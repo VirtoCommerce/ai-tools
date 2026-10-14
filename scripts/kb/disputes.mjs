@@ -22,6 +22,7 @@ import { join } from 'node:path';
 import { parseEntry, stringifyFrontmatter } from './core/frontmatter.mjs';
 import { buildIndex, buildRow, claimHash, isInvestigation, RESOLUTIONS } from './core/index-build.mjs';
 import { standName } from './core/verbs.mjs';
+import { loadPublicProjects } from './core/stands.mjs';
 import { appendObservation, applyResolution, clusters, disputeState, dossier, exposure, hints, priority } from './core/disputes.mjs';
 import { normalizeConditions, repairConditions } from './core/conditions.mjs';
 import { undoMsysRewrite } from './core/anchors.mjs';
@@ -269,7 +270,7 @@ async function main() {
     const r = applyResolution(entry.data, {
       at: a.flags.at, by: a.flags.by ?? null, verdict: a.flags.verdict, why: a.flags.why, ref: a.flags.in, session,
       pending: outsideEvidence(entry, a.id, session ? `session:${session}` : null, main.tip), amendedFrom,
-      defect: a.flags.defect ?? null, fixedIn: a.flags['fixed-in'] ?? null,
+      defect: a.flags.defect ?? null, fixedIn: a.flags['fixed-in'] ?? null, projects: loadPublicProjects(),
     });
     if (r.problem) { console.error(`refused: ${r.problem}`); return 1; }
     const blocked = gated([a.flags.why, a.flags.in]);

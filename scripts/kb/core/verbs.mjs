@@ -12,8 +12,8 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { mintId } from './canonical.mjs';
-import { profileOf, resolveStand } from './stands.mjs';
+import { canonicalBuild, mintId } from './canonical.mjs';
+import { loadPublicProjects, profileOf, resolveStand } from './stands.mjs';
 import { buildLabel, fixState, softDispute } from './gate.mjs';
 import { defectOf, markerProblem, resolveDefect, resolveFixedIn } from './defect.mjs';
 import { codeVersionProblem, isSource, resolveMethod } from './method.mjs';
@@ -611,6 +611,7 @@ async function askVerdict({ question, repair, cat, opened, ranker, env, started,
       id: c.row.id, subject: c.row.subject, separating: c.separating, question: c.row.question, body: bodies.get(c.row.id) ?? null,
       // A headline's `says:` excerpt is the bug's value when the entry is a defect: say so on the headline.
       defect: defectOf(parsed.get(c.row.id)?.data?.evidence ?? []),
+      defectUnknown: !parsed.get(c.row.id),
     }));
     // No headline is certified, so the agent may be about to go and find out: name what this session
     // already captured and has not published, as the floor-1 miss does, or the same fact is captured twice.
@@ -675,10 +676,14 @@ export async function ask(asked, opened, opts = {}) {
   return r;
 }
 
-/** A build snapshot the base holds, or null -- the one reader the gate and the labels share. */
+/**
+ * A build snapshot the base holds, or null -- the one reader the gate and the labels share. Read through
+ * `canonicalBuild`, so a snapshot written before the theme was read live (the artifact's name,
+ * `vc-theme-b2b-vue-2.60.0-…`) compares in the spelling every new stamp uses: normalised once, here.
+ */
 const buildReader = (opened) => async (pin) => {
   const r = await opened.reader.readEntry(buildPath(pin));
-  try { return r?.ok ? JSON.parse(r.text) : null; } catch { return null; }
+  try { return r?.ok ? canonicalBuild(JSON.parse(r.text)) : null; } catch { return null; }
 };
 
 /**
@@ -689,29 +694,36 @@ const buildReader = (opened) => async (pin) => {
 export const LABEL_DEADLINE_MS = 6_000;
 
 async function labelBuilds(hits, opened, { env = process.env, deployment, builds }) {
+  // A defect's fix against the asker's build (VCST-6317) needs only the asker's snapshot, not the labels'
+  // swagger reads, so it is raced on its own: it is there whenever the build itself arrived in time, even
+  // when the labels miss their deadline. Like the labels, nothing is applied after the answer has gone.
+  let gotFixes;
+  const fixesP = new Promise((r) => { gotFixes = r; });
   const work = (async () => {
     const where = resolveStand(deployment, { env });
-    if (!where.known) return;
+    if (!where.known) return null;
     const mine = await builds(where.value, { env });
-    if (!mine.pin) return;
+    if (!mine.pin) return null;
     const backUrl = profileOf(where.value, { env })?.backUrl?.replace(/\/$/, '') ?? null;
-    // A defect's fix against the asker's build (VCST-6317): synchronous, from the same snapshot, so it is
-    // there even when the labels below miss their deadline.
-    for (const h of hits) {
-      const marker = h.entryData ? defectOf(h.entryData.evidence ?? []) : null;
-      if (marker?.fixedIn) h.fix = fixState(marker.fixedIn, mine.snapshot);
-    }
+    // The marker `describeHit` already derived (`trust.defect`); derived here only for a bare hit.
+    gotFixes(hits.map((h) => {
+      const marker = h.trust ? h.trust.defect : h.entryData ? defectOf(h.entryData.evidence ?? []) : null;
+      return marker?.fixedIn ? fixState(marker.fixedIn, mine.snapshot) : null;
+    }));
     const readBuild = buildReader(opened);
     const labels = await Promise.all(hits.map((h) => (h.entryData
       ? buildLabel({ entry: h.entryData, asker: { build: mine.pin, snapshot: mine.snapshot }, readBuild, backUrl })
       : null)));
     return labels;
   })();
+  work.then(() => gotFixes(null), () => gotFixes(null)); // no build: no fix states (a no-op once resolved)
   let timer;
-  const labels = await Promise.race([
-    work.catch(() => null),
-    new Promise((r) => { timer = setTimeout(() => r(null), LABEL_DEADLINE_MS); timer.unref?.(); }),
+  const deadline = new Promise((r) => { timer = setTimeout(() => r(null), LABEL_DEADLINE_MS); timer.unref?.(); });
+  const [fixes, labels] = await Promise.all([
+    Promise.race([fixesP, deadline]),
+    Promise.race([work.catch(() => null), deadline]),
   ]).finally(() => clearTimeout(timer));
+  if (Array.isArray(fixes)) fixes.forEach((f, i) => { if (f) hits[i].fix = f; });
   // Applied only when they all arrived in time: a half-labelled answer would read as "unknown" for the rest.
   if (Array.isArray(labels)) labels.forEach((l, i) => { if (l) hits[i].build = l; });
 }
@@ -835,7 +847,7 @@ export async function show(id, opened, opts = {}) {
   const r = await showEntry(id, opened, opts);
   if (r.state !== 'answer' || !opts.deployment || typeof opts.builds !== 'function') return r;
   try {
-    const hit = { entryData: r.entry };
+    const hit = { entryData: r.entry, trust: r.trust };
     await labelBuilds([hit], opened, opts);
     if (hit.build) r.build = hit.build;
     if (hit.fix) r.fix = hit.fix;
@@ -1118,7 +1130,7 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   const conditions = normalizeConditions(input.conditions);
   if (conditions.problem) return refuseAtDoor(doorHints({ state: 'invalid', why: `unusable conditions: ${conditions.problem}` }, input), input, door);
   // IS IT A DEFECT (VCST-6317): checked against the docs / BL-* before capture, refused like `method`.
-  const defect = resolveDefect(input.defect);
+  const defect = resolveDefect(input.defect, { projects: loadPublicProjects(env) });
   if (defect.problem) return refuseAtDoor(doorHints({ state: 'invalid', why: `unusable defect: ${defect.problem}` }, input), input, door);
   if (defect.value === 'none') return refuseAtDoor(doorHints({ state: 'invalid', why: 'unusable defect: `none` withdraws a marker, and a new entry has none to withdraw -- leave defect out' }, input), input, door);
   const fixedIn = resolveFixedIn(input.fixedIn);
@@ -1354,7 +1366,7 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
   if (conditions.problem) return { state: 'invalid', why: `unusable --conditions: ${conditions.problem} (key=value; key=value, e.g. platform=3.1007.27; setting:Store.Name=value)` };
   // A DEFECT MARKER RIDES ON A CONFIRM (VCST-6317): you saw the behaviour, and it should not happen. On a
   // dispute it would mark the very claim the dispute says is not what happens.
-  const defect = resolveDefect(input.defect);
+  const defect = resolveDefect(input.defect, { projects: loadPublicProjects(env) });
   if (defect.problem) return { state: 'invalid', why: `unusable --defect: ${defect.problem}` };
   const fixedIn = resolveFixedIn(input.fixedIn);
   if (fixedIn.problem) return { state: 'invalid', why: `unusable --fixed-in: ${fixedIn.problem}` };

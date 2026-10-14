@@ -12,7 +12,7 @@
 
 import { MSYS_REMEDY } from './anchors.mjs';
 import { CONTRACT, DEFECT_SOURCE, DEPLOYMENT_SOURCE, METHOD_SOURCE, SCOPE_SOURCE } from './contract.mjs';
-import { defectText } from './defect.mjs';
+import { DEFECT_UNKNOWN, defectText } from './defect.mjs';
 import { HEADLINE } from './exits.mjs';
 import { isResolved } from './index-build.mjs';
 import { idList } from './index-load.mjs';
@@ -79,6 +79,7 @@ export function hitLines(hit) {
   // A DEFECT, said beside the trust label and before the subject (VCST-6317): trust says it happens, this
   // says it should not -- a reader who stops at the headline must not take the bug for the expectation.
   if (hit.trust.defect) lines.push(`  ! ${defectText(hit.trust.defect, hit.fix)}`);
+  else if (hit.unavailable) lines.push(`  ! ${DEFECT_UNKNOWN}`);
   lines.push(`  ${hit.subject}`);
   // Where it was seen, against the asker's own build (VCST-6221) -- only when the ask named its stand.
   if (hit.build) lines.push(`  build: observed on ${hit.build.label}${hit.build.diff ? ` (yours vs then: ${hit.build.diff})` : ''}`);
@@ -184,7 +185,7 @@ export function verdictLines(v, { prefix = 'kb ask', says = true } = {}) {
       `${prefix}: ${AMBIGUOUS_CONTRACT}`,
       ...v.headlines.flatMap((h) => [
         `  ${h.id}  ${h.subject}${h.separating ? `  [${h.separating}]` : ''}`,
-        ...(h.defect ? [`      ! ${defectText(h.defect)}`] : []),
+        ...(h.defect ? [`      ! ${defectText(h.defect)}`] : h.defectUnknown ? [`      ! ${DEFECT_UNKNOWN}`] : []),
         ...(h.question ? [`      answers: ${h.question}`] : []),
         ...(says && h.body ? [`      says: ${excerpt(h.body)}`] : []),
       ]),

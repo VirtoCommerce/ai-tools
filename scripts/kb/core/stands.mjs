@@ -113,6 +113,34 @@ export function readProfiles({ root = REPO_ROOT, tracked = false } = {}) {
     .filter(Boolean);
 }
 
+/**
+ * The Jira projects whose ticket keys may be PUBLISHED (VCST-6317): every `JIRA_PROJECT_KEY` a git-tracked
+ * `.env.*` of this repo assigns (comma-separated allowed). A client's own tracker is configured in an
+ * untracked file, so its keys (`ACME-42`) never qualify -- the leak `probeStand` refuses for a private
+ * stand's build, applied to a ticket. No git, or no key: none, and only `suspected` is accepted.
+ */
+export function publicProjects({ root = REPO_ROOT } = {}) {
+  let committed;
+  try {
+    committed = execFileSync('git', ['ls-files', '.env*'], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).split(/\r?\n/).filter(Boolean);
+  } catch { return []; }
+  const keys = new Set();
+  for (const n of committed) {
+    let text;
+    try { text = readFileSync(join(root, n), 'utf8'); } catch { continue; }
+    for (const k of String(readAssignments(text).JIRA_PROJECT_KEY ?? '').split(',')) if (k.trim()) keys.add(k.trim().toUpperCase());
+  }
+  return [...keys].sort();
+}
+
+let projectsCached = null;
+/** `publicProjects`, read once per process; `KB_STANDS_ROOT` points it at another checkout, as for the stand map. */
+export function loadPublicProjects(env = process.env) {
+  const root = env.KB_STANDS_ROOT || REPO_ROOT;
+  if (projectsCached?.root !== root) projectsCached = { root, keys: publicProjects({ root }) };
+  return projectsCached.keys;
+}
+
 let cached = null;
 /** The map the door uses, read once per process. `KB_STANDS_ROOT` points it at another checkout (tests, fixtures). */
 export function loadStands(env = process.env) {

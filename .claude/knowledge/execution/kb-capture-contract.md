@@ -169,11 +169,14 @@ bug shows itself is what whoever fixes or tests it needs — but it carries a **
   and the `BL-*` oracles first. They say it should not happen → mark it. They say nothing, or you only
   feel it is wrong → do not mark it; say what looked odd in the claim. An unexpected value that the docs
   explain (a setting, a by-design rule) is not a defect.
-- **The values.** `defect`: a bug ticket (`VCST-1234`) or `suspected` (no ticket yet). `fixedIn`, once it
-  is fixed: the first build without it, `<module>@<version>`, `platform@<version>` or `theme@<version>`.
-  Anything else is refused.
+- **The values.** `defect`: a bug ticket of a project whose `JIRA_PROJECT_KEY` this repo's tracked config
+  names (`VCST-1234`; `publicProjects`, `scripts/kb/core/stands.mjs`) or `suspected` (no ticket yet, or a
+  ticket in a private tracker — the base is public). `fixedIn`, once it
+  is fixed: the first build without it, `VirtoCommerce.<Module>@<version>`, `platform@<version>` or
+  `theme@<version>` — never a client's own module, the base is public. Anything else is refused.
 - **Where it goes.** At capture, with the fact. On an existing entry, with `kb_confirm` (`--defect` in the
-  CLI): you saw the behaviour, and it should not happen — a ticket filed later re-marks it the same way,
+  CLI): you saw the behaviour, and it should not happen — a ticket filed later re-marks it the same way
+  (`suspected` never replaces a ticket the entry already carries),
   `fixedIn` alone completes the marker it carries, and `defect: none` withdraws a marker that proved
   wrong. The claim never changes. A dispute carries no marker.
 - **The judge.** A dispute that saw a marked defect fixed on a later build is `defect-fixed`

@@ -13,7 +13,6 @@
 // The rule (`RELEVANCE`) is the replay's best on the 2026-10-08 round: 19 of 21 scoped items soft, the
 // other two had identical reconstructed builds (a setting, or a PR build no manifest names).
 
-import { themeVersion } from './canonical.mjs';
 import { supportOf } from './index-build.mjs';
 import { isSource } from './method.mjs';
 import { ownersIndex } from './owners.mjs';
@@ -127,7 +126,7 @@ export async function buildLabel({ entry, asker, readBuild, backUrl, owners = ow
  *
  * Same comparison as the build label (`cmpVersion`, on the base version). Never "fixed" on a guess: a
  * part the build does not name, or a pre-release of the very version the fix shipped in (a PR build of
- * 3.1001.0 may predate the fix), is `unknown`.
+ * 3.1001.0 may predate the fix) other than the one `fixedIn` names, is `unknown`.
  */
 export function fixState(fixedIn, snapshot) {
   const at = String(fixedIn ?? '').lastIndexOf('@');
@@ -136,12 +135,15 @@ export function fixState(fixedIn, snapshot) {
   const p = part.toLowerCase();
   const mods = Object.entries(snapshot.modules ?? {});
   const have = p === 'platform' ? snapshot.platform
-    : p === 'theme' ? (snapshot.theme ? themeVersion(snapshot.theme) : null)
+    : p === 'theme' ? snapshot.theme ?? null
       : mods.find(([id]) => id.toLowerCase() === p)?.[1] ?? null;
   if (!have) return { state: 'unknown', have: null };
   const shown = p === 'platform' || p === 'theme' ? `${p} ${have}` : `${part} ${have}`;
   const c = cmpVersion(have, want);
   if (c > 0) return { state: 'fixed', have: shown };
   if (c < 0) return { state: 'not-fixed', have: shown };
-  return { state: String(have).includes('-') && !want.includes('-') ? 'unknown' : 'fixed', have: shown };
+  // Same base version: the release itself, or a release against a pre-release of it, carries the fix. A
+  // pre-release on the asker's side -- of the release, or a DIFFERENT pre-release (two PR builds of
+  // 2.60.0) -- may predate it.
+  return { state: String(have) === want || !String(have).includes('-') ? 'fixed' : 'unknown', have: shown };
 }

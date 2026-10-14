@@ -290,17 +290,18 @@ export const RESOLUTION_MAX = 600;
  * and the marker the readers see (`defectOf`, core/defect.mjs) gains its `fixedIn`. `defect` defaults to
  * the marker the entry already carries; one of the two must name the bug.
  */
-export function applyResolution(data, { at, by: disputedBy = null, verdict, why, ref, session, pending = [], amendedFrom = null, defect = null, fixedIn = null, now = new Date() }) {
+export function applyResolution(data, { at, by: disputedBy = null, verdict, why, ref, session, pending = [], amendedFrom = null, defect = null, fixedIn = null, projects = null, now = new Date() }) {
   if (!RESOLUTIONS.includes(verdict)) return { problem: `--verdict must be one of: ${RESOLUTIONS.join(', ')}` };
   let marker = null;
   if (verdict === 'defect-fixed') {
-    const d = resolveDefect(defect);
+    const d = resolveDefect(defect, { projects });
     const f = resolveFixedIn(fixedIn);
     if (d.problem) return { problem: `--defect: ${d.problem}` };
     if (f.problem) return { problem: `--fixed-in: ${f.problem}` };
     if (!f.value) return { problem: 'defect-fixed needs --fixed-in <module>@<version>: the first build the dispute saw without the defect' };
+    if (d.value === 'none') return { problem: '--defect none withdraws a marker; defect-fixed says the defect was real and is fixed -- give its ticket or `suspected`, or leave --defect out to keep the entry\'s marker' };
     const named = d.value ?? defectOf(data.evidence ?? [])?.defect ?? null;
-    if (!named || named === 'none') return { problem: `defect-fixed needs --defect <ticket | suspected>: ${data.id} carries no defect marker to complete` };
+    if (!named) return { problem: `defect-fixed needs --defect <ticket | suspected>: ${data.id} carries no defect marker to complete` };
     marker = { defect: named, fixedIn: f.value };
   } else if (defect || fixedIn) return { problem: '--defect / --fixed-in go with --verdict defect-fixed only' };
   const reason = String(why ?? '').trim();

@@ -26,8 +26,8 @@ export const CONDITIONS_SOURCE = 'Optional, and expected on a dispute: what the 
 
 /** What `defect` / `fixedIn` take (VCST-6317) -- said by capture and confirm. */
 export const DEFECT_SOURCE = 'Optional: the behaviour you observed should NOT happen -- checked against the docs (VirtoOZ) or a BL-* rule first. '
-  + 'A bug ticket (VCST-1234) or "suspected" (no ticket yet); on a confirm, "none" withdraws a marker that proved wrong. '
+  + 'A bug ticket of a public project (VCST-1234) or "suspected" (no ticket yet, or one in a private tracker); on a confirm, "none" withdraws a marker that proved wrong. '
   + 'fixedIn, once fixed: the first build without it, <module>@<version> (VirtoCommerce.XOrder@3.1001.0, platform@3.1080.0, theme@2.61.0). '
   + 'The claim still says what happens; readers are told never to assert it. Rules: ' + CONTRACT + ' §Defects';
 
-export const SCOPE_SOURCE =`at least one axis=value, e.g. surface=<${SURFACES.join(' | ')}>`;
+export const SCOPE_SOURCE = `at least one axis=value, e.g. surface=<${SURFACES.join(' | ')}>`;
