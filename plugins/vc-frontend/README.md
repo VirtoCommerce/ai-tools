@@ -6,10 +6,10 @@ storefront plugin to a backend module.**
 > The fork owns how it looks. Upstream owns how it behaves.
 
 > [!WARNING]
-> **The skills can make mistakes.** They resolve conflicts, port code and write tests on their own
-> judgement, and a passing build or test run does not prove the result is right. Every change they make —
-> the merge, each port, the map, the log — has to be reviewed by a person before it is merged. The person
-> who merges the PR owns the result.
+> **The skills can make mistakes.** They resolve conflicts, port code, write tests and edit a module's build
+> files on their own judgement, and a passing build, test run or check does not prove the result is right.
+> Every change they make — the merge, each port, the map, the log, the module edits — has to be reviewed by a
+> person before it is merged. The person who merges the PR owns the result.
 
 ## Install
 
@@ -71,10 +71,16 @@ plugin in the module's `StorefrontApp/` and never edits the module's own files. 
 2. It scaffolds, then runs the check to list what the module still lacks.
 3. **[PAUSE] You approve the diffs.** Raising the module's platform or dependency versions is called out: it
    changes who can install the module.
-4. It builds the plugin and runs the check until it passes. It never commits.
+4. It builds the plugin and runs the full check. It never commits.
+5. On request: the plugin in a local storefront, the module's package (`--artifact`), a local platform.
 
-It needs a vc-frontend checkout that is up to date with `dev`, and the module repo on a branch, with no uncommitted
-changes.
+It needs:
+
+- a vc-frontend checkout with `yarn install` done, whose facade is not newer than the storefronts the plugin is
+  for (it becomes the plugin's floor);
+- Node 22 or 24 with corepack;
+- the module repo on a branch, with no uncommitted changes;
+- for the package: the .NET SDK the module targets, and `vc-build`.
 
 Full details: [`skills/merge-upstream/SKILL.md`](skills/merge-upstream/SKILL.md),
 [`skills/port-upstream-to-fork/SKILL.md`](skills/port-upstream-to-fork/SKILL.md) and
