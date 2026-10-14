@@ -33,8 +33,9 @@ Stop and report, changing nothing, when:
 
 | Finding | Why |
 |---|---|
-| `$WEB/StorefrontApp/` exists | not this scenario. The plugin exists: upgrading it is S4, debugging it S7 |
-| the module repo has uncommitted changes | the diffs in step 3 must show only this skill's edits |
+| `$WEB/StorefrontApp/` is committed | not this scenario. The plugin exists: upgrading it is S4, debugging it S7 |
+| `$WEB/StorefrontApp/` exists but is untracked (`git status --porcelain` shows `?? …StorefrontApp/`) | an earlier run stopped. Offer to go on from step 3, or to delete that folder and start over; nothing in it was committed. Delete only on the user's yes |
+| the module repo has other uncommitted changes | the diffs in step 3 must show only this skill's edits. On a resumed run, its own earlier edits to the three module files may stay; show them in step 3 |
 | the module repo is on its default branch | ask for a branch first |
 
 Then confirm with the user, in one message:
@@ -72,7 +73,9 @@ changes for the module's users. Write nothing until the user agrees.
 | CI (`.github/workflows/`) | none | Report only. Module CI is updated centrally (its commits read "Auto update Github Action workflows"), so a local edit is overwritten. It must set up Node; if it does not, say so in the report |
 
 Apply the agreed edits, then run the check again. Loop until nothing about a module file fails; `yarn.lock is
-empty` is step 4's. Never edit a file
+empty` is step 4's. Stop the loop when the user declines an edit, or a ❌ prints no `→` line: the run is not done.
+Report those lines verbatim and what each one blocks (a declined floor: the module cannot ship the plugin to
+platforms below it). Never edit a file
 inside `StorefrontApp/` to silence a check: it was generated for exactly this setup, so a failure there is a
 generator bug to report.
 
@@ -119,4 +122,5 @@ Offer each; do only what the user wants.
 1. Commit, push, or edit a file outside the module's `.csproj`, `module.manifest` and `.gitignore`.
 2. Lower a version, or write one the check did not print.
 3. Hand-edit `@vc-frontend/core` files, or anything under `$HOST` except the reverted local setting in step 5.
-4. Re-run `create:plugin` over an existing `StorefrontApp/`, or delete one to make it run.
+4. Re-run `create:plugin` over an existing `StorefrontApp/`, or delete one without the user's yes. Only an
+   untracked one left by an earlier run may go (step 1).
