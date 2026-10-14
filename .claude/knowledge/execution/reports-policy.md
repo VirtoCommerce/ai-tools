@@ -342,8 +342,8 @@ Reports:
 
 Terminal-only, no file: `/qa-test-lifecycle` (labeled TLC-YYYY-MM-DD-HHMM in chat) and `/qa-test`'s
 ac-analysis + test-execution-report (both fold into one chat report). Persisting from `/qa-test`:
-summary.json + test-strategy.md + testing-checklist.md + screenshots (+ design-report.md when the visual lane ran) to
-reports/tickets/<Sprint>/<TICKET>/; the Test Model to reports/ba/test-models/; the 3x discovery report to
+summary.json + testing-checklist.md + screenshots (+ design-report.md when the visual lane ran) to
+reports/tickets/<Sprint>/<TICKET>/ (test-strategy.md beside them is `/qa-test-strategy`'s); the Test Model to reports/ba/test-models/; the 3x discovery report to
 reports/exploratory/; new test cases to regression/suites/ as category 2, not the ticket folder.
 ```
 

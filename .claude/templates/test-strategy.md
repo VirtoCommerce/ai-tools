@@ -8,7 +8,8 @@
 
 ## Round <N> of 3 — <YYYY-MM-DD>
 
-Status: DRAFT | APPROVED (<who>, <date>) | AUTO (--yes) | BLOCKED (F6) · Depth label: <light | standard | deep> (computed)
+Status: DRAFT | APPROVED (<who>, <date>) | CHANGED (<n> edits) | AUTO (--yes) · Depth label: <light | standard | deep> (computed)
+Blocked: <F6 — quote the NOT DEPLOYED line | no>
 Build: <PR#n @ sha per repo> · Stand: <env> · Deployed: <yes | NO → F6 | UNKNOWN → unverified> · Previous: <Round N−1 verdict, build | none>
 Floors fired: <F1 (signal) · F3 (signal) · …> · not fired: <F2, F4, …>
 

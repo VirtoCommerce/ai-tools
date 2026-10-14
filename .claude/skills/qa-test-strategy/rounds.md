@@ -38,7 +38,7 @@ So its strategy is the **delta**, not the ticket again:
 | defective cases, stale kb entries | cases → `/qa-test-lifecycle` (the staleness check); kb entries disputed after the check |
 | fixtures | checked for survival — a migration or a renamed field can invalidate them; re-seed when in doubt |
 
-The floors apply to the delta. The model and the mind map are amended, never rebuilt.
+From round 2, `floors.mjs` still reads the whole PR diff in the bundle, so the floors err upward: the delta narrows the risks, never the floors. The model and the mind map are amended, never rebuilt.
 
 ## Storage — one file per ticket (D7)
 
