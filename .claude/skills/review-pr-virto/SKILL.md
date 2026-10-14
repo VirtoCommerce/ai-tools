@@ -1,6 +1,6 @@
 ---
 name: review-pr-virto
-description: Use when asked to review a pull request in a VirtoCommerce platform or vc-module-* GitHub repository ("review PR 123 in vc-module-cart", "look at this x-api PR", "run a review on this PR") — code that ships as NuGet packages to downstream projects the reviewer cannot see.
+description: Use when asked to review a pull request in a VirtoCommerce platform or vc-module-* GitHub repository ("review PR 123 in vc-module-cart", "look at this x-api PR", "run a review on this PR") — code that ships as NuGet packages to downstream projects the reviewer cannot see. Not for a generic code review of other repositories (/code-review), this repo's own prompt files (/prompt-review), or a /qa-fix local diff before its PR (the vc-fix reviewers).
 compatibility: Requires the gh CLI signed in to GitHub, a local clone of the repository under review, and the Serena MCP server for code navigation. Optional — the Codex CLI with its Claude Code plugin (codex-lens.md), and the dotnet-diag plugin for perf-heavy diffs.
 ---
 
@@ -27,7 +27,7 @@ If any is missing, ask. If there is no local clone, offer to clone it (you will 
 worktree and for code navigation).
 
 `<scratch>` below means a scratch directory outside every repository, e.g. one made with
-`mktemp -d`. Helpers write nothing anywhere else.
+`mktemp -d`. Helpers write nothing anywhere else, except as the helper rules below declare.
 
 ## Orchestration model
 
@@ -44,7 +44,7 @@ findings at the end.
 | Test run in the worktree (Step 5) | **test helper** — a `general-purpose` subagent | `sonnet` — needs a shell and a build |
 | Optional Codex lenses (Step 3) | background Bash in the lead | see `codex-lens.md` |
 
-Rules for every helper:
+Rules for every helper — paste them into every spawn prompt (Steps 1, 4, 5):
 
 - **One helper = one task + an explicit output shape.** Helpers return digests and raw findings;
   the lead consolidates and judges. A helper with a vague mandate returns a wall of prose — the exact
@@ -53,7 +53,9 @@ Rules for every helper:
   in the spawn prompt: no edits, no new files in any repository or worktree (a throwaway probe test is
   a write), no `git add` / `commit` / `reset` / `checkout`, only `<scratch>`. A helper that thinks a
   probe would settle a finding reports the finding as unverified and includes the probe as text for
-  the lead to run.
+  the lead to run. **One exception, for the test helper only:** building and running the existing
+  tests writes build output (`bin/`, `obj/`, test results) into the worktree; that output is allowed,
+  and nothing else is.
 - **A helper cannot ask the user anything.** Whatever it would have asked comes back to the lead in
   its report, together with the assumption it made instead.
 - **If reality differs from the state the spawn prompt describes, the helper stops and reports** — it
@@ -118,11 +120,8 @@ every finding that depended on it as unverified.
 | "Decompiling is only my fallback" | It is not a fallback at all. See above. |
 | "I'll mark it unverified if time runs out" | Fine for the finding — and it still does not license reading source by another route without asking. |
 
-**Installing Serena** (per machine): it needs `uv` / `uvx` on `PATH`. In Claude Code:
-`/plugin marketplace add anthropics/claude-plugins-official`, then
-`/plugin install serena@claude-plugins-official`, then restart Claude Code (MCP tools bind at session
-start). Verify with `claude mcp list` — the Serena server shows as connected. Then activate each
-repository's local clone as a Serena project before navigating it.
+**Installing Serena** (per machine): the recipe and its check are `docs/onboarding.md` §Serena. Then
+activate each repository's local clone as a Serena project before navigating it.
 
 ## Severity scale
 
@@ -146,9 +145,7 @@ ranked by expected severity for code that ships as NuGet packages:
 5. `checklist/correctness.md`
 6. `checklist/tests.md`
 
-Compatibility comes first for the reason at the top of this file: a break of the public or virtual
-surface reaches every downstream consumer silently on their next package bump, while an internal bug
-hits one flow and is usually caught by a test. Each item says what to flag and why; verify every claim
+Compatibility comes first for the reason at the top of this file. Each item says what to flag and why; verify every claim
 against the code per **Code navigation**, never from memory of how the platform "usually" looks.
 
 A new rule goes into the file of its dimension; a new dimension is a new file plus a line in the list
@@ -167,10 +164,12 @@ helper the paths in this order.
   Red CI is context for severity, not a reason to skip the review.
 - Save the existing threads to files — the output goes to disk, not into the lead's context:
   ```bash
-  gh api repos/VirtoCommerce/<repo>/pulls/<pr>/comments --paginate > <scratch>/pr-<pr>-comments.json
-  gh api repos/VirtoCommerce/<repo>/pulls/<pr>/reviews --paginate > <scratch>/pr-<pr>-reviews.json
+  gh api graphql --paginate --slurp -f owner=VirtoCommerce -f repo=<repo> -F pr=<pr> -f query='query($owner:String!,$repo:String!,$pr:Int!,$endCursor:String){repository(owner:$owner,name:$repo){pullRequest(number:$pr){reviewThreads(first:100,after:$endCursor){pageInfo{hasNextPage endCursor} nodes{isResolved isOutdated path line comments(first:50){nodes{author{login} body}}}}}}}' > <scratch>/pr-<pr>-threads.json
+  gh api repos/VirtoCommerce/<repo>/pulls/<pr>/reviews --paginate --slurp > <scratch>/pr-<pr>-reviews.json
+  gh api repos/VirtoCommerce/<repo>/issues/<pr>/comments --paginate --slurp > <scratch>/pr-<pr>-conversation.json
   ```
-  Spawn the **sweep helper** on those two files. Output shape, per thread: `file:line`, the point in
+  (GraphQL, because REST review comments carry no resolved state.) Spawn the **sweep helper**, with
+  the helper rules, on those three files. Output shape, per thread: `file:line`, the point in
   one sentence, status (open / resolved / outdated), and any decision already litigated there. The
   lead reads only this digest. Reviewing without it produces duplicates and re-litigates settled
   decisions.
@@ -188,7 +187,8 @@ git -C <clone> fetch origin +<baseRefName>:refs/remotes/origin/<baseRefName> +pu
 git -C <clone> worktree add --detach <clone>/../worktrees/<repo>/pr-<pr> origin/pr/<pr>
 ```
 
-The `+` lets a re-run pick up a force-pushed head. A stale `origin/<baseRefName>` is as bad as a
+On a re-run, where the worktree exists, use `git -C <worktree> checkout --detach origin/pr/<pr>`
+instead. The `+` lets a re-run pick up a force-pushed head. A stale `origin/<baseRefName>` is as bad as a
 stale head: the three-dot diff then starts from an older merge base and pulls base-branch commits
 into the review.
 
@@ -217,24 +217,20 @@ the review is complete without it.
 Spawn the diff-pass helper (`opus`) with: the worktree path, `origin/<baseRefName>`, the paths of
 the `checklist/` files in the order listed under **Review checklist**, the path of
 `verification-discipline.md` with the instruction to read it first and apply it throughout, the
-Serena rule above, and the read-only mandate. Its task:
+Serena rule above, and the helper rules. Its task:
 
 - Read the branch diff: `git -C <worktree> diff origin/<baseRefName>...HEAD`.
 - Navigate code per **Code navigation** above.
 - Walk the checklist dimensions in order; report each finding as
   `severity | file:line | claim | evidence`, and separately list what it checked and found clean.
 
-For perf-heavy diffs (EF queries, hot paths, caching), if the `dotnet-diag` plugin is installed, also
-run its **`analyzing-dotnet-performance` skill in the lead** (Skill tool, main loop) on the changed
-files — its pattern catalog is wider than the checklist's performance section. Do **not** spawn the
-sibling `optimizing-dotnet-performance` **agent** for this: its engine is that same skill, a subagent
-cannot load skills, and it then free-forms — observed producing findings about code that does not
-exist. Either way, every perf finding is verified against the worktree in Step 6.
+For perf-heavy diffs (EF queries, hot paths, caching), read `dotnet-diag.md` — an optional extra pass
+the lead runs when the `dotnet-diag` plugin is installed.
 
 ### 5. Tests (test helper)
 
-Spawn the test helper (`sonnet`), told not to edit, create or commit anything, to run the affected
-test projects in the worktree and report: pass/fail counts, failures verbatim, and whether the PR's
+Spawn the test helper (`sonnet`) with the helper rules, including their build-output exception, to
+run the affected test projects in the worktree and report: pass/fail counts, failures verbatim, and whether the PR's
 new behavior is covered by new or updated tests (name the test files). No coverage for changed
 behavior is itself a finding, usually **major**.
 
@@ -264,27 +260,9 @@ Check this table at the moment you drop something, not afterwards:
 | "The tool errs" | A reason to check the claim, never a reason to rule on its provenance. |
 | "I'll record it as a residual risk" | A requirement written down instead of met is a dismissal wearing an artifact's clothes. Legitimate only when infeasibility is itself evidenced. |
 
-**Severity moves both ways, or it is a ratchet.** Before promoting a finding, check whether a decision
-about its subject is already recorded — in the PR, its threads, or earlier in this review. A decision
-has no artifact in the diff, so a re-derivation always arrives with fresher evidence than the decision
-it would override — and fresh evidence that the mechanism is real is not evidence that the decision
-was wrong.
-
-The standing case is a **prerelease version pin in a coordinated multi-repo change**: a companion PR
-pins a dependency to a prerelease build of another PR in the same change (`-alpha.`, `-beta.`,
-`-rc.`, `-pr-` in a `.csproj` or `module.manifest`). That pin is scaffolding so the PR builds before
-its dependency releases; it is re-pinned at release and never reaches the base branch as-is. It is
-**not a finding at any severity, not a blocking item, and not a request to re-pin to a newer build.**
-At most, one merge-order line: the companions' green CI validated against the pinned build's API
-surface, so the build against the released version is the one that must be re-run after the re-pin.
-If the author has not said which release the pin becomes, ask that as a question. Every technical fact about the pin can be true (NU5104, an older build, exact
-prerelease resolution) and none of them bears on whether it is a defect.
-
-| Thought | Reality |
-|---|---|
-| "The helper's facts are correct, so it's at least minor" | Correct facts wearing the wrong severity is the hard case: verification passes and returns you to the same conclusion. The facts do not bear on whether the pin is a defect. |
-| "The pinned build is stale — ask them to re-pin now" | Re-pinning happens at release. The merge-order note already says what green CI did and did not validate. |
-| "I'll make it a blocking checklist item instead of a finding" | A blocking item is a severity under another name. |
+**Severity moves both ways, or it is a ratchet** — a recorded decision outranks a fresh re-derivation,
+and a prerelease version pin in a coordinated multi-repo change is never a finding. Before promoting or
+re-ranking a finding, and whenever a prerelease pin appears, read `severity-ratchet.md`.
 
 **Output one consolidated review:**
 
@@ -306,5 +284,5 @@ prerelease resolution) and none of them bears on whether it is a defect.
   comments, and how to verify delivery are in `posting.md`; read it before posting anything.
 - Comments in English. Nothing about a downstream client — no client names, no client code, no client
   data — in a public repository.
-- Keep the worktree until posting is done (line numbers may need re-checking), then
-  `git -C <clone> worktree remove <worktree>`.
+- Keep the worktree until the review is delivered — and, if asked to post, until posting is done (line
+  numbers may need re-checking) — then `git -C <clone> worktree remove <worktree>`.

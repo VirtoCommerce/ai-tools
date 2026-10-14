@@ -31,4 +31,4 @@
   a thread-safe type is necessary but not sufficient: a `ConcurrentDictionary` exposed as
   `IDictionary` cannot express `GetOrAdd`, so a populate path through it is still check-then-act.
 - **GraphQL:** a per-row field resolver that calls a service per row without a batch / data loader.
-- For diffs heavy in this dimension, see `SKILL.md` Step 4 on the `dotnet-diag` skill.
+- For diffs heavy in this dimension, see [`dotnet-diag.md`](../dotnet-diag.md) (the lead runs it).
