@@ -181,7 +181,7 @@ npm run regression:plan -- <selection> --preflight --json --run-id {RUN_ID} --pr
 Exit 1 = the selection cannot run as-is (unknown id, missing CSV, no executor, or a cap that would guarantee truncation); 2 = pre-flight NOT READY; 3 = it could not run. On any: stop and report, never improvise. Suites in `preflight.gating.gated` are not in the plan. `preflight.json` is what `regression:close` turns into the next baseline.
 
 ### Step 3 — Initialize Status Tracker & Launch Live Dashboard
-1. Write `reports/regression/test-run-status.json` from the plan (run-level `status: "in_progress"`): every dispatch-order suite `pending`, every `preflight.gating.gated` suite `not_deployed` — terminal, so `regression:close` does not count it as open.
+1. Write `reports/regression/test-run-status.json` from the plan (run-level `status: "in_progress"`): every dispatch-order suite `pending`, every `preflight.gating.gated` suite `not_deployed`, every `preflight.secrets.gated` suite `blocked` (a password nobody has) — terminal, so `regression:close` does not count them as open.
 2. **ALWAYS launch the live HTML dashboard in the background — on EVERY run, unasked.** Never wait to be asked and never ask; it fires for every selection and mode, single runner-native suites (e.g. 050m) included. Launch it right after writing `test-run-status.json`, **before any dispatch (Step 4)**:
    ```
    npm run report:regression:watch -- --run-id {RUN_ID}
@@ -394,9 +394,7 @@ count and predicted makespan.
 | `frontend` | `where: {layer: frontend}` minus its excludes | Frontend only |
 | `backend` | `where: {layer: backend}` minus its excludes | Backend only |
 
-> The previous version of this table hard-coded member lists and counts. It drifted far enough to
-> name a suite id that does not exist (`01`) and to give `full` a count that contradicted the one in
-> §Usage — two wrong numbers for the same selection in one file. Shapes are stable; membership is not.
+> Shapes are stable; membership is not — a hard-coded list here once named a suite id that does not exist.
 
 ---
 

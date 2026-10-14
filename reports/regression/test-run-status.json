@@ -1,24 +1,221 @@
 {
-  "runId": "REG-2026-10-14-1156",
-  "status": "completed",
-  "startedAt": "2026-10-14T09:56:08.000Z",
-  "windowStart": "2026-10-14T09:56:08.000Z",
-  "selection": "043",
+  "runId": "REG-2026-10-14-1556",
+  "status": "in_progress",
+  "startedAt": "2026-10-14T13:57:59.063Z",
+  "windowStart": "2026-10-14T13:57:59.063Z",
+  "selection": "sprint:26-20 --frontend",
   "env": "vcst",
-  "scoped": true,
-  "purpose": "VCST-6017 /qa-test round 2 5-triage verification; --ids; --no-promote; suite source = worktree ai-tools-vcst6017",
+  "scoped": false,
+  "purpose": "Sprint26-20 regression, plan §5.1.1 Frontend suites (30); theme 2.60.0-alpha.2579, platform 3.1083.0",
   "suites": {
-    "043": {
+    "100": {
+      "status": "pending",
+      "lane": "browser",
+      "total": 6
+    },
+    "104": {
+      "status": "pending",
+      "lane": "browser",
+      "total": 17
+    },
+    "106": {
+      "status": "pending",
+      "lane": "browser",
+      "total": 29,
+      "note": "awaiting-secret TEST_USER_PASSWORD (held, not dispatched)"
+    },
+    "089": {
       "status": "done",
       "lane": "browser",
-      "browser": "playwright-chrome+playwright-edge",
-      "startedAt": "2026-10-14T09:56:08.000Z",
-      "pass": 8,
+      "total": 55,
+      "browser": "playwright-chrome",
+      "startedAt": "2026-10-14T14:01:53.220Z",
+      "finishedAt": "2026-10-14T14:15:32.576Z",
+      "pass": 3,
       "fail": 0,
-      "blocked": 0,
-      "total": 8,
-      "finishedAt": "2026-10-14T10:06:48.301Z"
+      "blocked": 51,
+      "skipped": 1,
+      "note": "BLOCKED: TEST_USER_PASSWORD missing from .env.playwright.local (sales-rep sign-in)"
+    },
+    "091": {
+      "status": "done",
+      "lane": "browser",
+      "total": 69,
+      "browser": "playwright-firefox",
+      "startedAt": "2026-10-14T14:01:53.271Z",
+      "finishedAt": "2026-10-14T14:15:32.626Z",
+      "pass": 0,
+      "fail": 0,
+      "blocked": 69,
+      "skipped": 0,
+      "note": "BLOCKED: TEST_USER_PASSWORD missing from .env.playwright.local (sales-rep sign-in)"
+    },
+    "093": {
+      "status": "running",
+      "lane": "browser",
+      "total": 79,
+      "browser": "playwright-edge",
+      "startedAt": "2026-10-14T14:01:53.321Z"
+    },
+    "014c": {
+      "status": "pending",
+      "lane": "browser",
+      "total": 46
+    },
+    "028": {
+      "status": "done",
+      "lane": "browser",
+      "total": 52,
+      "browser": "playwright-chrome",
+      "startedAt": "2026-10-14T14:15:48.276Z",
+      "finishedAt": "2026-10-14T14:24:46.724Z",
+      "pass": 0,
+      "fail": 0,
+      "blocked": 35,
+      "skipped": 17,
+      "note": "BLOCKED: USER_DEFAULT needs TEST_USER_PASSWORD (not in .env.playwright.local); re-run after key added + MCP restart"
+    },
+    "072b": {
+      "status": "done",
+      "lane": "browser",
+      "total": 76,
+      "browser": "playwright-chrome",
+      "startedAt": "2026-10-14T14:15:48.277Z",
+      "finishedAt": "2026-10-14T14:24:46.725Z",
+      "pass": 0,
+      "fail": 0,
+      "blocked": 6,
+      "skipped": 70,
+      "note": "BLOCKED: USER_DEFAULT needs TEST_USER_PASSWORD (not in .env.playwright.local); re-run after key added + MCP restart"
+    },
+    "097": {
+      "status": "pending",
+      "lane": "browser",
+      "total": 51,
+      "note": "awaiting-secret TEST_USER_PASSWORD (held, not dispatched)"
+    },
+    "011": {
+      "status": "pending",
+      "lane": "browser",
+      "total": 71
+    },
+    "014": {
+      "status": "running",
+      "lane": "browser",
+      "total": 68,
+      "browser": "playwright-firefox",
+      "startedAt": "2026-10-14T14:15:48.327Z"
+    },
+    "014b": {
+      "status": "running",
+      "lane": "browser",
+      "total": 50,
+      "browser": "playwright-chrome",
+      "startedAt": "2026-10-14T14:24:51.986Z"
+    },
+    "072e": {
+      "status": "done",
+      "lane": "browser",
+      "total": 56,
+      "browser": "playwright-chrome",
+      "startedAt": "2026-10-14T14:15:48.277Z",
+      "finishedAt": "2026-10-14T14:24:46.725Z",
+      "pass": 0,
+      "fail": 0,
+      "blocked": 18,
+      "skipped": 38,
+      "note": "BLOCKED: USER_DEFAULT needs TEST_USER_PASSWORD (not in .env.playwright.local); re-run after key added + MCP restart"
+    },
+    "098": {
+      "status": "pending",
+      "lane": "browser",
+      "total": 53
+    },
+    "002": {
+      "status": "pending",
+      "lane": "browser",
+      "total": 32
+    },
+    "029": {
+      "status": "pending",
+      "lane": "browser",
+      "total": 34
+    },
+    "046": {
+      "status": "pending",
+      "lane": "browser",
+      "total": 31,
+      "note": "awaiting-secret TEST_USER_PASSWORD (held, not dispatched)"
+    },
+    "015": {
+      "status": "pending",
+      "lane": "browser",
+      "total": 32
+    },
+    "007": {
+      "status": "pending",
+      "lane": "browser",
+      "total": 76
+    },
+    "004": {
+      "status": "pending",
+      "lane": "browser",
+      "total": 54
+    },
+    "042": {
+      "status": "pending",
+      "lane": "browser",
+      "total": 34
+    },
+    "043": {
+      "status": "pending",
+      "lane": "browser",
+      "total": 60
+    },
+    "045": {
+      "status": "pending",
+      "lane": "browser",
+      "total": 30,
+      "note": "awaiting-secret TEST_USER_PASSWORD (held, not dispatched)"
+    },
+    "072d": {
+      "status": "pending",
+      "lane": "browser",
+      "total": 26
+    },
+    "072": {
+      "status": "pending",
+      "lane": "browser",
+      "total": 44
+    },
+    "072f": {
+      "status": "pending",
+      "lane": "browser",
+      "total": 41,
+      "note": "awaiting-secret TEST_USER_PASSWORD (held, not dispatched)"
+    },
+    "033": {
+      "status": "pending",
+      "lane": "browser",
+      "total": 15
+    },
+    "013": {
+      "status": "pending",
+      "lane": "browser",
+      "total": 7
+    },
+    "048c": {
+      "status": "done",
+      "lane": "deterministic",
+      "total": 34,
+      "browser": "none",
+      "startedAt": "2026-10-14T14:00:54.615Z",
+      "finishedAt": "2026-10-14T14:15:49.679Z",
+      "pass": 20,
+      "fail": 5,
+      "blocked": 8,
+      "skipped": 0,
+      "note": "layout-runner exit 1; 8 BLOCKED (login field timeout)"
     }
-  },
-  "finishedAt": "2026-10-14T10:06:49.589Z"
+  }
 }
