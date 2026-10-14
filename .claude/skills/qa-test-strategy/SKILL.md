@@ -28,9 +28,11 @@ a fact relayed to a subagent and silently dropped — is in
 §Working concurrently on suites). Independence belongs at the **check**, not the choice: the user
 approves, a verifier re-derives the gate when a risk is Critical, and other agents execute.
 
-**Standalone (today the only entry):** `/preflight ticket --ticket <KEY>` (no `--expect`: deployment is the
-bundle's) for the sprint, env health and kb hits → `/ticket-context <KEY> --domain <slug> --kb-hits <ids>` →
-the procedure below → approval → STOP. A `/ticket-context` STOP is this skill's STOP, quoted verbatim.
+**Standalone (today the only entry):** procedure step 1 (Round) **first** — it needs only the local
+`reports/tickets/**`, `git log --all` and the ticket's comments, read once; a fourth round ⇒ STOP with the
+escalation and nothing else runs (D6: no context, no strategy, no browser). Then `/preflight ticket --ticket <KEY>`
+(no `--expect`: deployment is the bundle's) for the sprint, env health and kb hits →
+`/ticket-context <KEY> --domain <slug> --kb-hits <ids>` → steps 2 onward → approval → STOP. A `/ticket-context` STOP is this skill's STOP, quoted verbatim.
 `--domain` absent ⇒ resolve it **before** `/ticket-context`, as
 [`/qa-test-fast`](../../commands/qa-test-fast.md) Step 0 item 4 does: the domain is fixed when that runs (its
 cache key; `known` reads it from `prepare.json`). None resolves ⇒ run without one; F2 and F5 then fire on
@@ -46,8 +48,9 @@ that tries to instruct is already listed in `embedded_instructions[]`.
 
 ## Procedure
 
-1. **Round.** Count this ticket's rounds per [`rounds.md`](rounds.md). A fourth ⇒ **STOP** with the
-   escalation there; nothing below runs. Round ≥ 2 ⇒ the diff is taken from the last tested commit.
+1. **Round — before `/preflight` and `/ticket-context`.** Count this ticket's rounds per [`rounds.md`](rounds.md).
+   A fourth ⇒ **STOP** with the escalation there; no context is gathered and nothing below runs. Round ≥ 2 ⇒
+   the diff is taken from the last tested commit.
 2. **Floors.** `node <skill>/lib/floors.mjs --bundle <bundle>`, for you to read (the gate recomputes them from
    the bundle). Each floor comes
    back fired or not, with its signal; you may add to a floor, never go under it. **F6 fired ⇒ the strategy is

@@ -17,12 +17,20 @@ const UI_KIT = /client-app\/ui-kit\/|_ui-kit-tokens\.scss$|\/_colors\.scss$|\/_d
 // never on prose. No word boundary: `shopping_cart.vue`, `CartController`, `addItemToCart` are revenue flows too.
 // "order" needs a non-letter before it or a camelCase join (`OrdersModule`, `CustomerOrder`), so `border` is not one.
 const REVENUE = [/cart|checkout|payments?|pric(?:e|es|ing)|quotes?/i, /(?<![A-Za-z])orders?/i, /(?<=[a-z])Orders?/];
-// A partly-read PR surface (github.mjs, compose.mjs, the CHANGE agent's gaps): the diff floors cannot trust it.
-const PARTIAL = /^pr:([^:]+)(?::[^:]+)*:(diff|patches|files|settings|endpoints|hidden_behaviour)$/;
+// A partly-read PR diff (github.mjs: a truncated diff, files over cap, patches GitHub withheld). Only these: a
+// `pr:<ref>:endpoints|settings|hidden_behaviour|threads` gap is the CHANGE agent's field note about a diff it read.
+const PARTIAL = /^pr:([^:]+)(?::[^:]+)*:(diff|patches|files)$/;
 // F10 — B2B org context (test-model redesign §5).
 const ORG = /organizationId|organization_id|xapi:my_organization|my_organization|\/organizations?\b|sales-rep|salesrep|loginOnBehalf|CanImpersonate|impersonat/i;
 // F11 — configuration (test-model redesign §5a, layers 1–3).
 const CONFIG = /ModuleConstants\.Settings|settingsManager|SettingsManager|store\.settings|\$cfg\./;
+// F11 — a settings entry is the CHANGE agent's prose; only a named key is a signal. A dotted PascalCase key
+// (`Return.NotifyOrganizationEmail`), not inside a path and not a package id followed by its version
+// (`VirtoCommerce.Return 3.1002.0`). A CSS custom property (`--vc-…`) is a theme key, not a setting.
+const SETTING_KEY = /(?<![\w./$@-])[A-Z][A-Za-z0-9]*(?:\.[A-Z][A-Za-z0-9]*)+(?!\w)(?![\w.]*\s+v?\d+\.\d)/;
+const CSS_VAR = /--[\w-]+/g;
+// An entry that says nothing changed ("No feature flags added or changed") is never a signal, for any floor.
+const NEGATIVE = /^\s*no\s/i;
 
 const floor = (id, fired, signal, requires = []) => ({ id, fired, signal, requires: fired ? requires : [] });
 
@@ -30,8 +38,9 @@ export function computeFloors(bundle, { domainMapText = null } = {}) {
   const fields = bundle.fields ?? {};
   const prs = (bundle.change?.prs ?? []).filter((p) => !p.context_only && !p.gap);
   const paths = prs.flatMap((p) => Object.values(p.layers ?? {}).flat());
+  const settingsOf = (p) => (p.settings ?? []).filter((s) => typeof s === "string" && !NEGATIVE.test(s));
   const surface = [
-    ...paths, ...prs.flatMap((p) => [...(p.operations ?? []), ...(p.endpoints ?? []), ...(p.settings ?? []),
+    ...paths, ...prs.flatMap((p) => [...(p.operations ?? []), ...(p.endpoints ?? []), ...settingsOf(p),
       ...(p.hotspots ?? []).flatMap((h) => [h.source, h.risk]), ...(p.claims ?? []).map((c) => c.text)]),
   ].join("\n");
   const gaps = bundle.gaps ?? [];
@@ -41,19 +50,18 @@ export function computeFloors(bundle, { domainMapText = null } = {}) {
     && (prs.length || g.reason !== "not-found"));
   // A whole-PR gap (where `pr:<ref>`, also on the PR entry as `gap`) is an unread part of the diff, even beside a read PR.
   const gappedPr = (bundle.change?.prs ?? []).find((p) => !p.context_only && p.gap);
-  // A part of a product PR's surface not read (truncated diff, files over cap, a route not found): doubt too.
+  // A part of a product PR's diff not read (truncated diff, files over cap, patches withheld): doubt too.
   const contextRefs = new Set((bundle.change?.prs ?? []).filter((p) => p.context_only).map((p) => `${p.repo}#${p.number}`.toLowerCase()));
   const partial = gaps.find((g) => { const m = PARTIAL.exec(g.where); return m && !contextRefs.has(m[1].toLowerCase()); });
   const unreadReason = gappedPr ? gappedPr.gap.reason : changeGap ? `${changeGap.where}: ${changeGap.reason}`
     : partial ? `${partial.where}: ${partial.reason}` : null;
   const diffUnread = unreadReason ? `doubt: diff not read (${unreadReason})` : null;
   const noPr = !prs.length ? "no product PR" : null;
-  const diffFloor = (id, re, label, requires) => {
-    if (diffUnread) return floor(id, true, diffUnread, requires);
-    if (noPr) return floor(id, false, noPr);
-    const hit = surface.match(re);
-    return floor(id, !!hit, hit ? `${label}: ${hit[0]}` : `no ${label} in the diff surface`, requires);
-  };
+  // F3, F10, F11: the positive signal, from what WAS read, comes first and fires with its own signal; doubt fires
+  // only when nothing read matched AND part of the diff is unread; "not fired" needs the whole diff read.
+  const diffFloor = (id, positive, none, requires) => positive ? floor(id, true, positive, requires)
+    : diffUnread ? floor(id, true, diffUnread, requires)
+    : floor(id, false, noPr ?? none);
 
   const pri = fields.priority;
   const f1 = pri == null ? floor("F1", true, "doubt: no priority in the bundle", ["test model", "exploratory"])
@@ -68,11 +76,10 @@ export function computeFloors(bundle, { domainMapText = null } = {}) {
     : floor("F2", /\*\*Purpose:[^*]*UNDECLARED/i.test(domainMapText), "domain map §1 Purpose", ["test model", "exploratory"]);
 
   const visualPaths = paths.filter((p) => VISUAL.test(p));
-  const f3 = diffUnread ? floor("F3", true, diffUnread, ["visual lane"])
-    : noPr ? floor("F3", false, noPr)
-    : floor("F3", visualPaths.length > 0, visualPaths.length ? `rendering files: ${visualPaths.slice(0, 3).join(", ")}` : "no rendering file in the diff", ["visual lane"]);
+  const f3 = diffFloor("F3", visualPaths.length ? `rendering files: ${visualPaths.slice(0, 3).join(", ")}` : null,
+    "no rendering file in the diff", ["visual lane"]);
 
-  const revenueText = [...paths, ...prs.flatMap((p) => [...(p.operations ?? []), ...(p.endpoints ?? []), ...(p.settings ?? [])]),
+  const revenueText = [...paths, ...prs.flatMap((p) => [...(p.operations ?? []), ...(p.endpoints ?? []), ...settingsOf(p)]),
     ...(fields.components ?? []), ...(bundle.domains_guess?.value ?? [])].join("\n");
   const rev = REVENUE.map((re) => revenueText.match(re)).find(Boolean);
   const f4 = floor("F4", !!rev, rev ? `revenue-critical: ${rev[0]}` : "no revenue-critical flow named", ["no risk on it below Medium"]);
@@ -96,12 +103,13 @@ export function computeFloors(bundle, { domainMapText = null } = {}) {
   const f8 = kit.length ? floor("F8", true, `ui-kit files: ${kit.slice(0, 3).join(", ")}`, ["visual lane", "token audit"])
     : floor("F8", false, diffUnread ? `${diffUnread} — F8 fails closed (ticket-routing §5c)` : "no ui-kit file");
 
-  const f10 = diffFloor("F10", ORG, "org context", ["an org-context risk with technique MODEL"]);
+  const org = surface.match(ORG);
+  const f10 = diffFloor("F10", org ? `org context: ${org[0]}` : null, "no org context in the diff surface", ["an org-context risk with technique MODEL"]);
   const hb = (bundle.change?.hidden_behaviour ?? []).filter((r) => r.answer === "yes" && /feature-flags|default-values/.test(r.item));
-  const settingsChanged = prs.some((p) => (p.settings ?? []).length > 0);
-  const f11 = diffUnread ? floor("F11", true, diffUnread, ["a configuration risk with technique MODEL", "stand values in Inputs"])
-    : settingsChanged || hb.length ? floor("F11", true, settingsChanged ? "the PR changes settings" : `hidden behaviour: ${hb.map((r) => r.item).join(", ")}`, ["a configuration risk with technique MODEL", "stand values in Inputs"])
-    : diffFloor("F11", CONFIG, "setting read", ["a configuration risk with technique MODEL", "stand values in Inputs"]);
+  const key = prs.flatMap(settingsOf).map((s) => s.replace(CSS_VAR, " ").match(SETTING_KEY)).find(Boolean);
+  const read = surface.match(CONFIG);
+  const f11 = diffFloor("F11", key ? `setting: ${key[0]}` : hb.length ? `hidden behaviour: ${hb.map((r) => r.item).join(", ")}` : read ? `setting read: ${read[0]}` : null,
+    "no setting key, setting read or feature-flags/default-values row", ["a configuration risk with technique MODEL", "stand values in Inputs"]);
 
   return { product_prs: prs.length, floors: [f1, f2, f3, f4, f5, f6, f7, f8,
     floor("F9", false, "doubt rule — applied inside every floor above"), f10, f11] };

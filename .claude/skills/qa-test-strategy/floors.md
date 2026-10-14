@@ -20,18 +20,27 @@ ticket type. Name every floor in the strategy as fired or not, with its signal.
 | F8 | the change IS the design system or the token layer (`ui-kit`, [`../qa-test/ui-kit-class.md`](../qa-test/ui-kit-class.md)) | F3 + token audit; fails closed |
 | F9 | any doubt about a floor's signal | the floor applies (every floor except F8, which fails closed; F4 and F6 read only what was read) |
 | F10 | the change surface names org context: an `organizationId`-style argument, `xapi:my_organization:*`, an org route or list, `/graphql/sales-rep` or a `sales-rep:*` permission, `loginOnBehalf` / `CanImpersonate` / `/account/impersonate` ([`../../../docs/superpowers/specs/2026-10-09-qa-test-model-redesign.md`](../../../docs/superpowers/specs/2026-10-09-qa-test-model-redesign.md) §5) | an org-context risk with technique `MODEL` |
-| F11 | the PR adds or changes a setting, a hidden-behaviour row answers `yes` for `feature-flags` / `default-values`, or the diff reads one (`ModuleConstants.Settings`, `settingsManager`, `store.settings`, `$cfg.`) (§5a) | a configuration risk with technique `MODEL` + the stand's values in Inputs (`npm run store:caps -- --settings` / `--store`) |
+| F11 | the PR adds or changes a setting (a settings entry names its key — see below), a hidden-behaviour row answers `yes` for `feature-flags` / `default-values`, or the diff reads one (`ModuleConstants.Settings`, `settingsManager`, `store.settings`, `$cfg.`) (§5a) | a configuration risk with technique `MODEL` + the stand's values in Inputs (`npm run store:caps -- --settings` / `--store`) |
 
 ## How `floors.mjs` reads the bundle
 
 - **F9 is built into every floor except F8, F4 and F6:** a floor that cannot be read fires, with a `doubt:`
   signal. That is: no priority (F1), no type (F2, F7 — then F7 requires only F5 on), a domain map that is not
-  `PRESENT` (F2), and for F3, F10, F11 a product PR with a whole-PR gap, a partly-read one (a `pr:<ref>:diff` /
-  `patches` / `files` / `settings` / `endpoints` / `hidden_behaviour` gap), or any `change` / `change.*` gap
-  except `change.deployed` — even beside a read PR; only "searched, nothing found" with no product PR is not
-  fired. F5, when no case is at risk: a `known.domain` gap or a failed `known.tc:scope` / `known.regression:select`
-  lookup. **F4** needs a named flow to apply and **F6** needs
+  `PRESENT` (F2), F5 when no case is at risk (a `known.domain` gap or a failed `known.tc:scope` /
+  `known.regression:select` lookup), and F3, F10, F11 as the next bullet says. **F4** needs a named flow to apply and **F6** needs
   a `NOT DEPLOYED:` line: both read only what was read, and neither doubts.
+- **F3, F10, F11: a positive signal first.** Each is computed from the part of the diff that was read, and when
+  it matches, the floor fires with that signal. Only when nothing read matches **and** part of the diff is
+  unread does it fire with `doubt:`; "not fired" needs the whole diff read. The diff is (partly) unread on:
+  a whole-PR gap on a product PR, a `change` / `change.*` gap except `change.deployed` (even beside a read PR;
+  "searched, nothing found" with no product PR is not), or a `pr:<ref>:diff` / `patches` / `files` gap. A
+  `pr:<ref>:endpoints` / `settings` / `hidden_behaviour` / `threads` gap is the analyst's field note about a
+  diff it read, and never makes it unread.
+- **F11 reads settings entries, not their count.** An entry is the analyst's prose, so it fires only when it
+  names a setting key — a dotted PascalCase key such as `Return.NotifyOrganizationEmail`, not inside a path and
+  not a package id followed by its version — or matches the setting-read pattern; a hidden-behaviour row
+  answered `yes` for `feature-flags` / `default-values` fires it too. An entry starting with "No " is never a
+  signal, for any floor; a CSS custom property (`--vc-…`) is a theme key, not a setting.
 - **F8 fails closed:** an unread diff never fires it — it needs an affirmative ui-kit path in what was read ([`../../knowledge/execution/ticket-routing.md`](../../knowledge/execution/ticket-routing.md) §5c).
 - **F3 is a lower bound.** It fires on a rendering file in the diff
   ([`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §1 source 1) and never on a bare storefront/admin-spa
