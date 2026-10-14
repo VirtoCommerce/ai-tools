@@ -15,21 +15,25 @@
  * `{"decision":"block","reason":…}`: the agent takes ONE more step -- closes the list with `kb_show` /
  * `kb_none`, captures what it found out, or says in a line that it did not find it out.
  *
- * EACH AGENT IS ASKED ABOUT ITS OWN MISSES. Registered on `Stop` (the main thread) AND `SubagentStop`.
- * Claude Code writes the main thread to `transcript_path` and every subagent to its own
- * `agent_transcript_path` under `<session>/subagents/` (`core/caller.mjs` measured 12 of 12 ids that
- * way). An ask belongs to the transcript that HOLDS it: an MCP ask by its tool-use id (`call`), a CLI
- * ask by the shell call that ran it -- found with `caller.mjs` `kbShellCalls` / `carries`, the same
- * join the push uses to attribute CLI lines. So a subagent is reminded of its own misses at its own
- * SubagentStop, and the main thread's Stop does not raise -- and mark -- a still-working subagent's.
+ * THE MAIN THREAD IS ASKED, ALSO ABOUT ITS SUBAGENTS' LISTS (VCST-6341). Registered on `Stop` only.
+ * It used to block at `SubagentStop` too, so each subagent was asked about its own asks -- and a live
+ * test on Claude Code 2.1.295 showed that block never reaches the subagent: it hands its report back
+ * (`SubagentHandback`) and ends, the reason lands in its transcript unread, and the asks it named were
+ * already marked raised, so nobody was ever asked about them again. A `SubagentStop` therefore does
+ * nothing here. Any agent of the session can close a list by its handle, so the main thread -- the one
+ * agent a stop block demonstrably keeps working -- closes them.
  *
- * NOTHING IS ORPHANED. The main thread also takes an open ask that NO transcript holds (a plain
- * terminal, an unreadable path) and one held only by subagents that look FINISHED: transcript idle for
- * `SUBAGENT_IDLE_MS` and not busy -- a subagent that finished, crashed, was stopped, or whose
- * SubagentStop arrived without a transcript path. One still inside a long tool call is busy, however
- * quiet its transcript, and keeps its ask -- until that call's own timeout (30 min when it set none)
- * has passed, so a subagent killed mid-call is not deferred for long. Before, those were raised by nobody. A subagent's stop raises only what
- * its own transcript holds, and nothing when it cannot read it.
+ * WHOSE ASK IT IS still decides WHEN. Claude Code writes the main thread to `transcript_path` and every
+ * subagent to its own transcript under `<session>/subagents/` (`core/caller.mjs` measured 12 of 12 ids
+ * that way). An ask belongs to the transcript that HOLDS it: an MCP ask by its tool-use id (`call`), a
+ * CLI ask by the shell call that ran it -- found with `caller.mjs` `kbShellCalls` / `carries`, the same
+ * join the push uses to attribute CLI lines. The main thread takes its own asks, any ask NO transcript
+ * holds (a plain terminal, an unreadable path), and asks held only by subagents that are FINISHED:
+ * their last tool call was `SubagentHandback` (the report is delivered; nothing more will happen there),
+ * or their transcript has been idle for `SUBAGENT_IDLE_MS` with no tool call still open. One still
+ * inside a long tool call is busy, however quiet its transcript, and keeps its ask -- until that call's
+ * own timeout (30 min when it set none) has passed, so a subagent killed mid-call is not deferred for
+ * long.
  *
  * IT WRITES ONLY ITS OWN FILE, append-only: the asks it raised go to `<session>.reminded.ndjson`, one
  * per line (`remindedPath`), so stops finishing together never erase each other's markers. Once a day
@@ -45,10 +49,8 @@
  *   2. `stop_hook_active` (set by the harness while a stop hook already made Claude continue) does NOT
  *      silence it (VCST-6341). It used to, and that broke the reminder's own promise: the reason names
  *      `LISTED` asks and says the rest come "at your next stop", but the next stop is the continuation
- *      this block caused, so it was silent -- and a SUBAGENT has no stop after that. Measured
- *      2026-10-12..14: one regression session with 56 subagents left 84 lists unclosed, 78% of the
- *      window's 108; a subagent was reminded of its first five and never of the rest. Guard 1 already
- *      makes the continuation safe, so the rest are now raised there, five at a time.
+ *      this block caused, so it was silent. Guard 1 already makes the continuation safe, so the
+ *      rest are now raised there, five at a time.
  *   3. Off switches: `KB_ENABLED=0` (the base is off on this machine), `KB_REMIND=0` (this hook only),
  *      and `KB_SYNTHETIC=1`: a calibration or bench run must not take an extra step it did not ask for.
  *
@@ -141,13 +143,33 @@ function transcriptOf(path, now) {
   const text = readText(path);
   if (text === null) return null;
   const age = ageOf(path, now);
-  return { path, text, calls: kbShellCalls(text), busy: busyIn(text, age), age };
+  return { path, text, calls: kbShellCalls(text), busy: busyIn(text, age), handedBack: handedBack(text), age };
 }
 
 /** A known owner's state from its file's tail only -- no full read (PR #400 review). */
 function statusOf(path, now) {
   const age = ageOf(path, now);
-  return { age, busy: busyIn(readTail(path), age) };
+  const tail = readTail(path);
+  return { age, busy: busyIn(tail, age), handedBack: handedBack(tail) };
+}
+
+/**
+ * Did this subagent hand its report back as its LAST tool call? `SubagentHandback` is how a subagent
+ * ends (VCST-6341): after it, the transcript gains only its result and attachments, so the agent is
+ * finished and need not be waited out for `SUBAGENT_IDLE_MS`. A later tool call (the parent resumed it)
+ * makes it live again.
+ */
+function handedBack(text) {
+  if (text === null) return false;
+  const rows = text.split('\n');
+  for (let i = rows.length - 1; i >= 0; i -= 1) {
+    if (!rows[i].includes('"tool_use"')) continue;
+    let rec;
+    try { rec = JSON.parse(rows[i]); } catch { continue; }
+    const uses = (Array.isArray(rec?.message?.content) ? rec.message.content : []).filter((c) => c?.type === 'tool_use');
+    if (uses.length) return uses.at(-1).name === 'SubagentHandback';
+  }
+  return false;
 }
 
 /**
@@ -184,22 +206,22 @@ function readOwners(path) {
 }
 
 /**
- * The open asks THIS stop owns (see the header). A subagent: what its own transcript holds. The main
- * thread: what its transcript holds, plus every ask no LIVE subagent holds. The main transcript being
- * unreadable no longer hands it the asks of subagents still at work -- the subagent rule still applies
- * (PR #400 review); with no transcript path at all there is nothing to attribute by, and it takes all.
+ * The open asks the main thread's stop owns (see the header): what its transcript holds, plus every ask
+ * no LIVE subagent holds. The main transcript being unreadable does not hand it the asks of subagents
+ * still at work (PR #400 review); with no transcript path at all there is nothing to attribute by, and
+ * it takes all.
  * A subagent holder found once is cached in `ownersPath`; later stops read only that file's tail.
  */
-function owned(loops, { sub, transcript, ownersFile, now = Date.now() }) {
+function owned(loops, { transcript, ownersFile, now = Date.now() }) {
   const own = transcriptOf(transcript, now);
-  if (sub) return own === null ? [] : loops.filter((l) => holds(own, l));
   if (!transcript) return loops;
   const mine = [];
   const rest = [];
   for (const l of loops) (holds(own, l) ? mine : rest).push(l);
   if (!rest.length) return mine;
-  // FINISHED = idle for SUBAGENT_IDLE_MS AND no tool call still open. A holder that is busy keeps it.
-  const finished = (s) => !s.busy && s.age > SUBAGENT_IDLE_MS;
+  // FINISHED = handed its report back, or idle for SUBAGENT_IDLE_MS -- and no tool call still open.
+  // A holder that is busy keeps it.
+  const finished = (s) => !s.busy && (s.handedBack || s.age > SUBAGENT_IDLE_MS);
   const owners = readOwners(ownersFile);
   const unknown = rest.filter((l) => !owners.has(l.at));
   const scanned = unknown.length ? subagentTranscripts(transcript, now) : [];
@@ -227,6 +249,9 @@ function main() {
   // so a machine with KB_REMIND=0 or a synthetic run must still have its files cleaned.
   prune(queueDir(process.env));
   if (remindDisabled(process.env) || isSynthetic(process.env)) return;
+  // A subagent's stop block is never acted on (see the header): its lists go to the main thread.
+  // Checked here as well as unregistered, so an older settings copy cannot mark asks nobody will see.
+  if (payload?.hook_event_name === 'SubagentStop') return;
 
   // The journal is keyed like the queue (`hookEnv` -> `sessionId`); SubagentStop carries the PARENT's
   // session id, so a subagent reads the same journal as its main thread.
@@ -236,13 +261,12 @@ function main() {
   if (!journal.length) return;
 
   const path = remindedPath(env);
-  const sub = payload?.hook_event_name === 'SubagentStop';
   // Nothing open -> no transcript is read: on a session with a long journal and a multi-MB
   // transcript this is every turn end (PR #400 review).
   const open = openLoops(journal, { reminded: raisedAts(path) });
   if (!open.length) return;
   const loops = owned(open, {
-    sub, transcript: sub ? payload?.agent_transcript_path : payload?.transcript_path, ownersFile: ownersPath(env),
+    transcript: payload?.transcript_path, ownersFile: ownersPath(env),
   });
   if (!loops.length) return;
 
