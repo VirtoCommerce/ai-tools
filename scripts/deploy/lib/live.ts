@@ -77,16 +77,17 @@ export function parseThemeVersion(js: string): string | null {
 /**
  * The live, anonymous source of the storefront theme version: the entry bundle the index HTML loads.
  * The HTML is cache-busted (kb KB-D9DF8E54: it is served max-age=7200, so a plain GET can name the
- * previous build). Read-only GETs of FRONT_URL.
+ * previous build). Read-only GETs of FRONT_URL. `signal` lets a caller with a deadline (the kb build
+ * stamp) abort both requests rather than only stop waiting for them.
  */
-export async function probeThemeVersion(frontUrl: string): Promise<{ ok: true; version: string } | { ok: false; status: ProbeStatus | 'no-front-url' | 'no-entry-script' | 'no-version-in-bundle' }> {
+export async function probeThemeVersion(frontUrl: string, signal?: AbortSignal): Promise<{ ok: true; version: string } | { ok: false; status: ProbeStatus | 'no-front-url' | 'no-entry-script' | 'no-version-in-bundle' }> {
   if (!frontUrl) return { ok: false, status: 'no-front-url' };
   try {
-    const page = await fetch(`${frontUrl}/?_preflight=${Date.now()}`, { headers: { 'Cache-Control': 'no-cache' } });
+    const page = await fetch(`${frontUrl}/?_preflight=${Date.now()}`, { signal, headers: { 'Cache-Control': 'no-cache' } });
     if (page.status !== 200) return { ok: false, status: page.status };
     const entry = parseThemeEntry(await page.text());
     if (!entry) return { ok: false, status: 'no-entry-script' };
-    const js = await fetch(new URL(entry, `${frontUrl}/`).href);
+    const js = await fetch(new URL(entry, `${frontUrl}/`).href, { signal });
     if (js.status !== 200) return { ok: false, status: js.status };
     const version = parseThemeVersion(await js.text());
     return version ? { ok: true, version } : { ok: false, status: 'no-version-in-bundle' };

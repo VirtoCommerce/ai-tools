@@ -140,14 +140,17 @@ export function supportOf(evidence = []) {
  *   conditions-scoped    both sides were right under different settings; the entry names the condition
  *   split                the entry held two facts; each now lives in its own entry
  *   dispute-wrong        the entry holds; the dispute misread what it saw
+ *   defect-fixed         the entry describes a DEFECT and the dispute saw it fixed (VCST-6317): the claim
+ *                        stays as the bug's description, and the item carries `defect` + `fixedIn`
  *
- * A value outside this list resolves nothing -- a typo must not close a dispute silently.
+ * A value outside this list resolves nothing -- a typo must not close a dispute silently. A client from
+ * before a value existed reads that dispute as open: stale, never wrong.
  */
-export const RESOLUTIONS = Object.freeze(['claim-amended', 'version-scoped', 'conditions-scoped', 'split', 'dispute-wrong']);
+export const RESOLUTIONS = Object.freeze(['claim-amended', 'version-scoped', 'conditions-scoped', 'split', 'dispute-wrong', 'defect-fixed']);
 export const isResolved = (e) => Boolean(e?.contradicts) && RESOLUTIONS.includes(e?.resolved);
 
 /** The fields a resolution writes onto a contradicting item -- the only in-place edit an item ever gets. */
-export const RESOLUTION_FIELDS = Object.freeze(['resolved', 'resolvedAt', 'resolvedBy', 'resolvedIn', 'resolution', 'amendedFrom']);
+export const RESOLUTION_FIELDS = Object.freeze(['resolved', 'resolvedAt', 'resolvedBy', 'resolvedIn', 'resolution', 'amendedFrom', 'defect', 'fixedIn']);
 
 /** An anchor is `{coordinate}` or a bare string; both name one place. Rows carry it as written. */
 const anchorText = (a) => String(typeof a === 'string' ? a : a?.coordinate ?? '').trim();
