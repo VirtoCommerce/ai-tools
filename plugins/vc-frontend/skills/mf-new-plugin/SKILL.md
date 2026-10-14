@@ -112,6 +112,9 @@ Offer each; do only what the user wants.
 - **Local storefront:** S1a step 5. It needs a backend in `$FRONTEND/.env.local` and `module_federation_enabled: true`,
   the default; a fork that turned it off is the user's to change. Before changing `.env.local`, copy it aside: git
   cannot restore it. Afterwards put it back, and compare `git status` in `$FRONTEND` with what it was before step 5.
+  The two servers need ports 3000 (storefront) and 3001 (plugin). Check both are free first, e.g.
+  `lsof -iTCP:3000 -sTCP:LISTEN`: a server already there may be the user's, so ask, and never stop it. Start both
+  previews in the background, wait until each answers, and when done stop exactly those two.
 - **Package:** run the check with `--artifact <zip>` on the module's zip, from its CI or built the way CI does
   (📁 module repo `vc-build compress`, which needs the .NET SDK; the zip lands in `artifacts/`). ✅ the plugin sits
   at the zip root, not under `bin/` (S1a ⚠️ 1).
