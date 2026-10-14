@@ -22,9 +22,11 @@ It never commits or pushes.
 
 Find two folders and write them down:
 
-- **The vc-frontend checkout** (`$HOST`). Ask if it is not obvious. Then `git fetch` and check it is not behind
-  `origin/dev`: the generator, the checks and the floors all come from it. It must have
-  `"check:plugin-module"` in `package.json`; without it the checkout predates this flow — stop.
+- **The vc-frontend checkout** (`$HOST`), with `yarn install` done. Ask if it is not obvious. The generator, the
+  checks and the floors all come from it, and its facade version (`client-app/core-api/package.json`) becomes the
+  plugin's floor: it must not be newer than the facade of the storefronts the plugin is for (S1a, before you
+  start, 1). Ask which storefronts those are when it is not clear. It must have `"check:plugin-module"` in
+  `package.json` and the S1a file; without them the checkout predates this flow — stop.
 - **The module's `*.Web` project** (`$WEB`), the folder holding `module.manifest` and the `.csproj`.
 
 Stop and report, changing nothing, when:
