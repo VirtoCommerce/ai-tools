@@ -1,24 +1,24 @@
 {
-  "runId": "REG-2026-10-13-1739",
+  "runId": "REG-2026-10-14-1156",
   "status": "completed",
-  "startedAt": "2026-10-13T17:39:30.000Z",
-  "windowStart": "2026-10-13T17:39:30.000Z",
+  "startedAt": "2026-10-14T09:56:08.000Z",
+  "windowStart": "2026-10-14T09:56:08.000Z",
   "selection": "043",
   "env": "vcst",
   "scoped": true,
-  "purpose": "VCST-6017 /qa-test: verification of GA-030/GA-031 derivation fix (order line count from the placed order); --ids; --no-promote",
+  "purpose": "VCST-6017 /qa-test round 2 5-triage verification; --ids; --no-promote; suite source = worktree ai-tools-vcst6017",
   "suites": {
     "043": {
       "status": "done",
       "lane": "browser",
-      "browser": "playwright-chrome",
-      "startedAt": "2026-10-13T17:40:16.060Z",
-      "pass": 2,
+      "browser": "playwright-chrome+playwright-edge",
+      "startedAt": "2026-10-14T09:56:08.000Z",
+      "pass": 8,
       "fail": 0,
       "blocked": 0,
-      "total": 2,
-      "finishedAt": "2026-10-13T17:47:32.879Z"
+      "total": 8,
+      "finishedAt": "2026-10-14T10:06:48.301Z"
     }
   },
-  "finishedAt": "2026-10-13T17:47:42.665Z"
+  "finishedAt": "2026-10-14T10:06:49.589Z"
 }
