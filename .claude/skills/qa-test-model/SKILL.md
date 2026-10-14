@@ -20,13 +20,14 @@ oracle clause depends on, and the observed-behaviour steps.
 ## Inputs — the context bundle
 
 `--context <file>` is the bundle a caller already gathered — `/qa-test` FULL passes `1a` + `1c` + `1d`,
-`/qa-test-fast` its Stage-1 merge. A caller that already ran step 2 or 3 passes their result in the bundle.
+`/qa-test-fast` its run context, which names the `/ticket-context` bundle. A caller that already ran
+step 2 or 3 passes their result in that file.
 Without it, gather each part yourself; a part that cannot be obtained is a **recorded gap in the
 model's header**, never a guess.
 
 | Part | How it is obtained | Rule it follows |
 |---|---|---|
-| Ticket — ACs as atomic conditions, comments, every attachment opened, epic | tracker fetch **with all fields** — ACs often live in a custom field, so an empty description is never "no ACs" | [`../qa-test/preflight.md`](../qa-test/preflight.md) §1a |
+| Ticket — ACs as atomic conditions, comments, every attachment opened, epic | tracker fetch **with all fields** — ACs often live in a custom field, so an empty description is never "no ACs" | [`../qa-test/intake.md`](../qa-test/intake.md) §1a |
 | Change surface — changed files, GraphQL operations, endpoints, layers | the four-rung PR ladder, then `gh pr diff`; only **product-repo** PRs are change surface — a deployment-manifest or QA-repo PR is context | [`../qa-test/technical-change.md`](../qa-test/technical-change.md) §2.1 |
 | Domain map state | step 2 below | [`../qa-test/axes.md`](../qa-test/axes.md) §2g |
 | Mind map path, or `null` | step 2 below | `/qa-test-mind-map` |

@@ -94,7 +94,10 @@ test("full: continuous refill + LPT beats the fixed-batch barrier by a wide marg
   // theoretical floor of total/3 = 1114, so the 1100 ceiling had dropped BELOW the floor and was
   // unsatisfiable by any scheduler, optimal or not. Growth, not a regression — same absorption the
   // margin exists for.
-  assert.ok(pool <= 1275, `expected <= 1275 min at P=3, got ${pool}`);
+  // Recalibrated again 2026-10-14 at 146 `full` suites (punchout 107/108 added, +150 min): the
+  // floor is total/3 = 1282 against the 1275 ceiling — unsatisfiable again, and again growth. The
+  // packed makespan is 1284 vs a 1930 barrier; ceiling reset with the same ~14% headroom as above.
+  assert.ok(pool <= 1450, `expected <= 1450 min at P=3, got ${pool}`);
   assert.ok(barrier >= 1300, `expected the barrier to be >= 1300 min, got ${barrier}`);
 });
 

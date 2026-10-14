@@ -279,7 +279,6 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Violation signal:** Two orders with same items created; button remains clickable during processing; no loading indicator.
 - **Agents:** qa-frontend-expert, qa-backend-expert, qa-testing-expert, test-management-specialist
 - **Trust:** INFERRED
-- **Lifecycle:** SUSPECT — [code] vc-frontend@203908b:client-app/shared/checkout/components/proceed-to.vue - the only double-submit guard found is the button disabled while loading; no server-side idempotency (same cart -> same order) found in vc-module-x-order@0288eeb createOrderFromCart path, against the clause 'backend must enforce idempotency' - re-run the check
 
 ### BL-CHK-003: Address validation by country `[P1-data]`
 - **Rule:** Checkout address forms adapt the **State/Province** requirement to the selected country, but **ZIP/Postal code is required unconditionally regardless of country** (the `postalCode` field's schema has no country branch). State/Province is required when the selected country has one or more regions and is hidden/optional otherwise. US requires state; the address must be validated before proceeding to payment.
@@ -974,6 +973,7 @@ These invariants span multiple modules and are where the most expensive producti
 - **Docs:** platform/user-guide/docs/order-management/notifications.md (published) — customers get automated email on order creation
 - **Docs:** storefront/user-guide/docs/shopping/checkout-process.md (published) — placed orders are viewable in the account Orders section
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] GA-031 failed in REG-2026-10-13-1726
 
 ### BL-CROSS-006: Feature flag toggle → immediate behavior change `[P1-data]`
 - **Rule:** Store-level feature flags (e.g., `quotesEnabled`, `anonymousUsersAllowed`, `createAnonymousOrderEnabled`) take effect on the storefront without requiring a restart or redeployment. The storefront reads flags from xAPI on each page load. Module-level flags (e.g., module enable/disable) may require a platform restart. The distinction must be documented per flag.
@@ -2122,6 +2122,7 @@ These invariants hold for any rendered customer-facing surface on the accessibil
 - **Source:** `client-app/shared/cart/components/coupon-card.vue` — the coupon-apply error paragraph is conditionally mounted with `role="alert"` only when an error exists, so its appearance in the DOM itself triggers the assistive-technology alert announcement.
 - **Source:** VCST-5912 (Done) — quantity spinbutton exposed aria-invalid=true and a wrong aria-valuenow on untouched render; fixed
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [bug] VCST-5878 compare table body scroller below md has no focusable content (axe scrollable-region-focusable, Serious) — pre-existing; CMP-047 failed on it in REG-2026-10-12-1832
 
 ---
 
@@ -2310,6 +2311,7 @@ These invariants hold for any rendered customer-facing surface on the accessibil
 - **Source:** vc-frontend `client-app/modules/google-analytics/events.ts` (`viewItemList`, `selectItem`, `viewItem`, `viewSearchResults`, `addItemToWishList`) + `utils.ts` (`productToGtagItem`, `getCategories` — first 5 non-product breadcrumbs mapped to `item_category`/`item_category2..5`).
 - **Source:** VCST-4801 (Done) — GA4 item affiliation showed a placeholder instead of the store name; fixed
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] GA-002, GA-028, GA-029, GA-037, GA-043, GA-052, GA-056, GA-057 failed in REG-2026-10-13-1643
 
 ### BL-GA4-002: Cart mutation events report the cart's own line items and value, never a client-guessed total `[P1-data]`
 - **Rule:** Every cart mutation — `add_to_cart`, `view_cart`, `update_cart_item`, `remove_from_cart`, `clear_cart` — pushes a GA4 event whose `value`/`items[]` are read from the cart/line-item state the mutation itself returns, and whose `items[]` entries follow the same Item Fields schema as catalog events. `clear_cart` reports the value and contents of the cart AS IT WAS immediately before clearing — not zero/empty.
@@ -2335,6 +2337,7 @@ These invariants hold for any rendered customer-facing surface on the accessibil
 - **Source:** VCST-4800 (Done) — purchase event not capturable due to redirect off the completion page; fixed
 - **Source:** VCST-4307 (Done) — add_shipping_info value wrongly reflected shipping cost when switching methods
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] GA-031 failed in REG-2026-10-13-1726
 
 ### BL-GA4-004: GA4 is configured once per page with the session's current currency, language, and (when authenticated) user id `[P1-data]`
 - **Rule:** On every page load, the storefront issues a single `gtag("config", <trackId>, {...})` call whose config object carries the current store currency and the current UI language/culture; when the session is authenticated, it also carries `user_id` set to the logged-in user's own platform id; when the session is anonymous, `user_id` is omitted entirely — never a placeholder or empty string.
@@ -2403,12 +2406,12 @@ ticket or a docs page disputes (`status`).
 |--------|----------|-------|----|----|----|----------|---------|
 | Pricing & Discounts | BL-PRICE-001–009 | 9 | 7 | 1 | 1 | 6 | 2 |
 | Cart | BL-CART-001–015 | 15 | 5 | 10 | 0 | 7 | 1 |
-| Checkout | BL-CHK-001–008 | 8 | 5 | 3 | 0 | 1 | 1 |
+| Checkout | BL-CHK-001–008 | 8 | 5 | 3 | 0 | 1 | 0 |
 | Orders & Fulfillment | BL-ORD-001–010 | 10 | 3 | 7 | 0 | 5 | 1 |
 | Users & Authentication | BL-AUTH-001–017 | 17 | 5 | 11 | 1 | 9 | 3 |
 | B2B / Organization | BL-B2B-001–013 | 13 | 4 | 9 | 0 | 10 | 3 |
 | Catalog & Inventory | BL-CAT-001–012 | 12 | 2 | 6 | 4 | 8 | 5 |
-| Cross-Domain Invariants | BL-CROSS-001–012 | 12 | 7 | 5 | 0 | 5 | 5 |
+| Cross-Domain Invariants | BL-CROSS-001–012 | 12 | 7 | 5 | 0 | 5 | 6 |
 | Search | BL-SRCH-001–007 | 7 | 0 | 5 | 2 | 6 | 0 |
 | Shipping & BOPIS | BL-SHIP-001–004 | 4 | 2 | 2 | 0 | 2 | 0 |
 | BOPIS-Specific Rules | BL-BOPIS-001–008 | 8 | 1 | 6 | 1 | 3 | 0 |
@@ -2422,12 +2425,12 @@ ticket or a docs page disputes (`status`).
 | Payment Processors | BL-PAY-001–004 | 3 | 3 | 0 | 0 | 2 | 0 |
 | White Labeling | BL-WL-001–006 | 6 | 0 | 2 | 4 | 4 | 0 |
 | Sales Rep | BL-SR-001–032 | 32 | 3 | 18 | 11 | 6 | 4 |
-| Accessibility | BL-A11Y-001–004 | 4 | 0 | 4 | 0 | 4 | 3 |
+| Accessibility | BL-A11Y-001–004 | 4 | 0 | 4 | 0 | 4 | 4 |
 | Customer Reviews | BL-CR-001–018 | 9 | 1 | 6 | 2 | 5 | 0 |
 | Platform Administration | BL-PLAT-001–004 | 3 | 0 | 2 | 1 | 3 | 0 |
 | Store Management | BL-STORE-001 | 1 | 0 | 1 | 0 | 1 | 0 |
 | Agentic Commerce / UCP | — | 0 | 0 | 0 | 0 | 0 | 0 |
-| Analytics & Tracking | BL-GA4-001–004 | 4 | 0 | 4 | 0 | 3 | 0 |
+| Analytics & Tracking | BL-GA4-001–004 | 4 | 0 | 4 | 0 | 3 | 2 |
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Returns | — | 0 | 0 | 0 | 0 | 0 | 0 |
-| **Total** | | **223** | **60** | **125** | **38** | **114** | **36** |
+| **Total** | | **223** | **60** | **125** | **38** | **114** | **39** |
