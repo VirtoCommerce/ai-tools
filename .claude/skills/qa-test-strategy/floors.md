@@ -25,17 +25,22 @@ ticket type. Name every floor in the strategy as fired or not, with its signal.
 ## How `floors.mjs` reads the bundle
 
 - **F9 is built into every floor except F8, F4 and F6:** a floor that cannot be read fires, with a `doubt:`
-  signal. That is: no priority (F1), no type (F2, F7), a domain map that is not `PRESENT` (F2), a product PR with a
-  whole-PR gap or a change search that never ran (F3, F10, F11), and a failed `known.tc:scope` /
-  `known.regression:select` lookup (F5, when no case is at risk). **F4** needs a named flow to apply and **F6** needs
+  signal. That is: no priority (F1), no type (F2, F7 — then F7 requires only F5 on), a domain map that is not
+  `PRESENT` (F2), and for F3, F10, F11 a product PR with a whole-PR gap, a partly-read one (a `pr:<ref>:diff` /
+  `patches` / `files` / `settings` / `endpoints` / `hidden_behaviour` gap), or any `change` / `change.*` gap
+  except `change.deployed` — even beside a read PR; only "searched, nothing found" with no product PR is not
+  fired. F5, when no case is at risk: a `known.domain` gap or a failed `known.tc:scope` / `known.regression:select`
+  lookup. **F4** needs a named flow to apply and **F6** needs
   a `NOT DEPLOYED:` line: both read only what was read, and neither doubts.
-- **F8 fails closed:** an unread diff never fires it — it needs an affirmative ui-kit path ([`../../knowledge/execution/ticket-routing.md`](../../knowledge/execution/ticket-routing.md) §5c).
+- **F8 fails closed:** an unread diff never fires it — it needs an affirmative ui-kit path in what was read ([`../../knowledge/execution/ticket-routing.md`](../../knowledge/execution/ticket-routing.md) §5c).
 - **F3 is a lower bound.** It fires on a rendering file in the diff
   ([`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §1 source 1) and never on a bare storefront/admin-spa
   layer, because eligibility-as-trigger pinned that axis to true (visual-axis.md §1). The strategy adds the visual
   lane itself when it identifies a changed rendered value.
-- **F4 errs upward:** with no word boundary (`shopping_cart.vue`, `CartController` count), it matches `cart|checkout|payments?|pric(e|es|ing)|orders?|quotes?` anywhere in paths,
-  operations, endpoints, settings, hotspots, claims, components and domains.
+- **F4 reads names, never prose:** paths, operations, endpoints, settings, components and domains — not claims
+  or hotspot risk text. No word boundary (`shopping_cart.vue`, `CartController` count) for
+  `cart|checkout|payments?|pric(e|es|ing)|quotes?`; `orders?` needs a non-letter before it or a camelCase join
+  (`OrdersModule`, `CustomerOrder`), so `border.scss` is not a revenue flow.
 
 ## Staleness check — before F5's regression run (D11)
 

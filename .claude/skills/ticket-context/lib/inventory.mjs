@@ -6,7 +6,7 @@
 import { createHash } from "node:crypto";
 import { CAPS } from "./fetch.mjs";
 import { gap } from "./gap.mjs";
-import { redactUrlLabel } from "./scrub.mjs";
+import { redactText, redactUrlLabel } from "./scrub.mjs";
 
 const URL_RE = /https?:\/\/[^\s<>"'`)\]}|]+/g;
 const trimUrl = (u) => u.replace(/[.,;:!?]+$/, "");
@@ -256,18 +256,20 @@ export function adfText(node) {
   return ADF_BLOCKS.has(node.type) ? `${inner}\n` : inner;
 }
 
-export function ticketFields(issue, acFieldIds = []) {
+// The text fields are redacted here (env secret values, then token shapes): no agent mode writes `fields`, so a
+// token pasted into a description would otherwise fail gate rule 6 with nothing able to fix it.
+export function ticketFields(issue, acFieldIds = [], secrets = new Set()) {
   const f = issue.fields ?? {};
   const gaps = [];
   const capped = (where, s) => {
-    const t = String(s ?? "").replace(/\n{3,}/g, "\n\n").trim();
+    const t = redactText(String(s ?? ""), secrets).replace(/\n{3,}/g, "\n\n").trim();
     if (t.length <= CAPS.fieldText) return t;
     gaps.push(gap(where, "over-cap", `${t.length} chars; the first ${CAPS.fieldText} kept`));
     return t.slice(0, CAPS.fieldText);
   };
   return { gaps, fields: {
-    summary: f.summary ?? "", type: f.issuetype?.name ?? null, status: f.status?.name ?? null, priority: f.priority?.name ?? null,
-    components: (f.components ?? []).map((c) => c.name), labels: f.labels ?? [], fix_versions: (f.fixVersions ?? []).map((v) => v.name),
+    summary: redactText(f.summary ?? "", secrets), type: f.issuetype?.name ?? null, status: f.status?.name ?? null, priority: f.priority?.name ?? null,
+    components: (f.components ?? []).map((c) => c?.name).filter(Boolean), labels: f.labels ?? [], fix_versions: (f.fixVersions ?? []).map((v) => v?.name).filter(Boolean),
     description: capped("fields.description", adfText(f.description)),
     acceptance: capped("fields.acceptance", acFieldIds.map((id) => adfText(f[id]).trim()).filter(Boolean).join("\n\n")),
   } };

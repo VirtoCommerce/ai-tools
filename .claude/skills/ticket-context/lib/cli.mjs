@@ -98,7 +98,8 @@ async function prepare() {
   const remote = await jira.remoteLinks(key).catch((e) => { gaps.push(asGap("remotelinks", e)); return []; });
   const devPrUrls = await jira.devPrUrls(issue.id).catch((e) => { gaps.push(asGap("dev-status", e)); return []; });
   const inv = buildInventory({ issue, remoteLinks: remote, trackerBase: tcred.base, acFieldIds: acFields.map((f) => f.id), linkFieldIds: linkFields.map((f) => f.id), devPrUrls });
-  const tf = ticketFields(issue, acFields.map((f) => f.id));
+  const secrets = loadSecretValues(root); // after loadLayeredEnv, so FIGMA_TOKEN from any layer is in it
+  const tf = ticketFields(issue, acFields.map((f) => f.id), secrets);
   gaps.push(...tf.gaps);
 
   let epic = null;
@@ -154,7 +155,6 @@ async function prepare() {
     writeJson(ticketJson, issue);
     for (const it of linked) if (linkedJson.has(it.key)) { it.local_path = join(runDir, `issue-${it.key}.json`); writeJson(it.local_path, linkedJson.get(it.key)); }
 
-    const secrets = loadSecretValues(root);
     // An attachment the agent cannot read is never downloaded: its outcome is recorded without the bytes.
     for (const it of inv.items) if (it.ref.startsWith("attachment:") && it.kind === "other" && !it.gap) {
       it.gap = gap(it.ref, "unreadable", "not a format the agent can read — not downloaded; ask for a PDF, an image or text");
@@ -342,6 +342,8 @@ function redeploy() {
   // A bundle cached before hotspots/claims existed (fix wave 2, 2026-10-13) has no such keys on its PRs. They
   // default to [] — "none recorded" — so an old bundle still validates; the schema itself is not loosened.
   for (const p of b.change?.prs ?? []) { p.hotspots ??= []; p.claims ??= []; }
+  // Likewise `fields` (2026-10-14): empty values, so an old bundle validates and floors.mjs reads them as doubt.
+  b.fields ??= { summary: "", type: null, status: null, priority: null, components: [], labels: [], fix_versions: [], description: "", acceptance: "" };
   // Script values only: compose took repo, number, state, merged and gap from prepare, never from an agent.
   const d = checkDeployment({ root, key, prs: b.change.prs.map((p) => ({ ref: `${p.repo}#${p.number}`, number: p.number, state: p.state, merged: p.merged,
     context_only: p.context_only, gap: p.gap })) });

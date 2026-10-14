@@ -13,9 +13,12 @@ const P01 = /^(p0|p1|highest|high|blocker|critical)$/i;
 const VISUAL = /\.(vue|scss|css|html)$|\/Scripts\/.*\.html$|\/icons?\/|design-tokens?|_tokens?\.scss$/i; // not a bare "token": TokenService.cs is not a rendering file
 // ticket-routing.md §5c — the change IS the design system.
 const UI_KIT = /client-app\/ui-kit\/|_ui-kit-tokens\.scss$|\/_colors\.scss$|\/_dark\.scss$|\/preflight\.scss$|client-app\/assets\/presets\/[^/]+\.json$|\.storybook\/|storybook-styles\/|\.stories\./i;
-// F4 — revenue-critical flows.
-// No word boundary: `shopping_cart.vue`, `CartController`, `addItemToCart` are revenue flows too.
-const REVENUE = /(cart|checkout|payments?|pric(e|es|ing)|orders?|quotes?)/i;
+// F4 — revenue-critical flows, matched on names only (paths, operations, endpoints, settings, components, domains),
+// never on prose. No word boundary: `shopping_cart.vue`, `CartController`, `addItemToCart` are revenue flows too.
+// "order" needs a non-letter before it or a camelCase join (`OrdersModule`, `CustomerOrder`), so `border` is not one.
+const REVENUE = [/cart|checkout|payments?|pric(?:e|es|ing)|quotes?/i, /(?<![A-Za-z])orders?/i, /(?<=[a-z])Orders?/];
+// A partly-read PR surface (github.mjs, compose.mjs, the CHANGE agent's gaps): the diff floors cannot trust it.
+const PARTIAL = /^pr:([^:]+)(?::[^:]+)*:(diff|patches|files|settings|endpoints|hidden_behaviour)$/;
 // F10 — B2B org context (test-model redesign §5).
 const ORG = /organizationId|organization_id|xapi:my_organization|my_organization|\/organizations?\b|sales-rep|salesrep|loginOnBehalf|CanImpersonate|impersonat/i;
 // F11 — configuration (test-model redesign §5a, layers 1–3).
@@ -31,12 +34,18 @@ export function computeFloors(bundle, { domainMapText = null } = {}) {
     ...paths, ...prs.flatMap((p) => [...(p.operations ?? []), ...(p.endpoints ?? []), ...(p.settings ?? []),
       ...(p.hotspots ?? []).flatMap((h) => [h.source, h.risk]), ...(p.claims ?? []).map((c) => c.text)]),
   ].join("\n");
-  const changeGap = (bundle.gaps ?? []).find((g) => g.where === "change" || g.where.startsWith("change."));
+  const gaps = bundle.gaps ?? [];
+  // A change-search gap (`change`, `change.*`; not `change.deployed`, which is the deploy check) means a PR may be
+  // missing: doubt even beside a read PR. Only "searched and found nothing" with no product PR is "not fired".
+  const changeGap = gaps.find((g) => (g.where === "change" || g.where.startsWith("change.")) && g.where !== "change.deployed"
+    && (prs.length || g.reason !== "not-found"));
   // A whole-PR gap (where `pr:<ref>`, also on the PR entry as `gap`) is an unread part of the diff, even beside a read PR.
   const gappedPr = (bundle.change?.prs ?? []).find((p) => !p.context_only && p.gap);
-  // No product PR: when the search ran and found nothing, diff floors are "not fired"; when it never ran, doubt (F9).
-  const unreadReason = gappedPr ? gappedPr.gap.reason
-    : !prs.length && changeGap && changeGap.reason !== "not-found" ? changeGap.reason : null;
+  // A part of a product PR's surface not read (truncated diff, files over cap, a route not found): doubt too.
+  const contextRefs = new Set((bundle.change?.prs ?? []).filter((p) => p.context_only).map((p) => `${p.repo}#${p.number}`.toLowerCase()));
+  const partial = gaps.find((g) => { const m = PARTIAL.exec(g.where); return m && !contextRefs.has(m[1].toLowerCase()); });
+  const unreadReason = gappedPr ? gappedPr.gap.reason : changeGap ? `${changeGap.where}: ${changeGap.reason}`
+    : partial ? `${partial.where}: ${partial.reason}` : null;
   const diffUnread = unreadReason ? `doubt: diff not read (${unreadReason})` : null;
   const noPr = !prs.length ? "no product PR" : null;
   const diffFloor = (id, re, label, requires) => {
@@ -63,13 +72,15 @@ export function computeFloors(bundle, { domainMapText = null } = {}) {
     : noPr ? floor("F3", false, noPr)
     : floor("F3", visualPaths.length > 0, visualPaths.length ? `rendering files: ${visualPaths.slice(0, 3).join(", ")}` : "no rendering file in the diff", ["visual lane"]);
 
-  const revenueText = [surface, ...(fields.components ?? []), ...(bundle.domains_guess?.value ?? [])].join("\n");
-  const rev = revenueText.match(REVENUE);
+  const revenueText = [...paths, ...prs.flatMap((p) => [...(p.operations ?? []), ...(p.endpoints ?? []), ...(p.settings ?? [])]),
+    ...(fields.components ?? []), ...(bundle.domains_guess?.value ?? [])].join("\n");
+  const rev = REVENUE.map((re) => revenueText.match(re)).find(Boolean);
   const f4 = floor("F4", !!rev, rev ? `revenue-critical: ${rev[0]}` : "no revenue-critical flow named", ["no risk on it below Medium"]);
 
   const atRisk = bundle.known?.cases_at_risk ?? [];
   // A failed lookup of the suite set is doubt (F9): the cases at risk were never read.
-  const failedLookup = (bundle.gaps ?? []).find((g) => g.where.startsWith("known.tc:scope") || g.where.startsWith("known.regression:select"));
+  // So is a `known.domain` gap: without a domain, tc:scope never ran over the suites.
+  const failedLookup = gaps.find((g) => g.where === "known.domain" || g.where.startsWith("known.tc:scope") || g.where.startsWith("known.regression:select"));
   const f5 = atRisk.length > 0 ? floor("F5", true, `${atRisk.length} suite(s) at risk: ${atRisk.slice(0, 5).map((c) => c.suite).join(", ")}`, ["coverage triage + regression after the staleness check"])
     : failedLookup ? floor("F5", true, `doubt: ${failedLookup.where} (${failedLookup.reason})`, ["coverage triage + regression after the staleness check"])
     : floor("F5", false, "0 suite(s) at risk", ["coverage triage + regression after the staleness check"]);
@@ -77,12 +88,13 @@ export function computeFloors(bundle, { domainMapText = null } = {}) {
   const notDeployed = (bundle.blockers ?? []).filter((b) => /^NOT DEPLOYED:/.test(b));
   const f6 = floor("F6", notDeployed.length > 0, notDeployed[0] ?? "no NOT DEPLOYED blocker", ["BLOCKED before any browser opens"]);
 
-  const f7 = noType ? floor("F7", true, "doubt: no type in the bundle", ["oracles from the diff only", "F5 on"])
+  const f7 = noType ? floor("F7", true, "doubt: no type in the bundle", ["F5 on"])
     : floor("F7", /^review task$/i.test(fields.type), `type ${fields.type}`, ["oracles from the diff only", "F5 on"]);
 
   const kit = paths.filter((p) => UI_KIT.test(p));
-  const f8 = diffUnread ? floor("F8", false, `${diffUnread} — F8 fails closed (ticket-routing §5c)`)
-    : floor("F8", kit.length > 0, kit.length ? `ui-kit files: ${kit.slice(0, 3).join(", ")}` : "no ui-kit file", ["visual lane", "token audit"]);
+  // Fails closed on what was NOT read; a ui-kit path in the part that was read still fires it.
+  const f8 = kit.length ? floor("F8", true, `ui-kit files: ${kit.slice(0, 3).join(", ")}`, ["visual lane", "token audit"])
+    : floor("F8", false, diffUnread ? `${diffUnread} — F8 fails closed (ticket-routing §5c)` : "no ui-kit file");
 
   const f10 = diffFloor("F10", ORG, "org context", ["an org-context risk with technique MODEL"]);
   const hb = (bundle.change?.hidden_behaviour ?? []).filter((r) => r.answer === "yes" && /feature-flags|default-values/.test(r.item));
@@ -95,11 +107,22 @@ export function computeFloors(bundle, { domainMapText = null } = {}) {
     floor("F9", false, "doubt rule — applied inside every floor above"), f10, f11] };
 }
 
+/** A JSON file, or one line naming the file and the reason, then exit 2 — never a stack trace. */
+export function readJsonOrExit(path, script) {
+  try { return JSON.parse(readFileSync(path, "utf8")); } catch (e) {
+    console.error(`${script}: cannot read ${path} (${e.code ?? e.message})`);
+    process.exit(2);
+  }
+}
+/** The domain map a bundle names, or null when it has none or the file is gone (F2 then fires on doubt). */
+export function domainMapTextOf(bundle) {
+  const dmPath = bundle?.known?.domain_map?.path;
+  return dmPath && existsSync(dmPath) ? readFileSync(dmPath, "utf8") : null;
+}
+
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const i = process.argv.indexOf("--bundle");
   if (i < 0 || !process.argv[i + 1]) { console.error("usage: floors.mjs --bundle <bundle.json>"); process.exit(1); }
-  const bundle = JSON.parse(readFileSync(process.argv[i + 1], "utf8"));
-  const dmPath = bundle.known?.domain_map?.path;
-  const domainMapText = dmPath && existsSync(dmPath) ? readFileSync(dmPath, "utf8") : null;
-  console.log(JSON.stringify(computeFloors(bundle, { domainMapText }), null, 2));
+  const bundle = readJsonOrExit(process.argv[i + 1], "floors.mjs");
+  console.log(JSON.stringify(computeFloors(bundle, { domainMapText: domainMapTextOf(bundle) }), null, 2));
 }
