@@ -160,7 +160,7 @@ defaults, scope and layer. A model then cites the inventory instead of rediscove
 
 | File | Change |
 |---|---|
-| `qa-test-strategy` SKILL.md + `floors.md` (#416) | F10 and F11 rows and triggers; M1 guard in the gate; `MODEL` as a technique token; the stand's setting values in Inputs when F11 fires |
+| `qa-test-strategy` SKILL.md + `floors.md` (#416) | F10 and F11 rows and triggers; M1 guard in the gate; `MODEL` as a technique token; the stand's setting values in Inputs when F11 fires — **done 2026-10-14** (`floors.mjs`, `check-strategy.mjs`) |
 | `.claude/skills/qa-test-model/SKILL.md` | input = strategy path + `MODEL` risks; procedure step 1 follows the strategy's round; output adds the §9 amendments |
 | `.claude/skills/qa-test-model/test-model.md` | gate per §4; Part 0r becomes the org-context group; round section replaced by M4 |
 | `.claude/templates/test-model.md` | header, `R-n` column, org-context and configuration groups; sweep rows removed |

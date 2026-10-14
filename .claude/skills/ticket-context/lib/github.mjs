@@ -5,8 +5,10 @@ import { join } from "node:path";
 import { CAPS, timedFetch, timeoutGap } from "./fetch.mjs";
 import { GapError, asGap, gap } from "./gap.mjs";
 
-/** Stage-1 rule: deployment-manifest PRs, this repo's PRs and QA test-tooling PRs are context, not change surface. */
-export const CONTEXT_ONLY_REPOS = Object.freeze(["vc-deploy-dev", "ai-tools", "vc-testing-module"]);
+/** Stage-1 rule: deployment-manifest PRs, this repo's PRs, QA test-tooling PRs and the public knowledge base's PRs
+ *  (vc-knowledge: each is a kb entry about the ticket, not a change to it) are context, not change surface — so
+ *  their bodies are never read for companions either. */
+export const CONTEXT_ONLY_REPOS = Object.freeze(["vc-deploy-dev", "ai-tools", "vc-testing-module", "vc-knowledge"]);
 
 // owner/repo come from parsed URLs and end up in API paths and run-dir file names: refuse anything else.
 const NAME = /^[A-Za-z0-9_.-]+$/;
