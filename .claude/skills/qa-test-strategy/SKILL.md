@@ -130,8 +130,10 @@ project risk, never a guess.**
 ## Gate — before approval
 
 Run `node <skill>/lib/check-strategy.mjs --strategy <file> --bundle <bundle> --floors <floors.json>`; it checks
-clauses 1–6d, 8 and 10 and exits 1 with the failing clause numbers. Clauses 7 and 9 are yours. The strategy is
-not shown for approval until every clause holds. A failing clause is fixed, never noted.
+clauses 1–6d, 8 and 10 and exits 1 with the failing clause numbers. It checks clause 1's round cap, clause 4's
+cells (technique, oracle, lane, effort and a parseable level) and clause 6's fired floors and their artifacts. These
+remain yours, alongside 7 and 9: clause 1's carry-over, clause 6's naming of the not-fired floors with their
+signals, and clause 4's `{authority}` tag on each oracle. The strategy is not shown for approval until every clause holds. A failing clause is fixed, never noted.
 
 1. The round is counted and ≤ 3; round ≥ 2 carries over every unresulted risk of the previous round.
 2. Every AC maps to at least one risk, or is out of scope with a reason (method rules apply).
