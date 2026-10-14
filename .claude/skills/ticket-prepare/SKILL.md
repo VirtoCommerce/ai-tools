@@ -8,7 +8,8 @@ argument-hint: <KEY> [repo ...] [prepare-only]
 
 Arguments: $ARGUMENTS
 
-Read `~/.claude/ticket-core/GUIDE.md` first: rules, folder layout, scripts. Scripts: `$core = "$HOME\.claude\ticket-core\scripts"`.
+The shared part lives in `ticket-core`, next to this skill's folder. Read `${CLAUDE_SKILL_DIR}\..\ticket-core\GUIDE.md`
+first: rules, folder layout, scripts. Scripts: `$core = "${CLAUDE_SKILL_DIR}\..\ticket-core\scripts"`.
 
 1. **Folder.** `init.ps1 -Key <KEY> -Mode src` (GUIDE §3).
 2. **Ticket.** Read it with the Jira tools: `summary`, `issuetype`, `status`, `description`, `comment`,

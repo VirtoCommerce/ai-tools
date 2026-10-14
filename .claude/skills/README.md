@@ -114,10 +114,11 @@ Each ticket gets its own folder (`<root>\<KEY>\` with `back\`, `front\`, `source
 run side by side. The database and search engine come from your own `appsettings.json` template. Logins are typed by
 you in the browser and never stored.
 
-**Install:** copy `run-pr/`, `run-src/` and `ticket-prepare/` to `~/.claude/skills/`, and `ticket-core/` (the shared
-guide and scripts, not a skill) to `~/.claude/ticket-core/`, where the skills read it from. On the first run a skill
-asks for the tickets root and your backend `appsettings.json` (plus `.env.local` for a storefront from source) and
-keeps them in `<root>\_template\`.
+**Install:** copy the four folders, `run-pr/`, `run-src/`, `ticket-prepare/` and `ticket-core/` (the shared guide and
+scripts, not a skill), into one skills folder: a workspace's `.claude/skills/` (they load only in sessions opened
+there) or `~/.claude/skills/` (every session). Keep `ticket-core/` next to the skills: they reach it as
+`${CLAUDE_SKILL_DIR}\..\ticket-core`. On the first run a skill asks for the tickets root and your backend
+`appsettings.json` (plus `.env.local` for a storefront from source) and keeps them in `<root>\_template\`.
 
 **Needs:** Windows, PowerShell 7, .NET 10 SDK, vc-build, Node 22 and Yarn 4, `gh` signed in, the Atlassian (Jira) and
 Chrome DevTools MCP servers, and an elevated cmd for the `mklink` step of a module run from source.

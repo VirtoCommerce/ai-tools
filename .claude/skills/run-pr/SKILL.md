@@ -8,7 +8,8 @@ argument-hint: <KEY> [repo#PR | PR URL ...] [prepare-only]
 
 Arguments: $ARGUMENTS
 
-Read `~/.claude/ticket-core/GUIDE.md` first: rules, folder layout, scripts. Scripts: `$core = "$HOME\.claude\ticket-core\scripts"`.
+The shared part lives in `ticket-core`, next to this skill's folder. Read `${CLAUDE_SKILL_DIR}\..\ticket-core\GUIDE.md`
+first: rules, folder layout, scripts. Scripts: `$core = "${CLAUDE_SKILL_DIR}\..\ticket-core\scripts"`.
 
 1. **Folder.** `init.ps1 -Key <KEY> -Mode pr` (GUIDE §3).
 2. **PRs.** The ones given, else found from the ticket (GUIDE §4). For each PR:

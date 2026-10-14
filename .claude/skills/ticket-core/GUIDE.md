@@ -4,7 +4,9 @@ Used by the skills `run-pr`, `run-src` and `ticket-prepare`. Each ticket gets it
 `<root>\<KEY>\`, built from the newest released platform and modules plus the ticket's changes, the way
 vcptcore-dev/qa are deployed, but local: files on disk, the developer's own database and search engine.
 
-Scripts are in `$core = "$HOME\.claude\ticket-core\scripts"`. Run them from the PowerShell tool:
+Scripts are in `scripts\` next to this guide; the skills set `$core` to that folder
+(`${CLAUDE_SKILL_DIR}\..\ticket-core\scripts`, `ticket-core` sitting next to the skill folders). Run them from the
+PowerShell tool:
 `pwsh -NoProfile -File "$core\<script>.ps1" <args>`. Long ones (install, build, yarn install, health on a first
 start) go in the background.
 
