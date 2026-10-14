@@ -9,7 +9,8 @@ stands**: a round on another environment still counts.
 
 **Counting.** A round is any of: a `summary.json` under `reports/tickets/*/<TICKET>/` on any branch
 (`git log --all`), a round section in the ticket's `test-strategy.md`, or a QA verdict comment on the
-ticket (a "QA Complete" / PASS / FAIL / PASS WITH NOTES heading). Count distinct builds, not comments: two
+ticket (a "QA Complete" / PASS / FAIL / PASS WITH NOTES heading), read from the `/ticket-context` bundle's
+`signals[]` — never from a tracker fetch of this skill's own. Count distinct builds, not comments: two
 comments about the same build are one round. Record the rounds found and their builds in the section header.
 
 ## At most three (D6)

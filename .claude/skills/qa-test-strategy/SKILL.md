@@ -28,9 +28,10 @@ a fact relayed to a subagent and silently dropped — is in
 §Working concurrently on suites). Independence belongs at the **check**, not the choice: the user
 approves, a verifier re-derives the gate when a risk is Critical, and other agents execute.
 
-**Standalone (today the only entry):** procedure step 1 (Round) **first** — it needs only the local
-`reports/tickets/**`, `git log --all` and the ticket's comments, read once; a fourth round ⇒ STOP with the
-escalation and nothing else runs (D6: no context, no strategy, no browser). Then `/preflight ticket --ticket <KEY>`
+**Standalone (today the only entry):** procedure step 1 (Round) **first**, from local evidence only —
+`reports/tickets/**` and `git log --all`, never a tracker fetch of its own; a fourth round ⇒ STOP with the
+escalation and nothing else runs (D6: no context, no strategy, no browser). The QA verdict comments are counted
+once the bundle exists, from its `signals[]`; a fourth round found there ⇒ the same STOP. Then `/preflight ticket --ticket <KEY>`
 (no `--expect`: deployment is the bundle's) for the sprint, env health and kb hits →
 `/ticket-context <KEY> --domain <slug> --kb-hits <ids>` → steps 2 onward → approval → STOP. A `/ticket-context` STOP is this skill's STOP, quoted verbatim.
 `--domain` absent ⇒ resolve it **before** `/ticket-context`, as

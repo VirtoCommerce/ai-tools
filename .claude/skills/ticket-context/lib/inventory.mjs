@@ -248,7 +248,9 @@ export function linkedOverCap(item, rank, cap) {
 const ADF_BLOCKS = new Set(["paragraph", "heading", "listItem", "blockquote", "codeBlock", "rule", "tableRow", "panel"]);
 export function adfText(node) {
   if (typeof node === "string") return node;
+  if (Array.isArray(node)) return node.map(adfText).filter(Boolean).join("\n"); // a multi-select custom field
   if (!node || typeof node !== "object") return "";
+  if (!node.type && typeof node.value === "string") return node.value; // a select/option custom field: { value }
   if (node.type === "text") return node.text ?? "";
   if (node.type === "hardBreak") return "\n";
   if (node.type === "mention") return "@mention"; // a person's name is not testing context
@@ -269,7 +271,10 @@ export function ticketFields(issue, acFieldIds = [], secrets = new Set()) {
   };
   return { gaps, fields: {
     summary: redactText(f.summary ?? "", secrets), type: f.issuetype?.name ?? null, status: f.status?.name ?? null, priority: f.priority?.name ?? null,
-    components: (f.components ?? []).map((c) => c?.name).filter(Boolean), labels: f.labels ?? [], fix_versions: (f.fixVersions ?? []).map((v) => v?.name).filter(Boolean),
+    // Every string goes through the scrubber: gate rule 6 scans the whole bundle and no agent mode can repair `fields`.
+    components: (f.components ?? []).map((c) => c?.name).filter(Boolean).map((s) => redactText(s, secrets)),
+    labels: (f.labels ?? []).filter((s) => typeof s === "string").map((s) => redactText(s, secrets)),
+    fix_versions: (f.fixVersions ?? []).map((v) => v?.name).filter(Boolean).map((s) => redactText(s, secrets)),
     description: capped("fields.description", adfText(f.description)),
     acceptance: capped("fields.acceptance", acFieldIds.map((id) => adfText(f[id]).trim()).filter(Boolean).join("\n\n")),
   } };

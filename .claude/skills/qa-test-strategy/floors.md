@@ -39,8 +39,12 @@ ticket type. Name every floor in the strategy as fired or not, with its signal.
 - **F11 reads settings entries, not their count.** An entry is the analyst's prose, so it fires only when it
   names a setting key — a dotted PascalCase key such as `Return.NotifyOrganizationEmail`, not inside a path and
   not a package id followed by its version — or matches the setting-read pattern; a hidden-behaviour row
-  answered `yes` for `feature-flags` / `default-values` fires it too. An entry starting with "No " is never a
-  signal, for any floor; a CSS custom property (`--vc-…`) is a theme key, not a setting.
+  answered `yes` for `feature-flags` / `default-values` fires it too. An entry starting with "No " is no signal
+  for the other floors, but F11 still reads the key it names ("No longer defaults to true: Return.SendNotifications");
+  a CSS custom property (`--vc-…`) is a theme key, not a setting.
+- **A PR closed without merge is not change surface** — no floor reads it, and the gate asks for none of its
+  hotspots (check-bundle counts it out the same way).
+- **F1's P0/P1 names** come from `project-profile.json` `tracker.p0p1Priorities`; without it, Highest/High/P0/P1/Blocker/Critical.
 - **F8 fails closed:** an unread diff never fires it — it needs an affirmative ui-kit path in what was read ([`../../knowledge/execution/ticket-routing.md`](../../knowledge/execution/ticket-routing.md) §5c).
 - **F3 is a lower bound.** It fires on a rendering file in the diff
   ([`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §1 source 1) and never on a bare storefront/admin-spa

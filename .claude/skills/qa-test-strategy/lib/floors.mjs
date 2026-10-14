@@ -4,11 +4,13 @@
 // Specs: docs/superpowers/specs/2026-10-09-qa-test-strategy-redesign.md §6 (F1–F9),
 //        docs/superpowers/specs/2026-10-09-qa-test-model-redesign.md §5, §5a (F10, F11).
 import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-// The tracker's names for P0/P1 (this site: Highest/High). A name not listed reads as P2+; extend it, never guess.
-const P01 = /^(p0|p1|highest|high|blocker|critical)$/i;
+// The tracker's names for P0/P1 come from project-profile.json `tracker.p0p1Priorities` (an array of names); with no
+// profile entry, this default (Jira's Highest/High plus the P0/P1/Blocker/Critical spellings). A name not listed reads as P2+.
+const P01_DEFAULT = ["p0", "p1", "highest", "high", "blocker", "critical"];
+const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../../.."); // lib → skill → skills → .claude → repo
 // qa-test/visual-axis.md §1 source 1 — a rendering file.
 const VISUAL = /\.(vue|scss|css|html)$|\/Scripts\/.*\.html$|\/icons?\/|design-tokens?|_tokens?\.scss$/i; // not a bare "token": TokenService.cs is not a rendering file
 // ticket-routing.md §5c — the change IS the design system.
@@ -34,9 +36,13 @@ const NEGATIVE = /^\s*no\s/i;
 
 const floor = (id, fired, signal, requires = []) => ({ id, fired, signal, requires: fired ? requires : [] });
 
-export function computeFloors(bundle, { domainMapText = null } = {}) {
+/** A PR closed without merge never shipped: it is not change surface (check-bundle counts it out the same way). */
+export const isAbandoned = (p) => p.state === "closed" && p.merged === false;
+
+export function computeFloors(bundle, { domainMapText = null, p01Names = P01_DEFAULT } = {}) {
   const fields = bundle.fields ?? {};
-  const prs = (bundle.change?.prs ?? []).filter((p) => !p.context_only && !p.gap);
+  const p01 = new Set(p01Names.map((n) => String(n).toLowerCase()));
+  const prs = (bundle.change?.prs ?? []).filter((p) => !p.context_only && !p.gap && !isAbandoned(p));
   const paths = prs.flatMap((p) => Object.values(p.layers ?? {}).flat());
   const settingsOf = (p) => (p.settings ?? []).filter((s) => typeof s === "string" && !NEGATIVE.test(s));
   const surface = [
@@ -49,9 +55,9 @@ export function computeFloors(bundle, { domainMapText = null } = {}) {
   const changeGap = gaps.find((g) => (g.where === "change" || g.where.startsWith("change.")) && g.where !== "change.deployed"
     && (prs.length || g.reason !== "not-found"));
   // A whole-PR gap (where `pr:<ref>`, also on the PR entry as `gap`) is an unread part of the diff, even beside a read PR.
-  const gappedPr = (bundle.change?.prs ?? []).find((p) => !p.context_only && p.gap);
+  const gappedPr = (bundle.change?.prs ?? []).find((p) => !p.context_only && p.gap && !isAbandoned(p));
   // A part of a product PR's diff not read (truncated diff, files over cap, patches withheld): doubt too.
-  const contextRefs = new Set((bundle.change?.prs ?? []).filter((p) => p.context_only).map((p) => `${p.repo}#${p.number}`.toLowerCase()));
+  const contextRefs = new Set((bundle.change?.prs ?? []).filter((p) => p.context_only || isAbandoned(p)).map((p) => `${p.repo}#${p.number}`.toLowerCase()));
   const partial = gaps.find((g) => { const m = PARTIAL.exec(g.where); return m && !contextRefs.has(m[1].toLowerCase()); });
   const unreadReason = gappedPr ? gappedPr.gap.reason : changeGap ? `${changeGap.where}: ${changeGap.reason}`
     : partial ? `${partial.where}: ${partial.reason}` : null;
@@ -65,7 +71,7 @@ export function computeFloors(bundle, { domainMapText = null } = {}) {
 
   const pri = fields.priority;
   const f1 = pri == null ? floor("F1", true, "doubt: no priority in the bundle", ["test model", "exploratory"])
-    : floor("F1", P01.test(pri), `priority ${pri}${P01.test(pri) ? " (P0/P1)" : ""}; the High/Critical-risk half is checked on the register`, ["test model", "exploratory"]);
+    : floor("F1", p01.has(pri.toLowerCase()), `priority ${pri}${p01.has(pri.toLowerCase()) ? " (P0/P1)" : ""}; the High/Critical-risk half is checked on the register`, ["test model", "exploratory"]);
 
   const noType = fields.type == null;
   const isStory = /^story$/i.test(fields.type ?? "");
@@ -80,7 +86,7 @@ export function computeFloors(bundle, { domainMapText = null } = {}) {
     "no rendering file in the diff", ["visual lane"]);
 
   const revenueText = [...paths, ...prs.flatMap((p) => [...(p.operations ?? []), ...(p.endpoints ?? []), ...settingsOf(p)]),
-    ...(fields.components ?? []), ...(bundle.domains_guess?.value ?? [])].join("\n");
+    ...(fields.components ?? []), ...[].concat(bundle.domains_guess?.value ?? [])].join("\n");
   const rev = REVENUE.map((re) => revenueText.match(re)).find(Boolean);
   const f4 = floor("F4", !!rev, rev ? `revenue-critical: ${rev[0]}` : "no revenue-critical flow named", ["no risk on it below Medium"]);
 
@@ -106,7 +112,8 @@ export function computeFloors(bundle, { domainMapText = null } = {}) {
   const org = surface.match(ORG);
   const f10 = diffFloor("F10", org ? `org context: ${org[0]}` : null, "no org context in the diff surface", ["an org-context risk with technique MODEL"]);
   const hb = (bundle.change?.hidden_behaviour ?? []).filter((r) => r.answer === "yes" && /feature-flags|default-values/.test(r.item));
-  const key = prs.flatMap(settingsOf).map((s) => s.replace(CSS_VAR, " ").match(SETTING_KEY)).find(Boolean);
+  // Every entry, the "No …" ones included: "No longer defaults to true: Return.SendNotifications" still names a key.
+  const key = prs.flatMap((p) => (p.settings ?? []).filter((x) => typeof x === "string")).map((s) => s.replace(CSS_VAR, " ").match(SETTING_KEY)).find(Boolean);
   const read = surface.match(CONFIG);
   const f11 = diffFloor("F11", key ? `setting: ${key[0]}` : hb.length ? `hidden behaviour: ${hb.map((r) => r.item).join(", ")}` : read ? `setting read: ${read[0]}` : null,
     "no setting key, setting read or feature-flags/default-values row", ["a configuration risk with technique MODEL", "stand values in Inputs"]);
@@ -122,15 +129,24 @@ export function readJsonOrExit(path, script) {
     process.exit(2);
   }
 }
-/** The domain map a bundle names, or null when it has none or the file is gone (F2 then fires on doubt). */
+/** The domain map a bundle names, or null when it has none or the file is gone (F2 then fires on doubt). The path is
+ *  repo-relative: tried against the working directory, then against this skill's repo, so any cwd gets one answer. */
 export function domainMapTextOf(bundle) {
   const dmPath = bundle?.known?.domain_map?.path;
-  return dmPath && existsSync(dmPath) ? readFileSync(dmPath, "utf8") : null;
+  if (!dmPath) return null;
+  const hit = (isAbsolute(dmPath) ? [dmPath] : [resolve(dmPath), resolve(REPO_ROOT, dmPath)]).find((p) => existsSync(p));
+  return hit ? readFileSync(hit, "utf8") : null;
+}
+/** `tracker.p0p1Priorities` from project-profile.json (VC_FIX_HOME or cwd), else the default names. */
+export function p01NamesOf() {
+  const file = resolve(process.env.VC_FIX_HOME || process.cwd(), "project-profile.json");
+  try { const names = JSON.parse(readFileSync(file, "utf8"))?.tracker?.p0p1Priorities; if (Array.isArray(names) && names.length) return names; } catch { /* no profile ⇒ default */ }
+  return P01_DEFAULT;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const i = process.argv.indexOf("--bundle");
   if (i < 0 || !process.argv[i + 1]) { console.error("usage: floors.mjs --bundle <bundle.json>"); process.exit(1); }
   const bundle = readJsonOrExit(process.argv[i + 1], "floors.mjs");
-  console.log(JSON.stringify(computeFloors(bundle, { domainMapText: domainMapTextOf(bundle) }), null, 2));
+  console.log(JSON.stringify(computeFloors(bundle, { domainMapText: domainMapTextOf(bundle), p01Names: p01NamesOf() }), null, 2));
 }
