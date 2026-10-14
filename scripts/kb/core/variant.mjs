@@ -17,6 +17,7 @@
 // WHICH MODULES ARE RELEVANT is the caller's (`relevance`), because it is the part with a measured,
 // replaceable answer (`bench/variant-replay.mjs`); this file only compares.
 
+import { themeVersion } from './canonical.mjs';
 import { parseConditions } from './conditions.mjs';
 
 const lower = (modules = {}) => Object.fromEntries(Object.entries(modules).map(([k, v]) => [k.toLowerCase(), String(v)]));
@@ -40,7 +41,10 @@ export function compareBuilds(a, b, relevant) {
   }
   if (relevant.theme && a.theme && b.theme) {
     compared += 1;
-    if (a.theme !== b.theme) diffs.push({ part: 'theme', a: a.theme, b: b.theme });
+    // Compared as versions (`themeVersion`): a live stamp names the bundle's version, a snapshot rebuilt
+    // from deploy history the artifact zip, and the two spellings of one theme are one theme.
+    const ta = themeVersion(a.theme); const tb = themeVersion(b.theme);
+    if (ta !== tb) diffs.push({ part: 'theme', a: ta, b: tb });
   }
   const ma = lower(a.modules);
   const mb = lower(b.modules);

@@ -17,9 +17,14 @@
 // process's environment (`resolveEnvCoords`, never `loadEnvFiles`, which mutates `process.env`).
 // Modules from `/api/platform/modules` (admin token -- 401 anonymously on every stand, checked
 // 2026-10-13); the platform from the anonymous Admin page (`probePlatformVersion`); the theme from the
-// stand's deploy manifest in vc-deploy-dev, which is DECLARED rather than observed and is omitted when no
-// GitHub token is configured. The readers are the pre-flight's (`scripts/deploy/lib/live.ts`), imported
-// rather than re-written, so one HTTP contract serves both.
+// storefront's own entry bundle at the profile's FRONT_URL (`probeThemeVersion`), anonymous and OBSERVED.
+// It used to be the stand's deploy manifest in vc-deploy-dev: DECLARED, needing a GitHub token, and
+// missing on every stand whose branch keeps no `theme/artifact.json` -- measured 2026-10-14, the
+// manifest gave no theme for vcptcore_stable, vcptcore_regression and virtostart (352 of 1,709 stamps
+// carried none), while the bundle answered on all six tracked stands within 2.2 s, agreeing with the
+// manifest wherever both answered. No manifest fallback: a declared theme is a guess about the stand,
+// and a storefront that does not answer leaves the theme null. The readers are the pre-flight's
+// (`scripts/deploy/lib/live.ts`), imported rather than re-written, so one HTTP contract serves both.
 //
 // ABSENT, NEVER GUESSED. No profile for the stand, no credentials, no TypeScript loader in this Node, a
 // stand that is down -- each returns `{ unknown }` and the write goes ahead without a stamp. A stamp is
@@ -40,28 +45,12 @@ const cachePath = (env, stand) => join(queueDir(env), `${sessionId(env)}.build.$
 /** The pre-flight's readers. Dynamic, so a Node without type stripping degrades to "unknown" instead of failing to load. */
 async function readers(root) {
   try {
-    // Not `github.ts`: it uses TypeScript parameter properties, which plain Node's type stripping
-    // refuses (ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX), and the theme needs one GET (`declaredTheme`).
-    const [envLib, live, manifest] = await Promise.all(['env', 'live', 'manifest']
+    const [envLib, live] = await Promise.all(['env', 'live']
       .map((m) => import(pathToFileURL(resolve(root, `scripts/deploy/lib/${m}.ts`)).href)));
-    return { envLib, live, manifest };
+    return { envLib, live };
   } catch (err) {
     return { unknown: `the deploy readers did not load (${err.code ?? err.message}) -- Node with type stripping is required` };
   }
-}
-
-/** The theme a stand's deploy manifest declares, or null. Declared, not observed: the storefront serves no version. */
-async function declaredTheme({ envLib, manifest }, coords, signal) {
-  const local = envLib.readEnvFile(resolve(envLib.REPO_ROOT, '.env.local'));
-  const token = local.GIT_TOKEN || local.GITHUB_TOKEN || local.GITHUB_PERSONAL_ACCESS_TOKEN;
-  if (!token) return null;
-  try {
-    const url = `https://api.github.com/repos/${coords.deployOwner}/${coords.deployRepo}/contents/${coords.themePath}?ref=${encodeURIComponent(coords.branch)}`;
-    const r = await fetch(url, { signal, headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.raw', 'User-Agent': 'vc-kb' } });
-    if (!r.ok) return null;
-    const zip = manifest.THEME_URL_RE.exec(await r.text())?.[0];
-    return zip ? zip.split('/').pop().replace(/\.zip$/i, '') : null;
-  } catch { return null; }
 }
 
 /**
@@ -116,11 +105,18 @@ async function probeStand(stand, { env, root, signal }) {
   if (r.unknown) return r;
   const coords = r.envLib.resolveEnvCoords(profile.env);
   if (!coords.backUrl) return { unknown: `.env.${profile.env} has no BACK_URL` };
-  const [platform, token] = await Promise.all([r.live.probePlatformVersion(coords, signal), r.live.probeAdminToken(coords, signal)]);
+  // The theme is read beside the platform and the token, not after the modules: it is two more GETs on
+  // another host, and in sequence they would eat into the one deadline every write waits on.
+  const front = String(profile.frontUrl ?? '').replace(/\/+$/, '');
+  const [platform, token, theme] = await Promise.all([
+    r.live.probePlatformVersion(coords, signal),
+    r.live.probeAdminToken(coords, signal),
+    front ? r.live.probeThemeVersion(front, signal) : { ok: false },
+  ]);
   if (!token.token) return { unknown: `no admin token for ${stand} (${token.status})` };
   const mods = await r.live.probeLiveModules(coords, token.token, signal);
   if (!mods.ok) return { unknown: `modules of ${stand} unreadable (${mods.status})` };
   const modules = {};
   for (const m of mods.modules) if (m.isInstalled !== false) modules[m.id] = m.version;
-  return { platform: platform.ok ? platform.version : null, theme: await declaredTheme(r, coords, signal), modules };
+  return { platform: platform.ok ? platform.version : null, theme: theme.ok ? theme.version : null, modules };
 }
