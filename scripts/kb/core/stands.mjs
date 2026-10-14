@@ -118,17 +118,18 @@ export function readProfiles({ root = REPO_ROOT, tracked = false } = {}) {
  * `.env.*` of this repo assigns (comma-separated allowed). A client's own tracker is configured in an
  * untracked file, so its keys (`ACME-42`) never qualify -- the leak `probeStand` refuses for a private
  * stand's build, applied to a ticket. No git, or no key: none, and only `suspected` is accepted.
+ *
+ * Read from the COMMITTED files (`git grep HEAD`), never the working tree: a tracked `.env.*` edited
+ * locally to a client's key (`JIRA_PROJECT_KEY=ACME`) is still on disk under a tracked name.
  */
 export function publicProjects({ root = REPO_ROOT } = {}) {
-  let committed;
+  let lines;
   try {
-    committed = execFileSync('git', ['ls-files', '.env*'], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).split(/\r?\n/).filter(Boolean);
-  } catch { return []; }
+    lines = execFileSync('git', ['grep', '-h', '-e', 'JIRA_PROJECT_KEY', 'HEAD', '--', '.env*'], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+  } catch { return []; } // no git, or no committed assignment (git grep exits 1)
   const keys = new Set();
-  for (const n of committed) {
-    let text;
-    try { text = readFileSync(join(root, n), 'utf8'); } catch { continue; }
-    for (const k of String(readAssignments(text).JIRA_PROJECT_KEY ?? '').split(',')) if (k.trim()) keys.add(k.trim().toUpperCase());
+  for (const line of lines.split(/\r?\n/)) {
+    for (const k of String(readAssignments(line).JIRA_PROJECT_KEY ?? '').split(',')) if (k.trim()) keys.add(k.trim().toUpperCase());
   }
   return [...keys].sort();
 }

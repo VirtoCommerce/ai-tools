@@ -18,10 +18,11 @@
 // by a new verb: an older client's `push` applies capture / confirm / dispute only, and would turn a new
 // mutation into a log line and lose it. A marker therefore always arrives with an observation.
 //
-//   defect   VCST-1234   a filed bug (any tracker key: PROJECT-<n>)
+//   defect   VCST-1234   a filed bug, in a project this repo's committed config names (`publicProjects`)
 //            suspected   looks wrong against the docs or a BL-* rule; no ticket yet
 //            none        withdraws the marker -- it turned out to be intended
-//   fixedIn  <module>@<version>, `platform@<version>` or `theme@<version>`: the first build without it
+//   fixedIn  VirtoCommerce.<Module>@<version>, `platform@<version>` or `theme@<version>`: the first
+//            RELEASED version (x.y.z, no pre-release) without it
 //
 // What may be marked, and the docs check that comes first, is the contract's
 // (`.claude/knowledge/execution/kb-capture-contract.md` §Defects).
@@ -37,7 +38,9 @@ const TICKET = /^([A-Z][A-Z0-9]{0,19})-\d{1,9}$/;
 // free module id would carry a client's own module name into it -- the leak the build stamp already
 // refuses for a private stand (`probeStand`, build.mjs).
 const FIXED_IN = /^(platform|theme|VirtoCommerce\.[A-Za-z][\w.]{0,70})@(\S{1,80})$/i;
-const VERSION = /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.+-]{1,60})?$/;
+// A RELEASED version only: a PR build's fix may never reach the release of the same number, so a release
+// compared against it would read "fixed" on a guess.
+const VERSION = /^\d+\.\d+\.\d+$/;
 
 /**
  * `{ value }` -- a ticket key, `suspected` or `none`; null when none was given -- or `{ problem }`.
@@ -116,7 +119,8 @@ export function defectOf(evidence = []) {
     // `suspected` never downgrades a filed ticket: whoever saw the bug without knowing its ticket confirms
     // the same defect, and must not erase the ticket and its `fixedIn` for every later reader.
     if (d === 'suspected' && cur && cur.defect !== 'suspected') { if (f) cur = { ...cur, fixedIn: f }; continue; }
-    if (d) cur = { defect: d, fixedIn: f ?? (cur && cur.defect === d ? cur.fixedIn : null) };
+    // The same bug keeps its fixedIn: the same ticket, or the ticket it got after being `suspected`.
+    if (d) cur = { defect: d, fixedIn: f ?? (cur && (cur.defect === d || cur.defect === 'suspected') ? cur.fixedIn : null) };
     else if (f && cur) cur = { ...cur, fixedIn: f };
   }
   return cur;
