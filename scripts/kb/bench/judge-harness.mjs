@@ -262,7 +262,7 @@ function parseArgs(argv) {
   // floor-1 renders hits with bodies and no `says:` line, and only `items` renders at all: a flag
   // accepted and ignored there would make arm B silently identical to arm A.
   if (a.noSays && (a.verb !== 'items' || a.decider === 'floor-1')) throw new Error('--no-says applies to `items` with the verdict ranker only');
-  if (a.contract && !['one', 'parts'].includes(a.contract)) throw new Error('--contract is one or parts');
+  if (a.contract && !['one', 'parts', 'quoted'].includes(a.contract)) throw new Error('--contract is one, parts or quoted');
   if (a.contract && (a.verb !== 'items' || a.decider === 'floor-1')) throw new Error('--contract applies to `items` with the verdict ranker only');
   return a;
 }

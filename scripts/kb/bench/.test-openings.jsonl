@@ -40,3 +40,6 @@
 {"at":"2026-10-14T11:56:11.326Z","decider":"judge-harness/verdict-1 --contract parts","base":"vc-knowledge@eed590c","set":"rank-labelled-set.wave2.json","why":"VCST-6342 6a parts-contract A/B"}
 {"at":"2026-10-14T11:56:11.326Z","decider":"judge-harness/verdict-1 --contract parts","base":"vc-knowledge@eed590c","set":"rank-labelled-set.wave3.json","why":"VCST-6342 6a parts-contract A/B"}
 {"at":"2026-10-14T11:56:11.326Z","decider":"judge-harness/verdict-1 --contract parts","base":"vc-knowledge@eed590c","set":"rank-labelled-set.live1006.json","why":"VCST-6342 6a parts-contract A/B"}
+{"at":"2026-10-14T12:09:14.253Z","decider":"judge-harness/verdict-1 --contract quoted","base":"vc-knowledge@eed590c","set":"rank-labelled-set.wave2.json","why":"VCST-6342 6a parts-contract A/B, arm C"}
+{"at":"2026-10-14T12:09:14.254Z","decider":"judge-harness/verdict-1 --contract quoted","base":"vc-knowledge@eed590c","set":"rank-labelled-set.wave3.json","why":"VCST-6342 6a parts-contract A/B, arm C"}
+{"at":"2026-10-14T12:09:14.254Z","decider":"judge-harness/verdict-1 --contract quoted","base":"vc-knowledge@eed590c","set":"rank-labelled-set.live1006.json","why":"VCST-6342 6a parts-contract A/B, arm C"}

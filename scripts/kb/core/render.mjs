@@ -168,6 +168,18 @@ export const AMBIGUOUS_CONTRACT = 'close entries, none certified to answer. Open
   + 'if none could, say so (kb_none, or `npm run kb -- none --ask <handle>`). Same topic is not an answer.';
 
 /**
+ * The parts contract with a bar (VCST-6342 6a, arm C): a second entry is relied on only when the agent
+ * can QUOTE the sentence of its body that states the other part. Arm B (`AMBIGUOUS_CONTRACT_PARTS`)
+ * lost 11 points of precision because "a part" let near neighbours in; the quote is the test that a
+ * neighbour cannot pass. Bench-selected (`contract: 'quoted'`).
+ */
+export const AMBIGUOUS_CONTRACT_QUOTED = 'close entries, none certified to answer. Open the one most likely to state your fact '
+  + '(kb_show <id>, or `npm run kb -- show <id> --ask <handle>`) and rely on it only if its body does. '
+  + 'If your question asks two things and that body states only one, you may open another entry for the other, same handle: '
+  + 'rely on it only if you can quote the sentence of its body that states that other thing. '
+  + 'If none could, say so (kb_none, or `npm run kb -- none --ask <handle>`). Same topic is not an answer.';
+
+/**
  * The same contract for a question with PARTS (VCST-6342 6a). A real question often asks two things and
  * the base holds them in two entries: on wave2, 9 of 22 targets were partial and 1 of 9 resolved under
  * the one-open contract, which a composite question can never satisfy. Here the agent may open one entry
@@ -188,7 +200,8 @@ export const AMBIGUOUS_CONTRACT_PARTS = 'close entries, none certified to answer
  *
  * `says: false` drops the body excerpt from the `ambiguous` list -- a bench-only switch for VCST-6191,
  * which measures whether the agent chooses as well from subject + question alone. `contract: 'parts'`
- * prints `AMBIGUOUS_CONTRACT_PARTS` instead of the one-open contract (VCST-6342 6a, bench-selected).
+ * prints `AMBIGUOUS_CONTRACT_PARTS` instead of the one-open contract, `contract: 'quoted'` prints
+ * `AMBIGUOUS_CONTRACT_QUOTED` (VCST-6342 6a, both bench-selected).
  *
  * @param {{verdict:string, hit?:object, headlines?:Array<{id,subject,separating,question,body}>, concepts?:string[]}} v
  */
@@ -196,7 +209,7 @@ export function verdictLines(v, { prefix = 'kb ask', says = true, contract = 'on
   if (v.verdict === 'answer') return [`${prefix}: ${HEADLINE.answer}`, ...hitLines(v.hit)];
   if (v.verdict === 'ambiguous') {
     return [
-      `${prefix}: ${contract === 'parts' ? AMBIGUOUS_CONTRACT_PARTS : AMBIGUOUS_CONTRACT}`,
+      `${prefix}: ${contract === 'parts' ? AMBIGUOUS_CONTRACT_PARTS : contract === 'quoted' ? AMBIGUOUS_CONTRACT_QUOTED : AMBIGUOUS_CONTRACT}`,
       ...v.headlines.flatMap((h) => [
         `  ${h.id}  ${h.subject}${h.separating ? `  [${h.separating}]` : ''}`,
         ...(h.defect ? [`      ! ${defectText(h.defect)}`] : h.defectUnknown ? [`      ! ${DEFECT_UNKNOWN}`] : []),

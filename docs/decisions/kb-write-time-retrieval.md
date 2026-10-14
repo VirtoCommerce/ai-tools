@@ -745,3 +745,32 @@ partial rises.
   well outside that.
 
 Per-run metrics and the discarded A run: `scripts/kb/bench/parts-ab-result.json`.
+
+### Follow-up runs the same day: a neutral brief, a quotation bar, and the base composing -- all FAIL
+
+Run against the same A (one-entry brief), same items, same frozen base:
+
+| vs A, points | B, neutral picker brief | **C: quote the sentence for the other part** |
+|---|---|---|
+| picks precision | -17.8 | run 1 -1.8; **two runs pooled -6.3** |
+| controls end in `none` | -9.3 | run 1 -1.9; **pooled 6 more answered** |
+| resolved, non-partial | -5.6 | pooled +2.25 |
+| resolved, partial | +16.1 | pooled **+13.4** |
+
+- **The neutral brief made B worse, not better.** The picker brief was not what let neighbours in; the
+  permission was.
+- **C (`AMBIGUOUS_CONTRACT_QUOTED`) is the best multi-entry contract measured, and still fails.** Run 1
+  sat inside the run-to-run noise on precision, so a confirmatory run was made with its rule declared
+  before it (pooled over two runs: precision drop <= 1 point, at most 2 more controls answered,
+  non-partial >= -2, partial rises). Run 2 widened the gap: pooled -6.3 points of precision and 6 more
+  controls answered. A quote is not a bar a neighbour cannot pass -- a near entry usually HAS a sentence
+  about the other part's topic.
+- **6b, the base composing an answer, was probed offline and not built.** Only 15 of 111 partial
+  targets have both labelled entries among the three headlines, and the joint-coverage gain of the best
+  complement is the same for partial targets and controls (0.13-0.16 vs 0.14): every cut answers more
+  controls than right partial targets.
+- **The one-open contract stays.** Partial questions are a content and question-shape problem -- an agent
+  asking one thing per ask, or an entry that states both halves -- not something the closing rule can
+  absorb at the precision this base is held to.
+
+All arms, both runs and the offline probe: `scripts/kb/bench/parts-ab-result.json`.
