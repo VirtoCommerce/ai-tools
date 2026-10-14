@@ -62,10 +62,10 @@
  */
 
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
-import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import '../../config.js';
+import { readQueryFixture, storefrontGql, probeStorefrontModules } from '../lib/storefront-caps.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const argv = process.argv.slice(2);
@@ -96,44 +96,29 @@ if (!domain) {
   domain = new URL(front).host;
 }
 
-/** Read a fixture body, dropping its `#` metadata header. */
-function fixture(name) {
-  const p = resolve(ROOT, 'test-data/graphql/queries', `${name}.graphql`);
-  return readFileSync(p, 'utf8')
-    .split(/\r?\n/)
-    .filter((l) => !l.startsWith('#'))
-    .join('\n')
-    .trim();
-}
+const fixture = (name) => readQueryFixture(ROOT, name);
 
 async function gql(query, variables) {
-  const res = await fetch(`${backUrl}/graphql`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query, variables }),
-  });
-  const json = await res.json();
-  if (!res.ok || json.errors) {
-    console.error(`GraphQL error (HTTP ${res.status}):`);
-    console.error(JSON.stringify(json.errors ?? json, null, 2));
+  try {
+    return await storefrontGql(backUrl, query, variables);
+  } catch (e) {
+    console.error(`GraphQL error (${e.message})`);
     process.exit(1);
   }
-  return json.data;
 }
 
 // The storefront's own payload — modules + versions + public settings.
-const data = await gql(fixture('initializeApplicationClient'), { domain });
-const store = data.store;
-if (!store) {
-  console.error(`No store resolved for domain "${domain}" — check FRONT_URL / --domain.`);
+const probe = await probeStorefrontModules({ backUrl, domain, root: ROOT });
+if (!probe.ok) {
+  console.error(probe.reason === 'no-store-for-domain'
+    ? `No store resolved for domain "${domain}" — check FRONT_URL / --domain.`
+    : `GraphQL error (${probe.reason})`);
   process.exit(1);
 }
-
-const modules = (store.settings?.modules ?? [])
-  .slice()
-  .sort((a, b) => a.moduleId.localeCompare(b.moduleId));
+const store = { storeUrl: probe.storeUrl };
+const modules = probe.modules;
 const shown = FILTER ? modules.filter((m) => m.moduleId.toLowerCase().includes(FILTER)) : modules;
-const versionsHidden = modules.length > 0 && modules.every((m) => !m.version);
+const versionsHidden = probe.versionsHidden;
 
 // Optional: the broader store-level contract surface (the scalars, not the manifest).
 let broad = null;

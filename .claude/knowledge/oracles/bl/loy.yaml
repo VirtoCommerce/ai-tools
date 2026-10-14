@@ -146,6 +146,9 @@ rules:
       ref: "Mixed cart whose loyalty total exceeds the resolved balance → cart validation returns `LOYALTY_INSUFFICIENT_BALANCE` with `required`/`available` present and `required > available`; order not created; cart still readable. Storefront surfaces the localized message (i18n `loyalty_insufficient_balance`). Then: read the points balance the actor is shown on their account page, build a cart whose points total exceeds it, and assert `available` equals that same figure — not 0 and not another scope's number."
     violation_signal: Order created despite a balance shortfall; missing/empty `required`/`available`; balance allowed to go negative; **or `available` disagrees with the balance the same actor is shown, so an actor who holds enough points is refused (or one who does not is allowed).**
     status: ACTIVE
+    verified:
+      date: 2026-10-09
+      by: REG-2026-10-09-1716
   - id: BL-LOY-009
     title: Mixed Cart earn — only cash-currency lines earn points; loyalty-currency lines earn zero
     rule: "In Mixed-Cart `EarnProductPointsAsync`, earned points are computed exclusively from `order.Items` whose `Currency != loyaltyCurrency`; loyalty-currency (points-priced) items contribute 0. Holds both in the order-time job and the cart `loyaltyPoints` preview. Guard: `Items.Where(x => !x.Currency.EqualsIgnoreCase(loyaltyCurrency))`. Order-layer refinement of BL-LOY-005."
@@ -182,6 +185,9 @@ rules:
       ref: Auth as a loyalty user in a Mixed-Cart store; build a cart with only a PTS line → `cart.validationErrors` contains `LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED`; add a cash line and re-read → that error code is gone.
     violation_signal: A points-only cart validates clean / is allowed to check out; or the error fails to clear after a cash line is added.
     status: ACTIVE
+    verified:
+      date: 2026-10-09
+      by: REG-2026-10-09-1716
   - id: BL-LOY-012
     title: The loyalty payment gateway is only valid in Payment Method mode
     rule: When a cart carries a payment whose gateway code is `LoyaltyPaymentMethod` and the store loyalty mode is anything other than `"Payment Method"`, the cart MUST surface a `LOYALTY_PAYMENT_METHOD_NOT_ALLOWED` validation error and MUST NOT be checked out.

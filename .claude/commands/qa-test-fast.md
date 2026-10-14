@@ -37,9 +37,12 @@ behind every step, the rationalization table and the red flags are in
    [`../knowledge/execution/ticket-routing.md`](../knowledge/execution/ticket-routing.md). Anything
    other than `feature-test` ⇒ **STOP** and name the right command (`/qa-verify-fix`,
    `/qa-hotfix-check`, `/qa-test`).
-2. **Environment.** Run `npm run env:check`, record the deployed build per
-   [`../templates/agent-dispatch.md`](../templates/agent-dispatch.md) §Build Verification, and resolve
-   `{SPRINT}` as [`../skills/qa-test/preflight.md`](../skills/qa-test/preflight.md) does.
+2. **Environment.** Run [`/preflight`](../skills/preflight/SKILL.md)
+   `ticket-fast --ticket <KEY> --components <…>`. It returns env health,
+   the deployed build, `{SPRINT}`, the duplicate check (its row says "same build" / "different build" when
+   both runs probed the deployed modules) and MCP availability, and runs its own remediation loop. A `not-deployed:*`
+   row is BLOCKED-on-deploy, never a FAIL. **No `--expect` here:** the PRs are found in Stage 1, where
+   `/ticket-context` asks the same core per PR.
 3. **Prior artifacts are inputs.** For this ticket, glob `reports/tickets/*/<TICKET>/`,
    `reports/ba/test-models/<TICKET>-*` and `reports/bugs/**`. A prior model is amended, never forked.
    Prior bugs are the dedupe baseline `qa-bug` checks against. A prior run on a **different build**
@@ -52,27 +55,27 @@ behind every step, the rationalization table and the red flags are in
      ([`../knowledge/execution/tracker-ops.md`](../knowledge/execution/tracker-ops.md) §0).
 4. **Domain slug.** Take the candidate from the ticket's components and summary, then check it with
    `npm run bl:extract -- --has-domain <slug>`.
-5. **Ask the base for this run's coordinates.** For each page path, GraphQL operation and endpoint the
-   ticket names, run `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <question>"`). Record the
-   hit ids; a miss is not a blocker. Rule: [`../../CLAUDE.md`](../../CLAUDE.md) §Essential Rules →
-   *Product context*.
+5. **Ask the base for this run's coordinates** — done inside `/preflight` step 3 (kb first, then
+   VirtoOZ). Carry its hit ids into Stage 1.
 
 ## Stage 1 — Context
 
 Full briefs, merge rules and the context bundle:
 [`../skills/qa-test-fast/context-wave.md`](../skills/qa-test-fast/context-wave.md).
 
-1. **Wave 1 — one message:**
-   - **A** ticket, comments and attachments — `ba-system-analyzer`, no browser
-   - **B** linked PRs and their `gh pr diff` — `ba-api-specialist`, no browser
+1. **Wave 1:**
    - **C** domain map — `/qa-domain-map <slug>` on `playwright-firefox`, only when the map is
-     `ABSENT`/`unresolved`
-2. **Join.** Merge A+B+C into the context bundle. If B names a GraphQL operation, run both
-   contract-refresh commands ([`context-wave.md`](../skills/qa-test-fast/context-wave.md) §Join 1).
+     `ABSENT`/`unresolved`; dispatch it first, in the background
+   - **A+B** [`/ticket-context <KEY> --domain <slug> --kb-hits <Step 0 ids>`](../skills/ticket-context/SKILL.md)
+     — ticket, every attachment and link, the PRs, their deployment on this stand, known ground and
+     gaps, as one gated bundle
+2. **Join.** The bundle is the context. Its `blockers[]` decide deployment, and if it names a GraphQL
+   operation, run both contract-refresh commands
+   ([`context-wave.md`](../skills/qa-test-fast/context-wave.md) §Join 1).
 3. **Wave 2 — one message:**
-   - `/qa-test-model <TICKET> --context <bundle>`, run by you
+   - `/qa-test-model <TICKET> --context <run context>`, run by you
    - `/qa-test-mind-map update|build <slug> --from <TICKET>` — `ba-system-analyzer`, no browser,
-     **without** build step 10; then copy the map signals into the bundle
+     **without** build step 10; then copy the map signals into the run context
      ([`context-wave.md`](../skills/qa-test-fast/context-wave.md) §Wave 2)
 4. **Wave 3.** Run `/qa-checklist <TICKET> --from-model --mind-map <slug>` and write the result to
    `reports/tickets/{SPRINT}/<TICKET>/testing-checklist.md`.
@@ -93,7 +96,7 @@ Briefs, the lane split, the data rules and teardown:
    The charter is the model's unresolved items. `--no-explore` drops the lane. That is recorded, never
    silent.
 3. **Visual** — `ui-ux-expert` on Chrome DevTools MCP, whenever `visual_surface: true` (derived from the
-   Wave-1 diff). **Its brief's first line makes it invoke the Skill tool with `skill: "qa-design"`**; the
+   bundle's PR layers, recorded in the run context). **Its brief's first line makes it invoke the Skill tool with `skill: "qa-design"`**; the
    `/qa-design` command is never run. `--no-visual` drops the lane, recorded never silent. Trigger, the
    brief, the lane-count rule (a 4th lane waits for the first to return) and verdict handling:
    [`../skills/qa-test/visual-axis.md`](../skills/qa-test/visual-axis.md) §2, §4, §5. Writes

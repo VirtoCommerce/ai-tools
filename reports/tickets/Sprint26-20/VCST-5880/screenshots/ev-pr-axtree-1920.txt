@@ -1,0 +1,206 @@
+BUILD: PR #2518 (http://localhost, nginx serving vc-frontend theme 2.60.0-pr-2518-ee98-ee98adbd) - Chrome DevTools take_snapshot verbose (real Chromium AX tree), 1920x1080, guest, 5 products Group A
+DATE: 2026-10-12 - subtree trimmed to the compare table: header row + first 3 body rows (Price per unit, Availability, SKU); verbatim otherwise
+                      uid=39_116 table "Compare products"
+                        uid=38_68 rowgroup
+                          uid=39_117 row
+                            uid=39_118 cell "All Differences Differ: 7 of 9 rows Clear category"
+                              uid=39_119 ignored
+                                uid=39_120 ignored
+                                  uid=39_121 LabelText
+                                    uid=39_122 ignored
+                                    uid=38_69 button "All" pressed
+                                      uid=39_123 ignored
+                                        uid=39_124 StaticText "All"
+                                          uid=39_6 InlineTextBox "All"
+                                  uid=39_125 LabelText
+                                    uid=39_126 ignored
+                                    uid=38_70 button "Differences"
+                                      uid=39_127 ignored
+                                        uid=39_128 StaticText "Differences"
+                                          uid=39_6 InlineTextBox "Differences"
+                                uid=39_129 paragraph
+                                  uid=38_71 StaticText "Differ: 7 of 9 rows"
+                                    uid=39_6 InlineTextBox "Differ: 7 of 9 rows"
+                              uid=38_72 button "Clear category"
+                                uid=39_130 ignored
+                                  uid=39_131 ignored
+                                  uid=39_132 ignored
+                                    uid=39_133 StaticText "Clear category"
+                                      uid=39_6 InlineTextBox "Clear category"
+                            uid=39_134 columnheader "AGENT-TEST-Compare-Alpha"
+                              uid=39_135 generic
+                                uid=38_73 image "AGENT-TEST-Compare-Alpha" url="https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-ALPHA/AGENT-TEST-CMP-ALPHA-main.png"
+                                uid=39_136 generic
+                                  uid=38_74 button "Remove from compare" description="Remove from compare"
+                                    uid=39_137 ignored
+                              uid=39_138 ignored
+                                uid=39_139 ignored
+                                  uid=38_75 link "AGENT-TEST-Compare-Alpha" url="http://localhost/seed-compare-fixtures/seed-compare-fixtures-group-a/agent-test-compare-alpha"
+                                    uid=38_76 StaticText "AGENT-TEST-Compare-Alpha"
+                                      uid=39_6 InlineTextBox "AGENT-TEST-Compare-"
+                                      uid=39_6 InlineTextBox "Alpha"
+                                uid=38_77 button "Add to cart"
+                                  uid=39_140 ignored
+                            uid=39_141 columnheader "AGENT-TEST-Compare-Beta"
+                              uid=39_142 generic
+                                uid=38_78 image "AGENT-TEST-Compare-Beta" url="https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-BETA/AGENT-TEST-CMP-BETA-main.png"
+                                uid=39_143 generic
+                                  uid=38_79 button "Remove from compare" description="Remove from compare"
+                                    uid=39_144 ignored
+                              uid=39_145 ignored
+                                uid=39_146 ignored
+                                  uid=38_80 link "AGENT-TEST-Compare-Beta" url="http://localhost/seed-compare-fixtures/seed-compare-fixtures-group-a/agent-test-compare-beta"
+                                    uid=38_81 StaticText "AGENT-TEST-Compare-Beta"
+                                      uid=39_6 InlineTextBox "AGENT-TEST-Compare-"
+                                      uid=39_6 InlineTextBox "Beta"
+                                uid=38_82 button "Add to cart"
+                                  uid=39_147 ignored
+                            uid=39_148 columnheader "AGENT-TEST-Compare-LongName ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+                              uid=39_149 generic
+                                uid=38_83 image "AGENT-TEST-Compare-LongName ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" url="https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-LONGNAME/AGENT-TEST-CMP-LONGNAME-main.png"
+                                uid=39_150 generic
+                                  uid=38_84 button "Remove from compare" description="Remove from compare"
+                                    uid=39_151 ignored
+                              uid=39_152 ignored
+                                uid=39_153 ignored
+                                  uid=38_85 link "AGENT-TEST-Compare-LongName ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" url="http://localhost/seed-compare-fixtures/seed-compare-fixtures-group-a/agent-test-compare-longname-abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz0123456789"
+                                    uid=38_86 StaticText "AGENT-TEST-Compare-LongName ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+                                      uid=39_6 InlineTextBox "AGENT-TEST-Compare-"
+                                      uid=39_6 InlineTextBox "LongName "
+                                      uid=39_6 InlineTextBox "…"
+                                      uid=39_6 InlineTextBox "ABCDEFGHIJKLMNOPQ"
+                                      uid=39_6 InlineTextBox "RSTUVWXYZABCDEFG"
+                                      uid=39_6 InlineTextBox "HIJKLMNOPQRSTUVW"
+                                      uid=39_6 InlineTextBox "XYZ0123456789"
+                                uid=38_87 button "Add to cart"
+                                  uid=39_154 ignored
+                            uid=39_155 columnheader "AGENT-TEST-Compare-Filler-One"
+                              uid=39_156 generic
+                                uid=38_88 image "AGENT-TEST-Compare-Filler-One" url="https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-FILL-1/AGENT-TEST-CMP-FILL-1-main.png"
+                                uid=39_157 generic
+                                  uid=38_89 button "Remove from compare" description="Remove from compare"
+                                    uid=39_158 ignored
+                              uid=39_159 ignored
+                                uid=39_160 ignored
+                                  uid=38_90 link "AGENT-TEST-Compare-Filler-One" url="http://localhost/seed-compare-fixtures/seed-compare-fixtures-group-a/agent-test-compare-filler-one"
+                                    uid=38_91 StaticText "AGENT-TEST-Compare-Filler-One"
+                                      uid=39_6 InlineTextBox "AGENT-TEST-Compare-"
+                                      uid=39_6 InlineTextBox "Filler-One"
+                                uid=38_92 button "Add to cart"
+                                  uid=39_161 ignored
+                            uid=39_162 columnheader "AGENT-TEST-Compare-Filler-Two"
+                              uid=39_163 generic
+                                uid=38_93 image "AGENT-TEST-Compare-Filler-Two" url="https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-FILL-2/AGENT-TEST-CMP-FILL-2-main.png"
+                                uid=39_164 generic
+                                  uid=38_94 button "Remove from compare" description="Remove from compare"
+                                    uid=39_165 ignored
+                              uid=39_166 ignored
+                                uid=39_167 ignored
+                                  uid=38_95 link "AGENT-TEST-Compare-Filler-Two" url="http://localhost/seed-compare-fixtures/seed-compare-fixtures-group-a/agent-test-compare-filler-two"
+                                    uid=38_96 StaticText "AGENT-TEST-Compare-Filler-Two"
+                                      uid=39_6 InlineTextBox "AGENT-TEST-Compare-"
+                                      uid=39_6 InlineTextBox "Filler-Two"
+                                uid=38_97 button "Add to cart"
+                                  uid=39_168 ignored
+                        uid=39_169 ignored
+                          uid=39_170 row
+                            uid=39_171 rowheader "Price per unit" description="Price, excl. VAT, per unit."
+                              uid=39_172 ignored
+                                uid=39_173 ignored
+                                  uid=38_98 StaticText "Price per unit"
+                                    uid=39_6 InlineTextBox "Price per unit"
+                                uid=39_174 ignored
+                                  uid=39_175 generic
+                                    uid=38_99 image "Price, excl. VAT, per unit."
+                                      uid=39_176 image
+                              uid=38_100 button "Pin “Price per unit”" description="Pin to top"
+                                uid=39_177 ignored
+                                  uid=39_178 ignored
+                            uid=39_179 cell "$49.99"
+                              uid=39_180 ignored
+                                uid=39_181 ignored
+                                  uid=38_101 StaticText "$49.99"
+                                    uid=39_6 InlineTextBox "$49.99"
+                            uid=39_182 cell "$59.99"
+                              uid=39_183 ignored
+                                uid=39_184 ignored
+                                  uid=38_102 StaticText "$59.99"
+                                    uid=39_6 InlineTextBox "$59.99"
+                            uid=39_185 cell "$19.99"
+                              uid=39_186 ignored
+                                uid=39_187 ignored
+                                  uid=38_103 StaticText "$19.99"
+                                    uid=39_6 InlineTextBox "$19.99"
+                            uid=39_188 cell "$9.99"
+                              uid=39_189 ignored
+                                uid=39_190 ignored
+                                  uid=38_104 StaticText "$9.99"
+                                    uid=39_6 InlineTextBox "$9.99"
+                            uid=39_191 cell "$8.99"
+                              uid=39_192 ignored
+                                uid=39_193 ignored
+                                  uid=38_105 StaticText "$8.99"
+                                    uid=39_6 InlineTextBox "$8.99"
+                          uid=39_194 row
+                            uid=39_195 rowheader "Availability"
+                              uid=39_196 ignored
+                                uid=39_197 ignored
+                                  uid=38_106 StaticText "Availability"
+                                    uid=39_6 InlineTextBox "Availability"
+                              uid=38_107 button "Pin “Availability”" description="Pin to top"
+                                uid=39_198 ignored
+                                  uid=39_199 ignored
+                            uid=39_200 cell "In stock"
+                              uid=39_201 group "In stock"
+                                uid=39_202 generic
+                                  uid=39_203 ignored
+                                    uid=38_108 StaticText "12"
+                                      uid=39_6 InlineTextBox "12"
+                            uid=39_204 cell "In stock"
+                              uid=39_205 group "In stock"
+                                uid=39_206 generic
+                                  uid=39_207 ignored
+                                    uid=38_109 StaticText "340"
+                                      uid=39_6 InlineTextBox "340"
+                            uid=39_208 cell "In stock"
+                              uid=39_209 group "In stock"
+                                uid=39_210 generic
+                                  uid=39_211 ignored
+                                    uid=38_110 StaticText "60"
+                                      uid=39_6 InlineTextBox "60"
+                            uid=39_212 cell "In stock"
+                              uid=39_213 group "In stock"
+                                uid=39_214 generic
+                                  uid=39_215 ignored
+                                    uid=38_111 StaticText "80"
+                                      uid=39_6 InlineTextBox "80"
+                            uid=39_216 cell "In stock"
+                              uid=39_217 group "In stock"
+                                uid=39_218 generic
+                                  uid=39_219 ignored
+                                    uid=38_112 StaticText "80"
+                                      uid=39_6 InlineTextBox "80"
+                          uid=39_220 row
+                            uid=39_221 rowheader "SKU"
+                              uid=39_222 ignored
+                                uid=39_223 ignored
+                                  uid=38_113 StaticText "SKU"
+                                    uid=39_6 InlineTextBox "SKU"
+                              uid=38_114 button "Pin “SKU”" description="Pin to top"
+                                uid=39_224 ignored
+                                  uid=39_225 ignored
+                            uid=39_226 cell "AGENT-TEST-CMP-ALPHA"
+                              uid=38_115 StaticText "AGENT-TEST-CMP-ALPHA"
+                                uid=39_6 InlineTextBox "AGENT-TEST-CMP-ALPHA"
+                            uid=39_227 cell "AGENT-TEST-CMP-BETA"
+                              uid=38_116 StaticText "AGENT-TEST-CMP-BETA"
+                                uid=39_6 InlineTextBox "AGENT-TEST-CMP-BETA"
+                            uid=39_228 cell "AGENT-TEST-CMP-LONGNAME"
+                              uid=38_117 StaticText "AGENT-TEST-CMP-LONGNAME"
+                                uid=39_6 InlineTextBox "AGENT-TEST-CMP-LONGNAME"
+                            uid=39_229 cell "AGENT-TEST-CMP-FILL-1"
+                              uid=38_118 StaticText "AGENT-TEST-CMP-FILL-1"
+                                uid=39_6 InlineTextBox "AGENT-TEST-CMP-FILL-1"
+                            uid=39_230 cell "AGENT-TEST-CMP-FILL-2"
+                              uid=38_119 StaticText "AGENT-TEST-CMP-FILL-2"
+                                uid=39_6 InlineTextBox "AGENT-TEST-CMP-FILL-2"
