@@ -34,10 +34,11 @@ import {
   expectedRecipients, nonRecursiveRecipients, loginBlindRecipients, expectedCompaniesExpanded,
   findDecidabilityProblems, findGuidLeaks,
 } from './push-audience-specs.mjs';
+import { resolveTestEnv } from '../../lib/resolve-test-env.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const GUID_RE = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/i;
-const TEST_ENV = process.env.TEST_ENV || 'vcst';
+const TEST_ENV = resolveTestEnv('vcst');
 
 const problems = [];
 const fail = (m) => { problems.push(m); console.log(`  ✗ ${m}`); };

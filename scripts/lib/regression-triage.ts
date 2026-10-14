@@ -32,6 +32,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSy
 import { join, isAbsolute } from "path";
 import { fileURLToPath } from "url";
 import { parse as parseCsv } from "csv-parse/sync";
+import { resolveTestEnv } from "./resolve-test-env.js";
 
 export const REG_ROOT = join("reports", "regression");
 export const TRIAGE_STORE_PATH = join(REG_ROOT, ".triage-fingerprints.json");
@@ -609,16 +610,22 @@ function splitRow(line: string): string[] {
   return line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map((c) => c.trim());
 }
 
-/** Resolve a ticket key or a ticket folder path to the folder holding its checklist. */
-export function resolveTicketDir(arg: string): string {
+/**
+ * Resolve a ticket key or a ticket folder path to the folder holding its checklist: the env's own
+ * run folder (`<Sprint>/<TICKET>/<env>/`), else a run from before the env level (`<Sprint>/<TICKET>/`).
+ * Another env's folder never answers — its checklist describes a different deployment.
+ */
+export function resolveTicketDir(arg: string, env = process.env.TEST_ENV ?? "vcst"): string {
   if (!arg) throw new Error("collect --ticket needs a ticket key or a ticket folder");
   if (existsSync(join(arg, CHECKLIST_FILE))) return arg;
   if (!existsSync(TICKETS_ROOT)) throw new Error(`No ${TICKETS_ROOT}/ directory`);
-  const hits = readdirSync(TICKETS_ROOT)
-    .map((sprint) => join(TICKETS_ROOT, sprint, arg))
+  const sprints = readdirSync(TICKETS_ROOT);
+  const newest = (dirs: string[]) => dirs
     .filter((d) => existsSync(join(d, CHECKLIST_FILE)))
     .sort((a, b) => statSync(join(b, CHECKLIST_FILE)).mtimeMs - statSync(join(a, CHECKLIST_FILE)).mtimeMs);
-  if (!hits.length) throw new Error(`No ${TICKETS_ROOT}/*/${arg}/${CHECKLIST_FILE}`);
+  const own = newest(sprints.map((sprint) => join(TICKETS_ROOT, sprint, arg, env)));
+  const hits = own.length ? own : newest(sprints.map((sprint) => join(TICKETS_ROOT, sprint, arg)));
+  if (!hits.length) throw new Error(`No ${TICKETS_ROOT}/*/${arg}/${env}/${CHECKLIST_FILE} (nor a ${TICKETS_ROOT}/*/${arg}/${CHECKLIST_FILE} from before the env level)`);
   return hits[0]; // newest checklist wins when a ticket spans sprints
 }
 
@@ -636,7 +643,9 @@ export interface ChecklistRead {
  * `screenshots/` files named in the row, or whose name carries the item id as a token.
  */
 export function readChecklistIssues(ticketDir: string, env = process.env.TEST_ENV ?? "vcst"): ChecklistRead {
-  const ticket = ticketDir.split(/[\\/]/).filter(Boolean).pop() ?? "";
+  // A run folder is <TICKET>/<env>/; one from before the env level is <TICKET>/ itself.
+  const parts = ticketDir.split(/[\\/]/).filter(Boolean);
+  const ticket = (parts[parts.length - 1] === env ? parts[parts.length - 2] : parts[parts.length - 1]) ?? "";
   const lines = readFileSync(join(ticketDir, CHECKLIST_FILE), "utf-8").split(/\r?\n/);
   const shotsDir = join(ticketDir, "screenshots");
   const shots = existsSync(shotsDir) ? readdirSync(shotsDir).filter((f) => /\.(png|jpe?g|webp|gif)$/i.test(f)) : [];
@@ -940,6 +949,10 @@ export function appendSuiteHistory(runId: string, env: string, runDir: string): 
 // ---------------------------------------------------------------------------
 
 function main(): void {
+  // Resolve the session env as every other entry point does (TEST_ENV, else .env.test-env, else
+  // vcst) before anything below reads process.env.TEST_ENV. Without it a checkout that selects its
+  // env only in .env.test-env collected from the vcst run folder and labelled history rows vcst.
+  resolveTestEnv("vcst");
   const [cmd, runArg, ...rest] = process.argv.slice(2);
   if (!cmd || (cmd !== "collect" && cmd !== "history")) {
     console.error("Usage:\n  regression-triage.ts collect <RUN_ID|latest> [--record]\n  regression-triage.ts collect --ticket <TICKET|ticket-dir> [--max-batch N]\n  regression-triage.ts history <RUN_ID|latest> [--env <env>]");
@@ -949,8 +962,8 @@ function main(): void {
   const maxPerBatch = maxIdx !== -1 ? Math.max(1, Number(rest[maxIdx + 1]) || DEFAULT_MAX_BATCH) : DEFAULT_MAX_BATCH;
 
   if (cmd === "collect" && runArg === "--ticket") {
-    const ticketDir = resolveTicketDir(rest[0]);
     const env = process.env.TEST_ENV ?? "vcst";
+    const ticketDir = resolveTicketDir(rest[0], env);
     const { issues, unresulted, advisoryCount } = readChecklistIssues(ticketDir, env);
     const batches = groupIssues(issues, maxPerBatch);
     console.log(JSON.stringify({

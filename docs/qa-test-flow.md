@@ -111,7 +111,7 @@ sequenceDiagram
     else FAST path
         note over Orch,TMS: NO Artifact A — a FAST run authors no cases
     end
-    TMS->>TMS: Checklist (B) → reports/tickets/{SPRINT}/<TICKET>/testing-checklist.md; regression scope (C)
+    TMS->>TMS: Checklist (B) → reports/tickets/{SPRINT}/<TICKET>/<env>/testing-checklist.md; regression scope (C)
     opt Cases/checklist need un-fixtured data
         TMS->>TDE: generate + seed data
         TDE-->>TMS: seeded, green td:validate

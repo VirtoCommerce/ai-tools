@@ -15,13 +15,13 @@
  *   npx tsx scripts/bundle-evidence.ts VCST-5391 --sprint=Sprint-current --check
  *
  * Flags:
- *   --sprint=<S>     place the package under reports/tickets/<S>/<TICKET>/ (else reports/tickets/<TICKET>/)
+ *   --sprint=<S>     place the package under reports/tickets/<S>/<TICKET>/<env>/ (else reports/tickets/<TICKET>/<env>/)
  *   --browser=<b>    which test-results/<b>/ to scan for raw HAR/video/console (default: chrome)
  *   --symptom="..."  one-line symptom pre-filled into the manifest + worksheet
  *   --check          re-scan an existing package and print the completeness report (no scaffold)
  *
- * Env: resolves TEST_ENV via scripts/lib/resolve-test-env.js, then reads the layered .env files
- *      (.env.defaults → .env.${TEST_ENV} → .env.local) to pre-fill the env header. No hardcoding.
+ * Env: scripts/lib/load-env.mjs — TEST_ENV, the layered .env files and their KEY_<ENV> pins, as
+ *      config.js resolves them — pre-fills the env header. No hardcoding.
  */
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import {
@@ -33,8 +33,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { join, relative } from 'node:path';
-import { parse } from 'dotenv';
-import { resolveTestEnv } from '../lib/resolve-test-env.js';
+import { loadEnv } from '../lib/load-env.mjs';
 
 // ---------- args ----------
 const argv = process.argv.slice(2);
@@ -58,23 +57,17 @@ if (!ticket) {
 }
 
 // ---------- env header (no hardcoding) ----------
-const testEnv = resolveTestEnv();
-function loadEnvLayers(env: string): Record<string, string> {
-  const merged: Record<string, string> = {};
-  for (const f of ['.env.defaults', `.env.${env}`, '.env.local']) {
-    if (existsSync(f)) Object.assign(merged, parse(readFileSync(f)));
-  }
-  return merged;
-}
-const envVars = loadEnvLayers(testEnv);
-const FRONT_URL = process.env.FRONT_URL || envVars.FRONT_URL || '<FRONT_URL>';
-const BACK_URL = process.env.BACK_URL || envVars.BACK_URL || '<BACK_URL>';
-const ENV_RISK = process.env.ENV_RISK || envVars.ENV_RISK || 'unknown';
+// With the KEY_<ENV> promotion the header shows the env's own pinned URLs, not a developer's
+// .env.local override (the merge this replaces never promoted).
+const { testEnv } = loadEnv({ fallback: 'vcst' });
+const FRONT_URL = process.env.FRONT_URL || '<FRONT_URL>';
+const BACK_URL = process.env.BACK_URL || '<BACK_URL>';
+const ENV_RISK = process.env.ENV_RISK || 'unknown';
 
 // ---------- package location ----------
 const baseDir = sprint
-  ? join('reports', 'tickets', sprint, ticket)
-  : join('reports', 'tickets', ticket);
+  ? join('reports', 'tickets', sprint, ticket, testEnv)
+  : join('reports', 'tickets', ticket, testEnv);
 
 const SUBDIRS = ['screenshots', 'network', 'console', 'har', 'source'] as const;
 

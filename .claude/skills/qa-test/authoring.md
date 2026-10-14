@@ -402,7 +402,7 @@ Artifact A — one batch per execution surface, once the wave has closed.
 
 ## Artifact B — the testing checklist (both paths)
 
-Written to `reports/tickets/{SPRINT}/<ticket-key>/testing-checklist.md`.
+Written to `reports/tickets/{SPRINT}/<ticket-key>/<env>/testing-checklist.md`.
 
 Map **each atomic condition** to a case (new or existing); fold in the matching `E2E-*` scenario(s); add
 items for `BL-*`, `ECL-*`, and each `ba-system-analyzer` risk area; **flag any condition with no covering

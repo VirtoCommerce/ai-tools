@@ -172,7 +172,7 @@ and are combined with that math by the verifier.
   an unfinished or unsafe feature. Record the blocking criteria + owners; do not ship on schedule
   pressure.
 - The GO/NO-GO decision + evidence links are recorded in the per-ticket QA report
-  (`reports/tickets/<Sprint>/<TICKET>/`, category 6 per `.claude/rules/reports.md`), not a new artifact
+  (`reports/tickets/<Sprint>/<TICKET>/<env>/`, category 6 per `.claude/rules/reports.md`), not a new artifact
   type.
 - **Epic roll-up (`/qa-test --epic` runs).** This gate stays **per story**; an Epic-scoped run combines the
   per-story verdicts into one Epic-level recommendation: **all** child stories GO/CONDITIONAL GO + the

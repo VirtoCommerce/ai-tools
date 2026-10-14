@@ -25,7 +25,7 @@ Use the [`agent-dispatch.md`](../../templates/agent-dispatch.md) structure, **in
 - **Data:** the Data cell of each item is the instruction (§Data below).
 - **Shared state:** the checklist header's Rules block. Only the lane it names writes a shared setting,
   and that lane restores the setting and re-reads it to prove it.
-- **Evidence:** `reports/tickets/{SPRINT}/<TICKET>/screenshots/`, per
+- **Evidence:** `reports/tickets/{SPRINT}/<TICKET>/<env>/screenshots/`, per
   [`../qa-evidence/evidence-capture-policy.md`](../qa-evidence/evidence-capture-policy.md). HAR always.
 - **Return, per item:**
   - `PASS` / `FAIL` / `BLOCKED` and a one-line note
@@ -60,7 +60,7 @@ the Skill tool with `skill: "qa-design"` before any browser call**, and open the
 ticket's Prototype link + the `design:extract` spec path, the invariant text, the auth path, no
 credential names), the lane-count rule and the verdict vocabulary are
 [`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §2–§4 — cited, not restated here.
-- **Writes** `reports/tickets/{SPRINT}/<TICKET>/design-report.md`; you write `summary.json.visual`.
+- **Writes** `reports/tickets/{SPRINT}/<TICKET>/<env>/design-report.md`; you write `summary.json.visual`.
 - **Read-only.** It creates no data; a role-gated target uses the pre-signed profile, never a minted
   account ([`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §2).
 - **Skipped** (`visual_surface: false` or `--no-visual`) ⇒ `visual.ran: false` + the reason.

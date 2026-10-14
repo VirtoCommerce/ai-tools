@@ -1,5 +1,5 @@
 import { config } from 'dotenv';
-import { resolveTestEnv } from './scripts/lib/resolve-test-env.js';
+import { resolveTestEnv, TEST_ENV_PATTERN } from './scripts/lib/resolve-test-env.js';
 import { loadProjectProfile } from './scripts/lib/project-profile.mjs';
 import { CORE_REQUIRED_VARS, promoteEnvSuffix } from './scripts/lib/env-core.js';
 
@@ -7,7 +7,9 @@ import { CORE_REQUIRED_VARS, promoteEnvSuffix } from './scripts/lib/env-core.js'
 //   1. .env.defaults       — cross-env constants (sandbox cards, builder.io URL)
 //   2. .env.${TEST_ENV}    — per-env URLs/identifiers (vcst | vcptcore | virtostart)
 //   3. .env.local          — secrets (passwords, tokens) — gitignored
-//   4. process.env         — already wins (CI passes via -e flags)
+//   4. .env.playwright.${TEST_ENV} — this env's passwords (gitignored); resolveTestEnv()
+//                            exposes them as KEY_<ENV>, so the promotion below lifts them over 3.
+//   5. process.env         — already wins (CI passes via -e flags)
 // The legacy monolithic .env file was removed — all values live in the layered
 // files above. Per-env scaffolds are committed; secrets stay in .env.local.
 //
@@ -20,7 +22,7 @@ const TEST_ENV = resolveTestEnv('vcst');
 // (which uppercases TEST_ENV and appends as a var suffix) works correctly.
 // Kebab-case names like `customer-staging-eu` silently break suffix promotion
 // because `_CUSTOMER-STAGING-EU` is not a valid env-var suffix.
-if (!/^[a-z0-9_]+$/.test(TEST_ENV)) {
+if (!TEST_ENV_PATTERN.test(TEST_ENV)) {
     console.error(
         `[config] Invalid TEST_ENV="${TEST_ENV}". Must match [a-z0-9_]+. ` +
         `Use underscores instead of hyphens (e.g. "customer_staging_eu", not "customer-staging-eu"). ` +

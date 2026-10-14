@@ -245,7 +245,7 @@ it as a row with a verdict, exactly like every other condition. **An uncovered v
 never omitted** — dropping the row is what makes a checklist look complete when it is not.
 
 The pass also writes its own per-ticket `design-report.md` **into the run's own ticket folder**
-(`reports/tickets/{SPRINT}/<ticket-key>/design-report.md`) — `.claude/rules/reports.md` category 6, which
+(`reports/tickets/{SPRINT}/<ticket-key>/<env>/design-report.md`) — `.claude/rules/reports.md` category 6, which
 already permits a ticket-scoped `/qa-design` run; 30–60 lines, cap 120. Note this is deliberately the
 **ticket-folder** path, not the `reports/tickets/{SPRINT}/qa-design/<slug>-<date>/` tree a standalone
 `/qa-design` invocation uses: dispatched from `/qa-test` the audit belongs to the ticket's evidence, beside

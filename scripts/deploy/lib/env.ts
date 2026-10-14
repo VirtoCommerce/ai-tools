@@ -3,7 +3,7 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+import { basename, dirname, resolve } from 'node:path';
 import { parse as parseDotenv } from 'dotenv';
 
 export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
@@ -49,6 +49,12 @@ export function envFilePath(env: string): string {
   return resolve(REPO_ROOT, vcpt ? `.env.vcptcore_${vcpt[1].toLowerCase()}` : `.env.${env}`);
 }
 
+/** The env's gitignored password file, next to its .env file: `.env.playwright.<env>` (also its Playwright MCP --secrets file). */
+function envSecretsPath(env: string): string {
+  const envFile = envFilePath(env);
+  return resolve(dirname(envFile), basename(envFile).replace(/^\.env\./, '.env.playwright.'));
+}
+
 /** Resolve deploy + connection coords for an env. `.env.<env>` DEPLOY_* wins; else convention. */
 export function resolveEnvCoords(env: string, passwordOverride?: string): EnvCoords {
   const e = readEnvFile(envFilePath(env));
@@ -56,14 +62,17 @@ export function resolveEnvCoords(env: string, passwordOverride?: string): EnvCoo
   const repoSpec = e.DEPLOY_REPO || DEPLOY_REPO_DEFAULT;
   const [deployOwner, deployRepo] = repoSpec.includes('/') ? repoSpec.split('/') : [OWNER, repoSpec];
   const branch = e.DEPLOY_BRANCH || BRANCH_MAP[env] || env.replace(/_/g, '-');
-  // Per-env secret lookup, in config.js's own promotion form FIRST (`ADMIN_PASSWORD_${TEST_ENV}`
-  // upper-cased) — the vcptcore-suffix forms below only ever produce STABLE/REGRESSION, so a plain
-  // `vcptcore` used to strip to "" and silently fall through to the generic ADMIN_PASSWORD (wrong
-  // account → no admin token → --verify's live column reads "unavailable" instead of the version).
+  // Per-env secret lookup, in config.js's own order: a `.env.local` pin in its promotion form FIRST
+  // (`ADMIN_PASSWORD_${TEST_ENV}` upper-cased), then the env's own password file. Without that file a
+  // machine that keeps env passwords only there fell through to `Password1`; without the promotion
+  // form a plain `vcptcore` stripped to "" in the suffix forms below (they only ever produce
+  // STABLE/REGRESSION) and fell through to the generic ADMIN_PASSWORD. Either way: wrong account →
+  // no admin token → --verify's live column reads "unavailable" instead of the version.
   const envKey = env.toUpperCase().replace(/[^A-Z0-9]/g, '_');
   const suffix = env.replace(/^vcptcore[_-]?/, '').replace(/[^a-z0-9]/gi, '').toUpperCase();
   const password = passwordOverride
     || local[`ADMIN_PASSWORD_${envKey}`]
+    || readEnvFile(envSecretsPath(env)).ADMIN_PASSWORD
     || local[`ADMIN_PASSWORD_VCPTCORE_${suffix}`] || local[`ADMIN_PASSWORD_${suffix}`]
     || local.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || 'Password1';
   return {

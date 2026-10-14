@@ -77,8 +77,9 @@ npm run deploy:pr:apply -- <ticket-key> --env=vcst      # a human reviews + merg
 Both QA envs are `BRANCH_MAP` entries, not convention: env name ≠ branch name for either. A new env
 whose branch differs from its name needs a `BRANCH_MAP` row or a `DEPLOY_BRANCH` in its `.env.<env>`.
 
-`--verify`'s live column needs the env's admin password. It is read in `config.js`'s own promotion
-form first — `ADMIN_PASSWORD_<ENV>` (e.g. `ADMIN_PASSWORD_VCPTCORE`) — then the
+`--verify`'s live column needs the env's admin password. It is read in `config.js`'s own order: a
+`.env.local` pin in the promotion form first — `ADMIN_PASSWORD_<ENV>` (e.g. `ADMIN_PASSWORD_VCPTCORE`) —
+then `ADMIN_PASSWORD` from the env's own password file `.env.playwright.<env>`, then the
 `ADMIN_PASSWORD_VCPTCORE_<STABLE|REGRESSION>` forms, then generic `ADMIN_PASSWORD`. A missing
 per-env password degrades `--verify` to branch-pin-only (`live` reads `?`), it never fails the run.
 

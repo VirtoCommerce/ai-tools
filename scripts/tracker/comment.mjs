@@ -35,7 +35,8 @@
 // Ledger: .tracker-comments.json (gitignored) maps ticket -> {comment_id, run_id, …}.
 // It is what makes the rule mechanical instead of a judgment call, and it is what
 // the PreToolUse hook reads. It is also mirrored into
-// reports/tickets/*/<TICKET>/summary.json as `tracker.comment_id` when that file exists.
+// reports/tickets/*/<TICKET>/<env>/summary.json (or a pre-env-level <TICKET>/summary.json)
+// as `tracker.comment_id` when that file exists.
 
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from "node:fs";
@@ -92,13 +93,17 @@ const writeLedger = (l) => writeFileSync(LEDGER, JSON.stringify(l, null, 2) + "\
 /** A "run" is a Claude Code session when we have one, else an explicit --run-id. */
 const runId = (a) => a.runId ?? sessionRunId();
 
-/** Mirror the id into the ticket's summary.json when one exists (best effort). */
+/** Mirror the id into the ticket's summary.json when one exists (best effort): the newest in this
+ *  env's run folder (`<Sprint>/<TICKET>/<env>/`), else the newest from before the env level
+ *  (`<Sprint>/<TICKET>/`). TEST_ENV is the one config.js resolved for the Jira call before this. */
 function mirrorToSummary(ticket, commentId) {
   const base = resolve(ROOT, "reports/tickets");
   if (!existsSync(base)) return null;
-  for (const sprint of readdirSync(base)) {
-    const f = join(base, sprint, ticket, "summary.json");
-    if (!existsSync(f)) continue;
+  const sprints = readdirSync(base);
+  const newest = (files) => files.filter((f) => existsSync(f)).sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs);
+  const env = process.env.TEST_ENV;
+  const own = env ? newest(sprints.map((sprint) => join(base, sprint, ticket, env, "summary.json"))) : [];
+  for (const f of own.length ? own : newest(sprints.map((sprint) => join(base, sprint, ticket, "summary.json")))) {
     try {
       const j = JSON.parse(readFileSync(f, "utf8"));
       j.tracker = { ...(j.tracker ?? {}), comment_id: String(commentId) };

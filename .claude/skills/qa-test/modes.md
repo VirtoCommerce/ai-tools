@@ -160,7 +160,7 @@ build probe, because the transition gate below is evaluated against the probed b
    *that case's assertion*, not the bug's own STR. Dispatch them **concurrently inside the max-3 browser
    cap**, on distinct lanes — any of the three, firefox included since 2026-09-08
    ([`.claude/rules/agents.md`](../../rules/agents.md) §Parallel Execution). Each writes its own category-6 artifacts under
-   `reports/tickets/<Sprint>/<BUG-KEY>/`, so the round's per-bug evidence is a file rather than a claim.
+   `reports/tickets/<Sprint>/<BUG-KEY>/<env>/`, so the round's per-bug evidence is a file rather than a claim.
 4. **Then — and only then — re-run the round's failed scope**: C1 / the failed checklist items (item 3 of
    the enumeration above). A bug just verified VERIFIED does **not** drop its cases from C1: verify-fix
    proves the STR, and C1 is what produces the canonical `RUN_ID` a later promotion refuses to work

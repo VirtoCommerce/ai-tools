@@ -234,7 +234,7 @@ BLOCKED ❌ → escalate to qa-lead
 2. **Decompose into layers** — Which layers apply? (API, GraphQL, Admin, Storefront, E2E). Record in test plan
 3. **Explore per layer (MANDATORY)** — Run `/qa-sbtm <feature>` first to surface unknown unknowns before writing test cases. Then explore per layer: Storefront labels, Admin blades, API schemas, GraphQL operations (see UI Exploration Protocol above). Use `/qa-api ref <module>` to get exact mutation/query signatures before writing test steps
 4. **Apply test design techniques (MANDATORY)** — Run `/qa-test-design <feature>` to systematically derive test conditions before writing cases. **The techniques serve the four Mental Model questions — they don't replace them.** Use them to operationalize "how do we break this?" and "what wasn't considered?": pairwise for toggles/flags, decision tables for business rules, state transitions for lifecycles, **error guessing for "what if X breaks?" gaps the spec missed**, BVA for numeric edges. Produces structured test conditions that feed directly into step 6. Skip this step only for trivial bug-fix verifications with < 3 test cases.
-5. **Create test plan** — Save to `reports/tickets/SprintXX-XX/VCST-XXXX/test-plan.md` with **Layer Coverage Matrix**:
+5. **Create test plan** — Write `reports/tickets/<Sprint>/<TICKET>/<env>/test-plan.md` with **Layer Coverage Matrix**:
    ```
    | Layer | Applicable? | # Cases | Assigned Agent | Target Suite |
    |-------|-------------|---------|---------------|-------------|

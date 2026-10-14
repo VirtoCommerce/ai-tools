@@ -43,11 +43,12 @@ behind every step, the rationalization table and the red flags are in
    both runs probed the deployed modules) and MCP availability, and runs its own remediation loop. A `not-deployed:*`
    row is BLOCKED-on-deploy, never a FAIL. **No `--expect` here:** the PRs are found in Stage 1, where
    `/ticket-context` asks the same core per PR.
-3. **Prior artifacts are inputs.** For this ticket, glob `reports/tickets/*/<TICKET>/`,
+3. **Prior artifacts are inputs.** For this ticket, glob `reports/tickets/*/<TICKET>/` (one `<env>/` subfolder per env; a run before
+   2026-10-05 sits in `<TICKET>/` itself),
    `reports/ba/test-models/<TICKET>-*` and `reports/bugs/**`. A prior model is amended, never forked.
    Prior bugs are the dedupe baseline `qa-bug` checks against. A prior run on a **different build**
    supplies context, never results.
-   **A prior `summary.json` on the SAME build** is handled before anything runs:
+   **A prior `summary.json` on the SAME build** (this env's folder) is handled before anything runs:
    - Show its verdict, date and tracker comment id.
    - Ask once whether to re-run. A re-run overwrites that folder's files, so if they are uncommitted,
      ask the user to commit them first.
@@ -78,7 +79,7 @@ Full briefs, merge rules and the context bundle:
      **without** build step 10; then copy the map signals into the run context
      ([`context-wave.md`](../skills/qa-test-fast/context-wave.md) §Wave 2)
 4. **Wave 3.** Run `/qa-checklist <TICKET> --from-model --mind-map <slug>` and write the result to
-   `reports/tickets/{SPRINT}/<TICKET>/testing-checklist.md`.
+   `reports/tickets/{SPRINT}/<TICKET>/<env>/testing-checklist.md`.
 5. **Stage gate.** Every model gate clause is `PASS`/`FIXED`. Every in-scope scenario row and node is
    either an item or an omission line. Every item has a Data cell.
 

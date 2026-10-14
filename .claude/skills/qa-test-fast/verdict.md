@@ -61,7 +61,7 @@ The vocabulary and the decision rules are [`../qa-test/close-out.md`](../qa-test
 checklist's AC items. A `Low` finding never makes a FAIL, and an accessibility finding never blocks a
 functional ticket.
 
-## Files — `reports/tickets/{SPRINT}/<TICKET>/`
+## Files — `reports/tickets/{SPRINT}/<TICKET>/<env>/`
 
 - **`summary.json`** — keys come only from
   [`../../templates/qa-test-summary.schema.json`](../../templates/qa-test-summary.schema.json):

@@ -137,6 +137,9 @@ append, one `suites:sync`, no verifier beside its own doer, no two suites on one
    (the Δ vs `deployed`: `.behind[]` ← `facts.ledger.releasedNotDeployed[]`, `.breaking[]` ← `facts.ledger.breaking[]`;
    `build.releasedThrough` is `UNKNOWN` when `facts.ledger` or its `releasedNotDeployed` is — never an empty or full `behind[]`). `{SPRINT}` is the `sprint` fact; if it
    is null, create `reports/tickets/<sprint>/` once the sprint name is known (the `sprint` row's remedy).
+   The run's own folder is `reports/tickets/{SPRINT}/<ticket-key>/<env>/`, `<env>` being the `env` fact — the
+   resolved `TEST_ENV` (reports-policy §1); the duplicate check is per env, so the same ticket on another env is a
+   parallel run, not a duplicate.
 2b–2g. **Derive the SIX PRE-FLIGHT AXES — one mechanism, six instances.** Pure computation over
     what wave A returned; no operator input. Single source of truth for the contract they share and the
     ways they differ: [`skills/qa-test/axes.md`](axes.md). **Cite it; do not restate it.**

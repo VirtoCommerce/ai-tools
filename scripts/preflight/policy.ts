@@ -74,7 +74,7 @@ function storefrontRemedy(reason: string, env: string): { who: Who; do: string }
   return { who: "me", do: "wait and re-run" };
 }
 
-export function findDuplicate(root: string, f: ChangeFor, opts: { ticket?: string; domain?: string; now: Date }): Duplicate | null {
+export function findDuplicate(root: string, f: ChangeFor, opts: { ticket?: string; domain?: string; env?: string; now: Date }): Duplicate | null {
   const windowMin = DUP_WINDOW_MIN[f];
   if (windowMin === null) return null;
   const candidates: string[] = [];
@@ -83,8 +83,11 @@ export function findDuplicate(root: string, f: ChangeFor, opts: { ticket?: strin
     if (existsSync(base)) {
       try {
         for (const sprint of readdirSync(base)) {
-          const p = join(base, sprint, opts.ticket, "summary.json");
-          if (existsSync(p)) candidates.push(p);
+          // This env's folder <TICKET>/<env>/ (reports-policy §1), and a pre-2026-10-05 run's <TICKET>/ itself.
+          // Another env's folder is a parallel run, not a duplicate.
+          const ticketDir = join(base, sprint, opts.ticket);
+          for (const p of [...(opts.env ? [join(ticketDir, opts.env, "summary.json")] : []), join(ticketDir, "summary.json")])
+            if (existsSync(p)) candidates.push(p);
         }
       } catch { /* unreadable dir ⇒ skip */ }
     }

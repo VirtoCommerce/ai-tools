@@ -43,7 +43,7 @@ What the script does:
 
 Package location (matches `output-paths.md`):
 - `--sprint=<S>` → `tests/<S>/<TICKET>/evidence-<UTCstamp>/`
-- otherwise → `reports/tickets/<TICKET>/evidence-<UTCstamp>/` (ad-hoc, no sprint context)
+- otherwise → `reports/tickets/<TICKET>/<env>/evidence-<UTCstamp>/` (ad-hoc, no sprint context)
 
 ---
 
