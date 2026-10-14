@@ -206,7 +206,8 @@ export function reminderText(loops, { contract = CONTRACT } = {}) {
   const lines = [`kb reminder (not a failure): ${loops.length} question(s) this session left open in the knowledge base -- no answer and nothing written back, or a list never closed:`];
   for (const l of loops.slice(0, LISTED)) {
     if (l.why === 'unresolved' && l.inherited) {
-      lines.push(`- "${clip(l.q)}" -- a SUBAGENT's list${l.shown?.length ? ` (${l.shown.join(', ')})` : ''}: kb_show <id> with ask ${l.at} only if its report names the entry it relied on; otherwise leave it open`);
+      const whose = l.inherited === 'unknown' ? 'a list this session cannot attribute' : "a SUBAGENT's list";
+      lines.push(`- "${clip(l.q)}" -- ${whose}${l.shown?.length ? ` (${l.shown.join(', ')})` : ''}: kb_show <id> with ask ${l.at} only if a report or your own work names the entry it relied on; otherwise leave it open`);
     } else {
       lines.push(l.why === 'unresolved'
         ? `- "${clip(l.q)}" -- a list was shown and never closed: kb_show <id> with ask ${l.at}, or kb_none with ask ${l.at}`
@@ -220,7 +221,7 @@ export function reminderText(loops, { contract = CONTRACT } = {}) {
     lines.push('Close each list with the entry you relied on (kb_show) or kb_none -- even if you already wrote about it.');
   }
   if (loops.some((l) => l.why === 'unresolved' && l.inherited)) {
-    lines.push("Never kb_none a subagent's list: you did not judge it, and an open list is read as unclosed, not as a gap.");
+    lines.push("Never kb_none a list you did not judge: an open list is read as unclosed, not as a gap.");
   }
   if (loops.some((l) => l.why !== 'unresolved')) {
     lines.push(`If you or a subagent established a question with no answer -- live, or by reading code (method "source") -- kb_capture it now (contract: ${contract}). `

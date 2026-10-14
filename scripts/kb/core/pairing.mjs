@@ -4,8 +4,10 @@
 import { anchorProblems, isSingleSegmentPath, normalizeAnchor } from './coordinates.mjs';
 import { MIN_RELATED_WORDS, tokenize } from './rank.mjs';
 
-/** A character that can CONTINUE a route or a dotted coordinate -- so a match may not stop before it. */
-const CONTINUES = /[a-z0-9/_\-?=&{}%.]/;
+/** A character that ALWAYS continues a route -- a match may not stop before it. */
+const ROUTE = /[a-z0-9/_\-{}%]/;
+/** Characters that continue a route only when a route character follows: `?scope=`, `.json`, `&x=`. */
+const JOINERS = /[?.&=]/;
 
 /**
  * One trailing path segment that only IDENTIFIES a record of the route: a `{param}` placeholder, a
@@ -15,30 +17,22 @@ const CONTINUES = /[a-z0-9/_\-?=&{}%.]/;
 // The GUID alternative comes before `\d+`: a GUID can start with digits, and `\d+` would stop at its first letter.
 const ID_SEGMENT = /^\/(\{[^}/]*\}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|\d+)/;
 
-/** Does the match of a coordinate end here -- at the end, at a sentence stop, or at a non-route character? */
+/**
+ * Does the match of a coordinate end here? At the end, at a non-route character, or at a joiner that
+ * nothing route-like follows: the `?` that ends a question and the `.` that ends a sentence are ends,
+ * the `?` of `?scope=organization` and the `.` of `.json` are not (VCST-6341 review: kb questions end
+ * in `?`, so treating every `?` as a query string unpaired the commonest question shape there is).
+ */
 function endsAt(after) {
   if (!after) return true;
-  if (after[0] === '.' && !CONTINUES.test(after[1] ?? '')) return true;
-  return !CONTINUES.test(after[0]);
+  if (ROUTE.test(after[0])) return false;
+  return !(JOINERS.test(after[0]) && /[a-z0-9_{]/.test(after[1] ?? ''));
 }
 
-/**
- * Does `question` name the (lowercased, normalised) coordinate `coord` as a whole token?
- *
- * Every occurrence is tried, not only the first: `/api/carts/merge` must still be found in a
- * question that mentions `/api/carts/merge/preview` earlier and `/api/carts/merge` later. A
- * trailing `.` counts as an end only when nothing coordinate-like follows it -- the full stop of a
- * sentence, not `/api/x.json`.
- *
- * KEPT IN STEP WITH `rank.mjs` `anchorHit` on record routes: a coordinate followed by one ID segment
- * (`ID_SEGMENT`) is still named, and a coordinate stored WITH a `{param}` is also named by its stem --
- * `GET /api/members/{id}` by a question about `/api/members`. Only a query string or a further named
- * segment ends the match, which is the `/account/returns?scope=organization` case this exists for.
- */
-export function namesCoordinate(question, coord) {
-  const q = String(question ?? '').toLowerCase();
-  const c = String(coord ?? '').toLowerCase();
-  if (!c) return false;
+/** A question with any scheme://host removed, so `https://host/api/members/1` reads as `/api/members/1`. */
+const withoutHosts = (q) => q.replace(/[a-z][a-z0-9+.-]*:\/\/[^\s/]+/g, ' ');
+
+function namesExactly(q, c) {
   for (let i = q.indexOf(c); i !== -1; i = q.indexOf(c, i + 1)) {
     const before = i === 0 ? '' : q[i - 1];
     if (before && /[a-z0-9/_\-.]/.test(before)) continue;
@@ -47,8 +41,49 @@ export function namesCoordinate(question, coord) {
     const id = ID_SEGMENT.exec(after);
     if (id && endsAt(after.slice(id[0].length))) return true;
   }
-  const stem = c.replace(/\/\{[^}]*\}.*$/, '');
-  return stem !== c && /\/[^/\s]+\/[^/\s]+/.test(stem) && namesCoordinate(q, stem);
+  return false;
+}
+
+/**
+ * Does `question` name the (lowercased, normalised) coordinate `coord` as a whole token?
+ *
+ * Every occurrence is tried, not only the first: `/api/carts/merge` must still be found in a
+ * question that mentions `/api/carts/merge/preview` earlier and `/api/carts/merge` later. A full
+ * URL counts as its path (`withoutHosts`).
+ *
+ * KEPT IN STEP WITH `rank.mjs` `anchorHit` on record routes: a verb-prefixed coordinate is also named
+ * by its path alone (a question says "why does /api/carts return", not "POST /api/carts"); a
+ * coordinate followed by one ID segment (`ID_SEGMENT`) is still named; and a coordinate stored WITH a
+ * `{param}` is also named by its stem -- `GET /api/members/{id}` by a question about `/api/members`.
+ * Only a query string or a further named segment ends the match, which is the
+ * `/account/returns?scope=organization` case this exists for.
+ */
+export function namesCoordinate(question, coord) {
+  const q = withoutHosts(String(question ?? '').toLowerCase());
+  const c = String(coord ?? '').toLowerCase();
+  if (!c) return false;
+  const path = /^[a-z]+ (\/.+)$/.exec(c)?.[1] ?? null;
+  const forms = [c, ...(path ? [path] : [])];
+  for (const f of [...forms]) {
+    const stem = f.replace(/\/\{[^}]*\}.*$/, '');
+    // Never a one- or zero-segment stem: `/api` would name every REST question (anchorHit's own guard).
+    if (stem !== f && /\/[^/\s]+\/[^/\s]+/.test(stem)) forms.push(stem);
+  }
+  return forms.some((f) => namesExactly(q, f));
+}
+
+/**
+ * What one ask and one capture share: the words, and whether the ask names one of the capture's
+ * coordinates -- as a whole (`named`) or only as a substring (`prefix`, the pre-VCST-6341 test).
+ * ONE measurement for `askAbout` and `pairedOnlyBySubstring`, so the two cannot drift apart.
+ */
+function relation(question, mine, coords) {
+  const q = String(question ?? '');
+  return {
+    shared: new Set(tokenize(q).filter((t) => mine.has(t))).size,
+    named: coords.some((c) => namesCoordinate(q, c)),
+    prefix: coords.some((c) => q.toLowerCase().includes(c)),
+  };
 }
 
 /**
@@ -98,9 +133,7 @@ export function askAbout(asks, { text, anchors = [] }) {
   const coords = pairingCoords(anchors);
   let best = null;
   for (const a of asks) {
-    const q = String(a.q ?? '');
-    const shared = new Set(tokenize(q).filter((t) => mine.has(t))).size;
-    const named = coords.some((c) => namesCoordinate(q, c));
+    const { shared, named } = relation(a.q, mine, coords);
     if (!named && shared < MIN_RELATED_WORDS) continue;
     const score = (named ? 1_000 : 0) + shared;
     if (!best || score > best.score || (score === best.score && String(a.at) > best.at)) best = { score, at: String(a.at) };
@@ -134,10 +167,6 @@ function pairingCoords(anchors) {
  * shared words to pair on their own -- and nothing else.
  */
 export function pairedOnlyBySubstring(question, { text, anchors = [] }) {
-  const q = String(question ?? '');
-  const coords = pairingCoords(anchors);
-  const byPrefix = coords.some((c) => q.toLowerCase().includes(c));
-  if (!byPrefix || coords.some((c) => namesCoordinate(q, c))) return false;
-  const mine = new Set(tokenize(text));
-  return new Set(tokenize(q).filter((t) => mine.has(t))).size < MIN_RELATED_WORDS;
+  const { shared, named, prefix } = relation(question, new Set(tokenize(text)), pairingCoords(anchors));
+  return prefix && !named && shared < MIN_RELATED_WORDS;
 }

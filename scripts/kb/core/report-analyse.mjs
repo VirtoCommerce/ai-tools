@@ -285,7 +285,10 @@ export function nearMisses(lines, idx) {
       if (![...shown].some((id) => idx.has(id))) { shownNotInIndex += 1; continue; }
       const { byId, namespaces } = indexRows();
       const rows = [...shown].map((id) => byId.get(id)).filter(Boolean);
-      const [best] = scoreRows(String(l.q ?? ''), rows, { namespaces });
+      // The candidate that covered MOST of the question, not the best-scored: the panel's review band is
+      // a coverage band, and an agent-rejected list's error bar is its closest candidate by that measure.
+      const best = scoreRows(String(l.q ?? ''), rows, { namespaces })
+        .reduce((b, h) => (!b || h.coverage > b.coverage ? h : b), null);
       if (best) {
         nm = { id: best.row.id, score: best.score, coverage: Math.round(best.coverage * 100) / 100 };
         rejectedBy = 'agent';

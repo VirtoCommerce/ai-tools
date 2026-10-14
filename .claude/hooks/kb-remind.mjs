@@ -29,10 +29,15 @@
  * CLI ask by the shell call that ran it -- found with `caller.mjs` `kbShellCalls` / `carries`, the same
  * join the push uses to attribute CLI lines. The main thread takes its own asks, any ask NO transcript
  * holds (a plain terminal, an unreadable path), and asks held only by subagents that are FINISHED:
- * their last tool call was `SubagentHandback` (the report is delivered)
- * and they have been quiet for `HANDBACK_GRACE_MS`, or their transcript has been idle for
- * `SUBAGENT_IDLE_MS` with no tool call still open. Such a list reaches the main thread as INHERITED:
- * it is asked to close it only by a pick the subagent's report supports, never by `kb_none`. One still
+ * their last tool call was `SubagentHandback` (the report is delivered), or their transcript has been
+ * idle for `SUBAGENT_IDLE_MS` with no tool call still open. NO GRACE PERIOD after a handback: the main
+ * thread often stops seconds after one, and if that is the session's last stop a waited-out list is
+ * never named (VCST-6341 review). Naming one early is harmless, because such a list reaches the main
+ * thread as INHERITED and is closed only by a pick the subagent's report supports, never by `kb_none`
+ * -- an interim report that is followed by more work costs, at worst, a reminder the main thread
+ * leaves alone. With no `transcript_path` at all nothing can be attributed, so every list is treated
+ * as inherited (owner unknown): offering `kb_none` on a list the main thread may never have seen is
+ * the blind closing this hook must not invite. One still
  * inside a long tool call is busy, however quiet its transcript, and keeps its ask -- until that call's
  * own timeout (30 min when it set none) has passed, so a subagent killed mid-call is not deferred for
  * long.
@@ -49,10 +54,13 @@
  *      up to `LISTED` new asks, so a stop can block at most once per `LISTED` open asks, and an append
  *      that fails prints nothing.
  *   2. `stop_hook_active` (set by the harness while a stop hook already made Claude continue) does NOT
- *      silence it (VCST-6341). It used to, and that broke the reminder's own promise: the reason names
- *      `LISTED` asks and says the rest come "at your next stop", but the next stop is the continuation
- *      this block caused, so it was silent. Guard 1 already makes the continuation safe, so the
- *      rest are now raised there, five at a time.
+ *      silence the main thread's OWN lists (VCST-6341). It used to, and that broke the reminder's own
+ *      promise: the reason names `LISTED` asks and says the rest come "at your next stop", but the next
+ *      stop is the continuation this block caused, so it was silent. Guard 1 makes the continuation
+ *      safe, so the rest of its own lists are raised there, five at a time. INHERITED lists are raised
+ *      only at a fresh stop, five per stop: the main thread can close few of them (only what a report
+ *      names), and chaining a block per five of the 84 a regression session left would trap it for
+ *      seventeen rounds of "leave it open".
  *   3. Off switches: `KB_ENABLED=0` (the base is off on this machine), `KB_REMIND=0` (this hook only),
  *      and `KB_SYNTHETIC=1`: a calibration or bench run must not take an extra step it did not ask for.
  *
@@ -73,9 +81,6 @@ import { BACKGROUND_DEFAULT_MS, carries, cliKey, kbShellCalls } from '../../scri
 const KEEP_DAYS = 14;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const SUBAGENT_IDLE_MS = 10 * 60 * 1000;
-// `SubagentHandback` does not stop its caller ("Report delivered to your caller."), so a subagent that
-// handed back an interim report could still be about to pick: a short quiet period guards that window.
-const HANDBACK_GRACE_MS = 30 * 1000;
 const TAIL_BYTES = 512 * 1024;
 
 const ageOf = (path, now) => { try { return now - statSync(path).mtimeMs; } catch { return Infinity; } };
@@ -95,27 +100,33 @@ function readTail(path) {
 }
 
 /**
- * Is the agent of this transcript still at work? A `tool_use` with no `tool_result` yet -- a subagent
- * inside one long tool call writes nothing, so age alone cannot say it finished. BUSY EXPIRES: a
- * subagent killed mid-call keeps its dangling `tool_use` forever, so a call counts as open only for its
- * own `timeout`, or `BACKGROUND_DEFAULT_MS` (30 min) when it set none (PR #400 review).
+ * One pass over a transcript's tool calls: is its agent still at work, and did it hand its report back?
+ *
+ * BUSY: a `tool_use` with no `tool_result` yet -- a subagent inside one long tool call writes nothing,
+ * so age alone cannot say it finished. BUSY EXPIRES: a subagent killed mid-call keeps its dangling
+ * `tool_use` forever, so a call counts as open only for its own `timeout`, or `BACKGROUND_DEFAULT_MS`
+ * (30 min) when it set none (PR #400 review).
+ *
+ * HANDED BACK: its LAST tool call is `SubagentHandback`, which is how a subagent ends (VCST-6341). A
+ * later tool call -- the parent resumed it -- makes it live again.
  */
-function busyIn(text, age) {
-  if (text === null) return false;
+function toolState(text, age) {
+  if (text === null) return { busy: false, handedBack: false };
   const used = new Map();
   const answered = new Set();
+  let last = null;
   for (const raw of text.split('\n')) {
     if (!raw.includes('"tool_use"') && !raw.includes('"tool_result"')) continue;
     let rec;
     try { rec = JSON.parse(raw); } catch { continue; }
     for (const c of Array.isArray(rec?.message?.content) ? rec.message.content : []) {
-      if (c?.type === 'tool_use' && c.id) used.set(c.id, Number(c.input?.timeout));
+      if (c?.type === 'tool_use' && c.id) { used.set(c.id, Number(c.input?.timeout)); last = c.name ?? null; }
       if (c?.type === 'tool_result' && c.tool_use_id) answered.add(c.tool_use_id);
     }
   }
   const open = [...used].filter(([id]) => !answered.has(id))
     .map(([, timeout]) => (Number.isFinite(timeout) && timeout > 0 ? timeout : BACKGROUND_DEFAULT_MS));
-  return open.length > 0 && age < Math.max(...open);
+  return { busy: open.length > 0 && age < Math.max(...open), handedBack: last === 'SubagentHandback' };
 }
 
 /** Delete journals idle for KEEP_DAYS, and a reminded file only once its journal is gone or idle too. */
@@ -148,34 +159,13 @@ function transcriptOf(path, now) {
   const text = readText(path);
   if (text === null) return null;
   const age = ageOf(path, now);
-  return { path, text, calls: kbShellCalls(text), busy: busyIn(text, age), handedBack: handedBack(text), age };
+  return { path, text, calls: kbShellCalls(text), ...toolState(text, age), age };
 }
 
 /** A known owner's state from its file's tail only -- no full read (PR #400 review). */
 function statusOf(path, now) {
   const age = ageOf(path, now);
-  const tail = readTail(path);
-  return { age, busy: busyIn(tail, age), handedBack: handedBack(tail) };
-}
-
-/**
- * Did this subagent hand its report back as its LAST tool call? `SubagentHandback` is how a subagent
- * ends (VCST-6341): after it, the transcript gains only its result and attachments, so the agent is
- * finished and need not be waited out for `SUBAGENT_IDLE_MS` -- only for `HANDBACK_GRACE_MS`, because
- * the tool does not stop its caller and an interim report can be followed by more work. A later tool
- * call (or the parent resuming it) makes it live again.
- */
-function handedBack(text) {
-  if (text === null) return false;
-  const rows = text.split('\n');
-  for (let i = rows.length - 1; i >= 0; i -= 1) {
-    if (!rows[i].includes('"tool_use"')) continue;
-    let rec;
-    try { rec = JSON.parse(rows[i]); } catch { continue; }
-    const uses = (Array.isArray(rec?.message?.content) ? rec.message.content : []).filter((c) => c?.type === 'tool_use');
-    if (uses.length) return uses.at(-1).name === 'SubagentHandback';
-  }
-  return false;
+  return { age, ...toolState(readTail(path), age) };
 }
 
 /**
@@ -214,20 +204,20 @@ function readOwners(path) {
 /**
  * The open asks the main thread's stop owns (see the header): what its transcript holds, plus every ask
  * no LIVE subagent holds. The main transcript being unreadable does not hand it the asks of subagents
- * still at work (PR #400 review); with no transcript path at all there is nothing to attribute by, and
- * it takes all.
+ * still at work (PR #400 review); with no transcript path at all there is nothing to attribute by: it
+ * takes all, each marked inherited with an unknown owner, so none is offered to `kb_none`.
  * A subagent holder found once is cached in `ownersPath`; later stops read only that file's tail.
  */
 function owned(loops, { transcript, ownersFile, now = Date.now() }) {
+  if (!transcript) return loops.map((l) => ({ ...l, inherited: 'unknown' }));
   const own = transcriptOf(transcript, now);
-  if (!transcript) return loops;
   const mine = [];
   const rest = [];
   for (const l of loops) (holds(own, l) ? mine : rest).push(l);
   if (!rest.length) return mine;
-  // FINISHED = handed its report back and quiet for HANDBACK_GRACE_MS, or idle for SUBAGENT_IDLE_MS --
-  // and no tool call still open. A holder that is busy keeps it.
-  const finished = (s) => !s.busy && ((s.handedBack && s.age > HANDBACK_GRACE_MS) || s.age > SUBAGENT_IDLE_MS);
+  // FINISHED = handed its report back, or idle for SUBAGENT_IDLE_MS -- and no tool call still open.
+  // A holder that is busy keeps it.
+  const finished = (s) => !s.busy && (s.handedBack || s.age > SUBAGENT_IDLE_MS);
   const owners = readOwners(ownersFile);
   const unknown = rest.filter((l) => !owners.has(l.at));
   const scanned = unknown.length ? subagentTranscripts(transcript, now) : [];
@@ -261,8 +251,8 @@ function main() {
   // Checked here as well as unregistered, so an older settings copy cannot mark asks nobody will see.
   if (payload?.hook_event_name === 'SubagentStop') return;
 
-  // The journal is keyed like the queue (`hookEnv` -> `sessionId`); SubagentStop carries the PARENT's
-  // session id, so a subagent reads the same journal as its main thread.
+  // The journal is keyed like the queue (`hookEnv` -> `sessionId`): every agent of the session -- the
+  // main thread and its subagents -- appends to one journal, which this stop reads whole.
   const env = hookEnv(process.env, payload);
   if (!hasSessionId(env)) return;
   const journal = readLoop(env);
@@ -273,9 +263,13 @@ function main() {
   // transcript this is every turn end (PR #400 review).
   const open = openLoops(journal, { reminded: raisedAts(path) });
   if (!open.length) return;
-  const loops = owned(open, {
+  const owners = owned(open, {
     transcript: payload?.transcript_path, ownersFile: ownersPath(env),
   });
+  // Own lists first. On a continuation (guard 2) only the main thread's own lists are raised; inherited
+  // ones wait for a fresh stop, so a session with many subagent lists is not blocked round after round.
+  const mine = owners.filter((l) => !l.inherited);
+  const loops = payload?.stop_hook_active ? mine : [...mine, ...owners.filter((l) => l.inherited)];
   if (!loops.length) return;
 
   // Only the questions the reminder NAMES are marked raised: the rest come back at the next stop, each
