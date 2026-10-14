@@ -29,8 +29,10 @@
  * CLI ask by the shell call that ran it -- found with `caller.mjs` `kbShellCalls` / `carries`, the same
  * join the push uses to attribute CLI lines. The main thread takes its own asks, any ask NO transcript
  * holds (a plain terminal, an unreadable path), and asks held only by subagents that are FINISHED:
- * their last tool call was `SubagentHandback` (the report is delivered; nothing more will happen there),
- * or their transcript has been idle for `SUBAGENT_IDLE_MS` with no tool call still open. One still
+ * their last tool call was `SubagentHandback` (the report is delivered)
+ * and they have been quiet for `HANDBACK_GRACE_MS`, or their transcript has been idle for
+ * `SUBAGENT_IDLE_MS` with no tool call still open. Such a list reaches the main thread as INHERITED:
+ * it is asked to close it only by a pick the subagent's report supports, never by `kb_none`. One still
  * inside a long tool call is busy, however quiet its transcript, and keeps its ask -- until that call's
  * own timeout (30 min when it set none) has passed, so a subagent killed mid-call is not deferred for
  * long.
@@ -71,6 +73,9 @@ import { BACKGROUND_DEFAULT_MS, carries, cliKey, kbShellCalls } from '../../scri
 const KEEP_DAYS = 14;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const SUBAGENT_IDLE_MS = 10 * 60 * 1000;
+// `SubagentHandback` does not stop its caller ("Report delivered to your caller."), so a subagent that
+// handed back an interim report could still be about to pick: a short quiet period guards that window.
+const HANDBACK_GRACE_MS = 30 * 1000;
 const TAIL_BYTES = 512 * 1024;
 
 const ageOf = (path, now) => { try { return now - statSync(path).mtimeMs; } catch { return Infinity; } };
@@ -156,8 +161,9 @@ function statusOf(path, now) {
 /**
  * Did this subagent hand its report back as its LAST tool call? `SubagentHandback` is how a subagent
  * ends (VCST-6341): after it, the transcript gains only its result and attachments, so the agent is
- * finished and need not be waited out for `SUBAGENT_IDLE_MS`. A later tool call (the parent resumed it)
- * makes it live again.
+ * finished and need not be waited out for `SUBAGENT_IDLE_MS` -- only for `HANDBACK_GRACE_MS`, because
+ * the tool does not stop its caller and an interim report can be followed by more work. A later tool
+ * call (or the parent resuming it) makes it live again.
  */
 function handedBack(text) {
   if (text === null) return false;
@@ -219,9 +225,9 @@ function owned(loops, { transcript, ownersFile, now = Date.now() }) {
   const rest = [];
   for (const l of loops) (holds(own, l) ? mine : rest).push(l);
   if (!rest.length) return mine;
-  // FINISHED = handed its report back, or idle for SUBAGENT_IDLE_MS -- and no tool call still open.
-  // A holder that is busy keeps it.
-  const finished = (s) => !s.busy && (s.handedBack || s.age > SUBAGENT_IDLE_MS);
+  // FINISHED = handed its report back and quiet for HANDBACK_GRACE_MS, or idle for SUBAGENT_IDLE_MS --
+  // and no tool call still open. A holder that is busy keeps it.
+  const finished = (s) => !s.busy && ((s.handedBack && s.age > HANDBACK_GRACE_MS) || s.age > SUBAGENT_IDLE_MS);
   const owners = readOwners(ownersFile);
   const unknown = rest.filter((l) => !owners.has(l.at));
   const scanned = unknown.length ? subagentTranscripts(transcript, now) : [];
@@ -236,7 +242,9 @@ function owned(loops, { transcript, ownersFile, now = Date.now() }) {
   const stateOf = (p) => { if (!state.has(p)) state.set(p, statusOf(p, now)); return state.get(p); };
   for (const l of rest) {
     const holders = owners.get(l.at) ?? [];
-    if (!holders.length || holders.every((p) => finished(stateOf(p)))) mine.push(l);
+    // A list a subagent held is INHERITED: the main thread did not judge it (`reminderText`).
+    if (!holders.length) mine.push(l);
+    else if (holders.every((p) => finished(stateOf(p)))) mine.push({ ...l, inherited: true });
   }
   return mine;
 }

@@ -410,9 +410,11 @@ export function composeLine(record, { env = process.env, who, run } = {}) {
 export const metaPath = (env, session = sessionId(env)) => join(queueDir(env), `${session}.meta.json`);
 /**
  * `<session>.reminded.ndjson` -- the asks `kb-remind` already raised, one `at` per line. ITS OWN FILE, and
- * APPEND-ONLY like the journal: a Stop and a SubagentStop (or two subagents) finishing together each
- * append their own lines, where a read-modify-write would let the last rename erase the other's
- * markers and raise an ask twice (PR #400 review).
+ * APPEND-ONLY like the journal: two stops of one session finishing together (parallel sessions on one
+ * key, or a stop racing its own continuation) each append their own lines, where a read-modify-write
+ * would let the last rename erase the other's markers and raise an ask twice (PR #400 review).
+ * `kb-remind` runs on the main thread's `Stop` only (VCST-6341): a `SubagentStop` block never reached
+ * the subagent, so it must not mark anything there.
  */
 export const remindedPath = (env, session = sessionId(env)) => join(queueDir(env), `${session}.reminded.ndjson`);
 /**

@@ -129,6 +129,7 @@ export function openLoops(journal, { reminded = [] } = {}) {
     out.push({
       at: a.at, q: String(a.q ?? ''), why: a.state === 'miss' || word.verdict === 'none' ? 'miss' : 'unresolved',
       ...(a.call ? { call: a.call } : {}),
+      ...(Array.isArray(a.shown) && a.shown.length ? { shown: a.shown.map(String) } : {}),
     });
   }
   return out;
@@ -191,21 +192,35 @@ const clip = (q) => (q.length > Q_MAX ? `${q.slice(0, Q_MAX).replace(/\s+\S*$/, 
  * occurred" in its UI (measured 2026-10-06, a live `claude -p` run: `hook_blocking_error`), and there
  * is no non-blocking way for a Stop hook to make the agent take one more step. The operator who opens
  * that notice reads this line first.
+ *
+ * A SUBAGENT'S LIST IS NOT THE MAIN THREAD'S TO REJECT (VCST-6341). Since `kb-remind` hands a finished
+ * subagent's open lists to the main thread (`inherited`), the main thread is asked about lists it never
+ * read. Inviting `kb_none` there turned a closure failure into a coverage miss -- and into a near-miss
+ * "rejected by the agent" that nobody judged. So an inherited list is closed ONLY by a pick the
+ * subagent's report supports (its candidates are named so the report can be matched), and is otherwise
+ * left open, which the report reads as `unclosed` -- the honest reading.
  */
 export function reminderText(loops, { contract = CONTRACT } = {}) {
   // An unclosed list is raised even after a write (VCST-6191), so the headline does not claim "nothing
   // was written back" for it: that holds for the misses only.
   const lines = [`kb reminder (not a failure): ${loops.length} question(s) this session left open in the knowledge base -- no answer and nothing written back, or a list never closed:`];
   for (const l of loops.slice(0, LISTED)) {
-    lines.push(l.why === 'unresolved'
-      ? `- "${clip(l.q)}" -- a list was shown and never closed: kb_show <id> with ask ${l.at}, or kb_none with ask ${l.at}`
-      : `- "${clip(l.q)}"`);
+    if (l.why === 'unresolved' && l.inherited) {
+      lines.push(`- "${clip(l.q)}" -- a SUBAGENT's list${l.shown?.length ? ` (${l.shown.join(', ')})` : ''}: kb_show <id> with ask ${l.at} only if its report names the entry it relied on; otherwise leave it open`);
+    } else {
+      lines.push(l.why === 'unresolved'
+        ? `- "${clip(l.q)}" -- a list was shown and never closed: kb_show <id> with ask ${l.at}, or kb_none with ask ${l.at}`
+        : `- "${clip(l.q)}"`);
+    }
   }
   if (loops.length > LISTED) lines.push(`- and ${loops.length - LISTED} more, named at your next stop`);
   // A list is closed by a choice, never by a write (VCST-6191): asking the agent to capture it again
   // would turn a list it already wrote about into a duplicate entry. The capture line is for misses.
-  if (loops.some((l) => l.why === 'unresolved')) {
+  if (loops.some((l) => l.why === 'unresolved' && !l.inherited)) {
     lines.push('Close each list with the entry you relied on (kb_show) or kb_none -- even if you already wrote about it.');
+  }
+  if (loops.some((l) => l.why === 'unresolved' && l.inherited)) {
+    lines.push("Never kb_none a subagent's list: you did not judge it, and an open list is read as unclosed, not as a gap.");
   }
   if (loops.some((l) => l.why !== 'unresolved')) {
     lines.push(`If you or a subagent established a question with no answer -- live, or by reading code (method "source") -- kb_capture it now (contract: ${contract}). `

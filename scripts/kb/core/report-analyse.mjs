@@ -19,6 +19,7 @@ import { lastWord, pointersByAsk } from './loop.mjs';
 import { queuedWrite } from './queue.mjs';
 import { canonicalStand } from './canonical.mjs';
 import { MIN_COVERAGE, MIN_WORDS, scoreRows } from './rank.mjs';
+import { namespaceRoots } from './coordinates.mjs';
 import { normalizeRow } from './index-load.mjs';
 import { pairedOnlyBySubstring } from './pairing.mjs';
 import { isLegacyProcessKey, lineTouches, lineWork, sessionKeyOf } from './reach.mjs';
@@ -259,13 +260,16 @@ export function nearMisses(lines, idx) {
   let withoutNearMiss = 0;
   let unclosed = 0;
   let shownNotInIndex = 0;
+  // Normalised once, and only when a verdict-ranker miss needs it; the namespace roots are computed
+  // over the WHOLE index once, so scoring the 1-3 shown rows gives the anchor hits the ranker saw.
   let catalog = null;
   const indexRows = () => {
     if (!catalog) {
-      catalog = [];
+      const byId = new Map();
       for (const raw of idx.byId.values()) {
-        try { catalog.push(normalizeRow(raw)); } catch { /* a malformed index row costs itself, not the panel */ }
+        try { const r = normalizeRow(raw); byId.set(r.id, r); } catch { /* a malformed index row costs itself, not the panel */ }
       }
+      catalog = { byId, namespaces: namespaceRoots([...byId.values()]) };
     }
     return catalog;
   };
@@ -279,7 +283,9 @@ export function nearMisses(lines, idx) {
     if (!nm && l.closedBy === 'none' && Array.isArray(l.shown) && l.shown.length) {
       const shown = new Set(l.shown.map(String));
       if (![...shown].some((id) => idx.has(id))) { shownNotInIndex += 1; continue; }
-      const best = scoreRows(String(l.q ?? ''), indexRows()).find((h) => shown.has(h.row.id));
+      const { byId, namespaces } = indexRows();
+      const rows = [...shown].map((id) => byId.get(id)).filter(Boolean);
+      const [best] = scoreRows(String(l.q ?? ''), rows, { namespaces });
       if (best) {
         nm = { id: best.row.id, score: best.score, coverage: Math.round(best.coverage * 100) / 100 };
         rejectedBy = 'agent';
@@ -941,7 +947,7 @@ export const NEEDS_READING = 'NEEDS READING';
  * with rows in the band is reported as NOT ENOUGH DATA *with the rows named*, never as a FAIL: a
  * FAIL there would be the script claiming a judgement it has no way to make.
  */
-export function verdict({ unhelpful: u, nearMisses: nm, loop }) {
+export function verdict({ unhelpful: u, nearMisses: nm, loop, misses: m = null }) {
   const rows = [];
 
   // 1 ── unhelpful-answer rate ≤ 15% (PLAN §11's trigger, reused).
@@ -998,7 +1004,7 @@ export function verdict({ unhelpful: u, nearMisses: nm, loop }) {
       detail = `${band} near-miss row(s) at coverage ≥ ${NEAR_MISS_REVIEW} — a human must read them and`
         + ' decide whether they were answerable. This script does not judge that'
         + `${byAgent ? `. ${byAgent} of them were shown and rejected by the agent (kb_none): read whether the candidate answered` : ''}`
-        + `${band > byAgent && band > 1 ? '. §15.3: one is a signal, two mean the floor is too high' : ''}.`;
+        + `${band - byAgent > 1 ? '. §15.3 (floor rows): one is a signal, two mean the floor is too high' : ''}.`;
     } else if (n < MIN_SAMPLE) {
       state = NO_DATA;
       detail = `no near-miss reached ${NEAR_MISS_REVIEW}, but only ${n} miss(es) carried a candidate at all`
@@ -1022,7 +1028,8 @@ export function verdict({ unhelpful: u, nearMisses: nm, loop }) {
   // 3 ── at least one capture following a miss, via `after` (PLAN §14.4, §15.3).
   {
     // Every resolved miss, unclosed lists included: `loop.afterMiss` counts captures after any of them.
-    const n = nm.missTotal + (nm.unclosed ?? 0);
+    // Counted by the misses panel, which owns the number; the near-miss panel's tally is a fallback.
+    const n = m ? m.total + (m.unclosed?.total ?? 0) : nm.missTotal + (nm.unclosed ?? 0);
     const hit = loop.afterMiss;
     let state;
     let detail;
@@ -1512,6 +1519,6 @@ export function analyse({ lines = [], rows = [], meta = {} } = {}) {
     panels,
     // The §15 gate, computed from the panels above rather than from the lines again — one
     // derivation, so a number in the verdict can never disagree with the panel it came from.
-    verdict: verdict({ unhelpful: panels.unhelpful, nearMisses: panels.nearMisses, loop: panels.loop }),
+    verdict: verdict({ unhelpful: panels.unhelpful, nearMisses: panels.nearMisses, loop: panels.loop, misses: panels.misses }),
   };
 }

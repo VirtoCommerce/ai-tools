@@ -8,12 +8,32 @@ import { MIN_RELATED_WORDS, tokenize } from './rank.mjs';
 const CONTINUES = /[a-z0-9/_\-?=&{}%.]/;
 
 /**
+ * One trailing path segment that only IDENTIFIES a record of the route: a `{param}` placeholder, a
+ * number, or a GUID. `/api/members/{id}` and `/api/members/123` name `/api/members`'s item, which is
+ * what an entry anchored on the route is about; `/api/members/search` or `?scope=` is another thing.
+ */
+// The GUID alternative comes before `\d+`: a GUID can start with digits, and `\d+` would stop at its first letter.
+const ID_SEGMENT = /^\/(\{[^}/]*\}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|\d+)/;
+
+/** Does the match of a coordinate end here -- at the end, at a sentence stop, or at a non-route character? */
+function endsAt(after) {
+  if (!after) return true;
+  if (after[0] === '.' && !CONTINUES.test(after[1] ?? '')) return true;
+  return !CONTINUES.test(after[0]);
+}
+
+/**
  * Does `question` name the (lowercased, normalised) coordinate `coord` as a whole token?
  *
  * Every occurrence is tried, not only the first: `/api/carts/merge` must still be found in a
  * question that mentions `/api/carts/merge/preview` earlier and `/api/carts/merge` later. A
  * trailing `.` counts as an end only when nothing coordinate-like follows it -- the full stop of a
  * sentence, not `/api/x.json`.
+ *
+ * KEPT IN STEP WITH `rank.mjs` `anchorHit` on record routes: a coordinate followed by one ID segment
+ * (`ID_SEGMENT`) is still named, and a coordinate stored WITH a `{param}` is also named by its stem --
+ * `GET /api/members/{id}` by a question about `/api/members`. Only a query string or a further named
+ * segment ends the match, which is the `/account/returns?scope=organization` case this exists for.
  */
 export function namesCoordinate(question, coord) {
   const q = String(question ?? '').toLowerCase();
@@ -23,11 +43,12 @@ export function namesCoordinate(question, coord) {
     const before = i === 0 ? '' : q[i - 1];
     if (before && /[a-z0-9/_\-.]/.test(before)) continue;
     const after = q.slice(i + c.length);
-    if (!after) return true;
-    if (after[0] === '.' && !CONTINUES.test(after[1] ?? '')) return true;
-    if (!CONTINUES.test(after[0])) return true;
+    if (endsAt(after)) return true;
+    const id = ID_SEGMENT.exec(after);
+    if (id && endsAt(after.slice(id[0].length))) return true;
   }
-  return false;
+  const stem = c.replace(/\/\{[^}]*\}.*$/, '');
+  return stem !== c && /\/[^/\s]+\/[^/\s]+/.test(stem) && namesCoordinate(q, stem);
 }
 
 /**
