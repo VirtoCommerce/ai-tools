@@ -14,8 +14,9 @@ const JOINERS = /[?.&=]/;
  * number, or a GUID. `/api/members/{id}` and `/api/members/123` name `/api/members`'s item, which is
  * what an entry anchored on the route is about; `/api/members/search` or `?scope=` is another thing.
  */
-// The GUID alternative comes before `\d+`: a GUID can start with digits, and `\d+` would stop at its first letter.
-const ID_SEGMENT = /^\/(\{[^}/]*\}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|\d+)/;
+// The GUID alternatives come before `\d+`: a GUID can start with digits, and `\d+` would stop at its
+// first letter. Virto writes most ids as 32 hex characters with no dashes, so that form is listed too.
+const ID_SEGMENT = /^\/(\{[^}/]*\}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9a-f]{32}|\d+)/;
 
 /**
  * Does the match of a coordinate end here? At the end, at a non-route character, or at a joiner that
@@ -25,8 +26,10 @@ const ID_SEGMENT = /^\/(\{[^}/]*\}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
  */
 function endsAt(after) {
   if (!after) return true;
-  // A trailing slash is the same route (`/account/returns/`), unless another segment follows it.
-  if (after[0] === '/' && !/[a-z0-9_{]/.test(after[1] ?? '')) return true;
+  // A trailing slash is the same route (`/account/returns/`) -- unless what follows the slash continues
+  // it: another segment, or a query string (`/account/returns/?scope=organization` is the case this
+  // file exists to refuse).
+  if (after[0] === '/' && after[1] !== '/') return endsAt(after.slice(1));
   if (ROUTE.test(after[0])) return false;
   return !(JOINERS.test(after[0]) && /[a-z0-9_{]/.test(after[1] ?? ''));
 }
@@ -39,7 +42,8 @@ const withoutHosts = (q) => q.replace(/[a-z][a-z0-9+.-]*:\/\/[^\s/]+/g, ' ');
  * bare host (`vcst-qa.example.com`, `localhost:5000`) or a stand variable (`$FRONT_URL`, `{BACK_URL}`)
  * -- the spellings agents actually paste. Anything else (`/v2/api/x`, `foo_api/x`) is a longer path.
  */
-const HOST_OR_VAR = /^(?:[a-z0-9-]+(?:\.[a-z0-9-]+)+(?::\d+)?|localhost(?::\d+)?|\$\{?[a-z_][a-z0-9_]*\}?|\{[a-z_][a-z0-9_]*\})$/;
+// `{{BACK_URL}}` is the repo's own variable spelling and `BACK_URL/` the bare one `normalizeAnchor` strips.
+const HOST_OR_VAR = /^(?:[a-z0-9-]+(?:\.[a-z0-9-]+)+(?::\d+)?|localhost(?::\d+)?|\$\{?[a-z_][a-z0-9_]*\}?|\{\{?[a-z_][a-z0-9_]*\}\}?|[a-z][a-z0-9_]*_url)$/;
 function routeStartsAt(q, i) {
   if (i === 0 || !/[a-z0-9/_\-.}]/.test(q[i - 1])) return true;
   const start = Math.max(q.lastIndexOf(' ', i - 1), q.lastIndexOf('(', i - 1), q.lastIndexOf('`', i - 1), q.lastIndexOf('"', i - 1)) + 1;
@@ -84,7 +88,9 @@ export function namesCoordinate(question, coord) {
   const path = /^[a-z]+ (\/.+)$/.exec(c)?.[1] ?? null;
   const forms = [c, ...(path ? [path] : [])];
   for (const f of [...forms]) {
-    const stem = f.replace(/\/\{[^}]*\}.*$/, '');
+    // Only a TRAILING `{param}`: `/api/members/{id}/addresses` is a sub-resource, and stripping from the
+    // first `{param}` on would let any question about `/api/members/123` name it.
+    const stem = f.replace(/\/\{[^}/]*\}$/, '');
     // Never a one- or zero-segment stem: `/api` would name every REST question (anchorHit's own guard).
     if (stem !== f && /\/[^/\s]+\/[^/\s]+/.test(stem)) forms.push(stem);
   }

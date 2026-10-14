@@ -297,7 +297,9 @@ export function nearMisses(lines, idx) {
       // a coverage band, and an agent-rejected list's error bar is its closest candidate by that measure.
       const best = scoreRows(String(l.q ?? ''), shownRows, { namespaces })
         .reduce((b, h) => (!b || h.coverage > b.coverage ? h : b), null);
-      if (best) {
+      // Zero coverage is "nothing near", not a near miss: counted with the misses that scored nothing,
+      // or it would lift the §15 row's n towards a PASS on rows that say nothing about the band.
+      if (best && best.coverage > 0) {
         nm = { id: best.row.id, score: best.score, coverage: Math.round(best.coverage * 100) / 100 };
         rejectedBy = 'agent';
       }
