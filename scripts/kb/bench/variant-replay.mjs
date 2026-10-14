@@ -12,6 +12,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { parseEntry } from '../core/frontmatter.mjs';
+import { canonicalBuild } from '../core/canonical.mjs';
 import { classifyDisagreement } from '../core/variant.mjs';
 import { rulesWith } from '../core/relevance.mjs';
 
@@ -20,13 +21,15 @@ const base = resolve(arg('--base') ?? '');
 const hist = JSON.parse(readFileSync(resolve(arg('--history') ?? ''), 'utf8'));
 const round = arg('--round');
 const RULES = rulesWith(arg('--swagger') ? JSON.parse(readFileSync(resolve(arg('--swagger')), 'utf8')) : null);
-const builds = { ...hist.builds };
+const builds = Object.fromEntries(Object.entries(hist.builds ?? {}).map(([pin, b]) => [pin, canonicalBuild(b)]));
 for (const f of (() => { try { return readdirSync(join(base, 'builds')); } catch { return []; } })()) {
-  builds[f.replace(/\.json$/, '')] = JSON.parse(readFileSync(join(base, 'builds', f), 'utf8'));
+  builds[f.replace(/\.json$/, '')] = canonicalBuild(JSON.parse(readFileSync(join(base, 'builds', f), 'utf8')));
 }
 const buildOf = new Map(hist.items.filter((i) => i.build).map((i) => [`${i.id}#${i.index}`, i.build]));
 
-const EXPECT = { 'version-scoped': 'variant', 'conditions-scoped': 'variant', 'claim-amended': 'dispute', 'dispute-wrong': 'dispute' };
+// `defect-fixed` (VCST-6317): the behaviour changed between builds because a bug was fixed -- a version
+// difference, like `version-scoped`.
+const EXPECT = { 'version-scoped': 'variant', 'conditions-scoped': 'variant', 'defect-fixed': 'variant', 'claim-amended': 'dispute', 'dispute-wrong': 'dispute' };
 const cases = [];
 for (const f of readdirSync(join(base, 'entries')).filter((n) => n.endsWith('.md'))) {
   const { data, body } = parseEntry(readFileSync(join(base, 'entries', f), 'utf8'), f);

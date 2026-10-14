@@ -95,6 +95,7 @@ Per dispute (per contradicting evidence item), one of:
 | Each side is right under its own setting / role / store / entity state | `conditions-scoped` | the body names the condition; a closed-vocabulary axis goes in `appliesTo` |
 | The entry holds two facts and the dispute is about the other one | `split` | split the entry (below); the dispute is resolved on the child it does not concern |
 | The entry holds on the conditions the dispute named; the dispute misread its observation | `dispute-wrong` | nothing in the claim; the resolution says what the dispute misread |
+| The entry describes a **defect** (docs or a `BL-*` rule say it should not happen) and the dispute saw it fixed; the source history names the fix | `defect-fixed` | nothing in the claim (it is how the bug shows itself on an unfixed build); `resolve --defect <ticket\|suspected> --fixed-in <Module>@<version>` writes the marker readers see (`kb-capture-contract.md` §Defects) |
 | Not established — a source unreachable, or the reproduction inconclusive | **no verdict** | the dispute stays OPEN; the PR says what is missing |
 
 **A soft dispute** (`contested` on the item, `DISPUTE (soft)` in the dossier) was made on a different build

@@ -72,10 +72,13 @@ const USAGE = `kb — the knowledge base (PLAN v1)
                         --claim "<the claim, in prose>" --deployment <stand, e.g. vcst_qa>
                         --anchor /company/members [--anchor ...] --scope surface=storefront-ui [--scope ...]
                         [--conditions "platform=<v>; setting:<Name>=<v>"]
+                        [--defect <VCST-1234 | suspected> [--fixed-in <Module>@<version>]]
                         [--topic "<...>"] [--dry-run]   --dry-run: check the payload, log and queue nothing
                         an anchor is a route, endpoint or GraphQL op, never a label or menu path;
                         contract: ${CONTRACT}
   npm run kb -- confirm KB-XXXXXXXX --deployment <stand, e.g. vcst_qa> [--note "<what you saw>"] [--conditions "<k=v; k=v>"] [--topic "<...>"]
+                        [--defect <VCST-1234 | suspected | none>] [--fixed-in <Module>@<version>]
+                        defect: the behaviour should NOT happen (docs / BL-* checked first); the claim is unchanged
   npm run kb -- dispute KB-XXXXXXXX --deployment <stand, e.g. vcst_qa> --saw "<what you saw instead>" [--conditions "<k=v; k=v>"] [--topic "<...>"]
                         conditions: optional, expected on a dispute -- the build and settings the behaviour may depend on
   npm run kb -- stat [--base <dir>]
@@ -268,6 +271,7 @@ async function main(argv) {
     const r = await capture({
       subject: args.flags.subject, question: args.flags.question, claim: args.flags.claim,
       deployment: args.flags.deployment, method: args.flags.method, conditions: args.flags.conditions,
+      defect: args.flags.defect, fixedIn: args.flags['fixed-in'],
       anchors: args.repeated.anchor, scope: args.repeated.scope,
     }, opened, { via: VIA, topic: args.flags.topic, dryRun: Boolean(args.flags['dry-run']), builds: liveBuild });
     if (json) out(JSON.stringify(r, null, 2));
@@ -284,7 +288,7 @@ async function main(argv) {
     const fn = verb === 'confirm' ? confirm : dispute;
     const r = await fn(args._[1], {
       deployment: args.flags.deployment, note: args.flags.note, saw: args.flags.saw, method: args.flags.method,
-      conditions: args.flags.conditions,
+      conditions: args.flags.conditions, defect: args.flags.defect, fixedIn: args.flags['fixed-in'],
     }, opened, { via: VIA, topic: args.flags.topic, builds: liveBuild });
     if (json) out(JSON.stringify(r, null, 2));
     else emit(evidenceLines(verb, r));
