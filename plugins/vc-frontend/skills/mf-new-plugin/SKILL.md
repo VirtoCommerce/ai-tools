@@ -15,8 +15,8 @@ The procedure is scenario **S1a** in vc-frontend: `client-app/core/federation/sc
 Read it from the checkout first. It is the source for every step below; this file adds only what an agent must do
 differently. Where they disagree, the checkout wins, and say so in the report.
 
-The skill stops for the user twice: after the preflight (step 1) and before it writes any module file (step 3).
-It never commits or pushes.
+The skill stops for the user at least twice: after the preflight (step 1) and before it writes any module file
+(step 3). It never commits or pushes.
 
 ## 1. Preflight
 
@@ -103,14 +103,15 @@ the check's lines can change between vc-frontend versions. The plugin is not shi
 
 Offer each; do only what the user wants.
 
-- **Local storefront:** S1a step 5. It needs a backend in `$HOST/.env.local`. It changes
-  `client-app/config/settings_data.json` in `$HOST`: restore it afterwards and confirm `git status` there is clean.
+- **Local storefront:** S1a step 5. It needs a backend in `$HOST/.env.local` and `module_federation_enabled: true`,
+  the default; a fork that turned it off is the user's to change. Before changing `.env.local`, copy it aside: git
+  cannot restore it. Afterwards put it back, and compare `git status` in `$HOST` with what it was before step 5.
 - **Package:** run the check with `--artifact <zip>` on the module's zip, from its CI or built the way CI does
   (📁 module repo `vc-build compress`, which needs the .NET SDK; the zip lands in `artifacts/`). ✅ the plugin sits
   at the zip root, not under `bin/` (S1a ⚠️ 1).
 - **Local platform:** if the user runs one, follow S6 → "On a local platform" with that zip: install, restart, then
   `--env <platform URL>` and the storefront from S2.2. ✅ the plugin's page renders with no override set. Restore
-  `settings_data.json` and `.env.local` in `$HOST` afterwards, as above.
+  `.env.local` in `$HOST` afterwards, as above.
 
 ## 6. Report
 
@@ -124,8 +125,10 @@ Offer each; do only what the user wants.
 
 ## Never
 
-1. Commit, push, or edit a file outside the module's `.csproj`, `module.manifest` and `.gitignore`.
+1. Commit, push, or edit a file outside the module's `.csproj`, `module.manifest` and `.gitignore`, except
+   `$HOST/.env.local` in step 5, restored afterwards.
 2. Lower a version, or write one the check did not print.
-3. Hand-edit `@vc-frontend/core` files, or anything under `$HOST` except the reverted local setting in step 5.
+3. Hand-edit `@vc-frontend/core` files, or anything else under `$HOST`. Never `git checkout` or `git restore` a file
+   there: it may hold the user's own work.
 4. Re-run `create:plugin` over an existing `StorefrontApp/`, or delete one without the user's yes. Only an
    untracked one left by an earlier run may go (step 1).
