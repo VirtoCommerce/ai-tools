@@ -3,7 +3,7 @@
 import { CAPS, readCapped, timedFetch, timeoutGap } from "./fetch.mjs";
 import { GapError, asGap, gap } from "./gap.mjs";
 
-export const BASE_FIELDS = Object.freeze(["summary", "description", "comment", "status", "issuetype", "labels", "components",
+export const BASE_FIELDS = Object.freeze(["summary", "description", "comment", "status", "issuetype", "priority", "labels", "components",
   "attachment", "issuelinks", "parent", "subtasks", "updated", "fixVersions"]);
 export const LINKED_FIELDS = Object.freeze(["summary", "description", "status", "issuetype", "updated", "resolution"]);
 

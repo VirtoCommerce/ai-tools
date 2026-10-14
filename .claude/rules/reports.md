@@ -15,7 +15,7 @@ A ticket is a shared inbox, not a work log. Rule, mechanism, amend recipe and th
 `critical-high/` · `medium/` · `low/`; `fixed/`/`closed/`/`rejected/` stay flat. The severity DECLARED IN THE REPORT is the source of truth and the folder mirrors it; a straddling grade files at the LOWER bucket; any reader walks the tree RECURSIVELY (`open/**/*.md`). Policy §1a.
 
 ## 2. Hard size caps (lines)
-Clean regression 30 · regression w/ failures 200 · UI/copy bug 80 · functional bug 120 · cross-layer bug 150 · BA 250 · release-note fragment 60 / aggregate 150 · ticket-doc comment 120 · monitoring 100 · per-ticket QA 120 · BL audit 100 · exploratory 80 · coverage 150 · perf 120 · test model 260 · testing checklist 160. Over the cap is a review failure. Policy §2.
+Clean regression 30 · regression w/ failures 200 · UI/copy bug 80 · functional bug 120 · cross-layer bug 150 · BA 250 · release-note fragment 60 / aggregate 150 · ticket-doc comment 120 · monitoring 100 · per-ticket QA 120 · BL audit 100 · exploratory 80 · coverage 150 · perf 120 · test model 260 · test strategy 120 per round · testing checklist 160. Over the cap is a review failure. Policy §2.
 
 ## 3. Required sections — policy §3.  ## 4. Cut bloat — policy §4.
 
