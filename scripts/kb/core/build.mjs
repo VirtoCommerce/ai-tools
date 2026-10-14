@@ -67,7 +67,13 @@ export async function liveBuild(stand, { env = process.env, root = REPO_ROOT, pr
     const cached = JSON.parse(await readFile(file, 'utf8'));
     // A build read is good for BUILD_TTL_MS, not the whole session: the MCP server lives for hours and a
     // stand redeployed meanwhile would keep stamping (and labelling) the build it ran before.
-    if (cached?.pin && cached?.snapshot && now() - new Date(cached.at) < BUILD_TTL_MS) return cached;
+    // Re-canonicalised on read: a snapshot cached by an older client carries the theme's artifact name
+    // (`vc-theme-b2b-vue-2.60.0-…`), and its pin was hashed over it -- both are re-derived, so the stamp and
+    // its `builds/<pin>.json` stay content-addressed in the one spelling.
+    if (cached?.pin && cached?.snapshot && now() - new Date(cached.at) < BUILD_TTL_MS) {
+      const snapshot = canonicalBuild(cached.snapshot);
+      return { ...cached, pin: buildPin(snapshot), snapshot };
+    }
     // A failure is retried after UNKNOWN_TTL_MS: a stand that was down a minute ago may be up now, and
     // re-probing it on every write would put its timeout in front of every write.
     if (cached?.unknown && now() - new Date(cached.at) < UNKNOWN_TTL_MS) return cached;
