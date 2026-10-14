@@ -38,9 +38,17 @@
  * ask is remembered in `<session>.owners.ndjson`, and later stops read only the tail of that one file.
  *
  * GUARDS, because a stop hook that blocks is a hook that can trap a session:
- *   1. `stop_hook_active` (set by the harness while a stop hook already made Claude continue) -> silent.
- *   2. Every question is raised ONCE: its ask `at` is appended BEFORE the reason is printed, so a crash
- *      after the write costs a reminder, never a loop.
+ *   1. Every question is raised ONCE: its ask `at` is appended BEFORE the reason is printed, so a crash
+ *      after the write costs a reminder, never a loop. That is what bounds the session: each block marks
+ *      up to `LISTED` new asks, so a stop can block at most once per `LISTED` open asks, and an append
+ *      that fails prints nothing.
+ *   2. `stop_hook_active` (set by the harness while a stop hook already made Claude continue) does NOT
+ *      silence it (VCST-6341). It used to, and that broke the reminder's own promise: the reason names
+ *      `LISTED` asks and says the rest come "at your next stop", but the next stop is the continuation
+ *      this block caused, so it was silent -- and a SUBAGENT has no stop after that. Measured
+ *      2026-10-12..14: one regression session with 56 subagents left 84 lists unclosed, 78% of the
+ *      window's 108; a subagent was reminded of its first five and never of the rest. Guard 1 already
+ *      makes the continuation safe, so the rest are now raised there, five at a time.
  *   3. Off switches: `KB_ENABLED=0` (the base is off on this machine), `KB_REMIND=0` (this hook only),
  *      and `KB_SYNTHETIC=1`: a calibration or bench run must not take an extra step it did not ask for.
  *
@@ -214,7 +222,6 @@ function owned(loops, { sub, transcript, ownersFile, now = Date.now() }) {
 function main() {
   let payload = null;
   try { payload = JSON.parse(readFileSync(0, 'utf8')); } catch { /* no stdin, or not JSON */ }
-  if (payload?.stop_hook_active) return;
   if (kbDisabled(process.env)) return;
   // Pruned BEFORE the reminder's own off switches: the journal is written whenever the base is on,
   // so a machine with KB_REMIND=0 or a synthetic run must still have its files cleaned.

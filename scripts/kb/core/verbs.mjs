@@ -31,7 +31,8 @@ import {
 } from './queue.mjs';
 import { lastWord, openedHash, openedIds, pointersByAsk } from './loop.mjs';
 import { cachedWho } from './who.mjs';
-import { MIN_RELATED_WORDS, RANKER, rank, rankNeighbours, relatedTo, tokenize } from './rank.mjs';
+import { RANKER, rank, rankNeighbours, relatedTo } from './rank.mjs';
+import { askAbout } from './pairing.mjs';
 import { prepareVocabulary, readVocabulary } from './query.mjs';
 import { prepareRetrieval, retrieve } from './retrieve.mjs';
 import { AMBIGUOUS_TOP, FEATURES, decide } from './verdict.mjs';
@@ -919,64 +920,9 @@ function pairShow(id, env) {
 
 const REQUIRED = ['subject', 'question', 'claim', 'deployment'];
 
-/**
- * The `ask` this capture is ABOUT, as a pointer into the session's own log — or nothing.
- *
- * Panel 6 answers "did the agent go and find out anyway?" and the unhelpful panel "was the answer
- * any use?" by following this pointer, so it has to name the RIGHT ask. It stores that ask's `at`:
- * a POINTER to a line already in this session's log, never a copy of the question — a second copy
- * of a question is a second thing that can disagree with the first.
- *
- * IT USED TO NAME THE LAST ASK, AND THAT WAS WRONG IN BOTH DIRECTIONS (PLAN §23.11). Run `cdb27d99`
- * wrote three captures inside one minute, after one answered ask; all three pointed at it. Measured
- * by the words each capture shares with each of the session's four asks:
- *
- *   KB-D54F3AAB (CFG_* 404s)          the MISS 50 min earlier: 10 · the last ask: 1
- *   KB-7F535D52 (CyberSource flakes)  the last ask: 13 · the nearest other: 7
- *   KB-8BE777BB (org switch header)   at most 2, against any ask
- *
- * So the report read "0 captures after a miss" on the run whose loop had closed exactly as designed,
- * and charged one answer with three captures, two of them about something else. The pointer now
- * goes to the ask the capture shares the most with — ties to the later — and ONLY if that clears
- * the floor `relatedTo` already uses for "speaks to the same thing" (`MIN_RELATED_WORDS`, derived
- * in `rank.mjs`), or the ask names one of the capture's own anchors verbatim — a structured
- * coordinate cannot appear in a question by accident, which is the anchor bonus's own argument. Below the floor there is no
- * pointer: a capture that followed no question is `unprompted`, which is a true reading, and a
- * pointer to the nearest unrelated ask is a false one.
- *
- * ANY ASK OF THE SESSION, not only this agent's. The CFG capture above was written by a subagent
- * about a miss its ORCHESTRATOR hit and handed down in the brief — one session, one loop.
- *
- * Pure, and exported, because it is the part with a wrong answer.
- *
- * @param {Array<{at: string, q: string}>} asks  the session's asks, any order
- * @param {{text: string, anchors?: Array<string|{coordinate: string}>}} capture
- * @returns {string|null} the chosen ask's `at`
- */
-export function askAbout(asks, { text, anchors = [] }) {
-  const mine = new Set(tokenize(text));
-  // Only a coordinate the door would ACCEPT names an ask. A one-segment page (`/cart`) sits in half the
-  // storefront's questions, and a rejected one names everything: `/` is a substring of every question
-  // that mentions a page, which is how a live smoke on 2026-09-23 paired a `capture-invalid` with an
-  // unrelated answer. Either still counts as the words it contributes.
-  // NORMALISED before it is tested or searched for (PR #313 review 2): an ask carries the plain route,
-  // so `{BACK_URL}/api/platform/x` searched for verbatim never matched it and pairing was dead for
-  // every prefixed spelling.
-  const coords = anchors.map((a) => String(typeof a === 'string' ? a : a?.coordinate ?? '').trim())
-    .filter((c) => c && !anchorProblems([c]).length)
-    .map((c) => normalizeAnchor(c))
-    .filter((c) => c && !isSingleSegmentPath(c)).map((c) => c.toLowerCase());
-  let best = null;
-  for (const a of asks) {
-    const q = String(a.q ?? '');
-    const shared = new Set(tokenize(q).filter((t) => mine.has(t))).size;
-    const named = coords.some((c) => q.toLowerCase().includes(c));
-    if (!named && shared < MIN_RELATED_WORDS) continue;
-    const score = (named ? 1_000 : 0) + shared;
-    if (!best || score > best.score || (score === best.score && String(a.at) > best.at)) best = { score, at: String(a.at) };
-  }
-  return best ? best.at : null;
-}
+// `askAbout` -- which ask a capture is about -- lives in `pairing.mjs` so the report can apply the
+// same test to historical lines (VCST-6341). Re-exported here, where its callers already import it.
+export { askAbout } from './pairing.mjs';
 
 /**
  * The session's asks, from BOTH places they live: the queue holds every ask since the last flush,
