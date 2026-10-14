@@ -95,7 +95,9 @@ rest. Then, from `$HOST`, the full check:
 yarn check:plugin-module "$WEB"
 ```
 
-✅ `All checks passed.` Nothing else counts as done.
+✅ `All checks passed.` (exit code 0): the module's sources are wired. Only the exit code decides; the wording of
+the check's lines can change between vc-frontend versions. The plugin is not shipped until a package passes
+`--artifact` (step 5), so the report says which of the two the run reached.
 
 ## 5. Optional: see it in a storefront, check a package, try a local platform
 
@@ -103,19 +105,22 @@ Offer each; do only what the user wants.
 
 - **Local storefront:** S1a step 5. It needs a backend in `$HOST/.env.local`. It changes
   `client-app/config/settings_data.json` in `$HOST`: restore it afterwards and confirm `git status` there is clean.
-- **Package:** if the user has the module's zip (from its CI, or built locally the way CI does), run the check with
-  `--artifact <zip>`. ✅ the plugin sits at the zip root, not under `bin/` (S1a ⚠️ 1).
+- **Package:** run the check with `--artifact <zip>` on the module's zip, from its CI or built the way CI does
+  (📁 module repo `vc-build compress`, which needs the .NET SDK; the zip lands in `artifacts/`). ✅ the plugin sits
+  at the zip root, not under `bin/` (S1a ⚠️ 1).
 - **Local platform:** if the user runs one, follow S6 → "On a local platform" with that zip: install, restart, then
   `--env <platform URL>` and the storefront from S2.2. ✅ the plugin's page renders with no override set. Restore
   `settings_data.json` and `.env.local` in `$HOST` afterwards, as above.
 
 ## 6. Report
 
-1. The edits in the module, file by file, and every *decision* the user took.
-2. The last `check:plugin-module` output, verbatim.
-3. What the user does next: commit (including `StorefrontApp/` and its `yarn.lock`), push for the module CI, run the
-   check with `--artifact` on the CI zip, then install it on an environment (S6) and run it with `--env`.
-4. Anything S1a says that turned out wrong, with the evidence.
+1. Where the run got to: sources wired, package verified, or not done (and what blocks it).
+2. The edits in the module, file by file, and every *decision* the user took.
+3. The last `check:plugin-module` output, verbatim.
+4. What the user does next: commit (including `StorefrontApp/` and its `yarn.lock`), push for the module CI, run the
+   check with `--artifact` on the CI zip if step 5 did not, then install it on an environment (S6) and run it with
+   `--env`.
+5. Anything S1a says that turned out wrong, with the evidence.
 
 ## Never
 
