@@ -14,7 +14,8 @@ const VISUAL = /\.(vue|scss|css|html)$|\/Scripts\/.*\.html$|\/icons?\/|design-to
 // ticket-routing.md §5c — the change IS the design system.
 const UI_KIT = /client-app\/ui-kit\/|_ui-kit-tokens\.scss$|\/_colors\.scss$|\/_dark\.scss$|\/preflight\.scss$|client-app\/assets\/presets\/[^/]+\.json$|\.storybook\/|storybook-styles\/|\.stories\./i;
 // F4 — revenue-critical flows.
-const REVENUE = /\b(cart|checkout|payment|pric(e|ing)|orders?|quote)\b/i;
+// No word boundary: `shopping_cart.vue`, `CartController`, `addItemToCart` are revenue flows too.
+const REVENUE = /(cart|checkout|payments?|pric(e|es|ing)|orders?|quotes?)/i;
 // F10 — B2B org context (test-model redesign §5).
 const ORG = /organizationId|organization_id|xapi:my_organization|my_organization|\/organizations?\b|sales-rep|salesrep|loginOnBehalf|CanImpersonate|impersonat/i;
 // F11 — configuration (test-model redesign §5a, layers 1–3).
@@ -31,8 +32,12 @@ export function computeFloors(bundle, { domainMapText = null } = {}) {
       ...(p.hotspots ?? []).flatMap((h) => [h.source, h.risk]), ...(p.claims ?? []).map((c) => c.text)]),
   ].join("\n");
   const changeGap = (bundle.gaps ?? []).find((g) => g.where === "change" || g.where.startsWith("change."));
+  // A whole-PR gap (where `pr:<ref>`, also on the PR entry as `gap`) is an unread part of the diff, even beside a read PR.
+  const gappedPr = (bundle.change?.prs ?? []).find((p) => !p.context_only && p.gap);
   // No product PR: when the search ran and found nothing, diff floors are "not fired"; when it never ran, doubt (F9).
-  const diffUnread = !prs.length && changeGap && changeGap.reason !== "not-found" ? `doubt: diff not read (${changeGap.reason})` : null;
+  const unreadReason = gappedPr ? gappedPr.gap.reason
+    : !prs.length && changeGap && changeGap.reason !== "not-found" ? changeGap.reason : null;
+  const diffUnread = unreadReason ? `doubt: diff not read (${unreadReason})` : null;
   const noPr = !prs.length ? "no product PR" : null;
   const diffFloor = (id, re, label, requires) => {
     if (diffUnread) return floor(id, true, diffUnread, requires);
@@ -45,9 +50,11 @@ export function computeFloors(bundle, { domainMapText = null } = {}) {
   const f1 = pri == null ? floor("F1", true, "doubt: no priority in the bundle", ["test model", "exploratory"])
     : floor("F1", P01.test(pri), `priority ${pri}${P01.test(pri) ? " (P0/P1)" : ""}; the High/Critical-risk half is checked on the register`, ["test model", "exploratory"]);
 
+  const noType = fields.type == null;
   const isStory = /^story$/i.test(fields.type ?? "");
   const dm = bundle.known?.domain_map ?? {};
-  const f2 = !isStory ? floor("F2", false, `type ${fields.type ?? "unknown"}, not a Story`)
+  const f2 = noType ? floor("F2", true, "doubt: no type in the bundle", ["test model", "exploratory"])
+    : !isStory ? floor("F2", false, `type ${fields.type}, not a Story`)
     : dm.state !== "PRESENT" || domainMapText == null ? floor("F2", true, `doubt: domain map ${dm.state ?? "unknown"} — purpose not readable`, ["test model", "exploratory"])
     : floor("F2", /\*\*Purpose:[^*]*UNDECLARED/i.test(domainMapText), "domain map §1 Purpose", ["test model", "exploratory"]);
 
@@ -56,17 +63,22 @@ export function computeFloors(bundle, { domainMapText = null } = {}) {
     : noPr ? floor("F3", false, noPr)
     : floor("F3", visualPaths.length > 0, visualPaths.length ? `rendering files: ${visualPaths.slice(0, 3).join(", ")}` : "no rendering file in the diff", ["visual lane"]);
 
-  const revenueText = [...paths, ...(fields.components ?? []), ...(bundle.domains_guess?.value ?? [])].join("\n");
+  const revenueText = [surface, ...(fields.components ?? []), ...(bundle.domains_guess?.value ?? [])].join("\n");
   const rev = revenueText.match(REVENUE);
   const f4 = floor("F4", !!rev, rev ? `revenue-critical: ${rev[0]}` : "no revenue-critical flow named", ["no risk on it below Medium"]);
 
   const atRisk = bundle.known?.cases_at_risk ?? [];
-  const f5 = floor("F5", atRisk.length > 0, `${atRisk.length} suite(s) at risk${atRisk.length ? `: ${atRisk.slice(0, 5).map((c) => c.suite).join(", ")}` : ""}`, ["coverage triage + regression after the staleness check"]);
+  // A failed lookup of the suite set is doubt (F9): the cases at risk were never read.
+  const failedLookup = (bundle.gaps ?? []).find((g) => g.where.startsWith("known.tc:scope") || g.where.startsWith("known.regression:select"));
+  const f5 = atRisk.length > 0 ? floor("F5", true, `${atRisk.length} suite(s) at risk: ${atRisk.slice(0, 5).map((c) => c.suite).join(", ")}`, ["coverage triage + regression after the staleness check"])
+    : failedLookup ? floor("F5", true, `doubt: ${failedLookup.where} (${failedLookup.reason})`, ["coverage triage + regression after the staleness check"])
+    : floor("F5", false, "0 suite(s) at risk", ["coverage triage + regression after the staleness check"]);
 
   const notDeployed = (bundle.blockers ?? []).filter((b) => /^NOT DEPLOYED:/.test(b));
   const f6 = floor("F6", notDeployed.length > 0, notDeployed[0] ?? "no NOT DEPLOYED blocker", ["BLOCKED before any browser opens"]);
 
-  const f7 = floor("F7", /^review task$/i.test(fields.type ?? ""), `type ${fields.type ?? "unknown"}`, ["oracles from the diff only", "F5 on"]);
+  const f7 = noType ? floor("F7", true, "doubt: no type in the bundle", ["oracles from the diff only", "F5 on"])
+    : floor("F7", /^review task$/i.test(fields.type), `type ${fields.type}`, ["oracles from the diff only", "F5 on"]);
 
   const kit = paths.filter((p) => UI_KIT.test(p));
   const f8 = diffUnread ? floor("F8", false, `${diffUnread} — F8 fails closed (ticket-routing §5c)`)
