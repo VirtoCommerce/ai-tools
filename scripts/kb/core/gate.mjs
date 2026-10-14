@@ -13,6 +13,7 @@
 // The rule (`RELEVANCE`) is the replay's best on the 2026-10-08 round: 19 of 21 scoped items soft, the
 // other two had identical reconstructed builds (a setting, or a PR build no manifest names).
 
+import { themeVersion } from './canonical.mjs';
 import { supportOf } from './index-build.mjs';
 import { isSource } from './method.mjs';
 import { ownersIndex } from './owners.mjs';
@@ -85,7 +86,7 @@ export async function softDispute({ entry, observation, readBuild, backUrl, owne
 // ── build-aware ask (VCST-6221 step 2) ──────────────────────────────────────────────────────────
 
 const base3 = (v) => String(v ?? '').split('-')[0].split('.').map((n) => Number.parseInt(n, 10) || 0);
-const cmpVersion = (a, b) => {
+export const cmpVersion = (a, b) => {
   const x = base3(a); const y = base3(b);
   for (let i = 0; i < Math.max(x.length, y.length); i += 1) if ((x[i] ?? 0) !== (y[i] ?? 0)) return (x[i] ?? 0) - (y[i] ?? 0);
   return 0;
@@ -118,4 +119,29 @@ export async function buildLabel({ entry, asker, readBuild, backUrl, owners = ow
   const signs = nearest.map((d) => Math.sign(cmpVersion(d.a, d.b)));
   const label = signs.every((x) => x > 0) ? 'an older build' : signs.every((x) => x < 0) ? 'a newer build' : 'a different build';
   return { label, diff: summarize(nearest) };
+}
+
+/**
+ * Does the ASKER's build carry a defect's fix (VCST-6317)? `fixedIn` is `<module|platform|theme>@<version>`,
+ * `snapshot` the asker's build as the label reads it. `{ state: 'fixed' | 'not-fixed' | 'unknown', have }`.
+ *
+ * Same comparison as the build label (`cmpVersion`, on the base version). Never "fixed" on a guess: a
+ * part the build does not name, or a pre-release of the very version the fix shipped in (a PR build of
+ * 3.1001.0 may predate the fix), is `unknown`.
+ */
+export function fixState(fixedIn, snapshot) {
+  const at = String(fixedIn ?? '').lastIndexOf('@');
+  if (at < 1 || !snapshot) return { state: 'unknown', have: null };
+  const part = fixedIn.slice(0, at); const want = fixedIn.slice(at + 1);
+  const p = part.toLowerCase();
+  const mods = Object.entries(snapshot.modules ?? {});
+  const have = p === 'platform' ? snapshot.platform
+    : p === 'theme' ? (snapshot.theme ? themeVersion(snapshot.theme) : null)
+      : mods.find(([id]) => id.toLowerCase() === p)?.[1] ?? null;
+  if (!have) return { state: 'unknown', have: null };
+  const shown = p === 'platform' || p === 'theme' ? `${p} ${have}` : `${part} ${have}`;
+  const c = cmpVersion(have, want);
+  if (c > 0) return { state: 'fixed', have: shown };
+  if (c < 0) return { state: 'not-fixed', have: shown };
+  return { state: String(have).includes('-') && !want.includes('-') ? 'unknown' : 'fixed', have: shown };
 }

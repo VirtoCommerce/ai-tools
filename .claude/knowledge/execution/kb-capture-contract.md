@@ -42,6 +42,7 @@ rewritten into a Windows path (repaired since VCST-6102, but only when the rewri
 | `deployment` | the stand you observed it on | one token: the stand's name or its `TEST_ENV` / host name — the door maps every alias onto the stand's one name, declared as `KB_STAND` in its `.env.<env>` profile (`scripts/kb/core/stands.mjs`). Prose is refused |
 | `method` | how you established it | optional; `observation` (the default) — seen on a live stand — or `source` — read in code, not seen live (§Facts read from source code). Anything else is refused |
 | `conditions` | what the stand was running and how it was set up | optional on `capture` / `confirm`, **expected on `dispute`** — §Conditions |
+| `defect` / `fixedIn` | the behaviour should NOT happen, and since which build it no longer does | optional on `capture` / `confirm` — §Defects |
 
 `confirm` and `dispute` need the entry `id` and `deployment` (`dispute` also `saw`). A superseded id
 is refused with the ids of its successors — confirm or dispute the one you actually observed. An entry
@@ -157,3 +158,32 @@ what a validator rejects — is captured with `method: source` (VCST-6186). It i
 
 Observed it live as well? Then it is an observation: capture with the default method and say in the
 claim what the code showed.
+
+## Defects
+
+The base records what the platform DOES. A behaviour that should not happen is still captured — how a
+bug shows itself is what whoever fixes or tests it needs — but it carries a **defect marker**
+(VCST-6317), or the next agent reads the bug as the expectation and writes a case that locks it in.
+
+- **Check before you mark.** Behaviour that looks wrong is checked against the docs (VirtoOZ, `/vc-docs`)
+  and the `BL-*` oracles first. They say it should not happen → mark it. They say nothing, or you only
+  feel it is wrong → do not mark it; say what looked odd in the claim. An unexpected value that the docs
+  explain (a setting, a by-design rule) is not a defect.
+- **The values.** `defect`: a bug ticket (`VCST-1234`) or `suspected` (no ticket yet). `fixedIn`, once it
+  is fixed: the first build without it, `<module>@<version>`, `platform@<version>` or `theme@<version>`.
+  Anything else is refused.
+- **Where it goes.** At capture, with the fact. On an existing entry, with `kb_confirm` (`--defect` in the
+  CLI): you saw the behaviour, and it should not happen — a ticket filed later re-marks it the same way,
+  `fixedIn` alone completes the marker it carries, and `defect: none` withdraws a marker that proved
+  wrong. The claim never changes. A dispute carries no marker.
+- **The judge.** A dispute that saw a marked defect fixed on a later build is `defect-fixed`
+  (`/kb-judge`, `investigation.md` §4): the claim stays, the marker gains its `fixedIn`.
+- **What readers see.** `kb_ask` / `kb_show` print `KNOWN DEFECT VCST-1234: observed behaviour, NOT
+  expected; do not assert it` beside the trust label; with your stand named, a `fixedIn` is compared with
+  your build. **An entry marked as a defect is never the source of an expected result** — the expectation
+  comes from the docs or an oracle; the entry only shows that the bug reproduces
+  ([`cases-that-catch-bugs.md`](cases-that-catch-bugs.md) §2).
+
+The marker rides on the evidence item, not the entry's frontmatter, and the entry's marker is derived
+from it — so a client older than VCST-6317 reads and pushes marked entries unchanged
+(`scripts/kb/core/defect.mjs`, header).

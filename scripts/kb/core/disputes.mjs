@@ -14,6 +14,7 @@ import { amendmentsOf, attestsCurrentClaim, claimHash, distinctDisputes, isInves
 
 export { isInvestigation };
 import { parseConditions } from './conditions.mjs';
+import { defectOf, resolveDefect, resolveFixedIn } from './defect.mjs';
 import { NOTE_MAX } from './verbs.mjs';
 
 const lower = (s) => String(s ?? '').trim().toLowerCase();
@@ -186,6 +187,9 @@ export function dossier(entry, { exp = null, state = null } = {}) {
     `- scope: ${(d.appliesTo ?? []).map((a) => `${a.axis}=${a.value}`).join(', ') || '—'}`,
     `- concepts: ${idsIn(d.concepts).join(', ') || '—'}`,
   ];
+  // A disputed DEFECT is often "it was a bug and it got fixed" (VCST-6317): the judge sees the marker first.
+  const marker = defectOf(items);
+  if (marker) lines.push(`- defect: ${marker.defect}${marker.fixedIn ? `, fixed in ${marker.fixedIn}` : ''} -- a dispute that saw it fixed is \`defect-fixed\`, not \`claim-amended\``);
   if (exp) lines.push(`- served since the first open dispute: ${exp.asks} ask(s), ${exp.shows} show(s)`);
   if (state) for (const h of hints(state)) lines.push(`- hint: ${h}`);
   const amendments = amendmentsOf(items);
@@ -280,9 +284,25 @@ export const RESOLUTION_MAX = 600;
  * `amendedFrom` (with `claim-amended`) is the hash of the body the verdict corrects, as `main` holds
  * it; it is written on the resolution so confirmations of that body stop counting even when they
  * reach `main` after this resolution (`attestsCurrentClaim`, index-build.mjs).
+ *
+ * `defect` / `fixedIn` (with `defect-fixed`, VCST-6317): the entry describes a bug and the dispute saw it
+ * fixed. The claim stays -- it is how the bug shows itself, which whoever meets an unfixed build needs --
+ * and the marker the readers see (`defectOf`, core/defect.mjs) gains its `fixedIn`. `defect` defaults to
+ * the marker the entry already carries; one of the two must name the bug.
  */
-export function applyResolution(data, { at, by: disputedBy = null, verdict, why, ref, session, pending = [], amendedFrom = null, now = new Date() }) {
+export function applyResolution(data, { at, by: disputedBy = null, verdict, why, ref, session, pending = [], amendedFrom = null, defect = null, fixedIn = null, now = new Date() }) {
   if (!RESOLUTIONS.includes(verdict)) return { problem: `--verdict must be one of: ${RESOLUTIONS.join(', ')}` };
+  let marker = null;
+  if (verdict === 'defect-fixed') {
+    const d = resolveDefect(defect);
+    const f = resolveFixedIn(fixedIn);
+    if (d.problem) return { problem: `--defect: ${d.problem}` };
+    if (f.problem) return { problem: `--fixed-in: ${f.problem}` };
+    if (!f.value) return { problem: 'defect-fixed needs --fixed-in <module>@<version>: the first build the dispute saw without the defect' };
+    const named = d.value ?? defectOf(data.evidence ?? [])?.defect ?? null;
+    if (!named || named === 'none') return { problem: `defect-fixed needs --defect <ticket | suspected>: ${data.id} carries no defect marker to complete` };
+    marker = { defect: named, fixedIn: f.value };
+  } else if (defect || fixedIn) return { problem: '--defect / --fixed-in go with --verdict defect-fixed only' };
   const reason = String(why ?? '').trim();
   if (!reason) return { problem: '--why is required: one sentence a reader of the entry can check' };
   if (reason.length > RESOLUTION_MAX) return { problem: `--why is over ${RESOLUTION_MAX} characters; the argument belongs in the PR, the conclusion here` };
@@ -313,6 +333,7 @@ export function applyResolution(data, { at, by: disputedBy = null, verdict, why,
     resolvedIn: String(ref).trim(),
     resolution: reason,
     ...(verdict === 'claim-amended' && amendedFrom ? { amendedFrom } : {}),
+    ...(marker ?? {}),
   }));
   return { data: { ...data, evidence } };
 }

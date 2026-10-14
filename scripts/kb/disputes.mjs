@@ -33,7 +33,8 @@ const USAGE = `usage: npm run kb:disputes -- list --base <checkout> [--json]
        npm run kb:disputes -- dossier <KB-id> --base <checkout>
        npm run kb:disputes -- cluster <KB-id> --base <checkout>
        npm run kb:disputes -- observe <KB-id> --deployment <stand> --conditions "<k=v; k=v>" --note "<...>" [--main <ref>] --base <checkout>
-       npm run kb:disputes -- resolve <KB-id> --at <iso> [--by <dispute's by>] --verdict <${RESOLUTIONS.join('|')}> --why "<...>" --in <PR> [--main <ref>] --base <checkout>`;
+       npm run kb:disputes -- resolve <KB-id> --at <iso> [--by <dispute's by>] --verdict <${RESOLUTIONS.join('|')}> --why "<...>" --in <PR> [--main <ref>] --base <checkout>
+                              [--defect <ticket | suspected>] [--fixed-in <Module>@<version>]   with defect-fixed`;
 
 function parseArgs(argv) {
   const a = { verb: argv[0], id: null, flags: {} };
@@ -268,6 +269,7 @@ async function main() {
     const r = applyResolution(entry.data, {
       at: a.flags.at, by: a.flags.by ?? null, verdict: a.flags.verdict, why: a.flags.why, ref: a.flags.in, session,
       pending: outsideEvidence(entry, a.id, session ? `session:${session}` : null, main.tip), amendedFrom,
+      defect: a.flags.defect ?? null, fixedIn: a.flags['fixed-in'] ?? null,
     });
     if (r.problem) { console.error(`refused: ${r.problem}`); return 1; }
     const blocked = gated([a.flags.why, a.flags.in]);

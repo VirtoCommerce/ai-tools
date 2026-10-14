@@ -11,7 +11,8 @@
 // and the server joins them; neither has to guess where the newlines were meant to be.
 
 import { MSYS_REMEDY } from './anchors.mjs';
-import { CONTRACT, DEPLOYMENT_SOURCE, METHOD_SOURCE, SCOPE_SOURCE } from './contract.mjs';
+import { CONTRACT, DEFECT_SOURCE, DEPLOYMENT_SOURCE, METHOD_SOURCE, SCOPE_SOURCE } from './contract.mjs';
+import { defectText } from './defect.mjs';
 import { HEADLINE } from './exits.mjs';
 import { isResolved } from './index-build.mjs';
 import { idList } from './index-load.mjs';
@@ -29,6 +30,7 @@ function evidenceLine(e) {
   return `  ${e.contradicts ? (e.contested ? 'contested on another build' : 'contradicted') : 'seen'} by ${e.by ?? '?'} on ${e.deployment ?? '?'}`
     + `${e.contested ? ` (${e.contested})` : ''}`
     + `${e.conditions ? ` {${e.conditions}}` : ''} at ${e.at ?? '?'}${methodText(e.method)}`
+    + `${e.defect ? ` [marked defect: ${e.defect}]` : ''}${e.fixedIn ? ` [fixed in ${e.fixedIn}]` : ''}`
     + `${e.note ? ` — ${e.note}` : ''}${verdict}`;
 }
 
@@ -74,6 +76,9 @@ export function hitLines(hit) {
     // invisible state into a readable one — and a reader deciding whether to re-verify a claim is
     // exactly who needs it.
     + `${hit.trust.anonymous ? `, ${hit.trust.anonymous} anonymous` : ''}`);
+  // A DEFECT, said beside the trust label and before the subject (VCST-6317): trust says it happens, this
+  // says it should not -- a reader who stops at the headline must not take the bug for the expectation.
+  if (hit.trust.defect) lines.push(`  ! ${defectText(hit.trust.defect, hit.fix)}`);
   lines.push(`  ${hit.subject}`);
   // Where it was seen, against the asker's own build (VCST-6221) -- only when the ask named its stand.
   if (hit.build) lines.push(`  build: observed on ${hit.build.label}${hit.build.diff ? ` (yours vs then: ${hit.build.diff})` : ''}`);
@@ -179,6 +184,7 @@ export function verdictLines(v, { prefix = 'kb ask', says = true } = {}) {
       `${prefix}: ${AMBIGUOUS_CONTRACT}`,
       ...v.headlines.flatMap((h) => [
         `  ${h.id}  ${h.subject}${h.separating ? `  [${h.separating}]` : ''}`,
+        ...(h.defect ? [`      ! ${defectText(h.defect)}`] : []),
         ...(h.question ? [`      answers: ${h.question}`] : []),
         ...(says && h.body ? [`      says: ${excerpt(h.body)}`] : []),
       ]),
@@ -204,6 +210,7 @@ export function showLines(r, { prefix = 'kb show' } = {}) {
       + `${r.trust.resolved ? `, ${r.trust.resolved} dispute(s) resolved` : ''}`
       + `${r.trust.beforeAmendment ? `, ${r.trust.beforeAmendment} not counted (they confirmed the claim before a judge corrected it)` : ''}`
       + `   status: ${r.entry.status}`,
+    ...(r.trust.defect ? [`! ${defectText(r.trust.defect, r.fix)}`] : []),
     `${r.entry.subject}`,
     `question: ${r.entry.question ?? '—'}`,
     `anchors:  ${(r.entry.anchors ?? []).map((a) => a.coordinate).join(', ')}`,
@@ -238,6 +245,7 @@ export const CONTRACT_CARD = [
   `    --deployment  ${DEPLOYMENT_SOURCE}`,
   `    --method   ${METHOD_SOURCE}`,
   `    --scope    ${SCOPE_SOURCE}`,
+  `    --defect   ${DEFECT_SOURCE}`,
   '    fix the payload and retry ONCE with the same --subject; prefer kb_capture (MCP) when it is connected',
 ];
 
@@ -364,6 +372,8 @@ function evidenceBody(verb, r) {
     `kb ${verb}: queued on ${r.id} (${r.row.subject})`,
     // The gate's answer (VCST-6221): said to the agent, so it knows why the entry will not turn DISPUTED.
     ...(r.item?.contested ? [`  different build: recorded as a soft dispute (contested on another build: ${r.item.contested}); the judge still reviews it, readers do not see the entry as DISPUTED`] : []),
+    ...(r.item?.defect === 'none' ? ['  defect marker: withdrawn -- the claim is unchanged; readers no longer see a defect marker'] : []),
+    ...((r.item?.defect && r.item.defect !== 'none') || r.item?.fixedIn ? [`  defect marker: ${r.item.defect ?? 'unchanged'}${r.item.fixedIn ? `, fixed in ${r.item.fixedIn}` : ''} -- the claim is unchanged; readers see the marker beside the trust label`] : []),
     `  ${r.queuedTo}`,
     '  nothing has been sent; it ships with the next push.',
   ];

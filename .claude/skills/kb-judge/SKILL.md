@@ -87,7 +87,7 @@ dispute gets no verdict. Say what is missing; do not infer it.
 
 One verdict per contradicting evidence item, from the table in
 [`investigation.md`](investigation.md) §4: `claim-amended`, `version-scoped`, `conditions-scoped`,
-`split`, `dispute-wrong` — or **no verdict**, which leaves the dispute open. A verdict states what was
+`split`, `dispute-wrong`, `defect-fixed` — or **no verdict**, which leaves the dispute open. A verdict states what was
 observed, on which stands, under which conditions, and which source confirms the mechanism; if any of
 the four is missing, it is not a verdict yet.
 
