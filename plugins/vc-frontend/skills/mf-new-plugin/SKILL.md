@@ -1,7 +1,7 @@
 ---
 name: mf-new-plugin
 description: "Use when a Virto Commerce backend module should ship a storefront plugin (a Module Federation remote for vc-frontend): scaffolding StorefrontApp/ into the module's *.Web project, wiring the module's .csproj, module.manifest and .gitignore, and proving it with check:plugin-module."
-argument-hint: "<plugin-name> <path to the module's *.Web project> [--with-apollo] [--with-tailwind]"
+argument-hint: "<plugin-name> <path to the module's *.Web project> [--with-i18n] [--with-apollo] [--with-vueuse] [--with-tailwind] [--no-router]"
 ---
 
 # mf-new-plugin — a storefront plugin inside an existing backend module
@@ -37,17 +37,19 @@ Stop and report, changing nothing, when:
 
 Then confirm with the user, in one message:
 
-1. **The plugin name** (kebab-case). It becomes the plugin id, the remote name and the default route. Propose one
-   from the module id (`VirtoCommerce.SalesRep` → `sales-rep`).
-2. **The options:** `--with-apollo` if the plugin has its own GraphQL, `--with-tailwind` for Tailwind. The rest
-   are asked by the generator; pass `--yes` only if the user wants the defaults.
+1. **The plugin name** (kebab-case). It becomes the plugin id, the remote name and the default route. Take it
+   from the arguments if given; otherwise propose one from the module id (`VirtoCommerce.SalesRep` → `sales-rep`).
+2. **The options**, each one asked: `--with-i18n` (its own translations), `--with-apollo` (its own GraphQL, read from
+   the module's scoped schema: S1b step 4), `--with-vueuse`, `--with-tailwind`, `--no-router` (no page of its own).
+   The generator cannot ask them here: without a terminal it takes its defaults silently. A group left out is
+   written as not shared, and importing it later bundles a second copy.
 
 ## 2. Scaffold
 
 From `$HOST`:
 
 ```bash
-yarn create:plugin <name> --module "$WEB" [--with-apollo] [--with-tailwind]
+yarn create:plugin <name> --module "$WEB" --yes [the flags the user picked]
 ```
 
 It ends with a list of what is still to do in the module. Keep it: it is step 3's work list. If it prints
