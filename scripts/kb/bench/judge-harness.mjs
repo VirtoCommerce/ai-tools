@@ -53,6 +53,14 @@ export const codeOf = (id, salt) => createHash('sha256').update(`${salt}:${id}`)
 const readPairs = async (file) => new Map((await readFile(file, 'utf8')).trim().split(/\r?\n/)
   .map((l) => l.trim().split(/\s+/)).filter((p) => p.length >= 2));
 
+/**
+ * `<code> <id> [<id> ...]` or `<code> none` -- one line per item. Several ids are several reliances on
+ * one ask, which the `parts` contract allows (VCST-6342 6a); a one-open run simply writes one.
+ */
+const readPicks = async (file) => new Map((await readFile(file, 'utf8')).trim().split(/\r?\n/)
+  .map((l) => l.trim().split(/\s+/)).filter((p) => p.length >= 2)
+  .map(([code, ...ids]) => [code, ids.includes('none') ? [] : [...new Set(ids)]]));
+
 async function openCatalogue(base) {
   const { reader, why, locator } = openBase({ baseArg: base });
   if (!reader) throw new Error(why);
@@ -107,7 +115,7 @@ async function itemsFloor1({ base, splits, out, set: setFile, openTest, salt }) 
   console.log(`${key.length} rows; ${blocks.length} answered items written (the agent judges each); misses ${key.filter((k) => k.verdict === 'none').length}`);
 }
 
-async function itemsVerdict({ base, ranker: rankerFile, splits, out, set: setFile, openTest, salt, noSays }) {
+async function itemsVerdict({ base, ranker: rankerFile, splits, out, set: setFile, openTest, salt, noSays, contract = 'one' }) {
   if (splits.includes('test') && !openTest) throw new Error('the test split is opened once, at the gate: pass --open-test');
   const set = JSON.parse(await readFile(setFile, 'utf8'));
   const ranker = JSON.parse(await readFile(rankerFile, 'utf8'));
@@ -130,7 +138,7 @@ async function itemsVerdict({ base, ranker: rankerFile, splits, out, set: setFil
       const headlines = await Promise.all(d.entries.map(async (c) => ({
         id: c.row.id, subject: c.row.subject, separating: c.separating, question: c.row.question, body: await bodyOf(reader, c.row),
       })));
-      lines = verdictLines({ verdict: 'ambiguous', headlines }, { says: !noSays });
+      lines = verdictLines({ verdict: 'ambiguous', headlines }, { says: !noSays, contract });
       blocks.push({ code, text: [`ITEM ${code}`, `QUESTION: ${row.q}`, ...lines].join('\n') });
     } else {
       // `answer` and `none` need no agent; their rendered size still counts toward tokens per ask.
@@ -153,7 +161,7 @@ async function itemsVerdict({ base, ranker: rankerFile, splits, out, set: setFil
 
 async function bodies({ base, out, picks: picksFile }) {
   const { key: k } = { key: JSON.parse(await readFile(join(out, 'key.json'), 'utf8')) };
-  const picks = await readPairs(picksFile);
+  const picks = new Map([...(await readPicks(picksFile))].map(([c, ids]) => [c, ids[0] ?? 'none']));
   const { reader, rows } = await openCatalogue(base);
   const byId = new Map(rows.map((r) => [r.id, r]));
   const itemsText = await readFile(join(out, 'items.txt'), 'utf8');
@@ -171,25 +179,40 @@ async function bodies({ base, out, picks: picksFile }) {
 
 const ratio = (n, d) => `${n}/${d}${d ? ` (${Math.round((100 * n) / d)}%)` : ''}`;
 
-/** Every amended-AC line, from what the base did and what the agent relied on. */
+/**
+ * Every amended-AC line, from what the base did and what the agent relied on.
+ *
+ * A pick may name SEVERAL entries (`parts` contract, VCST-6342 6a). An item is RIGHT when it relied on at
+ * least one entry and every entry it relied on is labelled -- one wrong reliance makes the item wrong, so
+ * opening more cannot buy precision. `picksPrecision` stays per item, comparable with the one-open runs;
+ * `reliancePrecision` counts every relied entry, and `partialCoverage` the share of a partial target's
+ * labelled entries the agent relied on -- the number the `parts` contract exists to move.
+ */
 export function scoreRows(rows, picks, confirm = null) {
+  const asList = (p) => (Array.isArray(p) ? p : p && p !== 'none' ? [p] : []);
   const relied = (r) => {
-    if (r.verdict === 'answer') return r.base;
-    if (r.verdict !== 'ambiguous') return null;
-    const p = picks.get(r.code);
-    if (!p || p === 'none') return null;
-    return confirm && confirm.get(r.code) !== 'yes' ? null : p;
+    if (r.verdict === 'answer') return [r.base];
+    if (r.verdict !== 'ambiguous') return [];
+    const ids = asList(picks.get(r.code));
+    return confirm && confirm.get(r.code) !== 'yes' ? [] : ids;
   };
   const T = rows.filter((r) => r.kind === 'target');
   const C = rows.filter((r) => r.kind === 'control');
-  const reliedRows = rows.filter((r) => relied(r));
-  const right = (r) => r.kind === 'target' && r.expect.includes(relied(r));
+  const reliedRows = rows.filter((r) => relied(r).length);
+  const right = (r) => r.kind === 'target' && relied(r).length > 0 && relied(r).every((id) => r.expect.includes(id));
+  const reliances = rows.flatMap((r) => relied(r).map((id) => r.kind === 'target' && r.expect.includes(id)));
+  const partial = T.filter((r) => r.partial);
   const full = T.filter((r) => !r.partial);
   const para = T.filter((r) => r.source === 'paraphrase');
   return {
     picksPrecision: [reliedRows.filter(right).length, reliedRows.length],
     controlsAnsweredByBase: C.filter((r) => r.verdict === 'answer').length,
-    controlsNone: [C.filter((r) => !relied(r)).length, C.length],
+    controlsNone: [C.filter((r) => !relied(r).length).length, C.length],
+    reliancePrecision: [reliances.filter(Boolean).length, reliances.length],
+    partialCoverage: [partial.reduce((s, r) => s + relied(r).filter((id) => r.expect.includes(id)).length, 0),
+      partial.reduce((s, r) => s + r.expect.length, 0)],
+    partialFullyCovered: [partial.filter((r) => r.expect.length && r.expect.every((id) => relied(r).includes(id))).length, partial.length],
+    reliedPerAsk: reliedRows.length ? +(reliedRows.reduce((s, r) => s + relied(r).length, 0) / reliedRows.length).toFixed(2) : 0,
     resolvedNonPartial: [full.filter(right).length, full.length],
     resolvedPartial: [T.filter((r) => r.partial).filter(right).length, T.filter((r) => r.partial).length],
     resolvedAll: [T.filter(right).length, T.length],
@@ -197,14 +220,14 @@ export function scoreRows(rows, picks, confirm = null) {
     paraphraseRecall10: [para.filter((r) => r.recalled).length, para.length],
     meanAskTokens: rows.length ? Math.round(rows.reduce((s, r) => s + r.tokens, 0) / rows.length) : null,
     baseAnswers: [rows.filter((r) => r.verdict === 'answer' && right(r)).length, rows.filter((r) => r.verdict === 'answer').length],
-    wave1: rows.filter((r) => WAVE1_MISSES.includes(r.id)).map((r) => ({ id: r.id, shown: r.shown.some((id) => r.expect.includes(id)), relied: relied(r), right: right(r) })),
-    wrong: reliedRows.filter((r) => !right(r)).map((r) => ({ id: r.id, kind: r.kind, relied: relied(r), expect: r.expect })),
+    wave1: rows.filter((r) => WAVE1_MISSES.includes(r.id)).map((r) => ({ id: r.id, shown: r.shown.some((id) => r.expect.includes(id)), relied: relied(r).join(' ') || null, right: right(r) })),
+    wrong: reliedRows.filter((r) => !right(r)).map((r) => ({ id: r.id, kind: r.kind, relied: relied(r).join(' '), expect: r.expect })),
   };
 }
 
 async function score({ out, picks: picksFile, confirm: confirmFile }) {
   const key = JSON.parse(await readFile(join(out, 'key.json'), 'utf8'));
-  const picks = await readPairs(picksFile);
+  const picks = await readPicks(picksFile);
   const confirm = confirmFile ? await readPairs(confirmFile) : null;
   for (const split of [...key.splits, ...(key.splits.length > 1 ? ['all'] : [])]) {
     const s = scoreRows(key.rows.filter((r) => split === 'all' || r.split === split), picks, confirm);
@@ -214,6 +237,8 @@ async function score({ out, picks: picksFile, confirm: confirmFile }) {
     console.log(`  controls none / kb_none  ${ratio(...s.controlsNone)}      gate >= 90%`);
     console.log(`  resolved, non-partial    ${ratio(...s.resolvedNonPartial)}      gate >= 80%   (shown ${ratio(...s.shownNonPartial)})`);
     console.log(`  resolved, partial        ${ratio(...s.resolvedPartial)}   all targets ${ratio(...s.resolvedAll)}`);
+    console.log(`  partial coverage         ${ratio(...s.partialCoverage)} labelled entries relied on; fully covered ${ratio(...s.partialFullyCovered)}`);
+    console.log(`  reliance precision       ${ratio(...s.reliancePrecision)}   relied entries per answered ask ${s.reliedPerAsk}`);
     console.log(`  paraphrase recall@10     ${ratio(...s.paraphraseRecall10)}      gate >= 90%`);
     console.log(`  mean ask tokens          ${s.meanAskTokens}              gate <= 400`);
     console.log(`  base answered alone      ${ratio(...s.baseAnswers)} right`);
@@ -230,13 +255,15 @@ function parseArgs(argv) {
     if (k === '--open-test') a.openTest = true;
     else if (k === '--no-says') a.noSays = true;
     else if (k === '--split') a.splits = rest[++i].split(',').map((s) => s.trim()).filter(Boolean);
-    else if (['--base', '--ranker', '--out', '--picks', '--confirm', '--set', '--salt', '--decider'].includes(k)) a[k.slice(2)] = rest[++i];
+    else if (['--base', '--ranker', '--out', '--picks', '--confirm', '--set', '--salt', '--decider', '--contract'].includes(k)) a[k.slice(2)] = rest[++i];
     else throw new Error(`unknown argument ${k}`);
   }
   if (a.out) a.out = resolve(a.out);
   // floor-1 renders hits with bodies and no `says:` line, and only `items` renders at all: a flag
   // accepted and ignored there would make arm B silently identical to arm A.
   if (a.noSays && (a.verb !== 'items' || a.decider === 'floor-1')) throw new Error('--no-says applies to `items` with the verdict ranker only');
+  if (a.contract && !['one', 'parts'].includes(a.contract)) throw new Error('--contract is one or parts');
+  if (a.contract && (a.verb !== 'items' || a.decider === 'floor-1')) throw new Error('--contract applies to `items` with the verdict ranker only');
   return a;
 }
 

@@ -692,3 +692,56 @@ Reproduce (`<b>` a checkout of `vc-knowledge` at `f11d658`; `$q` an isolated `KB
     node scripts/kb/bench/judge-harness.mjs score --out <dir> --picks <picks.txt>
 
 Picks per item and run, the per-run metrics and the disagreement rows: `scripts/kb/bench/says-ab-result.json`.
+
+## M6, the answer threshold from live pairs (VCST-6342, 2026-10-14) -- 0.957 -> 0.90
+
+Under `verdict-1` the base answered alone on 0 of 739 live asks (2026-10-08..14): the highest live `p`
+was 0.95, just under 0.957, so every ask became a list to read and close. Recalibrated from the logged
+`kb_show` / `kb_none` pairs, as this record planned.
+
+- **Weights stay.** A refit on the 576 judged live asks, cross-validated by session, did not beat the
+  published model (AUC 0.796 vs 0.815 on "the agent picked the top entry").
+- **Threshold.** Live at 0.90: 27 asks answered alone; of the 18 an agent judged, 18 picked that same
+  entry and 0 said none. Labelled sets (v2, logs300, wave2, wave3, live1006; 596 rows, 166 controls,
+  `verdict-bench --decider verdict` against base main): 0.957 -> 9/9, **0.90 -> 31/31, 0 controls**,
+  0.85 -> 62 answers with 3 on controls (`L-123`, `L-155`, `N-points-filter`), which the AC allows zero of.
+- **Limits.** 49/49 puts the lower bound of precision near 94%, at the edge of the 0.95 target; live
+  labels are picks, not truth. Expected effect is about 4% of asks skipping the list.
+- Published as `vc-knowledge#7` (one number in `ranker.json`). Rollback: restore 0.9573352630894495.
+
+## Several entries per question (VCST-6342 6a, 2026-10-14) -- FAIL, the one-open contract stays
+
+A real question often asks two things and the base holds them in two entries; the one-open contract
+cannot be satisfied by such a question (wave2: 1 of 9 partial targets resolved). Arm B
+(`AMBIGUOUS_CONTRACT_PARTS`, `render.mjs`) lets the agent open one entry per part, same handle, and
+rely on each for its part. Same method as the `says:` A/B above, one variable: base main @ `eed590c`
+and its ranker frozen; `judge-harness items --contract one|parts`, byte-identical but for the contract
+line; wave2 + wave3 + live1006 (197 `ambiguous` items: 89 non-partial targets, 56 partial, 54 controls);
+fresh Sonnet-class pickers, one run per arm, real `kb show` against an isolated queue, a reliance counted
+only when that batch's own log shows the open (0 unverified). The harness now scores several ids per item:
+an item is right only if EVERY entry it relied on is labelled. Rule, declared before the run: B ships if
+picks precision drops <= 1 point, resolved non-partial <= 2 points, controls stay >= 90%, and resolved
+partial rises.
+
+| one run per arm | A: one entry | B: parts | B - A | rule |
+|---|---|---|---|---|
+| picks precision (per item) | 86/103 (83.5%) | 97/134 (72.4%) | **-11.1** | >= -1 -- **fail** |
+| controls end in `none` | 46/54 (85.2%) | 42/54 (77.8%) | -7.4 | B >= 90% -- **fail** |
+| resolved, non-partial | 72/89 (80.9%) | 70/89 (78.7%) | -2.25 | >= -2 -- **fail** |
+| resolved, partial | 14/56 (25.0%) | 27/56 (48.2%) | **+23.2** | rises -- pass |
+| labelled entries of partial targets relied on | 14/123 (11.4%) | 45/123 (36.6%) | +25.2 | -- |
+| relied entries per answered ask | 1.00 | 1.48 | | -- |
+
+- **Permission to rely on a part is permission to rely on a near neighbour.** B covers parts as intended
+  (+23 points on partial targets), and pays for it where nothing should be relied on: four more controls
+  answered and eleven points of precision. The same effect showed in a discarded first A run, whose
+  picker brief itself said "states (part of)" and allowed several ids: 1.46 relied entries per ask and
+  controls at 79.6%. The brief, not only the contract line, moves this number.
+- **Not shipped.** `AMBIGUOUS_CONTRACT_PARTS` stays bench-selected (`verdictLines({contract})`,
+  `judge-harness --contract`). Partial answers need a decision the agent is not given today -- which part
+  an entry covers -- before more reliance can be allowed; 6b (the base composing an answer from entries
+  that each clear a part) is the next candidate.
+- One run per arm: the earlier A/B saw 1.6 points between two runs of one arm. Every failed line here is
+  well outside that.
+
+Per-run metrics and the discarded A run: `scripts/kb/bench/parts-ab-result.json`.

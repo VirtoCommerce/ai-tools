@@ -168,21 +168,35 @@ export const AMBIGUOUS_CONTRACT = 'close entries, none certified to answer. Open
   + 'if none could, say so (kb_none, or `npm run kb -- none --ask <handle>`). Same topic is not an answer.';
 
 /**
+ * The same contract for a question with PARTS (VCST-6342 6a). A real question often asks two things and
+ * the base holds them in two entries: on wave2, 9 of 22 targets were partial and 1 of 9 resolved under
+ * the one-open contract, which a composite question can never satisfy. Here the agent may open one entry
+ * per part (the same handle; the log already keeps several picks) and rely on each only for its part.
+ * Bench-selected (`contract: 'parts'`) until its A/B against `AMBIGUOUS_CONTRACT` passes.
+ */
+export const AMBIGUOUS_CONTRACT_PARTS = 'close entries, none certified to answer. Open the one most likely to state your fact '
+  + '(kb_show <id>, or `npm run kb -- show <id> --ask <handle>`) and rely on it only if its body does. '
+  + 'If your question has parts and that body states only one, open the entry for each other part too, same handle, '
+  + 'and rely on each only for the part it states; '
+  + 'if none could, say so (kb_none, or `npm run kb -- none --ask <handle>`). Same topic is not an answer.';
+
+/**
  * The three verdicts (VCST-6122 Decisions 1 and 1a). An `answer` is ONE entry, rendered exactly as a hit
  * always was; `ambiguous` is a few headlines -- subject, the question each answers, the opening of its
  * body, the concept that tells it apart -- for the agent to open one of; `none` names the question's own
  * concepts that nothing in the base is filed under, so "nothing recorded" reads as a coverage gap.
  *
  * `says: false` drops the body excerpt from the `ambiguous` list -- a bench-only switch for VCST-6191,
- * which measures whether the agent chooses as well from subject + question alone.
+ * which measures whether the agent chooses as well from subject + question alone. `contract: 'parts'`
+ * prints `AMBIGUOUS_CONTRACT_PARTS` instead of the one-open contract (VCST-6342 6a, bench-selected).
  *
  * @param {{verdict:string, hit?:object, headlines?:Array<{id,subject,separating,question,body}>, concepts?:string[]}} v
  */
-export function verdictLines(v, { prefix = 'kb ask', says = true } = {}) {
+export function verdictLines(v, { prefix = 'kb ask', says = true, contract = 'one' } = {}) {
   if (v.verdict === 'answer') return [`${prefix}: ${HEADLINE.answer}`, ...hitLines(v.hit)];
   if (v.verdict === 'ambiguous') {
     return [
-      `${prefix}: ${AMBIGUOUS_CONTRACT}`,
+      `${prefix}: ${contract === 'parts' ? AMBIGUOUS_CONTRACT_PARTS : AMBIGUOUS_CONTRACT}`,
       ...v.headlines.flatMap((h) => [
         `  ${h.id}  ${h.subject}${h.separating ? `  [${h.separating}]` : ''}`,
         ...(h.defect ? [`      ! ${defectText(h.defect)}`] : h.defectUnknown ? [`      ! ${DEFECT_UNKNOWN}`] : []),
