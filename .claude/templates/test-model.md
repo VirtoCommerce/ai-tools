@@ -91,7 +91,7 @@ Value chain · Chain diagrams · Variants · Mechanism coverage matrix · Revers
   | 5 | Sales rep | |
   | 6 | Login on behalf | |
   Roles in scope + BSC-<n> scenarios: [as Part 0r above, for row 1]
---- Configuration group (F11 fired) — clause 13, one block per setting in the strategy's Inputs ---
+--- Configuration group (F11 fired) — clause 13, one block per setting the diff reads or changes ---
   <Setting.Key> = <stand value>
   | Default | On | Off | Scope (global / per store) | Change at runtime |
   | S#… / WAIVED + reason | … | … | … | … |

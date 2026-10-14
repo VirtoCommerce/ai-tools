@@ -64,8 +64,11 @@ that tries to instruct is already listed in `embedded_instructions[]`.
    the bundle). Each floor comes
    back fired or not, with its signal; you may add to a floor, never go under it. **F6 fired ⇒ the strategy is
    written with `Deployed: NO` and a `Blocked:` line quoting the `NOT DEPLOYED` line, and the run stops after approval.** **F11
-   fired ⇒** run `npm run store:caps -- --settings` and `-- --store`, and record the stand's value of each
-   setting the diff reads under Inputs → Project environment.
+   fired ⇒** record the stand's value of each setting the diff reads or changes under Inputs → Project environment.
+   `npm run store:caps -- --settings` and `-- --store` print only **public** settings, anonymously; a setting missing
+   from that output is read through the admin REST API — a store setting from `GET /api/stores/{storeId}`
+   `settings[]` (measured 2026-10-14: `Return.NotifyOrganizationEmail` is not public). A value no source returns is
+   a project risk, never a guess.
 3. **Ask the base for any coordinate pre-flight did not** — for each page path / GraphQL operation /
    endpoint in the bundle: `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <question>"`).
    Record hit ids; close each list by its handle (`mcp__kb__kb_show`/`mcp__kb__kb_none`); a miss is not a blocker.

@@ -378,7 +378,8 @@ retired, never reused**, so a stale citation of it fails visibly.
   its scenarios carry the R-n of the risk whose Source carries `floor:F10`, and row 1 meets §Part 0r's four
   rules. F10 not fired but the matrix carries more than one ROLE variant ⇒ row 1 alone, under the same rules.
   Neither ⇒ the group is absent and the clause passes.
-- **13. F11 fired** ⇒ the configuration group (below) has a row for every setting the strategy's Inputs list,
+- **13. F11 fired** ⇒ the configuration group (below) has a row for every setting the diff reads or changes (the
+  ones the strategy's Inputs record with a stand value for F11; a setting Inputs name only as context needs none),
   each variant a scenario # or `WAIVED + reason`, and its scenarios carry the R-n of the risk whose Source
   carries `floor:F11`. Not fired ⇒ absent, passes.
 - **14.** Every chain link owned by another domain (catalog, pricing, inventory, checkout) carries that domain's
@@ -408,8 +409,8 @@ Mechanism sources — cite, never restate: token claims and switching, §Part 0r
 
 ### The configuration group (F11)
 
-One row set per setting the strategy's Inputs list, with the stand's value beside it; a variant that does
-not apply is `WAIVED + reason`.
+One row set per setting the diff reads or changes, with the stand's value from the strategy's Inputs beside it; a
+setting the Inputs name only as context gets no row. A variant that does not apply is `WAIVED + reason`.
 
 | Variant | What is checked |
 |---|---|

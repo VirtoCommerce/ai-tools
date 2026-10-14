@@ -95,7 +95,7 @@ strategy's `Floors fired:` line, never re-derived by the model.
 | 10 | — | retired (sweep rows) |
 | 11, 11b | Unchanged | kept |
 | 12 | F10 fired ⇒ the org-context group (§5) has all six rows, each a scenario # or `WAIVED + reason`, its scenarios carry the F10 risk's R-n (M10), and row 1 meets Part 0r's four rules. F10 not fired but the matrix carries more than one ROLE variant ⇒ row 1 alone, under the same rules (today's trigger, kept so nothing it caught is lost). Neither ⇒ the group is absent and the clause passes | rewritten (was: Part 0r when >1 role variant) |
-| 13 | F11 fired ⇒ the configuration group (§5a) has a row set for every setting the strategy's Inputs list, each variant a scenario # or `WAIVED + reason`, and its scenarios carry the F11 risk's R-n (M10). F11 not fired ⇒ the group is absent and the clause passes | new |
+| 13 | F11 fired ⇒ the configuration group (§5a) has a row set for every setting the diff reads or changes (a setting the strategy's Inputs name only as context needs none), each variant a scenario # or `WAIVED + reason`, and its scenarios carry the F11 risk's R-n (M10). F11 not fired ⇒ the group is absent and the clause passes | new |
 | 14 | Every chain link owned by another domain (catalog, pricing, inventory, checkout) carries that domain's variants (product type, property type, …) or `WAIVED + reason` | new; makes the existing integration-point rule checkable (§5a) |
 
 Fourteen clauses: 1–9, 11, 11b, 12–14. Clauses 12 and 13 are what give F10 and F11 force inside the model.
@@ -152,7 +152,7 @@ the new integration-link clause in §4.
 
 | # | Layer | Where it lives | How its value is read | Phase A |
 |---|---|---|---|---|
-| 1 | Module / platform settings | `ModuleConstants.Settings`; global, or overridden per store | the diff + `npm run store:caps -- --settings` (public ones), REST settings (the rest) | **F11** |
+| 1 | Module / platform settings | `ModuleConstants.Settings`; global, or overridden per store | the diff + `npm run store:caps -- --settings` (public ones only — anonymous); the admin REST API for the rest, e.g. `GET /api/stores/{storeId}` `settings[]` (VCST-5884's `Return.NotifyOrganizationEmail` is not public) | **F11** |
 | 2 | Store settings | flags (`quotesEnabled`, `anonymousUsersAllowed`…), languages, currencies, payment / shipping / tax methods | `npm run store:caps -- --store` | **F11** |
 | 3 | Theme `$cfg.*` flags | baked into the theme bundle | `.claude/knowledge/automation/storefront-config-flags.md` | **F11** |
 | 4 | Catalog and product | product type (physical / digital / configurable / variations), property type, multivalue, dictionary, virtual catalog | catalog data, live-discover | gate clause (§4) |
@@ -170,7 +170,7 @@ When F11 fires:
 - **Inputs → Project environment** records the stand's current value of each setting the diff reads (the
   `store:caps` output). A branch the stand cannot reach is then visible before the run, not discovered after it.
 
-**In the model (a configuration row group).** One set of rows per setting the strategy's Inputs list (gate
+**In the model (a configuration row group).** One set of rows per setting the diff reads or changes (gate
 clause 13):
 
 | Variant | What is checked |
