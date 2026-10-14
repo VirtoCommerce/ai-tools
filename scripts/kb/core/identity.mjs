@@ -110,22 +110,23 @@ export function findDuplicate(rows, { anchors, scope, subject }) {
  * refused at push. Said while the writer can still act on it: the two honest moves are to confirm
  * the incumbent (it is the same fact) or to reword the subject (it is a different one).
  */
-export function subjectTakenMessage(row, { sameSubject = true } = {}) {
+export function subjectTakenMessage(row, { sameSubject = true, carry = '' } = {}) {
   const anchors = (row.anchors ?? row.anchorKeys ?? []).join(', ');
   return `${row.id} already ${sameSubject ? 'has this exact subject' : 'is the id this subject hashes to, held by a different subject'}`
     + ` at other coordinates (${anchors}).\n`
     + `  ${row.subject}\n`
     + `Read it: kb show ${row.id}\n`
-    + `Same fact? confirm it:        kb confirm ${row.id} --deployment <env>\n`
+    + `Same fact? confirm it:        kb confirm ${row.id} --deployment <env>${carry}\n`
     + 'Different fact? reword the subject so it says what is different, and capture again.';
 }
 
-export function refusalMessage(row) {
+/** `carry`: flags the refused capture set that the confirm must repeat -- a defect marker (VCST-6317). */
+export function refusalMessage(row, { carry = '' } = {}) {
   const anchors = (row.anchors ?? row.anchorKeys ?? []).join(', ');
   const scope = (row.scope ?? []).join(', ');
   return `${row.id} is already this fact — same subject, same anchors (${anchors}), same scope (${scope}).\n`
     + `  ${row.subject}\n`
     + `Read it: kb show ${row.id}\n`
-    + `If it agrees with what you saw, confirm it:  kb confirm ${row.id} --deployment <env>\n`
+    + `If it agrees with what you saw, confirm it:  kb confirm ${row.id} --deployment <env>${carry}\n`
     + `If it does not, dispute it:                  kb dispute ${row.id} --saw "<what you saw>"`;
 }
