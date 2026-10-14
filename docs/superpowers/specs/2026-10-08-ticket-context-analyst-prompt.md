@@ -1,6 +1,7 @@
 # `ticket-context-analyst` — agent prompt design
 
-> **Status: REVISED 2026-10-13 — awaiting owner confirmation.** Companion to
+> **Status: ACCEPTED 2026-10-14 — shipped as `.claude/agents/ticket-context-analyst.md` (#430, #436), which
+> is byte-identical to §3.** Companion to
 > [`2026-10-08-ticket-context-design.md`](2026-10-08-ticket-context-design.md) (decision D6, revised the
 > same day). The agent now reads **only files**: every fetch moved to the skill's `lib/` or to the skill
 > runner, and its allowlist is `Read, Grep, Glob`. §3 is the agent file verbatim; Phase 1 Task 9 copies
@@ -225,14 +226,13 @@ lists both.
 
 ## 4. Open points for review
 
-1. **A7 vs `authoring-standard.md` §2.** Accept the exception and record it in the standard (proposed;
-   plan Task 9 adds one line to §2), or copy the few rules it needs from `ba/shared-instructions.md` into
-   the skill directory.
+1. **A7 vs `authoring-standard.md` §2. Resolved:** the exception is recorded in the standard (§2, #430).
 2. **A5 (Mechanic).** Check the output fields against §5.2's test: *does its output state how the
    platform behaves?* `layer_guess` and the hidden-behaviour pass come closest. They describe the
    **diff**, not runtime behaviour, which is why they are classified as Mechanic.
-3. **Allowlist behaviour, verified in Phase 1.** A `tools:` allowlist of built-in tools is documented. Plan
-   Task 9 still runs a one-dispatch check that the agent cannot call `Bash` or an MCP tool, and records
-   the result in the PR.
+3. **Allowlist behaviour — partly verified.** A `tools:` allowlist of built-in tools is documented. Across
+   the 43 Phase 2 dispatches (2026-10-13) the agent called only `Read` and `Grep`. The negative check is
+   still open: #430 left unticked "dispatch once to confirm it only has Read, Grep and Glob" — one
+   dispatch whose brief asks for `Bash` or an MCP tool, with the refusal recorded in VCST-6223.
 4. **Azure DevOps** stays `GAP: connector-unavailable` until Phase 5 — now in `lib/`, not in this file.
    The agent itself is tracker-agnostic: it reads files.
