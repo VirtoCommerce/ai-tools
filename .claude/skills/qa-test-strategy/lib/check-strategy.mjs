@@ -20,7 +20,8 @@ export function checkStrategy(md, bundle, floors) {
   if (!head) return { round, errors: ["1: no '## Round N' section"] };
   if (round > 3) errors.push(`1: round ${round} — a fourth round is refused (D6)`);
 
-  const risks = rows(block(sec, "Risks")).map(([r, what, source, , level]) => ({ r, what, source: source ?? "", level: level ?? "" }));
+  const levelOf = (s) => { const m = /^\W*(critical|high|medium|low)\b/i.exec(s); return m ? m[1].toLowerCase() : null; };
+  const risks = rows(block(sec, "Risks")).map(([r, what, source, , level]) => ({ r, what, source: source ?? "", level: levelOf(level ?? "") }));
   const approach = rows(block(sec, "Approach per risk")).map(([r, technique, oracle, layer, lane, effort]) => ({ r, technique: technique ?? "", oracle: oracle ?? "", lane: lane ?? "", effort: effort ?? "" }));
   const artifacts = new Map(rows(block(sec, "Artifacts")).map(([name, decision]) => [name, decision ?? ""]));
   const outOfScope = block(sec, "Out of scope");
@@ -30,6 +31,7 @@ export function checkStrategy(md, bundle, floors) {
   for (const p of (bundle.change?.prs ?? []).filter((x) => !x.context_only && !x.gap))
     for (const h of p.hotspots ?? []) if (!cited.includes(h.source)) errors.push(`3: hotspot ${h.source} maps to no risk and is not out of scope`);
 
+  for (const x of risks) if (x.level === null) errors.push(`4: ${x.r} Level is not Critical/High/Medium/Low`);
   const registered = new Set(risks.map((x) => x.r));
   for (const x of risks) {
     const a = approach.find((y) => y.r === x.r);
@@ -42,14 +44,14 @@ export function checkStrategy(md, bundle, floors) {
 
   const firedLine = (/^Floors fired:([^\n]*)/m.exec(sec)?.[1] ?? "").split("not fired:")[0];
   const fired = (floors.floors ?? []).filter((f) => f.fired).map((f) => f.id);
-  const skipped = (name) => /^SKIP/i.test(artifacts.get(name) ?? "SKIP");
+  const running = (name) => /^RUN\b/i.test((artifacts.get(name) ?? "").trim());
   for (const id of fired) {
     if (!new RegExp(`\\b${id}\\b`).test(firedLine)) errors.push(`6: ${id} fired but is not on the 'Floors fired:' line`);
-    for (const name of ARTIFACTS_FOR[id] ?? []) if (skipped(name)) errors.push(`6: ${id} fired but '${name}' is SKIP or missing`);
+    for (const name of ARTIFACTS_FOR[id] ?? []) if (!running(name)) errors.push(`6: ${id} fired but '${name}' is not RUN (SKIP, N/A, missing or other)`);
     if ((id === "F10" || id === "F11") && !approach.some((a) => /\bMODEL\b/.test(a.technique))) errors.push(`6: ${id} fired but no risk has technique MODEL`);
   }
-  const high = risks.filter((x) => /^(high|critical)$/i.test(x.level));
-  if (high.length && (skipped("Test model") || skipped("Exploratory"))) errors.push(`6b: ${high.map((x) => x.r).join(", ")} High/Critical ⇒ Test model and Exploratory run (F1)`);
+  const high = risks.filter((x) => x.level === "high" || x.level === "critical");
+  if (high.length && (!running("Test model") || !running("Exploratory"))) errors.push(`6b: ${high.map((x) => x.r).join(", ")} High/Critical ⇒ Test model and Exploratory run (F1)`);
   for (const x of high) { const a = approach.find((y) => y.r === x.r); if (a && /\{HYPOTHESIS\}/.test(a.oracle) && !/\bMODEL\b/.test(a.technique)) errors.push(`6c: ${x.r} High/Critical on {HYPOTHESIS} needs MODEL (M1)`); }
   if (fired.includes("F6") && !/Deployed:\s*NO/.test(sec)) errors.push("6d: F6 fired but the header does not say 'Deployed: NO'");
 
