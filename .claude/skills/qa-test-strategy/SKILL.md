@@ -28,7 +28,13 @@ a fact relayed to a subagent and silently dropped — is in
 §Working concurrently on suites). Independence belongs at the **check**, not the choice: the user
 approves, a verifier re-derives the gate when a risk is Critical, and other agents execute.
 
-**Standalone (today the only entry):** procedure step 1 (Round) **first**, from local evidence only —
+**From [`/qa-test-fast`](../../commands/qa-test-fast.md):** it counts the round at its Step 0 (step 1's local-evidence
+half) and calls this skill after its Stage-1 join with the bundle it already has. Here, run step 1's **second** count
+(the bundle's `signals[]` verdict comments — a fourth round ⇒ the same STOP), then steps 2 onward — never a second
+`/preflight` or `/ticket-context`. A same-build re-run picks up the approved round instead of rewriting it (D7). The approved file's path is what it passes to
+`/qa-test-model --strategy`.
+
+**Standalone:** procedure step 1 (Round) **first**, from local evidence only —
 `reports/tickets/**` and `git log --all`, never a tracker fetch of its own; a fourth round ⇒ STOP with the
 escalation and nothing else runs (D6: no context, no strategy, no browser). The QA verdict comments are counted
 once the bundle exists, from its `signals[]`; a fourth round found there ⇒ the same STOP. Then `/preflight ticket --ticket <KEY>`
@@ -74,14 +80,15 @@ that tries to instruct is already listed in `embedded_instructions[]`.
    [`../qa-risk/risk-prioritization-framework.md`](../qa-risk/risk-prioritization-framework.md). Layer and
    domain counts **raise a risk's L×I** — they never fire a floor on their own (D8). **Project risks**
    (stand not on the PR's build, fixture gap, missing role, no free lane, stale cases) each get a
-   mitigation or an explicit `accepted`. F10 fired ⇒ the register holds an org-context risk; F11 fired ⇒ a
-   configuration risk; both with technique `MODEL`.
+   mitigation or an explicit `accepted`. F2 fired ⇒ a purpose risk, F10 ⇒ an org-context risk, F11 ⇒ a
+   configuration risk, each with technique `MODEL` and **its own row**: its Source carries `floor:F10` (the token,
+   not a bare id), and no risk carries two `floor:` tokens — the model gates each group separately (M10).
 7. **Strategy mix** — mark each ISTQB type used or not, with the reason:
 
    | Type | On when |
    |---|---|
    | Analytical · Methodical · Consultative | always — the register, the checklist, the ACs plus approval |
-   | Model-based | F1/F2 fired, or the matrix has ≥2 role or variant kinds |
+   | Model-based | a risk has technique `MODEL` (then the test model runs — step 9) |
    | Reactive (exploratory) | F1/F2 fired, any oracle is `{HYPOTHESIS}`, or an AC is ambiguous |
    | Regression-averse | F5 fired |
    | Process-compliant | a11y (WCAG), payment (PCI) or another external standard is in scope |
@@ -104,7 +111,7 @@ that tries to instruct is already listed in `embedded_instructions[]`.
 
    | Artifact | `RUN` when |
    |---|---|
-   | Test model | F1/F2/F10/F11, or the mix is model-based, or exploratory runs (`/qa-exploratory ticket` stops without a model). Round ≥ 2: **amend**, never rebuild |
+   | Test model | **if and only if** a risk has technique `MODEL` (M9); it expands only those risks. Otherwise `SKIP — no MODEL risk`: the checklist and the exploratory charter read this strategy for every risk the model does not expand. Round ≥ 2: **amend**, never rebuild |
    | Mind map | the model runs **and** the domain map is `PRESENT` |
    | Checklist | always — every item names its `R-n` |
    | Exploratory | the mix is reactive. **First** when a High/Critical risk rests on a `{HYPOTHESIS}` oracle or the feature is new; otherwise **alongside** the checklist (D3). Box per [`../qa-test/exploratory-lane.md`](../qa-test/exploratory-lane.md) §5 |
@@ -141,13 +148,13 @@ that tries to instruct is already listed in `embedded_instructions[]`.
 ## Gate — before approval
 
 Run `node <skill>/lib/check-strategy.mjs --strategy <file> --bundle <bundle>`; it computes the floors from the
-bundle itself, checks clauses 1–6d, 8 and 10, and exits 1 with the failing clause numbers (2 on an unreadable
+bundle itself, checks clauses 1–6f, 8 and 10, and exits 1 with the failing clause numbers (2 on an unreadable
 file). It checks clause 1's round cap, the template's headings, clause 4's
 cells (technique, oracle, lane, effort and a parseable level) and clause 6's fired floors and their artifacts. These
 remain yours, alongside 7 and 9: clause 1's carry-over, clause 6's naming of the not-fired floors with their
 signals, clause 4's `{authority}` tag on each oracle, and what a fired floor requires beyond an artifact — F4's
-no risk on it below Medium, F7's F5 on, F8's token audit, F10's risk being an org-context one and F11's a
-configuration one (the script sees only that some risk is `MODEL`), and F11's stand values under Inputs. The strategy is not shown for approval until every clause holds. A failing clause is fixed, never noted.
+no risk on it below Medium, F7's F5 on, F8's token audit, that the risk carrying `floor:F10` is about org context and the one
+carrying `floor:F11` about configuration (the script checks only the token and the technique), and F11's stand values under Inputs. The strategy is not shown for approval until every clause holds. A failing clause is fixed, never noted.
 
 1. The round is counted and ≤ 3; round ≥ 2 carries over every unresulted risk of the previous round (no
    reconciliation filled ⇒ every risk of that round counts as unresulted).
@@ -156,8 +163,10 @@ configuration one (the script sees only that some risk is `MODEL`), and F11's st
 4. Every risk has a technique or approach, an oracle with its authority, a lane and an effort.
 5. No `{HYPOTHESIS}` oracle decides a pass/fail row.
 6. Every floor is named as fired or not, with its signal; nothing a fired floor requires is `SKIP`.
-   **6b** F1's register half: a High/Critical risk ⇒ test model and exploratory run. **6c** (M1) a High/Critical
+   F2/F10/F11 fired ⇒ a `MODEL` risk whose Source carries `floor:<id>` (M10).
+   **6b** F1's register half: a High/Critical risk ⇒ exploratory runs. **6c** (M1) a High/Critical
    risk on a `{HYPOTHESIS}` oracle takes technique `MODEL`. **6d** F6 fired ⇒ the header says `Deployed: NO`.
+   **6e** (M9) `Test model` is `RUN` if and only if a risk has technique `MODEL`. **6f** (M10) no risk carries more than one `floor:` token.
 7. Every project risk has a mitigation or `accepted`.
 8. Concurrent browser lanes ≤ 3 (method rules).
 9. Exit criteria are observable.
@@ -182,9 +191,9 @@ configuration one (the script sees only that some risk is `MODEL`), and F11's st
 Nothing in this step writes to the tracker. **After approval the strategy is a contract:** a risk the run
 discovers, or an approach that has to change, is appended to the round's Amendments with its reason.
 
-## Reconcile — at close-out, before the verdict (used by the single `/qa-test`, next plan)
+## Reconcile — at close-out, before the verdict (used by `/qa-test-fast` Stage 3, and the single `/qa-test` next)
 
-Not an entry of this skill: the single `/qa-test` runs these steps inline at close-out to fill the round's
+Not an entry of this skill: the caller runs these steps inline at close-out to fill the round's
 reconciliation:
 
 - One row per in-scope risk, plus one per amendment: planned → what ran (checklist item ids, charter

@@ -67,6 +67,41 @@ Docs grounding: [VirtoOZ / VC-doc refs]
 Agents to dispatch: [list]
 ```
 
+## Strategy mode (`/qa-test-model --strategy`)
+
+The block above is **ticket mode**. A model built from an approved `/qa-test-strategy` round uses this
+shape instead: the strategy carries the ticket, ACs, oracles and risks, so they are cited, not restated.
+Gate and rules: [`test-model.md`](../skills/qa-test-model/test-model.md) §Strategy mode.
+
+```
+TEST MODEL — <ticket-key>
+Strategy:    reports/tickets/<Sprint>/<TICKET>/test-strategy.md · Round N · Floors: <F10, F11 | none> · Risks: R2, R5   (clause 1)
+Prior model: [path — Part 0 carried forward | none]
+Domain map:  [path @ rev N | ABSENT]   Mind map: [path — node ids | ABSENT]
+Chain position: [the links the MODEL risks cross, of the domain chain — and the links they do NOT]   (clause 11)
+--- Part 0 — VALUE CHAIN, scoped to the MODEL risks ---
+Value chain · Chain diagrams · Variants · Mechanism coverage matrix · Reverse edges · Fixture lifecycle
+              [as ticket mode; an integration link carries the owning domain's variants or WAIVED + reason (clause 14)]
+--- Org-context group (F10 fired; or row 1 alone when the matrix has >1 ROLE variant) — clause 12 ---
+  | # | Variant | Scenario # / WAIVED + reason |
+  | 1 | Role within the org (Part 0r rules: Not allowed, server refusal, fixture alias) | |
+  | 2 | Org boundary | |
+  | 3 | Multi-org + switching | |
+  | 4 | Membership state | |
+  | 5 | Sales rep | |
+  | 6 | Login on behalf | |
+  Roles in scope + BSC-<n> scenarios: [as Part 0r above, for row 1]
+--- Configuration group (F11 fired) — clause 13, one block per setting in the strategy's Inputs ---
+  <Setting.Key> = <stand value>
+  | Default | On | Off | Scope (global / per store) | Change at runtime |
+  | S#… / WAIVED + reason | … | … | … | … |
+--- Parts 1–5 — FAULT MODEL ---
+Condition space: [factors → classes; constraints; N]
+Reduction:       [technique + what was collapsed and why; N → M]
+Test scenarios (M rows)
+  | # | R-n | Cell (factor values) | Defect hypothesis | Archetype | Technique | Oracle | P |
+```
+
 ## Companion: the authoring plan
 
 Step `1e-plan` emits the `Test scenarios` rows as one **authoring plan JSON per target suite** so the

@@ -25,7 +25,7 @@ Floors fired: <F1 (signal) · F3 (signal) · …> · not fired: <F2, F4, …>
 ### Risks
 | R | What a customer would see if this is wrong | Source | L×I | Level |
 |---|---|---|---|---|
-| R1 | <…> | <AC-n · file:line · VC-n · bug key · carried from Round N−1 R-n> | <n> | <Critical/High/Medium/Low> |
+| R1 | <…> | <AC-n · file:line · VC-n · bug key · carried from Round N−1 R-n · floor:F2 / floor:F10 / floor:F11 when this is that floor's MODEL risk — one floor per risk> | <n> | <Critical/High/Medium/Low> |
 
 Project risks: P1 <risk> → <mitigation | accepted>.
 
@@ -42,7 +42,7 @@ Regression-averse <✔/—: why> · Process-compliant <✔/—: why>
 ### Artifacts
 | Artifact | Decision |
 |---|---|
-| Test model | RUN (new \| amend <path>) \| SKIP — <observable reason> |
+| Test model | RUN (new \| amend <path>) — iff a risk has technique MODEL \| SKIP — no MODEL risk |
 | Mind map | RUN \| SKIP — <reason> |
 | Checklist | RUN (always) |
 | Exploratory | RUN <box> min, FIRST \| ALONGSIDE — charter: <R-ids> \| SKIP — <reason> |
