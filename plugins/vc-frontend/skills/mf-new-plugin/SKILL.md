@@ -37,7 +37,7 @@ Stop and report, changing nothing, when:
 | Finding | Why |
 |---|---|
 | `$WEB/StorefrontApp/` is committed | not this scenario. The plugin exists: upgrading it is S4, debugging it S7 |
-| `$WEB/StorefrontApp/` exists but is untracked (`git status --porcelain` shows `?? …StorefrontApp/`) | an earlier run stopped. Offer to go on from step 3, or to delete that folder and start over; nothing in it was committed. Delete only on the user's yes |
+| `$WEB/StorefrontApp/` exists but is untracked (`git status --porcelain` shows `?? …StorefrontApp/`) | an earlier run stopped, or it is someone's uncommitted work. Show what is in it (`git ls-files --others --exclude-standard -- StorefrontApp` in `$WEB`), then offer to go on from step 3, or to move it out of the module repo and start over. Never delete it. Move it only on the user's yes, and out of the repo: a copy left inside the `*.Web` project would be built into the module |
 | the module repo has other uncommitted changes | the diffs in step 3 must show only this skill's edits. On a resumed run, its own earlier edits to the three module files may stay; show them in step 3 |
 | the module repo is on its default branch | ask for a branch first |
 | `node --version` in `$FRONTEND` is not 22, or `corepack --version` fails | the checkout asks for Node 22 (its `engines`), and the plugin builds through corepack (S1a, before you start, 2). Say what to install |
@@ -136,5 +136,5 @@ Offer each; do only what the user wants.
 2. Lower a version, or write one the check did not print.
 3. Hand-edit `@vc-frontend/core` files, or anything else under `$FRONTEND`. Never `git checkout` or `git restore` a file
    there: it may hold the user's own work.
-4. Re-run `create:plugin` over an existing `StorefrontApp/`, or delete one without the user's yes. Only an
-   untracked one left by an earlier run may go (step 1).
+4. Re-run `create:plugin` over an existing `StorefrontApp/`, or delete one. An untracked one may move out of the
+   module repo, on the user's yes (step 1).
