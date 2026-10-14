@@ -5,8 +5,8 @@ import { join } from "node:path";
 import { CAPS, timedFetch, timeoutGap } from "./fetch.mjs";
 import { GapError, asGap, gap } from "./gap.mjs";
 
-/** Stage-1 rule: deployment-manifest PRs and this repo's PRs are context, not change surface. */
-export const CONTEXT_ONLY_REPOS = Object.freeze(["vc-deploy-dev", "ai-tools"]);
+/** Stage-1 rule: deployment-manifest PRs, this repo's PRs and QA test-tooling PRs are context, not change surface. */
+export const CONTEXT_ONLY_REPOS = Object.freeze(["vc-deploy-dev", "ai-tools", "vc-testing-module"]);
 
 // owner/repo come from parsed URLs and end up in API paths and run-dir file names: refuse anything else.
 const NAME = /^[A-Za-z0-9_.-]+$/;

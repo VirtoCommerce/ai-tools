@@ -78,9 +78,15 @@ export function compose(prep, outs) {
       artifact: dp?.artifact ?? null, deployed: dp?.deployed ?? "UNKNOWN", deployed_reason: dp?.deployed_reason ?? fallback });
   }
 
+  // No kb.out.json means the kb step never ran. `kb: []` would read as "the base knows nothing", so it becomes the
+  // not-read row known-ground.md prescribes, plus a gap (Block 5: never a silent empty).
+  const kbMissing = !outs.kb;
+  const kb = kbMissing ? [{ coordinate: "*", entries: [], trust: "not-read", answer: "the base was not read (kb.out.json was not written)" }] : outs.kb.kb ?? [];
+
   // Block 5: gaps[] is the one list — every block's gaps, then each materials GAP row and each whole-PR gap whose
   // `where` is not listed yet (an inventory item's gap and its material row share the ref, so neither is doubled).
-  const gaps = [...prep.gaps, ...prep.prs.flatMap((p) => p.gaps ?? []), ...t.gaps, ...m.gaps, ...invented, ...c.gaps, ...capGaps, ...(d.gaps ?? []), ...(k.gaps ?? [])];
+  const gaps = [...prep.gaps, ...prep.prs.flatMap((p) => p.gaps ?? []), ...t.gaps, ...m.gaps, ...invented, ...c.gaps, ...capGaps, ...(d.gaps ?? []), ...(k.gaps ?? []),
+    ...(kbMissing ? [{ where: "known.kb", reason: "unreadable", detail: "kb.out.json was not written — the kb step did not run, so nothing is known either way" }] : [])];
   const listed = new Set(gaps.map((g) => g.where));
   const addOnce = (g) => { if (!listed.has(g.where)) { listed.add(g.where); gaps.push(g); } };
   for (const row of materials) if (row.outcome === "GAP" && row.reason) addOnce({ where: row.ref, reason: row.reason, ...(row.detail ? { detail: row.detail } : {}) });
@@ -97,7 +103,7 @@ export function compose(prep, outs) {
     acs: t.acs, signals: t.signals, epic: prep.epic, siblings: t.siblings, layer_guess: t.layer_guess, domains_guess: t.domains_guess,
     materials, design: m.design,
     change: { rung: prep.rung, prs, chain_deployed: d.chain_deployed ?? "NONE", ac_to_diff: j.ac_to_diff, diff_to_ac: j.diff_to_ac, hidden_behaviour: c.hidden_behaviour },
-    known: { ...k.known, kb: outs.kb?.kb ?? [] },
+    known: { ...k.known, kb },
     gaps,
     questions: [...t.questions, ...m.questions, ...c.questions, ...j.questions],
     embedded_instructions: [...t.embedded_instructions, ...m.embedded_instructions, ...c.embedded_instructions],
