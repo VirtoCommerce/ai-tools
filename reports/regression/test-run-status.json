@@ -1,25 +1,24 @@
 {
- "runId": "REG-2026-10-12-1832",
- "status": "completed",
- "startedAt": "2026-10-12T16:33:20.000Z",
- "windowStart": "2026-10-12T16:33:20.000Z",
- "selection": "098",
- "env": "localhost",
- "scoped": true,
- "purpose": "VCST-5880 /qa-test Step 4c (C1): exact set of 17 Draft cases CMP-036,038-053; --ids; --no-promote",
- "suites": {
-  "098": {
-   "status": "done",
-   "lane": "browser",
-   "browser": "playwright-chrome",
-   "laneId": 1,
-   "startedAt": "2026-10-12T16:33:20.000Z",
-   "attempts": 1,
-   "pass": 5,
-   "fail": 2,
-   "blocked": 10,
-   "finishedAt": "2026-10-12T17:01:47.000Z"
-  }
- },
- "finishedAt": "2026-10-12T17:01:47.000Z"
+  "runId": "REG-2026-10-13-1739",
+  "status": "completed",
+  "startedAt": "2026-10-13T17:39:30.000Z",
+  "windowStart": "2026-10-13T17:39:30.000Z",
+  "selection": "043",
+  "env": "vcst",
+  "scoped": true,
+  "purpose": "VCST-6017 /qa-test: verification of GA-030/GA-031 derivation fix (order line count from the placed order); --ids; --no-promote",
+  "suites": {
+    "043": {
+      "status": "done",
+      "lane": "browser",
+      "browser": "playwright-chrome",
+      "startedAt": "2026-10-13T17:40:16.060Z",
+      "pass": 2,
+      "fail": 0,
+      "blocked": 0,
+      "total": 2,
+      "finishedAt": "2026-10-13T17:47:32.879Z"
+    }
+  },
+  "finishedAt": "2026-10-13T17:47:42.665Z"
 }

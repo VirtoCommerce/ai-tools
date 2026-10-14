@@ -1166,7 +1166,7 @@
       "layer": "frontend",
       "concern": "non-functional",
       "priority": "P2",
-      "testCount": 33,
+      "testCount": 58,
       "estimatedMinutes": 17,
       "agent": "qa-testing-expert",
       "tags": [

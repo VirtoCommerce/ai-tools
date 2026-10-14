@@ -3406,5 +3406,58 @@
     "returnLineAReturnLineItemId": "c5c1795d-6605-4031-adbb-8cee3d86e33a",
     "lineAReturnableAfterSeed": 1,
     "seededAt": "2026-10-12T11:58:44.490Z"
+  },
+  "PB_GA4_PRODUCT_LISTS": {
+    "_inline": true,
+    "group_id": "f42ef82a-d669-4215-97a8-464b6081a6d5",
+    "permalink": "/agent-test-ga4-product-lists",
+    "carousel_card_name": "ASUS ROG Strix G15 Laptop da gioco AMD Ryzen 9 5900HX 16G RAM 512GB SSD RX6800M-8GB 300Hz schermo Computer",
+    "carousel_card_code": "51131830271",
+    "carousel_card_images": 2
+  },
+  "PB_GA4_HTML_LISTS": {
+    "_inline": true,
+    "group_id": "56d0aa4d-eb09-4f18-a8b1-260105060926",
+    "permalink": "/agent-test-ga4-html-product-lists"
+  },
+  "PROD_GA4_RELATED_ANCHOR": {
+    "_inline": true,
+    "id": "4303e416-a09e-4f85-b98d-d6d9e1959bf5",
+    "code": "AGENT-TEST-GA4-REL-ANCHOR",
+    "name": "AGENT-TEST GA4 Related Anchor",
+    "slug": "seed-test-fixtures/agent-test-ga4-related-anchor",
+    "url": "/seed-test-fixtures/agent-test-ga4-related-anchor",
+    "related_count": 10,
+    "related_codes": "0000385,0000645,0001057,0003283-1,0003420,0003428,107029,108141,108335,111553",
+    "related_ids": "eebd44a1-5bb0-4468-8a7a-d807adcc3002,77ae9c2c-eb4c-4c79-b861-5cdea22c490c,81a1c2ed-f9a2-4984-801e-f77fc71597ec,e968c73f-e066-4419-bb6c-dfc7d3f69a9e,2f525d09-cf38-4277-9670-86cb9f47e875,8d2a4903-f96b-46b0-b904-3e000f1c0d01,776883dc-d967-4ab2-9f7e-578caeb8bd12,3aaac1cd-4508-4cda-a64b-5a59cdad17f8,6cf53adf-0d17-4a41-949b-0e5a7e700ac2,05d1d386-9931-4c90-b8b6-9400cbd2f968"
+  },
+  "PROD_GA4_VARIATION_PARENT": {
+    "_inline": true,
+    "id": "879bb965-d732-4433-96ba-2164cd7a9173",
+    "code": "AGENT-TEST-GA4-VAR-PARENT",
+    "name": "AGENT-TEST GA4 Variations Parent",
+    "slug": "seed-test-fixtures/agent-test-ga4-variations-parent",
+    "url": "/seed-test-fixtures/agent-test-ga4-variations-parent",
+    "variations_count": 60,
+    "family_total": 61,
+    "page_size": 50,
+    "pages": 2
+  },
+  "CART_GA4_SFL_RB": {
+    "_inline": true,
+    "account_env": "USER_EMAIL",
+    "cart_id": "88062015-b3e5-4b05-ae2c-2d2f460fecb3",
+    "saved_for_later_list_id": "5dca4896-59ff-427d-a623-652112740326",
+    "cart_line_codes": "111798",
+    "cart_line_ids": "59bd14a6-c4f0-4647-84a1-d9805c1c97fd",
+    "saved_for_later_codes": "121924,121975,122718,123109,14418465,151682,152078,7PLSH835",
+    "saved_for_later_ids": "f1d0a44d-a3a8-4d64-9627-f9874bd0e202,68e85496-4281-47ab-9a32-2248e5326717,e0a441cb-efe7-4d9a-927d-1dabf23db1ff,803c1a54-1be8-4ef1-8786-34c9e8259cf6,b2db70a5-68f0-4356-9503-a7a18b08cad0,8e3fe657-127d-4e40-ac86-dca9b3f90734,16fae43e-8f5e-4b65-8de6-b0d5333ab15c,5e3ba6cd-2957-4b59-b0ea-29f253ab2c2e",
+    "recently_browsed_codes": "152123,1592321634,229032,261082,271507,2YJN7",
+    "recently_browsed_ids": "cc81104c-8528-490b-a7a8-d1fb53ca164b,ffd1bc36-4756-4e6a-88ee-0d7ae70d539c,6410c133-7a4d-423f-8b57-733abe6ce6a0,fa5c5851-a262-46f2-9f14-bc2a1af3097e,5096739d-648e-48bc-ab43-d662d8bdffcb,92a1b7f7705e4448a796cc419492220a",
+    "saved_for_later_count": 8,
+    "sfl_show_more_step": 6,
+    "url": "/cart",
+    "rb_session_id": "AGENT-TEST-GA4-RB-SEED",
+    "recently_browsed_order_newest_first": "2YJN7,271507,261082,229032,1592321634,152123"
   }
 }

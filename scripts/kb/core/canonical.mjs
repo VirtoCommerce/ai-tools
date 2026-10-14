@@ -21,7 +21,17 @@ export function hash(value, length = 12) {
 export function canonicalBuild({ platform = null, theme = null, modules = {} } = {}) {
   const sorted = {};
   for (const id of Object.keys(modules ?? {}).sort((a, b) => a.localeCompare(b))) sorted[id] = String(modules[id]);
-  return { platform: platform ? String(platform) : null, theme: theme ? String(theme) : null, modules: sorted };
+  return { platform: platform ? String(platform) : null, theme: theme ? themeVersion(theme) : null, modules: sorted };
+}
+
+// ONE THEME, TWO SPELLINGS. The storefront bundle inlines the package version (`2.60.0-pr-2543-0127-01276486`);
+// a deploy manifest names the artifact zip (`vc-theme-b2b-vue-2.60.0-pr-2543-0127-01276486`), and every
+// snapshot rebuilt from deploy history carries that form. Both reduce to the version: everything from the
+// first `x.y.z` on. Derived from the string alone -- no package name is transcribed -- and a value with no
+// `x.y.z` in it is kept as written, never guessed at.
+export function themeVersion(theme) {
+  const s = String(theme ?? '').trim();
+  return /\d+\.\d+\.\d+.*$/.exec(s)?.[0] ?? s;
 }
 
 export const buildPin = (build) => hash(canonicalBuild(build), 16);
