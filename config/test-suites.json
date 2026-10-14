@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-10-12",
-    "totalSuites": 154,
+    "generated": "2026-10-13",
+    "totalSuites": 156,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -433,7 +433,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 23,
+      "testCount": 46,
       "estimatedMinutes": 45,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -1166,7 +1166,7 @@
       "layer": "frontend",
       "concern": "non-functional",
       "priority": "P2",
-      "testCount": 33,
+      "testCount": 58,
       "estimatedMinutes": 17,
       "agent": "qa-testing-expert",
       "tags": [
@@ -1835,7 +1835,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 45,
+      "testCount": 63,
       "estimatedMinutes": 75,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1851,9 +1851,9 @@
       "customerApplicability": "reference",
       "notes": "RET-GQL-031..035 (added 2026-09-25) prove five store settings are actually READ, not hardcoded defaults, by changing each live via POST /api/platform/settings/v2/tenant/Store/{id}/values, observing the shift, then restoring: Return.WindowDays, Return.AllowedOrderStatuses, Return.AllowedShipmentStatuses (blank means ANY status here, the inverse of AllowedOrderStatuses's blank), and Return.ReturnNewNumberTemplate; RET-GQL-035 is a pure read proving returnReasons.localizedName is per-culture admin text with a code fallback, not a global string. These intentionally do NOT write through PUT /api/stores despite a live 2026-09-25 finding that it propagates faster: PUT /api/stores REPLACES the whole store entity (scripts/seed-data/store/set-store-setting.mjs documents a real 2026-08-27 outage from a partial body), and safely reconstructing its ~100-entry settings array has no equivalent in this runner's declarative Steps grammar — only a real GET-spread-PUT script (or the Admin SPA's own Save) can do that safely. So these cases accept the slower, already-documented (RET-GQL-028) propagation risk of the tenant-values endpoint instead; a WAIT timeout on them is a cache/propagation finding, not a functional regression. Return.Reasons (the reason-dictionary SELECTION setting, distinct from ReasonsRequiringComment) could not be covered at all: PUT /api/stores returns 204 but the value stays null on every write attempt — no case exists for it, and none should be authored until that write path is understood. VERIFIED LIVE ON vcptcore_qa1 2026-09-25 (npm run store:set -- --list --store B2B-store) that the real persisted setting names are Return.WindowDays / Return.AllowedOrderStatuses / Return.AllowedShipmentStatuses / Return.ReturnNewNumberTemplate / Return.ReturnEnabled / Return.Reasons / Return.ReasonsRequiringComment / Return.AttachmentsRequired — NOT the ReturnWindowDays/ReturnAllowedOrderStatuses/ReturnAllowedShipmentStatuses spelling the domain map's own ModuleConstants.cs citation uses; that citation names C# field identifiers, not the dotted setting keys the REST/GraphQL surface actually reads.",
       "lanes": {
-        "machine": 45,
+        "machine": 62,
         "browser": 0,
-        "manual": 0
+        "manual": 1
       }
     },
     {
@@ -2565,7 +2565,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 31,
+      "testCount": 37,
       "estimatedMinutes": 50,
       "agent": "qa-backend-expert",
       "tags": [
@@ -2580,7 +2580,7 @@
       "envRiskGate": "staging",
       "customerApplicability": "reference",
       "lanes": {
-        "machine": 31,
+        "machine": 37,
         "browser": 0,
         "manual": 0
       }
@@ -2593,7 +2593,7 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 12,
+      "testCount": 17,
       "estimatedMinutes": 40,
       "agent": "qa-backend-expert",
       "tags": [
@@ -3755,6 +3755,65 @@
       "customerApplicability": "reference",
       "notes": "VCST-6077 (vc-frontend PR #2536). Tasks page redesign: scope chips, date chip, row actions, calendar rail. Every row re-seeds the wall-clock-relative task fixture first (`TEST_ENV=vcst npm run seed:sales-rep-tasks`, decays at local midnight); SR-TK-018 seeds with BROWSER_TZ=America/New_York and sets the browser timezone. Mutating rows restore their task in Cleanup; SR-TK-026 leaves SR_TASK_NODATE_INDIA dated until the next seed. SR-TK-024 asserts the CORRECT focus behaviour and is expected to FAIL on the current build (focus drops to the document root). SR-TK-007, 026, 027 and 028 record observed behaviour pending product-owner answers (All vs U+O+C; canceled-only day; canceled due today in Today). Cases stay Draft until a run promotes them.",
       "clickDriven": true
+    },
+    {
+      "id": "107",
+      "name": "Punchout — storefront session (start link to signed-in buyer)",
+      "file": "regression/suites/Frontend/punchout/107-punchout-storefront-session.csv",
+      "domain": "auth-security",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 8,
+      "estimatedMinutes": 60,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "punchout",
+        "cxml",
+        "sso",
+        "storefront",
+        "journey"
+      ],
+      "requiresModules": [
+        "VirtoCommerce.Punchout"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "notes": "VCST-5886 (Epic VCST-5154). Storefront half of Punchout (API/admin half: 108). PNCF-001 is the [JOURNEY] case. Each case mints its own start link by POSTing a cXML setup (single-use token). PNCF-007 flips the store-wide Punchout.Enabled of the configuration-0 store and PNCF-005 runs ~11 minutes (config-1 session lifetime, beyond the machine runner's 300 s wait cap) — exclusiveGroup keeps 108/107 from running together; run PNCF-005 outside a batch. Env-scoped by requiresModules (effective only when MODULES_ENABLED is set) — select with `punchout`. Cases stay Draft until a run promotes them.",
+      "exclusiveGroup": "store-setting:Punchout.Enabled",
+      "clickDriven": true
+    },
+    {
+      "id": "108",
+      "name": "Punchout — cXML setup, token exchange and Admin user mapping",
+      "file": "regression/suites/Backend/punchout/108-punchout-cxml-token-admin.csv",
+      "domain": "auth-security",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 25,
+      "estimatedMinutes": 90,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "punchout",
+        "cxml",
+        "sso",
+        "token-exchange",
+        "admin"
+      ],
+      "requiresModules": [
+        "VirtoCommerce.Punchout"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "notes": "VCST-5886 (Epic VCST-5154). Env-scoped to deployments carrying the VirtoCommerce.Punchout module (vcptcore_qa1 only today) — PNCH-001 is a PRE-FLIGHT that BLOCKS the suite when the module, the seeded mapping or configuration 0 is missing. requiresModules filters only when MODULES_ENABLED is set; with it empty the suite is selected anyway, so run it by selection `punchout`, not through backend/full. Data: npm run seed:punchout (td:validate:punchout). PNCH-009/010 flip Punchout.Enabled / clear the URL of the configuration-1 store and PNCF-007 flips it on the configuration-0 store: exclusiveGroup serialises them with 107. PNCH-015 waits ~2 min and the token rows need the start-link token out of the cXML response, which REST-CAPTURE cannot read (XML body), so those rows run on the agent lane. Out of scope: cart return (VCST-5887), OrderRequest (VCST-5888). Known gaps NOT asserted: organization selection via API/GraphQL (VCST-6222), mobile label (VCST-6227). Cases stay Draft until a run promotes them.",
+      "exclusiveGroup": "store-setting:Punchout.Enabled",
+      "clickDriven": true,
+      "lanes": {
+        "machine": 13,
+        "browser": 12,
+        "manual": 0
+      }
     }
   ],
   "selections": {
@@ -3888,7 +3947,8 @@
       "exclude": [
         "089",
         "090",
-        "091"
+        "091",
+        "107"
       ]
     },
     "backend": {
@@ -3901,7 +3961,8 @@
         "092",
         "092b",
         "094",
-        "102"
+        "102",
+        "108"
       ]
     },
     "sprint": {
@@ -4063,6 +4124,12 @@
     "layout-stability": {
       "include": [
         "048c"
+      ]
+    },
+    "punchout": {
+      "include": [
+        "108",
+        "107"
       ]
     }
   }

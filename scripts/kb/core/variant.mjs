@@ -40,6 +40,8 @@ export function compareBuilds(a, b, relevant) {
   }
   if (relevant.theme && a.theme && b.theme) {
     compared += 1;
+    // Both in one spelling: the stamp writes the version, and an older snapshot is read through
+    // `canonicalBuild` (`buildReader`, verbs.mjs), which reduces the artifact's name to it.
     if (a.theme !== b.theme) diffs.push({ part: 'theme', a: a.theme, b: b.theme });
   }
   const ma = lower(a.modules);

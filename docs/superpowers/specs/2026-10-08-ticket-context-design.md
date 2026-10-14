@@ -4,7 +4,8 @@
 > first draft with no review. It was re-checked against `main` after `/preflight` phases 1–2 landed
 > (#421, #424, #426), and revised: **D3** (deployment), **D6** (the agent's tools), the flow in §5 and
 > the tree in §4. **D8–D12** are added, along with **O2–O3**. Each revision says what it replaces and
-> why. Phase 1 plan: [`../plans/2026-10-13-ticket-context-phase-1.md`](../plans/2026-10-13-ticket-context-phase-1.md).
+> why. **Phase 2 fix wave 2 (2026-10-13)** revised Block 3 (ladder, 406 diffs, hotspots, claims), step 0b
+> (Figma), D4 (animated GIFs), D6/A1 (one CHANGE per product PR), D9, D12, and added **O4–O6**. Phase 1 plan: [`../plans/2026-10-13-ticket-context-phase-1.md`](../plans/2026-10-13-ticket-context-phase-1.md).
 
 ## 1. Problem
 
@@ -122,7 +123,8 @@ These were set by the requester and are binding for the design and for every lat
     inventory.mjs     # Q1 — attachments, inline images, links, linked issues, PR refs from the issue
     github.mjs        # code-host REST: PR ladder rungs 1–3, PR files/diff/reviews/checks
     fetch.mjs         # downloads + public-page fetch into the run dir, with caps (P5, S5)
-    frames.mjs        # D4 — ffmpeg frame extraction with caps
+    frames.mjs        # D4 — ffmpeg frame extraction with caps (videos and animated GIFs)
+    figma.mjs         # 0b — a Figma frame as PNG through the images API, when FIGMA_TOKEN is set
     deploy.mjs        # D3 — PR → artifact → the pre-flight core's answer
     cache.mjs         # P3 / D10 — freshness key, TTL, check-ignore guard
     known.mjs         # block 4 — capability-checked repo tooling (M2)
@@ -166,7 +168,7 @@ CHANGE's diff. Every join is now named.
   0b connectors     runner    only for inventory items no REST can read: Loom, Figma, Claude Design
   1  TICKET    ┐
   2  MATERIALS ├─ one message, ticket-context-analyst ×3, tools Read/Grep/Glob, input = paths
-  3  CHANGE    ┘
+  3  CHANGE    ┘    (one CHANGE per product PR when there are several — merge-change; rev. 2026-10-13)
   J  join           runner    PR ↔ AC (both directions) · conflicts → questions · embedded instructions
   D  deploy         script    PR → artifact (deploy:pr) → deployed (pre-flight core) → chain
   4  known ground   script    domain/mind map state · BL/ECL · cases at risk · prior runs  (+ kb, runner)
@@ -190,7 +192,12 @@ It does everything that needs a credential or a shell, so the agent needs neithe
 - **Files.** Attachments under the caps are downloaded; HAR/log/trace files are scrubbed (S2) and only the
   scrubbed copy is handed on; videos become frames (D4); public external pages become text (S5).
 - **PRs.** Rungs 1–3 of the ladder (§Block 3). Per PR: metadata, files, the diff, review comments,
-  unresolved thread count and check-run conclusions, each written to the run dir.
+  unresolved thread count and check-run conclusions, each written to the run dir. *Revised 2026-10-13
+  (Phase 2, fix wave 2):* a diff GitHub refuses (406, too large) is assembled from the per-file `patch`
+  fields of the files API (`/pulls/{n}/files`, 100 per page, up to the 300-file cap), with `diff --git`
+  headers, into the same diff file and under the same 500 KB cap. A file with no `patch` (binary or too
+  large) is listed in a `pr:<ref>:patches` gap; the diff is a gap only when the files API failed too.
+  *Replaces:* the whole PR's hunks unread on a 406 (VCST-4933, pagebuilder#159).
 - Every item that could not be read is already a `GAP` in `prepare.json`, with its reason.
 
 ### Step 0b — connector-only sources (skill runner)
@@ -200,6 +207,18 @@ inventory item of those kinds, the skill runner (the session that invoked the sk
 connectors) reads it once and writes the result into the run dir (`loom-<n>.md`, `figma-<n>.png`), then
 adds the path to the item. No connector ⇒ the item keeps `GAP: connector-unavailable`. The runner reads
 only items the inventory already lists — it follows no new link.
+*Revised 2026-10-13 (Phase 2, fix wave 2):* **Figma is read by `prepare` when the env names
+`FIGMA_TOKEN`** (through `process.env` after the layered loader, never printed): `lib/figma.mjs` parses the
+file key and node id from the item's full `url` (`node-id=1-2` → `1:2`), calls
+`GET https://api.figma.com/v1/images/{fileKey}?ids={nodeId}&format=png&scale=1` with `X-Figma-Token`, and
+downloads the returned image without the token, under the attachment cap. Both hosts are origin-guarded
+(api.figma.com; a Figma image host — figma.com or Figma's S3 bucket), redirects are refused, and a refusal
+is a gap, never a retry (S7, D9). At most `CAPS.figmaFrames` (6) are exported; the rest are one `over-cap` gap
+that names them, and the PNG bytes count toward the ticket's 100 MB with the attachments. A link the images API
+cannot take (no `node-id`, an instance id, `/make/`, `/slides/`, a community link) stays in `needs_connector`, as
+without a token. No token ⇒ the item stays in `needs_connector`, and
+`design-sources.md` says to set `FIGMA_TOKEN` or attach a PNG export. *Replaces:* Figma through the MCP
+`get_screenshot`, which returns the image to the session, not to a file — every Figma link was a gap.
 
 ### Block 1 — Ticket (agent, mode TICKET)
 
@@ -242,7 +261,19 @@ Every inventory item that is not a PR, by kind:
 **Find** (`prepare`) — the measured ladder of `technical-change.md` §2.1, with C2/C3 applied:
 explicit link + dev-status → org-wide PR search by key → commit search by key → paths named in the
 ticket (rung 4, the weakest; only the agent can read paths out of prose, so it is reported as a
-`GAP: not-found` with the candidate paths in `detail`). Stop at the first rung that yields PRs.
+`GAP: not-found` with the candidate paths in `detail`). *Revised 2026-10-13 (Phase 2, fix wave 2):*
+rungs 1 and 2 **always both run**, merged and deduplicated (a PR keeps the lower rung that found it);
+rung 3 runs only when rungs 1–2 found no product PR; `change.rung` is the highest rung that added a PR.
+*Replaces:* "stop at the first rung that yields PRs". On VCST-4933 a comment named two PRs, rung 1
+stopped there, and the functional fix (x-cms#23) was found only by the key search.
+*Revised 2026-10-13:* then follow **named companions, one hop only**. A change can span repos whose PRs
+carry other keys, so no rung finds them (VCST-5925: rung 2 found two of four PRs). The body of a
+product PR the ladder found names them as a PR URL, `owner/repo#n`, or a bare `repo#n` (read as the
+naming PR's owner). The owner must be a configured org, and context-only PRs are neither read for
+companions nor added as companions. A shorthand that 404s is an issue, not a PR, and is dropped. Each companion is a
+product PR entry with `found_via: <naming PR>`. It is appended after the ladder's PRs, so the PR cap
+fills with ladder PRs first and a companion past the cap is an `over-cap` gap. At most
+`CAPS.companions` references are looked up, and the rest are one `over-cap` gap. A companion's own body is never read.
 
 **Per PR, the agent returns** (from the files `prepare` wrote):
 
@@ -255,6 +286,8 @@ ticket (rung 4, the weakest; only the agent can read paths out of prose, so it i
 | tests the PR changed, and changed branches with no test | first targets for testing |
 | fate — reverted, superseded, follow-up fix after merge | avoid testing a dead change |
 | CI state, unresolved review threads | risk signal, never a block |
+| risk hotspots: `{source: <repo>:<path>:<line>, risk}`, ≤12, most important first (*added 2026-10-13, fix wave 2*) | where to test first; a hotspot names a changed line, and its risk is a testable consequence, not a style remark. The baseline Stage 1's strongest output, which the bundle lacked |
+| claims: the PR body's atomic testable statements, `source: pr:<repo>#<n>`, ≤25, always (*added 2026-10-13, fix wave 2*) | the oracle when the ticket has no ACs (VCST-5097). What the author says the change does, never ACs; Step 7 names their count when `acs` is empty |
 
 **Deployed on `TEST_ENV`?** — `lib/deploy.mjs`, after the agents (D3). Not the agent, and not a probe of
 its own.
@@ -298,7 +331,8 @@ a consumer must see "there are no ACs" rather than invent them.
    must have its line in `bundle.blockers[]` so the consumer can stop or mark the run `BLOCKED`.
 5. A HAR, log or trace that was read has no scrubbed-file marker (S2).
 6. **Any string in the bundle matches a real secret value from the env layer, or a PAT/JWT/Bearer
-   shape** (S2, S3). The bundle is the one artifact that outlives the run, so it gets the same value scan
+   shape** (S2, S3). *Added 2026-10-13 (fix wave 2 review):* `FIGMA_TOKEN` is in the value set when set, and
+   `figd_…` is a token shape (`figma-pat`). The bundle is the one artifact that outlives the run, so it gets the same value scan
    as the public `kb` queue.
 
 A ticket with no attachments, links or PRs passes in seconds with empty tables marked `none` — an empty
@@ -323,6 +357,7 @@ The schema (`bundle.schema.json`) is the contract. In outline:
   "change": { "rung": 1, "prs": [{ "repo": "…", "number": 0, "state": "…", "merged": true, "head_sha": "…",
                         "layers": {}, "operations": [], "endpoints": [], "settings": [],
                         "tests_changed": [], "untested": [], "fate": "…", "ci": "…", "open_threads": 0,
+                        "hotspots": [{ "source": "<repo>:<path>:<line>", "risk": "…" }], "claims": [{ "text": "…", "source": "pr:<repo>#<n>" }],
                         "artifact": { "kind": "module", "id": "…", "version": "…" },
                         "deployed": "YES|NO|UNKNOWN", "deployed_reason": "…" }],
               "chain_deployed": "YES|NO|UNKNOWN|NONE",
@@ -393,15 +428,15 @@ revised on 2026-10-13 and D8–D12 added; each revision says what it replaces.
 | D1 | Name | **`ticket-context`** (`/ticket-context` now, `vc-fix:ticket-context` after Phase 5) | Owner's choice (2026-10-08). `ticket-context` says what the skill gathers context *for*, and avoids `qa-context`, which reads as a sibling of `npm run context:check` (prompt-size lint). No `qa-` prefix, on purpose: its consumers are not only QA (`/qa-fix`, BA and planning commands read it too), the same reason `vc-self-check` is not qa-prefixed. |
 | D2 | Cache location | **Split by data class, one ignored root.** Bundle: `<outputRoot>/.vc-fix/context/<KEY>/bundle.json`, 24 h TTL (in this repo `.vc-fix/` is already gitignored). Raw artifacts: `<outputRoot>/.vc-fix/context/<KEY>/run-<stamp>/`, deleted at run end, never cached. Both only if `git check-ignore` confirms the path is ignored; else the run dir is an OS temp directory and the bundle is not cached. | Speed (P3) needs the bundle to survive between runs on the same ticket; security (S3) does not allow raw client attachments, HARs or frames to sit on disk. The bundle is derived and scrubbed, and gate rule 6 scans it. `.vc-fix/` is already the plugin's gitignored local-state root, and `project-init`'s `lib/gitignore.mjs` adds it in client projects. |
 | D3 | Deployment check | **Revised 2026-10-13. No probe of its own; one asker per run.** After the agents, `lib/deploy.mjs` (a) resolves each PR to its CI artifact with the existing read-only resolver, `npm run deploy:pr -- <KEY> --pr=<ref>… --json` (dry-run: `{kind, id, version, source}` per PR), (b) turns each artifact into an `expect` — an open PR's exact pre-release build, a merged PR's base version — and (c) asks the pre-flight core through its CLI, `npm run preflight -- --for ticket-fast --ticket <KEY> --expect <id>@<version> --json`, reading the `expect` row and `facts.deployed`. `theme` (vc-frontend) and `platform` artifacts are `UNKNOWN: no-live-source` and are **never** sent as `--expect` (the core has no live source for them, and `--expect` on an id it does not list reports "not deployed", a false BLOCK). `chain_deployed` is the weakest PR's. `/qa-test-fast` Step 0 stops passing `--expect`. Both scripts are behind M2 capability checks. | *Replaces:* "Block 3 asks `getEnvFacts()` with `expect: module@version` per PR". The shipped core has no `expect` option — `expect` is a CLI flag (`scripts/preflight/cli.ts`) and its comparison is private to `policy.ts`; and nothing in the first draft mapped a PR to a module version. The resolver that does exists (`scripts/deploy/pr/pr.ts`), and calling the CLI keeps the comparison in one place. Moving `--expect` out of Step 0 fixes an ordering bug: Step 0 ran before the PRs were found. A failed probe stays `UNKNOWN`, never filled from `declared`. Known limitation: O2. |
-| D4 | Video | **`ffmpeg` is a soft dependency.** Detected at run time; not added to `package.json`. Caps: 1 frame every 2 s, at most 12 frames, video only (audio is not transcribed). Absent ⇒ `GAP: tool-missing` with the install remedy. | Bug videos are often the only place the repro order exists, so a hard `GAP` throws away the input most worth reading. A hard dependency would break installs where `ffmpeg` is unavailable (C3). Loom keeps its own path through the connector (0b). |
+| D4 | Video | **`ffmpeg` is a soft dependency.** Detected at run time; not added to `package.json`. Caps: 1 frame every 2 s, at most 12 frames, video only (audio is not transcribed). Absent ⇒ `GAP: tool-missing` with the install remedy. *Revised 2026-10-13 (Phase 2, fix wave 2):* an image attachment that is an **animated GIF** (more than one image descriptor, counted by walking the GIF's blocks — no dependency) takes the same path and becomes a `video` item: its frames, with the sampling interval shortened for a short GIF (never below 0.1 s, same 12-frame cap), or `GAP: tool-missing` — "install ffmpeg (winget install ffmpeg)". It is never a finding from frame 1. *Replaces:* a GIF read as a still image (VCST-4933: four GIFs, first frame only). | Bug videos are often the only place the repro order exists, so a hard `GAP` throws away the input most worth reading. A hard dependency would break installs where `ffmpeg` is unavailable (C3). Loom keeps its own path through the connector (0b). |
 | D5 | `kb` writes | **Strictly read-only.** The skill asks the `kb`; it never captures, confirms or disputes. | The `kb` is a public repository, and `scripts/kb/core/secret-gate.mjs` states its acceptance rests on the consumer being this repo — "extending the base to client deployments must re-decide it first". A plugin skill runs in client deployments, so writing from it would be that unmade decision (S3). Consumers in this repo keep the capture duty they already have. See also D11 for asks. |
-| D6 | Who runs blocks 1–3, with what tools | **Revised 2026-10-13. One new agent, `ticket-context-analyst`, dispatched three times in parallel with mode-specific briefs, with `tools: Read, Grep, Glob` and nothing else.** All remote reads move to `lib/` (tracker REST, Confluence REST, code-host REST, public pages) or, for Loom/Figma/Claude Design, to the skill runner (step 0b). | *Replaces:* an allowlist of exact MCP tool ids. Checked against this session: the draft's ids (`mcp__Atlassian_MCP__…`) match neither Atlassian server in use (`mcp__atlassian__…` from `.mcp.json`, `mcp__claude_ai_Atlassian_MCP__…` from the connector), and the two do not even share tool names (`getConfluencePage` vs `getConfluenceContent`; only the connector has `getLoomVideo`). MCP ids are per-install, so no fixed list is portable (C1). A server-level pattern (`mcp__atlassian`) is documented, but it would admit the server's write tools and break S4. How a `tools:` allowlist treats deferred MCP tools and unknown ids is not documented. With no MCP and no network in the agent, S4 and S5 hold by construction, the prompt-injection exfiltration path through `WebFetch` is gone, and the PR ladder runs the same in cloud sessions. Cost: `lib/` needs a tracker and a code-host credential, which `/project-init` already sets up (PAT recommended); without one, the items are `GAP: no-credential`. |
+| D6 | Who runs blocks 1–3, with what tools | **Revised 2026-10-13. One new agent, `ticket-context-analyst`, dispatched three times in parallel with mode-specific briefs, with `tools: Read, Grep, Glob` and nothing else.** All remote reads move to `lib/` (tracker REST, Confluence REST, code-host REST, public pages) or, for Loom/Figma/Claude Design, to the skill runner (step 0b). *Revised 2026-10-13 (Phase 2, fix wave 2):* with more than one product PR, CHANGE is one dispatch per product PR in the same message (brief line `PRS: <ref>`), merged by `cli.mjs merge-change` (analyst-prompt A1). | *Replaces:* an allowlist of exact MCP tool ids. Checked against this session: the draft's ids (`mcp__Atlassian_MCP__…`) match neither Atlassian server in use (`mcp__atlassian__…` from `.mcp.json`, `mcp__claude_ai_Atlassian_MCP__…` from the connector), and the two do not even share tool names (`getConfluencePage` vs `getConfluenceContent`; only the connector has `getLoomVideo`). MCP ids are per-install, so no fixed list is portable (C1). A server-level pattern (`mcp__atlassian`) is documented, but it would admit the server's write tools and break S4. How a `tools:` allowlist treats deferred MCP tools and unknown ids is not documented. With no MCP and no network in the agent, S4 and S5 hold by construction, the prompt-injection exfiltration path through `WebFetch` is gone, and the PR ladder runs the same in cloud sessions. Cost: `lib/` needs a tracker and a code-host credential, which `/project-init` already sets up (PAT recommended); without one, the items are `GAP: no-credential`. |
 | D7 | Where it lives first | **`.claude/` in this repo now, `vc-fix` plugin in Phase 5**, under the §4a portability contract. | Requested by the owner, 2026-10-08. Its first consumers are here, and Phase 2 can still reject the design; building in the plugin first would ship an unproven skill to clients and cost a plugin release per iteration. The contract is what stops "later" from becoming a rewrite. |
-| D8 | Where the ACs are | **The AC field is resolved, not guessed.** `tracker.fieldMap.acceptanceCriteria` from the profile wins; else `prepare` lists the tracker's fields once (`/rest/api/3/field`) and takes every custom field whose name matches `/acceptance criteria/i`. Those ids join the named fields (P4). None found ⇒ the agent reads description and comments only, and `gaps[]` says the field was not found. | P4 forbids the all-fields fetch, and the first draft's "custom field first" named no field — today's Stage 1 fetches all fields for exactly this reason. The id differs per Jira site, so it cannot be hardcoded (GOLDEN RULE). `fieldMap` is the profile's existing operator-owned slot for this. |
-| D9 | Credentials | **One per system, chosen once.** Tracker: `JIRA_BASE_URL` (else `tracker.baseUrl`) + `JIRA_EMAIL` + `JIRA_API_TOKEN`. Code host: the variable named by `vcs.authEnv`, else `GIT_TOKEN`, else the `gh` CLI session. Absent ⇒ `GAP: no-credential` naming the variable. A refusal is `GAP: access-denied`, never a retry with another credential (S7). | Read paths need a credential the agent no longer has (D6). The variable names are the ones `scripts/lib/jira-search.ts`, `scripts/deploy/lib/github.ts` and `/project-init` already use. Retrying a refusal with a different token hides a permission problem and acts with an identity the operator did not choose. |
+| D8 | Where the ACs are | **The AC field is resolved, not guessed.** `tracker.fieldMap.acceptanceCriteria` from the profile wins; else `prepare` lists the tracker's fields once (`/rest/api/3/field`) and takes every custom field whose **whole** name is the term, `/^\s*accept[ae]nce(\s+criteria)?\s*$/i`: "Acceptance" or the misspelt "Acceptence", with or without " criteria", in any case. A name that only extends the term ("Acceptance criteria improvement") is a different field and is not taken. *Revised 2026-10-13:* the first rule, `/acceptance criteria/i`, missed a site whose ticket ACs sit in a field named just "Acceptance" and took only empty look-alikes. Those ids join the named fields (P4). None found ⇒ the agent reads description and comments only, and `gaps[]` says the field was not found. | P4 forbids the all-fields fetch, and the first draft's "custom field first" named no field — today's Stage 1 fetches all fields for exactly this reason. The id differs per Jira site, so it cannot be hardcoded (GOLDEN RULE). `fieldMap` is the profile's existing operator-owned slot for this. |
+| D9 | Credentials | **One per system, chosen once.** Tracker: `JIRA_BASE_URL` (else `tracker.baseUrl`) + `JIRA_EMAIL` + `JIRA_API_TOKEN`. Code host: the variable named by `vcs.authEnv`, else `GIT_TOKEN`, else the `gh` CLI session. A tracker or code-host credential absent ⇒ `GAP: no-credential` naming the variable. Figma (optional, *added 2026-10-13*): `FIGMA_TOKEN`; absent, it is no gap of its own — Figma links stay connector items (step 0b), and one the runner cannot attach is `GAP: connector-unavailable`. A refusal from any of the three is `GAP: access-denied`, never a retry with another credential (S7). | Read paths need a credential the agent no longer has (D6). The variable names are the ones `scripts/lib/jira-search.ts`, `scripts/deploy/lib/github.ts` and `/project-init` already use. Retrying a refusal with a different token hides a permission problem and acts with an identity the operator did not choose. |
 | D10 | Freshness key | **Ticket `updated` + each PR's head SHA, `state` and `merged_at` + each linked issue's `updated` + `--domain` + a fingerprint of the skill's own files and the analyst prompt.** A merge or a different domain invalidates the cache (a merge leaves the head SHA unchanged), and so does any change to the skill: a scrubber or prompt fix that does not change the schema would otherwise serve bundles built by the old code for 24 h (*added 2026-10-13*). A change to a Confluence page, Figma file, Loom or external page is **not** detected; `--fresh` skips the cache. | *Replaces:* ticket `updated` + PR SHAs only. Linked issues are free (same REST call). The rest would cost a request per source on every cache check; documenting the blind spot is cheaper and honest. |
 | D11 | Copies and the kb question rule | **`scrub.mjs` copies** `secretValuesFrom`, `TOKEN_SHAPES` and the env-file list from `scripts/kb/core/secret-gate.mjs`, with a header naming the origin. **kb questions are built from coordinates only** (endpoint, GraphQL operation, page path), never from ticket text; each ask is closed with `kb_show` or `kb_none`; hit ids `/preflight` step 3 already returned are reused, not re-asked. | M1 forbids the import; S2 forbids a second scanner design — a deliberate copy satisfies both, the way `vc-fix` already copies `knowledge/`. kb questions are stored verbatim in a public repo (`secret-gate.mjs` header), so ticket text in a question would publish client data; an unclosed ask breaks the base's trust loop (`CLAUDE.md` §Product context). |
-| D12 | Caps | Attachment 25 MB each, 100 MB per ticket · 12 frames per video · 20 pages per document · 6 PRs per ticket (most recent first) · 500 KB diff per PR · 300 files per PR · 200 KB text per public page · 10 linked issues · 500 comments per ticket (oldest first; the rest is an `over-cap` gap). Defined once, as `CAPS` in `lib/fetch.mjs`, which `lib/github.mjs` imports. | P5 named caps without values. These keep a typical ticket under P6's 5 minutes; Phase 2 measures and may move them. |
+| D12 | Caps | Attachment 25 MB each, 100 MB per ticket · 12 frames per video · 20 pages per document · 6 PRs per ticket (rung 1 first, then most recent — *revised 2026-10-13, fix wave 2 review:* newer key-search hits must not push an explicitly linked PR over the cap; companions after the ladder's PRs) · 500 KB diff per PR · 300 files per PR · 200 KB text per public page · 10 linked issues · 500 comments per ticket (oldest first; the rest is an `over-cap` gap). *Revised 2026-10-13 (Phase 2, fix wave 2):* over the linked-issue cap, the issues are **ranked before the cut** — subtasks and the parent first; then blocks / is blocked by / causes / is caused by; then clones / duplicates; then relates; then the rest; most recently updated first within a group — the position in one `key in (…) ORDER BY updated DESC` search, made only when the cap would drop something; a 400 naming keys that are gone is retried once without them, else the ranking is by group only, and either way the failure is a gap. Ranking applies only to subtasks that are also linked or mentioned: subtasks are read to recognise them, never added to the inventory. Each dropped issue keeps its `over-cap` gap, with its key and group in the detail. *Replaces:* the first 10 in inventory order (VCST-5957 dropped VCST-6141 and VCST-6145, the two most relevant). Per PR, 12 hotspots and 25 claims; 6 Figma frames per ticket, inside the 100 MB (*added 2026-10-13*). Defined once, as `CAPS` in `lib/fetch.mjs`, which `lib/github.mjs` imports. | P5 named caps without values. These keep a typical ticket under P6's 5 minutes; Phase 2 measures and may move them. |
 
 **What the decisions add to the build:** the `ticket-context-analyst` agent with a three-tool allowlist
 (D6); `lib/jira.mjs`, `lib/github.mjs`, `lib/inventory.mjs` and `lib/fetch.mjs` (D6, Q1); the
@@ -415,6 +450,9 @@ over `deploy:pr` and the pre-flight CLI (D3).
 | O1 | The pre-flight core and `deploy:pr` live in the repo root's `scripts/`, which a plugin cannot reference. When `/ticket-context` moves to `vc-fix`, its deployment fields lose their source. | (a) Copy them into the plugin deliberately, as `vc-fix` already does for `knowledge/` and `config.js`, and accept a second copy to keep in step. (b) Move the core into the plugin first, and have this repo consume it from there. To be settled with VCST-6225 before Phase 5, not now. |
 | O2 | **A deployed PR build can read as NOT DEPLOYED.** `deploy:pr`'s own header says pre-release artifacts are often not version-bumped in `module.manifest` (the `-pr` suffix lives only in the blob name), while the core's `expectMet` requires an exact match for a pre-release `--expect`. | Fix in the core's policy (VCST-6225), e.g. accept a pre-release when the declared pin is that blob and the live base matches. Until then `lib/deploy.mjs` reports the core's answer unchanged, and an open PR's `NO` carries `deployed_reason` "pre-release builds may not bump the live version — confirm with `npm run deploy:pr -- <KEY> --verify`". |
 | O3 | `kb` asks from a client install. The base logs questions verbatim to a public repository; D11 keeps ticket text out of questions, but a client's endpoint or page path is still client-identifying. | Decide with the `kb` owners before Phase 5: no `kb` step on `projectType: client`, or a client-side base. Phase 1 runs only here. |
+| O4 | *Added 2026-10-13 (Phase 2, not in fix wave 2).* **The theme version as a deployment source.** A storefront (theme) PR is `UNKNOWN: no-live-source` by design, though the stand's theme bundle carries its version. | Belongs to the pre-flight core (VCST-6225), not this skill: the core reads the theme version, and `lib/deploy.mjs` keeps asking the core (D3). |
+| O5 | *Added 2026-10-13 (Phase 2, not in fix wave 2).* **"token: 400" from the environment.** On a Phase 2 replay the pre-flight core could not get a platform token, so every module PR read `UNKNOWN`. | An environment or core credential problem, not this skill's; `deploy.mjs` reports the core's answer unchanged. Re-check after VCST-6225. |
+| O6 | *Added 2026-10-13 (Phase 2, not in fix wave 2).* **The join step's quality** (Step 3, PR ↔ AC). It is a runner step, and the Phase 2 replay built it with a keyword shortcut for three of the five tickets, so its `ac_to_diff` figures understate an LLM join. | Measure it on its own in the next validation round before changing it: a script join, a dedicated mode, or the runner as today. |
 
 ## 12. Risks
 

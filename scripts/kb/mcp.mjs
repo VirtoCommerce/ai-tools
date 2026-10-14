@@ -53,7 +53,7 @@ import { openBase } from './core/base.mjs';
 import { flush, ownFlushDue, sweepIfDue } from './core/push.mjs';
 import { askLines, captureLines, evidenceLines, noneLines, showLines } from './core/render.mjs';
 import { queueDir } from './core/queue.mjs';
-import { CONDITIONS_SOURCE, DEPLOYMENT_SOURCE, METHOD_SOURCE } from './core/contract.mjs';
+import { CONDITIONS_SOURCE, DEFECT_SOURCE, DEPLOYMENT_SOURCE, METHOD_SOURCE } from './core/contract.mjs';
 import { repoRoot, writeToken } from './core/token.mjs';
 import { TOPIC_MAX, ask, capture, confirm, dispute, none, show, stat } from './core/verbs.mjs';
 import { liveBuild } from './core/build.mjs';
@@ -199,6 +199,8 @@ export const TOOLS = Object.freeze([
         scope: { type: 'array', items: { type: 'string' }, description: 'axis=value pairs bounding where the fact applies, e.g. surface=storefront-ui. At least one — without scope a storefront fact gets applied to admin.' },
         method: { type: 'string', enum: ['observation', 'source'], description: METHOD_SOURCE },
         conditions: { type: 'array', items: { type: 'string' }, description: `${CONDITIONS_SOURCE}. One key=value per item.` },
+        defect: str(`${DEFECT_SOURCE}. On a capture: a ticket or "suspected".`),
+        fixedIn: str('Optional, with defect: the first build without the defect, <module>@<version>.'),
         topic: TOPIC,
       },
       required: ['subject', 'question', 'claim', 'deployment', 'anchors', 'scope'],
@@ -209,6 +211,7 @@ export const TOOLS = Object.freeze([
     description: 'Record that you saw an existing entry hold true on a deployment — its confirmation count is what a later '
       + 'reader weighs the claim by. Use when kb_ask returned an entry and you then observed the same thing yourself. '
       + 'Open the entry with kb_show first: one this session only saw in a list is refused. '
+      + 'With defect, it also marks the behaviour as one that should NOT happen (a bug), without changing the claim. '
       + PUBLISHED,
     inputSchema: {
       type: 'object',
@@ -218,6 +221,8 @@ export const TOOLS = Object.freeze([
         note: str('Optional: what you saw, if it adds anything the entry does not already say.'),
         method: { type: 'string', enum: ['observation', 'source'], description: METHOD_SOURCE },
         conditions: { type: 'array', items: { type: 'string' }, description: `${CONDITIONS_SOURCE}. One key=value per item.` },
+        defect: str(`${DEFECT_SOURCE}. Marks or re-marks the entry; its claim is not changed.`),
+        fixedIn: str('Optional: the first build without the defect, <module>@<version>. Alone, it completes the marker the entry carries.'),
         topic: TOPIC,
       },
       required: ['id', 'deployment'],
@@ -368,6 +373,7 @@ async function callTool(name, args, ctx) {
       const r = await capture({
         subject: args?.subject, question: args?.question, claim: args?.claim,
         deployment: args?.deployment, method: args?.method, conditions: asList(args?.conditions),
+        defect: args?.defect, fixedIn: args?.fixedIn,
         anchors: asList(args?.anchors), scope: asList(args?.scope),
       }, opened, { env: ctx.env, via: VIA, call: ctx.call, topic: args?.topic, builds: liveBuild });
       // `refused` is not an error: the base already holds the fact, which is the dedup working, and
@@ -380,7 +386,7 @@ async function callTool(name, args, ctx) {
       const fn = verb === 'confirm' ? confirm : dispute;
       const r = await fn(String(args?.id ?? '').trim(), {
         deployment: args?.deployment, note: args?.note, saw: args?.saw, method: args?.method,
-        conditions: asList(args?.conditions),
+        conditions: asList(args?.conditions), defect: args?.defect, fixedIn: args?.fixedIn,
       }, opened, { env: ctx.env, via: VIA, call: ctx.call, topic: args?.topic, builds: liveBuild });
       return text(evidenceLines(verb, r), r.state === 'invalid' || FAILED.has(r.state));
     }

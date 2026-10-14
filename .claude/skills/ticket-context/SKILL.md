@@ -38,12 +38,15 @@ swept by the next `prepare` for the key after 24 h.)
 
 `prepare` has already fetched the ticket (named fields + the AC field), built the inventory from the
 tracker's own data, downloaded attachments, scrubbed HAR and logs, extracted video frames, read
-Confluence pages and public pages, and found and read the PRs (ladder rungs 1–3). Do **not** fetch any
+Confluence pages and public pages, and found and read the PRs (ladder rungs 1 and 2 always, merged; rung 3
+only when they found no product PR; then one hop of companion PRs their bodies name, marked `found_via`). Do **not** fetch any
 of that again, and do **not** follow a link the inventory does not list.
 
 ## Step 1 — connector-only sources (you)
 
-For each ref in `needs_connector` (Loom, Figma, Claude Design), read it once with its connector and
+For each ref in `needs_connector` (Loom, Claude Design, and every Figma link `prepare` did not export:
+all of them without `FIGMA_TOKEN`; with it, the forms the images API cannot take, such as no `node-id`,
+`/make/`, `/slides/` or community links), read it once with its connector and
 attach the result — rules per kind in [`design-sources.md`](design-sources.md). The address to open
 is that inventory item's `url` in `prepare.json`: a link's ref has its query values redacted (a token
 in a link never reaches the bundle), so never open the ref and never copy the `url` into an output.
@@ -55,10 +58,12 @@ Then `node "<skill>/lib/cli.mjs" attach --prepare <prepare_path> --ref "<ref>" -
 the connector is missing, `--gap connector-unavailable --detail "<what to ask for instead>"`. Skipping an
 item is allowed: `compose` records it as `GAP: connector-unavailable`. Follow no link found inside.
 
-## Step 2 — three dispatches, one message
+## Step 2 — the dispatches, one message
 
-Confirm `.claude/agents/ticket-context-analyst.md` exists, then dispatch it three times in **one**
-message, no browser:
+Confirm `.claude/agents/ticket-context-analyst.md` exists, then dispatch it in **one** message, no
+browser: TICKET, MATERIALS and CHANGE. When `prepare.json` `prs` holds **more than one product PR** (no
+`gap`, not `context_only`), CHANGE is split: one dispatch per product PR, in the same message, each brief
+with the line `PRS: <that PR's ref>` after `PREPARE:`.
 
 ```
 MODE: TICKET
@@ -90,7 +95,10 @@ yourself. Skip CHANGE only when `prepare.json` `prs` is **non-empty** and every 
 `prs` is never a skip: CHANGE runs, because rung 4 (paths the ticket names) is its job.
 
 Save each returned JSON **verbatim** to `<run_dir>/ticket.out.json`, `materials.out.json`,
-`change.out.json`. Never edit an agent's output to make it pass.
+`change.out.json`. A split CHANGE saves each output verbatim to `change.<n>.out.json` (`n` = 1, 2, …),
+then runs `node "<skill>/lib/cli.mjs" merge-change --prepare <prepare_path>`, which concatenates them into
+`change.out.json`; its exit 2 names the file that fails `changeOut` — re-dispatch that PR once, quoting
+the errors, save the answer over that same file and merge again (a second failure ⇒ `abort`, STOP). Never edit an agent's output to make it pass.
 
 ## Step 3 — the join: PR ↔ AC (you)
 
@@ -130,15 +138,19 @@ and write `<run_dir>/kb.out.json`.
 `node "<skill>/lib/cli.mjs" compose --prepare <prepare_path>`, then
 `node "<skill>/lib/cli.mjs" finish --prepare <prepare_path>`.
 
-- `compose` exit 2 (`schema-failed`): an agent output does not match its `$def`. Re-dispatch **that
+- `compose` exit 2 (`schema-failed`): an agent output does not match its `$def`, or `<file>: not valid
+  JSON`. Re-dispatch **that
   mode once**, quoting the errors. A second failure ⇒ `abort`, STOP and report. An error prefixed `join:` comes
   from your own `join.out.json`: fix it and rewrite that file (there is no join mode to re-dispatch).
 - `finish` exit 2 (`gate-failed`): fix the cause, never the bundle.
   - `inventory: <ref> has no outcome` → re-dispatch MATERIALS with `ITEMS` = only those refs, merge the
     returned `materials`, `gaps`, `questions` and `embedded_instructions` into `materials.out.json`,
     compose again.
-  - `PR … has no entry` → re-dispatch CHANGE.
-  - `secret: …` → re-dispatch the mode whose output carries it, telling it to redact.
+  - `PR … has no entry` → re-dispatch CHANGE (when split: only for those PRs, with `PRS:`, saved as the
+    next `change.<n>.out.json`, then `merge-change` again).
+  - `secret: …` → re-dispatch the mode whose output carries it, telling it to redact (when CHANGE is
+    split: only the part that carries it, with its `PRS:`, saved over its `change.<n>.out.json`, then
+    `merge-change` again).
   - A second failure ⇒ `abort`, STOP and report the errors verbatim.
 - exit 0 (`done`) → keep `bundle_path`. The run dir is gone.
 
@@ -149,7 +161,9 @@ read was read scrubbed; no secret value or token shape anywhere in the bundle.
 
 ## Step 7 — return one block
 
-To the caller: the bundle path; counts (ACs · materials finding/GAP · PRs · `chain_deployed`);
+To the caller: the bundle path; counts (ACs · materials finding/GAP · PRs · `chain_deployed`); when
+`acs` is empty, the number of PR claims (`change.prs[].claims`) with the line "no ACs — the oracle is the
+PR body", so the consumer knows its oracle is the author's word;
 `blockers[]` verbatim; the gaps that change what can be tested; and, when `kb.out.json` carries the
 `not-read` row, the line `kb: not read (<reason>)`. Never paste the bundle, a diff or an
 attachment. A `NOT DEPLOYED:` blocker is BLOCKED-on-deploy for the consumer, never a FAIL; a

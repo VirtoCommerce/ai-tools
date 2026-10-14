@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // .claude/skills/ticket-context/lib/cli.mjs — the deterministic half of /ticket-context (design §5).
 // Exit: 0 ok · 1 usage · 2 gate or schema failed · 3 could not run. stdout is one JSON object; no secret is printed.
-import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { assertKey, cacheDir, isInside, newRunDir, outputRoot, removeRunDir, sweepStaleRuns } from "./paths.mjs";
@@ -9,16 +9,17 @@ import { loadLayeredEnv } from "./env.mjs";
 import { codeHostCredential, readProfile, resolveProfile, trackerCredential } from "./profile.mjs";
 import { GAP_REASONS, SCHEMA, asGap, gap } from "./gap.mjs";
 import { validateDef } from "./schema.mjs";
-import { BASE_FIELDS, LINKED_FIELDS, jiraClient } from "./jira.mjs";
-import { buildInventory, resolveFieldsByName } from "./inventory.mjs";
+import { BASE_FIELDS, LINKED_FIELDS, jiraClient, recencyOrder } from "./jira.mjs";
+import { AC_FIELD_NAME_RE, buildInventory, linkedOverCap, rankLinked, resolveFieldsByName } from "./inventory.mjs";
 import { CAPS, envHosts, fetchPublicPage, htmlToText, planDownloads, safeName } from "./fetch.mjs";
-import { extractFrames } from "./frames.mjs";
+import { exportFigmaItems, figmaToken } from "./figma.mjs";
+import { extractFrames, extractGifFrames } from "./frames.mjs";
 import { isHarText, loadSecretValues, scrubFile } from "./scrub.mjs";
-import { CONTEXT_ONLY_REPOS, collectContextPr, collectPr, ghClient, runLadder } from "./github.mjs";
+import { CONTEXT_ONLY_REPOS, collectContextPr, collectPr, followCompanions, ghClient, orderPrMeta, runLadder } from "./github.mjs";
 import { checkDeployment } from "./deploy.mjs";
 import { freshnessKey, isIgnored, readCached, skillFingerprint, writeCache } from "./cache.mjs";
 import { DOMAIN_RE, knownGround } from "./known.mjs";
-import { OUT_FILES, checkAgentOutputs, compose } from "./compose.mjs";
+import { CHANGE_PART_RE, OUT_FILES, checkAgentOutputs, compose, mergeChange } from "./compose.mjs";
 import { checkBundle } from "./check-bundle.mjs";
 
 const argv = process.argv.slice(2);
@@ -28,7 +29,10 @@ const has = (n) => argv.includes(`--${n}`);
 const out = (o) => process.stdout.write(`${JSON.stringify(o, null, 2)}\n`);
 const readJson = (p) => JSON.parse(readFileSync(p, "utf8"));
 const writeJson = (p, o) => writeFileSync(p, JSON.stringify(o, null, 2));
-const USAGE = "usage: cli.mjs prepare <KEY> [--domain <slug>] [--fresh] | attach --prepare <p> --ref <ref> (--file <path> | --gap <reason> [--detail <text>]) | deploy --prepare <p> | known --prepare <p> | compose --prepare <p> | check --prepare <p> | finish --prepare <p> | abort --prepare <p> | redeploy <KEY> --bundle <p>";
+/** An output a model (or the runner) wrote: unparsable is a schema failure naming the file — the documented
+ *  re-dispatch path (exit 2) — never a crash (exit 3). */
+const readOutput = (dir, name, errors) => { try { return readJson(join(dir, name)); } catch { errors.push(`${name}: not valid JSON`); return undefined; } };
+const USAGE = "usage: cli.mjs prepare <KEY> [--domain <slug>] [--fresh] | attach --prepare <p> --ref <ref> (--file <path> | --gap <reason> [--detail <text>]) | merge-change --prepare <p> | deploy --prepare <p> | known --prepare <p> | compose --prepare <p> | check --prepare <p> | finish --prepare <p> | abort --prepare <p> | redeploy <KEY> --bundle <p>";
 function usage(msg) { console.error(`✗ ${msg}\n${USAGE}`); process.exit(1); }
 const root = outputRoot();
 const ignored = (p) => isIgnored(root, p);
@@ -55,6 +59,19 @@ async function materialize(it, jira, runDir, secrets) {
     if (r.gap) it.gap = gap(it.ref, r.gap.reason, r.gap.detail); else it.local_path = r.dir;
     return;
   }
+  if (it.kind === "screenshot" || it.kind === "image") {
+    // An animated GIF is a video (D4): its frames, or a tool-missing gap — never a finding from frame 1.
+    let r = null;
+    try { r = extractGifFrames(file, join(runDir, `frames-${it.id}`), CAPS); }
+    catch (e) { r = { gap: { reason: "unreadable", detail: `could not read the GIF's frames: ${String(e.message).slice(0, 150)}` } }; }
+    if (r) {
+      rmSync(file, { force: true });
+      it.kind = "video";
+      it.animated_gif = true;
+      if (r.gap) it.gap = gap(it.ref, r.gap.reason, r.gap.detail); else it.local_path = r.dir;
+      return;
+    }
+  }
   it.local_path = file;
 }
 
@@ -73,9 +90,9 @@ async function prepare() {
   const gaps = [];
 
   const allFields = await jira.fields();
-  const acFields = resolveFieldsByName(allFields, profile.fieldMap.acceptanceCriteria, /acceptance criteria/i);
+  const acFields = resolveFieldsByName(allFields, profile.fieldMap.acceptanceCriteria, AC_FIELD_NAME_RE);
   const linkFields = resolveFieldsByName(allFields, profile.fieldMap.prototype, /prototype/i);
-  if (!acFields.length) gaps.push(gap("ac_fields", "not-found", "no custom field named like 'Acceptance criteria' and no tracker.fieldMap.acceptanceCriteria — ACs are read from description and comments"));
+  if (!acFields.length) gaps.push(gap("ac_fields", "not-found", "no custom field named 'Acceptance' or 'Acceptance criteria' and no tracker.fieldMap.acceptanceCriteria — ACs are read from description and comments"));
   // Comments past the first page are paged in before the inventory and ticket.json see the issue; any unread rest is a gap.
   const issue = await jira.issue(key, [...BASE_FIELDS, ...acFields.map((f) => f.id), ...linkFields.map((f) => f.id)], { gaps });
   const remote = await jira.remoteLinks(key).catch((e) => { gaps.push(asGap("remotelinks", e)); return []; });
@@ -91,10 +108,16 @@ async function prepare() {
       .map((s) => ({ key: s.key, title: s.fields?.summary ?? "", status: s.fields?.status?.name ?? null, done: s.fields?.status?.statusCategory?.key === "done" }));
   }
 
-  const linked = inv.items.filter((i) => i.kind === "ticket");
+  let linked = inv.items.filter((i) => i.kind === "ticket" && !i.gap);
+  // D12: over the cap, the cap keeps the right ones — ranked by relation, then most recently updated first.
+  // The dates cost one search, made only when there is something to drop.
+  if (linked.length > CAPS.linkedIssues) {
+    const order = await recencyOrder(jira, linked.map((i) => i.key), gaps);
+    linked = rankLinked(linked, { parentKey: issue.fields.parent?.key ?? null, subtaskKeys: (issue.fields.subtasks ?? []).map((t) => t.key), order });
+  }
   const linkedJson = new Map();
   for (const [n, it] of linked.entries()) {
-    if (n >= CAPS.linkedIssues) { it.gap = gap(it.ref, "over-cap", `more than ${CAPS.linkedIssues} linked issues`); continue; }
+    if (n >= CAPS.linkedIssues) { it.gap = linkedOverCap(it, n, CAPS.linkedIssues); continue; }
     try { linkedJson.set(it.key, await jira.issue(it.key, LINKED_FIELDS)); } catch (e) { it.gap = asGap(it.ref, e); }
   }
 
@@ -109,8 +132,13 @@ async function prepare() {
     if (!gh) { prMeta.push({ ...r, gap: gap(`pr:${r.ref}`, gcred.reason, gcred.detail) }); continue; }
     try { prMeta.push({ ...r, meta: await gh.pr(r.owner, r.repo, r.number) }); } catch (e) { prMeta.push({ ...r, gap: asGap(`pr:${r.ref}`, e) }); }
   }
-  const isContext = (p) => CONTEXT_ONLY_REPOS.includes(p.repo.toLowerCase());
-  prMeta.sort((a, b) => (isContext(a) - isContext(b)) || String(b.meta?.created_at ?? "").localeCompare(String(a.meta?.created_at ?? "")));
+  orderPrMeta(prMeta);
+  // Named companions, one hop (github.mjs): appended after the ladder's PRs, so they take only the cap left over.
+  if (gh) {
+    const companions = await followCompanions({ gh, prMeta, orgs, gaps });
+    ladder.ladder.push({ rung: "companion", found: companions.length });
+    prMeta.push(...companions);
+  }
 
   const fk = freshnessKey({ ticketUpdated: issue.fields.updated, domain, skill: skillFingerprint(),
     prShas: prMeta.map((p) => `${p.ref}@${p.meta?.head?.sha ?? "?"}@${p.meta?.state ?? "?"}@${p.meta?.merged_at ?? ""}`),
@@ -135,6 +163,8 @@ async function prepare() {
 
     const privateHosts = new Set([...envHosts(root), new URL(tcred.base).hostname, "github.com", "api.github.com"]);
     let pages = 0;
+    const figma = figmaToken(); // FIGMA_TOKEN after the layered loader; never printed
+    const figmaItems = [];
     for (const it of inv.items.filter((i) => i.ref.startsWith("link:") && !i.gap)) {
       if (it.kind === "confluence") {
         const id = /\/pages\/(\d+)/.exec(it.url)?.[1];
@@ -146,24 +176,31 @@ async function prepare() {
         } catch (e) { it.gap = asGap(it.ref, e); }
       } else if (it.kind === "external") {
         try { it.local_path = (await fetchPublicPage(it.url, join(runDir, `page-${++pages}.txt`), { privateHosts })).path; } catch (e) { it.gap = asGap(it.ref, e); }
-      } else it.needs_connector = true; // loom · figma · claude-design — step 1 of SKILL.md
+      } else if (it.kind === "figma" && figma) figmaItems.push(it);
+      else it.needs_connector = true; // loom · figma without FIGMA_TOKEN · claude-design — step 1 of SKILL.md
+    }
+    if (figmaItems.length) {
+      // The PNGs share CAPS.ticketBytes with the attachments (counted at their declared size by planDownloads).
+      const budget = CAPS.ticketBytes - plan.toFetch.reduce((n, i) => n + Number(i.size ?? 0), 0);
+      gaps.push(...(await exportFigmaItems(figmaItems, { token: figma, runDir, budget })).gaps);
     }
 
     const prs = [];
-    // P5: the cap is for CHANGE SURFACE. Product PRs come first (newest first) and only they count; a context-only
+    // P5: the cap is for CHANGE SURFACE. Product PRs come first (rung 1 first, then newest first) and only they count; a context-only
     // PR (ai-tools, vc-deploy-dev) gets its metadata only — no files, no diff — and never pushes a product PR over the cap.
     let product = 0;
     for (const p of prMeta) {
       const contextOnly = CONTEXT_ONLY_REPOS.includes(p.repo.toLowerCase());
-      const base = { ref: p.ref, repo: `${p.owner}/${p.repo}`, number: p.number, rung: p.rung ?? null, context_only: contextOnly };
-      if (p.gap) { prs.push({ ...base, gap: p.gap }); if (!contextOnly) product++; continue; }
+      const base = { ref: p.ref, repo: `${p.owner}/${p.repo}`, number: p.number, rung: p.rung ?? null, ...(p.found_via ? { found_via: p.found_via } : {}), context_only: contextOnly };
+      // A PR that could not be read (lookup 404, access denied, network) is no change surface, so it takes no cap slot.
+      if (p.gap) { prs.push({ ...base, gap: p.gap }); continue; }
       if (contextOnly) {
         try { prs.push(collectContextPr(p, base, runDir, ladder.sameKey)); } catch (e) { prs.push({ ...base, gap: asGap(`pr:${p.ref}`, e) }); }
         continue;
       }
       if (product++ >= CAPS.prs) {
         prs.push({ ...base, state: p.meta.state, merged: !!p.meta.merged_at, head_sha: p.meta.head?.sha ?? null,
-          gap: gap(`pr:${p.ref}`, "over-cap", `more than ${CAPS.prs} product PRs; the ${CAPS.prs} most recent are read`) });
+          gap: gap(`pr:${p.ref}`, "over-cap", `more than ${CAPS.prs} product PRs; rung 1 first, then the most recent, then the companions they name`) });
         continue;
       }
       try { prs.push(await collectPr(gh, p, runDir, { sameKey: ladder.sameKey })); } catch (e) { prs.push({ ...base, gap: asGap(`pr:${p.ref}`, e) }); }
@@ -204,6 +241,21 @@ function attach() {
   out({ status: "attached", ref, local_path: it.local_path ?? null, gap: it.gap ?? null });
 }
 
+/** Step 2 with one CHANGE dispatch per product PR: change.<n>.out.json (each saved verbatim) → change.out.json. */
+function mergeChangeCmd() {
+  const prep = readJson(prepPath());
+  const names = readdirSync(prep.run_dir).filter((n) => CHANGE_PART_RE.test(n))
+    .sort((a, b) => Number(CHANGE_PART_RE.exec(a)[1]) - Number(CHANGE_PART_RE.exec(b)[1]));
+  if (!names.length) { console.error("✗ no change.<n>.out.json in the run dir — save each CHANGE output first"); process.exit(3); }
+  const parseErrors = [];
+  const parts = names.map((name) => ({ name, out: readOutput(prep.run_dir, name, parseErrors) }));
+  if (parseErrors.length) { out({ status: "schema-failed", errors: parseErrors }); process.exit(2); }
+  const { errors, merged } = mergeChange(parts);
+  if (errors.length) { out({ status: "schema-failed", errors }); process.exit(2); }
+  writeJson(join(prep.run_dir, OUT_FILES.change), merged);
+  out({ status: "merged", parts: names.length, prs: merged.prs.length });
+}
+
 function deploy() {
   const prep = readJson(prepPath());
   const d = checkDeployment({ root, key: prep.ticket, prs: prep.prs });
@@ -235,11 +287,13 @@ function known() {
 function composeCmd() {
   const prep = readJson(prepPath());
   const outs = {};
+  const parseErrors = [];
   for (const [k, f] of Object.entries(OUT_FILES)) {
     const fp = join(prep.run_dir, f);
-    if (existsSync(fp)) outs[k] = readJson(fp);
+    if (existsSync(fp)) outs[k] = readOutput(prep.run_dir, f, parseErrors);
     else if (k !== "kb") { console.error(`✗ missing ${f} in the run dir — run the step that writes it`); process.exit(3); }
   }
+  if (parseErrors.length) { out({ status: "schema-failed", errors: parseErrors }); process.exit(2); }
   const errors = checkAgentOutputs(outs);
   if (errors.length) { out({ status: "schema-failed", errors }); process.exit(2); }
   const bp = join(prep.run_dir, "bundle.json");
@@ -249,6 +303,7 @@ function composeCmd() {
 
 function gate(prep) {
   const bundle = readJson(join(prep.run_dir, "bundle.json"));
+  loadLayeredEnv(root); // so an env-layer FIGMA_TOKEN is in the secret set here too, as it was in prepare
   return { bundle, errors: checkBundle(bundle, prep, { secrets: loadSecretValues(root) }) };
 }
 
@@ -282,6 +337,9 @@ function redeploy() {
   try { assertKey(key); } catch (e) { usage(e.message); }
   const bp = flag("bundle") ?? usage("--bundle is required");
   const b = readJson(bp);
+  // A bundle cached before hotspots/claims existed (fix wave 2, 2026-10-13) has no such keys on its PRs. They
+  // default to [] — "none recorded" — so an old bundle still validates; the schema itself is not loosened.
+  for (const p of b.change?.prs ?? []) { p.hotspots ??= []; p.claims ??= []; }
   // Script values only: compose took repo, number, state, merged and gap from prepare, never from an agent.
   const d = checkDeployment({ root, key, prs: b.change.prs.map((p) => ({ ref: `${p.repo}#${p.number}`, number: p.number, state: p.state, merged: p.merged,
     context_only: p.context_only, gap: p.gap })) });
@@ -298,7 +356,7 @@ function redeploy() {
   out({ status: "redeployed", bundle_path: bp, chain_deployed: d.chain_deployed, blockers: d.blockers });
 }
 
-const commands = { prepare, attach, deploy, known, compose: composeCmd, check, finish, abort, redeploy };
+const commands = { prepare, attach, "merge-change": mergeChangeCmd, deploy, known, compose: composeCmd, check, finish, abort, redeploy };
 if (!commands[cmd]) usage(cmd ? `unknown command "${cmd}"` : "no command");
 try { await commands[cmd](); } catch (e) {
   console.error(`✗ ticket-context ${cmd} could not run: ${String(e?.message ?? e).slice(0, 300)}`);
