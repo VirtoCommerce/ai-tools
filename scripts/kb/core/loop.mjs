@@ -228,8 +228,8 @@ export function reminderText(loops, { contract = CONTRACT } = {}) {
     const ids = whose && l.inherited && l.shown?.length ? `: ${l.shown.join(' ')}` : '';
     lines.push(`- "${clip(l.q)}"${whose ? `${whose}${ids})` : ''}${l.why === 'unresolved' ? ` ask ${l.at}` : ''}`);
   }
-  // "At a later stop", not "your next": on a continuation only the main thread's own lists are raised,
-  // so a subagent's list waits for the next fresh stop (kb-remind guard 2).
+  // "At a later stop", not "your next": the stop right after this block is its continuation, where the
+  // hook is silent (kb-remind guard 2); the rest come at the end of a later turn.
   if (loops.length > LISTED) lines.push(`- and ${loops.length - LISTED} more, named at a later stop`);
   return lines.join('\n');
 }

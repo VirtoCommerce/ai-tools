@@ -53,14 +53,11 @@
  *      after the write costs a reminder, never a loop. That is what bounds the session: each block marks
  *      up to `LISTED` new asks, so a stop can block at most once per `LISTED` open asks, and an append
  *      that fails prints nothing.
- *   2. `stop_hook_active` (set by the harness while a stop hook already made Claude continue) does NOT
- *      silence the main thread's OWN lists (VCST-6341). It used to, and that broke the reminder's own
- *      promise: the reason names `LISTED` asks and says the rest come "at your next stop", but the next
- *      stop is the continuation this block caused, so it was silent. Guard 1 makes the continuation
- *      safe, so the rest of its own lists are raised there, five at a time. INHERITED lists are raised
- *      only at a fresh stop, five per stop: the main thread can close few of them (only what a report
- *      names), and chaining a block per five of the 84 a regression session left would trap it for
- *      seventeen rounds of "leave it open".
+ *   2. `stop_hook_active` (set by the harness while a stop hook already made Claude continue) -> silent.
+ *      VCST-6341 lifted this for a while so the rest of a list could be raised in the continuation --
+ *      needed only while subagents were reminded at their own stop, which has no "next" one. Their lists
+ *      now reach the main thread, whose next ordinary stop always comes, so the guard is back: a session
+ *      that left 40 lists open is asked about five per turn, never blocked eight times in a row.
  *   3. Off switches: `KB_ENABLED=0` (the base is off on this machine), `KB_REMIND=0` (this hook only),
  *      and `KB_SYNTHETIC=1`: a calibration or bench run must not take an extra step it did not ask for.
  *
@@ -244,6 +241,7 @@ function owned(loops, { transcript, ownersFile, now = Date.now() }) {
 function main() {
   let payload = null;
   try { payload = JSON.parse(readFileSync(0, 'utf8')); } catch { /* no stdin, or not JSON */ }
+  if (payload?.stop_hook_active) return;
   if (kbDisabled(process.env)) return;
   // Pruned BEFORE the reminder's own off switches: the journal is written whenever the base is on,
   // so a machine with KB_REMIND=0 or a synthetic run must still have its files cleaned.
@@ -268,10 +266,8 @@ function main() {
   const owners = owned(open, {
     transcript: payload?.transcript_path, ownersFile: ownersPath(env),
   });
-  // Own lists first. On a continuation (guard 2) only the main thread's own lists are raised; inherited
-  // ones wait for a fresh stop, so a session with many subagent lists is not blocked round after round.
-  const mine = owners.filter((l) => !l.inherited);
-  const loops = payload?.stop_hook_active ? mine : [...mine, ...owners.filter((l) => l.inherited)];
+  // Own lists first: they are the ones this thread can close by judgement; inherited ones follow.
+  const loops = [...owners.filter((l) => !l.inherited), ...owners.filter((l) => l.inherited)];
   if (!loops.length) return;
 
   // Only the questions the reminder NAMES are marked raised: the rest come back at the next stop, each

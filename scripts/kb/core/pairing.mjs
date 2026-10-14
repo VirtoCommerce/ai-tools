@@ -7,7 +7,7 @@ import { MIN_RELATED_WORDS, tokenize } from './rank.mjs';
 /** A character that ALWAYS continues a route -- a match may not stop before it. */
 const ROUTE = /[a-z0-9/_\-{}%]/;
 /** Characters that continue a route only when a route character follows: `?scope=`, `.json`, `&x=`. */
-const JOINERS = /[?.&=]/;
+const JOINERS = /[?.&=#]/;
 
 /**
  * One trailing path segment that only IDENTIFIES a record of the route: a `{param}` placeholder, a
@@ -16,7 +16,9 @@ const JOINERS = /[?.&=]/;
  */
 // The GUID alternatives come before `\d+`: a GUID can start with digits, and `\d+` would stop at its
 // first letter. Virto writes most ids as 32 hex characters with no dashes, so that form is listed too.
-const ID_SEGMENT = /^\/(\{[^}/]*\}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9a-f]{32}|\d+)/;
+// Last, an id minted by code (`sku-123`, `ord-00012`): any one segment that holds a digit. Named
+// sub-resources (`search`, `addresses`, `edit`) do not.
+const ID_SEGMENT = /^\/(\{[^}/]*\}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9a-f]{32}|[a-z0-9_-]*\d[a-z0-9_-]*)/;
 
 /**
  * Does the match of a coordinate end here? At the end, at a non-route character, or at a joiner that
@@ -46,7 +48,8 @@ const withoutHosts = (q) => q.replace(/[a-z][a-z0-9+.-]*:\/\/[^\s/]+/g, ' ');
 const HOST_OR_VAR = /^(?:[a-z0-9-]+(?:\.[a-z0-9-]+)+(?::\d+)?|localhost(?::\d+)?|\$\{?[a-z_][a-z0-9_]*\}?|\{\{?[a-z_][a-z0-9_]*\}\}?|[a-z][a-z0-9_]*_url)$/;
 function routeStartsAt(q, i) {
   if (i === 0 || !/[a-z0-9/_\-.}]/.test(q[i - 1])) return true;
-  const start = Math.max(q.lastIndexOf(' ', i - 1), q.lastIndexOf('(', i - 1), q.lastIndexOf('`', i - 1), q.lastIndexOf('"', i - 1)) + 1;
+  let start = i;
+  while (start > 0 && !/[\s'"`(\[<]/.test(q[start - 1])) start -= 1;
   return HOST_OR_VAR.test(q.slice(start, i));
 }
 
