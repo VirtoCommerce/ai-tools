@@ -15,10 +15,16 @@ ASSET-005,Copy asset link,Folder Management,Functional,Medium,2m,Asset file exis
 2. Select Copy Link","Asset URL copied to clipboard",C179552,Not Automated
 ASSET-006,Sort columns in assets list,Folder Management,Functional,Medium,2m,Multiple assets exist,"1. Click column header to sort
 2. Verify sort order changes","Assets sorted by selected column",C179531,Not Automated
-ASSET-007,Upload file to root folder,File Upload,Functional,Critical,3m,Admin logged in,"1. Navigate to Assets root
-2. Click Upload
-3. Select file from filesystem
-4. Wait for upload","File uploaded to root folder successfully",C179521,Katalon
+ASSET-007,Upload file to root folder is refused,File Upload,Functional,Critical,3m,Admin logged in; a test folder exists under Assets for the control upload; a small file named with the AGENT-TEST- prefix (random-data) is available,"1. Navigate to Assets root (All assets)
+2. Click Upload to open the Asset upload blade
+3. Select the test file from the filesystem
+4. Observe the result
+5. Click OK and Refresh the asset list
+6. Open the test folder and upload the same file there
+7. Delete the uploaded control file","- An 'Upload error' dialog is shown: 'Choose a folder! Can't upload a file to the root!' {OBSERVED}
+- No file with that name appears in the root listing after Refresh
+- The same file uploaded into the test folder succeeds and is listed there
+- No uncaught error or 5xx is raised","C179521 | Repaired 2026-10-14 (Stable 16 regression VCST-6042): uploading to the Assets root is refused by design; case now asserts the refusal plus a control upload into a folder {OBSERVED}. Catches: root upload silently accepted or half-written, or uploads broken everywhere",Katalon
 ASSET-008,Upload picture to custom folder,File Upload,Functional,High,3m,Custom folder exists,"1. Navigate to custom folder
 2. Upload picture file","Picture uploaded to custom folder; thumbnail displayed",C179523,Katalon
 ASSET-009,Upload non-picture file to custom folder,File Upload,Functional,High,3m,Custom folder exists,"1. Navigate to custom folder

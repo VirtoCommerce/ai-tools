@@ -128,6 +128,7 @@
     "seed:configurable:conditional": "node scripts/seed-data/products/seed-configurable.mjs --group conditional",
     "seed:configurable:default": "node scripts/seed-data/products/seed-configurable.mjs --group default",
     "seed:configurable:bike": "node scripts/seed-data/products/seed-configurable.mjs --group bike",
+    "seed:configurable:standin": "node scripts/seed-data/products/seed-configurable.mjs --group standin",
     "seed:impersonation": "node scripts/seed-data/b2b/seed-company-users.mjs imp",
     "seed:loyalty:users": "node scripts/seed-data/b2b/seed-company-users.mjs loyalty",
     "schema:refresh": "node scripts/graphql/refresh-graphql-schema.mjs",
