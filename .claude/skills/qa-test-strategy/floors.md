@@ -80,5 +80,5 @@ The stale rows are listed in the strategy's Artifacts row with their reason and 
 | `deep` | test model **and** exploratory ran, **or** the Critical-risk verifier ran |
 | `standard` | anything between |
 
-The label is for people reading reports. No rule, floor or gate reads it, so it cannot drift from what ran.
+In the strategy it is computed from the planned `RUN` rows; at close-out, from what ran. The label is for people reading reports. No rule, floor or gate reads it, so it cannot drift from what ran.
 It never appears in a risk row; a risk carries **effort** (`low` / `medium` / `high`, D12).

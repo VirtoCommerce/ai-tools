@@ -3,7 +3,7 @@
 <!-- Shape for /qa-test-strategy; lib/check-strategy.mjs reads it. Write a Decision cell as plain `RUN` (not bold) and a risk
      Level as Critical | High | Medium | Low, in full words. More than 3 lanes ⇒ add a `Lanes sequenced:` line.
      ONE file per ticket (D7), one "## Round N" section per round, newest last.
-     Each round section: target 40–90 lines, hard cap 120 (D9, reports-policy §2). Method, floors, rounds:
+     Each round section's size cap: .claude/knowledge/execution/reports-policy.md §2 (D9). Method, floors, rounds:
      .claude/skills/qa-test-strategy/. Delete every comment line. -->
 
 ## Round <N> of 3 — <YYYY-MM-DD>

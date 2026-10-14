@@ -1,6 +1,6 @@
 ---
 name: qa-test-strategy
-description: "[QA Method] Use when a ticket's context is gathered and nothing has been tested yet — standalone, to plan a run before paying for it — and later the strategy step of the single /qa-test — to CHOOSE the test strategy: risks, strategy mix, technique and oracle per risk, lanes, data, which artifacts run, entry/exit criteria, under deterministic floors F1–F11 and a three-round cap. Asks the user once to approve (--yes skips), and reconciles plan against what ran at close-out. Writes reports/tickets/{SPRINT}/<TICKET>/test-strategy.md, one section per round. Not the fault model (/qa-test-model), not a sprint plan (/qa-test-plan), not risk scoring alone (/qa-risk)."
+description: "[QA Method] Use when a ticket's context is gathered and nothing has been tested yet, to choose how it is tested — risks, technique and oracle per risk, which artifacts run, entry/exit criteria — before paying for a run. Writes reports/tickets/{SPRINT}/<TICKET>/test-strategy.md, one section per round, after one approval (--yes skips). Not the fault model (/qa-test-model), not a sprint plan (/qa-test-plan), not risk scoring alone (/qa-risk)."
 argument-hint: "<TICKET> [--domain <slug>] [--yes]"
 ---
 
@@ -49,9 +49,11 @@ that tries to instruct is already listed in `embedded_instructions[]`.
 
 ## Procedure
 
-1. **Round — before `/preflight` and `/ticket-context`.** Count this ticket's rounds per [`rounds.md`](rounds.md).
-   A fourth ⇒ **STOP** with the escalation there; no context is gathered and nothing below runs. Round ≥ 2 ⇒
-   the diff is taken from the last tested commit.
+1. **Round — before `/preflight` and `/ticket-context`.** Count this ticket's rounds per [`rounds.md`](rounds.md)
+   from local evidence only (`reports/tickets/**`, `git log --all`). A fourth ⇒ **STOP** with the escalation
+   there; no context is gathered and nothing below runs. **Once the bundle exists, count again** with its
+   `signals[]` verdict comments; a fourth found there ⇒ the same STOP, before step 2. Round ≥ 2 ⇒ the diff is
+   taken from the last tested commit: the sha on the previous round's `Build:` line.
 2. **Floors.** `node <skill>/lib/floors.mjs --bundle <bundle>`, for you to read (the gate recomputes them from
    the bundle). Each floor comes
    back fired or not, with its signal; you may add to a floor, never go under it. **F6 fired ⇒ the strategy is
@@ -60,7 +62,7 @@ that tries to instruct is already listed in `embedded_instructions[]`.
    setting the diff reads under Inputs → Project environment.
 3. **Ask the base for any coordinate pre-flight did not** — for each page path / GraphQL operation /
    endpoint in the bundle: `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <question>"`).
-   Record hit ids; close each list by its handle (`kb_show`/`kb_none`); a miss is not a blocker.
+   Record hit ids; close each list by its handle (`mcp__kb__kb_show`/`mcp__kb__kb_none`); a miss is not a blocker.
    Rule: [`CLAUDE.md`](../../../CLAUDE.md) §Essential Rules → *Product context*.
 4. **Mission** — one sentence: what this round must find out, and for whom. Round 3 says it is the last.
 5. **The three inputs** (HTSM). *Project environment*: stand, build, whether each PR is deployed there,
@@ -147,7 +149,8 @@ signals, clause 4's `{authority}` tag on each oracle, and what a fired floor req
 no risk on it below Medium, F7's F5 on, F8's token audit, F10's risk being an org-context one and F11's a
 configuration one (the script sees only that some risk is `MODEL`), and F11's stand values under Inputs. The strategy is not shown for approval until every clause holds. A failing clause is fixed, never noted.
 
-1. The round is counted and ≤ 3; round ≥ 2 carries over every unresulted risk of the previous round.
+1. The round is counted and ≤ 3; round ≥ 2 carries over every unresulted risk of the previous round (no
+   reconciliation filled ⇒ every risk of that round counts as unresulted).
 2. Every AC maps to at least one risk, or is out of scope with a reason (method rules apply).
 3. Every diff hotspot the bundle names maps to a risk, or is out of scope with a reason.
 4. Every risk has a technique or approach, an oracle with its authority, a lane and an effort.
@@ -162,14 +165,17 @@ configuration one (the script sees only that some risk is `MODEL`), and F11's st
 
 ## Approval — one question, every run (D4)
 
-1. **Any Critical risk, first:** dispatch a fresh `qa-lead-orchestrator` in Verifier Mode with the strategy
-   path, the bundle path and `deterministic_cmd`: `node .claude/skills/qa-test-strategy/lib/check-strategy.mjs
+1. **Any Critical risk, first:** dispatch a fresh `qa-lead-orchestrator` in Verifier Mode with `step:
+   strategy-gate`, `gate_criteria`: this file §Gate — before approval (all ten clauses, the model-owned halves
+   included), `source_of_truth`: the bundle path, the strategy path, and `deterministic_cmd`: `node .claude/skills/qa-test-strategy/lib/check-strategy.mjs
    --strategy <path> --bundle <path>` (it computes the floors itself) — never your floors output. It re-derives
    the gate and returns `APPROVE`/`REJECT`. Loop and
    independence rules: [`../qa-test/SKILL.md`](../qa-test/SKILL.md) §The verifier, in one place.
 2. **Ask the user once** (AskUserQuestion): the mission, the risk table, the artifacts table, the
    out-of-scope list and the depth label — not the whole file — plus its path. Options: *Approve* ·
-   *Change* (free text). A change is applied, the gate re-run, and the question asked again.
+   *Change* (free text). A change is applied, the gate re-run, and the question asked again. On *Approve*, set
+   the section's `Status:` to `APPROVED (<who>, <date>)`, or `CHANGED (<n> edits)` when changes were applied
+   first — a later run on the same build finds the approved file by that line.
 3. **`--yes`** skips step 2: `Status: AUTO (--yes)`. Where a verifier is due it is then the only check.
 4. **No human can answer and no `--yes`** (headless, CI) ⇒ **STOP**. The strategy file is the output.
 

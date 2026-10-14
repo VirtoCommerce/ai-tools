@@ -46,5 +46,4 @@ From round 2, `floors.mjs` still reads the whole PR diff in the bundle, so the f
 `reports/tickets/{SPRINT}/<TICKET>/test-strategy.md` holds one `## Round N` section per round, each with
 its own amendments and reconciliation. Round N cites round N−1 by section, not by path. When the sprint
 folder changes between rounds, the file moves with the newest round and the older folder keeps a one-line
-pointer. Worked example (round 3, written before the round's build was deployed):
-`reports/tickets/Sprint26-20/VCST-5884/test-strategy.md` on branch `qa/vcst-5884`.
+pointer. Shape: [`../../templates/test-strategy.md`](../../templates/test-strategy.md).
