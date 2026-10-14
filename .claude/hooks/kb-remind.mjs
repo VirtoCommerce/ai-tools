@@ -232,8 +232,10 @@ function owned(loops, { transcript, ownersFile, now = Date.now() }) {
   const stateOf = (p) => { if (!state.has(p)) state.set(p, statusOf(p, now)); return state.get(p); };
   for (const l of rest) {
     const holders = owners.get(l.at) ?? [];
-    // A list a subagent held is INHERITED: the main thread did not judge it (`reminderText`).
-    if (!holders.length) mine.push(l);
+    // A list a subagent held is INHERITED: the main thread did not judge it (`reminderText`). One no
+    // transcript holds is the main thread's own only when its own transcript was READ: unreadable is the
+    // same as absent -- owner unknown, never offered to kb_none (VCST-6341 review).
+    if (!holders.length) mine.push(own === null ? { ...l, inherited: 'unknown' } : l);
     else if (holders.every((p) => finished(stateOf(p)))) mine.push({ ...l, inherited: true });
   }
   return mine;

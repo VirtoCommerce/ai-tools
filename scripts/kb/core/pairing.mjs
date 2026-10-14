@@ -25,6 +25,8 @@ const ID_SEGMENT = /^\/(\{[^}/]*\}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
  */
 function endsAt(after) {
   if (!after) return true;
+  // A trailing slash is the same route (`/account/returns/`), unless another segment follows it.
+  if (after[0] === '/' && !/[a-z0-9_{]/.test(after[1] ?? '')) return true;
   if (ROUTE.test(after[0])) return false;
   return !(JOINERS.test(after[0]) && /[a-z0-9_{]/.test(after[1] ?? ''));
 }
@@ -32,10 +34,21 @@ function endsAt(after) {
 /** A question with any scheme://host removed, so `https://host/api/members/1` reads as `/api/members/1`. */
 const withoutHosts = (q) => q.replace(/[a-z][a-z0-9+.-]*:\/\/[^\s/]+/g, ' ');
 
+/**
+ * What may stand right before a route and still leave it a route: nothing, a non-route character, a
+ * bare host (`vcst-qa.example.com`, `localhost:5000`) or a stand variable (`$FRONT_URL`, `{BACK_URL}`)
+ * -- the spellings agents actually paste. Anything else (`/v2/api/x`, `foo_api/x`) is a longer path.
+ */
+const HOST_OR_VAR = /^(?:[a-z0-9-]+(?:\.[a-z0-9-]+)+(?::\d+)?|localhost(?::\d+)?|\$\{?[a-z_][a-z0-9_]*\}?|\{[a-z_][a-z0-9_]*\})$/;
+function routeStartsAt(q, i) {
+  if (i === 0 || !/[a-z0-9/_\-.}]/.test(q[i - 1])) return true;
+  const start = Math.max(q.lastIndexOf(' ', i - 1), q.lastIndexOf('(', i - 1), q.lastIndexOf('`', i - 1), q.lastIndexOf('"', i - 1)) + 1;
+  return HOST_OR_VAR.test(q.slice(start, i));
+}
+
 function namesExactly(q, c) {
   for (let i = q.indexOf(c); i !== -1; i = q.indexOf(c, i + 1)) {
-    const before = i === 0 ? '' : q[i - 1];
-    if (before && /[a-z0-9/_\-.]/.test(before)) continue;
+    if (!routeStartsAt(q, i)) continue;
     const after = q.slice(i + c.length);
     if (endsAt(after)) return true;
     const id = ID_SEGMENT.exec(after);
@@ -51,12 +64,18 @@ function namesExactly(q, c) {
  * question that mentions `/api/carts/merge/preview` earlier and `/api/carts/merge` later. A full
  * URL counts as its path (`withoutHosts`).
  *
- * KEPT IN STEP WITH `rank.mjs` `anchorHit` on record routes: a verb-prefixed coordinate is also named
- * by its path alone (a question says "why does /api/carts return", not "POST /api/carts"); a
- * coordinate followed by one ID segment (`ID_SEGMENT`) is still named; and a coordinate stored WITH a
+ * BORROWED FROM `rank.mjs` `anchorHit`: a verb-prefixed coordinate is also named by its path alone (a
+ * question says "why does /api/carts return", not "POST /api/carts"), and a coordinate stored WITH a
  * `{param}` is also named by its stem -- `GET /api/members/{id}` by a question about `/api/members`.
- * Only a query string or a further named segment ends the match, which is the
- * `/account/returns?scope=organization` case this exists for.
+ * A coordinate followed by one ID segment (`ID_SEGMENT`), a trailing slash, a host or a stand variable
+ * before it are still named.
+ *
+ * DELIBERATELY STRICTER THAN `anchorHit`, which matches a substring. The two answer different
+ * questions: `anchorHit` asks "is this entry worth SHOWING for the question" -- an entry anchored
+ * `/account/returns` is a fair candidate for a question about `?scope=organization`, the same page --
+ * while this asks "is this capture ABOUT that ask", where the same prefix charged an answer with an
+ * unrelated capture. Tightening `anchorHit` changes retrieval and the verdict's `coordMatch` feature,
+ * so it is a ranking change with its own measurement (VCST-6342), not a fix to pairing.
  */
 export function namesCoordinate(question, coord) {
   const q = withoutHosts(String(question ?? '').toLowerCase());

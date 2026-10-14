@@ -203,30 +203,33 @@ const clip = (q) => (q.length > Q_MAX ? `${q.slice(0, Q_MAX).replace(/\s+\S*$/, 
 export function reminderText(loops, { contract = CONTRACT } = {}) {
   // An unclosed list is raised even after a write (VCST-6191), so the headline does not claim "nothing
   // was written back" for it: that holds for the misses only.
+  // THE RULES COME BEFORE THE LIST (VCST-6341 review): the harness truncates hook text near 2,000
+  // characters, from the end, and five subagent lines with their candidates reached 2,126 -- cutting
+  // exactly the "never kb_none" line this hook exists to say. The list is what may be cut; one line per
+  // question, its handle and nothing repeated.
+  const listed = loops.slice(0, LISTED);
   const lines = [`kb reminder (not a failure): ${loops.length} question(s) this session left open in the knowledge base -- no answer and nothing written back, or a list never closed:`];
-  for (const l of loops.slice(0, LISTED)) {
-    if (l.why === 'unresolved' && l.inherited) {
-      const whose = l.inherited === 'unknown' ? 'a list this session cannot attribute' : "a SUBAGENT's list";
-      lines.push(`- "${clip(l.q)}" -- ${whose}${l.shown?.length ? ` (${l.shown.join(', ')})` : ''}: kb_show <id> with ask ${l.at} only if a report or your own work names the entry it relied on; otherwise leave it open`);
-    } else {
-      lines.push(l.why === 'unresolved'
-        ? `- "${clip(l.q)}" -- a list was shown and never closed: kb_show <id> with ask ${l.at}, or kb_none with ask ${l.at}`
-        : `- "${clip(l.q)}"`);
-    }
+  if (listed.some((l) => l.why === 'unresolved' && l.inherited)) {
+    lines.push('Lists marked (subagent) or (unattributed) were judged by no one here: kb_show <id> with that ask only if a report '
+      + 'or your own work names the entry relied on; never kb_none them -- an open list is read as unclosed, not as a gap.');
   }
-  if (loops.length > LISTED) lines.push(`- and ${loops.length - LISTED} more, named at your next stop`);
   // A list is closed by a choice, never by a write (VCST-6191): asking the agent to capture it again
   // would turn a list it already wrote about into a duplicate entry. The capture line is for misses.
-  if (loops.some((l) => l.why === 'unresolved' && !l.inherited)) {
-    lines.push('Close each list with the entry you relied on (kb_show) or kb_none -- even if you already wrote about it.');
+  if (listed.some((l) => l.why === 'unresolved' && !l.inherited)) {
+    lines.push('Close each other list with the entry you relied on (kb_show <id> with its ask) or kb_none with its ask -- even if you already wrote about it.');
   }
-  if (loops.some((l) => l.why === 'unresolved' && l.inherited)) {
-    lines.push("Never kb_none a list you did not judge: an open list is read as unclosed, not as a gap.");
-  }
-  if (loops.some((l) => l.why !== 'unresolved')) {
+  if (listed.some((l) => l.why !== 'unresolved')) {
     lines.push(`If you or a subagent established a question with no answer -- live, or by reading code (method "source") -- kb_capture it now (contract: ${contract}). `
       + 'If you did not establish it, say so in one line and finish.');
   }
   lines.push('Each question is raised once.');
+  for (const l of listed) {
+    const whose = l.why !== 'unresolved' ? '' : l.inherited === 'unknown' ? ' (unattributed' : l.inherited ? ' (subagent' : ' (list';
+    const ids = whose && l.inherited && l.shown?.length ? `: ${l.shown.join(' ')}` : '';
+    lines.push(`- "${clip(l.q)}"${whose ? `${whose}${ids})` : ''}${l.why === 'unresolved' ? ` ask ${l.at}` : ''}`);
+  }
+  // "At a later stop", not "your next": on a continuation only the main thread's own lists are raised,
+  // so a subagent's list waits for the next fresh stop (kb-remind guard 2).
+  if (loops.length > LISTED) lines.push(`- and ${loops.length - LISTED} more, named at a later stop`);
   return lines.join('\n');
 }

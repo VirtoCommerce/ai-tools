@@ -194,10 +194,15 @@ export function misses(lines) {
   const coverage = new Map();
   const unclosed = new Map();
   let unreachable = 0;
+  // Every miss ASK, keyed or not: the ranked lists group by question text and drop an empty one, which
+  // is right for a work queue and wrong for a denominator (the verdict's row 3 reads these).
+  let coverageAsks = 0;
+  let unclosedAsks = 0;
   for (const l of lines) {
     if (l.kind !== 'ask') continue;
     if (l.state === 'unreachable') { unreachable += 1; continue; }
     if (l.state !== 'miss') continue;
+    if (l.closedBy === 'unclosed') unclosedAsks += 1; else coverageAsks += 1;
     const key = questionKey(l.q);
     if (!key) continue;
     const groups = l.closedBy === 'unclosed' ? unclosed : coverage;
@@ -213,7 +218,8 @@ export function misses(lines) {
     ranked,
     unreachable,
     total: ranked.reduce((n, g) => n + g.count, 0),
-    unclosed: { ranked: open, total: open.reduce((n, g) => n + g.count, 0) },
+    unclosed: { ranked: open, total: open.reduce((n, g) => n + g.count, 0), asks: unclosedAsks },
+    asks: coverageAsks,
   };
 }
 
@@ -282,12 +288,14 @@ export function nearMisses(lines, idx) {
     let rejectedBy = null;
     if (!nm && l.closedBy === 'none' && Array.isArray(l.shown) && l.shown.length) {
       const shown = new Set(l.shown.map(String));
-      if (![...shown].some((id) => idx.has(id))) { shownNotInIndex += 1; continue; }
       const { byId, namespaces } = indexRows();
-      const rows = [...shown].map((id) => byId.get(id)).filter(Boolean);
+      // A shown id the snapshot lacks, or holds only as a row too malformed to normalise, cannot be
+      // scored: counted as "not in the index", never as "scored nothing".
+      const shownRows = [...shown].map((id) => byId.get(id)).filter(Boolean);
+      if (!shownRows.length) { shownNotInIndex += 1; continue; }
       // The candidate that covered MOST of the question, not the best-scored: the panel's review band is
       // a coverage band, and an agent-rejected list's error bar is its closest candidate by that measure.
-      const best = scoreRows(String(l.q ?? ''), rows, { namespaces })
+      const best = scoreRows(String(l.q ?? ''), shownRows, { namespaces })
         .reduce((b, h) => (!b || h.coverage > b.coverage ? h : b), null);
       if (best) {
         nm = { id: best.row.id, score: best.score, coverage: Math.round(best.coverage * 100) / 100 };
@@ -1032,7 +1040,7 @@ export function verdict({ unhelpful: u, nearMisses: nm, loop, misses: m = null }
   {
     // Every resolved miss, unclosed lists included: `loop.afterMiss` counts captures after any of them.
     // Counted by the misses panel, which owns the number; the near-miss panel's tally is a fallback.
-    const n = m ? m.total + (m.unclosed?.total ?? 0) : nm.missTotal + (nm.unclosed ?? 0);
+    const n = m ? (m.asks ?? m.total) + (m.unclosed?.asks ?? m.unclosed?.total ?? 0) : nm.missTotal + (nm.unclosed ?? 0);
     const hit = loop.afterMiss;
     let state;
     let detail;

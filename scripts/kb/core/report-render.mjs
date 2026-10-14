@@ -128,7 +128,7 @@ function panelNearMisses(p) {
       <strong class="${p.inBand.length ? 'bad' : ''}">${esc(p.inBand.length)}</strong> row(s) at
       coverage ≥ ${esc(p.review)} · <strong>${esc(p.rows.length)}</strong> of
       <strong>${esc(p.missTotal)}</strong> miss(es) carried a candidate
-      <span class="muted">(${esc(p.withoutNearMiss)} scored nothing at all — not a floor problem${p.shownNotInIndex ? `; ${esc(p.shownNotInIndex)} showed only entries missing from the index snapshot` : ''})</span>
+      <span class="muted">(${esc(p.withoutNearMiss)} scored nothing at all — not a floor problem${p.shownNotInIndex ? `; ${esc(p.shownNotInIndex)} showed only entries missing from, or unreadable in, the index snapshot` : ''})</span>
       ${p.unclosed ? `<br><span class="muted">${esc(p.unclosed)} unclosed list(s) left out: nobody rejected their candidates, so there is no near-miss to read.</span>` : ''}
     </p>
     ${repeats ? `<p class="metric">Repeatedly near-missed: ${repeats}</p>` : ''}
@@ -229,7 +229,7 @@ function panelUnhelpful(p) {
     <p class="metric">
       <strong>${esc(p.flagged.length)}</strong> unhelpful of <strong>${esc(p.decidable)}</strong> decidable
       = <strong class="${p.rate != null && p.rate > 0.15 ? 'bad' : ''}">${esc(pct(p.rate))}</strong>
-      <span class="muted">(${esc(p.undecidable)} undecidable — the entry or the matched rows are not in the index snapshot)</span>
+      <span class="muted">(${esc(p.undecidable)} undecidable — the entry or the matched rows are not in the index snapshot${p.unpaired ? `; ${esc(p.unpaired)} unpaired — the capture named the ask only through a longer coordinate's prefix, so it is not evidence about it` : ''})</span>
     </p>
     <p class="muted">The denominator is pairs a capture <em>pointed at</em>, not all asks and not
       every later capture: until 2026-09-22 this paired every answered ask with every subsequent
