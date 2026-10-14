@@ -14,6 +14,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CANONICAL_PAGES, STATUS, findGuidLeaks, CONTENT_FILE, contentDocFor, blockCount, DISCOVER_RE } from './pagebuilder-pages-specs.mjs';
 import { existsSync } from 'node:fs';
+import { POOL_MARKER_RE } from '../analytics/ga4-lists-specs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const problems = [];
@@ -60,7 +61,10 @@ else {
   const cLeaks = findGuidLeaks(JSON.stringify(fixture));
   if (cLeaks.length) fail(`content fixture leaks runtime GUID(s): ${cLeaks.join(', ')}`);
   else ok('content fixture carries no runtime GUID');
-  const KNOWN = new Set(['title', 'text', 'image', 'predefined-product-list']);
+  // Storefront block types the fixture may use (vc-frontend static-content/components/index.ts templateBlocks
+  // + block-mapping.ts aliases). The product-rendering ones beyond predefined-product-list serve the VCST-6017
+  // GA4 pages, whose `@pool…` markers td:validate:ga4-lists guards.
+  const KNOWN = new Set(['title', 'text', 'image', 'predefined-product-list', 'products', 'products-carousel', 'favorite-products', 'demo-product-list', 'product-info']);
   let blocks = 0, bad = 0;
   for (const spec of CANONICAL_PAGES) {
     const cultures = spec.multiLang ? ['en-US', 'de-DE', ...(spec.frName ? ['fr-FR'] : [])] : [spec.culture];
@@ -71,7 +75,7 @@ else {
       for (const b of doc.content) {
         blocks++;
         if (!KNOWN.has(b.type)) { fail(`${spec.alias} (${cul}): unknown block type "${b.type}"`); bad++; }
-        if (typeof b.skus === 'string' && !DISCOVER_RE.test(b.skus)) { fail(`${spec.alias} (${cul}): skus string must be "@discover:N", got "${b.skus}"`); bad++; }
+        if (typeof b.skus === 'string' && !DISCOVER_RE.test(b.skus) && !POOL_MARKER_RE.test(b.skus)) { fail(`${spec.alias} (${cul}): skus string must be "@discover:N" or "@pool:<group>", got "${b.skus}"`); bad++; }
       }
     }
   }
