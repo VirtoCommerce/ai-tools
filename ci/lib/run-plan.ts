@@ -36,6 +36,7 @@ export interface PlannableSuite extends SuiteCapsInput {
   /** Browser servers this suite must not be placed on (derived `clickDriven`). */
   browserDenyList?: readonly string[];
   preferredBrowser?: string;
+  exclusiveGroup?: string;
 }
 
 export interface PlannedSuite {
@@ -51,6 +52,7 @@ export interface PlannedSuite {
   indicativeBudgetUsd: number;
   browserDenyList: readonly string[];
   preferredBrowser?: string;
+  exclusiveGroup?: string;
 }
 
 export interface LanePlan {
@@ -112,6 +114,7 @@ export function buildRunPlan(
       s.lane === "deterministic" ? 0 : budgetFor(s, globalBudgetUsd, totalEstimatedMinutes),
     browserDenyList: s.browserDenyList ?? [],
     preferredBrowser: s.preferredBrowser,
+    ...(s.exclusiveGroup ? { exclusiveGroup: s.exclusiveGroup } : {}),
   }));
 
   const lanes: LanePlan[] = (["browser", "fastpath", "deterministic"] as LaneKind[]).map((lane) => {

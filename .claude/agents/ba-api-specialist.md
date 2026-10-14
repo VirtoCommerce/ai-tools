@@ -48,7 +48,7 @@ The Postman MCP handles auth (uses `POSTMAN_API_KEY` from environment); prefer i
 **From Postman (local file fallback):**
 - Parse collection v2.1 JSON; extract folders, requests, pre-request scripts, tests, environment refs.
 
-**ASK — before the first live check of each endpoint / GraphQL operation in scope:** `npm run kb -- ask "<coordinate> <question>"` (MCP: `mcp__kb__kb_ask`). Record hit ids; a miss is not a blocker.
+**ASK — before the first live check of each endpoint / GraphQL operation in scope:** `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <question>"`). Record hit ids; close each list by its handle (`kb_show`/`kb_none`); a miss is not a blocker.
 
 **From Platform health endpoint:**
 - `GET {api_base_url}/health` — JSON with Modules, Cache, Redis, SQL Server status. Confirms the target platform is reachable and lists installed module versions before deeper analysis. (Note: this is `/health`, NOT `/api/platform/healthcheck`.)
@@ -95,12 +95,12 @@ When the slug is unclear, search rather than guess: `mcp__github__search_reposit
 
 **Existing project knowledge to consult before re-deriving the API surface:**
 - `reports/ba/` + `reports/ba/test-models/` + `.claude/knowledge/domain/` — **Step 0, always** (`.claude/knowledge/agents/ba/shared-instructions.md` §Step 0): the prior BA analysis, prior test models and existing suites for this surface, per domain. Read it before assessing an API surface someone on this team may already have documented; it is an index of pointers, so it can never ground a claim.
-- `.claude/knowledge/api/graphql-schema.md` — live introspected snapshot of the xAPI GraphQL schema (queries, mutations, input types, return types). Faster than re-introspecting. **Do not judge its staleness — the file cannot tell you whether the live schema moved.** A caller that refreshed it hands you the rev (`/qa-test` `1b` item 2d, `/qa-test-lifecycle` Pre-Flight 4); with no rev, treat the snapshot as UNKNOWN age and either run `npm run schema:refresh` or report the field names you took from it as unverified. Spec: `.claude/skills/qa-test/contract-refresh.md`.
+- `.claude/knowledge/api/graphql-schema.md` — live introspected snapshot of the xAPI GraphQL schema (queries, mutations, input types, return types). Faster than re-introspecting. **Do not judge its staleness — the file cannot tell you whether the live schema moved.** A caller that refreshed it hands you the rev (`/qa-test` `1b` item 2d, `/qa-test-lifecycle` Pre-Flight 2); with no rev, treat the snapshot as UNKNOWN age and either run `npm run schema:refresh` or report the field names you took from it as unverified. Spec: `.claude/skills/qa-test/contract-refresh.md`.
 - `.claude/knowledge/api/graphql-test-cases-runner.md` — canonical authoring contract for the QA team's runner-native GraphQL test cases (consumed by `scripts/graphql/graphql-runner.ts`). When you flag coverage gaps for GraphQL endpoints, point downstream test-authoring agents (test-management-specialist, qa-backend-expert) at this format. New GraphQL tests MUST be written in this format, not as Postman requests or GraphiQL UI flows.
 - `.claude/knowledge/api/api-auth.md` — Platform OAuth2 token flow (consistent with how the runner acquires tokens via `[AUTH role=…]`).
 - `.claude/knowledge/execution/module-suite-map.md` — module-to-test-suite mapping (use to flag "Postman has X requests but `regression/suites/Backend/<module>/` already covers Y").
 - `regression/suites/Backend/graphql/` and `regression/suites/Backend/api/` — existing GraphQL + REST test coverage; reference when reporting overlap with Postman.
-- `test-data/graphql/index.json` + `test-data/graphql/queries/` + `test-data/graphql/mutations/` — **schema-validated golden-set xAPI fixtures library**. Each `index.json` entry has: `path`, `category` (profile / orders / cart / catalog / configuration / wishlist / etc.), `role` (ORG_USER / ANON / ADMIN), `requiredVars`, `gqlVars` (typed variable map), `exampleVars`, `usedBy[]` (suite IDs that reference it). When auditing the GraphQL surface: (a) check `index.json` BEFORE flagging an operation as missing — it may already be fixturised; (b) treat fixtures as the canonical query/mutation shape (validated by `npm run graphql:fixtures:validate`) rather than re-deriving from schema; (c) when reporting coverage gaps, name the fixture file the QA team should add (e.g. `mutations/applyCoupon.graphql`) so the recommendation is actionable.
+- `test-data/graphql/index.json` + `test-data/graphql/queries/` + `test-data/graphql/mutations/` — **schema-validated golden-set xAPI fixtures library**. Each `index.json` entry has: `path`, `category`, `role` (ORG_USER / ANON / ADMIN), `requiredVars`, `gqlVars` (typed variable map), `exampleVars`, `usedBy[]` (suite IDs that reference it). When auditing the GraphQL surface: (a) check `index.json` BEFORE flagging an operation as missing — it may already be fixturised; (b) treat fixtures as the canonical query/mutation shape (validated by `npm run graphql:fixtures:validate`) rather than re-deriving from schema; (c) when reporting coverage gaps, name the fixture file the QA team should add (e.g. `mutations/applyCoupon.graphql`) so the recommendation is actionable.
 - `test-data/README.md` + `test-data/aliases.json` — `@td(ALIAS.field)` resolver registry (catalogs, products, orgs, payment cards, addresses, coupons). Reference these when documenting required vars / example payloads instead of hardcoding GUIDs/SKUs/emails.
 
 **Live GraphQL introspection (no rev in the brief, or a new mutation suspected):**
@@ -162,7 +162,7 @@ Check for these issues:
 - Missing error case tests (4xx, 5xx)
 
 ### 5. BANK — close-out
-For each platform behaviour your output states: matched ⇒ `kb confirm <id>`, contradicted ⇒ `kb dispute <id>`, base held nothing ⇒ `kb capture` (`--deployment {TEST_ENV}`). Public base — nothing client-specific. List the ids in `kb_entries`.
+For each platform behaviour your output states: matched ⇒ `kb_confirm`, contradicted ⇒ `kb_dispute`, base held nothing ⇒ `kb_capture` (anchor = the request, never a label: `.claude/knowledge/execution/kb-capture-contract.md`). Public base — nothing client-specific. List the ids in `kb_entries`.
 
 ---
 

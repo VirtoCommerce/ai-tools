@@ -1,0 +1,395 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+OTP-001,"[JOURNEY] OTP sign-in — request code, read it from the email, enter it, land signed in",Auth > OTP Sign-In > Storefront > [JOURNEY],Critical,BL-AUTH-015,,"[PRE:CLEAR_SESSION]
+Store setting OtpSignIn.Enabled is on for {{STORE_ID}} (Admin: Stores > store > Settings > OTP Sign-In > General)
+The storefront ingress routes /api/otp to the platform (a 405 on Continue is the defect this journey exists to catch, not a reason to skip)
+{{USER_EMAIL}} is a contact of {{STORE_ID}} with lockout enabled and a non-expired password; admin credentials resolve","email={{USER_EMAIL}}, store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","--- SCREEN: Sign in - request a code ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+--- SCREEN: Check your email ---
+[ASSERT] The step shows the masked address (not the full {{USER_EMAIL}}), six empty code cells, 'Resend code' and 'Use a different email'
+--- SCREEN: Notification journal (admin API) ---
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} created after T0 appears (SMTP may be off - the message is journaled either way)
+[CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
+--- SCREEN: Check your email ---
+[ACT] Type the 6 digits of code into 'Code'
+[WAIT] the page leaves /sign-in (sign-in auto-submits on the 6th digit)
+--- SCREEN: Signed in ---
+[ASSERT] The account menu shows the signed-in customer of {{USER_EMAIL}} and /sign-in is no longer the current page
+[ACT] Reload the page
+[ASSERT] The account menu still shows the same signed-in customer (the session is real, not a one-render state)","[DOM] After 'Continue' the step title is 'Check your email' and the address is masked {OBSERVED}
+[STATE] No 405 / generic failure after Continue: POST /api/otp/request on the storefront origin answers 200 with succeeded=true {OBSERVED}
+[STATE] The 6th digit auto-submits; the customer is signed in and leaves /sign-in (no returnUrl: lands on /) {OBSERVED}
+[STATE] me.userName of the signed-in session identifies the account of {{USER_EMAIL}} {OBSERVED}
+[NAV] After reload the session is still signed in {SPEC}","[API] POST /api/otp/request -> 200 succeeded=true; POST /connect/token grant_type=otp_email -> 200 with access_token
+[EMAIL] the OtpSignInEmailNotification message appears in the notification journal within 60s
+[ADMIN] Security > Sign-in log has a Type OTP row for the account with succeeded=true
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql or on /api/otp/request",405 on POST /api/otp/request or 'Something went wrong' after Continue (mid-journey: ingress route missing); the 6th digit is typed and the page stays on /sign-in; the account menu is anonymous after the code step; spinner >5s,Sign out through the account menu so the next case starts anonymous,VCST-5748 · Archetype:SILENT · Technique:FLOW,Draft
+OTP-002,OTP sign-in — a wrong code shows an inline error and the code can be re-entered,Auth > OTP Sign-In > Storefront,High,BL-AUTH-003,,"[PRE:CLEAR_SESSION]
+OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE_ID}} with lockout enabled","email={{USER_EMAIL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} created after T0 appears (SMTP may be off - the message is journaled either way)
+[CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
+[CAPTURE] wrongCode = a 6-digit string that differs from code (change its last digit)
+[ACT] Type wrongCode into 'Code' (auto-submits on the 6th digit)
+[WAIT] the error appears under the code field
+[ASSERT] Count the visible error alerts and read the code cells
+[ACT] Type the real code into 'Code'
+[WAIT] the page leaves /sign-in","[DOM] Exactly one inline error alert is shown above the 'Code' field, text ""That code didn't work."" {OBSERVED}
+[DOM] Under 'Code' there is no toast, no second alert and no raw translation key (e.g. shared.account.sign_in_form.errors...) {OBSERVED}
+[STATE] The first cell of 'Code' is focused and the field accepts a new entry (it is not locked after the error) {OBSERVED}
+[STATE] Still on /sign-in and not signed in after the wrong code {OBSERVED}
+[STATE] Entering the real code afterwards signs the customer in {SPEC}","[API] POST /connect/token grant_type=otp_email -> 400 with code invalid_code for the wrong code, 200 for the real one
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 5xx on /connect/token or /api/otp/request",No message after a wrong code; two alerts with different copy at once; a raw key shown; the field is locked or unfocusable after the error; spinner >5s,"Sign out through the account menu so the next case starts anonymous
+The final successful sign-in resets the failed-attempt counter of {{USER_EMAIL}}",VCST-5748 · Archetype:FALLBACK · Technique:EP,Draft
+OTP-003,OTP sign-in — an unknown email gets the same 'Check your email' screen as a real account,Auth > OTP Sign-In > Storefront,High,BL-AUTH-003,ECL-4.2,"[PRE:CLEAR_SESSION]
+OtpSignIn.Enabled is on for {{STORE_ID}}
+PasswordLogin:DetailedErrors is false on the target environment (platform appsettings, not changeable from a case). Probe: POST /api/otp/request for the unknown address; if error.code is user_not_found the environment shows detailed errors - mark BLOCKED, do not assert the masked screen against it","email=@td(OTP_INPUTS.unknownEmail), known_email={{USER_EMAIL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[CAPTURE] knownScreen = step title, masked-address text pattern, visible controls
+[ACT] Click 'Use a different email'
+[WAIT] the page settles (spinner gone, network idle)
+[ACT] Fill 'Email': the generated unknown address
+[ACT] Click 'Continue'
+[WAIT] the next step is shown
+[CAPTURE] unknownScreen = step title, masked-address text pattern, visible controls
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and body {""keyword"":""<unknown address>"",""take"":5}","[DOM] The unknown address reaches the same 'Check your email' step as the known one, with a masked address and the same controls {SPEC}
+[DOM] No ""User not found"" or other account-existence message is shown for the unknown address {OBSERVED}
+[STATE] unknownScreen equals knownScreen in title, masking pattern and controls {SPEC}
+[BODY] The journal holds no OtpSignInEmailNotification for the unknown address {OBSERVED}","[API] POST /api/otp/request for the unknown address -> 200 (no error.code distinguishing it)
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /api/otp/request",A different screen or message for an unknown address ('User not found' on the email step); an email created for a non-existent address; spinner >5s,Sign out through the account menu so the next case starts anonymous (nothing was signed in; return to /sign-in),VCST-5748 · Archetype:PARITY · Technique:EP,Draft
+OTP-004,"OTP sign-in - empty and malformed email are rejected before any request, and the 254-character limit is enforced",Auth > OTP Sign-In > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
+OtpSignIn.Enabled is on for {{STORE_ID}}","email=@td(OTP_INPUTS.invalidEmails), email_254=@td(OTP_INPUTS.boundary.maxLength254), email_255=@td(OTP_INPUTS.invalid.tooLong255)","[NAV] Navigate to {{FRONT_URL}}/sign-in
+--- SCREEN: one pass per value of email (empty, no domain, inner space, 255-char address) ---
+[ACT] Fill 'Email' with the value (leave empty for the first)
+[ACT] Click 'Continue'
+[WAIT] the page settles (spinner gone, network idle)
+[ASSERT] Read the field validation message and the network log for POST /api/otp/request
+--- SCREEN: control, 254-char address ---
+[ACT] Fill 'Email': email_254
+[ACT] Click 'Continue'
+[WAIT] the page settles (spinner gone, network idle)
+[ASSERT] Read the network log and the form message","[DOM] Under 'Email', the empty, no-domain and inner-space values each show a validation message and the page stays on the sign-in form with the 'Continue' button {OBSERVED}
+[STATE] POST /api/otp/request is not sent for the empty, no-domain and inner-space values {OBSERVED}
+[STATE] For the 255-char address either the client refuses it with a field message, or a request is sent and answers a 4xx validation error - never a 5xx and never a verify step; record which layer refused it {SPEC}
+[STATE] The 254-char control address is not refused for LENGTH (the request is sent; any refusal is the unknown-email outcome) {SPEC}","[API] POST /api/otp/request responses for the 255 and 254 values: status and error.code
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 5xx on /api/otp/request",An invalid value triggers a request and a generic 'Something went wrong'; a 5xx for the 255-char value; the 254-char control refused for length; no message at all,none (no state changed; no code was requested for a real account),VCST-5748 · Archetype:BOUNDARY · Technique:BVA,Draft
+OTP-005,"OTP sign-in — pasted code with spaces or letters, and a 5-digit code, submit correctly or not at all",Auth > OTP Sign-In > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
+OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE_ID}} with lockout enabled (each submitted wrong code counts one failed attempt - the case ends with a successful sign-in that resets it)","email={{USER_EMAIL}}, code=@td(OTP_INPUTS.malformedCodes), admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} created after T0 appears (SMTP may be off - the message is journaled either way)
+[CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
+--- SCREEN: one pass per value of code ("" 123 456 "", ""12a456"", ""12345"", ""1234567"") ---
+[ACT] Paste the value into 'Code' (clipboard paste, not key-by-key typing)
+[ASSERT] Read the digits kept in the six cells and the network log for POST /connect/token
+[ACT] Clear 'Code' before the next value
+--- SCREEN: finish ---
+[ACT] Type the real code into 'Code'
+[WAIT] the page leaves /sign-in","[DOM] 'Code' holds exactly the six digits 123456 after the spaced paste and submits them (the alert ""That code didn't work."" follows) {OBSERVED}
+[DOM] 'Code' drops the letter, holds 12456 and the 'Sign in' button stays disabled (nothing is submitted) {OBSERVED}
+[STATE] The five-digit value stays in the cells and no POST /connect/token is sent {OBSERVED}
+[DOM] 'Code' is cut to its first six digits 123456 and submitted once {SPEC}
+[STATE] The real code afterwards signs the customer in {SPEC}","[API] POST /connect/token is sent for the spaced and seven-digit values only, with a 6-digit code parameter
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 5xx on /connect/token",A pasted code with a space never submits; a letter reaches /connect/token; the five-digit value submits; more than one request per paste; cells show garbled digits,"Sign out through the account menu so the next case starts anonymous
+The final successful sign-in resets the failed-attempt counter of {{USER_EMAIL}}",VCST-5748 · Archetype:BOUNDARY · Technique:BVA,Draft
+OTP-006,OTP sign-in — Resend code and Use a different email clear the previous error,Auth > OTP Sign-In > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
+OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} and {{USER2_EMAIL}} are contacts of {{STORE_ID}} with lockout enabled","email={{USER_EMAIL}}, email2={{USER2_EMAIL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} created after T0 appears (SMTP may be off - the message is journaled either way)
+[CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
+[CAPTURE] wrongCode = a 6-digit string that differs from code (change its last digit)
+[ACT] Type wrongCode into 'Code'
+[WAIT] the error shows
+[ACT] Click 'Resend code'
+[WAIT] the page settles (spinner gone, network idle)
+[ASSERT] Read the error area, the code cells and the status text
+[ACT] Type wrongCode into 'Code' again
+[WAIT] the error shows
+[ACT] Click 'Use a different email'
+[WAIT] the page settles (spinner gone, network idle)
+[ASSERT] Read the step shown, the error area and the Email field
+[ACT] Fill 'Email': {{USER2_EMAIL}}
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[ASSERT] Read the masked address, the error area and the code cells","[DOM] After 'Resend code' the invalid-code error is gone, the code cells are empty and 'New code sent.' is announced {OBSERVED}
+[DOM] After 'Use a different email' the email step is shown with no error from the previous attempt {OBSERVED}
+[DOM] The 'Check your email' step for {{USER2_EMAIL}} shows that account's masked address, six empty code cells and no alert element {SPEC}
+[STATE] No leftover alert from the first account survives either transition (single error list) {OBSERVED}","[API] POST /api/otp/request is sent once per Continue and once per Resend, each 200
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 5xx on /api/otp/request",The old 'code didn't work' error still shown after Resend or after switching address; cells keep the old digits; the second account's screen shows the first account's masked address,"Sign out through the account menu so the next case starts anonymous
+Complete one successful code sign-in for {{USER_EMAIL}} (request a code, read it from the journal, enter it) and sign out - this resets the two failed attempts counted on it",VCST-5748 · Archetype:LIFECYCLE · Technique:ST,Draft
+OTP-007,"OTP sign-in — with the store setting off, Sign in shows only the password form",Auth > OTP Sign-In > Storefront,High,,,"[PRE:CLEAR_SESSION]
+OtpSignIn.Enabled is on for {{STORE_ID}} at the start; admin credentials resolve
+Runs ALONE: this case flips a store-wide setting, so no other OTP case runs on {{STORE_ID}} at the same time (the API suite flips the same setting)","setting=OtpSignIn.Enabled false on {{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","--- SCREEN: Admin ---
+[NAV] Navigate to {{BACK_URL}}
+[ACT] Sign in to the admin as {{ADMIN_EMAIL}}
+[ACT] Open Stores > {{STORE_ID}} > Settings widget > 'OTP Sign-In' > 'General' (blade only - never a REST write of the whole store)
+[ACT] Turn 'Enable OTP sign-in' off
+[SAVE] Save the store blade
+--- SCREEN: Storefront ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[WAIT] reload /sign-in every 15s for up to 3 minutes until the page stops offering the code form (the storefront reads the setting once per load and the xAPI settings cache can lag)
+[ASSERT] Read which form /sign-in renders and look for a link that switches to a one-time code
+[HTTP] POST {{FRONT_URL}}/api/otp/request, JSON body {""storeId"":""{{STORE_ID}}"",""email"":""{{USER_EMAIL}}""}","[DOM] /sign-in renders the 'Email' and 'Password' fields and a 'Sign in' button {OBSERVED}
+[DOM] /sign-in has no 'Continue' button for a code, no six-cell code field and no link that switches to a one-time code {OBSERVED}
+[STATE] error.code of POST /api/otp/request equals 'otp_disabled' {OBSERVED}
+[STATE] Within the polling window the page does reflect the change (a setting that never propagates is the defect) {SPEC}","[ADMIN] the setting reads off in Stores > Settings > OTP Sign-In > General after Save
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx except the asserted otp_disabled answer",The code form is still offered after the setting is off and a reload; the password form is missing; the page never reflects the change within 3 minutes; a code form that fails on Continue,"Turn OtpSignIn.Enabled back ON for {{STORE_ID}} in the same admin blade and Save - even if the case aborted midway
+Reload {{FRONT_URL}}/sign-in until the code form is offered again (confirms the restore reached the storefront)",VCST-5748 · Archetype:CONFIG · Technique:DT,Draft
+OTP-008,OTP sign-in — homepage login section runs the same OTP flow,Auth > OTP Sign-In > Storefront,Low,,,"[PRE:CLEAR_SESSION]
+OtpSignIn.Enabled is on for {{STORE_ID}}
+The homepage of {{STORE_ID}} carries a login section block (Page Builder login-form-section). B2B-store has none on vcptcore_qa1: if {{FRONT_URL}} shows no login section the case is BLOCKED, not FAIL","email={{USER_EMAIL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/
+[ASSERT] The login section is visible on the homepage
+[ACT] In the login section fill 'Email': {{USER_EMAIL}}
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue' in the section
+[WAIT] the section changes step
+[ASSERT] Read the section title and the code cells
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} created after T0 appears (SMTP may be off - the message is journaled either way)
+[CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the 6 digits of code into the section code field
+[WAIT] the section is replaced by the signed-in state or the page redirects","[DOM] After Continue the section title switches to 'Check your email' and shows the masked address {SPEC}
+[STATE] The 6th digit auto-submits and the customer is signed in {SPEC}
+[DOM] The section shows six code cells and the text 'Check your email', not the password form fields {SPEC}","[API] POST /api/otp/request 200 and POST /connect/token 200 from the homepage origin
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /api/otp/request",The homepage block keeps a password-only form; the title stays on the sign-in text during the code step; Continue fails with a generic error; the session is anonymous after the code,Sign out through the account menu so the next case starts anonymous,VCST-5748 · Archetype:PARITY · Technique:FLOW,Draft
+OTP-009,/sign-in OTP verify step — browser Back after a completed submit / payment,Auth > OTP Sign-In > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
+OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE_ID}} with lockout enabled","email={{USER_EMAIL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} created after T0 appears (SMTP may be off - the message is journaled either way)
+[CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the 6 digits of code into 'Code'
+[WAIT] the page leaves /sign-in (sign-in auto-submits on the 6th digit)
+[ASSERT] The customer is signed in
+[KEY] Press the browser Back button once
+[ASSERT] Read the URL and what the page renders
+[KEY] Press Forward, then Back again
+[ASSERT] Read the network log for POST /connect/token","[NAV] Back from a completed sign-in leaves /sign-in (there is no in-flow Back inside the code steps) {OBSERVED}
+[STATE] Going back never shows a verify step that still holds the consumed code, and never re-submits it {SPEC}
+[STATE] A second POST /connect/token is not sent by Back or Forward {SPEC}
+[STATE] The session stays the signed-in customer; the page does not show an anonymous header after Back {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /api/otp/request or /connect/token other than the one asserted",Back resurrects the verify step with the used code in the cells; a second token request fires; the header flips to anonymous,Sign out through the account menu so the next case starts anonymous,VCST-5748 · Archetype:REPLAY · Technique:EG,Draft
+OTP-010,/sign-in OTP verify step — refresh mid-flow / during a redirect,Auth > OTP Sign-In > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
+OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE_ID}} with lockout enabled","email={{USER_EMAIL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} created after T0 appears (SMTP may be off - the message is journaled either way)
+[CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the first 3 digits of code into 'Code'
+[ACT] Reload the page (F5)
+[ASSERT] Read the step shown, the Email field and the code cells
+[ACT] Start again: fill Email, Continue, read the new code from the journal, type it
+[WAIT] the page leaves /sign-in
+[ACT] Reload the page
+[ASSERT] Read the signed-in state","[STATE] A reload on the verify step returns to the start (email) step with an empty Email field - the pending email is component state only {OBSERVED}
+[DOM] The six cells of 'Code' are not shown after the reload, and no alert or spinner is shown {SPEC}
+[STATE] A fresh request after the reload completes sign-in normally {SPEC}
+[STATE] A reload after sign-in keeps the session {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /api/otp/request or /connect/token other than the one asserted",A white screen or stuck spinner after reload; the verify step shown with an empty address; the second request fails because of leftover state,Sign out through the account menu so the next case starts anonymous,VCST-5748 · Archetype:REPLAY · Technique:EG,Draft
+OTP-011,/sign-in OTP verify step — two tabs on the same entity; sign-out or sign-in in one,Auth > OTP Sign-In > Storefront,Medium,BL-AUTH-007,,"[PRE:CLEAR_SESSION]
+OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE_ID}} with lockout enabled","email={{USER_EMAIL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","--- SCREEN: Tab A ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} created after T0 appears (SMTP may be off - the message is journaled either way)
+[CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the 6 digits of code into 'Code'
+[WAIT] the page leaves /sign-in (sign-in auto-submits on the 6th digit)
+[ASSERT] Tab A shows the signed-in customer
+--- SCREEN: Tab B (same browser context) ---
+[NAV] Open a new tab on {{FRONT_URL}}/
+[ASSERT] Tab B shows the same signed-in customer
+[ACT] Click 'Sign out' in the account menu of tab B
+[WAIT] the page settles (spinner gone, network idle)
+--- SCREEN: Tab A ---
+[ACT] In tab A open {{FRONT_URL}}/account/orders
+[ASSERT] Read the URL and the header","[STATE] Tab B shares the OTP-created session of tab A (same customer) {SPEC}
+[NAV] After sign-out in tab B, tab A navigates to /account/orders and ends on /sign-in {SPEC}
+[DOM] Tab A does not show the previous customer's orders or name {SPEC}
+[STATE] No blank screen and no silent 401 loop in tab A {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /api/otp/request or /connect/token other than the one asserted",Tab A keeps acting as the signed-out customer; /account/orders renders data after sign-out; a silent 401 leaves a blank page,Close tab B; Sign out through the account menu so the next case starts anonymous,VCST-5748 · Archetype:RACE · Technique:EG,Draft
+OTP-012,/sign-in OTP verify step — session / token expires mid-flow,Auth > OTP Sign-In > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
+OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE_ID}} with lockout enabled","email={{USER_EMAIL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} created after T0 appears (SMTP may be off - the message is journaled either way)
+[CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
+[WAIT] 10 minutes without touching the page - past the code lifetime (observed ~6-9 min, fixed by the Identity Email token provider)
+[ACT] Type the 6 digits of code (now expired)
+[WAIT] the result of the submit is shown
+[ASSERT] Read the error area and the cells
+[ACT] Click 'Resend code'
+[WAIT] the page settles (spinner gone, network idle)
+[CAPTURE] T0 = current UTC time
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} created after T0 appears (SMTP may be off - the message is journaled either way)
+[CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the new code
+[WAIT] the page leaves /sign-in","[DOM] The expired code shows the same single inline error as a wrong code, ""That code didn't work."", with no blank screen {OBSERVED}
+[STATE] The form stays usable: Resend and Use a different email still work {SPEC}
+[STATE] A fresh code after the expiry signs the customer in {OBSERVED}","[API] the expired grant answers 400 invalid_grant (code invalid_code)
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /api/otp/request or /connect/token other than the one asserted",Unhandled 401 or blank screen after the expired code; the error shows a raw key; Resend does nothing after an expiry,"Sign out through the account menu so the next case starts anonymous
+The final successful sign-in resets the failed-attempt counter of {{USER_EMAIL}}",VCST-5748 · Archetype:FALLBACK · Technique:EG,Draft
+OTP-013,"/sign-in OTP verify step — a dependency is blocked, slow, 500, or returns malformed JSON",Auth > OTP Sign-In > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
+OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE_ID}} with lockout enabled","email={{USER_EMAIL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, front={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Intercept POST /api/otp/request on the page (Playwright page.route)
+[ACT] Answer the intercepted call with an empty 500 response
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[ACT] Click 'Continue'
+[WAIT] the page settles (spinner gone, network idle)
+[ASSERT] Read the error area, the button state and the step shown
+[ACT] Re-route the same call to answer 200 with the malformed body '<html>' (not JSON)
+[ACT] Click 'Continue' again
+[WAIT] the page settles (spinner gone, network idle)
+[ASSERT] Read the same three things
+[ACT] Re-route the call to be aborted (network down)
+[ACT] Click 'Continue'
+[WAIT] 10 seconds
+[ASSERT] Read the same three things
+[ACT] Remove the interception
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} created after T0 appears (SMTP may be off - the message is journaled either way)
+[CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Intercept POST /connect/token to answer 500
+[ACT] Type the code
+[ASSERT] Read the error area and that the cells are still editable
+[ACT] Remove the interception
+[ACT] Type the code again
+[WAIT] the page leaves /sign-in","[DOM] After a 500, a malformed body and an aborted call the email step shows one error alert and the 'Continue' button is enabled again {SPEC}
+[DOM] A blocked request (the missing-route case, 405) shows the generic 'Something went wrong' on the email step {OBSERVED}
+[STATE] No infinite spinner for the 500, malformed-JSON and aborted cases (<=10s) {SPEC}
+[STATE] A failed token call on the verify step leaves the form editable and retryable {SPEC}
+[STATE] Once the interception is removed the normal journey completes {SPEC}","[CONSOLE] errors are limited to the injected failures; no uncaught exception
+[NETWORK] only the injected failures are non-2xx",White page; spinner forever; Continue stays disabled after a failure; an uncaught exception in the console; a raw server message shown,"Remove every route interception from the page
+Sign out through the account menu so the next case starts anonymous",VCST-5748 · Archetype:FALLBACK · Technique:EG,Draft
+OTP-014,/sign-in OTP verify step — autofill / password manager / paste populates the form,Auth > OTP Sign-In > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
+OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE_ID}} with lockout enabled","email={{USER_EMAIL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Set the value of 'Email' to {{USER_EMAIL}} from script, the way browser autofill does (no key presses)
+[ACT] Dispatch only a 'change' event on 'Email' (no 'input' event)
+[ACT] Click 'Continue'
+[WAIT] the page settles (spinner gone, network idle)
+[ASSERT] Read whether a validation message says the email is empty and whether POST /api/otp/request was sent
+[WAIT] the 'Check your email' step is shown
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} created after T0 appears (SMTP may be off - the message is journaled either way)
+[CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Dispatch a paste event carrying the full 6-digit code on the first cell of 'Code' (as a phone's 'offered above the keyboard' / password-manager code fill does)
+[WAIT] the page leaves /sign-in","[STATE] An autofilled email is accepted by Continue: no ""required"" message and the request carries the autofilled value {SPEC}
+[DOM] After the paste on the first cell, 'Code' holds all six digits of the code and the form submits {SPEC}
+[STATE] The customer is signed in {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /api/otp/request or /connect/token other than the one asserted",Continue says the email is empty although the field shows it; a pasted code fills only the first cell; the paste never submits,Sign out through the account menu so the next case starts anonymous,VCST-5748 · Archetype:SILENT · Technique:EG,Draft
+OTP-015,"/sign-in OTP verify step — zoom 200–400%, reduced motion, dark mode, print",Auth > OTP Sign-In > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
+OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE_ID}} with lockout enabled","email={{USER_EMAIL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[ACT] Set browser zoom to 200%
+[ASSERT] Read whether the six cells, Resend code and Use a different email are all visible and clickable without horizontal scroll
+[ACT] Set browser zoom to 400% (equivalent to a 320px-wide viewport)
+[ASSERT] Same check; scroll vertically to every control
+[ACT] Emulate prefers-reduced-motion: reduce
+[ACT] Emulate prefers-color-scheme: dark
+[ASSERT] Read the verify step: text readable, no motion left running, nothing clipped
+[ACT] Reset zoom
+[ACT] Reset media emulation","[DOM] At 200% and 400% the six cells, 'Resend code' and 'Use a different email' are visible and clickable {SPEC}
+[DOM] document.scrollWidth <= viewport width on the 'Check your email' step at 200% and at 400% {SPEC}
+[DOM] At 400% the bounding boxes of the six cells and of 'Resend code' / 'Use a different email' do not intersect {SPEC}
+[DOM] With reduced motion and dark mode the step stays readable and no control is hidden {SPEC}",[CONSOLE] no TypeError or JS error on the page under test,Clipped or unreachable cells at zoom; text unreadable in dark mode; looping animation under reduced motion,Reset zoom and media emulation; Sign out through the account menu so the next case starts anonymous,VCST-5748 · Archetype:RENDER · Technique:EG,Draft
+OTP-016,/sign-in OTP verify step - repeated activation of Resend code while a request is in flight (no paged list exists on this step; request-loop check),Auth > OTP Sign-In > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
+OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE_ID}} with lockout enabled","email={{USER_EMAIL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[ACT] Slow POST /api/otp/request to about 5 seconds (Playwright page.route delay)
+[ACT] Click 'Resend code' five times in quick succession
+[WAIT] all pending requests settle
+[ASSERT] Count POST /api/otp/request calls and read the status text and the error area
+[ACT] Remove the delay","[STATE] The step has no paged or filtered list (nothing to scroll or page) - the paging probe collapses to the request-loop check below {SPEC}
+[STATE] Five rapid clicks do not produce an unbounded request chain: the number of /api/otp/request calls is bounded (one per accepted click) and the step ends in one consistent state {SPEC}
+[DOM] The status shows one settled message, not a stack of ""New code sent."" lines {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /api/otp/request or /connect/token other than the one asserted",Requests keep firing after the clicks stop; the status text duplicates; the step ends in a spinner,"Remove the request delay
+Sign out through the account menu so the next case starts anonymous",VCST-5748 · Archetype:BOUNDARY · Technique:EG,Draft
+OTP-017,"/sign-in OTP verify step — an unbreakable value (32-char code, GUID, URL) in a cell",Auth > OTP Sign-In > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
+OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE_ID}} with lockout enabled","email={{USER_EMAIL}}, email_254=@td(OTP_INPUTS.boundary.maxLength254), email_255=@td(OTP_INPUTS.invalid.tooLong255), admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': email_255
+[ACT] Click 'Continue'
+[WAIT] the page settles (spinner gone, network idle)
+[ASSERT] Read whether the field text, the validation message or the error banner overflows its box, clips behind a neighbour or widens the page (document scroll width vs viewport width)
+[ACT] Fill 'Email': email_254
+[ACT] Click 'Continue'
+[WAIT] the page settles (spinner gone, network idle)
+[ASSERT] Same layout check on whatever the form shows
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': {{USER_EMAIL}}
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} created after T0 appears (SMTP may be off - the message is journaled either way)
+[CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Paste a 32-character alphanumeric string into 'Code'
+[ACT] Paste a GUID into 'Code'
+[ACT] Paste the sign-in page URL into 'Code'
+[ASSERT] Read the code cells and the page width after each paste
+[ACT] Type the real code
+[WAIT] the page leaves /sign-in","[DOM] With a 254/255-character address the text of 'Email' and its validation message stay inside the field box and document scrollWidth does not exceed the viewport width {SPEC}
+[DOM] After each unbreakable paste 'Code' holds at most six digits and its six cells keep their single-row layout {SPEC}
+[STATE] No horizontal page scroll appears at any point {SPEC}
+[STATE] The real code afterwards signs the customer in {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /api/otp/request or /connect/token other than the one asserted",Text painted outside the input; page widens with a horizontal scrollbar; a GUID or URL accepted into the cells; cells broken after the paste,Sign out through the account menu so the next case starts anonymous,VCST-5748 · Archetype:RENDER · Technique:EG,Draft

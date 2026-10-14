@@ -1,6 +1,6 @@
 ---
 name: prompt-review
-description: "Review, heal and improve THIS repo's own prompt files — skills (SKILL.md + supporting files), commands and agent definitions under .claude/ and plugins/*/. REVIEW is read-only (dimensions: triggering, budget/tiering, single source of truth, no-hardcode, portability, executability, write safety, delegation, product grounding, integration); HEAL (--fix) applies SAFE repairs and proposes the rest; IMPROVE (--improve) tunes from real-run evidence. Findings go to chat. Not for test cases (/qa-review-tests), oracles (/qa-review-oracles), product or script code (/code-review), a skill's runtime telemetry (/vc-self-check), or authoring a brand-new skill (anthropic-skills:skill-creator)."
+description: "Use when asked to review, check, heal or improve a prompt file in this repo — a skill (SKILL.md and its supporting files), a command or an agent definition under .claude/ or plugins/*/ (\"review the qa-test skill\", \"is this agent prompt any good\", \"fix the prompts changed on this branch\"). Not for test cases (/qa-review-tests), oracles (/qa-review-oracles), product or script code (/code-review), a skill's runtime telemetry (/vc-self-check), or authoring a brand-new skill (anthropic-skills:skill-creator)."
 argument-hint: "<skill|command|agent name | path | changed | all> [--fix] [--improve] [--dry-run]"
 ---
 
@@ -39,7 +39,8 @@ nothing is ever written without an explicit `--fix` / `--improve`.
 
 | File | Read at |
 |---|---|
-| [`review-dimensions.md`](review-dimensions.md) | Step 1 (§Collect: the fact, grep and citation-sweep commands) and Step 3 (the dimensions, severities, verdict) |
+| [`review-dimensions.md`](review-dimensions.md) | Step 1 (§Candidates: the generic greps) and Step 3 (the generic dimensions G1–G10, severities, verdict) |
+| [`repo-profile.md`](repo-profile.md) | Step 1 (§Tooling for every target; §QA greps) and Step 3 (the QA criteria per `G` id) — criteria apply to `qa-*` skills and commands and to QA agents only, see its §Scope |
 | [`healing-playbook.md`](healing-playbook.md) | Step 4 (`--fix` / `--dry-run`): recipes, SAFE vs PROPOSE |
 | [`improvement-loop.md`](improvement-loop.md) | Step 5 (`--improve`): evidence, diagnosis, measurement |
 
@@ -86,7 +87,8 @@ of them and this skill disagree, they win — and that disagreement is a finding
 
 ## Step 1 — Collect facts deterministically (one batch, before reading prose)
 
-Run, in one batch, the three command blocks of `review-dimensions.md` §Collect. They are **facts** (BUDGET-004
+Run, in one batch, the generic greps (`review-dimensions.md` §Candidates), the two blocks of
+`repo-profile.md` §Tooling, and — for a QA unit, per its §Scope — its §QA greps. They are **facts** (BUDGET-004
 status read from `context:report`, never a transcribed cap), **grep pack**, **citation sweep** —
 plus `git log --oneline -n 15 -- <paths>` and `claude plugin validate .claude` (or
 `plugins/<name>`) for frontmatter. Everything is piped; nothing is written to disk.
@@ -116,16 +118,17 @@ n=<name>; grep -rnIE "(^|[^A-Za-z0-9_-])/?$n([^A-Za-z0-9_-]|\$)" .claude plugins
 ```
 A caller that invokes the target by name (a pipeline phase, a CI workflow) fixes its name and
 arguments — and **cannot run it at all if the target has `disable-model-invocation: true`**. Check
-that pairing explicitly (D10).
+that pairing explicitly (G1).
 
 ## Step 3 — Review against the dimensions
 
-Apply every dimension in `review-dimensions.md`. Each finding: `ID · dimension · severity ·
+Apply every dimension in `review-dimensions.md`. For a QA unit (a `qa-*` skill or command, or a QA agent), sharpen each with
+its section in `repo-profile.md` (which units count: its §Scope); any other unit gets the generic dimensions only. Each finding: `ID · dimension · severity ·
 file:line · what · failure scenario (BLOCKER/MAJOR only) · fix`.
 
 - **Evidence or it is not a finding.** Quote the line, name the missing path, show the count.
 - **Do not flag house style** the repo applies everywhere, unless it breaks a cited rule.
-- **A known, documented limitation** (e.g. plugin bare paths, D5) is flagged only where the target
+- **A known, documented limitation** (e.g. plugin bare paths, `repo-profile.md` G3) is flagged only where the target
   adds a new instance or lacks the documented mitigation.
 - **Product claims:** before writing any judgement of one — "correct", "wrong", "unsourced" — ground
   it in order: repo knowledge (`.claude/knowledge/domain/`, the BL/ECL oracles), then `/vc-docs`,
@@ -147,7 +150,7 @@ confirmation, never reword while moving. **Gates** before reporting done:
 |---|---|
 | anything under `.claude/` | `npm run context:check` |
 | `/qa-test` or `.claude/skills/qa-test/` | + `npm run qa-test:doclint` |
-| `plugins/<name>/` | `claude plugin validate plugins/<name>` + re-run the citation sweep (no BUDGET-004/DOC gate reaches plugins — check size with `wc -c` against the cap from §Collect) |
+| `plugins/<name>/` | `claude plugin validate plugins/<name>` + re-run the citation sweep (no BUDGET-004/DOC gate reaches plugins — check size with `wc -c` against the cap from `repo-profile.md` §Tooling) |
 | a skill dir that also holds `*.mjs`/`*.ts` | that code is out of scope — if a prompt edit changed how it is called, run `npm test` |
 
 Then re-read your own diff adversarially: is every hunk a SAFE recipe or a confirmed PROPOSE? A
@@ -159,7 +162,8 @@ Follow `improvement-loop.md`. **No evidence ⇒ no behavioural edit.** Every IMP
 
 ## Step 6 — Close out
 
-The findings table stands on its own; after it, a summary of ≤ 15 lines: target, verdict, counts by
+The findings table stands on its own; after it, a summary of ≤ 15 lines: target, scope ("QA
+profile applied" / "generic only"), verdict, counts by
 severity, what was healed (files, chars before → after), what is proposed and awaiting a decision,
 gates run with results, anything *not verified* (concurrent edits, plugin gates, product claims).
 If files changed, suggest a commit message; commit or push only if asked.

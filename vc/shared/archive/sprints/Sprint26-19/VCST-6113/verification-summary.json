@@ -1,0 +1,27 @@
+{
+  "ticket": "VCST-6113",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "date": "2026-10-02",
+  "environment": "vcptcore-qa (BACK_URL from .env.vcptcore)",
+  "build": {
+    "platform": "3.1076.0",
+    "theme": "n/a (API-only bug)",
+    "relevant_modules": {"VirtoCommerce.XCart": "3.1038.0-pr-141-3d86", "VirtoCommerce.SalesRep": "3.1012.0-pr-21-ff6d", "VirtoCommerce.Cart": "3.1011.0-pr-194-8331"},
+    "pr_build": "vc-module-x-cart#141 @ 3d86058 (contains cd984e3); vc-module-sales-rep#21 @ ff6da14"
+  },
+  "agent_used": "inline (API probe, no browser)",
+  "str_result": "3/3",
+  "baseline_reproduction": "from-qa-test VCST-5707 2026-09-29 (reports/tickets/Sprint26-19/VCST-5707/screenshots/4a-be-cache-poison-then-rename.json, 4a-be-E3-*.json)",
+  "checklist_total": 8,
+  "checklist_passed": 8,
+  "checklist_failed": 0,
+  "regression_issues": [],
+  "side_effects": [],
+  "notes": ["Fix PRs x-cart#141 and sales-rep#21 are still open; Done not set — re-check after merge"],
+  "bugs_filed": [],
+  "business_rules_verified": [],
+  "tracker_transition": {"role": "tested", "state": "Tested", "path": ["Ready for test", "Testing", "Tested"], "comment_id": "111130"},
+  "evidence": "reports/tickets/Sprint26-19/VCST-6113/evidence.html",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-19/VCST-6113/"
+}

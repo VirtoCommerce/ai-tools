@@ -1,10 +1,5 @@
 # Finding a Product by Scanning Its Barcode
 
-!!! note
-    This guide describes the barcode scanner as it behaves in the VCST-2945 PR build (Catalog
-    `3.1046.0-pr-909`, XCatalog `3.1022.0-pr-113`, theme `2.59.0-pr-2501`) — these changes are not yet
-    part of a released version.
-
 ### Introduction
 
 The search bar's barcode scanner lets you jump straight to a product by scanning its code instead of
@@ -12,7 +7,7 @@ typing a search. Your store can now set the scanner up so that a scan looks for 
 the codes it chooses (for example the product's GTIN, SKU, or manufacturer part number) — so scanning
 the item in your hand takes you straight to its page, instead of running a general keyword search.
 
-![Scanning an exact-match code opens the product page directly](../tickets/Sprint26-19/VCST-2945/screenshots/c1-SRCH-020-barcode-opens-pdp-390.png)
+![Scanning an exact-match code opens the product page directly](../../tickets/Sprint26-19/VCST-2945/screenshots/c1-SRCH-020-barcode-opens-pdp-390.png)
 *Scanning a code that matches exactly one product opens that product's page — here on a mobile screen.*
 
 ### Prerequisites
@@ -46,7 +41,7 @@ instead.
 Some stores turn the scanner off entirely, or keep it on with plain keyword matching. When it's off,
 the scanner icon simply doesn't appear in the search bar, on desktop or on mobile.
 
-![Search bar with the scanner button hidden](../tickets/Sprint26-19/VCST-2945/screenshots/c1-SRCH-016-scanner-disabled-mobile.png)
+![Search bar with the scanner button hidden](../../tickets/Sprint26-19/VCST-2945/screenshots/c1-SRCH-016-scanner-disabled-mobile.png)
 *With the scanner turned off, no scan icon shows in the mobile search bar either.*
 
 ### Troubleshooting

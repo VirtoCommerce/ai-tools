@@ -24,25 +24,25 @@ This is the productized form of the manual cherry-pick → "Release Hotfix" flow
 
 `$ARGUMENTS` = a **JIRA task key** + optionally a comma-separated **bundle list** (`vN`). If the
 bundle list is omitted, ask the user which bundles are currently the latest stable before doing
-anything (this is the "я тебе говорю v12 и v14" step).
+anything (the operator names them — e.g. "v12 and v14").
 
 ## Flow (gate ladder — STOP/BAIL is a success)
 
 1. **Resolve the fix (linked PR is the primary path).** PRIMARY: the PR **linked to the task** —
    GitHub search by task key (the precheck does this automatically). FALLBACK, only when that finds
    nothing / can't disambiguate: read the issue **description** for a PR link (via the Atlassian MCP
-   `getJiraIssue`, or the script's JIRA REST fallback) — `feedback-find-linked-pr-in-jira-first`.
+   `getJiraIssue`, or the script's JIRA REST fallback).
    LAST RESORT: manual `--pr=<owner/repo#num | url>` / `--repo=`. The repo must be a single
    hotfixable product repo (`vc-module-*`, `vc-platform`, `vc-frontend`).
 2. **Gate the fix — merged AND released (run the gate phase FIRST, with NO bundles yet).** This is
-   the original "проверяем, что PR смержен и релиз выпущен" step:
+   the original "check the PR is merged and the release is out" step:
    ```bash
    npm run hotfix:precheck -- VCST-XXXX            # gates-only: PR → merged → shipped
    # add --pr=<owner/repo#num> only if the linked-PR search needs the manual fallback
    ```
    - PR not merged → **STOP**, ask to merge first.
    - Fix not shipped in a release yet → **STOP**, ask to run the normal "Release" workflow on the
-     base branch first ("сначала просим выпустить релиз").
+     base branch first (ask for the release to be cut first).
    - Both pass → the script prints "✓ Gates passed" and asks for bundles — go to step 3.
 3. **Establish which bundles are the latest stable (ASK — never hardcode).** Only after the gates
    pass. The stable-bundle set changes over time; `v12`/`v14` are only an example. Ask
@@ -71,7 +71,9 @@ anything (this is the "я тебе говорю v12 и v14" step).
    git push origin support/X.Y     # ← confirm before this push
    ```
    Re-run the precheck for that bundle → it should now read `✓ READY` → continue with step 6.
-6. **Per READY bundle — gated writes (confirm before EACH).** Work in `.fix-workspace/` (gitignored):
+6. **Per READY bundle — gated writes.** Sequential: one confirmation per write, as below. With ≥2
+   READY bundles the lanes run in parallel behind ONE batch confirmation before any push — follow
+   [`parallel-lanes.md`](../skills/qa-hotfix/parallel-lanes.md). Work in `.fix-workspace/` (gitignored):
    1. `git fetch && git checkout support/X.Y`
    2. `git cherry-pick <fixSha>` — on conflict, resolve only if trivially mechanical; otherwise
       **STOP + hand off** (do not force a risky resolution).
@@ -83,23 +85,25 @@ anything (this is the "я тебе говорю v12 и v14" step).
       This dispatches the repo's "Release hotfix" workflow (module/platform/theme variant,
       discovered by name), waits for it, and verifies the published patch contains the fix commit.
 7. **Verify + report.** Re-run the precheck (the bundle should now read `already-applied`), report
-   the new patch versions + release URLs per bundle, and comment the outcome on the JIRA task
+   the new patch versions + release URLs per bundle. After ONE explicit yes covering the comment, the
+   "Need hotfixes" flag and the status change, comment the outcome on the JIRA task
    (Markdown not wiki, clear/brief/outcome-first — `knowledge/execution/tracker-ops.md` §5a). For
    issue type `Bug`, advance the status `Tested → Wait hotfixes → Hotfix ready` (never backwards) —
    see the skill's *After the hotfix* section for the exact field + transition. Note: a vc-frontend
    hotfix asset is named `vc-frontend-X.Y.Z.zip`, not `vc-theme-b2b-vue-*`
-   (`reference-vc-frontend-release-asset-naming`) — use the release's real `assets[]` URL when a
+   — use the release's real `assets[]` URL when a
    bundle pin must be updated.
 8. **Offer self-diagnostics (consent-gated).** At the very end of the run — released, STOPPED, or
    BAILed — ask a single Yes/No to run [`/vc-self-check`](../skills/vc-self-check/SKILL.md) on this
    session (local `DIAG-*.md` only, nothing sent externally). Run it **only** on an explicit Yes;
    never auto-trigger. Skip the offer silently if the end-of-session prompt already offered it
-   (`selfCheckSeen`) or telemetry wasn't collected. See the skill's *Final step* section.
+   (`selfCheckSeen`) or telemetry wasn't collected. See the skill's [`self-check-offer.md`](../skills/qa-hotfix/self-check-offer.md).
 
 ## Hard rules
 
 - **Never auto-merge.** Writes are: (optionally) creating a missing support branch, cherry-pick,
-  push to `support/X.Y`, and the Release-hotfix dispatch — each behind explicit confirmation.
+  push to `support/X.Y`, the Release-hotfix dispatch, and the JIRA comment + "Need hotfixes" flag +
+  status transition — each behind explicit confirmation.
 - **Create a missing `support/X.Y` branch only as the gated step 0** — from the line's base tag,
   confirmed with the user, never off `dev`/`master`. It is no longer a hand-off.
 - **A hotfix never bumps a dependency version, and never spans more than one module.** Either

@@ -8,7 +8,7 @@
     "env:check": "node get_variables_env.js",
     "verify:paths": "node scripts/verify-plugin-paths.mjs"
   },
-  "license": "TBD-internal",
+  "license": "SEE LICENSE IN LICENSE",
   "dependencies": {
     "@playwright/mcp": "^0.0.77",
     "dotenv": "^17.4.2"

@@ -20,6 +20,9 @@
  * CLI:
  *   npx tsx scripts/lib/regression-triage.ts collect <RUN_ID|runDir|latest> [--record]
  *       → prints a JSON triage input packet (failures + traces + CSV rows + flaky flags)
+ *   npx tsx scripts/lib/regression-triage.ts collect --ticket <TICKET|ticket-dir> [--max-batch N]
+ *       → the same packet shape from a ticket's testing-checklist.md (checklist, exploratory and
+ *         visual rows — findings that have no RUN_ID); `source: "checklist"`, no store, no history
  *   npx tsx scripts/lib/regression-triage.ts history <RUN_ID|runDir|latest> [--env <env>]
  *       → backfills per-suite RunEntry rows into reports/regression/history.json
  */
@@ -51,6 +54,9 @@ export type Verdict = "PASS" | "FAIL" | "BLOCKED" | "SKIPPED" | "PENDING" | "UNK
  */
 export interface IssueInput {
   fingerprint: string;
+  /** Where the issue came from: a regression run's results (`collect <RUN_ID>`), or a
+   * ticket's `testing-checklist.md` Result/Verdict column (`collect --ticket`). */
+  source: "regression" | "checklist";
   /** The runner verdict that made this a triage issue: FAIL | BLOCKED | SKIPPED. */
   status: Verdict;
   suiteId: string;
@@ -71,7 +77,9 @@ export interface IssueInput {
   /** Per-browser-lane HAR path (reference only — never inline; the trace's
    * networkFailures[] is the isolated per-failure network slice). */
   harPath: string | null;
-  /** The failing test case's authored CSV row (Steps/Assertions/Test_Data/…), or null. */
+  /** The failing case's authored row, or null: the suite CSV row (Steps/Assertions/Test_Data/…)
+   * for `source: "regression"`, the checklist table row (Condition/Expected/Oracle/Data/Result
+   * — whatever the table's headers are) for `source: "checklist"`. */
   csvRow: Record<string, string> | null;
   /** Cross-run flaky flag (seen both PASS and FAIL in history). */
   flaky: boolean;
@@ -546,6 +554,7 @@ export function readRunIssues(runDir: string, store?: TriageStore): IssueInput[]
       const flaky = entry ? hasOscillated(entry) : false;
       out.push({
         fingerprint,
+        source: "regression",
         status: c.status,
         suiteId: s.suiteId,
         suiteName: s.suiteName,
@@ -563,6 +572,133 @@ export function readRunIssues(runDir: string, store?: TriageStore): IssueInput[]
         priorRuns,
       });
     }
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// Ticket mode — a /qa-test or /qa-test-fast run's testing-checklist.md
+// ---------------------------------------------------------------------------
+//
+// Checklist, exploratory and visual findings have no RUN_ID: they live as rows of the ticket's
+// testing-checklist.md (the run's single durable record — every lane's condition is a row with a
+// verdict). This reads that file the way readRunIssues reads a run dir, so ONE classifier
+// (`ci/agents/regression-triage-agent.md`) triages both. No fingerprint store, no history: a
+// checklist item is not a regression case and has no cross-run outcome series.
+
+export const TICKETS_ROOT = join("reports", "tickets");
+const CHECKLIST_FILE = "testing-checklist.md";
+
+/**
+ * Leading verdict word of a Result/Verdict cell → the issue status it triages as, or null
+ * when the row is not an issue. Advisory outcomes (`vs. DESIGN` DRIFT / UNSPEC /
+ * KNOWN_DIVERGENCE, WAIVED) never block (visual-axis.md §3), so they are not triaged.
+ */
+export function checklistVerdict(cell: string): Verdict | "ADVISORY" | null {
+  const u = String(cell ?? "").replace(/[*_`]/g, "").trim().toUpperCase();
+  if (!u) return null;
+  if (/^(FAIL(ED)?|NOT[- ]BUILT|MISSING)\b/.test(u)) return "FAIL";
+  if (/^(BLOCKED|INCONCLUSIVE)\b/.test(u)) return "BLOCKED";
+  if (/^(NOT[- ]RUN|SKIP(PED)?)\b/.test(u)) return "SKIPPED";
+  if (/^PASS(ED)?\b/.test(u)) return "PASS";
+  if (/^(DRIFT|ADVISORY|UNSPEC|KNOWN_DIVERGENCE|WAIVED|N\/A)\b/.test(u)) return "ADVISORY";
+  return null;
+}
+
+function splitRow(line: string): string[] {
+  return line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map((c) => c.trim());
+}
+
+/** Resolve a ticket key or a ticket folder path to the folder holding its checklist. */
+export function resolveTicketDir(arg: string): string {
+  if (!arg) throw new Error("collect --ticket needs a ticket key or a ticket folder");
+  if (existsSync(join(arg, CHECKLIST_FILE))) return arg;
+  if (!existsSync(TICKETS_ROOT)) throw new Error(`No ${TICKETS_ROOT}/ directory`);
+  const hits = readdirSync(TICKETS_ROOT)
+    .map((sprint) => join(TICKETS_ROOT, sprint, arg))
+    .filter((d) => existsSync(join(d, CHECKLIST_FILE)))
+    .sort((a, b) => statSync(join(b, CHECKLIST_FILE)).mtimeMs - statSync(join(a, CHECKLIST_FILE)).mtimeMs);
+  if (!hits.length) throw new Error(`No ${TICKETS_ROOT}/*/${arg}/${CHECKLIST_FILE}`);
+  return hits[0]; // newest checklist wins when a ticket spans sprints
+}
+
+export interface ChecklistRead {
+  issues: IssueInput[];
+  /** Item ids whose Result cell is empty or unreadable — a join-gate gap, never a pass. */
+  unresulted: string[];
+  advisoryCount: number;
+}
+
+/**
+ * Every non-passing checklist row (FAIL / BLOCKED / SKIPPED) as an IssueInput. A table counts
+ * when its header has a `Result` or `Verdict` column. The LAST row for an item id wins, so a
+ * later `## Round` re-test supersedes the first pass. Screenshots are the ticket's
+ * `screenshots/` files named in the row, or whose name carries the item id as a token.
+ */
+export function readChecklistIssues(ticketDir: string, env = process.env.TEST_ENV ?? "vcst"): ChecklistRead {
+  const ticket = ticketDir.split(/[\\/]/).filter(Boolean).pop() ?? "";
+  const lines = readFileSync(join(ticketDir, CHECKLIST_FILE), "utf-8").split(/\r?\n/);
+  const shotsDir = join(ticketDir, "screenshots");
+  const shots = existsSync(shotsDir) ? readdirSync(shotsDir).filter((f) => /\.(png|jpe?g|webp|gif)$/i.test(f)) : [];
+  const rows = new Map<string, { status: Verdict | "ADVISORY" | null; issue: IssueInput }>();
+  let section = "";
+  let header: string[] | null = null;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (/^#{2,3}\s/.test(line)) { section = line.replace(/^#+\s*/, "").trim(); header = null; continue; }
+    if (!line.trim().startsWith("|")) { header = null; continue; }
+    if (!header) {
+      if (/^\s*\|[\s:|-]+\|\s*$/.test(lines[i + 1] ?? "")) { header = splitRow(line); i++; }
+      continue;
+    }
+    const resIdx = header.findIndex((h) => /^(result|verdict)$/i.test(h.replace(/[*_]/g, "")));
+    if (resIdx === -1) continue;
+    const idIdx = Math.max(0, header.findIndex((h) => /^(#|id)$/i.test(h)));
+    const cells = splitRow(line);
+    const id = (cells[idIdx] ?? "").replace(/[*_`]/g, "").trim();
+    if (!id) continue;
+    // A row with an extra empty cell (`… | data || PASS …`) shifts its result right — take the
+    // first non-empty cell from the Result column on.
+    const result = cells.slice(resIdx).find((c) => c.length > 0) ?? "";
+    const status = checklistVerdict(result);
+    const csvRow: Record<string, string> = {};
+    header.forEach((h, k) => { csvRow[h] = k === resIdx ? result : cells[k] ?? ""; });
+    const named = [...line.matchAll(/([\w.-]+\.(?:png|jpe?g|webp|gif))/gi)].map((m) => m[1].toLowerCase());
+    const idTok = id.toLowerCase();
+    const screenshots = shots
+      .filter((f) => named.includes(f.toLowerCase()) || f.toLowerCase().split(/[-_.]/).includes(idTok))
+      .map((f) => `screenshots/${f}`);
+    const lane = /playwright-(chrome|edge|firefox)/i.exec(section)?.[1] ?? "";
+    const letter = /^([A-Z])\.\s/.exec(section)?.[1];
+    const suiteId = letter ? `checklist-${letter}` : "checklist";
+    rows.set(id, {
+      status,
+      issue: {
+        fingerprint: fingerprintFailure(env, `${ticket}:${suiteId}`, id, normalizeSignature(result).slice(0, 120)),
+        source: "checklist",
+        status: status === "ADVISORY" || status === null ? "UNKNOWN" : status,
+        suiteId,
+        suiteName: section,
+        environment: env,
+        caseId: id,
+        title: cells[idIdx + 1] ?? "",
+        evidence: result,
+        consoleErrors: [],
+        tracePath: null,
+        trace: null,
+        screenshots,
+        harPath: harPathForBrowser(lane),
+        csvRow,
+        flaky: false,
+        priorRuns: 0,
+      },
+    });
+  }
+  const out: ChecklistRead = { issues: [], unresulted: [], advisoryCount: 0 };
+  for (const [id, r] of rows) {
+    if (r.status === "FAIL" || r.status === "BLOCKED" || r.status === "SKIPPED") out.issues.push(r.issue);
+    else if (r.status === "ADVISORY") out.advisoryCount++;
+    else if (r.status === null) out.unresulted.push(id);
   }
   return out;
 }
@@ -806,8 +942,34 @@ export function appendSuiteHistory(runId: string, env: string, runDir: string): 
 function main(): void {
   const [cmd, runArg, ...rest] = process.argv.slice(2);
   if (!cmd || (cmd !== "collect" && cmd !== "history")) {
-    console.error("Usage:\n  regression-triage.ts collect <RUN_ID|latest> [--record]\n  regression-triage.ts history <RUN_ID|latest> [--env <env>]");
+    console.error("Usage:\n  regression-triage.ts collect <RUN_ID|latest> [--record]\n  regression-triage.ts collect --ticket <TICKET|ticket-dir> [--max-batch N]\n  regression-triage.ts history <RUN_ID|latest> [--env <env>]");
     process.exit(2);
+  }
+  const maxIdx = rest.indexOf("--max-batch");
+  const maxPerBatch = maxIdx !== -1 ? Math.max(1, Number(rest[maxIdx + 1]) || DEFAULT_MAX_BATCH) : DEFAULT_MAX_BATCH;
+
+  if (cmd === "collect" && runArg === "--ticket") {
+    const ticketDir = resolveTicketDir(rest[0]);
+    const env = process.env.TEST_ENV ?? "vcst";
+    const { issues, unresulted, advisoryCount } = readChecklistIssues(ticketDir, env);
+    const batches = groupIssues(issues, maxPerBatch);
+    console.log(JSON.stringify({
+      source: "checklist",
+      ticketDir,
+      environment: env,
+      issueCount: issues.length,
+      byStatus: {
+        FAIL: issues.filter((i) => i.status === "FAIL").length,
+        BLOCKED: issues.filter((i) => i.status === "BLOCKED").length,
+        SKIPPED: issues.filter((i) => i.status === "SKIPPED").length,
+      },
+      advisoryCount,
+      unresulted,
+      batchCount: batches.length,
+      maxPerBatch,
+      batches,
+    }, null, 2));
+    return;
   }
   const runDir = resolveRunDir(runArg);
   const runId = runDir.split(/[\\/]/).pop() || runArg;
@@ -819,10 +981,9 @@ function main(): void {
       recordRunOutcomes(store, runDir, runId);
       saveTriageStore(store);
     }
-    const maxIdx = rest.indexOf("--max-batch");
-    const maxPerBatch = maxIdx !== -1 ? Math.max(1, Number(rest[maxIdx + 1]) || DEFAULT_MAX_BATCH) : DEFAULT_MAX_BATCH;
     const batches = groupIssues(issues, maxPerBatch);
     const packet = {
+      source: "regression",
       runId,
       runDir,
       environment: issues[0]?.environment ?? process.env.TEST_ENV ?? "vcst",

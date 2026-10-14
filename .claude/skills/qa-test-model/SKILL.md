@@ -20,13 +20,14 @@ oracle clause depends on, and the observed-behaviour steps.
 ## Inputs — the context bundle
 
 `--context <file>` is the bundle a caller already gathered — `/qa-test` FULL passes `1a` + `1c` + `1d`,
-`/qa-test-fast` its Stage-1 merge. A caller that already ran step 2 or 3 passes their result in the bundle.
+`/qa-test-fast` its run context, which names the `/ticket-context` bundle. A caller that already ran
+step 2 or 3 passes their result in that file.
 Without it, gather each part yourself; a part that cannot be obtained is a **recorded gap in the
 model's header**, never a guess.
 
 | Part | How it is obtained | Rule it follows |
 |---|---|---|
-| Ticket — ACs as atomic conditions, comments, every attachment opened, epic | tracker fetch **with all fields** — ACs often live in a custom field, so an empty description is never "no ACs" | [`../qa-test/preflight.md`](../qa-test/preflight.md) §1a |
+| Ticket — ACs as atomic conditions, comments, every attachment opened, epic | tracker fetch **with all fields** — ACs often live in a custom field, so an empty description is never "no ACs" | [`../qa-test/intake.md`](../qa-test/intake.md) §1a |
 | Change surface — changed files, GraphQL operations, endpoints, layers | the four-rung PR ladder, then `gh pr diff`; only **product-repo** PRs are change surface — a deployment-manifest or QA-repo PR is context | [`../qa-test/technical-change.md`](../qa-test/technical-change.md) §2.1 |
 | Domain map state | step 2 below | [`../qa-test/axes.md`](../qa-test/axes.md) §2g |
 | Mind map path, or `null` | step 2 below | `/qa-test-mind-map` |
@@ -54,7 +55,7 @@ model's header**, never a guess.
    `{HYPOTHESIS}` and the contract state is `UNKNOWN` in the output (§3 there). Drift on an operation the
    ticket's own diff touches is a chain link and a candidate reverse edge in the model.
 4. **Ask the base for this run's coordinates** — for each page path / GraphQL operation / endpoint in
-   the change surface that the bundle does not already carry kb hit ids for: `npm run kb -- ask "<coordinate> <question>"` (MCP: `mcp__kb__kb_ask`). Record hit
+   the change surface that the bundle does not already carry kb hit ids for: `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <question>"`). Record hit
    ids; a miss is not a blocker. VirtoOZ (`/vc-docs`) before any claim about what the platform is
    supposed to do — released vs new decides the source. Rule: [`../../../CLAUDE.md`](../../../CLAUDE.md)
    §Essential Rules → *Product context*.
@@ -64,8 +65,8 @@ model's header**, never a guess.
    against the written file. A failing clause is fixed in the file, then re-checked; it is never waived
    in the output. No verifier dispatch — the gate is the doer's own completeness check on every path.
 7. **Bank what THIS run observed** — only a fresh observation or a document read this session counts;
-   agreeing with an entry you only read is not a confirmation. For each: matched ⇒ `kb confirm <id>`,
-   contradicted ⇒ `kb dispute <id>`, base held nothing ⇒ `kb capture` (`--deployment {TEST_ENV}`).
+   agreeing with an entry you only read is not a confirmation. For each: matched ⇒ `kb_confirm`,
+   contradicted ⇒ `kb_dispute`, base held nothing ⇒ `kb_capture` (`.claude/knowledge/execution/kb-capture-contract.md`).
    Public base — nothing client-specific.
 
 ## Output — returned to the caller, in this order

@@ -1,9 +1,5 @@
 # Barcode Search — Developer Guide
 
-!!! note
-    This guide describes behavior shipped in the VCST-2945 PR build — Catalog `3.1046.0-pr-909`,
-    XCatalog `3.1022.0-pr-113`, theme `2.59.0-pr-2501` — not yet part of a released version.
-
 The storefront's barcode scanner submits a scanned code as one virtual xAPI filter term,
 `barcode:"<value>"`. When a store has configured barcode matching (Admin → Store → Search
 configuration → Barcode scanner), the term is expanded server-side into an exact-match filter on the
@@ -11,9 +7,9 @@ store's chosen index fields; when it hasn't, the term is left as a literal (norm
 
 ## Prerequisites
 
-- `VirtoCommerce.Catalog` >= `3.1046.0-pr-909` (introduces `IBarcodeSearchConfigurationService` and the
+- A `VirtoCommerce.Catalog` version that includes barcode search (introduces `IBarcodeSearchConfigurationService` and the
   `Catalog.Search.BarcodeScannerEnabled` / `Catalog.Search.BarcodeSearchFields` store settings)
-- `VirtoCommerce.XCatalog` >= `3.1022.0-pr-113` (introduces the `barcode:` term expansion)
+- A `VirtoCommerce.XCatalog` version that includes barcode search (introduces the `barcode:` term expansion)
 - A store with at least one field configured (see the admin guide) — otherwise the term matches
   nothing
 
@@ -66,8 +62,12 @@ query FindByBarcode {
 | — | every expanded field is reported in the response `filters[]` with `isGenerated: true`, and the original `barcode` term is removed from the reported user filters — so a storefront can drop it from its filter chips |
 | — | the same expansion is applied inside facet aggregations, so facet counts stay consistent with the filtered result |
 
-Configured field names are matched **case-insensitively on Elasticsearch, case-sensitively on Lucene**
-(the provider's own term-comparison rule — this project's environment uses Elasticsearch).
+!!! note
+    `*` and `?` inside a barcode value act as wildcards (they are not matched as literal characters), so
+    do not rely on a value containing them being compared character-for-character.
+
+A scanned value matches **regardless of letter case on Elasticsearch** (letter case follows the search
+provider's own term comparison; the Lucene provider was not verified).
 
 ## Error handling
 

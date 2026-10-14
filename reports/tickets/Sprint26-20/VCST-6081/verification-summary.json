@@ -1,0 +1,101 @@
+{
+  "ticket": "VCST-6081",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "date": "2026-10-12",
+  "round": 2,
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "routing": {
+    "flow": "verify-fix",
+    "ticket_type": "Bug",
+    "status": "Ready for test",
+    "status_role": "fix-ready",
+    "path": null,
+    "entered_via": "/qa-test 1a"
+  },
+  "build": {
+    "platform": "3.1078.0",
+    "theme": "vc-theme-b2b-vue-2.60.0-pr-2511-81f1-81f18d01",
+    "pr_build": "vc-frontend #2511 @81f18d01 (fix files byte-identical to 29b41f42); live useFiles-DOdGrTDg.js carries the fix fingerprint",
+    "preflight": "READY (4 checks OK)"
+  },
+  "agent_used": "qa-frontend-expert (playwright-chrome)",
+  "str_result": "3/3",
+  "baseline_reproduction": "RED (pre-fix, live, same stand + product, pr-2523 build, 14:10 UTC): failed file silently dropped, no error/alert, None flipped. Headline freeze not reproducible (dev #2488 guard). GREEN 14:35-14:42 UTC.",
+  "checklist_total": 10,
+  "checklist_passed": 7,
+  "checklist_failed": 0,
+  "checklist_notes": {
+    "3": "heap not sampled (real-user hook)",
+    "5": "pass with design note (None stays selected; add-to-cart proceeds while alert shows)",
+    "7": "pass; zero-byte sub-check BLOCKED (needs registered scope)",
+    "10": "SKIPPED (quote filename unreachable on vcst)"
+  },
+  "regression_issues": [],
+  "side_effects": [
+    "F2 UX: optional section alert says fix errors to continue, add-to-cart proceeds without file (not filed, note)"
+  ],
+  "bugs_filed": [
+    {
+      "key": "VCST-6281",
+      "severity": "Medium",
+      "provenance": "PRE-EXISTING (exposed)",
+      "link": "relates",
+      "local": "reports/bugs/open/medium/BUG-upload-error-messages-drop-positional-parameter.md"
+    }
+  ],
+  "bugs_not_filed": [
+    "F2 optional-section alert vs add-to-cart (design note)",
+    "test-fixture-1page.pdf CRLF size/sha drift (repo test data)"
+  ],
+  "business_rules_verified": [
+    "BL-CAT-006 (optional may be empty; required blocks add)",
+    "BL-CART-007 (configured lines separate)"
+  ],
+  "tracker_transition": {
+    "role": "tested",
+    "state": "Tested",
+    "path": [
+      "Ready for test",
+      "Testing",
+      "Tested"
+    ]
+  },
+  "status_transitions": [
+    {
+      "at": "step3",
+      "to": "Testing",
+      "transition": "On QA",
+      "approved_by": "operator"
+    },
+    {
+      "at": "step6",
+      "to": "Tested",
+      "transition": "Finish test",
+      "approved_by": "operator"
+    }
+  ],
+  "tracker": {
+    "comment_id": "111920",
+    "round": 2,
+    "inline_images": 2,
+    "render_errors": 0,
+    "round1_comment_id": "111471"
+  },
+  "kb": {
+    "published": "vc-knowledge ccac1dd (dispute KB-057A596A, capture KB-FF711B97)"
+  },
+  "evidence": "reports/tickets/Sprint26-20/VCST-6081/verification-report.md",
+  "evidence_artifact": null,
+  "round1": {
+    "verdict": "BLOCKED",
+    "blocker": "fix-not-deployed",
+    "red_baseline": {
+      "product": "AGENT-TEST-Config-FileUpload (live-discovered; @td(CFG_FILE_HOODIE) 404)",
+      "agent": "qa-frontend-expert / playwright-chrome",
+      "screenshots": "screenshots/red-1..8 — only 2 distinct images (md5); settled state, no pre-attach or transient-error frame",
+      "freeze": false,
+      "raw_upload_failed_key_seen": false
+    }
+  },
+  "artifacts": "reports/tickets/Sprint26-20/VCST-6081/"
+}

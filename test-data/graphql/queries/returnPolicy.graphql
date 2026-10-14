@@ -1,0 +1,23 @@
+# name: returnPolicy
+# category: returns
+# role: ORG_USER
+# purpose: Store-scoped return policy -- isEnabled, windowDays, allowedOrderStatuses. EXACTLY these
+#   3 fields exist on ReturnPolicyType (confirmed live + source, 2026-09-25) -- a larger hypothesized
+#   shape (allowOrderlessReturns, maxOrderlessLineQuantity, policyText) does NOT exist on this schema.
+# required-vars: STORE_ID (String)
+# optional-vars: (none)
+# last-validated: 2026-09-25
+# known-issues: (none)
+# used-by: RET-GQL-009, RET-GQL-028 (050o-graphql-returns.csv)
+# runner-note: VCST-5628. isEnabled reflects the STORE-level Return.ReturnEnabled setting, written/read
+#   via POST/GET {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values -- measured live
+#   that a fresh write is NOT immediately visible here (>30s cache lag observed 2026-09-25); poll with
+#   [WAIT until=<label> timeout=180 interval=15] rather than a fixed short delay.
+
+query {
+  returnPolicy(storeId: "{{STORE_ID}}") {
+    isEnabled
+    windowDays
+    allowedOrderStatuses
+  }
+}

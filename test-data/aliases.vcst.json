@@ -20,13 +20,13 @@
   },
   "LOYALTY_VIP_USER": {
     "_inline": true,
-    "memberId": "ce559a6d-8ad3-408e-9b03-7dbf5b4b0c8b",
-    "securityAccountId": "95a30901-9b99-4269-a855-109607378479",
+    "memberId": "5fe7b1aa-4fdf-4b93-a44e-e054126ea3e1",
+    "securityAccountId": "9ccb9d6f-99f5-4ee9-b530-ce11e59e6ccf",
     "fields": {
       "memberId": "memberId",
       "securityAccountId": "securityAccountId"
     },
-    "_notes": "Per-env runtime GUIDs for AGENT-TEST-vip@ (moved out of base aliases.json per the multi-env rule). LIVE vcst ids as of 2026-07-13 (prior account 1dba59a3-… / member 2fae41c3-… was deleted+reseeded with fresh GUIDs on 2026-07-01). Live security account 95a30901-… genuinely holds 0 PTS; the orphaned ~4.87M sits on the deleted account's read-only op-log. memberId is also resolvable live by email. Re-seed the user (seed:company-users loyalty) mints new GUIDs — refresh these when it does."
+    "_notes": "Per-env runtime GUIDs for AGENT-TEST-vip@ (moved out of base aliases.json per the multi-env rule). Refreshed 2026-10-01 from GET /api/platform/security/users/email/{email}: the account was recreated 2026-09-19 (2026-09-19T08:32:13.1766055Z) and holds 0 PTS. The previous account 95a30901-… / member ce559a6d-… no longer exist; ~2.80bn PTS sit orphaned on the deleted account's read-only op-log (no purge path). Earlier history: 1dba59a3-… / 2fae41c3-… deleted 2026-07-01. seed:company-users loyalty REUSES this account and does not write these ids back — refresh them by hand (or by this lookup) whenever the account is recreated."
   },
   "WL_ELECTRONICS_PLATFORM_ID": {
     "_inline": true,
@@ -561,51 +561,51 @@
     "storeOriginalCatalog": "fc596540864a41bf8ab78734ee7353a3"
   },
   "SR_REP_PRIMARY": {
-    "id": "969269c4-9766-41e4-b538-b7ba68157dd0",
-    "user_id": "31c6feef-f7b2-46ae-a965-1b94280e7ef0"
+    "id": "19ba228a-ae37-436f-bb4d-436de7309b33",
+    "user_id": "f4b70c55-d140-4b5a-8c38-dd925a52b8ab"
   },
   "SR_REP_SECOND_STORE": {
-    "id": "34a0474a-6579-44c8-8d42-007dcceb5db0",
-    "user_id": "515ab5a2-948f-48ad-8830-6c82db04b904"
+    "id": "f045b4b4-9830-40ba-b163-14e6b20e72de",
+    "user_id": "aaa42b5b-3830-4089-a11f-02c0a3423775"
   },
   "SR_REP_BLOCKED": {
-    "id": "694b8c8a-ae5d-4f7d-810f-e717f8626aef",
-    "user_id": "46189ac1-747b-48c4-9b05-07b6823bc9fb"
+    "id": "914c9f4a-142d-445b-bd19-944d774f4504",
+    "user_id": "b3381644-7e18-4fbc-922c-8dfe88ad08e9"
   },
   "SR_REP_LOCKED": {
-    "id": "617ff3ab-cb8a-4e67-9547-8f926d0aba10",
-    "user_id": "2efbfc2d-ad02-400d-9b2d-a63fab4265c2",
-    "membership_locked_id": "41d85601-467c-4ae8-94db-03bfea14498d"
+    "id": "bbbbd97b-cfab-4158-a8c6-73f9f0fffe41",
+    "user_id": "8d155f47-b3c7-4a9a-9ee6-343d8e66ba5c",
+    "membership_locked_id": "51a96ac1-28fe-4ab7-bc17-4f3c33d65550"
   },
   "SR_REP_EXCLUSIVE_TECHFLOW": {
-    "id": "005ec00c-417e-4224-ad1a-cd9530ec8db2",
-    "user_id": "b911e559-c195-403d-b3c0-c67a9338ecd1"
+    "id": "abe7b846-425a-4a7c-81fb-1a7476baa410",
+    "user_id": "656ae24d-ea4d-4cdc-832d-9a78439b0aab"
   },
   "SR_REP_ACME2": {
-    "id": "0139cc48-7218-4a77-9697-95e98c235abd",
-    "user_id": "dc879343-0e9f-44a8-b04c-8e2614c660a7"
+    "id": "1dea7611-563b-4b73-b20b-184cf157a897",
+    "user_id": "7d9b46fd-df11-4555-b2c2-1d41ed7b2311"
   },
   "SR_REP_NOCUSTOMERS": {
-    "id": "9406a11b-56ab-40d8-b775-5375fa9a41f7",
-    "user_id": "a0a7b684-d475-43bb-8bdc-28f903644051"
+    "id": "059ce50e-b8fe-44cd-9758-a326d44412e9",
+    "user_id": "bef0c846-5f6f-4214-8633-8c069817c6e1"
   },
   "SR_REP_PAGING": {
-    "id": "3f2fbeb0-a122-4640-a409-ce43c1d93936",
-    "user_id": "281beb5a-b753-48cd-a884-fa429c0ad997"
+    "id": "3cb03c43-76d8-4368-9e0e-4f44a25f48be",
+    "user_id": "0a6a859e-79b7-4764-be15-621cc9ea400a"
   },
   "SR_OWNER_ACME": {
-    "id": "5c357a1c-af00-4865-82b0-ac12a41897a0"
+    "id": "8fdcf909-7984-4eee-ba82-cdc138729d49"
   },
   "COMPLETED_ORDER": {
-    "id": "51cc5eb9-23d4-47fe-b46d-36e03dc53b2f",
+    "id": "3714cb2e-fa33-4b43-8650-08ccd310e8cf",
     "number": "AGENT-TEST-ORD-COMPLETED"
   },
   "SHIPPED_ORDER": {
-    "id": "8b3eef55-aded-4589-b1fa-04fd06b02909",
+    "id": "855a96a0-57b9-4e5b-bacc-b5dc74bd1119",
     "number": "AGENT-TEST-ORD-SHIPPED"
   },
   "PROCESSING_ORDER": {
-    "id": "fa8f601d-a217-4caf-b761-32ae1898ee2f",
+    "id": "64a31ac0-067d-40b1-8075-2c28ea9770c2",
     "number": "AGENT-TEST-ORD-PROCESSING"
   },
   "QUOTE_WITH_ADMIN_RESPONSE": {
@@ -702,8 +702,8 @@
     "testProductId": "2645e50b-baf1-43b9-99f6-7f525f4025f8"
   },
   "CFG_FILE_HOODIE": {
-    "productId": "a04bbb3c-c3a0-4ab0-9b03-4e69e0ce5556",
-    "fileSectionId": "8b7559d7-873b-4291-98e0-f64a45edc7e2"
+    "productId": "0cbdc80d-efb0-4670-bd25-e12fef15ea26",
+    "fileSectionId": "81fe0e40-9e88-4a6d-a8fa-31b60de48d2e"
   },
   "ADMIN_DEFAULT": {
     "userId": "1eb2fa8ac6574541afdb525833dadb46"
@@ -726,8 +726,8 @@
     "productId": "f4f27033-d688-4d22-ade7-5106f4748add"
   },
   "LOYALTY_NOBAL_USER": {
-    "memberId": "83bcb310-9856-47a0-8e68-c4e34a143dce",
-    "securityAccountId": "e383066c-56dc-4ff2-8e92-3c5a3a1329bd"
+    "memberId": "7a89f754-6053-49cd-96d7-6d2e7b2fc4bf",
+    "securityAccountId": "758c8c14-1f8b-410d-896f-001246b0c141"
   },
   "MULTI_ORG_TF_BR": {
     "id": "83637bb5-6c0f-4e8d-b5ea-dff81d69fd38",
@@ -768,8 +768,8 @@
     "variation_white_id": "2cf1b2ae-68e0-40c2-ae87-f95d55268caa"
   },
   "LOYALTY_WHOLESALE_USER": {
-    "memberId": "0554b16e-1989-46ee-9944-b639289e7c95",
-    "securityAccountId": "fa360b8f-aab2-43eb-828e-9edb9c451d15"
+    "memberId": "f268e513-ef98-4662-a237-403761a966e6",
+    "securityAccountId": "add6d0c8-fac4-45e7-b773-0f8ed0b5d08d"
   },
   "CATALOG_LINK_RESTRICTED": {
     "_inline": true,
@@ -802,8 +802,8 @@
     "role_id": "AGENT-TEST-SalesRep-Full"
   },
   "SR_REP_ACME3": {
-    "id": "e8f2eee6-6396-47e5-b340-498ddd2a6ee4",
-    "user_id": "5badccfa-b4f9-45c4-80e8-379e4870c75c"
+    "id": "3bf70e83-d1ee-4851-94f3-7e87977c62f4",
+    "user_id": "f18dbf6a-f792-4034-ba92-75430c343fbd"
   },
   "CATALOG_READ_ONLY": {
     "_inline": true,
@@ -847,25 +847,25 @@
     "techflow_membership_id": "108f48d7-7a19-4d10-badf-11185fcee61b"
   },
   "SR_REP_LAYOUT": {
-    "id": "f7ab0294-bbda-41ca-918b-027d725e3a71",
-    "user_id": "adda6ecd-d25d-43ab-ae70-c23f051b003d"
+    "id": "597a218a-c4b5-4310-99d7-98ca47484fe5",
+    "user_id": "31949b97-a5c6-4709-886a-6116dc28acb4"
   },
   "SR_STATS_TOPSELLER_ORDER": {
-    "id": "3f732df3-9fc0-4861-8e99-882d7bf265f6",
+    "id": "c7541c4c-a95d-4db2-a509-fab547135929",
     "number": "AGENT-TEST-SRO-STATS-TOPSELLERS"
   },
   "SR_STATS_CART_ACME": {
-    "id": "54f8d2f6-7c18-41e4-b15c-2578dfeba0e2",
+    "id": "96cad981-a729-4c08-93c1-f20f6ae2779b",
     "name": "AGENT-TEST-SR-CART-ACME"
   },
   "SR_STATS_CART_WEST": {
-    "id": "c6626374-2688-4d99-9d98-6cb6069561a9",
+    "id": "ec24035d-0801-4529-b060-80df4f751831",
     "name": "AGENT-TEST-SR-CART-WEST"
   },
   "LOYALTY_ZERO_USER": {
-    "memberId": "ed9ab58e-13db-4489-80ed-d15c78e4bf17",
-    "securityAccountId": "ffa6ea09-8b8e-4a7e-8d4c-769f901c9537",
-    "email": "AGENT-TEST-loyzero-20260910114015-4a9a@test-agent.com"
+    "memberId": "9e5d1f14-0081-4f8e-af09-dc059e96985a",
+    "securityAccountId": "8cca0e49-9452-4fb5-ae31-23ffafebc425",
+    "email": "AGENT-TEST-loyzero-20261005072002-e356@test-agent.com"
   },
   "REV_VAR_MATRIX": {
     "id": "08c33cfc9f664426a52fac8882da2df0",
@@ -906,12 +906,12 @@
     "contactId": "089afd9f-fefc-43cb-9219-8f42b45047c0"
   },
   "SR_ORDER_ACME_WIN_NEW": {
-    "id": "ca493165-1408-4bf3-87ba-3019cec0bec4",
-    "createdDate": "2026-09-18T10:23:57.3488015Z"
+    "id": "11463564-0ff0-4c73-bb01-eec7725570b2",
+    "createdDate": "2026-10-13T07:46:53.7510695Z"
   },
   "SR_ORDER_ACME_WIN_PROC": {
-    "id": "206682b6-4184-4c51-a5eb-07428289a88c",
-    "createdDate": "2026-09-18T10:24:16.4959849Z"
+    "id": "550825f4-c0ec-41e3-b173-1172351e1b40",
+    "createdDate": "2026-10-13T07:46:59.0473958Z"
   },
   "CAT_EMPTY": {
     "id": "ccb46dbd-c966-4159-8093-9c5a2f264603",
@@ -928,8 +928,8 @@
     "url": "/seed-test-fixtures/agent-test-seo-configured-product"
   },
   "SR_ORDER_ACME_ELEC": {
-    "id": "2e28e846-88e3-4837-bc90-a82b90734912",
-    "createdDate": "2026-09-18T10:24:30.5455928Z"
+    "id": "c030493a-fb39-4e35-b7d3-65dadd7aa8c7",
+    "createdDate": "2026-10-13T07:47:21.3477265Z"
   },
   "MSN_ORDERVALUE": {
     "id": "91ec8c28-d73a-4df9-8045-5171cd3a504b",
@@ -1055,184 +1055,184 @@
     "currency": "USD"
   },
   "MSN_E2E_RUN": {
-    "run_id": "20260910114018-8e82",
-    "seeded_at": "2026-09-10T11:40:18.509Z",
-    "store_id": "B2B-store",
+    "run_id": "",
+    "seeded_at": "",
+    "store_id": "",
     "catalog_id": "3b0e9125-8c5b-41ce-9ff8-6a470e5aaf8f",
     "category_id": "b48c4e86-3e3c-4a84-800b-def13dad5ffc"
   },
   "MSN_E2E_REWARD_USER": {
-    "email": "AGENT-TEST-loyzero-20260910114015-4a9a@test-agent.com",
-    "user_id": "ffa6ea09-8b8e-4a7e-8d4c-769f901c9537",
-    "member_id": "ed9ab58e-13db-4489-80ed-d15c78e4bf17",
-    "balance_at_seed": "0"
+    "email": "",
+    "user_id": "",
+    "member_id": "",
+    "balance_at_seed": ""
   },
   "MSN_E2E_ORDERVALUE": {
-    "id": "558400bd-57bb-4a67-92df-8c9a28df3357",
-    "name": "AGENT-TEST-MSN-E2E-20260910114018-8e82-ORDERVALUE",
-    "run_id": "20260910114018-8e82",
-    "goal_currency": "USD",
-    "progress_status_at_seed": "InProgress",
-    "progress_percent_at_seed": "0"
+    "id": "",
+    "name": "",
+    "run_id": "",
+    "goal_currency": "",
+    "progress_status_at_seed": "",
+    "progress_percent_at_seed": ""
   },
   "MSN_E2E_ORDERCOUNT": {
-    "id": "f0cd9550-77b8-43f2-ab7e-ca47dc802125",
-    "name": "AGENT-TEST-MSN-E2E-20260910114018-8e82-ORDERCOUNT",
-    "run_id": "20260910114018-8e82",
+    "id": "",
+    "name": "",
+    "run_id": "",
     "goal_currency": "",
-    "progress_status_at_seed": "InProgress",
-    "progress_percent_at_seed": "0",
-    "order_shipping_max": "unbounded",
-    "available_shipping": "BuyOnlinePickupInStore/Pickup=0; FixedRate/Ground=150; FixedRate/Air=250",
-    "measured_subtotal": "15",
-    "measured_discount": "0",
-    "measured_tax": "3",
-    "measured_shipping": "0",
-    "measured_total": "18",
-    "reading_values": "netMerchandise=15; grossMerchandise=15; orderTotal=18; totalPlusPoints=18",
-    "order1_co_missions": "AGENT-TEST-MSN-E2E-20260910114018-8e82-ORDERVALUE-008=508; AGENT-TEST-MSN-E2E-20260910113721-1ecf-ORDERVALUE-008=508; AGENT-TEST-MSN-E2E-20260910105616-3436-ORDERVALUE-008=508; AGENT-TEST-MSN-LOCALIZED=250; AGENT-TEST-MSN-ZEROREWARD=0; AGENT-TEST-MSN-ZEROTARGET=200; AGENT-TEST-MSN-PUBLISHED-PRIVATE=100",
-    "order1_expected_delta": "2074",
-    "co_completing_missions": "AGENT-TEST-MSN-E2E-20260910114018-8e82-ORDERVALUE-006=506; AGENT-TEST-MSN-E2E-20260910113721-1ecf-ORDERVALUE-006=506; AGENT-TEST-MSN-E2E-20260910113721-1ecf-ORDERCOUNT=501; AGENT-TEST-MSN-E2E-20260910105616-3436-ORDERVALUE-006=506; AGENT-TEST-MSN-E2E-20260910105616-3436-ORDERCOUNT=501; AGENT-TEST-MSN-ORDERCOUNT=300",
-    "reward_expected_total": "3321"
+    "progress_status_at_seed": "",
+    "progress_percent_at_seed": "",
+    "order_shipping_max": "",
+    "available_shipping": "",
+    "measured_subtotal": "",
+    "measured_discount": "",
+    "measured_tax": "",
+    "measured_shipping": "",
+    "measured_total": "",
+    "reading_values": "",
+    "order1_co_missions": "",
+    "order1_expected_delta": "",
+    "co_completing_missions": "",
+    "reward_expected_total": ""
   },
   "MSN_E2E_PERSKU": {
-    "id": "5e03f4f5-ed60-433f-b9aa-de818bf7c6ba",
-    "name": "AGENT-TEST-MSN-E2E-20260910114018-8e82-PERSKU",
-    "run_id": "20260910114018-8e82",
+    "id": "",
+    "name": "",
+    "run_id": "",
     "goal_currency": "",
-    "progress_status_at_seed": "InProgress",
-    "progress_percent_at_seed": "0"
+    "progress_status_at_seed": "",
+    "progress_percent_at_seed": ""
   },
   "MSN_E2E_PERSKU_PTS": {
-    "id": "f6a38d19-f1fe-4b06-9c13-9b8e0ef0cc2d",
-    "name": "AGENT-TEST-MSN-E2E-20260910114018-8e82-PERSKU-PTS",
-    "run_id": "20260910114018-8e82",
+    "id": "",
+    "name": "",
+    "run_id": "",
     "goal_currency": "",
-    "progress_status_at_seed": "InProgress",
-    "progress_percent_at_seed": "0"
+    "progress_status_at_seed": "",
+    "progress_percent_at_seed": ""
   },
   "MSN_E2E_ORDERVALUE_003": {
-    "id": "c8148c40-f691-40fd-b659-21ad6fbe6a86",
-    "name": "AGENT-TEST-MSN-E2E-20260910114018-8e82-ORDERVALUE-003",
-    "run_id": "20260910114018-8e82",
-    "goal_currency": "USD",
-    "goal_target": "49.5",
-    "progress_status_at_seed": "InProgress",
-    "progress_percent_at_seed": "0",
-    "order_shipping_max": "unbounded",
-    "available_shipping": "BuyOnlinePickupInStore/Pickup=0; FixedRate/Ground=150; FixedRate/Air=250",
-    "measured_subtotal": "45",
-    "measured_discount": "0",
-    "measured_tax": "9",
-    "measured_shipping": "0",
-    "measured_total": "54",
+    "id": "",
+    "name": "",
+    "run_id": "",
+    "goal_currency": "",
+    "goal_target": "",
+    "progress_status_at_seed": "",
+    "progress_percent_at_seed": "",
+    "order_shipping_max": "",
+    "available_shipping": "",
+    "measured_subtotal": "",
+    "measured_discount": "",
+    "measured_tax": "",
+    "measured_shipping": "",
+    "measured_total": "",
     "measured_total_undiscounted": "",
-    "reading_values": "netMerchandise=45; grossMerchandise=45; orderTotal=54; totalPlusPoints=54",
-    "separates_below": "45",
-    "separates_above": "54",
-    "separation_margin": "4.5",
+    "reading_values": "",
+    "separates_below": "",
+    "separates_above": "",
+    "separation_margin": "",
     "co_completing_missions": "",
     "reward_expected_total": ""
   },
   "MSN_E2E_USER_003": {
-    "email": "AGENT-TEST-msne2e-20260910114044-b246@test-agent.com",
-    "user_id": "bd177777-6ecb-4e7b-b805-1766ad13d833",
-    "member_id": "58322da0-bb4f-4e3a-ac54-9eae71a8c67b",
-    "handle": "AGENT-TEST-msne2e-20260910114044-b246",
-    "balance_at_seed": "0",
+    "email": "",
+    "user_id": "",
+    "member_id": "",
+    "handle": "",
+    "balance_at_seed": "",
     "groups_at_seed": ""
   },
   "MSN_E2E_ORDERVALUE_005": {
-    "id": "209b12c7-a638-4684-abd2-d9c94fbd9e1f",
-    "name": "AGENT-TEST-MSN-E2E-20260910114018-8e82-ORDERVALUE-005",
-    "run_id": "20260910114018-8e82",
-    "goal_currency": "USD",
-    "goal_target": "54",
-    "progress_status_at_seed": "InProgress",
-    "progress_percent_at_seed": "0",
-    "order_shipping_max": "5",
-    "available_shipping": "BuyOnlinePickupInStore/Pickup=0; FixedRate/Ground=150; FixedRate/Air=250",
-    "measured_subtotal": "50",
-    "measured_discount": "10",
-    "measured_tax": "8",
-    "measured_shipping": "0",
-    "measured_total": "48",
-    "measured_total_undiscounted": "60",
-    "reading_values": "netMerchandise=40; grossMerchandise=50; orderTotal=48; totalPlusPoints=48",
-    "separates_below": "48",
-    "separates_above": "60",
-    "separation_margin": "6",
+    "id": "",
+    "name": "",
+    "run_id": "",
+    "goal_currency": "",
+    "goal_target": "",
+    "progress_status_at_seed": "",
+    "progress_percent_at_seed": "",
+    "order_shipping_max": "",
+    "available_shipping": "",
+    "measured_subtotal": "",
+    "measured_discount": "",
+    "measured_tax": "",
+    "measured_shipping": "",
+    "measured_total": "",
+    "measured_total_undiscounted": "",
+    "reading_values": "",
+    "separates_below": "",
+    "separates_above": "",
+    "separation_margin": "",
     "co_completing_missions": "",
     "reward_expected_total": ""
   },
   "MSN_E2E_USER_005": {
-    "email": "AGENT-TEST-msne2e-20260910114047-6392@test-agent.com",
-    "user_id": "55a485d1-aaad-4ffe-b15c-8817c4ce6abe",
-    "member_id": "bf01dd98-ff00-4e36-a154-05109bff3531",
-    "handle": "AGENT-TEST-msne2e-20260910114047-6392",
-    "balance_at_seed": "0",
+    "email": "",
+    "user_id": "",
+    "member_id": "",
+    "handle": "",
+    "balance_at_seed": "",
     "groups_at_seed": ""
   },
   "MSN_E2E_ORDERVALUE_006": {
-    "id": "7c499974-9fab-4e58-90a9-a9dfa35adc94",
-    "name": "AGENT-TEST-MSN-E2E-20260910114018-8e82-ORDERVALUE-006",
-    "run_id": "20260910114018-8e82",
-    "goal_currency": "USD",
-    "goal_target": "36",
-    "progress_status_at_seed": "InProgress",
-    "progress_percent_at_seed": "0",
-    "order_shipping_max": "unbounded",
-    "available_shipping": "BuyOnlinePickupInStore/Pickup=0; FixedRate/Ground=150; FixedRate/Air=250",
-    "measured_subtotal": "60",
-    "measured_discount": "0",
-    "measured_tax": "12",
-    "measured_shipping": "0",
-    "measured_total": "72",
+    "id": "",
+    "name": "",
+    "run_id": "",
+    "goal_currency": "",
+    "goal_target": "",
+    "progress_status_at_seed": "",
+    "progress_percent_at_seed": "",
+    "order_shipping_max": "",
+    "available_shipping": "",
+    "measured_subtotal": "",
+    "measured_discount": "",
+    "measured_tax": "",
+    "measured_shipping": "",
+    "measured_total": "",
     "measured_total_undiscounted": "",
-    "reading_values": "netMerchandise=60; grossMerchandise=60; orderTotal=72; totalPlusPoints=72",
-    "separates_below": "0",
-    "separates_above": "60",
-    "separation_margin": "24",
+    "reading_values": "",
+    "separates_below": "",
+    "separates_above": "",
+    "separation_margin": "",
     "co_completing_missions": "",
     "reward_expected_total": ""
   },
   "MSN_E2E_USER_006": {
-    "email": "AGENT-TEST-msne2e-20260910114050-177a@test-agent.com",
-    "user_id": "b0290f44-2c62-425a-bcd6-85731aeb69b9",
-    "member_id": "87b6be33-1910-4417-8a69-cc50fc9c43b5",
-    "handle": "AGENT-TEST-msne2e-20260910114050-177a",
-    "balance_at_seed": "0",
+    "email": "",
+    "user_id": "",
+    "member_id": "",
+    "handle": "",
+    "balance_at_seed": "",
     "groups_at_seed": ""
   },
   "MSN_E2E_ORDERVALUE_008": {
-    "id": "7f62cee7-05d1-4c41-ba6b-583db7b5b615",
-    "name": "AGENT-TEST-MSN-E2E-20260910114018-8e82-ORDERVALUE-008",
-    "run_id": "20260910114018-8e82",
-    "goal_currency": "USD",
-    "goal_target": "12",
-    "progress_status_at_seed": "InProgress",
-    "progress_percent_at_seed": "0",
-    "order_shipping_max": "10",
-    "available_shipping": "BuyOnlinePickupInStore/Pickup=0; FixedRate/Ground=150; FixedRate/Air=250",
-    "measured_subtotal": "20",
-    "measured_discount": "0",
-    "measured_tax": "4",
-    "measured_shipping": "0",
-    "measured_total": "24",
+    "id": "",
+    "name": "",
+    "run_id": "",
+    "goal_currency": "",
+    "goal_target": "",
+    "progress_status_at_seed": "",
+    "progress_percent_at_seed": "",
+    "order_shipping_max": "",
+    "available_shipping": "",
+    "measured_subtotal": "",
+    "measured_discount": "",
+    "measured_tax": "",
+    "measured_shipping": "",
+    "measured_total": "",
     "measured_total_undiscounted": "",
-    "reading_values": "netMerchandise=20; grossMerchandise=20; orderTotal=24; totalPlusPoints=24",
-    "separates_below": "0",
-    "separates_above": "20",
-    "separation_margin": "8",
-    "co_completing_missions": "AGENT-TEST-MSN-E2E-20260910113721-1ecf-ORDERVALUE-008=508; AGENT-TEST-MSN-E2E-20260910105616-3436-ORDERVALUE-008=508; AGENT-TEST-MSN-LOCALIZED=250; AGENT-TEST-MSN-ZEROREWARD=0; AGENT-TEST-MSN-ZEROTARGET=200; AGENT-TEST-MSN-PUBLISHED-PRIVATE=100",
-    "reward_expected_total": "2074"
+    "reading_values": "",
+    "separates_below": "",
+    "separates_above": "",
+    "separation_margin": "",
+    "co_completing_missions": "",
+    "reward_expected_total": ""
   },
   "MSN_E2E_USER_008": {
-    "email": "AGENT-TEST-msne2e-20260910114052-cea8@test-agent.com",
-    "user_id": "08c78de4-c88b-4c81-b3fd-dce001e51567",
-    "member_id": "bb28f4ac-fd58-44fc-9de4-94549e8fdc32",
-    "handle": "AGENT-TEST-msne2e-20260910114052-cea8",
-    "balance_at_seed": "0",
+    "email": "",
+    "user_id": "",
+    "member_id": "",
+    "handle": "",
+    "balance_at_seed": "",
     "groups_at_seed": ""
   },
   "MSN_E2E_PRODUCT_UNIT": {
@@ -1265,73 +1265,73 @@
     "url": "/seed-loyalty-missions-e2e/agent-test-msn-e2e-persku-pts"
   },
   "MSN_E2E_TGT_CONTROL": {
-    "id": "8e5374e2-f8f4-43a2-96bf-3dc6fd47698d",
-    "name": "AGENT-TEST-MSN-E2E-20260910114018-8e82-TGT-CONTROL",
-    "run_id": "20260910114018-8e82",
-    "goal_currency": "USD",
-    "goal_target": "7200",
-    "progress_status_at_seed": "InProgress",
-    "progress_percent_at_seed": "0",
-    "observed_visibility": "MSN_E2E_USER_TGTMEMBER=visible; MSN_E2E_USER_TGTOUTSIDER=visible"
+    "id": "",
+    "name": "",
+    "run_id": "",
+    "goal_currency": "",
+    "goal_target": "",
+    "progress_status_at_seed": "",
+    "progress_percent_at_seed": "",
+    "observed_visibility": ""
   },
   "MSN_E2E_TGT_GROUP": {
-    "id": "2b97b89c-a000-46f8-b981-9068da08381b",
-    "name": "AGENT-TEST-MSN-E2E-20260910114018-8e82-TGT-GROUP",
-    "run_id": "20260910114018-8e82",
-    "goal_currency": "USD",
-    "goal_target": "7200",
-    "progress_status_at_seed": "InProgress",
-    "progress_percent_at_seed": "0",
-    "observed_visibility": "MSN_E2E_USER_TGTMEMBER=visible; MSN_E2E_USER_TGTOUTSIDER=absent"
+    "id": "",
+    "name": "",
+    "run_id": "",
+    "goal_currency": "",
+    "goal_target": "",
+    "progress_status_at_seed": "",
+    "progress_percent_at_seed": "",
+    "observed_visibility": ""
   },
   "MSN_E2E_TGT_PRIVATE": {
-    "id": "33267f6a-3b2d-46ba-94db-0e4b95315aa3",
-    "name": "AGENT-TEST-MSN-E2E-20260910114018-8e82-TGT-PRIVATE",
-    "run_id": "20260910114018-8e82",
-    "goal_currency": "USD",
-    "goal_target": "7200",
-    "progress_status_at_seed": "InProgress",
-    "progress_percent_at_seed": "0",
-    "observed_visibility": "MSN_E2E_USER_TGTMEMBER=visible; MSN_E2E_USER_TGTOUTSIDER=visible"
+    "id": "",
+    "name": "",
+    "run_id": "",
+    "goal_currency": "",
+    "goal_target": "",
+    "progress_status_at_seed": "",
+    "progress_percent_at_seed": "",
+    "observed_visibility": ""
   },
   "MSN_E2E_USER_001": {
-    "email": "AGENT-TEST-msne2e-20260910114036-d8e1@test-agent.com",
-    "user_id": "d7c42206-cf70-485f-8f1a-8c40b0cf8b38",
-    "member_id": "b7f3a4e0-9702-47bf-be95-345fba56e7f9",
-    "handle": "AGENT-TEST-msne2e-20260910114036-d8e1",
-    "balance_at_seed": "0",
+    "email": "",
+    "user_id": "",
+    "member_id": "",
+    "handle": "",
+    "balance_at_seed": "",
     "groups_at_seed": ""
   },
   "MSN_E2E_USER_TGTMEMBER": {
-    "email": "AGENT-TEST-msne2e-20260910114055-2d55@test-agent.com",
-    "user_id": "8d8ea654-5ba1-4cbd-a651-c483a3cd5e65",
-    "member_id": "a6317baf-40fb-447b-8473-eb5dfba1ca60",
-    "handle": "AGENT-TEST-msne2e-20260910114055-2d55",
-    "balance_at_seed": "0",
-    "groups_at_seed": "VIP"
+    "email": "",
+    "user_id": "",
+    "member_id": "",
+    "handle": "",
+    "balance_at_seed": "",
+    "groups_at_seed": ""
   },
   "MSN_E2E_USER_TGTOUTSIDER": {
-    "email": "AGENT-TEST-msne2e-20260910114058-9c38@test-agent.com",
-    "user_id": "55031067-ee0e-44af-aa1e-085ecad4cb5c",
-    "member_id": "af8230c4-85b8-4856-b79a-78ecc3088649",
-    "handle": "AGENT-TEST-msne2e-20260910114058-9c38",
-    "balance_at_seed": "0",
+    "email": "",
+    "user_id": "",
+    "member_id": "",
+    "handle": "",
+    "balance_at_seed": "",
     "groups_at_seed": ""
   },
   "MSN_E2E_USER_PTSSPEND": {
-    "email": "AGENT-TEST-msne2e-20260910114041-4056@test-agent.com",
-    "user_id": "c9a4cc11-706d-442b-9c15-ffc46f37c8ec",
-    "member_id": "8a175d2f-99f9-4361-9ae4-44ee354a89c7",
-    "handle": "AGENT-TEST-msne2e-20260910114041-4056",
-    "balance_at_seed": "36394",
+    "email": "",
+    "user_id": "",
+    "member_id": "",
+    "handle": "",
+    "balance_at_seed": "",
     "groups_at_seed": "",
-    "pts_line_cost": "1",
-    "funding_program": "AGENT-TEST PP Single-SKU Laptop (pri 80, factor 500 × 60)",
-    "funding_order": "CO260910-00013",
-    "funding_points_per_unit": "30000",
-    "pts_progress_status_at_seed": "InProgress",
-    "pts_is_started_at_seed": "false",
-    "pts_current_quantity_at_seed": "0"
+    "pts_line_cost": "",
+    "funding_program": "",
+    "funding_order": "",
+    "funding_points_per_unit": "",
+    "pts_progress_status_at_seed": "",
+    "pts_is_started_at_seed": "",
+    "pts_current_quantity_at_seed": ""
   },
   "MSN_POINTS_ORDER": {
     "id": "3c20b2c4-2a21-4c46-a6ac-c7f29102bc74",
@@ -1374,23 +1374,23 @@
     "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-per-sku.svg"
   },
   "ORDER_REP_PLACED": {
-    "id": "a037c69d-7b41-41a3-ba90-15817f19a553",
-    "createdDate": "2026-09-02T15:52:19.8822992Z",
-    "customerId": "31c6feef-f7b2-46ae-a965-1b94280e7ef0"
+    "id": "d5972ad6-2796-47c6-8941-09917745857f",
+    "createdDate": "2026-10-13T07:47:03.5963115Z",
+    "customerId": "f4b70c55-d140-4b5a-8c38-dd925a52b8ab"
   },
   "ORDER_BUYER_PLACED": {
-    "id": "2d1ff582-9b63-4509-9c5f-ea9ed57cb2c5",
-    "createdDate": "2026-09-19T08:53:08.4636076Z",
+    "id": "3052a05c-3a95-4a16-8cbc-c1156f64b620",
+    "createdDate": "2026-10-13T07:47:07.0152532Z",
     "customerId": "2f917069-fea7-4a6a-8d80-0899aa0a0586"
   },
   "ORDER_NOT_SERVED": {
-    "id": "d0af627e-373a-42db-b156-c6dbab15f40f",
-    "createdDate": "2026-09-02T15:52:28.2422314Z",
-    "customerId": "31c6feef-f7b2-46ae-a965-1b94280e7ef0"
+    "id": "b70f691c-db60-460d-b515-840d7bbf0a27",
+    "createdDate": "2026-10-13T07:47:11.9253337Z",
+    "customerId": "f4b70c55-d140-4b5a-8c38-dd925a52b8ab"
   },
   "SR_REP_LOCKABLE": {
-    "id": "85b99e4d-517c-4143-85b2-616eceddd545",
-    "user_id": "2461c44f-b3a2-42d8-a910-e4eb5377fb03"
+    "id": "4d4b58ee-1bfd-4f44-b288-f053f29d22dd",
+    "user_id": "5d9fcad2-6eb5-49c4-a2d4-0641074a5bca"
   },
   "PROD_CMP_A": {
     "id": "b2c64e9c-62f6-4538-87f8-71acf42f9e4e"
@@ -1437,7 +1437,7 @@
   "ORG_LOY_A": {
     "userId": "8e31d1d9-d7c1-4514-93c7-92376aac423a",
     "contactId": "8fcfbd67-8f16-4ad3-80ed-4a5ac0e3b8e4",
-    "org_id": "12b52a61-6dc0-4aa7-9e62-a5eb57e12d4f",
+    "org_id": "fbecdf1e-7b2c-4e6b-ba90-c3a3dee82136",
     "sibling_org_id": "23525b44-f0d0-43a4-b45e-b162080a4d29",
     "earn_points_expected": "30000",
     "balance_at_seed": "0"
@@ -1445,16 +1445,16 @@
   "ORG_LOY_B": {
     "userId": "71297bdc-28cc-4568-94cd-d4e729553f7b",
     "contactId": "94f5696a-9bfb-4fd4-869b-8892a55e9a0c",
-    "org_id": "12b52a61-6dc0-4aa7-9e62-a5eb57e12d4f",
+    "org_id": "fbecdf1e-7b2c-4e6b-ba90-c3a3dee82136",
     "earn_points_expected": "90000",
     "balance_at_seed": "0"
   },
   "ORG_LOY_LOCKED": {
     "userId": "762105ea-f1f4-4968-adab-a91735710aea",
     "contactId": "dbcb0c07-db61-44b4-a4f7-cf2e40b26a3c",
-    "org_id": "12b52a61-6dc0-4aa7-9e62-a5eb57e12d4f",
+    "org_id": "fbecdf1e-7b2c-4e6b-ba90-c3a3dee82136",
     "balance_at_seed": "0",
-    "membershipId": "fe542ef3-b817-4bdd-aba0-0aaede66a0b8"
+    "membershipId": "cb86d48f-2925-484d-80f4-c50fc9776147"
   },
   "LOY_PERSONAL_NOORG": {
     "userId": "2cdf9bb1-bfef-424c-a68f-b371e37f1bc1",
@@ -1466,22 +1466,22 @@
     "dearest_pts_price": "552"
   },
   "ORG_LOY_MISSION": {
-    "id": "ba383695-d833-40d9-a920-ee565d3283c6",
-    "name": "AGENT-TEST-MSN-ORGLOY-20260914092256-79fa",
-    "run_id": "20260914092256-79fa",
-    "seeded_at": "2026-09-14T09:22:57.588Z"
+    "id": "48bca2a1-5620-465d-a85f-5eea0eaaee3b",
+    "name": "AGENT-TEST-MSN-ORGLOY-20261001083600-e1e0",
+    "run_id": "20261001083600-e1e0",
+    "seeded_at": "2026-10-01T08:36:01.947Z"
   },
   "ORG_LOY_MISSION_2": {
-    "id": "c2c3dffb-fef2-43aa-9238-df6760965c8b",
-    "name": "AGENT-TEST-MSN-ORGLOY-M2-20260914092256-84e5",
-    "run_id": "20260914092256-84e5",
-    "seeded_at": "2026-09-14T09:22:57.588Z"
+    "id": "be97ba42-04ec-4076-b4c7-e48a04ef0890",
+    "name": "AGENT-TEST-MSN-ORGLOY-M2-20261001083600-0fed",
+    "run_id": "20261001083600-0fed",
+    "seeded_at": "2026-10-01T08:36:01.947Z"
   },
   "ORG_LOY_MISSION_PARTIAL": {
-    "id": "7d30cc17-df1c-4dc3-ab52-52f1e74dfee7",
-    "name": "AGENT-TEST-MSN-ORGLOY-P2-20260914092257-69ac",
-    "run_id": "20260914092257-69ac",
-    "seeded_at": "2026-09-14T09:22:57.588Z"
+    "id": "6a380a7c-e8ee-48aa-810d-97f5c064f3b5",
+    "name": "AGENT-TEST-MSN-ORGLOY-P2-20261001083601-8e47",
+    "run_id": "20261001083601-8e47",
+    "seeded_at": "2026-10-01T08:36:01.947Z"
   },
   "MULTI_ORG_LOY_POOLS": {
     "user_email": "agent-test-multiorg-alt-20260803@yopmail.com",
@@ -1500,111 +1500,111 @@
     "seeded_at": "2026-09-14T10:22:42.746Z"
   },
   "SR_REP_DOCS": {
-    "id": "cf437af8-d620-4eaa-8880-f86f5b95ffac",
-    "user_id": "cd815be1-614c-4989-8ef3-9c3534afb3de"
+    "id": "46f953a3-9e70-4e55-92c2-60e109df5c8d",
+    "user_id": "bb72a16c-3ec6-47fb-88da-3660dfc9cfc3"
   },
   "SR_REP_DOCS_WRITER": {
-    "id": "cde12dab-6d79-467c-a945-7048fefad6e6",
-    "user_id": "a15ca448-3bf5-4937-8a28-19e1828e3521"
+    "id": "799b3d03-4c7f-4fd1-b1b0-d4e510f2eb68",
+    "user_id": "73bc4cf6-e554-4bde-8cd2-9d9f7b00fc61"
   },
   "SR_DOC_PDF": {
-    "id": "d97e880c-0eda-4a34-8b15-5687b98584b2",
-    "file_id": "bfbd8f79fd3f4084b9160116a6f12902",
-    "url": "/api/files/bfbd8f79fd3f4084b9160116a6f12902"
+    "id": "f1f77622-3783-4991-b183-fb01f005fa8c",
+    "file_id": "ba8f1a35e6d244bb9ea415aeba958dd0",
+    "url": "/api/files/ba8f1a35e6d244bb9ea415aeba958dd0"
   },
   "SR_DOC_DOCX": {
-    "id": "22ae1d8a-2029-4f55-a703-65fb97d3a2fa",
-    "file_id": "5e63e587a59f4a46955f3c90d5021ac3",
-    "url": "/api/files/5e63e587a59f4a46955f3c90d5021ac3"
+    "id": "d3c9061f-741a-4c44-88d8-e3afe1ab4bfe",
+    "file_id": "617294595626492d894643585317636e",
+    "url": "/api/files/617294595626492d894643585317636e"
   },
   "SR_DOC_XLSX": {
-    "id": "cc88a190-8ffc-4aeb-94aa-87958aaaf6f7",
-    "file_id": "074aeaf88b2d4eef8e26742461ed644f",
-    "url": "/api/files/074aeaf88b2d4eef8e26742461ed644f"
+    "id": "30e26dd0-a06e-490c-ab4a-0a791fd3480d",
+    "file_id": "1b068b7cb1e34ae799ca8df7210c45e0",
+    "url": "/api/files/1b068b7cb1e34ae799ca8df7210c45e0"
   },
   "SR_DOC_TXT": {
-    "id": "037f321c-d950-4ccd-b2c9-6c6f8c5f3ab7",
-    "file_id": "179a6787daad4488baf514e18d3f912b",
-    "url": "/api/files/179a6787daad4488baf514e18d3f912b"
+    "id": "a25ab823-a1f5-4847-b823-fc8870646086",
+    "file_id": "dae6dc22e16b4d34b53872f592e73ced",
+    "url": "/api/files/dae6dc22e16b4d34b53872f592e73ced"
   },
   "SR_DOC_PNG": {
-    "id": "b4d09afb-d8e1-45c5-a289-e984870382af",
-    "file_id": "c3a386fecc7041cab6c5b62b9ca4fd6d",
-    "url": "/api/files/c3a386fecc7041cab6c5b62b9ca4fd6d"
+    "id": "ea82399f-302d-4659-ae0a-e28ddeec43e6",
+    "file_id": "d04e067b4f704572ae887d48217d3f1c",
+    "url": "/api/files/d04e067b4f704572ae887d48217d3f1c"
   },
   "SR_DOC_JPG": {
-    "id": "e29e6c5d-18c0-4429-ad95-d1eae2eb732e",
-    "file_id": "fa12819540924ca185f6e6c5da220043",
-    "url": "/api/files/fa12819540924ca185f6e6c5da220043"
+    "id": "96d03204-37d0-4210-af77-4e45b0d93c28",
+    "file_id": "177b0b927d544c5a9b501b7a51f37639",
+    "url": "/api/files/177b0b927d544c5a9b501b7a51f37639"
   },
   "SR_DOC_UNKNOWN_EXT": {
-    "id": "0eee6c97-3007-4655-a12d-ca5c5611e681",
-    "file_id": "66cbdee7a4a2450bbe29a4ab1a18b3db",
-    "url": "/api/files/66cbdee7a4a2450bbe29a4ab1a18b3db"
+    "id": "cacc7825-1507-43b4-bfc9-5524e13aa044",
+    "file_id": "7b49fa2f7db04a11acead01a6a00458c",
+    "url": "/api/files/7b49fa2f7db04a11acead01a6a00458c"
   },
   "SR_DOC_UNICODE": {
-    "id": "7e23304e-9af8-46b2-88ff-2154a9dace26",
-    "file_id": "4b4402467e414a48a2aa584822deb11c",
-    "url": "/api/files/4b4402467e414a48a2aa584822deb11c"
+    "id": "85aff3a7-f1ab-4d03-b8c0-a70b1b41eb9f",
+    "file_id": "2e13d15c00cd4857a2f44cd659d1bbc5",
+    "url": "/api/files/2e13d15c00cd4857a2f44cd659d1bbc5"
   },
   "SR_DOC_LARGE": {
-    "id": "387d0b91-cfe3-4679-a7c6-3b46f275217b",
-    "file_id": "ba02f5eba52c46d6a9bb071e16aeb109",
-    "url": "/api/files/ba02f5eba52c46d6a9bb071e16aeb109"
+    "id": "0d6b15f6-abe6-426a-8c9d-1eb8f7b6e3d3",
+    "file_id": "8aa77d64625447f997a7d6ea975eb2cf",
+    "url": "/api/files/8aa77d64625447f997a7d6ea975eb2cf"
   },
   "SR_DOC_FILLER_01": {
-    "id": "df789a88-2e38-4066-8440-5a2705b11d25",
-    "file_id": "713abad6a0424f43ac239a6bc6ecb5b5",
-    "url": "/api/files/713abad6a0424f43ac239a6bc6ecb5b5"
+    "id": "dc67a2fe-d503-4eb2-a3d3-f10c2b1d9fb6",
+    "file_id": "e6fe599e4b8b46c887e3f8fbfd59c085",
+    "url": "/api/files/e6fe599e4b8b46c887e3f8fbfd59c085"
   },
   "SR_DOC_FILLER_02": {
-    "id": "858be15a-d11c-41a6-9a19-a8bc87304913",
-    "file_id": "1c466c3f20bb4ddfb25fc7fe3d0b34c4",
-    "url": "/api/files/1c466c3f20bb4ddfb25fc7fe3d0b34c4"
+    "id": "68e30bae-f221-42d0-865f-c86f4b2d76b2",
+    "file_id": "01fba76ffc604ded9c472a74c2eea4f5",
+    "url": "/api/files/01fba76ffc604ded9c472a74c2eea4f5"
   },
   "SR_DOC_FILLER_03": {
-    "id": "210ad1e1-a0ff-4286-851b-132a862134f8",
-    "file_id": "94b373d3a0484e77bc26d5f0001297ee",
-    "url": "/api/files/94b373d3a0484e77bc26d5f0001297ee"
+    "id": "6b400636-547e-4c2c-bec4-c6a8cf632627",
+    "file_id": "5bff6c25076c43679cdc32b24a1bd526",
+    "url": "/api/files/5bff6c25076c43679cdc32b24a1bd526"
   },
   "SR_DOC_FILLER_04": {
-    "id": "78de74c0-2aa3-441d-b61f-85a44986dc52",
-    "file_id": "585b86aa83084c958d4ec0f26fffb7e1",
-    "url": "/api/files/585b86aa83084c958d4ec0f26fffb7e1"
+    "id": "8c96a8af-60cd-40e3-8991-8769da7e8fb8",
+    "file_id": "ced15b2912524f5596716c0ccb7384a6",
+    "url": "/api/files/ced15b2912524f5596716c0ccb7384a6"
   },
   "SR_DOC_FILLER_05": {
-    "id": "c2d3ac1a-293a-4e36-b127-f53877f6dfe6",
-    "file_id": "24b455ea8cb44a64a588ce6672d0c57f",
-    "url": "/api/files/24b455ea8cb44a64a588ce6672d0c57f"
+    "id": "32865f6a-54fd-494a-b3e1-ef815bff21ff",
+    "file_id": "73e20e2d07904fdabc8d701efd201505",
+    "url": "/api/files/73e20e2d07904fdabc8d701efd201505"
   },
   "SR_DOC_FILLER_06": {
-    "id": "b5c31202-cfcd-4504-b787-3d0b0cba3f80",
-    "file_id": "1e59a2ac34084ff0bb271fd37153af0a",
-    "url": "/api/files/1e59a2ac34084ff0bb271fd37153af0a"
+    "id": "6426f21c-f3fd-486d-8125-ebaced7a9194",
+    "file_id": "a3c36575392746738f157475a59f8ce0",
+    "url": "/api/files/a3c36575392746738f157475a59f8ce0"
   },
   "SR_DOC_FILLER_07": {
-    "id": "9eeca812-707b-4f4d-a1f6-56848e89c881",
-    "file_id": "086c10c9551c400193f5a9ec9f931017",
-    "url": "/api/files/086c10c9551c400193f5a9ec9f931017"
+    "id": "ca84d2ec-76f2-4240-b487-e79625fe507b",
+    "file_id": "6a32ca9fb66a4cab84e9ef64615880ab",
+    "url": "/api/files/6a32ca9fb66a4cab84e9ef64615880ab"
   },
   "SR_ROWCAP_ORDER_ACME_NEW": {
-    "id": "a7681963-5c71-4c5e-8099-2a4f4e06c83b",
+    "id": "4981972d-8eb6-403f-ba47-9b724fb85b0f",
     "number": "AGENT-TEST-SRO-ROWCAP-ACME-01"
   },
   "SR_ROWCAP_ORDER_ACME_CANCELLED": {
-    "id": "82c45d4a-e306-4593-9266-4956dd81c216",
+    "id": "34f76832-8b60-43f5-be90-4c8c070e69f9",
     "number": "AGENT-TEST-SRO-ROWCAP-ACME-07"
   },
   "SR_ROWCAP_ORDER_TECH_COMPLETED": {
-    "id": "3c13de67-a784-42bb-a612-c3f14d5392ad",
+    "id": "27eb304f-32a3-42f3-a80d-d2bdeb954766",
     "number": "AGENT-TEST-SRO-ROWCAP-TECH-04"
   },
   "SR_I18N_SINGULAR_ORDER": {
-    "id": "620db19d-0ca1-4e88-bcde-4fc564003771",
+    "id": "05a568d3-6fd9-4405-a750-8d277f349763",
     "number": "AGENT-TEST-SRO-I18N-ACME3"
   },
   "SR_I18N_SINGULAR_CART": {
-    "id": "e37c4c44-23fb-406f-a16f-f8d05a23f408",
+    "id": "f8ae02e3-1286-49ef-b178-4edfd6d9dc70",
     "name": "AGENT-TEST-SR-CART-I18N-ACME3"
   },
   "B2B_STORE_MEMBERSHIP_ROLES": {
@@ -1618,106 +1618,106 @@
   },
   "SC_MULTI": {
     "_inline": true,
-    "component_id": "4a99cb8ee6a343808e3ef56e19717070",
+    "component_id": "414aacb042414ae3ab24a09d5d8863e8",
     "name": "AGENT-TEST-SC-Multi-Trio"
   },
   "SC_SINGLE": {
     "_inline": true,
-    "component_id": "dc7e0762763e47f5b3c58a0b68d9e210",
+    "component_id": "ab96b80eca7d41baab124360d949b036",
     "name": "AGENT-TEST-SC-Single"
   },
   "SC_UNUSED": {
     "_inline": true,
-    "component_id": "f44f8f56876842879549769a6c0558bf",
+    "component_id": "2bba682bbab442c482e41307aae78caa",
     "name": "AGENT-TEST-SC-Unused-Deletable"
   },
   "SC_USED": {
     "_inline": true,
-    "component_id": "ed1688094c1d405096a0f73427447ac5",
+    "component_id": "8648747e984e411f841e4aad509ceca4",
     "name": "AGENT-TEST-SC-Used-Undeletable"
   },
   "PB_SC_MASTER": {
     "_inline": true,
-    "group_id": "53b829d2-502e-42ef-9b92-60aab5048eff",
+    "group_id": "d0273741-91cd-47b6-8235-98f7c51427d7",
     "permalink": "/agent-test-sc-master"
   },
   "PB_SC_CONSUMER_A": {
     "_inline": true,
-    "group_id": "d946ed13-4c11-480d-9250-3c1393a289c8",
+    "group_id": "314b039b-f72c-48f6-b744-8bd1e316e418",
     "permalink": "/agent-test-sc-consumer-a"
   },
   "PB_SC_CONSUMER_B": {
     "_inline": true,
-    "group_id": "b177440a-1aa0-44ea-9f1f-91f4139b609f",
+    "group_id": "134368b0-ee8a-4248-bec4-122c3f59d6d4",
     "permalink": "/agent-test-sc-consumer-b"
   },
   "PB_SC_CONSUMER_DRAFT": {
     "_inline": true,
-    "group_id": "bf643663-93b1-4736-8374-c66dbb5d5182",
+    "group_id": "e7b607a3-97af-4f2a-84bf-77be895a68c8",
     "permalink": "/agent-test-sc-consumer-draft"
   },
   "PB_SC_DELETE_HOLDER": {
     "_inline": true,
-    "group_id": "7d88e789-fefe-4d1c-bbac-644fbb0305fe",
+    "group_id": "e0e1a247-736e-4bf5-bf51-76f86714568f",
     "permalink": "/agent-test-sc-delete-holder"
   },
   "PB_SC_CONTROL": {
     "_inline": true,
-    "group_id": "f39f5f30-48f9-41e5-8609-82688ca2ca1a",
+    "group_id": "afafde56-a0f3-40f1-a862-fe6f2b2523a6",
     "permalink": "/agent-test-sc-control"
   },
   "SC_PERM_ALL": {
     "_inline": true,
-    "platform_id": "c473ef91-8b91-4548-93e8-cc08a152defd",
-    "user_id": "c473ef91-8b91-4548-93e8-cc08a152defd",
+    "platform_id": "45cf4e44-91b2-4770-8fcb-25122bb5b385",
+    "user_id": "45cf4e44-91b2-4770-8fcb-25122bb5b385",
     "role_id": "AGENT-TEST-PB-SC-sc-all",
     "email": "AGENT-TEST-sc-all@test.virtocommerce.com",
     "store_id": "B2B-store"
   },
   "SC_PERM_READ": {
     "_inline": true,
-    "platform_id": "60c559da-dc41-46ce-aaf2-776f5e296324",
-    "user_id": "60c559da-dc41-46ce-aaf2-776f5e296324",
+    "platform_id": "f1e552c4-698d-4589-b151-b87475a6b33b",
+    "user_id": "f1e552c4-698d-4589-b151-b87475a6b33b",
     "role_id": "AGENT-TEST-PB-SC-sc-read",
     "email": "AGENT-TEST-sc-read@test.virtocommerce.com",
     "store_id": "B2B-store"
   },
   "SC_PERM_NOCREATE": {
     "_inline": true,
-    "platform_id": "9fb29885-1fb8-45ea-8f7a-9ec02df4af42",
-    "user_id": "9fb29885-1fb8-45ea-8f7a-9ec02df4af42",
+    "platform_id": "a820aaab-d508-4459-bffc-9a3324066d8c",
+    "user_id": "a820aaab-d508-4459-bffc-9a3324066d8c",
     "role_id": "AGENT-TEST-PB-SC-sc-nocreate",
     "email": "AGENT-TEST-sc-nocreate@test.virtocommerce.com",
     "store_id": "B2B-store"
   },
   "SC_PERM_NOUPDATE": {
     "_inline": true,
-    "platform_id": "a2698807-36ab-467e-a998-f930ee94d8c0",
-    "user_id": "a2698807-36ab-467e-a998-f930ee94d8c0",
+    "platform_id": "2bd1db7c-98f8-403c-8ccd-f5cf8eccd1cc",
+    "user_id": "2bd1db7c-98f8-403c-8ccd-f5cf8eccd1cc",
     "role_id": "AGENT-TEST-PB-SC-sc-noupdate",
     "email": "AGENT-TEST-sc-noupdate@test.virtocommerce.com",
     "store_id": "B2B-store"
   },
   "SC_PERM_NODELETE": {
     "_inline": true,
-    "platform_id": "05bc16f0-1e39-49d4-8682-dd00fadc73b6",
-    "user_id": "05bc16f0-1e39-49d4-8682-dd00fadc73b6",
+    "platform_id": "a995aebe-8002-4c21-bc6b-3757d409b9ae",
+    "user_id": "a995aebe-8002-4c21-bc6b-3757d409b9ae",
     "role_id": "AGENT-TEST-PB-SC-sc-nodelete",
     "email": "AGENT-TEST-sc-nodelete@test.virtocommerce.com",
     "store_id": "B2B-store"
   },
   "SC_PERM_NOREAD": {
     "_inline": true,
-    "platform_id": "19124d92-533a-4577-929a-89c10dda81b8",
-    "user_id": "19124d92-533a-4577-929a-89c10dda81b8",
+    "platform_id": "9aa4385d-1cfe-4876-bda1-f5d7cc2c2267",
+    "user_id": "9aa4385d-1cfe-4876-bda1-f5d7cc2c2267",
     "role_id": "AGENT-TEST-PB-SC-sc-noread",
     "email": "AGENT-TEST-sc-noread@test.virtocommerce.com",
     "store_id": "B2B-store"
   },
   "SC_PERM_NOSTORE": {
     "_inline": true,
-    "platform_id": "7b6b5c24-2f38-41c0-a060-59f0d383f46d",
-    "user_id": "7b6b5c24-2f38-41c0-a060-59f0d383f46d",
+    "platform_id": "3249fc65-4e0b-4380-8a62-45c4671406a8",
+    "user_id": "3249fc65-4e0b-4380-8a62-45c4671406a8",
     "role_id": "AGENT-TEST-PB-SC-sc-nostore",
     "email": "AGENT-TEST-sc-nostore@test.virtocommerce.com",
     "store_id": "Electronics"
@@ -1910,70 +1910,70 @@
       {
         "type": "order",
         "key": "DORD-NW-01",
-        "id": "4f0653a3-fdd2-413e-98c1-f9de13f3ae8b",
+        "id": "6feb854b-0d47-4b2a-a0e9-f0185c3033b0",
         "number": "SO-619637"
       },
       {
         "type": "order",
         "key": "DORD-CN-01",
-        "id": "96495790-b248-4eed-be71-65871e64d14f",
+        "id": "f23a6947-d3d9-42fb-94a0-41b27865847b",
         "number": "SO-992787"
       },
       {
         "type": "order",
         "key": "DORD-NW-02",
-        "id": "6d2ab9ed-6872-4bf0-adbc-2f0a0f36de59",
+        "id": "cc69c4a6-6950-4392-b055-fb32a5e4cd31",
         "number": "SO-619638"
       },
       {
         "type": "order",
         "key": "DORD-CN-02",
-        "id": "67792afb-c135-40fa-a918-2654d7288be6",
+        "id": "79d47298-27a5-4765-9234-1ce3808bfb65",
         "number": "SO-992788"
       },
       {
         "type": "order",
         "key": "DORD-FB-01",
-        "id": "f5a31ab7-b4e2-4e13-8a07-a1fd0064957d",
+        "id": "0376c907-bd59-4ad4-a061-cdbf3cf08b0e",
         "number": "SO-705858"
       },
       {
         "type": "order",
         "key": "DORD-WT-01",
-        "id": "b460a3b9-d0f7-4617-bf60-2d969f5b9791",
+        "id": "9349bd12-dca5-4913-90ec-53170a97e488",
         "number": "SO-741953"
       },
       {
         "type": "order",
         "key": "DORD-NW-03",
-        "id": "b8f95322-5063-4db2-b500-1ca95fe12460",
+        "id": "9786c31d-8613-4e54-ba7b-9eeb2af1691d",
         "number": "SO-619639"
       },
       {
         "type": "order",
         "key": "DORD-CN-03",
-        "id": "586fb487-5e99-4a21-b448-562cb530814c",
+        "id": "946ea346-1db0-4152-992f-b5f4929417b3",
         "number": "SO-992789"
       },
       {
         "type": "order",
         "key": "DORD-FB-02",
-        "id": "98b321af-3689-414a-82ac-a70a818126ef",
+        "id": "e9163941-26c4-4af0-89ac-67cb2519d77d",
         "number": "SO-705859"
       },
       {
         "type": "order",
         "key": "DORD-WT-02",
-        "id": "c05e70c7-7167-494b-99fa-798a08793acd",
+        "id": "fe57db66-2081-4804-b80c-c3a921af8e05",
         "number": "SO-741954"
       },
       {
         "type": "document",
         "key": "DDOC-CATALOG",
-        "id": "038cdca0-3a1d-4817-a4ec-099b315cfe96",
-        "fileId": "128002cf615d451aaf72addab7f9007c",
+        "id": "7a034705-4d6b-4aa4-b4dc-4dd92953f3bf",
+        "fileId": "2a8c9040cbd546578e9e560650631c5f",
         "name": "2026 Industrial Catalog",
-        "sha256": "d3176f15d49e76e97a9da9d58754043a2aa9a49891ed98af39993e512571d615"
+        "sha256": "0e26324b24f456431c32b1cff6f8a965afca49da294ffd4bff052d2a52b7ab78"
       },
       {
         "type": "document",
@@ -1986,10 +1986,10 @@
       {
         "type": "document",
         "key": "DDOC-VOLUME",
-        "id": "7081d40c-20ed-4d6d-bdaa-821728bfd2e4",
-        "fileId": "8b0a1a9671db4eee9b5d977a93f897bb",
+        "id": "c99ba626-e4b9-4f9f-bf30-e20ea1f8c786",
+        "fileId": "8cc29fb390024c528b34844f30fd81f6",
         "name": "Volume Pricing Agreement — Northwind Traders",
-        "sha256": "679e08646b9223a0c892bf3175e10fb0a4767738b48e760648c428e8bfae17a8"
+        "sha256": "064e2090064ad74f4ad11c1a7b5d4b5702f9de3c725c0f2c002e93a13429763d"
       },
       {
         "type": "document",
@@ -2002,34 +2002,34 @@
       {
         "type": "document",
         "key": "DDOC-SDS",
-        "id": "b82b2b2d-a721-49b9-a454-0d65cb18d487",
-        "fileId": "18721988a97f43c9ae1012699cd8b627",
+        "id": "739f7a44-e538-43c5-b297-2d872f1b90a7",
+        "fileId": "fbe259210839430bad5ec2c88251a791",
         "name": "Safety Data Sheet — Industrial Lubricants",
-        "sha256": "bf866f438c849dda1978dcce860b81d74b749354ec6776dc187a66cf049c389c"
+        "sha256": "0610904a1fe0ec547648113d5d1d2d32dcc15bb447be9228214d87c9ea38d215"
       },
       {
         "type": "document",
         "key": "DDOC-TERMS",
-        "id": "a27ed639-7c1c-40e7-81bc-6f815268da40",
-        "fileId": "c606111d5fcd43789b91a83f5e9be7cd",
+        "id": "a7f4860a-db75-49b0-9b5a-5842b530bc56",
+        "fileId": "2835169775c947e8949bb5e5520ade1e",
         "name": "Terms and Conditions of Sale",
-        "sha256": "b3d910753a5f690782cdfd53a6e1339dafb381674284b1d985e2464ba77c4115"
+        "sha256": "e24ff32fe38aa4c845b01c4f811c47e2c5b8821ec052419d53779b246528c91f"
       },
       {
         "type": "document",
         "key": "DDOC-RETURNS",
-        "id": "1a3f5aaf-eb3f-47f8-8a85-20c53b28bad1",
-        "fileId": "b1069b15fba343b8bf19b50fd228e770",
+        "id": "76c6d691-450e-4b7b-a381-6081af76dc94",
+        "fileId": "93cfcbbdb75e4e33b2ba31628b2d1dad",
         "name": "Returns and Warranty Policy",
-        "sha256": "f17a6a46cf52acd775b258e645a2051ed7b0ca77f2904dd5730241ebae2f43b1"
+        "sha256": "8d627b6aa9dc4002b51d021837bffa86b412584aab79666ed2b6c5d2eb3af6e3"
       },
       {
         "type": "document",
         "key": "DDOC-WAREHOUSE",
-        "id": "525e786d-1b15-46f5-a99f-e7ad37f54cb8",
-        "fileId": "9652cbe0ba7743178d246d34a376c46b",
+        "id": "50171cdc-798c-439d-8125-3b812f399f8d",
+        "fileId": "0f71eac95ccd487ea99a1b91f0f59c23",
         "name": "Memphis Distribution Centre",
-        "sha256": "90871f287e0d1bc15797c0a643c50e490b88ed32e7ed8da3fcd96ac81fd15d62"
+        "sha256": "b669f7b4e58d5a9dbb978bb52adf7f11ee438de96f09e9323369e83c7ec2dd7b"
       },
       {
         "type": "task",
@@ -2464,5 +2464,1000 @@
   "PUSH_DATA_BULK": {
     "batch_marker": "AGENT-TEST-bulk-20260929T1446",
     "batch_message_ids": "eeff03dc-3e43-489f-adc8-45f9eef9d6be;2a70f33f-8083-4874-a527-80a68ba00f04;2cbca8a9-6a5c-4acd-a1d5-6abbc52f83b0"
+  },
+  "MSN_DL_RUN": {
+    "run_id": "202610011340",
+    "seeded_at": "2026-10-01T13:40:59.000Z",
+    "valid_until": "2026-10-02T01:40:59.000Z",
+    "clock_skew_ms": "-1643",
+    "reader_user_id": "2cdf9bb1-bfef-424c-a68f-b371e37f1bc1",
+    "order_id": "613f3baa-4bc6-440b-a11a-d3d29a45d02e",
+    "order_number": "AGENT-TEST-MSN-VCST5957-202610011340-ORD",
+    "balance_before": "42244",
+    "balance_after": "42464",
+    "order_co_completed": "",
+    "expired_observation": ""
+  },
+  "MSN_DL_NOAVAIL_PRODUCT": {
+    "productId": "bd1cc6f9-1e55-4e75-9099-dad90e1db191",
+    "catalogId": "6032bd3c-77dc-4035-a94f-6f60ee5abb4e",
+    "deleted_at": "2026-10-01T13:41:12.263Z"
+  },
+  "MSN_DL_DUE_01": {
+    "id": "481c70cc-6d40-4a64-a5f6-6de262f35a1f",
+    "name": "AGENT-TEST-MSN-VCST5957-202610011340-DUE-01",
+    "run_id": "202610011340",
+    "end_date": "2026-10-02T01:40:59.000Z",
+    "valid_until": "2026-10-02T01:40:59.000Z",
+    "days_remaining_at_seed": "1",
+    "status_at_seed": "InProgress",
+    "percentage_at_seed": "0"
+  },
+  "MSN_DL_DUE_15": {
+    "id": "9d2282fb-2ec9-4a69-8e28-de1aa7230a5a",
+    "name": "AGENT-TEST-MSN-VCST5957-202610011340-DUE-15",
+    "run_id": "202610011340",
+    "end_date": "2026-10-16T01:40:59.000Z",
+    "valid_until": "2026-10-02T01:40:59.000Z",
+    "days_remaining_at_seed": "15",
+    "status_at_seed": "InProgress",
+    "percentage_at_seed": "0"
+  },
+  "MSN_DL_DUE_16": {
+    "id": "9bbfa874-4b73-4b6c-877b-e99b07d67d7d",
+    "name": "AGENT-TEST-MSN-VCST5957-202610011340-DUE-16",
+    "run_id": "202610011340",
+    "end_date": "2026-10-17T01:40:59.000Z",
+    "valid_until": "2026-10-02T01:40:59.000Z",
+    "days_remaining_at_seed": "16",
+    "status_at_seed": "InProgress",
+    "percentage_at_seed": "0"
+  },
+  "MSN_DL_DUE_30": {
+    "id": "ad054791-2a47-43d0-9d26-e4cb1112f1ce",
+    "name": "AGENT-TEST-MSN-VCST5957-202610011340-DUE-30",
+    "run_id": "202610011340",
+    "end_date": "2026-10-31T01:40:59.000Z",
+    "valid_until": "2026-10-02T01:40:59.000Z",
+    "days_remaining_at_seed": "30",
+    "status_at_seed": "InProgress",
+    "percentage_at_seed": "0"
+  },
+  "MSN_DL_DUE_31": {
+    "id": "e6af2d54-2b62-430f-9403-7c78fcce6957",
+    "name": "AGENT-TEST-MSN-VCST5957-202610011340-DUE-31",
+    "run_id": "202610011340",
+    "end_date": "2026-11-01T01:40:59.000Z",
+    "valid_until": "2026-10-02T01:40:59.000Z",
+    "days_remaining_at_seed": "31",
+    "status_at_seed": "InProgress",
+    "percentage_at_seed": "0"
+  },
+  "MSN_DL_DONE_SOON": {
+    "id": "f9ea83ba-14e7-40b9-ae1e-297d7efc81e9",
+    "name": "AGENT-TEST-MSN-VCST5957-202610011340-DONE-15",
+    "run_id": "202610011340",
+    "end_date": "2026-10-16T01:40:59.000Z",
+    "valid_until": "2026-10-02T01:40:59.000Z",
+    "days_remaining_at_seed": "15",
+    "status_at_seed": "Completed",
+    "percentage_at_seed": "100"
+  },
+  "MSN_DL_EXPIRED": {
+    "id": "f4d9fdbf-2717-462b-93f1-302dca1e31f0",
+    "name": "AGENT-TEST-MSN-VCST5957-202610011340-DUE-00",
+    "run_id": "202610011340",
+    "end_date": "2026-10-01T14:00:59.000Z",
+    "valid_until": "",
+    "days_remaining_at_seed": "1",
+    "status_at_seed": "InProgress",
+    "percentage_at_seed": "2"
+  },
+  "MSN_DL_SKU_NOAVAIL": {
+    "id": "50d87203-0d9e-47bc-9f67-268d3cf1028b",
+    "name": "AGENT-TEST-MSN-VCST5957-202610011340-SKU-NOAVAIL",
+    "run_id": "202610011340",
+    "end_date": "2026-11-30T01:40:59.000Z",
+    "valid_until": "2026-10-02T01:40:59.000Z",
+    "days_remaining_at_seed": "60",
+    "status_at_seed": "InProgress",
+    "percentage_at_seed": "0"
+  },
+  "MSN_PERSKU_TRACKED": {
+    "id": "c39e9677-f21f-4ae9-a2c2-e7d2bd318541",
+    "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-per-sku.svg"
+  },
+  "MSN_PERSKU_TRACKED_PRODUCT": {
+    "productId": "20090d7a-c3ff-4723-8426-be4c1c896f96",
+    "catalogId": "6032bd3c-77dc-4035-a94f-6f60ee5abb4e",
+    "currency": "USD"
+  },
+  "MSN_LONG_CONTENT": {
+    "id": "96d7534f-3be8-42ca-85a5-01dc9df1775f",
+    "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-per-sku.svg"
+  },
+  "CFG_CHECKLIST_ALLTYPES": {
+    "id": "f459a4ae-e366-4b25-851c-c5bb82932168",
+    "configurationId": "314a2735-ef19-4b3e-8bc6-445825565fbe",
+    "sections": {
+      "LAY": "c6b1427d-9d1b-4a95-a2a3-5789dac547ed",
+      "TXT": "09dc259a-af1d-4162-a313-b1daed57b49c",
+      "PHO": "f4e459a1-c12f-48fe-9ffc-203473a36866",
+      "FIL": "8c5a4031-410d-415f-995e-2e8393c8ec90",
+      "ICE": "a2b7bb93-3b52-4702-bf95-b1544cfae349",
+      "DEC": "d48e38a9-3699-4ae5-9f9c-fadd84e477df",
+      "MSG": "b25f40c1-efa3-4d96-bb20-44ed03a877a7",
+      "ART": "89b0a598-fe3b-45f8-9ad3-ef7ac6fc24d5"
+    }
+  },
+  "ORG_EXACTLY_11": {
+    "email": "agent-test-org-exactly-11-20260811@test-agent.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "store_id": "B2B-store",
+    "userId": "cb9a7602-39b1-4eee-aec9-e3a34de6edc6",
+    "contactId": "1ec1f444-dd57-4751-90fe-3b12ad02148b",
+    "org_count": 11,
+    "org_ids": [
+      "b1a5c85a-7abd-434a-9ff4-4bbcf0bc033f",
+      "1b86e4c1-1851-4794-a7e2-86c61d21f901",
+      "e82a0c96-0451-49cd-9991-c73d40718e3e",
+      "27f430a9-2ed4-40a2-9487-e81644e89c26",
+      "fd31f8bb-3504-4d06-82d1-8407126cd509",
+      "b57bd6b0-ec22-46ed-9eaf-633a41e5cd1a",
+      "e261d447-54d5-4ff8-95e8-4d48e6d0c478",
+      "036b27d1-8bd0-4b9e-8dea-6b4ab5f4be7a",
+      "1fa442b6-47fa-4ddc-a783-ecedbee911d0",
+      "57559b0e-8919-4492-a49c-2d3d3e5fd88e",
+      "ca76a1e9-070d-424d-92f4-90ea7e365c7a"
+    ]
+  },
+  "MULTI_ORG_11": {
+    "email": "agent-test-org-exactly-11-20260811@test-agent.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "store_id": "B2B-store",
+    "userId": "cb9a7602-39b1-4eee-aec9-e3a34de6edc6",
+    "contactId": "1ec1f444-dd57-4751-90fe-3b12ad02148b",
+    "org_count": 11,
+    "org_ids": [
+      "b1a5c85a-7abd-434a-9ff4-4bbcf0bc033f",
+      "1b86e4c1-1851-4794-a7e2-86c61d21f901",
+      "e82a0c96-0451-49cd-9991-c73d40718e3e",
+      "27f430a9-2ed4-40a2-9487-e81644e89c26",
+      "fd31f8bb-3504-4d06-82d1-8407126cd509",
+      "b57bd6b0-ec22-46ed-9eaf-633a41e5cd1a",
+      "e261d447-54d5-4ff8-95e8-4d48e6d0c478",
+      "036b27d1-8bd0-4b9e-8dea-6b4ab5f4be7a",
+      "1fa442b6-47fa-4ddc-a783-ecedbee911d0",
+      "57559b0e-8919-4492-a49c-2d3d3e5fd88e",
+      "ca76a1e9-070d-424d-92f4-90ea7e365c7a"
+    ]
+  },
+  "ORG_EXACTLY_10": {
+    "email": "agent-test-org-exactly-10-20260811@test-agent.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "store_id": "B2B-store",
+    "userId": "aa5bd842-80dd-430a-a2ec-c52ce2d8cf79",
+    "contactId": "9660d7b7-8082-4b17-9fe1-9bb927a12d16",
+    "org_count": 10,
+    "org_ids": [
+      "b1a5c85a-7abd-434a-9ff4-4bbcf0bc033f",
+      "1b86e4c1-1851-4794-a7e2-86c61d21f901",
+      "e82a0c96-0451-49cd-9991-c73d40718e3e",
+      "27f430a9-2ed4-40a2-9487-e81644e89c26",
+      "fd31f8bb-3504-4d06-82d1-8407126cd509",
+      "b57bd6b0-ec22-46ed-9eaf-633a41e5cd1a",
+      "e261d447-54d5-4ff8-95e8-4d48e6d0c478",
+      "036b27d1-8bd0-4b9e-8dea-6b4ab5f4be7a",
+      "1fa442b6-47fa-4ddc-a783-ecedbee911d0",
+      "57559b0e-8919-4492-a49c-2d3d3e5fd88e"
+    ]
+  },
+  "SR_TASK_FUTURE_YANKEE": {
+    "id": "7a86b0e2-f192-4042-b1e4-d04d28c5cb1e",
+    "due_date": "2026-10-09T11:00:00.000Z"
+  },
+  "SR_TASK_OVERDUE_MIKE": {
+    "id": "671371c1-c426-41f0-b473-4f17e0a27870",
+    "due_date": "2026-10-07T09:00:00.000Z"
+  },
+  "SR_TASK_DONE_ECHO": {
+    "id": "9df365e0-8392-4891-86b1-5ef71764563a",
+    "due_date": "2026-09-29T16:00:00.000Z"
+  },
+  "SR_TASK_FUTURE_ROMEO": {
+    "id": "6fcac728-113e-484e-a138-4466b7d79118",
+    "due_date": "2026-10-15T09:00:00.000Z"
+  },
+  "SR_TASK_TODAY_SIERRA": {
+    "id": "1bd35582-2635-40ae-b08f-b0edce128977",
+    "due_date": "2026-10-08T12:00:00.000Z"
+  },
+  "SR_TASK_FUTURE_OSCAR": {
+    "id": "6c870e91-dfde-4122-8c8b-0eb62dc625bf",
+    "due_date": "2026-10-22T13:00:00.000Z"
+  },
+  "SR_TASK_OVERDUE_ZULU": {
+    "id": "a43b7d61-be61-4424-a08a-d577c8a0cd28",
+    "due_date": "2026-10-03T10:00:00.000Z"
+  },
+  "SR_TASK_DONE_FOXTROT": {
+    "id": "37e67211-7648-420a-8b1e-c570c23c96af",
+    "due_date": "2026-10-13T10:00:00.000Z"
+  },
+  "SR_TASK_TODAY_DELTA": {
+    "id": "8d173c9a-cd0c-4433-9803-1c34c8526f82",
+    "due_date": "2026-10-08T20:00:00.000Z"
+  },
+  "SR_TASK_FUTURE_CHARLIE": {
+    "id": "86d2495c-f3cb-448f-831f-6a118fb37291",
+    "due_date": "2026-10-15T17:00:00.000Z"
+  },
+  "SR_TASK_DONE_NOVEMBER": {
+    "id": "41ae1d67-3f69-430f-8657-9ee1d47f3b3e",
+    "due_date": "2026-10-06T12:00:00.000Z"
+  },
+  "SR_TASK_TODAY_ALPHA": {
+    "id": "d076a8be-995b-4797-8109-6756cb21f232",
+    "due_date": "2026-10-08T07:00:00.000Z"
+  },
+  "SR_TASK_FUTURE_BRAVO": {
+    "id": "f84fef4c-ad83-4c91-bdc9-c9397e2fcd48",
+    "due_date": "2026-10-11T15:00:00.000Z"
+  },
+  "SR_TASK_DONE_TANGO": {
+    "id": "d83454b1-9578-4138-8432-e6826a824007",
+    "due_date": "2026-10-08T15:00:00.000Z"
+  },
+  "SR_TASK_GROUPS": {
+    "open_overdue": "2",
+    "open_today": "5",
+    "open_future": "7",
+    "completed": "4",
+    "total": "22",
+    "seeded_at": "2026-10-08T08:51:55.791Z",
+    "decays_at_utc": "2026-10-08T22:00:00.000Z",
+    "owner_rep_email": "agent-test-sr-primary@example.com",
+    "canceled": "3",
+    "dateless": "1",
+    "chip_upcoming": "12",
+    "chip_overdue": "2",
+    "chip_completed": "4",
+    "chip_all": "22",
+    "today_scope_excl_canceled": "6",
+    "canceled_due_today": "1",
+    "all_minus_tabs": "4",
+    "browser_tz": "Europe/Budapest"
+  },
+  "SR_TASK_EDGE_QUEBEC": {
+    "id": "b888f961-899d-4f87-b0b8-3f2b79e8c5e5",
+    "due_date": "2026-10-09T03:30:00.000Z"
+  },
+  "SR_TASK_CANCELED_LIMA": {
+    "id": "6f987344-b62d-4656-b72b-6160b1b00c4a",
+    "due_date": "2026-10-08T10:00:00.000Z"
+  },
+  "SR_TASK_EDGE_UNIFORM": {
+    "id": "417d617d-46b4-4ee7-be52-46a1c099a119",
+    "due_date": "2026-12-07T10:00:00.000Z"
+  },
+  "SR_TASK_NODATE_INDIA": {
+    "id": "b2d1f0a1-40f3-407b-8d6a-5461db35797b",
+    "due_date": ""
+  },
+  "SR_TASK_CANCELED_KILO": {
+    "id": "2c6e9df9-8650-4963-8775-10b70b1c7548",
+    "due_date": "2026-10-05T11:00:00.000Z"
+  },
+  "SR_TASK_EDGE_GOLF": {
+    "id": "1e70ff1a-d604-4849-8e5f-d512dcd34f16",
+    "due_date": "2026-10-07T22:00:00.000Z"
+  },
+  "SR_TASK_CANCELED_HOTEL": {
+    "id": "dfee6502-2f6b-460a-830e-d220b74d895e",
+    "due_date": "2026-10-10T14:00:00.000Z"
+  },
+  "SR_TASK_EDGE_PAPA": {
+    "id": "b62e59b1-56eb-4a19-bb1f-4bd72cebe432",
+    "due_date": "2026-10-08T21:30:00.000Z"
+  },
+  "SR_TASK_GROUPS_NY": {
+    "open_overdue": "3",
+    "open_today": "5",
+    "open_future": "6",
+    "completed": "4",
+    "canceled": "3",
+    "dateless": "1",
+    "total": "22",
+    "chip_upcoming": "11",
+    "chip_overdue": "3",
+    "chip_completed": "4",
+    "chip_all": "22",
+    "today_scope_excl_canceled": "6",
+    "canceled_due_today": "1",
+    "all_minus_tabs": "4",
+    "seeded_at": "2026-10-08T08:51:55.791Z",
+    "decays_at_utc": "2026-10-09T04:00:00.000Z"
+  },
+  "ORG_RET_VIEWER_ORG": {
+    "id": "180022db-2ef9-44ad-8999-6fd6e7ca7d09"
+  },
+  "ORG_RET_ORGROLE_ORG": {
+    "id": "18d30f05-85a9-4eb6-b262-9b862aab88c2"
+  },
+  "ORG_RET_OTHER_ORG": {
+    "id": "1d86c8df-8470-42d2-8523-cddca92b90d3"
+  },
+  "ORG_RET_SAME_ADDRESS_ORG": {
+    "id": "a74f77f8-196d-41de-aa5a-3290263e5b55"
+  },
+  "ORG_RET_NOEMAIL_ORG": {
+    "id": "934b6749-cfab-4c67-86c5-ecbb4f0b89d6"
+  },
+  "ORG_RET_LONG_NAME_ORG": {
+    "id": "c711e53c-791e-432e-aa2c-d5ee49d7a050"
+  },
+  "ORG_RET_HOME_ORG": {
+    "id": "b2f694ad-be10-40cc-afc0-423cec85d750"
+  },
+  "ORG_RET_BUYER": {
+    "userId": "8c3fb993-654e-4506-a8ae-28759c6bdc25",
+    "contactId": "f690f668-a02a-4064-bba6-5af5953e7980",
+    "organizationId": "180022db-2ef9-44ad-8999-6fd6e7ca7d09",
+    "membershipId": "2c6b2d49-102a-45da-bced-1dc25610f582",
+    "orderId": "9d12fd5f-e0db-42cb-a612-ecdad20350b1",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-BUYER",
+    "orderOrganizationId": "180022db-2ef9-44ad-8999-6fd6e7ca7d09",
+    "lineAItemId": "63c425d3-9dfc-4a8b-bac9-08e93221e735",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "9f1cb8a3-ef63-4a04-8ef5-d269221581ef",
+    "lineBSku": "55557702",
+    "lineBOrderedQuantity": 25,
+    "seededAt": "2026-10-08T15:34:21.655Z",
+    "spare1OrderId": "2f4a31f8-943f-4079-9a42-c6bbc88afa05",
+    "spare1OrderNumber": "AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-1",
+    "spare1LineAItemId": "eb778aab-b064-40bc-8ac7-174d4da96b56",
+    "spare1LineBItemId": "ce832a35-693c-4097-9985-e783d9385fa8",
+    "spare1SeededAt": "2026-10-12T08:30:16.086Z",
+    "spare2OrderId": "78071271-dc4e-4d7f-88e9-6efcfb3878e3",
+    "spare2OrderNumber": "AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-2",
+    "spare2LineAItemId": "92561912-bac6-4d4e-8239-e225ae1843ac",
+    "spare2LineBItemId": "9cd32285-1967-409a-b9cc-69d92bd29938",
+    "spare2SeededAt": "2026-10-12T08:30:16.086Z",
+    "spare3OrderId": "90bd8d98-b97b-44c3-a571-08809866042b",
+    "spare3OrderNumber": "AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-3",
+    "spare3LineAItemId": "3522614f-6e7e-4e77-b7cd-738ebd9e4307",
+    "spare3LineBItemId": "d19cee93-071f-4391-80db-2370ca86065e",
+    "spare3SeededAt": "2026-10-12T08:30:16.086Z",
+    "spare4OrderId": "1a060b26-ab2f-4762-901d-91624d81b2fd",
+    "spare4OrderNumber": "AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-4",
+    "spare4LineAItemId": "68a20752-3769-48a9-ae90-68c81db92f0c",
+    "spare4LineBItemId": "1bde9cf3-cb22-4eda-b79e-df72214e95de",
+    "spare4SeededAt": "2026-10-12T08:35:02.217Z",
+    "spare5OrderId": "a74b741f-d108-440c-964c-d438fe27b661",
+    "spare5OrderNumber": "AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-5",
+    "spare5LineAItemId": "9f7461c6-2d90-4d92-abcd-f3eb75f4ae32",
+    "spare5LineBItemId": "8558f590-a66e-4dbe-a180-170c4dc76d0e",
+    "spare5SeededAt": "2026-10-12T08:35:02.217Z",
+    "spare6OrderId": "51306b13-4208-44eb-aad4-69e14ae54680",
+    "spare6OrderNumber": "AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-6",
+    "spare6LineAItemId": "eb599fd9-7c19-4270-a64b-e5a5c1932413",
+    "spare6LineBItemId": "4dbc0bac-7c7f-4fb0-a16b-aedcd1a3666c",
+    "spare6SeededAt": "2026-10-12T08:35:02.217Z",
+    "spare7OrderId": "6f7f4ae9-6b3d-427b-aa3d-1c11d9ccb246",
+    "spare7OrderNumber": "AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-7",
+    "spare7LineAItemId": "c41a7887-335d-43cd-8bf7-a0d358a22553",
+    "spare7LineBItemId": "acf9e65b-ddfd-4de7-b646-545d7d2b0a36",
+    "spare7SeededAt": "2026-10-12T08:35:02.217Z"
+  },
+  "ORG_RET_HOLDER_GLOBAL": {
+    "userId": "c6a48020-0b32-43d6-ad05-e43e7dc8b293",
+    "contactId": "99fef6df-f7a4-4f15-b5b6-b0ceae7d200d",
+    "organizationId": "180022db-2ef9-44ad-8999-6fd6e7ca7d09",
+    "membershipId": "e86c86d1-776f-4ac0-bc4f-e0c2d95ba237"
+  },
+  "ORG_RET_HOLDER_MEMBERSHIP": {
+    "userId": "9f059e55-cd51-48c5-8cf0-08ae5c0489b0",
+    "contactId": "ae8efca4-5c29-402b-a453-a053e2bb0623",
+    "organizationId": "180022db-2ef9-44ad-8999-6fd6e7ca7d09",
+    "membershipId": "ec7e052f-a343-42b3-8f36-db0fd8242f43",
+    "orderId": "f8f40ac8-28ac-4d2b-91e2-d83048ebe55b",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-HOLDER-MEMBERSHIP",
+    "orderOrganizationId": "180022db-2ef9-44ad-8999-6fd6e7ca7d09",
+    "lineAItemId": "4d75b1d1-ddda-45bd-9c43-82ebecdc00c9",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "d1b36d83-ac55-4e0f-8f08-ef699006cd30",
+    "lineBSku": "55557702",
+    "lineBOrderedQuantity": 25,
+    "seededAt": "2026-10-08T15:34:21.655Z"
+  },
+  "ORG_RET_HOLDER_SUBMIT": {
+    "userId": "5742beaa-1d50-4cb1-aef3-31c124977665",
+    "contactId": "bf60b45c-85da-4c9a-b5aa-8a22bc681add",
+    "organizationId": "180022db-2ef9-44ad-8999-6fd6e7ca7d09",
+    "membershipId": "25947774-64c7-4fbe-bf96-5dbbe049cdd6"
+  },
+  "ORG_RET_HOLDER_LOCKED": {
+    "userId": "9a137762-e884-48c1-ad2e-2e45df15ed2c",
+    "contactId": "fa08d0f9-48da-408c-9980-7ff503374bd0",
+    "organizationId": "180022db-2ef9-44ad-8999-6fd6e7ca7d09",
+    "membershipId": "ab23032b-bbb9-48de-88df-c58b8a5b6de9"
+  },
+  "ORG_RET_HOLDER_INVITED": {
+    "userId": "c8c9e968-d8d9-469b-8fb3-13bfad4aaa4a",
+    "contactId": "459c5a22-013f-4d59-8f6d-292387c0925a",
+    "organizationId": "180022db-2ef9-44ad-8999-6fd6e7ca7d09",
+    "membershipId": "82fcd712-43d3-45d0-8ab2-e964b70012b3"
+  },
+  "ORG_RET_HOLDER_REJECTED": {
+    "userId": "c08972fc-c030-4648-b4fc-4b8e1bcc9c02",
+    "contactId": "0dc96cf0-e9fc-4616-ab1c-1f4ac61641f4",
+    "organizationId": "180022db-2ef9-44ad-8999-6fd6e7ca7d09",
+    "membershipId": "b67c7e9e-96d0-4bbf-918d-d7c19029337e"
+  },
+  "ORG_RET_HOLDER_DELETED": {
+    "userId": "04fc972f-76c4-4414-aba0-7e2eac0411db",
+    "contactId": "e3af0208-b58b-49f0-a351-7cb9842a1a06",
+    "organizationId": "180022db-2ef9-44ad-8999-6fd6e7ca7d09",
+    "membershipId": "3a90ecb5-0486-4ffa-9299-8d5ff29d7e7d"
+  },
+  "ORG_RET_BUYER_NOEMAIL": {
+    "userId": "d2e28ab7-c930-4366-8be6-aa8b6fa633f8",
+    "contactId": "74b24b7c-4ba0-44d9-90f1-057a99a44471",
+    "organizationId": "180022db-2ef9-44ad-8999-6fd6e7ca7d09",
+    "membershipId": "a0ac8dc5-2679-41ee-a00c-6550b8bf45a9",
+    "orderId": "75d9972c-ebcd-4bc1-a979-42a8064a41d2",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-BUYER-NOEMAIL",
+    "orderOrganizationId": "180022db-2ef9-44ad-8999-6fd6e7ca7d09",
+    "lineAItemId": "96231972-1e4b-4be0-8113-db5191785774",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "a45ef607-473f-455e-b974-db5716622d76",
+    "lineBSku": "55557702",
+    "lineBOrderedQuantity": 25,
+    "seededAt": "2026-10-08T15:34:21.655Z"
+  },
+  "ORG_RET_MULTI_ORG": {
+    "userId": "188ba8ac-7e05-4e1d-9cf9-b7ec0dc022bd",
+    "contactId": "26f089b0-981a-494c-800f-3b306ae40c08",
+    "organizationId": "180022db-2ef9-44ad-8999-6fd6e7ca7d09",
+    "membershipId": "33d5273a-9b6e-4cf1-a5d2-45c7fd703885",
+    "org_x_id": "b2f694ad-be10-40cc-afc0-423cec85d750",
+    "org_y_id": "180022db-2ef9-44ad-8999-6fd6e7ca7d09",
+    "org_x_membership_id": "fb8850e2-12ad-4816-8109-d26c6e0c6ffc",
+    "org_y_membership_id": "33d5273a-9b6e-4cf1-a5d2-45c7fd703885",
+    "orderId": "a9c681ab-b611-4e04-9838-485e8bc4f79a",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-MULTI",
+    "orderOrganizationId": "b2f694ad-be10-40cc-afc0-423cec85d750",
+    "lineAItemId": "692c1fc6-55ff-427e-8480-0b3adc34a28a",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "0ed395bb-2141-4805-9040-7d6258e5f7ed",
+    "lineBSku": "55557702",
+    "lineBOrderedQuantity": 25,
+    "seededAt": "2026-10-08T15:34:21.655Z"
+  },
+  "ORG_RET_HOLDER_ORGROLE": {
+    "userId": "dd5e0d34-b8ba-4486-9d94-94cb1fcc25fb",
+    "contactId": "863c27fc-a68a-4baf-ba9e-7730f26a6095",
+    "organizationId": "18d30f05-85a9-4eb6-b262-9b862aab88c2",
+    "membershipId": "be737a36-83ea-44ce-826b-c85ad097bd4b"
+  },
+  "ORG_RET_ORGROLE_BUYER": {
+    "userId": "d09e969d-6e92-44e0-a8e9-9abea5869a0d",
+    "contactId": "008ebd5c-f89d-4329-8b8a-d46f4e3001ba",
+    "organizationId": "18d30f05-85a9-4eb6-b262-9b862aab88c2",
+    "membershipId": "4ddeb0cb-eacf-49ce-a074-99f9f8acba71",
+    "orderId": "513af0ca-3ae3-4353-b220-20d77e8b6832",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-ORGROLE-BUYER",
+    "orderOrganizationId": "18d30f05-85a9-4eb6-b262-9b862aab88c2",
+    "lineAItemId": "9ff6ec36-fbb7-409f-8f6a-df4d03b1be60",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "eae8642a-28ee-4285-9466-806de8a47d98",
+    "lineBSku": "55557702",
+    "lineBOrderedQuantity": 25,
+    "seededAt": "2026-10-08T15:34:21.655Z",
+    "spare1OrderId": "82c5b061-42da-4349-9bf4-6b4305269887",
+    "spare1OrderNumber": "AGENT-TEST-ORD-RET-ORG-ORGROLE-BUYER-SPARE-1",
+    "spare1LineAItemId": "d2a531dc-d35c-4ad7-8067-0fdcc866b2de",
+    "spare1LineBItemId": "917d1f96-9c87-404d-ac35-87447dd3f8a9",
+    "spare1SeededAt": "2026-10-12T08:30:16.086Z"
+  },
+  "ORG_RET_OTHER_BUYER": {
+    "userId": "16fe6d72-0487-4683-8a3d-75e366b0d4fe",
+    "contactId": "c1b1ab72-c9d9-4289-bbfc-b64708489688",
+    "organizationId": "1d86c8df-8470-42d2-8523-cddca92b90d3",
+    "membershipId": "c951881b-2cb1-4de9-91a5-77f25aff6ea0",
+    "orderId": "beffd122-05b1-4d94-8c8f-5552d1c8e553",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-OTHER-BUYER",
+    "orderOrganizationId": "1d86c8df-8470-42d2-8523-cddca92b90d3",
+    "lineAItemId": "f5ebb35d-fb10-419f-a074-0868dc03d944",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "49d1598a-963a-47a0-b2e5-24f6fc0fb13a",
+    "lineBSku": "55557702",
+    "lineBOrderedQuantity": 25,
+    "seededAt": "2026-10-08T15:34:21.655Z",
+    "spare1OrderId": "24c7be8a-7831-4837-8445-dca457313952",
+    "spare1OrderNumber": "AGENT-TEST-ORD-RET-ORG-OTHER-BUYER-SPARE-1",
+    "spare1LineAItemId": "84da9cfd-4117-430c-b7a4-2fa9a7d154e5",
+    "spare1LineBItemId": "2a0b04e5-ca8a-47ea-b372-46a436441079",
+    "spare1SeededAt": "2026-10-12T08:30:16.086Z"
+  },
+  "ORG_RET_SAME_ADDRESS_BUYER": {
+    "userId": "41a2c010-8918-4939-809b-8e0a9c3a0012",
+    "contactId": "ea0aba33-edb4-42cc-8009-9f2d41d8719b",
+    "organizationId": "a74f77f8-196d-41de-aa5a-3290263e5b55",
+    "membershipId": "cf71be9d-c87b-4247-953b-c0a0e9b0b16e",
+    "orderId": "07cbb0e4-facf-4be9-9381-9fdf78830d0d",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-SAME-ADDRESS-BUYER",
+    "orderOrganizationId": "a74f77f8-196d-41de-aa5a-3290263e5b55",
+    "lineAItemId": "250e255c-8755-4b03-8086-88efa62416bb",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "2c49010d-1406-4832-839b-74933c5053bc",
+    "lineBSku": "55557702",
+    "lineBOrderedQuantity": 25,
+    "seededAt": "2026-10-08T15:34:21.655Z"
+  },
+  "ORG_RET_NOEMAIL_ORG_BUYER": {
+    "userId": "53c67bef-08b3-48f3-a2dc-e1cbfe775ca8",
+    "contactId": "1d056732-4815-4dd1-a77f-6a41a165e28f",
+    "organizationId": "934b6749-cfab-4c67-86c5-ecbb4f0b89d6",
+    "membershipId": "ca32bdd7-c81b-4fe1-a9df-1fdc0c95751c",
+    "orderId": "bea00557-ff7c-4393-9899-8d512d389531",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-NOEMAIL-ORG-BUYER",
+    "orderOrganizationId": "934b6749-cfab-4c67-86c5-ecbb4f0b89d6",
+    "lineAItemId": "b011dba0-4157-4795-9031-271f4daf2df7",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "3e2a4905-bcd2-41f4-bff6-61855c0f0b3f",
+    "lineBSku": "55557702",
+    "lineBOrderedQuantity": 25,
+    "seededAt": "2026-10-08T15:34:21.655Z"
+  },
+  "ORG_RET_LONG_NAME_BUYER": {
+    "userId": "c82e90fc-80c3-4288-b2a4-c5178d78f12e",
+    "contactId": "d674bc62-9848-482c-aec7-a3866c5b17ab",
+    "organizationId": "c711e53c-791e-432e-aa2c-d5ee49d7a050",
+    "membershipId": "302904d4-0693-4905-9ad1-66d8a628ff2c",
+    "orderId": "8a99a3b2-4f45-4a97-9da5-5a78b3bbf771",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-LONG-NAME-BUYER",
+    "orderOrganizationId": "c711e53c-791e-432e-aa2c-d5ee49d7a050",
+    "lineAItemId": "8dab8657-6dc6-4765-bf19-0e8224995294",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "7f63941e-e408-4547-86b9-6da6c355cc66",
+    "lineBSku": "55557702",
+    "lineBOrderedQuantity": 25,
+    "seededAt": "2026-10-08T15:34:21.655Z",
+    "spare1OrderId": "b16ec223-deea-48ea-872b-ab855f41efc6",
+    "spare1OrderNumber": "AGENT-TEST-ORD-RET-ORG-LONG-NAME-BUYER-SPARE-1",
+    "spare1LineAItemId": "6087ecc2-fe2b-403f-a0c0-43dc0bc518c6",
+    "spare1LineBItemId": "d6458fb5-417c-4b8d-8f7b-a6303f237cf4",
+    "spare1SeededAt": "2026-10-12T08:30:16.086Z"
+  },
+  "ORG_RET_OTHER_ORG_RETURN": {
+    "id": "e58a6f6d-5d53-4670-894c-0d827e63963e",
+    "number": "RET261008-00019",
+    "status": "Requested",
+    "orderId": "beffd122-05b1-4d94-8c8f-5552d1c8e553",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-OTHER-BUYER",
+    "organizationId": "1d86c8df-8470-42d2-8523-cddca92b90d3"
+  },
+  "ORG_RET_LEAVER": {
+    "userId": "94334be0-8b2c-4ab9-acd4-2d878d2261d1",
+    "contactId": "481831c6-56cd-4351-88b6-2a4bf3c08178",
+    "organizationId": "180022db-2ef9-44ad-8999-6fd6e7ca7d09",
+    "membershipId": "a3fa58b8-c16e-4b60-b66c-1a532b3c3135",
+    "orderId": "f90ae547-a2a1-483a-b557-60fb38b8d13b",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-LEAVER",
+    "orderOrganizationId": "180022db-2ef9-44ad-8999-6fd6e7ca7d09",
+    "lineAItemId": "82a67905-34ac-43cc-8778-7e1fa28a4541",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "e60b6a4c-9270-410d-906d-aa22e1fdfce5",
+    "lineBSku": "55557702",
+    "lineBOrderedQuantity": 25,
+    "seededAt": "2026-10-08T15:44:57.498Z"
+  },
+  "ORG_RET_EMPTY_ORG": {
+    "id": "d807b6d4-2c7b-40d7-917f-8bbef43220c5"
+  },
+  "ORG_RET_RENAME_ORG": {
+    "id": "302cc57c-8051-4bd7-a3c3-795109c96909"
+  },
+  "ORG_RET_EMPTY_HOLDER": {
+    "userId": "a433351c-61e9-421e-835a-4dcf3c0c7497",
+    "contactId": "0cb0599a-53fd-4267-9130-d2aa99ac8c0c",
+    "organizationId": "d807b6d4-2c7b-40d7-917f-8bbef43220c5",
+    "membershipId": "e86b4e49-4136-4707-8c11-8a8b4ac47df0"
+  },
+  "ORG_RET_RENAME_BUYER": {
+    "userId": "13f7e4b4-ec9e-4b00-b4ed-02971007593b",
+    "contactId": "c03813b7-7925-43f1-9a8d-42662d94101e",
+    "organizationId": "302cc57c-8051-4bd7-a3c3-795109c96909",
+    "membershipId": "906a66de-9e60-4e99-9d7c-3e165df2e1a3",
+    "orderId": "fc4e4ad7-b914-41ab-a2a7-a3e122afb25d",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-RENAME-BUYER",
+    "orderOrganizationId": "302cc57c-8051-4bd7-a3c3-795109c96909",
+    "lineAItemId": "1da8d9bc-5d8c-4ed4-a9bd-744dd938c6f2",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "b0d01f0c-271e-4969-b137-f044a76c00f0",
+    "lineBSku": "55557702",
+    "lineBOrderedQuantity": 25,
+    "seededAt": "2026-10-12T10:40:40.696Z"
+  },
+  "RETURNS_ORDER_A_HAPPY": {
+    "id": "429cdcb5-e076-4e16-9be9-581ee965432d",
+    "number": "AGENT-TEST-ORD-RET-A",
+    "lineXItemId": "b92f3462-c27b-4340-8228-171e92ad148b",
+    "seededAt": "2026-10-12T11:18:05.279Z",
+    "deliveryDates": {
+      "S1": "2026-10-12T11:18:05.279Z"
+    },
+    "windowDaysAtSeed": 30
+  },
+  "RETURNS_ORDER_A2_PARTIAL_DELIVERY": {
+    "id": "72f611a0-aabc-42b5-9f14-f7faf357ec12",
+    "number": "AGENT-TEST-ORD-RET-A2",
+    "lineXItemId": "0eec0bfa-994f-47b7-9ecb-1ed36afb254a",
+    "seededAt": "2026-10-12T11:18:05.279Z",
+    "deliveryDates": {
+      "S1": "2026-10-12T11:18:05.279Z"
+    },
+    "windowDaysAtSeed": 30
+  },
+  "RETURNS_ORDER_B_OUTSIDE_WINDOW": {
+    "id": "0af6c4e3-0bc9-4fab-a5e1-f9f06e949272",
+    "number": "AGENT-TEST-ORD-RET-B",
+    "lineXItemId": "92e8a146-b961-463d-b598-1c11262f0a49",
+    "seededAt": "2026-10-12T11:18:05.279Z",
+    "deliveryDates": {
+      "S1": "2026-09-02T11:18:05.279Z"
+    },
+    "windowDaysAtSeed": 30
+  },
+  "RETURNS_ORDER_C_NOT_DELIVERED": {
+    "id": "d5744da6-c2ec-4ae5-84d1-8dddeaa6b0ff",
+    "number": "AGENT-TEST-ORD-RET-C",
+    "lineXItemId": "7588d228-f370-4e96-a185-d08c68071c64",
+    "seededAt": "2026-10-12T11:18:05.279Z",
+    "deliveryDates": {
+      "S1": null
+    },
+    "windowDaysAtSeed": 30
+  },
+  "RETURNS_ORDER_D_STATUS_NOT_ALLOWED": {
+    "id": "57129097-5592-49ab-b5ab-49c667dddc9e",
+    "number": "AGENT-TEST-ORD-RET-D",
+    "lineXItemId": "6c57f81e-b517-417e-bfce-b26568e5713c",
+    "seededAt": "2026-10-12T11:18:05.279Z",
+    "deliveryDates": {
+      "S1": "2026-10-12T11:18:05.279Z"
+    },
+    "windowDaysAtSeed": 30
+  },
+  "RETURNS_ORDER_E_SPLIT_DELIVERY": {
+    "id": "880d9a76-e4ff-461c-b681-1322ed295430",
+    "number": "AGENT-TEST-ORD-RET-E",
+    "lineXItemId": "5d7a53cb-b130-4fc3-939a-f074ecfc6e19",
+    "seededAt": "2026-10-12T11:18:05.279Z",
+    "deliveryDates": {
+      "S1": "2026-09-02T11:18:05.279Z",
+      "S2": "2026-10-12T11:18:05.279Z"
+    },
+    "windowDaysAtSeed": 30
+  },
+  "RETURNS_ORDER_F_CANCELLED_LINE": {
+    "id": "f5f02979-99cb-494b-8a08-359949d68bb1",
+    "number": "AGENT-TEST-ORD-RET-F",
+    "lineXItemId": "7f76ea61-902c-479f-b476-7a51a64d1f14",
+    "cancelledLineItemId": "429320e9-909e-470d-a7a0-7e78de70c1b4",
+    "seededAt": "2026-10-12T11:18:05.279Z",
+    "deliveryDates": {
+      "S1": "2026-10-12T11:18:05.279Z"
+    },
+    "windowDaysAtSeed": 30
+  },
+  "RETURNS_ORDER_G_TWO_ELIGIBLE_LINES": {
+    "id": "dd3445b1-6ae3-4a6b-a56a-b578b7f49a18",
+    "number": "AGENT-TEST-ORD-RET-G",
+    "lineXItemId": "bb96409f-9cd5-47e8-9fe8-f76dceee7c6d",
+    "lineAItemId": "bb96409f-9cd5-47e8-9fe8-f76dceee7c6d",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 5,
+    "lineADeliveredQuantity": 5,
+    "lineBItemId": "221fd963-fb82-4c81-af2a-c2ea10c67cae",
+    "lineBSku": "568171770",
+    "lineBOrderedQuantity": 3,
+    "lineBDeliveredQuantity": 3,
+    "seededAt": "2026-10-12T11:18:05.279Z",
+    "deliveryDates": {
+      "S1": "2026-10-12T11:18:05.279Z"
+    },
+    "windowDaysAtSeed": 30
+  },
+  "RETURNS_ORDER_ADMIN_073": {
+    "id": "d3dec5d7-f7a0-4c92-b856-67d3162eb2f1",
+    "number": "AGENT-TEST-ORD-RET-ADM073",
+    "lineXItemId": "ea2cb696-f11e-4d29-805f-4923fbaa8087",
+    "lineAItemId": "ea2cb696-f11e-4d29-805f-4923fbaa8087",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 20,
+    "lineADeliveredQuantity": 20,
+    "lineBItemId": "cb6603a0-ebaf-49b2-9448-f279b5055035",
+    "lineBSku": "568171770",
+    "lineBOrderedQuantity": 25,
+    "lineBDeliveredQuantity": 25,
+    "seededAt": "2026-10-12T11:18:05.279Z",
+    "deliveryDates": {
+      "S1": "2026-10-12T11:18:05.279Z"
+    },
+    "windowDaysAtSeed": 30
+  },
+  "RETURNS_LINE_X": {
+    "productId": "08c33cfc9f664426a52fac8882da2df0",
+    "sku": "566903892",
+    "name": "Canon Imageclass WiFi MF232W Monochrome Laser Printer/Scanner/Copier",
+    "cancelledProductId": "4b729fae613046448aaba7c265bb4f2d",
+    "cancelledSku": "55557702",
+    "lineYProductId": "ca255c81f8254865956c1d714f2ef457",
+    "lineYSku": "568171770",
+    "seededAt": "2026-10-12T11:18:05.279Z"
+  },
+  "RETURNS_AUTH_PARTIAL_LINE": {
+    "orderId": "e68a28fe-da51-4847-972a-891aea574d5f",
+    "orderNumber": "AGENT-TEST-ORD-RET-DEC-PARTIAL",
+    "orderLanguageCode": "en-US",
+    "lineAItemId": "0db6a140-4ee5-4ad7-9263-65011b9fa68b",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 500,
+    "lineAMeasureUnit": "box",
+    "lineBItemId": "f14b684a-e50a-4755-8cc9-a085354320dd",
+    "lineBSku": "55557702",
+    "lineBOrderedQuantity": 12,
+    "lineBMeasureUnit": null,
+    "returnId": "33f3c197-4b03-4b5b-b423-b80479225496",
+    "returnNumber": "RET261012-00085",
+    "returnStatus": "Requested",
+    "returnVia": "xapi-buyer",
+    "returnCustomerReference": "AGENT-TEST-RET-DEC-PARTIAL-R1",
+    "returnLanguageCode": "en-US",
+    "returnLineARequestedQuantity": 240,
+    "returnLineAReturnLineItemId": "c9ac966c-ba9d-48eb-8548-03a0e4b4da95",
+    "returnLineBRequestedQuantity": 12,
+    "returnLineBReturnLineItemId": "6b5755f7-2f57-4bd4-a16a-0d6ab697c1b7",
+    "lineAReturnableAfterSeed": 260,
+    "lineBReturnableAfterSeed": 0,
+    "seededAt": "2026-10-12T11:58:44.490Z"
+  },
+  "RETURNS_AUTH_MIXED": {
+    "orderId": "1ca81296-4396-4739-9a9c-61f3e2587ba1",
+    "orderNumber": "AGENT-TEST-ORD-RET-DEC-MIXED",
+    "orderLanguageCode": "en-US",
+    "lineAItemId": "ce596847-48cc-4944-aceb-ea342a83e3d5",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 8,
+    "lineAMeasureUnit": null,
+    "lineBItemId": "d977b3b1-ecf6-4b66-88e6-0d1cc13fbee6",
+    "lineBSku": "55557702",
+    "lineBOrderedQuantity": 6,
+    "lineBMeasureUnit": null,
+    "returnId": "5757f29f-7878-443b-9f78-fdb90feba48b",
+    "returnNumber": "RET261012-00086",
+    "returnStatus": "Requested",
+    "returnVia": "xapi-buyer",
+    "returnCustomerReference": "AGENT-TEST-RET-DEC-MIXED-R1",
+    "returnLanguageCode": "en-US",
+    "returnLineARequestedQuantity": 5,
+    "returnLineAReturnLineItemId": "61dfb1c1-2453-434e-abeb-ab24a320a35f",
+    "returnLineBRequestedQuantity": 4,
+    "returnLineBReturnLineItemId": "6b5f08e7-6276-4d5f-b70d-fbc7170e74fb",
+    "lineAReturnableAfterSeed": 3,
+    "lineBReturnableAfterSeed": 2,
+    "seededAt": "2026-10-12T11:58:44.490Z"
+  },
+  "RETURNS_AUTH_REJECT": {
+    "orderId": "511b130f-5d84-49ad-b754-c7aa8ae26bdf",
+    "orderNumber": "AGENT-TEST-ORD-RET-DEC-REJECT",
+    "orderLanguageCode": "en-US",
+    "lineAItemId": "420b79b1-1702-4eeb-8a16-024c136296be",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 9,
+    "lineAMeasureUnit": null,
+    "lineBItemId": "0efc8fc1-ace8-4b4f-9d71-98598729475e",
+    "lineBSku": "55557702",
+    "lineBOrderedQuantity": 4,
+    "lineBMeasureUnit": null,
+    "returnId": "b74409e9-5027-4f42-8de1-3c7219736c28",
+    "returnNumber": "RET261012-00087",
+    "returnStatus": "Requested",
+    "returnVia": "xapi-buyer",
+    "returnCustomerReference": "AGENT-TEST-RET-DEC-REJECT-R1",
+    "returnLanguageCode": "en-US",
+    "returnLineARequestedQuantity": 7,
+    "returnLineAReturnLineItemId": "fb58cd6b-cbb4-44a0-b60f-a16dccdbeaa0",
+    "returnLineBRequestedQuantity": 3,
+    "returnLineBReturnLineItemId": "1f680dfe-7aac-4dac-893f-24dcb3b6f211",
+    "lineAReturnableAfterSeed": 2,
+    "lineBReturnableAfterSeed": 1,
+    "seededAt": "2026-10-12T11:58:44.490Z"
+  },
+  "RETURNS_AUTH_SINGLE": {
+    "orderId": "c79a1185-c8fe-4909-9129-58e85a6b3c06",
+    "orderNumber": "AGENT-TEST-ORD-RET-DEC-SINGLE",
+    "orderLanguageCode": "en-US",
+    "lineAItemId": "0d2434ac-a458-4e7d-847c-fd6c7a4da343",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 1,
+    "lineAMeasureUnit": null,
+    "returnId": "996d8503-7756-4b9a-8308-16677c7fece1",
+    "returnNumber": "RET261012-00088",
+    "returnStatus": "Requested",
+    "returnVia": "xapi-buyer",
+    "returnCustomerReference": "AGENT-TEST-RET-DEC-SINGLE-R1",
+    "returnLanguageCode": "en-US",
+    "returnLineARequestedQuantity": 1,
+    "returnLineAReturnLineItemId": "e2cb1c83-8cbe-4dac-95cb-f6bb52cd1445",
+    "lineAReturnableAfterSeed": 0,
+    "seededAt": "2026-10-12T11:58:44.490Z"
+  },
+  "RETURNS_AUTH_FR": {
+    "orderId": "356a3af5-fb35-4da8-bf3c-baa8e1b17d48",
+    "orderNumber": "AGENT-TEST-ORD-RET-DEC-FR",
+    "orderLanguageCode": "de-DE",
+    "lineAItemId": "de5eda54-4c64-4b65-8c3d-ce57e461059a",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 3,
+    "lineAMeasureUnit": null,
+    "returnId": "844e0cd8-b25b-406c-a5d2-adccef366c21",
+    "returnNumber": "RET261012-00089",
+    "returnStatus": "Requested",
+    "returnVia": "xapi-buyer",
+    "returnCustomerReference": "AGENT-TEST-RET-DEC-FR-R1",
+    "returnLanguageCode": "fr-FR",
+    "returnSubmissionCulture": "fr-FR",
+    "returnLineARequestedQuantity": 2,
+    "returnLineAReturnLineItemId": "438c9f37-a45c-405b-a7a8-0f160889694f",
+    "lineAReturnableAfterSeed": 1,
+    "seededAt": "2026-10-12T11:58:44.490Z"
+  },
+  "RETURNS_AUTH_TWO_RETURNS": {
+    "orderId": "2324314c-8d54-4d93-bb3b-d33d764eaf97",
+    "orderNumber": "AGENT-TEST-ORD-RET-DEC-TWO",
+    "orderLanguageCode": "en-US",
+    "lineAItemId": "68f679a2-7fbd-4e0b-8848-7d7e5dac31b5",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 10,
+    "lineAMeasureUnit": null,
+    "returnId": "c7c8af72-ea30-4d6d-8d59-174305072a01",
+    "returnNumber": "RET261012-00090",
+    "returnStatus": "Requested",
+    "returnVia": "xapi-buyer",
+    "returnCustomerReference": "AGENT-TEST-RET-DEC-TWO-R1",
+    "returnLanguageCode": "en-US",
+    "returnLineARequestedQuantity": 6,
+    "returnLineAReturnLineItemId": "e5a51283-331b-459a-adb4-4b1ef4b229d5",
+    "return2Id": "6e9d8c38-6699-4d6b-9e8d-934dfde57988",
+    "return2Number": "RET261012-00091",
+    "return2Status": "Requested",
+    "return2Via": "xapi-buyer",
+    "return2CustomerReference": "AGENT-TEST-RET-DEC-TWO-R2",
+    "return2LanguageCode": "en-US",
+    "return2LineARequestedQuantity": 4,
+    "return2LineAReturnLineItemId": "4faa2423-2ec0-49a0-8570-3cd41f7bfd3e",
+    "lineAReturnableAfterSeed": 0,
+    "seededAt": "2026-10-12T11:58:44.490Z"
+  },
+  "RETURNS_AUTH_DUP_LINE": {
+    "orderId": "c071921c-ba12-4bf3-9ef8-b5be6048e6ac",
+    "orderNumber": "AGENT-TEST-ORD-RET-DEC-DUP",
+    "orderLanguageCode": "en-US",
+    "lineAItemId": "d71271f0-fbb4-4406-93f4-660cd1904650",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 5,
+    "lineAMeasureUnit": null,
+    "returnId": "b4f5b1f8-74c5-4d2e-a32f-8ecefec3b777",
+    "returnNumber": "RET261012-00092",
+    "returnStatus": "Requested",
+    "returnVia": "xapi-buyer",
+    "returnCustomerReference": "AGENT-TEST-RET-DEC-DUP-R1",
+    "returnLanguageCode": "en-US",
+    "returnLineARequestedQuantity": 5,
+    "returnLineAReturnLineItemId": "d05e3233-06ee-4b82-afcb-e3caad54959d",
+    "lineAReturnableAfterSeed": 0,
+    "seededAt": "2026-10-12T11:58:44.490Z"
+  },
+  "RETURNS_AUTH_JOURNEY": {
+    "orderId": "5ed52858-b502-4b20-bf1f-c2ff8e2ae522",
+    "orderNumber": "AGENT-TEST-ORD-RET-DEC-JOURNEY",
+    "orderLanguageCode": "en-US",
+    "lineAItemId": "081963ae-c386-4ec2-81fb-7ac801c1b41e",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 7,
+    "lineAMeasureUnit": null,
+    "lineBItemId": "d27c6d73-caed-4d84-987e-31ca29c06fd7",
+    "lineBSku": "55557702",
+    "lineBOrderedQuantity": 5,
+    "lineBMeasureUnit": null,
+    "lineAReturnableAfterSeed": 7,
+    "lineBReturnableAfterSeed": 5,
+    "seededAt": "2026-10-12T11:58:44.490Z"
+  },
+  "RETURNS_AUTH_NEW_ADMIN": {
+    "orderId": "3bdb5862-58e4-43b8-ade9-d5a632b5b1f0",
+    "orderNumber": "AGENT-TEST-ORD-RET-DEC-ADMIN",
+    "orderLanguageCode": "en-US",
+    "lineAItemId": "433bb0b5-d43e-4f55-b53a-0a8df406c282",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 4,
+    "lineAMeasureUnit": null,
+    "returnId": "bbf78ef7-1922-4b28-98c6-6184fc586ce3",
+    "returnNumber": "RET261012-00093",
+    "returnStatus": "New",
+    "returnVia": "admin-put",
+    "returnCustomerReference": "AGENT-TEST-RET-DEC-ADMIN-R1",
+    "returnLanguageCode": "en-US",
+    "returnLineARequestedQuantity": 3,
+    "returnLineAReturnLineItemId": "c5c1795d-6605-4031-adbb-8cee3d86e33a",
+    "lineAReturnableAfterSeed": 1,
+    "seededAt": "2026-10-12T11:58:44.490Z"
+  },
+  "PB_GA4_PRODUCT_LISTS": {
+    "_inline": true,
+    "group_id": "f42ef82a-d669-4215-97a8-464b6081a6d5",
+    "permalink": "/agent-test-ga4-product-lists",
+    "carousel_card_name": "ASUS ROG Strix G15 Laptop da gioco AMD Ryzen 9 5900HX 16G RAM 512GB SSD RX6800M-8GB 300Hz schermo Computer",
+    "carousel_card_code": "51131830271",
+    "carousel_card_images": 2
+  },
+  "PB_GA4_HTML_LISTS": {
+    "_inline": true,
+    "group_id": "56d0aa4d-eb09-4f18-a8b1-260105060926",
+    "permalink": "/agent-test-ga4-html-product-lists"
+  },
+  "PROD_GA4_RELATED_ANCHOR": {
+    "_inline": true,
+    "id": "4303e416-a09e-4f85-b98d-d6d9e1959bf5",
+    "code": "AGENT-TEST-GA4-REL-ANCHOR",
+    "name": "AGENT-TEST GA4 Related Anchor",
+    "slug": "seed-test-fixtures/agent-test-ga4-related-anchor",
+    "url": "/seed-test-fixtures/agent-test-ga4-related-anchor",
+    "related_count": 10,
+    "related_codes": "0000385,0000645,0001057,0003283-1,0003420,0003428,107029,108141,108335,111553",
+    "related_ids": "eebd44a1-5bb0-4468-8a7a-d807adcc3002,77ae9c2c-eb4c-4c79-b861-5cdea22c490c,81a1c2ed-f9a2-4984-801e-f77fc71597ec,e968c73f-e066-4419-bb6c-dfc7d3f69a9e,2f525d09-cf38-4277-9670-86cb9f47e875,8d2a4903-f96b-46b0-b904-3e000f1c0d01,776883dc-d967-4ab2-9f7e-578caeb8bd12,3aaac1cd-4508-4cda-a64b-5a59cdad17f8,6cf53adf-0d17-4a41-949b-0e5a7e700ac2,05d1d386-9931-4c90-b8b6-9400cbd2f968"
+  },
+  "PROD_GA4_VARIATION_PARENT": {
+    "_inline": true,
+    "id": "879bb965-d732-4433-96ba-2164cd7a9173",
+    "code": "AGENT-TEST-GA4-VAR-PARENT",
+    "name": "AGENT-TEST GA4 Variations Parent",
+    "slug": "seed-test-fixtures/agent-test-ga4-variations-parent",
+    "url": "/seed-test-fixtures/agent-test-ga4-variations-parent",
+    "variations_count": 60,
+    "family_total": 61,
+    "page_size": 50,
+    "pages": 2
+  },
+  "CART_GA4_SFL_RB": {
+    "_inline": true,
+    "account_env": "USER_EMAIL",
+    "cart_id": "88062015-b3e5-4b05-ae2c-2d2f460fecb3",
+    "saved_for_later_list_id": "5dca4896-59ff-427d-a623-652112740326",
+    "cart_line_codes": "111798",
+    "cart_line_ids": "59bd14a6-c4f0-4647-84a1-d9805c1c97fd",
+    "saved_for_later_codes": "121924,121975,122718,123109,14418465,151682,152078,7PLSH835",
+    "saved_for_later_ids": "f1d0a44d-a3a8-4d64-9627-f9874bd0e202,68e85496-4281-47ab-9a32-2248e5326717,e0a441cb-efe7-4d9a-927d-1dabf23db1ff,803c1a54-1be8-4ef1-8786-34c9e8259cf6,b2db70a5-68f0-4356-9503-a7a18b08cad0,8e3fe657-127d-4e40-ac86-dca9b3f90734,16fae43e-8f5e-4b65-8de6-b0d5333ab15c,5e3ba6cd-2957-4b59-b0ea-29f253ab2c2e",
+    "recently_browsed_codes": "152123,1592321634,229032,261082,271507,2YJN7",
+    "recently_browsed_ids": "cc81104c-8528-490b-a7a8-d1fb53ca164b,ffd1bc36-4756-4e6a-88ee-0d7ae70d539c,6410c133-7a4d-423f-8b57-733abe6ce6a0,fa5c5851-a262-46f2-9f14-bc2a1af3097e,5096739d-648e-48bc-ab43-d662d8bdffcb,92a1b7f7705e4448a796cc419492220a",
+    "saved_for_later_count": 8,
+    "sfl_show_more_step": 6,
+    "url": "/cart",
+    "rb_session_id": "AGENT-TEST-GA4-RB-SEED",
+    "recently_browsed_order_newest_first": "2YJN7,271507,261082,229032,1592321634,152123"
   }
 }

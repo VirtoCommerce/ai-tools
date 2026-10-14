@@ -1,0 +1,403 @@
+{
+  "sprint": "Sprint26-19",
+  "jiraSprintName": "VCST Sprint 26-19",
+  "jiraSprintId": 2716,
+  "jiraBoardId": 126,
+  "startDate": "2026-09-21",
+  "endDate": "2026-10-05",
+  "datesInferred": false,
+  "sprintOpenAtPlanTime": true,
+  "planCreated": "2026-10-02",
+  "doneCounts": {
+    "stories": 14,
+    "bugs": 27,
+    "tasks": 19,
+    "techDebt": 1,
+    "spikes": 3,
+    "reviewTasks": 1,
+    "total": 65
+  },
+  "sprintIssueTotal": 184,
+  "outOfScopeCount": 28,
+  "testRelevantCount": 37,
+  "mergedFrontendPRs": 30,
+  "mergedFrontendPRsOnDev": 25,
+  "mergedModulePRs": 63,
+  "mergedModulePRsExclCiSweep": 55,
+  "mergedModuleRepos": 29,
+  "mergedOrgWideVcstPRs": 131,
+  "environment": {
+    "platformLine": "3.1073.0",
+    "isPreRelease": false,
+    "sitemapRev": 10,
+    "modulesReadAt": "2026-10-02",
+    "pendingDeploy": [
+      "VCST-5748 (VirtoCommerce.Otp not installed)",
+      "VCST-5662/6052/5901 x-cart part (XCart 3.1037.0-pr-141 predates #142/#143/#146)"
+    ],
+    "prBuilds": {
+      "UCP": "3.1007.0-pr-9",
+      "Loyalty": "3.1009.0-pr-18",
+      "XCatalog": "3.1022.0-pr-113",
+      "Catalog": "3.1046.0-pr-909",
+      "SalesRep": "3.1012.0-pr-21",
+      "XCart": "3.1037.0-pr-141"
+    },
+    "note": "QA owner will install missing/current modules on vcst later (stated 2026-10-02); PENDING-DEPLOY tickets are tested after the install"
+  },
+  "domains": [
+    {
+      "name": "Auth & sign-in",
+      "likelihood": 5,
+      "impact": 5,
+      "score": 25,
+      "level": "Critical"
+    },
+    {
+      "name": "xAPI / cart core (structural)",
+      "likelihood": 4,
+      "impact": 5,
+      "score": 20,
+      "level": "Critical"
+    },
+    {
+      "name": "Search & indexing",
+      "likelihood": 4,
+      "impact": 5,
+      "score": 20,
+      "level": "Critical"
+    },
+    {
+      "name": "Sales Rep hub",
+      "likelihood": 5,
+      "impact": 4,
+      "score": 20,
+      "level": "Critical"
+    },
+    {
+      "name": "Returns",
+      "likelihood": 4,
+      "impact": 4,
+      "score": 16,
+      "level": "Critical"
+    },
+    {
+      "name": "UCP / agentic commerce",
+      "likelihood": 4,
+      "impact": 4,
+      "score": 16,
+      "level": "Critical"
+    },
+    {
+      "name": "Loyalty Missions",
+      "likelihood": 4,
+      "impact": 4,
+      "score": 16,
+      "level": "Critical"
+    },
+    {
+      "name": "B2B org-order authorization",
+      "likelihood": 3,
+      "impact": 5,
+      "score": 15,
+      "level": "High"
+    },
+    {
+      "name": "UI kit & storefront a11y / i18n",
+      "likelihood": 3,
+      "impact": 4,
+      "score": 12,
+      "level": "High"
+    },
+    {
+      "name": "Page Builder & Asset Library",
+      "likelihood": 5,
+      "impact": 2,
+      "score": 10,
+      "level": "High"
+    },
+    {
+      "name": "Asset / Content storage security",
+      "likelihood": 3,
+      "impact": 3,
+      "score": 9,
+      "level": "Medium"
+    },
+    {
+      "name": "Admin SPA platform",
+      "likelihood": 3,
+      "impact": 3,
+      "score": 9,
+      "level": "Medium"
+    },
+    {
+      "name": "Catalog browse / Compare",
+      "likelihood": 2,
+      "impact": 4,
+      "score": 8,
+      "level": "Medium"
+    }
+  ],
+  "suitesActivated": [
+    "042",
+    "044",
+    "031",
+    "032",
+    "033",
+    "082",
+    "011",
+    "012",
+    "013",
+    "014",
+    "014b",
+    "015",
+    "028",
+    "029",
+    "030",
+    "037",
+    "038",
+    "004",
+    "005",
+    "001",
+    "003",
+    "098",
+    "045",
+    "046",
+    "048c",
+    "083c",
+    "083d",
+    "089",
+    "091",
+    "093",
+    "097",
+    "006",
+    "078",
+    "078b",
+    "078c",
+    "078d",
+    "049",
+    "101",
+    "020",
+    "050d",
+    "050c",
+    "050a",
+    "050b1",
+    "050b2",
+    "050b3",
+    "050b4",
+    "050b5",
+    "050g",
+    "050f",
+    "050k",
+    "050j",
+    "050m",
+    "092",
+    "092b",
+    "085",
+    "073",
+    "057",
+    "058",
+    "068",
+    "017",
+    "018",
+    "051",
+    "056",
+    "026",
+    "023",
+    "062",
+    "061",
+    "103",
+    "075d",
+    "075e",
+    "059",
+    "060",
+    "060b",
+    "102",
+    "094"
+  ],
+  "suitesActivatedCount": 75,
+  "suitesActivatedFrontend": 32,
+  "suitesActivatedBackend": 43,
+  "suitesVerifiedAgainstManifest": true,
+  "manifestSuiteTotal": 146,
+  "manifestFindings": [
+    "M1: loyalty selection omits 075d and 075e (26-18 finding still open)",
+    "M2: sprint selection excludes 045, 046, 068 and the Sales Rep suites 089/091/093/097/050m/092/092b (all activated here); sales-rep group must be unioned; full has the same Sales Rep exclusions",
+    "M3: no returns selection; orders omits 073 and 085",
+    "M4: auth omits 044/049/020/102; backend excludes 092/092b/050m/050m2/094/102; no ucp or task-management selection",
+    "M5: module-suite-map.md lacks 094/097/102/103/014b/UCP; Returns Frontend shown as dash",
+    "M6: BL-UCP empty, no returns BL domain, no OTP/grant invariant in bl/auth.yaml; no domain maps for Returns/Auth/Task Management",
+    "M7: PRF-GQL-093 (050d) locked-leg assertion is vacuous for VCST-5933 (third OR branch passes in both states)",
+    "M8: 014b ORD-037..040 Draft cases assert a legacy Return button on order detail; stale-risk against the new returns module",
+    "M9: checklists still have no Returns, Auth/OTP, Task Management or Product Compare section"
+  ],
+  "newCasesEstimate": "100-157",
+  "newCasesFirstWave": 48,
+  "newSuitesProposed": [
+    "Frontend/returns/104-returns-storefront.csv",
+    "Backend/graphql/050o-graphql-xreturn.csv",
+    "Frontend/cross-cutting/0XX-ui-kit-components.csv"
+  ],
+  "coverageGapsOpen": [
+    "GAP-01",
+    "GAP-02",
+    "GAP-03",
+    "GAP-04",
+    "GAP-05",
+    "GAP-06",
+    "GAP-07",
+    "GAP-08",
+    "GAP-09",
+    "GAP-10",
+    "GAP-11",
+    "GAP-12",
+    "GAP-13",
+    "GAP-14",
+    "GAP-15",
+    "GAP-16",
+    "GAP-17",
+    "GAP-18",
+    "GAP-19",
+    "GAP-20",
+    "GAP-21",
+    "GAP-22",
+    "GAP-CF-01",
+    "GAP-CF-02",
+    "GAP-CF-03",
+    "GAP-CF-04",
+    "GAP-CF-05"
+  ],
+  "coverageGapsClosed": [
+    "GAP-23",
+    "GAP-24",
+    "GAP-25",
+    "GAP-26",
+    "GAP-27"
+  ],
+  "coverageGapsNoTargetSuite": [
+    "GAP-04 (propose Frontend/returns/104-returns-storefront.csv)",
+    "GAP-05 (propose Backend/graphql/050o-graphql-xreturn.csv)",
+    "GAP-CF-01 (propose Frontend/cross-cutting/0XX-ui-kit-components.csv)"
+  ],
+  "exploratoryCharters": [
+    {
+      "id": "EXP-01",
+      "domain": "Returns",
+      "signals": [
+        "C1",
+        "C3"
+      ],
+      "mission": "Discover how the quantity engine and wizard behave at seams no case exists for (module has no suite); record order-only vs orderless without asserting it",
+      "candidateScenarios": [
+        "Same order line returned from two tabs/org colleagues at once (RETURN_QUANTITY_UNAVAILABLE vs silent over-return)",
+        "Draft holds nothing then admin partial approval while wizard open: when available quantity refreshes",
+        "Allowed-order-status or order status flips mid-wizard; attachment upload fails mid-wizard; OWN to ORGANIZATION scope via org switcher"
+      ],
+      "technique": "Soap Opera + Scenario tour + Boundary-of-features",
+      "lane": "playwright-chrome",
+      "timeboxMin": 30,
+      "owner": "qa-frontend-expert (qa-backend-expert verifies API/admin)"
+    },
+    {
+      "id": "EXP-02",
+      "domain": "UI kit & a11y",
+      "signals": [
+        "C1"
+      ],
+      "mission": "Discover consumers broken by three global shared-component changes (VcButton contrast, checkbox/radio target, popover dialog focus) with no UI-kit suite in the corpus",
+      "candidateScenarios": [
+        "Walk every popover/dialog consumer for Esc dismissal and focus return",
+        "Checkbox/radio at dense consumers: overlapping hit areas after target change",
+        "VcButton secondary/outline disabled/hover/focus under whitelabel/dark themes"
+      ],
+      "technique": "User-flow edge enumeration + Galumphing",
+      "lane": "playwright-firefox",
+      "timeboxMin": 30,
+      "owner": "qa-testing-expert (+ ui-ux-expert)"
+    },
+    {
+      "id": "EXP-03",
+      "domain": "Auth & sign-in",
+      "signals": [
+        "C2",
+        "C3"
+      ],
+      "mission": "Discover seams between OTP grant, storefront OAuth and custom grant handlers and the existing lockout, sign-in log and impersonation behaviour",
+      "candidateScenarios": [
+        "Alternate password and OTP failures on one account: shared lockout counter and message",
+        "OTP on a store the user does not own/trust; returning-vs-new classification for unverified account; replay of consumed/expired code",
+        "Unauthenticated /oauth/authorize to OTP sign-in to return; rep with partial name; sign-in log records each attempt"
+      ],
+      "technique": "Soap Opera + Feature-pair matrix",
+      "lane": "playwright-edge",
+      "timeboxMin": 30,
+      "owner": "qa-backend-expert (qa-frontend-expert on sign-in UI)"
+    },
+    {
+      "id": "EXP-04",
+      "domain": "Search & indexing",
+      "signals": [
+        "C2"
+      ],
+      "mission": "Discover what the customer sees while an index is created, rebuilt or slow (the 0-results window the lock was meant to close)",
+      "candidateScenarios": [
+        "First build/rebuild from two admin sessions while storefront searches",
+        "Slow cluster with bounded timeout: empty state vs error state",
+        "Barcode search across blue-green swap and after barcode property deletion"
+      ],
+      "technique": "Feature-pair matrix + Saboteur",
+      "lane": "playwright-edge",
+      "timeboxMin": 30,
+      "owner": "qa-backend-expert"
+    },
+    {
+      "id": "EXP-05",
+      "domain": "Sales Rep hub",
+      "signals": [
+        "C2"
+      ],
+      "mission": "Discover seams between the new Tasks widget and surfaces six other fixes touched in the same window, on the actually deployed build (design commit merged then reverted)",
+      "candidateScenarios": [
+        "Task created around day/timezone boundary: group placement; Task module present vs absent for same rep",
+        "One 375px keyboard session: filters drawer Esc/focus, breadcrumb, orders cards, date fields",
+        "Rep with partial name signs in and opens hub; document widget actions per file type"
+      ],
+      "technique": "Feature-pair matrix + Boundary-of-features",
+      "lane": "playwright-chrome",
+      "timeboxMin": 30,
+      "owner": "qa-frontend-expert"
+    }
+  ],
+  "criticalTickets": [
+    "VCST-5748",
+    "VCST-4585",
+    "VCST-5378",
+    "VCST-5662",
+    "VCST-6052",
+    "VCST-5901",
+    "VCST-6085",
+    "VCST-2945",
+    "VCST-5732",
+    "VCST-5869",
+    "VCST-6083",
+    "VCST-6005",
+    "VCST-6002",
+    "VCST-5870",
+    "VCST-5759",
+    "VCST-6028",
+    "VCST-5628",
+    "VCST-5883",
+    "VCST-6054",
+    "VCST-6056",
+    "VCST-5957",
+    "VCST-5855",
+    "VCST-6084"
+  ],
+  "entryBlockers": [
+    "Module install + deployed-version re-read",
+    "VCST-5628 order-only vs orderless spec conflict",
+    "VCST-6077 merge/revert (#2514/#2535) deployed side",
+    "Active search provider on vcst"
+  ],
+  "artifacts": "vc/shared/docs/Sprint plans/"
+}

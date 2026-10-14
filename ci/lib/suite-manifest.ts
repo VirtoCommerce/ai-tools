@@ -36,6 +36,8 @@ export interface ManifestSuite {
   runnerCommand?: string;
   /** Suite requires this browser server (cross-origin iframe suites 039/041 need Chromium). */
   preferredBrowser?: string;
+  /** Suites sharing this value mutate the same shared state and never run at the same time. */
+  exclusiveGroup?: string;
   /**
    * DERIVED by `suites:sync`: the suite performs UI clicks. Bars it from firefox ONLY while
    * `defaults.firefoxClickOk` is false — that flag is true since 2026-09-08, so this no longer

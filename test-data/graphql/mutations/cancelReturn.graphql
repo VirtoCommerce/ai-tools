@@ -1,0 +1,26 @@
+# name: cancelReturn
+# category: returns
+# role: ORG_USER
+# purpose: Sets status -> Cancelled from ANY non-terminal status (Draft or Requested), releasing any
+#   quantity that return was holding back to returnableItems FULLY -- confirmed live 2026-09-25 across
+#   a full create -> submit -> cancel cycle (quantity returns to the exact pre-create figure, not a
+#   partial release). Refused RETURN_NOT_FOUND for a nonexistent id or a return owned by a different
+#   customer (ownership is customer-id scoped only, no store check).
+# required-vars: RETURN_ID (String)
+# optional-vars: REASON (String)
+# last-validated: 2026-09-25
+# known-issues: (none)
+# used-by: RET-GQL-013, RET-GQL-014, RET-GQL-015, RET-GQL-016, RET-GQL-017, RET-GQL-018, RET-GQL-019,
+#   RET-GQL-022, RET-GQL-023, RET-GQL-024, RET-GQL-025, RET-GQL-026, RET-GQL-027
+#   (050o-graphql-returns.csv) -- also every mutation case's own inline/Cleanup teardown
+# runner-note: VCST-5628. This is the ONLY reversal path a buyer has (no un-cancel) -- an agent
+#   reject/approve path exists in the schema (availableActions, approvedQuantity, rejectReason) but is
+#   VCST-5883 territory, not reachable this phase.
+
+mutation {
+  cancelReturn(command: { returnId: "{{RETURN_ID}}" }) {
+    id
+    status
+    cancelReason
+  }
+}

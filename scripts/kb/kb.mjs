@@ -22,8 +22,10 @@ import { OWN_FLUSH_AFTER_MS, SWEEP_AFTER_MS, flush, postVerbSweepAllowed, sweepI
 import { pushConfirmRequired, queueDir } from './core/queue.mjs';
 import { resolveWho } from './core/who.mjs';
 import { writeToken } from './core/token.mjs';
-import { askLines, captureLines, evidenceLines, showLines } from './core/render.mjs';
-import { TOPIC_MAX, ask, capture, confirm, dispute, reindex, show, stat } from './core/verbs.mjs';
+import { askLines, captureLines, evidenceLines, noneLines, showLines } from './core/render.mjs';
+import { CONTRACT } from './core/contract.mjs';
+import { TOPIC_MAX, ask, capture, confirm, dispute, none, reindex, show, stat } from './core/verbs.mjs';
+import { liveBuild } from './core/build.mjs';
 
 // ── argument parsing ──────────────────────────────────────────────────────────────────────────
 
@@ -40,7 +42,7 @@ import { TOPIC_MAX, ask, capture, confirm, dispute, reindex, show, stat } from '
 const HOLD_EVERYWHERE = 'To hold it everywhere, set KB_PUSH_CONFIRM=1 in the `env` of .claude/settings.local.json '
   + 'and restart the session: a shell variable does not reach the MCP server.';
 
-const BOOLEAN_FLAGS = new Set(['dry-run', 'no-sweep', 'json', 'help']);
+const BOOLEAN_FLAGS = new Set(['dry-run', 'no-sweep', 'json', 'help', 'verify']);
 
 /** A pacing constant in whole minutes, for prose — derived, so the text cannot drift from the code. */
 function minutes(ms) { return Math.round(ms / 60_000); }
@@ -64,15 +66,22 @@ const USAGE = `kb — the knowledge base (PLAN v1)
 
   npm run kb -- ask "<question>" [--deployment <env>] [--topic "<what you're working on>"]
                                  [--base <dir>] [--top 3] [--json]
-  npm run kb -- show KB-XXXXXXXX [--topic "<...>"] [--base <dir>] [--json]
+  npm run kb -- show KB-XXXXXXXX [--ask <handle> | --verify] [--topic "<...>"] [--base <dir>] [--json]
+  npm run kb -- none [--ask <handle>] [--topic "<...>"]     none of the listed entries answers
   npm run kb -- capture --subject "<one line>" --question "<the question it answers>"
-                        --claim "<the claim, in prose>" --deployment <env>
+                        --claim "<the claim, in prose>" --deployment <stand, e.g. vcst_qa>
                         --anchor /company/members [--anchor ...] --scope surface=storefront-ui [--scope ...]
-                        [--topic "<...>"]
-  npm run kb -- confirm KB-XXXXXXXX --deployment <env> [--note "<what you saw>"] [--topic "<...>"]
-  npm run kb -- dispute KB-XXXXXXXX --deployment <env> --saw "<what you saw instead>" [--topic "<...>"]
+                        [--conditions "platform=<v>; setting:<Name>=<v>"]
+                        [--topic "<...>"] [--dry-run]   --dry-run: check the payload, log and queue nothing
+                        an anchor is a route, endpoint or GraphQL op, never a label or menu path;
+                        contract: ${CONTRACT}
+  npm run kb -- confirm KB-XXXXXXXX --deployment <stand, e.g. vcst_qa> [--note "<what you saw>"] [--conditions "<k=v; k=v>"] [--topic "<...>"]
+  npm run kb -- dispute KB-XXXXXXXX --deployment <stand, e.g. vcst_qa> --saw "<what you saw instead>" [--conditions "<k=v; k=v>"] [--topic "<...>"]
+                        conditions: optional, expected on a dispute -- the build and settings the behaviour may depend on
   npm run kb -- stat [--base <dir>]
   npm run kb -- reindex --base <dir> [--dry-run]     repair: rebuild index.json from every entry
+  npm run kb -- calibrate --base <dir> [--set <labelled-set.json>] [--out <ranker.json>]
+                                                    fit the verdict on dev, threshold it on calibration
   npm run kb -- push [--dry-run] [--no-sweep]       send the queue to the base as ONE commit
 
 exit: 0 answered · 1 no coverage (or capture refused as a duplicate) · 2 no base · 3 unreachable
@@ -161,9 +170,44 @@ async function main(argv) {
     out(`last push ${p.last ? `${p.last.state} at ${p.last.at}${p.last.commit ? ` ${p.last.commit.slice(0, 7)}` : ''}${p.last.why ? ` — ${p.last.why}` : ''}` : 'none recorded on this machine'}`);
     // Sticky until a push LANDS: a later "nothing to do" must not hide that the queue never drained.
     if (p.lastFailure && p.lastFailure.at !== p.last?.at) out(`  FAILED  ${p.lastFailure.state} at ${p.lastFailure.at}${p.lastFailure.why ? ` — ${p.lastFailure.why}` : ''}`);
-    if (r.state === 'answer') out(`index     ${r.entries} entr(ies), ${r.active} active, from ${r.indexes.join(', ')}`);
-    else out(`index     ${r.state} — ${r.why}`);
+    if (r.state === 'answer') {
+      out(`index     ${r.entries} entr(ies), ${r.active} active, from ${r.indexes.join(', ')}`);
+      const d = r.disputes;
+      out(`disputed  ${d.disputedEntries} entr(ies) disputed${d.contestedEntries ? ` · ${d.contestedEntries} contested on another build (soft, still to judge)` : ''} · ${d.settledEntries} settled by a judge`);
+    } else out(`index     ${r.state} — ${r.why}`);
     return exitFor(r.state);
+  }
+
+  if (verb === 'calibrate') {
+    // OFFLINE AND OPERATOR-ONLY (VCST-6122 Decision 6). It reads the base and the labelled set and
+    // PRINTS the ranker; it writes `ranker.json` only where `--out` points, because ranker.json is
+    // base data and base data changes only with the operator's yes. The test split is never read.
+    const { readFile, writeFile } = await import('node:fs/promises');
+    const { loadIndex, retrievable } = await import('./core/index-load.mjs');
+    const { prepareVocabulary, readVocabulary } = await import('./core/query.mjs');
+    const { prepareRetrieval } = await import('./core/retrieve.mjs');
+    const { calibrate } = await import('./core/calibrate.mjs');
+    const { labelledRows } = await import('./bench/verdict-bench.mjs');
+    if (!opened.reader) { out(`kb calibrate: ${HEADLINE['no-base']}`); return EXIT.NO_BASE; }
+    const cat = await loadIndex(opened.reader);
+    if (cat.state !== 'ok') { out(`kb calibrate: ${HEADLINE[cat.state] ?? cat.state}`); if (cat.why) out(`  ${cat.why}`); return exitFor(cat.state); }
+    const setPath = typeof args.flags.set === 'string' ? args.flags.set : new URL('./bench/rank-labelled-set.v2.json', import.meta.url);
+    const set = JSON.parse(await readFile(setPath, 'utf8'));
+    const prep = prepareRetrieval(retrievable(cat.rows), prepareVocabulary(await readVocabulary(opened.reader)));
+    // Every body, once: the head re-rank reads them, and an offline verb can afford what ask cannot.
+    const { parseEntry } = await import('./core/frontmatter.mjs');
+    const bodies = new Map();
+    await Promise.all(retrievable(cat.rows).map(async (row) => {
+      const r = await opened.reader.readEntry(row.path);
+      if (r.ok) { try { bodies.set(row.id, parseEntry(r.text, row.path).body); } catch { /* an unreadable body only weakens the re-rank */ } }
+    }));
+    const ranker = calibrate(prep, labelledRows(set), { snapshot: set.snapshot ?? null, bodies });
+    const text = `${JSON.stringify(ranker, null, 2)}
+`;
+    if (typeof args.flags.out === 'string') { await writeFile(args.flags.out, text); out(`kb calibrate: wrote ${args.flags.out}`); }
+    else out(text.trimEnd());
+    out(`  ${ranker.rank}: answer threshold ${ranker.thresholds.answer ?? 'unreachable (the base never answers alone)'}; dev ${ranker.fit.dev.positives}/${ranker.fit.dev.rows} positive; calibration answers at threshold ${ranker.fit.calibration.answeredAtThreshold}/${ranker.fit.calibration.rows}`);
+    return EXIT.ANSWER;
   }
 
   if (verb === 'reindex') {
@@ -188,10 +232,10 @@ async function main(argv) {
   if (verb === 'ask') {
     const question = args._.slice(1).join(' ').trim();
     if (!question) { out('ask needs a question'); return EXIT.NO_COVERAGE; }
-    // `--deployment` is OPTIONAL on ask and is never derived -- see `stand()` in core/verbs.mjs
-    // for why this door has no authoritative source to derive it from either.
+    // `--deployment` is OPTIONAL on ask and is never defaulted from this process -- only a name the
+    // caller passes is mapped onto the stand's one name (`stand()` in core/verbs.mjs).
     const r = await ask(question, opened, {
-      top: Number(args.flags.top) || 3, via: VIA, deployment: args.flags.deployment, topic: args.flags.topic,
+      top: Number(args.flags.top) || 3, via: VIA, deployment: args.flags.deployment, topic: args.flags.topic, builds: liveBuild,
     });
     if (json) { out(JSON.stringify(r, null, 2)); return exitFor(r.state); }
     emit(askLines(r));
@@ -201,32 +245,47 @@ async function main(argv) {
   if (verb === 'show') {
     const id = args._[1];
     if (!id) { out('show needs an id'); return EXIT.NO_COVERAGE; }
-    const r = await show(id, opened, { via: VIA, topic: args.flags.topic });
+    const r = await show(id, opened, {
+      via: VIA, topic: args.flags.topic, ask: typeof args.flags.ask === 'string' ? args.flags.ask : null, verify: Boolean(args.flags.verify),
+      deployment: typeof args.flags.deployment === 'string' ? args.flags.deployment : null, builds: liveBuild,
+    });
     if (json) { out(JSON.stringify(r, null, 2)); return exitFor(r.state); }
     emit(showLines(r));
     return exitFor(r.state);
   }
 
+  if (verb === 'none') {
+    // The pair of an `ambiguous` ask that ends in nothing (VCST-6122 Decision 1a). Exit 1 -- the base
+    // holds nothing on this, which is what the caller has just concluded -- so a script can branch on
+    // it the way it branches on a miss.
+    const r = await none({ via: VIA, ask: typeof args.flags.ask === 'string' ? args.flags.ask : null, topic: args.flags.topic });
+    if (json) { out(JSON.stringify(r, null, 2)); return r.state === 'recorded' ? EXIT.NO_COVERAGE : exitFor(r.state); }
+    emit(noneLines(r));
+    return r.state === 'recorded' ? EXIT.NO_COVERAGE : exitFor(r.state);
+  }
+
   if (verb === 'capture') {
     const r = await capture({
       subject: args.flags.subject, question: args.flags.question, claim: args.flags.claim,
-      deployment: args.flags.deployment, method: args.flags.method,
+      deployment: args.flags.deployment, method: args.flags.method, conditions: args.flags.conditions,
       anchors: args.repeated.anchor, scope: args.repeated.scope,
-    }, opened, { via: VIA, topic: args.flags.topic });
+    }, opened, { via: VIA, topic: args.flags.topic, dryRun: Boolean(args.flags['dry-run']), builds: liveBuild });
     if (json) out(JSON.stringify(r, null, 2));
-    else emit(captureLines(r));
+    // The CLI has no input schema, so a refusal here also prints the contract card (VCST-6156).
+    else emit(captureLines(r, { card: true }));
     // A refusal is not a failure -- it is the design working (the ranking missed an entry that
     // exists, and instead of a duplicate the base gets a confirmation) -- but it is not a queued
     // capture either, and 0 would say it was.
     if (r.state === 'invalid' || r.state === 'refused') return EXIT.NO_COVERAGE;
-    return r.state === 'queued' ? EXIT.ANSWER : r.state === 'disabled' ? EXIT.NO_BASE : exitFor(r.state);
+    return r.state === 'queued' || r.state === 'dry-run' ? EXIT.ANSWER : r.state === 'disabled' ? EXIT.NO_BASE : exitFor(r.state);
   }
 
   if (verb === 'confirm' || verb === 'dispute') {
     const fn = verb === 'confirm' ? confirm : dispute;
     const r = await fn(args._[1], {
       deployment: args.flags.deployment, note: args.flags.note, saw: args.flags.saw, method: args.flags.method,
-    }, opened, { via: VIA, topic: args.flags.topic });
+      conditions: args.flags.conditions,
+    }, opened, { via: VIA, topic: args.flags.topic, builds: liveBuild });
     if (json) out(JSON.stringify(r, null, 2));
     else emit(evidenceLines(verb, r));
     if (r.state === 'invalid') return EXIT.NO_COVERAGE;

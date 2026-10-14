@@ -8,7 +8,7 @@
  *
  * Order (explicit seed priority — see STEPS[].priority):
  *   preflight    : member-index → catalog+categories+store (ensureVirtualCatalog) → fulfillment-center
- *   priority 30+ : properties → products → configurable → pricing → inventory → bopis
+ *   priority 30+ : properties → products → configurable → pricing → inventory → category-images → bopis
  *                  → company-users → promotions → loyalty → white-labeling
  *   (prices run AFTER products AND configurable so every product is priced; bopis after inventory
  *    so a fulfillment center exists; company-users after the member index is ready.)
@@ -55,9 +55,13 @@ const TEARDOWN_STEPS = [
   // hand-made reps, orphaned documents — need `npm run sr:inventory`, which is deliberately not
   // wired into an unattended chain: it can delete things no script can recreate.
   { name: 'sales-rep', script: 'sales-rep/seed-sales-rep-family.mjs', args: ['--teardown'] },
+  // VCST-5748 OTP sign-in accounts — independent of every other domain; deletes only agent-test-otp-* accounts/contacts.
+  { name: 'otp-signin', script: 'auth/seed-otp-signin.mjs', args: ['--teardown'] },
   // Wishlists are carts referencing products AND a security account, so they go before both.
   { name: 'wishlists', script: 'wishlists/seed-wishlists.mjs', args: ['--teardown'] },
   // Orders/quotes reference products + users, so sweep them FIRST (before the entities they point at).
+  // VCST-5884 organization returns: its own orders/returns, AGENT-TEST accounts, orgs and two pinned roles.
+  { name: 'returns-org', script: 'orders/seed-org-returns.mjs', args: ['--teardown'] },
   { name: 'quotes', script: 'orders/seed-quotes.mjs', args: ['--teardown'] },
   { name: 'orders', script: 'orders/seed-order-states.mjs', args: ['--teardown'] },
   { name: 'white-labeling', script: 'white-labeling/seed-white-labeling.mjs', args: ['--teardown'] },
@@ -76,6 +80,7 @@ const TEARDOWN_STEPS = [
   { name: 'loyalty', script: 'loyalty/seed-loyalty.mjs', args: ['--teardown'] },
   { name: 'loyalty-fixtures', script: 'loyalty/seed-loyalty-fixtures.mjs', args: ['--teardown'] },
   { name: 'promotions', script: 'promotions/seed-promotions.mjs', args: ['--teardown'] },
+  { name: 'push-audience', script: 'push-messages/seed-push-audience.mjs', args: ['--teardown'] },
   { name: 'b2b-addresses', script: 'b2b/seed-b2b-addresses.mjs', args: ['--teardown'] },
   // Contract pricing before the org graph: the contract binds the AcmeCorp organisation and owns a
   // buyer contact inside it, so it must release both before company-users deletes them.
@@ -85,6 +90,9 @@ const TEARDOWN_STEPS = [
   // VCST-2945 barcode fixtures — its products, properties, dedicated store and pricelist. Before the
   // inventory / catalog sweeps (its products sit in the AGENT-TEST-SEED catalog on the store FFC).
   { name: 'barcode', script: 'catalog/seed-barcode-fixtures.mjs', args: ['--teardown'] },
+  // VCST-6017 GA4 list fixtures (related anchor + associations, 60-variation family, their pricelist) —
+  // before the fulfillment centers their stock sits on. The cart part is a per-case precondition, not seeded here.
+  { name: 'ga4-lists', script: 'analytics/seed-ga4-lists.mjs', args: ['--teardown', '--only', 'related,variations'] },
   // Variation family + its per-FFC stock records — before the fulfillment centers they sit on.
   { name: 'variation-stock', script: 'inventory/seed-variation-stock.mjs', args: ['--teardown'] },
   { name: 'inventory', script: 'inventory/seed-inventory.mjs', args: ['--teardown'] },
@@ -93,6 +101,9 @@ const TEARDOWN_STEPS = [
   { name: 'configurable', script: 'products/seed-configurable.mjs', args: ['--teardown'] },
   { name: 'products', script: 'products/seed-standard-products.mjs', args: ['--teardown'] },
   { name: 'properties', script: 'catalog/seed-catalog-properties.mjs', args: ['--teardown'] },
+  // Category images before the catalog sweep: it strips our images from every store-catalog category
+  // (real ones included) and deletes the uploaded files — a catalog-first sweep would leave the files.
+  { name: 'category-images', script: 'catalog/seed-category-images.mjs', args: ['--teardown'] },
   // Sweeps every AGENT-TEST-SEED-* catalog + its categories/products/pricelists and unbinds the store.
   { name: 'catalog+categories', script: 'seed-test-data.js', args: ['teardown'] },
 ];
@@ -140,6 +151,10 @@ const STEPS = [
   // names, store-scoped SEO) instead of a date-stamped fork, and seeds into the same catalogs. Runs
   // after inventory(70) so its stock has FFCs. Optional — supplementary to the .mjs product set.
   { name: 'test-data', script: 'seed-test-data.js', args: ['catalog'], required: false, priority: 75 },
+  // Category artwork (test-data/catalogs/category-images.csv). Resolves categories BY NAME inside the
+  // store's catalog, so it runs after store(80) binds that catalog and after every phase that creates
+  // categories. Optional: a name the env does not carry is reported unmatched, never created.
+  { name: 'category-images', script: 'catalog/seed-category-images.mjs', required: false, priority: 85 },
   { name: 'bopis', script: 'bopis/seed-bopis.mjs', required: true, priority: 90 },
   { name: 'company-users', script: 'b2b/seed-company-users.mjs', args: ['all'], required: true, priority: 100 },
   // Org addresses beyond the single inline default baked into orgBody() — needs the org graph (100) first.
@@ -148,6 +163,10 @@ const STEPS = [
   // existing product for an existing organisation and creates its own dedicated buyer inside it.
   // Optional — it needs VirtoCommerce.Contracts deployed.
   { name: 'org-contract', script: 'pricing/seed-org-contract-pricing.mjs', required: false, priority: 106 },
+  // Push Messages audience-builder fixture (VCST-5944): a two-level org tree + an Employee holding a
+  // login. Needs nothing but the member graph, so it sits just after the org/address steps. OPTIONAL —
+  // the fixture is only meaningful where the PushMessages module is deployed.
+  { name: 'push-audience', script: 'push-messages/seed-push-audience.mjs', required: false, priority: 107 },
   { name: 'promotions', script: 'promotions/seed-promotions.mjs', required: false, priority: 110 },
   // The 1-PTS divisor fixture (LOY_SKU_PTS_UNIT) that balance-relative loyalty tests depend on. Runs
   // just BEFORE the loyalty programs (120) and is OPTIONAL (warns if the loyalty module/PTS currency
@@ -180,6 +199,9 @@ const STEPS = [
   // `sales-rep-documents` in FileUpload:Scopes, and the task seeder needs a storefront password
   // grant (SALES_REP_EMAIL + SALES_REP_PASSWORD_<ENV>).
   { name: 'sales-rep', script: 'sales-rep/seed-sales-rep-family.mjs', required: false, priority: 142 },
+  // VCST-5884 organization returns: creates its own orgs/accounts/roles, then orders on live-discovered
+  // products (40) in the store (80). Optional: needs the Return module + Return.ReturnEnabled on the store.
+  { name: 'returns-org', script: 'orders/seed-org-returns.mjs', required: false, priority: 143 },
   { name: 'quotes', script: 'orders/seed-quotes.mjs', required: false, priority: 145 },
   // Push Messages inboxes (suite 068): tops the reader's inbox up to a mixed read/unread state and
   // sends the bulk recipient 3 fresh messages. After company-users (100), which creates the
@@ -191,11 +213,18 @@ const STEPS = [
   // VCST-2945 — barcode scanner search fixtures + a dedicated AGENT-TEST store on the store catalog.
   // After inventory (70): it stocks the store FFC. Never writes STORE_ID (fingerprinted before/after).
   { name: 'barcode', script: 'catalog/seed-barcode-fixtures.mjs', required: false, priority: 74 },
+  // VCST-6017 — PDP related-products anchor (catalog associations) + a variation family longer than one
+  // variations page. After inventory (70): it stocks the store's main FFC. The cart/SFL/recently-browsed
+  // state is pooled per account (FIFTH RULE) — a case runs `seed:ga4-lists:cart` as its own precondition.
+  { name: 'ga4-lists', script: 'analytics/seed-ga4-lists.mjs', args: ['--only', 'related,variations'], required: false, priority: 76 },
   // VCST-5705 / CAT-079 + CAT-080 + WISH-30 — two wishlists in two REAL stores. Runs last: it needs
   // the catalog structure and a fulfillment center, and it creates its own products + customer.
   // `required: false` because it hard-aborts on an env with no genuine second store
   // (STORE_ID_SECONDARY), which is a legitimate deployment shape — see seed-wishlists.mjs.
   { name: 'wishlists', script: 'wishlists/seed-wishlists.mjs', required: false, priority: 150 },
+  // VCST-5748 OTP sign-in accounts (the non-optIn SEEDED_ACCOUNTS of auth/otp-signin-specs.mjs — no
+  // Administrator: the opt-in back-office accounts need --only). Self-contained: creates its own contacts/accounts on STORE_ID.
+  { name: 'otp-signin', script: 'auth/seed-otp-signin.mjs', required: false, priority: 102 },
 ].sort((a, b) => a.priority - b.priority);
 
 function runStep(step) {

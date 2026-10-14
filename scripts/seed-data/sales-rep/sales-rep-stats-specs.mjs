@@ -201,7 +201,7 @@ export const OWNED_ALIASES = [TOP_SELLER_ORDER.alias, ...CART_FIXTURES.map((c) =
 
 /**
  * Build the shaped order's line items from the discovered product list (PURE).
- * `products` = [{ id, sku, name, catalogId }] — identity from the env, quantity/price from the spec.
+ * `products` = [{ id, sku, name, catalogId, imgSrc }] — identity from the env, quantity/price from the spec.
  * Throws when a slot cannot be satisfied, so the seeder fails loudly rather than silently
  * collapsing two slots onto one product (which would destroy the by-units/by-revenue divergence).
  */
@@ -211,6 +211,7 @@ export function buildShapedItems(lines, products) {
     if (!p) throw new Error(`productSlot ${l.productSlot} unsatisfied — only ${products.length} distinct product(s) discovered`);
     return {
       sku: p.sku, productId: p.id, name: p.name, ...(p.catalogId ? { catalogId: p.catalogId } : {}),
+      ...(p.imgSrc ? { imageUrl: p.imgSrc } : {}),
       quantity: l.quantity, price: l.unitPrice, productType: 'Physical', currency: 'USD',
     };
   });

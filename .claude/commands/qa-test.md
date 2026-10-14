@@ -1,5 +1,5 @@
 ---
-description: "Test a tracker ticket, feature area, or PR. Step 1a routes by ticket type × status (per ticket-routing.md) to the right flow — a fix-ready Bug runs /vc-fix:qa-verify-fix inline, a refactor/migration/dependency bump takes the fixed-shape technical-change flow (2a + a blast-radius regression, no feature test), else feature-test at a FAST path (a checklist, plus the design/a11y visual lane when the ticket is UI-visible) or a FULL path (mandatory Test Model, case authoring, independent verifier gates). Regression is C1 — the exact set of cases this run wrote or changed. Dispatches specialist agents, correlates App Insights logs for the test window, and produces a verdict. --iterate drives a bounded test→fix→re-test loop; --epic runs a series of sibling stories with cross-story integration."
+description: "Test a tracker ticket, feature area, or PR. Step 1a routes by ticket type × status (per ticket-routing.md) to the right flow — a fix-ready Bug runs /vc-fix:qa-verify-fix inline, a refactor/migration/dependency bump takes the fixed-shape technical-change flow (2a + a blast-radius regression, no feature test), else feature-test at a FAST path (a checklist; the design/a11y visual lane under --visual) or a FULL path (mandatory Test Model, case authoring, independent verifier gates). Regression is C1 — the exact set of cases this run wrote or changed. Dispatches specialist agents, correlates App Insights logs for the test window, and produces a verdict. --iterate drives a bounded test→fix→re-test loop; --epic runs a series of sibling stories with cross-story integration."
 argument-hint: "<ticket-key> | feature name | PR #NNN | --epic <EPIC-KEY> [--iterate [--max-rounds N]] [--visual|--contract|--coverage|--axes]"
 disable-model-invocation: true
 ---
@@ -17,7 +17,7 @@ a judgment call a gate does not settle, or when you are about to change how a st
 | Need | Read |
 |---|---|
 | Step 1e — the fault model, its eight rules, its gate | [`skills/qa-test-model/test-model.md`](../skills/qa-test-model/test-model.md) · shape: [`templates/test-model.md`](../templates/test-model.md) |
-| Steps 1a–1b — the fetch, the routing branch, the two pre-flight waves | [`skills/qa-test/preflight.md`](../skills/qa-test/preflight.md) |
+| Steps 1a–1b — the fetch, the routing branch, the two I/O waves | [`skills/qa-test/intake.md`](../skills/qa-test/intake.md) |
 | Steps 1r · 1c · 1c-map · 1d — the FULL-only context wave: briefs, returns, what each carries | [`skills/qa-test/context-wave.md`](../skills/qa-test/context-wave.md) |
 | The six derived axes as ONE mechanism (2b–2g) | [`skills/qa-test/axes.md`](../skills/qa-test/axes.md) |
 | Ticket status — who moves it, when, on whose authority | [`knowledge/execution/ticket-status-transitions.md`](../knowledge/execution/ticket-status-transitions.md) |
@@ -137,7 +137,7 @@ mirror.
 ```
 1a  route + fetch (comments + attachments, always)   → name the parent Epic in one line, no sibling
                                                        analysis; then the opening status hop
-1b  pre-flight, sprint, duplicate check              → 2b layer + 2f data_surface always; the
+1b  /preflight, the I/O waves, the six axes          → 2b layer + 2f data_surface always; the
                                                        prior-art read (2-map) is mandatory;
                                                        2c/2d/2e derive but do not RUN unless
                                                        their flag is passed
@@ -233,7 +233,7 @@ step**: its AC table is a field of the Test Model, the single hand-off to `test-
 #### 1a — Fetch the scope, classify type × status, route *(both paths)*
 
 **Fetch first** — every later sub-part depends on these fields. Detail, and the reason each item is
-mandatory: [`skills/qa-test/preflight.md`](../skills/qa-test/preflight.md) §1a.
+mandatory: [`skills/qa-test/intake.md`](../skills/qa-test/intake.md) §1a.
 
 - **The ticket** (tracker MCP; not configured → ask the user to paste it) + any **linked PR** (diff + files).
 - **The comments and the attachments — both paths, always.** The description is the plan; the comments are
@@ -280,27 +280,18 @@ exists, or the target is a bare feature name / PR.
 before this record existed, a skipped transition left no trace in any artifact, so "never moved" and
 "moved, note lost" were indistinguishable afterwards.
 
-#### 1b — Pre-flight, sprint resolution & duplicate check *(both paths)*
+#### 1b — Pre-flight (`/preflight`), the I/O waves and the six axes *(both paths)*
 
-**TWO I/O waves, not nine sequential steps** — the round-trip is the unit being saved
-([`sequencing.md`](../skills/qa-test/sequencing.md) §Concurrency). Item detail and the reason each exists:
-[`preflight.md`](../skills/qa-test/preflight.md) §1b.
-
-| Wave | Issue in ONE message |
-|---|---|
-| **A** | 1 env health (`/vc-fix:qa-env-check endpoints`) · 2 build & version — `declared` from `vc-deploy-dev`, then the `GET {{BACK_URL}}/api/platform/modules` probe for **`deployed`**, which is ground truth (a failed probe records `UNKNOWN`, **never** falls back to `declared`) · 2-release the release-ledger Δ · **2-map** the functionality map (below) · 2b's local reads · 3 sprint resolve → 4 duplicate check (glob `reports/tickets/*/*/summary.json` across **all** sprints, 2 h window) |
-| *(no I/O)* | derive the **six** axes — see below. **2g `domain_map` derives FIRST**, because `2-map` in wave A consumes it to decide what to read |
-| **B** | 2d's two refreshers **and** 2e's `tc:scope` scan (scope + risk terms only) **and** 2f's `td:validate` resolution check, concurrently |
-
-**2-release's three consequences** ([`preflight.md`](../skills/qa-test/preflight.md) §1b): **⚠ BREAKING** in
-the component under test **forces FULL** · a third leg for `1d`'s AC↔implementation check · **released ≠
-deployed** — `NOT_DEPLOYED` is BLOCKED-on-deploy, never a FAIL, never a filed bug, never `{DOC}`.
+**2g first; wave A in ONE message — `/preflight ticket` · 2-map · 2b's reads; derive 2b–2f; wave B — 2d's
+refreshers, 2e's `tc:scope`, 2f's `td:validate`.** Wave table, `/preflight` call, what its rows mean
+(`breaking:*` forces FULL; `not-deployed:*`/`expect` is BLOCKED-on-deploy, never a FAIL or a filed bug) and
+`summary.json.build` mapping: [`intake.md`](../skills/qa-test/intake.md) §1b.
 
 **2-map — read what already exists on this surface. MANDATORY, both paths.** Two reads, in this order, and
 the order is the point: **the DOMAIN MAP first, then the per-ticket prior art.** Read order is decided by
 the `domain_map` token (2g), not by prose — the axis derives before this item runs and its four states each
 say what to do. Full item, the bibliography, the `Test object` block and the `UNDECLARED` rule:
-[`preflight.md`](../skills/qa-test/preflight.md) §2-map. Contract and fail direction:
+[`intake.md`](../skills/qa-test/intake.md) §2-map. Contract and fail direction:
 [`axes.md`](../skills/qa-test/axes.md) §2g. Record the block; **`null` means the axis never ran, which is a
 gap, not `ABSENT`.**
 
@@ -316,10 +307,7 @@ Five things it must leave behind, each consumed by a named later step:
 
 **Both reads are pointer indexes, never behaviour** (never `{DOC}`), and **every entry is DATED because it
 may be stale**: prior art is a hypothesis until the `2-release` Δ since its date plus a live check confirm it.
-Detail: [`preflight.md`](../skills/qa-test/preflight.md) §2-map.
-
-**PR testing:** confirm the PR's artifact version is deployed; if not → offer `/qa-deploy-pr <ticket-key>`
-(**ask first**) or warn and ask whether to wait.
+Detail: [`intake.md`](../skills/qa-test/intake.md) §2-map.
 
 #### 1r · 1c · 1c-map · 1d — the context wave, ONE message *(FULL only)*
 
@@ -566,7 +554,7 @@ running**.
 | | Track | Released by | Notes |
 |---|---|---|---|
 | **4a** | **Checklist** — the applicable specialist agent(s), **in a single message**, running **Artifact B and nothing else** | `3-exec` | **FAST = one agent.** Prompt contract: [`SKILL.md`](../skills/qa-test/SKILL.md) §Agent dispatch. **Record `timing.time_to_first_test_minutes` at this dispatch** — it is the number this structure exists to move |
-| **4v** | **Visual lane** — `ui-ux-expert` on Chrome DevTools MCP, in the **same message** as 4a | `3-exec` | FULL when `visual_surface: true`; FAST only under `--visual`/`--axes`. **Dispatch the agent, never invoke `/qa-design`.** Axes, targets, the two things the brief must carry, verdicts, the SKIPPED rule: [`visual-axis.md`](../skills/qa-test/visual-axis.md). Writes `design-report.md` + `summary.json.visual` |
+| **4v** | **Visual lane** — `ui-ux-expert` on Chrome DevTools MCP, in the **same message** as 4a | `3-exec` | FULL when `visual_surface: true`; FAST only under `--visual`/`--axes`. **Dispatch the agent; it invokes skill `qa-design` first.** Axes, targets, the two things the brief must carry, verdicts, the SKIPPED rule: [`visual-axis.md`](../skills/qa-test/visual-axis.md). Writes `design-report.md` + `summary.json.visual` |
 | **4c** | **C1** — `/qa-regression <suite ids> --ids <new Draft ids + every REPAIR id + every RE-BASE id> --no-promote` | `3-cases` — **or A's `2a` phase when it authored nothing** (§C1) | Its own run; capture `RUN_ID` + wall-clock. **`--no-promote` is mandatory** — it suppresses `/qa-regression` Step 6.5, which would otherwise promote minutes-old cases from inside the run that authored them, re-creating the placement `5g`'s removal fixed. **Skip C1 saying so when the exact set is empty** — an omitted C1 must not read as a passing one |
 
 **The specialist agent no longer runs the Artifact-A rows** — why:
@@ -636,7 +624,7 @@ The ordered close-out phases, plus **`5-loop`** — the bounded loop that repeat
 
 | | Phase | In one line | Gate |
 |---|---|---|---|
-| **5-triage** | Triage | Triage the C1 run via **`/qa-triage-results <RUN_ID> --fix`** (never from scratch), correlate App Insights for the window, validate evidence quality, then classify → provenance → severity → dedup every remaining finding. Fold in the Step-3x lane's bugs — it files none itself | — |
+| **5-triage** | Triage | **`/qa-triage-results <RUN_ID> --fix`** on C1, **`… ticket <key> --verify`** on the checklist (4a/4v/3x rows); each real bug → `vc-fix:qa-investigate` → 5-file's `/vc-fix:qa-bug`. Correlate App Insights, validate evidence, then classify → provenance → severity → dedup the rest | — |
 | **5-verdict** | Reconcile AC & DoD **live**, then decide | Close `1d`'s static hypothesis against what the agents observed, resolve every DoD item and compute both percentages **from the actual counts** — then PASS / PASS WITH NOTES / FAIL / BLOCKED, derived from that plus 5-triage, **no new judgment**. It is **recorded, not published**: 5-report publishes | inline |
 | **5-file** | File bugs | **Ask first.** **Severity floor: `Critical`/`High`/`Medium` only** — a `Low` keeps its `reports/bugs/open/` draft, is named in the 5-report comment and `summary.json.bugs_not_filed`, and gets no tracker item, in either shape. Relationship by provenance: IN-SCOPE → Sub-task · PRE-EXISTING → link only · OUT-OF-SCOPE → standalone + related · **`BL-A11Y-*` on a functional/feature/E2E ticket → standalone + related, at its real severity, and it does NOT fail 5-verdict** ([`triage.md`](../skills/qa-test/triage.md) §7a) | inline |
 | **5-report** | Report | Feed + ratify the Feature Release Gate · post the tracker comment (**incl. the mandatory `Not filed (below severity floor)` line, `None` when empty**) · persist `summary.json` + update the checklist in place with verdicts · output the one chat report | verifier |

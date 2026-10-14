@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-10-01",
-    "totalSuites": 146,
+    "generated": "2026-10-13",
+    "totalSuites": 154,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -204,7 +204,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 56,
+      "testCount": 76,
       "estimatedMinutes": 20,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -423,6 +423,31 @@
       ],
       "envRiskGate": "staging",
       "customerApplicability": "universal",
+      "clickDriven": true
+    },
+    {
+      "id": "014c",
+      "name": "Orders Frontend — Returns (buyer's own returns + agent decisions, steps 1-2)",
+      "file": "regression/suites/Frontend/orders/014c-orders-frontend-returns.csv",
+      "domain": "purchase-flow",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 46,
+      "estimatedMinutes": 45,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "orders",
+        "frontend",
+        "returns",
+        "notifications",
+        "sprint"
+      ],
+      "requiresModules": [
+        "VirtoCommerce.Return"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
       "clickDriven": true
     },
     {
@@ -1141,7 +1166,7 @@
       "layer": "frontend",
       "concern": "non-functional",
       "priority": "P2",
-      "testCount": 33,
+      "testCount": 58,
       "estimatedMinutes": 17,
       "agent": "qa-testing-expert",
       "tags": [
@@ -1603,7 +1628,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 35,
+      "testCount": 49,
       "estimatedMinutes": 21,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1615,7 +1640,7 @@
       "customerApplicability": "universal",
       "clickDriven": true,
       "lanes": {
-        "machine": 34,
+        "machine": 48,
         "browser": 0,
         "manual": 1
       }
@@ -1705,7 +1730,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P2",
-      "testCount": 18,
+      "testCount": 22,
       "estimatedMinutes": 13,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1719,7 +1744,7 @@
       ],
       "customerApplicability": "reference",
       "lanes": {
-        "machine": 15,
+        "machine": 19,
         "browser": 0,
         "manual": 0,
         "deprecated": 3
@@ -1800,6 +1825,35 @@
         "machine": 9,
         "browser": 0,
         "manual": 0
+      }
+    },
+    {
+      "id": "050o",
+      "name": "GraphQL xAPI — Returns (buyer's own returns + decided-return read surface, steps 1-2)",
+      "file": "regression/suites/Backend/graphql/050o-graphql-returns.csv",
+      "domain": "purchase-flow",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 63,
+      "estimatedMinutes": 75,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "graphql",
+        "xapi",
+        "returns",
+        "b2b",
+        "sprint"
+      ],
+      "requiresModules": [
+        "VirtoCommerce.Return"
+      ],
+      "customerApplicability": "reference",
+      "notes": "RET-GQL-031..035 (added 2026-09-25) prove five store settings are actually READ, not hardcoded defaults, by changing each live via POST /api/platform/settings/v2/tenant/Store/{id}/values, observing the shift, then restoring: Return.WindowDays, Return.AllowedOrderStatuses, Return.AllowedShipmentStatuses (blank means ANY status here, the inverse of AllowedOrderStatuses's blank), and Return.ReturnNewNumberTemplate; RET-GQL-035 is a pure read proving returnReasons.localizedName is per-culture admin text with a code fallback, not a global string. These intentionally do NOT write through PUT /api/stores despite a live 2026-09-25 finding that it propagates faster: PUT /api/stores REPLACES the whole store entity (scripts/seed-data/store/set-store-setting.mjs documents a real 2026-08-27 outage from a partial body), and safely reconstructing its ~100-entry settings array has no equivalent in this runner's declarative Steps grammar — only a real GET-spread-PUT script (or the Admin SPA's own Save) can do that safely. So these cases accept the slower, already-documented (RET-GQL-028) propagation risk of the tenant-values endpoint instead; a WAIT timeout on them is a cache/propagation finding, not a functional regression. Return.Reasons (the reason-dictionary SELECTION setting, distinct from ReasonsRequiringComment) could not be covered at all: PUT /api/stores returns 204 but the value stays null on every write attempt — no case exists for it, and none should be authored until that write path is understood. VERIFIED LIVE ON vcptcore_qa1 2026-09-25 (npm run store:set -- --list --store B2B-store) that the real persisted setting names are Return.WindowDays / Return.AllowedOrderStatuses / Return.AllowedShipmentStatuses / Return.ReturnNewNumberTemplate / Return.ReturnEnabled / Return.Reasons / Return.ReasonsRequiringComment / Return.AttachmentsRequired — NOT the ReturnWindowDays/ReturnAllowedOrderStatuses/ReturnAllowedShipmentStatuses spelling the domain map's own ModuleConstants.cs citation uses; that citation names C# field identifiers, not the dotted setting keys the REST/GraphQL surface actually reads.",
+      "lanes": {
+        "machine": 62,
+        "browser": 0,
+        "manual": 1
       }
     },
     {
@@ -2016,7 +2070,7 @@
         "sprint"
       ],
       "requiresModules": [
-        "cms"
+        "VirtoCommerce.PageBuilderModule"
       ],
       "envRiskGate": "staging",
       "customerApplicability": "reference",
@@ -2041,7 +2095,7 @@
         "sprint"
       ],
       "requiresModules": [
-        "cms"
+        "VirtoCommerce.PageBuilderModule"
       ],
       "envRiskGate": "staging",
       "customerApplicability": "reference",
@@ -2067,7 +2121,7 @@
         "sprint"
       ],
       "requiresModules": [
-        "cms"
+        "VirtoCommerce.PageBuilderModule"
       ],
       "envRiskGate": "staging",
       "customerApplicability": "reference",
@@ -2162,7 +2216,7 @@
         "sprint"
       ],
       "requiresModules": [
-        "import-export"
+        "VirtoCommerce.CatalogCsvImportModule"
       ],
       "envRiskGate": "staging",
       "customerApplicability": "reference"
@@ -2187,7 +2241,7 @@
         "sprint"
       ],
       "requiresModules": [
-        "import-export"
+        "VirtoCommerce.CatalogCsvImportModule"
       ],
       "envRiskGate": "staging",
       "customerApplicability": "reference",
@@ -2273,7 +2327,7 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P2",
-      "testCount": 22,
+      "testCount": 32,
       "estimatedMinutes": 18,
       "agent": "qa-backend-expert",
       "tags": [
@@ -2361,8 +2415,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 57,
-      "estimatedMinutes": 27,
+      "testCount": 44,
+      "estimatedMinutes": 14,
       "agent": "qa-frontend-expert",
       "tags": [
         "configurable-products",
@@ -2459,6 +2513,27 @@
       "clickDriven": true
     },
     {
+      "id": "072f",
+      "name": "Configurable Products UI — Configurable Products > Promotions",
+      "file": "regression/suites/Frontend/configurable-products/072f-configurable-products-promotions.csv",
+      "domain": "catalog-search",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 41,
+      "estimatedMinutes": 13,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "configurable-products",
+        "storefront",
+        "pdp",
+        "widget",
+        "sprint"
+      ],
+      "customerApplicability": "reference",
+      "clickDriven": true
+    },
+    {
       "id": "073",
       "name": "Returns",
       "file": "regression/suites/Backend/returns/073-returns.csv",
@@ -2466,7 +2541,7 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 22,
+      "testCount": 23,
       "estimatedMinutes": 15,
       "agent": "qa-backend-expert",
       "tags": [
@@ -2476,10 +2551,65 @@
         "sprint"
       ],
       "requiresModules": [
-        "returns"
+        "VirtoCommerce.Return"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
+    },
+    {
+      "id": "073a",
+      "name": "Returns — Authorize & Notifications (agent decisions, step 2)",
+      "file": "regression/suites/Backend/returns/073a-returns-authorize-notifications.csv",
+      "domain": "purchase-flow",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 37,
+      "estimatedMinutes": 50,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "returns",
+        "authorize",
+        "notifications",
+        "sprint"
+      ],
+      "requiresModules": [
+        "VirtoCommerce.Return"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "lanes": {
+        "machine": 37,
+        "browser": 0,
+        "manual": 0
+      }
+    },
+    {
+      "id": "073b",
+      "name": "Returns — Admin SPA Decisions (Approve / decline, status set, settings, permissions)",
+      "file": "regression/suites/Backend/returns/073b-returns-admin-decisions.csv",
+      "domain": "purchase-flow",
+      "layer": "backend",
+      "concern": "admin",
+      "priority": "P1",
+      "testCount": 17,
+      "estimatedMinutes": 40,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "returns",
+        "admin",
+        "authorize",
+        "settings",
+        "permissions",
+        "sprint"
+      ],
+      "requiresModules": [
+        "VirtoCommerce.Return"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "074",
@@ -2695,7 +2825,7 @@
         "data-quality"
       ],
       "requiresModules": [
-        "channels"
+        "VirtoCommerce.CatalogPublishing"
       ],
       "envRiskGate": "staging",
       "customerApplicability": "reference"
@@ -2958,7 +3088,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 84,
+      "testCount": 99,
       "estimatedMinutes": 75,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -2983,7 +3113,7 @@
       "layer": "frontend",
       "concern": "e2e",
       "priority": "P1",
-      "testCount": 8,
+      "testCount": 9,
       "estimatedMinutes": 40,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -3378,7 +3508,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 38,
+      "testCount": 51,
       "estimatedMinutes": 40,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -3403,7 +3533,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P2",
-      "testCount": 35,
+      "testCount": 53,
       "estimatedMinutes": 26,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -3549,6 +3679,82 @@
       ],
       "customerApplicability": "reference",
       "clickDriven": true
+    },
+    {
+      "id": "104",
+      "name": "Auth OTP Sign-In",
+      "file": "regression/suites/Frontend/auth/104-auth-otp-sign-in.csv",
+      "domain": "auth-security",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 17,
+      "estimatedMinutes": 60,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "auth",
+        "otp",
+        "sign-in"
+      ],
+      "requiresModules": [
+        "otp"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "notes": "VCST-5748. Storefront half of OTP email sign-in (API half: 105). OTP-007 flips the store-wide OtpSignIn.Enabled setting, shared with 105 OTP-022 — exclusiveGroup keeps the two suites from running at the same time. Reads the code from the notification journal (SMTP may be off). Cases stay Draft until a run promotes them.",
+      "exclusiveGroup": "store-setting:OtpSignIn.Enabled",
+      "clickDriven": true
+    },
+    {
+      "id": "105",
+      "name": "OTP Sign-In API",
+      "file": "regression/suites/Backend/api/105-otp-sign-in-api.csv",
+      "domain": "auth-security",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 11,
+      "estimatedMinutes": 40,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "auth",
+        "otp",
+        "sign-in"
+      ],
+      "requiresModules": [
+        "otp"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "notes": "VCST-5748. REST half of OTP email sign-in (storefront half: 104). OTP-019 and OTP-020 each lock their OWN disposable account (OTP_LOCKOUT_USER_1 / _2): re-arm with `npm run seed:otp-signin:rearm` (seed + live verify) before each run. OTP-022 flips the store-wide OtpSignIn.Enabled setting, shared with 104 OTP-007 — exclusiveGroup keeps the two suites from running at the same time. OTP-018, OTP-025 and OTP-028 encode the SPEC expectation the current build does not meet (code reuse, notification sender/subject, code sent to a blocked account) and are expected to FAIL until fixed.",
+      "exclusiveGroup": "store-setting:OtpSignIn.Enabled",
+      "clickDriven": true
+    },
+    {
+      "id": "106",
+      "name": "Sales Rep — Tasks (storefront)",
+      "file": "regression/suites/Frontend/sales-rep/106-sales-rep-tasks-storefront.csv",
+      "domain": "sales-rep",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 29,
+      "estimatedMinutes": 45,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "sales-rep",
+        "tasks",
+        "storefront",
+        "calendar",
+        "feature-gated"
+      ],
+      "requiresModules": [
+        "sales-rep",
+        "task-management"
+      ],
+      "customerApplicability": "reference",
+      "notes": "VCST-6077 (vc-frontend PR #2536). Tasks page redesign: scope chips, date chip, row actions, calendar rail. Every row re-seeds the wall-clock-relative task fixture first (`TEST_ENV=vcst npm run seed:sales-rep-tasks`, decays at local midnight); SR-TK-018 seeds with BROWSER_TZ=America/New_York and sets the browser timezone. Mutating rows restore their task in Cleanup; SR-TK-026 leaves SR_TASK_NODATE_INDIA dated until the next seed. SR-TK-024 asserts the CORRECT focus behaviour and is expected to FAIL on the current build (focus drops to the document root). SR-TK-007, 026, 027 and 028 record observed behaviour pending product-owner answers (All vs U+O+C; canceled-only day; canceled due today in Today). Cases stay Draft until a run promotes them.",
+      "clickDriven": true
     }
   ],
   "selections": {
@@ -3610,6 +3816,7 @@
       "include": [
         "014",
         "014b",
+        "014c",
         "015",
         "017",
         "017b",
@@ -3623,7 +3830,9 @@
         "032",
         "033",
         "082",
-        "101"
+        "101",
+        "104",
+        "105"
       ]
     },
     "platform": {
@@ -3820,6 +4029,15 @@
       },
       "exclude": [
         "092"
+      ]
+    },
+    "returns": {
+      "include": [
+        "014c",
+        "050o",
+        "073",
+        "073a",
+        "073b"
       ]
     },
     "loyalty": {

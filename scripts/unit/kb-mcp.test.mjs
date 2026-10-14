@@ -65,12 +65,12 @@ test('a protocol version we do not speak gets ours back rather than a failure', 
   } finally { q.done(); }
 });
 
-test('tools/list offers exactly the five verbs PLAN §4 puts on the MCP door', async () => {
+test('tools/list offers exactly the five verbs PLAN §4 puts on the MCP door, plus kb_none (VCST-6122 Decision 1a)', async () => {
   const q = scratch('list');
   try {
     const r = await fixtureServer(q.dir).handle({ jsonrpc: '2.0', id: 2, method: 'tools/list' });
     assert.deepEqual(r.result.tools.map((t) => t.name).sort(),
-      ['kb_ask', 'kb_capture', 'kb_confirm', 'kb_dispute', 'kb_show']);
+      ['kb_ask', 'kb_capture', 'kb_confirm', 'kb_dispute', 'kb_none', 'kb_show']);
     // push / reindex / stat are CLI-only: the push happens by itself when the process ends, and
     // the other two are operator repairs against a checkout.
     assert.ok(!r.result.tools.some((t) => /push|reindex|stat/.test(t.name)));
@@ -80,7 +80,9 @@ test('tools/list offers exactly the five verbs PLAN §4 puts on the MCP door', a
 test('every tool schema declares its required arguments — a tool that cannot be called correctly is worse than absent', () => {
   for (const t of TOOLS) {
     assert.equal(t.inputSchema.type, 'object', `${t.name} schema`);
-    assert.ok(t.inputSchema.required?.length, `${t.name} declares required fields`);
+    // Declared, even when empty: kb_none has no required argument (no handle means the latest ask).
+    assert.ok(Array.isArray(t.inputSchema.required), `${t.name} declares its required fields`);
+    if (t.name !== 'kb_none') assert.ok(t.inputSchema.required.length, `${t.name} requires what it cannot run without`);
     for (const field of t.inputSchema.required) {
       assert.ok(t.inputSchema.properties[field], `${t.name}.${field} is described`);
     }
@@ -219,6 +221,8 @@ test('kb_confirm queues evidence; kb_dispute without --saw is refused', async ()
   const q = scratch('confirm');
   try {
     const s = fixtureServer(q.dir);
+    // The confirm gate (VCST-6191): the entry is opened first, as the tool description says.
+    await call(s, 'kb_show', { id: 'KB-27B4CD10' });
     const ok = await call(s, 'kb_confirm', { id: 'KB-27B4CD10', deployment: 'vcst_qa' });
     assert.ok(!ok.result.isError);
     assert.match(callText(ok), /queued on KB-27B4CD10/);

@@ -26,6 +26,10 @@ rules:
       ref: Place order → check email inbox → exactly 1 confirmation received. Check Admin → Notification feed → sent status shown. Simulate email service failure → retry mechanism sends email after service recovery → still only 1 email total.
     violation_signal: 0 or 2+ confirmation emails; email silently dropped on service failure; no retry mechanism; notification feed shows no record.
     status: ACTIVE
+    verified:
+      date: 2026-10-12
+      version: Orders 3.1018.0, Notifications 3.1018.0
+      by: ORACLE-REVIEW-2026-10-12
   - id: BL-NOTIF-002
     title: Email content matches order data
     rule: "Order confirmation email content must match the actual order: order number, item names, quantities, prices, subtotal, shipping cost, tax, and grand total. The email uses the same currency as the order. Personalization tokens (customer name, shipping address) must be resolved — no `{{customerName}}` or blank fields."
@@ -36,7 +40,8 @@ rules:
       kind: manual
       ref: Place order → compare email content against Admin order detail → all values match. Check for unresolved tokens or placeholder text. Verify currency symbol matches order currency.
     violation_signal: Email shows wrong order total; unresolved template tokens; prices in wrong currency; missing items in email; order number mismatch.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] BSM-082 failed in REG-2026-10-08-0812"
   - id: BL-NOTIF-003
     title: Notification failure does not block order
     rule: If the email/notification service fails during order placement, the order must still be created successfully. Notification sending is asynchronous — it must never block or roll back the order transaction. The customer should see the order confirmation page, and the email will be retried in the background.
@@ -52,6 +57,9 @@ rules:
       ref: Simulate email service outage → place order → order created successfully → confirmation page shown → order in Admin → email queued for retry (visible in notification feed as "Pending").
     violation_signal: Order fails because email service is down; 500 error at checkout due to notification failure; order transaction rolled back; customer sees error but order was actually created (inconsistent state).
     status: ACTIVE
+    verified:
+      date: 2026-10-05
+      by: REG-2026-10-05-1613
   - id: BL-NOTIF-004
     title: An admin Save must be observable through the API
     rule: A Save that reports success must have reached the server. No UI success signal — a success toast, an auto-closing blade, or a refreshed `Modified` column in the parent list — may be emitted for a change that exists only in client memory, and the signal must not depend on which entry path opened the editor. A surface that deliberately *stages* an edit for a parent blade to persist later must keep that staged state visible and recoverable (no auto-close that discards it) and must not advance a persisted-state indicator such as `Modified`.
@@ -94,7 +102,7 @@ rules:
       ref: Open a template badged `predefined` → assert the replace-the-default note renders in the authoring surface. Save an edit → assert the template persists as an override (badged `predefined` + `edited`) and that Restore is enabled. Trigger Restore → assert a confirmation is required and that no request is issued before it is accepted; cancel it → re-read the template and assert subject and body are unchanged.
     violation_signal: No note is shown on a predefined template, so an admin silently overwrites a shipped default; Restore is missing or disabled while the template is `predefined` + `edited`; Restore deletes without confirmation, or issues its request before the confirmation is accepted; cancelling Restore still mutates the override.
     status: SUSPECT
-    suspect_reason: VCST-5606 (Cancelled) — the bug that the predefined-template replace warning was removed was closed by the developer with the reason that Save really saves; the warn-before-replace clause was not restored.
+    suspect_reason: VCST-5606 (Cancelled) - the bug that the predefined-template replace warning was removed was closed by the developer with the reason that Save really saves; the warn-before-replace clause was not restored. The note is still HTML-commented-out on the default branch too (vc-module-notification@a816b0a:notifications-edit-template.tpl.html line 5; it rendered before the editor rework), so the clause is not met on dev either; re-run the check.
   - id: BL-NOTIF-006
     title: A code editor must not lose user content to a single undo
     rule: "The document a code editor loads is the undo baseline, not an undoable edit. On a freshly opened editor where the user has typed nothing, undo is a no-op: it must never empty or truncate the buffer, and must not mark the surface as modified. Conversely, after an undo/redo round trip that restores content identical to the loaded document, the surface must report itself unmodified (Save disabled)."

@@ -44,7 +44,11 @@ You coordinate three specialist subagents in sequence, then synthesize their fin
 
 ### Step 0 — Pre-Flight
 
-1. **VirtoOZ MCP first** — ground the target scope against the matching topic-scoped tool (`PlatformUserGuide` / `StorefrontUserGuide` / `PlatformDeveloperGuide` / `VirtoCommerce` for sales). Use Context7 (`/virtocommerce/vc-docs`, `tokens: 8000`) only as fallback. Build understanding of current module architecture and **Virto's published terminology/voice** before analyzing code.
+1. **`/preflight ba --components <scope>`** ([`../skills/preflight/SKILL.md`](../skills/preflight/SKILL.md))
+   — MCP availability (VirtoOZ is `REQ`: with neither VirtoOZ nor Context7 there is nothing to ground in)
+   and kb → VirtoOZ grounding. Then query the topic-scoped VirtoOZ tool for the target scope
+   (`PlatformUserGuide` / `StorefrontUserGuide` / `PlatformDeveloperGuide` / `VirtoCommerce` for sales)
+   to build Virto's published terminology and voice before analyzing code.
 2. **If the run will produce docs** (scope `docs`, `full`, or anything that reaches `ba-doc-writer`): read `knowledge/ba/virto-doc-style.md` so you can verify each generated doc matches its audience skeleton. The BA team framework is `knowledge/agents/ba/shared-instructions.md`.
 2a. **On `docs release`, read `summary.json` FIRST — before any MCP call.** If
    `release.refusal` is non-null, or `layer` is null, **stop and report the refusal**: there is no
@@ -60,7 +64,6 @@ You coordinate three specialist subagents in sequence, then synthesize their fin
    document the run's passing paths, omit the failing ones, and carry the mandatory `Not documented`
    line and the verbatim verdict (`virto-doc-style.md` §10.4). There is likewise **no `no-version`
    refusal** in this mode: a how-to does not quote a build number (`virto-doc-style.md` §10).
-3. Confirm GitHub MCP and browser MCP servers are available (needed for sub-agents).
 3. **`npm run bl:extract -- --domain <d>`**: its `Included:` line lists existing `BL-DOMAIN-NNN` IDs. You will pass this list to `ba-system-analyzer` as `existing_bl_ids` so it can (a) avoid re-proposing known invariants and (b) pick the next available number per domain when drafting new ones.
 
 ### Step 1 — Greet & Confirm Scope
@@ -104,7 +107,7 @@ Launch agents 1 and 2 **in parallel** (single message with 2 Task calls). Agent 
   one — it is derived from the layer via §9.1, and an explicit one narrows rather than replaces.
   **`--publish` posts to the tracker, so ASK before posting**; the subagent composes the body and never
   posts it itself. Mechanics are `knowledge/execution/tracker-ops.md`'s — **§2** for the endpoint, **§5d**
-  for what a delivery is (the guides in full; split one comment per audience if they do not fit; never a
+  for what a delivery is (the guides in full, in ONE comment however long — never split; never a
   repo path in place of content), **§5a** for the body dialect and **§5c** for the screenshot carve-out.
 - If scope is `docs`: run all agents (docs need full context), then `ba-doc-writer` with the requested `audience`. For `sales`, the system analysis is still required — Sales claims must map to observed features (see `ba-doc-writer` Truth guardrail).
 - Default (full): run all four agents
@@ -216,7 +219,7 @@ deliverable is the release note (or the refusal). Print the fragment path (or th
 - Flag any security concerns (exposed sensitive endpoints, missing auth, etc.) immediately
 - Write each document for its declared **audience** (`customer | admin | developer | sales`) in the matching Virto style — `knowledge/ba/virto-doc-style.md` is the single source of truth for skeletons and voice. Do not collapse audiences (a Sales one-pager is benefit-led, not a how-to; a Customer guide has no GUIDs/code)
 - Browser assignments: `ba-system-analyzer` → `playwright-firefox` (fallback: `playwright-edge`), `ba-api-specialist` → `playwright-edge` (fallback: `playwright-firefox`)
-- Always query Context7 in Step 0 before launching sub-agents
+- Ground in Step 0 via `/preflight` (kb → VirtoOZ; Context7 only as VirtoOZ's fallback) before launching sub-agents
 - **BA never edits the BL oracle and writes no proposals file** — Step 4.5 routes each candidate (human source → `/qa-review-bl`; observation → `kb`; contradiction → finding). Every candidate cites a source; drop unsourced ones rather than guess.
 
 ## Stories review mode (`stories --review <TICKET>`)

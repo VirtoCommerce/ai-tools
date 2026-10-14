@@ -28,13 +28,19 @@
  *   npm run regression:plan -- critical
  *   npm run regression:plan -- full --verbose    # + per-suite caps
  *   npm run regression:plan -- sprint --json     # machine-readable, for an agent to follow
+ *   npm run regression:plan -- smoke --preflight                          # + the build-scoped pre-flight; gated suites leave the plan
+ *   npm run regression:plan -- smoke --preflight --preflight-out <path>   # also write the RegressionPreflight JSON to <path>
+ *   npm run regression:plan -- smoke --preflight --run-id <RUN_ID>        # this run's own test-run-status.json is not a lock
+ *   npm run regression:plan -- smoke --preflight --accept drift:<id>[,…]  # "proceed as is" on those drift BLOCKs (WARN)
  *
  * Exit codes: 0 planned cleanly · 1 the selection cannot run as-is (unknown id, missing CSV,
- * no executor, or a cap that would guarantee truncation).
+ * no executor, or a cap that would guarantee truncation) · 2 --preflight: pre-flight NOT READY ·
+ * 3 --preflight: the pre-flight could not run. A usage error (an --accept id not starting with
+ * `drift:`) is also exit 1.
  */
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
-import { existsSync } from "fs";
-import { join } from "path";
+import { existsSync, mkdirSync, writeFileSync } from "fs";
+import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 import { browserDenyListFor, loadManifest, resolveSelection, selectionNames, type ManifestSuite } from "../../ci/lib/suite-manifest.ts";
 import { classifyLane } from "../../ci/lib/lane-classifier.ts";
@@ -42,6 +48,8 @@ import { buildRunPlan, formatRunPlan, type PlannableSuite } from "../../ci/lib/r
 import { batchSuites, DEFAULT_MAX_BATCH_CASES } from "../../ci/lib/suite-batching.ts";
 import { orderLpt, simulateMakespan } from "../../ci/lib/scheduler.ts";
 import { formatPreflightProblems, preflightManifest, type PreflightSuite } from "../../ci/lib/manifest-preflight.ts";
+import { runRegressionPreflight, type RegressionPreflight } from "./preflight.ts";
+import { renderHuman } from "../preflight/render.ts";
 
 const DEFAULT_CONCURRENCY = { browser: 3, fastpath: 4, deterministic: 2 };
 
@@ -50,10 +58,15 @@ function parseArgs(argv: string[]): {
   json: boolean;
   verbose: boolean;
   concurrency: typeof DEFAULT_CONCURRENCY;
+  preflight: boolean;
+  preflightOut: string | null;
+  runId: string | null;
+  accept: string[];
 } {
   const args = argv.filter((a) => a !== "--");
   const flags = new Set(args.filter((a) => a.startsWith("--")));
-  const positional = args.filter((a) => !a.startsWith("--"));
+  const valued = new Set(["--preflight-out", "--run-id", "--accept", "--browsers", "--fastpath", "--deterministic"]);
+  const positional = args.filter((a, i) => !a.startsWith("--") && !valued.has(args[i - 1]));
 
   const numFlag = (name: string, fallback: number): number => {
     const i = args.indexOf(`--${name}`);
@@ -62,10 +75,16 @@ function parseArgs(argv: string[]): {
     return Number.isFinite(n) && n > 0 ? n : fallback;
   };
 
+  const valueOf = (name: string): string | null => { const i = args.indexOf(name); return i >= 0 && args[i + 1] && !args[i + 1].startsWith("--") ? args[i + 1] : null; };
+
   return {
     selection: positional[0] || "smoke",
     json: flags.has("--json"),
     verbose: flags.has("--verbose"),
+    preflight: flags.has("--preflight"),
+    preflightOut: valueOf("--preflight-out"),
+    runId: valueOf("--run-id"),
+    accept: (valueOf("--accept") ?? "").split(",").map((x) => x.trim()).filter(Boolean),
     concurrency: {
       browser: numFlag("browsers", DEFAULT_CONCURRENCY.browser),
       fastpath: numFlag("fastpath", DEFAULT_CONCURRENCY.fastpath),
@@ -74,8 +93,14 @@ function parseArgs(argv: string[]): {
   };
 }
 
-function main(): void {
-  const { selection, json, verbose, concurrency } = parseArgs(process.argv.slice(2));
+async function main(): Promise<void> {
+  const { selection, json, verbose, concurrency, preflight: wantPreflight, preflightOut, runId, accept } = parseArgs(process.argv.slice(2));
+  // D9: only a drift BLOCK can be "proceeded as is"; anything else is a usage error, never a silent no-op.
+  const notDrift = accept.filter((a) => !a.startsWith("drift:"));
+  if (notDrift.length > 0) {
+    console.error(`--accept takes drift:<id> only — not acceptable: ${notDrift.join(", ")}`);
+    process.exit(1);
+  }
   const manifest = loadManifest();
 
   const resolved = resolveSelection(manifest, selection);
@@ -112,13 +137,31 @@ function main(): void {
     (p) => p.kind !== "missing-agent",
   );
 
-  const plannable: PlannableSuite[] = suites.map((s) => ({
+  let pf: RegressionPreflight | null = null;
+  let toPlan = suites;
+  if (wantPreflight) {
+    pf = await runRegressionPreflight({
+      for: selection === "smoke" ? "smoke" : "regression", selection,
+      suites: suites.map((s) => ({ id: s.id, layer: s.layer, requiresModules: s.requiresModules })),
+      manifestProblems: problems.map((p) => ({ suiteId: p.suiteId, kind: p.kind, detail: p.detail })),
+      root: process.cwd(), ...(runId ? { runId } : {}), accept,
+    });
+    const gated = new Set(pf.gating.gated.map((g) => g.suite));
+    toPlan = suites.filter((s) => !gated.has(s.id));
+    if (preflightOut) {
+      mkdirSync(dirname(preflightOut), { recursive: true });
+      writeFileSync(preflightOut, JSON.stringify(pf, null, 2) + "\n", "utf8");
+    }
+  }
+
+  const plannable: PlannableSuite[] = toPlan.map((s) => ({
     id: s.id,
     description: s.name,
     lane: classifyLane(s),
     testCount: s.testCount,
     estimatedMinutes: s.estimatedMinutes,
     preferredBrowser: s.preferredBrowser,
+    exclusiveGroup: s.exclusiveGroup,
     browserDenyList: browserDenyListFor(s, manifest),
   }));
 
@@ -128,6 +171,7 @@ function main(): void {
     // Shape the orchestrator follows: per lane, the LPT dispatch order with everything needed
     // to place each suite without re-deriving anything.
     const out = {
+      ...(pf ? { preflight: pf } : {}),
       selection,
       filterSummary: resolved.filterSummary,
       skipped: resolved.skipped,
@@ -154,15 +198,22 @@ function main(): void {
             timeoutMinutes: s.timeoutMinutes,
             browserDenyList: s.browserDenyList,
             preferredBrowser: s.preferredBrowser,
+            /** Never in flight together with another suite of this group — run them one after another. */
+            exclusiveGroup: s.exclusiveGroup,
           })),
         })),
       capAnomalies: plan.capAnomalies,
     };
     console.log(JSON.stringify(out, null, 2));
-    process.exit(problems.length > 0 || plan.capAnomalies.length > 0 ? 1 : 0);
+    process.exit(problems.length > 0 || plan.capAnomalies.length > 0 ? 1 : pf?.verdict === "NOT READY" ? 2 : 0);
   }
 
   console.log(`=== Regression plan: ${selection} ===`);
+  if (pf) {
+    process.stdout.write(renderHuman({ env: pf.facts.env, for: pf.for, at: new Date() }, pf.facts, pf.checks));
+    if (pf.falseFailureRisk.length) console.log(`False-failure risk (changed since ${pf.baselineRunId}): ${pf.falseFailureRisk.join(", ")}`);
+    console.log("");
+  }
   console.log(`Env filters: ${resolved.filterSummary}`);
   if (resolved.skipped.length > 0) {
     console.log("");
@@ -182,6 +233,7 @@ function main(): void {
       estimatedMinutes: s.estimatedMinutes,
       ...(s.preferredBrowser ? { preferredBrowser: s.preferredBrowser } : {}),
       ...(s.browserDenyList.length ? { browserDenyList: s.browserDenyList } : {}),
+      ...(s.exclusiveGroup ? { exclusiveGroup: s.exclusiveGroup } : {}),
     })));
     const saved = lane.suites.length - batches.length;
     if (saved <= 0) continue;
@@ -203,8 +255,9 @@ function main(): void {
     for (const s of orderLpt(lane.suites)) {
       const deny = s.browserDenyList.length > 0 ? `  NOT ON ${s.browserDenyList.join(",")}` : "";
       const pref = s.preferredBrowser ? `  REQUIRES ${s.preferredBrowser}` : "";
+      const excl = s.exclusiveGroup ? `  EXCLUSIVE ${s.exclusiveGroup}` : "";
       console.log(
-        `  ${s.id.padEnd(8)}${String(s.estimatedMinutes + "m").padStart(6)}  ${String(s.cases).padStart(4)} cases  ${s.description.slice(0, 44).padEnd(46)}${pref}${deny}`,
+        `  ${s.id.padEnd(8)}${String(s.estimatedMinutes + "m").padStart(6)}  ${String(s.cases).padStart(4)} cases  ${s.description.slice(0, 44).padEnd(46)}${pref}${deny}${excl}`,
       );
     }
   }
@@ -221,10 +274,19 @@ function main(): void {
   }
 
   console.log("");
+  if (pf?.verdict === "NOT READY") {
+    console.log("Pre-flight NOT READY — see the BLOCK rows above.");
+    process.exit(2);
+  }
   console.log("Plan is runnable: every suite has a CSV and an executor, and no cap guarantees truncation.");
   process.exit(0);
 }
 
 // Same CLI guard as scripts/test-cases/sync-test-suites.ts: importing this module must not run it.
 const isCli = !!process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
-if (isCli) main();
+if (isCli) main().catch((e) => {
+  // Only the --preflight path has a defined "could not run" exit; without it, keep the old uncaught-exception behaviour.
+  if (process.argv.includes("--preflight")) { console.error(`✗ regression pre-flight could not run: ${(e as Error).message}`); process.exit(3); }
+  console.error(e);
+  process.exit(1);
+});

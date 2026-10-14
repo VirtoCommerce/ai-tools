@@ -1,0 +1,35 @@
+# name: submitReturn
+# category: returns
+# role: ORG_USER
+# purpose: Transitions Draft -> Requested. Runs EVERY createReturn-time check again PLUS: a reason is
+#   required on every line (INVALID_REQUEST if missing), an attachment is required per line when the
+#   store's Return.AttachmentsRequired is true (ATTACHMENTS_REQUIRED, extensions.orderLineItemId names
+#   the offending line), and quantity must still be available against what other Requested/etc. returns
+#   currently hold (RETURN_QUANTITY_UNAVAILABLE with extensions.requestedQuantity/availableQuantity when
+#   SOME is left; LINE_NOT_RETURNABLE with extensions.ineligibilityReason=NOTHING_LEFT_TO_RETURN when
+#   NONE is left). On any refusal the Draft is left INTACT, not deleted or corrupted -- all confirmed
+#   live 2026-09-25.
+# required-vars: RETURN_ID (String)
+# optional-vars: (none)
+# last-validated: 2026-09-25
+# known-issues: (none)
+# used-by: RET-GQL-014, RET-GQL-017, RET-GQL-018, RET-GQL-019, RET-GQL-022, RET-GQL-023, RET-GQL-024,
+#   RET-GQL-025, RET-GQL-026, RET-GQL-028 (050o-graphql-returns.csv)
+# runner-note: VCST-5628. HTTP 200 + errors[] populated is the failure shape here (like every xAPI
+#   mutation) -- always select and assert errors[0].extensions.code, never rely on data.submitReturn
+#   being null alone to distinguish WHICH gate refused the submit.
+
+mutation {
+  submitReturn(command: { returnId: "{{RETURN_ID}}" }) {
+    id
+    status
+    statusDisplayValue
+    items {
+      itemState
+      attachments {
+        name
+        url
+      }
+    }
+  }
+}

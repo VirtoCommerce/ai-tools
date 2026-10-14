@@ -34,7 +34,8 @@ rules:
       kind: manual
       ref: Register with `emailVerificationRequired = true` → attempt checkout → blocked with "Please verify your email" message. Click verification link → features unlocked. Test expired link → shows "Link expired, request a new one."
     violation_signal: Unverified user completes checkout; no verification prompt; expired link still works; verified status not persisted after sign-out/sign-in.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[code] vc-module-profile-experience-api@42213c4:src/VirtoCommerce.ProfileExperienceApiModule.Data/Commands/RegisterRequestCommandHandler.cs#LockAccount - when email verification is required the account is locked until the email is confirmed, so the user cannot sign in at all; the rule describes a signed-in unverified user (browse, cart allowed, checkout blocked, 'Please verify' message) and expiring links - re-run the check"
   - id: BL-AUTH-003
     title: Account lockout after N failed attempts
     rule: "After a configurable number of consecutive failed login attempts (platform default: 5), the account is temporarily locked. During lockout, even correct credentials are rejected with a generic message (not revealing whether the account exists). Lockout duration is configurable. Successful login resets the failure counter."

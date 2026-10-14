@@ -51,10 +51,12 @@ import { pathToFileURL } from 'node:url';
 
 import { openBase } from './core/base.mjs';
 import { flush, ownFlushDue, sweepIfDue } from './core/push.mjs';
-import { askLines, captureLines, evidenceLines, showLines } from './core/render.mjs';
+import { askLines, captureLines, evidenceLines, noneLines, showLines } from './core/render.mjs';
 import { queueDir } from './core/queue.mjs';
+import { CONDITIONS_SOURCE, DEPLOYMENT_SOURCE, METHOD_SOURCE } from './core/contract.mjs';
 import { repoRoot, writeToken } from './core/token.mjs';
-import { TOPIC_MAX, ask, capture, confirm, dispute, show, stat } from './core/verbs.mjs';
+import { TOPIC_MAX, ask, capture, confirm, dispute, none, show, stat } from './core/verbs.mjs';
+import { liveBuild } from './core/build.mjs';
 import { resolveWho } from './core/who.mjs';
 
 /** The newest protocol version this server speaks; older ones are echoed back when a client asks. */
@@ -119,6 +121,12 @@ export const TOOLS = Object.freeze([
       + 'Use it whenever you are about to assert, write or test something about platform behaviour that could be '
       + 'checked by observation — before grepping, before reasoning it out, before writing the assertion. '
       + 'Returns matching entries with their trust label, confirmation count and per-observation provenance. '
+      + 'When the base cannot tell whether any close entry states what you asked, it lists a few headlines '
+      + 'instead ("close entries, none certified to answer"): open the one most likely to state your fact with '
+      + 'kb_show, passing the printed ask handle, and rely on it only if its BODY states the fact; if none could, '
+      + 'call kb_none with the handle, then go find out and kb_capture. Being about the same page or feature is not an answer. '
+      + 'Every listed ask ENDS in one of the two -- a kb_show pick or a kb_none -- before you move on: an ask left with '
+      + 'neither is recorded as unresolved, nobody can tell whether the base helped, and the session is reminded of it at the end of your turn. '
       + 'Says plainly when the base was read and holds nothing (go find out, then kb_capture) and when it could '
       + 'NOT be read (conclude nothing; retry) — these are different answers and never look alike. '
       + 'Name the deployment you are working against, if you know it: the same behaviour differs between stands, '
@@ -139,21 +147,41 @@ export const TOOLS = Object.freeze([
   {
     name: 'kb_show',
     description: 'Read one knowledge-base entry in full by its id (KB-XXXXXXXX), including its evidence trail and status. '
-      + 'Use after kb_ask when a hit is worth reading whole, or when a report, ticket or test case cites an id.',
+      + 'Use after kb_ask when a hit is worth reading whole, or when a report, ticket or test case cites an id. '
+      + 'Opening one of the headlines kb_ask listed is your pick: pass its ask handle so the pick is recorded against that question. '
+      + 'Opening an entry only to read it before kb_confirm / kb_dispute: pass verify, so it is not recorded as a pick.',
     inputSchema: {
       type: 'object',
       properties: {
         id: str('The entry id, e.g. KB-27B4CD10.'),
+        ask: str('The ask handle kb_ask printed ("ask handle: …"), when you are opening one of its headlines.'),
+        verify: { type: 'boolean', description: 'true when you open the entry only to read it before confirming or disputing it -- not a pick from any list.' },
+        deployment: str('Optional: the stand you are working on (vcst_qa, vcptcore_stable, or its TEST_ENV name) -- you are then told whether the entry was observed on your build.'),
         topic: TOPIC,
       },
       required: ['id'],
     },
   },
   {
+    name: 'kb_none',
+    description: 'Say that NONE of the headlines kb_ask listed answers your question. Recorded against that ask, so '
+      + 'the gap is visible to whoever fills it and the base learns from it. Then go find out, and record what you '
+      + 'found with kb_capture. Reads nothing and costs nothing.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        ask: str('The ask handle kb_ask printed ("ask handle: …"). Omit it to mean your latest kb_ask.'),
+        topic: TOPIC,
+      },
+      required: [],
+    },
+  },
+  {
     name: 'kb_capture',
-    description: 'Record a NEW observation about platform behaviour that you verified yourself on a live deployment, '
+    description: 'Record a NEW fact about platform behaviour that you established yourself -- verified on a live deployment, '
+      + 'or read in source code with method "source" (labelled as such, never shown as observed) -- '
       + 'so the next session does not have to re-derive it. Use after kb_ask returned nothing and you then found out. '
-      + 'Refused if an entry already states the same subject at the same anchors and scope — confirm that one instead; '
+      + 'Refused if an entry already states the same subject at the same anchors and scope — open it (kb_show) and confirm that one instead; '
       + 'a different fact at the same coordinates is recorded as its own entry. '
       + 'Names back the entries YOU OPENED earlier in this session and asks whether what you just wrote '
       + 'disagrees with any of them — if it does, kb_dispute that entry rather than leaving the base '
@@ -165,10 +193,12 @@ export const TOOLS = Object.freeze([
         subject: str('One line, the fact itself, as a claim — not a topic.'),
         question: str('The question this entry answers, phrased as somebody would ask it.'),
         claim: str('The observation in prose: what you did, what happened, and what follows.'),
-        deployment: str('Where you observed it, e.g. vcst_qa, vcptcore_stable.'),
-        anchors: { type: 'array', items: { type: 'string' }, description: 'Structured coordinates the fact lives at: a route (/company/members), an endpoint (POST /api/carts), a GraphQL operation (Query.products). At least one.' },
+        deployment: str(`Where you observed it: ${DEPLOYMENT_SOURCE}.`),
+        anchors: { type: 'array', items: { type: 'string' }, description: 'Structured coordinates the fact lives at: a route (/company/members), an endpoint (POST /api/carts), a GraphQL operation (Query.products). At least one. '
+          + 'Never a button label, field name, menu path or bare /api -- put the label in claim and anchor at the page route or the request it sent.' },
         scope: { type: 'array', items: { type: 'string' }, description: 'axis=value pairs bounding where the fact applies, e.g. surface=storefront-ui. At least one — without scope a storefront fact gets applied to admin.' },
-        method: str('How it was established. Default "observation".'),
+        method: { type: 'string', enum: ['observation', 'source'], description: METHOD_SOURCE },
+        conditions: { type: 'array', items: { type: 'string' }, description: `${CONDITIONS_SOURCE}. One key=value per item.` },
         topic: TOPIC,
       },
       required: ['subject', 'question', 'claim', 'deployment', 'anchors', 'scope'],
@@ -178,13 +208,16 @@ export const TOOLS = Object.freeze([
     name: 'kb_confirm',
     description: 'Record that you saw an existing entry hold true on a deployment — its confirmation count is what a later '
       + 'reader weighs the claim by. Use when kb_ask returned an entry and you then observed the same thing yourself. '
+      + 'Open the entry with kb_show first: one this session only saw in a list is refused. '
       + PUBLISHED,
     inputSchema: {
       type: 'object',
       properties: {
         id: str('The entry id, e.g. KB-27B4CD10.'),
-        deployment: str('Where you observed it.'),
+        deployment: str(`Where you observed it: ${DEPLOYMENT_SOURCE}.`),
         note: str('Optional: what you saw, if it adds anything the entry does not already say.'),
+        method: { type: 'string', enum: ['observation', 'source'], description: METHOD_SOURCE },
+        conditions: { type: 'array', items: { type: 'string' }, description: `${CONDITIONS_SOURCE}. One key=value per item.` },
         topic: TOPIC,
       },
       required: ['id', 'deployment'],
@@ -194,13 +227,16 @@ export const TOOLS = Object.freeze([
     name: 'kb_dispute',
     description: 'Record that an existing entry did NOT hold — what you observed instead, and where. Never deletes or retires '
       + 'anything: one contradiction against four confirmations is a flag for a human, not a deletion. '
+      + 'Open the entry with kb_show first: one this session only saw in a list is refused. '
       + PUBLISHED,
     inputSchema: {
       type: 'object',
       properties: {
         id: str('The entry id, e.g. KB-27B4CD10.'),
-        deployment: str('Where you observed the contradiction.'),
+        deployment: str(`Where you observed the contradiction: ${DEPLOYMENT_SOURCE}.`),
         saw: str('What you saw instead — required, because a bare "it is wrong" is not evidence.'),
+        method: { type: 'string', enum: ['observation', 'source'], description: METHOD_SOURCE },
+        conditions: { type: 'array', items: { type: 'string' }, description: `${CONDITIONS_SOURCE}. One key=value per item.` },
         topic: TOPIC,
       },
       required: ['id', 'deployment', 'saw'],
@@ -314,22 +350,26 @@ async function callTool(name, args, ctx) {
       if (!question) return text(['kb_ask needs a question.'], true);
       const r = await ask(question, opened, {
         env: ctx.env, top: Number(args?.top) || 3, via: VIA, call: ctx.call, deployment: args?.deployment,
-        topic: args?.topic,
+        topic: args?.topic, builds: liveBuild,
       });
       return text(askLines(r, { prefix: 'kb_ask' }), FAILED.has(r.state));
     }
     case 'kb_show': {
       const id = String(args?.id ?? '').trim();
       if (!id) return text(['kb_show needs an entry id.'], true);
-      const r = await show(id, opened, { env: ctx.env, via: VIA, call: ctx.call, topic: args?.topic });
+      const r = await show(id, opened, { env: ctx.env, via: VIA, call: ctx.call, topic: args?.topic, ask: args?.ask, verify: args?.verify === true || args?.verify === 'true', deployment: args?.deployment, builds: liveBuild });
       return text(showLines(r, { prefix: 'kb_show' }), FAILED.has(r.state));
+    }
+    case 'kb_none': {
+      const r = await none({ env: ctx.env, ask: args?.ask, via: VIA, call: ctx.call, topic: args?.topic });
+      return text(noneLines(r, { prefix: 'kb_none' }), FAILED.has(r.state));
     }
     case 'kb_capture': {
       const r = await capture({
         subject: args?.subject, question: args?.question, claim: args?.claim,
-        deployment: args?.deployment, method: args?.method,
+        deployment: args?.deployment, method: args?.method, conditions: asList(args?.conditions),
         anchors: asList(args?.anchors), scope: asList(args?.scope),
-      }, opened, { env: ctx.env, via: VIA, call: ctx.call, topic: args?.topic });
+      }, opened, { env: ctx.env, via: VIA, call: ctx.call, topic: args?.topic, builds: liveBuild });
       // `refused` is not an error: the base already holds the fact, which is the dedup working, and
       // the text hands back the id to confirm instead.
       return text(captureLines(r, { prefix: 'kb_capture' }), r.state === 'invalid' || FAILED.has(r.state));
@@ -340,7 +380,8 @@ async function callTool(name, args, ctx) {
       const fn = verb === 'confirm' ? confirm : dispute;
       const r = await fn(String(args?.id ?? '').trim(), {
         deployment: args?.deployment, note: args?.note, saw: args?.saw, method: args?.method,
-      }, opened, { env: ctx.env, via: VIA, call: ctx.call, topic: args?.topic });
+        conditions: asList(args?.conditions),
+      }, opened, { env: ctx.env, via: VIA, call: ctx.call, topic: args?.topic, builds: liveBuild });
       return text(evidenceLines(verb, r), r.state === 'invalid' || FAILED.has(r.state));
     }
     default:

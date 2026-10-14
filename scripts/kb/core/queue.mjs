@@ -36,6 +36,9 @@ export const LOGGED = Object.freeze([
   // anchor, no scope — as opposed to `capture-refused`, a well-formed capture deduplicated against
   // an entry the base already holds. Unlogged until 2026-09-23 (PLAN §23.11); see `refuseAtDoor`.
   'capture-invalid',
+  // `confirm-invalid` / `dispute-invalid`: evidence refused because this session never opened the
+  // entry (VCST-6191). Id and a reason code only, never prose.
+  'confirm-invalid', 'dispute-invalid',
   // `session` is the DENOMINATOR, and it is the one kind written about a session that may never
   // have touched the base at all. Every other line here is evidence that the base was used, so a
   // log made only of them can count uses and can never count opportunities: a session that ran for
@@ -72,6 +75,9 @@ export const MUTATIONS = Object.freeze(['capture', 'confirm', 'dispute']);
  */
 export const isSynthetic = (env = process.env) => /^(1|true|yes|on)$/i.test(String(env.KB_SYNTHETIC ?? '').trim());
 
+/** An env switch set to an OFF spelling (`0`, `false`, `no`, `off`). Unset means on. */
+export const isOff = (value) => /^(0|false|no|off)$/i.test(String(value ?? '').trim());
+
 /**
  * THE OFF SWITCH (PR #313 review). `KB_ENABLED=0` — set durably in `.claude/settings.local.json`
  * `env`, which reaches hooks and MCP servers as well as the session — takes this machine out of the
@@ -82,7 +88,9 @@ export const isSynthetic = (env = process.env) => /^(1|true|yes|on)$/i.test(Stri
  * Default ON (opt-out), and only an explicit falsy literal turns it off: an unset or mistyped value
  * leaves the team default in place rather than silently opting somebody out.
  */
-export const kbDisabled = (env = process.env) => /^(0|false|no|off)$/i.test(String(env.KB_ENABLED ?? '').trim());
+export const kbDisabled = (env = process.env) => isOff(env.KB_ENABLED);
+/** `KB_REMIND=0`: only the end-of-turn reminder (`.claude/hooks/kb-remind.mjs`) is off. */
+export const remindDisabled = (env = process.env) => isOff(env.KB_REMIND);
 
 /**
  * THE OPERATOR'S YES, opt-in (PR #313 review). `KB_PUSH_CONFIRM=1` holds every push that has no
@@ -339,7 +347,8 @@ export async function log(record, { env = process.env, who, run } = {}) {
   } catch (err) {
     return { ok: false, path, line, why: `${err.code ?? 'EUNKNOWN'}: ${err.message}` };
   }
-  if (line.kind === 'ask') await noteAsk(env, line.at, line.q);
+  await noteLine(env, line);
+  await noteLoop(env, line);
   return { ok: true, path, line };
 }
 
@@ -347,6 +356,15 @@ export async function log(record, { env = process.env, who, run } = {}) {
  * The line `log` would append, built and NOT written. `log` is its one writer; the other caller is
  * a dry-run push (VCST-6103), which must show the lines a real push would add without adding them.
  */
+// A line's `at` is also an ambiguous ask's HANDLE: `kb_show` / `kb_none` name their ask by it. Two
+// parallel `kb_ask` calls in one MCP process can log in the same millisecond, and then a pick pairs
+// with the wrong ask -- so within a process `at` strictly increases (+1 ms on a tie).
+let lastAt = 0;
+function nextAt() {
+  lastAt = Math.max(Date.now(), lastAt + 1);
+  return new Date(lastAt).toISOString();
+}
+
 export function composeLine(record, { env = process.env, who, run } = {}) {
   // All three marks are stamped LAST and by the single writer, so no verb can forget one and no
   // verb can fake one: `synthetic` because an env var must cover every line a benchmark run
@@ -361,7 +379,7 @@ export function composeLine(record, { env = process.env, who, run } = {}) {
   // is a bound the log does not have.
   const handle = run === undefined ? runOf(env) : String(run ?? '').trim().slice(0, RUN_MAX).trim();
   return {
-    at: new Date().toISOString(),
+    at: nextAt(),
     ...record,
     ...(handle ? { run: handle } : {}),
     ...(me ? { who: me } : {}),
@@ -390,6 +408,96 @@ export function composeLine(record, { env = process.env, who, run } = {}) {
  * this machine from here: the sidecar is local, and the same `q` is already on the ask's own line.
  */
 export const metaPath = (env, session = sessionId(env)) => join(queueDir(env), `${session}.meta.json`);
+/**
+ * `<session>.reminded.ndjson` -- the asks `kb-remind` already raised, one `at` per line. ITS OWN FILE, and
+ * APPEND-ONLY like the journal: a Stop and a SubagentStop (or two subagents) finishing together each
+ * append their own lines, where a read-modify-write would let the last rename erase the other's
+ * markers and raise an ask twice (PR #400 review).
+ */
+export const remindedPath = (env, session = sessionId(env)) => join(queueDir(env), `${session}.reminded.ndjson`);
+/**
+ * `<session>.owners.ndjson` -- which subagent transcript holds an open ask, `{ at, path }` per line,
+ * written by `kb-remind` the first time it finds one. Later stops look at that one file's tail instead
+ * of re-reading every subagent transcript in full (PR #400 review). Append-only, local.
+ */
+export const ownersPath = (env, session = sessionId(env)) => join(queueDir(env), `${session}.owners.ndjson`);
+
+/**
+ * `<session>.loop.ndjson` -- THE LOOP JOURNAL (VCST-6156): one short line per ask, per `show` /
+ * `none`, and per write that reached the queue, for `kb-remind` to read at `Stop`. APPEND-ONLY, and
+ * that is the whole design: `meta.json` is rewritten whole by every kb process of the session (the MCP
+ * server, the CLI, background subagents), so two of them interleaving lose one update -- and a lost
+ * write would turn into a false reminder, a lost ask into a missed one. A small `appendFile` cannot
+ * erase another process's line. Not a `.jsonl`, so the queue, the push and `kb-flush` never take it
+ * for queue work. Local only: an ask's question and entry ids, never a subject or claim.
+ *
+ * IDS, SINCE VCST-6191: an ask records the entries it showed (`shown`, an `ambiguous` list) and the
+ * bodies it printed (`opened`), a `show` the entry it opened (`id`). `kb confirm` / `kb dispute` read
+ * them to refuse an entry this session never opened (`loop.mjs` `openedIds`): on 2026-10-06 agents
+ * confirmed entries they had seen only as a list excerpt (VCST-6191). The queue alone cannot answer
+ * that -- it is flushed at every `Stop` -- so the gate reads both.
+ *
+ * A WRITE is a line that queued something -- a `capture` / `confirm` / `dispute` carrying its
+ * `payload` -- or a dedup refusal (the base already holds the fact). A confirm the base could not be
+ * read for carries a `state` and no payload, and closes nothing (PR #400 review).
+ */
+export const loopPath = (env, session = sessionId(env)) => join(queueDir(env), `${session}.loop.ndjson`);
+const WROTE = new Set(['capture', 'confirm', 'dispute']);
+/**
+ * A write that QUEUED something: a capture / confirm / dispute with no `state` (a failure carries one),
+ * and for a capture its minted id. Read the same way on a queue line (which also carries `payload`) and
+ * on a published log line (which does not) -- the one rule `loopRecord` and `report-analyse.mjs`
+ * `lists()` share, so hook and report cannot disagree about what was written (PR #407 review).
+ */
+export const queuedWrite = (line) => WROTE.has(line?.kind) && !line.state && (line.kind !== 'capture' || Boolean(line.id));
+export function loopRecord(line) {
+  const at = String(line.at ?? '');
+  if (!at) return null;
+  // `call` (the MCP tool-use id) says WHOSE ask it was: `kb-remind` finds it in the main transcript or
+  // in one subagent's, so each agent is reminded of its own misses only (PR #400 review).
+  if (line.kind === 'ask') {
+    // `queued`: the base said nothing, but THIS session already captured the fact and it is waiting
+    // in the queue. Such an ask is answered -- reminding it would make the agent capture it twice
+    // (PR #400 review).
+    return {
+      at, kind: 'ask', q: String(line.q ?? ''), ...(line.state ? { state: String(line.state) } : {}), ...(line.call ? { call: String(line.call) } : {}),
+      ...(Array.isArray(line.queued) && line.queued.length ? { queued: true } : {}),
+      ...(Array.isArray(line.shown) && line.shown.length ? { shown: line.shown.map(String) } : {}),
+      ...(Array.isArray(line.opened) && line.opened.length ? { opened: line.opened.map(String) } : {}),
+      // The hash of each body this ask printed (VCST-6221 step 6) -- local, from the line's `payload`.
+      ...(line.payload?.bodyHashes && typeof line.payload.bodyHashes === 'object' ? { bodyHashes: line.payload.bodyHashes } : {}),
+    };
+  }
+  if (line.kind === 'show' || line.kind === 'none') {
+    return {
+      at, kind: line.kind, ...(line.after ? { after: String(line.after) } : {}), ...(line.state ? { state: String(line.state) } : {}),
+      ...(line.kind === 'show' && line.state === 'answer' && line.id ? { id: String(line.id) } : {}),
+      ...(line.kind === 'show' && line.verify ? { verify: true } : {}),
+      ...(line.kind === 'show' && line.unpaired ? { unpaired: true } : {}),
+      ...(line.kind === 'show' && typeof line.payload?.bodyHash === 'string' ? { bodyHash: line.payload.bodyHash } : {}),
+    };
+  }
+  if (queuedWrite(line) || line.kind === 'capture-refused') return { at, kind: 'write' };
+  return null;
+}
+async function noteLoop(env, line) {
+  const rec = loopRecord(line);
+  if (!rec) return;
+  // A lost record costs a reminder, never the line -- and no false confirm refusal while the queue
+  // still holds the `show`, because the gate reads the queue too (`verbs.mjs` `openedEver`).
+  try { await appendFile(loopPath(env), `${JSON.stringify(rec)}\n`, 'utf8'); } catch { /* see above */ }
+}
+/** The journal, oldest first; a torn line is skipped. Synchronous: the Stop hook's whole budget is milliseconds. */
+export function readLoop(env = process.env, session = sessionId(env)) {
+  let text = '';
+  try { text = readFileSync(loopPath(env, session), 'utf8'); } catch { return []; }
+  const out = [];
+  for (const raw of text.split('\n')) {
+    if (!raw.trim()) continue;
+    try { const r = JSON.parse(raw); if (r && typeof r.at === 'string' && typeof r.kind === 'string') out.push(r); } catch { /* torn */ }
+  }
+  return out;
+}
 
 /** The sidecar, or `{}`. A torn or missing file is an absent pointer, never a failed verb. */
 export async function readMeta(env = process.env, session = sessionId(env)) {
@@ -411,17 +519,44 @@ export const metaAsks = (meta) => (Array.isArray(meta?.asks) ? meta.asks : [])
   .filter((a) => a && typeof a.at === 'string' && a.at);
 
 /**
- * Record the ask just written. Best effort in the strict sense: a sidecar that could not be written
- * costs a later capture its pointer — which is what happened on every flush before this — and must
- * never cost the ask.
+ * Record what the sidecar keeps about the line just written: an ask's `at`/`q`, and a CLI line's
+ * transcript id (`metaTranscripts` below says why). ONE read and ONE write per line, so this adds no second
+ * window in which two parallel kb processes of one session overwrite each other's update. Best
+ * effort in the strict sense: a sidecar that could not be written costs a later capture its pointer
+ * — which is what happened on every flush before this — and must never cost the line.
  */
-async function noteAsk(env, at, q) {
+async function noteLine(env, line) {
+  const ask = line.kind === 'ask';
+  const tx = line.via === 'cli' ? String(env.CLAUDE_CODE_SESSION_ID ?? '').trim() : '';
+  const newTx = TRANSCRIPT_ID.test(tx) ? tx : '';
+  if (!ask && !newTx) return;
   try {
     const meta = await readMeta(env);
-    const asks = [...metaAsks(meta), { at: String(at), q: String(q ?? '') }].slice(-ASK_MEMORY);
-    await writeFile(metaPath(env), JSON.stringify({ ...meta, asks }), 'utf8');
-  } catch { /* the pointer is lost, the ask is not */ }
+    const known = metaTranscripts(meta);
+    const addTx = newTx && !known.includes(newTx);
+    if (!ask && !addTx) return;
+    const next = { ...meta };
+    if (ask) next.asks = [...metaAsks(meta), { at: String(line.at), q: String(line.q ?? ''), ...(line.state ? { state: String(line.state) } : {}) }].slice(-ASK_MEMORY);
+    if (addTx) next.transcripts = [...known, newTx].slice(-TRANSCRIPT_MEMORY);
+    await writeFile(metaPath(env), JSON.stringify(next), 'utf8');
+  } catch { /* the pointer is lost, the line is not */ }
 }
+
+/**
+ * WHICH TRANSCRIPT a CLI line can be matched in (VCST-6146). `core/caller.mjs` attributes a CLI line
+ * by finding the shell tool call that ran it, and it must look only in THIS session's transcript:
+ * searched project-wide, a plain-terminal line (its own process-keyed queue) or another session's
+ * line claimed an agent's call by asking the same question minutes later. The queue key cannot say
+ * which transcript that is — on the desktop it comes from `CLAUDE_CODE_HOST_SESSION_ID`, not the
+ * transcript's id — so the id Claude Code gives every shell it runs is recorded here. A process with
+ * none (a plain terminal, CI) records nothing, and its lines are never matched. Local, like `asks`.
+ */
+export const TRANSCRIPT_MEMORY = 20;
+const TRANSCRIPT_ID = /^[A-Za-z0-9-]{8,64}$/;
+
+/** The transcript ids the sidecar holds. A torn or older sidecar is `[]`. */
+export const metaTranscripts = (meta) => (Array.isArray(meta?.transcripts) ? meta.transcripts : [])
+  .filter((t) => typeof t === 'string' && TRANSCRIPT_ID.test(t));
 
 // ── what the last push did: the only trace a detached push leaves ─────────────────────────────
 //

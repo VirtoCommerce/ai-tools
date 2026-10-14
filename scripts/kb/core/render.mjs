@@ -11,7 +11,41 @@
 // and the server joins them; neither has to guess where the newlines were meant to be.
 
 import { MSYS_REMEDY } from './anchors.mjs';
+import { CONTRACT, DEPLOYMENT_SOURCE, METHOD_SOURCE, SCOPE_SOURCE } from './contract.mjs';
 import { HEADLINE } from './exits.mjs';
+import { isResolved } from './index-build.mjs';
+import { idList } from './index-load.mjs';
+
+/**
+ * One evidence item as a line: who, where, under what conditions, when -- and, for a dispute a judge
+ * closed, how it was closed (VCST-6179). A resolved dispute is still printed: it is the history of
+ * the claim, and the resolution says why it no longer flags the entry.
+ */
+function evidenceLine(e) {
+  // A `resolved` outside RESOLUTIONS closes nothing, and says so rather than reading as closed.
+  const verdict = !e.contradicts || !e.resolved ? ''
+    : isResolved(e) ? ` [resolved: ${e.resolved}${e.resolution ? ` — ${e.resolution}` : ''}]`
+      : ` [unknown resolution "${e.resolved}" — still open]`;
+  return `  ${e.contradicts ? (e.contested ? 'contested on another build' : 'contradicted') : 'seen'} by ${e.by ?? '?'} on ${e.deployment ?? '?'}`
+    + `${e.contested ? ` (${e.contested})` : ''}`
+    + `${e.conditions ? ` {${e.conditions}}` : ''} at ${e.at ?? '?'}${methodText(e.method)}`
+    + `${e.note ? ` — ${e.note}` : ''}${verdict}`;
+}
+
+/** How it was established, when that is not the default: a source fact is always said (VCST-6186). */
+const methodText = (m) => {
+  const v = String(m ?? '').trim();
+  if (!v || v.toLowerCase() === 'observation') return '';
+  return v.toLowerCase() === 'source' ? ' (from source, not observed live)' : ` (${v})`;
+};
+
+/**
+ * A soft dispute (VCST-6221): somebody saw it differently on another build, and no judge has looked yet.
+ * Not DISPUTED -- the difference may be the build -- but never silent either: the reader sees what differed.
+ */
+const contestedText = (t) => (t?.contested
+  ? `, contested on another build (not yet judged${t.contestedOn?.[0] ? `: ${t.contestedOn[0]}` : ''})`
+  : '');
 
 /** The three things `cat` cannot print, printed (PLAN §3.1 step 4). */
 export function hitLines(hit) {
@@ -19,6 +53,10 @@ export function hitLines(hit) {
   lines.push(`  ${hit.id}  [${hit.trust.label}]  ${hit.trust.confirmations} confirmation(s)`
     + `${hit.trust.provisional ? ' per the index, unverified — the body did not arrive' : ''}`
     + `${hit.trust.disputed ? `, ${hit.trust.disputed} DISPUTED` : ''}`
+    + `${hit.trust.fromSource ? ` (${hit.trust.fromSource} of them read from source, not observed live)` : ''}`
+    + contestedText(hit.trust)
+    + `${hit.trust.resolved ? `, ${hit.trust.resolved} dispute(s) resolved` : ''}`
+    + `${hit.trust.beforeAmendment ? `, ${hit.trust.beforeAmendment} not counted (they confirmed the claim before a judge corrected it)` : ''}`
     // SESSIONS, NOT "INDEPENDENT PARTIES". `by` holds a session key and never held a person, so the
     // old wording promised independence of JUDGEMENT and delivered independence of RUN. Measured the
     // day it was noticed: all 125 commits in the base are one author, so every "5 independent
@@ -37,6 +75,8 @@ export function hitLines(hit) {
     // exactly who needs it.
     + `${hit.trust.anonymous ? `, ${hit.trust.anonymous} anonymous` : ''}`);
   lines.push(`  ${hit.subject}`);
+  // Where it was seen, against the asker's own build (VCST-6221) -- only when the ask named its stand.
+  if (hit.build) lines.push(`  build: observed on ${hit.build.label}${hit.build.diff ? ` (yours vs then: ${hit.build.diff})` : ''}`);
   const matched = [
     hit.matchedOn.anchors.length ? `anchor ${hit.matchedOn.anchors.join(', ')}` : null,
     hit.matchedOn.tokens.length ? `words ${hit.matchedOn.tokens.join(' ')}` : null,
@@ -44,10 +84,7 @@ export function hitLines(hit) {
   lines.push(`  matched on: ${matched || '—'}   (score ${hit.score})`);
   if (hit.indexDrift) lines.push(`  ! ${hit.indexDrift}`);
   if (hit.unavailable) { lines.push(`  ! ${hit.unavailable}`); return lines; }
-  for (const p of hit.provenance) {
-    lines.push(`  ${p.contradicts ? 'contradicted' : 'seen'} by ${p.by ?? '?'} on ${p.deployment ?? '?'}`
-      + ` at ${p.at ?? '?'} (${p.method})${p.note ? ` — ${p.note}` : ''}`);
-  }
+  for (const p of hit.provenance) lines.push(evidenceLine(p));
   lines.push('');
   for (const line of String(hit.body ?? '').split('\n')) lines.push(`  | ${line}`);
   return lines;
@@ -56,8 +93,29 @@ export function hitLines(hit) {
 /** Said wherever a repair ran: the next command from the same shell will be mangled the same way. */
 const MSYS_NOTE = `  (your shell rewrote a leading "/" into a local path; it was undone. ${MSYS_REMEDY})`;
 
+/** What this session captured and has not published, said wherever the base certified no answer. */
+function queuedLines(queued) {
+  if (!(queued ?? []).length) return [];
+  return [
+    `  you captured this yourself earlier in THIS session and it is not published yet —`
+      + ` it is not in the base and nobody else can see it:`,
+    ...queued.map((q) => `    ${q.id}  ${q.subject}${q.at ? `  (queued ${q.at})` : ''}`),
+  ];
+}
+
 export function askLines(r, { prefix = 'kb ask' } = {}) {
+  // A verdict ranker's `ambiguous` (VCST-6122 Decision 1a): the headlines, then the handle the pick
+  // or the `none` must carry so the log can pair them with THIS ask.
+  if (r.verdict === 'ambiguous') {
+    return [
+      ...verdictLines({ verdict: 'ambiguous', headlines: r.headlines }, { prefix }),
+      ...(r.repaired === 'msys' ? [MSYS_NOTE] : []),
+      ...(r.handle ? [`  ask handle: ${r.handle}  (pass it as \`ask\` to kb_show / kb_none, or as --ask on the CLI)`] : []),
+      ...queuedLines(r.queued),
+    ];
+  }
   const lines = [`${prefix}: ${HEADLINE[r.state] ?? r.state}`];
+  if (r.verdict === 'none' && r.concepts?.length) lines.push(`  your question maps to concepts nothing in the base is filed under: ${r.concepts.join(', ')}`);
   if (r.why) lines.push(`  ${r.why}`);
   // Said on every state: the repair already ran, but the next command from the same shell will be
   // mangled the same way, and only the agent can change how it is typed.
@@ -77,13 +135,59 @@ export function askLines(r, { prefix = 'kb ask' } = {}) {
   // work, and the reader is the one party who can judge it. Named as a DRAFT and kept out of the
   // hit list: it carries no trust, no confirmations and no provenance a second person could check,
   // and the state stays `miss` because the base really does hold nothing yet.
-  if (r.state === 'miss' && (r.queued ?? []).length) {
-    lines.push(`  you captured this yourself earlier in THIS session and it is not published yet —`
-      + ` it is not in the base and nobody else can see it:`);
-    for (const q of r.queued) lines.push(`    ${q.id}  ${q.subject}${q.at ? `  (queued ${q.at})` : ''}`);
-  }
+  if (r.state === 'miss') lines.push(...queuedLines(r.queued));
   for (const hit of r.hits ?? []) lines.push(...hitLines(hit));
   return lines;
+}
+
+/** How many characters of an entry's body an `ambiguous` headline carries. */
+export const EXCERPT_CHARS = 200;
+
+/** The opening of a body, on one line, cut at a word boundary. Bodies lead with the fact itself. */
+export function excerpt(body, max = EXCERPT_CHARS) {
+  const flat = String(body ?? '').replace(/\s+/g, ' ').trim();
+  return flat.length > max ? `${flat.slice(0, max).replace(/\s+\S*$/, '')} …` : flat;
+}
+
+/**
+ * The agent's half of an `ambiguous` verdict, said where the agent reads it: the base found these and
+ * cannot certify that any of them states the fact (VCST-6122 Decision 1a). Short because it is paid on
+ * every ask; the full rule belongs in the MCP tool description, paid once per session. M4 measured a
+ * Sonnet-class agent on exactly this text -- changing it changes what the gate measured.
+ */
+// BOTH DOORS ARE NAMED (exits.mjs, PLAN §5.1): `kb_show` / `kb_none` exist only on the MCP server and
+// `npm run kb -- show|none` only on the CLI, so naming one is a dead end for the reader with the other.
+export const AMBIGUOUS_CONTRACT = 'close entries, none certified to answer. Open the one most likely to state your fact '
+  + '(kb_show <id>, or `npm run kb -- show <id> --ask <handle>`) and rely on it only if its body does; '
+  + 'if none could, say so (kb_none, or `npm run kb -- none --ask <handle>`). Same topic is not an answer.';
+
+/**
+ * The three verdicts (VCST-6122 Decisions 1 and 1a). An `answer` is ONE entry, rendered exactly as a hit
+ * always was; `ambiguous` is a few headlines -- subject, the question each answers, the opening of its
+ * body, the concept that tells it apart -- for the agent to open one of; `none` names the question's own
+ * concepts that nothing in the base is filed under, so "nothing recorded" reads as a coverage gap.
+ *
+ * `says: false` drops the body excerpt from the `ambiguous` list -- a bench-only switch for VCST-6191,
+ * which measures whether the agent chooses as well from subject + question alone.
+ *
+ * @param {{verdict:string, hit?:object, headlines?:Array<{id,subject,separating,question,body}>, concepts?:string[]}} v
+ */
+export function verdictLines(v, { prefix = 'kb ask', says = true } = {}) {
+  if (v.verdict === 'answer') return [`${prefix}: ${HEADLINE.answer}`, ...hitLines(v.hit)];
+  if (v.verdict === 'ambiguous') {
+    return [
+      `${prefix}: ${AMBIGUOUS_CONTRACT}`,
+      ...v.headlines.flatMap((h) => [
+        `  ${h.id}  ${h.subject}${h.separating ? `  [${h.separating}]` : ''}`,
+        ...(h.question ? [`      answers: ${h.question}`] : []),
+        ...(says && h.body ? [`      says: ${excerpt(h.body)}`] : []),
+      ]),
+    ];
+  }
+  return [
+    `${prefix}: ${HEADLINE.miss}`,
+    ...(v.concepts?.length ? [`  your question maps to concepts nothing in the base is filed under: ${v.concepts.join(', ')}`] : []),
+  ];
 }
 
 export function showLines(r, { prefix = 'kb show' } = {}) {
@@ -94,16 +198,22 @@ export function showLines(r, { prefix = 'kb show' } = {}) {
   }
   const lines = [
     `${r.entry.id}  [${r.trust.label}]  ${r.trust.confirmations} confirmation(s)`
-      + `${r.trust.disputed ? `, ${r.trust.disputed} DISPUTED` : ''}   status: ${r.entry.status}`,
+      + `${r.trust.disputed ? `, ${r.trust.disputed} DISPUTED` : ''}`
+      + `${r.trust.fromSource ? ` (${r.trust.fromSource} of them read from source, not observed live)` : ''}`
+      + contestedText(r.trust)
+      + `${r.trust.resolved ? `, ${r.trust.resolved} dispute(s) resolved` : ''}`
+      + `${r.trust.beforeAmendment ? `, ${r.trust.beforeAmendment} not counted (they confirmed the claim before a judge corrected it)` : ''}`
+      + `   status: ${r.entry.status}`,
     `${r.entry.subject}`,
     `question: ${r.entry.question ?? '—'}`,
     `anchors:  ${(r.entry.anchors ?? []).map((a) => a.coordinate).join(', ')}`,
     `scope:    ${r.row.scope.join(', ')}`,
+    ...(r.build ? [`build:    observed on ${r.build.label}${r.build.diff ? ` (yours vs then: ${r.build.diff})` : ''}`] : []),
   ];
-  for (const e of r.entry.evidence ?? []) {
-    lines.push(`  ${e.contradicts ? 'contradicted' : 'seen'} by ${e.by ?? '?'} on ${e.deployment ?? '?'} at ${e.at ?? '?'}`
-      + `${e.note ? ` — ${e.note}` : ''}`);
-  }
+  // A retired or split entry still resolves by id (VCST-6122 Decision 2); say where its fact went.
+  const next = idList(r.entry.supersededBy);
+  if (next.length) lines.push(`superseded by: ${next.join(', ')}`);
+  for (const e of r.entry.evidence ?? []) lines.push(evidenceLine(e));
   lines.push('');
   lines.push(r.body);
   return lines;
@@ -116,10 +226,36 @@ export function captureLines(r, opts = {}) {
   return lines;
 }
 
-function captureBody(r, { prefix = 'kb capture' } = {}) {
-  if (r.state === 'invalid') {
-    return [`${prefix}: ${r.why}`, ...(r.problems ?? []).map((p) => `  ${p.coordinate} — ${p.kind}: ${p.why}`)];
+/**
+ * The write contract in six lines, printed under a CLI refusal: the CLI door has no input schema, so
+ * this is the only place a shell caller sees the contract before it retries (VCST-6156). The MCP door
+ * gets the same facts from its tool schema and is not handed the card.
+ */
+export const CONTRACT_CARD = [
+  `  the capture contract (in full: ${CONTRACT}):`,
+  '    --anchor   a route (/account/orders), an endpoint (POST /api/carts) or a GraphQL op (Query.products);',
+  '               never a button label, field name or menu path -- those go in --claim',
+  `    --deployment  ${DEPLOYMENT_SOURCE}`,
+  `    --method   ${METHOD_SOURCE}`,
+  `    --scope    ${SCOPE_SOURCE}`,
+  '    fix the payload and retry ONCE with the same --subject; prefer kb_capture (MCP) when it is connected',
+];
+
+function invalidCaptureLines(r, { prefix, card }) {
+  const lines = [`${prefix}: ${r.why}`];
+  for (const p of r.problems ?? []) {
+    lines.push(`  ${p.coordinate} — ${p.kind}: ${p.why}`);
+    if (p.fix) lines.push(`    fix: ${p.fix}`);
   }
+  for (const [field, source] of Object.entries(r.missing ?? {})) lines.push(`  ${field}: ${source}`);
+  if (r.suggest?.length) lines.push(`  your own text names: ${r.suggest.join(', ')} -- anchor there if the behaviour lives there`);
+  if (card) lines.push('', ...CONTRACT_CARD);
+  else if (r.contract) lines.push(`  contract: ${r.contract}`);
+  return lines;
+}
+
+function captureBody(r, { prefix = 'kb capture', card = false } = {}) {
+  if (r.state === 'invalid') return invalidCaptureLines(r, { prefix, card });
   if (r.state === 'refused') {
     // A refusal is not a failure -- it is the design working. The ranking missed an entry that
     // exists, and instead of a duplicate the base gets a confirmation.
@@ -128,6 +264,17 @@ function captureBody(r, { prefix = 'kb capture' } = {}) {
       ? 'REFUSED — an entry already has this subject, so this capture would take its id.'
       : 'REFUSED — the base already holds this fact.';
     return [`${prefix}: ${head}`, '', `  ${r.message.split('\n').join('\n  ')}`];
+  }
+  if (r.state === 'dry-run') {
+    // What a real capture would print, minus the queue: the id it would take and the three hints --
+    // they are the reason to dry-run a payload at all (PR #400 review).
+    return [
+      `${prefix}: dry run -- would queue ${r.id} — ${r.entry?.subject ?? ''}`,
+      `  ${r.why}`,
+      ...readLines(r.read),
+      ...neighbourLines(r.alsoHere),
+      ...relatedLines(r.related),
+    ];
   }
   if (r.state !== 'queued') {
     const lines = [`${prefix}: ${HEADLINE[r.state] ?? r.state}`];
@@ -215,7 +362,19 @@ function evidenceBody(verb, r) {
   }
   return [
     `kb ${verb}: queued on ${r.id} (${r.row.subject})`,
+    // The gate's answer (VCST-6221): said to the agent, so it knows why the entry will not turn DISPUTED.
+    ...(r.item?.contested ? [`  different build: recorded as a soft dispute (contested on another build: ${r.item.contested}); the judge still reviews it, readers do not see the entry as DISPUTED`] : []),
     `  ${r.queuedTo}`,
     '  nothing has been sent; it ships with the next push.',
+  ];
+}
+
+/** `kb none` / `kb_none`: what was recorded, and against which ask. */
+export function noneLines(r, { prefix = 'kb none' } = {}) {
+  if (r.state !== 'recorded') return [`${prefix}: ${HEADLINE[r.state] ?? r.state}`, ...(r.why ? [`  ${r.why}`] : [])];
+  return [
+    `${prefix}: recorded — none of the entries answers${r.q ? ` "${r.q}"` : ''}.`,
+    ...(r.why ? [`  ${r.why}`] : []),
+    '  Now go find out, and record what you find with kb_capture (or `npm run kb -- capture`).',
   ];
 }

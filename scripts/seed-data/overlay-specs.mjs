@@ -67,13 +67,18 @@ export const MEMBER_ID_ALIASES = [
   // precisely what leaves @td(ORG_TF_MBR_*.id) pointing at a deleted contact. Without the probe that
   // is silent: the assertion simply never matches and the case reads as a product bug.
   /^ORG_TF_MBR_/,
+  // VCST-5944 push-message audience fixture: every one of these is a MEMBER — two Organizations,
+  // three Contacts, one Employee. They are torn down and re-seeded per investigation, so a stale
+  // overlay id here would silently point @td(PUSH_AUDIENCE_*.id) at a deleted company and make the
+  // recipient counts read as a product defect rather than a data one.
+  /^PUSH_AUDIENCE_/,
 ];
 
 /**
  * Aliases whose `platform_id` is a MEMBER GUID. Deliberately narrow — see header note 4.
  * `ORG_*` = the b2b/white-labeling organizations (`ORG_ACME`, `ORG_TECHFLOW`, …).
  */
-export const MEMBER_PLATFORM_ID_ALIASES = [/^ORG_/];
+export const MEMBER_PLATFORM_ID_ALIASES = [/^ORG_/, /^PUSH_AUDIENCE_/];
 
 /**
  * `<NAME>_PLATFORM_ID` aliases written by `writeLiveIdAliases()` hold an ORG member id, EXCEPT the

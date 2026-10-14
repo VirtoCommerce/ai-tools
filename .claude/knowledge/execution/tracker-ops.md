@@ -26,8 +26,19 @@ deliver one conclusion — and left them to reconcile which version is current.
 3. **Nothing is posted mid-run** "so they know sooner". Findings live in chat and in the local
    report until close-out. If the operator explicitly says *post now*, that post becomes **the**
    comment for the run and everything later amends it.
-4. **A second comment requires the operator to ask for one**, for a reason they state. Not because
-   the run learned something new — a run always learns something new.
+4. **A second comment *in the same round* requires the operator to ask for one**, for a reason they
+   state. Learning something new about the same build is an amend — a run always learns something new.
+5. **A retest on an UPDATED artifact is a new round, and a new round is a NEW comment.** The developer
+   shipped new builds, so the people waiting on them must be notified, and an edit notifies nobody. The
+   earlier comment stays as that round's record. Name the build: `--artifact "<build under test>"`.
+   Without an artifact, a comment older than 12 h (`TRACKER_ROUND_HOURS`) is presumed to be another
+   round. **Exception:** an autonomous `/qa-test --iterate` loop is one round by design and amends with
+   `--same-round "<reason>"` — **but only its own round DELTAS.** A comment that already holds a
+   **published verdict** (the full `QA Complete` template — e.g. round 1 ran without `--iterate` and the
+   loop was entered later) is that round's record: it is never amended across builds, `--same-round` or
+   not. The next round posts a **new** comment, which needs no override because a new build is a new
+   round. Enforced by the helper (`VERDICT_OVERWRITE`, `scripts/tracker/round-guard.mjs`): a verdict is
+   amendable only on a build **proven** equal to the one it reports.
 
 **Why this is mechanical and not a judgment call.** The failure mode is that every individual
 comment is defensible while the aggregate is spam, so judgment-in-the-moment cannot catch it — the
@@ -40,26 +51,52 @@ comment, a results comment correcting it, a delta measurement, a malformed wiki-
 consolidated report superseding the first three. The fifth contained the other four. Teammates had
 already acted on the superseded ones.
 
+**Measured 2026-09-30, VCST-5883 — the opposite failure, which is why rule 5 exists:** a round-2 retest
+of NEW builds was amended into round 1's comment 110693, and the developer and PO never learned it
+happened. Three mechanisms let it through: the helper's run id was always `local` (it read a session
+variable Claude Code does not export), so a checkout was one run forever; `--amend` had no guard at all;
+and the MCP hooks matched one server name, so a claude.ai Atlassian connector bypassed them. Fixed in
+issue #360 — the round is now keyed on the build under test.
+
+**Measured 2026-10-08, VCST-6077 — rule 5's exception swallowing a verdict:** round 1 ran without
+`--iterate` and posted a full FAIL report with two inline screenshots (comment 111584). Re-entered as
+`--iterate` round 2, the exit round amended it with round 2's PASS WITH NOTES under `--same-round`, which
+short-circuited every amend check — the RED→GREEN record and the images vanished, and an edit notifies
+nobody. The operator caught it; the round-1 body was restored and round 2 re-posted as its own comment.
+`--same-round` now cannot reach a published verdict (`VERDICT_OVERWRITE`).
+
 ### 0a. How to amend (Jira)
 
-The Atlassian MCP exposes only `addCommentToJiraIssue` — **there is no edit or delete tool**, which is
-precisely why corrections turned into new comments.
+The Atlassian MCP was long used as if `addCommentToJiraIssue` could only post, which is precisely why
+corrections turned into new comments. It CAN edit: pass `commentId` (the local `atlassian` server and the
+claude.ai connectors alike; `addOrEditJiraIssueComment` on some connectors). There is still no delete tool; the hooks below guard that
+edit path too.
 
 **Use the helper — it makes amending as cheap as posting, and keeps the ledger for you:**
 
 ```bash
-npm run tracker:comment -- --ticket VCST-1234 --body-file body.md              # post (once)
-npm run tracker:comment -- --ticket VCST-1234 --amend 109824 --body-file body.md
+npm run tracker:comment -- --ticket VCST-1234 --artifact "<build>" --body-file body.md   # post (once per round)
+npm run tracker:comment -- --ticket VCST-1234 --amend 109824 --artifact "<build>" --body-file body.md
+npm run tracker:comment -- --ticket VCST-1234 --amend 109824 --same-round "<reason>" --body-file body.md
 npm run tracker:comment -- --ticket VCST-1234 --get 109824                     # read it back
 npm run tracker:comment -- --ticket VCST-1234 --delete 109823
 npm run tracker:comment -- --ticket VCST-1234 --body-file body.md --force-new "<reason>"
+npm run tracker:comment -- --ticket VCST-1234 --artifact "<build>" --body-file body.md --attach-file plan.md   # §5d
 ```
 
-It refuses a second `--post` for a ticket in the same run, rejects a wiki-markup body (§5a), writes
+`--attach` is for an **image** to embed inline (§5c — it forces the v2 API and a wiki body);
+`--attach-file` is for any **file** to link (a plan, a report page): the body keeps its dialect and one
+`Attached:` line linking each file by id is appended. **Never upload with raw REST from this repo** —
+both flags dedupe against what is already on the issue, which is what makes a retry safe.
+
+It guards BOTH directions (`scripts/tracker/round-guard.mjs`): a second `--post` in the same round is
+refused (offering `--amend`), and an `--amend` of a comment recorded for a different `--artifact`, or
+older than 12 h with no artifact, is refused (offering a new post). It rejects a wiki-markup body (§5a), writes
 `.tracker-comments.json` and mirrors the id into `summary.json.tracker.comment_id`. Two hooks close the
 loop for comments posted straight through the MCP: `.claude/hooks/record-tracker-comment.mjs` (PostToolUse)
 records the first id, `.claude/hooks/enforce-one-tracker-comment.mjs` (PreToolUse) blocks the second and
-prints the amend command. Both fail **open**. Behaviour is pinned by
+prints the amend command. Both match every Atlassian MCP server id, treat a `commentId` call as an edit,
+and treat a ledger comment older than 12 h as a previous round. Both fail **open**. Behaviour is pinned by
 `scripts/unit/tracker-comment-guard.test.mjs`.
 
 **Raw REST**, if you are outside this repo (the plugin ships no `scripts/`):
@@ -382,7 +419,8 @@ itself**, in full, in the comment body. A summary plus a repo path is not a deli
 - **Summarize only when explicitly asked to.** "Push it to the ticket" means the content.
 - **An oversized artifact is still ONE comment** (§0). Do not split it across several — that is the
   noise the GOLDEN RULE forbids, and it was licensed here until 2026-09-17. If it genuinely will not
-  fit, attach it as a file to the same ticket and reference the attachment from the single comment,
+  fit, attach it as a file to the same ticket and reference the attachment from the single comment
+  (`npm run tracker:comment -- … --attach-file <file>` does both in one step, §0a),
   or ask the operator which half they want inline. Never shrink it to an abstract, and never serialise
   it into a comment thread.
 - **A pointer is legitimate only when the target is reachable** — a merged-and-pushed GitHub URL, a

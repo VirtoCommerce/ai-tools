@@ -19,10 +19,28 @@ import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not
 import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parse as parseCsv } from 'csv-parse/sync';
 import {
   ORDER_FIXTURES, QUOTE_FIXTURES, ALL_FIXTURES, OWNED_ALIASES,
   validateFixtureShape, findGuidLeaks, GUID_RE,
+  RETURN_ORDER_FIXTURES, RETURN_LINE_X_ALIAS, RETURN_WINDOW_DAYS_ASSUMED,
+  validateReturnFixtureSet, validateReturnFixtureShape,
+  suiteRowsConsuming, orderedFor, LINE_ROLE_X, LINE_ROLE_Y,
+  resolveTokens, finalizeReturnOrderBody,
+  RETURN_ORDER_RECIPIENT, RETURN_ORDER_RECIPIENT_ALIAS, shapeReturnOrderRecipients, recipientProblems, applyReturnCatalogItems,
 } from './orders-specs.mjs';
+import {
+  RETURN_DECISION_FIXTURES, DECISION_OWNED_ALIASES, DECISION_TEMPLATE_FIXTURE,
+  DECISION_BUYER, DECISION_BUYER_PASSWORD_TOKEN, isDedicatedDecisionBuyer,
+  validateDecisionFixtureSet, validateDecisionTemplate,
+  shapeDecisionTemplate, toOrderSpec, foreignRecipients, recipientEmailsOf,
+} from './return-decisions-specs.mjs';
+
+/**
+ * The env whose SEEDED STATE section [6] checks. Static checks ([1]–[5]) are env-agnostic; the
+ * returns fixtures' age can only be judged against the overlay of the env they were seeded on.
+ */
+const TARGET_ENV = process.env.TEST_ENV || 'vcst';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const problems = [], notes = [];
@@ -74,8 +92,228 @@ if (existsSync(vcstPath)) {
   }
 } else warn('aliases.vcst.json absent — run seed:orders / seed:quotes to populate the overlay.');
 
-console.log('\n=== order/quote fixture validation (VCST-5482) ===');
+// ─────────────────────────────────────────────────────────────────────────────────────────────────
+// 4-6. VCST-5628 — the returnable-quantity fixtures (buyer's own returns, step 1).
+//
+// These have a drift mode the order/quote fixtures do not: their delivery dates are RELATIVE, so a
+// fixture set that was correct when it was seeded becomes WRONG purely by the passage of time — the
+// "delivered today" orders age out of the store's return window and start reporting
+// OUTSIDE_RETURN_WINDOW, and every case built on them flips from a real assertion to a vacuous one.
+// A static-only guard cannot see that, so [6] measures the ACTUAL seeded instants recorded in
+// aliases.<env>.json against the window. This is the check that makes "re-seed, never re-date" a gate
+// rather than a comment.
+// ─────────────────────────────────────────────────────────────────────────────────────────────────
+console.log('\n[4] Returns fixtures (VCST-5628) — spec table coherence + the divergences that make the cases decidable');
+{
+  const set = validateReturnFixtureSet();
+  if (set.ok) ok(`spec table coherent — ${RETURN_ORDER_FIXTURES.length} fixtures, window ${RETURN_WINDOW_DAYS_ASSUMED}d, A2 ordered!=delivered, E straddles the boundary with unequal quantities, F pairs a cancelled line with a live one`);
+  else set.problems.forEach((p) => fail(`returns spec: ${p}`));
+
+  for (const spec of RETURN_ORDER_FIXTURES) {
+    const rel = `test-data/${spec.fixtureFile}`;
+    if (!existsSync(join(ROOT, rel))) { fail(`${spec.alias}: fixture ${rel} missing`); continue; }
+    let obj;
+    try { obj = readJson(rel); } catch (e) { fail(`${spec.alias}: ${rel} is not valid JSON (${e.message})`); continue; }
+    const { ok: shapeOk, problems: ps } = validateReturnFixtureShape(spec, obj);
+    if (shapeOk) ok(`${spec.alias} (${spec.fixtureFile}) — body valid, matches the spec, no literal date, no GUID`);
+    else ps.forEach((p) => fail(`${spec.alias}: ${p}`));
+  }
+}
+
+// 4b. A disposable fixture a whole suite drains (consumedBySuite) must be DEEPER than the suite. The
+// floor is DERIVED from the suite CSV — one unit per row that references the alias — never transcribed,
+// so a case added to the suite raises it and this check fails loud instead of the suite running dry.
+console.log('\n[4b] Suite-consumed returns fixtures — each line deeper than the rows that drain it');
+for (const spec of RETURN_ORDER_FIXTURES.filter((f) => f.consumedBySuite)) {
+  const rel = spec.consumedBySuite;
+  if (!existsSync(join(ROOT, rel))) { fail(`${spec.alias}: consumedBySuite ${rel} does not exist`); continue; }
+  let rows;
+  try { rows = parseCsv(readFileSync(join(ROOT, rel), 'utf8'), { columns: true, skip_empty_lines: true }); } catch (e) { fail(`${spec.alias}: ${rel} does not parse (${e.message})`); continue; }
+  const consumers = suiteRowsConsuming(spec.alias, rows.map((r) => ({ id: r.ID, text: Object.values(r).join('\n') })));
+  if (!consumers.length) { fail(`${spec.alias}: no row of ${rel} references @td(${spec.alias}.…) — the fixture is consumed by nobody, or the suite went back to live-discovering an order`); continue; }
+  const roles = [LINE_ROLE_X, LINE_ROLE_Y].filter((role) => orderedFor(spec, role) !== undefined);
+  const shallow = roles.filter((role) => orderedFor(spec, role) < consumers.length);
+  if (shallow.length) fail(`${spec.alias}: ${shallow.map((r) => `${r} ordered ${orderedFor(spec, r)}`).join(', ')} < ${consumers.length} consuming rows in ${rel} — one pass of the suite can drain it`);
+  else ok(`${spec.alias} — ${consumers.length} rows of ${rel} consume it; lines ordered ${roles.map((r) => orderedFor(spec, r)).join(' / ')} (each >= ${consumers.length})`);
+}
+
+console.log('\n[5] aliases.json — returns aliases registered, no runtime GUID pinned in the committed base');
+for (const spec of RETURN_ORDER_FIXTURES) {
+  const a = aliases[spec.alias];
+  if (!a) { fail(`alias ${spec.alias} missing from aliases.json`); continue; }
+  const expectedJson = spec.fixtureFile.replace(/\.json$/, '');
+  if (a.json !== expectedJson) { fail(`alias ${spec.alias}.json = "${a.json}" — expected "${expectedJson}"`); continue; }
+  const pinned = Object.entries(a).filter(([k, v]) => typeof v === 'string' && GUID_RE.test(v) && k !== 'notes');
+  if (pinned.length) { pinned.forEach(([k, v]) => fail(`alias ${spec.alias}.${k} pins a runtime GUID ("${v}") — move it to aliases.<env>.json`)); continue; }
+  ok(`${spec.alias} → json:${a.json} (no pinned GUID)`);
+}
+{
+  const lx = aliases[RETURN_LINE_X_ALIAS];
+  if (!lx) fail(`alias ${RETURN_LINE_X_ALIAS} missing from aliases.json`);
+  else if (!lx._inline) fail(`alias ${RETURN_LINE_X_ALIAS} must be _inline (its values are live-discovered per env, so they arrive via the overlay)`);
+  else if (Object.entries(lx).some(([k, v]) => typeof v === 'string' && GUID_RE.test(v) && k !== 'notes')) fail(`alias ${RETURN_LINE_X_ALIAS} pins a runtime GUID in the committed base`);
+  else ok(`${RETURN_LINE_X_ALIAS} → _inline, no committed product identity (live-discovered per env)`);
+}
+
+console.log(`\n[6] aliases.${TARGET_ENV}.json — what was ACTUALLY seeded, and whether it has aged out of the return window`);
+{
+  const overlayPath = join(ROOT, 'test-data', `aliases.${TARGET_ENV}.json`);
+  if (!existsSync(overlayPath)) {
+    warn(`aliases.${TARGET_ENV}.json absent — run \`TEST_ENV=${TARGET_ENV} npm run seed:returns\` before any case that uses these fixtures.`);
+  } else {
+    const overlay = JSON.parse(readFileSync(overlayPath, 'utf8'));
+    const now = Date.now();
+    let seeded = 0;
+    for (const spec of RETURN_ORDER_FIXTURES) {
+      const o = overlay[spec.alias];
+      if (!o?.id) { warn(`${spec.alias} not seeded on ${TARGET_ENV} — @td(${spec.alias}.id) will not resolve`); continue; }
+      seeded++;
+      if (!GUID_RE.test(String(o.id))) fail(`${spec.alias}.id "${o.id}" on ${TARGET_ENV} is not a platform GUID`);
+      if (!o.lineXItemId) fail(`${spec.alias} on ${TARGET_ENV} has no lineXItemId — the seeder's phase-2 link did not record the line under test`);
+      if (spec.cancelledLine && !o.cancelledLineItemId) fail(`${spec.alias} on ${TARGET_ENV} has no cancelledLineItemId`);
+      // A two-eligible-lines fixture answers nothing the moment its two lines become interchangeable.
+      // The spec table cannot see this — the products are live-discovered per env — so it is checked
+      // here, against what was ACTUALLY seeded.
+      if (spec.lineY) {
+        if (!o.lineAItemId || !o.lineBItemId) {
+          fail(`${spec.alias} on ${TARGET_ENV} is missing lineAItemId/lineBItemId — the bulk-reason and per-line-attachment cases address each line by its own id, so they cannot run. Re-seed.`);
+        }
+        if (o.lineASku && o.lineASku === o.lineBSku) {
+          fail(`${spec.alias} on ${TARGET_ENV}: BOTH lines carry the same product ("${o.lineASku}") — a PER-LINE rule is now indistinguishable from a PER-RETURN one, which is exactly the distinction these cases exist to prove. Re-seed.`);
+        }
+        if (o.lineAOrderedQuantity && o.lineAOrderedQuantity === o.lineBOrderedQuantity) {
+          fail(`${spec.alias} on ${TARGET_ENV}: both lines ordered ${o.lineAOrderedQuantity} — a bulk-applied reason landing on each line independently becomes undecidable. Re-seed.`);
+        }
+        if (o.lineADeliveredQuantity && o.lineADeliveredQuantity === o.lineBDeliveredQuantity) {
+          fail(`${spec.alias} on ${TARGET_ENV}: both lines delivered ${o.lineADeliveredQuantity} — a per-line attachment hint cannot be told from a per-return one. Re-seed.`);
+        }
+      }
+
+      const windowDays = o.windowDaysAtSeed || RETURN_WINDOW_DAYS_ASSUMED;
+      const expectedOutside = spec.expect?.ineligibilityReason === 'OUTSIDE_RETURN_WINDOW';
+      const dates = Object.values(o.deliveryDates || {}).filter(Boolean).map((d) => (now - new Date(d).getTime()) / 86400000);
+      if (!dates.length) {
+        if ((spec.shipments || []).some((s) => s.hasDeliveryDate)) fail(`${spec.alias} on ${TARGET_ENV} recorded no delivery date though the spec has ${spec.shipments.filter((s) => s.hasDeliveryDate).length}`);
+        else ok(`${spec.alias} — no delivery date by design (${spec.key})`);
+        continue;
+      }
+      const newest = Math.min(...dates);
+      const oldest = Math.max(...dates);
+      if (expectedOutside && newest < windowDays) {
+        fail(`${spec.alias} DRIFTED: its delivery is now ${newest.toFixed(1)}d old, INSIDE the ${windowDays}-day window, but the fixture's whole purpose is to sit OUTSIDE it — the OUTSIDE_RETURN_WINDOW case is currently vacuous. Re-seed.`);
+      } else if (!expectedOutside && newest >= windowDays) {
+        fail(`${spec.alias} STALE: its latest delivery is ${newest.toFixed(1)}d old and has aged OUT of the ${windowDays}-day window — this fixture now reports OUTSIDE_RETURN_WINDOW instead of what it was built to test. Re-seed with \`TEST_ENV=${TARGET_ENV} npm run seed:returns\`.`);
+      } else if (dates.length > 1 && !(oldest > windowDays && newest < windowDays)) {
+        fail(`${spec.alias} no longer STRADDLES the ${windowDays}-day boundary (oldest ${oldest.toFixed(1)}d, newest ${newest.toFixed(1)}d) — "the window runs from the LATEST delivery" is untestable. Re-seed.`);
+      } else {
+        ok(`${spec.alias} → id ${o.id} | latest delivery ${newest.toFixed(1)}d old vs a ${windowDays}d window — still ${expectedOutside ? 'OUTSIDE (correct)' : 'inside (correct)'}`);
+      }
+    }
+    const lx = overlay[RETURN_LINE_X_ALIAS];
+    const needsLineY = RETURN_ORDER_FIXTURES.some((f) => f.lineY && overlay[f.alias]?.id);
+    if (seeded && !lx?.sku) fail(`${RETURN_LINE_X_ALIAS} has no sku on ${TARGET_ENV} — @td(${RETURN_LINE_X_ALIAS}.sku) will not resolve`);
+    else if (lx?.sku && lx.sku === lx.cancelledSku) fail(`${RETURN_LINE_X_ALIAS}: lineX and the cancelled line are the SAME product ("${lx.sku}") — fixture F's question is undecidable`);
+    else if (needsLineY && !lx?.lineYSku) fail(`${RETURN_LINE_X_ALIAS} has no lineYSku on ${TARGET_ENV} though a two-eligible-lines fixture is seeded — the second line cannot be identified in returnableItems output`);
+    else if (lx?.lineYSku && (lx.lineYSku === lx.sku || lx.lineYSku === lx.cancelledSku)) fail(`${RETURN_LINE_X_ALIAS}: lineY reuses the ${lx.lineYSku === lx.sku ? 'lineX' : 'cancelled-line'} product ("${lx.lineYSku}") — two roles collapsed onto one product`);
+    else if (lx?.sku) ok(`${RETURN_LINE_X_ALIAS} → lineX ${lx.sku}, cancelled line ${lx.cancelledSku}, lineY ${lx.lineYSku ?? '(n/a)'} (distinct)`);
+  }
+}
+
+// 7–9. VCST-5883 return-decision fixtures (return-decisions-specs.mjs). The divergences that make an
+// approve/decline case able to FAIL are checked here, not in a unit test (FOURTH RULE).
+console.log('\n[7] Return-decision fixtures (VCST-5883) — ordered != requested != approved, FR culture != order language, TWO returns unequal');
+{
+  const set = validateDecisionFixtureSet();
+  if (set.ok) ok(`spec table coherent — ${RETURN_DECISION_FIXTURES.length} fixtures, every discriminating gap holds`);
+  else set.problems.forEach((p) => fail(`decision fixtures: ${p}`));
+}
+console.log('\n[8] Return-decision template fixture — shape, no literal date, no runtime GUID');
+{
+  const rel = `test-data/${DECISION_TEMPLATE_FIXTURE}`;
+  if (!existsSync(join(ROOT, rel))) fail(`${rel} missing`);
+  else {
+    const t = validateDecisionTemplate(readJson(rel));
+    if (t.ok) ok(`${DECISION_TEMPLATE_FIXTURE} valid (lineX + lineY, one shipment delivered today, no date/GUID)`);
+    else t.problems.forEach((p) => fail(`${DECISION_TEMPLATE_FIXTURE}: ${p}`));
+  }
+}
+console.log('\n[8b] Return-decision orders — every notification recipient is the dedicated fixture mailbox');
+{
+  // Resolve the template against a HOSTILE env (every {{VAR}} → a non-fixture address), then shape and
+  // finalize it exactly as the seeder does. The order/return emails go to the order address first
+  // (KB-33E0A778); a body still carrying the env's USER_EMAIL would mail a real person on POST.
+  const rel = `test-data/${DECISION_TEMPLATE_FIXTURE}`;
+  if (existsSync(join(ROOT, rel))) {
+    const hostile = new Proxy({}, { get: (_, k) => (typeof k === 'string' ? `not-a-fixture-${k.toLowerCase()}@example.com` : undefined), has: () => true });
+    const { obj } = resolveTokens(readJson(rel), hostile);
+    const leaks = [];
+    for (const spec of RETURN_DECISION_FIXTURES) {
+      const body = finalizeReturnOrderBody(toOrderSpec(spec), shapeDecisionTemplate(spec, obj), { customerId: 'c', customerName: 'n' });
+      for (const r of foreignRecipients(body)) leaks.push(`${spec.key} ${r.path}=${r.email}`);
+      for (const a of body.addresses || []) if (!a.email) leaks.push(`${spec.key} ${a.addressType} address has no email (falls through past the fixture's order address)`);
+      if (!recipientEmailsOf(body).length) leaks.push(`${spec.key}: no recipient field at all — the check would pass vacuously`);
+    }
+    if (leaks.length) leaks.forEach((l) => fail(`decision order recipient is not ${DECISION_BUYER.email}: ${l}`));
+    else ok(`${RETURN_DECISION_FIXTURES.length} shaped decision orders — every recipient field is ${DECISION_BUYER.email}, even with a hostile env`);
+  }
+}
+console.log('\n[8c] Returns orders (VCST-5628, seed:returns) — every notification recipient is the dedicated fixture mailbox');
+{
+  // Same hostile-env check as [8b], over every RETURN_ORDER_FIXTURES template (a…g + adm073), shaped and
+  // finalized the way seed-return-orders.mjs does. The buyer ACCOUNT is out of scope (still the env persona).
+  const hostile = new Proxy({}, { get: (_, k) => (typeof k === 'string' ? `not-a-fixture-${k.toLowerCase()}@example.com` : undefined), has: () => true });
+  const leaks = [];
+  if (!/^agent-test-[a-z0-9-]+@yopmail\.com$/.test(RETURN_ORDER_RECIPIENT)) leaks.push(`RETURN_ORDER_RECIPIENT ${RETURN_ORDER_RECIPIENT} is not an AGENT-TEST yopmail address`);
+  if (RETURN_ORDER_RECIPIENT === DECISION_BUYER.email) leaks.push('RETURN_ORDER_RECIPIENT is the VCST-5883 decision buyer\'s mailbox — the two fixture sets would share one inbox');
+  const reg = aliases[RETURN_ORDER_RECIPIENT_ALIAS];
+  if (reg?.email !== RETURN_ORDER_RECIPIENT || !reg?.fields?.email) leaks.push(`${RETURN_ORDER_RECIPIENT_ALIAS} must be registered in aliases.json with email "${RETURN_ORDER_RECIPIENT}" (has "${reg?.email}")`);
+  for (const spec of RETURN_ORDER_FIXTURES) {
+    const rel = `test-data/${spec.fixtureFile}`;
+    if (!existsSync(join(ROOT, rel))) { leaks.push(`${spec.key}: ${rel} missing`); continue; }
+    const { obj } = resolveTokens(readJson(rel), hostile);
+    const body = finalizeReturnOrderBody(spec, applyReturnCatalogItems(shapeReturnOrderRecipients(obj), {}), { customerId: 'c', customerName: 'n' });
+    for (const r of recipientProblems(body, RETURN_ORDER_RECIPIENT)) leaks.push(`${spec.key} ${r.path}=${r.missing !== undefined ? `missing (${r.missing})` : r.email}`);
+    if (!(body.addresses || []).length) leaks.push(`${spec.key}: no address at all — the check would pass vacuously`);
+  }
+  if (leaks.length) leaks.forEach((l) => fail(`returns order recipient: ${l}`));
+  else ok(`${RETURN_ORDER_FIXTURES.length} shaped returns orders (${RETURN_ORDER_FIXTURES.map((s) => s.key).join(', ')}) — every recipient field is ${RETURN_ORDER_RECIPIENT}, even with a hostile env`);
+}
+console.log(`\n[9] Return-decision aliases — registered _inline with no committed value; seeded state on ${TARGET_ENV}`);
+{
+  const overlayPath = join(ROOT, 'test-data', `aliases.${TARGET_ENV}.json`);
+  const overlay = existsSync(overlayPath) ? JSON.parse(readFileSync(overlayPath, 'utf8')) : {};
+  for (const alias of DECISION_OWNED_ALIASES) {
+    const a = aliases[alias];
+    if (!a) { fail(`alias ${alias} missing from aliases.json`); continue; }
+    if (!a._inline) fail(`alias ${alias} must be _inline (every value is runtime, from the overlay)`);
+    else if (Object.entries(a).some(([k, v]) => typeof v === 'string' && GUID_RE.test(v) && k !== 'notes')) fail(`alias ${alias} pins a runtime GUID in the committed base`);
+    else ok(`${alias} → _inline, no committed value`);
+  }
+  // The dedicated buyer's committed entry must agree with DECISION_BUYER, and must stay a public AGENT-TEST yopmail inbox.
+  {
+    const b = aliases[DECISION_BUYER.alias];
+    if (!b) fail(`alias ${DECISION_BUYER.alias} missing from aliases.json`);
+    else {
+      if (b.email !== DECISION_BUYER.email || !isDedicatedDecisionBuyer(b.email)) fail(`${DECISION_BUYER.alias}.email ${JSON.stringify(b.email)} != spec ${DECISION_BUYER.email} (must be the AGENT-TEST yopmail buyer)`);
+      if (b.password !== DECISION_BUYER_PASSWORD_TOKEN) fail(`${DECISION_BUYER.alias}.password must be the ${DECISION_BUYER_PASSWORD_TOKEN} token, never a literal`);
+      if (b.name !== `${DECISION_BUYER.firstName} ${DECISION_BUYER.lastName}`) fail(`${DECISION_BUYER.alias}.name ${JSON.stringify(b.name)} != spec ${DECISION_BUYER.firstName} ${DECISION_BUYER.lastName}`);
+      if (Object.values(b).some((v) => typeof v === 'string' && GUID_RE.test(v))) fail(`${DECISION_BUYER.alias} pins a runtime GUID in the committed base`);
+      if (!problems.some((p) => p.includes(DECISION_BUYER.alias))) ok(`${DECISION_BUYER.alias} → ${DECISION_BUYER.email}, password token, matches DECISION_BUYER`);
+    }
+  }
+  for (const spec of RETURN_DECISION_FIXTURES) {
+    const o = overlay[spec.alias];
+    if (!o?.orderId) { warn(`${spec.alias} not seeded on ${TARGET_ENV} — run \`TEST_ENV=${TARGET_ENV} npm run seed:returns:decisions\``); continue; }
+    const missing = spec.returns.map((_, i) => (i === 0 ? 'returnId' : `return${i + 1}Id`)).filter((k) => !o[k]);
+    if (missing.length) fail(`${spec.alias} on ${TARGET_ENV}: seeded order but no ${missing.join(', ')} — the case has nothing to decide`);
+    if (spec.key === 'FR' && o.orderLanguageCode && o.orderLanguageCode === o.returnSubmissionCulture) fail(`${spec.alias} on ${TARGET_ENV}: order language == submission culture (${o.orderLanguageCode}) — the language-source question collapsed`);
+    if (spec.lineX.measureUnit && o.lineAMeasureUnit !== spec.lineX.measureUnit) fail(`${spec.alias} on ${TARGET_ENV}: order line A measureUnit is ${JSON.stringify(o.lineAMeasureUnit)}, spec ${spec.lineX.measureUnit} — the unit in the notification is unobservable`);
+  }
+}
+
+console.log('\n=== order/quote/returns fixture validation (VCST-5482 + VCST-5628 + VCST-5883) ===');
+console.log(`  target env for the seeded-state checks: ${TARGET_ENV}`);
 console.log(`  hard problems: ${problems.length} | warnings: ${notes.length}`);
 if (problems.length) { console.log('\nFAILED — fix the ✗ items above.'); process.exit(1); }
-console.log('\nOrder/quote fixture test-data OK — Swagger-shaped, spec-matched, multi-env-clean.');
+console.log('\nOrder/quote/returns fixture test-data OK — Swagger-shaped, spec-matched, multi-env-clean, in-window.');
 process.exit(0);

@@ -1,29 +1,24 @@
 {
- "runId": "REG-2026-09-30-1536",
- "status": "completed",
- "startedAt": "2026-09-30T15:36:33.000Z",
- "selection": "004",
- "env": "vcst",
- "scoped": true,
- "purpose": "/qa-test VCST-2945 --iterate (delta re-test) row R: SRCH-014..SRCH-023 on theme 2.59.0-pr-2501-3a82. Scoped regression, not C1 (no case written/changed). Delegated: --no-promote.",
- "preflightNote": "Catalog 3.1046.0-pr-909-2839 / XCatalog 3.1022.0-pr-113-f4a8 / Platform 3.1074.0-pr-3125-c3b8 / theme 2.59.0-pr-2501-3a82. Cases write B2B-store barcode settings: run serially, restore defaults in Cleanup.",
- "suites": [
-  {
-   "id": "004",
-   "name": "Search Core",
-   "file": "regression/suites/Frontend/search/004-search-core.csv",
-   "status": "done",
-   "lane": "browser",
-   "ids": "SRCH-014..SRCH-023",
-   "pass": 10,
-   "fail": 0,
-   "blocked": 0,
-   "skipped": 0,
-   "browser": "playwright-chrome",
-   "startedAt": "2026-09-30T15:37:30.730Z",
-   "finishedAt": "2026-09-30T15:50:34.785Z"
-  }
- ],
- "windowStart": "2026-09-30T15:36:33.000Z",
- "finishedAt": "2026-09-30T15:50:34.786Z"
+  "runId": "REG-2026-10-13-1739",
+  "status": "completed",
+  "startedAt": "2026-10-13T17:39:30.000Z",
+  "windowStart": "2026-10-13T17:39:30.000Z",
+  "selection": "043",
+  "env": "vcst",
+  "scoped": true,
+  "purpose": "VCST-6017 /qa-test: verification of GA-030/GA-031 derivation fix (order line count from the placed order); --ids; --no-promote",
+  "suites": {
+    "043": {
+      "status": "done",
+      "lane": "browser",
+      "browser": "playwright-chrome",
+      "startedAt": "2026-10-13T17:40:16.060Z",
+      "pass": 2,
+      "fail": 0,
+      "blocked": 0,
+      "total": 2,
+      "finishedAt": "2026-10-13T17:47:32.879Z"
+    }
+  },
+  "finishedAt": "2026-10-13T17:47:42.665Z"
 }

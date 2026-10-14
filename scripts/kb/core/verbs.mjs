@@ -8,21 +8,32 @@
 // (Git Data API, blobs -> tree -> commit -> ref) is a later session, and the queue is already the
 // durable record it will read.
 
-import { writeFile } from 'node:fs/promises';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { canonicalStand, mintId } from './canonical.mjs';
+import { mintId } from './canonical.mjs';
+import { profileOf, resolveStand } from './stands.mjs';
+import { buildLabel, softDispute } from './gate.mjs';
+import { codeVersionProblem, isSource, resolveMethod } from './method.mjs';
+import { normalizeConditions, repairConditions } from './conditions.mjs';
 import { parseEntry } from './frontmatter.mjs';
 import { anchorProblems, anchorShape, isSingleSegmentPath, namespaceRoots, neighbours, normalizeAnchor } from './coordinates.mjs';
+import { doorHints } from './door-hints.mjs';
 import { undoMsysRewrite } from './anchors.mjs';
-import { findDuplicate, identityKey, refusalMessage, subjectTakenMessage } from './identity.mjs';
-import { buildIndex, buildRow, countEvidence, entryPath } from './index-build.mjs';
+import { claimKey, findDuplicate, identityKey, refusalMessage, subjectTakenMessage } from './identity.mjs';
+import { amendmentsOf, attestsCurrentClaim, buildIndex, buildPath, buildRow, claimHash, countEvidence, distinctDisputes, entryPath, isResolved, supportOf } from './index-build.mjs';
 import { loadIndex, loadManifest, normalizeScope, retrievable } from './index-load.mjs';
 import {
-  log, metaAsks, pendingMutations, queueBacklog, queueDir, readMeta, readPushStatus, readQueue, sessionId,
+  DISABLED_WHY, hasSessionId, kbDisabled, log, metaAsks, pendingMutations, queueBacklog, queueDir, readLoop, readMeta, readPushStatus,
+  readQueue, sessionId, loopRecord as loopRecordOf,
 } from './queue.mjs';
+import { lastWord, openedHash, openedIds, pointersByAsk } from './loop.mjs';
 import { cachedWho } from './who.mjs';
 import { MIN_RELATED_WORDS, RANKER, rank, rankNeighbours, relatedTo, tokenize } from './rank.mjs';
+import { prepareVocabulary, readVocabulary } from './query.mjs';
+import { prepareRetrieval, retrieve } from './retrieve.mjs';
+import { AMBIGUOUS_TOP, FEATURES, decide } from './verdict.mjs';
 
 // ── Trust, as it is shown ─────────────────────────────────────────────────────────────────────
 //
@@ -35,10 +46,17 @@ import { MIN_RELATED_WORDS, RANKER, rank, rankNeighbours, relatedTo, tokenize } 
 // The thresholds are a starting point, not a finding. The log will say whether they are the right
 // places to cut.
 export function trustOf(evidence = []) {
-  const supporting = evidence.filter((e) => !e.contradicts);
+  // Support of the claim AS IT STANDS: after a judge's `claim-amended`, confirmations of the old
+  // wording are history, not support (`attestsCurrentClaim`, index-build.mjs) -- here too, so the
+  // sessions and operators printed beside the count are the ones the count is made of.
+  const amendments = amendmentsOf(evidence);
+  // Exactly the items the count is made of (`supportOf`), so the sessions, anonymous and operator
+  // numbers printed beside it describe the same set: a duplicate or a judge's third stand is not counted.
+  const supporting = supportOf(evidence);
+  const beforeAmendment = evidence.filter((e) => !e.contradicts && !e.duplicateSession && !attestsCurrentClaim(e, amendments)).length;
   // The COUNTS come from index-build, which is also what writes them into the row -- so `ask`'s
   // drift check compares one implementation against itself rather than against a second opinion.
-  const { trust: confirmations, disputed } = countEvidence(evidence);
+  const { trust: confirmations, disputed, resolved, contested } = countEvidence(evidence);
   // WHO SAW IT, AND ONLY WHO — never a deployment standing in for a person.
   //
   // THE DEFECT THIS CLOSES, and the reason it survived four days of green gates. The line used to
@@ -83,12 +101,25 @@ export function trustOf(evidence = []) {
   const named = supporting.filter((e) => e.who).map((e) => e.who);
   const operators = named.length ? new Set(named).size : null;
   const operatorsUnknown = supporting.filter((e) => e.by && !e.who).length;
+  // READ FROM CODE, NEVER SEEN LIVE (VCST-6186): an entry whose whole support is `method: source` is
+  // labelled so and never climbs the observation ladder -- two agents reading the same code are not two
+  // observations of the platform. One live confirmation makes it an ordinary observed entry.
+  // And the ladder counts OBSERVATIONS only: once a live confirm arrives the entry is an ordinary one,
+  // but two code readings plus one live look is a single observation, not "well attested".
+  const fromSource = supporting.filter(isSource).length;
+  const observed = confirmations - fromSource;
   const label = disputed ? 'DISPUTED'
-    : confirmations >= 3 ? 'well attested'
-      : confirmations === 2 ? 'corroborated'
-        : confirmations === 1 ? 'single observation'
-          : 'unattested';
-  return { label, confirmations, disputed, sessions, anonymous, operators, operatorsUnknown };
+    : observed <= 0 && fromSource > 0 ? 'from source, not observed live'
+      : observed >= 3 ? 'well attested'
+        : observed === 2 ? 'corroborated'
+          : observed === 1 ? 'single observation'
+            : 'unattested';
+  // What a soft dispute was about, for the reader: the build difference the gate computed (core/gate.mjs).
+  // The SAME open soft disputes `countEvidence` counts -- one per dispute, copies merged, a resolution
+  // outside RESOLUTIONS still open -- so the reason printed and the number printed cannot disagree.
+  const contestedOn = distinctDisputes((Array.isArray(evidence) ? evidence : []).filter((e) => !e?.duplicateSession))
+    .filter((e) => e.contested && !isResolved(e)).map((e) => e.contested);
+  return { label, confirmations, fromSource, disputed, resolved, contested, contestedOn, beforeAmendment, sessions, anonymous, operators, operatorsUnknown };
 }
 
 /**
@@ -100,12 +131,12 @@ export function trustOf(evidence = []) {
  * the index's own count, says it is provisional, and raises no drift: the two numbers were never
  * compared, so they cannot be said to disagree.
  */
-function describeHit(hit, parsed, { unavailable = null } = {}) {
+export function describeHit(hit, parsed, { unavailable = null } = {}) {
   const evidence = parsed?.data?.evidence ?? [];
   const trust = unavailable
-    ? { label: 'unread', confirmations: hit.row.trust, disputed: hit.row.disputed, sessions: 0, anonymous: 0, operators: null, operatorsUnknown: 0, provisional: true }
+    ? { label: 'unread', confirmations: hit.row.trust, disputed: hit.row.disputed, resolved: hit.row.resolved ?? 0, contested: hit.row.contested ?? 0, contestedOn: [], sessions: 0, anonymous: 0, operators: null, operatorsUnknown: 0, provisional: true }
     : trustOf(evidence);
-  return {
+  const described = {
     id: hit.row.id,
     subject: hit.row.subject,
     path: hit.row.path,
@@ -117,11 +148,16 @@ function describeHit(hit, parsed, { unavailable = null } = {}) {
     provenance: evidence.map((e) => ({
       method: e.method ?? 'observation',
       deployment: e.deployment ?? null,
+      build: e.build ?? null,
+      contested: e.contested ?? null,
+      conditions: e.conditions ?? null,
       at: e.at ?? null,
       by: e.by ?? null,
       who: e.who ?? null,
       contradicts: Boolean(e.contradicts),
       note: e.note ?? null,
+      resolved: e.resolved ?? null,
+      resolution: e.resolution ?? null,
     })),
     indexTrust: hit.row.trust,
     indexDrift: !unavailable && hit.row.trust !== trust.confirmations
@@ -130,6 +166,10 @@ function describeHit(hit, parsed, { unavailable = null } = {}) {
     body: parsed?.body?.trim() ?? null,
     unavailable: null,
   };
+  // The entry as written, for the build label (`labelBuilds`) -- NOT enumerable, so `--json` output and
+  // logs stay what they were; the label needs fields `provenance` leaves out (amendments, investigations).
+  if (parsed?.data) Object.defineProperty(described, 'entryData', { value: parsed.data, enumerable: false });
+  return described;
 }
 
 // ── What a line records about the CALL, and what it deliberately does not ─────────────────────
@@ -158,9 +198,10 @@ function describeHit(hit, parsed, { unavailable = null } = {}) {
 //           (KB-27B4CD10) turned entirely on the difference between those two stands. A demand log
 //           that cannot separate them can show neither fact.
 //
-//           OPTIONAL, AND NEVER DEFAULTED, which is the whole of its safety. There is no source of
-//           truth for a stand's canonical name, and both candidates were checked rather than
-//           assumed. `TEST_ENV` is not set in the process at all (`node -e "process.env.TEST_ENV"`
+//           OPTIONAL, AND NEVER DEFAULTED, which is the whole of its safety. (The NAME the caller
+//           passes is mapped onto one per stand since VCST-6189 -- `stand()` below; what follows is
+//           why the process never SUPPLIES one.) Both candidates for a default were checked rather
+//           than assumed. `TEST_ENV` is not set in the process at all (`node -e "process.env.TEST_ENV"`
 //           -> undefined; the MCP server is registered with no `env` block and inherits the
 //           session's), and its loader default `vcst` is not the string the base uses for that
 //           stand -- `vcst_qa`, 33 evidence lines against 1. `BACK_URL`'s host would map both live
@@ -263,39 +304,43 @@ const door = (via, call) => ({
 });
 /**
  * WHICH STAND the question was about, when the caller names one -- and nothing at all when it
- * does not. Trimmed, because an argument of whitespace is a caller that meant to say nothing, and
- * `deployment: ""` in the log would read as a stand whose name is the empty string.
+ * does not. Never defaulted: the stand is a property of the observation, not of this process.
  *
- * The NAME is never mapped. The base already holds `vcst` once against `vcst_qa` 33 times, so a
- * normaliser has a real fragmentation to argue for -- and it would be a transcribed mapping with no
- * source of truth behind it, which is the same defect wearing a tidier name. What the log needs is
- * what the caller believed; the disagreement is a finding, not something to iron out on the way in.
- * Only the SPELLING is folded (case, `-` against `_`) by `canonicalStand`, which is a rule on the
- * string and not a table -- see its comment for why `vcst-qa` vs `vcst_qa` is not a disagreement.
+ * MAPPED ONTO ONE NAME since VCST-6189, which reverses the "never mapped" rule this comment used to
+ * state. The map is read from the committed `.env.<env>` profiles (`KB_STAND=`), so it has the source
+ * of truth the old refusal said did not exist, and it only renames what the caller typed -- the full
+ * argument is in `core/stands.mjs`. `vcst`, `vcst-qa` and `vcst_qa` all land on `vcst_qa`; a name the
+ * profiles do not know passes through spelling-folded (`canonicalStand`).
  *
- * A STRING OR NOTHING, which is not defensive typing. `kb.mjs`'s parser hands a flag given
- * without a value the boolean `true`, so `kb ask "q" --deployment --json` would otherwise publish
- * `deployment: "true"` -- a stand name that is not a stand, indistinguishable in the log from one
- * an agent meant. The typed guard is the same one `door()` puts on `call`, for the same reason.
- *
- * AND BOUNDED, which the first version was not. "Verbatim" is a promise about not NORMALISING --
- * not to case-fold, not to map `vcst` onto `vcst_qa`, not to have an opinion about what a stand is
- * called -- and it was wrongly read as a promise not to bound the length either. The value is
- * caller-supplied, it lands in a PUBLIC, APPEND-ONLY log, and nothing between the tool call and the
- * file had a view on its size, so an agent that put a paragraph here published a paragraph (§7: ids
- * and subjects only, never prose). `DEPLOYMENT_MAX` is set far clear of every stand name this base
- * has ever held -- the longest, `vcptcore_stable`, is 15 characters -- so a real value is never
- * touched and the cap is only ever felt by something that was not a stand name. Truncated rather
- * than dropped, by `label()`'s argument below: the caller did name a stand and the only defect is
- * length, and the cut is deterministic so an ask and its confirm still join.
+ * A STRING OR NOTHING: `kb.mjs`'s parser hands a flag given without a value the boolean `true`, which
+ * would otherwise publish `deployment: "true"`. And NOT PROSE: a value with whitespace or over 40
+ * characters is not a stand name. On `ask` it is dropped (a read is never refused for a log field);
+ * every write refuses it at the door (`standProblem`), so an evidence item never holds a paragraph.
  */
-export const DEPLOYMENT_MAX = 40;
 const stand = (deployment) => {
-  const d = typeof deployment === 'string' ? deployment.trim() : '';
-  return d ? { deployment: canonicalStand(d.slice(0, DEPLOYMENT_MAX)) } : {};
+  const r = resolveStand(deployment);
+  return r.value ? { deployment: r.value } : {};
 };
-/** The same fold for an EVIDENCE item, so an entry and the log line about it name one stand. */
-const standName = (deployment) => stand(deployment).deployment ?? deployment;
+/** The same name for an EVIDENCE item, so an entry and the log line about it name one stand. */
+export const standName = (deployment) => resolveStand(deployment).value ?? deployment;
+/** Why a write's `deployment` is unusable, or null -- the door's refusal (VCST-6189). */
+export const standProblem = (deployment) => resolveStand(deployment).problem ?? null;
+
+/**
+ * The build the named stand is running, for an evidence item (VCST-6221): `{ item: {build}, snapshot }`
+ * or `{}`. Only for an OBSERVATION on a stand the profiles know -- a source fact names a code version,
+ * and an unknown stand has no BACK_URL to read. Never blocks the write: no stamp is a legal outcome.
+ *
+ * `builds` is the reader, INJECTED by the two doors (`liveBuild`, core/build.mjs) and absent
+ * everywhere else: a verb called from a test, a script or a migration reads no stand over the network,
+ * and in CI -- no `.env.local` -- it would otherwise try an admin login on every real stand it named.
+ */
+async function buildStamp(deployment, { env, dryRun = false, builds = null } = {}) {
+  const r = resolveStand(deployment, { env });
+  if (dryRun || !r.known || typeof builds !== 'function') return {};
+  const b = await builds(r.value, { env });
+  return b.pin ? { item: { build: b.pin }, snapshot: b.snapshot, stand: r.value } : {};
+}
 /**
  * WHAT THE WORK WAS -- a short English noun phrase, written by the AGENT and passed with the call.
  *
@@ -429,7 +474,235 @@ async function queuedHere(question, { env }) {
   }));
 }
 
-export async function ask(asked, opened, { env = process.env, top = 3, via = null, call = null, deployment = null, topic = null } = {}) {
+// ── the calibrated verdict (VCST-6122 M4, Decision 1a) ────────────────────────────────────────
+//
+// SWITCHED BY THE BASE, NOT BY THE CLIENT. A base that carries `ranker.json` gets the verdict; one
+// that does not -- every base before this change, and `main` today -- gets floor-1, byte for byte as
+// before. So this code can ship to every machine while the decision to turn it on stays a reviewed
+// data change in one place, and turning it off again is deleting one file. A ranker.json that cannot
+// be read or does not have the shape `decide` needs is treated as absent: the fallback is the ranker
+// that was running yesterday, never a half-configured one.
+
+// PER-PROCESS CACHES. The MCP server lives for a whole session and asks many times; without these it
+// fetched ranker.json (a 404 on every base without one, which is every base today), rebuilt the
+// retrieval index and re-read up to ten bodies on EVERY ask. A short TTL keeps a base update visible
+// within a minute; a CLI process asks once and never sees a hit, which is fine.
+const CACHE_TTL_MS = 60_000;
+const cached = new Map();
+async function remember(key, make, { now = Date.now(), keep = () => true } = {}) {
+  const hit = cached.get(key);
+  if (hit && now - hit.at < CACHE_TTL_MS) return hit.value;
+  const value = await make();
+  if (keep(value)) cached.set(key, { at: now, value });
+  return value;
+}
+/** Cheap identity of a loaded index: the same rows in the same order yield the same retrieval prep. */
+const rowsKey = (rows) => `${rows.length}:${rows.map((r) => r.id).join(',')}`;
+/** For tests: forget everything cached. */
+export const clearVerdictCaches = () => cached.clear();
+
+/** The base's verdict ranker, or null (absent, unreadable or malformed => floor-1). Cached per base. */
+export async function loadVerdictRanker(reader, { locator = null, env = null } = {}) {
+  return locator ? remember(`ranker\0${locator}`, () => readRankerRemembered(reader, locator, env)) : readVerdictRanker(reader);
+}
+
+// A REMOTE BASE WITHOUT ranker.json -- every base until the data PR lands -- answered a 404 on every
+// CLI ask, one extra sequential request each, because a CLI process lives for one ask and the
+// in-memory cache never gets a second look. The ABSENCE alone is remembered on disk beside the queue
+// for ABSENT_TTL_MS, per locator; a ranker that exists is always read fresh, so publishing one takes
+// effect within that window and deleting one takes effect at once.
+const ABSENT_TTL_MS = 10 * 60_000;
+const absentPath = (env) => join(queueDir(env ?? process.env), 'ranker-absent.json');
+function readAbsent(env) {
+  try { return JSON.parse(readFileSync(absentPath(env), 'utf8')) ?? {}; } catch { return {}; }
+}
+async function readRankerRemembered(reader, locator, env) {
+  const remote = /^https?:/i.test(String(locator));
+  if (remote) {
+    const at = readAbsent(env)[locator];
+    if (Number.isFinite(at) && Date.now() - at < ABSENT_TTL_MS) return null;
+  }
+  let missing = false;
+  const ranker = await readVerdictRanker(reader, { onMissing: () => { missing = true; } });
+  if (remote && missing) {
+    try {
+      await mkdir(queueDir(env ?? process.env), { recursive: true });
+      writeFileSync(absentPath(env), JSON.stringify({ ...readAbsent(env), [locator]: Date.now() }));
+    } catch { /* best effort: without the marker the next ask simply reads again */ }
+  }
+  return ranker;
+}
+
+async function readVerdictRanker(reader, { onMissing = () => {} } = {}) {
+  let read;
+  try { read = await reader.readIndex('ranker.json'); } catch { return null; }
+  if (!read?.ok) { if (read?.reason === 'missing') onMissing(); return null; }
+  try {
+    const r = JSON.parse(read.text);
+    const m = r?.model;
+    const n = Array.isArray(m?.features) ? m.features.length : -1;
+    // An OLDER client meets a NEWER ranker.json (clients ship first and lag the data, Decision 8):
+    // an unknown schema, fusion method or feature would be read as something else -- an unknown
+    // feature as 0, which shifts p and can certify a wrong answer. Unknown => absent => floor-1.
+    const shaped = r?.schema === 1 && typeof r?.rank === 'string' && n > 0 && Number.isFinite(m.bias)
+      && m.features.every((f) => FEATURES.includes(f))
+      && [m.mean, m.std, m.weights].every((a) => Array.isArray(a) && a.length === n && a.every(Number.isFinite))
+      && r.thresholds && (r.thresholds.answer === null || Number.isFinite(r.thresholds.answer))
+      // A std of 0 divides every feature into NaN and turns every ask ambiguous; a fusion or rerank
+      // that is present but not the shape `retrieve` / `rerankByBodies` read throws on every ask.
+      // Both are "malformed", so both fall back to floor-1 like any other unreadable ranker.
+      && m.std.every((s) => s > 0)
+      && (r.fusion === undefined || (r.fusion && typeof r.fusion === 'object' && ['linear', 'rrf'].includes(r.fusion.method)
+        && r.fusion.weights && typeof r.fusion.weights === 'object' && Object.values(r.fusion.weights).every(Number.isFinite)))
+      && (r.rerank === undefined || r.rerank === null
+        || (typeof r.rerank === 'object' && Number.isFinite(r.rerank.k) && r.rerank.k >= 0 && Number.isFinite(r.rerank.lambda)));
+    return shaped ? r : null;
+  } catch { return null; }
+}
+
+/** The model's own inputs, rounded, for the log line: what the verdict was decided ON -- the
+ * features THIS ranker.json reads, not a client constant, so a refit's log lines stay true. */
+const featureLine = (f, names) => Object.fromEntries(names.map((k) => [k, round2(f[k] ?? 0)]));
+
+/**
+ * `ask` under a verdict ranker: retrieve, read the head's bodies (the re-rank and the headline
+ * excerpts need them), decide, log the verdict with what it was decided on, render.
+ */
+async function askVerdict({ question, repair, cat, opened, ranker, env, started, via, call, topic, deployment }) {
+  const rows = retrievable(cat.rows);
+  const loc = String(opened.locator ?? '');
+  const prep = await remember(`prep\0${loc}\0${rowsKey(rows)}`,
+    async () => prepareRetrieval(rows, prepareVocabulary(await readVocabulary(opened.reader))));
+  const found = retrieve(prep, question, { fusion: ranker.fusion });
+  const head = found.candidates.slice(0, Math.max(ranker.rerank?.k ?? 0, AMBIGUOUS_TOP));
+  const parsed = new Map(await Promise.all(head.map(async (c) => [c.row.id, await remember(`entry\0${loc}\0${c.row.path}`, async () => {
+    const r = await opened.reader.readEntry(c.row.path);
+    if (!r.ok) return null;
+    try { return parseEntry(r.text, c.row.path); } catch { return null; }
+  }, { keep: (v) => v !== null })]))); // a failed read (a timeout) is retried next ask, not remembered for a minute
+  const bodies = new Map([...parsed].map(([id, p]) => [id, p?.body ?? null]));
+  const d = decide(prep, ranker, question, { retrieval: found, bodies });
+  const stamp = { rank: ranker.rank, ...context({ via, call, topic }), ...stand(deployment) };
+  const common = { kind: 'ask', q: question, ...repair, verdict: d.verdict, p: round2(d.p), f: featureLine(d.features, ranker.model.features) };
+
+  if (d.verdict === 'answer') {
+    const c = d.entries[0];
+    const hit = { row: c.row, score: round2(d.p), overlap: [], anchors: c.anchors.hits };
+    const p = parsed.get(c.row.id);
+    // The certified entry's body did not arrive (a timeout, drift, an unparseable file): the agent
+    // got a subject line, not an answer. Same honest state as floor-1 -- conclude nothing (exit 3).
+    if (!p) {
+      const missing = { ...describeHit(hit, null, { unavailable: 'body unavailable' }), unavailable: 'body unavailable' };
+      await log({ ...common, matched: [c.row.id], trustShown: [missing.trust.label], opened: [], state: 'unreachable', why: 'body unavailable', ms: Date.now() - started, ...stamp }, { env });
+      return { state: 'unreachable', verdict: 'answer', hits: [missing], rows: cat.rows.length, ...repair };
+    }
+    const described = describeHit(hit, p);
+    await log({ ...common, matched: [c.row.id], trustShown: [described.trust.label], opened: [c.row.id], state: 'answer', ms: Date.now() - started, ...stamp, payload: { bodyHashes: { [c.row.id]: claimHash(p.body) } } }, { env });
+    return { state: 'answer', verdict: 'answer', hits: [described], rows: cat.rows.length, ...repair };
+  }
+  if (d.verdict === 'ambiguous') {
+    const headlines = d.entries.map((c) => ({
+      id: c.row.id, subject: c.row.subject, separating: c.separating, question: c.row.question, body: bodies.get(c.row.id) ?? null,
+    }));
+    // No headline is certified, so the agent may be about to go and find out: name what this session
+    // already captured and has not published, as the floor-1 miss does, or the same fact is captured twice.
+    const queued = await queuedHere(question, { env });
+    const written = await log({ ...common, shown: headlines.map((h) => h.id), state: 'ambiguous', ms: Date.now() - started, ...stamp, ...(queued.length ? { queued: queued.map((q) => q.id) } : {}) }, { env });
+    return { state: 'ambiguous', verdict: 'ambiguous', headlines, handle: written.line?.at ?? null, hits: [], queued, rows: cat.rows.length, ...repair };
+  }
+  const concepts = d.concepts.map((id) => prep.vocab.concepts.get(id)?.label ?? id);
+  const queued = await queuedHere(question, { env });
+  await log({ ...common, matched: [], state: 'miss', ms: Date.now() - started, ...stamp, ...(queued.length ? { queued: queued.map((q) => q.id) } : {}) }, { env });
+  return { state: 'miss', verdict: 'none', concepts, hits: [], nearMiss: null, queued, rows: cat.rows.length, ...repair };
+}
+
+/** An ask handle is the ask's own `at`: an ISO timestamp, never prose. */
+const ISO_AT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
+
+/**
+ * The agent's half of an `ambiguous` verdict when NONE of the headlines answers (Decision 1a): one
+ * log line pointing at the ask it closes. That line is the label M6 recalibrates on -- with `kb_show`
+ * on the other side -- so it names its ask by HANDLE, the ask's own `at`, rather than "the session's
+ * latest ask": in a batched wave the latest ask is somebody else's, which is how S4's verdict once
+ * carried S5's timestamp.
+ */
+export async function none({ env = process.env, ask: handle = null, via = null, call = null, topic = null } = {}) {
+  const asks = (await sessionAsks({ env })).sort((a, b) => String(a.at).localeCompare(String(b.at)));
+  const named = typeof handle === 'string' && handle.trim() ? asks.find((a) => a.at === handle.trim()) : null;
+  // WITHOUT A HANDLE, ONLY AN OPEN QUESTION: the latest ask, and only if it ended `ambiguous`. A none
+  // pinned to an ask the base answered, or to a miss, is a false label in the very data M6
+  // recalibrates on; recorded unpaired, it is merely unpaired.
+  const latest = asks.at(-1) ?? null;
+  const target = named ?? (handle || latest?.state !== 'ambiguous' ? null : latest);
+  // A HANDLE THE SESSION NO LONGER REMEMBERS (the sidecar keeps the last ASK_MEMORY asks, the queue
+  // is flushed) is still the agent's explicit pointer, and it is a timestamp, not prose: recorded as
+  // `after`, so the ask it names is closed instead of being reminded about (PR #400 review). One that
+  // is not an `at` at all is recorded without it, as before.
+  const pointer = target?.at ?? (handle && !named && ISO_AT.test(handle.trim()) ? handle.trim() : null);
+  const written = await log({ kind: 'none', ...(pointer ? { after: pointer } : {}), ...context({ via, call, topic }) }, { env });
+  if (written.disabled) return { state: 'disabled', why: written.why };
+  if (!written.ok) return { state: 'unreachable', why: written.why };
+  return {
+    state: 'recorded',
+    ...(pointer ? { after: pointer } : {}),
+    ...(target ? { q: target.q } : {}),
+    // Said as it happened: an unremembered ISO handle WAS recorded (PR #400 review, cycle 3).
+    ...(handle && !named && pointer ? { why: `recorded against handle ${handle.trim()}, which this session no longer remembers` } : {}),
+    ...(handle && !named && !pointer ? { why: `no ask of this session has the handle ${handle}; the verdict was recorded without one` } : {}),
+    ...(!handle && latest && !target ? { why: `this session's latest ask ended ${latest.state ?? 'without a verdict'}, not ambiguous; pass its handle to pair them` } : {}),
+  };
+}
+
+/**
+ * `ask`, with each hit labelled by where its support was observed relative to the ASKER's build
+ * (VCST-6221 step 2): your build / an older, newer or different build (what differs) / unknown. Only
+ * when the caller names its stand and a door injected the build reader (`builds`); otherwise exactly the
+ * old answer. A label that cannot be computed in time is simply absent -- it never delays or fails an ask
+ * for long, because the asker's build is read once per session and module ownership is cached.
+ */
+export async function ask(asked, opened, opts = {}) {
+  const r = await askRanked(asked, opened, opts);
+  if (!opts.deployment || typeof opts.builds !== 'function' || !Array.isArray(r?.hits) || !r.hits.length) return r;
+  try { await labelBuilds(r.hits, opened, opts); } catch { /* a label is an extra, never a failure */ }
+  return r;
+}
+
+/** A build snapshot the base holds, or null -- the one reader the gate and the labels share. */
+const buildReader = (opened) => async (pin) => {
+  const r = await opened.reader.readEntry(buildPath(pin));
+  try { return r?.ok ? JSON.parse(r.text) : null; } catch { return null; }
+};
+
+/**
+ * A label is an extra on a READ, so it gets one budget for the whole answer: past LABEL_DEADLINE_MS the
+ * hits go out unlabelled rather than the ask waiting on a slow stand and its swagger documents
+ * (review of ai-tools#429). The work carries on in the background and fills the caches for the next ask.
+ */
+export const LABEL_DEADLINE_MS = 6_000;
+
+async function labelBuilds(hits, opened, { env = process.env, deployment, builds }) {
+  const work = (async () => {
+    const where = resolveStand(deployment, { env });
+    if (!where.known) return;
+    const mine = await builds(where.value, { env });
+    if (!mine.pin) return;
+    const backUrl = profileOf(where.value, { env })?.backUrl?.replace(/\/$/, '') ?? null;
+    const readBuild = buildReader(opened);
+    const labels = await Promise.all(hits.map((h) => (h.entryData
+      ? buildLabel({ entry: h.entryData, asker: { build: mine.pin, snapshot: mine.snapshot }, readBuild, backUrl })
+      : null)));
+    return labels;
+  })();
+  let timer;
+  const labels = await Promise.race([
+    work.catch(() => null),
+    new Promise((r) => { timer = setTimeout(() => r(null), LABEL_DEADLINE_MS); timer.unref?.(); }),
+  ]).finally(() => clearTimeout(timer));
+  // Applied only when they all arrived in time: a half-labelled answer would read as "unknown" for the rest.
+  if (Array.isArray(labels)) labels.forEach((l, i) => { if (l) hits[i].build = l; });
+}
+
+async function askRanked(asked, opened, { env = process.env, top = 3, via = null, call = null, deployment = null, topic = null } = {}) {
   const started = Date.now();
   // Ranked AND logged on the repaired text: the mangled one finds the wrong entries and puts a
   // local install path in a public log (see `undoMsysRewrite`). `repaired` says it happened, so
@@ -440,6 +713,11 @@ export async function ask(asked, opened, { env = process.env, top = 3, via = nul
   if (cat.state !== 'ok') {
     await log({ kind: 'ask', q: question, ...repair, state: cat.state, why: cat.why, ...ranked({ via, call, topic, deployment }) }, { env });
     return { state: cat.state, why: cat.why, hits: [], ...repair };
+  }
+
+  const verdictRanker = await loadVerdictRanker(opened.reader, { locator: opened.locator, env });
+  if (verdictRanker) {
+    return askVerdict({ question, repair, cat, opened, ranker: verdictRanker, env, started, via, call, topic, deployment });
   }
 
   const { hits, nearMiss } = rank(question, retrievable(cat.rows), { top });
@@ -526,6 +804,7 @@ export async function ask(asked, opened, { env = process.env, top = 3, via = nul
     ...(state === 'unreachable' ? { why: described[0]?.unavailable ?? 'no body could be read' } : {}),
     ms: Date.now() - started,
     ...ranked({ via, call, topic, deployment }),
+    ...(opened_.length ? { payload: { bodyHashes: Object.fromEntries(opened_.map((h) => [h.id, claimHash(h.body)])) } } : {}),
   }, { env });
 
   return { state, hits: described, rows: cat.rows.length, ...repair };
@@ -533,35 +812,80 @@ export async function ask(asked, opened, { env = process.env, top = 3, via = nul
 
 // ── show ──────────────────────────────────────────────────────────────────────────────────────
 
-export async function show(id, opened, { env = process.env, via = null, call = null, topic = null } = {}) {
+/**
+ * `show`, with the build label `ask` gives (VCST-6221): under the verdict ranker most asks end in a list
+ * and the agent reads the entry through `show`, so a label only on `ask`'s direct answers would almost
+ * never be seen. Only when the caller names its stand and a door injected the build reader.
+ */
+export async function show(id, opened, opts = {}) {
+  const r = await showEntry(id, opened, opts);
+  if (r.state !== 'answer' || !opts.deployment || typeof opts.builds !== 'function') return r;
+  try {
+    const hit = { entryData: r.entry };
+    await labelBuilds([hit], opened, opts);
+    if (hit.build) r.build = hit.build;
+  } catch { /* a label is an extra */ }
+  return r;
+}
+
+async function showEntry(id, opened, { env = process.env, via = null, call = null, topic = null, ask: handle = null, verify = false } = {}) {
+  // The ask this read answers, by handle, when the caller has one (an `ambiguous` verdict prints it):
+  // the pick-side twin of `none`'s pointer, and the other half of every label M6 recalibrates on.
+  // `verify` (VCST-6191): an open made to read an entry before confirming or disputing it, not a
+  // choice from any list -- it never pairs with an ask (`loop.mjs` `pointersByAsk`), so the gate's own
+  // advice cannot record a pick. A handle wins over it: a show with `--ask` is a choice by definition.
+  // WITHOUT EITHER, THE PAIRING IS RESOLVED HERE, at the write, as `none()` resolves its target: the
+  // latest list of this session that showed the entry and was not closed by `kb_none` -- logged as an
+  // explicit `after`, or `unpaired` when there is none. Hook and report then read the line, not a rule.
+  const after = typeof handle === 'string' && handle.trim() ? { after: handle.trim() }
+    : verify ? { verify: true } : pairShow(id, env);
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
-    await log({ kind: 'show', id, state: cat.state, why: cat.why, ...context({ via, call, topic }) }, { env });
+    await log({ kind: 'show', id, state: cat.state, why: cat.why, ...after, ...context({ via, call, topic }) }, { env });
     return { state: cat.state, why: cat.why };
   }
   // Retired entries are shown. Retrieval will not return one, but a reader holding an id is
   // entitled to see what is behind it -- including that it was retired.
   const row = cat.rows.find((r) => r.id.toUpperCase() === String(id).toUpperCase());
   if (!row) {
-    await log({ kind: 'show', id, state: 'miss', ...context({ via, call, topic }) }, { env });
+    await log({ kind: 'show', id, state: 'miss', ...after, ...context({ via, call, topic }) }, { env });
     return { state: 'miss', why: `${id} is not in this base's index` };
   }
   const read = await opened.reader.readEntry(row.path);
   if (!read.ok) {
     // Both a 404 and a timeout leave the caller without the entry, so both are 'conclude
     // nothing'. What differs is the REMEDY, which is why the message is built separately.
-    await log({ kind: 'show', id, state: 'unreachable', why: read.detail, ...context({ via, call, topic }) }, { env });
+    await log({ kind: 'show', id, state: 'unreachable', why: read.detail, ...after, ...context({ via, call, topic }) }, { env });
     return { state: 'unreachable', row, why: read.reason === 'missing' ? `${row.path} is not in the base — drift; run \`kb reindex\`` : read.detail };
   }
   let parsed;
   try {
     parsed = parseEntry(read.text, row.path);
   } catch (err) {
-    await log({ kind: 'show', id, state: 'unreachable', why: err.message, ...context({ via, call, topic }) }, { env });
+    await log({ kind: 'show', id, state: 'unreachable', why: err.message, ...after, ...context({ via, call, topic }) }, { env });
     return { state: 'unreachable', row, why: `unparseable entry: ${err.message}` };
   }
-  await log({ kind: 'show', id: row.id, state: 'answer', ...context({ via, call, topic }) }, { env });
+  // THE BODY THIS SESSION READ (VCST-6221 step 6), hashed into the local journal -- `payload` never
+  // reaches the public log (`toLogLine`). A confirm later in the session attests THIS body, even if a
+  // judge's correction merged in between.
+  await log({ kind: 'show', id: row.id, state: 'answer', ...after, ...context({ via, call, topic }), payload: { bodyHash: claimHash(parsed.body) } }, { env });
   return { state: 'answer', row, entry: parsed.data, body: parsed.body.trim(), trust: trustOf(parsed.data.evidence ?? []) };
+}
+
+/** The write-time pairing of a handle-less, non-`verify` show (see `show`): `{ after }`, `{ unpaired }`, or `{}` with no session. */
+function pairShow(id, env) {
+  if (!hasSessionId(env)) return {};
+  const journal = readLoop(env);
+  const pointed = pointersByAsk(journal);
+  const want = String(id).toUpperCase();
+  let at = null;
+  for (const r of journal) {
+    if (r.kind !== 'ask' || r.state !== 'ambiguous' || !Array.isArray(r.shown)) continue;
+    if (!r.shown.some((s) => String(s).toUpperCase() === want)) continue;
+    if (lastWord(pointed.get(r.at)).verdict === 'none') continue;
+    if (!at || r.at > at) at = r.at;
+  }
+  return at ? { after: at } : { unpaired: true };
 }
 
 // ── capture ───────────────────────────────────────────────────────────────────────────────────
@@ -634,9 +958,9 @@ export function askAbout(asks, { text, anchors = [] }) {
  */
 async function sessionAsks({ env }) {
   const byAt = new Map();
-  for (const a of metaAsks(await readMeta(env))) byAt.set(a.at, { at: a.at, q: String(a.q ?? '') });
+  for (const a of metaAsks(await readMeta(env))) byAt.set(a.at, { at: a.at, q: String(a.q ?? ''), state: a.state ?? null });
   const { lines } = await readQueue({ env });
-  for (const l of lines) if (l.kind === 'ask' && l.at) byAt.set(String(l.at), { at: String(l.at), q: String(l.q ?? '') });
+  for (const l of lines) if (l.kind === 'ask' && l.at) byAt.set(String(l.at), { at: String(l.at), q: String(l.q ?? ''), state: l.state ?? null });
   return [...byAt.values()];
 }
 
@@ -676,21 +1000,21 @@ const precedingAsk = async ({ env, input }) => askAbout(await sessionAsks({ env 
  * a contradiction is likelier with what was read a minute ago than with what was read at the start.
  */
 async function openedThisSession({ env }) {
+  // QUEUE-SCOPED ON PURPOSE: what capture calls "you read these minutes ago" is since the last flush.
+  // The confirm gate needs the whole session and reads the journal too (`openedEver`). One walk for
+  // both stores -- queue lines and journal records share the shape it reads (`loop.mjs` `openedIds`).
   const { lines } = await readQueue({ env });
-  const out = [];
-  const seen = new Set();
-  for (let i = lines.length - 1; i >= 0; i -= 1) {
-    const l = lines[i];
-    const ids = l.kind === 'ask' ? (l.opened ?? [])
-      : l.kind === 'show' && l.state === 'answer' && l.id ? [l.id]
-        : [];
-    for (const id of ids) {
-      if (typeof id !== 'string' || seen.has(id)) continue;
-      seen.add(id);
-      out.push(id);
-    }
-  }
-  return out;
+  return openedIds(lines);
+}
+
+/**
+ * Every entry the session has opened, upper-cased: its journal, which outlives the queue's flush at
+ * every `Stop`, joined with the queue, which holds what a best-effort journal append may have lost.
+ * The confirm/dispute gate's set (VCST-6191) -- session-wide, unlike capture's `openedThisSession`.
+ */
+async function openedEver({ env, journal = readLoop(env) }) {
+  const ids = [...openedIds(journal), ...(await openedThisSession({ env }))];
+  return new Set(ids.map((id) => String(id).toUpperCase()));
 }
 
 /**
@@ -706,7 +1030,9 @@ async function openedThisSession({ env }) {
  * which names a directory on the writer's machine. The kind says what went wrong; the text that
  * went wrong stays on the laptop. `subject` travels, as it does on every capture line.
  */
-async function refuseAtDoor(result, input, { env, via, call, topic, repair = {} }) {
+async function refuseAtDoor(result, input, { env, via, call, topic, repair = {}, dryRun = false }) {
+  // A dry run sends nothing, the refusal line included: it is a payload check, not an attempt.
+  if (dryRun) return result;
   // An `unstructured` verdict is either a rule too strict or a coordinate chosen badly, and the kind
   // alone cannot say which (VCST-6102). The SHAPE can — segment count and path/dotted/prose — and
   // it is numbers and an enum, so no part of the rejected value reaches the public log.
@@ -739,11 +1065,13 @@ function repairShellRewrite(input, env, fields = TEXT_FIELDS) {
   const undo = (v) => (typeof v === 'string' ? undoMsysRewrite(v, env, { wholeArgument: true }) : v);
   const out = { ...input };
   for (const f of fields) out[f] = undo(input[f]);
+  // `--conditions "page=/cart"` is rewritten at its first value, not its start (VCST-6179).
+  if (input.conditions !== undefined) out.conditions = repairConditions(input.conditions, env);
   if (Array.isArray(input.anchors)) {
     out.anchors = input.anchors.map((a) => (typeof a === 'string' ? undo(a)
       : typeof a?.coordinate === 'string' ? { ...a, coordinate: undo(a.coordinate) } : a));
   }
-  const changed = fields.some((f) => out[f] !== input[f])
+  const changed = fields.some((f) => out[f] !== input[f]) || out.conditions !== input.conditions
     || (out.anchors ?? []).some((a, i) => JSON.stringify(a) !== JSON.stringify(input.anchors[i]));
   return { input: out, repair: changed ? { repaired: 'msys' } : {} };
 }
@@ -754,28 +1082,52 @@ export async function capture(input, opened, opts = {}) {
   return { ...(await captureRepaired(fixed, opened, { ...opts, repair })), ...repair };
 }
 
-async function captureRepaired(input, opened, { env = process.env, via = null, call = null, topic = null, repair = {} } = {}) {
-  const door = { env, via, call, topic, repair };
+async function captureRepaired(input, opened, { env = process.env, via = null, call = null, topic = null, repair = {}, dryRun = false, builds = null } = {}) {
+  // `dryRun` (VCST-6156): every check below runs -- the door, the corpus-aware anchor check, the
+  // dedup and the subject check -- and nothing is logged or queued. Until this existed the CLI parsed
+  // `--dry-run` on capture and ignored it, so a "check" queued a real capture for the next push.
+  const door = { env, via, call, topic, repair, dryRun };
+  const note = (line) => (dryRun ? null : log(line, { env }));
   const missing = REQUIRED.filter((f) => !String(input[f] ?? '').trim());
   if (!input.anchors?.length) missing.push('anchor');
-  if (missing.length) return refuseAtDoor({ state: 'invalid', why: `capture needs: ${missing.join(', ')}` }, input, door);
+  // Every refusal carries `doorHints` -- the fix per anchor, coordinates the writer's own text names,
+  // the source of a missing field (VCST-6156). The hints ride on the RESULT only; `refuseAtDoor`
+  // logs kinds and shapes, never a rejected value.
+  if (missing.length) return refuseAtDoor(doorHints({ state: 'invalid', why: `capture needs: ${missing.join(', ')}`, missing }, input), input, door);
+  // HOW, then WHERE (VCST-6186): a source fact names a code version, not a stand, so the stand rule
+  // (VCST-6189) applies to observations only.
+  const how = resolveMethod(input.method);
+  if (how.problem) return refuseAtDoor(doorHints({ state: 'invalid', why: `unusable method: ${how.problem}` }, input), input, door);
+  const where = how.value === 'source' ? codeVersionProblem(input.deployment) : standProblem(input.deployment);
+  if (where) return refuseAtDoor(doorHints({ state: 'invalid', why: `unusable deployment: ${where}` }, input), input, door);
+  const conditions = normalizeConditions(input.conditions);
+  if (conditions.problem) return refuseAtDoor(doorHints({ state: 'invalid', why: `unusable conditions: ${conditions.problem}` }, input), input, door);
 
   // Refused at the door, before the base is read -- except a one-segment path (`/cart`), which is
   // a page or a namespace, and only the corpus can say which, so it is judged once the rows are here.
   const problems = anchorProblems(input.anchors)
     .filter((p) => !(p.kind === 'unstructured' && isSingleSegmentPath(p.normalized)));
-  if (problems.length) return refuseAtDoor({ state: 'invalid', why: 'unusable anchor(s)', problems }, input, door);
+  if (problems.length) return refuseAtDoor(doorHints({ state: 'invalid', why: 'unusable anchor(s)', problems }, input), input, door);
 
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
-    await log({ kind: 'capture', subject: input.subject, state: cat.state, why: cat.why, ...repair, ...context({ via, call, topic }) }, { env });
+    await note({ kind: 'capture', subject: input.subject, state: cat.state, why: cat.why, ...repair, ...context({ via, call, topic }) });
     return { state: cat.state, why: cat.why };
   }
-  const late = anchorProblems(input.anchors, { namespaces: namespaceRoots(cat.rows) });
-  if (late.length) return refuseAtDoor({ state: 'invalid', why: 'unusable anchor(s)', problems: late }, input, door);
+  const namespaces = namespaceRoots(cat.rows);
+  const late = anchorProblems(input.anchors, { namespaces });
+  if (late.length) {
+    return refuseAtDoor(doorHints({ state: 'invalid', why: 'unusable anchor(s)', problems: late }, input, { rows: cat.rows, namespaces }), input, door);
+  }
 
   const scope = normalizeScope(input.scope);
-  if (!scope.length) return refuseAtDoor({ state: 'invalid', why: 'capture needs at least one --scope axis=value (without scope, a storefront fact gets applied to admin)' }, input, door);
+  if (!scope.length) {
+    return refuseAtDoor(doorHints({
+      state: 'invalid',
+      why: 'capture needs at least one --scope axis=value (without scope, a storefront fact gets applied to admin)',
+      missing: ['scope'],
+    }, input, { namespaces }), input, door);
+  }
 
   // Read BEFORE this capture writes its own line, or the lookback finds nothing but itself.
   const after = await precedingAsk({ env, input });
@@ -785,10 +1137,10 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   // Anchors + scope + CLAIM (VCST-6102): the same coordinate with a different subject is a new fact.
   const dupe = findDuplicate(cat.rows, { anchors: input.anchors, scope, subject: input.subject });
   if (dupe) {
-    await log({
+    await note({
       kind: 'capture-refused', dupeOf: dupe.row.id, subject: input.subject,
       why: 'anchors+scope+claim', when: 'call', ...repair, ...(after ? { after } : {}), ...context({ via, call, topic }),
-    }, { env });
+    });
     return { state: 'refused', dupeOf: dupe.row, message: refusalMessage(dupe.row) };
   }
 
@@ -796,16 +1148,24 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   // THE SUBJECT IS TAKEN, at other coordinates — the case `findDuplicate` cannot see because it
   // requires the same anchors and scope as well as the claim, while the id is a pure function of the subject. Accepting it
   // as `queued` told the writer it landed and then lost the claim at push (PR #313 review 2).
-  const holder = cat.rows.find((r) => r.id === id);
+  //
+  // BY SUBJECT TOO, not only by the id it hashes to. An id is minted from the subject at BIRTH and
+  // never changes, while the subject can be corrected later (`/kb-judge`, a hand edit): measured
+  // 2026-10-12, 26 active entries on the base's main and 50 on a judge branch no longer hash to their
+  // id. A capture of the corrected subject then minted a fresh id, found no holder, and wrote the
+  // same fact a second time at other coordinates (VCST-6179 review).
+  const holder = cat.rows.find((r) => r.id === id)
+    ?? cat.rows.find((r) => r.status === 'active' && claimKey(r.subject) === claimKey(input.subject));
   if (holder) {
-    const sameSubject = String(holder.subject ?? '').trim() === String(input.subject ?? '').trim();
-    await log({
+    const sameSubject = claimKey(holder.subject) === claimKey(input.subject);
+    await note({
       kind: 'capture-refused', dupeOf: holder.id, subject: input.subject,
       why: sameSubject ? 'same-subject' : 'id-collision-different-subject', when: 'call',
       ...repair, ...(after ? { after } : {}), ...context({ via, call, topic }),
-    }, { env });
+    });
     return { state: 'refused', reason: 'subject-taken', dupeOf: holder, message: subjectTakenMessage(holder, { sameSubject }) };
   }
+  const stamp = how.value === 'source' ? {} : await buildStamp(input.deployment, { env, dryRun, builds });
   const entry = {
     id,
     subject: input.subject,
@@ -818,8 +1178,10 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
     }),
     anchors: input.anchors.map((a) => ({ coordinate: typeof a === 'string' ? a : a.coordinate })),
     evidence: [{
-      method: input.method ?? 'observation',
-      deployment: standName(input.deployment),
+      method: how.value,
+      deployment: how.value === 'source' ? String(input.deployment).trim() : standName(input.deployment),
+      ...stamp.item,
+      ...(conditions.value ? { conditions: conditions.value } : {}),
       at: new Date().toISOString(),
       by: `session:${sessionId(env)}`,
       // THE OPERATOR, beside the session, because `by` is a SESSION and was being counted as a
@@ -873,10 +1235,17 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
     { exclude: [id, ...read, ...alsoHere.hits.map((n) => n.id)] },
   );
 
+  if (dryRun) {
+    return { state: 'dry-run', id, entry, why: 'the payload is valid -- nothing was logged or queued (dry run)', read: readRows, alsoHere, related };
+  }
+
   const written = await log({
     kind: 'capture',
     id,
     subject: input.subject,
+    // WHICH BUILD it was seen on (VCST-6221): a pin, an id -- no prose -- so `kb:report` can say what
+    // share of new evidence carries a build. Absent when the stand could not be read.
+    ...(stamp.item?.build ? { build: stamp.item.build } : {}),
     // THE QUESTION, not only the subject. The subject is the claim; the question is the RETRIEVAL
     // KEY, and it is the half that decides whether anyone ever finds this entry again. Session 10
     // measured why that distinction is load-bearing: a base subject is a 3-11 token label while
@@ -914,7 +1283,7 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
     ...context({ via, call, topic }),
     // The PAYLOAD the pusher needs. The public log line is this minus `payload` (see toLogLine):
     // a log line carries ids and subjects only, but the queue must carry what it is queueing.
-    payload: { entry, body: String(input.claim).trim(), key: identityKey({ anchors: input.anchors, scope }) },
+    payload: { entry, body: String(input.claim).trim(), key: identityKey({ anchors: input.anchors, scope }), ...(stamp.snapshot ? { build: stamp.snapshot } : {}) },
   }, { env });
 
   if (written.disabled) return { state: 'disabled', why: written.why };
@@ -923,7 +1292,7 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
 
 // ── confirm / dispute ─────────────────────────────────────────────────────────────────────────
 
-async function appendEvidence(kind, id, input, opened, { env = process.env, via = null, call = null, topic = null, repair = {} } = {}) {
+async function appendEvidence(kind, id, input, opened, { env = process.env, via = null, call = null, topic = null, repair = {}, builds = null } = {}) {
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
     await log({ kind, id, state: cat.state, why: cat.why, ...repair, ...context({ via, call, topic }) }, { env });
@@ -931,20 +1300,99 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
   }
   const row = cat.rows.find((r) => r.id.toUpperCase() === String(id).toUpperCase());
   if (!row) return { state: 'invalid', why: `${id} is not in this base's index` };
+  // A split or merged entry is still served by `show`, so agents keep its id -- but evidence written
+  // to it lands on a retired file nobody counts. Name the active successor(s) instead.
+  if (row.status === 'superseded') {
+    const byId = new Map(cat.rows.map((r) => [r.id.toUpperCase(), r]));
+    const active = new Set();
+    const walk = (r, seen = new Set()) => {
+      if (!r || seen.has(r.id)) return;
+      seen.add(r.id);
+      if (r.status !== 'superseded') { active.add(r.id); return; }
+      for (const n of r.supersededBy ?? []) walk(byId.get(String(n).toUpperCase()), seen);
+    };
+    walk(row);
+    return { state: 'invalid', why: `${row.id} is superseded${active.size ? ` by ${[...active].join(', ')}; open the one you observed (kb_show with verify) and ${kind} it` : ' and has no active successor'}` };
+  }
   if (!String(input.deployment ?? '').trim()) return { state: 'invalid', why: `${kind} needs --deployment <env>` };
+  const how = resolveMethod(input.method);
+  if (how.problem) return { state: 'invalid', why: `unusable --method: ${how.problem}` };
+  const where = how.value === 'source' ? codeVersionProblem(input.deployment) : standProblem(input.deployment);
+  if (where) return { state: 'invalid', why: `unusable --deployment: ${where}` };
   if (kind === 'dispute' && !String(input.saw ?? '').trim()) return { state: 'invalid', why: 'dispute needs --saw "<what you saw instead>"' };
+  const conditions = normalizeConditions(input.conditions);
+  if (conditions.problem) return { state: 'invalid', why: `unusable --conditions: ${conditions.problem} (key=value; key=value, e.g. platform=3.1007.27; setting:Store.Name=value)` };
+  // NO CONFIRM BY EXCERPT (VCST-6191). Evidence raises or lowers the entry's trust for every later
+  // reader, so it rests on the whole entry -- its scope, stand and caveats sit below the line an
+  // `ambiguous` list prints. An entry this session never opened is refused with the command that opens
+  // it, the list's handle included when a list showed it. The refusal is logged as `<kind>-invalid`
+  // (id + reason code, never prose) so kb:report can count the gate; no evidence is written.
+  // KNOWN LIMITS, both a false refusal cured by one `show` through the same door: after a CLI `/clear`
+  // the MCP server keeps the old session key (`SESSION_ENV`), so an open through one door is not seen
+  // by the other; and a session begun on a client older than VCST-6191 journalled its opens without ids.
+  // Off means off, before the gate: a disabled kb journals nothing, so "open it first" would loop.
+  if (kbDisabled(env)) return { state: 'disabled', why: DISABLED_WHY };
+  // NO SESSION, NO GATE: outside Claude Code every process is its own session (`processKey`), so a
+  // show in one command could never satisfy the confirm in the next. The gate guards agents.
+  const journal = hasSessionId(env) ? readLoop(env) : [];
+  if (hasSessionId(env) && !(await openedEver({ env, journal })).has(row.id.toUpperCase())) {
+    // ALWAYS a `verify` open: the gate cannot know which list, if any, the entry answers, and a handle it
+    // guessed would record a pick on the wrong question (PR #407 review). Closing a list is the agent's
+    // own choice, and the Stop reminder names each one still open with its handle.
+    await log({ kind: `${kind}-invalid`, id: row.id, why: 'not-opened', ...context({ via, call, topic }) }, { env });
+    return {
+      state: 'invalid',
+      why: `${row.id} was not opened in this session -- open it first: kb_show ${row.id} with verify`
+        + `, or \`npm run kb -- show ${row.id} --verify\`; then ${kind} it if ${kind === 'dispute' ? 'what you saw contradicts its body' : 'its body says what you saw'}`,
+    };
+  }
 
+  // WHICH BODY THIS SESSION IS CONFIRMING OR DISPUTING, hashed now -- not when the queue is pushed.
+  // Stamped at push, a confirmation of the old wording that waited in a queue until a judge's
+  // `claim-amended` merged was hashed against the CORRECTED body and counted as its support
+  // (`attestsCurrentClaim`, index-build.mjs). An unreadable body leaves it to push's stamp.
+  let bodyHash = null;
+  let entry = null;
+  try {
+    const read = await opened.reader.readEntry(row.path);
+    if (read?.ok) { const parsed = parseEntry(read.text, row.path); bodyHash = claimHash(parsed.body); entry = parsed.data; }
+  } catch { /* push stamps it */ }
+  // ...BUT THE BODY THE AGENT READ WINS (VCST-6221 step 6). Hashed from the base NOW, a confirm whose
+  // `kb_show` came before a judge's `claim-amended` merged would attest the corrected wording it never
+  // read. The session's journal holds the hash of the body it opened; the current body is the fallback.
+  const readBody = openedHash([...journal, ...(await readQueue({ env })).lines.map(loopRecordOf).filter(Boolean)], row.id);
+  if (readBody) bodyHash = readBody;
+
+  const stamp = how.value === 'source' ? {} : await buildStamp(input.deployment, { env, builds });
+  // A DISAGREEMENT ON ANOTHER BUILD IS A SOFT DISPUTE (VCST-6221, core/gate.mjs): still a dispute the
+  // judge sees, but readers get "contested on another build" instead of DISPUTED. Needs the stamp and the
+  // entry; without either it stays a hard dispute -- the gate fails closed.
+  let contested = null;
+  if (kind === 'dispute' && stamp.snapshot && entry) {
+    try {
+      const soft = await softDispute({
+        entry,
+        observation: { build: stamp.item.build, snapshot: stamp.snapshot, conditions: conditions.value },
+        readBuild: buildReader(opened),
+        backUrl: profileOf(stamp.stand, { env })?.backUrl?.replace(/\/$/, '') ?? null,
+      });
+      contested = soft?.contested ?? null;
+    } catch { contested = null; }
+  }
   const item = {
-    method: input.method ?? 'observation',
-    deployment: standName(input.deployment),
+    method: how.value,
+    deployment: how.value === 'source' ? String(input.deployment).trim() : standName(input.deployment),
+    ...stamp.item,
+    ...(conditions.value ? { conditions: conditions.value } : {}),
     at: new Date().toISOString(),
     by: `session:${sessionId(env)}`,
+    ...(bodyHash ? { bodyHash } : {}),
     // Same reason as `capture`: a confirmation from a second SESSION of the same person is not a
     // second opinion, and until this field existed nothing could tell the two apart.
     ...(cachedWho({ dir: queueDir(env), env }) ? { who: cachedWho({ dir: queueDir(env), env }) } : {}),
     // BOUNDED, unlike every other prose field on this path used to be. See NOTE_MAX.
     ...(kind === 'dispute'
-      ? { contradicts: true, note: trimNote(input.saw) }
+      ? { contradicts: true, ...(contested ? { contested } : {}), note: trimNote(input.saw) }
       : trimNote(input.note) ? { note: trimNote(input.note) } : {}),
   };
 
@@ -955,7 +1403,7 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
     // and not of one verb: `ask` and `confirm` write the same `deployment` key into the same public
     // log, and a bound that only one of them applies is a bound the log does not have. The guard
     // above has already rejected an empty value, so the drop half of `stand()` never fires here.
-    ...stand(input.deployment),
+    ...(how.value === 'source' ? { deployment: String(input.deployment).trim(), method: 'source' } : stand(input.deployment)),
     // A dispute's `saw` used to be HERE, in the public line, and it should not have been. §7 is
     // "ids and subjects only, never prose", and this was hundreds of characters of free text from
     // an agent — found 2026-09-19 by reading a published line rather than the rule. Two reasons it
@@ -970,9 +1418,13 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
     //
     // It is still in `payload` (local, never published) and still on the entry. Nothing is lost.
     ...(kind === 'confirm' ? { trust: row.trust + 1 } : {}),
+    // The build pin (an id) and whether the gate made it a SOFT dispute (VCST-6221) -- what `kb:report`
+    // counts for the stamp share and the soft-dispute rate. The difference itself stays on the entry.
+    ...(stamp.item?.build ? { build: stamp.item.build } : {}),
+    ...(contested ? { soft: true } : {}),
     ...repair,
     ...context({ via, call, topic }),
-    payload: { id: row.id, path: row.path, item },
+    payload: { id: row.id, path: row.path, item, ...(stamp.snapshot ? { build: stamp.snapshot } : {}) },
   }, { env });
 
   // A dispute NEVER auto-retires anything. One contradicting observation against four
@@ -1020,13 +1472,38 @@ export async function stat(opened, { env = process.env } = {}) {
   };
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') return { ...out, state: cat.state, why: cat.why };
+  const live = retrievable(cat.rows);
   return {
     ...out,
     state: 'answer',
     indexes: cat.indexes,
     entries: cat.rows.length,
-    active: retrievable(cat.rows).length,
+    active: live.length,
+    disputes: disputeTotals(live),
     schema: cat.manifest.schema ?? null,
+  };
+}
+
+/**
+ * What is left to judge and what has been judged, over the ACTIVE entries. A retired entry's
+ * disputes live on in its successor and are judged there, so counting them here would count them
+ * twice. A verdict still in a PR is not in the index yet: until it merges, its dispute is open.
+ *
+ * The ENTRY is the unit `stat` reports: how much of the base is in doubt. An entry is `disputed`
+ * while any dispute on it is open, and `settled` once a judge resolved every dispute on it -- one
+ * new dispute moves a settled entry back. The per-dispute counts are what a judge works through,
+ * so they stay in the result for `--json` and `kb:disputes list`.
+ */
+export function disputeTotals(rows = []) {
+  const sum = (k) => rows.reduce((n, r) => n + (Number(r[k]) || 0), 0);
+  return {
+    disputedEntries: rows.filter((r) => r.disputed > 0).length,
+    // Open SOFT disputes (VCST-6221) are still for the judge: counted apart, and an entry holding one is
+    // not "settled" (review of ai-tools#429).
+    contestedEntries: rows.filter((r) => r.contested > 0).length,
+    settledEntries: rows.filter((r) => !(r.disputed > 0) && !(r.contested > 0) && r.resolved > 0).length,
+    open: sum('disputed'),
+    resolved: sum('resolved'),
   };
 }
 
@@ -1130,7 +1607,9 @@ export async function reindex(opened, { env = process.env, write = true, generat
   const added = cat.state === 'ok' ? [...seen].filter((id) => !before.has(id)).sort() : [];
   const removed = [...before.keys()].filter((id) => !seen.has(id)).sort();
   const retrusted = [...rowsFor.values()].flat()
-    .filter((r) => before.has(r.id) && (before.get(r.id).trust !== r.trust || before.get(r.id).disputed !== r.disputed))
+    // `contested` too (VCST-6221): a soft dispute moving is drift the operator should hear about.
+    .filter((r) => before.has(r.id) && (before.get(r.id).trust !== r.trust || before.get(r.id).disputed !== r.disputed
+      || (before.get(r.id).contested ?? 0) !== (r.contested ?? 0)))
     .map((r) => ({ id: r.id, was: before.get(r.id).trust, now: r.trust }));
 
   // `base` is CATEGORISED, never logged verbatim. The log is a file in a PUBLIC repository (PLAN

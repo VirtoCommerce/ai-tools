@@ -57,6 +57,11 @@
           "agent": { "type": "string" },
           "tags": { "type": "array", "items": { "type": "string" } },
           "preferredBrowser": { "type": "string" },
+          "exclusiveGroup": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Suites sharing this value mutate the same shared state (e.g. a store-wide setting) and must never run at the same time. The CI pools share one group lock, so two members are never in flight together in any lane; batching gives each member its own session, and the interactive orchestrator dispatches a group's members one after another. It isolates members from EACH OTHER only — a suite outside the group still runs beside them."
+          },
           "browserRequirementReason": { "type": "string" },
           "storefrontProfile": {
             "type": "array",
@@ -66,7 +71,7 @@
           },
           "requiresModules": {
             "type": "array",
-            "description": "VC modules this suite requires (e.g. ['cms', 'loyalty', 'marketing']). Orchestrator skips suites whose required modules aren't in the active MODULES_ENABLED env var. Defaults to no requirement if absent. Use for Backend suites that test module-admin surfaces; Frontend storefront suites typically don't need this.",
+            "description": "Module ids this suite requires. Write the full id (`VirtoCommerce.Return`) or its kebab short form (`sales-rep` → `VirtoCommerce.SalesRep`); a short form that does not map by that rule must be the full id. `regression:plan --preflight` gates a suite whose module is not deployed or failed to load; an entry that resolves to no module is reported and the suite runs. `MODULES_ENABLED` (CI) compares these strings as written. Defaults to no requirement if absent.",
             "items": { "type": "string" }
           },
           "envRiskGate": {

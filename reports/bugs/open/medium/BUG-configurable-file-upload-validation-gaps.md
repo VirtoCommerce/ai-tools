@@ -23,7 +23,8 @@
 
 # Finding 1 (= VCST-6000): a 0-byte file satisfies a REQUIRED File section
 
-## Status: CONFIRMED — re-reproduced end-to-end on **vcptcore-qa**, 2026-09-23
+## Status: **FIXED (backend) — verified on vcptcore-qa 2026-09-24.** See §Verification 2026-09-24 below.
+## Prior status: CONFIRMED — re-reproduced end-to-end on **vcptcore-qa**, 2026-09-23
 
 **Env:** vcptcore-qa · storefront `2.59.0-pr-2485-8b28-8b288e09` · `XCart 3.1036.0` · `FileExperienceApi 3.1004.0` ·
 `Xapi 3.1023.0`. Buyer `test-john.mitchell-20260310@test-agent.com`, product `agent-test-req-file-child-20260519`,
@@ -78,6 +79,34 @@ Text. Fix it there; the upload endpoint may legitimately keep accepting empty fi
 
 **Suite impact:** the case `CFG-FILE-003` ("0-Byte File Rejected on Required Upload Section") asserts the *correct*
 behaviour and currently fails — it is not stale, it is ahead of the code. Keep it; do not re-base it downward.
+
+## Verification 2026-09-24 — VERIFIED WITH NOTES (backend fixed; frontend gap remains)
+
+Verified on **vcptcore-qa** against `XCart 3.1037.0-pr-144-a0ce` (the PR #144 alpha build, confirmed live via
+`/api/platform/modules`). Pre-fix baseline `3.1036.0` — same stand, same fixtures, so RED→GREEN differs by the
+module version alone. Evidence: [`../../../tickets/Sprint26-19/VCST-6000/evidence.html`](../../../tickets/Sprint26-19/VCST-6000/evidence.html)
+(payloads `C1`–`C8`, index in `EVIDENCE-NOTES.md`).
+
+**Backend — FIXED.** `addItem` with only a 0-byte file in the required section is now rejected
+`CONFIGURATION_SECTION_FILES_REQUIRED`, `itemsCount: 0`, **3/3 consecutive runs** with a fresh upload each time.
+The fix did not over-reach: a real file still succeeds, 0-byte + real still succeeds, an omitted section still
+returns the *distinct* `CONFIGURATION_SECTION_REQUIRED`, and an **optional** section with only a 0-byte file still
+succeeds. Upload endpoint unchanged (200, `size:0`) — deliberately, per the fix's placement in the cart validator.
+
+**Frontend — STILL BROKEN, and now it is the visible defect.** The storefront continues to enable "Add to cart"
+on a 0-byte file and surfaces **nothing** when the server rejects the call — no toast, no inline error, clean
+console, empty cart. The buyer gets a live button that silently does nothing. This report's earlier judgement that
+a storefront guard is *"cosmetic once the server rejects"* was **half right**: the data-integrity half is closed,
+the silent-failure half is not, and it is a **separate pre-existing `vc-frontend` defect** — this fix did not cause
+it, it exposed it. **Not yet filed.**
+
+**Suite impact, updated:** `CFG-FILE-003` now passes at the API layer. If it asserts the storefront button state it
+still fails — against the frontend gap, not the backend.
+
+**Incidental (out of scope, not filed):** an uploaded file URL is **single-use** — once attached to a created line
+item, a later `addItem` reusing that URL silently drops the file with no error. Predates this fix.
+
+**This file stays in `open/`** — Findings 2–3 below are untouched.
 
 ---
 

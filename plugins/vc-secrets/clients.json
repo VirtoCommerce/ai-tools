@@ -1,0 +1,35 @@
+{
+  "claude-code": {
+    "displayName": "Claude Code",
+    "format": "json",
+    "serversKey": "mcpServers",
+    "launcherRef": "${VC_SECRETS}",
+    "minVersion": null,
+    "configFiles": {
+      "project": "<repo>/.mcp.json",
+      "local": "~/.claude.json (this project's block — write it with `claude mcp add-json --scope local`, not by pasting)",
+      "user": "~/.claude.json (user scope — `claude mcp add-json --scope user`)"
+    }
+  },
+  "cursor": {
+    "displayName": "Cursor",
+    "format": "json",
+    "serversKey": "mcpServers",
+    "launcherRef": "${env:VC_SECRETS}",
+    "minVersion": "unknown",
+    "configFiles": {
+      "project": "<repo>/.cursor/mcp.json",
+      "user": "~/.cursor/mcp.json"
+    }
+  },
+  "codex": {
+    "displayName": "Codex",
+    "format": "toml",
+    "serversKey": "mcp_servers",
+    "launcherRef": null,
+    "minVersion": null,
+    "configFiles": {
+      "user": "~/.codex/config.toml"
+    }
+  }
+}

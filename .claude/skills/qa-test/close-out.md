@@ -197,9 +197,15 @@ Mechanics: `.claude/knowledge/execution/tracker-ops.md` §5b.
 | **OUT-OF-SCOPE incidental** | Its **own standalone ticket** + a *related* link back to `<ticket-key>` |
 | **`BL-A11Y-*` on a functional / feature / E2E ticket** | Its **own standalone ticket** + a *related* link — the same shape as an OUT-OF-SCOPE incidental, and for the same reason. **Never a Sub-task**: a Sub-task asserts the parent caused it, and an inherited contrast or naming defect was not caused by this story. It keeps its **real severity** (never downgraded to look non-blocking) and does **not** fail 5-verdict ([`triage.md`](triage.md) §7a) |
 
-A bug already drafted by 5-triage's `/qa-triage-results --fix` pass is filed here the same way — pass its draft as
-the basis, don't re-investigate. A test-defect still routes to `/qa-review-tests <suite> --fix`, never to the
-tracker.
+**Every bug reaches `/vc-fix:qa-bug` already investigated.** 5-triage's two `/qa-triage-results` passes ran each
+confirmed bug through `vc-fix:qa-investigate` (its Phase 4). So the chain is always *triage → investigate →
+`qa-bug`*, and 5-file is its last link:
+- **C1 bug** — already drafted by the `--fix` pass. Pass its draft as the basis.
+- **Checklist / exploratory / visual bug** — returned by the `ticket` pass with its package. Call `/vc-fix:qa-bug`
+  with that package, per [`routing-and-fix.md`](../qa-triage-results/routing-and-fix.md) §The `/qa-bug` brief.
+
+Neither one is re-investigated. A bug that triage left `needs-review` is not filed. A test-defect still routes to
+`/qa-review-tests <suite> --fix`, never to the tracker.
 
 **Gate (inline self-check):** every IN-SCOPE bug **at or above the floor** is a Sub-task; every PRE-EXISTING
 match is linked, not re-filed; **every below-floor `Low` has a draft AND a line in the 5-report comment** (a `Low`

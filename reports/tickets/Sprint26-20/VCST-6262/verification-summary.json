@@ -1,0 +1,15 @@
+{
+  "ticket": "VCST-6262",
+  "verdict": "BLOCKED",
+  "blocked_reason": "fix not deployed: ticket status 'To do'; vc-frontend PR #2523 head 4263715a (2026-10-09) carries no fix commit; vcst-qa runs theme 2.60.0-pr-2523-4263-4263715a, the build round 3 already reported on (comments 111901/111902)",
+  "date": "2026-10-12",
+  "environment": "vcst",
+  "build": { "theme": "2.60.0-pr-2523-4263-4263715a", "pr_build": "vc-frontend #2523 @ 4263715a" },
+  "agent_used": null,
+  "str_result": "not run",
+  "tracker_transition": null,
+  "tracker_comment": "none — same build as today's round-3 comment (tracker-ops §0 rule 4)",
+  "evidence": null,
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-20/VCST-6262/"
+}
