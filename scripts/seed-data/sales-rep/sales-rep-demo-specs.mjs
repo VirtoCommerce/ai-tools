@@ -456,7 +456,7 @@ export function buildDemoOrderBody(spec, { org, contact, orgId, customerId, prod
   const items = prices.map((price, i) => {
     const p = products.length ? products[i % products.length] : null;
     return p
-      ? { sku: p.sku, productId: p.id, catalogId: p.catalogId, name: p.name, quantity: 1, price, productType: 'Physical', currency: DEMO_CURRENCY }
+      ? { sku: p.sku, productId: p.id, catalogId: p.catalogId, name: p.name, ...(p.imgSrc ? { imageUrl: p.imgSrc } : {}), quantity: 1, price, productType: 'Physical', currency: DEMO_CURRENCY }
       : { sku: `SKU-${spec.key}-${i + 1}`, productId: `demo-${spec.key}-${i + 1}`, catalogId: 'demo', name: `Item ${i + 1}`, quantity: 1, price, productType: 'Physical', currency: DEMO_CURRENCY };
   });
   const shipAddr = demoOrderAddress(org, contact, 'Shipping');

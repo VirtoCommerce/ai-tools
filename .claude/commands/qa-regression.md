@@ -77,14 +77,11 @@ add to it?" unanswerable from the invocation.
 
 ### Execution Modes
 
-There is **one** orchestrator: `regression-orchestrator`, dispatched via the Task tool.
+There is **one** orchestrator: `regression-orchestrator`, dispatched via the Task tool — **always with `--run-id {RUN_ID}` and Step 0's `--accept` ids** (else it blocks on this run's own lock).
 
 > A second `--autonomous` mode (Agent Teams, `results/{RUN_ID}/`) was removed 2026-08-26. It was a
 > parallel stack whose output no tooling read: no live dashboard, no `/qa-triage-results`, no
-> `history.json` flakiness feed, no `reap-stalled-run` backstop, no `compute-metrics` gate. It had
-> also drifted — its fallback chain still put firefox second (the order fixed on 2026-08-05, when
-> firefox could not click here), and it assigned firefox as the *preferred* browser for Smoke and
-> Payment. Its two genuinely useful pieces — the graduated rate-limit guard and the 30/60s backoff
+> `history.json` flakiness feed, no `reap-stalled-run` backstop, no `compute-metrics` gate. Why: `docs/decisions/regression-history.md`. Its two genuinely useful pieces — the graduated rate-limit guard and the 30/60s backoff
 > ladder — were folded into `regression-orchestrator.md` Step 5. Its auto-JIRA filing was dropped
 > deliberately: `/qa-triage-results` and `/qa-monitoring` both stop short of filing, and a
 > regression run should not be the one thing that does.
@@ -122,21 +119,14 @@ If the user passes an incompatible combo (e.g. `--seed=b2b` with `catalog` selec
 
 ### Step 0 — Pre-Flight (per `.claude/templates/agent-dispatch.md`)
 
-1. **Environment health** — run `/qa-env-check endpoints`. If unhealthy, abort — regression on a broken env wastes budget.
-2. **Build & version verification** — fetch full deploy state per `agent-dispatch.md § Build Verification`:
-   - Use GitHub MCP to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa` by default; use the branch matching `TEST_ENV` for other envs) — this is the **`declared`** state
-   - Probe `GET {{BACK_URL}}/api/platform/modules` for the **`deployed`** state (ground truth). A failed probe records `UNKNOWN`, never a fallback to `declared`
-   - Record: platform version, theme version, and all module versions, for both
-   - Include full deploy state in the regression report header (Step 6)
-   - Save to `reports/deploy-state-cache.json` for cross-reference
-3. **Duplicate check** — check `reports/regression/test-run-status.json` for an active run with the same suite selection. If found, block — wait for current run to complete. **First rule out an orphan:** that file is flipped to `completed` only by Step 6 of the owning orchestrator, so an orchestrator that died mid-run leaves it `in_progress` forever and blocks every future run. Run `npm run regression:reap` (read-only) — it classifies the run from file evidence (newest mtime across the run's own results/screenshots, ignoring the watcher-written `regression-report.html`). `ACTIVE` → block as above. `STALLED` → reclaim it with `npm run regression:reap:apply` (marks `status: "stalled"`, never `completed`) and proceed. `SETTLED`/`NO-STATUS` → nothing is running; proceed.
-4. **Recent-release check** (for `sprint` and `full` selections) — read `.claude/knowledge/domain/release-ledger.md` §1 (latest per component) and the newest §2 month(s), and diff `latestByComponent` against the **`deployed`** state item 2 just probed. Flag any component that shipped a change — a **⚠ BREAKING** row above all — between the last regression run and this build as a **false-failure risk**, and name it in the report header. Consider `/qa-test-lifecycle changelog <version>` first if breaking changes are present.
-
-   This replaced a Context7 query for `"platform release notes recent changes"` against `/virtocommerce/vc-docs`. That corpus does not carry release notes: its newest version page is Platform **3.917.1** while production is past **3.1050**, so the step was re-deriving release knowledge every run from a source ~9 months blind. Fall back to Context7 only if the ledger's `generated:` date is >45 days old.
-
-   **Guardrail — the ledger raises the hypothesis; the evidence decides the verdict.** A breaking change is an equally good explanation for why a *real* bug shipped. If a ledger entry could settle a classification, this step becomes an engine for explaining away production defects at scale, with a citation. So `/qa-triage-results`' `ambiguous → REAL_BUG / CONFIDENCE: LOW` bias is **unchanged**, and a ledger entry may never on its own move a failure from `REAL_BUG` to `STALE_TEST` — that still requires the screenshot plus `/qa-review-tests --verify` reporting CHANGED.
-
-   **Released ≠ deployed.** A case failing because the feature it asserts was never deployed to this env is `NOT_DEPLOYED`/BLOCKED, not FAIL (`agent-dispatch.md § Build Verification`).
+1. **[`/preflight`](../skills/preflight/SKILL.md) `regression <selection>`** — env health, the deployed
+   build (platform, theme, the selected suites' module versions — into the report header, Step 6), the
+   active-run lock (`regression:reap` classification; a stalled run is offered `regression:reap:apply`, with your OK), drift on the selected suites' modules (BLOCK), module gating
+   from `requiresModules` × deployed (gated suites leave the plan as `NOT_DEPLOYED`, never FAIL), the Δ
+   since this env's baseline (its false-failure-risk suites go in the report header), ⚠ BREAKING for the
+   selected suites' components, and MCP lanes — one output form, one question only on a BLOCK.
+   **A ledger or baseline entry raises a hypothesis; the evidence decides the verdict** — `/qa-triage-results`'
+   `ambiguous → REAL_BUG / CONFIDENCE: LOW` bias is unchanged; a change alone never moves `REAL_BUG` to `STALE_TEST`.
 
 ### Step 0.5 — Seed Data (only if `--seed=<profile>` provided)
 
@@ -183,42 +173,39 @@ Resolution order:
 
 **1d. Other selections** (`smoke`, `critical`, `full`, `frontend`, `backend`, comma-separated IDs) → manifest-only, no plan lookup.
 
-### Step 2 — Generate Run ID
-Create `REG-YYYY-MM-DD-HHMM` and output directory `reports/regression/{RUN_ID}/`.
+### Step 2 — Generate Run ID, get the plan
+Create `REG-YYYY-MM-DD-HHMM` and `reports/regression/{RUN_ID}/`, then — **before Step 3 writes the status file**, whose fresh `in_progress` the lock check would read as an active run — get the plan (never derive lanes, order or browser constraints by hand):
+```bash
+npm run regression:plan -- <selection> --preflight --json --run-id {RUN_ID} --preflight-out reports/regression/{RUN_ID}/preflight.json [--accept drift:<id>,… when the user chose "proceed as is" at Step 0]
+```
+Exit 1 = the selection cannot run as-is (unknown id, missing CSV, no executor, or a cap that would guarantee truncation); 2 = pre-flight NOT READY; 3 = it could not run. On any: stop and report, never improvise. Suites in `preflight.gating.gated` are not in the plan. `preflight.json` is what `regression:close` turns into the next baseline.
 
 ### Step 3 — Initialize Status Tracker & Launch Live Dashboard
-1. Write `reports/regression/test-run-status.json` with all suites in `pending` state (run-level `status: "in_progress"`).
-2. **ALWAYS launch the live HTML dashboard in the background — automatically, on EVERY run, without being asked.** This is mandatory, not optional: never wait for the user to request the dashboard, and never ask whether to launch it. It fires for every selection and every execution mode — browser-pool runs AND single runner-native suites (e.g. 050m) alike. Launch it here, right after writing `test-run-status.json` and **before dispatching any suite agent (Step 4)**:
+1. Write `reports/regression/test-run-status.json` from the plan (run-level `status: "in_progress"`): every dispatch-order suite `pending`, every `preflight.gating.gated` suite `not_deployed` — terminal, so `regression:close` does not count it as open.
+2. **ALWAYS launch the live HTML dashboard in the background — on EVERY run, unasked.** Never wait to be asked and never ask; it fires for every selection and mode, single runner-native suites (e.g. 050m) included. Launch it right after writing `test-run-status.json`, **before any dispatch (Step 4)**:
    ```
    npm run report:regression:watch -- --run-id {RUN_ID}
    ```
-   Run it **detached / in the background** (do not block on it). It opens `reports/regression/{RUN_ID}/regression-report.html` in the browser immediately (a "pending" view), regenerates every ~10s as suites complete, and — because it reads `test-run-status.json` — auto-refreshes the page (`<meta refresh>`) until the run is `completed`, then settles into the final static report and exits on its own. Spawning `npm run …` is a Node script, not a browser/UI action, so it does not trip the real-user hook.
+   Run it **detached** (never block on it). It opens `reports/regression/{RUN_ID}/regression-report.html` immediately (a "pending" view), regenerates every ~10s and auto-refreshes (`<meta refresh>`, reading `test-run-status.json`) until the run is `completed`, then settles into the final static report and exits. A Node script, not a browser action: it does not trip the real-user hook.
 
-   > **⚠ Watcher OWNERSHIP + lifecycle — the load-bearing rule (this is why the dashboard "freezes"):** the watcher MUST be launched by the **persistent session that owns the run for its whole duration** — i.e. the top-level `/qa-regression` session, using ITS OWN background mechanism. **NEVER let an ephemeral sub-agent own the watcher.** A sub-agent's background processes are **killed the instant its turn ends**, but the run outlives it (runner sub-agents keep writing `suite-*-results.json`, consolidation happens turns later) — so a watcher spawned *inside* the `regression-orchestrator`/`test-runner` sub-agent dies mid-run and the HTML goes stale even though results keep updating. Therefore:
+   > **⚠ Watcher OWNERSHIP + lifecycle — the load-bearing rule (this is why the dashboard "freezes"):** the watcher MUST be launched by the **persistent session that owns the run for its whole duration** — i.e. the top-level `/qa-regression` session, using ITS OWN background mechanism. **NEVER let an ephemeral sub-agent own the watcher.** A sub-agent's background processes are **killed the instant its turn ends** while the run outlives it, so a watcher spawned inside `regression-orchestrator`/`test-runner` dies mid-run and the HTML goes stale. Therefore:
    > - If you (the top-level session) **dispatch** suite execution to the `regression-orchestrator` sub-agent or runner sub-agents, **YOU launch the watcher here first, in your own background** — do not delegate the launch.
    > - **Self-heal (check on every wake / task-notification while the run is `in_progress`):** if `regression-report.html`'s mtime is older than ~60s while `test-run-status.json` is still `in_progress` (or any `suite-*-results.json` still shows PENDING/running), the watcher has died — **relaunch it** (same command) or run the one-shot `npm run report:regression -- --run-id {RUN_ID}` to refresh, then relaunch the watcher. Do this without being asked.
    > - The watcher is a plain Node process; the durable owner is the main-loop `run_in_background` (it survives across turns and re-notifies on exit), never a Task-dispatched agent.
 
-### Step 4 — Get the plan, then dispatch with continuous refill
+### Step 4 — Dispatch the Step 2 plan with continuous refill
 
 **Record the run window start** — the current timestamp, before the first dispatch. From here until
 the last suite settles is the App Insights correlation window used in Step 5.5.
 
-1. **Get the plan** (do not derive lanes, order or browser constraints by hand):
-   ```bash
-   npm run regression:plan -- <selection> --json
-   ```
-   Exit code 1 = the selection cannot run as-is (unknown suite id, missing CSV, no executor, or a
-   cap that would guarantee truncation). Stop and report; do not improvise around it.
-
-2. **Dispatch in the plan's order, keeping every slot busy.** The plan assigns each suite one of
+1. **Dispatch in the plan's order, keeping every slot busy.** The plan assigns each suite one of
    three lanes, which do not share slots: `browser` (3 slots), `fastpath` (up to 4, no browser at
    all), `deterministic` (the manifest's `runnerCommand`, no sub-agent and no tokens). Fill free
    slots from the head of each lane's dispatch order; **the moment ONE suite finishes, dispatch the
    next suite the freed slot can accept** — never wait for a group. A suite the plan marks
    `NOT ON <server>` queues for a different slot rather than being downgraded onto it.
 
-2a. **A MIXED suite is split by CASE, not sent whole to the browser.** A suite is no longer the unit
+1a. **A MIXED suite is split by CASE, not sent whole to the browser.** A suite is no longer the unit
    of execution: `npm run suites:lanes` classifies each case, its machine-routable cases run first
    with **no browser slot** (`suites:machine`), the browser agent gets a much smaller
    `suite-{ID}-resolved.browser.csv`, and `npm run suites:merge` folds the fragments into the
@@ -228,12 +215,12 @@ the last suite settles is the App Insights correlation window used in Step 5.5.
    planner assigns. Mechanics, invariants and the merge contract:
    `.claude/agents/regression-orchestrator.md` Step 3.
 
-3. Fill `.claude/agents/test-runner-agent.md` with the suite parameters, including **`{{LANE_ID}}`** — it
+2. Fill `.claude/agents/test-runner-agent.md` with the suite parameters, including **`{{LANE_ID}}`** — it
    selects the credential slot, and there are only 3 seeded accounts, so two concurrent suites must
    never share one.
 
-Full mechanics, including why each of these was a hand-derived decision that went wrong on the
-record: `.claude/agents/regression-orchestrator.md` Steps 1.5–4.
+Full mechanics, and why each was once hand-derived and got wrong:
+`.claude/agents/regression-orchestrator.md` Steps 1.5–4.
 
 > **Why not batches of 3.** Dispatching in fixed groups and waiting for the whole group means each
 > group costs its SLOWEST suite while the other slots idle; continuous refill with longest-first
@@ -264,17 +251,18 @@ look inside the run folder):
 - Executive summary (suites run/passed/failed, pass rate)
 - Suite-by-suite results table — **split into two subsections: `Frontend Suites` (`regression/suites/Frontend/`) and `Backend Suites` (`regression/suites/Backend/`)**, classifying each suite by the layer directory its CSV lives under in `config/test-suites.json` (not by module/component). Give each subsection its own pass/fail sub-total; omit a subsection only if the run touched zero suites in that layer. Watch the loyalty split (083/083b storefront → Frontend; 075/075b/075c → Backend) and admin/GraphQL suites (050*, 0XX admin → Backend).
 - Bugs found (include App Insights-correlated `REAL_BUG` signals, attributed to a suite where possible)
+- NOT_DEPLOYED — the gated suites with their module and state (BLOCKED-on-deploy, never FAIL)
 - App Insights (run window): correlated signal counts (real_bug / needs-review / dismissed), deferrals; reference telemetry by portal link. Skip if unconfigured
 - Retry log
 - Detailed results per suite
 
-Then flip `reports/regression/test-run-status.json` to `status: "completed"` (set `finishedAt`). The Step 3 live watcher detects this, emits the final static HTML (auto-refresh removed), and exits.
+Then close the run with **one command** — it appends `history.json`, flips `test-run-status.json` to `completed` (the Step 3 watcher then settles the HTML and exits) and writes this env's baseline from `preflight.json`:
 
-**Guarantee the HTML report** (belt-and-suspenders, in case the watcher never started or was killed): run the one-shot generator once —
-```
-npm run report:regression -- --run-id {RUN_ID}
-```
-This writes `reports/regression/{RUN_ID}/regression-report.html` from the same `suite-*-results.json` files. It is idempotent with the watcher's output.
+    npm run regression:close -- --run-id {RUN_ID} --env <TEST_ENV>
+
+Close on EVERY exit path, aborted or partially-failed runs included. If it refuses because suites are still open on an aborted run, flip `test-run-status.json` to `completed` by hand (set `finishedAt`); the backstop is `npm run regression:reap` / `:apply`.
+
+**Guarantee the HTML report** (in case the watcher never started or died): run `npm run report:regression -- --run-id {RUN_ID}` once. It writes `reports/regression/{RUN_ID}/regression-report.html` from the same `suite-*-results.json` files, idempotent with the watcher.
 
 ### Step 6.5 — Post-run promotion (`Draft → Automated`)
 
@@ -418,15 +406,13 @@ count and predicted makespan.
 - Never execute tests yourself — delegate via Task tool
 - Never share browser slots between concurrent agents
 - Priority order: P0 before P1 or Critical > High > Medium
-- Always write test-run-status.json (external tools + the live HTML dashboard monitor it — update it at each state change so the dashboard reflects real progress)
-- **Always auto-launch the live dashboard watcher (Step 3) — every run, every mode, without asking.** Spawn `npm run report:regression:watch -- --run-id {RUN_ID}` in the background immediately after writing `test-run-status.json` and before dispatching any suite agent. Never wait for the user to request it, and never ask whether to launch it — it applies to browser-pool runs and single runner-native suites (e.g. 050m) equally.
+- Always write test-run-status.json (external tools + the live HTML dashboard monitor it — update it at each state change)
+- **Always auto-launch the live dashboard watcher (Step 3) — every run, every mode, without asking.** Spawn `npm run report:regression:watch -- --run-id {RUN_ID}` in the background immediately after writing `test-run-status.json` and before dispatching any suite agent. Never wait for the user to request it or ask whether to launch it — it applies to browser-pool runs and single runner-native suites (e.g. 050m) equally.
 - **Split the suite-by-suite results by layer.** The Step 6 report's results table is written as two subsections — `Frontend Suites` (`regression/suites/Frontend/`) and `Backend Suites` (`regression/suites/Backend/`) — classified by the layer directory each suite's CSV lives under in `config/test-suites.json`, each with its own pass/fail sub-total. Loyalty splits across layers (083/083b → Frontend; 075/075b/075c → Backend); admin/GraphQL suites (050*, 0XX admin) → Backend.
 - **Post-run promotion (Step 6.5) is surfaced on every direct run, written only on `--promote`.** The dry `tc:promote` is read-only and deterministic; the apply takes one human approval, and `Draft → Automated` is never automatic. A run delegated by `/qa-test` (`4c`, `5-loop`) passes `--no-promote` and skips it. 6.5 never harvests assertions — a `{HYPOTHESIS}` hold (`PR-007`) is routed to `/qa-test-lifecycle` 6P, not resolved here
 - Read URLs from .env via `config.js`, never hardcode
 - If >50% suites fail, flag as critical_failure — suggest `/qa-triage-results latest` to classify the failures (real bug vs stale test), or `/qa-test-lifecycle diff` to sync against recent code changes
 - If a browser fails to launch, retry with fallback chain (see Browser Pool table above)
-- `--seed` with `smoke`/`042` is rejected — smoke tests don't need seeded data; warn and skip seeding
-- `--seed` runs sequentially before Step 1; it blocks the regression run and must succeed
 - `--teardown` runs after the report is written; failures are logged but don't fail the run
 - **Sprint-plan precedence:** When selection is `sprint`, `vc/shared/docs/Sprint plans/sprint-*-summary.json` → `suitesActivated[]` overrides the static `sprint` group from `test-suites.json`. Use `--no-plan` to opt out, `sprint:XX-YY` to pin.
 - **Sprint layer modifiers:** `--frontend` / `--backend` are only valid with `sprint` / `sprint:XX-YY`; they filter the resolved `suitesActivated[]` to that layer (§5.1.1 Frontend / §5.1.2 Backend), classified by the suite's CSV layer directory in `config/test-suites.json`. Mutually exclusive; ignored (with a warning) on non-sprint selections. Do NOT confuse them with the top-level `frontend`/`backend` selections, which run every suite in a layer independent of any plan.

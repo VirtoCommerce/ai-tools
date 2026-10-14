@@ -97,7 +97,7 @@ async function discoverStoreProducts(token, need, { cartable = false } = {}) {
   const target = cartable ? Math.max(need * 4, 8) : need;
   for (let page = 0; page < 10 && out.length < target; page++) {
     const d = await gql(token, `{ products(storeId:"${STORE_ID}", cultureName:"en-US", currencyCode:"USD", first: 50, after:"${page * 50}", sort:"code:asc", query:"") {
-        items { id code name catalogId minQuantity availabilityData { isBuyable isInStock } price { actual { amount } } } } }`);
+        items { id code name catalogId imgSrc minQuantity availabilityData { isBuyable isInStock } price { actual { amount } } } } }`);
     const items = d?.products?.items || [];
     if (!items.length) break;
     for (const p of items) {
@@ -111,7 +111,7 @@ async function discoverStoreProducts(token, need, { cartable = false } = {}) {
       // addItem answers PRODUCT_MIN_QTY and returns an EMPTY cart (itemsCount=0), which every cart
       // fixture here then fails on. Read the bound from the product (never transcribed) and drop it.
       if (cartable && (p.minQuantity ?? 1) > 1) { verbose(`skip ${sku}: minQuantity ${p.minQuantity} > 1 — a cart line below it is rejected with PRODUCT_MIN_QTY`); continue; }
-      out.push({ id: p.id, sku, name: String(p.name || sku).replace(/\s+/g, ' ').trim(), catalogId: p.catalogId, price: p.price?.actual?.amount });
+      out.push({ id: p.id, sku, name: String(p.name || sku).replace(/\s+/g, ' ').trim(), catalogId: p.catalogId, imgSrc: p.imgSrc || null, price: p.price?.actual?.amount });
       if (out.length >= target) break;
     }
   }
@@ -145,7 +145,9 @@ async function seedOrder(spec, org, customerId, products) {
       && full?.organizationId === org.id
       && full?.storeId === spec.store
       && full?.status === spec.status
-      && Math.abs((full?.total || 0) - total) < 0.01;
+      && Math.abs((full?.total || 0) - total) < 0.01
+      // imageUrl is write-once (PUT ignores it): a line that should show its product image and does not is rebuilt.
+      && items.every((want) => !want.imageUrl || (full?.items || []).some((got) => got.sku === want.sku && got.imageUrl));
     // A same-day re-run must NOT create a second order — that is the exact overshoot this fixture
     // cannot survive. Reuse when sound; rebuild in place when drifted.
     if (ok) { log(`order ${number} exists (authorship + org + store + status + total ok) -> ${existing.id}`); return existing.id; }

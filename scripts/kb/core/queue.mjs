@@ -464,6 +464,8 @@ export function loopRecord(line) {
       ...(Array.isArray(line.queued) && line.queued.length ? { queued: true } : {}),
       ...(Array.isArray(line.shown) && line.shown.length ? { shown: line.shown.map(String) } : {}),
       ...(Array.isArray(line.opened) && line.opened.length ? { opened: line.opened.map(String) } : {}),
+      // The hash of each body this ask printed (VCST-6221 step 6) -- local, from the line's `payload`.
+      ...(line.payload?.bodyHashes && typeof line.payload.bodyHashes === 'object' ? { bodyHashes: line.payload.bodyHashes } : {}),
     };
   }
   if (line.kind === 'show' || line.kind === 'none') {
@@ -472,6 +474,7 @@ export function loopRecord(line) {
       ...(line.kind === 'show' && line.state === 'answer' && line.id ? { id: String(line.id) } : {}),
       ...(line.kind === 'show' && line.verify ? { verify: true } : {}),
       ...(line.kind === 'show' && line.unpaired ? { unpaired: true } : {}),
+      ...(line.kind === 'show' && typeof line.payload?.bodyHash === 'string' ? { bodyHash: line.payload.bodyHash } : {}),
     };
   }
   if (queuedWrite(line) || line.kind === 'capture-refused') return { at, kind: 'write' };

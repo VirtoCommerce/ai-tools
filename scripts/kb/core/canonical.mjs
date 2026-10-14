@@ -13,17 +13,28 @@ export function hash(value, length = 12) {
   return createHash('sha256').update(stableStringify(value)).digest('hex').slice(0, length);
 }
 
-// The deployment pin. A running deployment has no commit, so what identifies it is the set of
-// module versions it is running -- which is also exactly what has to change before any derived
-// fact can change. Deterministic across runs against an unchanged deployment, which is what lets
-// `kb check` byte-compare at all.
-export function deploymentPin({ platformVersion, modules }) {
-  const rows = [...modules.entries()]
-    .filter(([, m]) => m.isInstalled)
-    .map(([id, m]) => [id, m.version])
-    .sort((a, b) => a[0].localeCompare(b[0]));
-  return hash({ platformVersion, modules: rows }, 16);
+// A BUILD, as the kb records it (VCST-6221): the platform version, the installed modules and the
+// theme, in one canonical shape -- module ids sorted, absent parts null -- so the same build hashes the
+// same from every writer and `builds/<pin>.json` is content-addressed. A running deployment has no
+// commit; what identifies it is what it runs, which is also what has to change before an observed
+// behaviour can. (Replaces `deploymentPin`, which nothing called.)
+export function canonicalBuild({ platform = null, theme = null, modules = {} } = {}) {
+  const sorted = {};
+  for (const id of Object.keys(modules ?? {}).sort((a, b) => a.localeCompare(b))) sorted[id] = String(modules[id]);
+  return { platform: platform ? String(platform) : null, theme: theme ? themeVersion(theme) : null, modules: sorted };
 }
+
+// ONE THEME, TWO SPELLINGS. The storefront bundle inlines the package version (`2.60.0-pr-2543-0127-01276486`);
+// a deploy manifest names the artifact zip (`vc-theme-b2b-vue-2.60.0-pr-2543-0127-01276486`), and every
+// snapshot rebuilt from deploy history carries that form. Both reduce to the version: everything from the
+// first `x.y.z` on. Derived from the string alone -- no package name is transcribed -- and a value with no
+// `x.y.z` in it is kept as written, never guessed at.
+export function themeVersion(theme) {
+  const s = String(theme ?? '').trim();
+  return /\d+\.\d+\.\d+.*$/.exec(s)?.[0] ?? s;
+}
+
+export const buildPin = (build) => hash(canonicalBuild(build), 16);
 
 export function slug(text) {
   return String(text)

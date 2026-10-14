@@ -84,6 +84,10 @@ tests/screenshots/**/*.png
 # path decodes them and `td:validate:barcode` checks each one's stamped value against the spec.
 !test-data/uploads/barcodes/*.png
 
+# Category images ARE committed test data: `seed:category-images` uploads each one named in
+# test-data/catalogs/category-images.csv, and `td:validate:category-images` fails a CI checkout without them.
+!test-data/uploads/categories images/*.png
+
 # Playwright MCP accessibility snapshots — dropped at repo root by browser MCPs
 # during exploratory sessions. Transient working state, not deliverables.
 # (No tracked YAML at repo root, so the bare-yml pattern is safe.)

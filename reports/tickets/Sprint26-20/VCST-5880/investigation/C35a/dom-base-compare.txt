@@ -1,0 +1,359 @@
+- generic [ref=f6e1]:
+  - generic [ref=f6e2]:
+    - generic [ref=f6e3]:
+      - list:
+        - listitem:
+          - link "Skip to main content":
+            - /url: "#main-content"
+        - listitem:
+          - link "Skip to footer":
+            - /url: "#footer"
+      - banner [ref=f6e4]:
+        - generic [ref=f6e5]:
+          - 'button "Language: English (United States) en" [ref=f6e9] [cursor=pointer]':
+            - generic [ref=f6e10]: "Language:"
+            - img "English (United States)" [ref=f6e11]
+            - generic [ref=f6e12]: en
+            - img [ref=f6e14]
+          - 'button "Currency: USD" [ref=f6e19] [cursor=pointer]':
+            - generic [ref=f6e20]: "Currency:"
+            - generic [ref=f6e21]: USD
+            - img [ref=f6e23]
+          - 'button "Ship to: Add new address" [ref=f6e26] [cursor=pointer]':
+            - img [ref=f6e28]
+            - generic [ref=f6e31]: "Ship to:"
+            - generic [ref=f6e32]: Add new address
+        - generic [ref=f6e33]:
+          - 'button "Theme: auto" [ref=f6e36] [cursor=pointer]':
+            - img [ref=f6e38]
+          - generic [ref=f6e41]:
+            - img [ref=f6e43]
+            - generic [ref=f6e45]: "Call us:"
+            - link "+1 (213) 603 3536" [ref=f6e46] [cursor=pointer]:
+              - /url: tel:+1 (213) 603 3536
+          - link "Contacts" [ref=f6e48] [cursor=pointer]:
+            - /url: /contacts
+          - link "Sign in" [ref=f6e50] [cursor=pointer]:
+            - /url: /sign-in
+          - link "Sign up now" [ref=f6e52] [cursor=pointer]:
+            - /url: /sign-up
+      - generic [ref=f6e53]:
+        - navigation "Main menu" [ref=f6e55]:
+          - link "B2B-store" [ref=f6e56] [cursor=pointer]:
+            - /url: /
+            - img "B2B-store" [ref=f6e57]
+          - generic [ref=f6e60]:
+            - searchbox "Search" [ref=f6e61]
+            - generic [ref=f6e62]:
+              - button "Barcode scan" [ref=f6e63] [cursor=pointer]:
+                - img [ref=f6e66]
+              - button "Search" [ref=f6e67] [cursor=pointer]:
+                - img [ref=f6e70]
+          - list [ref=f6e73]:
+            - listitem [ref=f6e74]:
+              - link "Bulk order" [ref=f6e75] [cursor=pointer]:
+                - /url: /bulk-order
+                - img [ref=f6e78]
+                - generic [ref=f6e88]: Bulk order
+            - listitem [ref=f6e89]:
+              - link "4 Compare" [ref=f6e90] [cursor=pointer]:
+                - /url: /compare
+                - generic [ref=f6e91]:
+                  - img [ref=f6e93]
+                  - generic [ref=f6e101]: "4"
+                - generic [ref=f6e102]: Compare
+            - listitem [ref=f6e103]:
+              - link "Lists" [ref=f6e104] [cursor=pointer]:
+                - /url: /account/lists
+                - img [ref=f6e107]
+                - generic [ref=f6e109]: Lists
+            - listitem [ref=f6e110]:
+              - link "Orders" [ref=f6e111] [cursor=pointer]:
+                - /url: /account/orders
+                - img [ref=f6e114]
+                - generic [ref=f6e117]: Orders
+            - listitem [ref=f6e118]:
+              - link "Cart" [ref=f6e119] [cursor=pointer]:
+                - /url: /cart
+                - img [ref=f6e122]
+                - generic [ref=f6e126]: Cart
+        - navigation "Main navigation" [ref=f6e127]:
+          - button "All products" [ref=f6e130] [cursor=pointer]:
+            - img [ref=f6e132]
+            - generic [ref=f6e142]: All products
+          - menubar "Navigation" [ref=f6e144]:
+            - menuitem "Alcoholic Drinks" [ref=f6e145] [cursor=pointer]
+            - menuitem "Accessories" [ref=f6e146] [cursor=pointer]
+            - menuitem "Jewelry and gems" [ref=f6e147] [cursor=pointer]
+            - menuitem "Tyres" [ref=f6e148] [cursor=pointer]
+            - menuitem "Home appliance" [ref=f6e149] [cursor=pointer]
+            - menuitem "Home supplies" [ref=f6e150] [cursor=pointer]
+            - menuitem "Products with options" [ref=f6e151] [cursor=pointer]
+            - menuitem "Soft drinks" [ref=f6e152] [cursor=pointer]
+            - menuitem "Snacks" [ref=f6e153] [cursor=pointer]
+            - menuitem "Printers" [ref=f6e154] [cursor=pointer]
+      - main [ref=f6e155]:
+        - generic [ref=f6e156]:
+          - img [ref=f6e158]
+          - generic [ref=f6e161]:
+            - navigation "Breadcrumbs navigation" [ref=f6e162]:
+              - list [ref=f6e163]:
+                - listitem [ref=f6e164]:
+                  - link "Home" [ref=f6e165] [cursor=pointer]:
+                    - /url: /
+                - listitem [ref=f6e166]: /
+                - listitem [ref=f6e167]: Compare products
+            - generic [ref=f6e168]:
+              - generic [ref=f6e169]:
+                - heading "Compare products" [level=1] [ref=f6e170]
+                - paragraph [ref=f6e171]: 3 of 5 added in Group A
+              - button "Clear all" [ref=f6e173] [cursor=pointer]:
+                - generic [ref=f6e174]:
+                  - img [ref=f6e177]
+                  - generic [ref=f6e180]: Clear all
+            - generic [ref=f6e181]:
+              - button "Group A 3" [pressed] [ref=f6e182] [cursor=pointer]:
+                - generic [ref=f6e185]:
+                  - text: Group A
+                  - generic [ref=f6e187]: "3"
+              - button "Group C 1" [ref=f6e188] [cursor=pointer]:
+                - generic [ref=f6e191]:
+                  - text: Group C
+                  - generic [ref=f6e193]: "1"
+            - generic [ref=f6e196]:
+              - generic [ref=f6e197]:
+                - generic [ref=f6e198]:
+                  - generic [ref=f6e199]:
+                    - generic [ref=f6e200]:
+                      - button "All" [pressed] [ref=f6e202] [cursor=pointer]:
+                        - generic [ref=f6e203]: All
+                      - button "Differences" [ref=f6e205] [cursor=pointer]:
+                        - generic [ref=f6e206]: Differences
+                    - paragraph [ref=f6e207]: "Differ: 7 of 9 rows"
+                  - button "Clear category" [ref=f6e208] [cursor=pointer]:
+                    - generic [ref=f6e209]:
+                      - img [ref=f6e212]
+                      - generic [ref=f6e215]: Clear category
+                - table [ref=f6e216]:
+                  - rowgroup [ref=f6e217]:
+                    - row "AGENT-TEST-Compare-Alpha Remove from compare AGENT-TEST-Compare-Alpha Add to cart AGENT-TEST-Compare-Beta Remove from compare AGENT-TEST-Compare-Beta Add to cart AGENT-TEST-Compare-LongName ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 Remove from compare AGENT-TEST-Compare-LongName ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 Add to cart" [ref=f6e218]:
+                      - columnheader "AGENT-TEST-Compare-Alpha Remove from compare AGENT-TEST-Compare-Alpha Add to cart" [ref=f6e219]:
+                        - generic [ref=f6e220]:
+                          - img "AGENT-TEST-Compare-Alpha" [ref=f6e221]
+                          - button "Remove from compare" [ref=f6e223] [cursor=pointer]:
+                            - img [ref=f6e226]
+                        - generic [ref=f6e229]:
+                          - link "AGENT-TEST-Compare-Alpha" [ref=f6e231] [cursor=pointer]:
+                            - /url: /seed-compare-fixtures/seed-compare-fixtures-group-a/agent-test-compare-alpha
+                          - button "Add to cart" [ref=f6e232] [cursor=pointer]:
+                            - img [ref=f6e235]
+                      - columnheader "AGENT-TEST-Compare-Beta Remove from compare AGENT-TEST-Compare-Beta Add to cart" [ref=f6e239]:
+                        - generic [ref=f6e240]:
+                          - img "AGENT-TEST-Compare-Beta" [ref=f6e241]
+                          - button "Remove from compare" [ref=f6e243] [cursor=pointer]:
+                            - img [ref=f6e246]
+                        - generic [ref=f6e249]:
+                          - link "AGENT-TEST-Compare-Beta" [ref=f6e251] [cursor=pointer]:
+                            - /url: /seed-compare-fixtures/seed-compare-fixtures-group-a/agent-test-compare-beta
+                          - button "Add to cart" [ref=f6e252] [cursor=pointer]:
+                            - img [ref=f6e255]
+                      - columnheader "AGENT-TEST-Compare-LongName ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 Remove from compare AGENT-TEST-Compare-LongName ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 Add to cart" [ref=f6e259]:
+                        - generic [ref=f6e260]:
+                          - img "AGENT-TEST-Compare-LongName ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" [ref=f6e261]
+                          - button "Remove from compare" [ref=f6e263] [cursor=pointer]:
+                            - img [ref=f6e266]
+                        - generic [ref=f6e269]:
+                          - link "AGENT-TEST-Compare-LongName ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" [ref=f6e271] [cursor=pointer]:
+                            - /url: /seed-compare-fixtures/seed-compare-fixtures-group-a/agent-test-compare-longname-abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz0123456789
+                          - button "Add to cart" [ref=f6e272] [cursor=pointer]:
+                            - img [ref=f6e275]
+              - table [ref=f6e279]:
+                - rowgroup [ref=f6e280]:
+                  - row "Price per unit Price, excl. VAT, per unit. Pin “Price per unit” $49.99 $59.99 $19.99" [ref=f6e281]:
+                    - rowheader "Price per unit Price, excl. VAT, per unit. Pin “Price per unit”" [ref=f6e282]:
+                      - generic [ref=f6e283]:
+                        - generic [ref=f6e284]: Price per unit
+                        - img "Price, excl. VAT, per unit." [ref=f6e287]:
+                          - img [ref=f6e288]
+                      - button "Pin “Price per unit”" [ref=f6e290] [cursor=pointer]:
+                        - img [ref=f6e294]
+                    - cell "$49.99" [ref=f6e296]:
+                      - generic [ref=f6e298]: $49.99
+                    - cell "$59.99" [ref=f6e299]:
+                      - generic [ref=f6e301]: $59.99
+                    - cell "$19.99" [ref=f6e302]:
+                      - generic [ref=f6e304]: $19.99
+                  - row "Availability Pin “Availability” 12 340 60" [ref=f6e305]:
+                    - rowheader "Availability Pin “Availability”" [ref=f6e306]:
+                      - generic [ref=f6e308]: Availability
+                      - button "Pin “Availability”" [ref=f6e309] [cursor=pointer]:
+                        - img [ref=f6e313]
+                    - cell "12" [ref=f6e315]:
+                      - generic "In stock" [ref=f6e316]:
+                        - generic [ref=f6e317]:
+                          - img [ref=f6e319]
+                          - generic [ref=f6e321]: "12"
+                    - cell "340" [ref=f6e322]:
+                      - generic "In stock" [ref=f6e323]:
+                        - generic [ref=f6e324]:
+                          - img [ref=f6e326]
+                          - generic [ref=f6e328]: "340"
+                    - cell "60" [ref=f6e329]:
+                      - generic "In stock" [ref=f6e330]:
+                        - generic [ref=f6e331]:
+                          - img [ref=f6e333]
+                          - generic [ref=f6e335]: "60"
+                  - row "SKU Pin “SKU” AGENT-TEST-CMP-ALPHA AGENT-TEST-CMP-BETA AGENT-TEST-CMP-LONGNAME" [ref=f6e336]:
+                    - rowheader "SKU Pin “SKU”" [ref=f6e337]:
+                      - generic [ref=f6e339]: SKU
+                      - button "Pin “SKU”" [ref=f6e340] [cursor=pointer]:
+                        - img [ref=f6e344]
+                    - cell "AGENT-TEST-CMP-ALPHA" [ref=f6e346]
+                    - cell "AGENT-TEST-CMP-BETA" [ref=f6e347]
+                    - cell "AGENT-TEST-CMP-LONGNAME" [ref=f6e348]
+                  - row "Min. order qty MOQ — minimum number of units per order. Pin “Min. order qty” 1 1 1" [ref=f6e349]:
+                    - rowheader "Min. order qty MOQ — minimum number of units per order. Pin “Min. order qty”" [ref=f6e350]:
+                      - generic [ref=f6e351]:
+                        - generic [ref=f6e352]: Min. order qty
+                        - img "MOQ — minimum number of units per order." [ref=f6e355]:
+                          - img [ref=f6e356]
+                      - button "Pin “Min. order qty”" [ref=f6e358] [cursor=pointer]:
+                        - img [ref=f6e362]
+                    - cell "1" [ref=f6e364]
+                    - cell "1" [ref=f6e365]
+                    - cell "1" [ref=f6e366]
+                  - row "AgentTestCompareDiffers Pin “AgentTestCompareDiffers” Alpha differing value Beta differing value –" [ref=f6e367]:
+                    - rowheader "AgentTestCompareDiffers Pin “AgentTestCompareDiffers”" [ref=f6e368]:
+                      - generic [ref=f6e370]: AgentTestCompareDiffers
+                      - button "Pin “AgentTestCompareDiffers”" [ref=f6e371] [cursor=pointer]:
+                        - img [ref=f6e375]
+                    - cell "Alpha differing value" [ref=f6e377]
+                    - cell "Beta differing value" [ref=f6e378]
+                    - cell "–" [ref=f6e379]
+                  - row "AgentTestCompareFlag Pin “AgentTestCompareFlag” Yes No –" [ref=f6e380]:
+                    - rowheader "AgentTestCompareFlag Pin “AgentTestCompareFlag”" [ref=f6e381]:
+                      - generic [ref=f6e383]: AgentTestCompareFlag
+                      - button "Pin “AgentTestCompareFlag”" [ref=f6e384] [cursor=pointer]:
+                        - img [ref=f6e388]
+                    - cell "Yes" [ref=f6e390]:
+                      - generic [ref=f6e391]:
+                        - img [ref=f6e393]
+                        - text: "Yes"
+                    - cell "No" [ref=f6e395]:
+                      - generic [ref=f6e396]:
+                        - img [ref=f6e398]
+                        - text: "No"
+                    - cell "–" [ref=f6e401]
+                  - row "AgentTestCompareFormatCollision Pin “AgentTestCompareFormatCollision” 1,234.568 1,234.568 –" [ref=f6e402]:
+                    - rowheader "AgentTestCompareFormatCollision Pin “AgentTestCompareFormatCollision”" [ref=f6e403]:
+                      - generic [ref=f6e405]: AgentTestCompareFormatCollision
+                      - button "Pin “AgentTestCompareFormatCollision”" [ref=f6e406] [cursor=pointer]:
+                        - img [ref=f6e410]
+                    - cell "1,234.568" [ref=f6e412]
+                    - cell "1,234.568" [ref=f6e413]
+                    - cell "–" [ref=f6e414]
+                  - row "AgentTestCompareOnlyOnAlpha Pin “AgentTestCompareOnlyOnAlpha” Present on Alpha only – –" [ref=f6e415]:
+                    - rowheader "AgentTestCompareOnlyOnAlpha Pin “AgentTestCompareOnlyOnAlpha”" [ref=f6e416]:
+                      - generic [ref=f6e418]: AgentTestCompareOnlyOnAlpha
+                      - button "Pin “AgentTestCompareOnlyOnAlpha”" [ref=f6e419] [cursor=pointer]:
+                        - img [ref=f6e423]
+                    - cell "Present on Alpha only" [ref=f6e425]
+                    - cell "–" [ref=f6e426]
+                    - cell "–" [ref=f6e427]
+                  - row "AgentTestCompareShared Pin “AgentTestCompareShared” Shared Attribute Value Shared Attribute Value Shared Attribute Value" [ref=f6e428]:
+                    - rowheader "AgentTestCompareShared Pin “AgentTestCompareShared”" [ref=f6e429]:
+                      - generic [ref=f6e431]: AgentTestCompareShared
+                      - button "Pin “AgentTestCompareShared”" [ref=f6e432] [cursor=pointer]:
+                        - img [ref=f6e436]
+                    - cell "Shared Attribute Value" [ref=f6e438]
+                    - cell "Shared Attribute Value" [ref=f6e439]
+                    - cell "Shared Attribute Value" [ref=f6e440]
+      - contentinfo "Footer" [ref=f6e441]:
+        - generic [ref=f6e442]:
+          - img "B2B-store" [ref=f6e444]
+          - navigation [ref=f6e445]:
+            - generic [ref=f6e446]:
+              - generic [ref=f6e449]: Account details
+              - generic [ref=f6e451]:
+                - link "Orders" [ref=f6e453] [cursor=pointer]:
+                  - /url: /account/orders
+                - link "Notifications" [ref=f6e455] [cursor=pointer]:
+                  - /url: /account/notifications
+                - link "Quote requests" [ref=f6e457] [cursor=pointer]:
+                  - /url: /account/quotes
+            - generic [ref=f6e458]:
+              - generic [ref=f6e461]: About us
+              - generic [ref=f6e463]:
+                - link "About Virto" [ref=f6e465] [cursor=pointer]:
+                  - /url: https://virtocommerce.com/about-us
+                - link "Our partners" [ref=f6e467] [cursor=pointer]:
+                  - /url: https://virtocommerce.com/our-partners
+                - link "Manufacturer partners" [ref=f6e469] [cursor=pointer]:
+                  - /url: https://virtocommerce.com/solutions/b2b-portal-for-manufacturers
+                - link "News" [ref=f6e471] [cursor=pointer]:
+                  - /url: https://virtocommerce.com/blog/category/news
+                - link "Careers" [ref=f6e473] [cursor=pointer]:
+                  - /url: https://virtocommerce.com/career
+                - link "News" [ref=f6e475] [cursor=pointer]:
+                  - /url: /news
+            - generic [ref=f6e476]:
+              - generic [ref=f6e479]: Popular categories
+              - generic [ref=f6e481]:
+                - link "Allbiz" [ref=f6e483] [cursor=pointer]:
+                  - /url: /category/61b05fae-0ea6-45e7-ae4f-8bdc5c043847
+                - link "Computer, Office, Education" [ref=f6e485] [cursor=pointer]:
+                  - /url: /category/b3a3f328-cc99-4d88-a8f1-08fb02f43c8e
+                - link "Consumer Electronics" [ref=f6e487] [cursor=pointer]:
+                  - /url: /category/36b507a9-0bdf-4cd9-821e-4dcbb6e1d578
+                - link "Home Appliances" [ref=f6e489] [cursor=pointer]:
+                  - /url: /category/7f965eeb-a5d7-42a3-89c9-7c7237e43f9d
+                - link "Phones and Accessories" [ref=f6e491] [cursor=pointer]:
+                  - /url: /category/ab8be45e-3ff6-4b8c-80a3-1d3ef2dfa0ac
+            - generic [ref=f6e492]:
+              - generic [ref=f6e495]: Online resources
+              - generic [ref=f6e497]:
+                - link "Sign Up" [ref=f6e499] [cursor=pointer]:
+                  - /url: /sign-up
+                - link "Catalog" [ref=f6e501] [cursor=pointer]:
+                  - /url: /catalog
+                - link "Demo Landing" [ref=f6e503] [cursor=pointer]:
+                  - /url: /demo-landing
+                - link "Builder I.O" [ref=f6e505] [cursor=pointer]:
+                  - /url: https://www.builder.io/
+            - generic [ref=f6e506]:
+              - generic [ref=f6e509]: External links
+              - generic [ref=f6e511]:
+                - link "Vcst-<secret>ADMIN_VCMP-DEV</secret>" [ref=f6e513] [cursor=pointer]:
+                  - /url: https://vcst-qa.govirto.com/
+                - link "Virto-start" [ref=f6e515] [cursor=pointer]:
+                  - /url: https://virtostart-demo-store.govirto.com/
+            - generic [ref=f6e516]:
+              - generic [ref=f6e519]: Customer support
+              - generic [ref=f6e521]:
+                - link "Catalog" [ref=f6e523] [cursor=pointer]:
+                  - /url: /catalog
+                - link "Contact Us" [ref=f6e525] [cursor=pointer]:
+                  - /url: /contacts
+                - link "Find a Branch" [ref=f6e527] [cursor=pointer]:
+                  - /url: /branch/vendor-fulfillment
+            - generic [ref=f6e528]:
+              - generic [ref=f6e531]: Brands
+              - generic [ref=f6e533]:
+                - link "Tablets" [ref=f6e535] [cursor=pointer]:
+                  - /url: /search?q=tablet
+                - link "Phones" [ref=f6e537] [cursor=pointer]:
+                  - /url: /search?q=phone
+                - link "Laptops" [ref=f6e539] [cursor=pointer]:
+                  - /url: /search?q=laptop
+        - generic [ref=f6e540]:
+          - generic [ref=f6e541]:
+            - text: Ver. 2.60.0-pr-2511-81f1-81f18d01. © 2026
+            - strong [ref=f6e542]: Virto Commerce
+            - text: . All rights reserved
+          - generic [ref=f6e543]:
+            - text: ASP.NET ecommerce platform
+            - link "Virto Commerce" [ref=f6e544] [cursor=pointer]:
+              - /url: https://virtocommerce.com
+    - 'complementary "Environment indicator: QA" [ref=f6e545]':
+      - generic [ref=f6e547]: QA
+  - region "Notifications"

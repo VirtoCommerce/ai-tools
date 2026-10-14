@@ -33,9 +33,11 @@ import { join } from 'node:path';
 
 import { writeRefusal } from './base.mjs';
 import { coordinatesOf, githubApi } from './github-api.mjs';
-import { findDuplicate } from './identity.mjs';
+import { claimKey, findDuplicate } from './identity.mjs';
 import { parseEntry, stringifyFrontmatter } from './frontmatter.mjs';
-import { buildIndex, buildRow, entryPath } from './index-build.mjs';
+import { buildIndex, buildPath, buildRow, claimHash, entryPath } from './index-build.mjs';
+
+export { buildPath };
 import { idList, normalizeRow } from './index-load.mjs';
 import { flagDuplicateSessions } from './sync-base.mjs';
 import { gateQueue, loadSecrets } from './secret-gate.mjs';
@@ -47,7 +49,7 @@ import {
   REACH_IDLE_MS, dropReach, idleReaches, lineWork, markSent, ownReachDue, reachLine, reachPath, readReach, sessionKeyOf, unsent,
   workIn,
 } from './reach.mjs';
-import { toLogLine } from './verbs.mjs';
+import { standName, toLogLine } from './verbs.mjs';
 import { cachedWho } from './who.mjs';
 import { stampCallersFromTranscripts } from './caller.mjs';
 
@@ -399,13 +401,36 @@ export function appendEvidence(text, item, where) {
   if ((data.evidence ?? []).some((e) => sameEvidence(e, item))) return { text, data, already: true };
   // A handed-off item (`mergedFrom`) from a session this entry already counts is the same observer
   // twice: flagged, kept for provenance, not counted (as sync-base / merge-entries do).
-  const next = { ...data, evidence: flagDuplicateSessions([...(data.evidence ?? []), item]) };
+  // WHICH BODY IT WAS APPLIED TO (VCST-6179) -- a FALLBACK. The door stamps `bodyHash` when the
+  // session confirms (verbs.mjs `appendEvidence`); only an item queued by an older client, or one whose
+  // body the door could not read, arrives without it and is stamped here, against the body it lands on.
+  const stamped = item.bodyHash ? item : { ...item, bodyHash: claimHash(body) };
+  const next = { ...data, evidence: flagDuplicateSessions([...(data.evidence ?? []), stamped]) };
   return { text: `${stringifyFrontmatter(next)}\n${body}`, data: next };
 }
 
-/** Two evidence items are ONE observation when these agree. Exact on purpose: see `appendEvidence`. */
+/**
+ * Two evidence items are ONE observation when these agree. Exact on purpose: see `appendEvidence`.
+ * The stand is compared by its ONE name (VCST-6189), so an item queued as `vcst` by an older client
+ * still matches the same observation already on the base as `vcst_qa`, and is not appended twice.
+ */
 const EVIDENCE_KEY = ['at', 'by', 'method', 'deployment', 'contradicts'];
-export const sameEvidence = (a, b) => EVIDENCE_KEY.every((k) => (a?.[k] ?? null) === (b?.[k] ?? null));
+const keyOf = (e, k) => (k === 'deployment' && e?.[k] != null ? standName(e[k]) : e?.[k] ?? null);
+export const sameEvidence = (a, b) => EVIDENCE_KEY.every((k) => keyOf(a, k) === keyOf(b, k));
+
+/**
+ * A queued line with its stand named as the base names it (VCST-6189). The door has done this since
+ * the map existed; a queue written by an OLDER client -- or before a profile gained its KB_STAND --
+ * reaches the base through here, so the rename happens at push too and no old spelling is re-added.
+ */
+export function onCanonicalStands(line) {
+  const p = line?.payload;
+  if (!p) return line;
+  const fold = (e) => (e && typeof e.deployment === 'string' ? { ...e, deployment: standName(e.deployment) } : e);
+  if (p.item) return { ...line, payload: { ...p, item: fold(p.item) } };
+  if (Array.isArray(p.entry?.evidence)) return { ...line, payload: { ...p, entry: { ...p.entry, evidence: p.entry.evidence.map(fold) } } };
+  return line;
+}
 
 /** A new entry's file. The trailing newline is added if the claim did not carry one. */
 export function entryText(entry, body) {
@@ -490,8 +515,18 @@ export async function applyQueue({ lines, rows, read, at = new Date() }) {
     return true;
   };
 
-  for (const line of lines) {
-    if (!MUTATIONS.includes(line.kind) || !line.payload) continue;
+  for (const queued of lines) {
+    if (!MUTATIONS.includes(queued.kind) || !queued.payload) continue;
+    const line = onCanonicalStands(queued);
+    // THE BUILD BEHIND A STAMP (VCST-6221), written once: `builds/<pin>.json` is content-addressed, so a
+    // second writer of the same build finds the file and writes nothing. Snapshot without a stamped
+    // item (a refused capture below) still lands -- it is a true fact about a build, not a claim.
+    const snap = line.payload.build;
+    const pinned = line.payload.item?.build ?? line.payload.entry?.evidence?.[0]?.build;
+    if (snap && pinned && !files.has(buildPath(pinned)) && (await read(buildPath(pinned))) == null) {
+      files.set(buildPath(pinned), `${JSON.stringify({ pin: pinned, ...snap }, null, 2)}
+`);
+    }
 
     if (line.kind === 'capture') {
       const { entry, body } = line.payload;
@@ -522,8 +557,13 @@ export async function applyQueue({ lines, rows, read, at = new Date() }) {
       // So a collision is only treated as a duplicate when the SUBJECTS actually agree. When they do
       // not, nothing is written and nothing is confirmed: the capture is refused with its own
       // reason, which is a state a human can see and act on, where a silent merge is not.
-      const idClash = !dupe && working.find((r) => r.id === entry.id);
-      const sameSubject = idClash && String(idClash.subject ?? '').trim() === String(entry.subject ?? '').trim();
+      // By id AND by subject, as the door does (`capture`, verbs.mjs): an id is minted from the subject
+      // at birth and never changes, so an entry whose subject was later corrected holds its subject under
+      // an id the subject no longer hashes to. Keyed on the id alone, a queued capture of the corrected
+      // subject at other coordinates was written as a second entry (VCST-6179 review).
+      const idClash = !dupe && (working.find((r) => r.id === entry.id)
+        ?? working.find((r) => r.status === 'active' && claimKey(r.subject) === claimKey(entry.subject)));
+      const sameSubject = idClash && claimKey(idClash.subject) === claimKey(entry.subject);
       // ONLY an anchors+scope+claim duplicate converts. A SAME-SUBJECT id collision used to convert too, and
       // that was the common case of the loss described above (PR #313 review 2): the same subject
       // re-captured under DIFFERENT anchors appended its one evidence item to the incumbent — an
@@ -576,7 +616,7 @@ export async function applyQueue({ lines, rows, read, at = new Date() }) {
           why: sameSubject ? 'id-collision-same-subject' : 'id-collision-different-subject',
           when: 'push',
           note: sameSubject
-            ? `${entry.id} already holds this subject at other coordinates; nothing was merged and nothing was `
+            ? `${idClash.id} already holds this subject at other coordinates; nothing was merged and nothing was `
               + 'confirmed — confirm the incumbent if it is the same fact, or reword this subject and capture again'
             : `${entry.id} is already held by a DIFFERENT subject (${JSON.stringify(idClash.subject)}); `
               + 'nothing was merged and nothing was confirmed — reword this subject and capture again',
