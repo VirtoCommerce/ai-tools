@@ -10614,5 +10614,86 @@
     "permissions": "customer:access,customer:read",
     "user_id": "",
     "role_id": ""
+  },
+  "PB_ASSETS_ROOT": {
+    "_inline": true,
+    "_comment": "VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "folder": "AGENT-TEST-VCST5726"
+  },
+  "PB_ASSETS_P500": {
+    "_inline": true,
+    "_comment": "VCST-5726 F500: 500 PNGs asset-000..asset-499 uploaded in a seeded shuffle (name order != upload order). firstByUpload/lastByUpload are read from the live createdDate. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "folder": "AGENT-TEST-VCST5726/p500",
+    "count": 500,
+    "firstByName": "asset-000.png",
+    "lastByName": "asset-499.png"
+  },
+  "PB_ASSETS_MIXED": {
+    "_inline": true,
+    "_comment": "VCST-5726 FMIX: 20 PDF asset-000..019 + 480 PNG asset-020..499; an image-accept picker shows 480, first asset-020.png. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "folder": "AGENT-TEST-VCST5726/mixed",
+    "count": 500,
+    "imageCount": 480,
+    "firstImage": "asset-020.png"
+  },
+  "PB_ASSETS_FOLDERS": {
+    "_inline": true,
+    "_comment": "VCST-5726 FFOLDERS: 25 sub-folders sub-00..24 + 30 files file-00..29 (totalCount 55 != fileCount 30). VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "folder": "AGENT-TEST-VCST5726/folders",
+    "totalCount": 55,
+    "fileCount": 30
+  },
+  "PB_ASSETS_DEEP": {
+    "_inline": true,
+    "_comment": "VCST-5726 FDEEP: deep/l1/../l5 (3 PNG per level) + deep/l1/b1..b4 (2 PNG each); d5-a.png at the leaf is referenced by 1 page. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "folder": "AGENT-TEST-VCST5726/deep",
+    "leaf": "AGENT-TEST-VCST5726/deep/l1/l2/l3/l4/l5"
+  },
+  "PB_ASSETS_EMPTY": {
+    "_inline": true,
+    "_comment": "VCST-5726 FEMPTY: empty folder. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "folder": "AGENT-TEST-VCST5726/empty",
+    "totalCount": 0
+  },
+  "PB_ASSETS_TPL": {
+    "_inline": true,
+    "_comment": "VCST-5726 FTPL: template-literal names (harmless marker window.__vcst5726). The folder name is rejected by POST /api/assets/folder (lowercase validator) so it is created by uploading tpl-marker.png into it. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "folder": "AGENT-TEST-VCST5726/tpl",
+    "file": "tpl-{{=window.__vcst5726=2}}.png",
+    "tplFolder": "tpl-{{=window.__vcst5726=1}}"
+  },
+  "PB_ASSET_REF_1": {
+    "_inline": true,
+    "_comment": "VCST-5726: p500/asset-007.png referenced by 1 page (AGENT-TEST-VCST5726-ref-1). assetUrl/pageIds/observed counts in aliases.<env>.json. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "rel": "p500/asset-007.png",
+    "expectedRefs": 1
+  },
+  "PB_ASSET_REF_3": {
+    "_inline": true,
+    "_comment": "VCST-5726: p500/asset-025.png referenced by 3 pages (ref-1..3). VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "rel": "p500/asset-025.png",
+    "expectedRefs": 3
+  },
+  "PB_ASSET_REF_2": {
+    "_inline": true,
+    "_comment": "VCST-5726: p500/asset-499.png referenced by 2 pages (ref-1, ref-2) + 2 shared components (AGENT-TEST-VCST5726-sc-1, sc-2) => expectedRefs 4 total (distinct from asset-025 = 3). VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "rel": "p500/asset-499.png",
+    "expectedRefs": 4,
+    "expectedPageRefs": 2,
+    "expectedScRefs": 2
+  },
+  "PB_ASSET_REF_DEEP": {
+    "_inline": true,
+    "_comment": "VCST-5726: deep/l1/l2/l3/l4/l5/d5-a.png referenced by 1 page (ref-4); a folder-level references lookup from deep/ must find it. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "rel": "deep/l1/l2/l3/l4/l5/d5-a.png",
+    "expectedRefs": 1
+  },
+  "PB_ASSET_REF_SC": {
+    "_inline": true,
+    "_comment": "VCST-5726: shared components (sc-1, sc-2) each referencing p500/asset-499.png. Runtime ids in aliases.<env>.json. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "names": [
+      "AGENT-TEST-VCST5726-sc-1",
+      "AGENT-TEST-VCST5726-sc-2"
+    ]
   }
 }
