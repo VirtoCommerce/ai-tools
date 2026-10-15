@@ -81,7 +81,15 @@ export const TOKEN_SHAPES = Object.freeze([
   // A credential named by its header or query key: `x-api-key: …`, `?client_secret=…`, `&access_token=…`.
   // A placeholder (`{token}`, `<key>`, `@td(...)`, `{{VAR}}`) is how a fact names one, and is not a hit.
   ['api-key', /\b(?:x-api-key|api[_-]?key|apikey|subscription-key)\s*[:=]\s*["']?(?![{<@])[A-Za-z0-9._~+/=-]{16,}/i],
-  ['url-credential', /[?&;](?:client_secret|access_token|refresh_token|id_token|api[_-]?key|token|password|passwd|pwd|secret|code_verifier)=(?![{<@%7B])[^&#\s]{8,}/i],
+  // At the start of a form body or after a fragment `#` too, and in camelCase (retest of ai-tools#460).
+  ['url-credential', /(?:^|[?&;#\s])(?:client_?secret|access_?token|refresh_?token|id_?token|api[_-]?key|token|password|passwd|pwd|secret|code_verifier)=(?![{<@%7B])[^&#\s]{8,}/i],
+  // The shapes HAR-derived evidence actually holds (retest of ai-tools#460): a credential as a JSON
+  // member, the platform's own auth cookie, a token header that is not `Authorization`, and an
+  // `Authorization` header with no scheme. A JSON value needs a digit, so `"password": "required"` passes.
+  ['json-credential', /["'](?:client_?secret|password|passwd|pwd|secret|api[_-]?key|access_?token|refresh_?token|id_?token|auth_?token)["']\s*:\s*["'](?![{<@*])(?=[^"']*\d)[^"'\s]{8,}["']/i],
+  ['auth-cookie', /\.AspNetCore\.(?:Identity\.Application|Cookies|Session|Antiforgery\.[A-Za-z0-9_-]+)=[A-Za-z0-9_-]{20,}/],
+  ['auth-header', /\b(?:x-auth-token|x-access-token|x-csrf-token|x-amz-security-token|x-goog-api-key)\s*:\s*["']?(?![{<@])[A-Za-z0-9._~+/=-]{16,}/i],
+  ['bearer', /\bAuthorization\s*:\s*["']?(?!(?:Bearer|Basic|Token|Digest|Negotiate)\b)(?![{<@])(?=[A-Za-z0-9._~+/=-]*\d)[A-Za-z0-9._~+/=-]{20,}/i],
   // VCST-6378: shapes a tester on this stack actually holds. An Azure DevOps PAT (the classic 52-char
   // base32 one, and the 84-char one that carries the `AZDO` signature at 76..79), a SAS signature, a
   // storage account key, a PEM private key, an AWS access key id. None of them is a word or a hash
@@ -382,6 +390,9 @@ export const PUBLISH_FIXES = Object.freeze({
   bearer: 'an Authorization header value -- remove it',
   'api-key': 'an API key header value -- name the header, drop the value',
   'url-credential': 'a credential in a query string -- keep the path and the parameter name, drop the value',
+  'json-credential': 'a credential in a JSON body -- keep the member name, replace the value with a placeholder ("<secret>")',
+  'auth-cookie': 'an authentication cookie -- name the cookie, drop its value',
+  'auth-header': 'a token header value -- name the header, drop the value',
   'ado-pat': 'an Azure DevOps PAT -- remove it',
   'sas-signature': 'a SAS signature -- keep the path, drop the query string',
   'storage-key': 'a storage account key -- remove it',

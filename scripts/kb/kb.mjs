@@ -19,7 +19,7 @@
 import { openBase } from './core/base.mjs';
 import { EXIT, HEADLINE, exitFor } from './core/exits.mjs';
 import { OWN_FLUSH_AFTER_MS, SWEEP_AFTER_MS, flush, postVerbSweepAllowed, sweepIfDue } from './core/push.mjs';
-import { accessBlock, accessWhy, pushConfirmRequired, queueDir } from './core/queue.mjs';
+import { accessBlock, accessWhy, liveRateHold, pushConfirmRequired, queueDir } from './core/queue.mjs';
 
 /** Minutes after which a still-queued line means the queue is not draining (`stat`, VCST-6378). */
 const STALE_QUEUE_MIN = 6 * 60;
@@ -181,7 +181,7 @@ async function main(argv) {
       else if (r.backlog.lines && !r.backlog.due) out('  (log lines only: they go with the next change to the base, or with the first push of tomorrow)');
     }
     const p = r.push ?? {};
-    if (p.rateLimitedUntil && Date.parse(p.rateLimitedUntil) > Date.now()) out(`  RATE LIMITED — GitHub asked for no push before ${p.rateLimitedUntil}; the queue waits`);
+    if (liveRateHold(p.rateLimitedUntil)) out(`  RATE LIMITED — GitHub asked for no push before ${p.rateLimitedUntil}; the queue waits`);
     // Said only while the denial holds for the token this machine would push with (review round 1).
     const denied = accessBlock(process.env, writeToken().token);
     if (denied) out(`  NO WRITE ACCESS since ${denied.at} — ${accessWhy(denied.code)}`);

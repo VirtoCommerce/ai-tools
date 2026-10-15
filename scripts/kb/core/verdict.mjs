@@ -212,15 +212,22 @@ export function decide(prep, ranker, question, { retrieval = null, bodies = null
   // positive weights turned "Stripe" or "the capital of France" into a certified answer at p 0.94-0.998
   // (tester run of ai-tools#460). Scored with both margins at the model's mean, and never certified:
   // one headline the agent opens, not an answer it is told to trust.
-  const lone = r.candidates.length === 1;
+  // Rivals that scored nothing are no rivals: a top padded with zero-score candidates from a channel that
+  // matched nothing kept margins of 1 and was certified again ("identifier", "bank"; retest of ai-tools#460).
+  // Counted BEFORE the body re-rank, which lifts every head candidate by its text coverage and so would
+  // turn a zero-score rival into one.
+  const lone = found.candidates.filter((c) => (c.fused ?? 0) > 0).length <= 1 && r.candidates.length > 0;
   const neutral = (name) => ranker.model.mean?.[ranker.model.features.indexOf(name)];
   const scored = lone ? { ...f, margin: neutral('margin') ?? f.margin, sentenceMargin: neutral('sentenceMargin') ?? f.sentenceMargin } : f;
   const p = r.candidates.length ? probability(ranker.model, scored) : 0;
   const verdict = !r.candidates.length || p < noneBelow ? 'none' : p >= answer && !lone ? 'answer' : 'ambiguous';
   // `top` is the caller's (kb_ask's argument), bounded to what an agent can read: 1..5.
   const n = Math.min(5, Math.max(1, Math.floor(Number(top)) || AMBIGUOUS_TOP));
-  const listed = verdict === 'answer' ? r.candidates.slice(0, 1)
-    : verdict === 'ambiguous' ? r.candidates.slice(0, n) : [];
+  // A lone list shows its one scored entry, not the zero-score rivals the re-rank lifted beside it.
+  const scoredTop = found.candidates[0]?.row.id;
+  const pool = lone ? r.candidates.filter((c) => c.row.id === scoredTop) : r.candidates;
+  const listed = verdict === 'answer' ? pool.slice(0, 1)
+    : verdict === 'ambiguous' ? pool.slice(0, n) : [];
   const entries = listed.map((c, i) => ({ ...c, separating: verdict === 'ambiguous' ? separating(listed, i, prep.vocab) : null }));
   // `none` happens only when NO channel found a candidate, concepts included -- so the question's own
   // concepts are, by construction, concepts no entry is filed under. Said as that, never as "nearest

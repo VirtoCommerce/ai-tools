@@ -121,7 +121,7 @@ export const TOOLS = Object.freeze([
       + 'Use it whenever you are about to assert, write or test something about platform behaviour that could be '
       + 'checked by observation — before grepping, before reasoning it out, before writing the assertion. '
       + 'Three answers. (1) ANSWERED: one entry, its body, trust label, confirmations and provenance. '
-      + '(2) A LIST, the usual case ("close entries, none certified to answer"), with a likely / possible / unlikely line: '
+      + '(2) A LIST, the usual case ("close entries, none certified to answer"), with a likely / possible / unlikely line (lone: one entry only, no measured odds): '
       + 'open the headline most likely to state your fact with kb_show, passing the printed ask handle, and rely on it only if '
       + 'its BODY states the fact; if none could, call kb_none with the handle, then go find out and kb_capture with the same '
       + 'handle. Being about the same page or feature is not an answer. A list is closed by a kb_show pick, a kb_none, or a '

@@ -771,7 +771,7 @@ export async function recordPush(r, { env = process.env, at = new Date() } = {})
       // Capped here as well as where it is parsed: a value from any other caller cannot hold for longer.
       ? new Date(Math.min(Date.parse(r.retryAt ?? '') || at.getTime() + 60_000, at.getTime() + RATE_HOLD_MAX_MS)).toISOString()
       : row.state === 'pushed' ? null
-        : (Date.parse(String(prev.rateLimitedUntil ?? '')) > at.getTime() ? prev.rateLimitedUntil : null);
+        : liveRateHold(prev.rateLimitedUntil, at.getTime());
     const next = {
       last: row,
       lastFailure: failed ? row : row.state === 'pushed' ? null : (prev.lastFailure ?? null),
@@ -809,8 +809,18 @@ export function accessBlock(env = process.env, token = null, now = Date.now()) {
 
 /** The time pushes are held until because GitHub said so, when it is still ahead, else `null`. */
 export function rateHold(env = process.env, now = Date.now()) {
-  const until = readPushStatus(env).rateLimitedUntil;
-  return until && Date.parse(String(until)) > now ? until : null;
+  return liveRateHold(readPushStatus(env).rateLimitedUntil, now);
+}
+
+/**
+ * A stored hold that still applies: ahead of now, and by no more than `RATE_HOLD_MAX_MS`. Capping only
+ * where a hold is parsed and recorded left one already on disk -- from a client before the cap, or
+ * written under a clock running days fast -- holding every push until it expired (retest of
+ * ai-tools#460). Read as no hold at all: the next push asks GitHub again, which costs one request.
+ */
+export function liveRateHold(until, now = Date.now()) {
+  const t = Date.parse(String(until ?? ''));
+  return Number.isFinite(t) && t > now && t - now <= RATE_HOLD_MAX_MS ? until : null;
 }
 
 /** What the operator is told, once: what happened, that nothing is lost, and what to ask for. */

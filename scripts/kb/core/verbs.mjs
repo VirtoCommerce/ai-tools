@@ -1447,7 +1447,9 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
 async function appendEvidence(kind, id, input, opened, { env = process.env, via = null, call = null, topic = null, repair = {}, builds = null } = {}) {
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
-    await log({ kind, id, state: cat.state, why: cat.why, ...repair, ...context({ via, call, topic }) }, { env });
+    // The privacy check runs further down, so this early line keeps its topic only when it is clean (retest).
+    const cleanTopic = topic && !privateData({ topic }, env) ? topic : null;
+    await log({ kind, id, state: cat.state, why: cat.why, ...repair, ...context({ via, call, topic: cleanTopic }) }, { env });
     return { state: cat.state, why: cat.why };
   }
   const row = cat.rows.find((r) => r.id.toUpperCase() === String(id).toUpperCase());
@@ -1825,14 +1827,25 @@ export function toLogLine(line) {
     const { why, ...kept } = rest;
     return { ...kept, code: kept.code ?? flushCode({ why, reason: kept.reason }) };
   }
+  // A LOCAL PATH NEVER GOES PUBLIC (retest of ai-tools#460): a `no-base` line says `no kb.json at
+  // C:\Users\<name>\...`, and an fs error repeats the path. The reason stays; the path is replaced.
+  if (typeof rest.why === 'string') return { ...rest, why: withoutLocalPaths(rest.why) };
   return rest;
+}
+
+/** Drive paths, UNC paths, `file://` URLs and home-rooted POSIX paths, each replaced by `<local path>`. */
+export function withoutLocalPaths(text) {
+  return String(text)
+    .replace(/file:\/\/\/?[^\s'"()]+/gi, '<local path>')
+    .replace(/(?:\b[A-Za-z]:|\\\\[^\\\s]+)[\\/][^\s'"()]*/g, '<local path>')
+    .replace(/(^|[\s'"(=])\/(?:[a-z]\/)?(?:home|Users|root|tmp|private|mnt)\/[^\s'"()]*/g, '$1<local path>');
 }
 
 /** A failed push, as a closed code: what went wrong, never the remote's words for it. */
 export function flushCode({ why = '', reason = null } = {}) {
   const w = String(why ?? '');
   if (/rate limit/i.test(w)) return 'rate-limited';
-  if (/not accessible by|must have push access|saml enforcement|enforced saml|access restrictions/i.test(w)) return 'no-write-access';
+  if (/not accessible by|must have push access|saml enforcement|enforced saml|re-authorize the oauth|access restrictions/i.test(w)) return 'no-write-access';
   if (/bad credentials/i.test(w)) return 'bad-credentials';
   if (/no GITHUB_TOKEN/i.test(w)) return 'no-token';
   if (reason === 'conflict' || reason === 'missing' || reason === 'contained') return reason;
