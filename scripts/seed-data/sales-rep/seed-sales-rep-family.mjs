@@ -19,6 +19,7 @@
  *   TEST_ENV=vcst       npm run seed:sales-rep-family -- --teardown
  *   TEST_ENV=vcst       npm run seed:sales-rep-family -- --step docs --only SR_DOC_PDF
  *   TEST_ENV=vcst       npm run seed:sales-rep-family -- --skip-optional   # reps only
+ * Without --profile, SR_DATASET_PROFILE (if set) names the default.
  */
 
 import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
@@ -53,8 +54,16 @@ runFamily({
   modulePresent: async () => {
     try { await api('GET', '/api/sales-rep/roles', null, { expectStatus: [200, 201] }); return true; } catch { return false; }
   },
-  teardownNote: [
-    'Note: this reverses the per-seeder chain only. To sweep entities the CSVs no longer',
-    'declare — hand-made reps, orphaned documents — use `npm run sr:inventory`.',
-  ],
+  profileEnv: 'SR_DATASET_PROFILE',
+  notes: {
+    conflict: [
+      'One rep list, one global document library, one served-org graph — seeding over the',
+      'other leaves a mixture that is neither a clean fixture set nor a credible demo.',
+    ],
+    seeded: ['Next: `npm run td:reconcile`.'],
+    teardown: [
+      'Note: this reverses the per-seeder chain only. To sweep entities the CSVs no longer',
+      'declare — hand-made reps, orphaned documents — use `npm run sr:inventory`.',
+    ],
+  },
 }).catch((e) => { console.error('sales-rep family crashed:', e.message); process.exit(2); });

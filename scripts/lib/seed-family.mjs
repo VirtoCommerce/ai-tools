@@ -38,12 +38,13 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ROOT, DRY_RUN, TEARDOWN, auth, assertSafeTarget, log } from './seed-common.mjs';
+import { SALES_REP_FAMILY, SALES_REP_LEGACY_STAMP_KEY } from '../seed-data/sales-rep/sales-rep-demo-specs.mjs';
 
 const TEST_ENV = process.env.TEST_ENV || 'vcst';
 const overlayPath = () => join(ROOT, `test-data/aliases.${TEST_ENV}.json`);
 
 /** Families whose stamp predates `_meta.dataset_profiles`: family → the old `_meta` key. */
-const LEGACY_STAMP = Object.freeze({ 'sales-rep': 'dataset_profile' });
+const LEGACY_STAMP = Object.freeze({ [SALES_REP_FAMILY]: SALES_REP_LEGACY_STAMP_KEY });
 
 function readOverlay() {
   const p = overlayPath();
@@ -61,6 +62,9 @@ export function datasetProfiles(overlay) {
 
 /** The profile id stamped for `family` in a parsed overlay, or null. */
 export const datasetProfileOf = (overlay, family) => datasetProfiles(overlay)[family] || null;
+
+/** Every family's stamp on this environment (legacy included); {} when the overlay is absent or unparsable. */
+export const liveDatasetProfiles = () => datasetProfiles(readOverlay());
 
 /** The profile id stamped for `family` on this environment, or null. */
 export const liveDatasetProfile = (family) => datasetProfileOf(readOverlay(), family);
@@ -87,13 +91,22 @@ function stamp(family, value) {
  *                   { name, script (under scripts/seed-data), args?, required }, run in array order
  *   modulePresent — async () => boolean; false ⇒ one skip line, exit 0
  *   beforeDemo    — optional async () => void, run before a demo seed (e.g. warn about live fixtures)
- *   teardownNote  — optional lines printed after a teardown (e.g. what the chain does NOT sweep)
+ *   profileEnv    — optional env var naming the default profile when --profile is absent
+ *   notes         — optional { conflict, seeded, teardown } line arrays: printed under the coexistence
+ *                   ABORT, after a clean seed, and after a teardown (e.g. what the chain does NOT sweep)
  */
-export async function runFamily({ family, npmScript, profiles, modulePresent, beforeDemo, teardownNote = [] }) {
+export async function runFamily({ family, npmScript, profiles, modulePresent, beforeDemo, profileEnv, notes = {} }) {
   const argv = process.argv.slice(2);
-  const flag = (n) => (argv.includes(n) ? argv[argv.indexOf(n) + 1] : null);
+  // A value flag given without its value is an operator error, never "flag absent": a bare `--step`
+  // would otherwise run (and stamp or clear) the whole chain, and a bare `--only` would spawn with undefined.
+  const flag = (n) => {
+    if (!argv.includes(n)) return null;
+    const v = argv[argv.indexOf(n) + 1];
+    if (v === undefined || v.startsWith('--')) { console.error(`ABORT: ${n} needs a value.`); process.exit(2); }
+    return v;
+  };
   const STEP = flag('--step');
-  const PROFILE = (flag('--profile') || 'fixtures').toLowerCase();
+  const PROFILE = (flag('--profile') || (profileEnv && process.env[profileEnv]) || 'fixtures').toLowerCase();
   const SKIP_OPTIONAL = argv.includes('--skip-optional');
   const passthrough = ['--dry-run', '--verbose', '--fresh'].filter((a) => argv.includes(a));
   if (argv.includes('--only')) passthrough.push('--only', flag('--only'));
@@ -111,6 +124,7 @@ export async function runFamily({ family, npmScript, profiles, modulePresent, be
   if (!TEARDOWN) {
     if (live && live !== profiles[PROFILE].id) {
       console.error(`ABORT: ${TEST_ENV} currently holds the "${live}" ${family} dataset, and the two cannot coexist.`);
+      for (const line of notes.conflict || []) console.error(`  ${line}`);
       console.error(`\n  Tear the live one down first:\n    TEST_ENV=${TEST_ENV} npm run ${npmScript} -- --teardown`);
       console.error(`  then re-run with --profile ${PROFILE}.`);
       process.exit(2);
@@ -127,7 +141,8 @@ export async function runFamily({ family, npmScript, profiles, modulePresent, be
 
   const run = (step, extra = []) => {
     const script = join(ROOT, 'scripts', 'seed-data', step.script);
-    if (!existsSync(script)) { log(`⚠ seed:${step.name} — ${step.script} does not exist; skipped.`); return !step.required; }
+    // A missing script did not run: never `ok`, so it cannot pass as a clean teardown and clear the stamp.
+    if (!existsSync(script)) { log(`⚠ seed:${step.name} — ${step.script} does not exist; not run.`); return false; }
     log(`\n─── seed:${step.name} (${step.required ? 'required' : 'optional'}) ───`);
     const res = spawnSync('node', [script, ...(step.args || []), ...extra, ...passthrough], { stdio: 'inherit', env: process.env, cwd: process.cwd() });
     return res.status === 0;
@@ -140,22 +155,31 @@ export async function runFamily({ family, npmScript, profiles, modulePresent, be
   const results = [];
   if (TEARDOWN) {
     // Best-effort per step: one stuck domain must not block the rest of the clean.
-    for (const step of [...steps].reverse()) results.push({ ...step, status: run(step, ['--teardown']) ? 'ok' : 'warn' });
+    for (const step of [...steps].reverse()) {
+      const ok = run(step, ['--teardown']);
+      results.push({ ...step, status: ok ? 'ok' : 'warn' });
+      if (!ok) log(`⚠ teardown ${step.name} reported a problem — continuing.`);
+    }
     const clean = results.every((r) => r.status === 'ok');
     if (!STEP && clean) stamp(family, null);
     else if (!STEP) log(`dataset_profiles.${family} left at "${profiles[effective].id}" — teardown was not clean.`);
     summary(results);
-    console.log(`\nTeardown complete. Re-seed with \`npm run ${npmScript} -- --profile ${effective}\`.`);
-    for (const line of teardownNote) console.log(line);
-    process.exit(0);
+    console.log(clean
+      ? `\nTeardown complete. Re-seed with \`npm run ${npmScript} -- --profile ${effective}\`.`
+      : '\nTeardown INCOMPLETE — fix the step(s) above and re-run the teardown (each seeder is idempotent).');
+    for (const line of notes.teardown || []) console.log(line);
+    // Non-zero when unclean, so seed-demo / seed-bootstrap report it instead of a ✓.
+    process.exit(clean ? 0 : 1);
   }
   for (const step of steps) {
     if (SKIP_OPTIONAL && !step.required) { results.push({ ...step, status: 'skipped' }); continue; }
     if (run(step)) { results.push({ ...step, status: 'ok' }); continue; }
     if (step.required) { results.push({ ...step, status: 'FAILED' }); summary(results); console.error(`\nABORT: required step seed:${step.name} failed (seeders are idempotent — fix and re-run).`); process.exit(1); }
     results.push({ ...step, status: 'warn' });
+    log(`⚠ optional step seed:${step.name} failed — continuing.`);
   }
   summary(results);
-  console.log(results.some((r) => r.status === 'warn') ? '\nFinished with warnings (see above).' : `\n${family} family OK (profile=${effective}).`);
+  if (results.some((r) => r.status === 'warn')) console.log('\nFinished with warnings (see above).');
+  else { console.log(`\n${family} family OK (profile=${effective}).`); for (const line of notes.seeded || []) console.log(line); }
   process.exit(0);
 }

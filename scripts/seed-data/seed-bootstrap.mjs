@@ -27,9 +27,8 @@
 
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { datasetProfiles } from '../lib/seed-family.mjs';
+import { liveDatasetProfiles } from '../lib/seed-family.mjs';
 import {
   ROOT, DRY_RUN, VERBOSE, api, auth, assertSafeTarget,
   ensureMemberIndex, ensureFulfillmentCenter, log,
@@ -56,7 +55,9 @@ const TEARDOWN_STEPS = [
   // NOTE: this sweeps only what the CSVs still declare. Entities the CSVs no longer name —
   // hand-made reps, orphaned documents — need `npm run sr:inventory`, which is deliberately not
   // wired into an unattended chain: it can delete things no script can recreate.
-  { name: 'sales-rep', script: 'sales-rep/seed-sales-rep-family.mjs', args: ['--teardown'] },
+  // `demoFamily`: SKIPPED while the family holds its demo — the family reverses whichever chain its stamp
+  // names, so a routine fixtures teardown would otherwise delete a live demo (seed:demo:teardown owns that).
+  { name: 'sales-rep', script: 'sales-rep/seed-sales-rep-family.mjs', args: ['--teardown'], demoFamily: 'sales-rep' },
   // VCST-5748 OTP sign-in accounts — independent of every other domain; deletes only agent-test-otp-* accounts/contacts.
   { name: 'otp-signin', script: 'auth/seed-otp-signin.mjs', args: ['--teardown'] },
   // Wishlists are carts referencing products AND a security account, so they go before both.
@@ -207,7 +208,7 @@ const STEPS = [
   // deployments (the entrypoint then prints one skip line and exits 0), the document library needs
   // `sales-rep-documents` in FileUpload:Scopes, and the task seeder needs a storefront password
   // grant (SALES_REP_EMAIL + SALES_REP_PASSWORD_<ENV>).
-  { name: 'sales-rep', script: 'sales-rep/seed-sales-rep-family.mjs', required: false, priority: 142 },
+  { name: 'sales-rep', script: 'sales-rep/seed-sales-rep-family.mjs', required: false, priority: 142, demoFamily: 'sales-rep' },
   // VCST-5884 organization returns: creates its own orgs/accounts/roles, then orders on live-discovered
   // products (40) in the store (80). Optional: needs the Return module + Return.ReturnEnabled on the store.
   // `demoFamily`: skipped while that family holds its DEMO profile (seed-returns-family.mjs stamps it),
@@ -257,7 +258,13 @@ function runStep(step) {
   // ── Teardown mode: reverse-order sweep of every domain, then exit. Best-effort per step. ──
   if (TEARDOWN) {
     const tdResults = [];
+    const demoProfiles = liveDatasetProfiles();
     for (const step of TEARDOWN_STEPS) {
+      if (step.demoFamily && /-demo$/.test(demoProfiles[step.demoFamily] || '')) {
+        log(`\n─── teardown ${step.name} skipped — the ${step.demoFamily} family holds its demo profile here (npm run seed:demo:teardown to release it) ───`);
+        tdResults.push({ ...step, status: 'skipped' });
+        continue;
+      }
       const ok = runStep({ ...step, required: false });
       tdResults.push({ ...step, status: ok ? 'ok' : 'warn' });
       if (!ok) log(`⚠ teardown ${step.name} reported a problem — continuing.`);
@@ -280,9 +287,7 @@ function runStep(step) {
 
   // ── Seeder chain ──
   const results = [];
-  const demoProfiles = (() => {
-    try { return datasetProfiles(JSON.parse(readFileSync(join(ROOT, `test-data/aliases.${process.env.TEST_ENV || 'vcst'}.json`), 'utf8'))); } catch { return {}; }
-  })();
+  const demoProfiles = liveDatasetProfiles();
   for (const step of STEPS) {
     if (SKIP_OPTIONAL && !step.required) { results.push({ ...step, status: 'skipped' }); continue; }
     if (step.demoFamily && /-demo$/.test(demoProfiles[step.demoFamily] || '')) {

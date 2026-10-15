@@ -78,6 +78,8 @@ export function markerSweepInScope(outerId, only) {
  */
 export const DEMO_PROFILE = 'sales-rep-demo';
 export const SALES_REP_FAMILY = 'sales-rep';
+/** The single-valued `_meta` key this family stamped before the shared engine; read as a fallback. */
+export const SALES_REP_LEGACY_STAMP_KEY = 'dataset_profile';
 export const SALES_REP_PROFILE = Object.freeze({ fixtures: 'sales-rep-fixtures', demo: DEMO_PROFILE });
 
 /**
