@@ -245,7 +245,17 @@ indefinitely. With no `KB_GITHUB_TOKEN` (or `GITHUB_TOKEN`) the flush reports `n
 the queue**: nothing is lost, and the first later session with a token sends it. An unauthenticated
 teammate is a full-value reader and can still record what they found — **but note the queue only
 drains on the machine it was written on**, so a reader-only machine accumulates locally until a token
-appears there.
+appears there. The queue lives in the per-user state directory (`%LOCALAPPDATA%\claude-kb\queue` on
+Windows, `~/.local/state/claude-kb/queue` elsewhere), not in the temp directory a disk clean-up empties;
+an older `%TEMP%\claude-kb-queue` is moved there automatically.
+
+**A token that can read but not write.** Writing needs push access to `VirtoCommerce/vc-knowledge`:
+membership in the org team that has write on it (ask a maintainer), or a fine-grained token with
+**Contents: Read and write** on that one repository. A token without it is refused with `403 Resource
+not accessible`, and an expired one with `401 Bad credentials`. The kb then stops trying with that
+token for six hours (a new token is tried at once), tells you once at the end of a turn, marks every
+`kb_capture` / `kb_confirm` / `kb_dispute` result `NOT PUBLISHED YET`, and `npm run kb -- stat` shows
+`NO WRITE ACCESS` until a push lands. Nothing queued is lost in the meantime.
 
 **Opting out.** The base is on by default. To take a machine out of it, set `KB_ENABLED=0` in the
 `env` block of your own `.claude/settings.local.json` and restart. With the switch set, nothing is

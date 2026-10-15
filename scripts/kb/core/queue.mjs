@@ -20,13 +20,14 @@
 // run over this file BEFORE the push, plus the fact that these questions are about a public
 // product. Extending the base to client deployments must re-decide it first (PLAN §7, §11).
 
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { appendFile, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
 import { cachedWho } from './who.mjs';
+import { ACCESS_CODES } from './github-api.mjs';
 
 /** Operations that are logged. `stat` is deliberately absent: an operator looking at the tool is
  *  not an agent using the base, and logging it would put noise in the panel that matters. */
@@ -302,12 +303,74 @@ export function hookEnv(env = process.env, payload = null) {
 }
 
 /**
- * Where the queue lives. A scratchpad, never the repo: these files are transient, they are swept
- * by the push, and a queue in the working tree would show up in `git status` and be committed by
- * somebody tidying up.
+ * Where the queue lives. Never the repo: these files are transient, they are swept by the push, and
+ * a queue in the working tree would show up in `git status` and be committed by somebody tidying up.
+ *
+ * NOT THE TEMP DIRECTORY ANY MORE (VCST-6378). A queue that cannot be pushed -- no token, a token
+ * without write access, a run of failures -- is the ONLY copy of what was observed, and a temp
+ * directory is exactly what Storage Sense, a disk clean-up or a reboot on Linux empties. 296 pushes
+ * failed for lack of write access between 2026-09-25 and 10-07, each of them leaving its lines in
+ * `%TEMP%`. The per-user state directory survives all of that: `%LOCALAPPDATA%` on Windows,
+ * `$XDG_STATE_HOME` or `~/.local/state` elsewhere. The old directory is drained into it on first use
+ * (`migrateLegacyQueue`). `KB_QUEUE_DIR` still overrides both.
  */
 export function queueDir(env = process.env) {
-  return env.KB_QUEUE_DIR || join(tmpdir(), 'claude-kb-queue');
+  if (env.KB_QUEUE_DIR) return env.KB_QUEUE_DIR;
+  const state = env.LOCALAPPDATA || env.XDG_STATE_HOME || (env.HOME ? join(env.HOME, '.local', 'state') : null);
+  if (!state) return legacyQueueDir();
+  const dir = join(state, 'claude-kb', 'queue');
+  migrateLegacyQueue(dir);
+  return dir;
+}
+
+/** Where every client before VCST-6378 kept the queue. */
+export const legacyQueueDir = () => join(tmpdir(), 'claude-kb-queue');
+
+const migrated = new Set();
+/** Line files: appended to, never rewritten, so two halves of one file are merged by concatenation. */
+const LINE_FILE = /\.(?:jsonl|ndjson)$/;
+
+/**
+ * Drain the pre-VCST-6378 queue directory into `dir`, once per process. Synchronous and silent: it
+ * runs inside `queueDir`, which every verb, hook and push calls, and must cost nothing when there is
+ * nothing to move.
+ *
+ * WHY IT RUNS EVERY PROCESS AND NOT ONCE PER MACHINE. After a `git pull` the MCP server keeps running
+ * the OLD code until it restarts, and keeps appending to the old directory. So each new process
+ * drains whatever has arrived there since: a line file is first RENAMED aside (atomic, so an append
+ * racing it lands in a fresh file that the next drain takes), then appended to its namesake here and
+ * deleted. Any other file (`last-push.json`, identity and reach state) moves only when `dir` has no
+ * copy; the copy here is the newer one. A file that cannot be moved now (locked, permissions) stays
+ * where it is and is tried again by the next process.
+ */
+export function migrateLegacyQueue(dir, legacy = legacyQueueDir()) {
+  if (migrated.has(dir) || dir === legacy) return;
+  migrated.add(dir);
+  let names;
+  try { names = readdirSync(legacy); } catch { return; } // no old directory: the common case
+  if (!names.length) return;
+  try { mkdirSync(dir, { recursive: true }); } catch { return; }
+  for (const name of names) {
+    const from = join(legacy, name);
+    // A file left aside by a drain that died between rename and append is finished here.
+    const original = name.replace(/\.\d+\.moving$/, '');
+    const to = join(dir, original);
+    try {
+      const s = statSync(from);
+      if (!s.isFile()) continue;
+      // Another drain may be appending its own aside file right now: only a stale one is ours to finish.
+      // `ctime`, because a rename keeps the mtime but moves the ctime.
+      if (original !== name && Date.now() - Math.max(s.mtimeMs, s.ctimeMs) < 60_000) continue;
+      if (LINE_FILE.test(original)) {
+        const aside = original === name ? `${from}.${process.pid}.moving` : from;
+        if (aside !== from) renameSync(from, aside);
+        appendFileSync(to, readFileSync(aside));
+        unlinkSync(aside);
+      } else if (original === name && !existsSync(to)) {
+        renameSync(from, to);
+      }
+    } catch { /* locked or vanished: the next process tries again */ }
+  }
 }
 
 export function queuePath(env = process.env) {
@@ -594,19 +657,74 @@ export async function recordPush(r, { env = process.env, at = new Date() } = {})
     const row = {
       at: at.toISOString(),
       state: r?.state ?? 'unknown',
+      ...(r?.code ? { code: r.code } : {}),
       ...(r?.why ? { why: String(r.why).slice(0, 300) } : {}),
       ...(r?.commit ? { commit: r.commit } : {}),
       ...(Number.isFinite(r?.queued) ? { queued: r.queued } : {}),
     };
     const failed = PUSH_FAILURES.includes(row.state);
+    // THE TOKEN CANNOT WRITE (VCST-6378): remembered with the token's fingerprint, so the next push with
+    // the SAME token is held without a request (`accessBlock`) and a new token is tried at once. A
+    // landed push clears it; a held one keeps it.
+    const denied = row.state === 'failed' && ACCESS_CODES.has(r?.code) && r?.tokenPrint
+      ? { code: r.code, at: row.at, token: r.tokenPrint }
+      : row.state === 'pushed' ? null : (prev.denied ?? null);
     const next = {
       last: row,
       lastFailure: failed ? row : row.state === 'pushed' ? null : (prev.lastFailure ?? null),
       ...(row.state === 'pushed' ? { lastPushed: row } : prev.lastPushed ? { lastPushed: prev.lastPushed } : {}),
+      ...(denied ? { denied } : {}),
+      ...(prev.deniedNotified && denied ? { deniedNotified: prev.deniedNotified } : {}),
     };
     await mkdir(queueDir(env), { recursive: true });
     await writeFile(pushStatusPath(env), JSON.stringify(next, null, 2), 'utf8');
   } catch { /* the status is a report, never a reason a push fails */ }
+}
+
+// ── a token that cannot write (VCST-6378) ─────────────────────────────────────────────────────
+//
+// Measured 2026-09-25 .. 10-07: two contributors whose token could read the base but not write it made
+// 296 pushes, every one refused with the same 403, one per turn per session -- and the only trace was a
+// `FAILED` row in `kb stat` that nobody runs. A denial that will not cure itself is now remembered,
+// stops the retries, and is said ONCE, in words that name what access is needed.
+
+/** How long a denial holds the pushes of the same token before ONE request checks again: access can be granted without the token changing. */
+export const DENIED_RECHECK_MS = 6 * 60 * 60 * 1000;
+
+/** A token's fingerprint: enough to tell "same token" from "new token", useless for anything else. */
+export const tokenPrint = (token) => (token ? createHash('sha256').update(String(token)).digest('hex').slice(0, 12) : null);
+
+/** The recorded denial when it still holds for this token, else `null`. */
+export function accessBlock(env = process.env, token = null, now = Date.now()) {
+  const d = readPushStatus(env).denied;
+  if (!d || !token || d.token !== tokenPrint(token)) return null;
+  const at = Date.parse(String(d.at ?? ''));
+  return Number.isFinite(at) && now - at < DENIED_RECHECK_MS ? d : null;
+}
+
+/** What the operator is told, once: what happened, that nothing is lost, and what to ask for. */
+export function accessWhy(code, env = process.env) {
+  const kept = `your kb writes are kept on this machine (${queueDir(env)}) and are published by the first push whose token can write`;
+  if (code === 'bad-credentials') {
+    return `kb: the GitHub token was rejected (expired, revoked or mistyped) — ${kept}. Renew KB_GITHUB_TOKEN / GITHUB_TOKEN (docs/onboarding.md §Required MCP Servers, "A token that can read but not write").`;
+  }
+  return `kb: your GitHub token can read VirtoCommerce/vc-knowledge but not write it — ${kept}. Ask a maintainer for write access to vc-knowledge, or use a fine-grained token with Contents: Read and write on that repository (docs/onboarding.md §Required MCP Servers, "A token that can read but not write").`;
+}
+
+/**
+ * Has the operator been told about THIS denial yet? Marks it told when not. One notice per denial and
+ * token: a new denial (re-check failed again after `DENIED_RECHECK_MS`) is told again, once.
+ */
+export function claimDeniedNotice(env = process.env) {
+  try {
+    const status = readPushStatus(env);
+    const d = status.denied;
+    if (!d) return null;
+    const key = `${d.token}@${d.at}`;
+    if (status.deniedNotified === key) return null;
+    writeFileSync(pushStatusPath(env), JSON.stringify({ ...status, deniedNotified: key }, null, 2), 'utf8');
+    return d;
+  } catch { return null; }
 }
 
 /**

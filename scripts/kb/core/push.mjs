@@ -43,7 +43,7 @@ import { flagDuplicateSessions } from './sync-base.mjs';
 import { gateQueue, loadSecrets } from './secret-gate.mjs';
 import {
   DISABLED_WHY, HELD_WHY, MUTATIONS, composeLine, isSynthetic, pushConfirmRequired, kbDisabled, log, metaTranscripts, orderQueue, queueDir, queuePath, readMeta,
-  readQueue, recordPush, releaseConsumed, runOf, sessionId,
+  readQueue, recordPush, releaseConsumed, runOf, sessionId, accessBlock, accessWhy, tokenPrint,
 } from './queue.mjs';
 import {
   REACH_IDLE_MS, dropReach, idleReaches, lineWork, markSent, ownReachDue, reachLine, reachPath, readReach, sessionKeyOf, unsent,
@@ -896,6 +896,21 @@ async function flushOnce({
     };
   }
 
+  // THE SAME TOKEN WAS REFUSED ALREADY (VCST-6378): held without a request until `DENIED_RECHECK_MS`
+  // has passed or the token changed. No `flush` line either -- the refusal is on record once, and 296
+  // copies of it are what this replaces. A dry run reads, so it is never held.
+  const blocked = !dryRun && !injected ? accessBlock(env, token, now().getTime()) : null;
+  if (blocked) {
+    await touchStamp({ env, now });
+    return {
+      state: 'denied-held',
+      session,
+      code: blocked.code,
+      queued: loaded.reduce((n, f) => n + f.lines.length, 0),
+      why: accessWhy(blocked.code, env),
+    };
+  }
+
   const api = injected ?? githubApi({ owner: coords.owner, repo: coords.repo, branch: coords.branch, token, fetchImpl });
 
   const allLines = loaded.flatMap((f) => f.lines);
@@ -969,7 +984,12 @@ async function flushOnce({
   // with the next real push as a failure that never happened, and `kb stat` would report it.
   const why = last?.detail ?? last?.why ?? 'unknown';
   const reason = last?.reason ?? null;
-  const failed = { state: 'failed', session, attempts: attempt, why, reason, queued: allLines.length, kept: loaded.map((f) => f.path) };
+  const failed = {
+    state: 'failed', session, attempts: attempt, why, reason, queued: allLines.length, kept: loaded.map((f) => f.path),
+    // Which denial, and whose token (a fingerprint), so `recordPush` can hold the next push of it.
+    ...(last?.code ? { code: last.code } : {}),
+    ...(last?.code && token ? { tokenPrint: tokenPrint(token) } : {}),
+  };
   if (dryRun) return { ...failed, dryRun: true };
   await touchStamp({ env, now });
   await log({ kind: 'flush', ok: false, attempts: attempt, why, reason }, { env });
