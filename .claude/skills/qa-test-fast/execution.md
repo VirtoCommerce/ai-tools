@@ -38,9 +38,11 @@ Use the [`agent-dispatch.md`](../../templates/agent-dispatch.md) structure, **in
 
 Invoke `/qa-exploratory ticket <TICKET>` — the command, never a re-implementation. The charter
 payload has the shape of [`../qa-test/exploratory-lane.md`](../qa-test/exploratory-lane.md) §6, and
-its mission is the `/qa-test-model` output's item 4 (the unresolved cells, reverse edges, `{HYPOTHESIS}`
-oracles and flagged ACs) plus the mind-map branches the checklist declared as omissions, including
-the `UNVERIFIED → charter` lines ([`context-wave.md`](context-wave.md) §Wave 3).
+its mission is the strategy's Exploratory row (its R-ids, each with the `{HYPOTHESIS}` oracle or question it
+rests on — source 6 there), plus, when a model ran, the `/qa-test-model` output's item 4 (the unresolved
+cells, reverse edges, `{HYPOTHESIS}` oracles and flagged ACs), plus the mind-map branches the checklist
+declared as omissions, including the `UNVERIFIED → charter` lines ([`context-wave.md`](context-wave.md) §Wave 3).
+The lane runs only when that row is `RUN`.
 - **The box** is sized per §5 there: 30-minute floor, 60-minute ceiling, stated in the payload.
 - **Read-only by default.** When a charter item needs its own data, it follows §Data with its own pool
   user.

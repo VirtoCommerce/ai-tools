@@ -8,10 +8,15 @@ EFFORT axis of [`../../knowledge/execution/ticket-routing.md`](../../knowledge/e
 §5–§5d for this flow: depth comes from these signals and the risk register, never from the
 ticket type. Name every floor in the strategy as fired or not, with its signal.
 
+**No floor requires the test model itself.** It runs if and only if a risk has technique `MODEL`; the floors
+that need modelling require a `MODEL` risk instead, and F2, F10 and F11 each require **their own** — its
+Source carries the token `floor:<id>`, and no risk carries two (test-model redesign M9, M10:
+[`../../../docs/superpowers/specs/2026-10-09-qa-test-model-redesign.md`](../../../docs/superpowers/specs/2026-10-09-qa-test-model-redesign.md) §3).
+
 | # | Signal (from the bundle) | Floor |
 |---|---|---|
-| F1 | any **High/Critical** risk in the register, or the ticket is **P0/P1** (D8). Layer and domain counts do **not** fire it — they raise a risk's L×I | test model + exploratory |
-| F2 | a Story whose surface purpose is `UNDECLARED` in the domain map §1 ([`../../knowledge/domain/domain-map.md`](../../knowledge/domain/domain-map.md)) | test model + exploratory, whatever else holds |
+| F1 | any **High/Critical** risk in the register, or the ticket is **P0/P1** (D8). Layer and domain counts do **not** fire it — they raise a risk's L×I | exploratory; a High/Critical risk on a `{HYPOTHESIS}` oracle takes technique `MODEL` (M1) |
+| F2 | a Story whose surface purpose is `UNDECLARED` in the domain map §1 ([`../../knowledge/domain/domain-map.md`](../../knowledge/domain/domain-map.md)) | a purpose risk with technique `MODEL` whose Source carries `floor:F2`, + exploratory, whatever else holds |
 | F3 | a rendering file in the diff ([`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §1 source 1) — a lower bound, see below | visual lane |
 | F4 | a revenue-critical flow is touched (cart, checkout, payment, pricing, orders) | no risk on it below Medium |
 | F5 | the bundle's `known.cases_at_risk` is non-empty (`/ticket-context` block 4 ran `regression:select` over the changed files; the strategy adds `npm run tc:scope -- --domain <slug> --observable <each observable the diff or an AC moves>` where path tokens miss — [`../../knowledge/execution/regression-selection.md`](../../knowledge/execution/regression-selection.md)) | coverage triage + a regression run over those cases, **after the staleness check below** |
@@ -19,8 +24,8 @@ ticket type. Name every floor in the strategy as fired or not, with its signal.
 | F7 | `Review task` — no ACs | oracles from the diff only; F5 on by default (the strategy's job: the script fires F7 but does not touch F5) |
 | F8 | the change IS the design system or the token layer (`ui-kit`, [`../qa-test/ui-kit-class.md`](../qa-test/ui-kit-class.md)) | F3 + token audit; fails closed |
 | F9 | any doubt about a floor's signal | the floor applies (every floor except F8, which fails closed; F4 and F6 read only what was read) |
-| F10 | the change surface names org context: an `organizationId`-style argument, `xapi:my_organization:*`, an org route or list, `/graphql/sales-rep` or a `sales-rep:*` permission, `loginOnBehalf` / `CanImpersonate` / `/account/impersonate` ([`../../../docs/superpowers/specs/2026-10-09-qa-test-model-redesign.md`](../../../docs/superpowers/specs/2026-10-09-qa-test-model-redesign.md) §5) | an org-context risk with technique `MODEL` |
-| F11 | the PR adds or changes a setting (a settings entry names its key — see below), a hidden-behaviour row answers `yes` for `feature-flags` / `default-values`, or the diff reads one (`ModuleConstants.Settings`, `settingsManager`, `store.settings`, `$cfg.`) (§5a) | a configuration risk with technique `MODEL` + the stand's values in Inputs (`npm run store:caps -- --settings` / `--store`) |
+| F10 | the change surface names org context: an `organizationId`-style argument, `xapi:my_organization:*`, an org route or list, `/graphql/sales-rep` or a `sales-rep:*` permission, `loginOnBehalf` / `CanImpersonate` / `/account/impersonate` ([`../../../docs/superpowers/specs/2026-10-09-qa-test-model-redesign.md`](../../../docs/superpowers/specs/2026-10-09-qa-test-model-redesign.md) §5) | an org-context risk with technique `MODEL` whose Source carries `floor:F10` |
+| F11 | the PR adds or changes a setting (a settings entry names its key — see below), a hidden-behaviour row answers `yes` for `feature-flags` / `default-values`, or the diff reads one (`ModuleConstants.Settings`, `settingsManager`, `store.settings`, `$cfg.`) (§5a) | a configuration risk with technique `MODEL` whose Source carries `floor:F11`, + the stand's values in Inputs (`npm run store:caps -- --settings` / `--store` for public settings, the admin REST API for the rest — SKILL.md step 2) |
 
 ## How `floors.mjs` reads the bundle
 
