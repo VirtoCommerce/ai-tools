@@ -77,6 +77,8 @@
     "seed:sales-rep-docs:teardown": "node scripts/seed-data/sales-rep/seed-sales-rep-docs.mjs --teardown",
     "seed:sales-rep-stats": "node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs",
     "seed:sales-rep-stats:teardown": "node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --teardown",
+    "seed:sales-rep-perf": "node scripts/seed-data/sales-rep/seed-sales-rep-perf.mjs",
+    "seed:sales-rep-perf:teardown": "node scripts/seed-data/sales-rep/seed-sales-rep-perf.mjs --teardown",
     "seed:sales-rep-rowcap": "node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --only ROWCAP",
     "seed:sales-rep-rowcap:teardown": "node scripts/seed-data/sales-rep/seed-sales-rep-stats.mjs --teardown --only ROWCAP",
     "seed:sales-rep-i18n": "node scripts/seed-data/sales-rep/seed-sales-rep-i18n-plural.mjs",

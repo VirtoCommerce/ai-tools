@@ -34,6 +34,11 @@ const CSS_VAR = /--[\w-]+/g;
 // An entry that says nothing changed ("No feature flags added or changed") is never a signal, for any floor.
 const NEGATIVE = /^\s*no\s/i;
 
+// What a fired floor puts into the strategy (floors.md). None names the test model itself: it runs if and only if a
+// risk has technique MODEL (test-model redesign M9), so F2/F10/F11 require their own MODEL risk, Source carrying `floor:<id>` (M10).
+const F1_REQUIRES = ["exploratory", "MODEL on a High/Critical risk with a {HYPOTHESIS} oracle (M1)"];
+const F2_REQUIRES = ["a purpose risk with technique MODEL, Source carrying floor:F2", "exploratory"];
+
 const floor = (id, fired, signal, requires = []) => ({ id, fired, signal, requires: fired ? requires : [] });
 
 /** A PR closed without merge never shipped: it is not change surface (check-bundle counts it out the same way). */
@@ -70,16 +75,16 @@ export function computeFloors(bundle, { domainMapText = null, p01Names = P01_DEF
     : floor(id, false, noPr ?? none);
 
   const pri = fields.priority;
-  const f1 = pri == null ? floor("F1", true, "doubt: no priority in the bundle", ["test model", "exploratory"])
-    : floor("F1", p01.has(pri.toLowerCase()), `priority ${pri}${p01.has(pri.toLowerCase()) ? " (P0/P1)" : ""}; the High/Critical-risk half is checked on the register`, ["test model", "exploratory"]);
+  const f1 = pri == null ? floor("F1", true, "doubt: no priority in the bundle", F1_REQUIRES)
+    : floor("F1", p01.has(pri.toLowerCase()), `priority ${pri}${p01.has(pri.toLowerCase()) ? " (P0/P1)" : ""}; the High/Critical-risk half is checked on the register`, F1_REQUIRES);
 
   const noType = fields.type == null;
   const isStory = /^story$/i.test(fields.type ?? "");
   const dm = bundle.known?.domain_map ?? {};
-  const f2 = noType ? floor("F2", true, "doubt: no type in the bundle", ["test model", "exploratory"])
+  const f2 = noType ? floor("F2", true, "doubt: no type in the bundle", F2_REQUIRES)
     : !isStory ? floor("F2", false, `type ${fields.type}, not a Story`)
-    : dm.state !== "PRESENT" || domainMapText == null ? floor("F2", true, `doubt: domain map ${dm.state ?? "unknown"} — purpose not readable`, ["test model", "exploratory"])
-    : floor("F2", /\*\*Purpose:[^*]*UNDECLARED/i.test(domainMapText), "domain map §1 Purpose", ["test model", "exploratory"]);
+    : dm.state !== "PRESENT" || domainMapText == null ? floor("F2", true, `doubt: domain map ${dm.state ?? "unknown"} — purpose not readable`, F2_REQUIRES)
+    : floor("F2", /\*\*Purpose:[^*]*UNDECLARED/i.test(domainMapText), "domain map §1 Purpose", F2_REQUIRES);
 
   const visualPaths = paths.filter((p) => VISUAL.test(p));
   const f3 = diffFloor("F3", visualPaths.length ? `rendering files: ${visualPaths.slice(0, 3).join(", ")}` : null,
@@ -110,13 +115,13 @@ export function computeFloors(bundle, { domainMapText = null, p01Names = P01_DEF
     : floor("F8", false, diffUnread ? `${diffUnread} — F8 fails closed (ticket-routing §5c)` : "no ui-kit file");
 
   const org = surface.match(ORG);
-  const f10 = diffFloor("F10", org ? `org context: ${org[0]}` : null, "no org context in the diff surface", ["an org-context risk with technique MODEL"]);
+  const f10 = diffFloor("F10", org ? `org context: ${org[0]}` : null, "no org context in the diff surface", ["an org-context risk with technique MODEL, Source carrying floor:F10"]);
   const hb = (bundle.change?.hidden_behaviour ?? []).filter((r) => r.answer === "yes" && /feature-flags|default-values/.test(r.item));
   // Every entry, the "No …" ones included: "No longer defaults to true: Return.SendNotifications" still names a key.
   const key = prs.flatMap((p) => (p.settings ?? []).filter((x) => typeof x === "string")).map((s) => s.replace(CSS_VAR, " ").match(SETTING_KEY)).find(Boolean);
   const read = surface.match(CONFIG);
   const f11 = diffFloor("F11", key ? `setting: ${key[0]}` : hb.length ? `hidden behaviour: ${hb.map((r) => r.item).join(", ")}` : read ? `setting read: ${read[0]}` : null,
-    "no setting key, setting read or feature-flags/default-values row", ["a configuration risk with technique MODEL", "stand values in Inputs"]);
+    "no setting key, setting read or feature-flags/default-values row", ["a configuration risk with technique MODEL, Source carrying floor:F11", "stand values in Inputs"]);
 
   return { product_prs: prs.length, floors: [f1, f2, f3, f4, f5, f6, f7, f8,
     floor("F9", false, "doubt rule — applied inside every floor above"), f10, f11] };
