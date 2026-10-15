@@ -44,9 +44,11 @@ password or, without it, an operator logging in on her behalf.
   password is `{{SR_DEMO_BUYER_PASSWORD}}`.
 - **`seed:bootstrap`** skips `returns-org` while the returns family holds its demo profile.
 - **Organization returns view:** no role on the store carries `xapi:my_organization:return:view`, so the
-  demo owns a view-only role, `Organization returns viewer`, and ADDS it to the memberships listed in the
+  demo owns a role, `Organization returns manager` (view + submit; submit is unchecked on Return 3.1005 —
+  colleagues' returns stay view-only), and ADDS it to the memberships listed in the
   fixture's `orgReturnsAccess` (maintainer buyers + both of Alla's logins in her served orgs). Built-in roles
-  are never edited; teardown removes the role from those memberships and deletes it.
+  are never edited. When the store's membership-roles whitelist is active, the role is appended to it so the
+  Admin picker offers it (`seed:membership-roles` keeps it while the demo holds). Teardown removes all of it.
 
 ## Loyalty missions demo
 

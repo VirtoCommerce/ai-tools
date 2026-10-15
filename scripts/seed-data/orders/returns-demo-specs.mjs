@@ -123,6 +123,9 @@ export const DEMO_RETURNS = Object.freeze(FIXTURE.returns);
  */
 export const DEMO_ORG_RETURNS_ACCESS = Object.freeze(FIXTURE.orgReturnsAccess || { role: null, buyers: [], reps: [] });
 export const ORG_RETURNS_VIEW_PERMISSION = 'xapi:my_organization:return:view';
+export const ORG_RETURNS_SUBMIT_PERMISSION = 'xapi:my_organization:return:submit';
+/** The only permissions the demo role may hold: it must never widen a real colleague's access beyond org returns. */
+export const ORG_RETURNS_PERMISSIONS = Object.freeze([ORG_RETURNS_VIEW_PERMISSION, ORG_RETURNS_SUBMIT_PERMISSION]);
 
 // ---- derivations ----------------------------------------------------------------
 
@@ -419,7 +422,9 @@ export function demoReturnProblems({ reasonCodes = null } = {}) {
   const acc = DEMO_ORG_RETURNS_ACCESS;
   if (acc.role) {
     if (/AGENT-TEST/i.test(acc.role.name) || /^(org-|purchasing|store-)/.test(acc.role.id)) problems.push(`org-returns role ${acc.role.id} looks like a fixture or built-in role — the demo must own its own`);
-    if (JSON.stringify(acc.role.permissions) !== JSON.stringify([ORG_RETURNS_VIEW_PERMISSION])) problems.push(`org-returns role must hold exactly ${ORG_RETURNS_VIEW_PERMISSION} — anything more widens a real colleague's access`);
+    if (!acc.role.permissions.includes(ORG_RETURNS_VIEW_PERMISSION)) problems.push(`org-returns role lacks ${ORG_RETURNS_VIEW_PERMISSION} — nobody could open the organization view`);
+    const extra = acc.role.permissions.filter((x) => !ORG_RETURNS_PERMISSIONS.includes(x));
+    if (extra.length) problems.push(`org-returns role holds ${extra.join(', ')} — only ${ORG_RETURNS_PERMISSIONS.join(' / ')} are allowed; anything more widens a real colleague's access`);
     for (const b of acc.buyers) if (!contactByKey(b)) problems.push(`org-returns access: buyer ${b} is not a demo contact`);
     for (const r of acc.reps) {
       const rep = DEMO_REPS.find((x) => x.key === r.key);

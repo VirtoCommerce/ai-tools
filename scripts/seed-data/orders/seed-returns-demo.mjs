@@ -444,14 +444,41 @@ async function ensureOrgReturnsAccess(base) {
       const m = mems.find((x) => x.organizationId === orgId);
       if (!m || seen.has(m.id)) continue;
       seen.add(m.id);
-      const has = (m.roles || []).some((r) => (r.roleId || r.id) === acc.role.id);
-      if (!has) await api('PUT', `/api/customer/organization-memberships/${m.id}`, { ...m, roles: [...(m.roles || []), { roleId: acc.role.id, roleName: acc.role.name }] }, { expectStatus: [200, 204] });
+      const mine = (m.roles || []).find((r) => (r.roleId || r.id) === acc.role.id);
+      const has = !!mine;
+      // Added, or renamed in place (the membership keeps a copy of the role name for display).
+      if (!has || mine.roleName !== acc.role.name) {
+        const roles = [...(m.roles || []).filter((r) => (r.roleId || r.id) !== acc.role.id), { roleId: acc.role.id, roleName: acc.role.name }];
+        await api('PUT', `/api/customer/organization-memberships/${m.id}`, { ...m, roles }, { expectStatus: [200, 204] });
+      }
       grants.push({ type: 'grant', key: `${g.who}|${m.organizationName}`, membershipId: m.id, userId, orgId });
       if (!has) log(`  org returns view → ${g.who} @ ${m.organizationName}`);
     }
   }
-  log(`Organization returns viewer: ${grants.length} membership(s) hold it.`);
-  return [{ type: 'role', key: acc.role.id, id: acc.role.id }, ...grants];
+  log(`${acc.role.name}: ${grants.length} membership(s) hold it.`);
+  const whitelisted = await whitelistDemoRole(acc.role.name, true);
+  return [{ type: 'role', key: acc.role.id, id: acc.role.id, name: acc.role.name, whitelisted }, ...grants];
+}
+
+/**
+ * Keep the demo role assignable from the Admin picker. `Customer.MembershipRolesWhitelist` on the store
+ * (set-membership-roles-whitelist.mjs owns it) filters the picker by role NAME: when it is non-empty
+ * and lacks this role, the role is APPENDED; when it is empty there is no restriction and nothing is
+ * written. Teardown removes only this entry. That runner keeps the entry while this ledger holds the
+ * role, so the two writers do not undo each other.
+ */
+async function whitelistDemoRole(roleName, add) {
+  const KEY = 'Customer.MembershipRolesWhitelist';
+  const path = `/api/platform/settings/v2/tenant/Store/${encodeURIComponent(STORE_ID)}/values`;
+  const vals = await api('GET', path, null, { expectStatus: [200] }).catch(() => null);
+  const cur = Array.isArray(vals?.[KEY]) ? vals[KEY] : [];
+  const has = cur.some((x) => String(x).toLowerCase() === roleName.toLowerCase());
+  if (add && (!cur.length || has)) { verbose(`whitelist: ${cur.length ? 'already lists' : 'empty (no restriction) — nothing to add for'} ${roleName}`); return has; }
+  if (!add && !has) return false;
+  const next = add ? [...cur, roleName] : cur.filter((x) => String(x).toLowerCase() !== roleName.toLowerCase());
+  await api('POST', path, { [KEY]: next }, { expectStatus: [200, 201, 204] });
+  log(`  membership roles whitelist: ${add ? 'added' : 'removed'} "${roleName}" (${next.length} role(s); Admin needs Settings → Reset cache + reload)`);
+  return add;
 }
 
 async function revokeOrgReturnsAccess(ledger) {
@@ -468,7 +495,8 @@ async function revokeOrgReturnsAccess(ledger) {
   }
   const role = await api('POST', '/api/platform/security/roles/search', { keyword: acc.role.name, take: 10 }).catch(() => null);
   if ((role?.results || []).some((r) => r.id === acc.role.id)) await api('DELETE', `/api/platform/security/roles?ids=${encodeURIComponent(acc.role.id)}`, null, { expectStatus: [200, 204] });
-  log(`  org returns view revoked from ${n} membership(s); role ${acc.role.id} deleted`);
+  await whitelistDemoRole(acc.role.name, false);
+  log(`  org returns access revoked from ${n} membership(s); role ${acc.role.id} deleted`);
 }
 
 // ---- teardown ----------------------------------------------------------------------------

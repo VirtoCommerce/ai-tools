@@ -9,7 +9,7 @@
       "returns[].lines[].approve": "approved qty (decided outcomes only); 0 = declined",
       "returns[].seq": "submit order — the platform numbers returns in creation order",
       "returns[].via": "omitted = the buyer submits through the storefront flow; \"agent\" = a back-office agent logs it on the buyer's behalf (status New, no evidence required)",
-      "orgReturnsAccess": "a demo-owned role holding ONLY the organization-returns view permission, ADDED (never replacing) to the listed buyers' memberships and to every login of the listed reps in the listed served orgs; teardown takes it back off and deletes the role",
+      "orgReturnsAccess": "a demo-owned role holding ONLY the organization-returns permissions (view, submit), ADDED (never replacing) to the listed buyers' memberships and to every login of the listed reps in the listed served orgs, and appended to the store's membership-roles whitelist when one is active; teardown takes all of it back. The id keeps its first name (viewer) so the grants already made stay attached",
       "orders[].owner": "instead of buyer: a REP's own order — {rep, login}, login = \"record\" (the account the sales-rep record points at) or \"email\" (the rep's declared email login). The rep places it inside a served org and submits its returns as herself; the order address email is the org's .example mailbox"
     }
   },
@@ -689,9 +689,10 @@
   "orgReturnsAccess": {
     "role": {
       "id": "demo-org-returns-viewer",
-      "name": "Organization returns viewer",
+      "name": "Organization returns manager",
       "permissions": [
-        "xapi:my_organization:return:view"
+        "xapi:my_organization:return:view",
+        "xapi:my_organization:return:submit"
       ]
     },
     "buyers": [
