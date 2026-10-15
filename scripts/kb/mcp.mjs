@@ -52,7 +52,7 @@ import { pathToFileURL } from 'node:url';
 import { openBase } from './core/base.mjs';
 import { flush, ownFlushDue, sweepIfDue } from './core/push.mjs';
 import { askLines, captureLines, evidenceLines, noneLines, showLines } from './core/render.mjs';
-import { queueDir } from './core/queue.mjs';
+import { accessWhy, queueDir, readPushStatus } from './core/queue.mjs';
 import { CONDITIONS_SOURCE, DEFECT_SOURCE, DEPLOYMENT_SOURCE, METHOD_SOURCE } from './core/contract.mjs';
 import { repoRoot, writeToken } from './core/token.mjs';
 import { TOPIC_MAX, ask, capture, confirm, dispute, none, show, stat } from './core/verbs.mjs';
@@ -309,6 +309,17 @@ const text = (lines, isError = false) => ({
 });
 
 /**
+ * A write that was QUEUED while this machine's token is known to be refused (VCST-6378) says so: the
+ * agent was otherwise told "queued" and reported the fact as recorded, while it can never leave the
+ * machine until somebody grants access.
+ */
+function withAccessNote(lines, r, env) {
+  if (r?.state !== 'queued') return lines;
+  const denied = readPushStatus(env).denied;
+  return denied ? [...lines, `  NOT PUBLISHED YET — ${accessWhy(denied.code, env)}`] : lines;
+}
+
+/**
  * The caller's own tool-use id, when the client sends one.
  *
  * WHO ASKED — answered by measurement on 2026-09-19, after being twice declared unanswerable.
@@ -378,7 +389,7 @@ async function callTool(name, args, ctx) {
       }, opened, { env: ctx.env, via: VIA, call: ctx.call, topic: args?.topic, builds: liveBuild });
       // `refused` is not an error: the base already holds the fact, which is the dedup working, and
       // the text hands back the id to confirm instead.
-      return text(captureLines(r, { prefix: 'kb_capture' }), r.state === 'invalid' || FAILED.has(r.state));
+      return text(withAccessNote(captureLines(r, { prefix: 'kb_capture' }), r, ctx.env), r.state === 'invalid' || FAILED.has(r.state));
     }
     case 'kb_confirm':
     case 'kb_dispute': {
@@ -388,7 +399,7 @@ async function callTool(name, args, ctx) {
         deployment: args?.deployment, note: args?.note, saw: args?.saw, method: args?.method,
         conditions: asList(args?.conditions), defect: args?.defect, fixedIn: args?.fixedIn,
       }, opened, { env: ctx.env, via: VIA, call: ctx.call, topic: args?.topic, builds: liveBuild });
-      return text(evidenceLines(verb, r), r.state === 'invalid' || FAILED.has(r.state));
+      return text(withAccessNote(evidenceLines(verb, r), r, ctx.env), r.state === 'invalid' || FAILED.has(r.state));
     }
     default:
       return null; // not a tool of ours -- the caller turns that into a JSON-RPC error
