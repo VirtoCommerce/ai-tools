@@ -323,12 +323,39 @@ export function queueDir(env = process.env) {
   return dir;
 }
 
+/**
+ * WOULD A PUSH GO NOW (VCST-6378) -- the ONE rule the push, the own flush, the server's timer, the
+ * Stop hook and `kb stat` all apply, so none of them starts work the push would only defer, and none
+ * of them warns about a queue that is waiting by design. Log lines and counters travel only with a
+ * change to the base (capture / confirm / dispute) or once a line is from an earlier day (UTC); a
+ * `session` line counts by its `lastAt`, the day it describes; a line with no date goes. In CI or with
+ * KB_LOG_DAILY=0 everything goes at once, as before.
+ */
+export const logsImmediate = (env = process.env) => Boolean(env.CI) || String(env.KB_LOG_DAILY ?? '').trim() === '0';
+const dayOfLine = (l) => String((l?.kind === 'session' && l.lastAt) || l?.at || '').slice(0, 10);
+export function linesWouldGo(lines, { env = process.env, now = Date.now() } = {}) {
+  const list = Array.isArray(lines) ? lines : [];
+  if (!list.length) return false;
+  if (logsImmediate(env)) return true;
+  const today = new Date(now).toISOString().slice(0, 10);
+  return list.some((l) => MUTATIONS.includes(l?.kind) || dayOfLine(l) < today);
+}
+
+/** How long another session's queue file must sit untouched before a push takes it. */
+export const QUEUE_IDLE_MS = 30 * 60 * 1000;
+
 /** Where every client before VCST-6378 kept the queue. */
 export const legacyQueueDir = () => join(tmpdir(), 'claude-kb-queue');
 
 const migrated = new Set();
 /** Line files: appended to, never rewritten, so two halves of one file are merged by concatenation. */
 const LINE_FILE = /\.(?:jsonl|ndjson)$/;
+/**
+ * The state files a queue directory holds, by name -- the only other files the drain moves. Anything
+ * else stays: a `*.released` file is a running old client's queue mid-flush, and moving it between its
+ * rename and its read would strand its lines under a name nobody reads (review of ai-tools#460).
+ */
+const STATE_FILE = /^(?:last-push\.json|\.last-flush|\.identity\.json|loop\.pruned|[\w-]+\.(?:reach\.json|reach\.sent|reach\.tried|meta\.json))$/;
 
 /**
  * Drain the pre-VCST-6378 queue directory into `dir`, once per process. Synchronous and silent: it
@@ -366,7 +393,7 @@ export function migrateLegacyQueue(dir, legacy = legacyQueueDir()) {
         if (aside !== from) renameSync(from, aside);
         appendFileSync(to, readFileSync(aside));
         unlinkSync(aside);
-      } else if (original === name && !existsSync(to)) {
+      } else if (original === name && STATE_FILE.test(name) && !existsSync(to)) {
         renameSync(from, to);
       }
     } catch { /* locked or vanished: the next process tries again */ }
@@ -758,7 +785,10 @@ export function claimDeniedNotice(env = process.env) {
  * and the `at` of its oldest line. Synchronous and read-only: `stat` reports, it never sweeps.
  */
 export function queueBacklog(env = process.env) {
-  const out = { files: 0, lines: 0, oldest: null };
+  // `due`: would a push take these lines now (`linesWouldGo`)? Only a due backlog that keeps waiting is
+  // a problem -- today's log lines wait for a change or for tomorrow by design (VCST-6378).
+  const out = { files: 0, lines: 0, oldest: null, due: false };
+  const all = [];
   let names = [];
   try { names = readdirSync(queueDir(env)); } catch { return out; }
   for (const name of names) {
@@ -770,12 +800,15 @@ export function queueBacklog(env = process.env) {
       if (!raw.trim()) continue;
       n += 1;
       try {
-        const at = JSON.parse(raw)?.at;
+        const line = JSON.parse(raw);
+        all.push(line);
+        const at = line?.at;
         if (typeof at === 'string' && (!out.oldest || at < out.oldest)) out.oldest = at;
       } catch { /* a torn line still counts toward depth */ }
     }
     if (n) { out.files += 1; out.lines += n; }
   }
+  out.due = linesWouldGo(all, { env });
   return out;
 }
 

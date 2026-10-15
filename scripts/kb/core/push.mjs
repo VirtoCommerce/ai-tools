@@ -43,7 +43,7 @@ import { flagDuplicateSessions } from './sync-base.mjs';
 import { gateQueue, loadSecrets } from './secret-gate.mjs';
 import {
   DISABLED_WHY, HELD_WHY, MUTATIONS, composeLine, isSynthetic, pushConfirmRequired, kbDisabled, log, metaTranscripts, orderQueue, queueDir, queuePath, readMeta,
-  readQueue, recordPush, releaseConsumed, runOf, sessionId, accessBlock, accessWhy, rateHold, tokenPrint,
+  readQueue, recordPush, releaseConsumed, runOf, sessionId, accessBlock, accessWhy, rateHold, tokenPrint, linesWouldGo, QUEUE_IDLE_MS,
 } from './queue.mjs';
 import {
   REACH_IDLE_MS, dropReach, idleReaches, lineWork, markSent, ownReachDue, reachLine, reachPath, readReach, sessionKeyOf, unsent,
@@ -57,7 +57,7 @@ import { stampCallersFromTranscripts } from './caller.mjs';
 export const RETENTION_DAYS = 90;
 
 /** How stale the last flush must be before an ordinary `kb` invocation opportunistically sweeps. */
-export const SWEEP_AFTER_MS = 30 * 60 * 1000;
+export const SWEEP_AFTER_MS = QUEUE_IDLE_MS;
 
 /**
  * How old this session's OLDEST unpublished line may get before an ordinary `kb` call publishes it.
@@ -334,11 +334,6 @@ const stampFile = (env) => join(queueDir(env), '.last-flush');
  * make every `kb` invocation retry the push for as long as the network is down, which is exactly
  * the hammering PLAN §7 rules out ("no in-session retry loop"). The cadence is the retry policy.
  */
-/**
- * Log lines go at once, not daily, where a deferred queue would be lost: CI (the container is thrown
- * away) or an operator who sets KB_LOG_DAILY=0 (VCST-6378).
- */
-export const logsImmediate = (env = process.env) => Boolean(env.CI) || String(env.KB_LOG_DAILY ?? '').trim() === '0';
 
 export async function shouldSweep({ env = process.env, now = () => new Date() } = {}) {
   try {
@@ -877,14 +872,10 @@ async function flushOnce({
   // lines and counters alone wait, on this machine, in the durable queue (`queueDir`). That holds for
   // another session's idle file and for a session's counters too. Never deferred: the operator's
   // `kb push`, a dry run, and CI (`CI` set, or KB_LOG_DAILY=0), where the queue dies with the container.
-  if (auto && !dryRun && !logsImmediate(env)) {
+  if (auto && !dryRun) {
     const real = loaded.flatMap((f) => (f.virtual ? [] : f.lines));
-    const changes = real.some((l) => MUTATIONS.includes(l.kind));
-    const today = now().toISOString().slice(0, 10);
-    // A harvested `session` line is written now but DESCRIBES a session that ended earlier: its `lastAt`
-    // is the day it belongs to, or yesterday's counters would wait for the day after tomorrow.
-    const earlierDay = real.some((l) => String((l.kind === 'session' && l.lastAt) || l.at || '').slice(0, 10) < today);
-    if (!changes && !earlierDay) {
+    // `linesWouldGo` (queue.mjs) is the one rule; a harvested `session` line counts by its `lastAt`.
+    if (!linesWouldGo(real, { env, now: now().getTime() })) {
       return {
         state: 'deferred',
         session,
@@ -1073,7 +1064,9 @@ export async function ownFlushDue({ env = process.env, now = () => new Date() } 
     if (!lines.length) return false;
     const oldest = lines.map((l) => Date.parse(l?.at ?? '')).filter((n) => Number.isFinite(n)).sort()[0];
     if (!Number.isFinite(oldest)) return true; // undatable lines are already anomalous — publish them
-    return now().getTime() - oldest > OWN_FLUSH_AFTER_MS;
+    // ...and only when the push would actually GO (VCST-6378): without this, a queue of today's log
+    // lines kept the server's 60 s timer and every CLI verb starting a push that only deferred, all day.
+    return now().getTime() - oldest > OWN_FLUSH_AFTER_MS && linesWouldGo(lines, { env, now: now().getTime() });
   } catch { return false; }
 }
 

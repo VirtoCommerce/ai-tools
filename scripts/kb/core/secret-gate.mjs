@@ -87,13 +87,29 @@ export const UI_PLACEHOLDER_EMAILS = Object.freeze(new Set(['johndoe@gmail.com']
 
 const EMAIL = /[A-Za-z0-9._%+*-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}/g;
 
+/**
+ * Shapes that contain an `@` and a dot and are not a mailbox (review of ai-tools#460): a retina asset
+ * (`hero@2x.png` -- the "TLD" is a file extension), a package or theme version (`vc-theme@2.31.0-alpha.beta`
+ * -- the "domain" starts with a digit), a code identifier (`foo@Component.Prototype` -- capitals in the
+ * domain), and a ROLE mailbox, which names a function and nobody's person (`noreply@`, `support@`,
+ * `git@github.com`). A first name on any domain, the company's own included, is still a person.
+ */
+const FILE_TLD = /\.(?:png|jpe?g|gif|webp|svg|avif|ico|bmp|js|mjs|ts|css|json|md|html?|xml|ya?ml|txt|map|woff2?)$/;
+const COMMON_TLD = new Set(['com', 'net', 'org', 'ru', 'io', 'co', 'uk', 'de', 'fr', 'nl', 'eu', 'us', 'me', 'dev', 'app', 'info', 'biz', 'ua', 'by', 'kz', 'pl']);
+const ROLE_LOCAL = /^(?:no-?reply|support|info|admin(?:istrator)?|sales|notifications?|mailer-daemon|postmaster|webmaster|git|hello|contact|help|team|billing|orders?|service)$/;
+
 /** Is this one address somebody's real mailbox, as far as a shape can tell? */
 export function isPersonalEmail(address) {
-  const a = String(address).toLowerCase().replace(/\.$/, '');
+  const raw = String(address).replace(/\.$/, '');
+  const a = raw.toLowerCase();
   const at = a.lastIndexOf('@');
   if (at < 1) return false;
   const local = a.slice(0, at);
   const domain = a.slice(at + 1);
+  // Capitals in the domain mark a code identifier -- unless it ends in a real TLD (`Jane.Doe@Gmail.com`).
+  const identifier = /[A-Z]/.test(raw.slice(at + 1)) && !COMMON_TLD.has(domain.split('.').pop());
+  if (identifier || /^\d/.test(domain) || FILE_TLD.test(domain) || /^\d+x$/.test(local)) return false;
+  if (ROLE_LOCAL.test(local)) return false;
   // `emails:"*@gmail.com"` is a search pattern, not an address: a wildcard names nobody.
   if (local.includes('*')) return false;
   if (UI_PLACEHOLDER_EMAILS.has(a)) return false;
@@ -239,7 +255,10 @@ export function secretValuesFromEnv(env = process.env) {
   for (const [k, raw] of Object.entries(env)) {
     if (!SECRET_NAME.test(k) || POINTER_KEY.test(k) || typeof raw !== 'string') continue;
     const v = raw.trim();
-    if (v.length >= 8 && !/\s/.test(v) && !/^[A-Za-z]+$/.test(v) && !looksLikePath(v)) out.add(v);
+    // A letter AND a digit or symbol, no whitespace, no `/`: `86400000` (a TTL), `2024-10-01` (a version
+    // date) and `connect/token` (an endpoint) under a secret-shaped key are not secrets, and treating
+    // them as such would refuse every capture that mentions them (review of ai-tools#460).
+    if (v.length >= 8 && !/\s/.test(v) && !v.includes('/') && /\p{L}/u.test(v) && /[^\p{L}]/u.test(v) && !looksLikePath(v)) out.add(v);
   }
   return out;
 }

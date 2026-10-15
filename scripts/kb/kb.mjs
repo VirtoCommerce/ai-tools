@@ -176,7 +176,9 @@ async function main(argv) {
       out(`backlog   ${r.backlog.lines} line(s) in ${r.backlog.files} queue file(s)${age === null ? '' : `, oldest ${age} min old`}`);
       // A queue that should have drained in minutes and has not in hours is lines nobody else has seen
       // (VCST-6378): said loudly, because this is the only copy of them.
-      if (age !== null && age >= STALE_QUEUE_MIN) out(`  WARNING the oldest queued line is ${Math.round(age / 60)} h old — these writes have not reached the base; see "last push" below`);
+      // Only a backlog a push WOULD take (`due`) is a warning: today's log lines alone wait by design.
+      if (age !== null && age >= STALE_QUEUE_MIN && r.backlog.due) out(`  WARNING the oldest queued line is ${Math.round(age / 60)} h old and due to go — these writes have not reached the base; see "last push" below`);
+      else if (r.backlog.lines && !r.backlog.due) out('  (log lines only: they go with the next change to the base, or with the first push of tomorrow)');
     }
     const p = r.push ?? {};
     if (p.rateLimitedUntil && Date.parse(p.rateLimitedUntil) > Date.now()) out(`  RATE LIMITED — GitHub asked for no push before ${p.rateLimitedUntil}; the queue waits`);

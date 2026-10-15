@@ -52,7 +52,9 @@ export function normalizeScope(scope) {
       ? item
       : item && typeof item === 'object' ? `${item.axis}=${item.value}` : '';
     const trimmed = String(text).trim().toLowerCase();
-    if (trimmed && trimmed.includes('=')) out.add(trimmed);
+    // `surface = rest` is `surface=rest`: spaces around the `=` must not make a second spelling (review of ai-tools#460).
+    const eq = trimmed.indexOf('=');
+    if (eq > 0) out.add(`${trimmed.slice(0, eq).trim()}=${trimmed.slice(eq + 1).trim()}`);
   }
   return [...out].sort();
 }

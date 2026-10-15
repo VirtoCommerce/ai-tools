@@ -1028,7 +1028,8 @@ async function refuseAtDoor(result, input, { env, via, call, topic, repair = {},
     await log({
       kind: 'capture-invalid', why: 'private-data', private: result.private, ...repair,
       ...(await precedingAsk({ env, input })),
-      ...context({ via, call, topic }),
+      // No `topic`: it may be the very field that carried the value.
+      ...context({ via, call, topic: null }),
     }, { env });
     return result;
   }
@@ -1152,11 +1153,14 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   // logs kinds and shapes, never a rejected value.
   if (missing.length) return refuseAtDoor(doorHints({ state: 'invalid', why: `capture needs: ${missing.join(', ')}`, missing }, input), input, door);
   // NOTHING PRIVATE GOES PUBLIC (VCST-6378): checked first, so the writer fixes it while still in the call.
-  // Anchors are scanned as they will be STORED: `normalizeAnchor` already strips a scheme and host, so
-  // `https://<stand>/cart` publishes as `/cart` and must not be refused for the host it no longer has.
+  // Anchors are scanned AS STORED -- `canonicalAnchor`, which keeps a query string and the case: an
+  // address in `?email=` or a token in a path segment is published with it, so it is refused here.
+  // A scheme+host is removed by that same step, so `https://<stand>/cart` is not refused for a host it
+  // no longer carries. `topic` is scanned too: it is written into the public log line.
   const exposed = privateData({
     ...input,
-    anchors: input.anchors.map((a) => normalizeAnchor(typeof a === 'string' ? a : a?.coordinate ?? '')),
+    anchors: input.anchors.map((a) => canonicalAnchor(typeof a === 'string' ? a : a?.coordinate ?? '')),
+    topic,
   }, env);
   if (exposed) return refuseAtDoor(exposed, input, door);
   // HOW, then WHERE (VCST-6186): a source fact names a code version, not a stand, so the stand rule
@@ -1211,7 +1215,8 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   // active entries carried one. A known alias is accepted AS WRITTEN: readers map it (`surfacesOf`), and
   // the dedup compares scopes as stored, so rewriting it here would stop a recapture matching its entry.
   const scope = normalizeScope(input.scope);
-  const unknownSurface = scope.map((s) => /^surface=(.+)$/.exec(s)?.[1]).filter((v) => v && !SURFACE_SPELLINGS[v]);
+  // `Object.hasOwn`: `surface=constructor` must not pass on the prototype (review of ai-tools#460).
+  const unknownSurface = scope.map((s) => /^surface=(.+)$/.exec(s)?.[1]).filter((v) => v && !Object.hasOwn(SURFACE_SPELLINGS, v));
   if (unknownSurface.length) {
     return refuseAtDoor(doorHints({
       state: 'invalid',
@@ -1459,9 +1464,9 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
   if (kind === 'dispute' && !String(input.saw ?? '').trim()) return { state: 'invalid', why: 'dispute needs --saw "<what you saw instead>"' };
   // The evidence note is where a personal address actually reached the base (VCST-6378): it is free
   // prose on a public entry. Refused here, logged as a code and kinds only.
-  const exposed = privateData({ note: input.note, saw: input.saw, conditions: input.conditions }, env);
+  const exposed = privateData({ note: input.note, saw: input.saw, conditions: input.conditions, topic }, env);
   if (exposed) {
-    await log({ kind: `${kind}-invalid`, id: row.id, why: 'private-data', private: exposed.private, ...context({ via, call, topic }) }, { env });
+    await log({ kind: `${kind}-invalid`, id: row.id, why: 'private-data', private: exposed.private, ...context({ via, call, topic: null }) }, { env });
     return exposed;
   }
   const conditions = normalizeConditions(input.conditions);

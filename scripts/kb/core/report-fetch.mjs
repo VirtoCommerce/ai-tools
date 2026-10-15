@@ -51,6 +51,12 @@ export function reportCacheDir(env = process.env) {
   return env.KB_REPORT_CACHE_DIR || join(tmpdir(), 'claude-kb-report-cache');
 }
 
+/** A text's git blob sha: sha1("blob <bytes>\0<text>"), what the tree lists for the file. */
+const blobSha = (text) => {
+  const body = Buffer.from(String(text), 'utf8');
+  return createHash('sha1').update(Buffer.concat([Buffer.from(`blob ${body.length}\0`), body])).digest('hex');
+};
+
 const cacheKey = (url) => createHash('sha256').update(String(url)).digest('hex').slice(0, 16);
 
 /** The `YYYY-MM-DD` dates inside the window, inclusive of today — what `dayOf()` is compared with. */
@@ -249,7 +255,10 @@ export async function collect({
       }
       const got = await getText(url, net);
       if (!got.ok) { texts[i] = { rel, failure: got.detail }; continue; }
-      if (useCache) await cacheWrite(cacheDir, url, { text: got.text, ...(sha ? { sha } : {}) });
+      // Cached under its sha only when the text IS that blob: raw.githubusercontent serves a branch path
+      // from a CDN that lags minutes behind, and a stale text filed under the fresh sha would be served
+      // from the cache forever (review of ai-tools#460). A mismatch is used once and not cached.
+      if (useCache && (!sha || blobSha(got.text) === sha)) await cacheWrite(cacheDir, url, { text: got.text, ...(sha ? { sha } : {}) });
       texts[i] = { rel, text: got.text };
     }
   };

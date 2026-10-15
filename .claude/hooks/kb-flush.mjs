@@ -34,7 +34,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { REACH_IDLE_MS, advanceReach, idleReaches, markTried, ownReachDue } from '../../scripts/kb/core/reach.mjs';
 import {
-  accessBlock, accessWhy, claimDeniedNotice, rateHold, hasSessionId, hookEnv, isSynthetic, kbDisabled, pushConfirmRequired, queueDir, runOf, sessionId,
+  accessBlock, accessWhy, claimDeniedNotice, rateHold, linesWouldGo, logsImmediate, QUEUE_IDLE_MS, hasSessionId, hookEnv, isSynthetic, kbDisabled, pushConfirmRequired, queueDir, runOf, sessionId,
 } from '../../scripts/kb/core/queue.mjs';
 import { cachedWho } from '../../scripts/kb/core/who.mjs';
 import { writeToken } from '../../scripts/kb/core/token.mjs';
@@ -50,25 +50,26 @@ function queueHasWork(dir) {
 }
 
 /**
- * Would a push go now (VCST-6378)? Log lines travel only with a change to the base or once a day, so a
- * queue of today's asks alone starts no process -- the push would only answer `deferred`. Reads the
- * queue files' text; they are small, and this runs once per turn. In CI everything goes, as before.
+ * Would a push go now (VCST-6378)? The same rule the push applies (`queue.mjs` `linesWouldGo`), over
+ * what the push would TAKE: this session's queue file, another session's only once it has sat idle for
+ * QUEUE_IDLE_MS, and idle sessions' counter states by the day they last worked. Otherwise a turn that
+ * only asked starts a process that answers `deferred`.
  */
-const CHANGE = /"kind":"(?:capture|confirm|dispute)"/;
-function pushWouldGo(dir, env) {
-  if (env.CI || String(env.KB_LOG_DAILY ?? '').trim() === '0') return true;
-  const today = new Date().toISOString().slice(0, 10);
+function pushWouldGo(dir, env, session, staleStates) {
+  const now = Date.now();
+  const today = new Date(now).toISOString().slice(0, 10);
+  if (staleStates.some((s) => String(s.lastAt ?? '').slice(0, 10) < today || logsImmediate(env))) return true;
   try {
     for (const name of readdirSync(dir)) {
       if (!name.endsWith('.jsonl')) continue;
-      const text = readFileSync(join(dir, name), 'utf8');
-      if (CHANGE.test(text)) return true;
-      for (const m of text.matchAll(/"at":"(\d{4}-\d{2}-\d{2})/g)) if (m[1] < today) return true;
-    }
-    // An idle session's counters live in a `.reach.json` state file, not in the queue: one last touched
-    // on an earlier day is due too, or the counters of a session that never asked are never published.
-    for (const name of readdirSync(dir)) {
-      if (name.endsWith('.reach.json') && new Date(statSync(join(dir, name)).mtimeMs).toISOString().slice(0, 10) < today) return true;
+      const path = join(dir, name);
+      if (name !== `${session}.jsonl` && now - statSync(path).mtimeMs < QUEUE_IDLE_MS) continue;
+      const lines = [];
+      for (const raw of readFileSync(path, 'utf8').split('\n')) {
+        if (!raw.trim()) continue;
+        try { lines.push(JSON.parse(raw)); } catch { lines.push({}); } // a torn line has no date: it goes
+      }
+      if (linesWouldGo(lines, { env, now })) return true;
     }
   } catch { /* no queue directory: nothing to send */ }
   return false;
@@ -134,7 +135,8 @@ function main() {
   // A SESSION THAT NEVER ASKED STILL HAS TO REACH THE BASE, which is exactly the case the old
   // early return dropped: no queue work meant no push, so the sessions worth knowing about were the
   // ones that could never report themselves. A finished session's counters are queue work now.
-  const stale = idleReaches(dir, { session, idleMs: REACH_IDLE_MS }).length > 0;
+  const staleStates = idleReaches(dir, { session, idleMs: REACH_IDLE_MS });
+  const stale = staleStates.length > 0;
   // AND THIS SESSION'S OWN COUNTERS, when it has nothing else to send (VCST-6091): at once the first
   // time, then at most every `OWN_REACH_EVERY_MS`. Without it a session that never asked reached the
   // base only when a later session on this machine happened to sweep it — days later, or never.
@@ -152,7 +154,7 @@ function main() {
   const mine = due && Boolean(writeToken(env).token);
   if (!queueHasWork(dir) && !stale && !mine) return;
   // Only log lines from today, or counters alone: they wait for a change or for tomorrow (VCST-6378).
-  if (!pushWouldGo(dir, process.env)) return;
+  if (!pushWouldGo(dir, env, session, staleStates)) return;
   // KB_PUSH_CONFIRM=1: a detached child has nobody to ask, so it would only hold. Not spawned.
   if (pushConfirmRequired(process.env)) return;
   // THIS TOKEN WAS REFUSED and the refusal still holds (VCST-6378): the push would only say so again,

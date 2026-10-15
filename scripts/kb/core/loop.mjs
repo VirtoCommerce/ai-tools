@@ -103,10 +103,12 @@ export function pointersByAsk(records) {
       if (ask && ask.state === 'ambiguous' && lastWord(pointed.get(target)).verdict === 'open') {
         const listed = wrote === 'confirm' && r.id && Array.isArray(ask.shown)
           && ask.shown.some((s) => String(s).toUpperCase() === String(r.id).toUpperCase());
+        // A confirm of an entry the list did NOT show says nothing about this list -- the agent may have
+        // found it through another ask on the same topic -- so only a listed confirm or a capture closes it.
         const closing = listed
           ? { kind: 'show', state: 'answer', id: String(r.id), at: r.at, by: wrote, ...(r.agent ? { agent: r.agent } : {}) }
-          : { kind: 'none', at: r.at, by: wrote, ...(r.agent ? { agent: r.agent } : {}) };
-        pointed.set(target, [...(pointed.get(target) ?? []), closing]);
+          : wrote === 'capture' ? { kind: 'none', at: r.at, by: wrote, ...(r.agent ? { agent: r.agent } : {}) } : null;
+        if (closing) pointed.set(target, [...(pointed.get(target) ?? []), closing]);
       }
       continue;
     }
