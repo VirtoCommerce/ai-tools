@@ -415,8 +415,20 @@ export function migrateLegacyQueue(dir, legacy = legacyQueueDir()) {
         if (aside !== from) renameSync(from, aside);
         appendFileSync(to, readFileSync(aside));
         unlinkSync(aside);
-      } else if (original === name && STATE_FILE.test(name) && !existsSync(to)) {
-        renameSync(from, to);
+      } else if (original === name && STATE_FILE.test(name)) {
+        if (!existsSync(to)) renameSync(from, to);
+        // The same session already has a NEW copy (it reconnected after the pull; round 5): the sidecar's
+        // asks and transcripts are merged, so pre-restart `after` pointers still pair; any other state
+        // file is superseded by the new one -- reach counters are re-read from the transcript -- and the
+        // stale copy is removed rather than left in %TEMP% for ever.
+        else if (name.endsWith('.meta.json')) {
+          const a = JSON.parse(readFileSync(from, 'utf8'));
+          const b = JSON.parse(readFileSync(to, 'utf8'));
+          const asks = new Map([...metaAsks(a), ...metaAsks(b)].map((x) => [x.at, x]));
+          const transcripts = [...new Set([...metaTranscripts(a), ...metaTranscripts(b)])];
+          writeFileSync(to, JSON.stringify({ ...a, ...b, asks: [...asks.values()].sort((x, y) => x.at.localeCompare(y.at)).slice(-ASK_MEMORY), transcripts: transcripts.slice(-TRANSCRIPT_MEMORY) }), 'utf8');
+          unlinkSync(from);
+        } else unlinkSync(from);
       }
     } catch { /* locked or vanished: the next process tries again */ }
   }
