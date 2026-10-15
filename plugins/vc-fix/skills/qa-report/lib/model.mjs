@@ -19,7 +19,7 @@ const TONE = {
   BLOCKED: "blocked",
 };
 const ICON = { pass: "✅", notes: "⚠️", fail: "❌", blocked: "⛔" };
-const EXTRA_KEYS = ["title", "lede", "rows", "areas", "notTested", "context", "shots"];
+const EXTRA_KEYS = ["title", "lede", "rows", "areas", "questions", "notTested", "context", "shots"];
 
 export function readJson(p) {
   try { return JSON.parse(readFileSync(p, "utf8").replace(/^\uFEFF/, "")); }
@@ -50,7 +50,7 @@ export function buildLine(build) {
   return parts.join(" · ") || "unknown";
 }
 
-const empty = () => ({ rows: [], areas: [], notTested: [], context: [], shots: [], lede: "", issues: [], failures: null, beforeAfter: [], notFiled: [] });
+const empty = () => ({ rows: [], areas: [], questions: [], notTested: [], context: [], shots: [], lede: "", issues: [], failures: null, beforeAfter: [], notFiled: [] });
 
 export function fromQaTest(path) {
   const s = readJson(path);
@@ -237,7 +237,7 @@ export function applyExtras(m, extra = {}, sets = {}) {
     });
     return extra[k];
   };
-  const out = { ...m, rows: list("rows"), areas: list("areas"), notTested: list("notTested"), context: list("context"),
+  const out = { ...m, rows: list("rows"), areas: list("areas"), questions: list("questions"), notTested: list("notTested"), context: list("context"),
     shots: [...m.shots, ...(extra.shots ?? [])], lines: { ...m.lines } };
   if (extra.title) out.title = String(extra.title);
   if (extra.lede) out.lede = String(extra.lede);
@@ -269,7 +269,7 @@ export function templateData(m, dialect = "markdown") {
     ENV: compact(m.env), BUILD: compact(m.build), DATE: m.date ?? "",
     TOTAL: m.counts.total, PASSED: m.counts.passed, FAILED: m.counts.failed, BLOCKED: m.counts.blocked, NOT_RUN: m.counts.notRun,
     ...m.lines,
-    AREAS: m.areas ?? [], BUGS: m.bugs, NOT_FILED: m.notFiled, BEFORE_AFTER: m.beforeAfter, ISSUES: m.issues, FAILURES: m.failures ?? [],
+    AREAS: m.areas ?? [], QUESTIONS: m.questions ?? [], BUGS: m.bugs, NOT_FILED: m.notFiled, BEFORE_AFTER: m.beforeAfter, ISSUES: m.issues, FAILURES: m.failures ?? [],
     SHOTS: dialect === "wiki" ? m.shots.map(s => basename(s)) : [],
     PAGE_URL: m.pageUrl ?? null,
   };

@@ -2,7 +2,7 @@
 kind: smoke
 budget: 900
 lede_max: 200
-trim: "[FAILURES, BUGS]"
+trim: "[QUESTIONS, FAILURES, BUGS]"
 ---
 ## {{ICON}} Smoke {{VERDICT_LABEL}} — {{RUN_ID}}
 {{LEDE}}
@@ -22,7 +22,7 @@ trim: "[FAILURES, BUGS]"
 | {{.}} | | |
 {{/FAILURES_MORE}}
 
-### Bugs filed
+### Bugs
 | Ticket | What is wrong |
 |---|---|
 {{#BUGS}}
@@ -34,6 +34,16 @@ trim: "[FAILURES, BUGS]"
 {{^BUGS}}
 | None | |
 {{/BUGS}}
+{{?QUESTIONS}}
+### Open questions
+{{/QUESTIONS}}
+{{#QUESTIONS}}
+- {{.}}
+{{/QUESTIONS}}
+{{#QUESTIONS_MORE}}
+- {{.}}
+{{/QUESTIONS_MORE}}
+
 {{#PAGE_URL}}
 **Report** [open the report page]({{.}})
 {{/PAGE_URL}}

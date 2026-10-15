@@ -2,7 +2,7 @@
 kind: regression
 budget: 1500
 lede_max: 280
-trim: "[FAILURES, BUGS]"
+trim: "[QUESTIONS, FAILURES, BUGS]"
 ---
 ## {{ICON}} Regression {{VERDICT_LABEL}} — {{RUN_ID}}
 {{LEDE}}
@@ -23,7 +23,7 @@ trim: "[FAILURES, BUGS]"
 | None | | |
 {{/FAILURES}}
 
-### Bugs filed
+### Bugs
 | Ticket | What is wrong |
 |---|---|
 {{#BUGS}}
@@ -35,6 +35,16 @@ trim: "[FAILURES, BUGS]"
 {{^BUGS}}
 | None | |
 {{/BUGS}}
+{{?QUESTIONS}}
+### Open questions
+{{/QUESTIONS}}
+{{#QUESTIONS}}
+- {{.}}
+{{/QUESTIONS}}
+{{#QUESTIONS_MORE}}
+- {{.}}
+{{/QUESTIONS_MORE}}
+
 {{#PAGE_URL}}
 **Report** [open the report page]({{.}})
 {{/PAGE_URL}}

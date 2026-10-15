@@ -86,11 +86,13 @@ The one source for whether a report page is published (moved here from `/qa-veri
 | `title` | string — page title |
 | `lede` | string — the same slot as `--lede`; the flag wins |
 | `rows` | array of `{ id, text, result, evidence }` — the page's case table |
+| `areas` | array of `{ area, cases, result }` — the `test` comment's "What was tested" table. Absent ⇒ one row from the checklist counts |
+| `questions` | array of strings — the "Open questions" section. A question is what needs a DECISION, not a defect: a defect goes in Findings with a ticket. Absent ⇒ no section at all |
 | `notTested` | array of `{ item, reason }` |
 | `context` | array of `{ label, value }` — page-only context lines |
 | `shots` | array of image paths, appended to the model's own |
 
-An entry that is not an object, in `rows`, `notTested` or `context`, is exit 2 naming the key and shape.
+An entry that is not an object, in `rows`, `areas`, `notTested` or `context`, is exit 2 naming the key and shape. `questions` is a plain string array.
 
 `--set KEY=VALUE` overrides one template line (e.g. `BUILD`) and is for a fact the record lacks.
 

@@ -2,7 +2,7 @@
 kind: test
 budget: 1500
 lede_max: 240
-trim: "[BUGS, NOT_FILED, AREAS]"
+trim: "[QUESTIONS, BUGS, NOT_FILED, AREAS]"
 ---
 ## {{ICON}} QA {{VERDICT_LABEL}} — {{TICKET}}
 {{LEDE}}
@@ -58,6 +58,16 @@ trim: "[BUGS, NOT_FILED, AREAS]"
 {{^NOT_FILED}}
 - None
 {{/NOT_FILED}}
+
+{{?QUESTIONS}}
+### Open questions
+{{/QUESTIONS}}
+{{#QUESTIONS}}
+- {{.}}
+{{/QUESTIONS}}
+{{#QUESTIONS_MORE}}
+- {{.}}
+{{/QUESTIONS_MORE}}
 
 **Release gate** {{RELEASE_GATE}} · **Release note** {{RELEASE_NOTE}}
 {{#PAGE_URL}}

@@ -2,7 +2,7 @@
 kind: fix
 budget: 1600
 lede_max: 280
-trim: "[BEFORE_AFTER, ISSUES, BUGS]"
+trim: "[QUESTIONS, BEFORE_AFTER, ISSUES, BUGS]"
 ---
 ## {{ICON}} Fix {{VERDICT_LABEL}} — {{TICKET}}
 {{LEDE}}
@@ -41,16 +41,28 @@ No before/after pair recorded.
 | Nothing found nearby | | |
 {{/ISSUES}}
 
-**Bugs filed**
+### Bugs filed
+| Ticket | What is wrong |
+|---|---|
 {{#BUGS}}
-- {{label}}
+| {{key}} | {{what}} |
 {{/BUGS}}
 {{#BUGS_MORE}}
-- {{.}}
+| {{.}} | |
 {{/BUGS_MORE}}
 {{^BUGS}}
-- None
+| None | |
 {{/BUGS}}
+{{?QUESTIONS}}
+### Open questions
+{{/QUESTIONS}}
+{{#QUESTIONS}}
+- {{.}}
+{{/QUESTIONS}}
+{{#QUESTIONS_MORE}}
+- {{.}}
+{{/QUESTIONS_MORE}}
+
 {{#PAGE_URL}}
 **Report** [open the before/after page]({{.}})
 {{/PAGE_URL}}
