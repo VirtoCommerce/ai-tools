@@ -68,6 +68,9 @@ export const MIN_SECRET_LENGTH = 6;
  * Token shapes, for values that are not in our env layer at all -- a token pasted into a question,
  * a bearer header copied out of a HAR. Deliberately NOT the vendor's `sha1+ hash` row: see above.
  */
+/** Header, cookie and parameter names whose VALUE is a credential (the HAR / Postman pair rule). */
+const CREDENTIAL_NAME = /^(?:authorization|proxy-authorization|cookie|set-cookie|\.AspNetCore\.[\w.-]+|\.ASPXAUTH|x-api-key|api[_-]?key|x-auth-token|x-access-token|x-functions-key|ocp-apim-subscription-key|password|passwd|pwd|client[_-]?secret|secret|access[_-]?token|refresh[_-]?token|id[_-]?token|token)$/i;
+
 export const TOKEN_SHAPES = Object.freeze([
   ['github-pat', /\b(?:gh[pousr]_|github_pat_)[A-Za-z0-9_]{20,}\b/],
   ['jwt', /\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/],
@@ -87,8 +90,16 @@ export const TOKEN_SHAPES = Object.freeze([
   // member, the platform's own auth cookie, a token header that is not `Authorization`, and an
   // `Authorization` header with no scheme. A JSON value needs a digit, so `"password": "required"` passes.
   ['json-credential', /["'](?:client_?secret|password|passwd|pwd|secret|api[_-]?key|access_?token|refresh_?token|id_?token|auth_?token)["']\s*:\s*["'](?![{<@*])(?=[^"']*\d)[^"'\s]{8,}["']/i],
-  // A HAR holds headers, cookies, query and form params as `{"name": …, "value": …}` objects (retest 3).
-  ['json-credential', /["']name["']\s*:\s*["'](?:authorization|cookie|set-cookie|\.AspNetCore\.[\w.-]+|x-api-key|api[_-]?key|x-auth-token|x-access-token|password|passwd|pwd|client_?secret|secret|access_?token|refresh_?token|id_?token|token)["']\s*,\s*["']value["']\s*:\s*["'](?![{<@*])[^"']{8,}["']/i],
+  // A HAR holds headers, cookies, query and form params as `{"name": …, "value": …}` objects (retest 3), a
+  // Postman export as `{"key": …, "value": …, "enabled": …}` (retest 4) -- in any member order, with other
+  // members between. Read per object; a placeholder value (`Bearer {{TOKEN}}`, `<token>`, `@td(…)`, a
+  // mask) or one with no digit (`required`, an App Insights cookie) is not a credential.
+  ['json-credential', { test: (s) => [...String(s).replace(/\\u0022/gi, '"').matchAll(/\{[^{}]*\}/g)].some(([o]) => {
+    const name = /["'](?:name|key)["']\s*:\s*["']([^"']+)["']/i.exec(o)?.[1]?.trim();
+    const value = /["']value["']\s*:\s*"((?:[^"\\]|\\.)*)"/i.exec(o)?.[1] ?? /["']value["']\s*:\s*'([^']*)'/i.exec(o)?.[1];
+    return Boolean(name && value && CREDENTIAL_NAME.test(name) && value.length >= 8 && /\d/.test(value)
+      && !/\{\{|<[^>]*>|@td\(|\*{3}|redacted/i.test(value));
+  }) }],
   ['auth-cookie', /\.AspNetCore\.(?:Identity\.Application|Cookies|Session|Antiforgery\.[A-Za-z0-9_-]+)=[A-Za-z0-9_-]{20,}/],
   ['auth-header', /\b(?:x-auth-token|x-access-token|x-csrf-token|x-amz-security-token|x-goog-api-key)\s*:\s*["']?(?![{<@])[A-Za-z0-9._~+/=-]{16,}/i],
   ['bearer', /\bAuthorization\s*:\s*["']?(?!(?:Bearer|Basic|Token|Digest|Negotiate)\b)(?![{<@])(?=[A-Za-z0-9._~+/=-]*\d)[A-Za-z0-9._~+/=-]{20,}/i],
@@ -424,17 +435,31 @@ export function publishProblems(fields, { secrets, values, hosts = new Set() } =
     // A path on the writer's machine names the writer (`C:\Users\<name>`, `OneDrive - <Company>`): refused
     // at the door in every published field (retest 3). Door only -- at push, a log line's `why` is
     // rewritten instead (`toLogLine`), so the backstop does not drop whole lines for it.
-    if (field !== 'anchors' && strings.some((s) => LOCAL_PATH.test(s))) kinds.push('local-path');
+    if (field !== 'anchors' && strings.some(hasPersonalPath)) kinds.push('local-path');
     if (kinds.length) out.push({ field, kinds });
   }
   return out;
 }
 
 /**
- * A path on a person's machine: a drive path, a UNC share, a `file://` URL, a home or user folder. A
- * system install folder (`C:/Program Files/Git`, as the MSYS rewrite prints it) names nobody and stays prose.
+ * A path that NAMES A PERSON OR AN EMPLOYER: a user profile folder, OneDrive, a WSL or UNC share, a
+ * `file://` URL, a macOS user or a Linux home. Narrower than "any local path" on purpose (retest 4): a
+ * case-blind `/users/` refused the platform's own `/users/{id}/lock` route, and `D:\home\site\wwwroot`
+ * or `C:\inetpub` are where the product is hosted -- facts, not people. Separators may come doubled,
+ * as a path pasted out of JSON does (`C:\\Users\\…`).
  */
-export const LOCAL_PATH = /(?:^|[^\w/])[A-Za-z]:[\\/](?!Program Files|Windows[\\/]|ProgramData)[^\s\\/]|\\\\[\w.-]+\\[\w$.-]|file:\/\/\/|(?:^|[\s'"(=:])\/(?:[a-z]\/)?(?:home|Users|root)\/[^\s/]+|OneDrive - /i;
+export const PERSONAL_PATHS = Object.freeze([
+  /\b[A-Za-z]:(?:[\\/]+|(?=users\b))(?:Users|Documents and Settings)[\\/]+[^\\/\s'"]/i,
+  /OneDrive\s*-\s*\S/i,
+  /\\\\+(?:wsl\$|wsl\.localhost)\\+/i,
+  /(?:^|[^\\\w])\\\\+[\w.-]+\\+[\w$.-]+\\+/,
+  /file:\/\//i,
+  /(?:^|[\s'"(=:])\/(?:mnt\/)?[a-z]\/Users\/[^/\s]/i,
+  /(?:^|[\s'"(=:])\/(?:Users|Volumes)\/[^/\s]+\//,
+  /(?:^|[\s'"(=:])\/var\/folders\//,
+  /(?:^|[\s'"(=:])\/home\/(?!site\/)[a-z_][\w.-]*\/[^/\s]+\/?/,
+]);
+export const hasPersonalPath = (s) => PERSONAL_PATHS.some((re) => re.test(String(s)));
 
 /** One refusal sentence for `publishProblems`' result -- what was found where, and what to write instead. */
 export function publishRefusal(problems) {

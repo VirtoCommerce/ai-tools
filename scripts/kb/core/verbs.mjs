@@ -23,7 +23,7 @@ import { anchorProblems, anchorShape, isSingleSegmentPath, namespaceRoots, neigh
 import { doorHints } from './door-hints.mjs';
 import { clientSha } from './build.mjs';
 import { canonicalAnchor, undoMsysRewrite } from './anchors.mjs';
-import { loadSecrets, publishProblems, publishRefusal } from './secret-gate.mjs';
+import { hasPersonalPath, loadSecrets, publishProblems, publishRefusal } from './secret-gate.mjs';
 import { claimKey, findDuplicate, identityKey, refusalMessage, subjectTakenMessage } from './identity.mjs';
 import { amendmentsOf, attestsCurrentClaim, buildIndex, buildPath, buildRow, claimHash, countEvidence, distinctDisputes, entryPath, isResolved, supportOf } from './index-build.mjs';
 import { SURFACES, SURFACE_SPELLINGS, loadIndex, loadManifest, normalizeScope, retrievable } from './index-load.mjs';
@@ -1829,8 +1829,11 @@ export function toLogLine(line) {
   }
   // A LOCAL PATH NEVER GOES PUBLIC (retest of ai-tools#460): a `no-base` line says `no kb.json at
   // C:\Users\<name>\...`, and an fs error repeats the path. The reason stays; the path is replaced.
-  if (typeof rest.why === 'string') return { ...rest, why: withoutLocalPaths(rest.why) };
-  return rest;
+  const out = typeof rest.why === 'string' ? { ...rest, why: withoutLocalPaths(rest.why) } : rest;
+  // `ask` has no door, so a question or topic quoting a file on the writer's machine is rewritten here
+  // (retest 4) -- only when it names a person, since the question is otherwise published verbatim.
+  for (const k of ['q', 'topic']) if (typeof out[k] === 'string' && hasPersonalPath(out[k])) out[k] = withoutLocalPaths(out[k]);
+  return out;
 }
 
 /** Drive paths, UNC paths, `file://` URLs and home-rooted POSIX paths, each replaced by `<local path>`. */
@@ -1842,7 +1845,9 @@ export function withoutLocalPaths(text) {
   const swap = (lead = '') => (m, ...g) => `${typeof g[0] === 'string' && lead ? g[0] : ''}<local path>${/\s+$/.exec(m)?.[0] ?? ''}`;
   return String(text)
     .replace(new RegExp(String.raw`file:\/\/` + tail, 'gi'), swap())
-    .replace(new RegExp(String.raw`(?:\b[A-Za-z]:|\\\\[^\\\s]+)[\\/]?` + tail, 'g'), swap())
+    // A separator is required after the drive (retest 4: `Plan B: retry` lost its tail), except before
+    // `Users`, the drive-relative profile form.
+    .replace(new RegExp(String.raw`(?:\b[A-Za-z]:(?:[\\/]|(?=Users\b))|\\\\[^\\\s]+[\\/])` + tail, 'g'), swap())
     .replace(new RegExp(String.raw`(^|[\s'"(=:])(?:~|\/(?:[a-z]\/)?(?:home|Users|root|tmp|private|mnt|opt|var\/folders|Volumes|workspaces?))\/` + tail, 'g'), swap(true));
 }
 
