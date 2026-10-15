@@ -445,10 +445,13 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
  * the index's, so a catalog change anywhere shifts which products a caller gets. `realOnly` drops
  * other seeders' AGENT-TEST-* fixtures (a code sort ranks them first, and their owners tear them down)
  * and inactive products — use it whenever the product becomes a line someone will reorder.
+ * `withImages` adds `ItemAssets` to the projection so each product carries `imgSrc` (its primary image
+ * URL) — `ItemInfo` alone omits it (KB-3F1DBB6E); without the flag `imgSrc` is null. Callers that write
+ * order lines set `imageUrl` from it.
  */
-export async function discoverCatalogProducts(api, count = 3, { catalogId = null, searchPhrase = '', sort = null, realOnly = false } = {}) {
+export async function discoverCatalogProducts(api, count = 3, { catalogId = null, searchPhrase = '', sort = null, realOnly = false, withImages = false } = {}) {
   if (DRY_RUN || count <= 0) return [];
-  const body = { take: Math.max(count * (realOnly ? 4 : 2), count), responseGroup: 'ItemInfo', searchPhrase };
+  const body = { take: Math.max(count * (realOnly ? 4 : 2), count), responseGroup: withImages ? 'ItemInfo,ItemAssets' : 'ItemInfo', searchPhrase };
   if (catalogId) body.catalogId = catalogId;
   if (sort) body.sort = sort;
   let res;
@@ -459,7 +462,8 @@ export async function discoverCatalogProducts(api, count = 3, { catalogId = null
     .filter((p) => p && p.id && (p.code || p.sku))
     .filter((p) => !realOnly || (p.isActive !== false && !/^AGENT-TEST/i.test(p.code || p.sku)))
     .map((p) => ({ id: p.id, sku: p.code || p.sku, name: p.name || p.code || p.sku, catalogId: p.catalogId,
-      minQuantity: p.minQuantity ?? null, maxQuantity: p.maxQuantity ?? null, trackInventory: p.trackInventory ?? null }));
+      minQuantity: p.minQuantity ?? null, maxQuantity: p.maxQuantity ?? null, trackInventory: p.trackInventory ?? null,
+      imgSrc: p.imgSrc || null }));
   // Prefer buyable/active where the flag is present, but never return fewer than we have.
   const buyable = norm.filter((p) => items.find((i) => i.id === p.id)?.isBuyable !== false);
   return (buyable.length >= count ? buyable : norm).slice(0, count);
@@ -483,6 +487,35 @@ export async function readProductsById(api, ids) {
     log(`  WARN: could not re-read products ${uniq.join(', ')} (${String(e.message).slice(0, 120)}) — product checks skipped`);
     return null;
   }
+}
+
+/**
+ * Re-read product images by id (GET /api/catalog/products?ids=…&respGroup=ItemAssets). Returns
+ * Map(id → imgSrc) holding only products that HAVE an image, or `null` when the read failed.
+ */
+export async function readProductImages(api, ids) {
+  const uniq = [...new Set(ids.filter(Boolean))];
+  if (!uniq.length) return new Map();
+  try {
+    const res = await api('GET', `/api/catalog/products?${idsParam(uniq)}&respGroup=ItemAssets`);
+    return new Map((Array.isArray(res) ? res : []).filter((p) => p?.id && p.imgSrc).map((p) => [p.id, p.imgSrc]));
+  } catch (e) {
+    verbose(`readProductImages: read failed (${String(e.message).slice(0, 120)})`);
+    return null;
+  }
+}
+
+/**
+ * True when an existing order has a line WITHOUT `imageUrl` whose product does have an image.
+ * A line's imageUrl is write-once — set on POST, silently ignored by PUT /api/order/customerOrders
+ * (KB-AF059013) — so the caller's only remedy is its delete-and-recreate self-heal. A product with no
+ * image never triggers it (no rebuild thrash), and a failed read never does either.
+ */
+export async function orderLacksProductImages(api, order) {
+  const bare = (order?.items || []).filter((i) => !i.imageUrl && i.productId);
+  if (!bare.length) return false;
+  const images = await readProductImages(api, bare.map((i) => i.productId));
+  return !!images && bare.some((i) => images.has(i.productId));
 }
 
 /**
@@ -559,6 +592,28 @@ export async function resetSecurityPassword(api, userName, newPassword, { silent
   if (!okRes && !silent) log(`  WARN: resetpassword failed for ${userName}: ${JSON.stringify(res?.errors || res).slice(0, 200)}`);
   else if (okRes) verbose(`password reset for ${userName}`);
   return okRes;
+}
+
+/**
+ * Is this security account locked out RIGHT NOW? Mirrors ASP.NET Identity's
+ * `UserManager.IsLockedOutAsync`, which the platform and xAPI call to decide a sign-in:
+ * `!LockoutEnabled ⇒ false`, else `LockoutEnd >= UtcNow`.
+ *
+ * A future `lockoutEnd` ALONE is not a lock. Identity's `AccessFailedAsync` writes `LockoutEnd`
+ * after MaxFailedAccessAttempts failures without checking `LockoutEnabled`, so an account with
+ * `lockoutEnabled: false` can carry a future `lockoutEnd` and still sign in normally. Observed on
+ * vcst 2026-10-15: `admin` had `lockoutEnabled=false`, a future `lockoutEnd`, failed count 0, and
+ * /connect/token worked — reading `lockoutEnd` alone reported it locked. Pure, so it is testable.
+ */
+export function isLockedOut(user, now = Date.now()) {
+  if (user?.lockoutEnabled !== true || !user?.lockoutEnd) return false;
+  return new Date(user.lockoutEnd).getTime() >= now;
+}
+
+/** `lockoutEnd` is in the future but lockout is not enabled — Identity does NOT treat this as locked. */
+export function hasInertLockoutEnd(user, now = Date.now()) {
+  if (user?.lockoutEnabled === true || !user?.lockoutEnd) return false;
+  return new Date(user.lockoutEnd).getTime() >= now;
 }
 
 // Primary env: its canonical IDs live committed, curated, inline in aliases.json,

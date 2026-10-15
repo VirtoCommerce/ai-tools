@@ -19,14 +19,15 @@ User logged in; DevTools Console open","url={{FRONT_URL}}/snacks
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/snacks
 [WAIT] wait for product grid to load
-[ASSERT] execute window.dataLayer.filter(e => e[1] === 'view_item_list') in console
-[ASSERT] inspect returned event object","[STATE] event name = view_item_list present in dataLayer
+[ASSERT] execute window.dataLayer.filter(e => e[0] === 'event' && e[1] === 'view_item_list') in console
+[ASSERT] inspect the event params (entry[2]) of the returned event","[STATE] event name = view_item_list present in dataLayer
 [DOM] item_list_id field is non-empty string
 [DOM] item_list_name includes category name
-[FORMAT] items_skus is CSV string of product SKUs
-[MATH] items_count matches number of visible products on page","[CONSOLE] no JS errors on category page load
+[DOM] e[2].items is an Array and each items[i].item_id is a non-empty string
+[STATE] no items_skus key at the top level of e[2]
+[MATH] e[2].items_count = e[2].items.length = number of [data-vc-track=""product-card""] rendered in the category grid","[CONSOLE] no JS errors on category page load
 [NETWORK] no 4xx/5xx on catalog API requests
-[API] GraphQL category query returns products array","view_item_list absent from dataLayer; items_count mismatches visible product count; items_skus empty or malformed","Navigate away from category page","google-analytics","Automated"
+[API] GraphQL category query returns products array","view_item_list absent from dataLayer; items is not an Array or an item_id is empty; an items_skus key present at the top level of e[2]; items_count or items.length differs from the rendered product-card count","Navigate away from category page","google-analytics; VCST-5109","Automated"
 "GA-003","view_item - Product Detail Page","GA Events > Product","High","BL-GA4-001","ECL-14.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 User logged in; DevTools open","url={{FRONT_URL}}
 user={{USER_EMAIL}}
@@ -429,40 +430,40 @@ User logged in; DevTools Console open; category page with visible product list",
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/snacks (or any category page with a visible product list)
 [WAIT] product grid fully rendered — at least 1 product card visible
-[ASSERT] execute window.dataLayer.filter(e => e.event === 'view_item_list') in console — capture first matching entry
-[ASSERT] inspect gtm.eventModel (or top-level event fields) inside the captured entry","[STATE] event.event === 'view_item_list' present in dataLayer
+[ASSERT] execute window.dataLayer.filter(e => e[0] === 'event' && e[1] === 'view_item_list') in console — capture first matching entry (dataLayer entries are gtag argument arrays)
+[ASSERT] inspect the event params (entry[2]) of the captured entry","[STATE] a gtag entry with e[0] === 'event' and e[1] === 'view_item_list' is present in dataLayer
 [DOM] item_list_id is a non-empty string (e.g. 'recently_browsed_products' or category-derived id)
 [DOM] item_list_name is a non-empty string (e.g. 'Recently browsed' or category name)
 [DOM] items key holds an Array (Array.isArray check passes)
 [DOM] items.length >= 1 (at least one item object in array)
 [DOM] items[0].item_id equals product SKU of first visible card (non-empty string)
 [DOM] items[0].item_name equals product name of first visible card (non-empty string)
-[DOM] items[0].brand key is present (string value)
+[DOM] items[0].item_brand key is present (string value)
 [DOM] items[0].affiliation key is present
 [DOM] items[0].currency is a non-empty string (e.g. 'USD')
 [STATE] NO items_skus string field at top level of event — old format must be absent","[CONSOLE] no JS errors on category page load
 [NETWORK] no 4xx/5xx on catalog GraphQL query
-[API] GraphQL products query returns name, SKU, brand, vendor fields","view_item_list absent from dataLayer; items is a string (old items_skus format) not an array; items[0].item_id missing or empty; items_skus still present alongside new items array (dual-format regression); currency key absent from item objects","Navigate away from category page","VCST-5109","Draft"
+[API] GraphQL products query returns name, SKU, brand, vendor fields (mapped to item_name, item_id, item_brand, affiliation)","view_item_list absent from dataLayer; items is a string (old items_skus format) not an array; items[0].item_id missing or empty; items_skus still present alongside new items array (dual-format regression); currency key absent from item objects","Navigate away from category page","VCST-5109; GA4 item parameters reference (item_brand); vc-frontend client-app/modules/google-analytics/utils.ts productToGtagItem","Draft"
 "GA-029","VCST-5109 — view_item_list items[] Schema: All Required Fields Present Across All Items","GA Events > Catalog > view_item_list > Schema","High","BL-GA4-001","ECL-14.3","[PRE:SIGNIN_AS:USER_DEFAULT]
 User logged in; DevTools Console open; category page with >= 3 product cards rendered","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/snacks (or any category page with >= 3 products)
 [WAIT] product grid fully rendered
-[ASSERT] execute: const evt = window.dataLayer.find(e => e.event === 'view_item_list'); const items = evt && (evt['gtm.eventModel'] || evt).items; items must be non-empty
+[ASSERT] execute: const evt = window.dataLayer.find(e => e[0] === 'event' && e[1] === 'view_item_list'); const items = evt && evt[2].items; items must be non-empty (dataLayer entries are gtag argument arrays; params live in entry[2])
 [ASSERT] iterate all entries in items and inspect each item object for required keys","[STATE] items is a non-empty array
 [DOM] every item in items[] has key item_id (product SKU — non-empty string)
 [DOM] every item in items[] has key item_name (non-empty string)
-[DOM] every item in items[] has key brand (key present; string value)
+[DOM] every item in items[] has key item_brand (key present; string value)
 [DOM] every item in items[] has key affiliation (key present)
 [DOM] every item in items[] has key currency (non-empty string)
 [STATE] items.length equals the number of product cards rendered in the list (consistent count)
 [STATE] no item in items[] contains an items_skus field — old format must not appear inside item objects","[CONSOLE] no JS errors during page load
 [NETWORK] no 4xx/5xx on products query
-[API] GraphQL products query includes brand and vendor fields in response","items is empty array when products are visible; any item missing item_id or item_name; currency key absent from any item; items_skus string appearing as a field inside any item object","Navigate away from category page","VCST-5109","Draft"
+[API] GraphQL products query includes brand and vendor fields in response (mapped to item_brand and affiliation)","items is empty array when products are visible; any item missing item_id or item_name; currency key absent from any item; items_skus string appearing as a field inside any item object","Navigate away from category page","VCST-5109; GA4 item parameters reference (item_brand); vc-frontend client-app/modules/google-analytics/utils.ts productToGtagItem","Draft"
 "GA-030","VCST-5109 — place_order Event Contains items[] Array and Non-Empty transaction_id","GA Events > Order > place_order","High","BL-GA4-003, BL-CROSS-005","ECL-14.3","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Authenticated user; DevTools Console open; at least one in-stock product available; shipping and payment method configured for the store","url={{FRONT_URL}}
+Authenticated user; DevTools Console open; at least one in-stock product available; shipping and payment method configured for the store. Automatic promotions may add gift lines to the order (environment promotion state, not a defect): the expected item count is taken from the order placed, never from the products the case added","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/catalog or search for any in-stock product
 [WAIT] product page loads
@@ -478,19 +479,22 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/catalog or search f
 [WAIT] Place Order button becomes enabled
 [ACT] click Place Order
 [WAIT] order confirmation page or confirmation message displayed
-[ASSERT] execute: const evts = window.dataLayer.filter(e => e.event === 'place_order'); inspect evts[evts.length-1]","[STATE] event.event === 'place_order' present in dataLayer after Place Order click
-[DOM] (event['gtm.eventModel'] || event).transaction_id is present and non-empty string (unique order identifier — NEW field added by VCST-5109)
-[DOM] (event['gtm.eventModel'] || event).items is an Array with length >= 1
-[DOM] items[0].item_id equals SKU of ordered product (non-empty string)
-[DOM] items[0].item_name is non-empty string
-[DOM] items[0].currency is non-empty string
+[ACT] read the codes of every line of the order placed from the order confirmation page line list (or the order response in the network log) as order_line_codes
+[ACT] read the number of lines of the order placed from the same source as order_line_count
+[ASSERT] execute: const evts = window.dataLayer.filter(e => e[0] === 'event' && e[1] === 'place_order'); inspect evts[evts.length-1] (params live in entry[2])","[STATE] a gtag entry with e[0] === 'event' and e[1] === 'place_order' present in dataLayer after Place Order click
+[DOM] evts[evts.length-1][2].transaction_id is present and non-empty string (unique order identifier — NEW field added by VCST-5109)
+[DOM] evts[evts.length-1][2].items is an Array with length >= 1
+[MATH] evts[evts.length-1][2].items.length = order_line_count (one entry per order line, including any automatic-promotion gift line)
+[DOM] every items[i].item_id is a non-empty string and one of order_line_codes
+[DOM] every items[i].item_name is non-empty string
+[DOM] every items[i].currency is non-empty string
 [STATE] transaction_id value matches the order number shown on the confirmation page (or is any non-empty server-assigned identifier)","[CONSOLE] no JS errors during checkout and order placement
 [NETWORK] no 4xx/5xx on createOrder GraphQL mutation
 [API] createOrder mutation response errors[] is empty","place_order absent from dataLayer after confirmation; transaction_id field missing (pre-VCST-5109 regression); transaction_id is null or empty string; items is a scalar or items_skus string instead of array; items array empty despite order having line items","Verify order appears in /account/orders; navigate away","VCST-5109","Draft"
 "GA-031","VCST-5109 — place_order items[] Count Matches Ordered Line Items (Multi-Item Order)","GA Events > Order > place_order > Items Integrity","High","BL-GA4-003, BL-CROSS-005","ECL-7.2, ECL-14.3","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Authenticated user; DevTools Console open; 2 distinct in-stock products available to add to cart","url={{FRONT_URL}}
+Authenticated user; DevTools Console open; 2 distinct in-stock products available to add to cart. Automatic promotions may add gift lines to the order (environment promotion state, not a defect): the expected item count is taken from the order placed, never from the 2 products the case added","url={{FRONT_URL}}
 user={{USER_EMAIL}}
 password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/catalog
 [WAIT] catalog page loaded
@@ -506,14 +510,16 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/catalog
 [WAIT] Place Order button enabled
 [ACT] click Place Order
 [WAIT] order confirmation displayed
-[ASSERT] execute: const evt = window.dataLayer.filter(e => e.event === 'place_order').slice(-1)[0]; const items = (evt['gtm.eventModel'] || evt).items; inspect items length and per-item fields","[STATE] place_order event present in dataLayer
-[MATH] items.length === 2 (one entry per distinct ordered product line)
-[DOM] items[0].item_id and items[1].item_id are distinct non-empty strings for the two ordered SKUs
+[ACT] read the codes of every line of the order placed from the order confirmation page line list (or the order response in the network log) as order_line_codes
+[ACT] read the number of lines of the order placed from the same source as order_line_count
+[ASSERT] execute: const evt = window.dataLayer.filter(e => e[0] === 'event' && e[1] === 'place_order').slice(-1)[0]; const items = evt[2].items; inspect items length and per-item fields","[STATE] place_order event present in dataLayer
+[MATH] items.length = order_line_count (one entry per order line, including any automatic-promotion gift line)
+[DOM] every items[i].item_id is a non-empty string and one of order_line_codes
 [DOM] each item has item_name (non-empty), currency (non-empty), item_id (non-empty)
 [DOM] transaction_id is present and non-empty
-[STATE] no duplicated item_id entries for a 2-distinct-product order","[CONSOLE] no JS errors during checkout
+[STATE] no duplicated item_id entries (order lines are distinct products)","[CONSOLE] no JS errors during checkout
 [NETWORK] no 4xx/5xx on createOrder mutation
-[API] createOrder response errors[] is empty and returns 2 line items","items.length === 1 for 2-product order (items collapsed or truncated); item_id values duplicated; items array absent even though order placed; transaction_id absent","Verify order in /account/orders; navigate away","VCST-5109","Draft"
+[API] createOrder response errors[] is empty and returns order_line_count line items","items.length differs from order_line_count (items collapsed, truncated or padded); item_id values duplicated; an item_id not among the order lines; items array absent even though order placed; transaction_id absent","Verify order in /account/orders; navigate away","VCST-5109","Draft"
 "GA-032","VCST-5009 — Skyflow Cart-Flow Checkout Fires Exactly One purchase Event","GA Events > Purchase > Skyflow Cart Path","High","BL-GA4-003","ECL-14.3","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
@@ -529,7 +535,7 @@ Authenticated user WITHOUT saved Skyflow cards (so new-card iframe renders immed
 [WAIT] 'Place order' button becomes enabled (isPaymentDataValid=true)
 [ACT] click 'Place order'
 [WAIT] payment processes; order confirmation or /checkout/completed loads
-[ASSERT] inspect window.dataLayer in DevTools Console: window.dataLayer.filter(e => e[1] === 'purchase' || e.event === 'purchase').length === 1
+[ASSERT] inspect window.dataLayer in DevTools Console: window.dataLayer.filter(e => e[0] === 'event' && e[1] === 'purchase').length === 1
 [ASSERT] the single purchase event has: value field is a positive number (order total); items array is non-empty; transaction_id field present
 [ASSERT] no second purchase event present (analytics('purchase') fires only for cart-flow, not orderToPay-driven per PR #2308)","[STATE] exactly one purchase event in dataLayer after Skyflow cart-flow checkout
 [STATE] purchase event value > 0 and matches order confirmation total
@@ -557,3 +563,627 @@ NOTE: This case CURRENTLY FAILS — add_payment_info carries stale value/items_c
 [STATE] add_payment_info items quantity reflects post-mutation qty
 NOTE: These assertions are CORRECT behavior — this case will FAIL until the stale-capture bug is fixed","[CONSOLE] no JS errors during cart mutation and Skyflow payment
 [NETWORK] no 4xx/5xx on order placement","add_payment_info event value = T1 (stale, captured before qty mutation — THIS IS THE KNOWN BUG); items quantity does not reflect updated quantity","Remove test order; [PRE:RESET_CART]","VCST-5198 (bug ticket, filed 2026-06-04); VCST-5009 exploratory finding F6 confirmed by second-source repro 2026-06-04; BL-GA4-003; Synced: VCST-5009 (2026-06-04)","Draft"
+GA-034,[JOURNEY] Markup analytics — home Page Builder block → PDP → recommended → next PDP,GA Events > Markup analytics,Critical,BL-GA4-001,,"[PRE:CLEAR_SESSION]
+Guest shopper, viewport 1920x1080. Build under test carries PR vc-frontend#2543 (data-vc-track markup; the served bundle contains data-vc-track). {{FRONT_URL}} home carries a Page Builder products block (list id products_block). PDP A must show a recommended-products block (list id recommended_products_<model>): open card PDPs of the products_block in order, up to 5, until one shows it; none of the 5 does -> BLOCKED, not FAIL.
+Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params). A count per action = matching entries after the action minus before (n0 = window.dataLayer.length read just before it). Shorthand: ev(name) = window.dataLayer.filter(e => e[0] === 'event' && e[1] === name), and ev(name) from index n = the same filter over window.dataLayer.slice(n); 'card' = [data-vc-track=""product-card""], 'link' = [data-vc-track=""product-link""], 'list' = [data-vc-track=""product-list""]. Navigate in-app (link clicks, router Back) between legs where the dataLayer must accumulate; a hard load resets it.",url={{FRONT_URL}},"--- SCREEN: Home (Page Builder products block) ---
+[NAV] {{FRONT_URL}}
+[WAIT] a [data-vc-track=""product-list""][data-list-id=""products_block""] container is rendered with at least one [data-vc-track=""product-card""] inside it
+[ACT] in the console read cards_home = the number of 'card' elements inside the first products_block container
+[ACT] in the console read the data-list-name attribute of the first products_block container as home_list_name
+[ACT] read the title text of the first 'card' of that container as home_card_title
+[ACT] in the console read ev('view_item_list') filtered to e[2].item_list_id === 'products_block' as home_events
+[ACT] read n_home = window.dataLayer.length
+[ACT] click the first 'link' element inside the first 'card' of that products_block container
+[WAIT] product detail page A is rendered (URL contains /product/ and the product title is visible)
+--- SCREEN: PDP A ---
+[WAIT] a [data-list-id^=""recommended_products_""] container is rendered with at least one product card
+[ACT] read the SKU text shown on product A's page as sku_a
+[ACT] in the browser network panel read the id of the product in the /graphql product response for product A as id_a
+[ACT] in the console read the data-list-id attribute of the recommended_products_ container as rec_list_id
+[ACT] in the console read the number of 'card' elements inside the recommended_products_ container as rec_cards
+[ACT] read the title text of the first 'card' of that container as rec_card_title
+[ACT] in the console read ev('select_item') from index n_home as sel_home
+[ACT] in the console read ev('view_item') from index n_home as view_a
+[ACT] in the console read ev('view_item_list') from index n_home as list_a
+[ACT] read n_a = window.dataLayer.length
+[ACT] click the first 'link' element inside the first 'card' of the recommended_products_ container
+[WAIT] product detail page B is rendered (URL differs from page A and the product title is visible)
+--- SCREEN: PDP B ---
+[ACT] read the SKU text shown on product B's page as sku_b
+[ACT] in the console read ev('select_item') from index n_a as sel_a
+[ACT] in the console read ev('view_item') from index n_a as view_b
+[ACT] in the console read ev('view_item_list') from index n_a as list_b
+[ACT] in the browser network panel count the /g/collect requests per event name (en=view_item_list, en=select_item, en=view_item)","[MATH] the number of home_events = 1 {SPEC}
+[STATE] home_events[0][2].item_list_name equals home_list_name {SPEC}
+[MATH] home_events[0][2].items.length = cards_home {SPEC}
+[MATH] the number of sel_home = 1 {SPEC}
+[STATE] sel_home[0][2].item_list_id === 'products_block' and sel_home[0][2].items[0].item_name equals home_card_title (captured before the click) {SPEC}
+[MATH] the number of view_a = 1 {BL}
+[STATE] view_a[0][2].items[0].item_id equals sku_a (captured from the page) and view_a[0][2].value is greater than 0 {BL}
+[MATH] the number of list_a entries with e[2].item_list_id === rec_list_id = 1 {SPEC}
+[STATE] that entry's e[2].related_id equals id_a (captured from the product response) and e[2].related_type === 'product' {SPEC}
+[MATH] that entry's e[2].items.length = rec_cards {SPEC}
+[MATH] the number of sel_a entries with e[2].item_list_id === rec_list_id = 1 {SPEC}
+[STATE] that select_item has e[2].related_id equal to id_a and e[2].items[0].item_name equal to rec_card_title (captured before the click) {SPEC}
+[MATH] the number of view_b = 1 {SPEC}
+[STATE] view_b[0][2].items[0].item_id equals sku_b (captured from the page) and sku_b differs from sku_a {SPEC}
+[STATE] every list_b entry has an e[2].related_id different from id_a {SPEC}","[CONSOLE] no TypeError or JS error on any of the three screens
+[NETWORK] the /g/collect requests carry one en=view_item_list per view_item_list in window.dataLayer, one en=select_item per select_item and one en=view_item per view_item {SPEC}
+[NETWORK] no 4xx/5xx on /graphql",products_block sends no view_item_list or sends it twice (home screen); select_item loses item_list_id=products_block after the click (home to PDP A boundary); view_item for PDP B missing after SPA navigation (PDP A to PDP B boundary); PDP B list still carries related_id of product A (mid-journey carry-over); /g/collect hits do not match the dataLayer counts,Navigate to {{FRONT_URL}}; no cart or account state was changed,VCST-6017 · Archetype:SILENT · Technique:FLOW,Draft
+GA-035,Markup analytics — Page Builder products_block per user (guest vs signed-in content),GA Events > Markup analytics,High,BL-GA4-001,,"[PRE:CLEAR_SESSION]
+Viewport 1920x1080. Build under test carries PR vc-frontend#2543 (data-vc-track markup; the served bundle contains data-vc-track). The home Page Builder content differs between a guest and the signed-in user (observed on the vcst store). Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params). A count per action = matching entries after the action minus before (n0 = window.dataLayer.length read just before it). Shorthand: ev(name) = window.dataLayer.filter(e => e[0] === 'event' && e[1] === name), and ev(name) from index n = the same filter over window.dataLayer.slice(n); 'card' = [data-vc-track=""product-card""], 'link' = [data-vc-track=""product-link""], 'list' = [data-vc-track=""product-list""]. Navigate in-app (link clicks, router Back) between legs where the dataLayer must accumulate; a hard load resets it.","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}
+[WAIT] at least one [data-vc-track=""product-list""][data-list-id=""products_block""] container is rendered with product cards
+[ACT] in the console read, for each products_block container, its data-list-name attribute as guest_name
+[ACT] in the console read the visible title text of each of its cards in DOM order as guest_cards
+[ACT] in the console read ev('view_item_list') filtered to e[2].item_list_id === 'products_block' as guest_events
+[NAV] {{FRONT_URL}}/sign-in
+[WAIT] the sign-in form is visible
+[ACT] fill 'Email': {{USER_EMAIL}}
+[ACT] fill 'Password': {{USER_PASSWORD}}
+[ACT] click 'Sign in'
+[WAIT] the account is signed in (the user menu shows the account name)
+[NAV] {{FRONT_URL}}
+[WAIT] at least one products_block container is rendered with product cards
+[ACT] in the console read each products_block container's data-list-name as signed_name
+[ACT] in the console read the visible title text of each of its cards in DOM order as signed_cards
+[ACT] in the console read ev('view_item_list') filtered to e[2].item_list_id === 'products_block' as signed_events","[MATH] for each products_block container the number of guest_events with e[2].item_list_name equal to the container's data-list-name = 1 {SPEC}
+[MATH] for each guest container e[2].items.length = the number of its product cards {SPEC}
+[STATE] for each guest event the e[2].items[i].item_name values equal the container's card titles in DOM order {SPEC}
+[MATH] for each signed-in container the number of signed_events with e[2].item_list_name equal to the container's data-list-name = 1 {SPEC}
+[STATE] for each signed-in event the e[2].items[i].item_name values equal that container's own card titles in DOM order, not the guest container's titles {BL}
+[MATH] each signed-in event's e[2].items[i].price = the list price of its product (a number greater than 0) {BL}","[CONSOLE] no TypeError or JS error on either load
+[NETWORK] no 4xx/5xx on /graphql",products_block of one user state produces no view_item_list; the signed-in event carries the guest block items; item count differs from the rendered card count,Sign out of the account,VCST-6017 · Archetype:CONFIG · Technique:EP,Draft
+GA-036,"Markup analytics — payload parity with the pre-PR manual events (PDP, related, recommended, recently browsed, variations)",GA Events > Markup analytics,Critical,BL-GA4-001,,"[PRE:CLEAR_SESSION]
+Viewport 1920x1080 (>= lg). Build under test carries PR vc-frontend#2543 (data-vc-track markup; the served bundle contains data-vc-track). The expected payloads below are the pre-PR manual calls (removed lines of PR #2543), which the markup events must reproduce. PDP with a recommended block: found as in the journey case (walk the home products_block cards, up to 5). Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params). A count per action = matching entries after the action minus before (n0 = window.dataLayer.length read just before it). Shorthand: ev(name) = window.dataLayer.filter(e => e[0] === 'event' && e[1] === name), and ev(name) from index n = the same filter over window.dataLayer.slice(n); 'card' = [data-vc-track=""product-card""], 'link' = [data-vc-track=""product-link""], 'list' = [data-vc-track=""product-list""]. Navigate in-app (link clicks, router Back) between legs where the dataLayer must accumulate; a hard load resets it.","anchor_url=@td(PROD_GA4_RELATED_ANCHOR.url)
+anchor_id=@td(PROD_GA4_RELATED_ANCHOR.id)
+anchor_name=@td(PROD_GA4_RELATED_ANCHOR.name)
+anchor_code=@td(PROD_GA4_RELATED_ANCHOR.code)
+related_count=@td(PROD_GA4_RELATED_ANCHOR.related_count)
+var_url=@td(PROD_GA4_VARIATION_PARENT.url)
+var_id=@td(PROD_GA4_VARIATION_PARENT.id)
+var_name=@td(PROD_GA4_VARIATION_PARENT.name)
+cart_url=@td(CART_GA4_SFL_RB.url)","[NAV] {{FRONT_URL}}{{anchor_url}}
+[WAIT] the product title is visible and the related products widget is rendered
+[ACT] in the console read ev('view_item') as pdp_events
+[ACT] in the console read ev('view_item_list') filtered to related_products as related_events
+[ACT] read the related widget heading text as related_title
+[NAV] {{FRONT_URL}}{{var_url}}
+[WAIT] the variations widget is rendered
+[ACT] in the console read ev('view_item_list') filtered to item_list_id 'variations' as var_events
+[ACT] read the variations widget heading text as var_title
+[NAV] a product page that shows a recommended products block (found by walking the products_block cards on {{FRONT_URL}})
+[WAIT] the [data-list-id^=""recommended_products_""] container is rendered
+[ACT] in the console read the view_item_list event whose item_list_id starts with recommended_products_ as rec_event
+[ACT] read the block heading text as rec_title
+[SETUP] run TEST_ENV=<env> npm run seed:ga4-lists:cart (cart state for {{USER_EMAIL}}); it exits 0
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] fill 'Email': {{USER_EMAIL}}
+[ACT] fill 'Password': {{USER_PASSWORD}}
+[ACT] click 'Sign in'
+[WAIT] the account is signed in
+[NAV] {{FRONT_URL}}{{cart_url}} (no product page visited since the seed)
+[WAIT] the [data-list-id=""recently_browsed_products""] container is rendered with product cards
+[ACT] in the console read the view_item_list with item_list_id 'recently_browsed_products' as rb_event
+[ACT] read the block heading text as rb_title","[STATE] pdp_events has exactly one entry; e[2].items[0].item_id equals {{anchor_code}} and e[2].items[0].item_name equals {{anchor_name}} {BL}
+[STATE] related_events has exactly one entry with e[2].item_list_id === 'related_products', e[2].related_id equal to {{anchor_id}} and e[2].related_type === 'product' {SPEC}
+[STATE] related_events[0][2].item_list_name equals related_title + ' ' + {{anchor_name}} {SPEC}
+[MATH] related_events[0][2].items.length = {{related_count}} {SPEC}
+[STATE] var_events has exactly one entry with e[2].related_id equal to {{var_id}}, e[2].related_type === 'product' and e[2].item_list_name equal to var_title + ' ' + {{var_name}} {SPEC}
+[STATE] rec_event e[2].item_list_id equals 'recommended_products_' followed by the block's model, e[2].item_list_name equals rec_title + ' ' + the PDP product name, e[2].related_type === 'product' {SPEC}
+[STATE] rb_event e[2].item_list_name equals rb_title and e[2] has no related_id key {SPEC}
+[STATE] every item of every captured list event has item_id and item_name non-empty strings and a currency {BL}
+[STATE] no captured list event carries a top-level items_skus field {BL}","[CONSOLE] no TypeError or JS error on any of the pages
+[NETWORK] no 4xx/5xx on /graphql
+[API] the related products query for the anchor returns {{related_count}} associations","any list event is missing or carries a different item_list_id, item_list_name, related_id or related_type than the pre-PR manual call; items[] fewer than the list holds; items_skus present; view_item missing on the PDP",Sign out; none of the steps created data that outlives the session,VCST-6017 · Archetype:PARITY · Technique:EP,Draft
+GA-037,"Markup analytics — related products widget (grid below lg, carousel from lg) impression and click",GA Events > Markup analytics,High,BL-GA4-001,,"[PRE:CLEAR_SESSION]
+Build under test carries PR vc-frontend#2543 (data-vc-track markup; the served bundle contains data-vc-track). The anchor product has 10 catalog associations: the widget is a carousel from lg up and a grid below lg (related-products.vue). Whole-list parity on the grid (all associations rendered) is not asserted: the grid reports the cards it renders. The product-link is a non-navigating wrapper, so the click targets the title anchor inside it. Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params). A count per action = matching entries after the action minus before (n0 = window.dataLayer.length read just before it). Shorthand: ev(name) = window.dataLayer.filter(e => e[0] === 'event' && e[1] === name), and ev(name) from index n = the same filter over window.dataLayer.slice(n); 'card' = [data-vc-track=""product-card""], 'link' = [data-vc-track=""product-link""], 'list' = [data-vc-track=""product-list""]. Navigate in-app (link clicks, router Back) between legs where the dataLayer must accumulate; a hard load resets it.","anchor_url=@td(PROD_GA4_RELATED_ANCHOR.url)
+anchor_id=@td(PROD_GA4_RELATED_ANCHOR.id)
+anchor_name=@td(PROD_GA4_RELATED_ANCHOR.name)
+related_count=@td(PROD_GA4_RELATED_ANCHOR.related_count)
+related_codes=@td(PROD_GA4_RELATED_ANCHOR.related_codes)","[ACT] resize the browser to 1920x1080
+[NAV] {{FRONT_URL}}{{anchor_url}}
+[WAIT] the related products widget is rendered as a carousel (a [data-list-id=""related_products""] container with product cards)
+[ACT] in the console read ev('view_item_list') filtered to e[2].item_list_id === 'related_products' as carousel_events
+[ACT] read the title text of the first 'card' of the related_products container as carousel_title
+[ACT] read n0 = window.dataLayer.length
+[ACT] click the title anchor 'a[href]' inside the first 'link' element of the first 'card' of the related_products container
+[WAIT] the product page of the clicked product is rendered
+[ACT] in the console read ev('select_item') from index n0 as carousel_clicks
+[ACT] resize the browser to 800x900
+[NAV] {{FRONT_URL}}{{anchor_url}}
+[WAIT] the related products widget is rendered as a grid (a [data-list-id=""related_products""] container with product cards)
+[ACT] in the console read the number of 'card' elements inside the [data-list-id=""related_products""] container as grid_cards
+[ACT] in the console read ev('view_item_list') filtered to related_products as grid_events
+[ACT] read the title text of the first 'card' of the related_products container as grid_title
+[ACT] read n1 = window.dataLayer.length
+[ACT] click the title anchor 'a[href]' inside the first 'link' element of the first 'card' of the related_products container
+[WAIT] the product page of the clicked product is rendered
+[ACT] in the console read ev('select_item') from index n1 as grid_clicks","[MATH] the number of carousel_events = 1 (one impression on the cold load at 1920) {SPEC}
+[MATH] the number of grid_events = 1 (one impression on the cold load at 800) {SPEC}
+[STATE] each impression event has e[2].related_id equal to {{anchor_id}}, e[2].related_type === 'product' and e[2].item_list_name ending with {{anchor_name}} {SPEC}
+[MATH] carousel_events[0][2].items.length = {{related_count}} {SPEC}
+[MATH] grid_events[0][2].items.length = grid_cards (the grid reports the cards it renders) {SPEC}
+[STATE] every item_id of carousel_events[0][2].items and of grid_events[0][2].items is one of the codes in {{related_codes}} {SPEC}
+[MATH] the number of carousel_clicks = 1 and the number of grid_clicks = 1 {SPEC}
+[STATE] each select_item has e[2].item_list_id === 'related_products', the same related_id and e[2].items[0].item_name equal to carousel_title (carousel) or grid_title (grid), captured before each click {SPEC}","[CONSOLE] no TypeError or JS error on the anchor page
+[NETWORK] no 4xx/5xx on /graphql",the related widget sends no view_item_list in the carousel or in the grid layout (data-* fallthrough through the widget lost); a card click sends no select_item or two; related_id missing or not the anchor id,Resize the browser back to 1920x1080,VCST-6017 · Archetype:SILENT · Technique:EP,Draft
+GA-038,Markup analytics — recently browsed block in cart (signed-in),GA Events > Markup analytics,High,BL-GA4-001,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Build under test carries PR vc-frontend#2543 (data-vc-track markup; the served bundle contains data-vc-track). Cart state of {{USER_EMAIL}} is pooled and mutable: the seed step is the precondition and no product page may be visited between it and the recently-browsed read. Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params). A count per action = matching entries after the action minus before (n0 = window.dataLayer.length read just before it). Shorthand: ev(name) = window.dataLayer.filter(e => e[0] === 'event' && e[1] === name), and ev(name) from index n = the same filter over window.dataLayer.slice(n); 'card' = [data-vc-track=""product-card""], 'link' = [data-vc-track=""product-link""], 'list' = [data-vc-track=""product-list""]. Navigate in-app (link clicks, router Back) between legs where the dataLayer must accumulate; a hard load resets it.","cart_url=@td(CART_GA4_SFL_RB.url)
+rb_codes=@td(CART_GA4_SFL_RB.recently_browsed_codes)
+rb_max=@td(CART_GA4_SFL_RB.recently_browsed_max)
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[SETUP] run TEST_ENV=<env> npm run seed:ga4-lists:cart; it exits 0 and reseeds 1 cart line, @td(CART_GA4_SFL_RB.saved_for_later_count) saved-for-later items and @td(CART_GA4_SFL_RB.recently_browsed_max) recently browsed products for {{USER_EMAIL}}
+[NAV] {{FRONT_URL}}{{cart_url}}
+[WAIT] the [data-list-id=""recently_browsed_products""] container is rendered with product cards
+[ACT] in the console read ev('view_item_list') filtered to e[2].item_list_id === 'recently_browsed_products' as rb_before
+[ACT] read the block heading text as rb_title
+[ACT] click the quantity increase control ('+') of the first cart line
+[WAIT] the cart line total updates
+[ACT] in the console read ev('view_item_list') filtered to recently_browsed_products as rb_after","[MATH] the number of rb_before = 1 {SPEC}
+[MATH] rb_before[0][2].items.length = {{rb_max}} {SPEC}
+[STATE] the item_id values of rb_before[0][2].items are exactly the codes in {{rb_codes}} {SPEC}
+[STATE] rb_before[0][2].item_list_name equals rb_title and rb_before[0][2] has no related_id key {SPEC}
+[MATH] the number of rb_after = the number of rb_before (the cart re-render does not re-send the list) {SPEC}","[CONSOLE] no TypeError or JS error on the cart page
+[NETWORK] no 4xx/5xx on /graphql",recently browsed list sent with other products than the seeded ones; sent twice or more after a cart quantity change; list missing from the cart page,Decrease the quantity of the cart line back; the next run reseeds the cart state with the seed command,VCST-6017 · Archetype:REPLAY · Technique:EP,Draft
+GA-039,Markup analytics — product variations widget (default and table view) sends view_item_list only,GA Events > Markup analytics,High,BL-GA4-001,,"[PRE:CLEAR_SESSION]
+Build under test carries PR vc-frontend#2543 (data-vc-track markup; the served bundle contains data-vc-track). The parent product has 60 variations; the PDP pages the family search by 50 (see GA-045 for pagination). The widget offers a default and a table view. Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params). A count per action = matching entries after the action minus before (n0 = window.dataLayer.length read just before it). Shorthand: ev(name) = window.dataLayer.filter(e => e[0] === 'event' && e[1] === name), and ev(name) from index n = the same filter over window.dataLayer.slice(n); 'card' = [data-vc-track=""product-card""], 'link' = [data-vc-track=""product-link""], 'list' = [data-vc-track=""product-list""]. Navigate in-app (link clicks, router Back) between legs where the dataLayer must accumulate; a hard load resets it.","var_url=@td(PROD_GA4_VARIATION_PARENT.url)
+var_id=@td(PROD_GA4_VARIATION_PARENT.id)
+var_name=@td(PROD_GA4_VARIATION_PARENT.name)
+first_price=@td(PROD_GA4_VARIATION_PARENT.first_variation_price)
+last_price=@td(PROD_GA4_VARIATION_PARENT.last_variation_price)","[NAV] {{FRONT_URL}}{{var_url}}
+[WAIT] the variations widget is rendered with variation rows or cards
+[ACT] in the console read ev('view_item_list') filtered to e[2].item_list_id === 'variations' as var_events_default
+[ACT] read the number of 'card' elements inside the [data-list-id=""variations""] container as var_cards
+[ACT] switch the widget to its other view (default to table, or table to default) using the view toggle of the variations widget
+[WAIT] the variations rows or cards of the other view are rendered
+[ACT] read n0 = window.dataLayer.length
+[ACT] click the product name text of the first variation row or card
+[WAIT] 1 second elapsed
+[ACT] in the console read ev('select_item') from index n0 as var_clicks","[MATH] the number of var_events_default = 1 {SPEC}
+[STATE] var_events_default[0][2].related_id equals {{var_id}} and .related_type === 'product' and .item_list_name ends with {{var_name}} {SPEC}
+[MATH] var_events_default[0][2].items.length = var_cards {SPEC}
+[MATH] the number of var_events_default[0][2].items entries with a price outside [{{first_price}}, {{last_price}}] = 0 {SPEC}
+[MATH] the number of var_clicks = 0 (variations never sent select_item) {SPEC}","[CONSOLE] no TypeError or JS error on the variations page
+[NETWORK] no 4xx/5xx on /graphql",variations list missing from the dataLayer in either view; a select_item appears after interacting with a variation (it never did); item prices outside the seeded range (wrong items),Navigate away from the variations page,VCST-6017 · Archetype:PARITY · Technique:EP,Draft
+GA-040,"Markup analytics — product card click targets (title, image carousel arrows and slides)",GA Events > Markup analytics,High,BL-GA4-001,,"[PRE:CLEAR_SESSION]
+Build under test carries PR vc-frontend#2543 (data-vc-track markup; the served bundle contains data-vc-track). The fixture guarantees at least one multi-image card in the first products block (@td(PB_GA4_PRODUCT_LISTS.carousel_card_images) >= 2): the card named @td(PB_GA4_PRODUCT_LISTS.carousel_card_name), code @td(PB_GA4_PRODUCT_LISTS.carousel_card_code), rendered 4th in that block. If it is not found -> BLOCKED (fixture drift), not FAIL. Single-image card image clicks are not asserted here: in grid view the ui-kit image slot overlays the link (pre-existing, handed to triage in 3x). Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params). A count per action = matching entries after the action minus before (n0 = window.dataLayer.length read just before it). Shorthand: ev(name) = window.dataLayer.filter(e => e[0] === 'event' && e[1] === name), and ev(name) from index n = the same filter over window.dataLayer.slice(n); 'card' = [data-vc-track=""product-card""], 'link' = [data-vc-track=""product-link""], 'list' = [data-vc-track=""product-list""]. Navigate in-app (link clicks, router Back) between legs where the dataLayer must accumulate; a hard load resets it.","lists_url=@td(PB_GA4_PRODUCT_LISTS.url)
+card_name=@td(PB_GA4_PRODUCT_LISTS.carousel_card_name)
+card_code=@td(PB_GA4_PRODUCT_LISTS.carousel_card_code)","[NAV] {{FRONT_URL}}{{lists_url}}
+[WAIT] the first [data-list-id=""products_block""] container is rendered with product cards in grid view
+[ACT] read n0 = window.dataLayer.length
+[ACT] locate the card whose title text is {{card_name}} inside the first [data-vc-track=""product-list""][data-list-id=""products_block""] container (the multi-image fixture card, 4th in the block)
+[ACT] click the next-image arrow of that card
+[WAIT] the card's image changes to the next slide
+[ACT] click the image slide of that card's carousel
+[WAIT] 1 second elapsed
+[ACT] in the console read ev('select_item') from index n0 as image_clicks
+[ACT] read the current URL as url_after_images
+[ACT] read the title text of that card as card_title
+[ACT] read n1 = window.dataLayer.length
+[ACT] click the title anchor 'a[href]' inside the first 'link' element of that card
+[WAIT] the product page of that card is rendered
+[ACT] in the console read ev('select_item') from index n1 as title_clicks","[MATH] the number of image_clicks = 0 (arrows and slides are not product links) {SPEC}
+[STATE] the URL after the arrow and slide clicks is still the products page (no navigation) {SPEC}
+[MATH] the number of title_clicks = 1 {SPEC}
+[STATE] title_clicks[0][2].item_list_id === 'products_block' and .items[0].item_name equals card_title (captured before the click) {SPEC}","[CONSOLE] no TypeError or JS error on the products page
+[NETWORK] no 4xx/5xx on /graphql",an image-carousel arrow or slide click is reported as select_item; a title click sends two select_item (nested links) or none,Navigate back to {{FRONT_URL}},VCST-6017 · Archetype:BOUNDARY · Technique:DT,Draft
+GA-041,Markup analytics — card action buttons do not send select_item,GA Events > Markup analytics,High,"BL-GA4-001, BL-GA4-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Build under test carries PR vc-frontend#2543 (data-vc-track markup; the served bundle contains data-vc-track). Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params). A count per action = matching entries after the action minus before (n0 = window.dataLayer.length read just before it). Shorthand: ev(name) = window.dataLayer.filter(e => e[0] === 'event' && e[1] === name), and ev(name) from index n = the same filter over window.dataLayer.slice(n); 'card' = [data-vc-track=""product-card""], 'link' = [data-vc-track=""product-link""], 'list' = [data-vc-track=""product-list""]. Navigate in-app (link clicks, router Back) between legs where the dataLayer must accumulate; a hard load resets it.","lists_url=@td(PB_GA4_PRODUCT_LISTS.url)
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}{{lists_url}}
+[WAIT] the first [data-list-id=""products_block""] container is rendered with product cards
+[ACT] read the title text of the first card in the products_block container as card_title
+[ACT] read n0 = window.dataLayer.length
+[ACT] click the quantity increase control ('+') of the first card in the products_block container
+[WAIT] the card's quantity value changes
+[ACT] click 'Add to cart' on the same card
+[WAIT] the cart badge count increases
+[ACT] click 'Add to list' on the same card
+[WAIT] the add-to-list dialog is open
+[ACT] click the dialog close control without saving
+[WAIT] the dialog is closed
+[ACT] click 'Add to Compare' on the same card
+[WAIT] the compare badge or compare icon state changes
+[ACT] in the console read ev('select_item') from index n0 as sel
+[ACT] in the console read ev('add_to_cart') from index n0 as adds","[MATH] the number of sel = 0 (no action button sends select_item) {SPEC}
+[MATH] the number of adds = 1 and adds[0][2].items[0].item_name equals card_title (captured before the clicks) {BL}","[CONSOLE] no TypeError or JS error during the clicks
+[NETWORK] no 4xx/5xx on the addItem mutation
+[API] the addItem mutation errors[] is empty",an action button inside a tracked card also sends select_item (inflated CTR); add_to_cart not sent or sent twice,"Remove the added cart line, remove the product from the compare list",VCST-6017 · Archetype:REPLAY · Technique:DT,Draft
+GA-042,"Markup analytics — PDP cold load: config before view_item, one view_item with price",GA Events > Markup analytics,High,"BL-GA4-001, BL-GA4-004",,"[PRE:CLEAR_SESSION]
+Build under test carries PR vc-frontend#2543 (data-vc-track markup; the served bundle contains data-vc-track). Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params). A count per action = matching entries after the action minus before (n0 = window.dataLayer.length read just before it). Shorthand: ev(name) = window.dataLayer.filter(e => e[0] === 'event' && e[1] === name), and ev(name) from index n = the same filter over window.dataLayer.slice(n); 'card' = [data-vc-track=""product-card""], 'link' = [data-vc-track=""product-link""], 'list' = [data-vc-track=""product-list""]. Navigate in-app (link clicks, router Back) between legs where the dataLayer must accumulate; a hard load resets it.","anchor_url=@td(PROD_GA4_RELATED_ANCHOR.url)
+anchor_code=@td(PROD_GA4_RELATED_ANCHOR.code)","[NAV] {{FRONT_URL}}{{anchor_url}}
+[WAIT] the product title and the price are rendered
+[ACT] read the product price shown on the page as page_price_1
+[ACT] in the console read the index of the first 'config' entry (e[0] === 'config') as config_idx_1
+[ACT] in the console read the index of the first view_item entry as view_idx_1
+[ACT] in the console read the count of 'config' entries as config_n_1
+[ACT] in the console read the count of view_item entries as view_n_1
+[ACT] in the console read ev('view_item') as view_events_1
+[NAV] {{FRONT_URL}}{{anchor_url}} as a hard reload (deep link, no in-app navigation)
+[WAIT] the product title and the price are rendered
+[ACT] read the product price shown on the page as page_price_2
+[ACT] in the console read the index of the first 'config' entry as config_idx_2
+[ACT] in the console read the index of the first view_item entry as view_idx_2
+[ACT] in the console read the count of 'config' entries as config_n_2
+[ACT] in the console read the count of view_item entries as view_n_2
+[ACT] in the console read ev('view_item') as view_events_2","[MATH] view_n_1 = 1 (first load) {SPEC}
+[MATH] view_n_2 = 1 (after the reload) {SPEC}
+[MATH] config_n_1 = 1 and config_n_2 = 1 (one config per page load) {BL}
+[STATE] config_idx_1 is lower than view_idx_1 {BL}
+[STATE] config_idx_2 is lower than view_idx_2 {BL}
+[MATH] view_events_1[0][2].value = page_price_1 and view_events_1[0][2].value is greater than 0 {SPEC}
+[MATH] view_events_2[0][2].value = page_price_2 and view_events_2[0][2].value is greater than 0 {SPEC}
+[STATE] view_events_1[0][2].items[0].item_id and view_events_2[0][2].items[0].item_id both equal {{anchor_code}} {BL}","[CONSOLE] no TypeError or JS error on either load
+[NETWORK] no 4xx/5xx on /graphql",view_item fires before the GA config entry; view_item carries value 0 (fired before the price was bound); two view_item entries after one load (bind then refetch),none,VCST-6017 · Archetype:RACE · Technique:ST,Draft
+GA-043,"Markup analytics — same-id refetch does not re-send (add to cart on PDP, resize across lg)",GA Events > Markup analytics,High,BL-GA4-001,ECL-11.1,"[PRE:CLEAR_SESSION]
+[PRE:RESET_CART]
+Build under test carries PR vc-frontend#2543 (data-vc-track markup; the served bundle contains data-vc-track). The related widget re-mounts its cards when the layout switches between grid and carousel at lg (v-if). Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params). A count per action = matching entries after the action minus before (n0 = window.dataLayer.length read just before it). Shorthand: ev(name) = window.dataLayer.filter(e => e[0] === 'event' && e[1] === name), and ev(name) from index n = the same filter over window.dataLayer.slice(n); 'card' = [data-vc-track=""product-card""], 'link' = [data-vc-track=""product-link""], 'list' = [data-vc-track=""product-list""]. Navigate in-app (link clicks, router Back) between legs where the dataLayer must accumulate; a hard load resets it.",anchor_url=@td(PROD_GA4_RELATED_ANCHOR.url),"[ACT] resize the browser to 1920x1080
+[NAV] {{FRONT_URL}}{{anchor_url}}
+[WAIT] the related products widget is rendered
+[ACT] in the console read the count of ev('view_item') as v0
+[ACT] in the console read the count of ev('view_item_list') filtered to related_products as r0
+[ACT] click 'Add to cart' on the product
+[WAIT] the cart badge count increases (the product query is refetched)
+[ACT] in the console read the count of ev('view_item') as v1
+[ACT] in the console read the count of ev('view_item_list') filtered to related_products as r1
+[ACT] resize the browser to 800x900 so the widget switches to the grid layout
+[WAIT] the related products grid is rendered
+[ACT] in the console read the count of ev('view_item') as v2
+[ACT] in the console read the count of ev('view_item_list') filtered to related_products as r2","[MATH] v1 = v0 and v2 = v0 (the refetch and the layout switch send no further view_item) {SPEC}
+[MATH] r1 = r0 (the refetch does not re-send the related list) {SPEC}
+[MATH] r2 = r0 (the same products in a re-mounted grid are the same entities, no new impression) {SPEC}","[CONSOLE] no TypeError or JS error during the flow
+[NETWORK] no 4xx/5xx on /graphql",the same view_item or related list is counted again after a cart refetch; the grid or carousel switch sends the same list a second time,Remove the added cart line; resize the browser back to 1920x1080,VCST-6017 · Archetype:REPLAY · Technique:ST,Draft
+GA-044,Markup analytics — SPA navigation PDP A → B → Back keeps list params consistent with items,GA Events > Markup analytics,High,BL-GA4-001,,"[PRE:CLEAR_SESSION]
+Build under test carries PR vc-frontend#2543 (data-vc-track markup; the served bundle contains data-vc-track). Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params). A count per action = matching entries after the action minus before (n0 = window.dataLayer.length read just before it). Shorthand: ev(name) = window.dataLayer.filter(e => e[0] === 'event' && e[1] === name), and ev(name) from index n = the same filter over window.dataLayer.slice(n); 'card' = [data-vc-track=""product-card""], 'link' = [data-vc-track=""product-link""], 'list' = [data-vc-track=""product-list""]. Navigate in-app (link clicks, router Back) between legs where the dataLayer must accumulate; a hard load resets it.","anchor_url=@td(PROD_GA4_RELATED_ANCHOR.url)
+anchor_id=@td(PROD_GA4_RELATED_ANCHOR.id)
+anchor_name=@td(PROD_GA4_RELATED_ANCHOR.name)
+anchor_code=@td(PROD_GA4_RELATED_ANCHOR.code)","[ACT] resize the browser to 1920x1080
+[NAV] {{FRONT_URL}}{{anchor_url}}
+[WAIT] the related products widget is rendered
+[ACT] read the title text of every 'card' inside the related_products container as a_titles
+[ACT] read n_a = window.dataLayer.length
+[ACT] click the first 'link' element inside the first 'card' of the related_products container (product B)
+[WAIT] the page of product B is rendered
+[ACT] in the browser network panel read the id of the product in the /graphql product response for product B as id_b
+[ACT] read the title text of every 'card' inside the related_products container of product B as b_titles (empty when B has no related products)
+[ACT] read n_b = window.dataLayer.length
+[ACT] click the browser Back button
+[WAIT] the anchor product page is rendered again with the related products widget
+[ACT] in the console read ev('view_item') with the index of each entry in window.dataLayer as views
+[ACT] in the console read ev('view_item_list') with the index of each entry in window.dataLayer as lists","[STATE] every entry of lists with e[2].related_id equal to {{anchor_id}} has an e[2].item_list_name ending with {{anchor_name}} and its e[2].items[].item_name equal to a_titles {SPEC}
+[STATE] every entry of lists at an index between n_a and n_b has e[2].related_id equal to id_b (captured from the product response) and e[2].items[].item_name contained in b_titles {SPEC}
+[STATE] after the Back navigation, views holds a view_item for the anchor (items[0].item_id equals {{anchor_code}}) and lists holds an entry with related_id equal to {{anchor_id}} at an index above n_b {SPEC}","[CONSOLE] no TypeError or JS error during the navigation
+[NETWORK] no 4xx/5xx on /graphql",an event pairs product B items with the anchor related_id (stale list parameters); the Back navigation sends no view_item or no list for the anchor; related list of B repeats the anchor id,none,VCST-6017 · Archetype:STALE · Technique:ST,Draft
+GA-045,Markup analytics — variations table pagination and full view,GA Events > Markup analytics,Medium,BL-GA4-001,,"[PRE:CLEAR_SESSION]
+Build under test carries PR vc-frontend#2543 (data-vc-track markup; the served bundle contains data-vc-track). The expectation is derived from the README dedup rule and the pre-PR whole-array send; the intended behaviour on pagination is unspecified and is a {HYPOTHESIS} until the author confirms it. 60 variations, page size 50 (family search counts the parent: 61 rows, 2 pages). Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params). A count per action = matching entries after the action minus before (n0 = window.dataLayer.length read just before it). Shorthand: ev(name) = window.dataLayer.filter(e => e[0] === 'event' && e[1] === name), and ev(name) from index n = the same filter over window.dataLayer.slice(n); 'card' = [data-vc-track=""product-card""], 'link' = [data-vc-track=""product-link""], 'list' = [data-vc-track=""product-list""]. Navigate in-app (link clicks, router Back) between legs where the dataLayer must accumulate; a hard load resets it.","var_url=@td(PROD_GA4_VARIATION_PARENT.url)
+var_count=@td(PROD_GA4_VARIATION_PARENT.variations_count)
+page_size=@td(PROD_GA4_VARIATION_PARENT.page_size)","[NAV] {{FRONT_URL}}{{var_url}}
+[WAIT] the variations table is rendered with its first page of rows
+[ACT] in the console read the item_id lists of every view_item_list with item_list_id 'variations' (pages_before)
+[ACT] click the control that loads the next page of variations under the variations table
+[WAIT] additional variation rows are rendered in the table
+[ACT] in the console read the item_id lists of every view_item_list with item_list_id 'variations' (pages_after)
+[ACT] click the control that shows the full list of variations if it is offered
+[WAIT] all variation rows are rendered
+[ACT] in the console read the item_id lists of every view_item_list with item_list_id 'variations' (pages_full)","[STATE] no two entries of pages_full carry an identical item_id list (the same set is never sent twice) {HYPOTHESIS}
+[STATE] the union of all item_id values in pages_full covers every variation row rendered in the table, with no id reported in more than one event {HYPOTHESIS}
+[MATH] the union size of pages_full = the number of rendered variation rows (up to {{var_count}}) {HYPOTHESIS}","[CONSOLE] no TypeError or JS error while paging
+[NETWORK] no 4xx/5xx on /graphql",each page re-sends the accumulated set (ids repeat across events); the impression covers only page 1 forever (page 2 rows never reported),none,VCST-6017 · Archetype:BOUNDARY · Technique:BVA,Draft
+GA-046,Markup analytics — keyboard Enter and ctrl-click on a list product link,GA Events > Markup analytics,Medium,BL-GA4-001,,"[PRE:CLEAR_SESSION]
+Build under test carries PR vc-frontend#2543 (data-vc-track markup; the served bundle contains data-vc-track). The KeyDown trigger was struck out of scope; Enter on a focused link dispatches click, which is covered by the click rule. Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params). A count per action = matching entries after the action minus before (n0 = window.dataLayer.length read just before it). Shorthand: ev(name) = window.dataLayer.filter(e => e[0] === 'event' && e[1] === name), and ev(name) from index n = the same filter over window.dataLayer.slice(n); 'card' = [data-vc-track=""product-card""], 'link' = [data-vc-track=""product-link""], 'list' = [data-vc-track=""product-list""]. Navigate in-app (link clicks, router Back) between legs where the dataLayer must accumulate; a hard load resets it.",anchor_url=@td(PROD_GA4_RELATED_ANCHOR.url),"[ACT] resize the browser to 1920x1080
+[NAV] {{FRONT_URL}}{{anchor_url}}
+[WAIT] the related products widget is rendered
+[ACT] read n0 = window.dataLayer.length
+[ACT] press Tab until document.activeElement is a 'link' element inside the related_products container
+[ACT] press Enter
+[WAIT] the product page of the focused card is rendered
+[ACT] in the console read ev('select_item') from index n0 as enter_clicks
+[NAV] {{FRONT_URL}}{{anchor_url}}
+[WAIT] the related products widget is rendered
+[ACT] read n1 = window.dataLayer.length
+[ACT] click the first 'link' element inside the first 'card' of the related_products container while holding Control
+[WAIT] a new browser tab opened for the product
+[ACT] in the first tab read ev('select_item') from index n1 as ctrl_clicks
+[ACT] close the new tab","[MATH] the number of enter_clicks = 1 {SPEC}
+[STATE] enter_clicks[0][2].item_list_id === 'related_products' {SPEC}
+[MATH] the number of ctrl_clicks = 1 (a ctrl-click is one click, not two) {SPEC}","[CONSOLE] no TypeError or JS error during the interaction
+[NETWORK] no 4xx/5xx on /graphql",keyboard activation of a product link sends no select_item; a ctrl-click sends two,Close any additional browser tab,VCST-6017 · Archetype:RENDER · Technique:EP,Draft
+GA-047,Markup analytics — saved-for-later block next to recently browsed in cart,GA Events > Markup analytics,High,BL-GA4-001,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Build under test carries PR vc-frontend#2543 (data-vc-track markup; the served bundle contains data-vc-track). Cart state of {{USER_EMAIL}} is pooled and mutable: the seed step runs immediately before the cart is opened, and no product page may be visited between them. Saved-for-later stays on manual calls (developer comment C3). Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params). A count per action = matching entries after the action minus before (n0 = window.dataLayer.length read just before it). Shorthand: ev(name) = window.dataLayer.filter(e => e[0] === 'event' && e[1] === name), and ev(name) from index n = the same filter over window.dataLayer.slice(n); 'card' = [data-vc-track=""product-card""], 'link' = [data-vc-track=""product-link""], 'list' = [data-vc-track=""product-list""]. Navigate in-app (link clicks, router Back) between legs where the dataLayer must accumulate; a hard load resets it.","cart_url=@td(CART_GA4_SFL_RB.url)
+rb_codes=@td(CART_GA4_SFL_RB.recently_browsed_codes)
+sfl_codes=@td(CART_GA4_SFL_RB.saved_for_later_codes)
+cart_codes=@td(CART_GA4_SFL_RB.cart_line_codes)
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[SETUP] run TEST_ENV=<env> npm run seed:ga4-lists:cart; it exits 0
+[NAV] {{FRONT_URL}}{{cart_url}}
+[WAIT] the [data-list-id=""recently_browsed_products""] container and the saved-for-later block are both rendered
+[ACT] in the console read ev('view_item_list') filtered to recently_browsed_products as rb_events
+[ACT] click 'Show more' in the saved-for-later block
+[WAIT] more saved-for-later cards are rendered
+[ACT] in the console read ev('view_item_list') filtered to recently_browsed_products as rb_after_more
+[ACT] read n0 = window.dataLayer.length
+[ACT] click the first 'link' element inside the first 'card' of the saved-for-later block
+[WAIT] the product page is rendered
+[ACT] in the console read ev('select_item') from index n0 as sfl_clicks
+[ACT] in the console read ev('view_item_list') from index n0 as sfl_lists","[MATH] the number of rb_events = 1 {SPEC}
+[STATE] the item_id values of rb_events[0][2].items are exactly the codes in {{rb_codes}}, and none of them is in {{sfl_codes}} or {{cart_codes}} {SPEC}
+[MATH] the number of rb_after_more = the number of rb_events ('Show more' sends no view_item_list) {SPEC}
+[MATH] the number of sfl_clicks = 1 {SPEC}
+[MATH] the number of view_item_list entries with item_list_id 'recently_browsed_products' in sfl_lists = 0 {SPEC}","[CONSOLE] no TypeError or JS error on the cart page
+[NETWORK] no 4xx/5xx on /graphql",saved-for-later products appear in the recently browsed impression; Show more re-sends recently_browsed_products; a saved-for-later click sends two select_item or none,Return to the cart; the next run reseeds cart state with the seed command,VCST-6017 · Archetype:SCOPE · Technique:DT,Draft
+GA-048,"Markup analytics — carousels count each product once and keep slide clicks (related at 1920, products_carousel at 390)",GA Events > Markup analytics,Medium,BL-GA4-001,,"[PRE:CLEAR_SESSION]
+Build under test carries PR vc-frontend#2543 (data-vc-track markup; the served bundle contains data-vc-track). The related widget is a carousel from lg up (10 associations, at most 7 per view); products_carousel is a carousel at every width. Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params). A count per action = matching entries after the action minus before (n0 = window.dataLayer.length read just before it). Shorthand: ev(name) = window.dataLayer.filter(e => e[0] === 'event' && e[1] === name), and ev(name) from index n = the same filter over window.dataLayer.slice(n); 'card' = [data-vc-track=""product-card""], 'link' = [data-vc-track=""product-link""], 'list' = [data-vc-track=""product-list""]. Navigate in-app (link clicks, router Back) between legs where the dataLayer must accumulate; a hard load resets it.","anchor_url=@td(PROD_GA4_RELATED_ANCHOR.url)
+related_count=@td(PROD_GA4_RELATED_ANCHOR.related_count)
+lists_url=@td(PB_GA4_PRODUCT_LISTS.url)","[ACT] resize the browser to 1920x1080
+[NAV] {{FRONT_URL}}{{anchor_url}}
+[WAIT] the related products carousel is rendered
+[ACT] in the console read the related_products view_item_list
+[ACT] read the item_id list of its items as related_ids
+[ACT] resize the browser to 390x844
+[NAV] {{FRONT_URL}}{{lists_url}}
+[WAIT] the titled [data-list-id=""products_carousel""] container is rendered
+[ACT] in the console read the view_item_list of the first products_carousel container as car_event
+[ACT] read n0 = window.dataLayer.length
+[ACT] click the first 'link' element inside a visible slide of the first products_carousel container
+[WAIT] the product page is rendered
+[ACT] in the console read ev('select_item') from index n0 as slide_clicks","[MATH] related_ids.length = {{related_count}} and the item_id values are all distinct {SPEC}
+[STATE] the item_id values of car_event[2].items are all distinct (a cloned or hidden slide is counted once) {SPEC}
+[MATH] the number of slide_clicks = 1 and slide_clicks[0][2].item_list_id === 'products_carousel' {SPEC}","[CONSOLE] no TypeError or JS error while the carousels render
+[NETWORK] no 4xx/5xx on /graphql",cloned or off-screen slides produce duplicate ids in items[]; a tap on a carousel slide sends no select_item (lost to the swipe handler),Resize the browser back to 1920x1080,VCST-6017 · Archetype:BOUNDARY · Technique:EP,Draft
+GA-049,Markup analytics — Page Builder products carousel block,GA Events > Markup analytics,Medium,BL-GA4-001,,"[PRE:CLEAR_SESSION]
+Build under test carries PR vc-frontend#2543 (data-vc-track markup; the served bundle contains data-vc-track). The fixture page carries a titled and an untitled products_carousel; the untitled one sits below a 2600 px spacer. name_carousel_titled must be non-empty and name_carousel_untitled empty (fixture contract); all DOM reads happen before the click. Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params). A count per action = matching entries after the action minus before (n0 = window.dataLayer.length read just before it). Shorthand: ev(name) = window.dataLayer.filter(e => e[0] === 'event' && e[1] === name), and ev(name) from index n = the same filter over window.dataLayer.slice(n); 'card' = [data-vc-track=""product-card""], 'link' = [data-vc-track=""product-link""], 'list' = [data-vc-track=""product-list""]. Navigate in-app (link clicks, router Back) between legs where the dataLayer must accumulate; a hard load resets it.",lists_url=@td(PB_GA4_PRODUCT_LISTS.url),"[ACT] resize the browser to 1920x1080
+[NAV] {{FRONT_URL}}{{lists_url}}
+[WAIT] both [data-list-id=""products_carousel""] containers are in the DOM
+[ACT] in the console read the data-list-name attribute of the titled products_carousel container as name_carousel_titled
+[ACT] in the console read the data-list-name attribute of the untitled products_carousel container as name_carousel_untitled (empty)
+[ACT] in the console read the number of 'card' elements inside the titled products_carousel container as cards_carousel_titled
+[ACT] in the console read the number of 'card' elements inside the untitled products_carousel container as cards_carousel_untitled
+[ACT] read the title text of the first 'card' of the titled carousel as card_title
+[ACT] in the console read ev('view_item_list') filtered to e[2].item_list_id === 'products_carousel' as car_events
+[ACT] read n0 = window.dataLayer.length
+[ACT] click the first 'link' element inside the first 'card' of the titled carousel
+[WAIT] the product page is rendered
+[ACT] in the console read ev('select_item') from index n0 as car_clicks","[MATH] the number of car_events = 2 (one per carousel container) {SPEC}
+[MATH] the number of car_events entries with e[2].item_list_name === name_carousel_titled = 1 {SPEC}
+[MATH] that entry's e[2].items.length = cards_carousel_titled {SPEC}
+[STATE] the other car_events entry has no item_list_name key, or it is undefined, never an empty string (name_carousel_untitled is empty) {SPEC}
+[MATH] the other entry's e[2].items.length = cards_carousel_untitled {SPEC}
+[STATE] the item_id sets of the two events are disjoint {SPEC}
+[MATH] the number of car_clicks = 1 and car_clicks[0][2].item_list_id === 'products_carousel' {SPEC}
+[STATE] car_clicks[0][2].item_list_name equals name_carousel_titled and car_clicks[0][2].items[0].item_name equals card_title (captured before the click) {SPEC}","[CONSOLE] no TypeError or JS error on the fixture page
+[NETWORK] no 4xx/5xx on /graphql",a carousel block sends nothing; the two carousels merge into one event; an untitled carousel sends an empty item_list_name,Navigate back to {{FRONT_URL}},VCST-6017 · Archetype:FALLBACK · Technique:EP,Draft
+GA-050,"Markup analytics — Page Builder favorite products block (signed-in, empty vs with favorites)",GA Events > Markup analytics,Medium,BL-GA4-001,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Build under test carries PR vc-frontend#2543 (data-vc-track markup; the served bundle contains data-vc-track). favorite-products is a product QUERY block (a filter), not the account's favourites; the page of the second fixture carries one whose filter matches nothing. Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params). A count per action = matching entries after the action minus before (n0 = window.dataLayer.length read just before it). Shorthand: ev(name) = window.dataLayer.filter(e => e[0] === 'event' && e[1] === name), and ev(name) from index n = the same filter over window.dataLayer.slice(n); 'card' = [data-vc-track=""product-card""], 'link' = [data-vc-track=""product-link""], 'list' = [data-vc-track=""product-list""]. Navigate in-app (link clicks, router Back) between legs where the dataLayer must accumulate; a hard load resets it.","lists_url=@td(PB_GA4_PRODUCT_LISTS.url)
+html_url=@td(PB_GA4_HTML_LISTS.url)
+empty_title=@td(PB_GA4_HTML_LISTS.empty_favorites_title)
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}{{lists_url}}
+[WAIT] the [data-list-id=""favorite_products""] container is rendered with product cards
+[ACT] in the console read ev('view_item_list') filtered to e[2].item_list_id === 'favorite_products' as fav_events
+[ACT] read the number of 'card' elements inside the favorite_products container as fav_cards
+[ACT] read the title text of the first 'card' of the favorite_products container as fav_title
+[ACT] read n0 = window.dataLayer.length
+[ACT] click the first 'link' element inside the first 'card' of the favorite_products container
+[WAIT] the product page is rendered
+[ACT] in the console read ev('select_item') from index n0 as fav_clicks
+[NAV] {{FRONT_URL}}{{html_url}}
+[WAIT] the favorite-products block titled {{empty_title}} is in the DOM with no product cards
+[ACT] in the console read ev('view_item_list') filtered to favorite_products as empty_events","[MATH] the number of fav_events = 1 and fav_events[0][2].items.length = fav_cards {SPEC}
+[MATH] the number of fav_clicks = 1 and fav_clicks[0][2].item_list_id === 'favorite_products' and fav_clicks[0][2].items[0].item_name equals fav_title (captured before the click) {SPEC}
+[MATH] the number of empty_events = 0 (an empty block sends no impression) {SPEC}","[CONSOLE] no TypeError or JS error on either page
+[NETWORK] no 4xx/5xx on /graphql",an empty favorites block sends an empty view_item_list; a favorites block with products never reports; the click is not reported,Navigate back to {{FRONT_URL}},VCST-6017 · Archetype:FALLBACK · Technique:EP,Draft
+GA-051,Markup analytics — plain HTML product list with data-product-* attributes,GA Events > Markup analytics,Medium,BL-GA4-001,,"[PRE:CLEAR_SESSION]
+Build under test carries PR vc-frontend#2543 (data-vc-track markup; the served bundle contains data-vc-track). Plain HTML in a Page Builder text block, in the PR README grammar: product-list with data-list-id, product-card with data-product-id, -sku, -name and -price, product-link. Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params). A count per action = matching entries after the action minus before (n0 = window.dataLayer.length read just before it). Shorthand: ev(name) = window.dataLayer.filter(e => e[0] === 'event' && e[1] === name), and ev(name) from index n = the same filter over window.dataLayer.slice(n); 'card' = [data-vc-track=""product-card""], 'link' = [data-vc-track=""product-link""], 'list' = [data-vc-track=""product-list""]. Navigate in-app (link clicks, router Back) between legs where the dataLayer must accumulate; a hard load resets it.","html_url=@td(PB_GA4_HTML_LISTS.url)
+full_list=@td(PB_GA4_HTML_LISTS.full_list_id)","[NAV] {{FRONT_URL}}{{html_url}}
+[WAIT] the [data-list-id=""{{full_list}}""] container is rendered
+[ACT] in the console read the data-product-id attribute of each 'card' inside that container
+[ACT] in the console read the data-product-sku attribute of each 'card' inside that container
+[ACT] in the console read the data-product-name attribute of each 'card' inside that container
+[ACT] in the console read the data-product-price attribute of each 'card' inside that container
+[ACT] in the console read ev('view_item_list') filtered to e[2].item_list_id === '{{full_list}}' as html_events
+[ACT] read n0 = window.dataLayer.length
+[ACT] click the first 'link' element inside the container
+[WAIT] 1 second elapsed
+[ACT] in the console read ev('select_item') from index n0 as html_clicks","[MATH] the number of html_events = 1 and html_events[0][2].items.length = the number of product-card elements {SPEC}
+[STATE] items[i].item_id equals the card's data-product-sku, items[i].item_name equals its data-product-name {SPEC}
+[MATH] items[i].price = Number(data-product-price) of the card, and Number.isFinite(items[i].price) is true {SPEC}
+[MATH] the number of html_clicks = 1 and html_clicks[0][2].items[0].item_name equals the clicked card's data-product-name {SPEC}","[CONSOLE] no TypeError or JS error while the tracker handles the partial product
+[NETWORK] no 4xx/5xx on /graphql",a markup-only product throws in the GA tracker (console error); price is NaN; the list or the click is not reported,Navigate back to {{FRONT_URL}} if the click navigated,VCST-6017 · Archetype:FALLBACK · Technique:EG,Draft
+GA-052,Markup analytics — markup products without id or sku do not re-send on unrelated DOM changes,GA Events > Markup analytics,Medium,BL-GA4-001,ECL-11.1,"[PRE:CLEAR_SESSION]
+Build under test carries PR vc-frontend#2543 (data-vc-track markup; the served bundle contains data-vc-track). The partial list has cards with name and price only (no id or sku): the expectation below is the README dedup rule read as applying to id-less items, a {HYPOTHESIS} until the author confirms it. Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params). A count per action = matching entries after the action minus before (n0 = window.dataLayer.length read just before it). Shorthand: ev(name) = window.dataLayer.filter(e => e[0] === 'event' && e[1] === name), and ev(name) from index n = the same filter over window.dataLayer.slice(n); 'card' = [data-vc-track=""product-card""], 'link' = [data-vc-track=""product-link""], 'list' = [data-vc-track=""product-list""]. Navigate in-app (link clicks, router Back) between legs where the dataLayer must accumulate; a hard load resets it.","html_url=@td(PB_GA4_HTML_LISTS.url)
+partial_list=@td(PB_GA4_HTML_LISTS.partial_list_id)","[NAV] {{FRONT_URL}}{{html_url}}
+[WAIT] the [data-list-id=""{{partial_list}}""] container is rendered
+[ACT] in the console read the count of ev('view_item_list') filtered to e[2].item_list_id === '{{partial_list}}' as c0
+[ACT] click into the header search field
+[WAIT] the field has focus
+[ACT] type 'ab' into the header search field
+[WAIT] the search dropdown has opened
+[ACT] clear the header search field
+[WAIT] the search dropdown has closed
+[ACT] repeat the three actions above two more times
+[WAIT] 1 second elapsed
+[ACT] in the console read the count of ev('view_item_list') filtered to {{partial_list}} as c1","[MATH] c1 = c0 (unrelated DOM changes do not re-send the list) {HYPOTHESIS}
+[MATH] c0 <= 1 {HYPOTHESIS}","[CONSOLE] no TypeError or JS error while the DOM mutates
+[NETWORK] no 4xx/5xx on /graphql",the list of id-less products is re-sent on every DOM mutation (event storm); two or more impressions after the first load,none,VCST-6017 · Archetype:REPLAY · Technique:EG,Draft
+GA-053,"Markup analytics — lists kept on manual calls get no second event (category, search dropdown, compare, cart, wishlist)",GA Events > Markup analytics,Critical,BL-GA4-001,ECL-11.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Build under test carries PR vc-frontend#2543 (data-vc-track markup; the served bundle contains data-vc-track). Saved-for-later page and shared-list legs are not authored: the saved-for-later page has no verified route on this build and a shared list needs a second account that shares it; both are VcLineItem lists with no markup roles. The wishlist leg creates its own 'AGENT-TEST-6017-WL' list and removes it in Cleanup (FIFTH RULE). Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params). A count per action = matching entries after the action minus before (n0 = window.dataLayer.length read just before it). Shorthand: ev(name) = window.dataLayer.filter(e => e[0] === 'event' && e[1] === name), and ev(name) from index n = the same filter over window.dataLayer.slice(n); 'card' = [data-vc-track=""product-card""], 'link' = [data-vc-track=""product-link""], 'list' = [data-vc-track=""product-list""]. Navigate in-app (link clicks, router Back) between legs where the dataLayer must accumulate; a hard load resets it.","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","--- SCREEN: Category ---
+[NAV] {{FRONT_URL}}/snacks
+[WAIT] the product grid is rendered
+[ACT] in the console read ev('view_item_list') as cat_lists
+[ACT] read n0 = window.dataLayer.length
+[ACT] click the first 'link' element inside the first 'card' of the product grid
+[WAIT] the product page is rendered
+[ACT] in the console read ev('select_item') from index n0 as cat_clicks
+--- SCREEN: Search dropdown ---
+[NAV] {{FRONT_URL}}
+[WAIT] the header search field is visible
+[ACT] type 'laptop' into the header search field
+[WAIT] the search dropdown lists products
+[ACT] in the console read ev('view_item_list') filtered to e[2].item_list_id === 'search_bar' as sd_lists
+[ACT] read n1 = window.dataLayer.length
+[ACT] click the first product in the dropdown
+[WAIT] the product page is rendered
+[ACT] in the console read ev('select_item') from index n1 as sd_clicks
+--- SCREEN: Compare ---
+[NAV] {{FRONT_URL}}/snacks
+[WAIT] the product grid is rendered
+[ACT] click 'Add to Compare' on the first two cards
+[WAIT] the compare badge shows 2
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table is rendered
+[ACT] in the console read ev('view_item_list') as cmp_lists
+--- SCREEN: Cart ---
+[NAV] {{FRONT_URL}}/snacks
+[WAIT] the product grid is rendered
+[ACT] click 'Add to cart' on the first card
+[WAIT] the cart badge count increases
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart line is rendered
+[ACT] read n2 = window.dataLayer.length
+[ACT] click the first 'link' element inside the cart line
+[WAIT] the product page is rendered
+[ACT] in the console read ev('select_item') from index n2 as cart_clicks
+--- SCREEN: Wishlist ---
+[NAV] {{FRONT_URL}}/account/lists
+[WAIT] the lists page is rendered
+[ACT] click 'Create list' (`[data-test-id=""create-wishlist-button""]`)
+[WAIT] the New List dialog (`[data-test-id=""add-or-update-wishlist-modal""]`) is visible
+[ACT] fill the List name field (`[data-test-id=""wishlist-name-input""]`) with 'AGENT-TEST-6017-WL'
+[ACT] click 'Create list' (`[data-test-id=""wishlist-settings-save-button""]`)
+[WAIT] the 'AGENT-TEST-6017-WL' list card is visible on /account/lists
+[NAV] {{FRONT_URL}}/snacks
+[WAIT] the product grid is rendered
+[ACT] read the title text of the first card of the product grid as wl_added_title
+[ACT] click 'Add to list' on the first card of the product grid
+[WAIT] the 'Please select list' dialog is open
+[ACT] select the checkbox of the 'AGENT-TEST-6017-WL' list in the dialog
+[ACT] click 'Save' (`[data-test-id=""wishlist-modal-save-button""]`)
+[WAIT] the dialog is closed
+[NAV] {{FRONT_URL}}/account/lists
+[WAIT] the 'AGENT-TEST-6017-WL' list card is visible
+[ACT] click the 'AGENT-TEST-6017-WL' list card
+[WAIT] the list page shows its line item
+[ACT] in the console read ev('view_item_list') as wl_lists
+[ACT] in the console read the number of 'list' containers on the page as wl_containers
+[ACT] read the title text of the first line item of the list as wl_title
+[ACT] read n3 = window.dataLayer.length
+[ACT] click the first 'link' element inside the first line item of the list
+[WAIT] the product page is rendered
+[ACT] in the console read ev('select_item') from index n3 as wl_clicks","[MATH] the number of cat_lists = 1 and the number of cat_clicks = 1 (category stays on its manual call) {SPEC}
+[MATH] the number of sd_lists = 1 and the number of sd_clicks = 1 (search dropdown) {SPEC}
+[MATH] the number of cmp_lists with e[2].item_list_id === 'compare_products' = 1 {SPEC}
+[MATH] the number of cart_clicks = 1 and cart_clicks[0][2].item_list_id === 'cart' {SPEC}
+[MATH] the number of wl_lists = 1 (one impression for the list page, no markup duplicate) {SPEC}
+[STATE] wl_lists[0][2].item_list_id === 'wishlist' {HYPOTHESIS}
+[STATE] wl_lists[0][2].items[0].item_name equals wl_added_title (captured before adding to the list) {SPEC}
+[MATH] wl_containers = 0 (the list page renders VcLineItem rows with no product-list container, so markup cannot send) {SPEC}
+[MATH] the number of wl_clicks = 1 and wl_clicks[0][2].items[0].item_name equals wl_title (captured before the click) {SPEC}","[CONSOLE] no TypeError or JS error on any of the screens
+[NETWORK] no 4xx/5xx on /graphql",a kept-manual list now sends two view_item_list or two select_item (markup plus manual); a click sends the event with the markup list id instead of the manual one,"Remove the added cart line and clear the compare list; open /account/lists, open the kebab menu (`[data-test-id=""wishlist-card-menu-button""]`) of the 'AGENT-TEST-6017-WL' list card, click 'Remove list' and accept the removal",VCST-6017 · Archetype:REPLAY · Technique:DT,Draft
+GA-054,Markup analytics — barcode single-hit search redirect sends no view_item_list,GA Events > Markup analytics,High,BL-GA4-001,,"[PRE:CLEAR_SESSION]
+Manual: the case changes B2B-store's shared barcode setting (Catalog.Search.BarcodeSearchFields = [""gtin""]), which needs operator approval, and restores it in Cleanup. Do not run it in parallel with another case that reads the same store settings. Build under test carries PR vc-frontend#2543 (data-vc-track markup; the served bundle contains data-vc-track). A scan cannot be dispatched here (no camera): the case enters at /search?barcode=<value>, the route useBarcodeSearch.ts pushes on a real scan. Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params). A count per action = matching entries after the action minus before (n0 = window.dataLayer.length read just before it). Shorthand: ev(name) = window.dataLayer.filter(e => e[0] === 'event' && e[1] === name), and ev(name) from index n = the same filter over window.dataLayer.slice(n); 'card' = [data-vc-track=""product-card""], 'link' = [data-vc-track=""product-link""], 'list' = [data-vc-track=""product-list""]. Navigate in-app (link clicks, router Back) between legs where the dataLayer must accumulate; a hard load resets it.","gtin=@td(BARCODE_GTIN_UNIQUE.gtin)
+sku=@td(BARCODE_GTIN_UNIQUE.sku)
+product_url=@td(BARCODE_GTIN_UNIQUE.url)","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access, capture access_token
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token>, capture scannerEnabled and fields as original_settings
+[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: {""scannerEnabled"": true, ""fields"": [""gtin""]}
+[NAV] {{FRONT_URL}}
+[WAIT] the home page is fully loaded (hard reload: the SPA reads store settings once at start)
+[NAV] {{FRONT_URL}}/search?barcode={{gtin}}
+[WAIT] navigation settles on the product page of {{sku}} (the single hit redirects)
+[ACT] in the console read ev('view_item_list') of the /search?barcode= load as list_events
+[ACT] in the console read ev('view_item') of the same load as item_events","[STATE] the final URL is the product page {{product_url}} {SPEC}
+[MATH] the number of list_events = 0 (the redirect is decided after the search response, so no impression is sent for the result grid) {SPEC}
+[MATH] the number of item_events = 1 and item_events[0][2].items[0].item_id equals {{sku}} {SPEC}","[CONSOLE] no TypeError or JS error during the redirect
+[NETWORK] no 4xx/5xx on /graphql",a view_item_list is in the dataLayer after the barcode redirect (event sent for a list the shopper never saw); the redirect does not reach the product page,"[HTTP] PUT {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} Authorization: Bearer <access_token> body: the original_settings captured before the change (scannerEnabled and fields; the resting state is fields [])
+[HTTP] GET {{BACK_URL}}/api/catalog/barcode-search/store/{{STORE_ID}} to confirm the original settings are back",VCST-6017 · Archetype:RACE · Technique:ST,Manual
+GA-055,Markup analytics — Page Builder test page: every product block type sends its own impression and click,GA Events > Markup analytics,High,BL-GA4-001,,"[PRE:CLEAR_SESSION]
+Build under test carries PR vc-frontend#2543 (data-vc-track markup; the served bundle contains data-vc-track). Fixture page blocks in order: products (titled), products-carousel (titled), favorite-products, demo-product-list, product-info, a 2600 px spacer, predefined-product-list, products-carousel (untitled). Each marked block holds its own disjoint product set. products and predefined-product-list share the list id products_block. demo-product-list and product-info are not marked by PR #2543. Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params). A count per action = matching entries after the action minus before (n0 = window.dataLayer.length read just before it). Shorthand: ev(name) = window.dataLayer.filter(e => e[0] === 'event' && e[1] === name), and ev(name) from index n = the same filter over window.dataLayer.slice(n); 'card' = [data-vc-track=""product-card""], 'link' = [data-vc-track=""product-link""], 'list' = [data-vc-track=""product-list""]. Navigate in-app (link clicks, router Back) between legs where the dataLayer must accumulate; a hard load resets it.",lists_url=@td(PB_GA4_PRODUCT_LISTS.url),"[ACT] resize the browser to 1920x1080
+[NAV] {{FRONT_URL}}{{lists_url}}
+[WAIT] all product blocks are in the DOM, without scrolling the page
+[ACT] in the console read the number of 'list' containers as containers, without scrolling
+[ACT] in the console read the data-list-id of each 'list' container
+[ACT] in the console read the data-list-name of each 'list' container
+[ACT] in the console read the number of 'card' elements inside each 'list' container
+[ACT] in the console read ev('view_item_list') as events
+[ACT] read the product titles rendered in the demo-product-list block as demo_titles
+[ACT] read the product ids or SKUs rendered in the demo-product-list block (data-product-id or SKU text, where shown) as demo_ids
+[ACT] read the title text of the product rendered in the product-info block as info_title
+[ACT] read the product id or SKU rendered in the product-info block as info_id
+[ACT] click the first 'link' element inside the first 'card' of the first 'list' container
+[WAIT] the product page is rendered
+[ACT] press the browser Back button
+[WAIT] the fixture page is rendered again
+[ACT] repeat the three actions above for each of the other four 'list' containers in DOM order (the two below the spacer are scrolled into view first)
+[WAIT] the fixture page is rendered again
+[ACT] in the console read ev('select_item') in order as clicks","[MATH] the number of events = containers = 5 (one impression per marked block, the two below the spacer included without scrolling) {SPEC}
+[STATE] the pairs (item_list_id, item_list_name) of the events equal the (data-list-id, data-list-name) of the containers, with item_list_name absent for the untitled carousel {SPEC}
+[STATE] each event's items.length equals its container's card count and no item_id appears in two events {SPEC}
+[STATE] no event's items[] contains an entry whose item_id is in demo_ids or equals info_id, or whose item_name is in demo_titles or equals info_title (the unmarked demo-product-list and product-info blocks produced no event) {SPEC}
+[MATH] the number of clicks = 5 and clicks[i][2].item_list_id equals the list id of the i-th marked container {SPEC}","[CONSOLE] no TypeError or JS error on the fixture page
+[NETWORK] no 4xx/5xx on /graphql",a product-bearing Page Builder block type is left untracked (fewer impressions than marked containers); two blocks sharing a list id merge into one event; a below-the-fold block waits for scroll; an unmarked block starts sending,Navigate back to {{FRONT_URL}},VCST-6017 · Archetype:SILENT · Technique:EP,Draft
+GA-056,Markup analytics — resizing the viewport does not re-send a product list,GA Events > Markup analytics,Medium,BL-GA4-001,ECL-11.1,"[PRE:CLEAR_SESSION]
+Build under test carries PR vc-frontend#2543 (data-vc-track markup; the served bundle contains data-vc-track). The case expects one impression per list per page view, derived from the README (a refetched list does not resend) and from the pre-PR single send; the build is observed to re-send on resize in 3x, so this case is expected to FAIL until fixed. PDP with a recommended block: found as in the journey case. Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params). A count per action = matching entries after the action minus before (n0 = window.dataLayer.length read just before it). Shorthand: ev(name) = window.dataLayer.filter(e => e[0] === 'event' && e[1] === name), and ev(name) from index n = the same filter over window.dataLayer.slice(n); 'card' = [data-vc-track=""product-card""], 'link' = [data-vc-track=""product-link""], 'list' = [data-vc-track=""product-list""]. Navigate in-app (link clicks, router Back) between legs where the dataLayer must accumulate; a hard load resets it.",url={{FRONT_URL}},"[ACT] resize the browser to 1920x1080
+[NAV] a product page that shows a recommended products block (found by walking the products_block cards on {{FRONT_URL}})
+[WAIT] the [data-list-id^=""recommended_products_""] container is rendered
+[ACT] in the console read the count of view_item_list events whose item_list_id starts with recommended_products_ (c1920a)
+[ACT] resize the browser to 800x900
+[WAIT] the recommended products block re-renders for the new width
+[ACT] in the console read the same count (c800)
+[ACT] resize the browser to 1920x1080
+[WAIT] the recommended products block re-renders for the new width
+[ACT] in the console read the same count (c1920b)","[MATH] c800 = c1920a (a resize does not re-send the same list) {SPEC}
+[MATH] c1920b = c1920a {SPEC}
+[MATH] c1920a = 1 {SPEC}","[CONSOLE] no TypeError or JS error while resizing
+[NETWORK] no 4xx/5xx on /graphql",each resize that changes the rendered card count sends the same list again; the same impressions are counted two or three times per page view,Resize the browser back to 1920x1080,VCST-6017 · Archetype:REPLAY · Technique:ST,Draft
+GA-057,Markup analytics — impression set on cold load does not depend on viewport width,GA Events > Markup analytics,Medium,BL-GA4-001,,"[PRE:CLEAR_SESSION]
+Build under test carries PR vc-frontend#2543 (data-vc-track markup; the served bundle contains data-vc-track). The expectation is the README rule (appear = rendered in the DOM): at each width the impression holds exactly the cards rendered at that width, all drawn from the recommended response. Whole-array parity with the pre-PR send (observed 3x: 4, 5 and 6 of 6 items at 390, 800 and 1920) is an open author question and is not asserted here. PDP with a recommended block: found as in the journey case. Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params). A count per action = matching entries after the action minus before (n0 = window.dataLayer.length read just before it). Shorthand: ev(name) = window.dataLayer.filter(e => e[0] === 'event' && e[1] === name), and ev(name) from index n = the same filter over window.dataLayer.slice(n); 'card' = [data-vc-track=""product-card""], 'link' = [data-vc-track=""product-link""], 'list' = [data-vc-track=""product-list""]. Navigate in-app (link clicks, router Back) between legs where the dataLayer must accumulate; a hard load resets it.",url={{FRONT_URL}},"[ACT] resize the browser to 390x844
+[NAV] a product page that shows a recommended products block (found by walking the products_block cards on {{FRONT_URL}})
+[WAIT] the [data-list-id^=""recommended_products_""] container is rendered
+[ACT] read the product page URL as pdp_url
+[ACT] in the console read the number of 'card' elements inside the [data-list-id^=""recommended_products_""] container as cards_390
+[ACT] in the browser network panel read the product codes in the recommended products response as api_codes_390
+[ACT] in the console read ev('view_item_list') filtered to e[2].item_list_id starting with recommended_products_ as lists_390
+[ACT] resize the browser to 800x900
+[NAV] pdp_url as a hard load
+[WAIT] the recommended products container is rendered
+[ACT] in the console read the number of 'card' elements inside the [data-list-id^=""recommended_products_""] container as cards_800
+[ACT] in the browser network panel read the product codes in the recommended products response as api_codes_800
+[ACT] in the console read ev('view_item_list') filtered to e[2].item_list_id starting with recommended_products_ as lists_800
+[ACT] resize the browser to 1920x1080
+[NAV] pdp_url as a hard load
+[WAIT] the recommended products container is rendered
+[ACT] in the console read the number of 'card' elements inside the [data-list-id^=""recommended_products_""] container as cards_1920
+[ACT] in the browser network panel read the product codes in the recommended products response as api_codes_1920
+[ACT] in the console read ev('view_item_list') filtered to e[2].item_list_id starting with recommended_products_ as lists_1920","[MATH] the number of lists_390 = 1 and the number of lists_800 = 1 and the number of lists_1920 = 1 (one impression per cold load) {SPEC}
+[MATH] lists_390[0][2].items.length = cards_390 {SPEC}
+[MATH] lists_800[0][2].items.length = cards_800 {SPEC}
+[MATH] lists_1920[0][2].items.length = cards_1920 {SPEC}
+[STATE] every item_id of lists_390[0][2].items is one of api_codes_390, and likewise at 800 and 1920 {SPEC}
+[MATH] lists_390[0][2].items.length <= the number of api_codes_390, and likewise at 800 and 1920 {SPEC}","[CONSOLE] no TypeError or JS error on any load
+[NETWORK] no 4xx/5xx on /graphql
+[API] the recommended products response holds n_api products","the impression covers only the cards that fit the viewport, so the same list reports a different number of impressions per device",Resize the browser back to 1920x1080,VCST-6017 · Archetype:PARITY · Technique:EP · whole-array parity is an open author question on the B6 bug,Draft
+GA-058,Markup analytics — Customize on a configurable product card opens a new tab and sends one select_item,GA Events > Markup analytics,Low,BL-GA4-001,,"[PRE:CLEAR_SESSION]
+Build under test carries PR vc-frontend#2543 (data-vc-track markup; the served bundle contains data-vc-track). The configurable card with a 'Customize' link exists only in the signed-in home block (the guest home has none: AGENT-TEST-CFG-019 sits in the signed-in products_block on the vcst store), so the case signs in first; no such card -> BLOCKED. 'Customize' opens a new browser tab. Observation grammar: window.dataLayer entries are gtag argument arrays (e[0] === 'event', e[1] = event name, e[2] = params). A count per action = matching entries after the action minus before (n0 = window.dataLayer.length read just before it). Shorthand: ev(name) = window.dataLayer.filter(e => e[0] === 'event' && e[1] === name), and ev(name) from index n = the same filter over window.dataLayer.slice(n); 'card' = [data-vc-track=""product-card""], 'link' = [data-vc-track=""product-link""], 'list' = [data-vc-track=""product-list""]. Navigate in-app (link clicks, router Back) between legs where the dataLayer must accumulate; a hard load resets it.","url={{FRONT_URL}}
+user={{USER_EMAIL}}
+password={{USER_PASSWORD}}","[NAV] {{FRONT_URL}}/sign-in
+[WAIT] the sign-in form is visible
+[ACT] fill 'Email': {{USER_EMAIL}}
+[ACT] fill 'Password': {{USER_PASSWORD}}
+[ACT] click 'Sign in'
+[WAIT] the account is signed in
+[NAV] {{FRONT_URL}}
+[WAIT] the products_block container with a card offering 'Customize' is rendered
+[ACT] read the title text of that card as card_title
+[ACT] read n0 = window.dataLayer.length
+[ACT] click 'Customize' on that card
+[WAIT] a new browser tab opened with the configurable product page
+[ACT] switch back to the first tab
+[ACT] in the console read ev('select_item') from index n0 as cust_clicks
+[ACT] close the new tab","[MATH] the number of cust_clicks = 1 {SPEC}
+[STATE] cust_clicks[0][2].item_list_id === 'products_block' and .items[0].item_name equals card_title (captured before the click) {SPEC}","[CONSOLE] no TypeError or JS error on the first tab
+[NETWORK] no 4xx/5xx on /graphql",a product click opened in a new tab is lost (no select_item); the same click is counted twice,Close the additional browser tab; sign out of the account,VCST-6017 · Archetype:REPLAY · Technique:EP,Draft

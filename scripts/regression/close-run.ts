@@ -35,6 +35,7 @@ import { existsSync, readFileSync, writeFileSync } from "fs";
 import { basename, join, resolve } from "path";
 import { fileURLToPath } from "url";
 import { REG_ROOT, appendSuiteHistory, resolveRunDir } from "../lib/regression-triage.js";
+import { writeBaselineFromRun } from "./baseline.ts";
 
 const STATUS_PATH = join(REG_ROOT, "test-run-status.json");
 
@@ -57,6 +58,11 @@ export interface CloseResult {
   statusWritten: boolean;
   /** Why the status was not written, when it wasn't. */
   statusSkippedReason?: string;
+  /** True only when reports/regression/baseline.<env>.json was written by this close. */
+  baselineWritten: boolean;
+  baselineSkippedReason?: string;
+  /** The env the baseline was filed under — the pre-flight's `facts.env`, which can differ from `--env`. */
+  baselineEnv?: string;
   warnings: string[];
 }
 
@@ -136,6 +142,7 @@ export function closeRun(
       runDir,
       historyRows: 0,
       statusWritten: false,
+      baselineWritten: false,
       statusSkippedReason: `run is not finished — ${open.length} suite(s) still ${states} (${open.map((o) => o.id).join(", ")}); use --force only when the orchestrator is provably gone`,
       warnings,
     };
@@ -157,10 +164,21 @@ export function closeRun(
 
   // --- half 2: status flip ---
   if (opts.dryRun) {
-    return { runId, runDir, historyRows, statusWritten: false, statusSkippedReason: "dry run", warnings };
+    return { runId, runDir, historyRows, statusWritten: false, statusSkippedReason: "dry run", baselineWritten: false, warnings };
   }
   const flip = markRunClosed(runId, status, nowIso);
-  return { runId, runDir, historyRows, statusWritten: flip.written, statusSkippedReason: flip.reason, warnings };
+  // Baseline only for a run that actually closed as completed (spec §6): a stalled, refused or
+  // force-closed-while-open run must not become the next run's comparison point.
+  const base: { written: boolean; env?: string; reason?: string; warning?: string } =
+    !flip.written ? { written: false, reason: "status not written" }
+    : status !== "completed" ? { written: false, reason: `status ${status} is not completed` }
+    : opts.force && open.length > 0 ? { written: false, reason: "forced close with open suites" }
+    : writeBaselineFromRun(process.cwd(), runDir, env, runId);
+  if (!base.written) warnings.push(`baseline not written: ${base.reason}`);
+  if (base.warning) warnings.push(`baseline: ${base.warning}`);
+  return { runId, runDir, historyRows, statusWritten: flip.written, statusSkippedReason: flip.reason,
+    baselineWritten: base.written, ...(base.reason ? { baselineSkippedReason: base.reason } : {}),
+    ...(base.env ? { baselineEnv: base.env } : {}), warnings };
 }
 
 // --- CLI -------------------------------------------------------------------
@@ -202,6 +220,7 @@ function main(): void {
     console.log(`Run ${r.runId}`);
     console.log(`  history.json  : +${r.historyRows} per-suite row(s)`);
     console.log(`  status        : ${r.statusWritten ? statusArg : `NOT written — ${r.statusSkippedReason}`}`);
+    console.log(`  baseline      : ${r.baselineWritten ? `reports/regression/baseline.${r.baselineEnv ?? env}.json` : `not written — ${r.baselineSkippedReason ?? "dry run"}`}`);
     for (const w of r.warnings) console.log(`  WARNING       : ${w}`);
   }
 

@@ -1,0 +1,53 @@
+Total messages: 8 (Errors: 7, Warnings: 0)
+Returning 50 messages for level "warning"
+
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-BETA/AGENT-TEST-CMP-BETA-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-ALPHA/AGENT-TEST-CMP-ALPHA-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-FILL-2/AGENT-TEST-CMP-FILL-2-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-LONGNAME/AGENT-TEST-CMP-LONGNAME-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-PROPNAME/AGENT-TEST-CMP-PROPNAME-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-FILL-1/AGENT-TEST-CMP-FILL-1-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-VARPARENT/AGENT-TEST-CMP-VARPARENT-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-GAMMA/AGENT-TEST-CMP-GAMMA-main_md.png:0
+[ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://starmarket-platform.demo.govirto.com/cms-content/assets/catalog/5aa50/201482/201482_md.jpg:0
+[ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://starmarket-platform.demo.govirto.com/cms-content/assets/catalog/5aa50/201482/201482.jpg:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-PROPNAME/AGENT-TEST-CMP-PROPNAME-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-PROPNAME/AGENT-TEST-CMP-PROPNAME-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-FILL-1/AGENT-TEST-CMP-FILL-1-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-LONGNAME/AGENT-TEST-CMP-LONGNAME-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-ALPHA/AGENT-TEST-CMP-ALPHA-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-VARPARENT/AGENT-TEST-CMP-VARPARENT-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-BETA/AGENT-TEST-CMP-BETA-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-FILL-2/AGENT-TEST-CMP-FILL-2-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-ALPHA/AGENT-TEST-CMP-ALPHA-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-LONGNAME/AGENT-TEST-CMP-LONGNAME-main_md.png:0
+[ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://starmarket-platform.demo.govirto.com/cms-content/assets/catalog/5aa50/GLS-89772161/ERDINGER-500ml_md.png:0
+[ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://starmarket-platform.demo.govirto.com/cms-content/assets/catalog/5aa50/GLS-89772161/ERDINGER-500ml.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://images.netdirector.co.uk/gforces-auto/image/upload/w_575,h_383,q_auto,c_fill,f_auto,fl_lossy/auto-client/f42177d67f37e56bcfafba5fcf7d2d10/475635_25ym_honda_crf450rx_1__md.jpg:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-LONGNAME/AGENT-TEST-CMP-LONGNAME-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-FILL-1/AGENT-TEST-CMP-FILL-1-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-BETA/AGENT-TEST-CMP-BETA-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-VARPARENT/AGENT-TEST-CMP-VARPARENT-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-ALPHA/AGENT-TEST-CMP-ALPHA-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-FILL-2/AGENT-TEST-CMP-FILL-2-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-PROPNAME/AGENT-TEST-CMP-PROPNAME-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-GAMMA/AGENT-TEST-CMP-GAMMA-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-BETA/AGENT-TEST-CMP-BETA-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-LONGNAME/AGENT-TEST-CMP-LONGNAME-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-FILL-1/AGENT-TEST-CMP-FILL-1-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-FILL-2/AGENT-TEST-CMP-FILL-2-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-PROPNAME/AGENT-TEST-CMP-PROPNAME-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-ALPHA/AGENT-TEST-CMP-ALPHA-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-VARPARENT/AGENT-TEST-CMP-VARPARENT-main_md.png:0
+[ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://starmarket-platform.demo.govirto.com/cms-content/assets/catalog/5aa50/GLS-89772161/ERDINGER-500ml_md.png:0
+[ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://starmarket-platform.demo.govirto.com/cms-content/assets/catalog/5aa50/GLS-89772161/ERDINGER-500ml.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://images.netdirector.co.uk/gforces-auto/image/upload/w_575,h_383,q_auto,c_fill,f_auto,fl_lossy/auto-client/f42177d67f37e56bcfafba5fcf7d2d10/475635_25ym_honda_crf450rx_1__md.jpg:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-ALPHA/AGENT-TEST-CMP-ALPHA-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-LONGNAME/AGENT-TEST-CMP-LONGNAME-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-FILL-1/AGENT-TEST-CMP-FILL-1-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-BETA/AGENT-TEST-CMP-BETA-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-ALPHA/AGENT-TEST-CMP-ALPHA-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-LONGNAME/AGENT-TEST-CMP-LONGNAME-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-FILL-2/AGENT-TEST-CMP-FILL-2-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-VARPARENT/AGENT-TEST-CMP-VARPARENT-main_md.png:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-PROPNAME/AGENT-TEST-CMP-PROPNAME-main_md.png:0

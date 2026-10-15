@@ -56,6 +56,10 @@ bug. The calls run sequentially because `qa-bug` may take a browser lane.
 
 ## Verdict
 
+**Reconcile the strategy first**, per [`../qa-test-strategy/SKILL.md`](../qa-test-strategy/SKILL.md)
+§Reconcile: fill the round's `### Reconciliation`, apply its cap (a High/Critical risk without a result is
+never `PASS`), and write `summary.json.strategy` — never null once a strategy ran.
+
 The vocabulary and the decision rules are [`../qa-test/close-out.md`](../qa-test/close-out.md)
 §5-verdict.2 — `PASS` / `PASS_WITH_NOTES` / `FAIL` / `BLOCKED`. The conditions it reconciles are the
 checklist's AC items. A `Low` finding never makes a FAIL, and an accessibility finding never blocks a
@@ -101,7 +105,7 @@ functional ticket.
 Created <n> AGENT-TEST- entities · removed <n> · settings restored and re-read: <list | none>
 
 ## Context used
-Model <path> · Checklist <path> · Domain map <state> · Mind map <path | SKIPPED: reason> · Exploratory <SBTM path | ran:false reason> · PRs <repo#n list>
+Strategy <path · Round N> · Model <path | SKIP — no MODEL risk> · Checklist <path> · Domain map <state> · Mind map <path | SKIPPED: reason> · Exploratory <SBTM path | ran:false reason> · PRs <repo#n list>
 ```
 
 **Mind-map findings** go into `summary.json.domain_map.mind_map_findings[]`: a node the run

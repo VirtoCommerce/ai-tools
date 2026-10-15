@@ -1,25 +1,24 @@
 {
- "runId": "REG-2026-10-08-1151",
- "status": "completed",
- "startedAt": "2026-10-08T09:51:40.270Z",
- "windowStart": "2026-10-08T09:51:40.270Z",
- "selection": "106",
- "env": "vcst",
- "scoped": true,
- "purpose": "VCST-6077 round 2 C1 supplement: SR-TK-023 only; --no-promote",
- "suites": {
-  "106": {
-   "status": "done",
-   "lane": "browser",
-   "browser": "playwright-edge",
-   "laneId": 3,
-   "startedAt": "2026-10-08T09:51:40.270Z",
-   "attempts": 1,
-   "pass": 1,
-   "fail": 0,
-   "blocked": 0,
-   "finishedAt": "2026-10-08T09:52:50.831Z"
-  }
- },
- "finishedAt": "2026-10-08T09:52:50.831Z"
+  "runId": "REG-2026-10-13-1739",
+  "status": "completed",
+  "startedAt": "2026-10-13T17:39:30.000Z",
+  "windowStart": "2026-10-13T17:39:30.000Z",
+  "selection": "043",
+  "env": "vcst",
+  "scoped": true,
+  "purpose": "VCST-6017 /qa-test: verification of GA-030/GA-031 derivation fix (order line count from the placed order); --ids; --no-promote",
+  "suites": {
+    "043": {
+      "status": "done",
+      "lane": "browser",
+      "browser": "playwright-chrome",
+      "startedAt": "2026-10-13T17:40:16.060Z",
+      "pass": 2,
+      "fail": 0,
+      "blocked": 0,
+      "total": 2,
+      "finishedAt": "2026-10-13T17:47:32.879Z"
+    }
+  },
+  "finishedAt": "2026-10-13T17:47:42.665Z"
 }
