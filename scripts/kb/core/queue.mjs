@@ -386,8 +386,21 @@ export function migrateLegacyQueue(dir, legacy = legacyQueueDir()) {
   try { names = readdirSync(legacy); } catch { return; } // no old directory: the common case
   if (!names.length) return;
   try { mkdirSync(dir, { recursive: true }); } catch { return; }
+  // ONLY WHAT NOBODY IS USING (review round 4). After a `git pull` the hooks run new code at once while
+  // the MCP server keeps the old code -- and the old directory -- until it restarts. Draining that
+  // server's live journal, queue and sidecar broke its confirm gate ("was not opened in this session")
+  // and its ask handles on every turn. So a SESSION's files move only when all of them have sat for
+  // QUEUE_IDLE_MS (the rule the push applies to another session's queue), and a shared file only when
+  // it has sat that long itself. A live old server's files wait until it restarts and goes quiet.
+  const now = Date.now();
+  // `mtime`: every write moves it, and nothing else does (a rename or a chmod moves `ctime`).
+  const age = (n) => { try { return now - statSync(join(legacy, n)).mtimeMs; } catch { return 0; } };
+  const sessionOf = (n) => (/^[\w-]+\./.test(n) && !n.startsWith('.') && !/^(?:last-push|loop)\./.test(n) ? n.slice(0, n.indexOf('.')) : null);
+  const freshSessions = new Set(names.filter((n) => sessionOf(n) && age(n) < QUEUE_IDLE_MS).map(sessionOf));
   for (const name of names) {
     const from = join(legacy, name);
+    const owner = sessionOf(name);
+    if (owner ? freshSessions.has(owner) : age(name) < QUEUE_IDLE_MS) continue;
     // A file left aside by a drain that died between rename and append is finished here.
     const original = name.replace(/\.\d+\.moving$/, '');
     const to = join(dir, original);
@@ -711,7 +724,17 @@ function writePushStatus(env, status) {
   const path = pushStatusPath(env);
   const tmp = `${path}.${process.pid}.tmp`;
   writeFileSync(tmp, JSON.stringify(status, null, 2), 'utf8');
-  renameSync(tmp, path);
+  // Windows refuses a rename over a file another process holds open (a reader, antivirus, the indexer):
+  // a few short retries, then the temp file is removed rather than left in the queue dir (round 4).
+  for (let i = 0; ; i += 1) {
+    try { renameSync(tmp, path); return; } catch (err) {
+      if (i >= 4 || !['EPERM', 'EBUSY', 'EACCES'].includes(err?.code)) {
+        try { unlinkSync(tmp); } catch { /* already gone */ }
+        throw err;
+      }
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 25 * (i + 1));
+    }
+  }
 }
 
 export async function recordPush(r, { env = process.env, at = new Date() } = {}) {

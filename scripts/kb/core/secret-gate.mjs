@@ -73,7 +73,7 @@ export const TOKEN_SHAPES = Object.freeze([
 /** Domains that are test data by construction. RFC 2606 / 6761 names, and the fixture domains of this repo. */
 export const TEST_EMAIL_DOMAINS = Object.freeze(new Set([
   'example.com', 'example.org', 'example.net', 'test-agent.com', 'yopmail.com',
-  'test.virtocommerce.com', 'acme.com',
+  'test.virtocommerce.com', 'acme.com', 'test.com',
 ]));
 
 /** Top-level names that can never be a real mailbox (RFC 2606 / 6761). */
@@ -104,6 +104,8 @@ const COMMON_TLD = new Set([
   'consulting', 'international', 'business', 'support', 'team', 'works', 'today', 'club', 'live', 'life', 'xyz', 'pro', 'name',
 ]);
 const ROLE_LOCAL = /^(?:no-?reply|support|info|admin(?:istrator)?|sales|notifications?|mailer-daemon|postmaster|webmaster|git|hello|contact|help|team|billing|orders?|service)$/;
+/** The repo's own QA accounts on stands -- slot accounts and AGENT-TEST fixtures -- are not persons (round 4). */
+const QA_LOCAL = /(?:^|[-_.])agent-slot\d*$|^agent-test/;
 
 /** Is this one address somebody's real mailbox, as far as a shape can tell? */
 export function isPersonalEmail(address) {
@@ -119,7 +121,7 @@ export function isPersonalEmail(address) {
   const last = domain.split('.').pop();
   const identifier = /[A-Z]/.test(raw.slice(at + 1)) && !COMMON_TLD.has(last) && last.length >= 5;
   if (identifier || /^\d/.test(domain) || FILE_TLD.test(domain) || /^\d+x$/.test(local)) return false;
-  if (ROLE_LOCAL.test(local)) return false;
+  if (ROLE_LOCAL.test(local) || QA_LOCAL.test(local)) return false;
   // `emails:"*@gmail.com"` is a search pattern, not an address: a wildcard names nobody.
   if (local.includes('*')) return false;
   if (UI_PLACEHOLDER_EMAILS.has(a)) return false;
