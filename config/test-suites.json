@@ -4,7 +4,7 @@
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
     "generated": "2026-10-15",
-    "totalSuites": 156,
+    "totalSuites": 157,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -1166,7 +1166,7 @@
       "layer": "frontend",
       "concern": "non-functional",
       "priority": "P2",
-      "testCount": 58,
+      "testCount": 60,
       "estimatedMinutes": 17,
       "agent": "qa-testing-expert",
       "tags": [
@@ -3409,7 +3409,32 @@
       "concern": "functional",
       "priority": "P1",
       "testCount": 79,
-      "estimatedMinutes": 61,
+      "estimatedMinutes": 51,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "sales-rep",
+        "storefront",
+        "hub-dashboard",
+        "saved-layout",
+        "b2b",
+        "feature-gated"
+      ],
+      "requiresModules": [
+        "sales-rep"
+      ],
+      "customerApplicability": "reference",
+      "clickDriven": true
+    },
+    {
+      "id": "093b",
+      "name": "Sales Rep — Hub Plugin Delivery (Module Federation, storefront)",
+      "file": "regression/suites/Frontend/sales-rep/093b-sales-rep-hub-plugin-delivery.csv",
+      "domain": "sales-rep",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 16,
+      "estimatedMinutes": 10,
       "agent": "qa-frontend-expert",
       "tags": [
         "sales-rep",
@@ -3984,6 +4009,7 @@
         "092",
         "092b",
         "093",
+        "093b",
         "097"
       ]
     },
@@ -3998,6 +4024,7 @@
         "092",
         "092b",
         "093",
+        "093b",
         "096",
         "097"
       ]
@@ -4012,6 +4039,7 @@
         "092",
         "092b",
         "093",
+        "093b",
         "097"
       ]
     },

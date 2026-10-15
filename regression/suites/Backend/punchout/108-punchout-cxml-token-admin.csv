@@ -437,7 +437,7 @@ Body: {""externalId"":""AGENT-TEST-PO-RBAC"",""userId"":""{{mapUser}}"",""member
 DELETE {{BACK_URL}}/api/punchout-user-mappings?ids={{RBAC_ID}}
 [REST-EXEC cleanup_map]",VCST-5886 · Archetype:SCOPE · Technique:DT · Probe:VC-B2B-002,Draft
 PNCH-021,"Punchout admin — the user widget is hidden on a new contact, shows the identity on a mapped one and 'Not linked' on an unmapped one",Punchout > Admin user mapping,High,,,"[PRE:SIGNIN_AS:ADMIN]
-The contact of {{USER2_EMAIL}} has no punchout mapping; the contact of {{USER_EMAIL}} has the mapping @td(PUNCHOUT_MAPPING_DEFAULT.externalId)","ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId), mapped={{USER_EMAIL}}, unmapped={{USER2_EMAIL}}, admin={{ADMIN}}","[NAV] {{BACK_URL}}/admin
+The contact of {{USER2_EMAIL}} has no punchout mapping; the contact of @td(PUNCHOUT_MAPPING_DEFAULT.persona_email) has the mapping @td(PUNCHOUT_MAPPING_DEFAULT.externalId)","ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId), mapped=@td(PUNCHOUT_MAPPING_DEFAULT.persona_email), unmapped={{USER2_EMAIL}}, admin={{ADMIN}}","[NAV] {{BACK_URL}}/admin
 [BLADE] open 'Companies & contacts' and the contacts list
 [ACT] click the toolbar command that adds a new contact
 [WAIT] the new-contact blade opens
@@ -510,7 +510,7 @@ An own mapping AGENT-TEST-PO-DEL-1 is created for the contact of {{USER2_EMAIL}}
 [COUNT] POST /api/punchout-user-mappings/search for AGENT-TEST-PO-DEL-1 returns 0 mappings {SPEC}","[CONSOLE] no TypeError or JS error during the blade interaction
 [NETWORK] no 4xx/5xx on the Admin API calls this blade issues","confirmation without the identity, widget still showing the identity, cXML Status 200 for the deleted identity, console error",delete the mapping {{DEL_ID}} if the UI delete did not remove it,VCST-5886 · Archetype:LIFECYCLE · Technique:ST,Draft
 PNCH-025,Punchout admin — a punchout:read user sees the mapping read-only and a user with no punchout permission does not see the widget,Punchout > Admin user mapping,Critical,"BL-AUTH-005, BL-AUTH-014",,"Sign in to the Admin SPA as @td(BACKOFFICE_PUNCHOUT_READ.email) for the first part and as @td(BACKOFFICE_NO_PUNCHOUT.email) for the second (password {{DEFAULT_TEST_PASSWORD}}); both are non-administrator Manager accounts seeded by npm run seed:punchout
-[PRE:CLEAR_SESSION]","ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId), viewer=@td(BACKOFFICE_PUNCHOUT_READ.email), noperm=@td(BACKOFFICE_NO_PUNCHOUT.email), mapped={{USER_EMAIL}}","--- SCREEN: punchout:read user ---
+[PRE:CLEAR_SESSION]","ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId), viewer=@td(BACKOFFICE_PUNCHOUT_READ.email), noperm=@td(BACKOFFICE_NO_PUNCHOUT.email), mapped=@td(PUNCHOUT_MAPPING_DEFAULT.persona_email)","--- SCREEN: punchout:read user ---
 [NAV] {{BACK_URL}}/admin
 [ACT] sign in as {{viewer}}
 [PRE:VERIFY_AUTH]

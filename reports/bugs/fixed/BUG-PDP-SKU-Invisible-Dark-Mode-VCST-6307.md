@@ -1,9 +1,15 @@
 # PDP: SKU under the product title is invisible in dark mode (1.03:1), Mercury dark preset
 
-## Status: READY_TO_SUBMIT
+## Status: FIXED
 **Found by:** human · **Tracker:** [VCST-6307](https://virtocommerce.atlassian.net/browse/VCST-6307)
 
 **Severity:** Medium · **Type:** UI / visual (WCAG 1.4.3 contrast) · **Archetype:** design-token defect
+
+## Resolution
+- **Tracker:** VCST-6307, moved to Tested on 2026-10-14. Done waits for the PR merge.
+- **Fix:** vc-frontend#2574 @ `24c9f7f2` (open). The SKU span in `client-app/pages/product.vue` changes from `text-secondary-900` to `text-neutral-900`. The Mercury/default dark secondary scale is unchanged.
+- **Verified on:** theme `2.60.0-pr-2574-24c9-24c9f7f2`, local frontend-only with the vcst-qa API. The bug reproduced on vcst-qa first (theme `pr-2511-0a23`, before the fix): 1.03:1.
+- **Method:** `/qa-test` → verify-fix. The steps passed 3 of 3 runs at 16.01:1 (#edeef2 on #121317). All 10 checks pass. Evidence: `reports/tickets/Sprint26-20/VCST-6307/evidence.html`, tracker comment 112002.
 
 ## Environment
 - vcst-qa storefront, theme `2.60.0-pr-2543-0127` (PR #2543 does not touch the SKU line or presets, so `dev` is affected too)
@@ -18,7 +24,7 @@
 **Actual:** The SKU text renders `#0d1013` on the `#121317` background, a contrast of **1.03:1**, so it is effectively invisible. Only the copy button can be seen.
 **Expected:** The SKU is readable in dark mode, at least 4.5:1 (WCAG 1.4.3), as it is in light mode (18.28:1).
 
-![dark zoom](../../screenshots/PDP-SKU-Invisible-Dark-Mode/pdp-sku-dark-zoom.png)
+![dark zoom](../screenshots/PDP-SKU-Invisible-Dark-Mode/pdp-sku-dark-zoom.png)
 
 Folder: `reports/bugs/screenshots/PDP-SKU-Invisible-Dark-Mode/` (`pdp-sku-dark.png`, `pdp-sku-light.png`, `pdp-sku-dark-zoom.png`).
 

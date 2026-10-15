@@ -708,9 +708,9 @@ dashboard drag-and-drop order is exhaustively specified; a rep's ability to plac
 in a served org is neither tested nor invariant-stated.
 
 **Selection-group / executability:**
-- `selections.sales-rep = {"include":["050m","050m2","089","090","091","092","092b","093","097"]}` — exact
+- `selections.sales-rep = {"include":["050m","050m2","089","090","091","092","092b","093","093b","097"]}` — exact
   match confirmed against the manifest, unchanged.
-- **`selections.sprint` excludes all 9 by name**, unchanged. Combined with `requiresModules:
+- **`selections.sprint` excludes all 10 by name**, unchanged. Combined with `requiresModules:
   ["sales-rep"]` on every one (silent skip without the module) and no declared `envRiskGate`: this domain
   **never runs** in a sprint-scoped pass, by deliberate exclusion, and needs an explicit `sales-rep`
   selection or `full`.
