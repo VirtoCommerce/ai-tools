@@ -15,6 +15,13 @@ The merge stops for the user up to three times: after the brief (step 3), after 
 `port-upstream-to-fork` finds something (step 5), and before the push (step 9). Nothing is merged into
 the fork's `dev` by this skill — the user merges the PR.
 
+**Track the nine steps as a checklist from the start** (a task list where the client has one), and
+close a step only when it is done or the user has said, in those words, to skip it. A request that
+arrives mid-merge — a screenshot, a report, a question — is done *in addition*: when it is finished,
+name the first open step and resume there. **Step 5 updates the fork's own components and is the step
+that gets lost**: a clean build and green tests after step 4 feel like the end, and they are not. The
+log, the push and the PR (step 9) wait until step 5 has run on the merge commit.
+
 Every merge leaves a log in the fork: `upstream-merges/<YYYY-MM-DD>-<ref>.md`, one file per session
 (`-2` for a second one that day), next to `fork-map.json`. The PR body is gone from view once merged and
 `rerere` keeps only *how* a conflict was resolved; the log keeps *why*, the user's decisions, what was
@@ -148,9 +155,10 @@ conflicts, the decisions and who made them. Fill it in as the later steps produc
   it whole — leave those as they were.
 - Commit the merge locally once the checks are done — steps 5 and 6 read it as `HEAD^1`/`HEAD^2`:
   `chore: merge upstream vc-frontend <ref>` (or `chore: merge dev into <branch>`), each conflict and its
-  resolution in the body. Nothing is pushed yet.
+  resolution in the body. Nothing is pushed yet. **The next action is step 5**, whatever else was asked
+  in the meantime.
 
-## 5. Trace every upstream change into the result
+## 5. Update the fork: trace every upstream change into the result — never skipped
 
 For every file in step 2's two lists, the lines upstream added must exist in the merged file, or be
 replaced by a resolution you can name:
@@ -165,6 +173,11 @@ comm -23 up.txt merged.txt        # each line printed needs a reason
 Then the case no line diff shows: **upstream changed code the fork no longer renders**, or renders from
 fewer places. **REQUIRED SUB-SKILL:** run `vc-frontend:port-upstream-to-fork` on the merge commit. Its
 brief is the second pause; its ports are committed on this branch and join this PR.
+
+Both halves run on every merge, a quiet one too: a range with no conflicts can still change a component
+the fork replaced. "Nothing to port" is a result of this step — say it with the drift report's sections
+— never a reason to skip it. Step 5 is done when the line trace has a reason for every printed line,
+and the port brief is answered (or the report found nothing).
 
 ## 6. Tests
 
@@ -203,6 +216,8 @@ Not covered by the smoke: <what needs data, a role or a device the smoke did not
 
 ## 9. Log, push, PR — landed as a merge commit
 
+- **Gate:** every step 1–8 is done or skipped by the user in words. Step 5 open → go back to it now; the
+  log's Ports section is filled from its drift report, so a log without one is not finished.
 - The merge commit (step 4) and the ports (step 5) are already committed. Push only after the user says so.
 - Finish the log: every section of the template, filled from steps 3–8 and the port's brief. "Decisions
   that carry forward" holds only rules a later merge must keep, each with its reason — a fork identifier
@@ -243,6 +258,7 @@ Not covered by the smoke: <what needs data, a role or a device the smoke did not
 | Taking upstream's whole file to "get the fix" into a restyled component | Fork's markup + upstream's behavior |
 | Hand-merging `types.ts` or the lockfile | Regenerate |
 | Checking only the conflicted files | Also the files both sides changed, and `vc-frontend:port-upstream-to-fork` for code the fork stopped rendering |
+| Stopping after a green build, or after a side request mid-merge, without step 5 | Step 5 right after the merge commit; a side request is done in addition, then resume at the first open step |
 | Trusting a passing upstream test without a mutation | Remove a ported line, watch it fail |
 | A bare `gh` in a clone with an `upstream` remote | `--repo <owner/repo>` on every `gh` command; it otherwise reads and writes upstream |
 | Squash- or rebase-merging an upstream merge | A merge commit; the PR body's first line says so |
