@@ -39,7 +39,7 @@ import {
   DEMO_WINDOW_DAYS_ASSUMED, DEMO_RET_REQUIRED_ORDER_STATUS,
   demoRetMarker, isDemoRetMarker, demoRetOrderNumber, retOrderByKey, returnsInSubmitOrder,
   retProductNeedByOrg, isDemoSafeProduct, buildDemoRetOrderBody, buildDemoRetDeliveryBody, orderIsDelivered,
-  buildDemoReturnItems, buildDemoAuthorizeBody, authorizedStatusFor, isDecided, demoReturnProblems,
+  buildDemoReturnItems, buildDemoAuthorizeBody, authorizedStatusFor, isDecided, isPostDecision, isAgentLogged, demoReturnProblems,
 } from './returns-demo-specs.mjs';
 
 const TEST_ENV = process.env.TEST_ENV || 'vcst';
@@ -244,14 +244,18 @@ function returnMatches(ret, live) {
   return byQty === ret.lines.map((l) => l.approve).sort().join(',');
 }
 
-async function walkToCompleted(id) {
+/**
+ * Carry a decided return to a post-decision status (Processing, Completed) through the same admin
+ * edit an agent makes, taking only the steps the return's own available-statuses offer.
+ */
+async function walkTo(id, target) {
   for (let hop = 0; hop < 4; hop += 1) {
     const cur = await api('GET', `/api/return/${id}`);
-    if (cur.status === OUTCOME.COMPLETED) return cur.status;
+    if (cur.status === target) return cur.status;
     const next = await api('GET', `/api/return/${id}/available-statuses`, null, { expectStatus: [200] });
     const opts = (Array.isArray(next) ? next : next?.statuses || []).map((s) => (typeof s === 'string' ? s : s.name || s.value));
-    const step = opts.includes(OUTCOME.COMPLETED) ? OUTCOME.COMPLETED : opts.includes('Processing') ? 'Processing' : null;
-    if (!step) throw new Error(`return ${cur.number} (${cur.status}) offers ${opts.join(', ') || 'nothing'} — cannot reach Completed`);
+    const step = opts.includes(target) ? target : opts.includes(OUTCOME.PROCESSING) ? OUTCOME.PROCESSING : null;
+    if (!step) throw new Error(`return ${cur.number} (${cur.status}) offers ${opts.join(', ') || 'nothing'} — cannot reach ${target}`);
     await api('PUT', '/api/return', { ...cur, status: step }, { expectStatus: [200, 204] });
     verbose(`return ${cur.number}: ${cur.status} → ${step}`);
   }
@@ -276,6 +280,7 @@ async function ensureReturn(ret, ctx) {
   }
 
   const requiresComment = (code) => !!reasons.find((r) => r.code === code)?.requiresComment;
+  if (isAgentLogged(ret)) return finishReturn(ret, ctx, await createAsAgent(ret, order, orderRes.lineIds, requiresComment));
   const created = await mutate(token, `createReturn ${ret.key}`, `mutation($c:CreateReturnCommandType!){ createReturn(command:$c){ ${RETURN_FIELDS} } }`, {
     c: {
       orderId: order.id, customerReference: ret.reference, customerComment: ret.comment, cultureName: CULTURE,
@@ -299,13 +304,49 @@ async function ensureReturn(ret, ctx) {
     if (!cancelField) log(`  NOTE ${ret.key}: CancelReturnCommandType has no reason field on this build — cancelled without one`);
     await mutate(token, `cancelReturn ${ret.key}`, `mutation($c:CancelReturnCommandType!){ cancelReturn(command:$c){ ${RETURN_FIELDS} } }`, { c });
   }
+  return finishReturn(ret, ctx, id);
+}
+
+/**
+ * The back-office path: an agent logs the return for the buyer (PUT /api/return with no id creates it;
+ * there is no POST create — domain map §2a). It lands New, needs no evidence, and can be decided like
+ * a Requested one.
+ */
+async function createAsAgent(ret, order, lineIds, requiresComment) {
+  if (DRY_RUN) { log(`  [DRY] agent-logged ${ret.key} → ${ret.outcome}`); return null; }
+  const body = {
+    storeId: order.storeId, customerId: order.customerId, customerName: order.customerName,
+    orderId: order.id, orderNumber: order.number,
+    customerReference: ret.reference, customerComment: ret.comment, status: OUTCOME.NEW,
+    lineItems: ret.lines.map((l) => {
+      const li = (order.items || []).find((x) => x.id === lineIds[l.line - 1]);
+      if (!li) throw new Error(`${ret.key}: order has no line ${l.line}`);
+      return {
+        orderLineItemId: li.id, productId: li.productId, sku: li.sku, name: li.name, measureUnit: li.measureUnit ?? null,
+        orderedQuantity: li.quantity, price: li.price, quantity: l.qty,
+        reason: l.reason, reasonCode: l.reason, ...(l.reasonComment || requiresComment(l.reason) ? { reasonComment: l.reasonComment || ret.comment } : {}),
+      };
+    }),
+  };
+  await api('PUT', '/api/return', body, { expectStatus: [200, 201, 204] });
+  const made = (await returnsOnOrder(order.id)).find((r) => r.customerReference === ret.reference);
+  if (!made?.id) throw new Error(`agent-logged ${ret.key}: PUT /api/return created nothing findable`);
+  return made.id;
+}
+
+/** Decide (if the outcome is a decision) and walk on to a post-decision status, then read back. */
+async function finishReturn(ret, ctx, id) {
+  const { orderRes } = ctx;
+  if (DRY_RUN || !id) return { type: 'return', key: ret.key, id: `dry-${ret.key}`, status: ret.outcome };
+  const order = orderRes.order;
+  const spec = retOrderByKey(ret.order);
   if (isDecided(ret.outcome)) {
     const entity = await api('GET', `/api/return/${id}`);
     await api('POST', `/api/return/${id}/authorize`, buildDemoAuthorizeBody(ret, entity, orderRes.lineIds), { expectStatus: [200, 204] });
     const after = await api('GET', `/api/return/${id}`);
     if (after.status !== authorizedStatusFor(ret)) throw new Error(`authorize ${after.number}: expected ${authorizedStatusFor(ret)}, got ${after.status}`);
   }
-  if (ret.outcome === OUTCOME.COMPLETED) await walkToCompleted(id);
+  if (isPostDecision(ret.outcome)) await walkTo(id, ret.outcome);
 
   const final = await api('GET', `/api/return/${id}`);
   if (final.status !== ret.outcome) log(`  ⚠ ${ret.key}: ended ${final.status}, declared ${ret.outcome}`);

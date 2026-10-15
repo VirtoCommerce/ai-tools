@@ -196,7 +196,7 @@
     "profile": "sales-rep-demo",
     "env": "virtostart",
     "marker": "DEMO-SR",
-    "generated": "2026-09-24T10:03:24.377Z",
+    "generated": "2026-10-15T16:23:44.410Z",
     "entities": [
       {
         "type": "organization",
@@ -348,70 +348,80 @@
       {
         "type": "order",
         "key": "DORD-NW-01",
-        "id": "297336fe-5562-4301-87a6-53b0163cbf3b",
-        "number": "SO-619637"
+        "id": "51325252-0abf-4f4f-a0a1-74fe8a350650",
+        "number": "SO-619637",
+        "marker": "DEMO-SR:ORD:DORD-NW-01"
       },
       {
         "type": "order",
         "key": "DORD-CN-01",
-        "id": "17417685-adc1-4b16-82f7-c641ca1382c4",
-        "number": "SO-992787"
+        "id": "8fd80435-168a-40af-a15d-9111e01bd18a",
+        "number": "SO-992787",
+        "marker": "DEMO-SR:ORD:DORD-CN-01"
       },
       {
         "type": "order",
         "key": "DORD-NW-02",
-        "id": "afd0274b-4ccc-4753-8ee2-8da86cf81010",
-        "number": "SO-619638"
+        "id": "72e40051-fd30-4be1-86cc-4267da0d4584",
+        "number": "SO-619638",
+        "marker": "DEMO-SR:ORD:DORD-NW-02"
       },
       {
         "type": "order",
         "key": "DORD-CN-02",
-        "id": "e5fe3db0-54f0-4638-967a-39562fb8eb2c",
-        "number": "SO-992788"
+        "id": "2b63f5fc-3a59-4167-9810-198f0640894d",
+        "number": "SO-992788",
+        "marker": "DEMO-SR:ORD:DORD-CN-02"
       },
       {
         "type": "order",
         "key": "DORD-FB-01",
-        "id": "114a4bc8-7995-4060-96dc-4ebcda611912",
-        "number": "SO-705858"
+        "id": "2203d823-7696-4332-bd31-cdcde4f9b93b",
+        "number": "SO-705858",
+        "marker": "DEMO-SR:ORD:DORD-FB-01"
       },
       {
         "type": "order",
         "key": "DORD-WT-01",
-        "id": "cbc5e3e0-b582-47a6-93da-b119be3f209d",
-        "number": "SO-741953"
+        "id": "9dc06e17-87ce-4ed7-af42-f77c5d45b979",
+        "number": "SO-741953",
+        "marker": "DEMO-SR:ORD:DORD-WT-01"
       },
       {
         "type": "order",
         "key": "DORD-NW-03",
-        "id": "08501246-881d-4d70-aa4e-f802dff6e107",
-        "number": "SO-619639"
+        "id": "befcc346-620e-4581-9015-303d6a15a659",
+        "number": "SO-619639",
+        "marker": "DEMO-SR:ORD:DORD-NW-03"
       },
       {
         "type": "order",
         "key": "DORD-CN-03",
-        "id": "c7f49f0d-d1ac-4ace-9c81-5372a975ae36",
-        "number": "SO-992789"
+        "id": "3fd8fa90-3123-4831-9b7d-ea6a283ad228",
+        "number": "SO-992789",
+        "marker": "DEMO-SR:ORD:DORD-CN-03"
       },
       {
         "type": "order",
         "key": "DORD-FB-02",
-        "id": "fa0b2541-9309-4ddc-8d19-1bf83eb1b675",
-        "number": "SO-705859"
+        "id": "adf4fd83-aa45-4fc6-9f0c-013064d2a89c",
+        "number": "SO-705859",
+        "marker": "DEMO-SR:ORD:DORD-FB-02"
       },
       {
         "type": "order",
         "key": "DORD-WT-02",
-        "id": "6cb0f05e-7484-4efa-b539-8140027d4031",
-        "number": "SO-741954"
+        "id": "9e680cdd-8429-4775-b12d-65c7ed3fae3c",
+        "number": "SO-741954",
+        "marker": "DEMO-SR:ORD:DORD-WT-02"
       },
       {
         "type": "document",
         "key": "DDOC-CATALOG",
-        "id": "f194d8ba-13e5-4582-a0b3-e554be4fe327",
-        "fileId": "704ee58845494b589e74549e27566b55",
+        "id": "5a23c7e3-d911-4ce9-8f9a-931f983734da",
+        "fileId": "f772585c4993438c956d9af2b8b93a4b",
         "name": "2026 Industrial Catalog",
-        "sha256": "d3176f15d49e76e97a9da9d58754043a2aa9a49891ed98af39993e512571d615"
+        "sha256": "0e26324b24f456431c32b1cff6f8a965afca49da294ffd4bff052d2a52b7ab78"
       },
       {
         "type": "document",
@@ -424,10 +434,10 @@
       {
         "type": "document",
         "key": "DDOC-VOLUME",
-        "id": "1850c7a2-33ce-4264-90a2-6e6c21c104d6",
-        "fileId": "b6d3281fb198453cbc168577a6ccdc68",
+        "id": "52c89bdf-6b16-4c87-8c7d-e5c32ad671ea",
+        "fileId": "141c6a43fcf04589853e8d6430a5c9ee",
         "name": "Volume Pricing Agreement — Northwind Traders",
-        "sha256": "679e08646b9223a0c892bf3175e10fb0a4767738b48e760648c428e8bfae17a8"
+        "sha256": "064e2090064ad74f4ad11c1a7b5d4b5702f9de3c725c0f2c002e93a13429763d"
       },
       {
         "type": "document",
@@ -440,103 +450,103 @@
       {
         "type": "document",
         "key": "DDOC-SDS",
-        "id": "5659396e-d9ae-43e4-aeb3-4a05933049b5",
-        "fileId": "c06a49857ef64106a0bc41b2301cd5e3",
+        "id": "61cb60fe-3a97-4656-a93b-8b38cb7554a9",
+        "fileId": "e0cc36b8470f49f682a10922cc65f205",
         "name": "Safety Data Sheet — Industrial Lubricants",
-        "sha256": "bf866f438c849dda1978dcce860b81d74b749354ec6776dc187a66cf049c389c"
+        "sha256": "0610904a1fe0ec547648113d5d1d2d32dcc15bb447be9228214d87c9ea38d215"
       },
       {
         "type": "document",
         "key": "DDOC-TERMS",
-        "id": "10f1d197-14d4-49a5-9c63-5c360305b85f",
-        "fileId": "98e9d9ccbcb34cf08fa1d2c8bf67f7e3",
+        "id": "2055326b-93fd-4770-bc9d-965088eee7d0",
+        "fileId": "b4778b990ef54e8e92d2f84b76b40844",
         "name": "Terms and Conditions of Sale",
-        "sha256": "b3d910753a5f690782cdfd53a6e1339dafb381674284b1d985e2464ba77c4115"
+        "sha256": "e24ff32fe38aa4c845b01c4f811c47e2c5b8821ec052419d53779b246528c91f"
       },
       {
         "type": "document",
         "key": "DDOC-RETURNS",
-        "id": "797e0079-72b7-40fa-88f0-14bd1d7ba705",
-        "fileId": "7c2f10be5c504ab18752734f629f798f",
+        "id": "39035aec-e5c8-4206-885e-fbe419f1a902",
+        "fileId": "cf5ff6894602477abcf9e18d7143749d",
         "name": "Returns and Warranty Policy",
-        "sha256": "f17a6a46cf52acd775b258e645a2051ed7b0ca77f2904dd5730241ebae2f43b1"
+        "sha256": "8d627b6aa9dc4002b51d021837bffa86b412584aab79666ed2b6c5d2eb3af6e3"
       },
       {
         "type": "document",
         "key": "DDOC-WAREHOUSE",
-        "id": "f91ef46d-f12d-47d6-97b0-e58c59bad1e4",
-        "fileId": "33b3ece1c8bf492288839f168343fcb2",
+        "id": "0a00fdf2-25d0-4c73-9e3f-8b45b3dd26dc",
+        "fileId": "d04de1dc9dcb417489b885b828b9648e",
         "name": "Memphis Distribution Centre",
-        "sha256": "90871f287e0d1bc15797c0a643c50e490b88ed32e7ed8da3fcd96ac81fd15d62"
+        "sha256": "b669f7b4e58d5a9dbb978bb52adf7f11ee438de96f09e9323369e83c7ec2dd7b"
       },
       {
         "type": "task",
         "key": "DTSK-V-01",
         "id": "ba3dcd9a-0448-45e4-bcaa-dc62db84840f",
-        "ownerUserId": "db222b30-2326-4fe0-86ab-e4d41d9329f2",
+        "ownerUserId": "27b89463-a04f-4792-8496-3784ca472bcb",
         "name": "Follow up on Northwind reorder"
       },
       {
         "type": "task",
         "key": "DTSK-V-02",
         "id": "b6bee6b7-c789-4001-a4df-68628d99b755",
-        "ownerUserId": "db222b30-2326-4fe0-86ab-e4d41d9329f2",
+        "ownerUserId": "27b89463-a04f-4792-8496-3784ca472bcb",
         "name": "Send Q4 price list to Contoso"
       },
       {
         "type": "task",
         "key": "DTSK-V-03",
         "id": "9ec72d40-a841-457c-82bf-dbb48df2a769",
-        "ownerUserId": "db222b30-2326-4fe0-86ab-e4d41d9329f2",
+        "ownerUserId": "27b89463-a04f-4792-8496-3784ca472bcb",
         "name": "Prepare volume pricing proposal — Fabrikam"
       },
       {
         "type": "task",
         "key": "DTSK-V-04",
         "id": "9834ee1b-57f8-4e06-a9e9-4cd80ed14728",
-        "ownerUserId": "db222b30-2326-4fe0-86ab-e4d41d9329f2",
+        "ownerUserId": "27b89463-a04f-4792-8496-3784ca472bcb",
         "name": "Quarterly business review — Fabrikam Industrial"
       },
       {
         "type": "task",
         "key": "DTSK-V-05",
         "id": "ff55581f-c9ef-41b3-ba57-6db76a43dfa9",
-        "ownerUserId": "db222b30-2326-4fe0-86ab-e4d41d9329f2",
+        "ownerUserId": "27b89463-a04f-4792-8496-3784ca472bcb",
         "name": "Chase cancelled order SO-992788 with Contoso"
       },
       {
         "type": "task",
         "key": "DTSK-V-06",
         "id": "8810c43b-e2f4-46ad-b580-35f1a29ccee4",
-        "ownerUserId": "db222b30-2326-4fe0-86ab-e4d41d9329f2",
+        "ownerUserId": "27b89463-a04f-4792-8496-3784ca472bcb",
         "name": "Update credit terms for Northwind"
       },
       {
         "type": "task",
         "key": "DTSK-V-07",
         "id": "5cf34e06-8133-4ed6-8ed7-c48811b66389",
-        "ownerUserId": "db222b30-2326-4fe0-86ab-e4d41d9329f2",
+        "ownerUserId": "27b89463-a04f-4792-8496-3784ca472bcb",
         "name": "Call Fabrikam about the Plant 2 outage"
       },
       {
         "type": "task",
         "key": "DTSK-V-08",
         "id": "593384dd-a1c1-4d26-8bde-779fad560ddc",
-        "ownerUserId": "db222b30-2326-4fe0-86ab-e4d41d9329f2",
+        "ownerUserId": "27b89463-a04f-4792-8496-3784ca472bcb",
         "name": "Send revised fastener quote to Northwind"
       },
       {
         "type": "task",
         "key": "DTSK-V-09",
         "id": "4e5dd892-43f0-4204-aa08-af43d70d92e4",
-        "ownerUserId": "db222b30-2326-4fe0-86ab-e4d41d9329f2",
+        "ownerUserId": "27b89463-a04f-4792-8496-3784ca472bcb",
         "name": "Confirm delivery of order SO-619637"
       },
       {
         "type": "task",
         "key": "DTSK-V-10",
         "id": "22bb6b2d-a21a-4c0f-b42c-b815a7bf776b",
-        "ownerUserId": "db222b30-2326-4fe0-86ab-e4d41d9329f2",
+        "ownerUserId": "27b89463-a04f-4792-8496-3784ca472bcb",
         "name": "Send credit application to Contoso"
       },
       {
@@ -606,24 +616,31 @@
         "type": "rep-attachment",
         "key": "DEMO_REP_VOLKOVA",
         "salesRepId": "aa0b2efc-30ec-41d8-8396-834656ef0cf5",
-        "userId": "db222b30-2326-4fe0-86ab-e4d41d9329f2",
+        "userId": "27b89463-a04f-4792-8496-3784ca472bcb",
         "email": "alla.volkova@virtoway.com",
         "priorOrganizations": [
           {
-            "organizationId": "f6aa9e85-7feb-4591-a880-c029f1a79628",
-            "organizationName": "Northwind Traders"
+            "organizationId": "b7df4d1e-de1e-404a-98e9-8f19ca80fbdf",
+            "organizationName": "Virto Commerce"
           },
           {
-            "organizationId": "d5162a8a-ceae-4a79-9c17-28813b5c2e59",
-            "organizationName": "Contoso Manufacturing"
+            "organizationId": "afe87c85-1269-488c-9d7e-872c38d6b48c",
+            "organizationName": "Dynamic CCTV"
           },
           {
-            "organizationId": "3192efa1-be41-4136-a955-9374f75ed0f8",
-            "organizationName": "Fabrikam Industrial"
+            "organizationId": "818a6f9c-6758-4378-9904-bdc4fbbff246",
+            "organizationName": "Watermelon"
           }
         ],
-        "addedOrgIds": [],
+        "addedOrgIds": [
+          "f6aa9e85-7feb-4591-a880-c029f1a79628",
+          "d5162a8a-ceae-4a79-9c17-28813b5c2e59",
+          "3192efa1-be41-4136-a955-9374f75ed0f8"
+        ],
         "servedOrgIds": [
+          "b7df4d1e-de1e-404a-98e9-8f19ca80fbdf",
+          "afe87c85-1269-488c-9d7e-872c38d6b48c",
+          "818a6f9c-6758-4378-9904-bdc4fbbff246",
           "f6aa9e85-7feb-4591-a880-c029f1a79628",
           "d5162a8a-ceae-4a79-9c17-28813b5c2e59",
           "3192efa1-be41-4136-a955-9374f75ed0f8"
@@ -659,7 +676,7 @@
         "scope": "Customer",
         "org": "DORG-NORTHWIND",
         "author": "Alla Volkova",
-        "itemsCount": 4,
+        "itemsCount": 9,
         "shareUrl": "https://virtostart-demo-store.govirto.com/shared-list/3d334d69-c8cc-479e-9d0f-27e55fe74f8a"
       },
       {
@@ -681,7 +698,7 @@
         "scope": "Customer",
         "org": "DORG-FABRIKAM",
         "author": "Alla Volkova",
-        "itemsCount": 4,
+        "itemsCount": 5,
         "shareUrl": "https://virtostart-demo-store.govirto.com/shared-list/3b80c071-4b64-4ff3-8633-830db1d936b8"
       },
       {
@@ -692,7 +709,7 @@
         "scope": "Customer",
         "org": "DORG-WINGTIP",
         "author": "Oleg Zhuk",
-        "itemsCount": 7,
+        "itemsCount": 8,
         "shareUrl": "https://virtostart-demo-store.govirto.com/shared-list/b6b4dba1-a95a-4fe4-a765-995375ad003e"
       },
       {
@@ -703,7 +720,7 @@
         "scope": "Organization",
         "org": "DORG-NORTHWIND",
         "author": "Daniel Okafor",
-        "itemsCount": 3,
+        "itemsCount": 6,
         "shareUrl": "https://virtostart-demo-store.govirto.com/shared-list/e90db672-3364-4ef2-bba7-1991197a5687"
       },
       {
@@ -755,7 +772,7 @@
         "id": "a45a25e8-bbb0-4a0c-8b09-1f137506b3db",
         "owner": "e.duarte@fabrikam-industrial.example",
         "org": "DORG-FABRIKAM",
-        "itemsCount": 1
+        "itemsCount": 2
       },
       {
         "type": "cart",
@@ -763,7 +780,7 @@
         "id": "43e59643-06e4-457c-955a-171f7a4f81bf",
         "owner": "m.webb@fabrikam-industrial.example",
         "org": "DORG-FABRIKAM",
-        "itemsCount": 1
+        "itemsCount": 2
       },
       {
         "type": "cart",
@@ -771,12 +788,12 @@
         "id": "76869845-f9d3-4afe-92c3-64ece73b5841",
         "owner": "j.whitfield@wingtip-electrical.example",
         "org": "DORG-WINGTIP",
-        "itemsCount": 1
+        "itemsCount": 2
       },
       {
         "type": "cart",
         "key": "DRCART-VOL-NW",
-        "id": "aaddb3d1-b41b-465b-bef6-4ad93fca0dad",
+        "id": "0d29dbab-1459-45b6-a76e-1a1d10ce37fb",
         "owner": "alla.volkova@virtoway.com",
         "org": "DORG-NORTHWIND",
         "createdByRep": "DEMO_REP_VOLKOVA",
@@ -785,7 +802,7 @@
       {
         "type": "cart",
         "key": "DRCART-VOL-CN",
-        "id": "a3a2a5c4-f9a1-4c28-8b30-2bb57c78b707",
+        "id": "0348f0df-902f-4729-befd-3df5b94474ab",
         "owner": "alla.volkova@virtoway.com",
         "org": "DORG-CONTOSO",
         "createdByRep": "DEMO_REP_VOLKOVA",
@@ -794,11 +811,11 @@
       {
         "type": "cart",
         "key": "DRCART-VOL-FB",
-        "id": "997a9057-ba6f-4efb-aabb-648396418989",
+        "id": "5e4ab434-28c6-4a99-a939-9fb948248b64",
         "owner": "alla.volkova@virtoway.com",
         "org": "DORG-FABRIKAM",
         "createdByRep": "DEMO_REP_VOLKOVA",
-        "itemsCount": 1
+        "itemsCount": 2
       },
       {
         "type": "cart",
@@ -816,7 +833,7 @@
         "owner": "oleg@virtoworks.com",
         "org": "DORG-WINGTIP",
         "createdByRep": "DEMO_REP_ZHUK",
-        "itemsCount": 1
+        "itemsCount": 2
       }
     ]
   },
@@ -824,7 +841,7 @@
     "profile": "returns-demo",
     "env": "virtostart",
     "marker": "DEMO-RET",
-    "generated": "2026-10-15T15:59:59.928Z",
+    "generated": "2026-10-15T16:24:13.570Z",
     "entities": [
       {
         "type": "order",
@@ -988,6 +1005,60 @@
         "status": "Draft",
         "orderId": "8c37b04a-ae60-4e90-8a57-7e34615ab89d",
         "orderKey": "DRO-NW-01"
+      },
+      {
+        "type": "return",
+        "key": "DRET-NW-04",
+        "id": "976b27ad-450e-41a3-be73-70cd5af956d2",
+        "number": "RET261015-00015",
+        "status": "Processing",
+        "orderId": "8c37b04a-ae60-4e90-8a57-7e34615ab89d",
+        "orderKey": "DRO-NW-01"
+      },
+      {
+        "type": "return",
+        "key": "DRET-NW-05",
+        "id": "a78cff73-1006-4b76-b645-753caef78264",
+        "number": "RET261015-00016",
+        "status": "PartiallyApproved",
+        "orderId": "ffd9c31e-d782-4a84-8e7c-96626ec7b040",
+        "orderKey": "DRO-NW-02"
+      },
+      {
+        "type": "return",
+        "key": "DRET-CN-03",
+        "id": "2fa60532-4bd9-41d0-a739-c7a2fe2baaa0",
+        "number": "RET261015-00017",
+        "status": "Requested",
+        "orderId": "8ed0759b-afb7-48d9-bc56-3eaf2a5908c8",
+        "orderKey": "DRO-CN-01"
+      },
+      {
+        "type": "return",
+        "key": "DRET-CN-04",
+        "id": "1b09c8ee-61c7-472f-8826-b457d8474e90",
+        "number": "RET261015-00018",
+        "status": "Processing",
+        "orderId": "2624582b-9955-4171-9818-07f5b4c2b1d8",
+        "orderKey": "DRO-CN-02"
+      },
+      {
+        "type": "return",
+        "key": "DRET-FB-02",
+        "id": "89c02dee-afb1-4400-b470-2f30222072e2",
+        "number": "RET261015-00019",
+        "status": "New",
+        "orderId": "6ff02b7a-e732-443b-9b75-0b6727b92565",
+        "orderKey": "DRO-FB-01"
+      },
+      {
+        "type": "return",
+        "key": "DRET-NW-06",
+        "id": "bf0beea4-17ae-4ad8-a666-a5e9435abb88",
+        "number": "RET261015-00020",
+        "status": "Approved",
+        "orderId": "8c37b04a-ae60-4e90-8a57-7e34615ab89d",
+        "orderKey": "DRO-NW-01"
       }
     ]
   },
@@ -995,7 +1066,7 @@
     "profile": "loyalty-missions-demo",
     "env": "virtostart",
     "marker": "DEMO-MSN",
-    "generated": "2026-10-15T16:11:30.195Z",
+    "generated": "2026-10-15T16:24:18.625Z",
     "entities": [
       {
         "type": "mission",

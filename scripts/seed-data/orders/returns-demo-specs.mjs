@@ -93,11 +93,13 @@ export const DEMO_RET_REQUIRED_ORDER_STATUS = 'Completed';
 export const OUTCOME = Object.freeze({
   DRAFT: 'Draft',                       // createReturn only — the buyer's unfinished request
   REQUESTED: 'Requested',               // submitted, awaiting the agent: the live Approve / decline demo
+  NEW: 'New',                           // logged by a back-office agent on the buyer's behalf, awaiting a decision
   APPROVED: 'Approved',                 // authorize, every line approved in full
   PARTIAL: 'PartiallyApproved',         // authorize, some units approved
   REJECTED: 'Rejected',                 // authorize, every line 0
   CANCELLED: 'Cancelled',               // buyer withdrew before a decision
-  COMPLETED: 'Completed',               // approved, then carried through by the back office
+  PROCESSING: 'Processing',             // decided, goods being handled by the back office
+  COMPLETED: 'Completed',               // decided, then carried through by the back office
 });
 
 /**
@@ -254,7 +256,14 @@ export function buildDemoAuthorizeBody(ret, returnEntity, lineIds) {
 }
 
 /** Is this a decided outcome (one that goes through authorize)? */
-export const isDecided = (outcome) => [OUTCOME.APPROVED, OUTCOME.PARTIAL, OUTCOME.REJECTED, OUTCOME.COMPLETED].includes(outcome);
+export const isDecided = (outcome) => [OUTCOME.APPROVED, OUTCOME.PARTIAL, OUTCOME.REJECTED, OUTCOME.PROCESSING, OUTCOME.COMPLETED].includes(outcome);
+
+/** Statuses reached by an edit AFTER the decision (the module's available-statuses for a decided return). */
+export const isPostDecision = (outcome) => [OUTCOME.PROCESSING, OUTCOME.COMPLETED].includes(outcome);
+
+/** A back-office agent logs the return (admin create, status New) instead of the buyer submitting it. */
+export const VIA_AGENT = 'agent';
+export const isAgentLogged = (ret) => ret.via === VIA_AGENT;
 
 /** The status the authorize call itself must produce for a spec (Completed is reached afterwards). */
 export function authorizedStatusFor(ret) {
@@ -342,7 +351,7 @@ export function demoReturnProblems({ reasonCodes = null } = {}) {
       if (!ol) { problems.push(`return ${r.key}: order ${o.key} has no line ${l.line}`); continue; }
       if (reasonCodes && !reasonCodes.includes(l.reason)) problems.push(`return ${r.key}: reason "${l.reason}" is not one of ${reasonCodes.join(' | ')}`);
       if (!(l.qty > 0)) problems.push(`return ${r.key} line ${l.line}: qty must be > 0`);
-      if (r.outcome !== OUTCOME.DRAFT && !l.evidence) problems.push(`return ${r.key} line ${l.line}: no evidence file — Return.AttachmentsRequired refuses the submit`);
+      if (r.outcome !== OUTCOME.DRAFT && !isAgentLogged(r) && !l.evidence) problems.push(`return ${r.key} line ${l.line}: no evidence file — Return.AttachmentsRequired refuses the submit`);
       if (isDecided(r.outcome)) {
         if (!(l.approve >= 0 && l.approve <= l.qty)) problems.push(`return ${r.key} line ${l.line}: approve must be 0..${l.qty}`);
         if (l.approve < l.qty && !l.decline) problems.push(`return ${r.key} line ${l.line}: declined units with no per-line decline reason`);
@@ -355,10 +364,14 @@ export function demoReturnProblems({ reasonCodes = null } = {}) {
       requested.set(k, (requested.get(k) || 0) + held);
       if (l.qty > ol.qty) problems.push(`return ${r.key} line ${l.line}: requests ${l.qty} of ${ol.qty} ordered`);
     }
+    if (isAgentLogged(r) && ![OUTCOME.NEW, ...[OUTCOME.APPROVED, OUTCOME.PARTIAL, OUTCOME.REJECTED, OUTCOME.PROCESSING, OUTCOME.COMPLETED]].includes(r.outcome)) {
+      problems.push(`return ${r.key}: an agent-logged return starts New, so it cannot end ${r.outcome}`);
+    }
+    if (!isAgentLogged(r) && r.outcome === OUTCOME.NEW) problems.push(`return ${r.key}: only an agent-logged return (via "agent") is New — a buyer submit lands Requested`);
     if (isDecided(r.outcome)) {
-      const want = r.outcome === OUTCOME.COMPLETED ? OUTCOME.APPROVED : r.outcome;
       const got = authorizedStatusFor(r);
-      if (got !== want) problems.push(`return ${r.key}: lines decide to ${got}, but the outcome declares ${r.outcome}`);
+      const ok = isPostDecision(r.outcome) ? [OUTCOME.APPROVED, OUTCOME.PARTIAL].includes(got) : got === r.outcome;
+      if (!ok) problems.push(`return ${r.key}: lines decide to ${got}, which cannot end ${r.outcome}${isPostDecision(r.outcome) ? ' (a Rejected return is closed)' : ''}`);
       if (got === OUTCOME.APPROVED && r.declineReason) problems.push(`return ${r.key}: a fully approved return drops its return-level decline reason — remove it`);
     }
   }

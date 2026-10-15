@@ -4,10 +4,11 @@
     "fields": {
       "orders[].deliveredDaysAgo": "shipment DeliveryDate offset from seed time — the date the return window is computed from",
       "orders[].lines[]": "ordered qty + unit price; one distinct discovered product per line; quantities distinct within an order",
-      "returns[].outcome": "final status: Draft | Requested | Approved | PartiallyApproved | Rejected | Cancelled | Completed",
+      "returns[].outcome": "final status: Draft | Requested | New | Approved | PartiallyApproved | Rejected | Cancelled | Processing | Completed. Processing/Completed are reached after the decision (approve values decide Approved vs PartiallyApproved first)",
       "returns[].lines[].line": "1-based index into the order lines",
       "returns[].lines[].approve": "approved qty (decided outcomes only); 0 = declined",
-      "returns[].seq": "submit order — the platform numbers returns in creation order"
+      "returns[].seq": "submit order — the platform numbers returns in creation order",
+      "returns[].via": "omitted = the buyer submits through the storefront flow; \"agent\" = a back-office agent logs it on the buyer's behalf (status New, no evidence required)"
     }
   },
   "currency": "USD",
@@ -311,6 +312,123 @@
           "reasonComment": "Packing slip lists a different model from the units in the box."
         }
       ]
+    },
+    {
+      "key": "DRET-NW-04",
+      "order": "DRO-NW-01",
+      "outcome": "Processing",
+      "seq": 90,
+      "reference": "Bent stock — second delivery",
+      "comment": "Thirty units from the second pallet arrived bent at the corners.",
+      "lines": [
+        {
+          "line": 2,
+          "qty": 30,
+          "reason": "DamagedInTransit",
+          "reasonComment": "Pallet wrap torn, corner units bent.",
+          "approve": 30,
+          "evidence": "bent-corner-units.png"
+        }
+      ]
+    },
+    {
+      "key": "DRET-NW-05",
+      "order": "DRO-NW-02",
+      "outcome": "PartiallyApproved",
+      "seq": 100,
+      "reference": "Bench test failures",
+      "comment": "Six units failed our incoming bench test.",
+      "declineReason": "Two units show handling damage that is not on the delivery photos; those are not covered.",
+      "lines": [
+        {
+          "line": 1,
+          "qty": 6,
+          "reason": "FaultyOnArrival",
+          "reasonComment": "Units do not hold pressure on the bench test.",
+          "approve": 4,
+          "decline": "Damage not present on delivery photos.",
+          "evidence": "bench-test-log.png"
+        }
+      ]
+    },
+    {
+      "key": "DRET-CN-03",
+      "order": "DRO-CN-01",
+      "outcome": "Requested",
+      "seq": 110,
+      "reference": "Columbus print room — mixed shipment",
+      "comment": "Part of the shipment is the wrong model and two units were ordered in error.",
+      "lines": [
+        {
+          "line": 3,
+          "qty": 4,
+          "reason": "WrongItemDelivered",
+          "reasonComment": "Received the consumer model instead of the office model.",
+          "evidence": "model-plate-photo.png"
+        },
+        {
+          "line": 2,
+          "qty": 2,
+          "reason": "OrderedByMistake",
+          "evidence": "po-correction.png"
+        }
+      ]
+    },
+    {
+      "key": "DRET-CN-04",
+      "order": "DRO-CN-02",
+      "outcome": "Processing",
+      "seq": 120,
+      "reference": "Transit damage — Columbus dock",
+      "comment": "Three cartons arrived crushed; units inside are scratched.",
+      "declineReason": "One unit's damage is cosmetic only and within tolerance.",
+      "lines": [
+        {
+          "line": 2,
+          "qty": 3,
+          "reason": "DamagedInTransit",
+          "reasonComment": "Cartons crushed on the left side.",
+          "approve": 2,
+          "decline": "Cosmetic scratch within tolerance.",
+          "evidence": "crushed-cartons-columbus.png"
+        }
+      ]
+    },
+    {
+      "key": "DRET-FB-02",
+      "order": "DRO-FB-01",
+      "outcome": "New",
+      "via": "agent",
+      "seq": 130,
+      "reference": "Phoned in by Marcus Webb",
+      "comment": "Logged by the account team from a phone call — unit shuts down under load.",
+      "lines": [
+        {
+          "line": 2,
+          "qty": 1,
+          "reason": "FaultyOnArrival",
+          "reasonComment": "Shuts down under load after ten minutes."
+        }
+      ]
+    },
+    {
+      "key": "DRET-NW-06",
+      "order": "DRO-NW-01",
+      "outcome": "Approved",
+      "seq": 140,
+      "reference": "Faulty batch — awaiting pickup",
+      "comment": "Eight units from the same batch fail on start-up. Courier pickup booked.",
+      "lines": [
+        {
+          "line": 3,
+          "qty": 8,
+          "reason": "FaultyOnArrival",
+          "reasonComment": "Same batch code on all eight; fail on first start-up.",
+          "approve": 8,
+          "evidence": "batch-code-label.png"
+        }
+      ]
     }
-  ]
+  ],
+  "expectNote": "14 returns: Draft 1, Requested 3, New 1, Approved 2, PartiallyApproved 2, Processing 2, Rejected 1, Cancelled 1, Completed 1"
 }
