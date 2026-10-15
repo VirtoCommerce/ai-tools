@@ -24,8 +24,8 @@ removed once the new command has passed validation (§10 P4).
 - Not a change to `/qa-verify-fix`, `/qa-hotfix-check` or `/qa-fix` — separate jobs (redesign §2).
 - **No regression in this project** (U7): no regression lane, no coverage triage, no regression-corpus updates.
   Client suites may look nothing like ours; regression is the next large step.
-- No Azure Boards / Azure Repos connectors yet (U4) and no client-side domain-map or mind-map builders (U6) —
-  both are next steps into the interfaces this design creates.
+- No client-side domain-map or mind-map builders (U6) — the next step into the knowledge store this design
+  creates.
 
 ## 2. Decisions (owner, 2026-10-15)
 
@@ -34,7 +34,7 @@ removed once the new command has passed validation (§10 P4).
 | U1 | Where does the single flow live? | A **new command**; FAST, FULL and `/qa-test-fast` are removed after validation — "we are moving away from FAST/FULL" |
 | U2 | How does it reach clients? | A **new plugin `vc-test`** (working name) that depends on `vc-fix`, like `vc-perf` does. Canonical copies live in the plugin; this repository uses the plugin, with no duplicate under `.claude/` |
 | U3 | What is in v1? | **Core + adapters.** Core: context, strategy, test model, checklist, exploratory, visual lane, triage, investigate, `qa-bug`, verdict. Adapters run when the project has what they need and otherwise record a `SKIP` with the reason |
-| U4 | Trackers and code hosts | A **connector interface**; v1 ships Jira + GitHub (what `/ticket-context` reads today). Azure Boards / Azure Repos are a later step into the same interface; until then an Azure project gets a clear STOP with its reason |
+| U4 | Trackers and code hosts | A **connector interface** with **four connectors in v1 (P1)**: Jira, GitHub, Azure Boards, Azure Repos. Azure is validated on a real client Azure DevOps project, not a sandbox (owner, 2026-10-15, revising the first answer "Jira + GitHub first") |
 | U5 | "Any project" means | **Any Virto Commerce project**. Platform facts may be relied on: `/api/platform/modules`, the `vc-frontend` layout for the ui-kit, xAPI, VirtoOZ, the public kb |
 | U6 | Knowledge | **Two stores, one interface** (§6). A client run reads its project store first, then the platform store, and writes **only** to its project store. Domain/mind-map builders for clients come next |
 | U7 | Regression | **Out of this project.** F5 still fires, but records the cases at risk and the follow-up instead of requiring a run (§5.3). The post-verdict corpus update goes with it |
@@ -187,12 +187,19 @@ the things the flow already produces. Domain maps and mind maps are read when pr
 
 ## 7. Connectors
 
-`/ticket-context` reads Jira and GitHub today, inline in its `lib/`. They are extracted behind two interfaces,
-`tracker` (fetch issue, fields, comments, attachments, links; post or amend one comment) and `host` (find a
-ticket's PRs; read metadata, files, diff, review threads), selected by `project-profile.json`. v1 implements Jira
-and GitHub and keeps today's behaviour byte-for-byte on the platform project (`/ticket-context`'s own gate and the
-VCST-5097 bundle are the regression check). An `azure` tracker or `azure-repos` host gets a STOP naming the
-missing connector.
+`/ticket-context` reads Jira and GitHub today, inline in its `lib/`; Azure Boards is a stub
+(`connector-unavailable`) and Azure Repos is not read at all. Both are extracted behind two interfaces, selected
+by `project-profile.json` (`tracker.kind`, `vcs.clientHost`):
+
+| Interface | Operations | Jira / GitHub | Azure Boards / Azure Repos |
+|---|---|---|---|
+| `tracker` | fetch issue, fields (incl. the AC field), comments, attachments, links, parent/epic, status → role; post or amend one comment | today's `jira.mjs` | work-item REST: fields mapped through `tracker.fieldMap`, states → roles through `tracker.azure.roleStates` (already scanned by `/project-init`), attachments and relations from the work item's `relations[]` |
+| `host` | find a ticket's PRs; read metadata, files, diff, review threads, merge state | today's `github.mjs` (key search across the profile's orgs) | the work item's native **ArtifactLink** relations to pull requests — a stronger link than a key search — then the Git PR REST endpoints for iterations, changes, diff and threads |
+
+Credentials stay where `vc-fix` keeps them: a PAT from the profile's `authEnv`, else `az login`. v1 keeps
+today's Jira/GitHub behaviour byte-for-byte on the platform project (`/ticket-context`'s own gate and the
+VCST-5097 bundle are the regression check). The Azure connectors are checked against recorded responses in P1
+and live on the client project in P3; the bundle schema does not change — a connector fills the same fields.
 
 Defaults that assume this repository (`DEFAULT_ORG = "VirtoCommerce"`, `TEST_ENV` default `vcst`) become profile
 values with those defaults only when no profile exists.
@@ -236,9 +243,9 @@ Every step ends in one of four states: **OK**, **SKIP**(reason), **BLOCKED**(rea
 
 | Phase | Delivers | Checked by |
 |---|---|---|
-| **P1 Foundation** | plugin manifest, `vc-fix` dependency, marketplace entry; `ticket-context` and `qa-test-strategy` moved; tracker/host interfaces with Jira + GitHub; `capabilities.mjs`; F6 via `/api/platform/modules`; `knowledge-store.mjs` (+ committed tests); the "unavailable is not doubt" rule in the floors | `claude plugin validate`; committed store tests; temporary tests for the rest; `/ticket-context` + strategy from the plugin on VCST-5097 reproduce today's bundle and gate result |
+| **P1 Foundation** | plugin manifest, `vc-fix` dependency, marketplace entry; `ticket-context` and `qa-test-strategy` moved; tracker/host interfaces with Jira, GitHub, Azure Boards and Azure Repos; `capabilities.mjs`; F6 via `/api/platform/modules`; `knowledge-store.mjs` (+ committed tests); the "unavailable is not doubt" rule in the floors | `claude plugin validate`; committed store tests; temporary tests for the rest; `/ticket-context` + strategy from the plugin on VCST-5097 reproduce today's bundle and gate result; Azure connectors against recorded responses |
 | **P2 Flow** | `artifacts.json`, `plan-run.mjs`, `route.mjs`, `rounds.mjs`, `trace.mjs`, `write-zones.mjs` (+ committed tests); the command; execution skills moved; `qa-checklist` risk ids (`vc-fix` bump); the join speed-up (O6); per-entry models | `--dry-run` on 3 tickets: wave plan, gates, no outward write |
-| **P3 Validation** | live runs on 3–5 VC tickets (Story, Review task, Technical task, UI-only, Bug not-fixed) + one client-shaped run (`projectType: client` profile in a sandbox) | redesign §8 measures; the client-shaped run shows SKIPs for missing adapters and zero platform writes |
+| **P3 Validation** | live runs on 3–5 VC tickets (Story, Review task, Technical task, UI-only, Bug not-fixed) + at least one run on the **real client Azure DevOps project**, with the plugin installed in the client's checkout | redesign §8 measures; the client run shows Azure Boards + Azure Repos read end to end, SKIPs for missing adapters, every write inside the client's `outputRoot()` and project store, and zero platform writes. Its reports stay in the client's project; only its measures, with nothing client-identifying, are recorded here |
 | **P4 Removal** | `/qa-test` FAST/FULL, `/qa-test-fast`, `ticket-routing.md` §5–§5d, Artifact A, `3-cases`, `1e-plan` removed; `ci/run-full-cycle.ts`, `ci/run-suite-audit.ts` and the other consumers repointed or cleaned; plugin released with its tag (`docs/release-process.md`) | `npm run context:check`, `npm test`, CI |
 
 ## 11. Out of scope, and what comes next
@@ -247,7 +254,6 @@ Every step ends in one of four states: **OK**, **SKIP**(reason), **BLOCKED**(rea
   selection (V7: 33–91 suites per ticket, because every path token that matches manifest vocabulary widens the
   selection), and the post-verdict corpus update through `/qa-test-lifecycle`. Until then the run hands its
   candidate and stale case lists to the project store's test documentation.
-- **Azure Boards / Azure Repos connectors** (U4).
 - **Client domain-map and mind-map builders** writing into the project store (U6).
 
 ## 12. Risks
@@ -255,7 +261,8 @@ Every step ends in one of four states: **OK**, **SKIP**(reason), **BLOCKED**(rea
 | Risk | Mitigation |
 |---|---|
 | Moving five skills breaks this repository's consumers before P4 | P1/P2 repoint each consumer in the same commit as the move; `context:check` ratchets dangling paths |
-| The client-shaped run is a sandbox, not a real client | P3 states it; the first real client install is watched with `/vc-self-check` telemetry (opt-in) |
+| Validating on a real client project leaks client data into this repository or the public kb | its reports and knowledge stay in the client's checkout; this repository records only anonymous measures; the platform-write refusal is code (§6) |
 | Without regression, a change that breaks an untouched flow escapes the ticket run | F5 still names the cases at risk and the follow-up command in every strategy; the residual risk is written down, not silent |
-| A connector interface designed around Jira/GitHub only fits Azure badly | the interface is the operations `/ticket-context` and the close step actually call (§7), and `vc-fix` already drives Azure Boards through the same profile |
+| Azure work items differ per client (custom AC fields, custom states) | fields and states are read through the profile's `fieldMap` and `roleStates`, which `/project-init` scans live; a field the map does not name is a `gap`, never a guess |
+| Four connectors in P1 make the foundation the longest phase | P1 tasks split per connector; Jira/GitHub extraction lands first and keeps today's bundle byte-for-byte, so P2 can start on it |
 | Deleting FAST/FULL removes the in-run regression this repository has today | accepted with U7; `/qa-regression` stays a standalone command |
