@@ -207,8 +207,16 @@ export function decide(prep, ranker, question, { retrieval = null, bodies = null
   // none, and a low p is an `ambiguous` list labelled `unlikely`. Measured 2026-10-01..15: even below
   // p 0.15, 22 of 89 closed lists were picks.
   const noneBelow = Number.isFinite(ranker.thresholds.none) ? ranker.thresholds.none : -Infinity;
-  const p = r.candidates.length ? probability(ranker.model, f) : 0;
-  const verdict = !r.candidates.length || p < noneBelow ? 'none' : p >= answer ? 'answer' : 'ambiguous';
+  // A LONE CANDIDATE HAS NO RIVAL, so its two margins are not measured: `featuresOf` reads them as 1, a
+  // value no fitted ask had -- 0 of 1,535 real asks of 2026-10 retrieved exactly one candidate -- and the
+  // positive weights turned "Stripe" or "the capital of France" into a certified answer at p 0.94-0.998
+  // (tester run of ai-tools#460). Scored with both margins at the model's mean, and never certified:
+  // one headline the agent opens, not an answer it is told to trust.
+  const lone = r.candidates.length === 1;
+  const neutral = (name) => ranker.model.mean?.[ranker.model.features.indexOf(name)];
+  const scored = lone ? { ...f, margin: neutral('margin') ?? f.margin, sentenceMargin: neutral('sentenceMargin') ?? f.sentenceMargin } : f;
+  const p = r.candidates.length ? probability(ranker.model, scored) : 0;
+  const verdict = !r.candidates.length || p < noneBelow ? 'none' : p >= answer && !lone ? 'answer' : 'ambiguous';
   // `top` is the caller's (kb_ask's argument), bounded to what an agent can read: 1..5.
   const n = Math.min(5, Math.max(1, Math.floor(Number(top)) || AMBIGUOUS_TOP));
   const listed = verdict === 'answer' ? r.candidates.slice(0, 1)

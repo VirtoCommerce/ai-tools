@@ -560,6 +560,8 @@ export function evidence(lines, idx) {
   const clients = [...new Set(writes.map((l) => l.client).filter(Boolean))].sort();
   const soft = lines.filter((l) => l.kind === 'dispute' && l.id && l.soft).length;
   for (const l of lines) {
+    // A confirm or dispute with a `state` did not land (no base, unreachable): counted nowhere (tester run).
+    if (l.state) continue;
     if (l.kind === 'confirm' && l.id) {
       const r = get(l.id);
       r.confirms += 1;
@@ -880,7 +882,8 @@ export function unhelpful(lines, idx) {
       const capSubject = String(cap.subject ?? idx.subjectOf(cap.id));
       const capQuestion = String(cap.question ?? idx.byId.get(String(cap.id))?.question ?? '');
       const capRaw = idx.byId.get(String(cap.id))?.anchors ?? [];
-      if (pairedOnlyBySubstring(ask.q, { text: `${capSubject} ${capQuestion}`, anchors: capRaw })) {
+      // A writer that NAMED the ask (`afterBy: handle`) paired it exactly: no substring guess to discount (tester run).
+      if (cap.afterBy !== 'handle' && pairedOnlyBySubstring(ask.q, { text: `${capSubject} ${capQuestion}`, anchors: capRaw })) {
         unpaired += 1;
         rows.push({
           verdict: 'unpaired',
@@ -1439,7 +1442,8 @@ export function lists(lines) {
   // it never did (the fact was dropped). doorStats' pairing, applied to the evidence door: `refused`
   // counts attempts, `landed` / `abandoned` count FACTS -- one per (session, entry) -- so an agent that
   // retried three times and gave up is one abandoned confirmation, not three.
-  const refused = lines.filter((l) => l.kind === 'confirm-invalid' || l.kind === 'dispute-invalid');
+  // `not-opened` only: a private-data refusal is the privacy door, counted in `refusals`, not this gate (tester run).
+  const refused = lines.filter((l) => (l.kind === 'confirm-invalid' || l.kind === 'dispute-invalid') && l.why !== 'private-data');
   const firstRefusal = new Map();
   for (const r of refused) {
     const key = `${r._session ?? ''}\0${String(r.id ?? '').toUpperCase()}`;
@@ -1550,7 +1554,11 @@ export function analyse({ lines = [], rows = [], meta = {} } = {}) {
   // window's 61 near-miss rows, unmarked. The mark cannot be added after the fact; `--exclude-sessions` can.
   const excluded = new Set((Array.isArray(meta.excludeSessions) ? meta.excludeSessions : []).map(String));
   const notSynthetic = lines.filter((l) => l.synthetic !== true && !excluded.has(String(l._session ?? '')));
-  const syntheticLines = lines.length - notSynthetic.length;
+  // Counted APART from the synthetic lines (tester run of ai-tools#460): they are a named check, not a
+  // benchmark, and a name that matched no session is said -- a typo must not read as "nothing to exclude".
+  const setAside = lines.filter((l) => l.synthetic !== true && excluded.has(String(l._session ?? '')));
+  const seen = new Set(setAside.map((l) => String(l._session)));
+  const syntheticLines = lines.filter((l) => l.synthetic === true).length;
   // SCOPED TO ONE RUN, when the operator named one. Filtered HERE and not in `report.mjs` for the
   // reason the synthetic filter is here: every panel and the §15 verdict must be computed from the
   // same set of lines, and a filter applied at the caller is one a second caller forgets. The
@@ -1581,6 +1589,12 @@ export function analyse({ lines = [], rows = [], meta = {} } = {}) {
       ...meta,
       synthetic: syntheticLines,
       syntheticAsks: lines.filter((l) => l.synthetic === true && l.kind === 'ask').length,
+      excludedSessions: excluded.size ? {
+        lines: setAside.length,
+        asks: setAside.filter((l) => l.kind === 'ask').length,
+        matched: [...excluded].filter((s) => seen.has(s)),
+        unmatched: [...excluded].filter((s) => !seen.has(s)),
+      } : null,
       // THE SCOPE IS PART OF THE NUMBER (PLAN §15.2): a report headed "last 30 days" that actually
       // analysed one run is a figure nobody can reproduce. `outOfRun` is what the filter set aside,
       // printed rather than dropped, for the same reason the synthetic count is.

@@ -94,13 +94,20 @@ export function pointersByAsk(records) {
     if (r.kind === 'ask') {
       latestAsk = r;
       asksAt.set(String(r.at), r);
-      if (r.state === 'ambiguous' && r.topic) openOnTopic.set(String(r.topic), String(r.at));
+      if (r.state === 'ambiguous' && r.topic) openOnTopic.set(String(r.topic), [...(openOnTopic.get(String(r.topic)) ?? []), String(r.at)]);
       continue;
     }
     const wrote = r.kind === 'write' ? r.wrote : r.kind;
     if (wrote === 'confirm' || wrote === 'capture') {
+      // Only a write that WENT: a log line with a `state` (no base, unreachable, invalid) or a capture
+      // that minted no id closed nothing, as the journal reads it (`queuedWrite`) -- the report read the
+      // raw lines and closed lists on failed confirms (tester run of ai-tools#460).
+      if (r.kind !== 'write' && (r.state || (wrote === 'capture' && !r.id))) continue;
+      // The latest list on the topic that is still OPEN: a later list already closed must not hide an
+      // earlier one the confirm settles (tester run of ai-tools#460).
+      const onTopic = r.topic ? openOnTopic.get(String(r.topic)) ?? [] : [];
       const target = wrote === 'capture' && r.afterBy === 'handle' && r.after ? String(r.after)
-        : r.topic ? openOnTopic.get(String(r.topic)) ?? null : null;
+        : [...onTopic].reverse().find((at) => lastWord(pointed.get(at)).verdict === 'open') ?? null;
       const ask = target ? asksAt.get(target) : null;
       if (ask && ask.state === 'ambiguous' && lastWord(pointed.get(target)).verdict === 'open') {
         const listed = wrote === 'confirm' && r.id && Array.isArray(ask.shown)

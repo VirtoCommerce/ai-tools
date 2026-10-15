@@ -20,6 +20,12 @@ const VERBS = new Set(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS
  * a reader recognises (`Query.organizationReturns`, `?scope=organization`), and comparison lowercases
  * and drops them anyway.
  */
+// An INSTANCE id in a path is a parameter, not a place (tester run of ai-tools#460): `/api/orders/12345`
+// and `/api/orders/<guid>` are where `/api/orders/{id}` is, and publishing the literal leaks an instance.
+// Past the first segment only, so a page like `/404` keeps its name.
+const INSTANCE_ID = /^(?:\d+|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9a-f]{32})$/i;
+const isParam = (seg, i) => /^[<{:]|[>}]$/.test(seg) || (i > 1 && INSTANCE_ID.test(seg));
+
 export function canonicalAnchor(raw) {
   let s = String(raw ?? '').trim();
   if (!s) return '';
@@ -33,7 +39,7 @@ export function canonicalAnchor(raw) {
     const q = s.search(/[?#]/);
     const path = q === -1 ? s : s.slice(0, q);
     const rest = q === -1 ? '' : s.slice(q);
-    let p = path.split('/').map((seg) => (/^[<{:]|[>}]$/.test(seg) ? '{id}' : seg)).join('/');
+    let p = path.split('/').map((seg, i) => (isParam(seg, i) ? '{id}' : seg)).join('/');
     if (p.length > 1) p = p.replace(/\/+$/, '');
     s = p + rest;
   }
@@ -59,7 +65,7 @@ export function normalizeAnchor(raw) {
   if (s.startsWith('/')) {
     s = s
       .split('/')
-      .map((seg) => (/^[<{:]|[>}]$/.test(seg) ? '{}' : seg))  // <id>, {cartId}, :id are one parameter
+      .map((seg, i) => (isParam(seg, i) ? '{}' : seg))  // <id>, {cartId}, :id, 12345, a GUID are one parameter
       .join('/');
     if (s.length > 1) s = s.replace(/\/+$/, '');
   }

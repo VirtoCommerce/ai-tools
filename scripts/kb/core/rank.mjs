@@ -61,7 +61,9 @@ export function tokenize(text) {
   // (logs300 dev answer precision 93% -> 87%) -- that is a change for a refit (VCST-6193), not a
   // tokenizer edit under a model fitted on the old terms. The Unicode change alone leaves both labelled
   // sets' bench results identical.
+  // NFKC first: a decomposed `café` (e + U+0301) and the `ﬁ` ligature are the letters they display as.
   return String(text ?? '')
+    .normalize('NFKC')
     .toLowerCase()
     .split(/[^\p{L}\p{N}]+/u)
     .filter((t) => t.length > 1 && !STOP.has(t));

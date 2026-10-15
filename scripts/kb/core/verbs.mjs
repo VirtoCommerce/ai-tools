@@ -1078,7 +1078,8 @@ function repairShellRewrite(input, env, fields = TEXT_FIELDS) {
  * `why` names the fields, the kinds and what to write instead -- and never the value itself.
  */
 function privateData(fields, env) {
-  const found = publishProblems(fields, loadSecrets(env));
+  const { values, hosts } = loadSecrets(env);
+  const found = publishProblems(fields, { secrets: values, hosts });
   if (!found.length) return null;
   return { state: 'invalid', why: publishRefusal(found), private: [...new Set(found.flatMap((p) => p.kinds))] };
 }
@@ -1146,23 +1147,29 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   // `--dry-run` on capture and ignored it, so a "check" queued a real capture for the next push.
   const door = { env, via, call, topic, repair, dryRun };
   const note = (line) => (dryRun ? null : log(line, { env }));
-  const missing = REQUIRED.filter((f) => !String(input[f] ?? '').trim());
-  if (!input.anchors?.length) missing.push('anchor');
-  // Every refusal carries `doorHints` -- the fix per anchor, coordinates the writer's own text names,
-  // the source of a missing field (VCST-6156). The hints ride on the RESULT only; `refuseAtDoor`
-  // logs kinds and shapes, never a rejected value.
-  if (missing.length) return refuseAtDoor(doorHints({ state: 'invalid', why: `capture needs: ${missing.join(', ')}`, missing }, input), input, door);
-  // NOTHING PRIVATE GOES PUBLIC (VCST-6378): checked first, so the writer fixes it while still in the call.
+  // A BLANK ANCHOR IS NO ANCHOR (tester run of ai-tools#460): `--anchor " "` used to pass the length
+  // check and publish an entry with an empty coordinate that no hold, dedup or neighbour lookup reaches.
+  const coordOf = (a) => String(typeof a === 'string' ? a : a?.coordinate ?? '');
+  if (Array.isArray(input.anchors)) input = { ...input, anchors: input.anchors.filter((a) => coordOf(a).trim()) };
+  // NOTHING PRIVATE GOES PUBLIC (VCST-6378): checked FIRST, before any other refusal, because every
+  // other refusal logs `subject` and `topic` -- a capture missing its claim must not log the address in
+  // its subject (tester run of ai-tools#460). The writer fixes it while still in the call.
   // Anchors are scanned AS STORED -- `canonicalAnchor`, which keeps a query string and the case: an
   // address in `?email=` or a token in a path segment is published with it, so it is refused here.
   // A scheme+host is removed by that same step, so `https://<stand>/cart` is not refused for a host it
   // no longer carries. `topic` is scanned too: it is written into the public log line.
   const exposed = privateData({
     ...input,
-    anchors: input.anchors.map((a) => canonicalAnchor(typeof a === 'string' ? a : a?.coordinate ?? '')),
+    anchors: (input.anchors ?? []).map((a) => canonicalAnchor(coordOf(a))),
     topic,
   }, env);
   if (exposed) return refuseAtDoor(exposed, input, door);
+  const missing = REQUIRED.filter((f) => !String(input[f] ?? '').trim());
+  if (!input.anchors?.length) missing.push('anchor');
+  // Every refusal carries `doorHints` -- the fix per anchor, coordinates the writer's own text names,
+  // the source of a missing field (VCST-6156). The hints ride on the RESULT only; `refuseAtDoor`
+  // logs kinds and shapes, never a rejected value.
+  if (missing.length) return refuseAtDoor(doorHints({ state: 'invalid', why: `capture needs: ${missing.join(', ')}`, missing }, input), input, door);
   // HOW, then WHERE (VCST-6186): a source fact names a code version, not a stand, so the stand rule
   // (VCST-6189) applies to observations only.
   const how = resolveMethod(input.method);
@@ -1216,7 +1223,8 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   // the dedup compares scopes as stored, so rewriting it here would stop a recapture matching its entry.
   const scope = normalizeScope(input.scope);
   // `Object.hasOwn`: `surface=constructor` must not pass on the prototype (review of ai-tools#460).
-  const unknownSurface = scope.map((s) => /^surface=(.+)$/.exec(s)?.[1]).filter((v) => v && !Object.hasOwn(SURFACE_SPELLINGS, v));
+  // An EMPTY `surface=` is an unknown surface too (tester run): it used to never reach the check.
+  const unknownSurface = scope.map((s) => /^surface=(.*)$/.exec(s)?.[1]).filter((v) => v !== undefined && !Object.hasOwn(SURFACE_SPELLINGS, v));
   if (unknownSurface.length) {
     return refuseAtDoor(doorHints({
       state: 'invalid',
@@ -1277,7 +1285,9 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   // at SIMILAR_JACCARD_OPENED, which catches the confirm-then-recapture three.
   const distinct = String(input.distinct ?? '').trim();
   if (!distinct) {
-    const similar = similarEntries(retrievable(cat.rows), input, new Set(await openedThisSession({ env })));
+    // Session-wide, as the confirm gate reads it (tester run of ai-tools#460): a confirm-then-recapture
+    // spans a turn, and the queue flushes at every Stop -- queue-scoped, the lower bar was gone by then.
+    const similar = similarEntries(retrievable(cat.rows), input, await openedEver({ env }));
     if (similar.length) {
       await note({
         kind: 'capture-held', dupeOf: similar[0].id, subject: input.subject, why: 'similar', when: 'call',

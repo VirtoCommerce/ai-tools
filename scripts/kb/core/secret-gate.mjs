@@ -36,9 +36,30 @@ import { fileURLToPath } from 'node:url';
 /** Lifted verbatim from the vendor scanner: which env keys name a secret. */
 export const SECRET_NAME = /password|passwd|pwd|token|secret|api[_-]?key|access[_-]?key/i;
 
-/** Lifted verbatim: a value that is a path is a location, not a credential. */
-export const looksLikePath = (v) => /^[A-Za-z]:[\\/]/.test(v) || /^[\\/]/.test(v)
-  || /^\w+:\/\//.test(v) || (v.match(/[\\/]/g) || []).length >= 2;
+/**
+ * A value that is a path is a location, not a credential: rooted (`/x`, `C:\x`), a URL, or a run of
+ * lower-case words (`connect/token`). Slash COUNT says nothing -- a base64 storage or AWS key carries
+ * two or three -- and neither does a leading `/`, which one base64 key in 64 starts with (tester run
+ * of ai-tools#460). So a rooted or word path still counts as a key when one of its segments looks
+ * like key material: base64 `+`/`=`, or eight characters or more mixing upper case, lower case and digits.
+ */
+const keyish = (seg) => /[+=]/.test(seg) || (seg.length >= 8 && /[A-Z]/.test(seg) && /[a-z]/.test(seg) && /\d/.test(seg));
+export const looksLikePath = (v) => {
+  if (/^\w+:\/\//.test(v)) return true;
+  const rooted = /^[A-Za-z]:[\\/]/.test(v) || /^[\\/]/.test(v);
+  const words = /^[a-z0-9][a-z0-9._-]*(?:\/[a-z0-9][a-z0-9._-]*)+$/.test(v);
+  return (rooted || words) && !v.split(/[\\/]/).some(keyish);
+};
+
+/**
+ * A key that ENDS in `KEY` or `CREDENTIAL(S)` -- `AZURE_STORAGE_KEY`, `ACCOUNT_KEY`, `SIGNING_KEY` -- is
+ * a secret the vendor rule never named (tester run of ai-tools#460). But `CACHE_KEY=products` is not,
+ * so a value counts under this name only when it looks like key material: 16+ characters, no
+ * whitespace, a letter and a digit.
+ */
+export const KEY_NAME = /(?:^|[_-])(?:KEY|CREDENTIALS?)$/i;
+const keyMaterial = (v) => v.length >= 16 && !/\s/.test(v) && /\p{L}/u.test(v) && /\d/.test(v);
+const secretNamed = (name, v) => SECRET_NAME.test(name) || (KEY_NAME.test(name) && keyMaterial(v));
 
 /** Lifted: shorter than six characters is a word, not a secret, and would match everything. */
 export const MIN_SECRET_LENGTH = 6;
@@ -50,13 +71,23 @@ export const MIN_SECRET_LENGTH = 6;
 export const TOKEN_SHAPES = Object.freeze([
   ['github-pat', /\b(?:gh[pousr]_|github_pat_)[A-Za-z0-9_]{20,}\b/],
   ['jwt', /\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/],
-  ['bearer', /\b(?:Bearer|Basic)\s+[A-Za-z0-9._~+/-]{20,}=*/],
+  // The auth scheme is case-insensitive (RFC 9110), so is the match; an opaque token carries a digit,
+  // which keeps "bearer" in prose clear (tester run of ai-tools#460). `Token` is the DRF/GitHub scheme.
+  ['bearer', /\b(?:Bearer|Token)\s+(?=[A-Za-z._~+/-]*\d)[A-Za-z0-9._~+/-]{20,}=*/i],
+  // `Basic` carries base64 of `user:password`, as short as 12 characters -- matched only when it DECODES to
+  // that shape, so "Basic authentication" in prose is not a hit.
+  ['bearer', { test: (s) => [...String(s).matchAll(/\bBasic\s+([A-Za-z0-9+/]{8,}={0,2})(?![A-Za-z0-9+/=])/gi)]
+    .some((m) => /^[\x20-\x7e]+:[\x20-\x7e]*$/.test(Buffer.from(m[1], 'base64').toString('latin1'))) }],
+  // A credential named by its header or query key: `x-api-key: …`, `?client_secret=…`, `&access_token=…`.
+  // A placeholder (`{token}`, `<key>`, `@td(...)`, `{{VAR}}`) is how a fact names one, and is not a hit.
+  ['api-key', /\b(?:x-api-key|api[_-]?key|apikey|subscription-key)\s*[:=]\s*["']?(?![{<@])[A-Za-z0-9._~+/=-]{16,}/i],
+  ['url-credential', /[?&;](?:client_secret|access_token|refresh_token|id_token|api[_-]?key|token|password|passwd|pwd|secret|code_verifier)=(?![{<@%7B])[^&#\s]{8,}/i],
   // VCST-6378: shapes a tester on this stack actually holds. An Azure DevOps PAT (the classic 52-char
   // base32 one, and the 84-char one that carries the `AZDO` signature at 76..79), a SAS signature, a
   // storage account key, a PEM private key, an AWS access key id. None of them is a word or a hash
   // somebody asks about, which is the bar the three above were held to.
   ['ado-pat', /\b(?:[a-z2-7]{52}|[A-Za-z0-9]{76}AZDO[A-Za-z0-9]{4})\b/],
-  ['sas-signature', /[?&]sig=[A-Za-z0-9%+/=]{20,}/],
+  ['sas-signature', /(?:^|[?&;]|&amp;)sig=[A-Za-z0-9%+/=]{20,}/i],
   ['storage-key', /\bAccountKey=[A-Za-z0-9+/]{40,}={0,2}/],
   ['private-key', /-----BEGIN (?:[A-Z]+ )?PRIVATE KEY-----/],
   ['aws-access-key', /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/],
@@ -147,7 +178,7 @@ export function secretValuesFrom(text) {
     let v = l.slice(e + 1).trim();
     const q = v.charAt(0);
     if ((q === '"' || q === "'") && v.endsWith(q) && v.length > 1) v = v.slice(1, -1);
-    if (SECRET_NAME.test(name) && v.length >= MIN_SECRET_LENGTH && !looksLikePath(v)) out.add(v);
+    if (secretNamed(name, v) && v.length >= MIN_SECRET_LENGTH && !looksLikePath(v)) out.add(v);
   }
   return out;
 }
@@ -262,22 +293,16 @@ export function loadHosts(env = process.env) {
  */
 const POINTER_KEY = /(?:_FILES?|_PATH|_DIR|SECRETS)$/i;
 
-/** A location, not a key: rooted (`/x`, `C:\x`) or a URL. Slash COUNT says nothing -- an AWS secret has two. */
-const rootedPath = (v) => /^[A-Za-z]:[\\/]/.test(v) || /^[\\/]/.test(v) || /^\w+:\/\//.test(v);
-
 export function secretValuesFromEnv(env = process.env) {
   const out = new Set();
   for (const [k, raw] of Object.entries(env)) {
-    if (!SECRET_NAME.test(k) || POINTER_KEY.test(k) || typeof raw !== 'string') continue;
+    if (typeof raw !== 'string' || !secretNamed(k, raw.trim()) || POINTER_KEY.test(k)) continue;
     const v = raw.trim();
-    // A letter AND a digit or symbol, no whitespace, no `/`: `86400000` (a TTL), `2024-10-01` (a version
-    // date) and `connect/token` (an endpoint) under a secret-shaped key are not secrets, and treating
-    // them as such would refuse every capture that mentions them (review of ai-tools#460).
-    // A `/` alone does not make a path -- base64 keys carry one (review round 1) -- but a slash-separated
-    // run of plain words does (`connect/token`): skipped.
-    // Lower-case segments only (round 2): `api/v2/token` is a path, while a base64 key mixes cases.
-    const wordsPath = /^[a-z0-9][a-z0-9._-]*(?:\/[a-z0-9][a-z0-9._-]*)+$/.test(v);
-    if (v.length >= 8 && !/\s/.test(v) && !wordsPath && /\p{L}/u.test(v) && /[^\p{L}]/u.test(v) && !rootedPath(v)) out.add(v);
+    // A letter AND a digit or symbol, no whitespace, not a path: `86400000` (a TTL), `2024-10-01` (a
+    // version date) and `connect/token` (an endpoint) under a secret-shaped key are not secrets, and
+    // treating them as such would refuse every capture that mentions them (review of ai-tools#460).
+    // What counts as a path is `looksLikePath`, shared with the file rule so the two cannot disagree.
+    if (v.length >= 8 && !/\s/.test(v) && /\p{L}/u.test(v) && /[^\p{L}]/u.test(v) && !looksLikePath(v)) out.add(v);
   }
   return out;
 }
@@ -355,6 +380,8 @@ export const PUBLISH_FIXES = Object.freeze({
   'github-pat': 'a GitHub token -- remove it',
   jwt: 'a JWT -- remove it; say which claim you read and its value only if that value is not a credential',
   bearer: 'an Authorization header value -- remove it',
+  'api-key': 'an API key header value -- name the header, drop the value',
+  'url-credential': 'a credential in a query string -- keep the path and the parameter name, drop the value',
   'ado-pat': 'an Azure DevOps PAT -- remove it',
   'sas-signature': 'a SAS signature -- keep the path, drop the query string',
   'storage-key': 'a storage account key -- remove it',
@@ -370,7 +397,10 @@ export const PUBLISH_FIXES = Object.freeze({
  *
  * Like `scanText`, it names FIELDS and KINDS, never the matched text.
  */
-export function publishProblems(fields, { secrets = new Set(), hosts = new Set() } = {}) {
+export function publishProblems(fields, { secrets, values, hosts = new Set() } = {}) {
+  // `loadSecrets` names them `values`; both spellings are taken, because reading the wrong one left
+  // the door checking hosts and shapes but never a secret VALUE (tester run of ai-tools#460).
+  secrets = secrets ?? values ?? new Set();
   const out = [];
   for (const [field, value] of Object.entries(fields ?? {})) {
     if (value == null) continue;
@@ -406,7 +436,12 @@ export function gateQueue(lines, secrets = new Set(), hosts = new Set()) {
     // `who` survives with them, off the ORIGINAL line and never off this process: a redaction is a
     // hole in one person's record, and a hole whose owner is unknown is one nobody can go and ask
     // about. A swept foreign line keeps its own writer here, as it does everywhere else.
-    kept.push({ at: line.at, kind: 'redacted', why: 'secret-scan', was: line.kind ?? null, hits, ...(line.who ? { who: line.who } : {}) });
+    // ...and only when they are clean themselves (tester run of ai-tools#460): the marker exists for the
+    // hand-edited or corrupted line, which is exactly where `at` or `who` may be the value that tripped.
+    const clean = (v) => typeof v === 'string' && !scanText([v], secrets, hosts).length;
+    const at = clean(line.at) && /^\d{4}-\d\d-\d\dT[\d:.]+(?:Z|[+-]\d\d:?\d\d)?$/.test(line.at) ? line.at : new Date().toISOString();
+    const was = clean(line.kind) && /^[a-z-]{1,40}$/.test(line.kind) ? line.kind : null;
+    kept.push({ at, kind: 'redacted', why: 'secret-scan', was, hits, ...(line.who && clean(line.who) ? { who: line.who } : {}) });
   }
   return { kept, dropped };
 }

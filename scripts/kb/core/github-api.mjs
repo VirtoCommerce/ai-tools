@@ -52,12 +52,19 @@ export function deniedCode(res, json) {
  */
 export function retryAtOf(res, json, now = Date.now()) {
   const get = (h) => (typeof res?.headers?.get === 'function' ? res.headers.get(h) : null);
+  // AT MOST AN HOUR (tester run of ai-tools#460): GitHub's primary window is an hour, so anything longer
+  // is a proxy rewriting the header or clock skew on `x-ratelimit-reset` -- and an uncapped value held
+  // every push, the explicit one included, until 2058.
+  const capped = (ms) => new Date(Math.min(ms, now + RATE_HOLD_MAX_MS)).toISOString();
   const after = Number(get('retry-after'));
-  if (Number.isFinite(after) && after > 0) return new Date(now + after * 1000).toISOString();
+  if (Number.isFinite(after) && after > 0) return capped(now + after * 1000);
   const reset = Number(get('x-ratelimit-reset'));
-  if (get('x-ratelimit-remaining') === '0' && Number.isFinite(reset) && reset * 1000 > now) return new Date(reset * 1000).toISOString();
+  if (get('x-ratelimit-remaining') === '0' && Number.isFinite(reset) && reset * 1000 > now) return capped(reset * 1000);
   return new Date(now + 60_000).toISOString();
 }
+
+/** The longest a rate limit holds pushes: GitHub's primary rate-limit window. */
+export const RATE_HOLD_MAX_MS = 60 * 60 * 1000;
 
 /** The denials that will not cure themselves: the same token will be refused again until somebody acts. */
 export const ACCESS_CODES = Object.freeze(new Set(['no-write-access', 'bad-credentials']));

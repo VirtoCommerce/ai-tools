@@ -27,7 +27,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
 import { cachedWho } from './who.mjs';
-import { ACCESS_CODES } from './github-api.mjs';
+import { ACCESS_CODES, RATE_HOLD_MAX_MS } from './github-api.mjs';
 
 /** Operations that are logged. `stat` is deliberately absent: an operator looking at the tool is
  *  not an agent using the base, and logging it would put noise in the panel that matters. */
@@ -768,7 +768,8 @@ export async function recordPush(r, { env = process.env, at = new Date() } = {})
       ? { code: r.code, at: row.at, token: r.tokenPrint }
       : row.state === 'pushed' ? null : (prev.denied ?? null);
     const rateUntil = row.state === 'failed' && r?.code === 'rate-limited'
-      ? (r.retryAt ?? new Date(at.getTime() + 60_000).toISOString())
+      // Capped here as well as where it is parsed: a value from any other caller cannot hold for longer.
+      ? new Date(Math.min(Date.parse(r.retryAt ?? '') || at.getTime() + 60_000, at.getTime() + RATE_HOLD_MAX_MS)).toISOString()
       : row.state === 'pushed' ? null
         : (Date.parse(String(prev.rateLimitedUntil ?? '')) > at.getTime() ? prev.rateLimitedUntil : null);
     const next = {
