@@ -15,8 +15,13 @@ const block = (sec, heading) => { const m = new RegExp(`^### ${heading}[ \\t]*\\
 const REQUIRED = [["Risks", 4], ["Approach per risk", 4], ["Artifacts", 6], ["Out of scope", 2]]; // heading, the clause that reads it
 // A table line that is not a separator (`|---|`, `|:--|--:|` alike); the first one left is the header row.
 const rows = (text) => text.split("\n").filter((l) => /^\|/.test(l) && !/^[\s|:-]+$/.test(l)).map((l) => l.split("|").slice(1, -1).map((c) => c.trim())).slice(1);
-const ARTIFACTS_FOR = { F1: ["Test model", "Exploratory"], F2: ["Test model", "Exploratory"], F3: ["Visual lane"], F8: ["Visual lane"],
-  F5: ["Coverage triage + regression"], F10: ["Test model"], F11: ["Test model"] };
+// No floor maps to "Test model": the model runs if and only if a risk has technique MODEL (6e, M9), and the floors
+// that used to force it now force a MODEL risk instead (MODEL_RISK_FOR; F1's half is 6c).
+const ARTIFACTS_FOR = { F1: ["Exploratory"], F2: ["Exploratory"], F3: ["Visual lane"], F8: ["Visual lane"],
+  F5: ["Coverage triage + regression"] };
+// A fired floor here needs its OWN risk: Source carries the token `floor:<id>`, technique is MODEL (M10). A risk carries
+// at most one such token. A fixed token, not a bare id, so a passing mention of "F10" in prose never counts.
+const MODEL_RISK_FOR = { F2: "a purpose", F10: "an org-context", F11: "a configuration" };
 
 export function checkStrategy(md, bundle, { domainMapText = null, p01Names } = {}) {
   if (bundle?.schema !== "ticket-context/1") return { round: 0, errors: ["0: bundle is not a ticket-context/1 bundle"] };
@@ -60,15 +65,25 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names } = {
   const firedLine = (/^Floors fired:([^\n]*)/m.exec(sec)?.[1] ?? "").split(/not fired:/i)[0];
   const fired = floors.floors.filter((f) => f.fired).map((f) => f.id);
   const running = (name) => /^RUN\b/i.test((artifacts.get(name) ?? "").trim());
+  const isModel = (r) => /\bMODEL\b/.test(approach.find((a) => a.r === r)?.technique ?? "");
+  const names = (x, id) => new RegExp(`\\bfloor:${id}\\b`).test(x.source);
   for (const id of fired) {
     if (!new RegExp(`\\b${id}\\b`).test(firedLine)) errors.push(`6: ${id} fired but is not on the 'Floors fired:' line`);
     for (const name of ARTIFACTS_FOR[id] ?? []) if (!running(name)) errors.push(`6: ${id} fired but '${name}' is not RUN (SKIP, N/A, missing or other)`);
-    if ((id === "F10" || id === "F11") && !approach.some((a) => /\bMODEL\b/.test(a.technique))) errors.push(`6: ${id} fired but no risk has technique MODEL`);
+    if (MODEL_RISK_FOR[id] && !risks.some((x) => names(x, id) && isModel(x.r)))
+      errors.push(`6: ${id} fired but no risk carries floor:${id} in its Source with technique MODEL (${MODEL_RISK_FOR[id]} risk, M10)`);
   }
   const high = risks.filter((x) => x.level === "high" || x.level === "critical");
-  if (high.length && (!running("Test model") || !running("Exploratory"))) errors.push(`6b: ${high.map((x) => x.r).join(", ")} High/Critical ⇒ Test model and Exploratory run (F1)`);
-  for (const x of high) { const a = approach.find((y) => y.r === x.r); if (a && /\{HYPOTHESIS\}/.test(a.oracle) && !/\bMODEL\b/.test(a.technique)) errors.push(`6c: ${x.r} High/Critical on {HYPOTHESIS} needs MODEL (M1)`); }
+  if (high.length && !running("Exploratory")) errors.push(`6b: ${high.map((x) => x.r).join(", ")} High/Critical ⇒ Exploratory runs (F1)`);
+  for (const x of high) { const a = approach.find((y) => y.r === x.r); if (a && /\{HYPOTHESIS\}/.test(a.oracle) && !isModel(x.r)) errors.push(`6c: ${x.r} High/Critical on {HYPOTHESIS} needs MODEL (M1)`); }
   if (fired.includes("F6") && !/Deployed:\s*NO\b/.test(sec)) errors.push("6d: F6 fired but the header does not say 'Deployed: NO'");
+  const modelRisks = risks.filter((x) => isModel(x.r)).map((x) => x.r);
+  if (modelRisks.length && !running("Test model")) errors.push(`6e: ${modelRisks.join(", ")} technique MODEL ⇒ Test model is RUN (M9)`);
+  if (!modelRisks.length && running("Test model")) errors.push("6e: Test model is RUN but no risk has technique MODEL — SKIP — no MODEL risk (M9)");
+  for (const x of risks) {
+    const own = Object.keys(MODEL_RISK_FOR).filter((id) => names(x, id));
+    if (own.length > 1) errors.push(`6f: ${x.r} carries ${own.map((id) => `floor:${id}`).join(" and ")} — one floor, one risk (M10)`);
+  }
 
   const lanes = new Set(approach.map((a) => a.lane.split("·")[0].trim()).filter(Boolean));
   if (lanes.size > 3 && !/^Lanes sequenced:/m.test(sec)) errors.push(`8: ${lanes.size} browser lanes and no 'Lanes sequenced:' line`);
