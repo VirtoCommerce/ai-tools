@@ -114,7 +114,7 @@ export function askLines(r, { prefix = 'kb ask' } = {}) {
   // or the `none` must carry so the log can pair them with THIS ask.
   if (r.verdict === 'ambiguous') {
     return [
-      ...verdictLines({ verdict: 'ambiguous', headlines: r.headlines }, { prefix }),
+      ...verdictLines({ verdict: 'ambiguous', headlines: r.headlines, likelihood: r.likelihood }, { prefix }),
       ...(r.repaired === 'msys' ? [MSYS_NOTE] : []),
       ...(r.handle ? [`  ask handle: ${r.handle}  (pass it as \`ask\` to kb_show / kb_none, and to kb_capture when you record what you then found out; --ask on the CLI)`] : []),
       ...queuedLines(r.queued),
@@ -122,6 +122,8 @@ export function askLines(r, { prefix = 'kb ask' } = {}) {
   }
   const lines = [`${prefix}: ${HEADLINE[r.state] ?? r.state}`];
   if (r.verdict === 'none' && r.concepts?.length) lines.push(`  your question maps to concepts nothing in the base is filed under: ${r.concepts.join(', ')}`);
+  // Under the none threshold there WERE candidates: the nearest is named, so the absence is checkable.
+  if (r.verdict === 'none' && r.nearest) lines.push(`  nearest, below the threshold the base answers "none" at: ${r.nearest.id}  ${r.nearest.subject}`);
   if (r.why) lines.push(`  ${r.why}`);
   // Said on every state: the repair already ran, but the next command from the same shell will be
   // mangled the same way, and only the agent can change how it is typed.
@@ -145,6 +147,13 @@ export function askLines(r, { prefix = 'kb ask' } = {}) {
   for (const hit of r.hits ?? []) lines.push(...hitLines(hit));
   return lines;
 }
+
+/** The likelihood line, per band of `verdict.mjs` `likelihood` -- measured pick rates, 2026-10-01..15. */
+const LIKELIHOOD_TEXT = Object.freeze({
+  likely: 'likely: on lists this confident, agents found their answer in a headline about 9 times in 10 -- open the one that states your fact',
+  possible: 'possible: on lists this confident, agents found their answer about half the time',
+  unlikely: 'unlikely: on lists this confident, agents found their answer about 1 time in 4 -- open one only if its headline names your fact, else kb_none and find out',
+});
 
 /** How many characters of an entry's body an `ambiguous` headline carries. */
 export const EXCERPT_CHARS = 200;
@@ -183,6 +192,9 @@ export function verdictLines(v, { prefix = 'kb ask', says = true } = {}) {
   if (v.verdict === 'ambiguous') {
     return [
       `${prefix}: ${AMBIGUOUS_CONTRACT}`,
+      // HOW OFTEN A LIST LIKE THIS HELD THE ANSWER (VCST-6378), from the agents' own closes: a hint for
+      // the agent's triage, never a cut. The bands are `verdict.mjs` `likelihood`.
+      ...(v.likelihood ? [`  ${LIKELIHOOD_TEXT[v.likelihood]}`] : []),
       ...v.headlines.flatMap((h) => [
         `  ${h.id}  ${h.subject}${h.separating ? `  [${h.separating}]` : ''}`,
         ...(h.defect ? [`      ! ${defectText(h.defect)}`] : h.defectUnknown ? [`      ! ${DEFECT_UNKNOWN}`] : []),

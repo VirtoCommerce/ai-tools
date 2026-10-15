@@ -120,15 +120,14 @@ export const TOOLS = Object.freeze([
     description: 'Ask the shared knowledge base what is already known about how the Virto Commerce platform BEHAVES. '
       + 'Use it whenever you are about to assert, write or test something about platform behaviour that could be '
       + 'checked by observation — before grepping, before reasoning it out, before writing the assertion. '
-      + 'Returns matching entries with their trust label, confirmation count and per-observation provenance. '
-      + 'When the base cannot tell whether any close entry states what you asked, it lists a few headlines '
-      + 'instead ("close entries, none certified to answer"): open the one most likely to state your fact with '
-      + 'kb_show, passing the printed ask handle, and rely on it only if its BODY states the fact; if none could, '
-      + 'call kb_none with the handle, then go find out and kb_capture. Being about the same page or feature is not an answer. '
-      + 'Every listed ask ENDS in one of the two -- a kb_show pick or a kb_none -- before you move on: an ask left with '
-      + 'neither is recorded as unresolved, nobody can tell whether the base helped, and the session is reminded of it at the end of your turn. '
-      + 'Says plainly when the base was read and holds nothing (go find out, then kb_capture) and when it could '
-      + 'NOT be read (conclude nothing; retry) — these are different answers and never look alike. '
+      + 'Three answers. (1) ANSWERED: one entry, its body, trust label, confirmations and provenance. '
+      + '(2) A LIST, the usual case ("close entries, none certified to answer"), with a likely / possible / unlikely line: '
+      + 'open the headline most likely to state your fact with kb_show, passing the printed ask handle, and rely on it only if '
+      + 'its BODY states the fact; if none could, call kb_none with the handle, then go find out and kb_capture with the same '
+      + 'handle. Being about the same page or feature is not an answer. A list is closed by a kb_show pick, a kb_none, or a '
+      + 'kb_confirm / kb_capture you make next on the same topic -- leave it with none of those and the session is reminded at '
+      + 'the end of your turn. (3) NOTHING: the base was read and holds nothing close (go find out, then kb_capture). '
+      + 'Separately, it says when the base could NOT be read (conclude nothing; retry) -- never the same as (3). '
       + 'Name the deployment you are working against, if you know it: the same behaviour differs between stands, '
       + 'and an answer weighed on the wrong one is how this base got its only dispute.',
     inputSchema: {
@@ -139,7 +138,7 @@ export const TOOLS = Object.freeze([
           + 'kb_capture, e.g. vcst_qa, vcptcore_stable. Omit it rather than guess: an absent stand costs nothing, '
           + 'a wrong one is read as fact by everybody after you.'),
         topic: TOPIC,
-        top: { type: 'integer', minimum: 1, maximum: 5, description: 'How many entries to open. Default 3.' },
+        top: { type: 'integer', minimum: 1, maximum: 5, description: 'How many headlines to list when no entry is certified as the answer. Default 3.' },
       },
       required: ['question'],
     },

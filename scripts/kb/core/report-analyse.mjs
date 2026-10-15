@@ -1497,7 +1497,8 @@ export function resolveVerdicts(lines) {
   // classified one ask two ways (PR #400 review).
   const bySession = new Map();
   for (const l of lines) {
-    if (l.kind !== 'ask' && l.kind !== 'show' && l.kind !== 'none') continue;
+    // confirm / capture too (VCST-6378): a later one on the same topic closes an open list (`pointersByAsk`).
+    if (!['ask', 'show', 'none', 'confirm', 'capture'].includes(l.kind)) continue;
     const s = l._session ?? '';
     if (!bySession.has(s)) bySession.set(s, []);
     bySession.get(s).push(l);
@@ -1505,10 +1506,13 @@ export function resolveVerdicts(lines) {
   const pointers = new Map([...bySession].map(([s, ls]) => [s, pointersByAsk(ls)]));
   return lines.map((l) => {
     if (l.kind !== 'ask' || l.state !== 'ambiguous') return l;
-    const word = lastWord(pointers.get(l._session ?? '')?.get(String(l.at)), { owner: l.agent ?? null });
+    const said = pointers.get(l._session ?? '')?.get(String(l.at));
+    const word = lastWord(said, { owner: l.agent ?? null });
+    // Closed by what the agent did next rather than by a word: `closedVia` names the verb (VCST-6378).
+    const via = word.verdict !== 'open' && (said ?? []).length && (said ?? []).every((r) => r.by) ? { closedVia: said[said.length - 1].by } : {};
     return word.verdict === 'picked' && word.ids.length
-      ? { ...l, state: 'answer', matched: word.ids, closedBy: 'show' }
-      : { ...l, state: 'miss', matched: [], closedBy: word.verdict === 'none' ? 'none' : 'unclosed' };
+      ? { ...l, state: 'answer', matched: word.ids, closedBy: 'show', ...via }
+      : { ...l, state: 'miss', matched: [], closedBy: word.verdict === 'none' ? 'none' : 'unclosed', ...via };
   });
 }
 

@@ -529,6 +529,9 @@ export function loopRecord(line) {
       ...(Array.isArray(line.queued) && line.queued.length ? { queued: true } : {}),
       ...(Array.isArray(line.shown) && line.shown.length ? { shown: line.shown.map(String) } : {}),
       ...(Array.isArray(line.opened) && line.opened.length ? { opened: line.opened.map(String) } : {}),
+      // The topic and the asking agent (VCST-6378): a later confirm / capture on the same topic closes the list.
+      ...(line.topic ? { topic: String(line.topic) } : {}),
+      ...(line.agent ? { agent: String(line.agent) } : {}),
       // The hash of each body this ask printed (VCST-6221 step 6) -- local, from the line's `payload`.
       ...(line.payload?.bodyHashes && typeof line.payload.bodyHashes === 'object' ? { bodyHashes: line.payload.bodyHashes } : {}),
     };
@@ -542,7 +545,17 @@ export function loopRecord(line) {
       ...(line.kind === 'show' && typeof line.payload?.bodyHash === 'string' ? { bodyHash: line.payload.bodyHash } : {}),
     };
   }
-  if (queuedWrite(line) || line.kind === 'capture-refused') return { at, kind: 'write' };
+  // A write keeps what closes a list (VCST-6378): which verb, which entry, which ask it named, the topic.
+  if (queuedWrite(line) || line.kind === 'capture-refused') {
+    return {
+      at, kind: 'write', wrote: String(line.kind),
+      ...(line.id ? { id: String(line.id) } : line.payload?.id ? { id: String(line.payload.id) } : {}),
+      ...(line.after ? { after: String(line.after) } : {}),
+      ...(line.afterBy ? { afterBy: String(line.afterBy) } : {}),
+      ...(line.topic ? { topic: String(line.topic) } : {}),
+      ...(line.agent ? { agent: String(line.agent) } : {}),
+    };
+  }
   return null;
 }
 async function noteLoop(env, line) {

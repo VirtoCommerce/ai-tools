@@ -81,8 +81,35 @@ export function pointersByAsk(records) {
   // lists unclosed in the lists panel).
   const fromList = (ask, show) => !Array.isArray(ask.shown) || !show.id
     || ask.shown.some((s) => String(s).toUpperCase() === String(show.id).toUpperCase());
+  // A LIST IS ALSO CLOSED BY WHAT THE AGENT DID NEXT (VCST-6378). 25% of lists were left with neither a
+  // pick nor a none, many of them followed by the very confirm or capture that settles them: a confirm of
+  // a listed entry IS the pick, a capture on the same topic IS "none of these said it". Only an OPEN list
+  // is closed this way -- an explicit kb_show / kb_none always outranks it -- and only the latest open
+  // list on the same topic, or the one a capture named by its handle.
+  const asksAt = new Map();
+  const openOnTopic = new Map();
   for (const r of sorted) {
-    if (r.kind === 'ask') { latestAsk = r; continue; }
+    if (r.kind === 'ask') {
+      latestAsk = r;
+      asksAt.set(String(r.at), r);
+      if (r.state === 'ambiguous' && r.topic) openOnTopic.set(String(r.topic), String(r.at));
+      continue;
+    }
+    const wrote = r.kind === 'write' ? r.wrote : r.kind;
+    if (wrote === 'confirm' || wrote === 'capture') {
+      const target = wrote === 'capture' && r.afterBy === 'handle' && r.after ? String(r.after)
+        : r.topic ? openOnTopic.get(String(r.topic)) ?? null : null;
+      const ask = target ? asksAt.get(target) : null;
+      if (ask && ask.state === 'ambiguous' && lastWord(pointed.get(target)).verdict === 'open') {
+        const listed = wrote === 'confirm' && r.id && Array.isArray(ask.shown)
+          && ask.shown.some((s) => String(s).toUpperCase() === String(r.id).toUpperCase());
+        const closing = listed
+          ? { kind: 'show', state: 'answer', id: String(r.id), at: r.at, by: wrote, ...(r.agent ? { agent: r.agent } : {}) }
+          : { kind: 'none', at: r.at, by: wrote, ...(r.agent ? { agent: r.agent } : {}) };
+        pointed.set(target, [...(pointed.get(target) ?? []), closing]);
+      }
+      continue;
+    }
     if (r.kind !== 'show' && r.kind !== 'none') continue;
     // ...and never after the agent said `kb_none` on it: a handle-less show would rewrite that none into
     // a pick -- exactly what the confirm gate's advice to open an entry would trigger. Re-opening a

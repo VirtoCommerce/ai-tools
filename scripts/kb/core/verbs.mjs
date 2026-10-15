@@ -582,20 +582,20 @@ const featureLine = (f, names) => Object.fromEntries(names.map((k) => [k, round2
  * `ask` under a verdict ranker: retrieve, read the head's bodies (the re-rank and the headline
  * excerpts need them), decide, log the verdict with what it was decided on, render.
  */
-async function askVerdict({ question, repair, cat, opened, ranker, env, started, via, call, topic, deployment }) {
+async function askVerdict({ question, repair, cat, opened, ranker, env, started, via, call, topic, deployment, top = AMBIGUOUS_TOP }) {
   const rows = retrievable(cat.rows);
   const loc = String(opened.locator ?? '');
   const prep = await remember(`prep\0${loc}\0${rowsKey(rows)}`,
     async () => prepareRetrieval(rows, prepareVocabulary(await readVocabulary(opened.reader))));
   const found = retrieve(prep, question, { fusion: ranker.fusion });
-  const head = found.candidates.slice(0, Math.max(ranker.rerank?.k ?? 0, AMBIGUOUS_TOP));
+  const head = found.candidates.slice(0, Math.max(ranker.rerank?.k ?? 0, AMBIGUOUS_TOP, Math.min(5, Number(top) || 0)));
   const parsed = new Map(await Promise.all(head.map(async (c) => [c.row.id, await remember(`entry\0${loc}\0${c.row.path}`, async () => {
     const r = await opened.reader.readEntry(c.row.path);
     if (!r.ok) return null;
     try { return parseEntry(r.text, c.row.path); } catch { return null; }
   }, { keep: (v) => v !== null })]))); // a failed read (a timeout) is retried next ask, not remembered for a minute
   const bodies = new Map([...parsed].map(([id, p]) => [id, p?.body ?? null]));
-  const d = decide(prep, ranker, question, { retrieval: found, bodies });
+  const d = decide(prep, ranker, question, { retrieval: found, bodies, top });
   const stamp = { rank: ranker.rank, ...context({ via, call, topic }), ...stand(deployment) };
   const common = { kind: 'ask', q: question, ...repair, verdict: d.verdict, p: round2(d.p), f: featureLine(d.features, ranker.model.features) };
 
@@ -625,12 +625,12 @@ async function askVerdict({ question, repair, cat, opened, ranker, env, started,
     // already captured and has not published, as the floor-1 miss does, or the same fact is captured twice.
     const queued = await queuedHere(question, { env });
     const written = await log({ ...common, shown: headlines.map((h) => h.id), state: 'ambiguous', ms: Date.now() - started, ...stamp, ...(queued.length ? { queued: queued.map((q) => q.id) } : {}) }, { env });
-    return { state: 'ambiguous', verdict: 'ambiguous', headlines, handle: written.line?.at ?? null, hits: [], queued, rows: cat.rows.length, ...repair };
+    return { state: 'ambiguous', verdict: 'ambiguous', likelihood: d.likelihood, headlines, handle: written.line?.at ?? null, hits: [], queued, rows: cat.rows.length, ...repair };
   }
   const concepts = d.concepts.map((id) => prep.vocab.concepts.get(id)?.label ?? id);
   const queued = await queuedHere(question, { env });
   await log({ ...common, matched: [], state: 'miss', ms: Date.now() - started, ...stamp, ...(queued.length ? { queued: queued.map((q) => q.id) } : {}) }, { env });
-  return { state: 'miss', verdict: 'none', concepts, hits: [], nearMiss: null, queued, rows: cat.rows.length, ...repair };
+  return { state: 'miss', verdict: 'none', concepts, nearest: d.nearest, hits: [], nearMiss: null, queued, rows: cat.rows.length, ...repair };
 }
 
 /** An ask handle is the ask's own `at`: an ISO timestamp, never prose. */
@@ -751,7 +751,7 @@ async function askRanked(asked, opened, { env = process.env, top = 3, via = null
 
   const verdictRanker = await loadVerdictRanker(opened.reader, { locator: opened.locator, env });
   if (verdictRanker) {
-    return askVerdict({ question, repair, cat, opened, ranker: verdictRanker, env, started, via, call, topic, deployment });
+    return askVerdict({ question, repair, cat, opened, ranker: verdictRanker, env, started, via, call, topic, deployment, top });
   }
 
   const { hits, nearMiss } = rank(question, retrievable(cat.rows), { top });
