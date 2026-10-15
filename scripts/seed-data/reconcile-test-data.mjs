@@ -42,6 +42,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   ROOT, BACK_URL, api, auth, assertSafeTarget, loadAliases, log, SEED_FAMILY, STORE_ID,
+  isLockedOut, hasInertLockoutEnd,
 } from '../lib/seed-common.mjs';
 import { resolveAllRoles, roleByKey } from '../lib/user-roles.mjs';
 import { selectProbeTargets } from './overlay-specs.mjs';
@@ -63,6 +64,8 @@ const notes = [];
 const fail = (msg) => { problems.push(msg); console.log(`  ✗ ${msg}`); };
 const ok = (msg) => console.log(`  ✓ ${msg}`);
 const warn = (msg) => { notes.push(msg); console.log(`  ⚠ ${msg}`); };
+/** informational only — neither a problem nor a note; never affects the exit code. */
+const info = (msg) => console.log(`  ℹ ${msg}`);
 
 /** Merge aliases.json ← aliases.{TEST_ENV}.json (same precedence as the resolver). */
 function mergedAliases() {
@@ -504,7 +507,8 @@ async function checkSeoComplete() {
  * still authenticates via /connect/token with its declared password, using the SAME grant context
  * the runner uses (graphql-auth.ts acquireToken): context-free for admin roles, storeId-scoped for
  * customer/org roles. A locked account (LOCKOUT_TEST / a blocked rep) failing auth is EXPECTED
- * state, not a drift, so it is skipped. Secret-safe: the password is only sent to /connect/token;
+ * state, not a drift, so it is skipped — "locked" meaning lockoutEnabled AND a future lockoutEnd
+ * (seed-common isLockedOut), never a future lockoutEnd alone. Secret-safe: the password is only sent to /connect/token;
  * no token is retained or written to disk. */
 async function checkAuthDrift() {
   console.log('\n[10] Auth drift (each seeded role authenticates with its declared password)');
@@ -516,10 +520,13 @@ async function checkAuthDrift() {
     try { user = await api('GET', `/api/platform/security/users/${encodeURIComponent(r.email)}`, null, { expectStatus: [200, 404] }); }
     catch (e) { warn(`${r.key}: account probe error for ${r.email} — ${String(e.message).slice(0, 90)}`); continue; }
     if (!user?.id) continue; // absent account already reported in [2] (required→fail / optional→warn)
-    if (user.lockoutEnd && new Date(user.lockoutEnd).getTime() > Date.now()) {
+    // Locked ⇔ lockoutEnabled AND a future lockoutEnd (Identity's IsLockedOutAsync). A future
+    // lockoutEnd with lockout disabled is inert — the account signs in, so the check still runs.
+    if (isLockedOut(user)) {
       warn(`${r.key} → ${r.email}: account locked — auth-drift check skipped (expected for lockout/blocked fixtures)`);
       continue;
     }
+    if (hasInertLockoutEnd(user)) info(`${r.key} → ${r.email}: lockoutEnd ${user.lockoutEnd} set but lockout not enabled — not locked, auth-drift check runs`);
     const ctx = r.kind === 'admin' ? {} : { storeId: STORE_ID };
     const okLogin = await tryLogin(user.userName || r.email, r.password, ctx);
     if (okLogin) ok(`${r.key} → ${r.email} authenticates with ${pwVar} (${r.kind}${ctx.storeId ? `, storeId=${ctx.storeId}` : ', context-free'})`);
