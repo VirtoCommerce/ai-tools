@@ -107,6 +107,19 @@ async function ensureAssortmentFixture(storeCatalogId) {
     product = { id: created.id, catalogId: loc.catalogId };
     log(`✓ product ${ORG_ONLY_PRODUCT.sku} → ${product.id}`);
   }
+  // The create body carries no seoInfos, so the platform stores only an auto slug (no title, no store):
+  // td:reconcile [8] fails it and the storefront has no store-scoped canonical URL. Heal in place —
+  // GET-merge-POST of the full product, which also repairs a product created before this step existed.
+  if (!DRY_RUN) {
+    const full = await api('GET', `/api/catalog/products/${product.id}`);
+    const infos = full.seoInfos || [];
+    const cur = infos.find((s) => s.storeId === STORE_ID) || infos.find((s) => !s.storeId) || null;
+    if (!cur?.pageTitle || cur?.storeId !== STORE_ID || cur?.semanticUrl !== ORG_ONLY_PRODUCT.slug) {
+      const seo = { ...(cur || {}), semanticUrl: ORG_ONLY_PRODUCT.slug, pageTitle: ORG_ONLY_PRODUCT.name, storeId: STORE_ID, languageCode: cur?.languageCode || 'en-US', isActive: true };
+      await api('POST', '/api/catalog/products', { ...full, seoInfos: [seo, ...infos.filter((s) => s !== cur)] }, { expectStatus: [200, 201, 204] });
+      log(`↻ product ${ORG_ONLY_PRODUCT.sku}: store-scoped SEO set (${STORE_ID}, "${seo.semanticUrl}")`);
+    }
+  }
   if (loc.catalogId !== storeCatalogId) {
     await api('POST', '/api/catalog/listentrylinks',
       [{ listEntryId: product.id, listEntryType: 'product', catalogId: storeCatalogId, categoryId: loc.categoryId }],
