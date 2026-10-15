@@ -1,6 +1,6 @@
 {
   "runId": "REG-2026-10-14-1556",
-  "status": "in_progress",
+  "status": "completed",
   "startedAt": "2026-10-14T13:57:59.063Z",
   "windowStart": "2026-10-14T13:57:59.063Z",
   "selection": "sprint:26-20 --frontend",
@@ -9,24 +9,27 @@
   "purpose": "Sprint26-20 regression, plan §5.1.1 Frontend suites (30); theme 2.60.0-alpha.2579, platform 3.1083.0",
   "suites": {
     "100": {
-      "status": "running",
+      "status": "skipped",
       "lane": "browser",
       "total": 6,
-      "note": "batch F1 (097+100) lane 1",
+      "note": "not run — run stopped by user 2026-10-15",
       "browser": "playwright-chrome",
-      "startedAt": "2026-10-15T07:26:07Z"
+      "startedAt": "2026-10-15T07:26:07Z",
+      "finishedAt": "2026-10-15T08:01:25.614Z"
     },
     "104": {
-      "status": "pending",
+      "status": "skipped",
       "lane": "browser",
       "total": 17,
-      "note": "queued; dispatch paused pending Playwright MCP reconnect (coordinator)"
+      "note": "not run — run stopped by user 2026-10-15",
+      "finishedAt": "2026-10-15T08:01:25.614Z"
     },
     "106": {
-      "status": "pending",
+      "status": "skipped",
       "lane": "browser",
       "total": 29,
-      "note": "queued; dispatch paused pending Playwright MCP reconnect (coordinator)"
+      "note": "not run — run stopped by user 2026-10-15",
+      "finishedAt": "2026-10-15T08:01:25.614Z"
     },
     "089": {
       "status": "done",
@@ -107,20 +110,30 @@
       "note": "after re-run"
     },
     "097": {
-      "status": "running",
+      "status": "done",
       "lane": "browser",
       "total": 51,
-      "note": "batch F1 (097+100) lane 1",
+      "note": "partial: 20 of 51 executed — run stopped by user 2026-10-15",
       "browser": "playwright-chrome",
-      "startedAt": "2026-10-15T07:26:07Z"
+      "startedAt": "2026-10-15T07:26:07Z",
+      "pass": 17,
+      "fail": 0,
+      "blocked": 3,
+      "skipped": 0,
+      "finishedAt": "2026-10-15T08:01:25.614Z"
     },
     "011": {
-      "status": "running",
+      "status": "done",
       "lane": "browser",
       "total": 71,
-      "note": "batch F2 (011+007 resume) lane 2",
+      "note": "partial: 20 of 41 executed — run stopped by user 2026-10-15",
       "browser": "playwright-firefox",
-      "startedAt": "2026-10-15T07:26:07Z"
+      "startedAt": "2026-10-15T07:26:07Z",
+      "pass": 13,
+      "fail": 1,
+      "blocked": 6,
+      "skipped": 30,
+      "finishedAt": "2026-10-15T08:01:25.614Z"
     },
     "014": {
       "status": "done",
@@ -173,65 +186,86 @@
       "finishedAt": "2026-10-15T07:26:07Z"
     },
     "002": {
-      "status": "pending",
+      "status": "skipped",
       "lane": "browser",
       "total": 32,
-      "note": "queued; dispatch paused pending Playwright MCP reconnect (coordinator)"
+      "note": "not run — run stopped by user 2026-10-15",
+      "finishedAt": "2026-10-15T08:01:25.614Z"
     },
     "029": {
-      "status": "pending",
+      "status": "skipped",
       "lane": "browser",
       "total": 34,
-      "note": "queued; dispatch paused pending Playwright MCP reconnect (coordinator)"
+      "note": "not run — run stopped by user 2026-10-15",
+      "finishedAt": "2026-10-15T08:01:25.614Z"
     },
     "046": {
-      "status": "pending",
+      "status": "skipped",
       "lane": "browser",
       "total": 31,
-      "note": "re-queued on resume",
-      "browser": "playwright-firefox"
+      "note": "not run — run stopped by user 2026-10-15",
+      "browser": "playwright-firefox",
+      "finishedAt": "2026-10-15T08:01:25.614Z"
     },
     "015": {
-      "status": "pending",
+      "status": "skipped",
       "lane": "browser",
       "total": 32,
-      "note": "queued; dispatch paused pending Playwright MCP reconnect (coordinator)"
+      "note": "not run — run stopped by user 2026-10-15",
+      "finishedAt": "2026-10-15T08:01:25.614Z"
     },
     "007": {
-      "status": "running",
+      "status": "done",
       "lane": "browser",
       "total": 76,
       "browser": "playwright-firefox",
-      "note": "batch F2; resumes 18 of 42 rerun ids",
-      "startedAt": "2026-10-15T07:26:07Z"
+      "note": "partial: 63 of 63 browser cases executed, but only 24 of 42 re-run ids re-run (18 keep first-pass BLOCKED: B2C-LIST-038, 062-065, 069-081) — run stopped by user 2026-10-15",
+      "startedAt": "2026-10-15T07:26:07Z",
+      "pass": 32,
+      "fail": 10,
+      "blocked": 21,
+      "skipped": 13,
+      "finishedAt": "2026-10-15T08:01:25.614Z"
     },
     "004": {
-      "status": "pending",
+      "status": "done",
       "lane": "browser",
       "total": 54,
-      "note": "re-queued on resume",
-      "browser": "playwright-chrome"
+      "note": "partial: 26 of 48 executed — run stopped by user 2026-10-15",
+      "browser": "playwright-chrome",
+      "pass": 25,
+      "fail": 1,
+      "blocked": 0,
+      "skipped": 6,
+      "finishedAt": "2026-10-15T08:01:25.614Z"
     },
     "042": {
-      "status": "pending",
+      "status": "skipped",
       "lane": "browser",
       "total": 34,
-      "note": "queued; dispatch paused pending Playwright MCP reconnect (coordinator)"
+      "note": "not run — run stopped by user 2026-10-15",
+      "finishedAt": "2026-10-15T08:01:25.614Z"
     },
     "043": {
-      "status": "running",
+      "status": "done",
       "lane": "browser",
       "total": 60,
-      "note": "batch T1 lane 3",
+      "note": "partial: 24 of 57 executed — run stopped by user 2026-10-15",
       "browser": "playwright-edge",
-      "startedAt": "2026-10-15T07:26:07Z"
+      "startedAt": "2026-10-15T07:26:07Z",
+      "pass": 22,
+      "fail": 1,
+      "blocked": 1,
+      "skipped": 3,
+      "finishedAt": "2026-10-15T08:01:25.614Z"
     },
     "045": {
-      "status": "pending",
+      "status": "skipped",
       "lane": "browser",
       "total": 30,
-      "note": "re-queued on resume",
-      "browser": "playwright-firefox"
+      "note": "not run — run stopped by user 2026-10-15",
+      "browser": "playwright-firefox",
+      "finishedAt": "2026-10-15T08:01:25.614Z"
     },
     "072d": {
       "status": "done",
@@ -244,31 +278,39 @@
       "note": "0 browser cases, all manual — merged, no slot"
     },
     "072": {
-      "status": "pending",
+      "status": "skipped",
       "lane": "browser",
       "total": 44,
-      "note": "re-queued on resume",
-      "browser": "playwright-edge"
+      "note": "not run — run stopped by user 2026-10-15",
+      "browser": "playwright-edge",
+      "finishedAt": "2026-10-15T08:01:25.614Z"
     },
     "072f": {
-      "status": "pending",
+      "status": "skipped",
       "lane": "browser",
       "total": 41,
-      "note": "queued; dispatch paused pending Playwright MCP reconnect (coordinator)"
+      "note": "not run — run stopped by user 2026-10-15",
+      "finishedAt": "2026-10-15T08:01:25.614Z"
     },
     "033": {
-      "status": "pending",
+      "status": "done",
       "lane": "browser",
       "total": 15,
-      "note": "re-queued on resume",
-      "browser": "playwright-edge"
+      "note": "partial: 1 of 9 executed — run stopped by user 2026-10-15",
+      "browser": "playwright-edge",
+      "pass": 1,
+      "fail": 0,
+      "blocked": 0,
+      "skipped": 6,
+      "finishedAt": "2026-10-15T08:01:25.614Z"
     },
     "013": {
-      "status": "pending",
+      "status": "skipped",
       "lane": "browser",
       "total": 7,
-      "note": "re-queued on resume",
-      "browser": "playwright-edge"
+      "note": "not run — run stopped by user 2026-10-15",
+      "browser": "playwright-edge",
+      "finishedAt": "2026-10-15T08:01:25.614Z"
     },
     "048c": {
       "status": "done",
@@ -287,6 +329,8 @@
   "notes": [
     "Reopened 2026-10-14 19:1x after a spend-limit stop; watcher had marked it stalled. Paused for a playwright-* MCP reconnect (TEST_USER_PASSWORD fix).",
     "Resumed 2026-10-15T07:23:40.295Z: build unchanged (platform 3.1083.0, theme 2.60.0-alpha.2579, 0 module diffs), preflight READY. 007/098 browser lanes already complete in cases.jsonl (merge only); 004 resumes at 26/48, 033 at 1/9.",
-    "Resume orchestrator (REG-2026-10-14-1556) 2026-10-15T07:26:07Z: 098 + 072d merged. Dispatching batches: F1 chrome 097+100, F2 firefox 011+007, T1 edge 043; then F3 015+004+013, F4 002+106, F5 072f+029+033+072, T2 042+045+046, F6 104 (exclusive OtpSignIn)."
-  ]
+    "Resume orchestrator (REG-2026-10-14-1556) 2026-10-15T07:26:07Z: 098 + 072d merged. Dispatching batches: F1 chrome 097+100, F2 firefox 011+007, T1 edge 043; then F3 015+004+013, F4 002+106, F5 072f+029+033+072, T2 042+045+046, F6 104 (exclusive OtpSignIn).",
+    "Close-out 2026-10-15T08:01:25.614Z: run stopped by user; 6 suites partial (097,011,043,004,033,007), 12 never started. 098/072d merged earlier."
+  ],
+  "finishedAt": "2026-10-15T08:16:43.403Z"
 }
