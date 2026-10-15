@@ -214,10 +214,11 @@ rules:
       kind: manual
       ref: Rep with `sales-rep:access` + module enabled → hub/my-customers/customer-profile render, including the empty "No customers found" state for a rep with **zero** org memberships; **any non-rep account lacking `sales-rep:access`** — a low-privilege buyer, **or a privileged non-rep** (e.g. an org maintainer holding org user-CRUD permissions and `platform:security:loginOnBehalf`, but not `sales-rep:access`) — is redirected, no `salesRep*` query issued; `SalesRep.Enabled=false` → hub/list/profile unreachable and rail section absent (mirrors 089 SR-FE-003). The buyer-facing `/company/sales-reps` page stays org-gated regardless.
     violation_signal: Any sales-rep widget/query for a non-rep; hub reachable while the module is disabled (client-side-only gate); OR a customer-less rep's rep-facing hub links render but **redirect to `/account/dashboard`** (visible-but-dead links — the pre-fix VCST-5494 behavior).
-    status: ACTIVE
+    status: SUSPECT
     verified:
       date: 2026-10-15
       by: REG-2026-10-15-1453
+    suspect_reason: "[case] SR-HD-100, SR-HD-102 failed in REG-2026-10-15-1548"
   - id: BL-SR-012
     title: Filter-aware empty states distinguish "no data" from "nothing matched the filter/search"
     rule: The orders, top-sellers and my-customers views render **distinct** empty states for "the rep has no data at all" vs "the current filter/search matched nothing" — the latter must offer a way back (clear filter/search), not read as "you have no customers/orders".

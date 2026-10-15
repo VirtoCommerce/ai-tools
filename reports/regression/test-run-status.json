@@ -1,27 +1,25 @@
 {
-  "runId": "REG-2026-10-15-1548",
+  "runId": "REG-2026-10-15-1624",
   "status": "in_progress",
-  "startedAt": "2026-10-15T13:48:39.481Z",
-  "windowStart": "2026-10-15T13:48:39.481Z",
-  "selection": "093,089",
+  "startedAt": "2026-10-15T14:25:10.074Z",
+  "windowStart": "2026-10-15T14:25:10.074Z",
+  "selection": "011,043 --ids (54 never-executed cases of REG-2026-10-14-1556)",
   "env": "vcst",
   "scoped": true,
-  "purpose": "VCST-6015 /qa-test 4c — C1 exact set (16 ids; SR-HD-106 executed under the SalesRep.Enabled flip in 4a section E)",
-  "ids": "SR-HD-100,SR-HD-101,SR-HD-102,SR-HD-103,SR-HD-104,SR-HD-105,SR-HD-107,SR-HD-108,SR-HD-109,SR-HD-110,SR-HD-111,SR-HD-112,SR-HD-113,SR-HD-114,SR-HD-115,SR-FE-013",
+  "purpose": "Sprint26-20 release readiness: 011 Checkout (21) + 043 GA4 (33) cases REG-2026-10-14-1556 never executed",
+  "notes": [],
   "suites": {
-    "093": {
+    "011": {
       "status": "running",
       "lane": "browser",
-      "browser": "playwright-chrome",
-      "startedAt": "2026-10-15T13:50:04.074Z",
-      "total": 15
+      "total": 21,
+      "browser": "playwright-chrome"
     },
-    "089": {
+    "043": {
       "status": "running",
       "lane": "browser",
-      "browser": "playwright-edge",
-      "startedAt": "2026-10-15T13:50:04.074Z",
-      "total": 1
+      "total": 33,
+      "browser": "playwright-firefox"
     }
   }
 }

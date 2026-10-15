@@ -1894,6 +1894,7 @@ Scoped storefront GraphQL surface for sales representatives (`POST /graphql/sale
 - **Source:** VCST-5304 (Done) — when logged in as a Sales Rep (role), the account left rail gets a separate 'Sales Rep hub' widget
 - **Source:** VCST-5494 (Done) — rep with no org membership was redirected from My customers; fixed so rep-facing hub pages are reachable
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] SR-HD-100, SR-HD-102 failed in REG-2026-10-15-1548
 
 ### BL-SR-012: Filter-aware empty states distinguish "no data" from "nothing matched the filter/search" `[P2-ux]`
 - **Rule:** The orders, top-sellers and my-customers views render **distinct** empty states for "the rep has no data at all" vs "the current filter/search matched nothing" — the latter must offer a way back (clear filter/search), not read as "you have no customers/orders".
@@ -2429,7 +2430,7 @@ ticket or a docs page disputes (`status`).
 | Loyalty & Mixed Cart | BL-LOY-001–020 | 19 | 10 | 7 | 2 | 10 | 0 |
 | Payment Processors | BL-PAY-001–004 | 3 | 3 | 0 | 0 | 2 | 0 |
 | White Labeling | BL-WL-001–006 | 6 | 0 | 2 | 4 | 4 | 0 |
-| Sales Rep | BL-SR-001–032 | 32 | 3 | 18 | 11 | 6 | 4 |
+| Sales Rep | BL-SR-001–032 | 32 | 3 | 18 | 11 | 6 | 5 |
 | Accessibility | BL-A11Y-001–004 | 4 | 0 | 4 | 0 | 4 | 4 |
 | Customer Reviews | BL-CR-001–018 | 9 | 1 | 6 | 2 | 5 | 0 |
 | Platform Administration | BL-PLAT-001–004 | 3 | 0 | 2 | 1 | 3 | 0 |
@@ -2438,4 +2439,4 @@ ticket or a docs page disputes (`status`).
 | Analytics & Tracking | BL-GA4-001–004 | 4 | 0 | 4 | 0 | 3 | 2 |
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Returns | — | 0 | 0 | 0 | 0 | 0 | 0 |
-| **Total** | | **223** | **60** | **125** | **38** | **114** | **44** |
+| **Total** | | **223** | **60** | **125** | **38** | **114** | **45** |

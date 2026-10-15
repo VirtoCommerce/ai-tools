@@ -759,7 +759,7 @@ SR_REP_PRIMARY is the same account as @td(SR_REP_PRIMARY.email) (password key TE
 [SHAPE] ORDER_NO_SHOWN is not empty - the opened order renders its own number {SPEC}
 [NAV] URL_ALL is {{FRONT_URL}}/company/customer-orders {OBSERVED}
 [NAV] URL_TASKS ends with /company/tasks {OBSERVED}
-[REL] every URL in HUB_SCRIPTS is under /modules/$(VirtoCommerce.SalesRep)/plugins/vc-frontend/ - the host's own /assets/ folder serves no hub page chunk {OBSERVED}
+[REL] every URL in HUB_SCRIPTS other than host federation/routing runtime chunks (/assets/remoteEntry-*, /assets/*__mfe_internal__host__*, /assets/plugin-route-placeholder-*) is under /modules/$(VirtoCommerce.SalesRep)/plugins/vc-frontend/ - the host /assets/ folder serves no hub PAGE chunk {OBSERVED}
 [COUNT] entries of PLUGIN_REQS whose status is not 200 or 304 == 0, and PLUGIN_REQS contains mf-manifest.json (content-type application/json) and remoteEntry.js {OBSERVED}
 [REL] H1_DASH, H1_CUST, H1_PROFILE, H1_ORDERS, H1_ALL and H1_TASKS are non-empty and pairwise different, and none contains 'Page not found' - a route that fell to the host catch-all would repeat the Not Found text {SPEC}
 [REL] WIDGETS_SECOND equals WIDGETS_FIRST - the dashboard is the same page the second time, not a re-registered duplicate or a half-mounted one {SPEC}
@@ -768,7 +768,7 @@ SR_REP_PRIMARY is the same account as @td(SR_REP_PRIMARY.email) (password key TE
 [CONSOLE] no uncaught TypeError or ReferenceError from the hub pages (unrelated image-host DNS errors are excluded)","a hub page after the first renders the host Not Found page or an empty body although the rail still lists it - its route or component did not make the port (mid-journey)
 the rail loses or doubles the 'Sales Rep hub' section after navigating from one hub page to the next (mid-journey)
 a page chunk is requested from the host /assets/ folder, or from the plugin folder with a 404, while earlier pages loaded fine
-WIDGETS_SECOND differs from WIDGETS_FIRST on the return to the dashboard",none (read-only; sign out is not required),VCST-6015 · Archetype:PARITY · Technique:FLOW · Probe:VC-PLATFORM-002 · Behavior:sr.hub.basic-rep,Draft
+WIDGETS_SECOND differs from WIDGETS_FIRST on the return to the dashboard",none (read-only; sign out is not required),VCST-6015 · Archetype:PARITY · Technique:FLOW · Probe:VC-PLATFORM-002 · Behavior:sr.hub.basic-rep · Fixed: VCST-6015 triage REG-2026-10-15-1548,Draft
 SR-HD-101,Rep cold deep link to each hub route resolves to the real page with no Not Found flash,Sales Rep Hub > Plugin delivery (Module Federation),High,BL-SR-011,"ECL-7.3, ECL-10.1","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 SR_REP_PRIMARY serves @td(ORG_ACME.id). Each route is opened in a NEW tab by full document load (no SPA navigation), which is the bookmark and emailed-link path. Complements the SPA-navigation rows of the hub suites, none of which samples the frames before the page settles.","rep=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}, org=@td(ORG_ACME.id)","[SETUP] open a new tab and install an init script that samples the visible body text every 100 ms into FRAMES_1 until the page H1 appears
@@ -804,6 +804,7 @@ SR-HD-102,Non-rep buyer deep link to hub routes ends on the account dashboard wi
 ACME_BUYER is a plain corporate member of @td(ORG_ACME.id) with NO sales-rep:access (not a maintainer, unlike the ORG_USER_DEFAULT account, which is an organization maintainer). Extends the existing non-rep refusal rows of the My customers, customer profile and dashboard suites, which each visit one route, to every hub route and adds what the plugin delivery changed: the guard is reached through a placeholder hand-over, so the first navigation can show Not Found before the redirect.","buyer=@td(ACME_BUYER.email), password=@td(ACME_BUYER.password), org=@td(ORG_ACME.id)","[SETUP] start recording every network request of the tab into REQ_LOG
 [NAV] {{FRONT_URL}}/account
 [WAIT] account page rendered (this page is the history entry before the hub URL)
+[KEY] record the current URL (PREV_URL_1)
 [SETUP] install an init script that samples the visible body text every 100 ms into FRAMES_1
 [NAV] {{FRONT_URL}}/company/dashboard
 [WAIT] navigation settles (the URL has not changed for 1 s)
@@ -813,6 +814,7 @@ ACME_BUYER is a plain corporate member of @td(ORG_ACME.id) with NO sales-rep:acc
 [KEY] record the URL after Back (BACK_URL_1)
 [NAV] {{FRONT_URL}}/account
 [WAIT] account page rendered (this page is the history entry before the hub URL)
+[KEY] record the current URL (PREV_URL_2)
 [SETUP] install an init script that samples the visible body text every 100 ms into FRAMES_2
 [NAV] {{FRONT_URL}}/company/my-customers
 [WAIT] navigation settles (the URL has not changed for 1 s)
@@ -822,6 +824,7 @@ ACME_BUYER is a plain corporate member of @td(ORG_ACME.id) with NO sales-rep:acc
 [KEY] record the URL after Back (BACK_URL_2)
 [NAV] {{FRONT_URL}}/account
 [WAIT] account page rendered (this page is the history entry before the hub URL)
+[KEY] record the current URL (PREV_URL_3)
 [SETUP] install an init script that samples the visible body text every 100 ms into FRAMES_3
 [NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_ACME.id)
 [WAIT] navigation settles (the URL has not changed for 1 s)
@@ -831,6 +834,7 @@ ACME_BUYER is a plain corporate member of @td(ORG_ACME.id) with NO sales-rep:acc
 [KEY] record the URL after Back (BACK_URL_3)
 [NAV] {{FRONT_URL}}/account
 [WAIT] account page rendered (this page is the history entry before the hub URL)
+[KEY] record the current URL (PREV_URL_4)
 [SETUP] install an init script that samples the visible body text every 100 ms into FRAMES_4
 [NAV] {{FRONT_URL}}/company/customer-orders
 [WAIT] navigation settles (the URL has not changed for 1 s)
@@ -840,6 +844,7 @@ ACME_BUYER is a plain corporate member of @td(ORG_ACME.id) with NO sales-rep:acc
 [KEY] record the URL after Back (BACK_URL_4)
 [NAV] {{FRONT_URL}}/account
 [WAIT] account page rendered (this page is the history entry before the hub URL)
+[KEY] record the current URL (PREV_URL_5)
 [SETUP] install an init script that samples the visible body text every 100 ms into FRAMES_5
 [NAV] {{FRONT_URL}}/company/tasks
 [WAIT] navigation settles (the URL has not changed for 1 s)
@@ -849,6 +854,7 @@ ACME_BUYER is a plain corporate member of @td(ORG_ACME.id) with NO sales-rep:acc
 [KEY] record the URL after Back (BACK_URL_5)
 [NAV] {{FRONT_URL}}/account
 [WAIT] account page rendered (this page is the history entry before the hub URL)
+[KEY] record the current URL (PREV_URL_6)
 [SETUP] install an init script that samples the visible body text every 100 ms into FRAMES_6
 [NAV] {{FRONT_URL}}/company/documents
 [WAIT] navigation settles (the URL has not changed for 1 s)
@@ -859,12 +865,12 @@ ACME_BUYER is a plain corporate member of @td(ORG_ACME.id) with NO sales-rep:acc
 [KEY] record every REQ_LOG entry whose URL contains /graphql/sales-rep (SR_GQL_REQS)","[REL] for all six routes FINAL_URL_n equals {{FRONT_URL}}/account/dashboard - the guard sends a non-rep home from every hub route {OBSERVED}
 [COUNT] frames containing the host Not Found text ('Page not found') across FRAMES_1..FRAMES_6 == 0 - no transient Not Found before the redirect {OBSERVED}
 [COUNT] SR_GQL_REQS == 0 - no salesRep* operation is sent to /graphql/sales-rep for a non-rep, asserted at the network layer and not only by an absent link {BL}
-[REL] every BACK_URL_n equals {{FRONT_URL}}/account - the redirect replaced the history entry, so Back neither re-enters the hub route nor loops {OBSERVED}
+[REL] every BACK_URL_n equals PREV_URL_n and none is a hub route (/company/dashboard|my-customers|customer-orders|tasks|documents) - the redirect replaced the history entry, so Back neither re-enters the hub route nor loops {OBSERVED}
 [COUNT] sections named 'Sales Rep hub' in the left rail of the landing page == 0 {BL}","[NETWORK] no 4xx/5xx on /graphql
 [CONSOLE] no uncaught TypeError or ReferenceError during the six redirects","a hub page, its chrome or rep data renders for the buyer before or instead of the redirect
 the buyer is left on the host 'Page not found' page instead of being sent to /account/dashboard
 a request to /graphql/sales-rep is issued for this session even though nothing renders (data fetched then discarded is still a scope leak)
-Back returns to a hub route, or the redirect loops",none (read-only),VCST-6015 · Archetype:SCOPE · Technique:DT · Probe:VC-AUTH-004 · Behavior:sr.hub.non-rep-direct-url,Draft
+Back returns to a hub route, or the redirect loops",none (read-only),VCST-6015 · Archetype:SCOPE · Technique:DT · Probe:VC-AUTH-004 · Behavior:sr.hub.non-rep-direct-url · Fixed: VCST-6015 triage REG-2026-10-15-1548,Draft
 SR-HD-103,Privileged non-rep (Organization maintainer) is refused every hub route,Sales Rep Hub > Plugin delivery (Module Federation),High,BL-SR-011,ECL-14.3,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ACME_ADMIN]
 ACME_ADMIN is an Organization maintainer of @td(ORG_ACME.id) with NO sales-rep:access and is not a platform administrator. Extends the existing maintainer rows for My customers and the dashboard, the two routes they visit, to the four they do not: customer profile, All customer orders, Tasks and Document library. The plugin declares each route with its own can: condition, so a loose condition on one route would escape the two existing rows.","maintainer=@td(ACME_ADMIN.email), password=@td(ACME_ADMIN.password), org=@td(ORG_ACME.id)","[SETUP] start recording every network request of the tab into REQ_LOG
@@ -974,7 +980,11 @@ a direct hub URL renders hub content while the switch is off","[ADMIN] restore S
 [PRE:SIGNOUT]",VCST-6015 · Archetype:CONFIG · Technique:DT · Behavior:sr.store-toggle.off-hides-ui,Draft
 SR-HD-107,Non-en cultures render translated hub and Sales reps labels with no raw sales_rep keys,Sales Rep Hub > Plugin delivery (Module Federation),High,BL-SR-013,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
-SR_REP_PRIMARY is the same account as @td(SR_REP_PRIMARY.email). The plugin ships its own locale files; de-DE and es-ES have one, nl-NL has none (a culture without a plugin locale file falls back to English). The existing localization rows of the My customers, Sales reps and customer profile suites assert the page headings of single pages; this case adds the rail and menu labels, which the host declares from the plugin manifest before any plugin code has run.","rep=@td(SR_REP_PRIMARY.email), buyer=@td(ACME_BUYER.email), buyerPassword=@td(ACME_BUYER.password), password={{TEST_USER_PASSWORD}}","--- SCREEN: English baseline ---
+SR_REP_PRIMARY is the same account as @td(SR_REP_PRIMARY.email). The plugin ships its own locale files; de-DE and es-ES have one; {{SR_NOLOCALE_CULTURE}} is a storefront culture with no plugin locale file (it falls back to English). The culture code is bound per environment in .env.vcst. The existing localization rows of the My customers, Sales reps and customer profile suites assert the page headings of single pages; this case adds the rail and menu labels, which the host declares from the plugin manifest before any plugin code has run.","rep=@td(SR_REP_PRIMARY.email), buyer=@td(ACME_BUYER.email), buyerPassword=@td(ACME_BUYER.password), password={{TEST_USER_PASSWORD}}, noLocale={{SR_NOLOCALE_CULTURE}}","--- SCREEN: Precondition check ---
+[NAV] {{FRONT_URL}}/account (full document load)
+[WAIT] the left rail is visible
+[KEY] open the storefront language selector and record whether it offers {{SR_NOLOCALE_CULTURE}} (NOLOC_OFFERED); if NOLOC_OFFERED is false stop and report BLOCKED:PRECONDITION_UNMET naming SR_NOLOCALE_CULTURE
+--- SCREEN: English baseline ---
 [NAV] {{FRONT_URL}}/account (full document load)
 [WAIT] the left rail is visible
 [KEY] record the rail section heading (RAIL_EN) and the rail item labels (ITEMS_EN)
@@ -994,14 +1004,14 @@ SR_REP_PRIMARY is the same account as @td(SR_REP_PRIMARY.email). The plugin ship
 [NAV] {{FRONT_URL}}/company/dashboard
 [WAIT] the hub dashboard widgets have rendered
 [KEY] record the H1 text (H1_ES) and the visible text of the page (PAGE_TEXT_ES)
---- SCREEN: nl-NL (no plugin locale file) ---
-[ACT] switch the storefront culture/language to nl-NL
+--- SCREEN: {{SR_NOLOCALE_CULTURE}} (no plugin locale file) ---
+[ACT] switch the storefront culture/language to {{SR_NOLOCALE_CULTURE}}
 [NAV] {{FRONT_URL}}/account (full document load)
 [WAIT] the left rail is visible
-[KEY] record the rail section heading (RAIL_NL), the rail item labels (ITEMS_NL) and the visible text of the whole rail (RAIL_TEXT_NL)
+[KEY] record the rail section heading (RAIL_NOLOC), the rail item labels (ITEMS_NOLOC) and the visible text of the whole rail (RAIL_TEXT_NOLOC)
 [NAV] {{FRONT_URL}}/company/dashboard
 [WAIT] the hub dashboard widgets have rendered
-[KEY] record the H1 text (H1_NL) and the visible text of the page (PAGE_TEXT_NL)
+[KEY] record the H1 text (H1_NOLOC) and the visible text of the page (PAGE_TEXT_NOLOC)
 --- SCREEN: Buyer Corporate link in each culture ---
 [PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ACME_BUYER]
@@ -1011,19 +1021,19 @@ SR_REP_PRIMARY is the same account as @td(SR_REP_PRIMARY.email). The plugin ship
 [ACT] switch the storefront culture/language to es-ES
 [NAV] {{FRONT_URL}}/account (full document load)
 [KEY] record the label of the Sales reps link under 'Corporate' (CORP_ES)
-[ACT] switch the storefront culture/language to nl-NL
+[ACT] switch the storefront culture/language to {{SR_NOLOCALE_CULTURE}}
 [NAV] {{FRONT_URL}}/account (full document load)
-[KEY] record the label of the Sales reps link under 'Corporate' (CORP_NL)
+[KEY] record the label of the Sales reps link under 'Corporate' (CORP_NOLOC)
 [ACT] switch the storefront culture/language back to en-US
 [NAV] {{FRONT_URL}}/account (full document load)
-[KEY] record the label of the Sales reps link under 'Corporate' (CORP_EN)","[COUNT] occurrences of a dotted i18n key token (matches /sales_rep\.[a-z_.]+/i or /^[A-Z_]+\.[A-Z_.]+$/ or the literal PAGE.TITLE) in RAIL_TEXT_DE, RAIL_TEXT_ES, RAIL_TEXT_NL, PAGE_TEXT_DE, PAGE_TEXT_ES, PAGE_TEXT_NL and in CORP_DE, CORP_ES, CORP_NL == 0 {BL}
+[KEY] record the label of the Sales reps link under 'Corporate' (CORP_EN)","[COUNT] occurrences of a dotted i18n key token (matches /sales_rep\.[a-z_.]+/i or /^[A-Z_]+\.[A-Z_.]+$/ or the literal PAGE.TITLE) in RAIL_TEXT_DE, RAIL_TEXT_ES, RAIL_TEXT_NOLOC, PAGE_TEXT_DE, PAGE_TEXT_ES, PAGE_TEXT_NOLOC and in CORP_DE, CORP_ES, CORP_NOLOC == 0 {BL}
 [REL] RAIL_DE differs from RAIL_EN and CORP_DE differs from CORP_EN - German is translated, not English text under a German culture {OBSERVED}
 [REL] RAIL_ES differs from RAIL_EN and CORP_ES differs from CORP_EN {SPEC}
-[REL] RAIL_NL equals RAIL_EN and CORP_NL equals CORP_EN - a culture with no plugin locale file falls back to English, never to a raw key {OBSERVED}
-[SHAPE] H1_DE, H1_ES and H1_NL are non-empty {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[REL] RAIL_NOLOC equals RAIL_EN and CORP_NOLOC equals CORP_EN - a culture with no plugin locale file falls back to English, never to a raw key {OBSERVED}
+[SHAPE] H1_DE, H1_ES and H1_NOLOC are non-empty {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","a dotted sales_rep.* key renders in the rail, the Corporate link or a page heading under a non-English culture
 English text renders under de-DE or es-ES although the plugin ships those locale files
-a culture without a locale file renders a key or an empty label instead of English","switch the storefront culture back to en-US, then sign out",VCST-6015 · Archetype:RENDER · Technique:EP · Probe:VC-UI-007 · Behavior:sr.localization,Draft
+a culture without a locale file renders a key or an empty label instead of English","switch the storefront culture back to en-US, then sign out",VCST-6015 · Archetype:RENDER · Technique:EP · Probe:VC-UI-007 · Behavior:sr.localization · Fixed: VCST-6015 triage REG-2026-10-15-1548,Draft
 SR-HD-108,Slow network: Corporate Sales reps link never shows its raw title key while the plugin locale loads,Sales Rep Hub > Plugin delivery (Module Federation),High,BL-SR-013,ECL-7.3,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ACME_BUYER]
 ACME_BUYER is a corporate member of @td(ORG_ACME.id) with no sales-rep:access. The Corporate Sales reps link is declared by the host from the plugin manifest with its i18n title key BEFORE the plugin code and its locale file have loaded, and the plugin merges its locale without awaiting it, so a slow connection can show the key itself. The existing Sales reps localization row checks a settled non-English page and cannot see this window.","buyer=@td(ACME_BUYER.email), password=@td(ACME_BUYER.password)","[THROTTLE] slow3g
@@ -1127,12 +1137,12 @@ SR_REP_PRIMARY is the same account as @td(SR_REP_PRIMARY.email). Client-side int
 the slow-loading notice appears after more than 10 s, or never offers Reload page
 the page shows 'Page not found' while the entry is still pending
 the hub does not render after the delayed entry finally arrives",remove the request interception and sign out,VCST-6015 · Archetype:FALLBACK · Technique:EG,Draft
-SR-HD-112,User switch in one tab: rail and links follow the signed-in user without a reload,Sales Rep Hub > Plugin delivery (Module Federation),High,BL-SR-011,ECL-14.3,"[PRE:CLEAR_SESSION]
+SR-HD-112,User switch in one tab via Logout / Sign in: rail and links follow the signed-in user,Sales Rep Hub > Plugin delivery (Module Federation),High,BL-SR-011,ECL-14.3,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
-Three actors share ONE tab and the tab is never reloaded: SR_REP_PRIMARY (same account as @td(SR_REP_PRIMARY.email), no document permission), ACME_BUYER (corporate member, no sales-rep:access) and SR_REP_DOCS (an Advanced rep holding sales-rep-documents:read, @td(SR_REP_DOCS.email)). Password key TEST_USER_PASSWORD for both reps. The plugin computes its rail and menu contributions at init, so a user switch is where a stale contribution would show.","rep=@td(SR_REP_PRIMARY.email), docsRep=@td(SR_REP_DOCS.email), buyer=@td(ACME_BUYER.email), buyerPassword=@td(ACME_BUYER.password), password={{TEST_USER_PASSWORD}}","--- SCREEN: Plain rep ---
+Three actors are signed in one after another in ONE tab: SR_REP_PRIMARY (same account as @td(SR_REP_PRIMARY.email), no document permission), ACME_BUYER (corporate member, no sales-rep:access) and SR_REP_DOCS (an Advanced rep holding sales-rep-documents:read, @td(SR_REP_DOCS.email)). Password key TEST_USER_PASSWORD for both reps. Logout and Sign in each reload the document, so the plugin re-runs its init per user; a stale rail or Document library entry from the previous user would show as a leftover.","rep=@td(SR_REP_PRIMARY.email), docsRep=@td(SR_REP_DOCS.email), buyer=@td(ACME_BUYER.email), buyerPassword=@td(ACME_BUYER.password), password={{TEST_USER_PASSWORD}}","--- SCREEN: Plain rep ---
 [NAV] {{FRONT_URL}}/account
 [WAIT] the left rail is visible
-[KEY] record the window time origin (T0_REP), the number of 'Sales Rep hub' rail sections (HUB_REP) and the number of 'Document library' entries in the rail (DOCS_REP)
+[KEY] record the number of 'Sales Rep hub' rail sections (HUB_REP) and the number of 'Document library' entries in the rail (DOCS_REP)
 --- SCREEN: Buyer, same tab ---
 [ACT] click the account button in the top header (data-test-id=""account-button"")
 [WAIT] the account-menu popup is visible
@@ -1142,8 +1152,7 @@ Three actors share ONE tab and the tab is never reloaded: SR_REP_PRIMARY (same a
 [ACT] fill 'Password': @td(ACME_BUYER.password)
 [ACT] click 'Sign in'
 [WAIT] the account area has rendered
-[KEY] record the window time origin (T0_BUYER), the number of 'Sales Rep hub' rail sections (HUB_BUYER) and the number of 'Sales reps' links under 'Corporate' (LINK_BUYER)
-[KEY] compare T0_BUYER with T0_REP (T0_SAME_1); if T0_SAME_1 is false stop and report BLOCKED:PRECONDITION_UNMET - the tab reloaded, so the case no longer tests a user switch without reload
+[KEY] record the number of 'Sales Rep hub' rail sections (HUB_BUYER) and the number of 'Sales reps' links under 'Corporate' (LINK_BUYER)
 --- SCREEN: Advanced rep, same tab ---
 [ACT] click the account button in the top header (data-test-id=""account-button"")
 [WAIT] the account-menu popup is visible
@@ -1153,15 +1162,13 @@ Three actors share ONE tab and the tab is never reloaded: SR_REP_PRIMARY (same a
 [ACT] fill 'Password': {{TEST_USER_PASSWORD}}
 [ACT] click 'Sign in'
 [WAIT] the account area has rendered
-[KEY] record the window time origin (T0_DOCS), the number of 'Sales Rep hub' rail sections (HUB_DOCS) and the number of 'Document library' entries in the rail (DOCS_DOCS)
-[KEY] compare T0_DOCS with T0_BUYER (T0_SAME_2); if T0_SAME_2 is false stop and report BLOCKED:PRECONDITION_UNMET - the tab reloaded","[COUNT] HUB_REP == 1 and HUB_DOCS == 1 - exactly one hub section for each rep, never a duplicate left over from the previous registration {SPEC}
+[KEY] record the number of 'Sales Rep hub' rail sections (HUB_DOCS) and the number of 'Document library' entries in the rail (DOCS_DOCS)","[COUNT] HUB_REP == 1 and HUB_DOCS == 1 - exactly one hub section for each rep, never a duplicate left over from the previous registration {SPEC}
 [COUNT] HUB_BUYER == 0 - the buyer sees no hub section after a rep was signed in on the same tab {BL}
 [COUNT] LINK_BUYER == 1 - the buyer sees exactly one Corporate Sales reps link {SPEC}
 [REL] DOCS_REP == 0 and DOCS_DOCS >= 1 - the Document library entry follows the permission of the signed-in user, not of the first user of the tab {DOC}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","the buyer still sees the rep's 'Sales Rep hub' section after signing in on the same tab (rail computed once at init)
 the Advanced rep sees no Document library entry after the plain rep and the buyer were in the same tab (permission computed once)
-a rail section or a Corporate link appears twice after a user switch
-T0 changes between checkpoints (the tab reloaded: the case is vacuous, reported BLOCKED by the T0_SAME gates, never FAIL)",[ACT] click 'Logout' in the account menu,VCST-6015 · Archetype:STALE · Technique:ST · Behavior:sr.hub.non-rep-sees-nothing,Draft
+a rail section or a Corporate link appears twice after a user switch",[ACT] click 'Logout' in the account menu,VCST-6015 · Archetype:STALE · Technique:ST · Behavior:sr.hub.non-rep-sees-nothing · Fixed: VCST-6015 triage REG-2026-10-15-1548,Draft
 SR-HD-113,Plugin entry download fails: hub deep link offers Reload page and Reload recovers the hub,Sales Rep Hub > Plugin delivery (Module Federation),Medium,,ECL-10.2,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 SR_REP_PRIMARY is the same account as @td(SR_REP_PRIMARY.email). Client-side interception only. The manifest is fine and only the entry script download fails, which the host treats as a failed plugin (a Reload offer) and not as a skipped one (host Not Found).","rep=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}","[SETUP] intercept GET **/modules/$(VirtoCommerce.SalesRep)/plugins/vc-frontend/remoteEntry.js and abort the request (network error)
@@ -1191,55 +1198,47 @@ SR_REP_PRIMARY is the same account as @td(SR_REP_PRIMARY.email). Client-side int
 [SHAPE] FINAL_RAIL and FINAL_H1 are non-empty {SPEC}","[CONSOLE] no uncaught TypeError or ReferenceError
 [NETWORK] the delayed locale request returns 200 once released","the rail, the title, a widget heading or a table header shows SALES_REP.HUB.TITLE, Sales_rep.hub.dashboard.navigation.link, PAGE.TITLE or sales_rep.table.name while the locale chunk is in flight (3x on 2026-10-15 saw all four, for more than 7 s)
 the labels never translate after the locale chunk arrives",remove the request interception and sign out,VCST-6015 · Archetype:RENDER · Technique:EG · Probe:VC-UI-007 · Behavior:sr.localization · Catches:VCST-6015-3x-B1,Draft
-SR-HD-115,"Language switch en to de in one tab leaves exactly one Sales reps link and one Sales Rep hub section, desktop and 375px, with no raw key",Sales Rep Hub > Plugin delivery (Module Federation),High,BL-SR-013,,"[PRE:CLEAR_SESSION]
+SR-HD-115,"Language switch en to de leaves exactly one Sales reps link and one Sales Rep hub section, desktop and 375px, with no raw key",Sales Rep Hub > Plugin delivery (Module Federation),High,BL-SR-013,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ACME_BUYER]
-Two actors share ONE tab that is never reloaded: ACME_BUYER (a corporate member of @td(ORG_ACME.id) with no sales-rep:access) and then SR_REP_PRIMARY (same account as @td(SR_REP_PRIMARY.email), password key TEST_USER_PASSWORD). The language is switched through the storefront language selector (an SPA switch). The plugin re-merges its locale and the host re-resolves the declared contributions on a language change, which is where a second registration or a missing translation would show. The sign-in form is only used in English, so the language is switched back to en-US before each sign-out.","buyer=@td(ACME_BUYER.email), buyerPassword=@td(ACME_BUYER.password), rep=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}","--- SCREEN: Buyer, desktop ---
+Two actors, each in a session of their own: ACME_BUYER (a corporate member of @td(ORG_ACME.id) with no sales-rep:access) and then SR_REP_PRIMARY (same account as @td(SR_REP_PRIMARY.email), password key TEST_USER_PASSWORD), signed in through [PRE:CLEAR_SESSION] and [PRE:SIGNIN_AS]. The language is switched through the storefront language selector, which navigates to the /<culture>/ path with a full document load. The plugin merges its locale and the host resolves the declared contributions on each such load, which is where a second registration or a missing translation would show. The sign-in is only done in English, so the language is switched back to en-US before the second sign-in.","buyer=@td(ACME_BUYER.email), buyerPassword=@td(ACME_BUYER.password), rep=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}","--- SCREEN: Buyer, desktop ---
 [VIEWPORT] 1280x900
 [NAV] {{FRONT_URL}}/account
 [WAIT] the left rail is visible
-[KEY] record the window time origin (T0_1), the number of Sales reps links under 'Corporate' (LINKS_B_EN) and its label (LABEL_B_EN)
-[ACT] switch the storefront language to de-DE through the language selector (SPA switch, no full reload)
+[KEY] record the number of Sales reps links under 'Corporate' (LINKS_B_EN) and its label (LABEL_B_EN)
+[ACT] switch the storefront language to de-DE through the language selector (navigates to the /<culture>/ path)
 [WAIT] the page text has re-rendered in the new language
-[KEY] record the window time origin (T0_2), the number of Sales reps links under 'Corporate' (LINKS_B_DE), its label (LABEL_B_DE) and the visible text of the whole rail (RAIL_TEXT_B_DE)
-[KEY] compare T0_2 with T0_1 (T0_SAME_1); if T0_SAME_1 is false stop and report BLOCKED:PRECONDITION_UNMET - the page reloaded, so the case no longer tests an SPA language switch
+[KEY] record the number of Sales reps links under 'Corporate' (LINKS_B_DE), its label (LABEL_B_DE) and the visible text of the whole rail (RAIL_TEXT_B_DE)
 --- SCREEN: Buyer, 375px menu ---
 [VIEWPORT] 375x812
 [ACT] open the mobile account menu
 [WAIT] the mobile menu is rendered
 [KEY] record the number of Sales reps links under 'Corporate' in the mobile menu (MOB_LINKS_B_DE), its label (MOB_LABEL_B_DE) and the visible text of the whole mobile menu (MOB_TEXT_B_DE)
---- SCREEN: Back to English and switch user, same tab ---
+--- SCREEN: Back to English ---
 [VIEWPORT] 1280x900
-[ACT] switch the storefront language to en-US through the language selector (SPA switch, no full reload)
+[ACT] switch the storefront language to en-US through the language selector (navigates to the /<culture>/ path)
 [WAIT] the page text has re-rendered in the new language
-[ACT] click the account button in the top header (data-test-id=""account-button"")
-[WAIT] the account-menu popup is visible
-[ACT] click 'Logout' in the account menu popup (data-test-id=""sign-out-button"")
-[WAIT] the sign-in page is shown
-[ACT] fill 'Email': @td(SR_REP_PRIMARY.email)
-[ACT] fill 'Password': {{TEST_USER_PASSWORD}}
-[ACT] click 'Sign in'
-[WAIT] the account area has rendered
---- SCREEN: Rep, desktop ---
-[KEY] record the window time origin (T0_3), the number of 'Sales Rep hub' rail sections (HUB_R_EN) and the rail section heading (HUB_LABEL_R_EN)
-[KEY] compare T0_3 with T0_1 (T0_SAME_2); if T0_SAME_2 is false stop and report BLOCKED:PRECONDITION_UNMET - the tab reloaded
-[ACT] switch the storefront language to de-DE through the language selector (SPA switch, no full reload)
+--- SCREEN: Rep, new session, desktop ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+[NAV] {{FRONT_URL}}/account
+[WAIT] the left rail is visible
+[KEY] record the number of 'Sales Rep hub' rail sections (HUB_R_EN) and the rail section heading (HUB_LABEL_R_EN)
+[ACT] switch the storefront language to de-DE through the language selector (navigates to the /<culture>/ path)
 [WAIT] the page text has re-rendered in the new language
-[KEY] record the window time origin (T0_4), the number of 'Sales Rep hub' rail sections (HUB_R_DE), the rail section heading (HUB_LABEL_R_DE) and the visible text of the whole rail (RAIL_TEXT_R_DE)
-[KEY] compare T0_4 with T0_1 (T0_SAME_3); if T0_SAME_3 is false stop and report BLOCKED:PRECONDITION_UNMET - the page reloaded
+[KEY] record the number of 'Sales Rep hub' rail sections (HUB_R_DE), the rail section heading (HUB_LABEL_R_DE) and the visible text of the whole rail (RAIL_TEXT_R_DE)
 --- SCREEN: Rep, 375px menu ---
 [VIEWPORT] 375x812
 [ACT] open the mobile account menu
 [WAIT] the mobile menu is rendered
 [KEY] record the number of 'Sales Rep hub' sections in the mobile menu (MOB_HUB_R_DE) and the visible text of the whole mobile menu (MOB_TEXT_R_DE)
 [VIEWPORT] 1280x900
-[ACT] switch the storefront language to en-US through the language selector (SPA switch, no full reload)
+[ACT] switch the storefront language to en-US through the language selector (navigates to the /<culture>/ path)
 [WAIT] the page text has re-rendered in the new language","[COUNT] LINKS_B_EN == 1, LINKS_B_DE == 1 and MOB_LINKS_B_DE == 1 - the buyer sees exactly one Corporate Sales reps link before and after the language switch, on desktop and in the 375px menu {SPEC}
 [COUNT] HUB_R_EN == 1, HUB_R_DE == 1 and MOB_HUB_R_DE == 1 - the rep sees exactly one Sales Rep hub section before and after the switch, on desktop and in the 375px menu {SPEC}
 [DOM] LABEL_B_DE and MOB_LABEL_B_DE read 'Vertriebsmitarbeiter' and HUB_LABEL_R_DE reads 'Vertriebsmitarbeiter-Hub' {OBSERVED}
 [REL] LABEL_B_DE differs from LABEL_B_EN and HUB_LABEL_R_DE differs from HUB_LABEL_R_EN - the labels were translated by the switch, not left in English {SPEC}
 [COUNT] occurrences of a dotted i18n key token (matches /sales_rep\.[a-z_.]+/i or /^[A-Z_]+\.[A-Z_.]+$/ or the literal PAGE.TITLE) in RAIL_TEXT_B_DE, MOB_TEXT_B_DE, RAIL_TEXT_R_DE and MOB_TEXT_R_DE == 0 {BL}","[CONSOLE] no uncaught TypeError or ReferenceError during the language switches
-[NETWORK] no 4xx/5xx on /graphql","the Corporate Sales reps link or the Sales Rep hub section appears twice after the SPA language switch (the contribution was registered again)
+[NETWORK] no 4xx/5xx on /graphql","the Corporate Sales reps link or the Sales Rep hub section appears twice after the language switch (the contribution was registered again)
 the link or the hub section is missing, or shows a dotted sales_rep.* key, after the switch
-the 375px menu differs from the desktop rail in the number of entries after the switch
-T0 changes between checkpoints (the page reloaded: the case is vacuous, reported BLOCKED by the T0_SAME gates, never FAIL)","[ACT] switch the storefront language back to en-US
-[ACT] click 'Logout' in the account menu popup",VCST-6015 · Archetype:PARITY · Technique:ST · Behavior:sr.localization,Draft
+the 375px menu differs from the desktop rail in the number of entries after the switch","[ACT] switch the storefront language back to en-US
+[ACT] click 'Logout' in the account menu popup",VCST-6015 · Archetype:PARITY · Technique:ST · Behavior:sr.localization · Fixed: VCST-6015 triage REG-2026-10-15-1548,Draft

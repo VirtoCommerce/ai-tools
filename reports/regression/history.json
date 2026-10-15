@@ -3060,5 +3060,37 @@
     "pass_rate": 92.31,
     "duration_minutes": 33.88,
     "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-10-15-1548",
+    "date": "2026-10-15",
+    "suiteId": "089",
+    "suiteName": "Sales Rep — My Customers (storefront UI/E2E)",
+    "environment": "vcst",
+    "browser": "playwright-edge",
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "blocked": 0,
+    "skipped": 0,
+    "pass_rate": 100,
+    "duration_minutes": 6.68,
+    "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-10-15-1548",
+    "date": "2026-10-15",
+    "suiteId": "093",
+    "suiteName": "Sales Rep — Hub Dashboard (storefront)",
+    "environment": "vcst",
+    "browser": "playwright-chrome",
+    "total": 15,
+    "passed": 8,
+    "failed": 4,
+    "blocked": 3,
+    "skipped": 0,
+    "pass_rate": 66.67,
+    "duration_minutes": 31.97,
+    "mode": "interactive"
   }
 ]

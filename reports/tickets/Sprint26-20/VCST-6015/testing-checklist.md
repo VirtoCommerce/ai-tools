@@ -45,15 +45,15 @@ Case column: existing `<suite>/<id>`; `SR-HD-100..115` are Draft rows authored b
 | D2 | Buyer deep links | 5 hub URLs, cold | end on `/account/dashboard`, no transient Not Found, 0 requests to `/graphql/sales-rep`; Back leaves without a loop | #10 / 093/SR-HD-102 | **FAIL** — end state correct (6 routes × 3 → `/account/dashboard` 1.07–1.35 s, 0 `/graphql/sales-rep`, Back OK) but host **404 frame flashes 50–90 ms before redirect in 6/18 loads**; `document.title` + GA page_view record "404 Page not found" (4a2, 50 ms poll) |
 | D3 | Maintainer non-rep | `{{ORG_USER_EMAIL}}` | `me` has no `sales-rep:access`, not administrator; same refusals as D2 | #11 / 093/SR-HD-103 | **FAIL** — refusals hold (no `sales-rep:access`, not admin, 0 sales-rep calls) but same transient 404 in 8/18 (`{{ORG_USER_EMAIL}}`) and 6/10 (USR-015) (4a2) |
 | D4 | Anonymous | 5 hub URLs (dashboard, my-customers, customer-orders, tasks, documents) → sign-in | `/sign-in?returnUrl=…`; after rep sign-in → hub; after buyer sign-in → `/account/dashboard` | #13 / 093/SR-HD-104 | PASS with finding — anon → `/sign-in?returnUrl=<route>` for 6 routes; rep returns to hub, buyer/maintainer → `/account/dashboard`; transient 404 before sign-in redirect in 6/9 (4a2) |
-| D5 | Plugin code for every visitor (H2 — record, not a verdict) | anon + buyer | count of plugin requests/bytes (3x: 13 resources, ~51 KB transferred) | #9 / — | recorded — 13 plugin resources on every cold load for anon + buyer; warm anon 0 B transferred / 49 KB decoded (4a2); cold ~51 KB (3x) |
+| D5 | Plugin code for every visitor (H2 — record, not a verdict) | anon + buyer | count of plugin requests/bytes (3x: 13 resources, ~51 KB transferred) | #9 / — | WAIVED (record-only, no verdict) — recorded — 13 plugin resources on every cold load for anon + buyer; warm anon 0 B transferred / 49 KB decoded (4a2); cold ~51 KB (3x) |
 
 ## E. Store switch off (AC-4) — operator approved flip + restore (2026-10-15)
 
 | # | Condition | Where | Expected | Model # / case | Verdict |
 |---|---|---|---|---|---|
-| E1 | `SalesRep.Enabled` = off for B2B-store | rep + buyer | no rail, no Corporate "Sales reps" link, no request under the plugin folder after `GetStorePlugins` | #14 / 093/SR-HD-106 | |
-| E2 | Direct URLs with the switch off | `/company/dashboard`, `/company/sales-reps` | end state recorded (account dashboard or Not Found) | #14 | |
-| E3 | Restore | Admin → store → Sales Rep | value restored to its prior state and confirmed; hub back for the rep | — | |
+| E1 | `SalesRep.Enabled` = off for B2B-store | rep + buyer | no rail, no Corporate "Sales reps" link, no request under the plugin folder after `GetStorePlugins` | #14 / 093/SR-HD-106 | PASS — off at 13:31:51Z, effective ≤2 min 36 s; rep + ACME_BUYER: no rail, no Corporate link; GetStorePlugins still lists the entry but 0 requests under `/modules/` (4aE) |
+| E2 | Direct URLs with the switch off | `/company/dashboard`, `/company/sales-reps` | end state recorded (account dashboard or Not Found) | #14 | PASS (recorded) — `/company/dashboard`, `/company/my-customers`, `/company/sales-reps` (rep, buyer, anon): URL kept, host 404 Page not found, no hub content (4aE) |
+| E3 | Restore | Admin → store → Sales Rep | value restored to its prior state and confirmed; hub back for the rep | — | PASS — restored 13:45:05Z to `true` (= default; prior value was unset — PUT ignores null, so it is now an explicit `true`, behaviour identical) |
 
 ## F. Delivery faults (gap-ACs; client-side request interception only)
 
