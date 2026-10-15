@@ -313,7 +313,9 @@ export function duplicateLineProducts(items = []) {
  * line products are picked from a live catalog page, so comparing against a fresh pick rebuilt every
  * order whenever the catalog moved (2026-10-05: PROCESSING_ORDER's id changed for no reason). Rebuild
  * only when one of these is true:
- *   - the owner or the order status drifted from the spec;
+ *   - the owner, the owner's organization or the order status drifted from the spec (the buyer's xAPI
+ *     `orders` list filters by the token's CURRENT organization, so an order with organizationId null
+ *     or another org is invisible to "my orders" — REG-2026-10-13-W2 suite 086);
  *   - the line QUANTITY multiset differs from the fixture's (a fixture edit — e.g. distinct quantities);
  *   - a live line's product no longer exists (`productsById` has no entry for its productId);
  *   - a live line's quantity violates that product's min/max order quantity (fitsLineQuantity);
@@ -325,9 +327,10 @@ export function duplicateLineProducts(items = []) {
  * exactly the churn this replaces; stock is respected when a line's product is first chosen.
  * Returns `{ rebuild, reasons[] }`.
  */
-export function judgeExistingOrder(spec, fixtureObj, live, productsById, { ownerId = null } = {}) {
+export function judgeExistingOrder(spec, fixtureObj, live, productsById, { ownerId = null, organizationId = null } = {}) {
   const reasons = [];
   if (ownerId && live?.customerId !== ownerId) reasons.push(`owner ${live?.customerId || '(none)'} != ${ownerId}`);
+  if (organizationId && live?.organizationId !== organizationId) reasons.push(`organizationId ${live?.organizationId || '(none)'} != ${organizationId}`);
   if (live?.status !== spec.orderStatus) reasons.push(`status "${live?.status}" != "${spec.orderStatus}"`);
   const qtys = (items) => (items || []).map((i) => Number(i.quantity)).sort((a, b) => a - b).join(',');
   if (qtys(live?.items) !== qtys(fixtureObj?.items)) reasons.push(`line quantities [${qtys(live?.items)}] != fixture [${qtys(fixtureObj?.items)}]`);

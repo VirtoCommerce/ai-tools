@@ -27,7 +27,9 @@
  *     --dry-run                reads only, no writes
  *     --verbose                log every call
  *     --only CFG-013           seed/teardown a single CSV id
- *     --group base|conditional|default|bike|checklist   seed/teardown one family
+ *     --group base|conditional|default|bike|checklist|standin   seed/teardown one family
+ *                              (standin is OPT-IN: a run without --group/--only skips it —
+ *                              see the stand-in block in configurable-specs.mjs)
  *     --teardown               remove seeded products (see teardown notes below)
  *     --with-options           with --teardown --only: also remove that spec's option products
  *
@@ -41,7 +43,7 @@
 import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import {
   api, auth, assertSafeTarget, ensureVirtualCatalog, ensureFulfillmentCenter,
-  syncEnvAliases, verifyRemoved, enrichProductContent, log, verbose, DRY_RUN, ONLY, TEARDOWN, BACK_URL, STORE_ID, idsParam, loadCsv, buildStoreSeo,
+  syncEnvAliases, writeEnvAliasOverride, verifyRemoved, enrichProductContent, log, verbose, DRY_RUN, ONLY, TEARDOWN, BACK_URL, STORE_ID, idsParam, loadCsv, buildStoreSeo,
 } from '../../lib/seed-common.mjs';
 const argv = process.argv.slice(2);
 
@@ -108,6 +110,7 @@ const FAMILY = {
   // option name itself (the long-label clamp is the point); codes carry a truncated slug because a
   // product code is length-limited while the long option name is not.
   checklist:   { catalogGroup: 'main',   childNaming: 'chk',   slugFromCode: false },
+  standin:     { catalogGroup: 'main',   childNaming: 'keyed', slugFromCode: true },
 };
 
 // ── Catalog groups (original names preserved for idempotency) ─────────────────
@@ -136,10 +139,12 @@ const GROUPS = {
 // Source of truth: test-data/products/configurable-products.csv (section_details).
 // Section `key` is intra-spec (dependsOn wiring + config create/update mapping).
 // `dependsOn` references another section's key; null/absent = root section.
-import { SPECS } from './configurable-specs.mjs';
+import { SPECS, OPT_IN_FAMILIES } from './configurable-specs.mjs';
 
 // ── Spec selection ───────────────────────────────────────────────────────────
-let specs = SPECS;
+// A plain run skips the opt-in families (they write alias overlays that would shadow an env's
+// curated native fixtures); `--group standin` or `--only CFG-SI-…` selects them explicitly.
+let specs = (ONLY || GROUP) ? SPECS : SPECS.filter(s => !OPT_IN_FAMILIES.includes(s.family));
 if (ONLY) specs = specs.filter(s => s.csvId === ONLY);
 if (GROUP) {
   const g = GROUP.toLowerCase();
@@ -383,6 +388,7 @@ function childIdentity(spec, section, opt, idx) {
  * Flat specs with no deps/defaults/non-1 quantities compute no change and skip Pass 2's write.
  */
 async function createOrUpdateConfiguration(productId, sections) {
+  if (!sections.length) return null; // a plain (non-configurable) product — no configuration entity
   const sectionsForCreate = sections.map((s, i) => ({
     name: s.name, isRequired: s.isRequired, displayOrder: i + 1, type: s.type,
     allowCustomText: s.allowCustomText ?? false,
@@ -489,11 +495,27 @@ async function seedSpec(spec, ctx, ffcId) {
     await enrich(parent.id, spec.code); // images + descriptions (idempotent)
   }
 
+  // 2b. product variations (mainProductId = parent) — back a Variation section; priced + stocked.
+  const variationIds = {};
+  for (const v of (spec.variations || [])) {
+    const code = `${spec.code}-VAR-${v.key.toUpperCase()}`;
+    const child = await ensureProduct(catalog.id, parentCat.id, {
+      name: v.name, code, mainProductId: parent.id, productType: 'Physical', vendor: 'QA',
+      isActive: true, isBuyable: true, trackInventory: true,
+      seoInfos: [buildStoreSeo({ semanticUrl: cfgSlug(code), pageTitle: v.name })],
+    });
+    variationIds[v.key] = child.id;
+    if (!DRY_RUN && !String(child.id).startsWith('dry-')) {
+      await ensurePrice(priceList.id, child.id, v.price, v.salePrice ?? null);
+      await ensureInventory(ffcId, child.id, v.stock ?? 100);
+    }
+  }
+
   // 3. configuration
   const cfg = await createOrUpdateConfiguration(parent.id, spec.sections);
   // Read-back gate: a wrong body field is accepted with 200 and saved EMPTY + inactive
   // (kb KB-CD451F5C), so a seed is only done when the persisted config matches the spec.
-  if (!DRY_RUN && !String(parent.id).startsWith('dry-')) {
+  if (!DRY_RUN && !String(parent.id).startsWith('dry-') && spec.sections.length) {
     const n = cfg?.sections?.length ?? 0;
     if (n !== spec.sections.length || cfg?.isActive !== true) {
       throw new Error(`configuration ${cfg?.id} read back sections=${n} (spec ${spec.sections.length}) isActive=${cfg?.isActive} — not seeded`);
@@ -511,7 +533,29 @@ async function seedSpec(spec, ctx, ffcId) {
     dependsOnSectionId: s.dependsOnSectionId, displayOrder: s.displayOrder,
     options: (s.options || []).map(o => ({ id: o.id, productName: o.productName, quantity: o.quantity, isDefault: !!o.isDefault })),
   }));
-  return { csvId: spec.csvId, name: spec.name, parentId: parent.id, configurationId: cfg?.id, sections: sectionReport };
+  return { csvId: spec.csvId, name: spec.name, parentId: parent.id, configurationId: cfg?.id, sections: sectionReport, variationIds, spec };
+}
+
+/**
+ * Runtime fields for a spec's `aliasOverlay` (stand-ins): 'product' | 'configuration' |
+ * 'section:<key>' (matched by the spec section's displayOrder + name) | 'variation:<key>'.
+ * An unresolved field is left out, so it never clobbers a value already in the overlay.
+ */
+function aliasOverlayFields(seededSpec) {
+  const { spec, parentId, configurationId, sections, variationIds } = seededSpec;
+  const out = {};
+  for (const [field, src] of Object.entries(spec.aliasOverlay?.fields || {})) {
+    let v = null;
+    if (src === 'product') v = parentId;
+    else if (src === 'configuration') v = configurationId;
+    else if (src.startsWith('section:')) {
+      const idx = spec.sections.findIndex(x => x.key === src.slice(8));
+      const sec = idx >= 0 ? (sections || []).find(x => x.displayOrder === idx + 1 && x.name === spec.sections[idx].name) : null;
+      v = sec?.id || null;
+    } else if (src.startsWith('variation:')) v = variationIds?.[src.slice(10)] || null;
+    if (v) out[field] = v;
+  }
+  return out;
 }
 
 // ── Unified catalog context (ONE stable catalog for every family) ─────────────
@@ -581,6 +625,10 @@ async function main() {
       byKey[s.csvId] = { product_id_guid: s.parentId, configuration_id: s.configurationId, ...sectionOptionIds(s.sections), section_ids, ...(file_section_id ? { file_section_id } : {}) };
     }
     syncEnvAliases('products/configurable-products', byKey); // → aliases.{env}.json (all envs)
+    // Stand-ins: write each named alias's runtime fields (inline aliases, not CSV-row-backed).
+    const overlays = {};
+    for (const s of seeded) if (!s.error && s.spec?.aliasOverlay) overlays[s.spec.aliasOverlay.alias] = aliasOverlayFields(s);
+    if (Object.keys(overlays).length) { writeEnvAliasOverride(overlays); log(`✓ alias overlays: ${Object.keys(overlays).join(', ')}`); }
   }
 
   const ok = seeded.filter(s => !s.error).length;
