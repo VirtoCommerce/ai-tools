@@ -136,7 +136,8 @@ Commands that transition JIRA tickets (`/qa-test`, `/qa-verify-fix`, `/qa-bug`) 
 
 Run [`/preflight`](../skills/preflight/SKILL.md) — env health, `declared`/`deployed`/released-through,
 duplicate, MCP availability, one output form and the remediation loop. `/qa-regression` and
-`/qa-smoke` keep their own Step 0 (not `/preflight`) until phase 2 (`regression:plan --preflight`).
+`/qa-smoke` use its build-scoped entry (`regression:plan --preflight`), which adds module gating,
+the baseline Δ and the active-run lock.
 
 ## Build Verification
 

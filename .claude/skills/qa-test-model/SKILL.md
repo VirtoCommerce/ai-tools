@@ -20,7 +20,8 @@ oracle clause depends on, and the observed-behaviour steps.
 ## Inputs — the context bundle
 
 `--context <file>` is the bundle a caller already gathered — `/qa-test` FULL passes `1a` + `1c` + `1d`,
-`/qa-test-fast` its Stage-1 merge. A caller that already ran step 2 or 3 passes their result in the bundle.
+`/qa-test-fast` its run context, which names the `/ticket-context` bundle. A caller that already ran
+step 2 or 3 passes their result in that file.
 Without it, gather each part yourself; a part that cannot be obtained is a **recorded gap in the
 model's header**, never a guess.
 

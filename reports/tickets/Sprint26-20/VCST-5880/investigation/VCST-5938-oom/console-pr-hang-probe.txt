@@ -1,0 +1,51 @@
+# PR build 2.60.0-pr-2518-ee98-ee98adbd, http://localhost/compare, Chrome (DevTools MCP), viewport emulated 1280x1385x1
+# 19 entries / 8 tabs / 11 configured; tab "Configurable Parents" selected; docH 1685 (maxScroll 300)
+# Read-only probe installed BEFORE the key press: MutationObserver on <thead class="compare-table__header-row"> class attr,
+# console.log every 500 records (capped at 12 lines). Probe installed at ms=0; click on H1 then PageDown at ~ms 7000.
+[log] [oom-probe] header-row class toggles=500 ms=9216 top=128 scrollY=240 docH=1685 stuck=false
+[log] [oom-probe] header-row class toggles=1000 ms=11330 top=128 scrollY=240 docH=1685 stuck=false
+[log] [oom-probe] header-row class toggles=1500 ms=13463 top=128 scrollY=240 docH=1685 stuck=false
+[log] [oom-probe] header-row class toggles=2000 ms=15619 top=128 scrollY=240 docH=1685 stuck=false
+[log] [oom-probe] header-row class toggles=2500 ms=17944 top=128 scrollY=240 docH=1685 stuck=false
+[log] [oom-probe] header-row class toggles=3000 ms=20473 top=128 scrollY=240 docH=1685 stuck=false
+[log] [oom-probe] header-row class toggles=3500 ms=22900 top=128 scrollY=240 docH=1685 stuck=false
+[log] [oom-probe] header-row class toggles=4000 ms=25475 top=128 scrollY=240 docH=1685 stuck=false
+[log] [oom-probe] header-row class toggles=4500 ms=28074 top=128 scrollY=240 docH=1685 stuck=false
+[log] [oom-probe] header-row class toggles=5000 ms=30739 top=128 scrollY=240 docH=1685 stuck=false
+[log] [oom-probe] header-row class toggles=5500 ms=33515 top=128 scrollY=240 docH=1685 stuck=false
+[log] [oom-probe] header-row class toggles=6000 ms=36811 top=128 scrollY=240 docH=1685 stuck=false
+# During the same window: Runtime.evaluate and Page.captureScreenshot both time out (main thread never yields).
+# Renderer private bytes (Win32_Process.PrivatePageCount), run 1 (pid 58980):
+# 09:05:55 4753MB  09:06:16 4923MB  09:06:43 5099MB  09:07:14 5210MB  09:07:56 5383MB -> tab closed, pid exits
+# Run 2 (pid 32176), ~45 s after PageDown: 5664MB -> 5671MB (10 s later) -> tab closed, pid exits
+# Zero console errors/warnings on the page in both runs.
+
+# ---------------------------------------------------------------------------------------------
+# BASELINE build 2.60.0-pr-2511-81f1-81f18d01, https://vcst-qa-storefront.govirto.com/compare, same list shape
+# (19 entries / 8 tabs / 11 configured), same viewport 1280x1385x1, tab "Configurable Parents", docH 1685.
+# Header row on this build is a <div class="compare-table__header-row"> (PR made it a <thead>); same probe.
+[log] [oom-probe] header-row class toggles=500 ms=5456 top=128 scrollY=262 docH=1685 stuck=false
+[log] [oom-probe] header-row class toggles=1000 ms=7548 top=128 scrollY=262 docH=1685 stuck=false
+[log] [oom-probe] header-row class toggles=1500 ms=9602 top=128 scrollY=262 docH=1685 stuck=false
+[log] [oom-probe] header-row class toggles=2000 ms=11912 top=128 scrollY=262 docH=1685 stuck=false
+[log] [oom-probe] header-row class toggles=2500 ms=14009 top=128 scrollY=262 docH=1685 stuck=false
+[log] [oom-probe] header-row class toggles=3000 ms=16305 top=128 scrollY=262 docH=1685 stuck=false
+[log] [oom-probe] header-row class toggles=3500 ms=18660 top=128 scrollY=262 docH=1685 stuck=false
+[log] [oom-probe] header-row class toggles=4000 ms=21091 top=128 scrollY=262 docH=1685 stuck=false
+[log] [oom-probe] header-row class toggles=4500 ms=23547 top=128 scrollY=262 docH=1685 stuck=false
+# Renderer pid 52612 private bytes: 1722MB -> 2703MB in 8 s (~120 MB/s) -> over the 1.5 GB cap, tab closed, pid exits.
+
+# BASELINE, plain-products-only tab "Group A" (5 entries, 0 configured), viewport 1280x1358 (docH 1658, excess 300):
+[log] [oom-probe] toggles=500 ms=77693 scrollY=243
+[log] [oom-probe] toggles=1000 ms=79750 scrollY=243
+[log] [oom-probe] toggles=1500 ms=81857 scrollY=243
+[log] [oom-probe] toggles=2000 ms=83912 scrollY=243
+[log] [oom-probe] toggles=2500 ms=86081 scrollY=243
+[log] [oom-probe] toggles=3000 ms=88102 scrollY=243
+# -> tab closed immediately (configured entries are NOT required).
+
+# NEGATIVE controls (baseline, same page, no hang, 1 class toggle per crossing):
+#  1280x900,  tab Configurable Parents, PageDown -> scrollY 641, stuck=true, stable
+#  1280x900,  tab Dreamy cakes (docH 1386), PageDown -> scrollY 342, compact docH 1242, stable
+#  1280x1050, tab Dreamy cakes, PageDown -> scrollY 278, compact docH 1328, stable
+#  1280x1100, tab Dreamy cakes, PageDown -> scrollY 258, compact docH 1358, stable

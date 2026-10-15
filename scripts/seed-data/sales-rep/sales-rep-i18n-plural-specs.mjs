@@ -161,7 +161,7 @@ export function overshootErrors() {
 
 /**
  * Build the order's line items from the discovered product list (PURE).
- * `products` = [{ id, sku, name, catalogId }] — identity from the env, quantity/price from the spec.
+ * `products` = [{ id, sku, name, catalogId, imgSrc }] — identity from the env, quantity/price from the spec.
  * Throws when a slot cannot be satisfied, so the seeder fails loudly rather than silently writing an
  * order with no resolvable product.
  */
@@ -171,6 +171,7 @@ export function buildOrderItems(lines, products) {
     if (!p) throw new Error(`productSlot ${l.productSlot} unsatisfied — only ${products.length} distinct product(s) discovered`);
     return {
       sku: p.sku, productId: p.id, name: p.name, ...(p.catalogId ? { catalogId: p.catalogId } : {}),
+      ...(p.imgSrc ? { imageUrl: p.imgSrc } : {}),
       quantity: l.quantity, price: l.unitPrice, productType: 'Physical', currency: 'USD',
     };
   });

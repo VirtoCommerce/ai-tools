@@ -34,7 +34,11 @@ export function countEvidence(evidence = []) {
   // the history of the claim -- but it no longer flags it: before this, an entry a human had already
   // settled (KB-27B4CD10, 2026-09-20) was served as DISPUTED forever (VCST-6179).
   const resolved = contradicting.filter(isResolved).length;
-  return { trust: supportOf(items).length, disputed: contradicting.length - resolved, resolved };
+  // A SOFT dispute (`contested`, VCST-6221 core/gate.mjs) is an open dispute made on another build: the
+  // judge sees it like any other, but it does not flag the entry DISPUTED for readers. Counted apart.
+  const open = contradicting.filter((e) => !isResolved(e));
+  const contested = open.filter((e) => e.contested).length;
+  return { trust: supportOf(items).length, disputed: open.length - contested, resolved, contested };
 }
 
 /**
@@ -136,14 +140,17 @@ export function supportOf(evidence = []) {
  *   conditions-scoped    both sides were right under different settings; the entry names the condition
  *   split                the entry held two facts; each now lives in its own entry
  *   dispute-wrong        the entry holds; the dispute misread what it saw
+ *   defect-fixed         the entry describes a DEFECT and the dispute saw it fixed (VCST-6317): the claim
+ *                        stays as the bug's description, and the item carries `defect` + `fixedIn`
  *
- * A value outside this list resolves nothing -- a typo must not close a dispute silently.
+ * A value outside this list resolves nothing -- a typo must not close a dispute silently. A client from
+ * before a value existed reads that dispute as open: stale, never wrong.
  */
-export const RESOLUTIONS = Object.freeze(['claim-amended', 'version-scoped', 'conditions-scoped', 'split', 'dispute-wrong']);
+export const RESOLUTIONS = Object.freeze(['claim-amended', 'version-scoped', 'conditions-scoped', 'split', 'dispute-wrong', 'defect-fixed']);
 export const isResolved = (e) => Boolean(e?.contradicts) && RESOLUTIONS.includes(e?.resolved);
 
 /** The fields a resolution writes onto a contradicting item -- the only in-place edit an item ever gets. */
-export const RESOLUTION_FIELDS = Object.freeze(['resolved', 'resolvedAt', 'resolvedBy', 'resolvedIn', 'resolution', 'amendedFrom']);
+export const RESOLUTION_FIELDS = Object.freeze(['resolved', 'resolvedAt', 'resolvedBy', 'resolvedIn', 'resolution', 'amendedFrom', 'defect', 'fixedIn']);
 
 /** An anchor is `{coordinate}` or a bare string; both name one place. Rows carry it as written. */
 const anchorText = (a) => String(typeof a === 'string' ? a : a?.coordinate ?? '').trim();
@@ -156,7 +163,7 @@ const anchorText = (a) => String(typeof a === 'string' ? a : a?.coordinate ?? ''
  * anything. A diff nobody can read is a diff nobody reviews.
  */
 export function buildRow(data, path) {
-  const { trust, disputed, resolved } = countEvidence(data.evidence);
+  const { trust, disputed, resolved, contested } = countEvidence(data.evidence);
   // The card and the retirement pointer are written only when the entry has them. A key on every
   // row would change every row the first time a client from this change pushed, and a client from
   // before it would take the key off again on its next push -- the same row flapping between two
@@ -180,11 +187,14 @@ export function buildRow(data, path) {
     disputed,
     // Only when there is one, for the reason the card keys above are optional.
     ...(resolved ? { resolved } : {}),
+    ...(contested ? { contested } : {}),
   };
 }
 
 /** Where an entry lives, given its id. One rule, so the index and the writer cannot disagree. */
 export const entryPath = (id) => `entries/${id}.md`;
+/** Where a build's snapshot lives (VCST-6221): one rule for the writer (push) and the readers (gate, labels). */
+export const buildPath = (pin) => `builds/${pin}.json`;
 
 /**
  * The whole index file.

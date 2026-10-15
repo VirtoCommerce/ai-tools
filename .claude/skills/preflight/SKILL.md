@@ -18,7 +18,7 @@ npm run preflight -- --for <for> [--ticket KEY] [--components A,B] [--domain slu
 ```
 
 - `--components` — the ticket's components (ledger names, `vc-module-*` repos or `VirtoCommerce.*` ids).
-- `--expect` — the PR artifact under test (`/qa-test`: the linked PR's module + version).
+- `--expect` — the PR artifact under test (`/qa-test`: the linked PR's module + version). A storefront (`vc-frontend`) PR is `--expect vc-frontend@<version from the theme zip name>`: it is checked against the live storefront bundle (`facts.deployedTheme`), not the modules API.
 - `--storefront` — the scope touches the storefront (adds the anonymous `InitializeApplication` probe).
 - `--ci` — this skill's own flag (the caller is non-interactive, step 4); never pass it to the CLI, which rejects an unknown flag with exit `1`.
 - Exit `0` READY (warnings allowed) · `2` NOT READY · `1` usage error — fix the flags · `3` the script could not run: report its message and STOP, never improvise the facts by hand.
@@ -107,7 +107,7 @@ step 2's level-3 rows under `mcp`, `verdict` combined per step 4, and `kbHits`, 
 **means** for the consumer (a `breaking:*` or `not-deployed:*` row, for instance) is the consumer's own
 rule, stated in the consumer — not here. One id is defined here because it is easy to misread:
 `unknown-deployed:*` = the ledger released it but no live source reports the deployed version
-(the storefront theme; Platform only when the Admin page gave no version). It is **not** `not-deployed:*` — confirm the version, never assume either way.
+(the storefront theme only when its entry bundle gave no version; Platform only when the Admin page gave none). It is **not** `not-deployed:*` — confirm the version, never assume either way.
 
 ## Not this skill
 

@@ -535,6 +535,10 @@ async function main() {
         log(`  --skip-funding: leaving balance ${balanceByAlias[a.aliasName]} (cheapest PTS line ${cheapestPts.sku} @ ${cheapestPts.price}).`);
       } else if (balanceByAlias[a.aliasName] > cheapestPts.price) {
         log(`  balance ${balanceByAlias[a.aliasName]} already exceeds the cheapest PTS line (${cheapestPts.sku} @ ${cheapestPts.price}) — no order placed.`);
+      } else if (DRY_RUN) {
+        // gqlAs is a raw storefront fetch that seed-common's api() dry-run stub never sees, so without
+        // this branch the order below is REAL even under --dry-run (it was, 2026-10-13).
+        log(`  [DRY] would place ONE REAL, NON-REVERSIBLE order (${earn.sku} x${a.earnQty}) to fund ${a.aliasName}.`);
       } else {
         log(`  ⚠ placing ONE REAL, NON-REVERSIBLE order (${earn.sku} x${a.earnQty}) to fund ${a.aliasName} — a balance cannot be set on this platform.`);
         const number = await placeEarnOrder({

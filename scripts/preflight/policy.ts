@@ -21,6 +21,8 @@ export interface PolicyInput {
 }
 
 const isTicket = (f: ChangeFor) => f === "ticket" || f === "ticket-fast";
+/** `--expect` names the storefront theme rather than a module: its repo, its artifact name or the manifest key. */
+export const isThemeId = (id: string) => /^(vc-frontend|vc-theme[\w-]*|theme|themeb2bvue|virtocommerce\.theme)$/i.test(id);
 const DUP_WINDOW_MIN: Record<ChangeFor, number | null> = { "ticket": 120, "ticket-fast": 120, "exploratory": 1440, "lifecycle": 1440, "domain-map": null, "ba": null };
 const SECRET = /PASSWORD|TOKEN|SECRET|KEY/;
 
@@ -242,7 +244,17 @@ export function buildChecks(i: PolicyInput): Check[] {
   const deployedUnknownWho = env.deployedUnknown?.who ?? null, deployedUnknownDo = env.deployedUnknown?.do ?? null;
 
   // expect — is the change under test on the stand; when deployed is UNKNOWN, inherit its who/do but change status for tickets
-  if (i.expect) {
+  if (i.expect && isThemeId(i.expect.module)) {
+    // The theme is not a module: its live version is the storefront bundle's, read anonymously.
+    const live = isUnknown(f.deployedTheme) ? null : f.deployedTheme;
+    if (live === null) checks.push({ id: "expect", status: isTicket(i.for) ? "BLOCK" : "WARN", found: `${i.expect.module} — deployed theme version unknown (${(f.deployedTheme as { unknown: string }).unknown})`,
+      who: "me", do: "wait and re-run; else confirm the version in the storefront's entry bundle", diagnose: ["GET FRONT_URL (cache-busted) → its /assets/index-*.js → the inlined {version:…}"] });
+    // A theme zip name can carry a shorter build suffix than the bundle (…-pr-2269-cd06 vs …-pr-2269-cd06-cd06xxxx).
+    else if (expectMet(live, i.expect.version) || (i.expect.version.includes("-") && live.toLowerCase().startsWith(`${i.expect.version.toLowerCase()}-`)))
+      checks.push(ok("expect", `${i.expect.module} ${live}`));
+    else checks.push({ id: "expect", status: isTicket(i.for) ? "BLOCK" : "WARN", found: `${i.expect.module} ${i.expect.version} not deployed (has ${live})`,
+      who: "me, with OK", do: `/qa-deploy-pr ${i.ticket ?? "<KEY>"}, or wait`, diagnose: ["is the PR artifact built", "is it in vc-deploy-dev theme/artifact.json", "a returning browser may still hold the old index HTML (max-age=7200)"] });
+  } else if (i.expect) {
     const id = i.expect.module.toLowerCase();
     const live = isUnknown(f.deployed) ? null : f.deployed.modules[id]?.version ?? null;
     if (isUnknown(f.deployed)) checks.push({ id: "expect", status: isTicket(i.for) ? "BLOCK" : "WARN", found: `${i.expect.module} — deployed state unknown`, who: deployedUnknownWho, do: deployedUnknownDo, diagnose: [] });
