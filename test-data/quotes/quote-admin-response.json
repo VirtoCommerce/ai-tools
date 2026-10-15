@@ -1,33 +1,23 @@
 {
-  "_fixture": "QUOTE_WITH_ADMIN_RESPONSE — Swagger-shaped QuoteRequest body (VirtoCommerce.Quote module) for VCST-5482. Buyer-submitted RFQ that the admin has priced per line (proposalPrices). Submitter resolved at seed time from {{ORG_USER_EMAIL}}. The exact Quote REST route + field names (proposalPrices vs selectedTierPrice, status vocabulary) are confirmed LIVE on first run per quality-gates G6 — orders-specs.mjs is the single place to correct the status string. No runtime GUIDs here; created id → aliases.<env>.json.",
+  "_fixture": "QUOTE_WITH_ADMIN_RESPONSE — Swagger-shaped QuoteRequest create body (VirtoCommerce.Quote, POST /api/quote/requests). State: Processing -> Proposal sent. admin responded: per-line proposal price below the live catalog price on 2 lines; the no-expiry member of the QUOTE-023 expiry triad. Seeded once per agent-pool B2B buyer by scripts/seed-data/orders/seed-quotes.mjs; spec + rationale: orders-specs.mjs QUOTE_FIXTURES. Line products, list prices and the admin proposal are DERIVED LIVE (real catalog products + POST /api/pricing/evaluate; proposal = catalog x proposalRatio) — no price literal here. customerId/organizationId/languageCode/expirationDate are stamped at seed time. No runtime GUIDs; created ids -> aliases.<env>.json.",
   "number": "AGENT-TEST-QTE-ADMIN-RESPONSE",
   "storeId": "{{STORE_ID}}",
   "currency": "USD",
-  "status": "Processing",
+  "status": "Proposal sent",
   "customerName": "AGENT-TEST Org Buyer",
-  "comment": "AGENT-TEST RFQ awaiting/holding admin per-line pricing",
+  "comment": "AGENT-TEST quote fixture ADMIN-RESPONSE",
   "items": [
     {
       "sku": "AGENT-TEST-QTE-SKU-1",
       "productId": "agent-test-qte-prod-1",
       "name": "AGENT-TEST Quoted Item 1",
-      "quantity": 10,
-      "listPrice": 49.99,
-      "salePrice": 49.99,
-      "proposalPrices": [
-        { "quantity": 10, "price": 44.99 }
-      ]
+      "quantity": 10
     },
     {
       "sku": "AGENT-TEST-QTE-SKU-2",
       "productId": "agent-test-qte-prod-2",
       "name": "AGENT-TEST Quoted Item 2",
-      "quantity": 5,
-      "listPrice": 129.0,
-      "salePrice": 129.0,
-      "proposalPrices": [
-        { "quantity": 5, "price": 119.0 }
-      ]
+      "quantity": 5
     }
   ],
   "addresses": [
@@ -42,7 +32,7 @@
       "countryName": "United States",
       "postalCode": "10001",
       "phone": "+1-206-555-0100",
-      "email": "{{ORG_USER_EMAIL}}"
+      "email": "{{QUOTE_BUYER_EMAIL}}"
     }
   ]
 }

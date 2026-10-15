@@ -18,6 +18,7 @@
  * The MCP servers read the file at START: after a change, reconnect playwright-* in /mcp — never while
  * a regression run has browser suites in flight (a reconnect kills their sessions).
  */
+import '../lib/sync-stdio.mjs'; // before any output: a piped stdout must not lose its tail to process.exit()
 import '../../config.js';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';

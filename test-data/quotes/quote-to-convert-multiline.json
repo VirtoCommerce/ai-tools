@@ -1,0 +1,44 @@
+{
+  "_fixture": "QUOTE_TO_CONVERT_MULTILINE — Swagger-shaped QuoteRequest create body (VirtoCommerce.Quote, POST /api/quote/requests). State: Processing -> Proposal sent. 3 lines with different quantities — a partial or quantity-collapsing conversion is visible. Seeded once per agent-pool B2B buyer by scripts/seed-data/orders/seed-quotes.mjs; spec + rationale: orders-specs.mjs QUOTE_FIXTURES. Line products, list prices and the admin proposal are DERIVED LIVE (real catalog products + POST /api/pricing/evaluate; proposal = catalog x proposalRatio) — no price literal here. customerId/organizationId/languageCode/expirationDate are stamped at seed time. No runtime GUIDs; created ids -> aliases.<env>.json.",
+  "number": "AGENT-TEST-QTE-TO-CONVERT-MULTILINE",
+  "storeId": "{{STORE_ID}}",
+  "currency": "USD",
+  "status": "Proposal sent",
+  "customerName": "AGENT-TEST Org Buyer",
+  "comment": "AGENT-TEST quote fixture TO-CONVERT-MULTILINE",
+  "items": [
+    {
+      "sku": "AGENT-TEST-QTE-SKU-1",
+      "productId": "agent-test-qte-prod-1",
+      "name": "AGENT-TEST Quoted Item 1",
+      "quantity": 2
+    },
+    {
+      "sku": "AGENT-TEST-QTE-SKU-2",
+      "productId": "agent-test-qte-prod-2",
+      "name": "AGENT-TEST Quoted Item 2",
+      "quantity": 3
+    },
+    {
+      "sku": "AGENT-TEST-QTE-SKU-3",
+      "productId": "agent-test-qte-prod-3",
+      "name": "AGENT-TEST Quoted Item 3",
+      "quantity": 5
+    }
+  ],
+  "addresses": [
+    {
+      "addressType": "Shipping",
+      "firstName": "AGENT-TEST",
+      "lastName": "Org Buyer",
+      "line1": "1 Test Way",
+      "city": "New York",
+      "regionName": "New York",
+      "countryCode": "USA",
+      "countryName": "United States",
+      "postalCode": "10001",
+      "phone": "+1-206-555-0100",
+      "email": "{{QUOTE_BUYER_EMAIL}}"
+    }
+  ]
+}

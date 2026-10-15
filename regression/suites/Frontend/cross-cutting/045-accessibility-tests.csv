@@ -201,7 +201,7 @@
 [STATE] Screen reader can distinguish selected from unselected options
 [DOM] Each option has an accessible name matching the variant label","[CONSOLE] no ARIA state errors on picker interaction","states not visually distinguishable; selected state not reflected in aria-checked/aria-selected; accessible name missing on option","—","VCST-4373","Automated"
 
-"A11Y-SORT-001","Address Popup Column Sort - aria-sort Ascending Transition","ARIA > Sort","Critical","BL-CHK-008","","[PRE:SIGNIN_AS:USER_DEFAULT]
+"A11Y-SORT-001","Address Popup Column Sort - aria-sort Ascending Transition","ARIA > Sort","Critical","BL-A11Y-004","","[PRE:SIGNIN_AS:USER_DEFAULT]
 - User has at least 2 saved addresses
 - Address selection popup is accessible (checkout shipping step or ship-to widget)","store={{FRONT_URL}}","[NAV] Navigate to checkout shipping step on {{FRONT_URL}} and open the address selection popup
 [ASSERT] browser_snapshot to capture initial state of the address table header row
@@ -214,7 +214,7 @@
 [DOM] All other column headers do NOT have aria-sort=""ascending"" or ""descending"" — only one active sort indicator at a time
 [STATE] Column header cursor is ""pointer"" on hover, indicating interactivity
 [STATE] WCAG 4.1.2: The sort state change is programmatically determinable","[CONSOLE] no axe aria-sort violations after sort interaction","aria-sort attribute remains unchanged after click (not wired — VCST-4992 regression); multiple headers show aria-sort=""ascending"" simultaneously; cursor remains ""default"" on header hover; aria-sort absent on all headers (attribute not rendered)","Close address popup; no address changes were made","VCST-4992; WCAG 4.1.2 (Name, Role, Value)","Reviewed"
-"A11Y-SORT-002","Address Popup Column Sort - aria-sort Descending Transition","ARIA > Sort","Critical","BL-CHK-008","","[PRE:SIGNIN_AS:USER_DEFAULT]
+"A11Y-SORT-002","Address Popup Column Sort - aria-sort Descending Transition","ARIA > Sort","Critical","BL-A11Y-004","","[PRE:SIGNIN_AS:USER_DEFAULT]
 - User has at least 2 saved addresses
 - Address selection popup is accessible (checkout shipping step or ship-to widget)","store={{FRONT_URL}}","[NAV] Navigate to checkout shipping step on {{FRONT_URL}} and open the address selection popup
 [ACT] browser_click on a sortable column header (e.g., ""Name"") to sort ascending
@@ -226,7 +226,7 @@
 [DOM] aria-sort transitions: none → ascending → descending (correct ARIA 1.2 cycle)
 [DOM] Only one column header has an active aria-sort value at any point
 [STATE] Sort direction visually reflected in the table row order (rows reorder accordingly)","[CONSOLE] no axe aria-sort violations; [NETWORK] no 4xx/5xx on address re-fetch after sort","aria-sort stays ""ascending"" after second click (toggle not implemented); aria-sort flips to ""none"" instead of ""descending""; table rows do not reorder on second click; multiple headers become active simultaneously","Close address popup; no address changes were made","VCST-4992; WCAG 4.1.2 (Name, Role, Value); ARIA 1.2 §6.27 aria-sort","Reviewed"
-"A11Y-SORT-003","Address Popup Column Sort - Unsorted Columns aria-sort=none","ARIA > Sort","Critical","BL-CHK-008","","[PRE:SIGNIN_AS:USER_DEFAULT]
+"A11Y-SORT-003","Address Popup Column Sort - Unsorted Columns aria-sort=none","ARIA > Sort","Critical","BL-A11Y-004","","[PRE:SIGNIN_AS:USER_DEFAULT]
 - User has at least 2 saved addresses
 - Address selection popup is open at checkout shipping step or ship-to widget","store={{FRONT_URL}}","[NAV] Navigate to checkout shipping step on {{FRONT_URL}} and open the address selection popup
 [ASSERT] browser_snapshot to capture the address table at default/unsorted state

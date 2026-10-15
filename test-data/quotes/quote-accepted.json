@@ -1,22 +1,17 @@
 {
-  "_fixture": "ACCEPTED_QUOTE — Swagger-shaped QuoteRequest body (VirtoCommerce.Quote module) for VCST-5482. Admin-priced RFQ that the buyer has accepted (ready to convert to an order). Submitter resolved at seed time from {{ORG_USER_EMAIL}}. Quote REST route + status vocabulary confirmed LIVE on first run per quality-gates G6; orders-specs.mjs is the single place to correct the status string. No runtime GUIDs here; created id → aliases.<env>.json.",
+  "_fixture": "ACCEPTED_QUOTE — Swagger-shaped QuoteRequest create body (VirtoCommerce.Quote, POST /api/quote/requests). State: Processing -> Proposal sent -> Ordered. terminal Ordered state with a 3-step change log; reached by status writes, so NO customer order is linked to it — never use it to assert the order a conversion produced. Seeded once per agent-pool B2B buyer by scripts/seed-data/orders/seed-quotes.mjs; spec + rationale: orders-specs.mjs QUOTE_FIXTURES. Line products, list prices and the admin proposal are DERIVED LIVE (real catalog products + POST /api/pricing/evaluate; proposal = catalog x proposalRatio) — no price literal here. customerId/organizationId/languageCode/expirationDate are stamped at seed time. No runtime GUIDs; created ids -> aliases.<env>.json.",
   "number": "AGENT-TEST-QTE-ACCEPTED",
   "storeId": "{{STORE_ID}}",
   "currency": "USD",
   "status": "Ordered",
   "customerName": "AGENT-TEST Org Buyer",
-  "comment": "AGENT-TEST admin-priced RFQ accepted by buyer",
+  "comment": "AGENT-TEST quote fixture ACCEPTED",
   "items": [
     {
       "sku": "AGENT-TEST-QTE-SKU-1",
       "productId": "agent-test-qte-prod-1",
       "name": "AGENT-TEST Quoted Item 1",
-      "quantity": 20,
-      "listPrice": 49.99,
-      "salePrice": 49.99,
-      "proposalPrices": [
-        { "quantity": 20, "price": 39.99 }
-      ]
+      "quantity": 20
     }
   ],
   "addresses": [
@@ -31,7 +26,7 @@
       "countryName": "United States",
       "postalCode": "10001",
       "phone": "+1-206-555-0100",
-      "email": "{{ORG_USER_EMAIL}}"
+      "email": "{{QUOTE_BUYER_EMAIL}}"
     }
   ]
 }
