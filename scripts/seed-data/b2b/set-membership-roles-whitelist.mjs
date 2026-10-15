@@ -72,6 +72,25 @@ const TARGET_STORE = val('--store') || STORE_ID;
 const TEST_ENV = process.env.TEST_ENV || 'vcst';
 const VALUES_PATH = tenantValuesPath(TARGET_STORE, TENANT_TYPE);
 
+/* ── demo-owned roles ────────────────────────────────────────────────────────────────────────── */
+
+/**
+ * Roles a LIVE demo dataset owns and has whitelisted (seed-returns-demo.mjs records them in its ledger
+ * as `{type:'role', name, whitelisted:true}`). They join the target so this runner never strips a
+ * role the demo still hands out, and `--verify` does not report the demo's entry as drift. Once the
+ * demo is torn down its ledger is empty and the target is the plain seeded set again.
+ */
+const DEMO_LEDGER_KEYS = ['_demo_returns_ledger'];
+function withDemoRoles(target) {
+  let overlay = {};
+  try { overlay = JSON.parse(readFileSync(join(ROOT, `test-data/aliases.${process.env.TEST_ENV || 'vcst'}.json`), 'utf8')); } catch { /* no overlay */ }
+  const extra = DEMO_LEDGER_KEYS.flatMap((k) => (overlay[k]?.entities || []).filter((e) => e.type === 'role' && e.whitelisted && e.name).map((e) => e.name));
+  const out = [...target];
+  for (const name of extra) if (!out.some((x) => x.toLowerCase() === name.toLowerCase())) out.push(name);
+  if (extra.length) verbose(`demo-owned role(s) kept in the target: ${extra.join(', ')}`);
+  return out;
+}
+
 /* ── alias overlay (layered, like the @td() resolver) ─────────────────────────────────────────── */
 
 function loadLayeredAliases() {
@@ -173,7 +192,7 @@ async function verify() {
 
   const liveRoles = await readLiveRoles();
   const salesRep = selectSalesRepRoles(liveRoles).map((r) => r.name);
-  const target = buildWhitelist(ORG_ROLE_NAMES, salesRep);
+  const target = withDemoRoles(buildWhitelist(ORG_ROLE_NAMES, salesRep));
   const seeded = sameSet(whitelist, target);
   log(`  live sales-rep roles (${SALES_REP_GRANT_PERMISSION}): [${salesRep.join(', ') || 'NONE'}]`);
   log(`  seeded state: ${seeded ? 'PRESENT — the fixture is applied' : 'ABSENT — the whitelist is not the fixture set'}`);
@@ -235,7 +254,7 @@ async function apply() {
   const roleProblems = findRoleProblems({ orgRoleNames: ORG_ROLE_NAMES, salesRepRoles, liveRoles });
   if (roleProblems.length) throw new Error(`ROLE RESOLUTION FAILED:\n  - ${roleProblems.join('\n  - ')}`);
 
-  const target = buildWhitelist(ORG_ROLE_NAMES, salesRep);
+  const target = withDemoRoles(buildWhitelist(ORG_ROLE_NAMES, salesRep));
   const decid = findDecidabilityProblems({ orgRoleNames: ORG_ROLE_NAMES, salesRepRoleNames: salesRep, pool: DESCRIPTOR_POOL });
   if (decid.length) throw new Error(`DECIDABILITY FAILED — this whitelist would not discriminate:\n  - ${decid.join('\n  - ')}`);
   log(`seeded whitelist (${target.length}): [${target.join(', ')}]`);
