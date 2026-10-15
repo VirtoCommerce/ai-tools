@@ -345,8 +345,87 @@ and it is the row most likely to be deferred as "negative testing we can add lat
 layer's e2e suite (`concern: e2e` in `config/test-suites.json`). Handoff contract:
 [`authoring.md`](../qa-test/authoring.md) §Artifact A.
 
+## Strategy mode — the model of a strategy's `MODEL` risks
+
+A model built with `--strategy` ([`SKILL.md`](SKILL.md) §Two modes) details only the risks the approved
+`/qa-test-strategy` round gave technique `MODEL`. The strategy already holds what the ticket header, the risk
+areas and the rounds used to carry, so the model does not restate them. Everything above this section
+applies **except**:
+
+- **Header.** `Strategy: <path> · Round N · Floors: <F10, F11 | none> · Risks: R-n…` replaces the ticket,
+  flow, ACs, BL/ECL and risk-area lines. Floors are read from the round's `Floors fired:` line, never
+  re-derived.
+- **Scope.** Part 0, the matrix and the condition space cover the chain links the `MODEL` risks cross.
+  Every scenario row carries the `R-n` it details.
+- **No sweeps.** The archetype / UIP / probe rows and the BL/ECL lines marked "filled in Step 2" are absent:
+  archetype is a scenario column, and the strategy's Inputs carry the oracles.
+- **Rounds are the strategy's.** An amendment is a section headed with the strategy's round number;
+  §One ticket, one model file applies only to ticket mode. The three-round cap (D6) covers the model.
+- **No cases from the model in the run** (D2): `Not allowed` lines become checklist items, and
+  §What Step 3 does with it happens later, in `/qa-test-lifecycle`.
+- **Its own line cap** — the strategy-mode figure in [`reports-policy.md`](../../knowledge/execution/reports-policy.md) §2; read it there.
+
+### The strategy-mode gate — fourteen clauses
+
+A clause that survives keeps its ticket-mode number (11 and 11b are cited by number elsewhere); **10 is
+retired, never reused**, so a stale citation of it fails visibly.
+
+- **1.** The header names the strategy file, its round, the floors fired and the `MODEL` risks expanded. **Every
+  scenario carries an `R-n` from that list, and every listed risk has at least one scenario.**
+- **2–9.** As §The gate, scoped to the links the `MODEL` risks cross.
+- **11, 11b.** As §The gate.
+- **12. F10 fired** ⇒ the org-context group (below) has all six rows, each a scenario # or `WAIVED + reason`,
+  its scenarios carry the R-n of the risk whose Source carries `floor:F10`, and row 1 meets §Part 0r's four
+  rules. F10 not fired but the matrix carries more than one ROLE variant ⇒ row 1 alone, under the same rules.
+  Neither ⇒ the group is absent and the clause passes.
+- **13. F11 fired** ⇒ the configuration group (below) has a row for every setting the diff reads or changes (the
+  ones the strategy's Inputs record with a stand value for F11; a setting Inputs name only as context needs none),
+  each variant a scenario # or `WAIVED + reason`, and its scenarios carry the R-n of the risk whose Source
+  carries `floor:F11`. Not fired ⇒ absent, passes.
+- **14.** Every chain link owned by another domain (catalog, pricing, inventory, checkout) carries that domain's
+  variants — product type, property type, … (§Part 0, *Integration points*) — or `WAIVED + reason`.
+
+Clauses 12 and 13 are what give F10 and F11 force inside the model; without them the groups would be
+present only when someone remembers them.
+
+### The org-context group (F10)
+
+Six rows whenever F10 fired; a row that does not apply is `WAIVED + reason`, never omitted.
+
+| # | Variant | What is checked | Caught by |
+|---|---|---|---|
+| 1 | Role within the org | the UI gate **and** a refusal at the server with that role's own token | `Not allowed` line (§Part 0r) |
+| 2 | Org boundary | org A's data is unreachable from org B: list, by id, deep link, search | `SCOPE` |
+| 3 | Multi-org + switching | after a switch, data, permissions, cart and prices change and nothing leaks from the previous org; permissions are recalculated only at sign-in, so the switch is a link of its own | state-diagram transition |
+| 4 | Membership state | blocked / locked / no org (B2C) keeps pre-feature behaviour | `off` variant |
+| 5 | Sales rep | only **assigned** orgs, through the scoped schema; unassigning revokes access | `SCOPE` + reverse edge |
+| 6 | Login on behalf | the session carries the **target's** org context and permissions, gated by `CanImpersonate` / `loginOnBehalf`; entry points include the roster's pending-invite row; exit restores the operator's context and the sign-in log records "On behalf" | server refusal + state transition |
+
+Mechanism sources — cite, never restate: token claims and switching, §Part 0r; sales rep,
+[`sales-rep.md`](../../knowledge/domain/sales-rep.md); login on behalf,
+[`auth.md`](../../knowledge/domain/auth.md) (BL-AUTH-008..011 — read each rule's status in
+`oracles/bl/auth.yaml`; a row resting on a `SUSPECT` one is `{HYPOTHESIS}`); the roster entry point,
+[`b2b-organizations.md`](../../knowledge/domain/b2b-organizations.md) (B9/B22 and the `Invited` row actions).
+
+### The configuration group (F11)
+
+One row set per setting the diff reads or changes, with the stand's value from the strategy's Inputs beside it; a
+setting the Inputs name only as context gets no row. A variant that does not apply is `WAIVED + reason`.
+
+| Variant | What is checked |
+|---|---|
+| Default | out-of-the-box behaviour |
+| On / non-default | the branch the feature exists for |
+| Off | pre-feature behaviour (§Part 0, *A feature behind a switch*) |
+| Scope | the global value vs a per-store override |
+| Change at runtime | what the user sees after the value changes — the storefront caches its capability manifest per session ([`store-settings.md`](../../knowledge/domain/store-settings.md) §The storefront capability manifest) |
+
+A branch the stand's value cannot reach gets a `setting <name> flip+restore` Data cell, or `FIXTURE-GAP` with
+the reason when the run may not change it — never a silent skip.
+
 ## The gate — thirteen clauses, every one contradictable
 
+**Ticket mode** (no `--strategy`); a strategy-mode model is gated by §Strategy mode instead.
 "Scenarios enumerated" was the old bar and it cannot be wrong. These can. **This list is the normative
 one** — the command's `1e` gate line is its compact checklist, so a clause added or reworded here is
 changed there in the same edit. The count is stated in exactly two places, this heading and that

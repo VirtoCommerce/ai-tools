@@ -69,6 +69,8 @@ prefix (the path is kept), a query string or `#fragment` (dropped), an id segmen
 | a button label, field name or dialog title (`Add to cart`, `Payment method`) | `unstructured` | the route of the page it was on as the anchor; the label goes in `claim` |
 | a bare or one-segment namespace (`/api`, `/account`) | `unstructured` | the full route or endpoint you hit |
 | an Admin SPA menu path (`Orders > Returns`) | `menu-path` | the REST call the blade made (HAR / Network); the path goes in `claim` |
+| an Admin SPA address (`#/workspace/return`, `https://…/#/workspace/return`) | `unstructured` (everything after `#` is dropped, so nothing is left) | the REST call the blade made (HAR / Network); the `#/…` route goes in `claim` |
+| the site root (`/`, a bare `{FRONT_URL}/`) | `unstructured` | a request the page sent (HAR / Network); "home page" goes in `claim` |
 | a Windows path (`C:/Program Files/Git/cart`) | `local-path` | the route as typed, with `MSYS_NO_PATHCONV=1` or through MCP |
 
 ## Observation → anchor

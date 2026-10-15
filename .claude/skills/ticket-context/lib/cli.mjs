@@ -10,7 +10,7 @@ import { codeHostCredential, readProfile, resolveProfile, trackerCredential } fr
 import { GAP_REASONS, SCHEMA, asGap, gap } from "./gap.mjs";
 import { validateDef } from "./schema.mjs";
 import { BASE_FIELDS, LINKED_FIELDS, jiraClient, recencyOrder } from "./jira.mjs";
-import { AC_FIELD_NAME_RE, buildInventory, linkedOverCap, rankLinked, resolveFieldsByName } from "./inventory.mjs";
+import { AC_FIELD_NAME_RE, buildInventory, linkedOverCap, rankLinked, resolveFieldsByName, ticketFields } from "./inventory.mjs";
 import { CAPS, envHosts, fetchPublicPage, htmlToText, planDownloads, safeName } from "./fetch.mjs";
 import { exportFigmaItems, figmaToken } from "./figma.mjs";
 import { extractFrames, extractGifFrames } from "./frames.mjs";
@@ -98,6 +98,9 @@ async function prepare() {
   const remote = await jira.remoteLinks(key).catch((e) => { gaps.push(asGap("remotelinks", e)); return []; });
   const devPrUrls = await jira.devPrUrls(issue.id).catch((e) => { gaps.push(asGap("dev-status", e)); return []; });
   const inv = buildInventory({ issue, remoteLinks: remote, trackerBase: tcred.base, acFieldIds: acFields.map((f) => f.id), linkFieldIds: linkFields.map((f) => f.id), devPrUrls });
+  const secrets = loadSecretValues(root); // after loadLayeredEnv, so FIGMA_TOKEN from any layer is in it
+  const tf = ticketFields(issue, acFields.map((f) => f.id), secrets);
+  gaps.push(...tf.gaps);
 
   let epic = null;
   let siblings = [];
@@ -152,7 +155,6 @@ async function prepare() {
     writeJson(ticketJson, issue);
     for (const it of linked) if (linkedJson.has(it.key)) { it.local_path = join(runDir, `issue-${it.key}.json`); writeJson(it.local_path, linkedJson.get(it.key)); }
 
-    const secrets = loadSecretValues(root);
     // An attachment the agent cannot read is never downloaded: its outcome is recorded without the bytes.
     for (const it of inv.items) if (it.ref.startsWith("attachment:") && it.kind === "other" && !it.gap) {
       it.gap = gap(it.ref, "unreadable", "not a format the agent can read — not downloaded; ask for a PDF, an image or text");
@@ -207,7 +209,7 @@ async function prepare() {
     }
 
     const prepared = { schema: "ticket-context-prepare/1", ticket: key, tracker: profile.tracker, project_type: profile.projectType, domain, run_dir: runDir, run_dir_in_project: inProject,
-      fetched_at: new Date().toISOString(), ticket_updated: issue.fields.updated, freshness_key: fk, ticket_json: ticketJson,
+      fetched_at: new Date().toISOString(), ticket_updated: issue.fields.updated, freshness_key: fk, fields: tf.fields, ticket_json: ticketJson,
       ac_fields: acFields, link_fields: linkFields, epic, siblings, inventory: inv.items, prs, rung: ladder.rung, ladder: ladder.ladder, gaps };
     const prepPathOut = join(runDir, "prepare.json");
     writeJson(prepPathOut, prepared);
@@ -340,6 +342,8 @@ function redeploy() {
   // A bundle cached before hotspots/claims existed (fix wave 2, 2026-10-13) has no such keys on its PRs. They
   // default to [] — "none recorded" — so an old bundle still validates; the schema itself is not loosened.
   for (const p of b.change?.prs ?? []) { p.hotspots ??= []; p.claims ??= []; }
+  // Likewise `fields` (2026-10-14): empty values, so an old bundle validates and floors.mjs reads them as doubt.
+  b.fields ??= { summary: "", type: null, status: null, priority: null, components: [], labels: [], fix_versions: [], description: "", acceptance: "" };
   // Script values only: compose took repo, number, state, merged and gap from prepare, never from an agent.
   const d = checkDeployment({ root, key, prs: b.change.prs.map((p) => ({ ref: `${p.repo}#${p.number}`, number: p.number, state: p.state, merged: p.merged,
     context_only: p.context_only, gap: p.gap })) });
