@@ -1832,7 +1832,13 @@ export function toLogLine(line) {
   const out = typeof rest.why === 'string' ? { ...rest, why: withoutLocalPaths(rest.why) } : rest;
   // `ask` has no door, so a question or topic quoting a file on the writer's machine is rewritten here
   // (retest 4) -- only when it names a person, since the question is otherwise published verbatim.
-  for (const k of ['q', 'topic']) if (typeof out[k] === 'string' && hasPersonalPath(out[k])) out[k] = withoutLocalPaths(out[k]);
+  // If the rewrite left something the detector still reads as personal, the whole field goes (retest 5:
+  // `OneDrive - <Company>` with no drive in front was detected and then published unchanged).
+  for (const k of ['q', 'topic']) {
+    if (typeof out[k] !== 'string' || !hasPersonalPath(out[k])) continue;
+    const rewritten = withoutLocalPaths(out[k]);
+    out[k] = hasPersonalPath(rewritten) ? '<local path>' : rewritten;
+  }
   return out;
 }
 
@@ -1844,6 +1850,8 @@ export function withoutLocalPaths(text) {
   const tail = String.raw`[^'"()\r\n]*`;
   const swap = (lead = '') => (m, ...g) => `${typeof g[0] === 'string' && lead ? g[0] : ''}<local path>${/\s+$/.exec(m)?.[0] ?? ''}`;
   return String(text)
+    // `OneDrive - <Company>` names the employer wherever it stands, drive or not (retest 5).
+    .replace(new RegExp(String.raw`OneDrive\s*-\s*[^\\/'"()\r\n]*`, 'gi'), swap())
     .replace(new RegExp(String.raw`file:\/\/` + tail, 'gi'), swap())
     // A separator is required after the drive (retest 4: `Plan B: retry` lost its tail), except before
     // `Users`, the drive-relative profile form.
