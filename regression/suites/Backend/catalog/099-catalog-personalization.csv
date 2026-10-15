@@ -11,23 +11,24 @@ PERS-001,"Tagged Item Round-Trip - PUT Persists Tags, GET Returns Them",Catalog 
 [MATH] After the first PUT tags.length = 1 and the single entry equals the group name that was sent {SPEC}
 [MATH] After the clearing PUT tags.length = 0 - an empty collection is a real removal, not a rejected no-op {SPEC}
 [API] The baseline read and the final read agree, so the case leaves the entity as it found it {OBSERVED}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"Spinner visible >5s, 4xx/5xx on the endpoint under test, empty or malformed response body",Clear every tag this case assigned via PUT /api/personalization/taggeditem with an empty tag set; remove any AGENT-TEST- value added to the Customer.MemberGroups dictionary; verify by reading the entity back,VCST-5282 · Archetype:LIFECYCLE · Technique:FLOW,Draft
-PERS-002,Tag Count Endpoint Reports Direct And Inherited Separately,Catalog > Personalization > Tagged items,Medium,,,"Admin can authenticate against {{BACK_URL}}; a parent category and a child entity beneath it exist, both initially untagged","adminUrl={{BACK_URL}}; parentCategory=live-discover(a category with at least one child entity); childEntity=live-discover(a child of parentCategory); groupA,groupB=AGENT-TEST-PERS02-{run}-A,-B","[AUTH] Obtain an admin access token (POST /connect/token, password grant)
+PERS-002,"Tag Count Endpoint Reports The Distinct Union Of Direct And Inherited Tags",Catalog > Personalization > Tagged items,Medium,,,"Admin can authenticate against {{BACK_URL}}; a parent category and a child entity beneath it exist, both initially untagged","adminUrl={{BACK_URL}}; parentCategory=live-discover(a category with at least one child entity); childEntity=live-discover(a child of parentCategory); groupA,groupB=AGENT-TEST-PERS02-{run}-A,-B","[AUTH] Obtain an admin access token (POST /connect/token, password grant)
 [SETUP] Resolve parentCategory plus childEntity per Test_Data, both untagged
 [HTTP] GET /api/personalization/taggeditem/{childEntity}/tags/count in the untagged state
-[ACT] PUT a single group onto childEntity
+[ACT] PUT a single group onto childEntity (the body must include label and entityType - PUT without label returns 500)
 [WAIT] The write returns
 [HTTP] GET the count again in the direct-only state
-[ACT] PUT an empty tag collection onto childEntity
+[ACT] PUT an empty tag collection onto childEntity (the body must include label and entityType - PUT without label returns 500)
 [WAIT] The write returns
-[ACT] PUT a single group onto parentCategory
+[ACT] PUT a single group onto parentCategory (the body must include label and entityType - PUT without label returns 500)
 [WAIT] The write returns
 [HTTP] GET the count for childEntity in the inherited-only state
-[ACT] PUT a different group directly onto childEntity
+[ACT] PUT a different group directly onto childEntity (the body must include label and entityType - PUT without label returns 500)
 [WAIT] The write returns
-[HTTP] GET the count for childEntity in the mixed state","[MATH] Untagged state: direct = 0 and inherited = 0 {SPEC}
-[MATH] Direct-only state: direct = 1 and inherited = 0 {SPEC}
-[MATH] Inherited-only state: direct = 0 and inherited = 1 - the parent's grant is counted on the child, once {SPEC}
-[MATH] Mixed state: direct = 1 and inherited = 1, so the two groups are never collapsed into one figure {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"Spinner visible >5s, 4xx/5xx on the endpoint under test, empty or malformed response body",Clear every tag this case assigned via PUT /api/personalization/taggeditem with an empty tag set; remove any AGENT-TEST- value added to the Customer.MemberGroups dictionary; verify by reading the entity back,VCST-5282 · Archetype:RENDER · Technique:EP,Draft
+[HTTP] GET the count for childEntity in the mixed state","[MATH] The response body is ONE integer (no direct/inherited split) = distinct(Tags union InheritedTags) {OBSERVED}
+[MATH] Untagged state: count = 0 {OBSERVED}
+[MATH] Direct-only state: count = 1 {OBSERVED}
+[MATH] Inherited-only state: count = 1 - the parent's grant is counted on the child, once {OBSERVED}
+[MATH] Mixed state: count = 2 - a direct tag does not hide the inherited one, and neither is counted twice {OBSERVED}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"Spinner visible >5s, 4xx/5xx on the endpoint under test, empty or malformed response body",Clear every tag this case assigned via PUT /api/personalization/taggeditem with an empty tag set; remove any AGENT-TEST- value added to the Customer.MemberGroups dictionary; verify by reading the entity back,"VCST-5282 · Archetype:RENDER · Technique:EP · Repaired 2026-10-14 (Stable 16 regression VCST-6042): tags/count returns a single combined integer (PersonalizationModuleController.GetTagsCount @3.1006.1, KB-8BF13808); the {SPEC} direct/inherited split never existed. Expectation rewritten to the single-int contract - still fails if inherited tags are dropped when a direct tag exists, or if a tag is double-counted",Draft
 PERS-003,DownTree - A Product Inherits Its Parent Category's Tags,Catalog > Personalization > Tagged items,High,,,"Admin can authenticate against {{BACK_URL}}; TagsInheritancePolicy is DownTree on this environment (verify before running - under UpTree products compute no inherited tags at all and this case is invalid); a category holding at least one product exists, all untagged",adminUrl={{BACK_URL}}; parentCategory=live-discover(a category holding at least one product); childProduct=live-discover(a product inside parentCategory); group=AGENT-TEST-PERS03-{run},"[AUTH] Obtain an admin access token (POST /connect/token, password grant)
 [SETUP] Read the CatalogPersonalization.TagsInheritancePolicy setting - this case is valid only under DownTree
 [SETUP] Resolve parentCategory plus childProduct per Test_Data, both untagged
@@ -72,18 +73,19 @@ PERS-006,A Variation Inherits Through Its Product's Category,Catalog > Personali
 [WAIT] The write returns","[MATH] The product's inheritedTags.length = 1 {SPEC}
 [MATH] The variation's inheritedTags.length = 1 - a variation is reached by the same grant as its parent product {SPEC}
 [API] The variation carries no entry in its own tags collection {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"Spinner visible >5s, 4xx/5xx on the endpoint under test, empty or malformed response body",Clear every tag this case assigned via PUT /api/personalization/taggeditem with an empty tag set; remove any AGENT-TEST- value added to the Customer.MemberGroups dictionary; verify by reading the entity back,VCST-5282 · Archetype:SCOPE · Technique:EP,Draft
-PERS-007,Personalization Search Returns The Tagged Items It Was Asked For,Catalog > Personalization > Tagged items,Medium,,,Admin can authenticate against {{BACK_URL}}; at least two entities are tagged with distinct groups,"adminUrl={{BACK_URL}}; entityA,entityB=live-discover(two distinct untagged catalog entities); groupA,groupB=AGENT-TEST-PERS07-{run}-A,-B","[AUTH] Obtain an admin access token (POST /connect/token, password grant)
-[SETUP] Tag entityA with groupA per Test_Data
+PERS-007,"Personalization Search Filters Tagged Items By EntityIds",Catalog > Personalization > Tagged items,Medium,,,Admin can authenticate against {{BACK_URL}}; at least two entities are tagged with distinct groups,"adminUrl={{BACK_URL}}; entityA,entityB=live-discover(two distinct untagged catalog entities); groupA,groupB=AGENT-TEST-PERS07-{run}-A,-B","[AUTH] Obtain an admin access token (POST /connect/token, password grant)
+[SETUP] Tag entityA with groupA per Test_Data (PUT /api/personalization/taggeditem) (the body must include label and entityType - PUT without label returns 500)
 [WAIT] The write returns
-[SETUP] Tag entityB with groupB per Test_Data
+[SETUP] Tag entityB with groupB per Test_Data (PUT /api/personalization/taggeditem) (the body must include label and entityType - PUT without label returns 500)
 [WAIT] The write returns
-[HTTP] POST /api/personalization/search filtered by groupA
-[HTTP] POST /api/personalization/search filtered by groupB
-[ACT] Clear both tags via PUT with an empty collection
-[WAIT] The writes return","[STATUS] Both search requests return 200 {SPEC}
-[API] The groupA result set contains entityA and does NOT contain entityB {SPEC}
-[API] The groupB result set contains entityB and does NOT contain entityA - the two filters do not leak into each other {SPEC}
-[MATH] Each result set's totalCount = the number of entities this case tagged with that group (1) {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"Spinner visible >5s, 4xx/5xx on the endpoint under test, empty or malformed response body",Clear every tag this case assigned via PUT /api/personalization/taggeditem with an empty tag set; remove any AGENT-TEST- value added to the Customer.MemberGroups dictionary; verify by reading the entity back,VCST-5282 · Archetype:SCOPE · Technique:EP,Draft
+[HTTP] POST /api/personalization/search with entityIds=[entityA]
+[HTTP] POST /api/personalization/search with entityIds=[entityB]
+[ACT] Clear both tags via PUT with an empty collection (the body must include label and entityType - PUT without label returns 500)
+[WAIT] The writes return","[STATUS] Both search requests return 200 {OBSERVED}
+[API] The entityA result set contains entityA (carrying groupA) and does NOT contain entityB {OBSERVED}
+[API] The entityB result set contains entityB (carrying groupB) and does NOT contain entityA - the two filters do not leak into each other {OBSERVED}
+[MATH] Each result set's totalCount = 1 (the number of requested entityIds that are tagged) {OBSERVED}
+[API] The criteria carries no tags field: TaggedItemSearchCriteria has EntityId, EntityIds, EntityType, Ids, ChangedFrom and Label only {OBSERVED}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"Spinner visible >5s, 4xx/5xx on the endpoint under test, empty or malformed response body",Clear every tag this case assigned via PUT /api/personalization/taggeditem with an empty tag set; remove any AGENT-TEST- value added to the Customer.MemberGroups dictionary; verify by reading the entity back,"VCST-5282 · Archetype:SCOPE · Technique:EP · Repaired 2026-10-14 (Stable 16 regression VCST-6042): POST /api/personalization/search ignores a tags criteria field - it was never part of TaggedItemSearchCriteria @3.1006.1 (KB-8BF13808); filter retargeted to entityIds. Still fails if the entityIds filter is ignored (totalCount = all tagged items) or leaks across entities",Draft
 PERS-008,Tagged-Item Write Is Rejected Without The personalization:update Permission,Catalog > Personalization > Tagged items,High,,,"Admin can manage Security roles; a product exists. Self-contained: this case creates and tears down its OWN restricted role and user, holding platform access but NOT personalization:update","adminUrl={{BACK_URL}}, restrictedUserPwd={{DEFAULT_TEST_PASSWORD}}; restrictedRole=AGENT-TEST-NoPers08-{run} (duplicate of a full-access role, remove ONLY personalization:update, keep platform:access); restrictedUser=AGENT-TEST-nopers08-{run}; targetProduct=live-discover(any product); group=AGENT-TEST-PERS08-{run}","[SETUP] As admin, create restrictedRole holding platform access but NOT the personalization:update permission
 [WAIT] The role save returns
 [SETUP] Create restrictedUser with restrictedUserPwd, assigned only restrictedRole

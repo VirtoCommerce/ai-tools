@@ -1,6 +1,6 @@
 # GraphQL xAPI Schema Reference
 
-> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-10-12)
+> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-10-15)
 > **Purpose**: Agents MUST consult this file before writing or reviewing GraphQL queries/mutations.
 > **Refresh**: `npm run schema:refresh` — run when the schema may have changed.
 > **SCOPE — read this before concluding a field does not exist.** The query and mutation
@@ -133,9 +133,9 @@ page(storeId: String!, cultureName: String, id: String!)
 pages(after: String, first: Int, storeId: String!, keyword: String!, cultureName: String)
 pageDocument(id: String!)
 pageDocuments(after: String, first: Int, storeId: String!, keyword: String!, cultureName: String)
+pageContext(domain: String, cultureName: String, permalink: String, organizationId: String, userId: String, storeId: String)
 salesRepDocument(id: String!)
 salesRepDocuments(after: String, first: Int, keyword: String, sort: String, category: String, pinned: Boolean)
-pageContext(domain: String, cultureName: String, permalink: String, organizationId: String, userId: String, storeId: String)
 ```
 
 ### Orders
@@ -191,6 +191,8 @@ return(id: String!)
 returnReasons(storeId: String!, cultureName: String)
 returns(after: String, first: Int, keyword: String, sort: String, storeId: String!, statuses: [String], startDate: DateTime, endDate: DateTime)
 returnStatuses(cultureName: String)
+canLeaveFeedback(storeId: String!, entityId: String!, entityType: String!)
+customerReviews(after: String, first: Int, keyword: String, sort: String, storeId: String!, entityId: String!, entityType: String!, filter: String)
 customerSalesReps(after: String, first: Int, keyword: String, sort: String, storeId: String)
 salesRepCustomerFilterRules(storeId: String, cultureName: String)
 salesRepCustomer(organizationId: String!)
@@ -206,8 +208,6 @@ salesRepTopSellerFilterRules(storeId: String, cultureName: String, organizationI
 salesRepTopSellerSortRules(storeId: String, cultureName: String)
 salesRepTopSellers(organizationId: String, storeId: String, filter: String, sort: String, period: SalesRepStatisticsPeriodInput, take: Int, currencyCode: String, cultureName: String)
 salesRepCustomerCounts(organizationId: String, storeId: String)
-canLeaveFeedback(storeId: String!, entityId: String!, entityType: String!)
-customerReviews(after: String, first: Int, keyword: String, sort: String, storeId: String!, entityId: String!, entityType: String!, filter: String)
 ```
 
 ### Profile

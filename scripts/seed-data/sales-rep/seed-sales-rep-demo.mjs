@@ -215,7 +215,7 @@ async function findExisting(memberType, marker, name, ledgerId) {
   const rows = res?.results || [];
   const hit = rows.find((m) => m.outerId === marker) || rows.find((m) => m.name === name) || null;
   if (!hit && !ledgerId) {
-    verbose(`no ${memberType} found for "${name}" by marker or name — will CREATE`);
+    verbose(`no ${memberType} found for "${name}" by marker or name${TEARDOWN ? ' — nothing to sweep' : ' — will CREATE'}`);
   }
   return hit;
 }
@@ -767,7 +767,7 @@ async function teardown() {
       const name = type === 'organization' ? spec.name : `${spec.firstName} ${spec.lastName}`;
       const m = demoMarker(marker, spec.key);
       if (!markerSweepInScope(m, ONLY)) continue;
-      const hit = await findByMarker(type === 'organization' ? 'Organization' : 'Contact', m, name);
+      const hit = await findExisting(type === 'organization' ? 'Organization' : 'Contact', m, name);
       if (hit?.id && hit.outerId === m && !fromLedger.includes(hit.id)) swept.push(hit.id);
     }
     const ids = [...new Set([...fromLedger, ...swept])];
