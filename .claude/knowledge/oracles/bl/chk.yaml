@@ -143,5 +143,8 @@ rules:
       kind: manual
       ref: Open address-selection popup with a user whose address book contains ≥1 US or CA address → "State/Province" facet visible with term values. Apply Country facet = non-US/CA country (e.g., GB) → "State/Province" facet disappears from DOM (not just empties). Remove Country filter → facet reappears. For a user with only non-US/CA addresses (e.g., Albania-only), facet must not be rendered at all.
     violation_signal: '"State/Province" facet visible with empty/zero values when result set has no non-null regionId; facet persists in DOM after filter narrows the set to null-region addresses only; facet missing when USA/Canada addresses are present.'
-    status: SUSPECT
-    suspect_reason: "[case] A11Y-SORT-001, A11Y-SORT-002, A11Y-SORT-003 failed in REG-2026-10-15-1115"
+    status: ACTIVE
+    verified:
+      date: 2026-10-15
+      version: "platform 3.1083.0; storefront theme 2.60.0-alpha.2579"
+      by: BL-AUDIT-2026-10-15

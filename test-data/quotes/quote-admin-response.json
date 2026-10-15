@@ -11,13 +11,13 @@
       "sku": "AGENT-TEST-QTE-SKU-1",
       "productId": "agent-test-qte-prod-1",
       "name": "AGENT-TEST Quoted Item 1",
-      "quantity": 10
+      "quantity": 3
     },
     {
       "sku": "AGENT-TEST-QTE-SKU-2",
       "productId": "agent-test-qte-prod-2",
       "name": "AGENT-TEST Quoted Item 2",
-      "quantity": 5
+      "quantity": 2
     }
   ],
   "addresses": [

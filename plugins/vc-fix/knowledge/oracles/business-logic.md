@@ -329,7 +329,6 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Agents:** qa-frontend-expert, qa-backend-expert, qa-testing-expert, test-management-specialist
 - **Source:** VCST-4710 (Done) — address selection popup story: sorting, full-text search, and faceted filtering by Country, City and State
 - **Trust:** INFERRED
-- **Lifecycle:** SUSPECT — [case] A11Y-SORT-001, A11Y-SORT-002, A11Y-SORT-003 failed in REG-2026-10-15-1115
 
 ---
 
@@ -2411,7 +2410,7 @@ ticket or a docs page disputes (`status`).
 |--------|----------|-------|----|----|----|----------|---------|
 | Pricing & Discounts | BL-PRICE-001–009 | 9 | 7 | 1 | 1 | 6 | 2 |
 | Cart | BL-CART-001–015 | 15 | 5 | 10 | 0 | 7 | 1 |
-| Checkout | BL-CHK-001–008 | 8 | 5 | 3 | 0 | 1 | 3 |
+| Checkout | BL-CHK-001–008 | 8 | 5 | 3 | 0 | 1 | 2 |
 | Orders & Fulfillment | BL-ORD-001–010 | 10 | 3 | 7 | 0 | 5 | 2 |
 | Users & Authentication | BL-AUTH-001–017 | 17 | 5 | 11 | 1 | 9 | 3 |
 | B2B / Organization | BL-B2B-001–013 | 13 | 4 | 9 | 0 | 10 | 3 |
@@ -2438,4 +2437,4 @@ ticket or a docs page disputes (`status`).
 | Analytics & Tracking | BL-GA4-001–004 | 4 | 0 | 4 | 0 | 3 | 2 |
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Returns | — | 0 | 0 | 0 | 0 | 0 | 0 |
-| **Total** | | **223** | **60** | **125** | **38** | **114** | **44** |
+| **Total** | | **223** | **60** | **125** | **38** | **114** | **43** |

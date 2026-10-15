@@ -330,8 +330,10 @@ export function quoteDriftProblems(spec, live, expect = {}, now = new Date()) {
     const tier = it.selectedTierPrice?.price ?? it.proposalPrices?.[0]?.price;
     if (spec.adminPriced && !(Number(tier) > 0 && Number(tier) < Number(it.listPrice))) p.push(`line ${it.sku}: proposal ${tier} is not below list ${it.listPrice}`);
   }
-  if (spec.oosLineIndex !== undefined && expect.oosProductId && items[spec.oosLineIndex]?.productId !== expect.oosProductId) {
-    p.push(`line ${spec.oosLineIndex + 1} is not the OOS product`);
+  // The platform does not keep line order on read-back (vcst 2026-10-15), so the OOS line is matched by product.
+  if (spec.oosLineIndex !== undefined && expect.oosProductId) {
+    const oosLines = items.filter((it) => it.productId === expect.oosProductId).length;
+    if (oosLines !== 1) p.push(`${oosLines} line(s) carry the OOS product (need exactly 1, beside in-stock lines)`);
   }
   return p;
 }
