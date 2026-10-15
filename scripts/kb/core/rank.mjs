@@ -209,13 +209,16 @@ export function admissible(hit) {
  * REJECTED candidate too: `nearMiss` is what tells a later reader whether the floor is set too
  * high, and whether some entry is phrased so unlike the way people ask that it can never be found.
  *
+ * `namespaces` may be passed in when `rows` is a SUBSET of the corpus: the roots are a property of the
+ * whole index, and a caller scoring a few rows against it (the report's near-miss panel) would
+ * otherwise get different anchor hits than the ranker did.
+ *
  * @returns {Array<{row, score, overlap, anchors, coverage, admissible}>} sorted best first
  */
-export function scoreRows(question, rows) {
+export function scoreRows(question, rows, { namespaces = namespaceRoots(rows) } = {}) {
   const qTokens = tokenize(question);
   const qSet = new Set(qTokens);
   const qLower = String(question ?? '').toLowerCase();
-  const namespaces = namespaceRoots(rows);
 
   const scored = rows.map((row) => {
     const haystack = new Set(tokenize(`${row.subject} ${row.question}`));
