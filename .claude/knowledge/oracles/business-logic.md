@@ -466,6 +466,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Docs:** platform/developer-guide/docs/Tutorials-and-How-tos/How-tos/user-email-verification.md (published) — email verification is a per-store toggle, disabled by default, checked on registration.
 - **Docs:** platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Profile/Mutations/confirmEmail.md (published) — confirming the email completes verification, allowing the customer to sign in.
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [code] vc-module-profile-experience-api@42213c4:src/VirtoCommerce.ProfileExperienceApiModule.Data/Commands/RegisterRequestCommandHandler.cs#LockAccount - when email verification is required the account is locked until the email is confirmed, so the user cannot sign in at all; the rule describes a signed-in unverified user (browse, cart allowed, checkout blocked, 'Please verify' message) and expiring links - re-run the check
 
 ### BL-AUTH-003: Account lockout after N failed attempts `[P1-data]`
 - **Rule:** After a configurable number of consecutive failed login attempts (platform default: 5), the account is temporarily locked. During lockout, even correct credentials are rejected with a generic message (not revealing whether the account exists). Lockout duration is configurable. Successful login resets the failure counter.
@@ -859,6 +860,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Agents:** qa-frontend-expert, qa-backend-expert
 - **Source:** VP-7347 (Done) — a child of a hidden category was still returned as visible; fixed: subcategories inherit hidden
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [code] vc-module-catalog@f3b31c3:src/VirtoCommerce.CatalogModule.Data/Search/Indexing/ProductDocumentBuilder.cs#IsVisible (:369-374) indexes a product as status 'hidden' unless product.IsActive && ParentCategoryIsActive (CatalogProduct.cs:465, category and all ancestors active), commented 'Product must inherit hidden flag from parent categories'; this contradicts the clause 'products within a hidden category remain accessible via ... search'. No human source decides it (VP-7347 covers only child categories inheriting hidden), re-run the check
 
 ### BL-CAT-005: Product requires virtual catalog assignment for storefront `[P1-data]`
 - **Rule:** A product that exists only in a physical catalog (not linked to any virtual catalog assigned to a store) will NOT appear on the storefront. The storefront reads from the single catalog assigned to the store, which may be a physical catalog directly or a virtual catalog built over one or more physical catalogs. Products must be in a category within the store's assigned catalog (or its linked physical catalog) to be visible.
@@ -2410,9 +2412,9 @@ ticket or a docs page disputes (`status`).
 | Cart | BL-CART-001–015 | 15 | 5 | 10 | 0 | 7 | 1 |
 | Checkout | BL-CHK-001–008 | 8 | 5 | 3 | 0 | 1 | 3 |
 | Orders & Fulfillment | BL-ORD-001–010 | 10 | 3 | 7 | 0 | 5 | 2 |
-| Users & Authentication | BL-AUTH-001–017 | 17 | 5 | 11 | 1 | 9 | 2 |
+| Users & Authentication | BL-AUTH-001–017 | 17 | 5 | 11 | 1 | 9 | 3 |
 | B2B / Organization | BL-B2B-001–013 | 13 | 4 | 9 | 0 | 10 | 3 |
-| Catalog & Inventory | BL-CAT-001–012 | 12 | 2 | 6 | 4 | 8 | 4 |
+| Catalog & Inventory | BL-CAT-001–012 | 12 | 2 | 6 | 4 | 8 | 5 |
 | Cross-Domain Invariants | BL-CROSS-001–012 | 12 | 7 | 5 | 0 | 5 | 6 |
 | Search | BL-SRCH-001–007 | 7 | 0 | 5 | 2 | 6 | 0 |
 | Shipping & BOPIS | BL-SHIP-001–004 | 4 | 2 | 2 | 0 | 2 | 0 |
@@ -2435,4 +2437,4 @@ ticket or a docs page disputes (`status`).
 | Analytics & Tracking | BL-GA4-001–004 | 4 | 0 | 4 | 0 | 3 | 2 |
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Returns | — | 0 | 0 | 0 | 0 | 0 | 0 |
-| **Total** | | **223** | **60** | **125** | **38** | **114** | **41** |
+| **Total** | | **223** | **60** | **125** | **38** | **114** | **43** |
