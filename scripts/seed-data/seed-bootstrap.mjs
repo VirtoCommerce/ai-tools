@@ -27,6 +27,7 @@
 
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   ROOT, DRY_RUN, VERBOSE, api, auth, assertSafeTarget,
@@ -208,7 +209,9 @@ const STEPS = [
   { name: 'sales-rep', script: 'sales-rep/seed-sales-rep-family.mjs', required: false, priority: 142 },
   // VCST-5884 organization returns: creates its own orgs/accounts/roles, then orders on live-discovered
   // products (40) in the store (80). Optional: needs the Return module + Return.ReturnEnabled on the store.
-  { name: 'returns-org', script: 'orders/seed-org-returns.mjs', required: false, priority: 143 },
+  // `demoFamily`: skipped while that family holds its DEMO profile (seed-returns-family.mjs stamps it),
+  // or a routine bootstrap would put AGENT-TEST returns beside the demo in the Admin Return list.
+  { name: 'returns-org', script: 'orders/seed-org-returns.mjs', required: false, priority: 143, demoFamily: 'returns' },
   { name: 'quotes', script: 'orders/seed-quotes.mjs', required: false, priority: 145 },
   // Push Messages inboxes (suite 068): tops the reader's inbox up to a mixed read/unread state and
   // sends the bulk recipient 3 fresh messages. After company-users (100), which creates the
@@ -276,8 +279,16 @@ function runStep(step) {
 
   // ── Seeder chain ──
   const results = [];
+  const demoProfiles = (() => {
+    try { return JSON.parse(readFileSync(join(ROOT, `test-data/aliases.${process.env.TEST_ENV || 'vcst'}.json`), 'utf8'))?._meta?.dataset_profiles || {}; } catch { return {}; }
+  })();
   for (const step of STEPS) {
     if (SKIP_OPTIONAL && !step.required) { results.push({ ...step, status: 'skipped' }); continue; }
+    if (step.demoFamily && /-demo$/.test(demoProfiles[step.demoFamily] || '')) {
+      log(`\n─── seed:${step.name} skipped — the ${step.demoFamily} family holds its demo profile here (npm run seed:demo:teardown to release it) ───`);
+      results.push({ ...step, status: 'skipped' });
+      continue;
+    }
     const okStep = runStep(step);
     if (okStep) results.push({ ...step, status: 'ok' });
     else if (step.required) {

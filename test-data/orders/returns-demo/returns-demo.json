@@ -1,0 +1,316 @@
+{
+  "_meta": {
+    "description": "Presentation-grade returns demo (seed-returns-demo.mjs). Stands on the sales-rep demo: org/buyer keys are DEMO_ORGS / DEMO_CONTACTS in sales-rep-demo-specs.mjs. No AGENT-TEST string, no GUID, no SKU — products are discovered per org, reason codes are checked against the LIVE store, the window against the LIVE returnPolicy.",
+    "fields": {
+      "orders[].deliveredDaysAgo": "shipment DeliveryDate offset from seed time — the date the return window is computed from",
+      "orders[].lines[]": "ordered qty + unit price; one distinct discovered product per line; quantities distinct within an order",
+      "returns[].outcome": "final status: Draft | Requested | Approved | PartiallyApproved | Rejected | Cancelled | Completed",
+      "returns[].lines[].line": "1-based index into the order lines",
+      "returns[].lines[].approve": "approved qty (decided outcomes only); 0 = declined",
+      "returns[].seq": "submit order — the platform numbers returns in creation order"
+    }
+  },
+  "currency": "USD",
+  "windowDaysAssumed": 30,
+  "orders": [
+    {
+      "key": "DRO-NW-01",
+      "org": "DORG-NORTHWIND",
+      "buyer": "DCT-NW-2",
+      "deliveredDaysAgo": 6,
+      "lines": [
+        {
+          "qty": 200,
+          "price": 0.85
+        },
+        {
+          "qty": 120,
+          "price": 1.4
+        },
+        {
+          "qty": 50,
+          "price": 3.2
+        }
+      ],
+      "purchaseOrder": "PO 4500-118204"
+    },
+    {
+      "key": "DRO-NW-02",
+      "org": "DORG-NORTHWIND",
+      "buyer": "DCT-NW-1",
+      "deliveredDaysAgo": 12,
+      "lines": [
+        {
+          "qty": 40,
+          "price": 12.5
+        },
+        {
+          "qty": 10,
+          "price": 46
+        }
+      ],
+      "purchaseOrder": "PO 4500-117951"
+    },
+    {
+      "key": "DRO-CN-01",
+      "org": "DORG-CONTOSO",
+      "buyer": "DCT-CN-2",
+      "deliveredDaysAgo": 3,
+      "lines": [
+        {
+          "qty": 2,
+          "price": 489
+        },
+        {
+          "qty": 6,
+          "price": 64.9
+        },
+        {
+          "qty": 12,
+          "price": 38
+        }
+      ],
+      "purchaseOrder": "CMF-PR-22817"
+    },
+    {
+      "key": "DRO-CN-02",
+      "org": "DORG-CONTOSO",
+      "buyer": "DCT-CN-1",
+      "deliveredDaysAgo": 20,
+      "lines": [
+        {
+          "qty": 1,
+          "price": 1249
+        },
+        {
+          "qty": 10,
+          "price": 29.5
+        }
+      ],
+      "purchaseOrder": "CMF-PR-22604"
+    },
+    {
+      "key": "DRO-FB-01",
+      "org": "DORG-FABRIKAM",
+      "buyer": "DCT-FB-2",
+      "deliveredDaysAgo": 9,
+      "lines": [
+        {
+          "qty": 8,
+          "price": 159
+        },
+        {
+          "qty": 3,
+          "price": 899
+        }
+      ],
+      "purchaseOrder": "FAB-0098731"
+    },
+    {
+      "key": "DRO-FB-02",
+      "org": "DORG-FABRIKAM",
+      "buyer": "DCT-FB-1",
+      "deliveredDaysAgo": 1,
+      "lines": [
+        {
+          "qty": 2,
+          "price": 1150
+        },
+        {
+          "qty": 5,
+          "price": 74
+        }
+      ],
+      "purchaseOrder": "FAB-0098902"
+    },
+    {
+      "key": "DRO-WT-01",
+      "org": "DORG-WINGTIP",
+      "buyer": "DCT-WT-1",
+      "deliveredDaysAgo": 15,
+      "lines": [
+        {
+          "qty": 100,
+          "price": 4.75
+        },
+        {
+          "qty": 50,
+          "price": 9.9
+        },
+        {
+          "qty": 20,
+          "price": 22
+        }
+      ],
+      "purchaseOrder": "WES-77120"
+    },
+    {
+      "key": "DRO-WT-02",
+      "org": "DORG-WINGTIP",
+      "buyer": "DCT-WT-1",
+      "deliveredDaysAgo": 2,
+      "lines": [
+        {
+          "qty": 30,
+          "price": 6.4
+        },
+        {
+          "qty": 10,
+          "price": 18.5
+        }
+      ],
+      "purchaseOrder": "WES-77388"
+    }
+  ],
+  "returns": [
+    {
+      "key": "DRET-NW-01",
+      "order": "DRO-NW-01",
+      "outcome": "Completed",
+      "seq": 10,
+      "reference": "RMA request — dock 3 receiving",
+      "comment": "Two cartons were crushed on arrival at the Seattle yard and twenty units are dented. Photos of the packaging attached.",
+      "lines": [
+        {
+          "line": 1,
+          "qty": 20,
+          "reason": "DamagedInTransit",
+          "reasonComment": "Outer cartons crushed in the trailer, units dented.",
+          "approve": 20,
+          "evidence": "crushed-carton-dock3.png"
+        }
+      ]
+    },
+    {
+      "key": "DRET-CN-01",
+      "order": "DRO-CN-01",
+      "outcome": "PartiallyApproved",
+      "seq": 20,
+      "reference": "Print room — faulty units",
+      "comment": "One unit will not power on, and four arrived as the wrong model for our fleet.",
+      "declineReason": "Units that were unboxed and installed cannot be resold; only unopened units qualify under the Returns and Warranty Policy.",
+      "lines": [
+        {
+          "line": 1,
+          "qty": 1,
+          "reason": "FaultyOnArrival",
+          "reasonComment": "No power on first start-up, status light stays off.",
+          "approve": 1,
+          "evidence": "printer-no-power.png"
+        },
+        {
+          "line": 2,
+          "qty": 4,
+          "reason": "WrongItemDelivered",
+          "reasonComment": "Ordered the duplex model, received the simplex one.",
+          "approve": 1,
+          "decline": "Three of the four units were unboxed and installed.",
+          "evidence": "model-labels.png"
+        }
+      ]
+    },
+    {
+      "key": "DRET-CN-02",
+      "order": "DRO-CN-02",
+      "outcome": "Rejected",
+      "seq": 30,
+      "reference": "Surplus — Columbus plant",
+      "comment": "Project was cancelled; we would like to return the unit unused.",
+      "declineReason": "Supplied as a special order; not returnable under the Terms and Conditions of Sale.",
+      "lines": [
+        {
+          "line": 1,
+          "qty": 1,
+          "reason": "NoLongerNeeded",
+          "approve": 0,
+          "decline": "Special-order item.",
+          "evidence": "unit-in-original-box.png"
+        }
+      ]
+    },
+    {
+      "key": "DRET-WT-01",
+      "order": "DRO-WT-01",
+      "outcome": "Cancelled",
+      "seq": 40,
+      "reference": "Van stock overflow",
+      "comment": "Over-ordered for the Mesa job.",
+      "cancelReason": "Crew found a use for them on the next site — keeping the stock.",
+      "lines": [
+        {
+          "line": 2,
+          "qty": 10,
+          "reason": "NoLongerNeeded",
+          "evidence": "van-stock-shelf.png"
+        }
+      ]
+    },
+    {
+      "key": "DRET-WT-02",
+      "order": "DRO-WT-01",
+      "outcome": "Approved",
+      "seq": 50,
+      "reference": "Wrong length delivered",
+      "comment": "Fifteen packs are the wrong length for the job sheet.",
+      "lines": [
+        {
+          "line": 1,
+          "qty": 15,
+          "reason": "WrongItemDelivered",
+          "reasonComment": "Job sheet calls for 2 m runs; the packs are 1 m.",
+          "approve": 15,
+          "evidence": "pack-length-label.png"
+        }
+      ]
+    },
+    {
+      "key": "DRET-FB-01",
+      "order": "DRO-FB-01",
+      "outcome": "Requested",
+      "seq": 60,
+      "reference": "Plant 2 — battery faults",
+      "comment": "Two units show a cell-balance error straight out of the box.",
+      "lines": [
+        {
+          "line": 1,
+          "qty": 2,
+          "reason": "FaultyOnArrival",
+          "reasonComment": "BMS reports cell imbalance on first charge.",
+          "evidence": "battery-bms-error.png"
+        }
+      ]
+    },
+    {
+      "key": "DRET-NW-02",
+      "order": "DRO-NW-02",
+      "outcome": "Requested",
+      "seq": 70,
+      "reference": "Duplicate PO line",
+      "comment": "The same line was entered twice on our purchase order.",
+      "lines": [
+        {
+          "line": 2,
+          "qty": 5,
+          "reason": "OrderedByMistake",
+          "evidence": "duplicate-po-line.png"
+        }
+      ]
+    },
+    {
+      "key": "DRET-NW-03",
+      "order": "DRO-NW-01",
+      "outcome": "Draft",
+      "seq": 80,
+      "reference": "Mixed-up model — to confirm",
+      "comment": "Still checking the boxes on the shelf before submitting.",
+      "lines": [
+        {
+          "line": 3,
+          "qty": 5,
+          "reason": "WrongItemDelivered",
+          "reasonComment": "Packing slip lists a different model from the units in the box."
+        }
+      ]
+    }
+  ]
+}
