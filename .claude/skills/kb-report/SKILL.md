@@ -28,7 +28,7 @@ Misses first, because **the miss list is the work queue**.
 |---|---|---|
 | — | **§15 acceptance verdict** | Three thresholds, judged against this window. Above panel 1 because it is the gate. See below. |
 | 1a | **Near misses** | The best candidate each miss *rejected*, sorted by coverage descending — the floor's own error bar. See below. |
-| 1 | **Misses** | A question asked and not answered, ranked by repeat count. Asked three times and never answered is the highest-value entry nobody has written — go find out, then `kb_capture`. `unreachable` asks are counted **separately and are not misses**: the base was not read, so they say nothing about coverage. |
+| 1 | **Misses** | A question asked and not answered, ranked by repeat count. Asked three times and never answered is the highest-value entry nobody has written — go find out, then `kb_capture`. `unreachable` asks are counted **separately and are not misses**: the base was not read, so they say nothing about coverage. Nor are **unclosed lists** (an `ambiguous` ask the agent closed with neither `kb_show` nor `kb_none`): they are listed apart, as a closure failure, never as a gap in the base. |
 | 2 | **Unhelpful answers** | The miss the miss list cannot see. See below — this is the panel that decides ranking. |
 | 3 | **Questions asked** | Everything asked, answered or not, by frequency and by session. What agents actually want, which cannot be guessed in advance, only observed. |
 | 4 | **Entries used / never used** | A never-served entry is either unfindable or worthless. The log **names the candidates; it does not decide which** — and an entry written yesterday cannot have been used last month, so read it against the window. Not a retirement list. |
@@ -39,6 +39,11 @@ Misses first, because **the miss list is the work queue**.
 | 9 | **Doors** | Agent calls per route (`mcp`, `cli`), how many carry an `agent`, and which ones. `unattributed` is the share no per-agent reading speaks for. A Claude Code CLI call is matched to its shell tool call at push time (`scripts/kb/core/caller.mjs`), so a high `cli` unattributed count means a plain terminal, a script, or lines pushed before that matcher existed. |
 
 ## Panel 1a — near misses, the floor's own error bar
+
+**Under the verdict ranker** an ask logs the candidates it showed, not a `nearMiss`. For an ask the
+agent closed with `kb_none`, the panel scores the best of those shown candidates against the index
+with the ranker's own `scoreRows` and labels the row `rejected by: the agent`. An in-band row then
+means the agent turned away a candidate covering most of its question: read whether it answered.
 
 The admissibility floor (`rank.mjs`) returns nothing when no candidate carries an anchor or clears
 **≥ 2 overlapping words AND ≥ 50% of the question**. When it refuses, the miss line records the best

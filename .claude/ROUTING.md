@@ -59,6 +59,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Report on the knowledge base itself** (what was asked, what it could not answer) | `/kb-report` | Skill |
 | **Settle a disputed knowledge-base entry** (live investigation, verdict as a reviewed PR on the base) | `/kb-judge <KB-id> \| cluster <KB-id> \| next` | Skill |
 | **Build a ticket's test model (fault model) on its own** | `/qa-test-model <ticket-key> [--context <file>]` | Skill |
+| **Choose a ticket's test strategy before running anything** (risks, mix, technique + oracle per risk, artifacts, criteria; one approval) | `/qa-test-strategy <ticket-key> [--domain <slug>] [--yes]` | Skill |
 | **Model how a domain behaves (behaviour graph, stable ids, evidence)** | `/qa-test-mind-map build \| update \| audit <domain-slug>` | Skill |
 | **Declare the data state each behaviour needs / seed one profile** | `/qa-test-data-model build \| update \| audit <domain-slug>` · `/qa-seed-data --profile <id>` | Skill |
 | **Design the test-data combinations a feature needs** | `/qa-generate-data <feature \| flow \| VCST-XXXX>` | Skill |

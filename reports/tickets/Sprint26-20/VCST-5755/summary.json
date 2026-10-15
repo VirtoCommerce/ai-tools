@@ -1,0 +1,145 @@
+{
+  "ticket": "VCST-5755",
+  "ticket_type": "Task",
+  "flow": "feature-test",
+  "path": "fast",
+  "path_route": {
+    "decided_at": "1a",
+    "provisional": "fast",
+    "confirmed": "fast",
+    "reason": "Task, Medium (P2), single layer (module: vc-module-sales-rep PR #18, C# only), single domain (sales-rep); not technical-change (observable freshness behaviour changes)"
+  },
+  "layer": "module",
+  "shape_class": {
+    "value": "none",
+    "sources": [
+      "PR #18 diff: C# under src/VirtoCommerce.SalesRep.*, no UI/token files"
+    ]
+  },
+  "domain_map": {
+    "state": "PRESENT",
+    "path": ".claude/knowledge/domain/sales-rep.md",
+    "mind_map": ".claude/knowledge/domain/sales-rep.mind-map.json"
+  },
+  "verdict": "PASS WITH NOTES",
+  "date": "2026-10-12",
+  "environment": "vcptcore-qa",
+  "build": {
+    "salesrep_declared": "3.1013.0-pr-18-42c1",
+    "salesrep_deployed": "3.1013.0-pr-18-42c1",
+    "platform_deployed": "3.1078.0",
+    "deployed_source": "GET /api/platform/modules + module settings (8 Statistics settings present)",
+    "pr": "VirtoCommerce/vc-module-sales-rep#18 @42c1b8e (open, unmerged)",
+    "deploy_pr": "vc-deploy-dev#6904",
+    "delta_vs_prior_run": "d367 -> 42c1: CI workflow files only; module code identical",
+    "first_probe_note": "at 07:3x UTC the stand still ran pr-15-7910 (VCST-5337) → BLOCKED-on-deploy; re-probe after vc-deploy-dev#6904 (07:22 UTC) cleared it",
+    "topology": "2 backend replicas, Redis healthy"
+  },
+  "timing": {
+    "test_window_start": "2026-10-12T07:41:27Z",
+    "test_window_end": "2026-10-12T08:09:00Z",
+    "agent_dispatches": 1,
+    "reachability_minutes": null
+  },
+  "status_transitions": [
+    {
+      "hop": "opening",
+      "at": "1a",
+      "skipped": true,
+      "reason": "ticket already in Testing"
+    }
+  ],
+  "agents_dispatched": [
+    {
+      "agent": "qa-backend-expert",
+      "lane": "none (API only)",
+      "track": "4a"
+    },
+    {
+      "agent": "orchestrator inline",
+      "lane": "playwright-edge",
+      "track": "4a (C11 Admin UI re-check)"
+    }
+  ],
+  "epic": {
+    "key": "VCST-5142",
+    "summary": "Sales Rep Hub Epic"
+  },
+  "ac_analysis": {
+    "total": 12,
+    "pass": 11,
+    "not_tested": [
+      "AC-5 benchmark — IN PROGRESS: reduced-scale perf dataset (SR_REP_PERF, 15 orgs) on vcptcore-qa; createdDate server-assigned → current period only"
+    ],
+    "notes": [
+      "AC-12 verified via settings API AND Admin UI (Settings > Sales Rep > Statistics, 2026-10-12 08:07 UTC); raw labels = VCST-6229",
+      "Oracle gap: no BL-* invariant for sales-rep statistics freshness / cache invalidation",
+      "kb (vcptcore_qa): confirmed KB-D9D1A006, KB-912C89CE, KB-30814F3D, KB-F85ADC2B; captured KB-08FAC65C, KB-93561B6C"
+    ]
+  },
+  "total_cases": 14,
+  "passed": 13,
+  "failed": 0,
+  "blocked": 0,
+  "new_cases_authored": 0,
+  "regression": {
+    "c1": "SKIPPED — FAST, no --coverage: no REPAIR/RE-BASE/new cases"
+  },
+  "coverage_triage": {
+    "ran": false,
+    "reason": "FAST without --coverage"
+  },
+  "visual": {
+    "surface": "false",
+    "surface_source": [
+      "no .vue/.css/blade files in PR #18",
+      "layer module"
+    ],
+    "ran": false
+  },
+  "contract": {
+    "surface": "false",
+    "surface_source": [
+      "no GraphType/schema change in PR #18 diff"
+    ],
+    "ran": false
+  },
+  "test_data": {
+    "data_surface": "false",
+    "fixtures": [
+      "@td(SR_REP_PRIMARY)"
+    ],
+    "created_in_case": "2 orders + 5 carts AGENT-TEST-5755-*, all deleted by id",
+    "settings_after": "TTLs restored to 1; CartInvalidateOnChange stored true, TopSellerInvalidateOnChange stored false (= defaults, API cannot unset); Order/CustomerCounts flags untouched"
+  },
+  "business_rules_verified": [
+    "BL-SR-002",
+    "BL-SR-005",
+    "BL-SR-006",
+    "BL-SR-001"
+  ],
+  "bugs_filed": [],
+  "bugs_not_filed": [
+    {
+      "title": "my-last-orders sort ignores a cancelled last order that lastOrder still displays",
+      "severity": "Low",
+      "provenance": "OUT-OF-SCOPE",
+      "reason": "below severity floor",
+      "draft": "reports/bugs/open/low/BUG-SalesRep-Customers-LastOrders-Sort-Ignores-Cancelled-LastOrder.md"
+    }
+  ],
+  "discovery": null,
+  "appinsights": {
+    "ran": false,
+    "reason": "not correlated on this FAST API-only run"
+  },
+  "tracker": {
+    "comment_posted": true,
+    "comment_id": "111897",
+    "comment_kind": "interim (AC-5 in progress; amend with AC-5 result)",
+    "attachments": [
+      "86197 admin-settings-salesrep-statistics-vcptcore.png"
+    ],
+    "status_changed": false
+  }
+}

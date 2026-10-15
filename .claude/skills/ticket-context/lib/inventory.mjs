@@ -4,8 +4,9 @@
 // carrying a gap) or is routed (PR -> prRefs; an attachment URL of THIS issue -> its existing item; a link to
 // the issue itself -> dropped).
 import { createHash } from "node:crypto";
+import { CAPS } from "./fetch.mjs";
 import { gap } from "./gap.mjs";
-import { redactUrlLabel } from "./scrub.mjs";
+import { redactText, redactUrlLabel } from "./scrub.mjs";
 
 const URL_RE = /https?:\/\/[^\s<>"'`)\]}|]+/g;
 const trimUrl = (u) => u.replace(/[.,;:!?]+$/, "");
@@ -239,4 +240,42 @@ export function rankLinked(items, { parentKey = null, subtaskKeys = [], order = 
 /** The over-cap gap of a linked issue the ranking put past the cap: its key and group are in the detail. */
 export function linkedOverCap(item, rank, cap) {
   return gap(item.ref, "over-cap", `more than ${cap} linked issues: ${item.key} (${item.link_group ?? "other"}) ranked ${rank + 1}, past the cap — subtasks/parent, blocks/causes, clones/duplicates, relates are kept first, newest first`);
+}
+
+// The ticket's own fields, for consumers that need the story as written and for the strategy's floors
+// (priority → F1, type → F2/F7). ticket.json is deleted with the run dir, so the bundle carries them. Plain
+// text only; untrusted data (S1).
+const ADF_BLOCKS = new Set(["paragraph", "heading", "listItem", "blockquote", "codeBlock", "rule", "tableRow", "panel"]);
+export function adfText(node) {
+  if (typeof node === "string") return node;
+  if (Array.isArray(node)) return node.map(adfText).filter(Boolean).join("\n"); // a multi-select custom field
+  if (!node || typeof node !== "object") return "";
+  if (!node.type && typeof node.value === "string") return node.value; // a select/option custom field: { value }
+  if (node.type === "text") return node.text ?? "";
+  if (node.type === "hardBreak") return "\n";
+  if (node.type === "mention") return "@mention"; // a person's name is not testing context
+  const inner = (node.content ?? []).map(adfText).join(node.type === "tableRow" ? " | " : "");
+  return ADF_BLOCKS.has(node.type) ? `${inner}\n` : inner;
+}
+
+// The text fields are redacted here (env secret values, then token shapes): no agent mode writes `fields`, so a
+// token pasted into a description would otherwise fail gate rule 6 with nothing able to fix it.
+export function ticketFields(issue, acFieldIds = [], secrets = new Set()) {
+  const f = issue.fields ?? {};
+  const gaps = [];
+  const capped = (where, s) => {
+    const t = redactText(String(s ?? ""), secrets).replace(/\n{3,}/g, "\n\n").trim();
+    if (t.length <= CAPS.fieldText) return t;
+    gaps.push(gap(where, "over-cap", `${t.length} chars; the first ${CAPS.fieldText} kept`));
+    return t.slice(0, CAPS.fieldText);
+  };
+  return { gaps, fields: {
+    summary: redactText(f.summary ?? "", secrets), type: f.issuetype?.name ?? null, status: f.status?.name ?? null, priority: f.priority?.name ?? null,
+    // Every string goes through the scrubber: gate rule 6 scans the whole bundle and no agent mode can repair `fields`.
+    components: (f.components ?? []).map((c) => c?.name).filter(Boolean).map((s) => redactText(s, secrets)),
+    labels: (f.labels ?? []).filter((s) => typeof s === "string").map((s) => redactText(s, secrets)),
+    fix_versions: (f.fixVersions ?? []).map((v) => v?.name).filter(Boolean).map((s) => redactText(s, secrets)),
+    description: capped("fields.description", adfText(f.description)),
+    acceptance: capped("fields.acceptance", acFieldIds.map((id) => adfText(f[id]).trim()).filter(Boolean).join("\n\n")),
+  } };
 }
