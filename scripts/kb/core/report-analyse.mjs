@@ -28,7 +28,7 @@ import { isLegacyProcessKey, lineTouches, lineWork, sessionKeyOf } from './reach
 /** Log kinds this analysis knows about. Anything else is counted and otherwise ignored. */
 export const KNOWN_KINDS = Object.freeze([
   'ask', 'show', 'capture', 'capture-refused', 'capture-invalid', 'confirm', 'dispute', 'flush', 'reindex', 'redacted',
-  'confirm-invalid', 'dispute-invalid',
+  'confirm-invalid', 'dispute-invalid', 'capture-held',
 ]);
 
 // ── the numbers §15 is judged by, DECLARED HERE AND NOT PASSED IN ──────────────────────────────
@@ -701,7 +701,19 @@ export function doorStats(lines, atDoor, closing = new Set()) {
  * is not a problem — it is §2's guard working, and simultaneously a direct measure of how often
  * `ask` fails to find something the base already holds.
  */
-export function refusals(lines, idx) {
+export function refusals(all, idx) {
+  // COUNTED APART (VCST-6378, review round 3): a private-data refusal logs no subject (it may carry the
+  // value), so it cannot pair with its resend and would merge into one "fact" per session; a similar
+  // HOLD landed nothing and is not a duplicate; refused evidence is not a capture at all. Each is
+  // counted on its own line and kept out of the door's attempts, retries and abandoned facts.
+  const isPrivate = (l) => l.kind === 'capture-invalid' && l.why === 'private-data';
+  const lines = all.filter((l) => !isPrivate(l));
+  const evidenceRefused = {};
+  for (const l of all) {
+    if (l.kind !== 'confirm-invalid' && l.kind !== 'dispute-invalid') continue;
+    const k = `${l.kind.replace('-invalid', '')}:${l.why ?? '?'}`;
+    evidenceRefused[k] = (evidenceRefused[k] ?? 0) + 1;
+  }
   const rows = [];
   const byTarget = new Map();
   // TURNED AWAY AT THE DOOR (`capture-invalid`) — a different failure from a duplicate, counted
@@ -744,6 +756,9 @@ export function refusals(lines, idx) {
     atDoor,
     atDoorRetried: atDoor.filter((r) => r.pairedBy === 'subject').length,
     door,
+    privateRefused: all.filter(isPrivate).length,
+    held: all.filter((l) => l.kind === 'capture-held').length,
+    evidenceRefused,
     repeatTargets: [...byTarget.entries()].filter(([, n]) => n > 1)
       .map(([id, n]) => ({ id, subject: idx.subjectOf(id), count: n }))
       .sort((a, b) => b.count - a.count),

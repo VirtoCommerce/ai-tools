@@ -566,7 +566,11 @@ export function renderText(report) {
   const why = Object.entries(p.evidence.builds?.missing ?? {}).sort((a, b) => b[1] - a[1]);
   if (why.length) out.push(`  no build       ${why.map(([k, n]) => `${k} ${n}`).join(', ')}${p.evidence.builds.clients?.length ? `; clients ${p.evidence.builds.clients.join(', ')}` : ''}`);
   out.push(`  refusals       ${p.refusals.total} as duplicate, ${p.refusals.atDoor.length} turned away at the door`
-    + `${p.refusals.atDoor.length ? ` (${p.refusals.atDoorRetried} retried and landed)` : ''}`);
+    + `${p.refusals.atDoor.length ? ` (${p.refusals.atDoorRetried} retried and landed)` : ''}`
+    + `${p.refusals.held ? `; ${p.refusals.held} held as similar to an entry` : ''}`
+    + `${p.refusals.privateRefused ? `; ${p.refusals.privateRefused} refused for private data` : ''}`);
+  const ev = Object.entries(p.refusals.evidenceRefused ?? {});
+  if (ev.length) out.push(`  evidence       refused: ${ev.map(([k, n]) => `${k} ${n}`).join(', ')}`);
   const d = p.refusals.door;
   if (d?.attempts) {
     const doors = Object.entries(d.byDoor).map(([k, v]) => `${k} ${v.refused}/${v.attempts}`).join(', ');

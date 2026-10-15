@@ -40,6 +40,9 @@ export const LOGGED = Object.freeze([
   // `confirm-invalid` / `dispute-invalid`: evidence refused because this session never opened the
   // entry (VCST-6191). Id and a reason code only, never prose.
   'confirm-invalid', 'dispute-invalid',
+  // `capture-held` (VCST-6378): a capture held because an active entry at its coordinate reads like it;
+  // nothing landed, and it is not a duplicate refusal either, so it has its own kind.
+  'capture-held',
   // `session` is the DENOMINATOR, and it is the one kind written about a session that may never
   // have touched the base at all. Every other line here is evidence that the base was used, so a
   // log made only of them can count uses and can never count opportunities: a session that ran for
@@ -697,6 +700,20 @@ export function readPushStatus(env = process.env) {
  * so a failure is not hidden by a later "nothing to do". Only the state, a short why, the commit and
  * a count are stored — never a line, a payload or a token.
  */
+/**
+ * Replace last-push.json whole, never in place (round 3): written to a temp file and renamed, so a
+ * reader never sees half of it. Callers read, compute and call this with no `await` in between, so
+ * two sessions recording at once lose at most what lands in that microsecond -- not the denial one of
+ * them recorded while the other was awaiting a mkdir.
+ */
+function writePushStatus(env, status) {
+  mkdirSync(queueDir(env), { recursive: true });
+  const path = pushStatusPath(env);
+  const tmp = `${path}.${process.pid}.tmp`;
+  writeFileSync(tmp, JSON.stringify(status, null, 2), 'utf8');
+  renameSync(tmp, path);
+}
+
 export async function recordPush(r, { env = process.env, at = new Date() } = {}) {
   try {
     const prev = readPushStatus(env);
@@ -729,8 +746,7 @@ export async function recordPush(r, { env = process.env, at = new Date() } = {})
       // clears it; any other outcome keeps it until it passes.
       ...(rateUntil ? { rateLimitedUntil: rateUntil } : {}),
     };
-    await mkdir(queueDir(env), { recursive: true });
-    await writeFile(pushStatusPath(env), JSON.stringify(next, null, 2), 'utf8');
+    writePushStatus(env, next);
   } catch { /* the status is a report, never a reason a push fails */ }
 }
 
@@ -781,7 +797,7 @@ export function claimDeniedNotice(env = process.env) {
     if (!d) return null;
     const key = `${d.token}@${d.at}`;
     if (status.deniedNotified === key) return null;
-    writeFileSync(pushStatusPath(env), JSON.stringify({ ...status, deniedNotified: key }, null, 2), 'utf8');
+    writePushStatus(env, { ...status, deniedNotified: key });
     return d;
   } catch { return null; }
 }

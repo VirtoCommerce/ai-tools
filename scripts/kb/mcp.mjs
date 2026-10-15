@@ -125,7 +125,7 @@ export const TOOLS = Object.freeze([
       + 'open the headline most likely to state your fact with kb_show, passing the printed ask handle, and rely on it only if '
       + 'its BODY states the fact; if none could, call kb_none with the handle, then go find out and kb_capture with the same '
       + 'handle. Being about the same page or feature is not an answer. A list is closed by a kb_show pick, a kb_none, or a '
-      + 'kb_confirm of a listed entry or kb_capture you make next on the same topic -- leave it with none of those and the session is reminded at '
+      + 'kb_confirm of a listed entry or a kb_capture you make next, when both calls pass the same topic (or the capture passes the ask handle) -- leave it with none of those and the session is reminded at '
       + 'the end of your turn. (3) NOTHING: the base was read and holds nothing close (go find out, then kb_capture). '
       + 'Separately, it says when the base could NOT be read (conclude nothing; retry) -- never the same as (3). '
       + 'Name the deployment you are working against, if you know it: the same behaviour differs between stands, '

@@ -155,8 +155,8 @@ investigation -- one per judging session -- plus confirmations of the NEW body
 ## At the end of a turn
 
 Every `ambiguous` list ends in a `kb_show` pick or a `kb_none` — or in what you do next on the same
-`topic`: a `kb_confirm` of a listed entry counts as the pick, a `kb_capture` as "none of these"
-(pass the list's `ask` handle to `kb_capture` and the link is exact). A miss that nothing was written back
+`topic` (both calls must pass it): a `kb_confirm` of a listed entry counts as the pick, a `kb_capture`
+as "none of these". Pass the list's `ask` handle to `kb_capture` and it closes that list whatever the topic. A miss that nothing was written back
 after — or a list left unclosed — is raised once, at the end of the turn, by the `kb-remind` Stop hook
 ([`../../hooks/kb-remind.mjs`](../../hooks/kb-remind.mjs)): capture what you established, or say in one
 line that you did not establish it. `KB_REMIND=0` turns the hook off on a machine.

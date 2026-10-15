@@ -738,7 +738,8 @@ export async function flush(opts = {}) {
   const r = await flushOnce(opts);
   // Keyed on the REQUEST, not the result: a dry run can end in `nothing`, `no-base` or
   // `foreign-base` too, and none of those may overwrite the status of the last real push.
-  if (!opts.dryRun && !['declined', 'disabled'].includes(r.state)) await recordPush(r, { env: opts.env ?? process.env, at: (opts.now ?? (() => new Date()))() });
+  // `deferred` is not a push outcome (round 3): recorded, it hid the real last push in `kb stat`.
+  if (!opts.dryRun && !['declined', 'disabled', 'deferred'].includes(r.state)) await recordPush(r, { env: opts.env ?? process.env, at: (opts.now ?? (() => new Date()))() });
   return r;
 }
 
@@ -878,6 +879,8 @@ async function flushOnce({
     const real = loaded.flatMap((f) => (f.virtual ? [] : f.lines));
     // `linesWouldGo` (queue.mjs) is the one rule; a harvested `session` line counts by its `lastAt`.
     if (!linesWouldGo(real, { env, now: now().getTime() })) {
+      // The stamp paces the sweep: touched, the next ordinary call does not run this cycle again at once.
+      await touchStamp({ env, now });
       return {
         state: 'deferred',
         session,
@@ -1080,7 +1083,14 @@ export async function sweepIfDue({ env = process.env, base = null, token = null,
     if (env.KB_NO_SWEEP || kbDisabled(env)) return { state: 'off' };
     if (!coordinatesOf(base)) return { state: 'off', why: 'not a writable base' };
     const mineDue = await ownFlushDue({ env, now });
-    const due = await queueFiles({ env, now, sweep: true, includeMine: false });
+    // Another session's idle file counts only when a push would TAKE it (`linesWouldGo`, round 3): one
+    // holding only today's log lines started a full flush cycle on every MCP call and CLI verb, to defer.
+    const idle = await queueFiles({ env, now, sweep: true, includeMine: false });
+    const due = [];
+    for (const f of idle) {
+      const { lines } = await readQueue({ env, path: f.path });
+      if (linesWouldGo(lines, { env, now: now().getTime() })) due.push(f);
+    }
     if (!mineDue && !due.length) return { state: 'nothing' };
     // The stamp paces the OPPORTUNISTIC sweep of other people's files. It must not gate our own
     // queue: the stamp is touched by every flush, including one that pushed nothing of ours, so

@@ -1280,7 +1280,7 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
     const similar = similarEntries(retrievable(cat.rows), input, new Set(await openedThisSession({ env })));
     if (similar.length) {
       await note({
-        kind: 'capture-refused', dupeOf: similar[0].id, subject: input.subject, why: 'similar', when: 'call',
+        kind: 'capture-held', dupeOf: similar[0].id, subject: input.subject, why: 'similar', when: 'call',
         similar: similar.map((s) => s.id), ...repair, ...link, ...context({ via, call, topic }),
       });
       return {
