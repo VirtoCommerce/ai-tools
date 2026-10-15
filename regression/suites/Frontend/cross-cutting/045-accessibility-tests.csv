@@ -16,7 +16,8 @@
 [KEY] Tab through fields in order: cardholder name → expiry date → CVV
 [KEY] Tab to the Place Order / Submit button
 [ASSERT] Verify focus transitions correctly into and out of iframe fields
-[ACT] Enter test card data via keyboard only and submit the form","[DOM] Tab order: Card Number → Cardholder Name → Expiry → CVV → Submit
+[ACT] Enter test card data via keyboard only and submit the form
+[WAIT] for the payment submission response and the next checkout step to render","[DOM] Tab order: Card Number → Cardholder Name → Expiry → CVV → Submit
 [STATE] Data enterable in every field via keyboard alone
 [STATE] Focus transitions correctly into iframe and back to parent page
 [STATE] Form submittable via keyboard without mouse","[CONSOLE] no iframe focus errors; [NETWORK] payment tokenisation request fires on keyboard submit","focus stuck inside iframe; cannot reach CVV or submit via Tab; iframe focus handoff fails","Clear cart / cancel test order","VCST-3387","Manual"
@@ -67,7 +68,8 @@
 [KEY] Tab through each form field
 [ASSERT] Verify field label is announced for each input
 [ASSERT] Verify required status is announced for mandatory fields
-[ACT] Submit form with errors and verify error messages are announced","[STATE] Field labels read aloud on field focus
+[ACT] Submit form with errors and verify error messages are announced
+[WAIT] for the inline validation error messages to render","[STATE] Field labels read aloud on field focus
 [STATE] Required state announced (e.g., ""required"")
 [STATE] Error messages announced when triggered
 [DOM] <label for=""id""> association correct or aria-labelledby set","[CONSOLE] no missing-label warnings","field label not announced; required state silent; error message not announced after injection","—","WCAG 1.3.1","Manual"
@@ -76,6 +78,7 @@
 - Screen reader active
 - Form with client-side or server-side validation","store={{FRONT_URL}}","[NAV] Navigate to a form (e.g., checkout address or login) on {{FRONT_URL}} with screen reader active
 [ACT] Submit the form leaving required fields empty to trigger validation errors
+[WAIT] for the required-field validation messages to render
 [ASSERT] Verify error messages are announced immediately by the screen reader
 [KEY] Navigate to each errored field and confirm specific error text is read aloud","[STATE] Errors announced immediately upon form submission (via aria-live or focus shift)
 [STATE] Can navigate to each error and hear its specific description
@@ -107,6 +110,7 @@
 [PRE:RESET_CART]
 - Dynamic content area visible (cart badge, notifications, search results)","store={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}} with a dynamic content area
 [ACT] Trigger a content update (e.g., add item to cart, submit search query)
+[WAIT] for the updated content and its live-region announcement to render
 [ACT] Open DevTools → Elements and locate the aria-live region for that update
 [ASSERT] Verify aria-live attribute is present with appropriate politeness level (polite or assertive)
 [ASSERT] Verify the update is announced without being excessively verbose","[DOM] aria-live=""polite"" (or ""assertive"" for critical alerts) present on dynamic regions
@@ -166,13 +170,15 @@
 [ACT] Open DevTools → Elements panel
 [ASSERT] Verify each <input> has an associated <label> via matching for=""id""
 [ASSERT] Verify aria-label or aria-labelledby is present where a visible label is absent
-[ACT] Test with screen reader: Tab to each field and confirm label is announced","[DOM] All inputs have associated labels (for/id pairing or aria-labelledby)
+[ACT] Test with screen reader: Tab to each field and confirm label is announced
+[WAIT] for the screen-reader announcement of each focused field label","[DOM] All inputs have associated labels (for/id pairing or aria-labelledby)
 [STATE] Screen reader announces correct label on field focus
 [DOM] No orphaned inputs without accessible names","[CONSOLE] no axe label-missing violations","input has no associated label; for/id mismatch; aria-labelledby references missing id","—","WCAG 1.3.1","Manual"
 "A11Y-FORM-002","Error Identification","Forms > Errors","High","BL-A11Y-004","ECL-15.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Form with client-side validation","store={{FRONT_URL}}","[NAV] Navigate to a form on {{FRONT_URL}} (e.g., checkout address or login)
 [ACT] Submit the form with required fields left empty to trigger validation errors
+[WAIT] for the required-field validation messages to render
 [ASSERT] Verify each error is clearly identified with text (not only by color)
 [ASSERT] Verify error messages are programmatically linked to their fields via aria-describedby or aria-errormessage
 [ASSERT] Verify error messages provide actionable suggestions where appropriate","[STATE] Errors identified with text label — not color alone
@@ -200,7 +206,6 @@
 [DOM] Selected state reflected programmatically: aria-checked=""true"" or aria-selected=""true"" on the chosen option
 [STATE] Screen reader can distinguish selected from unselected options
 [DOM] Each option has an accessible name matching the variant label","[CONSOLE] no ARIA state errors on picker interaction","states not visually distinguishable; selected state not reflected in aria-checked/aria-selected; accessible name missing on option","—","VCST-4373","Automated"
-
 "A11Y-SORT-001","Address Popup Column Sort - aria-sort Ascending Transition","ARIA > Sort","Critical","BL-A11Y-004","","[PRE:SIGNIN_AS:USER_DEFAULT]
 - User has at least 2 saved addresses
 - Address selection popup is accessible (checkout shipping step or ship-to widget)","store={{FRONT_URL}}","[NAV] Navigate to checkout shipping step on {{FRONT_URL}} and open the address selection popup
@@ -253,7 +258,7 @@
 [DOM] the error <p> element has attribute role=""alert"" — asserting the fix from PR #2303: screen-reader users receive an audible announcement when the error appears (WCAG 4.1.3 Status Messages, Level AA)
 [DOM] the error element is not hidden by CSS (display is not none; visibility is not hidden)
 [STATE] error message text is non-empty — SR has meaningful content to announce","[CONSOLE] zero JS errors during coupon apply attempt; specifically no UnhandledPromiseRejection
-[NETWORK] addCoupon mutation response received (HTTP 200); errors[] is empty; isAppliedSuccessfully=false","role attribute absent from error <p> (VCST-5018 regression — SR silent on error); error <p> not rendered after invalid code (v-if gate failure); role is set to a non-live value (e.g. role=""paragraph"") instead of role=""alert"" or aria-live=""assertive""; console TypeError during apply","none — invalid coupon was not applied","VCST-5018; WCAG 3.3.1; WCAG 4.1.3","Draft"
+[NETWORK] addCoupon mutation response received (HTTP 200); errors[] is empty; isAppliedSuccessfully=false","role attribute absent from error <p> (VCST-5018 regression — SR silent on error); error <p> not rendered after invalid code (v-if gate failure); role is set to a non-live value (e.g. role=""paragraph"") instead of role=""alert"" or aria-live=""assertive""; console TypeError during apply","none — invalid coupon was not applied",VCST-5018; WCAG 3.3.1; WCAG 4.1.3 | Promoted: REG-2026-10-15-1115 (2026-10-15),Automated
 "A11Y-CPN-002","Coupon Sidebar — Apply and Trash Buttons Have Descriptive aria-label (WCAG 4.1.2)","Accessibility > Cart > Coupon Sidebar > Button Names","High","BL-A11Y-002","ECL-15.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - At least 1 product added to cart.
@@ -289,7 +294,7 @@ couponCode=@td(COUPONS.percentageCode)","[NAV] {{FRONT_URL}}/cart
 [DOM] ariaLabel is non-null AND ariaLabel.trim().length > 0 (not empty string)
 [DOM] ariaLabel does NOT equal visibleText alone — it contains a contextual prefix (e.g. 'Last modified: <date>'; confirmed fix in PR #2292 adds i18n key last_modified_label across 15 locale files)
 [STATE] All visible .wishlist-card__date elements (not just first) have aria-label — evaluate querySelectorAll and verify every element","[CONSOLE] no JS errors; no axe 'label' or 'presentation-role-conflict' violation on .wishlist-card__date
-[NETWORK] en-US locale file (or active locale) loads successfully and contains last_modified_label key (no 404)","aria-label attribute absent (VCST-5067 regression re-introduced after merge); ariaLabel equals bare date string only (no prefix — regression to pre-fix state); some cards have label and others do not (partial fix); locale 404 causes fallback to key name displayed as label text","none","VCST-5067; WCAG 1.3.1","Draft"
+[NETWORK] en-US locale file (or active locale) loads successfully and contains last_modified_label key (no 404)","aria-label attribute absent (VCST-5067 regression re-introduced after merge); ariaLabel equals bare date string only (no prefix — regression to pre-fix state); some cards have label and others do not (partial fix); locale 404 causes fallback to key name displayed as label text","none",VCST-5067; WCAG 1.3.1 | Promoted: REG-2026-10-15-1115 (2026-10-15),Automated
 "A11Y-CC-004","Lists card — save-v2 icon contrast ratio ≥ 3:1 on white card background (WCAG 1.4.11, regression for VCST-5066)","Color Contrast > UI","High","BL-UI-002","ECL-15.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 - Personal account with ≥ 1 wishlist so at least one list card renders with the save-v2 icon
 - Coffee theme only (only Coffee is a11y-compliant per project constraint)
@@ -297,9 +302,10 @@ couponCode=@td(COUPONS.percentageCode)","[NAV] {{FRONT_URL}}/cart
 [NAV] {{FRONT_URL}}/account/lists
 [WAIT] At least one `.wishlist-card` rendered; save-v2 icon element visible (SVG inside .wishlist-card__date area or adjacent to date)
 [ACT] `browser_evaluate`: let iconEl = document.querySelector('.wishlist-card .save-v2, .wishlist-card [class*=""save-v2""], .wishlist-card svg'); let iconColor = getComputedStyle(iconEl).color; return iconColor — capture computed color (hex or rgb)
+[WAIT] for the evaluated icon colour value to be returned
 [ACT] `browser_evaluate`: let cardEl = document.querySelector('.wishlist-card'); let cardBg = getComputedStyle(cardEl).backgroundColor; return cardBg — capture card background color
 [WAIT] 300ms","[FORMAT] Computed icon color is NOT #67AACB (2.56:1 — the failing value before fix per VCST-5066)
 [FORMAT] Icon color is #2b7ea8 (text-info-500, 4.51:1) OR any color with contrast ratio ≥ 3:1 against card background
 [MATH] WCAG relative luminance contrast ratio between iconColor and cardBg is ≥ 3:1 (WCAG 1.4.11 Non-text Contrast minimum for graphical objects)
 [STATE] Card background is #ffffff (verify no unexpected background color change)","[CONSOLE] no JS errors during DOM inspection; no axe 'color-contrast' violation on .wishlist-card svg if Lighthouse accessibility scan is run
-[NETWORK] no failed CSS requests","iconColor computed as #67AACB (2.56:1 — regression to pre-fix state); computed contrast ratio < 3:1 against card background; browser_evaluate returns null (icon selector drifted — update selector to match current rendered DOM); Lighthouse/axe reports color-contrast violation on the save-v2 icon","none","VCST-5066; WCAG 1.4.11","Draft"
+[NETWORK] no failed CSS requests","iconColor computed as #67AACB (2.56:1 — regression to pre-fix state); computed contrast ratio < 3:1 against card background; browser_evaluate returns null (icon selector drifted — update selector to match current rendered DOM); Lighthouse/axe reports color-contrast violation on the save-v2 icon","none",VCST-5066; WCAG 1.4.11 | Promoted: REG-2026-10-15-1115 (2026-10-15),Automated
