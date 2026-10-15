@@ -1120,5 +1120,46 @@
   "ORG_REP_ONLY": {
     "id": "40ac896b-cb80-49db-b71d-1ff23e2b9352",
     "platform_id": "40ac896b-cb80-49db-b71d-1ff23e2b9352"
+  },
+  "SR_REP_PERF": {
+    "id": "1257ae66-adbe-422f-8235-b30ac8eb4c44",
+    "user_id": "cc53f67e-c261-4e7c-81f4-1af5c8c8ae3c"
+  },
+  "SR_PERF_DATASET": {
+    "org_ids": "cd4cb3d0-a52b-4365-9b59-471eb399d064;143f4953-e7e2-4039-8187-c44c99079613;2dec071a-5f74-4946-861b-77dfc6bfad02;14cdaf13-d3bf-4051-9316-228b48d4453c;57805495-7bd2-4861-b2f4-5216e3c928b9;ca0bf4e5-d9c7-4d45-af4e-e7cba928ee90;44bd09fc-91e7-4525-b35e-01d60aed6256;eccddd16-35ec-43f3-a41d-3f17b148cf1e;9534a6e2-afec-4e6c-80ef-5c02a2172eba;44709357-8e19-4194-a3f1-ae95b64e06e4;82bec7ef-5e62-4b27-9239-1665d05ce65c;ce25ee1f-a02f-47e8-a6d9-11d01dfd934c;fd773e55-dcb2-42c1-80e4-63b4341c5c91;3fde0657-1b08-44fd-97d7-28f320ee03bf;8f126567-1827-43c7-b05c-3382bc38722e",
+    "order_count": "100",
+    "stats_order_count": "97",
+    "seeded_at": "2026-10-12T09:00:51.547Z"
+  },
+  "SR_REP_LOCKABLE": {
+    "id": "3ec2eaf5-28b6-4db8-bb6d-649d89d6892e",
+    "user_id": "f60c9cdd-1d71-41dd-905f-0c41b6162276"
+  },
+  "SR_ORDER_ACME_ELEC": {
+    "id": "1f4ce051-329f-41c4-be69-f990745e55e2",
+    "createdDate": "2026-10-13T13:02:59.557619Z"
+  },
+  "SR_ORDER_ACME_WIN_NEW": {
+    "id": "90c486b3-0527-4301-bce2-7acd8162eb8f",
+    "createdDate": "2026-10-13T13:02:50.927083Z"
+  },
+  "SR_ORDER_ACME_WIN_PROC": {
+    "id": "0d3d6760-a7a2-47e2-a4d0-7f3c4425fbdf",
+    "createdDate": "2026-10-13T13:02:52.0246855Z"
+  },
+  "ORDER_REP_PLACED": {
+    "id": "82254b78-d8ff-4dc1-9693-05202cbb171f",
+    "createdDate": "2026-10-13T13:02:52.8441471Z",
+    "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594"
+  },
+  "ORDER_BUYER_PLACED": {
+    "id": "20339c33-6d51-4032-9cdd-7c40b0392683",
+    "createdDate": "2026-10-13T13:02:54.0867155Z",
+    "customerId": "ec3031ac-6dd9-42e9-b7a7-0c10d9aac07b"
+  },
+  "ORDER_NOT_SERVED": {
+    "id": "cfa32136-1cf8-408a-a886-ca1e81e34b0d",
+    "createdDate": "2026-10-13T13:02:55.3202367Z",
+    "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594"
   }
 }
