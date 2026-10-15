@@ -33,7 +33,7 @@ import {
 } from './queue.mjs';
 import { lastWord, openedHash, openedIds, pointersByAsk } from './loop.mjs';
 import { cachedWho } from './who.mjs';
-import { RANKER, rank, rankNeighbours, relatedTo } from './rank.mjs';
+import { RANKER, rank, rankNeighbours, relatedTo, tokenize } from './rank.mjs';
 import { askAbout, askLink } from './pairing.mjs';
 import { prepareVocabulary, readVocabulary } from './query.mjs';
 import { prepareRetrieval, retrieve } from './retrieve.mjs';
@@ -1082,6 +1082,28 @@ function privateData(fields, env) {
   return { state: 'invalid', why: publishRefusal(found), private: [...new Set(found.flatMap((p) => p.kinds))] };
 }
 
+/** Subject+question similarity at or above which a same-anchor entry holds a capture (VCST-6378). */
+export const SIMILAR_JACCARD = 0.35;
+/** The lower bar for an entry THIS session opened: it read the original and wrote it again. */
+export const SIMILAR_JACCARD_OPENED = 0.2;
+
+/** Active entries sharing an anchor with the capture whose subject+question read alike, most alike first, at most 3. */
+export function similarEntries(rows, input, opened = new Set()) {
+  const anchorsOf = (list) => new Set((list ?? []).map((a) => normalizeAnchor(typeof a === 'string' ? a : a?.coordinate ?? '')).filter(Boolean));
+  const mine = anchorsOf(input.anchors);
+  const words = new Set(tokenize(`${input.subject ?? ''} ${input.question ?? ''}`));
+  const out = [];
+  for (const r of rows) {
+    if ([...anchorsOf(r.anchors)].every((a) => !mine.has(a))) continue;
+    const theirs = new Set(tokenize(`${r.subject ?? ''} ${r.question ?? ''}`));
+    const shared = [...words].filter((w) => theirs.has(w)).length;
+    const jaccard = shared / ((words.size + theirs.size - shared) || 1);
+    const bar = opened.has(r.id) ? SIMILAR_JACCARD_OPENED : SIMILAR_JACCARD;
+    if (jaccard >= bar) out.push({ id: r.id, subject: r.subject, similarity: Math.round(jaccard * 100) / 100, opened: opened.has(r.id) });
+  }
+  return out.sort((a, b) => b.similarity - a.similarity).slice(0, 3);
+}
+
 /** The marker rides on EVERY result from one place, rather than being threaded through each return. */
 export async function capture(input, opened, opts = {}) {
   const { input: fixed, repair } = repairShellRewrite(input, opts.env ?? process.env);
@@ -1190,6 +1212,30 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
     });
     return { state: 'refused', reason: 'subject-taken', dupeOf: holder, message: subjectTakenMessage(holder, { sameSubject, carry: markerFlags }) };
   }
+  // ALREADY HERE, IN OTHER WORDS (VCST-6378). The dedup above needs the same anchors, scope AND subject; a
+  // second wording of one fact passed it. Measured 2026-10-08..15: about ten new entries duplicated one
+  // that existed -- several written seconds after the same session CONFIRMED the original. So a capture
+  // that shares an anchor with an active entry and reads like it is held, with the entries, and the
+  // writer chooses: confirm the one that says it (add the new detail as the confirm's note), or resend
+  // with `distinct` saying why this is another fact. Thresholds: SIMILAR_JACCARD caught 6 of the 10
+  // known duplicates and 16 of 6,215 same-anchor neighbour pairs; an entry this session OPENED is held
+  // at SIMILAR_JACCARD_OPENED, which catches the confirm-then-recapture three.
+  const distinct = String(input.distinct ?? '').trim();
+  if (!distinct) {
+    const similar = similarEntries(retrievable(cat.rows), input, new Set(await openedThisSession({ env })));
+    if (similar.length) {
+      await note({
+        kind: 'capture-refused', dupeOf: similar[0].id, subject: input.subject, why: 'similar', when: 'call',
+        similar: similar.map((s) => s.id), ...repair, ...link, ...context({ via, call, topic }),
+      });
+      return {
+        state: 'refused', reason: 'similar', similar,
+        message: `an active entry at the same coordinate already reads like this fact: ${similar.map((s) => `${s.id} "${s.subject}"`).join('; ')}. `
+          + `If one of them says it, kb_confirm that one (put any new detail in the confirm's note) -- or, if what you saw contradicts it, kb_dispute it. `
+          + `If this is a DIFFERENT fact, resend the capture with distinct: "<what makes it different>".`,
+      };
+    }
+  }
   const stamp = how.value === 'source' ? {} : await buildStamp(input.deployment, { env, dryRun, builds });
   const entry = {
     id,
@@ -1218,6 +1264,8 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
       // when the token has not resolved; the handle is already in every log line and every commit of
       // this public base, so it crosses no boundary the log has not crossed (`core/who.mjs`).
       ...(cachedWho({ dir: queueDir(env), env }) ? { who: cachedWho({ dir: queueDir(env), env }) } : {}),
+      // Why the writer said this is a different fact from the similar entries it was shown (VCST-6378).
+      ...(distinct ? { note: trimNote(`distinct: ${distinct}`) } : {}),
     }],
   };
 

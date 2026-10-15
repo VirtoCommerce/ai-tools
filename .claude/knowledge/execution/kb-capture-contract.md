@@ -56,6 +56,13 @@ personal e-mail address, a value from your secret env, a deployment host, or a t
 deployment label. Test-domain addresses (`…@example.com`, `…@test-agent.com`, `*.test`) and a UI's
 own placeholder text are fine.
 
+**A capture that reads like an entry already at its coordinate is HELD (VCST-6378)** — same anchor and
+a subject/question this similar to an active entry, or lower when this session opened that entry.
+Nothing is queued: `kb_confirm` the entry that says it (new detail goes in the confirm's `note`), or
+resend with `distinct: "<what makes it a different fact>"`, which is recorded on the new entry.
+**Trust counts sessions, not rows:** a second confirm from the same session, or a confirm of the
+entry this session captured, is kept as history and adds nothing.
+
 ## Anchors — accepted forms
 
 | Form | Example |

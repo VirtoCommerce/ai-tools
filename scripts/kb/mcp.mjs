@@ -182,6 +182,7 @@ export const TOOLS = Object.freeze([
       + 'so the next session does not have to re-derive it. Use after kb_ask returned nothing and you then found out. '
       + 'Refused if an entry already states the same subject at the same anchors and scope — open it (kb_show) and confirm that one instead; '
       + 'a different fact at the same coordinates is recorded as its own entry. '
+      + 'HELD if an active entry at the same coordinate reads like it: confirm that one, or resend with distinct saying why this is another fact. '
       + 'Names back the entries YOU OPENED earlier in this session and asks whether what you just wrote '
       + 'disagrees with any of them — if it does, kb_dispute that entry rather than leaving the base '
       + 'holding two answers to one question. Also lists entries sitting at the same coordinates. '
@@ -201,6 +202,7 @@ export const TOOLS = Object.freeze([
         defect: str(`${DEFECT_SOURCE}. On a capture: a ticket or "suspected".`),
         fixedIn: str('Optional, with defect: the first build without the defect, <module>@<version>.'),
         ask: str('The ask handle kb_ask printed, when this fact answers that question. Ties the capture to the ask exactly; without it the base guesses from shared words.'),
+        distinct: str('Only after a capture was HELD as similar to an existing entry: one sentence on what makes this a different fact. Recorded in the entry; without it, confirm the existing entry instead.'),
         topic: TOPIC,
       },
       required: ['subject', 'question', 'claim', 'deployment', 'anchors', 'scope'],
@@ -384,7 +386,7 @@ async function callTool(name, args, ctx) {
       const r = await capture({
         subject: args?.subject, question: args?.question, claim: args?.claim,
         deployment: args?.deployment, method: args?.method, conditions: asList(args?.conditions),
-        defect: args?.defect, fixedIn: args?.fixedIn, ask: args?.ask,
+        defect: args?.defect, fixedIn: args?.fixedIn, ask: args?.ask, distinct: args?.distinct,
         anchors: asList(args?.anchors), scope: asList(args?.scope),
       }, opened, { env: ctx.env, via: VIA, call: ctx.call, topic: args?.topic, builds: liveBuild });
       // `refused` is not an error: the base already holds the fact, which is the dedup working, and

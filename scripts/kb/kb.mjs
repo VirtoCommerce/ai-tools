@@ -77,6 +77,7 @@ const USAGE = `kb — the knowledge base (PLAN v1)
                         [--conditions "platform=<v>; setting:<Name>=<v>"]
                         [--defect <VCST-1234 | suspected> [--fixed-in <Module>@<version>]]
                         [--ask <handle kb ask printed>]   ties the capture to that question exactly
+                        [--distinct "<why>"]   after a capture was held as similar: what makes it a different fact
                         [--topic "<...>"] [--dry-run]   --dry-run: check the payload, log and queue nothing
                         an anchor is a route, endpoint or GraphQL op, never a label or menu path;
                         contract: ${CONTRACT}
@@ -280,7 +281,7 @@ async function main(argv) {
     const r = await capture({
       subject: args.flags.subject, question: args.flags.question, claim: args.flags.claim,
       deployment: args.flags.deployment, method: args.flags.method, conditions: args.flags.conditions,
-      defect: args.flags.defect, fixedIn: args.flags['fixed-in'], ask: args.flags.ask,
+      defect: args.flags.defect, fixedIn: args.flags['fixed-in'], ask: args.flags.ask, distinct: args.flags.distinct,
       anchors: args.repeated.anchor, scope: args.repeated.scope,
     }, opened, { via: VIA, topic: args.flags.topic, dryRun: Boolean(args.flags['dry-run']), builds: liveBuild });
     if (json) out(JSON.stringify(r, null, 2));

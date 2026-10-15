@@ -231,7 +231,8 @@ export function showLines(r, { prefix = 'kb show' } = {}) {
     ...(r.build ? [`build:    observed on ${r.build.label}${r.build.diff ? ` (yours vs then: ${r.build.diff})` : ''}`] : []),
   ];
   // A retired or split entry still resolves by id (VCST-6122 Decision 2); say where its fact went.
-  const next = idList(r.entry.supersededBy);
+  // The index row's pointer is collapsed to ACTIVE successors (VCST-6378); the file's may name a retired one.
+  const next = idList(r.row?.supersededBy?.length ? r.row.supersededBy : r.entry.supersededBy);
   if (next.length) lines.push(`superseded by: ${next.join(', ')}`);
   for (const e of r.entry.evidence ?? []) lines.push(evidenceLine(e));
   lines.push('');
@@ -283,7 +284,9 @@ function captureBody(r, { prefix = 'kb capture', card = false } = {}) {
     // A taken SUBJECT is not necessarily the same fact — the writer decides which (PR #313 review 2).
     const head = r.reason === 'subject-taken'
       ? 'REFUSED — an entry already has this subject, so this capture would take its id.'
-      : 'REFUSED — the base already holds this fact.';
+      : r.reason === 'similar'
+        ? 'HELD — an entry at the same coordinate reads like this fact; nothing was queued.'
+        : 'REFUSED — the base already holds this fact.';
     return [`${prefix}: ${head}`, '', `  ${r.message.split('\n').join('\n  ')}`];
   }
   if (r.state === 'dry-run') {
