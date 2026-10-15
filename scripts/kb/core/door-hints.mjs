@@ -33,6 +33,14 @@ export const FIELD_SOURCE = {
   anchor: 'the route or request the behaviour lives at (/account/orders, POST /api/carts, Query.products)',
 };
 
+// AN ADMIN SPA ADDRESS LOSES EVERYTHING TO THE FRAGMENT RULE (VCST-6342). `normalizeAnchor` drops
+// `#...`, so `#/workspace/return` normalises to "" and `https://admin/#/workspace/return` to "/".
+// Read off the shape alone, the first was told it was a label and the second that the root is not a
+// place -- wrong for both. Measured 2026-10-12..14: 24 of 48 `unstructured` refusals had a
+// zero-segment shape, about 15 of them Admin blades and about 9 the storefront home page. The test
+// reads the RAW coordinate, because the normalised one no longer carries the `#`.
+const HASH_ROUTE = /#!?\//;
+
 /**
  * The fix for ONE rejected anchor, worded from its kind and shape. `deeper` lists coordinates the
  * corpus already holds under a one-segment root, so a namespace refusal can show what a full route
@@ -45,9 +53,14 @@ export function anchorFix(problem, { deeper = [] } = {}) {
   if (problem.kind === 'local-path') {
     return 'send the route as typed: through kb_capture (MCP), or prefix the CLI with MSYS_NO_PATHCONV=1';
   }
+  if (HASH_ROUTE.test(String(problem.coordinate ?? ''))) {
+    return 'an Admin SPA address keeps nothing once its #fragment is dropped: anchor = the REST call the blade sent '
+      + '(HAR / Network panel), and keep the #/... route in `claim`';
+  }
   const shape = anchorShape(problem.normalized ?? problem.coordinate);
   if (shape.type === 'path' && shape.segments === 0) {
-    return 'the root is not a place: name the route of the page';
+    return 'the site root (/) is not a coordinate: for the home page or the Admin sign-in page, anchor a request the page '
+      + 'sent (HAR / Network panel: its GraphQL operation or REST call), and name the page in `claim`';
   }
   if (shape.type === 'path') {
     const seen = deeper.length ? ` -- the base holds e.g. ${deeper.join(', ')}` : '';
