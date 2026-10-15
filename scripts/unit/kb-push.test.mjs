@@ -17,7 +17,7 @@ import { basename, join } from 'node:path';
 import { WRITE_TARGET, writeRefusal } from '../kb/core/base.mjs';
 import { mintId } from '../kb/core/canonical.mjs';
 import { parseEntry, stringifyFrontmatter } from '../kb/core/frontmatter.mjs';
-import { buildIndex, buildRow, entryPath } from '../kb/core/index-build.mjs';
+import { buildIndex, buildPath, buildRow, entryPath } from '../kb/core/index-build.mjs';
 import {
   RETENTION_DAYS, SWEEP_AFTER_MS, appendEvidence, commitMessage, expiredLogs, flush, fullestSessionLines, logPath,
   logTargetOf, outsideBase, ownFlushDue, ownedByMe, postVerbSweepAllowed, published, queueFiles, sameEvidence, shouldSweep,
@@ -1004,13 +1004,21 @@ test('a path outside entries/ index.json log/ stops the push — always, not onl
   assert.equal(api.calls.includes('createBlob'), false, 'nothing was even uploaded');
 }));
 
-test('outsideBase names exactly the three paths the base owns', () => {
-  const inside = ['v2/index.json', 'v2/entries/KB-11111111.md', 'v2/log/2026-09-18/x.jsonl'];
+test('outsideBase names exactly the four paths the base owns', () => {
+  const inside = ['v2/index.json', 'v2/entries/KB-11111111.md', 'v2/log/2026-09-18/x.jsonl', 'v2/builds/e00c89f4da0e9c98.json'];
   assert.deepEqual(outsideBase(inside, 'v2'), []);
   assert.deepEqual(outsideBase([...inside, 'v2/kb.json', 'captured/x.md', 'README.md'], 'v2'),
     ['v2/kb.json', 'captured/x.md', 'README.md']);
   // kb.json is deliberately NOT writable: the manifest decides whether this is a base at all, and
   // a push that can rewrite it can turn a base into something else without anyone reading a diff.
+});
+
+test('builds/ admits exactly `builds/<pin>.json` — the shape buildPath() writes (VCST-6221), nothing wider', () => {
+  assert.deepEqual(outsideBase([buildPath('e00c89f4da0e9c98'), 'builds/abc123.json'], ''), []);
+  for (const bad of ['builds/../.github/x.yml', 'builds/a/b.json', 'builds/x.txt', 'builds/abc123.json.md',
+    'builds/ABC123.json', 'builds/.json', 'builds/', 'builds', '.github/workflows/gates.yml', 'v2/builds/abc123.json']) {
+    assert.deepEqual(outsideBase([bad], ''), [bad], bad);
+  }
 });
 
 test('it NORMALISES first — a prefix test alone lets `entries/../../x` through', () => {
@@ -1118,7 +1126,7 @@ test('a base at the REPOSITORY ROOT writes root paths — the prefix was only ev
     'no prefix, and no leading slash either');
   assert.equal(JSON.parse(state.files.get('index.json')).count, 2);
 
-  // Containment still names exactly the three paths the base owns, now rooted -- and a stale `v2/`
+  // Containment still names exactly the paths the base owns, now rooted -- and a stale `v2/`
   // path is refused rather than quietly written beside the base it used to be.
   assert.deepEqual(outsideBase(['index.json', 'entries/x.md', 'log/2026-09-18/y.jsonl'], ''), []);
   assert.deepEqual(outsideBase(['kb.json', 'README.md', 'v2/index.json'], ''),
