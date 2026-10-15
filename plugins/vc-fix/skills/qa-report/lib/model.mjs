@@ -77,12 +77,17 @@ export function fromQaTest(path) {
         : `none — ${s.release?.refusal ?? "not resolved"}`,
     },
     // `title` is what the row is ABOUT; a key alone makes the reader open the ticket to find out.
-    bugs: (s.bugs_filed ?? []).map(b => ({ key: b.key, severity: b.severity ?? "", relation: b.relationship ?? "", what: b.title ?? "" })),
+    bugs: (s.bugs_filed ?? []).map(b => ({ key: b.key, severity: b.severity ?? "", relation: (b.relationship ?? "").replace(/\s+(?:of\s+)?[A-Z]+-\d+$/, ""), what: compact(b.title ?? "") })),
     // The schema says `summary`/`report`; live artifacts write `draft` and often no summary at all.
     // Read both and fall back to the file name, because a blank row is worse than a terse one.
+    // One identifier per row, never two: with no `summary` the title WAS the file name, so printing
+    // the path beside it duplicated ~70 chars. The draft is recoverable from the severity folder
+    // plus the name, and the page carries the full path.
     notFiled: (s.bugs_not_filed ?? []).map(b => {
       const path = b.report ?? b.draft ?? "";
-      return { severity: b.severity ?? "Low", title: b.summary ?? (path ? basename(path, ".md") : "(untitled)"), path };
+      return b.summary
+        ? { severity: b.severity ?? "Low", title: b.summary, path }
+        : { severity: b.severity ?? "Low", title: path ? basename(path, ".md") : "(untitled)", path: "" };
     }),
     evidence: s.screenshots ?? "", imageRoot: dirname(path), pageUrl: s.report?.page_url ?? null,
   };
@@ -184,6 +189,13 @@ export function fromRun(runDir, kind, verdict, ticket = null) {
   };
 }
 
+// The COMMENT's header answers "where, on what, as whom". A machine-written env/build string
+// carries its explanation in parentheses, which is page material: strip the asides and collapse
+// the whitespace. This is a structural removal, never a mid-line cut — the renderer's whole
+// doctrine is that it fails loudly rather than truncating. Applied in templateData only, so the
+// HTML page (renderPage reads m.env / m.build) still shows every string in full.
+export const compact = (v) => String(v ?? "").replace(/\s*\([^()]*\)/g, "").replace(/\s+/g, " ").trim();
+
 const SHAPES = { rows: "{ id, text, result, evidence }", areas: "{ area, cases, result }", notTested: "{ item, reason }", context: "{ label, value }" };
 
 export function applyExtras(m, extra = {}, sets = {}) {
@@ -229,9 +241,9 @@ export function requireLede(m, ledeMax) {
 export function templateData(m, dialect = "markdown") {
   return {
     ICON: m.icon, VERDICT_LABEL: m.verdictLabel, LEDE: m.lede, TICKET: m.ticket ?? "", RUN_ID: m.runLabel ?? "",
-    ENV: m.env ?? "", BUILD: m.build ?? "", DATE: m.date ?? "",
+    ENV: compact(m.env), BUILD: compact(m.build), DATE: m.date ?? "",
     TOTAL: m.counts.total, PASSED: m.counts.passed, FAILED: m.counts.failed, BLOCKED: m.counts.blocked, NOT_RUN: m.counts.notRun,
-    ...m.lines,
+    ...m.lines, ...(m.lines.BL ? { BL: compact(m.lines.BL) } : {}),
     AREAS: m.areas ?? [], BUGS: m.bugs, NOT_FILED: m.notFiled, BEFORE_AFTER: m.beforeAfter, ISSUES: m.issues, FAILURES: m.failures ?? [],
     SHOTS: dialect === "wiki" ? m.shots.map(s => basename(s)) : [],
     PAGE_URL: m.pageUrl ?? null,
