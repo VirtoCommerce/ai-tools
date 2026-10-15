@@ -52,7 +52,8 @@ import { selectProbeTargets } from './overlay-specs.mjs';
 import { runStoreDefaultsCheck } from './store/check-store-defaults.mjs';
 import { parse } from 'csv-parse/sync';
 import { REP_ONLY_ORG } from './sales-rep/rep-only-org-specs.mjs';
-import { DEMO_PROFILE, DEMO_LEDGER_KEY, demoServedOrgExpectations } from './sales-rep/sales-rep-demo-specs.mjs';
+import { DEMO_PROFILE, DEMO_LEDGER_KEY, SALES_REP_FAMILY, demoServedOrgExpectations } from './sales-rep/sales-rep-demo-specs.mjs';
+import { datasetProfileOf } from '../lib/seed-family.mjs';
 import { classifyStoreFfc, isBlockingStoreFfc, describeStoreFfc } from './store/store-ffc-specs.mjs';
 import {
   PRODUCTS as MSN_E2E_PRODUCTS, productFlagDrift, productFlagDriftMessage,
@@ -603,7 +604,8 @@ async function checkOverlayGuidLiveness() {
  * — and asserts the LIVE rep record still carries each one. Silent membership loss is now loud.
  *
  * PROFILE-AWARE. The serve-list's source of truth depends on WHICH sales-rep dataset the environment
- * holds, which `_meta.dataset_profile` in `test-data/aliases.<env>.json` records. Under the demo
+ * holds, which `_meta.dataset_profiles['sales-rep']` in `test-data/aliases.<env>.json` records (the
+ * legacy `_meta.dataset_profile` still counts — `datasetProfileOf()` reads both). Under the demo
  * profile the AGENT-TEST fixture reps were deliberately deleted by the changeover, so the committed
  * CSV describes reps that are *supposed* to be absent: asserting it would emit a row of permanent
  * ✗ failures that say nothing about the environment's health, and a check that is always red is a
@@ -625,7 +627,7 @@ async function checkSalesRepServedOrgs() {
   if (existsSync(overlayPath)) {
     try { overlay = JSON.parse(readFileSync(overlayPath, 'utf8')); } catch { overlay = {}; }
   }
-  const profile = overlay?._meta?.dataset_profile || null;
+  const profile = datasetProfileOf(overlay, SALES_REP_FAMILY);
   if (profile === DEMO_PROFILE) { await checkDemoServedOrgs(overlay); return; }
 
   const repsPath = join(ROOT, 'test-data/sales-rep/sales-reps.csv');
@@ -693,14 +695,14 @@ async function checkSalesRepServedOrgs() {
  * re-derived here, so the seeder, the guard and this check read one declaration.
  */
 async function checkDemoServedOrgs(overlay) {
-  console.log(`     dataset_profile = "${DEMO_PROFILE}" (test-data/aliases.${TEST_ENV}.json → _meta)`);
+  console.log(`     dataset_profiles.${SALES_REP_FAMILY} = "${DEMO_PROFILE}" (test-data/aliases.${TEST_ENV}.json → _meta)`);
   console.log('     SKIPPING test-data/sales-rep/sales-reps.csv: the AGENT-TEST fixture reps it declares were');
   console.log('     deliberately removed by the demo changeover, so every row would report a false ✗. Asserting');
   console.log(`     the demo ledger (${DEMO_LEDGER_KEY}) instead — same relationship check, right declaration.`);
 
   const ledger = overlay?.[DEMO_LEDGER_KEY] || null;
   if (!ledger) {
-    warn(`dataset_profile is "${DEMO_PROFILE}" but aliases.${TEST_ENV}.json carries no ${DEMO_LEDGER_KEY} — the demo's served-org attachments are UNVERIFIABLE (and so is its teardown); re-run \`TEST_ENV=${TEST_ENV} npm run seed:sales-rep-family -- --profile demo\` and commit the refreshed overlay`);
+    warn(`dataset_profiles.${SALES_REP_FAMILY} is "${DEMO_PROFILE}" but aliases.${TEST_ENV}.json carries no ${DEMO_LEDGER_KEY} — the demo's served-org attachments are UNVERIFIABLE (and so is its teardown); re-run \`TEST_ENV=${TEST_ENV} npm run seed:sales-rep-family -- --profile demo\` and commit the refreshed overlay`);
     return;
   }
 

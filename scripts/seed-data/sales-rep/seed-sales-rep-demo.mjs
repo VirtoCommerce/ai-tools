@@ -215,7 +215,7 @@ async function findExisting(memberType, marker, name, ledgerId) {
   const rows = res?.results || [];
   const hit = rows.find((m) => m.outerId === marker) || rows.find((m) => m.name === name) || null;
   if (!hit && !ledgerId) {
-    verbose(`no ${memberType} found for "${name}" by marker or name — will CREATE`);
+    verbose(`no ${memberType} found for "${name}" by marker or name${TEARDOWN ? ' — nothing to sweep' : ' — will CREATE'}`);
   }
   return hit;
 }
