@@ -99,7 +99,9 @@ function main() {
   // A TOKEN THAT CANNOT WRITE IS SAID ONCE, to the person (VCST-6378) -- a `systemMessage`, which is shown
   // and changes nothing about the turn, unlike a block. `claimDeniedNotice` marks it told before it is
   // printed, so a crash costs the notice, never a repeat.
-  const notice = claimDeniedNotice(process.env);
+  // Only while the denial holds for the token this machine pushes with (round 2): a switched token is not
+  // told it cannot write.
+  const notice = accessBlock(process.env, writeToken(process.env).token) ? claimDeniedNotice(process.env) : null;
   if (notice) process.stdout.write(JSON.stringify({ systemMessage: accessWhy(notice.code, process.env) }));
 
   // THE IDENTITY COMES FROM `sessionId()`, NOT FROM THE PAYLOAD, and the difference is not cosmetic:

@@ -95,7 +95,14 @@ const EMAIL = /[A-Za-z0-9._%+*-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,
  * `git@github.com`). A first name on any domain, the company's own included, is still a person.
  */
 const FILE_TLD = /\.(?:png|jpe?g|gif|webp|svg|avif|ico|bmp|js|mjs|ts|css|json|md|html?|xml|ya?ml|txt|map|woff2?)$/;
-const COMMON_TLD = new Set(['com', 'net', 'org', 'ru', 'io', 'co', 'uk', 'de', 'fr', 'nl', 'eu', 'us', 'me', 'dev', 'app', 'info', 'biz', 'ua', 'by', 'kz', 'pl']);
+// Real TLDs a capitalised address may end in, the long generic ones included (round 2: `Company.Online`,
+// `Firma.Store`). Outside this list, a capitalised word-length last label reads as code (`Component.Prototype`).
+const COMMON_TLD = new Set([
+  'com', 'net', 'org', 'ru', 'io', 'co', 'uk', 'de', 'fr', 'nl', 'eu', 'us', 'me', 'dev', 'app', 'info', 'biz', 'ua', 'by', 'kz', 'pl',
+  'online', 'store', 'shop', 'site', 'website', 'tech', 'cloud', 'email', 'space', 'digital', 'agency', 'company', 'group',
+  'global', 'world', 'media', 'design', 'studio', 'solutions', 'services', 'systems', 'software', 'network', 'center',
+  'consulting', 'international', 'business', 'support', 'team', 'works', 'today', 'club', 'live', 'life', 'xyz', 'pro', 'name',
+]);
 const ROLE_LOCAL = /^(?:no-?reply|support|info|admin(?:istrator)?|sales|notifications?|mailer-daemon|postmaster|webmaster|git|hello|contact|help|team|billing|orders?|service)$/;
 
 /** Is this one address somebody's real mailbox, as far as a shape can tell? */
@@ -266,7 +273,8 @@ export function secretValuesFromEnv(env = process.env) {
     // them as such would refuse every capture that mentions them (review of ai-tools#460).
     // A `/` alone does not make a path -- base64 keys carry one (review round 1) -- but a slash-separated
     // run of plain words does (`connect/token`): skipped.
-    const wordsPath = /^[A-Za-z][\w.-]*(?:\/[A-Za-z][\w.-]*)+$/.test(v) && !/\d/.test(v);
+    // Lower-case segments only (round 2): `api/v2/token` is a path, while a base64 key mixes cases.
+    const wordsPath = /^[a-z0-9][a-z0-9._-]*(?:\/[a-z0-9][a-z0-9._-]*)+$/.test(v);
     if (v.length >= 8 && !/\s/.test(v) && !wordsPath && /\p{L}/u.test(v) && /[^\p{L}]/u.test(v) && !rootedPath(v)) out.add(v);
   }
   return out;
