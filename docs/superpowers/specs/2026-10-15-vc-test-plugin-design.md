@@ -1,0 +1,261 @@
+# `vc-test` — one testing flow for any Virto Commerce project
+
+> **Status: for review.** Brainstormed with the owner on 2026-10-15; every decision in §2 is the owner's.
+> Builds on the `/qa-test` redesign ([spec](2026-10-09-qa-test-strategy-redesign.md), D1–D12) and on
+> `/ticket-context` ([spec](2026-10-08-ticket-context-design.md)). Supersedes the 2026-10-15 plan that turned
+> `/qa-test-fast` into the prototype; that plan was withdrawn before execution. Tracked in VCST-6249.
+
+## 1. Problem and goal
+
+Testing a ticket today takes `/qa-test` FAST, `/qa-test` FULL or `/qa-test-fast`, chosen by ticket type rather
+than risk, and none of them reaches a client: the whole QA toolset lives in this repository's `.claude/`. The two
+pieces the redesign is built on — `/ticket-context` (one gated context bundle) and `/qa-test-strategy` (an
+approved, floor-checked test strategy) — exist and are validated, but nothing composes them into a run.
+
+**Goal.** One command that tests a ticket end to end by **calling the existing skills in order** —
+`/ticket-context` → `/qa-test-strategy` → only the artifacts the approved strategy selected → triage → verdict —
+distributed as a plugin so it works on **any Virto Commerce project**: the platform project here and a client's
+project with its own modules, theme, tracker, repositories and stand. Scalable (a new artifact is a registry
+entry, not an orchestrator rewrite), secure, fast and token-efficient. FAST, FULL and `/qa-test-fast` are
+removed once the new command has passed validation (§10 P4).
+
+**Non-goals.**
+- Not a rewrite of the skills it calls. Changes to them are the minimum the composition needs (§10).
+- Not a change to `/qa-verify-fix`, `/qa-hotfix-check` or `/qa-fix` — separate jobs (redesign §2).
+- **No regression in this project** (U7): no regression lane, no coverage triage, no regression-corpus updates.
+  Client suites may look nothing like ours; regression is the next large step.
+- No Azure Boards / Azure Repos connectors yet (U4) and no client-side domain-map or mind-map builders (U6) —
+  both are next steps into the interfaces this design creates.
+
+## 2. Decisions (owner, 2026-10-15)
+
+| # | Question | Decision |
+|---|---|---|
+| U1 | Where does the single flow live? | A **new command**; FAST, FULL and `/qa-test-fast` are removed after validation — "we are moving away from FAST/FULL" |
+| U2 | How does it reach clients? | A **new plugin `vc-test`** (working name) that depends on `vc-fix`, like `vc-perf` does. Canonical copies live in the plugin; this repository uses the plugin, with no duplicate under `.claude/` |
+| U3 | What is in v1? | **Core + adapters.** Core: context, strategy, test model, checklist, exploratory, visual lane, triage, investigate, `qa-bug`, verdict. Adapters run when the project has what they need and otherwise record a `SKIP` with the reason |
+| U4 | Trackers and code hosts | A **connector interface**; v1 ships Jira + GitHub (what `/ticket-context` reads today). Azure Boards / Azure Repos are a later step into the same interface; until then an Azure project gets a clear STOP with its reason |
+| U5 | "Any project" means | **Any Virto Commerce project**. Platform facts may be relied on: `/api/platform/modules`, the `vc-frontend` layout for the ui-kit, xAPI, VirtoOZ, the public kb |
+| U6 | Knowledge | **Two stores, one interface** (§6). A client run reads its project store first, then the platform store, and writes **only** to its project store. Domain/mind-map builders for clients come next |
+| U7 | Regression | **Out of this project.** F5 still fires, but records the cases at risk and the follow-up instead of requiring a run (§5.3). The post-verdict corpus update goes with it |
+| U8 | Orchestrator shape | **Registry + planner**: `artifacts.json` declares the artifacts, `plan-run.mjs` computes the waves, the command executes the plan |
+| U9 | Removal timing | Build → validate on 3–5 tickets → remove FAST/FULL/`/qa-test-fast` as the last phase of this project |
+| U10 | Committed tests | An exception like `plugins/vc-secrets/`: the knowledge-store write router and the write-zone check get **committed** tests; everything else follows the repository rule (temporary tests, deleted before commit) |
+
+## 3. The shape
+
+```
+/vc-test:qa-ticket <KEY> [--yes] [--dry-run]                         (working name)
+ 0 PROBE     capabilities.mjs → capabilities.json            what this install can do
+             route (type × status role → job) · rounds.mjs   a fourth round STOPs before any context
+ 1 CONTEXT   /ticket-context <KEY> → bundle.json             parallel analysts, cached 24 h
+ 2 STRATEGY  /qa-test-strategy → test-strategy.md            floors · gate · one approval (--yes) · verifier if Critical
+ 3 RUN       plan-run.mjs → run-plan.json → waves            only RUN rows, ≤3 browser lanes
+ 4 CLOSE     trace.mjs reconcile → /qa-triage-results → qa-investigate → qa-bug → verdict
+             → verdict.md + HTML → tracker comment after a yes → knowledge write-back
+```
+
+The command holds the order of calls and pointers, never a rule of its own: every rule lives in the skill
+it belongs to and is cited. Body budget: ≤ 8,000 chars (BUDGET-004 is the hard cap; this is the target).
+
+**Routing.** Spec §5 of the redesign, unchanged: a fix-ready Bug ⇒ `/qa-verify-fix`, a hotfix-ready Bug ⇒
+`/qa-hotfix-check`, a Sub-task re-enters with its parent, everything else is a test job (a not-fixed Bug's
+mission is "reproduce and characterize", next `/qa-fix`). A role the table cannot decide is `unresolved` ⇒ STOP
+and ask, never a guess.
+
+**Rounds.** At most three per ticket (D6). Counted before any context from local evidence — every committed
+version of the ticket's `summary.json` (distinct builds; validation finding V9: a round overwrites the file, git
+history keeps it) and the reconciled round sections of `test-strategy.md` — and recounted from the bundle's
+verdict comments once it exists.
+
+## 4. Components
+
+| Unit | Does | Depends on |
+|---|---|---|
+| `commands/qa-ticket.md` | runs steps 0–4 in order, executes `run-plan.json` | everything below, by path |
+| `skills/ticket-context/` | **moved** from `.claude/skills/`; connectors extracted (§7) | connectors, `knowledge-store.mjs` (read) |
+| `skills/qa-test-strategy/` | **moved**; floors read `capabilities.json` (§5.2); Artifacts rows come from the registry | `artifacts.json`, `capabilities.json` |
+| `skills/qa-test-model/`, `qa-exploratory/`, `qa-triage-results/` (ticket mode), `qa-design/` | **moved** canonical copies | `vc-fix` agents and skills |
+| `vc-fix`: `qa-checklist`, `qa-investigate`, `qa-bug`, `qa-risk`, `qa-evidence`, agents `qa-*-expert`, `project-init`, `project-profile.json` | **reused**; `qa-checklist` Mode 5 gains the risk id in Ref and `--from-strategy` (a `vc-fix` version bump) | — |
+| `lib/artifacts.json` | the only list of artifacts (§5.1) | — |
+| `lib/capabilities.mjs` | probes the install, writes `capabilities.json` | profile, env, MCP list, project files |
+| `lib/plan-run.mjs` | approved strategy + registry + capabilities → `run-plan.json` | the three above |
+| `lib/route.mjs` · `lib/rounds.mjs` · `lib/trace.mjs` | routing · round count · checklist↔risk trace and reconciliation | the strategy reader |
+| `lib/knowledge-store.mjs` | the one reader/writer of project and platform knowledge (§6) | profile |
+| `lib/write-zones.mjs` | at close, checks every changed file against the zones the registry allows | `artifacts.json`, git |
+
+The skills that move are deleted from `.claude/` in the same phase (U2); this repository's consumers are
+repointed to the plugin, and FULL/FAST — the remaining consumers of the moved execution skills — are removed in
+P4. Paths inside the plugin resolve through `import.meta.url` / `pluginRoot()`; output paths through
+`outputRoot()` (`plugins/CLAUDE.md`).
+
+### 4.1 Data flow
+
+Every hand-off is a file, never a summary in a brief.
+
+```
+capabilities.json ─┐
+bundle.json ───────┼─► test-strategy.md (approved) ─► plan-run.mjs ─► run-plan.json
+artifacts.json ────┘                                                   │
+                          wave 1  test-model ‖ mind-map* ‖ contract-refresh*
+                          wave 2  exploratory           (when the strategy says FIRST)
+                          wave 3  checklist ── trace.mjs check
+                          wave 4  checklist-runners ‖ exploratory (ALONGSIDE) ‖ visual   (≤3 browser lanes)
+                                                                       │
+        testing-checklist.md + extras.json ─► trace.mjs reconcile ─► triage ─► verdict
+```
+`*` adapter. Reports land where they do today, `reports/tickets/{SPRINT}/<KEY>/` relative to `outputRoot()`:
+`test-strategy.md`, `testing-checklist.md`, `summary.json`, `verdict.md`. `bundle.json`, `capabilities.json`
+and `run-plan.json` are working state under `.vc-fix/`, never reports.
+
+## 5. Registry, capabilities, floors
+
+### 5.1 `artifacts.json`
+
+One entry per artifact. The strategy's Artifacts table, its gate and the planner all read it; none keeps its own
+list.
+
+```json
+{ "id": "exploratory",
+  "row": "Exploratory",
+  "run": { "skill": "qa-exploratory", "agent": "qa-testing-expert", "model": "sonnet" },
+  "needs": ["test-model"],
+  "lane": "browser:playwright-firefox",
+  "requires": ["browser"],
+  "writes": ["reports/exploratory/SBTM-*", "reports/tickets/*/<KEY>/screenshots/**"],
+  "order": "strategy" }
+```
+
+v1 entries: `test-model`, `mind-map`\*, `contract-refresh`\*, `checklist`, `exploratory`, `checklist-runners`
+(storefront + admin/API lanes), `visual`, `verifier`. Adding an artifact = an entry + its skill; the command does
+not change. `model` is per entry (§8).
+
+### 5.2 Capabilities and the rule "unavailable is not doubt"
+
+`capabilities.mjs` answers, once per run, what this install can do: tracker and code-host connectors and their
+credentials, `BACK_URL`/`FRONT_URL` reachability, browsers, Chrome DevTools MCP, the kb and VirtoOZ MCP servers,
+the project knowledge store and its domain maps / mind maps, and the project's own scripts (`schema:refresh` for
+contract refresh).
+
+**Rule.** A floor whose signal *could not be read* fires on doubt (F9, as today). A floor that requires an
+artifact the install *cannot run* does not turn that into doubt: the strategy records `SKIP — not available in
+this install: <capability>`, the verdict lists it under "not tested, and why", and the residual risk is written
+in Out of scope. A `RUN` row whose capability is missing is a planning error `plan-run.mjs` refuses. Nothing is
+silently dropped, and a client without our corpus is not handed a floor nothing can execute.
+
+### 5.3 Floor changes
+
+| Floor | Change |
+|---|---|
+| F2 | reads the domain map from the **project** knowledge store (§6), not from a repository path |
+| F5 | **U7:** fires as today when the bundle lists cases at risk, and requires the strategy to list them in Out of scope with their residual risk and the follow-up (`/qa-regression <suites>` where a corpus exists) — not a run. A project with no regression corpus (no `regression:select`) has the capability missing, so F5 records `SKIP — not available in this install` instead of firing on doubt (§5.2) |
+| F6 | deployment from `/api/platform/modules` on `BACK_URL` (any VC project) plus the theme version the storefront reports; the repository's `deploy:pr` stays an adapter that adds PR-artifact resolution where present |
+| F8 | the ui-kit is recognised by `vc-frontend` layout (U5); a client theme fork keeps that layout |
+
+## 6. Knowledge: two stores, one interface
+
+| Store | Holds | Read by | Written by |
+|---|---|---|---|
+| **platform** | how Virto Commerce behaves: the public kb (`VirtoCommerce/vc-knowledge`), VirtoOZ | every project | the **platform project only** |
+| **project** | how this project's product behaves | this project | this project |
+
+**Read order:** project first, then platform. When they disagree, the project store wins *for that project* — a
+client customisation is not a platform error, so it never becomes a dispute against the platform entry.
+
+**What the project store holds** (the formats used here today):
+
+| Kind | Format | Written by |
+|---|---|---|
+| business rules | `rules/<slug>.yaml` (the `bl/` shape) | the run proposes (SUSPECT / candidate); a human confirms |
+| domain map | `domain/<slug>.md` | a domain-map builder (next phase) |
+| mind map | `domain/<slug>.mind-map.json` | a mind-map builder (next phase) |
+| test documentation | strategies, test models, checklists, verdicts, candidate and stale case lists | the flow |
+| observed behaviour | kb entries: question, claim, trust, provenance | the flow's close: capture / confirm / dispute |
+
+**v1 backend:** a folder in the client's repository, default `qa-knowledge/`, path set in
+`project-profile.json`; git gives history, review and access control. Other backends (a private kb repository,
+Confluence) plug into the same interface later. This repository is one configuration of it: project =
+`.claude/knowledge/`, platform writes enabled.
+
+**Every write goes through `knowledge-store.mjs`**, which:
+- refuses a platform write when `projectType` is `client`, whatever the caller asks;
+- scrubs the text with the existing secret scrubber before writing;
+- writes only inside the configured store path.
+
+Its tests are committed (U10). v1 fills test documentation, observed behaviour and business-rule proposals —
+the things the flow already produces. Domain maps and mind maps are read when present.
+
+## 7. Connectors
+
+`/ticket-context` reads Jira and GitHub today, inline in its `lib/`. They are extracted behind two interfaces,
+`tracker` (fetch issue, fields, comments, attachments, links; post or amend one comment) and `host` (find a
+ticket's PRs; read metadata, files, diff, review threads), selected by `project-profile.json`. v1 implements Jira
+and GitHub and keeps today's behaviour byte-for-byte on the platform project (`/ticket-context`'s own gate and the
+VCST-5097 bundle are the regression check). An `azure` tracker or `azure-repos` host gets a STOP naming the
+missing connector.
+
+Defaults that assume this repository (`DEFAULT_ORG = "VirtoCommerce"`, `TEST_ENV` default `vcst`) become profile
+values with those defaults only when no profile exists.
+
+## 8. Security, speed, tokens
+
+**Security**
+
+| Threat | Control |
+|---|---|
+| client code and secrets in context | `ticket-context` analysts are Read/Grep/Glob only, no network or shell; HAR and logs are scrubbed before they are read; ticket and PR text is data, and anything instructing is listed in `embedded_instructions[]`, never acted on |
+| credentials | resolved from the layered env and `.env.local` through the profile; never in a brief; Playwright `--secrets` takes bare key names |
+| outward writes | tracker comment only after a yes; no status transition, ever; bugs only through `qa-bug` and its gate; no PR writes; knowledge writes only through `knowledge-store.mjs` |
+| writes outside an artifact's zone | `write-zones.mjs` compares the run's changed files with the `writes` globs of the artifacts that ran; a file outside every zone makes the run BLOCKED (tests committed, U10) |
+| public-kb leak | the platform-write refusal in `knowledge-store.mjs` is code, not prompt |
+
+**Speed.** The bundle is cached 24 h and its analysts run in parallel; waves are parallel inside; probes remove
+dead dispatches before they happen; a light strategy runs neither the model nor exploratory. The known slow step
+is `/ticket-context`'s join (O6, up to 5 min); speeding it up is part of P2.
+
+**Tokens.** A thin command; skills load only for `RUN` rows; files, not summaries, between steps; scripts own
+the deterministic work (floors, gate, plan, trace, rounds, routing); `model` per registry entry. Measured in the
+`/ticket-context` validation: analysts on Opus cost 2.5× the old Stage 1, on Sonnet about 1.7×; the default is
+chosen per entry in P2 from that measurement.
+
+## 9. Error handling
+
+Every step ends in one of four states: **OK**, **SKIP**(reason), **BLOCKED**(reason), **STOP**.
+
+| Condition | State |
+|---|---|
+| capability missing | SKIP — "not available in this install: …" |
+| `/ticket-context` STOP, or F6 (a PR not deployed) | BLOCKED, the line quoted |
+| route `unresolved`, a fourth round, no human and no `--yes` at approval | STOP |
+| a subagent's internal error | work directly, no retry of the same delegation (`.claude/rules/agents.md` §Agent Delegation) |
+| a browser lane fails | one retry, then the fallback browser |
+| a risk without a result after the run | back to execution once, then a deviation with its reason; an unresulted High/Critical caps the verdict below PASS |
+| a re-run on the same build | resumes from the first incomplete wave in `run-plan.json`; the approved strategy is reused |
+
+## 10. Phases
+
+| Phase | Delivers | Checked by |
+|---|---|---|
+| **P1 Foundation** | plugin manifest, `vc-fix` dependency, marketplace entry; `ticket-context` and `qa-test-strategy` moved; tracker/host interfaces with Jira + GitHub; `capabilities.mjs`; F6 via `/api/platform/modules`; `knowledge-store.mjs` (+ committed tests); the "unavailable is not doubt" rule in the floors | `claude plugin validate`; committed store tests; temporary tests for the rest; `/ticket-context` + strategy from the plugin on VCST-5097 reproduce today's bundle and gate result |
+| **P2 Flow** | `artifacts.json`, `plan-run.mjs`, `route.mjs`, `rounds.mjs`, `trace.mjs`, `write-zones.mjs` (+ committed tests); the command; execution skills moved; `qa-checklist` risk ids (`vc-fix` bump); the join speed-up (O6); per-entry models | `--dry-run` on 3 tickets: wave plan, gates, no outward write |
+| **P3 Validation** | live runs on 3–5 VC tickets (Story, Review task, Technical task, UI-only, Bug not-fixed) + one client-shaped run (`projectType: client` profile in a sandbox) | redesign §8 measures; the client-shaped run shows SKIPs for missing adapters and zero platform writes |
+| **P4 Removal** | `/qa-test` FAST/FULL, `/qa-test-fast`, `ticket-routing.md` §5–§5d, Artifact A, `3-cases`, `1e-plan` removed; `ci/run-full-cycle.ts`, `ci/run-suite-audit.ts` and the other consumers repointed or cleaned; plugin released with its tag (`docs/release-process.md`) | `npm run context:check`, `npm test`, CI |
+
+## 11. Out of scope, and what comes next
+
+- **Regression** (U7): the regression lane, coverage triage and staleness check, `regression:select`'s blanket
+  selection (V7: 33–91 suites per ticket, because every path token that matches manifest vocabulary widens the
+  selection), and the post-verdict corpus update through `/qa-test-lifecycle`. Until then the run hands its
+  candidate and stale case lists to the project store's test documentation.
+- **Azure Boards / Azure Repos connectors** (U4).
+- **Client domain-map and mind-map builders** writing into the project store (U6).
+
+## 12. Risks
+
+| Risk | Mitigation |
+|---|---|
+| Moving five skills breaks this repository's consumers before P4 | P1/P2 repoint each consumer in the same commit as the move; `context:check` ratchets dangling paths |
+| The client-shaped run is a sandbox, not a real client | P3 states it; the first real client install is watched with `/vc-self-check` telemetry (opt-in) |
+| Without regression, a change that breaks an untouched flow escapes the ticket run | F5 still names the cases at risk and the follow-up command in every strategy; the residual risk is written down, not silent |
+| A connector interface designed around Jira/GitHub only fits Azure badly | the interface is the operations `/ticket-context` and the close step actually call (§7), and `vc-fix` already drives Azure Boards through the same profile |
+| Deleting FAST/FULL removes the in-run regression this repository has today | accepted with U7; `/qa-regression` stays a standalone command |
