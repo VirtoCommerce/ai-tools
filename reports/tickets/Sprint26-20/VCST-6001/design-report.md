@@ -34,3 +34,34 @@ Browser session closed at end; no tracker writes. Dark mode = `prefers-color-sch
 ## Not covered
 Real SR output; Coffee/Red preset sweep (storefront theme preset not switched); Storybook error-state/with-footer stories not individually measured (storefront covers the error/footer behaviour); Firefox/Chrome parity.
 Screenshots: `reports/tickets/Sprint26-20/VCST-6001/screenshots/4v-*.png` (7 files).
+
+## Storybook pass (follow-up)
+qa-storybook: loaded. Hosted SB (PR build, Chrome DevTools MCP, axe 4.10.2 wcag2a/aa/21/22aa, light + dark). Console: 0 errors/warnings in all 31 stories. Env was warming (503) for ~2 min first.
+
+| Story | Render | axe | Names | Keyboard / focus | Result |
+|---|---|---|---|---|---|
+| vcinput clear-button-aria-label / clearable | ok | 0 | "Clear: Start date" / "Clear" | - | PASS |
+| vcdateinput clearable | ok | 0 | input "Date", "Clear" | - | PASS |
+| vcdatepicker default | ok | 0 | "Open calendar" | Tab,Tab>btn; Enter>today; Arrow+Enter picks, closes, focus>INPUT; Esc same | PASS (see F2) |
+| datepicker clearable | ok | 0 | "Clear","Open calendar" | Enter on Clear empties, focus>input | PASS |
+| datepicker with-footer | ok | 0 | TODAY/CLEAR (story slot) | Today sets+closes, focus>input; Clear empties, calendar STAYS OPEN, focus>CLEAR | PASS |
+| datepicker min-max / size-sm / size-xs | ok | 0 | fallback | targets 32/26px >=24 | PASS |
+| datepicker external-error | ok | 0 | aria-invalid=true | error #de3131 on white 4.58:1 | PASS |
+| datepicker locale-ja | ok | 0 | "カレンダーを開く", nav JA | - | PASS (F3) |
+| datepicker disabled | ok | 0 | input+btn disabled | Tab skips both | PASS |
+| rangepicker default | ok | 0 | "Open calendar"; inputs "Start/End date" | Tab x3>btn; pick start, pick end closes, focus>START input; Esc same | PASS (F2) |
+| rangepicker split | ok | 0 | "Clear: Start date", "Open calendar: End date" etc (contextual) | Clear: Enter empties, focus>input; pick via btn works | PASS |
+| rangepicker error-state | ok | 0 | aria-invalid=true on both inputs | error 4.58:1 light | PASS light / FAIL dark (F1) |
+| rangepicker clearable | ok | 0 | "Clear date range" | Enter clears both, focus>start input | PASS |
+| rangepicker with-footer | ok | 0 | footer CLEAR | Clear empties, calendar stays open, focus>CLEAR | PASS |
+| rangepicker min-max / reserved-details-row / with-mask | ok | 0 | fallback ("Open calendar"; min-max also split names) | - | PASS |
+| rangepicker disabled | ok | 0 | inputs+btn disabled | Tab skips | PASS |
+Dark (Storybook darkMode global + emulated scheme): datepicker clearable 0, range split 0, range error-state 1 serious.
+Docs: datepicker--docs ArgsTable lists clearButtonAriaLabel + calendarButtonAriaLabel with descriptions; vcinput--docs lists clearButtonAriaLabel with description. Both have a prose section.
+
+Findings
+- F1 (dark, serious, BL-A11Y-003) error text #de3131 on #0a090b = 4.34:1 (<4.5) on .vc-input-details__message + inputs. NOT in scope: reproduces identically in vcinput--error-state dark (shared danger token). Light passes at 4.58 (marginal).
+- F2 (low, BL-A11Y-001 wording) After pick/Escape focus returns to the text INPUT, not the calendar trigger button, in picker and range. Existing behaviour; PR does not touch it. Decide whether "trigger" means the field.
+- F3 (low, story-only) locale-ja: <html lang="en"> with JA text; datepicker--docs inline clearable story shows JA names "クリア"/"カレンダーを開く" with ja date format (locale leaks from locale-ja story in docs mode). JA names are plain fallback, not "{field}をクリア": that pattern is only for split range. Hypothesis: harness locale leak, pre-existing; IN-SCOPE only if PR intended contextual JA names for single pickers.
+- F4 (info) reserved-details-row renders two identical pickers with duplicate names (story design). Disabled stories are not clearable, so disabled+clearable operability is NOT covered by any story (gap). 3:1 non-text contrast of icon buttons not measured (axe cannot); axe incomplete lists were empty.
+- No IN-SCOPE (new-prop) defects found.

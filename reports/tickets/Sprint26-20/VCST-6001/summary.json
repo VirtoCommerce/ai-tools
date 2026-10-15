@@ -117,7 +117,23 @@
     "drift": [
       "AC3 — ticket premise (clearable today) false; decision recorded in tracker comment 111504"
     ],
-    "dod": "none declared"
+    "dod": "none declared",
+    "locales": {
+      "static_13": "PASS",
+      "live": [
+        "ja",
+        "zh",
+        "ru",
+        "pl",
+        "fr",
+        "es",
+        "it",
+        "pt",
+        "de"
+      ],
+      "live_result": "PASS — strings match PR exactly",
+      "nl": "not shipped by theme (404) — env config"
+    }
   },
   "total_cases": 13,
   "passed": 11,
@@ -188,36 +204,61 @@
       "Close chip"
     ]
   },
-  "bugs_filed": [],
-  "bugs_not_filed": [
+  "bugs_filed": [
     {
+      "key": "VCST-6195",
       "title": "Stale preset after removing Start chip of an applied preset",
       "severity": "Medium",
       "provenance": "PRE-EXISTING",
-      "reason": "operator chose not to file",
-      "draft": "reports/bugs/open/medium/BUG-SalesRep-CustomerOrders-Stale-Preset-After-Chip-Removal.md"
+      "relationship": "standalone + Relates VCST-6001",
+      "labels": [
+        "found-by-agent",
+        "found-in-testing"
+      ],
+      "filed": "2026-10-07",
+      "draft": "reports/bugs/open/medium/BUG-SalesRep-CustomerOrders-Stale-Preset-After-Chip-Removal-VCST-6195.md"
     },
     {
-      "title": "Raw i18n key custom_date after in-session language switch",
+      "key": "VCST-6196",
+      "title": "Raw i18n key custom_date after in-session language switch or (intermittently) first cold load of a locale",
       "severity": "Medium",
       "provenance": "PRE-EXISTING",
-      "reason": "operator chose not to file",
-      "draft": "reports/bugs/open/medium/BUG-SalesRep-CustomerOrders-Raw-I18n-Key-After-Language-Switch.md"
+      "relationship": "standalone + Relates VCST-6001",
+      "labels": [
+        "found-by-agent",
+        "found-in-testing"
+      ],
+      "filed": "2026-10-07",
+      "draft": "reports/bugs/open/medium/BUG-SalesRep-CustomerOrders-Raw-I18n-Key-After-Language-Switch-VCST-6196.md"
     },
     {
+      "key": "VCST-6197",
       "title": "Horizontal overflow at 375 on drawer reopen",
       "severity": "Medium",
       "provenance": "PRE-EXISTING",
-      "reason": "operator chose not to file",
-      "draft": "reports/bugs/open/medium/BUG-SalesRep-CustomerOrders-Mobile-Drawer-Horizontal-Overflow.md"
+      "relationship": "standalone + Relates VCST-6001",
+      "labels": [
+        "found-by-agent",
+        "found-in-testing"
+      ],
+      "filed": "2026-10-07",
+      "draft": "reports/bugs/open/medium/BUG-SalesRep-CustomerOrders-Mobile-Drawer-Horizontal-Overflow-VCST-6197.md"
     },
     {
+      "key": "VCST-6198",
       "title": "Focus lost to body after chip removal / Reset filters",
       "severity": "Medium",
       "provenance": "PRE-EXISTING",
-      "reason": "operator chose not to file",
-      "draft": "reports/bugs/open/medium/BUG-SalesRep-CustomerOrders-Focus-Lost-After-Chip-Remove-Reset.md"
-    },
+      "relationship": "standalone + Relates VCST-6001",
+      "labels": [
+        "found-by-agent",
+        "found-in-testing"
+      ],
+      "filed": "2026-10-07",
+      "draft": "reports/bugs/open/medium/BUG-SalesRep-CustomerOrders-Focus-Lost-After-Chip-Remove-Reset-VCST-6198.md"
+    }
+  ],
+  "bugs_not_filed": [
     {
       "title": "Calendar footer Clear leaves calendar open",
       "severity": "Low",
@@ -296,7 +337,14 @@
         "severity": "Medium",
         "grading_note": "control repro ab-5; draft medium/BUG-SalesRep-CustomerOrders-Mobile-Drawer-Horizontal-Overflow.md"
       }
-    ]
+    ],
+    "storybook_pass": {
+      "stories": 31,
+      "console_errors": 0,
+      "axe_light_violations": 0,
+      "in_scope_defects": 0,
+      "dark_error_state": "4.34:1 — pre-existing F1"
+    }
   },
   "contract": {
     "surface": "false",

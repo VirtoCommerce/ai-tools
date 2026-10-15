@@ -89,3 +89,11 @@ Scans: `tc:scope --domain sales-rep` (8 observables: Invalid date range · Start
 - **Not filed (operator decision), drafts:** `reports/bugs/open/medium/BUG-SalesRep-CustomerOrders-{Stale-Preset-After-Chip-Removal,Raw-I18n-Key-After-Language-Switch,Mobile-Drawer-Horizontal-Overflow,Focus-Lost-After-Chip-Remove-Reset}.md`
 - **Below severity floor (not filed):** footer Clear leaves calendar open (IN-SCOPE, Low) · focus-return target (Low) · dark contrast (Low) · /account/orders chip format (OUT-OF-SCOPE)
 - Tracker comment: 111504 · Evidence: `screenshots/`, A/B control `screenshots/ab-*`
+
+## Follow-up 2026-10-06 — localization + full Storybook pass
+
+- **Locales (static, PR head):** all 13 locale files carry `date_range`, `remove_filter`, `clear_field`, `open_calendar_for` translated; `invalid_range` removed everywhere; ja/zh keep their own word order. `nl` is offered by the store but the theme ships no nl locale (`/nl/…` → 404) — env config, not this PR.
+- **Locales (live, cold load by URL):** ja, zh, ru, pl, fr, es, it, pt (+ de earlier) — labels, placeholders/date format, contextual calendar names, translated validation messages, zero-padded chips in each locale's input format and Remove-filter names all match the PR strings exactly; no overflow at 1920/375. **PASS.**
+- **B11 widened:** the raw `custom_date` key also appears intermittently on the first cold load of a locale (race) — reproduced on the control without #2519 ⇒ still PRE-EXISTING (draft updated).
+- **Observations, not graded:** pl validation text says "Data końcowa/początkowa" while labels say "Data zakończenia/rozpoczęcia"; the ja/es group accessible name at 1920 differs from the visible 375 label; combined layout keeps a generic "Open calendar" (one button).
+- **Storybook (31 stories, Chrome DevTools):** 0 console errors, 0 axe violations in light; contextual names on split, fallbacks elsewhere; Docs ArgsTables document `clearButtonAriaLabel` / `calendarButtonAriaLabel`. Dark `error-state` 4.34:1 = the pre-existing token defect (F1). No IN-SCOPE defect. Detail: `design-report.md` §Storybook pass.
