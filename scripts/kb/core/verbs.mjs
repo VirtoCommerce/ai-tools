@@ -21,6 +21,7 @@ import { normalizeConditions, repairConditions } from './conditions.mjs';
 import { parseEntry } from './frontmatter.mjs';
 import { anchorProblems, anchorShape, isSingleSegmentPath, namespaceRoots, neighbours, normalizeAnchor } from './coordinates.mjs';
 import { doorHints } from './door-hints.mjs';
+import { clientSha } from './build.mjs';
 import { undoMsysRewrite } from './anchors.mjs';
 import { claimKey, findDuplicate, identityKey, refusalMessage, subjectTakenMessage } from './identity.mjs';
 import { amendmentsOf, attestsCurrentClaim, buildIndex, buildPath, buildRow, claimHash, countEvidence, distinctDisputes, entryPath, isResolved, supportOf } from './index-build.mjs';
@@ -344,9 +345,14 @@ export const standProblem = (deployment) => resolveStand(deployment).problem ?? 
  */
 async function buildStamp(deployment, { env, dryRun = false, builds = null } = {}) {
   const r = resolveStand(deployment, { env });
-  if (dryRun || !r.known || typeof builds !== 'function') return {};
+  // WHY THERE IS NO STAMP, as a closed code (VCST-6378) -- `missing` rides on the write's log line. For
+  // two days after stamping shipped no live write carried one, and the reason was discarded here, so
+  // the base could not tell an old client from a failed probe from an unknown stand.
+  if (dryRun) return {};
+  if (!r.known) return { missing: 'unknown-stand' };
+  if (typeof builds !== 'function') return { missing: 'no-reader' };
   const b = await builds(r.value, { env });
-  return b.pin ? { item: { build: b.pin }, snapshot: b.snapshot, stand: r.value } : {};
+  return b.pin ? { item: { build: b.pin }, snapshot: b.snapshot, stand: r.value } : { missing: b.code ?? 'unknown' };
 }
 /**
  * WHAT THE WORK WAS -- a short English noun phrase, written by the AGENT and passed with the call.
@@ -1231,7 +1237,9 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
     subject: input.subject,
     // WHICH BUILD it was seen on (VCST-6221): a pin, an id -- no prose -- so `kb:report` can say what
     // share of new evidence carries a build. Absent when the stand could not be read.
-    ...(stamp.item?.build ? { build: stamp.item.build } : {}),
+    ...(stamp.item?.build ? { build: stamp.item.build } : stamp.missing ? { buildMissing: stamp.missing } : {}),
+    // Which client wrote it (VCST-6378): the checkout's commit, so a missing stamp has an owner version.
+    ...(clientSha() ? { client: clientSha() } : {}),
     // Born marked as a defect (VCST-6317), as a closed code -- the ticket key stays on the entry.
     ...(defect.value ? { defect: defect.value === 'suspected' ? 'suspected' : 'ticket' } : {}),
     // THE QUESTION, not only the subject. The subject is the claim; the question is the RETRIEVAL
@@ -1429,7 +1437,9 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
     ...(fixedIn.value ? { fixedIn: true } : {}),
     // The build pin (an id) and whether the gate made it a SOFT dispute (VCST-6221) -- what `kb:report`
     // counts for the stamp share and the soft-dispute rate. The difference itself stays on the entry.
-    ...(stamp.item?.build ? { build: stamp.item.build } : {}),
+    ...(stamp.item?.build ? { build: stamp.item.build } : stamp.missing ? { buildMissing: stamp.missing } : {}),
+    // Which client wrote it (VCST-6378): the checkout's commit, so a missing stamp has an owner version.
+    ...(clientSha() ? { client: clientSha() } : {}),
     ...(contested ? { soft: true } : {}),
     ...repair,
     ...context({ via, call, topic }),

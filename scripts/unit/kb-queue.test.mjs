@@ -320,7 +320,10 @@ test('the PUBLIC log line is the queue line minus the payload', () => withQueue(
   // corpus's three labelled pairs; this one carries 4 of 4). Ids of public entries, no prose, and
   // the same chain `related` exists for — a later dispute of an id that appears here is the record
   // that the writer acted on what it was shown.
-  assert.deepEqual(Object.keys(publicLine).sort(), ['at', 'id', 'kind', 'question', 'read', 'related', 'subject']);
+  // `buildMissing` and `client` (VCST-6378): why the evidence carries no build, as a closed code, and the
+  // writing checkout's commit, 8 hex characters. Neither is prose; both exist so a write without a stamp
+  // can be traced to its cause and its client version.
+  assert.deepEqual(Object.keys(publicLine).sort(), ['at', 'buildMissing', 'client', 'id', 'kind', 'question', 'read', 'related', 'subject']);
   assert.equal(publicLine.question, CAPTURE.question, 'the retrieval key, not only the claim');
   for (const field of ['related', 'read']) {
     assert.ok(Array.isArray(publicLine[field]), `${field}: ids, so a later dispute is traceable`);
