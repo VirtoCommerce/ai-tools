@@ -72,8 +72,13 @@ export function markerSweepInScope(outerId, only) {
   return demoMarkerKey(outerId) === only;
 }
 
-/** The dataset flag written to `_meta.dataset_profile`; the fixtures profile is its counterpart. */
+/**
+ * The family's profile stamp, `_meta.dataset_profiles['sales-rep']` (scripts/lib/seed-family.mjs; the
+ * legacy `_meta.dataset_profile` is still read). The fixtures profile is the demo's counterpart.
+ */
 export const DEMO_PROFILE = 'sales-rep-demo';
+export const SALES_REP_FAMILY = 'sales-rep';
+export const SALES_REP_PROFILE = Object.freeze({ fixtures: 'sales-rep-fixtures', demo: DEMO_PROFILE });
 
 /**
  * The overlay key the demo id ledger lives under. Declared HERE rather than in the seeder because

@@ -37,14 +37,15 @@ TEST_ENV=<env> npm run seed:sales-rep-family -- --teardown            # tear dow
 TEST_ENV=<env> npm run seed:sales-rep-family -- --profile demo        # or --profile fixtures (default)
 ```
 
-The live profile is recorded in `_meta.dataset_profile` of `test-data/aliases.<env>.json`
-(`sales-rep-demo` / `sales-rep-fixtures`). The bracketing is deliberately **asymmetric**: stamped
+The live profile is recorded in `_meta.dataset_profiles['sales-rep']` of `test-data/aliases.<env>.json`
+(`sales-rep-demo` / `sales-rep-fixtures`). The legacy `_meta.dataset_profile` is still read; the next
+stamp or clear moves it to the new key. The bracketing is deliberately **asymmetric**: stamped
 **before** the chain runs, so a run that dies halfway still blocks the other profile; cleared only
-**after** a fully clean teardown. `assertProfileFree()` in `seed-sales-rep-family.mjs` refuses to
+**after** a fully clean teardown. `runFamily()` in `scripts/lib/seed-family.mjs` refuses to
 seed one profile over a live other and prints the teardown command rather than interleaving them.
 
 > **The stamp is written by the FAMILY ENTRYPOINT ONLY.** `seed-sales-rep-demo.mjs` run directly
-> writes the id ledger but **not** the stamp — so `assertProfileFree()` reads `null` and allows
+> writes the id ledger but **not** the stamp — so the guard reads `null` and allows
 > anything, and `td:reconcile` check [12] stays on the fixtures branch. Always switch profiles
 > through `seed:sales-rep-family`. A direct run leaves the guard disarmed, which is how a routine
 > `seed:bootstrap` could drop the fixture family onto a live demo.

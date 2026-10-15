@@ -767,7 +767,7 @@ async function teardown() {
       const name = type === 'organization' ? spec.name : `${spec.firstName} ${spec.lastName}`;
       const m = demoMarker(marker, spec.key);
       if (!markerSweepInScope(m, ONLY)) continue;
-      const hit = await findByMarker(type === 'organization' ? 'Organization' : 'Contact', m, name);
+      const hit = await findExisting(type === 'organization' ? 'Organization' : 'Contact', m, name);
       if (hit?.id && hit.outerId === m && !fromLedger.includes(hit.id)) swept.push(hit.id);
     }
     const ids = [...new Set([...fromLedger, ...swept])];

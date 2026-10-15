@@ -29,6 +29,7 @@ import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lo
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { datasetProfiles } from '../lib/seed-family.mjs';
 import {
   ROOT, DRY_RUN, VERBOSE, api, auth, assertSafeTarget,
   ensureMemberIndex, ensureFulfillmentCenter, log,
@@ -51,7 +52,7 @@ const TEARDOWN_STEPS = [
   // products, its reps' memberships reference the organisations `company-users` owns, and its
   // documents reference uploaded files. Everything it holds must be released before the steps
   // below start deleting the entities it points at. The family entrypoint reverses its own
-  // internal chain and picks the live profile (fixtures vs demo) off _meta.dataset_profile.
+  // internal chain and picks the live profile (fixtures vs demo) off its stamp (scripts/lib/seed-family.mjs).
   // NOTE: this sweeps only what the CSVs still declare. Entities the CSVs no longer name —
   // hand-made reps, orphaned documents — need `npm run sr:inventory`, which is deliberately not
   // wired into an unattended chain: it can delete things no script can recreate.
@@ -280,7 +281,7 @@ function runStep(step) {
   // ── Seeder chain ──
   const results = [];
   const demoProfiles = (() => {
-    try { return JSON.parse(readFileSync(join(ROOT, `test-data/aliases.${process.env.TEST_ENV || 'vcst'}.json`), 'utf8'))?._meta?.dataset_profiles || {}; } catch { return {}; }
+    try { return datasetProfiles(JSON.parse(readFileSync(join(ROOT, `test-data/aliases.${process.env.TEST_ENV || 'vcst'}.json`), 'utf8'))); } catch { return {}; }
   })();
   for (const step of STEPS) {
     if (SKIP_OPTIONAL && !step.required) { results.push({ ...step, status: 'skipped' }); continue; }

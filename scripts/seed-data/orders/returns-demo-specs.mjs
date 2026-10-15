@@ -68,9 +68,8 @@ export function demoRetMarkerKey(v) {
 export const DEMO_RET_LEDGER_KEY = '_demo_returns_ledger';
 
 /**
- * The returns family's profile stamp. Lives at `_meta.dataset_profiles.returns`, NOT the legacy
- * single-valued `_meta.dataset_profile` the sales-rep family owns — two families sharing one string
- * would let a returns stamp silently clear the sales-rep guard.
+ * The returns family's profile stamp, `_meta.dataset_profiles.returns` — one key per family, so a
+ * returns stamp can never clear another family's guard.
  */
 export const RETURNS_FAMILY = 'returns';
 export const RETURNS_PROFILE = Object.freeze({ fixtures: 'returns-fixtures', demo: 'returns-demo' });
