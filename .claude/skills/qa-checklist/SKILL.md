@@ -1,7 +1,7 @@
 ---
 name: qa-checklist
 description: "[Testing] Generate test case writing checklists for any domain, feature, or regression area. Uses the built-in domain checklists (storefront + backend/admin + GraphQL) + custom creation."
-argument-hint: "domain name | feature | VCST-XXXX [--from-model] | new <domain> | admin <module>"
+argument-hint: "domain name | feature | VCST-XXXX [--strategy <file>] [--from-model] | new <domain> | admin <module>"
 
 
 ---
@@ -238,7 +238,7 @@ Products · xCart Wishlists & Saved for Later · xOrder · xProfile · xQuote ·
 
 ### Mode 5: From the test model (`VCST-XXXX --from-model`)
 
-Mode 2 + the test model + the mind map; every in-scope row or node becomes an item or a declared omission. Procedure: [`from-model.md`](from-model.md).
+Mode 2 + the test model + the mind map; every in-scope row or node becomes an item or a declared omission. `--strategy`: every risk too, and no model needed if it ran none. Procedure: [`from-model.md`](from-model.md).
 
 ### Mode 4: List All (`all` keyword)
 

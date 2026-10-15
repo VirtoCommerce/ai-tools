@@ -74,7 +74,7 @@ FAST routes*) has no analogue here. State the skip; do not leave it implied.
 
 ---
 
-## 3. The charter is DERIVED from the model — five named sources, zero invention
+## 3. The charter is DERIVED — named sources (the model's, and a strategy's), zero invention
 
 This is what separates the lane from a generic exploratory session, and it is the reason a bounded box is
 enough at all: the mission is not "go look at checkout", it is a list of specific unknowns the pipeline has
@@ -88,6 +88,7 @@ spans** (§5), not to how interesting the feature is.
 | 3 | Every scenario row whose oracle is **`{HYPOTHESIS}`** | the expected value nobody has seen — observe it | `1e` |
 | 4 | Every AC marked **DRIFT / NOT-FOUND / CONTRADICTS** | `1d` already says *"a static-diff finding is a suspicion, verify it live"* — this is where that verification happens | `1d` |
 | 5 | Every **at-risk row** `tc:scope` returned | is the existing assertion stale, or is the change wrong? A live look answers it *before* the row is disposed, not after | `1b` 2e |
+| 6 | Every risk an approved **test strategy**'s Exploratory row names, with the `{HYPOTHESIS}` oracle or question it rests on | the risks the strategy chose to explore rather than assert — the only source when the strategy ran no model (test-model redesign M9) | `/qa-test-strategy` (from `/qa-test-fast`) |
 
 **Sources 4 and 5 are not new work — they are work the pipeline already deferred and never scheduled.**
 `1d` says to carry every DRIFT into execution *"as a thing to verify live"*, and an at-risk row's `RE-BASE`
@@ -204,21 +205,22 @@ authoring in `/qa-exploratory` §Exploration Charter:
 Charter (ticket mode) — <ticket-key>. Box: <30|45|60> min HARD — sized to scope by §5 and stated here.
 Derived from the Test Model; do NOT widen it.
 
-Mission — five sources, each covered or reported NOT REACHED + reason:
+Mission — the sources present (1–5 from a model, 6 from a strategy), each covered or reported NOT REACHED + reason:
   1. Unresolved chain links (mechanism matrix GAP/WAIVED): [cells]
   2. Unresolved reverse edges: [edges]
   3. {HYPOTHESIS} oracles to ground, with the scenario row each belongs to: [rows]
   4. ACs flagged DRIFT / NOT-FOUND / CONTRADICTS by 1d: [ACs]
   5. tc:scope at-risk rows (1b 2e) — is the OLD assertion stale, or is the change wrong: [case ids + assertions]
+  6. Strategy risks the Exploratory row names: [R-n — what a customer would see — oracle or open question]
 
 Value chain (Test Model Part 0, verbatim): [chain]
-Domains: [1a domains]   Model: reports/ba/test-models/<TICKET>-<date>.md
+Domains: [1a domains]   Model: reports/ba/test-models/<TICKET>-<date>.md | none — no MODEL risk   Strategy: [path · Round N | none]
 Test data: [the @td()/{{VAR}} 3a has confirmed seeded so far — resolve at runtime, never hardcode]
 
 Extra returns this caller needs, beyond /qa-exploratory's own §Output tables:
   - Model amendments (chain links / variants / reverse edges), with evidence
   - Per {HYPOTHESIS} row: the OBSERVED value, or "not reached + reason"
-  - Per mission item 1–5: covered, or NOT REACHED + reason
+  - Per mission item (every source present): covered, or NOT REACHED + reason
 Do NOT file bugs — hand them back; the caller's 5-triage/5-file owns triage, severity and filing.
 ```
 
@@ -231,11 +233,11 @@ rule (any free browser lane, firefox included since 2026-09-08 — `.claude/rule
 
 ## 7. Gate (3x — inline, never a verifier dispatch)
 
-- **`ticket` mode STOPs without a charter.** No Test Model, or a model with no unresolved cell in any of
-  the five sources, means there is no mission — say so and skip the lane. Never improvise one, exactly as
+- **`ticket` mode STOPs without a charter.** Neither a Test Model nor a strategy Exploratory row, or no
+  unresolved item in any source, means there is no mission — say so and skip the lane. Never improvise one, exactly as
   `sprint` mode STOPs rather than inventing a charter set the plan does not contain. This, not a
   frontmatter flag, is what stops the command running unprompted.
-- Each of the five charter sources is **covered or `NOT REACHED + reason`**.
+- Each charter source present — 1–5 from the model, 6 from the strategy — is **covered or `NOT REACHED + reason`**.
 - Every `{HYPOTHESIS}` row is either grounded to `{OBSERVED}` (with the value) or **restated as still a
   hypothesis**, so Artifact A authors it knowingly and the later promotion hold is not a surprise.
 - Every net-new scenario carries an `Oracle ref` **and** a `Fate`; every `PROMOTE` appears in the model's
