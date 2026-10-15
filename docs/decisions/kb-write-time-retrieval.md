@@ -713,9 +713,9 @@ was 0.95, just under 0.957, so every ask became a list to read and close. Recali
 
 A real question often asks two things and the base holds them in two entries; the one-open contract
 cannot be satisfied by such a question (wave2: 1 of 9 partial targets resolved). Arm B
-(`AMBIGUOUS_CONTRACT_PARTS`, `render.mjs`) lets the agent open one entry per part, same handle, and
+("parts") lets the agent open one entry per part, same handle, and
 rely on each for its part. Same method as the `says:` A/B above, one variable: base main @ `eed590c`
-and its ranker frozen; `judge-harness items --contract one|parts`, byte-identical but for the contract
+and its ranker frozen; `judge-harness items` with the contract line switched, byte-identical but for the contract
 line; wave2 + wave3 + live1006 (197 `ambiguous` items: 89 non-partial targets, 56 partial, 54 controls);
 fresh Sonnet-class pickers, one run per arm, real `kb show` against an isolated queue, a reliance counted
 only when that batch's own log shows the open (0 unverified). The harness now scores several ids per item:
@@ -737,14 +737,13 @@ partial rises.
   answered and eleven points of precision. The same effect showed in a discarded first A run, whose
   picker brief itself said "states (part of)" and allowed several ids: 1.46 relied entries per ask and
   controls at 79.6%. The brief, not only the contract line, moves this number.
-- **Not shipped.** `AMBIGUOUS_CONTRACT_PARTS` stays bench-selected (`verdictLines({contract})`,
-  `judge-harness --contract`). Partial answers need a decision the agent is not given today -- which part
+- **Not shipped, and not kept in the code.** Partial answers need a decision the agent is not given today -- which part
   an entry covers -- before more reliance can be allowed; 6b (the base composing an answer from entries
   that each clear a part) is the next candidate.
 - One run per arm: the earlier A/B saw 1.6 points between two runs of one arm. Every failed line here is
   well outside that.
 
-Per-run metrics and the discarded A run: `scripts/kb/bench/parts-ab-result.json`.
+Reproducing it: the bench code and the raw per-run results were not merged; they are in commit `2fe09feb`, kept in PR #444's history on GitHub (an ancestor of `refs/pull/444/head`): `render.mjs` `AMBIGUOUS_CONTRACT_PARTS` / `AMBIGUOUS_CONTRACT_QUOTED` behind `verdictLines({ contract })`, `judge-harness items --contract one|parts|quoted` with several-id picks, and `scripts/kb/bench/parts-ab-result.json`.
 
 ### Follow-up runs the same day: a neutral brief, a quotation bar, and the base composing -- all FAIL
 
@@ -759,7 +758,7 @@ Run against the same A (one-entry brief), same items, same frozen base:
 
 - **The neutral brief made B worse, not better.** The picker brief was not what let neighbours in; the
   permission was.
-- **C (`AMBIGUOUS_CONTRACT_QUOTED`) is the best multi-entry contract measured, and still fails.** Run 1
+- **C (quote the sentence for the other part) is the best multi-entry contract measured, and still fails.** Run 1
   sat inside the run-to-run noise on precision, so a confirmatory run was made with its rule declared
   before it (pooled over two runs: precision drop <= 1 point, at most 2 more controls answered,
   non-partial >= -2, partial rises). Run 2 widened the gap: pooled -6.3 points of precision and 6 more
@@ -773,4 +772,4 @@ Run against the same A (one-entry brief), same items, same frozen base:
   asking one thing per ask, or an entry that states both halves -- not something the closing rule can
   absorb at the precision this base is held to.
 
-All arms, both runs and the offline probe: `scripts/kb/bench/parts-ab-result.json`.
+All arms, both runs and the offline probe: in commit `2fe09feb`, kept in PR #444's history on GitHub (an ancestor of `refs/pull/444/head`): `render.mjs` `AMBIGUOUS_CONTRACT_PARTS` / `AMBIGUOUS_CONTRACT_QUOTED` behind `verdictLines({ contract })`, `judge-harness items --contract one|parts|quoted` with several-id picks, and `scripts/kb/bench/parts-ab-result.json`.
