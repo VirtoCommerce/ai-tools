@@ -1,27 +1,50 @@
 ---
 kind: test
-budget: 1500
+budget: 1900
 lede_max: 320
-trim: "[BUGS, NOT_FILED]"
+trim: "[BUGS, NOT_FILED, AREAS]"
 ---
 ## {{ICON}} QA {{VERDICT_LABEL}} — {{TICKET}}
 {{LEDE}}
 
-**Build** {{BUILD}} · **Env** {{ENV}} · {{DATE}} · {{RUN_ID}}
+| Where we tested | |
+|---|---|
+| **Environment** | {{ENV}} |
+| **Artifact** | {{BUILD}} |
+| **Signed in as** | {{AS_USER}} |
+| **When** | {{DATE}} · {{RUN_ID}} |
 
-**Cases** {{PASSED}}/{{TOTAL}} passed · {{FAILED}} failed · {{BLOCKED}} blocked · **AC coverage** {{AC_COVERAGE}} · **DoD** {{DOD}}
+### What was tested
+| Area | Cases | Result |
+|---|---|---|
+{{#AREAS}}
+| {{area}} | {{cases}} | {{result}} |
+{{/AREAS}}
+{{#AREAS_MORE}}
+| {{.}} | | |
+{{/AREAS_MORE}}
+{{^AREAS}}
+| Everything in the checklist | {{TOTAL}} | {{PASSED}} passed · {{FAILED}} failed · {{BLOCKED}} blocked |
+{{/AREAS}}
+
+**AC coverage** {{AC_COVERAGE}} · **DoD** {{DOD}}
 **Regression** {{REGRESSION}}
 **Business rules** {{BL}}
 
-**Bugs filed**
+### New regression coverage
+{{NEW_CASES}}
+
+### Findings
+| What is wrong | Severity | Ticket |
+|---|---|---|
 {{#BUGS}}
-- {{key}} [{{severity}}] {{relation}}
+| {{what}} | {{severity}} | {{key}} ({{relation}}) |
 {{/BUGS}}
 {{#BUGS_MORE}}
-- {{.}}
+| {{.}} | | |
 {{/BUGS_MORE}}
 {{^BUGS}}
-- None
+| Nothing filed | | |
 {{/BUGS}}
 
 **Not filed (below severity floor)**

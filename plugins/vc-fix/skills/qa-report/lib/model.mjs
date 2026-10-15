@@ -19,7 +19,7 @@ const TONE = {
   BLOCKED: "blocked",
 };
 const ICON = { pass: "✅", notes: "⚠️", fail: "❌", blocked: "⛔" };
-const EXTRA_KEYS = ["title", "lede", "rows", "notTested", "context", "shots"];
+const EXTRA_KEYS = ["title", "lede", "rows", "areas", "notTested", "context", "shots"];
 
 export function readJson(p) {
   try { return JSON.parse(readFileSync(p, "utf8").replace(/^\uFEFF/, "")); }
@@ -50,7 +50,7 @@ export function buildLine(build) {
   return parts.join(" · ") || "unknown";
 }
 
-const empty = () => ({ rows: [], notTested: [], context: [], shots: [], lede: "", issues: [], failures: null, beforeAfter: [], notFiled: [] });
+const empty = () => ({ rows: [], areas: [], notTested: [], context: [], shots: [], lede: "", issues: [], failures: null, beforeAfter: [], notFiled: [] });
 
 export function fromQaTest(path) {
   const s = readJson(path);
@@ -67,12 +67,23 @@ export function fromQaTest(path) {
       REGRESSION: c1?.run_id ? `${(c1.suites ?? []).join(", ")} — ${c1.pass_rate ?? "?"} (${c1.run_id})`
         : `not run${c1?.skipped_reason ? ` — ${c1.skipped_reason}` : ""}`,
       BL: (s.business_rules_verified ?? []).join(", ") || "none",
+      // No machine record carries the account a run signed in as, so this is the caller's to --set.
+      AS_USER: "not recorded",
+      NEW_CASES: s.new_cases_authored
+        ? `${s.new_cases_authored} authored — PR not linked`
+        : "none — the existing suites already cover this",
       RELEASE_GATE: "not assessed",
       RELEASE_NOTE: s.release?.fragment ? `${(s.release.layers ?? []).join("/")} — ${s.release.fragment}`
         : `none — ${s.release?.refusal ?? "not resolved"}`,
     },
-    bugs: (s.bugs_filed ?? []).map(b => ({ key: b.key, severity: b.severity ?? "", relation: b.relationship ?? "" })),
-    notFiled: (s.bugs_not_filed ?? []).map(b => ({ severity: b.severity ?? "Low", title: b.summary ?? "", path: b.report ?? "" })),
+    // `title` is what the row is ABOUT; a key alone makes the reader open the ticket to find out.
+    bugs: (s.bugs_filed ?? []).map(b => ({ key: b.key, severity: b.severity ?? "", relation: b.relationship ?? "", what: b.title ?? "" })),
+    // The schema says `summary`/`report`; live artifacts write `draft` and often no summary at all.
+    // Read both and fall back to the file name, because a blank row is worse than a terse one.
+    notFiled: (s.bugs_not_filed ?? []).map(b => {
+      const path = b.report ?? b.draft ?? "";
+      return { severity: b.severity ?? "Low", title: b.summary ?? (path ? basename(path, ".md") : "(untitled)"), path };
+    }),
     evidence: s.screenshots ?? "", imageRoot: dirname(path), pageUrl: s.report?.page_url ?? null,
   };
 }
@@ -173,7 +184,7 @@ export function fromRun(runDir, kind, verdict, ticket = null) {
   };
 }
 
-const SHAPES = { rows: "{ id, text, result, evidence }", notTested: "{ item, reason }", context: "{ label, value }" };
+const SHAPES = { rows: "{ id, text, result, evidence }", areas: "{ area, cases, result }", notTested: "{ item, reason }", context: "{ label, value }" };
 
 export function applyExtras(m, extra = {}, sets = {}) {
   const unknown = Object.keys(extra).filter(k => !EXTRA_KEYS.includes(k));
@@ -189,7 +200,7 @@ export function applyExtras(m, extra = {}, sets = {}) {
     });
     return extra[k];
   };
-  const out = { ...m, rows: list("rows"), notTested: list("notTested"), context: list("context"),
+  const out = { ...m, rows: list("rows"), areas: list("areas"), notTested: list("notTested"), context: list("context"),
     shots: [...m.shots, ...(extra.shots ?? [])], lines: { ...m.lines } };
   if (extra.title) out.title = String(extra.title);
   if (extra.lede) out.lede = String(extra.lede);
@@ -221,7 +232,7 @@ export function templateData(m, dialect = "markdown") {
     ENV: m.env ?? "", BUILD: m.build ?? "", DATE: m.date ?? "",
     TOTAL: m.counts.total, PASSED: m.counts.passed, FAILED: m.counts.failed, BLOCKED: m.counts.blocked, NOT_RUN: m.counts.notRun,
     ...m.lines,
-    BUGS: m.bugs, NOT_FILED: m.notFiled, BEFORE_AFTER: m.beforeAfter, ISSUES: m.issues, FAILURES: m.failures ?? [],
+    AREAS: m.areas ?? [], BUGS: m.bugs, NOT_FILED: m.notFiled, BEFORE_AFTER: m.beforeAfter, ISSUES: m.issues, FAILURES: m.failures ?? [],
     SHOTS: dialect === "wiki" ? m.shots.map(s => basename(s)) : [],
     PAGE_URL: m.pageUrl ?? null,
   };
