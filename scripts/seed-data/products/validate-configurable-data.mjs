@@ -16,6 +16,10 @@
  *   3. CFG CSV rows with no matching spec are reported (legacy/stale — not seeder-managed).
  *   4. CFG-034 (VCST-6027 checklist) keeps its non-vacuity contract (configurable-specs.mjs
  *      checklistContractProblems) and is registered in aliases.json.
+ *   6. Stand-in specs (`aliasOverlay`): the alias exists in aliases.json; each `aliasPrices` field
+ *      the cases assert on equals the spec arithmetic; and the non-vacuity contract holds — every
+ *      Product option priced > 0 and distinct within its section (cases pick options.0, whose order
+ *      is not controllable), sale < list where a sale is set, variations priced > 0 and distinct.
  *   5. Inline aliases bound to a spec (`_inline` + file/filter, e.g. CFG_FILE_HOODIE → CFG-FILE) keep
  *      their literal business fields equal to the spec/CSV, and keep runtime GUIDs out of the base file.
  *
@@ -27,7 +31,7 @@ import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'csv-parse/sync';
-import { SPECS, CHECKLIST_CONTRACT, checklistContractProblems } from './configurable-specs.mjs';
+import { SPECS, CHECKLIST_CONTRACT, checklistContractProblems, specPrice } from './configurable-specs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const CSV = join(ROOT, 'test-data', 'products', 'configurable-products.csv');
@@ -115,6 +119,32 @@ for (const [name, d] of Object.entries(aliases)) {
   if (errs.length) fail(`${name} → ${id}: ${errs.join('; ')}`); else ok(`${name} → ${id} matches spec + CSV`);
 }
 if (!inlineSeen) ok('no inline alias bound to a spec');
+
+// 6. Stand-in alias contract + non-vacuity.
+console.log('\n[6] Stand-in specs agree with their alias contract and stay discriminating');
+const ALIASES = JSON.parse(readFileSync(join(ROOT, 'test-data', 'aliases.json'), 'utf8'));
+const standins = SPECS.filter((s) => s.aliasOverlay);
+let siOk = 0;
+for (const s of standins) {
+  const errs = [];
+  const a = ALIASES[s.aliasOverlay.alias];
+  if (!a) errs.push(`alias ${s.aliasOverlay.alias} missing from aliases.json`);
+  for (const [field, expr] of Object.entries(s.aliasPrices || {})) {
+    const want = specPrice(s, expr);
+    if (a && Number(a[field]) !== want) errs.push(`${s.aliasOverlay.alias}.${field}=${a[field]} != spec ${expr}=${want}`);
+  }
+  for (const sec of s.sections.filter((x) => x.type === 'Product')) {
+    const prices = sec.options.map((o) => Number(o.price));
+    if (prices.some((p) => !(p > 0))) errs.push(`section "${sec.name}": an option is unpriced/$0 — options.0 picks would be undecidable`);
+    if (new Set(prices).size !== prices.length) errs.push(`section "${sec.name}": option prices not distinct`);
+  }
+  if (s.salePrice != null && !(Number(s.salePrice) < Number(s.basePrice))) errs.push(`sale ${s.salePrice} not below list ${s.basePrice}`);
+  const vp = (s.variations || []).map((v) => Number(v.price));
+  if (vp.some((p) => !(p > 0)) || new Set(vp).size !== vp.length) errs.push(`variation prices must be > 0 and distinct (${vp.join(',')})`);
+  if (s.sections.some((x) => x.type === 'Variation') && vp.length < 2) errs.push('a Variation section needs >= 2 real variations');
+  if (errs.length) fail(`stand-in ${s.csvId}: ${errs.join('; ')}`); else siOk++;
+}
+if (siOk === standins.length) ok(`all ${standins.length} stand-in spec(s) match their alias contract and are discriminating`);
 
 console.log('\n=== configurable-products drift check ===');
 console.log(`  specs: ${SPECS.length} | CSV CFG rows: ${cfgRows.length} | hard problems: ${problems.length} | warnings: ${notes.length}`);

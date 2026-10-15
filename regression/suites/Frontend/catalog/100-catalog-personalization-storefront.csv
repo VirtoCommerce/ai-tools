@@ -5,7 +5,7 @@ PERS-011,Anonymous Visitor Cannot Reach A Tagged Product But Can Reach An Untagg
 [WAIT] The result list renders
 [ACT] Search the storefront for taggedProduct by its SKU
 [WAIT] The result list renders
-[NAV] Request taggedProduct's product page directly by its URL","[MATH] The anonymous search for controlProduct result count = 1 - the control proves the search path works, so the tagged product's absence cannot be explained by a broken search {SPEC}
+[NAV] Request taggedProduct's product page directly by its URL","[DOM] The anonymous search for controlProduct lists controlProduct itself (by name or SKU) - other full-text hits are allowed, so the count is not asserted; the control proves the search path works, so the tagged product's absence cannot be explained by a broken search {OBSERVED} (KB-981EDA17)
 [MATH] The anonymous search for taggedProduct result count = 0 {SPEC}
 [DOM] The empty result renders the storefront's no-results state, and taggedProduct's name is absent from the page {SPEC}
 [STATUS] The direct product-page request for taggedProduct does not render the product - a restricted entity must not be reachable by guessing its URL {SPEC}","[CONSOLE] no TypeError or JS error on the page under test

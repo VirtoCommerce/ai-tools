@@ -19,6 +19,12 @@
  * category resolvers, writeEnvAliasOverride, verifyCreated/verifyRemoved). No hardcoded GUIDs.
  * Idempotent: looks the product up by SKU, reconciles price + catalog link; re-runnable.
  *
+ * ALSO (2026-10-13, REG-2026-10-13-W2 CAT-GQL-124): gives the products named by ALIAS_PTS_PRICES a
+ * points price in the same PTS list, so `product(currencyCode:"PTS")` on them resolves a price > 0.
+ * Those products are env-native (not AGENT-TEST), so only the PTS ROW is ours: the id comes from
+ * aliases.<env>.json (never hardcoded), PUT /api/products/prices touches only the PTS list (kb
+ * KB-16363E17), and teardown deletes only that row — the product and its other prices stay.
+ *
  * Usage:
  *   node scripts/seed-data/seed-loyalty-fixtures.mjs [--dry-run] [--verbose]
  *   node scripts/seed-data/seed-loyalty-fixtures.mjs --teardown        # delete the product + overlay ids
@@ -49,6 +55,58 @@ const loyaltySlug = (s) => {
 };
 
 let VIRTUAL_CATALOG_ID = null;
+
+/**
+ * Store products (by alias, resolved from aliases.<env>.json) that need a PTS price in the PTS list.
+ * `list` deliberately differs from LOY_SKU_PTS_UNIT's 1 PTS, so a case cannot pass by reading the
+ * divisor fixture's price instead of this product's.
+ */
+const ALIAS_PTS_PRICES = [
+  { alias: 'BUYABLE_NO_MIN_QTY', list: 10, consumer: 'CAT-GQL-124 (product loyaltyPoints with currencyCode PTS)' },
+];
+
+/** The env overlay's id for an alias (aliases.<env>.json) — null when this env has none. */
+function overlayId(alias) {
+  const env = process.env.TEST_ENV || 'vcst';
+  const p = join(ROOT, `test-data/aliases.${env}.json`);
+  if (!existsSync(p)) return null;
+  return JSON.parse(readFileSync(p, 'utf8'))?.[alias]?.id || null;
+}
+
+/** Ensure each ALIAS_PTS_PRICES product carries its PTS price row (idempotent upsert). */
+async function ensureAliasPtsPrices(pricelistId) {
+  for (const { alias, list, consumer } of ALIAS_PTS_PRICES) {
+    const id = overlayId(alias);
+    if (!id) { log(`  ⚠ ${alias}: no id in aliases.${process.env.TEST_ENV || 'vcst'}.json — PTS price skipped (${consumer} stays unpriced in PTS)`); continue; }
+    // Read through the product's price LISTS: GET /api/products/{id}/prices omits rows (on this build it
+    // returned [] for a product whose only price is a PTS row), so an idempotency check on it never matches.
+    const lists = await api('GET', `/api/catalog/products/${id}/pricelists`, null, { expectStatus: [200, 404] });
+    if (!Array.isArray(lists)) { log(`  ⚠ ${alias} ${id}: product not found — PTS price skipped`); continue; }
+    const cur = (lists.find((l) => l.id === pricelistId)?.prices || []).find((x) => Number(x.minQuantity) === 1);
+    if (cur && Number(cur.list) === list) { log(`  ↻ ${alias}: ${list} ${PTS} already in "${PTS_PRICELIST_NAME}"`); continue; }
+    if (DRY_RUN) { log(`  [DRY] would set ${alias} (${id}) to ${list} ${PTS} in "${PTS_PRICELIST_NAME}"`); continue; }
+    const row = { pricelistId, productId: id, list, currency: PTS, minQuantity: 1, ...(cur?.id ? { id: cur.id } : {}) };
+    await api('PUT', '/api/products/prices', [{ productId: id, prices: [row] }], { expectStatus: [200, 204] });
+    log(`  ✓ ${alias}: ${list} ${PTS} in "${PTS_PRICELIST_NAME}" (${consumer})`);
+  }
+}
+
+/** Teardown: remove ONLY the PTS rows ALIAS_PTS_PRICES added (the products are not ours). */
+async function removeAliasPtsPrices() {
+  const search = await api('GET', `/api/pricing/pricelists?keyword=${encodeURIComponent(PTS_PRICELIST_NAME)}`, null, { expectStatus: [200, 404] });
+  const pl = (search?.results || []).find((x) => x?.name === PTS_PRICELIST_NAME);
+  if (!pl) return;
+  for (const { alias } of ALIAS_PTS_PRICES) {
+    const id = overlayId(alias);
+    if (!id) continue;
+    if (DRY_RUN) { log(`  [DRY] would delete ${alias} (${id}) PTS row from "${PTS_PRICELIST_NAME}"`); continue; }
+    await api('DELETE', `/api/pricing/pricelists/${pl.id}/products/prices?productIds=${encodeURIComponent(id)}`, null, { expectStatus: [200, 204, 404] })
+      .catch((e) => log(`  ⚠ ${alias} PTS row delete: ${String(e.message).slice(0, 120)}`));
+    const lists = await api('GET', `/api/catalog/products/${id}/pricelists`, null, { expectStatus: [200, 404] }) || [];
+    const left = lists.find((l) => l.id === pl.id)?.prices || [];
+    log(left.length ? `  ⚠ ${alias}: ${left.length} PTS row(s) still present` : `  ✓ ${alias}: PTS row removed (other prices untouched)`);
+  }
+}
 
 /** Find an existing PTS-currency price list by exact name; create it if absent. */
 async function ensurePtsPriceList() {
@@ -180,6 +238,7 @@ async function seed() {
   await ensureCurrencies(api, [PTS]);                       // PTS must be a registered currency for the price list
   const pl = await ensurePtsPriceList();
   await ensurePtsAssignment(pl.id);                         // runs on BOTH paths — see the note on ensurePtsAssignment
+  await ensureAliasPtsPrices(pl.id);
   const ffc = await ensureFulfillmentCenter(api);           // resolved for completeness; product is trackInventory=false
   const loc = await ensureCategoryPath(api, CATEGORY_PATH);
   if (!loc) throw new Error(`could not resolve category path "${CATEGORY_PATH}"`);
@@ -229,6 +288,7 @@ async function teardown() {
     const residual = await verifyRemoved(async () => { const p = await findProductByCode(SKU); return p?.id && p.name?.startsWith(SEED_NAME_PREFIX) ? [p.id] : []; });
     log(residual === 0 ? '  ✓ teardown verified — product gone' : `  ⚠ teardown incomplete — ${residual} still present`);
   }
+  await removeAliasPtsPrices();
   removeOverlayIds();
 }
 

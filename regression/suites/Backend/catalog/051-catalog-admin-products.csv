@@ -365,31 +365,31 @@
 [STATE] Reopened product shows the correct UoM and value
 [STATE] UoM display is consistent across product detail views","[API] GET /api/catalog/products/{id} — verify property with UoM value
 [CONSOLE] No errors","UoM selector not visible; unit not saved with value; value reverts after reopen","restore original property value via Admin","","Not Automated"
-"CATA-043","Product Automatic Links","Catalog > Product > Links","Medium","BL-CAT-001","","Admin logged in to Backend ({{BACK_URL}}), product exists in a virtual catalog setup","adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module
-[NAV] Open a product that belongs to a physical catalog
-[NAV] Navigate to the Links tab
-[ACT] Click Add Link or observe automatic link entries
-[ASSERT] Verify links to virtual catalogs are displayed
-[ACT] Click on a link entry to verify it navigates to the linked location
-[ASSERT] Verify link details (catalog name, category path)","[STATE] Links tab is accessible on the product blade
-[STATE] Automatic links from virtual catalog assignments are displayed
-[STATE] Each link shows the correct catalog and category reference
-[NAV] Clicking a link navigates to the correct location
-[STATE] No broken or duplicate links appear","[API] GET /api/catalog/products/{id}/links — verify links array
-[CONSOLE] No errors","Links tab empty despite virtual catalog assignment; broken navigation; duplicate links shown","none","","Not Automated"
-"CATA-045","Links from Category and Product","Catalog > Navigation","Medium","BL-CAT-002","","Admin logged in to Backend ({{BACK_URL}}), product and category both linked to a virtual catalog","adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module
-[NAV] Open a category linked to a virtual catalog
-[NAV] Navigate to the Links tab and click on a link
-[ASSERT] Verify navigation to the virtual catalog location
-[NAV] Return and open a product within this category
-[NAV] Navigate to the product Links tab
-[ACT] Click on a product link and verify correct navigation
-[ASSERT] Verify breadcrumb or path information is correct","[NAV] Category link navigates to the correct virtual catalog location
-[NAV] Product link navigates to the correct virtual catalog entry
-[STATE] Breadcrumb or path reflects the virtual catalog hierarchy
-[STATE] Navigation is consistent between category and product links
-[STATE] No 404 or broken navigation occurs","[CONSOLE] No navigation errors
-[DOM] Breadcrumb path matches virtual catalog hierarchy","404 on link click; breadcrumb shows wrong path; category and product links inconsistent","none","","Not Automated"
+"CATA-043","Product Links Blade Lists Virtual Catalog Links","Catalog > Product > Links","Medium","BL-CAT-001","","Admin logged in to Backend ({{BACK_URL}}); a product in a physical catalog is linked to a category of a virtual catalog (Map/Link)","adminUrl={{BACK_URL}}; product=live-discover(a product whose GET /api/catalog/products/{id} links[] is non-empty); linkedCategory=the links[0] category of that product","[NAV] Navigate to Catalog module
+[NAV] Open the product from Test_Data
+[ASSERT] Read the count on the Links widget
+[NAV] Click the Links widget to open the Links blade
+[ASSERT] Verify the Links blade lists the linked virtual-catalog category with its path and has Add and Delete toolbar buttons
+[ACT] Click a link row
+[ASSERT] Verify the row is only selected: no navigation happens and no new blade opens","[STATE] Links widget count equals the number of rows in the Links blade and equals links[] length in the API {OBSERVED}
+[STATE] Each row shows the linked category name and its path (the catalog name is not shown as a separate value) {OBSERVED}
+[STATE] The linked category from Test_Data appears exactly once - no duplicate rows {OBSERVED}
+[STATE] Clicking a row selects it and does not navigate or open another blade (list + Add/Delete only) {OBSERVED}
+[STATE] Products have no Automatic links widget - that widget exists on categories only {OBSERVED}","[API] GET /api/catalog/products/{id} - links[] matches the rows (catalogId, categoryId, name)
+[CONSOLE] No errors","Links widget shows 0 or a different count than the API links[]; linked category missing or duplicated; row click throws a console error or opens an unrelated blade","none","Repaired 2026-10-14 (Stable 16 regression VCST-6042): Links blade rows are selectable list items and do not navigate; case retargeted from a navigation assertion to list/count/API parity (catches: count drift, duplicate or missing link rows). Behaviour {OBSERVED}","Not Automated"
+"CATA-045","Category And Product Links Blades Agree With The API","Catalog > Navigation","Medium","BL-CAT-002","","Admin logged in to Backend ({{BACK_URL}}); a category of a physical catalog is mapped into a virtual catalog and one product is linked into the same virtual catalog","adminUrl={{BACK_URL}}; category=live-discover(a category whose GET /api/catalog/categories/{id} links[] is non-empty); product=live-discover(a product with non-empty links[])","[NAV] Navigate to Catalog module
+[NAV] Open the category from Test_Data
+[ASSERT] Verify the category blade shows the Links and Automatic links widgets and read the Links count
+[NAV] Open the Links blade of the category
+[ASSERT] Verify the virtual-catalog category and its path are listed
+[NAV] Open the product from Test_Data and its Links blade
+[ASSERT] Verify the virtual-catalog category and its path are listed
+[ACT] Select a row in each Links blade
+[ASSERT] Verify selection does not navigate to the virtual catalog","[STATE] Category Links count and rows equal links[] of the category in the API {OBSERVED}
+[STATE] Product Links count and rows equal links[] of the product in the API {OBSERVED}
+[STATE] The same virtual-catalog category shows the same path in the category and the product Links blades {OBSERVED}
+[STATE] Rows are selectable list items - no navigation, breadcrumb or 404 results from clicking {OBSERVED}","[API] GET /api/catalog/categories/{id} and GET /api/catalog/products/{id} - links[] match the blades
+[CONSOLE] No errors","Category and product show different paths for the same virtual category; count differs from API links[]; blade empty despite API links; console error on row click","none","Repaired 2026-10-14 (Stable 16 regression VCST-6042): Links blades do not navigate to the virtual location (rows are selectable); case retargeted to category/product parity with the API. Behaviour {OBSERVED}","Not Automated"
 "CATA-046","Full-Text Search Within Catalog Module","Catalog > Search","Medium","BL-CAT-004","ECL-8.1","Admin logged in to Backend ({{BACK_URL}}), catalog populated with at least 20 products and categories","searchTerm=TestProduct; adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module
 [ACT] Locate the search/filter bar at the top of the catalog blade
 [ACT] Enter a partial product name in the search field
@@ -441,19 +441,16 @@
 [STATE] Assignment persists after page refresh
 [STATE] Product remains in its original physical catalog","[API] GET /api/catalog/virtualcatalogs/{id} — verify product assignment
 [CONSOLE] No errors","Product duplicated instead of linked; assignment lost after refresh; product removed from physical catalog","remove virtual catalog assignment via Admin","","Not Automated"
-"CATA-050","Dynamic Product Associations","Catalog > Product > Associations","Medium","BL-CAT-001","ECL-5.1","Admin logged in to Backend ({{BACK_URL}}), Associations feature enabled, multiple products exist","adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module and open a product
-[NAV] Navigate to the Associations tab
-[ACT] Click Add Dynamic Association or configure an association group
-[ACT] Define association criteria (e.g. same category, same brand)
-[ACT] Save the association rule
-[ASSERT] Verify the associated products list populates based on the rule
-[ASSERT] Verify associated products update if catalog changes match the rule","[STATE] Associations tab is accessible on the product blade
-[STATE] Dynamic association rule can be created with criteria
-[STATE] Matching products are listed under the dynamic association
-[STATE] Association list refreshes when matching criteria are met
-[STATE] Saved rules persist after navigating away and returning
-[STATE] No performance degradation with large product sets","[API] GET /api/catalog/products/{id}/associations — verify dynamic association results
-[CONSOLE] No performance errors","Association tab missing; rules not saving; associated list empty despite matching products; timeout with large sets","delete created association rule via Admin","","Not Automated"
+"CATA-050","Product Association Group With A Category Item Persists","Catalog > Product > Associations","Medium","BL-CAT-001","ECL-5.1","Admin logged in to Backend ({{BACK_URL}}); a product without associations and a category exist","adminUrl={{BACK_URL}}; product=live-discover(a product with no associations); category=live-discover(a category); group=a value of the Group name dictionary (e.g. Related Items); no dictionary value is created","[NAV] Navigate to Catalog module and open the product from Test_Data
+[ASSERT] Open the Associations widget and verify the blade shows 'No Associations yet'
+[ACT] Click Add to open the 'New association' blade
+[ASSERT] Verify the fields Group name, Tags, Quantity and Items (products and/or categories)
+[ACT] Select the group from Test_Data in the Group name dictionary dropdown, add the category from Test_Data as an item and click OK
+[ACT] Save the product
+[NAV] Close and reopen the product and its Associations blade","[STATE] Associations widget count = 1 after Save {OBSERVED}
+[STATE] After reopening, the association group from Test_Data is listed with the category as its item {OBSERVED}
+[STATE] A category item is a membership-driven list entry, not a rule editor - the product tab has no 'Add Dynamic Association' or criteria editor (rule-based dynamic associations belong to the Dynamic Associations module in Marketing) {OBSERVED}","[API] GET /api/catalog/products/{id} - associations[] holds one entry with type = the selected group, associatedObjectType = 'category' and the category as associatedObjectId
+[CONSOLE] No errors","Association not persisted after Save; group lost its category item on reopen; widget count differs from associations[] length; New association blade missing a field","Remove the association from the product (Delete + Save); no dictionary value was created so nothing else to clean","Repaired 2026-10-14 (Stable 16 regression VCST-6042): product Associations tab manages association groups, not dynamic criteria rules (those live in the Dynamic Associations module); case retargeted to group + category item persistence. Behaviour {OBSERVED}","Not Automated"
 "CATA-051","Product Required Properties Validation","Catalog > Product > Validation","High","BL-CAT-001","","Admin logged in to Backend ({{BACK_URL}}), catalog schema has at least one property marked as Required","adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module and open or create a product
 [NAV] Navigate to the Properties tab
 [ASSERT] Identify a property marked as Required (indicated by asterisk or label)
