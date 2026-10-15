@@ -1,6 +1,6 @@
 # Mode 5 — a ticket checklist built FROM its test model and the domain's mind map
 
-`/qa-checklist <TICKET> --from-model [--mind-map <slug>]`
+`/qa-checklist <TICKET> --from-model [--mind-map <slug>]` · `/qa-checklist <TICKET> --from-model --strategy <test-strategy.md> [--mind-map <slug>]`
 
 Mode 2 builds a ticket checklist from the ACs, the domain checklists and the oracles. That is
 everything the *ticket* and the *corpus* say. It is not everything the *fault model* says: a test model's
@@ -12,7 +12,8 @@ Every item traces to its source, and every in-scope source row is either an item
 
 | Input | Where | Missing ⇒ |
 |---|---|---|
-| Test model | `reports/ba/test-models/<TICKET>-*.md` with all of its rounds. Where two dated files exist for one ticket (a legacy fork), use the newest, plus the rows it declares still valid from the older file | **STOP** — run `/qa-test-model <TICKET>` first. Mode 5 without a model is Mode 2 |
+| Test model | `reports/ba/test-models/<TICKET>-*.md` with all of its rounds. Where two dated files exist for one ticket (a legacy fork), use the newest, plus the rows it declares still valid from the older file | **STOP** — run `/qa-test-model <TICKET>` first. Mode 5 without a model is Mode 2. **Except with `--strategy`** whose `Test model` row is `SKIP — no MODEL risk`: then no model is read and none is required |
+| Strategy (`--strategy`) | the last `## Round N` of `reports/tickets/{SPRINT}/<TICKET>/test-strategy.md`, approved (`Status:` not `DRAFT`) | not given ⇒ Mode 5 as before. Given but `DRAFT` ⇒ **STOP** — the strategy is a contract only once approved |
 | Mind map | `.claude/knowledge/domain/<name>.mind-map.json` for the slug (`--mind-map`, else the model's `Mind map:` header) | proceed; write `Mind map: ABSENT` in the header. A missing map is recorded, never a blocker |
 
 ## Procedure
@@ -68,11 +69,31 @@ Every item traces to its source, and every in-scope source row is either an item
    mutable state — a store setting, a shared fixture — has one writing lane only, and that lane
    restores it (the header's Rules block).
 
+## With a strategy (`--strategy <path>`)
+
+The strategy is the authority for **what** is tested; the model only details its `MODEL` risks
+(test-model redesign M9). So, on top of the procedure above:
+
+- **Every in-scope risk is an item or an omission line.** A risk whose technique is not `MODEL` becomes
+  items straight from the strategy: its *what a customer would see* is the Condition, its Approach row's
+  oracle and authority the Oracle, its layer the lane (step 6), its Data cell the data strategy (step 5).
+  The technique shapes the items — `DT` one per rule, `BVA` the boundaries, `ST` the transitions.
+- **A `MODEL` risk is reached through the model's scenario rows** (step 2), which carry its `R-n`. With no
+  model (the row says `SKIP`), there is no `MODEL` risk, so nothing is lost.
+- **An `EXPLORE` risk, and a `{HYPOTHESIS}` oracle, is never an item** — `EXPLORE → charter` as an omission
+  line; it is exploratory work, not pass/fail.
+- **Out of scope** stays out: the strategy's list is copied into *Not covered, deliberately*, with its
+  residual risk.
+- **Ref** leads with the `R-n` (`R3 · S#4 · <node-id>`), so reconciliation at close-out can map every
+  result back to its risk. An item that reaches no risk is either a Mode-2 item the strategy put out of
+  scope (drop it) or a risk the strategy missed — append it to the round's `### Amendments`, never keep it
+  silently.
+
 ## Output — the Artifact B shape, plus two columns
 
 ```markdown
 # Testing checklist — <TICKET> (<summary>)
-**Model:** <path> · **Mind map:** <path | ABSENT> · **Domain map:** <state>
+**Strategy:** <path · Round N | none> · **Model:** <path | SKIP — no MODEL risk> · **Mind map:** <path | ABSENT> · **Domain map:** <state>
 **Data:** <the aliases / seeders / create-on-fly entities the items use>
 **Rules for every executor:** <shared-state owner + restore, env quirks from the model>
 
