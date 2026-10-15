@@ -324,7 +324,10 @@ async function kbRecorded(args, extraEnv = {}) {
     const log = join(logDir, 'fetch.log');
     const hourAgo = new Date(Date.now() - 60 * 60 * 1000);
     const file = join(dir, 'sweep001.jsonl');
-    writeFileSync(file, `${JSON.stringify({ at: hourAgo.toISOString(), kind: 'ask', q: 'x', matched: [], state: 'miss' })}\n`, 'utf8');
+    // Dated a DAY back (VCST-6378): log lines alone go only with a change or on a later day, so a line
+    // from an hour ago would rightly wait, and the sweep these tests watch would never start.
+    const dayAgo = new Date(Date.now() - 25 * 60 * 60 * 1000);
+    writeFileSync(file, `${JSON.stringify({ at: dayAgo.toISOString(), kind: 'ask', q: 'x', matched: [], state: 'miss' })}\n`, 'utf8');
     utimesSync(file, hourAgo, hourAgo);
     const before = snapshot(dir);
     let stdout = '';

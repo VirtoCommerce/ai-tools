@@ -416,10 +416,10 @@ export function dropReach(dir, session) {
 // stays as the backstop for whatever happened after the last send.
 
 /**
- * How often a session with no other queue work pushes its own counters. Was 30 min: on 2026-10-08..15
- * that was 264 of 863 commits that changed nothing but a counter line, about two per session
- * (VCST-6378). The counters ride every push the session makes anyway, and the idle harvest publishes
- * the final state, so alone they need only say "this session is alive" now and then.
+ * How often a session's counters are due to ride a push. Was 30 min, and counters went ALONE: on
+ * 2026-10-08..15 that was 264 of 863 commits that changed nothing but a counter line (VCST-6378). They
+ * no longer go alone -- like every log line they ride a change to the base or the first push of the
+ * next day (`push.mjs`) -- and the idle harvest publishes a finished session's final state.
  */
 export const OWN_REACH_EVERY_MS = 2 * 60 * 60 * 1000;
 

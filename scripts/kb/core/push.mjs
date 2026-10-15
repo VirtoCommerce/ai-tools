@@ -334,8 +334,11 @@ const stampFile = (env) => join(queueDir(env), '.last-flush');
  * make every `kb` invocation retry the push for as long as the network is down, which is exactly
  * the hammering PLAN §7 rules out ("no in-session retry loop"). The cadence is the retry policy.
  */
-/** How long an automatic push lets a queue of LOG lines only wait for company (VCST-6378). */
-export const LOG_BATCH_MS = 30 * 60 * 1000;
+/**
+ * Log lines go at once, not daily, where a deferred queue would be lost: CI (the container is thrown
+ * away) or an operator who sets KB_LOG_DAILY=0 (VCST-6378).
+ */
+export const logsImmediate = (env = process.env) => Boolean(env.CI) || String(env.KB_LOG_DAILY ?? '').trim() === '0';
 
 export async function shouldSweep({ env = process.env, now = () => new Date() } = {}) {
   try {
@@ -865,24 +868,28 @@ async function flushOnce({
     return { state: 'nothing', session, why: 'the queue is empty' };
   }
 
-  // A LOG LINE WAITS FOR COMPANY (VCST-6378). An automatic push -- the Stop hook, the 5-minute own
-  // flush, the server's timer -- used to commit every turn's asks on their own: 325 of the 863 commits
-  // of 2026-10-08..15 carried nothing but log lines. A change to the base (capture / confirm / dispute)
-  // still goes at once, because somebody may be about to ask for it; a log line is for the report and
-  // can wait until it is LOG_BATCH_MS old, or ride the next write. Another session's file is old by
-  // construction (it is taken only when idle), so it goes too; so does a session's counter line alone,
-  // which has its own, slower cadence. The operator's `kb push` and the end of a session never wait.
-  if (auto && !dryRun) {
+  // LOG LINES TRAVEL AS PASSENGERS, OR ONCE A DAY (VCST-6378). An automatic push -- the Stop hook, the
+  // own flush, the server's timer, the close of a session -- used to commit every turn's asks on their
+  // own: 325 of the 863 commits of 2026-10-08..15 carried nothing but log lines, and 264 nothing but a
+  // session's counters. Now a push goes when the queue holds a CHANGE to the base (capture / confirm /
+  // dispute, which somebody may be about to ask for -- the log rides along), or when it holds a line
+  // from an EARLIER DAY (UTC): the first push of a day carries what the days before left behind. Log
+  // lines and counters alone wait, on this machine, in the durable queue (`queueDir`). That holds for
+  // another session's idle file and for a session's counters too. Never deferred: the operator's
+  // `kb push`, a dry run, and CI (`CI` set, or KB_LOG_DAILY=0), where the queue dies with the container.
+  if (auto && !dryRun && !logsImmediate(env)) {
     const real = loaded.flatMap((f) => (f.virtual ? [] : f.lines));
     const changes = real.some((l) => MUTATIONS.includes(l.kind));
-    const foreign = loaded.some((f) => !f.mine);
-    const oldest = Math.min(...real.map((l) => Date.parse(String(l.at ?? ''))).filter(Number.isFinite));
-    if (real.length && !changes && !foreign && now().getTime() - oldest < LOG_BATCH_MS) {
+    const today = now().toISOString().slice(0, 10);
+    // A harvested `session` line is written now but DESCRIBES a session that ended earlier: its `lastAt`
+    // is the day it belongs to, or yesterday's counters would wait for the day after tomorrow.
+    const earlierDay = real.some((l) => String((l.kind === 'session' && l.lastAt) || l.at || '').slice(0, 10) < today);
+    if (!changes && !earlierDay) {
       return {
         state: 'deferred',
         session,
         queued: real.length,
-        why: `only log lines, the oldest ${Math.round((now().getTime() - oldest) / 60000)} min old -- they go with the next change to the base, or once ${LOG_BATCH_MS / 60000} min old`,
+        why: 'only log lines -- they go with the next change to the base, or with the first push of tomorrow',
       };
     }
   }

@@ -530,10 +530,12 @@ export function createServer({ env = process.env, baseArg = null, ttlMs = 300_00
    * session's own queue. Neither `flush` nor `sweepIfDue` prints or throws; the summary goes to
    * stderr, where it cannot corrupt the channel that is closing anyway.
    */
-  async function shutdown({ auto = false } = {}) {
+  async function shutdown() {
     if (sweeping) { try { await sweeping; } catch { /* best effort */ } }
     const { token, from } = writeToken(env);
-    const r = await flush({ env, base: opened.locator, token, includeMine: true, auto }).catch((err) => ({ state: 'failed', why: String(err?.message ?? err) }));
+    // Always `auto` (VCST-6378): closing a session is not a reason to publish its log lines on their own --
+    // they wait for a change or for tomorrow's first push. Changes in the queue still go now.
+    const r = await flush({ env, base: opened.locator, token, includeMine: true, auto: true }).catch((err) => ({ state: 'failed', why: String(err?.message ?? err) }));
     return { ...r, tokenFrom: from };
   }
 
@@ -623,9 +625,7 @@ export function runStdio({ env = process.env, input = process.stdin, output = pr
     if (ticking || closing) return;
     ticking = true;
     ownFlushDue({ env })
-      // `auto`: the timer is a background push, so log-only lines wait for company (VCST-6378); the
-      // shutdown on close is not, and sends everything.
-      .then((due) => (due ? server.shutdown({ auto: true }) : null))
+      .then((due) => (due ? server.shutdown() : null))
       .then((r) => { if (r && !['nothing', 'deferred'].includes(r.state)) note(`flush (timer): ${r.state}${r.commit ? ` ${r.commit.slice(0, 7)}` : ''}`); })
       .catch(() => { /* a timer must never take the session down */ })
       .finally(() => { ticking = false; });

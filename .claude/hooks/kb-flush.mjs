@@ -49,6 +49,31 @@ function queueHasWork(dir) {
   return false;
 }
 
+/**
+ * Would a push go now (VCST-6378)? Log lines travel only with a change to the base or once a day, so a
+ * queue of today's asks alone starts no process -- the push would only answer `deferred`. Reads the
+ * queue files' text; they are small, and this runs once per turn. In CI everything goes, as before.
+ */
+const CHANGE = /"kind":"(?:capture|confirm|dispute)"/;
+function pushWouldGo(dir, env) {
+  if (env.CI || String(env.KB_LOG_DAILY ?? '').trim() === '0') return true;
+  const today = new Date().toISOString().slice(0, 10);
+  try {
+    for (const name of readdirSync(dir)) {
+      if (!name.endsWith('.jsonl')) continue;
+      const text = readFileSync(join(dir, name), 'utf8');
+      if (CHANGE.test(text)) return true;
+      for (const m of text.matchAll(/"at":"(\d{4}-\d{2}-\d{2})/g)) if (m[1] < today) return true;
+    }
+    // An idle session's counters live in a `.reach.json` state file, not in the queue: one last touched
+    // on an earlier day is due too, or the counters of a session that never asked are never published.
+    for (const name of readdirSync(dir)) {
+      if (name.endsWith('.reach.json') && new Date(statSync(join(dir, name)).mtimeMs).toISOString().slice(0, 10) < today) return true;
+    }
+  } catch { /* no queue directory: nothing to send */ }
+  return false;
+}
+
 function main() {
   // THE PAYLOAD IS NOW READ, not discarded. It carries `session_id` and `transcript_path`, and
   // those two are the only way this system can learn how much work a session did — the base sees
@@ -126,6 +151,8 @@ function main() {
   if (due) markTried(dir, session);
   const mine = due && Boolean(writeToken(env).token);
   if (!queueHasWork(dir) && !stale && !mine) return;
+  // Only log lines from today, or counters alone: they wait for a change or for tomorrow (VCST-6378).
+  if (!pushWouldGo(dir, process.env)) return;
   // KB_PUSH_CONFIRM=1: a detached child has nobody to ask, so it would only hold. Not spawned.
   if (pushConfirmRequired(process.env)) return;
   // THIS TOKEN WAS REFUSED and the refusal still holds (VCST-6378): the push would only say so again,
