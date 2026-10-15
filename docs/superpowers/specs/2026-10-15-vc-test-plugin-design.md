@@ -40,6 +40,11 @@ removed once the new command has passed validation (§10 P4).
 | U7 | Regression | **Out of this project.** F5 still fires, but records the cases at risk and the follow-up instead of requiring a run (§5.3). The post-verdict corpus update goes with it |
 | U8 | Orchestrator shape | **Registry + planner**: `artifacts.json` declares the artifacts, `plan-run.mjs` computes the waves, the command executes the plan |
 | U9 | Removal timing and validation stages | Build → **stage 1**: validate on 3–5 native-platform tickets → remove FAST/FULL/`/qa-test-fast` → **stage 2**: validate on the real client project → release to clients |
+| U11 | Where the run asks a human | **Two points only.** *Before execution*: approve the strategy (and, on the same build, re-run or reuse). *After the verdict*: `qa-bug` runs for each confirmed bug and asks its own "create a tracker ticket?" question (`qa-bug` is used as it is), then the run asks once whether to post the tracker comment. Nothing asks between the two points; `--yes` answers only the first |
+| U12 | How much of the bundle the strategy reads | **The whole bundle**, so nothing is missed; the token cost is accepted |
+| U13 | Who writes the checklist | **The orchestrator, inline** — it already holds the bundle and the strategy, and a subagent would need them retold |
+| U14 | `qa-triage-results` cannot be called by the Skill tool (`disable-model-invocation: true`) | **Remove the flag** in the plugin's canonical copy |
+| U15 | Round N ≥ 2 | **A delta strategy that proves the fixes**: the diff from the last tested commit; every bug from round N−1 is a risk with its original reproduction as a checklist item, decided `FIXED` / `NOT FIXED`, plus a risk for what sits next to the fix; every unresulted risk carries over; the verdict lists each prior bug's result |
 | U10 | Committed tests | An exception like `plugins/vc-secrets/`: the knowledge-store write router and the write-zone check get **committed** tests; everything else follows the repository rule (temporary tests, deleted before commit) |
 
 ## 3. The shape
@@ -49,10 +54,13 @@ removed once the new command has passed validation (§10 P4).
  0 PROBE     capabilities.mjs → capabilities.json            what this install can do
              route (type × status role → job) · rounds.mjs   a fourth round STOPs before any context
  1 CONTEXT   /ticket-context <KEY> → bundle.json             parallel analysts, cached 24 h
- 2 STRATEGY  /qa-test-strategy → test-strategy.md            floors · gate · one approval (--yes) · verifier if Critical
- 3 RUN       plan-run.mjs → run-plan.json → waves            only RUN rows, ≤3 browser lanes
- 4 CLOSE     trace.mjs reconcile → /qa-triage-results → qa-investigate → qa-bug → verdict
-             → verdict.md + HTML → tracker comment after a yes → knowledge write-back
+ 2 STRATEGY  /qa-test-strategy (whole bundle) → test-strategy.md   floors · gate · verifier if Critical
+             ── HUMAN POINT 1: approve the strategy (--yes) ──
+ 3 RUN       plan-run.mjs → run-plan.json → waves            only RUN rows, ≤3 browser lanes;
+             the checklist is written by the orchestrator inline (U13)
+ 4 CLOSE     trace.mjs reconcile → /qa-triage-results → qa-investigate → verdict → verdict.md + HTML
+             ── HUMAN POINT 2: qa-bug per confirmed bug (its own question) · post the comment? ──
+             → knowledge write-back
 ```
 
 The command holds the order of calls and pointers, never a rule of its own: every rule lives in the skill
@@ -68,6 +76,12 @@ version of the ticket's `summary.json` (distinct builds; validation finding V9: 
 history keeps it) and the reconciled round sections of `test-strategy.md` — and recounted from the bundle's
 verdict comments once it exists.
 
+**Round N ≥ 2 is a delta that proves the fixes (U15).** The strategy reads round N−1's section: the diff is taken
+from the last tested commit; each bug round N−1 found becomes a risk "fixed, and nothing next to it broke" whose
+checklist item is the bug's original reproduction, decided `FIXED` or `NOT FIXED`; a second risk covers the code
+next to the fix; every unresulted risk carries over. The floors still read the whole PR diff, so they err upward.
+`verdict.md` lists every prior bug with its result, and a `NOT FIXED` one is a FAIL of the round.
+
 ## 4. Components
 
 | Unit | Does | Depends on |
@@ -75,8 +89,8 @@ verdict comments once it exists.
 | `commands/qa-ticket.md` | runs steps 0–4 in order, executes `run-plan.json` | everything below, by path |
 | `skills/ticket-context/` | **moved** from `.claude/skills/`; connectors extracted (§7) | connectors, `knowledge-store.mjs` (read) |
 | `skills/qa-test-strategy/` | **moved**; floors read `capabilities.json` (§5.2); Artifacts rows come from the registry | `artifacts.json`, `capabilities.json` |
-| `skills/qa-test-model/`, `qa-exploratory/`, `qa-triage-results/` (ticket mode), `qa-design/` | **moved** canonical copies | `vc-fix` agents and skills |
-| `vc-fix`: `qa-checklist`, `qa-investigate`, `qa-bug`, `qa-risk`, `qa-evidence`, agents `qa-*-expert`, `project-init`, `project-profile.json` | **reused**; `qa-checklist` Mode 5 gains the risk id in Ref and `--from-strategy` (a `vc-fix` version bump) | — |
+| `skills/qa-test-model/`, `qa-exploratory/`, `qa-triage-results/` (ticket mode), `qa-design/` | **moved** canonical copies; `qa-triage-results` loses `disable-model-invocation` (U14) | `vc-fix` agents and skills |
+| `vc-fix`: `qa-checklist`, `qa-investigate`, `qa-bug`, `qa-risk`, `qa-evidence`, agents `qa-*-expert`, `project-init`, `project-profile.json` | **reused**; `qa-bug` unchanged. One change, one `vc-fix` version bump: `qa-checklist` Mode 5 names the risk id in Ref and gains `--from-strategy` | — |
 | `lib/artifacts.json` | the only list of artifacts (§5.1) | — |
 | `lib/capabilities.mjs` | probes the install, writes `capabilities.json` | profile, env, MCP list, project files |
 | `lib/plan-run.mjs` | approved strategy + registry + capabilities → `run-plan.json` | the three above |
@@ -238,13 +252,14 @@ Every step ends in one of four states: **OK**, **SKIP**(reason), **BLOCKED**(rea
 | a browser lane fails | one retry, then the fallback browser |
 | a risk without a result after the run | back to execution once, then a deviation with its reason; an unresulted High/Critical caps the verdict below PASS |
 | a re-run on the same build | resumes from the first incomplete wave in `run-plan.json`; the approved strategy is reused |
+| nobody answers human point 2 (headless, CI) | no bug is filed and no comment is posted; the reports and `verdict.md` are the output |
 
 ## 10. Phases
 
 | Phase | Delivers | Checked by |
 |---|---|---|
 | **P1 Foundation** | plugin manifest, `vc-fix` dependency, marketplace entry; `ticket-context` and `qa-test-strategy` moved; tracker/host interfaces with Jira, GitHub, Azure Boards and Azure Repos; `capabilities.mjs`; F6 via `/api/platform/modules`; `knowledge-store.mjs` (+ committed tests); the "unavailable is not doubt" rule in the floors | `claude plugin validate`; committed store tests; temporary tests for the rest; `/ticket-context` + strategy from the plugin on VCST-5097 reproduce today's bundle and gate result; Azure connectors against recorded responses |
-| **P2 Flow** | `artifacts.json`, `plan-run.mjs`, `route.mjs`, `rounds.mjs`, `trace.mjs`, `write-zones.mjs` (+ committed tests); the command; execution skills moved; `qa-checklist` risk ids (`vc-fix` bump); the join speed-up (O6); per-entry models | `--dry-run` on 3 tickets: wave plan, gates, no outward write |
+| **P2 Flow** | `artifacts.json`, `plan-run.mjs`, `route.mjs`, `rounds.mjs`, `trace.mjs`, `write-zones.mjs` (+ committed tests); the command with its two human points; execution skills moved (`qa-triage-results` invocable); `qa-checklist` risk ids (`vc-fix` bump); the round-N delta that proves fixes; the join speed-up (O6); per-entry models | `--dry-run` on 3 tickets: wave plan, gates, no outward write |
 | **P3 Validation, stage 1 — native platform** | live runs on 3–5 VC tickets in this repository (Story, Review task, Technical task, UI-only, Bug not-fixed) on Jira + GitHub, with the plugin installed the way a client installs it | redesign §8 measures (R3 not slower on a small ticket, R4 nothing FULL ran is lost on a large one, no floor overridden by hand); the platform store receives the kb writes |
 | **P4 Removal** — after stage 1 passes | `/qa-test` FAST/FULL, `/qa-test-fast`, `ticket-routing.md` §5–§5d, Artifact A, `3-cases`, `1e-plan` removed; `ci/run-full-cycle.ts`, `ci/run-suite-audit.ts` and the other consumers repointed or cleaned; the plugin tagged for internal use (`docs/release-process.md`) | `npm run context:check`, `npm test`, CI |
 | **P5 Validation, stage 2 — real client project** | at least one live run on the **real client Azure DevOps project**, with the plugin installed in the client's checkout | Azure Boards + Azure Repos read end to end; SKIPs for missing adapters; every write inside the client's `outputRoot()` and project store; zero platform writes. Its reports stay in the client's project; only anonymous measures are recorded here. A pass releases the plugin to clients (marketplace description + tag) |
