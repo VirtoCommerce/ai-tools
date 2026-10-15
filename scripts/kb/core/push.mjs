@@ -49,7 +49,7 @@ import {
   REACH_IDLE_MS, dropReach, idleReaches, lineWork, markSent, ownReachDue, reachLine, reachPath, readReach, sessionKeyOf, unsent,
   workIn,
 } from './reach.mjs';
-import { standName, toLogLine } from './verbs.mjs';
+import { flushCode, standName, toLogLine } from './verbs.mjs';
 import { cachedWho } from './who.mjs';
 import { stampCallersFromTranscripts } from './caller.mjs';
 
@@ -972,7 +972,10 @@ async function flushOnce({
   const failed = { state: 'failed', session, attempts: attempt, why, reason, queued: allLines.length, kept: loaded.map((f) => f.path) };
   if (dryRun) return { ...failed, dryRun: true };
   await touchStamp({ env, now });
-  await log({ kind: 'flush', ok: false, attempts: attempt, why, reason }, { env });
+  // A CLOSED CODE in the line, never `why` (VCST-6378): `why` carries GitHub's own message, which names
+  // the token owner's numeric user id and a request id ("API rate limit exceeded for user ID …"), and
+  // 123 such lines reached the public log on 2026-10-12. The operator still gets `why` in the result.
+  await log({ kind: 'flush', ok: false, attempts: attempt, reason, code: flushCode({ why, reason }) }, { env });
   return failed;
 }
 

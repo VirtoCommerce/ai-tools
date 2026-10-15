@@ -22,6 +22,7 @@ import { parseEntry } from './frontmatter.mjs';
 import { anchorProblems, anchorShape, isSingleSegmentPath, namespaceRoots, neighbours, normalizeAnchor } from './coordinates.mjs';
 import { doorHints } from './door-hints.mjs';
 import { undoMsysRewrite } from './anchors.mjs';
+import { loadSecrets, publishProblems, publishRefusal } from './secret-gate.mjs';
 import { claimKey, findDuplicate, identityKey, refusalMessage, subjectTakenMessage } from './identity.mjs';
 import { amendmentsOf, attestsCurrentClaim, buildIndex, buildPath, buildRow, claimHash, countEvidence, distinctDisputes, entryPath, isResolved, supportOf } from './index-build.mjs';
 import { loadIndex, loadManifest, normalizeScope, retrievable } from './index-load.mjs';
@@ -1010,6 +1011,16 @@ async function refuseAtDoor(result, input, { env, via, call, topic, repair = {},
   // alone cannot say which (VCST-6102). The SHAPE can — segment count and path/dotted/prose — and
   // it is numbers and an enum, so no part of the rejected value reaches the public log.
   const shapes = (result.problems ?? []).filter((p) => p.kind === 'unstructured').map((p) => anchorShape(p.normalized));
+  // A private-data refusal logs the code and the KINDS only (VCST-6378): its subject is the field most
+  // likely to be the one carrying the value, so it is not logged either.
+  if (result.private) {
+    await log({
+      kind: 'capture-invalid', why: 'private-data', private: result.private, ...repair,
+      ...(await precedingAsk({ env, input }).then((after) => (after ? { after } : {}))),
+      ...context({ via, call, topic }),
+    }, { env });
+    return result;
+  }
   await log({
     kind: 'capture-invalid',
     subject: String(input.subject ?? '').trim(),
@@ -1049,6 +1060,17 @@ function repairShellRewrite(input, env, fields = TEXT_FIELDS) {
   return { input: out, repair: changed ? { repaired: 'msys' } : {} };
 }
 
+/**
+ * The door's privacy check (VCST-6378): every field of a write the base would publish, scanned for a
+ * secret, a deployment host or a personal address. `null` when clean, else an `invalid` result whose
+ * `why` names the fields, the kinds and what to write instead -- and never the value itself.
+ */
+function privateData(fields, env) {
+  const found = publishProblems(fields, loadSecrets(env));
+  if (!found.length) return null;
+  return { state: 'invalid', why: publishRefusal(found), private: [...new Set(found.flatMap((p) => p.kinds))] };
+}
+
 /** The marker rides on EVERY result from one place, rather than being threaded through each return. */
 export async function capture(input, opened, opts = {}) {
   const { input: fixed, repair } = repairShellRewrite(input, opts.env ?? process.env);
@@ -1067,6 +1089,14 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   // the source of a missing field (VCST-6156). The hints ride on the RESULT only; `refuseAtDoor`
   // logs kinds and shapes, never a rejected value.
   if (missing.length) return refuseAtDoor(doorHints({ state: 'invalid', why: `capture needs: ${missing.join(', ')}`, missing }, input), input, door);
+  // NOTHING PRIVATE GOES PUBLIC (VCST-6378): checked first, so the writer fixes it while still in the call.
+  // Anchors are scanned as they will be STORED: `normalizeAnchor` already strips a scheme and host, so
+  // `https://<stand>/cart` publishes as `/cart` and must not be refused for the host it no longer has.
+  const exposed = privateData({
+    ...input,
+    anchors: input.anchors.map((a) => normalizeAnchor(typeof a === 'string' ? a : a?.coordinate ?? '')),
+  }, env);
+  if (exposed) return refuseAtDoor(exposed, input, door);
   // HOW, then WHERE (VCST-6186): a source fact names a code version, not a stand, so the stand rule
   // (VCST-6189) applies to observations only.
   const how = resolveMethod(input.method);
@@ -1308,6 +1338,13 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
   const where = how.value === 'source' ? codeVersionProblem(input.deployment) : standProblem(input.deployment);
   if (where) return { state: 'invalid', why: `unusable --deployment: ${where}` };
   if (kind === 'dispute' && !String(input.saw ?? '').trim()) return { state: 'invalid', why: 'dispute needs --saw "<what you saw instead>"' };
+  // The evidence note is where a personal address actually reached the base (VCST-6378): it is free
+  // prose on a public entry. Refused here, logged as a code and kinds only.
+  const exposed = privateData({ note: input.note, saw: input.saw, conditions: input.conditions }, env);
+  if (exposed) {
+    await log({ kind: `${kind}-invalid`, id: row.id, why: 'private-data', private: exposed.private, ...context({ via, call, topic }) }, { env });
+    return exposed;
+  }
   const conditions = normalizeConditions(input.conditions);
   if (conditions.problem) return { state: 'invalid', why: `unusable --conditions: ${conditions.problem} (key=value; key=value, e.g. platform=3.1007.27; setting:Store.Name=value)` };
   // A DEFECT MARKER RIDES ON A CONFIRM (VCST-6317): you saw the behaviour, and it should not happen. On a
@@ -1645,5 +1682,26 @@ export async function reindex(opened, { env = process.env, write = true, generat
  */
 export function toLogLine(line) {
   const { payload, ...rest } = line;
+  // A failed flush's `why` is the remote's own error text (VCST-6378) -- a numeric GitHub user id and a
+  // request id among it. It goes public only as a closed code; the text stays in the local queue. This
+  // also covers lines queued by an older client that still wrote `why`.
+  if (rest.kind === 'flush' && 'why' in rest) {
+    const { why, ...kept } = rest;
+    return { ...kept, code: kept.code ?? flushCode({ why, reason: kept.reason }) };
+  }
   return rest;
+}
+
+/** A failed push, as a closed code: what went wrong, never the remote's words for it. */
+export function flushCode({ why = '', reason = null } = {}) {
+  const w = String(why ?? '');
+  if (/rate limit/i.test(w)) return 'rate-limited';
+  if (/not accessible by (?:personal access|integration)/i.test(w)) return 'no-write-access';
+  if (/bad credentials/i.test(w)) return 'bad-credentials';
+  if (/no GITHUB_TOKEN/i.test(w)) return 'no-token';
+  if (reason === 'conflict' || reason === 'missing' || reason === 'contained') return reason;
+  if (/HTTP 5\d\d/.test(w)) return 'server-error';
+  if (reason === 'denied') return 'denied';
+  if (reason === 'unreachable') return 'unreachable';
+  return 'other';
 }
