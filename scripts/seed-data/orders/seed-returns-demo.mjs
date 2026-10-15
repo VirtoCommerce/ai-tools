@@ -39,7 +39,7 @@ import {
   DEMO_WINDOW_DAYS_ASSUMED, DEMO_RET_REQUIRED_ORDER_STATUS,
   demoRetMarker, isDemoRetMarker, demoRetOrderNumber, retOrderByKey, returnsInSubmitOrder,
   retProductNeedByOrg, isDemoSafeProduct, buildDemoRetOrderBody, buildDemoRetDeliveryBody, orderIsDelivered,
-  DEMO_ORG_RETURNS_ACCESS, buildDemoReturnItems, buildDemoAuthorizeBody, authorizedStatusFor, isDecided, isPostDecision, isAgentLogged, demoReturnProblems,
+  DEMO_ORG_RETURNS_ACCESS, ownerKeyOf, isRepOwned, buildDemoReturnItems, buildDemoAuthorizeBody, authorizedStatusFor, isDecided, isPostDecision, isAgentLogged, demoReturnProblems,
 } from './returns-demo-specs.mjs';
 
 const TEST_ENV = process.env.TEST_ENV || 'vcst';
@@ -74,7 +74,29 @@ function salesRepDemoBase() {
     if (e.type === 'organization') orgs[e.key] = { id: e.id, name: e.name };
     if (e.type === 'account') buyers[e.key] = { userId: e.id, email: e.email, orgId: e.orgId };
   }
-  return { present: !!l, orgs, buyers };
+  const reps = {};
+  for (const e of l?.entities || []) if (e.type === 'rep-attachment') reps[e.key] = { userId: e.userId, email: e.email };
+  return { present: !!l, orgs, buyers, reps, owners: { ...buyers } };
+}
+
+/**
+ * Add the rep logins the fixture's rep-owned orders name to `base.owners`: "record" is the rep
+ * record's account (ledger userId), "email" the account of the rep's declared email.
+ */
+async function resolveRepOwners(base) {
+  for (const o of DEMO_RET_ORDERS.filter(isRepOwned)) {
+    const key = ownerKeyOf(o);
+    if (base.owners[key]) continue;
+    const att = base.reps[o.owner.rep];
+    if (!att) continue;
+    if (o.owner.login === 'record') {
+      const u = await api('GET', `/api/platform/security/users/id/${encodeURIComponent(att.userId)}`, null, { expectStatus: [200, 404] }).catch(() => null);
+      base.owners[key] = { userId: att.userId, email: u?.email || u?.userName || att.email, rep: true };
+    } else {
+      const u = await api('GET', `/api/platform/security/users/${encodeURIComponent(att.email)}`, null, { expectStatus: [200, 404] }).catch(() => null);
+      if (u?.id) base.owners[key] = { userId: u.id, email: att.email, rep: true };
+    }
+  }
 }
 
 // ---- storefront identity -------------------------------------------------------------
@@ -93,6 +115,40 @@ async function buyerToken(email, password, organizationId) {
   if (!t.refresh_token || !organizationId) return t.access_token;
   const s = await tokenRequest({ grant_type: 'refresh_token', refresh_token: t.refresh_token, organization_id: organizationId, scope: 'offline_access' });
   return s?.access_token || t.access_token;
+}
+
+/**
+ * A token acting as a rep login inside one organization: the rep's own password when the env has it
+ * (SR_DEMO_REP_<NAME>_PASSWORD[_ENV]), else an operator holding platform:security:loginOnBehalf logs in
+ * on her behalf (the same operator chain as the sales-rep demo). Never written to disk.
+ */
+async function repToken(owner, repKey, organizationId) {
+  const env = TEST_ENV.toUpperCase();
+  const name = repKey.replace(/^DEMO_REP_/, '');
+  const pw = process.env[`SR_DEMO_REP_${name}_PASSWORD_${env}`] || process.env[`SR_DEMO_REP_${name}_PASSWORD`];
+  let t = pw ? await tokenRequest({ grant_type: 'password', username: owner.email, password: pw, scope: 'offline_access', storeId: STORE_ID }) : null;
+  if (!t?.access_token) {
+    const ops = [[process.env.SR_DEMO_OPERATOR_EMAIL, process.env.SR_DEMO_OPERATOR_PASSWORD], [process.env.IMPERSONATION_ADMIN_EMAIL, process.env.IMPERSONATION_ADMIN_PASSWORD], [process.env.USER2_EMAIL, process.env.USER2_PASSWORD]];
+    for (const [e, p] of ops) {
+      if (!e || !p) continue;
+      const op = await tokenRequest({ grant_type: 'password', username: e, password: p, scope: 'offline_access', storeId: STORE_ID });
+      if (!op?.access_token) continue;
+      const res = await fetch(`${BACK_URL}/connect/token`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', Authorization: `Bearer ${op.access_token}` }, body: new URLSearchParams({ grant_type: 'impersonate', user_id: owner.userId, scope: 'offline_access' }) });
+      if (res.ok) { t = await res.json(); break; }
+    }
+  }
+  if (!t?.access_token) return null;
+  if (!t.refresh_token || !organizationId) return t.access_token;
+  const sw = await tokenRequest({ grant_type: 'refresh_token', refresh_token: t.refresh_token, organization_id: organizationId, scope: 'offline_access' });
+  return sw?.access_token || null;
+}
+
+/** A token for whoever owns `spec`, inside the order's organization. */
+async function ownerToken(base, spec, password) {
+  const owner = base.owners[ownerKeyOf(spec)];
+  if (!owner) return null;
+  const orgId = base.orgs[spec.org]?.id;
+  return owner.rep ? repToken(owner, spec.owner.rep, orgId) : buyerToken(owner.email, password, orgId);
 }
 
 async function gql(token, query, variables = {}) {
@@ -168,7 +224,7 @@ async function deleteReturns(returns) {
  */
 async function ensureOrder(spec, base, pools, cursor, now) {
   const number = demoRetOrderNumber(spec.key);
-  const buyer = base.buyers[spec.buyer];
+  const buyer = base.owners[ownerKeyOf(spec)];
   const org = base.orgs[spec.org];
   let order = DRY_RUN ? null : await findOrderByNumber(number);
   if (order && !isDemoRetMarker(order.outerId)) {
@@ -200,7 +256,7 @@ async function ensureOrder(spec, base, pools, cursor, now) {
   await api('PUT', '/api/order/customerOrders', buildDemoRetDeliveryBody(spec, full, skus, now), { expectStatus: [200, 204] });
   order = await api('GET', `/api/order/customerOrders/${created.id}`);
   if (!orderIsDelivered(spec, order)) throw new Error(`${number} POSTed but the delivery did not take (status ${order.status}, shipment items ${order.shipments?.[0]?.items?.length ?? 0})`);
-  log(`order ${number} — ${org.name}, ${spec.lines.length} line(s), delivered ${spec.deliveredDaysAgo}d ago, buyer ${buyer.email}`);
+  log(`order ${number} — ${org.name}, ${spec.lines.length} line(s), delivered ${spec.deliveredDaysAgo}d ago, owner ${buyer.email}`);
   return { order, lineIds: lineIdsFor(spec, order, skus), rebuilt: true, skus };
 }
 
@@ -438,7 +494,8 @@ async function teardown(base) {
     const o = await api('GET', `/api/order/customerOrders/${e.id}`, null, { expectStatus: [200, 404] });
     if (o?.id && isDemoRetMarker(o.outerId)) orders.set(o.id, o);
   }
-  const buyerIds = Object.values(base.buyers).map((b) => b.userId).filter(Boolean);
+  await resolveRepOwners(base);
+  const buyerIds = [...new Set(Object.values(base.owners).map((b) => b.userId).filter(Boolean))];
   if (buyerIds.length) {
     const r = await api('POST', '/api/order/customerOrders/search', { customerIds: buyerIds, take: 500 });
     for (const o of r?.results || []) {
@@ -463,10 +520,11 @@ async function teardown(base) {
     returns += rs.length;
     await api('DELETE', `/api/order/customerOrders?ids=${o.id}`, null, { expectStatus: [200, 204] });
     // Files: owner-only delete through xAPI. Best effort — an orphaned scoped file is invisible to every page.
-    const buyer = Object.values(base.buyers).find((b) => b.userId === o.customerId);
-    if (buyer && urls.length && !DRY_RUN) {
-      if (!tokens.has(buyer.email)) tokens.set(buyer.email, await buyerToken(buyer.email, password, buyer.orgId));
-      const t = tokens.get(buyer.email);
+    const ownerSpec = DEMO_RET_ORDERS.find((x) => demoRetMarker('ORD', x.key) === o.outerId);
+    if (ownerSpec && urls.length && !DRY_RUN) {
+      const tk = `${ownerKeyOf(ownerSpec)}|${ownerSpec.org}`;
+      if (!tokens.has(tk)) tokens.set(tk, await ownerToken(base, ownerSpec, password));
+      const t = tokens.get(tk);
       for (const u of urls) {
         if (!t) break;
         const r = await gql(t, 'mutation($c:DeleteFileCommandType!){ deleteFile(command:$c) }', { c: { id: String(u).split('/').pop() } }).catch(() => null);
@@ -504,7 +562,8 @@ async function main() {
     console.error(`  Seed it first: TEST_ENV=${TEST_ENV} npm run seed:sales-rep-family -- --profile demo   (or npm run seed:demo for both)`);
     process.exit(2);
   }
-  const missing = DEMO_RET_ORDERS.filter((o) => !base.orgs[o.org] || !base.buyers[o.buyer]).map((o) => `${o.key} (${!base.orgs[o.org] ? o.org : o.buyer})`);
+  await resolveRepOwners(base);
+  const missing = DEMO_RET_ORDERS.filter((o) => !base.orgs[o.org] || !base.owners[ownerKeyOf(o)]).map((o) => `${o.key} (${!base.orgs[o.org] ? o.org : ownerKeyOf(o)})`);
   if (missing.length) {
     console.error(`ABORT: the sales-rep demo ledger lacks what these orders stand on: ${missing.join(', ')}. Re-seed the sales-rep demo.`);
     process.exit(2);
@@ -512,10 +571,17 @@ async function main() {
 
   const password = resolvePassword('{{SR_DEMO_BUYER_PASSWORD}}');
   const tokens = {};
-  for (const key of new Set(DEMO_RET_ORDERS.map((o) => o.buyer))) {
-    const b = base.buyers[key];
-    tokens[key] = DRY_RUN ? 'dry' : await buyerToken(b.email, password, b.orgId);
-    if (!tokens[key]) throw new Error(`${b.email} cannot sign in to ${STORE_ID} with SR_DEMO_BUYER_PASSWORD — the sales-rep demo set it; check .env.local`);
+  // One token per (owner, org): a rep's orders sit in different served orgs, and each return is made
+  // from inside the org its order belongs to.
+  for (const o of DEMO_RET_ORDERS) {
+    const k = `${ownerKeyOf(o)}|${o.org}`;
+    if (tokens[k]) continue;
+    tokens[k] = DRY_RUN ? 'dry' : await ownerToken(base, o, password);
+    if (!tokens[k]) {
+      throw new Error(isRepOwned(o)
+        ? `cannot act as ${base.owners[ownerKeyOf(o)]?.email} in ${o.org}: no SR_DEMO_REP_*_PASSWORD and no operator (SR_DEMO_OPERATOR_*, IMPERSONATION_ADMIN_*, USER2_*) that can log in on her behalf`
+        : `${base.owners[ownerKeyOf(o)].email} cannot sign in to ${STORE_ID} with SR_DEMO_BUYER_PASSWORD — check .env.local`);
+    }
   }
 
   // Policy, read live with a buyer token, never assumed.
@@ -548,7 +614,7 @@ async function main() {
   for (const ret of returnsInSubmitOrder()) {
     if (ONLY && ONLY !== ret.key && ONLY !== ret.order) continue;
     const spec = retOrderByKey(ret.order);
-    entities.push({ ...await ensureReturn(ret, { orderRes: orderRes[ret.order], token: tokens[spec.buyer], reasons: pol?.returnReasons || [], cancelField }), orderKey: ret.order });
+    entities.push({ ...await ensureReturn(ret, { orderRes: orderRes[ret.order], token: tokens[`${ownerKeyOf(spec)}|${spec.org}`], reasons: pol?.returnReasons || [], cancelField }), orderKey: ret.order });
   }
 
   if (!ONLY) entities.push(...await ensureOrgReturnsAccess(base));

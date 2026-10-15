@@ -24,9 +24,12 @@ TEST_ENV=virtostart npm run seed:demo -- --family returns
 
 ## Returns demo
 
-Eight delivered orders and fourteen returns on the sales-rep demo's four organizations, every status the store allows —
+Delivered orders and returns on the sales-rep demo's four organizations — eight buyer orders with fourteen returns covering every status the store allows —
 Draft, Requested ×3, New (agent-logged), Approved ×2, PartiallyApproved ×2, Processing ×2, Rejected, Cancelled,
-Completed — plus two freshly delivered orders with no return for a live Request-return walkthrough.
+Completed — plus two freshly delivered orders with no return for a live Request-return walkthrough. **Alla's own orders**
+(fixture `owner: {rep, login}`): three per login (`record` and `email`) in her served orgs, four returns each
+on "My returns", every order still returnable so **Request return** shows; returns are submitted as her via her
+password or, without it, an operator logging in on her behalf.
 
 - **Data is the fixture**, never the script: edit `returns-demo.json`; `returns-demo-specs.mjs` loads and
   derives; `npm run td:validate:returns-demo` gates it. A copy change (reference, comment, decline reason)

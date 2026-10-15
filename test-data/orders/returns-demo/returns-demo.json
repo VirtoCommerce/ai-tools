@@ -9,7 +9,8 @@
       "returns[].lines[].approve": "approved qty (decided outcomes only); 0 = declined",
       "returns[].seq": "submit order — the platform numbers returns in creation order",
       "returns[].via": "omitted = the buyer submits through the storefront flow; \"agent\" = a back-office agent logs it on the buyer's behalf (status New, no evidence required)",
-      "orgReturnsAccess": "a demo-owned role holding ONLY the organization-returns view permission, ADDED (never replacing) to the listed buyers' memberships and to every login of the listed reps in the listed served orgs; teardown takes it back off and deletes the role"
+      "orgReturnsAccess": "a demo-owned role holding ONLY the organization-returns view permission, ADDED (never replacing) to the listed buyers' memberships and to every login of the listed reps in the listed served orgs; teardown takes it back off and deletes the role",
+      "orders[].owner": "instead of buyer: a REP's own order — {rep, login}, login = \"record\" (the account the sales-rep record points at) or \"email\" (the rep's declared email login). The rep places it inside a served org and submits its returns as herself; the order address email is the org's .example mailbox"
     }
   },
   "currency": "USD",
@@ -162,6 +163,118 @@
         }
       ],
       "purchaseOrder": "WES-77388"
+    },
+    {
+      "key": "DRO-AV-01",
+      "org": "DORG-NORTHWIND",
+      "owner": {
+        "rep": "DEMO_REP_VOLKOVA",
+        "login": "record"
+      },
+      "deliveredDaysAgo": 4,
+      "lines": [
+        {
+          "qty": 24,
+          "price": 38
+        },
+        {
+          "qty": 10,
+          "price": 95
+        }
+      ],
+      "purchaseOrder": "AV-NW-2041"
+    },
+    {
+      "key": "DRO-AV-02",
+      "org": "DORG-CONTOSO",
+      "owner": {
+        "rep": "DEMO_REP_VOLKOVA",
+        "login": "record"
+      },
+      "deliveredDaysAgo": 11,
+      "lines": [
+        {
+          "qty": 3,
+          "price": 410
+        }
+      ],
+      "purchaseOrder": "AV-CN-2033"
+    },
+    {
+      "key": "DRO-AV-03",
+      "org": "DORG-FABRIKAM",
+      "owner": {
+        "rep": "DEMO_REP_VOLKOVA",
+        "login": "email"
+      },
+      "deliveredDaysAgo": 7,
+      "lines": [
+        {
+          "qty": 6,
+          "price": 210
+        },
+        {
+          "qty": 2,
+          "price": 640
+        }
+      ],
+      "purchaseOrder": "AV-FB-2052"
+    },
+    {
+      "key": "DRO-AV-04",
+      "org": "DORG-NORTHWIND",
+      "owner": {
+        "rep": "DEMO_REP_VOLKOVA",
+        "login": "email"
+      },
+      "deliveredDaysAgo": 2,
+      "lines": [
+        {
+          "qty": 40,
+          "price": 12
+        }
+      ],
+      "purchaseOrder": "AV-NW-2058"
+    },
+    {
+      "key": "DRO-AV-05",
+      "org": "DORG-FABRIKAM",
+      "owner": {
+        "rep": "DEMO_REP_VOLKOVA",
+        "login": "record"
+      },
+      "deliveredDaysAgo": 1,
+      "lines": [
+        {
+          "qty": 4,
+          "price": 185
+        },
+        {
+          "qty": 12,
+          "price": 22
+        }
+      ],
+      "purchaseOrder": "AV-FB-2061"
+    },
+    {
+      "key": "DRO-AV-06",
+      "org": "DORG-CONTOSO",
+      "owner": {
+        "rep": "DEMO_REP_VOLKOVA",
+        "login": "email"
+      },
+      "deliveredDaysAgo": 1,
+      "lines": [
+        {
+          "qty": 2,
+          "price": 395
+        },
+        {
+          "qty": 8,
+          "price": 31
+        }
+      ],
+      "purchaseOrder": "AV-CN-2064"
     }
   ],
   "returns": [
@@ -427,6 +540,147 @@
           "reasonComment": "Same batch code on all eight; fail on first start-up.",
           "approve": 8,
           "evidence": "batch-code-label.png"
+        }
+      ]
+    },
+    {
+      "key": "DRET-AV-01",
+      "order": "DRO-AV-01",
+      "outcome": "Requested",
+      "seq": 150,
+      "reference": "Demo stock — damaged cartons",
+      "comment": "Six units from the demo-stock order arrived with crushed cartons.",
+      "lines": [
+        {
+          "line": 1,
+          "qty": 6,
+          "reason": "DamagedInTransit",
+          "reasonComment": "Cartons crushed on one side of the pallet.",
+          "evidence": "demo-stock-cartons.png"
+        }
+      ]
+    },
+    {
+      "key": "DRET-AV-02",
+      "order": "DRO-AV-01",
+      "outcome": "Approved",
+      "seq": 160,
+      "reference": "Sample units — not powering on",
+      "comment": "Two sample units do not power on.",
+      "lines": [
+        {
+          "line": 2,
+          "qty": 2,
+          "reason": "FaultyOnArrival",
+          "reasonComment": "No power on first start-up.",
+          "approve": 2,
+          "evidence": "sample-units-no-power.png"
+        }
+      ]
+    },
+    {
+      "key": "DRET-AV-03",
+      "order": "DRO-AV-02",
+      "outcome": "PartiallyApproved",
+      "seq": 170,
+      "reference": "Showroom units — wrong model",
+      "comment": "Two showroom units arrived as the previous model.",
+      "declineReason": "One unit was already installed in the showroom and cannot be resold.",
+      "lines": [
+        {
+          "line": 1,
+          "qty": 2,
+          "reason": "WrongItemDelivered",
+          "reasonComment": "Labels show last year's model.",
+          "approve": 1,
+          "decline": "Installed in the showroom.",
+          "evidence": "showroom-model-label.png"
+        }
+      ]
+    },
+    {
+      "key": "DRET-AV-04",
+      "order": "DRO-AV-01",
+      "outcome": "Draft",
+      "seq": 180,
+      "reference": "Spare units — to confirm",
+      "comment": "Checking whether the spares are still needed.",
+      "lines": [
+        {
+          "line": 1,
+          "qty": 2,
+          "reason": "OrderedByMistake"
+        }
+      ]
+    },
+    {
+      "key": "DRET-AV-05",
+      "order": "DRO-AV-03",
+      "outcome": "Completed",
+      "seq": 190,
+      "reference": "Trial units — faulty",
+      "comment": "Two trial units fail under load.",
+      "lines": [
+        {
+          "line": 1,
+          "qty": 2,
+          "reason": "FaultyOnArrival",
+          "reasonComment": "Shut down under load after a few minutes.",
+          "approve": 2,
+          "evidence": "trial-units-load-test.png"
+        }
+      ]
+    },
+    {
+      "key": "DRET-AV-06",
+      "order": "DRO-AV-03",
+      "outcome": "Rejected",
+      "seq": 200,
+      "reference": "Trial unit — no longer needed",
+      "comment": "The customer chose a different model after the trial.",
+      "declineReason": "Trial units used on site are not returnable.",
+      "lines": [
+        {
+          "line": 2,
+          "qty": 1,
+          "reason": "NoLongerNeeded",
+          "approve": 0,
+          "decline": "Used on site during the trial.",
+          "evidence": "trial-unit-in-box.png"
+        }
+      ]
+    },
+    {
+      "key": "DRET-AV-07",
+      "order": "DRO-AV-04",
+      "outcome": "Requested",
+      "seq": 210,
+      "reference": "Wrong cable length",
+      "comment": "Ten packs are the wrong length.",
+      "lines": [
+        {
+          "line": 1,
+          "qty": 10,
+          "reason": "WrongItemDelivered",
+          "reasonComment": "Ordered 2 m, received 1 m.",
+          "evidence": "cable-pack-label.png"
+        }
+      ]
+    },
+    {
+      "key": "DRET-AV-08",
+      "order": "DRO-AV-04",
+      "outcome": "Cancelled",
+      "seq": 220,
+      "reference": "Extra packs",
+      "comment": "Ordered a few packs too many.",
+      "cancelReason": "The crew used the extra packs after all.",
+      "lines": [
+        {
+          "line": 1,
+          "qty": 5,
+          "reason": "OrderedByMistake",
+          "evidence": "extra-packs.png"
         }
       ]
     }

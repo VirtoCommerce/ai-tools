@@ -129,6 +129,24 @@ export const ORG_RETURNS_VIEW_PERMISSION = 'xapi:my_organization:return:view';
 export const retOrderByKey = (key) => DEMO_RET_ORDERS.find((o) => o.key === key) || null;
 export const orgByKey = (key) => DEMO_ORGS.find((o) => o.key === key) || null;
 export const contactByKey = (key) => DEMO_CONTACTS.find((c) => c.key === key) || null;
+
+/**
+ * Who owns an order — and so who may return it (ownership is the order's customer). Usually a buyer
+ * contact; a REP's own order instead names `owner: {rep, login}`, where login "record" is the account
+ * the sales-rep record points at and "email" the rep's declared email login (one contact, two logins —
+ * sales-rep-profiles.md §5). The key is what tokens and ledger rows are keyed by.
+ */
+export const REP_LOGINS = Object.freeze(['record', 'email']);
+export const isRepOwned = (o) => !!o?.owner;
+export const ownerKeyOf = (o) => (o.buyer ? o.buyer : `${o.owner.rep}@${o.owner.login}`);
+
+/** The person printed on the order. A rep's order is addressed to the ORG's .example mailbox, never her own. */
+export function ownerPersonOf(o) {
+  if (o.buyer) return contactByKey(o.buyer);
+  const rep = DEMO_REPS.find((r) => r.key === o.owner?.rep);
+  const org = orgByKey(o.org);
+  return rep && org ? { key: ownerKeyOf(o), firstName: rep.firstName, lastName: rep.lastName, email: org.email, org: o.org } : null;
+}
 export const returnsInSubmitOrder = () => [...DEMO_RETURNS].sort((a, b) => a.seq - b.seq);
 
 /** Order numbers share the sales-rep demo's SO-###### scheme, so both demos read as one ledger of sales. */
@@ -159,7 +177,7 @@ export const orderTotal = (spec) => round2(spec.lines.reduce((s, l) => s + l.qty
  */
 export function buildDemoRetOrderBody(spec, { storeId, orgId, customerId, products }) {
   const org = orgByKey(spec.org);
-  const contact = contactByKey(spec.buyer);
+  const contact = ownerPersonOf(spec);
   const number = demoRetOrderNumber(spec.key);
   const items = spec.lines.map((l, i) => {
     const p = products[i];
@@ -333,9 +351,16 @@ export function demoReturnProblems({ reasonCodes = null } = {}) {
 
   for (const o of DEMO_RET_ORDERS) {
     const org = orgByKey(o.org);
-    const buyer = contactByKey(o.buyer);
+    const buyer = ownerPersonOf(o);
     if (!org) problems.push(`order ${o.key}: org ${o.org} is not a sales-rep demo organization`);
-    if (!buyer) problems.push(`order ${o.key}: buyer ${o.buyer} is not a sales-rep demo contact`);
+    if (!!o.buyer === !!o.owner) problems.push(`order ${o.key}: declare exactly one of buyer / owner`);
+    if (isRepOwned(o)) {
+      const rep = DEMO_REPS.find((r) => r.key === o.owner.rep);
+      if (!rep) problems.push(`order ${o.key}: owner rep ${o.owner.rep} is not a demo rep`);
+      else if (!rep.servedOrgs.includes(o.org)) problems.push(`order ${o.key}: ${rep.key} does not serve ${o.org} — she has no membership to place it in`);
+      if (!REP_LOGINS.includes(o.owner.login)) problems.push(`order ${o.key}: owner login must be one of ${REP_LOGINS.join(' | ')}`);
+    }
+    if (!buyer) problems.push(`order ${o.key}: owner ${ownerKeyOf(o)} does not resolve`);
     else if (buyer.org !== o.org) problems.push(`order ${o.key}: buyer ${o.buyer} belongs to ${buyer.org}, not ${o.org} — the return would surface under the wrong customer`);
     if (buyer && !RESERVED_RECIPIENT_RE.test(buyer.email)) problems.push(`order ${o.key}: buyer email ${buyer.email} is not on .example — order/return notifications would reach a real mailbox`);
     if (org && !RESERVED_RECIPIENT_RE.test(org.email)) problems.push(`org ${org.key}: email ${org.email} is not on .example — Return.NotifyOrganizationEmail would mail it`);
@@ -402,7 +427,7 @@ export function demoReturnProblems({ reasonCodes = null } = {}) {
       for (const o of r.orgs) if (!rep.servedOrgs.includes(o)) problems.push(`org-returns access: ${r.key} does not serve ${o}`);
     }
     const viewerOrgs = new Set([...acc.buyers.map((b) => contactByKey(b)?.org), ...acc.reps.flatMap((r) => r.orgs)]);
-    const multiBuyer = Object.entries(DEMO_RETURNS.reduce((m, r) => { const o = retOrderByKey(r.order); if (o) (m[o.org] ||= new Set()).add(o.buyer); return m; }, {})).filter(([, s2]) => s2.size > 1).map(([org]) => org);
+    const multiBuyer = Object.entries(DEMO_RETURNS.reduce((m, r) => { const o = retOrderByKey(r.order); if (o) (m[o.org] ||= new Set()).add(ownerKeyOf(o)); return m; }, {})).filter(([, s2]) => s2.size > 1).map(([org]) => org);
     if (!multiBuyer.some((o) => viewerOrgs.has(o))) problems.push('no viewer sits in an organization with returns from two buyers — the organization view would look like a personal one');
   }
 
@@ -417,8 +442,11 @@ export function demoReturnProblems({ reasonCodes = null } = {}) {
   if (!DEMO_RET_ORDERS.some((o) => !withReturns.has(o.key))) problems.push('every order already carries a return — nothing is left for a live Request-return walkthrough');
   // An org-level view needs returns from two different buyers of one organization.
   const buyersByOrg = {};
-  for (const r of DEMO_RETURNS) { const o = retOrderByKey(r.order); if (o) (buyersByOrg[o.org] ||= new Set()).add(o.buyer); }
+  for (const r of DEMO_RETURNS) { const o = retOrderByKey(r.order); if (o) (buyersByOrg[o.org] ||= new Set()).add(ownerKeyOf(o)); }
   if (!Object.values(buyersByOrg).some((s) => s.size > 1)) problems.push('no organization has returns from two buyers — the organization returns view would equal a personal one');
+  for (const k of new Set(DEMO_RET_ORDERS.filter(isRepOwned).map(ownerKeyOf))) {
+    if (!DEMO_RET_ORDERS.some((o) => ownerKeyOf(o) === k && !withReturns.has(o.key))) problems.push(`${k} has no order without a return — no clean Request-return walkthrough on that login`);
+  }
   const seqs = DEMO_RETURNS.map((r) => r.seq);
   if (new Set(seqs).size !== seqs.length) problems.push('two returns share a seq — submit order (and so RET numbering) is a race');
 

@@ -841,7 +841,7 @@
     "profile": "returns-demo",
     "env": "virtostart",
     "marker": "DEMO-RET",
-    "generated": "2026-10-15T16:33:25.113Z",
+    "generated": "2026-10-15T16:44:04.926Z",
     "entities": [
       {
         "type": "order",
@@ -932,6 +932,70 @@
         "skus": [
           "PA907684",
           "PA475208"
+        ]
+      },
+      {
+        "type": "order",
+        "key": "DRO-AV-01",
+        "id": "1baf2bca-adfb-4c87-8093-a751506cb0d8",
+        "number": "SO-469037",
+        "marker": "DEMO-RET:ORD:DRO-AV-01",
+        "skus": [
+          "HA619738",
+          "HA282334"
+        ]
+      },
+      {
+        "type": "order",
+        "key": "DRO-AV-02",
+        "id": "e4bfcb07-d65d-40e6-afef-60233115338d",
+        "number": "SO-469038",
+        "marker": "DEMO-RET:ORD:DRO-AV-02",
+        "skus": [
+          "566903892"
+        ]
+      },
+      {
+        "type": "order",
+        "key": "DRO-AV-03",
+        "id": "cfb8ec04-fa52-4312-b300-a94780341515",
+        "number": "SO-469039",
+        "marker": "DEMO-RET:ORD:DRO-AV-03",
+        "skus": [
+          "ALCE5491",
+          "ALCE1598"
+        ]
+      },
+      {
+        "type": "order",
+        "key": "DRO-AV-04",
+        "id": "af4a32a0-d8d0-491e-b0e9-e374e028388d",
+        "number": "SO-469040",
+        "marker": "DEMO-RET:ORD:DRO-AV-04",
+        "skus": [
+          "HA012030"
+        ]
+      },
+      {
+        "type": "order",
+        "key": "DRO-AV-05",
+        "id": "6d43f434-d3d1-45d8-a731-75d42fc82ced",
+        "number": "SO-469041",
+        "marker": "DEMO-RET:ORD:DRO-AV-05",
+        "skus": [
+          "ALCE4660",
+          "ALCE3680"
+        ]
+      },
+      {
+        "type": "order",
+        "key": "DRO-AV-06",
+        "id": "0b517838-16af-42a6-aba6-427113136b8d",
+        "number": "SO-469042",
+        "marker": "DEMO-RET:ORD:DRO-AV-06",
+        "skus": [
+          "55557702",
+          "568171770"
         ]
       },
       {
@@ -1061,6 +1125,78 @@
         "orderKey": "DRO-NW-01"
       },
       {
+        "type": "return",
+        "key": "DRET-AV-01",
+        "id": "50453a59-8a2a-46b5-a761-e83d0b0b8546",
+        "number": "RET261015-00021",
+        "status": "Requested",
+        "orderId": "1baf2bca-adfb-4c87-8093-a751506cb0d8",
+        "orderKey": "DRO-AV-01"
+      },
+      {
+        "type": "return",
+        "key": "DRET-AV-02",
+        "id": "e5fddc4a-b6ec-4fe0-9635-7075a1ada124",
+        "number": "RET261015-00022",
+        "status": "Approved",
+        "orderId": "1baf2bca-adfb-4c87-8093-a751506cb0d8",
+        "orderKey": "DRO-AV-01"
+      },
+      {
+        "type": "return",
+        "key": "DRET-AV-03",
+        "id": "ad69b005-197a-4113-9154-8ec90c81b34c",
+        "number": "RET261015-00023",
+        "status": "PartiallyApproved",
+        "orderId": "e4bfcb07-d65d-40e6-afef-60233115338d",
+        "orderKey": "DRO-AV-02"
+      },
+      {
+        "type": "return",
+        "key": "DRET-AV-04",
+        "id": "4af8619f-8b8f-4be4-acb6-97b919c5202d",
+        "number": "RET261015-00024",
+        "status": "Draft",
+        "orderId": "1baf2bca-adfb-4c87-8093-a751506cb0d8",
+        "orderKey": "DRO-AV-01"
+      },
+      {
+        "type": "return",
+        "key": "DRET-AV-05",
+        "id": "23b24480-ef2f-42bb-8b09-541e312bcbab",
+        "number": "RET261015-00025",
+        "status": "Completed",
+        "orderId": "cfb8ec04-fa52-4312-b300-a94780341515",
+        "orderKey": "DRO-AV-03"
+      },
+      {
+        "type": "return",
+        "key": "DRET-AV-06",
+        "id": "7980d9e7-98fb-4249-b16d-1717abe41928",
+        "number": "RET261015-00026",
+        "status": "Rejected",
+        "orderId": "cfb8ec04-fa52-4312-b300-a94780341515",
+        "orderKey": "DRO-AV-03"
+      },
+      {
+        "type": "return",
+        "key": "DRET-AV-07",
+        "id": "b16ca4b0-1b2e-4a49-8afe-fe8b8b8dc7a0",
+        "number": "RET261015-00027",
+        "status": "Requested",
+        "orderId": "af4a32a0-d8d0-491e-b0e9-e374e028388d",
+        "orderKey": "DRO-AV-04"
+      },
+      {
+        "type": "return",
+        "key": "DRET-AV-08",
+        "id": "b72a6d56-ed7d-4a0b-b685-7ded715856be",
+        "number": "RET261015-00028",
+        "status": "Cancelled",
+        "orderId": "af4a32a0-d8d0-491e-b0e9-e374e028388d",
+        "orderKey": "DRO-AV-04"
+      },
+      {
         "type": "role",
         "key": "demo-org-returns-viewer",
         "id": "demo-org-returns-viewer"
@@ -1141,7 +1277,7 @@
     "profile": "loyalty-missions-demo",
     "env": "virtostart",
     "marker": "DEMO-MSN",
-    "generated": "2026-10-15T16:24:18.625Z",
+    "generated": "2026-10-15T16:44:10.837Z",
     "entities": [
       {
         "type": "mission",
