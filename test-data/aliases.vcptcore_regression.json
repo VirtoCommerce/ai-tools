@@ -81,7 +81,7 @@
     "id": "d04ed9df-7f94-4707-9d57-462c04d291e8"
   },
   "PROCESSING_ORDER": {
-    "id": "039bd09f-3fe4-4ca0-9345-a39bddba3a99",
+    "id": "af3000a5-22b2-485b-a1b7-78ed3e394636",
     "number": "AGENT-TEST-ORD-PROCESSING"
   },
   "PROD_MIN_ABOVE_STOCK": {
@@ -179,6 +179,43 @@
   },
   "FC_EAST": {
     "id": "ffc-chile-andes-supply-node"
+  },
+  "COMPLETED_ORDER": {
+    "id": "cc764579-1ef3-4608-8331-35127221d7d4",
+    "number": "AGENT-TEST-ORD-COMPLETED"
+  },
+  "SHIPPED_ORDER": {
+    "id": "d03b71b0-4367-44c1-90f0-47068380dd65",
+    "number": "AGENT-TEST-ORD-SHIPPED"
+  },
+  "CFG_HOODIE": {
+    "id": "3a381d88-77a5-413a-b757-61808593edec"
+  },
+  "CFG_REQUIRED_FILE_HOODIE": {
+    "productId": "764833c5-fba5-44e5-8e9c-515d18a9627a",
+    "fileSectionId": "1fca94cf-4432-48c2-9e3a-dc366161615d"
+  },
+  "CFG_OFFROAD_BIKE": {
+    "productId": "6a90089a-9150-4df4-b099-b5a0bf1204bb"
+  },
+  "CFG_WEDDING_CAKE_CONDITIONS": {
+    "productId": "78cf2301-8e3a-4cb4-8611-10f2f5441e77"
+  },
+  "CFG_VARIATION_CAKE": {
+    "productId": "d5fb0c20-5791-40b0-b6bc-8ed676926ee3",
+    "variationSectionId": "46a850db-29b0-40cb-84bc-c5c809987593",
+    "textSectionId": "0a34771d-8755-45fb-ab36-c5929ce6ef43",
+    "var1Id": "18614d51-4e6c-434e-92d6-f0c7b9c04edf",
+    "var2Id": "03691d56-f629-4ee5-b4a7-3fb762df64d9"
+  },
+  "PROD_FULL_FIELD_COVERAGE": {
+    "id": "e968c73f-e066-4419-bb6c-dfc7d3f69a9e",
+    "code": "0003283-1",
+    "name": "Efes Pilsner Bottle 50cl"
+  },
+  "CFG_FILE_HOODIE": {
+    "productId": "b1205ce8-660e-4a2c-b2e3-12772956d1a8",
+    "fileSectionId": "18f7f8e8-c5df-4e79-9f96-e64470af4fb4"
   },
   "EXTERNAL_HOST_IMAGE_PRODUCT": {
     "name": "Gin Tonic Three Cents - Cherry Soda 200 ml",
