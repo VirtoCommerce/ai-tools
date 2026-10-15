@@ -107,7 +107,10 @@ export function isPersonalEmail(address) {
   const local = a.slice(0, at);
   const domain = a.slice(at + 1);
   // Capitals in the domain mark a code identifier -- unless it ends in a real TLD (`Jane.Doe@Gmail.com`).
-  const identifier = /[A-Z]/.test(raw.slice(at + 1)) && !COMMON_TLD.has(domain.split('.').pop());
+  // ...and only when its last label is word-length, as `Prototype` / `Component` are: `Company.SE` and
+  // `Startup.Ai` are addresses with a capitalised domain (review round 1).
+  const last = domain.split('.').pop();
+  const identifier = /[A-Z]/.test(raw.slice(at + 1)) && !COMMON_TLD.has(last) && last.length >= 5;
   if (identifier || /^\d/.test(domain) || FILE_TLD.test(domain) || /^\d+x$/.test(local)) return false;
   if (ROLE_LOCAL.test(local)) return false;
   // `emails:"*@gmail.com"` is a search pattern, not an address: a wildcard names nobody.
@@ -250,6 +253,9 @@ export function loadHosts(env = process.env) {
  */
 const POINTER_KEY = /(?:_FILES?|_PATH|_DIR|SECRETS)$/i;
 
+/** A location, not a key: rooted (`/x`, `C:\x`) or a URL. Slash COUNT says nothing -- an AWS secret has two. */
+const rootedPath = (v) => /^[A-Za-z]:[\\/]/.test(v) || /^[\\/]/.test(v) || /^\w+:\/\//.test(v);
+
 export function secretValuesFromEnv(env = process.env) {
   const out = new Set();
   for (const [k, raw] of Object.entries(env)) {
@@ -258,7 +264,10 @@ export function secretValuesFromEnv(env = process.env) {
     // A letter AND a digit or symbol, no whitespace, no `/`: `86400000` (a TTL), `2024-10-01` (a version
     // date) and `connect/token` (an endpoint) under a secret-shaped key are not secrets, and treating
     // them as such would refuse every capture that mentions them (review of ai-tools#460).
-    if (v.length >= 8 && !/\s/.test(v) && !v.includes('/') && /\p{L}/u.test(v) && /[^\p{L}]/u.test(v) && !looksLikePath(v)) out.add(v);
+    // A `/` alone does not make a path -- base64 keys carry one (review round 1) -- but a slash-separated
+    // run of plain words does (`connect/token`): skipped.
+    const wordsPath = /^[A-Za-z][\w.-]*(?:\/[A-Za-z][\w.-]*)+$/.test(v) && !/\d/.test(v);
+    if (v.length >= 8 && !/\s/.test(v) && !wordsPath && /\p{L}/u.test(v) && /[^\p{L}]/u.test(v) && !rootedPath(v)) out.add(v);
   }
   return out;
 }

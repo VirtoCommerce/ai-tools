@@ -331,12 +331,18 @@ export function queueDir(env = process.env) {
  * `session` line counts by its `lastAt`, the day it describes; a line with no date goes. In CI or with
  * KB_LOG_DAILY=0 everything goes at once, as before.
  */
-export const logsImmediate = (env = process.env) => Boolean(env.CI) || String(env.KB_LOG_DAILY ?? '').trim() === '0';
+// Where the queue does not outlive the session, nothing waits: CI, Codespaces, a devcontainer, a Claude
+// cloud session -- and anywhere KB_LOG_DAILY=0 says so. Best effort by environment; the variable is the
+// reliable switch for anything else ephemeral.
+export const logsImmediate = (env = process.env) => Boolean(env.CI || env.CODESPACES || env.REMOTE_CONTAINERS || env.CLAUDE_CODE_REMOTE)
+  || String(env.KB_LOG_DAILY ?? '').trim() === '0';
 const dayOfLine = (l) => String((l?.kind === 'session' && l.lastAt) || l?.at || '').slice(0, 10);
 export function linesWouldGo(lines, { env = process.env, now = Date.now() } = {}) {
   const list = Array.isArray(lines) ? lines : [];
-  if (!list.length) return false;
+  // Immediate first (review round 1): a push carrying only the session's own counters -- virtual, not
+  // a queue line -- must go in CI too, or they die with the container.
   if (logsImmediate(env)) return true;
+  if (!list.length) return false;
   const today = new Date(now).toISOString().slice(0, 10);
   return list.some((l) => MUTATIONS.includes(l?.kind) || dayOfLine(l) < today);
 }

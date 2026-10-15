@@ -52,7 +52,7 @@ import { pathToFileURL } from 'node:url';
 import { openBase } from './core/base.mjs';
 import { flush, ownFlushDue, sweepIfDue } from './core/push.mjs';
 import { askLines, captureLines, evidenceLines, noneLines, showLines } from './core/render.mjs';
-import { accessWhy, queueDir, readPushStatus } from './core/queue.mjs';
+import { accessBlock, accessWhy, queueDir } from './core/queue.mjs';
 import { CONDITIONS_SOURCE, DEFECT_SOURCE, DEPLOYMENT_SOURCE, METHOD_SOURCE } from './core/contract.mjs';
 import { repoRoot, writeToken } from './core/token.mjs';
 import { TOPIC_MAX, ask, capture, confirm, dispute, none, show, stat } from './core/verbs.mjs';
@@ -319,7 +319,9 @@ const text = (lines, isError = false) => ({
  */
 function withAccessNote(lines, r, env) {
   if (r?.state !== 'queued') return lines;
-  const denied = readPushStatus(env).denied;
+  // The denial that holds for THIS token (`accessBlock`): a switched token, or one past its re-check,
+  // is not told it cannot write (review round 1).
+  const denied = accessBlock(env, writeToken(env).token);
   return denied ? [...lines, `  NOT PUBLISHED YET — ${accessWhy(denied.code, env)}`] : lines;
 }
 

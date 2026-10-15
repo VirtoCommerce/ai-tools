@@ -56,6 +56,7 @@ function queueHasWork(dir) {
  * only asked starts a process that answers `deferred`.
  */
 function pushWouldGo(dir, env, session, staleStates) {
+  if (logsImmediate(env)) return true; // everything goes, the session's own counters included
   const now = Date.now();
   const today = new Date(now).toISOString().slice(0, 10);
   if (staleStates.some((s) => String(s.lastAt ?? '').slice(0, 10) < today || logsImmediate(env))) return true;
@@ -67,7 +68,9 @@ function pushWouldGo(dir, env, session, staleStates) {
       const lines = [];
       for (const raw of readFileSync(path, 'utf8').split('\n')) {
         if (!raw.trim()) continue;
-        try { lines.push(JSON.parse(raw)); } catch { lines.push({}); } // a torn line has no date: it goes
+        // A torn line is skipped, as the push's own reader skips it: counting it would spawn a push on
+        // every turn that only answers `deferred` (review round 1).
+        try { lines.push(JSON.parse(raw)); } catch { /* torn */ }
       }
       if (linesWouldGo(lines, { env, now })) return true;
     }

@@ -243,8 +243,8 @@ that has neither. A change to the base (`capture` / `confirm` / `dispute`) goes 
 lines waiting in the queue ride along with it. Log lines alone (asks, shows, a session's counters) never
 go on their own: they wait for the next change, or go with the first push of a later day — so the
 public log lags until the next change, or until this machine next runs `kb` on another day; only
-`kb:report` notices. `npm run kb -- stat` says which lines are waiting and why. In CI (`CI` set) or with
-`KB_LOG_DAILY=0` everything goes at once, as before. When GitHub answers with a rate limit, nothing is pushed before the time it names. This paragraph used to say "when the session ends", which was true and useless —
+`kb:report` notices. `npm run kb -- stat` says which lines are waiting and why. Where the queue does not outlive the session — CI (`CI`), Codespaces, a devcontainer, a Claude
+cloud session — or with `KB_LOG_DAILY=0`, everything goes at once, as before. When GitHub answers with a rate limit, nothing is pushed before the time it names. This paragraph used to say "when the session ends", which was true and useless —
 nobody ends a session, and switching away from a tab is not ending one, so evidence sat on one laptop
 indefinitely. With no `KB_GITHUB_TOKEN` (or `GITHUB_TOKEN`) the flush reports `no-token` and **keeps
 the queue**: nothing is lost, and the first later session with a token sends it. An unauthenticated
@@ -257,8 +257,8 @@ an older `%TEMP%\claude-kb-queue` is moved there automatically.
 **A token that can read but not write.** Writing needs push access to `VirtoCommerce/vc-knowledge`:
 membership in the org team that has write on it (ask a maintainer), or a fine-grained token with
 **Contents: Read and write** on that one repository. A token without it is refused with `403 Resource
-not accessible`, and an expired one with `401 Bad credentials`. The kb then stops trying with that
-token for six hours (a new token is tried at once), tells you once at the end of a turn, marks every
+not accessible`, and an expired one with `401 Bad credentials`. The kb's automatic pushes then stop trying
+with that token for six hours (a new token, or your own `npm run kb -- push`, is tried at once), tells you once at the end of a turn, marks every
 `kb_capture` / `kb_confirm` / `kb_dispute` result `NOT PUBLISHED YET`, and `npm run kb -- stat` shows
 `NO WRITE ACCESS` until a push lands. Nothing queued is lost in the meantime.
 

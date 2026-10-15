@@ -39,7 +39,9 @@ export function deniedCode(res, json) {
   const remaining = typeof res?.headers?.get === 'function' ? res.headers.get('x-ratelimit-remaining') : null;
   if (/rate limit/i.test(msg) || remaining === '0') return 'rate-limited';
   if (res?.status === 401 || /bad credentials/i.test(msg)) return 'bad-credentials';
-  if (/not accessible by/i.test(msg)) return 'no-write-access';
+  // The wordings GitHub uses for "this token may not write here" (review round 1): a fine-grained or
+  // classic PAT without the scope, a repo without the collaborator, an org enforcing SAML SSO.
+  if (/not accessible by|must have push access|saml enforcement|enforced saml|re-authorize the oauth/i.test(msg)) return 'no-write-access';
   return 'forbidden';
 }
 

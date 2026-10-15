@@ -19,7 +19,7 @@
 import { openBase } from './core/base.mjs';
 import { EXIT, HEADLINE, exitFor } from './core/exits.mjs';
 import { OWN_FLUSH_AFTER_MS, SWEEP_AFTER_MS, flush, postVerbSweepAllowed, sweepIfDue } from './core/push.mjs';
-import { accessWhy, pushConfirmRequired, queueDir } from './core/queue.mjs';
+import { accessBlock, accessWhy, pushConfirmRequired, queueDir } from './core/queue.mjs';
 
 /** Minutes after which a still-queued line means the queue is not draining (`stat`, VCST-6378). */
 const STALE_QUEUE_MIN = 6 * 60;
@@ -182,7 +182,9 @@ async function main(argv) {
     }
     const p = r.push ?? {};
     if (p.rateLimitedUntil && Date.parse(p.rateLimitedUntil) > Date.now()) out(`  RATE LIMITED — GitHub asked for no push before ${p.rateLimitedUntil}; the queue waits`);
-    if (p.denied) out(`  NO WRITE ACCESS since ${p.denied.at} — ${accessWhy(p.denied.code)}`);
+    // Said only while the denial holds for the token this machine would push with (review round 1).
+    const denied = accessBlock(process.env, writeToken().token);
+    if (denied) out(`  NO WRITE ACCESS since ${denied.at} — ${accessWhy(denied.code)}`);
     out(`last push ${p.last ? `${p.last.state} at ${p.last.at}${p.last.commit ? ` ${p.last.commit.slice(0, 7)}` : ''}${p.last.why ? ` — ${p.last.why}` : ''}` : 'none recorded on this machine'}`);
     // Sticky until a push LANDS: a later "nothing to do" must not hide that the queue never drained.
     if (p.lastFailure && p.lastFailure.at !== p.last?.at) out(`  FAILED  ${p.lastFailure.state} at ${p.lastFailure.at}${p.lastFailure.why ? ` — ${p.lastFailure.why}` : ''}`);

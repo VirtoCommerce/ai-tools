@@ -935,7 +935,10 @@ async function flushOnce({
     await touchStamp({ env, now });
     return { state: 'rate-held', session, code: 'rate-limited', queued: loaded.reduce((n, f) => n + f.lines.length, 0), why: `GitHub rate limit: no push before ${rateUntil}` };
   }
-  const blocked = !dryRun && !injected ? accessBlock(env, token, now().getTime()) : null;
+  // ONLY AUTOMATIC PUSHES ARE HELD (review round 1): an operator who typed `kb push` -- typically right
+  // after a maintainer granted access to the SAME token -- gets the request. If it lands, `recordPush`
+  // clears the denial for everyone; if it is refused again, the denial is re-recorded.
+  const blocked = auto && !dryRun && !injected ? accessBlock(env, token, now().getTime()) : null;
   if (blocked) {
     await touchStamp({ env, now });
     return {

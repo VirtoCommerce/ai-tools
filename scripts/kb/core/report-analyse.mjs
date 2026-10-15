@@ -1511,8 +1511,9 @@ export function resolveVerdicts(lines) {
     if (l.kind !== 'ask' || l.state !== 'ambiguous') return l;
     const said = pointers.get(l._session ?? '')?.get(String(l.at));
     const word = lastWord(said, { owner: l.agent ?? null });
-    // Closed by what the agent did next rather than by a word: `closedVia` names the verb (VCST-6378).
-    const via = word.verdict !== 'open' && (said ?? []).length && (said ?? []).every((r) => r.by) ? { closedVia: said[said.length - 1].by } : {};
+    // Closed by what the agent did next rather than by a word: `closedVia` names the verb of the record
+    // that DECIDED it (`lastWord`'s `by`), never just the last record seen (review round 1).
+    const via = word.by ? { closedVia: word.by } : {};
     return word.verdict === 'picked' && word.ids.length
       ? { ...l, state: 'answer', matched: word.ids, closedBy: 'show', ...via }
       : { ...l, state: 'miss', matched: [], closedBy: word.verdict === 'none' ? 'none' : 'unclosed', ...via };

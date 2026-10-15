@@ -1822,7 +1822,7 @@ export function toLogLine(line) {
 export function flushCode({ why = '', reason = null } = {}) {
   const w = String(why ?? '');
   if (/rate limit/i.test(w)) return 'rate-limited';
-  if (/not accessible by (?:personal access|integration)/i.test(w)) return 'no-write-access';
+  if (/not accessible by|must have push access|saml enforcement|enforced saml/i.test(w)) return 'no-write-access';
   if (/bad credentials/i.test(w)) return 'bad-credentials';
   if (/no GITHUB_TOKEN/i.test(w)) return 'no-token';
   if (reason === 'conflict' || reason === 'missing' || reason === 'contained') return reason;

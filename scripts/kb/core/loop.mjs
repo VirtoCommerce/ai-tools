@@ -48,8 +48,10 @@ export function lastWord(pointed, { owner = null } = {}) {
   if (!said.length) return { verdict: 'open', ids: [] };
   const lastNone = said.map((o) => o.kind).lastIndexOf('none');
   const picks = said.slice(lastNone + 1);
-  if (!picks.length) return { verdict: 'none', ids: [] };
-  return { verdict: 'picked', ids: picks.map((o) => o.id).filter(Boolean).map(String) };
+  // `by`: what decided it when it was a later write rather than a word (`pointersByAsk`), else absent.
+  if (!picks.length) return { verdict: 'none', ids: [], ...(said[lastNone].by ? { by: said[lastNone].by } : {}) };
+  const last = picks[picks.length - 1];
+  return { verdict: 'picked', ids: picks.map((o) => o.id).filter(Boolean).map(String), ...(last.by ? { by: last.by } : {}) };
 }
 
 /**
