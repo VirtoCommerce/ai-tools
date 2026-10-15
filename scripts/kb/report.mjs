@@ -40,6 +40,8 @@ const USAGE = `kb:report — what agents asked this base, and what it could not 
   --run <handle>  scope to one run handle (KB_RUN, exactly as it was stamped -- it is never
                   parsed). NARROWS the window rather than replacing it, so it composes with
                   --days and --sessions, and the header says how many lines it set aside.
+  --exclude-sessions a,b  set these sessions aside like synthetic lines (a tooling check run without
+                  KB_SYNTHETIC=1). Counted in the header, never silently dropped.
   --base <url>    read a different base. Defaults to KB_BASE, then the declared default.
   --out <file>    where the HTML lands. Defaults to the session scratchpad; never the repo tree.
   --json          print the analysis as JSON instead of writing HTML.
@@ -109,7 +111,9 @@ export async function main(
   // through meta and the other reaches `collect`: a run's lines are scattered across whatever files
   // the push timer happened to cut, so there is no set of paths to fetch.
   const run = typeof flags.run === 'string' ? flags.run : null;
-  const report = analyse({ lines: got.lines, rows: got.rows, meta: { ...got.meta, how: base.how, run } });
+  const excludeSessions = typeof flags['exclude-sessions'] === 'string'
+    ? flags['exclude-sessions'].split(',').map((s) => s.trim()).filter(Boolean) : [];
+  const report = analyse({ lines: got.lines, rows: got.rows, meta: { ...got.meta, how: base.how, run, excludeSessions } });
 
   if (flags.json) {
     out(JSON.stringify(report, (_k, v) => (v instanceof Set ? [...v] : v), 1));

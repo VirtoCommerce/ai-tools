@@ -20,6 +20,7 @@ import { queuedWrite } from './queue.mjs';
 import { canonicalStand } from './canonical.mjs';
 import { MIN_COVERAGE, MIN_WORDS, scoreRows } from './rank.mjs';
 import { namespaceRoots } from './coordinates.mjs';
+import { coordinatesIn } from './query.mjs';
 import { normalizeRow } from './index-load.mjs';
 import { pairedOnlyBySubstring } from './pairing.mjs';
 import { isLegacyProcessKey, lineTouches, lineWork, sessionKeyOf } from './reach.mjs';
@@ -299,7 +300,15 @@ export function nearMisses(lines, idx) {
       if (!shownRows.length) { shownNotInIndex += 1; continue; }
       // The candidate that covered MOST of the question, not the best-scored: the panel's review band is
       // a coverage band, and an agent-rejected list's error bar is its closest candidate by that measure.
-      const best = scoreRows(String(l.q ?? ''), shownRows, { namespaces })
+      // OVER THE QUESTION'S PROSE, NOT ITS COORDINATES (VCST-6378). A route or an operation in the question
+      // shares its words with every entry anchored on the same endpoint family: of the 31 real rows this
+      // band held on 2026-10-12..14, 24 were correct rejections whose only overlap was
+      // `/api/platform/security/users`, `/account/returns` and the like, and 0 were answers the agent
+      // turned away. Whether the coordinate matched is the ranker's business; this band asks whether the
+      // candidate says what was asked.
+      const prose = coordinatesIn(String(l.q ?? ''), { namespaces })
+        .reduce((q, c) => q.split(c.raw).join(' '), String(l.q ?? ''));
+      const best = scoreRows(prose, shownRows, { namespaces })
         .reduce((b, h) => (!b || h.coverage > b.coverage ? h : b), null);
       // Zero coverage is "nothing near", not a near miss: counted with the misses that scored nothing,
       // or it would lift the §15 row's n towards a PASS on rows that say nothing about the band.
@@ -897,6 +906,13 @@ export function unhelpful(lines, idx) {
       const overlap = [...capAnchors].filter((a) => pool.has(a));
       rows.push({
         verdict: overlap.length ? 'helpful' : 'unhelpful',
+        // HOW THE PAIR WAS MADE (VCST-6378): `handle` -- the writer named the ask, exact; anything else was
+        // guessed by the writer from shared words or a coordinate, and a guess pairs a capture of a
+        // DIFFERENT fact found in the same work about one time in three (measured 2026-10-08..15: 9 of 25
+        // flagged rows). No rule over the text separates those (coordinate and word overlap were both
+        // measured and both fail), so guessed pairs are still counted -- and the exact rate is reported
+        // beside the overall one.
+        link: cap.afterBy === 'handle' ? 'handle' : 'guessed',
         session,
         question: String(ask.q ?? ''),
         matched: matched.map(String),
@@ -910,6 +926,7 @@ export function unhelpful(lines, idx) {
   }
 
   const flagged = rows.filter((r) => r.verdict === 'unhelpful');
+  const exact = rows.filter((r) => r.link === 'handle' && (r.verdict === 'helpful' || r.verdict === 'unhelpful'));
   return {
     rows: rows.filter((r) => r.verdict !== 'helpful').concat(rows.filter((r) => r.verdict === 'helpful')),
     flagged,
@@ -925,6 +942,9 @@ export function unhelpful(lines, idx) {
     // §11 gates "ranking beyond token overlap" on a rate above ~15%. It is reported, never acted on
     // here: this function measures, and the decision is a human's.
     rate: decidable ? flagged.length / decidable : null,
+    // Over the pairs the writer named exactly. `null` until captures carry the ask handle.
+    exact: { decidable: exact.length, flagged: exact.filter((r) => r.verdict === 'unhelpful').length },
+    rateExact: exact.length ? exact.filter((r) => r.verdict === 'unhelpful').length / exact.length : null,
   };
 }
 
@@ -1485,7 +1505,7 @@ export function resolveVerdicts(lines) {
   const pointers = new Map([...bySession].map(([s, ls]) => [s, pointersByAsk(ls)]));
   return lines.map((l) => {
     if (l.kind !== 'ask' || l.state !== 'ambiguous') return l;
-    const word = lastWord(pointers.get(l._session ?? '')?.get(String(l.at)));
+    const word = lastWord(pointers.get(l._session ?? '')?.get(String(l.at)), { owner: l.agent ?? null });
     return word.verdict === 'picked' && word.ids.length
       ? { ...l, state: 'answer', matched: word.ids, closedBy: 'show' }
       : { ...l, state: 'miss', matched: [], closedBy: word.verdict === 'none' ? 'none' : 'unclosed' };
@@ -1502,7 +1522,11 @@ export function analyse({ lines = [], rows = [], meta = {} } = {}) {
   // the line is still in the base, still readable, still auditable, and the header says how many
   // were set aside. A measurement that quietly removed its own inputs would be the same defect the
   // filter exists to fix.
-  const notSynthetic = lines.filter((l) => l.synthetic !== true);
+  // A SESSION THE OPERATOR NAMES AS A CHECK is set aside like a synthetic line (VCST-6378): a live check of
+  // the tooling run without KB_SYNTHETIC=1 (session 5354023a, the kb-remind check) made 13 of one
+  // window's 61 near-miss rows, unmarked. The mark cannot be added after the fact; `--exclude-sessions` can.
+  const excluded = new Set((Array.isArray(meta.excludeSessions) ? meta.excludeSessions : []).map(String));
+  const notSynthetic = lines.filter((l) => l.synthetic !== true && !excluded.has(String(l._session ?? '')));
   const syntheticLines = lines.length - notSynthetic.length;
   // SCOPED TO ONE RUN, when the operator named one. Filtered HERE and not in `report.mjs` for the
   // reason the synthetic filter is here: every panel and the §15 verdict must be computed from the

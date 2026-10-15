@@ -26,11 +26,19 @@ import { tmpdir } from 'node:os';
 import { coordinatesOf } from './github-api.mjs';
 import { dayOf, parseLogFile, sessionOf } from './report-analyse.mjs';
 
-/** Above this many session files the report refuses rather than hanging (PLAN §8). */
-export const MAX_FILES = 200;
+/**
+ * Above this many session files the report refuses rather than hanging (PLAN §8). Was 200, which the
+ * DEFAULT window could not meet: at ~35 files a day the 30-day default was refused from its sixth day
+ * (VCST-6378). The bound stays, at a size a first run fetches in a minute or two, because files are
+ * now fetched in parallel and only once per content (`sha`): a past day's log never changes.
+ */
+export const MAX_FILES = 3000;
 
-/** Default window. 30 days at the measured 10.8 KB/day is ~325 KB — no incremental cache needed. */
+/** Default window. */
 export const DEFAULT_DAYS = 30;
+
+/** Log files fetched at once. raw.githubusercontent serves static blobs; a handful in flight is polite and fast. */
+const FETCH_CONCURRENCY = 8;
 
 const DEFAULT_TIMEOUT_MS = 20_000;
 
@@ -222,13 +230,34 @@ export async function collect({
   const failures = [];
   let malformed = 0;
 
-  for (const path of paths) {
-    const rel = prefix ? path.slice(prefix.length + 1) : path;
-    const url = `${rawRoot}/${rel}`;
-    const got = await getText(url, net);
-    if (!got.ok) { failures.push({ path: rel, detail: got.detail }); continue; }
-    if (useCache) await cacheWrite(cacheDir, url, { text: got.text });
-    const parsed = parseLogFile(got.text, { path: rel, session: sessionOf(rel) });
+  // ONE FETCH PER CONTENT (VCST-6378): the tree gives every file's blob sha, and a cached copy with the
+  // same sha IS the file -- so a re-run fetches only the files that changed since the last one, which
+  // is today's. In parallel, in path order for the result.
+  const shaOf = new Map((tree.json?.tree ?? []).map((e) => [e.path, e.sha]));
+  const texts = new Array(paths.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < paths.length) {
+      const i = next++;
+      const path = paths[i];
+      const rel = prefix ? path.slice(prefix.length + 1) : path;
+      const url = `${rawRoot}/${rel}`;
+      const sha = shaOf.get(path) ?? null;
+      if (useCache && sha) {
+        const hit = await cacheRead(cacheDir, url);
+        if (hit.ok && hit.payload?.sha === sha && typeof hit.payload.text === 'string') { texts[i] = { rel, text: hit.payload.text }; continue; }
+      }
+      const got = await getText(url, net);
+      if (!got.ok) { texts[i] = { rel, failure: got.detail }; continue; }
+      if (useCache) await cacheWrite(cacheDir, url, { text: got.text, ...(sha ? { sha } : {}) });
+      texts[i] = { rel, text: got.text };
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(FETCH_CONCURRENCY, paths.length) }, worker));
+  for (const t of texts) {
+    if (!t) continue;
+    if (t.failure) { failures.push({ path: t.rel, detail: t.failure }); continue; }
+    const parsed = parseLogFile(t.text, { path: t.rel, session: sessionOf(t.rel) });
     lines.push(...parsed.lines);
     malformed += parsed.malformed;
   }

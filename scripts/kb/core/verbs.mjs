@@ -34,7 +34,7 @@ import {
 import { lastWord, openedHash, openedIds, pointersByAsk } from './loop.mjs';
 import { cachedWho } from './who.mjs';
 import { RANKER, rank, rankNeighbours, relatedTo } from './rank.mjs';
-import { askAbout } from './pairing.mjs';
+import { askAbout, askLink } from './pairing.mjs';
 import { prepareVocabulary, readVocabulary } from './query.mjs';
 import { prepareRetrieval, retrieve } from './retrieve.mjs';
 import { AMBIGUOUS_TOP, FEATURES, decide } from './verdict.mjs';
@@ -944,10 +944,15 @@ async function sessionAsks({ env }) {
   return [...byAt.values()];
 }
 
-const precedingAsk = async ({ env, input }) => askAbout(await sessionAsks({ env }), {
-  text: `${input.subject ?? ''} ${input.question ?? ''}`,
-  anchors: input.anchors ?? [],
-});
+/** `{ after, afterBy }` -- the ask a capture is about, and how it was linked (`askLink`) -- or `{}`. */
+const precedingAsk = async ({ env, input }) => {
+  const link = askLink(await sessionAsks({ env }), {
+    text: `${input.subject ?? ''} ${input.question ?? ''}`,
+    anchors: input.anchors ?? [],
+    handle: input.ask ?? null,
+  });
+  return link ? { after: link.at, afterBy: link.by } : {};
+};
 
 /**
  * Every entry THIS SESSION has already opened and read, newest first.
@@ -1022,7 +1027,7 @@ async function refuseAtDoor(result, input, { env, via, call, topic, repair = {},
   if (result.private) {
     await log({
       kind: 'capture-invalid', why: 'private-data', private: result.private, ...repair,
-      ...(await precedingAsk({ env, input }).then((after) => (after ? { after } : {}))),
+      ...(await precedingAsk({ env, input })),
       ...context({ via, call, topic }),
     }, { env });
     return result;
@@ -1034,7 +1039,7 @@ async function refuseAtDoor(result, input, { env, via, call, topic, repair = {},
     ...(result.problems?.length ? { problems: [...new Set(result.problems.map((p) => p.kind))] } : {}),
     ...(shapes.length ? { shapes } : {}),
     ...repair,
-    ...(await precedingAsk({ env, input }).then((after) => (after ? { after } : {}))),
+    ...(await precedingAsk({ env, input })),
     ...context({ via, call, topic }),
   }, { env });
   return result;
@@ -1150,7 +1155,7 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   }
 
   // Read BEFORE this capture writes its own line, or the lookback finds nothing but itself.
-  const after = await precedingAsk({ env, input });
+  const link = await precedingAsk({ env, input });
 
   // THE DEDUP CHECK. Runs here against the session's index, and AGAIN at push time against the
   // freshly re-read one -- which is what makes it race-free rather than merely likely (PLAN §2).
@@ -1159,7 +1164,7 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   if (dupe) {
     await note({
       kind: 'capture-refused', dupeOf: dupe.row.id, subject: input.subject,
-      why: 'anchors+scope+claim', when: 'call', ...repair, ...(after ? { after } : {}), ...context({ via, call, topic }),
+      why: 'anchors+scope+claim', when: 'call', ...repair, ...link, ...context({ via, call, topic }),
     });
     return { state: 'refused', dupeOf: dupe.row, message: refusalMessage(dupe.row, { carry: markerFlags }) };
   }
@@ -1181,7 +1186,7 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
     await note({
       kind: 'capture-refused', dupeOf: holder.id, subject: input.subject,
       why: sameSubject ? 'same-subject' : 'id-collision-different-subject', when: 'call',
-      ...repair, ...(after ? { after } : {}), ...context({ via, call, topic }),
+      ...repair, ...link, ...context({ via, call, topic }),
     });
     return { state: 'refused', reason: 'subject-taken', dupeOf: holder, message: subjectTakenMessage(holder, { sameSubject, carry: markerFlags }) };
   }
@@ -1284,7 +1289,7 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
     // same standing `q` on `ask` has always had.
     question: input.question,
     ...repair,
-    ...(after ? { after } : {}),
+    ...link,
     // WHAT was surfaced, not how many. It shipped as a count on 2026-09-19 and was too thin within
     // hours of meeting real traffic: a session was shown three related entries, then DISPUTED one --
     // the first dispute in this base's history -- and the log could not say whether the entry it

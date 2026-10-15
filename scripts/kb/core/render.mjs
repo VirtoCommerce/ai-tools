@@ -116,7 +116,7 @@ export function askLines(r, { prefix = 'kb ask' } = {}) {
     return [
       ...verdictLines({ verdict: 'ambiguous', headlines: r.headlines }, { prefix }),
       ...(r.repaired === 'msys' ? [MSYS_NOTE] : []),
-      ...(r.handle ? [`  ask handle: ${r.handle}  (pass it as \`ask\` to kb_show / kb_none, or as --ask on the CLI)`] : []),
+      ...(r.handle ? [`  ask handle: ${r.handle}  (pass it as \`ask\` to kb_show / kb_none, and to kb_capture when you record what you then found out; --ask on the CLI)`] : []),
       ...queuedLines(r.queued),
     ];
   }

@@ -558,6 +558,8 @@ export function renderText(report) {
     + `${p.nearMisses.inBand.length} at coverage >= ${p.nearMisses.review}`
     + `${p.nearMisses.rows.length ? `, top ${p.nearMisses.rows[0].coverage.toFixed(2)}` : ''}`);
   out.push(`  unhelpful      ${p.unhelpful.flagged.length}/${p.unhelpful.decidable} decidable = ${pct(p.unhelpful.rate)} (${p.unhelpful.undecidable} undecidable, ${p.unhelpful.unpaired ?? 0} unpaired, ${p.unhelpful.unprompted} unprompted, ${p.unhelpful.afterMiss} after a miss)`);
+  // VCST-6378: the rate over pairs the writer named exactly (kb_capture's `ask`); a guessed pair can be a different fact.
+  if (p.unhelpful.exact) out.push(`                 exact pairs (ask handle) ${p.unhelpful.exact.flagged}/${p.unhelpful.exact.decidable}${p.unhelpful.rateExact === null ? ' -- none yet' : ` = ${pct(p.unhelpful.rateExact)}`}; the rest were guessed from the text`);
   out.push(`  entries served ${p.entries.used.length} of ${p.entries.indexed} indexed; ${p.entries.never.length} never served here`);
   out.push(`  evidence       ${p.evidence.confirms} confirm, ${p.evidence.disputes} dispute, ${p.evidence.contested.length} contested`);
   if (p.evidence.builds) out.push(`  builds         ${p.evidence.builds.stamped} of ${p.evidence.builds.writes} write(s) carry a build; ${p.evidence.builds.soft} soft dispute(s) (on another build)${p.evidence.queue ? `; ${p.evidence.queue.softOpen ?? 0} soft dispute(s) open on the base` : ''}`);

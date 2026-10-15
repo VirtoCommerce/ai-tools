@@ -201,6 +201,7 @@ export const TOOLS = Object.freeze([
         conditions: { type: 'array', items: { type: 'string' }, description: `${CONDITIONS_SOURCE}. One key=value per item.` },
         defect: str(`${DEFECT_SOURCE}. On a capture: a ticket or "suspected".`),
         fixedIn: str('Optional, with defect: the first build without the defect, <module>@<version>.'),
+        ask: str('The ask handle kb_ask printed, when this fact answers that question. Ties the capture to the ask exactly; without it the base guesses from shared words.'),
         topic: TOPIC,
       },
       required: ['subject', 'question', 'claim', 'deployment', 'anchors', 'scope'],
@@ -384,7 +385,7 @@ async function callTool(name, args, ctx) {
       const r = await capture({
         subject: args?.subject, question: args?.question, claim: args?.claim,
         deployment: args?.deployment, method: args?.method, conditions: asList(args?.conditions),
-        defect: args?.defect, fixedIn: args?.fixedIn,
+        defect: args?.defect, fixedIn: args?.fixedIn, ask: args?.ask,
         anchors: asList(args?.anchors), scope: asList(args?.scope),
       }, opened, { env: ctx.env, via: VIA, call: ctx.call, topic: args?.topic, builds: liveBuild });
       // `refused` is not an error: the base already holds the fact, which is the dedup working, and

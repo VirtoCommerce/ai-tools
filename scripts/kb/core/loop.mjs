@@ -35,9 +35,15 @@ import { CONTRACT } from './contract.mjs';
  * picks after the last `none`), `{ verdict: 'none' }`, or `{ verdict: 'open' }`. `ids` is empty for
  * journal records, which carry no entry id; the report's log lines do.
  */
-export function lastWord(pointed) {
-  const said = (pointed ?? [])
-    .filter((o) => o.kind === 'none' || (o.kind === 'show' && o.state === 'answer'))
+export function lastWord(pointed, { owner = null } = {}) {
+  let said = (pointed ?? [])
+    .filter((o) => o.kind === 'none' || (o.kind === 'show' && o.state === 'answer'));
+  // THE ASKER'S WORD OUTRANKS ANOTHER AGENT'S (VCST-6378). One session key is shared by the main thread
+  // and every subagent, and a list one agent closed with a pick was re-closed by a different agent's
+  // later `kb_none` on the same handle -- and read as a miss (VCST-6342 near-miss reading, KB-D4FE7962).
+  // When the asking agent is known and said something itself, only its own words count.
+  if (owner && said.some((o) => o.agent === owner)) said = said.filter((o) => o.agent === owner);
+  said = said
     .sort((a, b) => String(a.at ?? '').localeCompare(String(b.at ?? '')));
   if (!said.length) return { verdict: 'open', ids: [] };
   const lastNone = said.map((o) => o.kind).lastIndexOf('none');
