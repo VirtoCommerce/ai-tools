@@ -85,10 +85,8 @@ rules:
       kind: manual
       ref: Search on Store A → only products from Store A's virtual catalog appear. Product in Store B's catalog → not in Store A's search. xAPI query without `storeId` → error, not unscoped results.
     violation_signal: Products from wrong store in search results; unscoped search returns cross-store data; xAPI returns results without storeId context.
-    status: ACTIVE
-    verified:
-      date: 2026-10-15
-      by: REG-2026-10-15-1115
+    status: SUSPECT
+    suspect_reason: "[case] SRCH-011, SRCH-024 failed in REG-2026-10-09-1616"
   - id: BL-SRCH-005
     title: Special characters in search queries
     rule: 'Search must handle special characters safely: quotes, ampersands, angle brackets, Unicode, emoji, and SQL/NoSQL injection patterns. Special characters should be escaped or treated as literal text — never interpreted as query operators (unless explicitly supported like `"exact phrase"` search). No 500 errors, no information leakage.'

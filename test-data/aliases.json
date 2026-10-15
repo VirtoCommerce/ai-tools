@@ -4364,6 +4364,25 @@
     "name": "AGENT-TEST-SR-CART-WEST",
     "_notes": "Second active cart, in ORG-004/AcmeWest, so the cross-customer dashboard cart count is >1 and cross-org cart scoping is exercised (BL-SR-002/BL-SR-006). Runtime id in aliases.<env>.json (npm run seed:sales-rep-stats)."
   },
+  "SR_REP_PERF": {
+    "_inline": true,
+    "seed": "seed:sales-rep-perf",
+    "id": "",
+    "user_id": "",
+    "email": "agent-test-sr-perf@example.com",
+    "fullName": "AGENT-TEST-SR-PERF Rep",
+    "store": "B2B-store",
+    "_notes": "VCST-5755 AC-5 performance-dataset rep. DEDICATED: no other fixture or suite reads its data. Creator of every AGENT-TEST-SRPERF-* order (customerId = its ApplicationUser id, BL-SR-002) across 15 dedicated orgs AGENT-TEST-SR-PERF-ORG-01..15. Shape lives in scripts/seed-data/sales-rep/sales-rep-perf-specs.mjs; id / user_id land in aliases.<env>.json (npm run seed:sales-rep-perf)."
+  },
+  "SR_PERF_DATASET": {
+    "_inline": true,
+    "seed": "seed:sales-rep-perf",
+    "org_ids": "",
+    "order_count": "",
+    "stats_order_count": "",
+    "seeded_at": "",
+    "_notes": "VCST-5755 AC-5 performance dataset summary for the env it was seeded on: semicolon-joined runtime org GUIDs (ORG-01..15 order), the number of AGENT-TEST-SRPERF-* orders present after the last seed, and how many of them the statistics scope counts (not IsCancelled, BL-SR-005). Written by npm run seed:sales-rep-perf; removed by seed:sales-rep-perf:teardown."
+  },
   "SR_REP_LOCKABLE": {
     "file": "sales-rep/sales-reps",
     "filter": {

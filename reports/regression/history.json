@@ -2346,6 +2346,22 @@
     "mode": "interactive"
   },
   {
+    "runId": "REG-2026-10-09-1616",
+    "date": "2026-10-09",
+    "suiteId": "004",
+    "suiteName": "Search Core",
+    "environment": "vcst",
+    "browser": "playwright-chrome",
+    "total": 12,
+    "passed": 6,
+    "failed": 5,
+    "blocked": 1,
+    "skipped": 0,
+    "pass_rate": 54.55,
+    "duration_minutes": 12.55,
+    "mode": "interactive"
+  },
+  {
     "runId": "REG-2026-10-12-1119",
     "date": "2026-10-12",
     "suiteId": "014c",
@@ -2485,6 +2501,22 @@
     "skipped": 0,
     "pass_rate": 100,
     "duration_minutes": 6.23,
+    "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-10-13-1511",
+    "date": "2026-10-13",
+    "suiteId": "072d",
+    "suiteName": "Configurable Products File & Text Sections",
+    "environment": "vcptcore",
+    "browser": "playwright-chrome",
+    "total": 12,
+    "passed": 7,
+    "failed": 1,
+    "blocked": 3,
+    "skipped": 1,
+    "pass_rate": 87.5,
+    "duration_minutes": 12.86,
     "mode": "interactive"
   },
   {

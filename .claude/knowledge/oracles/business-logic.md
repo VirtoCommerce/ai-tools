@@ -1080,6 +1080,7 @@ These invariants span multiple modules and are where the most expensive producti
 - **Docs:** vc-docs platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Catalog/queries/products.md — storeId is a required argument
 - **Source:** VCST-3003 / VP-8726 (Done) — a bulk add resolved an item code from another catalog; indirect
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] SRCH-011, SRCH-024 failed in REG-2026-10-09-1616
 
 ### BL-SRCH-005: Special characters in search queries `[P2-ux]`
 - **Rule:** Search must handle special characters safely: quotes, ampersands, angle brackets, Unicode, emoji, and SQL/NoSQL injection patterns. Special characters should be escaped or treated as literal text — never interpreted as query operators (unless explicitly supported like `"exact phrase"` search). No 500 errors, no information leakage.
@@ -2416,7 +2417,7 @@ ticket or a docs page disputes (`status`).
 | B2B / Organization | BL-B2B-001–013 | 13 | 4 | 9 | 0 | 10 | 3 |
 | Catalog & Inventory | BL-CAT-001–012 | 12 | 2 | 6 | 4 | 8 | 5 |
 | Cross-Domain Invariants | BL-CROSS-001–012 | 12 | 7 | 5 | 0 | 5 | 6 |
-| Search | BL-SRCH-001–007 | 7 | 0 | 5 | 2 | 6 | 0 |
+| Search | BL-SRCH-001–007 | 7 | 0 | 5 | 2 | 6 | 1 |
 | Shipping & BOPIS | BL-SHIP-001–004 | 4 | 2 | 2 | 0 | 2 | 0 |
 | BOPIS-Specific Rules | BL-BOPIS-001–008 | 8 | 1 | 6 | 1 | 3 | 0 |
 | Notifications | BL-NOTIF-001–007 | 7 | 1 | 5 | 1 | 4 | 3 |
@@ -2437,4 +2438,4 @@ ticket or a docs page disputes (`status`).
 | Analytics & Tracking | BL-GA4-001–004 | 4 | 0 | 4 | 0 | 3 | 2 |
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Returns | — | 0 | 0 | 0 | 0 | 0 | 0 |
-| **Total** | | **223** | **60** | **125** | **38** | **114** | **43** |
+| **Total** | | **223** | **60** | **125** | **38** | **114** | **44** |
