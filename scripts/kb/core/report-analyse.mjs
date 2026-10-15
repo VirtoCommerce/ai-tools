@@ -544,6 +544,11 @@ export function evidence(lines, idx) {
   // disputes the gate made SOFT (made on another build: still judged, not DISPUTED for readers).
   const writes = lines.filter((l) => ['capture', 'confirm', 'dispute'].includes(l.kind) && l.id && !l.state);
   const stamped = writes.filter((l) => l.build).length;
+  // WHY THE REST CARRY NONE (VCST-6378): the `buildMissing` code a write logs, and which client wrote it.
+  // Lines from a client older than the code say nothing, and are counted as `unreported`.
+  const missing = {};
+  for (const l of writes) if (!l.build) { const k = l.buildMissing ? String(l.buildMissing) : 'unreported'; missing[k] = (missing[k] ?? 0) + 1; }
+  const clients = [...new Set(writes.map((l) => l.client).filter(Boolean))].sort();
   const soft = lines.filter((l) => l.kind === 'dispute' && l.id && l.soft).length;
   for (const l of lines) {
     if (l.kind === 'confirm' && l.id) {
@@ -579,7 +584,7 @@ export function evidence(lines, idx) {
     contested: all.filter((r) => r.disputes > 0 && r.confirms > 0),
     confirms: all.reduce((n, r) => n + r.confirms, 0),
     disputes: all.reduce((n, r) => n + r.disputes, 0),
-    builds: { writes: writes.length, stamped, soft },
+    builds: { writes: writes.length, stamped, soft, missing, clients },
   };
 }
 

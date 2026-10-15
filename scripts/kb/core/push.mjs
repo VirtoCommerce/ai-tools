@@ -673,7 +673,7 @@ export function expiredLogs(paths, { at = new Date(), days = RETENTION_DAYS, pre
 /**
  * The containment check, applied to EVERY push and not only the first.
  *
- * A push writes entries, the index and logs. Anything else is either a bug in the path arithmetic
+ * A push writes entries, the index, logs and build snapshots. Anything else is either a bug in the path arithmetic
  * or a payload that arrived from somewhere it should not have, and in a shared public repository
  * the correct response to both is to stop rather than to find out afterwards.
  */
@@ -693,7 +693,11 @@ export function outsideBase(paths, prefix) {
     }
     const norm = parts.join('/');
     if (norm !== path) return true;
-    return !(norm === `${p}index.json` || norm.startsWith(`${p}entries/`) || norm.startsWith(`${p}log/`));
+    // `builds/` (VCST-6378): `applyQueue` writes the snapshot behind a stamp there, and until it was on this
+    // list the first stamped write of a build the base did not hold yet refused the WHOLE push as
+    // `contained` -- latent only because no live write carried a stamp.
+    return !(norm === `${p}index.json` || norm.startsWith(`${p}entries/`) || norm.startsWith(`${p}log/`)
+      || (norm.startsWith(`${p}builds/`) && norm.endsWith('.json')));
   });
 }
 
@@ -1201,7 +1205,7 @@ async function buildPush({ api, prefix, full, loaded, allLines, counts, session,
     // ALWAYS, not only on the first push. A path outside the three the base owns is either a bug in
     // the path arithmetic or a payload from somewhere it should not have come from, and in a shared
     // public repository the right answer to both is to stop.
-    return { state: 'failed', reason: 'contained', detail: `refusing to touch ${outside.length} path(s) outside ${prefix || '<root>'}/{entries,index.json,log}: ${outside.slice(0, 5).join(', ')}` };
+    return { state: 'failed', reason: 'contained', detail: `refusing to touch ${outside.length} path(s) outside ${prefix || '<root>'}/{entries,index.json,log,builds}: ${outside.slice(0, 5).join(', ')}` };
   }
 
   return {
