@@ -1,6 +1,6 @@
 # File upload error messages render an empty parameter: "Unknown scope ''." and "File size exceeds the allowed" with no limit
 
-## Status: CONFIRMED
+## Status: FIXED
 **Tracker:** VCST-6281 (filed 2026-10-12, Medium, 2 screenshots inline; relates to VCST-6081)
 
 **Found by:** `/qa-test VCST-6081` verify-fix, Phase B (2026-10-12), live on vcst-qa
@@ -70,3 +70,10 @@ The suggested change is in the ticket description. Tighten the
 - Package: `reports/tickets/Sprint26-20/VCST-6281/evidence-20261012T1500Z/`, containing `evidence-index.md`,
   `root-cause.md`, `source/findings.md`, the screenshots, the DOM snapshots, and the failing request and response.
 - First sighting: `reports/tickets/Sprint26-20/VCST-6081/screenshots/green-3-…`, `green-10-…`
+
+## Resolution
+
+- **Fixed in:** vc-frontend #2511 (commits `c1f1a2e9`, `2212d051`), verified on theme `2.60.0-pr-2511-0a23-0a23e6e0`, Platform 3.1078.0, vcst.
+- **Tracker:** VCST-6281 → Tested (comment 111998).
+- **Verified:** 2026-10-14, `/qa-verify-fix` pass 3. The size error carries its limit ("File size exceeds the allowed 10MB", 3/3). An unregistered scope now disables the field with "File upload is not available." instead of `Unknown scope ''.`, which is by design.
+- **Report:** `reports/tickets/Sprint26-20/VCST-6281/verification-report-pass3.md`

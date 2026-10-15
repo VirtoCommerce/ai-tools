@@ -1,0 +1,532 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+SR-HD-100,[JOURNEY] Sales Rep Hub served by the sales-rep plugin — dashboard to order and back,Sales Rep Hub > Plugin delivery (Module Federation),Critical,BL-SR-011,ECL-10.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SR_REP_PRIMARY is the same account as @td(SR_REP_PRIMARY.email) (password key TEST_USER_PASSWORD) and serves @td(ORG_ACME.id). Store setting SalesRep.Enabled=true on {{STORE_ID}}; the storefront delivers the hub from the sales-rep plugin (theme switches module_federation_enabled=true, sales_rep_builtin_enabled=false), so the plugin folder is /modules/$(VirtoCommerce.SalesRep)/plugins/vc-frontend/ (literal $(...) in the path). The TaskManagement module is installed (the rail carries Tasks).","rep=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}, org=@td(ORG_ACME.id), org_name=@td(ORG_ACME.name)","--- SCREEN: Cold load and plugin discovery ---
+[SETUP] start recording every network request of the tab (URL, status, content-type, resource type) into REQ_LOG
+[NAV] {{FRONT_URL}}/account (full document load, so GetStorePlugins is issued inside the recording)
+[WAIT] account page rendered and the left rail is visible
+[KEY] record from REQ_LOG the entry names returned by the GetStorePlugins response (PLUGIN_NAMES) and whether that response carries errors[] (PLUGINS_ERRORS)
+[KEY] record the set of script URLs requested so far (BASE_SCRIPTS)
+--- SCREEN: Dashboard ---
+[ACT] click 'Dashboard' under 'Sales Rep hub'
+[WAIT] the hub dashboard widgets have rendered
+[KEY] record the URL (URL_DASH), the page H1 text (H1_DASH) and the number of hub widget blocks rendered (WIDGETS_FIRST)
+--- SCREEN: My customers ---
+[ACT] click 'My customers' under 'Sales Rep hub'
+[WAIT] the customers table has at least one row
+[KEY] record the URL (URL_CUST), the page H1 text (H1_CUST) and the row count
+--- SCREEN: Customer profile ---
+[ACT] click the @td(ORG_ACME.name) row/customer-name cell
+[WAIT] customer profile page rendered
+[KEY] record the URL (URL_PROFILE) and the page H1 text (H1_PROFILE)
+--- SCREEN: Customer orders and one order ---
+[ACT] click the ""All orders"" link inside the Recent Orders block
+[WAIT] the order grid has rendered at least one row
+[KEY] record the URL (URL_ORDERS), the H1 text (H1_ORDERS) and the order number in the first row (ORDER_NO)
+[ACT] open the first order row
+[WAIT] navigation settles on the order destination page
+[KEY] record the order number shown on the destination page (ORDER_NO_SHOWN)
+--- SCREEN: All customer orders ---
+[NAV] {{FRONT_URL}}/company/customer-orders
+[WAIT] the order grid has rendered at least one row
+[KEY] record the URL (URL_ALL) and the H1 text (H1_ALL)
+--- SCREEN: Tasks ---
+[ACT] click 'Tasks' under 'Sales Rep hub'
+[WAIT] the Tasks page has rendered
+[KEY] record the URL (URL_TASKS) and the H1 text (H1_TASKS)
+--- SCREEN: Back to the dashboard ---
+[ACT] click 'Dashboard' under 'Sales Rep hub'
+[WAIT] the hub dashboard widgets have rendered
+[KEY] record the number of hub widget blocks rendered (WIDGETS_SECOND)
+[KEY] record every script URL first requested after the first Dashboard click and not in BASE_SCRIPTS (HUB_SCRIPTS) and every REQ_LOG entry whose URL is under /modules/$(VirtoCommerce.SalesRep)/plugins/vc-frontend/ (PLUGIN_REQS)","[STATE] PLUGIN_NAMES contains 'sales-rep' and PLUGINS_ERRORS is empty - the plugin list names the hub plugin without errors {OBSERVED}
+[DOM] the left rail carries a 'Sales Rep hub' section holding 'Dashboard', 'My customers' and 'Tasks' {OBSERVED}
+[NAV] URL_DASH ends with /company/dashboard and WIDGETS_FIRST is at least 1 {OBSERVED}
+[NAV] URL_CUST ends with /company/my-customers {OBSERVED}
+[NAV] URL_PROFILE is {{FRONT_URL}}/company/my-customers/@td(ORG_ACME.id) {OBSERVED}
+[NAV] URL_ORDERS ends with /orders and contains @td(ORG_ACME.id) {SPEC}
+[SHAPE] ORDER_NO_SHOWN is not empty - the opened order renders its own number {SPEC}
+[NAV] URL_ALL is {{FRONT_URL}}/company/customer-orders {OBSERVED}
+[NAV] URL_TASKS ends with /company/tasks {OBSERVED}
+[REL] every URL in HUB_SCRIPTS other than host federation/routing runtime chunks (/assets/remoteEntry-*, /assets/*__mfe_internal__host__*, /assets/plugin-route-placeholder-*) is under /modules/$(VirtoCommerce.SalesRep)/plugins/vc-frontend/ - the host /assets/ folder serves no hub PAGE chunk {OBSERVED}
+[COUNT] entries of PLUGIN_REQS whose status is not 200 or 304 == 0, and PLUGIN_REQS contains mf-manifest.json (content-type application/json) and remoteEntry.js {OBSERVED}
+[REL] H1_DASH, H1_CUST, H1_PROFILE, H1_ORDERS, H1_ALL and H1_TASKS are non-empty and pairwise different, and none contains 'Page not found' - a route that fell to the host catch-all would repeat the Not Found text {SPEC}
+[REL] WIDGETS_SECOND equals WIDGETS_FIRST - the dashboard is the same page the second time, not a re-registered duplicate or a half-mounted one {SPEC}
+[COUNT] sections named 'Sales Rep hub' in the left rail == 1 on every screen of the journey - a plugin that registers its rail section twice shows two {OBSERVED}
+[STATE] H1_TASKS contains 'Tasks' {OBSERVED}","[NETWORK] no 4xx/5xx on /graphql for the whole journey
+[CONSOLE] no uncaught TypeError or ReferenceError from the hub pages (unrelated image-host DNS errors are excluded)","a hub page after the first renders the host Not Found page or an empty body although the rail still lists it - its route or component did not make the port (mid-journey)
+the rail loses or doubles the 'Sales Rep hub' section after navigating from one hub page to the next (mid-journey)
+a page chunk is requested from the host /assets/ folder, or from the plugin folder with a 404, while earlier pages loaded fine
+WIDGETS_SECOND differs from WIDGETS_FIRST on the return to the dashboard",none (read-only; sign out is not required),VCST-6015 · Archetype:PARITY · Technique:FLOW · Probe:VC-PLATFORM-002 · Behavior:sr.hub.basic-rep · Fixed: VCST-6015 triage REG-2026-10-15-1548,Draft
+SR-HD-101,Rep cold deep link to each hub route resolves to the real page with no Not Found flash,Sales Rep Hub > Plugin delivery (Module Federation),High,BL-SR-011,"ECL-7.3, ECL-10.1","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SR_REP_PRIMARY serves @td(ORG_ACME.id). Each route is opened in a NEW tab by full document load (no SPA navigation), which is the bookmark and emailed-link path. Complements the SPA-navigation rows of the hub suites, none of which samples the frames before the page settles.","rep=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}, org=@td(ORG_ACME.id)","[SETUP] open a new tab and install an init script that samples the visible body text every 100 ms into FRAMES_1 until the page H1 appears
+[NAV] {{FRONT_URL}}/company/dashboard
+[WAIT] the page H1 has rendered
+[KEY] record the final URL (FINAL_URL_1), the H1 text (H1_1) and the seconds from navigation start to the H1 (T_1)
+[SETUP] open a new tab and install an init script that samples the visible body text every 100 ms into FRAMES_2 until the page H1 appears
+[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] the page H1 has rendered
+[KEY] record the final URL (FINAL_URL_2), the H1 text (H1_2) and the seconds from navigation start to the H1 (T_2)
+[SETUP] open a new tab and install an init script that samples the visible body text every 100 ms into FRAMES_3 until the page H1 appears
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_ACME.id)
+[WAIT] the page H1 has rendered
+[KEY] record the final URL (FINAL_URL_3), the H1 text (H1_3) and the seconds from navigation start to the H1 (T_3)
+[SETUP] open a new tab and install an init script that samples the visible body text every 100 ms into FRAMES_4 until the page H1 appears
+[NAV] {{FRONT_URL}}/company/customer-orders
+[WAIT] the page H1 has rendered
+[KEY] record the final URL (FINAL_URL_4), the H1 text (H1_4) and the seconds from navigation start to the H1 (T_4)
+[SETUP] open a new tab and install an init script that samples the visible body text every 100 ms into FRAMES_5 until the page H1 appears
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the page H1 has rendered
+[KEY] record the final URL (FINAL_URL_5), the H1 text (H1_5) and the seconds from navigation start to the H1 (T_5)","[REL] for each of the five routes FINAL_URL_n equals the URL that was requested - no redirect and no rewrite for a rep {OBSERVED}
+[COUNT] frames containing the host Not Found text ('Page not found') across FRAMES_1..FRAMES_5 == 0 - the placeholder hands over to the real page without a Not Found flash {OBSERVED}
+[SHAPE] each H1_n is non-empty and contains no dotted i18n key token {SPEC}
+[REL] the five H1 values are pairwise different (a page that fell to a shared fallback would repeat) {SPEC}
+[STATE] every T_n is at most 5 s (measured 1.07-1.64 s on vcst; 5 s is the stuck-spinner threshold of this suite) {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","a frame shows 'Page not found' before the real page replaces it (the placeholder route was not in place when the catch-all matched)
+a route stays on a loader or an empty body past 5 s
+the URL changes away from the requested hub route for a rep who holds sales-rep:access
+one of the five routes ends on the same H1 as another route",close the extra tabs and remove the init script,VCST-6015 · Archetype:RACE · Technique:EP · Behavior:sr.hub.basic-rep,Draft
+SR-HD-102,Non-rep buyer deep link to hub routes ends on the account dashboard with no hub request,Sales Rep Hub > Plugin delivery (Module Federation),Critical,BL-SR-011,ECL-4.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_BUYER]
+ACME_BUYER is a plain corporate member of @td(ORG_ACME.id) with NO sales-rep:access (not a maintainer, unlike the ORG_USER_DEFAULT account, which is an organization maintainer). Extends the existing non-rep refusal rows of the My customers, customer profile and dashboard suites, which each visit one route, to every hub route and adds what the plugin delivery changed: the guard is reached through a placeholder hand-over, so the first navigation can show Not Found before the redirect.","buyer=@td(ACME_BUYER.email), password=@td(ACME_BUYER.password), org=@td(ORG_ACME.id)","[SETUP] start recording every network request of the tab into REQ_LOG
+[NAV] {{FRONT_URL}}/account
+[WAIT] account page rendered (this page is the history entry before the hub URL)
+[KEY] record the current URL (PREV_URL_1)
+[SETUP] install an init script that samples the visible body text every 100 ms into FRAMES_1
+[NAV] {{FRONT_URL}}/company/dashboard
+[WAIT] navigation settles (the URL has not changed for 1 s)
+[KEY] record the final URL (FINAL_URL_1)
+[ACT] navigate back (browser Back)
+[WAIT] navigation settles
+[KEY] record the URL after Back (BACK_URL_1)
+[NAV] {{FRONT_URL}}/account
+[WAIT] account page rendered (this page is the history entry before the hub URL)
+[KEY] record the current URL (PREV_URL_2)
+[SETUP] install an init script that samples the visible body text every 100 ms into FRAMES_2
+[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] navigation settles (the URL has not changed for 1 s)
+[KEY] record the final URL (FINAL_URL_2)
+[ACT] navigate back (browser Back)
+[WAIT] navigation settles
+[KEY] record the URL after Back (BACK_URL_2)
+[NAV] {{FRONT_URL}}/account
+[WAIT] account page rendered (this page is the history entry before the hub URL)
+[KEY] record the current URL (PREV_URL_3)
+[SETUP] install an init script that samples the visible body text every 100 ms into FRAMES_3
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_ACME.id)
+[WAIT] navigation settles (the URL has not changed for 1 s)
+[KEY] record the final URL (FINAL_URL_3)
+[ACT] navigate back (browser Back)
+[WAIT] navigation settles
+[KEY] record the URL after Back (BACK_URL_3)
+[NAV] {{FRONT_URL}}/account
+[WAIT] account page rendered (this page is the history entry before the hub URL)
+[KEY] record the current URL (PREV_URL_4)
+[SETUP] install an init script that samples the visible body text every 100 ms into FRAMES_4
+[NAV] {{FRONT_URL}}/company/customer-orders
+[WAIT] navigation settles (the URL has not changed for 1 s)
+[KEY] record the final URL (FINAL_URL_4)
+[ACT] navigate back (browser Back)
+[WAIT] navigation settles
+[KEY] record the URL after Back (BACK_URL_4)
+[NAV] {{FRONT_URL}}/account
+[WAIT] account page rendered (this page is the history entry before the hub URL)
+[KEY] record the current URL (PREV_URL_5)
+[SETUP] install an init script that samples the visible body text every 100 ms into FRAMES_5
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] navigation settles (the URL has not changed for 1 s)
+[KEY] record the final URL (FINAL_URL_5)
+[ACT] navigate back (browser Back)
+[WAIT] navigation settles
+[KEY] record the URL after Back (BACK_URL_5)
+[NAV] {{FRONT_URL}}/account
+[WAIT] account page rendered (this page is the history entry before the hub URL)
+[KEY] record the current URL (PREV_URL_6)
+[SETUP] install an init script that samples the visible body text every 100 ms into FRAMES_6
+[NAV] {{FRONT_URL}}/company/documents
+[WAIT] navigation settles (the URL has not changed for 1 s)
+[KEY] record the final URL (FINAL_URL_6)
+[ACT] navigate back (browser Back)
+[WAIT] navigation settles
+[KEY] record the URL after Back (BACK_URL_6)
+[KEY] record every REQ_LOG entry whose URL contains /graphql/sales-rep (SR_GQL_REQS)","[REL] for all six routes FINAL_URL_n equals {{FRONT_URL}}/account/dashboard - the guard sends a non-rep home from every hub route {OBSERVED}
+[COUNT] frames containing the host Not Found text ('Page not found') across FRAMES_1..FRAMES_6 == 0 - no transient Not Found before the redirect {OBSERVED}
+[COUNT] SR_GQL_REQS == 0 - no salesRep* operation is sent to /graphql/sales-rep for a non-rep, asserted at the network layer and not only by an absent link {BL}
+[REL] every BACK_URL_n equals PREV_URL_n and none is a hub route (/company/dashboard|my-customers|customer-orders|tasks|documents) - the redirect replaced the history entry, so Back neither re-enters the hub route nor loops {OBSERVED}
+[COUNT] sections named 'Sales Rep hub' in the left rail of the landing page == 0 {BL}","[NETWORK] no 4xx/5xx on /graphql
+[CONSOLE] no uncaught TypeError or ReferenceError during the six redirects","a hub page, its chrome or rep data renders for the buyer before or instead of the redirect
+the buyer is left on the host 'Page not found' page instead of being sent to /account/dashboard
+a request to /graphql/sales-rep is issued for this session even though nothing renders (data fetched then discarded is still a scope leak)
+Back returns to a hub route, or the redirect loops",none (read-only),VCST-6015 · Archetype:SCOPE · Technique:DT · Probe:VC-AUTH-004 · Behavior:sr.hub.non-rep-direct-url · Fixed: VCST-6015 triage REG-2026-10-15-1548,Draft
+SR-HD-103,Privileged non-rep (Organization maintainer) is refused every hub route,Sales Rep Hub > Plugin delivery (Module Federation),High,BL-SR-011,ECL-14.3,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_ADMIN]
+ACME_ADMIN is an Organization maintainer of @td(ORG_ACME.id) with NO sales-rep:access and is not a platform administrator. Extends the existing maintainer rows for My customers and the dashboard, the two routes they visit, to the four they do not: customer profile, All customer orders, Tasks and Document library. The plugin declares each route with its own can: condition, so a loose condition on one route would escape the two existing rows.","maintainer=@td(ACME_ADMIN.email), password=@td(ACME_ADMIN.password), org=@td(ORG_ACME.id)","[SETUP] start recording every network request of the tab into REQ_LOG
+[NAV] {{FRONT_URL}}/account
+[WAIT] account page rendered
+[KEY] from the captured /graphql response of the storefront's current-user query record the permissions list (ME_PERMS) and the isAdministrator flag (ME_ADMIN)
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_ACME.id)
+[WAIT] navigation settles (the URL has not changed for 1 s)
+[KEY] record the final URL (FINAL_URL_1) and the visible body text (BODY_1)
+[NAV] {{FRONT_URL}}/company/customer-orders
+[WAIT] navigation settles (the URL has not changed for 1 s)
+[KEY] record the final URL (FINAL_URL_2) and the visible body text (BODY_2)
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] navigation settles (the URL has not changed for 1 s)
+[KEY] record the final URL (FINAL_URL_3) and the visible body text (BODY_3)
+[NAV] {{FRONT_URL}}/company/documents
+[WAIT] navigation settles (the URL has not changed for 1 s)
+[KEY] record the final URL (FINAL_URL_4) and the visible body text (BODY_4)
+[KEY] record every REQ_LOG entry whose URL contains /graphql/sales-rep (SR_GQL_REQS)","[STATE] ME_PERMS does not contain 'sales-rep:access' and ME_ADMIN is false - the guard precondition; a platform administrator would short-circuit every gate and make this case vacuous {BL}
+[REL] FINAL_URL_1..FINAL_URL_4 each equal {{FRONT_URL}}/account/dashboard {BL}
+[COUNT] BODY_1..BODY_4 containing 'Page not found' == 0 - the refusal is a redirect, not a dead end {SPEC}
+[COUNT] SR_GQL_REQS == 0 - no operation reaches /graphql/sales-rep for this maintainer {BL}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","a hub page renders for the maintainer on one of the four routes (a loose can: condition satisfied by organization-maintainer or login-on-behalf rights)
+ME_ADMIN is true or ME_PERMS holds sales-rep:access (the account is not the privileged non-rep this case needs: report BLOCKED, not PASS)
+the maintainer is left on 'Page not found' instead of /account/dashboard",none (read-only),VCST-6015 · Archetype:SCOPE · Technique:DT · Behavior:sr.hub.privileged-non-rep,Draft
+SR-HD-104,Anonymous hub deep link goes to sign-in and returns only a rep to the hub,Sales Rep Hub > Plugin delivery (Module Federation),High,BL-SR-011,ECL-14.3,"[PRE:CLEAR_SESSION]
+No session. Five hub URLs are opened anonymously; the sign-in round trip is exercised on the dashboard only. Two accounts sign in through the sign-in form in the same tab: SR_REP_PRIMARY (same account as @td(SR_REP_PRIMARY.email), password key TEST_USER_PASSWORD) and ACME_BUYER (a corporate member with no sales-rep:access).","rep=@td(SR_REP_PRIMARY.email), buyer=@td(ACME_BUYER.email), buyerPassword=@td(ACME_BUYER.password), password={{TEST_USER_PASSWORD}}","--- SCREEN: Anonymous deep links to four hub routes ---
+[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] navigation settles (the URL has not changed for 1 s)
+[KEY] record the final URL (URL_ANON_1)
+[NAV] {{FRONT_URL}}/company/customer-orders
+[WAIT] navigation settles (the URL has not changed for 1 s)
+[KEY] record the final URL (URL_ANON_2)
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] navigation settles (the URL has not changed for 1 s)
+[KEY] record the final URL (URL_ANON_3)
+[NAV] {{FRONT_URL}}/company/documents
+[WAIT] navigation settles (the URL has not changed for 1 s)
+[KEY] record the final URL (URL_ANON_4)
+--- SCREEN: Anonymous deep link to the dashboard ---
+[NAV] {{FRONT_URL}}/company/dashboard
+[WAIT] navigation settles (the URL has not changed for 1 s)
+[KEY] record the final URL (URL_ANON)
+--- SCREEN: Rep signs in and is returned to the hub ---
+[ACT] fill 'Email': @td(SR_REP_PRIMARY.email)
+[ACT] fill 'Password': {{TEST_USER_PASSWORD}}
+[ACT] click 'Sign in'
+[WAIT] navigation settles
+[KEY] record the final URL (URL_REP) and the number of hub widget blocks rendered (WIDGETS_REP)
+--- SCREEN: A different user signs in from the same returnUrl ---
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the account-menu popup is visible
+[ACT] click 'Logout' in the account menu popup (data-test-id=""sign-out-button"")
+[WAIT] the sign-in page is shown
+[KEY] record the URL of the sign-in page (URL_SIGNIN_AFTER_LOGOUT)
+[ACT] fill 'Email': @td(ACME_BUYER.email)
+[ACT] fill 'Password': @td(ACME_BUYER.password)
+[ACT] click 'Sign in'
+[WAIT] navigation settles (the URL has not changed for 1 s)
+[KEY] record the final URL (URL_BUYER) and the number of hub widget blocks rendered (WIDGETS_BUYER)","[NAV] for each of /company/my-customers, /company/customer-orders, /company/tasks and /company/documents the final URL (URL_ANON_1..URL_ANON_4) has the path /sign-in and a returnUrl query value equal to the requested path {SPEC}
+[NAV] URL_ANON path is /sign-in and its returnUrl query value is /company/dashboard {SPEC}
+[NAV] URL_REP is {{FRONT_URL}}/company/dashboard and WIDGETS_REP is at least 1 - a rep is returned to the hub after signing in {SPEC}
+[NAV] URL_BUYER is {{FRONT_URL}}/account/dashboard - a returnUrl that points at a hub route does not leak the hub to a non-rep {BL}
+[COUNT] WIDGETS_BUYER == 0 {BL}","[NETWORK] no request to /graphql/sales-rep before the rep signs in
+[CONSOLE] no uncaught TypeError or ReferenceError","an anonymous visit to any of the five hub URLs renders hub content or Not Found instead of redirecting to sign-in with that URL as returnUrl
+after the buyer signs in from a returnUrl that names a hub route the page stays on a loader or renders a hub placeholder (mid-journey)
+the rep lands on /account/dashboard instead of the hub after signing in",[ACT] click 'Logout' in the account menu,VCST-6015 · Archetype:SCOPE · Technique:ST · Behavior:sr.scope.anonymous,Draft
+SR-HD-105,Anonymous visitor: plugin list loads with no auth error and no hub surface,Sales Rep Hub > Plugin delivery (Module Federation),Medium,BL-SR-011,,"[PRE:CLEAR_SESSION]
+No session (anonymous visitor). The storefront queries the plugin list on every cold load for every visitor (module_federation_enabled=true), so the query runs before any sign-in.",front_url={{FRONT_URL}},"[SETUP] start recording every network request and every toast of the tab into REQ_LOG and TOASTS
+[NAV] {{FRONT_URL}}/ (full document load)
+[WAIT] the home page has rendered
+[KEY] record the GetStorePlugins response (PLUGINS_RESP): whether it carries errors[] and the number of entries
+[KEY] record the number of error toasts shown (ERROR_TOASTS) and every REQ_LOG entry whose URL contains /graphql/sales-rep (SR_GQL_REQS)","[COUNT] errors[] entries in PLUGINS_RESP == 0 - the plugin list is readable without a session {OBSERVED}
+[COUNT] ERROR_TOASTS == 0 - an anonymous visitor is not shown an authorization error {SPEC}
+[COUNT] sections named 'Sales Rep hub' plus links named 'Sales reps' in the page == 0 {BL}
+[COUNT] SR_GQL_REQS == 0 {BL}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","GetStorePlugins returns errors[] for an anonymous visitor
+an error or authorization toast appears on the home page of a signed-out visitor
+a hub rail section or the Sales reps link renders for an anonymous visitor",none (read-only),VCST-6015 · Archetype:SILENT · Technique:EP · Behavior:sr.scope.anonymous,Draft
+SR-HD-106,"SalesRep.Enabled off: no hub, no Sales reps link, no plugin asset fetched",Sales Rep Hub > Plugin delivery (Module Federation),High,BL-SR-011,ECL-14.3,"[PRE:CLEAR_SESSION]
+Requires an admin toggle of the store setting SalesRep.Enabled to false on {{STORE_ID}} (a shared-environment write: flip and restore with the operator's approval, in an isolated window). If the storefront still serves the hub after 120 s the setting has not propagated: report BLOCKED, not FAIL. UI absence per route is asserted by the existing Module Disabled rows of the My customers, Sales reps, customer profile and dashboard suites; this case adds the delivery layer, which they cannot see: with the switch off the plugin must not even be fetched.","rep=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}, buyer=@td(ACME_BUYER.email), buyerPassword=@td(ACME_BUYER.password), store={{STORE_ID}}","[ADMIN] set store setting SalesRep.Enabled = false on {{STORE_ID}}
+[WAIT] the storefront reflects the setting (reload the home page until two consecutive loads agree, at most 120 s)
+--- SCREEN: Rep with the switch off ---
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+[SETUP] start recording every network request of the tab into REQ_LOG
+[NAV] {{FRONT_URL}}/account (full document load)
+[WAIT] the left rail is visible
+[KEY] record the number of 'Sales Rep hub' rail sections (RAIL_REP), the number of 'Sales reps' links under 'Corporate' (LINK_REP) and every REQ_LOG entry whose URL is under /modules/$(VirtoCommerce.SalesRep)/plugins/vc-frontend/ (PLUGIN_REQS_REP)
+[NAV] {{FRONT_URL}}/company/dashboard
+[WAIT] navigation settles (the URL has not changed for 1 s)
+[KEY] record the final URL (URL_DASH) and the visible body text (BODY_DASH)
+[NAV] {{FRONT_URL}}/company/sales-reps
+[WAIT] navigation settles (the URL has not changed for 1 s)
+[KEY] record the final URL (URL_SR) and the visible body text (BODY_SR)
+--- SCREEN: Buyer with the switch off ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_BUYER]
+[SETUP] start recording every network request of the tab into REQ_LOG
+[NAV] {{FRONT_URL}}/account (full document load)
+[WAIT] the left rail is visible
+[KEY] record the number of 'Sales reps' links under 'Corporate' (LINK_BUYER) and every REQ_LOG entry whose URL is under /modules/$(VirtoCommerce.SalesRep)/plugins/vc-frontend/ (PLUGIN_REQS_BUYER)","[COUNT] RAIL_REP == 0, LINK_REP == 0 and LINK_BUYER == 0 - neither the rail section nor the Corporate link renders while the setting is off {SPEC}
+[COUNT] PLUGIN_REQS_REP == 0 and PLUGIN_REQS_BUYER == 0 - the when: gate is evaluated before any plugin code is fetched, so a disabled store ships no plugin bytes to its visitors {SPEC}
+[STATE] URL_DASH and URL_SR each end on either /account/dashboard or the host 'Page not found' page, and neither BODY_DASH nor BODY_SR holds hub content (widgets, the Sales reps table) {SPEC}","[NETWORK] no 4xx/5xx on /graphql
+[CONSOLE] no uncaught TypeError or ReferenceError","the hub rail section or the Sales reps link renders although SalesRep.Enabled is false
+a request under the plugin folder is made although the store has the plugin switched off (the when: gate runs after the fetch)
+a direct hub URL renders hub content while the switch is off","[ADMIN] restore SalesRep.Enabled to its prior value on {{STORE_ID}} before ending the session and confirm the hub is back for the rep
+[PRE:SIGNOUT]",VCST-6015 · Archetype:CONFIG · Technique:DT · Behavior:sr.store-toggle.off-hides-ui,Draft
+SR-HD-107,Non-en cultures render translated hub and Sales reps labels with no raw sales_rep keys,Sales Rep Hub > Plugin delivery (Module Federation),High,BL-SR-013,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SR_REP_PRIMARY is the same account as @td(SR_REP_PRIMARY.email). The plugin ships its own locale files; de-DE and es-ES have one; {{SR_NOLOCALE_CULTURE}} is a storefront culture with no plugin locale file (it falls back to English). The culture code is bound per environment in .env.vcst. The existing localization rows of the My customers, Sales reps and customer profile suites assert the page headings of single pages; this case adds the rail and menu labels, which the host declares from the plugin manifest before any plugin code has run.","rep=@td(SR_REP_PRIMARY.email), buyer=@td(ACME_BUYER.email), buyerPassword=@td(ACME_BUYER.password), password={{TEST_USER_PASSWORD}}, noLocale={{SR_NOLOCALE_CULTURE}}","--- SCREEN: Precondition check ---
+[NAV] {{FRONT_URL}}/account (full document load)
+[WAIT] the left rail is visible
+[KEY] open the storefront language selector and record whether it offers {{SR_NOLOCALE_CULTURE}} (NOLOC_OFFERED); if NOLOC_OFFERED is false stop and report BLOCKED:PRECONDITION_UNMET naming SR_NOLOCALE_CULTURE
+--- SCREEN: English baseline ---
+[NAV] {{FRONT_URL}}/account (full document load)
+[WAIT] the left rail is visible
+[KEY] record the rail section heading (RAIL_EN) and the rail item labels (ITEMS_EN)
+--- SCREEN: de-DE ---
+[ACT] switch the storefront culture/language to de-DE
+[NAV] {{FRONT_URL}}/account (full document load)
+[WAIT] the left rail is visible
+[KEY] record the rail section heading (RAIL_DE), the rail item labels (ITEMS_DE) and the visible text of the whole rail (RAIL_TEXT_DE)
+[NAV] {{FRONT_URL}}/company/dashboard
+[WAIT] the hub dashboard widgets have rendered
+[KEY] record the H1 text (H1_DE) and the visible text of the page (PAGE_TEXT_DE)
+--- SCREEN: es-ES ---
+[ACT] switch the storefront culture/language to es-ES
+[NAV] {{FRONT_URL}}/account (full document load)
+[WAIT] the left rail is visible
+[KEY] record the rail section heading (RAIL_ES), the rail item labels (ITEMS_ES) and the visible text of the whole rail (RAIL_TEXT_ES)
+[NAV] {{FRONT_URL}}/company/dashboard
+[WAIT] the hub dashboard widgets have rendered
+[KEY] record the H1 text (H1_ES) and the visible text of the page (PAGE_TEXT_ES)
+--- SCREEN: {{SR_NOLOCALE_CULTURE}} (no plugin locale file) ---
+[ACT] switch the storefront culture/language to {{SR_NOLOCALE_CULTURE}}
+[NAV] {{FRONT_URL}}/account (full document load)
+[WAIT] the left rail is visible
+[KEY] record the rail section heading (RAIL_NOLOC), the rail item labels (ITEMS_NOLOC) and the visible text of the whole rail (RAIL_TEXT_NOLOC)
+[NAV] {{FRONT_URL}}/company/dashboard
+[WAIT] the hub dashboard widgets have rendered
+[KEY] record the H1 text (H1_NOLOC) and the visible text of the page (PAGE_TEXT_NOLOC)
+--- SCREEN: Buyer Corporate link in each culture ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_BUYER]
+[ACT] switch the storefront culture/language to de-DE
+[NAV] {{FRONT_URL}}/account (full document load)
+[KEY] record the label of the Sales reps link under 'Corporate' (CORP_DE)
+[ACT] switch the storefront culture/language to es-ES
+[NAV] {{FRONT_URL}}/account (full document load)
+[KEY] record the label of the Sales reps link under 'Corporate' (CORP_ES)
+[ACT] switch the storefront culture/language to {{SR_NOLOCALE_CULTURE}}
+[NAV] {{FRONT_URL}}/account (full document load)
+[KEY] record the label of the Sales reps link under 'Corporate' (CORP_NOLOC)
+[ACT] switch the storefront culture/language back to en-US
+[NAV] {{FRONT_URL}}/account (full document load)
+[KEY] record the label of the Sales reps link under 'Corporate' (CORP_EN)","[COUNT] occurrences of a dotted i18n key token (matches /sales_rep\.[a-z_.]+/i or /^[A-Z_]+\.[A-Z_.]+$/ or the literal PAGE.TITLE) in RAIL_TEXT_DE, RAIL_TEXT_ES, RAIL_TEXT_NOLOC, PAGE_TEXT_DE, PAGE_TEXT_ES, PAGE_TEXT_NOLOC and in CORP_DE, CORP_ES, CORP_NOLOC == 0 {BL}
+[REL] RAIL_DE differs from RAIL_EN and CORP_DE differs from CORP_EN - German is translated, not English text under a German culture {OBSERVED}
+[REL] RAIL_ES differs from RAIL_EN and CORP_ES differs from CORP_EN {SPEC}
+[REL] RAIL_NOLOC equals RAIL_EN and CORP_NOLOC equals CORP_EN - a culture with no plugin locale file falls back to English, never to a raw key {OBSERVED}
+[SHAPE] H1_DE, H1_ES and H1_NOLOC are non-empty {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","a dotted sales_rep.* key renders in the rail, the Corporate link or a page heading under a non-English culture
+English text renders under de-DE or es-ES although the plugin ships those locale files
+a culture without a locale file renders a key or an empty label instead of English","switch the storefront culture back to en-US, then sign out",VCST-6015 · Archetype:RENDER · Technique:EP · Probe:VC-UI-007 · Behavior:sr.localization · Fixed: VCST-6015 triage REG-2026-10-15-1548,Draft
+SR-HD-108,Slow network: Corporate Sales reps link never shows its raw title key while the plugin locale loads,Sales Rep Hub > Plugin delivery (Module Federation),High,BL-SR-013,ECL-7.3,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_BUYER]
+ACME_BUYER is a corporate member of @td(ORG_ACME.id) with no sales-rep:access. The Corporate Sales reps link is declared by the host from the plugin manifest with its i18n title key BEFORE the plugin code and its locale file have loaded, and the plugin merges its locale without awaiting it, so a slow connection can show the key itself. The existing Sales reps localization row checks a settled non-English page and cannot see this window.","buyer=@td(ACME_BUYER.email), password=@td(ACME_BUYER.password)","[THROTTLE] slow3g
+[SETUP] install an init script that samples the text of the Sales reps link under 'Corporate' every 100 ms into LINK_FRAMES from first paint until the load ends
+[NAV] {{FRONT_URL}}/account (full document load)
+[WAIT] the page load has ended
+[KEY] record the final label of the Sales reps link under 'Corporate' (FINAL_LINK)
+[SETUP] install an init script that samples the H1 text and the table column header texts of the page every 100 ms into PAGE_FRAMES
+[NAV] {{FRONT_URL}}/account (full document load again, a cold plugin)
+[ACT] as soon as the Sales reps link under 'Corporate' first appears, click it (before the plugin load completes)
+[WAIT] the Sales reps table has rendered its rows
+[THROTTLE] none","[COUNT] LINK_FRAMES entries matching a dotted i18n key token (matches /sales_rep\.[a-z_.]+/i or /^[A-Z_]+\.[A-Z_.]+$/ or the literal PAGE.TITLE) == 0 - the link never shows its raw title key {BL}
+[REL] every non-empty LINK_FRAMES entry equals FINAL_LINK - no frame shows a label different from the settled one {BL}
+[COUNT] PAGE_FRAMES entries (H1 or a column header) matching a dotted i18n key token (matches /sales_rep\.[a-z_.]+/i or /^[A-Z_]+\.[A-Z_.]+$/ or the literal PAGE.TITLE) == 0 {BL}","[CONSOLE] no uncaught TypeError or ReferenceError
+[NETWORK] no 4xx/5xx on /graphql","the Corporate link text is 'Sales_rep.navigation.link' or any other dotted key in any frame (3x on 2026-10-15 saw exactly this)
+the page reached by clicking early shows raw table headers or a raw page title for a moment",[THROTTLE] none,VCST-6015 · Archetype:RACE · Technique:ST · Behavior:sr.localization · Catches:VCST-6015-3x-B1,Draft
+SR-HD-109,"Plugin manifest unreachable (404 or HTML): storefront still usable, hub and link absent",Sales Rep Hub > Plugin delivery (Module Federation),Critical,BL-CROSS-011,"ECL-10.2, ECL-10.3","Client-side request interception only (page.route on the manifest request; no server, setting or fixture is changed). Two actors: SR_REP_PRIMARY (same account as @td(SR_REP_PRIMARY.email)) and ACME_BUYER. A rep-only feature delivery fault also removes a page every organization buyer has, because the buyer-facing Sales reps page is delivered by the same plugin, which is why the buyer runs the same fault.
+The manifest URL is /modules/$(VirtoCommerce.SalesRep)/plugins/vc-frontend/mf-manifest.json. The ingress case (HTTP 200 with the storefront index.html body) is the realistic one: a missing /modules route answers every plugin URL with the HTML shell.","rep=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}, buyer=@td(ACME_BUYER.email), buyerPassword=@td(ACME_BUYER.password)","--- SCREEN: Rep, manifest answered 404 ---
+[SETUP] remove any request interception left from an earlier screen
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+[SETUP] intercept GET **/modules/$(VirtoCommerce.SalesRep)/plugins/vc-frontend/mf-manifest.json and answer it with status 404
+[NAV] {{FRONT_URL}}/ (full document load)
+[WAIT] the home page has rendered
+[KEY] record the number of 'Sales Rep hub' rail sections (RAIL_REP404), the number of 'Sales reps' links under 'Corporate' (LINK_REP404) and whether an uncaught error overlay is shown (OVERLAY_REP404)
+[NAV] {{FRONT_URL}}/company/dashboard
+[WAIT] navigation settles (the URL has not changed for 1 s)
+[KEY] record the final URL (URL_REP404), the visible body text (BODY_REP404) and whether a Reload page button is shown (RELOAD_REP404)
+[NAV] {{FRONT_URL}}
+[ACT] open the first product from the home page or the catalog
+[WAIT] the product page has rendered
+[KEY] record the product title shown (PDP_REP404)
+--- SCREEN: Rep, manifest answered 200 text/html ---
+[SETUP] remove any request interception left from an earlier screen
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+[SETUP] intercept GET **/modules/$(VirtoCommerce.SalesRep)/plugins/vc-frontend/mf-manifest.json and answer it with status 200, content-type text/html and the storefront index.html body
+[NAV] {{FRONT_URL}}/ (full document load)
+[WAIT] the home page has rendered
+[KEY] record the number of 'Sales Rep hub' rail sections (RAIL_REPHTML), the number of 'Sales reps' links under 'Corporate' (LINK_REPHTML) and whether an uncaught error overlay is shown (OVERLAY_REPHTML)
+[NAV] {{FRONT_URL}}/company/my-customers
+[WAIT] navigation settles (the URL has not changed for 1 s)
+[KEY] record the final URL (URL_REPHTML), the visible body text (BODY_REPHTML) and whether a Reload page button is shown (RELOAD_REPHTML)
+--- SCREEN: Buyer, manifest answered 404 ---
+[SETUP] remove any request interception left from an earlier screen
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_BUYER]
+[SETUP] intercept GET **/modules/$(VirtoCommerce.SalesRep)/plugins/vc-frontend/mf-manifest.json and answer it with status 404
+[NAV] {{FRONT_URL}}/ (full document load)
+[WAIT] the home page has rendered
+[KEY] record the number of 'Sales Rep hub' rail sections (RAIL_B404), the number of 'Sales reps' links under 'Corporate' (LINK_B404) and whether an uncaught error overlay is shown (OVERLAY_B404)
+[NAV] {{FRONT_URL}}/company/sales-reps
+[WAIT] navigation settles (the URL has not changed for 1 s)
+[KEY] record the final URL (URL_B404), the visible body text (BODY_B404) and whether a Reload page button is shown (RELOAD_B404)
+--- SCREEN: Buyer, manifest answered 200 text/html ---
+[SETUP] remove any request interception left from an earlier screen
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_BUYER]
+[SETUP] intercept GET **/modules/$(VirtoCommerce.SalesRep)/plugins/vc-frontend/mf-manifest.json and answer it with status 200, content-type text/html and the storefront index.html body
+[NAV] {{FRONT_URL}}/ (full document load)
+[WAIT] the home page has rendered
+[KEY] record the number of 'Sales Rep hub' rail sections (RAIL_BHTML), the number of 'Sales reps' links under 'Corporate' (LINK_BHTML) and whether an uncaught error overlay is shown (OVERLAY_BHTML)
+[NAV] {{FRONT_URL}}/company/sales-reps
+[WAIT] navigation settles (the URL has not changed for 1 s)
+[KEY] record the final URL (URL_BHTML), the visible body text (BODY_BHTML) and whether a Reload page button is shown (RELOAD_BHTML)","[COUNT] every RAIL_* == 0 and every LINK_* == 0 - an unusable manifest withdraws the rail section and the Corporate link, it never leaves a link to a dead route {OBSERVED}
+[COUNT] every OVERLAY_* == 0 - no uncaught error overlay on any of the four home loads {BL}
+[SHAPE] PDP_REP404 is non-empty - the storefront stays usable when the plugin cannot be delivered {BL}
+[STATE] each of BODY_REP404, BODY_REPHTML, BODY_B404 and BODY_BHTML is not empty and either contains 'Page not found' or RELOAD_* is true - the visitor is never left on a blank page; the outcome is recorded: 3x on 2026-10-15 saw the host 'Page not found' page with no Reload page button in all four cases, and whether that is the intended state of a failed manifest is an open product question (VCST-6015 3x B2) {SPEC}
+[CONSOLE] no uncaught exception (TypeError or ReferenceError); the single resource-error line for the faulted manifest request is expected {OBSERVED}","[CONSOLE] no uncaught exception; one resource-error line for the faulted manifest is expected
+[NETWORK] no 4xx/5xx on /graphql (the manifest request itself is the only intended failure)","the home page or a product page fails to render because the plugin could not be delivered
+the Corporate Sales reps link or the rail section is still present while its route can no longer render (link to a dead route)
+a hub URL renders an empty body or an uncaught error overlay
+the HTML-shell case behaves differently from the 404 case in a way the visitor can see (telemetry reports success for it; 3x B2)",remove the request interception and sign out,VCST-6015 · Archetype:FALLBACK · Technique:EG,Draft
+SR-HD-110,Plugin host-version gate: an incompatible requiredHostVersion skips the plugin before it runs,Sales Rep Hub > Plugin delivery (Module Federation),Medium,,ECL-10.2,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SR_REP_PRIMARY is the same account as @td(SR_REP_PRIMARY.email). Client-side interception only. The host compares the manifest requiredHostVersion with the version of its own @vc-frontend/core facade and skips an incompatible plugin before it runs (fail-closed). The deployed plugin declares ^0.2.3 against facade 0.2.3.","rep=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}","[SETUP] intercept GET **/modules/$(VirtoCommerce.SalesRep)/plugins/vc-frontend/mf-manifest.json, fetch the real manifest and answer with the same JSON where requiredHostVersion is rewritten to ^0.3.0
+[SETUP] start recording every network request of the tab into REQ_LOG
+[NAV] {{FRONT_URL}}/ (full document load)
+[WAIT] the home page has rendered
+[KEY] record the number of 'Sales Rep hub' rail sections (RAIL), every REQ_LOG entry whose URL ends with remoteEntry.js (ENTRY_REQS) and whether an uncaught error overlay is shown (OVERLAY)
+[NAV] {{FRONT_URL}}/company/dashboard
+[WAIT] navigation settles (the URL has not changed for 1 s)
+[KEY] record the visible body text (BODY_DASH) and whether a Reload page button is shown (RELOAD_DASH)","[COUNT] ENTRY_REQS == 0 - an incompatible plugin is rejected on its manifest alone, its entry script is never requested {OBSERVED}
+[COUNT] RAIL == 0 and OVERLAY == 0 {OBSERVED}
+[STATE] BODY_DASH is not empty and holds no hub content (no widgets, no hub table), and it either contains 'Page not found' or RELOAD_DASH is true - the visitor is never left on a blank page; the outcome is recorded, not pinned: 3x on 2026-10-15 saw the host 'Page not found' page with no Reload page button, and whether that is the intended state of a rejected plugin is an open product question (VCST-6015 3x B2) {SPEC}
+[SHAPE] the home page rendered (its main navigation is present) although the plugin was rejected {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","remoteEntry.js is requested although requiredHostVersion does not match the host (the gate fails open)
+the hub rail renders or the plugin runs against an incompatible host
+the storefront home fails to render because of the rejected plugin",remove the request interception and sign out,VCST-6015 · Archetype:FALLBACK · Technique:EG · Source:host README (fail-closed contract gate),Draft
+SR-HD-111,"Slow plugin entry: hub deep link shows the slow notice and a Reload offer, not an endless spinner",Sales Rep Hub > Plugin delivery (Module Federation),Medium,,ECL-10.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SR_REP_PRIMARY is the same account as @td(SR_REP_PRIMARY.email). Client-side interception only: the plugin entry script is delayed 15 s, longer than the host's slow-load threshold (about 7 s) and shorter than its failure state. The page under test is a cold deep link, so the host shows its placeholder route.","rep=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}","[SETUP] intercept GET **/modules/$(VirtoCommerce.SalesRep)/plugins/vc-frontend/remoteEntry.js and delay the response by 15 s
+[SETUP] install an init script that records, with timestamps from navigation start, the first moment each of these is visible: a loading indicator (T_LOADER), a slow-loading notice offering a 'Reload page' button (T_NOTICE) and the hub dashboard widgets (T_HUB), and samples the visible body text every 100 ms into FRAMES
+[NAV] {{FRONT_URL}}/company/dashboard (cold)
+[WAIT] the hub dashboard widgets have rendered (at most 40 s)
+[KEY] record T_LOADER, T_NOTICE and T_HUB, the final URL (FINAL_URL) and the number of hub widget blocks rendered (WIDGETS)","[STATE] T_LOADER is at most 5 s - the visitor sees a loading indicator, not a blank page {OBSERVED}
+[REL] T_LOADER is less than T_NOTICE, and T_NOTICE is at most 10 s - the slow-loading notice with a Reload page button appears while the entry is still pending (measured about 8.5 s; host README: about 7 s) {OBSERVED}
+[REL] T_HUB is at least 15 s and FINAL_URL equals {{FRONT_URL}}/company/dashboard with WIDGETS at least 1 - the page recovers by itself once the entry arrives {OBSERVED}
+[COUNT] FRAMES containing 'Page not found' == 0 {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","the loading indicator never turns into the slow-loading notice (an endless spinner with no way out)
+the slow-loading notice appears after more than 10 s, or never offers Reload page
+the page shows 'Page not found' while the entry is still pending
+the hub does not render after the delayed entry finally arrives",remove the request interception and sign out,VCST-6015 · Archetype:FALLBACK · Technique:EG,Draft
+SR-HD-112,User switch in one tab via Logout / Sign in: rail and links follow the signed-in user,Sales Rep Hub > Plugin delivery (Module Federation),High,BL-SR-011,ECL-14.3,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Three actors are signed in one after another in ONE tab: SR_REP_PRIMARY (same account as @td(SR_REP_PRIMARY.email), no document permission), ACME_BUYER (corporate member, no sales-rep:access) and SR_REP_DOCS (an Advanced rep holding sales-rep-documents:read, @td(SR_REP_DOCS.email)). Password key TEST_USER_PASSWORD for both reps. Logout and Sign in each reload the document, so the plugin re-runs its init per user; a stale rail or Document library entry from the previous user would show as a leftover.","rep=@td(SR_REP_PRIMARY.email), docsRep=@td(SR_REP_DOCS.email), buyer=@td(ACME_BUYER.email), buyerPassword=@td(ACME_BUYER.password), password={{TEST_USER_PASSWORD}}","--- SCREEN: Plain rep ---
+[NAV] {{FRONT_URL}}/account
+[WAIT] the left rail is visible
+[KEY] record the number of 'Sales Rep hub' rail sections (HUB_REP) and the number of 'Document library' entries in the rail (DOCS_REP)
+--- SCREEN: Buyer, same tab ---
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the account-menu popup is visible
+[ACT] click 'Logout' in the account menu popup (data-test-id=""sign-out-button"")
+[WAIT] the sign-in page is shown
+[ACT] fill 'Email': @td(ACME_BUYER.email)
+[ACT] fill 'Password': @td(ACME_BUYER.password)
+[ACT] click 'Sign in'
+[WAIT] the account area has rendered
+[KEY] record the number of 'Sales Rep hub' rail sections (HUB_BUYER) and the number of 'Sales reps' links under 'Corporate' (LINK_BUYER)
+--- SCREEN: Advanced rep, same tab ---
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the account-menu popup is visible
+[ACT] click 'Logout' in the account menu popup (data-test-id=""sign-out-button"")
+[WAIT] the sign-in page is shown
+[ACT] fill 'Email': @td(SR_REP_DOCS.email)
+[ACT] fill 'Password': {{TEST_USER_PASSWORD}}
+[ACT] click 'Sign in'
+[WAIT] the account area has rendered
+[KEY] record the number of 'Sales Rep hub' rail sections (HUB_DOCS) and the number of 'Document library' entries in the rail (DOCS_DOCS)","[COUNT] HUB_REP == 1 and HUB_DOCS == 1 - exactly one hub section for each rep, never a duplicate left over from the previous registration {SPEC}
+[COUNT] HUB_BUYER == 0 - the buyer sees no hub section after a rep was signed in on the same tab {BL}
+[COUNT] LINK_BUYER == 1 - the buyer sees exactly one Corporate Sales reps link {SPEC}
+[REL] DOCS_REP == 0 and DOCS_DOCS >= 1 - the Document library entry follows the permission of the signed-in user, not of the first user of the tab {DOC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","the buyer still sees the rep's 'Sales Rep hub' section after signing in on the same tab (rail computed once at init)
+the Advanced rep sees no Document library entry after the plain rep and the buyer were in the same tab (permission computed once)
+a rail section or a Corporate link appears twice after a user switch",[ACT] click 'Logout' in the account menu,VCST-6015 · Archetype:STALE · Technique:ST · Behavior:sr.hub.non-rep-sees-nothing · Fixed: VCST-6015 triage REG-2026-10-15-1548,Draft
+SR-HD-113,Plugin entry download fails: hub deep link offers Reload page and Reload recovers the hub,Sales Rep Hub > Plugin delivery (Module Federation),Medium,,ECL-10.2,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SR_REP_PRIMARY is the same account as @td(SR_REP_PRIMARY.email). Client-side interception only. The manifest is fine and only the entry script download fails, which the host treats as a failed plugin (a Reload offer) and not as a skipped one (host Not Found).","rep=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}","[SETUP] intercept GET **/modules/$(VirtoCommerce.SalesRep)/plugins/vc-frontend/remoteEntry.js and abort the request (network error)
+[NAV] {{FRONT_URL}}/company/dashboard (cold)
+[WAIT] the page shows a message instead of the loader (at most 30 s)
+[KEY] record the visible message text (MESSAGE) and whether a 'Reload page' button is shown (RELOAD_BTN)
+[SETUP] remove the interception so remoteEntry.js is no longer aborted
+[ACT] click 'Reload page'
+[WAIT] the hub dashboard widgets have rendered
+[KEY] record the final URL (FINAL_URL), the number of hub widget blocks rendered (WIDGETS) and the number of 'Sales Rep hub' rail sections (RAIL)","[DOM] MESSAGE reads 'Part of the site could not be loaded. Please reload the page to continue.' {OBSERVED}
+[STATE] RELOAD_BTN is true - the visitor is offered a way out {OBSERVED}
+[REL] FINAL_URL equals {{FRONT_URL}}/company/dashboard and WIDGETS is at least 1 - Reload page recovers the hub without leaving the route {OBSERVED}
+[COUNT] RAIL == 1 after the recovery - the failed first attempt left no half-registered duplicate {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","the page stays on a loader or goes blank after the entry download fails, with no message
+the message appears without a 'Reload page' button
+Reload page does not recover the hub although the entry is reachable again, or lands on 'Page not found'
+the failed first attempt leaves a duplicate rail section after the recovery",remove the request interception and sign out,VCST-6015 · Archetype:FALLBACK · Technique:EG,Draft
+SR-HD-114,"Plugin locale chunk delayed: no hub label, page title or menu link renders a raw i18n key",Sales Rep Hub > Plugin delivery (Module Federation),High,BL-SR-013,ECL-7.3,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SR_REP_PRIMARY is the same account as @td(SR_REP_PRIMARY.email). Client-side interception only: only the plugin locale chunk (assets/en-*.js under the plugin folder) is delayed, the entry and the page chunks are untouched. The plugin merges its locale without awaiting it, so every label of the hub can render before its translation exists. The buyer Corporate link under a slow network is the cell of the slow-network case, not of this one.","rep=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}","[SETUP] intercept GET **/modules/$(VirtoCommerce.SalesRep)/plugins/vc-frontend/assets/en-*.js and delay the response by 6 s
+[SETUP] install an init script that samples the visible text of the rail, the page title (H1), the widget headings and the table column headers every 100 ms into LABEL_FRAMES, from first paint until 10 s after the dashboard widgets render
+[NAV] {{FRONT_URL}}/company/dashboard (cold)
+[WAIT] the hub dashboard widgets have rendered and 10 s have passed
+[KEY] record the final rail heading (FINAL_RAIL), the final H1 (FINAL_H1) and the time of the first frame in which the rail rendered (T_RAIL)
+[KEY] record the rail heading and the H1 as they were in the first frame in which each rendered (FIRST_RAIL, FIRST_H1)","[COUNT] LABEL_FRAMES entries matching a dotted i18n key token (matches /sales_rep\.[a-z_.]+/i or /^[A-Z_]+\.[A-Z_.]+$/ or the literal PAGE.TITLE) == 0 - no frame at any moment shows a raw key in the rail, the page title, a widget heading or a table header {BL}
+[REL] FIRST_RAIL equals FINAL_RAIL and FIRST_H1 equals FINAL_H1 - the label shown first is the label that stays {BL}
+[SHAPE] FINAL_RAIL and FINAL_H1 are non-empty {SPEC}","[CONSOLE] no uncaught TypeError or ReferenceError
+[NETWORK] the delayed locale request returns 200 once released","the rail, the title, a widget heading or a table header shows SALES_REP.HUB.TITLE, Sales_rep.hub.dashboard.navigation.link, PAGE.TITLE or sales_rep.table.name while the locale chunk is in flight (3x on 2026-10-15 saw all four, for more than 7 s)
+the labels never translate after the locale chunk arrives",remove the request interception and sign out,VCST-6015 · Archetype:RENDER · Technique:EG · Probe:VC-UI-007 · Behavior:sr.localization · Catches:VCST-6015-3x-B1,Draft
+SR-HD-115,"Language switch en to de leaves exactly one Sales reps link and one Sales Rep hub section, desktop and 375px, with no raw key",Sales Rep Hub > Plugin delivery (Module Federation),High,BL-SR-013,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_BUYER]
+Two actors, each in a session of their own: ACME_BUYER (a corporate member of @td(ORG_ACME.id) with no sales-rep:access) and then SR_REP_PRIMARY (same account as @td(SR_REP_PRIMARY.email), password key TEST_USER_PASSWORD), signed in through [PRE:CLEAR_SESSION] and [PRE:SIGNIN_AS]. The language is switched through the storefront language selector, which navigates to the /<culture>/ path with a full document load. The plugin merges its locale and the host resolves the declared contributions on each such load, which is where a second registration or a missing translation would show. The sign-in is only done in English, so the language is switched back to en-US before the second sign-in.","buyer=@td(ACME_BUYER.email), buyerPassword=@td(ACME_BUYER.password), rep=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}","--- SCREEN: Buyer, desktop ---
+[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/account
+[WAIT] the left rail is visible
+[KEY] record the number of Sales reps links under 'Corporate' (LINKS_B_EN) and its label (LABEL_B_EN)
+[ACT] switch the storefront language to de-DE through the language selector (navigates to the /<culture>/ path)
+[WAIT] the page text has re-rendered in the new language
+[KEY] record the number of Sales reps links under 'Corporate' (LINKS_B_DE), its label (LABEL_B_DE) and the visible text of the whole rail (RAIL_TEXT_B_DE)
+--- SCREEN: Buyer, 375px menu ---
+[VIEWPORT] 375x812
+[ACT] open the mobile account menu
+[WAIT] the mobile menu is rendered
+[KEY] record the number of Sales reps links under 'Corporate' in the mobile menu (MOB_LINKS_B_DE), its label (MOB_LABEL_B_DE) and the visible text of the whole mobile menu (MOB_TEXT_B_DE)
+--- SCREEN: Back to English ---
+[VIEWPORT] 1280x900
+[ACT] switch the storefront language to en-US through the language selector (navigates to the /<culture>/ path)
+[WAIT] the page text has re-rendered in the new language
+--- SCREEN: Rep, new session, desktop ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+[NAV] {{FRONT_URL}}/account
+[WAIT] the left rail is visible
+[KEY] record the number of 'Sales Rep hub' rail sections (HUB_R_EN) and the rail section heading (HUB_LABEL_R_EN)
+[ACT] switch the storefront language to de-DE through the language selector (navigates to the /<culture>/ path)
+[WAIT] the page text has re-rendered in the new language
+[KEY] record the number of 'Sales Rep hub' rail sections (HUB_R_DE), the rail section heading (HUB_LABEL_R_DE) and the visible text of the whole rail (RAIL_TEXT_R_DE)
+--- SCREEN: Rep, 375px menu ---
+[VIEWPORT] 375x812
+[ACT] open the mobile account menu
+[WAIT] the mobile menu is rendered
+[KEY] record the number of 'Sales Rep hub' sections in the mobile menu (MOB_HUB_R_DE) and the visible text of the whole mobile menu (MOB_TEXT_R_DE)
+[VIEWPORT] 1280x900
+[ACT] switch the storefront language to en-US through the language selector (navigates to the /<culture>/ path)
+[WAIT] the page text has re-rendered in the new language","[COUNT] LINKS_B_EN == 1, LINKS_B_DE == 1 and MOB_LINKS_B_DE == 1 - the buyer sees exactly one Corporate Sales reps link before and after the language switch, on desktop and in the 375px menu {SPEC}
+[COUNT] HUB_R_EN == 1, HUB_R_DE == 1 and MOB_HUB_R_DE == 1 - the rep sees exactly one Sales Rep hub section before and after the switch, on desktop and in the 375px menu {SPEC}
+[DOM] LABEL_B_DE and MOB_LABEL_B_DE read 'Vertriebsmitarbeiter' and HUB_LABEL_R_DE reads 'Vertriebsmitarbeiter-Hub' {OBSERVED}
+[REL] LABEL_B_DE differs from LABEL_B_EN and HUB_LABEL_R_DE differs from HUB_LABEL_R_EN - the labels were translated by the switch, not left in English {SPEC}
+[COUNT] occurrences of a dotted i18n key token (matches /sales_rep\.[a-z_.]+/i or /^[A-Z_]+\.[A-Z_.]+$/ or the literal PAGE.TITLE) in RAIL_TEXT_B_DE, MOB_TEXT_B_DE, RAIL_TEXT_R_DE and MOB_TEXT_R_DE == 0 {BL}","[CONSOLE] no uncaught TypeError or ReferenceError during the language switches
+[NETWORK] no 4xx/5xx on /graphql","the Corporate Sales reps link or the Sales Rep hub section appears twice after the language switch (the contribution was registered again)
+the link or the hub section is missing, or shows a dotted sales_rep.* key, after the switch
+the 375px menu differs from the desktop rail in the number of entries after the switch","[ACT] switch the storefront language back to en-US
+[ACT] click 'Logout' in the account menu popup",VCST-6015 · Archetype:PARITY · Technique:ST · Behavior:sr.localization · Fixed: VCST-6015 triage REG-2026-10-15-1548,Draft

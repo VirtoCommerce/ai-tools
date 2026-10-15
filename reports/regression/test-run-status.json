@@ -1,24 +1,21 @@
 {
-  "runId": "REG-2026-10-13-1739",
+  "runId": "REG-2026-10-15-1720",
   "status": "completed",
-  "startedAt": "2026-10-13T17:39:30.000Z",
-  "windowStart": "2026-10-13T17:39:30.000Z",
-  "selection": "043",
+  "startedAt": "2026-10-15T15:20:55.249Z",
+  "windowStart": "2026-10-15T15:20:55.249Z",
+  "selection": "093",
   "env": "vcst",
   "scoped": true,
-  "purpose": "VCST-6017 /qa-test: verification of GA-030/GA-031 derivation fix (order line count from the placed order); --ids; --no-promote",
+  "purpose": "VCST-6015 — verify the 5 test-defect fixes from triage of REG-2026-10-15-1548",
+  "ids": "SR-HD-100,SR-HD-102,SR-HD-107,SR-HD-112,SR-HD-115",
   "suites": {
-    "043": {
-      "status": "done",
-      "lane": "browser",
-      "browser": "playwright-chrome",
-      "startedAt": "2026-10-13T17:40:16.060Z",
-      "pass": 2,
-      "fail": 0,
-      "blocked": 0,
-      "total": 2,
-      "finishedAt": "2026-10-13T17:47:32.879Z"
+    "093": {
+      "status": "pending",
+      "lane": "browser"
     }
   },
-  "finishedAt": "2026-10-13T17:47:42.665Z"
+  "finishedAt": "2026-10-15T15:21:05.438Z",
+  "notes": [
+    "ABORTED before dispatch (usage limit) — nothing ran; no results"
+  ]
 }

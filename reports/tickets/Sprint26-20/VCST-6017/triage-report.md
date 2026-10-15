@@ -40,3 +40,37 @@ Open human items: BL-CROSS-005 / BL-GA4-003 left SUSPECT by `bl:fresh` after GA-
 - **D5** console: pre-existing image 404s / dead host; nothing from `dom-analytics`.
 
 No tracker ticket filed, no fix triggered — human decides.
+
+---
+
+## Round 2 — fix `fdabd62` · theme `2.60.0-pr-2543-fdab-fdabd62d` · 2026-10-14
+
+Sources: checklist `## Round 2` (R2-1..R2-12, all PASS) + C1 `REG-2026-10-14-1118` (29 ids: 22 PASS, 3 FAIL, 4 BLOCKED) + verification `REG-2026-10-14-1156` (8/8 PASS). App Insights: skipped (no Azure identity / API key).
+Totals: **0 product bugs** · 7 test-defects (all fixed, re-run green) · round-1 IN-SCOPE A10 + B6 **CLEARED-by-fix**.
+
+### Round-1 in-scope bugs — RED → GREEN
+
+| Id | Round 1 (`…0127`) | Round 2 (`fdabd62`) | Evidence |
+|---|---|---|---|
+| A10 / GA-052 | id-less HTML list re-sent 1 → 9–26 | 1 after 3 churn rounds; 1 `/g/collect` hit | R2-1 Chrome; GA-052 PASS in 1118 (Firefox) + 1156 (Edge) |
+| B6 / GA-056, GA-043 | 6,5,6,5,6 per resize cycle | 1 per list per page view, every list | R2-2 Chrome; GA-056/043 PASS in 1118, GA-056 in 1156 |
+| B7 question | rendered cards only (4/5/6) | **whole list** at every width (6/6/6 = API) — answered by the fix | R2-3; GA-057 re-based, PASS in 1156 |
+
+### Test-case fixes (`/qa-review-tests --fix`, worktree `qa/sprint26-20-regression`) — all re-run green in REG-2026-10-14-1156
+
+| Case | Class | Fix |
+|---|---|---|
+| GA-037, GA-057 | ASSERTION_DEFECT (RE-BASE resolved) | items = whole bound list (`{SPEC}` README + fdabd62), guard: fewer cards rendered than the source, else BLOCKED |
+| GA-045 | ASSERTION_DEFECT (RE-BASE resolved) | page-scoped: p1 = page size, p2 = remainder, disjoint, return re-sends `{OBSERVED}` |
+| GA-044 | ASSERTION_DEFECT | assertion 2 scoped to the lists product B renders; no stale anchor params |
+| GA-038, GA-047 | TEST_DATA_DEFECT | pooled `USER_EMAIL` cart drifted (shared with the 4a lane); re-seeded; cart guard → BLOCKED, never FAIL (FIFTH RULE) |
+| GA-059 | STEPS_DEFECT | needs a scripted DOM edit; `@allow-eval` is for debug only → Manual; behaviour covered by R2-7 |
+| GA-052, GA-056 | prose | stale "expected to FAIL" / `{HYPOTHESIS}` → `{SPEC}` + run ids; assertions unchanged |
+
+**Follow-up (Low, test case):** GA-045's "full view" leg is vacuous — the variations widget has no full-view control (only List/Table, Filters, pagination); fix the step text at `/qa-test-lifecycle` 6P.
+
+### Carried, unchanged by the fix (not re-filed)
+
+Pre-existing F3, F6 (High), F8, F9, F10, F7 (= VCST-6304) and the 8 Low items from round 1. Re-observed: SFL `select_item` under `recently_browsed_products` (B11 / KB-E88FFFEB, `cart-for-later.vue` L70, same on `dev`); search results list `category_undefined_page_1` (`reports/bugs/open/low/BUG-storefront-search-results-analytics-list-name-category-undefined.md`). Improvement seen: the phantom `search_bar` impression on a fresh `/search?q=` load no longer fires (KB-456FD813 disputed).
+**C4 / GA-054** — PASS this round (operator approved the setting change; `BarcodeSearchFields` restored to `[]`, GET-verified).
+**Not verified:** BL-GA4-004 `user_id` after sign-in (auto-mode classifier denied the read); D3 in round 1 covered it on the PR build.

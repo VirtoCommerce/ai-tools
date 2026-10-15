@@ -21,6 +21,9 @@
  *                          WITH a role; a multi-org user's memberships carry DIFFERENT roles.
  *   5. Secret hygiene     — no password literals committed in the user CSVs
  *                          (b2b, personal, agent-pool, white-labeling).
+ *  16. Quote fixtures    — every seeded suite-015 quote (aliases.<env>.json, per pool buyer) is
+ *                          owned by that buyer's LOGIN id + live organization, carries a
+ *                          languageCode and its spec status/expiry (KB-874B24DD, KB-97C03EB4).
  *   9. Org address parity — each seeded org's LIVE member address fields
  *                          (regionName/city/postalCode/countryCode/line1) match the
  *                          CSV columns. Catches a seed storing a diverging value —
@@ -55,6 +58,8 @@ import { classifyStoreFfc, isBlockingStoreFfc, describeStoreFfc } from './store/
 import {
   PRODUCTS as MSN_E2E_PRODUCTS, productFlagDrift, productFlagDriftMessage,
 } from './loyalty/missions-e2e-specs.mjs';
+import { QUOTE_FIXTURES, quoteDriftProblems } from './orders/orders-specs.mjs';
+import { poolBuyerRows, resolveQuoteBuyer, slotField } from './orders/quote-buyers.mjs';
 
 const WARN_ONLY = process.argv.includes('--warn-only');
 const TEST_ENV = process.env.TEST_ENV || 'vcst';
@@ -842,6 +847,44 @@ async function checkStoreFulfillmentCenters() {
   }
 }
 
+/* ── 16. Quote fixtures — owner, organization, language, state ─────────────
+ * Live probe only. The buyer's quote list filters on customerId = the buyer's LOGIN id AND
+ * organizationId = the buyer's current org (KB-874B24DD); a seeded quote that drifts on either is
+ * silently absent for the buyer, and every suite-015 case built on it goes BLOCKED. Judged with the
+ * same pure quoteDriftProblems the seeder uses; the buyer is resolved LIVE (quote-buyers.mjs), never
+ * from the pool CSV's informational org columns. A consumed DISPOSABLE quote (Ordered/Declined by a
+ * case) is reported as a note, not a failure: re-seed restores it.
+ */
+async function checkQuoteFixtures() {
+  console.log('\n[16] Quote fixtures (suite 015) — owner, organization, language, state');
+  const overlay = mergedAliases();
+  const store = await api('GET', `/api/stores/${encodeURIComponent(STORE_ID)}`, null, { expectStatus: [200, 404] });
+  const buyers = [];
+  for (const row of poolBuyerRows()) {
+    const b = await resolveQuoteBuyer(api, row);
+    if (b.error) { warn(`quote buyer slot ${b.slot} (${b.email}): ${b.error}`); continue; }
+    buyers.push(b);
+  }
+  const now = new Date();
+  let checked = 0;
+  for (const spec of QUOTE_FIXTURES) {
+    const entry = overlay[spec.alias] || {};
+    for (const b of buyers) {
+      const id = entry[slotField('id', b.slot)];
+      if (!id) { warn(`${spec.alias}: no ${slotField('id', b.slot)} in aliases.${TEST_ENV}.json — run npm run seed:quotes`); continue; }
+      const live = await api('GET', `/api/quote/requests/${encodeURIComponent(id)}`, null, { expectStatus: [200, 204, 404] });
+      checked += 1;
+      if (!live?.id) { fail(`${spec.alias} slot ${b.slot}: quote ${id} does not exist — re-run npm run seed:quotes`); continue; }
+      const drift = quoteDriftProblems(spec, live, { customerId: b.userId, organizationId: b.organizationId, languageCode: store?.defaultLanguage }, now);
+      const consumed = spec.disposable && drift.length && drift.every((d) => d.startsWith('status ')) && ['Ordered', 'Declined'].includes(live.status);
+      if (!drift.length) continue;
+      if (consumed) warn(`${spec.alias} slot ${b.slot}: consumed (${live.status}) — re-seed before its case runs again`);
+      else fail(`${spec.alias} slot ${b.slot} (${live.number}): ${drift.join('; ')}`);
+    }
+  }
+  if (checked) ok(`${checked} seeded quote(s) checked against ${buyers.length} live buyer(s)`);
+}
+
 /* ── main ─────────────────────────────────────────────────────── */
 (async () => {
   console.log(`=== test-data live reconciliation — TEST_ENV=${TEST_ENV} ===`);
@@ -862,6 +905,7 @@ async function checkStoreFulfillmentCenters() {
   await checkStoreDefaults();
   await checkMissionFixtureProductFlags();
   await checkStoreFulfillmentCenters();
+  await checkQuoteFixtures();
 
   console.log('\n=== Summary ===');
   console.log(`  hard problems: ${problems.length}`);
