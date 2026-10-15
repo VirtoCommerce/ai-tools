@@ -571,3 +571,380 @@ User logged in as {{USER_EMAIL}}. Product AGENT-TEST-RING-TXT-CFG-20260327 has r
 [STATE] WCAG 1.3.1 satisfied by always-on aria-describedby (constraint communicated programmatically at all times)
 [STATE] WCAG 4.1.3 satisfied by conditional role=status + aria-live at cap (status message exposed to AT when limit reached)","[CONSOLE] No axe violation errors in console (axe-core injected or DevTools panel)
 [NETWORK] No 4xx/5xx during page load or accessibility audit","axe reporting WCAG 1.3.1 violation (aria-describedby missing or broken); input missing accessible name; aria-describedby absent at rest; aria-describedby removed at cap, role=status present at rest instead of only at-cap (over-application), role=status absent at cap (under-application); aria-live set to 'off' or 'assertive' instead of 'polite'; counter format '0/30' without spaces; Coffee theme color contrast <4.5:1 for counter text (WCAG 1.4.3)","Navigate away from PDP; no cart cleanup needed","VCST-4928; PR #2263 (conditional role=status + aria-live=polite at-cap; always-on aria-describedby); WCAG 2.1 AA criteria: 1.3.1 Info and Relationships, 4.1.3 Status Messages; Technique: Error Guessing (a11y misimplementation patterns); Note: Only Coffee theme is WCAG-compliant per memory/feedback_a11y_coffee_only.md — test on Coffee theme","Manual"
+"CFG-FILE-012","[JOURNEY] Attached files download from the cart and from Order details after the order is placed","Configurable Products > File Sections > Attachment retrieval","Critical","BL-CART-015",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Optional File section 'Design Upload' at {{FRONT_URL}}@td(CFG_FILE_HOODIE.url) takes up to 5 files within the storefront's 1 MiB fallback. Buyer {{USER_EMAIL}} has an empty cart. Fixture files exist on disk. Any assertion on a downloaded size compares to the SIZE ON DISK of the file that was uploaded, never to a size declared in an alias. When the case places an order it completes any required shipping or payment selection with the buyer's defaults. The case places its own order (terminal) and records the order number.","product=@td(CFG_FILE_HOODIE.url), file_a=@td(CFG_TEST_FILES.validPdf.path), file_b=@td(UPLOAD_FIXTURES.primary.path), user={{USER_EMAIL}}, front={{FRONT_URL}}","--- SCREEN: PDP ---
+[NAV] {{FRONT_URL}}@td(CFG_FILE_HOODIE.url)
+[WAIT] 'Design Upload' file control is visible
+[ACT] upload file_a through 'Design Upload'
+[WAIT] file_a appears in the uploaded files list
+[ACT] upload file_b through 'Design Upload'
+[WAIT] file_b appears in the uploaded files list
+[CAPTURE] size_a, size_b = byte size on disk of each uploaded file; name_a, name_b = their file names
+[ACT] click 'Add to cart'
+[WAIT] success notification is visible
+--- SCREEN: Cart ---
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the Components list of the configured line is visible
+[ASSERT] the 'Design Upload' value lists name_a and name_b as two separate link rows
+[CAPTURE] href_cart_a, href_cart_b = href of each link row; url_before = page URL
+[ACT] click 'name_a'
+[WAIT] the browser download event fires
+[CAPTURE] download_name, download_size, status of GET /api/files/{id}
+[CAPTURE] url_after = page URL
+[ASSERT] url_after equals url_before
+[ACT] click 'name_b'
+[WAIT] the browser download event fires
+[CAPTURE] download_name, download_size, status of GET /api/files/{id}
+--- SCREEN: Order placement ---
+[ACT] click 'Place order'
+[WAIT] order confirmation shows an order number
+[CAPTURE] order_number
+--- SCREEN: Order details ---
+[NAV] {{FRONT_URL}}/account/orders
+[ACT] click the row of order_number
+[WAIT] order details with the line configuration table is visible
+[ASSERT] the file value lists name_a and name_b as two separate link rows
+[CAPTURE] href_order_a, href_order_b = href of each link row
+[ACT] click 'name_a'
+[WAIT] the browser download event fires
+[CAPTURE] download_name, download_size, status of GET /api/files/{id}
+[ACT] click 'name_b'
+[WAIT] the browser download event fires
+[CAPTURE] download_name, download_size, status of GET /api/files/{id}
+[ASSERT] page URL is still the order details page
+--- LAYER: API ---
+[GQL] Query.orders for order_number: read configurationItems.files.url of the line
+[HTTP] GET each files url with the buyer's bearer token","[DOM] the cart Components list holds exactly two 'a.configuration-items__file--link' rows with visible text name_a and name_b and no comma between them {SPEC} VCST-5924 comment 2026-09-17 (separate files on lines) {OBSERVED} 3x vcptcore-qa theme pr-2485-f6cd22b2
+[DOM] each cart 'a.configuration-items__file--link' carries href = /api/files/{id} and download = its own file name {SPEC} PR vc-frontend#2485 contract {OBSERVED} 3x vcptcore-qa theme pr-2485-f6cd22b2
+[STATE] each cart click gives one download event: download_name equals name_a / name_b, download_size equals size_a / size_b, status 200 {SPEC} VCST-5996 cancelled: download is the accepted behaviour
+[STATE] page URL after each click equals page URL before it and no new tab opens {SPEC} PR vc-frontend#2485 contract (click.prevent)
+[STATE] the order lists the same two files as links on Order details {BL} BL-CART-015 (configuration carries to the order)
+[STATE] each Order details click downloads its own file, download_size equals size_a / size_b and status is 200, never 403 {SPEC} VCST-5995 resolution (order owner can read) {OBSERVED} 3x vcptcore-qa theme pr-2485-f6cd22b2
+[DATA] href_order_a == href_cart_a and href_order_b == href_cart_b and both equal Query.orders configurationItems.files.url {OBSERVED} 3x vcptcore-qa theme pr-2485-f6cd22b2
+[STATE] no click ends on the Access denied page (/403) {SPEC} VCST-5995 resolution","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, console.error with TypeError, Order details click lands on /403 Access denied (mid-journey: files readable in the cart, refused on the order), page URL changes after a download click, a downloaded size differs from the uploaded file's size on disk","Remove the configured cart line; orders and quotes created by the case stay (terminal) and are recorded by number in the run evidence","VCST-5924 · Archetype:PARITY · Technique:FLOW · Behavior:cat.cfg.order · VCST-5995 · VCST-5996 · BL-CART-015","Draft"
+"CFG-FILE-013","Cart components list shows each attached file as its own download link","Configurable Products > File Sections > Attachment retrieval","High","BL-CART-015",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Optional File section 'Design Upload' at {{FRONT_URL}}@td(CFG_FILE_HOODIE.url) takes up to 5 files within the storefront's 1 MiB fallback. Buyer {{USER_EMAIL}} has an empty cart. Fixture files exist on disk. Any assertion on a downloaded size compares to the SIZE ON DISK of the file that was uploaded, never to a size declared in an alias. When the case places an order it completes any required shipping or payment selection with the buyer's defaults.","product=@td(CFG_FILE_HOODIE.url), file_a=@td(CFG_TEST_FILES.validPdf.path), file_b=@td(UPLOAD_FIXTURES.primary.path), user={{USER_EMAIL}}","[NAV] {{FRONT_URL}}@td(CFG_FILE_HOODIE.url)
+[WAIT] 'Design Upload' file control is visible
+[ACT] upload file_a through 'Design Upload'
+[WAIT] file_a appears in the uploaded files list
+[ACT] upload file_b through 'Design Upload'
+[WAIT] file_b appears in the uploaded files list
+[CAPTURE] name_a, name_b = the two file names
+[ACT] click 'Add to cart'
+[WAIT] success notification is visible
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the Components list of the configured line is visible
+[CAPTURE] link_rows = every 'a.configuration-items__file--link' element in the line's Components list with its href, download and title attributes
+[CAPTURE] value_text = visible text of the 'Design Upload' value cell","[COUNT] link_rows equals 2, the number of uploaded files {SPEC} PR vc-frontend#2485 contract (one row per file)
+[DOM] first 'a.configuration-items__file--link' has download = name_a and title = name_a, second has download = name_b and title = name_b, each href is /api/files/{id} {SPEC} PR vc-frontend#2485 contract {OBSERVED} 3x vcptcore-qa theme pr-2485-f6cd22b2
+[DOM] value_text of the 'Design Upload' cell contains no ',' between name_a and name_b {SPEC} VCST-5924 comment 2026-09-17 (separate files on lines)
+[DATA] the two href values differ {SPEC} PR vc-frontend#2485 contract (each row keeps its own file url)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","Remove the configured cart line; orders and quotes created by the case stay (terminal) and are recorded by number in the run evidence","VCST-5924 · Archetype:RENDER · Technique:EP · Behavior:cat.cfg.cart-line.components-list · PR vc-frontend#2485","Draft"
+"CFG-FILE-014","Clicking a cart file link downloads that file and keeps the buyer on the cart","Configurable Products > File Sections > Attachment retrieval","High","BL-CART-015",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Optional File section 'Design Upload' at {{FRONT_URL}}@td(CFG_FILE_HOODIE.url) takes up to 5 files within the storefront's 1 MiB fallback. Buyer {{USER_EMAIL}} has an empty cart. Fixture files exist on disk. Any assertion on a downloaded size compares to the SIZE ON DISK of the file that was uploaded, never to a size declared in an alias. When the case places an order it completes any required shipping or payment selection with the buyer's defaults.","product=@td(CFG_FILE_HOODIE.url), file_a=@td(CFG_TEST_FILES.validPdf.path), user={{USER_EMAIL}}","[NAV] {{FRONT_URL}}@td(CFG_FILE_HOODIE.url)
+[WAIT] 'Design Upload' file control is visible
+[ACT] upload file_a through 'Design Upload'
+[WAIT] file_a appears in the uploaded files list
+[CAPTURE] size_a = byte size on disk of file_a; name_a = its file name
+[ACT] click 'Add to cart'
+[WAIT] success notification is visible
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the Components list of the configured line is visible
+[CAPTURE] tabs_before = number of open tabs; url_before = page URL
+[ACT] click 'name_a'
+[WAIT] the browser download event fires
+[CAPTURE] download_name, download_size, status of GET /api/files/{id}
+[CAPTURE] tabs_after = number of open tabs; url_after = page URL
+[ACT] click 'name_a'
+[WAIT] the browser download event fires
+[CAPTURE] download_name, download_size, status of GET /api/files/{id}","[STATE] one download event with download_name equal to name_a and download_size equal to size_a {SPEC} VCST-5996 cancelled: download is the accepted behaviour {OBSERVED} 3x vcptcore-qa theme pr-2485-f6cd22b2 (sha256 of the download matched the upload)
+[STATE] status of GET /api/files/{id} is 200 {SPEC} VCST-5996 cancelled: download is the accepted behaviour
+[STATE] url_after equals url_before and tabs_after equals tabs_before {SPEC} PR vc-frontend#2485 contract (click.prevent, no navigation)
+[STATE] the second click downloads the same file again with the same download_size {SPEC} VCST-5996 cancelled: download is the accepted behaviour
+[DOM] no toast notification is shown after either click, the notification area text does not contain 'error' {SPEC} PR vc-frontend#2485 contract","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","Remove the configured cart line; orders and quotes created by the case stay (terminal) and are recorded by number in the run evidence","VCST-5924 · Archetype:SILENT · Technique:EG · Behavior:cat.cfg.cart-line.components-list · PR vc-frontend#2485","Draft"
+"CFG-FILE-015","Order with five mixed-type attachments keeps every file downloadable with its own bytes","Configurable Products > File Sections > Attachment retrieval","Medium","BL-CART-015",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Optional File section 'Design Upload' at {{FRONT_URL}}@td(CFG_FILE_HOODIE.url) takes up to 5 files within the storefront's 1 MiB fallback. Buyer {{USER_EMAIL}} has an empty cart. Fixture files exist on disk. Any assertion on a downloaded size compares to the SIZE ON DISK of the file that was uploaded, never to a size declared in an alias. When the case places an order it completes any required shipping or payment selection with the buyer's defaults. The five files are pdf, png, xlsx, jpg and svg with five different byte sizes. If the section rejects one type the case is BLOCKED on that type, never FAIL. The case places its own order (terminal).
+The 5th file must be an ALLOWED type: svg is rejected with ""File format is not allowed"" and still consumes one of the 5 slots (REG-2026-10-13-1511)","product=@td(CFG_FILE_HOODIE.url), file_1=@td(CFG_TEST_FILES.validPdf.path), file_2=@td(UPLOAD_FIXTURES.primary.path), file_3=@td(UPLOAD_FIXTURES.smallXlsx.path), file_4=@td(UPLOAD_FIXTURES.jpg.path), file_5=AGENT-TEST-5924-five.txt generated in-case (allowed .txt, byte size distinct from files 1-4), user={{USER_EMAIL}}","[NAV] {{FRONT_URL}}@td(CFG_FILE_HOODIE.url)
+[WAIT] 'Design Upload' file control is visible
+[ACT] upload file_1 through 'Design Upload'
+[WAIT] file_1 appears in the uploaded files list
+[ACT] upload file_2 through 'Design Upload'
+[WAIT] file_2 appears in the uploaded files list
+[ACT] upload file_3 through 'Design Upload'
+[WAIT] file_3 appears in the uploaded files list
+[ACT] upload file_4 through 'Design Upload'
+[WAIT] file_4 appears in the uploaded files list
+[ACT] upload file_5 through 'Design Upload'
+[WAIT] file_5 appears in the uploaded files list
+[ASSERT] the 'Design Upload' file control is disabled at the limit of 5 files
+[CAPTURE] size_1 .. size_5 = byte size on disk of each file; name_1 .. name_5 = their file names
+[ACT] click 'Add to cart'
+[WAIT] success notification is visible
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the Components list of the configured line is visible
+[ACT] click 'Place order'
+[WAIT] order confirmation shows an order number
+[CAPTURE] order_number
+[NAV] {{FRONT_URL}}/account/orders
+[ACT] click the row of order_number
+[WAIT] order details with the line configuration table is visible
+[CAPTURE] link_rows = every 'a.configuration-items__file--link' element of the line with its href
+[ACT] click 'name_1'
+[WAIT] the browser download event fires
+[CAPTURE] download_name, download_size, status of GET /api/files/{id}
+[ACT] click 'name_2'
+[WAIT] the browser download event fires
+[CAPTURE] download_name, download_size, status of GET /api/files/{id}
+[ACT] click 'name_3'
+[WAIT] the browser download event fires
+[CAPTURE] download_name, download_size, status of GET /api/files/{id}
+[ACT] click 'name_4'
+[WAIT] the browser download event fires
+[CAPTURE] download_name, download_size, status of GET /api/files/{id}
+[ACT] click 'name_5'
+[WAIT] the browser download event fires
+[CAPTURE] download_name, download_size, status of GET /api/files/{id}","[COUNT] link_rows equals 5 {SPEC} the PDP maximum is 5 files
+[DATA] the five href values are pairwise different {SPEC} PR vc-frontend#2485 contract (one row per file)
+[STATE] for each i from 1 to 5 download_name equals name_i, download_size equals size_i and status is 200 {SPEC} VCST-5995 resolution (order owner can read)
+[STATE] no two downloads return the same size {SPEC} each link serves its own file
+[STATE] page URL stays the order details page after every click {SPEC} PR vc-frontend#2485 contract (click.prevent)","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, console.error with TypeError","Remove the configured cart line; orders and quotes created by the case stay (terminal) and are recorded by number in the run evidence","VCST-5924 · Archetype:BOUNDARY · Technique:BVA · Behavior:cat.cfg.order · VCST-5995","Draft"
+"CFG-FILE-016","Quote created from a cart lists the attached files and the buyer can download them","Configurable Products > File Sections > Attachment retrieval","Medium","BL-CART-015",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Optional File section 'Design Upload' at {{FRONT_URL}}@td(CFG_FILE_HOODIE.url) takes up to 5 files within the storefront's 1 MiB fallback. Buyer {{USER_EMAIL}} has an empty cart. Fixture files exist on disk. Any assertion on a downloaded size compares to the SIZE ON DISK of the file that was uploaded, never to a size declared in an alias. When the case places an order it completes any required shipping or payment selection with the buyer's defaults. The buyer can request a quote from the cart (RFQ enabled for the account); when 'Add cart items to quote' is not offered the case is BLOCKED. The case creates its own quote (terminal).","product=@td(CFG_FILE_HOODIE.url), file_a=@td(CFG_TEST_FILES.validPdf.path), file_b=@td(UPLOAD_FIXTURES.primary.path), user={{USER_EMAIL}}","[NAV] {{FRONT_URL}}@td(CFG_FILE_HOODIE.url)
+[WAIT] 'Design Upload' file control is visible
+[ACT] upload file_a through 'Design Upload'
+[WAIT] file_a appears in the uploaded files list
+[ACT] upload file_b through 'Design Upload'
+[WAIT] file_b appears in the uploaded files list
+[CAPTURE] size_a, size_b = byte size on disk; name_a, name_b = file names
+[ACT] click 'Add to cart'
+[WAIT] success notification is visible
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the Components list of the configured line is visible
+[ACT] click 'Add cart items to quote'
+[WAIT] the quote form is visible
+[ACT] fill the minimum required quote fields
+[ACT] click the form's submit button
+[WAIT] quote confirmation shows a quote number
+[CAPTURE] quote_number
+[NAV] {{FRONT_URL}}/account/quotes
+[ACT] click the row of quote_number
+[WAIT] the quote line with its configuration is visible
+[CAPTURE] link_rows = every 'a.configuration-items__file--link' element of the quote line with its href
+[ACT] click 'name_a'
+[WAIT] the browser download event fires
+[CAPTURE] download_name, download_size, status of GET /api/files/{id}
+[ACT] click 'name_b'
+[WAIT] the browser download event fires
+[CAPTURE] download_name, download_size, status of GET /api/files/{id}","[COUNT] link_rows equals 2 with visible text name_a and name_b {SPEC} PR vc-frontend#2485 contract (quote-line-items renders the same component)
+[STATE] download_size equals size_a for name_a and size_b for name_b and status is 200, never 404 {SPEC} VCST-5999 resolution (quote keeps readable files)
+[STATE] page URL stays the quote page after each click {SPEC} PR vc-frontend#2485 contract (click.prevent)
+[DATA] each quote link href equals the url the cart line carried before the quote was created {SPEC} VCST-5999 (same url, quote-owned)","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, console.error with TypeError, quote shows the file names but a click returns 404 (file deleted when the quote was created)","Remove the configured cart line; orders and quotes created by the case stay (terminal) and are recorded by number in the run evidence","VCST-5924 · Archetype:PARITY · Technique:EP · Behavior:cat.cfg.quote · VCST-5999","Draft"
+"CFG-FILE-017","Saved for later and back keeps the line file links downloadable","Configurable Products > File Sections > Attachment retrieval","Medium","BL-CART-015",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Optional File section 'Design Upload' at {{FRONT_URL}}@td(CFG_FILE_HOODIE.url) takes up to 5 files within the storefront's 1 MiB fallback. Buyer {{USER_EMAIL}} has an empty cart. Fixture files exist on disk. Any assertion on a downloaded size compares to the SIZE ON DISK of the file that was uploaded, never to a size declared in an alias. When the case places an order it completes any required shipping or payment selection with the buyer's defaults.","product=@td(CFG_FILE_HOODIE.url), file_a=@td(CFG_TEST_FILES.validPdf.path), file_b=@td(UPLOAD_FIXTURES.primary.path), user={{USER_EMAIL}}","[NAV] {{FRONT_URL}}@td(CFG_FILE_HOODIE.url)
+[WAIT] 'Design Upload' file control is visible
+[ACT] upload file_a through 'Design Upload'
+[WAIT] file_a appears in the uploaded files list
+[ACT] upload file_b through 'Design Upload'
+[WAIT] file_b appears in the uploaded files list
+[CAPTURE] size_a, size_b = byte size on disk; name_a, name_b = file names
+[ACT] click 'Add to cart'
+[WAIT] success notification is visible
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the Components list of the configured line is visible
+[ACT] click 'Save for later' on the configured line
+[WAIT] the line appears in the saved-for-later list
+[CAPTURE] saved_card_text = text of the saved card (recorded only, the card is not expected to show the configuration)
+[ACT] click 'Move to cart' on the saved card
+[WAIT] the line is back in the cart with its Components list
+[CAPTURE] link_rows = every 'a.configuration-items__file--link' element of the line with its href
+[ACT] click 'name_a'
+[WAIT] the browser download event fires
+[CAPTURE] download_name, download_size, status of GET /api/files/{id}
+[ACT] click 'name_b'
+[WAIT] the browser download event fires
+[CAPTURE] download_name, download_size, status of GET /api/files/{id}","[COUNT] after the round trip link_rows equals 2 with visible text name_a and name_b {BL} BL-CART-015 (the configuration survives the round trip)
+[STATE] download_size equals size_a for name_a and size_b for name_b and status is 200 {BL} BL-CART-015 (no dead link after the new lineItemId)
+[STATE] page URL stays the cart after each click {SPEC} PR vc-frontend#2485 contract (click.prevent)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","Remove the configured cart line; orders and quotes created by the case stay (terminal) and are recorded by number in the run evidence","VCST-5924 · Archetype:LIFECYCLE · Technique:ST · Behavior:cat.cfg.cart-line.saved-for-later · BL-CART-015","Draft"
+"CFG-FILE-018","An 80-plus-character file name truncates inside the components cell","Configurable Products > File Sections > Attachment retrieval","Medium","BL-UI-004",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Optional File section 'Design Upload' at {{FRONT_URL}}@td(CFG_FILE_HOODIE.url) takes up to 5 files within the storefront's 1 MiB fallback. Buyer {{USER_EMAIL}} has an empty cart. Fixture files exist on disk. Any assertion on a downloaded size compares to the SIZE ON DISK of the file that was uploaded, never to a size declared in an alias. When the case places an order it completes any required shipping or payment selection with the buyer's defaults.","product=@td(CFG_FILE_HOODIE.url), long_name='AGENT-TEST-' + 70 characters 'x' + '.png' (84 characters) made in-case as a copy of @td(UPLOAD_FIXTURES.primary.path), user={{USER_EMAIL}}","[NAV] {{FRONT_URL}}@td(CFG_FILE_HOODIE.url)
+[WAIT] 'Design Upload' file control is visible
+[ACT] create long_name as a copy of the png fixture in a temp folder
+[ACT] upload long_name through 'Design Upload'
+[WAIT] long_name appears in the uploaded files list
+[ACT] click 'Add to cart'
+[WAIT] success notification is visible
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the Components list of the configured line is visible
+[VIEWPORT] 1280x900
+[PROBE:OVERFLOW]
+[CAPTURE] link_box = bounding box of the 'a.configuration-items__file--link' element; cell_box = bounding box of its table cell; title_text = its title attribute
+[VIEWPORT] 390
+[PROBE:OVERFLOW]
+[CAPTURE] link_box, cell_box at 390","[OVERFLOW] horizontal == false at 1280 and at 390 {BL} BL-UI-004
+[DOM] link_box lies inside cell_box at 1280 and at 390, the visible text is truncated and does not run out of the cell {BL} BL-UI-004
+[DOM] the 'a.configuration-items__file--link' title attribute equals the full long_name {SPEC} PR vc-frontend#2485 contract (title exposes the full name)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","Remove the configured cart line; orders and quotes created by the case stay (terminal) and are recorded by number in the run evidence","VCST-5924 · Archetype:RENDER · Technique:BVA · Behavior:cat.cfg.cart-line.components-list · BL-UI-004","Draft"
+"CFG-FILE-019","Two attached files with the same name both list and each downloads its own content","Configurable Products > File Sections > Attachment retrieval","Medium","BL-CART-015",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Optional File section 'Design Upload' at {{FRONT_URL}}@td(CFG_FILE_HOODIE.url) takes up to 5 files within the storefront's 1 MiB fallback. Buyer {{USER_EMAIL}} has an empty cart. Fixture files exist on disk. Any assertion on a downloaded size compares to the SIZE ON DISK of the file that was uploaded, never to a size declared in an alias. When the case places an order it completes any required shipping or payment selection with the buyer's defaults. Two copies are made in-case in two temp folders under the SAME name 'AGENT-TEST-same-name.pdf': same_a copies @td(CFG_TEST_FILES.validPdf.path), same_b copies @td(UPLOAD_FIXTURES.smallPdf.path), so bytes and sizes differ.
+The PDP refuses a second file with the same name (""Cannot upload file with the same name""), so the same-name pair is attached through the API, which accepts it (KB-18733D45). File-row order is not guaranteed (KB-E74D7680)","product=@td(CFG_FILE_HOODIE.url), same_a=copy of @td(CFG_TEST_FILES.validPdf.path) named AGENT-TEST-same-name.pdf, same_b=copy of @td(UPLOAD_FIXTURES.smallPdf.path) named AGENT-TEST-same-name.pdf, user={{USER_EMAIL}}","[ACT] create same_a in temp folder 1
+[ACT] create same_b in temp folder 2
+[CAPTURE] size_a = byte size of same_a; size_b = byte size of same_b (different from size_a)
+[ACT] via the REST API, POST {{BACK_URL}}/api/files/product-configuration with same_a using the buyer bearer token
+[CAPTURE] url_a = returned url
+[ACT] via the REST API, POST {{BACK_URL}}/api/files/product-configuration with same_b using the buyer bearer token
+[CAPTURE] url_b = returned url
+[ACT] via the storefront xAPI, run the addItem mutation with productId=@td(CFG_FILE_HOODIE.productId) configurationSections=[{sectionId: @td(CFG_FILE_HOODIE.fileSectionId), type: File, fileUrls: [url_a, url_b]}]
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the Components list of the configured line is visible
+[CAPTURE] link_rows = every 'a.configuration-items__file--link' element of the line with its href
+[ACT] click the first AGENT-TEST-same-name.pdf link
+[WAIT] the browser download event fires
+[CAPTURE] download_1 name, size, status of GET /api/files/{id}
+[ACT] click the second AGENT-TEST-same-name.pdf link
+[WAIT] the browser download event fires
+[CAPTURE] download_2 name, size, status of GET /api/files/{id}","[COUNT] link_rows equals 2 {SPEC} PR vc-frontend#2485 contract (one row per attached file)
+[DATA] the two 'a.configuration-items__file--link' href values differ {SPEC} PR vc-frontend#2485 contract (each file keeps its own url)
+[STATE] the two download sizes are exactly {size_a, size_b} in either order, the two hrefs equal {url_a, url_b} and both status values are 200 {SPEC} each link serves its own file
+[DOM] both rows show the visible text 'AGENT-TEST-same-name.pdf' and neither row is dropped {SPEC} PR vc-frontend#2485 contract","[API] errors[] is empty in the addItem mutation response
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","Remove the configured cart line; orders and quotes created by the case stay (terminal) and are recorded by number in the run evidence","VCST-5924 · Archetype:SILENT · Technique:EG · Behavior:cat.cfg.cart-line.components-list · PR vc-frontend#2485","Draft"
+"CFG-FILE-020","Order details file links stay readable and operable at 768 and 390 px","Configurable Products > File Sections > Attachment retrieval","Medium","BL-UI-004, BL-UI-006, BL-A11Y-004",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Optional File section 'Design Upload' at {{FRONT_URL}}@td(CFG_FILE_HOODIE.url) takes up to 5 files within the storefront's 1 MiB fallback. Buyer {{USER_EMAIL}} has an empty cart. Fixture files exist on disk. Any assertion on a downloaded size compares to the SIZE ON DISK of the file that was uploaded, never to a size declared in an alias. When the case places an order it completes any required shipping or payment selection with the buyer's defaults. The case places its own order (terminal) and records the order number.","product=@td(CFG_FILE_HOODIE.url), file_a=@td(CFG_TEST_FILES.validPdf.path), file_b=@td(UPLOAD_FIXTURES.primary.path), user={{USER_EMAIL}}","[NAV] {{FRONT_URL}}@td(CFG_FILE_HOODIE.url)
+[WAIT] 'Design Upload' file control is visible
+[ACT] upload file_a through 'Design Upload'
+[WAIT] file_a appears in the uploaded files list
+[ACT] upload file_b through 'Design Upload'
+[WAIT] file_b appears in the uploaded files list
+[ACT] click 'Add to cart'
+[WAIT] success notification is visible
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the Components list of the configured line is visible
+[ACT] click 'Place order'
+[WAIT] order confirmation shows an order number
+[CAPTURE] order_number
+[NAV] {{FRONT_URL}}/account/orders
+[ACT] click the row of order_number
+[WAIT] order details with the line configuration table is visible
+[ASSERT] the configuration table holds two 'a.configuration-items__file--link' rows
+[VIEWPORT] 768
+[PROBE:OVERFLOW]
+[PROBE:TOUCH] the file link rows
+[CAPTURE] boxes (x, y, width, height) of the two 'a.configuration-items__file--link' rows at 768
+[VIEWPORT] 390
+[PROBE:OVERFLOW]
+[PROBE:TOUCH] the file link rows
+[CAPTURE] boxes of the two 'a.configuration-items__file--link' rows at 390","[DOM] at 768 and at 390 the two 'a.configuration-items__file--link' boxes do not intersect and are not clipped by their table cell {BL} BL-UI-004
+[OVERFLOW] horizontal == false at 768 {BL} BL-UI-004
+[OVERFLOW] horizontal == false at 390 {BL} BL-UI-004
+[TOUCH] belowAA == 0 at 768 {BL} BL-UI-006
+[TOUCH] belowAA == 0 at 390 {BL} BL-UI-006 and BL-A11Y-004 (WCAG 2.2 SC 2.5.8, 24x24 CSS px minimum; expected to fail while VCST-5998 is open)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql, a file link target measures under 24x24 CSS px at 390 (VCST-5998)","Remove the configured cart line; orders and quotes created by the case stay (terminal) and are recorded by number in the run evidence","VCST-5924 · Archetype:RENDER · Technique:EP · Behavior:cat.cfg.order.view-columns · Catches:VCST-5998 · BL-UI-004 · BL-UI-006 · BL-A11Y-004","Draft"
+"CFG-FILE-021","Order details file links work by keyboard and announce the file name","Configurable Products > File Sections > Attachment retrieval","Medium","BL-A11Y-001, BL-A11Y-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Optional File section 'Design Upload' at {{FRONT_URL}}@td(CFG_FILE_HOODIE.url) takes up to 5 files within the storefront's 1 MiB fallback. Buyer {{USER_EMAIL}} has an empty cart. Fixture files exist on disk. Any assertion on a downloaded size compares to the SIZE ON DISK of the file that was uploaded, never to a size declared in an alias. When the case places an order it completes any required shipping or payment selection with the buyer's defaults. The case places its own order (terminal) and records the order number.
+File-row order is not guaranteed to match upload order (KB-E74D7680): bind each link by its own name, never by position","product=@td(CFG_FILE_HOODIE.url), file_a=@td(CFG_TEST_FILES.validPdf.path), file_b=@td(UPLOAD_FIXTURES.primary.path), user={{USER_EMAIL}}","[NAV] {{FRONT_URL}}@td(CFG_FILE_HOODIE.url)
+[WAIT] 'Design Upload' file control is visible
+[ACT] upload file_a through 'Design Upload'
+[WAIT] file_a appears in the uploaded files list
+[ACT] upload file_b through 'Design Upload'
+[WAIT] file_b appears in the uploaded files list
+[ACT] click 'Add to cart'
+[WAIT] success notification is visible
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the Components list of the configured line is visible
+[ACT] click 'Place order'
+[WAIT] order confirmation shows an order number
+[CAPTURE] order_number
+[NAV] {{FRONT_URL}}/account/orders
+[ACT] click the row of order_number
+[WAIT] order details with the line configuration table is visible
+[ASSERT] the configuration table holds two 'a.configuration-items__file--link' rows
+[CAPTURE] name_a, name_b = the two file names; size_a, size_b = byte size on disk
+[KEY] Tab until focus lands on the first file link
+[CAPTURE] focus_1 = accessible name and focus indicator of the focused link
+[KEY] Tab
+[CAPTURE] focus_2 = accessible name of the focused link
+[KEY] Shift+Tab
+[KEY] Enter
+[WAIT] the browser download event fires
+[CAPTURE] download_name, download_size, url_after = page URL","[STATE] Tab reaches the first then the second 'a.configuration-items__file--link' in document order {BL} BL-A11Y-001
+[DOM] the focused 'a.configuration-items__file--link' shows a visible focus indicator (outline or ring) {BL} BL-A11Y-001
+[DOM] each focused link accessible name equals its own title attribute and is one of {name_a, name_b}; the two names differ; no ',' inside either name {BL} BL-A11Y-002
+[STATE] Enter on the focused link gives a download whose download_name equals that link's accessible name and whose download_size equals the on-disk size of the file with that name, page URL unchanged {BL} BL-A11Y-001 {SPEC} VCST-5996 cancelled: download is the accepted behaviour","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","Remove the configured cart line; orders and quotes created by the case stay (terminal) and are recorded by number in the run evidence","VCST-5924 · Archetype:RENDER · Technique:EP · Behavior:cat.cfg.order.view-columns · BL-A11Y-001 · BL-A11Y-002","Draft"
+"CFG-FILE-022","Product and Text sections still show their values after the file-row change","Configurable Products > File Sections > Attachment retrieval","Medium","BL-CART-015",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Configurable cake at {{FRONT_URL}}@td(CFG_CHECKLIST_ALLTYPES.url) with required Layers (Product), Text (Text), 'Photo for the cake topper' (File) and Filling (Product). Buyer {{USER_EMAIL}} has an empty cart. The case places its own order (terminal) with the buyer's default shipping and payment.","product=@td(CFG_CHECKLIST_ALLTYPES.url), file_a=@td(UPLOAD_FIXTURES.primary.path), text_value=AGENT-TEST-note-1 (typed in-case), user={{USER_EMAIL}}","[NAV] {{FRONT_URL}}@td(CFG_CHECKLIST_ALLTYPES.url)
+[WAIT] the configuration widget is visible
+[ACT] select the first option in 'Layers'
+[WAIT] the option shows the selected state
+[CAPTURE] layers_label = the selected option's label
+[ACT] fill 'Text': text_value
+[WAIT] the field keeps the typed value
+[ACT] upload file_a through 'Photo for the cake topper'
+[WAIT] file_a appears in the uploaded files list
+[CAPTURE] name_a
+[ACT] select the first option in 'Filling'
+[WAIT] the option shows the selected state
+[CAPTURE] filling_label = the selected option's label
+[ACT] click 'Add to cart'
+[WAIT] success notification is visible
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the Components list of the configured line is visible
+[CAPTURE] cart_values = the value cell of every row in the Components list
+[ACT] click 'Place order'
+[WAIT] order confirmation shows an order number
+[CAPTURE] order_number
+[NAV] {{FRONT_URL}}/account/orders
+[ACT] click the row of order_number
+[WAIT] order details with the line configuration table is visible
+[CAPTURE] order_values = the value cell of every row in the configuration table","[DOM] cart rows: the 'Layers' value equals layers_label, the 'Filling' value equals filling_label, the 'Text' value equals text_value exactly {SPEC} PR vc-frontend#2485 contract (non-file path unchanged)
+[DOM] cart row 'Photo for the cake topper' holds one 'a.configuration-items__file--link' with visible text name_a, and no other row holds a link {SPEC} PR vc-frontend#2485 contract
+[DOM] Order details rows carry the same Layers, Filling and Text values and the same name_a 'a.configuration-items__file--link' {SPEC} PR vc-frontend#2485 contract
+[DOM] no value cell in the cart or on Order details is empty or reads 'undefined' {SPEC} PR vc-frontend#2485 contract","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, console.error with TypeError","Remove the configured cart line; orders and quotes created by the case stay (terminal) and are recorded by number in the run evidence","VCST-5924 · Archetype:PARITY · Technique:EG · Behavior:cat.cfg.cart-line.components-list · PR vc-frontend#2485","Draft"
+"CFG-FILE-023","Replacing a file through Edit configuration shows only the new file in the cart","Configurable Products > File Sections > Attachment retrieval","Low","BL-CART-015",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Optional File section 'Design Upload' at {{FRONT_URL}}@td(CFG_FILE_HOODIE.url) takes up to 5 files within the storefront's 1 MiB fallback. Buyer {{USER_EMAIL}} has an empty cart. Fixture files exist on disk. Any assertion on a downloaded size compares to the SIZE ON DISK of the file that was uploaded, never to a size declared in an alias. When the case places an order it completes any required shipping or payment selection with the buyer's defaults. The case uses the cart line's 'Edit configuration' link (PDP with ?lineItemId=). The PDP file list may offer no remove control for an attached file; when file_a cannot be removed or replaced the case is BLOCKED, not FAIL.","product=@td(CFG_FILE_HOODIE.url), file_a=@td(CFG_TEST_FILES.validPdf.path), file_b=@td(UPLOAD_FIXTURES.primary.path), user={{USER_EMAIL}}","[NAV] {{FRONT_URL}}@td(CFG_FILE_HOODIE.url)
+[WAIT] 'Design Upload' file control is visible
+[ACT] upload file_a through 'Design Upload'
+[WAIT] file_a appears in the uploaded files list
+[ACT] click 'Add to cart'
+[WAIT] success notification is visible
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the Components list of the configured line is visible
+[CAPTURE] name_a = file_a name; size_b = byte size on disk of file_b
+[ACT] click 'Edit configuration' on the line
+[WAIT] the PDP opens with lineItemId in the URL and the button reads 'Update cart'
+[ACT] remove file_a from the 'Design Upload' list
+[WAIT] the uploaded files list is empty
+[ACT] upload file_b through 'Design Upload'
+[WAIT] file_b appears in the uploaded files list
+[CAPTURE] name_b = file_b name
+[ACT] click 'Update cart'
+[WAIT] the cart page loads with the updated line
+[CAPTURE] link_rows_after = every 'a.configuration-items__file--link' element of the line with its href
+[ACT] click 'name_b'
+[WAIT] the browser download event fires
+[CAPTURE] download_name, download_size, status of GET /api/files/{id}","[COUNT] link_rows_after equals 1 with visible text name_b and no row with name_a {SPEC} the line shows what is attached now
+[STATE] download_size equals size_b and status is 200 {SPEC} the line shows what is attached now (the new file is downloadable)
+[COUNT] the cart holds one line for the product, no duplicate was created {SPEC} reconfigure replaces the line (CFG-EDIT-003)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","Remove the configured cart line; orders and quotes created by the case stay (terminal) and are recorded by number in the run evidence","VCST-5924 · Archetype:LIFECYCLE · Technique:ST · Behavior:cat.cfg.cart-line.reconfigure · CFG-EDIT-003","Draft"

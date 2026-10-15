@@ -1,6 +1,6 @@
 # [Missions] Redesign polish: 7 small UI and accessibility fixes — **P3**
 
-## Status: CONFIRMED (live: 3x, 4a, 4v, C1 REG-2026-10-01-1243; #4 re-investigated `/qa-investigate` 2026-10-01; #5–#7 `/qa-design` 2026-10-01, #5 root-caused `/qa-investigate` 2026-10-01, #1–#3 re-confirmed on the same build)
+## Status: FIXED (verified 2026-10-13 on PR #2548 build, VERIFIED WITH NOTES)
 **Found by:** agent — testing VCST-5957 (`/qa-test` + `/qa-design`, 2026-10-01)
 **Tracker:** VCST-6145 (Bug, relates to VCST-5957) — filed 2026-10-01 at the QA engineer's request as one rollup of small fixes.
 **Provenance:** #1–#4 and #7 IN-SCOPE — introduced by vc-frontend PR #2524. #5 and #6 PRE-EXISTING — the same markup/CSS is on `dev` (`pages/missions.vue` has no grid skeleton; `sku-mission-modal.vue` already applies `order-last`); rolled in because they sit on the same surface and are small.
@@ -21,3 +21,10 @@
 
 ## Fix Routing
 `VirtoCommerce/vc-frontend` · `client-app/modules/loyalty/components/mission-card.vue` (#1, #3, #7 banner height / overlay / shadow), `order-mission-modal.vue` / `sku-mission-modal.vue` (#2), `sku-mission-modal.vue:108-110` (#4 — introduced by `4858ac66` on PR #2524; move the hint into the summary `<dl>` or the `#actions` footer), `sku-mission-modal.vue` `&__action--secondary` `order-last` + `#actions` markup (#6), `pages/missions.vue` card grid `v-for` (#5), `missions-banner.vue` title tracking (#7). #3 may instead be an artwork/content fix (design task VCDZ-897).
+
+## Resolution
+- **Fixed in:** vc-frontend PR #2548 (`fix(VCST-6145): missions redesign polish`), head `6fff28ab`, theme `2.60.0-pr-2548-6fff-6fff28ab` — PR still OPEN at verification time.
+- **Tracker:** VCST-6145 → Tested (2026-10-13), comment 111926.
+- **Method:** `/qa-verify-fix` — RED on vcst-qa (theme `2.60.0-pr-2511-81f1`, no fix) vs GREEN on a local frontend-only build of the PR bound to vcst-qa data; same account. Items #1–#7 GREEN 3/3; Chromium CLS 0.097–0.140 → 0.012.
+- **Open notes:** placeholder drawn at full banner height; skeleton row ~24 px shorter than a card row; over-stock quantity still counts a target as met (likely pre-existing). Re-smoke on vcst-qa after merge + deploy.
+- **Evidence:** `reports/tickets/Sprint26-20/VCST-6145/verification-report.md`, `evidence.html`.
