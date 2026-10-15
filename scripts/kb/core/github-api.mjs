@@ -43,6 +43,20 @@ export function deniedCode(res, json) {
   return 'forbidden';
 }
 
+/**
+ * When a rate-limited request may be retried, as an ISO time. `retry-after` (seconds) first, then
+ * `x-ratelimit-reset` (epoch seconds) when the primary limit is spent; a secondary limit names
+ * neither, and GitHub's guidance for it is to wait at least a minute -- so a minute.
+ */
+export function retryAtOf(res, json, now = Date.now()) {
+  const get = (h) => (typeof res?.headers?.get === 'function' ? res.headers.get(h) : null);
+  const after = Number(get('retry-after'));
+  if (Number.isFinite(after) && after > 0) return new Date(now + after * 1000).toISOString();
+  const reset = Number(get('x-ratelimit-reset'));
+  if (get('x-ratelimit-remaining') === '0' && Number.isFinite(reset) && reset * 1000 > now) return new Date(reset * 1000).toISOString();
+  return new Date(now + 60_000).toISOString();
+}
+
 /** The denials that will not cure themselves: the same token will be refused again until somebody acts. */
 export const ACCESS_CODES = Object.freeze(new Set(['no-write-access', 'bad-credentials']));
 
@@ -188,7 +202,11 @@ export function githubApi({
       // WHICH denial (VCST-6378): a token that cannot write and a token that is out of requests are both
       // a 403, and only the first is permanent. Classified here, where the status and the remote's
       // words are both in hand, so no caller has to re-read the prose.
-      ...(reason === 'denied' ? { code: deniedCode(res, json) } : {}),
+      ...(reason === 'denied' ? { code: deniedCode(res, json) } : res.status === 429 ? { code: 'rate-limited' } : {}),
+      // WHEN TO TRY AGAIN, for a rate limit (VCST-6378): GitHub says it in a header. 123 pushes on 2026-10-12
+      // retried into the same limit, one per turn, because nothing read it.
+      ...((reason === 'denied' && deniedCode(res, json) === 'rate-limited') || res.status === 429
+        ? { retryAt: retryAtOf(res, json) } : {}),
       detail: `HTTP ${res.status} ${method} ${path}${json?.message ? ` — ${json.message}` : ''}`,
       json,
     };

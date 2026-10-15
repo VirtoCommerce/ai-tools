@@ -45,7 +45,7 @@ import { liveBuild } from './core/build.mjs';
 const HOLD_EVERYWHERE = 'To hold it everywhere, set KB_PUSH_CONFIRM=1 in the `env` of .claude/settings.local.json '
   + 'and restart the session: a shell variable does not reach the MCP server.';
 
-const BOOLEAN_FLAGS = new Set(['dry-run', 'no-sweep', 'json', 'help', 'verify']);
+const BOOLEAN_FLAGS = new Set(['dry-run', 'no-sweep', 'json', 'help', 'verify', 'auto']);
 
 /** A pacing constant in whole minutes, for prose — derived, so the text cannot drift from the code. */
 function minutes(ms) { return Math.round(ms / 60_000); }
@@ -176,6 +176,7 @@ async function main(argv) {
       if (age !== null && age >= STALE_QUEUE_MIN) out(`  WARNING the oldest queued line is ${Math.round(age / 60)} h old — these writes have not reached the base; see "last push" below`);
     }
     const p = r.push ?? {};
+    if (p.rateLimitedUntil && Date.parse(p.rateLimitedUntil) > Date.now()) out(`  RATE LIMITED — GitHub asked for no push before ${p.rateLimitedUntil}; the queue waits`);
     if (p.denied) out(`  NO WRITE ACCESS since ${p.denied.at} — ${accessWhy(p.denied.code)}`);
     out(`last push ${p.last ? `${p.last.state} at ${p.last.at}${p.last.commit ? ` ${p.last.commit.slice(0, 7)}` : ''}${p.last.why ? ` — ${p.last.why}` : ''}` : 'none recorded on this machine'}`);
     // Sticky until a push LANDS: a later "nothing to do" must not hide that the queue never drained.
@@ -315,6 +316,9 @@ async function main(argv) {
       dryRun: Boolean(args.flags['dry-run']),
       sweep: !args.flags['no-sweep'],
       gate,
+      // `--auto`: the Stop hook's push, which lets log-only lines wait for company (VCST-6378). A person
+      // typing `kb push` means now.
+      auto: Boolean(args.flags.auto),
     });
     if (json) { out(JSON.stringify(r, null, 2)); }
     else if (r.state === 'pushed') {

@@ -669,12 +669,19 @@ export async function recordPush(r, { env = process.env, at = new Date() } = {})
     const denied = row.state === 'failed' && ACCESS_CODES.has(r?.code) && r?.tokenPrint
       ? { code: r.code, at: row.at, token: r.tokenPrint }
       : row.state === 'pushed' ? null : (prev.denied ?? null);
+    const rateUntil = row.state === 'failed' && r?.code === 'rate-limited'
+      ? (r.retryAt ?? new Date(at.getTime() + 60_000).toISOString())
+      : row.state === 'pushed' ? null
+        : (Date.parse(String(prev.rateLimitedUntil ?? '')) > at.getTime() ? prev.rateLimitedUntil : null);
     const next = {
       last: row,
       lastFailure: failed ? row : row.state === 'pushed' ? null : (prev.lastFailure ?? null),
       ...(row.state === 'pushed' ? { lastPushed: row } : prev.lastPushed ? { lastPushed: prev.lastPushed } : {}),
       ...(denied ? { denied } : {}),
       ...(prev.deniedNotified && denied ? { deniedNotified: prev.deniedNotified } : {}),
+      // OUT OF REQUESTS (VCST-6378): no push is attempted before GitHub's own retry time. A landed push
+      // clears it; any other outcome keeps it until it passes.
+      ...(rateUntil ? { rateLimitedUntil: rateUntil } : {}),
     };
     await mkdir(queueDir(env), { recursive: true });
     await writeFile(pushStatusPath(env), JSON.stringify(next, null, 2), 'utf8');
@@ -700,6 +707,12 @@ export function accessBlock(env = process.env, token = null, now = Date.now()) {
   if (!d || !token || d.token !== tokenPrint(token)) return null;
   const at = Date.parse(String(d.at ?? ''));
   return Number.isFinite(at) && now - at < DENIED_RECHECK_MS ? d : null;
+}
+
+/** The time pushes are held until because GitHub said so, when it is still ahead, else `null`. */
+export function rateHold(env = process.env, now = Date.now()) {
+  const until = readPushStatus(env).rateLimitedUntil;
+  return until && Date.parse(String(until)) > now ? until : null;
 }
 
 /** What the operator is told, once: what happened, that nothing is lost, and what to ask for. */

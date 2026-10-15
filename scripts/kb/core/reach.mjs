@@ -415,8 +415,13 @@ export function dropReach(dir, session) {
 // last, and the publisher keeps one per file (`fullestSessionLines` in push.mjs). The idle harvest
 // stays as the backstop for whatever happened after the last send.
 
-/** How often a session with no other queue work pushes its own counters. */
-export const OWN_REACH_EVERY_MS = 30 * 60 * 1000;
+/**
+ * How often a session with no other queue work pushes its own counters. Was 30 min: on 2026-10-08..15
+ * that was 264 of 863 commits that changed nothing but a counter line, about two per session
+ * (VCST-6378). The counters ride every push the session makes anyway, and the idle harvest publishes
+ * the final state, so alone they need only say "this session is alive" now and then.
+ */
+export const OWN_REACH_EVERY_MS = 2 * 60 * 60 * 1000;
 
 /** `<session>.reach.sent` — what the last published line carried: `<work> <turns>`. Not `.reach.json`. */
 export const sentPath = (dir, session) => join(dir, `${session}.reach.sent`);

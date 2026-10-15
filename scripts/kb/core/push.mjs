@@ -43,7 +43,7 @@ import { flagDuplicateSessions } from './sync-base.mjs';
 import { gateQueue, loadSecrets } from './secret-gate.mjs';
 import {
   DISABLED_WHY, HELD_WHY, MUTATIONS, composeLine, isSynthetic, pushConfirmRequired, kbDisabled, log, metaTranscripts, orderQueue, queueDir, queuePath, readMeta,
-  readQueue, recordPush, releaseConsumed, runOf, sessionId, accessBlock, accessWhy, tokenPrint,
+  readQueue, recordPush, releaseConsumed, runOf, sessionId, accessBlock, accessWhy, rateHold, tokenPrint,
 } from './queue.mjs';
 import {
   REACH_IDLE_MS, dropReach, idleReaches, lineWork, markSent, ownReachDue, reachLine, reachPath, readReach, sessionKeyOf, unsent,
@@ -334,6 +334,9 @@ const stampFile = (env) => join(queueDir(env), '.last-flush');
  * make every `kb` invocation retry the push for as long as the network is down, which is exactly
  * the hammering PLAN §7 rules out ("no in-session retry loop"). The cadence is the retry policy.
  */
+/** How long an automatic push lets a queue of LOG lines only wait for company (VCST-6378). */
+export const LOG_BATCH_MS = 30 * 60 * 1000;
+
 export async function shouldSweep({ env = process.env, now = () => new Date() } = {}) {
   try {
     const s = await stat(stampFile(env));
@@ -750,6 +753,7 @@ async function flushOnce({
   includeMine = true,
   dryRun = false,
   gate = null,
+  auto = false,
   maxAttempts = MAX_ATTEMPTS,
   retryDelayMs = RETRY_DELAY_MS,
   sleep = (ms) => new Promise((r) => { setTimeout(r, ms); }),
@@ -861,6 +865,28 @@ async function flushOnce({
     return { state: 'nothing', session, why: 'the queue is empty' };
   }
 
+  // A LOG LINE WAITS FOR COMPANY (VCST-6378). An automatic push -- the Stop hook, the 5-minute own
+  // flush, the server's timer -- used to commit every turn's asks on their own: 325 of the 863 commits
+  // of 2026-10-08..15 carried nothing but log lines. A change to the base (capture / confirm / dispute)
+  // still goes at once, because somebody may be about to ask for it; a log line is for the report and
+  // can wait until it is LOG_BATCH_MS old, or ride the next write. Another session's file is old by
+  // construction (it is taken only when idle), so it goes too; so does a session's counter line alone,
+  // which has its own, slower cadence. The operator's `kb push` and the end of a session never wait.
+  if (auto && !dryRun) {
+    const real = loaded.flatMap((f) => (f.virtual ? [] : f.lines));
+    const changes = real.some((l) => MUTATIONS.includes(l.kind));
+    const foreign = loaded.some((f) => !f.mine);
+    const oldest = Math.min(...real.map((l) => Date.parse(String(l.at ?? ''))).filter(Number.isFinite));
+    if (real.length && !changes && !foreign && now().getTime() - oldest < LOG_BATCH_MS) {
+      return {
+        state: 'deferred',
+        session,
+        queued: real.length,
+        why: `only log lines, the oldest ${Math.round((now().getTime() - oldest) / 60000)} min old -- they go with the next change to the base, or once ${LOG_BATCH_MS / 60000} min old`,
+      };
+    }
+  }
+
   // WHO CALLED, derived from this machine's transcripts before anything leaves it (`core/caller.mjs`).
   // Before the secret gate, so the stamped line is the one the gate judges.
   // A CLI line is matched only inside the transcripts its own session recorded (`metaTranscripts`).
@@ -903,6 +929,12 @@ async function flushOnce({
   // THE SAME TOKEN WAS REFUSED ALREADY (VCST-6378): held without a request until `DENIED_RECHECK_MS`
   // has passed or the token changed. No `flush` line either -- the refusal is on record once, and 296
   // copies of it are what this replaces. A dry run reads, so it is never held.
+  // OUT OF REQUESTS (VCST-6378): GitHub said when to come back; nothing is sent before then.
+  const rateUntil = !dryRun && !injected ? rateHold(env, now().getTime()) : null;
+  if (rateUntil) {
+    await touchStamp({ env, now });
+    return { state: 'rate-held', session, code: 'rate-limited', queued: loaded.reduce((n, f) => n + f.lines.length, 0), why: `GitHub rate limit: no push before ${rateUntil}` };
+  }
   const blocked = !dryRun && !injected ? accessBlock(env, token, now().getTime()) : null;
   if (blocked) {
     await touchStamp({ env, now });
@@ -993,13 +1025,14 @@ async function flushOnce({
     // Which denial, and whose token (a fingerprint), so `recordPush` can hold the next push of it.
     ...(last?.code ? { code: last.code } : {}),
     ...(last?.code && token ? { tokenPrint: tokenPrint(token) } : {}),
+    ...(last?.retryAt ? { retryAt: last.retryAt } : {}),
   };
   if (dryRun) return { ...failed, dryRun: true };
   await touchStamp({ env, now });
   // A CLOSED CODE in the line, never `why` (VCST-6378): `why` carries GitHub's own message, which names
   // the token owner's numeric user id and a request id ("API rate limit exceeded for user ID …"), and
   // 123 such lines reached the public log on 2026-10-12. The operator still gets `why` in the result.
-  await log({ kind: 'flush', ok: false, attempts: attempt, reason, code: flushCode({ why, reason }) }, { env });
+  await log({ kind: 'flush', ok: false, attempts: attempt, reason, code: last?.code ?? flushCode({ why, reason }) }, { env });
   return failed;
 }
 
@@ -1050,7 +1083,7 @@ export async function sweepIfDue({ env = process.env, base = null, token = null,
     // flush is self-pacing instead — a successful push removes the queue file, so the next one
     // cannot come due until five minutes after the next line is written.
     if (!mineDue && !(await shouldSweep({ env, now }))) return { state: 'too-soon' };
-    return await flush({ env, base, token, now, fetchImpl, includeMine: mineDue, sweep: true });
+    return await flush({ env, base, token, now, fetchImpl, includeMine: mineDue, sweep: true, auto: true });
   } catch (err) {
     const r = { state: 'failed', why: String(err?.message ?? err) };
     await recordPush(r, { env, at: now() });

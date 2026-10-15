@@ -34,7 +34,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { REACH_IDLE_MS, advanceReach, idleReaches, markTried, ownReachDue } from '../../scripts/kb/core/reach.mjs';
 import {
-  accessBlock, accessWhy, claimDeniedNotice, hasSessionId, hookEnv, isSynthetic, kbDisabled, pushConfirmRequired, queueDir, runOf, sessionId,
+  accessBlock, accessWhy, claimDeniedNotice, rateHold, hasSessionId, hookEnv, isSynthetic, kbDisabled, pushConfirmRequired, queueDir, runOf, sessionId,
 } from '../../scripts/kb/core/queue.mjs';
 import { cachedWho } from '../../scripts/kb/core/who.mjs';
 import { writeToken } from '../../scripts/kb/core/token.mjs';
@@ -131,6 +131,8 @@ function main() {
   // THIS TOKEN WAS REFUSED and the refusal still holds (VCST-6378): the push would only say so again,
   // so no process is started. A changed token, or the re-check interval passing, lets the next one go.
   if (accessBlock(env, writeToken(env).token)) return;
+  // OUT OF REQUESTS until GitHub's retry time (VCST-6378): the push would only be held, so none starts.
+  if (rateHold(env)) return;
 
   // `$CLAUDE_PROJECT_DIR` is set for hooks; resolving from this file is the fallback that survives
   // being invoked from somewhere else.
@@ -148,7 +150,7 @@ function main() {
     out = openSync(logFile, 'a');
   } catch { /* an unwritable log must not cost the push */ }
 
-  const child = spawn(process.execPath, [join(root, 'scripts', 'kb', 'kb.mjs'), 'push'], {
+  const child = spawn(process.execPath, [join(root, 'scripts', 'kb', 'kb.mjs'), 'push', '--auto'], {
     cwd: root,
     detached: true,
     stdio: ['ignore', out, out],
