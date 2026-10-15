@@ -3092,5 +3092,37 @@
     "pass_rate": 66.67,
     "duration_minutes": 31.97,
     "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-10-15-1624",
+    "date": "2026-10-15",
+    "suiteId": "011",
+    "suiteName": "Checkout Flow",
+    "environment": "vcst",
+    "browser": "playwright-chrome",
+    "total": 21,
+    "passed": 18,
+    "failed": 1,
+    "blocked": 2,
+    "skipped": 0,
+    "pass_rate": 94.74,
+    "duration_minutes": 30.36,
+    "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-10-15-1624",
+    "date": "2026-10-15",
+    "suiteId": "043",
+    "suiteName": "Google Analytics",
+    "environment": "vcst",
+    "browser": "playwright-firefox",
+    "total": 33,
+    "passed": 30,
+    "failed": 1,
+    "blocked": 2,
+    "skipped": 0,
+    "pass_rate": 96.77,
+    "duration_minutes": 51.21,
+    "mode": "interactive"
   }
 ]

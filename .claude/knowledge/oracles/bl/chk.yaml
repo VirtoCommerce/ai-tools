@@ -27,10 +27,11 @@ rules:
       kind: manual
       ref: With flag OFF → "Add to cart" → "Checkout" → redirect to sign-in. With flag ON → anonymous user can complete full checkout without account.
     violation_signal: Anonymous user reaches checkout when flag is OFF; guest order appears in a registered user's order history; saved addresses shown to guest.
-    status: ACTIVE
+    status: SUSPECT
     verified:
       date: 2026-10-15
       by: REG-2026-10-15-1115
+    suspect_reason: "[case] CHK-096 failed in REG-2026-10-15-1624"
   - id: BL-CHK-002
     title: Double-submit prevention (Place Order idempotency)
     rule: Clicking "Place Order" twice in rapid succession must NOT create two orders. The button must be disabled after first click, and the backend must enforce idempotency (same cart token → same order).
@@ -97,7 +98,7 @@ rules:
     status: ACTIVE
     verified:
       date: 2026-10-15
-      by: REG-2026-10-15-1115
+      by: REG-2026-10-15-1624
   - id: BL-CHK-006
     title: Order total formula
     rule: "The order total must always equal: `subTotal (sum of the list totals of items flagged selectedForCheckout) + shipping subtotal + tax total + payment subtotal + fee total − discount total (the aggregate of line-item, shipping, payment, and cart-level discounts)`. Every component is an explicit line — no hidden or unexplained differences. The total displayed at checkout must match the total on the order confirmation page and in the Admin order detail. (Source: vc-module-cart `DefaultShoppingCartTotalsCalculator.CalculateTotals` — `cart.Total = SubTotal + ShippingSubTotal + TaxTotal + PaymentSubTotal + FeeTotal − DiscountTotal`.)"
@@ -146,5 +147,4 @@ rules:
     status: ACTIVE
     verified:
       date: 2026-10-15
-      version: "platform 3.1083.0; storefront theme 2.60.0-alpha.2579"
-      by: BL-AUDIT-2026-10-15
+      by: REG-2026-10-15-1624

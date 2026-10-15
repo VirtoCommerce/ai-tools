@@ -2,7 +2,7 @@
 
 ## Status: READY_TO_SUBMIT
 **Found by:** agent — testing VCST-6015
-**Tracker:** [VCST-6397](https://virtocommerce.atlassian.net/browse/VCST-6397), Sub-task of VCST-6015. Labels `found-by-agent`, `found-in-testing`; auto-fix labels withheld (see Fix Routing)
+**Tracker:** [VCST-6397](https://virtocommerce.atlassian.net/browse/VCST-6397), standalone Bug, relates to VCST-6015 (converted from Sub-task 2026-10-15). Labels `found-by-agent`, `found-in-testing`; auto-fix labels withheld (see Fix Routing)
 **Severity:** Low (P3), graded at triage · **Provenance:** IN-SCOPE (introduced by the MF plugin delivery of VCST-6015/VCST-5159)
 
 ## Summary

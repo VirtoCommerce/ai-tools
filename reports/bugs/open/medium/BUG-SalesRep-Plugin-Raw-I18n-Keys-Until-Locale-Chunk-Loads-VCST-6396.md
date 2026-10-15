@@ -2,9 +2,9 @@
 
 ## Status: READY_TO_SUBMIT
 **Found by:** agent — testing VCST-6015
-**Tracker:** [VCST-6396](https://virtocommerce.atlassian.net/browse/VCST-6396) (Subtask of VCST-6015; relates to VCST-6196; labels found-by-agent, found-in-testing; auto-fix labels withheld)
+**Tracker:** [VCST-6396](https://virtocommerce.atlassian.net/browse/VCST-6396) (standalone Bug, relates to VCST-6015 (converted from Sub-task 2026-10-15); relates to VCST-6196; labels found-by-agent, found-in-testing; auto-fix labels withheld)
 
-**Severity:** Medium (P2), graded at triage · **Type:** Functional / i18n (load ordering) · **Relationship:** Sub-task of VCST-6015 (IN-SCOPE)
+**Severity:** Medium (P2), graded at triage · **Type:** Functional / i18n (load ordering) · **Relationship:** standalone Bug, relates to VCST-6015 (converted from Sub-task 2026-10-15) (IN-SCOPE)
 **Env:** vcst (`{{FRONT_URL}}`), playwright-chrome (chromium) 1920x1080, 2026-10-15
 **Build:** platform 3.1083.0 · VirtoCommerce.SalesRep 3.1014.0 (storefront plugin `sales-rep` 0.2.5) · theme 2.60.0-alpha.2579
 **Oracle:** BL-SR-013 (raw key never surfaces), VC-UI-007 · **Relates:** VCST-6196, `BUG-SalesRep-nav-link-raw-i18n-key-fr-es.md` (persistent raw keys under a locale; different symptom, not duplicates)

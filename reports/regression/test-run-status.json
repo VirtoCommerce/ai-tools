@@ -1,29 +1,21 @@
 {
-  "runId": "REG-2026-10-15-1624",
-  "status": "in_progress",
-  "startedAt": "2026-10-15T14:25:10.074Z",
-  "windowStart": "2026-10-15T14:25:10.074Z",
-  "selection": "011,043 --ids (54 never-executed cases of REG-2026-10-14-1556)",
+  "runId": "REG-2026-10-15-1720",
+  "status": "completed",
+  "startedAt": "2026-10-15T15:20:55.249Z",
+  "windowStart": "2026-10-15T15:20:55.249Z",
+  "selection": "093",
   "env": "vcst",
   "scoped": true,
-  "purpose": "Sprint26-20 release readiness: 011 Checkout (21) + 043 GA4 (33) cases REG-2026-10-14-1556 never executed",
-  "notes": [],
+  "purpose": "VCST-6015 — verify the 5 test-defect fixes from triage of REG-2026-10-15-1548",
+  "ids": "SR-HD-100,SR-HD-102,SR-HD-107,SR-HD-112,SR-HD-115",
   "suites": {
-    "011": {
-      "status": "done",
-      "lane": "browser",
-      "total": 21,
-      "browser": "playwright-chrome",
-      "pass": 18,
-      "fail": 1,
-      "blocked": 2,
-      "skipped": 0
-    },
-    "043": {
-      "status": "running",
-      "lane": "browser",
-      "total": 33,
-      "browser": "playwright-firefox"
+    "093": {
+      "status": "pending",
+      "lane": "browser"
     }
-  }
+  },
+  "finishedAt": "2026-10-15T15:21:05.438Z",
+  "notes": [
+    "ABORTED before dispatch (usage limit) — nothing ran; no results"
+  ]
 }
