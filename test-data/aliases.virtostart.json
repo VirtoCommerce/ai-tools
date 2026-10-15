@@ -841,7 +841,7 @@
     "profile": "returns-demo",
     "env": "virtostart",
     "marker": "DEMO-RET",
-    "generated": "2026-10-15T16:24:13.570Z",
+    "generated": "2026-10-15T16:33:25.113Z",
     "entities": [
       {
         "type": "order",
@@ -1059,6 +1059,81 @@
         "status": "Approved",
         "orderId": "8c37b04a-ae60-4e90-8a57-7e34615ab89d",
         "orderKey": "DRO-NW-01"
+      },
+      {
+        "type": "role",
+        "key": "demo-org-returns-viewer",
+        "id": "demo-org-returns-viewer"
+      },
+      {
+        "type": "grant",
+        "key": "DCT-NW-1|Northwind Traders",
+        "membershipId": "3b0f6321-70ea-4db8-9575-3db13ef788ee",
+        "userId": "0b955b91-16fa-4672-b4a9-615bc2ef9b07",
+        "orgId": "f6aa9e85-7feb-4591-a880-c029f1a79628"
+      },
+      {
+        "type": "grant",
+        "key": "DCT-CN-1|Contoso Manufacturing",
+        "membershipId": "bfbec898-de02-4a73-81a6-3ebf3a14696a",
+        "userId": "4c71d415-0d2c-4ff9-b759-936d471566cb",
+        "orgId": "d5162a8a-ceae-4a79-9c17-28813b5c2e59"
+      },
+      {
+        "type": "grant",
+        "key": "DCT-FB-1|Fabrikam Industrial",
+        "membershipId": "cb21f3c5-d02c-4599-ae81-2b38a31bf9b1",
+        "userId": "af1152af-1b36-42fb-b3a0-0fcfcf240698",
+        "orgId": "3192efa1-be41-4136-a955-9374f75ed0f8"
+      },
+      {
+        "type": "grant",
+        "key": "DCT-WT-1|Wingtip Electrical Supply",
+        "membershipId": "3bc4b1ca-b71b-4f65-b99c-75e90529105e",
+        "userId": "e3030dc4-c320-4923-9a8b-ceb603f4173e",
+        "orgId": "52c9ca25-0fae-47f6-b6c6-b963c8d3eb01"
+      },
+      {
+        "type": "grant",
+        "key": "DEMO_REP_VOLKOVA|Northwind Traders",
+        "membershipId": "6436d714-a3d2-4032-aee8-29c59f8d834a",
+        "userId": "27b89463-a04f-4792-8496-3784ca472bcb",
+        "orgId": "f6aa9e85-7feb-4591-a880-c029f1a79628"
+      },
+      {
+        "type": "grant",
+        "key": "DEMO_REP_VOLKOVA|Contoso Manufacturing",
+        "membershipId": "16bc8755-2ac8-4ef3-bfd1-93e3b05d68e4",
+        "userId": "27b89463-a04f-4792-8496-3784ca472bcb",
+        "orgId": "d5162a8a-ceae-4a79-9c17-28813b5c2e59"
+      },
+      {
+        "type": "grant",
+        "key": "DEMO_REP_VOLKOVA|Fabrikam Industrial",
+        "membershipId": "f343605a-3f78-4766-a53e-06084a72f7b9",
+        "userId": "27b89463-a04f-4792-8496-3784ca472bcb",
+        "orgId": "3192efa1-be41-4136-a955-9374f75ed0f8"
+      },
+      {
+        "type": "grant",
+        "key": "DEMO_REP_VOLKOVA|Northwind Traders",
+        "membershipId": "3abe1a4d-0399-48d1-bc72-c55f18d0d79e",
+        "userId": "db222b30-2326-4fe0-86ab-e4d41d9329f2",
+        "orgId": "f6aa9e85-7feb-4591-a880-c029f1a79628"
+      },
+      {
+        "type": "grant",
+        "key": "DEMO_REP_VOLKOVA|Contoso Manufacturing",
+        "membershipId": "73fec35d-87d9-446e-91b0-99f2bb3b5a85",
+        "userId": "db222b30-2326-4fe0-86ab-e4d41d9329f2",
+        "orgId": "d5162a8a-ceae-4a79-9c17-28813b5c2e59"
+      },
+      {
+        "type": "grant",
+        "key": "DEMO_REP_VOLKOVA|Fabrikam Industrial",
+        "membershipId": "a7e8b858-f881-4024-83c2-f666cd67152a",
+        "userId": "db222b30-2326-4fe0-86ab-e4d41d9329f2",
+        "orgId": "3192efa1-be41-4136-a955-9374f75ed0f8"
       }
     ]
   },

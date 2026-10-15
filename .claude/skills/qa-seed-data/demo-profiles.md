@@ -24,8 +24,8 @@ TEST_ENV=virtostart npm run seed:demo -- --family returns
 
 ## Returns demo
 
-Eight delivered orders and eight returns on the sales-rep demo's four organizations, one return per status
-a buyer or agent can see — Draft, Requested ×2, Approved, PartiallyApproved (two lines), Rejected, Cancelled,
+Eight delivered orders and fourteen returns on the sales-rep demo's four organizations, every status the store allows —
+Draft, Requested ×3, New (agent-logged), Approved ×2, PartiallyApproved ×2, Processing ×2, Rejected, Cancelled,
 Completed — plus two freshly delivered orders with no return for a live Request-return walkthrough.
 
 - **Data is the fixture**, never the script: edit `returns-demo.json`; `returns-demo-specs.mjs` loads and
@@ -40,8 +40,10 @@ Completed — plus two freshly delivered orders with no return for a live Reques
 - **Prerequisite:** the sales-rep demo (it reads its ledger for orgs and buyer accounts); the buyer
   password is `{{SR_DEMO_BUYER_PASSWORD}}`.
 - **`seed:bootstrap`** skips `returns-org` while the returns family holds its demo profile.
-- **Organization returns view:** the seeder reports whether `Organization maintainer` carries
-  `xapi:my_organization:return:view`; it never edits a built-in role.
+- **Organization returns view:** no role on the store carries `xapi:my_organization:return:view`, so the
+  demo owns a view-only role, `Organization returns viewer`, and ADDS it to the memberships listed in the
+  fixture's `orgReturnsAccess` (maintainer buyers + both of Alla's logins in her served orgs). Built-in roles
+  are never edited; teardown removes the role from those memberships and deletes it.
 
 ## Loyalty missions demo
 

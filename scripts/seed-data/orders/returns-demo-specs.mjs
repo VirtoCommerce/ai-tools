@@ -46,7 +46,7 @@
 
 import { readFileSync } from 'node:fs';
 import {
-  DEMO_ORGS, DEMO_CONTACTS, DEMO_ORDERS as SR_DEMO_ORDERS, DEMO_LEDGER_KEY as SR_DEMO_LEDGER_KEY,
+  DEMO_ORGS, DEMO_CONTACTS, DEMO_REPS, DEMO_ORDERS as SR_DEMO_ORDERS, DEMO_LEDGER_KEY as SR_DEMO_LEDGER_KEY,
   demoOrderNumber, demoOrderAddress, isDemoSafeProduct,
 } from '../sales-rep/sales-rep-demo-specs.mjs';
 
@@ -114,6 +114,15 @@ export const DEMO_RET_ORDERS = Object.freeze(FIXTURE.orders);
  * -> submitReturn), decided through `POST /api/return/{id}/authorize`, never by writing a status.
  */
 export const DEMO_RETURNS = Object.freeze(FIXTURE.returns);
+
+/**
+ * Who may open the ORGANIZATION returns view (xAPI `organizationReturns`, gated by
+ * `xapi:my_organization:return:view`). No role on the store carries that permission, so the demo owns a
+ * role that holds only it, and ADDS it to memberships — a built-in role is never edited and an existing
+ * role on a membership is never removed.
+ */
+export const DEMO_ORG_RETURNS_ACCESS = Object.freeze(FIXTURE.orgReturnsAccess || { role: null, buyers: [], reps: [] });
+export const ORG_RETURNS_VIEW_PERMISSION = 'xapi:my_organization:return:view';
 
 // ---- derivations ----------------------------------------------------------------
 
@@ -379,6 +388,22 @@ export function demoReturnProblems({ reasonCodes = null } = {}) {
     const [orderKey, line] = k.split('|');
     const ordered = retOrderByKey(orderKey).lines[Number(line) - 1].qty;
     if (held > ordered) problems.push(`order ${orderKey} line ${line}: returns hold ${held} of ${ordered} — the later submit is refused (RETURN_QUANTITY_UNAVAILABLE)`);
+  }
+
+  // Organization returns access: a demo-owned, view-only role on real demo members.
+  const acc = DEMO_ORG_RETURNS_ACCESS;
+  if (acc.role) {
+    if (/AGENT-TEST/i.test(acc.role.name) || /^(org-|purchasing|store-)/.test(acc.role.id)) problems.push(`org-returns role ${acc.role.id} looks like a fixture or built-in role — the demo must own its own`);
+    if (JSON.stringify(acc.role.permissions) !== JSON.stringify([ORG_RETURNS_VIEW_PERMISSION])) problems.push(`org-returns role must hold exactly ${ORG_RETURNS_VIEW_PERMISSION} — anything more widens a real colleague's access`);
+    for (const b of acc.buyers) if (!contactByKey(b)) problems.push(`org-returns access: buyer ${b} is not a demo contact`);
+    for (const r of acc.reps) {
+      const rep = DEMO_REPS.find((x) => x.key === r.key);
+      if (!rep) { problems.push(`org-returns access: rep ${r.key} is not a demo rep`); continue; }
+      for (const o of r.orgs) if (!rep.servedOrgs.includes(o)) problems.push(`org-returns access: ${r.key} does not serve ${o}`);
+    }
+    const viewerOrgs = new Set([...acc.buyers.map((b) => contactByKey(b)?.org), ...acc.reps.flatMap((r) => r.orgs)]);
+    const multiBuyer = Object.entries(DEMO_RETURNS.reduce((m, r) => { const o = retOrderByKey(r.order); if (o) (m[o.org] ||= new Set()).add(o.buyer); return m; }, {})).filter(([, s2]) => s2.size > 1).map(([org]) => org);
+    if (!multiBuyer.some((o) => viewerOrgs.has(o))) problems.push('no viewer sits in an organization with returns from two buyers — the organization view would look like a personal one');
   }
 
   // Non-vacuity: the lifecycle, not a list.

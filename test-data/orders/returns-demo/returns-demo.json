@@ -8,7 +8,8 @@
       "returns[].lines[].line": "1-based index into the order lines",
       "returns[].lines[].approve": "approved qty (decided outcomes only); 0 = declined",
       "returns[].seq": "submit order — the platform numbers returns in creation order",
-      "returns[].via": "omitted = the buyer submits through the storefront flow; \"agent\" = a back-office agent logs it on the buyer's behalf (status New, no evidence required)"
+      "returns[].via": "omitted = the buyer submits through the storefront flow; \"agent\" = a back-office agent logs it on the buyer's behalf (status New, no evidence required)",
+      "orgReturnsAccess": "a demo-owned role holding ONLY the organization-returns view permission, ADDED (never replacing) to the listed buyers' memberships and to every login of the listed reps in the listed served orgs; teardown takes it back off and deletes the role"
     }
   },
   "currency": "USD",
@@ -430,5 +431,30 @@
       ]
     }
   ],
-  "expectNote": "14 returns: Draft 1, Requested 3, New 1, Approved 2, PartiallyApproved 2, Processing 2, Rejected 1, Cancelled 1, Completed 1"
+  "expectNote": "14 returns: Draft 1, Requested 3, New 1, Approved 2, PartiallyApproved 2, Processing 2, Rejected 1, Cancelled 1, Completed 1",
+  "orgReturnsAccess": {
+    "role": {
+      "id": "demo-org-returns-viewer",
+      "name": "Organization returns viewer",
+      "permissions": [
+        "xapi:my_organization:return:view"
+      ]
+    },
+    "buyers": [
+      "DCT-NW-1",
+      "DCT-CN-1",
+      "DCT-FB-1",
+      "DCT-WT-1"
+    ],
+    "reps": [
+      {
+        "key": "DEMO_REP_VOLKOVA",
+        "orgs": [
+          "DORG-NORTHWIND",
+          "DORG-CONTOSO",
+          "DORG-FABRIKAM"
+        ]
+      }
+    ]
+  }
 }

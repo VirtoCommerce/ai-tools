@@ -39,7 +39,7 @@ import {
   DEMO_WINDOW_DAYS_ASSUMED, DEMO_RET_REQUIRED_ORDER_STATUS,
   demoRetMarker, isDemoRetMarker, demoRetOrderNumber, retOrderByKey, returnsInSubmitOrder,
   retProductNeedByOrg, isDemoSafeProduct, buildDemoRetOrderBody, buildDemoRetDeliveryBody, orderIsDelivered,
-  buildDemoReturnItems, buildDemoAuthorizeBody, authorizedStatusFor, isDecided, isPostDecision, isAgentLogged, demoReturnProblems,
+  DEMO_ORG_RETURNS_ACCESS, buildDemoReturnItems, buildDemoAuthorizeBody, authorizedStatusFor, isDecided, isPostDecision, isAgentLogged, demoReturnProblems,
 } from './returns-demo-specs.mjs';
 
 const TEST_ENV = process.env.TEST_ENV || 'vcst';
@@ -354,6 +354,67 @@ async function finishReturn(ret, ctx, id) {
   return { type: 'return', key: ret.key, id, number: final.number, status: final.status, orderId: order.id };
 }
 
+// ---- organization returns access -----------------------------------------------------------
+
+/** Every login that should get the viewer role, with the demo orgs it applies in. Read from the sales-rep ledger. */
+function accessGrantees(base) {
+  const acc = DEMO_ORG_RETURNS_ACCESS;
+  const out = [];
+  for (const k of acc.buyers) { const b = base.buyers[k]; if (b) out.push({ who: k, userId: b.userId, orgIds: [b.orgId] }); }
+  const srEntities = overlay()[SR_DEMO_LEDGER_KEY]?.entities || [];
+  for (const r of acc.reps) {
+    const att = srEntities.find((e) => e.type === 'rep-attachment' && e.key === r.key);
+    const orgIds = r.orgs.map((o) => base.orgs[o]?.id).filter(Boolean);
+    // A rep's contact can have TWO logins and only one is the rep record's (sales-rep-profiles.md §5):
+    // both get it, so the view works whichever one the presenter signs in with.
+    if (att?.userId) out.push({ who: r.key, userId: att.userId, orgIds });
+    if (att?.email) out.push({ who: r.key, email: att.email, orgIds });
+  }
+  return out;
+}
+
+async function ensureOrgReturnsAccess(base) {
+  const acc = DEMO_ORG_RETURNS_ACCESS;
+  if (!acc.role) return [];
+  if (DRY_RUN) { log(`  [DRY] would ensure role "${acc.role.name}" and grant it to ${acc.buyers.length} buyer(s) + ${acc.reps.length} rep(s)`); return []; }
+  await api('PUT', '/api/platform/security/roles', { id: acc.role.id, name: acc.role.name, permissions: acc.role.permissions.map((name) => ({ name })) }, { expectStatus: [200, 201, 204] });
+  const grants = []; const seen = new Set();
+  for (const g of accessGrantees(base)) {
+    let userId = g.userId;
+    if (!userId && g.email) userId = (await api('GET', `/api/platform/security/users/${encodeURIComponent(g.email)}`, null, { expectStatus: [200, 404] }))?.id;
+    if (!userId) continue;
+    const mems = (await api('POST', '/api/customer/organization-memberships/search', { userId, take: 100 }))?.results || [];
+    for (const orgId of g.orgIds) {
+      const m = mems.find((x) => x.organizationId === orgId);
+      if (!m || seen.has(m.id)) continue;
+      seen.add(m.id);
+      const has = (m.roles || []).some((r) => (r.roleId || r.id) === acc.role.id);
+      if (!has) await api('PUT', `/api/customer/organization-memberships/${m.id}`, { ...m, roles: [...(m.roles || []), { roleId: acc.role.id, roleName: acc.role.name }] }, { expectStatus: [200, 204] });
+      grants.push({ type: 'grant', key: `${g.who}|${m.organizationName}`, membershipId: m.id, userId, orgId });
+      if (!has) log(`  org returns view → ${g.who} @ ${m.organizationName}`);
+    }
+  }
+  log(`Organization returns viewer: ${grants.length} membership(s) hold it.`);
+  return [{ type: 'role', key: acc.role.id, id: acc.role.id }, ...grants];
+}
+
+async function revokeOrgReturnsAccess(ledger) {
+  const acc = DEMO_ORG_RETURNS_ACCESS;
+  if (!acc.role) return;
+  let n = 0;
+  for (const g of (ledger.entities || []).filter((e) => e.type === 'grant')) {
+    const m = await api('GET', `/api/customer/organization-memberships/${g.membershipId}`, null, { expectStatus: [200, 404] }).catch(() => null);
+    if (!m?.id) continue;
+    const roles = (m.roles || []).filter((r) => (r.roleId || r.id) !== acc.role.id);
+    if (roles.length === (m.roles || []).length) continue;
+    await api('PUT', `/api/customer/organization-memberships/${m.id}`, { ...m, roles }, { expectStatus: [200, 204] });
+    n += 1;
+  }
+  const role = await api('POST', '/api/platform/security/roles/search', { keyword: acc.role.name, take: 10 }).catch(() => null);
+  if ((role?.results || []).some((r) => r.id === acc.role.id)) await api('DELETE', `/api/platform/security/roles?ids=${encodeURIComponent(acc.role.id)}`, null, { expectStatus: [200, 204] });
+  log(`  org returns view revoked from ${n} membership(s); role ${acc.role.id} deleted`);
+}
+
 // ---- teardown ----------------------------------------------------------------------------
 
 async function teardown(base) {
@@ -361,6 +422,7 @@ async function teardown(base) {
   const scopeOrder = ONLY && retOrderByKey(ONLY) ? ONLY : null;
   const scopeReturn = ONLY && !scopeOrder ? ONLY : null;
   log(`TEARDOWN — ledger holds ${ledger.entities?.length || 0} entity/entities${ONLY ? ` (scoped to ${ONLY})` : ''}`);
+  if (!ONLY) await revokeOrgReturnsAccess(ledger);
 
   if (scopeReturn) {
     const id = (ledger.entities || []).find((e) => e.type === 'return' && e.key === scopeReturn)?.id;
@@ -489,15 +551,7 @@ async function main() {
     entities.push({ ...await ensureReturn(ret, { orderRes: orderRes[ret.order], token: tokens[spec.buyer], reasons: pol?.returnReasons || [], cancelField }), orderKey: ret.order });
   }
 
-  // Report — never write — whether the organization returns view has a holder among the demo buyers.
-  if (!DRY_RUN) {
-    const roles = await api('POST', '/api/platform/security/roles/search', { keyword: 'Organization maintainer', take: 5 }, { expectStatus: [200, 201] }).catch(() => null);
-    const role = (roles?.results || []).find((r) => r.name === 'Organization maintainer');
-    const can = (role?.permissions || []).some((p) => (p.name || p) === 'xapi:my_organization:return:view');
-    log(can
-      ? 'Organization maintainer holds xapi:my_organization:return:view — Margaret Hale / Priya Raman see their colleagues\' returns.'
-      : 'NOTE: Organization maintainer lacks xapi:my_organization:return:view on this env — each buyer sees only their own returns. Not changed (a built-in role is not this seeder\'s to edit).');
-  }
+  if (!ONLY) entities.push(...await ensureOrgReturnsAccess(base));
 
   const merged = ONLY
     ? [...(readLedger().entities || []).filter((e) => !entities.some((n) => n.type === e.type && n.key === e.key)), ...entities]
