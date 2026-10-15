@@ -594,6 +594,28 @@ export async function resetSecurityPassword(api, userName, newPassword, { silent
   return okRes;
 }
 
+/**
+ * Is this security account locked out RIGHT NOW? Mirrors ASP.NET Identity's
+ * `UserManager.IsLockedOutAsync`, which the platform and xAPI call to decide a sign-in:
+ * `!LockoutEnabled ⇒ false`, else `LockoutEnd >= UtcNow`.
+ *
+ * A future `lockoutEnd` ALONE is not a lock. Identity's `AccessFailedAsync` writes `LockoutEnd`
+ * after MaxFailedAccessAttempts failures without checking `LockoutEnabled`, so an account with
+ * `lockoutEnabled: false` can carry a future `lockoutEnd` and still sign in normally. Observed on
+ * vcst 2026-10-15: `admin` had `lockoutEnabled=false`, a future `lockoutEnd`, failed count 0, and
+ * /connect/token worked — reading `lockoutEnd` alone reported it locked. Pure, so it is testable.
+ */
+export function isLockedOut(user, now = Date.now()) {
+  if (user?.lockoutEnabled !== true || !user?.lockoutEnd) return false;
+  return new Date(user.lockoutEnd).getTime() >= now;
+}
+
+/** `lockoutEnd` is in the future but lockout is not enabled — Identity does NOT treat this as locked. */
+export function hasInertLockoutEnd(user, now = Date.now()) {
+  if (user?.lockoutEnabled === true || !user?.lockoutEnd) return false;
+  return new Date(user.lockoutEnd).getTime() >= now;
+}
+
 // Primary env: its canonical IDs live committed, curated, inline in aliases.json,
 // so seeders NEVER auto-write an aliases.vcst.json override for it. Every OTHER env
 // (localhost, vcptcore, virtostart, customer envs) gets aliases.<env>.json written on
