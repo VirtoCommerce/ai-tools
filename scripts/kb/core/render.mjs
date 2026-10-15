@@ -240,6 +240,18 @@ export function showLines(r, { prefix = 'kb show' } = {}) {
   return lines;
 }
 
+/** Anchors a capture dropped instead of refusing (VCST-6378): each one, and how to write it next time. */
+/** No concepts given: the ones the vocabulary finds in the text, to pick 1-3 from next time (VCST-6378). */
+function suggestedLines(suggested) {
+  return (suggested ?? []).length
+    ? [`  card: no concepts given -- your text names ${suggested.slice(0, 6).map((s) => `${s.id} (${s.label})`).join(', ')}; pass the 1-3 this fact is ABOUT as concepts`]
+    : [];
+}
+
+function droppedLines(dropped) {
+  return (dropped ?? []).map((d) => `  dropped anchor ${JSON.stringify(d.coordinate)} (${d.kind}) -- the capture kept the others. ${d.fix ?? ''}`.trimEnd());
+}
+
 export function captureLines(r, opts = {}) {
   const lines = captureBody(r, opts);
   // Same note as `askLines`: the anchor was repaired, but the next command will be mangled the same way.
@@ -295,6 +307,8 @@ function captureBody(r, { prefix = 'kb capture', card = false } = {}) {
     return [
       `${prefix}: dry run -- would queue ${r.id} — ${r.entry?.subject ?? ''}`,
       `  ${r.why}`,
+      ...droppedLines(r.dropped),
+      ...suggestedLines(r.suggested),
       ...readLines(r.read),
       ...neighbourLines(r.alsoHere),
       ...relatedLines(r.related),
@@ -307,6 +321,8 @@ function captureBody(r, { prefix = 'kb capture', card = false } = {}) {
   }
   return [
     `${prefix}: queued ${r.id} — ${r.entry.subject}`,
+    ...droppedLines(r.dropped),
+    ...suggestedLines(r.suggested),
     `  ${r.queuedTo}`,
     '  nothing has been sent; it ships with the next push.',
     ...readLines(r.read),

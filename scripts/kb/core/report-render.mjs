@@ -571,7 +571,8 @@ export function renderText(report) {
   if (d?.attempts) {
     const doors = Object.entries(d.byDoor).map(([k, v]) => `${k} ${v.refused}/${v.attempts}`).join(', ');
     out.push(`  door           ${d.refused}/${d.attempts} capture attempts refused = ${pct(d.rate)} (${doors}); `
-      + `first attempt ${pct(d.firstAttempt)}; ${d.abandoned} fact(s) abandoned${d.pairedByAsk ? ` (${d.pairedByAsk} refusal(s) likely reworded retries)` : ''}`);
+      + `first attempt ${pct(d.firstAttempt)}; ${d.abandoned} fact(s) abandoned${d.pairedByAsk ? ` (${d.pairedByAsk} refusal(s) likely reworded retries)` : ''}`
+      + `${d.droppedNotRefused ? `; ${d.droppedNotRefused} landed by dropping a bad anchor` : ''}`);
   }
   // THE DENOMINATOR, printed with the panels rather than after them, because it is the line that
   // decides how to read every other number here. `n/a` and not `0%` when nothing is accounted for:

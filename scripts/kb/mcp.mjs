@@ -202,6 +202,8 @@ export const TOOLS = Object.freeze([
         defect: str(`${DEFECT_SOURCE}. On a capture: a ticket or "suspected".`),
         fixedIn: str('Optional, with defect: the first build without the defect, <module>@<version>.'),
         ask: str('The ask handle kb_ask printed, when this fact answers that question. Ties the capture to the ask exactly; without it the base guesses from shared words.'),
+        concepts: { type: 'array', items: { type: 'string' }, description: '1-3 vocabulary concept ids this fact is ABOUT (not every one its text mentions). Ids the vocabulary does not hold are dropped; a dry run or a capture lists the candidates its text names.' },
+        questions: { type: 'array', items: { type: 'string' }, description: 'Up to 6 other ways somebody would ask for this fact -- the retrieval card. Different wordings, not the same question again.' },
         distinct: str('Only after a capture was HELD as similar to an existing entry: one sentence on what makes this a different fact. Recorded in the entry; without it, confirm the existing entry instead.'),
         topic: TOPIC,
       },
@@ -387,6 +389,7 @@ async function callTool(name, args, ctx) {
         subject: args?.subject, question: args?.question, claim: args?.claim,
         deployment: args?.deployment, method: args?.method, conditions: asList(args?.conditions),
         defect: args?.defect, fixedIn: args?.fixedIn, ask: args?.ask, distinct: args?.distinct,
+        concepts: asList(args?.concepts), questions: asList(args?.questions),
         anchors: asList(args?.anchors), scope: asList(args?.scope),
       }, opened, { env: ctx.env, via: VIA, call: ctx.call, topic: args?.topic, builds: liveBuild });
       // `refused` is not an error: the base already holds the fact, which is the dedup working, and

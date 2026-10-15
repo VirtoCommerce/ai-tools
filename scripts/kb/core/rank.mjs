@@ -55,9 +55,15 @@ export const STOP = new Set([
  * and `members`, which is what makes the worked example in PLAN §3.2 score 4 rather than 2.
  */
 export function tokenize(text) {
+  // UNICODE LETTERS (VCST-6378). `[^a-z0-9]` dropped every non-Latin letter: a question in Russian
+  // produced no terms at all, and `café` lost its last letter. camelCase is NOT split here: tried on
+  // the labelled sets, splitting `productPickupLocations` into its parts moved the calibrated ranker
+  // (logs300 dev answer precision 93% -> 87%) -- that is a change for a refit (VCST-6193), not a
+  // tokenizer edit under a model fitted on the old terms. The Unicode change alone leaves both labelled
+  // sets' bench results identical.
   return String(text ?? '')
     .toLowerCase()
-    .split(/[^a-z0-9]+/)
+    .split(/[^\p{L}\p{N}]+/u)
     .filter((t) => t.length > 1 && !STOP.has(t));
 }
 

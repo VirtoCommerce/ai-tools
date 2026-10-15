@@ -22,11 +22,11 @@ import { parseEntry } from './frontmatter.mjs';
 import { anchorProblems, anchorShape, isSingleSegmentPath, namespaceRoots, neighbours, normalizeAnchor } from './coordinates.mjs';
 import { doorHints } from './door-hints.mjs';
 import { clientSha } from './build.mjs';
-import { undoMsysRewrite } from './anchors.mjs';
+import { canonicalAnchor, undoMsysRewrite } from './anchors.mjs';
 import { loadSecrets, publishProblems, publishRefusal } from './secret-gate.mjs';
 import { claimKey, findDuplicate, identityKey, refusalMessage, subjectTakenMessage } from './identity.mjs';
 import { amendmentsOf, attestsCurrentClaim, buildIndex, buildPath, buildRow, claimHash, countEvidence, distinctDisputes, entryPath, isResolved, supportOf } from './index-build.mjs';
-import { loadIndex, loadManifest, normalizeScope, retrievable } from './index-load.mjs';
+import { SURFACES, SURFACE_SPELLINGS, loadIndex, loadManifest, normalizeScope, retrievable } from './index-load.mjs';
 import {
   DISABLED_WHY, hasSessionId, kbDisabled, log, metaAsks, pendingMutations, queueBacklog, queueDir, readLoop, readMeta, readPushStatus,
   readQueue, sessionId, loopRecord as loopRecordOf,
@@ -35,7 +35,7 @@ import { lastWord, openedHash, openedIds, pointersByAsk } from './loop.mjs';
 import { cachedWho } from './who.mjs';
 import { RANKER, rank, rankNeighbours, relatedTo, tokenize } from './rank.mjs';
 import { askAbout, askLink } from './pairing.mjs';
-import { prepareVocabulary, readVocabulary } from './query.mjs';
+import { parseQuestion, prepareVocabulary, readVocabulary } from './query.mjs';
 import { prepareRetrieval, retrieve } from './retrieve.mjs';
 import { AMBIGUOUS_TOP, FEATURES, decide } from './verdict.mjs';
 
@@ -1082,6 +1082,35 @@ function privateData(fields, env) {
   return { state: 'invalid', why: publishRefusal(found), private: [...new Set(found.flatMap((p) => p.kinds))] };
 }
 
+/**
+ * The retrieval card a capture can carry from the door (VCST-6378): the WRITER's concepts, kept only
+ * when the vocabulary holds them (at most 3, as the cards are made), and its question variants. Not
+ * derived here, and that was measured: attaching the concepts a capture's own text names (what
+ * `parseQuestion` finds) to the 468 uncarded rows cut the verdict ranker's certified answers on
+ * logs300 dev from 43 to 15 -- the model was fitted on hand cards of 1-3 concepts, not on every
+ * concept a sentence mentions. Those concepts are offered back as `suggested` for the writer to pick
+ * from. Never throws: a vocabulary that cannot be read costs the card, not the capture.
+ */
+async function cardOf(input, opened, { namespaces } = {}) {
+  const questions = [...new Set((Array.isArray(input.questions) ? input.questions : input.questions ? [input.questions] : [])
+    .map((q) => String(q).trim()).filter((q) => q && q !== String(input.question ?? '').trim()))].slice(0, 6).map((q) => q.slice(0, 240));
+  let concepts = [];
+  let suggested = [];
+  try {
+    const vocab = prepareVocabulary(await readVocabulary(opened.reader));
+    const known = (id) => vocab.concepts.has(String(id));
+    concepts = [...new Set((Array.isArray(input.concepts) ? input.concepts : input.concepts ? [input.concepts] : []).map(String).filter(known))].slice(0, 3);
+    const anchors = (input.anchors ?? []).map((a) => String(typeof a === 'string' ? a : a?.coordinate ?? ''));
+    suggested = parseQuestion([input.subject, input.question, ...anchors].join(' '), vocab, { namespaces }).concepts
+      .filter((id) => !concepts.includes(id)).map((id) => ({ id, label: vocab.concepts.get(id)?.label ?? id }));
+  } catch { concepts = []; suggested = []; }
+  return { concepts, questions, suggested };
+}
+
+/** The dropped anchors as the result reports them: what was typed, its kind, and how to write it. */
+const droppedOf = (dropped) => (dropped.length
+  ? { dropped: dropped.map((p) => ({ coordinate: p.coordinate, kind: p.kind, fix: doorHints({ problems: [p] }, {}).problems?.[0]?.fix ?? p.why })) } : {});
+
 /** Subject+question similarity at or above which a same-anchor entry holds a capture (VCST-6378). */
 export const SIMILAR_JACCARD = 0.35;
 /** The lower bar for an entry THIS session opened: it read the original and wrote it again. */
@@ -1154,7 +1183,18 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   // a page or a namespace, and only the corpus can say which, so it is judged once the rows are here.
   const problems = anchorProblems(input.anchors)
     .filter((p) => !(p.kind === 'unstructured' && isSingleSegmentPath(p.normalized)));
-  if (problems.length) return refuseAtDoor(doorHints({ state: 'invalid', why: 'unusable anchor(s)', problems }, input), input, door);
+  // ONE BAD ANCHOR NO LONGER SINKS THE CAPTURE (VCST-6378) when a good one remains: it is dropped, and
+  // the result says which and how to write it. Refused only when nothing usable is left.
+  const dropped = [];
+  const keep = (found) => {
+    const bad = new Set(found.map((p) => p.coordinate));
+    const rest = input.anchors.filter((a) => !bad.has(String(typeof a === 'string' ? a : a?.coordinate ?? '').trim()));
+    if (!rest.length) return false;
+    dropped.push(...found);
+    input = { ...input, anchors: rest };
+    return true;
+  };
+  if (problems.length && !keep(problems)) return refuseAtDoor(doorHints({ state: 'invalid', why: 'unusable anchor(s)', problems }, input), input, door);
 
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
@@ -1163,11 +1203,21 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   }
   const namespaces = namespaceRoots(cat.rows);
   const late = anchorProblems(input.anchors, { namespaces });
-  if (late.length) {
+  if (late.length && !keep(late)) {
     return refuseAtDoor(doorHints({ state: 'invalid', why: 'unusable anchor(s)', problems: late }, input, { rows: cat.rows, namespaces }), input, door);
   }
 
+  // `surface` IS A CLOSED SET (VCST-6378): a spelling no reader can place is refused with the list -- 30
+  // active entries carried one. A known alias is accepted AS WRITTEN: readers map it (`surfacesOf`), and
+  // the dedup compares scopes as stored, so rewriting it here would stop a recapture matching its entry.
   const scope = normalizeScope(input.scope);
+  const unknownSurface = scope.map((s) => /^surface=(.+)$/.exec(s)?.[1]).filter((v) => v && !SURFACE_SPELLINGS[v]);
+  if (unknownSurface.length) {
+    return refuseAtDoor(doorHints({
+      state: 'invalid',
+      why: `unknown surface ${unknownSurface.map((s) => `"${s}"`).join(', ')}: use one of ${SURFACES.join(', ')}`,
+    }, input, { namespaces }), input, door);
+  }
   if (!scope.length) {
     return refuseAtDoor(doorHints({
       state: 'invalid',
@@ -1236,6 +1286,7 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
       };
     }
   }
+  const card = await cardOf(input, opened, { namespaces });
   const stamp = how.value === 'source' ? {} : await buildStamp(input.deployment, { env, dryRun, builds });
   const entry = {
     id,
@@ -1247,7 +1298,12 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
       const [axis, ...rest] = s.split('=');
       return { axis, value: rest.join('=') };
     }),
-    anchors: input.anchors.map((a) => ({ coordinate: typeof a === 'string' ? a : a.coordinate })),
+    // Stored in ONE spelling per place (`canonicalAnchor`, VCST-6378).
+    anchors: [...new Set(input.anchors.map((a) => canonicalAnchor(typeof a === 'string' ? a : a.coordinate)))].map((coordinate) => ({ coordinate })),
+    // THE RETRIEVAL CARD, from the writer at the door (VCST-6378): only 10 of 409 entries written since
+    // 2026-10-06 carried one. See `cardOf` for why it is the writer's and not derived.
+    ...(card.concepts.length ? { concepts: card.concepts.map((cid) => ({ id: cid })) } : {}),
+    ...(card.questions.length ? { questions: card.questions.map((text) => ({ text })) } : {}),
     evidence: [{
       method: how.value,
       deployment: how.value === 'source' ? String(input.deployment).trim() : standName(input.deployment),
@@ -1311,13 +1367,15 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   );
 
   if (dryRun) {
-    return { state: 'dry-run', id, entry, why: 'the payload is valid -- nothing was logged or queued (dry run)', read: readRows, alsoHere, related };
+    return { state: 'dry-run', id, entry, why: 'the payload is valid -- nothing was logged or queued (dry run)', read: readRows, alsoHere, related, ...droppedOf(dropped), ...(card.concepts.length ? {} : { suggested: card.suggested }) };
   }
 
   const written = await log({
     kind: 'capture',
     id,
     subject: input.subject,
+    // Which anchor kinds were dropped (VCST-6378) -- kinds only, the rejected text stays on the laptop.
+    ...(dropped.length ? { droppedAnchors: [...new Set(dropped.map((p) => p.kind))] } : {}),
     // WHICH BUILD it was seen on (VCST-6221): a pin, an id -- no prose -- so `kb:report` can say what
     // share of new evidence carries a build. Absent when the stand could not be read.
     ...(stamp.item?.build ? { build: stamp.item.build } : stamp.missing ? { buildMissing: stamp.missing } : {}),
@@ -1366,7 +1424,7 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   }, { env });
 
   if (written.disabled) return { state: 'disabled', why: written.why };
-  return { state: 'queued', id, entry, queuedTo: written.path, logWrite: written, alsoHere, related, read: readRows };
+  return { state: 'queued', id, entry, queuedTo: written.path, logWrite: written, alsoHere, related, read: readRows, ...droppedOf(dropped), ...(card.concepts.length ? {} : { suggested: card.suggested }) };
 }
 
 // ── confirm / dispute ─────────────────────────────────────────────────────────────────────────

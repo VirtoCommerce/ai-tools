@@ -688,6 +688,9 @@ export function doorStats(lines, atDoor, closing = new Set()) {
     abandoned: new Set(atDoor.filter((r) => r.pairedBy !== 'subject').map(fact)).size,
     pairedByAsk: atDoor.filter((r) => r.pairedBy === 'ask').length,
     firstAttempt: intents ? (outcomes - closing.size) / intents : null,
+    // Captures that landed by DROPPING a bad anchor instead of being refused (VCST-6378) -- each one is
+    // a refusal the old door would have counted, so this is the door change's own measure.
+    droppedNotRefused: lines.filter((l) => l.kind === 'capture' && l.id && Array.isArray(l.droppedAnchors) && l.droppedAnchors.length).length,
     byDoor: split('via'),
     byWho: split('who'),
   };

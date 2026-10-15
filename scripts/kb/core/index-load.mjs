@@ -77,6 +77,12 @@ export const SURFACE_SPELLINGS = {
   'admin-ui': 'admin-ui', 'admin-spa': 'admin-ui',
   'ucp-mcp': 'ucp', 'ucp-rest': 'ucp',
   'vendor-portal-ui': 'vendor-ui',
+  // Spellings agents wrote in 2026-10-08..15 that name ONE surface unambiguously (VCST-6378). `api`,
+  // `notifications` and `search-index` stay unlisted: each names more than one surface across entries.
+  'xapi-graphql': 'xapi',
+  'admin-rest': 'rest', 'platform-rest-admin': 'rest', 'platform-rest-api': 'rest', 'platform-auth': 'rest', 'background-job': 'rest',
+  'admin-shell': 'admin-ui', 'admin-designer': 'admin-ui', 'page-builder-designer': 'admin-ui', 'page-builder-shell': 'admin-ui',
+  'admin-page-builder-designer': 'admin-ui', 'admin-pagebuilder-designer': 'admin-ui', 'hangfire-dashboard': 'admin-ui',
 };
 
 /** The canonical surfaces of a normalised scope, in SURFACES order. */

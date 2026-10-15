@@ -51,7 +51,7 @@ const BOOLEAN_FLAGS = new Set(['dry-run', 'no-sweep', 'json', 'help', 'verify', 
 function minutes(ms) { return Math.round(ms / 60_000); }
 
 function parseArgs(argv) {
-  const out = { _: [], flags: {}, repeated: { anchor: [], scope: [] } };
+  const out = { _: [], flags: {}, repeated: { anchor: [], scope: [], concept: [], 'also-asked': [] } };
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
     if (!a.startsWith('--')) { out._.push(a); continue; }
@@ -78,6 +78,7 @@ const USAGE = `kb — the knowledge base (PLAN v1)
                         [--defect <VCST-1234 | suspected> [--fixed-in <Module>@<version>]]
                         [--ask <handle kb ask printed>]   ties the capture to that question exactly
                         [--distinct "<why>"]   after a capture was held as similar: what makes it a different fact
+                        [--concept <vocabulary id> ...] [--also-asked "<another way to ask it>" ...]   the retrieval card
                         [--topic "<...>"] [--dry-run]   --dry-run: check the payload, log and queue nothing
                         an anchor is a route, endpoint or GraphQL op, never a label or menu path;
                         contract: ${CONTRACT}
@@ -283,6 +284,7 @@ async function main(argv) {
       deployment: args.flags.deployment, method: args.flags.method, conditions: args.flags.conditions,
       defect: args.flags.defect, fixedIn: args.flags['fixed-in'], ask: args.flags.ask, distinct: args.flags.distinct,
       anchors: args.repeated.anchor, scope: args.repeated.scope,
+      concepts: args.repeated.concept, questions: args.repeated['also-asked'],
     }, opened, { via: VIA, topic: args.flags.topic, dryRun: Boolean(args.flags['dry-run']), builds: liveBuild });
     if (json) out(JSON.stringify(r, null, 2));
     // The CLI has no input schema, so a refusal here also prints the contract card (VCST-6156).

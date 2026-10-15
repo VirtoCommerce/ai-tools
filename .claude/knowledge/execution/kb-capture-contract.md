@@ -63,6 +63,12 @@ resend with `distinct: "<what makes it a different fact>"`, which is recorded on
 **Trust counts sessions, not rows:** a second confirm from the same session, or a confirm of the
 entry this session captured, is kept as history and adds nothing.
 
+**At the door, since VCST-6378:**
+- A bad anchor beside a usable one is **dropped**, not refused. The result names it and says how to write it next time.
+- Anchors are stored in one spelling per place: path parameters become `{id}`, a host is removed, the verb is upper-cased.
+- `surface=` must be one of `SURFACES` or a listed spelling of one (`SURFACE_SPELLINGS`, `scripts/kb/core/index-load.mjs`). Anything else is refused with the list.
+- The retrieval card is optional. It is `concepts` (1–3 vocabulary ids the fact is ABOUT) and `questions` (other ways to ask for it). When no concepts are given, the result lists the vocabulary concepts the text names.
+
 ## Anchors — accepted forms
 
 | Form | Example |
