@@ -1850,8 +1850,9 @@ export function withoutLocalPaths(text) {
   const tail = String.raw`[^'"()\r\n]*`;
   const swap = (lead = '') => (m, ...g) => `${typeof g[0] === 'string' && lead ? g[0] : ''}<local path>${/\s+$/.exec(m)?.[0] ?? ''}`;
   return String(text)
-    // `OneDrive - <Company>` names the employer wherever it stands, drive or not (retest 5).
-    .replace(new RegExp(String.raw`OneDrive\s*-\s*[^\\/'"()\r\n]*`, 'gi'), swap())
+    // `OneDrive - <Company>` names the employer wherever it stands, drive or not (retest 5), with any dash,
+    // and through an apostrophe or brackets in the name (`O'Brien`, `Contoso (UK)`; retest 6).
+    .replace(new RegExp(String.raw`OneDrive\s*[-‐-―−]\s*[^\\/"\r\n]*`, 'gi'), swap())
     .replace(new RegExp(String.raw`file:\/\/` + tail, 'gi'), swap())
     // A separator is required after the drive (retest 4: `Plan B: retry` lost its tail), except before
     // `Users`, the drive-relative profile form.

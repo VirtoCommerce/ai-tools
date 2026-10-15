@@ -450,7 +450,8 @@ export function publishProblems(fields, { secrets, values, hosts = new Set() } =
  */
 export const PERSONAL_PATHS = Object.freeze([
   /\b[A-Za-z]:(?:[\\/]+|(?=users\b))(?:Users|Documents and Settings)[\\/]+[^\\/\s'"]/i,
-  /OneDrive\s*-\s*\S/i,
+  // Any dash: Windows and Office print `OneDrive – <Company>` with an en dash as often as a hyphen (retest 6).
+  /OneDrive\s*[-‐-―−]\s*\S/i,
   /\\\\+(?:wsl\$|wsl\.localhost)\\+/i,
   /(?:^|[^\\\w])\\\\+[\w.-]+\\+[\w$.-]+\\+/,
   /file:\/\//i,
