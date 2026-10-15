@@ -46,7 +46,7 @@ removed once the new command has passed validation (§10 P4).
 | U14 | `qa-triage-results` cannot be called by the Skill tool (`disable-model-invocation: true`) | **Remove the flag** in the plugin's canonical copy |
 | U15 | Round N ≥ 2 | **A delta strategy that proves the fixes**: the diff from the last tested commit; every bug from round N−1 is a risk with its original reproduction as a checklist item, decided `FIXED` / `NOT FIXED`, plus a risk for what sits next to the fix; every unresulted risk carries over; the verdict lists each prior bug's result |
 | U16 | May the run create or change data on the stand? | **Yes, only on a non-production stand** the profile declares as such and the probe matches; otherwise the run is read-only and every item that needs a write is BLOCKED with that reason. Everything created is deleted by ledger id |
-| U17 | Test-data building in v1 | **Core + adapter.** Core: live discovery, create-on-the-fly through the platform APIs, ledger teardown, an alias registry in the project store, test accounts per role. Seeders and the data model (`/qa-test-data-model`, `/qa-seed-data`, `test-data-engineer`) are an adapter — used where present (this repository); for clients they come next, like the map builders |
+| U17 | Test-data building in v1 | **The whole family moves into the plugin in v1, refactored** (owner, revising "seeders as an adapter"): `qa-test-data-model`, `qa-generate-data`, `qa-seed-data` (skill + command), the `test-data-engineer` agent and the seeding engine become the plugin's canonical copies and work on a client's project too. This repository's domain seeders and fixtures stay here as the platform project's **content**, as a client's live in the client's project. The refactor makes the family lighter, adapted to any project and flexible (§6a) |
 | U10 | Committed tests | An exception like `plugins/vc-secrets/`: the knowledge-store write router and the write-zone check get **committed** tests; everything else follows the repository rule (temporary tests, deleted before commit) |
 
 ## 3. The shape
@@ -93,6 +93,7 @@ next to the fix; every unresulted risk carries over. The floors still read the w
 | `skills/qa-test-strategy/` | **moved**; floors read `capabilities.json` (§5.2); Artifacts rows come from the registry | `artifacts.json`, `capabilities.json` |
 | `skills/qa-test-model/`, `qa-exploratory/`, `qa-triage-results/` (ticket mode), `qa-design/` | **moved** canonical copies; `qa-triage-results` loses `disable-model-invocation` (U14) | `vc-fix` agents and skills |
 | `vc-fix`: `qa-checklist`, `qa-investigate`, `qa-bug`, `qa-risk`, `qa-evidence`, agents `qa-*-expert`, `project-init`, `project-profile.json` | **reused**; `qa-bug` unchanged. One change, one `vc-fix` version bump: `qa-checklist` Mode 5 names the risk id in Ref and gains `--from-strategy` | — |
+| `skills/qa-test-data-model/`, `qa-generate-data/`, `qa-seed-data/` + command, agent `test-data-engineer`, `lib/seed/` engine | **moved and refactored** (§6a, U17); domain seeders stay project content | profile, `capabilities.json`, the project store |
 | `lib/artifacts.json` | the only list of artifacts (§5.1) | — |
 | `lib/capabilities.mjs` | probes the install, writes `capabilities.json` | profile, env, MCP list, project files |
 | `lib/plan-run.mjs` | approved strategy + registry + capabilities → `run-plan.json` | the three above |
@@ -214,10 +215,10 @@ that data comes from on any VC project, and the guard that keeps the run off pro
 | `@td(ALIAS.field)` — entities asserted by name | the alias registry in the project store (`test-data/aliases.json`); this repository's `test-data/` is its platform configuration | yes, per project |
 | `live-discover` — any entity matching a shape | xAPI / REST queries, identical on every VC platform; the plugin carries its own copy of the discovery library | yes |
 | `create-on-fly` — unique `AGENT-TEST-` values created right before use | the platform's GraphQL / REST operations, the random-data library copied into the plugin | yes |
-| seeders, fixtures, the data model | `scripts/seed-data/`, `test-data/models/`, `/qa-seed-data`, `test-data-engineer` | **adapter** (U17) |
+| seeders, fixtures, the data model | the plugin's seeding engine + `/qa-test-data-model`, `/qa-generate-data`, `/qa-seed-data`, `test-data-engineer`; the domain seeders and fixtures are the project's content | yes, after the refactor below (U17) |
 
 **The `test-data` artifact** (registry, wave 1) reads the strategy's Data section and, before any lane opens:
-checks every named alias is live, runs only the seeders a Data cell names (adapter), and confirms each browser
+checks every named alias is live, runs only the seeders a Data cell names, and confirms each browser
 lane has its own account (one session per agent). A gap is `FIXTURE-GAP` on the items that need it — BLOCKED,
 never FAIL.
 
@@ -229,6 +230,18 @@ authority and the probe only checks the run is pointed at the stand that was dec
 
 **Teardown** is by ledger id only, oldest dependency last, after the bugs are filed — never a prefix sweep,
 because persistent fixtures share the prefix. An entity that could not be deleted is named in `verdict.md`.
+
+**The refactor of the family (U17)** — today it is shaped by this repository: `qa-seed-data` alone is ~93,000
+chars across four files, and the skills cite this repository's paths, domains and fixtures throughout.
+
+| Aim | What it means |
+|---|---|
+| **Lighter** | each `SKILL.md` keeps only the steps every run needs, under BUDGET-004; recipes per domain, recovery paths and examples move to supporting files read on demand; nothing restates `rules/test-data.md` |
+| **Adapted** | paths through `pluginRoot()` / `outputRoot()`; environment, accounts and the stand's writability from the profile and `capabilities.json` (U16); the alias registry and data models in the project store (§6); no VC-catalog names in the method |
+| **Flexible** | the engine runs declarative specs: a project's data model names the states it needs, a project seeder is a spec module plugged into the engine, and the engine supplies the generic platform operations (create organization, user, product, price, inventory, order …) through xAPI / REST. A client adds a domain by writing a spec, not by forking the engine |
+
+This repository's seeders become the first project content on the new engine and are the regression check:
+`td:validate` and `td:reconcile` stay green on the platform project before and after.
 
 The rules themselves — never hardcode, a fixture is designed from the chain's question, evidence output is not a
 case's business, create in the case what the environment can take away — travel with the plugin as its own copy
@@ -295,6 +308,7 @@ Every step ends in one of four states: **OK**, **SKIP**(reason), **BLOCKED**(rea
 |---|---|---|
 | **P1 Foundation** | plugin manifest, `vc-fix` dependency, marketplace entry; `/vc-test:init` (test accounts per role, stand declared writable or not, knowledge-store path); `ticket-context` and `qa-test-strategy` moved; tracker/host interfaces with Jira, GitHub, Azure Boards and Azure Repos; `capabilities.mjs`; F6 via `/api/platform/modules`; `knowledge-store.mjs` (+ committed tests); the "unavailable is not doubt" rule in the floors | `claude plugin validate`; committed store tests; temporary tests for the rest; `/ticket-context` + strategy from the plugin on VCST-5097 reproduce today's bundle and gate result; Azure connectors against recorded responses |
 | **P2 Flow** | `artifacts.json`, `plan-run.mjs`, `route.mjs`, `rounds.mjs`, `trace.mjs`, `write-zones.mjs` (+ committed tests); the command with its two human points; execution skills moved (`qa-triage-results` invocable); `qa-checklist` risk ids (`vc-fix` bump); the round-N delta that proves fixes; the join speed-up (O6); per-entry models | `--dry-run` on 3 tickets: wave plan, gates, no outward write |
+| **P2b Test data** | the test-data family moved and refactored (§6a): lighter skills, the engine with generic platform operations, this repository's seeders ported as project content | `td:validate` + `td:reconcile` green on the platform project before and after; one domain seeded and torn down from the plugin on a non-production stand; BUDGET-004 for every moved `SKILL.md` |
 | **P3 Validation, stage 1 — native platform** | live runs on 3–5 VC tickets in this repository (Story, Review task, Technical task, UI-only, Bug not-fixed) on Jira + GitHub, with the plugin installed the way a client installs it | redesign §8 measures (R3 not slower on a small ticket, R4 nothing FULL ran is lost on a large one, no floor overridden by hand); the platform store receives the kb writes |
 | **P4 Removal** — after stage 1 passes | `/qa-test` FAST/FULL, `/qa-test-fast`, `ticket-routing.md` §5–§5d, Artifact A, `3-cases`, `1e-plan` removed; `ci/run-full-cycle.ts`, `ci/run-suite-audit.ts` and the other consumers repointed or cleaned; the plugin tagged for internal use (`docs/release-process.md`) | `npm run context:check`, `npm test`, CI |
 | **P5 Validation, stage 2 — real client project** | at least one live run on the **real client Azure DevOps project**, with the plugin installed in the client's checkout | Azure Boards + Azure Repos read end to end; SKIPs for missing adapters; every write inside the client's `outputRoot()` and project store; zero platform writes. Its reports stay in the client's project; only anonymous measures are recorded here. A pass releases the plugin to clients (marketplace description + tag) |
@@ -306,8 +320,6 @@ Every step ends in one of four states: **OK**, **SKIP**(reason), **BLOCKED**(rea
   selection), and the post-verdict corpus update through `/qa-test-lifecycle`. Until then the run hands its
   candidate and stale case lists to the project store's test documentation.
 - **Client domain-map and mind-map builders** writing into the project store (U6).
-- **Client seeders and test-data models** (U17): until then a client run uses live discovery, create-on-the-fly
-  and its alias registry.
 
 ## 12. Risks
 
