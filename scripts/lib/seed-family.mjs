@@ -15,6 +15,7 @@
  * step; `--only`, `--dry-run`, `--verbose` and `--fresh` are forwarded untouched.
  */
 
+import "./sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
