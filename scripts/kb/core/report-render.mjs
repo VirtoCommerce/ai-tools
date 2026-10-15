@@ -561,6 +561,8 @@ export function renderText(report) {
   out.push(`  entries served ${p.entries.used.length} of ${p.entries.indexed} indexed; ${p.entries.never.length} never served here`);
   out.push(`  evidence       ${p.evidence.confirms} confirm, ${p.evidence.disputes} dispute, ${p.evidence.contested.length} contested`);
   if (p.evidence.builds) out.push(`  builds         ${p.evidence.builds.stamped} of ${p.evidence.builds.writes} write(s) carry a build; ${p.evidence.builds.soft} soft dispute(s) (on another build)${p.evidence.queue ? `; ${p.evidence.queue.softOpen ?? 0} soft dispute(s) open on the base` : ''}`);
+  const why = Object.entries(p.evidence.builds?.missing ?? {}).sort((a, b) => b[1] - a[1]);
+  if (why.length) out.push(`  no build       ${why.map(([k, n]) => `${k} ${n}`).join(', ')}${p.evidence.builds.clients?.length ? `; clients ${p.evidence.builds.clients.join(', ')}` : ''}`);
   out.push(`  refusals       ${p.refusals.total} as duplicate, ${p.refusals.atDoor.length} turned away at the door`
     + `${p.refusals.atDoor.length ? ` (${p.refusals.atDoorRetried} retried and landed)` : ''}`);
   const d = p.refusals.door;
