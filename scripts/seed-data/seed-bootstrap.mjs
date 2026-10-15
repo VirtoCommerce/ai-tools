@@ -184,7 +184,7 @@ const STEPS = [
   // catalog discovery, so the products phase (40) must already have run. It turns ONLY
   // `Loyalty.Missions.Enable` on and never touches the base `Loyalty.Enable` that suites 075/075b/075c
   // read through LOYALTY_SETTINGS.
-  { name: 'loyalty-missions', script: 'loyalty/seed-loyalty-missions.mjs', required: false, priority: 122 },
+  { name: 'loyalty-missions', script: 'loyalty/seed-loyalty-missions.mjs', required: false, priority: 122, demoFamily: 'loyalty-missions' },
   { name: 'white-labeling', script: 'white-labeling/seed-white-labeling.mjs', required: false, priority: 130 },
   // Restricted back-office (Manager) RBAC account for CMS-123/124 — read-only Page Builder, no
   // builder:update. Independent of the catalog/user graph (own role + account); optional.

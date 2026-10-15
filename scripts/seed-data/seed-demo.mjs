@@ -10,6 +10,7 @@
  *   sales-rep  — organizations, buyers, reps' books, orders, documents, tasks, lists, carts
  *   returns    — delivered orders + returns in every status, on the sales-rep demo's customers
  *                (depends on sales-rep: it reads that demo's ledger for orgs and buyer accounts)
+ *   loyalty-missions — store-wide missions with buyer progress (completed / in progress / not started)
  *
  * Families WITHOUT a demo profile are untouched — their fixtures stay whatever is seeded. Run
  * `npm run seed:demo -- --list` to see which families have one.
@@ -35,6 +36,9 @@ const TEST_ENV = process.env.TEST_ENV || 'vcst';
 export const DEMO_FAMILIES = [
   { name: 'sales-rep', script: 'sales-rep/seed-sales-rep-family.mjs', dependsOn: [] },
   { name: 'returns', script: 'orders/seed-returns-family.mjs', dependsOn: ['sales-rep'] },
+  // After returns, not only after sales-rep: mission progress moves on EVERY order a demo buyer gets,
+  // so the returns demo's orders must exist before the missions do, or they would count toward them.
+  { name: 'loyalty-missions', script: 'loyalty/seed-missions-family.mjs', dependsOn: ['sales-rep', 'returns'] },
 ];
 
 function orderProblems(families = DEMO_FAMILIES) {

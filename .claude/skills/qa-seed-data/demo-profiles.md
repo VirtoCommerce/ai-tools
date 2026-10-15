@@ -20,6 +20,7 @@ TEST_ENV=virtostart npm run seed:demo -- --family returns
 |---|---|---|---|---|
 | sales-rep | `seed:sales-rep-family -- --profile demo` | `sales-rep/sales-rep-demo-specs.mjs` | `_meta.dataset_profile` | [`sales-rep-profiles.md`](sales-rep-profiles.md) |
 | returns (after sales-rep) | `seed:returns-family -- --profile demo` | `test-data/orders/returns-demo/returns-demo.json` | `_meta.dataset_profiles.returns` | below |
+| loyalty-missions (after returns) | `seed:missions-family -- --profile demo` | `test-data/loyalty/missions-demo/missions-demo.json` | `_meta.dataset_profiles.loyalty-missions` | below |
 
 ## Returns demo
 
@@ -42,6 +43,21 @@ Completed — plus two freshly delivered orders with no return for a live Reques
 - **Organization returns view:** the seeder reports whether `Organization maintainer` carries
   `xapi:my_organization:return:view`; it never edits a built-in role.
 
-**Adding a family:** give it a demo dataset as a `test-data/` fixture, a family entrypoint with
-`--profile demo` and its own `_meta.dataset_profiles.<family>` stamp, then one row in `DEMO_FAMILIES`
-(`seed-demo.mjs`).
+## Loyalty missions demo
+
+Six store-wide missions — order count, order value, featured SKUs; one ending within 10 days (red badge),
+one open-ended — and nine orders placed by four demo buyers after the missions exist. On `/account/missions`:
+Margaret Hale has three completed (rewards in Points history) and two part-way; Priya Raman, James Whitfield
+and Daniel Okafor are part-way or completed on others; Thomas, Elena and Marcus have nothing started.
+
+- **Progress cannot be written, reset or reversed**, and every order feeds every active mission, so the set
+  is reused WHOLE or rebuilt WHOLE (`--fresh`). Granted points stay in the buyers' ledgers after a rebuild
+  or teardown. The seeder derives the expected progress from the fixture and polls until it is reached.
+- **Ordering:** after returns in `seed:demo` — any order a demo buyer gets later counts toward the missions.
+- **Store-wide:** every account sees every Published mission, including ones the demo did not create; the
+  family warns when AGENT-TEST missions are live. `seed:bootstrap` skips `loyalty-missions` while the demo holds.
+- The 083d E2E set (`seed:missions-e2e`) is per-run and stays outside the family.
+
+**Adding a family:** give it a demo dataset as a `test-data/` fixture, a family entrypoint built on
+`scripts/lib/seed-family.mjs` (`runFamily`: profiles, stamp, mutual exclusion, teardown), then one row in
+`DEMO_FAMILIES` (`seed-demo.mjs`).
