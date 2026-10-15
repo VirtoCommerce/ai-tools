@@ -279,6 +279,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Violation signal:** Two orders with same items created; button remains clickable during processing; no loading indicator.
 - **Agents:** qa-frontend-expert, qa-backend-expert, qa-testing-expert, test-management-specialist
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] SMK-013 failed in REG-2026-10-15-1115
 
 ### BL-CHK-003: Address validation by country `[P1-data]`
 - **Rule:** Checkout address forms adapt the **State/Province** requirement to the selected country, but **ZIP/Postal code is required unconditionally regardless of country** (the `postalCode` field's schema has no country branch). State/Province is required when the selected country has one or more regions and is hidden/optional otherwise. US requires state; the address must be validated before proceeding to payment.
@@ -311,6 +312,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Docs:** platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Cart/objects/CartTotalType.md — per-currency bucket with total, subTotal, taxTotal, discountTotal
 - **Source:** VCST-661 (Done) — a '% off cart subtotal' reward ignored which items were selected in the cart; fixed
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] SMK-013 failed in REG-2026-10-15-1115
 
 ### BL-CHK-007: Minimum order amount enforcement `[P0-revenue]`
 - **Rule:** **NOT native to Virto Commerce** (live-verified 2026-07-15: no store-level monetary minimum-order-amount setting and no native cart validator that blocks Place Order on a below-minimum subtotal — native cart validation is quantity/stock/price-based only: MinQuantity/MaxQuantity/PackSize, out-of-stock, price-changed). This invariant applies **ONLY to deployments that add a custom minimum-order validator/setting**. Where such a validator exists: when a store has a minimum order amount configured, the checkout "Place Order" button must be disabled (or checkout blocked) if the cart subtotal (after discounts) is below the minimum. The minimum applies to the subtotal, not the grand total (before shipping/tax). A clear message must indicate the minimum and the shortfall.
@@ -327,6 +329,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Agents:** qa-frontend-expert, qa-backend-expert, qa-testing-expert, test-management-specialist
 - **Source:** VCST-4710 (Done) — address selection popup story: sorting, full-text search, and faceted filtering by Country, City and State
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] A11Y-SORT-001, A11Y-SORT-002, A11Y-SORT-003 failed in REG-2026-10-15-1115
 
 ---
 
@@ -381,6 +384,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Source:** vc-module-core `CounterOptions.cs` — default `ResetCounterType.Daily`; `SequenceNumberGeneratorService.ShouldResetCounter` resets the sequence at the UTC day boundary.
 - **Source:** VP-8617 (Done) — fixed duplicate order numbers generated across users and stores; expected each order number to be unique.
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] SMK-013 failed in REG-2026-10-15-1115
 
 ### BL-ORD-006: Payment state machine (detailed) `[P0-revenue]`
 - **Rule:** Payment states and allowed transitions:
@@ -462,7 +466,6 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Docs:** platform/developer-guide/docs/Tutorials-and-How-tos/How-tos/user-email-verification.md (published) — email verification is a per-store toggle, disabled by default, checked on registration.
 - **Docs:** platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Profile/Mutations/confirmEmail.md (published) — confirming the email completes verification, allowing the customer to sign in.
 - **Trust:** DECLARED
-- **Lifecycle:** SUSPECT — [code] vc-module-profile-experience-api@42213c4:src/VirtoCommerce.ProfileExperienceApiModule.Data/Commands/RegisterRequestCommandHandler.cs#LockAccount - when email verification is required the account is locked until the email is confirmed, so the user cannot sign in at all; the rule describes a signed-in unverified user (browse, cart allowed, checkout blocked, 'Please verify' message) and expiring links - re-run the check
 
 ### BL-AUTH-003: Account lockout after N failed attempts `[P1-data]`
 - **Rule:** After a configurable number of consecutive failed login attempts (platform default: 5), the account is temporarily locked. During lockout, even correct credentials are rejected with a generic message (not revealing whether the account exists). Lockout duration is configurable. Successful login resets the failure counter.
@@ -856,7 +859,6 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Agents:** qa-frontend-expert, qa-backend-expert
 - **Source:** VP-7347 (Done) — a child of a hidden category was still returned as visible; fixed: subcategories inherit hidden
 - **Trust:** DECLARED
-- **Lifecycle:** SUSPECT — [code] vc-module-catalog@f3b31c3:src/VirtoCommerce.CatalogModule.Data/Search/Indexing/ProductDocumentBuilder.cs#IsVisible (:369-374) indexes a product as status 'hidden' unless product.IsActive && ParentCategoryIsActive (CatalogProduct.cs:465, category and all ancestors active), commented 'Product must inherit hidden flag from parent categories'; this contradicts the clause 'products within a hidden category remain accessible via ... search'. No human source decides it (VP-7347 covers only child categories inheriting hidden), re-run the check
 
 ### BL-CAT-005: Product requires virtual catalog assignment for storefront `[P1-data]`
 - **Rule:** A product that exists only in a physical catalog (not linked to any virtual catalog assigned to a store) will NOT appear on the storefront. The storefront reads from the single catalog assigned to the store, which may be a physical catalog directly or a virtual catalog built over one or more physical catalogs. Products must be in a category within the store's assigned catalog (or its linked physical catalog) to be visible.
@@ -2406,11 +2408,11 @@ ticket or a docs page disputes (`status`).
 |--------|----------|-------|----|----|----|----------|---------|
 | Pricing & Discounts | BL-PRICE-001–009 | 9 | 7 | 1 | 1 | 6 | 2 |
 | Cart | BL-CART-001–015 | 15 | 5 | 10 | 0 | 7 | 1 |
-| Checkout | BL-CHK-001–008 | 8 | 5 | 3 | 0 | 1 | 0 |
-| Orders & Fulfillment | BL-ORD-001–010 | 10 | 3 | 7 | 0 | 5 | 1 |
-| Users & Authentication | BL-AUTH-001–017 | 17 | 5 | 11 | 1 | 9 | 3 |
+| Checkout | BL-CHK-001–008 | 8 | 5 | 3 | 0 | 1 | 3 |
+| Orders & Fulfillment | BL-ORD-001–010 | 10 | 3 | 7 | 0 | 5 | 2 |
+| Users & Authentication | BL-AUTH-001–017 | 17 | 5 | 11 | 1 | 9 | 2 |
 | B2B / Organization | BL-B2B-001–013 | 13 | 4 | 9 | 0 | 10 | 3 |
-| Catalog & Inventory | BL-CAT-001–012 | 12 | 2 | 6 | 4 | 8 | 5 |
+| Catalog & Inventory | BL-CAT-001–012 | 12 | 2 | 6 | 4 | 8 | 4 |
 | Cross-Domain Invariants | BL-CROSS-001–012 | 12 | 7 | 5 | 0 | 5 | 6 |
 | Search | BL-SRCH-001–007 | 7 | 0 | 5 | 2 | 6 | 0 |
 | Shipping & BOPIS | BL-SHIP-001–004 | 4 | 2 | 2 | 0 | 2 | 0 |
@@ -2433,4 +2435,4 @@ ticket or a docs page disputes (`status`).
 | Analytics & Tracking | BL-GA4-001–004 | 4 | 0 | 4 | 0 | 3 | 2 |
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Returns | — | 0 | 0 | 0 | 0 | 0 | 0 |
-| **Total** | | **223** | **60** | **125** | **38** | **114** | **39** |
+| **Total** | | **223** | **60** | **125** | **38** | **114** | **41** |

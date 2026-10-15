@@ -216,8 +216,8 @@ rules:
     violation_signal: Any sales-rep widget/query for a non-rep; hub reachable while the module is disabled (client-side-only gate); OR a customer-less rep's rep-facing hub links render but **redirect to `/account/dashboard`** (visible-but-dead links — the pre-fix VCST-5494 behavior).
     status: ACTIVE
     verified:
-      date: 2026-10-07
-      by: REG-2026-10-07-1421
+      date: 2026-10-15
+      by: REG-2026-10-15-1115
   - id: BL-SR-012
     title: Filter-aware empty states distinguish "no data" from "nothing matched the filter/search"
     rule: The orders, top-sellers and my-customers views render **distinct** empty states for "the rep has no data at all" vs "the current filter/search matched nothing" — the latter must offer a way back (clear filter/search), not read as "you have no customers/orders".
