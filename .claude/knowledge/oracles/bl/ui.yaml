@@ -72,7 +72,7 @@ rules:
     status: ACTIVE
     verified:
       date: 2026-10-15
-      by: REG-2026-10-15-1115
+      by: REG-2026-10-15-1453
   - id: BL-UI-005
     title: Alignment in horizontal groups
     rule: "Elements in a horizontal group share a baseline: text baselines align, vertical centers align within 1 px, buttons in the same row share `height` exactly, and an icon adjacent to text vertically centers with that text (within 1 px). Product-grid cells share height per row; table-row cells share height per row."

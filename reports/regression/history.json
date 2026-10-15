@@ -3028,5 +3028,37 @@
     "pass_rate": 100,
     "duration_minutes": 9.88,
     "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-10-15-1453",
+    "date": "2026-10-15",
+    "suiteId": "015",
+    "suiteName": "Quotes",
+    "environment": "vcst",
+    "browser": "playwright-chrome",
+    "total": 32,
+    "passed": 5,
+    "failed": 16,
+    "blocked": 6,
+    "skipped": 5,
+    "pass_rate": 23.81,
+    "duration_minutes": 30.12,
+    "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-10-15-1453",
+    "date": "2026-10-15",
+    "suiteId": "106",
+    "suiteName": "Sales Rep — Tasks (storefront)",
+    "environment": "vcst",
+    "browser": "playwright-edge",
+    "total": 29,
+    "passed": 24,
+    "failed": 2,
+    "blocked": 3,
+    "skipped": 0,
+    "pass_rate": 92.31,
+    "duration_minutes": 33.88,
+    "mode": "interactive"
   }
 ]

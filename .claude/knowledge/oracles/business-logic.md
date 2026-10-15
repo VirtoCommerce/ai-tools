@@ -136,6 +136,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Docs:** platform/user-guide/docs/cart/overview.md — the cart module reserves stock for cart products until checkout completes
 - **Source:** VP-2862 (Done) — a product with zero stock and zero preorder quantity could still be added and bought; fixed
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] QUOTE-026 failed in REG-2026-10-15-1453
 
 ### BL-CART-003: Coupon + sale interaction `[P0-revenue]`
 - **Rule:** A percentage coupon applies to the already-discounted (sale) price, not the original list price. A fixed-amount coupon subtracts from the cart total after all line-level discounts. If a coupon's minimum order amount is not met after sale discounts, the coupon must be rejected. Only one coupon per cart unless multi-coupon is explicitly enabled.
@@ -2409,7 +2410,7 @@ ticket or a docs page disputes (`status`).
 | Domain | ID Range | Total | P0 | P1 | P2 | DECLARED | SUSPECT |
 |--------|----------|-------|----|----|----|----------|---------|
 | Pricing & Discounts | BL-PRICE-001–009 | 9 | 7 | 1 | 1 | 6 | 2 |
-| Cart | BL-CART-001–015 | 15 | 5 | 10 | 0 | 7 | 1 |
+| Cart | BL-CART-001–015 | 15 | 5 | 10 | 0 | 7 | 2 |
 | Checkout | BL-CHK-001–008 | 8 | 5 | 3 | 0 | 1 | 2 |
 | Orders & Fulfillment | BL-ORD-001–010 | 10 | 3 | 7 | 0 | 5 | 2 |
 | Users & Authentication | BL-AUTH-001–017 | 17 | 5 | 11 | 1 | 9 | 3 |
@@ -2437,4 +2438,4 @@ ticket or a docs page disputes (`status`).
 | Analytics & Tracking | BL-GA4-001–004 | 4 | 0 | 4 | 0 | 3 | 2 |
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Returns | — | 0 | 0 | 0 | 0 | 0 | 0 |
-| **Total** | | **223** | **60** | **125** | **38** | **114** | **43** |
+| **Total** | | **223** | **60** | **125** | **38** | **114** | **44** |

@@ -173,8 +173,8 @@ rules:
     violation_signal: "Unknown filter returns the full/baseline set (fails open); a raw status/type accepted instead of a rule name; discovery returns raw enum keys — **on one of the four named axes.** NOT a violation of this rule: a raw field:value filter narrowing `salesRepCustomerOrders`, or the absence of a filter-rule discovery query on that surface."
     status: ACTIVE
     verified:
-      date: 2026-10-07
-      by: REG-2026-10-07-1421
+      date: 2026-10-15
+      by: REG-2026-10-15-1453
   - id: BL-SR-010
     title: One named sort rule per axis; unknown name → default ordering; unsupported direction → ERROR; `customerSalesReps` exempt
     rule: 'Lists are ordered by a single **named sort rule** discovered via `salesRepOrderSortRules` (`recent` default, `total`) / `salesRepCustomerSortRules` (`my-last-orders` default, `ytd-purchases`, `name`) / `salesRepTopSellerSortRules` (`by-units` default, `by-revenue`). A sort **never fails closed on the name** — an unknown/omitted rule name falls back to the domain default (no error). An optional `:asc`/`:desc` direction suffix reverses a rule **where meaningful** (`total:asc`, `name:desc`, `ytd-purchases:asc`); an **unsupported direction is rejected with an error** (`recent:asc`, `by-units:asc` → `extensions.code=ARGUMENT`). `customerSalesReps` accepts a plain member `sort` (e.g. `name:asc`) but is **exempt from the named rep sort-rule vocabulary** (no discovery query). The customers-list direction applies uniformly to member-column and order-derived (`my-last-orders`/`ytd-purchases`) rankings. **This invariant governs exactly those three axes (plus the stated `customerSalesReps` exemption) and does not extend to the index-backed "every order of a served customer" surface** (`salesRepCustomerOrders`): its `sort` takes a raw X-Order **field expression** (`<indexField>:asc|desc`), ships no sort-rule discovery query, performs **no direction validation** — an unsupported direction is accepted silently rather than rejected — and an unrecognized token does **NOT** fall back to the domain default but yields a third, undefined ordering. All of that is that surface working as designed, not a violation of this rule.'
@@ -217,7 +217,7 @@ rules:
     status: ACTIVE
     verified:
       date: 2026-10-15
-      by: REG-2026-10-15-1115
+      by: REG-2026-10-15-1453
   - id: BL-SR-012
     title: Filter-aware empty states distinguish "no data" from "nothing matched the filter/search"
     rule: The orders, top-sellers and my-customers views render **distinct** empty states for "the rep has no data at all" vs "the current filter/search matched nothing" — the latter must offer a way back (clear filter/search), not read as "you have no customers/orders".

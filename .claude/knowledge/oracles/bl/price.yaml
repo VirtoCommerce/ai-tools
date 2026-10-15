@@ -27,7 +27,7 @@ rules:
     status: ACTIVE
     verified:
       date: 2026-10-15
-      by: REG-2026-10-15-1115
+      by: REG-2026-10-15-1453
   - id: BL-PRICE-002
     title: Tax calculation position
     rule: Tax is always calculated AFTER all discounts are applied. Tax base = (line total after discounts), not the pre-discount subtotal. Tax rate depends on the shipping address (destination-based).

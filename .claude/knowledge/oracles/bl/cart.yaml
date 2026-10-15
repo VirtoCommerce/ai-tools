@@ -48,10 +48,11 @@ rules:
       kind: manual
       ref: Add item (stock=2) → in another session/admin, reduce stock to 0 → attempt checkout → error message, order NOT created. Cart should flag the item.
     violation_signal: Order placed successfully for an out-of-stock item; no error shown at checkout; oversold inventory.
-    status: ACTIVE
+    status: SUSPECT
     verified:
       date: 2026-10-15
       by: REG-2026-10-15-1115
+    suspect_reason: "[case] QUOTE-026 failed in REG-2026-10-15-1453"
   - id: BL-CART-003
     title: Coupon + sale interaction
     rule: A percentage coupon applies to the already-discounted (sale) price, not the original list price. A fixed-amount coupon subtracts from the cart total after all line-level discounts. If a coupon's minimum order amount is not met after sale discounts, the coupon must be rejected. Only one coupon per cart unless multi-coupon is explicitly enabled.
