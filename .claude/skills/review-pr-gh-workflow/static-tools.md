@@ -1,0 +1,47 @@
+# Static tools — actionlint and zizmor
+
+Read at `SKILL.md` Step 5. Both are optional; the review is complete without them, and says which
+ran. Neither is installed without the user's yes.
+
+| Tool | Catches | Misses |
+|---|---|---|
+| **actionlint** | YAML and schema errors, invalid expressions, type errors in `${{ }}`, unknown inputs of popular actions, `shellcheck` findings inside `run:` (when `shellcheck` is on PATH), some injection patterns | anything about callers, branch protection or secrets setup; semantics of third-party actions it does not know |
+| **zizmor** | the security classes in `checklist/security.md` — dangerous triggers, template injection, excessive permissions, unpinned uses, credential persistence, `secrets: inherit`, cache poisoning | correctness, contract and cost; context it cannot see (who can trigger, environment rules) |
+
+## Running them
+
+On the changed files only, in the worktree, writing to `<scratch>`:
+
+```bash
+git -C <worktree> diff --name-only --diff-filter=d <base>...HEAD -- '.github/workflows/*' 'workflow-templates/*.yml' '**/action.yml' '**/action.yaml' > <scratch>/changed-workflows.txt
+actionlint -version
+( cd <worktree> && actionlint $(grep -v 'action\.ya\?ml$' <scratch>/changed-workflows.txt) ) > <scratch>/actionlint.txt 2>&1
+zizmor --version
+( cd <worktree> && zizmor --format plain $(cat <scratch>/changed-workflows.txt) ) > <scratch>/zizmor.txt 2>&1
+```
+
+actionlint does not lint composite actions, hence the filter. **Use the repository's own config**:
+run from the worktree root so `.github/actionlint.yaml` is picked up, and pass `--config zizmor.yml`
+to zizmor when the repository has one at its root (`VirtoCommerce/.github` does) — the review applies
+the repository's policy, not the tools' defaults. Prefer the tool versions the repository's own gate
+pins, when it pins them. Its online audits (`--gh-token`, e.g. checking
+whether a pinned SHA matches a tag) query GitHub with a token — run them only if the user agrees,
+and never with a token that can write.
+
+`<base>` and `<worktree>` are the values `prepare.mjs` printed. These commands do prompt — they run
+code on the machine, which is worth a look.
+
+**Compare against the base, not against zero.** Run the same command at `<base>` (a second detached
+worktree, or `git show <base>:<file> > <scratch>/base/<file>`) and report
+what the PR **adds or removes**. A pre-existing finding in an untouched part of a changed file is not
+this PR's defect — mention it in "checked and clean" or as an item for the owners, never as a
+finding against the PR.
+
+## Reading the output
+
+- Every tool finding is a proposal: verify it at `file:line` in Step 6, like a helper's.
+- A tool's severity is not this skill's severity. zizmor rates by pattern; the review rates by who can
+  trigger it and what the job holds (`SKILL.md` §Severity scale).
+- **A clean run is not a clean review.** Both tools work file by file: they do not see callers, the
+  callee at its pinned ref, branch protection or organization defaults. Count a clean result only as
+  "the patterns these tools know are absent from the changed files".
