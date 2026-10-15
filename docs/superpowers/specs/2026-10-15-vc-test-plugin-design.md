@@ -45,6 +45,8 @@ removed once the new command has passed validation (§10 P4).
 | U13 | Who writes the checklist | **The orchestrator, inline** — it already holds the bundle and the strategy, and a subagent would need them retold |
 | U14 | `qa-triage-results` cannot be called by the Skill tool (`disable-model-invocation: true`) | **Remove the flag** in the plugin's canonical copy |
 | U15 | Round N ≥ 2 | **A delta strategy that proves the fixes**: the diff from the last tested commit; every bug from round N−1 is a risk with its original reproduction as a checklist item, decided `FIXED` / `NOT FIXED`, plus a risk for what sits next to the fix; every unresulted risk carries over; the verdict lists each prior bug's result |
+| U16 | May the run create or change data on the stand? | **Yes, only on a non-production stand** the profile declares as such and the probe matches; otherwise the run is read-only and every item that needs a write is BLOCKED with that reason. Everything created is deleted by ledger id |
+| U17 | Test-data building in v1 | **Core + adapter.** Core: live discovery, create-on-the-fly through the platform APIs, ledger teardown, an alias registry in the project store, test accounts per role. Seeders and the data model (`/qa-test-data-model`, `/qa-seed-data`, `test-data-engineer`) are an adapter — used where present (this repository); for clients they come next, like the map builders |
 | U10 | Committed tests | An exception like `plugins/vc-secrets/`: the knowledge-store write router and the write-zone check get **committed** tests; everything else follows the repository rule (temporary tests, deleted before commit) |
 
 ## 3. The shape
@@ -111,7 +113,7 @@ Every hand-off is a file, never a summary in a brief.
 capabilities.json ─┐
 bundle.json ───────┼─► test-strategy.md (approved) ─► plan-run.mjs ─► run-plan.json
 artifacts.json ────┘                                                   │
-                          wave 1  test-model ‖ mind-map* ‖ contract-refresh*
+                          wave 1  test-data ‖ test-model ‖ mind-map* ‖ contract-refresh*
                           wave 2  exploratory           (when the strategy says FIRST)
                           wave 3  checklist ── trace.mjs check
                           wave 4  checklist-runners ‖ exploratory (ALONGSIDE) ‖ visual   (≤3 browser lanes)
@@ -140,7 +142,7 @@ list.
   "order": "strategy" }
 ```
 
-v1 entries: `test-model`, `mind-map`\*, `contract-refresh`\*, `checklist`, `exploratory`, `checklist-runners`
+v1 entries: `test-data`, `test-model`, `mind-map`\*, `contract-refresh`\*, `checklist`, `exploratory`, `checklist-runners`
 (storefront + admin/API lanes), `visual`, `verifier`. Adding an artifact = an entry + its skill; the command does
 not change. `model` is per entry (§8).
 
@@ -184,6 +186,7 @@ client customisation is not a platform error, so it never becomes a dispute agai
 | domain map | `domain/<slug>.md` | a domain-map builder (next phase) |
 | mind map | `domain/<slug>.mind-map.json` | a mind-map builder (next phase) |
 | test documentation | strategies, test models, checklists, verdicts, candidate and stale case lists | the flow |
+| test-data registry | `test-data/aliases.json` — the entities cases assert against by name (§6a) | `/vc-test:init` and the run, by proposal |
 | observed behaviour | kb entries: question, claim, trust, provenance | the flow's close: capture / confirm / dispute |
 
 **v1 backend:** a folder in the client's repository, default `qa-knowledge/`, path set in
@@ -198,6 +201,38 @@ Confluence) plug into the same interface later. This repository is one configura
 
 Its tests are committed (U10). v1 fills test documentation, observed behaviour and business-rule proposals —
 the things the flow already produces. Domain maps and mind maps are read when present.
+
+## 6a. Test data
+
+The strategy already says what data each risk needs (its Data section: source per risk, the values that must
+differ, what is created in the case) and every checklist item carries a Data cell. What the plugin adds is where
+that data comes from on any VC project, and the guard that keeps the run off production.
+
+| Layer | Resolved by | Portable? |
+|---|---|---|
+| `{{VAR}}` — URLs, accounts, store/culture/currency | the layered env; accounts per role (buyer, org admin, sales rep, back-office admin) asked once by `/vc-test:init` into `.env.local` | yes |
+| `@td(ALIAS.field)` — entities asserted by name | the alias registry in the project store (`test-data/aliases.json`); this repository's `test-data/` is its platform configuration | yes, per project |
+| `live-discover` — any entity matching a shape | xAPI / REST queries, identical on every VC platform; the plugin carries its own copy of the discovery library | yes |
+| `create-on-fly` — unique `AGENT-TEST-` values created right before use | the platform's GraphQL / REST operations, the random-data library copied into the plugin | yes |
+| seeders, fixtures, the data model | `scripts/seed-data/`, `test-data/models/`, `/qa-seed-data`, `test-data-engineer` | **adapter** (U17) |
+
+**The `test-data` artifact** (registry, wave 1) reads the strategy's Data section and, before any lane opens:
+checks every named alias is live, runs only the seeders a Data cell names (adapter), and confirms each browser
+lane has its own account (one session per agent). A gap is `FIXTURE-GAP` on the items that need it — BLOCKED,
+never FAIL.
+
+**Writes to the stand (U16).** `capabilities.json` carries `stand.writable`: true only when the profile declares
+the environment non-production (`/vc-test:init` asks once; undeclared means read-only) and `BACK_URL` is that
+declared environment's URL. There is no reliable runtime signal of "production", so the declaration is the
+authority and the probe only checks the run is pointed at the stand that was declared. Read-only ⇒ `create-on-fly`,
+`flip+restore` and seeders are BLOCKED with "stand not declared writable".
+
+**Teardown** is by ledger id only, oldest dependency last, after the bugs are filed — never a prefix sweep,
+because persistent fixtures share the prefix. An entity that could not be deleted is named in `verdict.md`.
+
+The rules themselves — never hardcode, a fixture is designed from the chain's question, evidence output is not a
+case's business, create in the case what the environment can take away — travel with the plugin as its own copy
+of `.claude/rules/test-data.md`, as `vc-fix` carries its rules (`plugins/CLAUDE.md`).
 
 ## 7. Connectors
 
@@ -258,7 +293,7 @@ Every step ends in one of four states: **OK**, **SKIP**(reason), **BLOCKED**(rea
 
 | Phase | Delivers | Checked by |
 |---|---|---|
-| **P1 Foundation** | plugin manifest, `vc-fix` dependency, marketplace entry; `ticket-context` and `qa-test-strategy` moved; tracker/host interfaces with Jira, GitHub, Azure Boards and Azure Repos; `capabilities.mjs`; F6 via `/api/platform/modules`; `knowledge-store.mjs` (+ committed tests); the "unavailable is not doubt" rule in the floors | `claude plugin validate`; committed store tests; temporary tests for the rest; `/ticket-context` + strategy from the plugin on VCST-5097 reproduce today's bundle and gate result; Azure connectors against recorded responses |
+| **P1 Foundation** | plugin manifest, `vc-fix` dependency, marketplace entry; `/vc-test:init` (test accounts per role, stand declared writable or not, knowledge-store path); `ticket-context` and `qa-test-strategy` moved; tracker/host interfaces with Jira, GitHub, Azure Boards and Azure Repos; `capabilities.mjs`; F6 via `/api/platform/modules`; `knowledge-store.mjs` (+ committed tests); the "unavailable is not doubt" rule in the floors | `claude plugin validate`; committed store tests; temporary tests for the rest; `/ticket-context` + strategy from the plugin on VCST-5097 reproduce today's bundle and gate result; Azure connectors against recorded responses |
 | **P2 Flow** | `artifacts.json`, `plan-run.mjs`, `route.mjs`, `rounds.mjs`, `trace.mjs`, `write-zones.mjs` (+ committed tests); the command with its two human points; execution skills moved (`qa-triage-results` invocable); `qa-checklist` risk ids (`vc-fix` bump); the round-N delta that proves fixes; the join speed-up (O6); per-entry models | `--dry-run` on 3 tickets: wave plan, gates, no outward write |
 | **P3 Validation, stage 1 — native platform** | live runs on 3–5 VC tickets in this repository (Story, Review task, Technical task, UI-only, Bug not-fixed) on Jira + GitHub, with the plugin installed the way a client installs it | redesign §8 measures (R3 not slower on a small ticket, R4 nothing FULL ran is lost on a large one, no floor overridden by hand); the platform store receives the kb writes |
 | **P4 Removal** — after stage 1 passes | `/qa-test` FAST/FULL, `/qa-test-fast`, `ticket-routing.md` §5–§5d, Artifact A, `3-cases`, `1e-plan` removed; `ci/run-full-cycle.ts`, `ci/run-suite-audit.ts` and the other consumers repointed or cleaned; the plugin tagged for internal use (`docs/release-process.md`) | `npm run context:check`, `npm test`, CI |
@@ -271,6 +306,8 @@ Every step ends in one of four states: **OK**, **SKIP**(reason), **BLOCKED**(rea
   selection), and the post-verdict corpus update through `/qa-test-lifecycle`. Until then the run hands its
   candidate and stale case lists to the project store's test documentation.
 - **Client domain-map and mind-map builders** writing into the project store (U6).
+- **Client seeders and test-data models** (U17): until then a client run uses live discovery, create-on-the-fly
+  and its alias registry.
 
 ## 12. Risks
 
