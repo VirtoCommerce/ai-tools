@@ -227,7 +227,8 @@ export function decide(prep, ranker, question, { retrieval = null, bodies = null
   // concepts the base holds": that is the one thing they are not.
   const near = r.parsed.concepts.slice(0, 3);
   return {
-    verdict, p, likelihood: verdict === 'ambiguous' ? likelihood(p) : null, features: f, entries, candidates: r.candidates, parsed: r.parsed,
+    // A lone candidate gets no band: the bands quote pick rates read off lists with rivals (tester run).
+    verdict, p, likelihood: verdict === 'ambiguous' ? (lone ? 'lone' : likelihood(p)) : null, features: f, entries, candidates: r.candidates, parsed: r.parsed,
     // Unfiled concepts only when NOTHING was found: under the none threshold there were candidates, filed under them.
     concepts: verdict === 'none' && !r.candidates.length ? near : [],
     // Below the none threshold there WERE candidates: the nearest is named, so "holds nothing close" is checkable.

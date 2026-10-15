@@ -153,6 +153,8 @@ const LIKELIHOOD_TEXT = Object.freeze({
   likely: 'likely: on lists this confident, agents found their answer in a headline about 9 times in 10 -- open the one that states your fact',
   possible: 'possible: on lists this confident, agents found their answer about half the time',
   unlikely: 'unlikely: on lists this confident, agents found their answer about 1 time in 4 -- open one only if its headline names your fact, else kb_none and find out',
+  // No rate: no measured list had a single candidate, so no pick rate can be quoted for one (tester run).
+  lone: 'lone: the base found only this one entry and has no measured odds for a list of one -- it may merely share a word with your question; open it only if its headline names your fact, else kb_none and find out',
 });
 
 /** How many characters of an entry's body an `ambiguous` headline carries. */

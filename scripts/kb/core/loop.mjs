@@ -105,9 +105,13 @@ export function pointersByAsk(records) {
       if (r.kind !== 'write' && (r.state || (wrote === 'capture' && !r.id))) continue;
       // The latest list on the topic that is still OPEN: a later list already closed must not hide an
       // earlier one the confirm settles (tester run of ai-tools#460).
+      // A confirm settles the latest open list that LISTED its entry, not merely the latest open one
+      // (retest of ai-tools#460: with two open lists, a confirm from the earlier closed neither).
       const onTopic = r.topic ? openOnTopic.get(String(r.topic)) ?? [] : [];
+      const lists = (at) => !Array.isArray(asksAt.get(at)?.shown) || !r.id
+        || asksAt.get(at).shown.some((s) => String(s).toUpperCase() === String(r.id).toUpperCase());
       const target = wrote === 'capture' && r.afterBy === 'handle' && r.after ? String(r.after)
-        : [...onTopic].reverse().find((at) => lastWord(pointed.get(at)).verdict === 'open') ?? null;
+        : [...onTopic].reverse().find((at) => lastWord(pointed.get(at)).verdict === 'open' && (wrote !== 'confirm' || lists(at))) ?? null;
       const ask = target ? asksAt.get(target) : null;
       if (ask && ask.state === 'ambiguous' && lastWord(pointed.get(target)).verdict === 'open') {
         const listed = wrote === 'confirm' && r.id && Array.isArray(ask.shown)
