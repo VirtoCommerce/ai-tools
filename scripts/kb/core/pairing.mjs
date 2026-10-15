@@ -16,9 +16,9 @@ const JOINERS = /[?.&=#]/;
  */
 // The GUID alternatives come before `\d+`: a GUID can start with digits, and `\d+` would stop at its
 // first letter. Virto writes most ids as 32 hex characters with no dashes, so that form is listed too.
-// Last, an id minted by code (`sku-123`, `ord-00012`): any one segment that holds a digit. Named
-// sub-resources (`search`, `addresses`, `edit`) do not.
-const ID_SEGMENT = /^\/(\{[^}/]*\}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9a-f]{32}|[a-z0-9_-]*\d[a-z0-9_-]*)/;
+// Last, an id minted by code (`sku-123`, `ord-00012`): a short prefix, a separator, then digits. Not
+// any segment holding a digit -- `/api/platform/oauth2` is an endpoint, not a record of `/api/platform`.
+const ID_SEGMENT = /^\/(\{[^}/]*\}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9a-f]{32}|[a-z]{1,8}[-_]\d+|\d+)/;
 
 /**
  * Does the match of a coordinate end here? At the end, at a non-route character, or at a joiner that

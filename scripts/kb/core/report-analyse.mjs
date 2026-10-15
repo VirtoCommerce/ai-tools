@@ -291,7 +291,11 @@ export function nearMisses(lines, idx) {
       const { byId, namespaces } = indexRows();
       // A shown id the snapshot lacks, or holds only as a row too malformed to normalise, cannot be
       // scored: counted as "not in the index", never as "scored nothing".
-      const shownRows = [...shown].map((id) => byId.get(id)).filter(Boolean);
+      // The card questions are part of what the verdict ranker matched on; `scoreRows` reads only
+      // subject + question, so they are folded into the question here, or coverage reads low and a
+      // candidate a human should read stays under the 0.45 band.
+      const shownRows = [...shown].map((id) => byId.get(id)).filter(Boolean)
+        .map((r) => ({ ...r, question: [r.question, ...(r.questions ?? [])].join(' ') }));
       if (!shownRows.length) { shownNotInIndex += 1; continue; }
       // The candidate that covered MOST of the question, not the best-scored: the panel's review band is
       // a coverage band, and an agent-rejected list's error bar is its closest candidate by that measure.
@@ -390,7 +394,7 @@ export function captureLoop(lines) {
   }
 
   const rows = [];
-  const counts = { afterMiss: 0, afterAnswer: 0, unlinked: 0, dangling: 0, refusedAfterMiss: 0 };
+  const counts = { afterMiss: 0, afterAnswer: 0, afterUnclosed: 0, unlinked: 0, dangling: 0, refusedAfterMiss: 0 };
 
   for (const l of lines) {
     // A `capture` logged with a `state` and no `id` is a failure to reach the base, not a write.
@@ -400,7 +404,12 @@ export function captureLoop(lines) {
 
     const ask = l.after ? askAt.get(`${l._session}\0${String(l.after)}`) : null;
     let link;
-    if (!l.after) { link = 'unlinked'; counts.unlinked += 1; } else if (!ask) { link = 'dangling'; counts.dangling += 1; } else if (ask.state === 'miss') {
+    if (!l.after) { link = 'unlinked'; counts.unlinked += 1; } else if (!ask) { link = 'dangling'; counts.dangling += 1; } else if (ask.state === 'miss' && ask.closedBy === 'unclosed') {
+      // An UNCLOSED list is not a miss (see `misses`): nobody said the base lacked the fact, so a
+      // capture after one is not "exit 1 produced knowledge" and must not pass §15 row 3 (VCST-6341).
+      link = 'after-unclosed';
+      if (isCapture) counts.afterUnclosed += 1;
+    } else if (ask.state === 'miss') {
       // A verdict ranker's `ambiguous` arrives here already resolved to `miss` or `answer`
       // (resolveVerdicts). An `unreachable` or disabled ask is not the loop: the base was never read.
       link = 'after-miss';
@@ -1040,9 +1049,9 @@ export function verdict({ unhelpful: u, nearMisses: nm, loop, misses: m = null }
 
   // 3 ── at least one capture following a miss, via `after` (PLAN §14.4, §15.3).
   {
-    // Every resolved miss, unclosed lists included: `loop.afterMiss` counts captures after any of them.
-    // Counted by the misses panel, which owns the number; the near-miss panel's tally is a fallback.
-    const n = m ? (m.asks ?? m.total) + (m.unclosed?.asks ?? m.unclosed?.total ?? 0) : nm.missTotal + (nm.unclosed ?? 0);
+    // Misses only -- an unclosed list is neither in n nor in `loop.afterMiss` (captureLoop counts a capture
+    // after one as `afterUnclosed`). Counted by the misses panel, which owns the number.
+    const n = m ? (m.asks ?? m.total) : nm.missTotal;
     const hit = loop.afterMiss;
     let state;
     let detail;
