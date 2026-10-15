@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>__TITLE__</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600&display=swap">
+<style>
+/* Layout: summary first (verdicts, checks, conflicts), then one section per page with three synced columns — upstream | fork before | fork after. */
+:root {
+  --bg: #f4f5f7; --surface: #ffffff; --fg: #1d2330; --muted: #5c6577; --line: #dfe2e8;
+  --upstream: #2f6fd1; --before: #b26a00; --after: #19865a; --accent: #3b4b6b;
+  --same: #19865a; --expected: #2f6fd1; --data: #7a6a2f; --check: #b42d2d;
+  --font-display: "IBM Plex Sans Condensed", "Arial Narrow", sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #12151b; --surface: #1a1f28; --fg: #e4e7ee; --muted: #9aa3b5; --line: #2c3341;
+  --upstream: #6fa1ef; --before: #e0a24a; --after: #4cc08d; --accent: #a9b8d6;
+  --same: #4cc08d; --expected: #6fa1ef; --data: #cdb76a; --check: #ef7b7b; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #12151b; --surface: #1a1f28; --fg: #e4e7ee; --muted: #9aa3b5; --line: #2c3341;
+  --upstream: #6fa1ef; --before: #e0a24a; --after: #4cc08d; --accent: #a9b8d6;
+  --same: #4cc08d; --expected: #6fa1ef; --data: #cdb76a; --check: #ef7b7b; color-scheme: dark }
+
+* { box-sizing: border-box }
+[hidden] { display: none !important }
+body { background: var(--bg); color: var(--fg); font: 15px/1.5 var(--font-body); margin: 0; padding-inline: 20px; padding-block: 0 64px }
+.wrap { max-width: 1320px; margin: 0 auto; display: grid; gap: 28px }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; font-weight: 600 }
+h1 { font-size: 2.2rem; letter-spacing: .01em }
+h2 { font-size: 1.35rem }
+h3 { font-size: 1.05rem }
+code, .mono { font-family: var(--font-mono); font-size: .86em }
+a { color: var(--accent) }
+.muted { color: var(--muted) }
+.label { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600 }
+
+header.top { padding-block: 32px 4px; display: grid; gap: 10px }
+.facts { display: flex; flex-wrap: wrap; gap: 6px 22px; font-size: .9rem }
+.facts span b { font-weight: 500 }
+.legend { display: flex; flex-wrap: wrap; gap: 8px }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--line); font-size: .82rem; background: var(--surface); white-space: nowrap }
+.dot { width: 9px; height: 9px; border-radius: 50% }
+.v-upstream { --c: var(--upstream) } .v-before { --c: var(--before) } .v-after { --c: var(--after) }
+.dot { background: var(--c) }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; display: grid; gap: 12px; min-width: 0; align-content: start }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 20px }
+.scroll-x { overflow-x: auto }
+table { border-collapse: collapse; width: 100%; font-size: .9rem }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top }
+th { font-weight: 600; color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .06em }
+td.num { font-variant-numeric: tabular-nums; font-family: var(--font-mono); font-size: .82rem }
+tr:last-child td { border-bottom: 0 }
+.pill { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: .76rem; font-weight: 600; color: var(--c); border: 1px solid currentColor; white-space: nowrap }
+.p-same { --c: var(--same) } .p-expected { --c: var(--expected) } .p-data { --c: var(--data) } .p-check, .p-unreviewed { --c: var(--check) }
+.p-ok { --c: var(--same) } .p-warn { --c: var(--data) }
+ul.plain { margin: 0; padding-left: 18px; display: grid; gap: 4px }
+
+section.sc { display: grid; gap: 12px; scroll-margin-top: 16px }
+.sc-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 14px }
+.sc-why { margin: 0; color: var(--muted); max-width: 80ch }
+.sc-note { margin: 0; max-width: 80ch }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px }
+.tabs button { font: inherit; font-size: .84rem; padding: 4px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer }
+.tabs button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg) }
+.tabs button:focus-visible, .cols img:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.diffbadge { font-size: .8rem; color: var(--muted) }
+.cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px }
+.col { display: grid; gap: 6px; min-width: 0; align-content: start }
+.col-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: .84rem }
+.col-head .name { display: inline-flex; align-items: center; gap: 6px; font-weight: 600 }
+.viewport { max-height: 78vh; overflow: auto; border: 1px solid var(--line); border-top: 3px solid var(--c); border-radius: 6px; background: var(--bg) }
+.viewport.mobile { max-width: 392px; justify-self: center; width: 100% }
+.viewport img { display: block; width: 100%; height: auto; cursor: zoom-in }
+.errs { font-size: .76rem; color: var(--muted) }
+.errs.bad { color: var(--check) }
+body.two .cols { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+body.two .col.v-upstream { display: none }
+.layout { display: flex; gap: 6px; align-items: center; font-size: .84rem }
+.layout button { font: inherit; padding: 3px 10px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer }
+.layout button[aria-pressed="true"] { background: var(--fg); color: var(--bg) }
+@media (max-width: 760px) { .cols { grid-template-columns: 1fr } .viewport { max-height: 60vh } }
+
+.lightbox { position: fixed; inset: 0; background: rgb(10 12 16 / .92); display: grid; grid-template-rows: auto 1fr; z-index: 10 }
+.lb-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px; color: #e4e7ee }
+.lb-bar button { font: inherit; font-size: .85rem; padding: 4px 12px; border-radius: 6px; border: 1px solid #4a5263; background: #1a1f28; color: #e4e7ee; cursor: pointer }
+.lb-bar button[aria-pressed="true"] { background: #e4e7ee; color: #12151b }
+.lb-bar .grow { flex: 1 }
+.lb-scroll { overflow: auto; padding: 0 16px 24px }
+.lb-scroll img { display: block; margin: 0 auto; max-width: 100%; height: auto }
+@media (prefers-reduced-motion: no-preference) { .viewport img { transition: opacity .15s } }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div class="lightbox" id="lb" hidden>
+  <div class="lb-bar">
+    <strong id="lb-title"></strong><span class="grow"></span>
+    <span class="muted" style="color:#9aa3b5">Keys 1 · 2 · 3 switch builds at the same scroll position</span>
+    <span id="lb-switch" style="display:flex;gap:6px"></span>
+    <button id="lb-close" type="button">Close</button>
+  </div>
+  <div class="lb-scroll" id="lb-scroll"><img id="lb-img" alt=""></div>
+</div>
+<script>
+const DATA = /*__DATA__*/null;
+const { meta, sections, variants } = DATA;
+const VERDICT = { same: "No visual change", expected: "Expected change", data: "Data noise only", unreviewed: "Not reviewed", check: "Needs a look" };
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const app = document.getElementById("app");
+
+app.insertAdjacentHTML("beforeend", `
+<header class="top">
+  <span class="label">${esc(meta.fork)} · ${esc(meta.branch)}</span>
+  <h1>${esc(meta.title)}</h1>
+  <div class="facts">
+    <span><b>Range</b> <code>${esc(meta.range)}</code></span>
+    <span><b>Merge commit</b> <code>${esc(meta.mergeCommit)}</code></span>
+    <span><b>Backend</b> ${esc(meta.backend)}</span>
+    <span><b>Captured</b> ${esc(meta.date)}</span>
+  </div>
+  <div class="layout" role="group" aria-label="Columns"><span class="muted">Columns</span><button type="button" id="lay-3" aria-pressed="true">All three builds</button><button type="button" id="lay-2" aria-pressed="false">Before and after only</button></div>
+  <div class="legend">${variants.map(([k, n]) => `<span class="chip v-${k}"><span class="dot"></span>${esc(n)} <span class="muted mono">${esc(meta.variants[k])}</span></span>`).join("")}</div>
+</header>`);
+
+const rows = sections.map((s) => {
+  const diffs = s.shots.map((x) => x.diff == null ? x.diffNote : `${x.diff}%`).join(" · ");
+  return `<tr><td><a href="#${s.id}">${esc(s.title)}</a></td><td><span class="pill p-${s.verdict}">${VERDICT[s.verdict]}</span></td><td class="num">${esc(diffs)}</td></tr>`;
+}).join("");
+app.insertAdjacentHTML("beforeend", `
+<div class="grid2">
+  <div class="panel"><h2>Pages, before → after</h2>
+    <p class="muted" style="margin:0">Share of pixels that changed between the fork before and after the merge, per shot in the order the tabs list them.</p>
+    <div class="scroll-x"><table><thead><tr><th>Page</th><th>Verdict</th><th>Pixels changed</th></tr></thead><tbody>${rows}</tbody></table></div>
+  </div>
+  <div class="panel"><h2>Checks on the merge commit</h2>
+    <div class="scroll-x"><table><tbody>${meta.checks.map(([c, r, st]) => `<tr><td class="mono">${esc(c)}</td><td><span class="pill p-${st}">${st === "ok" ? "pass" : "known"}</span> ${esc(r)}</td></tr>`).join("")}</tbody></table></div>
+  </div>
+</div>
+<div class="grid2">
+  <div class="panel"><h2>Conflicts and where to see them</h2>
+    <div class="scroll-x"><table><thead><tr><th>File</th><th>Resolution</th><th>Shot</th></tr></thead><tbody>${meta.conflicts.map(([f, r, w]) => `<tr><td class="mono">${esc(f)}</td><td>${esc(r)}</td><td>${esc(w)}</td></tr>`).join("")}</tbody></table></div>
+  </div>
+  <div class="panel"><h2>Not captured</h2>
+    <p class="muted" style="margin:0">These need a signed-in user or a store setting; they go to QA.</p>
+    <ul class="plain">${meta.notCovered.map((n) => `<li>${esc(n)}</li>`).join("")}</ul>
+  </div>
+</div>`);
+
+for (const s of sections) {
+  const sec = document.createElement("section");
+  sec.className = "sc panel"; sec.id = s.id;
+  sec.innerHTML = `
+    <div class="sc-head"><h2>${esc(s.title)}</h2><span class="pill p-${s.verdict}">${VERDICT[s.verdict]}</span><code class="muted">${esc(s.url)}</code></div>
+    <p class="sc-why">${esc(s.why)}</p>
+    <p class="sc-note">${esc(s.note)}</p>
+    <div class="tabs" role="group" aria-label="Viewport and color scheme">${s.shots.map((x, i) => `<button type="button" id="t-${s.id}-${x.key}" aria-pressed="${i === 0}" data-i="${i}">${esc(x.label)}</button>`).join("")}<span class="diffbadge"></span></div>
+    <div class="cols"></div>`;
+  app.appendChild(sec);
+  const cols = sec.querySelector(".cols"), badge = sec.querySelector(".diffbadge");
+  const render = (i) => {
+    const shot = s.shots[i], mobile = shot.key.startsWith("mobile");
+    sec.querySelectorAll(".tabs button").forEach((b) => b.setAttribute("aria-pressed", String(+b.dataset.i === i)));
+    badge.textContent = shot.diff == null ? `before → after: ${shot.diffNote}` : `before → after: ${shot.diff}% of pixels changed`;
+    cols.innerHTML = variants.map(([k, n]) => {
+      const im = shot.imgs[k], errs = im.console.length + im.gql.length;
+      return `<div class="col v-${k}">
+        <div class="col-head"><span class="name"><span class="dot"></span>${esc(n)}</span>
+          <span class="errs ${im.gql.length ? "bad" : ""}" title="${esc([...im.gql, ...im.console].join("\n"))}">${im.gql.length} GraphQL errors · ${im.console.length} console</span></div>
+        <div class="viewport ${mobile ? "mobile" : ""}"><img tabindex="0" src="${im.src}" width="${im.w}" height="${im.h}" alt="${esc(`${s.title}, ${shot.label}, ${n}`)}" data-v="${k}"></div>
+      </div>`;
+    }).join("");
+    const vps = [...cols.querySelectorAll(".viewport")];
+    let syncing = false;
+    vps.forEach((vp) => vp.addEventListener("scroll", () => {
+      if (syncing) return; syncing = true;
+      const r = vp.scrollTop / Math.max(1, vp.scrollHeight - vp.clientHeight);
+      vps.forEach((o) => { if (o !== vp) o.scrollTop = r * (o.scrollHeight - o.clientHeight); });
+      requestAnimationFrame(() => (syncing = false));
+    }));
+    cols.querySelectorAll("img").forEach((img) => {
+      const open = () => openLightbox(s, shot, img.dataset.v);
+      img.addEventListener("click", open);
+      img.addEventListener("keydown", (e) => { if (e.key === "Enter") open(); });
+    });
+  };
+  sec.querySelectorAll(".tabs button").forEach((b) => b.addEventListener("click", () => render(+b.dataset.i)));
+  render(0);
+}
+
+const setLayout = (two) => {
+  document.body.classList.toggle("two", two);
+  document.getElementById("lay-2").setAttribute("aria-pressed", String(two));
+  document.getElementById("lay-3").setAttribute("aria-pressed", String(!two));
+  try { localStorage.setItem("vc-visual-layout", two ? "2" : "3"); } catch {}
+};
+document.getElementById("lay-2").addEventListener("click", () => setLayout(true));
+document.getElementById("lay-3").addEventListener("click", () => setLayout(false));
+try { if (localStorage.getItem("vc-visual-layout") === "2") setLayout(true); } catch {}
+
+const lb = document.getElementById("lb"), lbImg = document.getElementById("lb-img"), lbScroll = document.getElementById("lb-scroll");
+const lbSwitch = document.getElementById("lb-switch");
+let lbState = null;
+function showVariant(k) {
+  const ratio = lbScroll.scrollTop / Math.max(1, lbScroll.scrollHeight - lbScroll.clientHeight);
+  const im = lbState.shot.imgs[k];
+  lbImg.src = im.src; lbImg.width = im.w; lbImg.height = im.h;
+  lbImg.alt = `${lbState.s.title}, ${lbState.shot.label}, ${k}`;
+  lbState.v = k;
+  lbSwitch.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === k)));
+  requestAnimationFrame(() => (lbScroll.scrollTop = ratio * (lbScroll.scrollHeight - lbScroll.clientHeight)));
+}
+function openLightbox(s, shot, v) {
+  lbState = { s, shot, v };
+  document.getElementById("lb-title").textContent = `${s.title} · ${shot.label}`;
+  lbSwitch.innerHTML = variants.map(([k, n], i) => `<button type="button" data-v="${k}">${i + 1} · ${esc(n)}</button>`).join("");
+  lbSwitch.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => showVariant(b.dataset.v)));
+  lb.hidden = false; lbScroll.scrollTop = 0; showVariant(v);
+  document.getElementById("lb-close").focus();
+}
+document.getElementById("lb-close").addEventListener("click", () => (lb.hidden = true));
+document.addEventListener("keydown", (e) => {
+  if (lb.hidden) return;
+  if (e.key === "Escape") lb.hidden = true;
+  const idx = { 1: 0, 2: 1, 3: 2 }[e.key];
+  if (idx != null) showVariant(variants[idx][0]);
+});
+</script>
+</body>
+</html>
