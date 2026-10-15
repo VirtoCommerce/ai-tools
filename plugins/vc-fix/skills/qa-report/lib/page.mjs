@@ -66,7 +66,8 @@ ${m.lede ? `    <p class="lede">${esc(m.lede)}</p>\n` : ""}    <div class="meta"
     parts.push(section("nf", "Not filed (below the severity floor)", list(m.notFiled.map(b =>
       `      <li><span class="chip" data-sev="low">${esc(b.severity)}</span><span class="grow">${esc(b.title)}</span><span class="mono muted">${esc(b.path)}</span></li>`))));
   }
-  if (m.issues.length) parts.push(section("issues", "Regressions and side effects", list(m.issues.map(i => `      <li><span class="grow">${esc(i)}</span></li>`))));
+  if (m.issues.length) parts.push(section("issues", "Regressions and side effects", list(m.issues.map(i =>
+    `      <li><span class="grow">${esc(i.what)}</span>${i.severity ? `<span class="chip" data-sev="${esc(String(i.severity).toLowerCase())}">${esc(i.severity)}</span>` : ""}<span class="mono muted">${esc(i.ticket)}</span></li>`))));
   if (m.notTested.length) {
     parts.push(section("nt", "Not tested, and why", list(m.notTested.map(n =>
       `      <li><span class="grow">${esc(n.item)}</span><span class="muted">${esc(n.reason)}</span></li>`))));

@@ -11,15 +11,29 @@ trim: "[FAILURES, BUGS]"
 **Cases** {{PASSED}}/{{TOTAL}} passed · {{FAILED}} failed · {{BLOCKED}} blocked
 
 {{?FAILURES}}
-**Failed / blocked**
+### Failed / blocked
+| Case | Result | What it checks |
+|---|---|---|
 {{/FAILURES}}
 {{#FAILURES}}
-- `{{id}}` {{result}} — {{title}}
+| `{{id}}` | {{result}} | {{title}} |
 {{/FAILURES}}
 {{#FAILURES_MORE}}
-- {{.}}
+| {{.}} | | |
 {{/FAILURES_MORE}}
-**Bugs** {{#BUGS}}{{key}} {{/BUGS}}{{#BUGS_MORE}}{{.}}{{/BUGS_MORE}}{{^BUGS}}None{{/BUGS}}
+
+### Bugs filed
+| Ticket | What is wrong |
+|---|---|
+{{#BUGS}}
+| {{key}} | {{what}} |
+{{/BUGS}}
+{{#BUGS_MORE}}
+| {{.}} | |
+{{/BUGS_MORE}}
+{{^BUGS}}
+| None | |
+{{/BUGS}}
 {{#PAGE_URL}}
 **Report** [open the report page]({{.}})
 {{/PAGE_URL}}

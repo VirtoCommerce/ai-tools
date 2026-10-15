@@ -28,17 +28,29 @@ No before/after pair recorded.
 !{{.}}|width=700!
 {{/SHOTS}}
 
-**Regressions / side effects**
+### Regressions / side effects
+| What is wrong | Severity | Ticket |
+|---|---|---|
 {{#ISSUES}}
-- {{.}}
+| {{what}} | {{severity}} | {{ticket}} |
 {{/ISSUES}}
 {{#ISSUES_MORE}}
-- {{.}}
+| {{.}} | | |
 {{/ISSUES_MORE}}
 {{^ISSUES}}
-- None
+| Nothing found nearby | | |
 {{/ISSUES}}
-**Bugs filed** {{#BUGS}}{{key}} {{/BUGS}}{{#BUGS_MORE}}{{.}}{{/BUGS_MORE}}{{^BUGS}}None{{/BUGS}}
+
+**Bugs filed**
+{{#BUGS}}
+- {{label}}
+{{/BUGS}}
+{{#BUGS_MORE}}
+- {{.}}
+{{/BUGS_MORE}}
+{{^BUGS}}
+- None
+{{/BUGS}}
 {{#PAGE_URL}}
 **Report** [open the before/after page]({{.}})
 {{/PAGE_URL}}

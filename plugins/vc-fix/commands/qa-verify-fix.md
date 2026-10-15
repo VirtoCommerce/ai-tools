@@ -371,7 +371,10 @@ Write `reports/tickets/{SPRINT}/<ticket-key>/verification-summary.json`:
   "checklist_total": 10,
   "checklist_passed": 10,
   "checklist_failed": 0,
-  "regression_issues": [],
+  "$comment_side_effects": "Each entry carries its DISPOSITION, so a finding nobody triaged is never indistinguishable from one deliberately left alone. A bare string is the legacy shape and renders its ticket cell as `not recorded`.",
+  "regression_issues": [
+    {"summary": "<what is wrong, in the reader's words>", "severity": "Low|Medium|High", "ticket": "<key, when it was filed>", "why": "<the reason, when it was not>"}
+  ],
   "side_effects": [],
   "bugs_filed": [],
   "business_rules_verified": ["BL-CART-001"],

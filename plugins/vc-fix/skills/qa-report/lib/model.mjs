@@ -86,7 +86,8 @@ export function fromQaTest(path) {
         : `none — ${s.release?.refusal ?? "not resolved"}`,
     },
     // `title` is what the row is ABOUT; a key alone makes the reader open the ticket to find out.
-    bugs: (s.bugs_filed ?? []).map(b => ({ key: b.key, severity: b.severity ?? "", relation: (b.relationship ?? "").replace(/\s+(?:of\s+)?[A-Z]+-\d+$/, ""), what: compact(b.title ?? "") })),
+    bugs: (s.bugs_filed ?? []).map(b => bugEntry(
+      b.key, b.title ?? "", b.severity ?? "", (b.relationship ?? "").replace(/\s+(?:of\s+)?[A-Z]+-\d+$/, ""))),
     // The schema says `summary`/`report`; live artifacts write `draft` and often no summary at all.
     // Read both and fall back to the file name, because a blank row is worse than a terse one.
     // One identifier per row, never two: with no `summary` the title WAS the file name, so printing
@@ -123,9 +124,16 @@ export function fromVerifyFix(path) {
       BL: (s.business_rules_verified ?? []).join(", ") || "none",
     },
     beforeAfter: pairs, shots,
-    issues: [...(s.regression_issues ?? []), ...(s.side_effects ?? [])].map(x => typeof x === "string" ? x : (x?.summary ?? x?.title ?? x?.check ?? "(unspecified)")),
-    bugs: (s.bugs_filed ?? []).map(b => typeof b === "string" ? { key: b, severity: "", relation: "" }
-      : { key: b.key ?? "", severity: b.severity ?? "", relation: b.relationship ?? "" }),
+    // Each side effect carries its DISPOSITION, like /qa-test's findings do. A bare string is the
+    // legacy shape and has none, so the cell says `not recorded` rather than reading as "not filed":
+    // a finding nobody triaged must not be indistinguishable from one deliberately left alone.
+    issues: [...(s.regression_issues ?? []), ...(s.side_effects ?? [])].map(x => {
+      if (typeof x === "string") return { what: compact(x), severity: "", ticket: "not recorded" };
+      const what = compact(x?.summary ?? x?.title ?? x?.check ?? "(unspecified)");
+      return { what, severity: x?.severity ?? "", ticket: x?.ticket || x?.why || "not recorded" };
+    }),
+    bugs: (s.bugs_filed ?? []).map(b => typeof b === "string" ? bugEntry(b, "") 
+      : bugEntry(b.key ?? "", b.title ?? "", b.severity ?? "")),
     evidence: s.artifacts ?? "", imageRoot: dirname(path), pageUrl: s.evidence_artifact ?? null,
   };
 }
@@ -204,6 +212,14 @@ export function fromRun(runDir, kind, verdict, ticket = null) {
 // doctrine is that it fails loudly rather than truncating. Applied in templateData only, so the
 // HTML page (renderPage reads m.env / m.build) still shows every string in full.
 export const compact = (v) => String(v ?? "").replace(/\s*\([^()]*\)/g, "").replace(/\s+/g, " ").trim();
+
+// A bug key alone makes the reader open the ticket to find out whether it matters. Every kind
+// that lists filed bugs shows what each one is ABOUT; `label` is that rendering, built here so
+// the inline templates need no conditional (the engine has no nested sections).
+export function bugEntry(key, what = "", severity = "", relation = "") {
+  const w = compact(what);
+  return { key, what: w, severity, relation, label: w ? `${key} — ${w}` : key };
+}
 
 const SHAPES = { rows: "{ id, text, result, evidence }", areas: "{ area, cases, result }", notTested: "{ item, reason }", context: "{ label, value }" };
 

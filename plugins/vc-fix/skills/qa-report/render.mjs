@@ -5,7 +5,7 @@
 //
 //   node render.mjs --kind test       --source reports/tickets/<S>/<T>/summary.json              --out <dir>
 //   node render.mjs --kind fix        --source reports/tickets/<S>/<T>/verification-summary.json --out <dir> [--dialect wiki]
-//   node render.mjs --kind regression --source reports/regression/<REG-…>   --verdict GO          --out <dir> [--ticket K] [--bugs K1,K2]
+//   node render.mjs --kind regression --source reports/regression/<REG-…>   --verdict GO          --out <dir> [--ticket K] [--bugs "K1:what it is about,K2"]
 //   node render.mjs --kind smoke      --source reports/regression/<SMOKE-…> --verdict NO_GO       --out <dir>
 //   common: --lede "<1-3 sentences>" (required) [--title T] [--extra file.json] [--set KEY=VALUE]...
 //           [--page-url URL] [--dialect markdown|wiki|html] [--images ref|embed] [--json]
@@ -14,7 +14,7 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseTemplate, fitBudget, toWiki, toHtml, BudgetError } from "./lib/template.mjs";
-import { fromQaTest, fromVerifyFix, fromRun, applyExtras, requireLede, templateData, readJson, SourceError } from "./lib/model.mjs";
+import { fromQaTest, fromVerifyFix, fromRun, applyExtras, requireLede, templateData, readJson, bugEntry, SourceError } from "./lib/model.mjs";
 import { renderPage } from "./lib/page.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -30,7 +30,9 @@ export function parseArgs(argv) {
     else if (k === "--source") a.source = v();
     else if (k === "--verdict") a.verdict = v();
     else if (k === "--ticket") a.ticket = v();
-    else if (k === "--bugs") a.bugs = v().split(",").map(s => s.trim()).filter(Boolean);
+    // `KEY` or `KEY:what it is about` — a run folder records no bug text, so the caller supplies it.
+    else if (k === "--bugs") a.bugs = v().split(",").map(s => s.trim()).filter(Boolean)
+      .map(e => { const i = e.indexOf(":"); return i < 0 ? { key: e, what: "" } : { key: e.slice(0, i).trim(), what: e.slice(i + 1).trim() }; });
     else if (k === "--title") a.title = v();
     else if (k === "--lede") a.lede = v();          // D7 — required; beats --extra.lede
     else if (k === "--extra") a.extra = v();
@@ -62,7 +64,7 @@ function load(a) {
   let m = a.kind === "test" ? fromQaTest(src)
     : a.kind === "fix" ? fromVerifyFix(src)
     : fromRun(src, a.kind, a.verdict, a.ticket ?? null);
-  if (a.kind === "regression" || a.kind === "smoke") m = { ...m, bugs: a.bugs.map(key => ({ key, severity: "", relation: "" })) };
+  if (a.kind === "regression" || a.kind === "smoke") m = { ...m, bugs: a.bugs.map(b => bugEntry(b.key, b.what)) };
   m = applyExtras(m, a.extra ? readJson(resolve(a.extra)) : {}, a.sets);
   if (a.title) m.title = a.title;
   if (a.lede) m.lede = a.lede;                      // D7 — the flag wins over --extra.lede
