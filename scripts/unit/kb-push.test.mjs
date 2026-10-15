@@ -1014,9 +1014,10 @@ test('outsideBase names exactly the four paths the base owns', () => {
 });
 
 test('builds/ admits exactly `builds/<pin>.json` — the shape buildPath() writes (VCST-6221), nothing wider', () => {
-  assert.deepEqual(outsideBase([buildPath('e00c89f4da0e9c98'), 'builds/abc123.json'], ''), []);
-  for (const bad of ['builds/../.github/x.yml', 'builds/a/b.json', 'builds/x.txt', 'builds/abc123.json.md',
-    'builds/ABC123.json', 'builds/.json', 'builds/', 'builds', '.github/workflows/gates.yml', 'v2/builds/abc123.json']) {
+  assert.deepEqual(outsideBase([buildPath('e00c89f4da0e9c98')], ''), []);
+  for (const bad of ['builds/abc123.json', 'builds/e00c89f4da0e9c98a.json', 'builds/../.github/x.yml', 'builds/a/b.json',
+    'builds/x.txt', 'builds/e00c89f4da0e9c98.json.md', 'builds/E00C89F4DA0E9C98.json', 'builds/.json', 'builds/', 'builds',
+    '.github/workflows/gates.yml', 'v2/builds/e00c89f4da0e9c98.json']) {
     assert.deepEqual(outsideBase([bad], ''), [bad], bad);
   }
 });

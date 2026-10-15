@@ -675,7 +675,7 @@ export function expiredLogs(paths, { at = new Date(), days = RETENTION_DAYS, pre
  *
  * A push writes entries, the index, logs and -- since VCST-6221 -- the content-addressed build
  * snapshot `builds/<pin>.json` (`buildPath()`). That last one is admitted in exactly its own shape:
- * ONE segment under `builds/`, a lowercase-hex pin, `.json` -- never a free prefix like `entries/`,
+ * ONE segment under `builds/`, a 16-char lowercase-hex pin (`buildPin()`), `.json` -- never a free prefix like `entries/`,
  * because a pin arrives on a queue line and is only as trustworthy as whatever wrote it. Anything
  * else is either a bug in the path arithmetic or a payload that arrived from somewhere it should not
  * have, and in a shared public repository the correct response to both is to stop rather than to
@@ -699,7 +699,7 @@ export function outsideBase(paths, prefix) {
     if (norm !== path) return true;
     if (norm === `${p}index.json` || norm.startsWith(`${p}entries/`) || norm.startsWith(`${p}log/`)) return false;
     // `builds/<pin>.json` and nothing else under `builds/`: no sub-folder, no other extension.
-    return !(norm.startsWith(`${p}builds/`) && /^[0-9a-f]+\.json$/.test(norm.slice(`${p}builds/`.length)));
+    return !(norm.startsWith(`${p}builds/`) && /^[0-9a-f]{16}\.json$/.test(norm.slice(`${p}builds/`.length)));
   });
 }
 
