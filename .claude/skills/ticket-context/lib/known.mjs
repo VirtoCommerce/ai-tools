@@ -24,9 +24,11 @@ export function searchTerm(o) {
   return literal.split("/").filter(Boolean).length >= 2 ? literal : null;
 }
 
+/** Two slug vocabularies name one domain: a map's frontmatter `domain_slug` (`ret`) and its file name, which is
+ *  the word an operator types and `bl:extract` accepts (`returns.md` ↔ `--domain returns`). Either one matches. */
 export function domainState(json, slug) {
   if (!slug) return { state: "unresolved", path: null };
-  const map = json?.maps?.find((m) => m.slug === slug);
+  const map = json?.maps?.find((m) => m.slug === slug) ?? json?.maps?.find((m) => String(m.file ?? "").replace(/\.md$/, "") === slug);
   if (!map) return { state: "ABSENT", path: null };
   const codes = (json.findings ?? []).filter((f) => f.file === map.file).map((f) => f.code);
   const path = `.claude/knowledge/domain/${map.file}`;
@@ -100,6 +102,9 @@ export function knownGround({ root, key, domain, prs, operations = [], runDir, r
   if (domain && need("bl:extract")) {
     const r = run(root, ["bl:extract", "--", "--domain", domain, "--json"]);
     if (r.json) known.bl = (r.json.invariants ?? []).map((i) => ({ id: i.id, title: i.title, severity: i.severity }));
+    // bl:extract refuses an empty extract with exit 2 and, for a domain the oracle declares with no invariant yet,
+    // says so on stderr: that is a gap in the oracle (nothing promoted), not a lookup that failed.
+    else if (r.status === 2 && /declared with zero invariants/.test(r.stderr ?? "")) gaps.push({ where: "known.bl", reason: "not-found", detail: "domain declared with zero invariants" });
     else failed("bl:extract", r);
   }
   const product = prs.filter((p) => p.files_path && !p.context_only && !p.gap);

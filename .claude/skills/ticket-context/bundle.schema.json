@@ -83,11 +83,22 @@
         "domain_map": { "type": "object", "required": ["state", "path"], "properties": { "state": { "enum": ["PRESENT", "STALE", "ABSENT", "unresolved"] }, "path": { "type": ["string", "null"] } } },
         "mind_map": { "type": "object", "required": ["path"], "properties": { "path": { "type": ["string", "null"] } } },
         "bl": { "type": "array" }, "cases_at_risk": { "type": "array" }, "kb": { "type": "array" }, "prior_runs": { "type": "array" } } },
+    "fields": {
+      "type": "object", "additionalProperties": false,
+      "required": ["summary", "type", "status", "priority", "components", "labels", "fix_versions", "description", "acceptance"],
+      "properties": {
+        "summary": { "type": "string" }, "type": { "type": ["string", "null"] }, "status": { "type": ["string", "null"] },
+        "priority": { "type": ["string", "null"] },
+        "components": { "type": "array", "items": { "type": "string" } }, "labels": { "type": "array", "items": { "type": "string" } },
+        "fix_versions": { "type": "array", "items": { "type": "string" } },
+        "description": { "type": "string" }, "acceptance": { "type": "string" }
+      }
+    },
     "bundle": { "type": "object", "additionalProperties": false,
-      "required": ["schema", "ticket", "tracker", "fetched_at", "ticket_updated", "freshness_key", "acs", "signals", "epic", "siblings", "layer_guess", "domains_guess",
+      "required": ["schema", "ticket", "tracker", "fields", "fetched_at", "ticket_updated", "freshness_key", "acs", "signals", "epic", "siblings", "layer_guess", "domains_guess",
         "materials", "design", "change", "known", "gaps", "questions", "embedded_instructions", "blockers"],
       "properties": {
-        "schema": { "const": "ticket-context/1" }, "ticket": { "type": "string", "pattern": "^[A-Z][A-Z0-9]*-[0-9]+$" }, "tracker": { "enum": ["jira", "azure"] },
+        "schema": { "const": "ticket-context/1" }, "ticket": { "type": "string", "pattern": "^[A-Z][A-Z0-9]*-[0-9]+$" }, "tracker": { "enum": ["jira", "azure"] }, "fields": { "$ref": "#/$defs/fields" },
         "fetched_at": { "$ref": "#/$defs/text" }, "ticket_updated": { "$ref": "#/$defs/text" }, "freshness_key": { "$ref": "#/$defs/text" },
         "acs": { "type": "array", "items": { "$ref": "#/$defs/ac" } }, "signals": { "$ref": "#/$defs/sourcedList" },
         "epic": { "type": ["object", "null"], "properties": { "key": { "type": "string" }, "title": { "type": "string" } } },
