@@ -10,10 +10,14 @@
   "notes": [],
   "suites": {
     "011": {
-      "status": "running",
+      "status": "done",
       "lane": "browser",
       "total": 21,
-      "browser": "playwright-chrome"
+      "browser": "playwright-chrome",
+      "pass": 18,
+      "fail": 1,
+      "blocked": 2,
+      "skipped": 0
     },
     "043": {
       "status": "running",
