@@ -27,9 +27,10 @@ trim: "[BUGS, NOT_FILED, AREAS]"
 | Everything in the checklist | {{TOTAL}} | {{PASSED}} passed · {{FAILED}} failed · {{BLOCKED}} blocked |
 {{/AREAS}}
 
-**AC coverage** {{AC_COVERAGE}} · **DoD** {{DOD}}
+{{#AC_DOD}}
+**Acceptance** {{.}}
+{{/AC_DOD}}
 **Regression** {{REGRESSION}}
-**Business rules** {{BL}}
 
 ### New regression coverage
 {{NEW_CASES}}

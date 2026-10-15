@@ -76,8 +76,15 @@ ${m.lede ? `    <p class="lede">${esc(m.lede)}</p>\n` : ""}    <div class="meta"
     parts.push(section("shots", "Evidence", `${note}    <div class="shots">\n${m.shots.map((s, i) =>
       `      <figure><img src="${imgSrc(s, i < MAX_EMBED ? images : "ref", m.imageRoot)}" alt="${esc(basename(s))}"><figcaption>${esc(basename(s))}</figcaption></figure>`).join("\n")}\n    </div>`));
   }
-  if (m.context.length) {
-    parts.push(section("ctx", "Context used", `    <dl class="context">\n${m.context.map(c =>
+  // The oracle line was dropped from the tracker comment: BL-* ids are internal and a reader
+  // there cannot decode them. The page is where they have room and context, so it carries them —
+  // relocated, never deleted. Caller-supplied context keeps its order after the derived rows.
+  const ctx = [
+    ...(m.lines?.BL ? [{ label: "Business rules", value: m.lines.BL }] : []),
+    ...m.context,
+  ];
+  if (ctx.length) {
+    parts.push(section("ctx", "Context used", `    <dl class="context">\n${ctx.map(c =>
       `      <dt>${esc(c.label)}</dt><dd>${esc(c.value)}</dd>`).join("\n")}\n    </dl>`));
   }
   parts.push(`  <footer class="foot muted">Evidence folder <code>${esc(m.evidence)}</code></footer>`);

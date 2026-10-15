@@ -39,7 +39,6 @@ No before/after pair recorded.
 - None
 {{/ISSUES}}
 **Bugs filed** {{#BUGS}}{{key}} {{/BUGS}}{{#BUGS_MORE}}{{.}}{{/BUGS_MORE}}{{^BUGS}}None{{/BUGS}}
-**Business rules** {{BL}}
 {{#PAGE_URL}}
 **Report** [open the before/after page]({{.}})
 {{/PAGE_URL}}

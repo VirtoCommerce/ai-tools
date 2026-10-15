@@ -62,9 +62,18 @@ export function fromQaTest(path) {
     env: s.environment ?? "", build: buildLine(s.build), date: s.date ?? "",
     counts: { total: s.total_cases ?? 0, passed: s.passed ?? 0, failed: s.failed ?? 0, blocked: s.blocked ?? 0, notRun: 0 },
     lines: {
-      AC_COVERAGE: est.ac_coverage_pct == null ? "n/a" : `${est.ac_coverage_pct}%`,
-      DOD: est.dod_total ? `${est.dod_met ?? 0}/${est.dod_total}` : "none stated",
-      REGRESSION: c1?.run_id ? `${(c1.suites ?? []).join(", ")} — ${c1.pass_rate ?? "?"} (${c1.run_id})`
+      // ONE line, and EMPTY when neither half has a number. "n/a - none stated" is two
+      // non-answers occupying a line a reader has to read before learning nothing.
+      AC_DOD: [
+        est.ac_coverage_pct == null ? null : `${est.ac_coverage_pct}% of acceptance conditions carry evidence`,
+        est.dod_total ? `DoD ${est.dod_met ?? 0}/${est.dod_total}` : null,
+      ].filter(Boolean).join(" · "),
+      // The reader's question is "did anything else break", so lead with a percentage.
+      // Suite ids are internal routing and belong on the page, not in a tracker comment.
+      REGRESSION: c1?.run_id
+        ? `${c1.pass_rate == null ? "?" : `${Math.round(c1.pass_rate * 100)}%`}`
+          + `${c1.passed != null && c1.ids != null ? ` (${c1.passed} of ${c1.ids} cases)` : ""}`
+          + ` — ${c1.run_id}`
         : `not run${c1?.skipped_reason ? ` — ${c1.skipped_reason}` : ""}`,
       BL: (s.business_rules_verified ?? []).join(", ") || "none",
       // No machine record carries the account a run signed in as, so this is the caller's to --set.
@@ -243,7 +252,7 @@ export function templateData(m, dialect = "markdown") {
     ICON: m.icon, VERDICT_LABEL: m.verdictLabel, LEDE: m.lede, TICKET: m.ticket ?? "", RUN_ID: m.runLabel ?? "",
     ENV: compact(m.env), BUILD: compact(m.build), DATE: m.date ?? "",
     TOTAL: m.counts.total, PASSED: m.counts.passed, FAILED: m.counts.failed, BLOCKED: m.counts.blocked, NOT_RUN: m.counts.notRun,
-    ...m.lines, ...(m.lines.BL ? { BL: compact(m.lines.BL) } : {}),
+    ...m.lines,
     AREAS: m.areas ?? [], BUGS: m.bugs, NOT_FILED: m.notFiled, BEFORE_AFTER: m.beforeAfter, ISSUES: m.issues, FAILURES: m.failures ?? [],
     SHOTS: dialect === "wiki" ? m.shots.map(s => basename(s)) : [],
     PAGE_URL: m.pageUrl ?? null,
