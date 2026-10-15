@@ -1451,5 +1451,14 @@
         ]
       }
     ]
+  },
+  "B2B_STORE_MEMBERSHIP_ROLES": {
+    "pre_state": "[null]",
+    "captured_at": "2026-10-15T16:47:55.170Z",
+    "seeded_values": "Organization employee;Purchasing agent;Organization maintainer;Sales Representative;Advanced Sales Representative",
+    "seeded_values_json": "[\"Organization employee\",\"Purchasing agent\",\"Organization maintainer\",\"Sales Representative\",\"Advanced Sales Representative\"]",
+    "sales_rep_roles": "Sales Representative;Advanced Sales Representative",
+    "narrowed_values": "[\"Organization employee\",\"Organization maintainer\",\"Sales Representative\",\"Advanced Sales Representative\"]",
+    "narrowed_omitted_role": "Purchasing agent"
   }
 }
