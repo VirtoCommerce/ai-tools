@@ -1834,11 +1834,16 @@ export function toLogLine(line) {
 }
 
 /** Drive paths, UNC paths, `file://` URLs and home-rooted POSIX paths, each replaced by `<local path>`. */
+// A path runs to the next quote, bracket or line end, spaces included (retest 3): `C:\Users\John Smith\kb`
+// and `OneDrive - <Company>` used to leak everything after the first space. The trailing space before
+// a ` (detail)` is given back.
 export function withoutLocalPaths(text) {
+  const tail = String.raw`[^'"()\r\n]*`;
+  const swap = (lead = '') => (m, ...g) => `${typeof g[0] === 'string' && lead ? g[0] : ''}<local path>${/\s+$/.exec(m)?.[0] ?? ''}`;
   return String(text)
-    .replace(/file:\/\/\/?[^\s'"()]+/gi, '<local path>')
-    .replace(/(?:\b[A-Za-z]:|\\\\[^\\\s]+)[\\/][^\s'"()]*/g, '<local path>')
-    .replace(/(^|[\s'"(=])\/(?:[a-z]\/)?(?:home|Users|root|tmp|private|mnt)\/[^\s'"()]*/g, '$1<local path>');
+    .replace(new RegExp(String.raw`file:\/\/` + tail, 'gi'), swap())
+    .replace(new RegExp(String.raw`(?:\b[A-Za-z]:|\\\\[^\\\s]+)[\\/]?` + tail, 'g'), swap())
+    .replace(new RegExp(String.raw`(^|[\s'"(=:])(?:~|\/(?:[a-z]\/)?(?:home|Users|root|tmp|private|mnt|opt|var\/folders|Volumes|workspaces?))\/` + tail, 'g'), swap(true));
 }
 
 /** A failed push, as a closed code: what went wrong, never the remote's words for it. */

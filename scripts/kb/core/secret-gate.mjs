@@ -87,6 +87,8 @@ export const TOKEN_SHAPES = Object.freeze([
   // member, the platform's own auth cookie, a token header that is not `Authorization`, and an
   // `Authorization` header with no scheme. A JSON value needs a digit, so `"password": "required"` passes.
   ['json-credential', /["'](?:client_?secret|password|passwd|pwd|secret|api[_-]?key|access_?token|refresh_?token|id_?token|auth_?token)["']\s*:\s*["'](?![{<@*])(?=[^"']*\d)[^"'\s]{8,}["']/i],
+  // A HAR holds headers, cookies, query and form params as `{"name": …, "value": …}` objects (retest 3).
+  ['json-credential', /["']name["']\s*:\s*["'](?:authorization|cookie|set-cookie|\.AspNetCore\.[\w.-]+|x-api-key|api[_-]?key|x-auth-token|x-access-token|password|passwd|pwd|client_?secret|secret|access_?token|refresh_?token|id_?token|token)["']\s*,\s*["']value["']\s*:\s*["'](?![{<@*])[^"']{8,}["']/i],
   ['auth-cookie', /\.AspNetCore\.(?:Identity\.Application|Cookies|Session|Antiforgery\.[A-Za-z0-9_-]+)=[A-Za-z0-9_-]{20,}/],
   ['auth-header', /\b(?:x-auth-token|x-access-token|x-csrf-token|x-amz-security-token|x-goog-api-key)\s*:\s*["']?(?![{<@])[A-Za-z0-9._~+/=-]{16,}/i],
   ['bearer', /\bAuthorization\s*:\s*["']?(?!(?:Bearer|Basic|Token|Digest|Negotiate)\b)(?![{<@])(?=[A-Za-z0-9._~+/=-]*\d)[A-Za-z0-9._~+/=-]{20,}/i],
@@ -365,7 +367,8 @@ export function stringsOf(value, out = []) {
  */
 export function scanText(text, secrets = new Set(), hosts = new Set()) {
   const hits = [];
-  const parts = (Array.isArray(text) ? text : [text]).map(String);
+  // A JSON body quoted inside JSON (a HAR's `postData.text`) escapes its quotes: scanned unescaped too (retest 3).
+  const parts = (Array.isArray(text) ? text : [text]).map(String).flatMap((s) => (s.includes('\\"') ? [s, s.replace(/\\"/g, '"')] : [s]));
   for (const v of secrets) {
     if (v && parts.some((s) => s.includes(v))) { hits.push('env-secret-value'); break; }
   }
@@ -393,6 +396,7 @@ export const PUBLISH_FIXES = Object.freeze({
   'json-credential': 'a credential in a JSON body -- keep the member name, replace the value with a placeholder ("<secret>")',
   'auth-cookie': 'an authentication cookie -- name the cookie, drop its value',
   'auth-header': 'a token header value -- name the header, drop the value',
+  'local-path': 'a path on your machine (it names you or your company) -- drop it, or say "a local HAR" / "the local checkout"',
   'ado-pat': 'an Azure DevOps PAT -- remove it',
   'sas-signature': 'a SAS signature -- keep the path, drop the query string',
   'storage-key': 'a storage account key -- remove it',
@@ -415,11 +419,22 @@ export function publishProblems(fields, { secrets, values, hosts = new Set() } =
   const out = [];
   for (const [field, value] of Object.entries(fields ?? {})) {
     if (value == null) continue;
-    const kinds = scanText(stringsOf(value), secrets, hosts);
+    const strings = stringsOf(value);
+    const kinds = scanText(strings, secrets, hosts);
+    // A path on the writer's machine names the writer (`C:\Users\<name>`, `OneDrive - <Company>`): refused
+    // at the door in every published field (retest 3). Door only -- at push, a log line's `why` is
+    // rewritten instead (`toLogLine`), so the backstop does not drop whole lines for it.
+    if (field !== 'anchors' && strings.some((s) => LOCAL_PATH.test(s))) kinds.push('local-path');
     if (kinds.length) out.push({ field, kinds });
   }
   return out;
 }
+
+/**
+ * A path on a person's machine: a drive path, a UNC share, a `file://` URL, a home or user folder. A
+ * system install folder (`C:/Program Files/Git`, as the MSYS rewrite prints it) names nobody and stays prose.
+ */
+export const LOCAL_PATH = /(?:^|[^\w/])[A-Za-z]:[\\/](?!Program Files|Windows[\\/]|ProgramData)[^\s\\/]|\\\\[\w.-]+\\[\w$.-]|file:\/\/\/|(?:^|[\s'"(=:])\/(?:[a-z]\/)?(?:home|Users|root)\/[^\s/]+|OneDrive - /i;
 
 /** One refusal sentence for `publishProblems`' result -- what was found where, and what to write instead. */
 export function publishRefusal(problems) {
