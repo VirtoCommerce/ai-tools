@@ -18,7 +18,7 @@ TEST_ENV=virtostart npm run seed:demo -- --family returns
 
 | Family | Entrypoint | Dataset | Stamp in `aliases.<env>.json` | Detail |
 |---|---|---|---|---|
-| sales-rep | `seed:sales-rep-family -- --profile demo` | `sales-rep/sales-rep-demo-specs.mjs` | `_meta.dataset_profile` | [`sales-rep-profiles.md`](sales-rep-profiles.md) |
+| sales-rep | `seed:sales-rep-family -- --profile demo` | `sales-rep/sales-rep-demo-specs.mjs` | `_meta.dataset_profiles.sales-rep` (legacy `_meta.dataset_profile` still read) | [`sales-rep-profiles.md`](sales-rep-profiles.md) |
 | returns (after sales-rep) | `seed:returns-family -- --profile demo` | `test-data/orders/returns-demo/returns-demo.json` | `_meta.dataset_profiles.returns` | below |
 | loyalty-missions (after returns) | `seed:missions-family -- --profile demo` | `test-data/loyalty/missions-demo/missions-demo.json` | `_meta.dataset_profiles.loyalty-missions` | below |
 
