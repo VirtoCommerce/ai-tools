@@ -12,9 +12,14 @@
 // afford -- which is why this file lifts `vendor/agent-log/scrub-scan.mjs`'s loader and NOT its
 // `sha1+ hash` shape. The three token shapes kept below (PAT, JWT, Bearer) have no honest reason to
 // appear in a question about platform behaviour, and unlike 40 hex characters they cannot be a
-// commit sha somebody legitimately asked about.
+// commit sha somebody legitimately asked about. The one shape rule beyond tokens is a personal
+// e-mail address (VCST-6378), held to the same bar by an allow-list of test domains -- see below.
 //
-// A LINE THAT TRIPS IT IS DROPPED, NOT ESCALATED. The push continues without that line, and a
+// IT RUNS TWICE. At the DOOR (`publishProblems`, called by capture / confirm / dispute), where the
+// writer is told what to remove and resends; and at PUSH (`gateQueue`), the backstop for a line
+// written by an older client or through any other route.
+//
+// AT PUSH, A LINE THAT TRIPS IT IS DROPPED, NOT ESCALATED. The push continues without that line, and a
 // `{"kind":"redacted","why":"secret-scan"}` marker takes its place so the gap is visible in the
 // log rather than invisible. Losing one line is cheap; losing the session's whole log -- which is
 // what blocking the push would do -- is not.
@@ -46,7 +51,61 @@ export const TOKEN_SHAPES = Object.freeze([
   ['github-pat', /\b(?:gh[pousr]_|github_pat_)[A-Za-z0-9_]{20,}\b/],
   ['jwt', /\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/],
   ['bearer', /\b(?:Bearer|Basic)\s+[A-Za-z0-9._~+/-]{20,}=*/],
+  // VCST-6378: shapes a tester on this stack actually holds. An Azure DevOps PAT (the classic 52-char
+  // base32 one, and the 84-char one that carries the `AZDO` signature at 76..79), a SAS signature, a
+  // storage account key, a PEM private key, an AWS access key id. None of them is a word or a hash
+  // somebody asks about, which is the bar the three above were held to.
+  ['ado-pat', /\b(?:[a-z2-7]{52}|[A-Za-z0-9]{76}AZDO[A-Za-z0-9]{4})\b/],
+  ['sas-signature', /[?&]sig=[A-Za-z0-9%+/=]{20,}/],
+  ['storage-key', /\bAccountKey=[A-Za-z0-9+/]{40,}={0,2}/],
+  ['private-key', /-----BEGIN (?:[A-Z]+ )?PRIVATE KEY-----/],
+  ['aws-access-key', /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/],
 ]);
+
+// ── e-mail addresses: the one pattern rule, with an allow-list (VCST-6378) ─────────────────────
+//
+// THE VALUE SCAN COULD NOT SEE THIS, and a person's address is what actually leaked: a teammate's
+// personal address and an employee address reached public entries through free prose (evidence
+// notes, claims), where no secret-named key ever held them. An address is therefore the one thing
+// matched by SHAPE -- and the allow-list is what keeps it from crying wolf, because the base quotes
+// fixture addresses on purpose (`AGENT-TEST-…@test-agent.com`, a UI's own placeholder text).
+
+/** Domains that are test data by construction. RFC 2606 / 6761 names, and the fixture domains of this repo. */
+export const TEST_EMAIL_DOMAINS = Object.freeze(new Set([
+  'example.com', 'example.org', 'example.net', 'test-agent.com', 'yopmail.com',
+  'test.virtocommerce.com', 'acme.com',
+]));
+
+/** Top-level names that can never be a real mailbox (RFC 2606 / 6761). */
+const TEST_TLD = /\.(?:test|example|invalid|localhost)$/;
+
+/**
+ * Whole addresses a product prints as its OWN placeholder text, which an observation of that UI has
+ * to quote verbatim: the storefront's "Enter a valid email address, e.g. johndoe@gmail.com".
+ */
+export const UI_PLACEHOLDER_EMAILS = Object.freeze(new Set(['johndoe@gmail.com']));
+
+const EMAIL = /[A-Za-z0-9._%+*-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}/g;
+
+/** Is this one address somebody's real mailbox, as far as a shape can tell? */
+export function isPersonalEmail(address) {
+  const a = String(address).toLowerCase().replace(/\.$/, '');
+  const at = a.lastIndexOf('@');
+  if (at < 1) return false;
+  const local = a.slice(0, at);
+  const domain = a.slice(at + 1);
+  // `emails:"*@gmail.com"` is a search pattern, not an address: a wildcard names nobody.
+  if (local.includes('*')) return false;
+  if (UI_PLACEHOLDER_EMAILS.has(a)) return false;
+  if (TEST_TLD.test(domain)) return false;
+  for (const d of TEST_EMAIL_DOMAINS) if (domain === d || domain.endsWith(`.${d}`)) return false;
+  return true;
+}
+
+/** Does any of these strings carry a personal address? */
+export function hasPersonalEmail(parts) {
+  return parts.some((s) => (String(s).match(EMAIL) ?? []).some(isPersonalEmail));
+}
 
 /** One env file's text -> the secret VALUES in it. Pure, so the parsing rule is testable alone. */
 export function secretValuesFrom(text) {
@@ -163,6 +222,29 @@ export function loadHosts(env = process.env) {
 }
 
 /**
+ * The secret values the LIVE environment carries (VCST-6378). A token kept in
+ * `.claude/settings.local.json` `env` -- the documented way to keep a PAT out of `.mcp.json` -- is in
+ * `process.env` and in no `.env*` file, so the file scan never knew it.
+ *
+ * Stricter than the file rule, because the live environment is not curated: a secret-named key whose
+ * value is a plain word (`PASSWORD_POLICY=strict`) would otherwise make the gate refuse every line
+ * that says "strict". A live value counts when it is at least 8 characters, has no whitespace, and
+ * is not letters only. A key that POINTS at secrets rather than holding one -- `VC_MEASURE_SECRETS`
+ * (a file list), `*_FILE`, `*_PATH`, `*_DIR` -- is skipped: its value is a location.
+ */
+const POINTER_KEY = /(?:_FILES?|_PATH|_DIR|SECRETS)$/i;
+
+export function secretValuesFromEnv(env = process.env) {
+  const out = new Set();
+  for (const [k, raw] of Object.entries(env)) {
+    if (!SECRET_NAME.test(k) || POINTER_KEY.test(k) || typeof raw !== 'string') continue;
+    const v = raw.trim();
+    if (v.length >= 8 && !/\s/.test(v) && !/^[A-Za-z]+$/.test(v) && !looksLikePath(v)) out.add(v);
+  }
+  return out;
+}
+
+/**
  * Load the secret values. Values are never returned to a caller that prints them and never logged;
  * the COUNT is reported, so an operator can see the gate loaded something rather than assume it.
  * The deployment hosts ride along as `hosts` (see `loadHosts`); `count` stays the secret count.
@@ -181,6 +263,7 @@ export function loadSecrets(env = process.env) {
     read.push(f);
     for (const v of secretValuesFrom(text)) values.add(v);
   }
+  for (const v of secretValuesFromEnv(env)) values.add(v);
   return { values, hosts, files: read, count: values.size };
 }
 
@@ -222,7 +305,50 @@ export function scanText(text, secrets = new Set(), hosts = new Set()) {
     }
   }
   for (const [name, re] of TOKEN_SHAPES) if (parts.some((s) => re.test(s))) hits.push(name);
+  if (hasPersonalEmail(parts)) hits.push('email');
   return hits;
+}
+
+/** What to write INSTEAD, per kind: the refusal is the retry prompt, so it says how to fix, not only what. */
+export const PUBLISH_FIXES = Object.freeze({
+  'env-secret-value': 'a value from your secret env (a password or token) -- drop it; name the role or the @td() alias instead',
+  'env-host': 'a deployment host -- name the stand by its deployment label (vcst_qa, vcptcore_qa1) and keep only the path',
+  email: 'a personal e-mail address -- name the account by its role or @td() alias ("the B2B org admin"), or use a test domain (…@example.com)',
+  'github-pat': 'a GitHub token -- remove it',
+  jwt: 'a JWT -- remove it; say which claim you read and its value only if that value is not a credential',
+  bearer: 'an Authorization header value -- remove it',
+  'ado-pat': 'an Azure DevOps PAT -- remove it',
+  'sas-signature': 'a SAS signature -- keep the path, drop the query string',
+  'storage-key': 'a storage account key -- remove it',
+  'private-key': 'a private key -- remove it',
+  'aws-access-key': 'an AWS access key -- remove it',
+});
+
+/**
+ * THE GATE AT THE DOOR (VCST-6378): which fields of a write would put a secret or a person into the
+ * public base, as `[{ field, kinds }]`. The push-time `gateQueue` stays as the backstop, but it can
+ * only drop a line after the agent was told "queued" -- the fact is lost and nobody learns why. Here
+ * the writer is still in the call and can resend it without the value.
+ *
+ * Like `scanText`, it names FIELDS and KINDS, never the matched text.
+ */
+export function publishProblems(fields, { secrets = new Set(), hosts = new Set() } = {}) {
+  const out = [];
+  for (const [field, value] of Object.entries(fields ?? {})) {
+    if (value == null) continue;
+    const kinds = scanText(stringsOf(value), secrets, hosts);
+    if (kinds.length) out.push({ field, kinds });
+  }
+  return out;
+}
+
+/** One refusal sentence for `publishProblems`' result -- what was found where, and what to write instead. */
+export function publishRefusal(problems) {
+  const kinds = [...new Set(problems.flatMap((p) => p.kinds))];
+  const where = problems.map((p) => `${p.field} (${p.kinds.join(', ')})`).join('; ');
+  return `refused: the base is a PUBLIC repository and ${where} would publish `
+    + kinds.map((k) => PUBLISH_FIXES[k] ?? k).join('; ')
+    + '. Nothing was queued -- resend without it.';
 }
 
 /**

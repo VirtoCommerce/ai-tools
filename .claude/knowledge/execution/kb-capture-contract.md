@@ -49,6 +49,13 @@ is refused with the ids of its successors — confirm or dispute the one you act
 this session has not opened (`kb_show`, or an answer that printed its body) is refused with the command
 that opens it (VCST-6191): a list line is not the entry, and its caveats sit below it.
 
+**Nothing private goes into any field (VCST-6378) — the base is a public repository.** `capture`,
+`confirm` and `dispute` are refused, with the field and what to write instead, when a field holds a
+personal e-mail address, a value from your secret env, a deployment host, or a token / key shape
+(`scripts/kb/core/secret-gate.mjs`). Name an account by its role or `@td()` alias, a stand by its
+deployment label. Test-domain addresses (`…@example.com`, `…@test-agent.com`, `*.test`) and a UI's
+own placeholder text are fine.
+
 ## Anchors — accepted forms
 
 | Form | Example |
