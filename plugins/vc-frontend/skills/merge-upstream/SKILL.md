@@ -186,6 +186,9 @@ brief is the second pause; its ports are committed on this branch and join this 
   a failure.
 - Exercise each upstream feature in the merge on the page, in the state that switches it on (a query
   param, a setting, a signed-in user). Note what the backend could not reach — it goes to QA.
+- To see what the merge changed on screen, run `vc-frontend:visual-compare`: it captures the same pages
+  on upstream, the fork before and the fork after, and builds a side-by-side report with a pixel diff per
+  page. Its verdicts go into the log's Smoke section.
 
 ## 8. QA checklist
 

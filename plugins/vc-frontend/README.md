@@ -26,6 +26,7 @@ It installs disabled. Enable it in `/plugin`, or with `claude plugin enable vc-f
 |---|---|
 | Bring upstream into the fork (`upstream/dev`, a release tag, or `origin/dev` into a redesign branch) | `/vc-frontend:merge-upstream <ref>` |
 | Find upstream fixes the fork never got, because it renders its own component instead | `/vc-frontend:port-upstream-to-fork` |
+| See what a merge changed on screen: upstream, the fork before and after, side by side | `/vc-frontend:visual-compare` |
 
 `merge-upstream` runs `port-upstream-to-fork` itself. Run the second one alone only to audit a fork.
 
