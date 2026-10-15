@@ -914,7 +914,7 @@ library, one served-org graph.
 That is a **provisioning** concern, not a finding about the feature, so it is stated once in the
 seeding skill and nowhere else:
 [`.claude/skills/qa-seed-data/sales-rep-profiles.md`](../../skills/qa-seed-data/sales-rep-profiles.md)
-— the profile switch and its `_meta.dataset_profile` guard, `sr:inventory`, the marker + ledger
+— the profile switch and its `_meta.dataset_profiles['sales-rep']` guard, `sr:inventory`, the marker + ledger
 teardown mechanism, the rules for reusing a real person’s account as a rep, and the live state of
 each environment.
 

@@ -140,7 +140,8 @@ const hasMark = (mark, vals) => vals.some((v) => String(v ?? '').toUpperCase().i
 function classify({ declared, protectedHit, markerFields }) {
   if (protectedHit) return 'protected';
   if (declared) return 'repo-seeded';
-  if (hasMark(FAMILY_MARK, markerFields) || hasMark(DEMO_MARK, markerFields)) return 'repo-family';
+  // DEMO-RET: the returns demo's orders sit in the same demo organizations (seed-returns-demo.mjs).
+  if (hasMark(FAMILY_MARK, markerFields) || hasMark(DEMO_MARK, markerFields) || hasMark('DEMO-RET', markerFields)) return 'repo-family';
   return 'foreign';
 }
 

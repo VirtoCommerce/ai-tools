@@ -1,0 +1,78 @@
+{
+  "_meta": {
+    "description": "Presentation-grade loyalty-missions demo (seed-missions-demo.mjs). Stands on the sales-rep demo: buyer/org keys are DEMO_CONTACTS / DEMO_ORGS in sales-rep-demo-specs.mjs. No AGENT-TEST string, no GUID, no SKU, no currency code — products are discovered per org family, the goal currency is the store's default, read live.",
+    "fields": {
+      "missions[].goal": "OrderValueGoal {value} | OrderCountGoal {count} | PerSkuGoal {all, items[{slot, quantity}]} — a PerSku slot is a product picked from featuredFrom's family",
+      "missions[].window": "{startInDays, endInDays} relative to seed time; endInDays null = open-ended",
+      "missions[].banner": "order-value | order-count | per-sku — the committed artwork under test-data/uploads/",
+      "progressOrders[]": "real orders placed BY the buyer after the missions exist; each contributes to every active mission at once (count +1, value +order total, PerSku units of its slot products)",
+      "progressOrders[].lines[]": "{qty, price} from the buyer's org family, or {slot, qty, price} for a featured product",
+      "expect": "the progress each (buyer, mission) must reach — DERIVED by the spec module from the orders and checked against it; listed here so a reviewer reads the story without running code"
+    }
+  },
+  "featuredFrom": "DORG-WINGTIP",
+  "missions": [
+    {
+      "key": "DMSN-WELCOME", "banner": "order-count",
+      "name": "Your first portal order",
+      "description": "Place your first order through the portal and we'll add 250 bonus points to your account.",
+      "goal": { "type": "OrderCountGoal", "count": 1 }, "reward": 250,
+      "window": { "startInDays": -14, "endInDays": null }
+    },
+    {
+      "key": "DMSN-ORDERS-5", "banner": "order-count",
+      "name": "Place 5 orders this month",
+      "description": "Keep your restocking on the portal: five orders before the end of the month earns 1,000 points.",
+      "goal": { "type": "OrderCountGoal", "count": 5 }, "reward": 1000,
+      "window": { "startInDays": -10, "endInDays": 20 }
+    },
+    {
+      "key": "DMSN-SPEND-5K", "banner": "order-value",
+      "name": "Spend $5,000 this quarter",
+      "description": "Reach $5,000 in portal purchases this quarter and unlock 2,500 points toward the rewards catalog.",
+      "goal": { "type": "OrderValueGoal", "value": 5000 }, "reward": 2500,
+      "window": { "startInDays": -14, "endInDays": 75 }
+    },
+    {
+      "key": "DMSN-GOLD-15K", "banner": "order-value",
+      "name": "Gold tier — spend $15,000",
+      "description": "Our biggest reward of the season. Hit $15,000 in purchases before the deadline to earn 7,500 points.",
+      "goal": { "type": "OrderValueGoal", "value": 15000 }, "reward": 7500,
+      "window": { "startInDays": -30, "endInDays": 8 }
+    },
+    {
+      "key": "DMSN-LOYAL-12", "banner": "order-count",
+      "name": "12 orders in 12 weeks",
+      "description": "A standing order habit pays off: twelve portal orders within twelve weeks earns 3,000 points.",
+      "goal": { "type": "OrderCountGoal", "count": 12 }, "reward": 3000,
+      "window": { "startInDays": -7, "endInDays": 77 }
+    },
+    {
+      "key": "DMSN-FEATURED", "banner": "per-sku",
+      "name": "Charging essentials bundle",
+      "description": "Stock the van with this season's featured charging cables and collect 1,500 points.",
+      "goal": { "type": "PerSkuGoal", "all": true, "items": [{ "slot": "F1", "quantity": 10 }, { "slot": "F2", "quantity": 5 }] },
+      "reward": 1500,
+      "window": { "startInDays": -5, "endInDays": 45 }
+    }
+  ],
+  "progressOrders": [
+    { "key": "DMO-NW1-01", "buyer": "DCT-NW-1", "seq": 10, "lines": [{ "qty": 12, "price": 75 }, { "qty": 5, "price": 110 }] },
+    { "key": "DMO-NW1-02", "buyer": "DCT-NW-1", "seq": 20, "lines": [{ "qty": 8, "price": 85 }, { "qty": 4, "price": 75 }] },
+    { "key": "DMO-NW1-03", "buyer": "DCT-NW-1", "seq": 30, "lines": [{ "qty": 15, "price": 45 }, { "qty": 5, "price": 110 }] },
+    { "key": "DMO-NW1-04", "buyer": "DCT-NW-1", "seq": 40, "lines": [{ "qty": 4, "price": 190 }] },
+    { "key": "DMO-NW1-05", "buyer": "DCT-NW-1", "seq": 50, "lines": [{ "qty": 10, "price": 65 }, { "qty": 3, "price": 150 }] },
+    { "key": "DMO-CN1-01", "buyer": "DCT-CN-1", "seq": 60, "lines": [{ "qty": 2, "price": 520 }, { "qty": 4, "price": 200 }] },
+    { "key": "DMO-CN1-02", "buyer": "DCT-CN-1", "seq": 70, "lines": [{ "qty": 3, "price": 420 }] },
+    { "key": "DMO-WT1-01", "buyer": "DCT-WT-1", "seq": 80, "lines": [{ "slot": "F1", "qty": 10, "price": 12.5 }, { "slot": "F2", "qty": 5, "price": 24 }] },
+    { "key": "DMO-NW2-01", "buyer": "DCT-NW-2", "seq": 90, "lines": [{ "slot": "F1", "qty": 6, "price": 12.5 }] }
+  ],
+  "orderStatus": "Completed",
+  "expect": {
+    "DCT-NW-1": "Margaret Hale — WELCOME, ORDERS-5 and SPEND-5K completed (3 rewards); GOLD-15K and LOYAL-12 in progress; FEATURED not started",
+    "DCT-CN-1": "Priya Raman — WELCOME completed; SPEND-5K at 62%, ORDERS-5 at 40%; GOLD and LOYAL low; FEATURED not started",
+    "DCT-WT-1": "James Whitfield — WELCOME and FEATURED completed; the rest just started",
+    "DCT-NW-2": "Daniel Okafor — WELCOME completed; FEATURED in progress (6 of 15 units)",
+    "others": "Thomas Bergmann, Elena Duarte, Marcus Webb — every mission not started"
+  }
+}
