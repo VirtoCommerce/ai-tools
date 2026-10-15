@@ -9,9 +9,9 @@ runs only when this install declares the script; otherwise it is `GAP: not-avail
 
 | What | Script | In the bundle |
 |---|---|---|
-| domain map state | `domain:check --json` | `known.domain_map` — `PRESENT` / `STALE` / `ABSENT` / `unresolved`, path |
+| domain map state | `domain:check --json`, matched on a map's `slug` or its file name (`ret` or `returns`) | `known.domain_map` — `PRESENT` / `STALE` / `ABSENT` / `unresolved`, path |
 | mind map | the domain map's file name with `.mind-map.json` | `known.mind_map.path` |
-| BL invariants | `bl:extract --domain <slug> --json` | `known.bl` — id, title, severity |
+| BL invariants | `bl:extract --domain <slug> --json` | `known.bl` — id, title, severity; a domain the oracle declares with none yet is `[]` plus a `known.bl` `not-found` gap |
 | cases at risk | `regression:select` per repo (staleness-rotation picks dropped) · `tc:scope` with the operations | `known.cases_at_risk` |
 | prior runs and bugs | `reports/tickets/*/<KEY>/`, `reports/ba/test-models/<KEY>-*`, `reports/bugs/**` naming the key | `known.prior_runs` |
 

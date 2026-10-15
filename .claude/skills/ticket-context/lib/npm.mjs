@@ -32,5 +32,5 @@ export function runNpmJson(root, args, spawn = spawnSync, ctx = {}) {
   let json = null;
   if (at >= 0) { try { json = JSON.parse(text.slice(at)); } catch { json = null; } }
   if (r.error) return { status: r.status, json: null, error: r.error.code === "ETIMEDOUT" ? "timed-out" : String(r.error.code ?? r.error.message) };
-  return { status: r.status, json };
+  return { status: r.status, json, stderr: r.stderr ?? "" };
 }

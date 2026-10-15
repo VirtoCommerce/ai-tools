@@ -1,6 +1,6 @@
 ---
 name: ticket-context
-description: "One gated context bundle for one tracker ticket: ACs with provenance, comment signals, epic and siblings, every attachment, inline image and link analysed (HAR and logs scrubbed first), design conditions, the ticket's PRs (layers, operations, settings, tests, fate, hidden behaviour, PR↔AC both ways), whether each PR is deployed on the stand, known ground, and every gap with a reason. Use whenever a ticket must be analysed before testing, modelling or planning — /qa-test-fast Stage 1 today. Not for building domain or mind maps, fault models, verdicts, live testing, or any tracker, PR or kb write."
+description: "One gated context bundle for one tracker ticket: the ticket's own fields (summary, type, status, priority, components, description, AC-field text), ACs with provenance, comment signals, epic and siblings, every attachment, inline image and link analysed (HAR and logs scrubbed first), design conditions, the ticket's PRs (layers, operations, settings, tests, fate, hidden behaviour, PR↔AC both ways), whether each PR is deployed on the stand, known ground, and every gap with a reason. Use whenever a ticket must be analysed before testing, modelling or planning — /qa-test-fast Stage 1 today. Not for building domain or mind maps, fault models, verdicts, live testing, or any tracker, PR or kb write."
 argument-hint: "<TICKET-KEY> [--domain <slug>] [--fresh] [--kb-hits KB-…,…]"
 ---
 

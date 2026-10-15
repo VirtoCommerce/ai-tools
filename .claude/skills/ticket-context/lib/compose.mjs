@@ -98,7 +98,7 @@ export function compose(prep, outs) {
   }
 
   return {
-    schema: "ticket-context/1", ticket: prep.ticket, tracker: prep.tracker,
+    schema: "ticket-context/1", ticket: prep.ticket, tracker: prep.tracker, fields: prep.fields,
     fetched_at: prep.fetched_at, ticket_updated: prep.ticket_updated, freshness_key: prep.freshness_key,
     acs: t.acs, signals: t.signals, epic: prep.epic, siblings: t.siblings, layer_guess: t.layer_guess, domains_guess: t.domains_guess,
     materials, design: m.design,
