@@ -22,7 +22,7 @@ removed once the new command has passed validation (§10 P4).
 **Non-goals.**
 - Not a rewrite of the skills it calls. Changes to them are the minimum the composition needs (§10).
 - Not a change to `/qa-verify-fix`, `/qa-hotfix-check` or `/qa-fix` — separate jobs (redesign §2).
-- **No regression in this project** (U7): no regression lane, no coverage triage, no regression-corpus updates.
+- **No regression in this project** (U7): no regression lane over the existing corpus, no coverage triage, no repair of stale cases. Writing and running the ticket's new cases is in (U18).
   Client suites may look nothing like ours; regression is the next large step.
 - No client-side domain-map or mind-map builders (U6) — the next step into the knowledge store this design
   creates.
@@ -37,7 +37,7 @@ removed once the new command has passed validation (§10 P4).
 | U4 | Trackers and code hosts | A **connector interface** with **four connectors in v1 (P1)**: Jira, GitHub, Azure Boards, Azure Repos. Azure is validated on a real client Azure DevOps project, not a sandbox (owner, 2026-10-15, revising the first answer "Jira + GitHub first") |
 | U5 | "Any project" means | **Any Virto Commerce project**. Platform facts may be relied on: `/api/platform/modules`, the `vc-frontend` layout for the ui-kit, xAPI, VirtoOZ, the public kb |
 | U6 | Knowledge | **Two stores, one interface** (§6). A client run reads its project store first, then the platform store, and writes **only** to its project store. Domain/mind-map builders for clients come next |
-| U7 | Regression | **Out of this project.** F5 still fires, but records the cases at risk and the follow-up instead of requiring a run (§5.3). The post-verdict corpus update goes with it |
+| U7 | Regression | **Out of this project.** F5 still fires, but records the cases at risk and the follow-up instead of requiring a run (§5.3). Repairing stale cases goes with it; new cases do not (U18) |
 | U8 | Orchestrator shape | **Registry + planner**: `artifacts.json` declares the artifacts, `plan-run.mjs` computes the waves, the command executes the plan |
 | U9 | Removal timing and validation stages | Build → **stage 1**: validate on 3–5 native-platform tickets → remove FAST/FULL/`/qa-test-fast` → **stage 2**: validate on the real client project → release to clients |
 | U11 | Where the run asks a human | **Two points only.** *Before execution*: approve the strategy (and, on the same build, re-run or reuse). *After the verdict*: `qa-bug` runs for each confirmed bug and asks its own "create a tracker ticket?" question (`qa-bug` is used as it is), then the run asks once whether to post the tracker comment. Nothing asks between the two points; `--yes` answers only the first |
@@ -47,6 +47,7 @@ removed once the new command has passed validation (§10 P4).
 | U15 | Round N ≥ 2 | **A delta strategy that proves the fixes**: the diff from the last tested commit; every bug from round N−1 is a risk with its original reproduction as a checklist item, decided `FIXED` / `NOT FIXED`, plus a risk for what sits next to the fix; every unresulted risk carries over; the verdict lists each prior bug's result |
 | U16 | May the run create or change data on the stand? | **Yes, only on a non-production stand** the profile declares as such and the probe matches; otherwise the run is read-only and every item that needs a write is BLOCKED with that reason. Everything created is deleted by ledger id |
 | U17 | Test-data building in v1 | **The whole family moves into the plugin in v1, refactored** (owner, revising "seeders as an adapter"): `qa-test-data-model`, `qa-generate-data`, `qa-seed-data` (skill + command), the `test-data-engineer` agent and the seeding engine become the plugin's canonical copies and work on a client's project too. This repository's domain seeders and fixtures stay here as the platform project's **content**, as a client's live in the client's project. The refactor makes the family lighter, adapted to any project and flexible (§6a) |
+| U18 | Write new test cases, and run them? | **Yes — after the verdict, then one run of the new cases only** (owner, revising redesign D2 for this flow). The orchestrator is the single author: cases from the passing checklist items and from every bug's reproduction (`Catches:` that bug). One wave runs only the new cases. A new case that fails is a defect **of the case** — fixed or marked, never a change to the verdict, which was decided on the checklist. Cases land in the project's agent-native corpus; a client's own suites (Playwright, TestRail, …) are untouched |
 | U10 | Committed tests | An exception like `plugins/vc-secrets/`: the knowledge-store write router and the write-zone check get **committed** tests; everything else follows the repository rule (temporary tests, deleted before commit) |
 
 ## 3. The shape
@@ -60,7 +61,10 @@ removed once the new command has passed validation (§10 P4).
              ── HUMAN POINT 1: approve the strategy (--yes) ──
  3 RUN       plan-run.mjs → run-plan.json → waves            only RUN rows, ≤3 browser lanes;
              the checklist is written by the orchestrator inline (U13)
- 4 CLOSE     trace.mjs reconcile → /qa-triage-results → qa-investigate → verdict → verdict.md + HTML
+ 4 CLOSE     trace.mjs reconcile → /qa-triage-results → qa-investigate → verdict (decided here, final)
+ 5 CASES     orchestrator authors new cases (passing items + bug reproductions) → one wave runs only them
+             → Draft / Automated per case; a failing new case is a case defect (U18)
+             → verdict.md + HTML (verdict + new cases)
              ── HUMAN POINT 2: qa-bug per confirmed bug (its own question) · post the comment? ──
              → knowledge write-back
 ```
@@ -94,6 +98,7 @@ next to the fix; every unresulted risk carries over. The floors still read the w
 | `skills/qa-test-model/`, `qa-exploratory/`, `qa-triage-results/` (ticket mode), `qa-design/` | **moved** canonical copies; `qa-triage-results` loses `disable-model-invocation` (U14) | `vc-fix` agents and skills |
 | `vc-fix`: `qa-checklist`, `qa-investigate`, `qa-bug`, `qa-risk`, `qa-evidence`, agents `qa-*-expert`, `project-init`, `project-profile.json` | **reused**; `qa-bug` unchanged. One change, one `vc-fix` version bump: `qa-checklist` Mode 5 names the risk id in Ref and gains `--from-strategy` | — |
 | `skills/qa-test-data-model/`, `qa-generate-data/`, `qa-seed-data/` + command, agent `test-data-engineer`, `lib/seed/` engine | **moved and refactored** (§6a, U17); domain seeders stay project content | profile, `capabilities.json`, the project store |
+| `skills/qa-test-cases-generator/`, agent `test-runner-agent`, the suite lint and promote scripts | **moved** (U18): authoring in the agent-native case format, a runner for the new-case wave, `Draft → Automated` promotion. Not the regression orchestration — that stays out (U7) | the project's corpus path from the profile |
 | `lib/artifacts.json` | the only list of artifacts (§5.1) | — |
 | `lib/capabilities.mjs` | probes the install, writes `capabilities.json` | profile, env, MCP list, project files |
 | `lib/plan-run.mjs` | approved strategy + registry + capabilities → `run-plan.json` | the three above |
@@ -144,7 +149,7 @@ list.
 ```
 
 v1 entries: `test-data`, `test-model`, `mind-map`\*, `contract-refresh`\*, `checklist`, `exploratory`, `checklist-runners`
-(storefront + admin/API lanes), `visual`, `verifier`. Adding an artifact = an entry + its skill; the command does
+(storefront + admin/API lanes), `visual`, `verifier`, `case-authoring`, `new-case-run`. Adding an artifact = an entry + its skill; the command does
 not change. `model` is per entry (§8).
 
 ### 5.2 Capabilities and the rule "unavailable is not doubt"
@@ -186,7 +191,7 @@ client customisation is not a platform error, so it never becomes a dispute agai
 | business rules | `rules/<slug>.yaml` (the `bl/` shape) | the run proposes (SUSPECT / candidate); a human confirms |
 | domain map | `domain/<slug>.md` | a domain-map builder (next phase) |
 | mind map | `domain/<slug>.mind-map.json` | a mind-map builder (next phase) |
-| test documentation | strategies, test models, checklists, verdicts, candidate and stale case lists | the flow |
+| test documentation | strategies, test models, checklists, verdicts, the new cases (agent-native corpus), stale case lists | the flow |
 | test-data registry | `test-data/aliases.json` — the entities cases assert against by name (§6a) | `/vc-test:init` and the run, by proposal |
 | observed behaviour | kb entries: question, claim, trust, provenance | the flow's close: capture / confirm / dispute |
 
@@ -307,7 +312,7 @@ Every step ends in one of four states: **OK**, **SKIP**(reason), **BLOCKED**(rea
 | Phase | Delivers | Checked by |
 |---|---|---|
 | **P1 Foundation** | plugin manifest, `vc-fix` dependency, marketplace entry; `/vc-test:init` (test accounts per role, stand declared writable or not, knowledge-store path); `ticket-context` and `qa-test-strategy` moved; tracker/host interfaces with Jira, GitHub, Azure Boards and Azure Repos; `capabilities.mjs`; F6 via `/api/platform/modules`; `knowledge-store.mjs` (+ committed tests); the "unavailable is not doubt" rule in the floors | `claude plugin validate`; committed store tests; temporary tests for the rest; `/ticket-context` + strategy from the plugin on VCST-5097 reproduce today's bundle and gate result; Azure connectors against recorded responses |
-| **P2 Flow** | `artifacts.json`, `plan-run.mjs`, `route.mjs`, `rounds.mjs`, `trace.mjs`, `write-zones.mjs` (+ committed tests); the command with its two human points; execution skills moved (`qa-triage-results` invocable); `qa-checklist` risk ids (`vc-fix` bump); the round-N delta that proves fixes; the join speed-up (O6); per-entry models | `--dry-run` on 3 tickets: wave plan, gates, no outward write |
+| **P2 Flow** | `artifacts.json`, `plan-run.mjs`, `route.mjs`, `rounds.mjs`, `trace.mjs`, `write-zones.mjs` (+ committed tests); the command with its two human points; new-case authoring and the new-case wave (U18); execution skills moved (`qa-triage-results` invocable); `qa-checklist` risk ids (`vc-fix` bump); the round-N delta that proves fixes; the join speed-up (O6); per-entry models | `--dry-run` on 3 tickets: wave plan, gates, no outward write |
 | **P2b Test data** | the test-data family moved and refactored (§6a): lighter skills, the engine with generic platform operations, this repository's seeders ported as project content | `td:validate` + `td:reconcile` green on the platform project before and after; one domain seeded and torn down from the plugin on a non-production stand; BUDGET-004 for every moved `SKILL.md` |
 | **P3 Validation, stage 1 — native platform** | live runs on 3–5 VC tickets in this repository (Story, Review task, Technical task, UI-only, Bug not-fixed) on Jira + GitHub, with the plugin installed the way a client installs it | redesign §8 measures (R3 not slower on a small ticket, R4 nothing FULL ran is lost on a large one, no floor overridden by hand); the platform store receives the kb writes |
 | **P4 Removal** — after stage 1 passes | `/qa-test` FAST/FULL, `/qa-test-fast`, `ticket-routing.md` §5–§5d, Artifact A, `3-cases`, `1e-plan` removed; `ci/run-full-cycle.ts`, `ci/run-suite-audit.ts` and the other consumers repointed or cleaned; the plugin tagged for internal use (`docs/release-process.md`) | `npm run context:check`, `npm test`, CI |
@@ -315,10 +320,11 @@ Every step ends in one of four states: **OK**, **SKIP**(reason), **BLOCKED**(rea
 
 ## 11. Out of scope, and what comes next
 
-- **Regression** (U7): the regression lane, coverage triage and staleness check, `regression:select`'s blanket
-  selection (V7: 33–91 suites per ticket, because every path token that matches manifest vocabulary widens the
-  selection), and the post-verdict corpus update through `/qa-test-lifecycle`. Until then the run hands its
-  candidate and stale case lists to the project store's test documentation.
+- **Regression** (U7): running the **existing** corpus — the regression lane, coverage triage and staleness check,
+  `regression:select`'s blanket selection (V7: 33–91 suites per ticket, because every path token that matches
+  manifest vocabulary widens the selection), and repairing stale cases through `/qa-test-lifecycle`. Writing and
+  running the ticket's **new** cases is in (U18); the stale case list goes to the project store's test
+  documentation.
 - **Client domain-map and mind-map builders** writing into the project store (U6).
 
 ## 12. Risks
