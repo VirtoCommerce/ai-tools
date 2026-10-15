@@ -53,7 +53,10 @@ export function anchorFix(problem, { deeper = [] } = {}) {
   if (problem.kind === 'local-path') {
     return 'send the route as typed: through kb_capture (MCP), or prefix the CLI with MSYS_NO_PATHCONV=1';
   }
-  if (HASH_ROUTE.test(String(problem.coordinate ?? ''))) {
+  // Only when the fragment took everything: `/cart#/reviews` still normalises to `/cart`, and the
+  // namespace hint below (with its `deeper` examples) is the right one for it.
+  const normalized = problem.normalized ?? normalizeAnchor(problem.coordinate);
+  if ((normalized === '' || normalized === '/') && HASH_ROUTE.test(String(problem.coordinate ?? ''))) {
     return 'an Admin SPA address keeps nothing once its #fragment is dropped: anchor = the REST call the blade sent '
       + '(HAR / Network panel), and keep the #/... route in `claim`';
   }
