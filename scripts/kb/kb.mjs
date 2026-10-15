@@ -19,7 +19,10 @@
 import { openBase } from './core/base.mjs';
 import { EXIT, HEADLINE, exitFor } from './core/exits.mjs';
 import { OWN_FLUSH_AFTER_MS, SWEEP_AFTER_MS, flush, postVerbSweepAllowed, sweepIfDue } from './core/push.mjs';
-import { pushConfirmRequired, queueDir } from './core/queue.mjs';
+import { accessWhy, pushConfirmRequired, queueDir } from './core/queue.mjs';
+
+/** Minutes after which a still-queued line means the queue is not draining (`stat`, VCST-6378). */
+const STALE_QUEUE_MIN = 6 * 60;
 import { resolveWho } from './core/who.mjs';
 import { writeToken } from './core/token.mjs';
 import { askLines, captureLines, evidenceLines, noneLines, showLines } from './core/render.mjs';
@@ -168,8 +171,12 @@ async function main(argv) {
     if (r.backlog?.lines) {
       const age = r.backlog.oldest ? Math.round((Date.now() - Date.parse(r.backlog.oldest)) / 60000) : null;
       out(`backlog   ${r.backlog.lines} line(s) in ${r.backlog.files} queue file(s)${age === null ? '' : `, oldest ${age} min old`}`);
+      // A queue that should have drained in minutes and has not in hours is lines nobody else has seen
+      // (VCST-6378): said loudly, because this is the only copy of them.
+      if (age !== null && age >= STALE_QUEUE_MIN) out(`  WARNING the oldest queued line is ${Math.round(age / 60)} h old — these writes have not reached the base; see "last push" below`);
     }
     const p = r.push ?? {};
+    if (p.denied) out(`  NO WRITE ACCESS since ${p.denied.at} — ${accessWhy(p.denied.code)}`);
     out(`last push ${p.last ? `${p.last.state} at ${p.last.at}${p.last.commit ? ` ${p.last.commit.slice(0, 7)}` : ''}${p.last.why ? ` — ${p.last.why}` : ''}` : 'none recorded on this machine'}`);
     // Sticky until a push LANDS: a later "nothing to do" must not hide that the queue never drained.
     if (p.lastFailure && p.lastFailure.at !== p.last?.at) out(`  FAILED  ${p.lastFailure.state} at ${p.lastFailure.at}${p.lastFailure.why ? ` — ${p.lastFailure.why}` : ''}`);

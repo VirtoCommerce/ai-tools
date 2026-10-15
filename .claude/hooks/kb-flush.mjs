@@ -24,15 +24,18 @@
  *    and exits immediately. The hook itself is tens of milliseconds.
  * 2. IT MUST NOT WRITE TO STDOUT. A Stop hook's stdout is a control channel; stray text there can
  *    change what the session does. Everything here is silent, and it exits 0 whatever happens — a
- *    flush that can fail a session is worse than a flush that is late.
+ *    flush that can fail a session is worse than a flush that is late. The ONE exception is a
+ *    `{"systemMessage": …}` object, printed once per refused token (VCST-6378): it is shown to the
+ *    person and changes nothing about the turn.
  */
 import { spawn } from 'node:child_process';
 import { closeSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
-import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { REACH_IDLE_MS, advanceReach, idleReaches, markTried, ownReachDue } from '../../scripts/kb/core/reach.mjs';
-import { hasSessionId, hookEnv, isSynthetic, kbDisabled, pushConfirmRequired, runOf, sessionId } from '../../scripts/kb/core/queue.mjs';
+import {
+  accessBlock, accessWhy, claimDeniedNotice, hasSessionId, hookEnv, isSynthetic, kbDisabled, pushConfirmRequired, queueDir, runOf, sessionId,
+} from '../../scripts/kb/core/queue.mjs';
 import { cachedWho } from '../../scripts/kb/core/who.mjs';
 import { writeToken } from '../../scripts/kb/core/token.mjs';
 
@@ -60,7 +63,15 @@ function main() {
   // opted out contributes neither a push nor a `session` line (`queue.mjs` `kbDisabled`).
   if (kbDisabled(process.env)) return;
 
-  const dir = process.env.KB_QUEUE_DIR || join(tmpdir(), 'claude-kb-queue');
+  // THE SAME DIRECTORY EVERY OTHER kb PROCESS USES, from the one function that names it (VCST-6378 moved
+  // it out of the temp directory). A copy of the rule here is how the two would drift.
+  const dir = queueDir(process.env);
+
+  // A TOKEN THAT CANNOT WRITE IS SAID ONCE, to the person (VCST-6378) -- a `systemMessage`, which is shown
+  // and changes nothing about the turn, unlike a block. `claimDeniedNotice` marks it told before it is
+  // printed, so a crash costs the notice, never a repeat.
+  const notice = claimDeniedNotice(process.env);
+  if (notice) process.stdout.write(JSON.stringify({ systemMessage: accessWhy(notice.code, process.env) }));
 
   // THE IDENTITY COMES FROM `sessionId()`, NOT FROM THE PAYLOAD, and the difference is not cosmetic:
   // they are two different identifiers. The hook payload's `session_id` is the TRANSCRIPT's id
@@ -117,6 +128,9 @@ function main() {
   if (!queueHasWork(dir) && !stale && !mine) return;
   // KB_PUSH_CONFIRM=1: a detached child has nobody to ask, so it would only hold. Not spawned.
   if (pushConfirmRequired(process.env)) return;
+  // THIS TOKEN WAS REFUSED and the refusal still holds (VCST-6378): the push would only say so again,
+  // so no process is started. A changed token, or the re-check interval passing, lets the next one go.
+  if (accessBlock(env, writeToken(env).token)) return;
 
   // `$CLAUDE_PROJECT_DIR` is set for hooks; resolving from this file is the fallback that survives
   // being invoked from somewhere else.

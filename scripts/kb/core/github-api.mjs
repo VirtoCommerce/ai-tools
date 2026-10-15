@@ -27,6 +27,25 @@ export const DEFAULT_TIMEOUT_MS = 20_000;
 /** Ref-update statuses meaning "somebody else moved it" — the compare-and-swap losing, not an error. */
 const CONFLICT_STATUS = new Set([409, 422]);
 
+/**
+ * A 401/403, as one closed code (VCST-6378):
+ *   no-write-access  the token reads the base but may not write it ("Resource not accessible by …")
+ *   bad-credentials  the token was rejected outright (expired, revoked, mistyped) -- every 401
+ *   rate-limited     out of requests: TRANSIENT, so never treated as an access problem
+ *   forbidden        any other 403
+ */
+export function deniedCode(res, json) {
+  const msg = String(json?.message ?? '');
+  const remaining = typeof res?.headers?.get === 'function' ? res.headers.get('x-ratelimit-remaining') : null;
+  if (/rate limit/i.test(msg) || remaining === '0') return 'rate-limited';
+  if (res?.status === 401 || /bad credentials/i.test(msg)) return 'bad-credentials';
+  if (/not accessible by/i.test(msg)) return 'no-write-access';
+  return 'forbidden';
+}
+
+/** The denials that will not cure themselves: the same token will be refused again until somebody acts. */
+export const ACCESS_CODES = Object.freeze(new Set(['no-write-access', 'bad-credentials']));
+
 /** Blob mode for a regular file. The base holds nothing else: no symlinks, no submodules, no exec. */
 export const FILE_MODE = '100644';
 
@@ -166,6 +185,10 @@ export function githubApi({
       ok: false,
       status: res.status,
       reason,
+      // WHICH denial (VCST-6378): a token that cannot write and a token that is out of requests are both
+      // a 403, and only the first is permanent. Classified here, where the status and the remote's
+      // words are both in hand, so no caller has to re-read the prose.
+      ...(reason === 'denied' ? { code: deniedCode(res, json) } : {}),
       detail: `HTTP ${res.status} ${method} ${path}${json?.message ? ` — ${json.message}` : ''}`,
       json,
     };
