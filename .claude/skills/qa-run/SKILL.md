@@ -23,6 +23,7 @@ The methodology behind [`/qa-run`](../../commands/qa-run.md). The plan comes fro
 |---|---|
 | `npm run release:diff` | which bundle components changed code (used by the planner) |
 | `npm run release:status` | overview, generated `PROGRESS.md`, ledger export for triage (`--ledger --suites … --with-baseline`) |
+| `npm run release:report` | the tracker side: wave sub-tasks (`--subtasks --apply`), and per finished wave the release dashboard + the run dashboard as two new comments (`--wave <W> --post`) |
 | `npm run release:check` | validates a release folder; CI runs `--all` |
 
 They read and write `regression/releases/` under the project directory (`QA_RUN_HOME`, else the working

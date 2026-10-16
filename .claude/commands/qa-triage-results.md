@@ -66,11 +66,20 @@ This writes per-suite rows into `reports/regression/history.json` in the shape `
 ## Phase 3 — Classify (one call per batch)
 > **Owner:** `regression-triage-agent` (delegate **per batch**, not per case)
 
+**The classifier runs on Sonnet.** It picks one CLASS from a closed list per case, over evidence the packet already
+carries; that does not need Opus, and triage is the largest model spend of a regression after the run itself. The
+judgement that does need more stays where it is: every `REAL_BUG` candidate still goes to Phase 4's live repro by the
+layer's QA expert, and the `CONFIDENCE: LOW` bias below is unchanged.
+
+**`preClassified` is not dispatched.** Those cases were recorded BLOCKED by the pre-flight and never run (lane
+`preflight`); each carries the row that predicted it. Report them grouped by that row, class `ENV` (a `fixture:` row is
+`TEST_DATA_DEFECT` when the alias is broken rather than unseeded), never as a fresh finding.
+
 First run the deterministic linter on each affected suite so the classifier has static signal:
 ```
 npm run suites:review -- <suite-csv> --json
 ```
-Then delegate **each `batch`** from Phase 1 to the classifier. `ci/agents/regression-triage-agent.md` is a **brief, not an agent type**: dispatch a `general-purpose` subagent whose prompt is that file plus the batch (it needs `Read` for the screenshots) — pass the batch's `issues` (incl. `status` + screenshot paths — the classifier READS them for visual/element failures, and triages BLOCKED/SKIPPED per its Step 1a) + that suite's lint output + the **observed-behaviour instruction**: for each failing case's page path / GraphQL operation / endpoint, ask the base itself (`mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <question>"`)) before choosing a CLASS — an entry that already records the observed "actual" argues `KNOWN_ISSUE` / `STALE_TEST`, one that records the expected behaviour on the same deployment argues `REAL_BUG`. Cite the entry ids in `ROOT_CAUSE`. Because a batch is one suite + one status, its cases usually share a cause, so the classifier reasons over them in one shared context (one set of oracle reads) but **emits one verdict per case** (`CASE:` + `CLASS` markers). Dispatch batches largest first, at most 3 at a time (`.claude/rules/agents.md` §Agent Delegation); don't fan out one agent per case. Per case it emits:
+Then delegate **each `batch`** from Phase 1 to the classifier. `ci/agents/regression-triage-agent.md` is a **brief, not an agent type**: dispatch a `general-purpose` subagent **with `model: "sonnet"`** whose prompt is that file plus the batch (it needs `Read` for the screenshots) — pass the batch's `issues` (incl. `status` + screenshot paths — the classifier READS them for visual/element failures, and triages BLOCKED/SKIPPED per its Step 1a) + that suite's lint output + the **observed-behaviour instruction**: for each failing case's page path / GraphQL operation / endpoint, ask the base itself (`mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <question>"`)) before choosing a CLASS — an entry that already records the observed "actual" argues `KNOWN_ISSUE` / `STALE_TEST`, one that records the expected behaviour on the same deployment argues `REAL_BUG`. Cite the entry ids in `ROOT_CAUSE`. Because a batch is one suite + one status, its cases usually share a cause, so the classifier reasons over them in one shared context (one set of oracle reads) but **emits one verdict per case** (`CASE:` + `CLASS` markers). Dispatch batches largest first, at most 3 at a time (`.claude/rules/agents.md` §Agent Delegation); don't fan out one agent per case. Per case it emits:
 `CLASS` ∈ {`REAL_BUG`, `TEST_STEPS_DEFECT`, `ASSERTION_DEFECT`, `TEST_DATA_DEFECT`, `STALE_TEST`, `FLAKY`, `ENV`, `KNOWN_ISSUE`} + (for REAL_BUG) `SEVERITY`/`ROUTE_REPO`/`REPRO_LAYER` + `CONFIDENCE` + `ROOT_CAUSE` + `SUGGESTED_FIX`.
 
 Bias: when a case can't be confidently attributed to product-or-test, it stays `REAL_BUG` with `CONFIDENCE: LOW` (→ live repro / human review) — never downgraded to a test-defect to make it disappear. See the taxonomy + worked examples in the `/qa-triage-results` skill (`.claude/skills/qa-triage-results/triage-taxonomy.md`).

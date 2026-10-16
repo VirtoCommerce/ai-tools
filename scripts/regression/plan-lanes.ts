@@ -37,6 +37,12 @@
  *   npm run suites:lanes -- 050h --run-id REG-… --json
  *   npm run suites:lanes -- --all                          # corpus survey, writes nothing
  *
+ * PRE-FLIGHT SKIP. When the run folder holds the pre-flight (`preflight.json`, written by
+ * `regression:plan --preflight-out`) and its `skip` map names cases of this suite, those cases are planned in
+ * the `preflight` lane: no lane executes them, `suites:merge` records them BLOCKED with the pre-flight's reason.
+ * Their outcome is already known (no persona, unseeded fixture, setting off, password absent), so running them
+ * only spends a browser slot and model tokens to rediscover it. `regression:plan --run-blocked` empties the map.
+ *
  * Exit codes: 0 planned · 1 the suite cannot be planned (unknown id, unreadable CSV)
  * · 2 the CSV header is not the canonical 15 columns.
  */
@@ -119,6 +125,23 @@ function refuseLegacyHeader(raw: string, file: string): void {
   process.exit(2);
 }
 
+/** Lanes a case can be PLANNED in: the classifier's four, plus `preflight` (known to BLOCK, not run). */
+type PlannedLane = CaseLane | "preflight";
+
+/** The pre-flight's predicted BLOCKs for one suite, from the run folder; empty when there is none. */
+export function readPreflightSkip(dir: string, suiteId: string): Map<string, string> {
+  const p = join(dir, "preflight.json");
+  if (!existsSync(p)) return new Map();
+  try {
+    const j = JSON.parse(readFileSync(p, "utf-8")) as { skip?: Record<string, Record<string, string>>; preflight?: { skip?: Record<string, Record<string, string>> } };
+    return new Map(Object.entries((j.skip ?? j.preflight?.skip ?? {})[suiteId] ?? {}));
+  } catch (e) {
+    // A pre-flight that cannot be read must not silently turn into "skip nothing" with no trace.
+    console.warn(`[suites:lanes] WARN ${p} is not valid JSON (${(e as Error).message}) — no case is pre-skipped`);
+    return new Map();
+  }
+}
+
 interface LanesFile {
   suiteId: string;
   suiteName: string;
@@ -133,8 +156,10 @@ interface LanesFile {
    * non-executing lanes and are counted SEPARATELY — folding a retired case into `manual`
    * would claim a human is expected to run it.
    */
-  counts: { total: number; machine: number; browser: number; manual: number; deprecated: number };
-  planned: Array<{ id: string; lane: CaseLane }>;
+  counts: { total: number; machine: number; browser: number; manual: number; deprecated: number; preflight: number };
+  planned: Array<{ id: string; lane: PlannedLane }>;
+  /** Cases taken out of the machine/browser lanes because the pre-flight predicts they BLOCK, with its reason. */
+  preBlocked: Array<{ id: string; reason: string }>;
   /** Why each non-machine case is not machine — the burn-down input. */
   blockers: Array<{ id: string; codes: string[]; details: string[] }>;
 }
@@ -153,7 +178,10 @@ function planOne(suite: { id: string; file: string; name: string }, args: Args):
   const result = classifySuiteCases(rows as unknown as ClassifiableRow[]);
 
   const outDir = args.out ?? (args.runId ? join("reports", "regression", args.runId) : join("reports", "regression", "lanes"));
-  const browserRows = rows.filter((r) => result.browser.includes(r.ID));
+  const skip = readPreflightSkip(outDir, suite.id);
+  // Only an EXECUTING case is pre-skipped: a manual or retired one is not run anyway, and keeps its own lane.
+  const pre = new Map([...skip].filter(([id]) => result.machine.includes(id) || result.browser.includes(id)));
+  const browserRows = rows.filter((r) => result.browser.includes(r.ID) && !pre.has(r.ID));
 
   const lanes: LanesFile = {
     suiteId: suite.id,
@@ -164,12 +192,14 @@ function planOne(suite: { id: string; file: string; name: string }, args: Args):
     browserCsv: browserRows.length > 0 ? join(outDir, `suite-${suite.id}-resolved.browser.csv`) : "",
     counts: {
       total: rows.length,
-      machine: result.machine.length,
-      browser: result.browser.length,
+      machine: result.machine.filter((id) => !pre.has(id)).length,
+      browser: browserRows.length,
       manual: result.manual.length,
       deprecated: result.deprecated.length,
+      preflight: pre.size,
     },
-    planned: result.verdicts.map((v) => ({ id: v.id, lane: v.lane })),
+    planned: result.verdicts.map((v) => ({ id: v.id, lane: pre.has(v.id) ? "preflight" as const : v.lane })),
+    preBlocked: [...pre].map(([id, reason]) => ({ id, reason })),
     blockers: result.verdicts
       .filter((v) => v.blockers.length > 0)
       .map((v) => ({
@@ -254,10 +284,11 @@ function main(): void {
     return;
   }
 
-  const { total, machine, browser, manual, deprecated } = lanes.counts;
+  const { total, machine, browser, manual, deprecated, preflight } = lanes.counts;
   console.log(`=== Lane plan: ${lanes.suiteId} ${lanes.suiteName} ===`);
   console.log(
-    `${total} cases → ${machine} machine · ${browser} browser · ${manual} manual · ${deprecated} deprecated`,
+    `${total} cases → ${machine} machine · ${browser} browser · ${manual} manual · ${deprecated} deprecated` +
+      (preflight ? ` · ${preflight} pre-flight BLOCKED (not run)` : ""),
   );
   if (browser === 0 && machine > 0) {
     console.log(`This suite needs NO browser slot: every case is runner-native or an explicit opt-out.`);

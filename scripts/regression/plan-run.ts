@@ -32,6 +32,7 @@
  *   npm run regression:plan -- smoke --preflight --preflight-out <path>   # also write the RegressionPreflight JSON to <path>
  *   npm run regression:plan -- smoke --preflight --run-id <RUN_ID>        # this run's own test-run-status.json is not a lock
  *   npm run regression:plan -- smoke --preflight --accept drift:<id>[,…]  # "proceed as is" on those drift BLOCKs (WARN)
+ *   npm run regression:plan -- smoke --preflight --run-blocked   # run the cases the pre-flight predicts will BLOCK (default: recorded BLOCKED, not run)
  *
  * Exit codes: 0 planned cleanly · 1 the selection cannot run as-is (unknown id, missing CSV,
  * no executor, or a cap that would guarantee truncation) · 2 --preflight: pre-flight NOT READY ·
@@ -62,6 +63,7 @@ function parseArgs(argv: string[]): {
   preflightOut: string | null;
   runId: string | null;
   accept: string[];
+  runBlocked: boolean;
 } {
   const args = argv.filter((a) => a !== "--");
   const flags = new Set(args.filter((a) => a.startsWith("--")));
@@ -85,6 +87,7 @@ function parseArgs(argv: string[]): {
     preflightOut: valueOf("--preflight-out"),
     runId: valueOf("--run-id"),
     accept: (valueOf("--accept") ?? "").split(",").map((x) => x.trim()).filter(Boolean),
+    runBlocked: flags.has("--run-blocked"),
     concurrency: {
       browser: numFlag("browsers", DEFAULT_CONCURRENCY.browser),
       fastpath: numFlag("fastpath", DEFAULT_CONCURRENCY.fastpath),
@@ -94,7 +97,7 @@ function parseArgs(argv: string[]): {
 }
 
 async function main(): Promise<void> {
-  const { selection, json, verbose, concurrency, preflight: wantPreflight, preflightOut, runId, accept } = parseArgs(process.argv.slice(2));
+  const { selection, json, verbose, concurrency, preflight: wantPreflight, preflightOut, runId, accept, runBlocked } = parseArgs(process.argv.slice(2));
   // D9: only a drift BLOCK can be "proceeded as is"; anything else is a usage error, never a silent no-op.
   const notDrift = accept.filter((a) => !a.startsWith("drift:"));
   if (notDrift.length > 0) {
@@ -146,6 +149,7 @@ async function main(): Promise<void> {
       manifestProblems: problems.map((p) => ({ suiteId: p.suiteId, kind: p.kind, detail: p.detail })),
       root: process.cwd(), ...(runId ? { runId } : {}), accept,
       browserSuites: suites.filter((s) => classifyLane(s) === "browser").map((s) => s.id),
+      skipBlocked: !runBlocked,
     });
     // Off the plan: a required module is not deployed, or every case needs a password nobody has.
     const gated = new Set([...pf.gating.gated, ...pf.secrets.gated].map((g) => g.suite));

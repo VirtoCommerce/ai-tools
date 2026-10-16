@@ -976,7 +976,13 @@ function main(): void {
 
   if (cmd === "collect") {
     const store = loadTriageStore();
-    const issues = readRunIssues(runDir, store);
+    // Recorded BLOCKED by the pre-flight (lane `preflight`, never run): the cause is already known and named, so
+    // they are not classifier input. They travel as `preClassified` — the ledger takes the pre-flight's reason.
+    const preClassified = readRunSuites(runDir).flatMap((s) => s.cases
+      .filter((c) => c.lane === "preflight" && c.status === "BLOCKED")
+      .map((c) => ({ suiteId: s.suiteId, caseId: c.id, reason: String(c.evidence ?? "").replace(/^Note: /, "") })));
+    const preKeys = new Set(preClassified.map((p) => `${p.suiteId}/${p.caseId}`));
+    const issues = readRunIssues(runDir, store).filter((i) => !preKeys.has(`${i.suiteId}/${i.caseId}`));
     if (rest.includes("--record")) {
       recordRunOutcomes(store, runDir, runId);
       saveTriageStore(store);
@@ -1000,6 +1006,8 @@ function main(): void {
       batchCount: batches.length,
       maxPerBatch,
       batches,
+      preClassifiedCount: preClassified.length,
+      preClassified,
     };
     console.log(JSON.stringify(packet, null, 2));
     return;

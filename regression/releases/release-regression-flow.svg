@@ -86,16 +86,16 @@ svg { background: var(--bg) } text { font-family: var(--sans) }</style>
 <text x="640" y="352" class="sec" text-anchor="middle">2 · WAVES — tiers in order (critical → high → rest); the domain waves of one tier run in parallel</text>
 <rect x="10" y="360" width="1260" height="150" rx="16" class="lane"/>
 <text x="30" y="386" class="lt">QA A · C-purchase</text>
-<text x="30" y="404" class="ls">critical · purchase flow</text>
+<text x="30" y="404" class="ls">purchase flow</text>
 <rect x="30" y="416" width="84" height="22" rx="11" class="pill"/><text x="72" y="431" class="pt" text-anchor="middle">RUNNING</text>
 <rect x="140" y="399" width="150" height="80" rx="10" class="cmd"/>
 <text x="215" y="420" text-anchor="middle"><tspan x="215" dy="0" class="tc">Claim</tspan><tspan x="215" dy="16" class="tw">/qa-run stable:17</tspan><tspan x="215" dy="16" class="tw">&lt;wave&gt; --claim</tspan><tspan x="215" dy="16" class="tw">own personas</tspan></text>
 <rect x="310" y="399" width="150" height="80" rx="10" class="box"/>
-<text x="385" y="420" text-anchor="middle"><tspan x="385" dy="0" class="tt">Pre-flight</tspan><tspan x="385" dy="16" class="t">settings · yml · seed</tspan><tspan x="385" dy="16" class="t">personas · accounts</tspan><tspan x="385" dy="16" class="t">one OK, then I fix</tspan></text>
+<text x="385" y="420" text-anchor="middle"><tspan x="385" dy="0" class="tt">Pre-flight</tspan><tspan x="385" dy="16" class="t">settings · yml · seed</tspan><tspan x="385" dy="16" class="t">users · one OK, I fix</tspan><tspan x="385" dy="16" class="t">known BLOCKs: not run</tspan></text>
 <rect x="480" y="399" width="150" height="80" rx="10" class="box"/>
 <text x="555" y="420" text-anchor="middle"><tspan x="555" dy="0" class="tt">Run</tspan><tspan x="555" dy="16" class="t">--cases &lt;tier&gt;</tspan><tspan x="555" dy="16" class="t">machine lane first</tspan><tspan x="555" dy="16" class="t">no exclusive cases</tspan></text>
 <rect x="650" y="399" width="170" height="80" rx="10" class="box"/>
-<text x="735" y="420" text-anchor="middle"><tspan x="735" dy="0" class="tt">Triage — automatic</tspan><tspan x="735" dy="16" class="t">/qa-triage-results</tspan><tspan x="735" dy="16" class="t">seeded with the ledger</tspan><tspan x="735" dy="16" class="t">a row for every finding</tspan></text>
+<text x="735" y="420" text-anchor="middle"><tspan x="735" dy="0" class="tt">Triage — automatic</tspan><tspan x="735" dy="16" class="t">classifier on Sonnet</tspan><tspan x="735" dy="16" class="t">seeded with the ledger</tspan><tspan x="735" dy="16" class="t">a row for every finding</tspan></text>
 <polygon points="905,397 957.5,439 905,481 852.5,439" class="gate"/>
 <text x="905" y="436" text-anchor="middle"><tspan x="905" dy="0" class="tg">Put it in</tspan><tspan x="905" dy="14" class="tg2">GitHub?</tspan></text>
 <rect x="990" y="399" width="250" height="80" rx="10" class="side"/>
@@ -108,16 +108,16 @@ svg { background: var(--bg) } text { font-family: var(--sans) }</style>
 <text x="972" y="431" class="lbl" text-anchor="middle">yes</text>
 <rect x="10" y="522" width="1260" height="150" rx="16" class="lane"/>
 <text x="30" y="548" class="lt">QA B · C-catalog</text>
-<text x="30" y="566" class="ls">critical · catalog &amp; search</text>
+<text x="30" y="566" class="ls">catalog, search</text>
 <rect x="30" y="578" width="84" height="22" rx="11" class="pill"/><text x="72" y="593" class="pt" text-anchor="middle">TRIAGED</text>
 <rect x="140" y="561" width="150" height="80" rx="10" class="cmd"/>
 <text x="215" y="582" text-anchor="middle"><tspan x="215" dy="0" class="tc">Claim</tspan><tspan x="215" dy="16" class="tw">/qa-run stable:17</tspan><tspan x="215" dy="16" class="tw">&lt;wave&gt; --claim</tspan><tspan x="215" dy="16" class="tw">own personas</tspan></text>
 <rect x="310" y="561" width="150" height="80" rx="10" class="box"/>
-<text x="385" y="582" text-anchor="middle"><tspan x="385" dy="0" class="tt">Pre-flight</tspan><tspan x="385" dy="16" class="t">settings · yml · seed</tspan><tspan x="385" dy="16" class="t">personas · accounts</tspan><tspan x="385" dy="16" class="t">one OK, then I fix</tspan></text>
+<text x="385" y="582" text-anchor="middle"><tspan x="385" dy="0" class="tt">Pre-flight</tspan><tspan x="385" dy="16" class="t">settings · yml · seed</tspan><tspan x="385" dy="16" class="t">users · one OK, I fix</tspan><tspan x="385" dy="16" class="t">known BLOCKs: not run</tspan></text>
 <rect x="480" y="561" width="150" height="80" rx="10" class="box"/>
 <text x="555" y="582" text-anchor="middle"><tspan x="555" dy="0" class="tt">Run</tspan><tspan x="555" dy="16" class="t">--cases &lt;tier&gt;</tspan><tspan x="555" dy="16" class="t">machine lane first</tspan><tspan x="555" dy="16" class="t">no exclusive cases</tspan></text>
 <rect x="650" y="561" width="170" height="80" rx="10" class="box"/>
-<text x="735" y="582" text-anchor="middle"><tspan x="735" dy="0" class="tt">Triage — automatic</tspan><tspan x="735" dy="16" class="t">/qa-triage-results</tspan><tspan x="735" dy="16" class="t">seeded with the ledger</tspan><tspan x="735" dy="16" class="t">a row for every finding</tspan></text>
+<text x="735" y="582" text-anchor="middle"><tspan x="735" dy="0" class="tt">Triage — automatic</tspan><tspan x="735" dy="16" class="t">classifier on Sonnet</tspan><tspan x="735" dy="16" class="t">seeded with the ledger</tspan><tspan x="735" dy="16" class="t">a row for every finding</tspan></text>
 <polygon points="905,559 957.5,601 905,643 852.5,601" class="gate"/>
 <text x="905" y="598" text-anchor="middle"><tspan x="905" dy="0" class="tg">Put it in</tspan><tspan x="905" dy="14" class="tg2">GitHub?</tspan></text>
 <rect x="990" y="561" width="250" height="80" rx="10" class="side"/>
@@ -130,16 +130,16 @@ svg { background: var(--bg) } text { font-family: var(--sans) }</style>
 <text x="972" y="593" class="lbl" text-anchor="middle">yes</text>
 <rect x="10" y="684" width="1260" height="150" rx="16" class="lane"/>
 <text x="30" y="710" class="lt">QA C · C-accounts</text>
-<text x="30" y="728" class="ls">critical · accounts &amp; B2B</text>
+<text x="30" y="728" class="ls">accounts, B2B</text>
 <rect x="30" y="740" width="84" height="22" rx="11" class="pill"/><text x="72" y="755" class="pt" text-anchor="middle">CLAIMED</text>
 <rect x="140" y="723" width="150" height="80" rx="10" class="cmd"/>
 <text x="215" y="744" text-anchor="middle"><tspan x="215" dy="0" class="tc">Claim</tspan><tspan x="215" dy="16" class="tw">/qa-run stable:17</tspan><tspan x="215" dy="16" class="tw">&lt;wave&gt; --claim</tspan><tspan x="215" dy="16" class="tw">own personas</tspan></text>
 <rect x="310" y="723" width="150" height="80" rx="10" class="box"/>
-<text x="385" y="744" text-anchor="middle"><tspan x="385" dy="0" class="tt">Pre-flight</tspan><tspan x="385" dy="16" class="t">settings · yml · seed</tspan><tspan x="385" dy="16" class="t">personas · accounts</tspan><tspan x="385" dy="16" class="t">one OK, then I fix</tspan></text>
+<text x="385" y="744" text-anchor="middle"><tspan x="385" dy="0" class="tt">Pre-flight</tspan><tspan x="385" dy="16" class="t">settings · yml · seed</tspan><tspan x="385" dy="16" class="t">users · one OK, I fix</tspan><tspan x="385" dy="16" class="t">known BLOCKs: not run</tspan></text>
 <rect x="480" y="723" width="150" height="80" rx="10" class="box"/>
 <text x="555" y="744" text-anchor="middle"><tspan x="555" dy="0" class="tt">Run</tspan><tspan x="555" dy="16" class="t">--cases &lt;tier&gt;</tspan><tspan x="555" dy="16" class="t">machine lane first</tspan><tspan x="555" dy="16" class="t">no exclusive cases</tspan></text>
 <rect x="650" y="723" width="170" height="80" rx="10" class="box"/>
-<text x="735" y="744" text-anchor="middle"><tspan x="735" dy="0" class="tt">Triage — automatic</tspan><tspan x="735" dy="16" class="t">/qa-triage-results</tspan><tspan x="735" dy="16" class="t">seeded with the ledger</tspan><tspan x="735" dy="16" class="t">a row for every finding</tspan></text>
+<text x="735" y="744" text-anchor="middle"><tspan x="735" dy="0" class="tt">Triage — automatic</tspan><tspan x="735" dy="16" class="t">classifier on Sonnet</tspan><tspan x="735" dy="16" class="t">seeded with the ledger</tspan><tspan x="735" dy="16" class="t">a row for every finding</tspan></text>
 <polygon points="905,721 957.5,763 905,805 852.5,763" class="gate"/>
 <text x="905" y="760" text-anchor="middle"><tspan x="905" dy="0" class="tg">Put it in</tspan><tspan x="905" dy="14" class="tg2">GitHub?</tspan></text>
 <rect x="990" y="723" width="250" height="80" rx="10" class="side"/>
