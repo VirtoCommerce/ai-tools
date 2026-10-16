@@ -54,9 +54,12 @@ file:start-end | N → M lines | what goes (restated code / history / repetition
 
 ## Output
 
-- **PR mode:** its own section after the findings, **Comment compression (optional)** — the
-  proposals, then `K comments, N → M lines`. It never changes the verdict and carries no severity.
-  Posted only when the user asks, as `suggestion` blocks on those lines.
+- **PR mode:** its own section after the findings, **Comment compression** — **always present**:
+  the proposals and `K comments, N → M lines`, or `none (K comments checked)` when nothing qualifies,
+  so the reader knows the check ran. It never changes the verdict and carries no severity. A comment
+  that repeats or over-explains belongs here, **not** among the findings as a nit. Posted only when
+  the user asks, as `suggestion` blocks on those lines.
+- **The lead does it itself** when it skips helpers on a small diff: same rules, same section.
 - **Repository mode:** per file, the proposals; then **Stale comments**; then the total. Nothing is
   edited: applying the proposals is a write to the user's clone, made by the lead only on an
   explicit ask, file by file, and shown as a diff before anything is committed.
