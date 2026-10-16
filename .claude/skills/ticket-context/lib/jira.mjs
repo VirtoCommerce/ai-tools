@@ -79,9 +79,18 @@ export function jiraClient(cred, fetchImpl = fetch) {
       return issue;
     },
     remoteLinks: (key) => json(`/rest/api/3/issue/${encodeURIComponent(key)}/remotelink`),
+    // `detail` answers only for the applicationType the GitHub integration is registered under (a wrong one is an
+    // empty 200); the new GitHub app is `oAuth-com.github.integration.production`, so the type comes from `summary`.
     devPrUrls: async (issueId) => {
-      const j = await json(`/rest/dev-status/latest/issue/detail?issueId=${encodeURIComponent(issueId)}&applicationType=GitHub&dataType=pullrequest`);
-      return (j.detail ?? []).flatMap((d) => (d.pullRequests ?? []).map((p) => p.url)).filter(Boolean);
+      const id = encodeURIComponent(issueId);
+      const sum = await json(`/rest/dev-status/latest/issue/summary?issueId=${id}`);
+      const types = new Set([...Object.keys(sum?.summary?.pullrequest?.byInstanceType ?? {}), "GitHub"]);
+      const urls = new Set();
+      for (const t of types) {
+        const j = await json(`/rest/dev-status/latest/issue/detail?issueId=${id}&applicationType=${encodeURIComponent(t)}&dataType=pullrequest`);
+        for (const d of j.detail ?? []) for (const p of d.pullRequests ?? []) if (p.url) urls.add(p.url);
+      }
+      return [...urls];
     },
     search: async (jql, fields, cap = 50) => (await json("/rest/api/3/search/jql", { method: "POST", body: JSON.stringify({ jql, fields, maxResults: cap }) })).issues ?? [],
     // Streamed and capped: the attachment's declared size is the tracker's word, the bytes read are ours.
