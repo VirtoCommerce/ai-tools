@@ -137,24 +137,43 @@ async function jiraGet(path: string): Promise<any> {
   return res.json();
 }
 export interface PrRef { owner: string; repo: string; number: number; source: string; }
-async function prsFromJira(key: string): Promise<{ summary: string | null; prs: PrRef[] }> {
+/**
+ * dev-status `detail` answers only for the `applicationType` the GitHub integration is registered under, and a
+ * wrong one is an empty 200, not an error. This instance registers the new GitHub app as
+ * `oAuth-com.github.integration.production`, so the type is read from `summary.byInstanceType` instead of
+ * transcribed; `GitHub` stays as the fallback for the legacy DVCS connector. `expected` is the PR count the
+ * summary reports, so a caller can tell "no PRs" from "PRs we could not reach".
+ */
+async function devStatusPrUrls(issueId: string): Promise<{ urls: string[]; expected: number | null }> {
+  const sum = await jiraGet(`/rest/dev-status/latest/issue/summary?issueId=${issueId}`).catch(() => null);
+  const pr = sum?.summary?.pullrequest;
+  const types = new Set([...Object.keys(pr?.byInstanceType ?? {}), 'GitHub']);
+  const urls = new Set<string>();
+  for (const t of types) {
+    const ds = await jiraGet(`/rest/dev-status/latest/issue/detail?issueId=${issueId}&applicationType=${encodeURIComponent(t)}&dataType=pullrequest`).catch(() => null);
+    for (const d of ds?.detail || []) for (const p of d.pullRequests || []) if (p.url) urls.add(p.url);
+  }
+  return { urls: [...urls], expected: typeof pr?.overall?.count === 'number' ? pr.overall.count : null };
+}
+async function prsFromJira(key: string): Promise<{ summary: string | null; prs: PrRef[]; warning?: string }> {
   const issue = await jiraGet(`/rest/api/3/issue/${encodeURIComponent(key)}?fields=summary,description,comment`);
   const found = new Map<string, PrRef>();
   const add = (owner: string, repo: string, number: number, source: string) => {
     const id = `${owner}/${repo}#${number}`;
     if (!found.has(id)) found.set(id, { owner, repo, number: Number(number), source });
   };
-  try {
-    const ds = await jiraGet(`/rest/dev-status/latest/issue/detail?issueId=${issue.id}&applicationType=GitHub&dataType=pullrequest`);
-    for (const d of ds.detail || []) for (const pr of d.pullRequests || []) {
-      PR_URL_RE.lastIndex = 0; const m = PR_URL_RE.exec(pr.url || '');
-      if (m) add(m[1], m[2], +m[3], 'dev-status');
-    }
-  } catch { /* dev-status may be unavailable — fall back to the text scan */ }
+  const ds = await devStatusPrUrls(issue.id);
+  for (const url of ds.urls) {
+    PR_URL_RE.lastIndex = 0; const m = PR_URL_RE.exec(url);
+    if (m) add(m[1], m[2], +m[3], 'dev-status');
+  }
   const blob = JSON.stringify(issue);
   PR_URL_RE.lastIndex = 0; let m: RegExpExecArray | null;
   while ((m = PR_URL_RE.exec(blob)) !== null) add(m[1], m[2], +m[3], 'text');
-  return { summary: issue.fields?.summary ?? null, prs: [...found.values()] };
+  const warning = ds.expected !== null && ds.urls.length < ds.expected
+    ? `ticket ${key}: Jira's Development panel reports ${ds.expected} PR(s) but only ${ds.urls.length} could be read — pass the missing ones with --pr`
+    : undefined;
+  return { summary: issue.fields?.summary ?? null, prs: [...found.values()], warning };
 }
 /**
  * Resolve a single PR's LATEST artifact → a Target (or a reason it has none).
@@ -250,7 +269,12 @@ export async function runPr(args: string[]): Promise<void> {
       return { summary: null, prs: [] as PrRef[] };
     });
     summary = r.summary;
-    for (const ref of r.prs) { const a = await artifactFromPr(ref); resolveNotes.push(a.note); if (a.target) targets.push(a.target); }
+    if ('warning' in r && r.warning) resolveNotes.push(r.warning);
+    for (const ref of r.prs) {
+      // A previous deploy PR for this ticket is linked to it too; it is the delivery, not an artifact.
+      if (ref.owner === c.deployOwner && ref.repo === c.deployRepo) continue;
+      const a = await artifactFromPr(ref); resolveNotes.push(a.note); if (a.target) targets.push(a.target);
+    }
   }
   for (const ref of flags('pr')) {
     const parsed = parsePrRef(ref); if (!parsed) fail(`--pr could not be parsed: "${ref}" (want owner/repo#N or a PR URL).`);
