@@ -20,13 +20,14 @@
 // run over this file BEFORE the push, plus the fact that these questions are about a public
 // product. Extending the base to client deployments must re-decide it first (PLAN §7, §11).
 
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { appendFile, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
 import { cachedWho } from './who.mjs';
+import { ACCESS_CODES, RATE_HOLD_MAX_MS } from './github-api.mjs';
 
 /** Operations that are logged. `stat` is deliberately absent: an operator looking at the tool is
  *  not an agent using the base, and logging it would put noise in the panel that matters. */
@@ -39,6 +40,9 @@ export const LOGGED = Object.freeze([
   // `confirm-invalid` / `dispute-invalid`: evidence refused because this session never opened the
   // entry (VCST-6191). Id and a reason code only, never prose.
   'confirm-invalid', 'dispute-invalid',
+  // `capture-held` (VCST-6378): a capture held because an active entry at its coordinate reads like it;
+  // nothing landed, and it is not a duplicate refusal either, so it has its own kind.
+  'capture-held',
   // `session` is the DENOMINATOR, and it is the one kind written about a session that may never
   // have touched the base at all. Every other line here is evidence that the base was used, so a
   // log made only of them can count uses and can never count opportunities: a session that ran for
@@ -302,12 +306,132 @@ export function hookEnv(env = process.env, payload = null) {
 }
 
 /**
- * Where the queue lives. A scratchpad, never the repo: these files are transient, they are swept
- * by the push, and a queue in the working tree would show up in `git status` and be committed by
- * somebody tidying up.
+ * Where the queue lives. Never the repo: these files are transient, they are swept by the push, and
+ * a queue in the working tree would show up in `git status` and be committed by somebody tidying up.
+ *
+ * NOT THE TEMP DIRECTORY ANY MORE (VCST-6378). A queue that cannot be pushed -- no token, a token
+ * without write access, a run of failures -- is the ONLY copy of what was observed, and a temp
+ * directory is exactly what Storage Sense, a disk clean-up or a reboot on Linux empties. 296 pushes
+ * failed for lack of write access between 2026-09-25 and 10-07, each of them leaving its lines in
+ * `%TEMP%`. The per-user state directory survives all of that: `%LOCALAPPDATA%` on Windows,
+ * `$XDG_STATE_HOME` or `~/.local/state` elsewhere. The old directory is drained into it on first use
+ * (`migrateLegacyQueue`). `KB_QUEUE_DIR` still overrides both.
  */
 export function queueDir(env = process.env) {
-  return env.KB_QUEUE_DIR || join(tmpdir(), 'claude-kb-queue');
+  if (env.KB_QUEUE_DIR) return env.KB_QUEUE_DIR;
+  const state = env.LOCALAPPDATA || env.XDG_STATE_HOME || (env.HOME ? join(env.HOME, '.local', 'state') : null);
+  if (!state) return legacyQueueDir();
+  const dir = join(state, 'claude-kb', 'queue');
+  migrateLegacyQueue(dir);
+  return dir;
+}
+
+/**
+ * WOULD A PUSH GO NOW (VCST-6378) -- the ONE rule the push, the own flush, the server's timer, the
+ * Stop hook and `kb stat` all apply, so none of them starts work the push would only defer, and none
+ * of them warns about a queue that is waiting by design. Log lines and counters travel only with a
+ * change to the base (capture / confirm / dispute) or once a line is from an earlier day (UTC); a
+ * `session` line counts by its `lastAt`, the day it describes; a line with no date goes. In CI or with
+ * KB_LOG_DAILY=0 everything goes at once, as before.
+ */
+// Where the queue does not outlive the session, nothing waits: CI, Codespaces, a devcontainer, a Claude
+// cloud session -- and anywhere KB_LOG_DAILY=0 says so. Best effort by environment; the variable is the
+// reliable switch for anything else ephemeral.
+export const logsImmediate = (env = process.env) => Boolean(env.CI || env.CODESPACES || env.REMOTE_CONTAINERS || env.CLAUDE_CODE_REMOTE)
+  || String(env.KB_LOG_DAILY ?? '').trim() === '0';
+const dayOfLine = (l) => String((l?.kind === 'session' && l.lastAt) || l?.at || '').slice(0, 10);
+export function linesWouldGo(lines, { env = process.env, now = Date.now() } = {}) {
+  const list = Array.isArray(lines) ? lines : [];
+  // Immediate first (review round 1): a push carrying only the session's own counters -- virtual, not
+  // a queue line -- must go in CI too, or they die with the container.
+  if (logsImmediate(env)) return true;
+  if (!list.length) return false;
+  const today = new Date(now).toISOString().slice(0, 10);
+  return list.some((l) => MUTATIONS.includes(l?.kind) || dayOfLine(l) < today);
+}
+
+/** How long another session's queue file must sit untouched before a push takes it. */
+export const QUEUE_IDLE_MS = 30 * 60 * 1000;
+
+/** Where every client before VCST-6378 kept the queue. */
+export const legacyQueueDir = () => join(tmpdir(), 'claude-kb-queue');
+
+const migrated = new Set();
+/** Line files: appended to, never rewritten, so two halves of one file are merged by concatenation. */
+const LINE_FILE = /\.(?:jsonl|ndjson)$/;
+/**
+ * The state files a queue directory holds, by name -- the only other files the drain moves. Anything
+ * else stays: a `*.released` file is a running old client's queue mid-flush, and moving it between its
+ * rename and its read would strand its lines under a name nobody reads (review of ai-tools#460).
+ */
+const STATE_FILE = /^(?:last-push\.json|\.last-flush|\.identity\.json|loop\.pruned|[\w-]+\.(?:reach\.json|reach\.sent|reach\.tried|meta\.json))$/;
+
+/**
+ * Drain the pre-VCST-6378 queue directory into `dir`, once per process. Synchronous and silent: it
+ * runs inside `queueDir`, which every verb, hook and push calls, and must cost nothing when there is
+ * nothing to move.
+ *
+ * WHY IT RUNS EVERY PROCESS AND NOT ONCE PER MACHINE. After a `git pull` the MCP server keeps running
+ * the OLD code until it restarts, and keeps appending to the old directory. So each new process
+ * drains whatever has arrived there since: a line file is first RENAMED aside (atomic, so an append
+ * racing it lands in a fresh file that the next drain takes), then appended to its namesake here and
+ * deleted. Any other file (`last-push.json`, identity and reach state) moves only when `dir` has no
+ * copy; the copy here is the newer one. A file that cannot be moved now (locked, permissions) stays
+ * where it is and is tried again by the next process.
+ */
+export function migrateLegacyQueue(dir, legacy = legacyQueueDir()) {
+  if (migrated.has(dir) || dir === legacy) return;
+  migrated.add(dir);
+  let names;
+  try { names = readdirSync(legacy); } catch { return; } // no old directory: the common case
+  if (!names.length) return;
+  try { mkdirSync(dir, { recursive: true }); } catch { return; }
+  // ONLY WHAT NOBODY IS USING (review round 4). After a `git pull` the hooks run new code at once while
+  // the MCP server keeps the old code -- and the old directory -- until it restarts. Draining that
+  // server's live journal, queue and sidecar broke its confirm gate ("was not opened in this session")
+  // and its ask handles on every turn. So a SESSION's files move only when all of them have sat for
+  // QUEUE_IDLE_MS (the rule the push applies to another session's queue), and a shared file only when
+  // it has sat that long itself. A live old server's files wait until it restarts and goes quiet.
+  const now = Date.now();
+  // `mtime`: every write moves it, and nothing else does (a rename or a chmod moves `ctime`).
+  const age = (n) => { try { return now - statSync(join(legacy, n)).mtimeMs; } catch { return 0; } };
+  const sessionOf = (n) => (/^[\w-]+\./.test(n) && !n.startsWith('.') && !/^(?:last-push|loop)\./.test(n) ? n.slice(0, n.indexOf('.')) : null);
+  const freshSessions = new Set(names.filter((n) => sessionOf(n) && age(n) < QUEUE_IDLE_MS).map(sessionOf));
+  for (const name of names) {
+    const from = join(legacy, name);
+    const owner = sessionOf(name);
+    if (owner ? freshSessions.has(owner) : age(name) < QUEUE_IDLE_MS) continue;
+    // A file left aside by a drain that died between rename and append is finished here.
+    const original = name.replace(/\.\d+\.moving$/, '');
+    const to = join(dir, original);
+    try {
+      const s = statSync(from);
+      if (!s.isFile()) continue;
+      // Another drain may be appending its own aside file right now: only a stale one is ours to finish.
+      // `ctime`, because a rename keeps the mtime but moves the ctime.
+      if (original !== name && Date.now() - Math.max(s.mtimeMs, s.ctimeMs) < 60_000) continue;
+      if (LINE_FILE.test(original)) {
+        const aside = original === name ? `${from}.${process.pid}.moving` : from;
+        if (aside !== from) renameSync(from, aside);
+        appendFileSync(to, readFileSync(aside));
+        unlinkSync(aside);
+      } else if (original === name && STATE_FILE.test(name)) {
+        if (!existsSync(to)) renameSync(from, to);
+        // The same session already has a NEW copy (it reconnected after the pull; round 5): the sidecar's
+        // asks and transcripts are merged, so pre-restart `after` pointers still pair; any other state
+        // file is superseded by the new one -- reach counters are re-read from the transcript -- and the
+        // stale copy is removed rather than left in %TEMP% for ever.
+        else if (name.endsWith('.meta.json')) {
+          const a = JSON.parse(readFileSync(from, 'utf8'));
+          const b = JSON.parse(readFileSync(to, 'utf8'));
+          const asks = new Map([...metaAsks(a), ...metaAsks(b)].map((x) => [x.at, x]));
+          const transcripts = [...new Set([...metaTranscripts(a), ...metaTranscripts(b)])];
+          writeFileSync(to, JSON.stringify({ ...a, ...b, asks: [...asks.values()].sort((x, y) => x.at.localeCompare(y.at)).slice(-ASK_MEMORY), transcripts: transcripts.slice(-TRANSCRIPT_MEMORY) }), 'utf8');
+          unlinkSync(from);
+        } else unlinkSync(from);
+      }
+    } catch { /* locked or vanished: the next process tries again */ }
+  }
 }
 
 export function queuePath(env = process.env) {
@@ -466,6 +590,9 @@ export function loopRecord(line) {
       ...(Array.isArray(line.queued) && line.queued.length ? { queued: true } : {}),
       ...(Array.isArray(line.shown) && line.shown.length ? { shown: line.shown.map(String) } : {}),
       ...(Array.isArray(line.opened) && line.opened.length ? { opened: line.opened.map(String) } : {}),
+      // The topic and the asking agent (VCST-6378): a later confirm / capture on the same topic closes the list.
+      ...(line.topic ? { topic: String(line.topic) } : {}),
+      ...(line.agent ? { agent: String(line.agent) } : {}),
       // The hash of each body this ask printed (VCST-6221 step 6) -- local, from the line's `payload`.
       ...(line.payload?.bodyHashes && typeof line.payload.bodyHashes === 'object' ? { bodyHashes: line.payload.bodyHashes } : {}),
     };
@@ -479,7 +606,17 @@ export function loopRecord(line) {
       ...(line.kind === 'show' && typeof line.payload?.bodyHash === 'string' ? { bodyHash: line.payload.bodyHash } : {}),
     };
   }
-  if (queuedWrite(line) || line.kind === 'capture-refused') return { at, kind: 'write' };
+  // A write keeps what closes a list (VCST-6378): which verb, which entry, which ask it named, the topic.
+  if (queuedWrite(line) || line.kind === 'capture-refused') {
+    return {
+      at, kind: 'write', wrote: String(line.kind),
+      ...(line.id ? { id: String(line.id) } : line.payload?.id ? { id: String(line.payload.id) } : {}),
+      ...(line.after ? { after: String(line.after) } : {}),
+      ...(line.afterBy ? { afterBy: String(line.afterBy) } : {}),
+      ...(line.topic ? { topic: String(line.topic) } : {}),
+      ...(line.agent ? { agent: String(line.agent) } : {}),
+    };
+  }
   return null;
 }
 async function noteLoop(env, line) {
@@ -588,25 +725,127 @@ export function readPushStatus(env = process.env) {
  * so a failure is not hidden by a later "nothing to do". Only the state, a short why, the commit and
  * a count are stored — never a line, a payload or a token.
  */
+/**
+ * Replace last-push.json whole, never in place (round 3): written to a temp file and renamed, so a
+ * reader never sees half of it. Callers read, compute and call this with no `await` in between, so
+ * two sessions recording at once lose at most what lands in that microsecond -- not the denial one of
+ * them recorded while the other was awaiting a mkdir.
+ */
+function writePushStatus(env, status) {
+  mkdirSync(queueDir(env), { recursive: true });
+  const path = pushStatusPath(env);
+  const tmp = `${path}.${process.pid}.tmp`;
+  writeFileSync(tmp, JSON.stringify(status, null, 2), 'utf8');
+  // Windows refuses a rename over a file another process holds open (a reader, antivirus, the indexer):
+  // a few short retries, then the temp file is removed rather than left in the queue dir (round 4).
+  for (let i = 0; ; i += 1) {
+    try { renameSync(tmp, path); return; } catch (err) {
+      if (i >= 4 || !['EPERM', 'EBUSY', 'EACCES'].includes(err?.code)) {
+        try { unlinkSync(tmp); } catch { /* already gone */ }
+        throw err;
+      }
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 25 * (i + 1));
+    }
+  }
+}
+
 export async function recordPush(r, { env = process.env, at = new Date() } = {}) {
   try {
     const prev = readPushStatus(env);
     const row = {
       at: at.toISOString(),
       state: r?.state ?? 'unknown',
+      ...(r?.code ? { code: r.code } : {}),
       ...(r?.why ? { why: String(r.why).slice(0, 300) } : {}),
       ...(r?.commit ? { commit: r.commit } : {}),
       ...(Number.isFinite(r?.queued) ? { queued: r.queued } : {}),
     };
     const failed = PUSH_FAILURES.includes(row.state);
+    // THE TOKEN CANNOT WRITE (VCST-6378): remembered with the token's fingerprint, so the next push with
+    // the SAME token is held without a request (`accessBlock`) and a new token is tried at once. A
+    // landed push clears it; a held one keeps it.
+    const denied = row.state === 'failed' && ACCESS_CODES.has(r?.code) && r?.tokenPrint
+      ? { code: r.code, at: row.at, token: r.tokenPrint }
+      : row.state === 'pushed' ? null : (prev.denied ?? null);
+    const rateUntil = row.state === 'failed' && r?.code === 'rate-limited'
+      // Capped here as well as where it is parsed: a value from any other caller cannot hold for longer.
+      ? new Date(Math.min(Date.parse(r.retryAt ?? '') || at.getTime() + 60_000, at.getTime() + RATE_HOLD_MAX_MS)).toISOString()
+      : row.state === 'pushed' ? null
+        : liveRateHold(prev.rateLimitedUntil, at.getTime());
     const next = {
       last: row,
       lastFailure: failed ? row : row.state === 'pushed' ? null : (prev.lastFailure ?? null),
       ...(row.state === 'pushed' ? { lastPushed: row } : prev.lastPushed ? { lastPushed: prev.lastPushed } : {}),
+      ...(denied ? { denied } : {}),
+      ...(prev.deniedNotified && denied ? { deniedNotified: prev.deniedNotified } : {}),
+      // OUT OF REQUESTS (VCST-6378): no push is attempted before GitHub's own retry time. A landed push
+      // clears it; any other outcome keeps it until it passes.
+      ...(rateUntil ? { rateLimitedUntil: rateUntil } : {}),
     };
-    await mkdir(queueDir(env), { recursive: true });
-    await writeFile(pushStatusPath(env), JSON.stringify(next, null, 2), 'utf8');
+    writePushStatus(env, next);
   } catch { /* the status is a report, never a reason a push fails */ }
+}
+
+// ── a token that cannot write (VCST-6378) ─────────────────────────────────────────────────────
+//
+// Measured 2026-09-25 .. 10-07: two contributors whose token could read the base but not write it made
+// 296 pushes, every one refused with the same 403, one per turn per session -- and the only trace was a
+// `FAILED` row in `kb stat` that nobody runs. A denial that will not cure itself is now remembered,
+// stops the retries, and is said ONCE, in words that name what access is needed.
+
+/** How long a denial holds the pushes of the same token before ONE request checks again: access can be granted without the token changing. */
+export const DENIED_RECHECK_MS = 6 * 60 * 60 * 1000;
+
+/** A token's fingerprint: enough to tell "same token" from "new token", useless for anything else. */
+export const tokenPrint = (token) => (token ? createHash('sha256').update(String(token)).digest('hex').slice(0, 12) : null);
+
+/** The recorded denial when it still holds for this token, else `null`. */
+export function accessBlock(env = process.env, token = null, now = Date.now()) {
+  const d = readPushStatus(env).denied;
+  if (!d || !token || d.token !== tokenPrint(token)) return null;
+  const at = Date.parse(String(d.at ?? ''));
+  return Number.isFinite(at) && now - at < DENIED_RECHECK_MS ? d : null;
+}
+
+/** The time pushes are held until because GitHub said so, when it is still ahead, else `null`. */
+export function rateHold(env = process.env, now = Date.now()) {
+  return liveRateHold(readPushStatus(env).rateLimitedUntil, now);
+}
+
+/**
+ * A stored hold that still applies: ahead of now, and by no more than `RATE_HOLD_MAX_MS`. Capping only
+ * where a hold is parsed and recorded left one already on disk -- from a client before the cap, or
+ * written under a clock running days fast -- holding every push until it expired (retest of
+ * ai-tools#460). Read as no hold at all: the next push asks GitHub again, which costs one request.
+ */
+export function liveRateHold(until, now = Date.now()) {
+  const t = Date.parse(String(until ?? ''));
+  return Number.isFinite(t) && t > now && t - now <= RATE_HOLD_MAX_MS ? until : null;
+}
+
+/** What the operator is told, once: what happened, that nothing is lost, and what to ask for. */
+export function accessWhy(code, env = process.env) {
+  const kept = `your kb writes are kept on this machine (${queueDir(env)}) and are published by the first push whose token can write`;
+  if (code === 'bad-credentials') {
+    return `kb: the GitHub token was rejected (expired, revoked or mistyped) — ${kept}. Renew KB_GITHUB_TOKEN / GITHUB_TOKEN (docs/onboarding.md §Required MCP Servers, "A token that can read but not write").`;
+  }
+  return `kb: your GitHub token can read VirtoCommerce/vc-knowledge but not write it — ${kept}. Ask a maintainer for write access to vc-knowledge, or use a fine-grained token with Contents: Read and write on that repository (docs/onboarding.md §Required MCP Servers, "A token that can read but not write").`;
+}
+
+/**
+ * Has the operator been told about THIS denial yet? Marks it told when not. One notice per denial and
+ * token: a new denial (re-check failed again after `DENIED_RECHECK_MS`) is told again, once.
+ */
+export function claimDeniedNotice(env = process.env) {
+  try {
+    const status = readPushStatus(env);
+    const d = status.denied;
+    if (!d) return null;
+    const key = `${d.token}@${d.at}`;
+    if (status.deniedNotified === key) return null;
+    writePushStatus(env, { ...status, deniedNotified: key });
+    return d;
+  } catch { return null; }
 }
 
 /**
@@ -614,7 +853,10 @@ export async function recordPush(r, { env = process.env, at = new Date() } = {})
  * and the `at` of its oldest line. Synchronous and read-only: `stat` reports, it never sweeps.
  */
 export function queueBacklog(env = process.env) {
-  const out = { files: 0, lines: 0, oldest: null };
+  // `due`: would a push take these lines now (`linesWouldGo`)? Only a due backlog that keeps waiting is
+  // a problem -- today's log lines wait for a change or for tomorrow by design (VCST-6378).
+  const out = { files: 0, lines: 0, oldest: null, due: false };
+  const all = [];
   let names = [];
   try { names = readdirSync(queueDir(env)); } catch { return out; }
   for (const name of names) {
@@ -626,12 +868,15 @@ export function queueBacklog(env = process.env) {
       if (!raw.trim()) continue;
       n += 1;
       try {
-        const at = JSON.parse(raw)?.at;
+        const line = JSON.parse(raw);
+        all.push(line);
+        const at = line?.at;
         if (typeof at === 'string' && (!out.oldest || at < out.oldest)) out.oldest = at;
       } catch { /* a torn line still counts toward depth */ }
     }
     if (n) { out.files += 1; out.lines += n; }
   }
+  out.due = linesWouldGo(all, { env });
   return out;
 }
 

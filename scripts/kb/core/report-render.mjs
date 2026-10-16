@@ -155,6 +155,12 @@ function header(report) {
       + `${m.syntheticAsks ? ` (${m.syntheticAsks} of them asks)` : ''} — a benchmark, demo or acceptance run. `
       + 'They are excluded from every panel below: a stopwatch is not demand.');
   }
+  const x = m.excludedSessions;
+  if (x) {
+    notes.push(`<strong>${x.lines}</strong> line(s)${x.asks ? ` (${x.asks} of them asks)` : ''} of the session(s) named by `
+      + `<code>--exclude-sessions</code> (${esc(x.matched.join(', ') || 'none matched')}) are set aside from every panel below`
+      + (x.unmatched.length ? `; <strong>${esc(x.unmatched.join(', '))}</strong> matched no session in this window` : ''));
+  }
   // A report headed "last 30 days" that actually read three named sessions publishes a number
   // nobody can reproduce -- PLAN §15.2's objection, in the header.
   if (m.sessionsMissing?.length) {
@@ -551,23 +557,34 @@ export function renderText(report) {
   // is a number nobody can reproduce.
   const scoped = m.run ? `${scope}, run ${m.run}${m.outOfRun ? ` [${m.outOfRun} line(s) outside it excluded]` : ''}` : scope;
   out.push(`${m.files ?? 0} log file(s), ${report.sessions} session(s), ${p.questions.totalAsks} ask(s), ${scoped}`
-    + (m.synthetic ? `  [+${m.synthetic} synthetic line(s)${m.syntheticAsks ? `, ${m.syntheticAsks} ask(s)` : ''} excluded]` : ''));
+    + (m.synthetic ? `  [+${m.synthetic} synthetic line(s)${m.syntheticAsks ? `, ${m.syntheticAsks} ask(s)` : ''} excluded]` : '')
+    + (m.excludedSessions ? `  [+${m.excludedSessions.lines} line(s), ${m.excludedSessions.asks} ask(s) of excluded session(s) ${m.excludedSessions.matched.join(', ') || '(none matched)'} set aside]` : ''));
+  if (m.excludedSessions?.unmatched?.length) out.push(`  WARNING --exclude-sessions named ${m.excludedSessions.unmatched.join(', ')}, which matched no session in this window`);
   out.push(`  misses         ${p.misses.ranked.length} distinct (${p.misses.total} asks)${p.misses.unreachable ? `, ${p.misses.unreachable} unreachable` : ''}`
     + `${p.misses.unclosed?.total ? `; ${p.misses.unclosed.total} unclosed list(s) counted apart` : ''}`);
   out.push(`  near misses    ${p.nearMisses.rows.length} rejected candidate(s); `
     + `${p.nearMisses.inBand.length} at coverage >= ${p.nearMisses.review}`
     + `${p.nearMisses.rows.length ? `, top ${p.nearMisses.rows[0].coverage.toFixed(2)}` : ''}`);
   out.push(`  unhelpful      ${p.unhelpful.flagged.length}/${p.unhelpful.decidable} decidable = ${pct(p.unhelpful.rate)} (${p.unhelpful.undecidable} undecidable, ${p.unhelpful.unpaired ?? 0} unpaired, ${p.unhelpful.unprompted} unprompted, ${p.unhelpful.afterMiss} after a miss)`);
+  // VCST-6378: the rate over pairs the writer named exactly (kb_capture's `ask`); a guessed pair can be a different fact.
+  if (p.unhelpful.exact) out.push(`                 exact pairs (ask handle) ${p.unhelpful.exact.flagged}/${p.unhelpful.exact.decidable}${p.unhelpful.rateExact === null ? ' -- none yet' : ` = ${pct(p.unhelpful.rateExact)}`}; the rest were guessed from the text`);
   out.push(`  entries served ${p.entries.used.length} of ${p.entries.indexed} indexed; ${p.entries.never.length} never served here`);
   out.push(`  evidence       ${p.evidence.confirms} confirm, ${p.evidence.disputes} dispute, ${p.evidence.contested.length} contested`);
   if (p.evidence.builds) out.push(`  builds         ${p.evidence.builds.stamped} of ${p.evidence.builds.writes} write(s) carry a build; ${p.evidence.builds.soft} soft dispute(s) (on another build)${p.evidence.queue ? `; ${p.evidence.queue.softOpen ?? 0} soft dispute(s) open on the base` : ''}`);
+  const why = Object.entries(p.evidence.builds?.missing ?? {}).sort((a, b) => b[1] - a[1]);
+  if (why.length) out.push(`  no build       ${why.map(([k, n]) => `${k} ${n}`).join(', ')}${p.evidence.builds.clients?.length ? `; clients ${p.evidence.builds.clients.join(', ')}` : ''}`);
   out.push(`  refusals       ${p.refusals.total} as duplicate, ${p.refusals.atDoor.length} turned away at the door`
-    + `${p.refusals.atDoor.length ? ` (${p.refusals.atDoorRetried} retried and landed)` : ''}`);
+    + `${p.refusals.atDoor.length ? ` (${p.refusals.atDoorRetried} retried and landed)` : ''}`
+    + `${p.refusals.held ? `; ${p.refusals.held} held as similar to an entry` : ''}`
+    + `${p.refusals.privateRefused ? `; ${p.refusals.privateRefused} refused for private data` : ''}`);
+  const ev = Object.entries(p.refusals.evidenceRefused ?? {});
+  if (ev.length) out.push(`  evidence       refused: ${ev.map(([k, n]) => `${k} ${n}`).join(', ')}`);
   const d = p.refusals.door;
   if (d?.attempts) {
     const doors = Object.entries(d.byDoor).map(([k, v]) => `${k} ${v.refused}/${v.attempts}`).join(', ');
     out.push(`  door           ${d.refused}/${d.attempts} capture attempts refused = ${pct(d.rate)} (${doors}); `
-      + `first attempt ${pct(d.firstAttempt)}; ${d.abandoned} fact(s) abandoned${d.pairedByAsk ? ` (${d.pairedByAsk} refusal(s) likely reworded retries)` : ''}`);
+      + `first attempt ${pct(d.firstAttempt)}; ${d.abandoned} fact(s) abandoned${d.pairedByAsk ? ` (${d.pairedByAsk} refusal(s) likely reworded retries)` : ''}`
+      + `${d.droppedNotRefused ? `; ${d.droppedNotRefused} landed by dropping a bad anchor` : ''}`);
   }
   // THE DENOMINATOR, printed with the panels rather than after them, because it is the line that
   // decides how to read every other number here. `n/a` and not `0%` when nothing is accounted for:
