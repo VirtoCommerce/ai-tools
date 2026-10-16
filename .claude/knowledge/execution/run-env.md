@@ -1,9 +1,10 @@
 # The run's env — chosen per session, never by editing a shared file
 
-A command that runs against a stand takes its env as an optional argument:
-`/qa-test VCST-6314 vcptcore_dev`, `/qa-test-fast VCST-6314 vcptcore_dev`, `/qa-deploy-pr VCST-6314 vcptcore_dev`.
-Without one, the run uses the checkout's default (`.env.test-env`, else `vcst`). Two sessions in one checkout
-can run two envs at the same time; no file another session reads is edited.
+A command that runs against a stand takes its env as an optional argument and binds it for its own Claude Code
+session only, so two sessions in one checkout run two envs at the same time and no file another session reads
+is edited. Examples: `/qa-test VCST-6314 vcptcore_dev`, `/qa-test-fast VCST-6314 vcptcore_dev`,
+`/qa-deploy-pr VCST-6314 vcptcore_dev`. Without one, the run uses the checkout's default (`.env.test-env`,
+else `vcst`).
 
 ## Step 0 — bind the env, before anything else runs
 
