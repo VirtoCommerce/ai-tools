@@ -1,4 +1,4 @@
-# Static tools — actionlint and zizmor
+# Static tools — actionlint, zizmor and script linters
 
 Read at `SKILL.md` Step 5. Both are optional; the review is complete without them, and says which
 ran. Neither is installed without the user's yes.
@@ -36,6 +36,22 @@ worktree, or `git show <base>:<file> > <scratch>/base/<file>`) and report
 what the PR **adds or removes**. A pre-existing finding in an untouched part of a changed file is not
 this PR's defect — mention it in "checked and clean" or as an item for the owners, never as a
 finding against the PR.
+
+## Script linters — for the files actions run
+
+actionlint lints shell only inside `run:`; zizmor reads no script files. For a PR that changes
+`actions/*/scripts/*.sh`, `*.ps1` or a Node action's `src/`, the matching linter covers what
+`checklist/scripts.md` asks — same rules: optional, installed only on a yes, run on the changed files,
+compared against `<base>`.
+
+| Files | Tool | Command (in the worktree) |
+|---|---|---|
+| `*.sh`, bash in `.jq` wrappers | **shellcheck** | `shellcheck -S warning <files>` |
+| `*.ps1` | **PSScriptAnalyzer** | `pwsh -NoProfile -Command "Invoke-ScriptAnalyzer -Path <file> -Severity Warning,Error"` (module `PSScriptAnalyzer`) |
+| Node action `src/` | the action's own scripts | only what its `package.json` already defines (`lint`, `typecheck`/`tsc --noEmit`); never `npm install` scripts from the PR without a yes — that runs PR code |
+
+The repository's own linter config wins over the tool default (`.shellcheckrc`,
+`PSScriptAnalyzerSettings.psd1`, the action's eslint config), as for actionlint and zizmor above.
 
 ## Reading the output
 

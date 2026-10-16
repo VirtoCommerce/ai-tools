@@ -113,8 +113,9 @@ One file per dimension; walk them **in this order**, ranked by expected severity
 
 1. `checklist/security.md` — highest
 2. `checklist/contract.md`
-3. `checklist/correctness.md`
-4. `checklist/reliability-and-cost.md`
+3. `checklist/scripts.md` — bash, PowerShell, JS/TS in `run:` and in action files
+4. `checklist/correctness.md`
+5. `checklist/reliability-and-cost.md`
 
 A new rule goes into the file of its dimension; a new dimension is a new file plus a line here.
 
