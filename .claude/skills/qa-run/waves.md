@@ -51,8 +51,10 @@ sub-tasks are assigned and in progress right now. Change nothing.
    wave's cases need — personas and lane accounts, `@td()` fixtures, and the store, platform and deploy-config
    requirements in `config/suite-requirements.json` — and names the cases each gap will BLOCK. Show the rows; offer the
    `me` / `me, with OK` fixes (seeding, a store setting) before the run, and hand the `you` rows (a vc-deploy-dev PR,
-   a password) to the owner. A gap left as it is goes into `notRun` or becomes those cases' ledger rows — never a
-   surprise in triage. The deployed build must still match
+   a password) to the owner. **A gap left as it is costs nothing at run time:** every case a WARN/BLOCK row names is
+   recorded BLOCKED with that row's reason and not run (the pre-flight's `skip` map — no browser slot, no model tokens).
+   They become those cases' ledger rows in Step 5 — never a surprise in triage. `--run-blocked` runs them anyway, for a
+   check that the prediction still holds. The deployed build must still match
    `release.json` `env` — a hotfix deployed mid-release is recorded in `report.md`, not ignored.
 
 ## Step 1 — Claim (`--claim`)
@@ -89,7 +91,8 @@ folder exists. It is used in Step 5, and its `ENV_CONFIG` / `DATA` rows tell you
    owner's personas and removed afterwards.
 3. Set `state.json` `status: RUNNING` and move the sub-task to in-progress, then run
    the execution pipeline ([`run.md`](run.md) — today the `/qa-regression` pipeline, Steps 0–8) with the wave's suite ids, its `--cases` tier and
-   `TEST_ENV=<env.testEnv>`. Every rule of that pipeline applies unchanged (browser lanes, `--secrets`, the observed-behaviour steps of its runners).
+   `TEST_ENV=<env.testEnv>`. Its plan must write `reports/regression/<RUN_ID>/preflight.json` (`--preflight-out`): that
+   file is what `suites:lanes` reads the `skip` map from. Every rule of that pipeline applies unchanged (browser lanes, `--secrets`, the observed-behaviour steps of its runners).
 4. When it finishes — or is cut short (usage limit, env down) — append the run id to `runIds`, write `totals` from
    the run's consolidated report (never counted by hand; `ambiguous` holds what is neither pass, fail, blocked nor
    skipped), put anything not run into `notRun` (suite ids + case count + reason), set `untriaged` to the FAIL count,
@@ -119,6 +122,9 @@ the user stops it.
    never append a duplicate. Real bugs not filed yet: `follow_up: DRAFT`; the same defect seen in several cases: one
    `DRAFT`, the others `DRAFT: same defect as <case>, file once`. A question only a person can answer:
    `PENDING_DECISION` with `decided_by` naming that person. Set `untriaged` to the FAILs still without a row.
+   The triage packet's `preClassified` cases (recorded BLOCKED by the pre-flight, never run) get one row per case with
+   `source: preflight` and the row's reason: `req:` / `secret:` / a persona's module or password → `ENV_CONFIG` (or
+   `NOT_TESTABLE` when the module is not in the bundle), an unseeded `fixture:` → `DATA`. They cost no classifier call.
 5. **Bank what the triage established** — for each platform behaviour your rows state (real bug, by-design,
    env quirk): matched ⇒ `mcp__kb__kb_confirm`, contradicted ⇒ `kb_dispute`, base held nothing ⇒ `kb_capture` (CLI:
    `npm run kb -- capture`). Anchor = the route or request, never a label; contract:

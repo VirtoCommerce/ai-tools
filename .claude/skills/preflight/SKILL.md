@@ -42,13 +42,21 @@ sends the literal string and can lock a shared account). For step 4, run the sam
 same `checks[]`, read-only:
 - `persona:<ALIAS>` / `lane-account:slot<N>` — derived from the CSVs' `[PRE:SIGNIN_AS|SWITCH_ORG|VERIFY_AUTH]` and from
   `agent-user-pool.csv`: credentials resolvable, account exists, not locked out, password not expired — through the
-  admin API, **never by signing in**.
+  admin API, **never by signing in**. A persona listed under `personas` in `config/suite-requirements.json` (e.g.
+  `SR_*` → `VirtoCommerce.SalesRep`) is checked for its module first: absent, the row says the cases cannot run on
+  this stand, rather than sending someone to seed an account the platform cannot hold.
 - `fixture:<ALIAS>` — every `@td()` the cases use, through the runners' resolver; `unseeded` names the seed to run.
 - `req:<kind>:<name>` — what `config/suite-requirements.json` declares: store and platform settings, payment
-  methods, vc-deploy-dev `infra/environments.yml` keys (headers, FileUpload scopes, KnownAssetHosts).
+  methods, vc-deploy-dev `infra/environments.yml` keys (headers, FileUpload scopes, KnownAssetHosts), and the values a
+  platform setting's dictionary must offer (`allowedIncludes` — a seeder that writes `Quotes.Status = Declined` fails
+  when the stand's dictionary has no `Declined`).
 
 Each row names its cases. They are WARN unless a requirement says `"level": "block"` — the run goes, and the owner
-knows which cases will BLOCK and why before spending a run on them. A triage verdict `ENV_CONFIG` that no `req:` row
+knows which cases will BLOCK and why before spending a run on them. **Those cases are then not run:** the JSON's
+`skip` map (suite → case → the most upstream row's reason) is read by `suites:lanes` from the run folder's
+`preflight.json`, which plans them in the `preflight` lane; `suites:merge` records them BLOCKED with that reason, and
+triage receives them as `preClassified`, not as classifier input. A `skip` row states the count. `regression:plan
+--run-blocked` runs them anyway. A triage verdict `ENV_CONFIG` that no `req:` row
 predicted is a missing entry in `config/suite-requirements.json`: add it with the cases it hit.
 
 ## Step 2 — MCP level 3: what is callable in THIS session

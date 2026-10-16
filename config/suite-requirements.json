@@ -2,8 +2,14 @@
   "_meta": {
     "description": "What a suite's cases need from the stand that the suite CSV cannot express: a store setting, a platform setting, a payment method, a key in vc-deploy-dev infra/environments.yml (headers, FileUpload scopes, KnownAssetHosts). Read by the regression pre-flight (scripts/regression/requirements.ts) before every run and every release wave; personas ([PRE:SIGNIN_AS:*]) and fixtures (@td()) are derived from the CSVs and are NOT declared here.",
     "kinds": "storeSetting · platformSetting · paymentMethod (isActive) · deployConfig (dotted path in the env's block of infra/environments.yml; prefix:true for an indexed list) · uploadScope (a FileUpload__Scopes__N__Scope value)",
-    "match": "equals · notEquals · nonEmpty · (none = must be set). level: warn (default — the named cases will BLOCK) or block (the suite cannot run meaningfully).",
+    "match": "equals · notEquals · nonEmpty · allowedIncludes (platformSetting: values its dictionary must offer) · (none = must be set). level: warn (default — the named cases will BLOCK) or block (the suite cannot run meaningfully).",
+    "personas": "personas: alias (or PREFIX*) → the module its account needs. Checked before the account, so a missing module reads as 'cannot run here', not 'seed the account'.",
+    "skip": "Every case a WARN/BLOCK row names is recorded BLOCKED with that row's reason and NOT run (regression:plan --run-blocked runs them anyway).",
     "provenance": "Every entry below was a BLOCKED or FAIL cause in the Stable 16 regression on vcptcore_regression (regression/releases/stable-16/), with the exact cases it hit. Names were read live from the platform API and from vc-deploy-dev infra/environments.yml on 2026-10-16. Add an entry when a triage verdict is ENV_CONFIG; remove one when the cases stop needing it."
+  },
+  "personas": {
+    "SALES_REP": { "module": "VirtoCommerce.SalesRep", "why": "the sales-rep account is a rep contact of the SalesRep module (seed:sales-rep → /api/sales-rep/*)" },
+    "SR_*": { "module": "VirtoCommerce.SalesRep", "why": "the sales-rep personas are rep contacts of the SalesRep module (seed:sales-rep → /api/sales-rep/*)" }
   },
   "suites": {
     "001": [
@@ -17,6 +23,9 @@
     ],
     "005": [
       { "kind": "storeSetting", "name": "Order.PurchasedProductStoreFilter.Enable", "equals": true, "cases": ["SRCH-NEW-013"], "why": "the 'Purchased before' filter in search" }
+    ],
+    "015": [
+      { "kind": "platformSetting", "name": "Quotes.Status", "allowedIncludes": ["On hold", "Declined"], "cases": ["QUOTE-004", "QUOTE-005", "QUOTE-006", "QUOTE-007", "QUOTE-008", "QUOTE-009", "QUOTE-011", "QUOTE-012", "QUOTE-014", "QUOTE-018", "QUOTE-020", "QUOTE-021", "QUOTE-022", "QUOTE-023", "QUOTE-024", "QUOTE-025", "QUOTE-026", "QUOTE-027", "QUOTE-028", "QUOTE-030"], "why": "seed:quotes writes the On hold / Declined quote fixtures and refuses a status the platform's dictionary does not offer" }
     ],
     "036": [
       { "kind": "storeSetting", "name": "Shipping.Bopis.GoogleMaps.Enabled", "equals": true, "cases": ["BOPIS-001", "BOPIS-003", "BOPIS-008", "BOPIS-009", "BOPIS-011", "BOPIS-012", "BOPIS-013", "BOPIS-014", "BOPIS-017", "BOPIS-018", "BOPIS-022", "BOPIS-087", "BOPIS-091", "BOPIS-092", "BOPIS-093", "BOPIS-094", "BOPIS-096", "BOPIS-097", "BOPIS-098", "BOPIS-099", "BOPIS-100", "BOPIS-101", "BOPIS-102", "BOPIS-103", "BOPIS-104", "BOPIS-105", "BOPIS-106", "BOPIS-107", "BOPIS-108"], "why": "the pickup-location map" }

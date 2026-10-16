@@ -44,11 +44,20 @@ export interface Requirement {
   nonEmpty?: boolean;
   /** deployConfig: true when `name` is a key PREFIX (an indexed list such as `…KnownAssetHosts__`). */
   prefix?: boolean;
+  /** platformSetting: values the setting's dictionary (`allowedValues`) must offer — a seeder writes them as statuses. */
+  allowedIncludes?: string[];
   level?: "warn" | "block";
   cases?: string[];
   why: string;
 }
-export interface RequirementsFile { _meta?: unknown; suites: Record<string, Requirement[]> }
+/** A persona whose account only exists where a module is installed (a sales rep needs VirtoCommerce.SalesRep). */
+export interface PersonaRequirement { module: string; why: string }
+export interface RequirementsFile {
+  _meta?: unknown;
+  suites: Record<string, Requirement[]>;
+  /** Keyed by persona alias; a trailing `*` matches a prefix (`SR_*`). */
+  personas?: Record<string, PersonaRequirement>;
+}
 export interface SuiteFile { id: string; file: string }
 
 const PERSONA = /\[PRE:(?:SIGNIN_AS|SWITCH_ORG|VERIFY_AUTH):([A-Z][A-Z0-9_]+)\]/g;
@@ -127,6 +136,7 @@ export function fixtureChecks(root: string, env: string, refs: Map<string, Set<s
       ? (a.seed ? `seed it: TEST_ENV=${env} npm run ${a.seed}, then re-run` : `seed the fixture behind ${alias} on ${env} (/qa-seed-data), then re-run`)
       : `fix the reference or the alias (test-data/aliases.json, aliases.${env}.json) — a suite defect, not env state`,
     diagnose: [`TEST_ENV=${env} npm run td:validate`],
+    cases: [...a.cases],
   }));
 }
 
@@ -154,7 +164,27 @@ function accountProblems(u: any, status: number): string[] {
   return p;
 }
 
-export async function personaChecks(root: string, env: string, c: EnvCoords, token: string | null, personas: Map<string, Set<string>>): Promise<Check[]> {
+/** The persona's module requirement, by exact alias or by a `PREFIX*` key. */
+function personaModule(reqs: Record<string, PersonaRequirement> | undefined, alias: string): PersonaRequirement | null {
+  if (!reqs) return null;
+  if (reqs[alias]) return reqs[alias];
+  const hit = Object.keys(reqs).find((k) => k.endsWith("*") && alias.startsWith(k.slice(0, -1)));
+  return hit ? reqs[hit] : null;
+}
+
+/** Installed module ids, or null when they could not be read (then no persona is judged on its module). */
+async function installedModules(c: EnvCoords, token: string | null): Promise<Set<string> | null> {
+  if (!token || !c.backUrl) return null;
+  try {
+    const r = await fetch(`${c.backUrl}/api/platform/modules`, { headers: { Authorization: `Bearer ${token}` } });
+    if (r.status !== 200) return null;
+    const list = (await r.json()) as { id: string; isInstalled?: boolean }[];
+    return new Set(list.filter((m) => m.isInstalled !== false).map((m) => m.id));
+  } catch { return null; }
+}
+
+export async function personaChecks(root: string, env: string, c: EnvCoords, token: string | null, personas: Map<string, Set<string>>,
+  modules: { reqs?: Record<string, PersonaRequirement>; installed: Set<string> | null } = { installed: null }): Promise<Check[]> {
   const registry = JSON.parse(readFileSync(join(root, "test-data/aliases.json"), "utf-8")) as Record<string, AliasEntry>;
   const resolver = makeResolver(root, env);
   const read = (expr: string) => { try { const v = resolver.resolve(expr); resolver.clearWarnings(); return v.includes("@td(") ? "" : v; } catch { return ""; } };
@@ -169,12 +199,20 @@ export async function personaChecks(root: string, env: string, c: EnvCoords, tok
     const envEmail = [`${alias}_EMAIL`, `${alias}_USERNAME`, alias].find((k) => process.env[k] && process.env[k]!.includes("@") || (k === alias && process.env[k]));
     const entry: AliasEntry | undefined = registry[alias] ?? (envEmail && process.env[`${alias}_PASSWORD`] !== undefined ? { email_env: envEmail, password_env: `${alias}_PASSWORD` } : undefined);
     const where = `${count(cases)}: ${bySuite(cases)}`;
-    if (!entry) { out.push({ id: `persona:${alias}`, status: "WARN", found: `unknown persona — neither an alias in test-data/aliases.json nor ${alias}_EMAIL / ${alias}_PASSWORD in the env — ${where}`, who: "me", do: `add the alias to test-data/aliases.json, set ${alias}_EMAIL and ${alias}_PASSWORD for the env, or fix the [PRE:*] tag`, diagnose: [] }); continue; }
+    // Before the account: without the module the account cannot be provisioned, so "no such account" would send
+    // someone to seed what the platform cannot hold (Stable 16: seed:sales-rep → 404 on /api/sales-rep/*).
+    const needs = personaModule(modules.reqs, alias);
+    if (needs && modules.installed && !modules.installed.has(needs.module)) {
+      out.push({ id: `persona:${alias}`, status: "WARN", found: `${needs.module} is not installed on ${env}: ${needs.why} — ${where}`, who: "you",
+        do: `these cases cannot run here — deploy ${needs.module} on ${env}, or leave them BLOCKED (not a product failure)`, diagnose: [], cases: [...cases] });
+      continue;
+    }
+    if (!entry) { out.push({ id: `persona:${alias}`, status: "WARN", found: `unknown persona — neither an alias in test-data/aliases.json nor ${alias}_EMAIL / ${alias}_PASSWORD in the env — ${where}`, who: "me", do: `add the alias to test-data/aliases.json, set ${alias}_EMAIL and ${alias}_PASSWORD for the env, or fix the [PRE:*] tag`, diagnose: [], cases: [...cases] }); continue; }
     const email = entry.email_env ? process.env[entry.email_env] ?? "" : read(`@td(${alias}.email)`);
     const pwdOk = entry.password_env ? !!process.env[entry.password_env] : secretSet(read(`@td(${alias}.password)`));
     if (!email || !pwdOk) {
       const vars = [entry.email_env && !email ? entry.email_env : null, entry.password_env && !pwdOk ? entry.password_env : null].filter(Boolean).join(", ");
-      out.push({ id: `persona:${alias}`, status: "WARN", found: `${!email ? "no email" : "no password"} for ${alias} on ${env}${vars ? ` (${vars})` : ""} — ${where}`, who: "you", do: `set ${vars || "the persona's credentials"} in .env.local (the team secret store has the values); never commit a password`, diagnose: [] });
+      out.push({ id: `persona:${alias}`, status: "WARN", found: `${!email ? "no email" : "no password"} for ${alias} on ${env}${vars ? ` (${vars})` : ""} — ${where}`, who: "you", do: `set ${vars || "the persona's credentials"} in .env.local (the team secret store has the values); never commit a password`, diagnose: [], cases: [...cases] });
       continue;
     }
     if (!token || !c.backUrl) { out.push({ id: `persona:${alias}`, status: "UNKNOWN", found: `${email}: account state not checked (no admin token) — ${where}`, who: "you", do: `fix the admin credentials for ${env}`, diagnose: [] }); continue; }
@@ -182,7 +220,7 @@ export async function personaChecks(root: string, env: string, c: EnvCoords, tok
     const problems = accountProblems(u, status);
     out.push(problems.length
       ? { id: `persona:${alias}`, status: "WARN", found: `${email}: ${problems.join("; ")} — ${where}`, who: "me, with OK",
-          do: !u ? `provision the account on ${env} (/qa-seed-data users), or point ${alias} at an account this env has in test-data/aliases.${env}.json — then re-run` : `reset the account on ${env} (unlock / set a new password from .env.local), then re-run`, diagnose: [] }
+          do: !u ? `provision the account on ${env} (/qa-seed-data users), or point ${alias} at an account this env has in test-data/aliases.${env}.json — then re-run` : `reset the account on ${env} (unlock / set a new password from .env.local), then re-run`, diagnose: [], cases: [...cases] }
       : { id: `persona:${alias}`, status: "OK", found: `${email} — ${where}`, who: null, do: null, diagnose: [] });
   }
   return out;
@@ -241,12 +279,13 @@ async function readDeployYml(c: EnvCoords): Promise<Map<string, string> | { unkn
 
 const norm = (v: unknown) => (v === null || v === undefined ? "" : typeof v === "string" ? v.trim().toLowerCase() : JSON.stringify(v).toLowerCase());
 function meets(r: Requirement, value: unknown, present: boolean): boolean {
+  if (r.allowedIncludes) return present && Array.isArray(value) && r.allowedIncludes.every((v) => (value as unknown[]).map(norm).includes(norm(v)));
   if (r.equals !== undefined) return present && norm(value) === norm(r.equals);
   if (r.notEquals !== undefined) return !present || norm(value) !== norm(r.notEquals);
   if (r.nonEmpty || r.prefix) return present && norm(value) !== "" && norm(value) !== "[]" && norm(value) !== "null";
   return present;
 }
-const want = (r: Requirement) => r.equals !== undefined ? `= ${JSON.stringify(r.equals)}` : r.notEquals !== undefined ? `≠ ${JSON.stringify(r.notEquals)}` : "set";
+const want = (r: Requirement) => r.allowedIncludes ? `to offer ${r.allowedIncludes.map((v) => JSON.stringify(v)).join(", ")}` : r.equals !== undefined ? `= ${JSON.stringify(r.equals)}` : r.notEquals !== undefined ? `≠ ${JSON.stringify(r.notEquals)}` : "set";
 
 export async function declaredChecks(env: string, c: EnvCoords, token: string | null, reqs: { suite: string; r: Requirement }[]): Promise<Check[]> {
   if (!reqs.length) return [];
@@ -282,7 +321,8 @@ export async function declaredChecks(env: string, c: EnvCoords, token: string | 
     } else if (r.kind === "platformSetting") {
       if (!platform.has(r.name)) platform.set(r.name, await getJson(`/api/platform/settings/${encodeURIComponent(r.name)}`));
       const s: any = platform.get(r.name);
-      if (!auth) unknown = "no admin token"; else { present = !!s; value = s ? s.value ?? s.defaultValue : undefined; where = "platform"; }
+      if (!auth) unknown = "no admin token";
+      else { present = !!s; value = s ? (r.allowedIncludes ? s.allowedValues ?? [] : s.value ?? s.defaultValue) : undefined; where = r.allowedIncludes ? "platform, allowed values" : "platform"; }
     } else if (r.kind === "paymentMethod") {
       if (!payments) unknown = `payment methods of ${storeId} not readable`;
       else { const m = (payments.results ?? []).find((x: any) => x.code === r.name); present = !!m; value = m ? m.isActive : undefined; where = `store ${storeId} payment methods (isActive)`; }
@@ -303,13 +343,15 @@ export async function declaredChecks(env: string, c: EnvCoords, token: string | 
     if (unknown) { out.push({ id, status: "UNKNOWN", found: `${r.name}: not checked (${unknown})${cases}`, who: "you", do: "make it readable (admin credentials / GIT_TOKEN) and re-run", diagnose: [] }); continue; }
     const ok = r.kind === "uploadScope" ? present : meets(r, value, present);
     const shown = r.kind === "uploadScope" ? `scopes: ${value}` : present ? `${r.name} = ${JSON.stringify(value)}` : `${r.name} not set`;
+    const absent = r.allowedIncludes && Array.isArray(value) ? r.allowedIncludes.filter((v) => !(value as unknown[]).map(norm).includes(norm(v))) : [];
     if (ok) { out.push({ id, status: "OK", found: `${shown} (${where})${cases}`, who: null, do: null, diagnose: [] }); continue; }
     const fix = r.kind === "storeSetting" ? `set ${r.name} ${want(r)} on store ${storeId} (Admin › Stores › ${storeId} › Settings) — a shared-env write`
+      : r.kind === "platformSetting" && absent.length ? `add ${absent.map((v) => JSON.stringify(v)).join(", ")} to the allowed values of ${r.name} (Admin › Settings, or PUT /api/platform/settings with the full list) — a shared-env write`
       : r.kind === "platformSetting" ? `set ${r.name} ${want(r)} (Admin › Settings) — a shared-env write`
       : r.kind === "paymentMethod" ? `activate ${r.name} on store ${storeId} (Admin › Stores › ${storeId} › Payment methods), with a working sandbox configuration`
       : `TEST_ENV=${env} npm run deploy:env-config -- --env ${env} --apply — opens ONE vc-deploy-dev PR to ${c.branch} with the value copied from vcst-qa / vcptcore-qa; you merge it (merging deploys)`;
     out.push({ id, status: r.level === "block" ? "BLOCK" : "WARN", found: `${shown}, needs ${r.kind === "uploadScope" ? `scope "${r.name}"` : want(r)} (${where}): ${r.why}${cases}`,
-      who: "me, with OK", do: fix, diagnose: [] });
+      who: "me, with OK", do: fix, diagnose: [], cases: [...g.cases] });
   }
   return out;
 }
@@ -324,7 +366,8 @@ export async function requirementChecks(o: { root: string; env: string; suites: 
   for (const s of needs.unreadable) checks.push({ id: `case-needs:${s}`, status: "UNKNOWN", found: `suite ${s}: CSV not readable, its personas and fixtures were not checked`, who: "me", do: "npm run suites:lint", diagnose: [] });
   checks.push(...fixtureChecks(o.root, o.env, needs.refs));
   if (c) checks.push(...await laneAccountChecks(o.root, o.env, c, token));
-  if (c) checks.push(...await personaChecks(o.root, o.env, c, token, needs.personas));
+  if (c) checks.push(...await personaChecks(o.root, o.env, c, token, needs.personas,
+    { reqs: reqFile.personas, installed: reqFile.personas ? await installedModules(c, token) : null }));
   const declared = o.suites.flatMap((s) => (reqFile.suites[s.id] ?? []).map((r) => ({ suite: s.id, r })));
   if (c) checks.push(...await declaredChecks(o.env, c, token, declared));
   return checks;
