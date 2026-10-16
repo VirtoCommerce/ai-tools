@@ -307,10 +307,9 @@ export async function declaredChecks(env: string, c: EnvCoords, token: string | 
     const fix = r.kind === "storeSetting" ? `set ${r.name} ${want(r)} on store ${storeId} (Admin › Stores › ${storeId} › Settings) — a shared-env write`
       : r.kind === "platformSetting" ? `set ${r.name} ${want(r)} (Admin › Settings) — a shared-env write`
       : r.kind === "paymentMethod" ? `activate ${r.name} on store ${storeId} (Admin › Stores › ${storeId} › Payment methods), with a working sandbox configuration`
-      : r.kind === "uploadScope" ? `a vc-deploy-dev PR to branch ${c.branch}: add a FileUpload__Scopes__N__Scope: ${r.name} entry under platform.config (copy it from vcst-qa)`
-      : `a vc-deploy-dev PR to branch ${c.branch}: ${r.name}${r.prefix ? "…" : ""} ${want(r)} in infra/environments.yml (vcst-qa has the reference value)`;
+      : `TEST_ENV=${env} npm run deploy:env-config -- --env ${env} --apply — opens ONE vc-deploy-dev PR to ${c.branch} with the value copied from vcst-qa / vcptcore-qa; you merge it (merging deploys)`;
     out.push({ id, status: r.level === "block" ? "BLOCK" : "WARN", found: `${shown}, needs ${r.kind === "uploadScope" ? `scope "${r.name}"` : want(r)} (${where}): ${r.why}${cases}`,
-      who: r.kind === "deployConfig" || r.kind === "uploadScope" ? "you" : "me, with OK", do: fix, diagnose: [] });
+      who: "me, with OK", do: fix, diagnose: [] });
   }
   return out;
 }

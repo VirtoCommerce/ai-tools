@@ -90,7 +90,7 @@ level-3 MCP rows and step 3's misses. Do not reword a row, do not re-grade it, a
 `UNKNOWN` as OK. Form and rules: `docs/superpowers/specs/2026-10-08-preflight-skill-design.md` §8a.
 
 - `READY` with no rows ⇒ one line, proceed.
-- `READY` with warnings ⇒ name each in one line, proceed. A WARN never asks.
+- `READY` with warnings ⇒ name each in one line. If any has a fix you can make (list 1 of step 5), ask step 5's one question first; otherwise proceed. A WARN never asks anything else.
 - `READY` with `UNKNOWN` rows only (no BLOCK, no WARN) ⇒ list each `UNKNOWN` row with its `Who`/`Do`, never as OK, and do not ask.
 - `NOT READY` ⇒ go to step 5. **At most one question, and only for a BLOCK.**
 - A level-3 BLOCK from step 2 alone also makes the run `NOT READY` and routes to step 5; the verdict returned in step 6 is the combined one (CLI verdict, downgraded by any level-3 BLOCK).
@@ -98,7 +98,21 @@ level-3 MCP rows and step 3's misses. Do not reword a row, do not re-grade it, a
 
 ## Step 5 — remediation: diagnose → fix → re-check
 
-Offer, in one line per row, what you can do and what only the user can — the `Who` column decides:
+**Do as much as you can yourself; ask once before you do it.** After every pre-flight with rows to act on, show two
+lists in the user's language, grouped (one line per fix, not per row — fixtures by the seed that writes them, settings
+by store), each with the cases it unblocks:
+
+1. **I will do** (`me`, `me, with OK`) — seeding, store and platform settings, account provisioning or reset, and every
+   `req:deployConfig` / `req:uploadScope` row as **one** vc-deploy-dev PR: `npm run deploy:env-config -- --env <env>`
+   (dry run shows the exact lines and the reference env each value comes from; `--apply` opens the PR).
+2. **Needs you** (`you`) — only what you may not do: a secret or a credential (a password, an API key such as Google
+   Maps, a payment-provider sandbox), merging the vc-deploy-dev PR (merging deploys the env), and a product decision.
+   Say exactly where the value goes and where it comes from.
+
+One question covers list 1 ("Do all of list 1?" — or name the items to skip). On a yes, do them all, re-run step 1, and
+report what changed; list 2 stays with the user. Never ask per item.
+
+The `Who` column decides which list a row goes to:
 
 | `Who` | You may |
 |---|---|
