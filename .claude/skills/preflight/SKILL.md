@@ -38,6 +38,19 @@ types a password nobody has — report them BLOCKED (`SECRET_UNDECLARED`), never
 the cases of suites that still run: they are BLOCKED without a sign-in attempt (typing an unregistered name
 sends the literal string and can lock a shared account). For step 4, run the same command without `--json`.
 
+**What the selected cases need from the stand** (build-scoped only, `scripts/regression/requirements.ts`) comes in the
+same `checks[]`, read-only:
+- `persona:<ALIAS>` / `lane-account:slot<N>` — derived from the CSVs' `[PRE:SIGNIN_AS|SWITCH_ORG|VERIFY_AUTH]` and from
+  `agent-user-pool.csv`: credentials resolvable, account exists, not locked out, password not expired — through the
+  admin API, **never by signing in**.
+- `fixture:<ALIAS>` — every `@td()` the cases use, through the runners' resolver; `unseeded` names the seed to run.
+- `req:<kind>:<name>` — what `config/suite-requirements.json` declares: store and platform settings, payment
+  methods, vc-deploy-dev `infra/environments.yml` keys (headers, FileUpload scopes, KnownAssetHosts).
+
+Each row names its cases. They are WARN unless a requirement says `"level": "block"` — the run goes, and the owner
+knows which cases will BLOCK and why before spending a run on them. A triage verdict `ENV_CONFIG` that no `req:` row
+predicted is a missing entry in `config/suite-requirements.json`: add it with the cases it hit.
+
 ## Step 2 — MCP level 3: what is callable in THIS session
 
 The CLI sees `.mcp.json` only (levels 1–2; it also matches a server's `mcpKeys` aliases). For every server the consumer marks `REQ` or

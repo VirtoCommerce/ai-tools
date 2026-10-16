@@ -11,6 +11,8 @@ import { classifyRun, gatherActivity, loadStatus, type Classification } from "./
 import { gateSuites, resolveRequiredModule, type GatingResult, type SuiteRef } from "./requires.ts";
 import { baselineDelta, readBaseline, type ModuleChange } from "./baseline.ts";
 import { SECRETS_FILE, classifySecretNames, readSecretsFile, suiteSecretCases } from "../lib/browser-secrets.mjs";
+import { requirementChecks } from "./requirements.ts";
+import { loadManifest } from "../../ci/lib/suite-manifest.js";
 
 export type BuildFor = "regression" | "smoke";
 
@@ -200,6 +202,8 @@ export async function runRegressionPreflight(o: {
   root: string; now?: Date; env?: string; runId?: string; accept?: string[];
   /** Suites a browser agent types into — the only ones the secrets file matters for. Default: all. */
   browserSuites?: string[];
+  /** Case-level checks (personas, fixtures, declared settings — requirements.ts). Default on; off only for an offline plan. */
+  requirements?: boolean;
 }): Promise<RegressionPreflight> {
   const now = o.now ?? new Date();
   const required = [...new Set(o.suites.flatMap((s) => (s.requiresModules ?? []).map((e) => resolveRequiredModule(e).pascal)))];
@@ -220,6 +224,14 @@ export async function runRegressionPreflight(o: {
     smokeGates: o.for === "smoke" ? runSmokeGates(o.root) : null,
     smokeDuplicate: o.for === "smoke" ? smokeDuplicateToday(o.root, now) : null,
   });
+  // What THESE cases need from the stand — only for suites that will actually run (gated ones are already out).
+  if (o.requirements !== false) {
+    const gated = new Set(gating.gated.map((g) => g.suite));
+    let files = new Map<string, string>();
+    try { files = new Map(loadManifest().suites.map((s) => [s.id, s.file])); } catch { /* manifest problems are reported above */ }
+    const run = o.suites.filter((s) => !gated.has(s.id) && files.has(s.id)).map((s) => ({ id: s.id, file: files.get(s.id)! }));
+    checks.push(...await requirementChecks({ root: o.root, env: facts.env, suites: run }));
+  }
   return {
     for: o.for, selection: o.selection, facts, mcp, gating, secrets, changedSince, baselineRunId: baseline?.runId ?? null,
     falseFailureRisk: falseFailureRisk(changedSince, gating), accepted: o.accept ?? [], checks, verdict: isBlocking(checks) ? "NOT READY" : "READY",

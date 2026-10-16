@@ -150,7 +150,7 @@ Columns (exact header, in this order):
 | `BY_DESIGN` | the product works as intended; the case or the expectation was wrong | optional | the behaviour goes to the kb (§9) |
 | `TEST_DEFECT` | steps, assertion or the case itself is stale | the repair PR, or `OPEN` | |
 | `DATA` | a fixture is missing or wrong on this env | the seeder PR, or `OPEN` | |
-| `ENV_CONFIG` | the env is configured differently (a header, a key, a module, a stalled index) | the env change, or `OPEN` | the next release pre-checks these |
+| `ENV_CONFIG` | the env is configured differently (a header, a key, a module, a stalled index) | the env change, or `OPEN` | add it to `config/suite-requirements.json` with the cases it hit, so the next pre-flight predicts it |
 | `NOT_TESTABLE` | cannot be tested on this env at all (no telemetry backend, needs an isolated stand) | — | |
 | `DUPLICATE` | an existing issue | the existing key | |
 | `FLAKY` | passed on retry / timing noise | — | |

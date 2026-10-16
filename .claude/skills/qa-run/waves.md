@@ -46,7 +46,13 @@ sub-tasks are assigned and in progress right now. Change nothing.
 2. `npm run release:check -- stable-<N>` must be green. Read `release.json` (this wave's `suites`, `dependsOn`,
    `exclusive`) and every other wave's `state.json`.
 3. **Dependencies:** every wave in `dependsOn` is at least `RUN_DONE` — W0 especially. If not, STOP and say which.
-4. Run the [`/preflight`](../../skills/preflight/SKILL.md) skill for `env.testEnv`. The deployed build must still match
+4. **Before every wave, and before every resumed run of one:** run the [`/preflight`](../../skills/preflight/SKILL.md)
+   skill as `regression <this wave's suite ids>` for `env.testEnv`. Beyond the stand and the build it checks what the
+   wave's cases need — personas and lane accounts, `@td()` fixtures, and the store, platform and deploy-config
+   requirements in `config/suite-requirements.json` — and names the cases each gap will BLOCK. Show the rows; offer the
+   `me` / `me, with OK` fixes (seeding, a store setting) before the run, and hand the `you` rows (a vc-deploy-dev PR,
+   a password) to the owner. A gap left as it is goes into `notRun` or becomes those cases' ledger rows — never a
+   surprise in triage. The deployed build must still match
    `release.json` `env` — a hotfix deployed mid-release is recorded in `report.md`, not ignored.
 
 ## Step 1 — Claim (`--claim`)
