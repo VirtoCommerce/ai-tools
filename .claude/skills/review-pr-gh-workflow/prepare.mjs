@@ -8,11 +8,13 @@
 //   node .claude/skills/review-pr-gh-workflow/prepare.mjs search <query>
 //   node .claude/skills/review-pr-gh-workflow/prepare.mjs ref <clone> <ref> <path|commit>...
 //   node .claude/skills/review-pr-gh-workflow/prepare.mjs snapshot|snapshot-cleanup <clone> <scratch>
+//   node .claude/skills/review-pr-gh-workflow/prepare.mjs log <scratch> <repo> <pr> <run-id> [--failed]
+//   node .claude/skills/review-pr-gh-workflow/prepare.mjs runs <repo> <workflow> [limit]
 //
 // Contract — keep it: the hook .claude/hooks/review-pr-allow.mjs approves this script without a prompt.
 //   - GitHub: reads only — REST GETs (`gh api` without -f/-F/-X), GraphQL `query` (never a
 //     `mutation`; GraphQL is POST by protocol), `gh pr checks`, `gh pr list`, `gh run list`,
-//     `gh search code`.
+//     `gh run view --log`, `gh search code`.
 //   - The clone: must be a VirtoCommerce clone (origin checked). Touched only by `git fetch` (base
 //     branch, the PR's pull ref, tags), `git worktree add/remove/prune` and `update-ref -d` of the
 //     ref it created. Git LFS is off (a PR's .lfsconfig must not pick a host); symlinks in the PR are
@@ -148,6 +150,39 @@ if (sub === "ref") {
     }
   }
   process.stdout.write(JSON.stringify(result, null, 1) + "\n");
+  process.exit(0);
+}
+
+// ── log: save a run's log for Grep/Read (Step 5) ─────────────────────────────
+//   prepare.mjs log <scratch> <repo> <pr> <run-id> [--failed]  → <scratch>/pr-<pr>/runs/<id>.log, path + size
+if (sub === "log") {
+  const [, , , scratchArg, repoArg, prArg, runId, flag, ...extra] = process.argv;
+  if (!scratchArg || !repoArg || !prArg || !runId || extra.length || (flag && flag !== "--failed"))
+    die("usage: prepare.mjs log <scratch> <repo> <pr> <run-id> [--failed]");
+  if (!/^[A-Za-z0-9._-]+$/.test(repoArg)) die(`bad repo name: ${repoArg}`);
+  if (!PR_RE.test(prArg)) die(`bad PR number: ${prArg}`);
+  if (!/^[1-9][0-9]{0,15}$/.test(runId)) die(`bad run id: ${runId}`);
+  const scratch = scratchDir(scratchArg);
+  const dir = join(scratch, `pr-${prArg}`, "runs");
+  mkdirSync(dir, { recursive: true });
+  const text = gh(["run", "view", runId, "--repo", `${OWNER}/${repoArg}`, flag === "--failed" ? "--log-failed" : "--log"], { allowFail: true });
+  const file = join(dir, `${runId}${flag ? "-failed" : ""}.log`);
+  writeFileSync(file, text);
+  process.stdout.write(JSON.stringify({ file, bytes: Buffer.byteLength(text) }) + "\n");
+  process.exit(0);
+}
+
+// ── runs: recent runs of one workflow (e.g. earlier security scans to compare) ─
+//   prepare.mjs runs <repo> <workflow file or name> [limit]  → JSON list
+if (sub === "runs") {
+  const [, , , repoArg, workflow, limitArg = "10", ...extra] = process.argv;
+  if (!repoArg || !workflow || extra.length) die("usage: prepare.mjs runs <repo> <workflow> [limit]");
+  if (!/^[A-Za-z0-9._-]+$/.test(repoArg)) die(`bad repo name: ${repoArg}`);
+  if (!/^[A-Za-z0-9 ._-]+$/.test(workflow)) die(`bad workflow: ${workflow}`);
+  if (!/^[1-9][0-9]?$/.test(limitArg)) die(`bad limit: ${limitArg}`);
+  const runs = JSON.parse(gh(["run", "list", "--repo", `${OWNER}/${repoArg}`, "--workflow", workflow, "--limit", limitArg,
+    "--json", "databaseId,headBranch,headSha,event,conclusion,createdAt"]));
+  process.stdout.write(JSON.stringify(runs, null, 1) + "\n");
   process.exit(0);
 }
 

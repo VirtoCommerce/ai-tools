@@ -45,3 +45,17 @@ finding against the PR.
 - **A clean run is not a clean review.** Both tools work file by file: they do not see callers, the
   callee at its pinned ref, branch protection or organization defaults. Count a clean result only as
   "the patterns these tools know are absent from the changed files".
+
+## Codex lenses (optional)
+
+As `/review-pr-virto` Step 3 and [`../review-pr-virto/codex-lens.md`](../review-pr-virto/codex-lens.md),
+with these focus texts instead of the .NET ones:
+
+- *design*: "Contract of reusable workflows, actions and templates for consumers in other
+  repositories; trigger and permission model; what runs with secrets; coupling via artifacts, caches
+  and `workflow_run`."
+- *defect*: "Script injection through `${{ }}` in `run:`; `pull_request_target` / `workflow_run` /
+  `issue_comment` executing untrusted code; secrets reaching logs or artifacts; conditions that never
+  fire; failures swallowed by `continue-on-error` or `|| true`; unpinned third-party actions."
+
+Their findings are proposals like a helper's, verified in `SKILL.md` Step 6.

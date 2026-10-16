@@ -13,7 +13,8 @@
 //     scratchpad/pr-<N>/ or …/scratchpad/wt/ — the only two subtrees prepare.mjs writes. Never a
 //     credential-looking file name (.env, *.pem, *.key, id_rsa…), never a Grep/Glob whose pattern
 //     climbs out (`..` or absolute).
-//   - WebFetch of an https://docs.github.com/ URL — the skill cites GitHub semantics from there.
+//   - WebFetch of https://docs.github.com/, https://docs.zizmor.sh/ or https://rhysd.github.io/actionlint/
+//     — GitHub semantics and the docs of the skill's two static tools.
 //   - Bash running prepare.mjs as ONE plain command (no control characters at all, no shell
 //     metacharacters, no quoting tricks) from the project directory, so the script that runs is
 //     this repository's, not one a PR planted under a worktree.
@@ -81,8 +82,11 @@ function decide(input) {
   if (t === "Glob") return inReviewScratch(ti.path, input.cwd) && !climbs(ti.pattern);
   if (t === "Grep") return inReviewScratch(ti.path, input.cwd) && !climbs(ti.glob);
   if (t === "WebFetch") {
-    try { const u = new URL(ti.url); return u.protocol === "https:" && u.hostname === "docs.github.com"; }
-    catch { return false; }
+    try {
+      const u = new URL(ti.url);
+      return u.protocol === "https:" && (u.hostname === "docs.github.com" || u.hostname === "docs.zizmor.sh" ||
+        (u.hostname === "rhysd.github.io" && u.pathname.startsWith("/actionlint/")));
+    } catch { return false; }
   }
   if (t === "Bash") {
     const cmd = ti.command;

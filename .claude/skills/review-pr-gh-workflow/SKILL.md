@@ -203,9 +203,10 @@ adds or changes.
 ### 5. Gates, static tools and the PR's own runs (lead)
 
 - **The repository's own gates first.** `VirtoCommerce/.github` runs its pin check, workflow security
-  scan and dist check on workflow PRs (`virto-ci-layout.md`). Read their result in `gh pr checks` and
-  their logs for this head (`gh run view <id> --log-failed`). A gate that did not run on a PR that
-  touches its paths is itself a question.
+  scan and dist check on workflow PRs (`virto-ci-layout.md`). Read their result in the summary's
+  `checks`; save a run's log with `prepare.mjs log <scratch> <repo> <pr> <run-id> [--failed]` and
+  search it with `Grep` (no `gh run view | grep` — a prompt); earlier runs of a workflow:
+  `prepare.mjs runs <repo> "<workflow>"`. A gate that did not run on a PR touching its paths is a question.
 - **Local static tools** — only where the repository has no such gate, or to diff against the base:
   `static-tools.md`. Not installed ⇒ say so and offer the install; never install without a yes.
 - **The PR's own runs** — the summary's `runs` (every run at the PR head: workflow, event, result).
@@ -213,14 +214,7 @@ adds or changes.
   design), and a workflow whose trigger cannot fire on a PR (`push` to the default branch, `release`,
   `schedule`, `workflow_dispatch`, a template that only runs once deployed) has no runtime evidence.
   State which ran and which could not have.
-- **Optional Codex lenses**: as `/review-pr-virto` Step 3 and
-  [`../review-pr-virto/codex-lens.md`](../review-pr-virto/codex-lens.md), with these focus texts —
-  *design*: "Contract of reusable workflows, actions and templates for consumers in other repositories;
-  trigger and permission model; what runs with secrets; coupling via artifacts, caches and
-  `workflow_run`." *Defect*: "Script injection through `${{ }}` in `run:`; `pull_request_target` /
-  `workflow_run` / `issue_comment` executing untrusted code; secrets reaching logs or artifacts;
-  conditions that never fire; failures swallowed by `continue-on-error` or `|| true`; unpinned
-  third-party actions."
+- **Optional Codex lenses**: `static-tools.md` §Codex lenses.
 
 ### 6. Verify, then consolidate (lead)
 
