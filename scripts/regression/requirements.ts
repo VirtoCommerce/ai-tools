@@ -55,6 +55,13 @@ const PERSONA = /\[PRE:(?:SIGNIN_AS|SWITCH_ORG|VERIFY_AUTH):([A-Z][A-Z0-9_]+)\]/
 const TD_REF = /@td\(([A-Z][A-Z0-9_]+(?:\.\w+)+)\)/g;
 const VAR = /^\{\{([A-Z0-9_]+)\}\}$/;
 
+/** The resolver logs its overlay layering to stdout; under `--json` that line would corrupt the JSON a caller parses. */
+function makeResolver(root: string, env: string): TestDataResolver {
+  const log = console.log;
+  console.log = (...a: unknown[]) => console.error(...a);
+  try { return new TestDataResolver(join(root, "test-data"), env); } finally { console.log = log; }
+}
+
 export function loadRequirements(root: string): RequirementsFile {
   const p = join(root, "config/suite-requirements.json");
   if (!existsSync(p)) return { suites: {} };
@@ -95,7 +102,7 @@ function bySuite(cases: Iterable<string>): string {
 const count = (c: Set<string>) => `${c.size} case${c.size === 1 ? "" : "s"}`;
 
 export function fixtureChecks(root: string, env: string, refs: Map<string, Set<string>>): Check[] {
-  const resolver = new TestDataResolver(join(root, "test-data"), env);
+  const resolver = makeResolver(root, env);
   const byAlias = new Map<string, { cases: Set<string>; fields: Set<string>; kind: "unseeded" | "broken"; detail: string; seed?: string }>();
   for (const [ref, cases] of refs) {
     let out = "";
@@ -149,7 +156,7 @@ function accountProblems(u: any, status: number): string[] {
 
 export async function personaChecks(root: string, env: string, c: EnvCoords, token: string | null, personas: Map<string, Set<string>>): Promise<Check[]> {
   const registry = JSON.parse(readFileSync(join(root, "test-data/aliases.json"), "utf-8")) as Record<string, AliasEntry>;
-  const resolver = new TestDataResolver(join(root, "test-data"), env);
+  const resolver = makeResolver(root, env);
   const read = (expr: string) => { try { const v = resolver.resolve(expr); resolver.clearWarnings(); return v.includes("@td(") ? "" : v; } catch { return ""; } };
   const secretSet = (v: string) => {
     if (!v) return false;
@@ -158,9 +165,11 @@ export async function personaChecks(root: string, env: string, c: EnvCoords, tok
   };
   const out: Check[] = [];
   for (const [alias, cases] of personas) {
-    const entry = registry[alias];
+    // Not an alias: a config.js persona (USER, ORG_USER, ADMIN…), read from <NAME>_EMAIL / <NAME> and <NAME>_PASSWORD.
+    const envEmail = [`${alias}_EMAIL`, `${alias}_USERNAME`, alias].find((k) => process.env[k] && process.env[k]!.includes("@") || (k === alias && process.env[k]));
+    const entry: AliasEntry | undefined = registry[alias] ?? (envEmail && process.env[`${alias}_PASSWORD`] !== undefined ? { email_env: envEmail, password_env: `${alias}_PASSWORD` } : undefined);
     const where = `${count(cases)}: ${bySuite(cases)}`;
-    if (!entry) { out.push({ id: `persona:${alias}`, status: "WARN", found: `unknown persona alias — ${where}`, who: "me", do: "add the alias to test-data/aliases.json or fix the [PRE:*] tag", diagnose: [] }); continue; }
+    if (!entry) { out.push({ id: `persona:${alias}`, status: "WARN", found: `unknown persona — neither an alias in test-data/aliases.json nor ${alias}_EMAIL / ${alias}_PASSWORD in the env — ${where}`, who: "me", do: `add the alias to test-data/aliases.json, set ${alias}_EMAIL and ${alias}_PASSWORD for the env, or fix the [PRE:*] tag`, diagnose: [] }); continue; }
     const email = entry.email_env ? process.env[entry.email_env] ?? "" : read(`@td(${alias}.email)`);
     const pwdOk = entry.password_env ? !!process.env[entry.password_env] : secretSet(read(`@td(${alias}.password)`));
     if (!email || !pwdOk) {
