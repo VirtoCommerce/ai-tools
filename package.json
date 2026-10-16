@@ -205,6 +205,7 @@
     "regression:select": "npx tsx scripts/regression/select-suites.ts",
     "regression:recalibrate": "npx tsx scripts/regression/recalibrate-estimates.ts",
     "release:diff": "npx tsx scripts/regression/release-diff.ts",
+    "release:report": "npx tsx scripts/regression/release-report.ts",
     "release:status": "npx tsx scripts/regression/release-status.ts",
     "release:check": "npx tsx scripts/regression/release-status.ts --check",
     "suites:sync": "npx tsx scripts/test-cases/sync-test-suites.ts",

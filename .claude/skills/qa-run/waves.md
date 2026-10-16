@@ -147,7 +147,7 @@ without the user's yes for that bug.
 
 ## Step 7 — ASK: put it in GitHub?
 
-**Always ask after triage:** "Commit the wave and open a PR?" On *yes*:
+**Always ask after triage:** "Commit the wave, open a PR and post the wave report?" On *yes*:
 
 1. `npm run release:status -- stable-<N> --write`, then `npm run release:check -- stable-<N>` — must be green.
 2. Commit on the wave branch: `waves/<W>/` (state, ledger, report) and `PROGRESS.md`; the case / fixture repairs from
@@ -158,6 +158,16 @@ without the user's yes for that bug.
 4. **`DONE`** is set in the wave's own PR once nothing is open in it: `untriaged` 0, every repair merged or on this PR,
    every `DRAFT` filed or explicitly deferred by the user. Otherwise the wave stays `TRIAGED`, and the PR that closes
    the last open item sets `DONE`.
+5. **The wave report in the tracker:** `npm run release:report -- stable-<N> --wave <W> --post` (before the commit, so
+   the comment ids it records in `state.json` `reports` are in it). It posts two NEW comments, each with an inline image:
+   - on the **wave sub-task** — the run's own dashboard (`regression-report.html`, its summary part as a PNG; the HTML
+     attached), the totals, the wave's real bugs, the ledger's verdict counts, what was not run;
+   - on the **release ticket** — the release dashboard (every wave, status, numbers, owner, real bugs filed / to file,
+     pending decisions), then what this wave added and the release's full real-bug list.
+
+   A new comment per wave is the rule, not a duplicate: a wave is its own run, and only a new comment notifies.
+   Re-posting the same wave amends its own two comments. Without `--post` the script only builds the files
+   (`reports/regression/releases/<release>/<W>/`) — show them first when the user wants to see before posting.
 
 ## Step 8 — Handover (`--handover`, or when stopping early)
 

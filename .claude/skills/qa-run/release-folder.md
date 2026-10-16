@@ -219,8 +219,10 @@ the machine lanes first, or in CI, is the cheapest way to stretch a usage limit.
   branch. A running wave = its sub-task in progress; that, not `state.json`, is what §7.3 checks.
 - **Before claiming, pull `main` and run `npm run release:status -- <release>`** to see what is merged and
   what is pending a decision, then look at the wave sub-tasks for what is held and running right now.
-- **The release ticket's progress comment** (`release.json` `jiraProgressComment`) has one author, the
-  planner, who amends it from `PROGRESS.md` ([`../../rules/reports.md`](../../rules/reports.md) §0).
+- **The release ticket gets a new comment per finished wave** (`release:report --post`, [`waves.md`](waves.md) Step 7),
+  written by that wave's owner and carrying the whole release as of that wave; the wave sub-task gets the run's own
+  dashboard. Their ids are kept in the wave's `state.json` `reports`, so re-posting a wave amends its comments.
+  `release.json` `jiraProgressComment` names an older hand-written comment, if any — it is not updated any more.
 - **Handing over** a half-done wave: leave it `RUN_DONE` with `notRun` and a "Before the next owner
   continues" section in `report.md`, open the PR, and unassign the sub-task.
 - **Bugs** are filed per [`../../rules/reports.md`](../../rules/reports.md) and

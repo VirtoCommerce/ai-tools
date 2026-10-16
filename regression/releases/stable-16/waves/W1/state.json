@@ -20,5 +20,11 @@
  "updatedAt": "2026-10-16",
  "personas": "config.js personas USER, ORG_USER, EUR, MULTI_ORG and ACME_BUYER as resolved from Elena Kutasina's .env.local; a parallel owner must use different accounts",
  "untriaged": 0,
- "evidence": "Raw results, HAR and screenshots stay in the owner's local run folders reports/regression/<runId>/ (gitignored); each filed bug carries its own evidence in Jira."
+ "evidence": "Raw results, HAR and screenshots stay in the owner's local run folders reports/regression/<runId>/ (gitignored); each filed bug carries its own evidence in Jira.",
+ "reports": {
+  "W1": {
+   "subtask": "112106",
+   "release": "112107"
+  }
+ }
 }
