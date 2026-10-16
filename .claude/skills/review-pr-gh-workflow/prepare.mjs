@@ -7,6 +7,7 @@
 //   node .claude/skills/review-pr-gh-workflow/prepare.mjs fetch <scratch> <pr> <owner>/<repo> <ref|@default> <path>...
 //   node .claude/skills/review-pr-gh-workflow/prepare.mjs search <query>
 //   node .claude/skills/review-pr-gh-workflow/prepare.mjs ref <clone> <ref> <path|commit>...
+//   node .claude/skills/review-pr-gh-workflow/prepare.mjs snapshot|snapshot-cleanup <clone> <scratch>
 //
 // Contract — keep it: the hook .claude/hooks/review-pr-allow.mjs approves this script without a prompt.
 //   - GitHub: reads only — REST GETs (`gh api` without -f/-F/-X), GraphQL `query` (never a
@@ -17,8 +18,8 @@
 //     ref it created. Git LFS is off (a PR's .lfsconfig must not pick a host); symlinks in the PR are
 //     checked out as plain files; the worktree skips node_modules/ and dist/ except the PR's own files.
 //   - <scratch>: must be a session scratchpad (<tmp>/claude*/<slug>/<session>/scratchpad). Files are
-//     written only under <scratch>/pr-<pr>/ and <scratch>/wt/pr-<pr>/, and `cleanup` deletes
-//     exactly those two.
+//     written only under <scratch>/pr-<pr>/, <scratch>/wt/pr-<pr>/ and <scratch>/wt/snapshot/, and
+//     `cleanup` / `snapshot-cleanup` delete exactly those.
 //   - Every argument is validated; processes run with execFileSync and no shell.
 // stdout: one JSON summary. Everything large goes to files the summary names.
 
@@ -147,6 +148,38 @@ if (sub === "ref") {
     }
   }
   process.stdout.write(JSON.stringify(result, null, 1) + "\n");
+  process.exit(0);
+}
+
+// ── snapshot: a worktree of the clone's HEAD, for repository-mode comment compression ──
+//   prepare.mjs snapshot <clone> <scratch>          → <scratch>/wt/snapshot + JSON {worktree, commit, files}
+//   prepare.mjs snapshot-cleanup <clone> <scratch>  → removes it
+// The comment files of comment-compression.md §Two modes, listed for the helper; no node_modules/dist.
+if (sub === "snapshot" || sub === "snapshot-cleanup") {
+  const [, , , cloneArg, scratchArg] = process.argv;
+  if (!cloneArg || !scratchArg || process.argv.length > 5) die(`usage: prepare.mjs ${sub} <clone> <scratch>`);
+  const clone = cloneDir(cloneArg);
+  const scratch = scratchDir(scratchArg);
+  const wt = join(scratch, "wt", "snapshot");
+  if (existsSync(wt)) {
+    git(clone, ["worktree", "remove", "--force", wt], { allowFail: true });
+    rmSync(wt, { recursive: true, force: true });
+    git(clone, ["worktree", "prune"]);
+  }
+  if (sub === "snapshot-cleanup") {
+    const wtRoot = join(scratch, "wt");
+    if (existsSync(wtRoot) && !readdirSync(wtRoot).length) rmSync(wtRoot, { recursive: true, force: true });
+    process.stdout.write(JSON.stringify({ removed: wt, left: existsSync(wt) ? [wt] : [] }) + "\n");
+    process.exit(existsSync(wt) ? 1 : 0);
+  }
+  mkdirSync(join(scratch, "wt"), { recursive: true });
+  const commit = git(clone, ["rev-parse", "HEAD"]).trim();
+  git(clone, ["worktree", "add", "--quiet", "--no-checkout", "--detach", wt, commit]);
+  git(wt, ["checkout", "HEAD", "--", ".", ":(exclude,glob)**/node_modules/**", ":(exclude,glob)**/dist/**"]);
+  const files = git(wt, ["ls-files"]).split("\n").filter((f) =>
+    /^(\.github\/workflows\/[^/]+\.ya?ml|workflow-templates\/[^/]+\.ya?ml|actions\/[^/]+\/action\.ya?ml|actions\/[^/]+\/(scripts|src)\/.+)$/.test(f) &&
+    !/(^|\/)(node_modules|dist)\//.test(f));
+  process.stdout.write(JSON.stringify({ worktree: wt, commit, files }, null, 1) + "\n");
   process.exit(0);
 }
 
