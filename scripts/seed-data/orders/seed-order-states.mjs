@@ -13,7 +13,7 @@
  *
  * Business keys (the AGENT-TEST-ORD-* number) stay in the committed fixture; the runtime order GUID
  * is written to test-data/aliases.<env>.json (never the fixture). Owner is resolved live from
- * {{USER_EMAIL}} so "my orders" shows them.
+ * {{USER_EMAIL}} (login id + the contact's current organization) so "my orders" shows them.
  *
  * NOTE: the exact platform status strings are confirmed LIVE on first run (quality-gates G6). If one
  * is wrong, fix it in orders-specs.mjs — the single place every consumer follows.
@@ -24,7 +24,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   assertSafeTarget, auth, api, log, verbose,
-  ROOT, DRY_RUN, TEARDOWN, ONLY, writeEnvAliasOverride, verifyRemoved, discoverCatalogProducts,
+  ROOT, DRY_RUN, TEARDOWN, ONLY, STORE_ID, writeEnvAliasOverride, verifyRemoved, discoverCatalogProducts,
   findOrdersByExactNumber, idsParam,
 } from '../../lib/seed-common.mjs';
 import {
@@ -36,11 +36,58 @@ function loadFixture(relPath) {
   return JSON.parse(readFileSync(join(ROOT, 'test-data', relPath), 'utf8'));
 }
 
-/** Resolve the storefront ApplicationUser (login) id + name by email — the id that owns "my orders". */
-async function resolveOwner(email) {
-  if (!email) return { id: null, name: null };
+/**
+ * Resolve the storefront ApplicationUser (login) id + name by email — the id that owns "my orders" —
+ * AND the organization the buyer's xAPI `orders` list is filtered by. The storefront scopes a buyer's
+ * order list to the token's CURRENT organization, so an order with organizationId null (or another
+ * org) is invisible to the owner (REG-2026-10-13-W2, suite 086). The org is read from the persona's
+ * live contact membership, never hardcoded: a single membership is the current org; with several, the
+ * buyer's own token decides (`me.contact.organizationId`). A contact with no organization yields null
+ * (a B2C buyer — the order then carries no org, which is correct for that buyer).
+ */
+async function resolveOwner(email, password) {
+  const none = { id: null, name: null, organizationId: null, organizationName: null };
+  if (!email) return none;
   const u = await api('GET', `/api/platform/security/users/${encodeURIComponent(email)}`, null, { expectStatus: [200, 404] });
-  return u && u.id ? { id: u.id, name: u.userName || email } : { id: null, name: null };
+  if (!u?.id) return none;
+  const owner = { id: u.id, name: u.userName || email, organizationId: null, organizationName: null };
+  const contact = u.memberId ? await api('GET', `/api/members/${u.memberId}`, null, { expectStatus: [200, 404] }) : null;
+  const orgIds = contact?.organizations || [];
+  let orgId = orgIds.length === 1 ? orgIds[0] : null;
+  if (orgIds.length > 1) orgId = await currentOrgFromToken(email, password, orgIds);
+  if (orgIds.length > 1 && !orgId) {
+    log(`  WARN: ${email} belongs to ${orgIds.length} organizations and the current one could not be read from a buyer token — orders seeded WITHOUT an organization will not show in the buyer's xAPI orders list`);
+  }
+  if (orgId) {
+    const org = await api('GET', `/api/members/${orgId}`, null, { expectStatus: [200, 404] });
+    owner.organizationId = orgId;
+    owner.organizationName = org?.name || null;
+  }
+  return owner;
+}
+
+/** The buyer token's current organization (`me.contact.organizationId`), only if it is one of `orgIds`. */
+async function currentOrgFromToken(email, password, orgIds) {
+  if (!password) return null;
+  try {
+    const t = await fetch(`${process.env.BACK_URL}/connect/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ grant_type: 'password', username: email, password, scope: 'offline_access', storeId: STORE_ID }),
+    });
+    if (!t.ok) return null;
+    const token = (await t.json()).access_token;
+    const r = await fetch(`${process.env.BACK_URL}/graphql`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ query: '{ me { contact { organizationId } } }' }),
+    });
+    const id = (await r.json())?.data?.me?.contact?.organizationId;
+    return orgIds.includes(id) ? id : null;
+  } catch (e) {
+    verbose(`buyer-token org read failed: ${String(e.message).slice(0, 120)}`);
+    return null;
+  }
 }
 
 /**
@@ -114,7 +161,7 @@ async function ensureOrder(spec, owner, maxItems) {
     // quantity, shipment address) — never against what this run would pick from the catalog today.
     const full = await api('GET', `/api/order/customerOrders/${existing.id}`);
     const productsById = await readProducts((full?.items || []).map((i) => i.productId));
-    const { rebuild, reasons } = judgeExistingOrder(spec, obj, full, productsById, { ownerId: owner.id });
+    const { rebuild, reasons } = judgeExistingOrder(spec, obj, full, productsById, { ownerId: owner.id, organizationId: owner.organizationId });
     if (!rebuild) {
       log(`  order ${number} exists and is a valid instance of the fixture → ${existing.id} (kept)`);
       await removeSuperseded(number, dupes);
@@ -134,7 +181,10 @@ async function ensureOrder(spec, owner, maxItems) {
       if (!fitsLineQuantity(byId.get(it.productId), Number(it.quantity))) log(`  WARN: order ${number} line ${it.sku} qty ${it.quantity} — no discovered product admits it (min/max/stock); reorder cases on it will fail`);
     }
   }
-  const body = finalizeOrderBody(spec, withItems, { customerId: owner.id, customerName: owner.name || obj.customerName });
+  const body = finalizeOrderBody(spec, withItems, {
+    customerId: owner.id, customerName: owner.name || obj.customerName,
+    organizationId: owner.organizationId, organizationName: owner.organizationName,
+  });
 
   if (DRY_RUN) {
     log(`  [DRY] order ${number} would be ${existing ? 'created, then the old one deleted' : 'created'}`);
@@ -189,11 +239,11 @@ async function main() {
   if (TEARDOWN) { await teardown(); return; }
 
   const specs = ORDER_FIXTURES.filter((s) => !ONLY || s.key === ONLY || s.alias === ONLY);
-  const owner = await resolveOwner(process.env.USER_EMAIL);
+  const owner = await resolveOwner(process.env.USER_EMAIL, process.env.USER_PASSWORD);
   if (!owner.id && !DRY_RUN) {
     log(`WARN: could not resolve owner from USER_EMAIL="${process.env.USER_EMAIL || ''}" — orders will be created without an owner (won't show in "my orders"). Ensure the account exists, then re-run.`);
   } else if (owner.id) {
-    verbose(`orders owned by ${owner.name} (${owner.id})`);
+    log(`  orders owned by ${owner.name} (${owner.id}), organization ${owner.organizationName || '(none)'} (${owner.organizationId || '-'})`);
   }
 
   // Line items are discovered lazily, only for an order that is actually created or rebuilt; each

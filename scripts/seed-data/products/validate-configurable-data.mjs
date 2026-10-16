@@ -14,6 +14,14 @@
  *   2. No CFG CSV row carries a runtime GUID (product_id_guid, configuration_id, section/option
  *      ids must be blank — they belong in aliases.<env>.json).
  *   3. CFG CSV rows with no matching spec are reported (legacy/stale — not seeder-managed).
+ *   4. Stand-in specs (`aliasOverlay`): the alias exists in aliases.json; each `aliasPrices` field
+ *      the cases assert on equals the spec arithmetic; and the non-vacuity contract holds — every
+ *      Product option priced > 0 and distinct within its section (cases pick options.0, whose order
+ *      is not controllable), sale < list where a sale is set, variations priced > 0 and distinct.
+ *
+ * W1. aliasWriteback declarations name an existing alias field and a source the spec resolves.
+ * W2. A Variation-section fixture is discriminating (>= 3 variations, distinct effective prices, one
+ *     on sale and one not, distinct variation-property tuples, NO options declared) — 072 CFG-VAR-*.
  *
  * Usage:  node scripts/seed-data/validate-configurable-data.mjs   (exit 1 on any hard problem)
  */
@@ -23,7 +31,7 @@ import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'csv-parse/sync';
-import { SPECS } from './configurable-specs.mjs';
+import { SPECS, specPrice } from './configurable-specs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const CSV = join(ROOT, 'test-data', 'products', 'configurable-products.csv');
@@ -71,6 +79,76 @@ const specIds = new Set(SPECS.map((s) => s.csvId));
 const orphans = cfgRows.filter((r) => !specIds.has(r.product_id)).map((r) => r.product_id);
 if (orphans.length) warn(`${orphans.length} CFG CSV row(s) have no spec in configurable-specs.mjs — legacy/stale, NOT regenerated or drift-checked: ${orphans.join(', ')}`);
 else ok('every CFG CSV row maps to a spec');
+
+// 4. Stand-in alias contract + non-vacuity.
+console.log('\n[4] Stand-in specs agree with their alias contract and stay discriminating');
+const ALIASES = JSON.parse(readFileSync(join(ROOT, 'test-data', 'aliases.json'), 'utf8'));
+const standins = SPECS.filter((s) => s.aliasOverlay);
+let siOk = 0;
+for (const s of standins) {
+  const errs = [];
+  const a = ALIASES[s.aliasOverlay.alias];
+  if (!a) errs.push(`alias ${s.aliasOverlay.alias} missing from aliases.json`);
+  for (const [field, expr] of Object.entries(s.aliasPrices || {})) {
+    const want = specPrice(s, expr);
+    if (a && Number(a[field]) !== want) errs.push(`${s.aliasOverlay.alias}.${field}=${a[field]} != spec ${expr}=${want}`);
+  }
+  for (const sec of s.sections.filter((x) => x.type === 'Product')) {
+    const prices = sec.options.map((o) => Number(o.price));
+    if (prices.some((p) => !(p > 0))) errs.push(`section "${sec.name}": an option is unpriced/$0 — options.0 picks would be undecidable`);
+    if (new Set(prices).size !== prices.length) errs.push(`section "${sec.name}": option prices not distinct`);
+  }
+  if (s.salePrice != null && !(Number(s.salePrice) < Number(s.basePrice))) errs.push(`sale ${s.salePrice} not below list ${s.basePrice}`);
+  const vp = (s.variations || []).map((v) => Number(v.price));
+  if (vp.some((p) => !(p > 0)) || new Set(vp).size !== vp.length) errs.push(`variation prices must be > 0 and distinct (${vp.join(',')})`);
+  if (s.sections.some((x) => x.type === 'Variation') && vp.length < 2) errs.push('a Variation section needs >= 2 real variations');
+  if (errs.length) fail(`stand-in ${s.csvId}: ${errs.join('; ')}`); else siOk++;
+}
+if (siOk === standins.length) ok(`all ${standins.length} stand-in spec(s) match their alias contract and are discriminating`);
+
+// W3. Section/option write-back declarations resolve, and Variation-section options stay discriminating.
+console.log('\n[W1] aliasWriteback: every declared alias + field exists and every source resolves against its spec');
+const WB_ALIASES = JSON.parse(readFileSync(join(ROOT, 'test-data', 'aliases.json'), 'utf8'));
+let wbOk = 0, wbN = 0;
+for (const s of SPECS) {
+  for (const decl of (s.aliasWriteback || [])) {
+    wbN++;
+    const errs = [];
+    const a = WB_ALIASES[decl.alias];
+    if (!a) errs.push(`alias ${decl.alias} missing from aliases.json`);
+    for (const [field, src] of Object.entries(decl.fields || {})) {
+      if (a && a.fields && !(field in a.fields)) errs.push(`${decl.alias}.fields has no "${field}" — the overlay value would never resolve`);
+      if (src.startsWith('section:') && !s.sections.some((x) => x.key === src.slice(8))) errs.push(`${field}: no section key "${src.slice(8)}"`);
+      if (src.startsWith('option:')) {
+        const [, key, ...rest] = src.split(':');
+        const sec = s.sections.find((x) => x.key === key);
+        if (!sec?.options?.some((o) => o.name === rest.join(':'))) errs.push(`${field}: section "${key}" has no option "${rest.join(':')}"`);
+      }
+      if (!['product', 'configuration'].includes(src) && !/^(section|option|variation):/.test(src)) errs.push(`${field}: unknown source "${src}"`);
+    }
+    if (errs.length) fail(`${s.csvId} → ${decl.alias}: ${errs.join('; ')}`); else wbOk++;
+  }
+}
+if (wbOk === wbN) ok(`${wbN} write-back declaration(s) resolve`);
+
+console.log('\n[W2] Variation-section fixtures with variation properties are discriminating (072 CFG-VAR-*)');
+let voOk = 0, voN = 0;
+for (const s of SPECS.filter((x) => x.variationProperties?.length && x.sections.some((y) => y.type === 'Variation'))) {
+  voN++;
+  const errs = [];
+  const vars = s.variations || [];
+  if (vars.length < 3) errs.push('needs >= 3 variations (one on sale, >= 2 not, all distinguishable)');
+  if (s.sections.some((x) => x.type === 'Variation' && (x.options || []).length)) errs.push('a Variation section declares options — the API drops them (kb KB-76D8F765); the spec would claim a state that never persists');
+  const eff = vars.map((v) => Number(v.salePrice ?? v.price));
+  if (eff.some((p) => !(p > 0)) || new Set(eff).size !== eff.length) errs.push(`effective prices must be > 0 and distinct (${eff.join(',')})`);
+  const onSale = vars.filter((v) => v.salePrice != null && Number(v.salePrice) < Number(v.price)).length;
+  if (onSale < 1 || onSale === vars.length) errs.push('need at least one variation on sale AND one not (strikethrough decidable both ways)');
+  const names = s.variationProperties.map((p) => p.name);
+  const tuples = vars.map((v) => names.map((n) => v.props?.[n] ?? '').join('|'));
+  if (tuples.some((t) => t.split('|').some((x) => !x)) || new Set(tuples).size !== tuples.length) errs.push('every variation needs a value for each property, and distinct tuples');
+  if (errs.length) fail(`${s.csvId}: ${errs.join('; ')}`); else voOk++;
+}
+if (voOk === voN) ok(`${voN} Variation-section fixture(s) are discriminating`);
 
 console.log('\n=== configurable-products drift check ===');
 console.log(`  specs: ${SPECS.length} | CSV CFG rows: ${cfgRows.length} | hard problems: ${problems.length} | warnings: ${notes.length}`);

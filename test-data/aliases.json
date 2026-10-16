@@ -1353,6 +1353,21 @@
     },
     "_notes": "Repointed 2026-05-27 from CFG-009 (live 'Bike with options' f16d3e8f…, which drifted to [P?P!F?P!] after the 2026-05-15 restore and lost the test option set) to the freshly seeded flat bike CFG-032 (78daa2db…). One OPTIONAL Product section 'Select one' with 4 options: Seat $15 / Rear wheel ×2 ext $176 / Engine $225 / Pedals $14 (+ implicit None) — matches 072 CFG-PDP-001/002 prices exactly. Seeded via scripts/seed-data/seed-bike-flat-cfg.mjs. Navigate via @td(CFG_BIKE.url) (full SEO path /seed-20260527-def-parents/…); the old /products-with-options/configurations/ prefix does NOT resolve this product. Product code = AGENT-TEST-CFG-032-20260527 (the original SKU CVQ-54616437 no longer applies)."
   },
+  "CFG_VARIATION_OPTIONS": {
+    "file": "products/configurable-products",
+    "filter": {
+      "product_id": "CFG-035"
+    },
+    "fields": {
+      "name": "product_name",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "price": "base_price",
+      "id": "product_id_guid",
+      "configuration_id": "configuration_id"
+    },
+    "_notes": "Configurable product with a VARIATION section over its own 3 variations (Red / M list 60 sale 45; Blue / L 80; Green / S 35; base 200), each with variation-level Color + Size. The section stores NO options: the catalog API drops options sent on a Variation section (kb KB-76D8F765), so a per-option quantity > 1 (CFG-VAR-005) is not seedable. For 072 CFG-VAR-001..004 (which pointed at CFG_BIKE — a Product-section bike with no variations, so every VAR case was vacuous). Seeded by seed-configurable.mjs spec CFG-035 (configurable-specs.mjs is the single source of truth); id + configuration_id land in aliases.<env>.json via syncEnvAliases. Navigate via @td(CFG_VARIATION_OPTIONS.url) or /search?q=@td(CFG_VARIATION_OPTIONS.name)."
+  },
   "CFG_CONDITIONAL": {
     "file": "products/configurable-products",
     "filter": {
