@@ -413,7 +413,7 @@ Storefront login page accessible; a DEDICATED lockout-test user exists (never us
 [CONSOLE] No TypeError or JS errors","No error shown after failed attempts; 6th attempt with correct password succeeds and user logs in (VCST-5074 regression — lockout not enforced); account existence revealed in lockout message; console TypeError; 500 on any attempt","[SETUP] Create AGENT-TEST-lockout-sf@test.virtocommerce.com via admin if not exists
 [TEARDOWN] Unlock account via POST {{BACK_URL}}/api/platform/security/users/<id>/unlock with admin Bearer token; delete AGENT-TEST- user","VCST-5074, VCST-5149","Draft"
 "AUTH-028","Login on Behalf — Org Maintainer Clicks 'Login on behalf' at /company/members — Confirmation Modal Then Impersonate Flow","Login > Impersonation > Org Maintainer Entry Point","High","BL-AUTH-005, BL-AUTH-006","ECL-14.1","[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:ORG_MAINTAINER]
+[PRE:SIGNIN_AS:SUPPORT_AGENT]
 Org Maintainer (operator) is logged in. Their assigned role includes StorefrontPermissions.CanImpersonate (platform:security:loginOnBehalf — configured in Admin SPA > Security > Roles). A target org member (IMPERSONATE_TARGET) has a security account and is active in the member list. PR #2280 inserts a confirmation modal between clicking 'Login on behalf' and navigating to /account/impersonate/{userId}. State: authenticated as Org Maintainer → confirmation modal → Continue → silent impersonation.","front_url={{FRONT_URL}}, operator_email=@td(SUPPORT_AGENT.email), operator_password=@td(SUPPORT_AGENT.password), target_user_id=@td(IMPERSONATE_TARGET.userId), target_name=@td(IMPERSONATE_TARGET.name)","[NAV] {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
 [WAIT] Email field populated
