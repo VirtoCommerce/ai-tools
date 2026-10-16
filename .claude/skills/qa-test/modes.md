@@ -269,6 +269,8 @@ that claim is unfalsifiable and a "still failing" round may be a deploy that nev
 
 #### The round-delta comment (rounds 1…N−1)
 
+> Hand-typed on purpose: `qa-report` has no `delta` kind, and adding one is a feature, not a fix (decision recorded in `plugins/vc-fix/skills/qa-report/reference.md` §Out of scope).
+
 ```
 QA re-test — round N of M. Prerelease: <fix PR> deployed to {ENV} (<module> <version>, probed).
 Round entry: [N] sub-tasks + [N] linked bugs read; verified [keys|None] → TESTED [keys|None] (merged+deployed); carried [keys|None].

@@ -34,6 +34,7 @@
 | D3 | **The char budget lives only in each template's front-matter** (`budget: 1500`). When over budget, the renderer collapses lists, never prose. If it is still over, exit 3. | Spec 1 asks for a budget. Keeping it in the template means no second place states the number (GOLDEN RULE). | Truncating the text at N chars. That cuts a verdict mid-line, and it fails silently. |
 | D4 | **One Markdown source, three wire dialects:** `markdown` (Jira v3, the default), `wiki` (Jira v2, required to embed before/after **screenshots** inline, `tracker-ops.md` §5c) and `html` (Azure Boards, `azure-html-format.md`). | Each tracker accepts a different dialect, and a fourth copy of each template would undo spec 2. | One template per dialect (12 files). |
 | D5 | **The HTML page is one shell (`templates/page.html`) for all four kinds.** It is published with the Artifact tool after loading `artifact-design` (spec 4). It is gated by `profile.projectType`: a client project keeps the page local. | Gives one look everywhere. The shell already passes the artifact-design contract: tokens on `:root`, dark mode under both selectors, IBM Plex. | A page template per pipeline. Rejected: that is the drift spec 2 removes. |
+| D7 | **Every comment OPENS with prose — a required `{{LEDE}}` of one to three sentences, capped by the template's own `lede_max`.** The renderer refuses (exit 2) when it is missing or over the cap. `fitBudget` may collapse lists; it may never touch the lede. | A comment made only of `**Label** value` strips is a form, not a report: it says what the numbers were and never what happened, which is the failure the old `QA Complete — [X] cases, [Y] passed` block was replaced to fix. The sentences cannot be derived from the machine record — a human or the calling skill read the run, and this is the one slot where that reading survives. Capping it in the template keeps D3's rule that no second place states a number. | Deriving the sentence from the counts (`"21 of 23 cases passed"`). Rejected: that is the label strip again, with worse grammar. Also rejected: making the lede optional — an optional prose slot is an empty one by the second week. |
 | D6 | **"Attach to ticket" = the page link inside the ONE comment.** On a native project that link is the Artifact. On a client project the page goes on the same post as `tracker:comment --attach-file`, so it stays in the client's own tracker, plus inline screenshots. | `tracker-ops.md` §5d says a pointer is legitimate when the target is reachable, and an attachment on the same ticket is reachable. | Attaching `page.html` on a native project (a Jira HTML attachment downloads but does not render; the Artifact renders). |
 
 ## Global Constraints
@@ -49,6 +50,7 @@
   - The skill calls the renderer as `node "$pluginRoot/skills/qa-report/render.mjs"` (`plugins/vc-fix/knowledge/execution/plugin-root.md`).
   - In this repo, `npm run report:render --` is the same file.
 - **Never transcribe a budget, a count or a verdict list** into prose. Budgets live in template front-matter, verdict vocabularies in `lib/model.mjs` `VERDICTS`. Docs point at those, never restate them.
+- **The lede is written, not derived** (D7). Every kind requires one to three sentences saying what happened, supplied by the calling skill (`--lede`, or `lede` in `--extra`). The renderer validates presence and `lede_max`; it never composes, shortens or trims one. What the sentences must do, per kind, is §The lede.
 - **Case notes never reach the comment or the page.** Regression `notes` carry account emails and fixture details. The model keeps only `id`, `title` and `status`.
 - **The renderer posts nothing.** Posting goes through the existing paths:
   - `npm run tracker:comment` (this repo);
@@ -81,7 +83,10 @@
 4. **Verdict spelling drift.** Covers `conditional go`, `Conditional-Go`, `PASS WITH NOTES`, an unknown word, and regression/smoke without `--verdict`.
    - Expected: normalised to `CONDITIONAL_GO` / `PASS_WITH_NOTES`. Unknown words, or a missing run verdict, give exit 2 listing the allowed values.
    - Test: Task 2 (vocabulary), Task 4 (CLI).
-5. **Dialect leaks.** The Markdown output must pass `wikiMarkupRefusal` (otherwise `tracker:comment` refuses the post), and the `wiki` output must keep `!shot.png|width=700!` lines intact.
+5. **A missing or over-long lede.** Covers no `--lede` and no `--extra.lede`; a lede of only whitespace; one over `lede_max`; and `--lede` given alongside `--extra.lede`.
+   - Expected: exit 2 naming the flag in the first three cases, never a rendered comment with an empty opening; `--lede` wins over `--extra.lede`; and a lede is never shortened or trimmed by `fitBudget`.
+   - Tests: Task 2 (`requireLede`), Task 4 (CLI precedence).
+6. **Dialect leaks.** The Markdown output must pass `wikiMarkupRefusal` (otherwise `tracker:comment` refuses the post), and the `wiki` output must keep `!shot.png|width=700!` lines intact.
    - Expected: all four kinds render Markdown that `wikiMarkupRefusal` accepts, and the wiki fix comment contains one `!name|width=700!` line per screenshot.
    - Test: Task 4.
 
@@ -109,6 +114,66 @@ The skill always produces the comment and the page **together, from the same mod
 
 ---
 
+## The lede — the one part a machine cannot write (D7)
+
+Each comment opens with `{{LEDE}}`: **one to three sentences, in the voice of someone who read the run**,
+within the template's `lede_max`. Everything below it is derived from the machine record; this is not. The
+renderer refuses a missing or over-long lede (exit 2) and never composes, shortens or trims one — `fitBudget`
+collapses lists only, so the prose is structurally protected.
+
+**What the sentences have to do**, per kind — none of which the counts can answer:
+
+| Kind | The lede says |
+|---|---|
+| `test` | What the ticket now does on the surface a user touches, and what the verdict turns on. Not a restatement of the counts. |
+| `fix` | What was broken, what fixing it changed, and whether anything near it moved. |
+| `regression` | Whether the sweep is clean, and if not, whether the failures share a cause or are unrelated. |
+| `smoke` | Whether the build is safe to go on with, and what the one blocker is when it is not. |
+
+**It fails review when it is any of these:** the counts in words (*"21 of 23 cases passed"* — the strip
+below already says that); ticket-speak (*"implemented per AC"*); a code-site description instead of a
+surface one; or a sentence that would read identically on a different ticket.
+
+### What the output actually looks like
+
+`test`, rendered — the strip and the lists stay terse because they are reference data; the opening is not:
+
+```markdown
+## ✅ QA PASSED WITH NOTES — VCST-5869
+
+Keyboard and screen-reader access to the order filters now works: the FILTERS trigger announces itself
+as a dialog, Escape closes it and returns focus, and the filter-and-apply task can be completed without
+a mouse. Two gaps remain — the select list reports no selected option, and the mobile drawer on
+/account/orders was never in the PR's scope.
+
+**Build** theme 2.58.0-pr-2486 · **Env** vcst-qa · 2026-09-21 · REG-2026-09-21-1500
+
+**Cases** 21/23 passed · 2 failed · 0 blocked · **AC coverage** 100% · **DoD** 4/4
+…
+```
+
+`smoke`, rendered — the shortest budget still buys a sentence:
+
+```markdown
+## ⛔ Smoke NO_GO — SMOKE-2026-10-05-0900
+
+The build is not safe to go on with: checkout fails at the payment step for every storefront account,
+so nothing downstream of the cart was reached.
+
+**Env** vcst-qa · 2026-10-05 · **Gates** SMOKE 12/14 · ADMIN 8/8
+…
+```
+
+Compare with what the same run produced before this skill — a comment that reports the numbers and never
+says whether anyone can buy anything:
+
+```
+QA Complete — 23 cases, 21 passed, 2 failed.
+AC review: 4 story ACs (ok), 0 gap-ACs; AC↔impl: satisfied. AC coverage: 100%.
+```
+
+---
+
 ## File Structure
 
 ```
@@ -118,7 +183,7 @@ plugins/vc-fix/skills/qa-report/
   render.mjs                  NEW  CLI: parseArgs, load, render, main (exit 0 / 2 / 3)
   lib/template.mjs            NEW  parseTemplate, fill, fitBudget, toWiki, toHtml, BudgetError
   lib/model.mjs               NEW  VERDICTS, SourceError, readJson, buildLine, fromQaTest, fromVerifyFix,
-                                   readRunSuites, fromRun, applyExtras, templateData
+                                   readRunSuites, fromRun, applyExtras, requireLede, templateData
   lib/page.mjs                NEW  esc, renderPage
   templates/comment-test.md        NEW  (a) results after testing
   templates/comment-fix.md         NEW  (b) bug fix — before / after
@@ -152,9 +217,9 @@ docs/qa-test-flow.md:297                                   MODIFY wording
 
 **Interfaces:**
 - Produces:
-  - `parseTemplate(text: string) → { meta: { kind: string, budget: number, trim?: string[], dialect?: string }, body: string }`.
+  - `parseTemplate(text: string) → { meta: { kind: string, budget: number, lede_max: number, trim?: string[], dialect?: string }, body: string }`. `lede_max` is validated exactly like `budget` — a positive integer, or it throws (D7).
   - `fill(body: string, data: object) → string`. Supports `{{KEY}}`, `{{#L}}…{{/L}}` (each item: `{{field}}`, or `{{.}}` for a string item), `{{^L}}…{{/L}}` (when empty) and `{{?L}}…{{/L}}` (once, when non-empty). It throws on a slot that has no key.
-  - `fitBudget(tpl, data, transform?: (s) => string) → { text, chars, budget, dropped: Record<string, number> }`. It throws `BudgetError`.
+  - `fitBudget(tpl, data, transform?: (s) => string) → { text, chars, budget, dropped: Record<string, number> }`. It throws `BudgetError`. It only ever shortens lists named in `trim`, so `LEDE` — a scalar — is structurally untouchable; a run that cannot fit WITH its lede is exit 3, and the fix is the template or a shorter lede, never a silent cut (D7).
   - `toWiki(md: string) → string`.
   - `toHtml(md: string) → string`.
   - `class BudgetError extends Error { length; budget }`.
@@ -167,13 +232,15 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { parseTemplate, fill, fitBudget, toWiki, toHtml, BudgetError } from "../../plugins/vc-fix/skills/qa-report/lib/template.mjs";
 
-const T = (body, meta = "kind: t\nbudget: 400\ntrim: [L]") => parseTemplate(`---\n${meta}\n---\n${body}`);
+const T = (body, meta = "kind: t\nbudget: 400\nlede_max: 120\ntrim: [L]") => parseTemplate(`---\n${meta}\n---\n${body}`);
 
-test("front-matter: budget is a number, trim is a list, missing budget throws", () => {
+test("front-matter: budget and lede_max are numbers, trim is a list, either missing throws", () => {
   const t = T("x");
   assert.equal(t.meta.budget, 400);
+  assert.equal(t.meta.lede_max, 120);
   assert.deepEqual(t.meta.trim, ["L"]);
   assert.throws(() => parseTemplate("---\nkind: t\n---\nx"), /budget/);
+  assert.throws(() => parseTemplate("---\nkind: t\nbudget: 400\n---\nx"), /lede_max/);
   assert.throws(() => parseTemplate("no front matter"), /front-matter/);
 });
 
@@ -196,7 +263,7 @@ test("cell sanitising: pipes, newlines, slot injection and $-patterns", () => {
 });
 
 test("fitBudget: trims the longest list, never below one item, never shows None for a trimmed list", () => {
-  const t = T("{{#L}}\n- {{.}}\n{{/L}}\n{{#L_MORE}}\n- {{.}}\n{{/L_MORE}}\n{{^L}}\nNone\n{{/L}}\n", "kind: t\nbudget: 60\ntrim: [L]");
+  const t = T("{{#L}}\n- {{.}}\n{{/L}}\n{{#L_MORE}}\n- {{.}}\n{{/L_MORE}}\n{{^L}}\nNone\n{{/L}}\n", "kind: t\nbudget: 60\nlede_max: 40\ntrim: [L]");
   const r = fitBudget(t, { L: ["x".repeat(20), "y".repeat(20), "z".repeat(20), "w".repeat(20)] });
   assert.ok(r.chars <= 60, `${r.chars}`);
   assert.equal(r.dropped.L, 3);
@@ -205,7 +272,7 @@ test("fitBudget: trims the longest list, never below one item, never shows None 
 });
 
 test("fitBudget: still over with one item left → BudgetError, no mid-line cut", () => {
-  const t = T("{{X}}\n", "kind: t\nbudget: 10");
+  const t = T("{{X}}\n", "kind: t\nbudget: 10\nlede_max: 40");
   assert.throws(() => fitBudget(t, { X: "x".repeat(50) }), BudgetError);
 });
 
@@ -257,6 +324,8 @@ export function parseTemplate(text) {
       : /^\d+$/.test(v) ? Number(v) : v;
   }
   if (!Number.isInteger(meta.budget) || meta.budget <= 0) throw new Error("template front-matter needs a positive integer `budget`");
+  // D7: the lede is the one slot the renderer will not trim, so its own cap is declared here too.
+  if (!Number.isInteger(meta.lede_max) || meta.lede_max <= 0) throw new Error("template front-matter needs a positive integer `lede_max`");
   return { meta, body: m[2].replace(/\r\n/g, "\n") };
 }
 
@@ -419,7 +488,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, writeFileSync, utimesSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { fromQaTest, fromVerifyFix, fromRun, applyExtras, templateData, buildLine, SourceError } from "../../plugins/vc-fix/skills/qa-report/lib/model.mjs";
+import { fromQaTest, fromVerifyFix, fromRun, applyExtras, requireLede, templateData, buildLine, SourceError } from "../../plugins/vc-fix/skills/qa-report/lib/model.mjs";
 
 const dir = () => mkdtempSync(join(tmpdir(), "qa-report-"));
 const put = (d, f, o) => { const p = join(d, f); writeFileSync(p, JSON.stringify(o)); return p; };
@@ -496,6 +565,16 @@ test("applyExtras: closed keys, --set only on known lines", () => {
   assert.equal(x.rows.length, 1);
   assert.throws(() => applyExtras(m, { surprise: 1 }, {}), /surprise/);
   assert.throws(() => applyExtras(m, {}, { NOPE: "x" }), /NOPE/);
+});
+
+test("requireLede: absent, blank and over-long all refuse; a good one is normalised (D7)", () => {
+  const m = fromQaTest(put(dir(), "s.json", { ticket: "VCST-1", verdict: "PASS" }));
+  assert.throws(() => requireLede(m, 120), /needs a lede/);
+  assert.throws(() => requireLede({ ...m, lede: "   \n  " }, 120), /needs a lede/);
+  assert.throws(() => requireLede({ ...m, lede: "x".repeat(121) }, 120), /lede_max of 120/);
+  // Collapses the whitespace a multi-line --lede arrives with, and leaves the sentences alone.
+  assert.equal(requireLede({ ...m, lede: " Filters now open.\n  Focus returns. " }, 120).lede,
+    "Filters now open. Focus returns.");
 });
 
 test("templateData: SHOTS only in wiki dialect; buildLine tolerates strings and gaps", () => {
@@ -708,6 +787,21 @@ export function applyExtras(m, extra = {}, sets = {}) {
     out.lines[k] = v;
   }
   return out;
+}
+
+// D7. The lede is the only slot no machine record can supply, so it is the only one validated here
+// rather than defaulted. Called after applyExtras, because --lede and --extra.lede are both legal doors.
+export function requireLede(m, ledeMax) {
+  const s = String(m.lede ?? "").trim().replace(/\s+/g, " ");
+  if (!s) {
+    throw new SourceError(
+      `a ${m.kind} comment needs a lede: one to three sentences saying what happened, not the counts in words. ` +
+      `Pass --lede "<text>" or set "lede" in --extra.`);
+  }
+  if (s.length > ledeMax) {
+    throw new SourceError(`--lede is ${s.length} chars, over this template's lede_max of ${ledeMax}. Shorten the sentences; the renderer will not cut them.`);
+  }
+  return { ...m, lede: s };
 }
 
 export function templateData(m, dialect = "markdown") {
@@ -938,7 +1032,8 @@ git commit -m "feat(vc-fix): qa-report page shell + renderer (escaped, ref|embed
 **Interfaces:**
 - Consumes: Task 1 `parseTemplate`/`fitBudget`/`toWiki`/`toHtml`/`BudgetError`, Task 2 `fromQaTest`/`fromVerifyFix`/`fromRun`/`applyExtras`/`templateData`/`readJson`/`SourceError`, Task 3 `renderPage`.
 - Produces:
-  - CLI: `node render.mjs --kind <test|fix|regression|smoke> --source <path> --out <dir> [--verdict V] [--ticket KEY] [--bugs K1,K2] [--title T] [--extra file.json] [--set KEY=VALUE]... [--page-url URL] [--dialect markdown|wiki|html] [--images ref|embed] [--json]`.
+  - CLI: `node render.mjs --kind <test|fix|regression|smoke> --source <path> --out <dir> --lede "<one to three sentences>" [--verdict V] [--ticket KEY] [--bugs K1,K2] [--title T] [--extra file.json] [--set KEY=VALUE]... [--page-url URL] [--dialect markdown|wiki|html] [--images ref|embed] [--json]`.
+  - **`--lede` is required** (D7); `lede` inside `--extra` satisfies it equally, and `--lede` wins when both are given. Missing or over `lede_max` ⇒ exit 2 naming the flag. `render()` calls `requireLede(model, tpl.meta.lede_max)` after `applyExtras` and before `fitBudget`.
   - It writes `<out>/comment.{md|wiki|html}` and `<out>/page.html`.
   - `--json` prints `{ kind, verdict, ticket, artifact, comment, chars, budget, dropped, page, shots }`.
   - Exit codes: 0 ok · 2 bad input or source · 3 over budget.
@@ -951,9 +1046,12 @@ git commit -m "feat(vc-fix): qa-report page shell + renderer (escaped, ref|embed
 ---
 kind: test
 budget: 1500
+lede_max: 320
 trim: [BUGS, NOT_FILED]
 ---
 ## {{ICON}} QA {{VERDICT_LABEL}} — {{TICKET}}
+{{LEDE}}
+
 **Build** {{BUILD}} · **Env** {{ENV}} · {{DATE}} · {{RUN_ID}}
 
 **Cases** {{PASSED}}/{{TOTAL}} passed · {{FAILED}} failed · {{BLOCKED}} blocked · **AC coverage** {{AC_COVERAGE}} · **DoD** {{DOD}}
@@ -993,9 +1091,12 @@ trim: [BUGS, NOT_FILED]
 ---
 kind: fix
 budget: 1200
+lede_max: 280
 trim: [BEFORE_AFTER, ISSUES, BUGS]
 ---
 ## {{ICON}} Fix {{VERDICT_LABEL}} — {{TICKET}}
+{{LEDE}}
+
 **Build** {{BUILD}} · **Env** {{ENV}} · {{DATE}}
 **STR** {{STR}} · **Checklist** {{PASSED}}/{{TOTAL}} passed · **Baseline** {{BASELINE}}
 
@@ -1039,9 +1140,12 @@ No before/after pair recorded.
 ---
 kind: regression
 budget: 1500
+lede_max: 280
 trim: [FAILURES, BUGS]
 ---
 ## {{ICON}} Regression {{VERDICT_LABEL}} — {{RUN_ID}}
+{{LEDE}}
+
 **Env** {{ENV}} · {{DATE}} · **Suites** {{SUITES}}
 **Cases** {{PASSED}}/{{TOTAL}} passed · {{FAILED}} failed · {{BLOCKED}} blocked · {{NOT_RUN}} not run · **Pass rate** {{PASS_RATE}}
 
@@ -1067,9 +1171,12 @@ trim: [FAILURES, BUGS]
 ---
 kind: smoke
 budget: 900
+lede_max: 200
 trim: [FAILURES, BUGS]
 ---
 ## {{ICON}} Smoke {{VERDICT_LABEL}} — {{RUN_ID}}
+{{LEDE}}
+
 **Env** {{ENV}} · {{DATE}} · **Gates** {{GATES}}
 **Cases** {{PASSED}}/{{TOTAL}} passed · {{FAILED}} failed · {{BLOCKED}} blocked
 
@@ -1111,7 +1218,11 @@ const run = mkdtempSync(join(tmpdir(), "REG-2026-10-05-1200-"));
 writeFileSync(join(run, "suite-042-results.json"), JSON.stringify({ suiteId: "042", suiteName: "Smoke", completedAt: "x", environment: "https://qa",
   startedAt: "2026-10-05T10:00:00Z", testCases: [{ id: "A", status: "PASS" }, { id: "B", status: "FAIL", title: "t" }] }));
 const out = mkdtempSync(join(tmpdir(), "qa-out-"));
-const args = extra => parseArgs([...extra, "--out", out]);
+// D7: every kind requires a lede, so the helpers supply one unless the case is about its absence.
+const LEDE = "Filters now open from the keyboard and focus returns on close; two gaps remain.";
+const withLede = a => (a.includes("--lede") ? a : [...a, "--lede", LEDE]);
+const extraWithLede = put("extra.json", { lede: "Extra loses." });
+const args = extra => parseArgs([...withLede(extra), "--out", out]);
 
 test("every kind renders Markdown the tracker helper accepts, within budget", () => {
   for (const a of [["--kind", "test", "--source", test1], ["--kind", "fix", "--source", fix1],
@@ -1141,9 +1252,17 @@ test("--set, --page-url and --bugs reach the comment", () => {
 });
 
 test("CLI exit codes: 2 for a run without --verdict, 2 for an unknown flag, 0 + json otherwise", () => {
-  const cli = a => spawnSync(process.execPath, ["plugins/vc-fix/skills/qa-report/render.mjs", ...a, "--out", out], { encoding: "utf8" });
+  const cli = a => spawnSync(process.execPath, ["plugins/vc-fix/skills/qa-report/render.mjs", ...withLede(a), "--out", out], { encoding: "utf8" });
+  const bare = a => spawnSync(process.execPath, ["plugins/vc-fix/skills/qa-report/render.mjs", ...a, "--out", out], { encoding: "utf8" });
   assert.equal(cli(["--kind", "regression", "--source", run]).status, 2);
   assert.equal(cli(["--kind", "test", "--source", test1, "--bogus"]).status, 2);
+  // D7: no lede at all is exit 2, and the message names the flag rather than failing as a budget error.
+  const noLede = bare(["--kind", "test", "--source", test1]);
+  assert.equal(noLede.status, 2);
+  assert.match(noLede.stderr, /--lede/);
+  // --lede beats --extra.lede.
+  const both = render(parseArgs(["--kind", "test", "--source", test1, "--lede", "Flag wins.", "--extra", extraWithLede, "--out", out]));
+  assert.equal(both.model.lede, "Flag wins.");
   const ok = cli(["--kind", "test", "--source", test1, "--json"]);
   assert.equal(ok.status, 0, ok.stderr);
   const j = JSON.parse(ok.stdout);
@@ -1176,7 +1295,7 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseTemplate, fitBudget, toWiki, toHtml, BudgetError } from "./lib/template.mjs";
-import { fromQaTest, fromVerifyFix, fromRun, applyExtras, templateData, readJson, SourceError } from "./lib/model.mjs";
+import { fromQaTest, fromVerifyFix, fromRun, applyExtras, requireLede, templateData, readJson, SourceError } from "./lib/model.mjs";
 import { renderPage } from "./lib/page.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -1194,6 +1313,7 @@ export function parseArgs(argv) {
     else if (k === "--ticket") a.ticket = v();
     else if (k === "--bugs") a.bugs = v().split(",").map(s => s.trim()).filter(Boolean);
     else if (k === "--title") a.title = v();
+    else if (k === "--lede") a.lede = v();          // D7 — required; beats --extra.lede
     else if (k === "--extra") a.extra = v();
     else if (k === "--set") {
       const [key, ...rest] = v().split("=");
@@ -1226,13 +1346,16 @@ function load(a) {
   if (a.kind === "regression" || a.kind === "smoke") m = { ...m, bugs: a.bugs.map(key => ({ key, severity: "", relation: "" })) };
   m = applyExtras(m, a.extra ? readJson(resolve(a.extra)) : {}, a.sets);
   if (a.title) m.title = a.title;
+  if (a.lede) m.lede = a.lede;                      // D7 — the flag wins over --extra.lede
   if (a.pageUrl) m.pageUrl = a.pageUrl;
   return m;
 }
 
 export function render(a) {
-  const model = load(a);
   const tpl = parseTemplate(readFileSync(join(HERE, "templates", `comment-${a.kind}.md`), "utf8"));
+  // D7: validated after load() (so --lede and --extra.lede have both been applied) and before
+  // fitBudget, so an over-long lede is named as such instead of surfacing as a budget failure.
+  const model = requireLede(load(a), tpl.meta.lede_max);
   const comment = fitBudget(tpl, templateData(model, a.dialect), DIALECTS[a.dialect][0]);
   const page = renderPage(readFileSync(join(HERE, "templates", "page.html"), "utf8"), model, { images: a.images });
   return { model, comment, page };
@@ -1272,7 +1395,7 @@ Expected: PASS, 4 tests. If a template trips `wikiMarkupRefusal`, fix the **temp
 
 - [ ] **Step 6: Smoke test against a real run folder**, if one exists locally (the folder is gitignored):
 
-Run: `npm run report:render -- --kind regression --source reports/regression/REG-2026-10-01-1243 --verdict NO_GO --out <scratchpad>/qa-report-smoke --json`
+Run: `npm run report:render -- --kind regression --source reports/regression/REG-2026-10-01-1243 --verdict NO_GO --lede "Checkout fails at the payment step for every storefront account, so nothing past the cart was reached." --out <scratchpad>/qa-report-smoke --json`
 Expected: exit 0, `chars ≤ budget`, and `dropped.FAILURES > 0` (that run had 15 non-passing cases). Then run `grep -cE "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[a-z]{2,}" <scratchpad>/qa-report-smoke/{page.html,comment.md}`: both must print `0`, because no case note (with its account email) is carried.
 
 - [ ] **Step 7: Delete the temporary test, then commit**
@@ -1291,10 +1414,11 @@ git commit -m "feat(vc-fix): qa-report comment templates (test, fix before/after
 - Create: `plugins/vc-fix/skills/qa-report/SKILL.md`, `plugins/vc-fix/skills/qa-report/reference.md`
 - Modify: `plugins/vc-fix/knowledge/diagnostics/skill-expectations.md` (§3, add an entry after `/qa-env-check`)
 - Modify: `plugins/vc-fix/README.md` (the count line, plus a Quick Start line), `plugins/vc-fix/.claude-plugin/plugin.json` (`version` 0.9.6 → 0.10.0, "16 skills" → "17 skills")
+- Modify (GENERATED, never by hand): `.claude/skills/README.md` — run `npm run docs:index` (Step 5)
 
 **Interfaces:**
 - Consumes: the Task 4 CLI and its `--json` output fields.
-- Produces: the call contract for Tasks 6–7, which is `qa-report <TICKET | RUN_ID | path> [--kind K] [--verdict V] [--ticket KEY] [--bugs …] [--extra file] [--set K=V]… [--confirmed]`.
+- Produces: the call contract for Tasks 6–7, which is `qa-report <TICKET | RUN_ID | path> [--kind K] --lede "<sentences>" [--verdict V] [--ticket KEY] [--bugs …] [--extra file] [--set K=V]… [--confirmed]`. A caller that already writes an `--extra` file may put the sentences there as `lede` instead of passing the flag; one of the two is mandatory (D7).
 
 - [ ] **Step 1: Write `SKILL.md`** (target ≤ 8,000 chars). Use this content verbatim:
 
@@ -1302,7 +1426,7 @@ git commit -m "feat(vc-fix): qa-report comment templates (test, fix before/after
 ---
 name: qa-report
 description: "[QA Method] Turn a FINISHED run into its ONE tracker comment (brief, within the template's char budget) and a human-readable HTML report page — after /qa-test, /qa-test-fast, /qa-verify-fix (before/after the fix), /qa-regression and /qa-smoke, or standalone on a ticket key or RUN_ID. The single home of every result-comment template. Renders from the run's machine record, never from memory; asks once, posts once, amends after. Not for bug reports (/qa-bug) or release notes (/ba-analyze docs release)."
-argument-hint: "<TICKET | RUN_ID | path> [--kind test|fix|regression|smoke] [--verdict GO|CONDITIONAL_GO|NO_GO] [--ticket KEY] [--bugs K1,K2] [--extra file.json] [--set KEY=VALUE] [--confirmed]"
+argument-hint: "<TICKET | RUN_ID | path> [--kind test|fix|regression|smoke] [--lede '<sentences>'] [--verdict GO|CONDITIONAL_GO|NO_GO] [--ticket KEY] [--bugs K1,K2] [--extra file.json] [--set KEY=VALUE] [--confirmed]"
 ---
 
 # /qa-report — the result comment and the report page
@@ -1336,9 +1460,17 @@ Nothing found ⇒ STOP: "no machine record for <arg> — run the pipeline first"
 
 ## 2. Render
 
+**Write the lede first — it is the one thing here that is yours.** One to three sentences saying what
+happened, in the voice of someone who read the run: what the ticket now does on the surface a user
+touches, or what fails and what that blocks. Everything else in the comment is derived from the machine
+record. Do **not** restate the counts in words, do not write ticket-speak, and do not describe a code
+site — the strip under the lede already carries the numbers. What each kind's lede must answer, and the
+four ways it fails review: [`reference.md`](reference.md) §The lede. Over `lede_max` ⇒ exit 2; shorten
+the sentences, never ask the renderer to.
+
 ```bash
 node "$pluginRoot/skills/qa-report/render.mjs" --kind <kind> --source <path> --out <scratchpad>/qa-report-<id> \
-  [--verdict …] [--ticket …] [--bugs …] [--extra …] [--set …] --dialect <d> --images embed --json
+  --lede "<one to three sentences>" [--verdict …] [--ticket …] [--bugs …] [--extra …] [--set …] --dialect <d> --images embed --json
 ```
 
 `--dialect`: Jira ⇒ `markdown`; Jira **and** the model has screenshots (fix kind with
@@ -1387,12 +1519,13 @@ node "$pluginRoot/hooks/session-telemetry.mjs" complete --skill "qa-report"
 ````
 
 - [ ] **Step 2: Write `reference.md`.** It has these sections, each short and with no transcribed numbers:
-  - `§Templates`: front-matter keys (`kind`, `budget`, `trim`); slot syntax (`{{KEY}}`, `{{#L}}`, `{{^L}}`, `{{?L}}`, `{{L_MORE}}`); "a budget is changed in the template, in a PR, never by hand in a run".
+  - `§The lede`: what each kind's opening sentences must answer, the four ways one fails review, and that the renderer validates but never writes one (D7).
+  - `§Templates`: front-matter keys (`kind`, `budget`, `lede_max`, `trim`); slot syntax (`{{KEY}}`, `{{#L}}`, `{{^L}}`, `{{?L}}`, `{{L_MORE}}`); "a budget is changed in the template, in a PR, never by hand in a run".
   - `§Sources`: one row per kind naming the fields read, the `before_after[]` contract (`check`, `before`, `after`, optional `before_shot`, `after_shot`), and why case `notes` are dropped.
   - `§Verdicts`: "the vocabulary is `lib/model.mjs` `VERDICTS`".
   - `§Dialects`: the Jira md / Jira wiki / Azure html table and why (§5a, §5c).
   - `§Publish gate`: moved from `qa-verify-fix` 6A, now the single source.
-  - `§Extras`: the closed key list `title, lede, rows, notTested, context, shots`, with their shapes.
+  - `§Extras`: the closed key list `title, lede, rows, notTested, context, shots`, with their shapes; `lede` here and `--lede` are the same slot, and the flag wins.
   - `§Why no hook`: D2.
   - `§Callers`: the table from this plan's *How it is called*.
 
@@ -1416,6 +1549,8 @@ node "$pluginRoot/hooks/session-telemetry.mjs" complete --skill "qa-report"
 
 - [ ] **Step 5: Verify**
 
+Run: `npm run docs:index` → it regenerates the DERIVED `plugin-skills` roster in `.claude/skills/README.md`, which now has to list `qa-report`. **This is not optional and `npm test` does not catch it:** the roster is gated hard in CI only (`.github/workflows/gates.yml` → `docs:index:check`, `DOC-IDX-00x`), so skipping it passes every local gate and fails the build. Commit the regenerated file with this task, so the skill and its roster entry land together.
+Run: `npm run docs:index:check` → expected green.
 Run: `wc -c plugins/vc-fix/skills/qa-report/SKILL.md` → expected < 19000.
 Run: `npm run context:check` → expected: no new findings.
 
@@ -1455,7 +1590,7 @@ Below the block, add: `before_after[]` is required for VERIFIED / VERIFIED_WITH_
 
 ```markdown
 **Tracker comment — every verdict:** write `verification-summary.json` first (Step 7's shape, incl.
-`before_after[]`), then hand it to `/vc-fix:qa-report reports/tickets/{SPRINT}/<ticket-key>/verification-summary.json --kind fix --confirmed`.
+`before_after[]`), then hand it to `/vc-fix:qa-report reports/tickets/{SPRINT}/<ticket-key>/verification-summary.json --kind fix --confirmed --lede "<what was broken, what the fix changed, whether anything near it moved>"`.
 It renders the before/after comment within its template budget, embeds the screenshots inline for a UI bug,
 and posts or amends the ONE comment (`tracker-ops.md` §0). Template: `skills/qa-report/templates/comment-fix.md`.
 ```
@@ -1507,7 +1642,7 @@ git commit -m "refactor(vc-fix): /qa-verify-fix reports through qa-report — be
 
 ```markdown
 **Runs after §3 has written `summary.json`** — the comment is rendered from it:
-`/vc-fix:qa-report reports/tickets/{SPRINT}/<ticket-key>/summary.json --kind test --confirmed --set RELEASE_GATE="<§1 recommendation>"`.
+`/vc-fix:qa-report reports/tickets/{SPRINT}/<ticket-key>/summary.json --kind test --confirmed --lede "<one to three sentences: what the ticket now does on the surface a user touches, and what the verdict turns on>" --set RELEASE_GATE="<§1 recommendation>"`.
 The template (`plugins/vc-fix/skills/qa-report/templates/comment-test.md`) is the only copy; its `Not filed` and
 `Release note` lines are mandatory and print `None` / `none — <refusal>` rather than disappear, because an omitted
 line is indistinguishable from a clean run. Skill refused ⇒ the vc-fix install predates it: tell the user to run
@@ -1519,7 +1654,7 @@ Leave the `--iterate` paragraph as is (the round delta is `modes.md`'s and is ou
 - [ ] **Step 2: `/qa-test-fast`**
   - `verdict.md` §HTML page: replace the paragraph `Load the \`artifact-design\` skill, then copy … publish it with the Artifact tool.` with:
 
-    > Write the page's extras to `<scratchpad>/extra.json` from `verdict.md`: `lede` = the one sentence; `rows` = the AC table (`id`, `text`, `result`, `evidence`); `notTested`; `context` = the Data and Context-used lines as `{label, value}`; `shots` ≤ 4. Then run `/vc-fix:qa-report reports/tickets/{SPRINT}/<TICKET>/summary.json --kind test --extra <scratchpad>/extra.json`. It loads `artifact-design`, publishes the page, renders the comment with its link, and asks the one question in §Tracker comment.
+    > Write the page's extras to `<scratchpad>/extra.json` from `verdict.md`: `lede` = the one sentence — **mandatory**, and it is what satisfies D7 for this caller; `rows` = the AC table (`id`, `text`, `result`, `evidence`); `notTested`; `context` = the Data and Context-used lines as `{label, value}`; `shots` ≤ 4. Then run `/vc-fix:qa-report reports/tickets/{SPRINT}/<TICKET>/summary.json --kind test --extra <scratchpad>/extra.json`. It loads `artifact-design`, publishes the page, renders the comment with its link, and asks the one question in §Tracker comment.
 
     Keep the *Audience: Anyone at Virto Commerce* paragraph.
   - `verdict.md` §Tracker comment: replace its bullet list with one line: "The question, the post and the amend are `qa-report`'s §4–§5. Write the returned id into `summary.json.tracker.comment_id` (the `tracker:comment` helper mirrors it)."
@@ -1533,7 +1668,8 @@ Leave the `--iterate` paragraph as is (the round delta is `modes.md`'s and is ou
 Output the verdict, pass rate, bugs, **the Step-6.5 promotion line** (`N promotable, M held`, or `skipped —
 delegated run`), the seed profile, whether teardown ran, and both report paths in `reports/regression/{RUN_ID}/`
 (`regression-YYYY-MM-DD.md`, `regression-report.html`). Then `/vc-fix:qa-report {RUN_ID} --verdict <Step 6 Quality
-Gate verdict>` (+ `--ticket <KEY> --bugs <keys>` when the run belongs to a ticket) — the brief comment + the shareable page.
+Gate verdict> --lede "<is the sweep clean, and if not do the failures share a cause>"` (+ `--ticket <KEY> --bugs <keys>` when the run
+belongs to a ticket) — the brief comment + the shareable page.
 ```
 
 Run `npm run context:check`. It must report no `BUDGET-004` growth. If it does, cut the sentence `It is idempotent with the watcher's output.` from Step 6 and re-run.
@@ -1541,8 +1677,9 @@ Run `npm run context:check`. It must report no `BUDGET-004` growth. If it does, 
 - [ ] **Step 4: `/qa-smoke` Step 5.** Append to `Output verdict, pass rate, bugs found, and report path to the user.`:
 
 ```markdown
-Then `/vc-fix:qa-report {RUN_ID} --verdict <GO|CONDITIONAL_GO|NO_GO> --set GATES="<the Step 4 gate lines>"` (+ `--ticket <KEY>`
-when the smoke gates a ticket or release) for the brief comment and the shareable page. Skill refused ⇒ `/plugin update`.
+Then `/vc-fix:qa-report {RUN_ID} --verdict <GO|CONDITIONAL_GO|NO_GO> --lede "<is the build safe to go on with, and what is the one
+blocker when it is not>" --set GATES="<the Step 4 gate lines>"` (+ `--ticket <KEY>` when the smoke gates a ticket or release)
+for the brief comment and the shareable page. Skill refused ⇒ `/plugin update`.
 ```
 
 - [ ] **Step 5: The `.claude/` template copies.** These are the same edits as Task 6 Step 4, applied to `.claude/skills/qa-defect/defect-lifecycle-workflow.md` (lines ~127/139) and `.claude/skills/qa-evidence/sign-off-templates.md` (both headings). Use the plugin path in the pointer: `plugins/vc-fix/skills/qa-report/templates/comment-fix.md`.
@@ -1589,6 +1726,7 @@ Expected: the helper accepts the body (no wiki-markup refusal) and prints the pa
 - [ ] **Step 3: Gates**
 
 Run: `npm run context:check` → expected green.
+Run: `npm run docs:index:check` → expected green (the `plugin-skills` roster in `.claude/skills/README.md` must already list `qa-report`, regenerated in Task 5 Step 5). **`npm test` does not cover this** — only CI does, so a stale roster passes locally and fails the build.
 Run: `npm test` → expected green, with the same failure set as `origin/main` and no new failures.
 Run: `git status --porcelain scripts/unit` → expected empty (no temporary test survived).
 
@@ -1600,6 +1738,7 @@ Run: `git status --porcelain scripts/unit` → expected empty (no temporary test
 
 ## Out of scope (named so nobody adds them silently)
 
+- **The ticket DOCUMENTATION comment** (`virto-doc-style.md` §10.2 — feature name, how to configure it, what the customer sees once configured). It answers *how do I use this*, not *what did the run conclude*, so it is not a result comment and shares none of this skill's sources. It stays where it is; a later change can give it its own template.
 - **Bug-report file templates** (`defect-report-templates.md`). These are filed bugs, not result comments, and they belong to `/qa-bug`.
 - **`/qa-test --iterate` round-delta comment** (`modes.md` §5-loop). A later change can move it into a `comment-test-round.md`.
 - **`/qa-verify-fix` Step 2/Step 3 status notes** (deferred / moved to testing). These are one-line status notes, not results.
