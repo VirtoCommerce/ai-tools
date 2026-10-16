@@ -1,26 +1,68 @@
 {
-  "generatedIso": "2026-09-01T18:33:38.865Z",
-  "rev": 1,
+  "generatedIso": "2026-10-16T15:18:34.007Z",
+  "rev": 2,
   "monthsFull": 6,
   "source": {
     "rss": "https://www.virtocommerce.org/c/news-digest/15.rss",
     "categoryId": 15,
     "itemsInWindow": 25,
-    "oldestInWindow": "2024-11",
+    "oldestInWindow": "2024-12",
     "fetchNote": null
   },
   "latestByComponent": {
+    "Loyalty": {
+      "version": "3.1008.0",
+      "month": "2026-10",
+      "repo": "vc-module-loyalty",
+      "previousVersion": "3.1003.0"
+    },
+    "Frontend": {
+      "version": "2.58.0",
+      "month": "2026-10",
+      "repo": "vc-frontend",
+      "previousVersion": "2.56.0"
+    },
+    "Platform": {
+      "version": "3.1071.0",
+      "month": "2026-10",
+      "repo": "vc-platform",
+      "previousVersion": "3.1054.0"
+    },
+    "Page Builder": {
+      "version": "3.1026.0",
+      "month": "2026-10",
+      "repo": "vc-module-pagebuilder",
+      "previousVersion": "3.1015.0"
+    },
     "Sales Rep": {
-      "version": "3.1006.0",
-      "month": "2026-09",
+      "version": "3.1009.0",
+      "month": "2026-10",
       "repo": "vc-module-sales-rep",
-      "previousVersion": null
+      "previousVersion": "3.1006.0"
+    },
+    "Order": {
+      "version": "3.1015.0",
+      "month": "2026-10",
+      "repo": "vc-module-order",
+      "previousVersion": "3.1001.0"
     },
     "Customer": {
-      "version": "3.1021.0",
-      "month": "2026-09",
+      "version": "3.1023.0",
+      "month": "2026-10",
       "repo": "vc-module-customer",
-      "previousVersion": null
+      "previousVersion": "3.1021.0"
+    },
+    "Catalog": {
+      "version": "3.1044.0",
+      "month": "2026-10",
+      "repo": "vc-module-catalog",
+      "previousVersion": "3.1037.0"
+    },
+    "Core": {
+      "version": "3.1008.0",
+      "month": "2026-10",
+      "repo": "vc-module-core",
+      "previousVersion": "3.814.0"
     },
     "Inventory": {
       "version": "3.1005.0",
@@ -46,12 +88,6 @@
       "repo": "vc-module-notification",
       "previousVersion": null
     },
-    "Platform": {
-      "version": "3.1054.0",
-      "month": "2026-09",
-      "repo": "vc-platform",
-      "previousVersion": null
-    },
     "Pickup": {
       "version": "3.1004.0",
       "month": "2026-09",
@@ -70,18 +106,6 @@
       "repo": "vc-module-profile-experience-api",
       "previousVersion": null
     },
-    "Frontend": {
-      "version": "2.56.0",
-      "month": "2026-09",
-      "repo": "vc-frontend",
-      "previousVersion": null
-    },
-    "Page Builder": {
-      "version": "3.1015.0",
-      "month": "2026-08",
-      "repo": "vc-module-pagebuilder",
-      "previousVersion": null
-    },
     "Store": {
       "version": "3.1006.0",
       "month": "2026-08",
@@ -98,12 +122,6 @@
       "version": "3.1014.0",
       "month": "2026-08",
       "repo": "vc-module-x-api",
-      "previousVersion": null
-    },
-    "Catalog": {
-      "version": "3.1037.0",
-      "month": "2026-08",
-      "repo": "vc-module-catalog",
       "previousVersion": null
     },
     "Skyflow": {
@@ -140,12 +158,6 @@
       "version": "3.1000.0",
       "month": "2026-06",
       "repo": "vc-module-product-snapshot",
-      "previousVersion": null
-    },
-    "Loyalty": {
-      "version": "3.1003.0",
-      "month": "2026-06",
-      "repo": "vc-module-loyalty",
       "previousVersion": null
     },
     "Pages": {
@@ -194,12 +206,6 @@
       "version": "3.1001.0",
       "month": "2026-04",
       "repo": "vc-module-marketing-experience-api",
-      "previousVersion": null
-    },
-    "Order": {
-      "version": "3.1001.0",
-      "month": "2026-04",
-      "repo": "vc-module-order",
       "previousVersion": null
     },
     "Payment": {
@@ -298,12 +304,6 @@
       "repo": "vc-module-event-bus",
       "previousVersion": null
     },
-    "Core": {
-      "version": "3.814.0",
-      "month": "2025-01",
-      "repo": "vc-module-core",
-      "previousVersion": null
-    },
     "OpenId Connect": {
       "version": "3.800.0",
       "month": "2024-12",
@@ -336,6 +336,313 @@
     }
   },
   "digests": [
+    {
+      "month": "2026-10",
+      "kind": "monthly",
+      "topicId": 864,
+      "url": "https://www.virtocommerce.org/t/864",
+      "title": "Virto’s Release Notes | October 2026",
+      "publishedIso": "2026-09-28T13:59:09.000Z",
+      "updatedIso": "2026-10-01T04:36:59.672Z",
+      "bodyHash": "sha256:1257779edc136bd41ce464c275c060a5",
+      "features": [
+        {
+          "title": "Loyalty missions and challenges",
+          "components": [
+            {
+              "name": "Loyalty",
+              "version": "3.1006.0",
+              "repo": "vc-module-loyalty",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-module-loyalty/releases/tag/3.1006.0"
+            },
+            {
+              "name": "Frontend",
+              "version": "2.57.0",
+              "repo": "vc-frontend",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.57.0"
+            }
+          ],
+          "summary": "A shopper can now view their open loyalty missions from their account, open any mission to see its goal and current progress:",
+          "docsUrls": [
+            "https://docs.virtocommerce.org/storefront/user-guide/latest/account/missions",
+            "https://docs.virtocommerce.org/platform/user-guide/latest/loyalty/managing-loyalty-missions"
+          ],
+          "breaking": false,
+          "anchor": "p-1526-loyalty-missions-and-challenges-loyalty-310060httpsgithubcomvirtocommercevc-module-loyaltyreleasestag310060-frontend-2570httpsgithubcomvirtocommercevc-frontendreleasestag2570-1"
+        },
+        {
+          "title": "Earning and redeeming loyalty points at the organizational level",
+          "components": [
+            {
+              "name": "Loyalty",
+              "version": "3.1008.0",
+              "repo": "vc-module-loyalty",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-module-loyalty/releases/tag/3.1008.0"
+            }
+          ],
+          "summary": "Loyalty missions can now be completed by organizations, not just by individual customers:",
+          "docsUrls": [],
+          "breaking": false,
+          "anchor": "p-1526-earning-and-redeeming-loyalty-points-at-the-organizational-level-loyalty-310080httpsgithubcomvirtocommercevc-module-loyaltyreleasestag310080-2"
+        },
+        {
+          "title": "Sign-in log",
+          "components": [
+            {
+              "name": "Platform",
+              "version": "3.1071.0",
+              "repo": "vc-platform",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-platform/releases/tag/3.1071.0"
+            }
+          ],
+          "summary": "The Platform now keeps a durable record of every successful and failed sign-in attempt including sessions started through Login on behalf .",
+          "docsUrls": [
+            "https://docs.virtocommerce.org/platform/user-guide/latest/security/sign-in-log"
+          ],
+          "breaking": false,
+          "anchor": "p-1526-sign-in-log-platform-310710httpsgithubcomvirtocommercevc-platformreleasestag310710-3"
+        },
+        {
+          "title": "Page-wide anchor linking",
+          "components": [
+            {
+              "name": "Page Builder",
+              "version": "3.1022.0",
+              "repo": "vc-module-pagebuilder",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-module-pagebuilder/releases/tag/3.1022.0"
+            }
+          ],
+          "summary": "Users can add links to selected text within a Subscribe form block making tables of contents, jump links, “back to top” and section navigation possible against anchors rendered by other components on the page:",
+          "docsUrls": [
+            "https://docs.virtocommerce.org/platform/user-guide/latest/page-builder/configure-content-block/#add-links-to-text"
+          ],
+          "breaking": false,
+          "anchor": "p-1526-page-wide-anchor-linking-page-builder-310220httpsgithubcomvirtocommercevc-module-pagebuilderreleasestag310220-4"
+        },
+        {
+          "title": "Shared components",
+          "components": [
+            {
+              "name": "Page Builder",
+              "version": "3.1026.0",
+              "repo": "vc-module-pagebuilder",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-module-pagebuilder/releases/tag/3.1026.0"
+            }
+          ],
+          "summary": "Users can create, add, and delete shared components to be used across multiple pages, with the option to synchronize changes across all instances or edit each copy independently:",
+          "docsUrls": [
+            "https://docs.virtocommerce.org/platform/user-guide/latest/page-builder/configure-content-block/#create-and-add-shared-components"
+          ],
+          "breaking": false,
+          "anchor": "p-1526-shared-components-page-builder-310260httpsgithubcomvirtocommercevc-module-pagebuilderreleasestag310260-5"
+        },
+        {
+          "title": "Uploading over an asset improved",
+          "components": [
+            {
+              "name": "Page Builder",
+              "version": "3.1025.0",
+              "repo": "vc-module-pagebuilder",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-module-pagebuilder/releases/tag/3.1025.0"
+            }
+          ],
+          "summary": "If a user is trying to upload a file with the same full name (name + extension) as an existing file in the target folder, a confirmation prompt is displayed before anything is written",
+          "docsUrls": [
+            "https://docs.virtocommerce.org/platform/user-guide/latest/page-builder/manage-pages-via-office/#manage-assets"
+          ],
+          "breaking": false,
+          "anchor": "p-1526-uploading-over-an-asset-improved-page-builder-310250httpsgithubcomvirtocommercevc-module-pagebuilderreleasestag310250-6"
+        },
+        {
+          "title": "Shared document library for sales reps",
+          "components": [
+            {
+              "name": "Sales Rep",
+              "version": "3.1006.0",
+              "repo": "vc-module-sales-rep",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-module-sales-rep/releases/tag/3.1006.0"
+            },
+            {
+              "name": "Frontend",
+              "version": "2.57.0",
+              "repo": "vc-frontend",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.57.0"
+            }
+          ],
+          "summary": "A Sales Rep can now access a centralized document library and quickly find and share approved sales materials, product images, brochures and price sheets, with customers. Uploaded files are organized into categories and shown on the…",
+          "docsUrls": [
+            "https://docs.virtocommerce.org/platform/user-guide/latest/sales-rep/document-library",
+            "https://docs.virtocommerce.org/storefront/user-guide/latest/account/sales-rep-hub"
+          ],
+          "breaking": false,
+          "anchor": "p-1526-shared-document-library-for-sales-reps-sales-rep-310060httpsgithubcomvirtocommercevc-module-sales-repreleasestag310060-frontend-2570httpsgithubcomvirtocommercevc-frontendreleasestag2570-7"
+        },
+        {
+          "title": "Sales rep task management",
+          "components": [
+            {
+              "name": "Sales Rep",
+              "version": "3.1009.0",
+              "repo": "vc-module-sales-rep",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-module-sales-rep/releases/tag/3.1009.0"
+            }
+          ],
+          "summary": "Sales rep can now create a task with a title, description, due date and priority, view and complete active tasks grouped as Upcoming, Overdue and Completed, and see task indicators on a calendar:",
+          "docsUrls": [
+            "https://docs.virtocommerce.org/storefront/user-guide/latest/account/sales-rep-hub/#calendar"
+          ],
+          "breaking": false,
+          "anchor": "p-1526-sales-rep-task-management-sales-rep-310090httpsgithubcomvirtocommercevc-module-sales-repreleasestag310090-8"
+        },
+        {
+          "title": "Product comparison",
+          "components": [
+            {
+              "name": "Frontend",
+              "version": "2.57.0",
+              "repo": "vc-frontend",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.57.0"
+            }
+          ],
+          "summary": "Products comparison is now easier to navigate and review. Product attributes are grouped into category tabs instead of being displayed in a single mixed list. The All/Differences toggle lets users hide attributes that are identical…",
+          "docsUrls": [
+            "https://docs.virtocommerce.org/storefront/user-guide/latest/shopping/compare-products/#compare-products"
+          ],
+          "breaking": false,
+          "anchor": "p-1526-product-comparison-frontend-2570httpsgithubcomvirtocommercevc-frontendreleasestag2570-9"
+        },
+        {
+          "title": "Order price protection as a service",
+          "components": [
+            {
+              "name": "Order",
+              "version": "3.1015.0",
+              "repo": "vc-module-order",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-module-order/releases/tag/3.1015.0"
+            }
+          ],
+          "summary": "An administrator can give a user full access to orders while making it impossible for them to see the money on those orders. Order price visibility is now decided by one service rather than as a side effect of authorization, so the rule…",
+          "docsUrls": [
+            "https://docs.virtocommerce.org/platform/user-guide/latest/order-management/order-price-restriction",
+            "https://docs.virtocommerce.org/platform/developer-guide/latest/Fundamentals/Security/authorization/order-price-visibility"
+          ],
+          "breaking": false,
+          "anchor": "p-1526-order-price-protection-as-a-service-orders-310150httpsgithubcomvirtocommercevc-module-orderreleasestag310150-10"
+        },
+        {
+          "title": "SSO support added for login on behalf",
+          "components": [
+            {
+              "name": "Frontend",
+              "version": "2.57.0",
+              "repo": "vc-frontend",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.57.0"
+            }
+          ],
+          "summary": "The Login on behalf session page previously supported only a username and password. It now also supports SSO sign-in, where that option is enabled for the store.",
+          "docsUrls": [
+            "https://docs.virtocommerce.org/storefront/user-guide/latest/account/company-members/#log-in-on-behalf-of-company-member"
+          ],
+          "breaking": false,
+          "anchor": "p-1526-sso-support-added-for-login-on-behalf-frontend-2570httpsgithubcomvirtocommercevc-frontendreleasestag2570-11"
+        },
+        {
+          "title": "Locked organizations can no longer be switched into",
+          "components": [
+            {
+              "name": "Frontend",
+              "version": "2.58.0",
+              "repo": "vc-frontend",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.58.0"
+            }
+          ],
+          "summary": "The organization switcher now reflects membership state: a locked organization is marked and disabled in the switcher instead of silently missing, so a multi-organization user can no longer switch into an organization they’re locked out of:",
+          "docsUrls": [
+            "https://docs.virtocommerce.org/storefront/user-guide/latest/account/company-members/#block-unblock-delete-company-members"
+          ],
+          "breaking": false,
+          "anchor": "p-1526-locked-organizations-can-no-longer-be-switched-into-frontend-2580httpsgithubcomvirtocommercevc-frontendreleasestag2580-12"
+        },
+        {
+          "title": "Configurable customer company roles on the Frontend",
+          "components": [
+            {
+              "name": "Customer",
+              "version": "3.1023.0",
+              "repo": "vc-module-customer",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-module-customer/releases/tag/3.1023.0"
+            }
+          ],
+          "summary": "An ecommerce administrator can now configure the customer company role per store in the backend:",
+          "docsUrls": [
+            "https://docs.virtocommerce.org/platform/user-guide/latest/contacts/managing-organization-roles/#membership-roles-whitelist"
+          ],
+          "breaking": false,
+          "anchor": "p-1526-configurable-customer-company-roles-on-the-frontend-customer-310230httpsgithubcomvirtocommercevc-module-customerreleasestag310230-13"
+        },
+        {
+          "title": "Facet priority sorting now runs the way it reads",
+          "components": [
+            {
+              "name": "Catalog",
+              "version": "3.1044.0",
+              "repo": "vc-module-catalog",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-module-catalog/releases/tag/3.1044.0"
+            }
+          ],
+          "summary": "Facets sorting now offers Priority ascending and Priority descending, set per property alongside Name, Numeric and Score sorting, so an administrator chooses the direction instead of guessing it.",
+          "docsUrls": [
+            "https://docs.virtocommerce.org/platform/user-guide/latest/catalog/managing-properties/#define-products-sorting-order"
+          ],
+          "breaking": false,
+          "anchor": "p-1526-facet-priority-sorting-now-runs-the-way-it-reads-catalog-310440httpsgithubcomvirtocommercevc-module-catalogreleasestag310440-14"
+        },
+        {
+          "title": "Users belonging to user groups visible right away",
+          "components": [
+            {
+              "name": "Core",
+              "version": "3.1008.0",
+              "repo": "vc-module-core",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-module-core/releases/tag/3.1008.0"
+            }
+          ],
+          "summary": "A Show customers link is now available for every user group condition in Promotions , Loyalty missions , and Pricelist assignment . Clicking the link opens a blade with the contacts from the selected user groups, allowing managers to…",
+          "docsUrls": [],
+          "breaking": false,
+          "anchor": "p-1526-users-belonging-to-user-groups-visible-right-away-core-310080httpsgithubcomvirtocommercevc-module-corereleasestag310080-15"
+        },
+        {
+          "title": "UI Kit improvements",
+          "components": [
+            {
+              "name": "Frontend",
+              "version": "2.58.0",
+              "repo": "vc-frontend",
+              "releaseUrl": "https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.58.0"
+            }
+          ],
+          "summary": "A handful of shared UI Kit components were refined:",
+          "docsUrls": [],
+          "breaking": false,
+          "anchor": "p-1526-ui-kit-improvements-frontend-2580httpsgithubcomvirtocommercevc-frontendreleasestag2580-16"
+        }
+      ],
+      "headingsTotal": 22,
+      "headingsVersioned": 16,
+      "headingsUnparsed": 0,
+      "unparsed": [],
+      "rejectedUrls": [],
+      "sectionsWithoutVersion": [
+        "QA",
+        "Marketplace",
+        "VC-Shell",
+        "Documentation",
+        "Knowledge hub",
+        "Virto talks"
+      ],
+      "inWindow": true
+    },
     {
       "month": "2026-09",
       "kind": "monthly",
@@ -862,7 +1169,7 @@
       "url": "https://www.virtocommerce.org/t/857",
       "title": "Virto’s Release Notes | July 2026",
       "publishedIso": "2026-06-30T09:54:07.000Z",
-      "updatedIso": "2026-07-01T06:42:48.826Z",
+      "updatedIso": null,
       "bodyHash": "sha256:1cde0d936a7771c8cc46c495179f9d6f",
       "features": [
         {
@@ -5036,7 +5343,7 @@
         "Vendor portal",
         "VC Shell"
       ],
-      "inWindow": true
+      "inWindow": false
     }
   ]
 }
