@@ -61,9 +61,18 @@ npm run deploy:pr:apply -- <ticket-key> --env=vcst      # a human reviews + merg
 2. **Compute one combined diff** against the env-branch `backend/packages.json` (each module →
    AzureBlob `{Id,Version,BlobName}`, dropped from `GithubReleases`; platform →
    `PlatformVersion`+`PlatformImageTag`) and `theme/artifact.json` (the theme URL).
+   **Storybook rides with the storefront PR, only when that PR changes what Storybook renders**
+   (a `*.stories.*` file, `client-app/ui-kit/`, `client-app/assets/styles/`, `.storybook/`,
+   `storybook-styles/` — rules in `scripts/deploy/pr/storybook.ts`). A PR's Storybook image exists
+   only after a manual `storybook-ci.yml` dispatch on the PR branch, so `--apply` dispatches it,
+   waits (~2 min), reads the pushed tag from the run log and pins it in `storybook/image.json` in
+   the same deploy PR. A successful earlier dispatch at the same head SHA is reused, not rebuilt.
+   Every dispatch also re-tags the image's `:latest`. `--storybook` forces it, `--no-storybook`
+   skips it; a dry-run never dispatches.
 3. **Deliver** per the gate below.
 4. **`--verify`** reports, per target, whether it is pinned on the branch and its live
-   `/api/platform/modules` version (platform → `/health`; theme → branch URL match).
+   `/api/platform/modules` version (platform → `/health`; theme → branch URL match; Storybook →
+   the pinned tag ends with the PR head's 8-char SHA).
 
 ## Environments (branch ↔ TEST_ENV — never hardcode)
 
