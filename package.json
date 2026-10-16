@@ -342,9 +342,10 @@
     "td:validate:push-audience": "node scripts/seed-data/push-messages/validate-push-audience-data.mjs",
     "seed:punchout": "node scripts/seed-data/punchout/seed-punchout.mjs",
     "seed:punchout:verify": "node scripts/seed-data/punchout/seed-punchout.mjs --verify-only",
-    "seed:punchout:reset-carts": "node scripts/seed-data/punchout/seed-punchout.mjs --reset-buyer-carts",
     "seed:punchout:teardown": "node scripts/seed-data/punchout/seed-punchout.mjs --teardown",
+    "seed:punchout:reset-carts": "node scripts/seed-data/punchout/seed-punchout.mjs --reset-buyer-carts",
     "td:validate:punchout": "node scripts/seed-data/punchout/validate-punchout-data.mjs",
+    "td:validate:image-thumbnails": "node scripts/seed-data/image-tools/validate-image-thumbnails-data.mjs",
     "kb:sync-base": "node scripts/kb/sync-base.mjs",
     "kb:cards": "node scripts/kb/cards.mjs"
   },

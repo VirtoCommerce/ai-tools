@@ -16,3 +16,4 @@ plugins/vc-secrets/** text eol=lf
 regression/suites/**/*.csv text eol=crlf
 tests/**/*.csv text eol=crlf
 test-data/**/*.csv text eol=crlf
+test-data/uploads/image-thumbnails/** -text

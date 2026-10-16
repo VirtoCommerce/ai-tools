@@ -2390,6 +2390,29 @@
       "customerApplicability": "reference"
     },
     {
+      "id": "069b",
+      "name": "Image Tools - Thumbnail Output (SkiaSharp)",
+      "file": "regression/suites/Backend/image-tools/069b-image-tools-thumbnail-output.csv",
+      "domain": "content-cms",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P2",
+      "testCount": 24,
+      "estimatedMinutes": 60,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "image-tools",
+        "thumbnails",
+        "skiasharp",
+        "output"
+      ],
+      "requiresModules": [
+        "image-tools"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
+    },
+    {
       "id": "070",
       "name": "Whitelabeling Storefront",
       "file": "regression/suites/Frontend/whitelabeling/070-whitelabeling-storefront.csv",
