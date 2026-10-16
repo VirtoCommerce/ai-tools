@@ -23,15 +23,19 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse as parseCsv } from 'csv-parse/sync';
 import {
-  ORDER_FIXTURES, QUOTE_FIXTURES, ALL_FIXTURES, OWNED_ALIASES, QUOTE_OWNER_ALIAS, validateQuoteFixtureContract,
+  ORDER_FIXTURES, QUOTE_FIXTURES, ALL_FIXTURES, OWNED_ALIASES, quoteFixtureSetProblems,
   validateFixtureShape, findGuidLeaks, GUID_RE,
   RETURN_ORDER_FIXTURES, RETURN_LINE_X_ALIAS, RETURN_WINDOW_DAYS_ASSUMED,
   validateReturnFixtureSet, validateReturnFixtureShape,
   suiteRowsConsuming, orderedFor, LINE_ROLE_X, LINE_ROLE_Y,
+  resolveTokens, finalizeReturnOrderBody,
+  RETURN_ORDER_RECIPIENT, RETURN_ORDER_RECIPIENT_ALIAS, shapeReturnOrderRecipients, recipientProblems, applyReturnCatalogItems,
 } from './orders-specs.mjs';
 import {
   RETURN_DECISION_FIXTURES, DECISION_OWNED_ALIASES, DECISION_TEMPLATE_FIXTURE,
+  DECISION_BUYER, DECISION_BUYER_PASSWORD_TOKEN, isDedicatedDecisionBuyer,
   validateDecisionFixtureSet, validateDecisionTemplate,
+  shapeDecisionTemplate, toOrderSpec, foreignRecipients, recipientEmailsOf,
 } from './return-decisions-specs.mjs';
 
 /**
@@ -63,18 +67,20 @@ for (const [kind, list] of [['order', ORDER_FIXTURES], ['quote', QUOTE_FIXTURES]
   }
 }
 
-// 1b. Quote non-vacuity contract + owner alias (a quote the buyer cannot see, or one whose quoted
-// prices equal list, answers none of suite 015's questions).
-console.log('\n[1b] Quote fixtures — non-vacuity contract + owner alias');
-for (const spec of QUOTE_FIXTURES) {
-  const rel = `test-data/${spec.fixtureFile}`;
-  if (!existsSync(join(ROOT, rel))) continue; // already failed in [1]
-  const { ok: cOk, problems: cps } = validateQuoteFixtureContract(spec, readJson(rel));
-  if (cOk) ok(`${spec.alias} — ${readJson(rel).items.length} lines, every proposal below list`);
-  else cps.forEach((p) => fail(`${spec.alias}: ${p}`));
+// 1b. Quote set contract (SECOND RULE): the states still discriminate, and every consumer case exists.
+console.log('\n[1b] Quote fixtures — set-level design contract + consumer cases exist in suite 015');
+{
+  const contract = quoteFixtureSetProblems();
+  if (contract.length) contract.forEach((p) => fail(`quote set: ${p}`));
+  else ok(`${QUOTE_FIXTURES.length} quote states: disposable quotes have one consumer each, expiry triad past/future/none in one status, >= 4 list statuses, one OOS quote with an in-stock sibling`);
+  const suiteRel = 'regression/suites/Frontend/orders/015-quotes.csv';
+  if (existsSync(join(ROOT, suiteRel))) {
+    const ids = new Set(parseCsv(readFileSync(join(ROOT, suiteRel), 'utf8'), { columns: true, skip_empty_lines: true, bom: true }).map((r) => r.ID));
+    const ghosts = QUOTE_FIXTURES.flatMap((s) => (s.consumers || []).filter((c) => !ids.has(c)).map((c) => `${s.alias}→${c}`));
+    if (ghosts.length) fail(`quote consumer case(s) not in ${suiteRel}: ${ghosts.join(', ')}`);
+    else ok(`every quote consumer case exists in ${suiteRel}`);
+  } else warn(`${suiteRel} not found — consumer cases unchecked`);
 }
-if (aliases[QUOTE_OWNER_ALIAS]?.filter?.user_id) ok(`owner alias ${QUOTE_OWNER_ALIAS} → users.csv ${aliases[QUOTE_OWNER_ALIAS].filter.user_id}`);
-else fail(`QUOTE_OWNER_ALIAS ${QUOTE_OWNER_ALIAS} is not a users.csv-filtered alias in aliases.json — the seeder cannot resolve the quote owner`);
 
 // 2. Owned aliases are JSON-fixture aliases in the base registry, no pinned GUID.
 console.log('\n[2] aliases.json — owned aliases are JSON-fixture-backed, no runtime GUID pinned');
@@ -263,6 +269,47 @@ console.log('\n[8] Return-decision template fixture — shape, no literal date, 
     else t.problems.forEach((p) => fail(`${DECISION_TEMPLATE_FIXTURE}: ${p}`));
   }
 }
+console.log('\n[8b] Return-decision orders — every notification recipient is the dedicated fixture mailbox');
+{
+  // Resolve the template against a HOSTILE env (every {{VAR}} → a non-fixture address), then shape and
+  // finalize it exactly as the seeder does. The order/return emails go to the order address first
+  // (KB-33E0A778); a body still carrying the env's USER_EMAIL would mail a real person on POST.
+  const rel = `test-data/${DECISION_TEMPLATE_FIXTURE}`;
+  if (existsSync(join(ROOT, rel))) {
+    const hostile = new Proxy({}, { get: (_, k) => (typeof k === 'string' ? `not-a-fixture-${k.toLowerCase()}@example.com` : undefined), has: () => true });
+    const { obj } = resolveTokens(readJson(rel), hostile);
+    const leaks = [];
+    for (const spec of RETURN_DECISION_FIXTURES) {
+      const body = finalizeReturnOrderBody(toOrderSpec(spec), shapeDecisionTemplate(spec, obj), { customerId: 'c', customerName: 'n' });
+      for (const r of foreignRecipients(body)) leaks.push(`${spec.key} ${r.path}=${r.email}`);
+      for (const a of body.addresses || []) if (!a.email) leaks.push(`${spec.key} ${a.addressType} address has no email (falls through past the fixture's order address)`);
+      if (!recipientEmailsOf(body).length) leaks.push(`${spec.key}: no recipient field at all — the check would pass vacuously`);
+    }
+    if (leaks.length) leaks.forEach((l) => fail(`decision order recipient is not ${DECISION_BUYER.email}: ${l}`));
+    else ok(`${RETURN_DECISION_FIXTURES.length} shaped decision orders — every recipient field is ${DECISION_BUYER.email}, even with a hostile env`);
+  }
+}
+console.log('\n[8c] Returns orders (VCST-5628, seed:returns) — every notification recipient is the dedicated fixture mailbox');
+{
+  // Same hostile-env check as [8b], over every RETURN_ORDER_FIXTURES template (a…g + adm073), shaped and
+  // finalized the way seed-return-orders.mjs does. The buyer ACCOUNT is out of scope (still the env persona).
+  const hostile = new Proxy({}, { get: (_, k) => (typeof k === 'string' ? `not-a-fixture-${k.toLowerCase()}@example.com` : undefined), has: () => true });
+  const leaks = [];
+  if (!/^agent-test-[a-z0-9-]+@yopmail\.com$/.test(RETURN_ORDER_RECIPIENT)) leaks.push(`RETURN_ORDER_RECIPIENT ${RETURN_ORDER_RECIPIENT} is not an AGENT-TEST yopmail address`);
+  if (RETURN_ORDER_RECIPIENT === DECISION_BUYER.email) leaks.push('RETURN_ORDER_RECIPIENT is the VCST-5883 decision buyer\'s mailbox — the two fixture sets would share one inbox');
+  const reg = aliases[RETURN_ORDER_RECIPIENT_ALIAS];
+  if (reg?.email !== RETURN_ORDER_RECIPIENT || !reg?.fields?.email) leaks.push(`${RETURN_ORDER_RECIPIENT_ALIAS} must be registered in aliases.json with email "${RETURN_ORDER_RECIPIENT}" (has "${reg?.email}")`);
+  for (const spec of RETURN_ORDER_FIXTURES) {
+    const rel = `test-data/${spec.fixtureFile}`;
+    if (!existsSync(join(ROOT, rel))) { leaks.push(`${spec.key}: ${rel} missing`); continue; }
+    const { obj } = resolveTokens(readJson(rel), hostile);
+    const body = finalizeReturnOrderBody(spec, applyReturnCatalogItems(shapeReturnOrderRecipients(obj), {}), { customerId: 'c', customerName: 'n' });
+    for (const r of recipientProblems(body, RETURN_ORDER_RECIPIENT)) leaks.push(`${spec.key} ${r.path}=${r.missing !== undefined ? `missing (${r.missing})` : r.email}`);
+    if (!(body.addresses || []).length) leaks.push(`${spec.key}: no address at all — the check would pass vacuously`);
+  }
+  if (leaks.length) leaks.forEach((l) => fail(`returns order recipient: ${l}`));
+  else ok(`${RETURN_ORDER_FIXTURES.length} shaped returns orders (${RETURN_ORDER_FIXTURES.map((s) => s.key).join(', ')}) — every recipient field is ${RETURN_ORDER_RECIPIENT}, even with a hostile env`);
+}
 console.log(`\n[9] Return-decision aliases — registered _inline with no committed value; seeded state on ${TARGET_ENV}`);
 {
   const overlayPath = join(ROOT, 'test-data', `aliases.${TARGET_ENV}.json`);
@@ -273,6 +320,18 @@ console.log(`\n[9] Return-decision aliases — registered _inline with no commit
     if (!a._inline) fail(`alias ${alias} must be _inline (every value is runtime, from the overlay)`);
     else if (Object.entries(a).some(([k, v]) => typeof v === 'string' && GUID_RE.test(v) && k !== 'notes')) fail(`alias ${alias} pins a runtime GUID in the committed base`);
     else ok(`${alias} → _inline, no committed value`);
+  }
+  // The dedicated buyer's committed entry must agree with DECISION_BUYER, and must stay a public AGENT-TEST yopmail inbox.
+  {
+    const b = aliases[DECISION_BUYER.alias];
+    if (!b) fail(`alias ${DECISION_BUYER.alias} missing from aliases.json`);
+    else {
+      if (b.email !== DECISION_BUYER.email || !isDedicatedDecisionBuyer(b.email)) fail(`${DECISION_BUYER.alias}.email ${JSON.stringify(b.email)} != spec ${DECISION_BUYER.email} (must be the AGENT-TEST yopmail buyer)`);
+      if (b.password !== DECISION_BUYER_PASSWORD_TOKEN) fail(`${DECISION_BUYER.alias}.password must be the ${DECISION_BUYER_PASSWORD_TOKEN} token, never a literal`);
+      if (b.name !== `${DECISION_BUYER.firstName} ${DECISION_BUYER.lastName}`) fail(`${DECISION_BUYER.alias}.name ${JSON.stringify(b.name)} != spec ${DECISION_BUYER.firstName} ${DECISION_BUYER.lastName}`);
+      if (Object.values(b).some((v) => typeof v === 'string' && GUID_RE.test(v))) fail(`${DECISION_BUYER.alias} pins a runtime GUID in the committed base`);
+      if (!problems.some((p) => p.includes(DECISION_BUYER.alias))) ok(`${DECISION_BUYER.alias} → ${DECISION_BUYER.email}, password token, matches DECISION_BUYER`);
+    }
   }
   for (const spec of RETURN_DECISION_FIXTURES) {
     const o = overlay[spec.alias];

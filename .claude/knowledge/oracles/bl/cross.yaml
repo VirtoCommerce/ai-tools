@@ -89,10 +89,8 @@ rules:
       kind: manual
       ref: 'Place order → check inventory (decremented) → check email inbox (confirmation received) → check GA4 dataLayer (purchase event with correct data) → check "My Orders" (order listed) → check cart (empty). Verify in Admin: order exists with correct totals.'
     violation_signal: Inventory not decremented; email not sent; GA4 event missing or wrong revenue; order not in history; cart not cleared; any side effect missing.
-    status: ACTIVE
-    verified:
-      date: 2026-10-12
-      by: REG-2026-10-12-1659
+    status: SUSPECT
+    suspect_reason: "[case] GA-031 failed in REG-2026-10-13-1726"
   - id: BL-CROSS-006
     title: Feature flag toggle → immediate behavior change
     rule: Store-level feature flags (e.g., `quotesEnabled`, `anonymousUsersAllowed`, `createAnonymousOrderEnabled`) take effect on the storefront without requiring a restart or redeployment. The storefront reads flags from xAPI on each page load. Module-level flags (e.g., module enable/disable) may require a platform restart. The distinction must be documented per flag.
@@ -137,8 +135,10 @@ rules:
       kind: manual
       ref: As Org A, note cart, addresses, prices, theme → switch to Org B → verify ALL six contexts changed → switch back → ALL restored to Org A's state.
     violation_signal: Cart swaps but prices remain from previous org; addresses from wrong org; theme doesn't change; partial context swap of any kind.
-    status: SUSPECT
-    suspect_reason: "[case] SMK-020 failed in REG-2026-10-02-2022"
+    status: ACTIVE
+    verified:
+      date: 2026-10-15
+      by: REG-2026-10-15-1115
   - id: BL-CROSS-009
     title: Eventual consistency is bounded
     rule: "Any change to an entity — an admin edit (product, price, inventory, category, settings) **or a write through any API surface** (REST, xAPI/GraphQL) — must be reflected everywhere that entity is read within 120 seconds (2 reindex cycles). This bound covers search index, cache layers, CDN, **and per-entity read caches**: a write on one surface must invalidate the cached read of the *same* entity on every other surface — caches must expire on the entity's change event, not only on a same-surface write. After 120 seconds, any discrepancy (Admin vs storefront, or one API surface vs another) is a bug."
@@ -179,7 +179,7 @@ rules:
       ref: Simulate each service outage → verify core flow continues or shows meaningful error → no 500 errors, no white screens, no data corruption.
     violation_signal: White screen / 500 error when a dependent service is down; orphan orders created when payment fails; order blocked because email service is down; silent data loss without logging.
     status: SUSPECT
-    suspect_reason: "[case] SMK-001 failed in REG-2026-10-02-2022"
+    suspect_reason: "[case] BSM-044, BSM-045, BSM-046, BSM-047, BSM-054, BSM-058, BSM-060, BSM-062, BSM-073, BSM-083, BSM-106 failed in REG-2026-10-08-0812"
   - id: BL-CROSS-012
     title: Admin entity deletion never creates $0 products
     rule: No admin action (price list deletion, catalog reorganization, module disable, currency removal) should ever cause a product with **missing/absent** price data to silently fall back to a purchasable $0.00 on the storefront. The safe state for a product without a valid price is "Unavailable" / "Add to Cart disabled" — never $0.00 with an active purchase button. **EXCEPTION:** an *intentional* $0 price is purchasable only where the deployment has overridden the price-policy specifications (`ProductIsBuyableSpecification.CheckPricePolicy` and its catalog counterpart) to allow it; by default a $0-priced product is not buyable and cannot be added to cart. When auditing, confirm the deployment's price-policy override before treating a $0 purchase as a violation.
@@ -196,4 +196,5 @@ rules:
       kind: manual
       ref: Delete price list → check affected products show "Unavailable" not $0. Remove currency → products in that currency become unavailable. Disable pricing module → all products become unpurchasable.
     violation_signal: Any product purchasable at $0.00 due to admin action; "Add to Cart" active when price data is missing; order placed at $0.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] BSM-085 failed in REG-2026-10-08-0812"

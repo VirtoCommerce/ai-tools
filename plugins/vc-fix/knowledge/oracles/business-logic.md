@@ -135,6 +135,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Docs:** platform/user-guide/docs/cart/overview.md — the cart module reserves stock for cart products until checkout completes
 - **Source:** VP-2862 (Done) — a product with zero stock and zero preorder quantity could still be added and bought; fixed
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] QUOTE-026 failed in REG-2026-10-15-1453
 
 ### BL-CART-003: Coupon + sale interaction `[P0-revenue]`
 - **Rule:** A percentage coupon applies to the already-discounted (sale) price, not the original list price. A fixed-amount coupon subtracts from the cart total after all line-level discounts. If a coupon's minimum order amount is not met after sale discounts, the coupon must be rejected. Only one coupon per cart unless multi-coupon is explicitly enabled.
@@ -271,7 +272,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Docs:** platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/update-xapi-modules.md — the anonymous order creation setting moved to its functional X-module
 - **Source:** vc-frontend `client-app/pages/checkout/index.vue` — no auth guard on the checkout route; a guest may initialize and complete checkout, and the guest order is not linked to an account.
 - **Trust:** DECLARED
-- **Lifecycle:** SUSPECT — [case] CHK-004, CHK-027, CHK-028, CHK-096 failed in REG-2026-10-02-2022
+- **Lifecycle:** SUSPECT — [case] CHK-096 failed in REG-2026-10-15-1624
 
 ### BL-CHK-002: Double-submit prevention (Place Order idempotency) `[P0-revenue]`
 - **Rule:** Clicking "Place Order" twice in rapid succession must NOT create two orders. The button must be disabled after first click, and the backend must enforce idempotency (same cart token → same order).
@@ -279,6 +280,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Violation signal:** Two orders with same items created; button remains clickable during processing; no loading indicator.
 - **Agents:** qa-frontend-expert, qa-backend-expert, qa-testing-expert, test-management-specialist
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] SMK-013 failed in REG-2026-10-15-1115
 
 ### BL-CHK-003: Address validation by country `[P1-data]`
 - **Rule:** Checkout address forms adapt the **State/Province** requirement to the selected country, but **ZIP/Postal code is required unconditionally regardless of country** (the `postalCode` field's schema has no country branch). State/Province is required when the selected country has one or more regions and is hidden/optional otherwise. US requires state; the address must be validated before proceeding to payment.
@@ -311,7 +313,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Docs:** platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Cart/objects/CartTotalType.md — per-currency bucket with total, subTotal, taxTotal, discountTotal
 - **Source:** VCST-661 (Done) — a '% off cart subtotal' reward ignored which items were selected in the cart; fixed
 - **Trust:** INFERRED
-- **Lifecycle:** SUSPECT — [case] ORD-050 failed in REG-2026-10-02-2022
+- **Lifecycle:** SUSPECT — [case] SMK-013 failed in REG-2026-10-15-1115
 
 ### BL-CHK-007: Minimum order amount enforcement `[P0-revenue]`
 - **Rule:** **NOT native to Virto Commerce** (live-verified 2026-07-15: no store-level monetary minimum-order-amount setting and no native cart validator that blocks Place Order on a below-minimum subtotal — native cart validation is quantity/stock/price-based only: MinQuantity/MaxQuantity/PackSize, out-of-stock, price-changed). This invariant applies **ONLY to deployments that add a custom minimum-order validator/setting**. Where such a validator exists: when a store has a minimum order amount configured, the checkout "Place Order" button must be disabled (or checkout blocked) if the cart subtotal (after discounts) is below the minimum. The minimum applies to the subtotal, not the grand total (before shipping/tax). A clear message must indicate the minimum and the shortfall.
@@ -343,7 +345,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Docs:** platform/user-guide/docs/order-management/managing-documents.md (published) — refunds can be issued for payments/orders with Paid status; capture is an action on the PaymentIn document.
 - **Source:** vc-module-order `PaymentFlowService.cs` — `CaptureAllowedPaymentStatuses => [Authorized, Paid]`, `RefundAllowedPaymentStatuses => [Paid, PartiallyRefunded, Refunded]` (Voided excluded); shipment status enum = New / Pick & Pack / Ready to Send / Send (no "Delivered").
 - **Trust:** INFERRED
-- **Lifecycle:** SUSPECT — [case] ORD-013, ORD-031, ORD-093, ORD-063, ORD-064, ORD-065, ORD-066, ORD-075, ORD-076, ORD-077, ORD-081 failed in REG-2026-10-02-2022
+- **Lifecycle:** SUSPECT — [case] ORD-074 failed in REG-2026-10-06-1457
 
 ### BL-ORD-002: Cancellation restores inventory conditionally `[P1-data]`
 - **Rule:** When an order is cancelled, the stock reserved for it is released automatically, for **every** line item of the order, not only the first. The adjustment is governed by **"Adjust inventory for orders"** — *"Update the inventory when the order status changes"* — a **global** Orders → General setting (Settings in the main menu), **not** a store-specific one: in that blade the store-specific settings carry a `Store` badge and this one does not. With the setting off, a status change (cancellation included) does not adjust stock, and any correction is manual.
@@ -364,7 +366,6 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Agents:** qa-backend-expert, qa-testing-expert, qa-frontend-expert
 - **Docs:** platform/user-guide/docs/order-management/managing-documents.md (published) — orders can carry several shipment documents, all listed in the Shipment widget.
 - **Trust:** INFERRED
-- **Lifecycle:** SUSPECT — [case] ORD-004, ORD-027 failed in REG-2026-10-02-2022
 
 ### BL-ORD-004: Refund conditions `[P0-revenue]`
 - **Rule:** Refund is only possible on a payment that has been captured. Partial refund amount must be ≤ captured amount minus any previous refunds. Full refund sets payment status to "Refunded." A voided payment cannot be refunded. Refund does not automatically restore inventory — that follows BL-ORD-002 cancellation rules separately.
@@ -383,7 +384,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Source:** vc-module-core `CounterOptions.cs` — default `ResetCounterType.Daily`; `SequenceNumberGeneratorService.ShouldResetCounter` resets the sequence at the UTC day boundary.
 - **Source:** VP-8617 (Done) — fixed duplicate order numbers generated across users and stores; expected each order number to be unique.
 - **Trust:** DECLARED
-- **Lifecycle:** SUSPECT — [case] ORD-029, ORD-050 failed in REG-2026-10-02-2022
+- **Lifecycle:** SUSPECT — [case] SMK-013 failed in REG-2026-10-15-1115
 
 ### BL-ORD-006: Payment state machine (detailed) `[P0-revenue]`
 - **Rule:** Payment states and allowed transitions:
@@ -456,7 +457,6 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Violation signal:** Cart emptied after session expiry; user redirected to homepage instead of checkout; items lost.
 - **Agents:** qa-frontend-expert, qa-testing-expert, qa-backend-expert, test-management-specialist
 - **Trust:** INFERRED
-- **Lifecycle:** SUSPECT — [case] AUTH-009 failed in REG-2026-10-02-2022
 
 ### BL-AUTH-002: Email verification gate `[P1-data]`
 - **Rule:** When `emailVerificationRequired = true` in store settings, newly registered users cannot access protected features (checkout, order history, account management) until they verify their email via the confirmation link. They can still browse the catalog and add items to cart. The verification link must expire after a configurable period.
@@ -478,7 +478,6 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Source:** VCST-5374 (Done) — fixed org members getting a permanent-lockout code for a temporary failed-attempt lockout.
 - **Source:** KB-8646A9CB (corroborated) — five failed storefront sign-ins return user_is_temporary_locked_out with about 15-minute lockoutEnd.
 - **Trust:** DECLARED
-- **Lifecycle:** SUSPECT — [case] AUTH-069, SEC-AUTH-005 failed in REG-2026-10-02-2022
 
 ### BL-AUTH-004: Returning vs new customer defaults `[P2-ux]`
 - **Rule:** Shipping-address pre-fill at checkout is **config-gated and off by default.** The store's shipping-address policy setting has exactly two values — a disabled value (the **default**) and a previous-order value. Only under the previous-order value does checkout pre-fill the shipping address, and it then copies the **shipping (or billing-and-shipping) address of the customer's most recent order** — not the customer's saved address book — and only when the cart's shipment has **no** delivery address yet. Under the disabled value a returning customer sees **no** pre-filled shipping address, exactly like a first-time customer, and must select one; that is by design, not a defect. A new customer (first order) always sees empty address forms and no saved payment methods. Saved payment methods are a separate per-customer store of tokenized cards, offered only by card processors that support saving, and are **not** governed by the shipping-address policy. In every configuration the system must not show addresses or payment methods belonging to another account, even if the email was reused across organizations.
@@ -497,7 +496,6 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Docs:** platform/developer-guide/docs/Fundamentals/Security/authorization/global-permissions.md (published) — modules declare access/read/create/update/delete (+extensions) permissions; [Authorize] enforces them on API methods.
 - **Source:** Platform docs "Global permissions" (the module permission template is `access/read/create/update/delete`; Orders extends it with `read_prices`) + `vc-platform` `ClaimsPrincipalExtensions.cs:61-71` (`HasGlobalPermission` = reserved-administrator short-circuit, else the permission claim must be held) + `vc-module-customer` `ModuleConstants.cs:14-34` (base 5 plus a module-specific `invite`, and a separate organization-membership permission group) with `OrganizationMembershipController.cs:22,34,80,92,119,129,137` gating each action by permission. Live-confirmed on the environment: the registered permission catalog is dominated by the base-5 verbs across every module group, `export` appears only on the few modules that support data export, and a storefront-scoped token carrying no platform permission claims received 403 from three permission-gated admin endpoints. The Admin-SPA button-visibility half of `Verify` was not re-observed this run (docs + source cover the UI-gating mechanism).
 - **Trust:** DECLARED
-- **Lifecycle:** SUSPECT — [case] CHK-103, IMP-022 failed in REG-2026-10-02-2022
 
 ### BL-AUTH-006: Role hierarchy `[P1-data]`
 - **Rule:** Virto Commerce roles are independent permission-claim sets, **NOT** a built-in inheritance hierarchy — a role has exactly the permissions assigned to it and does not automatically inherit a lower role's permissions. The role entity carries no parent, base, extends, or child field of any kind. Three names are **reserved system roles** carried on the account rather than rows in the role list (administrator, manager, customer); every other role is **per-deployment data** — role names and their permission sets are created per deployment and must be read from the environment, never assumed to exist. Administrator power is a **short-circuit, not inheritance**: a principal in the reserved administrator system role passes every global permission check without holding the claim, while everyone else must hold the specific permission claim. Within that model: An Administrator can perform any action. Store Managers can manage their assigned store(s) but not platform settings. Customers can only access their own data — a storefront account is an account category, not a platform role, and typically holds no platform role at all (its rights arrive as organization-scoped claims). Anonymous users are limited to browsing (if `anonymousUsersAllowed = true`) — an unauthenticated state, not a role.
@@ -516,7 +514,6 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Agents:** qa-frontend-expert, qa-testing-expert, qa-backend-expert, test-management-specialist
 - **Source:** `vc-frontend` `client-app/shared/layout/components/header/_internal/top-header.vue` — `account-button` → `account-menu` popup → `sign-out-button` (an icon-only button titled with the localized logout label) wired to `signMeOut` from `useSignMeOut`; `client-app/router/routes/main.ts` declares only a sign-in page and a repo-wide search of the router directory finds no sign-out/logout route. Live-confirmed on the environment: both URLs render the 404 catch-all, the authenticated header carries no logout control, and the popup control signs the user out through the auth guard. Docs axis: N/A — the storefront user guide has no sign-out topic, and the invariant's substance is the route-absence + selector contract (QA methodology).
 - **Trust:** INFERRED
-- **Lifecycle:** SUSPECT — [case] IMP-041 failed in REG-2026-10-02-2022
 
 ### BL-AUTH-008: Self-impersonation must have a defined non-circular outcome `[P1-data]`
 - **Rule:** When an operator with `CanImpersonate` navigates to `/account/impersonate/{ownUserId}` (their own platform user ID), the result must be a defined, non-circular outcome: (a) session cleared with redirect to `/sign-in`, (b) a handled error page, or (c) a redirect to home with the operator's own session intact and no impersonation banner. The system must NOT enter a circular state where the banner shows "Operator logged in as Operator" or an infinite redirect loop.
@@ -607,7 +604,6 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Source:** `vc-module-customer` `OrganizationAccessResolver.cs:14-40` (steps 3–5) and `:42-79` (the two-axis predicate; the skip at `:48-51` is keyed on an absent userId or empty organization list, and the per-org branch at `:64-77` evaluates a null membership through the contact-status fallthrough) + `OrganizationIdRequestValidator.cs:136-151` (steps 1–2) + `OrganizationMembership.cs:22,26-34` (`IsCurrentlyLocked`, `ResolveEffectiveStatus`) + `ModuleConstants.cs:51-54` (blocking statuses) + `CurrentOrganizationIdTokenRequestHandler.cs:16-43` (the write-back, and its impersonation skip). Live-confirmed on the environment: step-1 precedence over the stored org; a stored current org honoured over the first-listed org; a zero-membership-row contact resolving and accepting an explicit org; all three blocking-status single-org fixtures signing in with no explicit org and receiving no organization claim; and the write-back observed moving a contact's stored org, after which the next no-org grant resolved the new value. The ordering **between** steps 3 and 4 remains source-only — no fixture carries a default organization, so it was not isolated live. Docs axis: N/A — the published guides describe multi-organization switching as a feature but no resolution order, accessibility predicate, or persistence; the behaviour shipped in the change under audit (waived).
 - **Source:** VCST-5496 (Done) — fixed org auto-resolution (Current, then Default, then first org) ignoring the user's other active orgs when the resolved one was locked.
 - **Trust:** DECLARED
-- **Lifecycle:** SUSPECT — [case] B2C-ORG-045, B2C-ORG-051 failed in REG-2026-10-02-2022
 
 ### BL-AUTH-016: An org refusal is a single code, lock-first, and only when no fallback remains `[P0-revenue]`
 - **Rule:** When the requested organization is one the user is associated with but cannot currently access, the outcome is decided in this order:
@@ -645,7 +641,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Agents:** qa-frontend-expert, qa-backend-expert
 - **Docs:** storefront/user-guide/docs/account/overview.md (published) — corporate accounts shop on behalf of a company using company-associated addresses; users can switch organizations
 - **Trust:** INFERRED
-- **Lifecycle:** SUSPECT — [case] B2C-ORG-045, AUTH-036, AUTH-037, AUTH-038, AUTH-043, SMK-020 failed in REG-2026-10-02-2022
+- **Lifecycle:** SUSPECT — [case] BSM-078, BSM-092 failed in REG-2026-10-08-0812
 
 ### BL-B2B-002: Organization-specific pricing overrides store default `[P0-revenue]`
 - **Rule:** When an organization has an assigned price list, those prices override the store's default price list for all members of that organization. The priority chain is: organization price list → store default price list → "Unavailable." If the org price list doesn't cover a product, the store default applies as fallback.
@@ -700,7 +696,6 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Source:** VCST-5028 (Done) — roles must be scoped to a single organization so a user can hold different roles in different organizations
 - **Source:** VCST-5401 (Done) — fixed an org membership role leaking into the global account; per-org permissions must come only for the active org
 - **Trust:** DECLARED
-- **Lifecycle:** SUSPECT — [case] B2C-ORG-051 failed in REG-2026-10-02-2022
 
 ### BL-B2B-008: Org-scoped role change mutates only the target org's membership `[P1-data]`
 - **Rule:** Changing a member's role in org X (`changeOrganizationContactRole(memberId, roleIds)` or REST `PUT /api/customer/organization-memberships/{id}`) MUST update only the (userId, orgX) `OrganizationMembership.Roles`. Other orgs' membership records and the global `ApplicationUser.Roles` MUST be unchanged. (VCST-5028 — guards against the old handler that replaced global roles.)
@@ -979,6 +974,7 @@ These invariants span multiple modules and are where the most expensive producti
 - **Docs:** platform/user-guide/docs/order-management/notifications.md (published) — customers get automated email on order creation
 - **Docs:** storefront/user-guide/docs/shopping/checkout-process.md (published) — placed orders are viewable in the account Orders section
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] GA-031 failed in REG-2026-10-13-1726
 
 ### BL-CROSS-006: Feature flag toggle → immediate behavior change `[P1-data]`
 - **Rule:** Store-level feature flags (e.g., `quotesEnabled`, `anonymousUsersAllowed`, `createAnonymousOrderEnabled`) take effect on the storefront without requiring a restart or redeployment. The storefront reads flags from xAPI on each page load. Module-level flags (e.g., module enable/disable) may require a platform restart. The distinction must be documented per flag.
@@ -1003,7 +999,6 @@ These invariants span multiple modules and are where the most expensive producti
 - **Docs:** platform/user-guide/docs/white-labeling/overview.md (published) — branding follows the logged-in organization
 - **Docs:** storefront/user-guide/docs/account/company-members.md (published) — users switch between their companies from the account menu
 - **Trust:** INFERRED
-- **Lifecycle:** SUSPECT — [case] SMK-020 failed in REG-2026-10-02-2022
 
 ### BL-CROSS-009: Eventual consistency is bounded `[P1-data]`
 - **Rule:** Any change to an entity — an admin edit (product, price, inventory, category, settings) **or a write through any API surface** (REST, xAPI/GraphQL) — must be reflected everywhere that entity is read within 120 seconds (2 reindex cycles). This bound covers search index, cache layers, CDN, **and per-entity read caches**: a write on one surface must invalidate the cached read of the *same* entity on every other surface — caches must expire on the entity's change event, not only on a same-surface write. After 120 seconds, any discrepancy (Admin vs storefront, or one API surface vs another) is a bug.
@@ -1027,7 +1022,7 @@ These invariants span multiple modules and are where the most expensive producti
 - **Violation signal:** White screen / 500 error when a dependent service is down; orphan orders created when payment fails; order blocked because email service is down; silent data loss without logging.
 - **Agents:** qa-backend-expert, qa-frontend-expert, qa-testing-expert
 - **Trust:** INFERRED
-- **Lifecycle:** SUSPECT — [case] SMK-001 failed in REG-2026-10-02-2022
+- **Lifecycle:** SUSPECT — [case] BSM-044, BSM-045, BSM-046, BSM-047, BSM-054, BSM-058, BSM-060, BSM-062, BSM-073, BSM-083, BSM-106 failed in REG-2026-10-08-0812
 
 ### BL-CROSS-012: Admin entity deletion never creates $0 products `[P0-revenue]`
 - **Rule:** No admin action (price list deletion, catalog reorganization, module disable, currency removal) should ever cause a product with **missing/absent** price data to silently fall back to a purchasable $0.00 on the storefront. The safe state for a product without a valid price is "Unavailable" / "Add to Cart disabled" — never $0.00 with an active purchase button. **EXCEPTION:** an *intentional* $0 price is purchasable only where the deployment has overridden the price-policy specifications (`ProductIsBuyableSpecification.CheckPricePolicy` and its catalog counterpart) to allow it; by default a $0-priced product is not buyable and cannot be added to cart. When auditing, confirm the deployment's price-policy override before treating a $0 purchase as a violation.
@@ -1037,6 +1032,7 @@ These invariants span multiple modules and are where the most expensive producti
 - **Docs:** platform/developer-guide/docs/Tutorials-and-How-tos/How-tos/customizing-cart-validation-policies.md (published) — zero-price products are not buyable by default; enabling requires overriding the price policy
 - **Docs:** platform/developer-guide/docs/Tutorials-and-How-tos/How-tos/customizing-cart-validation-policies.md — default price policy: products with zero price are not buyable; allowing them requires overriding CatalogProductIsBuyableSpecification/ProductIsBuyableSpecification (CheckPricePolicy returns true), a backend customization, not a theme flag
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] BSM-085 failed in REG-2026-10-08-0812
 
 ---
 
@@ -1051,7 +1047,6 @@ These invariants span multiple modules and are where the most expensive producti
 - **Source:** vc-module-x-catalog `ChildCategoriesQueryHandler` — server-side `TermFacetResult` term counts (`term_facets.terms.count`).
 - **Source:** VCST-1926 (Done) — a facet said 21 and 16 products came back; fixed. Also VCST-5324, VCST-3993 (Done)
 - **Trust:** DECLARED
-- **Lifecycle:** SUSPECT — [case] SRCH-023, SRCH-NEW-104 failed in REG-2026-10-02-2022
 
 ### BL-SRCH-002: Zero-result query shows an intact empty state `[P2-ux]`
 - **Rule:** When a search query returns zero results, the search-results page (rendered by `category.vue` → `category-products.vue`) must render an intact empty state and never a blank grid, broken layout, or error. It must display (1) a clear no-results message via a `VcEmptyView` (variant `search`, icon `outline-stock`) using i18n key `pages.catalog.no_products_filtered_message` when a keyword/filters are active (else `pages.catalog.no_products_message`), with the searched term echoed in the page heading via i18n key `pages.search.header_empty`; and (2) a recovery action — a reset button (i18n key `pages.catalog.no_products_button`) that clears the keyword/filters (emits `resetFilterKeyword`). NOTE: vc-frontend does **NOT** implement spelling "Did you mean…" suggestions nor a popular-products/categories fallback — do not assert them.
@@ -1081,7 +1076,7 @@ These invariants span multiple modules and are where the most expensive producti
 - **Docs:** vc-docs platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Catalog/queries/products.md — storeId is a required argument
 - **Source:** VCST-3003 / VP-8726 (Done) — a bulk add resolved an item code from another catalog; indirect
 - **Trust:** INFERRED
-- **Lifecycle:** SUSPECT — [case] SRCH-014, SRCH-018, SRCH-021 failed in REG-2026-10-02-2022
+- **Lifecycle:** SUSPECT — [case] SRCH-011, SRCH-024 failed in REG-2026-10-09-1616
 
 ### BL-SRCH-005: Special characters in search queries `[P2-ux]`
 - **Rule:** Search must handle special characters safely: quotes, ampersands, angle brackets, Unicode, emoji, and SQL/NoSQL injection patterns. Special characters should be escaped or treated as literal text — never interpreted as query operators (unless explicitly supported like `"exact phrase"` search). No 500 errors, no information leakage.
@@ -1165,7 +1160,6 @@ These invariants are extracted from BOPIS suite assertions (suites 036–038). T
 - **Source:** VCST-4092 (Done) — fixed pickup point address wrongly appearing in the Shipping address field after switching delivery options
 - **Source:** VCST-3025 (Done) — fixed addresses getting mixed when switching between Pickup and Shipping
 - **Trust:** DECLARED
-- **Lifecycle:** SUSPECT — [case] BOPIS-095 failed in REG-2026-10-02-2022
 
 ### BL-BOPIS-002: BOPIS pickup always has $0 shipping cost `[P0-revenue]`
 - **Rule:** Items selected for in-store pickup must have $0.00 shipping cost regardless of cart subtotal, applied promotions, or the presence of other delivery items in the same cart. The $0 pickup cost must not be inflated by any shipping fee calculation. The order confirmation and Admin order detail must also show $0 for the pickup shipment.
@@ -1406,7 +1400,6 @@ These invariants hold for any rendered surface — Storybook stories, storefront
 - **Violation signal:** Computed values that map to **no** Tailwind scale step (e.g. `"13px"`, `"27px"`, `"41px"`). Note: spacing in vc-frontend is applied via Tailwind utility classes / `theme()` refs, **not** `--spacing-*` CSS variables (those do not exist in the codebase).
 - **Agents:** ui-ux-expert, qa-frontend-expert, qa-backend-expert
 - **Trust:** INFERRED
-- **Lifecycle:** SUSPECT — [case] SR-CO-023 failed in REG-2026-10-02-2022
 
 ### BL-UI-003: No state-induced layout shift `[P2-ux]`
 - **Rule:** Hover, focus, validation-message insertion, badge/counter updates, and skeleton → content swap MUST NOT move adjacent elements. A border that appears on hover must use `outline` (which does not affect layout) OR reserve its space with a transparent border in the default state. A counter widening from 1-digit to 3-digit must not push siblings.
@@ -1414,7 +1407,6 @@ These invariants hold for any rendered surface — Storybook stories, storefront
 - **Violation signal:** Neighbor moves on hover. Form below a field jumps when validation error inserts. Cart-icon badge change shifts navbar items. Skeleton dimensions ≠ resolved content → snap on load.
 - **Agents:** ui-ux-expert, qa-frontend-expert, qa-backend-expert
 - **Trust:** INFERRED
-- **Lifecycle:** SUSPECT — [case] LAYOUT-COMP-VCINPUT-002 failed in REG-2026-10-02-2022
 
 ### BL-UI-004: Content boundary `[P2-ux]`
 - **Rule:** Text and child elements MUST stay inside their container at every supported viewport. Long content must wrap, truncate with ellipsis, or scroll — never overflow silently and never be clipped by `overflow: hidden` without an explicit ellipsis indicator. Horizontal scrolling on the document at any tested viewport (375 / 768 / 1024 / 1280 / 1920) is a bug unless the scrolling element is itself an intentional horizontal scroller (e.g., a data table).
@@ -1434,6 +1426,7 @@ These invariants hold for any rendered surface — Storybook stories, storefront
 - **Source:** VCST-4816 (Done) — badge count not vertically centered due to wrong flex alignment property; fixed to centre
 - **Source:** VCST-3738 (Done) — misaligned admin module icons adjusted
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] SR-TK-019 failed in REG-2026-10-07-1421
 
 ### BL-UI-006: Touch target size and spacing `[P1-data]`
 - **Rule:** At mobile viewport (≤ 768 px), every interactive element — `<button>`, `<a>`, `<input type="checkbox|radio">`, `[role="button"]`, custom steppers, toggle switches — MUST measure at least **24 × 24 CSS px (WCAG 2.2 SC 2.5.8, Level AA)** and SHOULD reach **44 × 44 (SC 2.5.5, Level AAA)**, with ≥ 8 px gap from any adjacent interactive element. Padding counts toward the target; hit area is `getBoundingClientRect()` of the element including padding, NOT the visible glyph alone. **Two tiers on purpose:** the vc-frontend UI kit ships button sizes 26 / 32 / 38 / 44 / 52 px by design (`vc-button.vue` `--size`), so a flat 44 px bar marks most of the design system as broken — that produced 13 of 36 failures in run REG-2026-07-24-2121. Below AA = defect (FAIL); AA-to-AAA = design-system tradeoff (WARN), cross-check against the derived `UI_KIT_BUTTON_SIZES_PX` before filing.
@@ -1445,7 +1438,7 @@ These invariants hold for any rendered surface — Storybook stories, storefront
 - **Source:** vc-frontend `client-app/ui-kit/components/molecules/button/vc-button.vue` `--size` tiers (xxs 26 / xs 32 / sm 38 / md 44 / lg 52 px); this repo `scripts/lib/measure-layout.ts` `TOUCH_TARGET_AA_MIN_PX` / `classifyTouchTargets()` (FAIL < 24, WARN 24–43).
 - **Source:** VCST-5019 (Cancelled) — 26x26 coupon buttons reported against a 44px bar were not fixed; consistent with the rule treating 24-43px as WARN, not FAIL
 - **Trust:** DECLARED
-- **Lifecycle:** SUSPECT — [case] B2C-ORG-047, LAYOUT-TGT-001, LAYOUT-TGT-002, LAYOUT-COMP-HEADER-003 failed in REG-2026-10-02-2022
+- **Lifecycle:** SUSPECT — [case] SR-CO-048 failed in REG-2026-10-07-1421
 
 ### BL-UI-007: Admin editor chrome is keyboard-operable and exposes its state `[P1-data]`
 - **Rule:** Every interactive control an admin surface introduces must be reachable by `Tab` in DOM order, activatable from the keyboard, and must expose the correct role and selected/expanded state to assistive technology plus a non-empty accessible name. A visible focus indicator is required on focus — a control may not remove the platform outline without replacing it. Keyboard focus must never be trapped: an embedded editor that consumes `Tab` for indentation must provide an escape binding so focus can leave it (WCAG 2.1.2 No Keyboard Trap, Level A). Embedded iframes carry a non-empty `title`. Text meets WCAG 2.2 AA contrast 4.5:1 (3:1 for large text); non-text affordances such as icons and focus indicators meet 3:1. **Scope:** this invariant judges the controls a surface itself adds or owns. Pre-existing platform form chrome that fails the same check is a platform-level finding — record it once against the platform, not against every module blade that renders it.
@@ -1475,7 +1468,6 @@ Transport-layer invariants for the xAPI GraphQL endpoint at `{BACK_URL}/graphql`
 - **Docs:** platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/best-practices.md (docs) — responses typically return HTTP 200 even when errors occur; inspect errors[] in the body
 - **Source:** VP-6664 (Done) — unauthorized user query returned an unhandled error instead of a structured Access denied error; fixed
 - **Trust:** DECLARED
-- **Lifecycle:** SUSPECT — [case] CART-118 failed in REG-2026-10-02-2022
 
 ### BL-GQL-002: GraphQL query performance thresholds `[P2-ux]`
 - **Rule:** Happy-path GraphQL operations against the xAPI complete within target wall-clock thresholds measured from request-send to response-received: simple single-resolver queries (`me`, `categories(first:1)`, flat `orders(first:10)`) **< 500 ms**; deep nested queries (`orders { items addresses inPayments shipments }`) **< 1000 ms**; introspection (`__schema { types }`) **< 1000 ms**. Thresholds are environment-specific — these are baselines for one deployment; other environments may differ.
@@ -1811,7 +1803,7 @@ Scoped storefront GraphQL surface for sales representatives (`POST /graphql/sale
 - **Docs:** platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/SalesRep/queries/salesRepOrders.md (published) — returns the orders the sales representative created for their customers
 - **Source:** module README @`dev` — *"All statistics and rankings obey the same data-isolation rule … they count only the data the calling rep created (their own orders/carts), within the organizations they serve"* (L459), and *"Every statistics query is scoped two ways — to the organizations the rep serves (membership) and to the data the rep created"* (L489). The README does **not** mention `salesRepCustomerOrders` at all. Source: `SalesRepOrdersQueryHandler.BuildSearchCriteria` sets BOTH `criteria.OrganizationIds` and `criteria.CustomerId = request.UserId` (blob `8f7253d0`), whereas the customer-orders handler applies organization scope only. Live probe 2026-07-23; re-probed 2026-09-04.
 - **Trust:** DECLARED
-- **Lifecycle:** SUSPECT — [case] SR-CO-012 failed in REG-2026-10-02-2022
+- **Lifecycle:** SUSPECT — [case] B2C-LIST-052, B2C-LIST-053, B2C-LIST-054, B2C-LIST-057, B2C-LIST-070, B2C-LIST-071, B2C-LIST-074, B2C-LIST-078, WISH-039, WISH-041, WISH-043, WISH-049 failed in REG-2026-10-05-1613
 
 ### BL-SR-003: Comparison returns the delta; `*ChangePercent` is NULL when the previous baseline is 0 `[P1-data]`
 - **Rule:** `comparison(current, previous)` always returns the absolute change (`totalChange`, `countChange`, `averageChange` as Money/scalar) plus a `*ChangePercent`. When the **previous** period baseline is 0, the percent is **null** (no divide-by-zero, no Infinity) while the absolute change is still the full current value.
@@ -1900,6 +1892,7 @@ Scoped storefront GraphQL surface for sales representatives (`POST /graphql/sale
 - **Source:** VCST-5304 (Done) — when logged in as a Sales Rep (role), the account left rail gets a separate 'Sales Rep hub' widget
 - **Source:** VCST-5494 (Done) — rep with no org membership was redirected from My customers; fixed so rep-facing hub pages are reachable
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] SR-HD-100, SR-HD-102 failed in REG-2026-10-15-1548
 
 ### BL-SR-012: Filter-aware empty states distinguish "no data" from "nothing matched the filter/search" `[P2-ux]`
 - **Rule:** The orders, top-sellers and my-customers views render **distinct** empty states for "the rep has no data at all" vs "the current filter/search matched nothing" — the latter must offer a way back (clear filter/search), not read as "you have no customers/orders".
@@ -1908,7 +1901,7 @@ Scoped storefront GraphQL surface for sales representatives (`POST /graphql/sale
 - **Agents:** qa-backend-expert, qa-frontend-expert
 - **Source:** vc-frontend PR #2395 ("Filter-aware empty states… distinguish 'nothing matches this filter/search' from 'no data'").
 - **Trust:** INFERRED
-- **Lifecycle:** SUSPECT — [case] SR-CO-027 failed in REG-2026-10-02-2022
+- **Lifecycle:** SUSPECT — [case] SR-TK-023 failed in REG-2026-10-07-1421
 
 ### BL-SR-013: Rep-facing status / money / rule vocabulary localizes by `cultureName`; raw enum/key never surfaces `[P2-ux]`
 - **Rule:** Filter/sort rule labels (`localizedName`), order statuses (`statusDisplayValue`), and `formattedAmount` localize by `cultureName`. The storefront renders the localized label, never a raw enum value or an i18n key.
@@ -1919,7 +1912,7 @@ Scoped storefront GraphQL surface for sales representatives (`POST /graphql/sale
 - **Source:** module README (`localizedName` on all rule discovery; `statusDisplayValue`); vc-frontend PR #2395 (13 locales).
 - **Source:** VCST-5681 (Done) — Sales Rep account sidebar rendered raw i18n keys in a non-English locale; fixed to render localized labels
 - **Trust:** DECLARED
-- **Lifecycle:** SUSPECT — [case] SR-CO-032 failed in REG-2026-10-02-2022
+- **Lifecycle:** SUSPECT — [case] SR-CO-032 failed in REG-2026-10-06-1457
 
 ### BL-SR-014: Embedded Sales Rep Admin app gates on customer-member + platform-security permissions, not on `sales-rep:access` `[P1-data]`
 - **Rule:** The embedded Sales Rep Admin app (`api/sales-rep`) is gated by the **customer module's member permissions + platform security permissions**, NOT by `sales-rep:access` (which only defines a storefront rep) and NOT merely by the module being installed. The exact matrix (`[Authorize]` attributes; **multiple attributes = AND — all required**):
@@ -2098,6 +2091,7 @@ These invariants hold for any rendered customer-facing surface on the accessibil
 - **Source:** `client-app/ui-kit/composables/useFocusManagement.ts` — the focusable-elements selector and the Tab-cycle keydown handler that wraps focus at the first/last element when `trapFocus` is enabled; wired into `client-app/ui-kit/components/molecules/dialog/vc-dialog.vue`.
 - **Source:** VCST-5671 (Done) — overflow popover was not keyboard reachable and focus did not move into it; fixed
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] SR-CO-051 failed in REG-2026-10-06-1457
 
 ### BL-A11Y-002: Accessible naming and label association `[P1-data]`
 - **Rule:** Every interactive control MUST expose a non-empty, contextual accessible name to assistive technology (WCAG 4.1.2), distinct from a generic element-type label. Every visible field label MUST be programmatically associated with its input via `<label for>`/`aria-labelledby`/`aria-label` (WCAG 1.3.1). Every informative image's `alt` describes its content/purpose; a purely decorative image carries `alt=""` (WCAG 1.1.1).
@@ -2131,7 +2125,7 @@ These invariants hold for any rendered customer-facing surface on the accessibil
 - **Source:** `client-app/shared/cart/components/coupon-card.vue` — the coupon-apply error paragraph is conditionally mounted with `role="alert"` only when an error exists, so its appearance in the DOM itself triggers the assistive-technology alert announcement.
 - **Source:** VCST-5912 (Done) — quantity spinbutton exposed aria-invalid=true and a wrong aria-valuenow on untouched render; fixed
 - **Trust:** DECLARED
-- **Lifecycle:** SUSPECT — [case] MSNF-047 failed in REG-2026-10-02-2022
+- **Lifecycle:** SUSPECT — [bug] VCST-5878 compare table body scroller below md has no focusable content (axe scrollable-region-focusable, Serious) — pre-existing; CMP-047 failed on it in REG-2026-10-12-1832
 
 ---
 
@@ -2323,6 +2317,7 @@ These invariants hold for any rendered customer-facing surface on the accessibil
 - **Source:** vc-frontend `client-app/modules/google-analytics/events.ts` (`viewItemList`, `selectItem`, `viewItem`, `viewSearchResults`, `addItemToWishList`) + `utils.ts` (`productToGtagItem`, `getCategories` — first 5 non-product breadcrumbs mapped to `item_category`/`item_category2..5`).
 - **Source:** VCST-4801 (Done) — GA4 item affiliation showed a placeholder instead of the store name; fixed
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] GA-002, GA-028, GA-029, GA-037, GA-043, GA-052, GA-056, GA-057 failed in REG-2026-10-13-1643
 
 ### BL-GA4-002: Cart mutation events report the cart's own line items and value, never a client-guessed total `[P1-data]`
 - **Rule:** Every cart mutation — `add_to_cart`, `view_cart`, `update_cart_item`, `remove_from_cart`, `clear_cart` — pushes a GA4 event whose `value`/`items[]` are read from the cart/line-item state the mutation itself returns, and whose `items[]` entries follow the same Item Fields schema as catalog events. `clear_cart` reports the value and contents of the cart AS IT WAS immediately before clearing — not zero/empty.
@@ -2348,6 +2343,7 @@ These invariants hold for any rendered customer-facing surface on the accessibil
 - **Source:** VCST-4800 (Done) — purchase event not capturable due to redirect off the completion page; fixed
 - **Source:** VCST-4307 (Done) — add_shipping_info value wrongly reflected shipping cost when switching methods
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] GA-031 failed in REG-2026-10-13-1726
 
 ### BL-GA4-004: GA4 is configured once per page with the session's current currency, language, and (when authenticated) user id `[P1-data]`
 - **Rule:** On every page load, the storefront issues a single `gtag("config", <trackId>, {...})` call whose config object carries the current store currency and the current UI language/culture; when the session is authenticated, it also carries `user_id` set to the logged-in user's own platform id; when the session is anonymous, `user_id` is omitted entirely — never a placeholder or empty string.
@@ -2386,6 +2382,26 @@ These invariants hold for any rendered customer-facing surface on the accessibil
 
 ---
 
+## Domain 28: Returns (BL-RET)
+
+> **Declared 2026-10-06, deliberately EMPTY — no invariant has cleared the evidence bar yet.** The
+> section exists so `.claude/knowledge/domain/returns.md` and `returns.mind-map.json` have a slug to
+> resolve against (`domain:check` DOMAIN-005 until now). The Return module carries two mechanisms on
+> one entity: the legacy admin-created return record, and the buyer self-service request (VCST-5628)
+> that an agent decides per line (VCST-5883). The published guides describe only the first. Returns are
+> judged today only by delegation to general oracles — `BL-AUTH-*` (who may read or decide a return),
+> `BL-B2B-*` (organization scoping) and `BL-NOTIF-*` (exactly-once sends, by analogy only: those are
+> order-email invariants).
+>
+> Candidates surfaced but **not** promoted (each needs a `/qa-review-oracles` three-axis pass): a
+> decision has no reverse path (no un-authorize); a return is decided only through the authorize call,
+> never by setting a status; Draft, Cancelled and Rejected hold no returnable quantity while a decided
+> line holds its approved quantity; every status change sends exactly one email and one push. Surfaces,
+> evidence and the open gaps: `.claude/knowledge/domain/returns.md` §3 and §5; behaviours:
+> `returns.mind-map.json`.
+
+---
+
 ## Invariant Coverage Summary
 
 Generated from `bl/*.yaml` by `npm run bl:render`. P0 rolls up `[P0-revenue]` + `[P0-security]`; P1 rolls up
@@ -2395,31 +2411,32 @@ ticket or a docs page disputes (`status`).
 | Domain | ID Range | Total | P0 | P1 | P2 | DECLARED | SUSPECT |
 |--------|----------|-------|----|----|----|----------|---------|
 | Pricing & Discounts | BL-PRICE-001–009 | 9 | 7 | 1 | 1 | 6 | 1 |
-| Cart | BL-CART-001–015 | 15 | 5 | 10 | 0 | 7 | 1 |
-| Checkout | BL-CHK-001–008 | 8 | 5 | 3 | 0 | 1 | 2 |
-| Orders & Fulfillment | BL-ORD-001–010 | 10 | 3 | 7 | 0 | 5 | 3 |
-| Users & Authentication | BL-AUTH-001–017 | 17 | 5 | 11 | 1 | 9 | 9 |
-| B2B / Organization | BL-B2B-001–013 | 13 | 4 | 9 | 0 | 10 | 3 |
+| Cart | BL-CART-001–015 | 15 | 5 | 10 | 0 | 7 | 2 |
+| Checkout | BL-CHK-001–008 | 8 | 5 | 3 | 0 | 1 | 3 |
+| Orders & Fulfillment | BL-ORD-001–010 | 10 | 3 | 7 | 0 | 5 | 2 |
+| Users & Authentication | BL-AUTH-001–017 | 17 | 5 | 11 | 1 | 9 | 4 |
+| B2B / Organization | BL-B2B-001–013 | 13 | 4 | 9 | 0 | 10 | 2 |
 | Catalog & Inventory | BL-CAT-001–012 | 12 | 2 | 6 | 4 | 8 | 3 |
-| Cross-Domain Invariants | BL-CROSS-001–012 | 12 | 7 | 5 | 0 | 5 | 2 |
-| Search | BL-SRCH-001–007 | 7 | 0 | 5 | 2 | 6 | 3 |
+| Cross-Domain Invariants | BL-CROSS-001–012 | 12 | 7 | 5 | 0 | 5 | 3 |
+| Search | BL-SRCH-001–007 | 7 | 0 | 5 | 2 | 6 | 2 |
 | Shipping & BOPIS | BL-SHIP-001–004 | 4 | 2 | 2 | 0 | 2 | 0 |
-| BOPIS-Specific Rules | BL-BOPIS-001–008 | 8 | 1 | 6 | 1 | 3 | 2 |
+| BOPIS-Specific Rules | BL-BOPIS-001–008 | 8 | 1 | 6 | 1 | 3 | 1 |
 | Notifications | BL-NOTIF-001–007 | 7 | 1 | 5 | 1 | 4 | 2 |
 | Import / Export | BL-IMPEX-001–004 | 4 | 0 | 4 | 0 | 1 | 0 |
 | SEO & URLs | BL-SEO-001–004 | 4 | 0 | 2 | 2 | 2 | 0 |
 | Profile & Member Data | BL-PROFILE-001 | 1 | 0 | 1 | 0 | 0 | 0 |
-| UI Display & Layout Stability | BL-UI-001–007 | 7 | 0 | 2 | 5 | 5 | 4 |
-| GraphQL xAPI Contract | BL-GQL-001–004 | 4 | 1 | 2 | 1 | 2 | 4 |
+| UI Display & Layout Stability | BL-UI-001–007 | 7 | 0 | 2 | 5 | 5 | 3 |
+| GraphQL xAPI Contract | BL-GQL-001–004 | 4 | 1 | 2 | 1 | 2 | 3 |
 | Loyalty & Mixed Cart | BL-LOY-001–020 | 19 | 10 | 7 | 2 | 10 | 0 |
 | Payment Processors | BL-PAY-001–004 | 3 | 3 | 0 | 0 | 2 | 0 |
 | White Labeling | BL-WL-001–006 | 6 | 0 | 2 | 4 | 4 | 0 |
-| Sales Rep | BL-SR-001–032 | 32 | 3 | 18 | 11 | 6 | 4 |
-| Accessibility | BL-A11Y-001–004 | 4 | 0 | 4 | 0 | 4 | 3 |
+| Sales Rep | BL-SR-001–032 | 32 | 3 | 18 | 11 | 6 | 5 |
+| Accessibility | BL-A11Y-001–004 | 4 | 0 | 4 | 0 | 4 | 4 |
 | Customer Reviews | BL-CR-001–018 | 9 | 1 | 6 | 2 | 5 | 0 |
 | Platform Administration | BL-PLAT-001–004 | 3 | 0 | 2 | 1 | 3 | 2 |
 | Store Management | BL-STORE-001 | 1 | 0 | 1 | 0 | 1 | 1 |
 | Agentic Commerce / UCP | — | 0 | 0 | 0 | 0 | 0 | 0 |
-| Analytics & Tracking | BL-GA4-001–004 | 4 | 0 | 4 | 0 | 3 | 0 |
+| Analytics & Tracking | BL-GA4-001–004 | 4 | 0 | 4 | 0 | 3 | 2 |
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
-| **Total** | | **223** | **60** | **125** | **38** | **114** | **49** |
+| Returns | — | 0 | 0 | 0 | 0 | 0 | 0 |
+| **Total** | | **223** | **60** | **125** | **38** | **114** | **45** |

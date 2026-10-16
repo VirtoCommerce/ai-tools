@@ -1,0 +1,369 @@
+{
+  "ticket": "VCST-6027",
+  "ticket_type": "Story",
+  "flow": "feature-test",
+  "tracker": {
+    "kind": "jira",
+    "comment_id": "111514",
+    "subtask_comment_ids": [],
+    "documentation_comment_id": "111515"
+  },
+  "path": "full",
+  "path_route": {
+    "decided_at": "1a",
+    "provisional": false,
+    "narrow_story_tokens": {
+      "priority": "P2",
+      "layer": "storefront (single)",
+      "domains": "cat (single)",
+      "chain_shape": "refines existing gate",
+      "surface": "obvious",
+      "reach": "exceeds diff — product-price-block.vue is shared"
+    },
+    "escalated_reason": "§5b refusal: configurable-products domain map §1 Purpose UNDECLARED (no Part 0 existed); Story default FULL",
+    "basis": "ticket-routing.md §5 / §5b — confirmed at end of 1b"
+  },
+  "shape_class": {
+    "value": "feature",
+    "sources": [
+      "PR #2527 diff: no client-app/ui-kit/**, token partials, presets or Storybook files"
+    ]
+  },
+  "layer": "storefront",
+  "domain_map": {
+    "state": "PRESENT",
+    "path": ".claude/knowledge/domain/configurable-products.md",
+    "rev": 1,
+    "mind_map": ".claude/knowledge/domain/configurable-products.mind-map.json",
+    "all_layer_chain": false,
+    "all_layer_confirmed_at": "1e-confirmed",
+    "built_in_run": false,
+    "unmapped_surfaces": [
+      "Price-and-delivery configuration checklist (product-configuration-checklist.vue)",
+      "useConfigurationSectionNavigation event bus + section element ids",
+      "per-section collapse state (collapsedSections)",
+      "mobile host: Share & Actions widget"
+    ],
+    "mind_map_findings": [
+      "no node carries the checklist / section-navigation mechanism (DRIFT for /qa-test-mind-map update)"
+    ],
+    "amended": {
+      "date": "2026-10-06",
+      "what": "§3 +4 rows CONFIRMED · D3 RESOLVED live · G5 CLOSED"
+    }
+  },
+  "verdict": "FAIL",
+  "date": "2026-10-06",
+  "timing": {
+    "started_at": null,
+    "test_window_start": "2026-10-06T16:38:00Z",
+    "finished_at": "2026-10-06T17:46:00Z",
+    "time_to_first_test_minutes": null,
+    "reachability_minutes": 4,
+    "agent_dispatches": 14,
+    "note": "started_at not captured at 1a (≈15:55Z); 4a dispatched 16:38Z. Dispatches: 1r, 1c, 1d, 3x, 3a, 4a, 4v, A (+1 fix round), firefox re-run, 3-cases verifier (+1 re-verify), C1."
+  },
+  "environment": "hybrid — storefront http://localhost (local container, vc-frontend PR #2527) + API/Admin https://vcst-qa.govirto.com (TEST_ENV=vcst, B2B-store)",
+  "build": {
+    "theme": "vc-theme-b2b-vue-2.59.0-pr-2527-d089-d08928e7 (local; X-VC-Local-Theme fe-b0b078dafdb1)",
+    "declared": {
+      "vcst-qa theme/artifact.json": "2.59.0-pr-2476-43b1-43b1a918",
+      "deploy_pr": "vc-deploy-dev#6829 (open) — PR #2527 not deployed to vcst-qa"
+    },
+    "deployed": {
+      "VirtoCommerce.Catalog": "3.1046.0",
+      "VirtoCommerce.XCatalog": "3.1022.0",
+      "VirtoCommerce.XCart": "3.1038.0-pr-141-3d86",
+      "VirtoCommerce.Cart": "3.1011.0-pr-194-8331",
+      "VirtoCommerce.Xapi": "3.1024.0",
+      "VirtoCommerce.FileExperienceApi": "3.1004.0"
+    },
+    "releasedThrough": "no ⚠ BREAKING in Catalog/Frontend for the ledger window; ticket changes no backend"
+  },
+  "status_transitions": [
+    {
+      "at": "1a",
+      "from": "Ready for test",
+      "to": "Testing",
+      "transition": "On QA (id 4)",
+      "by": "qa-lead (inline orchestrator)",
+      "confirmed": false,
+      "result": "done"
+    },
+    {
+      "at": "5-status",
+      "from": "Testing",
+      "to": "Reopen",
+      "transition": "Need fixes (id 7)",
+      "by": "qa-lead (inline orchestrator)",
+      "confirmed": true,
+      "reason": "verdict FAIL — AC-1/AC-3.1 DRIFT; Sub-task VCST-6188",
+      "result": "done"
+    }
+  ],
+  "agents_dispatched": [
+    "qa-frontend-expert (1r, 4a)",
+    "ba-system-analyzer (1c)",
+    "ba-story-writer (1d)",
+    "qa-testing-expert (3x, firefox re-run)",
+    "test-data-engineer (3a)",
+    "ui-ux-expert (4v)",
+    "test-management-specialist (A + fix round)",
+    "qa-lead-orchestrator (3-cases verifier ×2)",
+    "regression-orchestrator (4c)"
+  ],
+  "epic": null,
+  "ac_analysis": {
+    "story_acs": 8,
+    "weak_acs": 6,
+    "gap_acs_added": 15,
+    "impl_coverage": {
+      "SATISFIED": 4,
+      "DRIFT": 3,
+      "NOT-FOUND": 1,
+      "CONTRADICTS_mockup": 1
+    },
+    "conditions_total": 45,
+    "conditions_with_evidence": 45,
+    "ac_met": "6 of 8 story AC rows met (A1.1 FAIL/DRIFT, A3.2 PARTIAL/DRIFT) = 75%",
+    "dod": "none declared"
+  },
+  "total_cases": 45,
+  "passed": 34,
+  "failed": 5,
+  "blocked": 0,
+  "iterations": null,
+  "new_cases_authored": 28,
+  "promotion": {
+    "ran": false,
+    "reason": "--no-promote; cases stay Draft (route: /qa-test-lifecycle 6P or a later direct /qa-regression 6.5)"
+  },
+  "regression": {
+    "c1": {
+      "run_id": "REG-2026-10-06-1857",
+      "suites": [
+        "072",
+        "050i",
+        "072b",
+        "072e"
+      ],
+      "ids": 31,
+      "passed": 26,
+      "failed": 5,
+      "pass_rate": 0.839,
+      "wall_clock_minutes": 34,
+      "compute_metrics": "NOT EVALUATED — run absent from reports/regression/history.json (agent-run)"
+    },
+    "feature_release_gate": "not-assessed",
+    "bl_fresh": "regression Step 6.6 rewrote 9 records in 5 .claude/knowledge/oracles/bl/*.yaml (uncommitted)"
+  },
+  "regression_triage": {
+    "CFG-CHK-011": "real — AC-1/AC-3.1 DRIFT (in-scope)",
+    "CFG-CHK-014": "real — Low, optional whitespace marked completed",
+    "CFG-CHK-028": "real — Low, PRE-EXISTING (reproduced on deployed theme)",
+    "CFG-CHK-008": "real — Low, ~0.5 s first-paint window (in-page measured)",
+    "CFG-CHK-027": "test-defect — snapshot-polling measurement; in-page lag ~500 ms after last keystroke (within the 2 s tolerance) → /qa-review-tests --fix",
+    "CFG-FILE-ST-003": "FIXTURE-DRIFT — own URL /products-with-options/configurable-caps-shirts/physical 404; C1 PASS was on a substitute fixture and is NOT evidence for the case as written → test-defect, re-point",
+    "BUG_072_001": "C1 runner draft (High, confirmed:false) for the 1.6–19 s lag — REFUTED by in-page probe (~0.5 s); not cited, not filed"
+  },
+  "bugs_filed": [
+    {
+      "key": "VCST-6188",
+      "url": "https://virtocommerce.atlassian.net/browse/VCST-6188",
+      "title": "[Configurable products] Checklist: done Text and File rows show only the name, not {name} - {value} (AC-1 / AC-3.1)",
+      "severity": "Medium",
+      "provenance": "IN-SCOPE",
+      "relationship": "sub-task-of VCST-6027",
+      "labels": [
+        "found-by-agent",
+        "found-in-testing"
+      ],
+      "autofix_labels": "withheld — AC decision (Gate 0: by-design ambiguity)",
+      "report": "reports/bugs/open/medium/BUG-config-checklist-text-file-done-row-omits-value-VCST-6027.md",
+      "inline_images_rendered": 2
+    }
+  ],
+  "bugs_not_filed": [
+    {
+      "severity": "Low",
+      "draft": "reports/bugs/open/low/BUG-config-checklist-whitespace-optional-text-completed-VCST-6027.md"
+    },
+    {
+      "severity": "Low",
+      "draft": "reports/bugs/open/low/BUG-config-whitespace-parent-text-reveals-dependent-section.md",
+      "provenance": "PRE-EXISTING"
+    },
+    {
+      "severity": "Low",
+      "draft": "reports/bugs/open/low/BUG-config-checklist-green-while-add-to-cart-disabled-500ms-VCST-6027.md"
+    }
+  ],
+  "discovery": {
+    "session": "reports/exploratory/SBTM-VCST-6027-2026-10-06.md",
+    "minutes": 40,
+    "charter_items_covered": "all five sources; #9 collapsed-then-link, #25 SPA hop, optional whitespace, rejected type, clamp completed by the firefox re-run",
+    "model_amendments": 13,
+    "promoted_scenarios": 2
+  },
+  "visual": {
+    "surface": true,
+    "surface_source": [
+      ".vue + locales/*.json in PR #2527",
+      "layer storefront"
+    ],
+    "ran": true,
+    "report": "reports/tickets/Sprint26-20/VCST-6027/design-report.md",
+    "vs_design": "SKIPPED — no Claude Design link (Figma only)",
+    "fails": [
+      "BL-UI-001 (re-attributed PRE-EXISTING by probe)",
+      "BL-A11Y-004"
+    ]
+  },
+  "contract": {
+    "surface": false,
+    "surface_source": [
+      "PR #2527 diff: no .graphql / *ExperienceApi* / GraphType files",
+      "no AC names a query or field"
+    ],
+    "ran": false,
+    "snapshot": "graphql-schema.md not refreshed — field names of unknown age, none relied on"
+  },
+  "coverage_triage": {
+    "surface": true,
+    "surface_source": [
+      "domains configurable-products,cat",
+      "suites 072/072b/072c/072d/072e/009 (+050i, 052 by tag)"
+    ],
+    "ran": true,
+    "hits": 211,
+    "dispositions": {
+      "CONFIRMED": 208,
+      "REPAIR": 1,
+      "RE-BASE": 2,
+      "SUPERSEDED": 0
+    },
+    "record": "testing-checklist.md §F"
+  },
+  "test_data": {
+    "data_surface": true,
+    "surface_source": [
+      "no fixture with a > 2-line label (clamp unfalsifiable)",
+      "no product with required Text + File + Product together"
+    ],
+    "seeded": [
+      "CFG-034 @td(CFG_CHECKLIST_ALLTYPES) on vcst"
+    ],
+    "stale": [
+      "CFG_WEDDING_CAKE_CONDITIONS — product gone, alias marked gone-20261006",
+      "configurable-products.csv section ids in notes",
+      "CFG-FILE-ST-003 own URL 404"
+    ],
+    "td_validate": "exit 0",
+    "td_validate_cfg": "exit 0"
+  },
+  "business_rules_verified": [
+    "BL-CAT-006 (gate holds; converse holds after ~0.5 s)",
+    "BL-UI-002/003/004/005/006 PASS",
+    "BL-A11Y-001/002/003 PASS",
+    "BL-A11Y-004 FAIL",
+    "BL-UI-001 FAIL (pre-existing)"
+  ],
+  "appinsights": {
+    "checked": false,
+    "layers": [],
+    "window": "2026-10-06T16:00Z..17:35Z",
+    "skipped_reason": "configured for vcst, but the Azure CLI refresh token expired (AADSTS700082, 90 days inactive) and no APPINSIGHTS_API_KEY_BACKEND fallback; storefront under test is a local container with no telemetry"
+  },
+  "screenshots": "reports/tickets/Sprint26-20/VCST-6027/screenshots/",
+  "report": {
+    "notes": [
+      "Hybrid env: PR build served locally against vcst-qa data; the deployed vcst-qa storefront does not carry this change",
+      "C-27 (checklist hidden in print, print:hidden) — NOT COVERED: print is out of scope for this run (stated, not silent).",
+      "Timing figures are in-page (performance.now MutationObserver), single-session, un-throttled; Slow-4G not run.",
+      "Feature Release Gate not-assessed; C1 83.9% answers the exact-set question only and is not a gate figure."
+    ],
+    "verdict_basis": "AC-1 and AC-3.1 confirmed DRIFT live: done Text and File rows show the section name only, not {name} - {value} (close-out.md 5-verdict.2: any AC confirmed DRIFT live ⇒ FAIL). The PR states it deliberately — resolvable by a PO decision (amend the AC) or a fix.",
+    "test_model": "reports/ba/test-models/VCST-6027-2026-10-06.md",
+    "partial": 2,
+    "observed_for_po": 4,
+    "refuted": [
+      "3x 'Add to cart disabled 5–16 s after all rows green' — tool-latency artifact; in-page ~0.5 s (chrome 1920/375, firefox)",
+      "4v BL-UI-001 CLS attributed to the checklist — identical CLS 0.112/0.147 on the deployed theme without the checklist ⇒ PRE-EXISTING"
+    ],
+    "bugs_to_file_pending_approval": [
+      {
+        "title": "Configuration checklist: done Text and File rows omit the value ({name} - {value}, AC-1/AC-3.1)",
+        "severity": "Medium",
+        "provenance": "IN-SCOPE",
+        "shape": "Sub-task of VCST-6027",
+        "evidence": [
+          "VCST-6027-4a-alltypes-load-1920.png",
+          "C1 CFG-CHK-011"
+        ],
+        "operator_decision": "FILE"
+      },
+      {
+        "title": "Configuration checklist status changes are not announced to assistive technology (no aria-live) — BL-A11Y-004",
+        "severity": "Medium",
+        "provenance": "BL-A11Y on a feature ticket",
+        "shape": "standalone + related; does not fail the verdict",
+        "evidence": [
+          "design-report.md F3"
+        ],
+        "operator_decision": "DO NOT FILE (operator, 2026-10-06)"
+      },
+      {
+        "title": "Configurable PDP CLS 0.11–0.15 on load (BL-UI-001) — configuration area pushes the price widget",
+        "severity": "Medium",
+        "provenance": "PRE-EXISTING (identical on deployed theme)",
+        "shape": "standalone + related (no existing bug found)",
+        "evidence": [
+          "in-page CLS probe ×3 per page, local vs deployed"
+        ],
+        "operator_decision": "DO NOT FILE (operator, 2026-10-06)"
+      }
+    ],
+    "needs_review": [],
+    "po_questions": [
+      "Text/File done label: name only (PR) vs name + value (AC-1/3.1)",
+      "link focus target: section header (PR) vs the option control (AC 'anchor to the option')",
+      "'or any other btn': Add to list / Compare / Share / Print stay enabled while a row is red",
+      "mobile: disabled sticky Add to cart has no reason in view; checklist ~2,000 px away",
+      "legacy per-section prompt duplicates the checklist; same state also reads 'Section is required'",
+      "deep link #product-configuration-section-<id> scrolls + focuses but does not expand",
+      "whitespace-only Text expectations (optional and parent-reveal)",
+      "2 s enable tolerance (CFG-CHK-027)",
+      "optional rows use the amber warning glyph — read as blockers"
+    ],
+    "lane_findings": [
+      "playwright-firefox clicks OK at 1920, stall at 375×812 (recover at 1920) — viewport-specific sticky stall; firefoxClickOk unchanged",
+      "USER_DEFAULT / TEST_USER_PASSWORD absent from .env.playwright.local — C1 runners signed in with other slots"
+    ],
+    "har": "kept out of the repo (181 MB, carries session tokens) — session scratchpad evidence/VCST-6027-4a-localhost-2026-10-06.har",
+    "title": "[Configurable products] Check list to help the user to proceed next",
+    "count_rule": "45 checklist rows (A8 B3 C19 D5 E10). FAIL rows A1.1, C6, C9, C12, C13 — C9 restates A1.1 (same defect), C13 is PRE-EXISTING; distinct in-scope failures = 3 (AC drift, ~0.5 s window, optional whitespace).",
+    "pending_operator_decision": [
+      {
+        "title": "Configuration option radios have no accessible name (axe label, critical) — BL-A11Y-002",
+        "severity": "Medium",
+        "provenance": "PRE-EXISTING — 3 nodes on both the PR build and the deployed theme 2.59.0-pr-2476 (radios wrapped by an empty <label>)",
+        "shape": "standalone + related",
+        "evidence": "axe-core 4.10.2 label rule, CFG-023, 2026-10-06",
+        "note": "surfaced after the 5-file decision; not filed — awaiting operator"
+      }
+    ]
+  },
+  "documentation": {
+    "published": true,
+    "audiences": [
+      "customer"
+    ],
+    "files": [
+      "reports/ba/Configurable products/vcst-6027-configuration-checklist-customer-guide.md"
+    ],
+    "amended": false,
+    "comment_posted": true,
+    "refusal": null,
+    "scope": "FAIL-scoped: PASS rows only; Not documented line carries VCST-6188 + open PO questions"
+  }
+}

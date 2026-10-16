@@ -49,7 +49,7 @@ rules:
       ref: "*Half (a):* `salesRepCustomer`/`salesRepCustomerOrderStatistics` for an unserved org resolves null/empty (mirrors 050m SR-GQL-016/023); a per-org **locked** membership excludes that org while unlocked orgs still resolve; anonymous → auth error. *Half (b) — the CONTRAST is the test, and it is literal-free:* on ONE rep token in ONE window, `salesRepOrders` returns strictly fewer orders than `salesRepCustomerOrders`, and `salesRepCustomerOrders` returns **more than one distinct `customerId`** (a creator-scoped surface returns exactly one). Rep A's **statistics** still exclude rep B's orders in a shared org."
     violation_signal: "*Half (a)* — any surface returns data from an org the rep does not serve, or anonymous access returns data. *Half (b)* — a **statistics or ranking** figure includes orders/carts the rep did not create. **NOT a violation:** `salesRepCustomerOrders` / `salesRepCustomerOrder` returning an order the rep did not place — that is the surface's purpose."
     status: SUSPECT
-    suspect_reason: "[case] SR-CO-012 failed in REG-2026-10-02-2022"
+    suspect_reason: "[case] B2C-LIST-052, B2C-LIST-053, B2C-LIST-054, B2C-LIST-057, B2C-LIST-070, B2C-LIST-071, B2C-LIST-074, B2C-LIST-078, WISH-039, WISH-041, WISH-043, WISH-049 failed in REG-2026-10-05-1613"
   - id: BL-SR-003
     title: Comparison returns the delta; `*ChangePercent` is NULL when the previous baseline is 0
     rule: "`comparison(current, previous)` always returns the absolute change (`totalChange`, `countChange`, `averageChange` as Money/scalar) plus a `*ChangePercent`. When the **previous** period baseline is 0, the percent is **null** (no divide-by-zero, no Infinity) while the absolute change is still the full current value."
@@ -185,6 +185,9 @@ rules:
       ref: "`filter:\"BOGUS\"` on `salesRepOrders` → `totalCount:0` while baseline (no filter) > 0 (live-confirmed 2026-07-23: 0 vs 8); discovery returns localized names. **Contrast:** the identical raw field:value term *narrows* `salesRepCustomerOrders` instead of failing closed, and no filter-rule discovery query exists for that surface (querying one is a schema error) — both are correct under this Rule's stated scope. Re-confirmed by paired probes in one window on the same token."
     violation_signal: "Unknown filter returns the full/baseline set (fails open); a raw status/type accepted instead of a rule name; discovery returns raw enum keys — **on one of the four named axes.** NOT a violation of this rule: a raw field:value filter narrowing `salesRepCustomerOrders`, or the absence of a filter-rule discovery query on that surface."
     status: ACTIVE
+    verified:
+      date: 2026-10-15
+      by: REG-2026-10-15-1453
   - id: BL-SR-010
     title: One named sort rule per axis; unknown name → default ordering; unsupported direction → ERROR; `customerSalesReps` exempt
     rule: 'Lists are ordered by a single **named sort rule** discovered via `salesRepOrderSortRules` (`recent` default, `total`) / `salesRepCustomerSortRules` (`my-last-orders` default, `ytd-purchases`, `name`) / `salesRepTopSellerSortRules` (`by-units` default, `by-revenue`). A sort **never fails closed on the name** — an unknown/omitted rule name falls back to the domain default (no error). An optional `:asc`/`:desc` direction suffix reverses a rule **where meaningful** (`total:asc`, `name:desc`, `ytd-purchases:asc`); an **unsupported direction is rejected with an error** (`recent:asc`, `by-units:asc` → `extensions.code=ARGUMENT`). `customerSalesReps` accepts a plain member `sort` (e.g. `name:asc`) but is **exempt from the named rep sort-rule vocabulary** (no discovery query). The customers-list direction applies uniformly to member-column and order-derived (`my-last-orders`/`ytd-purchases`) rankings. **This invariant governs exactly those three axes (plus the stated `customerSalesReps` exemption) and does not extend to the index-backed "every order of a served customer" surface** (`salesRepCustomerOrders`): its `sort` takes a raw X-Order **field expression** (`<indexField>:asc|desc`), ships no sort-rule discovery query, performs **no direction validation** — an unsupported direction is accepted silently rather than rejected — and an unrecognized token does **NOT** fall back to the domain default but yields a third, undefined ordering. All of that is that surface working as designed, not a violation of this rule.'
@@ -224,10 +227,11 @@ rules:
       kind: manual
       ref: Rep with `sales-rep:access` + module enabled → hub/my-customers/customer-profile render, including the empty "No customers found" state for a rep with **zero** org memberships; **any non-rep account lacking `sales-rep:access`** — a low-privilege buyer, **or a privileged non-rep** (e.g. an org maintainer holding org user-CRUD permissions and `platform:security:loginOnBehalf`, but not `sales-rep:access`) — is redirected, no `salesRep*` query issued; `SalesRep.Enabled=false` → hub/list/profile unreachable and rail section absent (mirrors 089 SR-FE-003). The buyer-facing `/company/sales-reps` page stays org-gated regardless.
     violation_signal: Any sales-rep widget/query for a non-rep; hub reachable while the module is disabled (client-side-only gate); OR a customer-less rep's rep-facing hub links render but **redirect to `/account/dashboard`** (visible-but-dead links — the pre-fix VCST-5494 behavior).
-    status: ACTIVE
+    status: SUSPECT
     verified:
-      date: 2026-10-03
-      by: REG-2026-10-02-2022
+      date: 2026-10-15
+      by: REG-2026-10-15-1453
+    suspect_reason: "[case] SR-HD-100, SR-HD-102 failed in REG-2026-10-15-1548"
   - id: BL-SR-012
     title: Filter-aware empty states distinguish "no data" from "nothing matched the filter/search"
     rule: The orders, top-sellers and my-customers views render **distinct** empty states for "the rep has no data at all" vs "the current filter/search matched nothing" — the latter must offer a way back (clear filter/search), not read as "you have no customers/orders".
@@ -243,7 +247,10 @@ rules:
       ref: A narrowing filter/search with zero matches → "nothing matches" state (with reset affordance), distinct from the no-data-at-all state.
     violation_signal: A zero-match filter shows the generic "no data" state; no way to clear the filter; a spinner/blank instead of an empty state.
     status: SUSPECT
-    suspect_reason: "[case] SR-CO-027 failed in REG-2026-10-02-2022"
+    verified:
+      date: 2026-10-06
+      by: REG-2026-10-06-1457
+    suspect_reason: "[case] SR-TK-023 failed in REG-2026-10-07-1421"
   - id: BL-SR-013
     title: Rep-facing status / money / rule vocabulary localizes by `cultureName`; raw enum/key never surfaces
     rule: Filter/sort rule labels (`localizedName`), order statuses (`statusDisplayValue`), and `formattedAmount` localize by `cultureName`. The storefront renders the localized label, never a raw enum value or an i18n key.
@@ -261,7 +268,10 @@ rules:
       ref: Discovery queries return `localizedName` distinct from `name`; a rule chip / status / money value renders a human label, not `New`-style raw keys or `sales-rep.*` i18n paths.
     violation_signal: A raw enum/status key or unresolved i18n key shown in the UI; `formattedAmount` not localized.
     status: SUSPECT
-    suspect_reason: "[case] SR-CO-032 failed in REG-2026-10-02-2022"
+    verified:
+      date: 2026-10-05
+      by: REG-2026-10-05-1613
+    suspect_reason: "[case] SR-CO-032 failed in REG-2026-10-06-1457"
   - id: BL-SR-014
     title: Embedded Sales Rep Admin app gates on customer-member + platform-security permissions, not on `sales-rep:access`
     rule: |-

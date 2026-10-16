@@ -1,298 +1,354 @@
 ---
-domain_slug: returns
+domain_slug: ret
 applicability: universal
 rationale: |
-  What the Returns feature IS today, on this stand: TWO mechanisms sharing one word. The legacy
-  VirtoCommerce.Return admin/RMA surface (search/view/edit/delete a return, admin-created, any store)
-  has existed since before this pass and is unchanged by the ticket. A NEW buyer-facing self-service
-  flow (VCST-5628, vc-module-return PR #26 + vc-frontend PR #2488, both open) adds a customer-owned
-  draft -> submit -> cancel chain with its own status vocabulary, its own quantity/eligibility services,
-  and its own GraphQL surface at the shared /graphql endpoint. Built because the two mechanisms disagree
-  on status vocabulary, on what counts as "already reserved" quantity, and on which settings are
-  store-scoped — and because the backend half of the new flow is fully live while the storefront half
-  is NOT DEPLOYED on this environment at all (confirmed by version-string cross-check, not by data
-  absence). Approval/rejection (step 2, VCST-5883) is explicitly out of scope and only touched where the
-  schema already exposes fields for it (ReturnLineItem.approvedQuantity/rejectReason, ReturnType.
-  availableActions) that this pass could not exercise.
-generated: 2026-09-22
-rev: 1
+  What the Returns feature IS today, on this stand: TWO mechanisms sharing one word, now both shipped and
+  both reachable. The legacy VirtoCommerce.Return admin/RMA surface (search/view/edit/delete a return,
+  admin-created as status `New`, any store) predates the work below. The buyer self-service flow
+  (VCST-5628: customer-owned draft -> submit -> cancel) and the agent decision flow (VCST-5883: per-line
+  Approve / decline, buyer notifications) sit on the same entity with their own status vocabulary,
+  quantity/eligibility services, GraphQL surface at the shared /graphql endpoint, an admin
+  `POST /api/return/{id}/authorize`, and a storefront module (list, wizard, edit, details, cancel).
+  Built because the two mechanisms still disagree on status vocabulary, on who may set which status, on
+  what "quantity left" means at each surface, and because the published guides describe only the legacy
+  half. Refreshed at rev 2 because rev 1 was written while both PRs were open and the storefront was NOT
+  deployed; both PRs are now merged, the module is a released build, and the storefront serves
+  /account/returns. Orderless returns and a mandatory decline reason are out of scope (see excludes).
+generated: 2026-10-06
+rev: 2
 stale_after_days: 60
 expires_after_days: 120
 sources:
-  - vc-module-return PR #26 (VCST-5628) @ head ee6e377b, dev branch, OPEN, updated 2026-09-22 — via
-    GitHub REST API (no GitHub MCP available this session; gh CLI absent; used WebFetch against
-    api.github.com / raw.githubusercontent.com)
-  - vc-frontend PR #2488 (VCST-5628) @ head 4c6bb181, dev branch, OPEN, updated 2026-09-22 — metadata
-    only; its diff was NOT read (not deployed on this env — see §0)
-  - live introspection of the shared /graphql endpoint on Env (BACK_URL), 2026-09-22, admin token —
-    __schema query+mutation field list (121 query / 154 mutation fields; 6 + 4 matched `return`) and
-    __type on every Return* type/input reachable from those fields
-  - live GraphQL calls as both admin and the buyer persona (USER_EMAIL_VCPTCORE_QA1 / AcmeCorp), 2026-09-22
-  - live REST calls against the legacy `api/return` controller (admin token), 2026-09-22
-  - live storefront navigation (playwright-edge), signed in as the buyer persona, 2026-09-22
-  - GET /api/platform/modules (admin token), 2026-09-22 — authoritative deployed backend version
-  - source: vc-module-return @ ee6e377b — ModuleConstants.cs, ReturnStatus.cs, Models/Return.cs,
-    Models/ReturnLineItem.cs, Data/Services/{ReturnService,ReturnQuantityService,ReturnEligibilityService}.cs,
-    ExperienceApi/{Queries,Commands,Schemas,Authorization}/*.cs, Web/Controllers/Api/ReturnController.cs
-  - PlatformUserGuide (VirtoOZ, 3 pages) + StorefrontUserGuide (VirtoOZ, searched, zero returns hits),
-    queried first-hand 2026-09-22
-  - docs/return-module-guide.md @ ee6e377b (the PR's own updated doc, not yet published to
-    docs.virtocommerce.org)
-  - config/test-suites.json + regression/suites/Backend/returns/073-returns.csv (22 rows) +
-    regression/suites/Frontend/orders/014b-orders-frontend-returns-filtering.csv (rows ORD-037..051)
-  - .claude/knowledge/oracles/business-logic.md (no BL-RET domain exists yet — Domains 1-24 checked) +
-    e-commerce-edge-cases-library.md §7.1 (checked because 014b cites it)
+  - rev 1 of this map (generated 2026-09-22) — carried forward in place; D1..D9 / G1..G8 ids kept
+  - vc-module-return tag 3.1004.0 @ 6707da60 (released 2026-10-04) — read via `gh api` (GitHub MCP down this
+    session): ModuleConstants.cs, ReturnStatus.cs, ReturnIneligibilityReason.cs, ReturnFlowException.cs,
+    Data/Services/{ReturnStateProvider,ReturnFlowService,ReturnQuantityService,ReturnEligibilityService}.cs,
+    Data/Handlers/*, Web/Controllers/Api/ReturnController.cs, docs/return-module-guide.md. The 3.1004.0
+    release body is "Platform 3.1076.0 + 3rd-party align (#29)" only, so behaviour = 3.1003.0 (PRs #26 merged
+    2026-09-25, #27 merged 2026-09-30)
+  - vc-frontend `client-app/modules/returns/**` @ c7253361 (PR #2532 head, OPEN, "fix(VCST-6107): raise returns
+    secondary text and dark table hover contrast to AA") — the deployed build is `2.59.0-pr-2532-c725-c7253361`
+    (read from the storefront footer). PR #2488 (list/wizard/details/cancel) merged 2026-09-25, PR #2500
+    (decline reasons, buyer culture) merged 2026-09-30; the last RELEASED theme (2.58.0, 2026-09-22) has no
+    `modules/returns` — so the buyer UI is on an UNRELEASED theme
+  - live GET /api/platform/modules (admin token) on vcptcore_qa1, 2026-10-06: Return 3.1004.0, Notifications
+    3.1018.0, PushMessages 3.1008.0, Orders 3.1018.0, Xapi 3.1026.0, FileExperienceApi 3.1006.0; Platform
+    3.1076.0 (admin SPA banner). Contrast env `vcst`: Return 3.1003.0 (versions as handed in; not re-queried)
+  - live GraphQL on /graphql: introspection (Query 6 / Mutation 4 matching `return`), buyer reads as the rich
+    persona (AcmeCorp primary buyer, 132 returns; see §2c) and the colleague persona; admin reads of `/api/return/*`,
+    `/api/stores/*`, `/api/notifications`, `/api/push-message/search` — all READ-ONLY, 2026-10-06
+  - live storefront (playwright-chrome): /account/returns (rich + colleague), /account/returns/{id}
+    (Requested, PartiallyApproved), /account/orders/{id} (returnable + nothing-left), admin SPA Return list +
+    blade + Line items blade, 2026-10-06
+  - VirtoOZ PlatformUserGuide (return/overview, return/managing-returns, return/settings,
+    order-management/managing-returns, notifications/overview) + StorefrontUserGuide (searched, zero returns
+    pages) + PlatformDeveloperGuide xAPI reference (searched, zero returns pages), queried 2026-10-06
+  - kb entries opened in full: KB-21F4F161, KB-17555498, KB-06CFE625, KB-4E1FF232, KB-C6BB1914, KB-700E5D52,
+    KB-F97CFAF6 (+ KB-DF9F415E, KB-97A675C1, KB-1F2EBF83, KB-85F02FDB, KB-2073D7AD, KB-6323ED21 via ask
+    headlines) — observed on 3.1003 PR builds; each is re-triangulated below, none is trusted unchecked
+  - prior art: reports/ba/test-models/VCST-5883-2026-09-28.md; the mind map built from rev 1
+    (`returns.mind-map.json`, one DRIFT on `returns.agent.next-status.cancel-requested`); no reports/ba/<returns>
+    folder exists and no returns row in release-ledger.md
+  - config/test-suites.json + regression/suites/** (rows counted by parsing the CSVs, §4)
 excludes: >-
-  Approval/rejection workflow (step 2, VCST-5883) is out of scope by the brief; noted only where
-  the schema already carries fields for it. vc-frontend PR #2488's own diff was not read — it is not
-  deployed on this environment (§0), so reading it would describe a UI nobody can reach here. No
-  create/submit/cancel/update mutation was executed — read-only pass, no orders reach the required
-  `Completed` status on this env to make a real draft possible without seeding, which was explicitly
-  reserved for a concurrent agent.
+  Orderless returns (VCST-5884 per the brief; NB module PR #28 is titled "VCST-5884: Organization returns,
+  read-only" and is still OPEN — the ticket's scope is described two ways, so nothing here states it) and a
+  mandatory decline reason (VCST-5885) are NOT built into this map; each exists as a ticket and is listed so
+  a reader does not look for it. No create / submit / cancel / authorize / update / delete / settings write
+  was executed. The 130-odd RETURNS_* / RETURNS_AUTH_* fixture orders and returns are disposable per-run
+  fixtures of suites 050o/014c/073/073a/073b: they were READ (counts, statuses, one details page each of a
+  Requested and a PartiallyApproved) and never touched.
 ---
 
 # Returns — domain map
 
-> Refresh with `/qa-domain-map returns`. This file answers **what the feature is and where its surfaces
-> are**. It does **not** carry behavioural rules — there is no `BL-RET` domain in
-> `oracles/business-logic.md` yet (checked: Domains 1-24, none) — and it can **never ground an assertion
-> as `{DOC}`**. Pointer index plus surface inventory: it says *where to look* and *what exists*, never
-> *what correct looks like*.
+> Refresh with `/qa-domain-map ret --refresh`. This file answers **what the feature is and where its surfaces
+> are**. It does **not** carry behavioural rules — those are `BL-*` (`npm run bl:extract -- --domain ret`;
+> the `BL-RET` section is declared and deliberately empty, so the invariants named below are candidates, not
+> oracles) — and it can **never ground an assertion as `{DOC}`**. Pointer index plus surface inventory: it
+> says *where to look* and *what exists*, never *what correct looks like*.
 
 **Every claim carries a verdict.** `CONFIRMED` = observed live or read at source this pass ·
 `DRIFT` = prior art/docs say otherwise and are wrong · `MISSING` = documented, does not exist ·
 `UNVERIFIED` = not established, and **not** to be treated as true.
 
-**Read-only pass.** No create/update/submit/cancel/delete mutation was executed against either the new
-or the legacy Return surface, and no order/store data was touched (a concurrent agent owns order seeding
-for this env this pass).
+**Read-only pass.** No mutating call was made. A capability confirmable only by mutating is `UNVERIFIED`
+with the mutation named.
 
-> **MID-CHANGE, and it is the single most important fact in this file.** Both PRs are open and both
-> advanced *during this same pass* (both show `updated: 2026-09-22`, today).
-> 1. **Backend source drift.** The deployed module is `VirtoCommerce.Return 3.1002.0-pr-26-323d`
->    (confirmed via `GET /api/platform/modules`) — built from an **earlier commit** of PR #26 than the
->    one this map reads source from (`ee6e377b`, the PR's current head, short-sha fragment `323d`
->    vs `ee6e377`). Everything under §2c/§3 that cites source is grounded in the **later** commit; the
->    **live** GraphQL/REST observations are grounded in the **actually deployed** `323d` build. Where the
->    two could plausibly disagree this is called out inline; nothing observed live contradicted the
->    source read this pass.
-> 2. **The storefront half is not deployed here at all — confirmed, not assumed.** The brief named
->    vc-frontend PR #2488 (`feat(VCST-5628): returns module — list, create wizard, details, cancel`,
->    head `4c6bb181`) as the deployed theme. The storefront footer on this env reads
->    **`Ver. 2.58.0-pr-2464-595d-595d3244`** — a **different PR number**. Checked PR #2464 directly: it
->    is `feat(VCST-5732): sales rep task management`, entirely unrelated to returns. **`/account/returns`
->    404s outright** (not an empty/gated page — a routing 404, confirmed live), and no order detail page
->    for any of the buyer's 19 orders (`New`/`Processing`/`Cancelled`, zero `Completed`) shows a Return
->    affordance. §2b states this as the reason, in preference to "no eligible order data" — both are true,
->    but the route's absence is the stronger and more precise cause, and it means seeding a `Completed`
->    order on this env **would still not produce a visible buyer flow** until PR #2488 itself deploys.
+## Changed since rev 1
 
----
+Rev 1 was written on 2026-09-22 while both PRs were open and the storefront was not deployed. Every one of
+these rev 1 statements is **now wrong** (marked in place below with `DRIFT (rev 1)`):
+
+| Rev 1 statement | Now |
+|---|---|
+| Header call-out / §0: "both PRs are open"; deployed module is `3.1002.0-pr-26-323d`; "mid-change" | **DRIFT (rev 1).** Module is the released `3.1004.0`; PR #26 and #27 merged; PR #28 (organization returns) still open and not deployed. The mid-change call-out no longer applies to the backend |
+| §2b: "storefront not reachable"; `/account/returns` 404s; no Returns link; no Return button on order detail | **DRIFT (rev 1).** `/account/returns` renders; Purchasing sidebar has a **Returns** link; Completed orders with returnable lines show **Request return** (§2b). The theme is still an unreleased PR build (`2.59.0-pr-2532`), not a release |
+| §1 Actors: "Returns agent — not implemented / UNVERIFIED" | **DRIFT (rev 1).** Agent Approve / decline exists, REST + Admin SPA, gated by `return:authorize` (§2a) |
+| §1 link 7: "someone else decides — not built yet" | **DRIFT (rev 1).** Built — `POST /api/return/{id}/authorize`, `Approved`/`PartiallyApproved`/`Rejected` statuses, per-line `approvedQuantity`/`rejectReason` populated on live returns |
+| §4: "073 has 22 rows, all `Automation Status: None`", "zero coverage … true zero" | **DRIFT (rev 1).** Five returns suites hold 134 rows, 126 `Automated` (§4) |
+| §2c "live values match `ModuleConstants` defaults exactly" (`returnPolicy.isEnabled: true`) | **DRIFT (rev 1), in part.** `Return.ReturnEnabled` default in source is `false`; the live `true` is the B2B-store override. A store with no value reads `false` (§2c, D2) |
+| §1 link 1 reasons `OrderStatusNotAllowed`, `NotDelivered`… (PascalCase) | **DRIFT (rev 1).** The contract values are `UPPER_SNAKE`: `ORDER_STATUS_NOT_ALLOWED`, `NOT_DELIVERED`, `OUTSIDE_RETURN_WINDOW`, `NOTHING_LEFT_TO_RETURN`, `LINE_CANCELLED`, `RETURNS_DISABLED` (source + live) |
+| D1 (legacy available-quantity counts every status) | **DRIFT (rev 1)** — no longer holds on 3.1004; see D1 |
+| G1, G2, G3, G5, G6, G8 | `CLOSED` (§5). G4, G7 stay OPEN |
+
+Scope grew: **step 2 (agent approve/decline, VCST-5883) and notifications are now IN scope**.
 
 ## §1 — Purpose and value chain
 
-**Purpose** (this map's own reconstruction — no purpose statement exists in `PlatformUserGuide`,
-`StorefrontUserGuide`, or the PR body for the buyer-facing half; the published guides only describe the
-admin-created legacy flow, §3 D7): *An authenticated buyer requests to return specific quantities of
-specific lines from their own delivered order, within a configurable window, optionally with a comment
-and attachments, and can withdraw the request before an agent acts on it. Agent approval/rejection is a
-separate, later phase (VCST-5883) that several fields already exist for but nothing in this build
-exercises.* `CONFIRMED` as the mechanism (source + live); the sentence itself is the map's own framing,
-not a quote.
+**Purpose: UNDECLARED in every published source; reconstructed below and marked as the first written
+statement.** Where I looked: `PlatformUserGuide` (return/overview, return/managing-returns, return/settings,
+order-management/managing-returns), `StorefrontUserGuide` (searched `returns`, `request a return`, `RMA` —
+zero returns pages), the `PlatformDeveloperGuide` xAPI reference (searched — zero return pages), the module's
+own guide (vc-module-return, file docs/return-module-guide.md) @ 3.1004.0 (a how-it-works guide, no purpose statement), rev 1, and the VCST-5883
+test model. The only stated purpose is the legacy one, verbatim, `https://docs.virtocommerce.org/platform/user-guide/return/overview`:
+*"The **Return** module gives you an opportunity to view and manage all return operations. Once a customer
+returns an item to your store, this information appears in the list of returns."* — an admin-side record of a
+return that has **already happened**, which is the opposite of the buyer-initiated request that now exists
+(D12).
 
-The legacy admin Return module's own purpose IS documented (`PlatformUserGuide` §Return module overview,
-verbatim): *"The Return module gives you an opportunity to view and manage all return operations. Once a
-customer returns an item to your store, this information appears in the list of returns."* — an
-**admin-side record of a return that already happened**, not a self-service request flow. The two
-purposes coexist on the same entity going forward (§3 D1/D2/D9).
+Reconstructed purpose (this map's own framing, not a quote): *An authenticated B2B buyer asks to return
+specific quantities of specific lines from their own delivered order, within a store-configured window,
+with a reason, optional comment and evidence; a back-office agent decides each line with an approved
+quantity; the buyer is told, sees the outcome in their account, and can request again the units that were
+not approved. Nothing in this module moves money or stock — a return reaching any terminal state still does
+not refund or restock (D9).* `CONFIRMED` as the mechanism (source + live); the sentence is the map's own.
 
-| # | Link, in the buyer's words | Mechanism |
+| # | Link, in the user's words | Mechanism |
 |---|---|---|
-| 1 | **My order becomes returnable** | `returnableItems(orderId)` computes per-line eligibility in `ReturnEligibilityService.GetIneligibilityReason`: order status must be in `Return.AllowedOrderStatuses` (default `Completed` — `IsOrderStatusAllowed`); the line's **shipment delivery date** (not order date — "no delivery date means no honest point to count the window from," source comment, `CONFIRMED`) must exist; `ReturnableUntil = deliveryDate + WindowDays` (default 30) must not have passed; remaining returnable quantity must be > 0. Reasons returned: `ReturnsDisabled`, `OrderStatusNotAllowed`, `LineCancelled`, `NotDelivered`, `OutsideReturnWindow`, `NothingLeftToReturn`. `CONFIRMED` source; **not reachable live this pass** — no order on this env is `Completed` (§0) |
-| 2 | **I build a draft** | `createReturn(orderId, customerReference?, customerComment?, items[])` — `CreateReturnCommandHandler` is a thin pass-through to `IReturnFlowService.CreateDraft`; each item names `orderLineItemId`, `quantity`, optional `reasonCode`/`reasonComment`/`serialNumber`/`attachmentUrls`. Return starts in status `Draft`. `updateReturn(returnId, items?, customerReference?, customerComment?)` edits it while still `Draft`. `CONFIRMED` live (introspected argument shapes) + source (handler signature) |
-| 3 | **Quantity is held, but only by "open" returns** | `ReturnQuantityService.GetHeldQuantity` sums quantity from every OTHER return on the same order **except** those in `NonHoldingStatuses = {Draft, Cancelled, Canceled, Rejected}` — i.e. a return only reserves quantity once it is `Requested`/`Approved`/`PartiallyApproved`/etc. This is a deliberately narrower definition than the legacy admin method (§3 D1). `CONFIRMED` source |
-| 4 | **I attach evidence** | `ReturnAttachmentService` registers a file against a `ReturnLineItem` via the platform File Experience API; `Return.AttachmentsRequired` is a store setting, **default `false`** — the PR's own doc explains why: *"turned on before the scope exists, it would refuse every submit for a file the buyer has no way to upload"* (docs/return-module-guide.md, `CONFIRMED` source) |
-| 5 | **I submit** | `submitReturn(returnId)` — `Draft -> Requested`. Docs (same file): *"Submit runs the same checks and additionally requires a reason on every line."* `CONFIRMED` source |
-| 6 | **I can withdraw, but only before it's acted on** | `cancelReturn(returnId, reason?)` — sets `Status = Cancelled`, `CancelReason`. Authorization is by **ownership only** (`ReturnAuthorizationHandler.IsOwnedBy`, comparing the return's customer id to the caller) — no store-scope check exists in the handler (§3 D6, source-only, not reproduced live) |
-| 7 | **Someone else decides what happens next — not built yet** | `ReturnType.availableActions` (`[ReturnActionType!]!`, fields `name`/`isAvailable`/`unavailableReason`) and `ReturnLineItemType.approvedQuantity`/`rejectReason` are **already in the live schema**, but no mutation in this build sets them from an agent's decision — VCST-5883's territory. `CONFIRMED` live (schema) that the fields exist; `UNVERIFIED` what any of them ever return, since no return exists to query |
-| 8 | **Reversal is asymmetric, same as the legacy flow** | Cancel (buyer, pre-decision) and the eventual Reject (agent, post-decision — not built) are the only two ways a return's effect is undone. There is no un-cancel. |
+| 1 | **My order line becomes returnable** | `returnableItems(orderId)` → `ReturnEligibilityService`: store must have `Return.ReturnEnabled`; order status ∈ `Return.AllowedOrderStatuses` (default `Completed`); line not cancelled; the line's quantity counted **delivered** only through a non-cancelled shipment that carries a `DeliveryDate` (and, if `Return.AllowedShipmentStatuses` is non-blank, a matching shipment status); `returnableUntil = latest delivery date + WindowDays`; remaining > 0. Per-line reasons: `RETURNS_DISABLED`, `ORDER_STATUS_NOT_ALLOWED`, `LINE_CANCELLED`, `NOT_DELIVERED`, `OUTSIDE_RETURN_WINDOW`, `NOTHING_LEFT_TO_RETURN`. `CONFIRMED` source (3.1004.0) + live (4 of the 6 reasons seen on the rich persona's 17 Completed orders: `NOTHING_LEFT_TO_RETURN`, `OUTSIDE_RETURN_WINDOW`, `NOT_DELIVERED`, `LINE_CANCELLED`; `ORDER_STATUS_NOT_ALLOWED` is per kb KB-4E1FF232 only, `RETURNS_DISABLED` not seen) |
+| 2 | **I build a draft** | `createReturn(command{orderId, customerReference?, customerComment?, cultureName?, items[]})` (`cultureName` is NEW since rev 1) → status `Draft`; `updateReturn` edits it while `Draft`. `CONFIRMED` live (introspection) + source |
+| 3 | **Quantity is held — by what is OPEN** | `ReturnQuantityService`: Draft/Cancelled/Rejected hold 0; a Requested/New return holds its requested quantity; **a decided line holds its `approvedQuantity` by `ItemState`, not by return status**. `CONFIRMED` source; behaviour corroborated by live `returnableItems` on orders carrying decided returns (e.g. 260 returnable of 500 after a partial approval) |
+| 4 | **I attach evidence** | File Experience API scope `return-attachments`; `Return.AttachmentsRequired` (default `false`; **`true` on B2B-store here** — D2). Attachments render live on decided returns. `CONFIRMED` live (details page) + source |
+| 5 | **I submit** | `submitReturn(returnId)` `Draft -> Requested`; additionally requires a reason on every line and `ReasonsRequiringComment`; **this is where the over-limit quantity is refused** (`RETURN_QUANTITY_UNAVAILABLE`), not at create/update (kb KB-F97CFAF6, disputed on one display point — D14). `CONFIRMED` source; submit not re-run |
+| 6 | **I can withdraw until a decision** | `cancelReturn(returnId, reason?)` valid from `Draft` and `Requested` only (`ReturnStateProvider` transitions). xAPI `availableActions` shows `cancel.isAvailable=false, unavailableReason=WRONG_STATUS` on every other status. Authorization = ownership only, no store check (D6). `CONFIRMED` live (all six statuses sampled) + source |
+| 7 | **An agent decides each line** | Admin SPA Return -> Line items -> **Approve / decline** → `POST /api/return/{id}/authorize {rejectReason?, items[{lineItemId, approvedQuantity, rejectReason?}]}`; every line decided, `0 <= approved <= requested`; status follows the numbers (all full → `Approved`, all 0 → `Rejected`, else `PartiallyApproved`); gate `return:authorize`; valid only from `Requested` and `New`. `CONFIRMED` source + live (Line items blade renders Approved / Decline reason columns and the toolbar command on a Requested return; live returns exist in `PartiallyApproved` ×2 and `Rejected` ×3 for the rich persona); the decision call itself not re-run |
+| 8 | **Units I was refused become returnable again** | A decided line holds only its approved units, "whatever status it moves on to" (module guide). `CONFIRMED` live (returnable 260/500 on a partially approved order) |
+| 9 | **I am told, once, by email and in-app** | `ReturnStatusChangedEvent` → two Hangfire jobs (email, push) per change to Requested/Approved/PartiallyApproved/Rejected/Cancelled; five email notification types, **one `default` template each, no localized templates** (live); switches `Return.SendNotifications` / `Return.SendPushNotifications`. `CONFIRMED` live (5 types, 1 default template each; push messages `Return RET… cancelled`/`received`, status `Sent`, 427 push rows) + source; delivery of the email itself `UNVERIFIED` (no SMTP — kb: journal row status `Error`) |
+| 10 | **I see the outcome in my account** | `/account/returns/{id}`: Status, Date, Order number, PO reference, Comment, Reason for decline, **Items** with `Requested` / `Approved` columns, per-line decline reason, attachments. `CONFIRMED` live (Requested + PartiallyApproved) |
+| 11 | **Reversal** | Cancel (buyer, pre-decision) is the only undo; **a decision has NO reverse path** — no un-authorize; an edit can only carry a decided return onto `AwaitingDelivery/Received/Processing/Completed`, never cancel or reopen it (`CanSetStatus`); `Rejected` and `Cancelled` are closed. Nothing is refunded, restocked or re-opened in Orders (D9). `CONFIRMED` source + live (`available-statuses` per status, D11) |
 
 ```mermaid
 flowchart TD
-  A["Order reaches an allowed status\n(default: Completed) + line has a delivery date"] --> B{"Within WindowDays\nof delivery? (L1)"}
-  B -->|no| X["ineligibilityReason: OutsideReturnWindow"]
-  B -->|yes| C["returnableQuantity > 0?\n(held qty excludes Draft/Cancelled/Rejected — L3)"]
-  C -->|no| Y["ineligibilityReason: NothingLeftToReturn"]
-  C -->|yes| D["createReturn: Draft (L2)"]
-  D --> E["updateReturn: edit lines/reason/attachments\nwhile still Draft"]
-  E --> F["submitReturn: Draft -> Requested (L5)\nrequires a reason on every line"]
-  D --> G["cancelReturn: -> Cancelled (L6)\nownership-checked, NOT store-checked"]
+  A["Order Completed + line delivered inside WindowDays (L1)"] --> B{"returnable qty > 0?"}
+  B -->|no| X["no Request return button; wizard shows per-line reason (D15)"]
+  B -->|yes| D["createReturn: Draft (L2)"]
+  D --> E["updateReturn while Draft"]
+  E --> F["submitReturn: Draft -> Requested (L5); over-limit refused HERE"]
+  D --> G["cancelReturn -> Cancelled (L6)"]
   F --> G
-  F -.->|not built this phase| H["Agent approves/rejects (VCST-5883)\nfields exist: availableActions, approvedQuantity, rejectReason"]
+  F -->|"email + push (L9)"| N1[(buyer)]
+  F --> H{"Agent: Approve / decline (L7)"}
+  H -->|"all full"| AP[Approved]
+  H -->|"mixed / partial"| PA[PartiallyApproved]
+  H -->|"all 0"| RJ[Rejected]
+  PA --> REL["released units returnable again (L8)"]
+  RJ --> REL
+  AP --> FU["Processing / Completed (admin edit) — no refund, no restock (D9)"]
+  PA --> FU
+  H -.->|"no un-authorize (L11)"| H
 ```
 
 ### Actors
 
 | Actor | Can do | Verdict |
 |---|---|---|
-| **Buyer / customer** | Create/edit/submit/cancel **their own** returns only (customer-id ownership check, no store check — D6). Cannot see or act on anyone else's return via `return(id)` if they somehow know its id, unless the id belongs to a different order of the SAME customer id | `CONFIRMED` source (`ReturnAuthorizationHandler`); ownership *enforcement* not reproduced live (would need a second buyer's return to attempt cross-access) |
-| **Admin (legacy Return module)** | Search/view/edit status+resolution/delete any return, **across every store**, via the unchanged `api/return` controller. Cannot see the new fields (`customerComment`, `submittedDate`, attachments, `itemState`) in the legacy Admin SPA blade — that blade was not touched by this PR | `CONFIRMED` live (`api/return/search` returned pre-existing legacy rows from an unrelated store) + source (controller untouched) |
-| **Returns agent (approve/reject)** | Not implemented in this build. Schema fields exist (`availableActions`, `approvedQuantity`, `rejectReason`) but nothing populates them from a decision | `UNVERIFIED` — deferred to VCST-5883 |
-| **Anonymous** | Denied on every new-flow query with a clear `Unauthorized`/"Anonymous access denied" error (not a silent null) | `CONFIRMED` live (`returnReasons` probed unauthenticated) |
+| **Buyer / customer** (owner) | Create/edit/submit/cancel own returns; read own list/details; **Request return** from a Completed order that has a returnable line | `CONFIRMED` live (rich persona: list 132 returns, details, Request return button) + source |
+| **Org colleague** (same organization, not the owner) | Can open the owner's order by id (`order(id)` resolves) but `returnableItems` = `[]` (empty, not an error), `return(id)` = `null`, own `/account/returns` empty — so never sees Request return on the owner's order | `CONFIRMED` live (xAPI as the colleague persona + empty-state screenshot). Cancel/update refusal for a colleague not re-run (mutation) — `UNVERIFIED` |
+| **Back-office agent with `return:authorize`** | Decide each line via Approve / decline; everything below | `CONFIRMED` live (command renders for `admin`) + source |
+| **Back-office user WITHOUT `return:authorize`** (holds access/read/update) | Per kb: no Approve / decline command, Approved column read-only, Requested status dropdown offers only `Requested`; REST authorize → 403 | `UNVERIFIED` on 3.1004 (kb KB-700E5D52, KB-DF9F415E observed on 3.1003); no such account is provisioned on this env (G9) |
+| **Admin (legacy surface)** | Search/view/edit status + resolution + line reason, delete (REST `DELETE /api/return`, permission `return:delete`), create via `PUT /api/return` with no id, **across every store** | `CONFIRMED` source (controller) + live (search 136 rows across `B2B-store` and one store-less legacy row) |
+| **Anonymous** | Every new-flow query refused `Unauthorized` (not a silent empty); **introspection itself is allowed** (200) | `CONFIRMED` live |
 
 ---
 
 ## §2 — Surface inventory
 
-### 2a. Admin — legacy Return module (UNCHANGED by this PR)
+### 2a. Admin SPA + REST — Return module
 
-Route: platform main menu **Return** blade (per `PlatformUserGuide` — not re-navigated live this pass;
-its REST backing was hit directly and returned real pre-existing data, confirming the surface is live).
-REST: `[Route("api/return")]` (**singular** — `config/test-suites.json`'s module-suite-map row for suite
-073 states `/api/returns/` (plural), which 404s; the correct route is `api/return`, a small citation
-correction worth fixing next time that map is touched):
+Entry: platform main menu **More → Return** (route `#!/workspace/Return`; the lowercase `…/returns` path renders
+the dashboard, not the blade). Version banner: platform `3.1076.0`.
 
-| Verb | Route | Permission | `CONFIRMED` |
+**Return list blade** (`CONFIRMED` live): title "Return list" with total badge (136), toolbar **Refresh**,
+**Add new return**; search box ("Search keyword…"; module guide: covers return number, order number,
+customer reference, SKU and name of any line); status filter ("All statuses"; options seen: New, Approved,
+Completed, Processing, Draft, Requested, Partially approved, … list continues, not scrolled to the end);
+columns Return number, Order number, Customer, Return status, Create date, Modify date, Created by, Item count
+(column chooser present). Returns whose order was deleted show empty Order number / Customer.
+
+**Return blade** (`CONFIRMED` live, Requested return): Return number, Order number, Created date, Modified date,
+Created by (link), Customer (link), **Status** (dropdown, pencil icon), Buyer's reference, **Resolution**
+(free text, legacy), **Reason for decline** (free text, return-level), widget **N LINE ITEMS / total USD**.
+Toolbar Refresh / Save / Reset.
+
+**Line items blade** (`CONFIRMED` live): toolbar Refresh, Save, **Approve / decline**; columns Item name (+
+buyer reason, comment, attachment link), Return reason ("Faulty on arrival" — admin shows a LOCALIZED reason
+label where the storefront contract does not, D4), SKU, Quantity (editable input), **Approved** (pre-filled
+with the requested quantity), **Decline reason**, Price (editable input); a return-level "Reason for decline"
+box below. Decision commit and the absent confirmation dialog: kb KB-97A675C1, not re-run (mutation).
+
+REST `api/return` (`CONFIRMED` source @ 3.1004.0 + swagger live):
+
+| Verb | Route | Permission | Verdict |
 |---|---|---|---|
-| POST | `search` | Read | live — returned 2 pre-existing legacy returns, one against store `Electronics` (not this ticket's store) |
-| GET | `{id}` | Read | source |
-| PUT | *(none — upsert)* | Update | source. **No POST create action exists on this controller** — `PlatformUserGuide` documents creating a return "via the Return module" as a UI action, which most plausibly upserts through this same PUT with no id (VC's common create-via-PUT convention); not confirmed live this pass (would require a mutating call) — recorded as `UNVERIFIED` rather than assumed |
-| DELETE | *(none)* | Delete | source |
-| GET | `available-quantities/{orderId}` | Read | live — returned a real per-line-item quantity map for a seeded order |
+| POST | `search` | `return:read` | live (136 rows; body supports `statuses`, `orderId`, `customerId`, `storeId`, `keyword`, `startDate`/`endDate`, `sort`) |
+| GET | `{id}` | read | source |
+| GET | `{id}/available-statuses` | read | live (D11 table) |
+| PUT | *(none, upsert)* | `return:update` | source; **no POST create exists** — a body without id creates `New` (kb KB-1F2EBF83, 3.1003, not re-run) |
+| POST | `{id}/authorize` | **`return:authorize`** | source + swagger live (model `ReturnAuthorizationRequest {returnId, rejectReason, items[]}`, `ReturnLineDecision {lineItemId, approvedQuantity, rejectReason}`) |
+| DELETE | *(none)* `?ids=` | `return:delete` | source; kb KB-06CFE625 observed it working on 3.1003 — **contradicts both guides' "cannot be deleted"** (D13) |
+| GET | `available-quantities/{orderId}` | read | live (D1, D10) |
 
-`Return.cs` model (legacy + new fields coexist on one entity): `Number, StoreId, CustomerId,
-CustomerName, OrderId, OrderNumber, CustomerReference, Status, Resolution, CustomerComment, Comment,
-RejectReason, CancelReason, Order, LineItems[]`. **`Resolution` (free-text, legacy) and `Status`
-(dictionary-backed, legacy) sit alongside the new flow's own status machine** — see D9.
+Permissions (live `/api/platform/security/permissions`): `return:access, read, create, update, delete, authorize`.
 
-### 2b. Storefront — buyer-facing (NOT REACHABLE ON THIS ENVIRONMENT)
+Notification setup (live `POST /api/notifications`): five types — `ReturnRegisteredEmailNotification`,
+`ReturnApprovedEmailNotification`, `ReturnPartiallyApprovedEmailNotification`,
+`ReturnRejectedEmailNotification`, `ReturnCancelledEmailNotification` — all active, each with a single
+`default` template (no language-specific one). `CONFIRMED` live.
 
-**No entry point renders anywhere** — confirmed by direct inspection, not inference:
+### 2b. Storefront — buyer-facing (theme `2.59.0-pr-2532-c725-c7253361`, UNRELEASED)
 
-- Account sidebar (`/account/orders` and every other account page): **Purchasing** section lists
-  Dashboard, Orders (+ status counts), Lists, Quote requests, Saved for later, Back-in-stock list.
-  **No Returns link.** `CONFIRMED` live, signed in as the buyer persona.
-- Order detail page (`/account/orders/{id}`) for a `Processing` order: full line item, totals, addresses,
-  shipping/payment method, Print order button. **No Return affordance of any kind.** `CONFIRMED` live.
-- Direct navigation to `/account/returns`: **404 — routing failure, not an empty list.** `CONFIRMED` live.
+Module registers only when the store setting `Return.ReturnEnabled` is on (`index.ts` `isEnabled(ENABLED_KEY)`);
+a store without it gets no route, no menu item, no order-page button. `CONFIRMED` source; the "off" rendering was
+not observed (no org user can sign in to the only return-disabled store, `New-super`) — `UNVERIFIED` live.
 
-**Root cause, confirmed rather than assumed (§0):** the deployed storefront build's footer identifies
-itself as `2.58.0-pr-2464-...`, and PR #2464 is a completely unrelated feature (Sales Rep task
-management). vc-frontend PR #2488 — the one that actually adds `/account/returns`, a create wizard, and
-a details/cancel view (per its own title) — **is not what's deployed here**. The backend
-(`VirtoCommerce.Return 3.1002.0-pr-26-323d`) IS the PR #26 build. **This is a backend-ahead-of-frontend
-deployment gap, not a data gap** — seeding a `Completed` order on this env would not by itself produce a
-visible flow.
+| Surface | Route | Observed (`CONFIRMED` live unless stated) |
+|---|---|---|
+| Sidebar entry | Purchasing → **Returns** (`/account/returns`) | present (after Orders) |
+| Returns list | `/account/returns` | title "Returns"; search "Search by RMA, order, reference or product"; **Filters** panel: Created date (preset/custom start-end) + Status checkboxes Approved, Cancelled, Completed, Draft, New, Partially approved, Processing, Rejected, Requested (9 — the legacy `Canceled` is de-duplicated); table columns RMA, Date (sortable), Status, Qty; 10 rows/page, 14 pages for the rich persona; row is a button → details; **empty state** "There are no returns yet" (colleague persona) |
+| Order detail | `/account/orders/{id}` | **Request return** button (outline, beside Print order / Reorder all) on a Completed order with at least one `isReturnable` line; **absent with no explanation** on a Completed order whose lines are `NOTHING_LEFT_TO_RETURN` (D15). Gate: `allowsOrderStatus(order.status)` then `returnableItems.some(isReturnable)` (source) |
+| Wizard step 1 | `/account/returns/new/{orderId}` (no left sidebar) | source: "Select items to return" table with Ordered / Returnable / Quantity columns, per-line ineligibility text via i18n, window hint, Continue creates the draft. Not rendered this pass (needs a draft) — `UNVERIFIED` live on this theme; kb KB-6323ED21 / KB-2073D7AD observed it on 2.59 pr-2500 |
+| Wizard step 2 | `/account/returns/{id}/edit` | source: details/edit with reason (`text-field="localizedName"`), comment, attachments, autosave through a queued `UpdateReturn` mutation (800 ms debounce); `UNVERIFIED` live this pass |
+| Details | `/account/returns/{id}` | **Summary** (Status, Date, Order number, "Your purchase order reference", Comment, Reason for decline), **Cancel return** button, **Items** table (Item, Requested, **Approved**, per-line decline reason, attachments) |
+| Cancel | modal (`cancel-return-modal.vue`) | the button is **rendered on every status** but **disabled with a tooltip** (`WRONG_STATUS`) when `availableActions.cancel.isAvailable` is false — red-outline and live on Requested, grey and disabled on PartiallyApproved. Click-through not performed (mutation) |
 
-### 2c. API — GraphQL, shared `/graphql` endpoint (not a scoped sub-schema, unlike Sales Rep)
+Routes in source: `returns` (children `""`, `new/:orderId`, `:returnId/edit`, `:returnId`) under the Account route.
+`CONFIRMED` source @ c7253361.
 
-**6 queries / 4 mutations**, live-introspected 2026-09-22 and 1:1 matched to source file names (zero
-unmatched, zero extra):
+### 2c. API — GraphQL, shared `/graphql`
 
-```
-returnableItems(orderId: String!): [ReturnableItem!]!
-returnPolicy(storeId: String!): ReturnPolicy!
-return(id: String!): Return
-returnReasons(storeId: String!, cultureName: String): [ReturnReason!]!
-returns(after: String, first: Int, keyword: String, sort: String, storeId: String!,
-        statuses: [String], startDate: DateTime, endDate: DateTime): ReturnConnection!
-returnStatuses(cultureName: String): LocalizedSettingResponseType!   # see D3 — NOT the new-code status set
-
-createReturn(command: CreateReturnCommandType!): ReturnType
-updateReturn(command: UpdateReturnCommandType!): ReturnType
-submitReturn(command: SubmitReturnCommandType!): ReturnType
-cancelReturn(command: CancelReturnCommandType!): ReturnType
-```
-
-Input shapes, live-introspected:
+**6 queries / 4 mutations, unchanged by name since rev 1** (live introspection 2026-10-06):
 
 ```
-CreateReturnCommandType { orderId: String!, customerReference: String, customerComment: String, items: [InputReturnItemType!]! }
-UpdateReturnCommandType { returnId: String!, customerReference: String, customerComment: String, items: [InputReturnItemType!] }
-SubmitReturnCommandType { returnId: String! }
-CancelReturnCommandType { returnId: String!, reason: String }
-InputReturnItemType     { orderLineItemId: String!, quantity: Int!, reasonCode: String, reasonComment: String, serialNumber: String, attachmentUrls: [String!] }
+returnableItems(orderId) · returnPolicy(storeId) · return(id) · returnReasons(storeId, cultureName)
+returns(after, first, keyword, sort, storeId, statuses, startDate, endDate) · returnStatuses(cultureName)
+createReturn(command) · updateReturn(command) · submitReturn(command) · cancelReturn(command)
 ```
 
-Output shapes, live-introspected — note **no `storeId` argument on `return`/mutations**, only on
-`returns`/`returnPolicy`/`returnReasons` (§3 D6):
+Changed since rev 1: `CreateReturnCommandType` gained **`cultureName`** (fields now `orderId, customerReference,
+customerComment, cultureName, items`); `UpdateReturnCommandType` and `SubmitReturnCommandType` carry none (kb KB-C6BB1914:
+`Return.LanguageCode` = createReturn culture, observed on 3.1003). Unchanged: `ReturnPolicyType` still exactly
+`isEnabled, windowDays, allowedOrderStatuses` (D8); `ReturnType` fields `id, number, status, statusDisplayValue,
+createdDate, orderId, orderNumber, customerReference, customerComment, rejectReason, cancelReason, itemsQuantity,
+items, availableActions`; `ReturnLineItemType` adds nothing new (`approvedQuantity`, `itemState`, `rejectReason`
+now populated on live returns). `CONFIRMED` live.
 
-```
-ReturnType         { id, number, status, statusDisplayValue, createdDate, orderId, orderNumber,
-                      customerReference, customerComment, rejectReason, cancelReason, itemsQuantity,
-                      items: [ReturnLineItemType!]!, availableActions: [ReturnActionType!]! }
-ReturnableItemType { orderLineItemId, productId, sku, name, imageUrl, measureUnit, orderedQuantity,
-                      deliveredQuantity, returnableQuantity, isReturnable, ineligibilityReason,
-                      deliveryDate, returnableUntil }
-ReturnReasonType   { code, localizedName, requiresComment }
-ReturnPolicy       { isEnabled, windowDays, allowedOrderStatuses }   # exactly 3 fields — see D8
-ReturnLineItemType { id, orderLineItemId, productId, sku, name, imageUrl, measureUnit, orderedQuantity,
-                      quantity, approvedQuantity, itemState, reasonCode, reasonComment, rejectReason,
-                      serialNumber, attachments: [ReturnAttachmentType!]! }
-ReturnActionType   { name, isAvailable, unavailableReason }
-ReturnAttachmentType { name, url, mimeType, size }
-```
+**`availableActions` carries `edit`, `submit`, `cancel` only — never `authorize`** (source: agent actions are
+filtered out of `GetActions`). Live, per status: Draft → edit/submit/cancel all available; Requested → only cancel
+available; New, PartiallyApproved, Rejected, Cancelled → all three `WRONG_STATUS`. `CONFIRMED` live (132 returns) + source.
 
-**Anonymous access**: introspection was performed with a token this pass (not re-tested anonymously —
-gap G6); a real query (`returnReasons`) unauthenticated returns `200` with
-`errors[0].extensions.code: "Unauthorized"`, `data: null` — a clear refusal, not a silent empty result.
-`CONFIRMED` live.
-
-**Live values on this env**, buyer persona (AcmeCorp, 19 orders, none `Completed`):
+**Live values** (B2B-store, rich persona = AcmeCorp primary buyer; 22 customers have orders system-wide):
 
 | Call | Result | Verdict |
 |---|---|---|
-| `returnPolicy(storeId:"B2B-store")` | `{isEnabled:true, windowDays:30, allowedOrderStatuses:["Completed"]}` | `CONFIRMED` live — matches `ModuleConstants` defaults exactly |
-| `returnReasons(storeId:"B2B-store")` | 5 codes: `DamagedInTransit, FaultyOnArrival, NoLongerNeeded, OrderedByMistake, WrongItemDelivered` | `CONFIRMED` live — matches source's 5-value default |
-| `returns(storeId:"B2B-store")` as buyer | `{totalCount:0, items:[]}` | `CONFIRMED` live — no returns exist for this buyer, consistent with §0/§2b |
-| `orders(first:20)` as buyer | 19 orders, statuses `{New, Processing, Cancelled}` only — **zero `Completed`** | `CONFIRMED` live — this is *why* link 1 is unreachable, independent of the frontend-deployment gap in §2b |
+| `returnPolicy("B2B-store")` | `{isEnabled:true, windowDays:30, allowedOrderStatuses:["Completed"]}` | `CONFIRMED` (store override; module default `ReturnEnabled=false`) |
+| `returnPolicy("New-super")` | `{isEnabled:false, windowDays:30, …}` | `CONFIRMED` — a store with no Return setting reads disabled while `returnReasons("New-super")` still lists 5 codes (D16) |
+| `returnReasons("B2B-store")` | 5 codes; `requiresComment:true` only for `FaultyOnArrival`; `localizedName` == `code` **when no `cultureName` is passed** (and for de-DE / fr-FR); with `cultureName` en-US → "Faulty on arrival", ru-RU → "Брак при получении" (2026-10-07, triangulation of RET-GQL-035) | `CONFIRMED` (D4, D5) |
+| `returnStatuses` | 10 keys: Approved, Canceled, Cancelled, Completed, Draft, New, PartiallyApproved, Processing, Rejected, Requested | `CONFIRMED` (D3) |
+| `returns("B2B-store")` rich persona | `totalCount 132`: Cancelled 114, Requested 8, Draft 4, Rejected 3, PartiallyApproved 2, New 1 | `CONFIRMED` — all fixtures but `CO260923-` orders |
+| `orders` rich persona | 39 orders: Completed 17, Cancelled 13, Processing 6, New 3 | `CONFIRMED` |
+| admin `POST /api/return/search` | 136 rows: Cancelled 115, Requested 9, Draft 4, Rejected 3, PartiallyApproved 2, Completed 2, New 1; store ids `B2B-store` and one `null` | `CONFIRMED` |
+| anonymous `{__schema{queryType{name}}}` | 200, introspection answered | `CONFIRMED` (G6) |
 
-### 2d. NOT manageable from any layer this pass
+**Store settings** (live `GET /api/stores/B2B-store`, all 10 module keys present): `Return.ReturnNewNumberTemplate=RET{0:yyMMdd}-{1:D5}`,
+`Return.ReturnEnabled=true`, `Return.WindowDays=30`, `Return.AllowedOrderStatuses=Completed`,
+`Return.AllowedShipmentStatuses=null`, `Return.Reasons=null`, `Return.ReasonsRequiringComment=FaultyOnArrival`
+(**overrides the default 3-code list** — closes G3), `Return.AttachmentsRequired=true` (**overrides default false**),
+`Return.SendNotifications=true`, `Return.SendPushNotifications=null` (unset → source default `true`). `CONFIRMED` live.
 
-- **Approval/rejection of a return** — no mutation exists yet (VCST-5883).
-- **A store-scoped read/write of a single return by id** — `return(id)`/mutations take no `storeId`;
-  only `returns()`/`returnPolicy()`/`returnReasons()` do (D6).
-- **The legacy Admin SPA blade showing any new-flow field** — attachments, `customerComment`,
-  `itemState`, `approvedQuantity` are all invisible there; the blade was not touched by this PR.
-- **The buyer flow itself, on this environment** — 404 (§2b), independent of data.
+### 2d. NOT manageable from a given layer
+
+| What | Where it lives instead |
+|---|---|
+| Deciding a return (approve/decline) | **Admin SPA / REST only.** No buyer mutation; not in xAPI `availableActions`; `PUT /api/return` refuses decision statuses |
+| An agent cancelling a Requested return | **Nowhere** — the dropdown/`available-statuses` offer only `Requested` (D11); only the owner can cancel, via the storefront/xAPI |
+| Reversing a decision | **Nowhere** (no un-authorize; edit cannot reopen) |
+| Store switches `Return.SendNotifications` / `SendPushNotifications`, `AttachmentsRequired`, window, reasons | **Admin → Stores → store settings** only; no storefront or xAPI write |
+| Return attachments on the legacy blade | visible read-only on Line items (attachment link); deletion belongs to buyer/administrators (module guide) |
+| Order-side effect of any terminal status (refund, restock) | **Not connected** (D9) |
+| Organization-wide return visibility | **Not built** (PR #28 open, VCST-5884); a colleague sees nothing (Actors) |
 
 ---
 
 ## §3 — Where the layers DISAGREE
 
+Ids are a citation contract; rows are updated in place, never renumbered.
+
 | # | Disagreement | Verdict |
 |---|---|---|
-| **D1** | **Legacy admin "available quantity" counts ANY return status; the new buyer flow's held-quantity counts only "open" ones.** `ReturnService.GetItemsAvailableQuantities` (legacy, `api/return/available-quantities/{orderId}`) sums `LineItems.Quantity` across **every** return on the order with **no status filter at all** — a `Cancelled` or `Rejected` legacy return still consumes quantity forever (the PR's own doc admits this verbatim: *"counts every return regardless of its status, so a cancelled or rejected one still consumes quantity"*). `ReturnQuantityService.GetHeldQuantity` (new flow) explicitly excludes `{Draft, Cancelled, Canceled, Rejected}` via `NonHoldingStatuses`. An admin checking the legacy endpoint and a buyer checking `returnableItems` for the **same order** can see two different "quantity left to return" numbers whenever a cancelled/rejected return exists on that order. | `CONFIRMED` source (both methods read verbatim); not reproduced live (would need a cancelled return to exist, none do on this env) |
-| **D2** | **Settings split**: 8 settings are `StoreLevelSettings`. **Those are the C# field names in `ModuleConstants.cs`, NOT the persisted keys** — the dotted key drops the second `Return`, so the field `ReturnWindowDays` persists as `Return.WindowDays`. Verified live 2026-09-25 against `GET /api/stores/{id}`; a case written against the field name silently targets a setting that does not exist. The eight keys are `Return.ReturnEnabled, Return.ReturnNewNumberTemplate, Return.WindowDays, Return.AllowedOrderStatuses, Return.AllowedShipmentStatuses, Return.Reasons, Return.ReasonsRequiringComment, Return.AttachmentsRequired` — configurable per store, and `returnPolicy(storeId!)`/`returnReasons(storeId!)` read them per-store. `Return.ReturnPassword` (default `"qwerty"`, `SecureString`) and `Return.Status` (the legacy status dictionary) are **module-global only** — not in `StoreLevelSettings` — legacy leftovers with no per-store override. | `CONFIRMED` source (`ModuleConstants.cs`, exact array membership) |
-| **D3** | **`returnStatuses` (the storefront-queryable localized dictionary) is a DIFFERENT vocabulary from `ReturnStatus.cs` (the new flow's actual status constants) — not a relabeling of the same set.** Live `returnStatuses`: `Approved, Canceled, Cancelled, Completed, Draft, New, PartiallyApproved, Processing, Rejected, Requested` (10, includes legacy `New` and the **legacy typo spelling `Canceled`**). Source `ReturnStatus.cs` constants: `Draft, Requested, Approved, PartiallyApproved, Rejected, Cancelled, AwaitingDelivery, Received, Processing, Completed` (10, includes `AwaitingDelivery`/`Received`, which the dictionary does **not** have). A return that ever reaches `AwaitingDelivery` or `Received` would have **no matching label** in the vocabulary a status-lookup UI would query via `returnStatuses` — and a return status of `New` (a dictionary value) is not a value the new-flow status machine can ever set. | `CONFIRMED` live (`returnStatuses` query) + source (`ReturnStatus.cs`) — genuine set difference, not overlap-only |
-| **D4** | **`ReturnReasonType.localizedName` resolves to the raw code, not a display string.** Live: every reason's `localizedName` is byte-identical to its `code` (`"DamagedInTransit"`, not "Damaged in transit"). A storefront reason dropdown built from this field today would show `PascalCase` codes to a buyer. | `CONFIRMED` live — no localization resource was found to be missing/present this pass (not investigated further; recorded as observed, not diagnosed) |
-| **D5** | **`requiresComment` live matches only 1 of the 3 codes the module's own default declares as comment-requiring.** `ModuleConstants` default for `Return.ReasonsRequiringComment` is `"FaultyOnArrival,DamagedInTransit,WrongItemDelivered"` (3 codes); live, only `FaultyOnArrival` returns `requiresComment: true` — `DamagedInTransit` and `WrongItemDelivered` both return `false`. Could be this store's own setting override rather than a bug — **not distinguishable without reading the store's actual persisted setting value**, which was not done this pass. | Source default vs. live value **CONFIRMED** to differ; whether that is an override or a defect is `UNVERIFIED` (gap G3) |
-| **D6** | **Authorization is customer-scoped, not store-scoped, on `return(id)`/`updateReturn`/`submitReturn`/`cancelReturn` — while `returns()`/`returnPolicy()`/`returnReasons()` are store-scoped by argument.** `ReturnAuthorizationHandler` checks only `IsOwnedBy(orderReturn, callerId)` and authentication; no `storeId` comparison exists in the handler. A customer id that happens to have returns across more than one store (plausible for a multi-org contact) could plausibly fetch/cancel a return by id without it being scoped to the store context they're currently signed into. | `CONFIRMED` source; **not reproduced live** — would need a real cross-store same-customer return pair, none exist (gap G4) |
-| **D7** | **Published docs describe only the admin-created legacy flow; the entire buyer self-service mechanism this map documents does not exist in any published guide.** `PlatformUserGuide` "Manage Returns" covers creating/processing returns via the Return module or the Orders module — both admin actions. `StorefrontUserGuide` was queried directly for a return/RMA page and returned **zero** results (checkout, quote-requests, purchase-requests — nothing named "return"). This is **expected given both PRs are unmerged** (§0), not a defect — but it means once PR #2488 merges, `StorefrontUserGuide` needs a **new** page (there is nothing to amend, unlike a contradiction) and `PlatformUserGuide`'s "Manage Returns" page needs a customer-initiated-vs-admin-initiated distinction added. | `CONFIRMED` (docs queried first-hand, zero hits); flagged as a **future** doc gap, not a current contradiction |
-| **D8** | **`ReturnPolicy` carries exactly 3 fields (`isEnabled, windowDays, allowedOrderStatuses`) — the three fields this map's own brief was told to check against a larger hypothesized set (`allowOrderlessReturns, maxOrderlessLineQuantity, policyText`) that DO NOT exist anywhere in source or the live schema.** | `CONFIRMED` on both source (`ReturnPolicy.cs` model, 3 properties) and live introspection (`__type(name:"ReturnPolicyType")`, 3 fields) — the narrower set is correct |
-| **D9** | **The `Return` entity still carries the legacy free-text `Resolution` field alongside the new dictionary-backed `Status`, and neither creation nor approval of a return raises any order-side event** (per `config/test-suites.json`'s own retired-case note on suite 073: no payment refund is ever triggered by a return, `resolution` is nullable free text with no enum, and 4 pre-existing legacy returns with `resolution:"refund"` show zero actual order refunds). This PR does not touch that gap — a return reaching any terminal state, old or new, still does not connect to payment/refund automatically. | `CONFIRMED` — carried over from a prior, already-live-verified finding recorded directly in the suite manifest; re-confirmed the `Resolution` field still exists on the current `Return.cs` |
+| **D1** | **Legacy available-quantity vs the buyer flow's held quantity — NO LONGER DISAGREE.** Rev 1: `GetItemsAvailableQuantities` counted every return regardless of status. 3.1004.0's own guide now says the endpoint *"counts what the order's returns hold, the same way `returnableItems` does … nothing for a draft, a cancelled or a declined return, the approved quantity for a line that has been decided"*. Live: an order carrying many `Cancelled` returns of 20 units each reports admin `available-quantities` 20 / 25 and buyer `returnableItems.returnableQuantity` 20 / 25 — equal; cancelled returns consume nothing. **A residual difference remains and is its own row (D10).** | **DRIFT (rev 1)** — `CONFIRMED` live (one order with 100+ cancelled returns, 17 Completed orders compared) + guide text. The mind-map node `returns.buyer.hold.legacy-endpoint-counts-all` (CONFIRMED) is stale and needs its own re-observation |
+| **D2** | **Settings split — now 10 store-level settings, not 8.** The persisted keys (field names differ from keys — `ReturnWindowDays` persists as `Return.WindowDays`): `Return.ReturnNewNumberTemplate, ReturnEnabled, WindowDays, AllowedOrderStatuses, AllowedShipmentStatuses, Reasons, ReasonsRequiringComment, AttachmentsRequired, SendNotifications, SendPushNotifications` — configurable per store and all 10 present on the live store. `Return.ReturnPassword` (default `"qwerty"`, SecureString) and `Return.Status` (dictionary) remain module-global only. **Live overrides differ from the defaults on this stand**: `ReasonsRequiringComment=FaultyOnArrival` (default has 3 codes), `AttachmentsRequired=true` (default `false`), `ReturnEnabled=true` (default `false`). `SendNotifications` / `SendPushNotifications` both default **on** ("a store that upgrades would silently stop telling its buyers anything" — source comment). | `CONFIRMED` source (`StoreLevelSettings`, 10 entries) + live (`GET /api/stores`) |
+| **D3** | **`returnStatuses` dictionary vs `ReturnStatus.cs` — set difference remains, now DECLARED ON PURPOSE.** Live `returnStatuses`: 10 keys incl. legacy `New` and the typo spelling `Canceled`. Source `ReturnStatus.cs` @ 3.1004.0: 12 constants (`Draft, Requested, Approved, PartiallyApproved, Rejected, Cancelled, New, Canceled, AwaitingDelivery, Received, Processing, Completed`); the dictionary's `AllowedValues` omit `AwaitingDelivery` and `Received` — the source comment says they "exist as constants but are not reachable yet", and the module guide says to add them to the dictionary to use them. **This is not a defect**; marking it as one wastes a reviewer's time. The storefront does not rely on the server label: it falls back to its own `returns.statuses.*` i18n whenever `statusDisplayValue == code` (live: `statusDisplayValue` equals the code on every row). | `CONFIRMED` live + source; divergence declared in source and guide |
+| **D4** | **Reason labels are raw codes at the contract, localized in the admin, and NOT localized by the storefront.** Live `returnReasons` **without `cultureName`**: `localizedName` byte-identical to `code` (`"DamagedInTransit"`); with `cultureName` en-US / ru-RU the operator-entered labels come back, de-DE / fr-FR fall back to the code (2026-10-07). The storefront wizard was seen translating only "Faulty on arrival" and showing the other four as codes. Admin Line items shows "Faulty on arrival". The storefront localizes **statuses** and **ineligibility reasons** and **errors** through its own `returns.*` i18n, but its locale file has **no `reasons` namespace**, and the reason `<select>` binds `text-field="localizedName"` (`select-return-items`/`edit-return`) — so the buyer's dropdown can only show the raw `PascalCase` code until an operator fills the platform localization store. | contract + admin + source `CONFIRMED`; the **rendered dropdown** is `UNVERIFIED` on this theme (not walked — would need a draft; G11). Suspected defect, see report |
+| **D5** | **`requiresComment` live vs the module's default — explained, not a defect.** Source default `FaultyOnArrival,DamagedInTransit,WrongItemDelivered`; live `requiresComment` true only for `FaultyOnArrival` because **B2B-store overrides `Return.ReasonsRequiringComment` to `FaultyOnArrival`** (`GET /api/stores/B2B-store`). | `CONFIRMED` live — **closes the rev 1 question (G3)**; a store override, not a defect |
+| **D6** | **Authorization is customer-scoped, not store-scoped, on `return(id)`/`updateReturn`/`submitReturn`/`cancelReturn`** while `returns`/`returnPolicy`/`returnReasons` are store-scoped by argument. Ownership is checked in `ReturnFlowService.IsOwnedBy` / `GetOwnedReturnAsync` (called from the query and command handlers; `ReturnAuthorizationHandler` is the attachment-download authorizer — rev 1 mis-anchored it, corrected 2026-10-07) — ownership + authentication only, no store comparison. | `UNVERIFIED` at 3.1004.0 — carried from rev 1 (`ReturnAuthorizationHandler` was NOT re-read this pass; the authorize endpoint's own `return:authorize` gate WAS read); **not reproduced live** — still no same-customer two-store pair (G4) |
+| **D7** | **Published docs describe only the admin-created legacy flow; there is still NO buyer, no agent-decision and no notifications text anywhere published.** `StorefrontUserGuide` searched `returns`/`request a return`/`RMA`: no returns page (quote-requests, purchase-requests, dashboard… only). `PlatformDeveloperGuide` xAPI reference: no `returnableItems`/`createReturn`/`submitReturn` page. `PlatformUserGuide` return pages cover create/view/edit status only — nothing on Approve / decline, `return:authorize`, the two notification switches or the five notification types. Not a contradiction (new feature, release unpublished) but a **future** doc gap now larger than rev 1 recorded. | `CONFIRMED` (queried first-hand 2026-10-06, zero hits) |
+| **D8** | **`ReturnPolicy` carries exactly 3 fields.** No `allowOrderlessReturns`, `maxOrderlessLineQuantity`, `policyText` anywhere. Orderless returns are therefore not in this build (consistent with the excludes). | `CONFIRMED` live (`__type ReturnPolicyType`) + source |
+| **D9** | **`Return` still carries free-text `Resolution` next to the dictionary `Status`, and no status — old or new — raises any order-side event.** No refund, no restock; the legacy blade still has a **Resolution** textarea beside **Reason for decline**. The module guide itself says nothing about refunds beyond a link to creating refund documents in Orders. | `CONFIRMED` — Resolution field seen live on the blade; absence of an order-side effect carried from the suite manifest's retired-case note, not re-proven this pass (would need a decision + order read: mutation) → half `UNVERIFIED` on 3.1004 |
+| **D10** | **Admin `available-quantities` ignores the delivered cap and the eligibility gates that `returnableItems` applies.** Across the rich persona's 17 Completed orders, 3 differ: one where `returnableItems` caps at 4 (delivered 4) but admin reports 10; one `NOT_DELIVERED` order (returnable 0, delivered 0) where admin reports 5; one with a `LINE_CANCELLED` line where admin reports 2 for a line the buyer cannot return. So an admin creating a return from the Admin blade is guided by a number the buyer-side engine would refuse. | `CONFIRMED` live (aggregate comparison, 17 orders) — what the Admin blade then enforces on save is `UNVERIFIED` (mutation) |
+| **D11** | **An agent cannot cancel a Requested return, and the status dropdown is far narrower than the published guide says.** `GET /api/return/{id}/available-statuses` live on 3.1004.0: `Requested → [Requested]`, `Draft → [Draft]`, `Rejected → [Rejected]`, `Cancelled → [Cancelled]`, `PartiallyApproved → [Completed, Processing, PartiallyApproved]`, `New → [New, Completed, Cancelled, Processing]`, legacy `Completed → [New, Completed, Cancelled, Processing]` (still offers a **backwards move to `New`**); no `Approved` sample exists. **The legacy `Canceled` duplicate that kb KB-21F4F161 saw on one run is gone on 3.1004 — one `Cancelled` only** (resolves that entry's DISPUTED history in favour of the contradiction). Source: `Cancel` transition is the buyer's from `Draft`/`Requested`; `CanSetStatus` refuses leaving `Requested`, so an agent's only way to end a Requested return is Approve / decline with every line 0 (→ `Rejected`). The VCST-5883 test model's state diagram ("Requested → Cancelled: cancel (buyer own / agent)") and case RET-ADM-007 are wrong; the mind map already flags it DRIFT. | `CONFIRMED` live (6 statuses sampled) + source (`ReturnStateProvider.CanSetStatus`) |
+| **D12** | **PUBLISHED GUIDE vs build — the Return module user guide describes free status editing and a record-of-a-past-return module.** `https://docs.virtocommerce.org/platform/user-guide/return/managing-returns`: *"In the next blade, edit the return status and/or the resolution."* and *"If required, click the **Line items** widget to edit the return reason."* `https://docs.virtocommerce.org/platform/user-guide/order-management/managing-returns`: *"In the **Return** blade, change the return status and enter your resolution."* Build: status editing is a restricted list (D11); decisions are made on the **Line items** blade through **Approve / decline** with approved quantities and decline reasons — the widget is where the decision lives, not just the reason. The overview's *"Once a customer returns an item to your store, this information appears in the list of returns"* describes a retrospective record; buyers now **request** returns that wait for a decision. A reader following the guide will not find Approve / decline. | `CONFIRMED` (docs fetched first-hand; live Line items blade observed with Approve / decline) |
+| **D13** | **Three sources disagree about deleting a return.** `https://docs.virtocommerce.org/platform/user-guide/return/managing-returns`: *"You cannot delete line items or returns as a whole."* In-repo guide @ 3.1004.0 (Process Chart note 1): *"Once created, the return cannot be deleted, and its status changes as described under Approving and declining."* The controller exposes `[HttpDelete]` guarded by `return:delete`, and kb KB-06CFE625 observed `DELETE /api/return?ids=` working on 3.1003. | docs + source `CONFIRMED`; DELETE working on 3.1004 `UNVERIFIED` (mutation) |
+| **D14** | **Over-limit quantity: enforced at submit, but the wizard hides it by clamping.** kb KB-F97CFAF6 (createReturn with 13 of 12 → 200 and a Draft carrying the over-limit quantity; `submitReturn` refused) was DISPUTED by a later observation that the wizard clamps the saved value while the field still displays the typed number (KB-2073D7AD, KB-6323ED21). Both can be true at once: the contract accepts an over-limit draft (API), the storefront never sends one (UI), and the UI field can disagree with what was saved. | contract behaviour `UNVERIFIED` on 3.1004 (mutation); the display mismatch `UNVERIFIED` on this theme (G11) |
+| **D15** | **Four different causes collapse onto one silent absence on the order page.** `Request return` is hidden unless `allowsOrderStatus` AND some line `isReturnable`; a Completed order whose lines are all `NOTHING_LEFT_TO_RETURN` shows no button and no message (observed). The same is true of `OUTSIDE_RETURN_WINDOW`, `NOT_DELIVERED` and `ORDER_STATUS_NOT_ALLOWED`. The explanatory per-line text (`returns.ineligibility.*`: "Already fully requested", "Outside the return window", "Not delivered yet"…) exists only in the wizard, which a buyer cannot reach through the UI when nothing is returnable. | `CONFIRMED` live (nothing-left order) + source (other three causes by predicate) |
+| **D16** | **A store with no Return settings answers `isEnabled:false` yet still serves a reason list.** `returnPolicy("New-super").isEnabled=false` while `returnReasons("New-super")` returns the five default codes. And the storefront gate is `returnPolicy.isEnabled`/`Return.ReturnEnabled` — the xAPI itself still answers `returnableItems` for such a store. | `CONFIRMED` live for the two reads; whether `createReturn` is refused for a disabled store is `UNVERIFIED` (mutation; mind map says `RETURNS_DISABLED` refused) |
+| **D17** | **Notification setting write path and language chain are claims the build has not been shown to honour.** (a) kb KB-17555498: writing `Return.SendNotifications=false` through the platform settings API did not reach the store read by the handler within 10 minutes, and a submit still sent. (b) the module guide says the email is written in `cultureName`, then the order's language, then the store default, and *"a language without a template of its own gets the default one"*; kb KB-C6BB1914 observed `cultureName` winning over the order language; kb KB-17555498 observed one `fr-FR` decision whose jobs "succeeded" and produced neither email nor push, then both on requeue. Live now: every notification has only a `default` template. | `UNVERIFIED` on 3.1004 for both — each needs a mutation (setting write, a decision on a fresh return); carried as a candidate for a BL-RET proposal only |
+| **D18** | **`ReturnStatus.Normalize` hides the `Canceled`/`Cancelled` split from the buyer but not from the legacy contract.** Storefront filter shows one `Cancelled`; `returnStatuses` still returns both keys; the admin filter and `available-statuses` now offer one. A consumer reading the raw dictionary (an integration, a report) still sees two statuses for one fact. | `CONFIRMED` live (dictionary + both filters) |
+
+> **No longer mid-change on the backend.** Rev 1's call-out (PRs open, deployed build behind source) is retired.
+> Still open and relevant: PR #28 (organization returns, read-only) will change who can read a return — re-read
+> the Actors and D6 rows when it merges. The deployed theme is an unreleased PR build over `dev`; re-read §2b
+> after the next theme release.
 
 ---
 
 ## §4 — Coverage shape
 
-| Suite | Content | Feature-relevant to THIS ticket's buyer flow |
-|---|---|---|
-| `073-returns.csv` (Backend/returns) | 22 rows, **all** `Automation Status: None`. Legacy admin CRUD only: create/view/edit/delete a return via the Admin SPA "Returns workspace," status transitions (`New/Processing/Completed/Rejected`), search/filter/sort/pagination, grid-consistency checks, a refund-amount assertion, an inventory-restore assertion. | **Zero.** Every row targets the unchanged legacy admin blade; none exercises `createReturn`/`submitReturn`/`cancelReturn` or any storefront surface. The module-suite-map's REST citation for this suite (`/api/returns/`) is also off by one letter — the real route is `api/return` singular (§2a) |
-| `014b-orders-frontend-returns-filtering.csv` rows `ORD-037..ORD-051` (15 of 47 total rows in that file) | Speculative buyer-return cases (`Return - Reason Selection Required`, `Status Tracking Display`, `Partial Return Quantity Selection`, `Window Expiry Enforcement`, plus invoice/cancellation rows) authored **before this feature existed**, all `Automation_Status: Draft`, all carrying `References: "ENV-BLOCKED: Returns module not installed on vcst-qa (Coverage Gap Analysis)"`, all citing `Business_Rule: PROPOSED-BL-RTN-001` (never adopted — no `BL-RET` domain exists in the oracle) and `Edge_Case_Refs: ECL-7.1` — which is **"Browser & Device Issues,"** not returns at all. A miscitation, not just a placeholder. | **Zero, and actively misleading if reused as-is.** Their guessed mechanics do not match the real schema: e.g. ORD-038 assumes a customer-visible "RMA ID" — the real field is `Return.number`; ORD-040 assumes a visible "Return period has ended" message on the order page — the real mechanism is a per-line `ineligibilityReason: OutsideReturnWindow` returned from `returnableItems`, with no confirmed storefront rendering of it (route doesn't exist, §2b); none references `orderLineItemId`, `quantity` caps via `returnableQuantity`, or the reason-code vocabulary that actually exists. These rows should be treated as **superseded**, not extended, once the storefront half deploys |
+**Basis: rows parsed from each CSV (multi-line fields respected), `Automation_Status` column, plus
+`config/test-suites.json` for gates. Counts include one `Pre-flight` row per suite.**
 
-**Zero coverage, and it is a hole, not a deliberate exclusion:** the entire new backend surface
-(`createReturn`, `updateReturn`, `submitReturn`, `cancelReturn`, `returnableItems`, `returnPolicy`,
-`returnReasons`, `returnStatuses`, and the new `returns`/`return` query behavior) has **no test case
-anywhere in the corpus** that targets the actual schema. This is expected for an unmerged PR, but it
-means the day PR #26 merges, this domain starts at **true zero**, not at "14b's rows just need
-unblocking."
+| Suite | Rows | `Automated` / other | Layer & content |
+|---|---|---|---|
+| `050o` GraphQL xAPI — Returns | **45** | 44 / 1 `Draft` | Query 18, Mutation 17, Configuration 3, Step-2 read surface 6, Pre-flight 1 |
+| `014c` Orders Frontend — Returns | **23** | 22 / 1 `Draft` | `[JOURNEY]` 12, Wizard 5, List 3, Eligibility 1, Localisation 1, Pre-flight 1 |
+| `073` Returns (legacy Admin SPA) | **23** | 20 / 2 `Deprecated` / 1 `Manual` | CRUD 5, Status workflow 5, Validation 4, Cross-module 4, Grid & UX 4 |
+| `073a` Authorize & Notifications | **31** | 31 / 0 | Admin REST 26, Notifications 4 |
+| `073b` Admin SPA Decisions | **12** | 9 / 3 `Draft` | Decisions 8, Permissions 1, Localization 1, Settings 1 |
+| **Total, 5 suites** | **134** (129 excluding pre-flight) | **126 Automated**; 5 Draft, 1 Manual, 2 Deprecated | |
+| `014b` ORD-037..051 | 15 of 50 | all `Draft` | superseded proposals (below) |
 
-**Executability note:** even a freshly authored suite against this schema could exercise the full
-backend flow via GraphQL today (schema is live, `323d` build), but could not exercise anything through
-the storefront UI until vc-frontend PR #2488 (or its successor) is actually deployed to an environment
-(§0/§2b) — a `requiresModules`-style environment gate belongs on any storefront-layer case, distinct
-from the backend-layer cases which only need `VirtoCommerce.Return` installed.
+**Rev 1 correction, out loud:** rev 1 said suite `073` had 22 rows, *all* `Automation Status: None`, and that the
+buyer-flow surface had "no test case anywhere". Both were true at 2026-09-22 and false now: the corpus grew to
+134 returns rows across 5 suites (073 has 23 rows, 20 `Automated`) and every layer — xAPI, storefront UI,
+admin REST, admin SPA, notifications — has a suite (their last run results were not read). The module-suite-map citation rev 1 called "off by one
+letter" (`/api/returns/`) is now correct: the row reads `/api/return/`.
+
+- **Suites the obvious selection MISSES.** `config/test-suites.json` has a `returns` selection
+  (`014c, 050o, 073, 073a, 073b`) — the right 5. The `orders` selection includes `014c` and `014b` but **not**
+  `073*` or `050o`, so `/qa-regression orders` exercises the storefront half of Returns and none of the admin
+  or API half. `014b` carries a returns slice (ORD-037..051) under an Orders-only name and has **no
+  `requiresModules`** while the other five declare `["returns"]`.
+- **Superseded rows still present.** `014b` ORD-037..051 (15 rows, all `Draft`): their guessed vocabulary does
+  not match the real schema (rev 1 §4), several still carry `ENV-BLOCKED: Returns module not installed` —
+  now false — and ORD-038 is already stamped `SUPERSEDED (VCST-5883) … retirement is a human decision`. Treat as
+  retire-or-rewrite candidates, not coverage.
+- **Zero / near-zero coverage.** `Draft` cases (5 across 050o/014c/073b) have never run. Organization returns
+  (PR #28) has no coverage and no code deployed — **deliberate**, not a hole. The `Return.SendNotifications` write
+  path and the language fork (D17) are covered only by whatever 073a's 4 Notifications rows assert — whether they
+  exercise the write path was not checked (shape, not audit).
+- **Executability.** Five suites carry `envRiskGate: staging` (`073`, `073a`, `073b`, `014c`, and `014b`); `050o`
+  has none. All five returns suites declare `requiresModules: ["returns"]`. This env is `ENV_RISK=test`; whether
+  `staging` permits it was not tested this pass.
 
 ---
 
@@ -300,14 +356,23 @@ from the backend-layer cases which only need `VirtoCommerce.Return` installed.
 
 | # | Gap | State |
 |---|---|---|
-| G1 | Whether `createReturn`/`submitReturn`/`cancelReturn` actually succeed end-to-end (a real `Draft -> Requested -> Cancelled` cycle) | **OPEN** — needs an order that reaches `Completed` status with a delivered line inside the 30-day window, which needs seeding (deliberately not done this pass — reserved for the concurrent seeding agent per the brief) and a mutation, which this read-only pass does not perform |
-| G2 | The legacy admin controller's actual **create** path (no POST action exists; hypothesized as an id-less `PUT`) | **OPEN** — needs one non-destructive mutating call against `api/return` with no `id`, or a walk of the Admin SPA's "Add new return" button's network call, neither done this pass |
-| G3 | Whether D5 (`requiresComment` mismatch) is a per-store setting override or a genuine defect | **OPEN** — needs `GET /api/settings/Store/B2B-store/values?names=Return.ReasonsRequiringComment` (or the Admin Settings blade) read, not attempted this pass |
-| G4 | Whether D6 (no store-scope check on `return`/mutations) is exploitable — i.e. whether a real customer id has returns spanning two stores on any environment, and whether cross-store fetch/cancel actually succeeds | **OPEN** — needs a same-customer, two-store return pair; none exist on this env |
-| G5 | The Admin SPA's legacy Returns blade's own screen contents (columns, widgets) were **not re-navigated live this pass** — cited from the 073 suite's own case descriptions and the PlatformUserGuide, not fresh screenshots | **OPEN** — a straightforward re-walk, deprioritized in favor of the backend/schema work given the storefront is unreachable anyway |
-| G6 | Anonymous **introspection** (as opposed to anonymous query execution, which was confirmed refused) was not tested against `/graphql` this pass | **OPEN** — low priority; the query-refusal behavior is the security-relevant half and is confirmed |
-| G7 | `Return.AllowedShipmentStatuses` (default empty = any status) was read from source only, never exercised against a real shipment-status value | **OPEN** — needs a delivered order whose shipment carries a specific non-default status |
-| G8 | vc-frontend PR #2488's own route names, wizard step count, and rendered field set are **entirely unread** (§0 — deliberately not investigated since nothing on this env can reach it) | **OPEN** — re-open this gap and read the PR's diff once it is actually deployed somewhere reachable; do not guess its shape from the backend schema alone, since a storefront rarely renders 1:1 with its GraphQL contract (see D4's raw-code labels as exactly the kind of gap a UI layer usually papers over, or doesn't) |
+| G1 | Whether `createReturn`/`submitReturn`/`cancelReturn` succeed end to end | **CLOSED (by evidence of outcome, not by me).** Returns exist live in `Draft`, `Requested`, `PartiallyApproved`, `Rejected`, `Cancelled` with decided line states, quantities and attachments, and 126 `Automated` cases exist for the mutations (run results not read). I did not run a mutation this pass |
+| G2 | The legacy admin create path (no POST) | **CLOSED (source + kb).** Only `PUT /api/return`; a body without id creates `New` (source: no POST; kb KB-1F2EBF83 observed on 3.1003). Not re-run |
+| G3 | D5 `requiresComment` override vs defect | **CLOSED** — `GET /api/stores/B2B-store`: `Return.ReasonsRequiringComment=FaultyOnArrival` (store override) |
+| G4 | D6 cross-store exploitability | **OPEN** — needs one customer with returns in two stores and a store-context switch; only `B2B-store` has Return enabled and the other store (`New-super`) has no signable org user |
+| G5 | Admin SPA blade contents | **CLOSED** — re-walked live 2026-10-06 (§2a: list columns, blade fields, Line items columns, toolbar commands) |
+| G6 | Anonymous introspection | **CLOSED** — answered 200 (introspection open); anonymous queries still refused |
+| G7 | `Return.AllowedShipmentStatuses` exercised against a real shipment status | **OPEN** — live value is `null` (any); needs a delivered order whose shipment carries a specific non-default status and the setting changed (a settings write) |
+| G8 | vc-frontend route names, wizard shape, field set | **CLOSED** — read at c7253361 (§2b); the wizard *rendering* on this theme is G11 |
+| G9 | Behaviour of a back-office user WITHOUT `return:authorize` on 3.1004 | **OPEN** — no Manager-type account provisioned on this env (`IMPERSONATION_ADMIN_EMAIL` empty); needs a user with `return:access/read/update` and no `authorize`; kb entries are 3.1003 only |
+| G10 | Notification email actually sent / journal row content on 3.1004 | **OPEN** — push messages observed (`Sent`), email journal not inspected for a Return type (my journal query did not surface one); needs a decision on a fresh return plus a journal search by `tenantIdentity {id, type:Return}`; no SMTP so status `Error` is the expected proof |
+| G11 | Storefront wizard rendering on `2.59.0-pr-2532` (select-items, details step: reason dropdown label, clamp vs display, Submit gating) | **OPEN** — reaching step 1 creates a draft; the one observed order with returnable lines is a disposable fixture; needs a per-run order and a draft the pass may create |
+| G12 | Whether the notification switches take effect when written (D17a) | **OPEN** — a settings write on a store; named, not executed |
+| G13 | Non-English submit culture and missing-template behaviour (D17b) | **OPEN** — needs a `fr-FR` `createReturn` + a decision (two mutations) |
+| G14 | A buyer persona with orders but no Completed+delivered order (the "minimal" contrast) | **OPEN** — the available non-rich personas have 0 orders (colleague, multi-org) or an expired password (EUR, TechFlow, BuildRight); only the empty-list state was observed |
+| G15 | Whether a return-disabled store hides the module (menu/route/button) in the storefront | **OPEN** — source says so; `New-super` has no signable buyer |
+| G16 | Whether D10's admin-side number is enforced or merely advisory when an admin saves | **OPEN** — needs one admin create against a not-delivered line (mutation) |
+| G17 | Organization-visible returns (PR #28, VCST-5884) | **OPEN, deliberate** — unmerged; re-open this map when it deploys |
 
 ---
 
@@ -315,18 +380,23 @@ from the backend-layer cases which only need `VirtoCommerce.Return` installed.
 
 | Claim | Verdict |
 |---|---|
-| Ticket brief: `ReturnPolicyType` live "has only `isEnabled`, `windowDays`, `allowedOrderStatuses`"; the ticket also names `allowOrderlessReturns`, `maxOrderlessLineQuantity`, `policyText` as **not** existing | **CONFIRMED exactly as briefed** — both source and live agree on the narrower 3-field set (D8) |
-| Ticket brief: admin's legacy quantity calc counts every return regardless of status, while the storefront path does not | **CONFIRMED exactly as briefed**, and sourced precisely to `ReturnService.GetItemsAvailableQuantities` vs `ReturnQuantityService.GetHeldQuantity`/`NonHoldingStatuses` (D1) |
-| Ticket brief: settings split — 8 store-level, `Return.ReturnPassword` + `Return.Status` module-global | **CONFIRMED exactly as briefed** (D2), with the exact 8-item array named |
-| Ticket brief: "the feature is enabled on this stand but no test orders exist yet" | **CONFIRMED, but incomplete as the full explanation.** True that zero orders are `Completed` (§2c). Also true, and not named in the brief, that the storefront route does not exist on this build at all regardless of order data (§0/§2b) — the more precise and more consequential of the two reasons |
-| 014b suite's `PROPOSED-BL-RTN-001` and its guessed field/route names (RMA ID, "Return period has ended" copy, a dropdown of "Defective/Wrong Item/Changed Mind") | **DRIFT, now supersedable.** None of the guessed vocabulary matches the real schema (§4) — this map's §2c is the authoritative field/argument list going forward |
-| module-suite-map row for suite 073: REST endpoint `/api/returns/` | **DRIFT, minor.** The real route is `api/return` (singular), confirmed live and in source |
+| Rev 1 §0 / §2b: storefront half not deployed; `/account/returns` 404; no sidebar link; no Request-return affordance | **DRIFT** — served by `2.59.0-pr-2532` (unreleased PR build); all three present (§2b) |
+| Rev 1 §1 link 7 / Actors: agent approve/reject not built, `UNVERIFIED` | **DRIFT** — built and populated (§1 links 7–8, §2a) |
+| Rev 1 D1: admin quantity counts every status | **DRIFT** — equal to the buyer figure on an order with 100+ cancelled returns (D1); a different residual exists (D10) |
+| Rev 1 D2: 8 store-level settings | **DRIFT** — 10 (D2) |
+| Rev 1 D5: `requiresComment` mismatch, "UNVERIFIED override vs defect" | **Resolved** — store override (D5) |
+| Rev 1 §4: "073 = 22 rows, all `None`; zero coverage" | **DRIFT** (§4) |
+| Rev 1 §6: module-suite-map REST citation `/api/returns/` | **Resolved** — now `/api/return/` |
+| Rev 1 §6: `014b` `PROPOSED-BL-RTN-001` and guessed vocabulary | Still **DRIFT**; `BL-RET` now declared (empty) but `PROPOSED-BL-RTN-001` was never adopted and ORD-037..051 are still `Draft` |
+| VCST-5883 test model (2026-09-28): "Requested → Cancelled: cancel (buyer own / agent)" | **DRIFT** — buyer only (D11). Its other risk rows (language fork, no re-validation at authorize, no un-authorize, "Cancel return offered on a Cancelled return") — the last is **not a defect**: the button is rendered disabled with a tooltip by design (§2b) |
+| Test model: legacy `Canceled` offered in `available-statuses` | **DRIFT** — one `Cancelled` on 3.1004 (D11) |
+| kb KB-21F4F161 (DISPUTED), KB-F97CFAF6 (DISPUTED) | The former: **contradiction wins on 3.1004** (D11). The latter: unresolved here — contract behaviour not re-run, display mismatch not re-observed (D14) |
 
-Resolves 014b's own open question ("what does this look like once the module is installed?") — it now
-is, on the backend, and this map is the answer. Does not resolve G1/G2/G3/G4/G8 above.
+Resolves from the VCST-5883 test model's "Map MISSING" list: the authorize and available-statuses endpoints,
+both settings and the notification wiring are now in §2. Does **not** resolve G4, G7, G9–G17.
 
 ---
 
 ## §7 — Amendments
 
-*(none yet — this is the initial build, rev 1)*
+*(none yet — rev 2 is a full enumeration; amendments are appended below by `/qa-test` `5-docs-map`.)*

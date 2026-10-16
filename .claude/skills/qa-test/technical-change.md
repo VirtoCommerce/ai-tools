@@ -36,7 +36,7 @@ records what that dry run corrected, §7a what the routing test did.
 
 ```
   1a  classify + route + OPENING status hop       commands/qa-test.md §1a       [unchanged]
-  1b  pre-flight, sprint resolution, dup check    commands/qa-test.md §1b       [unchanged]
+  1b  /preflight, I/O waves, six axes             commands/qa-test.md §1b       [unchanged]
   2a  tc:scope -> dispose -> apply REPAIR         coverage-triage.md            [2a ALONE, no authoring]
   B   Artifact B checklist + 1 execution agent    authoring.md                  [CONDITIONAL — §3]
   RG  regression:select -> /qa-regression         §4 below                      *** the flow's own step

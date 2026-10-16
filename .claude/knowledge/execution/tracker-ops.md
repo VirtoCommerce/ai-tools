@@ -33,7 +33,12 @@ deliver one conclusion — and left them to reconcile which version is current.
    earlier comment stays as that round's record. Name the build: `--artifact "<build under test>"`.
    Without an artifact, a comment older than 12 h (`TRACKER_ROUND_HOURS`) is presumed to be another
    round. **Exception:** an autonomous `/qa-test --iterate` loop is one round by design and amends with
-   `--same-round "<reason>"`.
+   `--same-round "<reason>"` — **but only its own round DELTAS.** A comment that already holds a
+   **published verdict** (the full `QA Complete` template — e.g. round 1 ran without `--iterate` and the
+   loop was entered later) is that round's record: it is never amended across builds, `--same-round` or
+   not. The next round posts a **new** comment, which needs no override because a new build is a new
+   round. Enforced by the helper (`VERDICT_OVERWRITE`, `scripts/tracker/round-guard.mjs`): a verdict is
+   amendable only on a build **proven** equal to the one it reports.
 
 **Why this is mechanical and not a judgment call.** The failure mode is that every individual
 comment is defensible while the aggregate is spam, so judgment-in-the-moment cannot catch it — the
@@ -52,6 +57,13 @@ happened. Three mechanisms let it through: the helper's run id was always `local
 variable Claude Code does not export), so a checkout was one run forever; `--amend` had no guard at all;
 and the MCP hooks matched one server name, so a claude.ai Atlassian connector bypassed them. Fixed in
 issue #360 — the round is now keyed on the build under test.
+
+**Measured 2026-10-08, VCST-6077 — rule 5's exception swallowing a verdict:** round 1 ran without
+`--iterate` and posted a full FAIL report with two inline screenshots (comment 111584). Re-entered as
+`--iterate` round 2, the exit round amended it with round 2's PASS WITH NOTES under `--same-round`, which
+short-circuited every amend check — the RED→GREEN record and the images vanished, and an edit notifies
+nobody. The operator caught it; the round-1 body was restored and round 2 re-posted as its own comment.
+`--same-round` now cannot reach a published verdict (`VERDICT_OVERWRITE`).
 
 ### 0a. How to amend (Jira)
 

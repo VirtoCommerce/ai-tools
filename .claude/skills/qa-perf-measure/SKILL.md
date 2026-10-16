@@ -155,8 +155,8 @@ category correctly is the whole point of this phase.
   rather than ending it. Likewise a well-controlled **null** result ("no redundancy here to remove") is
   a finding worth publishing, *provided* the positive control fired in the same window.
 - **Bank structural findings, never raw timings** — an N+1, a duplicated call shape, a silent precondition
-  no-op: matched ⇒ `kb confirm <id>`, contradicted ⇒ `kb dispute <id>`, base held nothing ⇒ `kb capture`
-  (`--deployment {TEST_ENV}`). Raw timings and per-request counts stay in the report. Public base — nothing client-specific.
+  no-op: matched ⇒ `kb_confirm`, contradicted ⇒ `kb_dispute`, base held nothing ⇒ `kb_capture`
+  (`.claude/knowledge/execution/kb-capture-contract.md`). Raw timings and per-request counts stay in the report. Public base — nothing client-specific.
   List the ids in the report.
 - **STOP.** Present the numbers and a recommendation. Do not file a tracker item, transition one, or
   open a PR.

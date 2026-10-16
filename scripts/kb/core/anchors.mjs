@@ -11,6 +11,41 @@ const VERBS = new Set(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS
 //   /connect/token   BACK_URL/connect/token   {BACK_URL}/connect/token   http://host:8090/connect/token
 // Normalizing is what makes them one coordinate. Kept deliberately small: each rule below removes
 // a way of writing the SAME location, and none of them changes which location is meant.
+/**
+ * The coordinate as it is STORED (VCST-6378): one spelling per place, still readable. `normalizeAnchor`
+ * already compares `/account/returns/{id}`, `/account/returns/:id` and `/account/returns/{}` as one
+ * place, but entries kept whatever the writer typed -- 66 coordinates of the base were spelled two or
+ * more ways. Stored: the verb upper-cased, a scheme+host or `{BACK_URL}`-style prefix removed, every
+ * path parameter written `{id}`, a trailing slash dropped. Case and a query string stay: they are what
+ * a reader recognises (`Query.organizationReturns`, `?scope=organization`), and comparison lowercases
+ * and drops them anyway.
+ */
+// An INSTANCE id in a path is a parameter, not a place (tester run of ai-tools#460): `/api/orders/12345`
+// and `/api/orders/<guid>` are where `/api/orders/{id}` is, and publishing the literal leaks an instance.
+// Past the first segment only, so a page like `/404` keeps its name.
+const INSTANCE_ID = /^(?:\d+|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9a-f]{32})$/i;
+const isParam = (seg, i) => /^[<{:]|[>}]$/.test(seg) || (i > 1 && INSTANCE_ID.test(seg));
+
+export function canonicalAnchor(raw) {
+  let s = String(raw ?? '').trim();
+  if (!s) return '';
+  let verb = null;
+  const m = /^([A-Za-z]+)\s+(.+)$/.exec(s);
+  if (m && VERBS.has(m[1].toUpperCase())) { verb = m[1].toUpperCase(); s = m[2].trim(); }
+  s = s.replace(/^https?:\/\/[^/]+/i, '');
+  s = s.replace(/^\{[A-Za-z_][A-Za-z0-9_]*\}(?=\/)/, '');
+  s = s.replace(/^[A-Z][A-Z0-9_]*(?=\/)/, '');
+  if (s.startsWith('/')) {
+    const q = s.search(/[?#]/);
+    const path = q === -1 ? s : s.slice(0, q);
+    const rest = q === -1 ? '' : s.slice(q);
+    let p = path.split('/').map((seg, i) => (isParam(seg, i) ? '{id}' : seg)).join('/');
+    if (p.length > 1) p = p.replace(/\/+$/, '');
+    s = p + rest;
+  }
+  return verb ? `${verb} ${s}` : s;
+}
+
 export function normalizeAnchor(raw) {
   let s = String(raw ?? '').trim();
   if (!s) return '';
@@ -30,7 +65,7 @@ export function normalizeAnchor(raw) {
   if (s.startsWith('/')) {
     s = s
       .split('/')
-      .map((seg) => (/^[<{:]|[>}]$/.test(seg) ? '{}' : seg))  // <id>, {cartId}, :id are one parameter
+      .map((seg, i) => (isParam(seg, i) ? '{}' : seg))  // <id>, {cartId}, :id, 12345, a GUID are one parameter
       .join('/');
     if (s.length > 1) s = s.replace(/\/+$/, '');
   }

@@ -41,8 +41,8 @@ rules:
     violation_signal: Virtual catalog shows stale data after physical catalog edit; deleted product still appears in virtual catalog; changes require manual sync.
     status: ACTIVE
     verified:
-      date: 2026-10-12
-      by: REG-2026-10-12-1659
+      date: 2026-10-15
+      by: REG-2026-10-15-1115
   - id: BL-CAT-003
     title: Search index lag window
     rule: After an admin change (product create/update/delete, price change, stock update), there is a 30-60 second window where the Elasticsearch index still reflects old data. During this window, storefront search/listing may show stale results. However, PDP (direct product page) and cart always use live data. After reindex, search results must match the current state.
@@ -130,8 +130,8 @@ rules:
     violation_signal: Storefront shows stock from only one FFC; total doesn't match sum; decrement applied to wrong FFC; stock goes negative in one FFC while another has units.
     status: ACTIVE
     verified:
-      date: 2026-10-12
-      by: REG-2026-10-12-1659
+      date: 2026-10-15
+      by: REG-2026-10-15-1115
   - id: BL-CAT-008
     title: Unit-of-measure CRUD integrity
     rule: Creating, renaming, or deleting a unit-of-measure group or unit in the Catalog module persists atomically and leaves no orphaned data. Deleting a group removes its units; a deleted group/unit no longer appears in the list or in product UoM dropdowns; group integrity is preserved after a unit delete.

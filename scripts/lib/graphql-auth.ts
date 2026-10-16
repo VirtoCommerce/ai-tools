@@ -145,7 +145,12 @@ export function resolveRole(
     try {
       const resolver = new TestDataResolver(testDataDir);
       emailRaw = resolver.resolve(`@td(${role}.email)`);
-      passwordRaw = resolver.resolve(`@td(${role}.password)`);
+      // A CSV-backed alias whose CSV deliberately has NO credential column (sales-rep/sales-reps.csv:
+      // validate-sales-rep-data.mjs [3] forbids one) names the secret's env var at alias level instead,
+      // exactly like the _inline branch's `password_env`. Without this the role fell through to the
+      // `<ROLE>_EMAIL/_PASSWORD` env fallback and threw, so every [AUTH role=SR_REP_*] case exited 3.
+      const pwdEnv = (entry as { password_env?: string }).password_env;
+      passwordRaw = pwdEnv ? `{{${pwdEnv}}}` : resolver.resolve(`@td(${role}.password)`);
       // Store context is the `{{VAR}}` layer, NOT `@td()` (.claude/rules/test-data.md §Four data
       // layers) — the per-env `STORE_ID` below is the correct default for every role. Probing
       // `@td(<role>.store_id)` unconditionally made the resolver log

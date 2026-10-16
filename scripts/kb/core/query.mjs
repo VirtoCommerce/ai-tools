@@ -45,7 +45,9 @@ export const terms = (text) => tokenize(text).map(stem);
  * concept `sort`) into the single token "order", and every question mentioning an order parsed as a
  * question about sorting. A phrase is matched as it is written.
  */
-export const phraseTerms = (text) => String(text ?? '').toLowerCase().split(/[^a-z0-9]+/).filter((x) => x.length > 1)
+// Unicode letters, as `rank.mjs` `tokenize` splits the documents (tester run of ai-tools#460): an ASCII
+// split here cut `Geschäft` into `gesch`+`ft` and gave a Cyrillic question no terms at all.
+export const phraseTerms = (text) => String(text ?? '').normalize('NFKC').toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((x) => x.length > 1)
   .map((raw) => ({ t: stem(raw), content: !STOP.has(raw) }));
 
 /**

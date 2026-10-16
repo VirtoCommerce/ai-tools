@@ -26,7 +26,15 @@
 - `…/rep-share-message-limits-disagree/pm-B7-02-add-recipient-share-enabled-over-limit.png`: Share is enabled with an over-cap message. It saved 600 and sent 689 characters (HAR `reports/tickets/Sprint26-19/VCST-5728/screenshots/pm-B-lane.har`).
 - `reports/tickets/Sprint26-19/VCST-5728/screenshots/pm-A8-graphql.json`: 1001 characters is rejected. `pm-A6-graphql.json`: 1024 is stored, 1025 is rejected with a generic `INVALID_OPERATION`.
 - `…/rep-share-message-limits-disagree/pm-X-04-send-failure-warning-toast.png`: send failure after save (send aborted in the session, EXP-05).
-- Not observed end to end: a single run with a 912–1024-character stored message. Steps 3–4 combine two observed facts: the 689-character send in B7 and the 1001-character rejection in A8.
+- ~~Not observed end to end~~ — **observed end to end 2026-10-06 on vcptcore-qa** (`/qa-test VCST-6105`, below).
+
+## Re-test 2026-10-06 — vcptcore-qa, newer PR heads: REPRODUCED end to end
+Theme `2.59.0-pr-2476-43b1` · Cart `pr-194-8331` · XCart `3.1038.0-pr-141-b404` · SalesRep `pr-21-8964`. Evidence: `reports/tickets/Sprint26-20/VCST-6105/` (checklist + screenshots + redacted HAR).
+- **Not reproducible from the keyboard.** Typing (B1) and pasting (B10) both stop at 250 — the cap is a native `maxlength`, intended client-side validation. Reachable only when a stored message is already over 250 (written by a non-dialog `changeWishlist` client).
+- **The validation runs on input, never on submit.** A pre-filled 600-char message shows `600 / 250` in red with no error state; adding a recipient enables Share; 600 is saved and sent (693 = 600 + 2 + 91).
+- **950 stored → add a customer → Share:** saved (target added, message 950), then `SendCustomerCommunication` 1043 rejected → toast *"The list was saved, but the notification could not be sent."* Reopen: the customer is a normal recipient, Share disabled, no resend.
+- **Threshold T = 907** on this env (1000 − 2 separator − 91 link; depends on the storefront host length). 907 notifies; 908 saves then fails.
+- **Expected (operator-confirmed 2026-10-06):** the 250 validation must also apply to a pre-filled value — field in an error state and Share blocked. That storefront guard alone makes the 1000 failure unreachable from the dialog; the 1000 / 1024 backend parity stays a separate PO decision.
 
 ## Layer Validation
 | Layer | Result | Evidence |

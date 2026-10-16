@@ -27,6 +27,8 @@
  *   an Archived page is a 204 no-op — proven live).
  */
 
+import { resolvePoolMarkers, POOL_MARKER_RE, CARDS_MARKER_RE } from '../analytics/ga4-lists-specs.mjs';
+
 export const STATUS = { PUBLISHED: 'Published', DRAFT: 'Draft', ARCHIVED: 'Archived' };
 
 /**
@@ -65,6 +67,16 @@ export const CANONICAL_PAGES = [
     // absent on the target env, the page is still created + published and the seeder REPORTS that org
     // personalization needs manual completion. A pre-existing page is never re-personalized.
     orgSearchKeyword: 'AGENT-TEST-Org-TechFlow' },
+  // VCST-6017 (GA4 markup product lists). AGENT-TEST-owned pages: `ownedContent` makes the seeder
+  // REWRITE their content whenever it differs from the fixture (no human content lives here, and the
+  // products behind the `@pool…` markers are re-resolved each seed); the `@pool…` markers resolve against
+  // the shared, disjoint VCST-6017 product pool (../analytics/ga4-pool.mjs) instead of `@discover:N`,
+  // which hands every block the SAME first N SKUs and so cannot express "each block its own products".
+  // Teardown archives them like every canonical page.
+  { alias: 'PB_GA4_PRODUCT_LISTS', name: 'AGENT-TEST GA4 Product Lists',      permalink: '/agent-test-ga4-product-lists',      culture: 'en-US', expectStatus: STATUS.PUBLISHED, personalization: 'none', cases: 'VCST-6017 #16/#17 + PB block inventory',
+    ownedContent: true },
+  { alias: 'PB_GA4_HTML_LISTS',    name: 'AGENT-TEST GA4 HTML Product Lists', permalink: '/agent-test-ga4-html-product-lists', culture: 'en-US', expectStatus: STATUS.PUBLISHED, personalization: 'none', cases: 'VCST-6017 #17 empty / #18 / #19',
+    ownedContent: true },
 ];
 
 const norm = (s) => String(s || '').trim().toLowerCase();
@@ -214,11 +226,11 @@ export function blockCount(doc) {
  * GUIDs) and resolve "@discover:N" sku markers against a provided live-sku list (env-resilient — no
  * hardcoded SKUs). Returns a fresh object; never mutates the fixture.
  */
-export function buildContentBody(doc, { skus = [] } = {}) {
+export function buildContentBody(doc, { skus = [], pool = null } = {}) {
   const out = { settings: { ...(doc.settings || {}) }, content: [] };
   (doc.content || []).forEach((block, i) => {
-    const b = { ...block };
-    b.id = `${(b.type || 'block').replace(/[^a-z0-9]/gi, '')}${String(i + 1).padStart(2, '0')}`;
+    const b = pool ? resolvePoolMarkers(block, pool) : { ...block };
+    if (!b.id) b.id = `${(b.type || 'block').replace(/[^a-z0-9]/gi, '')}${String(i + 1).padStart(2, '0')}`;
     if (typeof b.skus === 'string') {
       const m = b.skus.match(DISCOVER_RE);
       const n = m ? Number(m[1]) : 0;
@@ -238,4 +250,18 @@ export function maxDiscover(doc) {
     if (m) max = Math.max(max, Number(m[1]));
   }
   return max;
+}
+
+/** Does a fixture doc use the VCST-6017 `@pool…` / `@@cards…@@` markers (so the seeder must discover the pool)? Pure. */
+export function usesPool(doc) {
+  return (doc?.content || []).some((b) => Object.values(b).some((v) => typeof v === 'string'
+    && (POOL_MARKER_RE.test(v) || new RegExp(CARDS_MARKER_RE.source).test(v))));
+}
+
+/** Content equality for `ownedContent` pages: same settings + blocks, ignoring key order. Pure. */
+export function sameContent(a, b) {
+  const canon = (v) => (Array.isArray(v) ? v.map(canon) : v && typeof v === 'object'
+    ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, canon(v[k])])) : v);
+  return JSON.stringify(canon({ settings: a?.settings || {}, content: a?.content || [] }))
+    === JSON.stringify(canon({ settings: b?.settings || {}, content: b?.content || [] }));
 }

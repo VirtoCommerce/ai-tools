@@ -27,8 +27,10 @@ rules:
       kind: manual
       ref: Select cart-level Pickup → choose a store → inspect cart xAPI `shipments[]` → exactly one shipment with `pickupLocation { id }` set (`fulfillmentCenterId` may be null; `deliveryAddress` carries the pickup location's address) → checkout shows pickup store, no shipping-address entry form → switch to Shipping → `pickupLocation` cleared, delivery-address form appears.
     violation_signal: "Cart xAPI returns zero shipments or more than one shipment for a pure-BOPIS cart; `pickupLocation.id` is null after Pickup is confirmed; switching to Delivery does not clear the pickup location. (Note: a null `fulfillmentCenterId` or a populated `deliveryAddress` on a pickup shipment is EXPECTED, not a violation.)"
-    status: SUSPECT
-    suspect_reason: "[case] BOPIS-095 failed in REG-2026-10-02-2022"
+    status: ACTIVE
+    verified:
+      date: 2026-10-15
+      by: REG-2026-10-15-1115
   - id: BL-BOPIS-002
     title: BOPIS pickup always has $0 shipping cost
     rule: Items selected for in-store pickup must have $0.00 shipping cost regardless of cart subtotal, applied promotions, or the presence of other delivery items in the same cart. The $0 pickup cost must not be inflated by any shipping fee calculation. The order confirmation and Admin order detail must also show $0 for the pickup shipment.
@@ -43,8 +45,8 @@ rules:
     violation_signal: Pickup item shows a non-zero shipping cost; free shipping promotion applied to pickup item (redundant but incorrect base); Admin order shows shipping fee on pickup shipment.
     status: ACTIVE
     verified:
-      date: 2026-10-12
-      by: REG-2026-10-12-1659
+      date: 2026-10-15
+      by: REG-2026-10-15-1115
   - id: BL-BOPIS-003
     title: FFC availability label matches actual stock level
     rule: "The availability label shown for each fulfillment center in the BOPIS store-selector modal must accurately reflect the product's stock at that FFC. The backend `ProductPickupLocation.AvailabilityType` is one of **three** values: `Today` (in stock at the location's own FFC, default note \"Today\"), `Transfer` (available via the location's configured transfer FFCs) or `GlobalTransfer` (covered by store-wide global transfer); both transfer tiers default to the note \"Via transfer\". The displayed strings are theme-localizable settings (`TodayAvailabilityNote` / `TransferAvailabilityNote` / `GlobalTransferAvailabilityNote`), **not fixed literals**. A location where the product is wholly unavailable (no own stock, no transfer, global transfer off) is **EXCLUDED from the result entirely** (the service returns `null`) rather than shown with a \"Not Available\" label. Labels must update after stock changes within the 120s consistency window (BL-CROSS-009)."

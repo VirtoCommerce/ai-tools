@@ -53,6 +53,29 @@ everything at once.*
 - Click **Date** or **Total** in the column header to sort by that column; sorting reverses on a
   second click. Order #, Customer, and Status are not sortable.
 
+#### Choosing your own date range
+
+*Amended for VCST-6001: the custom date range is now the same date-range control as **Account → Orders**.*
+
+1. Click **Filters**. Under **Created date**, choose **Custom date**.
+2. On a computer you see two fields, **Start date** and **End date**. Type a date in either field, or
+   click **Open calendar: Start date** / **Open calendar: End date** and pick a day. On a phone the two
+   dates share one field labelled **Date range**, with a single **Open calendar** button.
+3. Click **Apply**. The table updates, and each date you set appears as a chip in the same format you
+   see in the field — for example **Start: 08/01/2026** and **End: 08/17/2026**.
+
+You can set only one of the two dates. **Start** alone shows every order from that day on, and
+**End** alone shows every order up to that day.
+
+To clear a date before you apply it, open that field's calendar and click **Clear** at the bottom.
+This empties only that field, and nothing changes in the table until you click **Apply**. To clear a
+date that is already applied, click the **×** on its chip.
+
+!!! note "Apply stays greyed out"
+    The range is not valid yet. If the start date is after the end date, you see **"End date must be
+    on or after start date"**. A date that does not exist, such as 02/31/2026, shows **"Invalid date
+    format"**. Correct the date and **Apply** becomes available again.
+
 !!! note "A status checkbox disappeared from the drawer"
     This is expected: the drawer only offers a status you can actually filter to. If none of the
     customer's current orders have a given status (for example, everything is already **New**), that

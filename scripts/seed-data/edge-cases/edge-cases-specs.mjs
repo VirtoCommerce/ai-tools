@@ -36,6 +36,8 @@
  * seeder (per .claude/rules/test-data.md). Only business keys (emails, names, deterministic numbers,
  * SKUs, counts) live in this module, and passwords are the {{VAR}} token, never a literal.
  */
+import { ADDRESSES_PER_PAGE, pageCount, lastPageSize } from '../b2b/addresses-specs.mjs';
+import { fitsLineQuantity } from '../orders/orders-specs.mjs';
 
 /** AGENT-TEST- family prefix so /qa-seed-data teardown sweeps exactly what this domain creates. */
 export const EC_PREFIX = 'AGENT-TEST';
@@ -99,10 +101,11 @@ export const MULTI_ORG_PERSONAS = [
 ];
 
 /* ── F2 — isolated 22-address org ─────────────────────────────────────────────
- * Storefront address-book page size (SOURCE: vc-frontend useCheckout.ts:32 ADDRESSES_PER_PAGE=6).
- * Mirrors addresses-specs.mjs so the two fixtures agree; re-derive from that file if it changes.
+ * The storefront address-book page size and the page arithmetic are IMPORTED from
+ * b2b/addresses-specs.mjs (which names its source) — never transcribed, so the two fixtures cannot
+ * disagree and a page-size change there re-checks this contract too. Re-exported for callers.
  */
-export const ADDRESSES_PER_PAGE = 6;
+export { ADDRESSES_PER_PAGE, pageCount, lastPageSize };
 export const ADDR22_TARGET_TOTAL = 22;
 export const ADDR22_ORG_NAME = `AGENT-TEST-Org-Addr22-${STAMP}`;
 /** The org's own contact email — agent-test- prefixed like every other owned email. */
@@ -113,10 +116,6 @@ export const ADDR22_ADMIN = {
   firstName: 'Adam', lastName: 'Addr22',
   role: { roleId: 'org-maintainer', roleName: 'Organization maintainer' },
 };
-
-/** Pages the storefront renders for `n` addresses; and the partial-last-page rationale check. */
-export const pageCount = (n) => Math.ceil(Number(n) / ADDRESSES_PER_PAGE);
-export const lastPageSize = (n) => (Number(n) % ADDRESSES_PER_PAGE) || ADDRESSES_PER_PAGE;
 
 /**
  * Generate exactly ADDR22_TARGET_TOTAL org addresses (PURE, deterministic). Every address is
@@ -193,6 +192,8 @@ export const DISC_BUYER = {
   firstName: 'Dan', lastName: 'Discontinued',
 };
 export const DISCONTINUED_ORDER_ALIAS = 'DISCONTINUED_ITEM_ORDER';
+/** Quantity of each F3 line — the seeder picks the "available" product by whether it admits this. */
+export const DISC_LINE_QUANTITY = 1;
 
 /**
  * Build the Completed-order create body (PURE). `ctx` carries the runtime owner + the two resolved
@@ -208,7 +209,7 @@ export function buildDiscontinuedOrderBody(ctx = {}) {
     productId: p?.id ?? fallbackSku,
     catalogId: p?.catalogId ?? catFallback,
     name: p?.name ?? fallbackName,
-    quantity: 1, price, productType: 'Physical', currency,
+    quantity: DISC_LINE_QUANTITY, price, productType: 'Physical', currency,
   });
   const items = [
     line(availableProduct, `${EC_PREFIX}-DISC-AVAIL`, 'AGENT-TEST Available Item', 100),
@@ -232,6 +233,8 @@ export function buildDiscontinuedOrderBody(ctx = {}) {
     shipments: [{
       shipmentMethodCode: 'FixedRate', shipmentMethodOption: 'Ground', currency,
       status: 'Delivered', number: `${DISC_ORDER_NUMBER}-S1`, trackingNumber: `${EC_PREFIX}-TRK-DISC`,
+      // The order detail page reads "shipped to" from the SHIPMENT (CHK-013), not from order.addresses.
+      deliveryAddress: addr('Shipping'),
       price: 0, priceWithTax: 0, total: 0, totalWithTax: 0, items: [],
     }],
     inPayments: [{
@@ -244,6 +247,35 @@ export function buildDiscontinuedOrderBody(ctx = {}) {
       price: 0, priceWithTax: 0, total: 0, totalWithTax: 0,
     }],
   };
+}
+
+/**
+ * Judge an EXISTING F3 order (PURE) — the same self-heal question orders-specs.mjs judgeExistingOrder
+ * asks: is it still a valid instance of the fixture? Rebuild when the status or owner drifted, a
+ * shipment lacks a deliveryAddress, the discontinued line no longer points at the CURRENT dedicated
+ * product (`discProductId`, null = unknown ⇒ not judged), or an "available" line's product is gone or
+ * no longer admits its quantity. `productsById` = Map from readProductsById for the available lines;
+ * `null` (read failed) skips those checks. Returns `{ rebuild, reasons[] }`.
+ */
+export function judgeDiscontinuedOrder(live, { ownerId = null, discProductId = null, productsById = null } = {}) {
+  const reasons = [];
+  if (live?.status !== 'Completed') reasons.push(`status "${live?.status}" != "Completed"`);
+  if (ownerId && live?.customerId !== ownerId) reasons.push(`owner ${live?.customerId || '(none)'} != ${ownerId}`);
+  const ships = live?.shipments || [];
+  if (!ships.length || ships.some((sh) => !sh.deliveryAddress?.line1)) reasons.push('a shipment lacks a deliveryAddress');
+  const items = live?.items || [];
+  if (discProductId) {
+    const disc = items.filter((i) => i.productId === discProductId);
+    if (disc.length !== 1) reasons.push(`${disc.length} line(s) reference the current discontinued product ${discProductId} (want 1)`);
+  }
+  if (productsById) {
+    for (const item of items.filter((i) => i.sku !== DISC_PRODUCT.code)) {
+      const p = productsById.get(item.productId);
+      if (!p) reasons.push(`line ${item.sku}: product ${item.productId} no longer exists`);
+      else if (!fitsLineQuantity(p, Number(item.quantity))) reasons.push(`line ${item.sku}: qty ${item.quantity} outside min ${p.minQuantity} / max ${p.maxQuantity}`);
+    }
+  }
+  return { rebuild: reasons.length > 0, reasons };
 }
 
 /* ── F4 — personal (non-org) replacement ─────────────────────────────────────── */

@@ -28,7 +28,7 @@ rules:
       ref: In Admin → Order → attempt to skip states (e.g., capture without authorization) → should fail or button should be absent. Verify API rejects invalid state transitions.
     violation_signal: Payment captured without prior authorization; shipment marked "Send" while still "New"; state skipped without error.
     status: SUSPECT
-    suspect_reason: "[case] ORD-013, ORD-031, ORD-093, ORD-063, ORD-064, ORD-065, ORD-066, ORD-075, ORD-076, ORD-077, ORD-081 failed in REG-2026-10-02-2022"
+    suspect_reason: "[case] ORD-074 failed in REG-2026-10-06-1457"
   - id: BL-ORD-002
     title: Cancellation restores inventory conditionally
     rule: |-
@@ -68,8 +68,10 @@ rules:
       kind: manual
       ref: Order with 3 items → create 2 shipments (items A+B in shipment 1, item C in shipment 2) → advance shipment 1 to `Send` → shipment 1 shows `Send`, shipment 2 still `New` (per-shipment states independent) → advance shipment 2 to `Send` → set the order's `OrderStatus = Completed`. Assert there is no "Partially shipped" order status and no "Delivered" shipment state.
     violation_signal: Order marked "Completed" while shipments are pending; partial shipment not reflected in order status; items missing from shipment tracking.
-    status: SUSPECT
-    suspect_reason: "[case] ORD-004, ORD-027 failed in REG-2026-10-02-2022"
+    status: ACTIVE
+    verified:
+      date: 2026-10-15
+      by: REG-2026-10-15-1115
   - id: BL-ORD-004
     title: Refund conditions
     rule: Refund is only possible on a payment that has been captured. Partial refund amount must be ≤ captured amount minus any previous refunds. Full refund sets payment status to "Refunded." A voided payment cannot be refunded. Refund does not automatically restore inventory — that follows BL-ORD-002 cancellation rules separately.
@@ -107,7 +109,7 @@ rules:
       ref: Place 3 orders on the same day → numbers share the day's date prefix and increment sequentially (e.g. `CO<date>-00001`, `-00002`, `-00003`). Cancel the middle order → place another same-day order → the next number continues the same-day sequence (not reused). Placing an order on a new day resets the counter to `00001` under the new date prefix — expected, not a bug.
     violation_signal: Duplicate order numbers *within the same reset period*; counter fails to reset at the configured boundary; order number changes after creation.
     status: SUSPECT
-    suspect_reason: "[case] ORD-029, ORD-050 failed in REG-2026-10-02-2022"
+    suspect_reason: "[case] SMK-013 failed in REG-2026-10-15-1115"
   - id: BL-ORD-006
     title: Payment state machine (detailed)
     rule: |-
@@ -133,8 +135,8 @@ rules:
     violation_signal: Any illegal transition succeeds; Admin shows buttons for invalid states; API returns 200 on illegal transition.
     status: ACTIVE
     verified:
-      date: 2026-10-12
-      by: REG-2026-10-12-1659
+      date: 2026-10-15
+      by: REG-2026-10-15-1115
   - id: BL-ORD-007
     title: Shipment state machine (detailed)
     rule: |-

@@ -148,7 +148,8 @@ test('a dispute flags but never retires — the label changes, the entry does no
 
 test('independent parties are counted, not raw evidence rows', () => {
   const t = trustOf([{ by: 'session:a' }, { by: 'session:a' }, { by: 'session:b' }]);
-  assert.equal(t.confirmations, 3);
+  // VCST-6378: one session, one observation -- session:a's second item is history, not support.
+  assert.equal(t.confirmations, 2);
   assert.equal(t.sessions, 2);
   assert.equal(t.anonymous, 0);
 });

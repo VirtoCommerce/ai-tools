@@ -22,13 +22,13 @@
  */
 
 import {
-  assertSafeTarget, writeEnvAliasOverride, verifyRemoved, discoverCatalogProducts, findOrdersByExactNumber,
-  loadCsv, idsParam, ROOT, DRY_RUN, TEARDOWN, log, verbose,
+  assertSafeTarget, writeEnvAliasOverride, verifyRemoved, discoverLineCandidates, readProductsById, deleteListEntries,
+  findOrdersByExactNumber, loadCsv, idsParam, ROOT, DRY_RUN, TEARDOWN, log, verbose,
 } from '../../lib/seed-common.mjs';
 import {
   authenticate, getApi, ensureMemberIndex, setFlags,
   findUserByEmail, findMemberById, findContactById, ensureMembershipContact, ensureSecurityAccount,
-  ensureOrgMembership, searchMemberships, stripSeededGlobalRoles, deleteUserByEmail,
+  ensureOrgMembership, searchMemberships, isLegacyMembershipApi, stripSeededGlobalRoles, deleteUserByEmail,
   resolvePassword, isPasswordDeclared,
 } from '../../lib/user-provision.mjs';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
@@ -38,8 +38,9 @@ import {
   resolveFillerOrgs, BOUNDARY_ROLE, MULTI_ORG_PERSONAS,
   ADDR22_ORG_NAME, ADDR22_ORG_EMAIL, ADDR22_ADMIN, ADDR22_TARGET_TOTAL, buildAddr22Addresses,
   DISC_ORDER_NUMBER, DISC_PRODUCT, DISC_BUYER, DISCONTINUED_ORDER_ALIAS, buildDiscontinuedOrderBody,
-  PERSONAL_NON_ORG,
+  DISC_LINE_QUANTITY, judgeDiscontinuedOrder, PERSONAL_NON_ORG,
 } from './edge-cases-specs.mjs';
+import { fitsLineQuantity } from '../orders/orders-specs.mjs';
 
 const argv = process.argv.slice(2);
 const KINDS = ['all', 'multi-org', 'addr22', 'discontinued', 'personal'];
@@ -153,7 +154,10 @@ async function ensureExactOrgSet(api, persona, userId, contactId, orgIds) {
   const memberOrgs = [...new Set(rows.map((m) => m.organizationId))];
   const problems = [];
   if (!same(after?.organizations || [])) problems.push(`contact.organizations has ${(after?.organizations || []).length}`);
-  if (!same(memberOrgs) || rows.length !== want.size) problems.push(`memberships cover ${memberOrgs.length} org(s) in ${rows.length} row(s)`);
+  // A legacy Customer module has no membership rows at all — contact.organizations IS the membership
+  // there (user-provision latches it), so the row count is only judged where rows exist.
+  if (isLegacyMembershipApi()) verbose(`${persona.alias}: legacy membership model — judged on contact.organizations only`);
+  else if (!same(memberOrgs) || rows.length !== want.size) problems.push(`memberships cover ${memberOrgs.length} org(s) in ${rows.length} row(s)`);
   if (problems.length) throw new Error(`${persona.alias}: org set is not exactly ${want.size} after reconcile — ${problems.join('; ')}`);
 }
 
@@ -276,7 +280,7 @@ async function discProductFromOrder(api) {
     const line = (full?.items || []).find((i) => i.sku === DISC_PRODUCT.code && i.productId);
     if (!line) continue;
     const p = await api('GET', `/api/catalog/products/${line.productId}`, null, { expectStatus: [200, 404] });
-    if (p?.id && p.code === DISC_PRODUCT.code) return { id: p.id };
+    if (p?.id && p.code === DISC_PRODUCT.code) return { id: p.id, catalogId: p.catalogId };
   }
   return null;
 }
@@ -291,10 +295,13 @@ async function storeCurrency(api) {
 async function seedDiscontinued(api) {
   log('\n[F3] Completed order with a discontinued item…');
   // 1) An available shared product (READ ONLY — never mutated) + a catalog to host the dedicated one.
-  const discovered = await discoverCatalogProducts(getApi(), 1, { sort: 'code:asc' });
-  const available = discovered[0] || null;
+  //    Picked like every other reorderable order line: real, active, non-fixture, code-sorted, and
+  //    admitting the line quantity (min/max/stock) — otherwise reorder fails on PRODUCT_MIN_MAX_QTY
+  //    or stock for the AVAILABLE line instead of testing the discontinued one.
+  const candidates = await discoverLineCandidates(getApi(), 10);
+  const available = candidates.find((p) => fitsLineQuantity(p, DISC_LINE_QUANTITY)) || null;
   const catalogId = available?.catalogId;
-  if (!available && !DRY_RUN) log('  ⚠ no available catalog product discovered — the "available" line falls back to a placeholder');
+  if (!available && !DRY_RUN) log(`  ⚠ none of ${candidates.length} discovered product(s) admits qty ${DISC_LINE_QUANTITY} — the "available" line falls back to a placeholder`);
 
   // 2) The DEDICATED throwaway product we will discontinue. Idempotency is by the OVERLAY-persisted
   //    product id (a reliable GET-by-id): an unlinked/unindexed product is invisible to both the ES
@@ -305,7 +312,7 @@ async function seedDiscontinued(api) {
   const pinnedProductId = readOverlay()?.[DISCONTINUED_ORDER_ALIAS]?.discontinued_product_id;
   if (pinnedProductId) {
     const full = await api('GET', `/api/catalog/products/${pinnedProductId}`, null, { expectStatus: [200, 404] });
-    if (full?.id) { disc = { id: full.id }; verbose(`↻ discontinued product via overlay id (${full.id})`); }
+    if (full?.id) { disc = { id: full.id, catalogId: full.catalogId }; verbose(`↻ discontinued product via overlay id (${full.id})`); }
   }
   if (!disc) disc = await discProductFromOrder(api);
   if (!disc) disc = await findProductByCode(api, DISC_PRODUCT.code, catalogId);
@@ -320,6 +327,12 @@ async function seedDiscontinued(api) {
     log(`  ✓ created dedicated product ${DISC_PRODUCT.code} (${disc?.id})`);
     // Persist immediately — this is the idempotency key for every future re-run.
     if (!isDry(disc?.id)) writeEnvAliasOverride({ [DISCONTINUED_ORDER_ALIAS]: { discontinued_product_id: disc.id } });
+  }
+  // The discontinued line names the DEDICATED product's own catalog — never the available product's,
+  // which can sit in another catalog on a later run.
+  if (!isDry(disc?.id) && !disc.catalogId) {
+    const full = await api('GET', `/api/catalog/products/${disc.id}`, null, { expectStatus: [200, 404] });
+    disc.catalogId = full?.catalogId || catalogId;
   }
 
   // 3) The AGENT-TEST buyer persona (personal, no org) that owns the order.
@@ -339,10 +352,18 @@ async function seedDiscontinued(api) {
   let orderId = null;
   let superseded = [...dupes];
   if (existing) {
+    // Judge the EXISTING order as a valid instance of the fixture (orders-specs.mjs judgeExistingOrder's
+    // question): owner, status, shipment address, the discontinued line on the CURRENT dedicated
+    // product, and every available line's product still existing and admitting its quantity.
     const full = await api('GET', `/api/order/customerOrders/${existing.id}`);
-    const ownerOk = isDry(buyerUserId) || full?.customerId === buyerUserId;
-    if (full?.status === 'Completed' && ownerOk) { orderId = existing.id; log(`  ↻ order ${DISC_ORDER_NUMBER} ok (${orderId})`); }
-    else { superseded = [existing, ...dupes]; log(`  order ${DISC_ORDER_NUMBER} ${DRY_RUN ? 'would be rebuilt' : 'rebuilding'} (status=${full?.status}, ownerOk=${ownerOk})`); }
+    const availIds = (full?.items || []).filter((i) => i.sku !== DISC_PRODUCT.code).map((i) => i.productId);
+    const { rebuild, reasons } = judgeDiscontinuedOrder(full, {
+      ownerId: isDry(buyerUserId) ? null : buyerUserId,
+      discProductId: isDry(disc?.id) ? null : disc.id,
+      productsById: await readProductsById(api, availIds),
+    });
+    if (!rebuild) { orderId = existing.id; log(`  ↻ order ${DISC_ORDER_NUMBER} ok (${orderId})`); }
+    else { superseded = [existing, ...dupes]; log(`  order ${DISC_ORDER_NUMBER} ${DRY_RUN ? 'would be rebuilt' : 'rebuilding'}: ${reasons.join('; ')}`); }
   }
   if (!orderId) {
     if (DRY_RUN) { log(`  [DRY] would create order ${DISC_ORDER_NUMBER} (Completed)`); }
@@ -351,7 +372,7 @@ async function seedDiscontinued(api) {
         storeId: STORE_ID, currency: await storeCurrency(api),
         owner: { id: isDry(buyerUserId) ? undefined : buyerUserId, name: `${DISC_BUYER.firstName} ${DISC_BUYER.lastName}`, email: DISC_BUYER.email },
         availableProduct: available,
-        discontinuedProduct: !isDry(disc?.id) ? { id: disc.id, sku: DISC_PRODUCT.code, name: DISC_PRODUCT.name, catalogId } : null,
+        discontinuedProduct: !isDry(disc?.id) ? { id: disc.id, sku: DISC_PRODUCT.code, name: DISC_PRODUCT.name, catalogId: disc.catalogId } : null,
       });
       const created = await api('POST', '/api/order/customerOrders', orderBody);
       if (!created?.id) throw new Error(`order ${DISC_ORDER_NUMBER}: create returned no id — the existing order (if any) was left in place`);
@@ -428,7 +449,7 @@ async function teardown(api) {
     }
     if (discId) {
       try {
-        await api('POST', '/api/catalog/listentries/delete', { objectIds: [discId], objectType: 'CatalogProduct' }, { expectStatus: [200, 204, 404] });
+        await deleteListEntries([discId], 'CatalogProduct', { via: api });
         log(`  ✗ product ${DISC_PRODUCT.code} (${discId})`);
       } catch (e) {
         log(`  ⚠ product ${DISC_PRODUCT.code} (${discId}) NOT deleted: ${String(e.message).slice(0, 160)}`);

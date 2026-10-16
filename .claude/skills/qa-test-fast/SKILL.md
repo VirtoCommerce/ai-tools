@@ -7,19 +7,20 @@ disable-model-invocation: true
 
 # /qa-test-fast — methodology
 
-**The promise:** a ticket verdict in one sitting that is still **grounded**. The checklist is traced to
-a fault model, and the fault model is traced to the diff, the ticket and the domain. `/qa-test` FAST
-buys speed by dropping the model. FULL buys certainty with a verifier per step and suite authoring.
-This flow keeps the model, drops the verifiers and the suite writes, and runs discovery **alongside**
+**The promise:** a ticket verdict in one sitting that is still **grounded**. Every checklist item is traced
+to a risk of an approved test strategy, and the risks that need a fault model get one, traced to the diff,
+the ticket and the domain. `/qa-test` FAST buys speed by dropping both. FULL buys certainty with a verifier
+per step and suite authoring. This flow keeps the strategy and the model it asks for, drops the verifiers and the suite writes, and runs discovery — when the strategy asks for it — **alongside**
 execution instead of before it.
 
 ## Stage flow
 
 ```
-Step 0  route · env · prior artifacts · slug · kb ask
-Stage 1 Wave 1  A ticket ‖ B PRs ‖ C domain map (only if ABSENT)   ── join → bundle (+ schema:refresh)
-        Wave 2  /qa-test-model ‖ /qa-test-mind-map (update|build, no stamps)
-        Wave 3  /qa-checklist --from-model  ──  stage gate   [--dry-run stops here]
+Step 0  route · env · prior artifacts · slug · kb ask · round (≤3)
+Stage 1 Wave 1  /ticket-context (ticket · materials · PRs · deploy) ‖ C domain map (only if ABSENT)   ── join → bundle (+ schema:refresh)
+        Strategy /qa-test-strategy (floors · risks · artifacts · one approval)
+        Wave 2  /qa-test-model --strategy (only if a risk is MODEL) ‖ /qa-test-mind-map (update|build, no stamps; only if the model runs)
+        Wave 3  /qa-checklist --from-model --strategy  ──  stage gate   [--dry-run stops here]
 Stage 2         runner(chrome) ‖ runner(edge) ‖ exploratory(firefox), data on the fly ── settings restored
                 + visual(devtools, ui-ux-expert → Skill qa-design) when visual_surface; ≤3 at once
 Stage 3         qa-triage-results ticket --verify (→ vc-fix:qa-investigate per real bug) → /vc-fix:qa-bug per
@@ -27,8 +28,9 @@ Stage 3         qa-triage-results ticket --verify (→ vc-fix:qa-investigate per
 ```
 
 **Why three waves, not six parallel agents:** the dependencies are real. The mind map is derived
-from the domain map. The model needs the ticket and the diff. The checklist needs the model and the
-mind map. `/qa-exploratory ticket` stops without a model. Parallelism lives *inside* each wave.
+from the domain map. The strategy needs the whole bundle, and the model details the strategy's `MODEL`
+risks. The checklist needs the strategy, the model when one ran, and the mind map. Parallelism lives
+*inside* each wave.
 
 ## Fit
 
@@ -42,7 +44,7 @@ mind map. `/qa-exploratory ticket` stops without a model. Parallelism lives *ins
 
 | Stage | Writes | Never writes |
 |---|---|---|
-| 1 | `reports/ba/test-models/<TICKET>-<date>.md` · the domain map (only via `/qa-domain-map`) · the mind map (only via `/qa-test-mind-map`) · `testing-checklist.md` | suite CSVs, the tracker |
+| 1 | `reports/tickets/{SPRINT}/<TICKET>/test-strategy.md` · `reports/ba/test-models/<TICKET>-<date>.md` (only when a risk is `MODEL`) · the domain map (only via `/qa-domain-map`) · the mind map (only via `/qa-test-mind-map`) · `testing-checklist.md` | suite CSVs, the tracker |
 | 2 | evidence under `reports/tickets/{SPRINT}/<TICKET>/screenshots/` · `design-report.md` (visual lane) · `AGENT-TEST-` entities (then deletes them) · the SBTM session file · a setting or fixture a Data cell names (`flip+restore` / `mutate` + its seeder part, re-read after) · the Results in `testing-checklist.md` (you, at the join) | any other shared fixture, other lanes' settings |
 | 3 | `summary.json`, `verdict.md`, `triage-report.md` + the investigation packages (via `qa-triage-results`), bug reports **via `qa-bug`** · the Artifact page (shared with Anyone at Virto Commerce) + its `Page:` line · one tracker comment after a yes · kb entries | a status transition, a hand-written bug |
 

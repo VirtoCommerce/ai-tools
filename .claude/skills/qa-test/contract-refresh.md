@@ -15,7 +15,7 @@ definitions have since been corrected to the opposite rule (**"never judge its s
 arrives: treat the snapshot as UNKNOWN age and report every field name taken from it as **unverified**.
 That is correct and it is also the cost — an unrefreshed run loses its GraphQL grounding rather than
 guessing at it, which is precisely why the refresh belongs to the caller. The
-sibling pipeline already does this properly: `/qa-test-lifecycle` Pre-Flight step 4 runs the refresh for
+sibling pipeline already does this properly: `/qa-test-lifecycle` Pre-Flight step 2 runs the refresh for
 a GraphQL scope and passes the file into the delegation payload. `/qa-test` was the outlier.
 
 Two properties of the tooling make *"if it looks stale"* unworkable rather than merely loose:
@@ -104,7 +104,7 @@ green `schema:check` is not evidence the committed file is current. Do not cite 
 ## 3. Verdict rules — three, each closing a way the refresh could lie
 
 **1. A failed refresh records `UNKNOWN` and NEVER falls back to the committed snapshot.** Identical to
-`1b` item 2's `build.deployed: UNKNOWN` rule, for the identical reason: silently reading the stale file
+`1b` item 1's (`/preflight`) `build.deployed: UNKNOWN` rule, for the identical reason: silently reading the stale file
 is indistinguishable from reading a fresh one, and every downstream `{DOC}` oracle then rests on it. An
 unreachable endpoint records `contract.schema.refreshed: "UNKNOWN"` with the reason, is stated in the
 Step-5 report, and **every GraphQL assertion that would have been grounded `{DOC}` off that snapshot is
@@ -117,7 +117,7 @@ non-zero exit from the fixture gate has two very different causes, separated by 
 | Drift on | Means | Action |
 |---|---|---|
 | an op the **ticket's own diff** touches | the contract moved as designed | **a finding for `1e`** — a contract change is a value-chain link and a candidate reverse edge, so it belongs in the fault model, and the *old* shape belongs in the regression scope. Update the fixture via `npm run graphql:fixtures:update` |
-| an op the ticket does **not** touch | pre-existing drift, or an unannounced upstream break | **record, do not chase.** Cross-check `build.releasedThrough.breaking[]` (1b item 2a) — a ⚠ BREAKING row in the same component is the likeliest cause and already forces FULL. Name it in the Step-5 report; fixing it is `/qa-test-lifecycle`'s |
+| an op the ticket does **not** touch | pre-existing drift, or an unannounced upstream break | **record, do not chase.** Cross-check `build.releasedThrough.breaking[]` (`/preflight`, 1b item 1) — a ⚠ BREAKING row in the same component is the likeliest cause and already forces FULL. Name it in the Step-5 report; fixing it is `/qa-test-lifecycle`'s |
 
 Neither case files a bug from the gate alone. A schema-validation failure is a claim about a *query
 document*, not about product behaviour — the same rule that makes a static-diff DRIFT at `1d` a suspicion

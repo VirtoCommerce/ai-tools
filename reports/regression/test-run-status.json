@@ -1,19 +1,21 @@
 {
-  "runId": "REG-2026-10-14-2305",
+  "runId": "REG-2026-10-15-1720",
   "status": "completed",
-  "selection": "060b --ids (46 CMS cases) --no-promote (/qa-test VCST-5726 C1)",
-  "env": "vcptcore_qa1",
-  "startedAt": "2026-10-14T20:10:09Z",
-  "suites": [
-    {
-      "id": "060b",
-      "status": "done",
-      "browser": "playwright-edge",
-      "lane": "browser",
-      "pass": 37,
-      "fail": 4,
-      "blocked": 5
+  "startedAt": "2026-10-15T15:20:55.249Z",
+  "windowStart": "2026-10-15T15:20:55.249Z",
+  "selection": "093",
+  "env": "vcst",
+  "scoped": true,
+  "purpose": "VCST-6015 — verify the 5 test-defect fixes from triage of REG-2026-10-15-1548",
+  "ids": "SR-HD-100,SR-HD-102,SR-HD-107,SR-HD-112,SR-HD-115",
+  "suites": {
+    "093": {
+      "status": "pending",
+      "lane": "browser"
     }
-  ],
-  "finishedAt": "2026-10-14T20:58:14.552Z"
+  },
+  "finishedAt": "2026-10-15T15:21:05.438Z",
+  "notes": [
+    "ABORTED before dispatch (usage limit) — nothing ran; no results"
+  ]
 }
