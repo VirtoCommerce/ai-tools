@@ -6,9 +6,9 @@ can continue a wave someone else started.
 
 ![Parallel release regression](release-regression-flow.svg)
 
-- **Plan a release:** `/qa-release-plan <release> --from vN --to vN --env <TEST_ENV> --ticket <KEY>`
-- **Run, triage and publish one wave:** `/qa-release-wave <release> <wave> --claim` · overview: `/qa-release-wave <release> status`
+- **Plan a release:** `/qa-test-plan stable <N> [--ref <branch>] --ticket <KEY>` (the same command plans a sprint: `/qa-test-plan 26-20`)
+- **Run, triage and publish one wave:** `/qa-run stable:<N> <wave> --claim` · overview: `/qa-run stable:<N> status`
 - **Check a folder:** `npm run release:check -- <release>` (CI runs `--all`)
-- **Contract** — layout, fields, verdicts, parallel-run rules: [`.claude/knowledge/execution/release-regression.md`](../../.claude/knowledge/execution/release-regression.md)
+- **Contract** — layout, fields, verdicts, parallel-run rules: [`.claude/skills/qa-run/release-folder.md`](../../.claude/skills/qa-run/release-folder.md)
 
 `PROGRESS.md` in each folder is generated (`npm run release:status -- <release> --write`); never edit it by hand.

@@ -70,4 +70,4 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | W2 | SRCH-009 | SRCH-009 and SRCH-010 assert behaviour this bundle deprecates: deprecate the cases or retarget them? | Elena Kutasina |
 | W3 | ORDA-068 | A full refund leaves the payment status Paid: is Refunded expected? | product owner |
 
-Per-wave detail: `waves/<wave>/report.md` · verdicts: `waves/<wave>/ledger.csv` · contract: `.claude/knowledge/execution/release-regression.md`.
+Per-wave detail: `waves/<wave>/report.md` · verdicts: `waves/<wave>/ledger.csv` · contract: `.claude/skills/qa-run/release-folder.md`.

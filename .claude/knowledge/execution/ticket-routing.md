@@ -38,7 +38,7 @@ aliases e.g. `Defect → Bug`, `Enhancement → Task`).
 
 **Canonical set:** `Story` · `Bug` · `Task` · `Technical task` · `Review task` · `Sub-task` · `Epic`.
 
-These are the project's **real** JIRA issue types (see `commands/qa-test-plan.md` §Step 2 JQL:
+These are the project's **real** JIRA issue types (see `knowledge/execution/test-plan/sprint-mode.md` §Step 2 JQL:
 `issuetype in (Task, "Technical task", Sub-task)`). **`Review task`** is real too (VCST issue type
 `10181`) but is *auto-created per PR* rather than planned, so it never appears in a sprint-scoped JQL
 bucket and its fields carry no planning signal — §5a. For a **PR or bare feature name** there is no ticket

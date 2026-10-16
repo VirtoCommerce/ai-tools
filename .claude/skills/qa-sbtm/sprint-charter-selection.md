@@ -122,4 +122,4 @@ same reason).
 - [scenario-discovery.md](scenario-discovery.md) — the 10 techniques; §9 charter-from-gap, §10 the debrief rule
 - [charter-library.md](charter-library.md) — 11 ready charters to galumph/hostile-interview into a sprint charter
 - [adversarial-heuristics.md](adversarial-heuristics.md) · [personas.md](personas.md) — filters, not checklists
-- `.claude/commands/qa-test-plan.md` §5.3 — writes the charters · `.claude/commands/qa-exploratory.md` `sprint` — runs them
+- `.claude/knowledge/execution/test-plan/plan-sections.md` §Exploratory charters (read by `/qa-test-plan`) — writes the charters · `.claude/commands/qa-exploratory.md` `sprint` — runs them

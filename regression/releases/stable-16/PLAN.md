@@ -113,7 +113,7 @@ W0 is a gate: a broken BackgroundJobs or a failed login stops the run before W1.
 
 ## 8. Process per wave
 
-> Superseded on 2026-10-16 by `/qa-release-wave` and `.claude/knowledge/execution/release-regression.md`: no `bugs-draft/`, PROGRESS.md is generated, and wave state lives in `waves/<W>/`. Kept as written.
+> Superseded on 2026-10-16 by `/qa-run stable:16 <wave>` and `.claude/skills/qa-run/release-folder.md`: no `bugs-draft/`, PROGRESS.md is generated, and wave state lives in `waves/<W>/`. Kept as written.
 
 1. `/qa-regression <suite ids>` with `TEST_ENV=vcptcore_regression`.
 2. Per module: `modules/<Module>.md` (pass/fail/blocked, failing cases, suspected bugs).

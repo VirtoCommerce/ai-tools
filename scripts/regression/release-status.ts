@@ -12,7 +12,7 @@
  * plan, who holds which wave, what each wave found and — above all — what each triage DECIDED have
  * to sit in git, or the next QA re-runs and re-triages the same failures from scratch. The layout
  * (`regression/releases/<release>/`) and every field below are specified in
- * `.claude/knowledge/execution/release-regression.md`; this script is that contract's checker and
+ * `.claude/skills/qa-run/release-folder.md`; this script is that contract's checker and
  * its only aggregator.
  *
  * ONE AUTHOR PER FILE. `release.json` is written by the planner; `waves/<W>/state.json`,
@@ -30,7 +30,9 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { parse } from "csv-parse/sync";
 
-const REPO_ROOT = resolve(import.meta.dirname, "../..");
+// The release folders belong to the PROJECT, not to wherever this script is installed: QA_RUN_HOME,
+// else the working directory — the same split vc-fix makes between outputRoot() and pluginRoot().
+const REPO_ROOT = resolve(process.env.QA_RUN_HOME || process.cwd());
 const ROOT = join(REPO_ROOT, "regression/releases");
 
 export const WAVE_STATUSES = ["NOT_STARTED", "CLAIMED", "RUNNING", "RUN_DONE", "TRIAGED", "DONE", "BLOCKED"] as const;
@@ -48,7 +50,7 @@ const DRAFT = /^DRAFT\b/;
 const RAN = new Set(["RUN_DONE", "TRIAGED", "DONE"]);
 const TOTAL_KEYS = ["planned", "executed", "pass", "fail", "blocked", "skipped", "ambiguous"] as const;
 
-interface Wave { id: string; title: string; note?: string; suites: string[]; modules?: string[]; exclusive?: string[]; dependsOn?: string[] }
+interface Wave { id: string; title: string; note?: string; tier?: string; suites: string[]; modules?: string[]; exclusive?: string[]; dependsOn?: string[] }
 interface Release { release: string; ticket?: string; baseline?: string; bundle?: Record<string, unknown>; env?: Record<string, unknown>; waves: Wave[] }
 type Totals = Record<(typeof TOTAL_KEYS)[number], number>;
 interface NotRun { suites: string[]; cases: number; reason: string }
@@ -78,7 +80,7 @@ function load(release: string, required = true) {
   const dir = join(ROOT, release);
   if (!existsSync(join(dir, "release.json"))) {
     if (!required) return null;
-    console.error(`release-status: ${rel(join(dir, "release.json"))} not found — run /qa-release-plan first`);
+    console.error(`release-status: ${rel(join(dir, "release.json"))} not found — run /qa-test-plan stable <N> first`);
     process.exit(2);
   }
   const problems: string[] = [];
@@ -133,6 +135,14 @@ function reachesW0(waves: Wave[], id: string, seen = new Set<string>()): boolean
   return (waves.find((w) => w.id === id)?.dependsOn ?? []).some((d) => reachesW0(waves, d, seen));
 }
 
+const TIERS = ["critical", "high", "rest"];
+function dependsOnWave(waves: Wave[], id: string, target: string, seen = new Set<string>()): boolean {
+  if (seen.has(id)) return false;
+  seen.add(id);
+  const deps = waves.find((w) => w.id === id)?.dependsOn ?? [];
+  return deps.includes(target) || deps.some((d) => dependsOnWave(waves, d, target, seen));
+}
+
 const isCount = (v: unknown) => Number.isInteger(v) && (v as number) >= 0;
 
 function check(release: string, dir: string, plan: Release | null, states: Map<string, State>, ledger: LedgerRow[], problems: string[]): string[] {
@@ -147,7 +157,15 @@ function check(release: string, dir: string, plan: Release | null, states: Map<s
   const cycle = hasCycle(plan.waves);
   if (cycle) problems.push(`release.json: dependsOn has a cycle through ${cycle}`);
   for (const w of plan.waves) {
-    if (!/^W[0-9A-Z]+$/.test(w.id ?? "")) problems.push(`release.json: wave id '${w.id}' must look like W0, W3, WX`);
+    if (!/^[A-Z][A-Za-z0-9-]*$/.test(w.id ?? "")) problems.push(`release.json: wave id '${w.id}' must start with a capital letter (W0, C-purchase, WX)`);
+    if (w.tier !== undefined && !TIERS.includes(w.tier)) problems.push(`release.json: wave ${w.id} tier '${w.tier}' not one of ${TIERS.join(" ")}`);
+    // Priority is a dependency: a high wave waits for every critical wave, a rest wave for every high one.
+    const before = w.tier === "high" ? "critical" : w.tier === "rest" ? "high" : null;
+    if (before && !cycle) {
+      for (const o of plan.waves.filter((x) => x.tier === before)) {
+        if (!dependsOnWave(plan.waves, w.id, o.id)) problems.push(`release.json: ${w.tier} wave ${w.id} must depend on ${before} wave ${o.id}`);
+      }
+    }
     if (!Array.isArray(w.suites) || w.suites.length === 0) problems.push(`release.json: wave ${w.id} has no suites`);
     for (const d of w.dependsOn ?? []) if (!waves.has(d)) problems.push(`release.json: wave ${w.id} depends on unknown wave ${d}`);
     if (waves.has("W0") && w.id !== "W0" && !cycle && !reachesW0(plan.waves, w.id)) problems.push(`release.json: wave ${w.id} does not depend on the W0 smoke gate`);
@@ -269,7 +287,7 @@ function render(plan: Release, s: ReturnType<typeof summarise>): string {
     L.push("", "## Decisions pending", "", "| Wave | Case | Question | Who decides |", "|---|---|---|---|");
     for (const r of s.pending) L.push(`| ${r.wave} | ${r.case_id} | ${cell(r.summary)} | ${r.decided_by} |`);
   }
-  L.push("", "Per-wave detail: `waves/<wave>/report.md` · verdicts: `waves/<wave>/ledger.csv` · contract: `.claude/knowledge/execution/release-regression.md`.", "");
+  L.push("", "Per-wave detail: `waves/<wave>/report.md` · verdicts: `waves/<wave>/ledger.csv` · contract: `.claude/skills/qa-run/release-folder.md`.", "");
   return L.join("\n");
 }
 

@@ -10,7 +10,7 @@
  * bump is not a change: most modules in a stable bundle are re-released only to align the platform
  * or third-party packages. Deciding that by hand for ~60 modules took most of the Stable 16 planning
  * day, and the decision is mechanical — compare the two release tags in the module's repo and look at
- * which files moved. This prints the facts; `/qa-release-plan` makes the judgement calls (functional
+ * which files moved. This prints the facts; `/qa-test-plan stable <N>` makes the judgement calls (functional
  * vs technical change, which wave) on top of them.
  *
  * WHAT COUNTS AS CODE. A changed file is code unless it is a project/manifest/version file

@@ -49,11 +49,11 @@ svg { background: var(--bg) } text { font-family: var(--sans) }</style>
 <text x="30" y="36" class="lt">1 · PLAN</text>
 <text x="30" y="54" class="ls">one planner, once per release</text>
 <rect x="150" y="60" width="190" height="70" rx="10" class="cmd"/>
-<text x="245" y="92" text-anchor="middle"><tspan x="245" dy="0" class="tc">/qa-release-plan</tspan><tspan x="245" dy="16" class="tw">stable-17 --from v16 --to v17</tspan></text>
+<text x="245" y="92" text-anchor="middle"><tspan x="245" dy="0" class="tc">/qa-test-plan</tspan><tspan x="245" dy="16" class="tw">stable 17  ·  or a sprint</tspan></text>
 <rect x="380" y="60" width="190" height="70" rx="10" class="box"/>
 <text x="475" y="84" text-anchor="middle"><tspan x="475" dy="0" class="tt">What changed</tspan><tspan x="475" dy="16" class="t">release:diff — code vs rebuild</tspan><tspan x="475" dy="16" class="t">per component, candidate suites</tspan></text>
 <rect x="610" y="60" width="200" height="70" rx="10" class="box"/>
-<text x="710" y="84" text-anchor="middle"><tspan x="710" dy="0" class="tt">Scope &amp; waves</tspan><tspan x="710" dy="16" class="t">W0 smoke gate · domain waves</tspan><tspan x="710" dy="16" class="t">WX exclusive window last</tspan></text>
+<text x="710" y="84" text-anchor="middle"><tspan x="710" dy="0" class="tt">Waves: tier × domain</tspan><tspan x="710" dy="16" class="t">critical → high → rest</tspan><tspan x="710" dy="16" class="t">W0 first · WX last</tspan></text>
 <polygon points="925,51 980,95 925,139 870,95" class="gate"/>
 <text x="925" y="85" text-anchor="middle"><tspan x="925" dy="0" class="tg">Open PR +</tspan><tspan x="925" dy="14" class="tg2">Jira sub-task</tspan><tspan x="925" dy="14" class="tg2">per wave?</tspan></text>
 <rect x="1060" y="60" width="180" height="70" rx="10" class="side"/>
@@ -83,17 +83,17 @@ svg { background: var(--bg) } text { font-family: var(--sans) }</style>
 <rect x="1140" y="204" width="110" height="26" rx="13" class="ci"/><text x="1195" y="222" class="cit" text-anchor="middle">CI: release:check</text>
 <path d="M925,139 L925,186" class="ar" marker-end="url(#h)"/>
 <text x="940" y="172" class="lbl" text-anchor="middle">yes</text>
-<text x="640" y="352" class="sec" text-anchor="middle">2 · WAVES IN PARALLEL — same environment, own machine, own accounts</text>
+<text x="640" y="352" class="sec" text-anchor="middle">2 · WAVES — tiers in order (critical → high → rest); the domain waves of one tier run in parallel</text>
 <rect x="10" y="360" width="1260" height="150" rx="16" class="lane"/>
-<text x="30" y="386" class="lt">QA A · W3</text>
-<text x="30" y="404" class="ls">purchase flow</text>
+<text x="30" y="386" class="lt">QA A · C-purchase</text>
+<text x="30" y="404" class="ls">critical · purchase flow</text>
 <rect x="30" y="416" width="84" height="22" rx="11" class="pill"/><text x="72" y="431" class="pt" text-anchor="middle">RUNNING</text>
 <rect x="140" y="399" width="150" height="80" rx="10" class="cmd"/>
-<text x="215" y="420" text-anchor="middle"><tspan x="215" dy="0" class="tc">Claim</tspan><tspan x="215" dy="16" class="tw">assign the wave</tspan><tspan x="215" dy="16" class="tw">sub-task to yourself</tspan><tspan x="215" dy="16" class="tw">own personas</tspan></text>
+<text x="215" y="420" text-anchor="middle"><tspan x="215" dy="0" class="tc">Claim</tspan><tspan x="215" dy="16" class="tw">/qa-run stable:17</tspan><tspan x="215" dy="16" class="tw">&lt;wave&gt; --claim</tspan><tspan x="215" dy="16" class="tw">own personas</tspan></text>
 <rect x="310" y="399" width="150" height="80" rx="10" class="box"/>
 <text x="385" y="420" text-anchor="middle"><tspan x="385" dy="0" class="tt">Known ground</tspan><tspan x="385" dy="16" class="t">release:status --ledger</tspan><tspan x="385" dy="16" class="t">earlier verdicts</tspan><tspan x="385" dy="16" class="t">incl. baseline</tspan></text>
 <rect x="480" y="399" width="150" height="80" rx="10" class="box"/>
-<text x="555" y="420" text-anchor="middle"><tspan x="555" dy="0" class="tt">Run</tspan><tspan x="555" dy="16" class="t">/qa-regression</tspan><tspan x="555" dy="16" class="t">machine lane first</tspan><tspan x="555" dy="16" class="t">no exclusive cases</tspan></text>
+<text x="555" y="420" text-anchor="middle"><tspan x="555" dy="0" class="tt">Run</tspan><tspan x="555" dy="16" class="t">--cases &lt;tier&gt;</tspan><tspan x="555" dy="16" class="t">machine lane first</tspan><tspan x="555" dy="16" class="t">no exclusive cases</tspan></text>
 <polygon points="705,397 757.5,439 705,481 652.5,439" class="gate"/>
 <text x="705" y="436" text-anchor="middle"><tspan x="705" dy="0" class="tg">Run</tspan><tspan x="705" dy="14" class="tg2">triage?</tspan></text>
 <rect x="780" y="399" width="150" height="80" rx="10" class="box"/>
@@ -113,15 +113,15 @@ svg { background: var(--bg) } text { font-family: var(--sans) }</style>
 <path d="M705,481 L705,501 L1005,501 L1005,485" class="ard" marker-end="url(#hd)"/>
 <text x="855" y="497" class="lbls" text-anchor="middle">no — publish the run as it is; the next owner is asked again</text>
 <rect x="10" y="522" width="1260" height="150" rx="16" class="lane"/>
-<text x="30" y="548" class="lt">QA B · W4</text>
-<text x="30" y="566" class="ls">returns, B2B</text>
+<text x="30" y="548" class="lt">QA B · C-catalog</text>
+<text x="30" y="566" class="ls">critical · catalog &amp; search</text>
 <rect x="30" y="578" width="84" height="22" rx="11" class="pill"/><text x="72" y="593" class="pt" text-anchor="middle">TRIAGED</text>
 <rect x="140" y="561" width="150" height="80" rx="10" class="cmd"/>
-<text x="215" y="582" text-anchor="middle"><tspan x="215" dy="0" class="tc">Claim</tspan><tspan x="215" dy="16" class="tw">assign the wave</tspan><tspan x="215" dy="16" class="tw">sub-task to yourself</tspan><tspan x="215" dy="16" class="tw">own personas</tspan></text>
+<text x="215" y="582" text-anchor="middle"><tspan x="215" dy="0" class="tc">Claim</tspan><tspan x="215" dy="16" class="tw">/qa-run stable:17</tspan><tspan x="215" dy="16" class="tw">&lt;wave&gt; --claim</tspan><tspan x="215" dy="16" class="tw">own personas</tspan></text>
 <rect x="310" y="561" width="150" height="80" rx="10" class="box"/>
 <text x="385" y="582" text-anchor="middle"><tspan x="385" dy="0" class="tt">Known ground</tspan><tspan x="385" dy="16" class="t">release:status --ledger</tspan><tspan x="385" dy="16" class="t">earlier verdicts</tspan><tspan x="385" dy="16" class="t">incl. baseline</tspan></text>
 <rect x="480" y="561" width="150" height="80" rx="10" class="box"/>
-<text x="555" y="582" text-anchor="middle"><tspan x="555" dy="0" class="tt">Run</tspan><tspan x="555" dy="16" class="t">/qa-regression</tspan><tspan x="555" dy="16" class="t">machine lane first</tspan><tspan x="555" dy="16" class="t">no exclusive cases</tspan></text>
+<text x="555" y="582" text-anchor="middle"><tspan x="555" dy="0" class="tt">Run</tspan><tspan x="555" dy="16" class="t">--cases &lt;tier&gt;</tspan><tspan x="555" dy="16" class="t">machine lane first</tspan><tspan x="555" dy="16" class="t">no exclusive cases</tspan></text>
 <polygon points="705,559 757.5,601 705,643 652.5,601" class="gate"/>
 <text x="705" y="598" text-anchor="middle"><tspan x="705" dy="0" class="tg">Run</tspan><tspan x="705" dy="14" class="tg2">triage?</tspan></text>
 <rect x="780" y="561" width="150" height="80" rx="10" class="box"/>
@@ -139,15 +139,15 @@ svg { background: var(--bg) } text { font-family: var(--sans) }</style>
 <path d="M1058,601 L1076,601" class="ar" marker-end="url(#h)"/>
 <text x="1067" y="593" class="lbl" text-anchor="middle">yes</text>
 <rect x="10" y="684" width="1260" height="150" rx="16" class="lane"/>
-<text x="30" y="710" class="lt">QA C · W5</text>
-<text x="30" y="728" class="ls">marketing, content</text>
+<text x="30" y="710" class="lt">QA C · C-accounts</text>
+<text x="30" y="728" class="ls">critical · accounts &amp; B2B</text>
 <rect x="30" y="740" width="84" height="22" rx="11" class="pill"/><text x="72" y="755" class="pt" text-anchor="middle">CLAIMED</text>
 <rect x="140" y="723" width="150" height="80" rx="10" class="cmd"/>
-<text x="215" y="744" text-anchor="middle"><tspan x="215" dy="0" class="tc">Claim</tspan><tspan x="215" dy="16" class="tw">assign the wave</tspan><tspan x="215" dy="16" class="tw">sub-task to yourself</tspan><tspan x="215" dy="16" class="tw">own personas</tspan></text>
+<text x="215" y="744" text-anchor="middle"><tspan x="215" dy="0" class="tc">Claim</tspan><tspan x="215" dy="16" class="tw">/qa-run stable:17</tspan><tspan x="215" dy="16" class="tw">&lt;wave&gt; --claim</tspan><tspan x="215" dy="16" class="tw">own personas</tspan></text>
 <rect x="310" y="723" width="150" height="80" rx="10" class="box"/>
 <text x="385" y="744" text-anchor="middle"><tspan x="385" dy="0" class="tt">Known ground</tspan><tspan x="385" dy="16" class="t">release:status --ledger</tspan><tspan x="385" dy="16" class="t">earlier verdicts</tspan><tspan x="385" dy="16" class="t">incl. baseline</tspan></text>
 <rect x="480" y="723" width="150" height="80" rx="10" class="box"/>
-<text x="555" y="744" text-anchor="middle"><tspan x="555" dy="0" class="tt">Run</tspan><tspan x="555" dy="16" class="t">/qa-regression</tspan><tspan x="555" dy="16" class="t">machine lane first</tspan><tspan x="555" dy="16" class="t">no exclusive cases</tspan></text>
+<text x="555" y="744" text-anchor="middle"><tspan x="555" dy="0" class="tt">Run</tspan><tspan x="555" dy="16" class="t">--cases &lt;tier&gt;</tspan><tspan x="555" dy="16" class="t">machine lane first</tspan><tspan x="555" dy="16" class="t">no exclusive cases</tspan></text>
 <polygon points="705,721 757.5,763 705,805 652.5,763" class="gate"/>
 <text x="705" y="760" text-anchor="middle"><tspan x="705" dy="0" class="tg">Run</tspan><tspan x="705" dy="14" class="tg2">triage?</tspan></text>
 <rect x="780" y="723" width="150" height="80" rx="10" class="box"/>

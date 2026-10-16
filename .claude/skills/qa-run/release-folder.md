@@ -1,7 +1,7 @@
 # Release regression — a bundle regression split into waves that several QA run in parallel
 
-The contract behind [`/qa-release-plan`](../../commands/qa-release-plan.md) and
-[`/qa-release-wave`](../../commands/qa-release-wave.md). It is the single source for the folder
+The contract behind [`/qa-test-plan stable <N>`](../../knowledge/execution/test-plan/stable-mode.md) (the plan) and
+[`/qa-run stable:<N> <wave>`](waves.md) (the run). It is the single source for the folder
 layout, every field, the verdict vocabulary and the rules that let two or three QA test one bundle
 on one environment at the same time. The commands cite it; they do not restate it.
 
@@ -37,7 +37,7 @@ release, and splits the work into **waves** that are independent enough to run s
 every wave PR touches, and it is generated: `release:check` fails when it is not what `--write` would
 produce, and CI checks a PR's merge commit — so a wave PR that raced another one is told to rebase and
 re-run `--write`, and a stale overview never reaches `main`. This is the suite rule
-([`regression-suites.md`](regression-suites.md) §Working concurrently on suites) applied to the release
+([`regression-suites.md`](../../knowledge/execution/regression-suites.md) §Working concurrently on suites) applied to the release
 folder.
 
 `npm run release:check -- <release>` validates all of it (shapes, vocabularies, required fields). A
@@ -53,14 +53,20 @@ wave PR does not go up while it fails, and CI runs `release:check -- --all` on e
   "env": { "testEnv": "vcptcore_regression", "platform": "3.1076.1", "theme": "2.59.0" },
   "waves": [
     { "id": "W0", "title": "Smoke gate", "suites": ["042", "078"], "modules": ["Platform"] },
-    { "id": "W1", "title": "Platform & infrastructure", "suites": ["095", "020"], "dependsOn": ["W0"] },
-    { "id": "WX", "title": "Exclusive window", "suites": ["096"], "dependsOn": ["W1", "W2"], "exclusive": ["096"] }
+    { "id": "C-platform", "title": "Platform — critical", "tier": "critical", "suites": ["095", "020"], "dependsOn": ["W0"] },
+    { "id": "H-platform", "title": "Platform — high", "tier": "high", "suites": ["095", "020"], "dependsOn": ["C-platform"] },
+    { "id": "WX", "title": "Exclusive window", "suites": ["096"], "dependsOn": ["H-platform"], "exclusive": ["096"] }
   ]
 }
 ```
 
 - **W0 is always the smoke gate** and every other wave depends on it: a broken job engine or a
   failed login stops the release before anyone spends a wave on it.
+- **Waves are priority tier × domain group** (`/qa-test-plan stable` Step 3, [`stable-mode.md`](../../knowledge/execution/test-plan/stable-mode.md)): `tier` is `critical`, `high` or
+  `rest` (the cases neither tier selects; run through `--cases` / `suites:filter`), and the domain groups split
+  each tier between owners. Tier order is a dependency: every `high` wave depends on every `critical` wave, every
+  `rest` wave on every `high` wave — `release:check` fails otherwise. A wave without `tier` runs all of its
+  suites' cases (W0, the exclusive wave, and plans written before tiers existed, such as Stable 16).
 - A wave's `suites` is a plan, not a promise. The owner re-resolves it with `npm run regression:plan`
   when claiming, and records what actually ran in `state.json`.
 - `exclusive` names suites that change state the whole environment shares (§7.2). They live in one
@@ -106,7 +112,7 @@ Status moves forward only:
 | Status | Means | Set when |
 |---|---|---|
 | `NOT_STARTED` | nobody holds it | the planner creates the wave |
-| `CLAIMED` | an owner holds it, nothing ran yet | `/qa-release-wave … --claim` |
+| `CLAIMED` | an owner holds it, nothing ran yet | `/qa-run stable:<N> <wave> --claim` |
 | `RUNNING` | a run is in progress | the first `/qa-regression` of the wave starts |
 | `RUN_DONE` | the run finished; triage not done or not complete | the run is consolidated |
 | `TRIAGED` | every FAIL has a ledger row (`untriaged` 0); repairs or filing may still be open | triage is written to the ledger |
@@ -218,7 +224,7 @@ the machine lanes first, or in CI, is the cheapest way to stretch a usage limit.
 - **Handing over** a half-done wave: leave it `RUN_DONE` with `notRun` and a "Before the next owner
   continues" section in `report.md`, open the PR, and unassign the sub-task.
 - **Bugs** are filed per [`../../rules/reports.md`](../../rules/reports.md) and
-  [`tracker-ops.md`](tracker-ops.md) (labels, one comment per ticket per run, screenshots inline),
+  [`tracker-ops.md`](../../knowledge/execution/tracker-ops.md) (labels, one comment per ticket per run, screenshots inline),
   linked to the release ticket, after triage — never straight from a run.
 
 ## 9. What goes where
@@ -226,7 +232,7 @@ the machine lanes first, or in CI, is the cheapest way to stretch a usage limit.
 | Kind of knowledge | Lives in |
 |---|---|
 | Plan, wave state, verdicts, reports | `regression/releases/<release>/` (this contract) |
-| What the platform was **observed** to do (a by-design answer, a quirk of a deployment) | the kb — `kb_capture` / `kb_confirm` / `kb_dispute` ([`kb-capture-contract.md`](kb-capture-contract.md)); public, so nothing client-specific |
+| What the platform was **observed** to do (a by-design answer, a quirk of a deployment) | the kb — `kb_capture` / `kb_confirm` / `kb_dispute` ([`kb-capture-contract.md`](../../knowledge/execution/kb-capture-contract.md)); public, so nothing client-specific |
 | A product defect | the tracker, linked to the release ticket |
 | A stale case or fixture | a PR on `regression/suites/**` / `scripts/seed-data/**` |
 | Runtime fixture ids for the env | `test-data/aliases.<TEST_ENV>.json` |
