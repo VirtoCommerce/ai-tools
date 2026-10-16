@@ -70,6 +70,8 @@
     "seed:promotions:teardown": "node scripts/seed-data/promotions/seed-promotions.mjs --teardown",
     "seed:bopis": "node scripts/seed-data/bopis/seed-bopis.mjs",
     "seed:bopis:teardown": "node scripts/seed-data/bopis/seed-bopis.mjs --teardown",
+    "seed:bopis:pool": "node scripts/seed-data/bopis/seed-bopis.mjs --pool-only",
+    "seed:bopis:pool:teardown": "node scripts/seed-data/bopis/seed-bopis.mjs --pool-only --teardown",
     "seed:sales-rep": "node scripts/seed-data/sales-rep/seed-sales-rep.mjs",
     "seed:sales-rep:teardown": "node scripts/seed-data/sales-rep/seed-sales-rep.mjs --teardown",
     "seed:sales-rep-docs": "node scripts/seed-data/sales-rep/seed-sales-rep-docs.mjs",

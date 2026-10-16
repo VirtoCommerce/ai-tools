@@ -21,15 +21,34 @@
  *
  * USAGE:
  *   node scripts/seed-bopis.mjs [--dry-run] [--verbose] [--only LOC-001] [--teardown]
+ *   node scripts/seed-bopis.mjs --pool [--pool-only] [--product <productId>] [--dry-run]
+ *   node scripts/seed-bopis.mjs --teardown --pool-only            (removes ONLY the pool)
+ *
+ * PAGINATION POOL (opt-in, `--pool`): POOL_SIZE locations from bopis-pool-specs.mjs, all bound to the
+ * fulfillment center that STOCKS the BOPIS test product (resolved live from inventory), so every one
+ * is cart-eligible for that product — the 50-per-page cases need > 2 pages of eligible locations.
+ * After seeding it snapshots the live default order of xAPI productPickupLocations(productId) and
+ * writes BOPIS.{location50Id,location51Id,lastLocationId,…,testProductId,testSku,…} to
+ * aliases.<env>.json. OPT-IN because vcst's BOPIS overlay is a curated snapshot of its 102 native
+ * locations — a default run must not reshape it. Product: --product, else the env overlay's
+ * BOPIS.testProductId, else BUYABLE_NO_MIN_QTY.id from the same overlay.
  * Safety: ENV_RISK gate (blocks ENV_RISK=production unless --allow-admin-writes-on-prod); idempotent by location name within the store.
  * No _seed-results report (VCST-5406) — BOPIS_* resolve by static location_id business key.
  */
 import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
+import { readFileSync, existsSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   assertSafeTarget, auth, api, loadCsv, log, verbose, csvBool, iso3,
-  ensureFulfillmentCenter, verifyRemoved,
-  STORE_ID, DATE_STAMP, DRY_RUN, TEARDOWN, ONLY, BACK_URL,
+  ensureFulfillmentCenter, verifyRemoved, writeEnvAliasOverride,
+  STORE_ID, DATE_STAMP, DRY_RUN, TEARDOWN, ONLY, BACK_URL, FRONT_URL, ROOT,
 } from '../../lib/seed-common.mjs';
+import { POOL_PREFIX, POOL_SIZE, PAGE_SIZE, poolLocations, poolContractProblems } from './bopis-pool-specs.mjs';
+
+const argv = process.argv.slice(2);
+const POOL_ONLY = argv.includes('--pool-only');
+const POOL = POOL_ONLY || argv.includes('--pool');
+const PRODUCT_ARG = argv.includes('--product') ? argv[argv.indexOf('--product') + 1] : null;
 
 // Pickup locations join the AGENT-TEST family so teardown's safety guard can identify
 // and sweep them (the guard only deletes locations whose LIVE name starts with AGENT-TEST).
@@ -50,7 +69,9 @@ function resolveFfcId(ffcRef) {
 }
 
 async function findPickup(storeId, name) {
-  const r = await api('POST', '/api/shipping/pickup-locations/search', { storeId, take: 200 });
+  // take 1000, not 200: with the pagination pool a store holds > 200 locations and a name past the
+  // first page would read as absent and be created a second time.
+  const r = await api('POST', '/api/shipping/pickup-locations/search', { storeId, take: 1000 });
   const list = Array.isArray(r) ? r : (r?.results || []);
   return list.find((p) => p.name === name) || null;
 }
@@ -116,17 +137,130 @@ async function teardown(rows) {
   if (residual > 0 && !DRY_RUN) process.exit(1);
 }
 
+// ── Pagination pool (opt-in, --pool / --pool-only) ──────────────────────────────
+async function listPickups(storeId) {
+  const r = await api('POST', '/api/shipping/pickup-locations/search', { storeId, take: 1000 });
+  return Array.isArray(r) ? r : (r?.results || []);
+}
+
+/** The env's BOPIS test product: --product, else aliases.<env>.json BOPIS.testProductId, else BUYABLE_NO_MIN_QTY.id. */
+function poolProductId() {
+  if (PRODUCT_ARG) return PRODUCT_ARG;
+  const p = join(ROOT, `test-data/aliases.${process.env.TEST_ENV || 'vcst'}.json`);
+  const ov = existsSync(p) ? JSON.parse(readFileSync(p, 'utf8')) : {};
+  return ov.BOPIS?.testProductId || ov.BUYABLE_NO_MIN_QTY?.id || null;
+}
+
+/** The store FFC (main + additional) holding the most available stock of the product. */
+async function stockingFfc(productId) {
+  const store = await api('GET', `/api/stores/${STORE_ID}`);
+  const storeFfcs = new Set([store?.mainFulfillmentCenterId, ...(store?.additionalFulfillmentCenterIds || [])].filter(Boolean));
+  const inv = await api('POST', '/api/inventory/search', { productIds: [productId], take: 100 });
+  const rows = (inv?.results || []).filter((i) => storeFfcs.has(i.fulfillmentCenterId) && Number(i.inStockQuantity) - Number(i.reservedQuantity || 0) > 0);
+  rows.sort((a, b) => Number(b.inStockQuantity) - Number(a.inStockQuantity));
+  return rows[0]?.fulfillmentCenterId || null;
+}
+
+function poolBody(row, ffcId, existingId) {
+  const body = {
+    name: row.name, storeId: STORE_ID, isActive: true, fulfillmentCenterId: ffcId,
+    geoLocation: row.geoLocation, workingHours: 'Mon-Fri 09:00-18:00',
+    description: 'AGENT-TEST BOPIS pagination pool (bopis-pool-specs.mjs)',
+    address: { name: row.name, line1: row.line1, city: row.city, regionId: row.region, regionName: row.region, postalCode: row.postal, countryCode: row.country, countryName: row.countryName },
+  };
+  if (existingId) body.id = existingId;
+  return body;
+}
+
+async function seedPool() {
+  const rows = poolLocations();
+  const problems = poolContractProblems(rows);
+  if (problems.length) { console.error(`ABORT: pool declaration is not discriminating: ${problems.join('; ')}`); process.exit(2); }
+  const productId = poolProductId();
+  if (!productId) { console.error('ABORT: no BOPIS test product — pass --product <id> or seed BUYABLE_NO_MIN_QTY for this env'); process.exit(2); }
+  const product = await api('GET', `/api/catalog/products/${productId}`, null, { expectStatus: [200, 204, 404] });
+  if (!product?.id) { console.error(`ABORT: product ${productId} not found on ${BACK_URL}`); process.exit(2); }
+  const ffcId = await stockingFfc(productId);
+  if (!ffcId) { console.error(`ABORT: product ${product.code} has no stock on any ${STORE_ID} fulfillment center — no pickup location could be eligible`); process.exit(2); }
+  log(`Pool: ${rows.length} location(s) → FFC ${ffcId} (stocks ${product.code} "${product.name}")`);
+
+  const byName = new Map((await listPickups(STORE_ID)).map((p) => [p.name, p]));
+  let created = 0, updated = 0;
+  for (const row of rows) {
+    const existing = byName.get(row.name);
+    if (existing && existing.fulfillmentCenterId === ffcId && existing.isActive) { verbose(`= ${row.name}`); continue; }
+    const body = poolBody(row, ffcId, existing?.id);
+    if (existing) { await api('PUT', '/api/shipping/pickup-locations', body, { expectStatus: [200, 204] }); updated++; }
+    else { await api('POST', '/api/shipping/pickup-locations', body, { expectStatus: [200, 201] }); created++; }
+  }
+  log(`✓ pool: ${created} created, ${updated} updated, ${rows.length - created - updated} unchanged${DRY_RUN ? ' [DRY RUN — nothing written]' : ''}`);
+  if (DRY_RUN) return;
+  await snapshotPool(product);
+}
+
+async function gql(query) {
+  const r = await fetch(`${FRONT_URL}/graphql`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ query }) });
+  const j = await r.json();
+  if (j.errors) throw new Error(`xAPI: ${JSON.stringify(j.errors).slice(0, 300)}`);
+  return j.data;
+}
+
+/**
+ * Snapshot the live default order of productPickupLocations(productId) — the service and default
+ * sort cartPickupLocations uses for a cart holding only this product — and write the position
+ * aliases. Polls while the pickup-location index catches up with freshly created rows.
+ */
+async function snapshotPool(product) {
+  const q = `{ productPickupLocations(productId:"${product.id}", storeId:"${STORE_ID}", cultureName:"en-US", first:500) { totalCount items { id name } } }`;
+  let data;
+  for (let i = 0; i < 24; i++) {
+    data = (await gql(q)).productPickupLocations;
+    if (data.totalCount > POOL_SIZE) break;
+    verbose(`index catching up: ${data.totalCount} eligible`);
+    await new Promise((res) => setTimeout(res, 5000));
+  }
+  const items = data.items || [];
+  if (items.length <= PAGE_SIZE) { console.error(`⚠ only ${items.length} eligible location(s) visible — BOPIS position aliases NOT written`); process.exitCode = 1; return; }
+  const p50 = items[PAGE_SIZE - 1], p51 = items[PAGE_SIZE], last = items[items.length - 1];
+  const store = await gql(`{ pickupLocations(storeId:"${STORE_ID}", first:1) { totalCount } }`);
+  writeEnvAliasOverride({
+    BOPIS: {
+      location50Id: p50.id, location50Name: p50.name,
+      location51Id: p51.id, location51Name: p51.name,
+      lastLocationId: last.id, lastLocationName: last.name,
+      locationCount: data.totalCount, lastPageIndex: data.totalCount,
+      testProductId: product.id, testSku: product.code, testProductName: product.name, testProductCatalogId: product.catalogId,
+      captured_at: new Date().toISOString().slice(0, 10),
+      source_query: `productPickupLocations(productId: BOPIS.testProductId, storeId:"${STORE_ID}", first:500) default order; store-level pickupLocations totalCount=${store.pickupLocations.totalCount} — seed-bopis.mjs --pool`,
+    },
+  });
+  log(`✓ aliases.${process.env.TEST_ENV || 'vcst'}.json BOPIS: ${data.totalCount} eligible (store total ${store.pickupLocations.totalCount}); #50 "${p50.name}", #51 "${p51.name}" (${p51.id}), last "${last.name}"`);
+}
+
+async function teardownPool() {
+  const names = new Set(poolLocations().map((r) => r.name));
+  // Live-name guard: only a pool name the spec declares AND that carries the AGENT-TEST pool prefix.
+  const targets = (await listPickups(STORE_ID)).filter((p) => names.has(p.name) && String(p.name).startsWith(POOL_PREFIX));
+  log(`Pool teardown — ${targets.length} location(s)${DRY_RUN ? ' [DRY RUN — nothing deleted]' : ''}`);
+  for (const p of targets) await api('DELETE', `/api/shipping/pickup-locations/${STORE_ID}/${p.id}`, null, { expectStatus: [200, 204, 404] });
+  const residual = await verifyRemoved(async () => (await listPickups(STORE_ID)).filter((p) => names.has(p.name)));
+  log(residual === 0 ? 'Pool teardown verified — 0 remain.' : `⚠ Pool teardown incomplete — ${residual} remain.`);
+  if (residual > 0 && !DRY_RUN) process.exit(1);
+}
+
 async function main() {
   assertSafeTarget();
   console.log(`\n🌱 BOPIS pickup-locations seed${DRY_RUN ? ' [DRY RUN]' : ''}${TEARDOWN ? ' [TEARDOWN]' : ''}`);
   console.log(`   Target: ${BACK_URL} | Store: ${STORE_ID}\n`);
   await auth();
 
+  if (POOL_ONLY) { await (TEARDOWN ? teardownPool() : seedPool()); return; }
+
   const all = loadCsv('test-data/stores/bopis-locations.csv');
   const rows = ONLY ? all.filter((r) => r.location_id === ONLY) : all;
   if (!rows.length) { console.error(`ABORT: --only ${ONLY} matched no locations`); process.exit(2); }
 
-  if (TEARDOWN) { await teardown(rows); return; }
+  if (TEARDOWN) { await teardown(rows); if (POOL) await teardownPool(); return; }
 
   await loadFfcs();
   if (!FFCS.length && !DRY_RUN) {
@@ -160,6 +294,7 @@ async function main() {
   // keys, and the live BOPIS inline snapshot (position-50/51 ids) is captured out-of-band
   // (VCST-4707), not seeded — so this seeder has no runtime GUIDs to persist.
   console.log(`\n✅ BOPIS seed complete — ${results.length} pickup location(s).`);
+  if (POOL) await seedPool();
 }
 
 main().catch((err) => { console.error(`\n❌ BOPIS seed failed: ${err.message}`); process.exit(1); });

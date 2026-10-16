@@ -62,5 +62,21 @@
   },
   "BUYABLE_NO_MIN_QTY": {
     "id": "dfb650ed3741432f9af054c3436d6e06"
+  },
+  "BOPIS": {
+    "location50Id": "4a94c216-aa25-4c40-b453-3be54ec3a2af",
+    "location50Name": "AGENT-TEST-BOPIS-Pool-050 Toronto",
+    "location51Id": "25101bc1-d796-42eb-9d06-fb4935c52508",
+    "location51Name": "AGENT-TEST-BOPIS-Pool-051 Toronto",
+    "lastLocationId": "f2b18df9-39cc-48c5-bccb-a0792145267d",
+    "lastLocationName": "Los Angeles Pickup Center",
+    "locationCount": 102,
+    "lastPageIndex": 102,
+    "testProductId": "dfb650ed3741432f9af054c3436d6e06",
+    "testSku": "356971590",
+    "testProductName": "Silver Premium Crystal Double Sided Drop Earrings",
+    "testProductCatalogId": "b61aa9d1d0024bc4be12d79bf5786e9f",
+    "captured_at": "2026-10-14",
+    "source_query": "productPickupLocations(productId: BOPIS.testProductId, storeId:\"B2B-store\", first:500) default order; store-level pickupLocations totalCount=114 — seed-bopis.mjs --pool"
   }
 }
