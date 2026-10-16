@@ -1,0 +1,167 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 1010" width="1280" height="1010" role="img" aria-label="Parallel release regression: plan, release folder in main, three wave lanes, where everything else lands">
+<style>
+/* Layout: one swimlane diagram — plan, the repo as the shared spine, three parallel wave lanes, the stores underneath. */
+svg {
+  --bg: #FFFFFF; --ink: #050A40; --soft: #4A4F78; --lane: #F3F5FF; --line: #C7D3FA; --card: #FFFFFF;
+  --accent: #3D5FD9; --accent-ink: #FFFFFF; --gate: #FFEDE0; --gate-line: #FF7E13; --gate-ink: #8A3B00;
+  --main: #050A40; --main-ink: #FFFFFF; --main-soft: #B9C4F5; --chip: #12164F; --chip-line: #2B3AA8;
+  --ok: #15803D; --side: #EAF8EF; --side-line: #8FD4A8;
+  --mono: "JetBrains Mono", "Courier New", monospace; --sans: "Segoe UI", Inter, -apple-system, "Segoe UI", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) { svg:not([data-theme="light"]) {
+  --bg: #0B1030; --ink: #E8ECFF; --soft: #A9B1DA; --lane: #131A47; --line: #2E3A80; --card: #182055;
+  --accent: #7B97FA; --accent-ink: #0B1030; --gate: #3A2412; --gate-line: #FF9A3B; --gate-ink: #FFC48A;
+  --main: #1F2A72; --main-ink: #FFFFFF; --main-soft: #C3CCF7; --chip: #121A55; --chip-line: #4B5BC9;
+  --ok: #5FD38A; --side: #12321F; --side-line: #2F7A4C; color-scheme: dark } }
+svg[data-theme="dark"] {
+  --bg: #0B1030; --ink: #E8ECFF; --soft: #A9B1DA; --lane: #131A47; --line: #2E3A80; --card: #182055;
+  --accent: #7B97FA; --accent-ink: #0B1030; --gate: #3A2412; --gate-line: #FF9A3B; --gate-ink: #FFC48A;
+  --main: #1F2A72; --main-ink: #FFFFFF; --main-soft: #C3CCF7; --chip: #121A55; --chip-line: #4B5BC9;
+  --ok: #5FD38A; --side: #12321F; --side-line: #2F7A4C; color-scheme: dark }
+svg text { font-family: var(--sans) }
+.lane { fill: var(--lane) } .lt { font-size: 15px; font-weight: 700; fill: var(--ink); letter-spacing: .06em } .ls { font-size: 12.5px; fill: var(--soft) }
+.box { fill: var(--card); stroke: var(--line); stroke-width: 1.2 } .cmd { fill: var(--accent); stroke: none } .side { fill: var(--side); stroke: var(--side-line); stroke-width: 1.2 }
+.tt { font-size: 13.5px; font-weight: 700; fill: var(--ink) } .tc { font-size: 13.5px; font-weight: 700; fill: var(--accent-ink) }
+.tw { font-size: 12px; fill: var(--accent-ink); opacity: .9 }
+.t { font-size: 12px; fill: var(--soft) }
+.gate { fill: var(--gate); stroke: var(--gate-line); stroke-width: 1.8; stroke-dasharray: 5 3 } .tg { font-size: 12.5px; font-weight: 700; fill: var(--gate-ink) } .tg2 { font-size: 12.5px; font-weight: 700; fill: var(--gate-ink) }
+.ar { fill: none; stroke: var(--soft); stroke-width: 1.6 } .hd-a { fill: var(--soft) }
+.ard { fill: none; stroke: var(--gate-line); stroke-width: 1.4; stroke-dasharray: 4 3 } .hd-d { fill: var(--gate-line) }
+.arg { fill: none; stroke: var(--ok); stroke-width: 2.2 } .hd-g { fill: var(--ok) }
+.lbl { font-size: 11.5px; font-weight: 700; fill: var(--soft) } .lbls { font-size: 11.5px; fill: var(--gate-ink) } .lblg { font-size: 12px; font-weight: 700; fill: var(--ok) }
+.main { fill: var(--main) } .mt { font-family: var(--mono) !important; font-size: 17px; font-weight: 600; fill: var(--main-ink) } .ms { font-size: 12.5px; fill: var(--main-soft) }
+.chip { fill: var(--chip); stroke: var(--chip-line) } .cf { font-family: var(--mono) !important; font-size: 11.5px; font-weight: 600; fill: var(--main-ink) } .cd { font-size: 11.5px; fill: var(--main-soft) } .co { font-size: 10.5px; fill: #FFC48A; font-weight: 600 }
+.ci { fill: var(--ok) } .cit { font-size: 11px; font-weight: 700; fill: #FFFFFF }
+.sec { font-size: 12px; font-weight: 700; letter-spacing: .14em; fill: var(--soft) }
+.pill { fill: var(--card); stroke: var(--accent) } .pt { font-size: 10.5px; font-weight: 700; fill: var(--accent); letter-spacing: .04em }
+.store { fill: var(--card); stroke: var(--line); stroke-width: 1.2 } .store.s0 { stroke: var(--accent); stroke-width: 2 } .store.s1 { stroke: var(--ok); stroke-width: 2 } .store.s2 { stroke: var(--gate-line); stroke-width: 2 }
+.st { font-size: 14px; font-weight: 700; fill: var(--ink) } .sd { font-size: 12px; fill: var(--soft) }
+.lg { font-size: 12px; fill: var(--soft) }
+
+svg { background: var(--bg) } text { font-family: var(--sans) }</style>
+<rect width="100%" height="100%" style="fill: var(--bg)"/>
+<defs>
+  <marker id="h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="hd-a"/></marker>
+  <marker id="hg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="hd-g"/></marker>
+  <marker id="hd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="hd-d"/></marker>
+</defs>
+<rect x="10" y="10" width="1260" height="150" rx="16" class="lane"/>
+<text x="30" y="36" class="lt">1 · PLAN</text>
+<text x="30" y="54" class="ls">one planner, once per release</text>
+<rect x="150" y="60" width="190" height="70" rx="10" class="cmd"/>
+<text x="245" y="92" text-anchor="middle"><tspan x="245" dy="0" class="tc">/qa-test-plan</tspan><tspan x="245" dy="16" class="tw">stable 17  ·  or a sprint</tspan></text>
+<rect x="380" y="60" width="190" height="70" rx="10" class="box"/>
+<text x="475" y="84" text-anchor="middle"><tspan x="475" dy="0" class="tt">What changed</tspan><tspan x="475" dy="16" class="t">release:diff — code vs rebuild</tspan><tspan x="475" dy="16" class="t">per component, candidate suites</tspan></text>
+<rect x="610" y="60" width="200" height="70" rx="10" class="box"/>
+<text x="710" y="84" text-anchor="middle"><tspan x="710" dy="0" class="tt">Waves: tier × domain</tspan><tspan x="710" dy="16" class="t">critical → high → rest</tspan><tspan x="710" dy="16" class="t">W0 first · WX last</tspan></text>
+<polygon points="925,51 980,95 925,139 870,95" class="gate"/>
+<text x="925" y="85" text-anchor="middle"><tspan x="925" dy="0" class="tg">Open PR +</tspan><tspan x="925" dy="14" class="tg2">Jira sub-task</tspan><tspan x="925" dy="14" class="tg2">per wave?</tspan></text>
+<rect x="1060" y="60" width="180" height="70" rx="10" class="side"/>
+<text x="1150" y="84" text-anchor="middle"><tspan x="1150" dy="0" class="tt">Hand out</tspan><tspan x="1150" dy="16" class="t">one sub-task per wave</tspan><tspan x="1150" dy="16" class="t">unassigned</tspan></text>
+<path d="M340,95 L376,95" class="ar" marker-end="url(#h)"/>
+<path d="M570,95 L606,95" class="ar" marker-end="url(#h)"/>
+<path d="M810,95 L866,95" class="ar" marker-end="url(#h)"/>
+<path d="M980,95 L1056,95" class="ar" marker-end="url(#h)"/>
+<text x="1018" y="86" class="lbl" text-anchor="middle">yes</text>
+<rect x="10" y="190" width="1260" height="140" rx="16" class="main"/>
+<text x="30" y="220" class="mt">main · regression/releases/&lt;release&gt;/</text>
+<text x="30" y="240" class="ms">the whole release lives in git — anyone can pick up any wave</text>
+<rect x="30" y="256" width="165" height="60" rx="8" class="chip"/>
+<text x="40" y="276" class="cf">release.json</text><text x="40" y="293" class="cd">wave plan</text><text x="40" y="308" class="co">planner</text>
+<rect x="205" y="256" width="165" height="60" rx="8" class="chip"/>
+<text x="215" y="276" class="cf">PLAN.md · scope.json</text><text x="215" y="293" class="cd">how scope was decided</text><text x="215" y="308" class="co">planner</text>
+<rect x="380" y="256" width="165" height="60" rx="8" class="chip"/>
+<text x="390" y="276" class="cf">module-diff.json</text><text x="390" y="293" class="cd">release:diff output</text><text x="390" y="308" class="co">planner</text>
+<rect x="555" y="256" width="165" height="60" rx="8" class="chip"/>
+<text x="565" y="276" class="cf">waves/&lt;W&gt;/state.json</text><text x="565" y="293" class="cd">owner · status · totals</text><text x="565" y="308" class="co">wave owner</text>
+<rect x="730" y="256" width="165" height="60" rx="8" class="chip"/>
+<text x="740" y="276" class="cf">waves/&lt;W&gt;/ledger.csv</text><text x="740" y="293" class="cd">every verdict, filed or not</text><text x="740" y="308" class="co">wave owner</text>
+<rect x="905" y="256" width="165" height="60" rx="8" class="chip"/>
+<text x="915" y="276" class="cf">waves/&lt;W&gt;/report.md</text><text x="915" y="293" class="cd">results · what is left</text><text x="915" y="308" class="co">wave owner</text>
+<rect x="1080" y="256" width="165" height="60" rx="8" class="chip"/>
+<text x="1090" y="276" class="cf">PROGRESS.md</text><text x="1090" y="293" class="cd">generated, never edited</text><text x="1090" y="308" class="co">release:status --write</text>
+<rect x="1140" y="204" width="110" height="26" rx="13" class="ci"/><text x="1195" y="222" class="cit" text-anchor="middle">CI: release:check</text>
+<path d="M925,139 L925,186" class="ar" marker-end="url(#h)"/>
+<text x="940" y="172" class="lbl" text-anchor="middle">yes</text>
+<text x="640" y="352" class="sec" text-anchor="middle">2 · WAVES — tiers in order (critical → high → rest); the domain waves of one tier run in parallel</text>
+<rect x="10" y="360" width="1260" height="150" rx="16" class="lane"/>
+<text x="30" y="386" class="lt">QA A · C-purchase</text>
+<text x="30" y="404" class="ls">critical · purchase flow</text>
+<rect x="30" y="416" width="84" height="22" rx="11" class="pill"/><text x="72" y="431" class="pt" text-anchor="middle">RUNNING</text>
+<rect x="140" y="399" width="150" height="80" rx="10" class="cmd"/>
+<text x="215" y="420" text-anchor="middle"><tspan x="215" dy="0" class="tc">Claim</tspan><tspan x="215" dy="16" class="tw">/qa-run stable:17</tspan><tspan x="215" dy="16" class="tw">&lt;wave&gt; --claim</tspan><tspan x="215" dy="16" class="tw">own personas</tspan></text>
+<rect x="310" y="399" width="150" height="80" rx="10" class="box"/>
+<text x="385" y="420" text-anchor="middle"><tspan x="385" dy="0" class="tt">Pre-flight</tspan><tspan x="385" dy="16" class="t">settings · yml · seed</tspan><tspan x="385" dy="16" class="t">personas · accounts</tspan><tspan x="385" dy="16" class="t">one OK, then I fix</tspan></text>
+<rect x="480" y="399" width="150" height="80" rx="10" class="box"/>
+<text x="555" y="420" text-anchor="middle"><tspan x="555" dy="0" class="tt">Run</tspan><tspan x="555" dy="16" class="t">--cases &lt;tier&gt;</tspan><tspan x="555" dy="16" class="t">machine lane first</tspan><tspan x="555" dy="16" class="t">no exclusive cases</tspan></text>
+<rect x="650" y="399" width="170" height="80" rx="10" class="box"/>
+<text x="735" y="420" text-anchor="middle"><tspan x="735" dy="0" class="tt">Triage — automatic</tspan><tspan x="735" dy="16" class="t">/qa-triage-results</tspan><tspan x="735" dy="16" class="t">seeded with the ledger</tspan><tspan x="735" dy="16" class="t">a row for every finding</tspan></text>
+<polygon points="905,397 957.5,439 905,481 852.5,439" class="gate"/>
+<text x="905" y="436" text-anchor="middle"><tspan x="905" dy="0" class="tg">Put it in</tspan><tspan x="905" dy="14" class="tg2">GitHub?</tspan></text>
+<rect x="990" y="399" width="250" height="80" rx="10" class="side"/>
+<text x="1115" y="420" text-anchor="middle"><tspan x="1115" dy="0" class="tt">Wave PR</tspan><tspan x="1115" dy="16" class="t">state · ledger · report</tspan><tspan x="1115" dy="16" class="t">+ case repairs</tspan><tspan x="1115" dy="16" class="t">never merged by Claude</tspan></text>
+<path d="M290,439 L306,439" class="ar" marker-end="url(#h)"/>
+<path d="M460,439 L476,439" class="ar" marker-end="url(#h)"/>
+<path d="M630,439 L646,439" class="ar" marker-end="url(#h)"/>
+<path d="M820,439 L850,439" class="ar" marker-end="url(#h)"/>
+<path d="M958,439 L986,439" class="ar" marker-end="url(#h)"/>
+<text x="972" y="431" class="lbl" text-anchor="middle">yes</text>
+<rect x="10" y="522" width="1260" height="150" rx="16" class="lane"/>
+<text x="30" y="548" class="lt">QA B · C-catalog</text>
+<text x="30" y="566" class="ls">critical · catalog &amp; search</text>
+<rect x="30" y="578" width="84" height="22" rx="11" class="pill"/><text x="72" y="593" class="pt" text-anchor="middle">TRIAGED</text>
+<rect x="140" y="561" width="150" height="80" rx="10" class="cmd"/>
+<text x="215" y="582" text-anchor="middle"><tspan x="215" dy="0" class="tc">Claim</tspan><tspan x="215" dy="16" class="tw">/qa-run stable:17</tspan><tspan x="215" dy="16" class="tw">&lt;wave&gt; --claim</tspan><tspan x="215" dy="16" class="tw">own personas</tspan></text>
+<rect x="310" y="561" width="150" height="80" rx="10" class="box"/>
+<text x="385" y="582" text-anchor="middle"><tspan x="385" dy="0" class="tt">Pre-flight</tspan><tspan x="385" dy="16" class="t">settings · yml · seed</tspan><tspan x="385" dy="16" class="t">personas · accounts</tspan><tspan x="385" dy="16" class="t">one OK, then I fix</tspan></text>
+<rect x="480" y="561" width="150" height="80" rx="10" class="box"/>
+<text x="555" y="582" text-anchor="middle"><tspan x="555" dy="0" class="tt">Run</tspan><tspan x="555" dy="16" class="t">--cases &lt;tier&gt;</tspan><tspan x="555" dy="16" class="t">machine lane first</tspan><tspan x="555" dy="16" class="t">no exclusive cases</tspan></text>
+<rect x="650" y="561" width="170" height="80" rx="10" class="box"/>
+<text x="735" y="582" text-anchor="middle"><tspan x="735" dy="0" class="tt">Triage — automatic</tspan><tspan x="735" dy="16" class="t">/qa-triage-results</tspan><tspan x="735" dy="16" class="t">seeded with the ledger</tspan><tspan x="735" dy="16" class="t">a row for every finding</tspan></text>
+<polygon points="905,559 957.5,601 905,643 852.5,601" class="gate"/>
+<text x="905" y="598" text-anchor="middle"><tspan x="905" dy="0" class="tg">Put it in</tspan><tspan x="905" dy="14" class="tg2">GitHub?</tspan></text>
+<rect x="990" y="561" width="250" height="80" rx="10" class="side"/>
+<text x="1115" y="582" text-anchor="middle"><tspan x="1115" dy="0" class="tt">Wave PR</tspan><tspan x="1115" dy="16" class="t">state · ledger · report</tspan><tspan x="1115" dy="16" class="t">+ case repairs</tspan><tspan x="1115" dy="16" class="t">never merged by Claude</tspan></text>
+<path d="M290,601 L306,601" class="ar" marker-end="url(#h)"/>
+<path d="M460,601 L476,601" class="ar" marker-end="url(#h)"/>
+<path d="M630,601 L646,601" class="ar" marker-end="url(#h)"/>
+<path d="M820,601 L850,601" class="ar" marker-end="url(#h)"/>
+<path d="M958,601 L986,601" class="ar" marker-end="url(#h)"/>
+<text x="972" y="593" class="lbl" text-anchor="middle">yes</text>
+<rect x="10" y="684" width="1260" height="150" rx="16" class="lane"/>
+<text x="30" y="710" class="lt">QA C · C-accounts</text>
+<text x="30" y="728" class="ls">critical · accounts &amp; B2B</text>
+<rect x="30" y="740" width="84" height="22" rx="11" class="pill"/><text x="72" y="755" class="pt" text-anchor="middle">CLAIMED</text>
+<rect x="140" y="723" width="150" height="80" rx="10" class="cmd"/>
+<text x="215" y="744" text-anchor="middle"><tspan x="215" dy="0" class="tc">Claim</tspan><tspan x="215" dy="16" class="tw">/qa-run stable:17</tspan><tspan x="215" dy="16" class="tw">&lt;wave&gt; --claim</tspan><tspan x="215" dy="16" class="tw">own personas</tspan></text>
+<rect x="310" y="723" width="150" height="80" rx="10" class="box"/>
+<text x="385" y="744" text-anchor="middle"><tspan x="385" dy="0" class="tt">Pre-flight</tspan><tspan x="385" dy="16" class="t">settings · yml · seed</tspan><tspan x="385" dy="16" class="t">personas · accounts</tspan><tspan x="385" dy="16" class="t">one OK, then I fix</tspan></text>
+<rect x="480" y="723" width="150" height="80" rx="10" class="box"/>
+<text x="555" y="744" text-anchor="middle"><tspan x="555" dy="0" class="tt">Run</tspan><tspan x="555" dy="16" class="t">--cases &lt;tier&gt;</tspan><tspan x="555" dy="16" class="t">machine lane first</tspan><tspan x="555" dy="16" class="t">no exclusive cases</tspan></text>
+<rect x="650" y="723" width="170" height="80" rx="10" class="box"/>
+<text x="735" y="744" text-anchor="middle"><tspan x="735" dy="0" class="tt">Triage — automatic</tspan><tspan x="735" dy="16" class="t">/qa-triage-results</tspan><tspan x="735" dy="16" class="t">seeded with the ledger</tspan><tspan x="735" dy="16" class="t">a row for every finding</tspan></text>
+<polygon points="905,721 957.5,763 905,805 852.5,763" class="gate"/>
+<text x="905" y="760" text-anchor="middle"><tspan x="905" dy="0" class="tg">Put it in</tspan><tspan x="905" dy="14" class="tg2">GitHub?</tspan></text>
+<rect x="990" y="723" width="250" height="80" rx="10" class="side"/>
+<text x="1115" y="744" text-anchor="middle"><tspan x="1115" dy="0" class="tt">Wave PR</tspan><tspan x="1115" dy="16" class="t">state · ledger · report</tspan><tspan x="1115" dy="16" class="t">+ case repairs</tspan><tspan x="1115" dy="16" class="t">never merged by Claude</tspan></text>
+<path d="M290,763 L306,763" class="ar" marker-end="url(#h)"/>
+<path d="M460,763 L476,763" class="ar" marker-end="url(#h)"/>
+<path d="M630,763 L646,763" class="ar" marker-end="url(#h)"/>
+<path d="M820,763 L850,763" class="ar" marker-end="url(#h)"/>
+<path d="M958,763 L986,763" class="ar" marker-end="url(#h)"/>
+<text x="972" y="755" class="lbl" text-anchor="middle">yes</text>
+<path d="M1245,435 C1272,390 1272,360 1240,332" class="arg" marker-end="url(#hg)"/>
+<text x="1262" y="352" class="lblg" text-anchor="end">merge</text>
+<text x="640" y="858" class="sec" text-anchor="middle">WHERE EVERYTHING ELSE LANDS</text>
+<rect x="20" y="870" width="300" height="88" rx="12" class="store s0"/>
+<text x="36" y="896" text-anchor="start"><tspan x="36" dy="0" class="st">Jira</tspan><tspan x="36" dy="17" class="sd">wave sub-tasks = claims,</tspan><tspan x="36" dy="17" class="sd">in progress = running</tspan><tspan x="36" dy="17" class="sd">bugs linked to the release ticket</tspan></text>
+<rect x="332" y="870" width="300" height="88" rx="12" class="store s1"/>
+<text x="348" y="896" text-anchor="start"><tspan x="348" dy="0" class="st">kb (public)</tspan><tspan x="348" dy="17" class="sd">observed behaviour:</tspan><tspan x="348" dy="17" class="sd">by-design answers, env quirks</tspan><tspan x="348" dy="17" class="sd">read before triage, written after</tspan></text>
+<rect x="644" y="870" width="300" height="88" rx="12" class="store s2"/>
+<text x="660" y="896" text-anchor="start"><tspan x="660" dy="0" class="st">Shared environment</tspan><tspan x="660" dy="17" class="sd">own personas per owner</tspan><tspan x="660" dy="17" class="sd">env-wide changes only in WX</tspan><tspan x="660" dy="17" class="sd">seed once, before the waves</tspan></text>
+<rect x="956" y="870" width="300" height="88" rx="12" class="store s3"/>
+<text x="972" y="896" text-anchor="start"><tspan x="972" dy="0" class="st">Local only</tspan><tspan x="972" dy="17" class="sd">HAR, traces, screenshots,</tspan><tspan x="972" dy="17" class="sd">raw results stay in</tspan><tspan x="972" dy="17" class="sd">reports/regression/&lt;runId&gt;/</tspan></text>
+<g transform="translate(20 990)"><polygon points="0,-8 10,0 0,8 -10,0" transform="translate(10 0)" class="gate"/><text x="28" y="5" class="lg">always-asked question — never skipped; triage itself starts on its own</text>
+<rect x="520" y="-9" width="26" height="18" rx="5" class="cmd"/><text x="556" y="5" class="lg">a step the owner starts</text>
+<rect x="760" y="-9" width="26" height="18" rx="5" class="side"/><text x="796" y="5" class="lg">outward-facing: needs the user's yes</text></g>
+</svg>

@@ -1,0 +1,23 @@
+{
+ "wave": "W0",
+ "owner": "Elena Kutasina",
+ "status": "DONE",
+ "runIds": [
+  "REG-2026-10-12-1659"
+ ],
+ "totals": {
+  "planned": 149,
+  "executed": 149,
+  "pass": 100,
+  "fail": 4,
+  "blocked": 19,
+  "skipped": 8,
+  "ambiguous": 18
+ },
+ "notRun": [],
+ "handovers": [],
+ "updatedAt": "2026-10-16",
+ "personas": "config.js personas USER, ORG_USER, EUR, MULTI_ORG and ACME_BUYER as resolved from Elena Kutasina's .env.local; a parallel owner must use different accounts",
+ "untriaged": 0,
+ "evidence": "Raw results, HAR and screenshots stay in the owner's local run folders reports/regression/<runId>/ (gitignored); each filed bug carries its own evidence in Jira."
+}

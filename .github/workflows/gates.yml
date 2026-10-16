@@ -62,6 +62,8 @@ jobs:
         run: npm run kb:stands
       - name: suites:lint — manifest ↔ CSV sync, global case IDs, XREF-001
         run: npm run suites:lint
+      - name: release:check — release regression plans, wave states and triage ledgers
+        run: npm run release:check -- --all
       - name: td:validate — every @td() resolves, no hardcoded GUIDs
         run: npm run td:validate
       # The 22 per-domain fixture drift guards. Until 2026-09-15 these ran in NO workflow — only the

@@ -1,0 +1,304 @@
+{
+ "release": "stable-16",
+ "ticket": "VCST-6042",
+ "baseline": "stable-15",
+ "bundle": {
+  "repo": "VirtoCommerce/vc-modules",
+  "from": "v15",
+  "to": "v16",
+  "pr": "https://github.com/VirtoCommerce/vc-modules/pull/78"
+ },
+ "env": {
+  "testEnv": "vcptcore_regression",
+  "platform": "3.1076.1",
+  "theme": "2.59.0"
+ },
+ "jiraProgressComment": "VCST-6042 comment 111921",
+ "waves": [
+  {
+   "id": "W0",
+   "title": "Smoke gate",
+   "suites": [
+    "042",
+    "078",
+    "078b",
+    "078c",
+    "078d"
+   ],
+   "modules": [
+    "Platform",
+    "Theme (vc-frontend)"
+   ]
+  },
+  {
+   "id": "W1",
+   "title": "Platform & infrastructure",
+   "suites": [
+    "020",
+    "021",
+    "034",
+    "035",
+    "049",
+    "050g",
+    "050n",
+    "061",
+    "063",
+    "094",
+    "095",
+    "096",
+    "101",
+    "102"
+   ],
+   "modules": [
+    "Platform",
+    "BackgroundJobs",
+    "Search",
+    "ElasticSearch8",
+    "Core",
+    "Store",
+    "Xapi",
+    "OpenTelemetry",
+    "UCP",
+    "BackupRestore"
+   ],
+   "dependsOn": [
+    "W0"
+   ]
+  },
+  {
+   "id": "W2",
+   "title": "Catalog & search",
+   "suites": [
+    "001",
+    "002",
+    "003",
+    "005",
+    "050a",
+    "050i",
+    "051",
+    "052",
+    "053",
+    "062",
+    "064",
+    "064b",
+    "069",
+    "076",
+    "086",
+    "087",
+    "088",
+    "099",
+    "100",
+    "103"
+   ],
+   "modules": [
+    "Catalog",
+    "XCatalog",
+    "CatalogPersonalization",
+    "CatalogCsvImportModule",
+    "Export",
+    "CatalogPublishing",
+    "CustomerReviews",
+    "ImageTools",
+    "Assets",
+    "FileSystemAssets",
+    "AzureBlobAssets"
+   ],
+   "dependsOn": [
+    "W0"
+   ]
+  },
+  {
+   "id": "W3",
+   "title": "Purchase flow",
+   "suites": [
+    "007",
+    "014",
+    "017",
+    "017b",
+    "018",
+    "019",
+    "028",
+    "029",
+    "030",
+    "036",
+    "037",
+    "038",
+    "041",
+    "050b1",
+    "050b2",
+    "050b3",
+    "050b4",
+    "050b5",
+    "050c",
+    "050h",
+    "050k",
+    "054",
+    "055",
+    "056",
+    "065",
+    "072",
+    "072e"
+   ],
+   "modules": [
+    "XCart",
+    "Cart",
+    "Orders",
+    "XOrder",
+    "Pricing",
+    "Inventory",
+    "Shipping",
+    "Payment",
+    "XPickup"
+   ],
+   "dependsOn": [
+    "W0"
+   ]
+  },
+  {
+   "id": "W4",
+   "title": "Returns, B2B, accounts",
+   "suites": [
+    "006",
+    "008",
+    "014b",
+    "014c",
+    "026",
+    "027",
+    "027b",
+    "031",
+    "033",
+    "050d",
+    "050o",
+    "073",
+    "073a",
+    "073b"
+   ],
+   "modules": [
+    "Return",
+    "Customer",
+    "ProfileExperienceApiModule"
+   ],
+   "dependsOn": [
+    "W0"
+   ]
+  },
+  {
+   "id": "W5",
+   "title": "Marketing & content",
+   "suites": [
+    "023",
+    "024",
+    "025",
+    "048d",
+    "050e",
+    "050f",
+    "050j",
+    "050l",
+    "057",
+    "058",
+    "059",
+    "060",
+    "060b",
+    "066",
+    "066b",
+    "067",
+    "068",
+    "070",
+    "071",
+    "074",
+    "077",
+    "077b",
+    "079"
+   ],
+   "modules": [
+    "Marketing",
+    "Notifications",
+    "PushMessages",
+    "PageBuilderModule",
+    "XCMS",
+    "XFrontend",
+    "Seo",
+    "WhiteLabeling",
+    "Contracts"
+   ],
+   "dependsOn": [
+    "W0"
+   ]
+  },
+  {
+   "id": "W6",
+   "title": "Theme cross-cutting + gap sessions",
+   "suites": [
+    "044",
+    "045",
+    "046",
+    "048c"
+   ],
+   "modules": [
+    "Theme (vc-frontend)"
+   ],
+   "dependsOn": [
+    "W0"
+   ]
+  },
+  {
+   "id": "W7",
+   "title": "virto-start modules (autotests only)",
+   "suites": [
+    "015",
+    "039",
+    "040a",
+    "040c",
+    "075",
+    "075b",
+    "075c",
+    "075d",
+    "075e",
+    "075f",
+    "083",
+    "083b",
+    "083c",
+    "083d",
+    "083e",
+    "084",
+    "085"
+   ],
+   "modules": [
+    "virto-start PBC"
+   ],
+   "dependsOn": [
+    "W0"
+   ]
+  },
+  {
+   "id": "WX",
+   "title": "Exclusive window (env-wide cases)",
+   "note": "The W1 cases blocked as unsafe on a shared env: backup restore, full rebuild, global security and store settings",
+   "suites": [
+    "020",
+    "021",
+    "034",
+    "035",
+    "061",
+    "096"
+   ],
+   "exclusive": [
+    "020",
+    "021",
+    "034",
+    "035",
+    "061",
+    "096"
+   ],
+   "dependsOn": [
+    "W1",
+    "W2",
+    "W3",
+    "W4",
+    "W5",
+    "W6",
+    "W7"
+   ]
+  }
+ ]
+}
