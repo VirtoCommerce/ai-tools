@@ -1,19 +1,19 @@
 {
-  "runId": "REG-2026-10-07-2248",
+  "runId": "REG-2026-10-14-2305",
   "status": "completed",
-  "selection": "066b (VCST-5989 SEO explain, new Draft suite)",
+  "selection": "060b --ids (46 CMS cases) --no-promote (/qa-test VCST-5726 C1)",
   "env": "vcptcore_qa1",
-  "startedAt": "2026-10-07T19:48:00Z",
-  "finishedAt": "2026-10-07T19:55:52.518Z",
+  "startedAt": "2026-10-14T20:10:09Z",
   "suites": [
     {
-      "id": "066b",
+      "id": "060b",
       "status": "done",
       "browser": "playwright-edge",
       "lane": "browser",
-      "pass": 9,
-      "fail": 0,
-      "blocked": 0
+      "pass": 37,
+      "fail": 4,
+      "blocked": 5
     }
-  ]
+  ],
+  "finishedAt": "2026-10-14T20:58:14.552Z"
 }

@@ -1,5 +1,7 @@
 # Storefront renders a permanently blank page when a live session's user account is deleted
 
+**Filed as:** [VCST-6308](https://virtocommerce.atlassian.net/browse/VCST-6308) (Medium, Sprint 26-20, Oleg Zhuk, relates to VCST-6042) — re-confirmed 2026-10-13 on Stable 16 and Stable 15 (not a regression).
+
 ## Status: CONFIRMED
 
 **Env:** vcst-qa @ Platform `3.1053.0-pr-3093-e27a-vcst-5618-e27ac905` (unrelated to the VCST-5618 fix)
