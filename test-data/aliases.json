@@ -9765,6 +9765,34 @@
     "otherOrganizationId": "",
     "organizationCount": ""
   },
+  "BACKOFFICE_PUNCHOUT_READ": {
+    "_inline": true,
+    "_notes": "AGENT-TEST VCST-5886 BSC-2: opens Companies & contacts (customer:access + customer:read) and sees the Punchout user widget (punchout:read). Holds NO punchout:create/update/delete, so Save/Delete must be disabled and POST/PUT/DELETE /api/punchout-user-mappings must 403. Safe to delete. Back-office Manager account (isAdministrator=false), exactly one role AGENT-TEST-Punchout-Reader. Expected REST: search 200, write 403. Seeded/registered by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs. Only vcptcore_qa1 has VirtoCommerce.Punchout today — on every other env the seeder skips and these fields resolve to \"\" (a clear miss). Runtime ids live ONLY in aliases.<env>.json.",
+    "seed": "seed:punchout",
+    "email": "AGENT-TEST-punchout-reader@test.virtocommerce.com",
+    "login": "AGENT-TEST-punchout-reader@test.virtocommerce.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "userType": "Manager",
+    "role": "AGENT-TEST-Punchout-Reader",
+    "permissions": "customer:access,customer:read,punchout:read",
+    "user_id": "",
+    "role_id": ""
+  },
+  "BACKOFFICE_NO_PUNCHOUT": {
+    "_inline": true,
+    "_notes": "AGENT-TEST VCST-5886 BSC-3: opens Companies & contacts (customer:access + customer:read) with NO punchout:* permission, so the Punchout user widget must be hidden and POST /api/punchout-user-mappings/search must 403. Safe to delete. Back-office Manager account (isAdministrator=false), exactly one role AGENT-TEST-Punchout-None. Expected REST: search 403, write 403. Seeded/registered by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs. Only vcptcore_qa1 has VirtoCommerce.Punchout today — on every other env the seeder skips and these fields resolve to \"\" (a clear miss). Runtime ids live ONLY in aliases.<env>.json.",
+    "seed": "seed:punchout",
+    "email": "AGENT-TEST-no-punchout@test.virtocommerce.com",
+    "login": "AGENT-TEST-no-punchout@test.virtocommerce.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "userType": "Manager",
+    "role": "AGENT-TEST-Punchout-None",
+    "permissions": "customer:access,customer:read",
+    "user_id": "",
+    "role_id": ""
+  },
   "PUNCHOUT_PRODUCT_UOM": {
     "_inline": true,
     "_notes": "VCST-5887 OWNED punchout product with MeasureUnit \"box\" — a distinctive value, NOT the EA fallback, so a cXML ItemIn <UnitOfMeasure> that ignores the product's unit fails on this line. Sibling of @td(PUNCHOUT_PRODUCT_PLAIN) (same shape, no MeasureUnit). In the category of the standard fixture PROD-001 (test-products.csv; derived live, linked into config 0's store catalog), stocked (@td(PUNCHOUT_PRODUCT_UOM.stock)) on that store's main fulfillment center, priced ONLY by @td(PUNCHOUT_PRICELIST_USD) (price_usd) and @td(PUNCHOUT_PRICELIST_EUR) (price_eur). Add it to the dedicated buyer's cart as @td(PUNCHOUT_MAPPING_REQUISITION); reset carts with npm run seed:punchout:reset-carts. Seeded by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout, or `--only catalog` for just these fixtures; teardown seed:punchout:teardown, also `--teardown --only catalog`; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs §5. Runtime ids live ONLY in aliases.<env>.json.",
@@ -10303,33 +10331,5 @@
       "AGENT-TEST-VCST5726-sc-1",
       "AGENT-TEST-VCST5726-sc-2"
     ]
-  },
-  "BACKOFFICE_PUNCHOUT_READ": {
-    "_inline": true,
-    "_notes": "AGENT-TEST VCST-5886 BSC-2: opens Companies & contacts (customer:access + customer:read) and sees the Punchout user widget (punchout:read). Holds NO punchout:create/update/delete, so Save/Delete must be disabled and POST/PUT/DELETE /api/punchout-user-mappings must 403. Safe to delete. Back-office Manager account (isAdministrator=false), exactly one role AGENT-TEST-Punchout-Reader. Expected REST: search 200, write 403. Seeded/registered by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs. Only vcptcore_qa1 has VirtoCommerce.Punchout today — on every other env the seeder skips and these fields resolve to \"\" (a clear miss). Runtime ids live ONLY in aliases.<env>.json.",
-    "seed": "seed:punchout",
-    "email": "AGENT-TEST-punchout-reader@test.virtocommerce.com",
-    "login": "AGENT-TEST-punchout-reader@test.virtocommerce.com",
-    "password": "{{DEFAULT_TEST_PASSWORD}}",
-    "password_var": "DEFAULT_TEST_PASSWORD",
-    "userType": "Manager",
-    "role": "AGENT-TEST-Punchout-Reader",
-    "permissions": "customer:access,customer:read,punchout:read",
-    "user_id": "",
-    "role_id": ""
-  },
-  "BACKOFFICE_NO_PUNCHOUT": {
-    "_inline": true,
-    "_notes": "AGENT-TEST VCST-5886 BSC-3: opens Companies & contacts (customer:access + customer:read) with NO punchout:* permission, so the Punchout user widget must be hidden and POST /api/punchout-user-mappings/search must 403. Safe to delete. Back-office Manager account (isAdministrator=false), exactly one role AGENT-TEST-Punchout-None. Expected REST: search 403, write 403. Seeded/registered by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs. Only vcptcore_qa1 has VirtoCommerce.Punchout today — on every other env the seeder skips and these fields resolve to \"\" (a clear miss). Runtime ids live ONLY in aliases.<env>.json.",
-    "seed": "seed:punchout",
-    "email": "AGENT-TEST-no-punchout@test.virtocommerce.com",
-    "login": "AGENT-TEST-no-punchout@test.virtocommerce.com",
-    "password": "{{DEFAULT_TEST_PASSWORD}}",
-    "password_var": "DEFAULT_TEST_PASSWORD",
-    "userType": "Manager",
-    "role": "AGENT-TEST-Punchout-None",
-    "permissions": "customer:access,customer:read",
-    "user_id": "",
-    "role_id": ""
   }
 }
