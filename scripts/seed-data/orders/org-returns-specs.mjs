@@ -174,12 +174,22 @@ const personaByKey = Object.fromEntries(PERSONAS.map((p) => [p.key, p]));
 export const FIXTURE_GAPS = Object.freeze([
   { alias: 'RETURNS_LEGACY_STORELESS',
     reason: 'the legacy shape (storeId/customerId/customerName null, organization backfilled) cannot be created through the API: ReturnService.FillMissingSnapshots copies store/customer/name from the order on EVERY save, POST /api/order/customerOrders refuses an order without storeId/customerId/customerName (400), and PUT /api/return refuses an order-less return ("needs at least one line"; every line is measured against the order\'s available quantity). The 3 legacy rows that carry an organization belong to pre-existing, non-AGENT-TEST organizations, and adding a holder to one would change a shared organization.' },
-  { alias: 'ORG_RET_OTHER_STORE_RETURN',
-    reason: 'B2B-store is the only store on vcst with Return.ReturnEnabled=true (AGENT-TEST-BARCODE, Electronics, QA-STORE, test_del, TS-FULL-001, TestStore are all false); enabling one would change a store setting this run may not touch.' },
 ]);
 /** The other organization's submitted return. */
 export const OTHER_RETURN = Object.freeze({ key: 'OTHER', alias: 'ORG_RET_OTHER_ORG_RETURN', persona: 'OTHER_BUYER', returnStatus: 'Requested', requested: { [LINE_ROLE_X]: 1 } });
 export const OTHER_RETURN_REF = 'AGENT-TEST-RET-ORG-OTHER-R1';
+/**
+ * A VIEWER-org return that sits in ANOTHER store (formerly a FIXTURE-GAP). It does not need
+ * Return.ReturnEnabled on the other store: the buyer submits it in {{STORE_ID}} through xAPI, then an
+ * administrator PUT /api/return moves it to STORE_ID_SECONDARY — the mechanism 050o RET-ORG-011
+ * observed (2026-10-12). It lives on BUYER's LAST spare order (no case cites that spare), one unit of
+ * lineB, so no other fixture's returnable capacity moves.
+ */
+export const OTHER_STORE_RETURN = Object.freeze({
+  alias: 'ORG_RET_OTHER_STORE_RETURN', persona: 'BUYER', spare: personaByKey.BUYER.spares,
+  returnStatus: 'Requested', requested: { [LINE_ROLE_Y]: 1 }, storeVar: 'STORE_ID_SECONDARY',
+});
+export const OTHER_STORE_RETURN_REF = 'AGENT-TEST-RET-ORG-OTHERSTORE-R1';
 
 /** Per seeded order: two lines, different quantities, large enough for many per-run returns of 1. */
 export const ORDER_LINES = Object.freeze({ [LINE_ROLE_X]: 40, [LINE_ROLE_Y]: 25 });
@@ -303,7 +313,7 @@ export function expectedCanView(persona, orgKey) {
 }
 
 export const OWNED_ALIASES = Object.freeze([
-  ...ROLES.map((r) => r.alias), ...ORGS.map((o) => o.alias), ...PERSONAS.map((p) => p.alias), OTHER_RETURN.alias,
+  ...ROLES.map((r) => r.alias), ...ORGS.map((o) => o.alias), ...PERSONAS.map((p) => p.alias), OTHER_RETURN.alias, OTHER_STORE_RETURN.alias,
 ]);
 
 /**

@@ -29,7 +29,7 @@ The storefront ingress routes /api/otp to the platform (a 405 on Continue is the
 [EMAIL] the OtpSignInEmailNotification message appears in the notification journal within 60s
 [ADMIN] Security > Sign-in log has a Type OTP row for the account with succeeded=true
 [CONSOLE] no TypeError or JS error on the page under test
-[NETWORK] no 4xx/5xx on /graphql or on /api/otp/request",405 on POST /api/otp/request or 'Something went wrong' after Continue (mid-journey: ingress route missing); the 6th digit is typed and the page stays on /sign-in; the account menu is anonymous after the code step; spinner >5s,Sign out through the account menu so the next case starts anonymous,VCST-5748 · Archetype:SILENT · Technique:FLOW,Draft
+[NETWORK] no 4xx/5xx on /graphql or on /api/otp/request",405 on POST /api/otp/request or 'Something went wrong' after Continue (mid-journey: ingress route missing); the 6th digit is typed and the page stays on /sign-in; the account menu is anonymous after the code step; spinner >5s,Sign out through the account menu so the next case starts anonymous,VCST-5748 · Archetype:SILENT · Technique:FLOW | Promoted: REG-2026-10-15-1115 (2026-10-15),Automated
 OTP-002,OTP sign-in — a wrong code shows an inline error and the code can be re-entered,Auth > OTP Sign-In > Storefront,High,BL-AUTH-003,,"[PRE:CLEAR_SESSION]
 OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE_ID}} with lockout enabled","email={{USER_EMAIL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': {{USER_EMAIL}}
@@ -52,7 +52,7 @@ OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE
 [STATE] Entering the real code afterwards signs the customer in {SPEC}","[API] POST /connect/token grant_type=otp_email -> 400 with code invalid_code for the wrong code, 200 for the real one
 [CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 5xx on /connect/token or /api/otp/request",No message after a wrong code; two alerts with different copy at once; a raw key shown; the field is locked or unfocusable after the error; spinner >5s,"Sign out through the account menu so the next case starts anonymous
-The final successful sign-in resets the failed-attempt counter of {{USER_EMAIL}}",VCST-5748 · Archetype:FALLBACK · Technique:EP,Draft
+The final successful sign-in resets the failed-attempt counter of {{USER_EMAIL}}",VCST-5748 · Archetype:FALLBACK · Technique:EP | Promoted: REG-2026-10-15-1115 (2026-10-15),Automated
 OTP-003,OTP sign-in — an unknown email gets the same 'Check your email' screen as a real account,Auth > OTP Sign-In > Storefront,High,BL-AUTH-003,ECL-4.2,"[PRE:CLEAR_SESSION]
 OtpSignIn.Enabled is on for {{STORE_ID}}
 PasswordLogin:DetailedErrors is false on the target environment (platform appsettings, not changeable from a case). Probe: POST /api/otp/request for the unknown address; if error.code is user_not_found the environment shows detailed errors - mark BLOCKED, do not assert the masked screen against it","email=@td(OTP_INPUTS.unknownEmail), known_email={{USER_EMAIL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
@@ -89,7 +89,7 @@ OtpSignIn.Enabled is on for {{STORE_ID}}","email=@td(OTP_INPUTS.invalidEmails), 
 [STATE] For the 255-char address either the client refuses it with a field message, or a request is sent and answers a 4xx validation error - never a 5xx and never a verify step; record which layer refused it {SPEC}
 [STATE] The 254-char control address is not refused for LENGTH (the request is sent; any refusal is the unknown-email outcome) {SPEC}","[API] POST /api/otp/request responses for the 255 and 254 values: status and error.code
 [CONSOLE] no TypeError or JS error on the page under test
-[NETWORK] no 5xx on /api/otp/request",An invalid value triggers a request and a generic 'Something went wrong'; a 5xx for the 255-char value; the 254-char control refused for length; no message at all,none (no state changed; no code was requested for a real account),VCST-5748 · Archetype:BOUNDARY · Technique:BVA,Draft
+[NETWORK] no 5xx on /api/otp/request",An invalid value triggers a request and a generic 'Something went wrong'; a 5xx for the 255-char value; the 254-char control refused for length; no message at all,none (no state changed; no code was requested for a real account),VCST-5748 · Archetype:BOUNDARY · Technique:BVA | Promoted: REG-2026-10-15-1115 (2026-10-15),Automated
 OTP-005,"OTP sign-in — pasted code with spaces or letters, and a 5-digit code, submit correctly or not at all",Auth > OTP Sign-In > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
 OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE_ID}} with lockout enabled (each submitted wrong code counts one failed attempt - the case ends with a successful sign-in that resets it)","email={{USER_EMAIL}}, code=@td(OTP_INPUTS.malformedCodes), admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': {{USER_EMAIL}}
@@ -113,7 +113,7 @@ OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE
 [STATE] The real code afterwards signs the customer in {SPEC}","[API] POST /connect/token is sent for the spaced and seven-digit values only, with a 6-digit code parameter
 [CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 5xx on /connect/token",A pasted code with a space never submits; a letter reaches /connect/token; the five-digit value submits; more than one request per paste; cells show garbled digits,"Sign out through the account menu so the next case starts anonymous
-The final successful sign-in resets the failed-attempt counter of {{USER_EMAIL}}",VCST-5748 · Archetype:BOUNDARY · Technique:BVA,Draft
+The final successful sign-in resets the failed-attempt counter of {{USER_EMAIL}}",VCST-5748 · Archetype:BOUNDARY · Technique:BVA | Promoted: REG-2026-10-15-1115 (2026-10-15),Automated
 OTP-006,OTP sign-in — Resend code and Use a different email clear the previous error,Auth > OTP Sign-In > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
 OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} and {{USER2_EMAIL}} are contacts of {{STORE_ID}} with lockout enabled","email={{USER_EMAIL}}, email2={{USER2_EMAIL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': {{USER_EMAIL}}
@@ -144,7 +144,7 @@ OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} and {{USER2_EMAIL}} are
 [STATE] No leftover alert from the first account survives either transition (single error list) {OBSERVED}","[API] POST /api/otp/request is sent once per Continue and once per Resend, each 200
 [CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 5xx on /api/otp/request",The old 'code didn't work' error still shown after Resend or after switching address; cells keep the old digits; the second account's screen shows the first account's masked address,"Sign out through the account menu so the next case starts anonymous
-Complete one successful code sign-in for {{USER_EMAIL}} (request a code, read it from the journal, enter it) and sign out - this resets the two failed attempts counted on it",VCST-5748 · Archetype:LIFECYCLE · Technique:ST,Draft
+Complete one successful code sign-in for {{USER_EMAIL}} (request a code, read it from the journal, enter it) and sign out - this resets the two failed attempts counted on it",VCST-5748 · Archetype:LIFECYCLE · Technique:ST | Promoted: REG-2026-10-15-1115 (2026-10-15),Automated
 OTP-007,"OTP sign-in — with the store setting off, Sign in shows only the password form",Auth > OTP Sign-In > Storefront,High,,,"[PRE:CLEAR_SESSION]
 OtpSignIn.Enabled is on for {{STORE_ID}} at the start; admin credentials resolve
 Runs ALONE: this case flips a store-wide setting, so no other OTP case runs on {{STORE_ID}} at the same time (the API suite flips the same setting)","setting=OtpSignIn.Enabled false on {{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","--- SCREEN: Admin ---
@@ -163,7 +163,7 @@ Runs ALONE: this case flips a store-wide setting, so no other OTP case runs on {
 [STATE] Within the polling window the page does reflect the change (a setting that never propagates is the defect) {SPEC}","[ADMIN] the setting reads off in Stores > Settings > OTP Sign-In > General after Save
 [CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx except the asserted otp_disabled answer",The code form is still offered after the setting is off and a reload; the password form is missing; the page never reflects the change within 3 minutes; a code form that fails on Continue,"Turn OtpSignIn.Enabled back ON for {{STORE_ID}} in the same admin blade and Save - even if the case aborted midway
-Reload {{FRONT_URL}}/sign-in until the code form is offered again (confirms the restore reached the storefront)",VCST-5748 · Archetype:CONFIG · Technique:DT,Draft
+Reload {{FRONT_URL}}/sign-in until the code form is offered again (confirms the restore reached the storefront)",VCST-5748 · Archetype:CONFIG · Technique:DT | Promoted: REG-2026-10-15-1115 (2026-10-15),Automated
 OTP-008,OTP sign-in — homepage login section runs the same OTP flow,Auth > OTP Sign-In > Storefront,Low,,,"[PRE:CLEAR_SESSION]
 OtpSignIn.Enabled is on for {{STORE_ID}}
 The homepage of {{STORE_ID}} carries a login section block (Page Builder login-form-section). B2B-store has none on vcptcore_qa1: if {{FRONT_URL}} shows no login section the case is BLOCKED, not FAIL","email={{USER_EMAIL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/
@@ -203,7 +203,7 @@ OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE
 [STATE] Going back never shows a verify step that still holds the consumed code, and never re-submits it {SPEC}
 [STATE] A second POST /connect/token is not sent by Back or Forward {SPEC}
 [STATE] The session stays the signed-in customer; the page does not show an anonymous header after Back {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
-[NETWORK] no 4xx/5xx on /api/otp/request or /connect/token other than the one asserted",Back resurrects the verify step with the used code in the cells; a second token request fires; the header flips to anonymous,Sign out through the account menu so the next case starts anonymous,VCST-5748 · Archetype:REPLAY · Technique:EG,Draft
+[NETWORK] no 4xx/5xx on /api/otp/request or /connect/token other than the one asserted",Back resurrects the verify step with the used code in the cells; a second token request fires; the header flips to anonymous,Sign out through the account menu so the next case starts anonymous,VCST-5748 · Archetype:REPLAY · Technique:EG | Promoted: REG-2026-10-15-1115 (2026-10-15),Automated
 OTP-010,/sign-in OTP verify step — refresh mid-flow / during a redirect,Auth > OTP Sign-In > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
 OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE_ID}} with lockout enabled","email={{USER_EMAIL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': {{USER_EMAIL}}
@@ -224,7 +224,7 @@ OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE
 [DOM] The six cells of 'Code' are not shown after the reload, and no alert or spinner is shown {SPEC}
 [STATE] A fresh request after the reload completes sign-in normally {SPEC}
 [STATE] A reload after sign-in keeps the session {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
-[NETWORK] no 4xx/5xx on /api/otp/request or /connect/token other than the one asserted",A white screen or stuck spinner after reload; the verify step shown with an empty address; the second request fails because of leftover state,Sign out through the account menu so the next case starts anonymous,VCST-5748 · Archetype:REPLAY · Technique:EG,Draft
+[NETWORK] no 4xx/5xx on /api/otp/request or /connect/token other than the one asserted",A white screen or stuck spinner after reload; the verify step shown with an empty address; the second request fails because of leftover state,Sign out through the account menu so the next case starts anonymous,VCST-5748 · Archetype:REPLAY · Technique:EG | Promoted: REG-2026-10-15-1115 (2026-10-15),Automated
 OTP-011,/sign-in OTP verify step — two tabs on the same entity; sign-out or sign-in in one,Auth > OTP Sign-In > Storefront,Medium,BL-AUTH-007,,"[PRE:CLEAR_SESSION]
 OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE_ID}} with lockout enabled","email={{USER_EMAIL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","--- SCREEN: Tab A ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
@@ -250,7 +250,7 @@ OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE
 [NAV] After sign-out in tab B, tab A navigates to /account/orders and ends on /sign-in {SPEC}
 [DOM] Tab A does not show the previous customer's orders or name {SPEC}
 [STATE] No blank screen and no silent 401 loop in tab A {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
-[NETWORK] no 4xx/5xx on /api/otp/request or /connect/token other than the one asserted",Tab A keeps acting as the signed-out customer; /account/orders renders data after sign-out; a silent 401 leaves a blank page,Close tab B; Sign out through the account menu so the next case starts anonymous,VCST-5748 · Archetype:RACE · Technique:EG,Draft
+[NETWORK] no 4xx/5xx on /api/otp/request or /connect/token other than the one asserted",Tab A keeps acting as the signed-out customer; /account/orders renders data after sign-out; a silent 401 leaves a blank page,Close tab B; Sign out through the account menu so the next case starts anonymous,VCST-5748 · Archetype:RACE · Technique:EG | Promoted: REG-2026-10-15-1115 (2026-10-15),Automated
 OTP-012,/sign-in OTP verify step — session / token expires mid-flow,Auth > OTP Sign-In > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
 OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE_ID}} with lockout enabled","email={{USER_EMAIL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': {{USER_EMAIL}}
@@ -278,7 +278,7 @@ OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE
 [STATE] A fresh code after the expiry signs the customer in {OBSERVED}","[API] the expired grant answers 400 invalid_grant (code invalid_code)
 [CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /api/otp/request or /connect/token other than the one asserted",Unhandled 401 or blank screen after the expired code; the error shows a raw key; Resend does nothing after an expiry,"Sign out through the account menu so the next case starts anonymous
-The final successful sign-in resets the failed-attempt counter of {{USER_EMAIL}}",VCST-5748 · Archetype:FALLBACK · Technique:EG,Draft
+The final successful sign-in resets the failed-attempt counter of {{USER_EMAIL}}",VCST-5748 · Archetype:FALLBACK · Technique:EG | Promoted: REG-2026-10-15-1115 (2026-10-15),Automated
 OTP-013,"/sign-in OTP verify step — a dependency is blocked, slow, 500, or returns malformed JSON",Auth > OTP Sign-In > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
 OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE_ID}} with lockout enabled","email={{USER_EMAIL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, front={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Intercept POST /api/otp/request on the page (Playwright page.route)
@@ -348,7 +348,7 @@ OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE
 [ACT] Reset media emulation","[DOM] At 200% and 400% the six cells, 'Resend code' and 'Use a different email' are visible and clickable {SPEC}
 [DOM] document.scrollWidth <= viewport width on the 'Check your email' step at 200% and at 400% {SPEC}
 [DOM] At 400% the bounding boxes of the six cells and of 'Resend code' / 'Use a different email' do not intersect {SPEC}
-[DOM] With reduced motion and dark mode the step stays readable and no control is hidden {SPEC}",[CONSOLE] no TypeError or JS error on the page under test,Clipped or unreachable cells at zoom; text unreadable in dark mode; looping animation under reduced motion,Reset zoom and media emulation; Sign out through the account menu so the next case starts anonymous,VCST-5748 · Archetype:RENDER · Technique:EG,Draft
+[DOM] With reduced motion and dark mode the step stays readable and no control is hidden {SPEC}",[CONSOLE] no TypeError or JS error on the page under test,Clipped or unreachable cells at zoom; text unreadable in dark mode; looping animation under reduced motion,Reset zoom and media emulation; Sign out through the account menu so the next case starts anonymous,VCST-5748 · Archetype:RENDER · Technique:EG | Promoted: REG-2026-10-15-1115 (2026-10-15),Automated
 OTP-016,/sign-in OTP verify step - repeated activation of Resend code while a request is in flight (no paged list exists on this step; request-loop check),Auth > OTP Sign-In > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
 OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE_ID}} with lockout enabled","email={{USER_EMAIL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': {{USER_EMAIL}}
@@ -392,4 +392,4 @@ OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE
 [DOM] After each unbreakable paste 'Code' holds at most six digits and its six cells keep their single-row layout {SPEC}
 [STATE] No horizontal page scroll appears at any point {SPEC}
 [STATE] The real code afterwards signs the customer in {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
-[NETWORK] no 4xx/5xx on /api/otp/request or /connect/token other than the one asserted",Text painted outside the input; page widens with a horizontal scrollbar; a GUID or URL accepted into the cells; cells broken after the paste,Sign out through the account menu so the next case starts anonymous,VCST-5748 · Archetype:RENDER · Technique:EG,Draft
+[NETWORK] no 4xx/5xx on /api/otp/request or /connect/token other than the one asserted",Text painted outside the input; page widens with a horizontal scrollbar; a GUID or URL accepted into the cells; cells broken after the paste,Sign out through the account menu so the next case starts anonymous,VCST-5748 · Archetype:RENDER · Technique:EG | Promoted: REG-2026-10-15-1115 (2026-10-15),Automated

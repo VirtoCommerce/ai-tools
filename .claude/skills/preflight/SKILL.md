@@ -33,7 +33,10 @@ Keep the JSON; the consumer stores it as the `preflight` block of its `summary.j
 Its JSON carries the pre-flight under `preflight` (same `checks[]`, `verdict`, `facts`) plus the plan.
 Exit `2` NOT READY · `1` the selection itself cannot run (unknown id, missing CSV, no executor) · `3`
 could not run (also `1`: an `--accept` id that is not `drift:*`). `--run-id` makes that run's own `test-run-status.json` no lock. `3` — report its message and STOP, as for the change-scoped CLI. Gated suites (`preflight.gating.gated`) are already **out** of the plan: report each as
-`NOT_DEPLOYED` (BLOCKED-on-deploy), never FAIL. For step 4, run the same command without `--json`.
+`NOT_DEPLOYED` (BLOCKED-on-deploy), never FAIL. Suites in `preflight.secrets.gated` are out too: every case
+types a password nobody has — report them BLOCKED (`SECRET_UNDECLARED`), never FAIL. A `secret:*` WARN names
+the cases of suites that still run: they are BLOCKED without a sign-in attempt (typing an unregistered name
+sends the literal string and can lock a shared account). For step 4, run the same command without `--json`.
 
 ## Step 2 — MCP level 3: what is callable in THIS session
 

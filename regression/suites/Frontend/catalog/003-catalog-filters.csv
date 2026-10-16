@@ -14,17 +14,23 @@ Category with faceted products exists","url={{FRONT_URL}}","[NAV] Navigate to an
 [DOM] Result count label updates after each filter action","[NETWORK] no 4xx/5xx on filter request
 [CONSOLE] no TypeError or JS errors","Spinner >5s after filter click; facet panel not rendering; result count unchanged after filter; console TypeError","none","regression-qa-theme-26.csv","Automated"
 "CAT-005","Category - Price Range Filter","Catalog > Filters","High","BL-CAT-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
-Products with varying prices exist in category","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}}
+Products with varying prices exist in category; at least 2 eligible products whose amounts differ by >= 2 (live-discovered, see Steps).
+Documented limitation {DOC} (VirtoOZ xAPI Catalog, Filtering by price: ""Only the indexed prices may be used for filtration""): the storefront range filter price.<CUR>:(a TO b) and the price slider match the generic index field price_<currency>, which holds the MAX across all price lists by default (Pricing.Indexing.PriceIndexingValue), not the price list the shopper is priced from; per-list filtering is price.<cur>.<pricelistId>:(...). This case therefore asserts only on ELIGIBLE products, discovered live: eligible = cards whose indexed generic price_<cur> (admin GET {{BACK_URL}}/api/search/indexes/index/Product/{id}) equals the price shown on the card; cards that fail this, including variation parents showing 'From $X' that differs from the index, are logged, not asserted. xAPI/REST prices[] list only ONE price list even when the index carries a second one, so they cannot be used for eligibility.","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}} that lists several products
 [ASSERT] Locate price range filter (slider or min/max inputs)
-[ACT] Set minimum price value (choose any value above 0 that is below the page maximum)
-[ACT] Set maximum price value (choose any value that is above the minimum but below the page maximum)
+[SETUP] For each visible card read the displayed price; resolve its product id via admin POST {{BACK_URL}}/api/catalog/listentries with keyword = card name, then read the indexed price_<cur> (admin GET per the Preconditions rule); a variation parent showing 'From $X' IS eligible when X equals its indexed price -> {eligible} per the Preconditions rule
+[SETUP] From {eligible} take {p_lo} = lowest amount and {p_hi} = highest amount; require {p_hi} >= {p_lo} + 2, else choose another category; {win_lo} = floor({p_lo}); {win_hi} = {win_lo} + 1 (so the window contains {p_lo} and excludes {p_hi})
+[LOG] write {eligible codes+amounts, win_lo, win_hi} to evidence before applying the filter
+[ACT] Set minimum price value = {win_lo}
+[ACT] Set maximum price value = {win_hi}
 [ACT] Apply or confirm the price range filter
 [WAIT] Wait for product list to update
-[ASSERT] Verify all displayed products fall within the specified range","[DOM] Price range slider or input fields present
-[MATH] All displayed product prices are within the set min/max range (each price >= min AND <= max)
-[DOM] Products outside price range are not shown
+[ASSERT] Every eligible product with amount in [{win_lo}, {win_hi}] is displayed
+[ASSERT] No eligible product with amount outside [{win_lo}, {win_hi}] is displayed (the {p_hi} product is gone)
+[ASSERT] Every displayed eligible product price is within [{win_lo}, {win_hi}] inclusive; non-eligible cards, if any, are logged only, not asserted","[DOM] Price range slider or input fields present
+[MATH] Every displayed eligible product has price >= {win_lo} AND <= {win_hi}
+[DOM] Eligible product priced {p_lo} (inside window) is present; eligible product priced {p_hi} (outside window) is not shown
 [DOM] Result count updates to reflect filtered set (count >= 0)","[NETWORK] no 4xx/5xx on price filter request
-[CONSOLE] no TypeError or JS errors","Price filter controls not rendering; products outside range still visible; result count unchanged; console TypeError","none","regression-qa-theme-26.csv","Automated"
+[CONSOLE] no TypeError or JS errors","Price filter controls not rendering; eligible product inside the window missing (lower bound or inclusivity wrong, or product dropped); eligible product above {win_hi} still visible (upper bound not applied); result count unchanged; console TypeError","none","regression-qa-theme-26.csv | Repaired 2026-10-15 (Stable 16 regression VCST-6042): price filter uses the indexed max price (documented)","Automated"
 "CAT-006","Category - Clear Filters","Catalog > Filters","Medium","BL-CAT-004",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 Filters applied to a category page","url={{FRONT_URL}}","[NAV] Navigate to any category page on {{FRONT_URL}}
 [ACT] Apply multiple filters (e.g., any facet value + price range)

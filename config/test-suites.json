@@ -4,7 +4,7 @@
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
     "generated": "2026-10-15",
-    "totalSuites": 156,
+    "totalSuites": 158,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -1166,7 +1166,7 @@
       "layer": "frontend",
       "concern": "non-functional",
       "priority": "P2",
-      "testCount": 58,
+      "testCount": 60,
       "estimatedMinutes": 17,
       "agent": "qa-testing-expert",
       "tags": [
@@ -2103,14 +2103,40 @@
     },
     {
       "id": "060b",
-      "name": "Page Builder — Field Types, Asset Library & Operations",
+      "name": "Page Builder — Field Types, Scheduling & Operations",
       "file": "regression/suites/Backend/page-builder/060b-page-builder-fields-assets.csv",
       "domain": "content-cms",
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 70,
-      "estimatedMinutes": 30,
+      "testCount": 58,
+      "estimatedMinutes": 17,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "cms",
+        "design",
+        "content",
+        "builder",
+        "assets",
+        "sprint"
+      ],
+      "requiresModules": [
+        "VirtoCommerce.PageBuilderModule"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "clickDriven": true
+    },
+    {
+      "id": "060c",
+      "name": "Page Builder — Asset Library (picker, pagination, references)",
+      "file": "regression/suites/Backend/page-builder/060c-page-builder-asset-library.csv",
+      "domain": "content-cms",
+      "layer": "backend",
+      "concern": "admin",
+      "priority": "P1",
+      "testCount": 45,
+      "estimatedMinutes": 13,
       "agent": "qa-backend-expert",
       "tags": [
         "cms",
@@ -3409,7 +3435,32 @@
       "concern": "functional",
       "priority": "P1",
       "testCount": 79,
-      "estimatedMinutes": 61,
+      "estimatedMinutes": 51,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "sales-rep",
+        "storefront",
+        "hub-dashboard",
+        "saved-layout",
+        "b2b",
+        "feature-gated"
+      ],
+      "requiresModules": [
+        "sales-rep"
+      ],
+      "customerApplicability": "reference",
+      "clickDriven": true
+    },
+    {
+      "id": "093b",
+      "name": "Sales Rep — Hub Plugin Delivery (Module Federation, storefront)",
+      "file": "regression/suites/Frontend/sales-rep/093b-sales-rep-hub-plugin-delivery.csv",
+      "domain": "sales-rep",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 16,
+      "estimatedMinutes": 10,
       "agent": "qa-frontend-expert",
       "tags": [
         "sales-rep",
@@ -3984,6 +4035,7 @@
         "092",
         "092b",
         "093",
+        "093b",
         "097"
       ]
     },
@@ -3998,6 +4050,7 @@
         "092",
         "092b",
         "093",
+        "093b",
         "096",
         "097"
       ]
@@ -4012,6 +4065,7 @@
         "092",
         "092b",
         "093",
+        "093b",
         "097"
       ]
     },

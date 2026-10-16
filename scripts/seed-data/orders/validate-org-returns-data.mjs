@@ -23,7 +23,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  ROLES, ORGS, PERSONAS, OTHER_RETURN, OWNED_ALIASES, FIXTURE_GAPS, SEED_SCRIPT, PASSWORD_TOKEN, BASE_ROLE,
+  ROLES, ORGS, PERSONAS, OTHER_RETURN, OTHER_STORE_RETURN, OWNED_ALIASES, FIXTURE_GAPS, SEED_SCRIPT, PASSWORD_TOKEN, BASE_ROLE,
   emailOf, accountEmailOf, authUsernameOf, orgEmailOf, upperVariant, fullNameOf, orgOrderNumber, validateOrgReturnsFixtureSet,
   spareOrderKeys, spareField, SPARE_FIELDS, RETURNABLE_LINE_FLOOR, declaredLineCapacity, ISOLATED_ORG_KEYS, orgDrift, ORG_STATUS,
 } from './org-returns-specs.mjs';
@@ -70,6 +70,7 @@ for (const p of PERSONAS) {
   expectStatic[p.alias] = e;
 }
 expectStatic[OTHER_RETURN.alias] = {};
+expectStatic[OTHER_STORE_RETURN.alias] = {};
 const scanGuid = (node, path, alias) => {
   if (typeof node === 'string') { if (GUID_RE.test(node)) fail(`${alias}: runtime GUID committed at ${path} (belongs in aliases.<env>.json)`); return; }
   if (node && typeof node === 'object') for (const [k, x] of Object.entries(node)) if (!k.startsWith('_')) scanGuid(x, `${path}.${k}`, alias);
@@ -127,13 +128,21 @@ else {
   if (!oth?.id || !oth?.number) fail(`${OTHER_RETURN.alias}: not seeded on ${TARGET_ENV}`);
   else if (oth.organizationId !== orgId.OTHER) fail(`${OTHER_RETURN.alias}: organizationId ${oth.organizationId} != ORG_RET_OTHER_ORG`);
   else if (oth.organizationId === orgId.VIEWER) fail(`${OTHER_RETURN.alias} sits in the VIEWER org — the leak probe is gone`);
+  // The other-store return: the VIEWER org's own return, moved OUT of the buyer's store — same org, different store, or it probes nothing.
+  const ost = ov[OTHER_STORE_RETURN.alias];
+  const osBuyer = PERSONAS.find((p) => p.key === OTHER_STORE_RETURN.persona);
+  const homeStore = expectStatic[osBuyer.alias].store_id;
+  if (!ost?.id || !ost?.number) fail(`${OTHER_STORE_RETURN.alias}: not seeded on ${TARGET_ENV}`);
+  else if (ost.organizationId !== orgId.VIEWER) fail(`${OTHER_STORE_RETURN.alias}: organizationId ${ost.organizationId} != ORG_RET_VIEWER_ORG`);
+  else if (!ost.storeId || ost.storeId === homeStore) fail(`${OTHER_STORE_RETURN.alias}: storeId ${ost.storeId} is not another store than ${homeStore} — the other-store probe is gone`);
+  else if (ost.orderId !== ov[osBuyer.alias]?.[spareField(OTHER_STORE_RETURN.spare, 'OrderId')]) fail(`${OTHER_STORE_RETURN.alias}: not on ${osBuyer.alias} spare ${OTHER_STORE_RETURN.spare}`);
   // Isolated sets: no seeded order may be attributed to the EMPTY org, and their member ids are theirs alone.
   for (const p of PERSONAS) {
     const r = ov[p.alias] || {};
     const orderOrgs = [r.orderOrganizationId].filter(Boolean);
     if (orgId.EMPTY && orderOrgs.includes(orgId.EMPTY)) fail(`${p.alias}: an order is attributed to ORG_RET_EMPTY_ORG — the zero-returns state can be broken`);
   }
-  if (!problems.length) ok(`runtime ids present and coherent for ${PERSONAS.length} personas + ${ORGS.length} orgs + ${OTHER_RETURN.alias}`);
+  if (!problems.length) ok(`runtime ids present and coherent for ${PERSONAS.length} personas + ${ORGS.length} orgs + ${OTHER_RETURN.alias} + ${OTHER_STORE_RETURN.alias}`);
 }
 
 if (LIVE) await live();
