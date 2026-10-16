@@ -20,14 +20,14 @@ claim protocol (§8). This file is the procedure; that file is the contract.
 /qa-run stable:16 W4 --handover     # stop here, leave it for someone else
 ```
 
-**Where each entry point starts.** A flag never skips a gate: the two questions (Step 4, Step 7) are asked
-whenever the wave reaches them, whatever flag brought it there.
+**Where each entry point starts.** A flag never skips a step: triage (Step 4) starts, and the GitHub question (Step 7)
+is asked, whenever the wave reaches them, whatever flag brought it there.
 
 | Wave status / flag | Starts at |
 |---|---|
 | `NOT_STARTED` + `--claim` | Step 1 |
 | `CLAIMED`, or `RUN_DONE` with `notRun` + `--continue` | Step 2 (then runs only what is not run yet) |
-| `RUN_DONE` with `untriaged > 0` — with no flag, `--triage`, `--publish` or `--handover` | **Step 4** (the triage question comes first) |
+| `RUN_DONE` with `untriaged > 0` — with no flag, `--triage`, `--publish` or `--handover` | **Step 4** (triage runs first) |
 | `RUN_DONE` with `untriaged = 0`, or `TRIAGED` | Step 6 |
 | `--handover` on `CLAIMED` (nothing ran) | Step 8 |
 
@@ -89,12 +89,11 @@ folder exists. It is used in Step 5, and its `ENV_CONFIG` / `DATA` rows tell you
    skipped), put anything not run into `notRun` (suite ids + case count + reason), set `untriaged` to the FAIL count,
    `status: RUN_DONE`. **Then go to Step 4 — a cut-short run too.**
 
-## Step 4 — ASK: triage now?
+## Step 4 — Triage starts on its own
 
-**Always ask, never skip,** whenever the wave is `RUN_DONE` with FAILs or BLOCKED cases that have no ledger row:
-"The wave has N FAIL (U without a verdict) and M BLOCKED. Run triage now?" — with the counts and what it costs (live
-re-checks of the real-bug candidates on the baseline). On *no*: go to Step 7 (publish the run as it is) or Step 8
-(handover) — the wave stays `RUN_DONE` with `untriaged` as it is, so the next owner is asked again.
+No question: as soon as the wave is `RUN_DONE` with FAILs or BLOCKED cases that have no ledger row, go to Step 5 and
+say in one line what is being triaged ("Triaging N FAIL (U without a verdict) and M BLOCKED"). It is stopped only if
+the user stops it.
 
 ## Step 5 — Triage
 
@@ -136,7 +135,7 @@ without the user's yes for that bug.
 
 ## Step 7 — ASK: put it in GitHub?
 
-**Always ask after triage**, and after a run the user chose not to triage: "Commit the wave and open a PR?" On *yes*:
+**Always ask after triage:** "Commit the wave and open a PR?" On *yes*:
 
 1. `npm run release:status -- stable-<N> --write`, then `npm run release:check -- stable-<N>` — must be green.
 2. Commit on the wave branch: `waves/<W>/` (state, ledger, report) and `PROGRESS.md`; the case / fixture repairs from
@@ -150,7 +149,7 @@ without the user's yes for that bug.
 
 ## Step 8 — Handover (`--handover`, or when stopping early)
 
-The Step 4 question comes first if the wave has FAILs without a verdict. Then leave the wave `RUN_DONE` (or `CLAIMED`
+Triage (Step 4) runs first if the wave has FAILs without a verdict. Then leave the wave `RUN_DONE` (or `CLAIMED`
 if nothing ran) with `notRun` filled in and a "Before the next owner continues" section in `report.md` — including
 where any unpushed repair lives — and go to Step 7 so it reaches git. Offer to unassign the sub-task. The next owner
 runs `/qa-run stable:<N> <wave> --continue`, which records the handover in `handovers`; the wave id stays.
@@ -162,6 +161,6 @@ runs `/qa-run stable:<N> <wave> --continue`, which records the handover in `hand
 - **One wave, one owner.** Write only this wave's `waves/<W>/`, the generated `PROGRESS.md`, and the suites you are
   repairing; never another wave's files ([`release-folder.md`](release-folder.md) §2).
 - **Parallel-safe or not at all:** own personas, no env-wide changes, no re-seed under a running wave (§7).
-- **Two questions are never skipped:** triage after any run (Step 4), GitHub after triage (Step 7) — whatever flag.
+- **Triage starts on its own after any run (Step 4); the GitHub question after triage (Step 7) is never skipped** — whatever flag.
 - **Outward-facing writes only on a yes:** tracker assignment, bug filing, push, PR. Never merge.
 - **Numbers from the run, not from memory** — totals from the consolidated report, counts from `release:status`.

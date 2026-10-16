@@ -1,5 +1,5 @@
 ---
-description: "Run any regression: a one-off selection (smoke, critical, full, suite ids), a sprint plan, or one wave of a stable-bundle regression that several QA run in parallel (claim → known ground → run → triage into the ledger → PR). After every run it ALWAYS asks whether to triage, and after triage ALWAYS asks whether to put the result in GitHub. Plans come from /qa-test-plan. The successor of /qa-regression, built to move into a plugin."
+description: "Run any regression: a one-off selection (smoke, critical, full, suite ids), a sprint plan, or one wave of a stable-bundle regression that several QA run in parallel (claim → known ground → run → triage into the ledger → PR). After every run it triages the failures automatically, and after triage ALWAYS asks whether to put the result in GitHub. Plans come from /qa-test-plan. The successor of /qa-regression, built to move into a plugin."
 argument-hint: "smoke | critical | full | <ids> | sprint[:XX-YY] | stable:<N> <wave> [--claim|--continue|--triage|--publish|--handover] | stable:<N> status [--cases <tier>] [--seed=…] [--teardown]"
 disable-model-invocation: true
 ---
@@ -22,14 +22,14 @@ then the file the argument needs, **whole**.
 
 | Argument | Read | Then |
 |---|---|---|
-| a selection group, suite ids, `sprint`, `sprint:XX-YY` | [`run.md`](../skills/qa-run/run.md) | run → **ask: triage?** → **ask: GitHub?** |
-| `stable:<N> <wave> [flag]`, `stable:<N> status` | [`run.md`](../skills/qa-run/run.md) + [`waves.md`](../skills/qa-run/waves.md) | claim → known ground → run → **ask: triage?** → ledger → **ask: file bugs?** → **ask: GitHub?** |
+| a selection group, suite ids, `sprint`, `sprint:XX-YY` | [`run.md`](../skills/qa-run/run.md) | run → triage (automatic) → **ask: GitHub?** |
+| `stable:<N> <wave> [flag]`, `stable:<N> status` | [`run.md`](../skills/qa-run/run.md) + [`waves.md`](../skills/qa-run/waves.md) | claim → pre-flight → known ground → run → triage into the ledger (automatic) → **ask: file bugs?** → **ask: GitHub?** |
 | bare `stable:<N>` | — | refuse; show `npm run release:status -- stable-<N>` (a release runs wave by wave) |
 
 ## Rules
 
-- **The two questions are never skipped** — "Run triage now?" after any run with FAIL or BLOCKED cases, "Put it in
-  GitHub?" after triage — whatever flag resumed the run.
+- **Triage is not a question:** it starts as soon as a run with FAIL or BLOCKED cases ends. **"Put it in GitHub?" is
+  never skipped** after triage — whatever flag resumed the run.
 - **Outward-facing writes only on a yes:** tracker assignment, bug filing, push, PR. **Never merge.**
 - **Parallel-safe on a shared environment:** own personas, no env-wide changes outside the exclusive wave, no re-seed
   under a running wave ([`release-folder.md`](../skills/qa-run/release-folder.md) §7).

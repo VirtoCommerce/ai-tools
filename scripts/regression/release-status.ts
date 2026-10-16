@@ -300,6 +300,11 @@ function checkOne(release: string): boolean {
     return false;
   }
   console.log(`release:check ${release}: OK — ${plan!.waves.length} waves, ${states.size} state files, ${ledger.length} ledger rows`);
+  // A planned suite the manifest does not have (yet) is a note, not a failure: it may land in another PR.
+  try {
+    const ids = new Set((JSON.parse(readFileSync(join(REPO_ROOT, "config/test-suites.json"), "utf-8")).suites ?? []).map((x: { id: string }) => x.id));
+    for (const w of plan!.waves) for (const id of w.suites) if (!ids.has(id)) console.warn(`  note: wave ${w.id} plans suite ${id}, which config/test-suites.json does not have on this branch`);
+  } catch { /* manifest unreadable: suites:lint reports it */ }
   return true;
 }
 

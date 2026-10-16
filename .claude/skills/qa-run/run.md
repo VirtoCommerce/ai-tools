@@ -23,15 +23,15 @@ report, promotion, teardown), with the selection resolved in §1. Every rule of 
 `--secrets`, the runners' observed-behaviour steps, batches of 3.
 
 This is the one dependency on the old command, and it is deliberate: `/qa-run` adds the planning, waves, ledger and
-the two questions around a pipeline that already works, and takes the pipeline over when it moves into a plugin
+the automatic triage and the GitHub question around a pipeline that already works, and takes the pipeline over when it moves into a plugin
 (SKILL.md §Moving into a plugin).
 
-## 3. After the run — the two questions, for EVERY scope
+## 3. After the run — triage, then one question, for EVERY scope
 
-1. **"Run triage now?"** — always asked when the run has FAIL or BLOCKED cases, with the counts and what it costs. On a
-   yes: [`/qa-triage-results`](../../commands/qa-triage-results.md) on the run id. A wave also feeds it the ledger
+1. **Triage runs automatically** as soon as the run has FAIL or BLOCKED cases — no question:
+   [`/qa-triage-results`](../../commands/qa-triage-results.md) on the run id. A wave also feeds it the ledger
    (`waves.md` Step 5).
-2. **"Put it in GitHub?"** — always asked after triage (and after a run the user chose not to triage). What goes in
+2. **"Put it in GitHub?"** — always asked after triage. What goes in
    depends on the scope:
    - one-off or sprint run: the case and fixture repairs the triage found, as one PR (repairs in their own commit),
      plus `reports/regression/history.json` if the run updated it;
@@ -40,4 +40,4 @@ the two questions around a pipeline that already works, and takes the pipeline o
 
    Branch from current `main`, the user's git identity, PR body in English, **never merge**.
 
-A question is never skipped because a flag resumed the run part-way; it is asked when the run reaches it.
+Neither step is skipped because a flag resumed the run part-way: triage starts, and the question is asked, when the run reaches them.
