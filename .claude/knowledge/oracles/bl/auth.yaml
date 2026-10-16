@@ -37,8 +37,8 @@ rules:
     violation_signal: Unverified user completes checkout; no verification prompt; expired link still works; verified status not persisted after sign-out/sign-in.
     status: ACTIVE
     verified:
-      date: 2026-10-03
-      by: REG-2026-10-02-2022
+      date: 2026-10-13
+      by: REG-2026-10-13-0035
   - id: BL-AUTH-003
     title: Account lockout after N failed attempts
     rule: "After a configurable number of consecutive failed login attempts (platform default: 5), the account is temporarily locked. During lockout, even correct credentials are rejected with a generic message (not revealing whether the account exists). Lockout duration is configurable. Successful login resets the failure counter."
@@ -81,8 +81,8 @@ rules:
     violation_signal: "Checkout pre-fills a shipping address while the policy is at its disabled value, or fails to pre-fill while it is at the previous-order value; pre-fill overwrites a delivery address already chosen on the shipment; pre-fill draws from the saved address book rather than the most recent order; a brand-new customer sees pre-filled data; addresses or saved cards from another account are displayed. NOTE: a returning customer seeing an empty address form under the **default** (disabled) policy is **expected** — do not file it."
     status: ACTIVE
     verified:
-      date: 2026-10-03
-      by: REG-2026-10-02-2022
+      date: 2026-10-13
+      by: REG-2026-10-13-0035
   - id: BL-AUTH-005
     title: RBAC 6-permission model
     rule: Every module in Virto Commerce follows the same permission-claim model built from a canonical base set — `access`, `read`, `create`, `update`, `delete` (the 5-permission module template in `ModuleConstants.cs`) — plus `export` on modules that support data export, and further module-specific extensions (e.g. Orders adds `read_prices` / `update_shipments`). The commonly-used "6-permission" shorthand = the base 5 + `export`. Permissions are assigned to roles, and roles are assigned to users. A user without `create` permission on a module must not see the "Create" button in Admin. API calls without the required permission must return 403 Forbidden.
@@ -198,6 +198,9 @@ rules:
       ref: Operator starts impersonating target → confirms banner → clicks the "Back to operator" row (`data-test-id="back-to-operator-row"`) → the `/connect/token grant_type=impersonate` call carries an **empty `user_id`** (no `grant_type=password`); the URL does **NOT** go to the sign-in route; after the navigation the account menu shows the operator name (not target).
     violation_signal: 'Stopping impersonation redirects to the sign-in route (operator must re-authenticate); account menu shows "Sign in" instead of operator name (session lost); a `grant_type=password` call is made. NOTE: a full-page navigation to the operator landing route **is expected by design** — it is NOT a violation (the operator token is persisted before the reload, so the session survives).'
     status: ACTIVE
+    verified:
+      date: 2026-10-13
+      by: REG-2026-10-13-0035
   - id: BL-AUTH-012
     title: Org-scoped lockout does not touch the global account
     rule: 'Setting `OrganizationMembership.IsLocked = true` for (userId, orgX) MUST NOT set `ApplicationUser.LockoutEnd`. `GET /api/platform/security/users/{userId}/locked` MUST remain `{"locked": false}`, and the user MUST still authenticate into any other organization whose membership is unlocked. (VCST-5028 — the exact regression the feature exists to prevent: the old handler globally locked the shared user.)'
@@ -267,6 +270,9 @@ rules:
       ref: "Unauthenticated `GET` to an `/api/platform/**` endpoint → 401, no `Location` header, body is not login-page HTML. Authenticated-but-forbidden call to an `/api/**` endpoint → direct 403 (not the old 302→AccessDenied→404 chain). A path that merely starts with the string \"api\" but isn't the `/api` segment (e.g. `/apiary/...`) is NOT treated as an API path. An AJAX/XHR request outside `/api` (e.g. SignalR hub negotiation) carrying `X-Requested-With: XMLHttpRequest` also gets a direct status code. Unauthenticated navigation to `/connect/authorize` still redirects (302) to the login page."
     violation_signal: An unauthenticated `/api/**` call returns 200 with login-page HTML, or a 302 with a `Location` header, instead of a direct 401; an authenticated-but-forbidden `/api/**` call falls through a 302→AccessDenied→404 chain instead of a direct 403; a path like `/apiary/...` is incorrectly treated as an API path (false-positive segment match).
     status: ACTIVE
+    verified:
+      date: 2026-10-13
+      by: REG-2026-10-13-0035
   - id: BL-AUTH-015
     title: Active organization resolves by a fixed 5-step chain over *accessible* orgs only
     rule: |-
@@ -343,3 +349,6 @@ rules:
       ref: '`POST /api/platform/security/login` with `{}`, `{"userName":null,"password":null}`, a missing `password` key, or an empty raw body → `400`. The same shape with a well-formed but unknown `userName` → `200` + `succeeded:false`. Assert no `stackTrace` in any response.'
     violation_signal: "`500 Internal Server Error` on a malformed or empty request body; a parameter-name leak such as `Value cannot be null. (Parameter 'userName')` surfacing to the caller; or an over-correction that starts rejecting previously-valid payloads with `400`."
     status: ACTIVE
+    verified:
+      date: 2026-10-13
+      by: REG-2026-10-13-0035

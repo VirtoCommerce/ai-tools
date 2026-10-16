@@ -24,6 +24,9 @@ rules:
       ref: 'Delete price list in Admin → storefront product shows "Unavailable" or equivalent, not "$0.00" → "Add to Cart" disabled → xAPI `products` query returns `price: null` or empty price object.'
     violation_signal: Product displays "$0.00" price after price list deletion; "Add to Cart" remains active; order can be placed for $0.
     status: ACTIVE
+    verified:
+      date: 2026-10-12
+      by: REG-2026-10-12-1659
   - id: BL-CROSS-002
     title: Catalog change → search lag → cart price mismatch window
     rule: After a product price or availability is changed in Admin, there is a 30-60 second window where the Elasticsearch index still reflects old data. During this window, the storefront may show stale prices. However, the cart/checkout must always use the server-side (current) price — not the cached search index price.
@@ -39,6 +42,9 @@ rules:
       ref: Change price in Admin → immediately check storefront listing (may show old price) → add to cart → cart must show the NEW price. After reindex → listing matches cart.
     violation_signal: Cart uses stale price from search index; order placed at old price after admin price increase; price mismatch between listing and cart persists beyond reindex window.
     status: ACTIVE
+    verified:
+      date: 2026-10-12
+      by: REG-2026-10-12-1659
   - id: BL-CROSS-003
     title: Module disable → API 404, Admin section removal, dependent degradation
     rule: When a module is disabled in Admin, its REST APIs return 404, its Admin SPA sections disappear, and its GraphQL schema types are removed. Dependent modules should degrade gracefully — not crash.
@@ -50,6 +56,9 @@ rules:
       ref: Disable module → its API endpoints return 404 → Admin menu item gone → dependent module shows appropriate fallback (not error screen) → re-enable → everything restored.
     violation_signal: API returns 500 instead of 404; Admin section still visible but broken; dependent module crashes; re-enable doesn't restore functionality.
     status: ACTIVE
+    verified:
+      date: 2026-10-12
+      by: REG-2026-10-12-1659
   - id: BL-CROSS-004
     title: Currency switch triggers multi-system recalculation
     rule: "When a user switches currency on the storefront, the following must all update atomically: (1) product prices switch to the new currency's price list, (2) cart line items recalculate using new prices, (3) shipping rates update for the new currency, (4) tax recalculates if rates differ. Products without prices in the new currency become unavailable."
@@ -82,8 +91,8 @@ rules:
     violation_signal: Inventory not decremented; email not sent; GA4 event missing or wrong revenue; order not in history; cart not cleared; any side effect missing.
     status: ACTIVE
     verified:
-      date: 2026-10-03
-      by: REG-2026-10-02-2022
+      date: 2026-10-12
+      by: REG-2026-10-12-1659
   - id: BL-CROSS-006
     title: Feature flag toggle → immediate behavior change
     rule: Store-level feature flags (e.g., `quotesEnabled`, `anonymousUsersAllowed`, `createAnonymousOrderEnabled`) take effect on the storefront without requiring a restart or redeployment. The storefront reads flags from xAPI on each page load. Module-level flags (e.g., module enable/disable) may require a platform restart. The distinction must be documented per flag.
@@ -98,8 +107,8 @@ rules:
     violation_signal: Flag change requires restart when it shouldn't; flag change has no effect until cache expires; storefront caches flags beyond one page load.
     status: ACTIVE
     verified:
-      date: 2026-10-03
-      by: REG-2026-10-02-2022
+      date: 2026-10-12
+      by: REG-2026-10-12-1659
   - id: BL-CROSS-007
     title: Admin entity deletion → cascade cleanup
     rule: "When a top-level entity is deleted in Admin, all dependent data must be cleaned up: (1) delete catalog → products, categories, prices, search index entries removed; (2) delete organization → members disassociated (not deleted), org-specific price lists unlinked; (3) delete store → associated virtual catalog unlinked, orders preserved (historical). No orphaned records should remain in the database."
@@ -111,6 +120,9 @@ rules:
       ref: "Delete a catalog → its products no longer appear in search, pricing, or any virtual catalog. Delete an org → members can still log in but have no org association. Check xAPI: no references to deleted entities."
     violation_signal: Orphaned products in search after catalog deletion; orphaned prices referencing deleted products; member accounts deleted with org; API returns references to deleted entities.
     status: ACTIVE
+    verified:
+      date: 2026-10-12
+      by: REG-2026-10-12-1659
   - id: BL-CROSS-008
     title: Organization switch → full context swap
     rule: "When a B2B user switches organization, ALL of the following must swap atomically: (1) cart — new org's cart loads, (2) addresses — new org's address book, (3) pricing — new org's price list, (4) lists/wish lists — new org's lists, (5) white labeling — new org's theme (if WL enabled), (6) quotes — new org's quotes. Partial swap (e.g., cart changes but prices don't) is a critical bug."
@@ -154,8 +166,8 @@ rules:
     violation_signal: Duplicate orders on retry; double payment charge; inventory decremented twice; different results on identical retry.
     status: ACTIVE
     verified:
-      date: 2026-10-03
-      by: REG-2026-10-02-2022
+      date: 2026-10-12
+      by: REG-2026-10-12-1659
   - id: BL-CROSS-011
     title: Graceful degradation when dependent service is down
     rule: "When a dependent service is unavailable (Elasticsearch down, payment gateway timeout, email service failure, analytics endpoint unreachable), the platform must degrade gracefully: (1) search down → show \"Search unavailable\" message, catalog browsing via categories still works; (2) payment gateway down → show error at checkout, don't create orphan orders; (3) email down → order still placed, email queued for retry; (4) analytics down → order still placed, events lost (acceptable)."

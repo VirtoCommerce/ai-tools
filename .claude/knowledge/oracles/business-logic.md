@@ -1483,6 +1483,7 @@ Transport-layer invariants for the xAPI GraphQL endpoint at `{BACK_URL}/graphql`
 - **Violation signal:** `elapsed_ms` exceeds threshold consistently (not just one spike); response time grows linearly with repetition (N+1 hint); timeout; 504 Gateway Timeout.
 - **Agents:** qa-backend-expert, test-runner-agent, regression-orchestrator, test-management-specialist, qa-testing-expert
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] XCC-GQL-018 failed in REG-2026-10-13-0035
 
 ### BL-GQL-003: GraphQL response data integrity `[P1-data]`
 - **Rule:** Successful GraphQL operations return data conformant to the schema's declared return type: (a) non-null fields are non-null in the response (resolver did not silently drop a required projection), (b) computed/derived fields (cart totals `total`/`subTotal`/`taxTotal`/`discountTotal`; index-backed price fields `price.actual`/`price.list`) are present and arithmetically consistent, (c) mutation responses include the full mutated entity, not a partial echo, (d) after-state queries reflect the mutation's effect — no stale read.
@@ -2250,6 +2251,7 @@ These invariants hold for any rendered customer-facing surface on the accessibil
 - **Source:** VCST-3435 (Done) — locking a user did not terminate active sessions; lock must dispose all session identifiers
 - **Source:** VCST-5933 (Done) — a locked-out member could still read organization orders; fixed
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] PLAT-069 failed in REG-2026-10-13-0035
 
 ### BL-PLAT-004: A dynamic property's value type governs which capabilities it may declare `[P2-ux]`
 - **Rule:** A dynamic property is defined against exactly one object type and becomes available, by that definition alone, on every entity instance of that type that implements the dynamic-properties contract — no separate per-instance registration step is required. Each property's declared value type (short text, long text, HTML, decimal, integer, boolean, date-time, measure, …) determines which structural capabilities it may legally combine: only value types whose registered capability allows it may be flagged as an array, a dictionary, or multilingual — boolean and date-time support none of the three, while short text supports all three.
@@ -2260,6 +2262,7 @@ These invariants hold for any rendered customer-facing surface on the accessibil
 - **Docs:** platform/developer-guide/docs/Fundamentals/Dynamic-Properties/using-DynamicPropertyAccessor.md (docs) — DynamicPropertyValueTypeCapability declares SupportArray/SupportDictionary/SupportLocalization per value type
 - **Source:** vc-platform `src/VirtoCommerce.Platform.Core/DynamicProperties/DynamicProperty.cs` (`ObjectType`, `ValueType`, `IsArray`, `IsDictionary`, `IsMultilingual`) + `DynamicPropertyValueTypeCapabilities.cs` — the static capability registry (boolean and date-time declare no array/dictionary/localization support; short text declares all three).
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] PLAT-080 failed in REG-2026-10-13-0035
 
 ---
 
@@ -2276,6 +2279,7 @@ These invariants hold for any rendered customer-facing surface on the accessibil
 - **Docs:** platform/developer-guide/docs/Tutorials-and-How-tos/How-tos/feature-flags.md (published) — the xAPI store query returns a settings block for the given storeId.
 - **Source:** vc-module-store `src/VirtoCommerce.StoreModule.Core/Model/Store.cs` — every store-level field (`Languages`, `Currencies`, `DefaultLanguage`, `DefaultCurrency`, `Catalog`, `Url`, `SecureUrl`, `Settings` via `IHasSettings`, `DynamicProperties`) is a property on the per-instance `Store` entity, not a shared or global record.
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] STORE-017, STORE-033, STORE-069 failed in REG-2026-10-13-0035
 
 ---
 
@@ -2406,16 +2410,16 @@ ticket or a docs page disputes (`status`).
 | SEO & URLs | BL-SEO-001–004 | 4 | 0 | 2 | 2 | 2 | 0 |
 | Profile & Member Data | BL-PROFILE-001 | 1 | 0 | 1 | 0 | 0 | 0 |
 | UI Display & Layout Stability | BL-UI-001–007 | 7 | 0 | 2 | 5 | 5 | 4 |
-| GraphQL xAPI Contract | BL-GQL-001–004 | 4 | 1 | 2 | 1 | 2 | 3 |
+| GraphQL xAPI Contract | BL-GQL-001–004 | 4 | 1 | 2 | 1 | 2 | 4 |
 | Loyalty & Mixed Cart | BL-LOY-001–020 | 19 | 10 | 7 | 2 | 10 | 0 |
 | Payment Processors | BL-PAY-001–004 | 3 | 3 | 0 | 0 | 2 | 0 |
 | White Labeling | BL-WL-001–006 | 6 | 0 | 2 | 4 | 4 | 0 |
 | Sales Rep | BL-SR-001–032 | 32 | 3 | 18 | 11 | 6 | 4 |
 | Accessibility | BL-A11Y-001–004 | 4 | 0 | 4 | 0 | 4 | 3 |
 | Customer Reviews | BL-CR-001–018 | 9 | 1 | 6 | 2 | 5 | 0 |
-| Platform Administration | BL-PLAT-001–004 | 3 | 0 | 2 | 1 | 3 | 0 |
-| Store Management | BL-STORE-001 | 1 | 0 | 1 | 0 | 1 | 0 |
+| Platform Administration | BL-PLAT-001–004 | 3 | 0 | 2 | 1 | 3 | 2 |
+| Store Management | BL-STORE-001 | 1 | 0 | 1 | 0 | 1 | 1 |
 | Agentic Commerce / UCP | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Analytics & Tracking | BL-GA4-001–004 | 4 | 0 | 4 | 0 | 3 | 0 |
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
-| **Total** | | **223** | **60** | **125** | **38** | **114** | **45** |
+| **Total** | | **223** | **60** | **125** | **38** | **114** | **49** |

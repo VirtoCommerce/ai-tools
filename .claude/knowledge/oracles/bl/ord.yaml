@@ -85,6 +85,9 @@ rules:
       ref: Attempt refund on "Authorized" (not captured) payment → rejected. Capture $100 → refund $30 → remaining refundable = $70. Refund another $80 → rejected (exceeds remaining). Void a payment → refund button absent.
     violation_signal: Refund allowed on uncaptured payment; partial refund exceeds captured amount; refund succeeds on voided payment; inventory auto-restored on refund without cancellation.
     status: ACTIVE
+    verified:
+      date: 2026-10-12
+      by: REG-2026-10-12-1659
   - id: BL-ORD-005
     title: Order number format and uniqueness
     rule: Every order receives a unique order number upon creation from the store-configurable `Order.CustomerOrderNewNumberTemplate` (default format `CO{date:yyMMdd}-{counter:D5}`, counter reset type `Daily` by default — configurable to `None`/`Weekly`/`Monthly`/`Yearly`). Because the counter resets each period, sequential numbering is only guaranteed **within the active reset period**, not globally — uniqueness across periods comes from the date component, not the counter alone. Order numbers must never be reused within the same reset period, even after cancellation. The order number is immutable after creation.
@@ -130,8 +133,8 @@ rules:
     violation_signal: Any illegal transition succeeds; Admin shows buttons for invalid states; API returns 200 on illegal transition.
     status: ACTIVE
     verified:
-      date: 2026-10-03
-      by: REG-2026-10-02-2022
+      date: 2026-10-12
+      by: REG-2026-10-12-1659
   - id: BL-ORD-007
     title: Shipment state machine (detailed)
     rule: |-
@@ -152,6 +155,9 @@ rules:
       ref: For each illegal transition, attempt via API → expect error. In Admin, verify available actions match current state. Tracking number required for `Send` transition.
     violation_signal: State skipped; shipment marked `Send` without tracking number; API allows illegal jump.
     status: ACTIVE
+    verified:
+      date: 2026-10-12
+      by: REG-2026-10-12-1659
   - id: BL-ORD-009
     title: Order status vocabulary
     rule: |-
@@ -200,6 +206,9 @@ rules:
       ref: "Place order → authorize → capture → ship → deliver. Open order change log in Admin → every transition recorded with correct actor and timestamps. Verify via API: `GET /api/order/customerOrders/{id}/changes` returns full history."
     violation_signal: Missing entries in change log; actor shows "system" for manual actions; timestamps out of order; change log entries editable.
     status: ACTIVE
+    verified:
+      date: 2026-10-13
+      by: REG-2026-10-13-0035
   - id: BL-ORD-010
     title: Order totals — one entry per distinct line currency, unique default-currency flag
     rule: "`CustomerOrder.OrderTotals[]` MUST contain exactly one entry per distinct currency present across `Items[].Currency`, `Shipments[].Currency`, and `InPayments[].Currency`. The entry whose `CurrencyCode == CustomerOrder.Currency` MUST have `isDefaultTotalCurrency = true`; no other entry may. Each entry's `total/subTotal/taxTotal/discountTotal` reflect only that currency's entities. A single-currency order → exactly 1 entry. The REST `WithOrderTotals` response group (bit 9 = 512) must be requested; without it `OrderTotals` is null (not empty)."

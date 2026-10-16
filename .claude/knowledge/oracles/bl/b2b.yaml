@@ -96,6 +96,9 @@ rules:
       ref: See BL-WL-002 (per-field merge) and BL-WL-003 (store master switch + record-level gating).
     violation_signal: Master switch OFF but WL still applied; whole-object override instead of per-field merge; an enabled org's branding suppressed merely by a disabled/absent store *record* (confusing the record flag with the master switch).
     status: ACTIVE
+    verified:
+      date: 2026-10-12
+      by: REG-2026-10-12-1659
   - id: BL-B2B-007
     title: Per-org JWT permission set is org-scoped; pageContext must match it
     rule: A JWT issued for org X MUST carry only the `permission[]` derived from `OrganizationMembership.Roles` for (userId, orgX); permissions from any other org MUST NOT appear. `pageContext.user.permissions` (the `me`/GetPageContext projection) MUST equal the active-org JWT `permission[]`. (VCST-5028.)

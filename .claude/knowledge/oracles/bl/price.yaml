@@ -26,8 +26,8 @@ rules:
     violation_signal: Cart total higher than expected; coupon discount amount equals percentage of list price instead of sale/tier price.
     status: ACTIVE
     verified:
-      date: 2026-10-03
-      by: REG-2026-10-02-2022
+      date: 2026-10-12
+      by: REG-2026-10-12-1659
   - id: BL-PRICE-002
     title: Tax calculation position
     rule: Tax is always calculated AFTER all discounts are applied. Tax base = (line total after discounts), not the pre-discount subtotal. Tax rate depends on the shipping address (destination-based).
@@ -64,8 +64,8 @@ rules:
     violation_signal: Price displays like "$12.5" or "$12.456", or rounding inconsistency between line total and cart subtotal.
     status: ACTIVE
     verified:
-      date: 2026-10-03
-      by: REG-2026-10-02-2022
+      date: 2026-10-12
+      by: REG-2026-10-12-1659
   - id: BL-PRICE-004
     title: Tiered/volume pricing boundaries
     rule: When a product has tiered pricing (e.g., 1-9 units = $10, 10+ units = $8), the lower price activates at exactly the threshold quantity. All units in the line use the same tier price (not split pricing).
@@ -116,6 +116,9 @@ rules:
       ref: Delete a price list → storefront products show "Unavailable" (not $0) → existing orders in Admin still display original prices → re-creating a price list with same products restores storefront availability.
     violation_signal: Product shows $0.00 after price list deletion; "Add to Cart" remains enabled; historical order prices change retroactively.
     status: ACTIVE
+    verified:
+      date: 2026-10-12
+      by: REG-2026-10-12-1659
   - id: BL-PRICE-007
     title: Organization-specific (contract) pricing
     rule: When an organization has a dedicated price list assigned, its members see contract prices that override the store default. Contract pricing takes precedence over catalog sale prices but is still subject to tier pricing within the contract list. Users not in the organization never see contract prices.
@@ -136,8 +139,8 @@ rules:
     violation_signal: Non-org user sees contract prices; org member sees store default instead of contract; cart uses wrong price list after org switch.
     status: ACTIVE
     verified:
-      date: 2026-10-03
-      by: REG-2026-10-02-2022
+      date: 2026-10-12
+      by: REG-2026-10-12-1659
   - id: BL-PRICE-008
     title: No floating-point money arithmetic
     rule: All monetary calculations must use decimal or integer-cent arithmetic internally. Floating-point rounding errors must never accumulate across line items — the sum of rounded line totals must equal the displayed subtotal. A discrepancy of even $0.01 between `sum(lineTotals)` and `cartSubtotal` is a bug.
