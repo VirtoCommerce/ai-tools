@@ -5,6 +5,7 @@
   "main": "config.js",
   "scripts": {
     "env:check": "node get_variables_env.js",
+    "env:use": "node scripts/env/use-env.mjs",
     "secrets:sync": "node scripts/maintenance/sync-playwright-secrets.mjs",
     "secrets:check": "node scripts/maintenance/sync-playwright-secrets.mjs --check",
     "secrets:sync:all": "node scripts/maintenance/sync-playwright-secrets.mjs --all",
