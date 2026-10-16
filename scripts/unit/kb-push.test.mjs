@@ -1354,8 +1354,10 @@ test('ownFlushDue is decided by the OLDEST line, not the file mtime', async (t) 
   t.after(() => rm(dir, { recursive: true, force: true }));
   const env = { KB_QUEUE_DIR: dir, KB_SESSION: 'ownflush' };
   const path = queuePath(env);
+  // A CHANGE, not an ask (VCST-6378): today's log lines alone are never due -- they wait for a change or
+  // for tomorrow -- so the pacing this test is about is only visible on a queue a push would take.
   const line = (minutesAgo, q) => JSON.stringify({
-    kind: 'ask', at: new Date(Date.now() - minutesAgo * 60_000).toISOString(), q,
+    kind: 'confirm', id: 'KB-AAAAAAAA', at: new Date(Date.now() - minutesAgo * 60_000).toISOString(), q,
   });
 
   assert.equal(await ownFlushDue({ env }), false, 'an empty queue is never due');
