@@ -39,8 +39,8 @@ CI runs. That raises the bar for Step 6, not lowers it.
 If any is missing, ask. If there is no local clone, offer to clone it. `<scratch>` is **the session
 scratchpad directory** — never `mktemp` or another temp path. Everything the skill creates lives
 there, under `pr-<pr>/` and `wt/` only: the hook [`review-pr-allow.mjs`](../../hooks/review-pr-allow.mjs)
-approves `Read`/`Grep`/`Glob` inside exactly those two subtrees, `WebFetch` of `docs.github.com` and a
-plain `prepare.mjs` command — nothing else (a `permissions.allow` block in the tracked settings was not
+approves `Read`/`Grep`/`Glob` inside exactly those two subtrees, `WebFetch` of the docs hosts in its
+`WEB_HOSTS` and a plain `prepare.mjs` command — nothing else (a `permissions.allow` block in the tracked settings was not
 applied; the hook's header has why). Use the paths **exactly as `prepare.mjs` prints them**. The lead takes the PR body, checks and a small diff from
 the summary's own fields, not by opening files. The clone and `<scratch>` are
 the only places outside the working directory this skill touches — the user named the clone.
@@ -54,8 +54,8 @@ reading goes to helpers.
 **Every helper is the [`pr-review-reader`](../../agents/pr-review-reader.md) agent** —
 `subagent_type: "pr-review-reader"`, with the `model` from the table. Its tools are `Read`, `Grep`,
 `Glob` and `WebFetch`: no shell, no edit, no write, no GitHub API. **Read-only is enforced by the
-agent's tool list, not asked for in a prompt** — so every change made during a review is made by the
-lead, in view of the user. Never dispatch a helper as `general-purpose` or any other type with a shell
+tool list, and what it reads by the agent's own hook** (scratch, these skills, docs hosts; reader mode
+of the hook above) — not asked for in a prompt. Never dispatch a helper as `general-purpose` or any other type with a shell
 "because it would be faster"; the lead fetches instead.
 
 | Work | Helper model | The lead saves to `<scratch>` first |

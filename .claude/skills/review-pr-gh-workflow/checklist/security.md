@@ -19,11 +19,12 @@ credentials?**
 - **`workflow_run`** runs privileged after another workflow — often one that a fork PR triggered.
   Artifacts, caches and outputs from the triggering run are attacker-controlled: downloading them and
   executing, extracting over the workspace, or interpolating their content is the same class.
-- **`issue_comment`, `pull_request_review`, `discussion`** and similar fire on actions outsiders can
-  take, and run with the default branch's workflow and secrets. Read the `if:` that gates on
+- **`issue_comment`, `discussion`** and similar fire on actions outsiders can take, and run with the
+  default branch's workflow and secrets (`GITHUB_REF` is the default branch). Read the `if:` that gates on
   `author_association`, team membership or actor; a missing or spoofable guard (matching a comment
   body, trusting `github.actor` on a re-run) is the finding.
-- **`pull_request` from a fork** has no repository secrets and a read-only token — so moving a job
+- **`pull_request` from a fork** — and `pull_request_review` / `pull_request_review_comment`, which run
+  on the PR's merge ref the same way — has no repository secrets and a read-only token. So moving a job
   *from* `pull_request` *to* `pull_request_target` "to get secrets" is the most common way this class
   is introduced. Dependabot-triggered runs get Dependabot secrets only; a PR that works around that by
   switching trigger is in scope here.
@@ -69,8 +70,7 @@ credentials?**
 - **Scope:** a new repository or organization secret the workflow starts reading — is it an
   environment secret behind protection rules where it should be (publish keys, production deploy)?
   The review cannot see environment rules; name the dependency.
-- Secrets in `if:` conditions are not available and evaluate empty — a guard written that way never
-  fires (`correctness.md`).
+- A `secrets.*` reference in `if:` — `correctness.md`, the *Conditions* item.
 
 ## Supply chain
 

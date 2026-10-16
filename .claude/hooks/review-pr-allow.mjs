@@ -13,12 +13,21 @@
 //     scratchpad/pr-<N>/ or …/scratchpad/wt/ — the only two subtrees prepare.mjs writes. Never a
 //     credential-looking file name (.env, *.pem, *.key, id_rsa…), never a Grep/Glob whose pattern
 //     climbs out (`..` or absolute).
-//   - WebFetch of https://docs.github.com/, https://docs.zizmor.sh/ or https://rhysd.github.io/actionlint/
-//     — GitHub semantics and the docs of the skill's two static tools.
+//   - WebFetch of a documentation page in WEB_HOSTS below — THE list of hosts the review cites; the
+//     skill, its checklists and the reader agent point here instead of naming hosts themselves.
 //   - Bash running prepare.mjs as ONE plain command (no control characters at all, no shell
 //     metacharacters, no quoting tricks) from the project directory, so the script that runs is
 //     this repository's, not one a PR planted under a worktree.
 // Everything else: prints nothing, so the normal permission rules decide.
+//
+// `reader` mode (argument `reader`) — the pr-review-reader agent's own PreToolUse hook (its frontmatter;
+// it runs only while that agent does). The inverse: DENIES every Read / Grep / Glob outside the review
+// scratch and the two review skills' own files (.claude/skills/review-pr-gh-workflow/, …/review-pr-virto/),
+// every credential-looking file name, every Grep/Glob without an explicit path, and every WebFetch
+// outside WEB_HOSTS. Read-only by tool list is not enough on its own: inside the project `Read` needs
+// no prompt (`.env.local`, `.mcp.json`), and WebFetch is a way out — a PR that talks the helper into
+// reading one and fetching a URL with it must hit a wall, not a prompt the user may click through.
+// Fails CLOSED to "deny" on any error. Prints nothing when the call is in bounds.
 // Paths are filtered lexically BEFORE the filesystem is touched: a UNC or device path never reaches
 // existsSync/realpath (on Windows that alone opens an SMB connection).
 // Fails CLOSED to "no decision" on any error — a hook bug must never widen access.
@@ -75,19 +84,46 @@ function inReviewScratch(p, cwd) {
 const climbs = (pattern) => typeof pattern === "string" &&
   (pattern.split(/[\\/]/).includes("..") || isAbsolute(pattern) || /^[A-Za-z]:/.test(pattern));
 
+// The review skills' own files, which a helper brief names (the checklist/ paths, review-pr-virto's
+// shared rules). Reader mode only — the lead reads them without a prompt anyway.
+const SKILL_DIRS = [".claude/skills/review-pr-gh-workflow", ".claude/skills/review-pr-virto"];
+function inSkillDocs(p, cwd) {
+  if (!PROJECT || typeof p !== "string" || !p || CONTROL.test(p) || /^(\\\\|\/\/)/.test(p)) return false;
+  const abs = isAbsolute(p) ? p : resolve(cwd ?? process.cwd(), p);
+  if (!existsSync(abs)) return false;
+  const target = real(abs);
+  if (!target) return false;
+  const rel = relative(PROJECT, target).split(sep).join("/");
+  return SKILL_DIRS.some((d) => rel === d || rel.startsWith(d + "/"));
+}
+
+// host → the path prefix a page must have there ("" = any). A new host the checklists cite goes here.
+const WEB_HOSTS = {
+  "docs.github.com": "",                       // GitHub Actions semantics
+  "docs.zizmor.sh": "",                        // static tools (static-tools.md)
+  "rhysd.github.io": "/actionlint/",
+  "learn.microsoft.com": "powershell",         // PowerShell (checklist/scripts.md); optional locale first
+  "www.gnu.org": "/software/bash/manual/",     // bash
+  "nodejs.org": "/api/",                       // Node
+};
+
+function webAllowed(url) {
+  try {
+    const u = new URL(url);
+    if (u.protocol !== "https:" || u.username || u.password || u.port || !Object.hasOwn(WEB_HOSTS, u.hostname)) return false;
+    const prefix = WEB_HOSTS[u.hostname];
+    if (prefix === "powershell") return /^\/([a-z]{2}-[a-z]{2}\/)?powershell\//i.test(u.pathname);
+    return u.pathname.startsWith(prefix);
+  } catch { return false; }
+}
+
 function decide(input) {
   const t = input.tool_name;
   const ti = input.tool_input ?? {};
   if (t === "Read") return inReviewScratch(ti.file_path, input.cwd) && !SENSITIVE.test(basename(ti.file_path));
   if (t === "Glob") return inReviewScratch(ti.path, input.cwd) && !climbs(ti.pattern);
   if (t === "Grep") return inReviewScratch(ti.path, input.cwd) && !climbs(ti.glob);
-  if (t === "WebFetch") {
-    try {
-      const u = new URL(ti.url);
-      return u.protocol === "https:" && (u.hostname === "docs.github.com" || u.hostname === "docs.zizmor.sh" ||
-        (u.hostname === "rhysd.github.io" && u.pathname.startsWith("/actionlint/")));
-    } catch { return false; }
-  }
+  if (t === "WebFetch") return webAllowed(ti.url);
   if (t === "Bash") {
     const cmd = ti.command;
     if (typeof cmd !== "string" || CONTROL.test(cmd) || !PREPARE.test(cmd)) return false;
@@ -96,6 +132,34 @@ function decide(input) {
     return !!PROJECT && !!cwd && cwd.toLowerCase() === PROJECT.toLowerCase();
   }
   return false;
+}
+
+// Reader mode: true = in bounds (no output), false = deny.
+function inBounds(input) {
+  const t = input.tool_name;
+  const ti = input.tool_input ?? {};
+  const local = (p) => inReviewScratch(p, input.cwd) || inSkillDocs(p, input.cwd);
+  if (t === "Read") return local(ti.file_path) && !SENSITIVE.test(basename(ti.file_path));
+  if (t === "Glob") return local(ti.path) && !climbs(ti.pattern);
+  if (t === "Grep") return local(ti.path) && !climbs(ti.glob);
+  if (t === "WebFetch") return webAllowed(ti.url);
+  return true; // the agent has no other tools; anything else is the normal rules' business
+}
+
+const deny = (reason) => process.stdout.write(JSON.stringify({
+  hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: reason },
+}));
+
+if (process.argv[2] === "reader") {
+  try {
+    const input = JSON.parse(readFileSync(0, "utf8"));
+    if (!inBounds(input))
+      deny("pr-review-reader: outside the review scratch, the review skills' files and the docs hosts " +
+        "(Grep/Glob need an explicit path) — list it under `requests` for the lead instead");
+  } catch {
+    deny("pr-review-reader guard: could not read the call — denied (fails closed)");
+  }
+  process.exit(0);
 }
 
 try {

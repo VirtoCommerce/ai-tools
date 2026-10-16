@@ -7,8 +7,11 @@
 - **Conditions.** An `if:` with no status function is implicitly `success() && …`, so a cleanup or
   notification step after a failure never runs; `always()` also runs on cancellation, where
   `!cancelled()` is usually meant. A step-level `if:` comparing a string to a boolean input, an
-  expression wrapped in quotes that makes it a non-empty (truthy) string, a `secrets.*` reference in
-  `if:` (not available there — it evaluates empty): each makes a condition constant.
+  expression wrapped in quotes that makes it a non-empty (truthy) string: each makes a condition
+  constant. A `secrets.*` reference in `if:` is worse: the `secrets` context is not available there
+  (*Using secrets*: "cannot be directly referenced in `if:` conditionals"), so the workflow file fails
+  validation (`Unrecognized named-value: 'secrets'`) and nothing in it runs. The safe shape is a
+  job-level `env:` from the secret and an `if:` on `env.*`.
 - **Failures that cannot fail the run.** `continue-on-error: true`, `|| true`, `set +e`, a pipeline
   without `pipefail` (per the docs, a `run:` with no `shell:` gets `bash -e`, while an explicit
   `shell: bash` gets `-eo pipefail` — so `cmd | tee log` can mask a failure only in the first; check the

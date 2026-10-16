@@ -19,6 +19,10 @@
 //     branch, the PR's pull ref, tags), `git worktree add/remove/prune` and `update-ref -d` of the
 //     ref it created. Git LFS is off (a PR's .lfsconfig must not pick a host); symlinks in the PR are
 //     checked out as plain files; the worktree skips node_modules/ and dist/ except the PR's own files.
+//   - No git hook and no fsmonitor runs: every git call points core.hooksPath at an empty temp
+//     directory (removed on exit). A relative hooksPath in the clone (husky's `.husky/_`) resolves
+//     inside the worktree, i.e. the PR's tree — so `worktree add`, `checkout` and every ref update
+//     would otherwise run a post-checkout / reference-transaction hook the PR wrote.
 //   - <scratch>: must be a session scratchpad (<tmp>/claude*/<slug>/<session>/scratchpad). Files are
 //     written only under <scratch>/pr-<pr>/, <scratch>/wt/pr-<pr>/ and <scratch>/wt/snapshot/, and
 //     `cleanup` / `snapshot-cleanup` delete exactly those.
@@ -26,7 +30,7 @@
 // stdout: one JSON summary. Everything large goes to files the summary names.
 
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
 
@@ -59,7 +63,11 @@ function ok(cmd, args) {
 const gh = (args, opts) => run("gh", args, opts);
 // core.longpaths per command, never written to the clone's config: the scratchpad path is long on
 // Windows, and the actions/ tree (vendored node_modules) passes MAX_PATH under it.
-const GIT_C = ["-c", "core.longpaths=true", "-c", "core.symlinks=false"];
+// The empty hooks directory: see the contract above. Absolute, fresh, ours — never a path a PR can write.
+const NO_HOOKS = mkdtempSync(join(tmpdir(), "review-pr-no-hooks-"));
+process.on("exit", () => rmSync(NO_HOOKS, { recursive: true, force: true }));
+const GIT_C = ["-c", "core.longpaths=true", "-c", "core.symlinks=false",
+  "-c", `core.hooksPath=${NO_HOOKS}`, "-c", "core.fsmonitor=false"];
 const git = (dir, args, opts) => run("git", [...GIT_C, "-C", dir, ...args], opts);
 const gitOk = (dir, args) => ok("git", [...GIT_C, "-C", dir, ...args]);
 const api = (path, jq) => gh(["api", path, "--paginate", ...(jq ? ["--jq", jq] : [])]);

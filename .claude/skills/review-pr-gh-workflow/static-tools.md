@@ -44,14 +44,22 @@ actionlint lints shell only inside `run:`; zizmor reads no script files. For a P
 `checklist/scripts.md` asks — same rules: optional, installed only on a yes, run on the changed files,
 compared against `<base>`.
 
-| Files | Tool | Command (in the worktree) |
-|---|---|---|
-| `*.sh`, bash in `.jq` wrappers | **shellcheck** | `shellcheck -S warning <files>` |
-| `*.ps1` | **PSScriptAnalyzer** | `pwsh -NoProfile -Command "Invoke-ScriptAnalyzer -Path <file> -Severity Warning,Error"` (module `PSScriptAnalyzer`) |
-| Node action `src/` | the action's own scripts | only what its `package.json` already defines (`lint`, `typecheck`/`tsc --noEmit`); never `npm install` scripts from the PR without a yes — that runs PR code |
+**Two classes, and the difference is code execution.** actionlint, zizmor and shellcheck *parse* the
+PR's files, and their configs (`.github/actionlint.yaml`, `zizmor.yml`, `.shellcheckrc`) are
+declarative — running them on the worktree, with the repository's config, is the rule above. The
+others below **execute code from the PR's tree** when run there, so they are a different ask:
 
-The repository's own linter config wins over the tool default (`.shellcheckrc`,
-`PSScriptAnalyzerSettings.psd1`, the action's eslint config), as for actionlint and zizmor above.
+| Files | Tool | Command | What from the PR it would execute |
+|---|---|---|---|
+| `*.sh`, bash in `.jq` wrappers | **shellcheck** | `shellcheck -S warning <files>` (in the worktree) | nothing |
+| `*.ps1` | **PSScriptAnalyzer** | `pwsh -NoProfile -Command "Invoke-ScriptAnalyzer -Path <file> -Severity Warning,Error -Settings <settings>"` | a `PSScriptAnalyzerSettings.psd1` from the PR can set `CustomRulePath` and load a `.psm1` from the PR — so `<settings>` is the **base** copy (`git show <base>:<path>` into `<scratch>`) or a built-in preset, always passed explicitly |
+| Node action `src/` | eslint / `tsc` | the user's own install, the config from **`<base>`** | `npm run <script>` runs the PR's `package.json`; an eslint flat config is JavaScript; `npx` resolves `node_modules/.bin` the PR may add |
+
+For the Node row, and for anything else that reads its config or binary from the worktree, the ask is
+worded as what it is — **"this runs code from the PR on your machine"** — and runs only on a yes to
+that wording; a yes to "run the linter" is not one. The safe default is to skip it and say so: the
+checklist pass covers the same files by reading. A PR that changes a linter config is itself read
+under `checklist/security.md` (it can turn checks off).
 
 ## Reading the output
 
