@@ -31,6 +31,10 @@
 // Paths are filtered lexically BEFORE the filesystem is touched: a UNC or device path never reaches
 // existsSync/realpath (on Windows that alone opens an SMB connection).
 // Fails CLOSED to "no decision" on any error — a hook bug must never widen access.
+// Known width, accepted: the scratch check matches this project's slug but not the session (any
+// session of this project, and of a project whose path differs only in punctuation, which the slug
+// folds); and SENSITIVE filters Read by name only — Grep content in the scratch can still print a
+// `.env` the PR itself added, which is PR data, not a credential of this machine.
 // Cost: one node start, ~220 ms measured on Windows. settings.json therefore registers it with an
 // `if` filter where one works — scratchpad Reads and the prepare.mjs command — so it never runs for
 // the ordinary Read / Bash calls of every other session in this repository. Grep, Glob and WebFetch
@@ -45,7 +49,10 @@ import { isAbsolute, relative, resolve, sep, basename } from "node:path";
 const SENSITIVE = /^(\.env.*|\.envrc|\.netrc|\.pgpass|\.npmrc|\.git-credentials|\.htpasswd|secrets\.json|credentials\.json|id_rsa.*|id_ed25519.*|.*\.(pem|key|pfx|p12))$/i;
 // Literal spaces only; arguments are paths (forward slashes, optionally in double quotes for a space),
 // numbers, refs and names — never $, backticks, backslashes, single quotes, globs or redirections.
-const PREPARE = /^node \.claude\/skills\/review-pr-gh-workflow\/prepare\.mjs( [A-Za-z0-9 "._\/:@+-]+)?$/;
+// `~` only inside a word (the 8.3 form `ANDREW~1` of the scratchpad, which is what a session is told on
+// Windows) — at the start of a word bash would expand it.
+const PREPARE = /^node \.claude\/skills\/review-pr-gh-workflow\/prepare\.mjs( [A-Za-z0-9 "._\/:@+~-]+)?$/;
+const TILDE_EXPANDS = /(^|[\s"=:])~/;
 const CONTROL = /[\x00-\x1f\x7f\u2028\u2029]/;
 
 function real(p) {
@@ -126,7 +133,7 @@ function decide(input) {
   if (t === "WebFetch") return webAllowed(ti.url);
   if (t === "Bash") {
     const cmd = ti.command;
-    if (typeof cmd !== "string" || CONTROL.test(cmd) || !PREPARE.test(cmd)) return false;
+    if (typeof cmd !== "string" || CONTROL.test(cmd) || !PREPARE.test(cmd) || TILDE_EXPANDS.test(cmd)) return false;
     // The relative script path resolves against the shell's cwd: only the project dir is trusted.
     const cwd = input.cwd ? real(input.cwd) : null;
     return !!PROJECT && !!cwd && cwd.toLowerCase() === PROJECT.toLowerCase();

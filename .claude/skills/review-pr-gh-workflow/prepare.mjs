@@ -83,7 +83,10 @@ function scratchDir(arg) {
     const rel = relative(r, dir);
     if (!rel || rel.startsWith("..") || isAbsolute(rel)) continue;
     const parts = rel.split(sep);
-    if (parts.length === 4 && /^claude(-[\w.-]+)?$/.test(parts[0]) && parts[3] === "scratchpad") return dir;
+    // parts[1] is this project's slug, as the hook checks it (the hook only lets this script run from
+    // the project directory, so cwd is the project).
+    if (parts.length === 4 && /^claude(-[\w.-]+)?$/.test(parts[0]) && parts[3] === "scratchpad" &&
+        parts[1].toLowerCase() === realpathSync.native(process.cwd()).replace(/[^A-Za-z0-9]/g, "-").toLowerCase()) return dir;
   }
   die(`not a session scratchpad: ${dir}`);
 }
@@ -92,7 +95,8 @@ function cloneDir(arg, repo) {
   if (!arg || !existsSync(arg)) die("clone does not exist");
   const dir = realpathSync.native(resolve(arg));
   const remote = git(dir, ["remote", "get-url", "origin"]).trim();
-  const m = remote.match(/github\.com[/:]([^/]+)\/([^/]+?)(\.git)?\/?$/i);
+  // github.com as the host: https://, ssh://git@ or the scp form git@github.com: — nothing in front.
+  const m = remote.match(/^(?:https:\/\/(?:[^@/]+@)?|ssh:\/\/git@|git@)github\.com[/:]([^/]+)\/([^/]+?)(\.git)?\/?$/i);
   if (!m || m[1].toLowerCase() !== OWNER.toLowerCase() || (repo && m[2].toLowerCase() !== repo.toLowerCase()))
     die(`clone's origin is ${remote}, not ${OWNER}/${repo ?? "*"}`);
   return dir;
@@ -101,7 +105,8 @@ function cloneDir(arg, repo) {
 const sub = process.argv[2];
 
 // ── fetch: save files of another repository at a ref (callees, census callers) ─
-//   → <scratch>/pr-<pr>/files/<owner>/<repo>@<ref>/<path>, one line per file on stdout.
+//   → <scratch>/pr-<pr>/files/<owner>/<repo>@<ref>/<path>; JSON {ref, commit, files, missing}.
+//   A path not at that ref goes to `missing` and the rest are still saved (a 404 is evidence).
 if (sub === "fetch") {
   const [, , , scratchArg, prArg, slug, refArg, ...paths] = process.argv;
   if (!scratchArg || !prArg || !slug || !refArg || !paths.length) die("usage: prepare.mjs fetch <scratch> <pr> <owner>/<repo> <ref|@default> <path>...");
@@ -111,17 +116,26 @@ if (sub === "fetch") {
   const scratch = scratchDir(scratchArg);
   // `@default` = the repository's default branch, resolved here so the lead needs no `gh api` call.
   const ref = refArg === "@default" ? gh(["api", `repos/${slug}`, "--jq", ".default_branch"]).trim() : refArg;
+  for (const path of paths)
+    if (!PATH_RE.test(path) || path.split("/").includes("..") || path.startsWith("/")) die(`bad path: ${path}`);
+  // The commit the ref names now — a branch pin moves, so the review notes which commit it read.
+  const commit = gh(["api", `repos/${slug}/commits/${encodeURIComponent(ref)}`, "--jq", ".sha"]).trim();
+  if (!/^[0-9a-f]{40}$/.test(commit)) die(`unknown ref in ${slug}: ${ref}`);
   const [owner, name] = slug.split("/");
   const root = join(scratch, `pr-${prArg}`, "files", owner, `${name}@${ref.replace(/\//g, "_")}`);
+  const result = { ref, commit, files: [], missing: [] };
   for (const path of paths) {
-    if (!PATH_RE.test(path) || path.split("/").includes("..") || path.startsWith("/")) die(`bad path: ${path}`);
-    const b64 = gh(["api", `repos/${slug}/contents/${path}?ref=${encodeURIComponent(ref)}`, "--jq", ".content"]);
-    if (!b64.trim() || b64.trim() === "null") die(`not a file at ${ref}: ${path}`);
+    // Read at the resolved commit, so every file of one call comes from the same tree.
+    const b64 = gh(["api", `repos/${slug}/contents/${path}?ref=${commit}`, "--jq", ".content"], { allowFail: true });
+    if (/\(HTTP 404\)/.test(b64)) { result.missing.push(path); continue; }
+    // Anything else that is not base64 — a directory (`null`), rate limit, auth — is an error, not "missing".
+    if (!b64.trim() || b64.trim() === "null" || !/^[A-Za-z0-9+/=\s]+$/.test(b64)) die(`not a file at ${commit}: ${path}: ${b64.trim().slice(0, 200)}`);
     const file = join(root, ...path.split("/"));
     mkdirSync(join(file, ".."), { recursive: true });
     writeFileSync(file, Buffer.from(b64.replace(/\s/g, ""), "base64"));
-    process.stdout.write(file + "\n");
+    result.files.push(file.replace(/\\/g, "/"));
   }
+  process.stdout.write(JSON.stringify(result, null, 1) + "\n");
   process.exit(0);
 }
 
@@ -173,7 +187,8 @@ if (sub === "log") {
   const scratch = scratchDir(scratchArg);
   const dir = join(scratch, `pr-${prArg}`, "runs");
   mkdirSync(dir, { recursive: true });
-  const text = gh(["run", "view", runId, "--repo", `${OWNER}/${repoArg}`, flag === "--failed" ? "--log-failed" : "--log"], { allowFail: true });
+  // No allowFail: gh's error text (run still in progress, no access) must not land in a .log file.
+  const text = gh(["run", "view", runId, "--repo", `${OWNER}/${repoArg}`, flag === "--failed" ? "--log-failed" : "--log"]);
   const file = join(dir, `${runId}${flag ? "-failed" : ""}.log`);
   writeFileSync(file, text);
   process.stdout.write(JSON.stringify({ file, bytes: Buffer.byteLength(text) }) + "\n");
@@ -261,7 +276,11 @@ const save = (name, text) => { writeFileSync(join(out, name), text); return join
 
 // ── Step 1: metadata, files, checks ─────────────────────────────────────────
 const p = JSON.parse(gh(["api", `repos/${OWNER}/${repo}/pulls/${pr}`]));
-const files = api(`repos/${OWNER}/${repo}/pulls/${pr}/files`, ".[].filename").split("\n").filter(Boolean).sort();
+const fileRows = api(`repos/${OWNER}/${repo}/pulls/${pr}/files`, '.[] | [.filename, (.previous_filename // "")] | @tsv')
+  .split("\n").filter(Boolean).map((l) => l.split("\t"));
+const files = fileRows.map(([f]) => f).sort();
+// A rename's old path: the API lists only the new one, `git diff --no-renames` lists both.
+const renamedFrom = new Set(fileRows.map(([, prev]) => prev).filter(Boolean));
 const body = p.body ?? "";
 save("body.md", body);
 save("files.txt", files.join("\n") + "\n");
@@ -295,10 +314,11 @@ for (let i = 0; i < changedAtHead.length; i += 200)
   git(worktree, ["checkout", "HEAD", "--", ...changedAtHead.slice(i, i + 200).map((f) => `:(literal)${f}`)]);
 
 const head = git(worktree, ["rev-parse", "HEAD"]).trim();
-const local = git(worktree, ["diff", "--name-only", `${base}...HEAD`]).split("\n").filter(Boolean).sort();
+// --no-renames: the user's diff.renames and git's rename heuristic must not decide the comparison.
+const local = git(worktree, ["diff", "--name-only", "--no-renames", `${base}...HEAD`]).split("\n").filter(Boolean).sort();
 const mismatch = {
   head: head === p.head.sha ? null : { worktree: head, api: p.head.sha },
-  onlyLocal: local.filter((f) => !files.includes(f)),
+  onlyLocal: local.filter((f) => !files.includes(f) && !renamedFrom.has(f)),
   onlyApi: files.filter((f) => !local.includes(f)),
 };
 const verified = !mismatch.head && !mismatch.onlyLocal.length && !mismatch.onlyApi.length;
@@ -312,7 +332,7 @@ const counts = JSON.parse(gh(["api", "graphql", "-f",
 const threadFiles = {};
 if (counts.threads)
   threadFiles.threads = save("threads.json", gh(["api", "graphql", "--paginate", "-f", `owner=${OWNER}`, "-f", `repo=${repo}`, "-F", `pr=${pr}`, "-f",
-    "query=query($owner:String!,$repo:String!,$pr:Int!,$endCursor:String){repository(owner:$owner,name:$repo){pullRequest(number:$pr){reviewThreads(first:100,after:$endCursor){pageInfo{hasNextPage endCursor} nodes{isResolved isOutdated path line comments(first:50){nodes{author{login} body}}}}}}}"]));
+    "query=query($owner:String!,$repo:String!,$pr:Int!,$endCursor:String){repository(owner:$owner,name:$repo){pullRequest(number:$pr){reviewThreads(first:100,after:$endCursor){pageInfo{hasNextPage endCursor} nodes{isResolved isOutdated path line comments(first:50){totalCount nodes{author{login} body}}}}}}}"]));
 if (counts.reviews) threadFiles.reviews = save("reviews.json", api(`repos/${OWNER}/${repo}/pulls/${pr}/reviews`));
 if (counts.comments) threadFiles.conversation = save("conversation.json", api(`repos/${OWNER}/${repo}/issues/${pr}/comments`));
 
@@ -328,7 +348,7 @@ const overlapping = others
 
 process.stdout.write(JSON.stringify({
   pr: { number: pr, title: p.title, state: p.state, merged: p.merged, author: p.user?.login,
-        fork: p.head.repo?.full_name !== `${OWNER}/${repo}` ? p.head.repo?.full_name ?? "deleted" : null,
+        fork: p.head.repo?.full_name?.toLowerCase() !== `${OWNER}/${repo}`.toLowerCase() ? p.head.repo?.full_name ?? "deleted" : null,
         baseRef: p.base.ref, baseSha: p.base.sha, headSha: p.head.sha },
   // Forward slashes: the form to paste into the next prepare.mjs command (the hook rejects backslashes).
   scratch: scratch.replace(/\\/g, "/"), base, worktree, out, verified, mismatch: verified ? undefined : mismatch,

@@ -14,13 +14,15 @@ On the changed files only, in the worktree, writing to `<scratch>`:
 
 ```bash
 git -C <worktree> diff --name-only --diff-filter=d <base>...HEAD -- '.github/workflows/*' 'workflow-templates/*.yml' '**/action.yml' '**/action.yaml' > <scratch>/changed-workflows.txt
+grep -v 'action\.ya\?ml$' <scratch>/changed-workflows.txt > <scratch>/changed-for-actionlint.txt
 actionlint -version
-( cd <worktree> && actionlint $(grep -v 'action\.ya\?ml$' <scratch>/changed-workflows.txt) ) > <scratch>/actionlint.txt 2>&1
+[ -s <scratch>/changed-for-actionlint.txt ] && ( cd <worktree> && actionlint $(cat <scratch>/changed-for-actionlint.txt) ) > <scratch>/actionlint.txt 2>&1
 zizmor --version
-( cd <worktree> && zizmor --format plain $(cat <scratch>/changed-workflows.txt) ) > <scratch>/zizmor.txt 2>&1
+[ -s <scratch>/changed-workflows.txt ] && ( cd <worktree> && zizmor --format plain $(cat <scratch>/changed-workflows.txt) ) > <scratch>/zizmor.txt 2>&1
 ```
 
-actionlint does not lint composite actions, hence the filter. **Use the repository's own config**:
+actionlint does not lint composite actions, hence the filter. **An empty list skips the tool** — with
+no arguments actionlint lints every workflow in the repository, and its findings are not this PR's. **Use the repository's own config**:
 run from the worktree root so `.github/actionlint.yaml` is picked up, and pass `--config zizmor.yml`
 to zizmor when the repository has one at its root (`VirtoCommerce/.github` does) — the review applies
 the repository's policy, not the tools' defaults. Prefer the tool versions the repository's own gate

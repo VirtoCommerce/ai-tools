@@ -13,10 +13,8 @@
   validation (`Unrecognized named-value: 'secrets'`) and nothing in it runs. The safe shape is a
   job-level `env:` from the secret and an `if:` on `env.*`.
 - **Failures that cannot fail the run.** `continue-on-error: true`, `|| true`, `set +e`, a pipeline
-  without `pipefail` (per the docs, a `run:` with no `shell:` gets `bash -e`, while an explicit
-  `shell: bash` gets `-eo pipefail` — so `cmd | tee log` can mask a failure only in the first; check the
-  *workflow syntax → shell* page for the shell actually used), a test step whose result only lands in an
-  artifact. On a job that gates a merge or a release, a swallowed failure is a
+  without `pipefail` (which shell keyword gives which flags: `scripts.md` §bash / sh), a test step
+  whose result only lands in an artifact. On a job that gates a merge or a release, a swallowed failure is a
   **major**.
 - **Job graph.** `needs:` that skips a job when a dependency is skipped (a skipped need skips
   dependants unless their `if:` says otherwise); outputs read from a job that is not in `needs`

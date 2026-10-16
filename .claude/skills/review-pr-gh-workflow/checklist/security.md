@@ -39,7 +39,7 @@ credentials?**
   interpolation of such a value; a value the event's actor cannot set (`github.sha`,
   `github.repository`, a numeric id) is not one.
 - **Writes to `$GITHUB_ENV`, `$GITHUB_OUTPUT`, `$GITHUB_PATH`** with untrusted content: a newline in
-  the value lets the attacker set another variable (`LD_PRELOAD`, `NODE_OPTIONS`, `PATH`) for every
+  the value lets the attacker set another variable (`LD_PRELOAD`, `BASH_ENV`, `PATH`) for every
   later step. Flag unsanitised `echo "X=$UNTRUSTED" >> "$GITHUB_ENV"`; the multiline delimiter form
   with a random delimiter is the safe shape.
 

@@ -42,8 +42,8 @@ Claims about shell or runtime behaviour cite the page they rest on, on a host in
   right-hand side when a literal match is meant. Shellcheck (`static-tools.md`) catches most of it.
 - **`jq`**: `--arg`/`--argjson` for values, never string-built filters; `-e` when "null" must fail;
   `-r` output piped onward unquoted.
-- **Portability**: GNU-only flags (`sed -i ''`, `date -d`, `base64 -w`) in an action that may run on
-  macOS or Windows runners (Git Bash).
+- **Portability**: GNU-only forms (`sed -i` with no suffix argument, `date -d`, `base64 -w`) fail on
+  macOS runners, and the BSD form `sed -i ''` fails on Linux and in Git Bash on Windows (both GNU).
 
 ## PowerShell (`pwsh`, `powershell`, `.ps1`)
 
