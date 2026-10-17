@@ -39,6 +39,9 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Measure backend work per request / prove a perf change** | `/qa-perf-measure <ticket-key> \| <surface> [--ab a:b] [--scale] [--load]` | Command |
 | **Audit component/page design + UX + design spec** | `/qa-design component \| page \| flow [--storefront-only] [--design <project>]` | Command |
 | **Spin up a local VC stack** | `/qa-local-env [VCST-XXXX] [postgres\|mysql\|sqlserver]` | Command |
+| **Run a ticket's PR builds locally** (own folder and ports per ticket, your own DB; draft) | `/run-pr <TICKET> [repo#PR ...]` | Skill |
+| **Run a ticket from source locally** (clones, builds and links the changed repos; draft) | `/run-src <TICKET> [repo@branch ...]` | Skill |
+| **Start work on a ticket** (proposes repos, creates `feat/`/`fix/` branches, then `/run-src`; draft) | `/ticket-prepare <TICKET>` | Skill |
 | **Full test-case lifecycle (sync → … → promote)** | `/qa-test-lifecycle suite <ID> \| domain <name> \| PR #NNN \| module <name> \| diff [--promote-only]` | Command |
 | **Build a sprint test plan** | `/qa-test-plan SprintXX-YY \| current \| last` | Command |
 | **Generate coverage at scale** | `/qa-coverage-gap [analyze \| generate \| validate \| full \| domain <name> \| suite <ID>]` — run per domain | Skill |
