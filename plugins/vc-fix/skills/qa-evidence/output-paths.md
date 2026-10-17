@@ -48,11 +48,12 @@ whose file cannot be located is reported as missing, never assumed present.
 > smoke, exploratory, checklists, BA, test-lifecycle, coverage — none of that is shipped here).
 > This plugin actively uses: **Bug reports** (`reports/bugs/`), **Bug evidence**
 > (`reports/bugs/screenshots/`, `reports/bugs/api-traces/`), **Ticket test evidence**
-> (`reports/tickets/`), **Fix reports** (`reports/fixes/FIX-*/`), and **Monitoring summaries**
+> (the ticket's run folder — `knowledge/execution/run-env.md` §The run folder), **Fix reports** (`reports/fixes/FIX-*/`), and **Monitoring summaries**
 > (`reports/monitoring/MONITOR-*/`). Everything else is inert reference.
 
 | Artifact Type | Path | Examples |
 |---------------|------|----------|
+| **A ticket run's files** (`/qa-verify-fix`'s verification files and evidence page, an investigation package, a bug report filed in the run) | the ticket's run folder — `QA_OUTPUT_DIR` in `.env.local`, default `reports/tickets/<sprint>/<ticket-key>/<env>/` (`knowledge/execution/run-env.md` §The run folder) | `verification-summary.json`, `evidence-<UTCstamp>/`, `bugs/medium/BUG-*.md` |
 | **Test documentation** (plans, cases, execution reports, testrail CSVs) | `reports/tickets/SprintXX-XX/<ticket-key>/` | `test-plan.md`, `test-cases.md`, `test-execution-report.md`, `testrail-import.csv` |
 | **Test screenshots** (evidence captured during test execution) | `reports/tickets/SprintXX-XX/<ticket-key>/screenshots/` | `desktop/feature-overview.png`, `mobile/checkout-step3.png` |
 | **Bug reports — open** (active bugs) | `reports/bugs/open/<bucket>/` — `critical-high/` · `medium/` · `low/` (`.claude/rules/reports.md` §1a) | `BUG-Checkout-Payment-Overlap-iOS.md` |
@@ -109,6 +110,8 @@ reports/tickets/SprintXX-XX/<ticket-key>-feature-name/
   browser output (HAR, videos, console logs, un-kept captures) — never the path a report cites
 - `reports/` is tracked in git -- use it for all documentation artifacts (the top-level `tests/` dir now holds only repo unit tests, not QA evidence)
 - Never save test documentation into `test-results/` and never save raw browser dumps into `reports/`
-- **Never create `reports/<ticket-key>/` directly** — ticket folders belong under `reports/tickets/SprintXX-XX/<ticket-key>/` (sprint context) or `reports/tickets/<ticket-key>/` (ad-hoc, no sprint subfolder)
-- **Default for `/qa-bug` / `/qa-fix` / `/qa-verify-fix` evidence:** use `reports/tickets/<ticket-key>/` for ad-hoc evidence with no sprint context
+- **Never create `reports/<ticket-key>/` directly** — a ticket run's files belong in its run folder
+  (`knowledge/execution/run-env.md` §The run folder); other ticket folders belong under `reports/tickets/SprintXX-XX/<ticket-key>/` (sprint context) or `reports/tickets/<ticket-key>/` (ad-hoc, no sprint subfolder)
+- **Default for `/qa-bug` / `/qa-fix` / `/qa-verify-fix` evidence:** the ticket's run folder
+  (`node "$pluginRoot/scripts/env/run-folder.mjs" dir --ticket <ticket-key>`); `reports/tickets/<ticket-key>/` only when its template cannot resolve
 - See `reports/README.md` for full naming convention reference
