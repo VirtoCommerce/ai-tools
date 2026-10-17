@@ -137,7 +137,6 @@ Rationale, the charter derivation table and the record: [`exploratory-lane.md`](
    - [adversarial-heuristics.md](../skills/qa-sbtm/adversarial-heuristics.md) — Whittaker tours, FAILURE, HICCUPPS-F
    - [personas.md](../skills/qa-sbtm/personas.md) — Pick a persona that would see scenarios the charter author wouldn't
    - [modern-web-attack-surface.md](../skills/qa-sbtm/modern-web-attack-surface.md) — Cache/multi-tab/browser-feature probes
-   - The agent uses these to spot familiar problems faster — NOT as a sequential checklist.
 
 Delegate to **qa-testing-expert** (Task tool, `subagent_type: qa-testing-expert`) with the target area + the chosen discovery technique.
 
@@ -163,7 +162,7 @@ For each session, the agent should:
    - Visual glitches (overflow, alignment, z-index)
    - Accessibility issues (keyboard navigation, focus management)
 5. **Pursue every "huh"** — every unexpected observation gets at least 60 seconds of follow-up before being dismissed. The dismissed ones are the missed bugs.
-6. **Document findings** in `reports/exploratory/` with:
+6. **Document findings** in the session report (§Output) with:
    - Discovery charter and duration
    - Discovery technique used (which one from scenario-discovery.md)
    - **Net-new scenarios discovered** (mandatory, see Output section below)
@@ -182,13 +181,12 @@ For each session, the agent should:
 | `mobile` | Touch targets, scroll behavior, hamburger menu, form usability, viewport overflow | Impatient Buyer | Supermodel + Couch Potato |
 | `new` | Read the newest 1–2 months of `.claude/knowledge/domain/release-ledger.md` §2, drop anything `NOT_DEPLOYED` against the live probe, and focus exploration on what remains — **⚠ BREAKING** rows first | (depends on component) | Bad Neighborhood + Saboteur |
 
-Personas live in `skills/qa-sbtm/personas.md`. Tours live in `skills/qa-sbtm/adversarial-heuristics.md`.
-
 ---
 
 ## Output
 
-Write a session report to `reports/exploratory/SBTM-{charter}-YYYY-MM-DD.md`:
+Write a session report to `reports/exploratory/SBTM-{charter}-YYYY-MM-DD.md` — in `ticket` mode to
+`{RUN_DIR}/exploratory/`, the caller's run folder (`npm run --silent run:dir`):
 
 ```markdown
 # Exploratory Session: [Area]
