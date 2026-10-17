@@ -8,6 +8,48 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## Each run gets its own env and its own output folder — `vc-fix` `0.10.0` — 2026-10-17
+
+Two runs can now go in parallel in one checkout, whether they test two tickets or one ticket on a local
+stand and then a cloud one. Neither edits a shared file or writes the other's output. `vc-perf` and
+`vc-secrets` are unchanged.
+
+**Added: the env is a command argument, bound to the session (#471).** `/qa-test VCST-6314 vcptcore_dev`,
+and the same optional env on `/qa-test-fast`, `/qa-exploratory`, `/qa-deploy-pr` and
+`/vc-fix:qa-verify-fix ticket <KEY> [<env>]`. Step 0 binds it into `.vc-fix/session-env/<session id>`
+(`npm run env:use`; in the plugin, `scripts/env/use-env.mjs`). Every script the session and its subagents
+run resolves `TEST_ENV`, then that binding, then `.env.test-env`, then `vcst`. `env:check` and the
+`[config]` line name where the env came from.
+
+**Added: per-env passwords and one `--secrets` file for every env (#471).** `.env.playwright.<env>` holds
+one env's passwords, read as `KEY_<ENV>`. `npm run secrets:sync:all` writes `.env.playwright.all`, which holds
+every env's names as `NAME_<ENV>`. `enforce-secret-token` and `/preflight` read the combined file.
+
+**Added: one output folder per ticket and env (#472).** `QA_OUTPUT_DIR` in `.env.local` is a path template
+with optional `<ticket>`, `<env>` and `<sprint>`. A missing `<ticket>` or `<env>` is appended. Unset, the
+folder is `reports/tickets/<sprint>/<ticket>/<env>/`. `npm run run:use -- <KEY> [<env>]` (in the plugin,
+`scripts/env/run-folder.mjs use`) binds the env and the folder at Step 0. Everything a run writes lands
+there, and the scripts that write run output follow the binding: summary, verdict, checklist, strategy,
+test model, screenshots, evidence packages, bug drafts, the maps and GraphQL schema it refreshes, and
+`/qa-verify-fix`'s files.
+
+**Changed (`vc-fix`):**
+- `/qa-verify-fix` binds the env and the run folder at Step 0 and writes no `{SPRINT}` paths.
+- `/qa-bug` writes into a run folder's `bugs/` when its caller names one.
+- The tracker-comment hooks key their ledger `<TICKET>@<env>`.
+- The plugin's resolver reads `.env.playwright.<env>` and the session binding.
+- A ticket key may be a bare Azure Boards id.
+- In self-diagnostics, both copies of the `/qa-bug` expected-output marker also accept a run folder's bug
+  report.
+
+**Upgrade note.** Nothing has to change to keep today's behaviour. Without an env argument the run uses
+`.env.test-env` as before. Without `QA_OUTPUT_DIR` the run folder is the old ticket folder plus an `<env>/`
+level, and readers look in both layouts. A `QA_OUTPUT_DIR` outside the project needs
+`--allow-unrestricted-file-access` on the Playwright lanes, or each capture saved with a bare filename and
+moved in (`.claude/knowledge/execution/run-output.md` §Screenshots).
+
+---
+
 ## `vc-secrets`: a declared process gets its secrets at launch, not from a config file — catalog `0.11.0`, `vc-secrets` `0.1.0` — 2026-10-02
 
 **Added: the `vc-secrets` plugin** (`defaultEnabled: false`). An MCP entry calls the launcher instead of

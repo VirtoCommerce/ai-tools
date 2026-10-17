@@ -33,9 +33,11 @@ behind every step, the rationalization table and the red flags are in
 
 ## Step 0 — Pre-flight (inline)
 
-**Env first.** Bind this session's env per [`../knowledge/execution/run-env.md`](../knowledge/execution/run-env.md):
-`npm run env:use -- <env>` when the arguments name one, else `npm run env:use -- --default`. Every script below
-then resolves it, and its output fills the Environment line of every brief.
+**Env and run folder first.** `npm run run:use -- <TICKET> [<env>]` binds this session's env
+([`run-env.md`](../knowledge/execution/run-env.md); no env argument ⇒ the default) and its run folder
+`{RUN_DIR}` ([`run-output.md`](../knowledge/execution/run-output.md)). Every script below then resolves both, its
+output fills the Environment line of every brief, and **every file this run writes goes into `{RUN_DIR}`** —
+the domain map, mind map and GraphQL schema it builds or refreshes included (layout: run-output.md).
 
 1. **Route.** Fetch the ticket and route it per
    [`../knowledge/execution/ticket-routing.md`](../knowledge/execution/ticket-routing.md). Anything
@@ -47,11 +49,11 @@ then resolves it, and its output fills the Environment line of every brief.
    both runs probed the deployed modules) and MCP availability, and runs its own remediation loop. A `not-deployed:*`
    row is BLOCKED-on-deploy, never a FAIL. **No `--expect` here:** the PRs are found in Stage 1, where
    `/ticket-context` asks the same core per PR.
-3. **Prior artifacts are inputs.** For this ticket, glob `reports/tickets/*/<TICKET>/`,
-   `reports/ba/test-models/<TICKET>-*` and `reports/bugs/**`. A prior model is amended, never forked.
-   Prior bugs are the dedupe baseline `qa-bug` checks against. A prior run on a **different build**
-   supplies context, never results.
-   **A prior `summary.json` on the SAME build** is handled before anything runs:
+3. **Prior artifacts are inputs.** For this ticket, read the prior run folders `run:use` listed (every env),
+   `reports/ba/test-models/<TICKET>-*` (the older place) and `reports/bugs/**`. A prior model is amended into
+   `{RUN_DIR}/test-model.md`, never forked. Prior bugs are the dedupe baseline `qa-bug` checks against. A
+   prior run on a **different build** supplies context, never results.
+   **A prior `summary.json` on the SAME build** (this env's folder) is handled before anything runs:
    - Show its verdict, date and tracker comment id.
    - Ask once whether to re-run. A re-run overwrites that folder's files, so if they are uncommitted,
      ask the user to commit them first.
@@ -90,7 +92,7 @@ Full briefs, merge rules and the context bundle:
 5. **Wave 3.** Run `/qa-checklist <TICKET> --from-model --strategy <test-strategy.md> [--mind-map <slug>]`
    (always Mode 5, which reads no model when the strategy ran none; `--mind-map` only when the mind map
    ran) and write the result to
-   `reports/tickets/{SPRINT}/<TICKET>/testing-checklist.md`.
+   `{RUN_DIR}/testing-checklist.md`.
 6. **Stage gate.** The strategy gate passed and the round is approved. When a model ran, every model gate
    clause is `PASS`/`FIXED`. Every in-scope risk, scenario row and node is either an item or an omission
    line. Every item has a Data cell.
@@ -137,7 +139,7 @@ Triage, the verdict rules, the report shapes and the tracker comment:
    by ledger id ([`execution.md`](../skills/qa-test-fast/execution.md) §Data) and re-read.
 3. **Verdict.** Decide it per [`../skills/qa-test/close-out.md`](../skills/qa-test/close-out.md)
    §5-verdict.2.
-4. **Write the ticket folder:** `summary.json`, `verdict.md`, and the updated `testing-checklist.md`.
+4. **Write `{RUN_DIR}`:** `summary.json`, `verdict.md`, and the updated `testing-checklist.md`.
    Then run `npm run summary:validate`.
 5. **HTML page.** Load the `artifact-design` skill, fill in
    [`../skills/qa-test-fast/report-template.html`](../skills/qa-test-fast/report-template.html), and

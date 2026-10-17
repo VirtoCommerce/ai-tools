@@ -50,9 +50,9 @@ Apply the project's evidence capture policy and output path conventions. Use bef
 ### Output Paths
 | Artifact | Directory |
 |----------|-----------|
-| Test docs (plans, cases, reports) | `reports/tickets/SprintXX-XX/<ticket-key>/` |
-| Screenshots (test evidence) | `reports/tickets/SprintXX-XX/<ticket-key>/screenshots/` |
-| Bug reports | `reports/bugs/` |
+| Test docs (plans, cases, reports) | the ticket's run folder (`knowledge/execution/run-env.md` §The run folder) |
+| Screenshots (test evidence) | the run folder's `screenshots/` |
+| Bug reports | `reports/bugs/` — filed in a ticket run, the run folder's `bugs/` |
 | Bug evidence | `reports/bugs/screenshots/`, `reports/bugs/api-traces/` |
 | Regression reports | `reports/regression/` |
 | Raw browser artifacts (gitignored) | `test-results/{browser}/` |

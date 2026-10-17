@@ -264,7 +264,7 @@ Testing Complete: [Feature]
 Bugs: [list with severity]
 Decision: [APPROVED / CONDITIONS / BLOCKED]
 Blocking: [none or list]
-Full report: reports/tickets/SprintXX-XX/<ticket-key>/test-execution-report.md
+Full report: <run folder>/test-execution-report.md
 ```
 
 **Approval criteria:**

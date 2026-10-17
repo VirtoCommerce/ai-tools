@@ -12,7 +12,8 @@ If you observe anything live yourself, you are also an **Observer** and step 9 a
 2. The oracle domain: `npm run bl:extract -- --domain <slug>`, plus the ECL sections the domain's cases cite.
 3. The suites the domain map §4 names. Read Title + References + Automation_Status only; the steps
    are not needed. `npm run tc:scope` when the slice is unclear.
-4. Prior test models in `reports/ba/test-models/`: their Part 0 diagrams already hold states and variants.
+4. Prior test models in `reports/ba/test-models/` (and, inside a ticket run, `{RUN_DIR}/test-model.md`):
+   their Part 0 diagrams already hold states and variants.
 5. Seed spec modules for the domain (`scripts/seed-data/<domain>/*-specs.mjs`): their headers often
    record why a fixture has the shape it has, which is behaviour evidence (`DOC`).
 6. `kb` hits from pre-flight, and VirtoOZ.

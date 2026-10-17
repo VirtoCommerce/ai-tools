@@ -176,7 +176,7 @@ force it, is the one move this rule must not cause.
 
 Silence is the failure mode this pipeline is built against, so a below-floor finding lands in three places:
 
-1. Its **`reports/bugs/open/low/` draft stays** (a below-floor finding is `Low`/P3 by definition, so `low/` is always its folder — `.claude/rules/reports.md` §1a) (5-triage's `--fix` pass wrote it, or write it here). That is the
+1. Its **`{RUN_DIR}/bugs/low/` draft stays** (a below-floor finding is `Low`/P3 by definition, so `low/` is always its folder — `.claude/rules/reports.md` §1a) (5-triage's `--fix` pass wrote it, or write it here). That is the
    durable record, and what a human promotes from later if the finding recurs or the grade is disputed.
 2. **5-report's tracker comment names it** — count plus one line each, under `Not filed (below severity floor)`,
    with the draft path. A reviewer who wants it filed can say so; a reviewer who never sees it cannot.

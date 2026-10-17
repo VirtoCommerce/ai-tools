@@ -34,8 +34,9 @@
 
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, readdirSync, existsSync } from "node:fs";
-import { join, basename } from "node:path";
+import { join, basename, relative } from "node:path";
 import { fileURLToPath } from "node:url";
+import { sessionRunPath } from "../lib/run-dir.mjs";
 import { parse as parseYaml } from "yaml";
 
 // fileURLToPath, not .pathname — a space in the repo path URL-encodes to %20 and existsSync fails SILENTLY,
@@ -90,13 +91,22 @@ const maps = [];
 const slugSeen = new Map();
 const slugs = validSlugs();
 
-if (!existsSync(DOMAIN_DIR)) {
+// Inside a ticket run (scripts/lib/run-dir.mjs) the run's own copies in `<run folder>/knowledge/domain/` replace
+// the repo's same-named maps — a run writes the map it builds or refreshes there — and a map new in this run is
+// checked too. `--maps <dir>` names another overlay folder. Each map's `path` says which copy was read.
+const mapsAt = process.argv.indexOf("--maps");
+const OVERLAY = mapsAt !== -1 ? process.argv[mapsAt + 1] : sessionRunPath("domain");
+const sources = new Map();
+for (const dir of [DOMAIN_DIR, OVERLAY].filter((d) => d && existsSync(d))) {
+  for (const f of readdirSync(dir).filter((x) => x.endsWith(".md"))) sources.set(f, join(dir, f));
+}
+
+if (!sources.size) {
   console.log("[domain:check] no .claude/knowledge/domain/ — nothing to check");
   process.exit(0);
 }
 
-for (const file of readdirSync(DOMAIN_DIR).filter((f) => f.endsWith(".md"))) {
-  const path = join(DOMAIN_DIR, file);
+for (const [file, path] of [...sources].sort(([a], [b]) => a.localeCompare(b))) {
   const text = readFileSync(path, "utf8");
   const fm = frontmatter(text);
 
@@ -104,7 +114,8 @@ for (const file of readdirSync(DOMAIN_DIR).filter((f) => f.endsWith(".md"))) {
   if (!fm || !fm.domain_slug) continue;
 
   const slug = fm.domain_slug;
-  maps.push({ file, slug, rev: fm.rev, generated: fm.generated });
+  const shown = relative(ROOT, path);
+  maps.push({ file, slug, rev: fm.rev, generated: fm.generated, path: (shown.startsWith("..") ? path : shown).split("\\").join("/") });
 
   for (const key of REQUIRED) {
     if (!fm[key]) findings.push({ code: "DOMAIN-003", file, msg: `missing required frontmatter field \`${key}\`` });

@@ -70,7 +70,7 @@ Investigate a suspected bug using a structured 5-phase process: Reproduce → Is
    - Write bug report using templates in `skills/qa-defect/defect-report-templates.md` — reference the package artifacts, don't inline them (`reports.md` §8)
    - Include the **env header** (§1) and the **Fix Routing block** (owning layer + repo + `repoKind`, per `qa-bug.md` Step 4) so `/qa-fix` Gate 1 can confirm rather than re-derive
    - For regressions, add the **Regression block** (§8C Step 4): introducing commit/PR, first-bad & last-good versions, why it broke, revert-safe vs. fix-forward
-   - Save to `reports/bugs/`
+   - Save to `reports/bugs/` — inside a ticket run, `{RUN_DIR}/bugs/` ([`run-output.md`](../../knowledge/execution/run-output.md))
    - **Bank the platform behaviour you established** (not the verdict): matched an entry ⇒ `kb_confirm`, contradicted ⇒ `kb_dispute`, unrecorded ⇒ `kb_capture` (`.claude/knowledge/execution/kb-capture-contract.md`, nothing client-specific). Cite the ids in the report ([`authoring-standard.md`](../../knowledge/agents/authoring-standard.md) §5)
    - Optionally create JIRA ticket via Atlassian MCP
 

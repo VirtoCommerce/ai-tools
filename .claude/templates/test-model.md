@@ -1,7 +1,7 @@
 # Test Model template — `/qa-test` Step 1e
 
-Fill-in shape for the durable Test Model written to `reports/ba/test-models/<TICKET>-<date>.md`
-(`.claude/rules/reports.md` category 3). **The line cap is the `reports-policy.md` §2 row — read it
+Fill-in shape for the durable Test Model written to `{RUN_DIR}/test-model.md`, the ticket's run folder
+(`.claude/rules/reports.md` category 3; promoted by hand as `reports/ba/test-models/<TICKET>-<date>.md`). **The line cap is the `reports-policy.md` §2 row — read it
 there, never from here:** the number was transcribed into this file once as 220 and was stale from the
 day §2 raised it.
 
@@ -75,7 +75,7 @@ Gate and rules: [`test-model.md`](../skills/qa-test-model/test-model.md) §Strat
 
 ```
 TEST MODEL — <ticket-key>
-Strategy:    reports/tickets/<Sprint>/<TICKET>/test-strategy.md · Round N · Floors: <F10, F11 | none> · Risks: R2, R5   (clause 1)
+Strategy:    {RUN_DIR}/test-strategy.md · Round N · Floors: <F10, F11 | none> · Risks: R2, R5   (clause 1)
 Prior model: [path — Part 0 carried forward | none]
 Domain map:  [path @ rev N | ABSENT]   Mind map: [path — node ids | ABSENT]
 Chain position: [the links the MODEL risks cross, of the domain chain — and the links they do NOT]   (clause 11)

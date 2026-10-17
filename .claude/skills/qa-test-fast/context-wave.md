@@ -87,7 +87,7 @@ chain link and descent).
 
 `/qa-checklist <TICKET> --from-model --strategy <test-strategy.md> [--mind-map <slug>]`
 ([`../qa-checklist/from-model.md`](../qa-checklist/from-model.md) §With a strategy), written to
-`reports/tickets/{SPRINT}/<TICKET>/testing-checklist.md`. Always Mode 5: every in-scope risk is an item or
+`{RUN_DIR}/testing-checklist.md`. Always Mode 5: every in-scope risk is an item or
 an omission line, the model's scenarios are added when a model ran, and `--mind-map` is passed only when
 Wave 2 ran the map. The model's unresolved items and the
 strategy's `EXPLORE` risks are **not** checklist items. They are the exploratory charter

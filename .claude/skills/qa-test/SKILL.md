@@ -194,7 +194,7 @@ Test <ticket-key> on the [backend/frontend].
 
 Context: [what changed]
 Environment: {FRONT_URL} / {BACK_URL}   Browser: {BROWSER_SERVER}
-Screenshot output: reports/tickets/{SPRINT}/<ticket-key>/screenshots/
+Screenshot output: {SCREENSHOTS}   (run:use's line; a lane that refuses it saves a bare filename, then mv)
 
 Testing checklist (Artifact B): [from Step 3]
 Test data: [the @td()/{{VAR}} the cases use — confirmed seeded; resolve at runtime, never hardcode]
@@ -222,13 +222,13 @@ Per [`.claude/rules/reports.md`](../../rules/reports.md) §1 — that file is th
 
 | Artifact | Path | Category |
 |---|---|---|
-| `summary.json` (incl. `timing`, `bugs_not_filed`) | `reports/tickets/{SPRINT}/<ticket-key>/` | 6 |
+| `summary.json` (incl. `timing`, `bugs_not_filed`) | `{RUN_DIR}/` — the run folder, [`run-output.md`](../../knowledge/execution/run-output.md) | 6 |
 | `testing-checklist.md` (Artifact B) | same folder | 6 |
 | Evidence screenshots | same folder `screenshots/` | 6 |
 | `design-report.md` — **only when the Step-4 visual lane ran** (`visual_surface: true`) | same folder | 6 |
-| Test Model (FULL only) | `reports/ba/test-models/<TICKET>-<date>.md` | 3 |
+| Test Model (FULL only) | `{RUN_DIR}/test-model.md` | 3 |
 | New test cases | `regression/suites/<layer>/<module>/*.csv` | 2 |
-| Discovery session report (3x, FULL only) | `reports/exploratory/SBTM-<ticket-key>-<date>.md` | 8 |
+| Discovery session report (3x, FULL only) | `{RUN_DIR}/exploratory/SBTM-<ticket-key>-<date>.md` | 8 |
 
 `ac-analysis.md` and `test-execution-report.md` are **terminal-only** and have no reader beyond their own
 run — the AC table lives in working context and is folded into the one Step-5 chat report. Authoring plans

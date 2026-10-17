@@ -51,6 +51,11 @@ get a full-viewport capture instead, with the emitted code reading `page.screens
 toast: full viewport **1920×1080 / 302 KB**, the element **320×96 / 6 KB** — and only the second is
 legible once Jira scales it to `|width=700!`. `fullPage: true` cannot be combined with an element shot.
 - Browser configs set viewport to 1920x1080, HAR capture enabled, and isolated contexts. No `recordVideo` — motion evidence is a **GIF built from the run's own stills** (`npm run gif`), never a recorded video file; see `reports-policy.md` §5.2. The three desktop lanes render at 1920×1080; `playwright-mobile` (registered 2026-09-14) at 390×844 portrait. **`.mcp.json` is gitignored and per-machine** — a checkout missing the `playwright-mobile` entry loads that config not at all, and the tell is that `test-results/mobile/` never appears.
+- **A run folder outside the project needs `--allow-unrestricted-file-access`.** A Playwright lane writes
+  only inside its `--output-dir` and the project, so a `QA_OUTPUT_DIR` outside the project is reached either by
+  that flag in each Playwright lane's `.mcp.json` args (it also lifts the lane's limit on reading local files
+  and `file://` URLs, so it is the operator's call) or by capturing with a bare filename and moving the file
+  ([`run-output.md`](run-output.md) §Screenshots).
 
 ## `.mcp.json` Setup
 

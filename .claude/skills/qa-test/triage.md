@@ -21,7 +21,7 @@ HAR). Invoke **`/qa-triage-results <RUN_ID> --fix`** instead of re-deriving the 
 command owns: deterministic collection (`triage:collect`), per-batch classification via
 `ci/agents/regression-triage-agent.md`, live verification of HIGH-confidence `REAL_BUG`s, auto-application
 of confirmed test-case fixes via `/qa-review-tests --fix` for the *existing* Artifact-C suites (Step 3's own
-`--fix` pass only covers the newly-authored rows), and drafting confirmed bugs to `reports/bugs/`.
+`--fix` pass only covers the newly-authored rows), and drafting confirmed bugs into the run folder's `bugs/` ([`routing-and-fix.md`](../qa-triage-results/routing-and-fix.md) §The `/qa-bug` brief).
 
 Two side effects `/qa-test` gets nowhere else: the cross-run **flakiness history**
 (`triage:history` → `reports/regression/history.json`) and the fingerprint dedup store.
@@ -105,7 +105,7 @@ never re-graded at 5-file to move a finding across the line.
 
 ### 6. Dedup — every finding, regardless of source
 
-Glob `reports/bugs/**` + all `reports/tickets/Sprint*/`, and search the tracker. A match = PRE-EXISTING. A `/qa-triage-results`-confirmed bug
+Glob `reports/bugs/**` + all `reports/tickets/Sprint*/` + the ticket's run folders (their `bugs/`), and search the tracker. A match = PRE-EXISTING. A `/qa-triage-results`-confirmed bug
 still needs this tracker-wide check before 5-file can file it.
 
 **`--iterate` — the one exception, and it matters because this item runs AFTER item 4.** A match on a

@@ -1,5 +1,5 @@
 ---
-description: "Build or refresh a DOMAIN MAP — the feature-scoped, persistent answer to \"what is this thing and where are its surfaces\". Consolidates the per-ticket BA deliverables plus a live enumeration into .claude/knowledge/domain/<name>.md: actors, value chain, surface inventory per layer (back office / storefront / API), where the layers DISAGREE, the shape of existing QA coverage, and the open gaps. Built once per domain and cited thereafter, instead of re-derived per ticket. Read-only against the environment."
+description: "Build or refresh a DOMAIN MAP — the feature-scoped, persistent answer to \"what is this thing and where are its surfaces\". Consolidates the per-ticket BA deliverables plus a live enumeration into .claude/knowledge/domain/<name>.md (inside a ticket run, the run folder's knowledge/domain/): actors, value chain, surface inventory per layer (back office / storefront / API), where the layers DISAGREE, the shape of existing QA coverage, and the open gaps. Built once per domain and cited thereafter, instead of re-derived per ticket. Read-only against the environment."
 argument-hint: "<domain-slug> [--refresh] [--layers back-office,storefront,api] [--exclude <area>]"
 ---
 
@@ -48,6 +48,9 @@ so `--has-domain` accepts it and this command proceeds.
    i.e. it failed hardest on the domains that most need a map. `--has-domain` answers *declared*,
    `--domain` answers *populated*; this step wants the first.
 2. Resolve the target: `.claude/knowledge/domain/<name>.md` where a `domain_slug: <slug>` field matches.
+   **Inside a ticket run** (`npm run --silent run:dir` prints a folder) the run's copy in
+   `{RUN_DIR}/knowledge/domain/` comes first, and the build or refresh is written there, never to the shared
+   copy ([`run-output.md`](../knowledge/execution/run-output.md); `npm run run:use -- --clear` first to write the shared one).
    **Match on the field, not the filename** — a descriptive filename (`b2b-organizations.md`) and a
    mechanical slug (`b2b`) are both wanted, and the field is what reconciles them.
 3. **Exists and inside `stale_after_days`, with no `--refresh`?** → print its `rev`, `generated` date and
@@ -66,7 +69,7 @@ so `--has-domain` accepts it and this command proceeds.
 - The **prior art**: glob `reports/ba/**` for this domain's deliverables and `reports/ba/test-models/` for its models. Count the files and lines — the count is the argument for the map's existence.
 - Any **existing** map for an adjacent domain, so conventions match rather than diverge.
 - `config/test-suites.json` + the domain's suites, for §4.
-- The live-introspected `.claude/knowledge/api/graphql-schema.md` and its refresh date, when a contract layer is in scope.
+- The live-introspected `.claude/knowledge/api/graphql-schema.md` (the run's `{RUN_DIR}/knowledge/api/` copy once it refreshed one) and its refresh date, when a contract layer is in scope.
 - The domain's `BL-*` and `ECL-*` **for orientation only** — the map records *surfaces*, never rules.
 - **The PUBLISHED DOCS, via `/vc-docs` → VirtoOZ MCP — query EVERY guide the domain touches, not one.** A map covering back office + storefront needs **`PlatformUserGuide`** *and* **`StorefrontUserGuide`**; add `PlatformDeveloperGuide` / `StorefrontDeveloperGuide` / `FrontendSourceCode` for a contract layer, and `B2BExperts` for B2B. One guide answers for one audience, and **a disagreement between two guides about the same mechanism is itself a finding**. Context7 (`/virtocommerce/vc-docs`) is a fallback only.
   **VirtoOZ answers "how is it MEANT to work", never "what is new"** — its release corpus stops around Platform 3.917 while production is past 3.1050. A guide describing the pre-change behaviour is therefore **expected**, not a miss to retry; what turns it into a finding is the **live** check placed beside it.
@@ -80,6 +83,7 @@ oracles use. The brief must carry:
 
 | Must carry | Why |
 |---|---|
+| **The target path** — step 2's file | the agent writes that one file; inside a ticket run it is in `{RUN_DIR}`, never the shared copy |
 | **The shape file + the reference map, by path** | so the output is citable in the same shape as its siblings |
 | **The prior art as PATHS, never as a digest** | the agent has to triangulate each claim against a live check before it can carry `CONFIRMED`/`DRIFT`/`MISSING`/`UNVERIFIED`. A summary pre-answers the question the pass exists to ask ([`dispatch-pack.md`](../skills/qa-test/dispatch-pack.md)) |
 | **Deployed versions**, and the schema's refresh date | otherwise every field name it reads is of unknown age and it will say so — correctly, and uselessly |
@@ -164,8 +168,8 @@ drop it**: those rows are observations this map does not otherwise hold.
 
 | Artifact | Path |
 |---|---|
-| The map | `.claude/knowledge/domain/<name>.md` (`.claude/rules/reports.md` — knowledge, not a report category) |
-| A one-row citation | `CLAUDE.md` Detailed References, on a **first** build only |
+| The map | `.claude/knowledge/domain/<name>.md`; inside a ticket run `{RUN_DIR}/knowledge/domain/<name>.md`, promoted by hand (`.claude/rules/reports.md` — knowledge, not a report category) |
+| A one-row citation | `CLAUDE.md` Detailed References, on a **first** build of the shared map only (a run's build gets it at promotion) |
 
 **No report file.** The map *is* the deliverable.
 

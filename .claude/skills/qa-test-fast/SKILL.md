@@ -44,8 +44,8 @@ risks. The checklist needs the strategy, the model when one ran, and the mind ma
 
 | Stage | Writes | Never writes |
 |---|---|---|
-| 1 | `reports/tickets/{SPRINT}/<TICKET>/test-strategy.md` · `reports/ba/test-models/<TICKET>-<date>.md` (only when a risk is `MODEL`) · the domain map (only via `/qa-domain-map`) · the mind map (only via `/qa-test-mind-map`) · `testing-checklist.md` | suite CSVs, the tracker |
-| 2 | evidence under `reports/tickets/{SPRINT}/<TICKET>/screenshots/` · `design-report.md` (visual lane) · `AGENT-TEST-` entities (then deletes them) · the SBTM session file · a setting or fixture a Data cell names (`flip+restore` / `mutate` + its seeder part, re-read after) · the Results in `testing-checklist.md` (you, at the join) | any other shared fixture, other lanes' settings |
+| 1 | `{RUN_DIR}/test-strategy.md` · `{RUN_DIR}/test-model.md` (only when a risk is `MODEL`) · the domain map (only via `/qa-domain-map`, into `{RUN_DIR}/knowledge/domain/`) · the mind map (only via `/qa-test-mind-map`, same folder) · `testing-checklist.md` | suite CSVs, the tracker, anything under `.claude/knowledge/` |
+| 2 | evidence under `{RUN_DIR}/screenshots/` · `design-report.md` (visual lane) · `AGENT-TEST-` entities (then deletes them) · the SBTM session file · a setting or fixture a Data cell names (`flip+restore` / `mutate` + its seeder part, re-read after) · the Results in `testing-checklist.md` (you, at the join) | any other shared fixture, other lanes' settings |
 | 3 | `summary.json`, `verdict.md`, `triage-report.md` + the investigation packages (via `qa-triage-results`), bug reports **via `qa-bug`** · the Artifact page (shared with Anyone at Virto Commerce) + its `Page:` line · one tracker comment after a yes · kb entries | a status transition, a hand-written bug |
 
 ## Rationalization table (each row was produced by a baseline run without this skill)
@@ -57,7 +57,7 @@ risks. The checklist needs the strategy, the model when one ran, and the mind ma
 | "Pre-seed with the domain seeder first, then test." | Rule 3: data is made per item. A seeder runs only when an item's Data cell names it. A pre-seed wave is FULL's `3a`, not this flow. |
 | "The runner already saw it fail — call `qa-bug` straight away." | A runner's FAIL is a candidate, not a bug: it can be a wrong checklist item, stale data or an env blip. Triage classifies it, and `vc-fix:qa-investigate` reproduces it and finds the owning layer. Only then does `qa-bug` file it, from that package. |
 | "Triage is quick — I'll classify inline." | `qa-triage-results ticket` runs the same classifier as a regression run. Inline classification is the second copy of that taxonomy that drifts. |
-| "I'll write the bug reports into `reports/bugs/open/` myself." | Rule 1: `/vc-fix:qa-bug` does the 4-layer validation, the owning-repo resolution and the `/qa-fix` handoff block. A hand-written report has none of them. |
+| "I'll write the bug reports into `{RUN_DIR}/bugs/` myself." | Rule 1: `/vc-fix:qa-bug` does the 4-layer validation, the owning-repo resolution and the `/qa-fix` handoff block. A hand-written report has none of them. |
 | "The opening status hop is automatic." | Rule 2: this flow makes no transition, and that includes the opening one. |
 | "Contract refresh isn't needed for a verdict." | Without it, every `{DOC}` oracle on a GraphQL field is `{HYPOTHESIS}`. `schema:refresh` takes about 9 s. |
 | "A 120-line report is within the per-ticket cap." | The deliverable is the HTML page + a ≤60-line `verdict.md`. The cap is a ceiling, not a target. |
@@ -71,7 +71,7 @@ risks. The checklist needs the strategy, the model when one ran, and the mind ma
 
 ## Red flags — stop and re-read the six rules
 
-- You are about to `Write` a file under `reports/bugs/`.
+- You are about to `Write` a bug report yourself (under `{RUN_DIR}/bugs/` or `reports/bugs/`).
 - You are about to call `/vc-fix:qa-bug` for a finding that has no `vc-fix:qa-investigate` package.
 - You are about to call a tracker transition.
 - The Stage-2 message contains a `seed:*` call that no checklist item's Data cell names.

@@ -41,9 +41,11 @@ What the script does:
   empty, whether the trace ID is filled, and whether the worksheet's alternatives are ruled out. A clean
   `--check` is the gate before you write the bug report.
 
-Package location (matches `output-paths.md`):
-- `--sprint=<S>` → `tests/<S>/<TICKET>/evidence-<UTCstamp>/`
-- otherwise → `reports/tickets/<TICKET>/evidence-<UTCstamp>/` (ad-hoc, no sprint context)
+Package location — `<run folder>/evidence-<UTCstamp>/`
+([`run-output.md`](../../knowledge/execution/run-output.md)):
+- the session's bound run (`npm run run:use`) when it is this ticket's on this env;
+- otherwise the ticket's run folder for the env (`--sprint=<S>` fills a template's `<sprint>`);
+- a template that cannot resolve → `reports/tickets/<TICKET>/evidence-<UTCstamp>/` (ad-hoc).
 
 ---
 
