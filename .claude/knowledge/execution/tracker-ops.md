@@ -92,7 +92,8 @@ both flags dedupe against what is already on the issue, which is what makes a re
 It guards BOTH directions (`scripts/tracker/round-guard.mjs`): a second `--post` in the same round is
 refused (offering `--amend`), and an `--amend` of a comment recorded for a different `--artifact`, or
 older than 12 h with no artifact, is refused (offering a new post). It rejects a wiki-markup body (§5a), writes
-`.tracker-comments.json` and mirrors the id into `summary.json.tracker.comment_id`. Two hooks close the
+`.tracker-comments.json` — one entry per ticket **and env** (`<TICKET>@<env>`): a ticket tested on two envs is
+two runs, each with its own comment — and mirrors the id into the run folder's `summary.json.tracker.comment_id`. Two hooks close the
 loop for comments posted straight through the MCP: `.claude/hooks/record-tracker-comment.mjs` (PostToolUse)
 records the first id, `.claude/hooks/enforce-one-tracker-comment.mjs` (PreToolUse) blocks the second and
 prints the amend command. Both match every Atlassian MCP server id, treat a `commentId` call as an edit,
