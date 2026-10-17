@@ -1,5 +1,5 @@
 import { config } from 'dotenv';
-import { resolveTestEnv } from './scripts/lib/resolve-test-env.js';
+import { resolveTestEnv, testEnvChoice } from './scripts/lib/resolve-test-env.js';
 import { loadProjectProfile } from './scripts/lib/project-profile.mjs';
 
 // Layered env loader. Precedence (later overrides earlier):
@@ -51,7 +51,7 @@ if (!['dev', 'test', 'staging', 'production'].includes(ENV_RISK)) {
     process.exit(1);
 }
 
-console.log(`[config] TEST_ENV=${TEST_ENV} ENV_RISK=${ENV_RISK}`);
+console.log(`[config] TEST_ENV=${TEST_ENV} (from ${testEnvChoice('vcst').source}) ENV_RISK=${ENV_RISK}`);
 if (ENV_RISK === 'production') {
     console.log(`[config] ⚠ PRODUCTION-RISK ENV. Admin-write suites blocked unless --allow-admin-writes-on-prod is passed.`);
 }

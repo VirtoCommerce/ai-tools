@@ -34,12 +34,12 @@ The `ci:*` family drives the pipelines; `npm run env:check` validates env vars b
 
 Layered loader, keyed by `TEST_ENV` (default `vcst`). Validate: `npm run env:check`. Access: `import { env } from './config.js'`.
 
-Load order (later overrides earlier): `.env.defaults` → `.env.${TEST_ENV}` → `.env.local` → legacy `.env` (backwards-compat fallback).
+Load order (later overrides earlier): `.env.defaults` → `.env.${TEST_ENV}` → `.env.local` → `.env.playwright.${TEST_ENV}` (that env's passwords, applied as `KEY_<ENV>` promotion) → legacy `.env` (backwards-compat fallback). `.env.local` applies to EVERY env: a URL there overrides `.env.${TEST_ENV}` unless that file pins it as `BACK_URL_<ENV>=` (`resolveTestEnv()` warns otherwise).
 
 - **Per-env URLs/identifiers** (committed, no secrets): `.env.vcst` (current QA), `.env.vcptcore` (second QA), `.env.virtostart` (staging)
-- **Secrets** (passwords, API tokens): `.env.playwright.local`, `.env.local` only — gitignored
+- **Secrets** (passwords, API tokens): `.env.local`, and per-env `.env.playwright.<env>` (that env's passwords) — gitignored. The Playwright MCP `--secrets` file is generated from them: `.env.playwright.local` for one env (`npm run secrets:sync`), or `.env.playwright.all` for every env as `NAME_<ENV>` (`npm run secrets:sync:all`)
 - **Cross-env constants** (sandbox cards, builder.io): `.env.defaults`
-- Switch envs: `TEST_ENV=vcptcore npm run env:check` or `TEST_ENV=virtostart …`
+- Switch envs: `TEST_ENV=vcptcore npm run env:check` or `TEST_ENV=virtostart …`. **Per session:** a command's env argument (`/qa-test VCST-1234 vcptcore_dev`) or `npm run env:use -- <env>` binds this Claude Code session only, so two sessions in one checkout run two envs — order `TEST_ENV` → the session's binding → `.env.test-env` → `vcst` (`.claude/knowledge/execution/run-env.md`)
 - Agents read variable values via `process.env.X` — they don't care which file it came from. Variable *names* are stable across envs.
 - ES modules project — always use `.js` extensions in imports
 - URLs from env vars, never hardcoded. Default environment: vcst-qa

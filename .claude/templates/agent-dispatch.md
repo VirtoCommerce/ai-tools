@@ -13,7 +13,7 @@ You are executing {TASK_DESCRIPTION} for run {RUN_ID}.
 
 **Scope:**
 - Ticket/Suite/Feature: {SCOPE}
-- Environment: Frontend: {FRONT_URL} | Backend: {BACK_URL}
+- Environment: TEST_ENV={TEST_ENV} | Frontend: {FRONT_URL} | Backend: {BACK_URL} | Passwords: type {NAME_FORM} (e.g. ORG_USER_PASSWORD_{ENV} on .env.playwright.all, the bare name on a single-env file)
 
 **Browser:** {BROWSER_SERVER} (fallback: {FALLBACK_BROWSER})
 
@@ -112,7 +112,9 @@ Before starting a run, check for recent duplicate runs to avoid waste:
 
 ## Environment URLs
 
-Always read from `config.js` / `.env`. Never hardcode.
+Always read from `config.js` / `.env`. Never hardcode. The run's env is bound per session at its Step 0
+(`npm run env:use`, [`../knowledge/execution/run-env.md`](../knowledge/execution/run-env.md)), which prints the
+values the Environment line above carries.
 
 ```
 Frontend: FRONT_URL (storefront)

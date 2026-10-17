@@ -25,9 +25,38 @@ export declare function suiteSecretNames(root: string, ids?: Iterable<string> | 
 /** name → sources ("suite:089", "test-data", "role:ADMIN"). */
 export declare function deriveSecretNames(root: string): Map<string, Set<string>>;
 
-export interface SecretsFile { exists: boolean; env: string | null; values: Map<string, string> }
+/** The combined `--secrets` file (`npm run secrets:sync:all`): every env's passwords as `NAME_<ENV>`. */
+export declare const COMBINED_SECRETS_FILE: string;
 
-export declare function readSecretsFile(root: string): SecretsFile;
+/** `envs` is the combined file's env list, null for a single-env file. */
+export interface SecretsFile { path: string; exists: boolean; env: string | null; envs: string[] | null; values: Map<string, string> }
+
+export declare function readSecretsFile(root: string, path?: string): SecretsFile;
+
+/** The env list of a combined file's `# envs:` line, or null for a single-env file. */
+export declare function combinedEnvs(text: string): string[] | null;
+
+/** `{ env, name }` of an env-qualified name, by the longest env suffix; null when none matches. */
+export declare function splitQualifiedName(qualified: string, envs: Iterable<string>): { env: string; name: string } | null;
+
+/** The `--secrets` path in the nearest `.mcp.json` from `root` upwards (`${VAR}` expanded), or null. */
+export declare function declaredSecretsFile(root: string): string | null;
+
+export declare function combinedEnvCandidates(
+  root: string,
+  ambient?: Record<string, string | undefined>,
+): { envs: string[]; excluded: { env: string; reason: string }[] };
+
+/** Values, keyed `NAME_<ENV>` — for the writer of the combined file only. */
+export declare function combinedSecretValues(
+  root: string,
+  names: Iterable<string>,
+  options?: { ambient?: Record<string, string | undefined> },
+): {
+  entries: Map<string, { env: string; name: string; value: string }>;
+  envs: { env: string; written: number; missing: string[] }[];
+  excluded: { env: string; reason: string }[];
+};
 
 export interface SecretClassification { ok: string[]; unsynced: string[]; undeclared: string[] }
 

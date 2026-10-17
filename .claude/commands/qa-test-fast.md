@@ -1,6 +1,6 @@
 ---
 description: "[Testing] Use when a ticket needs a fast but GROUNDED test pass — more than /qa-test FAST's single-agent checklist, less than /qa-test FULL's verifier-gated pipeline. Context from the PR diff, the ticket and the domain map feeds an approved test strategy; its MODEL risks get a test model, and with the mind map they feed one traced checklist; the checklist and, when the strategy asks for one, an exploratory session run in parallel with test data made on the fly, plus the qa-design visual lane when the ticket is UI-visible; the run ends in a short human-readable verdict. feature-test route only."
-argument-hint: "<TICKET> [--layer fe|be|both] [--no-explore] [--no-visual] [--dry-run]"
+argument-hint: "<TICKET> [<env>] [--layer fe|be|both] [--no-explore] [--no-visual] [--dry-run]"
 disable-model-invocation: true
 ---
 
@@ -32,6 +32,10 @@ behind every step, the rationalization table and the red flags are in
    optional.
 
 ## Step 0 — Pre-flight (inline)
+
+**Env first.** Bind this session's env per [`../knowledge/execution/run-env.md`](../knowledge/execution/run-env.md):
+`npm run env:use -- <env>` when the arguments name one, else `npm run env:use -- --default`. Every script below
+then resolves it, and its output fills the Environment line of every brief.
 
 1. **Route.** Fetch the ticket and route it per
    [`../knowledge/execution/ticket-routing.md`](../knowledge/execution/ticket-routing.md). Anything

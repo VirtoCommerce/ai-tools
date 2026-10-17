@@ -26,6 +26,11 @@ context gathering, the Test Model, authoring and seeding that are 30+ minutes of
 
 ## 1a — Fetch the scope, classify type × status, route
 
+**Bind the env before anything else** — `npm run env:use -- <env>` when the arguments name one, else
+`npm run env:use -- --default` ([`../../knowledge/execution/run-env.md`](../../knowledge/execution/run-env.md)).
+Every script after it, the subagents' too, resolves that env, and its output fills every brief's Environment
+line. A `verify-fix` route keeps this binding: `/vc-fix:qa-verify-fix` run inline does not bind again.
+
 **Fetch first** — every later sub-part depends on these fields.
 
 - **Tracker ticket** — Atlassian MCP `getJiraIssue` (summary, Type, Priority, Status, Components, ACs). Not

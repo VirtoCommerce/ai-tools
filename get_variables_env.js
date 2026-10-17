@@ -1,9 +1,11 @@
 import { env } from './config.js';
+import { testEnvChoice } from './scripts/lib/resolve-test-env.js';
 
 // Mask values — never print raw secrets. Report presence + length only.
 // If you need to see a value, read the source env file directly.
 // config.js already logs the active TEST_ENV during import.
-console.log(`Active env layer: TEST_ENV=${process.env.TEST_ENV || 'vcst'} (default)`);
+const ENV_SOURCE = { TEST_ENV: 'TEST_ENV in the environment', session: "this session's binding (npm run env:use)", '.env.test-env': '.env.test-env', default: 'the default' };
+console.log(`Active env layer: TEST_ENV=${process.env.TEST_ENV || 'vcst'} (${ENV_SOURCE[testEnvChoice('vcst').source]})`);
 console.log('---');
 
 const report = (name) => {

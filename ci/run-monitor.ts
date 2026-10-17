@@ -1,6 +1,6 @@
 import "../scripts/lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { query } from "@anthropic-ai/claude-agent-sdk";
-import { config as loadEnv } from "dotenv";
+import { loadEnv } from "../scripts/lib/load-env.mjs";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 import {
@@ -20,23 +20,13 @@ import {
 } from "./lib/fingerprint-store.js";
 import { isAllowedRepo, routingReference, suggestRepo } from "../plugins/vc-fix/skills/qa-fix-routing/repo-router.js";
 
-// Layered env preload (gap-fill only — override:false, so CI `-e` values always
-// win). Lets `npm run ci:monitor` work locally without exporting vars by hand,
-// mirroring config.js load order. Secrets stay in .env.local. Runs before the
-// config constants below read process.env.
-loadEnv({ path: ".env.defaults" });
-loadEnv({ path: `.env.${process.env.TEST_ENV || "vcst"}` });
-loadEnv({ path: ".env.local" });
-// Per-env secret promotion (e.g. APPINSIGHTS_API_KEY_BACKEND_VCST → ..._BACKEND),
-// matching config.js so .env.local can carry per-env key variants.
-{
-  const sfx = `_${(process.env.TEST_ENV || "vcst").toUpperCase()}`;
-  for (const [k, v] of Object.entries(process.env)) {
-    if (k.endsWith(sfx) && v && !process.env[k.slice(0, -sfx.length)]) {
-      process.env[k.slice(0, -sfx.length)] = v;
-    }
-  }
-}
+// Layered env preload, gap-fill only: CI `-e` values always win (ambientWins). Lets
+// `npm run ci:monitor` work locally without exporting vars by hand: .env.defaults →
+// .env.<TEST_ENV> → .env.local, later wins, with config.js's per-env promotion (e.g.
+// APPINSIGHTS_API_KEY_BACKEND_VCST → ..._BACKEND), and TEST_ENV honours .env.test-env.
+// The hand-rolled version it replaces let the FIRST file win and ignored .env.test-env.
+// Runs before the config constants below read process.env.
+const { testEnv } = loadEnv({ fallback: "vcst", ambientWins: true });
 
 /**
  * Online Monitoring CI Pipeline
@@ -72,7 +62,7 @@ const SPIKE_MIN_DELTA = parseInt(process.env.MONITOR_SPIKE_MIN_DELTA || "20", 10
 const STORE_PATH = process.env.MONITOR_STORE || "reports/monitoring/.seen-fingerprints.json";
 // The store is shared across envs; the env is part of each fingerprint so vcst
 // and vcptcore signatures stay separate inside the one file.
-const MONITOR_ENV = process.env.TEST_ENV || "vcst";
+const MONITOR_ENV = testEnv;
 
 const FRONT_URL = process.env.FRONT_URL || "";
 const BACK_URL = process.env.BACK_URL || "";

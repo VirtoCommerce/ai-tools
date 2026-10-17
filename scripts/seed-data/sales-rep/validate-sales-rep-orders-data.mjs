@@ -30,6 +30,7 @@ import {
   validateAuthorshipShape, customerRoleFor, servedOrgKeysFor,
 } from './sales-rep-orders-specs.mjs';
 import { requiredProductSlots } from './sales-rep-stats-specs.mjs';
+import { resolveTestEnv } from '../../lib/resolve-test-env.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const readCsv = (rel) => parse(readFileSync(join(ROOT, rel), 'utf8'), { columns: true, skip_empty_lines: true, trim: true, relax_quotes: true, relax_column_count: true });
@@ -95,7 +96,7 @@ for (const r of dated) {
 if (dated.every((r) => pinned.get(r.org))) ok(`orgs pinned: ${[...new Set(dated.map((r) => r.org))].join(', ')}`);
 
 // 4. Are they in the window on this env RIGHT NOW? Time-dependent → a warning, never a hard failure.
-const env = process.env.TEST_ENV || 'vcst';
+const env = resolveTestEnv('vcst');
 console.log(`\n[4] aliases.${env}.json: rolling-window freshness at this instant (informational)`);
 const overlayPath = join(ROOT, 'test-data', `aliases.${env}.json`);
 const overlay = existsSync(overlayPath) ? JSON.parse(readFileSync(overlayPath, 'utf8')) : {};

@@ -32,6 +32,7 @@ import {
   V6_IS_READ_ONLY, laneLegs, findLaneReservationProblems, findDecidabilityProblems,
   isCurrentlyLocked, tokenSurvivesState,
 } from './membership-lock-specs.mjs';
+import { resolveTestEnv } from '../../lib/resolve-test-env.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const readCsv = (rel) => parse(readFileSync(join(ROOT, 'test-data', rel), 'utf8'), { columns: true, skip_empty_lines: true, relax_quotes: true, relax_column_count: true });
@@ -123,7 +124,7 @@ if (tokenSurvivesState('V2')) fail('V2 is reported as session-surviving, but a p
 if (!tokenSurvivesState('V4')) fail('V4 is reported as session-killing, but a PAST LockoutEnd leaves IsCurrentlyLocked false, so the handler does not fire — over-stating this costs a needless re-auth in every V4 case');
 if (!tokenSurvivesState(RESTING_STATE)) fail(`${RESTING_STATE} (unlock) is reported as session-killing, but the handler guards on the NEW state being currently-locked, so an unlock does not fire it`);
 
-const env = process.env.TEST_ENV || 'vcst';
+const env = resolveTestEnv('vcst');
 console.log(`\n[8] aliases.${env}.json: the ids the lock axis binds are resolvable (informational)`);
 const overlayPath = join(ROOT, 'test-data', `aliases.${env}.json`);
 if (!existsSync(overlayPath)) warn(`aliases.${env}.json does not exist — the lock axis is reproducible only on an env whose MULTI_ORG* aliases are seeded`);

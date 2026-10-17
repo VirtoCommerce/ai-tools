@@ -38,12 +38,9 @@ import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'csv-parse/sync';
-import { config as loadDotenv } from 'dotenv';
-// Layered, TEST_ENV-aware load (later files override) — matches config.js so the
-// seeder works across envs (vcst/vcptcore/localhost/...). No legacy root `.env`.
-loadDotenv({ path: '.env.defaults' });
-loadDotenv({ path: `.env.${process.env.TEST_ENV || 'vcst'}`, override: true });
-loadDotenv({ path: '.env.local', override: true });
+// Env: seed-common.mjs (imported below, so evaluated before this module's body) loads the layered
+// .env files and promotes the `_<ENV>` keys. A second load here re-applied .env.local over those
+// promoted values — BACK_URL / ENV_RISK / passwords fell back to the shared base keys.
 import { ensureVirtualCatalog, ensureFulfillmentCenter, ensureCategoryPath, seedCategoryTree, buildStoreSeo, verifyRemoved, auth as commonAuth, enrichProductContent, syncEnvAliases, idsParam, ensureCurrencies } from '../../lib/seed-common.mjs';
 // Orchestration source (single source of truth) — side-effect-free, shared with the guard.
 import {

@@ -27,17 +27,18 @@ import { readFileSync, readdirSync, statSync } from "fs";
 import { join, relative } from "path";
 import { parse as parseCsv } from "csv-parse/sync";
 import { TestDataResolver } from "../lib/test-data-resolver.js";
+import { resolveTestEnv } from "../lib/resolve-test-env.js";
 
 const ROOT = process.cwd();
 const SUITES_DIR = join(ROOT, "regression", "suites");
 const TEST_DATA_DIR = join(ROOT, "test-data");
 const WARN_ONLY = process.argv.includes("--warn-only");
 const REQUIRE_SEEDED = process.argv.includes("--require-seeded");
-const TARGET_ENV = process.env.TEST_ENV || "vcst";
+const TARGET_ENV = resolveTestEnv("vcst");
 const NPM_SCRIPTS = new Set(Object.keys(JSON.parse(readFileSync(join(ROOT, "package.json"), "utf-8")).scripts ?? {}));
 
 // Layer the per-env overlay (aliases.<env>.json) the same way suites resolve at runtime — default to
-// the committed primary env `vcst` when TEST_ENV is unset (mirrors config.js / seed-common PRIMARY_ENV),
+// the committed primary env `vcst` when neither TEST_ENV nor .env.test-env selects one (as config.js does),
 // so @td() fields that live in the overlay (runtime GUIDs written by the seeders, e.g. LOY_SKU_PTS_UNIT.id)
 // resolve here instead of falsely failing against base-only aliases.json.
 const resolver = new TestDataResolver(TEST_DATA_DIR, TARGET_ENV);

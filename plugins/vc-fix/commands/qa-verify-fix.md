@@ -1,6 +1,6 @@
 ---
 description: "Verify a bug fix: fetch ticket, reproduce original bug, confirm fix, run regression checks, transition the tracker ticket by role."
-argument-hint: "ticket <KEY>"
+argument-hint: "ticket <KEY> [<env>]"
 
 ---
 
@@ -29,6 +29,7 @@ Pick up a READY-FOR-TEST bug ticket, verify the fix on the live environment, and
 ```
 /qa-verify-fix VCST-1234              # Verify a single bug fix
 /qa-verify-fix VCST-1234 VCST-1235    # Verify multiple bug fixes sequentially
+/qa-verify-fix VCST-1234 vcptcore_dev # Verify on another env — binds this session only (Step 0)
 ```
 
 ---
@@ -81,6 +82,10 @@ Reference `tracker-ops.md` / `project-profile.mjs` — don't restate their conte
 
 ## Step 0 — Pre-Flight (per `.claude/templates/agent-dispatch.md`)
 
+0. **Bind the env** per [`knowledge/execution/run-env.md`](../knowledge/execution/run-env.md):
+   `node "$pluginRoot/scripts/env/use-env.mjs" <env>` when the arguments name one, else `… --default`. Every
+   script below then resolves it; its output fills each brief's environment line. **Skip** when `/qa-test` runs
+   this pipeline inline — it already bound the env.
 1. **Resolve current sprint** — check if `reports/tickets/Sprint-current` exists → use it. Otherwise list `reports/tickets/` and pick the latest `SprintXX-XX` folder. This becomes `{SPRINT}` for all output paths below.
 2. **Environment health** — run `/qa-env-check endpoints`. If unhealthy, warn user — fix may not be deployed or env may be stale.
 3. **Duplicate check** — scan `reports/tickets/{SPRINT}/<ticket-key>/` for a verification run in the last 4 hours. If found, warn user and show previous verdict.
