@@ -45,6 +45,8 @@ function tempProject(t) {
 const ledgerPath = (dir) => join(dir, ".tracker-comments.json");
 const seed = (dir, obj) => writeFileSync(ledgerPath(dir), JSON.stringify(obj, null, 2));
 const readLedger = (dir) => (existsSync(ledgerPath(dir)) ? JSON.parse(readFileSync(ledgerPath(dir), "utf8")) : {});
+/** A ticket's entry: keyed `<TICKET>@<env>` since one ticket on two envs is two runs (whatever env this runner resolves). */
+const entryOf = (ledger, ticket) => ledger[ticket] ?? Object.entries(ledger).find(([k]) => k.startsWith(`${ticket}@`))?.[1];
 
 const commentEvent = (ticket, session) => ({
   tool_name: "mcp__atlassian__addCommentToJiraIssue",
@@ -93,21 +95,21 @@ test("PreToolUse: malformed input fails OPEN — a hook bug never blocks work", 
 test("PostToolUse: records the comment id so the guard has state", (t) => {
   const dir = tempProject(t);
   runHook(POST, { ...commentEvent("VCST-1", "run-A"), tool_response: { id: "109824" } }, dir);
-  assert.equal(readLedger(dir)["VCST-1"].comment_id, "109824");
-  assert.equal(readLedger(dir)["VCST-1"].run_id, "run-A");
+  assert.equal(entryOf(readLedger(dir), "VCST-1").comment_id, "109824");
+  assert.equal(entryOf(readLedger(dir), "VCST-1").run_id, "run-A");
 });
 
 test("PostToolUse: keeps the FIRST comment of a run — the one everything amends", (t) => {
   const dir = tempProject(t);
   runHook(POST, { ...commentEvent("VCST-1", "run-A"), tool_response: { id: "111" } }, dir);
   runHook(POST, { ...commentEvent("VCST-1", "run-A"), tool_response: { id: "222" } }, dir);
-  assert.equal(readLedger(dir)["VCST-1"].comment_id, "111");
+  assert.equal(entryOf(readLedger(dir), "VCST-1").comment_id, "111");
 });
 
 test("PostToolUse: handles a stringified tool_response", (t) => {
   const dir = tempProject(t);
   runHook(POST, { ...commentEvent("VCST-1", "r"), tool_response: JSON.stringify({ id: "555" }) }, dir);
-  assert.equal(readLedger(dir)["VCST-1"].comment_id, "555");
+  assert.equal(entryOf(readLedger(dir), "VCST-1").comment_id, "555");
 });
 
 // --- helper script: guards that must fire before any network call -----------
