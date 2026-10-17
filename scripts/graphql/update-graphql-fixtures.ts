@@ -29,6 +29,7 @@
 
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { loadEnv } from "../lib/load-env.mjs";
+import { sessionRunPath } from "../lib/run-dir.mjs";
 import { readdirSync, readFileSync, writeFileSync, existsSync } from "fs";
 import { join, resolve, basename } from "path";
 import {
@@ -48,7 +49,8 @@ const { testEnv, sourceOf } = loadEnv({ fallback: "vcst" });
 const ROOT = resolve(process.cwd());
 const FIXTURES_DIR = join(ROOT, "test-data", "graphql");
 const INDEX_PATH = join(FIXTURES_DIR, "index.json");
-const SCHEMA_CACHE = join(ROOT, "scripts", ".graphql-schema.cache.json");
+// Inside a ticket run the schema cache is the run's own (scripts/lib/run-dir.mjs), as in validate-graphql-fixtures.ts.
+const SCHEMA_CACHE = sessionRunPath("schemaCache", { env: testEnv }) ?? join(ROOT, "scripts", ".graphql-schema.cache.json");
 
 type Mode = "bump" | "apply-renames";
 

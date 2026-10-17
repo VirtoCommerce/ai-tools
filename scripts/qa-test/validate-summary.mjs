@@ -19,13 +19,18 @@
  * a file not listed must be clean. Day-one drift does not block; new drift does.
  *
  *   node scripts/qa-test/validate-summary.mjs            # all runs
+ *   node scripts/qa-test/validate-summary.mjs --file <run folder>/summary.json
  *   node scripts/qa-test/validate-summary.mjs --json
  *   node scripts/qa-test/validate-summary.mjs --update-baseline
+ *
+ * A run folder outside reports/tickets/ (QA_OUTPUT_DIR — scripts/lib/run-dir.mjs) is validated too: the
+ * session's bound one automatically, any other with --file. Those must be clean — they never enter the baseline.
  */
 
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import fs from 'node:fs';
 import path from 'node:path';
+import { runLayout, sessionRun } from '../lib/run-dir.mjs';
 
 const ROOT = process.cwd();
 const SCHEMA = '.claude/templates/qa-test-summary.schema.json';
@@ -118,7 +123,12 @@ const schemaTypes = new Map(
 );
 
 const baseline = fs.existsSync(BASELINE_PATH) ? readJson(BASELINE_PATH) : {};
-const files = walk(TICKETS).sort();
+const fileArg = argv.includes('--file') ? argv[argv.indexOf('--file') + 1] : undefined;
+const bound = sessionRun();
+const inTickets = (p) => path.resolve(p).startsWith(path.resolve(TICKETS) + path.sep);
+const external = [...new Set([fileArg, bound && runLayout(bound.dir).summary]
+  .filter((p) => p && fs.existsSync(p) && !inTickets(p)).map((p) => path.resolve(p)))];
+const files = [...walk(TICKETS), ...external].sort();
 const report = {};
 let regressions = 0;
 let totalFindings = 0;
@@ -135,7 +145,7 @@ for (const f of files) {
 
 if (updateBaseline) {
   const next = {};
-  for (const [rel, r] of Object.entries(report)) if (r.findings.length) next[rel] = r.findings.length;
+  for (const [rel, r] of Object.entries(report)) if (r.findings.length && inTickets(rel)) next[rel] = r.findings.length;
   fs.mkdirSync(path.dirname(BASELINE_PATH), { recursive: true });
   fs.writeFileSync(BASELINE_PATH, JSON.stringify(next, null, 2) + '\n');
   console.log('baseline written: ' + Object.keys(next).length + ' file(s), ' + totalFindings + ' finding(s)');
