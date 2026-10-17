@@ -59,7 +59,7 @@ function use() {
   const shots = laneScreenshots(dir);
   console.log(shots
     ? `SCREENSHOTS=${shots}  (project-relative: the form a Playwright lane can write)`
-    : `SCREENSHOTS=${join(dir, 'screenshots')}  (outside the project a Playwright lane refuses this path: capture with a bare filename, then mv the file here)`);
+    : `SCREENSHOTS=${join(dir, 'screenshots')}  (outside the project: a Playwright lane started without --allow-unrestricted-file-access refuses this path — then capture with a bare filename and mv the file here)`);
   console.log(`  template ${completeTemplate(runDirTemplate())}${process.env.QA_OUTPUT_DIR ? ' (QA_OUTPUT_DIR)' : ' (the default: QA_OUTPUT_DIR is unset)'}`);
   const prior = priorRunDirs({ ticket }).filter((p) => p.dir !== dir);
   if (prior.length) {

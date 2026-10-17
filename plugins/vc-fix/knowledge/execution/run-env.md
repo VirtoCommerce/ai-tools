@@ -47,8 +47,9 @@ on two envs) never write the same file.
   `/qa-bug` writes there only when its caller names the run folder; standalone it writes `reports/bugs/`.
 - **Screenshots:** a Playwright lane writes only inside its allowed roots (its output folder and the project)
   and creates no folder. `use` creates `screenshots/` and prints `SCREENSHOTS=` in the form a lane can write —
-  project-relative inside the project. Outside it the lane refuses the path: save the capture with a bare
-  filename and `mv` it into the folder (`--allow-unrestricted-file-access` on the lanes lifts the limit).
+  project-relative inside the project. Outside it, a lane started with `--allow-unrestricted-file-access`
+  writes the absolute path; without the flag it refuses it, so save the capture with a bare filename and `mv`
+  it into the folder. The flag also lifts the lane's limit on reading local files: the operator's call.
 - **Reading:** prior artifacts come from every run folder of the ticket that `use` listed (all envs, and the
   older `reports/tickets/<Sprint>/<ticket-key>/` layout); they are written only into this run's folder.
   Moving a run's bug report into `reports/bugs/open/` is the operator's call.

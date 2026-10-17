@@ -28,10 +28,11 @@ A Playwright lane writes only inside its allowed roots (its output folder and th
 relative path against the project root, and creates no folder — a path outside the roots fails with
 *outside allowed roots*, even an absolute path into the project whose drive letter differs in case. So
 `run:use` creates `screenshots/` and prints `SCREENSHOTS=` in the form a lane can write: **project-relative**
-when the run folder is inside the project. **Outside the project** the lane refuses the path: the capture is
-saved with a bare filename (on `@playwright/mcp` 0.0.77 it lands in the project root) and moved into
-`{RUN_DIR}/screenshots/` with `mv` right after. Starting the lanes with `--allow-unrestricted-file-access`
-lifts the limit; that flag is the operator's call.
+when the run folder is inside the project. **Outside the project** a lane started with `--allow-unrestricted-file-access` in its `.mcp.json`
+args writes the absolute path directly. Without the flag it refuses the path: the capture is saved with a bare
+filename (on `@playwright/mcp` 0.0.77 it lands in the project root) and moved into `{RUN_DIR}/screenshots/`
+with `mv` right after. The flag also lifts the lane's limit on reading local files, so it is the operator's
+call ([`browser-lanes.md`](browser-lanes.md)).
 
 **Only the run's orchestrator binds.** Subagents share the session, so one that works on another ticket (a
 per-bug verify-fix in `/qa-test --iterate`) resolves that ticket's folder with
