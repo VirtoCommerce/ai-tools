@@ -43,6 +43,35 @@
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/enforce-bug-labels.mjs\""
           }
         ]
+      },
+      {
+        "matcher": "^Read$",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Read(//**/scratchpad/**)",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/review-pr-allow.mjs\""
+          }
+        ]
+      },
+      {
+        "matcher": "^(Grep|Glob|WebFetch)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/review-pr-allow.mjs\""
+          }
+        ]
+      },
+      {
+        "matcher": "^Bash$",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(node .claude/skills/review-pr-gh-workflow/prepare.mjs*)",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/review-pr-allow.mjs\""
+          }
+        ]
       }
     ],
     "PostToolUse": [
