@@ -8,10 +8,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
-## `vc-frontend`: merging upstream vc-frontend into a theme fork — catalog `0.12.0`, `vc-frontend` `0.1.0` — 2026-10-08
+## `vc-frontend`: theme forks and storefront plugins — catalog `0.12.0`, `vc-frontend` `0.1.0` — 2026-10-08
 
-**Added: the `vc-frontend` plugin** (`defaultEnabled: false`) with two skills, for teams that keep a fork of the
-storefront theme (vc-frontend-next, customer themes). Its description and README say the skills can make mistakes
+**Added: the `vc-frontend` plugin** (`defaultEnabled: false`) with three skills: two for teams that keep a fork of
+the storefront theme (vc-frontend-next, customer themes), one for a backend module that ships a storefront plugin. Its description and README say the skills can make mistakes
 and every change needs human review.
 
 - **`merge-upstream`** brings upstream `VirtoCommerce/vc-frontend` (its `dev` or a release tag) into the fork, or a
@@ -31,6 +31,11 @@ and every change needs human review.
   fork no longer renders, render sites it dropped, and changes to files a committed `fork-map.json` says the fork
   replaced. The skill briefs each upstream commit as port / already / n/a / lost feature, ports the approved ones
   with a mutation-checked test, and keeps the map current.
+- **`mf-new-plugin`** makes a backend module ship a storefront plugin (scenario S1a of vc-frontend's Module
+  Federation docs). vc-frontend's `create:plugin --module` writes only new files; the skill edits the module's own
+  `.csproj`, `module.manifest` and `.gitignore` after the user approves the diffs, copying versions only from what
+  `check:plugin-module` prints. Its report says whether the sources are wired or the package is verified too
+  (`--artifact`). It never commits, and reports CI without editing it, because module CI is updated centrally.
 ---
 
 ## `vc-secrets`: a declared process gets its secrets at launch, not from a config file — catalog `0.11.0`, `vc-secrets` `0.1.0` — 2026-10-02
