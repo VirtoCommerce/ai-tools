@@ -25,8 +25,8 @@ Use the [`agent-dispatch.md`](../../templates/agent-dispatch.md) structure, **in
 - **Data:** the Data cell of each item is the instruction (§Data below).
 - **Shared state:** the checklist header's Rules block. Only the lane it names writes a shared setting,
   and that lane restores the setting and re-reads it to prove it.
-- **Evidence:** `{SCREENSHOTS}`, the `run:use` line — outside the project a lane saves a bare filename and
-  moves the file in ([`run-output.md`](../../knowledge/execution/run-output.md) §Screenshots) — per
+- **Evidence:** `{SCREENSHOTS}`, the `run:use` line — a lane that refuses it (outside the project, without
+  `--allow-unrestricted-file-access`) saves a bare filename and the file is moved in ([`run-output.md`](../../knowledge/execution/run-output.md) §Screenshots) — per
   [`../qa-evidence/evidence-capture-policy.md`](../qa-evidence/evidence-capture-policy.md). HAR always.
 - **Return, per item:**
   - `PASS` / `FAIL` / `BLOCKED` and a one-line note
