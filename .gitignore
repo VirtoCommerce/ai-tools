@@ -88,6 +88,9 @@ tests/screenshots/**/*.png
 # test-data/catalogs/category-images.csv, and `td:validate:category-images` fails a CI checkout without them.
 !test-data/uploads/categories images/*.png
 
+# Brand logos + banners (seed-brands.mjs, VCST-3286 sample-data brands) — seeder input, tracked.
+!test-data/uploads/brands/*.png
+
 # Playwright MCP accessibility snapshots — dropped at repo root by browser MCPs
 # during exploratory sessions. Transient working state, not deliverables.
 # (No tracked YAML at repo root, so the bare-yml pattern is safe.)
