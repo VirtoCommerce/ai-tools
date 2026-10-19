@@ -19,7 +19,8 @@
  *     `github-pat` at launch. On a session axis it is the hosted server with OAuth on first use.
  *   - No other server takes a token: postman and context7 were removed (VCST-6402 D2), atlassian /
  *     figma / azure-mcp sign in by themselves.
- *   - settings.local.json `env` gets VC_RUN (the bridge shim's path — not a secret) and LOSES every
+ *   - settings.local.json `env` gets VC_RUN and VC_SECRETS (the two shims' paths — not secrets; the
+ *     project's own setting, so ~/.claude/settings.json is never asked for) and LOSES every
  *     token key it may hold from the VCST-5774 design, which put the PAT value there for `${VAR}`
  *     expansion. Each pruned name is printed; `/project-init --check` moves the value to vc-secrets.
  *   - `--inline-secrets` is refused: it existed to write a credential literal into .mcp.json.
@@ -31,6 +32,7 @@
  *   node skills/project-init/gen-mcp.mjs --tracker jira --client-vcs github \
  *     [--github-auth pat|gh-cli]       (default: the profile's auth.github)
  *     [--vc-run <shim path>]           (default: the installed bridge shim)
+ *     [--vc-secrets <shim path>]       (default: VC_SECRETS, else the vc-secrets shim's default path)
  *     [--with figma,devtools,azure] [--os linux|windows|mac] \
  *     [--out .mcp.json] [--settings .claude/settings.local.json] [--print] [--warm-cache]
  */
@@ -43,6 +45,7 @@ import { emitObservations } from "./lib/diag-obs.mjs";
 import { standDownIfHostGoverned } from "./lib/governance.mjs";
 import { authAxes, readProjectProfile } from "../../scripts/lib/project-profile.mjs";
 import { defaultShimPath } from "../../scripts/install-bridge.mjs";
+import { vcSecretsShim } from "../../bridge/vc-secrets-path.mjs";
 import { MCP_REMOTE_SPEC, githubMcpEntryOAuth, githubMcpEntryPat } from "./lib/github-mcp.mjs";
 import { patAxesFromProfile, writeSecretsDecl } from "./write-secrets-decl.mjs";
 // The ignore rules + writer live in lib/ because FOUR scripts create secret-bearing files at
@@ -315,15 +318,18 @@ export const TOKEN_ENV_KEYS = [
 export const REMOVED_SERVERS = ["postman", "context7"];
 
 /**
- * The settings object with every token key pruned from `env` and VC_RUN set. Pure.
+ * The settings object with every token key pruned from `env` and VC_RUN + VC_SECRETS set. Pure.
+ * VC_SECRETS lives here, in the project, not in ~/.claude/settings.json: it is what `${VC_SECRETS}`
+ * in this project's .mcp.json expands from, and nothing outside the project needs it.
  * @returns {{ settings: object, pruned: string[] }}
  */
-export function pruneSettingsEnv(settings, { vcRun } = {}) {
+export function pruneSettingsEnv(settings, { vcRun, vcSecrets } = {}) {
   const next = { ...settings };
   const env = { ...(settings.env || {}) };
   const pruned = TOKEN_ENV_KEYS.filter((k) => k in env);
   for (const k of pruned) delete env[k];
   if (vcRun) env.VC_RUN = vcRun;
+  if (vcSecrets) env.VC_SECRETS = vcSecrets;
   if (Object.keys(env).length) next.env = env;
   else delete next.env;
   if (Array.isArray(next.enabledMcpjsonServers)) {
@@ -439,6 +445,7 @@ function main() {
     process.exit(1);
   }
   const vcRun = typeof args["vc-run"] === "string" ? args["vc-run"] : defaultShimPath();
+  const vcSecrets = typeof args["vc-secrets"] === "string" ? args["vc-secrets"] : vcSecretsShim().path;
 
   const templatePath = join(PLUGIN_ROOT, "templates", ".mcp.json.example");
   if (!existsSync(templatePath)) {
@@ -553,11 +560,14 @@ function main() {
   // settings.local.json (gitignored): the enabled set, VC_RUN, and NO token. Already read + validated
   // by the preflight above; an unparsable file halted the run there rather than being replaced (#1).
   mkdirSync(dirname(settingsPath), { recursive: true });
-  const { settings, pruned } = pruneSettingsEnv(existingSettings, { vcRun });
+  const { settings, pruned } = pruneSettingsEnv(existingSettings, { vcRun, vcSecrets });
   settings.enabledMcpjsonServers = enabledList;
   writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + "\n");
   console.log(`[gen-mcp] enabled servers: ${enabledList.join(", ")}`);
-  console.log(`[gen-mcp] ${settingsPath} env: VC_RUN=${vcRun} (a path, not a secret)`);
+  console.log(`[gen-mcp] ${settingsPath} env: VC_RUN=${vcRun}${vcSecrets ? `, VC_SECRETS=${vcSecrets}` : ""} (paths, not secrets)`);
+  if (!vcSecrets && githubAuth === "pat") {
+    console.warn("[gen-mcp] ⚠ no vc-secrets shim found, so VC_SECRETS was not written and the github server (`node ${VC_SECRETS} run github`) cannot start — run /project-init --check (§0d installs the shim).");
+  }
   if (pruned.length) {
     // console.warn: this branch DELETES a value the operator may still need, so the way back is named.
     console.warn(`[gen-mcp] ⚠ removed ${pruned.join(", ")} from ${settingsPath} — tokens live in vc-secrets now (VCST-6402). If that value is still in use, store it with \`node "<VC_SECRETS>" set <name>\` (or run /project-init --check), then rotate it: it sat in a file exported to every session.`);
@@ -593,7 +603,7 @@ function main() {
     if (warmObs.length) emitObservations(warmObs, { skill: "project-init" });
   }
 
-  console.log("[gen-mcp] ⚠ Restart Claude Code for the MCP servers and VC_RUN to take effect.");
+  console.log("[gen-mcp] ⚠ Restart Claude Code for the MCP servers, VC_RUN and VC_SECRETS to take effect.");
   if (asBool(args.print)) console.log(JSON.stringify({ mcpServers }, null, 2));
 }
 

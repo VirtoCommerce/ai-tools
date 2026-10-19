@@ -58,7 +58,7 @@ export const TOKEN_GUIDE = {
  * @returns {string[]}
  */
 export function tokenSteps({ secrets, vcSecrets }) {
-  const shim = JSON.stringify(vcSecrets || "<path printed by /vc-secrets:install>");
+  const shim = JSON.stringify(vcSecrets || "<the shim path /project-init §0d printed>");
   const lines = [];
   for (const [envVar, g] of Object.entries(TOKEN_GUIDE)) {
     if (!secrets.includes(g.secret)) continue;

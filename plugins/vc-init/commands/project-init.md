@@ -42,8 +42,9 @@ PAT, no `az login`, self-diagnostics off; the host's rules win.
 0. Preconditions — **(0a)** confirm the working directory (`pwd` + `AskUserQuestion`); wrong folder →
    STOP (cwd is fixed at launch). Resolve the plugin dir once (`echo "$CLAUDE_PLUGIN_ROOT"`).
    **(0b)** self-diagnostics capture consent FIRST, written immediately on Yes. **(0d)** vc-secrets
-   ready? — `check-secrets.mjs --preflight`; not installed ⇒ STOP before the interview
-   (`/vc-secrets:install`, `VC_SECRETS` in `~/.claude/settings.json`, restart). Then
+   shim — `check-secrets.mjs --preflight` installs it itself when missing (no `~/.claude/settings.json`
+   edit: §7 writes `VC_SECRETS` into the project's `.claude/settings.local.json`); STOP only when it
+   cannot. Then
    `install-bridge.mjs` → the literal `VC_RUN=<path>` used for the rest of the session. **(0e)**
    detect **and install** missing tooling: `gh` (required), `az` (only if Azure is chosen).
 1. Install deps into the **plugin** (`( cd "$CLAUDE_PLUGIN_ROOT" && npm install )`) + Playwright

@@ -130,7 +130,7 @@ bridge, so the probe exercises exactly the path every real call takes. Read `pro
 NOT READY (run `/project-init`).**
 
 **Are the tokens stored?** Run `node "<VC_SECRETS>" doctor` once (`<VC_SECRETS>` = the vc-secrets shim, the
-`VC_SECRETS` path in `~/.claude/settings.json` `env`). It resolves every declared secret (`github-pat`,
+`VC_SECRETS` path `/project-init` wrote into the project's `.claude/settings.local.json` `env`). It resolves every declared secret (`github-pat`,
 `ado-pat`, `jira-token`) without printing a value and exits non-zero on any `FAIL`. A `FAIL` on an axis the
 profile uses is a blocker — the operator stores the token with `node "<VC_SECRETS>" set <name>` in their own
 terminal, then `/project-init --check`. Session axes (`gh auth login` / `az login` / Atlassian OAuth) declare

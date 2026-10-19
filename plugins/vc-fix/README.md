@@ -20,8 +20,8 @@ developer/reviewer agents.
 /reload-plugins
 ```
 
-Once per machine, set up vc-secrets: `/vc-secrets:install`, add the `VC_SECRETS` line it prints to
-`~/.claude/settings.json` `env`, restart Claude Code. Then, in your deployment project, run:
+Then, in your deployment project, run (it installs the vc-secrets shim itself and keeps its settings in
+the project's `.claude/settings.local.json` — nothing to add to `~/.claude/settings.json`):
 
 ```
 /project-init

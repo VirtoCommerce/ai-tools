@@ -66,7 +66,7 @@ The plugin distributes as a Claude Code marketplace plugin (per [Claude Code plu
 
 Claude Code clones the plugin into its cache and auto-discovers the agents (`agents/`), skills (`skills/`), commands (`commands/`), knowledge files (`knowledge/`), and MCP server config.
 
-**Step B — set up vc-secrets (once per machine):** run `/vc-secrets:install`, add the `{"env": {"VC_SECRETS": …}}` line it prints to `~/.claude/settings.json`, and restart Claude Code. Every GitHub / Azure DevOps / Jira token lives there — never in a project file (VCST-6402). `/project-init` checks this first and stops with these steps when it is missing; it installs its own npm dependencies.
+**Step B — vc-secrets needs no separate setup:** `/project-init` installs its shim (§0d) and writes `VC_SECRETS` into the project's `.claude/settings.local.json` next to `VC_RUN` — no edit to `~/.claude/settings.json`. Every GitHub / Azure DevOps / Jira token lives in vc-secrets — never in a project file (VCST-6402); `/project-init` also installs its own npm dependencies.
 
 **Step C — onboard with `/project-init` (recommended):**
 

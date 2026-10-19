@@ -31,8 +31,8 @@ This repo hosts two things:
 /plugin install vc-fix@ai-tools        # pulls in vc-init and vc-secrets
 ```
 
-Then install the vc-secrets shim once per machine (`/vc-secrets:install`, add the `VC_SECRETS` line it prints
-to `~/.claude/settings.json` `env`, restart Claude Code) and, in your deployment project, run:
+Then, in your deployment project, run (it installs the vc-secrets shim itself and writes `VC_SECRETS` into
+the project's `.claude/settings.local.json` — nothing to add to `~/.claude/settings.json`):
 
 ```
 /project-init

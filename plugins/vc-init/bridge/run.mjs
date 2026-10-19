@@ -39,6 +39,7 @@ import { fileURLToPath } from "node:url";
 import { GROUPS, checkArgv, groupOf, toolInGroup } from "./allowlist.mjs";
 import { createRedactor } from "./redact.mjs";
 import { resolvePluginFile, resolvePluginRoot, selfRoot } from "./resolve-plugin.mjs";
+import { vcSecretsShim } from "./vc-secrets-path.mjs";
 
 export const EX_REFUSED = 64;
 export const EX_UNAVAILABLE = 69;
@@ -315,8 +316,8 @@ async function outer(argv) {
     const report = {
       vcInit: selfRoot(),
       vcFix: resolvePluginRoot("vc-fix"),
-      vcSecrets: process.env.VC_SECRETS || null,
-      vcSecretsPresent: Boolean(process.env.VC_SECRETS && existsSync(process.env.VC_SECRETS)),
+      vcSecrets: vcSecretsShim().path || null,
+      vcSecretsPresent: vcSecretsShim().present,
       declarations: decls ? decls.root : null,
       tasks: Object.fromEntries(GROUPS.map((g) => [taskName(g), taskDeclared(decls, g)])),
     };
@@ -338,9 +339,9 @@ async function outer(argv) {
   // vc-secrets then launches must come from the same file.
   const decls = findDeclarations(process.cwd());
   if (taskDeclared(decls, group)) {
-    const shim = process.env.VC_SECRETS;
-    if (!shim || !existsSync(shim)) {
-      say(`the ${group} axis keeps its token in vc-secrets, but VC_SECRETS ${shim ? `points at a missing file (${shim})` : "is not set"} — run /vc-secrets:install, add VC_SECRETS to ~/.claude/settings.json "env", and restart Claude Code`);
+    const { path: shim, present, source } = vcSecretsShim();
+    if (!present) {
+      say(`the ${group} axis keeps its token in vc-secrets, but ${source === "VC_SECRETS" ? `VC_SECRETS points at a missing file (${shim})` : "the vc-secrets shim is not installed"} — run /project-init --check (its §0d installs the shim and writes VC_SECRETS into this project's .claude/settings.local.json), then restart Claude Code`);
       return EX_UNAVAILABLE;
     }
     return runChild(process.execPath, [shim, "task", taskName(group)], {

@@ -47,9 +47,10 @@ test("outer: a PAT axis goes through `vc-secrets task vc-init-<group>` with the 
 
 test("outer: a PAT axis with vc-secrets missing stops with the install instruction", () => {
   const dir = project({ tasks: { [taskName("ado")]: { command: "node" } } });
-  const r = bridge(["ado", "whoami"], { cwd: dir });
+  // HOME is the temp project, so the default shim path the bridge falls back to holds nothing.
+  const r = bridge(["ado", "whoami"], { cwd: dir, env: { HOME: dir } });
   assert.equal(r.status, 69);
-  assert.match(r.stderr, /vc-secrets:install/);
+  assert.match(r.stderr, /project-init --check/);
 });
 
 test("outer: the exit code of the task is propagated", () => {

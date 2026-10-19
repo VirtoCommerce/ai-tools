@@ -523,7 +523,7 @@ async function main() {
   } else {
     const doctor = runDoctor({ cwd: outputRoot() });
     if (!doctor.available) {
-      add("vc-secrets (tokens)", "FAIL", `${declared.join(", ")} declared, but vc-secrets is not installed (VC_SECRETS ${process.env.VC_SECRETS ? "points at a missing file" : "unset"}) — /vc-secrets:install, add VC_SECRETS to ~/.claude/settings.json env, restart`);
+      add("vc-secrets (tokens)", "FAIL", `${declared.join(", ")} declared, but vc-secrets is not installed (${process.env.VC_SECRETS ? "VC_SECRETS points at a missing file" : "no shim at the default path"}) — /project-init --check installs it (§0d) and writes VC_SECRETS into .claude/settings.local.json; restart`);
     } else {
       const v = secretsVerdict(parseDoctor(doctor.text), declared);
       const q = JSON.stringify(doctor.shim);
@@ -870,7 +870,7 @@ function renderMcp() {
       // its token is whatever vc-secrets resolves, so the answer is doctor's, not this process's env.
       if (entry && Array.isArray(entry.args) && entry.args.includes("run") && entry.args.includes("github")) {
         const d = runDoctor({ cwd: outputRoot() });
-        if (!d.available) return ["NOT AUTH", "vc-secrets not installed (VC_SECRETS)"];
+        if (!d.available) return ["NOT AUTH", "vc-secrets shim not installed — /project-init --check"];
         const p = parseDoctor(d.text);
         if (p.untrustedLaunchables.includes("server github") || p.skippedUntrusted.includes("github-pat")) return ["NOT AUTH", "vc-secrets trust not given"];
         return p.resolvable.includes("github-pat") ? ["AUTHORIZED", "github-pat via vc-secrets"] : ["NOT AUTH", "github-pat not stored — vc-secrets set github-pat"];

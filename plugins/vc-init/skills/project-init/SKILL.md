@@ -272,25 +272,30 @@ asks a single binary *file the issue in Virto — yes/no?* — with the exact pa
 **Do not pass `--feedback-mode` from the interview.** §0b's `--self-diagnostics` is the ONLY
 self-diagnostics answer carried to step 6.
 
-### 0d. vc-secrets ready? — check FIRST, STOP if not
+### 0d. vc-secrets ready? — install the shim, STOP only if that fails
 
 **Every token this onboarding needs is stored in vc-secrets** (VCST-6402), so it must be installed
 and reachable BEFORE the interview — otherwise the operator answers every question and then
-cannot store the first token. Run:
+cannot store the first token. The shim is set up HERE, by this step, not by the operator: nothing
+asks them to run `/vc-secrets:install` or to edit `~/.claude/settings.json`. `VC_SECRETS` is a
+**project** setting — §7's `gen-mcp.mjs` writes it into this project's `.claude/settings.local.json`
+next to `VC_RUN`. Run:
 
 ```bash
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/check-secrets.mjs" --preflight
 ```
 
-- **Exit 0** (`"installed": true`) → vc-secrets is installed, `VC_SECRETS` names its shim and its
-  `doctor` runs (a `FAIL no declaration file found` from doctor is expected at this point — this
-  run writes the declaration in §3). Note the `shim` path: it is the `<VC_SECRETS>` in every
-  command you show the operator.
-- **Exit 2** (`"installed": false`) → **STOP before the interview.** Show the JSON's `next` list as
-  the operator's to-do: run `/vc-secrets:install`, add the `{"env": {"VC_SECRETS": …}}` it prints
-  to `~/.claude/settings.json`, **restart Claude Code**, re-run `/project-init`. (vc-secrets'
-  `install` is operator-invoked by design — do not try to run its script yourself.) Then the
-  plain-chat waiting line (§Output FORMAT): `⏸️ WAITING FOR YOU — re-run /project-init after the restart.`
+- **Exit 0** (`"installed": true`) → the shim is in place (`shimState`: `installed` /
+  `already up to date` / `present`) and its `doctor` runs (a `FAIL no declaration file found` from
+  doctor is expected at this point — this run writes the declaration in §3). With no `VC_SECRETS` in
+  the environment the script installs the shim itself, through vc-secrets' own `install-shim.mjs`
+  at its documented default path; that installer writes no settings file. Note the `shim` path: it
+  is the `<VC_SECRETS>` in every command you show the operator, and the literal path for this
+  session (the settings `env` takes effect only after a restart).
+- **Exit 2** (`"installed": false`) → **STOP before the interview.** Show the JSON's `reason` and
+  `next` (the vc-secrets plugin is missing, its installer failed, or a `VC_SECRETS` set outside this
+  project names a missing file), then the plain-chat waiting line (§Output FORMAT):
+  `⏸️ WAITING FOR YOU — re-run /project-init once that is fixed.`
 
 Then install the **bridge** — the stable `$VC_RUN` path every token-holding call goes through:
 
@@ -300,7 +305,7 @@ node "$CLAUDE_PLUGIN_ROOT/scripts/install-bridge.mjs" --data-dir "${CLAUDE_PLUGI
 
 Its first line is `VC_RUN=<path>`. **Remember that literal path** — it is `$VC_RUN` for the rest of
 this session (the settings `env` that sets the variable takes effect only after a restart).
-Idempotent: a re-run reports `already up to date`. One line to the operator: `✓ vc-secrets · bridge installed`.
+Idempotent: a re-run reports `already up to date`. One line to the operator: `✓ vc-secrets shim · bridge installed`.
 
 ### 0e. Detect AND install the required tooling
 
@@ -797,7 +802,7 @@ guard. Best-effort + timeboxed; drop it to skip the network step.
 Enables playwright-chrome + github + the tracker's MCP (atlassian for Jira; azure-mcp for Azure).
 `postman` and `context7` are no longer offered (VCST-6402 D2 — each needed an API key in a file); a
 `--with postman|context7` is skipped with a one-line note. **Remind the operator to restart Claude
-Code**: the MCP servers and `VC_RUN` take effect only in a new session.
+Code**: the MCP servers, `VC_RUN` and `VC_SECRETS` take effect only in a new session.
 
 **No token in any file this writes (VCST-6402).** The github server follows the GitHub auth axis
 (read from `auth.github` in the profile §6 wrote; `--github-auth` overrides):
@@ -808,7 +813,9 @@ Code**: the MCP servers and `VC_RUN` take effect only in a new session.
   in the `Authorization` header. Verified on Windows `npx.cmd`.
 - **Browser login** → the hosted server with no header; Claude Code runs OAuth on first use.
 
-`.claude/settings.local.json` `env` gets `VC_RUN` (a path, not a secret) and **loses** every token key
+`.claude/settings.local.json` `env` gets `VC_RUN` and `VC_SECRETS` (the two shims' paths, not secrets —
+`${VC_SECRETS}` in `.mcp.json` expands from it, so it is the project's setting, never
+`~/.claude/settings.json`; `--vc-secrets <path>` overrides the §0d shim) and **loses** every token key
 an older onboarding put there (VCST-5774 kept the PAT value in it) — each removed name is printed; the
 value belongs in vc-secrets (`/project-init --check` moves it). Before writing anything, gen-mcp adds
 the generated files to the project's `.gitignore` (creating it if absent), and it refuses to write when

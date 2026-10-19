@@ -17,6 +17,7 @@
  */
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
+import { vcSecretsShim } from "../../../bridge/vc-secrets-path.mjs";
 
 /** Parse doctor's lines. Pure. */
 export function parseDoctor(text) {
@@ -51,11 +52,12 @@ export function secretsVerdict(parsed, needed) {
 }
 
 /**
- * Run doctor through the installed shim. `available:false` when vc-secrets is not installed — the
+ * Run doctor through the installed shim — VC_SECRETS, else the default path (before the restart that
+ * brings the project's settings env in). `available:false` when vc-secrets is not installed — the
  * caller says so instead of reporting every secret as missing.
  * @param {{ cwd?: string, shim?: string }} [opts]
  */
-export function runDoctor({ cwd = process.cwd(), shim = process.env.VC_SECRETS } = {}) {
+export function runDoctor({ cwd = process.cwd(), shim = vcSecretsShim().path } = {}) {
   if (!shim || !existsSync(shim)) return { available: false, shim: shim || "", code: null, text: "" };
   const r = spawnSync(process.execPath, [shim, "doctor"], { cwd, encoding: "utf8", timeout: 120000, windowsHide: true });
   return { available: true, shim, code: r.status, text: `${r.stdout || ""}\n${r.stderr || ""}` };

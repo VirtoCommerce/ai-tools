@@ -23,9 +23,9 @@ Two rules shape it (VCST-6402):
 /plugin install vc-fix@ai-tools      # pulls in vc-init and vc-secrets
 ```
 
-Once per machine: run `/vc-secrets:install`, add the `{"env": {"VC_SECRETS": "…"}}` line it prints to
-`~/.claude/settings.json`, restart Claude Code. `/project-init` checks this first and stops with these steps
-when it is missing.
+Nothing to set up by hand before it: `/project-init` installs the vc-secrets shim itself (§0d) and writes
+`VC_SECRETS` into the project's `.claude/settings.local.json` next to `VC_RUN` — no edit to
+`~/.claude/settings.json`, and the settings stay in the project folder. Restart Claude Code when it finishes.
 
 ## `/project-init`
 
@@ -43,7 +43,7 @@ What it writes into the project (all gitignored):
 | `.env.<env>` | URLs and identifiers (no secret) |
 | `.env.local` | test-user passwords only |
 | `.claude/vc-secrets.local.json` | the vc-secrets declarations: one `local` secret per PAT axis (`github-pat`, `ado-pat`, `jira-token`), the bridge's `vc-init-*` tasks, the GitHub MCP server |
-| `.mcp.json` + `.claude/settings.local.json` | MCP servers; the settings `env` holds `VC_RUN` (a path) and no token |
+| `.mcp.json` + `.claude/settings.local.json` | MCP servers; the settings `env` holds `VC_RUN` and `VC_SECRETS` (paths) and no token |
 
 The token step: `/project-init` prints, per token, what it is, where to create it and the exact command
 — `node "<VC_SECRETS>" set github-pat` — plus `node "<VC_SECRETS>" trust` when the declarations are new or
