@@ -1,0 +1,73 @@
+{
+  "env": "https://vcptcore-qa1.govirto.com",
+  "platform": "3.1085.0-pr-3141-a644",
+  "property": "AGENT-TEST-ShortText-mv9h7yio",
+  "propertyId": "51ad5f9a-2664-460c-ab4d-19960967972d",
+  "contactId": "35a7fcc6-797f-4026-8b5a-1adbf35da31f",
+  "request": "PUT /api/members (Contact with one ShortText dynamic property value of N chars)",
+  "results": [
+    {
+      "run": 1,
+      "len": 512,
+      "status": 204,
+      "response": "",
+      "storedLen": 512
+    },
+    {
+      "run": 1,
+      "len": 513,
+      "status": 500,
+      "response": "{\"message\":\"The value of the dynamic property 'AGENT-TEST-ShortText-mv9h7yio' is 513 characters long. Short text values cannot exceed 512 characters; use the Long text type for longer values.\",\"stackTrace\":null}",
+      "storedLen": 512
+    },
+    {
+      "run": 1,
+      "len": 1025,
+      "status": 500,
+      "response": "{\"message\":\"The value of the dynamic property 'AGENT-TEST-ShortText-mv9h7yio' is 1025 characters long. Short text values cannot exceed 512 characters; use the Long text type for longer values.\",\"stackTrace\":null}",
+      "storedLen": 512
+    },
+    {
+      "run": 2,
+      "len": 512,
+      "status": 204,
+      "response": "",
+      "storedLen": 512
+    },
+    {
+      "run": 2,
+      "len": 513,
+      "status": 500,
+      "response": "{\"message\":\"The value of the dynamic property 'AGENT-TEST-ShortText-mv9h7yio' is 513 characters long. Short text values cannot exceed 512 characters; use the Long text type for longer values.\",\"stackTrace\":null}",
+      "storedLen": 512
+    },
+    {
+      "run": 2,
+      "len": 1025,
+      "status": 500,
+      "response": "{\"message\":\"The value of the dynamic property 'AGENT-TEST-ShortText-mv9h7yio' is 1025 characters long. Short text values cannot exceed 512 characters; use the Long text type for longer values.\",\"stackTrace\":null}",
+      "storedLen": 512
+    },
+    {
+      "run": 3,
+      "len": 512,
+      "status": 204,
+      "response": "",
+      "storedLen": 512
+    },
+    {
+      "run": 3,
+      "len": 513,
+      "status": 500,
+      "response": "{\"message\":\"The value of the dynamic property 'AGENT-TEST-ShortText-mv9h7yio' is 513 characters long. Short text values cannot exceed 512 characters; use the Long text type for longer values.\",\"stackTrace\":null}",
+      "storedLen": 512
+    },
+    {
+      "run": 3,
+      "len": 1025,
+      "status": 500,
+      "response": "{\"message\":\"The value of the dynamic property 'AGENT-TEST-ShortText-mv9h7yio' is 1025 characters long. Short text values cannot exceed 512 characters; use the Long text type for longer values.\",\"stackTrace\":null}",
+      "storedLen": 512
+    }
+  ]
+}
