@@ -77,7 +77,8 @@
 
 import { existsSync } from 'node:fs';
 import { basename } from 'node:path';
-import { OWNER, envFilePath, loadEnvFiles, resolveEnvCoords } from '../lib/env.ts';
+import { OWNER, REPO_ROOT, envFilePath, isLocalUrl, loadEnvFiles, resolveEnvCoords } from '../lib/env.ts';
+import { lookedIn } from '../../lib/env-layers.mjs';
 import { resolveTestEnv } from '../../lib/resolve-test-env.js';
 import { fetchFile, getToken, ghJson, setToken } from '../lib/github.ts';
 import { DeliverError, deliverPr } from '../lib/deliver.ts';
@@ -258,7 +259,11 @@ export async function runPr(args: string[]): Promise<void> {
   const envArgs = [...new Set([flag('env'), envAt !== -1 ? args[envAt + 1] : undefined, ...positionals.filter((a) => /^[a-z0-9_]+$/.test(a))].filter((a): a is string => !!a))];
   if (envArgs.length > 1) fail(`two envs named: ${envArgs.join(', ')} — name one.`);
   const named = envArgs[0];
-  if (named !== undefined && !existsSync(envFilePath(named))) fail(`unknown env "${named}": there is no ${basename(envFilePath(named))}.`);
+  // The ticket key fills QA_ENV_PATH's <ticket> folders, so the ticket's own stand is an env here too.
+  const ticketArg = positionals.find((a) => /^[A-Za-z][A-Za-z0-9]*-\d+$/.test(a))?.toUpperCase();
+  if (named !== undefined && !existsSync(envFilePath(named, ticketArg))) {
+    fail(`unknown env "${named}": there is no ${basename(envFilePath(named, ticketArg))} in ${lookedIn(named, { root: REPO_ROOT, ticket: ticketArg })}.`);
+  }
   const key = positionals.find((a) => a !== named)?.toUpperCase();
 
   // The session env as every entry point resolves it (TEST_ENV, else this session's binding, else
@@ -267,9 +272,12 @@ export async function runPr(args: string[]): Promise<void> {
   const sessionEnv = resolveTestEnv('vcst');
   loadEnvFiles(sessionEnv);
   const env = named || sessionEnv;
+  const c = resolveEnvCoords(env, flag('password'), ticketArg);
+  // A local stand runs the ticket's own build on this machine: no vc-deploy-dev branch, nothing to deploy. Say so
+  // before any tracker or GitHub call.
+  if (isLocalUrl(c.backUrl)) fail(`${env} is a local stand (BACK_URL ${c.backUrl}): there is nothing to deploy — it runs the ticket's own build. Name a cloud stand's env.`);
   setToken(process.env.GIT_TOKEN || process.env.GITHUB_TOKEN || process.env.GITHUB_PERSONAL_ACCESS_TOKEN);
   if (!getToken()) fail('No GIT_TOKEN — a PAT with product-repo read + push on your vc-deploy-dev fork (read .env.local).');
-  const c = resolveEnvCoords(env, flag('password'));
 
   // ── 1. resolve the artifact set ──
   const targets: Target[] = [];

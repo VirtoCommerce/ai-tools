@@ -62,8 +62,8 @@ function use() {
   const ticket = positionals[0]?.toUpperCase();
   if (!ticket || !TICKET_KEY.test(ticket)) throw new BindError(`run:use needs a ticket key (VCST-1234, or an Azure Boards id) first, got "${positionals[0] ?? ''}"`);
   const envArg = value('--env') ?? positionals[1];
-  if (bindSessionEnv(envArg, { reason: `run:use ${ticket}` }) === null) console.log('not in a Claude Code session (no CLAUDE_CODE_SESSION_ID): nothing is bound; TEST_ENV resolves per process');
-  const { testEnv, sourceOf, lines } = describeSessionEnv();
+  if (bindSessionEnv(envArg, { reason: `run:use ${ticket}`, ticket }) === null) console.log('not in a Claude Code session (no CLAUDE_CODE_SESSION_ID): nothing is bound; TEST_ENV resolves per process');
+  const { testEnv, sourceOf, lines } = describeSessionEnv({ ticket });
   let dir;
   try { dir = resolveRunDir({ ticket, env: testEnv }); } catch (e) { throw new BindError(e.message); }
   mkdirSync(join(dir, 'screenshots'), { recursive: true }); // a Playwright lane never creates a folder
@@ -100,7 +100,7 @@ function dir() {
     return;
   }
   if (!TICKET_KEY.test(ticket)) throw new BindError(`--ticket expects a key (VCST-1234, or an Azure Boards id), got "${ticket}"`);
-  const { testEnv } = loadEnv({ fallback: 'vcst' });
+  const { testEnv } = loadEnv({ fallback: 'vcst', ticket });
   if (args.includes('--prior')) {
     const prior = priorRunDirs({ ticket });
     if (args.includes('--json')) console.log(JSON.stringify(prior, null, 2));

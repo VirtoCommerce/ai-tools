@@ -31,6 +31,9 @@ export interface RunLayout {
 /** Where each artifact of a run lives inside its folder. */
 export declare function runLayout(dir: string): RunLayout;
 
+/** The directories matching an absolute path whose segments may hold `*` (one segment each). */
+export declare function globDirs(pattern: string): string[];
+
 /** Every existing run folder of a ticket (all envs, both templates, the pre-env layouts); env null when pre-env. */
 export declare function priorRunDirs(opts: { ticket: string; template?: string; root?: string }): { dir: string; env: string | null }[];
 

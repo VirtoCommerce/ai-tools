@@ -13,7 +13,7 @@ You are executing {TASK_DESCRIPTION} for run {RUN_ID}.
 
 **Scope:**
 - Ticket/Suite/Feature: {SCOPE}
-- Environment: TEST_ENV={TEST_ENV} | Frontend: {FRONT_URL} | Backend: {BACK_URL} | Passwords: type {NAME_FORM} (e.g. ORG_USER_PASSWORD_{ENV} on .env.playwright.all, the bare name on a single-env file)
+- Environment: TEST_ENV={TEST_ENV} | Frontend: {FRONT_URL} | Backend: {BACK_URL} | Passwords: type {NAME_FORM} (MASTER_PASSWORD in every password field on a master stand; else e.g. ORG_USER_PASSWORD_{ENV} on .env.playwright.all, the bare name on a single-env file)
 
 **Browser:** {BROWSER_SERVER} (fallback: {FALLBACK_BROWSER})
 

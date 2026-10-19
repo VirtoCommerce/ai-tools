@@ -42,10 +42,10 @@ function use() {
   const positionals = args.filter((a, i) => !a.startsWith('--') && !(envAt !== -1 && i === envAt + 1));
   const ticket = positionals[0]?.toUpperCase();
   if (!ticket || !TICKET_KEY.test(ticket)) throw new BindError(`use needs a ticket key (VCST-1234, or an Azure Boards id) first, got "${positionals[0] ?? ''}"`);
-  if (bindSessionEnv(value('--env') ?? positionals[1], { reason: `run-folder use ${ticket}` }) === null) {
+  if (bindSessionEnv(value('--env') ?? positionals[1], { reason: `run-folder use ${ticket}`, ticket }) === null) {
     console.log('not in a Claude Code session (no CLAUDE_CODE_SESSION_ID): nothing is bound; TEST_ENV resolves per process');
   }
-  const { testEnv, lines } = describeSessionEnv();
+  const { testEnv, lines } = describeSessionEnv({ ticket });
   let dir;
   try { dir = resolveRunDir({ ticket, env: testEnv }); } catch (e) { throw new BindError(e.message); }
   mkdirSync(join(dir, 'screenshots'), { recursive: true }); // a Playwright lane never creates a folder

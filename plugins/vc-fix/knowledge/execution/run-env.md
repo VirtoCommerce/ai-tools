@@ -7,7 +7,8 @@ another session reads is edited.
 
 ## Step 0 — bind the env, before anything else runs
 
-- **The arguments name an env** — a bare token with a `.env.<token>` file in the project, or `--env <env>`
+- **The arguments name an env** — a bare word the script accepts as one (a `.env.<word>` in the project or in
+  a `QA_ENV_PATH` folder, §Where an env's files live), or `--env <env>`
   ⇒ `node "$pluginRoot/scripts/env/use-env.mjs" <env>` (`$pluginRoot`: [`plugin-root.md`](plugin-root.md)).
 - **They name none** ⇒ the same script with `--default`. It binds the default too, so the run keeps one env
   even if someone edits `.env.test-env` while it runs.
@@ -23,11 +24,26 @@ the session runs afterwards resolves `TEST_ENV` from it — `scripts/lib/resolve
 session's binding → `.env.test-env` → `vcst` — and so do the subagents' scripts, because they share the
 session id. No `TEST_ENV=` prefix is needed. `env:check` and the `[config]` line name where the env came from.
 
+## Where an env's files live
+
+An env is the same files wherever they live: `.env.<env>` and `.env.playwright.<env>`. Besides the project, they
+may sit in dedicated folders — `QA_ENV_PATH` in `.env.local`, `;`-separated, the first wins
+(`QA_ENV_PATH=P:\VC\_VIRTO\tickets\<ticket>\.work\self-qa;P:\VC\_VIRTO\qa-envs`), with `QA_OUTPUT_DIR`'s
+placeholders and nothing appended; `<ticket>` is the run's ticket (`run-folder.mjs use`'s argument, else the
+session's bound run; outside a session `QA_TICKET=<KEY>`). A dedicated file beats the project's key by key,
+pins included: a ticket's folder holds its own stands and may override a shared env for that ticket's runs.
+`scripts/lib/env-layers.mjs` is the order, byte-identical with the ai-tools repo's.
+
+**Master stands:** `PASSWORDS=master` in a stand's env file means every test account on it signs in with ONE
+password, `MASTER_PASSWORD` in the project's `.env.playwright.master`; every test-account password variable
+resolves to it, and a lane types `MASTER_PASSWORD` in every password field.
+
 ## What every dispatch brief carries
 
 A browser lane has no shell, so the brief is the only way the env reaches it: the env, `FRONT_URL`,
 `BACK_URL` (the script prints them), and the password names in the form the lanes' `--secrets` file uses —
-`NAME_<ENV>` on a combined every-env file, the bare `NAME` on a single-env one.
+`MASTER_PASSWORD` on a master stand (the script says so), else `NAME_<ENV>` on a combined every-env file, the
+bare `NAME` on a single-env one.
 
 ## The run folder — where a ticket run writes
 

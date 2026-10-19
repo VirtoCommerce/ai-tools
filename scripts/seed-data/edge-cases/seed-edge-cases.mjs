@@ -41,6 +41,7 @@ import {
   DISC_LINE_QUANTITY, judgeDiscontinuedOrder, PERSONAL_NON_ORG,
 } from './edge-cases-specs.mjs';
 import { fitsLineQuantity } from '../orders/orders-specs.mjs';
+import { findEnv } from '../../lib/env-layers.mjs';
 
 const argv = process.argv.slice(2);
 const KINDS = ['all', 'multi-org', 'addr22', 'discontinued', 'personal'];
@@ -49,7 +50,7 @@ const VERBOSE = argv.includes('--verbose');
 setFlags({ dryRun: DRY_RUN, verbose: VERBOSE });
 const wants = (k) => kind === 'all' || kind === k;
 const TEST_ENV = process.env.TEST_ENV || 'vcst';
-const ENV_FILE = `.env.${TEST_ENV}`;
+const ENV_FILE = findEnv(TEST_ENV, { root: ROOT }) ?? `.env.${TEST_ENV}`; // the env's own file: the root's or a QA_ENV_PATH folder's
 const STORE_ID = process.env.STORE_ID || STORE_ID_DEFAULT;
 const PW = resolvePassword(PW_TOKEN);
 const RECONCILE = isPasswordDeclared(PW_TOKEN);

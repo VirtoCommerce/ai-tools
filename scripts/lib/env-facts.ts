@@ -2,9 +2,9 @@
 // OK/WARN/BLOCK. Every source can be UNKNOWN on its own without failing the others.
 // Spec: docs/superpowers/specs/2026-10-08-preflight-skill-design.md §4.
 import { basename } from "node:path";
-import { CORE_REQUIRED_VARS, promoteEnvSuffix } from "./env-core.js";
+import { CORE_REQUIRED_VARS } from "./env-core.js";
 import { resolveTestEnv } from "./resolve-test-env.js";
-import { loadEnvFiles, resolveEnvCoords, REPO_ROOT, type EnvCoords } from "../deploy/lib/env.ts";
+import { isLocalUrl, loadEnvFiles, resolveEnvCoords, REPO_ROOT, type EnvCoords } from "../deploy/lib/env.ts";
 import { fetchFile, setToken } from "../deploy/lib/github.ts";
 import { platformHealthy, probeAdminToken, probeLiveModules, probePlatformVersion, probeThemeVersion, type LiveModule } from "../deploy/lib/live.ts";
 import { listPinnedModules, THEME_URL_RE } from "../deploy/lib/manifest.ts";
@@ -16,6 +16,8 @@ import { repoFromProjectUrl, moduleIdToRepoGuess } from "../../plugins/vc-fix/sk
 export interface Unknown { unknown: string }
 export const isUnknown = (v: unknown): v is Unknown => typeof v === "object" && v !== null && "unknown" in v;
 const U = (reason: string): Unknown => ({ unknown: reason });
+/** `declared` on a stand whose BACK_URL is on this machine: no vc-deploy-dev manifest to read. */
+export const LOCAL_STAND = "local stand: no vc-deploy-dev branch, it runs its own build";
 
 export interface DeployedModule { version: string; repo: string | null; repoGuessed: boolean; loadErrors: string[] }
 
@@ -143,8 +145,7 @@ export function probeCoords(env: string): EnvCoords {
 export async function getEnvFacts(opts: EnvFactsOptions = {}): Promise<EnvFacts> {
   const env = opts.env ?? resolveTestEnv("vcst");
   const now = opts.now ?? new Date();
-  loadEnvFiles(env);
-  promoteEnvSuffix(env);
+  loadEnvFiles(env); // the layers, the KEY_<ENV> promotion, the QA_ENV_PATH folders, the master password
   setToken(process.env.GIT_TOKEN || process.env.GITHUB_TOKEN || process.env.GITHUB_PERSONAL_ACCESS_TOKEN);
   const c = probeCoords(env);
   const frontUrl = (process.env.FRONT_URL || "").replace(/\/$/, "");
@@ -153,9 +154,11 @@ export async function getEnvFacts(opts: EnvFactsOptions = {}): Promise<EnvFacts>
 
   const health: EnvFacts["health"] = c.backUrl ? ((await platformHealthy(c)) ? "UP" : "DOWN") : U("no-back-url");
 
-  // declared — vc-deploy-dev, branch per env
+  // declared — vc-deploy-dev, branch per env. A local stand has no branch there: it runs its own build, which
+  // `deployed` and `--expect` read off the stand itself.
   let declared: EnvFacts["declared"];
-  try {
+  if (isLocalUrl(c.backUrl)) declared = U(LOCAL_STAND);
+  else try {
     const pk = await fetchFile(c, c.packagesPath);
     const modules: Record<string, string> = {};
     for (const m of listPinnedModules(pk.json)) modules[m.id.toLowerCase()] = m.version;

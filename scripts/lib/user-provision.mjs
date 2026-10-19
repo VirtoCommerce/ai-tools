@@ -28,14 +28,14 @@
  *     seed-loyalty-users).
  *   • identity from .env.{ENV}, secrets from .env.local, per-env suffix promotion (portable).
  *
- * Env: read AFTER the loadDotenv + suffix-promotion below (mirrors config.js/seed-common.mjs).
+ * Env: read AFTER the loadEnv below (the one order config.js and seed-common.mjs apply too).
  * Prod is blocked by config (ENV_RISK=production), not hostname.
  */
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { config as loadDotenv } from 'dotenv';
+import { loadEnv } from './load-env.mjs';
 import { ensureMemberIndex, verifyCreated, verifyRemoved, syncEnvAliases, writeEnvAliasOverride, idsParam, resetSecurityPassword } from './seed-common.mjs';
 import {
   matchesOnly, normalizeMembershipStatus, resolveMembershipStatusForIndex, STATUS_COLUMN, ALIAS_COLUMN,
@@ -43,15 +43,8 @@ import {
 import { resolveAllRoles, roleByKey } from './user-roles.mjs';
 import { CSV_CREDENTIAL_SOURCES, collectDeclarations, findPasswordConflicts } from '../seed-data/credential-specs.mjs';
 
-// --- Env (defaults → .env.{ENV} → .env.local) + per-env suffix promotion ---
-export const TEST_ENV = process.env.TEST_ENV || 'vcst';
-loadDotenv({ path: '.env.defaults' });
-loadDotenv({ path: `.env.${TEST_ENV}`, override: true });
-loadDotenv({ path: '.env.local', override: true });
-const _ENV_SUFFIX = `_${TEST_ENV.toUpperCase()}`;
-for (const [k, v] of Object.entries(process.env)) {
-  if (k.endsWith(_ENV_SUFFIX) && v) process.env[k.slice(0, -_ENV_SUFFIX.length)] = v;
-}
+// --- Env: defaults → .env.{ENV} → .env.local, per-env suffix promotion, the QA_ENV_PATH files, the master password ---
+export const { testEnv: TEST_ENV } = loadEnv({ fallback: 'vcst' });
 
 // Strip trailing slash(es) — some envs set BACK_URL with one (e.g. `.env.vcptcore`), which would
 // produce `//connect/token` and 404 on EVERY call this module makes. `seed-common.mjs` already
