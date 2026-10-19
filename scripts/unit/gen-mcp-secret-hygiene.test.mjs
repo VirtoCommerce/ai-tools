@@ -76,25 +76,28 @@ test("#1: on a NORMAL run every operator key survives — permissions.deny inclu
     hooks: { Stop: [{ hooks: [{ type: "command", command: "echo hi" }] }] },
   }, null, 2));
 
-  runGenMcp(dir, [], { GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_survivorcheck12345" });
+  runGenMcp(dir, ["--vc-run", "/stable/vc-run.mjs"], { GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_survivorcheck12345" });
   const after = JSON.parse(readFileSync(settingsPath, "utf8"));
   assert.deepEqual(after.permissions.deny, ["Bash(gh pr merge:*)", "mcp__github__merge_pull_request"]);
   assert.deepEqual(after.permissions.allow, ["Bash(npm test)"]);
   assert.ok(after.hooks?.Stop, "unrelated keys are preserved");
-  assert.equal(after.env.GITHUB_PERSONAL_ACCESS_TOKEN, "ghp_survivorcheck12345", "and ours is merged in");
+  // Since VCST-6402 what is merged in is VC_RUN (a path) — never the token in the generator's env.
+  assert.deepEqual(after.env, { VC_RUN: "/stable/vc-run.mjs" });
 }));
 
 // ─── #2 — a safety flag must not invert ───────────────────────────────────────────
-test("#2: `--inline-secrets false` turns the flag OFF (it used to turn it ON)", () => withTempDir((dir) => {
+test("#2: `--inline-secrets false` is the flag OFF — accepted, and nothing is inlined", () => withTempDir((dir) => {
   runGenMcp(dir, ["--inline-secrets", "false"], { GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_mustnotinline123" });
   const raw = readFileSync(join(dir, ".mcp.json"), "utf8");
   assert.ok(!raw.includes("ghp_mustnotinline123"), "a literal was written despite --inline-secrets false");
-  assert.match(raw, /\$\{GITHUB_PERSONAL_ACCESS_TOKEN\}/);
 }));
 
-test("#2: `--inline-secrets` bare still opts IN (the escape hatch keeps working)", () => withTempDir((dir) => {
-  runGenMcp(dir, ["--inline-secrets"], { GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_deliberateinline9" });
-  assert.match(readFileSync(join(dir, ".mcp.json"), "utf8"), /Bearer ghp_deliberateinline9/);
+test("#2: `--inline-secrets` bare is REFUSED since VCST-6402 — the escape hatch wrote a literal into .mcp.json", () => withTempDir((dir) => {
+  let err;
+  try { runGenMcp(dir, ["--inline-secrets"], { GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_deliberateinline9" }); } catch (e) { err = e; }
+  assert.ok(err, "the run must refuse");
+  assert.match(outputOf(err), /--inline-secrets was removed/);
+  assert.ok(!existsSync(join(dir, ".mcp.json")));
 }));
 
 test("#2: asBool — bare flag, every falsey spelling, anything else", () => {

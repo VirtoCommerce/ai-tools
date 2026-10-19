@@ -28,7 +28,8 @@
  *   node write-secrets-decl.mjs --github-auth pat --ado-auth az-login --tracker jira --client-vcs github
  *   node write-secrets-decl.mjs --from-profile            # the axes from project-profile.json auth.*
  *   [--shim <path to vc-run.mjs>]  default: the installed shim (scripts/install-bridge.mjs)
- *   [--github-mcp <json>]          the `servers.github` declaration (gen-mcp passes it); "none" removes it
+ *   [--github-mcp <json>|none]     override the `servers.github` declaration (default: lib/github-mcp.mjs
+ *                                  GITHUB_MCP_DECL, written only when github is a PAT axis); "none" removes it
  *   [--out <path>]                 default <project>/.claude/vc-secrets.local.json
  *
  * Prints one JSON report: { status: "written"|"unchanged", path, projectId, secrets, tasks, servers,
@@ -43,6 +44,7 @@ import { authAxes, readProjectProfile } from "../../scripts/lib/project-profile.
 import { defaultShimPath } from "../../scripts/install-bridge.mjs";
 import { ensureProjectIgnores } from "./lib/gitignore.mjs";
 import { outputRoot } from "./lib/paths.mjs";
+import { GITHUB_MCP_DECL } from "./lib/github-mcp.mjs";
 
 /** Secret name and the env var it is bound to, per axis. The env names are the runtime contract. */
 export const AXIS_SECRETS = Object.freeze({
@@ -141,8 +143,7 @@ function main() {
       console.error(`[write-secrets-decl] ${error ? `cannot parse ${path}: ${error}` : `no ${path} — pass the axes as flags`}`);
       process.exit(1);
     }
-    const ax = authAxes(raw);
-    pat = { github: ax.github.mode === "pat", ado: ax.ado.applies && ax.ado.mode === "pat", jira: ax.jira.applies && ax.jira.mode === "pat" };
+    pat = patAxesFromProfile(raw);
   } else {
     const tracker = args.tracker || "jira";
     const host = args["client-vcs"] || "github";
@@ -154,14 +155,45 @@ function main() {
     };
   }
 
-  const out = resolve(root, args.out || join(".claude", "vc-secrets.local.json"));
+  let githubServer = GITHUB_MCP_DECL;
+  if (args["github-mcp"] === "none") githubServer = null;
+  else if (args["github-mcp"]) {
+    try {
+      githubServer = JSON.parse(args["github-mcp"]);
+    } catch (e) {
+      console.error(`[write-secrets-decl] --github-mcp is not valid JSON (${e.message})`);
+      process.exit(1);
+    }
+  }
+  try {
+    const report = writeSecretsDecl({ root, pat, shim: args.shim || defaultShimPath(), githubServer, out: args.out });
+    console.log(JSON.stringify(report, null, 2));
+  } catch (e) {
+    console.error(`[write-secrets-decl] ${e.message}`);
+    process.exit(1);
+  }
+}
+
+/** The PAT axes a profile records (auth.*), as the { github, ado, jira } booleans writeSecretsDecl takes. */
+export function patAxesFromProfile(raw) {
+  const ax = authAxes(raw);
+  return { github: ax.github.mode === "pat", ado: ax.ado.applies && ax.ado.mode === "pat", jira: ax.jira.applies && ax.jira.mode === "pat" };
+}
+
+/**
+ * Write (or leave unchanged) the declaration file. Shared by this CLI and gen-mcp.mjs, which makes sure
+ * the GitHub MCP server it points .mcp.json at is declared.
+ * @param {{ root: string, pat: {github:boolean, ado:boolean, jira:boolean}, shim: string, githubServer?: object|null, out?: string }} opts
+ * @returns {{ status: "written"|"unchanged", path: string, projectId: string, secrets: string[], tasks: string[], servers: string[], trustNeeded: boolean, shim: string, shimInstalled: boolean }}
+ */
+export function writeSecretsDecl({ root, pat, shim, githubServer = GITHUB_MCP_DECL, out: outFlag }) {
+  const out = resolve(root, outFlag || join(".claude", "vc-secrets.local.json"));
   let existing = null;
   if (existsSync(out)) {
     try {
       existing = JSON.parse(readFileSync(out, "utf8"));
     } catch (e) {
-      console.error(`[write-secrets-decl] ${out} is not valid JSON (${e.message}) — fix or delete it; nothing was written`);
-      process.exit(1);
+      throw new Error(`${out} is not valid JSON (${e.message}) — fix or delete it; nothing was written`);
     }
   }
   // projectId: the local file's, else the committed project file's (vc-secrets refuses the two
@@ -177,21 +209,11 @@ function main() {
   }
   if (!projectId) projectId = newProjectId(root);
 
-  let githubServer;
-  if (args["github-mcp"] === "none") githubServer = null;
-  else if (args["github-mcp"]) {
-    try {
-      githubServer = JSON.parse(args["github-mcp"]);
-    } catch (e) {
-      console.error(`[write-secrets-decl] --github-mcp is not valid JSON (${e.message})`);
-      process.exit(1);
-    }
-  }
-
-  const shim = args.shim || defaultShimPath();
   const next = buildDeclarations(existing, { pat, shim, projectId, githubServer });
-  const text = `${JSON.stringify(next, null, 2)}\n`;
-  const changed = !existing || `${JSON.stringify(existing, null, 2)}\n` !== text;
+  const text = `${JSON.stringify(next, null, 2)}
+`;
+  const changed = !existing || `${JSON.stringify(existing, null, 2)}
+` !== text;
   const trustNeeded = changed && launchables(existing) !== launchables(next);
   if (changed) {
     const added = ensureProjectIgnores(root);
@@ -199,18 +221,17 @@ function main() {
     mkdirSync(dirname(out), { recursive: true });
     writeFileSync(out, text);
   }
-  const secretNames = Object.keys(AXIS_SECRETS).filter((a) => pat[a]).map((a) => AXIS_SECRETS[a].secret);
-  console.log(JSON.stringify({
+  return {
     status: changed ? "written" : "unchanged",
     path: out,
     projectId,
-    secrets: secretNames,
+    secrets: Object.keys(AXIS_SECRETS).filter((a) => pat[a]).map((a) => AXIS_SECRETS[a].secret),
     tasks: Object.keys(next.tasks || {}).filter((t) => OWNED_TASKS.includes(t)),
     servers: next.servers?.github ? ["github"] : [],
     trustNeeded,
     shim,
     shimInstalled: existsSync(shim),
-  }, null, 2));
+  };
 }
 
 const invoked = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);

@@ -257,10 +257,11 @@ export function findSettingsSecrets(settingsJsonText) {
  * because that net is value-blind: it cannot tell a credential from `--secrets .env.local`, and a
  * readiness gate that blocks onboarding over a filename would teach operators to ignore the row.
  *
- * `kind` distinguishes what a hit MEANS:
- *   "mcp"      — a credential here is a defect in itself; the file is meant to hold `${VAR}` refs.
- *   "settings" — a credential here is BY DESIGN (this is the value's new home), so only EXPOSURE
- *                is a finding. A secret at rest in an ignored, untracked file is the target state.
+ * `kind` names the file; since VCST-6402 a credential is a defect in EITHER of them. Tokens live in
+ * vc-secrets and reach a process through the $VC_RUN bridge or `vc-secrets run`; .mcp.json holds a
+ * launcher call and settings.local.json `env` holds only VC_RUN (a path). Between VCST-5774 and
+ * VCST-6402 settings.local.json WAS the value's home and a credential there graded PASS — an upgraded
+ * project still carries one, and the row now says how to move it.
  */
 /** The ids vc-fix can be installed under, in PRIORITY order: `vc-tools` is the marketplace's name
  *  before the 2026-09-30 rename, so a pre-rename install still resolves, but never ahead of a new one. */
@@ -288,7 +289,7 @@ export function gradeSecretHygiene({ kind, file, hits, weak = [], unparsable, in
   const REGEN = 'node "$CLAUDE_PLUGIN_ROOT/skills/project-init/gen-mcp.mjs" --tracker <jira|azure> --client-vcs <github|azure-repos>';
   const fix = tracked
     ? `\`git rm --cached ${file}\` + commit (a .gitignore rule CANNOT untrack it), then rotate the credential`
-    : `run \`${REGEN}\` (rewrites the file with a \${VAR} reference and adds the ignore entry — \`--check\` alone will NOT do this), then rotate the credential`;
+    : `run \`/project-init --check\` (it stores the token in vc-secrets and strips the file; \`${REGEN}\` rewrites .mcp.json and prunes the settings env), then rotate the credential`;
 
   if (unparsable) {
     return { status: "WARN", detail: `${file} is not valid JSON — could not audit it for credentials${exposed ? ` (and it is ${why})` : ""}` };
@@ -299,16 +300,13 @@ export function gradeSecretHygiene({ kind, file, hits, weak = [], unparsable, in
   if (weak.length && exposed) {
     return { status: "WARN", detail: `${file} is ${why} and ${weak.join(", ")} may hold a credential (a credential-shaped key with an opaque value — could equally be a filename or an id). Check it; if it is a secret, ${fix}.` };
   }
-  if (hits.length && kind === "mcp") {
-    return { status: "WARN", detail: `credential written as a literal in ${hits.join(", ")} (${file} is not committable, so not exposed). Run \`${REGEN}\` to replace it with a \${VAR} reference, or keep it deliberately via --inline-secrets.` };
+  if (hits.length) {
+    return { status: "WARN", detail: `credential at rest in ${hits.join(", ")} (${file} is not committable, so not exposed) — tokens belong in vc-secrets now. Run \`/project-init --check\` to move it there and strip the file (\`${REGEN}\` rewrites ${kind === "mcp" ? "this file" : ".mcp.json and prunes this env"}), then rotate it.` };
   }
   if (weak.length && kind === "mcp") {
     // Not exposed, and only suspected — but .mcp.json is gitignored in the normal case, so this is
     // where the structural net earns its keep: staying silent here would make it dead weight.
     return { status: "WARN", detail: `${weak.join(", ")} may hold a credential literal in ${file} (a credential-shaped key with an opaque value — could equally be a filename or an id). The file is not committable. If it IS a secret, run \`${REGEN}\` to replace it with a \${VAR} reference.` };
-  }
-  if (hits.length) {
-    return { status: "PASS", detail: `${hits.join(", ")} held in ${file} (by design — this is where the value belongs) and the file is not committable` };
   }
   if (exposed) {
     return { status: "WARN", detail: `${file} carries no credential but is ${why} — ${tracked ? `\`git rm --cached ${file}\`` : "add it to .gitignore"}, so a future hand-edit cannot be committed` };

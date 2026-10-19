@@ -109,8 +109,8 @@ export function ensureProjectIgnores(projectRoot, extraEntries = []) {
     return ensureGitignoreEntries(projectRoot, [...new Set([...extraEntries.filter(Boolean), ...SECRET_IGNORES])], {
       title: "vc-fix (/project-init) — generated local config, never commit",
       notes: [
-        "Per-machine onboarding output. .mcp.json references a credential via ${VAR}; the VALUE",
-        "lives in .claude/settings.local.json `env` and .env.local. None of this belongs in git.",
+        "Per-machine onboarding output: the profile, env files (.env.local holds test-user passwords),",
+        "the MCP config and the vc-secrets declarations. Tokens live in vc-secrets, not here. Never commit.",
       ],
     });
   } catch (e) {

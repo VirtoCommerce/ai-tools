@@ -1,9 +1,6 @@
 {
-  "//": "TEMPLATE — copy to .mcp.json (gitignored) and replace every <PLACEHOLDER>. Restart the MCP servers after editing. Windows uses `cmd /c npx`; on Linux/macOS drop the `cmd` + `/c` and call `npx` directly (gen-mcp.mjs does this automatically).",
-
+  "//": "TEMPLATE — gen-mcp.mjs writes .mcp.json (gitignored) from this. Restart Claude Code after editing. Windows uses `cmd /c npx`; on Linux/macOS drop the `cmd` + `/c` and call `npx` directly (gen-mcp.mjs does this automatically). No server here takes a token from a file: postman and context7 were removed (VCST-6402), github's token comes from vc-secrets.",
   "//network": "stdio servers launch via npx (an npm registry lookup inside the ~30s MCP startup budget). Package versions are PINNED (not @latest), and gen-mcp.mjs injects NODE_OPTIONS='--dns-result-order=ipv4first' + npm_config_prefer_offline=true on every stdio server — so a broken/slow IPv6 route can't hang that lookup and a cached package resolves with no round-trip (#220). ipv4first alone is used deliberately; --no-network-family-autoselection is a newer flag that would be FATAL in NODE_OPTIONS on the Node-18 floor.",
-
-
   "mcpServers": {
     "playwright-chrome": {
       "type": "stdio",
@@ -63,28 +60,10 @@
       ],
       "env": {}
     },
-    "postman": {
-      "type": "http",
-      "url": "https://mcp.postman.com/minimal",
-      "headers": {
-        "Authorization": "Bearer <POSTMAN_API_KEY>"
-      }
-    },
     "github": {
-      "//": "Official REMOTE GitHub MCP (github/github-mcp-server). The npx `@modelcontextprotocol/server-github` package is ARCHIVED (moved to github/github-mcp-server, which ships no npm package); the replacement is the hosted server + a PAT `Authorization: Bearer` header. If no PAT resolves, gen-mcp.mjs DROPS this header so the server uses interactive OAuth instead (like atlassian). http-type ⇒ no npx ⇒ no npm-registry round-trip at startup.",
+      "//": "Hosted GitHub MCP. gen-mcp.mjs REPLACES this entry by the GitHub auth axis (VCST-6402): a PAT axis gets `node ${VC_SECRETS} run github` (the server is declared in .claude/vc-secrets.local.json, mcp-remote carries the token from vc-secrets into the Authorization header); a gh-cli axis gets this header-less entry and signs in with OAuth on first use. No token is ever written here.",
       "type": "http",
-      "url": "https://api.githubcopilot.com/mcp/",
-      "headers": {
-        "Authorization": "Bearer <GITHUB_PERSONAL_ACCESS_TOKEN>"
-      }
-    },
-    "context7": {
-      "//": "http server ⇒ the API key must be a HEADER, not env (an http MCP ignores env).",
-      "type": "http",
-      "url": "https://mcp.context7.com/mcp",
-      "headers": {
-        "CONTEXT7_API_KEY": "<CONTEXT7_API_KEY>"
-      }
+      "url": "https://api.githubcopilot.com/mcp/"
     },
     "azure-mcp": {
       "type": "stdio",

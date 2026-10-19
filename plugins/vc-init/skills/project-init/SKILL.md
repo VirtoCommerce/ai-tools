@@ -776,36 +776,34 @@ resolves `$pluginRoot` = the ACTIVE (enabled) install at call time via `claude p
 
 ```bash
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/gen-mcp.mjs" --tracker jira --client-vcs github \
-  --with context7 --warm-cache   # add postman,figma,devtools as needed
+  --vc-run "<the VC_RUN path from §0d>" --warm-cache   # add --with figma,devtools as needed
 ```
 `--warm-cache` pre-fetches the pinned npx packages into the npm cache (with an IPv4-first
 DNS hint) so the first MCP start doesn't pay a registry round-trip — the #220 startup-timeout
 guard. Best-effort + timeboxed; drop it to skip the network step.
-Enables playwright×3 + github + the tracker's MCP (atlassian for Jira; azure-mcp
-for Azure). A `--with` extra whose API key is an OPTIONAL placeholder the operator left blank
-(`postman`, `context7`) is **defined but NOT enabled** — the same "blank ⇒ stays disabled"
-contract `scaffold-secrets.mjs` states, so passing `--with context7` unconditionally (as above) is
-safe: it enables the server only once the key exists. gen-mcp prints one info line per dormant
-extra; filling the key in `.env.local` and re-running enables it. **Remind the operator to restart
-the MCP servers** (reload the IDE) for the new config to take effect.
+Enables playwright-chrome + github + the tracker's MCP (atlassian for Jira; azure-mcp for Azure).
+`postman` and `context7` are no longer offered (VCST-6402 D2 — each needed an API key in a file); a
+`--with postman|context7` is skipped with a one-line note. **Remind the operator to restart Claude
+Code**: the MCP servers and `VC_RUN` take effect only in a new session.
 
-**Secrets never land in `.mcp.json` (VCST-5774).** A resolved credential is written there as a
-`${VAR}` **indirection**; the VALUE goes into `.claude/settings.local.json` `env`, which Claude
-Code applies to every session and its subprocesses — and that is what feeds `${VAR}` expansion in
-`.mcp.json` `headers`/`env`. So `.mcp.json` is safe to read, diff and share. Before writing
-anything, gen-mcp adds `.mcp.json`, `.claude/settings.local.json`, `.env.local`, `.env.*.local`,
-`project-profile.json` and `.vc-fix/` to the project's `.gitignore` (creating it if absent), so
-the file never exists un-ignored even briefly. There is **no `gh auth token` fallback** — with no
-PAT the placeholder stays unresolved and the github server drops the header and uses interactive
-OAuth, rather than persisting the operator's CLI session to disk.
+**No token in any file this writes (VCST-6402).** The github server follows the GitHub auth axis
+(read from `auth.github` in the profile §6 wrote; `--github-auth` overrides):
 
-Two consequences worth stating to the operator:
-- The value being in settings `env` means it is exported to **every** session subprocess, not just
-  the one MCP client. That is the mechanism, not an accident — treat `.claude/settings.local.json`
-  as a secret file.
-- **`--inline-secrets`** restores the legacy literal substitution into `.mcp.json` (and then writes
-  no second copy to settings). Opt-in only, for a host that cannot apply settings `env`. It makes
-  `.mcp.json` itself a secret; the §8 hygiene rows will say so.
+- **PAT** → `.mcp.json` holds `node ${VC_SECRETS} run github` and nothing else. The server itself is
+  declared in `.claude/vc-secrets.local.json` (§3c wrote it; gen-mcp re-checks it, writing nothing when
+  it matches): the pinned `mcp-remote` against the hosted GitHub MCP, with `github-pat` from vc-secrets
+  in the `Authorization` header. Verified on Windows `npx.cmd`.
+- **Browser login** → the hosted server with no header; Claude Code runs OAuth on first use.
+
+`.claude/settings.local.json` `env` gets `VC_RUN` (a path, not a secret) and **loses** every token key
+an older onboarding put there (VCST-5774 kept the PAT value in it) — each removed name is printed; the
+value belongs in vc-secrets (`/project-init --check` moves it). Before writing anything, gen-mcp adds
+the generated files to the project's `.gitignore` (creating it if absent), and it refuses to write when
+the settings file is unparsable or already tracked by git. `--inline-secrets` is refused. There is
+**no `gh auth token` fallback** — the operator's CLI session is never copied into a file.
+
+If gen-mcp reports that the vc-secrets declarations changed, the operator runs `node "<VC_SECRETS>"
+trust` again before restarting.
 
 ## 8. Verify access — full readiness checkup
 
@@ -866,16 +864,16 @@ NOT READY (missing core env, unreachable `FRONT_URL`/`BACK_URL`, bad admin login
 absent/rejected credential that can't even reach the resource, or an **exposed credential** — see
 the hygiene rows below); **WARN** is non-blocking; **SKIP** means a feature isn't configured.
 
-**Secret-hygiene rows (VCST-5774).** Two rows — `Secret hygiene — .mcp.json` and
-`Secret hygiene — .claude/settings.local.json` — audit the files §7 generated. Both are checked,
-because the redesign MOVED the credential: guarding only `.mcp.json` would leave the value's new
-home unguarded. The walk covers the whole server def — `headers`, `env`, `args[]`, `url`, nested
+**Secret-hygiene rows (VCST-5774, VCST-6402).** Two rows — `Secret hygiene — .mcp.json` and
+`Secret hygiene — .claude/settings.local.json` — audit the files §7 generated. Since VCST-6402 a
+credential in EITHER is a defect: tokens live in vc-secrets, and an upgraded project may still carry
+one in the settings `env` the VCST-5774 design put it in. The walk covers the whole server def — `headers`, `env`, `args[]`, `url`, nested
 bags — because the generator substitutes placeholders at every leaf. It reports KEY PATHS only; a
 credential value never reaches the table or the telemetry.
 
 **Two nets, two confidence levels**, and that split is what keeps the row honest:
 
-- **CERTAIN** — the known-token-shape matcher shared with `hooks/redact.mjs` (`ghp_`, `glpat-`,
+- **CERTAIN** — the known-token-shape matcher shared with `scripts/lib/redact.mjs` (`ghp_`, `glpat-`,
   `AKIA`, JWT, …). A hit is a credential whatever key it hides under, so it may block readiness.
 - **SUSPECTED** — a credential-shaped key (or a `--api-key`-style flag, or a URL with inline
   credentials) whose value is opaque. This is the net that catches a token type nobody has invented
@@ -889,8 +887,8 @@ Grading is by **actual exposure**:
 |---|---|
 | **Certain** credential **and** the file is committable (not gitignored, **or already tracked**) | **FAIL** — blocks readiness, names the fix and says to rotate |
 | **Suspected** credential, however exposed | **WARN** — never blocks; says it may equally be a filename or an id |
-| Certain literal in `.mcp.json`, file not committable | WARN — re-run `/project-init`, or keep it via `--inline-secrets` |
-| Certain credential in `settings.local.json`, file not committable | **PASS** — that is the target state |
+| Certain literal in `.mcp.json`, file not committable | WARN — `/project-init --check` moves it into vc-secrets; rotate it |
+| Certain credential in `settings.local.json`, file not committable | WARN — a leftover of the VCST-5774 design; `/project-init --check` moves it into vc-secrets and gen-mcp prunes it |
 | Clean but committable, or unparsable JSON | WARN |
 | Outside a git repo | never FAIL on ignore-state — there is nothing to commit to |
 
@@ -1221,7 +1219,7 @@ Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or j
 | `probe-lib.mjs` | shared side-effect-free probes (GitHub-upstream permission, ADO tenant/auth) used by BOTH `verify-access` and `derive-context` so their results can't drift |
 | `gen-profile.mjs` | write/merge `project-profile.json` (`schemaVersion` 2) from the repos-json (projectType/clientOrg/repos) + derived flags (operator/contributionMode/upstream-account) + the auth axes (`--github-auth` / `--ado-auth` / `--jira-auth` → `auth.*`) + tracker connection; keeps an existing `perf` block |
 | `reconcile-profile.mjs` | **`--check` migration**: diff an existing profile against the current `PROFILE_DEFAULTS` schema → JSON report of `added` (safe-default) / `removed` (obsolete, open-maps+arrays preserved) / `pending` (operator-decision fields with `question`+`options`, e.g. `selfDiagnostics`) / `rescan` (re-derive live). Deterministic, dry-run by default; `--write` applies structural changes + `--set path=value` decisions. Idempotent. Mirrors `gen-profile`'s `tracker.azure`/`vcs.azure` discriminated pruning. Migrates a schema-1 `vcs.auth` into `auth.*` and refuses a profile from a newer vc-init |
-| `gen-mcp.mjs` | write `.mcp.json` (OS-aware) into the project + enable servers for the tracker/VCS. **Credentials are written as `${VAR}` refs; the VALUE goes to `.claude/settings.local.json` `env`. `--inline-secrets` opts back into a literal (and `--inline-secrets false` correctly turns it OFF). Refuses to write at all when the settings file is unparsable or already git-tracked — a rewrite would delete the operator's keys, and no `.gitignore` rule can untrack a tracked file (VCST-5774).** Playwright servers are flags-only (`--browser` / `--isolated` / `--viewport-size` / `--output-dir`) — no config files; only `playwright-chrome` is enabled by default |
+| `gen-mcp.mjs` | write `.mcp.json` (OS-aware) into the project + enable servers for the tracker/VCS. **No token in any file (VCST-6402):** github follows `auth.github` — PAT ⇒ `node ${VC_SECRETS} run github` plus the `servers.github` vc-secrets declaration (`lib/github-mcp.mjs`, pinned mcp-remote), session ⇒ the hosted server with OAuth; settings `env` gets `VC_RUN` and loses every token key; postman/context7 removed; `--inline-secrets` refused. **Refuses to write at all when the settings file is unparsable or already git-tracked** — a rewrite would delete the operator's keys, and no `.gitignore` rule can untrack a tracked file (VCST-5774). Playwright servers are flags-only (`--browser` / `--isolated` / `--viewport-size` / `--output-dir`) — no config files; only `playwright-chrome` is enabled by default |
 | `lib/paths.mjs` | shared path helper — `outputRoot()` (`VC_FIX_HOME` \|\| `process.cwd()`, where generated state goes) + `pluginRoot()` (`CLAUDE_PLUGIN_ROOT` \|\| resolved from `import.meta.url`, used by a running script to find its own read-only plugin assets). Keeps every generator writing to the project and reading templates from the plugin. (Commands resolve their launch path via `claude plugin list --json` — see vc-fix's `knowledge/execution/plugin-root.md`.) |
 | `verify-access.mjs` | full `/qa-fix` readiness table + verdict, incl. the two **secret-hygiene** rows that audit `.mcp.json` + `.claude/settings.local.json` for an exposed credential (graded by committability: tracked/not-ignored ⇒ FAIL); prints an untruncated "To resolve" block (incl. an auto-discovered `az login --tenant <guid>`). Also **reports every non-PASS row as self-diagnostics telemetry** (`lib/diag-obs.mjs` → the collector's `obs` subcommand) — the table used to be rendered and discarded, so a WARN the operator could plainly read was invisible to `/vc-self-check` and the run self-diagnosed "no plugin issues detected" (VCST-5582 H). Exit code is unchanged: 0 unless a hard FAIL |
 | `assert-profile.mjs` | asserts the **SHAPE** of the profile just written and records each degradation as a `degraded_artifact` observation: empty `tracker.fields` (⇒ `/qa-bug` sends "unverified defaults"), `roleStatesComplete:false`, unmapped required fields, empty `repos.client` on a client project, an unresolved storefront `upstreamRef`, `githubForkCapable != "yes"` while the upstream path is needed. Complements `verify-access` (which probes ACCESS): a scan can return empty with no HTTP error, and what `/qa-fix` reads at runtime is the persisted shape. Read-only, **always exits 0** — a diagnostic, not a second readiness gate |
