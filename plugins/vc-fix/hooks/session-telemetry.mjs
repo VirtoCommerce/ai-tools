@@ -2176,7 +2176,7 @@ async function cmdFinalize(ev) {
   // `background_tasks` is present on every current-CC Stop/SubagentStop but is NOT scoped to this
   // session: it also lists `run_in_background` SHELL tasks and background work owned by OTHER
   // sessions. Trusting its length EXCLUSIVELY made a foreign shell task force perpetual deferral —
-  // the LEO /project-init run (2026-07-22) recorded 3× `deferred` with agent_calls:0 and an empty
+  // a client /project-init run (2026-07-22) recorded 3× `deferred` with agent_calls:0 and an empty
   // openOps because a different session's background shell task showed up here. So we defer ONLY
   // when a pending background item corresponds to one of THIS session's OWN open AGENT ops.
   const bgTasks = Array.isArray(ev.background_tasks) ? ev.background_tasks : [];
@@ -2212,7 +2212,7 @@ async function cmdFinalize(ev) {
   }
   // Classify the `background_tasks` entries. `ownedPendingAgents` = entries that match one of OUR
   // agent ops by id/tool_use_id. `sawAgentKindBg` = at least one entry is an AGENT/subagent (not a
-  // shell/bash task), regardless of id. The kind split is the LEO fix's core: a `run_in_background`
+  // shell/bash task), regardless of id. The kind split is the 2026-07-22 fix's core: a `run_in_background`
   // SHELL task (foreign or ours) must NEVER cause a defer; only a genuine agent can.
   let ownedPendingAgents = 0;
   let sawAgentKindBg = false;
@@ -2226,7 +2226,7 @@ async function cmdFinalize(ev) {
     if (ids.some((x) => ownAgentIds.has(x))) ownedPendingAgents++;
   }
   // Hard guard (belt-and-suspenders): with ZERO open agent ops of ours, nothing of ours can be in a
-  // sidechain — NEVER defer, whatever `background_tasks` says (this is the LEO agent_calls:0 case).
+  // sidechain — NEVER defer, whatever `background_tasks` says (this is the 2026-07-22 agent_calls:0 case).
   // Otherwise, when the field is present, defer if either (a) a bg entry matches one of our agent ops
   // by id, OR (b) a bg entry is agent-KIND and we have an open agent op younger than ORPHAN_MS — this
   // covers a platform that keys an agent bg task by a distinct `agent_id` (≠ our tool_use_id), so a
@@ -2255,7 +2255,7 @@ async function cmdFinalize(ev) {
   // ─── an unanswered OPERATOR QUESTION also defers (VCST-5582 D) ───────────────
   // An `AskUserQuestion` tool_use with no matching tool_result means the operator is being asked
   // something right now. A `{decision:"block"}` here would RESUME the agent and push that question
-  // out of view — the OPUS failure: `/qa-bug`'s Step-5 "create a bug-tracker ticket?" was buried by
+  // out of view — the VCST-5582 D failure: `/qa-bug`'s Step-5 "create a bug-tracker ticket?" was buried by
   // the self-diagnostics tail-trigger, so the ticket phase ran unattended and undiagnosed. So this
   // Stop is a CHECKPOINT, exactly like a pending sub-agent: record a durable `deferred` decision and
   // return WITHOUT draining/closing spans or surfacing anything. The real verdict lands on the
@@ -2478,7 +2478,7 @@ async function cmdFinalize(ev) {
   // its `/project-init` UserPromptSubmit — which fired BEFORE the flag existed — was a no-op and NO
   // command span opened. Its `complete` signal is then the only proof the plugin ran; without this OR
   // the healthy run would be misjudged "no-plugin-activity" and its clean line withheld (residual
-  // opt-in blind spot, LEO deployment 2026-07-22). It never over-fires on a plain dev turn (no
+  // opt-in blind spot, client deployment 2026-07-22). It never over-fires on a plain dev turn (no
   // `complete` is emitted there — and a stray cross-session marker is filtered by the sid guard above).
   const pluginActivity = Boolean(state.sawPluginSpan) || Boolean(state.anySkillSeen) || completeForThisSession;
   // Clean line (default ON): gated on an EXPLICIT completion signal, NOT on per-turn plugin

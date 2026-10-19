@@ -322,7 +322,7 @@ async function callSoft(method, url, { body, contentType } = {}) {
 // ─── the bug field contract (VCST-5582 E) ─────────────────────────────────────────────
 /**
  * Where a `--*-file` path resolves from. `VC_FIX_HOME || cwd`, symmetric with the rest of the
- * plugin (skills/project-init/lib/paths.mjs `outputRoot()`), NOT bare cwd. The OPUS run died on
+ * plugin (skills/project-init/lib/paths.mjs `outputRoot()`), NOT bare cwd. A client deployment run died on
  * a raw `ENOENT … readFileUtf8` Node stack because `resolve(path)` used the process cwd, which
  * is not necessarily the project the report was written into.
  */
@@ -798,7 +798,7 @@ const COMMANDS = {
     let reproRef = "Microsoft.VSTS.TCM.ReproSteps";
     let systemInfoRef = "Microsoft.VSTS.TCM.SystemInfo";
     // Body/repro/systemInfo content, possibly merged: on a process whose only html control is the
-    // body target (e.g. OPUS: ReproSteps is the body, no distinct repro/systemInfo field), the repro
+    // body target (e.g. a Bug whose ReproSteps is the body, no distinct repro/systemInfo field), the repro
     // and systemInfo text fold INTO the body so nothing is silently dropped and no duplicate op is
     // emitted. `systemInfoFolded` tells the buildBugFields call below not to ALSO emit it separately.
     let bodyContent = description;
@@ -865,7 +865,7 @@ const COMMANDS = {
 
     // ─── FORM-VISIBILITY BINDING + OFF-FORM REFUSAL (VCST-5702 ITEM 0.3; review HIGH-1/MED-3) ──
     // Runs whenever a form layout was scanned, INDEPENDENT of whether a field contract is present.
-    // The OPUS silent failure — the whole body written to off-form System.Description, reported PASS —
+    // The VCST-5702 silent failure — the whole body written to off-form System.Description, reported PASS —
     // is reachable with NO contract too: discover-tracker's layout scan and field-contract scan are
     // SEPARATE best-effort calls, so a profile can carry `formLayout` while `fields` is empty (the
     // contract call failed, the layout call didn't). Gating this on the LAYOUT, not the contract,
@@ -937,7 +937,7 @@ const COMMANDS = {
     // but NOT conditional form rules ("required when State = X"), so a contract-clean payload
     // can still be rejected. Parse WHICH field the rejection is about and drop/keep precisely
     // that one — a REQUIRED field is never dropped (STOP + ask instead), and we never retry by
-    // shrinking the payload blindly, which is how the OPUS bug ended up with empty fields.
+    // shrinking the payload blindly, which is how a client bug ended up with empty fields.
     let healed = null;
     if (!res.ok && res.status >= 400 && res.status < 500) {
       const r = classifyFieldRejection(res.message, contract);

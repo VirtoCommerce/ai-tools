@@ -18,7 +18,7 @@
  * Emits ONE JSON object on stdout (notes on stderr) for `gen-profile.mjs --tracker-json`.
  *
  * Usage:
- *   node discover-tracker.mjs --tracker azure --org Lakeshirt-LEO --project LEO [--types Bug,Task,"User story"] [--primary Bug]
+ *   node discover-tracker.mjs --tracker azure --org acme-org --project ACME [--types Bug,Task,"User story"] [--primary Bug]
  *   node discover-tracker.mjs --tracker jira
  * Auth (azure): ADO_PAT (Basic) or an `az login` session. NEVER prints the token.
  */
@@ -81,7 +81,7 @@ async function adoGet(url, authHeader) {
 
 /**
  * Derive a lifecycle role → state map from a type's states. Pure. Name heuristics first
- * (a rich custom process like LEO's has "On Dev" / "On Review" / "Ready for QA"), with a
+ * (a rich custom process like one client's has "On Dev" / "On Review" / "Ready for QA"), with a
  * category-based fallback (Proposed / InProgress / Resolved / Completed). Also derives
  * best-effort QA-side roles (testing / tested / reopen) used by /qa-verify-fix — optional,
  * emitted only when found, and NOT part of the /qa-fix completeness gate.
@@ -109,7 +109,7 @@ export function deriveRoleStates(states) {
   // in-progress = the CANONICAL "work started" entry to the InProgress category = "Active"
   // (or "In Progress"). Do NOT pick "On Dev" here: in these custom VC processes "On Dev" /
   // "On Review" / "Ready for QA" are DOWNSTREAM sub-states that map to the in-review /
-  // ready-for-test roles — the start-of-work role is Active. (Confirmed against the LEO board:
+  // ready-for-test roles — the start-of-work role is Active. (Confirmed against a client board:
   // New → Active is correct; New → On Dev is wrong.)
   const inProgress = pick(/\bactive\b|\bin ?progress\b|\bstarted\b/i) || pickCat("inprogress");
   // Deliberately NO fallback to `inProgress` here. Aliasing in-review to whatever

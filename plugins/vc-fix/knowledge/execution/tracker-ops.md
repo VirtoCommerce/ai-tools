@@ -195,7 +195,7 @@ them. Always resolve the *destination status* by role, then map it to the live w
    matches the role (case-insensitive contains: "progress" / "review" / "test" / "done"). If
    none matches, ask the user which transition to use — do NOT invent an id.
 3. **Azure Boards:** map the role → a `System.State` via `tracker.azure.roleStates` — the map
-   `/project-init` SCANNED from this deployment's process (a custom process is common; e.g. LEO's Bug is
+   `/project-init` SCANNED from this deployment's process (a custom process is common; e.g. one client process's Bug is
    `{ "in-progress":"On Dev", "in-review":"On Review", "ready-for-test":"Ready for QA", "done":"Closed" }`
    — NOT the generic Agile `Active/Resolved`). If the map lacks the role, read the work item's allowed
    states (`node "$VC_RUN" ado list-states --type <T>`) and ask the user which state fits.

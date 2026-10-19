@@ -431,12 +431,12 @@ Rules:
 - Run it **exactly once**, at the real end of the workflow (e.g. after the final "Done"/STOP step),
   **AFTER** all user-visible output — never at an intermediate pause, and never before a step that
   still waits on the operator.
-- **NEVER while an operator DECISION is pending** (VCST-5582 D — this is the rule the OPUS run
+- **NEVER while an operator DECISION is pending** (VCST-5582 D — this is the rule a client deployment run
   broke). A skill that asks the operator anything — `/qa-bug`'s Step-5 "create a ticket?", its
   parent-link question, a field-mapping question — emits `complete` only **after** that question is
   answered or the step is explicitly declined. Two things go wrong otherwise: (1) everything the
   skill does after `complete` lands **outside** the span as `parentId: null` orphans, so neither the
-  oracle nor `/vc-self-check` ever evaluates it (on the OPUS run that was the entire
+  oracle nor `/vc-self-check` ever evaluates it (on that run that was the entire
   ticket-creation phase); (2) with the span closed, the `Stop` hook may resume the agent to print a
   verdict, pushing the unanswered question out of view.
 - **Ask with `AskUserQuestion`, not prose.** A prose question ends the turn, which is what lets an

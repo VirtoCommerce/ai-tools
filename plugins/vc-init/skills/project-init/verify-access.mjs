@@ -30,7 +30,7 @@
  *   - gh CLI session — gh auth status
  *   - Client repos — reachable + write-probed on their own host (GitHub permissions.push; Azure
  *     Repos non-mutating /pushes probe). A missing write scope is a **WARN** (grant-before-/qa-fix),
- *     not a FAIL — the LEO gap (read-only PAT reaches get-repo 200 but push 401) is surfaced, not
+ *     not a FAIL — the read-only-PAT gap (read-only PAT reaches get-repo 200 but push 401) is surfaced, not
  *     hard-blocked. A totally unreachable repo / absent credential is still FAIL.
  *
  * Usage: node skills/project-init/verify-access.mjs
@@ -689,7 +689,7 @@ async function main() {
     // ── GitHub token kind / upstream capability (VCST-5582 A) ──────────────────────────
     // The row above only checks whether the token READS the upstream — which a fine-grained PAT
     // does perfectly, while being structurally unable to fork / open a fork-PR / file an Issue
-    // there. That is why the OPUS deployment reported READY on a token that could never deliver.
+    // there. That is why a client deployment reported READY on a token that could never deliver.
     // So the token KIND gets its own row, and it is NEVER a silent green when the upstream axis
     // is actually needed. Not a FAIL: consistent with writeProbeSeverity's design call, a missing
     // capability is a WARN with the exact remedy — the operator can fix it before /qa-fix.
@@ -765,7 +765,7 @@ async function main() {
             continue;
           }
           // Reachable — now confirm PUSH scope (the /qa-fix operation), not just read. This is
-          // the LEO gap: get-repo 200 but push 401. Non-mutating: empty push body → 400 when
+          // the read-only-PAT gap: get-repo 200 but push 401. Non-mutating: empty push body → 400 when
           // authorized, 401/403 when Code-write scope is absent.
           const wp = await probeAdoCodeWrite({ apiBase, authHeader: ado.header, repo: name });
           const adoDetail =
@@ -850,7 +850,7 @@ async function main() {
   // /project-init path runs (fresh §9, --check §C, --add-env §D), so emitting the terminal-step
   // marker HERE makes the clean self-check line ("no plugin issues detected") fire reliably —
   // WITHOUT depending on the model remembering the trailing `complete` command (it can skip that
-  // silent afterthought in auto mode; observed on the LEO deployment 2026-07-22 → the healthy run
+  // silent afterthought in auto mode; observed on the client deployment 2026-07-22 → the healthy run
   // surfaced nothing). The hook gates itself on captureEnabled (selfDiagnostics:true), so this is a
   // no-op when capture is off. NEVER throws / never affects the readiness exit code. Emitted even on
   // NOT READY — a correct NOT-READY verdict is itself a completed run (see skill-expectations §complete).

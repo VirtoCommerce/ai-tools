@@ -241,7 +241,7 @@ mv reports/bugs/screenshots/_incoming/*/<kept>.png reports/bugs/screenshots/<slu
 - The report then references the **final** path (`reports/bugs/screenshots/<slug>/<file>.png`) —
   never an `_incoming/` path and never a bare filename.
 - If a capture is not where you expect, **list `reports/bugs/screenshots/_incoming/`** — do not
-  guess a path. A guessed path was one of the two `Read` failures on the OPUS run.
+  guess a path. A guessed path was one of the two `Read` failures on a client deployment run.
 
 Generate a report in `reports/bugs/open/<bucket>/` — `critical-high/` · `medium/` · `low/`, chosen by the severity the report declares (`.claude/rules/reports.md` §1a; a straddling grade files at the lower bucket), using this naming convention:
 `BUG-{Short-Description}.md` or `BUG-{Short-Description}-<ticket-key>.md` (if a JIRA ticket is known)
@@ -323,7 +323,7 @@ instead of re-deriving it. Fill it from Step 2 (owning layer) + Step 3a (exact r
 **Ask via `AskUserQuestion`** — question `"Create a bug-tracker ticket for this bug?"`, options
 **"Yes — create the ticket"** / **"No — keep the local report only"**. Use the tool, **never prose**:
 a prose question ENDS THE TURN, which lets an end-of-turn hook (the self-diagnostics tail-trigger)
-resume the agent and push the question out of view — exactly what happened on the OPUS deployment
+resume the agent and push the question out of view — exactly what happened on a client deployment
 (VCST-5582 D). `AskUserQuestion` blocks inside the turn, so nothing can bury it. This is the same
 mechanism the parent-link question below already uses.
 
@@ -388,7 +388,7 @@ If yes, **create via the profile's tracker** (`tracker-ops.md` §2 — Create), 
     - **Read-back (E-e):** re-reads the created item and returns `fieldsOk` + a per-field **PASS/MISSING** table (`verifyTable`) with **Status / On form / Images** columns + `stillMissing`. A 200 from ADO means "an item exists", not "the fields are populated". Statuses: **PASS · MISSING** (empty), **OFF_FORM** (written to a field NOT on the form — an invisible body, never a PASS, VCST-5702 ITEM 0), **IMAGES_MISSING** (submitted N `<img>`, fewer than N came back as attachment-backed images — the "persisted ≠ rendered" gap, ITEM 1). A refillable MISSING is PATCHed **once** and re-verified (`patchedAfterCreate`); an OFF_FORM/IMAGES_MISSING is reported, not silently retried. The receiving body field is echoed as `bodyField`.
     - **Verify inline rendering with `get-workitem --json`, never a raw curl.** The stripped default `get-workitem` output now also reports an image **count** per html field + `hasSystemInfo`/`hasIterationPath`, so it can't imply images are absent; to eyeball the actual `<img src="…/_apis/wit/attachments/…">` tags, read the raw item: `node "$VC_RUN" ado get-workitem --id <ID> --json` (ITEM 2).
     - Returns `{ id, type, title, state, url, contract, contractAccounting, bodyField, fieldsOk, verifyTable, … }`.
-  - **On a create failure: FIX THE INPUT — never retry with fields removed.** Dropping fields until the POST succeeds is exactly how the OPUS work item ended up with its fields unset. The one automatic exception is handled for you: an **optional** field the server itself rejected is dropped and the create retried **once** (reported as `selfHealed`). A **required** field is never dropped — STOP and ask the operator.
+  - **On a create failure: FIX THE INPUT — never retry with fields removed.** Dropping fields until the POST succeeds is exactly how a client work item ended up with its fields unset. The one automatic exception is handled for you: an **optional** field the server itself rejected is dropped and the create retried **once** (reported as `selfHealed`). A **required** field is never dropped — STOP and ask the operator.
   - **Fallback ladder (E-f) — "universal" must not mean "fragile":** contract in the profile ⇒ use it · contract absent ⇒ re-run `/project-init`'s tracker scan, or proceed and let the create report `contract: "unverified defaults"` · metadata unreachable (read permission / offline) ⇒ the legacy field set is sent, **clearly labelled "unverified defaults"** in your report to the operator · a specific field rejected ⇒ the single self-heal above.
   - **Safety net:** `create-workitem` auto-converts Markdown→HTML for html-typed fields if any slips through, but author HTML directly for the clean, structured result — don't lean on the net.
 
@@ -438,7 +438,7 @@ ls -1 *.png *.har *.zip *.webm 2>/dev/null   # also catches an already-ignored f
 - **Nothing found** → say so in one line: `root clean — no stray artifacts`.
 - **Something found** → **NAME each file** (and its size/mtime) in your final message, THEN move it
   into `reports/bugs/screenshots/<slug>/` if it is evidence, or delete it if it is a temp file.
-  Naming it is the point: the OPUS telemetry could not pin down WHICH writer produced the
+  Naming it is the point: a client deployment's telemetry could not pin down WHICH writer produced the
   root-level files, so a silent move would erase the only clue if the pattern repeats
   (VCST-5582 C). Report it as an observation, not a failure — the run still succeeded.
 
@@ -450,7 +450,7 @@ captures under `reports/bugs/screenshots/`, scratch files under the session temp
 > **ORDERING RULE — never signal completion while an operator decision is pending.** `complete
 > --skill` is emitted **only after** the Step-5 ticket was created **or** explicitly declined (and
 > after any parent-link / field-mapping question was answered). Signalling early is what broke the
-> OPUS run (VCST-5582 D/E1): `complete` fired at 11:04:19Z while the ticket question was still
+> A client deployment run (VCST-5582 D/E1): `complete` fired at 11:04:19Z while the ticket question was still
 > unanswered, so the whole ticket-creation phase ran OUTSIDE the span (`parentId: null` orphans) and
 > was never diagnosed — and the `Stop` hook, seeing a closed span, resumed the agent and buried the
 > question. The collector now also defers a `Stop` that finds an unanswered `AskUserQuestion`

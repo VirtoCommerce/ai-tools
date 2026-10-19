@@ -74,7 +74,7 @@ export function moduleToRepo(mod) {
     // No resolvable repo URL. The upstream `vc-module-*` naming convention applies ONLY to a
     // genuine `VirtoCommerce.*` PLATFORM module — for that it is a safe, authoritative guess. For a
     // CLIENT module id it would INVENT a name that has no basis and 404s at fix time (the
-    // omnia-opus/OPUS `Opus.Main` → `vc-module-opus-main` bug). So synthesize ONLY for
+    // VCST-5702 `Acme.Main` → `vc-module-acme-main` bug). So synthesize ONLY for
     // `VirtoCommerce.*`; for a client id leave `name` NULL and let main() RESOLVE it against the
     // live repo listing (resolveModuleRepo) — never inventing a name. `nameFromId` marks either as
     // id-derived (unauthoritative) in both cases.
@@ -91,7 +91,7 @@ export function moduleToRepo(mod) {
  * Classify discovered modules into client vs platform repo lists. Pure.
  * Platform iff a VirtoCommerce-owned repo, or (owner unknown) a `VirtoCommerce.*` module
  * id. Everything else — a non-VirtoCommerce owner, an owner matching `clientOrg`, or a
- * non-`VirtoCommerce.*` id (e.g. a custom `vc-module-leo-main`) — is a CLIENT repo.
+ * non-`VirtoCommerce.*` id (e.g. a custom `vc-module-acme-main`) — is a CLIENT repo.
  */
 export function classify(modules, clientOrg) {
   const client = [];
@@ -177,13 +177,13 @@ function tokenizeRepoId(s) {
 
 /**
  * Resolve a client module id to a REAL repo from the live listing by token overlap — never by
- * inventing a `vc-module-*` name (VCST-5702). `Opus.Main` + `["opus-module-main", ...]` →
- * `opus-module-main`. Pure + unit-testable (the network fetch that obtains `liveRepoNames` stays
+ * inventing a `vc-module-*` name (VCST-5702). `Acme.Main` + `["acme-module-main", ...]` →
+ * `acme-module-main`. Pure + unit-testable (the network fetch that obtains `liveRepoNames` stays
  * in main()).
  *
  * Match: tokenize the id and each candidate, drop the structural noise tokens (REPO_NOISE_TOKENS)
  * and — from candidates only — the clientOrg tokens that are NOT themselves part of the id (so an
- * org slug that is genuinely part of the module identity, like `opus` in `Opus.Main`, is KEPT).
+ * org slug that is genuinely part of the module identity, like `acme` in `Acme.Main`, is KEPT).
  * A candidate matches when the id token set equals its stripped set or is a subset of it; prefer
  * the equal match, then the fewest EXTRA candidate tokens. EXACTLY ONE best candidate → resolved;
  * zero or a tie → null (never pick arbitrarily).

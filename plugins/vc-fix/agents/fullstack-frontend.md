@@ -114,7 +114,7 @@ Invoke the development skills:
    layer, RCA). Confirm the root cause, not the symptom. **Rule out `$cfg` config-gating** (→ BAIL if so).
 2. **Checkout** — the ONE routed storefront repo (from the route: `vc-frontend` upstream, or a **client
    fork** whose bare name may differ, e.g. `frontend`). Clone into
-   `<paths.workspace>/<repo-basename>/` (i.e. `.fix-workspace/frontend/` for a repo `Lakeshirt-LEO/frontend`
+   `<paths.workspace>/<repo-basename>/` (i.e. `.fix-workspace/frontend/` for a repo `acme-org/frontend`
    — **do NOT hardcode `vc-frontend`**) on branch `<workBranchPrefix><ticket>` (e.g. `claude/qa-autofix/967`).
    **Base + PR target = `contribution.prTarget` / `integrationBranch`** from the profile (often `dev`, but
    may differ — do not assume). Clone `contribution.cloneUrl` with `node "$VC_RUN" git-gh clone …`

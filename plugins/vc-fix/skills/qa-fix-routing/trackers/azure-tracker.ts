@@ -1,6 +1,6 @@
 /**
  * AzureTracker — Tracker implementation for Azure Boards (Azure DevOps work
- * items), mirroring the patterns proven in LEO's ado-api.sh.
+ * items), mirroring the patterns proven in the curl-based ADO helper it replaced.
  *
  * Auth is delegated to qa-fix-routing/ado-rest (PAT via ADO_PAT, or an `az login`
  * browser/device token — no passwords). Config: org/project from env

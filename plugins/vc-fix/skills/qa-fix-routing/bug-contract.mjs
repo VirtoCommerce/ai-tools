@@ -7,7 +7,7 @@
  * WHAT WAS WRONG. `/qa-bug` Step 5 hardcoded one organization's Azure Boards process:
  * `Custom.Environment`, `Custom.Reportedby`, `Custom.Typeofbug`, plus the ASSUMPTION that
  * `System.Description` / `Microsoft.VSTS.TCM.SystemInfo` are HTML fields. Those refs exist in
- * the LEO/OPUS-shaped process and nowhere else: on any other organization they are rejected or
+ * one client's customized process and nowhere else: on any other organization they are rejected or
  * silently blank, while THAT process's genuinely required fields are never filled. And a 200
  * from ADO means "an item was created", not "the fields are populated" — nothing verified.
  *
@@ -64,7 +64,7 @@ const SLOT_SPECS = {
   expected: { refs: [], names: [/expected/i], types: ["html", "plaintext", "string"] },
   actual: { refs: [], names: [/^actual/i], types: ["html", "plaintext", "string"] },
   // Short-value slots accept `plaintext` as well as `string`: Azure reports a single-line
-  // custom text field either way depending on how the process defined it (the LEO/OPUS
+  // custom text field either way depending on how the process defined it (on one client process
   // "Reported by" is plainText while "Environment" next to it is string).
   severity: { refs: ["Microsoft.VSTS.Common.Severity"], names: [/^severity$/i], types: ["string", "plaintext", "pickliststring"] },
   priority: { refs: ["Microsoft.VSTS.Common.Priority"], names: [/^priority$/i], types: ["integer", "double", "string", "picklistinteger"] },
@@ -326,7 +326,7 @@ export function resolveSlots(contract, fieldMap = {}, formHtmlControls = []) {
     let hit = list.find((f) => !taken.has(lc(f.ref)) && formEligible(f) && spec.refs.some((r) => lc(r) === lc(f.ref)));
     if (!hit) hit = list.find((f) => !taken.has(lc(f.ref)) && typeOk(f) && formEligible(f) && spec.names.some((rx) => rx.test(f.name)));
     // body fallback (VCST-5702 ITEM 0): a process whose form does NOT surface System.Description
-    // (the OPUS Bug: ReproSteps + SystemInfo only) has no canonical body target. Bind `body` to the
+    // (e.g. a Bug with ReproSteps + SystemInfo only) has no canonical body target. Bind `body` to the
     // FIRST form-visible html control instead — in form order, so the operator's primary text area
     // is chosen. repro/systemInfo, resolved later/earlier, then take what remains.
     if (!hit && slot === "body" && formActive) {
@@ -464,7 +464,7 @@ export function buildContractFields(contract, mapping, slotValues = {}, extraFie
  *                            reported as MISSING rather than silently passing)
  * @param {Object} [opts]     { formHtmlControls?: string[], submittedImages?: Record<ref,number> }
  *   formHtmlControls — the ordered html controls on THIS type's form. A form-gated long-text slot
- *     whose field is off-form can never PASS, even non-empty (the OPUS false pass — VCST-5702 ITEM 0).
+ *     whose field is off-form can never PASS, even non-empty (the VCST-5702 ITEM 0 false pass).
  *   submittedImages — ref → count of `<img>` we SUBMITTED. The read-back must contain that many
  *     `<img>` pointing at `_apis/wit/attachments/` or the field is IMAGES_MISSING (ITEM 1). A field
  *     with zero submitted images keeps the plain non-empty semantics.
@@ -503,7 +503,7 @@ export function verifyAgainstContract(contract, mapping, itemFields = {}, sent =
     const imgReadback = imgSubmitted > 0 ? countAttachmentImages(typeof raw === "string" ? raw : "") : 0;
     let status;
     if (formActive && FORM_GATED_HTML_SLOTS.has(slot) && onForm === false) {
-      // A body written to an OFF-FORM field is never a PASS, even non-empty — the OPUS symptom
+      // A body written to an OFF-FORM field is never a PASS, even non-empty — the VCST-5702 symptom
       // (fieldsOk:true on an invisible body). ITEM 0.
       status = "OFF_FORM";
     } else if (!present) {
@@ -552,7 +552,7 @@ export function renderVerifyTable(rows) {
 /**
  * Parse an Azure Boards rejection to find WHICH field it is about, so the caller can fix or
  * drop exactly that field and retry ONCE — instead of the natural-but-wrong reaction of
- * re-POSTing with fewer fields until something sticks (which is how the OPUS bug ended up
+ * re-POSTing with fewer fields until something sticks (which is how a client bug ended up
  * with its fields unset).
  *
  * A REQUIRED field is never droppable: the caller must STOP and ask.
@@ -697,7 +697,7 @@ export function filterContractForPersist(contract, opts = {}) {
  *     defaultValue / AreaPath / --iteration current — the SERVER_DEFAULTED_REQUIRED set);
  *   - any field carrying a contract `defaultValue`;
  *   - any field with a persisted `tracker.fieldDefaults` entry.
- * On the omnia-opus/OPUS Bug that reduces 8 required fields to exactly 3 questions. Pure.
+ * On the VCST-5702 client Bug that reduces 8 required fields to exactly 3 questions. Pure.
  * @returns {Array} contract entries the operator must answer, in contract order.
  */
 export function operatorQuestions(contract, opts = {}) {
