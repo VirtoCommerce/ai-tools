@@ -37,6 +37,9 @@ import { join, relative, isAbsolute, sep } from "path";
 export const SECRET_IGNORES = [
   ".mcp.json",
   ".claude/settings.local.json",
+  // The vc-secrets declarations /project-init writes (write-secrets-decl.mjs). No secret VALUE is in
+  // it, but it names this machine's bridge shim path and is reviewed per checkout with vc-secrets trust.
+  ".claude/vc-secrets.local.json",
   ".env.local",
   ".env.*.local",
   "project-profile.json",
