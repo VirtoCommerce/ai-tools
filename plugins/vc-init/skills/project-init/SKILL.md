@@ -1137,6 +1137,39 @@ nothing — that many removals usually means a schema mismatch (reconciling agai
 schema than the one that wrote the profile), not stale fields. **Review the `removed` list**;
 only if the removals are genuinely intended, re-run with `--force`.
 
+### Step M — move every plaintext token into vc-secrets, then strip it (VCST-6402)
+
+An install onboarded before VCST-6402 keeps its tokens in files: `.env.local` (`GITHUB_FIX_BUGS_TOKEN`,
+`ADO_PAT`, `JIRA_API_TOKEN`, also `_<ENV>`-suffixed), `.claude/settings.local.json` `env`
+(`GITHUB_PERSONAL_ACCESS_TOKEN` from the VCST-5774 design), a literal in `.mcp.json`, and the remote URL
+of an Azure Repos checkout under `.fix-workspace/`. Find them — names and locations only, never a value:
+
+```bash
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/migrate-secrets.mjs" --scan
+```
+
+Exit 0 (`clean`) ⇒ skip to Step C. Otherwise show the findings as ONE table (file · key · axis ·
+committed?) and, for every axis listed under `rotate`, say plainly that the token sat in a file that is
+or was in git history and must be **rotated** (a new token created and the old one revoked), not merely
+moved. Then:
+
+1. The declarations must match the reconciled profile — Step B's `write-secrets-decl.mjs --from-profile`.
+2. The operator stores each token in vc-secrets — the §3d token block (`check-secrets.mjs --steps`):
+   `trust` when the declarations changed, `set <name>` per token (the CURRENT value, or the new one when
+   rotating — pasted at the hidden prompt, never in chat). Pause with the waiting line.
+3. On "done": the §3e token gate (`check-secrets.mjs`), then strip what now works:
+
+```bash
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/migrate-secrets.mjs" --strip --vc-run "<VC_RUN path>"
+```
+
+`--strip` probes each axis through the bridge (`gh api user` · `ado whoami` · `jira myself`) and removes
+that axis's plaintext copies ONLY when its probe passes — a failing axis keeps its file copy, because it
+may be the only working one. A postman/context7 key is stripped unconditionally (those servers are gone).
+`.mcp.json` is never edited here: re-run gen-mcp (§7), which rewrites it without any token and prunes
+the settings `env`. Relay `stripped`, `remaining` and `next` in one short table; a `remaining` entry is
+the operator's to-do, named, not a silent leftover.
+
 ### Step C — normalize the env file, then verify access
 
 First re-run the §3d normalizer — an env file edited by hand since onboarding can have
@@ -1223,6 +1256,7 @@ Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or j
 | `lib/paths.mjs` | shared path helper — `outputRoot()` (`VC_FIX_HOME` \|\| `process.cwd()`, where generated state goes) + `pluginRoot()` (`CLAUDE_PLUGIN_ROOT` \|\| resolved from `import.meta.url`, used by a running script to find its own read-only plugin assets). Keeps every generator writing to the project and reading templates from the plugin. (Commands resolve their launch path via `claude plugin list --json` — see vc-fix's `knowledge/execution/plugin-root.md`.) |
 | `verify-access.mjs` | full `/qa-fix` readiness table + verdict, incl. the two **secret-hygiene** rows that audit `.mcp.json` + `.claude/settings.local.json` for an exposed credential (graded by committability: tracked/not-ignored ⇒ FAIL); prints an untruncated "To resolve" block (incl. an auto-discovered `az login --tenant <guid>`). Also **reports every non-PASS row as self-diagnostics telemetry** (`lib/diag-obs.mjs` → the collector's `obs` subcommand) — the table used to be rendered and discarded, so a WARN the operator could plainly read was invisible to `/vc-self-check` and the run self-diagnosed "no plugin issues detected" (VCST-5582 H). Exit code is unchanged: 0 unless a hard FAIL |
 | `assert-profile.mjs` | asserts the **SHAPE** of the profile just written and records each degradation as a `degraded_artifact` observation: empty `tracker.fields` (⇒ `/qa-bug` sends "unverified defaults"), `roleStatesComplete:false`, unmapped required fields, empty `repos.client` on a client project, an unresolved storefront `upstreamRef`, `githubForkCapable != "yes"` while the upstream path is needed. Complements `verify-access` (which probes ACCESS): a scan can return empty with no HTTP error, and what `/qa-fix` reads at runtime is the persisted shape. Read-only, **always exits 0** — a diagnostic, not a second readiness gate |
+| `migrate-secrets.mjs` | **`--check` Step M**: `--scan` lists every token left in a file (`.env*`, settings `env`, `.mcp.json`, `.fix-workspace/*/.git/config` remote URLs, the profile) by NAME and LOCATION and flags the ones in git history (⇒ rotate); `--strip` removes an axis's plaintext copies only after its bridge probe passes |
 | `ensure-session.mjs` | establish the browser-login sessions WITHOUT hand-crafted commands: auto-discovers the ADO org tenant and drives `az login --tenant <guid>` / `gh auth login --web`; `--check` probes only. Run in the background (the login blocks on the browser). Run it DIRECTLY, never through `$VC_RUN` — a session login must not see a token (gh refuses to log in while GH_TOKEN is set). |
 
 > The interview asks only **env name · tracker · code host** + an auth preference
