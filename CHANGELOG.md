@@ -8,6 +8,44 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## `vc-init`: onboarding is its own plugin, and no token sits in any file — catalog `0.12.0`, `vc-init` `0.1.0`, `vc-fix` `0.10.0`, `vc-perf` `0.4.0` — VCST-6402
+
+**Added: the `vc-init` plugin** (depends on `vc-secrets`). `/project-init` moved out of `vc-fix`, so `vc-perf`
+no longer pulls in the whole bug lifecycle to onboard. `vc-fix` and `vc-perf` now depend on `vc-init`.
+vc-init is the **only writer of `project-profile.json`**: `/qa-bug` (first-run field answers) and `/perf-init`
+(the `perf` block) write through its `profile-set.mjs`, and `/project-init --check` keeps the `perf` block.
+
+**Added: the `$VC_RUN` bridge — every GitHub / Azure DevOps / Jira token goes through `vc-secrets`.** The
+operator stores a PAT with `node "<VC_SECRETS>" set github-pat|ado-pat|jira-token` at a hidden prompt (never
+in the chat) and approves the project's declarations with `vc-secrets trust`. A process receives a token only
+as `node "$VC_RUN" gh|git-gh|git-ado|ado|jira|deliver|onboard …`: the bridge checks the command line against an
+allowlist (no `gh auth`, no `gh pr merge`, no `git -c`, no foreign host), starts `vc-secrets task
+vc-init-<group>` for a PAT axis or the tool directly for a session login, pins git to a host-scoped credential
+helper with hooks off, and redacts the child's output. New: `vc-fix` `skills/qa-fix-routing/jira.mjs` (Jira
+REST with the host pinned to the profile) and `ado.mjs edit-comment | patch-fields | wiql`.
+
+**Changed: the GitHub MCP server** runs through `vc-secrets run github` on a PAT axis (pinned `mcp-remote`
+carrying `github-pat` in the Authorization header — verified on Windows `npx.cmd`) and as the hosted server with
+OAuth otherwise. `.claude/settings.local.json` `env` holds only `VC_RUN`.
+
+**BREAKING:** a missing `project-profile.json` now **stops** vc-fix and vc-perf with "run /project-init" —
+the silent native-platform / Jira / GitHub defaults are gone; an unknown `schemaVersion` stops too. The profile
+is `schemaVersion` 2: `auth.{github,ado,jira}` replaces `vcs.auth` / `vcs.authEnv`. **Migration:** run
+`/project-init --check` — it reconciles the profile (deriving the auth axes a schema-1 file never recorded),
+writes the vc-secrets declarations, asks you to `set` each token, and then `migrate-secrets.mjs --strip` removes
+every plaintext copy (`.env.local`, settings `env`, a tokenised `.fix-workspace` remote URL) whose vc-secrets
+copy passes a live probe. A token that sat in a file ever committed to git is flagged for rotation.
+
+**Removed:** the `postman` and `context7` MCP servers from onboarding (each needed an API key in a file);
+`gen-mcp --inline-secrets` (refused); the token placeholders in `.env.local` (`scaffold-secrets` writes
+test-user passwords only).
+
+**Verified:** see the PR — `npm test`, `npm run context:check`, `npm run docs:index:check`, the vc-secrets and
+vc-init bridge suites, `claude plugin validate` on vc-init / vc-fix / vc-perf, and a secret-at-rest scan of a
+scratch onboarding.
+
+---
+
 ## `vc-secrets`: a declared process gets its secrets at launch, not from a config file — catalog `0.11.0`, `vc-secrets` `0.1.0` — 2026-10-02
 
 **Added: the `vc-secrets` plugin** (`defaultEnabled: false`). An MCP entry calls the launcher instead of
