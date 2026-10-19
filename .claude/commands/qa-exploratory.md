@@ -36,7 +36,7 @@ and `ticket` STOPs without one.
 Only for `sprint` / `sprint:XX-YY`. The charter set was already derived at planning time — this step
 loads it and skips the ad-hoc charter authoring in "Exploration Charter" below.
 
-1. Resolve the plan: `sprint` → the most recent `vc/shared/docs/Sprint plans/sprint-*-summary.json`;
+1. Resolve the plan: `sprint` → the most recent `docs/Sprint plans/sprint-*-summary.json`;
    `sprint:XX-YY` → that exact file. No summary.json ⇒ **STOP** and tell the user to run
    `/qa-test-plan XX-YY` first — never improvise a charter set that the plan does not contain.
 2. Read `exploratoryCharters[]`. Each entry carries `mission`, `candidateScenarios[]`, `technique`,

@@ -59,7 +59,7 @@ suite list. The table below is *when to reach for which*, which the manifest can
 | `purchase-flow` | Cart → checkout → orders → payment, end to end |
 | `catalog` · `search` · `orders` · `auth` · `b2b` · `marketing` · `platform` | One module, frontend + admin |
 | `frontend` · `backend` | One layer, minus the suites the manifest excludes |
-| `sprint` | **Plan-driven** — `/qa-regression sprint` reads `vc/shared/docs/Sprint plans/sprint-*-summary.json` → `suitesActivated[]` (auto-picks the most recent plan). Falls back to all P0+P1 suites when no plan exists or `--no-plan` is set |
+| `sprint` | **Plan-driven** — `/qa-regression sprint` reads `docs/Sprint plans/sprint-*-summary.json` → `suitesActivated[]` (auto-picks the most recent plan). Falls back to all P0+P1 suites when no plan exists or `--no-plan` is set |
 | `sprint:XX-YY` | Re-run a past sprint's regression scope, pinned to that plan |
 | `stable:N <wave>` (`/qa-run` only) | One wave of a stable-bundle regression planned by `/qa-test-plan stable N` — claim, run, triage, publish; `stable:N status` for the overview |
 | `full` | Everything the manifest does not exclude — before a production release |
