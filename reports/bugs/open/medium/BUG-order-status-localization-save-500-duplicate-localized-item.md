@@ -83,3 +83,10 @@ observability gap.
 
 ## Workaround
 None in the product. Only a DB cleanup of the stray row.
+
+## Verification 2026-10-14
+**Verdict:** VERIFIED WITH NOTES on vcptcore-dev, Platform `3.1084.0-pr-3139-3b31` (vc-platform PR #3139 @3b31958a, still open). Jira comment 112047; ticket left in **Testing** until the PR merges, so this report stays in `open/` (move it to `fixed/` with a Resolution block once the fix is released).
+- Double-click Save: 2 requests pre-fix → 1 fixed. "Yes" in *Save changes*: TypeError pre-fix → saves. STR 3/3 → 204; unchanged-set save → 204.
+- Not verified live: the server removing an EXISTING duplicate on the next save — 148 concurrent identical REST saves on vcptcore-dev never stored one. Covered by the PR's unit test only.
+- Cause refined by the developer (Jira 112039): duplicates come from concurrent saves (double-clicked Save), i.e. exact duplicates — not only case-variant aliases as hypothesised above.
+- Evidence: `reports/tickets/Sprint26-20/VCST-6148/vcptcore_dev/`.
