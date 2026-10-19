@@ -111,7 +111,7 @@ export const PROFILE_DEFAULTS = {
   projectType: "platform",
   operator: "virto-engineer",
 
-  // runtime — how a skill orients itself. DEFAULT (no profile) = the original
+  // runtime — how a skill orients itself. DEFAULT (a profile written without --runtime-mode) = the original
   // VirtoCommerce-internal agentic checkout where the .ts/.mjs helpers ACTUALLY RUN
   // headless. /project-init generating a PLUGIN profile overrides this to
   // { mode:"plugin", helpersRunnable:false } so the interactive command reads the

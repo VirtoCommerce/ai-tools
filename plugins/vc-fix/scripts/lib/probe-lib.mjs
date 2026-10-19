@@ -89,7 +89,7 @@ const FORK_CAPABLE_SCOPE_RE = /^(repo|public_repo)$/i;
  */
 export const GITHUB_UPSTREAM_REMEDY =
   "create ONE CLASSIC token with the `repo` scope — github.com → Settings → Developer settings → " +
-  "Personal access tokens → Tokens (classic). It covers both your own org's repos and the " +
+  "Personal access tokens → Tokens (classic) — and store it in vc-secrets (`node \"<VC_SECRETS>\" set github-pat`), never in a file. It covers both your own org's repos and the " +
   "VirtoCommerce upstream (fork / fork-PR / Issue). Or run `gh auth login` and use the browser " +
   "session instead. A fine-grained PAT cannot do the upstream half: it is read-only on public " +
   "repos it does not own, so fork / fork-PR / issue-create return 403.";

@@ -58,6 +58,12 @@
  *                               --target refs/heads/dev --title "fix(AB#967): ..." \
  *                               --description-file pr.md [--work-item 967] [--draft]
  *   node ado.mjs list-policies  --repo frontend --pr 1200
+ *   node ado.mjs edit-comment   --id 967 --comment-id 4711 --text-file body.txt   # the amend path
+ *   node ado.mjs patch-fields   --id 967 --field "System.Description=" --fields-file fields.json
+ *   node ado.mjs wiql           --query "SELECT [System.Id] FROM WorkItems WHERE …" [--fields System.Title] [--top 50]
+ *
+ * Token-holding calls run through the vc-init bridge (VCST-6402): `node "$VC_RUN" ado <command> …`
+ * gives this process ADO_PAT from vc-secrets for a PAT axis, or runs it as is for an `az login` axis.
  *
  * Exit non-zero on any HTTP >=400 or an auth redirect. `--json` prints the raw body.
  */
@@ -193,10 +199,10 @@ async function authHeader() {
   try {
     ({ AzureCliCredential } = await import("@azure/identity"));
   } catch {
-    fail(`Azure DevOps auth unavailable: set ADO_PAT (recommended) or install @azure/identity and run \`az login\`.\n      (ADO_PAT is read from .env.local under VC_FIX_HOME || cwd = ${inputRoot()} — confirm it is set there, not just exported in another shell.)`);
+    fail(`Azure DevOps auth unavailable: no ADO_PAT in this process and no @azure/identity for an \`az login\` session.\n      A PAT is stored in vc-secrets and reaches this script only when it runs as \`node "$VC_RUN" ado …\` — run it that way (cwd = ${inputRoot()}). Not set up yet: /project-init --check.`);
   }
   const tok = await new AzureCliCredential().getToken(ADO_RESOURCE);
-  if (!tok?.token) fail(`Azure DevOps auth unavailable: set ADO_PAT, or run \`az login\` and set ADO_AUTH=az-login.\n      (ADO_PAT is read from .env.local under VC_FIX_HOME || cwd = ${inputRoot()}.)`);
+  if (!tok?.token) fail(`Azure DevOps auth unavailable: run as \`node "$VC_RUN" ado …\` (the PAT comes from vc-secrets), or \`az login\` for a session axis.\n      (cwd = ${inputRoot()}; not set up yet: /project-init --check.)`);
   _bearer = { token: tok.token, exp: tok.expiresOnTimestamp };
   return `Bearer ${tok.token}`;
 }
@@ -269,7 +275,7 @@ async function call(method, url, { body, contentType } = {}) {
     redirect: "manual",
   });
   if (res.status >= 300 && res.status < 400) {
-    fail(`HTTP ${res.status} redirect to sign-in for ${method} ${url}\n      => ADO auth not accepted. Is ADO_PAT loaded (absolute path to .env.local) and non-empty/valid?`);
+    fail(`HTTP ${res.status} redirect to sign-in for ${method} ${url}\n      => ADO auth not accepted. Run through the bridge (\`node "$VC_RUN" ado …\`) so the stored PAT is used; if it was, the PAT is expired or lacks scope — store a new one with \`node "<VC_SECRETS>" set ado-pat\`.`);
   }
   const text = await res.text();
   let data;
@@ -517,6 +523,69 @@ const COMMANDS = {
       },
     );
     return { id: d.id, state: d.fields?.["System.State"] };
+  },
+
+  // Edit an existing comment — the amend path of tracker-ops §0 (one comment per ticket per run).
+  async "edit-comment"(args) {
+    if (!args.id || !args["comment-id"]) fail("--id and --comment-id required");
+    const text = args["text-file"] ? readFileSync(resolve(args["text-file"]), "utf-8") : args.text;
+    if (!text) fail("--text or --text-file required");
+    const body = args.raw ? String(text) : ensureAzureHtml(text);
+    const d = await call(
+      "PATCH",
+      `${base(args, "tracker")}/_apis/wit/workItems/${args.id}/comments/${enc(args["comment-id"])}?api-version=7.1-preview.4`,
+      { body: { text: body } },
+    );
+    return { id: d.id, ok: true };
+  },
+
+  // Set arbitrary work-item fields (a JSON-Patch `add` per field) — the repair path
+  // azure-html-format.md §Repairing used to hand-roll with curl and a PAT in a temp file
+  // (VCST-6402: the token reaches this process through `node "$VC_RUN" ado …`, never a file).
+  //   --field "Ref.Path=value"            (repeatable; value taken literally)
+  //   --fields-file fields.json           ({ "Ref.Path": "value", … } — for html bodies)
+  // An empty value clears the field. Values are written as given: no Markdown→HTML conversion.
+  async "patch-fields"(args) {
+    if (!args.id) fail("--id required");
+    const fields = {};
+    if (args["fields-file"]) {
+      let parsed;
+      try {
+        parsed = JSON.parse(readFileSync(resolve(args["fields-file"]), "utf-8"));
+      } catch (e) {
+        fail(`--fields-file: ${e.message}`);
+      }
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) fail("--fields-file must hold a JSON object { \"Ref.Path\": value }");
+      Object.assign(fields, parsed);
+    }
+    for (const kv of args.field || []) {
+      const eq = String(kv).indexOf("=");
+      if (eq < 1) fail(`--field "${kv}" — expected Ref.Path=value`);
+      fields[kv.slice(0, eq)] = kv.slice(eq + 1);
+    }
+    const refs = Object.keys(fields);
+    if (!refs.length) fail("nothing to set — pass --field Ref=value or --fields-file");
+    for (const ref of refs) if (!/^[A-Za-z][\w.]*$/.test(ref)) fail(`"${ref}" is not a field reference name`);
+    const d = await call(
+      "PATCH",
+      `${base(args, "tracker")}/_apis/wit/workitems/${args.id}?${V}`,
+      { body: refs.map((ref) => ({ op: "add", path: `/fields/${ref}`, value: fields[ref] })), contentType: "application/json-patch+json" },
+    );
+    return { id: d.id, rev: d.rev, set: refs };
+  },
+
+  // Run a WIQL query — the Azure Boards search of tracker-ops §2. Returns the matching ids, and with
+  // --fields the listed fields of the first --top items (default 50).
+  async wiql(args) {
+    const query = args["query-file"] ? readFileSync(resolve(args["query-file"]), "utf-8") : args.query;
+    if (!query) fail("--query or --query-file required");
+    const top = Math.max(1, Math.min(200, Number(args.top) || 50));
+    const d = await call("POST", `${base(args, "tracker")}/_apis/wit/wiql?$top=${top}&${V}`, { body: { query: String(query) } });
+    const ids = (d.workItems || []).map((w) => w.id).slice(0, top);
+    if (!args.fields || !ids.length) return { count: ids.length, ids };
+    const fieldList = String(args.fields).split(",").map((f) => f.trim()).filter(Boolean);
+    const items = await call("GET", `${orgUrl(args)}/_apis/wit/workitems?ids=${ids.join(",")}&fields=${fieldList.map(enc).join(",")}&${V}`);
+    return { count: ids.length, items: (items.value || []).map((w) => ({ id: w.id, ...w.fields })) };
   },
 
   async "list-types"(args) {

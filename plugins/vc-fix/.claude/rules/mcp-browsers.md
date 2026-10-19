@@ -7,9 +7,7 @@
 | **playwright-chrome** | Browser automation with Chromium (`--browser chrome`) | CLI flags only — no config file |
 | **playwright-firefox** | Browser automation with Firefox (`--browser firefox`) | CLI flags only — no config file |
 | **playwright-edge** | Browser automation with Edge (`--browser msedge`) | CLI flags only — no config file |
-| **postman** | API testing - collections, environments, monitors | N/A (uses `--minimal` flag) |
-| **github** | PR review, code search, issue management | N/A (uses `GITHUB_PERSONAL_ACCESS_TOKEN` via `GIT_TOKEN`) |
-| **context7** | Up-to-date library documentation lookup | N/A (HTTP MCP at `mcp.context7.com`, uses `CONTEXT7_API_KEY`) |
+| **github** | PR review, code search, issue management | PAT axis (`auth.github: pat`): `node ${VC_SECRETS} run github` — vc-secrets injects the `github-pat` secret at launch, `.mcp.json` holds no token. Session axis: the hosted GitHub MCP with OAuth on first use |
 
 Additional MCP servers (configured at user/IDE level, or — depending on your local `.mcp.json` — project-level; `.mcp.json` is gitignored and per-machine, so some of these may appear there too):
 - **Chrome DevTools MCP** - Console logs, network requests, performance tracing, HAR export
@@ -25,7 +23,7 @@ documents the platform's **CORE functionality** — on a CLIENT deployment it is
 path and silent, never negative, about custom modules / themes / storefront forks. The rule, the client
 caveat and the 3-source bar: [`../../skills/vc-docs/SKILL.md`](../../skills/vc-docs/SKILL.md) §Scope.
 
-The 6 servers in the table above are configured in `.mcp.json` (project-level). The additional servers above are typically at the user/IDE level, though a given machine's `.mcp.json` may also include Chrome DevTools, Azure, Figma, and Atlassian — verify against your local file.
+The 4 servers in the table above are configured in `.mcp.json` (project-level); `postman` and `context7` are no longer generated (VCST-6402). The additional servers above are typically at the user/IDE level, though a given machine's `.mcp.json` may also include Chrome DevTools, Azure, Figma, and Atlassian — verify against your local file.
 
 ## Browser Automation Rules
 

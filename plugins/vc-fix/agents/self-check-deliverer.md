@@ -55,13 +55,19 @@ Everything below is `deliver.mjs`'s job; you invoke it and report. You do not re
    # 1) write the struct you were handed to a scratch file
    #    e.g. <outputRoot>/.vc-fix/diagnostics/<sid>.deliver-input.json
    # 2) run WITHOUT a pipe:
-   node "$pluginRoot/skills/vc-self-check/deliver.mjs" \
+   node "$VC_RUN" deliver \
      --input "<outputRoot>/.vc-fix/diagnostics/<sid>.deliver-input.json" --session <sid> --confirm --json
    ```
 
+   **Why `$VC_RUN`:** no GitHub token sits in a project file (VCST-6402) — it lives in vc-secrets and
+   reaches `deliver.mjs` only through the bridge, which runs vc-fix's installed `deliver.mjs` with it.
+   `$VC_RUN` is set by `/project-init` (vc-init) in `.claude/settings.local.json` `env`; if it is
+   unset, the project was onboarded before VCST-6402 — do not send, report that `/project-init --check`
+   is needed.
+
    **Why `--input`, not a pipe:** the piped-stdin form (`<json> | node deliver.mjs`) is rejected by
    Claude Code's auto-mode permission classifier BEFORE the script runs — so a consented delivery
-   silently never happens in auto mode. A plain `node deliver.mjs --input <file>` is both
+   silently never happens in auto mode. A plain `node "$VC_RUN" deliver --input <file>` is both
    classifier-friendlier and narrowly allowlistable. Do NOT fall back to a pipe if `--input` is denied
    — a pipe will be denied too; report the block instead.
 

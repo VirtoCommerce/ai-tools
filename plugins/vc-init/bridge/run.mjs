@@ -66,7 +66,10 @@ const ENV_KEEP = [
   "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "ALL_PROXY", "NODE_EXTRA_CA_CERTS", "SSL_CERT_FILE", "SSL_CERT_DIR", "GIT_SSL_CAINFO", "REQUESTS_CA_BUNDLE",
   "XDG_CONFIG_HOME", "XDG_CACHE_HOME", "XDG_DATA_HOME", "GH_CONFIG_DIR", "AZURE_CONFIG_DIR", "GIT_EXEC_PATH",
   "TEST_ENV", "VC_FIX_HOME", "PROJECT_PROFILE_PATH", "CLAUDE_PROJECT_DIR", "CLAUDE_CODE_SESSION_ID", "HOST_SESSION_ID",
-  "JIRA_BASE_URL", "JIRA_EMAIL", "JIRA_USER", "JIRA_PROJECT_KEY", "ADO_ORG", "ADO_PROJECT",
+  // Identifiers only. Anything that names a HOST (JIRA_BASE_URL, ADO_ORG, …) is deliberately not
+  // passed: the child reads those from the profile and the .env files, so a caller cannot point a
+  // token-holding script at another server by exporting a variable.
+  "JIRA_EMAIL", "JIRA_USER",
 ];
 const ENV_KEEP_PREFIX = ["LC_"];
 
@@ -264,7 +267,7 @@ async function outer(argv) {
     return tool ? 0 : EX_REFUSED;
   }
   if (tool === "--where") {
-    const decls = findDeclarations(process.env.VC_FIX_HOME || process.cwd());
+    const decls = findDeclarations(process.cwd());
     const report = {
       vcInit: selfRoot(),
       vcFix: resolvePluginRoot("vc-fix"),
@@ -282,7 +285,9 @@ async function outer(argv) {
     return EX_REFUSED;
   }
   const group = groupOf(tool);
-  const decls = findDeclarations(process.env.VC_FIX_HOME || process.cwd());
+  // From the cwd, exactly as vc-secrets finds its declarations: the route decided here and the task
+  // vc-secrets then launches must come from the same file.
+  const decls = findDeclarations(process.cwd());
   if (taskDeclared(decls, group)) {
     const shim = process.env.VC_SECRETS;
     if (!shim || !existsSync(shim)) {

@@ -884,7 +884,8 @@ function nextStepsFor({ route, results, confirmed }) {
     return [
       "No token or no upstream rights — nothing can be sent from this machine.",
       "Authenticate, then re-run to deliver (the local telemetry is kept until then):",
-      "  export GITHUB_FIX_BUGS_TOKEN=<PAT>   # or:  gh auth login",
+      "  node \"<VC_SECRETS>\" set github-pat   # a PAT, stored in vc-secrets — then run this as: node \"$VC_RUN\" deliver …",
+      "  gh auth login                         # or a browser session",
     ];
   }
   if (confirmed) {
