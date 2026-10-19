@@ -95,7 +95,7 @@ with `npm run regression:plan -- <name>`.
 |-----------|--------|------------|
 | `smoke` | 042, 078, 078b, 078c, 078d | `npm run ci:smoke` |
 | `critical` | 042, 078, 078b, 078c, 078d, 039, 044, 049 | `npm run ci:critical` |
-| `sprint` | `/qa-regression sprint`: plan-driven via `vc/shared/docs/Sprint plans/sprint-*-summary.json` (`--no-plan` → all P0+P1). The CI runner uses the manifest rule (all minus excludes) | — |
+| `sprint` | `/qa-regression sprint`: plan-driven via `docs/Sprint plans/sprint-*-summary.json` (`--no-plan` → all P0+P1). The CI runner uses the manifest rule (all minus excludes) | — |
 | `full` | All suites minus the manifest's excludes | `npm run ci:full` |
 
 ### By Layer
