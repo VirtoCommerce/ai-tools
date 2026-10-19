@@ -28,9 +28,7 @@
  *    which is Windows-safe and covers a whole readiness table in ONE spawn.
  */
 import { execFileSync } from "child_process";
-import { existsSync } from "fs";
-import { resolve } from "path";
-import { pluginRoot } from "./paths.mjs";
+import { resolvePluginFile } from "../../../bridge/resolve-plugin.mjs";
 
 /**
  * Send observation records to the collector. Best-effort and silent.
@@ -41,8 +39,10 @@ export function emitObservations(records, { skill = null, source = "script" } = 
   try {
     const list = (Array.isArray(records) ? records : [records]).filter((r) => r && typeof r === "object");
     if (!list.length) return;
-    const hook = resolve(pluginRoot(), "hooks", "session-telemetry.mjs");
-    if (!existsSync(hook)) return;
+    // The collector is vc-fix's (hooks/session-telemetry.mjs): /project-init moved to vc-init
+    // (VCST-6402) but self-diagnostics did not. No vc-fix install ⇒ nothing to report to.
+    const hook = resolvePluginFile("vc-fix", "hooks/session-telemetry.mjs");
+    if (!hook) return;
     const args = [hook, "obs"];
     if (skill) args.push("--skill", skill);
     if (source) args.push("--source", source);

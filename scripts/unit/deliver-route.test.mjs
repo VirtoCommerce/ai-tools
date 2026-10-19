@@ -26,7 +26,7 @@ function stdinOf(obj) {
   const text = obj == null ? "" : (typeof obj === "string" ? obj : JSON.stringify(obj));
   return { isTTY: false, async *[Symbol.asyncIterator]() { if (text) yield text; } };
 }
-import { classifyGithubTokenKind, GITHUB_UPSTREAM_REMEDY } from "../../plugins/vc-fix/skills/project-init/probe-lib.mjs";
+import { classifyGithubTokenKind, GITHUB_UPSTREAM_REMEDY } from "../../plugins/vc-init/skills/project-init/probe-lib.mjs";
 
 // ─── classifyGithubTokenKind (VCST-5582 A — the token-kind probe) ────────────────
 // GitHub returns X-OAuth-Scopes for CLASSIC tokens (even when the scope list is empty) and
@@ -81,7 +81,7 @@ test("scaffold-secrets: the .env.local comment names ONE classic `repo` token, i
   const { join, resolve, dirname } = await import("node:path");
   const { fileURLToPath } = await import("node:url");
   const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-  for (const rel of ["plugins/vc-fix/skills/project-init/scaffold-secrets.mjs", ".claude/skills/project-init/scaffold-secrets.mjs"]) {
+  for (const rel of ["plugins/vc-init/skills/project-init/scaffold-secrets.mjs", ".claude/skills/project-init/scaffold-secrets.mjs"]) {
     const src = readFileSync(join(root, rel), "utf8");
     const entry = src.slice(src.indexOf("  GITHUB_FIX_BUGS_TOKEN: {"), src.indexOf("  ADO_PAT: {"));
     const fields = entry.split("\n").filter((l) => /^\s+(what|why|where):/.test(l));

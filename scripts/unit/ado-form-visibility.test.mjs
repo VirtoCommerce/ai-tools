@@ -20,7 +20,7 @@ import {
 } from "../../plugins/vc-fix/skills/qa-fix-routing/bug-contract.mjs";
 import { shapeWorkItem } from "../../plugins/vc-fix/skills/qa-fix-routing/ado.mjs";
 import { buildBugFields } from "../../plugins/vc-fix/skills/qa-fix-routing/ado-html.mjs";
-import { pinnedPlaywrightVersion } from "../../plugins/vc-fix/skills/project-init/gen-mcp.mjs";
+import { pinnedPlaywrightVersion } from "../../plugins/vc-init/skills/project-init/gen-mcp.mjs";
 import {
   OPUS_FORM_HTML_CONTROLS, DESCRIPTION_ON_FORM_CONTROLS, OPUS_LAYOUT_WIT, OPUS_XMLFORM_WIT,
   OPUS_BUG_73, LEO_OPUS_BUG_FIELDS, FIELD_TYPES,

@@ -17,11 +17,20 @@
  *     --project-type client --operator ask \
  *     --tracker jira --tracker-base-url https://acme.atlassian.net --tracker-project ABC \
  *     --client-vcs github --client-org acme-corp \
- *     --upstream-account jane-doe --contribution-mode fork --vcs-auth gh-cli --print
+ *     --upstream-account jane-doe --contribution-mode fork \
+ *     --github-auth pat --jira-auth pat --print
  *
  *   # Azure DevOps (Boards + Repos):
  *   ... --tracker azure --azure-org acme --azure-project Web \
- *       --client-vcs azure-repos --vcs-auth pat ...
+ *       --client-vcs azure-repos --github-auth gh-cli --ado-auth pat ...
+ *
+ * Auth axes (VCST-6402) — one flag per axis, written to `auth.*`; an axis that does not apply to the
+ * chosen tracker / code host is written as "":
+ *   --github-auth pat|gh-cli        always applies (the platform upstream is always GitHub)
+ *   --ado-auth    pat|az-login      Azure Boards tracker or Azure Repos code host
+ *   --jira-auth   pat|oauth         Jira tracker (`token`, the scaffold's old spelling, means pat)
+ *   --vcs-auth    pat|gh-cli|az-login   DEPRECATED — the client host's axis only; kept so an old
+ *                                       caller still lands on the right `auth.<axis>`.
  *
  *   # Merge a discovered repo map (output of discover-repos.mjs) into an existing profile:
  *   node skills/project-init/gen-profile.mjs --repos-json repos.json --merge --print
@@ -35,7 +44,7 @@
  */
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { resolve } from "path";
-import { PROFILE_DEFAULTS } from "../../scripts/lib/project-profile.mjs";
+import { PROFILE_DEFAULTS, PROFILE_SCHEMA_VERSION } from "../../scripts/lib/project-profile.mjs";
 import { outputRoot, resolveOutPath } from "./lib/paths.mjs";
 import { ensureProjectIgnores } from "./lib/gitignore.mjs";
 
@@ -52,6 +61,9 @@ const ENUMS = {
   "client-vcs": ["github", "azure-repos"],
   "contribution-mode": ["fork", "direct"],
   "vcs-auth": ["gh-cli", "pat", "az-login"],
+  "github-auth": ["pat", "gh-cli"],
+  "ado-auth": ["pat", "az-login"],
+  "jira-auth": ["pat", "token", "oauth"],
   "feedback-mode": ["auto", "ask", "off"],
 };
 
@@ -110,15 +122,23 @@ function main() {
 
   // Base: existing profile (with --merge) or the shipped defaults.
   let base = PROFILE_DEFAULTS;
-  if (args.merge && existsSync(outPath)) {
+  let existing = null;
+  if (existsSync(outPath)) {
     try {
-      const raw = JSON.parse(readFileSync(outPath, "utf-8"));
-      delete raw._meta;
-      base = deepMerge(PROFILE_DEFAULTS, raw);
+      existing = JSON.parse(readFileSync(outPath, "utf-8"));
+      delete existing._meta;
     } catch (err) {
-      fail(`--merge: cannot parse existing ${outPath}: ${err.message}`);
+      if (args.merge) fail(`--merge: cannot parse existing ${outPath}: ${err.message}`);
     }
   }
+  if (existing && typeof existing.schemaVersion === "number" && existing.schemaVersion > PROFILE_SCHEMA_VERSION) {
+    fail(`${outPath} is schemaVersion ${existing.schemaVersion}, written by a newer vc-init than this one (${PROFILE_SCHEMA_VERSION}) — update vc-init instead of overwriting it.`);
+  }
+  if (args.merge && existing) base = deepMerge(PROFILE_DEFAULTS, existing);
+  // `perf` belongs to vc-perf (written through profile-set.mjs by /perf-init), not to this
+  // interview: a fresh /project-init re-run rewrites the profile from the defaults, and that must
+  // not silently delete the perf block another plugin depends on.
+  else if (existing && existing.perf && typeof existing.perf === "object") base = { ...PROFILE_DEFAULTS, perf: existing.perf };
 
   // Build the override patch from flags (only set what was provided).
   const patch = {};
@@ -141,7 +161,6 @@ function main() {
   set("vcs.clientOrg", args["client-org"]);
   set("vcs.azure.organization", args["azure-org"]);
   set("vcs.azure.project", args["azure-project"]);
-  set("vcs.auth", args["vcs-auth"]);
   // The PROBED GitHub token kind (VCST-5582 A) — derive-context.mjs `github.tokenKind` /
   // `github.forkCapable`. Stored so /qa-fix Gate 1 and /vc-self-check deliver can refuse an
   // impossible upstream route instead of discovering it at push time. Unset ⇒ left "" (unprobed),
@@ -166,13 +185,17 @@ function main() {
     set("selfDiagnostics", args["self-diagnostics"] === true || args["self-diagnostics"] === "true");
   }
 
-  // vcs.authEnv — which env var carries the WRITE credential for the client host, so the
-  // interactive command doesn't guess. (github PAT ⇒ GITHUB_FIX_BUGS_TOKEN; azure-repos ⇒
-  // ADO_PAT; a session/gh-cli axis ⇒ "" = use the ambient login.)
+  // auth.* — one mode per credential axis (VCST-6402). `--vcs-auth` (the pre-split flag) still maps
+  // onto the CLIENT host's axis when the per-axis flag for it is absent.
   const clientHost = args["client-vcs"];
   const vcsAuth = args["vcs-auth"];
-  if (clientHost === "azure-repos") set("vcs.authEnv", vcsAuth === "pat" ? "ADO_PAT" : "");
-  else if (clientHost === "github") set("vcs.authEnv", vcsAuth === "pat" ? "GITHUB_FIX_BUGS_TOKEN" : "");
+  let githubAuth = args["github-auth"];
+  let adoAuth = args["ado-auth"];
+  if (vcsAuth && clientHost === "github" && githubAuth === undefined && vcsAuth !== "az-login") githubAuth = vcsAuth;
+  if (vcsAuth && clientHost === "azure-repos" && adoAuth === undefined && vcsAuth !== "gh-cli") adoAuth = vcsAuth;
+  set("auth.github", githubAuth);
+  set("auth.ado", adoAuth);
+  set("auth.jira", args["jira-auth"] === "token" ? "pat" : args["jira-auth"]);
 
   // runtime — how skills orient. When invoked with $CLAUDE_PLUGIN_ROOT set (installed
   // plugin), interactive commands read the BAKED profile facts (helpersRunnable=false);
@@ -290,6 +313,15 @@ function main() {
   // touch profile.tracker.azure / profile.vcs.azure still sees the empty default at runtime.
   if (profile.tracker?.kind !== "azure") delete profile.tracker.azure;
   if (profile.vcs?.clientHost !== "azure-repos") delete profile.vcs.azure;
+  // The pre-VCST-6402 single-axis fields, if a --merge carried them over: auth.* replaces them.
+  delete profile.vcs.auth;
+  delete profile.vcs.authEnv;
+  // An axis that does not apply to this tracker / code host is "", whatever a flag or an older
+  // profile said — the bridge reads `auth.<axis>` to decide whether to go through vc-secrets at all.
+  const adoApplies = profile.tracker.kind === "azure" || profile.vcs.clientHost === "azure-repos";
+  if (!adoApplies) profile.auth.ado = "";
+  if (profile.tracker.kind !== "jira") profile.auth.jira = "";
+  profile.schemaVersion = PROFILE_SCHEMA_VERSION;
 
   const withMeta = {
     _meta: {

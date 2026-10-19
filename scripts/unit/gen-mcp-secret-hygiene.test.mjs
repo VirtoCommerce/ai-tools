@@ -23,11 +23,11 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { withTempDir } from "./_test-helpers.mjs";
-import { asBool } from "../../plugins/vc-fix/skills/project-init/gen-mcp.mjs";
-import { SECRET_PREFIX_RE } from "../../plugins/vc-fix/hooks/redact.mjs";
+import { asBool } from "../../plugins/vc-init/skills/project-init/gen-mcp.mjs";
+import { SECRET_PREFIX_RE } from "../../plugins/vc-init/scripts/lib/redact.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const PI_DIR = join(ROOT, "plugins/vc-fix/skills/project-init");
+const PI_DIR = join(ROOT, "plugins/vc-init/skills/project-init");
 
 // spawnSync, not execFileSync: several of these assertions are about a `console.warn`, and
 // execFileSync returns ONLY stdout on success — a warning on stderr would read as absent and the

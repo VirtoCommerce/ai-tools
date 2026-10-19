@@ -65,6 +65,7 @@ import { readFileSync, existsSync, statSync } from "fs";
 import { fileURLToPath } from "url";
 import { basename, dirname, isAbsolute, join, resolve } from "path";
 import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
+import { loadProjectProfile } from "../../scripts/lib/project-profile.mjs";
 // The per-ORGANIZATION bug field contract (VCST-5582 E) — discovery lives in
 // /project-init's discover-tracker.mjs; the pure contract logic is shared here so the scan
 // and the payload builder can never disagree. See bug-contract.mjs's header.
@@ -74,7 +75,7 @@ import {
 } from "./bug-contract.mjs";
 // Non-mutating ADO write-scope probe, reused from /project-init's readiness table so
 // "your PAT is read-only" is told ONCE, up front, in the same words on both surfaces.
-import { discoverAdoWorkItemId, probeAdoWorkItemsWrite } from "../project-init/probe-lib.mjs";
+import { discoverAdoWorkItemId, probeAdoWorkItemsWrite } from "../../scripts/lib/probe-lib.mjs";
 // Azure HTML conversion + the Bug JSON-Patch builder live in a shared module so the CLI here
 // and the TS tracker (trackers/azure-tracker.ts) can't drift. ensureAzureHtml/mdToHtml are
 // re-exported below for the unit test that imports them from this file.
@@ -101,32 +102,18 @@ try {
 }
 
 // ---- profile (defaults for org/project/apiBase/projectId/repoId) --------------------
-// cwd-drift-proof: honor PROJECT_PROFILE_PATH, else search cwd AND walk up parent dirs
-// (so `create-pr` invoked from inside .fix-workspace/<repo> still finds the project profile
-// at the project root — the "no org/project" grabli from the run's create-pr cwd-drift).
+// The shared loader (scripts/lib/project-profile.mjs): PROJECT_PROFILE_PATH, then VC_FIX_HOME, then
+// cwd and its parents — so `create-pr` invoked from inside .fix-workspace/<repo> still finds the
+// project profile at the project root (the "no org/project" grabli from the run's create-pr
+// cwd-drift). OPTIONAL here, because every sub-command also takes --org/--project/--api-base and can
+// run without a profile; the stop for a missing one is in base(), where the org/project is needed.
+// A malformed or too-new profile is never optional.
 function loadProfile() {
-  const candidates = [];
-  if (process.env.PROJECT_PROFILE_PATH) candidates.push(process.env.PROJECT_PROFILE_PATH);
-  // Honor VC_FIX_HOME (the write-root the readers use — see inputRoot()) so a tool launched from an
-  // unrelated cwd still finds the deployment's profile, matching where /project-init wrote it.
-  if (process.env.VC_FIX_HOME) candidates.push(join(resolve(process.env.VC_FIX_HOME), "project-profile.json"));
-  let dir = process.cwd();
-  for (let i = 0; i < 8; i++) {
-    candidates.push(join(dir, "project-profile.json"));
-    const parent = dirname(dir);
-    if (parent === dir) break;
-    dir = parent;
+  try {
+    return loadProjectProfile(process.cwd(), { optional: true, walkUp: true }) || {};
+  } catch (e) {
+    fail(e.message);
   }
-  for (const path of candidates) {
-    try {
-      const raw = JSON.parse(readFileSync(path, "utf-8"));
-      delete raw._meta;
-      return raw;
-    } catch {
-      /* try next */
-    }
-  }
-  return {};
 }
 const PROFILE = loadProfile();
 // Two DISTINCT axes, not one merged object: tracker.azure (Boards — org/project/apiBase
@@ -222,7 +209,7 @@ function base(args, axis = "vcs") {
   const org = args.org || AZ.organization;
   const project = args.project || AZ.project;
   if (AZ.apiBase && !args.org && !args.project) return String(AZ.apiBase).replace(/\/$/, "");
-  if (!org || !project) fail(`no org/project — pass --org/--project or set tracker/vcs.azure in project-profile.json.\n      (The profile was searched at PROJECT_PROFILE_PATH, then VC_FIX_HOME (${process.env.VC_FIX_HOME || "unset"}), then cwd and its parents from ${process.cwd()}. If it lives elsewhere, set PROJECT_PROFILE_PATH or run from the project root.)`);
+  if (!org || !project) fail(`no org/project — pass --org/--project, or run /project-init (the vc-init plugin) so project-profile.json carries tracker/vcs.azure.\n      (The profile was searched at PROJECT_PROFILE_PATH, then VC_FIX_HOME (${process.env.VC_FIX_HOME || "unset"}), then cwd and its parents from ${process.cwd()}. If it lives elsewhere, set PROJECT_PROFILE_PATH or run from the project root.)`);
   return `https://dev.azure.com/${org}/${encodeURIComponent(project)}`;
 }
 
@@ -1106,7 +1093,7 @@ const COMMANDS = {
     const AZ = vcsAZ();
     const org = args.org || AZ.organization;
     const project = args.project || AZ.project;
-    if (!org || !project) fail("search: no org/project — pass --org/--project or set vcs/tracker.azure in project-profile.json");
+    if (!org || !project) fail("search: no org/project — pass --org/--project, or run /project-init (the vc-init plugin) so project-profile.json carries vcs/tracker.azure");
     // ADO Code Search REST lives on the almsearch.* host (NOT dev.azure.com) and REQUIRES a
     // filters.Project; a filters.Repository sent WITHOUT Project fails with
     //   "Filter [Repository] is found but filter [Project] is not."

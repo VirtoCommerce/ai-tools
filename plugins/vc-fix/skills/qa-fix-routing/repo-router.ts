@@ -165,16 +165,15 @@ function repoName(repo: string): { owner: string | null; name: string } {
 }
 
 // --- Client repo awareness (from the deployment profile) ---------------------
-// A native-platform deployment has NO client repos, so CLIENT_ORG is "" and
-// repoOwnership() always returns "platform" ⇒ every function below behaves
-// exactly as before. Only a client deployment (project-init wrote a profile with
-// vcs.clientOrg + repos.client) activates the client branches. fix-repos.json is
+// A native-platform deployment has NO client repos, so the client org is "" and
+// repoOwnership() always returns "platform". Only a client deployment (project-init wrote a
+// profile with vcs.clientOrg + repos.client) activates the client branches. fix-repos.json is
 // untouched — platform routing is unchanged.
-const PROFILE = loadProjectProfile();
-/** GitHub/Azure org that owns the CLIENT's custom code ("" for native platform). */
-export const CLIENT_ORG: string = PROFILE.vcs.clientOrg || "";
-const CLIENT_REPOS = PROFILE.repos.client || [];
-
+//
+// Loaded on FIRST USE, not at module load (VCST-6402). A missing profile now stops the caller
+// (ProfileMissingError — "run /project-init"), and a module-level load turned every import of this
+// file into that stop, including callers that only want the pure helpers (computeOwnership,
+// REPO_PROFILES) and the tests that exercise them.
 export type RepoOwnership = "client" | "platform";
 
 /** Optional per-repo toolchain overrides + upstream provenance for a client repo. */
@@ -199,31 +198,58 @@ export interface ClientRepoMeta {
   forkVersion?: string;
 }
 
-const CLIENT_FULL = new Set<string>();
-const CLIENT_BARE = new Set<string>();
-const CLIENT_KINDS = new Map<string, RepoKind>();
-const CLIENT_HOSTS = new Map<string, "github" | "azure-repos">();
-const CLIENT_BRANCHES = new Map<string, string>();
-const CLIENT_META = new Map<string, ClientRepoMeta>();
-for (const r of CLIENT_REPOS) {
-  if (!r?.name) continue;
-  const bare = repoName(r.name).name;
-  CLIENT_FULL.add(r.name);
-  CLIENT_BARE.add(bare);
-  if (r.kind) CLIENT_KINDS.set(bare, r.kind as RepoKind);
-  if (r.host) CLIENT_HOSTS.set(bare, r.host);
-  if (r.defaultBranch) CLIENT_BRANCHES.set(bare, r.defaultBranch);
-  const meta: ClientRepoMeta = {};
-  // Copy the optional string overrides via explicit record views so the const-tuple key index is
-  // not an implicit `any` under strict tsc (the keys aren't all declared on the profile-repo type).
-  const rr = r as unknown as Record<string, unknown>;
-  const mm = meta as unknown as Record<string, unknown>;
-  for (const k of ["installCmd", "buildCmd", "typecheckCmd", "lintCmd", "testCmd", "upstream", "upstreamRef", "forkVersion"] as const) {
-    if (rr[k]) mm[k] = rr[k];
+interface ClientFacts {
+  profile: ReturnType<typeof loadProjectProfile>;
+  org: string;
+  repos: ReturnType<typeof loadProjectProfile>["repos"]["client"];
+  full: Set<string>;
+  bare: Set<string>;
+  kinds: Map<string, RepoKind>;
+  hosts: Map<string, "github" | "azure-repos">;
+  branches: Map<string, string>;
+  meta: Map<string, ClientRepoMeta>;
+}
+let _facts: ClientFacts | null = null;
+function clientFacts(): ClientFacts {
+  if (_facts) return _facts;
+  const profile = loadProjectProfile();
+  const f: ClientFacts = {
+    profile,
+    org: profile.vcs.clientOrg || "",
+    repos: profile.repos.client || [],
+    full: new Set<string>(),
+    bare: new Set<string>(),
+    kinds: new Map<string, RepoKind>(),
+    hosts: new Map<string, "github" | "azure-repos">(),
+    branches: new Map<string, string>(),
+    meta: new Map<string, ClientRepoMeta>(),
+  };
+  for (const r of f.repos) {
+    if (!r?.name) continue;
+    const bare = repoName(r.name).name;
+    f.full.add(r.name);
+    f.bare.add(bare);
+    if (r.kind) f.kinds.set(bare, r.kind as RepoKind);
+    if (r.host) f.hosts.set(bare, r.host);
+    if (r.defaultBranch) f.branches.set(bare, r.defaultBranch);
+    const meta: ClientRepoMeta = {};
+    // Copy the optional string overrides via explicit record views so the const-tuple key index is
+    // not an implicit `any` under strict tsc (the keys aren't all declared on the profile-repo type).
+    const rr = r as unknown as Record<string, unknown>;
+    const mm = meta as unknown as Record<string, unknown>;
+    for (const k of ["installCmd", "buildCmd", "typecheckCmd", "lintCmd", "testCmd", "upstream", "upstreamRef", "forkVersion"] as const) {
+      if (rr[k]) mm[k] = rr[k];
+    }
+    // Booleans must be copied explicitly — a falsy `false` would be dropped by `if (r[k])`.
+    if (typeof r.upstreamRefResolved === "boolean") meta.upstreamRefResolved = r.upstreamRefResolved;
+    if (Object.keys(meta).length) f.meta.set(bare, meta);
   }
-  // Booleans must be copied explicitly — a falsy `false` would be dropped by `if (r[k])`.
-  if (typeof r.upstreamRefResolved === "boolean") meta.upstreamRefResolved = r.upstreamRefResolved;
-  if (Object.keys(meta).length) CLIENT_META.set(bare, meta);
+  _facts = f;
+  return f;
+}
+/** GitHub/Azure org that owns the CLIENT's custom code ("" for native platform). */
+export function clientOrg(): string {
+  return clientFacts().org;
 }
 
 /**
@@ -268,9 +294,9 @@ export function computeOwnership(
 export function repoOwnership(repo: string): RepoOwnership {
   return computeOwnership(repo, {
     platformOrg: REPO_ORG,
-    clientOrg: CLIENT_ORG,
-    clientFull: CLIENT_FULL,
-    clientBare: CLIENT_BARE,
+    clientOrg: clientFacts().org,
+    clientFull: clientFacts().full,
+    clientBare: clientFacts().bare,
   });
 }
 
@@ -316,7 +342,7 @@ export function repoKind(repo: string): RepoKind {
   const { name } = repoName(repo);
   // Client repos: use the kind declared in the profile; else a name heuristic.
   if (repoOwnership(repo) === "client") {
-    const declared = CLIENT_KINDS.get(name);
+    const declared = clientFacts().kinds.get(name);
     if (declared) return declared;
     return /front|storefront|theme|vue|spa/i.test(name) ? "frontend" : "module";
   }
@@ -331,7 +357,7 @@ export function repoProfile(repo: string): RepoProfile {
   // native VC module, or a storefront fork with a non-standard test command). Layer the
   // profile overrides over the kind default; platform repos always use the kind default.
   if (repoOwnership(repo) === "client") {
-    const meta = CLIENT_META.get(repoName(repo).name);
+    const meta = clientFacts().meta.get(repoName(repo).name);
     if (meta) {
       return {
         ...base,
@@ -397,7 +423,7 @@ export function clientUpstream(
   repo: string,
 ): { upstream: string; upstreamRef: string; upstreamRefResolved: boolean; forkVersion: string } | null {
   if (repoOwnership(repo) !== "client") return null;
-  const meta = CLIENT_META.get(repoName(repo).name);
+  const meta = clientFacts().meta.get(repoName(repo).name);
   if (!meta?.upstream) return null;
   return {
     upstream: meta.upstream,
@@ -436,21 +462,21 @@ export function contributionPlan(repo: string): ContributionPlan {
   const ownership = repoOwnership(repo);
   if (ownership === "client") {
     const bare = repoName(repo).name;
-    const host = CLIENT_HOSTS.get(bare) || PROFILE.vcs.clientHost || "github";
+    const host = clientFacts().hosts.get(bare) || clientFacts().profile.vcs.clientHost || "github";
     return {
       ownership,
       host,
       mode: "direct",
       forkOwner: "",
       azure: {
-        organization: PROFILE.vcs.azure?.organization || "",
-        project: PROFILE.vcs.azure?.project || "",
+        organization: clientFacts().profile.vcs.azure?.organization || "",
+        project: clientFacts().profile.vcs.azure?.project || "",
       },
     };
   }
   // platform — always GitHub. Fork mode requires BOTH an explicit fork contribution
   // mode AND a configured account; otherwise direct (the native-platform default).
-  const u = PROFILE.upstream;
+  const u = clientFacts().profile.upstream;
   const fork = u.contributionMode === "fork" && Boolean(u.clientGithubAccount);
   return {
     ownership,
@@ -463,7 +489,7 @@ export function contributionPlan(repo: string): ContributionPlan {
 
 /** Default branch declared for a client repo in the profile (azure-repos has no `gh`). */
 function clientDefaultBranch(repo: string): string | undefined {
-  return CLIENT_BRANCHES.get(repoName(repo).name);
+  return clientFacts().branches.get(repoName(repo).name);
 }
 
 /**
@@ -495,11 +521,11 @@ export function routingReference(): string {
     `- ${REPO_ORG}/vc-platform (platform core, C#)`,
     `- ${REPO_ORG}/vc-module-<name> or ${REPO_ORG}/vc-module-x-<name> (any backend module, C#)`,
   ];
-  if (CLIENT_REPOS.length) {
+  if (clientFacts().repos.length) {
     lines.push(
       ``,
       `Client-owned repos (custom modules / theme / storefront fork — fix & PR go HERE):`,
-      ...CLIENT_REPOS.map((r) => `- ${r.name}${r.kind ? ` (${r.kind})` : ""}`),
+      ...clientFacts().repos.map((r) => `- ${r.name}${r.kind ? ` (${r.kind})` : ""}`),
     );
   }
   lines.push(

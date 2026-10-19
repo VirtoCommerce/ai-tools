@@ -1,5 +1,5 @@
 // Unit tests for optional-extra gating in
-// plugins/vc-fix/skills/project-init/gen-mcp.mjs.
+// plugins/vc-init/skills/project-init/gen-mcp.mjs.
 //
 // The defect (self-diagnostics `project-init/mcp_config`, DEGRADED): the enable loop did
 // `for (const e of extras) if (extraMap[e]) enabled.add(extraMap[e])` — every `--with` extra was
@@ -16,10 +16,10 @@ import { readFileSync } from "node:fs";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { withTempDir } from "./_test-helpers.mjs";
-import { unresolvedPlaceholders } from "../../plugins/vc-fix/skills/project-init/gen-mcp.mjs";
+import { unresolvedPlaceholders } from "../../plugins/vc-init/skills/project-init/gen-mcp.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const SCRIPT = join(ROOT, "plugins/vc-fix/skills/project-init/gen-mcp.mjs");
+const SCRIPT = join(ROOT, "plugins/vc-init/skills/project-init/gen-mcp.mjs");
 
 function runGenMcp(dir, args = [], extraEnv = {}) {
   return execFileSync(process.execPath, [SCRIPT, ...args], {

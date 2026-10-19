@@ -1,5 +1,5 @@
 // Unit tests for the generated-file secret-hygiene readiness checks (VCST-5774 B4) —
-// plugins/vc-fix/skills/project-init/verify-access.mjs `findLiteralSecrets`,
+// plugins/vc-init/skills/project-init/verify-access.mjs `findLiteralSecrets`,
 // `findSettingsSecrets` and the pure `gradeSecretHygiene` decision table.
 //
 // gen-mcp.mjs now emits `${VAR}` indirections instead of literal credentials, but that fix lives in
@@ -14,7 +14,7 @@
 // Run: `npm test` (tsx --test scripts/unit/**/*.test.mjs).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { findLiteralSecrets, findSettingsSecrets, gradeSecretHygiene } from "../../plugins/vc-fix/skills/project-init/verify-access.mjs";
+import { findLiteralSecrets, findSettingsSecrets, gradeSecretHygiene } from "../../plugins/vc-init/skills/project-init/verify-access.mjs";
 
 const cfg = (servers) => JSON.stringify({ mcpServers: servers });
 /** "certain" | "suspected" | "clean" — the only distinction the grading actually consumes. */

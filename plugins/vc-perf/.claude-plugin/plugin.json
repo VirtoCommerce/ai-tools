@@ -20,6 +20,7 @@
   ],
   "defaultEnabled": false,
   "dependencies": [
+    { "name": "vc-init", "version": ">=0.1.0" },
     { "name": "vc-fix", "version": ">=0.7.0" }
   ]
 }

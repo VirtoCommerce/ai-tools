@@ -31,7 +31,7 @@
 import { resolve } from "path";
 import { fileURLToPath } from "url";
 import { loadProjectProfile } from "../../scripts/lib/project-profile.mjs";
-import { resolveSlots } from "../qa-fix-routing/bug-contract.mjs";
+import { resolveSlots } from "../../scripts/lib/bug-contract.mjs";
 import { emitObservations } from "./lib/diag-obs.mjs";
 
 /**

@@ -56,8 +56,9 @@
  * Exit code is always 0 (the skill reads the JSON to decide next steps); a genuine IO/parse
  * failure prints an { "error": ... } report and still exits 0 so the skill can handle it.
  */
-import { readFileSync, writeFileSync, existsSync } from "fs";
-import { PROFILE_DEFAULTS } from "../../scripts/lib/project-profile.mjs";
+import { readFileSync, writeFileSync, existsSync, realpathSync } from "fs";
+import { fileURLToPath } from "url";
+import { PROFILE_DEFAULTS, PROFILE_SCHEMA_VERSION, authAxes } from "../../scripts/lib/project-profile.mjs";
 import { resolveOutPath } from "./lib/paths.mjs";
 
 // ─── managed-field migration policy ──────────────────────────────────────────
@@ -94,6 +95,15 @@ const MANAGED_FIELDS = [
   // so `--check` no longer surfaces it as a pending decision.
 ];
 const managedFor = (path) => MANAGED_FIELDS.find((m) => m.path === path);
+
+// Fixed-shape scalars `--set` may write directly, each with its allowed values. The auth axes are
+// here because a migrated version-1 profile reports an axis it never described under `rescan`, and
+// --check writes what derive-context found back through `--set auth.<axis>=<mode>`.
+const SETTABLE_SCALARS = {
+  "auth.github": ["", "pat", "gh-cli"],
+  "auth.ado": ["", "pat", "az-login"],
+  "auth.jira": ["", "pat", "oauth"],
+};
 
 // ─── conditional (discriminated) sub-objects ─────────────────────────────────
 // gen-profile.mjs prunes the tracker.azure / vcs.azure blocks from a written profile
@@ -184,8 +194,22 @@ function setDeep(obj, dotted, value) {
  * Pure — returns { migrated, added, removed, pending, rescan }. `migrated` omits any
  * pending (unresolved ask/rescan) field, so it is always safe to write.
  */
-function reconcile(schema, existing, decisions, unsets = []) {
+export function reconcile(schema, existing, decisions, unsets = []) {
   const report = { added: [], removed: [], pending: [], rescan: [], unset: [], rejected: [], preserved: [] };
+  // ─── schema 1 → 2 (VCST-6402): the single `vcs.auth` becomes `auth.{github,ado,jira}` ─────────
+  // A version-1 profile recorded the client host's auth only. Derive what it does say (authAxes)
+  // BEFORE the walk, so the walk keeps the derived block instead of adding an all-empty default;
+  // the walk then drops `vcs.auth` / `vcs.authEnv` as obsolete. An axis that applies but that the old
+  // file never described (the upstream GitHub on an Azure Repos client, the Jira tracker) cannot be
+  // guessed — it goes to `rescan`, and --check re-runs derive-context to fill it.
+  if (isPlainObject(existing) && !isPlainObject(existing.auth) && isPlainObject(schema.auth)) {
+    const axes = authAxes(existing);
+    existing = { ...existing, auth: { github: axes.github.mode, ado: axes.ado.mode, jira: axes.jira.mode } };
+    report.added.push({ path: "auth", value: existing.auth, via: "migrated-from-vcs.auth" });
+    for (const [axis, a] of Object.entries(axes)) {
+      if (a.applies && !a.mode) report.rescan.push({ path: `auth.${axis}`, source: "derive-context" });
+    }
+  }
   // A conditional sub-object is "disabled" (not in schema for this profile) when its
   // discriminator predicate is false against the existing profile.
   const conditionalDisabled = (path) => {
@@ -290,6 +314,14 @@ function reconcile(schema, existing, decisions, unsets = []) {
   }
 
   const migrated = walk(schema, existing, "");
+  // The walk keeps an existing scalar, so a file that says `schemaVersion: 1` would stay 1 after
+  // its fields were brought up to date. Reconciling IS the migration: stamp the current version.
+  if (isPlainObject(schema) && "schemaVersion" in schema && migrated.schemaVersion !== schema.schemaVersion) {
+    if ("schemaVersion" in (existing || {})) {
+      report.added.push({ path: "schemaVersion", value: schema.schemaVersion, via: "migrated", from: existing.schemaVersion });
+    }
+    migrated.schemaVersion = schema.schemaVersion;
+  }
 
   // ─── `--set` into an OPEN MAP (VCST-5582 E-b) ──────────────────────────────────────
   // The walk above only consults `decisions` for MANAGED_FIELDS. But the open maps
@@ -301,6 +333,19 @@ function reconcile(schema, existing, decisions, unsets = []) {
   // path against the SCHEMA and, the moment the schema node is an empty-object open map, treat
   // the ENTIRE remainder as one literal key.
   for (const [dotted, value] of Object.entries(decisions || {})) {
+    // A settable scalar (an auth axis that --check re-derived) — validated against its own enum.
+    const scalar = SETTABLE_SCALARS[dotted];
+    if (scalar) {
+      if (!scalar.includes(value)) {
+        report.rejected.push({ path: dotted, value, reason: `allowed: ${scalar.map((v) => JSON.stringify(v)).join(" | ")}` });
+      } else {
+        const [head, leaf] = dotted.split(".");
+        if (!isPlainObject(migrated[head])) migrated[head] = {};
+        migrated[head][leaf] = value;
+        report.added.push({ path: dotted, value, via: "set" });
+      }
+      continue;
+    }
     const parts = dotted.split(".");
     let schemaCur = schema;
     let objCur = migrated;
@@ -380,6 +425,8 @@ function reconcile(schema, existing, decisions, unsets = []) {
     report.rescan.push({ path: "tracker.fields", source: "discover-tracker" });
   }
 
+  // A rescan the caller already answered with `--set` is resolved, not pending.
+  report.rescan = report.rescan.filter((r) => !report.added.some((x) => x.path === r.path && x.via === "set"));
   return { migrated, ...report };
 }
 
@@ -405,6 +452,16 @@ function main() {
   // _meta is bookkeeping, not schema — set it aside so it is neither pruned nor walked.
   const meta = raw._meta;
   delete raw._meta;
+
+  // A profile written by a NEWER vc-init carries fields this schema does not know; reconciling it
+  // would prune them as "obsolete". Refuse instead — the fix is updating vc-init, not this file.
+  if (typeof raw.schemaVersion === "number" && raw.schemaVersion > PROFILE_SCHEMA_VERSION) {
+    console.log(JSON.stringify({
+      status: "newer-schema", path: outPath, wrote: false,
+      reason: `schemaVersion ${raw.schemaVersion} was written by a newer vc-init than this one (${PROFILE_SCHEMA_VERSION}) — update vc-init; nothing was changed`,
+    }, null, 2));
+    return;
+  }
 
   const { migrated, added, removed, pending, rescan, unset, rejected, preserved } = reconcile(PROFILE_DEFAULTS, raw, decisions, args.unset);
   const hasStructuralChange = added.length > 0 || removed.length > 0 || unset.length > 0;
@@ -472,4 +529,8 @@ function main() {
   );
 }
 
-main();
+// Run only when executed, not when imported (profile-set.mjs reuses `reconcile`).
+const invoked = process.argv[1] && (() => {
+  try { return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url)); } catch { return false; }
+})();
+if (invoked) main();

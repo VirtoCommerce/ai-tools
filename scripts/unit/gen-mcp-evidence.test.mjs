@@ -1,5 +1,5 @@
 // Unit tests for the evidence-destination half of
-// plugins/vc-fix/skills/project-init/gen-mcp.mjs (VCST-5582 C).
+// plugins/vc-init/skills/project-init/gen-mcp.mjs (VCST-5582 C).
 //
 // The defect: screenshots taken during a /qa-bug run appeared at the PROJECT ROOT. The template's
 // `--output-dir` was RELATIVE (`test-results/<browser>`), which playwright-mcp resolves against the
@@ -18,15 +18,15 @@ import { withTempDir } from "./_test-helpers.mjs";
 // The production auditor + the SHARED secret-prefix matcher. Imported rather than copied: the
 // test used to carry its own `SECRET_SHAPE` regex, so a change to what production considers a
 // credential would silently stop being what the test checks for.
-import { findLiteralSecrets } from "../../plugins/vc-fix/skills/project-init/verify-access.mjs";
-import { SECRET_PREFIX_RE } from "../../plugins/vc-fix/hooks/redact.mjs";
-import { ensureGitignoreEntries, absolutizeOutputDir, ensureNodeOptions, extractNpxSpecs, classifyWarmResults, enableOAuthIfNoPat, resolveTokens, injectTokenRefs } from "../../plugins/vc-fix/skills/project-init/gen-mcp.mjs";
+import { findLiteralSecrets } from "../../plugins/vc-init/skills/project-init/verify-access.mjs";
+import { SECRET_PREFIX_RE } from "../../plugins/vc-init/scripts/lib/redact.mjs";
+import { ensureGitignoreEntries, absolutizeOutputDir, ensureNodeOptions, extractNpxSpecs, classifyWarmResults, enableOAuthIfNoPat, resolveTokens, injectTokenRefs } from "../../plugins/vc-init/skills/project-init/gen-mcp.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const SCRIPT = join(ROOT, "plugins/vc-fix/skills/project-init/gen-mcp.mjs");
-const TEMPLATE = join(ROOT, "plugins/vc-fix/templates/.mcp.json.example");
+const SCRIPT = join(ROOT, "plugins/vc-init/skills/project-init/gen-mcp.mjs");
+const TEMPLATE = join(ROOT, "plugins/vc-init/templates/.mcp.json.example");
 const PLAYWRIGHT = ["playwright-chrome", "playwright-firefox", "playwright-edge"];
-const PI_DIR = join(ROOT, "plugins/vc-fix/skills/project-init");
+const PI_DIR = join(ROOT, "plugins/vc-init/skills/project-init");
 
 function outputDirOf(server) {
   const i = server.args.indexOf("--output-dir");

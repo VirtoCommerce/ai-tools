@@ -45,12 +45,13 @@ import { outputRoot, pluginRoot } from "./lib/paths.mjs";
 // The SAME distinctive-prefix matcher the telemetry redactor uses. Shared on purpose: this
 // audit used to keep its own shorter copy, so a token type redact.mjs already knew about
 // (glpat-/xoxb-/sk_live_/AKIA/JWT) passed the hygiene check clean.
-import { SECRET_PREFIX_RE } from "../../hooks/redact.mjs";
+import { SECRET_PREFIX_RE } from "../../scripts/lib/redact.mjs";
 // Self-diagnostics CAPTURE channel. This table is the plugin's own structured verdict on the
 // deployment; before VCST-5582 H it was rendered and then discarded (exit 0 unless a hard FAIL),
 // so a WARN the operator could plainly see — e.g. "no field contract scanned for Bug" — was
 // invisible to /vc-self-check and the run self-diagnosed "no plugin issues detected".
 import { emitObservations, httpStatusFrom, classForStatus } from "./lib/diag-obs.mjs";
+import { resolvePluginFile, resolvePluginRoot } from "../../bridge/resolve-plugin.mjs";
 import {
   probeGithubUpstream, resolveGithubToken, resolveAdoTenant, ADO_RESOURCE,
   githubCanWrite, discoverAdoWorkItemId, probeAdoWorkItemsWrite, probeAdoCodeWrite,
@@ -58,7 +59,7 @@ import {
 } from "./probe-lib.mjs";
 // Slot resolution for the "tracker bug field contract" readiness row (VCST-5582 E-g) — the
 // SAME pure function the create path uses, so the row can't claim a mapping create won't make.
-import { resolveSlots } from "../qa-fix-routing/bug-contract.mjs";
+import { resolveSlots } from "../../scripts/lib/bug-contract.mjs";
 import { fileURLToPath } from "url";
 
 let TEST_ENV;
@@ -262,6 +263,8 @@ export function findSettingsSecrets(settingsJsonText) {
 /** The ids vc-fix can be installed under, in PRIORITY order: `vc-tools` is the marketplace's name
  *  before the 2026-09-30 rename, so a pre-rename install still resolves, but never ahead of a new one. */
 export const VC_FIX_PLUGIN_IDS = ["vc-fix@ai-tools", "vc-fix@vc-tools"];
+/** vc-init — the onboarding plugin since VCST-6402; it was born after the rename, so one id. */
+export const VC_INIT_PLUGIN_IDS = ["vc-init@ai-tools"];
 
 /** Pick the vc-fix install from `claude plugin list --json`: the highest-priority id with an ENABLED
  *  entry, else the highest-priority id with any entry. `enabledIds` lists every id that is enabled —
@@ -375,8 +378,8 @@ function splitRepo(full) {
 // NEVER break onboarding, so any failure (missing hook, spawn error, timeout) is ignored.
 function signalSelfDiagnosticsComplete() {
   try {
-    const hook = resolve(pluginRoot(), "hooks", "session-telemetry.mjs");
-    if (!existsSync(hook)) return;
+    const hook = resolvePluginFile("vc-fix", "hooks/session-telemetry.mjs");
+    if (!hook) return;
     execSync(`node "${hook}" complete --skill "project-init"`, { stdio: "ignore", timeout: 5000 });
   } catch {
     /* never throw */
@@ -424,42 +427,47 @@ async function main() {
     add(label, status, detail);
   }
 
-  // 1b. The ACTIVE plugin install resolves at runtime + the routing helper is present.
-  //     /qa-fix / /qa-bug launch `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" …` where
-  //     $pluginRoot is resolved from `claude plugin list --json` (the enabled
-  //     vc-fix install, by VC_FIX_PLUGIN_IDS priority — knowledge/execution/plugin-root.md), NOT a baked
-  //     profile field. Confirm that resolver works and points at a real install with the
-  //     helper; fall back to this script's own location (import.meta.url) when the `claude`
-  //     CLI isn't on PATH in the shell.
-  let activeRoot = "";
-  let cliOk = false;
-  let enabledIds = [];
+  // 1b. The ACTIVE plugin installs resolve at runtime. Since VCST-6402 onboarding is its own plugin
+  //     (vc-init) and the bug lifecycle that READS this profile is vc-fix — both must be installed,
+  //     and each command resolves its own launch path from `claude plugin list --json` (by the ids
+  //     below, knowledge/execution/plugin-root.md), NOT a baked profile field. Confirm that resolver
+  //     finds both, and fall back to the on-disk resolver (bridge/resolve-plugin.mjs: a checkout
+  //     sibling, the install registry, the cache) when the `claude` CLI isn't on PATH in the shell.
+  let cliList = null;
   try {
-    const raw = execSync("claude plugin list --json", { stdio: ["ignore", "pipe", "ignore"], timeout: 20000 }).toString();
-    cliOk = true; // the CLI ran; activeRoot may still be "" if no enabled vc-fix entry matched
-    const arr = JSON.parse(raw);
-    const picked = pickPluginInstall(arr);
-    activeRoot = picked.entry?.installPath || "";
-    enabledIds = picked.enabledIds;
+    cliList = JSON.parse(execSync("claude plugin list --json", { stdio: ["ignore", "pipe", "ignore"], timeout: 20000 }).toString());
   } catch {
-    /* claude CLI unavailable / not on PATH — fall back to self-location below */
+    /* claude CLI unavailable / not on PATH — fall back to the on-disk resolver below */
   }
-  const selfRoot = pluginRoot(); // import.meta.url based — where THIS script actually lives
-  if (activeRoot && existsSync(resolve(activeRoot, "skills", "qa-fix-routing", "ado.mjs"))) {
-    add("Plugin root (claude plugin list)", "PASS", `active install resolves — qa-fix-routing/ado.mjs present (${activeRoot})`);
-  } else if (!activeRoot && existsSync(resolve(selfRoot, "skills", "qa-fix-routing", "ado.mjs"))) {
-    // Distinguish CLI-missing from CLI-ran-but-no-match: the fallback + fix advice differ.
-    const why = cliOk
-      ? `\`claude plugin list\` ran but found no enabled ${VC_FIX_PLUGIN_IDS.join(" / ")} install (running from a checkout, or the plugin is disabled)`
-      : "`claude plugin list` unavailable in this shell — commands must use the cache-dir fallback (plugin-root.md)";
-    add("Plugin root (claude plugin list)", "WARN", `${why}. Helper present at ${selfRoot}`);
-  } else {
+  const enabledIds = [];
+  const roots = {};
+  for (const [name, ids, probe] of [
+    ["vc-init", VC_INIT_PLUGIN_IDS, ["skills", "project-init", "verify-access.mjs"]],
+    ["vc-fix", VC_FIX_PLUGIN_IDS, ["skills", "qa-fix-routing", "ado.mjs"]],
+  ]) {
+    const picked = cliList ? pickPluginInstall(cliList, ids) : { entry: null, enabledIds: [] };
+    if (picked.enabledIds.length > 1) enabledIds.push(picked.enabledIds);
+    const active = picked.entry?.installPath || "";
+    const onDisk = name === "vc-init" ? pluginRoot() : (resolvePluginRoot("vc-fix") || "");
+    if (active && existsSync(resolve(active, ...probe))) roots[name] = { root: active, how: "cli" };
+    else if (!active && onDisk && existsSync(resolve(onDisk, ...probe))) roots[name] = { root: onDisk, how: "disk" };
+    else roots[name] = { root: "", how: "" };
+  }
+  const missing = Object.entries(roots).filter(([, r]) => !r.root).map(([n]) => n);
+  if (missing.length) {
     add("Plugin root (claude plugin list)", "FAIL",
-      "could not resolve the active vc-fix install (qa-fix-routing/ado.mjs missing) — re-install the plugin; see knowledge/execution/plugin-root.md");
+      `could not resolve the active ${missing.join(" + ")} install — install it with /plugin install ${missing.map((n) => `${n}@ai-tools`).join(" ")} (vc-fix pulls in vc-init and vc-secrets); see knowledge/execution/plugin-root.md`);
+  } else if (Object.values(roots).every((r) => r.how === "cli")) {
+    add("Plugin root (claude plugin list)", "PASS", `vc-init and vc-fix both resolve (${roots["vc-init"].root} · ${roots["vc-fix"].root})`);
+  } else {
+    const why = cliList
+      ? "`claude plugin list` ran but found no enabled install for " + Object.entries(roots).filter(([, r]) => r.how === "disk").map(([n]) => n).join(" + ") + " (running from a checkout, or the plugin is disabled)"
+      : "`claude plugin list` unavailable in this shell — commands must use the cache-dir fallback (plugin-root.md)";
+    add("Plugin root (claude plugin list)", "WARN", `${why}. Found on disk: ${roots["vc-init"].root} · ${roots["vc-fix"].root}`);
   }
-  if (enabledIds.length > 1) {
+  for (const ids of enabledIds) {
     add("Plugin root (single install)", "WARN",
-      `${enabledIds.join(" and ")} are both enabled — each one's hooks.json starts its own telemetry collector, so spans duplicate and state writes race. Uninstall the old one (/plugin uninstall ${enabledIds.slice(1).join(", ")}) and restart Claude Code`);
+      `${ids.join(" and ")} are both enabled — each one's hooks.json starts its own telemetry collector, so spans duplicate and state writes race. Uninstall the old one (/plugin uninstall ${ids.slice(1).join(", ")}) and restart Claude Code`);
   }
 
   // 2. Core env vars

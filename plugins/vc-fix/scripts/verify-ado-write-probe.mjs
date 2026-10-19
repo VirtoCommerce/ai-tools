@@ -15,7 +15,7 @@
 //
 // SAFE: both probes send an INVALID body ("{}"), the exact requests the real probes send, so
 // nothing is created/changed/pushed. Prints HTTP status + verdict only; the PAT is never echoed.
-import { probeAdoWorkItemsWrite, probeAdoCodeWrite } from "../skills/project-init/probe-lib.mjs";
+import { probeAdoWorkItemsWrite, probeAdoCodeWrite } from "./lib/probe-lib.mjs";
 
 const ORG = process.env.ADO_ORG || "";
 const PROJECT = process.env.ADO_PROJECT || "";

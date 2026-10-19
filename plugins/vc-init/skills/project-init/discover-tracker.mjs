@@ -40,11 +40,11 @@ import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
 import { emitObservations, httpStatusFrom, scrubUrls } from "./lib/diag-obs.mjs";
 // The contract PARSER lives with its consumers (the create path) so the scan and the payload
 // builder can never disagree about the shape. Pure — see that file's header.
-import { parseFieldContract, resolveSlots, parseFormLayout, filterContractForPersist, operatorQuestions } from "../qa-fix-routing/bug-contract.mjs";
+import { parseFieldContract, resolveSlots, parseFormLayout, filterContractForPersist, operatorQuestions } from "../../scripts/lib/bug-contract.mjs";
 // SHARED date-range validation for a team iteration — the same predicate ado.mjs's runtime resolver
 // uses, so onboarding picks the team whose current sprint the create path will accept (VCST: the
 // default team's `timeFrame:"current"` flag pointed at a 3-year-dead sprint).
-import { isIterationCurrent, iterationRange, localTodayYMD, selectTeamWithCurrentSprint } from "../qa-fix-routing/iteration-dates.mjs";
+import { isIterationCurrent, iterationRange, localTodayYMD, selectTeamWithCurrentSprint } from "../../scripts/lib/iteration-dates.mjs";
 
 /** Write the result to --out (relative to the deployment project) and/or print it. */
 function emit(out, args) {
