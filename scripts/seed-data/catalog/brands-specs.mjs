@@ -43,7 +43,15 @@ export const SETTING = Object.freeze({
 export const DEFAULT_BRAND_PROPERTY = 'Brand';
 
 export const FEATURED_PROPERTY = 'Featured';
-export const LANG = 'en-US';
+
+/**
+ * Category CODE of a seeded brand. Prefixed so `td:reconcile` check [7] (every category of an
+ * AGENT-TEST-SEED-* catalog carries the family prefix) holds, and so a seeded brand is recognisable
+ * by code as well as by its marker image. The storefront never shows the code — brand URLs come from
+ * the SEO slug (`brand_code`), and products match a brand by NAME.
+ */
+export const CODE_PREFIX = 'AGENT-TEST-SEED-BRAND-';
+export const categoryCode = (row) => `${CODE_PREFIX}${row.brand_code}`;
 
 /** The `pinned-links` menu entry the theme prepends inside the "All products" mega-menu. */
 export const PINNED_LIST = 'pinned-links';
@@ -56,7 +64,7 @@ export const contentTypeFor = (file) => CONTENT_TYPES[extname(file).toLowerCase(
 export const nameKey = (s) => String(s ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
 
 export const isOurImage = (img) => String(img?.url || '').includes(`/${ASSET_FOLDER}/`);
-export const isOurCategory = (cat) => (cat?.images || []).some(isOurImage);
+export const isOurCategory = (cat) => String(cat?.code || '').startsWith(CODE_PREFIX) || (cat?.images || []).some(isOurImage);
 
 export const isTrue = (v) => /^true$/i.test(String(v ?? '').trim());
 
@@ -82,11 +90,16 @@ export function planStoreSettings(settings, catalogId) {
   return out;
 }
 
+/** The three store settings must all be registered (a build without the brand feature has none). */
+export const missingSettings = (settings) => Object.values(SETTING).filter((n) => settingValue(settings, n) === undefined);
+
 /**
  * Create/update body for one brand category. `urls` = { logo, banner } (uploaded asset urls),
- * `featuredProp` = the catalog's Featured property ({ id }) or null, `seo` = the store-scoped SEO record.
+ * `featuredProp` = the catalog's Featured property ({ id }) or null, `seo` = the store-scoped SEO record,
+ * `lang` = the store's default language (never a transcribed culture).
  */
-export function categoryBody(row, { catalogId, urls, featuredProp, seo, existing = null }) {
+export function categoryBody(row, { catalogId, urls, featuredProp, seo, lang, existing = null }) {
+  if (!lang) throw new Error("categoryBody: lang is required (the store's defaultLanguage)");
   const images = [
     { url: urls.logo, name: row.logo_file, group: 'Logo', sortOrder: 0, languageCode: null },
     { url: urls.banner, name: row.banner_file, group: 'Banner', sortOrder: 1, languageCode: null },
@@ -100,11 +113,11 @@ export function categoryBody(row, { catalogId, urls, featuredProp, seo, existing
   const body = {
     ...(existing || {}),
     catalogId,
-    code: row.brand_code,
+    code: categoryCode(row),
     name: row.brand_name,
     isActive: true,
     images,
-    descriptions: [{ content: `<p>${row.description}</p>`, descriptionType: 'FullReview', languageCode: LANG }],
+    descriptions: [{ content: `<p>${row.description}</p>`, descriptionType: 'FullReview', languageCode: lang }],
     properties,
     seoInfos: existing?.seoInfos?.length ? existing.seoInfos : [seo],
   };

@@ -14,7 +14,8 @@
  *   3. `Featured` Boolean category property on the brand catalog (drives the "Top brands" row).
  *   4. Per CSV row: a brand category with a Logo + Banner image, a FullReview description, a store SEO
  *      record and Featured. A brand the catalog ALREADY carries (by name or code) and that is not ours
- *      is left alone — the env's own content wins. Ours (marker: an image in `ASSET_FOLDER`) is reconciled.
+ *      is left alone — the env's own content wins. Ours (code prefix `CODE_PREFIX`, or an image in
+ *      `ASSET_FOLDER`) is reconciled. Language = the store's defaultLanguage.
  *   5. `pinned-links` menu entry Brands → /brands — only for an owned catalog (an env with its own
  *      brand catalog already decided its navigation).
  *   6. Re-index the touched categories (event indexation is off on vcst-qa), then verify read-back.
@@ -32,22 +33,28 @@
  *   npm run seed:brands:teardown
  */
 import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   assertSafeTarget, auth, api, log, verbose, uploadAsset, assetUrlOk, loadCsv, verifyRemoved, buildStoreSeo,
   ROOT, DRY_RUN, TEARDOWN, ONLY, STORE_ID, SEED_FAMILY,
 } from '../../lib/seed-common.mjs';
 import {
-  CSV_PATH, IMAGE_DIR, ASSET_FOLDER, OWNED_CATALOG_SUFFIX, SETTING, FEATURED_PROPERTY, LANG, PINNED_LIST, PINNED_LINK,
-  contentTypeFor, nameKey, isOurCategory, planStoreSettings, settingValue, categoryBody,
+  CSV_PATH, IMAGE_DIR, ASSET_FOLDER, OWNED_CATALOG_SUFFIX, SETTING, FEATURED_PROPERTY, PINNED_LIST, PINNED_LINK,
+  contentTypeFor, nameKey, isOurCategory, planStoreSettings, settingValue, missingSettings, categoryBody, categoryCode, rowProblems,
 } from './brands-specs.mjs';
 
 const REUPLOAD = process.argv.includes('--reupload');
 const OWNED_CATALOG_NAME = `${SEED_FAMILY}-${OWNED_CATALOG_SUFFIX}`;
 
 const getStore = () => api('GET', `/api/stores/${encodeURIComponent(STORE_ID)}`, null, { expectStatus: [200] });
-const getCatalog = (id) => (id ? api('GET', `/api/catalog/catalogs/${encodeURIComponent(id)}`, null, { expectStatus: [200, 404] }).catch(() => null) : null);
+// Only a 404 means "no such catalog". Every other failure THROWS: read as "absent", a transient 5xx on
+// the env's configured brand catalog would make the seeder create its own and repoint BrandCatalogId.
+async function getCatalog(id) {
+  if (!id) return null;
+  const c = await api('GET', `/api/catalog/catalogs/${encodeURIComponent(id)}`, null, { expectStatus: [200, 404] });
+  return c?.id ? c : null;
+}
 
 async function findCatalogByName(name) {
   const r = await api('POST', '/api/catalog/catalogs/search', { take: 500 }, { expectStatus: [200, 201] });
@@ -89,22 +96,23 @@ async function reindex(ids) {
 }
 
 async function getMenus() {
-  const r = await api('GET', `/api/cms/${encodeURIComponent(STORE_ID)}/menu`, null, { expectStatus: [200, 204, 404] }).catch(() => null);
+  // No catch: a failed read must not pass for "no pinned-links list" and create a second one.
+  const r = await api('GET', `/api/cms/${encodeURIComponent(STORE_ID)}/menu`, null, { expectStatus: [200, 204, 404] });
   return Array.isArray(r) ? r : [];
 }
-const findPinned = (menus) => menus.find((m) => m.name === PINNED_LIST && (m.language || LANG) === LANG);
+const findPinned = (menus, lang) => menus.find((m) => m.name === PINNED_LIST && (m.language || lang) === lang);
 const isOnlyOurPinnedLink = (list) => (list?.menuLinks || []).length === 1 && list.menuLinks[0].url === PINNED_LINK.url;
 
 /** Brand catalog the store uses; creates the owned one when none is configured. */
-async function resolveBrandCatalog(store) {
+async function resolveBrandCatalog(store, lang) {
   const configured = await getCatalog(settingValue(store.settings, SETTING.catalogId));
   if (configured?.id) return { catalog: configured, owned: configured.name === OWNED_CATALOG_NAME };
   const found = await findCatalogByName(OWNED_CATALOG_NAME);
   if (found) return { catalog: await getCatalog(found.id), owned: true };
   const body = {
     name: OWNED_CATALOG_NAME, isVirtual: false,
-    languages: [{ languageCode: LANG, isDefault: true }],
-    seoInfos: [{ ...buildStoreSeo({ semanticUrl: 'brands', pageTitle: 'Brands' }), objectType: 'Catalog', isActive: true }],
+    languages: [{ languageCode: lang, isDefault: true }],
+    seoInfos: [{ ...buildStoreSeo({ semanticUrl: 'brands', pageTitle: 'Brands', languageCode: lang }), objectType: 'Catalog', isActive: true }],
   };
   const created = await api('POST', '/api/catalog/catalogs', body, { expectStatus: [200, 201] });
   log(`✓ catalog: ${OWNED_CATALOG_NAME} (${created?.id})`);
@@ -139,13 +147,20 @@ async function seed() {
   const all = loadCsv(CSV_PATH);
   const rows = ONLY ? all.filter((r) => r.brand_code === ONLY || nameKey(r.brand_name) === nameKey(ONLY)) : all;
   if (!rows.length) throw new Error(`--only ${ONLY} matched no brand in ${CSV_PATH}`);
+  // Same contract td:validate:brands enforces — checked BEFORE the first write, so a missing image
+  // cannot fail the run halfway (settings written, some brands created, nothing re-indexed).
+  const problems = rowProblems(all, Object.keys(all[0] || {}), (f) => existsSync(join(ROOT, IMAGE_DIR, f)));
+  if (problems.length) throw new Error(`${CSV_PATH} is not seedable:\n    ${problems.join('\n    ')}`);
 
   const store = await getStore();
-  if (settingValue(store.settings, SETTING.enabled) === undefined) {
-    log(`⚠ store ${STORE_ID} has no ${SETTING.enabled} setting — this platform build has no brand feature; skipped.`);
+  const missing = missingSettings(store.settings);
+  if (missing.length) {
+    log(`⚠ store ${STORE_ID} lacks ${missing.join(', ')} — this platform build has no brand feature; skipped.`);
     return;
   }
-  const { catalog, owned } = await resolveBrandCatalog(store);
+  const lang = store.defaultLanguage;
+  if (!lang) throw new Error(`store ${STORE_ID} has no defaultLanguage`);
+  const { catalog, owned } = await resolveBrandCatalog(store, lang);
   log(`Brand catalog: ${catalog.name} (${catalog.id})${owned ? ' [owned]' : ' [env-owned — brands are added, nothing is replaced]'}`);
   if (!owned && !(catalog.seoInfos || []).some((s) => s.semanticUrl)) {
     log(`⚠ catalog ${catalog.name} has no SEO record — /brands may 404 until one is added (not changed: env-owned catalog)`);
@@ -160,21 +175,21 @@ async function seed() {
   const touched = []; const kept = []; const expected = new Map();
 
   for (const r of rows) {
-    const cur = byName.get(nameKey(r.brand_name)) || byCode.get(r.brand_code) || null;
+    const cur = byName.get(nameKey(r.brand_name)) || byCode.get(categoryCode(r)) || byCode.get(r.brand_code) || null;
     if (cur && !isOurCategory(cur)) { kept.push(r.brand_name); verbose(`${r.brand_name}: env already has it (${cur.id}) — left alone`); continue; }
     const urls = { logo: await ensureAsset(r.logo_file, listed), banner: await ensureAsset(r.banner_file, listed) };
-    const seo = buildStoreSeo({ semanticUrl: r.brand_code, pageTitle: r.brand_name, metaDescription: r.description });
-    const body = categoryBody(r, { catalogId: catalog.id, urls, featuredProp, seo, existing: cur });
+    const seo = buildStoreSeo({ semanticUrl: r.brand_code, pageTitle: r.brand_name, metaDescription: r.description, languageCode: lang });
+    const body = categoryBody(r, { catalogId: catalog.id, urls, featuredProp, seo, lang, existing: cur });
     const saved = await api('POST', '/api/catalog/categories', body, { expectStatus: [200, 201, 204] });
     const id = cur?.id || saved?.id;
     log(`${DRY_RUN ? '[DRY] ' : ''}${cur ? '↻' : '✓'} brand: ${r.brand_name}${r.featured === 'true' ? ' ★' : ''} (${id})`);
-    if (id) { touched.push(id); expected.set(id, urls.logo); }
+    if (id) { touched.push(id); expected.set(id, urls); }
   }
 
   if (owned) {
     const menus = await getMenus();
-    if (!findPinned(menus)) {
-      await api('POST', `/api/cms/${encodeURIComponent(STORE_ID)}/menu`, { name: PINNED_LIST, storeId: STORE_ID, language: LANG, menuLinks: [{ ...PINNED_LINK }] }, { expectStatus: [200, 201, 204] });
+    if (!findPinned(menus, lang)) {
+      await api('POST', `/api/cms/${encodeURIComponent(STORE_ID)}/menu`, { name: PINNED_LIST, storeId: STORE_ID, language: lang, menuLinks: [{ ...PINNED_LINK }] }, { expectStatus: [200, 201, 204] });
       log(`${DRY_RUN ? '[DRY] ' : ''}✓ menu ${PINNED_LIST}: ${PINNED_LINK.title} → ${PINNED_LINK.url}`);
     }
   }
@@ -183,12 +198,15 @@ async function seed() {
   let bad = 0;
   if (!DRY_RUN) {
     const now = new Map((await catalogCategories(catalog.id)).map((c) => [c.id, c]));
-    for (const [id, logo] of expected) {
+    for (const [id, urls] of expected) {
       const c = now.get(id);
       if (!c) { bad++; log(`✗ brand ${id} not found in catalog after save`); continue; }
-      if (!(c.images || []).some((im) => im.url === logo && im.group === 'Logo')) { bad++; log(`✗ ${c.name}: Logo image missing`); }
+      for (const [group, url] of [['Logo', urls.logo], ['Banner', urls.banner]]) {
+        if (!(c.images || []).some((im) => im.url === url && im.group === group)) { bad++; log(`✗ ${c.name}: ${group} image missing`); }
+      }
     }
-    for (const url of new Set(expected.values())) if (!(await assetUrlOk(url))) { bad++; log(`✗ asset does not serve: ${url}`); }
+    const served = new Set([...expected.values()].flatMap((u) => [u.logo, u.banner]));
+    for (const url of served) if (!(await assetUrlOk(url))) { bad++; log(`✗ asset does not serve: ${url}`); }
   }
   log(`Done: ${touched.length} brand(s) seeded, ${kept.length} already on the env (left alone)${bad ? `, ${bad} FAILED` : ''}.`);
   if (kept.length) verbose(`env-owned: ${kept.join(', ')}`);
@@ -211,12 +229,12 @@ async function teardown() {
       deleted += ours.length;
     }
     if (!owned) continue;
-    const pinned = findPinned(await getMenus());
+    const pinned = findPinned(await getMenus(), store.defaultLanguage);
     if (pinned && isOnlyOurPinnedLink(pinned)) {
       log(`${DRY_RUN ? '[DRY] ' : ''}delete menu ${PINNED_LIST}`);
       await api('DELETE', `/api/cms/${encodeURIComponent(STORE_ID)}/menu?listIds=${encodeURIComponent(pinned.id)}`, null, { expectStatus: [200, 204, 404] });
     }
-    if (configuredId === catalog.id) {
+    if (configuredId === catalog.id && !missingSettings(store.settings).length) {
       log(`${DRY_RUN ? '[DRY] ' : ''}store settings: ${SETTING.enabled}=false, ${SETTING.catalogId}=""`);
       store.settings.find((s) => s.name === SETTING.enabled).value = false;
       store.settings.find((s) => s.name === SETTING.catalogId).value = '';
