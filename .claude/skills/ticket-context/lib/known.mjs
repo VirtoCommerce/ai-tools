@@ -2,7 +2,7 @@
 // known-ground.md). Every lookup is capability-checked (M2); paths are this repo's layout and are simply
 // absent on a client install.
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join, relative } from "node:path";
+import { isAbsolute, join, relative } from "node:path";
 import { hasScript, runNpmJson } from "./npm.mjs";
 
 // Values that reach an npm script's argv: an allow-list, as deploy.mjs does for an artifact id and version.
@@ -31,7 +31,8 @@ export function domainState(json, slug) {
   const map = json?.maps?.find((m) => m.slug === slug) ?? json?.maps?.find((m) => String(m.file ?? "").replace(/\.md$/, "") === slug);
   if (!map) return { state: "ABSENT", path: null };
   const codes = (json.findings ?? []).filter((f) => f.file === map.file).map((f) => f.code);
-  const path = `.claude/knowledge/domain/${map.file}`;
+  // domain:check names the copy it read: a ticket run's own map (its run folder's knowledge/domain/) before the repo's.
+  const path = map.path ?? `.claude/knowledge/domain/${map.file}`;
   if (codes.includes("DOMAIN-002")) return { state: "STALE", path, expired: true }; // expired: verdicts are no longer citable
   return { state: codes.includes("DOMAIN-001") ? "STALE" : "PRESENT", path };
 }
@@ -57,11 +58,21 @@ const list = (dir) => { try { return readdirSync(dir); } catch { return []; } };
 const has = (p) => { try { return existsSync(p); } catch { return false; } };
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-/** Prior runs mentioning the ticket. One unreadable entry is skipped, never thrown. */
-export function priorRuns(root, key) {
+/** Prior runs mentioning the ticket. One unreadable entry is skipped, never thrown. The ticket's run folders —
+ *  every env, wherever QA_OUTPUT_DIR puts them — come from `run:dir --prior` when this install has it
+ *  (scripts/lib/run-dir.mjs; M1: asked through npm, not imported), else from the in-repo layout read directly. */
+export function priorRuns(root, key, run = null) {
   const out = [];
-  const tickets = join(root, "reports", "tickets");
-  for (const sprint of list(tickets)) if (has(join(tickets, sprint, key))) out.push(`reports/tickets/${sprint}/${key}/`);
+  const listed = run && hasScript(root, "run:dir") ? run(root, ["run:dir", "--", "--ticket", key, "--prior", "--json"]).json : null;
+  if (Array.isArray(listed)) {
+    for (const r of listed) if (typeof r?.dir === "string") {
+      const rel = relative(root, r.dir);
+      out.push(`${(rel && !rel.startsWith("..") ? rel : r.dir).split("\\").join("/")}/`);
+    }
+  } else {
+    const tickets = join(root, "reports", "tickets");
+    for (const sprint of list(tickets)) if (has(join(tickets, sprint, key))) out.push(`reports/tickets/${sprint}/${key}/`);
+  }
   const models = join(root, "reports", "ba", "test-models");
   for (const f of list(models)) if (f.startsWith(`${key}-`)) out.push(`reports/ba/test-models/${f}`);
   const mention = new RegExp(`(?<![A-Za-z0-9-])${escapeRe(key)}(?!\\d)`); // VCST-62 is not VCST-6223, nor XVCST-62
@@ -96,7 +107,7 @@ export function knownGround({ root, key, domain, prs, operations = [], runDir, r
     if (r.json) {
       known.domain_map = domainState(r.json, domain);
       const mm = known.domain_map.path?.replace(/\.md$/, ".mind-map.json");
-      known.mind_map.path = mm && existsSync(join(root, mm)) ? mm : null;
+      known.mind_map.path = mm && existsSync(isAbsolute(mm) ? mm : join(root, mm)) ? mm : null;
     } else failed("domain:check", r);
   }
   if (domain && need("bl:extract")) {
@@ -130,6 +141,6 @@ export function knownGround({ root, key, domain, prs, operations = [], runDir, r
     if (r.json) known.cases_at_risk.push(...(r.json.hits ?? []).map((h) => ({ suite: h.suiteId, case: h.caseId, title: h.title, via: "tc:scope" })));
     else failed("tc:scope", r);
   }
-  known.prior_runs = priorRuns(root, key);
+  known.prior_runs = priorRuns(root, key, run);
   return { known, gaps };
 }

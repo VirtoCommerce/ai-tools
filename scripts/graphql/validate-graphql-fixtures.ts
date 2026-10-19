@@ -31,8 +31,9 @@
 
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { loadEnv } from "../lib/load-env.mjs";
+import { sessionRunPath } from "../lib/run-dir.mjs";
 import { readdirSync, readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
-import { join, resolve, basename } from "path";
+import { join, resolve, basename, dirname } from "path";
 import {
   buildSchema,
   introspect,
@@ -48,8 +49,11 @@ const { testEnv, sourceOf } = loadEnv({ fallback: "vcst" });
 
 const ROOT = resolve(process.cwd());
 const FIXTURES_DIR = join(ROOT, "test-data", "graphql");
-const SCHEMA_CACHE = join(ROOT, "scripts", ".graphql-schema.cache.json");
-const REPORT_PATH = join(ROOT, "reports", "graphql-fixtures-validation.md");
+// Inside a ticket run (`npm run run:use` bound one for this session and env) the cache and the report are the
+// run's own: the schema is the env's, and two runs on two envs must not overwrite one cache between one's
+// refresh and its validation (scripts/lib/run-dir.mjs).
+const SCHEMA_CACHE = sessionRunPath("schemaCache", { env: testEnv }) ?? join(ROOT, "scripts", ".graphql-schema.cache.json");
+const REPORT_PATH = sessionRunPath("fixturesReport", { env: testEnv }) ?? join(ROOT, "reports", "graphql-fixtures-validation.md");
 
 interface FixtureHeader {
   name: string;
@@ -234,7 +238,7 @@ async function main() {
   console.log(`\nTotal: ${passed} passed / ${failed} failed / ${results.length} fixtures`);
 
   // Report
-  if (!existsSync(join(ROOT, "reports"))) mkdirSync(join(ROOT, "reports"), { recursive: true });
+  mkdirSync(dirname(REPORT_PATH), { recursive: true });
 
   if (args.json) {
     const jsonPath = REPORT_PATH.replace(/\.md$/, ".json");

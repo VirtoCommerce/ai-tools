@@ -26,10 +26,12 @@ context gathering, the Test Model, authoring and seeding that are 30+ minutes of
 
 ## 1a — Fetch the scope, classify type × status, route
 
-**Bind the env before anything else** — `npm run env:use -- <env>` when the arguments name one, else
-`npm run env:use -- --default` ([`../../knowledge/execution/run-env.md`](../../knowledge/execution/run-env.md)).
-Every script after it, the subagents' too, resolves that env, and its output fills every brief's Environment
-line. A `verify-fix` route keeps this binding: `/vc-fix:qa-verify-fix` run inline does not bind again.
+**Bind the env and the run folder before anything else** — `npm run run:use -- <TICKET> [<env>]` (no env
+argument ⇒ the default; [`../../knowledge/execution/run-env.md`](../../knowledge/execution/run-env.md)). Every
+script after it, the subagents' too, resolves that env and that folder `{RUN_DIR}`, its output fills every
+brief's Environment line, and every file this run writes goes into `{RUN_DIR}`
+([`../../knowledge/execution/run-output.md`](../../knowledge/execution/run-output.md)). A `verify-fix` route
+keeps this binding: `/vc-fix:qa-verify-fix` run inline does not bind again.
 
 **Fetch first** — every later sub-part depends on these fields.
 
@@ -179,8 +181,8 @@ append, one `suites:sync`, no verifier beside its own doer, no two suites on one
     `UNKNOWN` and **never** falls back to the committed snapshot.
 
     ```bash
-    npm run schema:refresh                      # → knowledge/api/graphql-schema.md — ~8.5s
-    npm run graphql:fixtures:validate:refresh   # → the runner cache + the fixture gate — ~1.8s
+    npm run schema:refresh                      # → {RUN_DIR}/knowledge/api/graphql-schema.md — ~8.5s
+    npm run graphql:fixtures:validate:refresh   # → the run's runner cache + the fixture gate — ~1.8s
     ```
 
 ---
@@ -219,8 +221,8 @@ like any other hit ([`coverage-triage.md`](coverage-triage.md) §3).
 Like the map, it is never an oracle. `null` ⇒ skip it; no run builds one inline ([`axes.md`](axes.md) §2g).
 
 **2. The per-ticket prior art**, read directly — `reports/ba/<domain folder>/` (prior BA analysis),
-`reports/ba/test-models/` (prior test models), and the tickets already tested here
-(`reports/tickets/**/summary.json`). (The generated index that used to front these sources was removed 2026-09-08 — read the sources directly, 
+`reports/ba/test-models/` (older test models), the ticket's prior run folders (`npm run run:dir -- --ticket <KEY> --prior`),
+and the tickets already tested (every run folder's `summary.json`: `npm run --silent run:dir -- --all`). (The generated index that used to front these sources was removed 2026-09-08 — read the sources directly, 
 dated by their filenames or `git log`.) 
 Two questions, and the second is the one that lets you design a test.
 

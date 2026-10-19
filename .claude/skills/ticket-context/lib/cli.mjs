@@ -82,7 +82,7 @@ async function prepare() {
   try { sweepStaleRuns(key, { root }); } catch { /* a failed sweep never blocks the run; the next prepare retries */ }
   const domain = flag("domain") ?? null; // part of the freshness key: known ground differs per domain
   if (domain !== null && !DOMAIN_RE.test(domain)) usage("--domain must be a slug: letters, digits, '-' or '_'");
-  loadLayeredEnv(root);
+  const testEnv = loadLayeredEnv(root);
   const profile = resolveProfile(readProfile(root));
   const tcred = trackerCredential(profile);
   if (!tcred.ok) { out({ status: "no-tracker", gap: gap("ticket", tcred.reason, tcred.detail) }); process.exit(3); }
@@ -145,8 +145,9 @@ async function prepare() {
 
   const fk = freshnessKey({ ticketUpdated: issue.fields.updated, domain, skill: skillFingerprint(),
     prShas: prMeta.map((p) => `${p.ref}@${p.meta?.head?.sha ?? "?"}@${p.meta?.state ?? "?"}@${p.meta?.merged_at ?? ""}`),
-    linkedUpdated: [...linkedJson.values()].map((j) => `${j.key}@${j.fields?.updated}`) });
-  const cachedFile = join(cacheDir(key, root), "bundle.json");
+    linkedUpdated: [...linkedJson.values()].map((j) => `${j.key}@${j.fields?.updated}`), env: testEnv });
+  // One cached bundle per env: its deployment facts are that stand's, and two envs must not evict each other.
+  const cachedFile = join(cacheDir(key, root), `bundle-${testEnv}.json`);
   if (!has("fresh") && readCached(cachedFile, fk)) { out({ status: "cached", bundle_path: cachedFile }); return; }
 
   const { dir: runDir, inProject } = newRunDir(key, { root, ignored });
@@ -208,7 +209,7 @@ async function prepare() {
       try { prs.push(await collectPr(gh, p, runDir, { sameKey: ladder.sameKey })); } catch (e) { prs.push({ ...base, gap: asGap(`pr:${p.ref}`, e) }); }
     }
 
-    const prepared = { schema: "ticket-context-prepare/1", ticket: key, tracker: profile.tracker, project_type: profile.projectType, domain, run_dir: runDir, run_dir_in_project: inProject,
+    const prepared = { schema: "ticket-context-prepare/1", ticket: key, env: testEnv, tracker: profile.tracker, project_type: profile.projectType, domain, run_dir: runDir, run_dir_in_project: inProject,
       fetched_at: new Date().toISOString(), ticket_updated: issue.fields.updated, freshness_key: fk, fields: tf.fields, ticket_json: ticketJson,
       ac_fields: acFields, link_fields: linkFields, epic, siblings, inventory: inv.items, prs, rung: ladder.rung, ladder: ladder.ladder, gaps };
     const prepPathOut = join(runDir, "prepare.json");
@@ -319,9 +320,10 @@ function finish() {
   const prep = readJson(prepPath());
   const { bundle, errors } = gate(prep);
   if (errors.length) { out({ status: "gate-failed", errors }); process.exit(2); }
-  const target = join(cacheDir(prep.ticket, root), "bundle.json");
+  const envTag = prep.env ? `-${prep.env}` : ""; // a prepare.json from before the env was recorded
+  const target = join(cacheDir(prep.ticket, root), `bundle${envTag}.json`);
   const c = writeCache(root, target, bundle, ignored);
-  const final = c.cached ? target : join(tmpdir(), `ticket-context-${prep.ticket}-bundle.json`);
+  const final = c.cached ? target : join(tmpdir(), `ticket-context-${prep.ticket}${envTag}-bundle.json`);
   if (!c.cached) writeJson(final, bundle);
   removeRunDir(prep.run_dir, root);
   out({ status: "done", bundle_path: final, cached: c.cached, ...(c.cached ? {} : { reason: c.reason }) });

@@ -70,6 +70,7 @@ import {
   withEnvFallback,
 } from "../lib/graphql-substitute.js";
 import { GraphQLSchema } from "graphql";
+import { sessionRunPath } from "../lib/run-dir.mjs";
 
 // Layered, TEST_ENV-aware env load (later files override earlier; no legacy root `.env`).
 // Mirrors scripts/lib/seed-common.mjs — a bare loadDotenv() reads only `.env`, which
@@ -91,7 +92,9 @@ for (const [key, value] of Object.entries(process.env)) {
 }
 
 const ROOT = resolve(process.cwd());
-const DEFAULT_CACHE = join(ROOT, "scripts", ".graphql-schema.cache.json");
+// Inside a ticket run (`npm run run:use`) the cache is the run's own, the one its refresh wrote — the env's schema,
+// never another parallel run's (scripts/lib/run-dir.mjs). The scoped-endpoint caches sit beside it.
+const DEFAULT_CACHE = sessionRunPath("schemaCache", { env: _TEST_ENV }) ?? join(ROOT, "scripts", ".graphql-schema.cache.json");
 const DEFAULT_FIXTURES = join(ROOT, "scripts", "fixtures", "graphql");
 // Run-less / ad-hoc invocations (no --run-id, no --evidence-dir) write here — a
 // gitignored scratch dir, deliberately OUTSIDE reports/regression/ so it can never
@@ -270,7 +273,7 @@ function endpointSlug(endpointPath: string): string {
  */
 function schemaCachePathFor(endpointPath: string, baseCache: string): string {
   if (endpointPath === "/graphql") return baseCache;
-  return join(ROOT, "scripts", `.graphql-schema.${endpointSlug(endpointPath)}.cache.json`);
+  return join(dirname(DEFAULT_CACHE), `.graphql-schema.${endpointSlug(endpointPath)}.cache.json`);
 }
 
 /**

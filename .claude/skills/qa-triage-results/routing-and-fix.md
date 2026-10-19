@@ -36,7 +36,8 @@ so three of its steps must be steered — say all three in the brief:
   `root-cause.md`, screenshots, trace, HAR path) and say the bug is already reproduced and investigated.
   It must reuse that package for its reproduction and its 4-layer validation, not dispatch a second repro.
 - **Step 4 (write the report)** — write it to `reports/bugs/open/<severity>/` per the map above,
-  not the flat `open/` its template names, and pass `found-by:agent-regression <RUN_ID>` so the report carries
+  not the flat `open/` its template names — inside a ticket run (ticket mode, or `/qa-test`'s 5-triage) to the
+  run folder's `bugs/<severity>/`, and name that folder in the brief — and pass `found-by:agent-regression <RUN_ID>` so the report carries
   `**Found by:** agent — regression <RUN_ID>` and whoever files it later labels it `found-by-agent` + `found-in-regression`
   (`.claude/knowledge/execution/tracker-ops.md` §Labels on bugs Claude files).
 - **Step 5 (create the tracker ticket)** — **skip it: stop after Step 4 and do not ask.** Step 5

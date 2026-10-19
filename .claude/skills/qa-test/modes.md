@@ -159,8 +159,9 @@ build probe, because the transition gate below is evaluated against the probed b
    C1 result: a bug with no covering case cannot be verified that way at all, and a case going green proves
    *that case's assertion*, not the bug's own STR. Dispatch them **concurrently inside the max-3 browser
    cap**, on distinct lanes — any of the three, firefox included since 2026-09-08
-   ([`.claude/rules/agents.md`](../../rules/agents.md) §Parallel Execution). Each writes its own category-6 artifacts under
-   `reports/tickets/<Sprint>/<BUG-KEY>/`, so the round's per-bug evidence is a file rather than a claim.
+   ([`.claude/rules/agents.md`](../../rules/agents.md) §Parallel Execution). Each writes its own category-6 artifacts in
+   its bug's run folder, `npm run run:dir -- --ticket <BUG-KEY>` (resolved, never `run:use`: the agents share this
+   session's binding), so the round's per-bug evidence is a file rather than a claim.
 4. **Then — and only then — re-run the round's failed scope**: C1 / the failed checklist items (item 3 of
    the enumeration above). A bug just verified VERIFIED does **not** drop its cases from C1: verify-fix
    proves the STR, and C1 is what produces the canonical `RUN_ID` a later promotion refuses to work
@@ -292,7 +293,7 @@ the exit template posts as a NEW comment and records both ids in `summary.json.t
 ### Artifact refresh between rounds
 
 **Test Model — one file, amended; never a second dated file.** The path stays
-`reports/ba/test-models/<TICKET>-<date>.md` with `<date>` = **round 1's** date (the run's `date` field). A
+`{RUN_DIR}/test-model.md` (one per run folder; round 1's `date` stays in its header). A
 same-day round 2 would collide on that exact path, and a `-r2` sibling is worse than a collision: the model
 is durable partly because the next ticket on that surface **reuses** it, and two files for one fault model
 means the reuse picks one at random. The 80–160-line band is per model, not per round; an amendment is 5–15

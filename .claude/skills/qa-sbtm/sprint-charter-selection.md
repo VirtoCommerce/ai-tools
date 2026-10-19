@@ -46,7 +46,7 @@ the agent-printed `AFFECTED_SUITES:` line that hallucinated 32 case ids.
 |---|---|---|
 | **D1** | **Exact oracle** — the change is one assertable value or contract (a rounding rule, an error payload shape, a schema endpoint's presence) | §6 → `/qa-test-cases-generator`. A precise oracle makes a case cheaper *and* permanent; spending a charter on it buys a one-off verdict |
 | **D2** | **No QA surface in this repo** — §2.4 exclusions, separate products (`vc-shell` / Vendor Portal) | Nothing. Say so in §5.3 rather than omitting it silently |
-| **D3** | **Already charted in the last 24 h** — `reports/exploratory/SBTM-*` on the same domain | The existing report; extend it, don't re-run |
+| **D3** | **Already charted in the last 24 h** — `reports/exploratory/SBTM-*`, or a ticket run's `exploratory/SBTM-*` (`npm run --silent run:dir -- --all` lists the run folders), on the same domain | The existing report; extend it, don't re-run |
 
 **A disqualifier outranks every C signal.** Sprint 26-16's Platform Security / Auth API is `I=5, L=3`
 (a clean C4) *and* a pure D1 — the change is the login endpoint's error contract, which §5.2 GAP-13
@@ -109,7 +109,7 @@ Run this in **shadow for 2–3 sprints** before treating it as load-bearing, and
 
 | Metric | Source |
 |---|---|
-| `[EXP]` vs `[VAL]` session ratio | `reports/exploratory/SBTM-*` session-type field |
+| `[EXP]` vs `[VAL]` session ratio | `reports/exploratory/SBTM-*` and the run folders' `exploratory/SBTM-*` session-type field |
 | Net-new scenarios promoted to `Draft` | §5.2 rows tagged `from: EXP-<charter>` |
 | Bugs found by charter, not attributable to any activated suite's assertions | `reports/bugs/` cross-ref |
 

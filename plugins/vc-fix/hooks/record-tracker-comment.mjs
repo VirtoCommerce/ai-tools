@@ -21,6 +21,18 @@ import { resolve } from "node:path";
 const ROOT = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
 const LEDGER = resolve(ROOT, ".tracker-comments.json");
 
+// The run's env, as scripts/lib/resolve-test-env.js resolves it — TEST_ENV, else this session's binding
+// (.vc-fix/session-env/<session id>, `npm run env:use`), else .env.test-env, else vcst — inline, because a hook
+// runs without node_modules. The ledger keys an entry by ticket AND env: one ticket tested on two envs is two
+// runs, each with its own comment. An entry written before the env joined the key is the ticket alone.
+function runEnv(sessionId) {
+  const fromEnv = process.env.TEST_ENV?.trim();
+  if (fromEnv) return fromEnv;
+  const read = (f) => { try { return /^\s*TEST_ENV\s*=\s*["']?([a-z0-9_]+)/m.exec(readFileSync(f, "utf8"))?.[1]; } catch { return undefined; } };
+  const sid = sessionId ?? process.env.CLAUDE_CODE_SESSION_ID;
+  return (sid && /^[A-Za-z0-9-]+$/.test(sid) && read(resolve(ROOT, ".vc-fix", "session-env", sid))) || read(resolve(ROOT, ".env.test-env")) || "vcst";
+}
+
 // Every Atlassian server id: a claude.ai connector registers as mcp__<uuid>__…, and
 // addOrEditJiraIssueComment / addCommentToJiraIssue{commentId} EDIT (issue #360).
 const TOOL = /^mcp__.+__(addCommentToJiraIssue|addOrEditJiraIssueComment)$/;
@@ -58,9 +70,12 @@ try {
 
   // keep the FIRST comment of a round — that is the one everything else amends. A stale
   // entry is a previous round, so the guard let this post through and it replaces the entry.
-  if (ledger[ticket]?.run_id === run && !isStale(ledger[ticket]?.posted_at)) process.exit(0);
+  const key = `${ticket}@${runEnv(event.session_id)}`;
+  const prior = ledger[key] ?? ledger[ticket];
+  if (prior?.run_id === run && !isStale(prior?.posted_at)) process.exit(0);
 
-  ledger[ticket] = { comment_id: id, run_id: run, posted_at: new Date().toISOString(), via: "mcp" };
+  ledger[key] = { comment_id: id, run_id: run, posted_at: new Date().toISOString(), via: "mcp" };
+  delete ledger[ticket];
   writeFileSync(LEDGER, JSON.stringify(ledger, null, 2) + "\n");
   process.exit(0);
 } catch (err) {

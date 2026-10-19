@@ -308,8 +308,8 @@ customer names, or claims**: only state benefits the feature actually delivers (
    `reports/ba/release-notes/` the way test models sit under `reports/ba/test-models/`.
 6. **Schema-validate developer examples** against `graphql-schema.md` / live introspection before publish.
 7. **Verify every image path resolves from the doc's own directory** before shipping. A doc in
-   `reports/ba/<domain>/` reaching evidence in `reports/tickets/<Sprint>/<TICKET>/screenshots/` needs
-   `../../tickets/…` — and so does a release note in `reports/ba/release-notes/`, which sits at the
+   `reports/ba/<domain>/` reaching evidence in `reports/tickets/<Sprint>/<TICKET>/<env>/screenshots/` needs
+   `../../tickets/…` (a run folder outside the repo cannot be linked at all: copy the screenshots the doc uses beside it) — and so does a release note in `reports/ba/release-notes/`, which sits at the
    same depth. Two docs already in the repo ship broken images because the prefix was copied
    from an exemplar without checking — a `[ -f ]` loop over the extracted paths takes seconds.
 8. **Pushing a doc to a tracker ticket is a separate job with its own rules** — the artifact goes in
@@ -390,7 +390,7 @@ block. Never both, never zero.}
 
 ---
 *Verified on {env} @ Platform `{build.deployed.platform}`, Theme `{build.theme}` · {TICKET} verdict
-{PASS | PASS WITH NOTES} · Evidence: `reports/tickets/{SPRINT}/{TICKET}/` ·
+{PASS | PASS WITH NOTES} · Evidence: `{RUN_DIR}/` ·
 Derivation: layer from {layer_source, comma-separated}{ · ⚠ sources disagreed}*
 ```
 
@@ -512,7 +512,7 @@ ending in the verbatim quoted success message.}
 ---
 *{TICKET} · verified on {env} ·
 Not documented: {each omitted condition with its reason, or the word none} ·
-Evidence: `reports/tickets/{SPRINT}/{TICKET}/` · Audiences derived from layer `{layer}`*
+Evidence: `{RUN_DIR}/` · Audiences derived from layer `{layer}`*
 ```
 
 Include only the sections the ticket earned — an absent audience is an absent heading, never an empty

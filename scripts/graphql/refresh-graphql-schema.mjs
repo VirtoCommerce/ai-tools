@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 /**
- * Refreshes .claude/knowledge/api/graphql-schema.md from live GraphQL introspection.
+ * Refreshes .claude/knowledge/api/graphql-schema.md from live GraphQL introspection — or, inside a ticket run
+ * (`npm run run:use` bound one for this session and env), that run's own copy, `<run>/knowledge/api/graphql-schema.md`:
+ * the schema is the env's, and two runs on two envs must not overwrite one file (scripts/lib/run-dir.mjs).
  *
  * Usage:
  *   node scripts/refresh-graphql-schema.mjs              # BACK_URL of the active TEST_ENV (lib/load-env.mjs)
@@ -9,14 +11,14 @@
  */
 
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
-import { writeFileSync } from 'fs';
+import { mkdirSync, writeFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { loadEnv } from '../lib/load-env.mjs';
+import { sessionRunPath } from '../lib/run-dir.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..', '..');
-const OUTPUT = resolve(ROOT, '.claude/knowledge/api/graphql-schema.md');
 
 // Parse args
 const args = process.argv.slice(2);
@@ -32,6 +34,8 @@ let backUrl = urlIdx !== -1 ? args[urlIdx + 1] : null;
 // BACK_URL_<ENV> pin beats .env.local's localhost. Like config.js, the files also beat a shell
 // BACK_URL: --url is the override. The output is the agents' contract oracle, so say where it came from.
 const { testEnv, sourceOf } = loadEnv({ fallback: 'vcst' });
+const REPO_SCHEMA = resolve(ROOT, '.claude/knowledge/api/graphql-schema.md');
+const OUTPUT = sessionRunPath('schema', { env: testEnv }) ?? REPO_SCHEMA;
 const urlSource = backUrl ? '--url' : sourceOf('BACK_URL');
 backUrl ||= process.env.BACK_URL || null;
 
@@ -424,8 +428,9 @@ async function main() {
     process.stdout.write(md);
     console.error('\n[dry-run] Schema printed to stdout. Use without --dry-run to write to file.');
   } else {
+    mkdirSync(dirname(OUTPUT), { recursive: true });
     writeFileSync(OUTPUT, md, 'utf-8');
-    console.error(`Written to ${OUTPUT}`);
+    console.error(`Written to ${OUTPUT}${OUTPUT === REPO_SCHEMA ? '' : ' (this run\'s copy; the repo\'s .claude/knowledge/api/graphql-schema.md is unchanged)'}`);
     console.error(`  Queries: ${queries.length}`);
     console.error(`  Mutations: ${mutations.length}`);
     console.error(`  Types: ${Object.keys(typeResults).length}`);

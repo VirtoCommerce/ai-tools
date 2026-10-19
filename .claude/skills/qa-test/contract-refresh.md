@@ -23,9 +23,10 @@ Two properties of the tooling make *"if it looks stale"* unworkable rather than 
 - **`loadSchemaCache` has no age check** (`scripts/lib/graphql-validator.ts`). It parses whatever is on
   disk, however old. So `npm run graphql:fixtures:validate` — the fixture gate — **passes clean against a
   months-old cache**. A false green, with no warning line.
-- **The cache is one shared file, not one per environment** (`scripts/.graphql-schema.cache.json`,
-  hard-coded in three scripts). A `TEST_ENV=vcptcore` run validates against whichever env refreshed it
-  last. The fixture library records this itself — `test-data/graphql/index.json` carries `backUrl` and
+- **Outside a ticket run the cache is one shared file, not one per environment**
+  (`scripts/.graphql-schema.cache.json`). A `TEST_ENV=vcptcore` run validates against whichever env refreshed it
+  last. Inside one (`npm run run:use`) the refresh, the fixture gate and the runner all use the run's own
+  `{RUN_DIR}/.graphql-schema.cache.json` ([`run-output.md`](../../knowledge/execution/run-output.md)). The fixture library records this itself — `test-data/graphql/index.json` carries `backUrl` and
   `lastValidated` — so the mismatch is *readable*. Nothing was reading it.
 
 The failure mode is the expensive one. A stale contract does not error; it produces cases asserting a
@@ -74,8 +75,8 @@ scripts, and running one does **not** freshen the other.
 
 | Artifact | What reads it | Refreshed by | Notes |
 |---|---|---|---|
-| `.claude/knowledge/api/graphql-schema.md` | **the agents** — `1c`, `1d`, `1e`, the Step-3b authoring pack | `npm run schema:refresh` | Writes only this file. Its header carries the introspection date (`> **Source**: … (YYYY-MM-DD)`) — that date is the rev you quote. **Does NOT touch the schema cache.** |
-| `scripts/.graphql-schema.cache.json` + the 74 fixtures under `test-data/graphql/` | **the runner and the fixture gate** — `graphql-runner.ts`, `validate-graphql-fixtures.ts` | `npm run graphql:fixtures:validate:refresh` | Introspects live, `saveSchemaCache`, then validates all 74 fixtures and **exits non-zero on drift**. |
+| `.claude/knowledge/api/graphql-schema.md` — inside a ticket run `{RUN_DIR}/knowledge/api/graphql-schema.md` | **the agents** — `1c`, `1d`, `1e`, the Step-3b authoring pack | `npm run schema:refresh` | Writes only this file. Its header carries the introspection date (`> **Source**: … (YYYY-MM-DD)`) — that date is the rev you quote. **Does NOT touch the schema cache.** |
+| `scripts/.graphql-schema.cache.json` (inside a ticket run `{RUN_DIR}/.graphql-schema.cache.json`) + the 74 fixtures under `test-data/graphql/` | **the runner and the fixture gate** — `graphql-runner.ts`, `validate-graphql-fixtures.ts` | `npm run graphql:fixtures:validate:refresh` | Introspects live, `saveSchemaCache`, then validates all 74 fixtures and **exits non-zero on drift**. |
 
 So when `contract_surface` is `true`, `1b` item 2d runs **both — concurrently, in one message**:
 
@@ -85,7 +86,7 @@ npm run graphql:fixtures:validate:refresh   # the cache + the 74-fixture gate  �
 ```
 
 **There is no order to preserve.** They write disjoint targets (`graphql-schema.md` · the cache +
-`reports/graphql-fixtures-validation.md`) and each introspects the endpoint independently, so neither
+the `graphql-fixtures-validation.md` report; inside a ticket run all three in `{RUN_DIR}`) and each introspects the endpoint independently, so neither
 reads the other's output. Measured on vcst-qa: **10.4 s serial → 8.6 s parallel** — the saving is exactly
 the smaller job, hidden under the introspection that dominates. Read **both** exit codes: run serially, a
 failed `schema:refresh` would mask whatever the fixture gate had to say, and §3 needs both.
@@ -184,6 +185,7 @@ It is also the cheapest of the three freshness gates the repo runs for this same
 - **The BL oracle / the ECL.** Oracle freshness is `/qa-review-oracles`' job, on its own
   triangulation + value bar. This axis refreshes *contracts* (what the API exposes), never *invariants*
   (what it must do).
-- **Committing the refreshed snapshot.** `graphql-schema.md` is git-tracked and the refresh rewrites it,
-  so it will appear in the working tree. `/qa-test` does **not** commit it. Report the change; let a
+- **Committing the refreshed snapshot.** Inside a ticket run the refresh writes the run's copy and the
+  git-tracked `.claude/knowledge/api/graphql-schema.md` is untouched: promoting it is the operator's copy.
+  Outside one the refresh rewrites the tracked file, so it will appear in the working tree. `/qa-test` does **not** commit it. Report the change; let a
   human commit it.

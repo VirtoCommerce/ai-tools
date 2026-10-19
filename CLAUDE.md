@@ -111,7 +111,8 @@ Each row names THE file that is normative for its topic. Read it before acting o
 | **What a domain IS** — actors, value chain, surface inventory per layer, where the layers DISAGREE, coverage shape | `.claude/knowledge/domain/<domain>.md` (shape: `domain-map.md`; build/refresh `/qa-domain-map <slug>`; freshness `npm run domain:check`) |
 | Orders & Fulfillment (`ord`) — CustomerOrder + PaymentIn/Shipment/Refund across Admin, storefront, REST/xAPI | `.claude/knowledge/domain/orders.md` |
 | **How a domain BEHAVES + the data state each behaviour needs** — behaviour graph (stable ids, evidence) and data profiles; cases link by `Behavior:` / `DataProfile:` stamps | `/qa-test-mind-map`, `/qa-test-data-model`; gate + seed order `npm run models:check [-- --plan <profile>]`; why: `docs/decisions/test-mind-map-and-data-model.md` |
-| Prior art per ticket (read the sources directly) | `reports/ba/<domain>/` · `reports/ba/test-models/` · `reports/tickets/**/summary.json` |
+| Prior art per ticket (read the sources directly) | `reports/ba/<domain>/` · `reports/ba/test-models/` · every run folder's `summary.json` (`npm run run:dir -- --all`) |
+| Where a ticket run writes — `QA_OUTPUT_DIR`, the run folder per ticket and env, `npm run run:use` | `.claude/knowledge/execution/run-output.md` |
 | Bug auto-fix gate ladder G0–G7, ownership routing, no-auto-merge, client-code containment | `.claude/knowledge/execution/quality-gates.md` |
 | Test data — `@td()` / `{{VAR}}`, GOLDEN RULE, SECOND RULE | `.claude/rules/test-data.md`; seeder authoring `.claude/knowledge/execution/test-data-authoring.md` |
 | **Whether a change needs a unit test at all** (NO CODE ⇒ NO TEST; derivation vs declaration; which gate already owns it) | `.claude/knowledge/execution/when-to-write-a-test.md` |
