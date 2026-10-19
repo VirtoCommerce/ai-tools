@@ -62,7 +62,7 @@ line before Step 1, rather than acting on a guess.
 | `--axes` | `--visual --contract --coverage` | all three; `layer` derives on both paths regardless |
 | any axis flag on a FULL run | **no-op, say so in one line** | FULL already derives and runs every axis (`axes.md` §4) |
 | `--release-regression` | **no longer exists — say so in one line and continue.** Run the sweep deliberately with `/qa-regression` | removed 2026-09-10 with C2/`5r`; see §Execution order |
-| a second bare token that is not a ticket key, `PR #N`, or a flag | **STOP and ask** | never silently fold it into the target or a flag value |
+| a second bare token that is not a ticket key, an env `run:use` accepts, `PR #N`, or a flag | **STOP and ask** | never silently fold it into the target or a flag value |
 
 `--iterate` and `--epic` **compose** (the loop tries to fix a failing child story before the chain
 continues). **No flag changes the FAST/FULL routing** — effort comes only from `1a`'s routing (a
