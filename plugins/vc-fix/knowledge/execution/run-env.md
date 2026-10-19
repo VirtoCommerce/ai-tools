@@ -29,6 +29,34 @@ A browser lane has no shell, so the brief is the only way the env reaches it: th
 `BACK_URL` (the script prints them), and the password names in the form the lanes' `--secrets` file uses —
 `NAME_<ENV>` on a combined every-env file, the bare `NAME` on a single-env one.
 
+## The run folder — where a ticket run writes
+
+A ticket run writes every file into one folder per ticket and env, so two runs (two tickets, or one ticket
+on two envs) never write the same file.
+
+- **Bind it at Step 0 instead of the env alone:** `node "$pluginRoot/scripts/env/run-folder.mjs" use <ticket-key> [<env>]`
+  binds the env as above **and** the run folder, creates the folder, and prints `RUN_DIR=…` and the ticket's
+  prior run folders. `… dir` prints the folder again at any later step, in a subagent too.
+- **Where it is:** `QA_OUTPUT_DIR` in `.env.local`, a path template with optional `<ticket>`, `<env>` and
+  `<sprint>` (`QA_OUTPUT_DIR=P:\VC\_VIRTO\tickets\<ticket>\.work\self-testing`). A template without
+  `<ticket>` gets `\<ticket>` appended, then one without `<env>` gets `\<env>`. Unset ⇒
+  `reports/tickets/<sprint>/<ticket-key>/<env>/` in the project. Write it unquoted or single-quoted.
+- **What lands there:** `/qa-verify-fix`'s `verification-report.md`, `verification-summary.json`,
+  `evidence.html` and screenshots; an investigation package as `evidence-<UTCstamp>/`; a bug report the run
+  files, as `bugs/<critical-high|medium|low>/BUG-*.md` with its screenshots in `bugs/screenshots/<slug>/`.
+  `/qa-bug` writes there only when its caller names the run folder; standalone it writes `reports/bugs/`.
+- **Screenshots:** a Playwright lane writes only inside its allowed roots (its output folder and the project)
+  and creates no folder. `use` creates `screenshots/` and prints `SCREENSHOTS=` in the form a lane can write —
+  project-relative inside the project. Outside it, a lane started with `--allow-unrestricted-file-access`
+  writes the absolute path; without the flag it refuses it, so save the capture with a bare filename and `mv`
+  it into the folder. The flag also lifts the lane's limit on reading local files: the operator's call.
+- **Reading:** prior artifacts come from every run folder of the ticket that `use` listed (all envs, and the
+  older `reports/tickets/<Sprint>/<ticket-key>/` layout); they are written only into this run's folder.
+  Moving a run's bug report into `reports/bugs/open/` is the operator's call.
+- **Run inline by another command** for its own ticket (the ai-tools `/qa-test` on a fix-ready Bug): the
+  caller bound the folder, do not bind again. **For another ticket** (a per-bug verify in `/qa-test --iterate`):
+  `… dir --ticket <ticket-key>` resolves that ticket's folder. Never `use` there: it re-binds the whole session.
+
 ## Limits
 
 - **`/clear` starts a new session id.** The binding no longer applies; the next command binds again.

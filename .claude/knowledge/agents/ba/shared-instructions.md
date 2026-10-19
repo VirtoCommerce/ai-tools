@@ -21,7 +21,7 @@ first rather than an amendment to it (`reports/ba/test-models/` carries two VCST
 this reason).
 
 **Before any other work, read your target's domain section of**
-Read the prior art directly: `reports/ba/<domain folder>/` (prior BA analysis), `reports/ba/test-models/` (prior test models), `.claude/knowledge/domain/<domain>.md` (domain knowledge), and `reports/tickets/**/summary.json` (tickets already tested). (The generated index that used to front these was removed 2026-09-08; read the sources.) Per domain that means: the suites and their
+Read the prior art directly: `reports/ba/<domain folder>/` (prior BA analysis), `reports/ba/test-models/` (prior test models), `.claude/knowledge/domain/<domain>.md` (domain knowledge), and the `summary.json` of every run folder (tickets already tested; `npm run --silent run:dir -- --all` lists them, wherever `QA_OUTPUT_DIR` puts them). (The generated index that used to front these was removed 2026-09-08; read the sources.) Per domain that means: the suites and their
 `BL-*`/`ECL-*` citations, the domain-knowledge docs, **the prior BA analysis**, **the prior test models**,
 and the tickets already tested there — **plus each domain's `Test object` block**: purpose (the value
 chain), the operations, the data its assertions read, the variants that change behaviour without changing

@@ -212,7 +212,8 @@ const BAIL_OK_RE = /(FIX_STATUS:\s*FAILED|\bBAIL(?:_CLASS)?\b|out-of-auto-fix-sc
 // the enclosing `/qa-fix` command span (PR marker) via the sub-agent's Task result.
 const DEV_SKILL_OUTPUT = [/\b(?:vitest|tsx --test|dotnet test|xunit|vue-tsc|npm (?:run )?test|red→green|reproduc)/i, /\b(?:Edit|MultiEdit|Write)\b/, /\b(?:pass(?:ed|ing)?|green|failing|red)\b/i, BAIL_OK_RE];
 const EXPECTED_OUTPUT = {
-  "qa-bug": [/reports[\/\\]bugs[\/\\]/i, /createJiraIssue|create_issue|work item|filed\b/i, BAIL_OK_RE],
+  // A ticket run writes its bug report into its run folder's `bugs/<severity>/` (scripts/lib/run-dir.mjs).
+  "qa-bug": [/reports[\/\\]bugs[\/\\]|[\/\\]+bugs[\/\\]+(?:critical-high|medium|low)[\/\\]+BUG-/i, /createJiraIssue|create_issue|work item|filed\b/i, BAIL_OK_RE],
   "qa-fix": [/create_pull_request|gh pr create|pull\/\d+|PR #?\d+|opened a? PR/i, BAIL_OK_RE],
   "qa-verify-fix": [/transitionJiraIssue|update_issue|READY FOR TEST|testing|verified|reproduc/i, BAIL_OK_RE],
   "qa-monitoring": [/reports[\/\\]monitoring[\/\\]|signature|dedup|no (?:new )?(?:errors|signatures)/i, BAIL_OK_RE],

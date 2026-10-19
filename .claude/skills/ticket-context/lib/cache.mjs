@@ -26,8 +26,10 @@ export function skillFingerprint(root = skillRoot()) {
 
 /** D10: ticket `updated` + each PR's head SHA, state and merge time (a merge invalidates) + linked issues' `updated` +
  *  the --domain the known-ground lookups used + the skill fingerprint. Confluence/Figma/Loom/pages are not in it (documented). */
-export function freshnessKey({ ticketUpdated, prShas = [], linkedUpdated = [], domain = null, skill = null }) {
-  return createHash("sha256").update(JSON.stringify({ t: ticketUpdated, p: [...prShas].sort(), l: [...linkedUpdated].sort(), d: domain ?? null, s: skill ?? null })).digest("hex").slice(0, 16);
+// `env` is part of the key: a bundle records whether each PR is deployed on THIS stand, so another env's bundle
+// is never fresh for this one.
+export function freshnessKey({ ticketUpdated, prShas = [], linkedUpdated = [], domain = null, skill = null, env = null }) {
+  return createHash("sha256").update(JSON.stringify({ t: ticketUpdated, p: [...prShas].sort(), l: [...linkedUpdated].sort(), d: domain ?? null, s: skill ?? null, e: env ?? null })).digest("hex").slice(0, 16);
 }
 
 /**

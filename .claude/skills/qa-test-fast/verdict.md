@@ -43,6 +43,7 @@ Call `/vc-fix:qa-bug "<one-line defect>"` once per **confirmed** bug. Give it, *
 - the checklist item id or charter item it came from
 - the ledger ids of the data involved
 - the build versions from Step 0
+- the run folder `{RUN_DIR}`, so the report and its screenshots land in its `bugs/`
 - `found-by:agent-testing <ticket-key>` — left out only for a bug the user brought in, which `qa-bug` then
   records as a human's (`.claude/knowledge/execution/tracker-ops.md` §Labels on bugs Claude files)
 
@@ -65,7 +66,7 @@ The vocabulary and the decision rules are [`../qa-test/close-out.md`](../qa-test
 checklist's AC items. A `Low` finding never makes a FAIL, and an accessibility finding never blocks a
 functional ticket.
 
-## Files — `reports/tickets/{SPRINT}/<TICKET>/`
+## Files — `{RUN_DIR}` (the run folder, `run-output.md`)
 
 - **`summary.json`** — keys come only from
   [`../../templates/qa-test-summary.schema.json`](../../templates/qa-test-summary.schema.json):

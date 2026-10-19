@@ -44,7 +44,8 @@ deliver one conclusion — and left them to reconcile which version is current.
 comment is defensible while the aggregate is spam, so judgment-in-the-moment cannot catch it — the
 judgment is what failed. The comment id is therefore recorded in `summary.json.tracker.comment_id`
 at first post, and its presence is what makes every later write an edit. **No id recorded ⇒ you have
-not posted yet. Id recorded ⇒ you may not POST, only PUT.**
+not posted yet. Id recorded ⇒ you may not POST, only PUT.** The hooks' ledger (`.tracker-comments.json`) keys
+each entry by ticket **and env** (`<KEY>@<env>`): one ticket tested on two envs is two runs, each with its own comment.
 
 **Measured 2026-09-17, VCST-5378:** one run posted **five** comments in about one hour — a root-cause
 comment, a results comment correcting it, a delta measurement, a malformed wiki-markup comment, and a

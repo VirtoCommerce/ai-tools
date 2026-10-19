@@ -13,7 +13,7 @@ runs only when this install declares the script; otherwise it is `GAP: not-avail
 | mind map | the domain map's file name with `.mind-map.json` | `known.mind_map.path` |
 | BL invariants | `bl:extract --domain <slug> --json` | `known.bl` — id, title, severity; a domain the oracle declares with none yet is `[]` plus a `known.bl` `not-found` gap |
 | cases at risk | `regression:select` per repo (staleness-rotation picks dropped) · `tc:scope` with the operations | `known.cases_at_risk` |
-| prior runs and bugs | `reports/tickets/*/<KEY>/`, `reports/ba/test-models/<KEY>-*`, `reports/bugs/**` naming the key | `known.prior_runs` |
+| prior runs and bugs | the ticket's run folders (`run:dir --prior`: every env, wherever `QA_OUTPUT_DIR` puts them; without that script, `reports/tickets/*/<KEY>/`), `reports/ba/test-models/<KEY>-*`, `reports/bugs/**` naming the key | `known.prior_runs` |
 
 A `STALE` map is read as hypotheses. This skill never builds or refreshes a map.
 
