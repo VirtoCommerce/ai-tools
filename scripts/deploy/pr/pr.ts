@@ -75,7 +75,10 @@
  * (Jira: JIRA_EMAIL + JIRA_API_TOKEN). The --verify live check needs the env's admin credentials.
  */
 
-import { OWNER, loadEnvFiles, resolveEnvCoords } from '../lib/env.ts';
+import { existsSync } from 'node:fs';
+import { basename } from 'node:path';
+import { OWNER, envFilePath, loadEnvFiles, resolveEnvCoords } from '../lib/env.ts';
+import { resolveTestEnv } from '../../lib/resolve-test-env.js';
 import { fetchFile, getToken, ghJson, setToken } from '../lib/github.ts';
 import { DeliverError, deliverPr } from '../lib/deliver.ts';
 import type { DeliverResult } from '../lib/deliver.ts';
@@ -246,10 +249,24 @@ export async function runPr(args: string[]): Promise<void> {
   const asJson = has('json');
   const apply = has('apply') && !has('dry-run');
   const verify = has('verify');
-  const key = args.find((a) => !a.startsWith('--'))?.toUpperCase();
+  // The target env: `--env=<name>`, `--env <name>` (as the argument hint writes it — that form used to be
+  // ignored, deploying to the session's env instead), or a bare env-shaped token
+  // (`/qa-deploy-pr VCST-6314 vcptcore_dev`). A ticket key always has a dash, an env name never does, so a
+  // mistyped env fails here instead of falling back to the session's env.
+  const envAt = args.indexOf('--env');
+  const positionals = args.filter((a, i) => !a.startsWith('--') && !(envAt !== -1 && i === envAt + 1));
+  const envArgs = [...new Set([flag('env'), envAt !== -1 ? args[envAt + 1] : undefined, ...positionals.filter((a) => /^[a-z0-9_]+$/.test(a))].filter((a): a is string => !!a))];
+  if (envArgs.length > 1) fail(`two envs named: ${envArgs.join(', ')} — name one.`);
+  const named = envArgs[0];
+  if (named !== undefined && !existsSync(envFilePath(named))) fail(`unknown env "${named}": there is no ${basename(envFilePath(named))}.`);
+  const key = positionals.find((a) => a !== named)?.toUpperCase();
 
-  loadEnvFiles(process.env.TEST_ENV || 'vcst');
-  const env = flag('env') || process.env.TEST_ENV || 'vcst';
+  // The session env as every entry point resolves it (TEST_ENV, else this session's binding, else
+  // .env.test-env, else vcst): reading TEST_ENV alone sent a checkout whose env is set only in
+  // .env.test-env to vcst / vcst-qa.
+  const sessionEnv = resolveTestEnv('vcst');
+  loadEnvFiles(sessionEnv);
+  const env = named || sessionEnv;
   setToken(process.env.GIT_TOKEN || process.env.GITHUB_TOKEN || process.env.GITHUB_PERSONAL_ACCESS_TOKEN);
   if (!getToken()) fail('No GIT_TOKEN — a PAT with product-repo read + push on your vc-deploy-dev fork (read .env.local).');
   const c = resolveEnvCoords(env, flag('password'));
