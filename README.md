@@ -142,9 +142,9 @@ Safe non-prod defaults ship in [`templates/.env.local.template`](templates/.env.
 ```json
 {
   "mcpServers": {
-    "playwright-chrome":  { "type": "stdio", "command": "cmd", "args": ["/c", "npx", "@playwright/mcp@<pinned>", "--config", "config/mcp-playwright-chrome.config.json", "--secrets", ".env.playwright.local"] },
-    "playwright-firefox": { "type": "stdio", "command": "cmd", "args": ["/c", "npx", "@playwright/mcp@<pinned>", "--config", "config/mcp-playwright-firefox.config.json", "--secrets", ".env.playwright.local"] },
-    "playwright-edge":    { "type": "stdio", "command": "cmd", "args": ["/c", "npx", "@playwright/mcp@<pinned>", "--config", "config/mcp-playwright-edge.config.json", "--secrets", ".env.playwright.local"] }
+    "playwright-chrome":  { "type": "stdio", "command": "cmd", "args": ["/c", "npx", "@playwright/mcp@<pinned>", "--config", "config/mcp-playwright-chrome.config.json", "--secrets", ".env.playwright.all"] },
+    "playwright-firefox": { "type": "stdio", "command": "cmd", "args": ["/c", "npx", "@playwright/mcp@<pinned>", "--config", "config/mcp-playwright-firefox.config.json", "--secrets", ".env.playwright.all"] },
+    "playwright-edge":    { "type": "stdio", "command": "cmd", "args": ["/c", "npx", "@playwright/mcp@<pinned>", "--config", "config/mcp-playwright-edge.config.json", "--secrets", ".env.playwright.all"] }
   }
 }
 ```
