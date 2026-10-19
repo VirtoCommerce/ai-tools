@@ -112,7 +112,7 @@ export function runLayout(dir) {
 }
 
 /** The directories matching a path whose segments may hold `*` (one segment each, never a separator). */
-function globDirs(pattern) {
+export function globDirs(pattern) {
   const parts = resolve(pattern).split(/[\\/]+/);
   let found = [parts[0] + sep]; // the root: `C:\` or `/`
   for (const part of parts.slice(1)) {

@@ -1,11 +1,14 @@
-// .claude/skills/ticket-context/lib/env.mjs — the layered .env loader, copied from config.js and
-// scripts/lib/resolve-test-env.js + env-core.js (M1). Keep in step by hand:
+// .claude/skills/ticket-context/lib/env.mjs — the layered .env loader. TEST_ENV is resolved here, against `root` (copied
+// from scripts/lib/resolve-test-env.js — keep in step by hand); the files are applied by scripts/lib/env-layers.mjs, the
+// one order every loader applies:
 //   TEST_ENV: process env > this session's binding (.vc-fix/session-env/<CLAUDE_CODE_SESSION_ID>,
 //             `npm run env:use`) > .env.test-env > "vcst"
 //   .env.defaults → .env.<TEST_ENV> (override) → .env.local (override) → _<ENV> suffix promotion
+//   → the env's QA_ENV_PATH files → on a PASSWORDS=master stand, the master password
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { config, parse } from "dotenv";
+import { parse } from "dotenv";
+import { applyLayered } from "../../../../scripts/lib/env-layers.mjs";
 
 export function resolveTestEnv(root, env = process.env) {
   const fromEnv = env.TEST_ENV?.trim();
@@ -19,10 +22,6 @@ export function resolveTestEnv(root, env = process.env) {
 export function loadLayeredEnv(root) {
   const testEnv = resolveTestEnv(root);
   process.env.TEST_ENV = testEnv;
-  config({ path: join(root, ".env.defaults"), quiet: true });
-  config({ path: join(root, `.env.${testEnv}`), override: true, quiet: true });
-  config({ path: join(root, ".env.local"), override: true, quiet: true });
-  const suffix = `_${testEnv.toUpperCase()}`;
-  for (const [k, v] of Object.entries(process.env)) if (k.endsWith(suffix) && v) process.env[k.slice(0, -suffix.length)] = v;
+  applyLayered(testEnv, { root });
   return testEnv;
 }

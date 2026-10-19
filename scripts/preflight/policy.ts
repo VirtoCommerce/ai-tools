@@ -4,7 +4,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { baseOf, isUnknown, type EnvFacts, type ReleasedNotDeployed } from "../lib/env-facts.ts";
+import { LOCAL_STAND, baseOf, isUnknown, type EnvFacts, type ReleasedNotDeployed } from "../lib/env-facts.ts";
 import type { McpStatic } from "./mcp-static.ts";
 import { cmpSemver } from "../maintenance/refresh-release-ledger.mjs";
 import { priorRunDirs, resolveSprint, runLayout } from "../lib/run-dir.mjs";
@@ -140,7 +140,8 @@ export function envChecks(f: EnvFacts, o: EnvCheckOptions): EnvCheckResult {
 
   // declared
   // read over GitHub REST with GIT_TOKEN / GITHUB_TOKEN only — `gh` auth is not consulted
-  if (isUnknown(f.declared)) checks.push({ id: "declared", status: "UNKNOWN", found: f.declared.unknown, who: "you", do: "set GIT_TOKEN in .env.local",
+  if (isUnknown(f.declared) && f.declared.unknown === LOCAL_STAND) checks.push(ok("declared", `${LOCAL_STAND} — 'deployed' and --expect read it off the stand`));
+  else if (isUnknown(f.declared)) checks.push({ id: "declared", status: "UNKNOWN", found: f.declared.unknown, who: "you", do: "set GIT_TOKEN in .env.local",
     diagnose: ["which .env layer GIT_TOKEN resolves from (value never printed)"] });
   else checks.push(ok("declared", `Platform ${f.declared.platform ?? "?"} · Theme ${f.declared.theme ?? "?"}`));
 
