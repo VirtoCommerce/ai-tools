@@ -121,7 +121,7 @@ that was considered and correctly ruled out.
 
 ## Rules
 
-- Reference example: `vc/shared/docs/Sprint plans/sprint-26-08-test-plan.md` — match its structure section-for-section.
+- Reference example: `docs/Sprint plans/sprint-26-08-test-plan.md` — match its structure section-for-section.
 - Pull JIRA items via Atlassian MCP only — do NOT scrape the web. If MCP unavailable, ask user to paste.
 - Pull PRs via GitHub MCP only — do NOT shell out to `gh` from this command (the orchestrator runs inline; `gh` is fine inside agent dispatches).
 - The sprint window for PRs is the **JIRA sprint dates**, not arbitrary dates. Honor `--from` / `--to` only when explicitly given.
