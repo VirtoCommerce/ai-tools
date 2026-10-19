@@ -569,15 +569,14 @@ function detectDefaultBranch(repo: string, fallback: string): string {
 }
 
 /**
- * Build the Azure Repos clone/push URL. When ADO_PAT is present it is embedded so
- * a later `git push` authenticates without a credential helper — the workspace
- * (`.fix-workspace`) is gitignored and ephemeral. With `az login` (no PAT) we
- * fall back to a plain URL and rely on the Git Credential Manager / `az` helper.
+ * Build the Azure Repos clone/push URL — ALWAYS without a credential in it (VCST-6402). It used to
+ * embed ADO_PAT, which git then persisted into `.fix-workspace/<repo>/.git/config`: a plaintext token
+ * at rest that outlived the run. Authentication now comes from the git credential helper — the
+ * $VC_RUN bridge's host-pinned one when a PAT is in play (`node "$VC_RUN" git-ado …`, or any git a
+ * bridged process starts, via GIT_CONFIG_*), else the Git Credential Manager / `az` session.
  */
 function azureGitUrl(org: string, project: string, name: string): string {
-  const pat = process.env.ADO_PAT || "";
-  const cred = pat ? `${encodeURIComponent("x-token")}:${pat}@` : "";
-  return `https://${cred}dev.azure.com/${org}/${encodeURIComponent(project)}/_git/${encodeURIComponent(name)}`;
+  return `https://dev.azure.com/${org}/${encodeURIComponent(project)}/_git/${encodeURIComponent(name)}`;
 }
 
 /**
@@ -620,6 +619,8 @@ export function checkoutForFix(
     if (!existsSync(dest)) {
       sh(`git clone --depth 1 --branch ${baseBranch} ${JSON.stringify(url)} "${dest}"`);
     } else {
+      // A checkout made before VCST-6402 may carry the PAT in its remote URL; reset it to the plain one.
+      sh(`git remote set-url origin ${JSON.stringify(url)}`, dest);
       sh(`git fetch origin ${baseBranch} --depth 1`, dest);
       sh(`git checkout ${baseBranch}`, dest);
       sh(`git reset --hard origin/${baseBranch}`, dest);

@@ -288,16 +288,15 @@ export function pickBaselineTag(tags, line) {
 /**
  * `git ls-remote --tags <upstream>` → array of bare tag names (deduped; the `^{}`
  * annotated-tag peel suffix stripped), or null on ANY failure (git missing, offline,
- * bad token). Auth: GITHUB_FIX_BUGS_TOKEN embedded in the URL when present — the
- * upstream is always a public VirtoCommerce GitHub repo, so the token is optional but
- * avoids rate limits. GIT_TERMINAL_PROMPT=0 so a missing credential fails fast instead
- * of hanging on a prompt.
+ * bad token). The URL carries NO credential (VCST-6402): the upstream is a public
+ * VirtoCommerce GitHub repo, so anonymous access works, and when this script runs through
+ * `node "$VC_RUN" onboard discover-repos` git authenticates through the bridge's host-pinned
+ * credential helper (GIT_CONFIG_* in the environment) instead of a token in argv.
+ * GIT_TERMINAL_PROMPT=0 so a missing credential fails fast instead of hanging on a prompt.
  */
 function lsRemoteTags(upstreamFull) {
   try {
-    const tok = process.env.GITHUB_FIX_BUGS_TOKEN || process.env.GIT_TOKEN || process.env.GITHUB_TOKEN || "";
-    const auth = tok ? `${tok}@` : "";
-    const url = `https://${auth}github.com/${upstreamFull}.git`;
+    const url = `https://github.com/${upstreamFull}.git`;
     const out = execSync(`git ls-remote --tags "${url}"`, {
       stdio: ["ignore", "pipe", "ignore"],
       env: { ...process.env, GIT_TERMINAL_PROMPT: "0" },

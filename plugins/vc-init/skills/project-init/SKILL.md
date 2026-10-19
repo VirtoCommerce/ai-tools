@@ -1,6 +1,6 @@
 ---
 name: project-init
-description: "Initialize / onboard this agentic-QA plugin onto a deployment. Installs deps, then asks the operator only what genuinely shapes the config — the environment NAME, the bug tracker (Jira / Azure Boards), the code host (GitHub / Azure Repos), and an auth preference per axis (PAT recommended, else browser/CLI login). Everything else — whether it is a native-platform or a CLIENT project, the client org, the contribution mode, the fork account — is DERIVED from the token + the filled env + a live module/repo scan. Writes project-profile.json + .env.<env> + .env.local + .mcp.json and verifies access. The whole point is to make /qa-fix route each bug to the RIGHT repo (client custom code vs native platform) and file to the RIGHT tracker. Use when standing the plugin up on a new machine or for a new customer. Day-2 modes skip the interview: `--add-env` adds another environment (URLs + per-env access keys) to an already-onboarded project; `--check` reconciles an existing profile to the current schema then verifies."
+description: "Initialize / onboard the Virto Commerce QA plugins (vc-fix, vc-perf) onto a deployment. Checks that vc-secrets is installed, installs deps, then asks the operator only what genuinely shapes the config — the environment NAME, the bug tracker (Jira / Azure Boards), the code host (GitHub / Azure Repos), and an auth preference per axis (PAT recommended, else browser/CLI login). Every PAT is stored in vc-secrets by the operator in a terminal — never typed in chat, never written to a file — and reaches a process only through the $VC_RUN bridge. Everything else — native-platform or CLIENT project, the client org, the contribution mode, the fork account — is DERIVED from the token + the filled env + a live module/repo scan. Writes project-profile.json + .env.<env> + .env.local (test-user passwords only) + .mcp.json + the vc-secrets declarations, and verifies access. The whole point is to make /qa-fix route each bug to the RIGHT repo and file to the RIGHT tracker. Use when standing the plugins up on a new machine or for a new customer. Day-2 modes skip the interview: `--add-env` adds another environment (URLs + per-env passwords) to an already-onboarded project; `--check` reconciles an existing profile to the current schema, moves any plaintext token into vc-secrets, then verifies."
 ---
 
 # /project-init — deploy & wire this QA plugin for a customer
@@ -19,9 +19,15 @@ platform) and to the correct bug tracker.
 > they are derived from the token's permissions + the filled `.env` + a live
 > module/repo scan. Ask again only on a *genuine* ambiguity.
 
-> **Additive, never destructive.** This skill only *adds* a profile + config. With
-> no profile, the plugin keeps its original behaviour (native-platform, Jira,
-> GitHub). Nothing existing is rewritten.
+> **Additive, never destructive.** This skill only *adds* a profile + config; nothing existing is
+> rewritten. It is also **required**: vc-fix and vc-perf STOP with "run /project-init" when
+> `project-profile.json` is absent (VCST-6402) — there are no silent native-platform defaults.
+
+> **No token in chat, no token in a file.** A PAT (GitHub, Azure DevOps, Jira API token) is stored by
+> the OPERATOR, in their own terminal, with `node "<VC_SECRETS>" set <name>` at a hidden prompt.
+> You never ask for one, never see one, and never run `set` or `trust` yourself (both need a real
+> terminal and both are the operator's review). Every script that needs a token runs through the
+> bridge — `node "$VC_RUN" onboard <script> …` — which gets it from vc-secrets at launch.
 
 > **Two day-2 modes** (skip the interview): **`--add-env`** — add another environment
 > (URLs + per-env access creds) to an already-onboarded project (§`--add-env` below);
@@ -32,26 +38,31 @@ platform) and to the correct bug tracker.
 
 | Artifact | Purpose |
 |----------|---------|
-| `project-profile.json` (gitignored) | the deployment profile — read by `config.js` (→ every skill via `env.PROFILE`), `skills/qa-fix-routing/repo-router.ts` (client-vs-platform routing), `skills/qa-fix-routing/trackers/*` (which tracker) |
-| `.env.<env>` + `.env.local` | Both scaffolded as **commented templates** the operator fills in — no values are asked in the interview. `scaffold-env.mjs` writes `.env.<env>` (Bucket #2: URLs/identifiers/tracker connection); `scaffold-secrets.mjs` writes `.env.local` (Bucket #3: secrets, per-env creds `_<ENV>`-suffixed). Each placeholder carries what/where comments. |
-| `.mcp.json` + `.claude/settings.local.json` | MCP servers enabled for the chosen tracker/VCS (via `gen-mcp.mjs`). The Playwright servers are configured entirely via CLI flags (`--browser` / `--isolated` / `--viewport-size` / `--output-dir`) — no config files are shipped or copied. Only `playwright-chrome` is enabled by default; `playwright-firefox` / `playwright-edge` stay defined for opt-in cross-browser runs. |
+| `project-profile.json` (gitignored) | the deployment profile (`schemaVersion` 2) — read by vc-fix (`config.js`, `skills/qa-fix-routing/repo-router.ts`, `skills/qa-fix-routing/trackers/*`) and vc-perf. vc-init is its ONLY writer: other plugins persist into it through `profile-set.mjs` |
+| `.env.<env>` + `.env.local` | Both scaffolded as **commented templates** the operator fills in — no values are asked in the interview. `scaffold-env.mjs` writes `.env.<env>` (URLs/identifiers/tracker connection); `scaffold-secrets.mjs` writes `.env.local` — **test-user passwords only** (`_<ENV>`-suffixed). No token goes into either. |
+| `.claude/vc-secrets.local.json` (gitignored) | the vc-secrets declarations (`write-secrets-decl.mjs`): one `local` secret per PAT axis (`github-pat` / `ado-pat` / `jira-token`), the `vc-init-*` tasks the `$VC_RUN` bridge dispatches to, and the GitHub MCP server. Reviewed and approved by the operator with `vc-secrets trust` |
+| `.mcp.json` + `.claude/settings.local.json` | MCP servers enabled for the chosen tracker/VCS (via `gen-mcp.mjs`); `settings.local.json` `env` carries `VC_RUN` (a path, not a secret) and no token. The Playwright servers are configured entirely via CLI flags (`--browser` / `--isolated` / `--viewport-size` / `--output-dir`). Only `playwright-chrome` is enabled by default; `playwright-firefox` / `playwright-edge` stay defined for opt-in cross-browser runs. |
 
 ## Pipeline
 
 ```
-0 preconditions (confirm dir · BOTH self-diagnostics consents FIRST + write flag · install) → 2 interview (env name · tracker · code host · auth pref)
-→ 3 scaffold BOTH env templates + operator fills + pause
-→ 3d normalize + validate the filled .env.<env> (normalize-env) — STOP on exit 1
-→ 4 discover repos (ALWAYS) → projectType · clientOrg · repo split · storefront
-→ 4b discover tracker (Azure) → per-type states · role→state map · apiBase · projectId
-→ 5 derive block (derive-context) → auth-fact · contributionMode · forkAccount · operator
+0 preconditions (confirm dir · self-diagnostics consent FIRST + write flag · vc-secrets ready + bridge · install)
+→ 2 interview (env name · tracker · code host · auth pref)
+→ 3 scaffold BOTH env templates + vc-secrets declarations → operator fills the files, trusts, stores tokens → pause
+→ 3d check-secrets (doctor gate) + normalize + validate the filled .env.<env> — STOP on either failing
+→ 4 discover repos (ALWAYS, via $VC_RUN onboard) → projectType · clientOrg · repo split · storefront
+→ 4b discover tracker (Azure, via $VC_RUN onboard) → per-type states · role→state map · apiBase · projectId
+→ 5 derive block (via $VC_RUN onboard) → auth-fact · contributionMode · forkAccount · operator
 → 6 write profile (gen-profile: repos-json + tracker-json + derived flags) → 7 MCP (gen-mcp)
-→ 8 verify (verify-access) → 9 done
+→ 8 verify (via $VC_RUN onboard) → 9 done
 ```
 
 All scripts live in the plugin's own `skills/project-init/` directory and are
 **non-interactive** — you (the model) collect the interview answers, run the scan +
-derive scripts, then call the writers with the results as flags.
+derive scripts, then call the writers with the results as flags. Every script that talks to
+GitHub, Azure DevOps or Jira with a token runs as `node "$VC_RUN" onboard <script> …` (§0d says
+how `$VC_RUN` is set in this session); the writers (scaffold-*, gen-*, normalize-env,
+write-secrets-decl, check-secrets, reconcile-profile) need no token and run directly.
 
 ### Output discipline — the operator is onboarding, not reading a report
 
@@ -145,24 +156,25 @@ Why this order:
 picker, so the banner is duplicate chrome. Framed step header, one line of context if the
 options need it, then the tool call.
 
-### Where things go — read this once (two roots, kept separate)
+### Where things go — read this once (three roots, kept separate)
 
-- **Plugin install directory** (`$CLAUDE_PLUGIN_ROOT` — the versioned marketplace cache
-  when the plugin is installed, or this checkout when developing): holds the read-only
-  scripts, templates, and source MCP configs. **Invoke every generator by its ABSOLUTE
-  path here** — `node "$CLAUDE_PLUGIN_ROOT/skills/project-init/<name>.mjs" …`. Do **not**
-  use a bare relative `node skills/…` path: your Bash working directory is the deployment
-  project, not the plugin, so a relative path won't resolve once the plugin is installed
-  from the marketplace. (The bash examples below show the bare path for brevity — always
-  prefix it with `$CLAUDE_PLUGIN_ROOT/`.)
+- **Plugin install directory** (`$CLAUDE_PLUGIN_ROOT` — vc-init's versioned marketplace cache
+  when installed, or this checkout when developing): holds the read-only scripts and templates.
+  **Invoke every generator by its ABSOLUTE path here** — `node "$CLAUDE_PLUGIN_ROOT/skills/project-init/<name>.mjs" …`.
+  Do **not** use a bare relative `node skills/…` path: your Bash working directory is the
+  deployment project, not the plugin. (The bash examples below show `$CLAUDE_PLUGIN_ROOT/` — use
+  the literal path you resolved in §0a.)
+- **The bridge** (`$VC_RUN` — `~/.claude/plugins/data/vc-init-ai-tools/vc-run.mjs`, installed in
+  §0d): a stable pointer to this plugin's `bridge/run.mjs`. Every token-holding script runs as
+  `node "$VC_RUN" onboard <script> …`; it gets the token from vc-secrets at launch. `VC_RUN` reaches
+  your shell only after Claude Code restarts with the settings `gen-mcp.mjs` writes — **in THIS
+  session use the literal path `install-bridge.mjs` printed**, wherever this file says `$VC_RUN`.
 - **Deployment project directory** (your Bash cwd — the folder Claude Code was launched
   in): where **all generated state lands** — `project-profile.json`, `.env.<env>`,
-  `.env.local`, `.mcp.json`, and `.claude/settings.local.json`. The generators default
-  their output there
-  automatically (symmetric with the readers: `config.js` dotenv-loads `.env.*` and
-  `loadProjectProfile()` reads the profile from cwd). You do **not** pass an output path in
-  the normal flow. `VC_FIX_HOME=<dir>` overrides the output root only for out-of-project /
-  CI callers — the interactive flow never sets it.
+  `.env.local`, `.mcp.json`, `.claude/settings.local.json` and `.claude/vc-secrets.local.json`.
+  The generators default their output there automatically (symmetric with the readers). You do
+  **not** pass an output path in the normal flow. `VC_FIX_HOME=<dir>` overrides the output root
+  only for out-of-project / CI callers — the interactive flow never sets it.
 
 **Every generator flag you need is documented in the steps below — never inspect the
 `.mjs` scripts (and never pass `--help`: unrecognised flags are treated as booleans and
@@ -170,13 +182,13 @@ the script runs anyway, writing a default file).**
 
 ---
 
-## 0. Preconditions — confirm the working directory, then detect AND install tooling
+## 0. Preconditions — confirm the working directory, vc-secrets, then detect AND install tooling
 
 ### 0a. Confirm the deployment project directory (everything lands here)
 
 Run `pwd` and show the operator the current directory. **This is your deployment project
-home** — everything `/project-init` generates (profile, env files, `.mcp.json`, MCP
-configs) is written here, and every later run (`/qa-fix`, `/qa-bug`) reads its config from
+home** — everything `/project-init` generates (profile, env files, `.mcp.json`, the vc-secrets
+declarations) is written here, and every later run (`/qa-fix`, `/qa-bug`) reads its config from
 here. Confirm with `AskUserQuestion`:
 
 - **Yes — initialize here (`<cwd>`)** (Recommended) → proceed.
@@ -187,9 +199,9 @@ here. Confirm with `AskUserQuestion`:
 
 Then resolve the **plugin directory** once, so you can invoke the generators by absolute
 path: `echo "$CLAUDE_PLUGIN_ROOT"`. If it prints a path, use it. If empty, locate the
-installed plugin (e.g. under `~/.claude/plugins/`, or the absolute directory this SKILL.md
-loaded from). Use it as the `$CLAUDE_PLUGIN_ROOT/skills/project-init/…` prefix for every
-generator call in the steps below.
+installed vc-init (`claude plugin list --json` → the enabled `vc-init@ai-tools` entry's
+`installPath`, or the absolute directory this SKILL.md loaded from — two levels up). Use it as
+the `$CLAUDE_PLUGIN_ROOT/…` prefix for every generator call in the steps below.
 
 ### 0b. Self-diagnostics capture consent — ask FIRST, write the flag NOW
 
@@ -247,7 +259,37 @@ asks a single binary *file the issue in Virto — yes/no?* — with the exact pa
 **Do not pass `--feedback-mode` from the interview.** §0b's `--self-diagnostics` is the ONLY
 self-diagnostics answer carried to step 6.
 
-### 0d. Detect AND install the required tooling
+### 0d. vc-secrets ready? — check FIRST, STOP if not
+
+**Every token this onboarding needs is stored in vc-secrets** (VCST-6402), so it must be installed
+and reachable BEFORE the interview — otherwise the operator answers every question and then
+cannot store the first token. Run:
+
+```bash
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/check-secrets.mjs" --preflight
+```
+
+- **Exit 0** (`"installed": true`) → vc-secrets is installed, `VC_SECRETS` names its shim and its
+  `doctor` runs (a `FAIL no declaration file found` from doctor is expected at this point — this
+  run writes the declaration in §3). Note the `shim` path: it is the `<VC_SECRETS>` in every
+  command you show the operator.
+- **Exit 2** (`"installed": false`) → **STOP before the interview.** Show the JSON's `next` list as
+  the operator's to-do: run `/vc-secrets:install`, add the `{"env": {"VC_SECRETS": …}}` it prints
+  to `~/.claude/settings.json`, **restart Claude Code**, re-run `/project-init`. (vc-secrets'
+  `install` is operator-invoked by design — do not try to run its script yourself.) Then the
+  plain-chat waiting line (§Output FORMAT): `⏸️ WAITING FOR YOU — re-run /project-init after the restart.`
+
+Then install the **bridge** — the stable `$VC_RUN` path every token-holding call goes through:
+
+```bash
+node "$CLAUDE_PLUGIN_ROOT/scripts/install-bridge.mjs" --data-dir "${CLAUDE_PLUGIN_DATA}"
+```
+
+Its first line is `VC_RUN=<path>`. **Remember that literal path** — it is `$VC_RUN` for the rest of
+this session (the settings `env` that sets the variable takes effect only after a restart).
+Idempotent: a re-run reports `already up to date`. One line to the operator: `✓ vc-secrets · bridge installed`.
+
+### 0e. Detect AND install the required tooling
 
 Run a detection pass, then **install whatever is missing** — do not just report a
 gap and move on (that leaves `/qa-fix` unable to open PRs).
@@ -283,9 +325,7 @@ must run before any generator/verify script. **Install inside the plugin (`( cd
 "$CLAUDE_PLUGIN_ROOT" && npm install )`), NOT a bare `npm install`** — several scripts
 (`discover-repos`, `derive-context`, `verify-access`, `ensure-session`) import `dotenv`,
 and Node resolves that bare specifier from the *script's own* directory (the plugin), not
-your project cwd. A bare `npm install` would install into the project and leave those
-scripts unable to find `dotenv`. The subshell `( … )` keeps your project cwd unchanged
-(don't use a bare `cd`, which the harness resets when it leaves the project).
+your project cwd. The subshell `( … )` keeps your project cwd unchanged.
 
 ## 2. Interview — three answers + an auth preference, THEN scaffold
 
@@ -350,28 +390,27 @@ Now that tracker + host are known, ask an auth preference **only for the applica
 axes**, each as a question in a single `AskUserQuestion` call. **A PAT is the
 recommended option** (more reliable / non-interactive); the alternative is a browser
 / CLI login. **You are NOT collecting the token in chat** — the choice only decides
-whether step 3 emits a *token placeholder to fill in `.env.local`* (PAT) or *no token
-line + a login to run* (session). verify-access (step 8) confirms whichever is
-actually present.
+whether step 3 declares a *vc-secrets secret the operator stores in a terminal* (PAT) or
+*nothing + a login to run* (session). verify-access (step 8) confirms whichever is actually present.
 
 Applicable axes:
 
 | Axis | When applicable | Options |
 |------|-----------------|---------|
-| **GitHub** | **always** (the platform upstream is always GitHub; and the client host may be GitHub) | `PAT` (Recommended) → `GITHUB_FIX_BUGS_TOKEN` placeholder · `Browser login` → `gh auth login` |
-| **Azure DevOps** | tracker = `azure` **OR** code host = `azure-repos` | `PAT` (Recommended) → `ADO_PAT` placeholder · `Browser login` → `az login` |
-| **Jira** | tracker = `jira` | `API token` (Recommended) → `JIRA_API_TOKEN` placeholder · `Atlassian MCP OAuth` (no token line) |
+| **GitHub** | **always** (the platform upstream is always GitHub; and the client host may be GitHub) | `PAT` (Recommended) → vc-secrets `github-pat` · `Browser login` → `gh auth login` |
+| **Azure DevOps** | tracker = `azure` **OR** code host = `azure-repos` | `PAT` (Recommended) → vc-secrets `ado-pat` · `Browser login` → `az login` |
+| **Jira** | tracker = `jira` | `API token` (Recommended) → vc-secrets `jira-token` · `Atlassian MCP OAuth` (no token) |
 
-Map the answers to the scaffold flags: `--github-auth pat|gh-cli`, `--ado-auth
-pat|az-login`, `--jira-auth token|oauth`.
+Map the answers to the flags every later step takes: `--github-auth pat|gh-cli`, `--ado-auth
+pat|az-login`, `--jira-auth pat|oauth`. **Carry them to step 6** — gen-profile writes them to
+`auth.*` in the profile.
 
-## 3. Scaffold the two env templates, then hand off for filling
+## 3. Scaffold the env templates + the vc-secrets declarations, then hand off
 
-Using the env name + tracker + code host + auth preferences, create **both** env
-files as commented templates. No values are collected here — the operator fills them.
-**Do NOT pass `--project-type` / `--client-org`** — projectType and the client org are
-derived by the scan (step 4), not chosen; leaving them off means scaffold-env emits no
-`CLIENT_REPO_ORG` placeholder (it is derived).
+Using the env name + tracker + code host + auth preferences, create **both** env files as
+commented templates and the **vc-secrets declarations**. No values are collected here — the
+operator fills the files and stores the tokens. **Do NOT pass `--project-type` / `--client-org`**
+— projectType and the client org are derived by the scan (step 4), not chosen.
 
 ### 3a. `.env.<env>` template (`scaffold-env.mjs`)
 
@@ -386,56 +425,85 @@ everything else is empty. `ADO_ORG`/`ADO_PROJECT` are emitted when the tracker i
 Azure **or** the code host is Azure Repos. Idempotent — a re-run only adds missing
 keys, never clobbers.
 
-### 3b. `.env.local` template (`scaffold-secrets.mjs`)
+### 3b. `.env.local` template — test-user passwords only (`scaffold-secrets.mjs`)
 
 ```bash
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/scaffold-secrets.mjs" \
-  --env myqa --tracker jira --jira-auth token \
-  --client-vcs github --github-auth pat --print
-# client on Azure with session auth for both axes → app passwords + optional MCP keys only:
-node "$CLAUDE_PLUGIN_ROOT/skills/project-init/scaffold-secrets.mjs" \
-  --env acme --tracker azure --client-vcs azure-repos \
-  --ado-auth az-login --github-auth gh-cli --print
+  --env myqa --tracker jira --jira-auth pat --client-vcs github --github-auth pat --print
 ```
-Flags — **one per auth axis, from step 2d**: `--jira-auth token|oauth` · `--ado-auth
-pat|az-login` (`az-login` ⇒ no `ADO_PAT`) · `--github-auth pat|gh-cli` (`gh-cli` ⇒ no
-`GITHUB_FIX_BUGS_TOKEN`). App test-user passwords (`ADMIN_PASSWORD`/`USER_PASSWORD`,
-`_<ENV>`-suffixed) are always emitted. **`POSTMAN_API_KEY` + `CONTEXT7_API_KEY` are
-always emitted too, but as OPTIONAL placeholders** (blank ⇒ that MCP server stays
-disabled; not needed for `/qa-fix`) — each with a "which tool it powers" comment.
-(`--extras` is retained for back-compat but no longer gates them.) Idempotent.
+Writes `ADMIN_PASSWORD_<ENV>` / `USER_PASSWORD_<ENV>` placeholders (app TEST accounts) and NOTHING
+else. Its last line names the tokens this topology needs — `tokens go to vc-secrets, not .env.local:
+github-pat, jira-token` — which must match what 3c declares. If it warns that `.env.local` still holds
+a token in plaintext (an older onboarding), say so in one line: `/project-init --check` moves it.
+Idempotent.
 
-### 3c. Tell the operator: two files created — fill them, then pause
+### 3c. vc-secrets declarations (`write-secrets-decl.mjs`)
 
-Under a framed `📝  FILL IN THE TWO ENV FILES` step header (§Output FORMAT), print:
-- **two files were created**: `.env.<env>` (non-secret URLs/identifiers) and `.env.local`
-  (secrets, gitignored) — with the placeholder keys each emitted;
-- that the inline comments say what each value is and where to get it;
-- for any **browser-login** choice (github `gh auth login`, ado `az login`, Jira Atlassian MCP
-  OAuth) there is no token line — remind the operator to run that login instead (step 8's
-  `ensure-session.mjs` drives it).
+```bash
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/write-secrets-decl.mjs" \
+  --github-auth pat --ado-auth az-login --jira-auth pat --tracker jira --client-vcs github \
+  --shim "<the VC_RUN path from §0d>"
+```
+Writes `.claude/vc-secrets.local.json` (gitignored first): one `local` secret per PAT axis
+(`github-pat` / `ado-pat` / `jira-token`), the `vc-init-<group>` tasks the bridge dispatches to, and a
+stable `projectId`. Prints a JSON report — keep `secrets` and `trustNeeded`. With no PAT axis at all
+it declares nothing (every axis is a session login) and 3d's token block is empty. A re-run with the
+same answers changes nothing and asks for no new trust.
 
-Then the plain-chat question block (§Output FORMAT), which is what makes the pause impossible
-to scroll past:
+### 3d. Tell the operator what to do — files, trust, tokens — then pause
+
+Get the token block first — it is relayed **verbatim**:
+
+```bash
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/check-secrets.mjs" --steps
+```
+
+Then, under a framed `🔒  FILL IN · TRUST · STORE TOKENS` step header (§Output FORMAT), print three
+short parts, in this order:
+
+1. **Two files to fill** — `.env.<env>` (URLs/identifiers) and `.env.local` (test-user passwords),
+   with the placeholder keys each emitted; the inline comments say what each value is and where to
+   get it.
+2. **Approve the declarations** — only when 3c reported `trustNeeded: true`: the operator runs, in
+   their own terminal in the project directory, `node "<VC_SECRETS>" trust`, reads what it shows (the
+   bridge command and env names, no values) and types `y`. It needs a real terminal — the `!` prefix
+   in this chat has none, so it is a separate terminal window.
+3. **Store each token** — the `--steps` block: per token, what it is, why, where to create it, and
+   `Store: node "<VC_SECRETS>" set <name>`, which the operator runs in that terminal, pastes the token
+   at the HIDDEN prompt and presses Enter. Never offer to take a token in chat; if the operator pastes
+   one anyway, do not repeat it, tell them to revoke it, and continue with `set` for a new one.
+
+For any **browser-login** choice (`gh auth login`, `az login`, Atlassian MCP OAuth) there is no
+token — remind the operator to run that login instead (step 8's `ensure-session.mjs` drives it).
+
+Then the plain-chat question block (§Output FORMAT):
 
 ```markdown
-**Filled in both files?**
+**Filled in both files, trusted the declarations and stored the tokens?**
 
-I normalise and validate them first (trailing slashes, quotes, unfilled placeholders), then
+I check the token store first (names only — I never see a value), then normalise the env file,
 scan your repos and verify every credential.
 
-⏸️ **WAITING FOR YOU** — reply "done" when both files are filled.
+⏸️ **WAITING FOR YOU** — reply "done" when all three are finished.
 ```
 
-Nothing after the block — no further tool calls; the turn ends there so the ask is the last
-thing on screen. This is the same format every blocking question uses.
+Nothing after the block — no further tool calls; the turn ends there so the ask is the last thing
+on screen. Note the env name (e.g. `myqa`) — that's your `TEST_ENV` for every later run.
 
-Note the env name (e.g. `myqa`) — that's your `TEST_ENV` for every later run.
+### 3e. On "done" — the TOKEN GATE, then NORMALIZE + VALIDATE (MANDATORY, before the scan)
 
-### 3d. On "done" — NORMALIZE + VALIDATE the filled `.env.<env>` (MANDATORY, before the scan)
+**First, the token gate** (skip only when 3c declared no secret):
 
-The very first thing you do on the operator's "done" — **before** the repo scan in step 4 and
-before any access probe:
+```bash
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/check-secrets.mjs"
+```
+
+It runs `vc-secrets doctor` and reads its LINES — an untrusted checkout exits 0 with `SKIP … not
+trusted`, so the exit code alone would pass a run that has not been approved. **Exit 1 ⇒ STOP:** show
+its `next` list (the exact `trust` / `set <name>` commands still to run, names only) and re-ask with
+the plain-chat block (*"Done? Reply 'done'."*). Exit 0 ⇒ one line: `✓ tokens stored: github-pat, jira-token`.
+
+**Then normalise the env file:**
 
 ```bash
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/normalize-env.mjs" --env <env>
@@ -449,11 +517,9 @@ quotes and padding stripped, **every trailing slash removed** from `FRONT_URL` /
 component. Comments, ordering, and any variable the operator added themselves are untouched.
 
 **On exit 1: STOP.** Show the errors verbatim, then re-ask with the plain-chat question block
-(§Output FORMAT — *"Fixed them? Reply 'done'."*), and wait — do not
-scan, do not probe. Every downstream check would otherwise fail for a reason the operator cannot
-see: a stray `/` used to be stripped only *in memory* by `verify-access.mjs` while the file stayed
-wrong, and every runtime `${BACK_URL}/api/...` template produced `//api/...` (VCST-5582 B). The
-rules are not restated in this skill — `scaffold-env.mjs` `CATALOG` declares each key's type and
+(§Output FORMAT — *"Fixed them? Reply 'done'."*), and wait — do not scan, do not probe. Every
+downstream check would otherwise fail for a reason the operator cannot see (VCST-5582 B). The rules
+are not restated in this skill — `scaffold-env.mjs` `CATALOG` declares each key's type and
 requiredness, and `normalize-env.mjs` reads them from there.
 
 Relay the printed fixes to the operator in one line ("normalized N value(s): …") so they know the
@@ -461,13 +527,14 @@ file changed under them, then continue to step 4.
 
 ## 4. Discover the repo split — ALWAYS run; it is the source of projectType
 
-**After the files are filled and normalized (§3d)**, run the scan **unconditionally** (it needs no
-`--client-org` — clients are recognised by module owner / id-namespace). It classifies
-installed modules client-vs-platform, scans the client's code host for the
-storefront/theme repo, and **derives `projectType` + `clientOrg`**:
+**After the token gate and the normalizer (§3e)**, run the scan **unconditionally** (it needs no
+`--client-org` — clients are recognised by module owner / id-namespace), through the bridge so it
+reaches the client's code host with the stored token. It classifies installed modules
+client-vs-platform, scans the client's code host for the storefront/theme repo, and **derives
+`projectType` + `clientOrg`**:
 
 ```bash
-TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/discover-repos.mjs" \
+TEST_ENV=<env> node "$VC_RUN" onboard discover-repos \
   --client-vcs <github|azure-repos> --out .local-env/repos.json --print
 # (add --insecure only for a QA env with a self-signed cert)
 ```
@@ -540,11 +607,11 @@ for Jira (transitions are discovered live at runtime; the scan would add nothing
 
 ```bash
 # Azure Boards:
-node "$CLAUDE_PLUGIN_ROOT/skills/project-init/discover-tracker.mjs" \
+TEST_ENV=<env> node "$VC_RUN" onboard discover-tracker \
   --tracker azure --org "$ADO_ORG" --project "$ADO_PROJECT" \
   --types "Bug,Task,User story" [--team "<team>"] --out .local-env/tracker.json --print
 # Jira (format facts only — no state scan needed):
-node "$CLAUDE_PLUGIN_ROOT/skills/project-init/discover-tracker.mjs" --tracker jira --out .local-env/tracker.json
+TEST_ENV=<env> node "$VC_RUN" onboard discover-tracker --tracker jira --out .local-env/tracker.json
 ```
 
 The Azure scan also DISCOVERS the `team` whose current sprint `/qa-bug` will stamp (`tracker.azure.team`):
@@ -556,8 +623,8 @@ resolver in `ado.mjs` re-validates and can still auto-select the right team at b
 
 It writes `.local-env/tracker.json`: `{ kind, ticketKeyFormat, crossLinkToken, apiBase,
 projectId, workItemTypes:{<Type>:{states:[…]}}, roleStates:{in-progress,in-review,
-ready-for-test,done} }`. Auth = `ADO_PAT` (Basic) or an `az login` session — the same creds
-the operator filled in step 3; if neither is present yet, this step FAILS loudly (fix the ADO
+ready-for-test,done} }`. Auth = the `ado-pat` the operator stored in vc-secrets (the bridge hands it over as
+`ADO_PAT`) or an `az login` session; if neither is present yet, this step FAILS loudly (fix the ADO
 auth, don't skip it — an empty `roleStates` makes `/qa-fix` fall back to asking on every
 transition). Step 6 ingests it via `--tracker-json`.
 
@@ -610,12 +677,12 @@ Run the **derive block**: it reads the filled env + live sessions and derives th
 actually present, the contribution mode, the fork account, and the operator role:
 
 ```bash
-TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/derive-context.mjs" \
+TEST_ENV=<env> node "$VC_RUN" onboard derive-context \
   --tracker <jira|azure> --client-vcs <github|azure-repos>
 ```
 It prints ONE JSON object on stdout (notes on stderr):
 ```json
-{ "auth": { "github": "pat|gh-cli|none", "ado": "pat|az-login|none|n/a", "jira": "token|none|n/a" },
+{ "auth": { "github": "pat|gh-cli|none", "ado": "pat|az-login|none|n/a", "jira": "pat|none|n/a" },
   "github": { "login": "...", "upstreamPerm": "push|pull...", "contributionMode": "direct|fork",
               "forkAccount": "...", "via": "PAT|gh CLI",
               "tokenKind": "classic|fine-grained|gh-cli|none", "forkCapable": "yes|no|unknown" },
@@ -675,11 +742,14 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/gen-profile.mjs" \
   --github-token-kind <derived: github.tokenKind> --github-fork-capable <derived: github.forkCapable> \
   --self-diagnostics <true|false, from step 0b> \
   # NB: NO --feedback-mode (item 4) — it stays at the `ask` default; the interview never sets it. \
-  --vcs-auth <derived: client host's auth — github⇒gh-cli|pat, azure-repos⇒az-login|pat> --print
+  --github-auth <§2d: pat|gh-cli> --jira-auth <§2d: pat|oauth> --print
 # Azure Boards + Azure Repos:
-#   ... --tracker azure --azure-org acme --azure-project Web --client-vcs azure-repos --vcs-auth pat ...
+#   ... --tracker azure --azure-org acme --azure-project Web --client-vcs azure-repos --github-auth pat --ado-auth pat ...
 ```
-`--repos-json` supplies `projectType`, `vcs.clientOrg`, and the client/platform repo
+The `--github-auth` / `--ado-auth` / `--jira-auth` answers (§2d) land in `auth.*` — an axis that
+does not apply is written as `""`; vc-fix's prompts and the bridge read them. If step 5 derived
+`none` for an axis the operator chose, that is step 5's exception line — the profile still records
+the CHOICE. `--repos-json` supplies `projectType`, `vcs.clientOrg`, and the client/platform repo
 lists in one shot. **`--tracker-json .local-env/tracker.json`** (from step 4b) bakes the
 tracker status model (per-type states, `roleStates`, `apiBase`, `projectId`, `ticketKeyFormat`,
 `crossLinkToken`) and flips `transitionPolicy` to `auto` — WITHOUT it the Azure profile has an
@@ -698,8 +768,8 @@ If step 4 surfaced a storefront/theme repo the scan couldn't classify, hand-edit
 NOT write `paths.pluginRoot` (a versioned cache dir `…/vc-fix/<version>` would freeze to a
 stale/deleted version on the next upgrade). Instead every command's `node "$pluginRoot/skills/…"`
 resolves `$pluginRoot` = the ACTIVE (enabled) install at call time via `claude plugin list --json`
-(fallback: a highest-semver scan of `~/.claude/plugins/cache/*/vc-fix/`). See
-[`knowledge/execution/plugin-root.md`](../../knowledge/execution/plugin-root.md). Result:
+(fallback: a highest-semver scan of `~/.claude/plugins/cache/*/vc-fix/`) — vc-fix's
+`knowledge/execution/plugin-root.md`. Result:
 **no re-run of `/project-init` after an upgrade**, no version-stamped path, no stale link.
 
 ## 7. Generate `.mcp.json`
@@ -745,14 +815,20 @@ is not a TTY and the harness runs this through a pipe, so without `FORCE_COLOR=1
 operator only ever sees a plain table.
 
 ```bash
-FORCE_COLOR=1 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"
+FORCE_COLOR=1 TEST_ENV=<env> node "$VC_RUN" onboard verify-access
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/assert-profile.mjs"
 ```
 
 Prints a bordered readiness table + a **READY / NOT READY** verdict for `/qa-fix`.
+Run it THROUGH THE BRIDGE as above — a direct run sees only the session logins, so every PAT axis
+would read as missing (it says so in a `Launched through $VC_RUN` WARN row).
+
 Checks (PASS / FAIL / WARN / SKIP): deployment profile · **plugin root** (`claude plugin list --json`
-resolves the active vc-fix install and `skills/qa-fix-routing/ado.mjs` is present under it;
-WARN if the `claude` CLI isn't on PATH) · core env vars · storefront
+resolves the active vc-init AND vc-fix installs — `skills/project-init/verify-access.mjs` and
+`skills/qa-fix-routing/ado.mjs` present; WARN if the `claude` CLI isn't on PATH) · **`$VC_RUN`
+bridge** (the shim §0d installed) · **vc-secrets (tokens)** (every declared token stored and the
+declarations trusted — read from `vc-secrets doctor`'s lines; FAIL names the `trust` / `set <name>`
+commands still to run) · core env vars · storefront
 URL · admin/platform URL · **admin login** (real `POST {BACK_URL}/connect/token`
 password grant) · storefront user login (the REAL store-scoped OAuth grant → PASS/FAIL, not a
 "verify manually" WARN) · tracker token (Jira `GET /myself`
@@ -834,7 +910,7 @@ auto-discovers the ADO org's tenant and drives `az login --tenant <guid>` /
 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/ensure-session.mjs"           # establish
 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/ensure-session.mjs" --check   # probe only
 ```
-`az login` / `gh auth login` are **blocking** — **launch `ensure-session.mjs` in the
+Run it directly (not through `$VC_RUN`: a session login must not see a token). `az login` / `gh auth login` are **blocking** — **launch `ensure-session.mjs` in the
 background** and let the operator complete the single browser consent, then re-run
 verify-access. For a fully non-interactive setup use a PAT instead.
 
@@ -869,14 +945,17 @@ need to run it **manually as a fallback** if the run ended BEFORE reaching Step 
 hard precondition bail at Step 0), so the collector still knows the run finished:
 
 ```bash
-node "$CLAUDE_PLUGIN_ROOT/hooks/session-telemetry.mjs" complete --skill "project-init"
+node "<vcFix>/hooks/session-telemetry.mjs" complete --skill "project-init"
 ```
+
+(`<vcFix>` is the `vcFix` path `node "$VC_RUN" --where` prints — the collector belongs to vc-fix,
+not to this plugin.)
 
 It tells the vc-fix self-diagnostics collector this run has finished, so its one-line
 clean/health status prints **exactly once** (right after this step) instead of on every
 interview / file-fill / verify pause. Emit it even when the run ended early (a NOT READY
 precondition bail, or "nothing to do") — a correct early exit is still a completed run. (See
-[`knowledge/diagnostics/skill-expectations.md`](../../knowledge/diagnostics/skill-expectations.md)
+vc-fix's `knowledge/diagnostics/skill-expectations.md`
 §Signal completion.)
 
 ---
@@ -941,31 +1020,31 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/scaffold-secrets.mjs" --env <new> 
   (`process.env.X || profile.…`).** Only the per-env **URLs** genuinely need filling; don't ask the
   operator to re-enter tracker/org values they already gave at onboarding.
 - `scaffold-secrets` adds ONLY the `_<ENV>`-suffixed per-env app passwords
-  (`ADMIN_PASSWORD_<NEW>` / `USER_PASSWORD_<NEW>`) to the shared `.env.local`. **Cross-env
-  tokens** (`GITHUB_FIX_BUGS_TOKEN` / `JIRA_API_TOKEN` / `ADO_PAT`) are single-instance and
-  already present from the first env — idempotent add-only leaves them untouched. (A new env
-  reachable only with a *different* tracker/GitHub token is the "different project" case above.)
+  (`ADMIN_PASSWORD_<NEW>` / `USER_PASSWORD_<NEW>`) to the shared `.env.local`. **Tokens are
+  project-level**: the `github-pat` / `ado-pat` / `jira-token` stored in vc-secrets at onboarding
+  serve every environment, so `--add-env` declares nothing and asks no trust. (A new env reachable
+  only with a *different* tracker/GitHub token is the "different project" case above.)
 
 Tell the operator both were touched and what genuinely needs filling — **the new env's URLs + its
 admin/user passwords** (the empty project-level tracker/org placeholders are covered by the profile) —
-then **pause** with the unmistakable waiting banner (§3c) — no tool calls after it.
+then **pause** with the unmistakable waiting banner (§3d) — no tool calls after it.
 
 ### Step D — verify the new environment
 
 ```bash
-FORCE_COLOR=1 TEST_ENV=<new> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"
+FORCE_COLOR=1 TEST_ENV=<new> node "$VC_RUN" onboard verify-access
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/assert-profile.mjs"
 ```
 
 Run with `TEST_ENV=<new>` so the per-env creds resolve. This confirms the new env's URLs +
-**real admin login** + the (cross-env) tracker/GitHub tokens all work for this target.
+**real admin login** + the (project-level, vc-secrets) tracker/GitHub tokens all work for this target.
 `project-profile.json` and `.mcp.json` are **unchanged** (env-agnostic). **Restate the
 readiness table** in your reply (§8). Then present **Done**: `TEST_ENV=<new>` (per run, or via
 your shell) selects the new environment for `/qa-fix`, `/qa-bug`, `/qa-verify-fix`.
 
 Completion is signalled **automatically** by `verify-access.mjs` above (it fires the terminal-step
 marker itself). Only if this path ended before running verify-access, run it manually as a fallback:
-`node "$CLAUDE_PLUGIN_ROOT/hooks/session-telemetry.mjs" complete --skill "project-init"`.
+`node "<vcFix>/hooks/session-telemetry.mjs" complete --skill "project-init"` (`<vcFix>` from `node "$VC_RUN" --where`).
 
 ---
 
@@ -978,6 +1057,11 @@ evolves between versions — fields are **added** (e.g. `selfDiagnostics`), **re
 drift) — but the on-disk `project-profile.json` was written once and goes stale. `--check`
 brings it back in line with the current schema, then runs the readiness table. It does
 **NOT** re-run the interview.
+
+### Step 0 — vc-secrets ready + the bridge (same as §0d)
+
+Run §0d first — `check-secrets.mjs --preflight`, STOP on exit 2, then `install-bridge.mjs`. An
+upgrade from a pre-VCST-6402 onboarding has no vc-secrets yet, and every later step needs it.
 
 ### Step A — reconcile the profile (deterministic, dry-run first)
 
@@ -1001,6 +1085,8 @@ report — no writes, no scans, no questions of its own:
 
 `status:"no-profile"` ⇒ never onboarded — run the **full interview** instead, don't reconcile.
 `status:"current"` ⇒ nothing stale — skip to **Step C**.
+`status:"newer-schema"` ⇒ the profile was written by a NEWER vc-init than this one — STOP and tell the
+operator to update vc-init; nothing was changed.
 
 ### Step B — resolve decisions + rescans, then write
 
@@ -1011,12 +1097,28 @@ report — no writes, no scans, no questions of its own:
   profile with an **empty `tracker.fields`** is reported here as `{ path: "tracker.fields", source:
   "discover-tracker" }` (VCST-5582 E5) — an upgraded install whose original scan predates the
   `$expand=all` fix re-derives the bug field contract on `--check`, no full re-onboarding needed.
+- A **schema-1 profile** (written before VCST-6402) carries a single `vcs.auth` that described only
+  the client host. Reconcile migrates what it can into `auth.*` (reported `via:
+  "migrated-from-vcs.auth"`) and lists each axis it could not know as `{ path: "auth.<axis>",
+  source: "derive-context" }`. Run `TEST_ENV=<env> node "$VC_RUN" onboard derive-context --tracker
+  <kind> --client-vcs <host>` and pass its `auth.<axis>` back as `--set auth.<axis>=<pat|gh-cli|az-login|oauth>`
+  (derive's `none` ⇒ ask the operator which they want, as in §2d).
 - Then apply everything in one write, one `--set path=value` per resolved decision:
 
 ```bash
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/reconcile-profile.mjs" --write \
-  --set selfDiagnostics=<true|false>
+  --set selfDiagnostics=<true|false> --set auth.jira=<pat|oauth>
 ```
+
+Then bring the vc-secrets declarations in line with the reconciled `auth.*` — idempotent, it writes
+nothing (and asks no new trust) when they already match:
+
+```bash
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/write-secrets-decl.mjs" --from-profile --shim "<VC_RUN path>"
+```
+
+When it reports `trustNeeded: true` or a secret is not stored yet, run the §3d token block (trust +
+`set`) and the §3e token gate before Step C.
 
 `selfDiagnostics` is the CAPTURE opt-in and the ONLY self-diagnostics decision `--check` asks.
 `feedback.mode` (VCST-5509) — the DELIVERY consent — is **no longer a managed "ask" field**
@@ -1050,7 +1152,7 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/normalize-env.mjs" --env <env>
 Then the readiness table (§8), so a stale token / URL / login surfaces too:
 
 ```bash
-FORCE_COLOR=1 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"
+FORCE_COLOR=1 TEST_ENV=<env> node "$VC_RUN" onboard verify-access
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/assert-profile.mjs"
 ```
 
@@ -1061,7 +1163,7 @@ only produce misleading failures.
 
 Completion is signalled **automatically** by `verify-access.mjs` above (it fires the terminal-step
 marker itself). Only if this path ended before running verify-access, run it manually as a fallback:
-`node "$CLAUDE_PLUGIN_ROOT/hooks/session-telemetry.mjs" complete --skill "project-init"`.
+`node "<vcFix>/hooks/session-telemetry.mjs" complete --skill "project-init"` (`<vcFix>` from `node "$VC_RUN" --where`).
 
 ---
 
@@ -1081,7 +1183,7 @@ Once the profile exists, the fix pipeline uses it automatically:
 - **Tracker** — comments + status transitions go to Jira or Azure Boards per
   `tracker.kind`.
 
-Client-code containment (`.claude/rules/quality-gates.md` §2a) is enforced regardless:
+Client-code containment (vc-fix's `.claude/rules/quality-gates.md` §2a) is enforced regardless:
 client code never leaves the client project. Gate ladder is unchanged. Never auto-merges.
 
 ## Re-running
@@ -1102,21 +1204,28 @@ Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or j
 | Script | Role |
 |--------|------|
 | `scaffold-env.mjs` | write a commented `.env.<env>` **template** (non-secret URL/identifier/tracker placeholders + what/example comments); topology-driven, idempotent. **Calls `lib/gitignore.mjs` `ensureProjectIgnores()` BEFORE it writes**, so the file it is about to create is already covered (VCST-5774). |
-| `scaffold-secrets.mjs` | write a commented `.env.local` **template** (secret placeholders + what/why/where per secret); topology-driven, idempotent. **Calls `lib/gitignore.mjs` `ensureProjectIgnores()` BEFORE it writes**, so the file it is about to create is already covered (VCST-5774). |
+| `scaffold-secrets.mjs` | write a commented `.env.local` **template** — test-user passwords only (what/why/where per value); reports which tokens this topology stores in vc-secrets and warns on a plaintext token still in `.env.local`; idempotent. **Calls `lib/gitignore.mjs` `ensureProjectIgnores()` BEFORE it writes**, so the file it is about to create is already covered (VCST-5774). |
 | `lib/gitignore.mjs` | the ONE list of what onboarding generates that must never be committed, plus the append-only writer. Shared because FOUR scripts create such files at four different steps and each must protect its own **before** creating it — while only `gen-mcp` (§7) wrote the block, `.env.local` (§3b) sat unignored through the operator's fill-in pause and through any run that aborted before §7. Idempotent, so four calls cost one read and produce one block |
-| `normalize-env.mjs` | **run on the operator's "done" (§3d) and in `--check` Step C** — normalize the hand-filled `.env.<env>` IN PLACE (quotes / padding / **all** trailing slashes; a pasted `dev.azure.com/<org>` → the bare slug) and validate it: exit 1 on an unfilled placeholder, a URL with no `http(s)://`, or a path-shaped `ADO_ORG`/`ADO_PROJECT`; WARN on a path component in `FRONT_URL`/`BACK_URL`. Prints every fix. Rules come from `scaffold-env.mjs` `CATALOG` (`type` + no-`def`), never a private copy |
+| `write-secrets-decl.mjs` | write `.claude/vc-secrets.local.json` — one `local` secret per PAT axis, the `vc-init-<group>` bridge tasks, the GitHub MCP server, a stable `projectId`. Owns only those keys, writes nothing when unchanged (so trust is re-asked only when the PAT axes change). `--from-profile` reads `auth.*` |
+| `check-secrets.mjs` | `--preflight` (§0d): is vc-secrets installed and runnable · `--steps` (§3d): the token block — what/why/where + the exact `set <name>` command per token · default (§3e): the TOKEN GATE — reads `vc-secrets doctor`'s lines and exits 1 with the `trust` / `set` commands still to run. Never sees a value |
+| `lib/token-guide.mjs` | what/why/where of each onboarding token (`github-pat`, `ado-pat`, `jira-token`) — the texts that used to sit in `.env.local` comments |
+| `lib/vc-secrets-doctor.mjs` | runs `vc-secrets doctor` through the shim and parses its OK/FAIL/SKIP lines into a verdict (shared by check-secrets and verify-access) |
+| `profile-set.mjs` | the ONE path another plugin writes the profile through: `/qa-bug` (`--set tracker.fieldDefaults.*` / `fieldMap.*`), `/perf-init` (`--merge perf=<json>`). Allowlisted paths only; exit 2 = no profile |
+| `../../scripts/install-bridge.mjs` | copy `vc-run-shim.mjs` to `~/.claude/plugins/data/vc-init-ai-tools/vc-run.mjs` (§0d) and print `VC_RUN=<path>` |
+| `../../bridge/run.mjs` | the `$VC_RUN` dispatcher: allowlist (`bridge/allowlist.mjs`) → `vc-secrets task vc-init-<group>` for a PAT axis, else the tool directly; inner side builds an allowlisted env, pins git to `bridge/git-credential.mjs`, redacts output (`bridge/redact.mjs`) |
+| `normalize-env.mjs` | **run on the operator's "done" (§3e) and in `--check` Step C** — normalize the hand-filled `.env.<env>` IN PLACE (quotes / padding / **all** trailing slashes; a pasted `dev.azure.com/<org>` → the bare slug) and validate it: exit 1 on an unfilled placeholder, a URL with no `http(s)://`, or a path-shaped `ADO_ORG`/`ADO_PROJECT`; WARN on a path component in `FRONT_URL`/`BACK_URL`. Prints every fix. Rules come from `scaffold-env.mjs` `CATALOG` (`type` + no-`def`), never a private copy |
 | `write-env.mjs` | (non-interactive helper) write `.env.<env>` / `.env.local` from a JSON answer object on STDIN when values ARE known programmatically; idempotent |
 | `discover-repos.mjs` | ALWAYS-run scan: Platform API modules → client/platform split, client-host scan for the storefront repo, and **derives projectType + clientOrg**; bakes per-repo `contribution`/`integrationBranch`/`toolchain`/`localVerify`; emits `{ projectType, clientOrg, client, platform }` |
 | `discover-tracker.mjs` | **Azure-only** scan of work-item types → per-type `states` + a `role→state` map (`roleStates`), plus `apiBase`/`projectId`/`ticketKeyFormat`/`crossLinkToken`; emits `.local-env/tracker.json` for `gen-profile --tracker-json`. Jira: format facts only (transitions discovered live). Enables `/qa-fix`'s silent role-based transitions |
 | `derive-context.mjs` | the **derive block**: reads the filled env + sessions, probes the upstream permission, emits JSON — auth actually present per axis, contributionMode, forkAccount, operator |
 | `probe-lib.mjs` | shared side-effect-free probes (GitHub-upstream permission, ADO tenant/auth) used by BOTH `verify-access` and `derive-context` so their results can't drift |
-| `gen-profile.mjs` | write/merge `project-profile.json` from the repos-json (projectType/clientOrg/repos) + derived flags (operator/contributionMode/upstream-account/vcs-auth) + tracker connection |
-| `reconcile-profile.mjs` | **`--check` migration**: diff an existing profile against the current `PROFILE_DEFAULTS` schema → JSON report of `added` (safe-default) / `removed` (obsolete, open-maps+arrays preserved) / `pending` (operator-decision fields with `question`+`options`, e.g. `selfDiagnostics`) / `rescan` (re-derive live). Deterministic, dry-run by default; `--write` applies structural changes + `--set path=value` decisions. Idempotent. Mirrors `gen-profile`'s `tracker.azure`/`vcs.azure` discriminated pruning |
+| `gen-profile.mjs` | write/merge `project-profile.json` (`schemaVersion` 2) from the repos-json (projectType/clientOrg/repos) + derived flags (operator/contributionMode/upstream-account) + the auth axes (`--github-auth` / `--ado-auth` / `--jira-auth` → `auth.*`) + tracker connection; keeps an existing `perf` block |
+| `reconcile-profile.mjs` | **`--check` migration**: diff an existing profile against the current `PROFILE_DEFAULTS` schema → JSON report of `added` (safe-default) / `removed` (obsolete, open-maps+arrays preserved) / `pending` (operator-decision fields with `question`+`options`, e.g. `selfDiagnostics`) / `rescan` (re-derive live). Deterministic, dry-run by default; `--write` applies structural changes + `--set path=value` decisions. Idempotent. Mirrors `gen-profile`'s `tracker.azure`/`vcs.azure` discriminated pruning. Migrates a schema-1 `vcs.auth` into `auth.*` and refuses a profile from a newer vc-init |
 | `gen-mcp.mjs` | write `.mcp.json` (OS-aware) into the project + enable servers for the tracker/VCS. **Credentials are written as `${VAR}` refs; the VALUE goes to `.claude/settings.local.json` `env`. `--inline-secrets` opts back into a literal (and `--inline-secrets false` correctly turns it OFF). Refuses to write at all when the settings file is unparsable or already git-tracked — a rewrite would delete the operator's keys, and no `.gitignore` rule can untrack a tracked file (VCST-5774).** Playwright servers are flags-only (`--browser` / `--isolated` / `--viewport-size` / `--output-dir`) — no config files; only `playwright-chrome` is enabled by default |
-| `lib/paths.mjs` | shared path helper — `outputRoot()` (`VC_FIX_HOME` \|\| `process.cwd()`, where generated state goes) + `pluginRoot()` (`CLAUDE_PLUGIN_ROOT` \|\| resolved from `import.meta.url`, used by a running script to find its own read-only plugin assets). Keeps every generator writing to the project and reading templates from the plugin. (Commands resolve their launch path via `claude plugin list --json` — see `knowledge/execution/plugin-root.md`.) |
+| `lib/paths.mjs` | shared path helper — `outputRoot()` (`VC_FIX_HOME` \|\| `process.cwd()`, where generated state goes) + `pluginRoot()` (`CLAUDE_PLUGIN_ROOT` \|\| resolved from `import.meta.url`, used by a running script to find its own read-only plugin assets). Keeps every generator writing to the project and reading templates from the plugin. (Commands resolve their launch path via `claude plugin list --json` — see vc-fix's `knowledge/execution/plugin-root.md`.) |
 | `verify-access.mjs` | full `/qa-fix` readiness table + verdict, incl. the two **secret-hygiene** rows that audit `.mcp.json` + `.claude/settings.local.json` for an exposed credential (graded by committability: tracked/not-ignored ⇒ FAIL); prints an untruncated "To resolve" block (incl. an auto-discovered `az login --tenant <guid>`). Also **reports every non-PASS row as self-diagnostics telemetry** (`lib/diag-obs.mjs` → the collector's `obs` subcommand) — the table used to be rendered and discarded, so a WARN the operator could plainly read was invisible to `/vc-self-check` and the run self-diagnosed "no plugin issues detected" (VCST-5582 H). Exit code is unchanged: 0 unless a hard FAIL |
 | `assert-profile.mjs` | asserts the **SHAPE** of the profile just written and records each degradation as a `degraded_artifact` observation: empty `tracker.fields` (⇒ `/qa-bug` sends "unverified defaults"), `roleStatesComplete:false`, unmapped required fields, empty `repos.client` on a client project, an unresolved storefront `upstreamRef`, `githubForkCapable != "yes"` while the upstream path is needed. Complements `verify-access` (which probes ACCESS): a scan can return empty with no HTTP error, and what `/qa-fix` reads at runtime is the persisted shape. Read-only, **always exits 0** — a diagnostic, not a second readiness gate |
-| `ensure-session.mjs` | establish the browser-login sessions WITHOUT hand-crafted commands: auto-discovers the ADO org tenant and drives `az login --tenant <guid>` / `gh auth login --web`; `--check` probes only. Run in the background (the login blocks on the browser). |
+| `ensure-session.mjs` | establish the browser-login sessions WITHOUT hand-crafted commands: auto-discovers the ADO org tenant and drives `az login --tenant <guid>` / `gh auth login --web`; `--check` probes only. Run in the background (the login blocks on the browser). Run it DIRECTLY, never through `$VC_RUN` — a session login must not see a token (gh refuses to log in while GH_TOKEN is set). |
 
 > The interview asks only **env name · tracker · code host** + an auth preference
 > per axis. The **self-diagnostics capture opt-in** (`selfDiagnostics`) is asked FIRST, as

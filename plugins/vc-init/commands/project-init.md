@@ -1,21 +1,23 @@
 ---
-description: "Initialize / onboard this QA plugin for a deployment — install deps, ask only env name + bug tracker (Jira/Azure Boards) + code host (GitHub/Azure Repos) + an auth preference, then DERIVE the rest (native-platform vs CLIENT project, client org, contribution mode, fork account) from the token + filled env + a live module/repo scan. Writes project-profile.json + .env + .mcp.json, verifies access. Makes /qa-fix route bugs to the right repo + tracker. Backed by the /project-init skill."
-argument-hint: "(no args — interactive) | --add-env (add another environment to an onboarded project) | --check (reconcile an existing profile + verify)"
+description: "Initialize / onboard the Virto Commerce QA plugins for a deployment — check vc-secrets, install deps, ask only env name + bug tracker (Jira/Azure Boards) + code host (GitHub/Azure Repos) + an auth preference, then DERIVE the rest (native-platform vs CLIENT project, client org, contribution mode, fork account) from the token + filled env + a live module/repo scan. Every PAT is stored by the operator in vc-secrets and reaches a process only through the $VC_RUN bridge. Writes project-profile.json + .env + the vc-secrets declarations + .mcp.json, verifies access. Makes /qa-fix route bugs to the right repo + tracker. Backed by the /project-init skill."
+argument-hint: "(no args — interactive) | --add-env (add another environment to an onboarded project) | --check (reconcile an existing profile, move plaintext tokens into vc-secrets, verify)"
 
 ---
 
-# /project-init — deploy & wire this QA plugin for a customer
+# /project-init — deploy & wire the QA plugins for a customer
 
-Bring this agentic-QA plugin up on a new machine / for a new customer and produce
-the **deployment profile** (`project-profile.json`) that every skill reads — so
-`/qa-fix` knows the infrastructure and routes each bug to the right repository
-(client module / theme / storefront fork **or** native VirtoCommerce platform)
-and the right bug tracker (Jira or Azure Boards).
+Bring the Virto Commerce QA plugins (vc-fix, vc-perf) up on a new machine / for a new customer and
+produce the **deployment profile** (`project-profile.json`) that every skill reads — so `/qa-fix`
+knows the infrastructure and routes each bug to the right repository (client module / theme /
+storefront fork **or** native VirtoCommerce platform) and the right bug tracker (Jira or Azure Boards).
 
-Methodology + helper scripts: the [`/project-init` skill](../skills/project-init/SKILL.md).
+Methodology + helper scripts: the [`/project-init` skill](../skills/project-init/SKILL.md). This
+plugin (vc-init) is the ONLY writer of the profile; vc-fix and vc-perf stop with "run /project-init"
+when it is absent.
 
-**Additive & safe:** only adds a profile + config; with no profile the plugin
-keeps its original behaviour (native-platform / Jira / GitHub). Never auto-merges.
+**Tokens never pass through chat or a file.** The operator stores each PAT with
+`node "<VC_SECRETS>" set <name>` in their own terminal and approves the declarations with
+`node "<VC_SECRETS>" trust`; every script that needs a token runs as `node "$VC_RUN" <tool> …`.
 
 **Ask only what shapes the config; DERIVE the rest.** Interview = **env name ·
 tracker · code host** + an auth preference per axis. `projectType`, client org,
@@ -26,153 +28,81 @@ permissions + the filled env + a live module/repo scan.
 
 ```
 /project-init            # run the full onboarding interview + pipeline
-/project-init --add-env  # add another environment (URLs + per-env access keys) to an onboarded project
-/project-init --check    # reconcile an existing profile to the current schema, then verify
+/project-init --add-env  # add another environment (URLs + per-env passwords) to an onboarded project
+/project-init --check    # reconcile an existing profile, move plaintext tokens into vc-secrets, then verify
 ```
 
 ## Flow (the skill drives this)
 
-0. Preconditions — **(0a)** confirm the working directory: `pwd`, show it, and confirm via
-   `AskUserQuestion` that this is the deployment project (everything is generated here and
-   read from here). Wrong folder → STOP, tell the operator to relaunch Claude Code from the
-   right directory (cwd is fixed at launch, not movable with `cd`). Resolve the plugin dir
-   once (`echo "$CLAUDE_PLUGIN_ROOT"`) — prefix every generator call with it. **(0b)** detect
-   **and install** missing tooling: `gh` (required), `az` (only if Azure is chosen); STOP if
-   Node 18+/`git` are absent.
-1. Install deps into the **plugin** (`( cd "$CLAUDE_PLUGIN_ROOT" && npm install )` — subshell, NOT
-   a bare `npm install`, which would land in the project; scripts resolve `dotenv` from the plugin's
-   own `node_modules`) + Playwright browsers (`npx playwright install chromium firefox`).
-2. Interview — **no mid-interview reconnaissance**: (a) **ENV_NAME** as a plain chat
-   question (operator replies; becomes `TEST_ENV` → normalise to `[a-z0-9_]+`; not via
-   AskUserQuestion / widget); (b) **tracker + code host** as one `AskUserQuestion` block
-   (independent — Azure Boards + GitHub is fine; upstream is always GitHub); (c)
-   **existing-env guard** — if `.env.<name>` exists, ask via `AskUserQuestion` to
-   **reuse** (scaffold only adds missing keys) or **new name** (re-check) — never
-   auto-pick; (d) **auth preference** as one `AskUserQuestion` block for the applicable
-   axes (github always; ado if azure tracker/host; jira if jira) — **PAT is Recommended**,
-   else browser/CLI login. The token is NOT typed in chat — the choice only decides
-   whether a token placeholder is emitted to `.env.local` (PAT) or a login is run
-   (session). **No operator / projectType / contribution-mode question** — derived later.
-   **(e) Self-diagnostics CAPTURE consent (opt-in — ASK, never assume)** as one `AskUserQuestion`:
-   `selfDiagnostics` only (local telemetry capture to `.vc-fix/`, Yes recommended). This MUST be
-   asked — the persisted default is `false`/opt-out (PROFILE_DEFAULTS), so a run that skips it
-   leaves capture OFF; capture is enabled ONLY by the operator's explicit Yes here (passed to
-   step 6 as `--self-diagnostics`). The SKILL's §0b additionally writes the Yes immediately
-   (a `gen-profile --self-diagnostics true` stub) so `/project-init`'s own run is captured.
-   **Do NOT ask about upstream `feedback.mode` here** (PR #172 item 4): the delivery flow already
-   asks once, per finding, when a real BROKEN/DEGRADED finding exists — an onboarding question was a
-   second, context-free ask. `feedback.mode` stays at its `ask` default (PROFILE_DEFAULTS),
-   hand-editable for CI (`auto`) or as a kill switch (`off`).
-3. Scaffold BOTH env files as commented templates: (3a) `scaffold-env.mjs --tracker …
-   --client-vcs …` → `.env.<env>` (ADO_ORG/ADO_PROJECT emitted for an azure tracker OR
-   azure-repos host; **do NOT pass --project-type/--client-org** — client org is derived);
-   (3b) `scaffold-secrets.mjs` → `.env.local` (auth axes `--jira-auth`/`--ado-auth`/
-   `--github-auth`; session auth emits no token line); (3c) tell the operator **two files
-   created — fill both** (inline comments say what/where), then **pause**. Never a raw
-   account password. **End the pause with a visually unmistakable waiting banner** (e.g. a
-   blockquote `> ⏸️ WAITING FOR YOU — fill in both files, then "done"`) as the last line, no
-   tool calls after it — a plain "let me know" reads as narration, not a prompt.
-4. **Discover repos — ALWAYS** (`discover-repos.mjs --client-vcs …`, no `--client-org`):
-   classify installed modules + scan the client host for the storefront/theme repo, and
-   **derive `projectType` + `clientOrg`** → `.local-env/repos.json`
-   (`{ projectType, clientOrg, client, platform }`). Show the map; confirm. Ask ONLY on a
-   genuine ambiguity (github host + no client modules + no org → native platform vs client
-   org; or no storefront repo matched → name it).
-4b. **Discover tracker — Azure Boards only** (`discover-tracker.mjs --tracker azure --org "$ADO_ORG"
-   --project "$ADO_PROJECT" --types "Bug,Task,User story" --out .local-env/tracker.json`): scan
-   work-item types → per-type `states` + a `role→state` map (`roleStates`) + `apiBase`/`projectId`/
-   `ticketKeyFormat`/`crossLinkToken`. Confirm the `roleStates` with the operator. **Without this the
-   Azure profile's `roleStates` is empty and `/qa-fix` asks on every transition.** Jira → format facts
-   only (`--tracker jira`), transitions discovered live.
-5. **Derive block** (`derive-context.mjs --tracker … --client-vcs …`): reads the filled
-   env + sessions, probes the upstream permission, prints JSON — auth actually present per
-   axis, `contributionMode` (push⇒direct, else fork), `forkAccount` (token owner),
-   `operator`. Capture for step 6.
-6. Write the profile (`gen-profile.mjs --repos-json .local-env/repos.json` supplies
-   projectType/clientOrg/repos; **`--tracker-json .local-env/tracker.json`** bakes the tracker
-   status model + flips `transitionPolicy=auto`; **`--runtime-mode plugin`** when run from an
-   installed plugin — the `$CLAUDE_PLUGIN_ROOT` env auto-detect is unreliable, so pass it explicitly;
-   + tracker connection from the filled `.env.<env>`; + derived `--operator`/`--contribution-mode`/
-   `--upstream-account` (fork only)/`--vcs-auth`; **+ `--self-diagnostics <yes|no>` from the (e)
-   capture consent** — always pass it explicitly so the written value reflects the operator's
-   choice, not the safe opt-out default. **`--feedback-mode` is NOT passed by the interview**
-   (item 4) — it stays at its `ask` default; a non-interactive/CI caller may still pass it. Do NOT
-   pass `--project-type`/`--client-org` — the scan is authoritative.
+0. Preconditions — **(0a)** confirm the working directory (`pwd` + `AskUserQuestion`); wrong folder →
+   STOP (cwd is fixed at launch). Resolve the plugin dir once (`echo "$CLAUDE_PLUGIN_ROOT"`).
+   **(0b)** self-diagnostics capture consent FIRST, written immediately on Yes. **(0d)** vc-secrets
+   ready? — `check-secrets.mjs --preflight`; not installed ⇒ STOP before the interview
+   (`/vc-secrets:install`, `VC_SECRETS` in `~/.claude/settings.json`, restart). Then
+   `install-bridge.mjs` → the literal `VC_RUN=<path>` used for the rest of the session. **(0e)**
+   detect **and install** missing tooling: `gh` (required), `az` (only if Azure is chosen).
+1. Install deps into the **plugin** (`( cd "$CLAUDE_PLUGIN_ROOT" && npm install )`) + Playwright
+   browsers (`npx playwright install chromium firefox`).
+2. Interview — **no mid-interview reconnaissance**: (a) **ENV_NAME** as a plain chat question;
+   (b) **tracker + code host** as one `AskUserQuestion` block; (c) **existing-env guard**; (d) **auth
+   preference** per applicable axis (github always; ado if azure tracker/host; jira if jira) — **PAT is
+   Recommended**, else browser/CLI login. The token is NOT typed in chat — the choice decides whether
+   a vc-secrets secret is declared (PAT) or a login is run (session). **Do NOT ask about upstream
+   `feedback.mode`** (PR #172 item 4) — it stays at its `ask` default.
+3. Scaffold + hand off: `scaffold-env.mjs` → `.env.<env>`; `scaffold-secrets.mjs` → `.env.local`
+   (**test-user passwords only**); `write-secrets-decl.mjs` → `.claude/vc-secrets.local.json` (one
+   secret per PAT axis + the bridge tasks). Show the operator what to fill, the `trust` command when
+   the declarations changed, and the token block from `check-secrets.mjs --steps` (what / where / the
+   `set <name>` command per token) — then **pause** with the waiting banner, no tool calls after it.
+   On "done": **token gate** `check-secrets.mjs` (reads doctor's lines; exit 1 ⇒ show the remaining
+   `trust`/`set` commands and wait again), then `normalize-env.mjs` (exit 1 ⇒ STOP).
+4. **Discover repos — ALWAYS** (`node "$VC_RUN" onboard discover-repos --client-vcs …`): derive
+   `projectType` + `clientOrg` → `.local-env/repos.json`. Show the map; confirm. Ask ONLY on a
+   genuine ambiguity.
+4b. **Discover tracker — Azure Boards only** (`node "$VC_RUN" onboard discover-tracker --tracker azure …`):
+   per-type `states` + a `role→state` map + the bug field contract. Confirm the `roleStates`.
+5. **Derive block** (`node "$VC_RUN" onboard derive-context --tracker … --client-vcs …`): auth actually
+   present per axis, `contributionMode`, `forkAccount`, `operator`.
+6. Write the profile (`gen-profile.mjs --repos-json … --tracker-json … --runtime-mode plugin` + tracker
+   connection + derived flags + `--github-auth`/`--ado-auth`/`--jira-auth` from 2d + `--self-diagnostics`
+   from 0b). Do NOT pass `--project-type`/`--client-org` — the scan is authoritative.
 7. Generate `.mcp.json` (`gen-mcp.mjs`) → restart MCP servers.
-8. Verify access — `FORCE_COLOR=1 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"` then `node "$CLAUDE_PLUGIN_ROOT/skills/project-init/assert-profile.mjs"` (asserts the written profile’s SHAPE — empty `tracker.fields`, incomplete `roleStates`, empty `repos.client` — and records each as self-diagnostics telemetry; always exits 0)
-   (`FORCE_COLOR=1` so the Status column renders — the script auto-disables colour on a
-   non-TTY, and the harness runs it through a pipe) prints a full readiness table +
-   READY/NOT-READY verdict (profile · core env · URLs · real admin login · storefront-user
-   soft-probe · tracker token · GitHub token + upstream perm · gh CLI). Resolve every FAIL.
-   **Restate the readiness table AND the MCP-server status as Markdown tables in your
-   reply** (tool output is often collapsed/hidden), mapping rows to surfaces
-   (front=FRONT_URL, back=BACK_URL+admin login, Jira=tracker token, Git=GitHub token+gh
-   CLI) + the PASS/FAIL/WARN/verdict line. For a **session-auth FAIL** (az/ADO or gh),
-   don't make the operator type commands — run `ensure-session.mjs` **in the background**
-   (it auto-discovers the ADO tenant and drives `az login --tenant <guid>` /
-   `gh auth login --web`), let them complete the one browser consent, then re-run.
-9. Done → present as an explicit labelled **Step 9**: summary (incl. derived projectType /
-   contributionMode) + manual actions (reload IDE for `.mcp.json`, pending OAuth) + first
-   run `/qa-fix <TICKET>`.
+8. Verify access — `FORCE_COLOR=1 TEST_ENV=<env> node "$VC_RUN" onboard verify-access` then
+   `node "$CLAUDE_PLUGIN_ROOT/skills/project-init/assert-profile.mjs"`. **Restate the readiness table
+   AND the MCP-server status as Markdown tables in your reply.** For a **session-auth FAIL** run
+   `ensure-session.mjs` directly (never through `$VC_RUN`) **in the background**.
+9. Done → an explicit labelled **Step 9**: summary + manual actions (restart Claude Code so `VC_RUN`
+   and `.mcp.json` take effect, pending OAuth) + first run `/qa-fix <TICKET>`.
 
 ### `--add-env` — add another environment to an already-onboarded project
 
-For a deployment that is ALREADY onboarded (a `project-profile.json` exists) and you want to
-point the plugin at **another deployment target** — a second QA env, staging, a customer's
-second site — that shares the **same project topology** (tracker, code host, repos,
-contribution mode). An environment is just a new **URL set + its access creds**; it does
-**NOT** re-run the interview, re-scan repos, rewrite the profile, or regenerate `.mcp.json`
-(those are project-level, env-agnostic). The skill's **`--add-env`** section drives this:
-
-1. **Precondition** — `project-profile.json` must exist (if not, run the full `/project-init`
-   instead). Confirm cwd (0a). Read `tracker.kind` + `vcs.clientHost` from the profile —
-   **do not ask them again** (they're project-level).
-2. **Env name** — **ask "what should the new environment be named?" as a plain chat question**
-   (like §2a — no positional arg); normalise to `[a-z0-9_]+` and tell the operator what you
-   used. **Then the existing-env guard** (2c): check `.env.<name>` — if it already exists,
-   `AskUserQuestion` to reuse it (scaffold is add-only, never clobbers) or pick a new name
-   (re-ask + re-check). Not found → proceed.
-3. **Scaffold the new env's two files** — `scaffold-env.mjs --env <new> --tracker <kind>
-   --client-vcs <host>` → `.env.<new>` (its own URLs/identifiers); `scaffold-secrets.mjs
-   --env <new> --tracker <kind> --client-vcs <host>` → adds the `_<ENV>`-suffixed per-env app
-   passwords (`ADMIN_PASSWORD_<ENV>`/`USER_PASSWORD_<ENV>`) to `.env.local`. Cross-env tokens
-   already present (GitHub/Jira/ADO) are **untouched** (idempotent add-only). Tell the operator
-   to fill both, then **pause** with the waiting banner.
-4. **Verify** the new env: `FORCE_COLOR=1 TEST_ENV=<new> node
-   "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"`; restate the readiness table.
-5. **Done** → `TEST_ENV=<new>` selects the new environment for `/qa-fix`, `/qa-bug`, etc.
-   (A different **tracker or code host** is a different *project*, not an environment — run a
-   fresh `/project-init` in its own directory for that.)
+For a deployment that is ALREADY onboarded and needs **another deployment target** sharing the same
+project topology. An environment is a new **URL set + its per-env passwords**; tokens are
+project-level (vc-secrets) and are not touched. The skill's **`--add-env`** section drives this:
+precondition (profile exists; read `tracker.kind` + `vcs.clientHost` — never re-ask) → env name +
+existing-env guard → `scaffold-env.mjs` + `scaffold-secrets.mjs` for the new env → pause → verify with
+`TEST_ENV=<new> node "$VC_RUN" onboard verify-access`.
 
 ### `--check` — reconcile an existing setup (after a plugin upgrade), then verify
 
 Do **not** re-run the interview. The skill's **`--check`** section drives this:
 
-1. **Reconcile** the profile to the current schema (dry-run):
-   `node "$CLAUDE_PLUGIN_ROOT/skills/project-init/reconcile-profile.mjs" --print` — prints
-   `added` (safe defaults) / `removed` (obsolete fields) / `pending` (operator-decision
-   fields, each with a `question`+`options` — e.g. `selfDiagnostics`) / `rescan` (re-derive
-   live). `no-profile` ⇒ run the full interview instead; `current` ⇒ nothing stale.
-2. **Ask** each `pending` decision via `AskUserQuestion` (default = Recommended); re-run
-   `discover-*` for any `rescan`; then apply:
-   `node "$CLAUDE_PLUGIN_ROOT/skills/project-init/reconcile-profile.mjs" --write --set <path>=<value>`.
-3. **Verify**: `FORCE_COLOR=1 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/verify-access.mjs"`.
+0. vc-secrets ready + the bridge (as §0d).
+1. **Reconcile** the profile to the current schema (dry-run): `reconcile-profile.mjs --print` —
+   `added` / `removed` / `pending` / `rescan` (a schema-1 profile's auth axes are re-derived through
+   `node "$VC_RUN" onboard derive-context`). `no-profile` ⇒ run the full interview instead.
+2. **Ask** each `pending` decision via `AskUserQuestion`; re-run `discover-*` for any `rescan`; then
+   apply with `reconcile-profile.mjs --write --set <path>=<value>` and bring the declarations in line
+   with `write-secrets-decl.mjs --from-profile`.
+3. **Move plaintext tokens** — the migration step of the skill finds every token left in a file and,
+   once the vc-secrets copy works, strips it.
+4. **Verify**: `FORCE_COLOR=1 TEST_ENV=<env> node "$VC_RUN" onboard verify-access`.
 
-Restate both the reconciliation summary and the readiness table in your reply.
+Restate the reconciliation summary, the migration report and the readiness table in your reply.
 
 ### Signal completion (self-diagnostics — the LAST action of EVERY path)
 
-`/project-init` is exactly where self-capture is first enabled (§0b writes the `selfDiagnostics:true`
-stub so its OWN run is captured), so its terminal step MUST emit the completion signal like every
-other terminal command — otherwise a slash-only run with no Skill span leaves the collector thinking
-there was no plugin activity and never surfaces its clean/health line. As the **last action** of
-whichever path ran — the full interview (Step 9), `--add-env` (step 5), or `--check` (step 3) — run
-this once (best-effort, silent, never blocks):
-
-```bash
-node "$CLAUDE_PLUGIN_ROOT/hooks/session-telemetry.mjs" complete --skill "project-init"
-```
-
-So the collector prints its one-line status **exactly once** after the run. No-op when capture is off.
-Details: [`knowledge/diagnostics/skill-expectations.md`](../knowledge/diagnostics/skill-expectations.md)
-§Signal completion.
+`verify-access.mjs` fires the terminal-step marker itself. Only if a path ended before it ran, run the
+fallback once (best-effort, silent): `node "<vcFix>/hooks/session-telemetry.mjs" complete --skill "project-init"`,
+where `<vcFix>` is the `vcFix` path `node "$VC_RUN" --where` prints — the collector is vc-fix's. No-op
+when capture is off. Details: vc-fix's `knowledge/diagnostics/skill-expectations.md` §Signal completion.

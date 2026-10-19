@@ -118,8 +118,10 @@ test("deliver: only VirtoCommerce/* targets", () => {
 });
 
 test("onboard: only the onboarding scripts that need a token", () => {
-  for (const s of ["verify-access", "discover-repos", "discover-tracker", "derive-context", "ensure-session"]) allowed("onboard", [s]);
+  for (const s of ["verify-access", "discover-repos", "discover-tracker", "derive-context"]) allowed("onboard", [s]);
   refused("onboard", ["gen-mcp"]);
+  // The session-login driver must never run with a token in its environment.
+  refused("onboard", ["ensure-session"]);
   refused("onboard", ["../../../evil"]);
 });
 

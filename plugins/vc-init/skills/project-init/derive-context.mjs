@@ -8,7 +8,7 @@
  * profile fields from the token + the live sessions:
  *
  *   - auth mode actually present per axis (github: pat|gh-cli|none, ado: pat|az-login|
- *     none, jira: token|none) — what the operator really filled / logged into.
+ *     none, jira: pat|none) — what the operator really stored (vc-secrets, via $VC_RUN) or logged into.
  *   - contributionMode + operator — from the token's PERMISSION on the platform upstream
  *     (VirtoCommerce/vc-platform): push/maintain/admin ⇒ direct / virto-engineer;
  *     otherwise ⇒ fork / client (you PR from your own fork).
@@ -22,8 +22,7 @@
  *   TEST_ENV=<env> node skills/project-init/derive-context.mjs \
  *     --tracker jira|azure --client-vcs github|azure-repos [--upstream-org VirtoCommerce]
  */
-import { config as dotenv } from "dotenv";
-import { resolveTestEnv } from "../../scripts/lib/resolve-test-env.js";
+import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
 import { probeGithubUpstream, resolveGithubToken, tryCmd } from "./probe-lib.mjs";
 
 function parseArgs(argv) {
@@ -47,15 +46,9 @@ async function main() {
   // Load env the same way config.js / verify-access do, incl. per-env suffix promotion
   // (ADMIN_PASSWORD_<ENV> → ADMIN_PASSWORD, ADO_PAT_<ENV> → ADO_PAT, …) so filled creds
   // are seen regardless of which file they landed in.
-  const TEST_ENV = resolveTestEnv("vcst");
-  // quiet: keep stdout pure JSON (dotenv v17 prints promo tips to stdout otherwise).
-  dotenv({ path: ".env.defaults", quiet: true });
-  dotenv({ path: `.env.${TEST_ENV}`, override: true, quiet: true });
-  dotenv({ path: ".env.local", override: true, quiet: true });
-  const SUF = `_${TEST_ENV.toUpperCase()}`;
-  for (const [k, v] of Object.entries(process.env)) {
-    if (k.endsWith(SUF) && v) process.env[k.slice(0, -SUF.length)] = v;
-  }
+  // The shared loader (quiet, so stdout stays pure JSON): it also keeps the tokens the $VC_RUN
+  // bridge injected from vc-secrets over a stale plaintext copy in .env.local (VCST-6402).
+  loadLayeredEnv("vcst");
 
   // --- auth actually present, per axis ---
   const gh = resolveGithubToken();
@@ -64,7 +57,7 @@ async function main() {
   const adoAuth = !adoApplicable ? "n/a" : process.env.ADO_PAT ? "pat" : tryCmd("az account show") ? "az-login" : "none";
   const jiraAuth =
     tracker !== "jira" ? "n/a"
-      : process.env.JIRA_API_TOKEN && process.env.JIRA_EMAIL && (process.env.JIRA_BASE_URL || "") ? "token"
+      : process.env.JIRA_API_TOKEN && process.env.JIRA_EMAIL && (process.env.JIRA_BASE_URL || "") ? "pat"
       : "none";
 
   // --- contribution mode + fork owner from the upstream permission probe ---

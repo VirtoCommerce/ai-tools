@@ -38,8 +38,13 @@ export const GIT_HOSTS = Object.freeze({
   "git-ado": ["dev.azure.com", "*.visualstudio.com"],
 });
 
-/** vc-init onboarding scripts the `onboard` group may launch (skills/project-init/<name>.mjs). */
-export const ONBOARD_SCRIPTS = Object.freeze(["verify-access", "discover-repos", "discover-tracker", "derive-context", "ensure-session"]);
+/**
+ * vc-init onboarding scripts the `onboard` group may launch (skills/project-init/<name>.mjs) — the
+ * ones that call an API with a token. ensure-session.mjs is deliberately NOT here: it drives the
+ * SESSION logins (`gh auth login --web`, `az login`), which must run without a token in the
+ * environment (gh refuses to log in while GH_TOKEN is set), so /project-init runs it directly.
+ */
+export const ONBOARD_SCRIPTS = Object.freeze(["verify-access", "discover-repos", "discover-tracker", "derive-context"]);
 
 /**
  * `gh` sub-commands, by top-level command. `null` = any sub-command (still subject to the flag rules).

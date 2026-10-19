@@ -253,7 +253,7 @@ const USAGE = `usage: node "$VC_RUN" <tool> [args…]
   ado <command> …        vc-fix qa-fix-routing/ado.mjs
   jira <command> …       vc-fix qa-fix-routing/jira.mjs
   deliver …              vc-fix vc-self-check/deliver.mjs
-  onboard <script> …     vc-init /project-init scripts (verify-access, discover-repos, discover-tracker, derive-context, ensure-session)
+  onboard <script> …     vc-init /project-init scripts (verify-access, discover-repos, discover-tracker, derive-context)
   --where                print what the bridge resolves (plugins, vc-secrets, the project's declared tasks)`;
 
 /** OUTER side. */

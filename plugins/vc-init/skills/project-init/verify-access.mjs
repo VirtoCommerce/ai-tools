@@ -52,6 +52,8 @@ import { SECRET_PREFIX_RE } from "../../scripts/lib/redact.mjs";
 // invisible to /vc-self-check and the run self-diagnosed "no plugin issues detected".
 import { emitObservations, httpStatusFrom, classForStatus } from "./lib/diag-obs.mjs";
 import { resolvePluginFile, resolvePluginRoot } from "../../bridge/resolve-plugin.mjs";
+import { defaultShimPath } from "../../scripts/install-bridge.mjs";
+import { parseDoctor, runDoctor, secretsVerdict } from "./lib/vc-secrets-doctor.mjs";
 import {
   probeGithubUpstream, resolveGithubToken, resolveAdoTenant, ADO_RESOURCE,
   githubCanWrite, discoverAdoWorkItemId, probeAdoWorkItemsWrite, probeAdoCodeWrite,
@@ -367,6 +369,16 @@ function adoAuth() {
   return { header: "", via: "" };
 }
 
+/** The onboarding tokens this project's vc-secrets declaration lists (github-pat / ado-pat / jira-token). */
+export function readDeclaredSecrets(root) {
+  try {
+    const d = JSON.parse(readFileSync(resolve(root, ".claude", "vc-secrets.local.json"), "utf8"));
+    return Object.keys(d.secrets || {}).filter((n) => ["github-pat", "ado-pat", "jira-token"].includes(n));
+  } catch {
+    return [];
+  }
+}
+
 /** Split owner/name. */
 function splitRepo(full) {
   const i = (full || "").indexOf("/");
@@ -468,6 +480,34 @@ async function main() {
   for (const ids of enabledIds) {
     add("Plugin root (single install)", "WARN",
       `${ids.join(" and ")} are both enabled — each one's hooks.json starts its own telemetry collector, so spans duplicate and state writes race. Uninstall the old one (/plugin uninstall ${ids.slice(1).join(", ")}) and restart Claude Code`);
+  }
+
+  // 1c. Tokens live in vc-secrets and reach a process only through the $VC_RUN bridge (VCST-6402).
+  //     Three facts, each its own row: the bridge shim is installed, every token this project
+  //     declared is stored and its declarations trusted (doctor's LINES, not its exit code — an
+  //     untrusted checkout exits 0), and THIS run actually came through the bridge — a direct run
+  //     sees only the session logins, so the token rows below would report a PAT as missing.
+  const declared = readDeclaredSecrets(outputRoot());
+  const shimPath = process.env.VC_RUN || defaultShimPath();
+  add("$VC_RUN bridge", existsSync(shimPath) ? "PASS" : "FAIL",
+    existsSync(shimPath) ? `shim at ${shimPath}` : `no shim at ${shimPath} — run node "<vc-init>/scripts/install-bridge.mjs" (/project-init §0d does this)`);
+  if (!declared.length) {
+    add("vc-secrets (tokens)", "SKIP", "no PAT axis — every axis uses a session login (gh auth login / az login / Atlassian OAuth)");
+  } else {
+    const doctor = runDoctor({ cwd: outputRoot() });
+    if (!doctor.available) {
+      add("vc-secrets (tokens)", "FAIL", `${declared.join(", ")} declared, but vc-secrets is not installed (VC_SECRETS ${process.env.VC_SECRETS ? "points at a missing file" : "unset"}) — /vc-secrets:install, add VC_SECRETS to ~/.claude/settings.json env, restart`);
+    } else {
+      const v = secretsVerdict(parseDoctor(doctor.text), declared);
+      const q = JSON.stringify(doctor.shim);
+      const todo = [...(v.trustNeeded ? [`node ${q} trust`] : []), ...v.missing.map((n) => `node ${q} set ${n}`), ...v.problems];
+      add("vc-secrets (tokens)", v.ready ? "PASS" : "FAIL",
+        v.ready ? `${declared.join(", ")} stored and trusted` : `not ready — run in a terminal: ${todo.join(" ; ")}`);
+    }
+    if (process.env.VC_BRIDGE !== "1") {
+      add("Launched through $VC_RUN", "WARN",
+        `this run was started directly, so the token rows below see only session logins — re-run as: node "$VC_RUN" onboard verify-access`);
+    }
   }
 
   // 2. Core env vars
@@ -798,17 +838,22 @@ function renderMcp() {
     "playwright-firefox": { auth: "local", status: () => ["OK", "local browser, no auth"] },
     "playwright-edge": { auth: "local", status: () => ["OK", "local browser, no auth"] },
     "Chrome DevTools": { auth: "local", status: () => ["OK", "local, no auth"] },
-    github: { auth: "token", status: () => {
-      const t = process.env.GITHUB_FIX_BUGS_TOKEN || process.env.GIT_TOKEN || process.env.GITHUB_TOKEN || process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
-      if (t) return ["AUTHORIZED", "PAT in env"];
-      if (tryCmd("gh auth token")) return ["AUTHORIZED", "gh CLI token"];
-      return ["NOT AUTH", "no PAT / gh token"];
+    github: { auth: "token", status: (entry) => {
+      // A PAT axis launches the server through vc-secrets (`node ${VC_SECRETS} run github`, VCST-6402):
+      // its token is whatever vc-secrets resolves, so the answer is doctor's, not this process's env.
+      if (entry && Array.isArray(entry.args) && entry.args.includes("run") && entry.args.includes("github")) {
+        const d = runDoctor({ cwd: outputRoot() });
+        if (!d.available) return ["NOT AUTH", "vc-secrets not installed (VC_SECRETS)"];
+        const p = parseDoctor(d.text);
+        if (p.untrustedLaunchables.includes("server github") || p.skippedUntrusted.includes("github-pat")) return ["NOT AUTH", "vc-secrets trust not given"];
+        return p.resolvable.includes("github-pat") ? ["AUTHORIZED", "github-pat via vc-secrets"] : ["NOT AUTH", "github-pat not stored — vc-secrets set github-pat"];
+      }
+      if (entry && entry.type === "http") return ["NEEDS OAUTH", "authorize in /mcp (no PAT axis)"];
+      return ["?", "unrecognised github entry — re-run gen-mcp.mjs"];
     } },
     atlassian: { auth: "oauth", status: () => ["NEEDS OAUTH", "authorize in claude.ai connectors / /mcp"] },
     "figma-remote-mcp": { auth: "oauth", status: () => ["NEEDS OAUTH", "authorize in claude.ai connectors / /mcp"] },
     "azure-mcp": { auth: "az/AAD", status: () => tryCmd("az account show") ? ["AUTHORIZED", "az login active"] : ["NOT AUTH", "run `az login`"] },
-    context7: { auth: "key", status: () => process.env.CONTEXT7_API_KEY ? ["AUTHORIZED", "CONTEXT7_API_KEY set"] : ["NO KEY", "optional — set CONTEXT7_API_KEY"] },
-    postman: { auth: "key", status: () => process.env.POSTMAN_API_KEY ? ["AUTHORIZED", "POSTMAN_API_KEY set"] : ["NO KEY", "optional — set POSTMAN_API_KEY"] },
   };
 
   let mcp, enabled;
@@ -821,7 +866,7 @@ function renderMcp() {
 
   const rows = names.map((n) => {
     const meta = MCP[n] || { auth: "?", status: () => ["?", "unknown server"] };
-    const [st, detail] = meta.status();
+    const [st, detail] = meta.status(mcp.mcpServers?.[n]);
     return { name: n, auth: meta.auth, status: st, detail };
   });
 
