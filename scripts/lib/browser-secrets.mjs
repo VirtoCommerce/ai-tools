@@ -11,17 +11,31 @@
  * env (`.env.local` is the source the seeders set passwords from), never from this file.
  *
  * Pure: reads files, never loads env, never writes, never returns or prints a value except to the
- * one caller that writes the secrets file (`scripts/env/sync-playwright-secrets.mjs`).
- * Callers must load the layered env first (config.js / env-facts) so per-env suffixes are promoted.
+ * one caller that writes the secrets files (`scripts/maintenance/sync-playwright-secrets.mjs`).
+ * Callers must load the layered env first (config.js / env-facts) so per-env suffixes are promoted —
+ * except for the combined file, whose values `combinedSecretValues` layers per env itself.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { parse } from 'dotenv';
 import { USER_ROLES } from './user-roles.mjs';
+import { layeredEnv } from './env-core.js';
+import { envSuffix, TEST_ENV_PATTERN } from './resolve-test-env.js';
 
 export const SECRETS_FILE = '.env.playwright.local';
 /** The header line that stamps which TEST_ENV the values were resolved for. */
 export const ENV_STAMP = /^#\s*generated-for:\s*TEST_ENV=([a-z0-9_]+)\s*$/m;
+
+/**
+ * The combined `--secrets` file (`npm run secrets:sync:all`): every env's passwords, each name carrying
+ * its env (`ORG_USER_PASSWORD_VCST_QA`), so one set of Playwright lanes serves sessions on several envs
+ * with no restart — the env travels in the typed name. Its `# envs:` line is how a reader tells it from
+ * a single-env file, whose names are bare.
+ */
+export const COMBINED_SECRETS_FILE = '.env.playwright.all';
+const ENVS_LINE = /^# envs: (.*)$/m;
+/** `.env.<name>` files that are not envs — the same set scripts/kb/core/stands.mjs skips. */
+const NOT_AN_ENV = new Set(['local', 'defaults', 'backup']);
 
 /**
  * A login password NAME: `X_PASSWORD`. Least privilege is the point of a separate file — a page or a
@@ -118,12 +132,102 @@ export function deriveSecretNames(root) {
   return names;
 }
 
-/** What the secrets file holds: whether it exists, the TEST_ENV it was generated for, and its name → value map. */
-export function readSecretsFile(root) {
-  const p = join(root, SECRETS_FILE);
-  if (!existsSync(p)) return { exists: false, env: null, values: new Map() };
-  const text = readFileSync(p, 'utf8');
-  return { exists: true, env: ENV_STAMP.exec(text)?.[1] ?? null, values: new Map(Object.entries(parse(text))) };
+/**
+ * What a secrets file holds: whether it exists, the TEST_ENV a single-env file was generated for, the
+ * envs a combined file covers (null for a single-env file), and its name → value map.
+ * @param {string} root
+ * @param {string} [path] the file to read (default: `.env.playwright.local` under `root`)
+ */
+export function readSecretsFile(root, path = join(root, SECRETS_FILE)) {
+  if (!existsSync(path)) return { path, exists: false, env: null, envs: null, values: new Map() };
+  const text = readFileSync(path, 'utf8');
+  return { path, exists: true, env: ENV_STAMP.exec(text)?.[1] ?? null, envs: combinedEnvs(text), values: new Map(Object.entries(parse(text))) };
+}
+
+/** The env list of a combined file's `# envs:` line, or null when the text is a single-env file. */
+export function combinedEnvs(text) {
+  const m = ENVS_LINE.exec(String(text));
+  return m ? m[1].split(/\s+/).filter(Boolean) : null;
+}
+
+/** `{ env, name }` of an env-qualified name (`ORG_USER_PASSWORD_VCST_QA`), by the longest env suffix; null when none matches. */
+export function splitQualifiedName(qualified, envs) {
+  for (const env of [...envs].sort((a, b) => b.length - a.length)) {
+    const suffix = envSuffix(env);
+    if (qualified.length > suffix.length && qualified.endsWith(suffix)) return { env, name: qualified.slice(0, -suffix.length) };
+  }
+  return null;
+}
+
+/** Claude Code expands `${VAR}` and `${VAR:-default}` in `.mcp.json` args from its own environment; an unset `${VAR}` stays literal. */
+const expandVars = (s) => s.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)(?::-([^}]*))?\}/g, (whole, name, fallback) => {
+  const value = process.env[name];
+  if (fallback !== undefined) return value || fallback;
+  return value ?? whole;
+});
+
+/**
+ * The `--secrets` file the playwright-* servers are started with: the first `--secrets` arg in the nearest
+ * `.mcp.json` that declares one, from `root` upwards (a parent workspace's `.mcp.json` may declare the
+ * servers). Relative paths resolve against `root`. Null when no `.mcp.json` declares one.
+ */
+export function declaredSecretsFile(root) {
+  for (let dir = resolve(root), prev = null; dir !== prev; prev = dir, dir = dirname(dir)) {
+    let servers;
+    try { servers = JSON.parse(readFileSync(join(dir, '.mcp.json'), 'utf8')).mcpServers ?? {}; } catch { continue; }
+    for (const server of Object.values(servers)) {
+      const args = server?.args ?? [];
+      const i = args.indexOf('--secrets');
+      if (i !== -1 && args[i + 1]) {
+        const file = expandVars(String(args[i + 1]));
+        return isAbsolute(file) ? file : resolve(root, file);
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * The envs the combined file covers: every `.env.<env>` under `root` with a TEST_ENV-shaped name, except
+ * `.env.defaults` / `.env.local` / `.env.backup`, and except an env whose layered `ENV_RISK` or own file
+ * says production — every lane loads the combined file, and a run never types a production password.
+ */
+export function combinedEnvCandidates(root, ambient = process.env) {
+  const out = [], excluded = [];
+  const names = readdirSync(root).map((f) => /^\.env\.(.+)$/.exec(f)?.[1]).filter((n) => n && TEST_ENV_PATTERN.test(n) && !NOT_AN_ENV.has(n));
+  for (const env of names.sort()) {
+    const own = parse(readFileSync(join(root, `.env.${env}`)));
+    const risk = [layeredEnv(env, { root, ambient }).ENV_RISK, own.ENV_RISK, own[`ENV_RISK${envSuffix(env)}`]];
+    if (risk.some((r) => r?.trim().toLowerCase() === 'production')) excluded.push({ env, reason: 'ENV_RISK=production' });
+    else out.push(env);
+  }
+  return { envs: out, excluded };
+}
+
+/**
+ * Every env's value for each name, keyed `NAME_<ENV>`, from that env's layered env (config.js order).
+ * Only the writer of the combined file may call this: it returns values. A name an env has no value for
+ * is listed under that env's `missing`; an env with no value at all is excluded.
+ * @param {string} root
+ * @param {Iterable<string>} names
+ * @param {{ ambient?: Record<string, string | undefined> }} [options] the environment before any loading
+ */
+export function combinedSecretValues(root, names, { ambient = process.env } = {}) {
+  const { envs: candidates, excluded } = combinedEnvCandidates(root, ambient);
+  const sorted = [...new Set(names)].sort();
+  const entries = new Map(), envs = [];
+  for (const env of candidates) {
+    const values = layeredEnv(env, { root, ambient });
+    const have = sorted.filter((n) => values[n]);
+    if (!have.length) { excluded.push({ env, reason: 'no password values' }); continue; }
+    for (const n of have) {
+      const qualified = n + envSuffix(env);
+      if (entries.has(qualified)) throw new Error(`${qualified} would be written for two envs; rename one of them`);
+      entries.set(qualified, { env, name: n, value: values[n] });
+    }
+    envs.push({ env, written: have.length, missing: sorted.filter((n) => !values[n]) });
+  }
+  return { entries, envs, excluded };
 }
 
 /**
