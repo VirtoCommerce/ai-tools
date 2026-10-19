@@ -25,6 +25,11 @@
 //   4. On the combined file, a name whose value no longer matches its env's
 //      layered value (scripts/lib/env-core.js `layeredEnv`) — the old password
 //      would be typed.
+//   5. MASTER_PASSWORD (the one password of every PASSWORDS=master stand,
+//      scripts/lib/env-layers.mjs) when this session's stand is not a master
+//      stand — it would send the master password to that stand's sign-in form —
+//      or when the file's copy differs from .env.playwright.master. A name the
+//      file lacks on a master stand is answered with "type MASTER_PASSWORD".
 //
 // Rule source: .claude/knowledge/execution/browser-lanes.md §Browser login secrets.
 // Memory: reference_playwright_secrets_bare_key_name.
@@ -116,6 +121,8 @@ function contract(extra, ctx) {
     "      (ENV = the run's TEST_ENV upper-cased); a single-env file -> the bare NAME,\n" +
     "      e.g. browser_type(text=\"ORG_USER_PASSWORD\").\n" +
     `    This lane reads ${lane}.\n` +
+    "  - On a master stand (PASSWORDS=master in its env file) every password field takes\n" +
+    "    MASTER_PASSWORD, whatever account signs in.\n" +
     "  - Whole-value exact match only. No {{}}, no $VAR, no interpolation inside\n" +
     "    a longer string. The repo's {{VAR}} test-data convention does NOT apply here.\n" +
     "  - A miss is SILENT: the literal string is typed and the form just says\n" +
@@ -128,9 +135,53 @@ function contract(extra, ctx) {
   );
 }
 
-/** The form this file uses for a NAME it lacks: the env-qualified names of a bare name on the combined
- *  file, the envs a qualified name could have used there, or the bare name on a single-env file. */
-function nameHint(name, secrets, { envs, lib }) {
+const MASTER_NAME = "MASTER_PASSWORD";
+
+/** This session's stand: the env it resolves (TEST_ENV, its binding, .env.test-env, vcst) layered with its run's
+ *  ticket, and whether that stand says PASSWORDS=master. Null without the libraries or on any error. */
+function sessionStand(ctx) {
+  if (!ctx.lib) return null;
+  if (ctx.stand === undefined) {
+    try {
+      const { env } = ctx.lib.testEnvChoice("vcst");
+      ctx.stand = { env, master: ctx.lib.usesMaster(ctx.lib.layeredEnv(env, { root: ROOT })) };
+    } catch {
+      ctx.stand = null;
+    }
+  }
+  return ctx.stand;
+}
+
+/** MASTER_PASSWORD is a hit in the file: block it off a master stand, and when its value is not the master file's. */
+function masterReason(secrets, ctx) {
+  const stand = sessionStand(ctx);
+  if (stand && !stand.master) {
+    return (
+      `BLOCKED: this session's stand ${stand.env} does not use the master password (its env files have no PASSWORDS=master),\n` +
+      `so MASTER_PASSWORD would send the master password to ${stand.env}'s sign-in form. Type ${stand.env}'s own name: ` +
+      (ctx.envs ? `NAME_${stand.env.toUpperCase()}.` : "the bare NAME.")
+    );
+  }
+  const master = ctx.lib ? ctx.lib.readMaster({ root: ROOT }).value : null;
+  if (master && master !== secrets.get(MASTER_NAME)) {
+    return (
+      `BLOCKED: ${MASTER_NAME} in ${basename(ctx.file)} is out of date: .env.playwright.master holds a different one now.\n` +
+      "The servers would type the old value. Run npm run secrets:sync:all, then reconnect the Playwright MCP servers in /mcp."
+    );
+  }
+  return null;
+}
+
+/** The form this file uses for a NAME it lacks: MASTER_PASSWORD on a master stand, the env-qualified names of a bare
+ *  name on the combined file, the envs a qualified name could have used there, or the bare name on a single-env file. */
+function nameHint(name, secrets, ctx) {
+  const { envs, lib } = ctx;
+  if (name === MASTER_NAME) {
+    return "MASTER_PASSWORD is not in this --secrets file yet: npm run secrets:sync:all copies it from .env.playwright.master,\n" +
+      "then reconnect the Playwright servers in /mcp.";
+  }
+  const stand = sessionStand(ctx);
+  if (stand?.master) return `This session's stand ${stand.env} uses the master password (PASSWORDS=master): type ${MASTER_NAME} in every password field.`;
   const keys = [...secrets.keys()];
   if (envs && lib) {
     const variants = keys.filter((k) => lib.splitQualifiedName(k, envs)?.name === name);
@@ -206,6 +257,11 @@ function check(value, secrets, ctx) {
     );
   }
 
+  if (typed === MASTER_NAME && secrets.has(typed)) {
+    const master = masterReason(secrets, ctx);
+    if (master) return contract(master, ctx);
+  }
+
   const stale = secrets.has(typed) ? staleReason(typed, secrets, ctx) : null;
   return stale ? contract(stale, ctx) : null;
 }
@@ -223,14 +279,20 @@ try {
   const { file, text, map: secrets } = await loadSecrets();
   if (!secrets.size) process.exit(0);
 
-  // The combined-file helpers; without them (no node_modules yet) a combined file is checked as a plain one.
+  // The combined-file and master-stand helpers; without them (no node_modules yet) a combined file is checked as a
+  // plain one and MASTER_PASSWORD as any other name.
   let lib = null;
   try {
-    const [secretsLib, envCore] = await Promise.all([
+    const [secretsLib, envCore, layers, resolver] = await Promise.all([
       import(new URL("../../scripts/lib/browser-secrets.mjs", import.meta.url).href),
       import(new URL("../../scripts/lib/env-core.js", import.meta.url).href),
+      import(new URL("../../scripts/lib/env-layers.mjs", import.meta.url).href),
+      import(new URL("../../scripts/lib/resolve-test-env.js", import.meta.url).href),
     ]);
-    lib = { combinedEnvs: secretsLib.combinedEnvs, splitQualifiedName: secretsLib.splitQualifiedName, layeredEnv: envCore.layeredEnv };
+    lib = {
+      combinedEnvs: secretsLib.combinedEnvs, splitQualifiedName: secretsLib.splitQualifiedName, layeredEnv: envCore.layeredEnv,
+      usesMaster: layers.usesMaster, readMaster: layers.readMaster, testEnvChoice: resolver.testEnvChoice,
+    };
   } catch {
     /* fail open on the combined-file checks only */
   }
