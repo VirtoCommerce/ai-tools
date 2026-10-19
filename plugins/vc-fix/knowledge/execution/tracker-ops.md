@@ -15,6 +15,8 @@ fallback any more.** Commands apply the matrix by reading the profile.
 > process only through the bridge: `node "$VC_RUN" gh|git-gh|git-ado|ado|jira …`. `$VC_RUN` is set by
 > `/project-init` (vc-init) in `.claude/settings.local.json` `env`; it is the stable path of the bridge
 > shim. If it is unset, the project was onboarded before VCST-6402 — run `/project-init --check`.
+>
+> **Host-governed project** (`governance.host` set): use the host's MCP servers from `governance.servers.*`, never `$VC_RUN` — [`knowledge/execution/host-governance.md`](host-governance.md).
 
 ## 0. GOLDEN RULE — ONE comment per ticket per run. Amend it; never append to it.
 

@@ -25,6 +25,8 @@ Create a structured bug report from a description, screenshot, or observed issue
 > more.** Every tracker/host call goes through the token bridge `node "$VC_RUN" …` (`tracker-ops.md` top). The platform
 > code search always stays on GitHub (the upstream is public GitHub even when the client's own code
 > lives on Azure Repos).
+>
+> **Host-governed project** (`governance.host` set): use the host's MCP servers from `governance.servers.*`, never `$VC_RUN` — [`knowledge/execution/host-governance.md`](../knowledge/execution/host-governance.md).
 
 ## Usage
 ```

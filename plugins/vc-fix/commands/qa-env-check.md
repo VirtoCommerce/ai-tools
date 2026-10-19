@@ -115,6 +115,7 @@ full `vc-qa` plugin only, not shipped here):
 | Item | Check |
 |------|-------|
 | `project-profile.json` | Exists at repo root, valid JSON — written by `/project-init` (the `vc-init` plugin); absent ⇒ NOT READY, `/qa-bug` / `/qa-fix` / `/qa-verify-fix` STOP until `/project-init` runs. |
+| Host governance | `governance.host` set ⇒ skip every `$VC_RUN` / vc-secrets check below and verify the host's servers instead ([`knowledge/execution/host-governance.md`](../knowledge/execution/host-governance.md); vc-init's `verify-access` prints that table) |
 | `$VC_RUN` | Set (by `/project-init`, in `.claude/settings.local.json` `env`) and the file exists — the bridge every tracker/host call goes through. Unset ⇒ NOT READY: the project was onboarded before VCST-6402, run `/project-init --check`. |
 | `.fix-workspace/` | Present or creatable (gitignored — `/qa-fix` clones repos here). |
 | `reports/bugs/` | Exists (create if missing — `/qa-bug` writes here). |

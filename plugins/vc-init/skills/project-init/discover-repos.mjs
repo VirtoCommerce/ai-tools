@@ -36,6 +36,7 @@ import { fileURLToPath } from "url";
 import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
 import { resolveAdoAuth } from "./probe-lib.mjs";
 import { outputRoot } from "./lib/paths.mjs";
+import { standDownIfHostGoverned } from "./lib/governance.mjs";
 
 const UPSTREAM_ORG = "VirtoCommerce";
 
@@ -646,6 +647,7 @@ async function getModulesLive() {
 }
 
 async function main() {
+  standDownIfHostGoverned(process.env.VC_FIX_HOME || process.cwd(), "discover-repos skipped: the client code host is scanned through the host's code-host MCP server, never with a PAT or az");
   const args = parseArgs(process.argv.slice(2));
   if (args.insecure) process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
   const override = args["client-org"] || "";

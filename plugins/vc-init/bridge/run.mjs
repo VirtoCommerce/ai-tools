@@ -29,7 +29,8 @@
  *   through a redactor that masks every spelling of the secrets.
  *
  * Exit codes: the child's own, or 64 refused by the allowlist, 69 the bridge's prerequisites are
- * missing (vc-secrets, vc-fix, a declared secret), 70 an internal error.
+ * missing (vc-secrets, vc-fix, a declared secret), 70 an internal error, 78 a host-governed project
+ * (project-profile.json governance — the host plugin's MCP servers do this job; nothing runs here).
  */
 import { spawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
@@ -42,6 +43,49 @@ import { resolvePluginFile, resolvePluginRoot, selfRoot } from "./resolve-plugin
 export const EX_REFUSED = 64;
 export const EX_UNAVAILABLE = 69;
 export const EX_SOFTWARE = 70;
+export const EX_CONFIG = 78;
+
+/** Which host server role a bridge tool's job belongs to on a host-governed project. */
+const HOST_ROLE = Object.freeze({ gh: "github", "git-gh": "github", deliver: "github", ado: "tracker", "git-ado": "codeHost", jira: "tracker", onboard: "tracker" });
+
+/**
+ * The nearest project-profile.json's `governance` block (PROJECT_PROFILE_PATH, VC_FIX_HOME, then the cwd
+ * and its parents), or null. Read-only; an unreadable profile reads as not governed — the scripts the
+ * bridge launches stop on it themselves.
+ */
+export function findGovernance(start = process.cwd()) {
+  const candidates = [];
+  if (process.env.PROJECT_PROFILE_PATH) candidates.push(process.env.PROJECT_PROFILE_PATH);
+  if (process.env.VC_FIX_HOME) candidates.push(join(resolve(process.env.VC_FIX_HOME), "project-profile.json"));
+  let dir = resolve(start);
+  for (let i = 0; i < 12; i++) {
+    candidates.push(join(dir, "project-profile.json"));
+    const parent = dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  for (const p of candidates) {
+    if (!existsSync(p)) continue;
+    try {
+      return JSON.parse(readFileSync(p, "utf8")).governance || null;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+/**
+ * The refusal for a host-governed project (VCST-6402 step 8), or null when the project is not one.
+ * There, the client's governance plugin owns every MCP server and secret: no tool of ours may carry a
+ * token, and nothing falls back to .env.local, a PAT or `az login`. Pure.
+ */
+export function hostRefusal(tool, governance) {
+  if (!governance || (governance.secrets !== "host" && !governance.host)) return null;
+  const role = HOST_ROLE[tool] || "tracker";
+  const server = governance.servers?.[role] || "(none mapped)";
+  return `host-governed project: use the ${server} MCP server from ${governance.host || "the host plugin"} (see project-profile.json governance.servers) — ${tool} does not run through $VC_RUN here`;
+}
 
 /** The env var each group's secret arrives in (the task declaration binds it to `secret:<name>`). */
 export const GROUP_SECRETS = Object.freeze({
@@ -279,6 +323,11 @@ async function outer(argv) {
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
     return 0;
   }
+  const refusal = hostRefusal(tool, findGovernance(process.cwd()));
+  if (refusal) {
+    say(refusal);
+    return EX_CONFIG;
+  }
   const check = checkArgv(tool, args);
   if (!check.ok) {
     say(`refused — ${check.reason}`);
@@ -324,6 +373,11 @@ async function inner(group) {
     return EX_REFUSED;
   }
   const [tool, ...args] = argv;
+  const refusal = hostRefusal(tool, findGovernance(process.cwd()));
+  if (refusal) {
+    say(refusal);
+    return EX_CONFIG;
+  }
   if (!toolInGroup(tool, group)) {
     say(`refused — ${JSON.stringify(tool)} does not belong to the ${group} group; a task never runs another axis's tool`);
     return EX_REFUSED;

@@ -32,6 +32,13 @@
  *   --vcs-auth    pat|gh-cli|az-login   DEPRECATED — the client host's axis only; kept so an old
  *                                       caller still lands on the right `auth.<axis>`.
  *
+ * Host governance (VCST-6402 step 8; lib/governance.mjs):
+ *   --governance <host|none>   write the `governance` block for a host-governed project (our token
+ *                              paths stand down; auth.* is cleared) or clear it. Absent ⇒ an existing
+ *                              block is kept, like `perf`.
+ *   --gov-tracker <key> --gov-code-host <key> --gov-github <key> --gov-telemetry <key>
+ *   --gov-test-management <key> --gov-browsers <k1,k2>   operator overrides of the host's server per role
+ *
  *   # Merge a discovered repo map (output of discover-repos.mjs) into an existing profile:
  *   node skills/project-init/gen-profile.mjs --repos-json repos.json --merge --print
  *
@@ -47,6 +54,7 @@ import { resolve } from "path";
 import { PROFILE_DEFAULTS, PROFILE_SCHEMA_VERSION } from "../../scripts/lib/project-profile.mjs";
 import { outputRoot, resolveOutPath } from "./lib/paths.mjs";
 import { ensureProjectIgnores } from "./lib/gitignore.mjs";
+import { HOSTS, governanceBlock } from "./lib/governance.mjs";
 
 // A work-item field whose VALUE is time-varying (a sprint/area NODE id: System.IterationId /
 // System.AreaId). Persisting it as a fieldDefaults constant silently files future bugs into a
@@ -138,7 +146,16 @@ function main() {
   // `perf` belongs to vc-perf (written through profile-set.mjs by /perf-init), not to this
   // interview: a fresh /project-init re-run rewrites the profile from the defaults, and that must
   // not silently delete the perf block another plugin depends on.
-  else if (existing && existing.perf && typeof existing.perf === "object") base = { ...PROFILE_DEFAULTS, perf: existing.perf };
+  else if (existing) {
+    // `perf` belongs to vc-perf and `governance` to the host decision of §0-host: a fresh re-run
+    // rewrites the profile from the defaults, and neither may silently disappear with it.
+    base = { ...PROFILE_DEFAULTS };
+    if (existing.perf && typeof existing.perf === "object") base.perf = existing.perf;
+    if (existing.governance && typeof existing.governance === "object") base = deepMerge(base, { governance: existing.governance });
+  }
+  if (args.governance !== undefined && args.governance !== "none" && !HOSTS[args.governance]) {
+    fail(`Invalid --governance "${args.governance}". Allowed: ${Object.keys(HOSTS).join(" | ")} | none`);
+  }
 
   // Build the override patch from flags (only set what was provided).
   const patch = {};
@@ -304,7 +321,11 @@ function main() {
   if (effectiveType === "client") set("buildVerify.source", "modules-endpoint");
   else if (effectiveType === "platform") set("buildVerify.source", "vc-deploy-dev");
 
-  const profile = deepMerge(base, patch);
+  let profile = deepMerge(base, patch);
+  if (args.governance !== undefined) {
+    const overrides = { tracker: args["gov-tracker"], codeHost: args["gov-code-host"], github: args["gov-github"], telemetry: args["gov-telemetry"], testManagement: args["gov-test-management"], browsers: args["gov-browsers"] };
+    profile = { ...profile, governance: governanceBlock(args.governance === "none" ? null : args.governance, overrides) };
+  }
 
   // Prune infra sub-objects that don't apply to the chosen tracker / code host, so the written
   // file MIRRORS THE ANSWERS — no dead `azure:{}` block in a Jira+GitHub profile. This is SAFE:
@@ -321,6 +342,9 @@ function main() {
   const adoApplies = profile.tracker.kind === "azure" || profile.vcs.clientHost === "azure-repos";
   if (!adoApplies) profile.auth.ado = "";
   if (profile.tracker.kind !== "jira") profile.auth.jira = "";
+  // A host-governed project has no token axis of ours: the host's own servers and secret wrapper own
+  // every credential, so the bridge never reads auth.* there.
+  if (profile.governance?.host) profile.auth = { github: "", ado: "", jira: "" };
   profile.schemaVersion = PROFILE_SCHEMA_VERSION;
 
   const withMeta = {

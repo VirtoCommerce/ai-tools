@@ -45,6 +45,7 @@ import { parseFieldContract, resolveSlots, parseFormLayout, filterContractForPer
 // uses, so onboarding picks the team whose current sprint the create path will accept (VCST: the
 // default team's `timeFrame:"current"` flag pointed at a 3-year-dead sprint).
 import { isIterationCurrent, iterationRange, localTodayYMD, selectTeamWithCurrentSprint } from "../../scripts/lib/iteration-dates.mjs";
+import { standDownIfHostGoverned } from "./lib/governance.mjs";
 
 /** Write the result to --out (relative to the deployment project) and/or print it. */
 function emit(out, args) {
@@ -193,6 +194,7 @@ async function discoverTeam({ apiBase, org, project, authHeader, explicitTeam })
 }
 
 async function main() {
+  standDownIfHostGoverned(process.env.VC_FIX_HOME || process.cwd(), "discover-tracker skipped: the tracker is read through the host's tracker MCP server, never with a PAT or az");
   const args = parseArgs(process.argv.slice(2));
   const kind = args.tracker || "azure";
   // Observations collected across the scan and emitted in ONE batch at the end (one child

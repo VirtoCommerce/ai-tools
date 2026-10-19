@@ -45,6 +45,7 @@ import { defaultShimPath } from "../../scripts/install-bridge.mjs";
 import { ensureProjectIgnores } from "./lib/gitignore.mjs";
 import { outputRoot } from "./lib/paths.mjs";
 import { GITHUB_MCP_DECL } from "./lib/github-mcp.mjs";
+import { standDownIfHostGoverned } from "./lib/governance.mjs";
 
 /** Secret name and the env var it is bound to, per axis. The env names are the runtime contract. */
 export const AXIS_SECRETS = Object.freeze({
@@ -136,6 +137,7 @@ function main() {
     process.exit(1);
   }
   const root = outputRoot();
+  standDownIfHostGoverned(root, "write-secrets-decl skipped: the host's secret wrapper owns every credential — no vc-secrets declaration", { json: true });
   let pat;
   if (args["from-profile"]) {
     const { raw, error, path } = readProjectProfile(root);

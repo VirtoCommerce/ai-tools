@@ -39,7 +39,7 @@ What it writes into the project (all gitignored):
 
 | File | Holds |
 |---|---|
-| `project-profile.json` | the deployment profile (`schemaVersion` 2): tracker, code host, repos, `auth.{github,ado,jira}` |
+| `project-profile.json` | the deployment profile (`schemaVersion` 3): tracker, code host, repos, `auth.{github,ado,jira}`, `governance` |
 | `.env.<env>` | URLs and identifiers (no secret) |
 | `.env.local` | test-user passwords only |
 | `.claude/vc-secrets.local.json` | the vc-secrets declarations: one `local` secret per PAT axis (`github-pat`, `ado-pat`, `jira-token`), the bridge's `vc-init-*` tasks, the GitHub MCP server |
@@ -49,6 +49,34 @@ The token step: `/project-init` prints, per token, what it is, where to create i
 — `node "<VC_SECRETS>" set github-pat` — plus `node "<VC_SECRETS>" trust` when the declarations are new or
 changed. The operator runs them in a terminal and replies "done"; `check-secrets.mjs` then reads
 `vc-secrets doctor` and names whatever is still missing.
+
+## Host-governed projects
+
+Some client projects run their own governance plugin: it injects binding rules, ships the approved MCP
+servers and keeps every secret in its own wrapper. There vc-init, vc-fix and vc-perf are guests, and the
+host's rules win. The first known host is `opus-governance` (`lib/governance.mjs` holds the registry).
+
+`/project-init` detects one (the install registry, the project's `enabledPlugins`), the operator confirms
+it (`--governance <host|none>` overrides detection either way), and the profile records:
+
+```json
+"governance": { "host": "opus-governance", "secrets": "host",
+                "servers": { "tracker": "…", "codeHost": "…", "github": "…", "telemetry": "…",
+                             "testManagement": "…", "browsers": ["…"] },
+                "stand": { "writable": false } }
+```
+
+The host's default server per role is shown for the operator to accept or correct — which server is the
+tracker and which the code host is the operator's answer, never inferred. On such a project
+`/project-init` writes the profile, `.env.<env>` and the test-user password placeholders, and **nothing
+else**: no vc-secrets declaration, no `$VC_RUN` shim, no token step, no `.mcp.json` and no settings
+`enabledMcpjsonServers`/`env`, no `az login`, no repo or tracker discovery (done through the host's
+servers at run time), self-diagnostics off with no consent question. `verify-access` prints a host-mode
+table: the host plugin installed and each mapped server among the servers it ships.
+
+At run time the bridge refuses every token-bearing tool (exit 78, naming the server to use), self-diagnostics
+delivery is disabled, and vc-fix follows its `knowledge/execution/host-governance.md`. `governance.host: null`
+(the default) is the normal flow. Detail: `skills/project-init/host-governed.md`.
 
 ## The `$VC_RUN` bridge
 

@@ -3,11 +3,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildInnerEnv, findDeclarations, gitConfigEnv, runChild, taskDeclared, taskName } from "./run.mjs";
+import { buildInnerEnv, findDeclarations, findGovernance, gitConfigEnv, hostRefusal, runChild, taskDeclared, taskName } from "./run.mjs";
 
 const RUN = fileURLToPath(new URL("./run.mjs", import.meta.url));
 const TOKEN = "ghp_BRIDGETEST0123456789abcdefABCDEF";
@@ -23,7 +23,7 @@ function project(decl) {
 
 function bridge(args, { cwd, env = {} } = {}) {
   const clean = { ...process.env };
-  for (const k of ["VC_SECRETS", "VC_RUN_ARGV", "GITHUB_FIX_BUGS_TOKEN", "ADO_PAT", "JIRA_API_TOKEN", "VC_FIX_HOME"]) delete clean[k];
+  for (const k of ["VC_SECRETS", "VC_RUN_ARGV", "GITHUB_FIX_BUGS_TOKEN", "ADO_PAT", "JIRA_API_TOKEN", "VC_FIX_HOME", "PROJECT_PROFILE_PATH"]) delete clean[k];
   return spawnSync(process.execPath, [RUN, ...args], { cwd, env: { ...clean, ...env }, encoding: "utf8" });
 }
 
@@ -138,4 +138,54 @@ test("runChild: a child that prints its secret has it masked on both streams", a
   assert.match(child.stdout, /out:«redacted»/);
   assert.match(child.stderr, /err:«redacted»/);
   void runChild;
+});
+
+// ─── host-governed projects (VCST-6402 step 8) ──────────────────────────────────────────────────
+const HOST_GOV = { host: "opus-governance", secrets: "host", servers: { tracker: "azure-mcp-work", codeHost: "azure-mcp-dev", github: "github" } };
+
+function governedProject(extra = {}) {
+  const dir = project({ tasks: { [taskName("github")]: { command: "node" }, [taskName("ado")]: { command: "node" } } });
+  writeFileSync(join(dir, "project-profile.json"), JSON.stringify({ schemaVersion: 3, governance: HOST_GOV, ...extra }));
+  return dir;
+}
+
+test("host-governed: EVERY token-bearing tool is refused before vc-secrets is touched, naming the host server", () => {
+  const dir = governedProject();
+  const fake = join(dir, "fake-vc-secrets.mjs");
+  writeFileSync(fake, "require('fs').writeFileSync(process.argv[1] + '.ran', '1');");
+  const cases = [
+    [["gh", "pr", "list"], /github MCP server/],
+    [["git-gh", "ls-remote", "https://github.com/a/b"], /github MCP server/],
+    [["git-ado", "ls-remote", "https://dev.azure.com/o/p/_git/r"], /azure-mcp-dev MCP server/],
+    [["ado", "whoami"], /azure-mcp-work MCP server/],
+    [["jira", "myself"], /azure-mcp-work MCP server/],
+    [["deliver", "--json"], /github MCP server/],
+    [["onboard", "verify-access"], /MCP server/],
+  ];
+  for (const [argv, re] of cases) {
+    const r = bridge(argv, { cwd: dir, env: { VC_SECRETS: fake, GITHUB_FIX_BUGS_TOKEN: TOKEN } });
+    assert.equal(r.status, 78, `${argv.join(" ")}: ${r.stderr}`);
+    assert.match(r.stderr, /host-governed project/);
+    assert.match(r.stderr, re);
+    assert.match(r.stderr, /opus-governance/);
+  }
+  assert.equal(existsSync(fake + ".ran"), false, "vc-secrets must never be launched on a host-governed project");
+});
+
+test("host-governed: the inner side refuses too, even with a token in its environment", () => {
+  const dir = governedProject();
+  const r = bridge(["--inner", "github"], { cwd: dir, env: { VC_RUN_ARGV: JSON.stringify(["gh", "api", "user"]), GITHUB_FIX_BUGS_TOKEN: TOKEN } });
+  assert.equal(r.status, 78);
+  assert.ok(!r.stdout.includes(TOKEN) && !r.stderr.includes(TOKEN));
+});
+
+test("host-governed: the profile is found from a nested directory; no governance ⇒ no refusal", () => {
+  const dir = governedProject();
+  const nested = join(dir, ".fix-workspace", "repo");
+  mkdirSync(nested, { recursive: true });
+  assert.equal(findGovernance(nested).host, "opus-governance");
+  assert.equal(hostRefusal("gh", null), null);
+  assert.equal(hostRefusal("gh", { host: null, secrets: "vc-secrets" }), null);
+  assert.match(hostRefusal("ado", HOST_GOV), /azure-mcp-work/);
+  assert.match(hostRefusal("git-ado", HOST_GOV), /azure-mcp-dev/);
 });

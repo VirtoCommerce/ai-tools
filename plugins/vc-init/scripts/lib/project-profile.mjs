@@ -33,6 +33,8 @@
  *   through the $VC_RUN bridge; a session value (`gh-cli`, `az-login`, `oauth`) ⇒ the tool's own
  *   login. "" ⇒ the axis does not apply to this deployment (e.g. `ado` on Jira + GitHub).
  * @property {Record<string, any>} perf  vc-perf's block — an open map, kept wholesale by reconcile
+ * @property {{host:string|null, secrets:"host"|"vc-secrets", servers:Record<string,string|string[]>, stand:{writable:boolean}}} governance
+ *   a host-governed project (schema 3): see the PROFILE_DEFAULTS comment
  * @property {"platform"|"client"} projectType
  * @property {"virto-engineer"|"client"|"ask"} operator
  * @property {{kind:"jira"|"azure", baseUrl:string, projectKey:string,
@@ -103,7 +105,7 @@ import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 
 /** The profile schema this plugin writes. Bump it when a reader could misread an older shape. */
-export const PROFILE_SCHEMA_VERSION = 2;
+export const PROFILE_SCHEMA_VERSION = 3;
 
 /** @type {ProjectProfile} */
 export const PROFILE_DEFAULTS = {
@@ -269,6 +271,20 @@ export const PROFILE_DEFAULTS = {
   // OPEN MAP here: its keys are vc-perf's to define, so reconcile keeps it wholesale and never
   // prunes it, and `/perf-init` writes it through profile-set.mjs `--merge perf=<json>`.
   perf: {},
+
+  // governance — a HOST-GOVERNED project (VCST-6402 step 8): the client runs its own governance
+  // plugin (rules, approved MCP servers, its own secret wrapper) and our plugins are a guest.
+  //   host:    the host plugin's registry key (vc-init lib/governance.mjs HOSTS) | null (= not governed)
+  //   secrets: "host" — no token path of ours runs at all (bridge refuses, no vc-secrets, no PAT, no
+  //            az login) | "vc-secrets" — the normal VCST-6402 flow
+  //   servers: the host's MCP server key per role — operator-confirmed, never inferred
+  //   stand.writable: false on a governed project (no seeding/mutation of the client's stands)
+  governance: {
+    host: null,
+    secrets: "vc-secrets",
+    servers: { tracker: "", codeHost: "", github: "", telemetry: "", testManagement: "", browsers: [] },
+    stand: { writable: true },
+  },
 };
 
 /** Recursive merge: objects merge key-by-key; arrays + scalars are replaced wholesale. */

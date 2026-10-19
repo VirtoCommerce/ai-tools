@@ -37,6 +37,8 @@ export interface ProjectProfile {
   auth: { github: "" | "pat" | "gh-cli"; ado: "" | "pat" | "az-login"; jira: "" | "pat" | "oauth" };
   /** vc-perf's block — an open map written by /perf-init through vc-init's profile-set.mjs. */
   perf?: Record<string, unknown>;
+  /** A host-governed project (schema 3): host plugin key, secrets owner, host MCP server per role. */
+  governance?: { host: string | null; secrets: "host" | "vc-secrets"; servers: { tracker: string; codeHost: string; github: string; telemetry: string; testManagement: string; browsers: string[] }; stand: { writable: boolean } };
   projectType: "platform" | "client";
   operator: "virto-engineer" | "client" | "ask";
   tracker: {

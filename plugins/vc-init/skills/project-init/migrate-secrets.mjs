@@ -36,6 +36,7 @@ import { fileURLToPath } from "node:url";
 import { SECRET_PREFIX_RE } from "../../scripts/lib/redact.mjs";
 import { defaultShimPath } from "../../scripts/install-bridge.mjs";
 import { outputRoot } from "./lib/paths.mjs";
+import { standDownIfHostGoverned } from "./lib/governance.mjs";
 
 /** Env-style token keys → the axis that owns them. A `_<ENV>` suffix is the same key per environment. */
 export const TOKEN_AXIS = {
@@ -205,6 +206,7 @@ function strip(root, findings, okAxes) {
 function main() {
   const argv = process.argv.slice(2);
   const root = outputRoot();
+  standDownIfHostGoverned(root, "migrate-secrets skipped: secrets are the host's to manage", { json: true });
   const findings = scan(root);
   const view = (f) => ({ file: f.file, kind: f.kind, key: f.key, line: f.line, axis: f.axis, tracked: f.tracked, everCommitted: f.everCommitted });
   const rotate = [...new Set(findings.filter((f) => f.everCommitted || f.tracked).map((f) => f.axis))];

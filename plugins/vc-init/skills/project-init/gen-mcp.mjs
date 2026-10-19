@@ -40,6 +40,7 @@ import { execSync, execFileSync } from "child_process";
 import { fileURLToPath } from "url";
 import { outputRoot, pluginRoot, resolveOutPath } from "./lib/paths.mjs";
 import { emitObservations } from "./lib/diag-obs.mjs";
+import { standDownIfHostGoverned } from "./lib/governance.mjs";
 import { authAxes, readProjectProfile } from "../../scripts/lib/project-profile.mjs";
 import { defaultShimPath } from "../../scripts/install-bridge.mjs";
 import { MCP_REMOTE_SPEC, githubMcpEntryOAuth, githubMcpEntryPat } from "./lib/github-mcp.mjs";
@@ -419,6 +420,7 @@ export function absolutizeOutputDir(server, root) {
 
 function main() {
   const args = parseArgs(process.argv.slice(2));
+  standDownIfHostGoverned(outputRoot(), "gen-mcp skipped: .mcp.json and the .claude/settings*.json servers/env are the host's — nothing written or pruned");
   if (args["inline-secrets"] !== undefined && asBool(args["inline-secrets"])) {
     console.error("[gen-mcp] ✗ --inline-secrets was removed (VCST-6402): it wrote a credential literal into .mcp.json, and no token is written into any file now. "
       + "A GitHub PAT reaches its MCP server through vc-secrets (`node ${VC_SECRETS} run github`). To move a token that is still in a file, run /project-init --check.");

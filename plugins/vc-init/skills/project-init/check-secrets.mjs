@@ -23,6 +23,7 @@ import { join } from "node:path";
 import { outputRoot } from "./lib/paths.mjs";
 import { parseDoctor, runDoctor, secretsVerdict } from "./lib/vc-secrets-doctor.mjs";
 import { tokenSteps } from "./lib/token-guide.mjs";
+import { standDownIfHostGoverned } from "./lib/governance.mjs";
 
 const OWNED = ["github-pat", "ado-pat", "jira-token"];
 
@@ -38,6 +39,7 @@ function declaredSecrets(root) {
 function main() {
   const argv = process.argv.slice(2);
   const root = outputRoot();
+  standDownIfHostGoverned(root, "check-secrets skipped: no vc-secrets on a host-governed project", { json: true });
   const doctor = runDoctor({ cwd: root });
   const shim = doctor.shim;
   const q = JSON.stringify(shim || "<VC_SECRETS>");

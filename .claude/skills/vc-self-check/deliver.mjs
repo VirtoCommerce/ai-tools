@@ -1141,6 +1141,18 @@ export async function main(argv = process.argv.slice(2), { stdin = process.stdin
     return;
   }
 
+  // A HOST-GOVERNED project (project-profile.json `governance.host`, VCST-6402 step 8): the client's
+  // governance plugin owns every outbound channel and secret, so no self-diagnostics data leaves for
+  // the VirtoCommerce GitHub — not even a deduplicated +1. Local --purge (above) still works.
+  const governance = readProfileObj()?.governance;
+  if (governance?.host || governance?.secrets === "host") {
+    const out = { action: "disabled", reason: "host-governed", host: governance.host || null, session: args.session || null };
+    emit(args.json, out,
+      `Upstream delivery is disabled on a host-governed project (${governance.host || "host"}). Nothing sent, nothing drafted — ` +
+      `the host's rules decide what leaves this project.`);
+    return;
+  }
+
   if (args.backfill) {
     const { token } = resolveGithubToken();
     return backfillMarkers({ repo: args.repo, token, json: args.json, fetchImpl });

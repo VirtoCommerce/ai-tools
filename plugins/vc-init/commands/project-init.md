@@ -1,6 +1,6 @@
 ---
 description: "Initialize / onboard the Virto Commerce QA plugins for a deployment — check vc-secrets, install deps, ask only env name + bug tracker (Jira/Azure Boards) + code host (GitHub/Azure Repos) + an auth preference, then DERIVE the rest (native-platform vs CLIENT project, client org, contribution mode, fork account) from the token + filled env + a live module/repo scan. Every PAT is stored by the operator in vc-secrets and reaches a process only through the $VC_RUN bridge. Writes project-profile.json + .env + the vc-secrets declarations + .mcp.json, verifies access. Makes /qa-fix route bugs to the right repo + tracker. Backed by the /project-init skill."
-argument-hint: "(no args — interactive) | --add-env (add another environment to an onboarded project) | --check (reconcile an existing profile, move plaintext tokens into vc-secrets, verify)"
+argument-hint: "(no args — interactive) | --add-env (add another environment to an onboarded project) | --check (reconcile an existing profile, move plaintext tokens into vc-secrets, verify) | --governance <host|none> (override host-governance detection)"
 
 ---
 
@@ -33,6 +33,11 @@ permissions + the filled env + a live module/repo scan.
 ```
 
 ## Flow (the skill drives this)
+
+**Host-governed project first (§0-host).** `detect-governance.mjs` looks for a client governance plugin
+(`--governance <host|none>` overrides). If the operator confirms one, the skill follows its
+`host-governed.md`: profile + non-secret env files only — no vc-secrets, no `$VC_RUN`, no `.mcp.json`, no
+PAT, no `az login`, self-diagnostics off; the host's rules win.
 
 0. Preconditions — **(0a)** confirm the working directory (`pwd` + `AskUserQuestion`); wrong folder →
    STOP (cwd is fixed at launch). Resolve the plugin dir once (`echo "$CLAUDE_PLUGIN_ROOT"`).

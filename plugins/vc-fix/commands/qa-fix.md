@@ -45,6 +45,8 @@ live module graph (`skills/qa-fix-routing/module-registry.ts`). Workspace `.fix-
 > default any more.** Every tracker/host call goes through the token bridge `node "$VC_RUN" …` (below). The single
 > hard invariant on a client deployment: **client code never leaves the client project** (`quality-gates.md`
 > §2a); the upstream gets platform contribution only.
+>
+> **Host-governed project** (`governance.host` set): use the host's MCP servers from `governance.servers.*`, never `$VC_RUN` — [`knowledge/execution/host-governance.md`](../knowledge/execution/host-governance.md).
 
 ## Orientation — the deployment profile is the KEY (read it once, first)
 

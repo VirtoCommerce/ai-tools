@@ -163,6 +163,8 @@ platform code — NEVER client source, in any form.** This outranks fixing the b
   on a maybe-client repo.
 
 ## GitHub authentication (the write token)
+**Host-governed project** (`governance.host` set): use the host's MCP servers from `governance.servers.*`, never `$VC_RUN` — [`knowledge/execution/host-governance.md`](../../execution/host-governance.md) — the bridge refuses there.
+
 **No token lives in a file, and you never handle one.** Every **network** git/gh operation — clone,
 fetch, pull, push, ls-remote, and every `gh` call — goes through the bridge `node "$VC_RUN" …`. The
 bridge resolves the write credential itself: on a PAT axis (`auth.github: "pat"`) it reads `github-pat`

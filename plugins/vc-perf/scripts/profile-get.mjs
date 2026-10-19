@@ -24,7 +24,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 /** Highest profile schema this reader understands — vc-init's PROFILE_SCHEMA_VERSION when this was written. */
-const SUPPORTED_SCHEMA = 2;
+const SUPPORTED_SCHEMA = 3;
 
 function profilePath() {
   if (process.env.PROJECT_PROFILE_PATH) return process.env.PROJECT_PROFILE_PATH;

@@ -24,6 +24,7 @@
  */
 import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
 import { probeGithubUpstream, resolveGithubToken, tryCmd } from "./probe-lib.mjs";
+import { standDownIfHostGoverned } from "./lib/governance.mjs";
 
 function parseArgs(argv) {
   const a = {};
@@ -38,6 +39,7 @@ function parseArgs(argv) {
 }
 
 async function main() {
+  standDownIfHostGoverned(process.env.VC_FIX_HOME || process.cwd(), "derive-context skipped: no token probe on a host-governed project", { json: true });
   const args = parseArgs(process.argv.slice(2));
   const tracker = args.tracker || "jira";
   const clientVcs = args["client-vcs"] || "github";

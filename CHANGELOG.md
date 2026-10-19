@@ -30,11 +30,20 @@ OAuth otherwise. `.claude/settings.local.json` `env` holds only `VC_RUN`.
 
 **BREAKING:** a missing `project-profile.json` now **stops** vc-fix and vc-perf with "run /project-init" —
 the silent native-platform / Jira / GitHub defaults are gone; an unknown `schemaVersion` stops too. The profile
-is `schemaVersion` 2: `auth.{github,ado,jira}` replaces `vcs.auth` / `vcs.authEnv`. **Migration:** run
+is `schemaVersion` 3: `auth.{github,ado,jira}` replaces `vcs.auth` / `vcs.authEnv`, and a `governance` block is added (below). **Migration:** run
 `/project-init --check` — it reconciles the profile (deriving the auth axes a schema-1 file never recorded),
 writes the vc-secrets declarations, asks you to `set` each token, and then `migrate-secrets.mjs --strip` removes
 every plaintext copy (`.env.local`, settings `env`, a tokenised `.fix-workspace` remote URL) whose vc-secrets
 copy passes a live probe. A token that sat in a file ever committed to git is flagged for rotation.
+
+**Added: host-governed mode.** On a client project whose own governance plugin owns the MCP servers and the
+secrets (first host: `opus-governance`), `/project-init` detects it, the operator confirms, and the profile
+records `governance.{host, secrets: "host", servers.{tracker,codeHost,github,telemetry,testManagement,browsers},
+stand.writable: false}` — the server per role is the operator's answer, never inferred. Onboarding then writes
+the profile and the non-secret env files only: no vc-secrets, no `$VC_RUN`, no `.mcp.json` or settings, no PAT,
+no `az login`, self-diagnostics off. At run time the bridge refuses every token-bearing tool (exit 78, naming
+the host server), `deliver` refuses, and vc-fix follows `knowledge/execution/host-governance.md`.
+`governance.host: null` (the default) is today's behaviour. `--governance <host|none>` overrides detection.
 
 **Removed:** the `postman` and `context7` MCP servers from onboarding (each needed an API key in a file);
 `gen-mcp --inline-secrets` (refused); the token placeholders in `.env.local` (`scaffold-secrets` writes

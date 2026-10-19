@@ -38,6 +38,7 @@ import { resolveOutPath, outputRoot } from "./lib/paths.mjs";
 import { ensureProjectIgnores } from "./lib/gitignore.mjs";
 import { TOKEN_GUIDE } from "./lib/token-guide.mjs";
 import { emitObservations } from "./lib/diag-obs.mjs";
+import { isHostGoverned } from "./lib/governance.mjs";
 
 function parseArgs(argv) {
   const a = {};
@@ -89,7 +90,14 @@ function main() {
     ado: (opts.tracker === "azure" || opts.clientVcs === "azure-repos") && opts.adoAuth === "pat",
     jira: opts.tracker === "jira" && (opts.jiraAuth === "pat" || opts.jiraAuth === "token"),
   };
-  const tokens = Object.values(TOKEN_GUIDE).filter((g) => patAxes[g.axis]).map((g) => g.secret);
+  // A host-governed project (VCST-6402 step 8) has no token of ours at all — the host's wrapper owns them.
+  let hostGoverned = false;
+  try {
+    hostGoverned = isHostGoverned(JSON.parse(readFileSync(resolveOutPath(undefined, "project-profile.json"), "utf-8")));
+  } catch {
+    /* no profile yet — not governed */
+  }
+  const tokens = hostGoverned ? [] : Object.values(TOKEN_GUIDE).filter((g) => patAxes[g.axis]).map((g) => g.secret);
 
   const SUFFIX = `_${env.toUpperCase()}`;
   // Default output → the deployment project (process.cwd()); .env.local is loaded from

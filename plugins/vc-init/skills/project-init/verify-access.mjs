@@ -54,6 +54,7 @@ import { emitObservations, httpStatusFrom, classForStatus } from "./lib/diag-obs
 import { resolvePluginFile, resolvePluginRoot } from "../../bridge/resolve-plugin.mjs";
 import { defaultShimPath } from "../../scripts/install-bridge.mjs";
 import { parseDoctor, runDoctor, secretsVerdict } from "./lib/vc-secrets-doctor.mjs";
+import { ROLES, hostInstallPath, hostLine, hostServerKeys, isHostGoverned } from "./lib/governance.mjs";
 import {
   probeGithubUpstream, resolveGithubToken, resolveAdoTenant, ADO_RESOURCE,
   githubCanWrite, discoverAdoWorkItemId, probeAdoWorkItemsWrite, probeAdoCodeWrite,
@@ -407,7 +408,35 @@ async function main() {
   add("Deployment profile", profileExists ? "PASS" : "FAIL",
     profileExists
       ? `type=${profile.projectType} tracker=${profile.tracker.kind} vcs=${profile.vcs.clientHost} upstream=${profile.upstream.org}/${profile.upstream.contributionMode}`
-      : `no project-profile.json at ${profilePath} — run /project-init to create it (falling back to platform/jira/github defaults meanwhile)`);
+      : `no project-profile.json at ${profilePath} — run /project-init to create it (vc-fix and vc-perf stop until it exists)`);
+
+  // 1-host. A HOST-GOVERNED project (VCST-6402 step 8): the client's governance plugin owns the MCP
+  //     servers and every secret, so this table checks what is ours to check and nothing else — the
+  //     host plugin is installed, each role's server exists among the servers it ships (read-only), and
+  //     the non-secret URLs answer. No token, no session probe, no login: none of that is ours here.
+  if (profileExists && isHostGoverned(profile)) {
+    const g = profile.governance;
+    const installPath = hostInstallPath(g.host);
+    add("Host governance plugin", installPath ? "PASS" : "FAIL",
+      installPath ? `${g.host} installed (${installPath}) — its rules outrank ours` : `${g.host} is recorded in the profile but not installed — install it, or re-run /project-init --governance none`);
+    const keys = hostServerKeys(installPath);
+    for (const role of ROLES) {
+      const want = role === "browsers" ? (g.servers?.browsers || []) : [g.servers?.[role]].filter(Boolean);
+      if (!want.length) { add(`Host server — ${role}`, "SKIP", "no server mapped for this role"); continue; }
+      const missing = want.filter((k) => !keys.has(k));
+      add(`Host server — ${role}`, !installPath ? "SKIP" : missing.length ? "FAIL" : "PASS",
+        !installPath ? "host plugin not found" : missing.length ? `${missing.join(", ")} not among the host plugin's MCP servers (${[...keys].join(", ") || "none"})` : `${want.join(", ")} shipped by ${g.host}`);
+    }
+    const fS = await httpStatus(FRONT);
+    add("Storefront URL (FRONT_URL)", fS >= 200 && fS < 500 ? "PASS" : FRONT ? "FAIL" : "SKIP", `${FRONT || "(unset)"}${FRONT ? ` → HTTP ${fS}` : ""}`);
+    const bS = await httpStatus(BACK);
+    add("Admin/platform URL (BACK_URL)", bS >= 200 && bS < 500 ? "PASS" : BACK ? "FAIL" : "SKIP", `${BACK || "(unset)"}${BACK ? ` → HTTP ${bS}` : ""}`);
+    add("Tokens / MCP config", "SKIP", hostLine(profile, "no vc-secrets, no $VC_RUN, no .mcp.json of ours"));
+    console.log("\n  Host-governed readiness (no secret is resolved in this mode)");
+    renderTable(results);
+    signalSelfDiagnosticsComplete();
+    process.exit(results.some((r) => r.status === "FAIL") ? 1 : 0);
+  }
 
   // 1a. Secret hygiene of the files /project-init generates (VCST-5774). Two things can go wrong
   //     and each is invisible until it is too late: a credential written where it does not belong

@@ -47,7 +47,7 @@ operator what the profile already answers. **Absent profile ⇒ STOP and ask the
   vc-secrets and reach a process only through the bridge `node "$VC_RUN" gh|ado|jira …`, which runs the
   same command on a PAT axis or a session axis (never branch on `auth.*`). `$VC_RUN` is set by
   `/project-init` in `.claude/settings.local.json` `env`; unset ⇒ the project was onboarded before
-  VCST-6402 — run `/project-init --check`. To invoke any other bundled plugin script, resolve
+  VCST-6402 — run `/project-init --check`. **Host-governed project** (`governance.host` set): use the host's MCP servers from `governance.servers.*`, never `$VC_RUN` — [`knowledge/execution/host-governance.md`](../knowledge/execution/host-governance.md). To invoke any other bundled plugin script, resolve
   `$pluginRoot` = the ACTIVE install path at runtime via `claude plugin list --json` (see
   [`knowledge/execution/plugin-root.md`](../knowledge/execution/plugin-root.md)). **Never print a
   PAT/token, never source one into the shell, never inline one in a command.**

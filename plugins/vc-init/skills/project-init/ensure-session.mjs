@@ -26,6 +26,7 @@ import { execSync, spawnSync } from "child_process";
 import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
 import { loadProjectProfile } from "../../scripts/lib/project-profile.mjs";
 import { ADO_RESOURCE } from "./probe-lib.mjs";
+import { standDownIfHostGoverned } from "./lib/governance.mjs";
 
 function parseArgs(argv) {
   const a = {};
@@ -111,6 +112,7 @@ async function ensureGithub(check) {
 }
 
 async function main() {
+  standDownIfHostGoverned(process.env.VC_FIX_HOME || process.cwd(), "ensure-session skipped: no az login / gh auth login on a host-governed project — the host's servers sign in themselves");
   const args = parseArgs(process.argv.slice(2));
   loadEnv();
   const profile = loadProjectProfile();
