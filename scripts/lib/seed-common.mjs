@@ -19,8 +19,7 @@
  */
 
 import "./sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
-import { config as loadDotenv } from 'dotenv';
-import { resolveTestEnv } from './resolve-test-env.js';
+import { loadEnv } from './load-env.mjs';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -72,35 +71,22 @@ async function warnIfPresetUnresolvable(name, where) {
 // Intentionally does NOT import config.js: seeders only need BACK_URL/ADMIN/ADMIN_PASSWORD
 // (asserted in assertSafeTarget) and must not be blocked by config.js's strict CORE
 // validation of storefront-test vars (e.g. USER_EMAIL) that seeding never uses.
-const _TEST_ENV = resolveTestEnv();
-loadDotenv({ path: '.env.defaults' });
-loadDotenv({ path: `.env.${_TEST_ENV}`, override: true });
-loadDotenv({ path: '.env.local', override: true });
-
-// Per-env override promotion (mirrors config.js): any key ending in
-// `_${TEST_ENV.toUpperCase()}` is promoted to its base name. Lets `.env.local`
-// carry per-env secret variants (e.g. ADMIN_PASSWORD_VCPTCORE1) so seeders run
-// against an env whose admin password differs from the shared base. Without this,
-// `.env.local`'s base ADMIN_PASSWORD (loaded last with override) clobbers any
-// inline override and auth fails with invalid_grant.
-const _ENV_SUFFIX = `_${_TEST_ENV.toUpperCase()}`;
+// The one order every loader applies (scripts/lib/env-layers.mjs via load-env.mjs): .env.defaults →
+// .env.${TEST_ENV} → .env.local, the `_${TEST_ENV.toUpperCase()}` promotion (so `.env.local` can carry per-env
+// secret variants, e.g. ADMIN_PASSWORD_VCPTCORE1 — without it `.env.local`'s base ADMIN_PASSWORD clobbers the
+// inline override and auth fails with invalid_grant), the env's QA_ENV_PATH files, and on a PASSWORDS=master
+// stand the master password for every test account.
+const { testEnv: _TEST_ENV, promoted } = loadEnv();
 /**
- * Base keys that actually got a per-env value this run. Promotion is a SILENT no-op when the
- * suffixed key is absent or misnamed — the base value simply stays in place — so callers that
+ * Base keys that actually got a per-env value this run (a pin, a dedicated file, the master password). Promotion
+ * is a SILENT no-op when the suffixed key is absent or misnamed — the base value simply stays in place — so callers that
  * care (assertSafeTarget below) need to know whether a per-env value was really found, not just
  * whether the base key is populated. Real case this catches: `.env.local` carrying
  * `ADMIN_VIRTO_PASSWORD` instead of `ADMIN_PASSWORD_VIRTOSTART`. The rule promotes
  * `_${TEST_ENV}` and nothing else, so that key is dead and `TEST_ENV=virtostart` silently
  * authenticated with another env's admin password.
  */
-export const PROMOTED_PER_ENV = new Set();
-for (const [key, value] of Object.entries(process.env)) {
-  if (key.endsWith(_ENV_SUFFIX) && value) {
-    const base = key.slice(0, -_ENV_SUFFIX.length);
-    process.env[base] = value;
-    PROMOTED_PER_ENV.add(base);
-  }
-}
+export const PROMOTED_PER_ENV = promoted;
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 

@@ -8,6 +8,46 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## An env's files can live outside the repo; a stand can use one master password — `vc-fix` `0.11.0` — 2026-10-19
+
+Every ticket now runs on its own stand, and dedicated cloud stands are replacing the shared ones. A stand that
+belongs to one ticket or one machine no longer needs a file in the repo, and every test account on it can sign
+in with one password. `vc-perf` and `vc-secrets` are unchanged.
+
+**Added: env files in dedicated folders (VCST-6350).** `QA_ENV_PATH` in `.env.local` lists folders,
+`;`-separated, the first winning, with `QA_OUTPUT_DIR`'s placeholders: `<ticket>` (the run's ticket),
+`<env>` and `<sprint>`. Each folder may hold `.env.<env>` and `.env.playwright.<env>`, and a file there beats the
+repo's key by key, `KEY_<ENV>` pins included. A ticket's folder holds its own stands (`vcst_6314`) and may
+override a shared env for that ticket's runs. `env:use`, `run:use`, `/preflight --env` and `deploy:pr` accept
+those envs. Outside a session, `QA_TICKET=<KEY>` names the ticket.
+
+**Added: master stands.** `PASSWORDS=master` in a stand's env file makes every test-account password
+variable resolve to `MASTER_PASSWORD` from `.env.playwright.master`, so the seeders set it. Only the stand's own
+files, or a `PASSWORDS_<ENV>` pin, count; a bare `PASSWORDS` in `.env.local` is ignored with a warning, because it
+would switch the shared stands too. Browser lanes then
+type `MASTER_PASSWORD` in every password field. `secrets:sync` and `secrets:sync:all` copy it as one stable line,
+so a new master stand needs no re-sync and no MCP reconnect. `enforce-secret-token` blocks `MASTER_PASSWORD` in a
+session whose stand did not opt in, and a copy older than the master file.
+
+**Changed:**
+- One loader: `scripts/lib/env-layers.mjs` holds the order. config.js, `load-env.mjs`, the seeders, the GraphQL
+  and layout runners, deploy and the ticket-context skill apply it, and the plugin has a byte-identical copy.
+  The "no `.env.<env>`" warning moved from the resolver to the loader.
+- `secrets:sync:all` reads every ticket's folder and writes atomically. It refuses a name whose value differs
+  between a shared env and a ticket's override of it.
+- `/qa-deploy-pr` refuses an env whose `BACK_URL` is on this machine, and reads a dedicated cloud stand's
+  `DEPLOY_BRANCH` and `BACK_URL` from its own files.
+- `/preflight` on a local stand reports `declared` as `local stand` instead of an UNKNOWN that asked for a
+  `GIT_TOKEN`. `deployed` and `--expect` read the stand's build as before.
+- `vc-fix`: the plugin's loader, `use-env.mjs` and `run-folder.mjs` find envs in the `QA_ENV_PATH` folders. The
+  env report names `MASTER_PASSWORD` on a master stand.
+
+**Upgrade note.** Nothing has to change. Without `QA_ENV_PATH` every env comes from the repo as before. Without
+`PASSWORDS=master` a stand keeps its own passwords. A master stand needs `.env.playwright.master`, then one
+`npm run secrets:sync:all` and a reconnect of the `playwright-*` servers.
+
+---
+
 ## Each run gets its own env and its own output folder — `vc-fix` `0.10.0` — 2026-10-17
 
 Two runs can now go in parallel in one checkout, whether they test two tickets or one ticket on a local
