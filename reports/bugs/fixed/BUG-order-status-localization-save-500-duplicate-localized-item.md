@@ -83,3 +83,12 @@ observability gap.
 
 ## Workaround
 None in the product. Only a DB cleanup of the stray row.
+
+## Resolution
+- **Fixed in:** vc-platform PR #3139 (merged to `dev` 2026-10-16, `26523239`); verified on build `3.1086.0-pr-3139-5d63` (vcst-qa).
+- **Tracker:** VCST-6148 → Tested (2026-10-19), QA comment 112124.
+- **Method:** `/qa-test` → `/qa-verify-fix`: UI STR 3/3 (204), REST round-trip 6/6, stored exact duplicates collapsed by the next save (observed live), double-click sends 1 request, close dialog Yes/No correct. Case-variant alias duplicates rest on the PR unit test only.
+- **Residual (Low, not filed):** concurrent REST saves can still store an exact duplicate and return 409 with the raw EF Core message; the next save heals it.
+- **Evidence:** `reports/tickets/Sprint26-20/VCST-6148/` (`verification-report.md`, `evidence.html`).
+
+## Status: FIXED
