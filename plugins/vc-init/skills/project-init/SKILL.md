@@ -1,6 +1,6 @@
 ---
 name: project-init
-description: "Initialize / onboard the Virto Commerce plugins (vc-fix, vc-perf, …) onto a deployment. Checks that vc-secrets is installed, installs deps, then asks the operator only what genuinely shapes the config — the environment NAME, the tracker (Jira / Azure Boards), the code host (GitHub / Azure Repos), and an auth preference per axis (PAT recommended, else browser/CLI login). Every PAT is stored in vc-secrets by the operator in a terminal — never typed in chat, never written to a file — and reaches a process only through the $VC_RUN bridge. Everything else — native-platform or CLIENT project, the client org, the contribution mode, the fork account — is DERIVED from the token + the filled env + a live module/repo scan. Writes project-profile.json + .env.<env> + .env.local (test-user passwords only) + .mcp.json + the vc-secrets declarations, and verifies access. That one profile is what every installed plugin reads — vc-fix routes a bug to the RIGHT repo and tracker with it, vc-perf finds the stand and the code with it. Use when standing the plugins up on a new machine or for a new customer. On a host-governed project (a client governance plugin owns MCP servers and secrets) it writes the profile and env files only and skips every token / MCP step. Day-2 modes skip the interview: `--add-env` adds another environment (URLs + per-env passwords) to an already-onboarded project; `--check` reconciles an existing profile to the current schema, moves any plaintext token into vc-secrets, then verifies."
+description: "Initialize / onboard the Virto Commerce plugins (vc-fix, vc-perf, …) onto a deployment. Checks that vc-secrets is installed, installs deps, then asks the operator only what genuinely shapes the config — the environment NAME, the tracker (Jira / Azure Boards), the code host (GitHub / Azure Repos), and an auth preference per axis (PAT recommended, else browser/CLI login). Every PAT is stored in vc-secrets by the operator in a terminal — never typed in chat, never written to a file — and reaches a process only through the $VC_RUN bridge. Everything else — native-platform or CLIENT project, the client org, the contribution mode, the fork account — is DERIVED from the token + the filled env + a live module/repo scan. Writes project-profile.json + .env.<env> + .env.local (test-user passwords only) + .mcp.json + the vc-secrets declarations, and verifies access. That one profile is what every installed plugin reads — vc-fix routes a bug to the RIGHT repo and tracker with it, vc-perf finds the stand and the code with it. Use when standing the plugins up on a new machine or for a new customer. On a host-governed project (a client governance plugin owns MCP servers and secrets) it writes the profile and env files only and skips every token / MCP step. Day-2 modes skip the interview: `--add-env` adds another environment (URLs + per-env passwords) to an already-onboarded project; `--add-user` adds another storefront user or admin (login in `.env.<env>`, password in vc-secrets or `.env.local`); `--check` reconciles an existing profile to the current schema, moves any plaintext token into vc-secrets, then verifies."
 ---
 
 # /project-init — deploy & wire this QA plugin for a customer
@@ -29,10 +29,11 @@ operator can do now, built from the plugins actually installed.
 > terminal and both are the operator's review). Every script that needs a token runs through the
 > bridge — `node "$VC_RUN" onboard <script> …` — which gets it from vc-secrets at launch.
 
-> **Two day-2 modes** (skip the interview): **`--add-env`** — add another environment
+> **Three day-2 modes** (skip the interview): **`--add-env`** — add another environment
 > (URLs + per-env access creds) to an already-onboarded project (§`--add-env` below);
-> **`--check`** — reconcile an existing profile to the current schema after a plugin
-> upgrade, then verify (§`--check`).
+> **`--add-user`** — add another storefront user or admin to one or more environments
+> (§`--add-user`); **`--check`** — reconcile an existing profile to the current schema after a
+> plugin upgrade, then verify (§`--check`).
 
 ## What it produces
 
@@ -1140,6 +1141,41 @@ marker itself). Only if this path ended before running verify-access, run it man
 
 ---
 
+## `--add-user` — add another test user to an environment
+
+`/project-init --add-user` gives an already-onboarded project one more storefront user or admin — a
+second buyer, a support admin — on one or more environments, without the interview. A test user is a
+KEY with two values: the login, which is not a secret and goes into `.env.<env>` as `<KEY>_LOGIN`, and
+the password `<KEY>_PASSWORD`, which you never see. Where the password goes follows each env's mode:
+in vc-secrets (`<key>-password-<env>`, bound into that env's lanes and onboard task) or in `.env.local`
+(`<KEY>_PASSWORD_<ENV>=`, for the operator to fill). `add-user.mjs` does both writes; you only ask.
+
+1. **Precondition + scan** (no question): `project-profile.json` must exist (else run the full
+   interview). List the environments, their password mode and the users they already have:
+   ```bash
+   node "$CLAUDE_PLUGIN_ROOT/skills/project-init/add-user.mjs" --list
+   ```
+   Show it as ONE table (env · passwords · users with their logins).
+2. **Ask** in one `AskUserQuestion` block: which environment(s) (multi-select, from the scan) and the
+   role — `Storefront user` or `Admin`. Then, as plain chat, the KEY (upper snake case, e.g. `BUYER2`;
+   offer one from the role) and the login for EACH chosen env — a login usually differs per env. A
+   KEY already listed in an env is reused there only on the operator's explicit "replace"
+   (`--replace`). Never ask for the password.
+3. **Write**, once per chosen env:
+   ```bash
+   node "$CLAUDE_PLUGIN_ROOT/skills/project-init/add-user.mjs" --env <env> --key <KEY> --role user|admin --login <login> --shim "$VC_RUN"
+   ```
+   A refusal (bad KEY, built-in `ADMIN`/`USER`, a token-shaped name, an unknown env) is relayed and
+   re-asked. Collect every report's `steps`.
+4. **Hand off** under a `🔒  STORE THE PASSWORD` header: the `steps` verbatim, deduplicated — for
+   vc-secrets `trust` (when a declaration changed) and `set <key>-password-<env>`, typed at the hidden
+   prompt in their own terminal; for `.env.local` the line to fill and the sync-browser-secrets command —
+   then the restart. Close with the report's `agent` line: an agent logs in with `<KEY>_LOGIN` and types
+   the password by its NAME (`browser_type(text="<KEY>_PASSWORD")`). The user itself must already exist
+   on the stand — this mode only hands its credentials to the agents.
+
+---
+
 ## `--check` — reconcile an existing profile, then verify
 
 `/project-init --check` is for a deployment that is ALREADY onboarded — most often
@@ -1350,6 +1386,7 @@ Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or j
 | `scaffold-secrets.mjs` | write a commented `.env.local` **template** — test-user passwords only (what/why/where per value); reports which tokens this topology stores in vc-secrets and warns on a plaintext token still in `.env.local`; idempotent. **Calls `lib/gitignore.mjs` `ensureProjectIgnores()` BEFORE it writes**, so the file it is about to create is already covered (VCST-5774). |
 | `lib/gitignore.mjs` | the ONE list of what onboarding generates that must never be committed, plus the append-only writer. Shared because FOUR scripts create such files at four different steps and each must protect its own **before** creating it — while only `gen-mcp` (§7) wrote the block, `.env.local` (§3b) sat unignored through the operator's fill-in pause and through any run that aborted before §7. Idempotent, so four calls cost one read and produce one block |
 | `write-secrets-decl.mjs` | write `.claude/vc-secrets.local.json` — one `local` secret per PAT axis, the `vc-init-<group>` bridge tasks, the GitHub MCP server, a stable `projectId`. Owns only those keys, writes nothing when unchanged (so trust is re-asked only when the PAT axes change). `--from-profile` reads `auth.*`. `--password-envs` / `--password-names`: per env the password secrets, `vc-init-onboard.<env>` and the `playwright-<lane>.<env>` servers (`lib/passwords.mjs`, `lib/playwright-lanes.mjs`) |
+| `add-user.mjs` | **`--add-user`**: `--list` — every `.env.<env>`, its password mode and its users; `--env --key --role --login` — writes `<KEY>_LOGIN` into `.env.<env>` and declares `<KEY>_PASSWORD` in that env's vc-secrets declaration or adds its `.env.local` placeholder; prints the operator's `steps`. Never sees a password |
 | `check-secrets.mjs` | `--preflight` (§0d): is vc-secrets installed and runnable · `--steps` (§3d): the token block — what/why/where + the exact `set <name>` command per token (and each declared password's) · default (§3e): the TOKEN GATE — reads `vc-secrets doctor`'s lines and exits 1 with the `trust` / `set` commands still to run. Never sees a value |
 | `lib/token-guide.mjs` | what/why/where of each onboarding token (`github-pat`, `ado-pat`, `jira-token`) — the texts that used to sit in `.env.local` comments |
 | `lib/vc-secrets-doctor.mjs` | runs `vc-secrets doctor` through the shim and parses its OK/FAIL/SKIP lines into a verdict (shared by check-secrets and verify-access) |

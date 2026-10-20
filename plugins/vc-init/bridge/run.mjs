@@ -55,7 +55,7 @@ export const EX_SOFTWARE = 70;
 export const EX_CONFIG = 78;
 
 /** Which host server role a bridge tool's job belongs to on a host-governed project. */
-const HOST_ROLE = Object.freeze({ gh: "github", "git-gh": "github", deliver: "github", ado: "tracker", "git-ado": "codeHost", jira: "tracker", onboard: "tracker", playwright: "browser" });
+const HOST_ROLE = Object.freeze({ gh: "github", "git-gh": "github", deliver: "github", ado: "tracker", "git-ado": "codeHost", jira: "tracker", onboard: "tracker", playwright: "browsers" });
 
 /**
  * The nearest project-profile.json's `governance` block (PROJECT_PROFILE_PATH, VC_FIX_HOME, then the cwd

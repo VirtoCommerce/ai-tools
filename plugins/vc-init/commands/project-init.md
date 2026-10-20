@@ -1,6 +1,6 @@
 ---
 description: "Initialize / onboard the Virto Commerce QA plugins for a deployment — check vc-secrets, install deps, ask only env name + bug tracker (Jira/Azure Boards) + code host (GitHub/Azure Repos) + an auth preference, then DERIVE the rest (native-platform vs CLIENT project, client org, contribution mode, fork account) from the token + filled env + a live module/repo scan. Every PAT is stored by the operator in vc-secrets and reaches a process only through the $VC_RUN bridge. Writes project-profile.json + .env + the vc-secrets declarations + .mcp.json, verifies access. Every installed plugin reads that profile. Backed by the /project-init skill."
-argument-hint: "(no args — interactive) | --add-env (add another environment to an onboarded project) | --check (reconcile an existing profile, move plaintext tokens into vc-secrets, verify) | --governance <host|none> (override host-governance detection)"
+argument-hint: "(no args — interactive) | --add-env (add another environment to an onboarded project) | --add-user (add another storefront user or admin to an environment) | --check (reconcile an existing profile, move plaintext tokens into vc-secrets, verify) | --governance <host|none> (override host-governance detection)"
 
 ---
 
@@ -29,6 +29,7 @@ permissions + the filled env + a live module/repo scan.
 ```
 /project-init            # run the full onboarding interview + pipeline
 /project-init --add-env  # add another environment (URLs + per-env passwords) to an onboarded project
+/project-init --add-user # add another storefront user or admin to one or more environments
 /project-init --check    # reconcile an existing profile, move plaintext tokens into vc-secrets, then verify
 ```
 
@@ -95,6 +96,15 @@ project-level (vc-secrets) and are not touched. The skill's **`--add-env`** sect
 precondition (profile exists; read `tracker.kind` + `vcs.clientHost` — never re-ask) → env name +
 existing-env guard → `scaffold-env.mjs` + `scaffold-secrets.mjs` for the new env → pause → verify with
 `TEST_ENV=<new> node "$VC_RUN" onboard verify-access`.
+
+### `--add-user` — add another storefront user or admin
+
+For an onboarded project that needs one more test user on one or more environments. The skill's
+**`--add-user`** section drives this: `add-user.mjs --list` (environments, their password mode, their
+users) → ask the env(s), the role, the KEY and the login per env — never the password →
+`add-user.mjs --env <env> --key <KEY> --role user|admin --login <login>` per env → hand the operator its
+`steps` (`trust` + `set <key>-password-<env>` in a terminal, or the `.env.local` line to fill) → restart.
+An agent then logs in with `<KEY>_LOGIN` and types `<KEY>_PASSWORD` by name.
 
 ### `--check` — reconcile an existing setup (after a plugin upgrade), then verify
 

@@ -32,6 +32,7 @@ Nothing to set up by hand before it: `/project-init` installs the vc-secrets shi
 ```
 /project-init            # the full interview + pipeline
 /project-init --add-env  # another environment (URLs + per-env passwords) for an onboarded project
+/project-init --add-user # another storefront user or admin (login + where its password goes) for an env
 /project-init --check    # reconcile the profile, move any plaintext token into vc-secrets, verify
 ```
 
