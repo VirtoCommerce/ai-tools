@@ -8,7 +8,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
-## `vc-init`: onboarding is its own plugin, and no token sits in any file — catalog `0.12.0`, `vc-init` `0.1.0`, `vc-fix` `0.10.0`, `vc-perf` `0.4.0` — VCST-6402
+## `vc-init`: onboarding is its own plugin, and no token sits in any file — catalog `0.12.0`, `vc-init` `0.1.0`, `vc-fix` `0.11.0`, `vc-perf` `0.4.0` — VCST-6402
 
 **Added: the `vc-init` plugin** (depends on `vc-secrets`). `/project-init` moved out of `vc-fix`, so `vc-perf`
 no longer pulls in the whole bug lifecycle to onboard. `vc-fix` and `vc-perf` now depend on `vc-init`.
@@ -59,12 +59,30 @@ and /qa-fix, /qa-verify-fix and tracker-ops use it instead of `--state <roleStat
 table is one row per role and one column per type. `STORE_ID` may stay empty: `normalize-env` asks the
 storefront at `FRONT_URL` which store it serves and fills it in.
 
-**Changed: a browser agent types a password's NAME, never its value.** `/project-init` generates
-`.env.playwright.local` (`sync-browser-secrets.mjs`, gitignored) from the current env's test-user passwords
-in `.env.local`, and gen-mcp passes it to every Playwright lane as `--secrets`. vc-fix's agents type
+**Changed: a browser agent types a password's NAME, never its value.** vc-fix's agents type
 `ADMIN_PASSWORD` / `USER_PASSWORD` as names; Playwright MCP substitutes and masks the value, so it never
-enters the model's context or the transcript. verify-access warns when the file is missing or stale for
-`TEST_ENV`. The passwords themselves still live in `.env.local`.
+enters the model's context or the transcript.
+
+**Added: test-user passwords in vc-secrets, asked per role.** `/project-init` asks separately where admin
+passwords live (vc-secrets recommended) and where storefront-user passwords live (`.env.local` recommended —
+easier to edit when there are many). A vc-secrets role gets one `local` secret per password per environment
+(`admin-password-<env>`), declared with a task `vc-init-onboard.<env>` (the onboarding scripts' API logins)
+and a server `playwright-<lane>.<env>` per browser lane. A lane in `.mcp.json` is then
+`node ${VC_RUN} playwright <lane>`: the bridge picks the current `TEST_ENV` and runs that env's server, which
+starts the pinned `@playwright/mcp` in-process (`bridge/playwright-mcp.mjs`) with the passwords in memory as
+`config.secrets` — the vc-secrets roles from the declaration, the `.env.local` roles of that env read straight
+from the file — so no `.env.playwright.local` is written. One declaration per env means an env whose
+passwords are not stored yet breaks only itself, and switching `TEST_ENV` asks for no new trust. With both
+roles in `.env.local`, `sync-browser-secrets.mjs` still generates `.env.playwright.local` for `--secrets`, as
+before. `migrate-secrets` moves a vc-secrets role's lines out of `.env.local` once stored. Only vc-init's
+onboarding scripts read a password through the bridge: a script elsewhere that logs in over the API from the
+env files (vc-fix's module registry, seeders) needs that role kept in `.env.local`.
+
+**Added: `/project-init --add-user`.** Adds another storefront user or admin to one or more environments:
+`add-user.mjs --list` shows each env, where each role's passwords live, its users and the next free numbered
+KEY (`USER2`, `ADMIN2`, …); the operator picks the KEY and gives a login per env; the login goes into
+`.env.<env>` as `<KEY>_LOGIN`, and `<KEY>_PASSWORD` is declared in vc-secrets or added as a `.env.local`
+placeholder by the role. The password itself is only ever typed by the operator in a terminal or editor.
 
 **Fixed: vc-fix's npm dependencies were never installed after the move.** `/project-init` installed only
 vc-init's `node_modules`, so vc-fix's tracker and code-host helpers failed with "Cannot find package
@@ -78,8 +96,29 @@ folder (§1, and `--check` after an update, which lands in a new folder without 
 test-user passwords only).
 
 **Verified:** see the PR — `npm test`, `npm run context:check`, `npm run docs:index:check`, the vc-secrets and
-vc-init bridge suites, `claude plugin validate` on vc-init / vc-fix / vc-perf, and a secret-at-rest scan of a
-scratch onboarding.
+vc-init bridge suites, `claude plugin validate` on vc-init / vc-fix / vc-perf, a secret-at-rest scan of a
+scratch onboarding, and a live browser lane through `vc-secrets run` that typed and masked a vc-secrets
+password and an `.env.local` one.
+
+## One renderer for every result comment and report page — `vc-fix` `0.10.0`, released as part of `0.11.0` (VCST-5675)
+
+**Added: `/vc-fix:qa-report`.** A finished run becomes one char-budgeted tracker comment and one HTML report
+page, rendered from the run's machine record by `skills/qa-report/render.mjs`, never typed by hand. Four
+kinds — `test` (`summary.json`), `fix` (`verification-summary.json`, proven by a `before_after[]` RED→GREEN
+pair), `regression` and `smoke` (the run folder) — each with one template whose front-matter declares its
+`budget` and `lede_max`. Every comment opens with a lede the caller writes; over budget, the lists named in
+`trim` collapse to `+N more` in their declared order, and a comment that still does not fit is exit 3,
+never a cut. The budget is counted on the Markdown before the Jira-wiki / Azure-HTML transform. The page
+publish gate keeps a client project's page local and **never** publishes one for a client-owned-code bug.
+
+**Changed:** `/qa-test`, `/qa-test-fast`, `/qa-verify-fix`, `/qa-regression` and `/qa-smoke` report through
+it, and their own comment templates became pointers. In `/qa-verify-fix` the evidence page is rendered and
+gated inside the Step 6 call, so the one comment carries its link; Step 6A only says what the page is built
+from. A `verification-summary.json` written before this release has no `before_after[]` and is refused for
+a verified fix.
+
+**Verified:** `npm run context:check` green; the renderer exercised against the repo's real `summary.json`
+and `verification-summary.json` records in every dialect.
 
 ---
 

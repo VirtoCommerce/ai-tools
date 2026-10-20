@@ -51,6 +51,7 @@ vc-secrets) are documented in [`../vc-init/README.md`](../vc-init/README.md).
 /qa-bug <description>        # Reproduce, document, optionally file a bug
 /qa-fix VCST-1234            # Autonomous fix of an already-filed bug — never auto-merges
 /qa-verify-fix VCST-1234     # Verify a fix, transition the ticket
+/qa-report VCST-1234          # The run's ONE tracker comment + its report page
 /qa-monitoring both          # Query App Insights, dedup, triage, live-repro, report
 /qa-env-check                # Validate env vars, endpoints, MCP servers
 /vc-self-check               # Diagnose whether the plugin's own skills ran correctly
