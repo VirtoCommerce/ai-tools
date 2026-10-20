@@ -19,7 +19,7 @@
 
 Evidence:
 - `reports/tickets/Sprint26-21/VCST-6132/screenshots/4a-ui-18-switch-to-locked-B-signed-out.png`
-- `…/4a-ui-18-switch-to-removed-A.png`
+- The removed-org variant behaved the same (400 on refresh, silent sign-out); its frame was not captured.
 
 ## Expected
 The switch is refused with a message, and the refused organization is not stored as the last-used one `{HYPOTHESIS}` (UX expectation; no written spec). If a sign-out is unavoidable after token revocation, it should say why.
