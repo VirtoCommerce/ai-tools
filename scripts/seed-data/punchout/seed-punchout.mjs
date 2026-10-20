@@ -31,7 +31,7 @@ import {
 import { resolvePassword } from '../../lib/user-provision.mjs';
 import {
   CONFIG_SPECS, DEPLOYED_CONFIGS, configOverlayFields, MAPPING_SPECS, PROTECTED_EXTERNAL_IDS,
-  mappingBody, teardownMappingTargets, BACKOFFICE_SPECS, roleBody, accountBody,
+  mappingBody, teardownMappingTargets, personaEmailVarFor, personaOverlayFields, BACKOFFICE_SPECS, roleBody, accountBody,
   VERIFY_PROBES, buildSetupRequest, cxmlStatusCode,
 } from './punchout-specs.mjs';
 
@@ -81,10 +81,11 @@ const notLocked = (u) => !u.lockoutEnd || new Date(u.lockoutEnd).getTime() <= Da
 // ── mappings ─────────────────────────────────────────────────────────────────────────────────
 
 async function personaFor(spec) {
-  const email = process.env[spec.personaEmailVar];
-  if (!email) { fail(`${spec.alias}: {{${spec.personaEmailVar}}} is not set for TEST_ENV=${TEST_ENV}`); return null; }
+  const emailVar = personaEmailVarFor(spec, TEST_ENV);
+  const email = process.env[emailVar];
+  if (!email) { fail(`${spec.alias}: {{${emailVar}}} is not set for TEST_ENV=${TEST_ENV}`); return null; }
   const user = await getUser(email);
-  if (!user) { fail(`${spec.alias}: persona {{${spec.personaEmailVar}}} has no security account`); return null; }
+  if (!user) { fail(`${spec.alias}: persona {{${emailVar}}} has no security account`); return null; }
   const contact = user.memberId ? await getMember(user.memberId) : null;
   if (!contact) { fail(`${spec.alias}: persona account has no contact (memberId=${user.memberId || 'null'})`); return null; }
   return { user, contact };
@@ -98,13 +99,13 @@ async function registerMapping(spec) {
   if (spec.minOrganizations && orgs.length < spec.minOrganizations) {
     fail(`${spec.alias}: persona contact is in ${orgs.length} org(s), needs ≥${spec.minOrganizations}`);
   }
-  if (spec.maxOrganizations && orgs.length > spec.maxOrganizations) {
-    fail(`${spec.alias}: persona contact is in ${orgs.length} org(s), must be ≤${spec.maxOrganizations} (single-org side of the pair)`);
+  if (spec.maxOrganizations && (orgs.length < 1 || orgs.length > spec.maxOrganizations)) {
+    fail(`${spec.alias}: persona contact is in ${orgs.length} org(s), must be 1..${spec.maxOrganizations} (single-org side of the pair)`);
   }
   if (user.passwordExpired) fail(`${spec.alias}: persona account is passwordExpired`);
   if (!notLocked(user)) fail(`${spec.alias}: persona account is locked until ${user.lockoutEnd}`);
   if (spec.owned) {
-    const pw = process.env[`${spec.personaEmailVar.replace(/_EMAIL$/, '')}_PASSWORD`];
+    const pw = process.env[`${personaEmailVarFor(spec, TEST_ENV).replace(/_EMAIL$/, '')}_PASSWORD`];
     if (pw) {
       const g = await grant({ username: user.userName, password: pw, storeId: STORE_ID });
       if (g.token) ok(`${spec.alias}: persona password sign-in OK (store ${STORE_ID})`);
@@ -141,7 +142,7 @@ async function registerMapping(spec) {
   const other = orgs.find((o) => o !== current) || '';
   return {
     [spec.alias]: {
-      id: mapping.id, userId: user.id, memberId: contact.id,
+      ...personaOverlayFields(spec, TEST_ENV), id: mapping.id, userId: user.id, memberId: contact.id,
       currentOrganizationId: current, otherOrganizationId: other, organizationCount: orgs.length,
     },
   };
@@ -280,7 +281,7 @@ async function main() {
   assertSafeTarget();
   await auth();
   if (!(await moduleInstalled())) {
-    // Not an error: the module ships only where it is deployed (vcptcore_qa1 today). Nothing is
+    // Not an error: the module ships only where it is deployed (vcptcore_qa1, vcst). Nothing is
     // written, so every PUNCHOUT_* alias keeps resolving to "" here — a clear miss, never qa1's ids.
     log(`· VirtoCommerce.Punchout is not installed on ${TEST_ENV} (GET ${MAPPINGS}/new → 404) — punchout fixtures skipped.`);
     return;

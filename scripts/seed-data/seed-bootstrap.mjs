@@ -28,6 +28,7 @@
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { liveDatasetProfiles } from '../lib/seed-family.mjs';
 import {
   ROOT, DRY_RUN, VERBOSE, api, auth, assertSafeTarget,
   ensureMemberIndex, ensureFulfillmentCenter, log,
@@ -50,11 +51,13 @@ const TEARDOWN_STEPS = [
   // products, its reps' memberships reference the organisations `company-users` owns, and its
   // documents reference uploaded files. Everything it holds must be released before the steps
   // below start deleting the entities it points at. The family entrypoint reverses its own
-  // internal chain and picks the live profile (fixtures vs demo) off _meta.dataset_profile.
+  // internal chain and picks the live profile (fixtures vs demo) off its stamp (scripts/lib/seed-family.mjs).
   // NOTE: this sweeps only what the CSVs still declare. Entities the CSVs no longer name —
   // hand-made reps, orphaned documents — need `npm run sr:inventory`, which is deliberately not
   // wired into an unattended chain: it can delete things no script can recreate.
-  { name: 'sales-rep', script: 'sales-rep/seed-sales-rep-family.mjs', args: ['--teardown'] },
+  // `demoFamily`: SKIPPED while the family holds its demo — the family reverses whichever chain its stamp
+  // names, so a routine fixtures teardown would otherwise delete a live demo (seed:demo:teardown owns that).
+  { name: 'sales-rep', script: 'sales-rep/seed-sales-rep-family.mjs', args: ['--teardown'], demoFamily: 'sales-rep' },
   // VCST-5748 OTP sign-in accounts — independent of every other domain; deletes only agent-test-otp-* accounts/contacts.
   { name: 'otp-signin', script: 'auth/seed-otp-signin.mjs', args: ['--teardown'] },
   // Wishlists are carts referencing products AND a security account, so they go before both.
@@ -183,7 +186,7 @@ const STEPS = [
   // catalog discovery, so the products phase (40) must already have run. It turns ONLY
   // `Loyalty.Missions.Enable` on and never touches the base `Loyalty.Enable` that suites 075/075b/075c
   // read through LOYALTY_SETTINGS.
-  { name: 'loyalty-missions', script: 'loyalty/seed-loyalty-missions.mjs', required: false, priority: 122 },
+  { name: 'loyalty-missions', script: 'loyalty/seed-loyalty-missions.mjs', required: false, priority: 122, demoFamily: 'loyalty-missions' },
   { name: 'white-labeling', script: 'white-labeling/seed-white-labeling.mjs', required: false, priority: 130 },
   // Restricted back-office (Manager) RBAC account for CMS-123/124 — read-only Page Builder, no
   // builder:update. Independent of the catalog/user graph (own role + account); optional.
@@ -205,10 +208,12 @@ const STEPS = [
   // deployments (the entrypoint then prints one skip line and exits 0), the document library needs
   // `sales-rep-documents` in FileUpload:Scopes, and the task seeder needs a storefront password
   // grant (SALES_REP_EMAIL + SALES_REP_PASSWORD_<ENV>).
-  { name: 'sales-rep', script: 'sales-rep/seed-sales-rep-family.mjs', required: false, priority: 142 },
+  { name: 'sales-rep', script: 'sales-rep/seed-sales-rep-family.mjs', required: false, priority: 142, demoFamily: 'sales-rep' },
   // VCST-5884 organization returns: creates its own orgs/accounts/roles, then orders on live-discovered
   // products (40) in the store (80). Optional: needs the Return module + Return.ReturnEnabled on the store.
-  { name: 'returns-org', script: 'orders/seed-org-returns.mjs', required: false, priority: 143 },
+  // `demoFamily`: skipped while that family holds its DEMO profile (seed-returns-family.mjs stamps it),
+  // or a routine bootstrap would put AGENT-TEST returns beside the demo in the Admin Return list.
+  { name: 'returns-org', script: 'orders/seed-org-returns.mjs', required: false, priority: 143, demoFamily: 'returns' },
   { name: 'quotes', script: 'orders/seed-quotes.mjs', required: false, priority: 145 },
   // Push Messages inboxes (suite 068): tops the reader's inbox up to a mixed read/unread state and
   // sends the bulk recipient 3 fresh messages. After company-users (100), which creates the
@@ -253,7 +258,13 @@ function runStep(step) {
   // ── Teardown mode: reverse-order sweep of every domain, then exit. Best-effort per step. ──
   if (TEARDOWN) {
     const tdResults = [];
+    const demoProfiles = liveDatasetProfiles();
     for (const step of TEARDOWN_STEPS) {
+      if (step.demoFamily && /-demo$/.test(demoProfiles[step.demoFamily] || '')) {
+        log(`\n─── teardown ${step.name} skipped — the ${step.demoFamily} family holds its demo profile here (npm run seed:demo:teardown to release it) ───`);
+        tdResults.push({ ...step, status: 'skipped' });
+        continue;
+      }
       const ok = runStep({ ...step, required: false });
       tdResults.push({ ...step, status: ok ? 'ok' : 'warn' });
       if (!ok) log(`⚠ teardown ${step.name} reported a problem — continuing.`);
@@ -276,8 +287,14 @@ function runStep(step) {
 
   // ── Seeder chain ──
   const results = [];
+  const demoProfiles = liveDatasetProfiles();
   for (const step of STEPS) {
     if (SKIP_OPTIONAL && !step.required) { results.push({ ...step, status: 'skipped' }); continue; }
+    if (step.demoFamily && /-demo$/.test(demoProfiles[step.demoFamily] || '')) {
+      log(`\n─── seed:${step.name} skipped — the ${step.demoFamily} family holds its demo profile here (npm run seed:demo:teardown to release it) ───`);
+      results.push({ ...step, status: 'skipped' });
+      continue;
+    }
     const okStep = runStep(step);
     if (okStep) results.push({ ...step, status: 'ok' });
     else if (step.required) {

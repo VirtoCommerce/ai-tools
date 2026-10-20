@@ -82,6 +82,19 @@ export const DEPLOYED_CONFIGS = {
            tokenLifetime: '', sessionLifetime: '' },
     },
   },
+  vcst: {
+    source: 'vc-deploy-dev#6935 infra/environments.yml (Punchout__Configurations__0..3), branch vcst-qa',
+    configs: {
+      0: { storeId: 'B2B-store', storeExists: true, senderDomain: 'NetworkId', allowedReturnUrls: ['https://punchoutcommerce.com/*'],
+           tokenLifetime: '00:15:00', sessionLifetime: '04:00:00' },
+      1: { storeId: 'QA-STORE', storeExists: true, senderDomain: '', allowedReturnUrls: [],
+           tokenLifetime: '00:02:00', sessionLifetime: '00:10:00' },
+      2: { storeId: 'AGENT-TEST-no-such-store', storeExists: false, senderDomain: '', allowedReturnUrls: [],
+           tokenLifetime: '', sessionLifetime: '' },
+      3: { storeId: '', storeExists: false, senderDomain: '', allowedReturnUrls: [],
+           tokenLifetime: '', sessionLifetime: '' },
+    },
+  },
 };
 
 /** `{{VAR}}` token for a configuration's secret — the only form a committed file may carry. */
@@ -119,7 +132,9 @@ export function hhmmssToMinutes(s) {
 // ── 2. Mappings ─────────────────────────────────────────────────────────────────────────────────
 
 export const MAPPING_SPECS = [
+  // vcst: {{USER_EMAIL}} belongs to no organization there, so the single-org persona is {{ORG_USER_EMAIL}}.
   { alias: 'PUNCHOUT_MAPPING_DEFAULT', externalId: 'AGENT-TEST-PO-100', personaEmailVar: 'USER_EMAIL',
+    personaEmailVarByEnv: { vcst: 'ORG_USER_EMAIL' },
     owned: false, maxOrganizations: 1, ownerNote: 'created by /qa-test VCST-5886 step 1r; deleted at run close-out — this seeder only registers it' },
   { alias: 'PUNCHOUT_MAPPING_MULTI_ORG', externalId: 'AGENT-TEST-PO-200', personaEmailVar: 'MULTI_ORG_USER_EMAIL',
     owned: true, minOrganizations: 2, ownerNote: 'seed-punchout.mjs find-or-create; teardown deletes it by id' },
@@ -127,6 +142,19 @@ export const MAPPING_SPECS = [
 
 /** External ids this seeder must never delete or mutate, whatever a search returns. */
 export const PROTECTED_EXTERNAL_IDS = new Set(MAPPING_SPECS.filter((m) => !m.owned).map((m) => m.externalId));
+
+/** The env var naming a mapping's persona on one env (pure). */
+export const personaEmailVarFor = (spec, env) => spec.personaEmailVarByEnv?.[env] || spec.personaEmailVar;
+
+/**
+ * Persona overlay fields (pure): the `{{VAR}}` tokens a case reads as the mapped buyer, so a suite
+ * never names the persona variable itself and stays correct on an env that maps a different one.
+ */
+export function personaOverlayFields(spec, env) {
+  const emailVar = personaEmailVarFor(spec, env);
+  const passwordVar = emailVar.replace(/_EMAIL$/, '_PASSWORD');
+  return { persona_email_var: emailVar, persona_email: `{{${emailVar}}}`, persona_password: `{{${passwordVar}}}` };
+}
 
 /** POST /api/punchout-user-mappings body (shape from GET /api/punchout-user-mappings/new). */
 export function mappingBody(spec, user) {

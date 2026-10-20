@@ -35,15 +35,23 @@ import { CONTRACT } from './contract.mjs';
  * picks after the last `none`), `{ verdict: 'none' }`, or `{ verdict: 'open' }`. `ids` is empty for
  * journal records, which carry no entry id; the report's log lines do.
  */
-export function lastWord(pointed) {
-  const said = (pointed ?? [])
-    .filter((o) => o.kind === 'none' || (o.kind === 'show' && o.state === 'answer'))
+export function lastWord(pointed, { owner = null } = {}) {
+  let said = (pointed ?? [])
+    .filter((o) => o.kind === 'none' || (o.kind === 'show' && o.state === 'answer'));
+  // THE ASKER'S WORD OUTRANKS ANOTHER AGENT'S (VCST-6378). One session key is shared by the main thread
+  // and every subagent, and a list one agent closed with a pick was re-closed by a different agent's
+  // later `kb_none` on the same handle -- and read as a miss (VCST-6342 near-miss reading, KB-D4FE7962).
+  // When the asking agent is known and said something itself, only its own words count.
+  if (owner && said.some((o) => o.agent === owner)) said = said.filter((o) => o.agent === owner);
+  said = said
     .sort((a, b) => String(a.at ?? '').localeCompare(String(b.at ?? '')));
   if (!said.length) return { verdict: 'open', ids: [] };
   const lastNone = said.map((o) => o.kind).lastIndexOf('none');
   const picks = said.slice(lastNone + 1);
-  if (!picks.length) return { verdict: 'none', ids: [] };
-  return { verdict: 'picked', ids: picks.map((o) => o.id).filter(Boolean).map(String) };
+  // `by`: what decided it when it was a later write rather than a word (`pointersByAsk`), else absent.
+  if (!picks.length) return { verdict: 'none', ids: [], ...(said[lastNone].by ? { by: said[lastNone].by } : {}) };
+  const last = picks[picks.length - 1];
+  return { verdict: 'picked', ids: picks.map((o) => o.id).filter(Boolean).map(String), ...(last.by ? { by: last.by } : {}) };
 }
 
 /**
@@ -75,8 +83,48 @@ export function pointersByAsk(records) {
   // lists unclosed in the lists panel).
   const fromList = (ask, show) => !Array.isArray(ask.shown) || !show.id
     || ask.shown.some((s) => String(s).toUpperCase() === String(show.id).toUpperCase());
+  // A LIST IS ALSO CLOSED BY WHAT THE AGENT DID NEXT (VCST-6378). 25% of lists were left with neither a
+  // pick nor a none, many of them followed by the very confirm or capture that settles them: a confirm of
+  // a listed entry IS the pick, a capture on the same topic IS "none of these said it". Only an OPEN list
+  // is closed this way -- an explicit kb_show / kb_none always outranks it -- and only the latest open
+  // list on the same topic, or the one a capture named by its handle.
+  const asksAt = new Map();
+  const openOnTopic = new Map();
   for (const r of sorted) {
-    if (r.kind === 'ask') { latestAsk = r; continue; }
+    if (r.kind === 'ask') {
+      latestAsk = r;
+      asksAt.set(String(r.at), r);
+      if (r.state === 'ambiguous' && r.topic) openOnTopic.set(String(r.topic), [...(openOnTopic.get(String(r.topic)) ?? []), String(r.at)]);
+      continue;
+    }
+    const wrote = r.kind === 'write' ? r.wrote : r.kind;
+    if (wrote === 'confirm' || wrote === 'capture') {
+      // Only a write that WENT: a log line with a `state` (no base, unreachable, invalid) or a capture
+      // that minted no id closed nothing, as the journal reads it (`queuedWrite`) -- the report read the
+      // raw lines and closed lists on failed confirms (tester run of ai-tools#460).
+      if (r.kind !== 'write' && (r.state || (wrote === 'capture' && !r.id))) continue;
+      // The latest list on the topic that is still OPEN: a later list already closed must not hide an
+      // earlier one the confirm settles (tester run of ai-tools#460).
+      // A confirm settles the latest open list that LISTED its entry, not merely the latest open one
+      // (retest of ai-tools#460: with two open lists, a confirm from the earlier closed neither).
+      const onTopic = r.topic ? openOnTopic.get(String(r.topic)) ?? [] : [];
+      const lists = (at) => !Array.isArray(asksAt.get(at)?.shown) || !r.id
+        || asksAt.get(at).shown.some((s) => String(s).toUpperCase() === String(r.id).toUpperCase());
+      const target = wrote === 'capture' && r.afterBy === 'handle' && r.after ? String(r.after)
+        : [...onTopic].reverse().find((at) => lastWord(pointed.get(at)).verdict === 'open' && (wrote !== 'confirm' || lists(at))) ?? null;
+      const ask = target ? asksAt.get(target) : null;
+      if (ask && ask.state === 'ambiguous' && lastWord(pointed.get(target)).verdict === 'open') {
+        const listed = wrote === 'confirm' && r.id && Array.isArray(ask.shown)
+          && ask.shown.some((s) => String(s).toUpperCase() === String(r.id).toUpperCase());
+        // A confirm of an entry the list did NOT show says nothing about this list -- the agent may have
+        // found it through another ask on the same topic -- so only a listed confirm or a capture closes it.
+        const closing = listed
+          ? { kind: 'show', state: 'answer', id: String(r.id), at: r.at, by: wrote, ...(r.agent ? { agent: r.agent } : {}) }
+          : wrote === 'capture' ? { kind: 'none', at: r.at, by: wrote, ...(r.agent ? { agent: r.agent } : {}) } : null;
+        if (closing) pointed.set(target, [...(pointed.get(target) ?? []), closing]);
+      }
+      continue;
+    }
     if (r.kind !== 'show' && r.kind !== 'none') continue;
     // ...and never after the agent said `kb_none` on it: a handle-less show would rewrite that none into
     // a pick -- exactly what the confirm gate's advice to open an entry would trigger. Re-opening a
@@ -129,6 +177,7 @@ export function openLoops(journal, { reminded = [] } = {}) {
     out.push({
       at: a.at, q: String(a.q ?? ''), why: a.state === 'miss' || word.verdict === 'none' ? 'miss' : 'unresolved',
       ...(a.call ? { call: a.call } : {}),
+      ...(Array.isArray(a.shown) && a.shown.length ? { shown: a.shown.map(String) } : {}),
     });
   }
   return out;
@@ -191,26 +240,44 @@ const clip = (q) => (q.length > Q_MAX ? `${q.slice(0, Q_MAX).replace(/\s+\S*$/, 
  * occurred" in its UI (measured 2026-10-06, a live `claude -p` run: `hook_blocking_error`), and there
  * is no non-blocking way for a Stop hook to make the agent take one more step. The operator who opens
  * that notice reads this line first.
+ *
+ * A SUBAGENT'S LIST IS NOT THE MAIN THREAD'S TO REJECT (VCST-6341). Since `kb-remind` hands a finished
+ * subagent's open lists to the main thread (`inherited`), the main thread is asked about lists it never
+ * read. Inviting `kb_none` there turned a closure failure into a coverage miss -- and into a near-miss
+ * "rejected by the agent" that nobody judged. So an inherited list is closed ONLY by a pick the
+ * subagent's report supports (its candidates are named so the report can be matched), and is otherwise
+ * left open, which the report reads as `unclosed` -- the honest reading.
  */
 export function reminderText(loops, { contract = CONTRACT } = {}) {
   // An unclosed list is raised even after a write (VCST-6191), so the headline does not claim "nothing
   // was written back" for it: that holds for the misses only.
+  // THE RULES COME BEFORE THE LIST (VCST-6341 review): the harness truncates hook text near 2,000
+  // characters, from the end, and five subagent lines with their candidates reached 2,126 -- cutting
+  // exactly the "never kb_none" line this hook exists to say. The list is what may be cut; one line per
+  // question, its handle and nothing repeated.
+  const listed = loops.slice(0, LISTED);
   const lines = [`kb reminder (not a failure): ${loops.length} question(s) this session left open in the knowledge base -- no answer and nothing written back, or a list never closed:`];
-  for (const l of loops.slice(0, LISTED)) {
-    lines.push(l.why === 'unresolved'
-      ? `- "${clip(l.q)}" -- a list was shown and never closed: kb_show <id> with ask ${l.at}, or kb_none with ask ${l.at}`
-      : `- "${clip(l.q)}"`);
+  if (listed.some((l) => l.why === 'unresolved' && l.inherited)) {
+    lines.push('Lists marked (subagent) or (unattributed) were judged by no one here: kb_show <id> with that ask only if a report '
+      + 'or your own work names the entry relied on; never kb_none them -- an open list is read as unclosed, not as a gap.');
   }
-  if (loops.length > LISTED) lines.push(`- and ${loops.length - LISTED} more, named at your next stop`);
   // A list is closed by a choice, never by a write (VCST-6191): asking the agent to capture it again
   // would turn a list it already wrote about into a duplicate entry. The capture line is for misses.
-  if (loops.some((l) => l.why === 'unresolved')) {
-    lines.push('Close each list with the entry you relied on (kb_show) or kb_none -- even if you already wrote about it.');
+  if (listed.some((l) => l.why === 'unresolved' && !l.inherited)) {
+    lines.push('Close each other list with the entry you relied on (kb_show <id> with its ask) or kb_none with its ask -- even if you already wrote about it.');
   }
-  if (loops.some((l) => l.why !== 'unresolved')) {
+  if (listed.some((l) => l.why !== 'unresolved')) {
     lines.push(`If you or a subagent established a question with no answer -- live, or by reading code (method "source") -- kb_capture it now (contract: ${contract}). `
       + 'If you did not establish it, say so in one line and finish.');
   }
   lines.push('Each question is raised once.');
+  for (const l of listed) {
+    const whose = l.why !== 'unresolved' ? '' : l.inherited === 'unknown' ? ' (unattributed' : l.inherited ? ' (subagent' : ' (list';
+    const ids = whose && l.inherited && l.shown?.length ? `: ${l.shown.join(' ')}` : '';
+    lines.push(`- "${clip(l.q)}"${whose ? `${whose}${ids})` : ''}${l.why === 'unresolved' ? ` ask ${l.at}` : ''}`);
+  }
+  // "At a later stop", not "your next": the stop right after this block is its continuation, where the
+  // hook is silent (kb-remind guard 2); the rest come at the end of a later turn.
+  if (loops.length > LISTED) lines.push(`- and ${loops.length - LISTED} more, named at a later stop`);
   return lines.join('\n');
 }

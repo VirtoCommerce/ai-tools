@@ -170,11 +170,20 @@ REV-GQL-014,customerReviews — pagination via first/after (PAGE_SIZE 5),GraphQL
 [ERRORS label=page2] errors[] empty
 [DATA label=page2] data.customerReviews.totalCount = @td(REVIEW_PRODUCT.approved_count)
 [COUNT label=page2] data.customerReviews.items.length >= 1",,first:5 returns more or fewer than 5 items on page 1; totalCount differs between pages; page 2 empty despite 6 approved,,vc-module-customer-review storefront query pagination,runner
-REV-GQL-015,customerReviews — sort by created date descending,GraphQL > Customer Reviews > Query,Low,BL-CR-010,,Runner-native. Requires `npm run seed:reviews` — REVIEW_PRODUCT has >=2 Approved reviews. sort=createddate:desc must return newest-first (item[0].createdDate >= item[1].createdDate).,store={{STORE_ID}},"[GQL-OP sorted]
-  query { customerReviews(storeId: ""{{STORE_ID}}"" entityId: ""@td(REVIEW_PRODUCT.id)"" entityType: ""Product"" first: 10 sort: ""createddate:desc"") { totalCount items { id createdDate } } }
-[GQL-EXEC sorted]","[ERRORS label=sorted] errors[] empty
-[DATA label=sorted] data.customerReviews.totalCount >= 2
-[DATA label=sorted] data.customerReviews.items.0.createdDate >= data.customerReviews.items.1.createdDate",[EVIDENCE] createddate:desc = newest first; item[0] must be >= item[1],sort returns oldest-first (item[0] older than item[1]) — wrong direction,,vc-module-customer-review storefront query sort,runner
+REV-GQL-015,customerReviews — sort by created date descending,GraphQL > Customer Reviews > Query,Low,BL-CR-010,,"Runner-native. Requires `npm run seed:reviews` — REVIEW_PRODUCT has approved_count (6) Approved reviews with distinct createdDate values. sort=createddate:desc must return newest-first and sort=createddate:asc the exact reverse. The runner cannot order two date strings (its cross-path ordering needs numbers, so `items.0.createdDate >= items.1.createdDate` evaluates to ""> = undefined""), so the direction is proven by REVERSAL IDENTITY: the id of the first item of the descending list (captured) is the last item of the ascending list (and 2nd/2nd-last), which holds only if the sort key is honoured and its direction flips. The positions 5 and 4 are the last and second-last of approved_count = 6; the totalCount/items.length assertions pin that coupling, so a reseed to another count fails loudly instead of passing vacuously.",store={{STORE_ID}},"[GQL-OP sorted]
+  query {
+    newest_first: customerReviews(storeId: ""{{STORE_ID}}"" entityId: ""@td(REVIEW_PRODUCT.id)"" entityType: ""Product"" first: 10 sort: ""createddate:desc"") { totalCount items { id createdDate } }
+    oldest_first: customerReviews(storeId: ""{{STORE_ID}}"" entityId: ""@td(REVIEW_PRODUCT.id)"" entityType: ""Product"" first: 10 sort: ""createddate:asc"") { totalCount items { id createdDate } }
+  }
+[GQL-EXEC sorted]
+[GQL-CAPTURE sorted.data.newest_first.items.0.id → NEWEST_ID]
+[GQL-CAPTURE sorted.data.newest_first.items.1.id → NEWEST_2ND_ID]","[ERRORS label=sorted] errors[] empty
+[DATA label=sorted] data.newest_first.totalCount = @td(REVIEW_PRODUCT.approved_count)
+[COUNT label=sorted] data.newest_first.items.length = @td(REVIEW_PRODUCT.approved_count)
+[COUNT label=sorted] data.oldest_first.items.length = @td(REVIEW_PRODUCT.approved_count)
+[DATA label=sorted] data.oldest_first.items.5.id = {{NEWEST_ID}}
+[DATA label=sorted] data.oldest_first.items.4.id = {{NEWEST_2ND_ID}}
+[EVIDENCE] createddate:desc = newest first; createddate:asc is its exact reverse (item[0] of desc = last item of asc)",[EVIDENCE] createddate:desc = newest first; item[0] must be >= item[1],"sort ignored (desc and asc return the same order, so newest_first.items.0 = oldest_first.items.0, not .5); direction not flipped between desc and asc; errors[] non-empty. Known limit: a consistent wrong KEY (e.g. rating) reversed by asc would also satisfy the reversal — the createdDate key itself is then not proven (runner cannot order date strings).",,"vc-module-customer-review storefront query sort; Repaired 2026-10-13 (Stable 16 regression VCST-6042): the runner cannot compare two date paths with >= (evaluates to ""> = undefined""; data was correctly sorted, 6 reviews strictly decreasing); the direction is now asserted by desc/asc reversal identity of review ids",runner
 REV-GQL-016,"customerReviews — storeId scope: unknown entity returns empty, no error",GraphQL > Customer Reviews > Query,Low,PROPOSED-BL-CR-011,,"Runner-native. A random GUID entityId that has no reviews returns an empty connection (totalCount 0), not an error.",store={{STORE_ID}}; bogus_entity=00000000-0000-0000-0000-000000000000,"[GQL-OP empty_read]
   query { customerReviews(storeId: ""{{STORE_ID}}"" entityId: ""{{bogus_entity}}"" entityType: ""Product"" first: 5) { totalCount items { id } } }
 [GQL-EXEC empty_read]","[ERRORS label=empty_read] errors[] empty

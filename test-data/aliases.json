@@ -1,7 +1,7 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.66",
+    "version": "1.5.67",
     "changelog_1_5_50": "Suite 083d (loyalty missions E2E) fixture set: MSN_E2E_RUN + MSN_E2E_{ORDERVALUE,ORDERCOUNT,PERSKU,PERSKU_PTS} + MSN_E2E_PRODUCT_{UNIT,A,B,PTS} + MSN_E2E_REWARD_USER. Run REG-2026-08-28-1154 returned 2 PASS / 6 BLOCKED because the shared MSN_* missions had been CONSUMED — MSN_ORDERCOUNT at 2 of 2 Completed, MSN_ORDERVALUE at 5,842,446/100% — and a Completed mission stops accruing entirely (proven by a control pair inside one order: MSN_ZEROTARGET 24 -> 25 while MSN_ORDERCOUNT stayed frozen at 2). Mission progress is per-(user,mission), cumulative, monotonic, frozen at completion, with NO reset path in vc-module-loyalty, so repeatability comes from minting a FRESH mission per run (name carries a run handle) rather than from resetting anything. Products are stable and NOT run-scoped (no per-user state), packSize 1 (MSN_PERSKU_PRODUCT_B steps 0->2->0, so \"quantity exactly 1\" was unachievable) and trackInventory=false. MSN_E2E_PRODUCT_PTS is the first PerSku target priced in the loyalty currency, which is what makes the no-currency-filter question (LoyaltyMissionLogicService.cs:~416 vs LoyaltyProgramHandler.cs:199) askable at all. MSN_E2E_REWARD_USER borrows the per-run ephemeral LOYALTY_ZERO_USER because a 500-PTS reward against LOYALTY_VIP_USER (964,189,233 PTS) cannot demonstrate that the points spent were earned from a mission. Seeder scripts/seed-data/loyalty/seed-missions-e2e.mjs, spec module missions-e2e-specs.mjs, guard npm run td:validate:missions-e2e (a VACUITY guard: it fails when a fixture was not pre-completion at seed time or when the reward stops being legible against the balance).",
     "updated": "GENERATED",
     "changelog_1_5_53": "VCST-5024 top-up — ORG_LOY_MISSION_2 (OrderCountGoal 1, reward 619) and ORG_LOY_MISSION_PARTIAL (OrderCountGoal 2, reward 631), both Published and targeted at AGENT-TEST-ORGLOY like ORG_LOY_MISSION. WHY: ORG_LOY_MISSION was CONSUMED before it could answer anything, because the store-mode flip silently did not take effect (the settings-v2 tenant write returns 204 and updates the tenant-settings read, but the module resolves store.Settings from the store entity, which stayed null) — so the first journey ran in Customer mode and ORG_LOY_A and ORG_LOY_B each completed the count-1 mission and were each granted 617. Once-per-MEMBER is correct Customer-mode behaviour, which is why that mission is KEPT rather than swept: it is the cleanest record that the flip had not landed. But OrderCountGoal progress is terminal per owner with no reset path, so a consumed mission cannot be repaired and a NEW one is the only route back to a decidable question. THE PAIR, NOT JUST THE REPLACEMENT: count 1 alone cannot separate pooled PROGRESS from pooled COMPLETION (it is Completed the instant anything accrues, so \"B sees it done\" fits both readings); count 2 splits them, because after ONE order a pooled implementation reads 1/2 for BOTH members and a user-keyed one reads 1/2 and 0/2, with neither Completed. Rewards are mutually DISTINCT (617/619/631) and distinct from the missions-e2e set (501/509) because all three are live at once against the same group and one order can move more than one — identical rewards would make a balance delta and a points-history row name nothing, the same failure the missions-e2e set hit with four 500s. MECHANICS: each mission spec now owns a sweep NAME-SPACE (AGENT-TEST-MSN-ORGLOY[-<KEY>]-<ts>-<rand>; ORG_LOY_MISSION keeps the empty key so its live name is unchanged), and a seed sweeps only its own predecessors — minting one mission can never delete a sibling, which is what let the consumed generation-1 record survive. New seeder flags --missions-only + --only <ALIAS,...> mint missions while touching NO account, no org, no balance read and placing no order: by this point ORG_LOY_A and ORG_LOY_B carry real pre-flip balances (39,533 and 100,033) and LOY_PERSONAL_NOORG its funding floor (38,916), all of which are load-bearing evidence a full re-seed would have overwritten. Guard npm run td:validate:org-loyalty now fails a duplicate sweep key, a duplicate or missions-e2e-colliding reward, a non-count-1 ORG_LOY_MISSION_2, a count < 2 ORG_LOY_MISSION_PARTIAL, and equal counts across the pair.",
@@ -68,7 +68,8 @@
     "changelog_1_5_63": "VCST-5884 round 3 returnable capacity: spare orders (spare<N>* fields) on ORG_RET_BUYER (3), ORG_RET_ORGROLE_BUYER, ORG_RET_OTHER_BUYER, ORG_RET_LONG_NAME_BUYER (1 each) — RETURNABLE_LINE_FLOOR in org-returns-specs.mjs, guarded by td:validate:returns-org.",
     "changelog_1_5_64": "VCST-5884 round 3 top-up: ORG_RET_BUYER spares 3 -> 7 (spare4..7 fields), RETURNABLE_LINE_FLOOR.BUYER 8 -> 16.",
     "changelog_1_5_65": "RETURNS_ORDER_RECIPIENT: dedicated AGENT-TEST yopmail mailbox for the VCST-5628 returns orders' address emails (seed-return-orders.mjs forces + hard-stops; td:validate:orders §8c).",
-    "changelog_1_5_66": "VCST-6017 GA4 markup product lists: registered PROD_GA4_RELATED_ANCHOR, PROD_GA4_VARIATION_PARENT, CART_GA4_SFL_RB (seed:ga4-lists, scripts/seed-data/analytics) and PB_GA4_PRODUCT_LISTS, PB_GA4_HTML_LISTS (seed:cms-pages:ga4) — business keys only, runtime ids from aliases.<env>.json; gated by td:validate:ga4-lists."
+    "changelog_1_5_66": "VCST-6017 GA4 markup product lists: registered PROD_GA4_RELATED_ANCHOR, PROD_GA4_VARIATION_PARENT, CART_GA4_SFL_RB (seed:ga4-lists, scripts/seed-data/analytics) and PB_GA4_PRODUCT_LISTS, PB_GA4_HTML_LISTS (seed:cms-pages:ga4) — business keys only, runtime ids from aliases.<env>.json; gated by td:validate:ga4-lists.",
+    "changelog_1_5_67": "VCST-5884 FIXTURE-GAP ORG_RET_OTHER_STORE_RETURN closed: registered ORG_RET_OTHER_STORE_RETURN (seed:returns:org) — ORG_RET_BUYER submits a return in STORE_ID on its last spare order, then an administrator PUT /api/return moves it to STORE_ID_SECONDARY (mechanism observed by 050o RET-ORG-011); no store setting is touched. RETURNS_LEGACY_STORELESS remains a FIXTURE-GAP."
   },
   "COMPLETED_ORDER": {
     "json": "orders/completed-order",
@@ -111,7 +112,7 @@
       "currency": "currency",
       "id": "id"
     },
-    "notes": "VCST-5482 — RFQ submitted by {{ORG_USER_EMAIL}} with admin per-line pricing applied. Runtime id from aliases.<env>.json (npm run seed:quotes). Unblocks suite 015 QUOTE-004/005/006/008/009/018/020/021/025."
+    "notes": "Quote state \"Proposal sent\" (Processing -> Proposal sent), read-only. admin responded: per-line proposal price below the live catalog price on 2 lines; the no-expiry member of the QUOTE-023 expiry triad. Read by suite 015 QUOTE-004, QUOTE-005, QUOTE-009, QUOTE-018, QUOTE-020, QUOTE-021, QUOTE-023, QUOTE-025. Seeded once PER agent-pool B2B buyer with customerId = that buyer's login id and organizationId = the buyer's live org (KB-874B24DD): id/number/buyer_email/expiration_date = slot 1 (suite 015's chrome lane); id_slot<n>/number_slot<n>/buyer_email_slot<n>/expiration_date_slot<n> for every slot — all runtime, in aliases.<env>.json only. Static status/currency resolve from the fixture. Spec: scripts/seed-data/orders/orders-specs.mjs QUOTE_FIXTURES; guard npm run td:validate:orders; live check npm run td:reconcile [16]; teardown npm run seed:quotes:teardown."
   },
   "ACCEPTED_QUOTE": {
     "json": "quotes/quote-accepted",
@@ -121,7 +122,137 @@
       "currency": "currency",
       "id": "id"
     },
-    "notes": "VCST-5482 — admin-priced RFQ accepted by the buyer (ready to convert). Runtime id from aliases.<env>.json (npm run seed:quotes). Unblocks suite 015 QUOTE-007/024/027/028/030."
+    "notes": "Quote state \"Ordered\" (Processing -> Proposal sent -> Ordered), read-only. terminal Ordered state with a 3-step change log; reached by status writes, so NO customer order is linked to it — never use it to assert the order a conversion produced. Read by suite 015 QUOTE-012, QUOTE-014, QUOTE-024. Seeded once PER agent-pool B2B buyer with customerId = that buyer's login id and organizationId = the buyer's live org (KB-874B24DD): id/number/buyer_email/expiration_date = slot 1 (suite 015's chrome lane); id_slot<n>/number_slot<n>/buyer_email_slot<n>/expiration_date_slot<n> for every slot — all runtime, in aliases.<env>.json only. Static status/currency resolve from the fixture. Spec: scripts/seed-data/orders/orders-specs.mjs QUOTE_FIXTURES; guard npm run td:validate:orders; live check npm run td:reconcile [16]; teardown npm run seed:quotes:teardown."
+  },
+  "QUOTE_PROCESSING": {
+    "json": "quotes/quote-processing",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "id": "id"
+    },
+    "notes": "Quote state \"Processing\" (Processing), read-only. submitted, not yet answered — no Approve/Decline may be offered. Read by suite 015 QUOTE-012, QUOTE-014. Seeded once PER agent-pool B2B buyer with customerId = that buyer's login id and organizationId = the buyer's live org (KB-874B24DD): id/number/buyer_email/expiration_date = slot 1 (suite 015's chrome lane); id_slot<n>/number_slot<n>/buyer_email_slot<n>/expiration_date_slot<n> for every slot — all runtime, in aliases.<env>.json only. Static status/currency resolve from the fixture. Spec: scripts/seed-data/orders/orders-specs.mjs QUOTE_FIXTURES; guard npm run td:validate:orders; live check npm run td:reconcile [16]; teardown npm run seed:quotes:teardown."
+  },
+  "QUOTE_ON_HOLD": {
+    "json": "quotes/quote-on-hold",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "id": "id"
+    },
+    "notes": "Quote state \"On hold\" (Processing -> On hold), read-only. admin paused processing — a status distinct from Processing in the list. Read by suite 015 QUOTE-012, QUOTE-014. Seeded once PER agent-pool B2B buyer with customerId = that buyer's login id and organizationId = the buyer's live org (KB-874B24DD): id/number/buyer_email/expiration_date = slot 1 (suite 015's chrome lane); id_slot<n>/number_slot<n>/buyer_email_slot<n>/expiration_date_slot<n> for every slot — all runtime, in aliases.<env>.json only. Static status/currency resolve from the fixture. Spec: scripts/seed-data/orders/orders-specs.mjs QUOTE_FIXTURES; guard npm run td:validate:orders; live check npm run td:reconcile [16]; teardown npm run seed:quotes:teardown."
+  },
+  "QUOTE_DECLINED": {
+    "json": "quotes/quote-declined",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "id": "id"
+    },
+    "notes": "Quote state \"Declined\" (Processing -> Proposal sent -> Declined), read-only. terminal declined state with a Processing → Proposal sent → Declined change log. Read by suite 015 QUOTE-012, QUOTE-014, QUOTE-024. Seeded once PER agent-pool B2B buyer with customerId = that buyer's login id and organizationId = the buyer's live org (KB-874B24DD): id/number/buyer_email/expiration_date = slot 1 (suite 015's chrome lane); id_slot<n>/number_slot<n>/buyer_email_slot<n>/expiration_date_slot<n> for every slot — all runtime, in aliases.<env>.json only. Static status/currency resolve from the fixture. Spec: scripts/seed-data/orders/orders-specs.mjs QUOTE_FIXTURES; guard npm run td:validate:orders; live check npm run td:reconcile [16]; teardown npm run seed:quotes:teardown."
+  },
+  "EXPIRED_QUOTE": {
+    "json": "quotes/quote-expired",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "id": "id"
+    },
+    "notes": "Quote state \"Proposal sent\" (Processing -> Proposal sent), expirationDate -3d from the seed, read-only. actionable status with a PAST expirationDate — only the date says it is expired. Read by suite 015 QUOTE-011, QUOTE-023. Seeded once PER agent-pool B2B buyer with customerId = that buyer's login id and organizationId = the buyer's live org (KB-874B24DD): id/number/buyer_email/expiration_date = slot 1 (suite 015's chrome lane); id_slot<n>/number_slot<n>/buyer_email_slot<n>/expiration_date_slot<n> for every slot — all runtime, in aliases.<env>.json only. Static status/currency resolve from the fixture. Spec: scripts/seed-data/orders/orders-specs.mjs QUOTE_FIXTURES; guard npm run td:validate:orders; live check npm run td:reconcile [16]; teardown npm run seed:quotes:teardown."
+  },
+  "QUOTE_FUTURE_EXPIRY": {
+    "json": "quotes/quote-future-expiry",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "id": "id"
+    },
+    "notes": "Quote state \"Proposal sent\" (Processing -> Proposal sent), expirationDate +30d from the seed, read-only. same status as EXPIRED_QUOTE with a FUTURE expirationDate — the pair isolates the date. Read by suite 015 QUOTE-023. Seeded once PER agent-pool B2B buyer with customerId = that buyer's login id and organizationId = the buyer's live org (KB-874B24DD): id/number/buyer_email/expiration_date = slot 1 (suite 015's chrome lane); id_slot<n>/number_slot<n>/buyer_email_slot<n>/expiration_date_slot<n> for every slot — all runtime, in aliases.<env>.json only. Static status/currency resolve from the fixture. Spec: scripts/seed-data/orders/orders-specs.mjs QUOTE_FIXTURES; guard npm run td:validate:orders; live check npm run td:reconcile [16]; teardown npm run seed:quotes:teardown."
+  },
+  "QUOTE_TO_ACCEPT": {
+    "json": "quotes/quote-to-accept",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "id": "id"
+    },
+    "notes": "Quote state \"Proposal sent\" (Processing -> Proposal sent), DISPOSABLE — consumed by its one case, re-seed (npm run seed:quotes) restores it. used up by Approve. Read by suite 015 QUOTE-006. Seeded once PER agent-pool B2B buyer with customerId = that buyer's login id and organizationId = the buyer's live org (KB-874B24DD): id/number/buyer_email/expiration_date = slot 1 (suite 015's chrome lane); id_slot<n>/number_slot<n>/buyer_email_slot<n>/expiration_date_slot<n> for every slot — all runtime, in aliases.<env>.json only. Static status/currency resolve from the fixture. Spec: scripts/seed-data/orders/orders-specs.mjs QUOTE_FIXTURES; guard npm run td:validate:orders; live check npm run td:reconcile [16]; teardown npm run seed:quotes:teardown."
+  },
+  "QUOTE_TO_DECLINE": {
+    "json": "quotes/quote-to-decline",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "id": "id"
+    },
+    "notes": "Quote state \"Proposal sent\" (Processing -> Proposal sent), DISPOSABLE — consumed by its one case, re-seed (npm run seed:quotes) restores it. used up by Decline. Read by suite 015 QUOTE-008. Seeded once PER agent-pool B2B buyer with customerId = that buyer's login id and organizationId = the buyer's live org (KB-874B24DD): id/number/buyer_email/expiration_date = slot 1 (suite 015's chrome lane); id_slot<n>/number_slot<n>/buyer_email_slot<n>/expiration_date_slot<n> for every slot — all runtime, in aliases.<env>.json only. Static status/currency resolve from the fixture. Spec: scripts/seed-data/orders/orders-specs.mjs QUOTE_FIXTURES; guard npm run td:validate:orders; live check npm run td:reconcile [16]; teardown npm run seed:quotes:teardown."
+  },
+  "QUOTE_TO_CONVERT": {
+    "json": "quotes/quote-to-convert",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "id": "id"
+    },
+    "notes": "Quote state \"Proposal sent\" (Processing -> Proposal sent), DISPOSABLE — consumed by its one case, re-seed (npm run seed:quotes) restores it. used up by Approve (= convert to order). Read by suite 015 QUOTE-007. Seeded once PER agent-pool B2B buyer with customerId = that buyer's login id and organizationId = the buyer's live org (KB-874B24DD): id/number/buyer_email/expiration_date = slot 1 (suite 015's chrome lane); id_slot<n>/number_slot<n>/buyer_email_slot<n>/expiration_date_slot<n> for every slot — all runtime, in aliases.<env>.json only. Static status/currency resolve from the fixture. Spec: scripts/seed-data/orders/orders-specs.mjs QUOTE_FIXTURES; guard npm run td:validate:orders; live check npm run td:reconcile [16]; teardown npm run seed:quotes:teardown."
+  },
+  "QUOTE_TO_CONVERT_REPRICED": {
+    "json": "quotes/quote-to-convert-repriced",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "id": "id"
+    },
+    "notes": "Quote state \"Proposal sent\" (Processing -> Proposal sent), DISPOSABLE — consumed by its one case, re-seed (npm run seed:quotes) restores it. proposal = 80% of the live catalog price, so an order priced from the catalog instead of the quote differs on every line. Read by suite 015 QUOTE-027. Seeded once PER agent-pool B2B buyer with customerId = that buyer's login id and organizationId = the buyer's live org (KB-874B24DD): id/number/buyer_email/expiration_date = slot 1 (suite 015's chrome lane); id_slot<n>/number_slot<n>/buyer_email_slot<n>/expiration_date_slot<n> for every slot — all runtime, in aliases.<env>.json only. Static status/currency resolve from the fixture. Spec: scripts/seed-data/orders/orders-specs.mjs QUOTE_FIXTURES; guard npm run td:validate:orders; live check npm run td:reconcile [16]; teardown npm run seed:quotes:teardown."
+  },
+  "QUOTE_TO_CONVERT_MULTILINE": {
+    "json": "quotes/quote-to-convert-multiline",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "id": "id"
+    },
+    "notes": "Quote state \"Proposal sent\" (Processing -> Proposal sent), DISPOSABLE — consumed by its one case, re-seed (npm run seed:quotes) restores it. 3 lines with different quantities — a partial or quantity-collapsing conversion is visible. Read by suite 015 QUOTE-028. Seeded once PER agent-pool B2B buyer with customerId = that buyer's login id and organizationId = the buyer's live org (KB-874B24DD): id/number/buyer_email/expiration_date = slot 1 (suite 015's chrome lane); id_slot<n>/number_slot<n>/buyer_email_slot<n>/expiration_date_slot<n> for every slot — all runtime, in aliases.<env>.json only. Static status/currency resolve from the fixture. Spec: scripts/seed-data/orders/orders-specs.mjs QUOTE_FIXTURES; guard npm run td:validate:orders; live check npm run td:reconcile [16]; teardown npm run seed:quotes:teardown."
+  },
+  "QUOTE_TO_CONVERT_STATUS": {
+    "json": "quotes/quote-to-convert-status",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "id": "id"
+    },
+    "notes": "Quote state \"Proposal sent\" (Processing -> Proposal sent), DISPOSABLE — consumed by its one case, re-seed (npm run seed:quotes) restores it. used up by Approve; the case reads the status afterwards. Read by suite 015 QUOTE-030. Seeded once PER agent-pool B2B buyer with customerId = that buyer's login id and organizationId = the buyer's live org (KB-874B24DD): id/number/buyer_email/expiration_date = slot 1 (suite 015's chrome lane); id_slot<n>/number_slot<n>/buyer_email_slot<n>/expiration_date_slot<n> for every slot — all runtime, in aliases.<env>.json only. Static status/currency resolve from the fixture. Spec: scripts/seed-data/orders/orders-specs.mjs QUOTE_FIXTURES; guard npm run td:validate:orders; live check npm run td:reconcile [16]; teardown npm run seed:quotes:teardown."
+  },
+  "EXPIRED_QUOTE_TO_ACCEPT": {
+    "json": "quotes/quote-expired-to-accept",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "id": "id"
+    },
+    "notes": "Quote state \"Proposal sent\" (Processing -> Proposal sent), expirationDate -3d from the seed, DISPOSABLE — consumed by its one case, re-seed (npm run seed:quotes) restores it. past expirationDate; used up IF Approve succeeds (the handler does not check the date) — kept apart from EXPIRED_QUOTE so a successful approve cannot corrupt QUOTE-011/023. Read by suite 015 QUOTE-022. Seeded once PER agent-pool B2B buyer with customerId = that buyer's login id and organizationId = the buyer's live org (KB-874B24DD): id/number/buyer_email/expiration_date = slot 1 (suite 015's chrome lane); id_slot<n>/number_slot<n>/buyer_email_slot<n>/expiration_date_slot<n> for every slot — all runtime, in aliases.<env>.json only. Static status/currency resolve from the fixture. Spec: scripts/seed-data/orders/orders-specs.mjs QUOTE_FIXTURES; guard npm run td:validate:orders; live check npm run td:reconcile [16]; teardown npm run seed:quotes:teardown."
+  },
+  "QUOTE_PROPOSAL_OOS": {
+    "json": "quotes/quote-oos",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "id": "id"
+    },
+    "notes": "Quote state \"Proposal sent\" (Processing -> Proposal sent), DISPOSABLE — consumed by its one case, re-seed (npm run seed:quotes) restores it. line 1 is the permanent OOS product, line 2 is in stock — \"whole conversion refused\" and \"OOS line silently dropped\" look different. Read by suite 015 QUOTE-026. Seeded once PER agent-pool B2B buyer with customerId = that buyer's login id and organizationId = the buyer's live org (KB-874B24DD): id/number/buyer_email/expiration_date = slot 1 (suite 015's chrome lane); id_slot<n>/number_slot<n>/buyer_email_slot<n>/expiration_date_slot<n> for every slot — all runtime, in aliases.<env>.json only. Static status/currency resolve from the fixture. Spec: scripts/seed-data/orders/orders-specs.mjs QUOTE_FIXTURES; guard npm run td:validate:orders; live check npm run td:reconcile [16]; teardown npm run seed:quotes:teardown."
   },
   "CFG_LAPTOP": {
     "file": "products/configurable-products",
@@ -4362,6 +4493,25 @@
     "id": "",
     "name": "AGENT-TEST-SR-CART-WEST",
     "_notes": "Second active cart, in ORG-004/AcmeWest, so the cross-customer dashboard cart count is >1 and cross-org cart scoping is exercised (BL-SR-002/BL-SR-006). Runtime id in aliases.<env>.json (npm run seed:sales-rep-stats)."
+  },
+  "SR_REP_PERF": {
+    "_inline": true,
+    "seed": "seed:sales-rep-perf",
+    "id": "",
+    "user_id": "",
+    "email": "agent-test-sr-perf@example.com",
+    "fullName": "AGENT-TEST-SR-PERF Rep",
+    "store": "B2B-store",
+    "_notes": "VCST-5755 AC-5 performance-dataset rep. DEDICATED: no other fixture or suite reads its data. Creator of every AGENT-TEST-SRPERF-* order (customerId = its ApplicationUser id, BL-SR-002) across 15 dedicated orgs AGENT-TEST-SR-PERF-ORG-01..15. Shape lives in scripts/seed-data/sales-rep/sales-rep-perf-specs.mjs; id / user_id land in aliases.<env>.json (npm run seed:sales-rep-perf)."
+  },
+  "SR_PERF_DATASET": {
+    "_inline": true,
+    "seed": "seed:sales-rep-perf",
+    "org_ids": "",
+    "order_count": "",
+    "stats_order_count": "",
+    "seeded_at": "",
+    "_notes": "VCST-5755 AC-5 performance dataset summary for the env it was seeded on: semicolon-joined runtime org GUIDs (ORG-01..15 order), the number of AGENT-TEST-SRPERF-* orders present after the last seed, and how many of them the statistics scope counts (not IsCancelled, BL-SR-005). Written by npm run seed:sales-rep-perf; removed by seed:sales-rep-perf:teardown."
   },
   "SR_REP_LOCKABLE": {
     "file": "sales-rep/sales-reps",
@@ -10282,6 +10432,20 @@
     },
     "_notes": "VCST-5884 — the ONE seeded return: ORG_RET_OTHER_BUYER's return in ORG_RET_OTHER_ORG, submitted through xAPI (createReturn → submitReturn, status Requested, customerReference AGENT-TEST-RET-ORG-OTHER-R1). It must never appear for a viewer-org holder (organizationReturns, keyword by its number, return(id) → null). STATED LIMITS: no case may decide/cancel it — a later status is still a valid leak probe (the seeder reuses any non-Draft status) but a Draft is rebuilt. Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
   },
+  "ORG_RET_OTHER_STORE_RETURN": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "fields": {
+      "id": "id",
+      "number": "number",
+      "status": "status",
+      "storeId": "storeId",
+      "orderId": "orderId",
+      "orderNumber": "orderNumber",
+      "organizationId": "organizationId"
+    },
+    "_notes": "VCST-5884 — a VIEWER-org return that sits in ANOTHER store (formerly a FIXTURE-GAP). ORG_RET_BUYER submits it in {{STORE_ID}} through xAPI (createReturn → submitReturn, customerReference AGENT-TEST-RET-ORG-OTHERSTORE-R1, one unit of lineB on its LAST spare order), then an administrator PUT /api/return moves it to {{STORE_ID_SECONDARY}} — the mechanism 050o RET-ORG-011 observed; no store setting is changed (Return.ReturnEnabled stays false on the target store). Organization stays ORG_RET_VIEWER_ORG. STATED LIMITS: no case may decide, cancel or move it back — the seeder rebuilds it when it is no longer Requested or no longer in the target store. A per-run case that needs to WRITE an other-store return still creates its own (FIFTH RULE). Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. `npm run seed:returns:org:teardown` (or `-- --teardown --only ORG_RET_OTHER_STORE_RETURN` for the return alone) removes it with zero residue."
+  },
   "ORG_RET_LEAVER": {
     "_inline": true,
     "seed": "seed:returns:org",
@@ -10479,7 +10643,7 @@
   },
   "PUNCHOUT_CONFIG_0": {
     "_inline": true,
-    "_notes": "VCST-5886 Punchout configuration 0 (Punchout:Configurations:0 app setting, deployed per env via vc-deploy-dev infra/environments.yml — there is no REST read-back). Purpose: happy path — every optional check ON (sender domain + return-URL allow-list), default-length lifetimes. sharedSecret is a {{VAR}} token: the value lives only in .env.local as PUNCHOUT_SHARED_SECRET_0_<TEST_ENV> (e.g. PUNCHOUT_SHARED_SECRET_0_VCPTCORE_QA1), promoted to PUNCHOUT_SHARED_SECRET_0 by config.js / seed-common.mjs. Env facts below are EMPTY in this base file by design; the seeder writes the deployed values to the env overlay. Seeded/registered by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs. Only vcptcore_qa1 has VirtoCommerce.Punchout today — on every other env the seeder skips and these fields resolve to \"\" (a clear miss). Runtime ids live ONLY in aliases.<env>.json.",
+    "_notes": "VCST-5886 Punchout configuration 0 (Punchout:Configurations:0 app setting, deployed per env via vc-deploy-dev infra/environments.yml — there is no REST read-back). Purpose: happy path — every optional check ON (sender domain + return-URL allow-list), default-length lifetimes. sharedSecret is a {{VAR}} token: the value lives only in .env.local as PUNCHOUT_SHARED_SECRET_0_<TEST_ENV> (e.g. PUNCHOUT_SHARED_SECRET_0_VCPTCORE_QA1), promoted to PUNCHOUT_SHARED_SECRET_0 by config.js / seed-common.mjs. Env facts below are EMPTY in this base file by design; the seeder writes the deployed values to the env overlay. Seeded/registered by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs. VirtoCommerce.Punchout is deployed only on vcptcore_qa1 and vcst — on every other env the seeder skips and these fields resolve to \"\" (a clear miss). Runtime ids live ONLY in aliases.<env>.json.",
     "seed": "seed:punchout",
     "index": 0,
     "sharedSecret": "{{PUNCHOUT_SHARED_SECRET_0}}",
@@ -10499,7 +10663,7 @@
   },
   "PUNCHOUT_CONFIG_1": {
     "_inline": true,
-    "_notes": "VCST-5886 Punchout configuration 1 (Punchout:Configurations:1 app setting, deployed per env via vc-deploy-dev infra/environments.yml — there is no REST read-back). Purpose: checks OFF (no SenderDomain, no AllowedReturnUrls), a DIFFERENT store, short lifetimes (token/session expiry cases). sharedSecret is a {{VAR}} token: the value lives only in .env.local as PUNCHOUT_SHARED_SECRET_1_<TEST_ENV> (e.g. PUNCHOUT_SHARED_SECRET_1_VCPTCORE_QA1), promoted to PUNCHOUT_SHARED_SECRET_1 by config.js / seed-common.mjs. Env facts below are EMPTY in this base file by design; the seeder writes the deployed values to the env overlay. Seeded/registered by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs. Only vcptcore_qa1 has VirtoCommerce.Punchout today — on every other env the seeder skips and these fields resolve to \"\" (a clear miss). Runtime ids live ONLY in aliases.<env>.json.",
+    "_notes": "VCST-5886 Punchout configuration 1 (Punchout:Configurations:1 app setting, deployed per env via vc-deploy-dev infra/environments.yml — there is no REST read-back). Purpose: checks OFF (no SenderDomain, no AllowedReturnUrls), a DIFFERENT store, short lifetimes (token/session expiry cases). sharedSecret is a {{VAR}} token: the value lives only in .env.local as PUNCHOUT_SHARED_SECRET_1_<TEST_ENV> (e.g. PUNCHOUT_SHARED_SECRET_1_VCPTCORE_QA1), promoted to PUNCHOUT_SHARED_SECRET_1 by config.js / seed-common.mjs. Env facts below are EMPTY in this base file by design; the seeder writes the deployed values to the env overlay. Seeded/registered by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs. VirtoCommerce.Punchout is deployed only on vcptcore_qa1 and vcst — on every other env the seeder skips and these fields resolve to \"\" (a clear miss). Runtime ids live ONLY in aliases.<env>.json.",
     "seed": "seed:punchout",
     "index": 1,
     "sharedSecret": "{{PUNCHOUT_SHARED_SECRET_1}}",
@@ -10519,7 +10683,7 @@
   },
   "PUNCHOUT_CONFIG_2": {
     "_inline": true,
-    "_notes": "VCST-5886 Punchout configuration 2 (Punchout:Configurations:2 app setting, deployed per env via vc-deploy-dev infra/environments.yml — there is no REST read-back). Purpose: StoreId points at a store that does not exist → mapped identity gets cXML 500 (N15). sharedSecret is a {{VAR}} token: the value lives only in .env.local as PUNCHOUT_SHARED_SECRET_2_<TEST_ENV> (e.g. PUNCHOUT_SHARED_SECRET_2_VCPTCORE_QA1), promoted to PUNCHOUT_SHARED_SECRET_2 by config.js / seed-common.mjs. Env facts below are EMPTY in this base file by design; the seeder writes the deployed values to the env overlay. Seeded/registered by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs. Only vcptcore_qa1 has VirtoCommerce.Punchout today — on every other env the seeder skips and these fields resolve to \"\" (a clear miss). Runtime ids live ONLY in aliases.<env>.json.",
+    "_notes": "VCST-5886 Punchout configuration 2 (Punchout:Configurations:2 app setting, deployed per env via vc-deploy-dev infra/environments.yml — there is no REST read-back). Purpose: StoreId points at a store that does not exist → mapped identity gets cXML 500 (N15). sharedSecret is a {{VAR}} token: the value lives only in .env.local as PUNCHOUT_SHARED_SECRET_2_<TEST_ENV> (e.g. PUNCHOUT_SHARED_SECRET_2_VCPTCORE_QA1), promoted to PUNCHOUT_SHARED_SECRET_2 by config.js / seed-common.mjs. Env facts below are EMPTY in this base file by design; the seeder writes the deployed values to the env overlay. Seeded/registered by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs. VirtoCommerce.Punchout is deployed only on vcptcore_qa1 and vcst — on every other env the seeder skips and these fields resolve to \"\" (a clear miss). Runtime ids live ONLY in aliases.<env>.json.",
     "seed": "seed:punchout",
     "index": 2,
     "sharedSecret": "{{PUNCHOUT_SHARED_SECRET_2}}",
@@ -10539,7 +10703,7 @@
   },
   "PUNCHOUT_CONFIG_3": {
     "_inline": true,
-    "_notes": "VCST-5886 Punchout configuration 3 (Punchout:Configurations:3 app setting, deployed per env via vc-deploy-dev infra/environments.yml — there is no REST read-back). Purpose: no StoreId at all → cXML 500 for any identity (N16). sharedSecret is a {{VAR}} token: the value lives only in .env.local as PUNCHOUT_SHARED_SECRET_3_<TEST_ENV> (e.g. PUNCHOUT_SHARED_SECRET_3_VCPTCORE_QA1), promoted to PUNCHOUT_SHARED_SECRET_3 by config.js / seed-common.mjs. Env facts below are EMPTY in this base file by design; the seeder writes the deployed values to the env overlay. Seeded/registered by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs. Only vcptcore_qa1 has VirtoCommerce.Punchout today — on every other env the seeder skips and these fields resolve to \"\" (a clear miss). Runtime ids live ONLY in aliases.<env>.json.",
+    "_notes": "VCST-5886 Punchout configuration 3 (Punchout:Configurations:3 app setting, deployed per env via vc-deploy-dev infra/environments.yml — there is no REST read-back). Purpose: no StoreId at all → cXML 500 for any identity (N16). sharedSecret is a {{VAR}} token: the value lives only in .env.local as PUNCHOUT_SHARED_SECRET_3_<TEST_ENV> (e.g. PUNCHOUT_SHARED_SECRET_3_VCPTCORE_QA1), promoted to PUNCHOUT_SHARED_SECRET_3 by config.js / seed-common.mjs. Env facts below are EMPTY in this base file by design; the seeder writes the deployed values to the env overlay. Seeded/registered by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs. VirtoCommerce.Punchout is deployed only on vcptcore_qa1 and vcst — on every other env the seeder skips and these fields resolve to \"\" (a clear miss). Runtime ids live ONLY in aliases.<env>.json.",
     "seed": "seed:punchout",
     "index": 3,
     "sharedSecret": "{{PUNCHOUT_SHARED_SECRET_3}}",
@@ -10559,11 +10723,12 @@
   },
   "PUNCHOUT_MAPPING_DEFAULT": {
     "_inline": true,
-    "_notes": "VCST-5886 punchout user mapping AGENT-TEST-PO-100 → the contact + own security account of {{USER_EMAIL}} (exactly 1 organization). created by /qa-test VCST-5886 step 1r; deleted at run close-out — this seeder only registers it. id = mapping id, userId = security account, memberId = contact; currentOrganizationId/otherOrganizationId/organizationCount come from the contact. Seeded/registered by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs. Only vcptcore_qa1 has VirtoCommerce.Punchout today — on every other env the seeder skips and these fields resolve to \"\" (a clear miss). Runtime ids live ONLY in aliases.<env>.json.",
+    "_notes": "VCST-5886 punchout user mapping AGENT-TEST-PO-100 → the contact + own security account of the single-org persona (exactly 1 organization): {{USER_EMAIL}} by default, {{ORG_USER_EMAIL}} on vcst (USER_EMAIL has no organization there). Cases read the buyer as persona_email / persona_password, which the env overlay sets to that env's {{VAR}} tokens. created by /qa-test VCST-5886 step 1r; deleted at run close-out — this seeder only registers it. id = mapping id, userId = security account, memberId = contact; currentOrganizationId/otherOrganizationId/organizationCount come from the contact. Seeded/registered by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs. VirtoCommerce.Punchout is deployed only on vcptcore_qa1 and vcst — on every other env the seeder skips and these fields resolve to \"\" (a clear miss). Runtime ids live ONLY in aliases.<env>.json.",
     "seed": "seed:punchout",
     "externalId": "AGENT-TEST-PO-100",
     "persona_email": "{{USER_EMAIL}}",
     "persona_email_var": "USER_EMAIL",
+    "persona_password": "{{USER_PASSWORD}}",
     "owned_by_seeder": false,
     "id": "",
     "userId": "",
@@ -10574,7 +10739,7 @@
   },
   "PUNCHOUT_MAPPING_MULTI_ORG": {
     "_inline": true,
-    "_notes": "VCST-5886 punchout user mapping AGENT-TEST-PO-200 → the contact + own security account of {{MULTI_ORG_USER_EMAIL}} (≥2 organizations). seed-punchout.mjs find-or-create; teardown deletes it by id. id = mapping id, userId = security account, memberId = contact; currentOrganizationId/otherOrganizationId/organizationCount come from the contact. Seeded/registered by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs. Only vcptcore_qa1 has VirtoCommerce.Punchout today — on every other env the seeder skips and these fields resolve to \"\" (a clear miss). Runtime ids live ONLY in aliases.<env>.json.",
+    "_notes": "VCST-5886 punchout user mapping AGENT-TEST-PO-200 → the contact + own security account of {{MULTI_ORG_USER_EMAIL}} (≥2 organizations). seed-punchout.mjs find-or-create; teardown deletes it by id. id = mapping id, userId = security account, memberId = contact; currentOrganizationId/otherOrganizationId/organizationCount come from the contact. Seeded/registered by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs. VirtoCommerce.Punchout is deployed only on vcptcore_qa1 and vcst — on every other env the seeder skips and these fields resolve to \"\" (a clear miss). Runtime ids live ONLY in aliases.<env>.json.",
     "seed": "seed:punchout",
     "externalId": "AGENT-TEST-PO-200",
     "persona_email": "{{MULTI_ORG_USER_EMAIL}}",
@@ -10589,7 +10754,7 @@
   },
   "BACKOFFICE_PUNCHOUT_READ": {
     "_inline": true,
-    "_notes": "AGENT-TEST VCST-5886 BSC-2: opens Companies & contacts (customer:access + customer:read) and sees the Punchout user widget (punchout:read). Holds NO punchout:create/update/delete, so Save/Delete must be disabled and POST/PUT/DELETE /api/punchout-user-mappings must 403. Safe to delete. Back-office Manager account (isAdministrator=false), exactly one role AGENT-TEST-Punchout-Reader. Expected REST: search 200, write 403. Seeded/registered by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs. Only vcptcore_qa1 has VirtoCommerce.Punchout today — on every other env the seeder skips and these fields resolve to \"\" (a clear miss). Runtime ids live ONLY in aliases.<env>.json.",
+    "_notes": "AGENT-TEST VCST-5886 BSC-2: opens Companies & contacts (customer:access + customer:read) and sees the Punchout user widget (punchout:read). Holds NO punchout:create/update/delete, so Save/Delete must be disabled and POST/PUT/DELETE /api/punchout-user-mappings must 403. Safe to delete. Back-office Manager account (isAdministrator=false), exactly one role AGENT-TEST-Punchout-Reader. Expected REST: search 200, write 403. Seeded/registered by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs. VirtoCommerce.Punchout is deployed only on vcptcore_qa1 and vcst — on every other env the seeder skips and these fields resolve to \"\" (a clear miss). Runtime ids live ONLY in aliases.<env>.json.",
     "seed": "seed:punchout",
     "email": "AGENT-TEST-punchout-reader@test.virtocommerce.com",
     "login": "AGENT-TEST-punchout-reader@test.virtocommerce.com",
@@ -10603,7 +10768,7 @@
   },
   "BACKOFFICE_NO_PUNCHOUT": {
     "_inline": true,
-    "_notes": "AGENT-TEST VCST-5886 BSC-3: opens Companies & contacts (customer:access + customer:read) with NO punchout:* permission, so the Punchout user widget must be hidden and POST /api/punchout-user-mappings/search must 403. Safe to delete. Back-office Manager account (isAdministrator=false), exactly one role AGENT-TEST-Punchout-None. Expected REST: search 403, write 403. Seeded/registered by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs. Only vcptcore_qa1 has VirtoCommerce.Punchout today — on every other env the seeder skips and these fields resolve to \"\" (a clear miss). Runtime ids live ONLY in aliases.<env>.json.",
+    "_notes": "AGENT-TEST VCST-5886 BSC-3: opens Companies & contacts (customer:access + customer:read) with NO punchout:* permission, so the Punchout user widget must be hidden and POST /api/punchout-user-mappings/search must 403. Safe to delete. Back-office Manager account (isAdministrator=false), exactly one role AGENT-TEST-Punchout-None. Expected REST: search 403, write 403. Seeded/registered by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs. VirtoCommerce.Punchout is deployed only on vcptcore_qa1 and vcst — on every other env the seeder skips and these fields resolve to \"\" (a clear miss). Runtime ids live ONLY in aliases.<env>.json.",
     "seed": "seed:punchout",
     "email": "AGENT-TEST-no-punchout@test.virtocommerce.com",
     "login": "AGENT-TEST-no-punchout@test.virtocommerce.com",
@@ -10614,5 +10779,86 @@
     "permissions": "customer:access,customer:read",
     "user_id": "",
     "role_id": ""
+  },
+  "PB_ASSETS_ROOT": {
+    "_inline": true,
+    "_comment": "VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "folder": "AGENT-TEST-VCST5726"
+  },
+  "PB_ASSETS_P500": {
+    "_inline": true,
+    "_comment": "VCST-5726 F500: 500 PNGs asset-000..asset-499 uploaded in a seeded shuffle (name order != upload order). firstByUpload/lastByUpload are read from the live createdDate. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "folder": "AGENT-TEST-VCST5726/p500",
+    "count": 500,
+    "firstByName": "asset-000.png",
+    "lastByName": "asset-499.png"
+  },
+  "PB_ASSETS_MIXED": {
+    "_inline": true,
+    "_comment": "VCST-5726 FMIX: 20 PDF asset-000..019 + 480 PNG asset-020..499; an image-accept picker shows 480, first asset-020.png. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "folder": "AGENT-TEST-VCST5726/mixed",
+    "count": 500,
+    "imageCount": 480,
+    "firstImage": "asset-020.png"
+  },
+  "PB_ASSETS_FOLDERS": {
+    "_inline": true,
+    "_comment": "VCST-5726 FFOLDERS: 25 sub-folders sub-00..24 + 30 files file-00..29 (totalCount 55 != fileCount 30). VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "folder": "AGENT-TEST-VCST5726/folders",
+    "totalCount": 55,
+    "fileCount": 30
+  },
+  "PB_ASSETS_DEEP": {
+    "_inline": true,
+    "_comment": "VCST-5726 FDEEP: deep/l1/../l5 (3 PNG per level) + deep/l1/b1..b4 (2 PNG each); d5-a.png at the leaf is referenced by 1 page. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "folder": "AGENT-TEST-VCST5726/deep",
+    "leaf": "AGENT-TEST-VCST5726/deep/l1/l2/l3/l4/l5"
+  },
+  "PB_ASSETS_EMPTY": {
+    "_inline": true,
+    "_comment": "VCST-5726 FEMPTY: empty folder. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "folder": "AGENT-TEST-VCST5726/empty",
+    "totalCount": 0
+  },
+  "PB_ASSETS_TPL": {
+    "_inline": true,
+    "_comment": "VCST-5726 FTPL: template-literal names (harmless marker window.__vcst5726). The folder name is rejected by POST /api/assets/folder (lowercase validator) so it is created by uploading tpl-marker.png into it. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "folder": "AGENT-TEST-VCST5726/tpl",
+    "file": "tpl-{{=window.__vcst5726=2}}.png",
+    "tplFolder": "tpl-{{=window.__vcst5726=1}}"
+  },
+  "PB_ASSET_REF_1": {
+    "_inline": true,
+    "_comment": "VCST-5726: p500/asset-007.png referenced by 1 page (AGENT-TEST-VCST5726-ref-1). assetUrl/pageIds/observed counts in aliases.<env>.json. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "rel": "p500/asset-007.png",
+    "expectedRefs": 1
+  },
+  "PB_ASSET_REF_3": {
+    "_inline": true,
+    "_comment": "VCST-5726: p500/asset-025.png referenced by 3 pages (ref-1..3). VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "rel": "p500/asset-025.png",
+    "expectedRefs": 3
+  },
+  "PB_ASSET_REF_2": {
+    "_inline": true,
+    "_comment": "VCST-5726: p500/asset-499.png referenced by 2 pages (ref-1, ref-2) + 2 shared components (AGENT-TEST-VCST5726-sc-1, sc-2) => expectedRefs 4 total (distinct from asset-025 = 3). VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "rel": "p500/asset-499.png",
+    "expectedRefs": 4,
+    "expectedPageRefs": 2,
+    "expectedScRefs": 2
+  },
+  "PB_ASSET_REF_DEEP": {
+    "_inline": true,
+    "_comment": "VCST-5726: deep/l1/l2/l3/l4/l5/d5-a.png referenced by 1 page (ref-4); a folder-level references lookup from deep/ must find it. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "rel": "deep/l1/l2/l3/l4/l5/d5-a.png",
+    "expectedRefs": 1
+  },
+  "PB_ASSET_REF_SC": {
+    "_inline": true,
+    "_comment": "VCST-5726: shared components (sc-1, sc-2) each referencing p500/asset-499.png. Runtime ids in aliases.<env>.json. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "names": [
+      "AGENT-TEST-VCST5726-sc-1",
+      "AGENT-TEST-VCST5726-sc-2"
+    ]
   }
 }

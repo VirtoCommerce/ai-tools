@@ -16,9 +16,13 @@ CSVIO-004,Import catalog - update existing items,CSV Import,Functional,High,5m,P
 CSVIO-005,Import catalog - multiple product images via CSV,CSV Import,Functional,Medium,5m,CSV with image URLs prepared,"1. Upload CSV with multiple image URLs per product
 2. Start import
 3. Verify images attached","Multiple product images imported and attached correctly",C243261,Not Automated
-CSVIO-006,Import catalog - multilanguage product descriptions,CSV Import,Functional,Medium,5m,CSV with multilanguage descriptions prepared,"1. Upload CSV with product descriptions in different languages
-2. Import
-3. Verify all language variants","Product descriptions imported for all specified languages",C256728,Not Automated
+CSVIO-006,Import catalog - product description lands in the default language,CSV Import,Functional,Medium,5m,"CSV in the export format with a product row carrying a description and a StartDate (a row with an empty StartDate is silently skipped, KB-6891B496); the target catalog has 2 or more languages, otherwise 'no variants in other languages' proves nothing; the catalog default language is known","1. Open the Import blade and open Map columns for the CSV
+2. Verify there is no language column or language mapping target for descriptions
+3. Import a CSV row with a description for a new AGENT-TEST- product
+4. Open the product and read its description in the catalog default language
+5. Open the same product in another catalog language","- The CSV format and the mapping blade offer no language column for descriptions {OBSERVED}
+- The imported description is present on the product in the catalog default language (en-US on the QA stand), exactly once {OBSERVED}
+- No description variants are created for other languages and the import completes without errors {OBSERVED}","C256728 | Repaired 2026-10-14 (Stable 16 regression VCST-6042): CSV format has no language column and the VirtoOZ import guide documents none, so multilanguage descriptions cannot be imported; retargeted to the supported behaviour (description lands in the default language, once). Catches: description dropped, duplicated or written to a wrong language",Not Automated
 CSVIO-007,Import catalog - full product export and reimport,CSV Import,Functional,High,5m,Products with full data exist,"1. Export products to CSV
 2. Modify some values
 3. Reimport modified CSV
@@ -33,8 +37,12 @@ CSVIO-010,Import - SEO properties (creation and update),CSV Import,Functional,Me
 2. Import CSV updating SEO for existing items","SEO properties created and updated via CSV import",C226605 C226606,Not Automated
 CSVIO-011,Import - common properties (updating and creating),CSV Import,Functional,Medium,3m,CSV with common properties prepared,"1. Import CSV with common properties for items
 2. Verify properties created/updated","Common properties imported correctly",C226810,Not Automated
-CSVIO-012,Import - multilanguage property values,CSV Import,Functional,Medium,3m,CSV with multilanguage property values,"1. Import CSV with multilanguage property values
-2. Verify all language values","Multilanguage property values imported for all locales",C256726,Not Automated
+CSVIO-012,Import - property values carry no language mapping and are imported once,CSV Import,Functional,Medium,3m,CSV in the export format with a product row carrying a value for a catalog property,"1. Import a CSV with a property value column for a new AGENT-TEST- product
+2. On the mapping blade check the property column's mapping targets
+3. Complete the import
+4. Open the product and read the property value","- The mapping blade offers no per-language target for property values {OBSERVED}
+- The imported property value is present on the product exactly once - not blank and not duplicated per language {OBSERVED}
+- The import completes without errors {OBSERVED}","C256726 | Repaired 2026-10-14 (Stable 16 regression VCST-6042): no per-language column/mapping for property values exists in the CSV module, so multilanguage property values cannot be imported; retargeted to the supported behaviour (single value imported once). Catches: value lost or duplicated",Not Automated
 CSVIO-013,Export catalog - general,CSV Export,Functional,Critical,5m,Products exist in catalog,"1. Navigate to Catalog
 2. Select products/categories
 3. Click Export
