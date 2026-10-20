@@ -282,7 +282,7 @@ See [`.claude/rules/reports.md`](../../../.claude/rules/reports.md) — the sing
 
 ## Browser Interaction — Mandatory Real-User Behavior
 
-**Hook-enforced.** A `PreToolUse` hook (`hooks/enforce-real-user.mjs`) blocks `browser_evaluate`, `browser_run_code_unsafe`, and `evaluate_script` MCP calls unless the JS payload matches the narrow auto-allow regex list (GraphiQL JWT `execCommand('insertText')`, `dataLayer`/`gtag()`, cross-origin iframe inspection). Do not try to bypass — if your case fits an exception but was blocked, extend the regex.
+**Hook-enforced.** A `PreToolUse` hook (`hooks/enforce-real-user.mjs`) blocks `browser_evaluate`, `browser_run_code_unsafe`, and `evaluate_script` MCP calls on ANY MCP server name (plugin-namespaced ones included) unless the JS payload matches the narrow auto-allow regex list (GraphiQL JWT `execCommand('insertText')`, `dataLayer`/`gtag()`, cross-origin iframe inspection, read-only measurement, `/* @allow-eval */`). **Exploratory / SBTM probes** (`/qa-exploratory`, `/qa-sbtm`) declare themselves with `/* @exploratory: <charter> — <reason> */` in the payload; a finding from such a probe is a server/API-layer finding, never a UI-layer one (VCST-5100), and the sentinel never goes into a scripted test case or regression run. Do not try to bypass — if your case fits an exception but was blocked, extend the regex.
 
 You MUST drive the browser like a real customer:
 
