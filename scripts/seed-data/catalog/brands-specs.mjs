@@ -3,9 +3,11 @@
  * `validate-brands-data.mjs`. No env load, no network, no main().
  *
  * Source: the Brands catalog VirtoCommerce/vc-sample-data added to the B2B sample store (PR #19,
- * VCST-3286, CI run 36045319073 on release/3.0.0). `test-data/catalogs/brands.csv` carries its 19
- * brand categories (code, name, Featured flag, description) and `test-data/uploads/brands/` the
- * logo + banner of each, extracted verbatim from that archive's VirtoCommerce.Catalog.json.
+ * VCST-3286): `Setup/B2BSampleStore/VirtoCommerce.Catalog.json` at merge commit
+ * b08ab90e7766056abbdfc031974c3e9d05b8441a, git-LFS object
+ * sha256:a1b209f82c465dbe72b0771ab8f77586e5f66cf4b6b40062573ea3c39a6a9989 (92 887 102 bytes).
+ * `test-data/catalogs/brands.csv` carries its 19 brand categories (code, name, Featured flag,
+ * description) and `test-data/uploads/brands/` the logo + banner of each, extracted verbatim from it.
  *
  * How the storefront reads it (the contract this fixture serves):
  *   - store settings `Catalog.BrandStoreSetting.{BrandsEnabled,BrandCatalogId,BrandPropertyName}` turn
@@ -24,10 +26,10 @@ export const IMAGE_DIR = 'test-data/uploads/brands';
 export const CSV_COLUMNS = ['brand_code', 'brand_name', 'featured', 'description', 'logo_file', 'banner_file', 'notes'];
 
 /**
- * Platform asset folder the images are uploaded to — and the TEARDOWN MARKER. Brand names are real
- * (no AGENT-TEST prefix, the storefront matches them to product property values), so a category is
- * "ours" only when one of its image urls lies in this folder. An env-owned brand of the same name is
- * never touched, never deleted.
+ * Platform asset folder the images are uploaded to — one half of the TEARDOWN MARKER (`isOurCategory`):
+ * a category is "ours" when its code carries `CODE_PREFIX` or one of its image urls lies in this folder.
+ * Brand NAMES are real (no AGENT-TEST prefix — the storefront matches them to product property values),
+ * so an env-owned brand of the same name is never touched, never deleted.
  */
 export const ASSET_FOLDER = 'catalog/agent-test-brands';
 
@@ -93,6 +95,21 @@ export function planStoreSettings(settings, catalogId) {
 /** The three store settings must all be registered (a build without the brand feature has none). */
 export const missingSettings = (settings) => Object.values(SETTING).filter((n) => settingValue(settings, n) === undefined);
 
+/** The description goes into `<p>` as HTML; the validator rejects `<`/`>`, this escapes the rest. */
+export const htmlText = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+
+/**
+ * The SEO records a re-seed writes: the existing ones, with the record for this store + language
+ * replaced by `seo` (so a changed slug, title or description in the CSV reaches a brand that was
+ * already seeded). Records for other stores or languages are kept as they are.
+ */
+export function mergeSeo(existing, seo) {
+  const same = (s) => s.storeId === seo.storeId && String(s.languageCode || '').toLowerCase() === String(seo.languageCode || '').toLowerCase();
+  const keep = (existing || []).filter((s) => !same(s));
+  const prior = (existing || []).find(same);
+  return [...keep, prior ? { ...prior, ...seo } : seo];
+}
+
 /**
  * Create/update body for one brand category. `urls` = { logo, banner } (uploaded asset urls),
  * `featuredProp` = the catalog's Featured property ({ id }) or null, `seo` = the store-scoped SEO record,
@@ -117,9 +134,9 @@ export function categoryBody(row, { catalogId, urls, featuredProp, seo, lang, ex
     name: row.brand_name,
     isActive: true,
     images,
-    descriptions: [{ content: `<p>${row.description}</p>`, descriptionType: 'FullReview', languageCode: lang }],
+    descriptions: [{ content: `<p>${htmlText(row.description)}</p>`, descriptionType: 'FullReview', languageCode: lang }],
     properties,
-    seoInfos: existing?.seoInfos?.length ? existing.seoInfos : [seo],
+    seoInfos: mergeSeo(existing?.seoInfos, seo),
   };
   if (!existing) body.priority = 0;
   return body;
