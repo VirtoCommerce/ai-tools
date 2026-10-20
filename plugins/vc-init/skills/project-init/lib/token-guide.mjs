@@ -12,6 +12,47 @@
  * the vc-secrets name write-secrets-decl.mjs declares and the bridge binds to that var.
  */
 
+import { passwordSecret } from "./passwords.mjs";
+
+/**
+ * The test-user passwords (option B, lib/passwords.mjs keeps them in vc-secrets; option A in
+ * .env.local, where scaffold-secrets.mjs writes the same texts as comments). A name not listed here
+ * (MULTI_ORG_USER_PASSWORD, …) is the operator's own and gets a generic line.
+ */
+export const PASSWORD_GUIDE = {
+  ADMIN_PASSWORD: {
+    what: "Admin / back-office login password (an app TEST account — never a raw personal password).",
+    why: "Required for every admin-side run.",
+    where: "Your deployment's admin TEST account (ops/customer). Local start-local stack: Password1!",
+  },
+  USER_PASSWORD: {
+    what: "Storefront test-user login password (app TEST account).",
+    why: "Required for storefront runs.",
+    where: "Your deployment's storefront TEST account.",
+  },
+};
+
+/**
+ * The password step of the pause (option B): per env and name, what it is and the exact command that
+ * stores it. Plain lines the skill relays verbatim; the value is typed at vc-secrets' hidden prompt.
+ * @param {{ passwords: Record<string,string[]>, vcSecrets: string }} opts  env → names (write-secrets-decl's report)
+ * @returns {string[]}
+ */
+export function passwordSteps({ passwords, vcSecrets }) {
+  const shim = JSON.stringify(vcSecrets || "<the shim path /project-init §0d printed>");
+  const lines = [];
+  for (const env of Object.keys(passwords || {}).sort()) {
+    lines.push(`Test-user passwords for ${env} — typed at a hidden prompt, never into chat or a file:`);
+    for (const name of passwords[env]) {
+      const g = PASSWORD_GUIDE[name];
+      lines.push(`  ${name} — ${g ? g.what : "a test-user login password this project uses"}`);
+      lines.push(`    Store: node ${shim} set ${passwordSecret(name, env)}`);
+    }
+    lines.push("");
+  }
+  return lines;
+}
+
 export const TOKEN_GUIDE = {
   JIRA_API_TOKEN: {
     axis: "jira", secret: "jira-token",

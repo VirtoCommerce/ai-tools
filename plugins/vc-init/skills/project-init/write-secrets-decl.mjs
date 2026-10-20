@@ -13,6 +13,14 @@
  *             vc-init-onboard                      group's secret(s); the bridge dispatches on these
  *   servers   github                               the GitHub MCP server, when github is a PAT axis
  *                                                   (gen-mcp.mjs points .mcp.json at `vc-secrets run github`)
+ *
+ * and, when the test-user passwords are kept in vc-secrets too (option B, lib/passwords.mjs), per env:
+ *
+ *   secrets   admin-password-<env> / user-password-<env> / …   { backend: "local" }
+ *   tasks     vc-init-onboard.<env>                 the onboard task plus that env's passwords (API logins)
+ *   servers   playwright-<lane>.<env>               each Playwright lane, run in-process with that env's
+ *                                                   passwords (bridge/playwright-mcp.mjs; .mcp.json says
+ *                                                   `node ${VC_RUN} playwright <lane>`)
  *   projectId vcqa-<project dir>-<4 hex>           stable: reused on every re-run (it namespaces the
  *                                                   keystore entries, so a new id would orphan them)
  *
@@ -28,12 +36,16 @@
  *   node write-secrets-decl.mjs --github-auth pat --ado-auth az-login --tracker jira --client-vcs github
  *   node write-secrets-decl.mjs --from-profile            # the axes from project-profile.json auth.*
  *   [--shim <path to vc-run.mjs>]  default: the installed shim (scripts/install-bridge.mjs)
+ *   [--password-envs <env,…>|none] keep these envs' test-user passwords in vc-secrets (option B); added to
+ *                                  the envs already declared. "none" returns every env to .env.local (A)
+ *   [--password-names <NAME,…>]    passwords beyond ADMIN_PASSWORD/USER_PASSWORD, for the envs above (or
+ *                                  every declared env when --password-envs is not given)
  *   [--github-mcp <json>|none]     override the `servers.github` declaration (default: lib/github-mcp.mjs
  *                                  GITHUB_MCP_DECL, written only when github is a PAT axis); "none" removes it
  *   [--out <path>]                 default <project>/.claude/vc-secrets.local.json
  *
  * Prints one JSON report: { status: "written"|"unchanged", path, projectId, secrets, tasks, servers,
- * trustNeeded, setCommands }. trustNeeded is true when a launchable (task/server) changed — the
+ * passwords, trustNeeded, setCommands }. trustNeeded is true when a launchable (task/server) changed — the
  * operator has to run `vc-secrets trust` again. Exit 1 on a bad flag or an unparsable existing file.
  */
 import { randomBytes } from "node:crypto";
@@ -46,6 +58,8 @@ import { ensureProjectIgnores } from "./lib/gitignore.mjs";
 import { outputRoot } from "./lib/paths.mjs";
 import { GITHUB_MCP_DECL } from "./lib/github-mcp.mjs";
 import { standDownIfHostGoverned } from "./lib/governance.mjs";
+import { ALWAYS_PASSWORDS, ENV_NAME_RE, declaredLanes, declaredPasswords, isPasswordName, laneServer, onboardTask, passwordSecret, passwordSecretNames } from "./lib/passwords.mjs";
+import { laneCommands, readTemplateServers } from "./lib/playwright-lanes.mjs";
 
 /** Secret name and the env var it is bound to, per axis. The env names are the runtime contract. */
 export const AXIS_SECRETS = Object.freeze({
@@ -64,17 +78,42 @@ export function newProjectId(projectRoot, rand = () => randomBytes(2).toString("
 }
 
 /**
+ * The password map after a change: the declared one, plus `addEnvs` (each with ALWAYS_PASSWORDS),
+ * plus `addNames` on the given envs (or on every env when none is given). `addEnvs === "none"` clears it.
+ * Pure; throws on a bad name.
+ */
+export function nextPasswords(declaredMap, { addEnvs = [], addNames = [] } = {}) {
+  if (addEnvs === "none") return {};
+  for (const e of addEnvs) if (!ENV_NAME_RE.test(e)) throw new Error(`not an environment name: ${JSON.stringify(e)} ([a-z0-9_]+)`);
+  for (const n of addNames) if (!isPasswordName(n)) throw new Error(`not a password name: ${JSON.stringify(n)} (upper snake case ending in PASSWORD)`);
+  const out = Object.fromEntries(Object.entries(declaredMap || {}).map(([e, names]) => [e, [...names]]));
+  for (const e of addEnvs) out[e] = [...new Set([...(out[e] || []), ...ALWAYS_PASSWORDS])];
+  for (const e of addEnvs.length ? addEnvs : Object.keys(out)) out[e] = [...new Set([...(out[e] || []), ...addNames])];
+  for (const e of Object.keys(out)) out[e].sort();
+  return out;
+}
+
+/**
  * Compute the declaration file from the axes. Pure: (existing file object, inputs) → new object.
  * @param {object|null} existing  the current local file, parsed (null when absent)
- * @param {{ pat: {github:boolean, ado:boolean, jira:boolean}, shim: string, projectId: string, githubServer?: object|null|undefined }} inputs
+ * @param {{ pat: {github:boolean, ado:boolean, jira:boolean}, shim: string, projectId: string, githubServer?: object|null|undefined,
+ *   passwords?: Record<string,string[]>, lanes?: Record<string,{command:string,args:string[]}> }} inputs
+ *   passwords / lanes: undefined keeps what the file declares (lib/passwords.mjs)
  */
-export function buildDeclarations(existing, { pat, shim, projectId, githubServer }) {
+export function buildDeclarations(existing, { pat, shim, projectId, githubServer, passwords, lanes }) {
   const base = existing && typeof existing === "object" ? existing : {};
   const secrets = { ...(base.secrets || {}) };
   const tasks = { ...(base.tasks || {}) };
   const servers = { ...(base.servers || {}) };
   for (const { secret } of Object.values(AXIS_SECRETS)) delete secrets[secret];
   for (const t of OWNED_TASKS) delete tasks[t];
+  // Option B: what the file declared is replaced as a whole, so a removed env leaves nothing behind.
+  const priorPasswords = declaredPasswords(base);
+  const pw = passwords === undefined ? priorPasswords : passwords;
+  const laneDefs = lanes === undefined ? declaredLanes(base) : lanes;
+  for (const n of passwordSecretNames(priorPasswords)) delete secrets[n];
+  for (const e of Object.keys(priorPasswords)) delete tasks[onboardTask(e)];
+  for (const name of Object.keys(servers)) if (/^playwright-[a-z0-9]+\.[a-z0-9_]+$/.test(name)) delete servers[name];
 
   const axes = Object.keys(AXIS_SECRETS).filter((a) => pat[a]);
   const env = (list) => Object.fromEntries(list.map((a) => [AXIS_SECRETS[a].env, `secret:${AXIS_SECRETS[a].secret}`]));
@@ -85,13 +124,25 @@ export function buildDeclarations(existing, { pat, shim, projectId, githubServer
     owned[`vc-init-${a}`] = task(a, [a]);
   }
   if (axes.length) owned["vc-init-onboard"] = task("onboard", axes);
+  // Per env (option B): its password secrets, its onboard task (the tokens + its passwords), its lanes.
+  const envTasks = {};
+  const laneServers = {};
+  for (const e of Object.keys(pw).sort()) {
+    const bind = Object.fromEntries(pw[e].map((n) => [n, `secret:${passwordSecret(n, e)}`]));
+    for (const n of pw[e]) secrets[passwordSecret(n, e)] = { backend: "local" };
+    envTasks[onboardTask(e)] = { ...task("onboard", axes), env: { ...env(axes), ...bind } };
+    for (const lane of Object.keys(laneDefs).sort()) {
+      laneServers[laneServer(lane, e)] = { command: laneDefs[lane].command, args: laneDefs[lane].args, env: { ...bind, npm_config_prefer_offline: "literal:true" } };
+    }
+  }
   // Owned tasks first, in a fixed order; a person's own tasks after them, in their order.
   const orderedTasks = {};
   for (const t of OWNED_TASKS) if (owned[t]) orderedTasks[t] = owned[t];
-  Object.assign(orderedTasks, tasks);
+  Object.assign(orderedTasks, envTasks, tasks);
 
   if (githubServer === null || !pat.github) delete servers.github;
   else if (githubServer !== undefined) servers.github = githubServer;
+  Object.assign(servers, laneServers);
 
   const out = { schemaVersion: 1, projectId };
   // Canonical key order: what this writer owns first, then anything else the file carried.
@@ -167,8 +218,12 @@ function main() {
       process.exit(1);
     }
   }
+  const list = (v) => String(v || "").split(",").map((x) => x.trim()).filter(Boolean);
+  const passwordChange = args["password-envs"] === undefined && args["password-names"] === undefined
+    ? undefined
+    : { addEnvs: args["password-envs"] === "none" ? "none" : list(args["password-envs"]), addNames: list(args["password-names"]) };
   try {
-    const report = writeSecretsDecl({ root, pat, shim: args.shim || defaultShimPath(), githubServer, out: args.out });
+    const report = writeSecretsDecl({ root, pat, shim: args.shim || defaultShimPath(), githubServer, out: args.out, passwordChange });
     console.log(JSON.stringify(report, null, 2));
   } catch (e) {
     console.error(`[write-secrets-decl] ${e.message}`);
@@ -185,10 +240,14 @@ export function patAxesFromProfile(raw) {
 /**
  * Write (or leave unchanged) the declaration file. Shared by this CLI and gen-mcp.mjs, which makes sure
  * the GitHub MCP server it points .mcp.json at is declared.
- * @param {{ root: string, pat: {github:boolean, ado:boolean, jira:boolean}, shim: string, githubServer?: object|null, out?: string }} opts
- * @returns {{ status: "written"|"unchanged", path: string, projectId: string, secrets: string[], tasks: string[], servers: string[], trustNeeded: boolean, shim: string, shimInstalled: boolean }}
+ * Option B (lib/passwords.mjs): `passwordChange` ({ addEnvs, addNames }, see nextPasswords) changes which
+ * envs keep their passwords here; without it the file's own set is kept. Whenever any env does, the lane
+ * servers are rebuilt from the template (lib/playwright-lanes.mjs) — `templateServers` overrides it in tests.
+ * @param {{ root: string, pat: {github:boolean, ado:boolean, jira:boolean}, shim: string, githubServer?: object|null, out?: string,
+ *   passwordChange?: { addEnvs: string[]|"none", addNames: string[] }, templateServers?: object }} opts
+ * @returns {{ status: "written"|"unchanged", path: string, projectId: string, secrets: string[], tasks: string[], servers: string[], passwords: Record<string,string[]>, trustNeeded: boolean, shim: string, shimInstalled: boolean }}
  */
-export function writeSecretsDecl({ root, pat, shim, githubServer = GITHUB_MCP_DECL, out: outFlag }) {
+export function writeSecretsDecl({ root, pat, shim, githubServer = GITHUB_MCP_DECL, out: outFlag, passwordChange, templateServers }) {
   const out = resolve(root, outFlag || join(".claude", "vc-secrets.local.json"));
   let existing = null;
   if (existsSync(out)) {
@@ -211,7 +270,9 @@ export function writeSecretsDecl({ root, pat, shim, githubServer = GITHUB_MCP_DE
   }
   if (!projectId) projectId = newProjectId(root);
 
-  const next = buildDeclarations(existing, { pat, shim, projectId, githubServer });
+  const passwords = passwordChange ? nextPasswords(declaredPasswords(existing), passwordChange) : declaredPasswords(existing);
+  const lanes = Object.keys(passwords).length ? laneCommands({ servers: templateServers || readTemplateServers(), root, shim }) : {};
+  const next = buildDeclarations(existing, { pat, shim, projectId, githubServer, passwords, lanes });
   const text = `${JSON.stringify(next, null, 2)}
 `;
   const changed = !existing || `${JSON.stringify(existing, null, 2)}
@@ -227,9 +288,10 @@ export function writeSecretsDecl({ root, pat, shim, githubServer = GITHUB_MCP_DE
     status: changed ? "written" : "unchanged",
     path: out,
     projectId,
-    secrets: Object.keys(AXIS_SECRETS).filter((a) => pat[a]).map((a) => AXIS_SECRETS[a].secret),
-    tasks: Object.keys(next.tasks || {}).filter((t) => OWNED_TASKS.includes(t)),
-    servers: next.servers?.github ? ["github"] : [],
+    secrets: [...Object.keys(AXIS_SECRETS).filter((a) => pat[a]).map((a) => AXIS_SECRETS[a].secret), ...passwordSecretNames(passwords)],
+    tasks: Object.keys(next.tasks || {}).filter((t) => OWNED_TASKS.includes(t) || Object.keys(passwords).some((e) => t === onboardTask(e))),
+    servers: Object.keys(next.servers || {}).filter((n) => n === "github" || /^playwright-[a-z0-9]+\./.test(n)),
+    passwords,
     trustNeeded,
     shim,
     shimInstalled: existsSync(shim),

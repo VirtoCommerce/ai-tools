@@ -41,14 +41,28 @@ What it writes into the project (all gitignored):
 |---|---|
 | `project-profile.json` | the deployment profile (`schemaVersion` 3): tracker, code host, repos, `auth.{github,ado,jira}`, `governance` |
 | `.env.<env>` | URLs and identifiers (no secret) |
-| `.env.local` | test-user passwords only |
-| `.claude/vc-secrets.local.json` | the vc-secrets declarations: one `local` secret per PAT axis (`github-pat`, `ado-pat`, `jira-token`), the bridge's `vc-init-*` tasks, the GitHub MCP server |
+| `.env.local` | test-user passwords only — or nothing, when they are kept in vc-secrets (below) |
+| `.claude/vc-secrets.local.json` | the vc-secrets declarations: one `local` secret per PAT axis (`github-pat`, `ado-pat`, `jira-token`), the bridge's `vc-init-*` tasks, the GitHub MCP server; with the passwords in vc-secrets also, per env, its password secrets, `vc-init-onboard.<env>` and the `playwright-<lane>.<env>` servers |
 | `.mcp.json` + `.claude/settings.local.json` | MCP servers; the settings `env` holds `VC_RUN` and `VC_SECRETS` (paths) and no token |
 
 The token step: `/project-init` prints, per token, what it is, where to create it and the exact command
 — `node "<VC_SECRETS>" set github-pat` — plus `node "<VC_SECRETS>" trust` when the declarations are new or
 changed. The operator runs them in a terminal and replies "done"; `check-secrets.mjs` then reads
 `vc-secrets doctor` and names whatever is still missing.
+
+**Test-user passwords** go one of two ways, chosen at the auth question:
+
+- **vc-secrets (recommended)** — no password in any file. One secret per password per environment
+  (`admin-password-<env>`, `user-password-<env>`), stored with `set` like a token. Each Playwright lane in
+  `.mcp.json` is `node ${VC_RUN} playwright <lane>`: the bridge picks the current `TEST_ENV` and runs the
+  declared vc-secrets server `playwright-<lane>.<env>`, which starts the pinned `@playwright/mcp` in-process
+  (`bridge/playwright-mcp.mjs`) with the passwords as `config.secrets` — a browser agent types the NAME
+  (`ADMIN_PASSWORD`), the lane types the value and masks it. The onboarding scripts that log in over the API
+  run as `vc-init-onboard.<env>`. One declaration per env means an env whose passwords are not stored yet
+  breaks only itself, and switching `TEST_ENV` asks for no new trust.
+- **`.env.local`** — `ADMIN_PASSWORD_<ENV>` …, and `sync-browser-secrets.mjs` generates
+  `.env.playwright.local`, the lanes' `--secrets` file. Use it where a script outside vc-init reads a
+  password from the env files (vc-fix's module registry, seeders): those do not go through the bridge.
 
 ## Host-governed projects
 
@@ -88,6 +102,7 @@ node "$VC_RUN" ado comment --id 967 --text-file c.txt # vc-fix's Azure DevOps CL
 node "$VC_RUN" jira edit-comment --key ABC-1 --id …   # vc-fix's Jira CLI (host pinned to the profile)
 node "$VC_RUN" deliver …                              # vc-fix self-diagnostics delivery
 node "$VC_RUN" onboard verify-access                  # /project-init's own token-holding scripts
+node "$VC_RUN" playwright chrome                      # a Playwright lane, passwords from vc-secrets (.mcp.json runs it)
 node "$VC_RUN" --where                                # what the bridge resolves
 ```
 
@@ -118,7 +133,7 @@ code already running as the user, which can read the credential store directly.
 |---|---|
 | `skills/project-init/` | the skill and its scripts (`SKILL.md` §Scripts lists them) |
 | `commands/project-init.md` | the `/project-init` command |
-| `bridge/` | the dispatcher, allowlist, credential helper, redactor, plugin resolver — and their committed tests (`node --test "plugins/vc-init/bridge/*.test.mjs"`) |
+| `bridge/` | the dispatcher, allowlist, credential helper, redactor, plugin resolver, the Playwright lane launcher (`playwright-mcp.mjs`) — and their committed tests (`node --test "plugins/vc-init/bridge/*.test.mjs"`) |
 | `vc-run-shim.mjs`, `scripts/install-bridge.mjs` | the stable `$VC_RUN` pointer and its installer |
 | `scripts/lib/` | vc-init's own copies of the shared libs (plugins are self-contained) |
 | `templates/.mcp.json.example` | the MCP template `gen-mcp.mjs` writes `.mcp.json` from |

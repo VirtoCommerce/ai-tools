@@ -594,7 +594,7 @@ async function getModulesLive() {
   const ADMIN = process.env.ADMIN || "";
   const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
   if (!BACK_URL || !ADMIN || !ADMIN_PASSWORD) {
-    throw new Error("Need BACK_URL + ADMIN + ADMIN_PASSWORD in env (.env.local). Run the base env setup first.");
+    throw new Error("Need BACK_URL + ADMIN + ADMIN_PASSWORD in env (.env.local, or vc-secrets admin-password-<env> through `node \"$VC_RUN\" onboard`). Run the base env setup first.");
   }
 
   const tokenRes = await fetch(`${BACK_URL}/connect/token`, {

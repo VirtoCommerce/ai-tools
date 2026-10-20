@@ -65,6 +65,7 @@ import {
 import { resolveSlots } from "../../scripts/lib/bug-contract.mjs";
 import { SECRETS_FILE as BROWSER_SECRETS_FILE, currentState as browserSecretsState } from "./sync-browser-secrets.mjs";
 import { missingDeps, pluginRoots } from "./install-deps.mjs";
+import { declaredPasswords, passwordSecretNames } from "./lib/passwords.mjs";
 import { fileURLToPath } from "url";
 
 let TEST_ENV;
@@ -371,6 +372,45 @@ function adoAuth() {
 }
 
 /** The onboarding tokens this project's vc-secrets declaration lists (github-pat / ado-pat / jira-token). */
+/** The project's local vc-secrets declaration, parsed; null when absent or unreadable. */
+export function readLocalDeclaration(root) {
+  try {
+    return JSON.parse(readFileSync(resolve(root, ".claude", "vc-secrets.local.json"), "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The "Browser login secrets" row under option B: are this env's passwords stored, and do the lanes in
+ * .mcp.json run from vc-secrets? Returns [label, status, detail].
+ */
+function browserPasswordsRow({ root, env, pwByEnv }) {
+  const label = "Browser login secrets";
+  if (!pwByEnv[env]) {
+    return [label, "WARN", `passwords are in vc-secrets for ${Object.keys(pwByEnv).join(", ")}, not for TEST_ENV=${env} — add it with /project-init --add-env, or switch TEST_ENV`];
+  }
+  let lanesViaBridge = false;
+  try {
+    const servers = JSON.parse(readFileSync(resolve(root, ".mcp.json"), "utf8")).mcpServers || {};
+    lanesViaBridge = Object.entries(servers).some(([n, d]) => /^playwright-/.test(n) && Array.isArray(d.args) && d.args.includes("playwright"));
+  } catch {
+    /* no .mcp.json yet — reported below */
+  }
+  if (!lanesViaBridge) return [label, "WARN", `the Playwright lanes in .mcp.json do not run from vc-secrets — re-run gen-mcp.mjs (/project-init --check), then restart Claude Code`];
+  const leftover = existsSync(resolve(root, ".env.playwright.local"));
+  const doctor = runDoctor({ cwd: root });
+  if (!doctor.available) return [label, "FAIL", "vc-secrets is not installed — /project-init --check (§0d), then restart"];
+  const needed = passwordSecretNames({ [env]: pwByEnv[env] });
+  const v = secretsVerdict(parseDoctor(doctor.text), needed);
+  const q = JSON.stringify(doctor.shim);
+  if (!v.ready) {
+    const todo = [...(v.trustNeeded ? [`node ${q} trust`] : []), ...v.missing.map((n) => `node ${q} set ${n}`), ...v.problems];
+    return [label, "FAIL", `not ready for ${env} — run in a terminal: ${todo.join(" ; ")}`];
+  }
+  return [label, leftover ? "WARN" : "PASS", `${pwByEnv[env].join(", ")} for ${env} in vc-secrets — typed by name, no password file${leftover ? "; .env.playwright.local is left over — migrate-secrets.mjs --strip deletes it" : ""}`];
+}
+
 export function readDeclaredSecrets(root) {
   try {
     const d = JSON.parse(readFileSync(resolve(root, ".claude", "vc-secrets.local.json"), "utf8"));
@@ -526,7 +566,12 @@ async function main() {
   // 1b'. Browser login: the agent types a password's NAME and Playwright MCP substitutes the value from
   //      the --secrets file gen-mcp wires in — so the password never enters the model's context. A
   //      missing or stale file means the agent would have to read the password to type it.
-  try {
+  //      Option B (lib/passwords.mjs): no file — the current env's passwords are vc-secrets entries and
+  //      each lane is a declared server; the row checks those instead.
+  const pwByEnv = declaredPasswords(readLocalDeclaration(outputRoot()));
+  if (Object.keys(pwByEnv).length) {
+    add(...browserPasswordsRow({ root: outputRoot(), env: resolveTestEnv("vcst"), pwByEnv }));
+  } else try {
     const bs = browserSecretsState(outputRoot());
     const regen = `TEST_ENV=${bs.env} node "$CLAUDE_PLUGIN_ROOT/skills/project-init/sync-browser-secrets.mjs", then restart Claude Code`;
     if (bs.before === null) add("Browser login secrets", "WARN", `no ${BROWSER_SECRETS_FILE} — run ${regen}; gen-mcp then passes it to every Playwright lane`);

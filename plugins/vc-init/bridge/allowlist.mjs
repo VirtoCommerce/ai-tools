@@ -253,6 +253,17 @@ export function checkArgv(tool, args) {
   }
 }
 
+/**
+ * `playwright <lane>` — the outer side of a Playwright MCP lane (option B). It holds no secret and only
+ * names which declared vc-secrets server to run, so its one argument is a lane name and nothing else:
+ * the lane's CLI flags live in the trusted declaration, never on this command line.
+ */
+export function checkPlaywright(args) {
+  if (!Array.isArray(args) || args.length !== 1 || typeof args[0] !== "string") return no("playwright takes exactly one argument, the lane (chrome, firefox, edge, …)");
+  if (!/^[a-z0-9]+$/.test(args[0])) return no(`a lane name is lowercase letters and digits, got ${JSON.stringify(args[0])}`);
+  return ok();
+}
+
 /** The group a tool belongs to, or null. */
 export function groupOf(tool) {
   return Object.prototype.hasOwnProperty.call(TOOL_GROUP, tool) ? TOOL_GROUP[tool] : null;

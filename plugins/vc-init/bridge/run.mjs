@@ -11,6 +11,7 @@
  *   node "$VC_RUN" jira comment --key ABC-1 --text-file body.md  # vc-fix qa-fix-routing/jira.mjs
  *   node "$VC_RUN" deliver --confirm < struct.json              # vc-fix vc-self-check/deliver.mjs
  *   node "$VC_RUN" onboard verify-access                         # vc-init's own onboarding scripts
+ *   node "$VC_RUN" playwright chrome                             # a Playwright MCP lane (.mcp.json, option B)
  *
  * Two sides, one file:
  *
@@ -28,6 +29,12 @@
  *   with a host-pinned credential helper and no hooks, and passes the child's stdout and stderr
  *   through a redactor that masks every spelling of the secrets.
  *
+ * PASSWORDS (option B, skills/project-init/lib/passwords.mjs). Test-user passwords live in vc-secrets
+ *   per environment. `onboard` routes to the task `vc-init-onboard.<env>` of the current env (TEST_ENV)
+ *   when it is declared, so the onboarding scripts' API logins get that env's passwords; `playwright
+ *   <lane>` — the command .mcp.json gives a lane — runs the vc-secrets server `playwright-<lane>.<env>`,
+ *   whose inner side is `--playwright` (bridge/playwright-mcp.mjs, the passwords in memory only).
+ *
  * Exit codes: the child's own, or 64 refused by the allowlist, 69 the bridge's prerequisites are
  * missing (vc-secrets, vc-fix, a declared secret), 70 an internal error, 78 a host-governed project
  * (project-profile.json governance — the host plugin's MCP servers do this job; nothing runs here).
@@ -36,10 +43,11 @@ import { spawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { GROUPS, checkArgv, groupOf, toolInGroup } from "./allowlist.mjs";
+import { GROUPS, checkArgv, checkPlaywright, groupOf, toolInGroup } from "./allowlist.mjs";
 import { createRedactor } from "./redact.mjs";
 import { resolvePluginFile, resolvePluginRoot, selfRoot } from "./resolve-plugin.mjs";
 import { vcSecretsShim } from "./vc-secrets-path.mjs";
+import { currentEnv, declaredPasswords, isPasswordName, laneServer, onboardTask } from "../skills/project-init/lib/passwords.mjs";
 
 export const EX_REFUSED = 64;
 export const EX_UNAVAILABLE = 69;
@@ -47,7 +55,7 @@ export const EX_SOFTWARE = 70;
 export const EX_CONFIG = 78;
 
 /** Which host server role a bridge tool's job belongs to on a host-governed project. */
-const HOST_ROLE = Object.freeze({ gh: "github", "git-gh": "github", deliver: "github", ado: "tracker", "git-ado": "codeHost", jira: "tracker", onboard: "tracker" });
+const HOST_ROLE = Object.freeze({ gh: "github", "git-gh": "github", deliver: "github", ado: "tracker", "git-ado": "codeHost", jira: "tracker", onboard: "tracker", playwright: "browser" });
 
 /**
  * The nearest project-profile.json's `governance` block (PROJECT_PROFILE_PATH, VC_FIX_HOME, then the cwd
@@ -130,6 +138,10 @@ export function buildInnerEnv(source, group, { nodePath = process.execPath, help
   for (const name of GROUP_SECRETS[group] || []) {
     if (typeof source[name] === "string" && source[name].length) secrets[name] = source[name];
   }
+  // onboard also logs in over the API: the `vc-init-onboard.<env>` task injects that env's passwords.
+  if (group === "onboard") {
+    for (const [name, v] of Object.entries(source)) if (isPasswordName(name) && typeof v === "string" && v.length) secrets[name] = v;
+  }
   Object.assign(env, secrets);
   if (secrets.GITHUB_FIX_BUGS_TOKEN) env.GH_TOKEN = secrets.GITHUB_FIX_BUGS_TOKEN;
   if (secrets.ADO_PAT) env.ADO_AUTH = "pat";
@@ -198,11 +210,30 @@ export function findDeclarations(start = process.cwd()) {
   }
 }
 
+/** Is the vc-secrets task (or, with kind "servers", the server) `name` declared in the nearest declaration? */
+export function declared(decls, name, kind = "tasks") {
+  if (!decls) return false;
+  return [decls.local, decls.project].some((d) => d && d[kind] && typeof d[kind] === "object" && name in d[kind]);
+}
+
 /** Is the vc-secrets task for this group declared in the nearest declaration? */
 export function taskDeclared(decls, group) {
-  if (!decls) return false;
-  const name = taskName(group);
-  return [decls.local, decls.project].some((d) => d && d.tasks && typeof d.tasks === "object" && name in d.tasks);
+  return declared(decls, taskName(group));
+}
+
+/** The environments whose passwords the nearest declaration keeps in vc-secrets. */
+export function passwordEnvs(decls) {
+  return [...new Set([decls?.local, decls?.project].flatMap((d) => Object.keys(declaredPasswords(d))))];
+}
+
+/**
+ * The task an `onboard` call runs: the current env's `vc-init-onboard.<env>` when its passwords are in
+ * vc-secrets, else `vc-init-onboard` when a token axis declared it, else none (run directly). Pure.
+ * @returns {{ task: string|null, env: string|null }}
+ */
+export function onboardRoute(decls, env) {
+  if (declared(decls, onboardTask(env))) return { task: onboardTask(env), env };
+  return { task: taskDeclared(decls, "onboard") ? taskName("onboard") : null, env: null };
 }
 
 /**
@@ -302,6 +333,7 @@ const USAGE = `usage: node "$VC_RUN" <tool> [args…]
   jira <command> …       vc-fix qa-fix-routing/jira.mjs
   deliver …              vc-fix vc-self-check/deliver.mjs
   onboard <script> …     vc-init /project-init scripts (verify-access, discover-repos, discover-tracker, derive-context)
+  playwright <lane>      a Playwright MCP lane with the current env's passwords from vc-secrets (.mcp.json runs this)
   --where                print what the bridge resolves (plugins, vc-secrets, the project's declared tasks)`;
 
 /** OUTER side. */
@@ -320,6 +352,7 @@ async function outer(argv) {
       vcSecretsPresent: vcSecretsShim().present,
       declarations: decls ? decls.root : null,
       tasks: Object.fromEntries(GROUPS.map((g) => [taskName(g), taskDeclared(decls, g)])),
+      passwordEnvs: passwordEnvs(decls),
     };
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
     return 0;
@@ -329,6 +362,7 @@ async function outer(argv) {
     say(refusal);
     return EX_CONFIG;
   }
+  if (tool === "playwright") return playwrightLane(args);
   const check = checkArgv(tool, args);
   if (!check.ok) {
     say(`refused — ${check.reason}`);
@@ -338,14 +372,18 @@ async function outer(argv) {
   // From the cwd, exactly as vc-secrets finds its declarations: the route decided here and the task
   // vc-secrets then launches must come from the same file.
   const decls = findDeclarations(process.cwd());
-  if (taskDeclared(decls, group)) {
+  const route = group === "onboard"
+    ? onboardRoute(decls, currentEnv(process.cwd(), passwordEnvs(decls)))
+    : { task: taskDeclared(decls, group) ? taskName(group) : null, env: null };
+  if (route.task) {
     const { path: shim, present, source } = vcSecretsShim();
     if (!present) {
-      say(`the ${group} axis keeps its token in vc-secrets, but ${source === "VC_SECRETS" ? `VC_SECRETS points at a missing file (${shim})` : "the vc-secrets shim is not installed"} — run /project-init --check (its §0d installs the shim and writes VC_SECRETS into this project's .claude/settings.local.json), then restart Claude Code`);
+      say(`the ${group} axis keeps its secrets in vc-secrets, but ${source === "VC_SECRETS" ? `VC_SECRETS points at a missing file (${shim})` : "the vc-secrets shim is not installed"} — run /project-init --check (its §0d installs the shim and writes VC_SECRETS into this project's .claude/settings.local.json), then restart Claude Code`);
       return EX_UNAVAILABLE;
     }
-    return runChild(process.execPath, [shim, "task", taskName(group)], {
-      env: { ...process.env, VC_RUN_ARGV: JSON.stringify([tool, ...args]) },
+    // TEST_ENV goes along, so the scripts load the env files of the env whose passwords they received.
+    return runChild(process.execPath, [shim, "task", route.task], {
+      env: { ...process.env, ...(route.env ? { TEST_ENV: route.env } : {}), VC_RUN_ARGV: JSON.stringify([tool, ...args]) },
     });
   }
   // A session axis (gh auth login / az login / Atlassian OAuth): no secret to inject, so no inner side.
@@ -355,6 +393,34 @@ async function outer(argv) {
     return EX_UNAVAILABLE;
   }
   return runChild(cmd.command, cmd.args);
+}
+
+/**
+ * OUTER side of a Playwright lane: run the vc-secrets server `playwright-<lane>.<env>` of the current env.
+ * stdio passes straight through (MCP), and nothing here holds a secret.
+ */
+async function playwrightLane(args) {
+  const check = checkPlaywright(args);
+  if (!check.ok) {
+    say(`refused — ${check.reason}`);
+    return EX_REFUSED;
+  }
+  const decls = findDeclarations(process.cwd());
+  const envs = passwordEnvs(decls);
+  const env = currentEnv(process.cwd(), envs);
+  const server = laneServer(args[0], env);
+  if (!declared(decls, server, "servers")) {
+    say(envs.length
+      ? `no vc-secrets server ${server} — passwords are declared for ${envs.join(", ")} only; set TEST_ENV (or .env.test-env) to one of them, or add this env with /project-init --add-env, then restart Claude Code`
+      : `no vc-secrets server ${server} — this project keeps its passwords in .env.local; re-run gen-mcp.mjs (/project-init --check) to rewrite .mcp.json`);
+    return EX_UNAVAILABLE;
+  }
+  const { path: shim, present } = vcSecretsShim();
+  if (!present) {
+    say("the vc-secrets shim is not installed — run /project-init --check, then restart Claude Code");
+    return EX_UNAVAILABLE;
+  }
+  return runChild(process.execPath, [shim, "run", server]);
 }
 
 /** INNER side — runs inside `vc-secrets task vc-init-<group>`, with that group's secrets in its env. */
@@ -414,7 +480,15 @@ export async function runBridge(argv, { shimContract } = {}) {
   void shimContract;
   let code;
   try {
-    code = argv[0] === "--inner" ? await inner(argv[1]) : await outer(argv);
+    if (argv[0] === "--playwright") {
+      // Started by the vc-secrets server playwright-<lane>.<env>: the lane runs in THIS process, and
+      // a started server keeps it alive on stdin — no exit code to set.
+      const { runPlaywrightMcp } = await import("./playwright-mcp.mjs");
+      code = await runPlaywrightMcp(argv.slice(1));
+      if (code === undefined) return undefined;
+    } else {
+      code = argv[0] === "--inner" ? await inner(argv[1]) : await outer(argv);
+    }
   } catch (e) {
     say(`internal error: ${e?.message || e}`);
     code = EX_SOFTWARE;

@@ -244,7 +244,7 @@ Values are loaded by `config.js` from layered files (default `TEST_ENV=vcst`): `
 | User creds (fallback) | `USER_EMAIL` / `USER_PASSWORD` |
 | User2 creds (fallback) | `USER2_EMAIL` / `USER2_PASSWORD` |
 
-**In a browser, type a `*_PASSWORD` by its NAME, never its value** (`browser_type(text="ADMIN_PASSWORD")`) — Playwright MCP substitutes it from `.env.playwright.local` and masks it ([`../../../.claude/rules/mcp-browsers.md`](../../../.claude/rules/mcp-browsers.md) §Browser login). Scripts that call an API (a token request) read the value from the env as before.
+**In a browser, type a `*_PASSWORD` by its NAME, never its value** (`browser_type(text="ADMIN_PASSWORD")`) — Playwright MCP substitutes it (from `.env.playwright.local`, or from vc-secrets when the project keeps its passwords there) and masks it ([`../../../.claude/rules/mcp-browsers.md`](../../../.claude/rules/mcp-browsers.md) §Browser login). Scripts that call an API (a token request) read the value from the env as before.
 | Store | `STORE_ID` |
 | Payment (Skyflow) | `SKYFLOW_VISA`, `SKYFLOW_MASTERCARD`, `SKYFLOW_EXPIRY`, `SKYFLOW_CVV` |
 

@@ -43,8 +43,9 @@ export function loadLayeredEnv(fallback = "vcst") {
   // files below load with override:true, so a stale plaintext token left in .env.local would
   // silently WIN over the one the operator stored in vc-secrets — snapshot the injected ones and put
   // them back after every layer (and after the _<ENV> promotion, which can override too).
+  // The same holds for the test-user passwords the `vc-init-onboard.<env>` task injects (option B).
   const injected = process.env.VC_BRIDGE === "1"
-    ? Object.fromEntries(TOKEN_KEYS.filter((k) => process.env[k]).map((k) => [k, process.env[k]]))
+    ? Object.fromEntries(Object.keys(process.env).filter((k) => (TOKEN_KEYS.includes(k) || /^[A-Z][A-Z0-9_]*PASSWORD$/.test(k)) && process.env[k]).map((k) => [k, process.env[k]]))
     : {};
   dotenv({ path: ".env.defaults", quiet: true });
   dotenv({ path: `.env.${TEST_ENV}`, override: true, quiet: true });

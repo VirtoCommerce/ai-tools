@@ -19,6 +19,14 @@
  *             be the only working one) and is reported. `.mcp.json` is never edited here: re-running
  *             gen-mcp.mjs rewrites it without any token.
  *
+ * Test-user passwords (option B, lib/passwords.mjs) — only when the declaration keeps an env's passwords in
+ * vc-secrets; under option A they belong in .env.local and are not findings:
+ *   --scan    also lists each `<NAME>_<ENV>` of a declared env in an .env file, and `.env.playwright.local`
+ *             (the option-A --secrets file, which nothing reads once the lanes run from vc-secrets).
+ *   --strip   removes a password line once `vc-secrets doctor` reports its secret resolvable (stored, and
+ *             the checkout trusted) — the login itself is checked by verify-access afterwards — and
+ *             deletes `.env.playwright.local`.
+ *
  * The value is never read into this report, never printed, never passed anywhere: the operator stores
  * the token in vc-secrets themselves (`node "<VC_SECRETS>" set <name>` at a hidden prompt), and this
  * script only decides, from the probe, whether the plaintext copy can go.
@@ -30,13 +38,17 @@
  *   node migrate-secrets.mjs --strip [--vc-run <path to vc-run.mjs>]
  */
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { SECRET_PREFIX_RE } from "../../scripts/lib/redact.mjs";
 import { defaultShimPath } from "../../scripts/install-bridge.mjs";
 import { outputRoot } from "./lib/paths.mjs";
 import { standDownIfHostGoverned } from "./lib/governance.mjs";
+import { declaredPasswords, passwordSecret, splitSuffixedKey } from "./lib/passwords.mjs";
+import { parseDoctor, runDoctor } from "./lib/vc-secrets-doctor.mjs";
+
+const BROWSER_SECRETS_FILE = ".env.playwright.local";
 
 /** Env-style token keys → the axis that owns them. A `_<ENV>` suffix is the same key per environment. */
 export const TOKEN_AXIS = {
@@ -81,6 +93,25 @@ export function stripEnvText(text, keys) {
   }, "");
 }
 
+/**
+ * Option B: password keys of the declared envs with a value in a dotenv text — [{ key, line, secret,
+ * declared }]. `declared` is false for a name the declaration does not carry for that env (it has to be
+ * added with write-secrets-decl --password-names before the line can go). Pure — no value returned.
+ */
+export function scanPasswordText(text, passwords) {
+  const envs = Object.keys(passwords || {});
+  const out = [];
+  if (!envs.length) return out;
+  String(text).split(/\r?\n/).forEach((raw, i) => {
+    const m = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/.exec(raw);
+    if (!m) return;
+    const value = m[2].replace(/\s+#.*$/, "").replace(/^['"]|['"]$/g, "").trim();
+    const hit = value ? splitSuffixedKey(m[1], envs) : null;
+    if (hit) out.push({ key: m[1], name: hit.name, env: hit.env, line: i + 1, secret: passwordSecret(hit.name, hit.env), declared: passwords[hit.env].includes(hit.name) });
+  });
+  return out;
+}
+
 /** Credentials in a git config's remote URLs: [{ remote, line }]. Pure. */
 export function scanGitConfig(text) {
   const out = [];
@@ -115,8 +146,20 @@ export function scan(root) {
   const findings = [];
   const add = (f) => findings.push({ ...f, tracked: inGit(root, f.file), everCommitted: inGit(root, f.file, { ever: true }) });
 
+  let passwords = {};
+  try {
+    passwords = declaredPasswords(JSON.parse(readFileSync(join(root, ".claude", "vc-secrets.local.json"), "utf8")));
+  } catch {
+    /* no declaration — option A, passwords are not findings */
+  }
   for (const name of readdirSync(root).filter((n) => /^\.env(\..+)?$/.test(n))) {
-    for (const hit of scanEnvText(readFileSync(join(root, name), "utf8"))) add({ file: name, kind: "env", ...hit });
+    if (name === BROWSER_SECRETS_FILE) continue;
+    const text = readFileSync(join(root, name), "utf8");
+    for (const hit of scanEnvText(text)) add({ file: name, kind: "env", ...hit });
+    for (const hit of scanPasswordText(text, passwords)) add({ file: name, kind: "env", axis: "password", ...hit });
+  }
+  if (Object.keys(passwords).length && existsSync(join(root, BROWSER_SECRETS_FILE))) {
+    add({ file: BROWSER_SECRETS_FILE, kind: "browser-secrets-file", axis: "password" });
   }
   for (const rel of [".claude/settings.local.json", ".claude/settings.json"]) {
     const p = join(root, rel);
@@ -172,18 +215,22 @@ function probeAxis(axis, { root, vcRun }) {
   return r.status === 0 ? { ok: true } : { ok: false, reason: `\`node "$VC_RUN" ${probes[axis].join(" ")}\` exited ${r.status}` };
 }
 
-function strip(root, findings, okAxes) {
+function strip(root, findings, okAxes, storedSecrets = new Set()) {
   const stripped = [];
   const byFile = new Map();
   for (const f of findings) {
-    if (!okAxes.has(f.axis) && f.axis !== "removed") continue;
+    const passwordOk = f.axis === "password" && (f.kind === "browser-secrets-file" || (f.declared && storedSecrets.has(f.secret)));
+    if (!okAxes.has(f.axis) && f.axis !== "removed" && !passwordOk) continue;
     if (!byFile.has(f.file)) byFile.set(f.file, []);
     byFile.get(f.file).push(f);
   }
   for (const [file, list] of byFile) {
     const p = join(root, file);
     const kind = list[0].kind;
-    if (kind === "env") {
+    if (kind === "browser-secrets-file") {
+      rmSync(p, { force: true });
+      stripped.push(...list);
+    } else if (kind === "env") {
       writeFileSync(p, stripEnvText(readFileSync(p, "utf8"), list.map((f) => f.key)));
       stripped.push(...list);
     } else if (kind === "settings-env") {
@@ -208,7 +255,7 @@ function main() {
   const root = outputRoot();
   standDownIfHostGoverned(root, "migrate-secrets skipped: secrets are the host's to manage", { json: true });
   const findings = scan(root);
-  const view = (f) => ({ file: f.file, kind: f.kind, key: f.key, line: f.line, axis: f.axis, tracked: f.tracked, everCommitted: f.everCommitted });
+  const view = (f) => ({ file: f.file, kind: f.kind, key: f.key, line: f.line, axis: f.axis, ...(f.secret ? { secret: f.secret, declared: f.declared } : {}), tracked: f.tracked, everCommitted: f.everCommitted });
   const rotate = [...new Set(findings.filter((f) => f.everCommitted || f.tracked).map((f) => f.axis))];
   if (!argv.includes("--strip")) {
     console.log(JSON.stringify({ status: findings.length ? "found" : "clean", findings: findings.map(view), rotate }, null, 2));
@@ -219,7 +266,13 @@ function main() {
   const axes = [...new Set(findings.map((f) => f.axis))].filter((a) => ["github", "ado", "jira"].includes(a));
   const probes = Object.fromEntries(axes.map((a) => [a, probeAxis(a, { root, vcRun })]));
   const okAxes = new Set(axes.filter((a) => probes[a].ok));
-  const stripped = strip(root, findings, okAxes);
+  // Passwords: stored in vc-secrets (doctor: resolvable, which also means the checkout is trusted).
+  let stored = new Set();
+  if (findings.some((f) => f.axis === "password" && f.secret)) {
+    const doctor = runDoctor({ cwd: root });
+    if (doctor.available) stored = new Set(parseDoctor(doctor.text).resolvable);
+  }
+  const stripped = strip(root, findings, okAxes, stored);
   const remaining = scan(root);
   console.log(JSON.stringify({
     status: remaining.length ? "remaining" : "clean",
@@ -230,7 +283,9 @@ function main() {
     next: [
       ...(remaining.some((f) => f.kind.startsWith("mcp")) ? ["re-run gen-mcp.mjs — it rewrites .mcp.json without any token"] : []),
       ...(remaining.some((f) => ["github", "ado", "jira"].includes(f.axis)) ? ["store the token(s) whose probe failed: node \"<VC_SECRETS>\" set <github-pat|ado-pat|jira-token>, then re-run --strip"] : []),
-      ...(rotate.length ? [`ROTATE the ${rotate.join(", ")} token(s): a file holding them is or was in git history`] : []),
+      ...remaining.filter((f) => f.axis === "password" && f.declared).map((f) => `store ${f.key}: node "<VC_SECRETS>" set ${f.secret} (and \`trust\` if doctor asks), then re-run --strip`),
+      ...remaining.filter((f) => f.axis === "password" && f.secret && !f.declared).map((f) => `${f.key} is not declared for vc-secrets — add it with write-secrets-decl.mjs --from-profile --password-envs ${f.env} --password-names ${f.name}, or keep it in the file`),
+      ...(rotate.length ? [`ROTATE the ${rotate.join(", ")} ${rotate.includes("password") ? "secret" : "token"}(s): a file holding them is or was in git history`] : []),
     ],
   }, null, 2));
   process.exit(remaining.length ? 1 : 0);

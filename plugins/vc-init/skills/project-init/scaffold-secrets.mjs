@@ -22,6 +22,9 @@
  *   --github-auth pat | gh-cli     (client GitHub repos and/or the platform upstream)
  *   --jira-auth   pat | token | oauth   (Jira; `token` is the old spelling of pat)
  *
+ * --passwords vc-secrets  (option B, lib/passwords.mjs) the passwords go to vc-secrets as well: nothing
+ *   is written to .env.local, and the report names the secrets write-secrets-decl.mjs declares instead.
+ *
  * IDEMPOTENT: appends only the placeholders not already present in `.env.local` (a line matching
  * `^KEY=`), so a re-run never clobbers values the operator has already filled.
  *
@@ -36,7 +39,8 @@ import { resolveOutPath, outputRoot } from "./lib/paths.mjs";
 // flow then PAUSES while they do it. gen-mcp's .gitignore block only ran at §7, so that whole window — and
 // every onboarding that aborted before §7 — left the densest secret file unignored (review #4).
 import { ensureProjectIgnores } from "./lib/gitignore.mjs";
-import { TOKEN_GUIDE } from "./lib/token-guide.mjs";
+import { PASSWORD_GUIDE, TOKEN_GUIDE } from "./lib/token-guide.mjs";
+import { ALWAYS_PASSWORDS, passwordSecret } from "./lib/passwords.mjs";
 import { emitObservations } from "./lib/diag-obs.mjs";
 import { isHostGoverned } from "./lib/governance.mjs";
 
@@ -56,18 +60,8 @@ function fail(msg) { console.error(`[scaffold-secrets] ${msg}`); process.exit(1)
 
 // Secret catalog: what / why / where + whether it is a per-env credential.
 const CATALOG = {
-  ADMIN_PASSWORD: {
-    perEnv: true, include: () => true,
-    what: "Admin / back-office login password (an app TEST account — never a raw personal password).",
-    why: "Required for every admin-side run.",
-    where: "Your deployment's admin TEST account (ops/customer). Local start-local stack: Password1!",
-  },
-  USER_PASSWORD: {
-    perEnv: true, include: () => true,
-    what: "Storefront test-user login password (app TEST account).",
-    why: "Required for storefront runs.",
-    where: "Your deployment's storefront TEST account.",
-  },
+  ADMIN_PASSWORD: { perEnv: true, include: () => true, ...PASSWORD_GUIDE.ADMIN_PASSWORD },
+  USER_PASSWORD: { perEnv: true, include: () => true, ...PASSWORD_GUIDE.USER_PASSWORD },
 };
 
 function main() {
@@ -99,6 +93,12 @@ function main() {
   }
   const tokens = hostGoverned ? [] : Object.values(TOKEN_GUIDE).filter((g) => patAxes[g.axis]).map((g) => g.secret);
 
+  if (args.passwords !== undefined && !["vc-secrets", "env-local"].includes(args.passwords)) fail(`--passwords must be vc-secrets or env-local, got "${args.passwords}"`);
+  if (args.passwords === "vc-secrets" && !hostGoverned) {
+    console.log(`[scaffold-secrets] passwords go to vc-secrets, not .env.local: ${ALWAYS_PASSWORDS.map((n) => passwordSecret(n, env)).join(", ")} (declared by write-secrets-decl.mjs --password-envs ${env})`);
+    if (tokens.length) console.log(`[scaffold-secrets] tokens go to vc-secrets, not .env.local: ${tokens.join(", ")}`);
+    return;
+  }
   const SUFFIX = `_${env.toUpperCase()}`;
   // Default output → the deployment project (process.cwd()); .env.local is loaded from
   // cwd by config.js. --out still overrides.

@@ -433,10 +433,13 @@ Applicable axes:
 | **GitHub** | **always** (the platform upstream is always GitHub; and the client host may be GitHub) | `PAT` (Recommended) → vc-secrets `github-pat` · `Browser login` → `gh auth login` |
 | **Azure DevOps** | tracker = `azure` **OR** code host = `azure-repos` | `PAT` (Recommended) → vc-secrets `ado-pat` · `Browser login` → `az login` |
 | **Jira** | tracker = `jira` | `API token` (Recommended) → vc-secrets `jira-token` · `Atlassian MCP OAuth` (no token) |
+| **Test-user passwords** | always | `vc-secrets` (Recommended) → `admin-password-<env>` / `user-password-<env>`, no password file · `.env.local` → the file, plus a generated `.env.playwright.local` for the browser lanes |
 
 Map the answers to the flags every later step takes: `--github-auth pat|gh-cli`, `--ado-auth
-pat|az-login`, `--jira-auth pat|oauth`. **Carry them to step 6** — gen-profile writes them to
-`auth.*` in the profile.
+pat|az-login`, `--jira-auth pat|oauth`, `--passwords vc-secrets|env-local`. **Carry the auth ones to
+step 6** — gen-profile writes them to `auth.*` in the profile. The password choice is recorded by the
+vc-secrets declaration itself (3c), not the profile: a `vc-init-onboard.<env>` task there means the
+env's passwords are in vc-secrets (`lib/passwords.mjs`).
 
 ## 3. Scaffold the env templates + the vc-secrets declarations, then hand off
 
@@ -465,7 +468,8 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/scaffold-secrets.mjs" \
   --env myqa --tracker jira --jira-auth pat --client-vcs github --github-auth pat --print
 ```
 Writes `ADMIN_PASSWORD_<ENV>` / `USER_PASSWORD_<ENV>` placeholders (app TEST accounts) and NOTHING
-else. Its last line names the tokens this topology needs — `tokens go to vc-secrets, not .env.local:
+else — and with `--passwords vc-secrets` not even those: it writes nothing and names the password
+secrets 3c declares instead. Its last line names the tokens this topology needs — `tokens go to vc-secrets, not .env.local:
 github-pat, jira-token` — which must match what 3c declares. If it warns that `.env.local` still holds
 a token in plaintext (an older onboarding), say so in one line: `/project-init --check` moves it.
 Idempotent.
@@ -483,6 +487,13 @@ stable `projectId`. Prints a JSON report — keep `secrets` and `trustNeeded`. W
 it declares nothing (every axis is a session login) and 3d's token block is empty. A re-run with the
 same answers changes nothing and asks for no new trust.
 
+With `--passwords vc-secrets` (2d) add `--password-envs <env>`: it also declares, for that env, one
+`local` secret per password (`admin-password-<env>`, `user-password-<env>`; `--password-names` adds
+others), the task `vc-init-onboard.<env>` (the onboarding scripts' API logins) and one server
+`playwright-<lane>.<env>` per Playwright lane — the same lane flags gen-mcp would write, run in-process by
+`bridge/playwright-mcp.mjs` with the passwords in memory only. Declared here, at 3c, so the operator
+trusts it once: gen-mcp (§7) finds it unchanged.
+
 ### 3d. Tell the operator what to do — files, trust, tokens — then pause
 
 Get the token block first — it is relayed **verbatim**:
@@ -494,9 +505,9 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/check-secrets.mjs" --steps
 Then, under a framed `🔒  FILL IN · TRUST · STORE TOKENS` step header (§Output FORMAT), print three
 short parts, in this order:
 
-1. **Two files to fill** — `.env.<env>` (URLs/identifiers) and `.env.local` (test-user passwords),
-   with the placeholder keys each emitted; the inline comments say what each value is and where to
-   get it.
+1. **The files to fill** — `.env.<env>` (URLs/identifiers) and, on the `.env.local` password choice,
+   `.env.local` (test-user passwords), with the placeholder keys each emitted; the inline comments say
+   what each value is and where to get it.
 2. **Approve the declarations** — only when 3c reported `trustNeeded: true`: the operator runs, in
    their own terminal in the project directory, `node "<VC_SECRETS>" trust`, reads what it shows (the
    bridge command and env names, no values) and types `y`. It needs a real terminal — the `!` prefix
@@ -504,7 +515,9 @@ short parts, in this order:
 3. **Store each token** — the `--steps` block: per token, what it is, why, where to create it, and
    `Store: node "<VC_SECRETS>" set <name>`, which the operator runs in that terminal, pastes the token
    at the HIDDEN prompt and presses Enter. Never offer to take a token in chat; if the operator pastes
-   one anyway, do not repeat it, tell them to revoke it, and continue with `set` for a new one.
+   one anyway, do not repeat it, tell them to revoke it, and continue with `set` for a new one. On the
+   vc-secrets password choice the same block lists each test-user password's `set` command — the same
+   hidden prompt, never chat.
 
 For any **browser-login** choice (`gh auth login`, `az login`, Atlassian MCP OAuth) there is no
 token — remind the operator to run that login instead (step 8's `ensure-session.mjs` drives it).
@@ -819,6 +832,12 @@ path) to every Playwright server it finds on disk:
 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/sync-browser-secrets.mjs"
 ```
 
+**Passwords in vc-secrets (3c declared `--password-envs`)?** Skip this command — it says so and writes
+nothing. gen-mcp then writes every lane as `node ${VC_RUN} playwright <lane>`: the bridge resolves the
+current env (`TEST_ENV`, else `.env.test-env`, else the only declared env) and runs the declared server
+`playwright-<lane>.<env>`, so switching `TEST_ENV` needs a restart and nothing else — no file, no new
+trust. Otherwise:
+
 It writes `.env.playwright.local` (gitignored) with the CURRENT env's login passwords under their bare
 names — `ADMIN_PASSWORD`, `USER_PASSWORD`, any other `*_PASSWORD` in `.env.local`; never a token. A
 browser agent then types the NAME into the password field and Playwright MCP types the value and masks
@@ -1083,7 +1102,13 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/scaffold-secrets.mjs" --env <new> 
   (`process.env.X || profile.…`).** Only the per-env **URLs** genuinely need filling; don't ask the
   operator to re-enter tracker/org values they already gave at onboarding.
 - `scaffold-secrets` adds ONLY the `_<ENV>`-suffixed per-env app passwords
-  (`ADMIN_PASSWORD_<NEW>` / `USER_PASSWORD_<NEW>`) to the shared `.env.local`. **Tokens are
+  (`ADMIN_PASSWORD_<NEW>` / `USER_PASSWORD_<NEW>`) to the shared `.env.local`. **Passwords in vc-secrets**
+  (`node "$VC_RUN" --where` lists `passwordEnvs`)? Pass `--passwords vc-secrets` (it writes nothing), then
+  declare the new env and show its steps:
+  `node "$CLAUDE_PLUGIN_ROOT/skills/project-init/write-secrets-decl.mjs" --from-profile --password-envs <new> --shim "$VC_RUN"`
+  and `check-secrets.mjs --steps`. The new env's lanes and onboard task change the declarations, so the
+  pause asks for `trust` plus a `set` per password; an env whose passwords are not stored yet breaks only
+  its own lanes. **Tokens are
   project-level**: the `github-pat` / `ado-pat` / `jira-token` stored in vc-secrets at onboarding
   serve every environment, so `--add-env` declares nothing and asks no trust. (A new env reachable
   only with a *different* tracker/GitHub token is the "different project" case above.)
@@ -1106,7 +1131,8 @@ readiness table** in your reply (§8). Then present **Done**: `TEST_ENV=<new>` (
 your shell) selects the new environment for every plugin, and close with
 `TEST_ENV=<new> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/next-steps.mjs"` (§9). Before a browser run
 on the new env, `TEST_ENV=<new> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/sync-browser-secrets.mjs"`
-and a restart give the Playwright lanes that env's passwords (§7).
+and a restart give the Playwright lanes that env's passwords (§7) — with the passwords in vc-secrets,
+`TEST_ENV=<new>` and a restart alone do.
 
 Completion is signalled **automatically** by `verify-access.mjs` above (it fires the terminal-step
 marker itself). Only if this path ended before running verify-access, run it manually as a fallback:
@@ -1238,7 +1264,16 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/migrate-secrets.mjs" --strip --vc-
 that axis's plaintext copies ONLY when its probe passes — a failing axis keeps its file copy, because it
 may be the only working one. A postman/context7 key is stripped unconditionally (those servers are gone).
 `.mcp.json` is never edited here: re-run gen-mcp (§7), which rewrites it without any token and prunes
-the settings `env`. Relay `stripped`, `remaining` and `next` in one short table; a `remaining` entry is
+the settings `env`.
+
+**Passwords.** Once the declaration keeps an env's passwords in vc-secrets, `--scan` also lists each
+`<NAME>_<ENV>` of that env in an `.env` file and a leftover `.env.playwright.local`; `--strip` removes a
+password line when `vc-secrets doctor` reports its secret stored (verify-access then proves the login) and
+deletes `.env.playwright.local`. To move an existing project's passwords there: `write-secrets-decl.mjs
+--from-profile --password-envs <every env>`, the §3d steps (`trust`, `set` per password), `--strip`,
+then gen-mcp. Only vc-init's onboarding scripts read a password from vc-secrets today: a script outside
+vc-init that logs in over the API with `ADMIN_PASSWORD` from `.env.local` (vc-fix's module registry,
+seeders) finds it empty after the move — keep `.env.local` (option A) where those are used. Relay `stripped`, `remaining` and `next` in one short table; a `remaining` entry is
 the operator's to-do, named, not a silent leftover.
 
 ### Step C — normalize the env file, then verify access
@@ -1314,8 +1349,8 @@ Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or j
 | `scaffold-env.mjs` | write a commented `.env.<env>` **template** (non-secret URL/identifier/tracker placeholders + what/example comments); topology-driven, idempotent. **Calls `lib/gitignore.mjs` `ensureProjectIgnores()` BEFORE it writes**, so the file it is about to create is already covered (VCST-5774). |
 | `scaffold-secrets.mjs` | write a commented `.env.local` **template** — test-user passwords only (what/why/where per value); reports which tokens this topology stores in vc-secrets and warns on a plaintext token still in `.env.local`; idempotent. **Calls `lib/gitignore.mjs` `ensureProjectIgnores()` BEFORE it writes**, so the file it is about to create is already covered (VCST-5774). |
 | `lib/gitignore.mjs` | the ONE list of what onboarding generates that must never be committed, plus the append-only writer. Shared because FOUR scripts create such files at four different steps and each must protect its own **before** creating it — while only `gen-mcp` (§7) wrote the block, `.env.local` (§3b) sat unignored through the operator's fill-in pause and through any run that aborted before §7. Idempotent, so four calls cost one read and produce one block |
-| `write-secrets-decl.mjs` | write `.claude/vc-secrets.local.json` — one `local` secret per PAT axis, the `vc-init-<group>` bridge tasks, the GitHub MCP server, a stable `projectId`. Owns only those keys, writes nothing when unchanged (so trust is re-asked only when the PAT axes change). `--from-profile` reads `auth.*` |
-| `check-secrets.mjs` | `--preflight` (§0d): is vc-secrets installed and runnable · `--steps` (§3d): the token block — what/why/where + the exact `set <name>` command per token · default (§3e): the TOKEN GATE — reads `vc-secrets doctor`'s lines and exits 1 with the `trust` / `set` commands still to run. Never sees a value |
+| `write-secrets-decl.mjs` | write `.claude/vc-secrets.local.json` — one `local` secret per PAT axis, the `vc-init-<group>` bridge tasks, the GitHub MCP server, a stable `projectId`. Owns only those keys, writes nothing when unchanged (so trust is re-asked only when the PAT axes change). `--from-profile` reads `auth.*`. `--password-envs` / `--password-names`: per env the password secrets, `vc-init-onboard.<env>` and the `playwright-<lane>.<env>` servers (`lib/passwords.mjs`, `lib/playwright-lanes.mjs`) |
+| `check-secrets.mjs` | `--preflight` (§0d): is vc-secrets installed and runnable · `--steps` (§3d): the token block — what/why/where + the exact `set <name>` command per token (and each declared password's) · default (§3e): the TOKEN GATE — reads `vc-secrets doctor`'s lines and exits 1 with the `trust` / `set` commands still to run. Never sees a value |
 | `lib/token-guide.mjs` | what/why/where of each onboarding token (`github-pat`, `ado-pat`, `jira-token`) — the texts that used to sit in `.env.local` comments |
 | `lib/vc-secrets-doctor.mjs` | runs `vc-secrets doctor` through the shim and parses its OK/FAIL/SKIP lines into a verdict (shared by check-secrets and verify-access) |
 | `profile-set.mjs` | the ONE path another plugin writes the profile through: `/qa-bug` (`--set tracker.fieldDefaults.*` / `fieldMap.*`), `/perf-init` (`--merge perf=<json>`). Allowlisted paths only; exit 2 = no profile |
@@ -1333,7 +1368,7 @@ Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or j
 | `lib/paths.mjs` | shared path helper — `outputRoot()` (`VC_FIX_HOME` \|\| `process.cwd()`, where generated state goes) + `pluginRoot()` (`CLAUDE_PLUGIN_ROOT` \|\| resolved from `import.meta.url`, used by a running script to find its own read-only plugin assets). Keeps every generator writing to the project and reading templates from the plugin. (Commands resolve their launch path via `claude plugin list --json` — see vc-fix's `knowledge/execution/plugin-root.md`.) |
 | `verify-access.mjs` | full `/qa-fix` readiness table + verdict, incl. the two **secret-hygiene** rows that audit `.mcp.json` + `.claude/settings.local.json` for an exposed credential (graded by committability: tracked/not-ignored ⇒ FAIL); prints an untruncated "To resolve" block (incl. an auto-discovered `az login --tenant <guid>`). Also **reports every non-PASS row as self-diagnostics telemetry** (`lib/diag-obs.mjs` → the collector's `obs` subcommand) — the table used to be rendered and discarded, so a WARN the operator could plainly read was invisible to `/vc-self-check` and the run self-diagnosed "no plugin issues detected" (VCST-5582 H). Exit code is unchanged: 0 unless a hard FAIL |
 | `assert-profile.mjs` | asserts the **SHAPE** of the profile just written and records each degradation as a `degraded_artifact` observation: empty `tracker.fields` (⇒ `/qa-bug` sends "unverified defaults"), `roleStatesComplete:false`, unmapped required fields, empty `repos.client` on a client project, an unresolved storefront `upstreamRef`, `githubForkCapable != "yes"` while the upstream path is needed. Complements `verify-access` (which probes ACCESS): a scan can return empty with no HTTP error, and what `/qa-fix` reads at runtime is the persisted shape. Read-only, **always exits 0** — a diagnostic, not a second readiness gate |
-| `migrate-secrets.mjs` | **`--check` Step M**: `--scan` lists every token left in a file (`.env*`, settings `env`, `.mcp.json`, `.fix-workspace/*/.git/config` remote URLs, the profile) by NAME and LOCATION and flags the ones in git history (⇒ rotate); `--strip` removes an axis's plaintext copies only after its bridge probe passes |
+| `migrate-secrets.mjs` | **`--check` Step M**: `--scan` lists every token left in a file (`.env*`, settings `env`, `.mcp.json`, `.fix-workspace/*/.git/config` remote URLs, the profile) by NAME and LOCATION and flags the ones in git history (⇒ rotate); `--strip` removes an axis's plaintext copies only after its bridge probe passes. With passwords in vc-secrets also their `.env` lines (once stored) and `.env.playwright.local` |
 | `detect-governance.mjs` | §0-host: find a host governance plugin (`lib/governance.mjs` registry) and print the `governance` block it would write; `--governance <host|none>` overrides |
 | `render-scan.mjs` | §4a/§4b: the operator's confirmation tables, verbatim — `--repos` (client repos with default branch + PR target) and `--tracker` (role → state per work-item type) |
 | `next-steps.mjs` | §9: "the project is ready" + what to do now, from the profile and the installed plugins (`--plugins a,b` overrides detection) |

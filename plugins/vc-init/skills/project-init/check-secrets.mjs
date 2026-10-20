@@ -17,7 +17,7 @@
  *
  * Usage:
  *   node check-secrets.mjs --preflight
- *   node check-secrets.mjs --steps                              # the token block of the §3 pause, as text
+ *   node check-secrets.mjs --steps                              # the token (and password) block of the §3 pause, as text
  *   node check-secrets.mjs [--secrets github-pat,jira-token]   # default: what the declaration lists
  */
 import { existsSync, readFileSync } from "node:fs";
@@ -25,18 +25,24 @@ import { join } from "node:path";
 import { outputRoot } from "./lib/paths.mjs";
 import { parseDoctor, runDoctor, secretsVerdict } from "./lib/vc-secrets-doctor.mjs";
 import { installVcSecretsShim } from "../../bridge/vc-secrets-path.mjs";
-import { tokenSteps } from "./lib/token-guide.mjs";
+import { passwordSteps, tokenSteps } from "./lib/token-guide.mjs";
+import { declaredPasswords, passwordSecretNames } from "./lib/passwords.mjs";
 import { standDownIfHostGoverned } from "./lib/governance.mjs";
 
 const OWNED = ["github-pat", "ado-pat", "jira-token"];
 
-function declaredSecrets(root) {
+function readDecl(root) {
   try {
-    const d = JSON.parse(readFileSync(join(root, ".claude", "vc-secrets.local.json"), "utf8"));
-    return Object.keys(d.secrets || {}).filter((n) => OWNED.includes(n));
+    return JSON.parse(readFileSync(join(root, ".claude", "vc-secrets.local.json"), "utf8"));
   } catch {
-    return [];
+    return null;
   }
+}
+
+/** The secrets this project declared: its token axes', and (option B) every env's passwords. */
+function declaredSecrets(root) {
+  const d = readDecl(root);
+  return [...Object.keys(d?.secrets || {}).filter((n) => OWNED.includes(n)), ...passwordSecretNames(declaredPasswords(d))];
 }
 
 function main() {
@@ -68,7 +74,7 @@ function main() {
   if (argv.includes("--steps")) {
     // The token block of the §3 pause, relayed verbatim: per declared token, what / why / where and
     // the exact `set` command. Plain text, not JSON — it is shown to the operator as is.
-    const lines = tokenSteps({ secrets: declaredSecrets(root), vcSecrets: shim });
+    const lines = [...tokenSteps({ secrets: declaredSecrets(root), vcSecrets: shim }), ...passwordSteps({ passwords: declaredPasswords(readDecl(root)), vcSecrets: shim })];
     process.stdout.write(lines.length ? `${lines.join("\n")}\n` : "(no token to store — every axis uses a session login)\n");
     return;
   }

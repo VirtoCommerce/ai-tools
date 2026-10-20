@@ -77,7 +77,8 @@ PAT, no `az login`, self-diagnostics off; the host's rules win.
    connection + derived flags + `--github-auth`/`--ado-auth`/`--jira-auth` from 2d + `--self-diagnostics`
    from 0b). Do NOT pass `--project-type`/`--client-org` — the scan is authoritative.
 7. Browser login secrets (`sync-browser-secrets.mjs` → `.env.playwright.local`: the agent types a password's
-   NAME, Playwright MCP types the value), then `.mcp.json` (`gen-mcp.mjs`) → restart MCP servers.
+   NAME, Playwright MCP types the value — skipped when 3c put the passwords in vc-secrets, where each lane
+   is `node ${VC_RUN} playwright <lane>` and no file exists), then `.mcp.json` (`gen-mcp.mjs`) → restart MCP servers.
 8. Verify access — `FORCE_COLOR=1 TEST_ENV=<env> node "$VC_RUN" onboard verify-access` then
    `node "$CLAUDE_PLUGIN_ROOT/skills/project-init/assert-profile.mjs"`. **Restate the readiness table
    AND the MCP-server status as Markdown tables in your reply.** For a **session-auth FAIL** run

@@ -16,6 +16,9 @@
  * - Prints names only, never a value. `--check` writes nothing and exits 1 when the file is stale.
  * The MCP servers read the file at START: after a change, reconnect playwright-* (or restart).
  *
+ * This is option A. When the vc-secrets declaration keeps the passwords (option B, lib/passwords.mjs),
+ * the lanes run from vc-secrets and no file is wanted: this script then writes nothing and says so.
+ *
  * Usage: TEST_ENV=<env> node sync-browser-secrets.mjs [--check]
  */
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
@@ -25,6 +28,7 @@ import { parse } from "dotenv";
 import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
 import { outputRoot } from "./lib/paths.mjs";
 import { standDownIfHostGoverned } from "./lib/governance.mjs";
+import { declaredPasswords } from "./lib/passwords.mjs";
 
 export const SECRETS_FILE = ".env.playwright.local";
 const ALWAYS = ["ADMIN_PASSWORD", "USER_PASSWORD"];
@@ -86,6 +90,16 @@ export function currentState(root = outputRoot()) {
 function main() {
   standDownIfHostGoverned(outputRoot(), "sync-browser-secrets skipped: the browser lanes are the host's");
   const check = process.argv.includes("--check");
+  let inVcSecrets = [];
+  try {
+    inVcSecrets = Object.keys(declaredPasswords(JSON.parse(readFileSync(join(outputRoot(), ".claude", "vc-secrets.local.json"), "utf8"))));
+  } catch {
+    /* no declaration — option A */
+  }
+  if (inVcSecrets.length) {
+    console.log(`[browser-secrets] the passwords are in vc-secrets (${inVcSecrets.join(", ")}): the lanes run from there and need no ${SECRETS_FILE} — nothing written${existsSync(join(outputRoot(), SECRETS_FILE)) ? `; a leftover ${SECRETS_FILE} is deleted by migrate-secrets.mjs --strip` : ""}`);
+    return;
+  }
   const s = currentState();
   if (s.unserialisable.length) {
     console.error(`[browser-secrets] ✗ no dotenv quoting carries the value of ${s.unserialisable.join(", ")} — change that password`);

@@ -48,6 +48,8 @@ import { defaultShimPath } from "../../scripts/install-bridge.mjs";
 import { vcSecretsShim } from "../../bridge/vc-secrets-path.mjs";
 import { MCP_REMOTE_SPEC, githubMcpEntryOAuth, githubMcpEntryPat } from "./lib/github-mcp.mjs";
 import { patAxesFromProfile, writeSecretsDecl } from "./write-secrets-decl.mjs";
+import { EVIDENCE_INCOMING, absolutizeOutputDir, laneEntryViaBridge, preferProjectPlaywrightConfig } from "./lib/playwright-lanes.mjs";
+import { declaredPasswords } from "./lib/passwords.mjs";
 // The ignore rules + writer live in lib/ because FOUR scripts create secret-bearing files at
 // four different onboarding steps and each must protect its own before writing it (VCST-5774
 // review #4). Re-exported so the existing unit tests keep importing them from here.
@@ -356,72 +358,18 @@ export function unresolvedPlaceholders(server) {
   return [...new Set(JSON.stringify(server).match(/<[A-Z0-9_]+>/g) || [])];
 }
 
-// ─── evidence destination (VCST-5582 C) ──────────────────────────────────────────────
-//
-// Screenshots taken during a /qa-bug run were landing at the PROJECT ROOT and being moved
-// afterwards. Two facts existed but were never connected: the template's `--output-dir` was
-// RELATIVE (`test-results/<browser>`, resolved against whatever cwd the MCP server happens to
-// start in — the project root, if we're lucky), while `skills/qa-evidence/output-paths.md`
-// declared the destination policy `reports/bugs/screenshots/`. Nothing said HOW a screenshot
-// gets from one to the other, so the path was guessed.
-//
-// The fix is to make the DESTINATION DETERMINISTIC rather than hope about cwd: we rewrite
-// `--output-dir` to an ABSOLUTE path inside the project's own evidence tree. Whatever cwd the
-// MCP server inherits, its default target can no longer be the project root — the strongest
-// available guarantee, since playwright-mcp resolves a relative --output-dir against its cwd.
-// `_incoming/` is the landing zone; /qa-bug performs ONE deterministic move from there into
-// `reports/bugs/screenshots/<bug-slug>/` at its evidence step.
-const EVIDENCE_INCOMING = ["reports", "bugs", "screenshots", "_incoming"];
-/** Rewrite a Playwright server's relative --output-dir to an absolute path under the project. */
-// A deployment may ship its OWN Playwright MCP config per lane
-// (`config/mcp-playwright-<lane>.config.json`) plus a `--secrets` file. Those carry settings the
-// template's CLI flags cannot express — recordHar, recordVideo, locale, launchOptions, and the
-// Firefox `widget.windows.window_occlusion_tracking.enabled=false` workaround that is the only
-// thing making that lane click-capable. Regenerating with the template's inline flags silently
-// dropped all of it, and dropping `--secrets` is worse than a crash: playwright-mcp then types the
-// BARE KEY NAME as a literal, so a login "succeeds" with the wrong string and nothing errors.
-// So: when the project has a config for a lane, hand it to `--config` and drop the inline flags it
-// supersedes; when it has a secrets file, always pass it. Both paths absolute — playwright-mcp
-// resolves relative paths against ITS OWN cwd, which is the bug absolutizeOutputDir already fixes.
-const PW_SUPERSEDED = new Set(["--browser", "--isolated", "--viewport-size", "--output-dir"]);
-/** Point a Playwright lane at the deployment's own --config / --secrets when they exist. Pure-ish (fs reads). */
-export function preferProjectPlaywrightConfig(server, name, root, exists = existsSync) {
-  const args = server?.args;
-  if (!Array.isArray(args) || !/^playwright-/.test(name || "")) return server;
-  const lane = name.slice("playwright-".length);
-  const cfg = join(root, "config", `mcp-playwright-${lane}.config.json`);
-  const secrets = join(root, ".env.playwright.local");
-  const hasCfg = exists(cfg);
-  const hasSecrets = exists(secrets);
-  if (!hasCfg && !hasSecrets) return server;
-  let next = [...args];
-  if (hasCfg) {
-    // Drop the flags the config file supersedes, then append --config.
-    const kept = [];
-    for (let i = 0; i < next.length; i++) {
-      if (PW_SUPERSEDED.has(next[i])) { if (next[i] !== "--isolated") i++; continue; }
-      kept.push(next[i]);
-    }
-    next = kept;
-    if (!next.includes("--config")) next.push("--config", cfg);
-  }
-  if (hasSecrets && !next.includes("--secrets")) next.push("--secrets", secrets);
-  return { ...server, args: next };
-}
+// ─── evidence destination (VCST-5582 C) + project lane configs ─────────────────────────
+// Moved to lib/playwright-lanes.mjs, which write-secrets-decl.mjs shares (option B lanes); re-exported
+// here for the callers and tests that import them from gen-mcp.
+export { EVIDENCE_INCOMING, absolutizeOutputDir, preferProjectPlaywrightConfig } from "./lib/playwright-lanes.mjs";
 
-export function absolutizeOutputDir(server, root) {
-  const args = server?.args;
-  if (!Array.isArray(args)) return server;
-  const i = args.indexOf("--output-dir");
-  if (i < 0 || i + 1 >= args.length) return server;
-  const current = String(args[i + 1] || "");
-  if (isAbsolute(current)) return server; // already pinned (a hand-edited template)
-  // Keep only the LAST path segment (the browser lane) and re-root it in the evidence tree,
-  // so an older template value like `test-results/chrome` is migrated too.
-  const lane = current.split(/[/\\]/).filter(Boolean).pop() || "chrome";
-  const next = [...args];
-  next[i + 1] = join(root, ...EVIDENCE_INCOMING, lane);
-  return { ...server, args: next };
+/** The project's local vc-secrets declaration, parsed; null when absent or unreadable. */
+function readLocalDecl(root) {
+  try {
+    return JSON.parse(readFileSync(join(root, ".claude", "vc-secrets.local.json"), "utf8"));
+  } catch {
+    return null;
+  }
 }
 
 function main() {
@@ -469,6 +417,20 @@ function main() {
     // doc-comment keys so they don't leak into the runtime .mcp.json.
     const built = preferProjectPlaywrightConfig(absolutizeOutputDir(ensureNodeOptions(normalizeForOs(def, os)), projectRoot), name, projectRoot);
     mcpServers[name] = stripComments(built);
+  }
+
+  // The Playwright pin and specs are read from the lanes as the template builds them, before option B
+  // below replaces those entries with a bridge call that names no package.
+  const pwVersion = pinnedPlaywrightVersion(mcpServers);
+  const pwSpecs = extractNpxSpecs(Object.fromEntries(Object.entries(mcpServers).filter(([n]) => /^playwright-/.test(n))));
+  // Option B (lib/passwords.mjs): the declaration keeps the test-user passwords in vc-secrets, so each
+  // lane is `node ${VC_RUN} playwright <lane>` — the bridge runs the current env's declared lane server,
+  // and no --secrets file is passed or needed. The declaration is the switch; /project-init writes it.
+  const passwordEnvs = Object.keys(declaredPasswords(readLocalDecl(projectRoot))).sort();
+  if (passwordEnvs.length) {
+    for (const name of Object.keys(mcpServers)) {
+      if (/^playwright-[a-z0-9]+$/.test(name)) mcpServers[name] = laneEntryViaBridge(name.slice("playwright-".length));
+    }
   }
 
   // Which servers to ENABLE (the rest stay defined but dormant). Only playwright-chrome
@@ -531,9 +493,11 @@ function main() {
   // changes nothing and asks no new trust. All axes come from the profile, so a call here never
   // drops another axis's task.
   let decl = null;
-  if (githubAuth === "pat") {
-    const pat = profile ? patAxesFromProfile(profile) : { github: true, ado: false, jira: false };
-    pat.github = true;
+  if (githubAuth === "pat" || passwordEnvs.length) {
+    // Option B's lane servers are rebuilt here too, from the same builder §3c used — unchanged unless a
+    // lane config appeared or moved since.
+    const pat = profile ? patAxesFromProfile(profile) : { github: githubAuth === "pat", ado: false, jira: false };
+    if (githubAuth === "pat") pat.github = true;
     try {
       decl = writeSecretsDecl({ root: projectRoot, pat, shim: vcRun });
     } catch (e) {
@@ -548,11 +512,13 @@ function main() {
   if (decl?.trustNeeded) {
     console.warn(`[gen-mcp] ⚠ the vc-secrets declarations changed (${decl.path}) — run \`node "<VC_SECRETS>" trust\` in a terminal before restarting.`);
   }
+  console.log(passwordEnvs.length
+    ? `[gen-mcp] browser passwords: vc-secrets for ${passwordEnvs.join(", ")} — each lane runs \`node \${VC_RUN} playwright <lane>\`, which starts the declared server playwright-<lane>.<TEST_ENV>; no password file`
+    : `[gen-mcp] browser passwords: ${existsSync(join(projectRoot, ".env.playwright.local")) ? ".env.playwright.local, passed as --secrets" : "no .env.playwright.local yet — run sync-browser-secrets.mjs, then gen-mcp again"}`);
   console.log(`[gen-mcp] browser evidence lands in ${join(projectRoot, ...EVIDENCE_INCOMING)}\\<browser> (absolute — never the project root, whatever cwd the MCP server starts in)`);
   // VCST-5702 ITEM 4 — emit the PINNED @playwright/mcp version so a version mismatch surfaces at
   // project-init. On 0.0.77 a bare screenshot filename resolves against the server cwd, not the
   // configured --output-dir, so Stage 5 (output-paths.md) MUST reconcile the file into _incoming/.
-  const pwVersion = pinnedPlaywrightVersion(mcpServers);
   if (pwVersion) {
     console.log(`[gen-mcp] @playwright/mcp pinned at ${pwVersion} — capture with a BARE filename; on 0.0.77 it lands in the server cwd, so /qa-bug reconciles it into _incoming/ (output-paths.md Stage 5).`);
   }
@@ -593,6 +559,7 @@ function main() {
   if (asBool(args["warm-cache"])) {
     const specs = extractNpxSpecs(mcpServers);
     if (githubAuth === "pat") specs.push(MCP_REMOTE_SPEC);
+    if (passwordEnvs.length) specs.push(...pwSpecs.filter((p) => !specs.includes(p)));
     console.log(`[gen-mcp] warming npm cache for ${specs.length} npx package(s): ${specs.join(", ") || "(none)"}`);
     const results = warmNpxCache(specs);
     for (const r of results) {
