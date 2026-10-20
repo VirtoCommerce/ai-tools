@@ -17,7 +17,7 @@ deployment — a client's Jira has different transition labels, and Azure Boards
 So `/qa-bug` and `/qa-verify-fix` decide a destination *role*, then let
 [`tracker-ops.md`](../../knowledge/execution/tracker-ops.md) resolve it to the live workflow:
 Jira via `getTransitionsForJiraIssue` (best-match by target status, never a hardcoded id), Azure
-via `ado.mjs transition --state <roleStates[role]>` (honoring `tracker.azure.transitionPolicy`).
+via `ado.mjs transition --role <role>` (the state for the item's own type) (honoring `tracker.azure.transitionPolicy`).
 
 | Role | Lifecycle meaning | Jira transition (VC reference name) | Jira target status | Azure `roleStates` key |
 |------|-------------------|-------------------------------------|--------------------|------------------------|

@@ -29,6 +29,7 @@
  *   # offline test with mock module data ([{Id,ProjectUrl}, ...]); skips the repo scan:
  *   node skills/project-init/discover-repos.mjs --modules-json mods.json --print
  */
+import { probeStorefrontBackend } from "./lib/storefront-probe.mjs";
 import { readFileSync, writeFileSync, mkdirSync } from "fs";
 import { execSync } from "child_process";
 import { resolve, dirname } from "path";
@@ -585,41 +586,6 @@ export function contributionForClient(host, { org, project, name, integrationBra
 const hostnameOf = (u) => {
   try { return new URL(u).hostname; } catch { return ""; }
 };
-const originOf = (u) => {
-  try { return new URL(u).origin; } catch { return String(u || "").replace(/\/$/, ""); }
-};
-
-/**
- * Probe which host both RESOLVES the store and PROXIES the storefront GraphQL — the value
- * `APP_BACKEND_URL` must take for a LOCAL dev run (vc-frontend's app-runner.ts derives the
- * store-resolution `domain` from APP_BACKEND_URL's hostname in dev; the ADMIN host does NOT
- * resolve the store → blank app). Tries FRONT_URL first, then BACK_URL. Returns
- * { backendUrlForDev, storeId, storeDomain } or null (operator fills in). Never throws.
- */
-async function probeStorefrontBackend({ frontUrl, backUrl, storeId }) {
-  const query =
-    "query GetPageContext($domain:String,$permalink:String){pageContext(domain:$domain,permalink:$permalink){store{storeId storeName}}}";
-  for (const candidate of [frontUrl, backUrl].filter(Boolean)) {
-    const origin = originOf(candidate);
-    const domain = hostnameOf(candidate);
-    try {
-      const res = await fetch(`${origin}/graphql`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ operationName: "GetPageContext", query, variables: { domain, permalink: "sign-in" } }),
-      });
-      if (!res.ok) continue;
-      const data = await res.json();
-      const store = data?.data?.pageContext?.store;
-      if (store?.storeId) {
-        return { backendUrlForDev: origin, storeId: store.storeId || storeId || "", storeDomain: domain };
-      }
-    } catch {
-      /* try next candidate */
-    }
-  }
-  return null;
-}
 
 async function getModulesLive() {
   loadLayeredEnv("vcst"); // throws on a malformed TEST_ENV — let it crash loudly here

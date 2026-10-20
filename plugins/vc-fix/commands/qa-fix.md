@@ -79,7 +79,9 @@ helpers, and do **not** ask the operator what the profile already answers.
   `node "$VC_RUN" ado <cmd>` — `get-workitem`, `comment`, `edit-comment`, `transition`,
   `create-pr`, `list-policies`, `get-file`, `list-refs` (org/project/apiBase default from the profile).
   Jira: Atlassian MCP, or `node "$VC_RUN" jira …` for what the MCP does not cover (`tracker-ops.md` §0a).
-- **Status transitions** — map the lifecycle ROLE to a state via `profile.tracker.azure.roleStates`
+- **Status transitions** — `node "$VC_RUN" ado transition --id <n> --role <role>` maps the lifecycle ROLE to
+  the state of the ticket's OWN work-item type (`profile.tracker.azure.roleStatesByType` — a Bug, a Task and a
+  User story can name one role differently)
   (`in-progress` / `in-review` / `ready-for-test` / `done`) — these are the deployment's REAL states
   (e.g. `On Dev` / `On Review` / `Ready for QA` / `Closed`), scanned per work-item type. When
   `tracker.azure.transitionPolicy` is `auto`, transition **silently by role and just log it — do NOT
@@ -232,7 +234,7 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
   upstream half as well.
 - On PASS: transition the ticket to the **in-progress** role state (Jira: discover the transition live via
   `getTransitionsForJiraIssue`, don't hardcode "Take to development"; Azure Boards: set `System.State` to
-  `profile.tracker.azure.roleStates["in-progress"]` via `node "$VC_RUN" ado transition`). **Follow
+  the `in-progress` state of that item's type via `node "$VC_RUN" ado transition --id <n> --role in-progress`). **Follow
   `tracker.azure.transitionPolicy`: `auto` ⇒ transition silently and just log it (do NOT ask); `ask` ⇒
   confirm first** (Jira, or an unscanned map, defaults to ask). Add a comment naming the routed repo +
   kind + (for a frontend route) the provenance verdict.
@@ -303,7 +305,7 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
   receives it through a later release + fork sync. (An upstream **Issue** instead is only for a Gate-0
   too-complex / multi-repo bail — handled at Gate 0, not here.)
 - Transition the ticket to the **in-review** role state (Jira: live-discover the transition, don't hardcode
-  "Go to review"; Azure Boards: `roleStates["in-review"]` via `node "$VC_RUN" ado transition`; obey
+  "Go to review"; Azure Boards: `node "$VC_RUN" ado transition --id <n> --role in-review`; obey
   `transitionPolicy` — `auto` ⇒ no ask) with the PR link.
 
 ## Phase 6 — Await CI (Gate 5); E2E (Gate 6) is delegated, not run here

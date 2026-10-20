@@ -44,6 +44,7 @@ export class AzureTracker implements Tracker {
   private org: string;
   private project: string;
   private roleStates: Record<string, string>;
+  private roleStatesByType: Record<string, Record<string, string>>;
   private stateMap: Record<string, string>;
   private dryRun: boolean;
   private log: (msg: string) => void;
@@ -54,6 +55,7 @@ export class AzureTracker implements Tracker {
     this.org = process.env.ADO_ORG || az.organization || "";
     this.project = process.env.ADO_PROJECT || az.project || "";
     this.roleStates = az.roleStates || {};
+    this.roleStatesByType = az.roleStatesByType || {};
     this.stateMap = az.stateMap || {};
     this.enabled = Boolean(this.org && this.project && adoConfigured());
     this.dryRun = deps.dryRun;
@@ -162,7 +164,16 @@ export class AzureTracker implements Tracker {
     // only mechanism /project-init's discover-tracker.mjs ever populates); fall back to
     // the legacy free-form stateMap for a caller still passing a raw display name, then
     // to the raw name itself when neither map has it.
-    const targetState = this.roleStates[transitionName] || this.stateMap[transitionName] || transitionName;
+    // A per-type map (tracker.azure.roleStatesByType) wins: a Task and a Bug can name one role
+    // differently, so the item's own type is read first.
+    let roleState = this.roleStates[transitionName] || "";
+    if (Object.keys(this.roleStatesByType).length) {
+      const item = await this.req("GET", `/_apis/wit/workitems/${encodeURIComponent(key)}?fields=System.WorkItemType&api-version=${API_VERSION}`);
+      const type = item.ok ? String(((await item.json()) as any)?.fields?.["System.WorkItemType"] || "") : "";
+      const typeKey = Object.keys(this.roleStatesByType).find((k) => k.toLowerCase() === type.toLowerCase());
+      roleState = (typeKey && this.roleStatesByType[typeKey][transitionName]) || "";
+    }
+    const targetState = roleState || this.stateMap[transitionName] || transitionName;
     const res = await this.req(
       "PATCH",
       `/_apis/wit/workitems/${encodeURIComponent(key)}?api-version=${API_VERSION}`,

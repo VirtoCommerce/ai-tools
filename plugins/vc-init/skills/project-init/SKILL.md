@@ -1,6 +1,6 @@
 ---
 name: project-init
-description: "Initialize / onboard the Virto Commerce plugins (vc-fix, vc-perf, …) onto a deployment. Checks that vc-secrets is installed, installs deps, then asks the operator only what genuinely shapes the config — the environment NAME, the bug tracker (Jira / Azure Boards), the code host (GitHub / Azure Repos), and an auth preference per axis (PAT recommended, else browser/CLI login). Every PAT is stored in vc-secrets by the operator in a terminal — never typed in chat, never written to a file — and reaches a process only through the $VC_RUN bridge. Everything else — native-platform or CLIENT project, the client org, the contribution mode, the fork account — is DERIVED from the token + the filled env + a live module/repo scan. Writes project-profile.json + .env.<env> + .env.local (test-user passwords only) + .mcp.json + the vc-secrets declarations, and verifies access. That one profile is what every installed plugin reads — vc-fix routes a bug to the RIGHT repo and tracker with it, vc-perf finds the stand and the code with it. Use when standing the plugins up on a new machine or for a new customer. On a host-governed project (a client governance plugin owns MCP servers and secrets) it writes the profile and env files only and skips every token / MCP step. Day-2 modes skip the interview: `--add-env` adds another environment (URLs + per-env passwords) to an already-onboarded project; `--check` reconciles an existing profile to the current schema, moves any plaintext token into vc-secrets, then verifies."
+description: "Initialize / onboard the Virto Commerce plugins (vc-fix, vc-perf, …) onto a deployment. Checks that vc-secrets is installed, installs deps, then asks the operator only what genuinely shapes the config — the environment NAME, the tracker (Jira / Azure Boards), the code host (GitHub / Azure Repos), and an auth preference per axis (PAT recommended, else browser/CLI login). Every PAT is stored in vc-secrets by the operator in a terminal — never typed in chat, never written to a file — and reaches a process only through the $VC_RUN bridge. Everything else — native-platform or CLIENT project, the client org, the contribution mode, the fork account — is DERIVED from the token + the filled env + a live module/repo scan. Writes project-profile.json + .env.<env> + .env.local (test-user passwords only) + .mcp.json + the vc-secrets declarations, and verifies access. That one profile is what every installed plugin reads — vc-fix routes a bug to the RIGHT repo and tracker with it, vc-perf finds the stand and the code with it. Use when standing the plugins up on a new machine or for a new customer. On a host-governed project (a client governance plugin owns MCP servers and secrets) it writes the profile and env files only and skips every token / MCP step. Day-2 modes skip the interview: `--add-env` adds another environment (URLs + per-env passwords) to an already-onboarded project; `--check` reconciles an existing profile to the current schema, moves any plaintext token into vc-secrets, then verifies."
 ---
 
 # /project-init — deploy & wire this QA plugin for a customer
@@ -382,8 +382,10 @@ End the turn there — nothing after. On the reply, normalise mixed case / space
 
 Ask these two enums together:
 
-1. **tracker** — `jira` or `azure` (Azure Boards). What the bug-tracker skills work
-   against + which tracker MCP is enabled.
+1. **tracker** — `jira` or `azure` (Azure Boards): where the project's work items live — bugs,
+   tasks and stories alike. Ask *"Which tracker holds the project's work items?"*, options
+   **Jira** ("Work items live in Jira") · **Azure Boards** ("Work items live in Azure DevOps Boards").
+   Never describe it as a bug tracker: the plugins read and move every work-item type.
 2. **code host** — `github` or `azure-repos`. Where the **client's own** code lives
    (drives routing + how a client PR is opened). Tracker and code host are
    **independent** (Azure Boards + GitHub is fine). The platform upstream is
@@ -596,6 +598,11 @@ back, and they will approve it unread. Sequence is exactly: repo table → `AskU
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/render-scan.mjs" --repos .local-env/repos.json
 ```
 
+**The operator cannot see tool output** — a Bash result is collapsed or hidden in the client. So your
+message, right above the question, must CONTAIN the table exactly as printed, its `| Repo |` header
+line included. A prose sentence ("found 2 client repos — X (branch dev) and Y …") in its place is
+the defect this step exists to prevent, even when every fact in it is right.
+
 It prints one summary line (client repos and host, the platform-repo COUNT — never their list — the
 client org, the project type) and one table: **Repo · Kind · Default branch · PR target · Notes**, a
 row per client repo. Notes carries only what is repo-specific: a PR target that differs from the
@@ -631,7 +638,7 @@ TEST_ENV=<env> node "$VC_RUN" onboard discover-tracker \
 TEST_ENV=<env> node "$VC_RUN" onboard discover-tracker --tracker jira --out .local-env/tracker.json
 ```
 
-The Azure scan also DISCOVERS the `team` whose current sprint `/qa-bug` will stamp (`tracker.azure.team`):
+The Azure scan also DISCOVERS the `team` whose current sprint a newly filed work item is stamped with (`tracker.azure.team`):
 it enumerates the project's teams and picks the one that owns a **date-valid** current sprint (the
 project's DEFAULT team is often dormant — its `timeFrame:"current"` flag points at a long-dead sprint).
 Pass **`--team "<name>"`** to override the discovery (or to disambiguate when several teams have a
@@ -651,37 +658,37 @@ transition). Step 6 ingests it via `--tracker-json`.
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/render-scan.mjs" --tracker .local-env/tracker.json
 ```
 
-It prints every state the scan found on the type transitions are driven on (State · Category ·
-Mapped role · Meaning — an unused state reads "not used"), then the roles that got no state, then the
-other types' states on one line each. Paste it verbatim. Because step 6 turns on silent
-`transitionPolicy=auto`, a mis-picked role moves real work items with no further prompt — so the
-operator approves the WHOLE board, not a summary of it (D4).
+It prints ONE table: a row per role (`in-progress` … `done`, with what it means), a column per
+scanned work-item type (Bug, Task, User story — the plugins move all of them, each by its own map),
+each cell the state a ticket of that type is moved to; `—` where the type has no state for the role.
+The board's other states are not shown — they are not decisions. Put the table in your message
+verbatim (the operator cannot see tool output — §4a). Because step 6 turns on silent
+`transitionPolicy=auto`, a mis-picked cell moves real work items with no further prompt — so the
+operator approves the whole map, not a summary of it (D4).
 
 Then `AskUserQuestion`: *"Is the status mapping in the table above correct?"* — options **"Yes, as in
 the table"** · **"Change a role"**. Do **not** put the mapping or examples into the question text
 ("done = Closed, not Resolved/HotFixed?") — the table is the thing being approved. On **"Change a
-role"**, ask which role, offer that board's states as options, and persist with
-`reconcile-profile.mjs --write --set 'tracker.azure.roleStates.<role>=<state>'` (after step 6) or by
-editing `.local-env/tracker.json` (before it). A role under **Not mapped** is asked about at the time
-of that move; name it in one line, it does not block.
+role"**, ask which type and which role, offer that type's states as options, and persist with
+`reconcile-profile.mjs --write --set 'tracker.azure.roleStatesByType.<Type>.<role>=<state>'` (after
+step 6) or by editing `roleStatesByType` in `.local-env/tracker.json` (before it). A `—` cell is asked
+about at the time of that move; it does not block.
 
 `apiBase`, `projectId`, `ticketKeyFormat` and the cross-link token stay internals: do not print them.
-
-Correct a mismapped role by hand-editing `.local-env/tracker.json` (or the profile) before
-continuing.
 
 Also captured here: the **bug FIELD CONTRACT** per work-item type (VCST-5582 E-a) —
 `tracker.fields.<Type>[]` — plus the two lists that drive the FIRST bug creation:
 **`operatorQuestions`** (every required field the operator must supply a value for, whether or not it
 maps to a semantic slot) and **`unmappedRequired`** (only the subset that maps to no slot). **The
 happy-path one-liner MUST state the TOTAL number of first-run questions — `operatorQuestions.length`
-— and name them**, e.g. `Bug field contract: 16 fields, 8 required — /qa-bug's first run will ask 3
-values (Environment, Reported by, Type of bug), then persist them`. Do **NOT** report only
+— and name them**, e.g. `Bug: 16 fields, 8 required — filing the first bug asks 3 values once
+(Environment, Reported by, Type of bug) and remembers them`. Say it about the tracker, not about a
+command: do not name `/qa-bug` (or any plugin) here. Do **NOT** report only
 `unmappedRequired`: on a live run it showed "1 question" (Value Area) while `operatorQuestions` held
 3 more that were never surfaced, so the operator was told to expect 1 and got 4. A field the board
 already answers — a `defaultValue` that is a member of a closed `allowedValues` set — is filled from
 that default and is **not** a question (D1); it appears in neither list. **Surface the
-`operatorQuestions` list to the operator now — never silently defer it to `/qa-bug`.** Show a table
+`operatorQuestions` list to the operator now — never silently defer it to the first bug.** Show a table
 only when `unmappedRequired` is non-empty (a required field with no semantic slot — a genuine mapping
 gap to review).
 
@@ -1288,7 +1295,7 @@ Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or j
 | `assert-profile.mjs` | asserts the **SHAPE** of the profile just written and records each degradation as a `degraded_artifact` observation: empty `tracker.fields` (⇒ `/qa-bug` sends "unverified defaults"), `roleStatesComplete:false`, unmapped required fields, empty `repos.client` on a client project, an unresolved storefront `upstreamRef`, `githubForkCapable != "yes"` while the upstream path is needed. Complements `verify-access` (which probes ACCESS): a scan can return empty with no HTTP error, and what `/qa-fix` reads at runtime is the persisted shape. Read-only, **always exits 0** — a diagnostic, not a second readiness gate |
 | `migrate-secrets.mjs` | **`--check` Step M**: `--scan` lists every token left in a file (`.env*`, settings `env`, `.mcp.json`, `.fix-workspace/*/.git/config` remote URLs, the profile) by NAME and LOCATION and flags the ones in git history (⇒ rotate); `--strip` removes an axis's plaintext copies only after its bridge probe passes |
 | `detect-governance.mjs` | §0-host: find a host governance plugin (`lib/governance.mjs` registry) and print the `governance` block it would write; `--governance <host|none>` overrides |
-| `render-scan.mjs` | §4a/§4b: the operator's confirmation tables, verbatim — `--repos` (client repos with default branch + PR target) and `--tracker` (every state found, with its mapped role) |
+| `render-scan.mjs` | §4a/§4b: the operator's confirmation tables, verbatim — `--repos` (client repos with default branch + PR target) and `--tracker` (role → state per work-item type) |
 | `next-steps.mjs` | §9: "the project is ready" + what to do now, from the profile and the installed plugins (`--plugins a,b` overrides detection) |
 | `ensure-session.mjs` | establish the browser-login sessions WITHOUT hand-crafted commands: auto-discovers the ADO org tenant and drives `az login --tenant <guid>` / `gh auth login --web`; `--check` probes only. Run in the background (the login blocks on the browser). Run it DIRECTLY, never through `$VC_RUN` — a session login must not see a token (gh refuses to log in while GH_TOKEN is set). |
 

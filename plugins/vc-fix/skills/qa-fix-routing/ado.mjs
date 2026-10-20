@@ -19,7 +19,8 @@
  * Usage (org/project default from the profile; --org/--project override):
  *   node ado.mjs get-workitem   --id 967
  *   node ado.mjs comment        --id 967 --text-file body.txt   # or --text "..."
- *   node ado.mjs transition     --id 967 --state Active
+ *   node ado.mjs transition     --id 967 --role in-review     # state from the item's own type
+ *   node ado.mjs transition     --id 967 --state Active       # a state verbatim
  *   node ado.mjs list-types                                     # work item type names
  *   node ado.mjs list-states    --type Bug                      # states for a type
  *   node ado.mjs create-workitem --type Bug --title "..." --description-file body.md \
@@ -143,6 +144,20 @@ function trackerAZ() {
     apiBase: TRACKER_AZ.apiBase,
     projectId: TRACKER_AZ.projectId || VCS_AZ.projectId,
   };
+}
+
+/**
+ * The state a lifecycle role maps to for one work-item TYPE: tracker.azure.roleStatesByType[type]
+ * (matched case-insensitively), else — on a profile scanned before per-type maps existed — the
+ * primary type's tracker.azure.roleStates. "" when nothing is mapped: never guess a state.
+ */
+export function roleStateFor(type, role, az = TRACKER_AZ) {
+  const byType = az.roleStatesByType && typeof az.roleStatesByType === "object" ? az.roleStatesByType : {};
+  if (Object.keys(byType).length) {
+    const key = Object.keys(byType).find((k) => k.toLowerCase() === String(type || "").toLowerCase());
+    return (key && byType[key]?.[role]) || "";
+  }
+  return (az.roleStates || {})[role] || "";
 }
 
 /** Repos (git/PR) ops: list-refs, get-file, create-pr, list-policies. */
@@ -512,17 +527,30 @@ const COMMANDS = {
     return { id: d.id, ok: true };
   },
 
+  // `--role <role>` maps a lifecycle role to the state of THIS item's type (a Task and a Bug can name
+  // the same role differently); `--state <name>` sets a state verbatim.
   async transition(args) {
-    if (!args.id || !args.state) fail("--id and --state required");
+    if (!args.id || (!args.state && !args.role)) fail("--id and --role <role> (or --state <name>) required");
+    let state = args.state ? String(args.state) : "";
+    let type = "";
+    if (!state) {
+      const item = await call("GET", `${base(args, "tracker")}/_apis/wit/workitems/${args.id}?fields=System.WorkItemType&${V}`);
+      type = item.fields?.["System.WorkItemType"] || "";
+      state = roleStateFor(type, String(args.role));
+      if (!state) {
+        fail(`no state is mapped for role "${args.role}" on ${type || "this"} work items — ask the operator which state to use ` +
+          `(ado list-states --type "${type}"), then pass --state, or map it with /project-init --check`);
+      }
+    }
     const d = await call(
       "PATCH",
       `${base(args, "tracker")}/_apis/wit/workitems/${args.id}?${V}`,
       {
-        body: [{ op: "add", path: "/fields/System.State", value: String(args.state) }],
+        body: [{ op: "add", path: "/fields/System.State", value: state }],
         contentType: "application/json-patch+json",
       },
     );
-    return { id: d.id, state: d.fields?.["System.State"] };
+    return { id: d.id, ...(type ? { type, role: String(args.role) } : {}), state: d.fields?.["System.State"] };
   },
 
   // Edit an existing comment — the amend path of tracker-ops §0 (one comment per ticket per run).

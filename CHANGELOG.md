@@ -52,6 +52,13 @@ at `/qa-fix`. The repo map and the tracker status map are printed in full by `re
 client repo with its default branch and PR target, every state the scan found with the role mapped to
 it — and the question refers to that table instead of restating the mapping in parentheses.
 
+**Changed: Azure Boards transitions work for every work-item type, not only Bugs.** The tracker scan maps
+roles to states for each type it reads (Bug, Task, User story) into `tracker.azure.roleStatesByType`;
+`ado.mjs transition --role <role>` (and `AzureTracker.transition`) picks the state by the item's own type,
+and /qa-fix, /qa-verify-fix and tracker-ops use it instead of `--state <roleStates[role]>`. The confirmation
+table is one row per role and one column per type. `STORE_ID` may stay empty: `normalize-env` asks the
+storefront at `FRONT_URL` which store it serves and fills it in.
+
 **Removed:** the `postman` and `context7` MCP servers from onboarding (each needed an API key in a file);
 `gen-mcp --inline-secrets` (refused); the token placeholders in `.env.local` (`scaffold-secrets` writes
 test-user passwords only).

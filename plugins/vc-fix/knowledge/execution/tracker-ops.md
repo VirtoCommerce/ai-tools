@@ -133,7 +133,7 @@ Use whichever surface is available; prefer the MCP when connected, else the CLI/
 | **Resolve** a ticket | Atlassian MCP `getJiraIssue` | `ado get-workitem --id <n>` (cleaned fields; wraps `GET {base}/_apis/wit/workitems/<n>?$expand=all`) |
 | **Search** by label | Atlassian MCP `searchJiraIssuesUsingJql` (`labels = qa-autofix`) | `ado wiql --query "SELECT [System.Id] FROM WorkItems WHERE [System.Tags] CONTAINS 'qa-autofix' AND [System.WorkItemType]='Bug'" [--fields System.Title,System.State]` |
 | **Comment** | Atlassian MCP `addCommentToJiraIssue` | `ado comment --id <n> --text-file <path>` (amend: `ado edit-comment`, §0a) |
-| **Transition / set state** | Atlassian MCP `transitionJiraIssue` — **discover the transition id live**, never hardcode a name | `ado transition --id <n> --state <roleStates[role]>` — map ROLE→state via `tracker.azure.roleStates` (scanned per type), never a hardcoded name |
+| **Transition / set state** | Atlassian MCP `transitionJiraIssue` — **discover the transition id live**, never hardcode a name | `ado transition --id <n> --role <role>` — the CLI maps ROLE→state for the item's own type via `tracker.azure.roleStatesByType` (scanned per type), never a hardcoded name |
 
 **Created-ticket key follows the tracker** (as in §1): Jira returns a prefixed key (`ABC-123`);
 Azure returns a **bare numeric** id (`12345`). Use that key/id verbatim for the follow-up
@@ -189,13 +189,15 @@ them. Always resolve the *destination status* by role, then map it to the live w
    - Fix-side (`/qa-fix`): `in-progress` (start work) · `in-review` (PR opened) · `ready-for-test` (awaiting human) · `done`.
    - QA-side (`/qa-verify-fix`): `testing` (QA in progress) · `tested` (QA passed) · `reopen` (QA rejected, back to dev).
    VC-internal Jira reference names for the QA roles: `On QA` → testing, `Finish test` → tested,
-   `Need fixes` / `REOPEN` → reopen. Azure Boards maps every role via `tracker.azure.roleStates`
+   `Need fixes` / `REOPEN` → reopen. Azure Boards maps every role via `tracker.azure.roleStatesByType`
    (the QA roles are scanned best-effort by `/project-init`; hand-edit the profile if missing).
 2. **Jira:** call `getTransitionsForJiraIssue` and pick the transition whose target status best
    matches the role (case-insensitive contains: "progress" / "review" / "test" / "done"). If
    none matches, ask the user which transition to use — do NOT invent an id.
-3. **Azure Boards:** map the role → a `System.State` via `tracker.azure.roleStates` — the map
-   `/project-init` SCANNED from this deployment's process (a custom process is common; e.g. one client process's Bug is
+3. **Azure Boards:** map the role → a `System.State` of the item's OWN work-item type via
+   `tracker.azure.roleStatesByType[<type>]` (`ado transition --role` does it; `roleStates` is the primary
+   type's map, kept for older profiles) — the maps `/project-init`
+   SCANNED from this deployment's process (a custom process is common; e.g. one client process's Bug is
    `{ "in-progress":"On Dev", "in-review":"On Review", "ready-for-test":"Ready for QA", "done":"Closed" }`
    — NOT the generic Agile `Active/Resolved`). If the map lacks the role, read the work item's allowed
    states (`node "$VC_RUN" ado list-states --type <T>`) and ask the user which state fits.

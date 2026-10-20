@@ -49,6 +49,7 @@
  *   projectId:string, stateMap:Record<string,string>,
  *   workItemTypes:Record<string,object>,
  *   roleStates:Record<"in-progress"|"in-review"|"ready-for-test"|"testing"|"tested"|"reopen"|"done", string>,
+ *   roleStatesByType:Record<string, Record<string, string>>,
  *   transitionPolicy:"auto"|"confirm-once"|"ask",
  *   qaRoleStatesComplete:boolean}}} tracker
  * @property {{clientHost:"github"|"azure-repos", clientOrg:string,
@@ -185,6 +186,7 @@ export const PROFILE_DEFAULTS = {
       // No auto-migration: a profile generated before the QA roles / heuristic existed keeps
       // its old map until /project-init (discover-tracker) is re-run to refresh it.
       roleStates: {},
+      roleStatesByType: {},
       // Fix-side completeness signal (in-progress/in-review/ready-for-test/done all found by the
       // discover-tracker scan). Baked as a canonical boolean under tracker.azure.* so readers do
       // not have to re-derive it from transitionPolicy or the map (VCST-5582 E3). Defaults false.

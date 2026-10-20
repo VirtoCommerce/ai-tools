@@ -58,7 +58,7 @@ operator what the profile already answers. **Absent profile ⇒ STOP and ask the
   `get-file`, `list-refs`, `list-states`; org/project/apiBase default from the profile). Use the
   tracker's own **key format** (`profile.tracker.ticketKeyFormat`): Jira `ABC-123`, Azure Boards a
   **bare numeric** `12345` — never assume `VCST-`.
-- **QA-side role → state** (`profile.tracker.azure.roleStates`): map the lifecycle ROLE to a real
+- **QA-side role → state** (`profile.tracker.azure.roleStatesByType`, one map per work-item type): map the lifecycle ROLE to a real
   deployment state — `testing` (QA in progress) · `tested` (QA passed) · `reopen` (QA rejected, back
   to dev) · `done` (final). These are the deployment's REAL states (e.g. one client process's Bug: `testing`→`On QA`,
   `tested`→`Tested on QA`, `reopen`→`Reopen`, `done`→`Closed`). The QA roles are scanned best-effort;
@@ -176,7 +176,7 @@ The strongest verification proves the **same** reproduction goes **RED on the pr
 
 With the fix confirmed deployed, transition the ticket to the **`testing`** role state (`tracker-ops.md` §Live transition discovery — resolve by ROLE, never a hardcoded name):
 - **Jira** → `getTransitionsForJiraIssue`, then `transitionJiraIssue` on the transition whose target status matches the `testing` role (the VC-internal Jira reference name for this role is `On QA`).
-- **Azure Boards** → `node "$VC_RUN" ado transition --id <n> --state <roleStates["testing"]>` (e.g. `On QA`). If `roleStates["testing"]` is **absent** from an older profile: do NOT invent a state, and do **NOT** write it into `project-profile.json` (persisting scanned roles is `/project-init`'s job). Fall back to policy `ask`, run **`node "$VC_RUN" ado list-states --type Bug` live** (don't trust the profile's cached state list), confirm the state with the operator for THIS run only, and recommend running `/project-init` to persist the QA roles.
+- **Azure Boards** → `node "$VC_RUN" ado transition --id <n> --role testing` (e.g. `On QA` — the CLI picks the state for the item's own type). If it reports **no state mapped** for that role: do NOT invent a state, and do **NOT** write it into `project-profile.json` (persisting scanned roles is `/project-init`'s job). Fall back to policy `ask`, run **`node "$VC_RUN" ado list-states --type Bug` live** (don't trust the profile's cached state list), confirm the state with the operator for THIS run only, and recommend running `/project-init` to persist the QA roles.
 
 **Honor the transition policy per `tracker-ops.md` §Live transition discovery point 4** — including the
 QA-side `qaRoleStatesComplete` gate: only apply `auto`/`confirm-once` when it's `true`, else `ask`.
@@ -310,7 +310,7 @@ or two role transitions from `testing`:
 
 **Resolve each role → the live workflow** (`tracker-ops.md` §2, §Live transition discovery):
 - **Jira** → `getTransitionsForJiraIssue`, pick the transition whose target status matches the role (case-insensitive contains: "test" for `tested`, "reopen"/"fix" for `reopen`, "done" for `done`). The VC-internal Jira reference names for these roles are `Finish test` → `tested`, `Move to Done` → `done`, `Need fixes` → `reopen` — use them to recognize the transition, never as a hardcoded id.
-- **Azure Boards** → `node "$VC_RUN" ado transition --id <n> --state <roleStates[role]>` (e.g. `tested`→`Tested on QA`, `reopen`→`Reopen`, `done`→`Closed`). If a QA role is absent from an older profile, fall back to `ask` + `node "$VC_RUN" ado list-states --type Bug` and confirm the state with the operator — don't invent a state.
+- **Azure Boards** → `node "$VC_RUN" ado transition --id <n> --role <role>` (e.g. `tested`→`Tested on QA`, `reopen`→`Reopen`, `done`→`Closed`). If a QA role is absent from an older profile, fall back to `ask` + `node "$VC_RUN" ado list-states --type <the item's type>` and confirm the state with the operator — don't invent a state.
 
 **Honor the transition policy per `tracker-ops.md` §Live transition discovery point 4** — this
 replaces the old "Ask the user before transitioning", **and** requires `qaRoleStatesComplete === true`

@@ -387,9 +387,12 @@ async function main() {
     obs.push({ class: "degraded_artifact", subject: "tracker_team", code: "NONE", evidence: { snippet: `${teamResult.probeErrors} team(s) failed to probe for a current sprint (403/timeout) — team selection saw an incomplete set; re-run, or pin with --team <name>` } });
   }
 
-  // Keep each type's state categories for the operator's confirmation table (render-scan.mjs), then
-  // drop the helper _categories so workItemTypes keeps its shape for gen-profile.
-  const stateCategories = Object.fromEntries(Object.entries(workItemTypes).map(([t, v]) => [t, { ...(v._categories || {}) }]));
+  // A role map for EVERY scanned type, not only the primary one: /qa-fix and /qa-verify-fix move
+  // Tasks and User stories too, and a custom process names their states differently (a Task may
+  // have no "On Review"). `ado transition --role` picks the map by the item's own type.
+  const roleStatesByType = Object.fromEntries(Object.entries(workItemTypes).map(([t, v]) => [
+    t, deriveRoleStates((v.states || []).map((name) => ({ name, category: v._categories?.[name] || "" }))),
+  ]));
   // drop the helper _categories before emitting
   for (const t of Object.keys(workItemTypes)) delete workItemTypes[t]._categories;
 
@@ -431,10 +434,11 @@ async function main() {
     // tracker.azure.team by gen-profile so the runtime resolver starts from the right team.
     team: teamResult.team,
     workItemTypes,
-    // The type roleStates was derived from, and every type's { state: category } — for the
-    // confirmation table only (render-scan.mjs --tracker); gen-profile does not ingest them.
+    // The type `roleStates` (and its completeness flags) was derived from.
     primaryType: primary,
-    stateCategories,
+    // { <Type>: { <role>: <state> } } — one map per scanned type; `roleStates` stays the primary
+    // type's map for readers that predate it.
+    roleStatesByType,
     // Per-type BUG FIELD CONTRACT (VCST-5582 E-a): [{ ref, name, required, type,
     // allowedValues?, defaultValue? }]. Empty/absent ⇒ metadata was unreachable and the create
     // path uses the legacy field set labelled "unverified defaults" (E-f). Rule-filtered for
@@ -471,7 +475,7 @@ async function main() {
     primaryContract.length
       ? `[discover-tracker] ${primary} field contract: ${contractSummary.fieldCount} field(s), ${contractSummary.requiredCount} required` +
         (firstRunQ.length
-          ? ` — /qa-bug's first run asks ${firstRunQ.length} value(s), then persists them: ${firstRunQ.map((f) => f.name).join(", ")}` +
+          ? ` — filing the first bug asks ${firstRunQ.length} value(s) once, then remembers them: ${firstRunQ.map((f) => f.name).join(", ")}` +
             (contractSummary.unmappedRequired.length
               ? ` [${contractSummary.unmappedRequired.length} of them map to no semantic slot: ${contractSummary.unmappedRequired.map((f) => f.name).join(", ")}]`
               : "")

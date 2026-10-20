@@ -40,6 +40,7 @@ import { resolve } from "path";
 import { fileURLToPath } from "url";
 import { CATALOG } from "./scaffold-env.mjs";
 import { resolveOutPath } from "./lib/paths.mjs";
+import { probeStorefrontBackend } from "./lib/storefront-probe.mjs";
 
 function parseArgs(argv) {
   const a = {};
@@ -135,7 +136,31 @@ export function normalizeEnvText(text) {
   return { text: out.join("\n"), changes, errors, warnings };
 }
 
-function main() {
+/** The value a dotenv TEXT gives a key ("" when the key is absent or empty). */
+function envValue(text, key) {
+  const line = String(text ?? "").split("\n").find((l) => l.trim().startsWith(key + "=") || l.trim().startsWith(key + " ="));
+  return line ? unquote(line.slice(line.indexOf("=") + 1)) : "";
+}
+
+/**
+ * An empty STORE_ID is DETECTED, not asked for: the storefront at FRONT_URL (else BACK_URL) names the
+ * store it serves. Returns the text with the value filled, or an error when it cannot be detected.
+ */
+export async function detectStoreId(text, probe = probeStorefrontBackend) {
+  const lines = String(text ?? "").split("\n");
+  const idx = lines.findIndex((l) => /^\s*STORE_ID\s*=/.test(l));
+  if (idx < 0 || envValue(text, "STORE_ID")) return { text };
+  const frontUrl = envValue(text, "FRONT_URL");
+  const backUrl = envValue(text, "BACK_URL");
+  const found = frontUrl || backUrl ? await probe({ frontUrl, backUrl, storeId: "" }) : null;
+  if (!found?.storeId) {
+    return { text, error: `STORE_ID is empty and the storefront at ${frontUrl || backUrl || "(no FRONT_URL)"} did not name its store — fill STORE_ID in (Platform → Stores)` };
+  }
+  lines[idx] = lines[idx].slice(0, lines[idx].indexOf("=") + 1) + found.storeId;
+  return { text: lines.join("\n"), storeId: found.storeId };
+}
+
+async function main() {
   const args = parseArgs(process.argv.slice(2));
   const path = args.file
     ? String(args.file)
@@ -146,7 +171,14 @@ function main() {
   if (!existsSync(path)) { console.error(`[normalize-env] ${path} does not exist — run scaffold-env.mjs first.`); process.exit(1); }
 
   const original = readFileSync(path, "utf-8");
-  const { text, changes, errors, warnings } = normalizeEnvText(original);
+  const normalized = normalizeEnvText(original);
+  const { changes, errors, warnings } = normalized;
+  let { text } = normalized;
+  if (!errors.length) {
+    const store = await detectStoreId(text);
+    if (store.error) errors.push(store.error);
+    else if (store.storeId) { text = store.text; changes.push({ key: "STORE_ID", from: "", to: store.storeId, detected: true }); }
+  }
   const wrote = !args.check && text !== original;
   if (wrote) writeFileSync(path, text);
 
@@ -156,7 +188,7 @@ function main() {
     console.log(`[normalize-env] ${path}`);
     if (changes.length) {
       // Line-by-line, so the operator SEES what was corrected rather than trusting a silent fix.
-      for (const c of changes) console.log(`[normalize-env] fixed ${c.key}: "${c.from}" → "${c.to}"`);
+      for (const c of changes) console.log(c.detected ? `[normalize-env] detected ${c.key}=${c.to} from the storefront` : `[normalize-env] fixed ${c.key}: "${c.from}" → "${c.to}"`);
       console.log(`[normalize-env] ${wrote ? "rewrote" : "would rewrite (--check)"} ${changes.length} value(s)`);
     } else {
       console.log("[normalize-env] nothing to normalize — all values already canonical");

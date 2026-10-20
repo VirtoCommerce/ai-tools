@@ -68,7 +68,7 @@ PAT, no `az login`, self-diagnostics off; the host's rules win.
    genuine ambiguity.
 4b. **Discover tracker — Azure Boards only** (`node "$VC_RUN" onboard discover-tracker --tracker azure …`):
    per-type `states` + a `role→state` map + the bug field contract. Show the FULL status table
-   `render-scan.mjs --tracker` prints (every state found, its mapped role); confirm.
+   `render-scan.mjs --tracker` prints (role → state for each work-item type); confirm.
 5. **Derive block** (`node "$VC_RUN" onboard derive-context --tracker … --client-vcs …`): auth actually
    present per axis, `contributionMode`, `forkAccount`, `operator`.
 6. Write the profile (`gen-profile.mjs --repos-json … --tracker-json … --runtime-mode plugin` + tracker

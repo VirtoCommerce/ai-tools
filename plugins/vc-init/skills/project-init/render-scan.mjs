@@ -3,8 +3,8 @@
  * render-scan.mjs — the operator's confirmation tables for /project-init §4a and §4b, as Markdown.
  *
  * A scan result is confirmed by a person, so what they see must be COMPLETE and identical on every run:
- * every state the tracker scan found with the role it was mapped to, every client repo with its default
- * branch and PR target. Rendering that by hand let the table shrink to a parenthetical inside the
+ * the role → state map of every scanned work-item type, every client repo with its default branch and
+ * PR target. Rendering that by hand let the table shrink to a parenthetical inside the
  * question ("done = Closed, not Resolved/HotFixed?"), which the operator cannot check. The skill shows
  * this output verbatim, then asks.
  *
@@ -20,57 +20,43 @@ import { outputRoot } from "./lib/paths.mjs";
 
 /** The roles in the order a ticket moves through them, with what each means to the operator. */
 export const ROLES = [
-  ["in-progress", "work started (/qa-fix takes the bug)"],
+  ["in-progress", "work started"],
   ["in-review", "PR open, under review"],
   ["ready-for-test", "fix merged, ready for QA"],
   ["testing", "QA is testing it"],
   ["tested", "QA passed"],
-  ["reopen", "QA failed, back to dev"],
+  ["reopen", "QA failed, back to development"],
   ["done", "closed"],
 ];
 
 const cell = (v) => String(v ?? "").replace(/\|/g, "\\|").replace(/\r?\n/g, " ").trim() || "—";
 
-/** The tracker table: every state of the type transitions are driven on, with the role(s) mapped to it. */
+/**
+ * The tracker table: one row per role, one column per scanned work-item type, each cell the state a
+ * ticket of that type is moved to for that role. Only the mapping is shown — the board's other states
+ * are not decisions. A scan from before per-type maps falls back to the primary type's map.
+ */
 export function renderTracker(t) {
   if (!t || t.kind !== "azure") {
     return "**Tracker: Jira.** Transitions are discovered live on each ticket, so there is no status map to confirm.\n";
   }
-  const types = t.workItemTypes || {};
-  const primary = t.primaryType && types[t.primaryType] ? t.primaryType : Object.keys(types)[0];
-  if (!primary) return "**Tracker scan found no work-item types.** Nothing to confirm — fix the Azure DevOps access first.\n";
-  const roleStates = t.roleStates || {};
-  const cats = (t.stateCategories || {})[primary] || {};
-  const states = types[primary].states || [];
-  const byState = new Map();
-  for (const [role] of ROLES) {
-    const s = roleStates[role];
-    if (s) byState.set(s, [...(byState.get(s) || []), role]);
-  }
-  const mapped = ROLES.filter(([r]) => roleStates[r]).length;
+  const primary = t.primaryType || Object.keys(t.workItemTypes || {})[0];
+  const byType = t.roleStatesByType && Object.keys(t.roleStatesByType).length
+    ? t.roleStatesByType
+    : primary ? { [primary]: t.roleStates || {} } : {};
+  const types = Object.keys(byType);
+  if (!types.length) return "**Tracker scan found no work-item types.** Nothing to confirm — fix the Azure DevOps access first.\n";
   const lines = [
-    `**${primary}** — ${states.length} state(s) found, ${mapped} of ${ROLES.length} roles mapped. A mapped state is where the plugins move a ticket for that role, without asking.`,
+    "Where the plugins move a ticket for each role, per work-item type — without asking.",
     "",
-    "| State | Category | Mapped role | Meaning |",
-    "|---|---|---|---|",
+    `| Role | Meaning | ${types.map(cell).join(" | ")} |`,
+    `|---|---|${types.map(() => "---").join("|")}|`,
   ];
-  const meaning = Object.fromEntries(ROLES);
-  for (const s of states) {
-    const roles = byState.get(s) || [];
-    lines.push(`| ${cell(s)} | ${cell(cats[s])} | ${roles.length ? roles.map((r) => `\`${r}\``).join(", ") : "—"} | ${roles.length ? cell(roles.map((r) => meaning[r]).join("; ")) : "not used"} |`);
+  for (const [role, meaning] of ROLES) {
+    lines.push(`| \`${role}\` | ${meaning} | ${types.map((ty) => cell(byType[ty]?.[role])).join(" | ")} |`);
   }
-  // A role mapped to a state the type does not list (a hand edit) still has to be visible.
-  for (const [s, roles] of byState) {
-    if (!states.includes(s)) lines.push(`| ${cell(s)} (not on this board) | — | ${roles.map((r) => `\`${r}\``).join(", ")} | ${cell(roles.map((r) => meaning[r]).join("; "))} |`);
-  }
-  const missing = ROLES.filter(([r]) => !roleStates[r]);
-  if (missing.length) {
-    lines.push("", `**Not mapped:** ${missing.map(([r, m]) => `\`${r}\` (${m})`).join(", ")} — the plugins will ask before that move.`);
-  }
-  const others = Object.keys(types).filter((n) => n !== primary);
-  if (others.length) {
-    lines.push("", "Other types (states listed; transitions are driven on " + primary + " only):", "");
-    for (const n of others) lines.push(`- **${n}**: ${(types[n].states || []).join(" · ") || "—"}`);
+  if (types.some((ty) => ROLES.some(([r]) => !byType[ty]?.[r]))) {
+    lines.push("", "**—** = no state found for that role on that type: the plugins ask before that move.");
   }
   return lines.join("\n") + "\n";
 }

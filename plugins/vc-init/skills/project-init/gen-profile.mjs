@@ -264,6 +264,7 @@ function main() {
       if (t.team) set("tracker.azure.team", t.team);
       if (t.workItemTypes) set("tracker.azure.workItemTypes", t.workItemTypes);
       if (t.roleStates) set("tracker.azure.roleStates", t.roleStates);
+      if (t.roleStatesByType) set("tracker.azure.roleStatesByType", t.roleStatesByType);
       // Bake the fix-side completeness as a CANONICAL boolean under tracker.azure.* (the same
       // nested convention as roleStates / qaRoleStatesComplete) so readers — assert-profile.mjs,
       // any future consumer — have one explicit field instead of re-deriving it from transitionPolicy

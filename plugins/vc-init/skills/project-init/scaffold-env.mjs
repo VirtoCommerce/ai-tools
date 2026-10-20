@@ -72,8 +72,8 @@ export const CATALOG = [
     what: "Storefront URL.", where: "e.g. https://storefront.example.com" }],
   ["BACK_URL",         { include: () => true, type: "url", warnOnPath: true,
     what: "Admin SPA / platform URL.", where: "e.g. https://platform.example.com" }],
-  ["STORE_ID",         { include: () => true,
-    what: "Primary store identifier.", where: "e.g. B2B-store (Platform → Stores)." }],
+  ["STORE_ID",         { include: () => true, optional: true,
+    what: "Primary store identifier — leave EMPTY to detect it from FRONT_URL.", where: "fill it only if detection fails: Platform → Stores, e.g. B2B-store." }],
   ["ADMIN",            { def: "admin", include: () => true,
     what: "Admin login (identifier, NOT the password).", where: "usually 'admin'." }],
   ["USER_EMAIL",       { include: () => true,
@@ -149,7 +149,10 @@ function main() {
   }
 
   console.log(`[scaffold-env] ${blocks.length ? "wrote" : "no new placeholders for"} ${outPath}`);
-  if (emitted.length) console.log(`[scaffold-env] to fill: ${emitted.join(", ")}`);
+  const optional = emitted.filter((k) => CATALOG.find(([n]) => n === k)?.[1].optional);
+  const toFill = emitted.filter((k) => !optional.includes(k));
+  if (toFill.length) console.log(`[scaffold-env] to fill: ${toFill.join(", ")}`);
+  if (optional.length) console.log(`[scaffold-env] may stay empty (detected): ${optional.join(", ")}`);
   if (skipped.length) console.log(`[scaffold-env] already present (kept): ${skipped.join(", ")}`);
   if (args.print && emitted.length) console.log(`[scaffold-env] placeholders emitted: ${emitted.length}`);
 }
