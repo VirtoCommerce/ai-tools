@@ -1,33 +1,32 @@
-# Triage — VCST-5903 (ticket mode, --verify)
+# Triage — VCST-5903 Round 2 (ticket mode, --verify)
 
-Source: `testing-checklist.md` (checklist · exploratory · visual rows) · 2026-10-19 · env vcst · build vc-frontend#2568 @ 3f8af63a (QA Storybook 2.61.0-alpha.2594-vcst-5903-vc-stat-widget-3f8af63a)
-Non-passing rows: 8 · confirmed real bugs: 2 · needs-review: 3 · test defects: 1 · dismissed: 1 · out of scope: 1 (B1, by user scope)
-Phase 2 skipped (ticket mode, no cross-run history). `--fix` not applicable in ticket mode: this report writes nothing else.
+Source: `testing-checklist.md` (checklist · exploratory · visual rows) · 2026-10-20 · env vcst · build vc-frontend#2568 @ bfe0b259 (QA Storybook 2.61.0-alpha.2597-vcst-5903-vc-stat-widget-a6255676)
+Non-passing rows: 7 (6 FAIL · 1 BLOCKED) · confirmed real bugs: 2 · needs-review: 3 · known issue: 1 · test defect: 1 · unresulted: 0
+Phase 2 skipped (ticket mode, no cross-run history). `--fix` not applicable in ticket mode: this report writes nothing else. Classification: two `regression-triage-agent` batches; live repro: `vc-fix:qa-investigate` per candidate with an oracle.
 
 ## 1. Confirmed real bugs (live-reproduced via vc-fix:qa-investigate)
 | Row | Severity | Repo · file | Root cause | Package |
 |---|---|---|---|---|
-| A3 (+X11) | P3 | vc-frontend · `client-app/ui-kit/components/organisms/stat-widget/vc-stat-widget.vue:90, :17, :96` | `hasValue` and the `errorText` checks skip `trim()`: value `" "` renders a blank (or unit-only, with `valueSuffix`) figure row instead of the dash; errorText `" "` hides the figures behind an empty error row, status "<label>:". Contradicts the PR's own "a blank figure can't read as a value". 4/4 | `evidence-A3/` |
-| A11 | P3 | vc-frontend · `vc-stat-widget.vue:137-145` (`&__value`), `:109` | The figure never wraps and has no shrink/truncate/overflow fallback, so in a `minmax(0,1fr)` grid cell it paints past the card border at supported viewports: Colors story @1024 (4 cols, 236px) with `$123,456,789.00` → 13.1px past the border; @480 (2 cols) with `$12,345,678.90` → 15.7px past (BL-UI-004). 3/3 | `evidence-A11/` |
+| X27 | P3 (Low) | vc-frontend · `client-app/ui-kit/components/organisms/stat-widget/vc-stat-widget.vue:17-23, :34, :36-42, :152-163` | Only `__label` (:131) has `overflow-wrap:break-word`. The `__error` / `__delta` message spans are flex items with `min-width:auto` + `overflow-wrap:normal`, `__description` is a block with `overflow-wrap:normal`, and the root has visible overflow, so one unbreakable token (≈28+ chars: a URL, an id) paints past the card border — errorText +82px, delta +78px, description +11px (256px card, 1280 and 375). A URL in errorText overflows +41px (BL-UI-004). Edge 2/2 per prop | `evidence-X27/` |
+| X5 | P4 (Low) | vc-frontend · `vc-stat-widget.vue:90-91, :97` | The VCST-6427 fix uses `String.trim()`, which keeps format characters (U+200B–200F, U+2060, U+061C): value U+200B renders a blank figure row with no dash (with valueSuffix: the unit alone), errorText U+200B shows an error state with a blank message and status "<label>: U+200B". Breaks the PR's "a blank figure can't read as a value". Chromium 2/2 (firefox seen too); realism low (needs CMS/RTL-mark/backend-built strings) | `evidence-X5/` |
 
-## 2. Needs review (not filed)
+## 2. Needs review (not filed — no oracle states the expected behaviour)
 | Row | Class | Why not filed | Question for |
 |---|---|---|---|
-| V1 | REAL_BUG / LOW — reproduced | Loading/error hide description + delta: a lone card is 156 → 106 → 92px and content below moves 50/64px (also in a Row that wraps at 375). Identical to the shipping Sales Rep Hub card the component is extracted from; BL-UI-003 is INFERRED, no source states height across states | PO: should loading/error keep the ready height? (`evidence-V1/`) |
-| X2 | REAL_BUG / LOW | Loader overlay (z 996) blocks the pointer on a `prepend` control (the PR's drag-handle example); keyboard still reaches it. Intended behaviour unspecified (KB-A74F95A5) | dev/PO: should prepend stay operable while loading? |
-| X3 | REAL_BUG / LOW | `<output>` status holds its text from first render, so a card mounting in loading/error is likely not announced (KB-2B31393F). No screen reader in the toolkit — MANUAL | manual NVDA/VoiceOver run on Loading / Error State |
+| X15 | REAL_BUG / LOW | delta, description, label, valueSuffix are gated by a truthy `v-if`, not blank-checked: delta " " / U+200B renders the chevron with no text, others leave empty rows (KB-7C95C0AE) | dev/PO: should secondary props get the same blank check as value? |
+| X25 | REAL_BUG / LOW | a no-value (dash) card is silent to assistive tech: dash aria-hidden, status empty, so the description can pass for the metric | dev/PO: should a no-value card announce "no data"? |
+| X30 | REAL_BUG / LOW | the neutral-300 dash is ≈1.5:1 (light), 1.9:1 / 2.8:1 (dark, Coffee dark); axe passes only because it is aria-hidden | ui-ux/PO: is the dash decorative (WCAG 1.4.11) or must it reach 3:1? |
 
-## 3. Test-case fixes
+## 3. Known issue
+| Row | Class | Note |
+|---|---|---|
+| A6 | KNOWN_ISSUE → VCST-6428 | Unchanged from Round 1 (13.1px @1024, 15.7px @480, KB-069099FD). Developer proposes Won't Fix (comment 112171), PO decides. New evidence for the ticket: at 480 with $123,456,789.00 the right column runs 17px past the viewport and the whole page scrolls sideways (X11); a 24-digit value runs 134.8px past a 256px card (X29). The kit's own Colors/DeltaColors stories use `lg:grid-cols-4`, the layout the new note warns against |
+
+## 4. Test-case fixes
 | Row | Class | Fix |
 |---|---|---|
-| A5 | TEST_STEPS_DEFECT | Storybook rejects an out-of-list `color` ("Received illegal value", KB-BFF94794), so the Data path cannot exercise the unknown-colour fallback. Source shows it takes the neutral path (same as A4 PASS). Needs a direct mount; not re-run (DOM edits are blocked by the real-user rule) |
+| X18 | TEST_STEPS_DEFECT | Row story renders a fixed card set and ignores value args; a DOM override breaks the real-user rule. Recorded NOT-RUN; mechanism known (KB-527B0F06: a flex Row widens the card) |
 
-## 4. Dismissed / out of scope
-| Row | Class | Reason |
-|---|---|---|
-| C1 | KNOWN_ISSUE (user descope) | 10-suite F5 regression stopped by the user before dispatch; re-scoped to 093 P0 (C2 PASS, 0 attributable failures) |
-| B1 | out of scope | a11y scope set to the Coffee preset by the user (Coffee ≥ 4.53:1); Black gold light secondary 3.36:1 is a pre-existing preset token (`evidence-B1/`, partial) |
-
-Regression REG-2026-10-19-1307 (C2) side findings, not this ticket's: SR-HD-030 / SR-HD-053 read as stale 093 cases → `/qa-review-tests suite 093 --verify`; `bl:fresh` marked BL-SR-004 and BL-SR-029 SUSPECT from those two FAILs — review before the BL YAML is committed.
+Evidence note: the collector mapped exploratory screenshots by row number, but the session's file names are offset (X27 = `R2-X25*`/`R2-X26*`, X30 = `R2-X27*`/`R2-X28*`); the packages above carry their own screenshots.
 
 No tracker ticket filed, no fix triggered — human decides.

@@ -1,43 +1,41 @@
 # VCST-5903 — PASS WITH NOTES
-The new UI-kit card `VcStatWidget` (vc-frontend PR #2568 @ 3f8af63a, QA Storybook on vcst) renders its anatomy, colours, states, tokens and locale strings as the mockups and the PR describe; two Minor (P3) defects — whitespace input and long-figure overflow — are filed as sub-tasks.
-Page: https://claude.ai/artifact/BBb8pwBV6rSsm9LX8x2zhe
+Round 2 on vc-frontend PR #2568 @ bfe0b259 (QA Storybook on vcst): the VCST-6427 fix works (a blank value shows the dash, a blank errorText leaves the card ready, nothing next to it broke); VCST-6428 still reproduces and waits for the PO's Won't Fix decision; two new Low defects are filed as separate bugs to fix later.
+Page: https://claude.ai/artifact/EohUW6f7x43C12AyMeDii6
 
-The ticket has no ACs ("No requirements."), so the conditions are the two mockups and the PR #2568 body.
+Deployment unverified by the bundle ("DEPLOYMENT UNKNOWN: VirtoCommerce/vc-frontend#2568 — no CI artifact resolved for this PR" — the PR's CI fails on 8 sales-rep-tasks-page tests from the dev merge; all 11 vc-stat-widget tests pass); vc-deploy-dev pins theme bfe0b259 and Storybook a6255676, both confirmed live.
 
 | Condition | Result | Evidence |
 |---|---|---|
-| Card anatomy matches the mockups (bar, icon, label, figure, description, delta) | PASS | screenshots/A1-basic-mockup-card-1920.png |
-| Colours: bar/icon -500, delta -700, unset = neutral, 8 colours | PASS | screenshots/A6-colors-1920.png |
-| Unit suffix de-emphasised on the figure line | PASS | screenshots/A7-with-suffix.png |
-| States: loading outranks error, label always visible, live changes repaint | PASS | screenshots/A9-error-after-loading-off.png |
-| Empty value shows the dash; a blank figure never reads as a value | FAIL — whitespace (VCST-6427) | screenshots/A3-value-space-blank-figure-FAIL.png |
-| Figure stays inside the card, never wraps mid-number (BL-UI-004) | FAIL — 9-digit figure @1024 (VCST-6428) | evidence-A11/screenshots/02-colors-1024-123M-past-border-REPRO.png |
-| Long labels, equal row heights, alignment (BL-UI-005) | PASS | screenshots/A1-A13-row-1920.png |
-| Tokens `--vc-stat-widget-*` and token audit | PASS | screenshots/V-b2-tokens-set-on-wrapper.png |
-| Contrast, Coffee preset light + dark (WCAG 1.4.3) | PASS | design-report.md |
-| Status strings in 13 locales | PASS | testing-checklist.md A14 |
-| Sales Rep Hub dashboard 093, P0 cases, on the PR theme | PASS — 0 failures caused by the PR | reports/regression/REG-2026-10-19-1307/regression-2026-10-19.md |
+| Blank value (" ", "   ", tab, NBSP, "", undefined) shows the dash; "0" and real values show (VCST-6427) | PASS | screenshots/R2-A2-value-*.png |
+| With Suffix: blank value hides the unit | PASS | screenshots/R2-A3-suffix-value-space.png |
+| Blank errorText is not an error; "Boom" still is, status "<label>: Boom" (VCST-6427) | PASS | screenshots/R2-A4-errortext-*.png |
+| Loading outranks a blank and a real error | PASS | screenshots/R2-A5-loading-*.png |
+| Blank-value / blank-error card identical to the empty / ready card, 0 px shift (BL-UI-003) | PASS | screenshots/R2-B1-*.png |
+| Token audit, spacing grid (BL-UI-002) | PASS | design-report.md |
+| Card anatomy as the mockups | PASS | screenshots/R2-A1-basic-mockup.png |
+| Long figure stays inside the card (BL-UI-004, VCST-6428) | FAIL — HOLDS, Won't Fix proposed, PO decides | screenshots/R2-A6-colors-1024-overflow-FAIL.png |
+| Storefront boots on the PR theme | PASS | screenshots/R2-A7-storefront-home.png |
 
 ## Bugs
-- Low — VcStatWidget treats a whitespace-only value or errorText as real content — reports/bugs/open/low/BUG-VcStatWidget-Whitespace-Value-ErrorText-VCST-6427.md (VCST-6427)
-- Low — VcStatWidget: a long figure paints past the card border in a narrow grid cell — reports/bugs/open/low/BUG-VcStatWidget-Long-Figure-Overflows-Card-VCST-6428.md (VCST-6428)
+- Low (P3) VcStatWidget: a long unbreakable word in errorText, description or delta paints past the card border — reports/bugs/open/low/BUG-VcStatWidget-Unbreakable-Text-Overflows-Card-VCST-6448.md (VCST-6448, separate bug, fix later)
+- Low (P4) VcStatWidget: a value or errorText of only zero-width characters still reads as content — reports/bugs/open/low/BUG-VcStatWidget-Zero-Width-Value-ErrorText-VCST-6449.md (VCST-6449, separate bug, fix later)
+- Known: VCST-6428 — new evidence for the PO decision: at 480 the right column runs 17px past the viewport and the page scrolls sideways (X11); the kit's own Colors / Delta Colors stories use `lg:grid-cols-4`, the layout the new docs note warns against.
 
-Needs review, not filed (questions for the PO / developer):
-- V1 — a card on its own is 156 / 106 / 92 px in ready / loading / error, so content below it moves 50–64 px; the shipping Sales Rep Hub card behaves the same (evidence-V1/)
-- X2 — the loading overlay blocks the pointer on a `prepend` control (keyboard still reaches it)
-- S2 — the mockup draws an unchanged trend in blue (`deltaColor` info); the kit story uses neutral grey
+Needs review, not filed (questions for the dev / PO):
+- X15 — delta, description, label, valueSuffix are not blank-checked: a blank delta shows the chevron alone
+- X25 — a card with no value is silent to a screen reader (dash aria-hidden, status empty), so the description can pass for the metric
+- X30 — the pending dash is below 3:1 in every mode (aria-hidden): decorative, or must it reach 3:1?
 
 ## Not tested, and why
-- Unknown `color` value falls back to neutral (A5) — Storybook rejects values outside the 8 options; source shows the neutral path
-- Screen-reader announcement on first render (R6) — no screen reader in the toolkit; manual check needed
-- Status strings live in a non-English locale — the Storybook has no locale switcher
-- Contrast in presets other than Coffee — out of scope by the user's choice; Black gold light secondary measured 3.36:1 (pre-existing preset token)
-- 10-suite cart/checkout/configurable regression (C1) — dropped by the user; replaced by Sales Rep Hub 093 P0 cases
-- Pages using the card — none until the Sales Rep Hub follow-up
-- A1, A4, A6, A9, A13 — candidate cases (passed here, no suite case covers the kit card)
+- F5 regression of 10 storefront suites — dropped by the user at strategy approval; storefront boot (A7) only
+- Screen-reader announcement on first mount — no screen reader in the toolkit; manual check needed
+- Long figure in the Row (flex) story (X18) — the story ignores value args
+- Contrast, overlay containment, locale strings, unknown colour — code unchanged since the Round 1 PASS
+- Exploratory box ~28 of 30 min — a rate-limit stop cut the continuation; every charter item was covered
+- A2, A3, A4, A5 — candidate cases (passed here, no suite case covers the kit card)
 
 ## Data
 Created 0 AGENT-TEST- entities · removed 0 · settings restored and re-read: none
 
 ## Context used
-Strategy reports/tickets/Sprint26-21/VCST-5903/test-strategy.md · Round 1 · Model reports/ba/test-models/VCST-5903-2026-10-19.md · Checklist reports/tickets/Sprint26-21/VCST-5903/testing-checklist.md · Domain map ABSENT (`ui`, single-layer chain — not built) · Mind map SKIPPED: no domain map · Exploratory reports/exploratory/SBTM-VCST-5903-stat-widget-2026-10-19.md · PRs VirtoCommerce/vc-frontend#2568
+Strategy reports/tickets/Sprint26-21/VCST-5903/test-strategy.md · Round 2 · Model reports/ba/test-models/VCST-5903-2026-10-19.md §Round 2 · Checklist reports/tickets/Sprint26-21/VCST-5903/testing-checklist.md · Domain map ABSENT (`ui`, single-layer chain — not built) · Mind map SKIPPED: no domain map · Exploratory reports/exploratory/SBTM-VCST-5903-stat-widget-2026-10-20.md · PRs VirtoCommerce/vc-frontend#2568 (VirtoCommerce/vc-frontend#2585 CI-only)

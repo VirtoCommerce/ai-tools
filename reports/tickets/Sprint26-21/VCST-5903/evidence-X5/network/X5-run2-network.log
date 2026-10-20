@@ -1,0 +1,16 @@
+13. [POST] https://vcst-qa-storybook.govirto.com/cdn-cgi/rum? => [204] 
+16. [GET] https://vcst-qa-storybook.govirto.com/index.json => [200] 
+38. [GET] https://vcst-qa-storybook.govirto.com/assets/mf-entry-bootstrap-0-0fb3143f.js => [FAILED] net::ERR_ABORTED
+44. [POST] https://vcst-qa-storybook.govirto.com/cdn-cgi/rum? => [204] 
+49. [GET] https://vcst-qa-storybook.govirto.com/index.json => [200] 
+54. [POST] https://vcst-qa-storybook.govirto.com/cdn-cgi/rum? => [204] 
+57. [POST] https://vcst-qa-storybook.govirto.com/cdn-cgi/rum? => [204] 
+59. [POST] https://vcst-qa-storybook.govirto.com/cdn-cgi/rum? => [204] 
+62. [POST] https://vcst-qa-storybook.govirto.com/cdn-cgi/rum? => [204] 
+64. [POST] https://vcst-qa-storybook.govirto.com/cdn-cgi/rum? => [204] 
+67. [POST] https://vcst-qa-storybook.govirto.com/cdn-cgi/rum? => [204] 
+69. [POST] https://vcst-qa-storybook.govirto.com/cdn-cgi/rum? => [204] 
+72. [POST] https://vcst-qa-storybook.govirto.com/cdn-cgi/rum? => [204] 
+74. [POST] https://vcst-qa-storybook.govirto.com/cdn-cgi/rum? => [204] 
+
+Note: 61 static requests not shown, run with "static" option to see them.
