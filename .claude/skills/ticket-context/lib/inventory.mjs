@@ -210,10 +210,16 @@ export function buildInventory({ issue, remoteLinks = [], trackerBase, acFieldId
     const dir = l.outwardIssue ? l.type?.outward : l.type?.inward;
     if (other?.key) addIssue(other.key, `issuelinks:${l.type?.name ?? "link"}${dir ? ` (${dir})` : ""}`);
   }
+  // A sub-task is an item whether or not any text names it: its developer's resolution note lives in its comments
+  // (VCST-5903 round 2). The parent only when this ticket is itself a sub-task — that parent is the story or bug
+  // whose ACs it implements; an epic parent is already `epic`/`siblings`, and fetching it would cost a cap slot.
+  for (const t of f.subtasks ?? []) if (t?.key) addIssue(t.key, "subtasks");
+  if (f.issuetype?.subtask && f.parent?.key) addIssue(f.parent.key, "parent");
   return { items: [...items.values()], prRefs: [...prRefs.values()] };
 }
 
-// D12: which linked issues CAPS.linkedIssues keeps. Group 0 = a subtask or the parent; then the link kinds, by
+// D12: which linked issues CAPS.linkedIssues keeps. Group 0 = a subtask or the parent (an epic parent is an item
+// only when a link or text names it); then the link kinds, by
 // their type name or direction phrase; 4 = everything else (another link type, a key named only in text).
 const LINK_GROUPS = Object.freeze([[/block|caus|problem|incident/i, 1, "blocks/causes"], [/clon|duplicat/i, 2, "clones/duplicates"], [/relat/i, 3, "relates"]]);
 const GROUP_LABEL = Object.freeze(["subtask/parent", "blocks/causes", "clones/duplicates", "relates", "other"]);
@@ -229,7 +235,7 @@ export function linkGroup(item, parentKey, subtaskKeys) {
 
 /** Linked-issue items, ordered for the cap: by group, then most recently updated first (`order`: key → index in
  *  the tracker's ORDER BY updated DESC result, jira.mjs recencyOrder; a key without one goes last in its group),
- *  then inventory order. Each item gets `link_group`. Subtasks rank first only when they are among the items. */
+ *  then inventory order. Each item gets `link_group`. buildInventory makes every subtask an item. */
 export function rankLinked(items, { parentKey = null, subtaskKeys = [], order = new Map() } = {}) {
   const subs = new Set(subtaskKeys);
   return items.map((it, i) => ({ it, i, g: linkGroup(it, parentKey, subs), r: order.get(it.key) ?? Infinity }))
