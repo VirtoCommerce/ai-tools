@@ -47,7 +47,7 @@ PAT, no `az login`, self-diagnostics off; the host's rules win.
    cannot. Then
    `install-bridge.mjs` → the literal `VC_RUN=<path>` used for the rest of the session. **(0e)**
    detect **and install** missing tooling: `gh` (required), `az` (only if Azure is chosen).
-1. Install deps into **every installed plugin's** folder (`install-deps.mjs` — vc-init, vc-fix, vc-perf;
+1. Install deps into **every installed plugin's** folder (`install-deps.mjs` — every installed plugin of the marketplace, found at run time;
    Claude Code installs none) + Playwright browsers (`npx playwright install chromium firefox`).
 2. Interview — **no mid-interview reconnaissance**: (a) **ENV_NAME** as a plain chat question;
    (b) **tracker + code host** as one `AskUserQuestion` block; (c) **existing-env guard**; (d) **auth

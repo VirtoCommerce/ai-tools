@@ -9,17 +9,16 @@
  * VCST-6402 /project-init lived in vc-fix and its `npm install` covered vc-fix; after the move it covered
  * only vc-init, so vc-fix's helpers (`ado.mjs`, `jira.mjs`) failed with "Cannot find package 'dotenv'".
  *
- * For each of vc-init, vc-fix, vc-perf that is installed: if any runtime dependency is missing from its
- * node_modules, run `npm install --omit=dev` there. Prints one line per plugin; exit 1 when an install
+ * For EVERY installed and enabled plugin of this marketplace (found at run time, not a fixed list): if any
+ * runtime dependency is missing from its node_modules, run `npm install --omit=dev` there. Prints one line per plugin; exit 1 when an install
  * failed. `--check` installs nothing and exits 1 when something is missing.
  */
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
+import os from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { resolvePluginRoot } from "../../bridge/resolve-plugin.mjs";
-
-export const PLUGINS = ["vc-init", "vc-fix", "vc-perf"];
+import { ownMarketplace, resolvePluginRoot } from "../../bridge/resolve-plugin.mjs";
 
 /** The runtime dependencies of the plugin at `root` that its node_modules does not hold. */
 export function missingDeps(root) {
@@ -32,12 +31,50 @@ export function missingDeps(root) {
   return Object.keys(pkg.dependencies || {}).filter((d) => !existsSync(join(root, "node_modules", ...d.split("/"), "package.json")));
 }
 
-/** Every folder a plugin's code may run from: what the resolver picks, and the bridge's trusted pick. */
+/**
+ * The plugins of this marketplace that are installed and enabled: `claude plugin list --json`, else the
+ * install registry. Not a fixed list — a plugin added to the marketplace later is covered without a change
+ * here. Plugins from other marketplaces are not ours to install into.
+ */
+export function installedPlugins({ home = process.env.HOME || os.homedir(), marketplace = ownMarketplace() } = {}) {
+  const suffix = `@${marketplace}`;
+  try {
+    const list = JSON.parse(execSync("claude plugin list --json", { stdio: ["ignore", "pipe", "ignore"], timeout: 20000 }).toString());
+    if (Array.isArray(list)) {
+      return list.filter((x) => x && x.enabled && String(x.id || "").endsWith(suffix) && x.installPath)
+        .map((x) => ({ name: String(x.id).slice(0, -suffix.length), root: x.installPath }));
+    }
+  } catch {
+    /* no claude CLI in this shell — the registry below */
+  }
+  try {
+    const reg = JSON.parse(readFileSync(join(home, ".claude", "plugins", "installed_plugins.json"), "utf8"));
+    return Object.entries(reg?.plugins || {}).filter(([id]) => id.endsWith(suffix)).flatMap(([id, recs]) =>
+      (Array.isArray(recs) ? recs : []).filter((r) => r && typeof r.installPath === "string").map((r) => ({ name: id.slice(0, -suffix.length), root: r.installPath })));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Every folder an installed plugin's code may run from: its install path, what the resolver picks, and the
+ * bridge's trusted pick (the newest version beside this install) — deduplicated.
+ */
 export function pluginRoots() {
+  const seen = new Set();
   const out = [];
-  for (const name of PLUGINS) {
-    const roots = new Set([resolvePluginRoot(name), resolvePluginRoot(name, { trustedOnly: true })].filter(Boolean).map((r) => resolve(r)));
-    for (const root of roots) out.push({ name, root });
+  const push = (name, root) => {
+    if (!root || !existsSync(join(root, "package.json"))) return;
+    const r = resolve(root);
+    if (seen.has(r.toLowerCase())) return;
+    seen.add(r.toLowerCase());
+    out.push({ name, root: r });
+  };
+  push("vc-init", resolvePluginRoot("vc-init"));
+  for (const { name, root } of installedPlugins()) {
+    push(name, root);
+    push(name, resolvePluginRoot(name));
+    push(name, resolvePluginRoot(name, { trustedOnly: true }));
   }
   return out;
 }

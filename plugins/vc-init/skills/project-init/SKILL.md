@@ -342,7 +342,7 @@ proceeding.
 
 ## 1. Install dependencies
 
-Install the npm dependencies of EVERY installed plugin (vc-init, vc-fix, vc-perf) + the Playwright browsers:
+Install the npm dependencies of EVERY installed plugin of this marketplace (found at run time — vc-init, vc-fix, vc-perf, any later one) + the Playwright browsers:
 
 ```bash
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/install-deps.mjs"   # each plugin's own install folder
@@ -1330,7 +1330,7 @@ Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or j
 | `render-scan.mjs` | §4a/§4b: the operator's confirmation tables, verbatim — `--repos` (client repos with default branch + PR target) and `--tracker` (role → state per work-item type) |
 | `next-steps.mjs` | §9: "the project is ready" + what to do now, from the profile and the installed plugins (`--plugins a,b` overrides detection) |
 | `sync-browser-secrets.mjs` | §7: generate `.env.playwright.local` (Playwright `--secrets`) from the current env's passwords — the agent types the NAME, the MCP types the value; `--check` exits 1 when stale |
-| `install-deps.mjs` | §1 / `--check`: `npm install --omit=dev` in every installed plugin's folder that lacks a runtime dependency (`--check` only reports) |
+| `install-deps.mjs` | §1 / `--check`: `npm install --omit=dev` in the folder of every installed plugin of this marketplace (from `claude plugin list`, not a fixed list) that lacks a runtime dependency (`--check` only reports) |
 | `ensure-session.mjs` | establish the browser-login sessions WITHOUT hand-crafted commands: auto-discovers the ADO org tenant and drives `az login --tenant <guid>` / `gh auth login --web`; `--check` probes only. Run in the background (the login blocks on the browser). Run it DIRECTLY, never through `$VC_RUN` — a session login must not see a token (gh refuses to log in while GH_TOKEN is set). |
 
 > The interview asks only **env name · tracker · code host** + an auth preference
