@@ -65,9 +65,9 @@ function fail(msg) { console.error(`[scaffold-env] ${msg}`); process.exit(1); }
 //   no `def`         — the operator MUST fill it; still empty ⇒ a hard failure.
 //   warnOnPath       — a path component on this URL is almost certainly a paste mistake.
 export const CATALOG = [
-  ["ENV_RISK",         { def: "test", include: () => true,
-    what: "Risk class: dev | test | staging | production.",
-    where: "production blocks admin-write suites by default; QA envs use test." }],
+  // ENV_RISK is not scaffolded: config.js defaults it to `test`, and nothing in the plugins branches on
+  // it beyond a warning. An operator who points a project at a production stand adds
+  // `ENV_RISK=production` by hand, and /qa-investigate then keeps reproduction read-only.
   ["FRONT_URL",        { include: () => true, type: "url", warnOnPath: true,
     what: "Storefront URL.", where: "e.g. https://storefront.example.com" }],
   ["BACK_URL",         { include: () => true, type: "url", warnOnPath: true,

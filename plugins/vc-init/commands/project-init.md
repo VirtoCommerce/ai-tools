@@ -47,8 +47,8 @@ PAT, no `az login`, self-diagnostics off; the host's rules win.
    cannot. Then
    `install-bridge.mjs` → the literal `VC_RUN=<path>` used for the rest of the session. **(0e)**
    detect **and install** missing tooling: `gh` (required), `az` (only if Azure is chosen).
-1. Install deps into the **plugin** (`( cd "$CLAUDE_PLUGIN_ROOT" && npm install )`) + Playwright
-   browsers (`npx playwright install chromium firefox`).
+1. Install deps into **every installed plugin's** folder (`install-deps.mjs` — vc-init, vc-fix, vc-perf;
+   Claude Code installs none) + Playwright browsers (`npx playwright install chromium firefox`).
 2. Interview — **no mid-interview reconnaissance**: (a) **ENV_NAME** as a plain chat question;
    (b) **tracker + code host** as one `AskUserQuestion` block; (c) **existing-env guard**; (d) **auth
    preference** per applicable axis (github always; ado if azure tracker/host; jira if jira) — **PAT is
@@ -97,7 +97,7 @@ existing-env guard → `scaffold-env.mjs` + `scaffold-secrets.mjs` for the new e
 
 Do **not** re-run the interview. The skill's **`--check`** section drives this:
 
-0. vc-secrets ready + the bridge (as §0d).
+0. vc-secrets ready + the bridge (as §0d); `install-deps.mjs` (a plugin update has no `node_modules`).
 1. **Reconcile** the profile to the current schema (dry-run): `reconcile-profile.mjs --print` —
    `added` / `removed` / `pending` / `rescan` (a schema-1 profile's auth axes are re-derived through
    `node "$VC_RUN" onboard derive-context`). `no-profile` ⇒ run the full interview instead.

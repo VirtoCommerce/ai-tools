@@ -158,6 +158,14 @@ Why this order:
 picker, so the banner is duplicate chrome. Framed step header, one line of context if the
 options need it, then the tool call.
 
+**Except a CONFIRMATION of a scan (§4a repos, §4b statuses): there the context is the TABLE, not a
+line.** Between the header and the tool call goes the table exactly as `render-scan.mjs` printed it —
+never a sentence that summarises it ("two client repos, PRs into dev", "each role maps to a state
+for bugs, tasks and stories"). And pass the same table as the `preview` of the first option
+("Yes, as in the table"), so it is on screen while the operator chooses. A live run showed both
+failure modes: the summary sentence instead of the table, twice, with the question asking whether
+"the table" was right.
+
 ### Where things go — read this once (three roots, kept separate)
 
 - **Plugin install directory** (`$CLAUDE_PLUGIN_ROOT` — vc-init's versioned marketplace cache
@@ -334,18 +342,19 @@ proceeding.
 
 ## 1. Install dependencies
 
-Install the plugin's own package dependencies + the Playwright browsers:
+Install the npm dependencies of EVERY installed plugin (vc-init, vc-fix, vc-perf) + the Playwright browsers:
 
 ```bash
-( cd "$CLAUDE_PLUGIN_ROOT" && npm install )   # into the PLUGIN's node_modules (subshell — your cwd is unchanged)
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/install-deps.mjs"   # each plugin's own install folder
 npx playwright install chromium firefox       # browser binaries (global cache — cwd-independent)
 ```
 (Edge uses the system `msedge` channel; WebKit is not used on Windows.) This step
-must run before any generator/verify script. **Install inside the plugin (`( cd
-"$CLAUDE_PLUGIN_ROOT" && npm install )`), NOT a bare `npm install`** — several scripts
-(`discover-repos`, `derive-context`, `verify-access`, `ensure-session`) import `dotenv`,
-and Node resolves that bare specifier from the *script's own* directory (the plugin), not
-your project cwd. The subshell `( … )` keeps your project cwd unchanged.
+must run before any generator/verify script. **Never a bare `npm install` in the project** — the
+scripts import `dotenv` (vc-fix also `@playwright/mcp`), and Node resolves a bare specifier from the
+*script's own* directory, i.e. each plugin's install folder. Claude Code installs no npm dependencies,
+and vc-fix's tracker / code-host helpers (`ado.mjs`, `jira.mjs`) fail with "Cannot find package
+'dotenv'" without them. A plugin update lands in a new version folder WITHOUT `node_modules` — which
+is why `--check` runs this again.
 
 ## 2. Interview — three answers + an auth preference, THEN scaffold
 
@@ -442,7 +451,7 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/scaffold-env.mjs" --env myqa --tra
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/scaffold-env.mjs" --env acme --tracker jira --client-vcs azure-repos --print
 ```
 Flags: `--env <name>` (required), `--tracker jira|azure`, `--client-vcs
-github|azure-repos`. `ENV_RISK` and `ADMIN` are pre-filled with safe defaults;
+github|azure-repos`. `ADMIN` is pre-filled with a safe default and `STORE_ID` may stay empty (normalize-env detects it);
 everything else is empty. `ADO_ORG`/`ADO_PROJECT` are emitted when the tracker is
 Azure **or** the code host is Azure Repos. Idempotent — a re-run only adds missing
 keys, never clobbers.
@@ -609,8 +618,8 @@ row per client repo. Notes carries only what is repo-specific: a PR target that 
 default branch, a storefront fork's provenance, a module with no matching repo, a base tag that could
 not be verified. Paste it into your reply as it is — it is already Markdown.
 
-Then ask with `AskUserQuestion`. The question **refers to the table** and names a flagged row if there
-is one; it never restates the map in parentheses — e.g. *"Are the repos and branches in the table
+Then ask with `AskUserQuestion` — the table also goes into the first option's `preview` (§Output
+FORMAT). The question **refers to the table** and names a flagged row if there is one; it never restates the map in parentheses — e.g. *"Are the repos and branches in the table
 correct?"* or *"`acme-module-main` opens PRs into `dev`, not `main` — correct?"*. Options:
 **"Yes, as in the table"** · **"Fix a repo or branch"**. On a fix, ask which row and what, and correct
 it in `.local-env/repos.json` before step 6.
@@ -667,7 +676,7 @@ verbatim (the operator cannot see tool output — §4a). Because step 6 turns on
 operator approves the whole map, not a summary of it (D4).
 
 Then `AskUserQuestion`: *"Is the status mapping in the table above correct?"* — options **"Yes, as in
-the table"** · **"Change a role"**. Do **not** put the mapping or examples into the question text
+the table"** (its `preview` = the table) · **"Change a role"**. Do **not** put the mapping or examples into the question text
 ("done = Closed, not Resolved/HotFixed?") — the table is the thing being approved. On **"Change a
 role"**, ask which type and which role, offer that type's states as options, and persist with
 `reconcile-profile.mjs --write --set 'tracker.azure.roleStatesByType.<Type>.<role>=<state>'` (after
@@ -1107,7 +1116,10 @@ drift) — but the on-disk `project-profile.json` was written once and goes stal
 brings it back in line with the current schema, then runs the readiness table. It does
 **NOT** re-run the interview.
 
-### Step 0 — vc-secrets ready + the bridge (same as §0d)
+### Step 0 — vc-secrets ready + the bridge (same as §0d), and the plugins' dependencies
+
+A plugin update lands in a new version folder without `node_modules`, so run §1's
+`install-deps.mjs` first.
 
 Run §0d first — `check-secrets.mjs --preflight`, STOP on exit 2, then `install-bridge.mjs`. An
 upgrade from a pre-VCST-6402 onboarding has no vc-secrets yet, and every later step needs it.
@@ -1318,6 +1330,7 @@ Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or j
 | `render-scan.mjs` | §4a/§4b: the operator's confirmation tables, verbatim — `--repos` (client repos with default branch + PR target) and `--tracker` (role → state per work-item type) |
 | `next-steps.mjs` | §9: "the project is ready" + what to do now, from the profile and the installed plugins (`--plugins a,b` overrides detection) |
 | `sync-browser-secrets.mjs` | §7: generate `.env.playwright.local` (Playwright `--secrets`) from the current env's passwords — the agent types the NAME, the MCP types the value; `--check` exits 1 when stale |
+| `install-deps.mjs` | §1 / `--check`: `npm install --omit=dev` in every installed plugin's folder that lacks a runtime dependency (`--check` only reports) |
 | `ensure-session.mjs` | establish the browser-login sessions WITHOUT hand-crafted commands: auto-discovers the ADO org tenant and drives `az login --tenant <guid>` / `gh auth login --web`; `--check` probes only. Run in the background (the login blocks on the browser). Run it DIRECTLY, never through `$VC_RUN` — a session login must not see a token (gh refuses to log in while GH_TOKEN is set). |
 
 > The interview asks only **env name · tracker · code host** + an auth preference

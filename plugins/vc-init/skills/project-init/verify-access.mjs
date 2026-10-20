@@ -64,6 +64,7 @@ import {
 // SAME pure function the create path uses, so the row can't claim a mapping create won't make.
 import { resolveSlots } from "../../scripts/lib/bug-contract.mjs";
 import { SECRETS_FILE as BROWSER_SECRETS_FILE, currentState as browserSecretsState } from "./sync-browser-secrets.mjs";
+import { missingDeps, pluginRoots } from "./install-deps.mjs";
 import { fileURLToPath } from "url";
 
 let TEST_ENV;
@@ -508,6 +509,18 @@ async function main() {
   for (const ids of enabledIds) {
     add("Plugin root (single install)", "WARN",
       `${ids.join(" and ")} are both enabled — each one's hooks.json starts its own telemetry collector, so spans duplicate and state writes race. Uninstall the old one (/plugin uninstall ${ids.slice(1).join(", ")}) and restart Claude Code`);
+  }
+
+  // 1b''. Each installed plugin's npm dependencies are in ITS install folder — Claude Code installs none,
+  //       and a plugin update lands in a new folder without them. vc-fix's tracker / code-host helpers
+  //       fail with "Cannot find package 'dotenv'" otherwise.
+  {
+    const gaps = pluginRoots().map(({ name, root }) => ({ name, root, missing: missingDeps(root) })).filter((p) => p.missing.length);
+    if (gaps.length) {
+      add("Plugin dependencies", "FAIL", `${gaps.map((g) => `${g.name} lacks ${g.missing.join(", ")}`).join("; ")} — run: node "$CLAUDE_PLUGIN_ROOT/skills/project-init/install-deps.mjs"`);
+    } else {
+      add("Plugin dependencies", "PASS", "every installed plugin has its npm dependencies");
+    }
   }
 
   // 1b'. Browser login: the agent types a password's NAME and Playwright MCP substitutes the value from

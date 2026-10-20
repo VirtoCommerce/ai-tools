@@ -66,6 +66,13 @@ in `.env.local`, and gen-mcp passes it to every Playwright lane as `--secrets`. 
 enters the model's context or the transcript. verify-access warns when the file is missing or stale for
 `TEST_ENV`. The passwords themselves still live in `.env.local`.
 
+**Fixed: vc-fix's npm dependencies were never installed after the move.** `/project-init` installed only
+vc-init's `node_modules`, so vc-fix's tracker and code-host helpers failed with "Cannot find package
+'dotenv'". `install-deps.mjs` installs the runtime dependencies of every installed plugin into its own
+folder (§1, and `--check` after an update, which lands in a new folder without them); verify-access FAILs
+"Plugin dependencies" when one is missing. `ENV_RISK` is no longer scaffolded (`test` by default; add
+`production` by hand for a production stand).
+
 **Removed:** the `postman` and `context7` MCP servers from onboarding (each needed an API key in a file);
 `gen-mcp --inline-secrets` (refused); the token placeholders in `.env.local` (`scaffold-secrets` writes
 test-user passwords only).
