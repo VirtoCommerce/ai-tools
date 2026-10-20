@@ -50,7 +50,11 @@ export interface Requirement {
   cases?: string[];
   why: string;
 }
-/** A persona whose account only exists where a module is installed (a sales rep needs VirtoCommerce.SalesRep). */
+/**
+ * A persona — or a fixture alias — that only exists where a module is installed (a sales rep needs
+ * VirtoCommerce.SalesRep). On a stand without the module its cases are NOT DEPLOYED: they leave the plan,
+ * exactly as a suite does whose `requiresModules` is not deployed, instead of being run or recorded BLOCKED.
+ */
 export interface PersonaRequirement { module: string; why: string }
 export interface RequirementsFile {
   _meta?: unknown;
@@ -110,8 +114,23 @@ function bySuite(cases: Iterable<string>): string {
 }
 const count = (c: Set<string>) => `${c.size} case${c.size === 1 ? "" : "s"}`;
 
-export function fixtureChecks(root: string, env: string, refs: Map<string, Set<string>>): Check[] {
+export function fixtureChecks(root: string, env: string, refs: Map<string, Set<string>>,
+  modules: { reqs?: Record<string, PersonaRequirement>; installed: Set<string> | null } = { installed: null }): Check[] {
   const resolver = makeResolver(root, env);
+  const absent: Check[] = [];
+  const absentAliases = new Set<string>();
+  for (const [ref, cases] of refs) {
+    const alias = ref.split(".")[0];
+    const needs = personaModule(modules.reqs, alias);
+    if (!needs || !modules.installed || modules.installed.has(needs.module)) continue;
+    const row = absent.find((c) => c.id === `fixture:${alias}`);
+    if (row) { for (const c of cases) if (!row.cases!.includes(c)) row.cases!.push(c); continue; }
+    absentAliases.add(alias);
+    absent.push({ id: `fixture:${alias}`, status: "WARN", found: `${needs.module} is not installed on ${env}: ${needs.why}`, who: "you",
+      do: `not deployed — these cases leave the plan; deploy ${needs.module} on ${env} to test them`, diagnose: [], cases: [...cases], notDeployed: needs.module });
+  }
+  for (const r of absent) r.found += ` — ${r.cases!.length} case(s): ${bySuite(r.cases!)}`;
+  refs = new Map([...refs].filter(([ref]) => !absentAliases.has(ref.split(".")[0])));
   const byAlias = new Map<string, { cases: Set<string>; fields: Set<string>; kind: "unseeded" | "broken"; detail: string; seed?: string }>();
   for (const [ref, cases] of refs) {
     let out = "";
@@ -137,7 +156,7 @@ export function fixtureChecks(root: string, env: string, refs: Map<string, Set<s
       : `fix the reference or the alias (test-data/aliases.json, aliases.${env}.json) — a suite defect, not env state`,
     diagnose: [`TEST_ENV=${env} npm run td:validate`],
     cases: [...a.cases],
-  }));
+  })).concat(absent);
 }
 
 interface AliasEntry { email_env?: string; password_env?: string; [k: string]: unknown }
@@ -204,7 +223,7 @@ export async function personaChecks(root: string, env: string, c: EnvCoords, tok
     const needs = personaModule(modules.reqs, alias);
     if (needs && modules.installed && !modules.installed.has(needs.module)) {
       out.push({ id: `persona:${alias}`, status: "WARN", found: `${needs.module} is not installed on ${env}: ${needs.why} — ${where}`, who: "you",
-        do: `these cases cannot run here — deploy ${needs.module} on ${env}, or leave them BLOCKED (not a product failure)`, diagnose: [], cases: [...cases] });
+        do: `not deployed — these cases leave the plan; deploy ${needs.module} on ${env} to test them`, diagnose: [], cases: [...cases], notDeployed: needs.module });
       continue;
     }
     if (!entry) { out.push({ id: `persona:${alias}`, status: "WARN", found: `unknown persona — neither an alias in test-data/aliases.json nor ${alias}_EMAIL / ${alias}_PASSWORD in the env — ${where}`, who: "me", do: `add the alias to test-data/aliases.json, set ${alias}_EMAIL and ${alias}_PASSWORD for the env, or fix the [PRE:*] tag`, diagnose: [], cases: [...cases] }); continue; }
@@ -361,13 +380,16 @@ export async function requirementChecks(o: { root: string; env: string; suites: 
   const reqFile = loadRequirements(o.root);
   const needs = collectCaseNeeds(o.root, o.suites);
   let c: EnvCoords | null = null, token: string | null = null;
-  try { c = resolveEnvCoords(o.env); token = await getAdminToken(c); } catch { /* reported per row as UNKNOWN */ }
+  try { c = resolveEnvCoords(o.env); } catch { /* reported per row as UNKNOWN */ }
+  // One retry: without the token every account and module check degrades to UNKNOWN, and a single dropped
+  // connection is common enough on a busy stand to cost the whole case-level half (2026-10-20, vcptcore_regression).
+  for (let i = 0; c && !token && i < 2; i++) { try { token = await getAdminToken(c); } catch { /* retried, then UNKNOWN */ } }
   const checks: Check[] = [];
   for (const s of needs.unreadable) checks.push({ id: `case-needs:${s}`, status: "UNKNOWN", found: `suite ${s}: CSV not readable, its personas and fixtures were not checked`, who: "me", do: "npm run suites:lint", diagnose: [] });
-  checks.push(...fixtureChecks(o.root, o.env, needs.refs));
+  const installed = c && reqFile.personas ? await installedModules(c, token) : null;
+  checks.push(...fixtureChecks(o.root, o.env, needs.refs, { reqs: reqFile.personas, installed }));
   if (c) checks.push(...await laneAccountChecks(o.root, o.env, c, token));
-  if (c) checks.push(...await personaChecks(o.root, o.env, c, token, needs.personas,
-    { reqs: reqFile.personas, installed: reqFile.personas ? await installedModules(c, token) : null }));
+  if (c) checks.push(...await personaChecks(o.root, o.env, c, token, needs.personas, { reqs: reqFile.personas, installed }));
   const declared = o.suites.flatMap((s) => (reqFile.suites[s.id] ?? []).map((r) => ({ suite: s.id, r })));
   if (c) checks.push(...await declaredChecks(o.env, c, token, declared));
   return checks;

@@ -95,7 +95,8 @@ folder exists. It is used in Step 5, and its `ENV_CONFIG` / `DATA` rows tell you
    file is what `suites:lanes` reads the `skip` map from. Every rule of that pipeline applies unchanged (browser lanes, `--secrets`, the observed-behaviour steps of its runners).
 4. When it finishes — or is cut short (usage limit, env down) — append the run id to `runIds`, write `totals` from
    the run's consolidated report (never counted by hand; `ambiguous` holds what is neither pass, fail, blocked nor
-   skipped), put anything not run into `notRun` (suite ids + case count + reason), set `untriaged` to the FAIL count,
+   skipped), put anything not run into `notRun` (suite ids + case count + reason — including each suite's
+   `notDeployed` cases from its results file, reason `not deployed: <module>`), set `untriaged` to the FAIL count,
    `status: RUN_DONE`. **Then go to Step 4 — a cut-short run too.**
 
 ## Step 4 — Triage starts on its own

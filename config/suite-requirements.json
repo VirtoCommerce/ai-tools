@@ -3,12 +3,13 @@
     "description": "What a suite's cases need from the stand that the suite CSV cannot express: a store setting, a platform setting, a payment method, a key in vc-deploy-dev infra/environments.yml (headers, FileUpload scopes, KnownAssetHosts). Read by the regression pre-flight (scripts/regression/requirements.ts) before every run and every release wave; personas ([PRE:SIGNIN_AS:*]) and fixtures (@td()) are derived from the CSVs and are NOT declared here.",
     "kinds": "storeSetting · platformSetting · paymentMethod (isActive) · deployConfig (dotted path in the env's block of infra/environments.yml; prefix:true for an indexed list) · uploadScope (a FileUpload__Scopes__N__Scope value)",
     "match": "equals · notEquals · nonEmpty · allowedIncludes (platformSetting: values its dictionary must offer) · (none = must be set). level: warn (default — the named cases will BLOCK) or block (the suite cannot run meaningfully).",
-    "personas": "personas: alias (or PREFIX*) → the module its account needs. Checked before the account, so a missing module reads as 'cannot run here', not 'seed the account'.",
+    "personas": "personas: a persona or @td() fixture alias (or PREFIX*) → the module it needs. Without that module on the stand its cases are NOT DEPLOYED: they leave the plan (not run, not counted, not triaged), like a suite whose requiresModules is not deployed.",
     "skip": "Every case a WARN/BLOCK row names is recorded BLOCKED with that row's reason and NOT run (regression:plan --run-blocked runs them anyway).",
     "provenance": "Every entry below was a BLOCKED or FAIL cause in the Stable 16 regression on vcptcore_regression (regression/releases/stable-16/), with the exact cases it hit. Names were read live from the platform API and from vc-deploy-dev infra/environments.yml on 2026-10-16. Add an entry when a triage verdict is ENV_CONFIG; remove one when the cases stop needing it."
   },
   "personas": {
     "SALES_REP": { "module": "VirtoCommerce.SalesRep", "why": "the sales-rep account is a rep contact of the SalesRep module (seed:sales-rep → /api/sales-rep/*)" },
+    "ORG_REP_ONLY": { "module": "VirtoCommerce.SalesRep", "why": "an organization served only by a sales rep (seed:sales-rep)" },
     "SR_*": { "module": "VirtoCommerce.SalesRep", "why": "the sales-rep personas are rep contacts of the SalesRep module (seed:sales-rep → /api/sales-rep/*)" }
   },
   "suites": {

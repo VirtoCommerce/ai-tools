@@ -96,6 +96,24 @@ export interface RegressionPreflight {
    */
   skip: Record<string, Record<string, string>>;
   skipDisabled?: boolean;
+  /**
+   * suite → case → module: cases that need a module this stand does not have. They are NOT in the plan —
+   * `suites:lanes` drops them, so they are neither run, nor counted, nor triaged — the case-level twin of a
+   * gated suite. `--run-blocked` does not bring them back: nothing could run them here.
+   */
+  notDeployed: Record<string, Record<string, string>>;
+}
+
+export function notDeployedMap(checks: Check[]): Record<string, Record<string, string>> {
+  const out: Record<string, Record<string, string>> = {};
+  for (const c of checks) {
+    if (!c.notDeployed || !c.cases?.length) continue;
+    for (const key of c.cases) {
+      const i = key.indexOf("/");
+      if (i > 0) (out[key.slice(0, i)] ??= {})[key.slice(i + 1)] ??= c.notDeployed;
+    }
+  }
+  return out;
 }
 
 /**
@@ -107,7 +125,7 @@ const rank = (id: string) => { const i = CAUSE_RANK.findIndex((p) => id.startsWi
 export function skipMap(checks: Check[]): Record<string, Record<string, string>> {
   const out: Record<string, Record<string, string>> = {};
   for (const c of [...checks].sort((a, b) => rank(a.id) - rank(b.id))) {
-    if ((c.status !== "WARN" && c.status !== "BLOCK") || !c.cases?.length) continue;
+    if ((c.status !== "WARN" && c.status !== "BLOCK") || !c.cases?.length || c.notDeployed) continue;
     const reason = `pre-flight ${c.id}: ${c.found.split(" — ")[0]}`.slice(0, 240);
     for (const key of c.cases) {
       const i = key.indexOf("/");
@@ -265,7 +283,13 @@ export async function runRegressionPreflight(o: {
     const run = o.suites.filter((s) => !gated.has(s.id) && files.has(s.id)).map((s) => ({ id: s.id, file: files.get(s.id)! }));
     checks.push(...await requirementChecks({ root: o.root, env: facts.env, suites: run }));
   }
+  const absent = notDeployedMap(checks);
+  const nAbsent = Object.values(absent).reduce((n, m) => n + Object.keys(m).length, 0);
+  if (nAbsent) checks.push({ id: "not-deployed", status: "WARN", who: null, do: null, diagnose: [],
+    found: `${nAbsent} case(s) in ${Object.keys(absent).length} suite(s) need a module this stand does not have (${[...new Set(Object.values(absent).flatMap((m) => Object.values(m)))].join(", ")}) — they leave the plan` });
   const predicted = skipMap(checks);
+  // A case that leaves the plan is never also "recorded BLOCKED".
+  for (const [s, m] of Object.entries(absent)) for (const id of Object.keys(m)) delete predicted[s]?.[id];
   const nCases = Object.values(predicted).reduce((n, m) => n + Object.keys(m).length, 0);
   const skipBlocked = o.skipBlocked !== false;
   if (nCases) checks.push(skipBlocked
@@ -273,7 +297,7 @@ export async function runRegressionPreflight(o: {
         who: "me", do: "fix those rows and re-run the pre-flight before the run; --run-blocked runs them anyway", diagnose: [] }
     : { id: "skip", status: "WARN", found: `--run-blocked: ${nCases} case(s) the rows above predict will BLOCK are run anyway`, who: null, do: null, diagnose: [] });
   return {
-    skip: skipBlocked ? predicted : {}, ...(skipBlocked ? {} : { skipDisabled: true }),
+    skip: skipBlocked ? predicted : {}, ...(skipBlocked ? {} : { skipDisabled: true }), notDeployed: absent,
     for: o.for, selection: o.selection, facts, mcp, gating, secrets, changedSince, baselineRunId: baseline?.runId ?? null,
     falseFailureRisk: falseFailureRisk(changedSince, gating), accepted: o.accept ?? [], checks, verdict: isBlocking(checks) ? "NOT READY" : "READY",
   };

@@ -17,6 +17,8 @@ export interface Check {
   /** Build-scoped only: the cases (`<suite>/<caseId>`) this row predicts will BLOCK. The regression pre-flight
    *  turns them into its `skip` map, so they are recorded BLOCKED with this row's reason instead of being run. */
   cases?: string[];
+  /** Build-scoped only: these cases need a module this stand does not have — they leave the plan (not BLOCKED). */
+  notDeployed?: string;
 }
 export interface Duplicate { path: string; ageMinutes: number; verdict: string | null; priorBuild: string | null; priorPlatform: string | null }
 export interface PolicyInput {

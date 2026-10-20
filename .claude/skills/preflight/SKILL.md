@@ -44,7 +44,11 @@ same `checks[]`, read-only:
   `agent-user-pool.csv`: credentials resolvable, account exists, not locked out, password not expired — through the
   admin API, **never by signing in**. A persona listed under `personas` in `config/suite-requirements.json` (e.g.
   `SR_*` → `VirtoCommerce.SalesRep`) is checked for its module first: absent, the row says the cases cannot run on
-  this stand, rather than sending someone to seed an account the platform cannot hold.
+  this stand, rather than sending someone to seed an account the platform cannot hold. The same map applies to
+  `@td()` fixture aliases (`ORG_REP_ONLY`, `SR_*`). Such cases are **not deployed**: the JSON's `notDeployed` map
+  (suite → case → module) takes them **out of the plan** — `suites:lanes` plans nothing for them, so they are not
+  run, not counted and not triaged, the case-level twin of a suite gated by `requiresModules`. A `not-deployed` row
+  states the count; `--run-blocked` does not bring them back.
 - `fixture:<ALIAS>` — every `@td()` the cases use, through the runners' resolver; `unseeded` names the seed to run.
 - `req:<kind>:<name>` — what `config/suite-requirements.json` declares: store and platform settings, payment
   methods, vc-deploy-dev `infra/environments.yml` keys (headers, FileUpload scopes, KnownAssetHosts), and the values a

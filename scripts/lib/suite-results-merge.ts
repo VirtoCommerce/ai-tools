@@ -94,6 +94,8 @@ export interface MergeInput {
    * someone looking for a dead lane, and never dropped, which would shrink the suite.
    */
   preBlocked?: ReadonlyArray<{ id: string; reason: string }>;
+  /** The lanes plan's `notDeployed`: out of the plan, so out of every count — carried only so the report names them. */
+  notDeployed?: ReadonlyArray<{ id: string; module: string }>;
 }
 
 export interface MergeResult {
@@ -216,6 +218,11 @@ export function mergeSuiteResults(input: MergeInput): MergeResult {
     completedAt: latest(input.fragments, "completedAt"),
     totalCases: total,
     // Scope provenance — absent on a normal run, so a full envelope is byte-identical to before.
+    // Cases out of the plan as not deployed make this a PARTIAL run of the suite, exactly like a --cases slice:
+    // calibration must not read its duration as the whole suite's.
+    ...(!input.caseFilter && input.notDeployed?.length
+      ? { scoped: true, unfilteredTotal: total + input.notDeployed.length }
+      : {}),
     ...(input.caseFilter
       ? {
           scoped: true,
@@ -230,6 +237,7 @@ export function mergeSuiteResults(input: MergeInput): MergeResult {
     skipped: tally.SKIPPED,
     passRate: total > 0 ? `${((tally.PASS / total) * 100).toFixed(1)}%` : "0.0%",
     lanes: laneCounts(ordered),
+    ...(input.notDeployed?.length ? { notDeployed: input.notDeployed } : {}),
     testCases: ordered,
     bugs: input.fragments.flatMap((f) => (Array.isArray(f.envelope.bugs) ? f.envelope.bugs : [])),
     errors: [...input.fragments.flatMap((f) => (Array.isArray(f.envelope.errors) ? f.envelope.errors : [])), ...warnings],
