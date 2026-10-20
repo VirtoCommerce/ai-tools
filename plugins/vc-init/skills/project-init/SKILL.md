@@ -158,13 +158,15 @@ Why this order:
 picker, so the banner is duplicate chrome. Framed step header, one line of context if the
 options need it, then the tool call.
 
-**Except a CONFIRMATION of a scan (§4a repos, §4b statuses): there the context is the TABLE, not a
-line.** Between the header and the tool call goes the table exactly as `render-scan.mjs` printed it —
-never a sentence that summarises it ("two client repos, PRs into dev", "each role maps to a state
-for bugs, tasks and stories"). And pass the same table as the `preview` of the first option
-("Yes, as in the table"), so it is on screen while the operator chooses. A live run showed both
-failure modes: the summary sentence instead of the table, twice, with the question asking whether
-"the table" was right.
+**A CONFIRMATION of a scan (§4a repos, §4b statuses) is NOT an `AskUserQuestion` — it is shape 2,
+and it ENDS the turn.** The desktop client folds every piece of text written BEFORE a tool call into the
+collapsed activity group and shows a generated one-line summary in its place. `AskUserQuestion` is a
+tool call, so a table written above it is hidden from the operator, whatever the skill says: two live
+runs showed an English one-sentence summary ("I found 2 client repos …", "I've mapped out how tracker
+statuses correspond …") where the table had been, under a picker asking whether "the table" was right.
+Only the LAST message of a turn is shown in full. So: framed header → the table exactly as
+`render-scan.mjs` printed it → the bold question → `⏸️ WAITING FOR YOU — reply "yes", or name what to
+change` → end the turn, no tool call after it. The operator answers in chat.
 
 ### Where things go — read this once (three roots, kept separate)
 
@@ -598,8 +600,9 @@ It writes `{ projectType, clientOrg, client:[…], platform:[…] }`:
 
 The operator confirms the repo map **immediately after seeing it**. Do **not** run step 4b or 5
 first: a table separated from its question by two more sections forces the operator to scroll
-back, and they will approve it unread. Sequence is exactly: repo table → `AskUserQuestion` →
-(only then) 4b.
+back, and they will approve it unread. Sequence is exactly: repo table → question → END THE TURN →
+(on the answer) 4b. Plain chat, not `AskUserQuestion` (§Output FORMAT — a table above a tool call is
+hidden from the operator).
 
 **The table comes from the script, verbatim — never hand-built, never shortened:**
 
@@ -618,11 +621,11 @@ row per client repo. Notes carries only what is repo-specific: a PR target that 
 default branch, a storefront fork's provenance, a module with no matching repo, a base tag that could
 not be verified. Paste it into your reply as it is — it is already Markdown.
 
-Then ask with `AskUserQuestion` — the table also goes into the first option's `preview` (§Output
-FORMAT). The question **refers to the table** and names a flagged row if there is one; it never restates the map in parentheses — e.g. *"Are the repos and branches in the table
-correct?"* or *"`acme-module-main` opens PRs into `dev`, not `main` — correct?"*. Options:
-**"Yes, as in the table"** · **"Fix a repo or branch"**. On a fix, ask which row and what, and correct
-it in `.local-env/repos.json` before step 6.
+Then the question, in the same final message, and end the turn. It **refers to the table** and names a
+flagged row if there is one; it never restates the map in parentheses — e.g. **"Are the repos and
+branches in the table correct?"** or **"`acme-module-main` opens PRs into `dev`, not `main` — correct?"**,
+then `⏸️ WAITING FOR YOU — reply "yes", or name the repo and what to change`. On a correction, fix it in
+`.local-env/repos.json` before step 6.
 
 **Genuine-ambiguity asks (only these — everything else is confirm-or-correct):**
 - host = `github`, **no** client modules found, org not resolvable → ask the operator:
@@ -675,10 +678,12 @@ verbatim (the operator cannot see tool output — §4a). Because step 6 turns on
 `transitionPolicy=auto`, a mis-picked cell moves real work items with no further prompt — so the
 operator approves the whole map, not a summary of it (D4).
 
-Then `AskUserQuestion`: *"Is the status mapping in the table above correct?"* — options **"Yes, as in
-the table"** (its `preview` = the table) · **"Change a role"**. Do **not** put the mapping or examples into the question text
-("done = Closed, not Resolved/HotFixed?") — the table is the thing being approved. On **"Change a
-role"**, ask which type and which role, offer that type's states as options, and persist with
+Then, in the same final message, **"Is the status mapping in the table correct?"** and
+`⏸️ WAITING FOR YOU — reply "yes", or name the type, the role and the state it should be` — and end the
+turn (plain chat, not `AskUserQuestion`: a table above a tool call is hidden — §Output FORMAT). Do
+**not** restate the mapping or give examples in the question ("done = Closed, not Resolved/HotFixed?")
+— the table is the thing being approved. On a correction (if the operator names no state, offer that
+type's states then), persist with
 `reconcile-profile.mjs --write --set 'tracker.azure.roleStatesByType.<Type>.<role>=<state>'` (after
 step 6) or by editing `roleStatesByType` in `.local-env/tracker.json` (before it). A `—` cell is asked
 about at the time of that move; it does not block.
@@ -965,8 +970,9 @@ verify-access. For a fully non-interactive setup use a PAT instead.
 (optional server, key unset).
 
 **Surface the result in your reply — do NOT leave it only in the script's stdout.**
-The table is tool output, which many clients collapse or hide. **Restate the readiness
-table AND the MCP-server status as Markdown tables in your chat message**, mapping each
+The table is tool output, which many clients collapse or hide — and so is any text you write before a
+FURTHER tool call (assert-profile, next-steps). **Restate the readiness table AND the MCP-server status
+as Markdown tables in the FINAL message of the run (§9)**, not between the scripts, mapping each
 row to the surface it proves — **front** = `FRONT_URL` (+ storefront user login),
 **back** = `BACK_URL` + admin login, **Jira/tracker** = tracker token, **Git** = GitHub
 token + gh CLI — and end with the `N PASS · N FAIL · N WARN · N SKIP` line and the
@@ -975,7 +981,9 @@ READY / NOT READY verdict.
 ## 9. Done
 
 Present this as an explicit, labelled **Step 9** in your reply (the operator tracks the
-pipeline by step number). Summarise what was written in two or three lines (profile path, tracker,
+pipeline by step number). It is the LAST message of the run and carries everything the operator must
+see — the readiness table (§8) included — because text written before a tool call is collapsed out of
+view: run `next-steps.mjs` (below) FIRST, then write this message, with no tool call after it. Summarise what was written in two or three lines (profile path, tracker,
 code host, repo counts, projectType), list the remaining **manual** actions (restart Claude Code so
 `.mcp.json` and the settings take effect; any interactive OAuth still pending, e.g. Atlassian), then
 close with what the operator can do now — printed by the script, from the profile and the plugins

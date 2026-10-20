@@ -109,7 +109,7 @@ function main() {
     process.exit(64);
   }
   // A reminder to the agent reading this output: the operator does not see tool output.
-  console.log("<!-- Put the table below in your reply VERBATIM and as the preview of the first option — never a summary. -->");
+  console.log("<!-- Put the table below VERBATIM in your FINAL message of the turn, then the question; no tool call after it (text before a tool call is collapsed out of the operator's view). Never a summary. -->");
   try {
     if (r) process.stdout.write(renderRepos(read(r)));
     if (t) process.stdout.write((r ? "\n" : "") + renderTracker(read(t)));

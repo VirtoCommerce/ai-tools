@@ -64,11 +64,13 @@ PAT, no `az login`, self-diagnostics off; the host's rules win.
    `trust`/`set` commands and wait again), then `normalize-env.mjs` (exit 1 ⇒ STOP).
 4. **Discover repos — ALWAYS** (`node "$VC_RUN" onboard discover-repos --client-vcs …`): derive
    `projectType` + `clientOrg` → `.local-env/repos.json`. Show the FULL table `render-scan.mjs --repos`
-   prints (default branch + PR target per repo); confirm. Ask ONLY on a
+   prints (default branch + PR target per repo) and the question as the turn's LAST message (plain chat —
+   a table above a tool call is collapsed out of view); confirm on the answer. Ask ONLY on a
    genuine ambiguity.
 4b. **Discover tracker — Azure Boards only** (`node "$VC_RUN" onboard discover-tracker --tracker azure …`):
    per-type `states` + a `role→state` map + the bug field contract. Show the FULL status table
-   `render-scan.mjs --tracker` prints (role → state for each work-item type); confirm.
+   `render-scan.mjs --tracker` prints (role → state for each work-item type), again as the turn's last
+   message; confirm on the answer.
 5. **Derive block** (`node "$VC_RUN" onboard derive-context --tracker … --client-vcs …`): auth actually
    present per axis, `contributionMode`, `forkAccount`, `operator`.
 6. Write the profile (`gen-profile.mjs --repos-json … --tracker-json … --runtime-mode plugin` + tracker
