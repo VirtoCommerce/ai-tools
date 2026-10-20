@@ -241,10 +241,10 @@ Ask with **`AskUserQuestion`** — a single question, wording taken **verbatim**
 `reconcile-profile.mjs` `MANAGED_FIELDS.selfDiagnostics.question` so the fresh interview and
 `/project-init --check` never diverge (make the first option the `default`):
 
-> *"Enable vc-fix self-diagnostics for this project? The passive session-telemetry hook
-> records how the plugin's OWN skills ran (to `<project>/.vc-fix/`, gitignored) so
-> `/vc-self-check` can spot plugin quality issues. It never sends anything without a separate
-> consent step and never touches your code."*
+> *"Enable self-diagnostics for this project? A passive hook records how the skills of the
+> installed plugins ran (locally in the project folder, gitignored) so `/vc-self-check` can spot
+> plugin quality issues. It never sends anything without a separate consent step and never touches
+> your code."*
 
 - **Yes (recommended)** → **immediately** write a stub profile carrying just the flag, so
   capture turns on right away (`gen-profile` layers over `PROFILE_DEFAULTS`, so this writes a

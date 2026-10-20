@@ -78,10 +78,10 @@ const MANAGED_FIELDS = [
     default: true,
     validate: (v) => v === true || v === false,
     question:
-      "Enable vc-fix self-diagnostics for this project? The passive session-telemetry hook records how the plugin's OWN skills ran (to <project>/.vc-fix/, gitignored) so /vc-self-check can spot plugin quality issues. It never sends anything without a separate consent step and never touches your code.",
+      "Enable self-diagnostics for this project? A passive hook records how the skills of the installed plugins ran (locally in the project folder, gitignored) so /vc-self-check can spot plugin quality issues. It never sends anything without a separate consent step and never touches your code.",
     options: [
-      { label: "Yes (recommended)", value: true, hint: "record local telemetry to .vc-fix/" },
-      { label: "No", value: false, hint: "hook stays a full no-op — no .vc-fix/" },
+      { label: "Yes (recommended)", value: true, hint: "record local telemetry in the project folder" },
+      { label: "No", value: false, hint: "the hook records nothing" },
     ],
   },
   // NOTE: `feedback` (the UPSTREAM-delivery consent, VCST-5509) is DELIBERATELY NOT a managed
