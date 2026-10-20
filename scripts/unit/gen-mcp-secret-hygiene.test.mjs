@@ -81,8 +81,11 @@ test("#1: on a NORMAL run every operator key survives — permissions.deny inclu
   assert.deepEqual(after.permissions.deny, ["Bash(gh pr merge:*)", "mcp__github__merge_pull_request"]);
   assert.deepEqual(after.permissions.allow, ["Bash(npm test)"]);
   assert.ok(after.hooks?.Stop, "unrelated keys are preserved");
-  // Since VCST-6402 what is merged in is VC_RUN (a path) — never the token in the generator's env.
-  assert.deepEqual(after.env, { VC_RUN: "/stable/vc-run.mjs" });
+  // Since VCST-6402 what is merged in is VC_RUN (a path) — never the token in the generator's env —
+  // plus VC_SECRETS (also a path) when this machine has the vc-secrets shim at its default location.
+  assert.equal(after.env.VC_RUN, "/stable/vc-run.mjs");
+  assert.deepEqual(Object.keys(after.env).filter((k) => k !== "VC_RUN" && k !== "VC_SECRETS"), []);
+  assert.ok(!JSON.stringify(after.env).includes("ghp_survivorcheck12345"), "the token never reaches the settings env");
 }));
 
 // ─── #2 — a safety flag must not invert ───────────────────────────────────────────
