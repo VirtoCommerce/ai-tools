@@ -251,7 +251,14 @@ export function adfText(node) {
   if (Array.isArray(node)) return node.map(adfText).filter(Boolean).join("\n"); // a multi-select custom field
   if (!node || typeof node !== "object") return "";
   if (!node.type && typeof node.value === "string") return node.value; // a select/option custom field: { value }
-  if (node.type === "text") return node.text ?? "";
+  // A link keeps its URL: a pasted PR or commit (an inlineCard, Jira Cloud's default) is what a "fixed in" comment
+  // says, and a link mark's text alone may not name it.
+  if (["inlineCard", "blockCard", "embedCard"].includes(node.type)) return node.attrs?.url ? `${node.attrs.url}${node.type === "inlineCard" ? "" : "\n"}` : "";
+  if (node.type === "text") {
+    const t = node.text ?? "";
+    const href = (node.marks ?? []).find((m) => m.type === "link")?.attrs?.href;
+    return href && href !== t ? `${t} (${href})` : t;
+  }
   if (node.type === "hardBreak") return "\n";
   if (node.type === "mention") return "@mention"; // a person's name is not testing context
   const inner = (node.content ?? []).map(adfText).join(node.type === "tableRow" ? " | " : "");
