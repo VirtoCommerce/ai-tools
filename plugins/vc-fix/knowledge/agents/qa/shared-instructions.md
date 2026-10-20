@@ -249,7 +249,7 @@ Values are loaded by `config.js` from layered files (default `TEST_ENV=vcst`): `
 `vc-fix` reproduces one bug at a time — there's no parallel agent-user pool to coordinate (that's
 full `vc-qa` plugin scope, for concurrent regression suites). Use the credentials above directly.
 
-## Sign-Off Format
+## Sign-Off Format (for Teams / qa-lead SendMessage — a tracker comment is `qa-report`'s)
 
 ```
 Testing Complete: [Feature]

@@ -1,14 +1,4 @@
-<!--
-  /qa-test-fast verdict page — the TEMPLATE. Copy to the scratchpad, fill every {{…}} slot from verdict.md (env, summary, date, counts: summary.json),
-  then publish with the Artifact tool (icon: "checklist"). Rules: verdict.md in this folder §HTML page.
-  - Set data-verdict on <main> to PASS | PASS_WITH_NOTES | FAIL | BLOCKED; the band colours itself.
-  - Chips take data-s = PASS | FAIL | BLOCKED | NOT_RUN, or data-sev = critical | high | medium | low.
-  - Repeat a <tr> / <li> / <figure> per row; delete a section's rows, never the section — an empty
-    section keeps its "none" line so the reader sees it was considered.
-  - Screenshots: at most 4, as data: URIs (the page must stand alone). Everything else is a repo path.
-  - Delete this comment before publishing.
--->
-<title>{{TICKET}} Verdict</title>
+<title>{{TITLE}}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
@@ -93,77 +83,11 @@
   dl.context dt { color: var(--muted); }
   dl.context dd { margin: 0; font-family: var(--mono); font-size: 12.5px; overflow-wrap: anywhere; }
   @media (max-width: 520px) { dl.context { grid-template-columns: 1fr; } dl.context dd { margin-bottom: 6px; } }
+  .ba-before { color: var(--fail); }
+  .ba-after  { color: var(--pass); font-weight: 600; }
+  footer.foot { margin-top: 28px; font-size: 12.5px; }
 </style>
 
-<main class="report" data-verdict="{{VERDICT}}">
-  <header class="band">
-    <div class="eyebrow"><span>{{TICKET}}</span><span>{{ENV}}</span><span>{{DATE}}</span></div>
-    <div class="verdict-row">
-      <span class="verdict">{{VERDICT_LABEL}}</span>
-      <span class="title">{{TICKET_SUMMARY}}</span>
-    </div>
-    <p class="lede">{{ONE_SENTENCE}}</p>
-    <div class="meta">
-      <span>Build <b>{{BUILD}}</b></span>
-      <span>Checklist <b>{{PASSED}}/{{TOTAL}} passed</b></span>
-      <span>Bugs <b>{{BUG_COUNT}}</b></span>
-    </div>
-  </header>
-
-  <section aria-labelledby="h-ac">
-    <h2 id="h-ac">Acceptance criteria</h2>
-    <div class="tally">
-      <span class="chip" data-s="PASS">{{AC_PASS}} PASS</span>
-      <span class="chip" data-s="FAIL">{{AC_FAIL}} FAIL</span>
-      <span class="chip" data-s="BLOCKED">{{AC_BLOCKED}} BLOCKED</span>
-    </div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>AC</th><th>What was checked</th><th>Result</th><th>Evidence</th></tr></thead>
-        <tbody>
-          <tr><td class="id">{{AC_ID}}</td><td>{{AC_TEXT}}</td><td><span class="chip" data-s="{{AC_RESULT}}">{{AC_RESULT}}</span></td><td class="mono">{{AC_EVIDENCE}}</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <section aria-labelledby="h-bugs">
-    <h2 id="h-bugs">Bugs</h2>
-    <ul class="rows">
-      <li><span class="chip" data-sev="{{SEV}}">{{SEV}}</span><span class="grow">{{BUG_TITLE}}</span><span class="mono muted">{{BUG_REPORT_PATH}} · {{TRACKER_KEY_OR_NOT_FILED}}</span></li>
-    </ul>
-    <!-- no bugs: <p class="none">No product defects found.</p> -->
-  </section>
-
-  <section aria-labelledby="h-untested">
-    <h2 id="h-untested">Not tested, and why</h2>
-    <ul class="rows">
-      <li><span class="grow">{{ITEM}}</span><span class="muted">{{REASON}}</span></li>
-    </ul>
-    <!-- nothing skipped: <p class="none">Every in-scope item ran.</p> -->
-  </section>
-
-  <section aria-labelledby="h-shots">
-    <h2 id="h-shots">Evidence</h2>
-    <div class="shots">
-      <figure><img src="{{DATA_URI}}" alt="{{SHOT_ALT}}"><figcaption>{{SHOT_CAPTION}}</figcaption></figure>
-    </div>
-  </section>
-
-  <section aria-labelledby="h-data">
-    <h2 id="h-data">Test data</h2>
-    <p class="lede">Created <b>{{CREATED}}</b> <code>AGENT-TEST-</code> entities, removed <b>{{REMOVED}}</b>. Settings restored and re-read: {{SETTINGS_OR_NONE}}.</p>
-  </section>
-
-  <section aria-labelledby="h-context">
-    <h2 id="h-context">Context used</h2>
-    <dl class="context">
-      <dt>Test model</dt><dd>{{MODEL_PATH}}</dd>
-      <dt>Checklist</dt><dd>{{CHECKLIST_PATH}}</dd>
-      <dt>Domain map</dt><dd>{{DOMAIN_MAP_STATE}}</dd>
-      <dt>Mind map</dt><dd>{{MIND_MAP_OR_SKIPPED}}</dd>
-      <dt>Exploratory</dt><dd>{{SBTM_PATH_OR_REASON}}</dd>
-      <dt>PRs</dt><dd>{{PR_LIST}}</dd>
-    </dl>
-  </section>
+<main class="report" data-verdict="{{TONE}}">
+{{BODY}}
 </main>

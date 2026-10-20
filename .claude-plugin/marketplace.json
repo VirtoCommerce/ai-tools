@@ -10,7 +10,7 @@
     {
       "name": "vc-fix",
       "source": "./plugins/vc-fix",
-      "description": "Bug lifecycle for Virto Commerce QA — project setup, bug filing, autonomous fixing, fix verification, online bug monitoring, and self-diagnostics (/vc-self-check). Self-contained plugin (10 agents, 16 skills, 8 commands)."
+      "description": "Bug lifecycle for Virto Commerce QA — project setup, bug filing, autonomous fixing, fix verification, online bug monitoring, self-diagnostics (/vc-self-check), and one renderer for every result comment and report page (/vc-fix:qa-report). Self-contained plugin (10 agents, 17 skills, 8 commands)."
     },
     {
       "name": "vc-perf",
