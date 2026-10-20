@@ -1,0 +1,9 @@
+{"capturedAt":"2026-10-14","env":"vcptcore_qa1","user":"{{USER_EMAIL}} (userId 8955c03c-190f-4c2e-8cd3-d85cb1780f56)",
+ "defaultCartBefore":{"id":"84eed7e4-8e95-40f1-8788-94c626118899","name":"default","lines":[{"lineId":"47a3d086-28d6-4ddc-a5c2-d4fe18a21f37","sku":"553390824","qty":1}]},
+ "otherCarts":"14 named AGENT-TEST-6286*/vcst5995-rerepro carts, untouched",
+ "xapiProductPrices":{
+  "AGENT-TEST-CFG-014-20260518 (Config-Sale-Bike)":{"list":250,"sale":200,"actual":200,"discountAmount":50,
+    "section Handlebars options":{"Drop Bar":{"list":100,"sale":80},"Standard":{"list":50,"sale":40}}},
+  "AGENT-TEST-CFG-012-20260518 (Config-Bike)":{"list":100,"actual":100,"discountAmount":0,
+    "options":{"Racing Seat":95,"Premium Seat":45,"Basic Seat":15},"note":"no discount currently applies"}},
+ "promotionDiscountOnAnyCfgProduct":"none — all AGENT-TEST-CFG-* show actual==sale; only sale-price differences exist (CFG-014)"}

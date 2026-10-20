@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE cXML SYSTEM "http://xml.cxml.org/schemas/cXML/1.2.041/cXML.dtd">
+<cXML payloadID="639275608481803531.aaec6d80d7194c7aa16696750057e422@virtocommerce.com" timestamp="2026-10-14T07:47:28+00:00">
+  <Header>
+    <From>
+      <Credential domain="NetworkId">
+        <Identity>Virto</Identity>
+      </Credential>
+    </From>
+    <To>
+      <Credential domain="NetworkId">
+        <Identity>buyer-company</Identity>
+      </Credential>
+    </To>
+    <Sender>
+      <Credential domain="NetworkId">
+        <Identity>Virto</Identity>
+      </Credential>
+      <UserAgent>Virto Commerce Punchout</UserAgent>
+    </Sender>
+  </Header>
+  <Message>
+    <PunchOutOrderMessage>
+      <BuyerCookie>AGENT-4a-A-A2-1791964042257</BuyerCookie>
+      <PunchOutOrderMessageHeader operationAllowed="create">
+        <Total>
+          <Money currency="USD">152.00</Money>
+        </Total>
+      </PunchOutOrderMessageHeader>
+      <ItemIn quantity="1">
+        <ItemID>
+          <SupplierPartID>553390824</SupplierPartID>
+          <SupplierPartAuxiliaryID>47a3d086-28d6-4ddc-a5c2-d4fe18a21f37</SupplierPartAuxiliaryID>
+        </ItemID>
+        <ItemDetail>
+          <UnitPrice>
+            <Money currency="USD">152.00</Money>
+          </UnitPrice>
+          <Description xml:lang="en-US">Epson Expression Premium XP-820 Wireless Color Photo Printer/Copier/Scanner/Fax Machine</Description>
+          <UnitOfMeasure>EA</UnitOfMeasure>
+          <Classification domain="Custom">00000000</Classification>
+        </ItemDetail>
+      </ItemIn>
+    </PunchOutOrderMessage>
+  </Message>
+</cXML>

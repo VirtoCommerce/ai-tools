@@ -1,0 +1,103 @@
+{
+ "carts": {
+  "at": "2026-10-20T11:38:03.830Z",
+  "userId": "ab33e096-ad35-4636-ad61-0af318f16d56",
+  "carts": [
+   {
+    "name": "default",
+    "type": null,
+    "id": "6f55628f-6262-4fd9-9b2f-b4203bb0bbcb",
+    "firstLineCreated": "2026-10-20T11:37:25.3530854Z",
+    "lines": [
+     "AGENT-TEST-PO-PLAIN-001x1"
+    ]
+   }
+  ]
+ },
+ "session": {
+  "cookie": "AGENT-R2-A4-1792496283832",
+  "status": "<Status code=\"200\" text=\"OK\" />"
+ },
+ "firstReturn": {
+  "http": 200,
+  "ms": 280,
+  "errorCode": null,
+  "url": "https://punchoutcommerce.com/tools/cxml-punchout-return",
+  "formField": "cxml-urlencoded",
+  "cxmlSha": "8732b250cc8d029f",
+  "cxmlLen": 1576,
+  "payloadID": "639280930951676462.c0625a3ef812473facd8efb53154c3fc@virtocommerce.com",
+  "skus": [
+   "AGENT-TEST-PO-PLAIN-001"
+  ],
+  "qtys": [
+   "1"
+  ],
+  "total": "12.00",
+  "errors": null
+ },
+ "otherStore": "New-super",
+ "results": {
+  "a_password": {
+   "http": 200,
+   "ms": 198,
+   "errorCode": "SessionNotFound",
+   "url": null,
+   "formField": null,
+   "cxmlSha": null,
+   "cxmlLen": null,
+   "payloadID": null,
+   "skus": null,
+   "qtys": null,
+   "total": null,
+   "errors": null
+  },
+  "b_anonymous": {
+   "http": 200,
+   "ms": 254,
+   "errorCode": "SessionNotFound",
+   "url": null,
+   "formField": null,
+   "cxmlSha": null,
+   "cxmlLen": null,
+   "payloadID": null,
+   "skus": null,
+   "qtys": null,
+   "total": null,
+   "errors": null
+  },
+  "c_punchoutToken_otherStoreInCall": {
+   "http": 200,
+   "ms": 188,
+   "errorCode": "SessionNotFound",
+   "url": null,
+   "formField": null,
+   "cxmlSha": null,
+   "cxmlLen": null,
+   "payloadID": null,
+   "skus": null,
+   "qtys": null,
+   "total": null,
+   "errors": null
+  },
+  "d_redeem_sameSessionToken_otherStore": "token refused: po token 400 invalid_grant",
+  "control_ownerReplay": {
+   "http": 200,
+   "ms": 250,
+   "errorCode": null,
+   "url": "https://punchoutcommerce.com/tools/cxml-punchout-return",
+   "formField": "cxml-urlencoded",
+   "cxmlSha": "8732b250cc8d029f",
+   "cxmlLen": 1576,
+   "payloadID": "639280930951676462.c0625a3ef812473facd8efb53154c3fc@virtocommerce.com",
+   "skus": [
+    "AGENT-TEST-PO-PLAIN-001"
+   ],
+   "qtys": [
+    "1"
+   ],
+   "total": "12.00",
+   "errors": null
+  }
+ }
+}

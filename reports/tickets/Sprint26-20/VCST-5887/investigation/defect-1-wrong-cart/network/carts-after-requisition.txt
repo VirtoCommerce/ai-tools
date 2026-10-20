@@ -1,0 +1,8 @@
+buyer ab33e096-ad35-4636-ad61-0af318f16d56 org 7c901bc8-e83b-4953-a77c-bbf7d3512d78
+carts total 2
+   AGENT-TEST-Other-Channel||USD|a22dc6c3-0687-40a0-9717-f88a3e639a6a|org=7c901bc8-e83b-4953-a77c-bbf7d3512d78|AGENT-TEST-PO-PLAIN-001x2@12
+   default||USD|1639b85b-1da6-432c-80bf-255a840dffc0|org=7c901bc8-e83b-4953-a77c-bbf7d3512d78|AGENT-TEST-PO-UOM-001x3@24
+  REST 2026-10-14T11:25:46.3596099Z default 1639b85b-1da6-432c-80bf-255a840dffc0 AGENT-TEST-PO-UOM-001x3
+  REST 2026-10-14T11:25:09.4968493Z AGENT-TEST-Other-Channel a22dc6c3-0687-40a0-9717-f88a3e639a6a AGENT-TEST-PO-PLAIN-001x2
+Query.cart(cartName=undefined) → {"id":"a22dc6c3-0687-40a0-9717-f88a3e639a6a","name":"AGENT-TEST-Other-Channel","items":[{"sku":"AGENT-TEST-PO-PLAIN-001","quantity":2}]}
+Query.cart(cartName=default) → {"id":"1639b85b-1da6-432c-80bf-255a840dffc0","name":"default","items":[{"sku":"AGENT-TEST-PO-UOM-001","quantity":3}]}

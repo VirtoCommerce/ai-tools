@@ -1,0 +1,417 @@
+[
+ {
+  "t": "2026-10-14T17:29:52.253Z",
+  "op": "GetShortCart",
+  "varsHasCartId": false,
+  "cartId": null,
+  "cartName": null,
+  "vars": {
+   "storeId": "B2B-store",
+   "cultureName": "en-US",
+   "currencyCode": "USD",
+   "userId": "c5aa1f77-2731-4c9d-983f-e6726b22483d"
+  },
+  "respCart": null
+ },
+ {
+  "t": "2026-10-14T17:30:16.321Z",
+  "op": "GetShortCart",
+  "varsHasCartId": false,
+  "cartId": null,
+  "cartName": null,
+  "vars": {
+   "storeId": "B2B-store",
+   "cultureName": "en-US",
+   "currencyCode": "USD",
+   "userId": "922da8f6-dbc1-4d2e-b59a-1577d3893eaf"
+  },
+  "respCart": {
+   "key": "cart",
+   "id": "05aaefca-5d09-4c28-9b40-218d7be00cae",
+   "items": [
+    "AGENT-TEST-PO-PLAIN-001x2"
+   ],
+   "shipCount": 0
+  }
+ },
+ {
+  "t": "2026-10-14T17:30:21.657Z",
+  "op": "GetShortCart",
+  "varsHasCartId": false,
+  "cartId": null,
+  "cartName": null,
+  "vars": {
+   "storeId": "B2B-store",
+   "cultureName": "en-US",
+   "currencyCode": "USD",
+   "userId": "922da8f6-dbc1-4d2e-b59a-1577d3893eaf"
+  },
+  "respCart": {
+   "key": "cart",
+   "id": "05aaefca-5d09-4c28-9b40-218d7be00cae",
+   "items": [
+    "AGENT-TEST-PO-PLAIN-001x2"
+   ],
+   "shipCount": 0
+  }
+ },
+ {
+  "t": "2026-10-14T17:30:21.665Z",
+  "op": "GetFullCart",
+  "varsHasCartId": false,
+  "cartId": null,
+  "cartName": null,
+  "vars": {
+   "storeId": "B2B-store",
+   "cultureName": "en-US",
+   "currencyCode": "USD",
+   "userId": "922da8f6-dbc1-4d2e-b59a-1577d3893eaf"
+  },
+  "respCart": {
+   "key": "cart",
+   "id": "05aaefca-5d09-4c28-9b40-218d7be00cae",
+   "items": [
+    "AGENT-TEST-PO-PLAIN-001x2"
+   ],
+   "shipCount": 0
+  }
+ },
+ {
+  "t": "2026-10-14T17:30:22.497Z",
+  "op": "AddOrUpdateCartShipment",
+  "varsHasCartId": false,
+  "cartId": null,
+  "cartName": null,
+  "vars": {
+   "command": {
+    "shipment": {},
+    "storeId": "B2B-store",
+    "currencyCode": "USD",
+    "cultureName": "en-US",
+    "userId": "922da8f6-dbc1-4d2e-b59a-1577d3893eaf"
+   },
+   "skipQuery": false
+  },
+  "respCart": {
+   "key": "addOrUpdateCartShipment",
+   "id": "01d964d6-6679-417d-96dd-73a7df03f8d5",
+   "items": [
+    "AGENT-TEST-PO-UOM-001x3"
+   ],
+   "shipCount": 1,
+   "ship0": {
+    "addr": null,
+    "method": null
+   }
+  }
+ },
+ {
+  "t": "2026-10-14T17:30:23.640Z",
+  "op": "AddOrUpdateCartPayment",
+  "varsHasCartId": false,
+  "cartId": null,
+  "cartName": null,
+  "vars": {
+   "command": {
+    "payment": {},
+    "storeId": "B2B-store",
+    "currencyCode": "USD",
+    "cultureName": "en-US",
+    "userId": "922da8f6-dbc1-4d2e-b59a-1577d3893eaf"
+   },
+   "skipQuery": false
+  },
+  "respCart": {
+   "key": "addOrUpdateCartPayment",
+   "id": "01d964d6-6679-417d-96dd-73a7df03f8d5",
+   "items": [
+    "AGENT-TEST-PO-UOM-001x3"
+   ],
+   "shipCount": 1,
+   "ship0": {
+    "addr": null,
+    "method": null
+   }
+  }
+ },
+ {
+  "t": "2026-10-14T17:34:03.699Z",
+  "op": "AddOrUpdateCartShipment",
+  "varsHasCartId": false,
+  "cartId": null,
+  "cartName": null,
+  "vars": {
+   "command": {
+    "shipment": {
+     "deliveryAddress": {
+      "name": null,
+      "organization": "AGENT-TEST-Org-AcmeCorp-20260310",
+      "firstName": "Test",
+      "lastName": "Admin",
+      "line1": "123 Test Street",
+      "line2": null,
+      "city": "New York",
+      "countryCode": "USA",
+      "countryName": "United States",
+      "regionId": "NY",
+      "regionName": "New York",
+      "postalCode": "10001",
+      "phone": "+1-555-AGENT-000",
+      "email": "agent-test-org-acmecorp-20260310@test-agent.com",
+      "addressType": 2
+     }
+    },
+    "storeId": "B2B-store",
+    "currencyCode": "USD",
+    "cultureName": "en-US",
+    "userId": "922da8f6-dbc1-4d2e-b59a-1577d3893eaf"
+   },
+   "skipQuery": false
+  },
+  "respCart": {
+   "key": "addOrUpdateCartShipment",
+   "id": "01d964d6-6679-417d-96dd-73a7df03f8d5",
+   "items": [
+    "AGENT-TEST-PO-UOM-001x3"
+   ],
+   "shipCount": 2,
+   "ship0": {
+    "addr": null,
+    "method": null
+   }
+  }
+ },
+ {
+  "t": "2026-10-14T17:34:40.117Z",
+  "op": "AddOrUpdateCartShipment",
+  "varsHasCartId": false,
+  "cartId": null,
+  "cartName": null,
+  "vars": {
+   "command": {
+    "shipment": {
+     "shipmentMethodCode": "FixedRate",
+     "shipmentMethodOption": "Ground",
+     "price": 10
+    },
+    "storeId": "B2B-store",
+    "currencyCode": "USD",
+    "cultureName": "en-US",
+    "userId": "922da8f6-dbc1-4d2e-b59a-1577d3893eaf"
+   },
+   "skipQuery": false
+  },
+  "respCart": {
+   "key": "addOrUpdateCartShipment",
+   "id": "01d964d6-6679-417d-96dd-73a7df03f8d5",
+   "items": [
+    "AGENT-TEST-PO-UOM-001x3"
+   ],
+   "shipCount": 3,
+   "ship0": {
+    "addr": null,
+    "method": null
+   }
+  }
+ },
+ {
+  "t": "2026-10-14T17:35:08.676Z",
+  "op": "AddOrUpdateCartPayment",
+  "varsHasCartId": false,
+  "cartId": null,
+  "cartName": null,
+  "vars": {
+   "command": {
+    "payment": {
+     "paymentGatewayCode": "DefaultManualPaymentMethod"
+    },
+    "storeId": "B2B-store",
+    "currencyCode": "USD",
+    "cultureName": "en-US",
+    "userId": "922da8f6-dbc1-4d2e-b59a-1577d3893eaf"
+   },
+   "skipQuery": false
+  },
+  "respCart": {
+   "key": "addOrUpdateCartPayment",
+   "id": "01d964d6-6679-417d-96dd-73a7df03f8d5",
+   "items": [
+    "AGENT-TEST-PO-UOM-001x3"
+   ],
+   "shipCount": 3,
+   "ship0": {
+    "addr": null,
+    "method": null
+   }
+  }
+ },
+ {
+  "t": "2026-10-14T17:35:26.923Z",
+  "op": "GetShortCart",
+  "varsHasCartId": false,
+  "cartId": null,
+  "cartName": null,
+  "vars": {
+   "storeId": "B2B-store",
+   "cultureName": "en-US",
+   "currencyCode": "USD",
+   "userId": "922da8f6-dbc1-4d2e-b59a-1577d3893eaf"
+  },
+  "respCart": {
+   "key": "cart",
+   "id": "05aaefca-5d09-4c28-9b40-218d7be00cae",
+   "items": [
+    "AGENT-TEST-PO-PLAIN-001x2"
+   ],
+   "shipCount": 0
+  }
+ },
+ {
+  "t": "2026-10-14T17:35:26.932Z",
+  "op": "GetFullCart",
+  "varsHasCartId": false,
+  "cartId": null,
+  "cartName": null,
+  "vars": {
+   "storeId": "B2B-store",
+   "cultureName": "en-US",
+   "currencyCode": "USD",
+   "userId": "922da8f6-dbc1-4d2e-b59a-1577d3893eaf"
+  },
+  "respCart": {
+   "key": "cart",
+   "id": "05aaefca-5d09-4c28-9b40-218d7be00cae",
+   "items": [
+    "AGENT-TEST-PO-PLAIN-001x2"
+   ],
+   "shipCount": 0
+  }
+ },
+ {
+  "t": "2026-10-14T17:35:27.879Z",
+  "op": "AddOrUpdateCartShipment",
+  "varsHasCartId": false,
+  "cartId": null,
+  "cartName": null,
+  "vars": {
+   "command": {
+    "shipment": {},
+    "storeId": "B2B-store",
+    "currencyCode": "USD",
+    "cultureName": "en-US",
+    "userId": "922da8f6-dbc1-4d2e-b59a-1577d3893eaf"
+   },
+   "skipQuery": false
+  },
+  "respCart": {
+   "key": "addOrUpdateCartShipment",
+   "id": "01d964d6-6679-417d-96dd-73a7df03f8d5",
+   "items": [
+    "AGENT-TEST-PO-UOM-001x3"
+   ],
+   "shipCount": 4,
+   "ship0": {
+    "addr": null,
+    "method": null
+   }
+  }
+ },
+ {
+  "t": "2026-10-14T17:35:28.985Z",
+  "op": "AddOrUpdateCartPayment",
+  "varsHasCartId": false,
+  "cartId": null,
+  "cartName": null,
+  "vars": {
+   "command": {
+    "payment": {},
+    "storeId": "B2B-store",
+    "currencyCode": "USD",
+    "cultureName": "en-US",
+    "userId": "922da8f6-dbc1-4d2e-b59a-1577d3893eaf"
+   },
+   "skipQuery": false
+  },
+  "respCart": {
+   "key": "addOrUpdateCartPayment",
+   "id": "01d964d6-6679-417d-96dd-73a7df03f8d5",
+   "items": [
+    "AGENT-TEST-PO-UOM-001x3"
+   ],
+   "shipCount": 4,
+   "ship0": {
+    "addr": null,
+    "method": null
+   }
+  }
+ },
+ {
+  "t": "2026-10-14T17:35:51.215Z",
+  "op": "AddOrUpdateCartShipment",
+  "varsHasCartId": false,
+  "cartId": null,
+  "cartName": null,
+  "vars": {
+   "command": {
+    "shipment": {
+     "deliveryAddress": {
+      "name": null,
+      "organization": "AGENT-TEST-Org-AcmeCorp-20260310",
+      "firstName": "Test",
+      "lastName": "Admin",
+      "line1": "123 Test Street",
+      "line2": null,
+      "city": "New York",
+      "countryCode": "USA",
+      "countryName": "United States",
+      "regionId": "NY",
+      "regionName": "New York",
+      "postalCode": "10001",
+      "phone": "+1-555-AGENT-000",
+      "email": "agent-test-org-acmecorp-20260310@test-agent.com",
+      "addressType": 2
+     }
+    },
+    "storeId": "B2B-store",
+    "currencyCode": "USD",
+    "cultureName": "en-US",
+    "userId": "922da8f6-dbc1-4d2e-b59a-1577d3893eaf"
+   },
+   "skipQuery": false
+  },
+  "respCart": {
+   "key": "addOrUpdateCartShipment",
+   "id": "01d964d6-6679-417d-96dd-73a7df03f8d5",
+   "items": [
+    "AGENT-TEST-PO-UOM-001x3"
+   ],
+   "shipCount": 5,
+   "ship0": {
+    "addr": null,
+    "method": null
+   }
+  }
+ },
+ {
+  "t": "2026-10-14T17:36:21.400Z",
+  "op": "ClearCart",
+  "varsHasCartId": false,
+  "cartId": null,
+  "cartName": null,
+  "vars": {
+   "command": {
+    "storeId": "B2B-store",
+    "currencyCode": "USD",
+    "cultureName": "en-US",
+    "userId": "922da8f6-dbc1-4d2e-b59a-1577d3893eaf"
+   },
+   "skipQuery": false
+  },
+  "respCart": {
+   "key": "clearCart",
+   "id": "01d964d6-6679-417d-96dd-73a7df03f8d5",
+   "items": [],
+   "shipCount": 0
+  }
+ }
+]

@@ -1,0 +1,13 @@
+{
+ "at": "2026-10-20T10:06:55.898Z",
+ "userId": "ab33e096-ad35-4636-ad61-0af318f16d56",
+ "carts": [
+  {
+   "name": "default",
+   "type": null,
+   "id": "f11f3100-c0da-4808-bc96-87f5dac5aed6",
+   "total": "$0.00",
+   "lines": []
+  }
+ ]
+}

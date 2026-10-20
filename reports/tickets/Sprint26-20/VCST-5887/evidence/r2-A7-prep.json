@@ -1,0 +1,42 @@
+{
+ "carts": {
+  "at": "2026-10-20T11:41:47.957Z",
+  "userId": "ab33e096-ad35-4636-ad61-0af318f16d56",
+  "carts": [
+   {
+    "name": "default",
+    "type": null,
+    "id": "511348db-4a50-41de-8039-afcdd6c6b0ba",
+    "firstLineCreated": "2026-10-20T11:41:57.760709Z",
+    "lines": [
+     "AGENT-TEST-PO-PLAIN-001x1"
+    ]
+   }
+  ]
+ },
+ "S1": {
+  "cookie": "AGENT-R2-A7-S1-1792496507959",
+  "firstCall": {
+   "http": 200,
+   "ms": 632,
+   "errorCode": null,
+   "url": "https://punchoutcommerce.com/tools/cxml-punchout-return",
+   "formField": "cxml-urlencoded",
+   "cxmlSha": "f0ec9a694db9c4a5",
+   "cxmlLen": 1579,
+   "payloadID": "639280933195628142.d7511ad563f14f9899ac516864d71eb5@virtocommerce.com",
+   "skus": [
+    "AGENT-TEST-PO-PLAIN-001"
+   ],
+   "qtys": [
+    "1"
+   ],
+   "total": "12.00",
+   "errors": null
+  }
+ },
+ "S2": {
+  "cookie": "AGENT-R2-A7-S2-1792496509195",
+  "status": "<Status code=\"200\" text=\"OK\" />"
+ }
+}

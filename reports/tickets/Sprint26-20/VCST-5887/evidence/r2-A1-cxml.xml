@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE cXML SYSTEM "http://xml.cxml.org/schemas/cXML/1.2.041/cXML.dtd">
+<cXML payloadID="639280930024021081.c95cb2e33c5b4287b0daeda80154dc98@virtocommerce.com" timestamp="2026-10-20T11:36:42+00:00">
+  <Header>
+    <From>
+      <Credential domain="NetworkId">
+        <Identity>supplier</Identity>
+      </Credential>
+    </From>
+    <To>
+      <Credential domain="NetworkId">
+        <Identity>buyer-co</Identity>
+      </Credential>
+    </To>
+    <Sender>
+      <Credential domain="NetworkId">
+        <Identity>supplier</Identity>
+      </Credential>
+      <UserAgent>Virto Commerce Punchout</UserAgent>
+    </Sender>
+  </Header>
+  <Message>
+    <PunchOutOrderMessage>
+      <BuyerCookie>AGENT-R2-A1-1792496186050</BuyerCookie>
+      <PunchOutOrderMessageHeader operationAllowed="create">
+        <Total>
+          <Money currency="USD">20.00</Money>
+        </Total>
+      </PunchOutOrderMessageHeader>
+      <ItemIn quantity="2">
+        <ItemID>
+          <SupplierPartID>6051795</SupplierPartID>
+          <SupplierPartAuxiliaryID>cb5449f5-4328-4b1e-9168-cf1d0891177b</SupplierPartAuxiliaryID>
+        </ItemID>
+        <ItemDetail>
+          <UnitPrice>
+            <Money currency="USD">10.00</Money>
+          </UnitPrice>
+          <Description xml:lang="en-US">LAYS CHIPS PAPRIKA BOX 20X40GR</Description>
+          <UnitOfMeasure>EA</UnitOfMeasure>
+          <Classification domain="Custom">00000000</Classification>
+        </ItemDetail>
+      </ItemIn>
+    </PunchOutOrderMessage>
+  </Message>
+</cXML>

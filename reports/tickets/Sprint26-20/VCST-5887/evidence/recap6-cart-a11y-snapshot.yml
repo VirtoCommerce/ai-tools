@@ -1,0 +1,228 @@
+- main [ref=f8e192] [box=0,168,1903,1639]:
+  - generic [ref=f8e198] [box=250,192,1404,1579]:
+    - navigation "Breadcrumbs navigation" [ref=f8e199] [box=250,192,1404,18]:
+      - list [ref=f8e200] [box=250,192,1404,18]:
+        - listitem [ref=f8e201] [box=250,192,37,18]:
+          - link "Home" [ref=f8e202] [cursor=pointer] [box=250,193,37,17]:
+            - /url: /
+        - listitem [aria-hidden] [ref=f8e203] [box=287,192,21,18]: /
+        - listitem [ref=f8e204] [box=308,192,28,18]: Cart
+    - heading "Cart" [level=1] [ref=f8e205] [box=250,210,1404,45]
+    - generic [ref=f8e207] [box=250,275,1404,1496]:
+      - generic [ref=f8e209] [box=250,275,1096,1496]:
+        - generic [ref=f8e212] [box=250,276,1094,338]:
+          - generic [ref=f8e214] [box=278,292,1038,244]:
+            - generic [ref=f8e215] [box=278,292,1038,32]: "Vendor: N/A"
+            - generic [ref=f8e219] [box=278,336,1038,200]:
+              - generic [ref=f8e220] [box=279,337,1037,44]:
+                - checkbox "Toggle vendor select" [checked] [ref=f8e223] [box=294,346,1,1]
+                - generic [ref=f8e225] [box=327,350,297,18]: Product
+                - generic [ref=f8e226] [box=636,350,190,18]: Properties
+                - generic [ref=f8e227] [box=838,350,132,18]: Price per item
+                - generic [ref=f8e228] [box=982,350,128,18]: Quantity
+                - generic [ref=f8e230] [box=1122,350,138,18]: Total
+              - generic [ref=f8e233] [box=295,397,1005,70]:
+                - checkbox "Toggle vendor select" [checked] [ref=f8e236] [box=294,420,1,1]
+                - img "Fanta Mango Soda 6x330ml" [ref=f8e239] [box=327,400,64,64]
+                - generic [ref=f8e240] [box=0,0,0,0]:
+                  - generic [ref=f8e241] [box=403,403,219,58]:
+                    - link "Fanta Mango Soda 6x330ml" [ref=f8e471] [cursor=pointer] [box=403,403,219,19]:
+                      - /url: /fanta-mango-soda-6x330ml
+                    - button "Save for later" [ref=f8e245] [cursor=pointer] [box=403,430,126,31]
+                  - generic [ref=f8e250] [box=634,405,190,54]:
+                    - generic [ref=f8e251] [box=634,405,190,18]:
+                      - generic [ref=f8e252] [box=634,405,32,18]: Brand
+                      - generic [ref=f8e254] [box=793,405,31,18]: Fanta
+                    - generic [ref=f8e255] [box=634,423,190,18]:
+                      - generic [ref=f8e256] [box=634,423,62,18]: original_sku
+                      - generic [ref=f8e258] [box=775,423,49,18]: "0003420"
+                    - generic [ref=f8e259] [box=634,441,190,18]:
+                      - generic [ref=f8e260] [box=634,441,70,18]: product_type
+                      - generic [ref=f8e262] [box=773,441,51,18]: Softdrink
+                  - generic [ref=f8e263] [box=836,423,132,19]: $89.00
+                  - generic [ref=f8e265] [box=0,0,0,0]:
+                    - generic [ref=f8e267] [box=980,397,128,70]:
+                      - generic [ref=f8e270] [box=980,397,128,38]:
+                        - button "Decrease quantity" [disabled] [ref=f8e272] [box=983,400,32,32]
+                        - spinbutton "Product quantity" [ref=f8e275] [box=1016,401,56,30]: "1"
+                        - button "Increase quantity" [ref=f8e277] [cursor=pointer] [box=1073,400,32,32]
+                      - generic "In stock" [ref=f8e284] [box=1018,443,53,24]: "435"
+                    - generic [ref=f8e288] [box=1120,422,138,21]: $89.00
+                  - button "Remove from cart" [ref=f8e290] [cursor=pointer] [box=1270,413,38,38]
+              - generic [ref=f8e293] [box=279,483,1037,52]:
+                - button "Remove selected" [ref=f8e294] [cursor=pointer] [box=291,494,118,31]
+                - generic [ref=f8e297] [box=1197,494,107,31]:
+                  - generic [ref=f8e298] [box=1197,503,49,14]: "Subtotal:"
+                  - generic [ref=f8e299] [box=1254,500,50,20]: $89.00
+          - button "Clear cart" [ref=f8e301] [cursor=pointer] [box=1224,556,93,37]
+        - generic [ref=f8e304] [box=250,634,1096,202]:
+          - generic [ref=f8e305] [box=250,635,1094,70]: Shipping details
+          - generic "Shipping details" [ref=f8e312] [box=250,705,1094,130]:
+            - generic [ref=f8e313] [box=278,721,1038,94]:
+              - generic [ref=f8e314] [box=278,721,240,94]:
+                - generic [ref=f8e315] [box=278,721,240,20]: Delivery option
+                - generic [ref=f8e316] [box=278,743,240,72]:
+                  - button "Pickup" [ref=f8e488] [cursor=pointer] [box=295,760,93,38]
+                  - button "Shipping" [pressed] [ref=f8e496] [cursor=pointer] [box=396,760,105,38]
+              - generic [ref=f8e317] [box=550,721,767,94]:
+                - generic [ref=f8e318] [box=550,721,487,94]:
+                  - generic [ref=f8e319] [box=550,721,487,20]: Shipping address*
+                  - paragraph [ref=f8e322] [box=563,770,462,19]:
+                    - text: Please
+                    - button "select a shipping address" [ref=f8e323] [cursor=pointer] [box=605,770,151,19]
+                - generic [ref=f8e324] [box=1061,721,256,94]:
+                  - generic [ref=f8e325] [box=1061,721,256,20]: Delivery method*
+                  - button "Delivery method" [ref=f8e329] [cursor=pointer] [box=1061,743,256,72]:
+                    - generic [ref=f8e330] [box=1062,744,228,70]: Select a delivery method
+        - generic [ref=f8e337] [box=250,856,1096,251]:
+          - generic [ref=f8e338] [box=250,857,1094,70]: Payment details
+          - generic "Payment details" [ref=f8e345] [box=250,927,1094,179]:
+            - generic [ref=f8e346] [box=278,943,1038,143]:
+              - generic [ref=f8e347] [box=278,943,604,143]:
+                - generic [ref=f8e348] [box=278,943,604,20]: Billing address*
+                - generic [ref=f8e349] [box=278,965,604,121]:
+                  - generic [ref=f8e351] [cursor=pointer] [box=291,977,182,20]:
+                    - checkbox "billingAddressEqualsShipping" [checked] [ref=f8e352] [box=290,976,1,1]
+                    - generic [ref=f8e354] [box=319,977,154,20]: Same as shipping address
+                  - paragraph [ref=f8e358] [box=291,1041,578,18]: Please select a shipping address
+              - generic [ref=f8e360] [box=914,943,403,96]:
+                - generic [ref=f8e361] [box=914,943,403,20]: Payment method*
+                - button "Payment method" [ref=f8e365] [cursor=pointer] [box=914,965,403,74]:
+                  - generic [ref=f8e366] [box=915,965,375,72]: Select a payment method
+        - generic [ref=f8e373] [box=250,1127,1096,229]:
+          - generic [ref=f8e374] [box=250,1128,1094,70]: Order comment
+          - generic "Order comment" [ref=f8e387] [box=250,1198,1094,158]:
+            - generic [ref=f8e388] [box=278,1214,1038,122]:
+              - textbox "Enter a value" [ref=f8e389] [box=278,1214,1038,106]
+              - generic [ref=f8e390] [box=278,1323,1038,12]: 0 / 1000
+        - generic [ref=f8e509] [box=250,1376,1096,395]:
+          - generic [ref=f8e510] [box=250,1377,1094,70]: Recently browsed
+          - generic "Recently browsed" [ref=f8e523] [box=250,1447,1094,323]:
+            - generic [ref=f8e525] [box=278,1463,1038,287]:
+              - generic [ref=f8e527] [box=278,1463,153,287]:
+                - img "AGENT-TEST-Config-Sale-Bike-20260518" [ref=f8e531] [box=279,1464,151,135]
+                - generic [ref=f8e532] [box=0,0,0,0]:
+                  - link "AGENT-TEST-Config-Sale-Bike-20260518" [ref=f8e534] [cursor=pointer] [box=278,1615,153,33]:
+                    - /url: /agent-test-config-sale-bike-20260518
+                  - generic [ref=f8e536] [box=278,1660,98,24]:
+                    - generic [ref=f8e537] [box=278,1667,28,14]: From
+                    - text: $200.00
+                  - link "Customize" [ref=f8e539] [cursor=pointer] [box=278,1696,153,37]:
+                    - /url: /agent-test-config-sale-bike-20260518
+              - generic [ref=f8e549] [box=455,1463,153,287]:
+                - img "AGENT-TEST-Two-Req-Siblings-20260519" [ref=f8e553] [box=456,1464,151,135]
+                - generic [ref=f8e554] [box=0,0,0,0]:
+                  - link "AGENT-TEST-Two-Req-Siblings-20260519" [ref=f8e556] [cursor=pointer] [box=455,1615,153,33]:
+                    - /url: /agent-test-two-req-siblings-20260519
+                  - generic [ref=f8e558] [box=455,1660,98,24]:
+                    - generic [ref=f8e559] [box=455,1667,28,14]: From
+                    - text: $120.00
+                  - link "Customize" [ref=f8e561] [cursor=pointer] [box=455,1696,153,37]:
+                    - /url: /agent-test-two-req-siblings-20260519
+              - generic [ref=f8e571] [box=633,1463,153,287]:
+                - img "AGENT-TEST-Wedding-Cake-Cond-20260519" [ref=f8e575] [box=633,1464,151,135]
+                - generic [ref=f8e576] [box=0,0,0,0]:
+                  - link "AGENT-TEST-Wedding-Cake-Cond-20260519" [ref=f8e578] [cursor=pointer] [box=633,1615,153,33]:
+                    - /url: /agent-test-wedding-cake-cond-20260519
+                  - generic [ref=f8e580] [box=633,1660,88,24]:
+                    - generic [ref=f8e581] [box=633,1667,28,14]: From
+                    - text: $81.00
+                  - link "Customize" [ref=f8e583] [cursor=pointer] [box=633,1696,153,37]:
+                    - /url: /agent-test-wedding-cake-cond-20260519
+              - generic [ref=f8e593] [box=810,1463,153,287]:
+                - img "AGENT-TEST-Req-File-Child-20260519" [ref=f8e597] [box=810,1464,151,135]
+                - generic [ref=f8e598] [box=0,0,0,0]:
+                  - link "AGENT-TEST-Req-File-Child-20260519" [ref=f8e600] [cursor=pointer] [box=810,1615,153,33]:
+                    - /url: /agent-test-req-file-child-20260519
+                  - generic [ref=f8e602] [box=810,1660,98,24]:
+                    - generic [ref=f8e603] [box=810,1667,28,14]: From
+                    - text: $150.00
+                  - link "Customize" [ref=f8e605] [cursor=pointer] [box=810,1696,153,37]:
+                    - /url: /agent-test-req-file-child-20260519
+              - generic [ref=f8e615] [box=987,1463,153,287]:
+                - img "AGENT-TEST-Wireless-Headphones" [ref=f8e619] [box=987,1464,151,135]
+                - generic [ref=f8e620] [box=0,0,0,0]:
+                  - link "AGENT-TEST-Wireless-Headphones" [ref=f8e622] [cursor=pointer] [box=987,1615,153,33]:
+                    - /url: /agent-test-wireless-headphones
+                  - generic [ref=f8e623] [box=987,1660,153,24]: $99.99
+                  - generic [ref=f8e627] [box=987,1696,153,38]:
+                    - button "Decrease quantity" [disabled] [ref=f8e629] [box=989,1699,32,32]
+                    - spinbutton "Product quantity" [ref=f8e634] [box=1022,1700,81,30]: "0"
+                    - button "Increase quantity" [ref=f8e636] [cursor=pointer] [box=1105,1699,32,32]
+      - complementary "Sidebar" [ref=f8e392] [box=1366,275,288,1496]:
+        - generic [ref=f8e393] [box=1366,275,288,1305]:
+          - generic [ref=f8e394] [box=1366,275,288,397]:
+            - generic [ref=f8e395] [box=1366,276,286,50]: Order summary
+            - generic "Order summary" [ref=f8e399] [box=1366,327,286,344]:
+              - generic [ref=f8e400] [box=1390,343,238,150]:
+                - generic [ref=f8e404] [box=1390,343,238,20]:
+                  - generic [ref=f8e405] [box=1390,343,63,20]: Subtotal
+                  - generic [ref=f8e406] [box=1579,343,50,20]: $89.00
+                - generic [ref=f8e407] [box=1390,379,238,78]:
+                  - generic [ref=f8e408] [box=1390,387,238,20]:
+                    - generic [ref=f8e409] [box=1390,387,63,20]: Discount
+                    - generic [ref=f8e410] [box=1588,387,41,20]: $0.00
+                  - generic [ref=f8e411] [box=1390,407,238,20]:
+                    - generic [ref=f8e412] [box=1390,407,24,20]: Tax
+                    - generic [ref=f8e413] [box=1588,407,41,20]: $0.00
+                  - generic [ref=f8e414] [box=1390,427,238,20]:
+                    - generic [ref=f8e415] [box=1390,427,93,20]: Shipping cost
+                    - generic [ref=f8e416] [box=1588,427,41,20]: $0.00
+                - generic [ref=f8e417] [box=1390,472,238,20]:
+                  - generic [ref=f8e418] [box=1390,472,37,20]: Total
+                  - generic [ref=f8e419] [box=1579,472,50,20]: $89.00
+              - button "Place order" [disabled] [ref=f8e420] [box=1390,508,238,43]
+              - generic [ref=f8e425] [box=1390,567,238,40]: Complete all required information to proceed.
+              - generic [ref=f8e429] [box=1390,623,238,28]: Availability, shipping, tax and promotions are not final until you complete your order.
+          - generic [ref=f8e430] [box=1366,692,288,688]:
+            - generic [ref=f8e431] [box=1366,693,286,50]: Discount & coupons
+            - generic [ref=f8e434] [box=1366,743,286,637]:
+              - generic [ref=f8e435] [box=1366,743,286,606]:
+                - generic [ref=f8e655] [box=1457,770,165,74]:
+                  - heading "Gift" [level=3] [ref=f8e656] [box=1457,770,165,20]
+                  - paragraph [ref=f8e657] [box=1457,790,165,14]: Wine as a gift
+                  - generic [ref=f8e659] [box=1457,812,165,32]:
+                    - textbox "Gift Wine as a gift" [ref=f8e660] [box=1461,816,131,24]:
+                      - /placeholder: Enter custom code
+                      - text: winegift
+                    - button "Apply coupon winegift" [ref=f8e662] [cursor=pointer] [box=1593,815,26,26]
+                - generic [ref=f8e676] [box=1457,878,165,92]:
+                  - heading "20% off cart" [level=3] [ref=f8e677] [box=1457,878,165,20]
+                  - paragraph [ref=f8e678] [box=1457,898,165,14]: Super Discount
+                  - generic [ref=f8e680] [box=1457,920,165,32]:
+                    - textbox "20% off cart Super Discount" [ref=f8e681] [box=1461,924,131,24]:
+                      - /placeholder: Enter custom code
+                      - text: SUPER
+                    - button "Apply coupon SUPER" [ref=f8e683] [cursor=pointer] [box=1593,923,26,26]
+                  - paragraph [ref=f8e689] [box=1457,956,165,14]: Expires Jan 1, 2027
+                - generic [ref=f8e698] [box=1457,1003,165,106]:
+                  - heading "10% off shipping" [level=3] [ref=f8e699] [box=1457,1003,165,20]
+                  - paragraph [ref=f8e700] [box=1457,1023,165,28]: Coupon on discount for shipping
+                  - generic [ref=f8e702] [box=1457,1059,165,32]:
+                    - textbox "10% off shipping Coupon on discount for shipping" [ref=f8e703] [box=1461,1063,131,24]:
+                      - /placeholder: Enter custom code
+                      - text: AIR
+                    - button "Apply coupon AIR" [ref=f8e705] [cursor=pointer] [box=1593,1062,26,26]
+                  - paragraph [ref=f8e711] [box=1457,1095,165,14]: Expires Jan 1, 2027
+                - generic [ref=f8e720] [box=1457,1143,165,92]:
+                  - heading "$999 off shipping" [level=3] [ref=f8e721] [box=1457,1143,165,20]
+                  - paragraph [ref=f8e722] [box=1457,1163,165,14]: QA Free Shipping
+                  - generic [ref=f8e724] [box=1457,1185,165,32]:
+                    - textbox "$999 off shipping QA Free Shipping" [ref=f8e725] [box=1461,1189,131,24]:
+                      - /placeholder: Enter custom code
+                      - text: FREESHIP
+                    - button "Apply coupon FREESHIP" [ref=f8e727] [cursor=pointer] [box=1593,1188,26,26]
+                  - paragraph [ref=f8e733] [box=1457,1221,165,14]: Expires Jan 1, 2027
+                - generic [ref=f8e439] [box=1457,1269,165,54]:
+                  - paragraph [ref=f8e440] [box=1457,1269,165,14]: Custom code
+                  - generic [ref=f8e442] [box=1457,1291,165,32]:
+                    - textbox "Custom code" [ref=f8e443] [box=1461,1294,131,24]:
+                      - /placeholder: Enter custom code
+                    - button "Apply coupon" [disabled] [ref=f8e445] [box=1593,1294,26,26]
+              - link "View all coupons & promotions" [ref=f8e449] [cursor=pointer] [box=1366,1349,286,30]:
+                - /url: /account/coupons
+          - generic [ref=f8e451] [box=1366,1400,288,180]:
+            - generic [ref=f8e452] [box=1366,1401,286,50]: Quote request
+            - generic "Quote request" [ref=f8e456] [box=1366,1452,286,127]:
+              - paragraph [ref=f8e457] [box=1390,1468,238,28]: You can request items in your cart through a special service
+              - button "Add cart items to quote" [ref=f8e458] [cursor=pointer] [box=1390,1516,238,43]

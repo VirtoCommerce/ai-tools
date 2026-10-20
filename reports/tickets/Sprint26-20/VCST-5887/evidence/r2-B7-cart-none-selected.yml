@@ -1,0 +1,306 @@
+- generic [ref=f11e1]:
+  - generic [ref=f11e3]:
+    - list:
+      - listitem:
+        - link "Skip to main content":
+          - /url: "#main-content"
+      - listitem:
+        - link "Skip to footer":
+          - /url: "#footer"
+    - banner [ref=f11e4]:
+      - generic [ref=f11e5]:
+        - 'button "Language: English (United States) en" [ref=f11e9] [cursor=pointer]':
+          - generic [ref=f11e10]: "Language:"
+          - img "English (United States)" [ref=f11e11]
+          - generic [ref=f11e12]: en
+        - 'button "Currency: USD" [ref=f11e19] [cursor=pointer]':
+          - generic [ref=f11e20]: "Currency:"
+          - generic [ref=f11e21]: USD
+        - 'button "Ship to: Select address" [ref=f11e28] [cursor=pointer]':
+          - generic [ref=f11e33]: "Ship to:"
+          - generic [ref=f11e34]: Select address
+      - generic [ref=f11e38]:
+        - 'button "Theme: auto" [ref=f11e41] [cursor=pointer]'
+        - link "Dashboard" [ref=f11e46] [cursor=pointer]:
+          - /url: /account/dashboard
+        - link "Contacts" [ref=f11e48] [cursor=pointer]:
+          - /url: /contacts
+        - generic [ref=f11e50]:
+          - generic [ref=f11e51]: Punchout mode
+          - button "Account menu" [ref=f11e53] [cursor=pointer]:
+            - generic "AGENT-TEST-Punchout Buyer" [ref=f11e55]
+    - generic [ref=f11e59]:
+      - navigation "Main menu" [ref=f11e61]:
+        - link [ref=f11e62] [cursor=pointer]:
+          - /url: /
+          - img "B2B-store" [ref=f11e63]
+        - generic [ref=f11e65]: AGENT-TEST-Org-AcmeCorp-20260310
+        - generic [ref=f11e68]:
+          - searchbox "Search" [ref=f11e69]
+          - generic [ref=f11e70]:
+            - button "Barcode scan" [ref=f11e71] [cursor=pointer]
+            - button "Search" [ref=f11e75] [cursor=pointer]
+        - list [ref=f11e81]:
+          - listitem [ref=f11e82]:
+            - link "Bulk order" [ref=f11e83] [cursor=pointer]:
+              - /url: /bulk-order
+          - listitem [ref=f11e97]:
+            - link "Compare" [ref=f11e98] [cursor=pointer]:
+              - /url: /compare
+          - listitem [ref=f11e109]:
+            - link "Lists" [ref=f11e110] [cursor=pointer]:
+              - /url: /account/lists
+          - listitem [ref=f11e116]:
+            - link "Orders" [ref=f11e117] [cursor=pointer]:
+              - /url: /account/orders
+          - listitem [ref=f11e124]:
+            - button "Notifications" [ref=f11e127] [cursor=pointer]
+          - listitem [ref=f11e136]:
+            - link "3 Cart" [ref=f11e137] [cursor=pointer]:
+              - /url: /cart
+              - generic [ref=f11e138]: "3"
+              - generic [ref=f11e146]: Cart
+      - navigation "Main navigation" [ref=f11e147]:
+        - button "All products" [ref=f11e150] [cursor=pointer]
+        - menubar "Navigation" [ref=f11e164]:
+          - menuitem "Bolts" [ref=f11e165] [cursor=pointer]
+          - menuitem "Standard Test Products" [ref=f11e166] [cursor=pointer]
+          - menuitem "Coca-Cola" [ref=f11e167] [cursor=pointer]
+          - menuitem "Snacks" [ref=f11e168] [cursor=pointer]
+          - menuitem "Soft Drinks" [ref=f11e169] [cursor=pointer]
+          - menuitem "Default Option Parents" [ref=f11e170] [cursor=pointer]
+          - menuitem "Alcoholic drinks" [ref=f11e171] [cursor=pointer]
+          - menuitem "Juice" [ref=f11e172] [cursor=pointer]
+          - menuitem "Kitchen supplies" [ref=f11e173] [cursor=pointer]
+          - menuitem "Coffee and tea" [ref=f11e174] [cursor=pointer]
+          - menuitem "Configurable Parents" [ref=f11e175] [cursor=pointer]
+          - menuitem "Clothing" [ref=f11e176] [cursor=pointer]
+          - menuitem "Printers" [ref=f11e177] [cursor=pointer]
+          - menuitem "Conditional Parents" [ref=f11e178] [cursor=pointer]
+    - main [ref=f11e179]:
+      - generic [ref=f11e185]:
+        - navigation "Breadcrumbs navigation" [ref=f11e186]:
+          - list [ref=f11e187]:
+            - listitem [ref=f11e188]:
+              - link "Home" [ref=f11e189] [cursor=pointer]:
+                - /url: /
+            - listitem [aria-hidden] [ref=f11e190]: /
+            - listitem [ref=f11e191]: Cart
+        - heading "Cart" [level=1] [ref=f11e192]
+        - generic [ref=f11e194]:
+          - generic [ref=f11e196]:
+            - generic [ref=f11e199]:
+              - generic [ref=f11e201]:
+                - generic [ref=f11e202]: "Vendor: N/A"
+                - generic [ref=f11e206]:
+                  - generic [ref=f11e207]:
+                    - checkbox "Toggle vendor select" [active] [ref=f11e210]
+                    - generic [ref=f11e212]: Product
+                    - generic [ref=f11e213]: Properties
+                    - generic [ref=f11e214]: Price per item
+                    - generic [ref=f11e215]: Quantity
+                    - generic [ref=f11e217]: Total
+                  - generic [ref=f11e218]:
+                    - generic [ref=f11e220]:
+                      - checkbox "Toggle vendor select" [ref=f11e223]
+                      - img "LAYS CHIPS PAPRIKA BOX 20X40GR" [ref=f11e226]
+                      - generic [ref=f11e227]:
+                        - generic [ref=f11e228]:
+                          - link "LAYS CHIPS PAPRIKA BOX 20X40GR" [ref=f11e230] [cursor=pointer]:
+                            - /url: /lays-chips-paprika-box-20x40gr
+                          - button "Save for later" [ref=f11e233] [cursor=pointer]
+                        - generic [ref=f11e240]:
+                          - generic [ref=f11e241]:
+                            - generic [ref=f11e242]: brand
+                            - generic [ref=f11e244]: Lays
+                          - generic [ref=f11e245]:
+                            - generic [ref=f11e246]: original_sku
+                            - generic [ref=f11e248]: "6051795"
+                          - generic [ref=f11e249]:
+                            - generic [ref=f11e250]: product_type
+                            - generic [ref=f11e252]: Chips
+                        - generic [ref=f11e253]: $10.00
+                        - generic [ref=f11e255]:
+                          - generic [ref=f11e257]:
+                            - generic [ref=f11e260]:
+                              - button "Decrease quantity" [ref=f11e262] [cursor=pointer]
+                              - spinbutton "Product quantity" [ref=f11e266]: "2"
+                              - button "Increase quantity" [ref=f11e268] [cursor=pointer]
+                            - generic "In stock" [ref=f11e273]: "345"
+                          - generic [ref=f11e279]: $20.00
+                        - button "Remove from cart" [ref=f11e281] [cursor=pointer]
+                    - generic [ref=f11e288]:
+                      - checkbox "Toggle vendor select" [ref=f11e291]
+                      - img "AGENT-TEST-Punchout Plain Product" [ref=f11e294]
+                      - generic [ref=f11e295]:
+                        - generic [ref=f11e296]:
+                          - link "AGENT-TEST-Punchout Plain Product" [ref=f11e298] [cursor=pointer]:
+                            - /url: /agent-test-punchout-plain-product
+                          - button "Save for later" [ref=f11e301] [cursor=pointer]
+                        - generic [ref=f11e308]: $12.00
+                        - generic [ref=f11e310]:
+                          - generic [ref=f11e312]:
+                            - generic [ref=f11e315]:
+                              - button "Decrease quantity" [disabled] [ref=f11e317]
+                              - spinbutton "Product quantity" [ref=f11e321]: "1"
+                              - button "Increase quantity" [ref=f11e323] [cursor=pointer]
+                            - generic "In stock" [ref=f11e328]: "500"
+                          - generic [ref=f11e334]: $12.00
+                        - button "Remove from cart" [ref=f11e336] [cursor=pointer]
+                  - generic [ref=f11e342]:
+                    - button "Remove selected" [disabled] [ref=f11e343]
+                    - generic [ref=f11e346]:
+                      - generic [ref=f11e347]: "Subtotal:"
+                      - generic [ref=f11e348]: $0.00
+              - button "Clear cart" [ref=f11e350] [cursor=pointer]
+            - generic [ref=f11e353]:
+              - generic [ref=f11e354]: Recently browsed
+              - generic "Recently browsed" [ref=f11e367]:
+                - generic [ref=f11e369]:
+                  - generic [ref=f11e371]:
+                    - img "AGENT-TEST-Wireless-Headphones" [ref=f11e375]
+                    - generic [ref=f11e376]:
+                      - link "AGENT-TEST-Wireless-Headphones" [ref=f11e379] [cursor=pointer]:
+                        - /url: /agent-test-wireless-headphones
+                      - generic [ref=f11e380]: $99.99
+                      - generic [ref=f11e384]:
+                        - button "Decrease quantity" [disabled] [ref=f11e386]
+                        - spinbutton "Product quantity" [ref=f11e390]: "0"
+                        - button "Increase quantity" [ref=f11e392] [cursor=pointer]
+                  - generic [ref=f11e398]:
+                    - img "ABSOLUT BLUE VODKA BOTTLE 1,00L" [ref=f11e402]
+                    - generic [ref=f11e403]:
+                      - link "ABSOLUT BLUE VODKA BOTTLE 1,00L" [ref=f11e406] [cursor=pointer]:
+                        - /url: /absolut-blue-vodka-bottle-100l
+                      - generic [ref=f11e407]:
+                        - generic [ref=f11e408]: $237.00
+                        - generic [ref=f11e409]: $400.00
+                      - generic [ref=f11e412]:
+                        - button "Decrease quantity" [disabled] [ref=f11e414]
+                        - spinbutton "Product quantity" [ref=f11e418]: "0"
+                        - button "Increase quantity" [ref=f11e420] [cursor=pointer]
+                  - generic [ref=f11e426]:
+                    - img "Double Layer Hemp Top and Strap with Arch Support" [ref=f11e430]
+                    - generic [ref=f11e431]:
+                      - link "Double Layer Hemp Top and Strap with Arch Support" [ref=f11e434] [cursor=pointer]:
+                        - /url: /double-layer-hemp-top-and-strap-with-arch-support
+                      - generic [ref=f11e436]:
+                        - generic [ref=f11e437]: From
+                        - text: $32.00
+                      - link "8 variations" [ref=f11e439] [cursor=pointer]:
+                        - /url: /double-layer-hemp-top-and-strap-with-arch-support
+                  - generic [ref=f11e443]:
+                    - img "AGENT-TEST-Config-Laptop-20260518" [ref=f11e447]
+                    - generic [ref=f11e448]:
+                      - link "AGENT-TEST-Config-Laptop-20260518" [ref=f11e450] [cursor=pointer]:
+                        - /url: /agent-test-config-laptop-20260518
+                      - generic [ref=f11e452]:
+                        - generic [ref=f11e453]: From
+                        - text: $999.00
+                      - link "Customize" [ref=f11e455] [cursor=pointer]:
+                        - /url: /agent-test-config-laptop-20260518
+                  - generic [ref=f11e464]:
+                    - img "Heineken 4x6/33 cl Сan" [ref=f11e468]
+                    - generic [ref=f11e469]:
+                      - link "Heineken 4x6/33 cl Сan" [ref=f11e472] [cursor=pointer]:
+                        - /url: /4x633-cl-cans-heineken-lager-beer
+                      - generic [ref=f11e474]:
+                        - generic [ref=f11e475]: From
+                        - text: $150.00
+                      - link "2 variations" [ref=f11e477] [cursor=pointer]:
+                        - /url: /4x633-cl-cans-heineken-lager-beer
+                  - generic [ref=f11e481]:
+                    - img "CIF PROFESSIONAL GLASS & INTERIOR CLEANER BOTTLE 0,75L" [ref=f11e485]
+                    - generic [ref=f11e486]:
+                      - link "CIF PROFESSIONAL GLASS & INTERIOR CLEANER BOTTLE 0,75L" [ref=f11e489] [cursor=pointer]:
+                        - /url: /cif-professional-glass-interior-cleaner-bottle-075l
+                      - generic [ref=f11e491]:
+                        - generic [ref=f11e492]: From
+                        - text: $23.00
+                      - link "2 variations" [ref=f11e494] [cursor=pointer]:
+                        - /url: /cif-professional-glass-interior-cleaner-bottle-075l
+          - complementary "Sidebar" [ref=f11e497]:
+            - generic [ref=f11e498]:
+              - generic [ref=f11e499]:
+                - generic [ref=f11e500]: Order summary
+                - generic "Order summary" [ref=f11e504]:
+                  - generic [ref=f11e505]:
+                    - generic [ref=f11e506]:
+                      - generic [ref=f11e507]: Subtotal
+                      - generic [ref=f11e508]: $0.00
+                    - generic [ref=f11e509]:
+                      - generic [ref=f11e510]:
+                        - generic [ref=f11e511]: Discount
+                        - generic [ref=f11e512]: $0.00
+                      - generic [ref=f11e513]:
+                        - generic [ref=f11e514]: Tax
+                        - generic [ref=f11e515]: $0.00
+                      - generic [ref=f11e516]:
+                        - generic [ref=f11e517]: Shipping cost
+                        - generic [ref=f11e518]: $0.00
+                    - generic [ref=f11e519]:
+                      - generic [ref=f11e520]: Total
+                      - generic [ref=f11e521]: $0.00
+                  - button "Create requisition" [disabled] [ref=f11e522]
+                  - generic [ref=f11e525]: Availability, shipping, tax and promotions are not final until you complete your order.
+              - generic [ref=f11e526]:
+                - generic [ref=f11e527]: Discount & coupons
+                - generic [ref=f11e530]:
+                  - generic [ref=f11e531]:
+                    - generic [ref=f11e538]:
+                      - heading "Gift" [level=3] [ref=f11e539]
+                      - paragraph [ref=f11e540]: Wine as a gift
+                      - generic [ref=f11e542]:
+                        - textbox "Gift Wine as a gift" [ref=f11e543]:
+                          - /placeholder: Enter custom code
+                          - text: winegift
+                        - button "Apply coupon winegift" [ref=f11e545] [cursor=pointer]
+                    - generic [ref=f11e556]:
+                      - heading "20% off cart" [level=3] [ref=f11e557]
+                      - paragraph [ref=f11e558]: Super Discount
+                      - generic [ref=f11e560]:
+                        - textbox "20% off cart Super Discount" [ref=f11e561]:
+                          - /placeholder: Enter custom code
+                          - text: SUPER
+                        - button "Apply coupon SUPER" [ref=f11e563] [cursor=pointer]
+                      - paragraph [ref=f11e568]: Expires Jan 1, 2027
+                    - generic [ref=f11e575]:
+                      - heading "10% off shipping" [level=3] [ref=f11e576]
+                      - paragraph [ref=f11e577]: Coupon on discount for shipping
+                      - generic [ref=f11e579]:
+                        - textbox "10% off shipping Coupon on discount for shipping" [ref=f11e580]:
+                          - /placeholder: Enter custom code
+                          - text: AIR
+                        - button "Apply coupon AIR" [ref=f11e582] [cursor=pointer]
+                      - paragraph [ref=f11e587]: Expires Jan 1, 2027
+                    - generic [ref=f11e594]:
+                      - heading "$999 off shipping" [level=3] [ref=f11e595]
+                      - paragraph [ref=f11e596]: QA Free Shipping
+                      - generic [ref=f11e598]:
+                        - textbox "$999 off shipping QA Free Shipping" [ref=f11e599]:
+                          - /placeholder: Enter custom code
+                          - text: FREESHIP
+                        - button "Apply coupon FREESHIP" [ref=f11e601] [cursor=pointer]
+                      - paragraph [ref=f11e606]: Expires Jan 1, 2027
+                    - generic [ref=f11e613]:
+                      - paragraph [ref=f11e614]: Custom code
+                      - generic [ref=f11e616]:
+                        - textbox "Custom code" [ref=f11e617]:
+                          - /placeholder: Enter custom code
+                        - button "Apply coupon" [disabled] [ref=f11e619]
+                  - link "View all coupons & promotions" [ref=f11e625] [cursor=pointer]:
+                    - /url: /account/coupons
+    - contentinfo "Footer" [ref=f11e629]:
+      - generic [ref=f11e630]:
+        - img "B2B-store" [ref=f11e632]
+        - navigation [ref=f11e633]
+      - generic [ref=f11e634]:
+        - generic [ref=f11e635]:
+          - text: Ver. 2.61.0-pr-2564-69d4-69d4418b. © 2026
+          - strong [ref=f11e636]: Virto Commerce
+          - text: . All rights reserved
+        - generic [ref=f11e637]:
+          - text: ASP.NET ecommerce platform
+          - link "Virto Commerce" [ref=f11e638] [cursor=pointer]:
+            - /url: https://virtocommerce.com
+  - region "Notifications"

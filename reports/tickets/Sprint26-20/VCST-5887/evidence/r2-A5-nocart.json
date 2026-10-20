@@ -1,0 +1,59 @@
+{
+ "initial": {
+  "at": "2026-10-20T11:38:30.590Z",
+  "userId": "ab33e096-ad35-4636-ad61-0af318f16d56",
+  "carts": [
+   {
+    "name": "default",
+    "type": null,
+    "id": "0a592e9e-2240-40c8-832a-535bc904606a",
+    "firstLineCreated": null,
+    "lines": []
+   }
+  ]
+ },
+ "before": {
+  "at": "2026-10-20T11:38:31.923Z",
+  "userId": "ab33e096-ad35-4636-ad61-0af318f16d56",
+  "carts": []
+ },
+ "afterRedeem": {
+  "at": "2026-10-20T11:38:33.323Z",
+  "userId": "ab33e096-ad35-4636-ad61-0af318f16d56",
+  "carts": []
+ },
+ "requisition": {
+  "http": 200,
+  "ms": 476,
+  "errorCode": "CartNotFound",
+  "url": null,
+  "formField": null,
+  "cxmlSha": null,
+  "cxmlLen": null,
+  "payloadID": null,
+  "skus": null,
+  "qtys": null,
+  "total": null,
+  "errors": null
+ },
+ "afterCall": {
+  "at": "2026-10-20T11:38:34.229Z",
+  "userId": "ab33e096-ad35-4636-ad61-0af318f16d56",
+  "carts": []
+ },
+ "secondCall": {
+  "http": 200,
+  "ms": 208,
+  "errorCode": "CartNotFound",
+  "url": null,
+  "formField": null,
+  "cxmlSha": null,
+  "cxmlLen": null,
+  "payloadID": null,
+  "skus": null,
+  "qtys": null,
+  "total": null,
+  "errors": null
+ },
+ "cookie": "AGENT-R2-A5-1792496311923"
+}

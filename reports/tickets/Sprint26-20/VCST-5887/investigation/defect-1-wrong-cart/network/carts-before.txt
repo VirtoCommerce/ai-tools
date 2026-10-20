@@ -1,0 +1,14 @@
+[config] TEST_ENV=vcptcore_qa1 ENV_RISK=test
+[config] FEATURE-GATED skipped: /qa-monitoring, ci:monitor (App Insights online bug monitoring) — set APPINSIGHTS_APP_ID_BACKEND, APPINSIGHTS_APP_ID_STOREFRONT to enable
+Environment variable BUILDER_IO_EMAIL is not set
+Environment variable BUILDER_IO_PASSWORD is not set
+buyer ab33e096-ad35-4636-ad61-0af318f16d56 org 7c901bc8-e83b-4953-a77c-bbf7d3512d78
+addItem AGENT-TEST-PO-UOM-001 cartName= (none) → {"id":"1639b85b-1da6-432c-80bf-255a840dffc0","name":"default","items":[{"sku":"AGENT-TEST-PO-UOM-001","quantity":3}]}
+addItem AGENT-TEST-PO-PLAIN-001 cartName= AGENT-TEST-Other-Channel → {"id":"a22dc6c3-0687-40a0-9717-f88a3e639a6a","name":"AGENT-TEST-Other-Channel","items":[{"sku":"AGENT-TEST-PO-PLAIN-001","quantity":2}]}
+carts total 2
+   AGENT-TEST-Other-Channel||USD|a22dc6c3-0687-40a0-9717-f88a3e639a6a|org=7c901bc8-e83b-4953-a77c-bbf7d3512d78|AGENT-TEST-PO-PLAIN-001x2@12
+   default||USD|1639b85b-1da6-432c-80bf-255a840dffc0|org=7c901bc8-e83b-4953-a77c-bbf7d3512d78|AGENT-TEST-PO-UOM-001x3@24
+  REST 2026-10-14T11:25:09.4968493Z AGENT-TEST-Other-Channel a22dc6c3-0687-40a0-9717-f88a3e639a6a AGENT-TEST-PO-PLAIN-001x2
+  REST 2026-10-14T11:25:06.0165169Z default 1639b85b-1da6-432c-80bf-255a840dffc0 AGENT-TEST-PO-UOM-001x3
+Query.cart(cartName=undefined) → {"id":"a22dc6c3-0687-40a0-9717-f88a3e639a6a","name":"AGENT-TEST-Other-Channel","items":[{"sku":"AGENT-TEST-PO-PLAIN-001","quantity":2}]}
+Query.cart(cartName=default) → {"id":"1639b85b-1da6-432c-80bf-255a840dffc0","name":"default","items":[{"sku":"AGENT-TEST-PO-UOM-001","quantity":3}]}

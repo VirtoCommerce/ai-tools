@@ -1,0 +1,18 @@
+# Root-cause worksheet — cart read/write split
+
+**Symptom.** A buyer who has two carts with `type = null` (the `default` cart plus a newer named cart) sees the named cart on /cart, but every checkout write and Clear cart go to the `default` cart. The buyer can never place the order: address, delivery and payment never appear, and Place order stays disabled. Clear cart wipes the cart they cannot see.
+
+**Lowest failing layer (proven).** The read and the write sides of the xAPI cart resolve different carts when neither carries a cart id:
+- READ: `Query.cart(storeId,userId,currencyCode,cultureName)` with no `cartName` -> `GetCartQueryHandler.GetCartSearchCriteria` sets `Name = null` -> `CartAggregateRepository.GetCartAsync` returns `SearchAllAsync(...).FirstOrDefault(type==null)` = the named cart 05aaefca (vc-module-x-cart @3.1042.0, `CartAggregateRepository.cs:137,145`, `GetCartQueryHandler.cs:51`). Observed: the newest-CREATED cart wins. `default` was modified later (17:35:56) and was still not returned.
+- WRITE: every cart command inherits `CartCommandBase.CartName = "default"` (`CartCommandBase.cs:9`). With no `cartId`, the command loads the `default` cart (01d964d6). Artifact: graphql-cart-ops.json shows responses carrying 01d964d6.
+- FRONTEND: vc-frontend `_useFullCart(cartId)` builds `commonVariables = { storeId, currencyCode, cultureName, userId, cartId }`, where `cartId` is the **route param** (undefined on /cart), not `cart.value.id` (`client-app/shared/cart/composables/useCart.ts:333`, `useFullCart` at :770). Every full-cart mutation spreads `commonVariables` with no cart-id override: `updateShipment` :588, `updatePayment` :659, `clearCart` :492, `removeItems` :498, `changeItemQuantity` :514, `addCoupon`/`removeCoupon` :558/563, `changeComment` :568, `changePurchaseOrderNumber` :575, `removeShipment` :637, and gifts :672/677. Only the SHORT-cart `updateItemCartQuantity` (:291) sets `cartId: cart.value?.id`. `createOrderFromCart` passes `cart.value!.id` (useCheckout.ts:592). So an order would be created from the DISPLAYED cart Y, but Y never gets a shipment or payment, so the button stays disabled.
+
+**Answer to the real-user question.** In a regular checkout, Place order turns nothing into an order: it stays disabled. The shipping address, delivery method and payment method the buyer picks all land on the hidden `default` cart. No order was created (REST search for orders by customer: 0).
+
+**Alternatives ruled out.**
+1. *By design?* No. Nothing documents a cart page that writes to a different cart than it shows (VirtoOZ storefront dev guide is silent on multi-cart resolution). The UI contract is broken: the controls show "select ..." after a successful selection, Place order is permanently disabled, and Clear cart destroys unseen data.
+2. *Data drift / stale cache?* No. The setup was created fresh via xAPI with no cartType. Behaviour was identical across a full reload. REST read-back after every step matches the GraphQL responses.
+3. *Punchout-specific?* No. Password sign-in, no punchout session, no requisition.
+4. *Index lag?* N/A. Carts are DB-read (REST search), not indexed.
+
+**Fix target (MEDIUM-HIGH confidence).** Primary: **vc-frontend** (`repoKind: frontend`). On the full-cart composable, pass `cartId: cart.value?.id` on every mutation, as the short-cart `updateItemCartQuantity` already does. Then the page writes to the cart it displays. Secondary hardening, which the owners decide: **vc-module-x-cart** read/write default asymmetry (query with no name = any untyped cart, newest first; commands with no name = `"default"`). This hits every client that reads without a name, not just vc-frontend.

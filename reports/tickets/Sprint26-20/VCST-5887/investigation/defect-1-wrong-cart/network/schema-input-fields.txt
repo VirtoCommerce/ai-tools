@@ -1,0 +1,2 @@
+CreatePunchoutRequisitionCommandType storeId, currencyCode, cultureName
+InputAddOrUpdateCartShipmentType cartId, storeId, cartName, userId, currencyCode, cultureName, cartType, shipment

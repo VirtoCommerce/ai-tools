@@ -1,0 +1,13 @@
+Total messages: 11 (Errors: 8, Warnings: 0)
+
+[INFO] [WebSocket] Connecting... Attempting to establish connection. @ https://vcptcore-qa1-storefront.govirto.com/assets/select-address-modal.vue_vue_type_script_setup_true_lang-C3nFo5h-.js:8
+[INFO] [WebSocket] Connection opened successfully. {url: wss://vcptcore-qa1-storefront.govirto.com/graphql, protocol: graphql-transport-ws} @ https://vcptcore-qa1-storefront.govirto.com/assets/select-address-modal.vue_vue_type_script_setup_true_lang-C3nFo5h-.js:8
+[LOG] Download the Apollo DevTools for a better development experience: %s https://chrome.google.com/webstore/detail/apollo-client-developer-t/jdkknkkbebbapilgoeccciglkfbmbnfm @ https://vcptcore-qa1-storefront.govirto.com/assets/_virtual_mf___mfe_internal__host__mf_owner__184451171074926__loadShare___mf_0_vue_mf_1_apollo_mf_2_composable__loadShare__.js-D3RznM0w.js:0
+[ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://starmarket-platform.demo.govirto.com/cms-content/assets/catalog/5aa50/LJO-92804653/315048_md.jpg:0
+[ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://starmarket-platform.demo.govirto.com/cms-content/assets/catalog/5aa50/102909/102909_md.jpg:0
+[ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://starmarket-platform.demo.govirto.com/cms-content/assets/catalog/5aa50/8041452/8041452_md.jpeg:0
+[ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://starmarket-platform.demo.govirto.com/cms-content/assets/catalog/5aa50/6051795/6051795_sm.jpg:0
+[ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://starmarket-platform.demo.govirto.com/cms-content/assets/catalog/5aa50/LJO-92804653/315048.jpg:0
+[ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://starmarket-platform.demo.govirto.com/cms-content/assets/catalog/5aa50/102909/102909.jpg:0
+[ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://starmarket-platform.demo.govirto.com/cms-content/assets/catalog/5aa50/8041452/8041452.jpeg:0
+[ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://starmarket-platform.demo.govirto.com/cms-content/assets/catalog/5aa50/6051795/6051795.jpg:0

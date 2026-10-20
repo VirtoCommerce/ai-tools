@@ -1,0 +1,84 @@
+- generic [ref=f37e2]:
+  - navigation [ref=f37e3]:
+    - link [ref=f37e4] [cursor=pointer]:
+      - /url: /
+    - list [ref=f37e7]:
+      - listitem [ref=f37e8]:
+        - link "Guides" [ref=f37e9] [cursor=pointer]:
+          - /url: /guides/
+      - listitem [ref=f37e10]:
+        - link "Tools" [ref=f37e11] [cursor=pointer]:
+          - /url: /tools/
+      - listitem [ref=f37e12]:
+        - link "Solution Directory" [ref=f37e13] [cursor=pointer]:
+          - /url: /solutions/
+      - listitem [ref=f37e14]:
+        - link "Blog" [ref=f37e15] [cursor=pointer]:
+          - /url: /blog/
+  - generic [ref=f37e17]:
+    - article [ref=f37e19]:
+      - heading [level=1] [ref=f37e21]:
+        - link "cXML PunchOut Tester" [ref=f37e22] [cursor=pointer]:
+          - /url: "#"
+      - generic [ref=f37e23]:
+        - heading "Items" [level=2] [ref=f37e24]
+        - table [ref=f37e25]:
+          - rowgroup [ref=f37e26]:
+            - row [ref=f37e27]:
+              - columnheader "quantity" [ref=f37e28]
+              - columnheader "SupplierPartID" [ref=f37e29]
+              - columnheader "SupplierPartAuxiliaryID" [ref=f37e30]
+              - columnheader "UnitPrice" [ref=f37e31]
+              - columnheader "currency" [ref=f37e32]
+              - columnheader "Description" [ref=f37e33]
+              - columnheader "ShortName" [ref=f37e34]
+              - columnheader "UnitOfMeasure" [ref=f37e35]
+              - columnheader "ManufacturerName" [ref=f37e36]
+              - columnheader "ManufacturerPartID" [ref=f37e37]
+          - rowgroup [ref=f37e38]:
+            - row [ref=f37e39]:
+              - cell "1" [ref=f37e40]
+              - cell "AGENT-TEST-PO-PLAIN-001" [ref=f37e41]
+              - cell "ea28d4f4-6f25-41a4-a948-df47259b0792" [ref=f37e42]
+              - cell "12.00" [ref=f37e43]
+              - cell "USD" [ref=f37e44]
+              - cell "AGENT-TEST-Punchout Plain Product" [ref=f37e45]
+              - cell [ref=f37e46]
+              - cell "EA" [ref=f37e47]
+              - cell [ref=f37e48]
+              - cell [ref=f37e49]
+        - heading "POST:" [level=2] [ref=f37e50]
+        - generic [ref=f37e51]: Array ( [cxml-urlencoded] => <?xml version="1.0" encoding="utf-8"?> <!DOCTYPE cXML SYSTEM "http://xml.cxml.org/schemas/cXML/1.2.041/cXML.dtd"> <cXML payloadID="639280885260189603.7605d98168ef4521ae3d5f73d60d8a98@virtocommerce.com" timestamp="2026-10-20T10:22:06+00:00"> <Header> <From> <Credential domain="NetworkId"> <Identity>supplier</Identity> </Credential> </From> <To> <Credential domain="NetworkId"> <Identity>buyer-co</Identity> </Credential> </To> <Sender> <Credential domain="NetworkId"> <Identity>supplier</Identity> </Credential> <UserAgent>Virto Commerce Punchout</UserAgent> </Sender> </Header> <Message> <PunchOutOrderMessage> <BuyerCookie>AGENT-R2-B11-1792491665990</BuyerCookie> <PunchOutOrderMessageHeader operationAllowed="create"> <Total> <Money currency="USD">12.00</Money> </Total> </PunchOutOrderMessageHeader> <ItemIn quantity="1"> <ItemID> <SupplierPartID>AGENT-TEST-PO-PLAIN-001</SupplierPartID> <SupplierPartAuxiliaryID>ea28d4f4-6f25-41a4-a948-df47259b0792</SupplierPartAuxiliaryID> </ItemID> <ItemDetail> <UnitPrice> <Money currency="USD">12.00</Money> </UnitPrice> <Description xml:lang="en-US">AGENT-TEST-Punchout Plain Product</Description> <UnitOfMeasure>EA</UnitOfMeasure> <Classification domain="Custom">00000000</Classification> </ItemDetail> </ItemIn> </PunchOutOrderMessage> </Message> </cXML> )
+        - heading "RAW POST:" [level=2] [ref=f37e52]
+        - generic [ref=f37e53]: cxml-urlencoded=<?xml version="1.0" encoding="utf-8"?> <!DOCTYPE cXML SYSTEM "http://xml.cxml.org/schemas/cXML/1.2.041/cXML.dtd"> <cXML payloadID="639280885260189603.7605d98168ef4521ae3d5f73d60d8a98@virtocommerce.com" timestamp="2026-10-20T10:22:06+00:00"> <Header> <From> <Credential domain="NetworkId"> <Identity>supplier</Identity> </Credential> </From> <To> <Credential domain="NetworkId"> <Identity>buyer-co</Identity> </Credential> </To> <Sender> <Credential domain="NetworkId"> <Identity>supplier</Identity> </Credential> <UserAgent>Virto Commerce Punchout</UserAgent> </Sender> </Header> <Message> <PunchOutOrderMessage> <BuyerCookie>AGENT-R2-B11-1792491665990</BuyerCookie> <PunchOutOrderMessageHeader operationAllowed="create"> <Total> <Money currency="USD">12.00</Money> </Total> </PunchOutOrderMessageHeader> <ItemIn quantity="1"> <ItemID> <SupplierPartID>AGENT-TEST-PO-PLAIN-001</SupplierPartID> <SupplierPartAuxiliaryID>ea28d4f4-6f25-41a4-a948-df47259b0792</SupplierPartAuxiliaryID> </ItemID> <ItemDetail> <UnitPrice> <Money currency="USD">12.00</Money> </UnitPrice> <Description xml:lang="en-US">AGENT-TEST-Punchout Plain Product</Description> <UnitOfMeasure>EA</UnitOfMeasure> <Classification domain="Custom">00000000</Classification> </ItemDetail> </ItemIn> </PunchOutOrderMessage> </Message> </cXML>
+        - heading "Cookies:" [level=2] [ref=f37e54]
+        - generic [ref=f37e55]: Array ( [_ga_DD3WKT478C] => GS2.1.s1792491641$o1$g0$t1792491641$j60$l0$h0 )
+      - separator [ref=f37e56]
+      - generic [ref=f37e58]:
+        - heading "Share" [level=4] [ref=f37e59]
+        - navigation [ref=f37e60]:
+          - link "Share on Facebook" [ref=f37e61] [cursor=pointer]:
+            - /url: https://www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fpunchoutcommerce.com%2f
+            - generic [aria-hidden] [ref=f37e62]: 
+          - link "Share on LinkedIn" [ref=f37e63] [cursor=pointer]:
+            - /url: https://www.linkedin.com/shareArticle?mini=true&url=https%3a%2f%2fpunchoutcommerce.com%2f
+            - generic [aria-hidden] [ref=f37e64]: 
+          - link "" [ref=f37e65] [cursor=pointer]:
+            - /url: https://twitter.com/home?status=https%3a%2f%2fpunchoutcommerce.com%2f
+    - complementary [ref=f37e67]
+  - contentinfo [ref=f37e68]:
+    - paragraph [ref=f37e69]:
+      - link "About" [ref=f37e70] [cursor=pointer]:
+        - /url: /blog/welcome/
+      - text: "|"
+      - link "Sitemap" [ref=f37e71] [cursor=pointer]:
+        - /url: /sitemap/
+      - text: "|"
+      - link "Contact Us" [ref=f37e72] [cursor=pointer]:
+        - /url: /contact-us/
+    - paragraph
+    - paragraph [ref=f37e74]: © 2024 PunchOutCommerce.com. All rights reserved.
+    - paragraph
+    - paragraph [ref=f37e75]:
+      - link "Back to top" [ref=f37e76] [cursor=pointer]:
+        - /url: "#"

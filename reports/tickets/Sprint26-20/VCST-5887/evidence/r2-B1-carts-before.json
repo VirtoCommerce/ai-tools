@@ -1,0 +1,26 @@
+{
+ "at": "2026-10-20T10:13:06.285Z",
+ "userId": "ab33e096-ad35-4636-ad61-0af318f16d56",
+ "carts": [
+  {
+   "name": "AGENT-R2-B1-named",
+   "type": null,
+   "id": "9ec095a9-c6a5-46f7-84fb-8bfcaedc43ac",
+   "total": "$29.00",
+   "created": "2026-10-20T10:13:14.5340706Z",
+   "lines": [
+    "271507x2@14.5/stk3530"
+   ]
+  },
+  {
+   "name": "default",
+   "type": null,
+   "id": "180ef4f4-dedd-4272-807b-e68e5fd5485a",
+   "total": "$36.00",
+   "created": "2026-10-20T10:13:12.4447181Z",
+   "lines": [
+    "AGENT-TEST-PO-PLAIN-001x3@12/stk500"
+   ]
+  }
+ ]
+}

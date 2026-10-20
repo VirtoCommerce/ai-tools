@@ -1,0 +1,94 @@
+{
+ "cartsBefore": {
+  "at": "2026-10-20T11:37:15.604Z",
+  "userId": "ab33e096-ad35-4636-ad61-0af318f16d56",
+  "carts": [
+   {
+    "name": "default",
+    "type": null,
+    "id": "6f55628f-6262-4fd9-9b2f-b4203bb0bbcb",
+    "firstLineCreated": "2026-10-20T11:37:25.3530854Z",
+    "lines": [
+     "AGENT-TEST-PO-PLAIN-001x1"
+    ]
+   }
+  ]
+ },
+ "cartsAfter": {
+  "at": "2026-10-20T11:37:18.320Z",
+  "userId": "ab33e096-ad35-4636-ad61-0af318f16d56",
+  "carts": [
+   {
+    "name": "default",
+    "type": null,
+    "id": "6f55628f-6262-4fd9-9b2f-b4203bb0bbcb",
+    "firstLineCreated": "2026-10-20T11:37:25.3530854Z",
+    "lines": [
+     "AGENT-TEST-PO-PLAIN-001x1"
+    ]
+   }
+  ]
+ },
+ "setup": {
+  "http": 200,
+  "status": "<Status code=\"200\" text=\"OK\" />",
+  "cookie": "AGENT-R2-A2-1792496232872"
+ },
+ "calls": [
+  {
+   "http": 200,
+   "ms": 479,
+   "errorCode": null,
+   "url": "https://punchoutcommerce.com/tools/cxml-punchout-return",
+   "formField": "cxml-urlencoded",
+   "cxmlSha": "4000df859d734175",
+   "cxmlLen": 1576,
+   "payloadID": "639280930469264791.845bda7dce874cb3b30ec7a8ddaf964c@virtocommerce.com",
+   "skus": [
+    "AGENT-TEST-PO-PLAIN-001"
+   ],
+   "qtys": [
+    "1"
+   ],
+   "total": "12.00",
+   "errors": null
+  },
+  {
+   "http": 200,
+   "ms": 245,
+   "errorCode": null,
+   "url": "https://punchoutcommerce.com/tools/cxml-punchout-return",
+   "formField": "cxml-urlencoded",
+   "cxmlSha": "4000df859d734175",
+   "cxmlLen": 1576,
+   "payloadID": "639280930469264791.845bda7dce874cb3b30ec7a8ddaf964c@virtocommerce.com",
+   "skus": [
+    "AGENT-TEST-PO-PLAIN-001"
+   ],
+   "qtys": [
+    "1"
+   ],
+   "total": "12.00",
+   "errors": null
+  },
+  {
+   "http": 200,
+   "ms": 479,
+   "errorCode": null,
+   "url": "https://punchoutcommerce.com/tools/cxml-punchout-return",
+   "formField": "cxml-urlencoded",
+   "cxmlSha": "4000df859d734175",
+   "cxmlLen": 1576,
+   "payloadID": "639280930469264791.845bda7dce874cb3b30ec7a8ddaf964c@virtocommerce.com",
+   "skus": [
+    "AGENT-TEST-PO-PLAIN-001"
+   ],
+   "qtys": [
+    "1"
+   ],
+   "total": "12.00",
+   "errors": null
+  }
+ ],
+ "messageSearchRest": "not exposed: Swagger VirtoCommerce.Punchout lists only /api/punchout/cxml and /api/punchout-user-mappings/*"
+}

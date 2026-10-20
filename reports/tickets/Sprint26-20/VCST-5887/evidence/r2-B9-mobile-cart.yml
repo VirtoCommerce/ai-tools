@@ -1,0 +1,225 @@
+- generic [ref=f18e1]:
+  - generic [ref=f18e3]:
+    - list:
+      - listitem:
+        - link "Skip to main content":
+          - /url: "#main-content"
+      - listitem:
+        - link "Skip to footer":
+          - /url: "#footer"
+    - banner [ref=f18e4]:
+      - 'button "Ship to: Select address" [ref=f18e9] [cursor=pointer]':
+        - generic [ref=f18e14]: "Ship to:"
+        - generic [ref=f18e15]: Select address
+      - generic [ref=f18e20]:
+        - generic [ref=f18e21]:
+          - button "Main menu" [ref=f18e22] [cursor=pointer]
+          - link [ref=f18e25] [cursor=pointer]:
+            - /url: /
+            - img "B2B-store" [ref=f18e26]
+        - generic [ref=f18e27]:
+          - button "Toggle search bar" [ref=f18e28] [cursor=pointer]
+          - button [ref=f18e35] [cursor=pointer]
+          - link "Cart" [ref=f18e42] [cursor=pointer]:
+            - /url: /cart
+            - generic [ref=f18e43]: "3"
+    - main [ref=f18e52]:
+      - generic [ref=f18e58]:
+        - heading "Cart" [level=1] [ref=f18e59]
+        - generic [ref=f18e61]:
+          - generic [ref=f18e63]:
+            - generic [ref=f18e66]:
+              - generic [ref=f18e68]:
+                - generic [ref=f18e69]: "Vendor: N/A"
+                - generic [ref=f18e73]:
+                  - generic [ref=f18e74]:
+                    - generic [ref=f18e76]:
+                      - checkbox "Toggle vendor select" [checked] [ref=f18e79]
+                      - generic [ref=f18e81]:
+                        - img "LAYS CHIPS PAPRIKA BOX 20X40GR" [ref=f18e82]
+                        - button [ref=f18e85] [cursor=pointer]
+                      - generic [ref=f18e90]:
+                        - link "LAYS CHIPS PAPRIKA BOX 20X40GR" [ref=f18e283] [cursor=pointer]:
+                          - /url: /lays-chips-paprika-box-20x40gr
+                        - generic [ref=f18e93]:
+                          - generic [ref=f18e94]:
+                            - generic [ref=f18e95]: brand
+                            - generic [ref=f18e97]: Lays
+                          - generic [ref=f18e98]:
+                            - generic [ref=f18e99]: original_sku
+                            - generic [ref=f18e101]: "6051795"
+                          - generic [ref=f18e102]:
+                            - generic [ref=f18e103]: product_type
+                            - generic [ref=f18e105]: Chips
+                          - generic [ref=f18e106]:
+                            - generic [ref=f18e107]: Price per item
+                            - generic [ref=f18e109]: $10.00
+                        - generic [ref=f18e112]:
+                          - generic [ref=f18e114]:
+                            - generic [ref=f18e117]:
+                              - button "Decrease quantity" [ref=f18e119] [cursor=pointer]
+                              - spinbutton "Product quantity" [ref=f18e123]: "2"
+                              - button "Increase quantity" [ref=f18e125] [cursor=pointer]
+                            - generic "In stock" [ref=f18e130]: "345"
+                          - generic [ref=f18e136]: $20.00
+                        - button "Remove from cart" [ref=f18e138] [cursor=pointer]
+                    - generic [ref=f18e145]:
+                      - checkbox "Toggle vendor select" [checked] [ref=f18e148]
+                      - generic [ref=f18e150]:
+                        - img "AGENT-TEST-Punchout Plain Product" [ref=f18e151]
+                        - button [ref=f18e154] [cursor=pointer]
+                      - generic [ref=f18e159]:
+                        - link "AGENT-TEST-Punchout Plain Product" [ref=f18e284] [cursor=pointer]:
+                          - /url: /agent-test-punchout-plain-product
+                        - generic [ref=f18e163]:
+                          - generic [ref=f18e164]: Price per item
+                          - generic [ref=f18e166]: $12.00
+                        - generic [ref=f18e169]:
+                          - generic [ref=f18e171]:
+                            - generic [ref=f18e174]:
+                              - button "Decrease quantity" [disabled] [ref=f18e176]
+                              - spinbutton "Product quantity" [ref=f18e180]: "1"
+                              - button "Increase quantity" [ref=f18e182] [cursor=pointer]
+                            - generic "In stock" [ref=f18e187]: "500"
+                          - generic [ref=f18e193]: $12.00
+                        - button "Remove from cart" [ref=f18e195] [cursor=pointer]
+                  - generic [ref=f18e201]:
+                    - button "Remove all" [ref=f18e202] [cursor=pointer]
+                    - generic [ref=f18e205]:
+                      - generic [ref=f18e206]: "Subtotal:"
+                      - generic [ref=f18e207]: $32.00
+              - button "Clear cart" [ref=f18e209] [cursor=pointer]
+            - generic [ref=f18e285]:
+              - generic [ref=f18e286]: Recently browsed
+              - generic "Recently browsed" [ref=f18e299]:
+                - generic [ref=f18e301]:
+                  - generic [ref=f18e303]:
+                    - img "AGENT-TEST-Wireless-Headphones" [ref=f18e307]
+                    - generic [ref=f18e308]:
+                      - link "AGENT-TEST-Wireless-Headphones" [ref=f18e310] [cursor=pointer]:
+                        - /url: /agent-test-wireless-headphones
+                      - generic [ref=f18e311]: $99.99
+                      - generic [ref=f18e315]:
+                        - button "Decrease quantity" [disabled] [ref=f18e317]
+                        - spinbutton "Product quantity" [ref=f18e321]: "0"
+                        - button "Increase quantity" [ref=f18e323] [cursor=pointer]
+                  - generic [ref=f18e329]:
+                    - img "ABSOLUT BLUE VODKA BOTTLE 1,00L" [ref=f18e333]
+                    - generic [ref=f18e334]:
+                      - link "ABSOLUT BLUE VODKA BOTTLE 1,00L" [ref=f18e336] [cursor=pointer]:
+                        - /url: /absolut-blue-vodka-bottle-100l
+                      - generic [ref=f18e337]:
+                        - generic [ref=f18e338]: $237.00
+                        - generic [ref=f18e339]: $400.00
+                      - generic [ref=f18e342]:
+                        - button "Decrease quantity" [disabled] [ref=f18e344]
+                        - spinbutton "Product quantity" [ref=f18e348]: "0"
+                        - button "Increase quantity" [ref=f18e350] [cursor=pointer]
+                  - generic [ref=f18e356]:
+                    - img "Double Layer Hemp Top and Strap with Arch Support" [ref=f18e360]
+                    - generic [ref=f18e361]:
+                      - link "Double Layer Hemp Top and Strap with Arch Support" [ref=f18e363] [cursor=pointer]:
+                        - /url: /double-layer-hemp-top-and-strap-with-arch-support
+                      - generic [ref=f18e365]:
+                        - generic [ref=f18e366]: From
+                        - text: $32.00
+                      - link "8 variations" [ref=f18e368] [cursor=pointer]:
+                        - /url: /double-layer-hemp-top-and-strap-with-arch-support
+                  - generic [ref=f18e372]:
+                    - img "AGENT-TEST-Config-Laptop-20260518" [ref=f18e376]
+                    - generic [ref=f18e377]:
+                      - link "AGENT-TEST-Config-Laptop-20260518" [ref=f18e379] [cursor=pointer]:
+                        - /url: /agent-test-config-laptop-20260518
+                      - generic [ref=f18e381]:
+                        - generic [ref=f18e382]: From
+                        - text: $999.00
+                      - link "Customize" [ref=f18e384] [cursor=pointer]:
+                        - /url: /agent-test-config-laptop-20260518
+          - complementary "Sidebar" [ref=f18e212]:
+            - generic [ref=f18e213]:
+              - generic [ref=f18e214]:
+                - generic [ref=f18e215]: Order summary
+                - generic "Order summary" [ref=f18e219]:
+                  - generic [ref=f18e220]:
+                    - generic [ref=f18e224]:
+                      - generic [ref=f18e225]: Subtotal
+                      - generic [ref=f18e226]: $32.00
+                    - generic [ref=f18e227]:
+                      - generic [ref=f18e228]:
+                        - generic [ref=f18e229]: Discount
+                        - generic [ref=f18e230]: $0.00
+                      - generic [ref=f18e231]:
+                        - generic [ref=f18e232]: Tax
+                        - generic [ref=f18e233]: $0.00
+                      - generic [ref=f18e234]:
+                        - generic [ref=f18e235]: Shipping cost
+                        - generic [ref=f18e236]: $0.00
+                    - generic [ref=f18e237]:
+                      - generic [ref=f18e238]: Total
+                      - generic [ref=f18e239]: $32.00
+                  - button "Create requisition" [ref=f18e240] [cursor=pointer]
+                  - generic [ref=f18e243]: Availability, shipping, tax and promotions are not final until you complete your order.
+              - generic [ref=f18e244]:
+                - generic [ref=f18e245]: Discount & coupons
+                - generic [ref=f18e248]:
+                  - generic [ref=f18e249]:
+                    - generic [ref=f18e398]:
+                      - heading "Gift" [level=3] [ref=f18e399]
+                      - paragraph [ref=f18e400]: Wine as a gift
+                      - generic [ref=f18e402]:
+                        - textbox "Gift Wine as a gift" [ref=f18e403]:
+                          - /placeholder: Enter custom code
+                          - text: winegift
+                        - button "Apply coupon winegift" [ref=f18e405] [cursor=pointer]
+                    - generic [ref=f18e416]:
+                      - heading "20% off cart" [level=3] [ref=f18e417]
+                      - paragraph [ref=f18e418]: Super Discount
+                      - generic [ref=f18e420]:
+                        - textbox "20% off cart Super Discount" [ref=f18e421]:
+                          - /placeholder: Enter custom code
+                          - text: SUPER
+                        - button "Apply coupon SUPER" [ref=f18e423] [cursor=pointer]
+                      - paragraph [ref=f18e428]: Expires Jan 1, 2027
+                    - generic [ref=f18e435]:
+                      - heading "10% off shipping" [level=3] [ref=f18e436]
+                      - paragraph [ref=f18e437]: Coupon on discount for shipping
+                      - generic [ref=f18e439]:
+                        - textbox "10% off shipping Coupon on discount for shipping" [ref=f18e440]:
+                          - /placeholder: Enter custom code
+                          - text: AIR
+                        - button "Apply coupon AIR" [ref=f18e442] [cursor=pointer]
+                      - paragraph [ref=f18e447]: Expires Jan 1, 2027
+                    - generic [ref=f18e454]:
+                      - heading "$999 off shipping" [level=3] [ref=f18e455]
+                      - paragraph [ref=f18e456]: QA Free Shipping
+                      - generic [ref=f18e458]:
+                        - textbox "$999 off shipping QA Free Shipping" [ref=f18e459]:
+                          - /placeholder: Enter custom code
+                          - text: FREESHIP
+                        - button "Apply coupon FREESHIP" [ref=f18e461] [cursor=pointer]
+                      - paragraph [ref=f18e466]: Expires Jan 1, 2027
+                    - generic [ref=f18e256]:
+                      - paragraph [ref=f18e257]: Custom code
+                      - generic [ref=f18e259]:
+                        - textbox "Custom code" [ref=f18e260]:
+                          - /placeholder: Enter custom code
+                        - button "Apply coupon" [disabled] [ref=f18e262]
+                  - link "View all coupons & promotions" [ref=f18e268] [cursor=pointer]:
+                    - /url: /account/coupons
+        - generic [ref=f18e467]:
+          - generic [ref=f18e468]: Total:$32.00
+          - button "Create requisition" [ref=f18e469] [cursor=pointer]
+    - contentinfo "Footer" [ref=f18e274]:
+      - generic [ref=f18e275]:
+        - img "B2B-store" [ref=f18e277]
+        - navigation
+      - generic [ref=f18e278]:
+        - generic [ref=f18e279]:
+          - text: Ver. 2.61.0-pr-2564-69d4-69d4418b. © 2026
+          - strong [ref=f18e280]: Virto Commerce
+          - text: . All rights reserved
+        - generic [ref=f18e281]:
+          - text: ASP.NET ecommerce platform
+          - link "Virto Commerce" [ref=f18e282] [cursor=pointer]:
+            - /url: https://virtocommerce.com
+  - region "Notifications"

@@ -1,0 +1,16 @@
+60. [POST] https://vcptcore-qa1-storefront.govirto.com/graphql => [200] 
+61. [POST] https://vcptcore-qa1-storefront.govirto.com/graphql => [200] 
+74. [POST] https://vcptcore-qa1-storefront.govirto.com/graphql => [200] 
+111. [POST] https://vcptcore-qa1-storefront.govirto.com/graphql => [200] 
+112. [POST] https://vcptcore-qa1-storefront.govirto.com/graphql => [200] 
+113. [POST] https://vcptcore-qa1-storefront.govirto.com/graphql => [200] 
+114. [POST] https://vcptcore-qa1-storefront.govirto.com/graphql => [200] 
+115. [POST] https://vcptcore-qa1-storefront.govirto.com/graphql => [200] 
+124. [POST] https://vcptcore-qa1-storefront.govirto.com/graphql => [200] 
+145. [POST] https://vcptcore-qa1-storefront.govirto.com/graphql => [200] 
+146. [POST] https://vcptcore-qa1-storefront.govirto.com/graphql => [200] 
+148. [POST] https://vcptcore-qa1-storefront.govirto.com/graphql => [200] 
+153. [POST] https://vcptcore-qa1-storefront.govirto.com/graphql => [200] 
+158. [POST] https://vcptcore-qa1-storefront.govirto.com/graphql => [200] 
+
+Note: 124 static requests not shown, run with "static" option to see them.

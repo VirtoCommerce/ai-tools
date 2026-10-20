@@ -1,0 +1,90 @@
+{
+ "at": "2026-10-20T17:12:16.862Z",
+ "phase": "window",
+ "s1Owner": {
+  "http": 200,
+  "ms": 988,
+  "errorCode": "StoreNotConfigured",
+  "url": null,
+  "formField": null,
+  "cxmlSha": null,
+  "cxmlLen": null,
+  "payloadID": null,
+  "skus": null,
+  "qtys": null,
+  "total": null,
+  "errors": null,
+  "sameAsFirst": false
+ },
+ "s1Password": {
+  "http": 200,
+  "ms": 274,
+  "errorCode": "SessionNotFound",
+  "url": null,
+  "formField": null,
+  "cxmlSha": null,
+  "cxmlLen": null,
+  "payloadID": null,
+  "skus": null,
+  "qtys": null,
+  "total": null,
+  "errors": null
+ },
+ "s1Anonymous": {
+  "http": 200,
+  "ms": 338,
+  "errorCode": "SessionNotFound",
+  "url": null,
+  "formField": null,
+  "cxmlSha": null,
+  "cxmlLen": null,
+  "payloadID": null,
+  "skus": null,
+  "qtys": null,
+  "total": null,
+  "errors": null
+ },
+ "s1OtherStore": {
+  "http": 200,
+  "ms": 262,
+  "errorCode": "StoreNotConfigured",
+  "url": null,
+  "formField": null,
+  "cxmlSha": null,
+  "cxmlLen": null,
+  "payloadID": null,
+  "skus": null,
+  "qtys": null,
+  "total": null,
+  "errors": null
+ },
+ "s2ActiveApiControl": {
+  "http": 200,
+  "ms": 321,
+  "errorCode": "StoreNotConfigured",
+  "url": null,
+  "formField": null,
+  "cxmlSha": null,
+  "cxmlLen": null,
+  "payloadID": null,
+  "skus": null,
+  "qtys": null,
+  "total": null,
+  "errors": null
+ },
+ "cartsAfter": {
+  "at": "2026-10-20T17:12:20.795Z",
+  "userId": "ab33e096-ad35-4636-ad61-0af318f16d56",
+  "carts": [
+   {
+    "name": "default",
+    "type": null,
+    "id": "a1853055-ccf1-4d3a-9cb8-2069c989eeb2",
+    "firstLineCreated": "2026-10-20T17:11:53.5998708Z",
+    "lines": [
+     "AGENT-TEST-PO-PLAIN-001x2"
+    ]
+   }
+  ]
+ }
+}

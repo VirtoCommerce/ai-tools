@@ -1,0 +1,80 @@
+{
+ "at": "2026-10-20T17:12:45.795Z",
+ "phase": "after",
+ "s1Owner": {
+  "http": 200,
+  "ms": 836,
+  "errorCode": null,
+  "url": "https://punchoutcommerce.com/tools/cxml-punchout-return",
+  "formField": "cxml-urlencoded",
+  "cxmlSha": "04b0cabac10c0790",
+  "cxmlLen": 1575,
+  "payloadID": "639281131154432395.799da106283447ea8cd439f4a779728d@virtocommerce.com",
+  "skus": [
+   "AGENT-TEST-PO-PLAIN-001"
+  ],
+  "qtys": [
+   "2"
+  ],
+  "total": "24.00",
+  "errors": null,
+  "sameAsFirst": true
+ },
+ "s1Password": {
+  "http": 200,
+  "ms": 209,
+  "errorCode": "SessionNotFound",
+  "url": null,
+  "formField": null,
+  "cxmlSha": null,
+  "cxmlLen": null,
+  "payloadID": null,
+  "skus": null,
+  "qtys": null,
+  "total": null,
+  "errors": null
+ },
+ "s1Anonymous": {
+  "http": 200,
+  "ms": 210,
+  "errorCode": "SessionNotFound",
+  "url": null,
+  "formField": null,
+  "cxmlSha": null,
+  "cxmlLen": null,
+  "payloadID": null,
+  "skus": null,
+  "qtys": null,
+  "total": null,
+  "errors": null
+ },
+ "s1OtherStore": {
+  "http": 200,
+  "ms": 207,
+  "errorCode": "SessionNotFound",
+  "url": null,
+  "formField": null,
+  "cxmlSha": null,
+  "cxmlLen": null,
+  "payloadID": null,
+  "skus": null,
+  "qtys": null,
+  "total": null,
+  "errors": null
+ },
+ "cartsAfter": {
+  "at": "2026-10-20T17:12:49.285Z",
+  "userId": "ab33e096-ad35-4636-ad61-0af318f16d56",
+  "carts": [
+   {
+    "name": "default",
+    "type": null,
+    "id": "a1853055-ccf1-4d3a-9cb8-2069c989eeb2",
+    "firstLineCreated": "2026-10-20T17:11:53.5998708Z",
+    "lines": [
+     "AGENT-TEST-PO-PLAIN-001x2"
+    ]
+   }
+  ]
+ }
+}

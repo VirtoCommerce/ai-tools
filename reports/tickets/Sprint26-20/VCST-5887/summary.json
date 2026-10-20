@@ -1,0 +1,203 @@
+{
+  "ticket": "VCST-5887",
+  "ticket_type": "Story",
+  "flow": "feature-test",
+  "path": "FULL",
+  "path_route": {
+    "decided_at": "1a",
+    "provisional": null,
+    "narrow_story_tokens": null,
+    "escalated_reason": "Story, priority High, cross-layer (vc-module-punchout + vc-frontend)"
+  },
+  "layer": "cross-layer",
+  "shape_class": null,
+  "verdict": "FAIL",
+  "date": "2026-10-20",
+  "environment": "vcptcore_qa1",
+  "build": {
+    "Punchout": "3.1000.0-pr-2-05b5",
+    "Punchout_source": "/api/platform/modules — PR #2 head 05b55ba (vc-deploy-dev #6965)",
+    "theme": "2.61.0-pr-2564-2fa8-2fa83310",
+    "theme_source": "storefront footer + served bundle index-B6I23A72.js — PR #2564 head 2fa8331 (vc-deploy-dev #6965)",
+    "Cart": "3.1012.0",
+    "XCart": "3.1042.0",
+    "Xapi": "3.1027.0",
+    "round_1": "FAIL (2026-10-14) — Bug A: requisition built from the 'default' cart, not the displayed one; build Punchout pr-2-f940 + theme 2.60.0-pr-2564-ff59",
+    "round_2": "FAIL (proposed, pending operator) — Bug A fixed (displayed/named cart sent, R2-B1/B2/A1/A6); replay byte-identical (R2-B4/B6/A2/A3); new UI + per-code messages PASS; R2-B5/PNCR-029: a cart changed after the return gets the OLD cXML replayed (High, IN-SCOPE). First attempt 2026-10-19 BLOCKED (theme not deployed + xAPI search down), rerun 2026-10-20 10:05Z.",
+    "round": 2,
+    "change_delta": [
+      "D1 DefaultPunchoutHandler no longer forces CartName=default (cart resolved like Query.cart)",
+      "D2 idempotent replay: a Returned session replays the stored cxml (QA guide case 2 now stale)",
+      "D3 per-errorCode toast messages (13 locales)",
+      "D4 punchout hides shipping/payment/comment + incomplete hint; button gated on shown sections only",
+      "D5 quote widget hidden in punchout mode"
+    ],
+    "reachability": "1r not dispatched as a separate lane; R2-B0 (4a's first row) served as the build probe and returned BLOCKED",
+    "environment_findings": [
+      "qa1 xAPI catalog search: products/categories -> errors[].extensions.code SEARCH inside HTTP 200 (21:38–21:41Z, anonymous and authenticated); admin REST catalog search works",
+      "qa1 storefront serves vc-frontend PR #2575 over #2564",
+      "version-mismatch banner on every page in the #2575 build ('VirtoCommerce.SalesRep 3.1014.0 ≥ 3.1013.0') — not VCST-5887",
+      "Punchout.Enabled on B2B-store left OFF 11:44:39Z–12:43Z by an interrupted API lane; restored by the orchestrator (full-store PUT), setup probe 200"
+    ],
+    "next": "Only open item: the team decision on R2-B5/PNCR-029 (stale cXML replay after a cart change, High draft). Then verdict, tracker transition. suites:sync for the 109 count (27→35) is blocked by two unrelated untracked suites (099, subscription/093).",
+    "AzureSearch": "3.1009.0-pr-61-8c37 (Oleg Zhuk, fixes the PR #59 $select regression that broke xAPI search)",
+    "bugs_pending_filing": [
+      {
+        "draft": "reports/bugs/open/critical-high/BUG-punchout-replay-sends-stale-cxml-after-cart-change.md",
+        "severity": "High",
+        "provenance": "IN-SCOPE",
+        "relationship": "Sub-task of VCST-5887"
+      }
+    ],
+    "round_2_decision": "2026-10-20 operator: verdict held — the stale replay after a cart change (R2-B5/PNCR-029, High draft) goes to a team discussion, no Sub-task filed, no tracker comment, no transition yet. Author will fix ONLY: replay of a returned session while Punchout.Enabled is off (R2-A7). Kept as is (by decision): replay instead of SessionExpired on a second click (QA guide case 2 stale); no errorCode console line; cart not refreshed after a CartIsEmpty refusal; cart not cleared after a return / next session reuses the same cart.",
+    "round_3": "6/6 PASS (2026-10-20 17:08–17:40Z): R3-1 returned session + Punchout.Enabled off → StoreNotConfigured, no replay (fix 05b55ba); R3-2 en/de toasts; R3-3 replay intact after restore; R3-4 owner check intact; R3-5 storefront in an iframe → return page replaces the whole window (fix 2fa8331); R3-6 direct submit. Store windows ~40 s and ~1.5 min, restored and read back true.",
+    "tracker_round_3": "comment 112218 (round 3 results + question to Oleg Zhuk: should the cart be cleared after the return / per-session cart), 2 inline screenshots, mention rendered",
+    "oracle": ".claude/knowledge/oracles/bl/punchout.yaml — BL-PUNCHOUT-001..009 (DECLARED, source: QA guide 2026-10-12 + operator decisions 2026-10-20)",
+    "kb": "queued: dispute KB-6A5F88F8; capture KB-7BA531B3 (replay), KB-B2D1325E (cart resolution, cart kept), KB-232D4C5C (375 px footer overlap)"
+  },
+  "status_transitions": [
+    {
+      "at": "1a",
+      "hop": "opening",
+      "from": "Testing",
+      "to": "Testing",
+      "skipped": "already in-testing at run start (moved Ready for test -> Testing 2026-10-19 16:25)",
+      "by": "qa-lead (inline orchestrator)",
+      "confirmed": false,
+      "result": "skipped"
+    },
+    {
+      "at": "5-status",
+      "hop": "closing",
+      "from": "Testing",
+      "to": "Testing",
+      "skipped": "held by operator — team discussion of the High finding",
+      "by": "qa-lead (inline orchestrator)",
+      "confirmed": false,
+      "result": "pending"
+    }
+  ],
+  "timing": {
+    "test_window_start": "2026-10-20T10:05:24Z",
+    "test_window_end": "2026-10-20T14:27:04Z",
+    "reachability_minutes": null,
+    "time_to_first_test_minutes": 0
+  },
+  "discovery": {
+    "ran": false,
+    "reason": "3x skipped on round 2 — round-1 SBTM session exists; the round-2 delta was read from source and turned into explicit checklist rows 38–47"
+  },
+  "visual": {
+    "ran": true,
+    "design_axis": "SKIPPED — no prototype link",
+    "punchout_cart_1920": "PASS (layout, alignment, axe 0 violations)",
+    "not_reached": "768/375 sticky bar, error toast, spinner/loading, de label wrap",
+    "still_present": "VCST-6374 \"Toggle vendor select\"",
+    "round_3": "768/375 PASS; spinner contrast PASS, busy state not announced (Low advisory); de label wrap Low (round 1); 375 px sticky bar covers footer — PRE-EXISTING (regular checkout same), KB-232D4C5C, not filed"
+  },
+  "test_data": {
+    "surface": false,
+    "fixtures_covering": [
+      "@td(PUNCHOUT_MAPPING_REQUISITION.*)",
+      "@td(PUNCHOUT_CONFIG_0.*)",
+      "@td(PUNCHOUT_PRODUCT_PLAIN.*)",
+      "{{PUNCHOUT_SHARED_SECRET_0}}"
+    ],
+    "seed_verify": "seed:punchout:verify green on qa1 except PUNCHOUT_PRODUCT_UOM not found via xAPI (same search outage)",
+    "td_validate": "exit 0 (td:validate); td:validate:punchout fails only on the vcst overlay (pre-existing, punchout not deployed on vcst)"
+  },
+  "coverage_triage": {
+    "suite": "109",
+    "state": "complete",
+    "repair": [
+      "PNCR-014",
+      "PNCR-026"
+    ],
+    "re_base": [
+      "PNCR-013",
+      "PNCR-015",
+      "PNCR-024"
+    ],
+    "confirmed_fix_oracles": [
+      "PNCR-002",
+      "PNCR-003",
+      "PNCR-027"
+    ],
+    "authored": [
+      "PNCR-028",
+      "PNCR-029",
+      "PNCR-030",
+      "PNCR-031",
+      "PNCR-032",
+      "PNCR-033",
+      "PNCR-034",
+      "PNCR-035"
+    ],
+    "gate_3_cases": "APPROVE on re-verify (first pass REJECT on PNCR-035 vacuity, fixed)"
+  },
+  "regression": {
+    "c1": {
+      "run_id": "REG-2026-10-20-1248",
+      "suite": "109",
+      "ids": 16,
+      "passed": 14,
+      "failed": 2,
+      "blocked": 0,
+      "pass_rate": 87.5,
+      "failures": [
+        "PNCR-013 RE-BASE (replay instead of SessionExpired — spec changed by author)",
+        "PNCR-015 RE-BASE (same)"
+      ],
+      "promotion": "skipped — delegated run (--no-promote)"
+    },
+    "c1_rerun": {
+      "run_id": "REG-2026-10-20-1811",
+      "ids": [
+        "PNCR-002",
+        "PNCR-003",
+        "PNCR-013",
+        "PNCR-015",
+        "PNCR-027",
+        "PNCR-028",
+        "PNCR-034"
+      ],
+      "passed": 7,
+      "failed": 0,
+      "blocked": 0,
+      "pass_rate": 100.0,
+      "promotion": "skipped — delegated run (--no-promote)"
+    }
+  },
+  "bugs_filed": [],
+  "bugs_not_filed": [
+    {
+      "title": "Cart view not refreshed after a CartIsEmpty refusal (all lines still look selected)",
+      "severity": "Low",
+      "provenance": "IN-SCOPE"
+    },
+    {
+      "title": "\"Something went wrong\" under a disabled checkout button for an over-stock line",
+      "severity": "Low",
+      "provenance": "PRE-EXISTING"
+    }
+  ],
+  "report": {
+    "kb": {
+      "read": [
+        "KB-6A5F88F8"
+      ],
+      "confirmed": [],
+      "disputed": [
+        "KB-6A5F88F8"
+      ],
+      "captured": [
+        "KB-7BA531B3",
+        "KB-B2D1325E",
+        "KB-232D4C5C"
+      ]
+    }
+  },
+  "tracker": {
+    "comment_id": "112218"
+  }
+}

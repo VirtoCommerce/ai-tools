@@ -1,0 +1,221 @@
+- generic [ref=f46e1]:
+  - generic [ref=f46e3]:
+    - list:
+      - listitem:
+        - link "Skip to main content":
+          - /url: "#main-content"
+      - listitem:
+        - link "Skip to footer":
+          - /url: "#footer"
+    - banner [ref=f46e4]:
+      - generic [ref=f46e5]:
+        - 'button "Language: English (United States) en" [ref=f46e9] [cursor=pointer]':
+          - generic [ref=f46e10]: "Language:"
+          - img "English (United States)" [ref=f46e11]
+          - generic [ref=f46e12]: en
+        - 'button "Currency: USD" [ref=f46e17] [cursor=pointer]':
+          - generic [ref=f46e18]: "Currency:"
+          - generic [ref=f46e19]: USD
+        - 'button "Ship to: Select address" [ref=f46e101] [cursor=pointer]':
+          - generic [ref=f46e106]: "Ship to:"
+          - generic [ref=f46e107]: Select address
+      - generic [ref=f46e26]:
+        - 'button "Theme: auto" [ref=f46e29] [cursor=pointer]'
+        - link "Dashboard" [ref=f46e32] [cursor=pointer]:
+          - /url: /account/dashboard
+        - link "Contacts" [ref=f46e34] [cursor=pointer]:
+          - /url: /contacts
+        - button "Account menu" [ref=f46e37] [cursor=pointer]:
+          - generic "AGENT-TEST-Punchout Buyer" [ref=f46e39]
+    - generic [ref=f46e41]:
+      - navigation "Main menu" [ref=f46e43]:
+        - link [ref=f46e44] [cursor=pointer]:
+          - /url: /
+          - img "B2B-store" [ref=f46e45]
+        - generic [ref=f46e47]: AGENT-TEST-Org-AcmeCorp-20260310
+        - generic [ref=f46e50]:
+          - searchbox "Search" [ref=f46e51]
+          - generic [ref=f46e52]:
+            - button "Barcode scan" [ref=f46e53] [cursor=pointer]
+            - button "Search" [ref=f46e56] [cursor=pointer]
+        - list [ref=f46e59]:
+          - listitem [ref=f46e60]:
+            - link "Bulk order" [ref=f46e61] [cursor=pointer]:
+              - /url: /bulk-order
+          - listitem [ref=f46e129]:
+            - link "Compare" [ref=f46e130] [cursor=pointer]:
+              - /url: /compare
+          - listitem [ref=f46e65]:
+            - link "Lists" [ref=f46e66] [cursor=pointer]:
+              - /url: /account/lists
+          - listitem [ref=f46e70]:
+            - link "Orders" [ref=f46e71] [cursor=pointer]:
+              - /url: /account/orders
+          - listitem [ref=f46e146]:
+            - button "Notifications" [ref=f46e149] [cursor=pointer]
+          - listitem [ref=f46e158]:
+            - link "600 Cart" [ref=f46e159] [cursor=pointer]:
+              - /url: /cart
+              - generic [ref=f46e160]: "600"
+              - generic [ref=f46e168]: Cart
+      - navigation "Main navigation" [ref=f46e75]:
+        - button "All products" [ref=f46e78] [cursor=pointer]
+        - menubar "Navigation" [ref=f46e181]:
+          - menuitem "Bolts" [ref=f46e182] [cursor=pointer]
+          - menuitem "Standard Test Products" [ref=f46e183] [cursor=pointer]
+          - menuitem "Coca-Cola" [ref=f46e184] [cursor=pointer]
+          - menuitem "Snacks" [ref=f46e185] [cursor=pointer]
+          - menuitem "Soft Drinks" [ref=f46e186] [cursor=pointer]
+          - menuitem "Default Option Parents" [ref=f46e187] [cursor=pointer]
+          - menuitem "Alcoholic drinks" [ref=f46e188] [cursor=pointer]
+          - menuitem "Juice" [ref=f46e189] [cursor=pointer]
+          - menuitem "Kitchen supplies" [ref=f46e190] [cursor=pointer]
+          - menuitem "Coffee and tea" [ref=f46e191] [cursor=pointer]
+          - menuitem "Configurable Parents" [ref=f46e192] [cursor=pointer]
+          - menuitem "Clothing" [ref=f46e193] [cursor=pointer]
+          - menuitem "Printers" [ref=f46e194] [cursor=pointer]
+          - menuitem "Conditional Parents" [ref=f46e195] [cursor=pointer]
+    - main [ref=f46e81]:
+      - generic [ref=f46e201]:
+        - navigation "Breadcrumbs navigation" [ref=f46e202]:
+          - list [ref=f46e203]:
+            - listitem [ref=f46e204]:
+              - link "Home" [ref=f46e205] [cursor=pointer]:
+                - /url: /
+            - listitem [aria-hidden] [ref=f46e206]: /
+            - listitem [ref=f46e207]: Cart
+        - heading "Cart" [level=1] [ref=f46e208]
+        - generic [ref=f46e210]:
+          - generic [ref=f46e212]:
+            - generic [ref=f46e215]:
+              - generic [ref=f46e217]:
+                - generic [ref=f46e218]: "Vendor: N/A"
+                - generic [ref=f46e222]:
+                  - generic [ref=f46e223]:
+                    - checkbox "Toggle vendor select" [checked] [ref=f46e226]
+                    - generic [ref=f46e228]: Product
+                    - generic [ref=f46e229]: Price per item
+                    - generic [ref=f46e230]: Quantity
+                    - generic [ref=f46e232]: Total
+                  - generic [ref=f46e234]:
+                    - generic [ref=f46e235]:
+                      - checkbox "Toggle vendor select" [checked] [ref=f46e238]
+                      - img "AGENT-TEST-Punchout Plain Product" [ref=f46e241]
+                      - generic [ref=f46e242]:
+                        - generic [ref=f46e243]:
+                          - link "AGENT-TEST-Punchout Plain Product" [ref=f46e245] [cursor=pointer]:
+                            - /url: /agent-test-punchout-plain-product
+                          - button "Save for later" [ref=f46e248] [cursor=pointer]
+                        - generic [ref=f46e255]: $12.00
+                        - generic [ref=f46e257]:
+                          - generic [ref=f46e259]:
+                            - generic [ref=f46e262]:
+                              - button "Decrease quantity" [ref=f46e264] [cursor=pointer]
+                              - spinbutton "Product quantity" [invalid] [ref=f46e268]: "600"
+                              - button "Increase quantity" [disabled] [ref=f46e270]
+                            - generic "In stock" [ref=f46e275]: "500"
+                          - generic [ref=f46e281]: $7,200.00
+                        - button "Remove from cart" [ref=f46e283] [cursor=pointer]
+                    - generic [ref=f46e289]: You can order maximum 500 item(s)
+                  - generic [ref=f46e299]:
+                    - button "Remove selected" [ref=f46e300] [cursor=pointer]
+                    - generic [ref=f46e303]:
+                      - generic [ref=f46e304]: "Subtotal:"
+                      - generic [ref=f46e305]: $7,200.00
+              - button "Clear cart" [ref=f46e307] [cursor=pointer]
+            - generic [ref=f46e310]:
+              - generic [ref=f46e311]: Shipping details
+              - generic "Shipping details" [ref=f46e323]:
+                - generic [ref=f46e324]:
+                  - generic [ref=f46e325]:
+                    - generic [ref=f46e326]: Delivery option
+                    - generic [ref=f46e327]:
+                      - button "Pickup" [ref=f46e329] [cursor=pointer]
+                      - button "Shipping" [pressed] [ref=f46e336] [cursor=pointer]
+                  - generic [ref=f46e344]:
+                    - generic [ref=f46e345]:
+                      - generic [ref=f46e346]: Shipping address*
+                      - generic [ref=f46e348]:
+                        - generic [ref=f46e349]: 1 Test St, New York, New York, 10001, United States
+                        - button [ref=f46e350] [cursor=pointer]
+                    - generic [ref=f46e356]:
+                      - generic [ref=f46e357]: Delivery method*
+                      - button "Delivery method" [ref=f46e361] [cursor=pointer]:
+                        - generic [ref=f46e362]: Select a delivery method
+            - generic [ref=f46e369]:
+              - generic [ref=f46e370]: Payment details
+              - generic "Payment details" [ref=f46e380]:
+                - generic [ref=f46e381]:
+                  - generic [ref=f46e382]:
+                    - generic [ref=f46e383]: Billing address*
+                    - generic [ref=f46e384]:
+                      - generic [ref=f46e386] [cursor=pointer]:
+                        - checkbox "billingAddressEqualsShipping" [checked] [ref=f46e387]
+                        - generic [ref=f46e389]: Same as shipping address
+                      - generic [ref=f46e392]: 1 Test St, New York, New York, 10001, United States
+                  - generic [ref=f46e395]:
+                    - generic [ref=f46e396]: Payment method*
+                    - button "Payment method" [ref=f46e400] [cursor=pointer]:
+                      - generic [ref=f46e401]: Select a payment method
+            - generic [ref=f46e408]:
+              - generic [ref=f46e409]: Order comment
+              - generic "Order comment" [ref=f46e419]:
+                - generic [ref=f46e420]:
+                  - textbox "Enter a value" [ref=f46e421]
+                  - generic [ref=f46e422]: 0 / 1000
+          - complementary "Sidebar" [ref=f46e424]:
+            - generic [ref=f46e425]:
+              - generic [ref=f46e426]:
+                - generic [ref=f46e427]: Order summary
+                - generic "Order summary" [ref=f46e431]:
+                  - generic [ref=f46e432]:
+                    - generic [ref=f46e433]:
+                      - generic [ref=f46e434]: Subtotal
+                      - generic [ref=f46e435]: $7,200.00
+                    - generic [ref=f46e436]:
+                      - generic [ref=f46e437]:
+                        - generic [ref=f46e438]: Discount
+                        - generic [ref=f46e439]: $0.00
+                      - generic [ref=f46e440]:
+                        - generic [ref=f46e441]: Tax
+                        - generic [ref=f46e442]: $0.00
+                      - generic [ref=f46e443]:
+                        - generic [ref=f46e444]: Shipping cost
+                        - generic [ref=f46e445]: $0.00
+                    - generic [ref=f46e446]:
+                      - generic [ref=f46e447]: Total
+                      - generic [ref=f46e448]: $7,200.00
+                  - button "Place order" [disabled] [ref=f46e449]
+                  - generic [ref=f46e452]: Complete all required information to proceed.
+                  - generic [ref=f46e458]: Something went wrong. Please try again later.
+                  - generic [ref=f46e464]: Availability, shipping, tax and promotions are not final until you complete your order.
+              - generic [ref=f46e465]:
+                - generic [ref=f46e466]: Discount & coupons
+                - generic [ref=f46e469]:
+                  - generic [ref=f46e477]:
+                    - paragraph [ref=f46e478]: Custom code
+                    - generic [ref=f46e480]:
+                      - textbox "Custom code" [ref=f46e481]:
+                        - /placeholder: Enter custom code
+                      - button "Apply coupon" [disabled] [ref=f46e483]
+                  - link "View all coupons & promotions" [ref=f46e489] [cursor=pointer]:
+                    - /url: /account/coupons
+              - generic [ref=f46e493]:
+                - generic [ref=f46e494]: Quote request
+                - generic "Quote request" [ref=f46e498]:
+                  - paragraph [ref=f46e499]: You can request items in your cart through a special service
+                  - button "Add cart items to quote" [ref=f46e500] [cursor=pointer]
+    - contentinfo "Footer" [ref=f46e85]:
+      - generic [ref=f46e86]:
+        - img "B2B-store" [ref=f46e88]
+        - navigation [ref=f46e89]
+      - generic [ref=f46e90]:
+        - generic [ref=f46e91]:
+          - text: Ver. 2.61.0-pr-2564-69d4-69d4418b. © 2026
+          - strong [ref=f46e92]: Virto Commerce
+          - text: . All rights reserved
+        - generic [ref=f46e93]:
+          - text: ASP.NET ecommerce platform
+          - link "Virto Commerce" [ref=f46e94] [cursor=pointer]:
+            - /url: https://virtocommerce.com
+  - region "Notifications"

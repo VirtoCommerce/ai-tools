@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE cXML SYSTEM "http://xml.cxml.org/schemas/cXML/1.2.041/cXML.dtd">
+<cXML payloadID="639280878898336452.60802ac5268147b4a361683aced7f3ca@virtocommerce.com" timestamp="2026-10-20T10:11:29+00:00">
+  <Header>
+    <From>
+      <Credential domain="NetworkId">
+        <Identity>supplier</Identity>
+      </Credential>
+    </From>
+    <To>
+      <Credential domain="NetworkId">
+        <Identity>buyer-co</Identity>
+      </Credential>
+    </To>
+    <Sender>
+      <Credential domain="NetworkId">
+        <Identity>supplier</Identity>
+      </Credential>
+      <UserAgent>Virto Commerce Punchout</UserAgent>
+    </Sender>
+  </Header>
+  <Message>
+    <PunchOutOrderMessage>
+      <BuyerCookie>AGENT-R2-B6-1792491058190</BuyerCookie>
+      <PunchOutOrderMessageHeader operationAllowed="create">
+        <Total>
+          <Money currency="USD">34.00</Money>
+        </Total>
+      </PunchOutOrderMessageHeader>
+      <ItemIn quantity="2">
+        <ItemID>
+          <SupplierPartID>AGENT-TEST-PO-PLAIN-001</SupplierPartID>
+          <SupplierPartAuxiliaryID>4f6bb8ac-a4d3-439a-9d59-a7b6b130df9e</SupplierPartAuxiliaryID>
+        </ItemID>
+        <ItemDetail>
+          <UnitPrice>
+            <Money currency="USD">12.00</Money>
+          </UnitPrice>
+          <Description xml:lang="en-US">AGENT-TEST-Punchout Plain Product</Description>
+          <UnitOfMeasure>EA</UnitOfMeasure>
+          <Classification domain="Custom">00000000</Classification>
+        </ItemDetail>
+      </ItemIn>
+      <ItemIn quantity="1">
+        <ItemID>
+          <SupplierPartID>6051795</SupplierPartID>
+          <SupplierPartAuxiliaryID>a5070881-4f02-440c-8995-865398517f13</SupplierPartAuxiliaryID>
+        </ItemID>
+        <ItemDetail>
+          <UnitPrice>
+            <Money currency="USD">10.00</Money>
+          </UnitPrice>
+          <Description xml:lang="en-US">LAYS CHIPS PAPRIKA BOX 20X40GR</Description>
+          <UnitOfMeasure>EA</UnitOfMeasure>
+          <Classification domain="Custom">00000000</Classification>
+        </ItemDetail>
+      </ItemIn>
+    </PunchOutOrderMessage>
+  </Message>
+</cXML>

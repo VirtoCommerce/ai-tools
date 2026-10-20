@@ -1,0 +1,17 @@
+{
+ "at": "2026-10-20T10:20:18.964Z",
+ "userId": "ab33e096-ad35-4636-ad61-0af318f16d56",
+ "carts": [
+  {
+   "name": "default",
+   "type": null,
+   "id": "7002af2c-b36c-4709-940a-a37b8c502151",
+   "total": "$32.00",
+   "created": "2026-10-20T10:18:43.2629106Z",
+   "lines": [
+    "6051795x2@10/stk345",
+    "AGENT-TEST-PO-PLAIN-001x1@12/stk500"
+   ]
+  }
+ ]
+}

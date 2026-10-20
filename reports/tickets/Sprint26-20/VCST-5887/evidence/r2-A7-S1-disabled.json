@@ -1,0 +1,19 @@
+{
+ "http": 200,
+ "ms": 946,
+ "errorCode": null,
+ "url": "https://punchoutcommerce.com/tools/cxml-punchout-return",
+ "formField": "cxml-urlencoded",
+ "cxmlSha": "f0ec9a694db9c4a5",
+ "cxmlLen": 1579,
+ "payloadID": "639280933195628142.d7511ad563f14f9899ac516864d71eb5@virtocommerce.com",
+ "skus": [
+  "AGENT-TEST-PO-PLAIN-001"
+ ],
+ "qtys": [
+  "1"
+ ],
+ "total": "12.00",
+ "errors": null,
+ "at": "2026-10-20T11:45:26.393Z"
+}

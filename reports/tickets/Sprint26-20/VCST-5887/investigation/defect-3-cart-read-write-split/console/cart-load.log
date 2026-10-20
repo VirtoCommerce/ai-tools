@@ -1,0 +1,4 @@
+[    1761ms] [INFO] [WebSocket] Connecting... Attempting to establish connection. @ https://vcptcore-qa1-storefront.govirto.com/assets/index-BSI66hFV.js:8
+[    2398ms] [INFO] Images loaded lazily and replaced with placeholders. Load events are deferred. See https://go.microsoft.com/fwlink/?linkid=2048113 @ https://vcptcore-qa1-storefront.govirto.com/cart:0
+[    3121ms] [INFO] [WebSocket] Connection opened successfully. {url: wss://vcptcore-qa1-storefront.govirto.com/graphql, protocol: graphql-transport-ws} @ https://vcptcore-qa1-storefront.govirto.com/assets/index-BSI66hFV.js:8
+[   10504ms] [LOG] Download the Apollo DevTools for a better development experience: %s https://chrome.google.com/webstore/detail/apollo-client-developer-t/jdkknkkbebbapilgoeccciglkfbmbnfm @ https://vcptcore-qa1-storefront.govirto.com/assets/vendor-BEustyit.js:0

@@ -1,0 +1,106 @@
+[
+ {
+  "t": "2026-10-14T11:25:29.426Z",
+  "op": "GetShortCart",
+  "vars": {
+   "storeId": "B2B-store",
+   "cultureName": "en-US",
+   "currencyCode": "USD",
+   "userId": "d6faffc9-2111-406a-b679-fd270beec4eb"
+  },
+  "result": [
+   "cart"
+  ]
+ },
+ {
+  "t": "2026-10-14T11:25:31.560Z",
+  "op": "GetShortCart",
+  "vars": {
+   "storeId": "B2B-store",
+   "cultureName": "en-US",
+   "currencyCode": "USD",
+   "userId": "ab33e096-ad35-4636-ad61-0af318f16d56"
+  },
+  "result": {
+   "id": "a22dc6c3-0687-40a0-9717-f88a3e639a6a",
+   "items": [
+    "AGENT-TEST-PO-PLAIN-001x2"
+   ]
+  }
+ },
+ {
+  "t": "2026-10-14T11:25:40.236Z",
+  "op": "GetFullCart",
+  "vars": {
+   "storeId": "B2B-store",
+   "cultureName": "en-US",
+   "currencyCode": "USD",
+   "userId": "ab33e096-ad35-4636-ad61-0af318f16d56"
+  },
+  "result": {
+   "id": "a22dc6c3-0687-40a0-9717-f88a3e639a6a",
+   "items": [
+    "AGENT-TEST-PO-PLAIN-001x2"
+   ]
+  }
+ },
+ {
+  "t": "2026-10-14T11:25:40.853Z",
+  "op": "AddOrUpdateCartShipment",
+  "vars": {
+   "command": {
+    "shipment": {},
+    "storeId": "B2B-store",
+    "currencyCode": "USD",
+    "cultureName": "en-US",
+    "userId": "ab33e096-ad35-4636-ad61-0af318f16d56"
+   },
+   "skipQuery": false
+  },
+  "result": {
+   "id": "1639b85b-1da6-432c-80bf-255a840dffc0",
+   "items": [
+    "AGENT-TEST-PO-UOM-001x3"
+   ]
+  }
+ },
+ {
+  "t": "2026-10-14T11:25:41.732Z",
+  "op": "AddOrUpdateCartPayment",
+  "vars": {
+   "command": {
+    "payment": {},
+    "storeId": "B2B-store",
+    "currencyCode": "USD",
+    "cultureName": "en-US",
+    "userId": "ab33e096-ad35-4636-ad61-0af318f16d56"
+   },
+   "skipQuery": false
+  },
+  "result": {
+   "id": "1639b85b-1da6-432c-80bf-255a840dffc0",
+   "items": [
+    "AGENT-TEST-PO-UOM-001x3"
+   ]
+  }
+ },
+ {
+  "t": "2026-10-14T11:26:19.593Z",
+  "op": "createRequisition",
+  "vars": {
+   "command": {
+    "storeId": "B2B-store",
+    "cultureName": "en-US",
+    "currencyCode": "USD"
+   }
+  },
+  "result": {
+   "url": "https://punchoutcommerce.com/tools/cxml-punchout-return",
+   "formField": "cxml-urlencoded",
+   "errorCode": null,
+   "cxmlLen": 1576,
+   "cxmlHasUOM": true,
+   "cxmlHasPLAIN": false
+  }
+ }
+]

@@ -1,0 +1,108 @@
+{
+ "initial": [
+  {
+   "name": "default",
+   "type": null,
+   "id": "f6b97c20-7aaa-4fd8-9050-f5e08edfb992",
+   "firstLineCreated": null,
+   "lines": []
+  }
+ ],
+ "namedShoppingCart": {
+  "id": "0be5b727-b19a-4e64-af6c-d2dc2061c89a",
+  "name": "AGENT-R2-A6b-named-1792496422880",
+  "type": null,
+  "items": [
+   {
+    "sku": "6051795",
+    "quantity": 1
+   },
+   {
+    "sku": "AGENT-TEST-PO-PLAIN-001",
+    "quantity": 2
+   }
+  ]
+ },
+ "moveToSavedForLater": {
+  "moveToSavedForLater": {
+   "cart": {
+    "id": "0be5b727-b19a-4e64-af6c-d2dc2061c89a",
+    "name": "AGENT-R2-A6b-named-1792496422880",
+    "items": [
+     {
+      "sku": "AGENT-TEST-PO-PLAIN-001",
+      "quantity": 2
+     }
+    ]
+   },
+   "list": {
+    "id": "dc12940b-d14b-4714-9628-b007cee0ea2e",
+    "name": "Saved for later",
+    "type": "SavedForLater",
+    "items": [
+     {
+      "sku": "6051795",
+      "quantity": 1
+     }
+    ]
+   }
+  }
+ },
+ "wishlist": {
+  "addWishlistItem": {
+   "id": "bd4e5c5e-74db-471e-969e-9a69022623c7",
+   "name": "AGENT-R2-A6b-wl-1792496429209",
+   "items": [
+    {
+     "sku": "6051795",
+     "quantity": 3
+    }
+   ]
+  }
+ },
+ "cartsUntyped": {
+  "at": "2026-10-20T11:40:30.571Z",
+  "userId": "ab33e096-ad35-4636-ad61-0af318f16d56",
+  "carts": [
+   {
+    "name": "AGENT-R2-A6b-named-1792496422880",
+    "type": null,
+    "id": "0be5b727-b19a-4e64-af6c-d2dc2061c89a",
+    "firstLineCreated": "2026-10-20T11:40:33.7919386Z",
+    "lines": [
+     "AGENT-TEST-PO-PLAIN-001x2"
+    ]
+   }
+  ]
+ },
+ "queryCartDefault": {
+  "id": "0be5b727-b19a-4e64-af6c-d2dc2061c89a",
+  "name": "AGENT-R2-A6b-named-1792496422880",
+  "type": null,
+  "items": [
+   {
+    "sku": "AGENT-TEST-PO-PLAIN-001",
+    "quantity": 2
+   }
+  ]
+ },
+ "requisition": {
+  "http": 200,
+  "ms": 1486,
+  "errorCode": null,
+  "url": "https://punchoutcommerce.com/tools/cxml-punchout-return",
+  "formField": "cxml-urlencoded",
+  "cxmlSha": "bf6465ea9cbf81b1",
+  "cxmlLen": 1577,
+  "payloadID": "639280932435161212.01ca48bca6c345a6901e86827640d4c7@virtocommerce.com",
+  "skus": [
+   "AGENT-TEST-PO-PLAIN-001"
+  ],
+  "qtys": [
+   "2"
+  ],
+  "total": "24.00",
+  "errors": null
+ },
+ "cookie": "AGENT-R2-A6b-1792496431056"
+}

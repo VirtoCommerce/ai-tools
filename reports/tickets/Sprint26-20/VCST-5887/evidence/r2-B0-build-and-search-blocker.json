@@ -1,0 +1,75 @@
+{
+ "at": "2026-10-19T21:40:22.463Z",
+ "servedTheme": "2.61.0-pr-2575-2024-2024d7ad (footer)",
+ "expected": "vc-frontend PR #2564 head 69d4418",
+ "pr2575": "feat(VCST-5906) VcTileButton, head 2024d7a, base dev",
+ "compare_69d4418_to_2024d7ad": "diverged ahead 4 behind 8 (served build does not contain 69d4418)",
+ "modules": {
+  "Punchout": "3.1000.0-pr-2-6c75",
+  "Cart": "3.1012.0",
+  "XCart": "3.1042.0",
+  "Xapi": "3.1027.0"
+ },
+ "probes": [
+  {
+   "query": "{products(storeId:\"B2B-store\",first:1){totalCount}}",
+   "http": 200,
+   "body": {
+    "errors": [
+     {
+      "message": "Error trying to resolve field 'products'.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 2
+       }
+      ],
+      "path": [
+       "products"
+      ],
+      "extensions": {
+       "code": "SEARCH",
+       "codes": [
+        "SEARCH",
+        "REQUEST_FAILED"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "products": null
+    }
+   }
+  },
+  {
+   "query": "{categories(storeId:\"B2B-store\",first:1){totalCount}}",
+   "http": 200,
+   "body": {
+    "errors": [
+     {
+      "message": "Error trying to resolve field 'categories'.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 2
+       }
+      ],
+      "path": [
+       "categories"
+      ],
+      "extensions": {
+       "code": "SEARCH",
+       "codes": [
+        "SEARCH",
+        "REQUEST_FAILED"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "categories": null
+    }
+   }
+  }
+ ]
+}

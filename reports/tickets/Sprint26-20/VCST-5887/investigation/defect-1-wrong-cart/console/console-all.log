@@ -1,0 +1,12 @@
+Total messages: 1 (Errors: 1, Warnings: 0)
+Returning 9 messages for level "debug"
+
+[INFO] [WebSocket] Connecting... Attempting to establish connection. @ https://vcptcore-qa1-storefront.govirto.com/assets/index-BSI66hFV.js:8
+[INFO] [WebSocket] Connection opened successfully. {url: wss://vcptcore-qa1-storefront.govirto.com/graphql, protocol: graphql-transport-ws} @ https://vcptcore-qa1-storefront.govirto.com/assets/index-BSI66hFV.js:8
+[LOG] Download the Apollo DevTools for a better development experience: %s https://chrome.google.com/webstore/detail/apollo-client-developer-t/jdkknkkbebbapilgoeccciglkfbmbnfm @ https://vcptcore-qa1-storefront.govirto.com/assets/vendor-BEustyit.js:0
+[WARNING] [WebSocket] Connection closed. {code: 1000, reason: No reason provided, wasClean: true} @ https://vcptcore-qa1-storefront.govirto.com/assets/index-BSI66hFV.js:8
+[ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://starmarket-platform.demo.govirto.com/cms-content/assets/catalog/5aa50/102909/102909_md.jpg:0
+[ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://starmarket-platform.demo.govirto.com/cms-content/assets/catalog/5aa50/8041452/8041452_md.jpeg:0
+[ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://starmarket-platform.demo.govirto.com/cms-content/assets/catalog/5aa50/8041452/8041452.jpeg:0
+[ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://starmarket-platform.demo.govirto.com/cms-content/assets/catalog/5aa50/102909/102909.jpg:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://punchoutcommerce.com/favicon.ico:0

@@ -1,0 +1,11 @@
+{
+ "operationName": "createRequisition",
+ "variables": {
+  "command": {
+   "storeId": "B2B-store",
+   "cultureName": "en-US",
+   "currencyCode": "USD"
+  }
+ },
+ "query": "mutation createRequisition($command: CreatePunchoutRequisitionCommandType!) {\n  createPunchoutRequisition(command: $command) {\n    url\n    formField\n    cxml\n    errorCode\n    __typename\n  }\n}"
+}

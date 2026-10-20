@@ -1,0 +1,60 @@
+{
+ "label": "05-after-payment-method",
+ "at": "2026-10-14T17:35:18.502Z",
+ "carts": [
+  {
+   "id": "05aaefca-5d09-4c28-9b40-218d7be00cae",
+   "name": "AGENT-TEST-Other-Channel",
+   "type": null,
+   "createdDate": "2026-10-14T17:29:35.0017451Z",
+   "modifiedDate": "2026-10-14T17:29:35.0017451Z",
+   "organizationId": "7c901bc8-e83b-4953-a77c-bbf7d3512d78",
+   "total": 24,
+   "items": [
+    "AGENT-TEST-PO-PLAIN-001x2"
+   ],
+   "shipments": [],
+   "payments": []
+  },
+  {
+   "id": "01d964d6-6679-417d-96dd-73a7df03f8d5",
+   "name": "default",
+   "type": null,
+   "createdDate": "2026-10-14T17:29:32.3321291Z",
+   "modifiedDate": "2026-10-14T17:35:13.5336476Z",
+   "organizationId": "7c901bc8-e83b-4953-a77c-bbf7d3512d78",
+   "total": 82,
+   "items": [
+    "AGENT-TEST-PO-UOM-001x3"
+   ],
+   "shipments": [
+    {
+     "method": null,
+     "option": null,
+     "addr": null
+    },
+    {
+     "method": null,
+     "option": null,
+     "addr": "123 Test Street, New York"
+    },
+    {
+     "method": "FixedRate",
+     "option": "Ground",
+     "addr": "123 Test Street, New York"
+    }
+   ],
+   "payments": [
+    {
+     "code": "DefaultManualPaymentMethod",
+     "addr": null
+    },
+    {
+     "code": null,
+     "addr": null
+    }
+   ]
+  }
+ ],
+ "orders": []
+}

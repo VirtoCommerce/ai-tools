@@ -1,0 +1,4 @@
+{"operation":"CreateConfiguredLineItem (storefront PDP, network #122)",
+ "variables":{"configurableProductId":"0c0ea05d-af48-4d28-916e-873daa1ec4b6","section":"63c5f246-b5a1-44a1-be07-4e11442542bc (Handlebars)","option":{"productId":"3b8826ff-6ac0-4377-af70-182e0b99d015 (Drop Bar)","quantity":1},"storeId":"B2B-store","currencyCode":"USD"},
+ "response":{"listPrice":350.00,"salePrice":280.00,"extendedPrice":280.00},
+ "pdpRendered":{"price":"$350.00 struck -> $280.00","badge":"-20%","option Drop Bar":"$80.00 (list $100.00)"}}

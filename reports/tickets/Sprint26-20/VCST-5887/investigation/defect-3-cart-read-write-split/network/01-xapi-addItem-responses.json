@@ -1,0 +1,36 @@
+{
+ "addItemX_noCartName": {
+  "data": {
+   "addItem": {
+    "id": "01d964d6-6679-417d-96dd-73a7df03f8d5",
+    "name": "default",
+    "items": [
+     {
+      "sku": "AGENT-TEST-PO-UOM-001",
+      "quantity": 3
+     }
+    ],
+    "total": {
+     "amount": 72
+    }
+   }
+  }
+ },
+ "addItemY_cartName_AGENT_TEST_Other_Channel": {
+  "data": {
+   "addItem": {
+    "id": "05aaefca-5d09-4c28-9b40-218d7be00cae",
+    "name": "AGENT-TEST-Other-Channel",
+    "items": [
+     {
+      "sku": "AGENT-TEST-PO-PLAIN-001",
+      "quantity": 2
+     }
+    ],
+    "total": {
+     "amount": 24
+    }
+   }
+  }
+ }
+}

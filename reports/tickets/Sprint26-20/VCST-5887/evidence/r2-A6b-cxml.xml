@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE cXML SYSTEM "http://xml.cxml.org/schemas/cXML/1.2.041/cXML.dtd">
+<cXML payloadID="639280932435161212.01ca48bca6c345a6901e86827640d4c7@virtocommerce.com" timestamp="2026-10-20T11:40:43+00:00">
+  <Header>
+    <From>
+      <Credential domain="NetworkId">
+        <Identity>supplier</Identity>
+      </Credential>
+    </From>
+    <To>
+      <Credential domain="NetworkId">
+        <Identity>buyer-co</Identity>
+      </Credential>
+    </To>
+    <Sender>
+      <Credential domain="NetworkId">
+        <Identity>supplier</Identity>
+      </Credential>
+      <UserAgent>Virto Commerce Punchout</UserAgent>
+    </Sender>
+  </Header>
+  <Message>
+    <PunchOutOrderMessage>
+      <BuyerCookie>AGENT-R2-A6b-1792496431056</BuyerCookie>
+      <PunchOutOrderMessageHeader operationAllowed="create">
+        <Total>
+          <Money currency="USD">24.00</Money>
+        </Total>
+      </PunchOutOrderMessageHeader>
+      <ItemIn quantity="2">
+        <ItemID>
+          <SupplierPartID>AGENT-TEST-PO-PLAIN-001</SupplierPartID>
+          <SupplierPartAuxiliaryID>522e4a0f-a4dc-4dde-8c03-6a6e4b0ef012</SupplierPartAuxiliaryID>
+        </ItemID>
+        <ItemDetail>
+          <UnitPrice>
+            <Money currency="USD">12.00</Money>
+          </UnitPrice>
+          <Description xml:lang="en-US">AGENT-TEST-Punchout Plain Product</Description>
+          <UnitOfMeasure>EA</UnitOfMeasure>
+          <Classification domain="Custom">00000000</Classification>
+        </ItemDetail>
+      </ItemIn>
+    </PunchOutOrderMessage>
+  </Message>
+</cXML>

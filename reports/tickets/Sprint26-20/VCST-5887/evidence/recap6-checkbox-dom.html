@@ -1,0 +1,19 @@
+<!-- VCST-5887 recap6 — /cart (desktop 1920x1080, Firefox), vcptcore_qa1, Ver. 2.60.0-pr-2564-ff59-ff5983c3; attributes only, read-only capture 2026-10-14 -->
+<!-- (a) header "select all" checkbox -->
+<label class="vc-checkbox__container">
+  <input type="checkbox" class="vc-checkbox__input" aria-label="Toggle vendor select" name="Toggle vendor select" checked aria-checked="true" data-test-id="vc-line-items-head-checkbox">
+  <span class="vc-checkbox__indicator" aria-hidden="true"></span>
+</label>
+<!-- input rect 1x1 px @ (294,346); indicator 20x20 @ (295,347); elementFromPoint(indicator centre) = span.vc-checkbox__indicator -->
+<!-- (b) line checkbox — Fanta Mango Soda 6x330ml (the only line in the cart /cart displays) -->
+<label class="vc-checkbox__container">
+  <input type="checkbox" class="vc-checkbox__input" aria-label="Toggle vendor select" name="Toggle vendor select" checked aria-checked="true" data-test-id="vc-line-item-checkbox">
+  <span class="vc-checkbox__indicator" aria-hidden="true"></span>
+</label>
+<!-- input rect 1x1 px @ (294,420); indicator 20x20 @ (295,421); elementFromPoint(indicator centre) = span.vc-checkbox__indicator -->
+<!-- (c) vendor-group checkbox: none rendered — "Vendor: N/A" badge only -->
+<!-- incidental: billing checkbox -->
+<label class="vc-checkbox__container">
+  <input type="checkbox" class="vc-checkbox__input" aria-label="billingAddressEqualsShipping" name="billingAddressEqualsShipping" checked aria-checked="true">
+  <span class="vc-checkbox__indicator" aria-hidden="true"></span>
+</label>

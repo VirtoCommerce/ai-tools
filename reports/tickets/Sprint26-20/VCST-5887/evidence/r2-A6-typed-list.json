@@ -1,0 +1,106 @@
+{
+ "shoppingCart": {
+  "id": "f2783985-271c-4bd0-ae4c-07cce329909b",
+  "name": "default",
+  "type": null,
+  "items": [
+   {
+    "sku": "6051795",
+    "quantity": 1
+   },
+   {
+    "sku": "AGENT-TEST-PO-PLAIN-001",
+    "quantity": 2
+   }
+  ]
+ },
+ "moveToSavedForLater": {
+  "moveToSavedForLater": {
+   "cart": {
+    "id": "f2783985-271c-4bd0-ae4c-07cce329909b",
+    "name": "default",
+    "items": [
+     {
+      "sku": "AGENT-TEST-PO-PLAIN-001",
+      "quantity": 2
+     }
+    ]
+   },
+   "list": {
+    "id": "34dd7270-fc2e-450d-8790-1b17342a9d14",
+    "name": "Saved for later",
+    "type": "SavedForLater",
+    "items": [
+     {
+      "sku": "6051795",
+      "quantity": 1
+     }
+    ]
+   }
+  }
+ },
+ "wishlist": [
+  {
+   "message": "Cannot query field 'type' on type 'WishlistType'.",
+   "locations": [
+    {
+     "line": 1,
+     "column": 74
+    }
+   ],
+   "extensions": {
+    "code": "FIELDS_ON_CORRECT_TYPE",
+    "codes": [
+     "FIELDS_ON_CORRECT_TYPE"
+    ],
+    "number": "5.3.1"
+   }
+  }
+ ],
+ "cartsUntyped": {
+  "at": "2026-10-20T11:39:33.383Z",
+  "userId": "ab33e096-ad35-4636-ad61-0af318f16d56",
+  "carts": [
+   {
+    "name": "default",
+    "type": null,
+    "id": "f2783985-271c-4bd0-ae4c-07cce329909b",
+    "firstLineCreated": "2026-10-20T11:39:37.5024264Z",
+    "lines": [
+     "AGENT-TEST-PO-PLAIN-001x2"
+    ]
+   }
+  ]
+ },
+ "savedForLaterViaCartType": null,
+ "queryCartDefault": {
+  "id": "f2783985-271c-4bd0-ae4c-07cce329909b",
+  "name": "default",
+  "type": null,
+  "items": [
+   {
+    "sku": "AGENT-TEST-PO-PLAIN-001",
+    "quantity": 2
+   }
+  ]
+ },
+ "requisition": {
+  "http": 200,
+  "ms": 224,
+  "errorCode": null,
+  "url": "https://punchoutcommerce.com/tools/cxml-punchout-return",
+  "formField": "cxml-urlencoded",
+  "cxmlSha": "9d433bc9c8c1270a",
+  "cxmlLen": 1576,
+  "payloadID": "639280931855612560.1277c07850084dcd9f1b7c22dcb4c19c@virtocommerce.com",
+  "skus": [
+   "AGENT-TEST-PO-PLAIN-001"
+  ],
+  "qtys": [
+   "2"
+  ],
+  "total": "24.00",
+  "errors": null
+ },
+ "cookie": "AGENT-R2-A6-1792496374292"
+}

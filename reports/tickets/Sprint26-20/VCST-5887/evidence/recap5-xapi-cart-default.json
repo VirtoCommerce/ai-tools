@@ -1,0 +1,126 @@
+{
+ "cart": {
+  "id": "84eed7e4-8e95-40f1-8788-94c626118899",
+  "name": "default",
+  "subTotal": {
+   "amount": 890
+  },
+  "discountTotal": {
+   "amount": 140
+  },
+  "total": {
+   "amount": 750
+  },
+  "items": [
+   {
+    "id": "041ad8d0-7574-4630-b831-4fd39b28e2d5",
+    "sku": "Configuration-AGENT-TEST-CFG-014-20260518",
+    "name": "AGENT-TEST-Config-Sale-Bike-20260518",
+    "quantity": 1,
+    "listPrice": {
+     "amount": 350
+    },
+    "salePrice": {
+     "amount": 280
+    },
+    "placedPrice": {
+     "amount": 280
+    },
+    "extendedPrice": {
+     "amount": 280
+    },
+    "discountAmount": {
+     "amount": 70
+    },
+    "discountTotal": {
+     "amount": 70
+    },
+    "configurationItems": [
+     {
+      "id": "442d1a07-30a3-49a0-9115-d93cbc847960",
+      "name": "AGENT-TEST-CFG-014-Drop Bar",
+      "sku": "AGENT-TEST-CFG-014-20260518-OPT-DROP-BAR",
+      "productId": "3b8826ff-6ac0-4377-af70-182e0b99d015",
+      "quantity": 1,
+      "listPrice": {
+       "amount": 100
+      },
+      "salePrice": {
+       "amount": 80
+      },
+      "extendedPrice": {
+       "amount": 80
+      }
+     }
+    ]
+   },
+   {
+    "id": "993dda3c-792e-4e49-814b-436af1deeb6c",
+    "sku": "Configuration-AGENT-TEST-CFG-014-20260518",
+    "name": "AGENT-TEST-Config-Sale-Bike-20260518",
+    "quantity": 1,
+    "listPrice": {
+     "amount": 350
+    },
+    "salePrice": {
+     "amount": 280
+    },
+    "placedPrice": {
+     "amount": 280
+    },
+    "extendedPrice": {
+     "amount": 280
+    },
+    "discountAmount": {
+     "amount": 70
+    },
+    "discountTotal": {
+     "amount": 70
+    },
+    "configurationItems": [
+     {
+      "id": "ff6dfb0d-955a-4dd1-98c6-728f2e3eb9e3",
+      "name": "AGENT-TEST-CFG-014-Drop Bar",
+      "sku": "AGENT-TEST-CFG-014-20260518-OPT-DROP-BAR",
+      "productId": "3b8826ff-6ac0-4377-af70-182e0b99d015",
+      "quantity": 1,
+      "listPrice": {
+       "amount": 100
+      },
+      "salePrice": {
+       "amount": 80
+      },
+      "extendedPrice": {
+       "amount": 80
+      }
+     }
+    ]
+   },
+   {
+    "id": "47a3d086-28d6-4ddc-a5c2-d4fe18a21f37",
+    "sku": "553390824",
+    "name": "Epson Expression Premium XP-820 Wireless Color Photo Printer/Copier/Scanner/Fax Machine",
+    "quantity": 1,
+    "listPrice": {
+     "amount": 190
+    },
+    "salePrice": {
+     "amount": 190
+    },
+    "placedPrice": {
+     "amount": 190
+    },
+    "extendedPrice": {
+     "amount": 190
+    },
+    "discountAmount": {
+     "amount": 0
+    },
+    "discountTotal": {
+     "amount": 0
+    },
+    "configurationItems": []
+   }
+  ]
+ }
+}

@@ -1,0 +1,68 @@
+{
+ "before": {
+  "at": "2026-10-20T11:36:28.174Z",
+  "userId": "ab33e096-ad35-4636-ad61-0af318f16d56",
+  "carts": [
+   {
+    "name": "default",
+    "type": null,
+    "id": "952c18ec-d8f6-4b79-8a25-cb53eb990a37",
+    "firstLineCreated": null,
+    "lines": []
+   }
+  ]
+ },
+ "setupState": {
+  "at": "2026-10-20T11:36:30.555Z",
+  "userId": "ab33e096-ad35-4636-ad61-0af318f16d56",
+  "carts": [
+   {
+    "name": "AGENT-R2-A1-named-1792496186050",
+    "type": null,
+    "id": "d9203098-efcd-4a5d-918d-1a40058a5003",
+    "firstLineCreated": "2026-10-20T11:36:39.1096611Z",
+    "lines": [
+     "6051795x2"
+    ]
+   }
+  ]
+ },
+ "after": {
+  "at": "2026-10-20T11:36:32.581Z",
+  "userId": "ab33e096-ad35-4636-ad61-0af318f16d56",
+  "carts": [
+   {
+    "name": "AGENT-R2-A1-named-1792496186050",
+    "type": null,
+    "id": "d9203098-efcd-4a5d-918d-1a40058a5003",
+    "firstLineCreated": "2026-10-20T11:36:39.1096611Z",
+    "lines": [
+     "6051795x2"
+    ]
+   }
+  ]
+ },
+ "setup": {
+  "http": 200,
+  "status": "<Status code=\"200\" text=\"OK\" />",
+  "cookie": "AGENT-R2-A1-1792496186050"
+ },
+ "requisition": {
+  "http": 200,
+  "ms": 353,
+  "errorCode": null,
+  "url": "https://punchoutcommerce.com/tools/cxml-punchout-return",
+  "formField": "cxml-urlencoded",
+  "cxmlSha": "d59818272571d282",
+  "cxmlLen": 1557,
+  "payloadID": "639280930024021081.c95cb2e33c5b4287b0daeda80154dc98@virtocommerce.com",
+  "skus": [
+   "6051795"
+  ],
+  "qtys": [
+   "2"
+  ],
+  "total": "20.00",
+  "errors": null
+ }
+}

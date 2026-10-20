@@ -1,0 +1,6 @@
+{"observation":"PDP Add to cart (AddItem, no cartId/cartName) wrote to cart 'default' 84eed7e4; /cart page (GetShortCart / Query.cart, no cartName) shows cart 8eba5be8 'AGENT-TEST-6286-R2-1791954808598'",
+ "AddItem.response.cart.id":"84eed7e4-8e95-40f1-8788-94c626118899",
+ "GetShortCart.response.cart.id":"8eba5be8-ae53-4605-ab37-bb767290413a",
+ "persisted":"still 8eba after two AddItem writes to default (checked via xAPI with a separate token)",
+ "consequence":"configured line never visible on /cart for this user; recap5-02-cart.png shows /cart WITHOUT the configured line",
+ "linesAddedAndRemoved":["993dda3c-792e-4e49-814b-436af1deeb6c","041ad8d0-7574-4630-b831-4fd39b28e2d5"]}

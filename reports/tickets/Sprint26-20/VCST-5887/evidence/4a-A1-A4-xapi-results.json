@@ -1,0 +1,12 @@
+{
+  "note": "VCST-5887 LANE A xAPI results — createPunchoutRequisition(command{storeId,currencyCode,cultureName}); session from punchout-grant token (grant_type=punchout, session_token). All HTTP 200; errorCode inside PunchoutCheckoutType.",
+  "A1_SessionNotFound": {
+    "A1a_password_grant_token_same_buyer": {"errorCode":"SessionNotFound","cxml":null},
+    "A1b_anonymous": {"errorCode":"SessionNotFound","cxml":null},
+    "A1c_punchout_token_other_storeId_New-super": {"errorCode":"SessionNotFound","cxml":null},
+    "A1c_sanity_same_token_correct_store": {"errorCode":null,"cxml":"present"}
+  },
+  "A2_parallel_one_fresh_token": {"results":["OK-CXML","SessionExpired"],"winnerCxml":"evidence/a5-winner-cxml.xml"},
+  "A3_session_already_returned": {"first":"OK-CXML","second":"SessionExpired"},
+  "A4_no_default_cart_named_only": {"errorCode":"CartNotFound","cxml":null,"note":"own buyer AGENT-TEST-PO-R5887-A4 provisioned+deleted; GetCartQuery(name=default) returned null -> handler CartNotFound; buyer had only a named cart"}
+}
