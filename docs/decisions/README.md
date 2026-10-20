@@ -23,3 +23,4 @@ When a rule accretes a *"measured on YYYY-MM-DD …"* paragraph, the rule stays 
 | `kb-write-time-retrieval.md` | The `kb` ranker / verdict at write time (VCST-6122) — milestones and measurements |
 | `kb-procedural-plane.md` | **Proposed, not built** — the shape of a procedural plane in the `kb` |
 | `kb-knowledge-migration.md` | **Conceptual, not built** — the shape of migrating repo knowledge into the `kb` |
+| `qa-report-design.md` | `/qa-report` (VCST-5675) — the required `{{LEDE}}`, the rulings taken against the plan, and the limits accepted on purpose |

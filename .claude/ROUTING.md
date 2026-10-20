@@ -30,6 +30,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Pick up bugs reported in Teams chats** (classify → dedup against Jira → file + label for `/qa-fix`) | `/qa-teams-watch [--since=HOURS] [--dry-run] [--chats=<id>,…]` | Command |
 | **Autonomously fix a filed bug** | `/qa-fix VCST-XXXX` | Command |
 | **Verify a bug fix** | `/qa-verify-fix VCST-XXXX` | Command |
+| **Post a finished run's result comment + report page** | `/qa-report <TICKET \| RUN_ID>` (`vc-fix` plugin skill) | Skill |
 | **Deploy a PR's prerelease artifacts to a test env** | `/qa-deploy-pr <ticket-key> [--apply] [--verify]` | Command |
 | **Upgrade an env to the latest released modules + platform** | `/qa-env-upgrade <env>` | Skill |
 | **Check a stable bundle for missed hotfixes** | `/qa-bundle-check vN \| <package.json-url>` | Command |
