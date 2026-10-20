@@ -156,6 +156,34 @@ function relation(question, mine, coords) {
  * @param {{text: string, anchors?: Array<string|{coordinate: string}>}} capture
  * @returns {string|null} the chosen ask's `at`
  */
+/**
+ * WHICH ASK, AND HOW SURE (VCST-6378): `{ at, by }` or `null`. `by` is `handle` when the writer named
+ * the ask itself (exact), `coordinate` when the ask names one of the capture's anchors, `words` when
+ * only shared vocabulary links them. The last is the weak one: on 2026-10-08..15 it paired about ten
+ * captures with an unrelated ask of the same session -- a `currentuser` question with a capture about
+ * catalog search routes -- and each counted as an unhelpful answer. The report counts only the first
+ * two; a `words` link is shown, not scored.
+ */
+export function askLink(asks, { text, anchors = [], handle = null }) {
+  const h = typeof handle === 'string' ? handle.trim() : '';
+  if (h && asks.some((a) => String(a.at) === h)) return { at: h, by: 'handle' };
+  const mine = new Set(tokenize(text));
+  const coords = pairingCoords(anchors);
+  let best = null;
+  for (const a of asks) {
+    const { shared, named } = relation(a.q, mine, coords);
+    if (!named && shared < MIN_RELATED_WORDS) continue;
+    const score = (named ? 1_000 : 0) + shared;
+    if (!best || score > best.score || (score === best.score && String(a.at) > best.at)) best = { score, at: String(a.at), named };
+  }
+  return best ? { at: best.at, by: best.named ? 'coordinate' : 'words' } : null;
+}
+
+/** Does the ask's question name one of these anchors -- the `coordinate` link, re-derived for a line written before `afterBy`? */
+export function linkedByCoordinate(question, anchors = []) {
+  return pairingCoords(anchors).some((c) => namesCoordinate(String(question ?? ''), c));
+}
+
 export function askAbout(asks, { text, anchors = [] }) {
   const mine = new Set(tokenize(text));
   const coords = pairingCoords(anchors);

@@ -602,5 +602,114 @@
   "BACKOFFICE_NO_PUNCHOUT": {
     "user_id": "31171794-f3db-4f5d-91d5-6d243754e02a",
     "role_id": "AGENT-TEST-Punchout-None"
+  },
+  "PB_ASSETS_ROOT": {
+    "_inline": true,
+    "folderUrl": "/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726",
+    "storeAssetRoot": "/stores/B2B-store/Page Builder"
+  },
+  "PB_ASSETS_P500": {
+    "_inline": true,
+    "folderUrl": "/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726/p500",
+    "count": 500,
+    "firstByName": "asset-000.png",
+    "lastByName": "asset-499.png",
+    "firstByUpload": "asset-497.png",
+    "lastByUpload": "asset-129.png"
+  },
+  "PB_ASSETS_MIXED": {
+    "_inline": true,
+    "folderUrl": "/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726/mixed",
+    "count": 500,
+    "imageCount": 480,
+    "firstImage": "asset-020.png"
+  },
+  "PB_ASSETS_FOLDERS": {
+    "_inline": true,
+    "folderUrl": "/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726/folders",
+    "totalCount": 55,
+    "fileCount": 30
+  },
+  "PB_ASSETS_DEEP": {
+    "_inline": true,
+    "folderUrl": "/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726/deep",
+    "leafUrl": "/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726/deep/l1/l2/l3/l4/l5"
+  },
+  "PB_ASSETS_EMPTY": {
+    "_inline": true,
+    "folderUrl": "/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726/empty",
+    "totalCount": 0
+  },
+  "PB_ASSETS_TPL": {
+    "_inline": true,
+    "folderUrl": "/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726/tpl",
+    "file": "tpl-{{=window.__vcst5726=2}}.png",
+    "tplFolder": "tpl-{{=window.__vcst5726=1}}",
+    "tplFolderUrl": "/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726/tpl-{{=window.__vcst5726=1}}"
+  },
+  "PB_ASSET_REF_1": {
+    "_inline": true,
+    "assetUrl": "https://vcptcore-qa1.govirto.com/cms-content/assets/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726/p500/asset-007.png",
+    "expectedRefs": 1,
+    "observedPages": 1,
+    "observedSc": 0,
+    "pageIds": [
+      "afd63ad0-9371-4606-8ab7-eadd469e0c92"
+    ],
+    "observedTotal": 1
+  },
+  "PB_ASSET_REF_3": {
+    "_inline": true,
+    "assetUrl": "https://vcptcore-qa1.govirto.com/cms-content/assets/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726/p500/asset-025.png",
+    "expectedRefs": 3,
+    "observedPages": 3,
+    "observedSc": 0,
+    "pageIds": [
+      "d4bca345-2cf2-46a7-b23c-5e8b9ca96c5b",
+      "a71dc120-40be-41cc-8611-a0f67d1bfe2b",
+      "afd63ad0-9371-4606-8ab7-eadd469e0c92"
+    ],
+    "observedTotal": 3
+  },
+  "PB_ASSET_REF_2": {
+    "_inline": true,
+    "assetUrl": "https://vcptcore-qa1.govirto.com/cms-content/assets/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726/p500/asset-499.png",
+    "expectedRefs": 4,
+    "observedPages": 2,
+    "observedSc": 2,
+    "pageIds": [
+      "d4bca345-2cf2-46a7-b23c-5e8b9ca96c5b",
+      "afd63ad0-9371-4606-8ab7-eadd469e0c92"
+    ],
+    "observedTotal": 4
+  },
+  "PB_ASSET_REF_DEEP": {
+    "_inline": true,
+    "assetUrl": "https://vcptcore-qa1.govirto.com/cms-content/assets/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726/deep/l1/l2/l3/l4/l5/d5-a.png",
+    "expectedRefs": 1,
+    "observedPages": 1,
+    "observedSc": 0,
+    "pageIds": [
+      "0a0ff18e-fe8c-470d-b62c-55f365c1fea8"
+    ],
+    "observedTotal": 1
+  },
+  "PB_ASSET_REF_SC": {
+    "_inline": true,
+    "ids": [
+      "d2536f4a136e44abbd59a81a09ab6640",
+      "4f65f3bf4920484bb910a082a1294d01"
+    ],
+    "names": [
+      "AGENT-TEST-VCST5726-sc-1",
+      "AGENT-TEST-VCST5726-sc-2"
+    ]
+  },
+  "RESTRICTED_CMS_ADMIN": {
+    "_inline": true,
+    "platform_id": "672a38a3-f322-43e0-ba2f-d9a439bc352d",
+    "user_id": "672a38a3-f322-43e0-ba2f-d9a439bc352d",
+    "role_id": "AGENT-TEST-Restricted-CMS-Viewer",
+    "userName": "AGENT-TEST-restricted-cms@test.virtocommerce.com"
   }
 }

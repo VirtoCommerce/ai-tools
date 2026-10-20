@@ -11,6 +11,7 @@ export const OWNER = 'VirtoCommerce';
 const DEPLOY_REPO_DEFAULT = 'VirtoCommerce/vc-deploy-dev';
 const PACKAGES_PATH_DEFAULT = 'backend/packages.json';
 const THEME_PATH_DEFAULT = 'theme/artifact.json';
+const STORYBOOK_PATH_DEFAULT = 'storybook/image.json';
 // vcst / vcptcore are the two QA envs; their vc-deploy-dev branches carry a -qa suffix the env name
 // doesn't (there is no bare `vcst` or `vcptcore` branch), and neither .env carries a DEPLOY_* block.
 // Every other env's branch equals the env name (underscores → hyphens) unless .env.<env> overrides it.
@@ -18,7 +19,7 @@ const BRANCH_MAP: Record<string, string> = { vcst: 'vcst-qa', vcptcore: 'vcptcor
 
 export interface EnvCoords {
   env: string; deployOwner: string; deployRepo: string; branch: string;
-  packagesPath: string; themePath: string; backUrl: string; admin: string; password: string;
+  packagesPath: string; themePath: string; storybookPath: string; backUrl: string; admin: string; password: string;
 }
 
 /**
@@ -70,6 +71,7 @@ export function resolveEnvCoords(env: string, passwordOverride?: string): EnvCoo
     env, deployOwner, deployRepo, branch,
     packagesPath: e.DEPLOY_PACKAGES_PATH || PACKAGES_PATH_DEFAULT,
     themePath: e.DEPLOY_THEME_PATH || THEME_PATH_DEFAULT,
+    storybookPath: e.DEPLOY_STORYBOOK_PATH || STORYBOOK_PATH_DEFAULT,
     backUrl: (e.BACK_URL || process.env.BACK_URL || '').replace(/\/$/, ''),
     admin: e.ADMIN || process.env.ADMIN || 'admin', password,
   };

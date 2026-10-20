@@ -24,6 +24,7 @@
 // here and a guess at it would be worse than its absence.
 
 import { LOOKS_LIKE_A_LOCAL_PATH, LOOKS_LIKE_A_MENU_PATH, MSYS_REMEDY, namespaceOf, normalizeAnchor } from './anchors.mjs';
+import { hasPersonalPath } from './secret-gate.mjs';
 
 /**
  * The one-segment roots the CORPUS uses as namespaces: a root under which two or more distinct
@@ -181,6 +182,12 @@ export function anchorProblems(anchors, { namespaces } = {}) {
     if (!raw) continue;
     if (LOOKS_LIKE_A_LOCAL_PATH.test(raw)) {
       out.push({ coordinate: raw, kind: 'local-path', why: MSYS_REMEDY });
+      continue;
+    }
+    // A file on the writer's machine (`C:\Users\<name>\x.har`, `/Users/<name>/…`, a UNC share) is no
+    // coordinate, and it names the writer: stored as one, it was published (retest 4 of ai-tools#460).
+    if (hasPersonalPath(` ${raw}`)) {
+      out.push({ coordinate: raw, kind: 'local-path', why: 'a file on your machine is not where the behaviour lives -- anchor the route or request you observed, and leave the file out' });
       continue;
     }
     if (LOOKS_LIKE_A_MENU_PATH.test(raw)) {

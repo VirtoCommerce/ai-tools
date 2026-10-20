@@ -66,6 +66,9 @@ rules:
       ref: Order with 3 items → create 2 shipments (items A+B in shipment 1, item C in shipment 2) → advance shipment 1 to `Send` → shipment 1 shows `Send`, shipment 2 still `New` (per-shipment states independent) → advance shipment 2 to `Send` → set the order's `OrderStatus = Completed`. Assert there is no "Partially shipped" order status and no "Delivered" shipment state.
     violation_signal: Order marked "Completed" while shipments are pending; partial shipment not reflected in order status; items missing from shipment tracking.
     status: ACTIVE
+    verified:
+      date: 2026-10-15
+      by: REG-2026-10-15-1115
   - id: BL-ORD-004
     title: Refund conditions
     rule: Refund is only possible on a payment that has been captured. Partial refund amount must be ≤ captured amount minus any previous refunds. Full refund sets payment status to "Refunded." A voided payment cannot be refunded. Refund does not automatically restore inventory — that follows BL-ORD-002 cancellation rules separately.
@@ -99,7 +102,8 @@ rules:
       kind: manual
       ref: Place 3 orders on the same day → numbers share the day's date prefix and increment sequentially (e.g. `CO<date>-00001`, `-00002`, `-00003`). Cancel the middle order → place another same-day order → the next number continues the same-day sequence (not reused). Placing an order on a new day resets the counter to `00001` under the new date prefix — expected, not a bug.
     violation_signal: Duplicate order numbers *within the same reset period*; counter fails to reset at the configured boundary; order number changes after creation.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] SMK-013 failed in REG-2026-10-15-1115"
   - id: BL-ORD-006
     title: Payment state machine (detailed)
     rule: |-
@@ -124,6 +128,9 @@ rules:
       ref: For each illegal transition, attempt via API → expect 400/422 error. In Admin, verify buttons only show valid next states.
     violation_signal: Any illegal transition succeeds; Admin shows buttons for invalid states; API returns 200 on illegal transition.
     status: ACTIVE
+    verified:
+      date: 2026-10-15
+      by: REG-2026-10-15-1115
   - id: BL-ORD-007
     title: Shipment state machine (detailed)
     rule: |-

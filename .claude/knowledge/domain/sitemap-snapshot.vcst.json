@@ -1,15 +1,15 @@
 {
-  "generatedIso": "2026-10-02T12:27:15.920Z",
+  "generatedIso": "2026-10-14T08:57:12.093Z",
   "env": "vcst",
   "frontUrl": "https://vcst-qa-storefront.govirto.com",
   "backUrl": "https://vcst-qa.govirto.com",
   "storeId": "B2B-store",
   "themeVersion": null,
   "platform": {
-    "maxPlatformVersion": "3.1073.0",
+    "maxPlatformVersion": "3.1078.0",
     "moduleCount": 87
   },
-  "storeTotalProducts": 4567,
+  "storeTotalProducts": 4615,
   "navCategories": [
     {
       "slug": "accessories",
@@ -26,10 +26,6 @@
     {
       "slug": "bolts",
       "name": "Bolts"
-    },
-    {
-      "slug": "bolts/carriage-bolts",
-      "name": "Carriage Bolts"
     },
     {
       "slug": "coffee-and-tea",
@@ -50,6 +46,10 @@
     {
       "slug": "destinations",
       "name": "destinations"
+    },
+    {
+      "slug": "destinations/carriage-bolts",
+      "name": "Carriage Bolts"
     },
     {
       "slug": "drinks-and-food",
@@ -261,7 +261,7 @@
       "head": "48a9759c03a3aca07f8f8b851095891fb0c88ce9",
       "headDate": "2026-09-24T08:53:12-06:00",
       "branch": "dev",
-      "remoteHead": "5ad8ba8da100dbe7a526e04a39eb1c291f4055cb",
+      "remoteHead": "3d463fb62df95b29ffd78190ef348b2276ac4a1f",
       "behindRemote": true,
       "note": null
     },

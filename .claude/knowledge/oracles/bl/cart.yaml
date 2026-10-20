@@ -28,8 +28,8 @@ rules:
     violation_signal: On either surface, the quantity is silently capped to available stock with no error/message; OR the out-of-range quantity is accepted with no validation signal and "Place order" becomes enabled; OR the PDP path lets an over-limit line commit; OR an order is placed for more units than in inventory.
     status: ACTIVE
     verified:
-      date: 2026-10-09
-      by: REG-2026-10-09-1716
+      date: 2026-10-15
+      by: REG-2026-10-15-1115
   - id: BL-CART-002
     title: Out-of-stock mid-session
     rule: If a product's stock reaches 0 after the user has added it to cart but before checkout completes, the system must prevent the order from being placed. The cart should show an error state for the affected item.
@@ -48,7 +48,11 @@ rules:
       kind: manual
       ref: Add item (stock=2) → in another session/admin, reduce stock to 0 → attempt checkout → error message, order NOT created. Cart should flag the item.
     violation_signal: Order placed successfully for an out-of-stock item; no error shown at checkout; oversold inventory.
-    status: ACTIVE
+    status: SUSPECT
+    verified:
+      date: 2026-10-15
+      by: REG-2026-10-15-1115
+    suspect_reason: "[case] QUOTE-026 failed in REG-2026-10-15-1453"
   - id: BL-CART-003
     title: Coupon + sale interaction
     rule: A percentage coupon applies to the already-discounted (sale) price, not the original list price. A fixed-amount coupon subtracts from the cart total after all line-level discounts. If a coupon's minimum order amount is not met after sale discounts, the coupon must be rejected. Only one coupon per cart unless multi-coupon is explicitly enabled.
@@ -67,8 +71,8 @@ rules:
     violation_signal: Coupon discount calculated on list price; coupon accepted when min-order threshold not met; multiple coupons applied when multi-coupon is disabled.
     status: ACTIVE
     verified:
-      date: 2026-10-09
-      by: REG-2026-10-09-1716
+      date: 2026-10-15
+      by: REG-2026-10-15-1115
   - id: BL-CART-004
     title: Currency switching recalculates primary-currency lines
     rule: When the user switches the cart currency, every line item **denominated in the previous cart currency** must recalculate using the new currency's price list. If such a product has no price in the new currency, that line item must be flagged or removed. Shipping and tax recalculate. **Mixed Cart exception (Loyalty mode "Mixed Cart"):** line items denominated in a non-primary currency (e.g. a PTS loyalty line) are NOT converted — they are preserved at their original currency, so a cart MAY legitimately hold multiple currencies simultaneously. See BL-LOY-006 for the switch contract and BL-LOY-003 for the per-currency totals split.
@@ -142,6 +146,9 @@ rules:
       ref: Add Product A (qty 1) → go back to listing → add Product A again → cart shows 1 line with qty 2, not 2 lines with qty 1.
     violation_signal: Duplicate line items for the same SKU; quantity not incremented on re-add; line count increases on every add.
     status: ACTIVE
+    verified:
+      date: 2026-10-15
+      by: REG-2026-10-15-1115
   - id: BL-CART-008
     title: Cart persistence across sign-out / sign-in
     rule: "A registered user's cart is persisted server-side. If the user signs out and signs back in, the cart must be restored with the same items and quantities. If the user had items as a guest (anonymous cart), upon sign-in those items should merge into the registered user's existing cart (merge strategy: add quantities, no duplicates). A coupon applied before the merge (on either side) persists through the merge — it is not silently dropped — and its discount **re-prices against the post-merge subtotal** rather than staying frozen at the pre-merge discount amount, because a merge always runs a full cart recalculation before saving."
@@ -164,8 +171,8 @@ rules:
     violation_signal: Cart empty after sign-in; guest cart items lost on authentication; duplicate lines after merge; quantities not combined; a previously-applied coupon disappears after merge; OR a surviving coupon's discount stays frozen at its pre-merge value instead of re-evaluating against the merged subtotal.
     status: ACTIVE
     verified:
-      date: 2026-10-09
-      by: REG-2026-10-09-1716
+      date: 2026-10-15
+      by: REG-2026-10-15-1115
   - id: BL-CART-009
     title: Storefront cart enforces a single active coupon slot
     rule: "The storefront cart \"Discount & coupons\" section applies at most ONE coupon at a time across BOTH facets — the preset promotion cards (up to 4, authenticated + marketing-experience module only) and the single \"Custom code\" input. The applied-coupon slot is shared: exactly one card/input is ever in the \"applied\" state (button \"Remove coupon\"), never two simultaneously. Two transition paths exist: (a) clicking \"Apply\" on a DIFFERENT preset card auto-replaces the current coupon — `applyCoupon(new)` first awaits `removeCoupon(current)`, then `validateCoupon(new)`, then `addCoupon(new)`, in that order; (b) the custom-code input becomes read-only **only when its own bound value equals the currently-applied coupon's code** — i.e. when the applied coupon was entered through that input itself, or the applied coupon is not among the up-to-4 visible preset cards (the input then mirrors the code and locks). When the applied coupon IS one of the visible preset cards, the custom input is reset to empty and stays fully editable: a user can type and submit a different code through it without first clicking \"Remove coupon\" on the preset card, and the single-slot guarantee still holds because that submission goes through the same `applyCoupon` replacement logic. NOTE: this single-slot guarantee is enforced by the storefront UI only — the platform cart (`CartAggregate.AddCouponAsync`) appends coupons (case-insensitive dedupe) and does not auto-replace, so a non-UI/API caller can hold multiple coupons."
@@ -206,8 +213,8 @@ rules:
     violation_signal: "`lineItem.listPrice` remains equal to `price_all_selected` after deselecting a placement; cart subtotal does not change; tax total does not update; pricing frozen at pre-toggle value."
     status: ACTIVE
     verified:
-      date: 2026-10-06
-      by: REG-2026-10-06-1857
+      date: 2026-10-15
+      by: REG-2026-10-15-1115
   - id: BL-CART-011
     title: Unmatched section key in batch selection is a silent no-op
     rule: When `selectCartConfigurationItems` or `unSelectCartConfigurationItems` receives a `configurationSections[]` list where one or more keys do not match any `ConfigurationItem` on the target lineItem, those unmatched keys MUST be silently skipped. The mutation MUST still process all matched keys, MUST return HTTP 200, and MUST return `errors[]` as empty. Unmatched keys leave no trace in the response.

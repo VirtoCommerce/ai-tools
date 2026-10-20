@@ -114,14 +114,16 @@ export function askLines(r, { prefix = 'kb ask' } = {}) {
   // or the `none` must carry so the log can pair them with THIS ask.
   if (r.verdict === 'ambiguous') {
     return [
-      ...verdictLines({ verdict: 'ambiguous', headlines: r.headlines }, { prefix }),
+      ...verdictLines({ verdict: 'ambiguous', headlines: r.headlines, likelihood: r.likelihood }, { prefix }),
       ...(r.repaired === 'msys' ? [MSYS_NOTE] : []),
-      ...(r.handle ? [`  ask handle: ${r.handle}  (pass it as \`ask\` to kb_show / kb_none, or as --ask on the CLI)`] : []),
+      ...(r.handle ? [`  ask handle: ${r.handle}  (pass it as \`ask\` to kb_show / kb_none, and to kb_capture when you record what you then found out; --ask on the CLI)`] : []),
       ...queuedLines(r.queued),
     ];
   }
   const lines = [`${prefix}: ${HEADLINE[r.state] ?? r.state}`];
   if (r.verdict === 'none' && r.concepts?.length) lines.push(`  your question maps to concepts nothing in the base is filed under: ${r.concepts.join(', ')}`);
+  // Under the none threshold there WERE candidates: the nearest is named, so the absence is checkable.
+  if (r.verdict === 'none' && r.nearest) lines.push(`  nearest, below the threshold the base answers "none" at: ${r.nearest.id}  ${r.nearest.subject}`);
   if (r.why) lines.push(`  ${r.why}`);
   // Said on every state: the repair already ran, but the next command from the same shell will be
   // mangled the same way, and only the agent can change how it is typed.
@@ -145,6 +147,15 @@ export function askLines(r, { prefix = 'kb ask' } = {}) {
   for (const hit of r.hits ?? []) lines.push(...hitLines(hit));
   return lines;
 }
+
+/** The likelihood line, per band of `verdict.mjs` `likelihood` -- measured pick rates, 2026-10-01..15. */
+const LIKELIHOOD_TEXT = Object.freeze({
+  likely: 'likely: on lists this confident, agents found their answer in a headline about 9 times in 10 -- open the one that states your fact',
+  possible: 'possible: on lists this confident, agents found their answer about half the time',
+  unlikely: 'unlikely: on lists this confident, agents found their answer about 1 time in 4 -- open one only if its headline names your fact, else kb_none and find out',
+  // No rate: no measured list had a single candidate, so no pick rate can be quoted for one (tester run).
+  lone: 'lone: the base found only this one entry and has no measured odds for a list of one -- it may merely share a word with your question; open it only if its headline names your fact, else kb_none and find out',
+});
 
 /** How many characters of an entry's body an `ambiguous` headline carries. */
 export const EXCERPT_CHARS = 200;
@@ -183,6 +194,9 @@ export function verdictLines(v, { prefix = 'kb ask', says = true } = {}) {
   if (v.verdict === 'ambiguous') {
     return [
       `${prefix}: ${AMBIGUOUS_CONTRACT}`,
+      // HOW OFTEN A LIST LIKE THIS HELD THE ANSWER (VCST-6378), from the agents' own closes: a hint for
+      // the agent's triage, never a cut. The bands are `verdict.mjs` `likelihood`.
+      ...(v.likelihood ? [`  ${LIKELIHOOD_TEXT[v.likelihood]}`] : []),
       ...v.headlines.flatMap((h) => [
         `  ${h.id}  ${h.subject}${h.separating ? `  [${h.separating}]` : ''}`,
         ...(h.defect ? [`      ! ${defectText(h.defect)}`] : h.defectUnknown ? [`      ! ${DEFECT_UNKNOWN}`] : []),
@@ -219,12 +233,25 @@ export function showLines(r, { prefix = 'kb show' } = {}) {
     ...(r.build ? [`build:    observed on ${r.build.label}${r.build.diff ? ` (yours vs then: ${r.build.diff})` : ''}`] : []),
   ];
   // A retired or split entry still resolves by id (VCST-6122 Decision 2); say where its fact went.
-  const next = idList(r.entry.supersededBy);
+  // The index row's pointer is collapsed to ACTIVE successors (VCST-6378); the file's may name a retired one.
+  const next = idList(r.row?.supersededBy?.length ? r.row.supersededBy : r.entry.supersededBy);
   if (next.length) lines.push(`superseded by: ${next.join(', ')}`);
   for (const e of r.entry.evidence ?? []) lines.push(evidenceLine(e));
   lines.push('');
   lines.push(r.body);
   return lines;
+}
+
+/** Anchors a capture dropped instead of refusing (VCST-6378): each one, and how to write it next time. */
+/** No concepts given: the ones the vocabulary finds in the text, to pick 1-3 from next time (VCST-6378). */
+function suggestedLines(suggested) {
+  return (suggested ?? []).length
+    ? [`  card: no concepts given -- your text names ${suggested.slice(0, 6).map((s) => `${s.id} (${s.label})`).join(', ')}; pass the 1-3 this fact is ABOUT as concepts`]
+    : [];
+}
+
+function droppedLines(dropped) {
+  return (dropped ?? []).map((d) => `  dropped anchor ${JSON.stringify(d.coordinate)} (${d.kind}) -- the capture kept the others. ${d.fix ?? ''}`.trimEnd());
 }
 
 export function captureLines(r, opts = {}) {
@@ -271,7 +298,9 @@ function captureBody(r, { prefix = 'kb capture', card = false } = {}) {
     // A taken SUBJECT is not necessarily the same fact — the writer decides which (PR #313 review 2).
     const head = r.reason === 'subject-taken'
       ? 'REFUSED — an entry already has this subject, so this capture would take its id.'
-      : 'REFUSED — the base already holds this fact.';
+      : r.reason === 'similar'
+        ? 'HELD — an entry at the same coordinate reads like this fact; nothing was queued.'
+        : 'REFUSED — the base already holds this fact.';
     return [`${prefix}: ${head}`, '', `  ${r.message.split('\n').join('\n  ')}`];
   }
   if (r.state === 'dry-run') {
@@ -280,6 +309,8 @@ function captureBody(r, { prefix = 'kb capture', card = false } = {}) {
     return [
       `${prefix}: dry run -- would queue ${r.id} — ${r.entry?.subject ?? ''}`,
       `  ${r.why}`,
+      ...droppedLines(r.dropped),
+      ...suggestedLines(r.suggested),
       ...readLines(r.read),
       ...neighbourLines(r.alsoHere),
       ...relatedLines(r.related),
@@ -292,6 +323,8 @@ function captureBody(r, { prefix = 'kb capture', card = false } = {}) {
   }
   return [
     `${prefix}: queued ${r.id} — ${r.entry.subject}`,
+    ...droppedLines(r.dropped),
+    ...suggestedLines(r.suggested),
     `  ${r.queuedTo}`,
     '  nothing has been sent; it ships with the next push.',
     ...readLines(r.read),

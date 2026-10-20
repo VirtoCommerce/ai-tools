@@ -239,13 +239,28 @@ should never ask, put `"mcp__kb"` in `permissions.allow` in your own `.claude/se
 and go out as one commit **shortly after, on their own** — there is no push command to remember and
 **nothing to close**. Three things publish: the `Stop` hook at the end of a turn, an ordinary `kb`
 call once the oldest queued line is over five minutes old, and a timer in the server for the tail
-that has neither. This paragraph used to say "when the session ends", which was true and useless —
+that has neither. A change to the base (`capture` / `confirm` / `dispute`) goes at once, and the log
+lines waiting in the queue ride along with it. Log lines alone (asks, shows, a session's counters) never
+go on their own: they wait for the next change, or go with the first push of a later day — so the
+public log lags until the next change, or until this machine next runs `kb` on another day; only
+`kb:report` notices. `npm run kb -- stat` says which lines are waiting and why. Where the queue does not outlive the session — CI (`CI`), Codespaces, a devcontainer, a Claude
+cloud session — or with `KB_LOG_DAILY=0`, everything goes at once, as before. When GitHub answers with a rate limit, nothing is pushed before the time it names. This paragraph used to say "when the session ends", which was true and useless —
 nobody ends a session, and switching away from a tab is not ending one, so evidence sat on one laptop
 indefinitely. With no `KB_GITHUB_TOKEN` (or `GITHUB_TOKEN`) the flush reports `no-token` and **keeps
 the queue**: nothing is lost, and the first later session with a token sends it. An unauthenticated
 teammate is a full-value reader and can still record what they found — **but note the queue only
 drains on the machine it was written on**, so a reader-only machine accumulates locally until a token
-appears there.
+appears there. The queue lives in the per-user state directory (`%LOCALAPPDATA%\claude-kb\queue` on
+Windows, `~/.local/state/claude-kb/queue` elsewhere), not in the temp directory a disk clean-up empties;
+an older `%TEMP%\claude-kb-queue` is moved there automatically.
+
+**A token that can read but not write.** Writing needs push access to `VirtoCommerce/vc-knowledge`:
+membership in the org team that has write on it (ask a maintainer), or a fine-grained token with
+**Contents: Read and write** on that one repository. A token without it is refused with `403 Resource
+not accessible`, and an expired one with `401 Bad credentials`. The kb's automatic pushes then stop trying
+with that token for six hours (a new token, or your own `npm run kb -- push`, is tried at once), tells you once at the end of a turn, marks every
+`kb_capture` / `kb_confirm` / `kb_dispute` result `NOT PUBLISHED YET`, and `npm run kb -- stat` shows
+`NO WRITE ACCESS` until a push lands. Nothing queued is lost in the meantime.
 
 **Opting out.** The base is on by default. To take a machine out of it, set `KB_ENABLED=0` in the
 `env` block of your own `.claude/settings.local.json` and restart. With the switch set, nothing is

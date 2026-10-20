@@ -1,24 +1,25 @@
 {
-  "runId": "REG-2026-10-13-1739",
+  "runId": "REG-2026-10-20-0917",
   "status": "completed",
-  "startedAt": "2026-10-13T17:39:30.000Z",
-  "windowStart": "2026-10-13T17:39:30.000Z",
-  "selection": "043",
+  "startedAt": "2026-10-20T07:17:32.000Z",
+  "windowStart": "2026-10-20T07:17:32.000Z",
+  "selection": "093",
   "env": "vcst",
   "scoped": true,
-  "purpose": "VCST-6017 /qa-test: verification of GA-030/GA-031 derivation fix (order line count from the placed order); --ids; --no-promote",
+  "purpose": "Verify the stale-case repairs of SR-HD-030 / SR-HD-053 (PR #479; failed in REG-2026-10-19-1307)",
+  "ids": "SR-HD-030,SR-HD-053",
   "suites": {
-    "043": {
+    "093": {
       "status": "done",
       "lane": "browser",
       "browser": "playwright-chrome",
-      "startedAt": "2026-10-13T17:40:16.060Z",
+      "startedAt": "2026-10-20T07:18:27.288Z",
+      "total": 2,
       "pass": 2,
       "fail": 0,
       "blocked": 0,
-      "total": 2,
-      "finishedAt": "2026-10-13T17:47:32.879Z"
+      "finishedAt": "2026-10-20T07:24:22.299Z"
     }
   },
-  "finishedAt": "2026-10-13T17:47:42.665Z"
+  "finishedAt": "2026-10-20T07:25:02.582Z"
 }
