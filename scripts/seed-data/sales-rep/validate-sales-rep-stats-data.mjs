@@ -12,7 +12,12 @@
  *  [6] NO runtime platform GUID leaked into the committed base aliases.json for these aliases
  *      (they belong in aliases.<env>.json — .claude/rules/test-data.md, DV-021),
  *  [7] every spec'd orgKey exists in test-data/b2b/organizations.csv WITH a pinned platform_id,
- *  [8] the window model is self-consistent (previous windows strictly precede their current window).
+ *  [8] the window model is self-consistent (previous windows strictly precede their current window),
+ *  [9] a cart fixture carries a selected AND a not-selected line whose quantities DIFFER (SR-HD-061 —
+ *      else the Active carts value/sub split is undecidable), on two distinct product slots, alone in
+ *      its org, and its alias's selected_qty / unselected_qty equal the spec's expected split; AND it lives
+ *      in the cart NAMED "default" — the dashboard card's `active-carts` filter counts only default-named
+ *      carts, so a split fixture in a named cart is invisible to the card (SR-HD-061, 2026-10-20).
  */
 import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync } from 'node:fs';
@@ -20,7 +25,8 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   TOP_SELLER_ORDER, CART_FIXTURES, OWNED_ALIASES, GUID_RE,
-  cartName, statsOrderNumber, shapedOrderTotal, lineExtended,
+  fixtureCartName, DEFAULT_CART_NAME, statsOrderNumber, shapedOrderTotal, lineExtended,
+  cartLines, expectedCartSplit, cartSplitDiverges, SPLIT_CART_FIXTURES,
   expectedRankings, rankingsDiverge, requiredProductSlots,
   buildStatisticsWindows, COMPARISON_AXES,
 } from './sales-rep-stats-specs.mjs';
@@ -69,7 +75,9 @@ for (const l of TOP_SELLER_ORDER.lines) {
   if (l.productSlot < 0 || l.productSlot >= need) fail(`top-seller line productSlot ${l.productSlot} outside 0..${need - 1}`);
 }
 for (const c of CART_FIXTURES) {
-  if (c.productSlot < 0 || c.productSlot >= need) fail(`cart ${c.key} productSlot ${c.productSlot} outside 0..${need - 1}`);
+  for (const l of cartLines(c)) {
+    if (l.productSlot < 0 || l.productSlot >= need) fail(`cart ${c.key} productSlot ${l.productSlot} outside 0..${need - 1}`);
+  }
 }
 
 // [3] line arithmetic
@@ -87,7 +95,7 @@ notes.push(`shaped order total $${shapedOrderTotal()} across ${TOP_SELLER_ORDER.
 // [4][5][6] alias registration, business keys, GUID leak
 const expectedKey = {
   [TOP_SELLER_ORDER.alias]: { field: 'number', value: statsOrderNumber(TOP_SELLER_ORDER.key) },
-  ...Object.fromEntries(CART_FIXTURES.map((c) => [c.alias, { field: 'name', value: cartName(c.key) }])),
+  ...Object.fromEntries(CART_FIXTURES.map((c) => [c.alias, { field: 'name', value: fixtureCartName(c) }])),
 };
 for (const alias of OWNED_ALIASES) {
   const entry = aliases[alias];
@@ -108,6 +116,25 @@ for (const key of [TOP_SELLER_ORDER.orgKey, ...CART_FIXTURES.map((c) => c.orgKey
   const o = orgs[key];
   if (!o) { fail(`orgKey ${key} not found in test-data/b2b/organizations.csv`); continue; }
   if (!o.platform_id) fail(`orgKey ${key} has no pinned platform_id in b2b/organizations.csv — the fixture cannot resolve its org`);
+}
+
+// [9] the selected / not-selected split is decidable (SR-HD-061, SECOND RULE)
+if (!SPLIT_CART_FIXTURES.length) fail('no cart fixture carries a not-selected line — the Active carts "not for checkout" figure can only read 0 (SR-HD-061 undecidable)');
+for (const c of SPLIT_CART_FIXTURES) {
+  const want = expectedCartSplit(c);
+  if (!cartSplitDiverges(c)) fail(`cart ${c.key}: selected ${want.selectedItemQuantity} vs not-selected ${want.unselectedItemQuantity} — both must be > 0 and DIFFERENT, or a value/sub swap passes`);
+  const slots = cartLines(c).map((l) => l.productSlot);
+  if (new Set(slots).size !== slots.length) fail(`cart ${c.key}: lines share a productSlot — addItem merges a repeated product into ONE line, collapsing the split`);
+  if (CART_FIXTURES.filter((o) => o.orgKey === c.orgKey).length > 1) fail(`cart ${c.key}: another cart fixture shares org ${c.orgKey} — the per-org statistic would no longer equal this fixture`);
+  const entry = aliases[c.alias] || {};
+  if (entry.selected_qty !== want.selectedItemQuantity) fail(`alias ${c.alias}.selected_qty = ${entry.selected_qty}, spec says ${want.selectedItemQuantity}`);
+  if (entry.unselected_qty !== want.unselectedItemQuantity) fail(`alias ${c.alias}.unselected_qty = ${entry.unselected_qty}, spec says ${want.unselectedItemQuantity}`);
+  if (entry.org_key !== c.orgKey) fail(`alias ${c.alias}.org_key = ${entry.org_key}, spec says ${c.orgKey}`);
+  // The exact mistake this fixture's first version made: a NAMED cart is counted by the unfiltered
+  // statistic but never by `active-carts` (an include-list by the name "default"), so the card reads 0/0.
+  if (fixtureCartName(c) !== DEFAULT_CART_NAME) fail(`cart ${c.key} writes to cart "${fixtureCartName(c)}" — the Active carts card (filter active-carts) counts ONLY carts named "${DEFAULT_CART_NAME}", so this split is invisible to SR-HD-061`);
+  if (entry.name !== DEFAULT_CART_NAME) fail(`alias ${c.alias}.name = "${entry.name}" — a split fixture must name the "${DEFAULT_CART_NAME}" cart`);
+  if (cartSplitDiverges(c)) notes.push(`cart ${c.key}: ${want.selectedItemQuantity} selected vs ${want.unselectedItemQuantity} not selected in ${c.orgKey}, cart "${fixtureCartName(c)}" — divergent`);
 }
 
 // [8] window model coherence

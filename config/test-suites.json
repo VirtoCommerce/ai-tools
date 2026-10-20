@@ -4,7 +4,7 @@
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
     "generated": "2026-10-20",
-    "totalSuites": 159,
+    "totalSuites": 161,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -1758,7 +1758,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 155,
+      "testCount": 156,
       "estimatedMinutes": 245,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1773,7 +1773,7 @@
       ],
       "customerApplicability": "reference",
       "lanes": {
-        "machine": 151,
+        "machine": 152,
         "browser": 1,
         "manual": 0,
         "deprecated": 3
@@ -1801,6 +1801,35 @@
         "sales-rep"
       ],
       "customerApplicability": "reference"
+    },
+    {
+      "id": "050m3",
+      "name": "GraphQL xAPI — Sales Rep Customer Activity & Insights (scoped /graphql/sales-rep)",
+      "file": "regression/suites/Backend/graphql/050m3-graphql-sales-rep-activity.csv",
+      "domain": "sales-rep",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 10,
+      "estimatedMinutes": 15,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "graphql",
+        "xapi",
+        "sales-rep",
+        "b2b",
+        "scoped-schema",
+        "google-analytics"
+      ],
+      "requiresModules": [
+        "sales-rep"
+      ],
+      "customerApplicability": "reference",
+      "lanes": {
+        "machine": 10,
+        "browser": 0,
+        "manual": 0
+      }
     },
     {
       "id": "050n",
@@ -3895,6 +3924,31 @@
         "browser": 12,
         "manual": 0
       }
+    },
+    {
+      "id": "109",
+      "name": "Sales Rep — Customer Activity & Insights (storefront)",
+      "file": "regression/suites/Frontend/sales-rep/109-sales-rep-activity-storefront.csv",
+      "domain": "sales-rep",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 28,
+      "estimatedMinutes": 60,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "sales-rep",
+        "storefront",
+        "customer-activity",
+        "google-analytics",
+        "b2b",
+        "feature-gated"
+      ],
+      "requiresModules": [
+        "sales-rep"
+      ],
+      "customerApplicability": "reference",
+      "clickDriven": true
     }
   ],
   "selections": {
