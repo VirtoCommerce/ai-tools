@@ -195,7 +195,8 @@ OTP-042,otp_email naming an organization with a Deleted membership falls back to
 OtpSignIn.Enabled is on for {{STORE_ID}}: the first POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
 Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); no code within 90s = BLOCKED. One fresh code per grant.
 Every grant sends organization_id = orgAId, as the storefront does for the last-used organization (KB-0080ED6D).
-State under test: Org A membership status Deleted (the named, last-used organization), Org B Approved.","storeId={{STORE_ID}}, backend={{BACK_URL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","--- LAYER: Fixture (REST, created in-case) ---
+State under test: Org A membership status Deleted (the named, last-used organization), Org B Approved.
+Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallback (vc-module-customer PR #321 — open on 2026-10-20; observed on 3.1030.0-pr-321-c54f). On a Customer build without it the fallback expectations do not hold: record the case BLOCKED for the build, never FAIL, and never re-base it to the old behaviour.","storeId={{STORE_ID}}, backend={{BACK_URL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","--- LAYER: Fixture (REST, created in-case) ---
 [AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
 [SETUP] Generate with random-data (AGENT-TEST-6132 prefix): orgAName, orgBName (uniqueOrgName) and email (uniqueEmail) - the email is also the userName
 [HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Organization"",""name"":orgAName}, then the same for orgBName; capture orgAId, orgBId
@@ -223,7 +224,8 @@ OTP-043,otp_email with every membership Invited is refused with the invitation-p
 OtpSignIn.Enabled is on for {{STORE_ID}}: the first POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
 Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); no code within 90s = BLOCKED. One fresh code per grant.
 Every grant sends organization_id = orgAId, as the storefront does for the last-used organization (KB-0080ED6D).
-State under test: every membership (Org A and Org B) at status Invited - no accessible organization, a blocking status.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, backend={{BACK_URL}}","--- LAYER: Fixture (REST, created in-case) ---
+State under test: every membership (Org A and Org B) at status Invited - no accessible organization, a blocking status.
+Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallback (vc-module-customer PR #321 — open on 2026-10-20; observed on 3.1030.0-pr-321-c54f). On a Customer build without it the fallback expectations do not hold: record the case BLOCKED for the build, never FAIL, and never re-base it to the old behaviour.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, backend={{BACK_URL}}","--- LAYER: Fixture (REST, created in-case) ---
 [AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
 [SETUP] Generate with random-data (AGENT-TEST-6132 prefix): orgAName, orgBName (uniqueOrgName) and email (uniqueEmail) - the email is also the userName
 [HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Organization"",""name"":orgAName}, then the same for orgBName; capture orgAId, orgBId
@@ -252,7 +254,8 @@ OTP-044,otp_email with every membership Deleted is refused with the removed-from
 OtpSignIn.Enabled is on for {{STORE_ID}}: the first POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
 Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); no code within 90s = BLOCKED. One fresh code per grant.
 Every grant sends organization_id = orgAId, as the storefront does for the last-used organization (KB-0080ED6D).
-State under test: every membership (Org A and Org B) at status Deleted - no accessible organization, a blocking status.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, backend={{BACK_URL}}","--- LAYER: Fixture (REST, created in-case) ---
+State under test: every membership (Org A and Org B) at status Deleted - no accessible organization, a blocking status.
+Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallback (vc-module-customer PR #321 — open on 2026-10-20; observed on 3.1030.0-pr-321-c54f). On a Customer build without it the fallback expectations do not hold: record the case BLOCKED for the build, never FAIL, and never re-base it to the old behaviour.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, backend={{BACK_URL}}","--- LAYER: Fixture (REST, created in-case) ---
 [AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
 [SETUP] Generate with random-data (AGENT-TEST-6132 prefix): orgAName, orgBName (uniqueOrgName) and email (uniqueEmail) - the email is also the userName
 [HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Organization"",""name"":orgAName}, then the same for orgBName; capture orgAId, orgBId
@@ -281,7 +284,8 @@ OTP-045,Removed from the last-used organization while the other is Rejected: otp
 OtpSignIn.Enabled is on for {{STORE_ID}}: the first POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
 Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); no code within 90s = BLOCKED. One fresh code per grant.
 Every grant sends organization_id = orgAId, as the storefront does for the last-used organization (KB-0080ED6D).
-State under test: Org A removed from the contact, Org B at status Rejected - nothing accessible; the same buyer and state are asked by otp_email and by password.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, backend={{BACK_URL}}, password={{DEFAULT_TEST_PASSWORD}}","--- LAYER: Fixture (REST, created in-case) ---
+State under test: Org A removed from the contact, Org B at status Rejected - nothing accessible; the same buyer and state are asked by otp_email and by password.
+Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallback (vc-module-customer PR #321 — open on 2026-10-20; observed on 3.1030.0-pr-321-c54f). On a Customer build without it the fallback expectations do not hold: record the case BLOCKED for the build, never FAIL, and never re-base it to the old behaviour.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, backend={{BACK_URL}}, password={{DEFAULT_TEST_PASSWORD}}","--- LAYER: Fixture (REST, created in-case) ---
 [AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
 [SETUP] Generate with random-data (AGENT-TEST-6132 prefix): orgAName, orgBName (uniqueOrgName) and email (uniqueEmail) - the email is also the userName
 [HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Organization"",""name"":orgAName}, then the same for orgBName; capture orgAId, orgBId
@@ -314,7 +318,8 @@ OTP-046,Locked in the last-used organization while the other is Rejected: otp_em
 OtpSignIn.Enabled is on for {{STORE_ID}}: the first POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
 Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); no code within 90s = BLOCKED. One fresh code per grant.
 Every grant sends organization_id = orgAId, as the storefront does for the last-used organization (KB-0080ED6D).
-State under test: Org A locked (the named, last-used organization), Org B at status Rejected - nothing accessible; the same buyer and state are asked by otp_email and by password.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, backend={{BACK_URL}}, password={{DEFAULT_TEST_PASSWORD}}","--- LAYER: Fixture (REST, created in-case) ---
+State under test: Org A locked (the named, last-used organization), Org B at status Rejected - nothing accessible; the same buyer and state are asked by otp_email and by password.
+Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallback (vc-module-customer PR #321 — open on 2026-10-20; observed on 3.1030.0-pr-321-c54f). On a Customer build without it the fallback expectations do not hold: record the case BLOCKED for the build, never FAIL, and never re-base it to the old behaviour.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, backend={{BACK_URL}}, password={{DEFAULT_TEST_PASSWORD}}","--- LAYER: Fixture (REST, created in-case) ---
 [AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
 [SETUP] Generate with random-data (AGENT-TEST-6132 prefix): orgAName, orgBName (uniqueOrgName) and email (uniqueEmail) - the email is also the userName
 [HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Organization"",""name"":orgAName}, then the same for orgBName; capture orgAId, orgBId
@@ -345,7 +350,8 @@ OTP-047,"Password sign-in keeps falling back for a removed, locked or Rejected l
 OtpSignIn.Enabled is on for {{STORE_ID}}: the first POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
 Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); no code within 90s = BLOCKED. One fresh code per grant.
 Every grant sends organization_id = orgAId, as the storefront does for the last-used organization (KB-0080ED6D).
-State under test: password grant naming Org A in three states in turn - removed, locked, Rejected - with Org B always Approved.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, backend={{BACK_URL}}, password={{DEFAULT_TEST_PASSWORD}}","--- LAYER: Fixture (REST, created in-case) ---
+State under test: password grant naming Org A in three states in turn - removed, locked, Rejected - with Org B always Approved.
+Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallback (vc-module-customer PR #321 — open on 2026-10-20; observed on 3.1030.0-pr-321-c54f). On a Customer build without it the fallback expectations do not hold: record the case BLOCKED for the build, never FAIL, and never re-base it to the old behaviour.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, backend={{BACK_URL}}, password={{DEFAULT_TEST_PASSWORD}}","--- LAYER: Fixture (REST, created in-case) ---
 [AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
 [SETUP] Generate with random-data (AGENT-TEST-6132 prefix): orgAName, orgBName (uniqueOrgName) and email (uniqueEmail) - the email is also the userName
 [HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Organization"",""name"":orgAName}, then the same for orgBName; capture orgAId, orgBId
@@ -374,7 +380,8 @@ OTP-048,"Login on behalf naming an organization the target is locked in is refus
 OtpSignIn.Enabled is on for {{STORE_ID}}: the first POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
 Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); no code within 90s = BLOCKED. One fresh code per grant.
 Every grant sends organization_id = orgAId, as the storefront does for the last-used organization (KB-0080ED6D).
-State under test: Org A locked, Org B active; an operator (admin) logs in on behalf of the buyer naming Org A - the impersonate grant sets no SignInResult and gets no fallback.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, backend={{BACK_URL}}","--- LAYER: Fixture (REST, created in-case) ---
+State under test: Org A locked, Org B active; an operator (admin) logs in on behalf of the buyer naming Org A - the impersonate grant sets no SignInResult and gets no fallback.
+Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallback (vc-module-customer PR #321 — open on 2026-10-20; observed on 3.1030.0-pr-321-c54f). On a Customer build without it the fallback expectations do not hold: record the case BLOCKED for the build, never FAIL, and never re-base it to the old behaviour.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, backend={{BACK_URL}}","--- LAYER: Fixture (REST, created in-case) ---
 [AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
 [SETUP] Generate with random-data (AGENT-TEST-6132 prefix): orgAName, orgBName (uniqueOrgName) and email (uniqueEmail) - the email is also the userName
 [HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Organization"",""name"":orgAName}, then the same for orgBName; capture orgAId, orgBId
@@ -398,7 +405,8 @@ OTP-049,A fallback sign-in persists the substituted organization as the contact'
 OtpSignIn.Enabled is on for {{STORE_ID}}: the first POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
 Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); no code within 90s = BLOCKED. One fresh code per grant.
 Every grant sends organization_id = orgAId, as the storefront does for the last-used organization (KB-0080ED6D).
-State under test: Org A is the contact's CurrentOrganizationId; (1) Org A locked, Org B active; (2) then Org B locked too (nothing accessible).","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, backend={{BACK_URL}}","--- LAYER: Fixture (REST, created in-case) ---
+State under test: Org A is the contact's CurrentOrganizationId; (1) Org A locked, Org B active; (2) then Org B locked too (nothing accessible).
+Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallback (vc-module-customer PR #321 — open on 2026-10-20; observed on 3.1030.0-pr-321-c54f). On a Customer build without it the fallback expectations do not hold: record the case BLOCKED for the build, never FAIL, and never re-base it to the old behaviour.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, backend={{BACK_URL}}","--- LAYER: Fixture (REST, created in-case) ---
 [AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
 [SETUP] Generate with random-data (AGENT-TEST-6132 prefix): orgAName, orgBName (uniqueOrgName) and email (uniqueEmail) - the email is also the userName
 [HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Organization"",""name"":orgAName}, then the same for orgBName; capture orgAId, orgBId
@@ -440,7 +448,8 @@ OTP-050,A wrong code with a blocked last-used organization returns the code erro
 OtpSignIn.Enabled is on for {{STORE_ID}}: the first POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
 Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); no code within 90s = BLOCKED. One fresh code per grant.
 Every grant sends organization_id = orgAId, as the storefront does for the last-used organization (KB-0080ED6D).
-State under test: Org A locked and the contact CurrentOrganizationId, Org B active; the grant is made with a code that was never issued, naming Org A.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, backend={{BACK_URL}}","--- LAYER: Fixture (REST, created in-case) ---
+State under test: Org A locked and the contact CurrentOrganizationId, Org B active; the grant is made with a code that was never issued, naming Org A.
+Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallback (vc-module-customer PR #321 — open on 2026-10-20; observed on 3.1030.0-pr-321-c54f). On a Customer build without it the fallback expectations do not hold: record the case BLOCKED for the build, never FAIL, and never re-base it to the old behaviour.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, backend={{BACK_URL}}","--- LAYER: Fixture (REST, created in-case) ---
 [AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
 [SETUP] Generate with random-data (AGENT-TEST-6132 prefix): orgAName, orgBName (uniqueOrgName) and email (uniqueEmail) - the email is also the userName
 [HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Organization"",""name"":orgAName}, then the same for orgBName; capture orgAId, orgBId
@@ -470,7 +479,8 @@ OTP-051,"A globally locked-out account is refused with the account lockout, not 
 OtpSignIn.Enabled is on for {{STORE_ID}}: the first POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
 Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); no code within 90s = BLOCKED. One fresh code per grant.
 Every grant sends organization_id = orgAId, as the storefront does for the last-used organization (KB-0080ED6D).
-State under test: the buyer's account is globally locked (permanent) while Org A is also locked and Org B is active.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, backend={{BACK_URL}}","--- LAYER: Fixture (REST, created in-case) ---
+State under test: the buyer's account is globally locked (permanent) while Org A is also locked and Org B is active.
+Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallback (vc-module-customer PR #321 — open on 2026-10-20; observed on 3.1030.0-pr-321-c54f). On a Customer build without it the fallback expectations do not hold: record the case BLOCKED for the build, never FAIL, and never re-base it to the old behaviour.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, backend={{BACK_URL}}","--- LAYER: Fixture (REST, created in-case) ---
 [AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
 [SETUP] Generate with random-data (AGENT-TEST-6132 prefix): orgAName, orgBName (uniqueOrgName) and email (uniqueEmail) - the email is also the userName
 [HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Organization"",""name"":orgAName}, then the same for orgBName; capture orgAId, orgBId
