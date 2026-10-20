@@ -1,21 +1,25 @@
 {
-  "runId": "REG-2026-10-15-1720",
+  "runId": "REG-2026-10-20-0917",
   "status": "completed",
-  "startedAt": "2026-10-15T15:20:55.249Z",
-  "windowStart": "2026-10-15T15:20:55.249Z",
+  "startedAt": "2026-10-20T07:17:32.000Z",
+  "windowStart": "2026-10-20T07:17:32.000Z",
   "selection": "093",
   "env": "vcst",
   "scoped": true,
-  "purpose": "VCST-6015 — verify the 5 test-defect fixes from triage of REG-2026-10-15-1548",
-  "ids": "SR-HD-100,SR-HD-102,SR-HD-107,SR-HD-112,SR-HD-115",
+  "purpose": "Verify the stale-case repairs of SR-HD-030 / SR-HD-053 (PR #479; failed in REG-2026-10-19-1307)",
+  "ids": "SR-HD-030,SR-HD-053",
   "suites": {
     "093": {
-      "status": "pending",
-      "lane": "browser"
+      "status": "done",
+      "lane": "browser",
+      "browser": "playwright-chrome",
+      "startedAt": "2026-10-20T07:18:27.288Z",
+      "total": 2,
+      "pass": 2,
+      "fail": 0,
+      "blocked": 0,
+      "finishedAt": "2026-10-20T07:24:22.299Z"
     }
   },
-  "finishedAt": "2026-10-15T15:21:05.438Z",
-  "notes": [
-    "ABORTED before dispatch (usage limit) — nothing ran; no results"
-  ]
+  "finishedAt": "2026-10-20T07:25:02.582Z"
 }

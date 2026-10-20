@@ -1,0 +1,263 @@
+{
+  "ticket": "VCST-5903",
+  "ticket_type": "Story",
+  "flow": "feature-test",
+  "path": "FAST_GROUNDED",
+  "tracker": {
+    "system": "jira",
+    "comment_id": "112206",
+    "artifact": "vc-theme-b2b-vue-2.61.0-pr-2568-bfe0-bfe0b259"
+  },
+  "path_route": {
+    "decided_at": "0",
+    "provisional": false,
+    "escalated_reason": null,
+    "basis": "/qa-test-fast invoked by the user; this command is the routing answer (SKILL.md rationalization table)"
+  },
+  "shape_class": {
+    "value": "ui-kit",
+    "sources": [
+      "PR #2568 diff: client-app/ui-kit/components/organisms/stat-widget/**, organisms/index.ts, ui-kit/locales/*.json, *.stories.ts"
+    ]
+  },
+  "layer": "storefront",
+  "verdict": "PASS WITH NOTES",
+  "date": "2026-10-20",
+  "environment": "vcst: QA Storybook (STORYBOOK_URL) and storefront (FRONT_URL)",
+  "build": {
+    "storybook_image": "2.61.0-alpha.2597-vcst-5903-vc-stat-widget-a6255676",
+    "theme": "vc-theme-b2b-vue-2.61.0-pr-2568-bfe0-bfe0b259",
+    "platform": "3.1086.0-pr-3139-5d63",
+    "pr": "VirtoCommerce/vc-frontend#2568",
+    "head": "bfe0b259 (product) / a6255676 (head: + CI-only dev merge)",
+    "deployed": "UNKNOWN — DEPLOYMENT UNKNOWN: VirtoCommerce/vc-frontend#2568 — no CI artifact resolved for this PR; vc-deploy-dev vcst-qa pins theme bfe0b259 and Storybook a6255676 (verified live)",
+    "previous_round": {
+      "round": 1,
+      "build": "3f8af63a",
+      "verdict": "PASS WITH NOTES",
+      "comment_id": "112158"
+    },
+    "preflight": {
+      "verdict": "READY",
+      "sprint": "Sprint26-21",
+      "env": "vcst",
+      "observedAt": "2026-10-20T07:49:31.402Z",
+      "health": "UP"
+    }
+  },
+  "status_transitions": [],
+  "strategy": {
+    "path": "reports/tickets/Sprint26-21/VCST-5903/test-strategy.md",
+    "round": 2,
+    "depth_label": "deep",
+    "floors_fired": [
+      "F2",
+      "F3",
+      "F5",
+      "F8",
+      "F11"
+    ],
+    "status": "APPROVED",
+    "verifier": null,
+    "mix": [
+      "analytical",
+      "methodical",
+      "consultative",
+      "model-based",
+      "reactive",
+      "regression-averse",
+      "process-compliant"
+    ],
+    "risks": {
+      "critical": 0,
+      "high": 1,
+      "medium": 5,
+      "low": 1
+    },
+    "artifacts": {
+      "test_model": "RUN (amend)",
+      "mind_map": "SKIP - domain map ui ABSENT (single-layer chain)",
+      "checklist": "RUN",
+      "exploratory": "RUN",
+      "visual_lane": "RUN",
+      "contract_refresh": "SKIP - no GraphQL/REST contract in the diff",
+      "coverage_triage_regression": "RUN planned - dropped by the user (amendment); R10 rests on A7",
+      "verifier": "SKIP - no Critical risk",
+      "case_authoring": "never in the run (D2)"
+    },
+    "amendments": 4,
+    "reconciled": {
+      "planned": 10,
+      "resulted": 10,
+      "deviations": 4,
+      "unresulted": 0
+    },
+    "candidate_cases": [
+      "A2",
+      "A3",
+      "A4",
+      "A5"
+    ],
+    "stale_cases": []
+  },
+  "domain_map": {
+    "state": "ABSENT",
+    "slug": "ui",
+    "path": null,
+    "rev": null,
+    "generated": null,
+    "mind_map": null,
+    "all_layer_chain": false,
+    "built_in_run": false,
+    "build_outcome": "NOT_RUN: single-layer chain (axes.md 2g)",
+    "unmapped_surfaces": [
+      "ui-kit / Storybook (no domain map for the design system)"
+    ],
+    "mind_map_findings": []
+  },
+  "agents_dispatched": [
+    "ticket-context-analyst x4",
+    "qa-frontend-expert (checklist A, chrome)",
+    "ui-ux-expert (visual B, DevTools, qa-design skill loaded)",
+    "qa-testing-expert (exploratory, firefox; resumed twice)",
+    "general-purpose triage classifier x2",
+    "qa-frontend-expert vc-fix:qa-investigate x2 (X5 chrome, X27 edge)"
+  ],
+  "total_cases": 9,
+  "passed": 8,
+  "failed": 1,
+  "blocked": 0,
+  "new_cases_authored": 0,
+  "regression": null,
+  "bugs_filed": [
+    {
+      "key": "VCST-6448",
+      "severity": "Low",
+      "relationship": "relates",
+      "parent_or_linked_ticket": "VCST-5903",
+      "report": "reports/bugs/open/low/BUG-VcStatWidget-Unbreakable-Text-Overflows-Card-VCST-6448.md"
+    },
+    {
+      "key": "VCST-6449",
+      "severity": "Low",
+      "relationship": "relates",
+      "parent_or_linked_ticket": "VCST-5903",
+      "report": "reports/bugs/open/low/BUG-VcStatWidget-Zero-Width-Value-ErrorText-VCST-6449.md"
+    }
+  ],
+  "bugs_not_filed": [
+    {
+      "id": "X15",
+      "reason": "needs-review: secondary props (delta/description/label/valueSuffix) not blank-safe — no oracle, dev/PO question"
+    },
+    {
+      "id": "X25",
+      "reason": "needs-review: no-value card silent to assistive tech — dev/PO question"
+    },
+    {
+      "id": "X30",
+      "reason": "needs-review: pending dash below 3:1 in every mode (aria-hidden) — ui-ux/PO question"
+    },
+    {
+      "id": "A6",
+      "reason": "known issue VCST-6428 (developer proposes Won't Fix, PO decides); new evidence: page horizontal scroll at 480"
+    }
+  ],
+  "discovery": {
+    "ran": true,
+    "lane": "qa-testing-expert, playwright-firefox, 30-min box (~28 used: 16 + 11 after a rate-limit stop)",
+    "report": "reports/exploratory/SBTM-VCST-5903-stat-widget-2026-10-20.md",
+    "findings": [
+      "U+200B value/errorText still reads as content (X5 → VCST-6449)",
+      "unbreakable word overflows error/description/delta (X27 → VCST-6448)",
+      "secondary props not blank-safe (X15)",
+      "no-value card silent to AT (X25)",
+      "dash below 3:1 (X30)",
+      "VCST-6428 page scroll at 480 (X11)"
+    ],
+    "not_reached": [
+      "screen-reader announcement itself (manual)",
+      "Row story with a long figure (X18: story ignores args)"
+    ]
+  },
+  "visual": {
+    "surface": true,
+    "ran": true,
+    "report": "reports/tickets/Sprint26-21/VCST-5903/design-report.md",
+    "axes": {
+      "design_system": {
+        "verdict": "PASS",
+        "detail": "blank value / blank errorText cards identical to empty / ready (0 px shift, BL-UI-003); 252 colour reads on palette, 0 literals, 0 off-grid spacing (BL-UI-002); token chain unchanged"
+      },
+      "a11y": {
+        "verdict": "NOT_RUN",
+        "detail": "contrast code unchanged since the Round 1 PASS (out of scope)"
+      },
+      "design_spec": {
+        "verdict": "SKIPPED",
+        "skipped_reason": "no Prototype / Claude Design link on the ticket (PNG mockups only)"
+      }
+    },
+    "invariant_failures": [],
+    "a11y_findings": [],
+    "advisories": [
+      "pending dash below 3:1 (X30, aria-hidden)"
+    ]
+  },
+  "contract": null,
+  "coverage_triage": {
+    "ran": false,
+    "detail": "F5 regression dropped by the user at strategy approval (Round 2 amendment); R10 rests on A7 storefront boot",
+    "regression": null
+  },
+  "test_data": {
+    "data_surface": false,
+    "fixtures": [],
+    "ledger": [],
+    "teardown": "nothing created"
+  },
+  "business_rules_verified": [
+    "BL-UI-002",
+    "BL-UI-003"
+  ],
+  "appinsights": {
+    "ran": false,
+    "skipped_reason": "Storybook is static; no server call involved"
+  },
+  "screenshots": "reports/tickets/Sprint26-21/VCST-5903/screenshots/",
+  "report": {
+    "page_url": "https://claude.ai/artifact/EohUW6f7x43C12AyMeDii6",
+    "verdict_md": "reports/tickets/Sprint26-21/VCST-5903/verdict.md",
+    "kb": {
+      "read": [
+        "KB-B9BB372D",
+        "KB-A4C7F35D",
+        "KB-82296935",
+        "KB-069099FD",
+        "KB-527B0F06",
+        "KB-2B31393F",
+        "KB-3F700CCC",
+        "KB-AF2196EB"
+      ],
+      "confirmed": [
+        "KB-069099FD",
+        "KB-82296935",
+        "KB-2B31393F",
+        "KB-3F700CCC",
+        "KB-AF2196EB"
+      ],
+      "disputed": [
+        "KB-B9BB372D",
+        "KB-A4C7F35D"
+      ],
+      "captured": [
+        "KB-7C95C0AE",
+        "KB-3F700CCC",
+        "KB-AF2196EB"
+      ]
+    }
+  },
+  "timing": {
+    "note": "9 checklist items: 8 PASS, 1 FAIL (A6 = known VCST-6428); 16 exploratory rows"
+  }
+}
