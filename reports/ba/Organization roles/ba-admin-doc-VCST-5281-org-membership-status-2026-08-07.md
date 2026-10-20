@@ -87,6 +87,31 @@ This is the same action a maintainer's **Revoke invite** button performs on the 
 
 ---
 
+## Sign-in by emailed code when a member's last organization is blocked (VCST-6132)
+
+A buyer who belongs to several organizations and signs in with an emailed code is resent their last-used organization by the storefront. If your change to the membership makes that organization unusable for them, they are no longer stopped: sign-in lands them in **another organization they can use**, exactly as password sign-in always did. This needs no new setting, permission or configuration key.
+
+An organization is unusable for a member when they are removed from it, the membership is **locked**, or its **Invite status** resolves to `Invited`, `Rejected` or `Deleted`.
+
+| What you did | What the member sees after a code sign-in |
+|---|---|
+| Locked one membership, another is active | Signed in to another organization. The locked one is listed greyed out with a padlock and cannot be selected |
+| Removed the member, or set Invite status `Invited` / `Rejected` / `Deleted`, another is active | Signed in to another organization. The blocked one is not listed |
+| Locked every membership | Signed in with no organization selected; company pages are not available |
+| Invite status `Invited` / `Rejected` / `Deleted` in every organization | Sign-in refused with the organization message |
+| Restored the original organization (**Unlock**, Invite status back to `Inherit from member`, or re-added the member) | Next code sign-in lands in it again, because the storefront still remembers it |
+
+![Organization memberships grid with one organization showing Is Currently Locked = true](../../tickets/Sprint26-21/VCST-6132/screenshots/q1-3-admin-org-A-locked.png)
+*The contact's **Organization memberships** grid: the first organization is locked (**Is Currently Locked** = `true`), the others are not.*
+
+!!! note "Good to know"
+    - Locking a membership does **not** lock the account: the contact's global **Locked** flag stays `false`.
+    - After a fallback, the contact's current organization becomes the organization the buyer landed in.
+    - A member who picks a blocked organization in the storefront header is refused. Impersonation (**Login on behalf**) and a global account lockout behave as before.
+    - MFA sign-in is not covered here (it ships with VCST-5904).
+
+---
+
 ## Notification templates for invites
 
 Three notification types were added for this feature, all listed under **Notifications → Notification list**:
