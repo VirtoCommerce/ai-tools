@@ -179,7 +179,18 @@
       "blocked_triaged": 3,
       "gate": "metrics:compute --gate feature --blocked-triaged 3 → GO (verify:gate alone: CANNOT EVALUATE, 10.34% BLOCKED > 10%); the 3 BLOCKED are lane infrastructure and also RE-BASE rows — not assessed, not green"
     },
-    "c2": "not run — removed from /qa-test 2026-09-10; change-scoped release sweep not assessed"
+    "c2": "not run — removed from /qa-test 2026-09-10; change-scoped release sweep not assessed",
+    "rerun": {
+      "run_id": "REG-2026-10-20-1329",
+      "ids": 6,
+      "pass": 5,
+      "fail": 0,
+      "blocked": 1,
+      "blocked_ids": [
+        "B2C-MBR-020 — SECRET_STALE: playwright-edge holds the pre-sync ORG_USER_PASSWORD; needs an MCP restart"
+      ],
+      "fixed_after": "COMP-E2E-005/AUTH-075/B2C-MBR-020 refresh_token step repointed from {{BACK_URL}} to {{FRONT_URL}} (issuer mismatch)"
+    }
   },
   "bugs_filed": [],
   "bugs_not_filed": [
@@ -249,7 +260,7 @@
       "BL-AUTH-016 rules 1–2 'password grant only' → every credential sign-in (grant sets SignInResult); rule 3 lock-beats-status only without a fallback",
       "BL-AUTH-013 'invalid_organization_id only on a non-password grant' → only on a grant without SignInResult"
     ],
-    "residue": "2 orgs 'AGENT-TEST-6132-mvaxbhut Org A/B' (83d2b957-…, 9b7a849e-…) from the 2026-10-16 round — not this run's; cleanup awaiting operator OK",
+    "residue": "none — 2026-10-16 leftovers (orgs AGENT-TEST-6132-mvaxbhut A/B, contact Agent Tester6132, user agent-test-6132-mvaxbhut@example.com) deleted 2026-10-20; search 6132 = 0 members / 0 users / 0 memberships",
     "checklist": "reports/tickets/Sprint26-21/VCST-6132/testing-checklist.md",
     "authored_cases": {
       "104": [
