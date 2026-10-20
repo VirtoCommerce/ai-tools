@@ -1,15 +1,15 @@
 ---
-description: "Initialize / onboard the Virto Commerce QA plugins for a deployment — check vc-secrets, install deps, ask only env name + bug tracker (Jira/Azure Boards) + code host (GitHub/Azure Repos) + an auth preference, then DERIVE the rest (native-platform vs CLIENT project, client org, contribution mode, fork account) from the token + filled env + a live module/repo scan. Every PAT is stored by the operator in vc-secrets and reaches a process only through the $VC_RUN bridge. Writes project-profile.json + .env + the vc-secrets declarations + .mcp.json, verifies access. Makes /qa-fix route bugs to the right repo + tracker. Backed by the /project-init skill."
+description: "Initialize / onboard the Virto Commerce QA plugins for a deployment — check vc-secrets, install deps, ask only env name + bug tracker (Jira/Azure Boards) + code host (GitHub/Azure Repos) + an auth preference, then DERIVE the rest (native-platform vs CLIENT project, client org, contribution mode, fork account) from the token + filled env + a live module/repo scan. Every PAT is stored by the operator in vc-secrets and reaches a process only through the $VC_RUN bridge. Writes project-profile.json + .env + the vc-secrets declarations + .mcp.json, verifies access. Every installed plugin reads that profile. Backed by the /project-init skill."
 argument-hint: "(no args — interactive) | --add-env (add another environment to an onboarded project) | --check (reconcile an existing profile, move plaintext tokens into vc-secrets, verify) | --governance <host|none> (override host-governance detection)"
 
 ---
 
 # /project-init — deploy & wire the QA plugins for a customer
 
-Bring the Virto Commerce QA plugins (vc-fix, vc-perf) up on a new machine / for a new customer and
-produce the **deployment profile** (`project-profile.json`) that every skill reads — so `/qa-fix`
-knows the infrastructure and routes each bug to the right repository (client module / theme /
-storefront fork **or** native VirtoCommerce platform) and the right bug tracker (Jira or Azure Boards).
+Bring the Virto Commerce plugins (vc-fix, vc-perf, …) up on a new machine / for a new customer and
+produce the **deployment profile** (`project-profile.json`) that every installed plugin reads — the
+tracker (Jira or Azure Boards), the code host and its repositories (client module / theme / storefront
+fork **or** native VirtoCommerce platform), the stands.
 
 Methodology + helper scripts: the [`/project-init` skill](../skills/project-init/SKILL.md). This
 plugin (vc-init) is the ONLY writer of the profile; vc-fix and vc-perf stop with "run /project-init"
@@ -63,10 +63,12 @@ PAT, no `az login`, self-diagnostics off; the host's rules win.
    On "done": **token gate** `check-secrets.mjs` (reads doctor's lines; exit 1 ⇒ show the remaining
    `trust`/`set` commands and wait again), then `normalize-env.mjs` (exit 1 ⇒ STOP).
 4. **Discover repos — ALWAYS** (`node "$VC_RUN" onboard discover-repos --client-vcs …`): derive
-   `projectType` + `clientOrg` → `.local-env/repos.json`. Show the map; confirm. Ask ONLY on a
+   `projectType` + `clientOrg` → `.local-env/repos.json`. Show the FULL table `render-scan.mjs --repos`
+   prints (default branch + PR target per repo); confirm. Ask ONLY on a
    genuine ambiguity.
 4b. **Discover tracker — Azure Boards only** (`node "$VC_RUN" onboard discover-tracker --tracker azure …`):
-   per-type `states` + a `role→state` map + the bug field contract. Confirm the `roleStates`.
+   per-type `states` + a `role→state` map + the bug field contract. Show the FULL status table
+   `render-scan.mjs --tracker` prints (every state found, its mapped role); confirm.
 5. **Derive block** (`node "$VC_RUN" onboard derive-context --tracker … --client-vcs …`): auth actually
    present per axis, `contributionMode`, `forkAccount`, `operator`.
 6. Write the profile (`gen-profile.mjs --repos-json … --tracker-json … --runtime-mode plugin` + tracker
@@ -78,7 +80,8 @@ PAT, no `az login`, self-diagnostics off; the host's rules win.
    AND the MCP-server status as Markdown tables in your reply.** For a **session-auth FAIL** run
    `ensure-session.mjs` directly (never through `$VC_RUN`) **in the background**.
 9. Done → an explicit labelled **Step 9**: summary + manual actions (restart Claude Code so `VC_RUN`
-   and `.mcp.json` take effect, pending OAuth) + first run `/qa-fix <TICKET>`.
+   and `.mcp.json` take effect, pending OAuth) + what to do now from `next-steps.mjs` — "the project is
+   ready to work with" and the asks/commands of the plugins actually installed.
 
 ### `--add-env` — add another environment to an already-onboarded project
 

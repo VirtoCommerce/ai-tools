@@ -1,16 +1,16 @@
 ---
 name: project-init
-description: "Initialize / onboard the Virto Commerce QA plugins (vc-fix, vc-perf) onto a deployment. Checks that vc-secrets is installed, installs deps, then asks the operator only what genuinely shapes the config — the environment NAME, the bug tracker (Jira / Azure Boards), the code host (GitHub / Azure Repos), and an auth preference per axis (PAT recommended, else browser/CLI login). Every PAT is stored in vc-secrets by the operator in a terminal — never typed in chat, never written to a file — and reaches a process only through the $VC_RUN bridge. Everything else — native-platform or CLIENT project, the client org, the contribution mode, the fork account — is DERIVED from the token + the filled env + a live module/repo scan. Writes project-profile.json + .env.<env> + .env.local (test-user passwords only) + .mcp.json + the vc-secrets declarations, and verifies access. The whole point is to make /qa-fix route each bug to the RIGHT repo and file to the RIGHT tracker. Use when standing the plugins up on a new machine or for a new customer. On a host-governed project (a client governance plugin owns MCP servers and secrets) it writes the profile and env files only and skips every token / MCP step. Day-2 modes skip the interview: `--add-env` adds another environment (URLs + per-env passwords) to an already-onboarded project; `--check` reconciles an existing profile to the current schema, moves any plaintext token into vc-secrets, then verifies."
+description: "Initialize / onboard the Virto Commerce plugins (vc-fix, vc-perf, …) onto a deployment. Checks that vc-secrets is installed, installs deps, then asks the operator only what genuinely shapes the config — the environment NAME, the bug tracker (Jira / Azure Boards), the code host (GitHub / Azure Repos), and an auth preference per axis (PAT recommended, else browser/CLI login). Every PAT is stored in vc-secrets by the operator in a terminal — never typed in chat, never written to a file — and reaches a process only through the $VC_RUN bridge. Everything else — native-platform or CLIENT project, the client org, the contribution mode, the fork account — is DERIVED from the token + the filled env + a live module/repo scan. Writes project-profile.json + .env.<env> + .env.local (test-user passwords only) + .mcp.json + the vc-secrets declarations, and verifies access. That one profile is what every installed plugin reads — vc-fix routes a bug to the RIGHT repo and tracker with it, vc-perf finds the stand and the code with it. Use when standing the plugins up on a new machine or for a new customer. On a host-governed project (a client governance plugin owns MCP servers and secrets) it writes the profile and env files only and skips every token / MCP step. Day-2 modes skip the interview: `--add-env` adds another environment (URLs + per-env passwords) to an already-onboarded project; `--check` reconciles an existing profile to the current schema, moves any plaintext token into vc-secrets, then verifies."
 ---
 
 # /project-init — deploy & wire this QA plugin for a customer
 
 Stand up this plugin against a customer's infrastructure and produce a single
 **deployment profile** (`project-profile.json`) that every other skill reads to
-know what it's working with. **Focus: get `/qa-fix` working first** — it must
-understand the infrastructure and route a found bug to the correct repository
-(client module / theme / storefront fork **or** the native VirtoCommerce
-platform) and to the correct bug tracker.
+know what it's working with — the tracker, the code host and its repositories (client module /
+theme / storefront fork **or** the native VirtoCommerce platform), the stands. It serves every
+installed plugin, not one of them: the close (§9) says the project is ready and lists what the
+operator can do now, built from the plugins actually installed.
 
 > **Ask only what shapes the config; DERIVE the rest.** The interview is three
 > answers — **env name · tracker · code host** — plus a soft auth preference per
@@ -74,8 +74,10 @@ rules, applied at every step:
    question: the operator has to scroll back, so they approve unread. One table, one question,
    nothing in between.
 2. **Show what the operator can DECIDE. Summarise what they cannot.** A scan result they can
-   correct earns a table. A derived fact (a token's permission, an API base, a state map that
-   resolved cleanly) earns ONE line — or nothing. Internals that only feed `/qa-fix`
+   correct earns a table. A derived fact (a token's permission, an API base) earns ONE line — or nothing. **The two
+   scan results the operator CONFIRMS — the repo map (§4a) and the tracker status map (§4b) — are
+   shown in FULL**, as `render-scan.mjs` prints them: a confirmation of a table the operator never
+   saw is not a confirmation. Internals that only feed `/qa-fix`
    (`apiBase`, `projectId`, `forkAccount`, `upstreamRef`, local-verify commands) go into the
    profile, not onto the screen.
 3. **Exceptions get the space, happy paths get a line.** Anything that resolved cleanly is one
@@ -588,26 +590,23 @@ first: a table separated from its question by two more sections forces the opera
 back, and they will approve it unread. Sequence is exactly: repo table → `AskUserQuestion` →
 (only then) 4b.
 
-**ONE table. Columns: `Repo · Kind · Branch · Notes`** — and nothing else.
+**The table comes from the script, verbatim — never hand-built, never shortened:**
 
-- **Branch** = `default → PR target` in one cell (`main → dev`). Two columns for two branch
-  names is padding.
-- **Notes** = only what is repo-SPECIFIC: the toolchain, and for a storefront fork its
-  provenance in one phrase — `fork of vc-frontend 2.49.7, base 2.49.0`. Do **NOT** render a
-  separate "fork provenance" table: `upstream` / `upstreamRef` / `forkVersion` are the same
-  three facts, and the operator cannot verify them anyway — they are `/qa-fix` Gate-1b inputs,
-  not decisions. If `upstreamRefResolved: false`, that IS a decision → say so in Notes and ask.
-- **Drop `Host` and `Auth`** when every client repo shares them (the usual case) — the operator
-  chose both in the interview two minutes ago. State once above the table:
-  `2 client repos on azure-repos (ADO_PAT) · 53 platform repos`. Keep a `Host` column only for a
-  genuinely mixed set.
-- **Never list the 53 platform repos.** A count is the whole signal; they are not the operator's
-  decision and the list buries the two rows that are.
-- Local-verify facts (`yarn dev`, port, cert) are `/qa-fix` plumbing — omit from the table.
+```bash
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/render-scan.mjs" --repos .local-env/repos.json
+```
 
-Then ask with `AskUserQuestion`, and **put the actual discrepancy in the question text**, not
-just in an option label — e.g. *"`frontend` defaults to `main` but the scan set PR target `dev`.
-Correct?"* Options: accept as scanned · fix the one thing named · something else.
+It prints one summary line (client repos and host, the platform-repo COUNT — never their list — the
+client org, the project type) and one table: **Repo · Kind · Default branch · PR target · Notes**, a
+row per client repo. Notes carries only what is repo-specific: a PR target that differs from the
+default branch, a storefront fork's provenance, a module with no matching repo, a base tag that could
+not be verified. Paste it into your reply as it is — it is already Markdown.
+
+Then ask with `AskUserQuestion`. The question **refers to the table** and names a flagged row if there
+is one; it never restates the map in parentheses — e.g. *"Are the repos and branches in the table
+correct?"* or *"`acme-module-main` opens PRs into `dev`, not `main` — correct?"*. Options:
+**"Yes, as in the table"** · **"Fix a repo or branch"**. On a fix, ask which row and what, and correct
+it in `.local-env/repos.json` before step 6.
 
 **Genuine-ambiguity asks (only these — everything else is confirm-or-correct):**
 - host = `github`, **no** client modules found, org not resolvable → ask the operator:
@@ -646,27 +645,27 @@ ready-for-test,done} }`. Auth = the `ado-pat` the operator stored in vc-secrets 
 auth, don't skip it — an empty `roleStates` makes `/qa-fix` fall back to asking on every
 transition). Step 6 ingests it via `--tracker-json`.
 
-**Reporting — scale it to whether the operator has anything to decide:**
+**Show the FULL status table, then confirm — every run, stock process or custom:**
 
-- **`roleStatesComplete: true` (every role mapped) → render the role→state grid as a TABLE and
-  CONFIRM it** with `AskUserQuestion` (options: **"Accept as scanned"** / **"Correct a role"**) — the
-  same shape §4a already mandates for the repo map. `roleStatesComplete: true` only means every role
-  got *a* state, **not** that the picks match this team's workflow. Because step 6 flips
-  `transitionPolicy=auto`, a mis-picked role moves real customer work items **silently, with no
-  further prompt** — so a custom process's mapping is exactly the kind of fact the operator must be
-  able to see and approve (D4). Render one row per role → picked `System.State`, and add a context
-  line listing the **unused** states — the alternatives the operator is implicitly approving against,
-  e.g. `Unused: New, On Dev, On hold, HotFixed, Resolved, On UAT`. On **"Correct a role"**, ask which
-  role, offer that board's states, and persist with
-  `reconcile-profile.mjs --write --set 'tracker.azure.roleStates.<role>=<state>'`.
-  - **Exception — the one-liner is fine ONLY when the picks are unambiguous:** the board's state set
-    is the STOCK one (New/Active/Resolved/Closed) with **no unused candidate state** a role could
-    plausibly have taken instead. Then: `Board states mapped (stock process, no ambiguity).
-    Transitions will be silent.` State counts per work-item type, `apiBase`, `projectId`,
-    `ticketKeyFormat` and the cross-link token stay internals: **do not print them.**
-- **A role is MISSING or looks wrong** → show the table of the affected roles only and ask (as
-  above). A MISSING role is the one that must be resolved before `/qa-fix` can transition by it; a
-  complete-but-custom map is confirmed, not blocked.
+```bash
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/render-scan.mjs" --tracker .local-env/tracker.json
+```
+
+It prints every state the scan found on the type transitions are driven on (State · Category ·
+Mapped role · Meaning — an unused state reads "not used"), then the roles that got no state, then the
+other types' states on one line each. Paste it verbatim. Because step 6 turns on silent
+`transitionPolicy=auto`, a mis-picked role moves real work items with no further prompt — so the
+operator approves the WHOLE board, not a summary of it (D4).
+
+Then `AskUserQuestion`: *"Is the status mapping in the table above correct?"* — options **"Yes, as in
+the table"** · **"Change a role"**. Do **not** put the mapping or examples into the question text
+("done = Closed, not Resolved/HotFixed?") — the table is the thing being approved. On **"Change a
+role"**, ask which role, offer that board's states as options, and persist with
+`reconcile-profile.mjs --write --set 'tracker.azure.roleStates.<role>=<state>'` (after step 6) or by
+editing `.local-env/tracker.json` (before it). A role under **Not mapped** is asked about at the time
+of that move; name it in one line, it does not block.
+
+`apiBase`, `projectId`, `ticketKeyFormat` and the cross-link token stay internals: do not print them.
 
 Correct a mismapped role by hand-editing `.local-env/tracker.json` (or the profile) before
 continuing.
@@ -837,7 +836,7 @@ FORCE_COLOR=1 TEST_ENV=<env> node "$VC_RUN" onboard verify-access
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/assert-profile.mjs"
 ```
 
-Prints a bordered readiness table + a **READY / NOT READY** verdict for `/qa-fix`.
+Prints a bordered readiness table + a **READY / NOT READY** verdict for the project.
 Run it THROUGH THE BRIDGE as above — a direct run sees only the session logins, so every PAT axis
 would read as missing (it says so in a `Launched through $VC_RUN` WARN row).
 
@@ -947,14 +946,23 @@ READY / NOT READY verdict.
 ## 9. Done
 
 Present this as an explicit, labelled **Step 9** in your reply (the operator tracks the
-pipeline by step number). Summarise what was written (profile path, tracker, VCS, repo
-counts, derived projectType / contributionMode), list the remaining **manual** actions
-(reload the IDE for `.mcp.json`; any interactive OAuth still pending, e.g. Atlassian),
-and point the operator at the first run:
+pipeline by step number). Summarise what was written in two or three lines (profile path, tracker,
+code host, repo counts, projectType), list the remaining **manual** actions (restart Claude Code so
+`.mcp.json` and the settings take effect; any interactive OAuth still pending, e.g. Atlassian), then
+close with what the operator can do now — printed by the script, from the profile and the plugins
+actually installed:
 
+```bash
+TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/next-steps.mjs"
 ```
-/qa-fix VCST-1234        # (or your tracker's key) — now routes to the right repo
-```
+
+It prints "the project is ready to work with" plus one table of asks and commands: the everyday
+tracker asks (a ticket, the current sprint, my open tickets), each installed plugin's entry points
+(vc-fix: `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-env-check`; vc-perf: `/perf-init` until the
+perf block exists, then `/perf-loop`, `/perf-benchmark`), `/project-init --add-env` and `--check`,
+and one line naming a plugin that is not installed. Relay it in the operator's language, keep the
+commands as printed, and do not single out one plugin as "the" next step. On **NOT READY**, list what
+to resolve first and run it only after that.
 
 **Signal completion (self-diagnostics).** This is now emitted **automatically** — `verify-access.mjs`
 (Step 8, the last script every path runs) fires the terminal-step marker itself, best-effort, so the
@@ -1058,7 +1066,8 @@ Run with `TEST_ENV=<new>` so the per-env creds resolve. This confirms the new en
 **real admin login** + the (project-level, vc-secrets) tracker/GitHub tokens all work for this target.
 `project-profile.json` and `.mcp.json` are **unchanged** (env-agnostic). **Restate the
 readiness table** in your reply (§8). Then present **Done**: `TEST_ENV=<new>` (per run, or via
-your shell) selects the new environment for `/qa-fix`, `/qa-bug`, `/qa-verify-fix`.
+your shell) selects the new environment for every plugin, and close with
+`TEST_ENV=<new> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/next-steps.mjs"` (§9).
 
 Completion is signalled **automatically** by `verify-access.mjs` above (it fires the terminal-step
 marker itself). Only if this path ended before running verify-access, run it manually as a fallback:
@@ -1208,7 +1217,8 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/assert-profile.mjs"
 ```
 
 **Restate all three** — the reconciliation summary (added / removed / decided), any value the
-normalizer corrected, and the readiness table — in your reply. A normalizer exit 1 (unfilled
+normalizer corrected, and the readiness table — in your reply, then on READY close with
+`next-steps.mjs` (§9). A normalizer exit 1 (unfilled
 placeholder / missing scheme) is a **STOP**: report it and skip the readiness table, which would
 only produce misleading failures.
 
@@ -1278,6 +1288,8 @@ Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or j
 | `assert-profile.mjs` | asserts the **SHAPE** of the profile just written and records each degradation as a `degraded_artifact` observation: empty `tracker.fields` (⇒ `/qa-bug` sends "unverified defaults"), `roleStatesComplete:false`, unmapped required fields, empty `repos.client` on a client project, an unresolved storefront `upstreamRef`, `githubForkCapable != "yes"` while the upstream path is needed. Complements `verify-access` (which probes ACCESS): a scan can return empty with no HTTP error, and what `/qa-fix` reads at runtime is the persisted shape. Read-only, **always exits 0** — a diagnostic, not a second readiness gate |
 | `migrate-secrets.mjs` | **`--check` Step M**: `--scan` lists every token left in a file (`.env*`, settings `env`, `.mcp.json`, `.fix-workspace/*/.git/config` remote URLs, the profile) by NAME and LOCATION and flags the ones in git history (⇒ rotate); `--strip` removes an axis's plaintext copies only after its bridge probe passes |
 | `detect-governance.mjs` | §0-host: find a host governance plugin (`lib/governance.mjs` registry) and print the `governance` block it would write; `--governance <host|none>` overrides |
+| `render-scan.mjs` | §4a/§4b: the operator's confirmation tables, verbatim — `--repos` (client repos with default branch + PR target) and `--tracker` (every state found, with its mapped role) |
+| `next-steps.mjs` | §9: "the project is ready" + what to do now, from the profile and the installed plugins (`--plugins a,b` overrides detection) |
 | `ensure-session.mjs` | establish the browser-login sessions WITHOUT hand-crafted commands: auto-discovers the ADO org tenant and drives `az login --tenant <guid>` / `gh auth login --web`; `--check` probes only. Run in the background (the login blocks on the browser). Run it DIRECTLY, never through `$VC_RUN` — a session login must not see a token (gh refuses to log in while GH_TOKEN is set). |
 
 > The interview asks only **env name · tracker · code host** + an auth preference

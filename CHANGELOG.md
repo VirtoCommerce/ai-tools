@@ -45,6 +45,13 @@ no `az login`, self-diagnostics off. At run time the bridge refuses every token-
 the host server), `deliver` refuses, and vc-fix follows `knowledge/execution/host-governance.md`.
 `governance.host: null` (the default) is today's behaviour. `--governance <host|none>` overrides detection.
 
+**Changed: `/project-init` speaks for every plugin, and shows what it asks you to confirm.** It closes
+with "the project is ready to work with" and the asks and commands of the plugins actually installed
+(`next-steps.mjs`: a ticket, the current sprint, then each plugin's entry points) instead of pointing
+at `/qa-fix`. The repo map and the tracker status map are printed in full by `render-scan.mjs` — every
+client repo with its default branch and PR target, every state the scan found with the role mapped to
+it — and the question refers to that table instead of restating the mapping in parentheses.
+
 **Removed:** the `postman` and `context7` MCP servers from onboarding (each needed an API key in a file);
 `gen-mcp --inline-secrets` (refused); the token placeholders in `.env.local` (`scaffold-secrets` writes
 test-user passwords only).

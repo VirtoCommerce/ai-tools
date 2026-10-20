@@ -958,7 +958,7 @@ function renderTable(rows) {
   );
   console.log(fails.length
     ? paint(ANSI.bold + ANSI.red, `  ✗ NOT READY — resolve: ${fails.map((f) => f.name).join(", ")}`)
-    : paint(ANSI.bold + ANSI.green, `  ✓ READY for /qa-fix.`));
+    : paint(ANSI.bold + ANSI.green, `  ✓ READY — the project is set up.`));
   // Full, UN-truncated remediation for each FAIL — the Detail column is width-capped, so
   // an actionable command (e.g. `az login --tenant <guid>`) would otherwise be cut off.
   if (fails.length) {

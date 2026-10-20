@@ -387,6 +387,9 @@ async function main() {
     obs.push({ class: "degraded_artifact", subject: "tracker_team", code: "NONE", evidence: { snippet: `${teamResult.probeErrors} team(s) failed to probe for a current sprint (403/timeout) — team selection saw an incomplete set; re-run, or pin with --team <name>` } });
   }
 
+  // Keep each type's state categories for the operator's confirmation table (render-scan.mjs), then
+  // drop the helper _categories so workItemTypes keeps its shape for gen-profile.
+  const stateCategories = Object.fromEntries(Object.entries(workItemTypes).map(([t, v]) => [t, { ...(v._categories || {}) }]));
   // drop the helper _categories before emitting
   for (const t of Object.keys(workItemTypes)) delete workItemTypes[t]._categories;
 
@@ -428,6 +431,10 @@ async function main() {
     // tracker.azure.team by gen-profile so the runtime resolver starts from the right team.
     team: teamResult.team,
     workItemTypes,
+    // The type roleStates was derived from, and every type's { state: category } — for the
+    // confirmation table only (render-scan.mjs --tracker); gen-profile does not ingest them.
+    primaryType: primary,
+    stateCategories,
     // Per-type BUG FIELD CONTRACT (VCST-5582 E-a): [{ ref, name, required, type,
     // allowedValues?, defaultValue? }]. Empty/absent ⇒ metadata was unreachable and the create
     // path uses the legacy field set labelled "unverified defaults" (E-f). Rule-filtered for
