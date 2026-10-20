@@ -398,7 +398,8 @@ Create in-case (FIFTH RULE; random-data uniqueEmail/uniqueOrgName, AGENT-TEST-61
 OtpSignIn.Enabled is on for {{STORE_ID}}: the fixture's own POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
 Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); SMTP is not relied on; no code within 90s = BLOCKED.
 One fresh code per sign-in and no session is carried across a state change (a lock ends the locked organization's sessions).
-State under test: Org A is the buyer's last-used organization (stored choice and server CurrentOrganizationId both A), then Org A is locked; Org B stays active and Approved.","storeId={{STORE_ID}}, storefront={{FRONT_URL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","--- LAYER: Fixture (REST, created in-case) ---
+State under test: Org A is the buyer's last-used organization (stored choice and server CurrentOrganizationId both A), then Org A is locked; Org B stays active and Approved.","storeId={{STORE_ID}}, storefront={{FRONT_URL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[PRE:CLEAR_SESSION] start the storefront lane from an empty browser session (cookies, localStorage, tokens) before any fixture or sign-in step
+--- LAYER: Fixture (REST, created in-case) ---
 [AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
 [SETUP] Generate with random-data (AGENT-TEST-6132 prefix): orgAName, orgBName (uniqueOrgName) and email (uniqueEmail) - the email is also the userName
 [HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Organization"",""name"":orgAName}, then the same for orgBName; capture orgAId, orgBId
@@ -491,7 +492,8 @@ Create in-case (FIFTH RULE; random-data uniqueEmail/uniqueOrgName, AGENT-TEST-61
 OtpSignIn.Enabled is on for {{STORE_ID}}: the fixture's own POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
 Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); SMTP is not relied on; no code within 90s = BLOCKED.
 One fresh code per sign-in and no session is carried across a state change (a lock ends the locked organization's sessions).
-State under test: the last-used organization is Org A, then Org A is removed from the contact (Member of companies); Org B stays active.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}","--- LAYER: Fixture (REST, created in-case) ---
+State under test: the last-used organization is Org A, then Org A is removed from the contact (Member of companies); Org B stays active.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}","[PRE:CLEAR_SESSION] start the storefront lane from an empty browser session (cookies, localStorage, tokens) before any fixture or sign-in step
+--- LAYER: Fixture (REST, created in-case) ---
 [AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
 [SETUP] Generate with random-data (AGENT-TEST-6132 prefix): orgAName, orgBName (uniqueOrgName) and email (uniqueEmail) - the email is also the userName
 [HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Organization"",""name"":orgAName}, then the same for orgBName; capture orgAId, orgBId
@@ -560,7 +562,8 @@ Create in-case (FIFTH RULE; random-data uniqueEmail/uniqueOrgName, AGENT-TEST-61
 OtpSignIn.Enabled is on for {{STORE_ID}}: the fixture's own POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
 Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); SMTP is not relied on; no code within 90s = BLOCKED.
 One fresh code per sign-in and no session is carried across a state change (a lock ends the locked organization's sessions).
-State under test: the last-used organization is Org A, then the membership of Org A is set to status Invited; Org B stays Approved.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}","--- LAYER: Fixture (REST, created in-case) ---
+State under test: the last-used organization is Org A, then the membership of Org A is set to status Invited; Org B stays Approved.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}","[PRE:CLEAR_SESSION] start the storefront lane from an empty browser session (cookies, localStorage, tokens) before any fixture or sign-in step
+--- LAYER: Fixture (REST, created in-case) ---
 [AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
 [SETUP] Generate with random-data (AGENT-TEST-6132 prefix): orgAName, orgBName (uniqueOrgName) and email (uniqueEmail) - the email is also the userName
 [HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Organization"",""name"":orgAName}, then the same for orgBName; capture orgAId, orgBId
@@ -630,7 +633,8 @@ Create in-case (FIFTH RULE; random-data uniqueEmail/uniqueOrgName, AGENT-TEST-61
 OtpSignIn.Enabled is on for {{STORE_ID}}: the fixture's own POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
 Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); SMTP is not relied on; no code within 90s = BLOCKED.
 One fresh code per sign-in and no session is carried across a state change (a lock ends the locked organization's sessions).
-State under test: the last-used organization is Org A, then the membership of Org A is set to status Rejected; Org B stays Approved.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}","--- LAYER: Fixture (REST, created in-case) ---
+State under test: the last-used organization is Org A, then the membership of Org A is set to status Rejected; Org B stays Approved.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}","[PRE:CLEAR_SESSION] start the storefront lane from an empty browser session (cookies, localStorage, tokens) before any fixture or sign-in step
+--- LAYER: Fixture (REST, created in-case) ---
 [AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
 [SETUP] Generate with random-data (AGENT-TEST-6132 prefix): orgAName, orgBName (uniqueOrgName) and email (uniqueEmail) - the email is also the userName
 [HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Organization"",""name"":orgAName}, then the same for orgBName; capture orgAId, orgBId
@@ -700,7 +704,8 @@ Create in-case (FIFTH RULE; random-data uniqueEmail/uniqueOrgName, AGENT-TEST-61
 OtpSignIn.Enabled is on for {{STORE_ID}}: the fixture's own POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
 Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); SMTP is not relied on; no code within 90s = BLOCKED.
 One fresh code per sign-in and no session is carried across a state change (a lock ends the locked organization's sessions).
-State under test: the last-used organization is Org A, then the membership of Org A is set to status Deleted; Org B stays Approved.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}","--- LAYER: Fixture (REST, created in-case) ---
+State under test: the last-used organization is Org A, then the membership of Org A is set to status Deleted; Org B stays Approved.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}","[PRE:CLEAR_SESSION] start the storefront lane from an empty browser session (cookies, localStorage, tokens) before any fixture or sign-in step
+--- LAYER: Fixture (REST, created in-case) ---
 [AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
 [SETUP] Generate with random-data (AGENT-TEST-6132 prefix): orgAName, orgBName (uniqueOrgName) and email (uniqueEmail) - the email is also the userName
 [HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Organization"",""name"":orgAName}, then the same for orgBName; capture orgAId, orgBId
@@ -770,7 +775,8 @@ Create in-case (FIFTH RULE; random-data uniqueEmail/uniqueOrgName, AGENT-TEST-61
 OtpSignIn.Enabled is on for {{STORE_ID}}: the fixture's own POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
 Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); SMTP is not relied on; no code within 90s = BLOCKED.
 One fresh code per sign-in and no session is carried across a state change (a lock ends the locked organization's sessions).
-State under test: after an OTP fallback from a locked last-used Org A the buyer is in Org B; the switcher still lists Org A.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}","--- LAYER: Fixture (REST, created in-case) ---
+State under test: after an OTP fallback from a locked last-used Org A the buyer is in Org B; the switcher still lists Org A.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}","[PRE:CLEAR_SESSION] start the storefront lane from an empty browser session (cookies, localStorage, tokens) before any fixture or sign-in step
+--- LAYER: Fixture (REST, created in-case) ---
 [AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
 [SETUP] Generate with random-data (AGENT-TEST-6132 prefix): orgAName, orgBName (uniqueOrgName) and email (uniqueEmail) - the email is also the userName
 [HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Organization"",""name"":orgAName}, then the same for orgBName; capture orgAId, orgBId
@@ -841,7 +847,8 @@ Create in-case (FIFTH RULE; random-data uniqueEmail/uniqueOrgName, AGENT-TEST-61
 OtpSignIn.Enabled is on for {{STORE_ID}}: the fixture's own POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
 Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); SMTP is not relied on; no code within 90s = BLOCKED.
 One fresh code per sign-in and no session is carried across a state change (a lock ends the locked organization's sessions).
-State under test: the last-used organization is Org A, then BOTH Org A and Org B memberships are locked (permanent) - no accessible organization remains.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}","--- LAYER: Fixture (REST, created in-case) ---
+State under test: the last-used organization is Org A, then BOTH Org A and Org B memberships are locked (permanent) - no accessible organization remains.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}","[PRE:CLEAR_SESSION] start the storefront lane from an empty browser session (cookies, localStorage, tokens) before any fixture or sign-in step
+--- LAYER: Fixture (REST, created in-case) ---
 [AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
 [SETUP] Generate with random-data (AGENT-TEST-6132 prefix): orgAName, orgBName (uniqueOrgName) and email (uniqueEmail) - the email is also the userName
 [HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Organization"",""name"":orgAName}, then the same for orgBName; capture orgAId, orgBId
@@ -987,7 +994,8 @@ Create in-case (FIFTH RULE; random-data uniqueEmail/uniqueOrgName, AGENT-TEST-61
 OtpSignIn.Enabled is on for {{STORE_ID}}: the fixture's own POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
 Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); SMTP is not relied on; no code within 90s = BLOCKED.
 One fresh code per sign-in and no session is carried across a state change (a lock ends the locked organization's sessions).
-State under test: the last-used organization is Org A, then Org A is removed from the contact and the membership of Org B is set to Rejected - nothing accessible is left.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}","--- LAYER: Fixture (REST, created in-case) ---
+State under test: the last-used organization is Org A, then Org A is removed from the contact and the membership of Org B is set to Rejected - nothing accessible is left.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}","[PRE:CLEAR_SESSION] start the storefront lane from an empty browser session (cookies, localStorage, tokens) before any fixture or sign-in step
+--- LAYER: Fixture (REST, created in-case) ---
 [AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
 [SETUP] Generate with random-data (AGENT-TEST-6132 prefix): orgAName, orgBName (uniqueOrgName) and email (uniqueEmail) - the email is also the userName
 [HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Organization"",""name"":orgAName}, then the same for orgBName; capture orgAId, orgBId
@@ -1060,7 +1068,8 @@ Create in-case (FIFTH RULE; random-data uniqueEmail/uniqueOrgName, AGENT-TEST-61
 OtpSignIn.Enabled is on for {{STORE_ID}}: the fixture's own POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
 Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); SMTP is not relied on; no code within 90s = BLOCKED.
 One fresh code per sign-in and no session is carried across a state change (a lock ends the locked organization's sessions).
-State under test: both organizations are active; the last-used organization is Org B and the SERVER CurrentOrganizationId is Org A, so a build that ignores the sent organization lands in Org A and is told apart from the correct Org B.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}","--- LAYER: Fixture (REST, created in-case) ---
+State under test: both organizations are active; the last-used organization is Org B and the SERVER CurrentOrganizationId is Org A, so a build that ignores the sent organization lands in Org A and is told apart from the correct Org B.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}","[PRE:CLEAR_SESSION] start the storefront lane from an empty browser session (cookies, localStorage, tokens) before any fixture or sign-in step
+--- LAYER: Fixture (REST, created in-case) ---
 [AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
 [SETUP] Generate with random-data (AGENT-TEST-6132 prefix): orgAName, orgBName (uniqueOrgName) and email (uniqueEmail) - the email is also the userName
 [HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Organization"",""name"":orgAName}, then the same for orgBName; capture orgAId, orgBId
@@ -1125,7 +1134,8 @@ Create in-case (FIFTH RULE; random-data uniqueEmail/uniqueOrgName, AGENT-TEST-61
 OtpSignIn.Enabled is on for {{STORE_ID}}: the fixture's own POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
 Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); SMTP is not relied on; no code within 90s = BLOCKED.
 One fresh code per sign-in and no session is carried across a state change (a lock ends the locked organization's sessions).
-State under test: the buyer is signed in by code in Org A with a live session; Org B (non-active) is then locked mid-session; the explicit switch to Org B is a refresh_token grant, which gets no fallback; a second session then probes an organization the buyer was removed from.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}","--- LAYER: Fixture (REST, created in-case) ---
+State under test: the buyer is signed in by code in Org A with a live session; Org B (non-active) is then locked mid-session; the explicit switch to Org B is a refresh_token grant, which gets no fallback; a second session then probes an organization the buyer was removed from.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}","[PRE:CLEAR_SESSION] start the storefront lane from an empty browser session (cookies, localStorage, tokens) before any fixture or sign-in step
+--- LAYER: Fixture (REST, created in-case) ---
 [AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
 [SETUP] Generate with random-data (AGENT-TEST-6132 prefix): orgAName, orgBName (uniqueOrgName) and email (uniqueEmail) - the email is also the userName
 [HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Organization"",""name"":orgAName}, then the same for orgBName; capture orgAId, orgBId
@@ -1196,7 +1206,8 @@ Create in-case (FIFTH RULE; random-data uniqueEmail/uniqueOrgName, AGENT-TEST-61
 OtpSignIn.Enabled is on for {{STORE_ID}}: the fixture's own POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
 Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); SMTP is not relied on; no code within 90s = BLOCKED.
 One fresh code per sign-in and no session is carried across a state change (a lock ends the locked organization's sessions).
-State under test: the last-used organization is Org A and Org A is locked; the code sign-in falls back to Org B; the stored choice is then read, the page is reloaded, and Org A is restored.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}","--- LAYER: Fixture (REST, created in-case) ---
+State under test: the last-used organization is Org A and Org A is locked; the code sign-in falls back to Org B; the stored choice is then read, the page is reloaded, and Org A is restored.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}","[PRE:CLEAR_SESSION] start the storefront lane from an empty browser session (cookies, localStorage, tokens) before any fixture or sign-in step
+--- LAYER: Fixture (REST, created in-case) ---
 [AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
 [SETUP] Generate with random-data (AGENT-TEST-6132 prefix): orgAName, orgBName (uniqueOrgName) and email (uniqueEmail) - the email is also the userName
 [HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Organization"",""name"":orgAName}, then the same for orgBName; capture orgAId, orgBId
