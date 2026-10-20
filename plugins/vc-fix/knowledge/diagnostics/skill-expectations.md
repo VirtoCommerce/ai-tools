@@ -368,9 +368,10 @@ Step-1 collector's signals can actually surface.
 - **Required outputs:** a rendered comment within its template budget; a page link or the local path; one tracker comment (or none, by the operator's choice).
 - **Anti-patterns:**
   - **S1** — a comment posted that `render.mjs` did not produce (hand-written or hand-shortened), or a second comment in the same round. *Signal:* a tracker post with no preceding `render.mjs` span; a second POST for one ticket.
-  - **S1** — a page published to an Artifact on a `projectType: client` profile without the operator's explicit request. *Signal:* Artifact publish + client profile.
+  - **S1** — a page published to an Artifact for a client-owned-code bug (never allowed), or on a `projectType: client` profile without the operator's explicit request. *Signal:* Artifact publish + client profile.
   - **S2** — exit 2/3 ignored and the step continued. *Signal:* non-zero renderer exit followed by a post.
   - **S3** — a list collapsed to `+N more` (expected under budget pressure; informational).
+- **Collector note:** the collector's skill vocabulary does not name `qa-report` yet, so its spans bucket to `other`; until it does, these are judged from the transcript (renderer exit codes, tracker posts), not from per-skill spans.
 
 ---
 

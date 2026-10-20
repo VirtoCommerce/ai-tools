@@ -8,6 +8,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## One renderer for every result comment and report page — `vc-fix` `0.10.0` — unreleased (VCST-5675)
+
+**Added: `/vc-fix:qa-report`.** A finished run becomes one char-budgeted tracker comment and one HTML report
+page, rendered from the run's machine record by `skills/qa-report/render.mjs`, never typed by hand. Four
+kinds — `test` (`summary.json`), `fix` (`verification-summary.json`, proven by a `before_after[]` RED→GREEN
+pair), `regression` and `smoke` (the run folder) — each with one template whose front-matter declares its
+`budget` and `lede_max`. Every comment opens with a lede the caller writes; over budget, the lists named in
+`trim` collapse to `+N more` in their declared order, and a comment that still does not fit is exit 3,
+never a cut. The budget is counted on the Markdown before the Jira-wiki / Azure-HTML transform. The page
+publish gate keeps a client project's page local and **never** publishes one for a client-owned-code bug.
+
+**Changed:** `/qa-test`, `/qa-test-fast`, `/qa-verify-fix`, `/qa-regression` and `/qa-smoke` report through
+it, and their own comment templates became pointers. In `/qa-verify-fix` the evidence page is rendered and
+gated inside the Step 6 call, so the one comment carries its link; Step 6A only says what the page is built
+from. A `verification-summary.json` written before this release has no `before_after[]` and is refused for
+a verified fix.
+
+**Verified:** `npm run context:check` green; the renderer exercised against the repo's real `summary.json`
+and `verification-summary.json` records in every dialect.
+
+---
+
 ## `vc-secrets`: a declared process gets its secrets at launch, not from a config file — catalog `0.11.0`, `vc-secrets` `0.1.0` — 2026-10-02
 
 **Added: the `vc-secrets` plugin** (`defaultEnabled: false`). An MCP entry calls the launcher instead of

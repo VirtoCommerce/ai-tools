@@ -62,11 +62,12 @@ Load the `artifact-design` skill, then:
   Artifact tool (icon `checklist`), then tell the user in one line to set **Share → everyone in your organisation**
   — a private page reaches no one — and re-run §2 with `--page-url <url>` so the comment carries
   the link. A decline keeps the page local and the comment stands alone.
-- **Client project**: do **not** publish. Kind `fix` ⇒ re-render with `--images ref` into the ticket folder as
-  `evidence.html`. Other kinds ⇒ no page; the comment stands alone. The page stays
+- **Client project**: do **not** publish. Kind `fix` ⇒ re-render with `--images ref` and save its `page.html`
+  in the ticket folder as `evidence.html`. Other kinds ⇒ no page; the comment stands alone. The page stays
   inside the client's own tracker by going on the post as `--attach-file` (§5), which works only in the
   ai-tools repo. Publish an Artifact only on the operator's explicit request, after scrubbing every client
-  host / path / identifier.
+  host / path / identifier — and **never for a client-owned-code bug**, even when asked
+  ([`reference.md`](reference.md) §Publish gate).
 - Record the link: `summary.json.report.page_url` (test) or `verification-summary.json.evidence_artifact` (fix).
 
 ## 4. Ask once — unless the caller already holds consent

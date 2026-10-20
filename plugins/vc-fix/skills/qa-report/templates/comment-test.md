@@ -2,7 +2,7 @@
 kind: test
 budget: 1500
 lede_max: 240
-trim: "[QUESTIONS, BUGS, NOT_FILED, AREAS]"
+trim: "[NOT_FILED, AREAS, QUESTIONS, BUGS]"
 ---
 ## {{ICON}} QA {{VERDICT_LABEL}} — {{TICKET}}
 {{LEDE}}
@@ -11,7 +11,9 @@ trim: "[QUESTIONS, BUGS, NOT_FILED, AREAS]"
 |---|---|
 | **Environment** | {{ENV}} |
 | **Artifact** | {{BUILD}} |
+{{?AS_USER}}
 | **Signed in as** | {{AS_USER}} |
+{{/AS_USER}}
 | **When** | {{DATE}} · {{RUN_ID}} |
 
 ### What was tested
@@ -39,7 +41,7 @@ trim: "[QUESTIONS, BUGS, NOT_FILED, AREAS]"
 | What is wrong | Severity | Ticket |
 |---|---|---|
 {{#BUGS}}
-| {{what}} | {{severity}} | {{key}} ({{relation}}) |
+| {{what}} | {{severity}} | {{ref}} |
 {{/BUGS}}
 {{#BUGS_MORE}}
 | {{.}} | | |

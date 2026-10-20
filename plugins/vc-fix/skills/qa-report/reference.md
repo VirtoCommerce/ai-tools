@@ -28,12 +28,18 @@ Four ways a lede fails review:
 
 ## Templates
 
-`templates/comment-<kind>.md`, front-matter keys: `kind`, `budget` (max chars of the rendered comment),
-`lede_max` (max chars of the lede), `trim` (the lists collapsed to `+N more` first, in order, when over
-budget). Slot syntax: `{{KEY}}` value · `{{#L}}…{{/L}}` per item of list `L` (`{{.}}` the item) ·
-`{{^L}}…{{/L}}` when `L` is empty · `{{?L}}…{{/L}}` when `L` is non-empty · `{{L_MORE}}` the items that
-were collapsed. The budget governs the rendered body; the posting helper appends its `**Attached:**` line after fitting, so a comment carrying an attachment measures slightly over — deliberate, not a defect. **A budget is changed in the template, in a PR, never by hand in a run.** Exit 3 means
-the comment cannot fit even fully collapsed; the fix is the template.
+`templates/comment-<kind>.md`, front-matter keys: `kind`, `budget` (max chars of the comment's
+Markdown), `lede_max` (max chars of the lede), `trim` (the lists collapsed to `+N more` when over budget,
+**in the order given**: the first list down to one item, then the next — so the list a reader needs most,
+the filed bugs, goes last). Slot syntax: `{{KEY}}` value · `{{#L}}…{{/L}}` per item of list `L` (`{{.}}`
+the item) · `{{^L}}…{{/L}}` when `L` is empty · `{{?L}}…{{/L}}` when `L` is non-empty (a scalar: when it
+is set) · `{{L_MORE}}` the items that were collapsed — "in the full report" only when the comment carries
+a page link, since every collapsible list is on the page in full. The budget is measured on the Markdown
+**before** the dialect transform, so one run fits in every dialect (wiki and HTML markup are not
+counted); the posting helper appends its `**Attached:**` line after fitting, so a comment carrying an
+attachment measures slightly over — deliberate, not a defect. **A budget is changed in the template, in
+a PR, never by hand in a run.** Exit 3 means the comment cannot fit even fully collapsed; the fix is the
+template.
 
 ## Sources
 
@@ -45,7 +51,9 @@ the comment cannot fit even fully collapsed; the fix is the template.
 
 `before_after[]` items: `check`, `before`, `after`, and optionally `before_shot`, `after_shot`. A
 VERIFIED / VERIFIED_WITH_NOTES / NEW_REGRESSION verdict without a pair is refused: a fix is proven by a
-red-to-green pair. Case `notes` are dropped on purpose — they are free text that carries account emails and fixture detail, which
+red-to-green pair. A `verification-summary.json` written before `/qa-verify-fix` reported through `qa-report` has no
+`before_after[]`, so `/qa-report <KEY>` on an old verified fix exits 2 — add the pair from the run's
+evidence, or leave the old comment as it is. Case `notes` are dropped on purpose — they are free text that carries account emails and fixture detail, which
 belong in the run folder and never in a ticket comment.
 
 ## Verdicts
@@ -73,9 +81,13 @@ The one source for whether a report page is published (moved here from `/qa-veri
   (`--confirmed` covers posting the comment, never this). On agreement the link goes into the comment and
   the ticket's machine record; a private page reaches no one, so the operator sets sharing to the
   organisation. A decline keeps the page local and the comment stands alone.
-- **Client project**: nothing is published. The page is a local file (`evidence.html` for a fix, in the
-  ticket folder) and may ride on the post as an attachment inside the client's own tracker. An Artifact
-  only on the operator's explicit request, after scrubbing every client host, path and identifier.
+- **Client project**: nothing is published by default. The page is a local file (`evidence.html` for a
+  fix, in the ticket folder) and may ride on the post as an attachment inside the client's own tracker.
+  An Artifact only on the operator's explicit request, after scrubbing every client host, path,
+  identifier and datum — and **NEVER for a client-owned-code bug** (the fix lives in the client's own
+  repository, not a VirtoCommerce one), whatever the operator asks: client code and data never leave the
+  client's project. When unsure whether the code is the client's, keep the page local. (In the ai-tools
+  repo: `.claude/knowledge/execution/quality-gates.md` §2a.)
 
 ## Extras
 
@@ -90,7 +102,7 @@ The one source for whether a report page is published (moved here from `/qa-veri
 | `questions` | array of strings — the "Open questions" section. A question is what needs a DECISION, not a defect: a defect goes in Findings with a ticket. Absent ⇒ no section at all |
 | `notTested` | array of `{ item, reason }` |
 | `context` | array of `{ label, value }` — page-only context lines |
-| `shots` | array of image paths, appended to the model's own |
+| `shots` | array of image paths, appended to the model's own — **relative to the source record's folder** (the image root); one outside it, or missing, is exit 2 when embedding |
 
 An entry that is not an object, in `rows`, `areas`, `notTested` or `context`, is exit 2 naming the key and shape. `questions` is a plain string array.
 

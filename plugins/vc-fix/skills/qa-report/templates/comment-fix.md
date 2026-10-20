@@ -38,7 +38,7 @@ No before/after pair recorded.
 | {{.}} | | |
 {{/ISSUES_MORE}}
 {{^ISSUES}}
-| Nothing found nearby | | |
+| {{ISSUES_NONE}} | | |
 {{/ISSUES}}
 
 ### Bugs filed

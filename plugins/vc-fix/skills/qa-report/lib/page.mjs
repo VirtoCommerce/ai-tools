@@ -2,7 +2,7 @@
 // ReportModel as the comment, so the page can state nothing the comment's source does not carry.
 // "ref" images = the committed local copy (reports-policy.md §1a: never inline base64 there);
 // "embed" = the published Artifact, which must stand alone.
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { SourceError } from "./model.mjs";
 import { resolve, relative, isAbsolute, basename, extname } from "node:path";
 
@@ -32,6 +32,7 @@ function imgSrc(file, mode, root) {
   }
   const mime = MIME[extname(abs).toLowerCase()];
   if (!mime) throw new SourceError(`cannot embed ${file}: not an image`);
+  if (!existsSync(abs)) throw new SourceError(`cannot embed ${file}: no such file under the image root ${resolve(root)} (a shot path is relative to the source record's folder)`);
   const buf = readFileSync(abs);
   if (buf.length > MAX_EMBED_BYTES) throw new SourceError(`cannot embed ${file}: ${buf.length} bytes > ${MAX_EMBED_BYTES}`);
   return `data:${mime};base64,${buf.toString("base64")}`;
@@ -52,6 +53,12 @@ ${m.lede ? `    <p class="lede">${esc(m.lede)}</p>\n` : ""}    <div class="meta"
     parts.push(section("ba", "Before and after the fix", table(["Check", "Before fix", "After fix"],
       m.beforeAfter.map(p => `        <tr><td>${esc(p.check)}</td><td class="ba-before">${esc(p.before)}</td><td class="ba-after">${esc(p.after)}</td></tr>`))));
   }
+  // Every list a comment template may collapse to "+N more" is on the page in full, so the
+  // comment's "+N more in the full report" is never a promise the page cannot keep.
+  if (m.areas.length) {
+    parts.push(section("areas", "What was tested", table(["Area", "Cases", "Result"],
+      m.areas.map(a => `        <tr><td>${esc(a.area)}</td><td class="mono">${esc(a.cases)}</td><td>${esc(a.result)}</td></tr>`))));
+  }
   if (m.rows.length) {
     parts.push(section("rows", m.failures ? "Suites" : "Conditions", table(["ID", "Name", "Result", "Evidence"],
       m.rows.map(r => `        <tr><td class="id">${esc(r.id)}</td><td>${esc(r.text)}</td><td>${chip(r.result)}</td><td class="mono">${esc(r.evidence)}</td></tr>`))));
@@ -61,13 +68,16 @@ ${m.lede ? `    <p class="lede">${esc(m.lede)}</p>\n` : ""}    <div class="meta"
       `      <li>${chip(f.result)}<span class="mono muted">${esc(f.suite)} · ${esc(f.id)}</span><span class="grow">${esc(f.title)}</span></li>`))));
   }
   parts.push(section("bugs", "Bugs filed", list(m.bugs.map(b =>
-    `      <li><span class="chip" data-sev="${esc(String(b.severity).toLowerCase())}">${esc(b.severity || "—")}</span><span class="grow">${esc(b.key)}</span><span class="muted">${esc(b.relation)}</span></li>`))));
+    `      <li><span class="chip" data-sev="${esc(String(b.severity).toLowerCase())}">${esc(b.severity || "—")}</span><span class="mono">${esc(b.key)}</span><span class="grow">${esc(b.what)}</span><span class="muted">${esc(b.relation)}</span></li>`))));
   if (m.kind === "test") {
     parts.push(section("nf", "Not filed (below the severity floor)", list(m.notFiled.map(b =>
       `      <li><span class="chip" data-sev="low">${esc(b.severity)}</span><span class="grow">${esc(b.title)}</span><span class="mono muted">${esc(b.path)}</span></li>`))));
   }
   if (m.issues.length) parts.push(section("issues", "Regressions and side effects", list(m.issues.map(i =>
     `      <li><span class="grow">${esc(i.what)}</span>${i.severity ? `<span class="chip" data-sev="${esc(String(i.severity).toLowerCase())}">${esc(i.severity)}</span>` : ""}<span class="mono muted">${esc(i.ticket)}</span></li>`))));
+  if (m.questions.length) {
+    parts.push(section("q", "Open questions", list(m.questions.map(q => `      <li><span class="grow">${esc(q)}</span></li>`))));
+  }
   if (m.notTested.length) {
     parts.push(section("nt", "Not tested, and why", list(m.notTested.map(n =>
       `      <li><span class="grow">${esc(n.item)}</span><span class="muted">${esc(n.reason)}</span></li>`))));

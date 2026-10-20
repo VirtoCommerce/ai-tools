@@ -62,6 +62,10 @@ export function fill(body, data) {
   });
 }
 
+// The budget is measured on the Markdown, BEFORE the dialect transform: it is a reading-length budget,
+// and the same run must fit in every dialect — counted after it, Azure's HTML tags alone pushed real
+// summaries over. Lists collapse in the template's `trim` order: the first list down to one item, then
+// the next. "+N more" promises the full report only when a page link is going out with the comment.
 export function fitBudget(tpl, data, transform = s => s) {
   const d = { ...data };
   const keys = tpl.meta.trim ?? [];
@@ -71,17 +75,20 @@ export function fitBudget(tpl, data, transform = s => s) {
     d[`${k}_MORE`] = null;
   }
   const dropped = Object.fromEntries(keys.map(k => [k, 0]));
-  const render = () => transform(fill(tpl.body, d)).replace(/\n{3,}/g, "\n\n").trim() + "\n";
-  let text = render();
-  while (text.length > tpl.meta.budget) {
-    const k = keys.filter(x => d[x].length > 1).sort((a, b) => d[b].length - d[a].length)[0];
-    if (!k) throw new BudgetError(tpl.meta.kind, text.length, tpl.meta.budget);
+  const where = d.PAGE_URL ? " in the full report" : "";
+  const tidy = s => s.replace(/\n{3,}/g, "\n\n").trim() + "\n";
+  const render = () => tidy(fill(tpl.body, d));
+  let md = render();
+  while (md.length > tpl.meta.budget) {
+    const k = keys.find(x => d[x].length > 1);
+    if (!k) throw new BudgetError(tpl.meta.kind, md.length, tpl.meta.budget);
     d[k].pop();
     dropped[k]++;
-    d[`${k}_MORE`] = `+${dropped[k]} more in the full report`;
-    text = render();
+    d[`${k}_MORE`] = `+${dropped[k]} more${where}`;
+    md = render();
   }
-  return { text, chars: text.length, budget: tpl.meta.budget, dropped };
+  const text = tidy(transform(md));
+  return { text, chars: md.length, budget: tpl.meta.budget, dropped };
 }
 
 const cells = row => row.trim().replace(/^\||\|$/g, "").split("|").map(s => s.trim());
@@ -94,6 +101,8 @@ export function toWiki(md) {
     .replace(/\*\*([^*]+)\*\*/g, "*$1*")
     .replace(/`([^`]+)`/g, "{{$1}}")
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "[$1|$2]");
+  // An empty cell would print `||`, which Jira wiki reads as a header delimiter — it gets one space.
+  const wikiCell = s => inline(s) || " ";
   const lines = md.split("\n");
   const out = [];
   for (let i = 0; i < lines.length; i++) {
@@ -101,8 +110,8 @@ export function toWiki(md) {
     const h = /^(#{1,6})\s+(.*)$/.exec(l);
     const b = /^(\s*)[-*]\s+(.*)$/.exec(l);
     if (h) out.push(`h${h[1].length}. ${inline(h[2])}`);
-    else if (ROW.test(l) && DIVIDER.test(lines[i + 1] ?? "")) { out.push(`||${cells(l).map(inline).join("||")}||`); i++; }
-    else if (ROW.test(l)) out.push(`|${cells(l).map(inline).join("|")}|`);
+    else if (ROW.test(l) && DIVIDER.test(lines[i + 1] ?? "")) { out.push(`||${cells(l).map(wikiCell).join("||")}||`); i++; }
+    else if (ROW.test(l)) out.push(`|${cells(l).map(wikiCell).join("|")}|`);
     else if (b) out.push(`${"*".repeat(1 + Math.floor(b[1].length / 2))} ${inline(b[2])}`);
     else out.push(inline(l));
   }

@@ -324,14 +324,15 @@ tell the user to run `/plugin update` and stop the report step.
 
 ---
 
-## Step 6A — Assemble the Evidence Page (local by default; external publish is gated)
+## Step 6A — What the Evidence Page Is Built From (the page itself is `qa-report`'s)
 
-For a **VERIFIED / VERIFIED-WITH-NOTES / NEW-REGRESSION** verdict, assemble ONE self-contained HTML evidence page from the Phase A/B captures. **Load the `artifact-design` skill first**; utilitarian/technical treatment (theme-aware light+dark, semantic PASS/stale coloring, no flashy hero).
-
-The page is `qa-report`'s (`skills/qa-report/templates/page.html`, filled from the same
-`verification-summary.json`), so it carries the before → after table, the build strip and the evidence. **Where it goes**
-— the publish gate (native ⇒ Artifact after asking; client ⇒ local `evidence.html`, never for client-owned code) — is
-`skills/qa-report/reference.md` §Publish gate. **Always** redact secrets before Step 7 writes the pair.
+For a **VERIFIED / VERIFIED-WITH-NOTES / NEW-REGRESSION** verdict the evidence page is rendered, gated and
+linked **inside the Step 6 `qa-report` call** — this step adds no second page flow. `qa-report` fills
+`skills/qa-report/templates/page.html` from the same `verification-summary.json` (before → after table, build
+strip, evidence), runs its publish gate (`skills/qa-report/reference.md` §Publish gate: native ⇒ Artifact after
+asking; client ⇒ local `evidence.html`, **never** published for client-owned code), and on a publish re-renders
+with `--page-url` **before** it posts, so the one comment already carries the link. Your part is what goes into
+the record: **always** redact secrets before Step 7 writes the pair.
 
 **What to capture in Phase A/B (feeds `before_after[]`):**
 
@@ -340,9 +341,9 @@ The page is `qa-report`'s (`skills/qa-report/templates/page.html`, filled from t
 | **xAPI / REST-API / module** | The real **request & response**: the trigger call, the GraphQL/REST **request**, the **fixed-build response** (fresh values highlighted), and the **same request's pre-fix response** for contrast (stale values). Use the payloads the QA agent captured in Phase A/B — **never hand-write them**. Optionally append the fix diff (PR files via the code host) as a secondary snippet. |
 | **Storefront / Admin-SPA / visual** | Before/after screenshots + the corrected computed style / DOM value. |
 
-Record the result in `verification-summary.json`: `evidence` = the local path (always); `evidence_artifact` = the hosted URL **only when actually published**. If you did publish, note in your output that hosted artifacts are private until the operator shares them.
-
-**Then amend, if a page was published.** Step 6 posted the comment before this page existed, so it carries no page link. Re-run `/vc-fix:qa-report … --kind fix --confirmed --page-url <evidence_artifact>` with the same `--lede` and **amend** the comment Step 6 posted (`qa-report` §5 `--amend <id>`; never a second comment). No page published ⇒ nothing to amend.
+`qa-report` records the outcome in `verification-summary.json`: `evidence` = the local path (always);
+`evidence_artifact` = the hosted URL **only when actually published**. If a page was published, note in your
+output that hosted artifacts are private until the operator shares them.
 
 ---
 

@@ -76,10 +76,11 @@ export function fromQaTest(path) {
           + ` — ${c1.run_id}`
         : `not run${c1?.skipped_reason ? ` — ${c1.skipped_reason}` : ""}`,
       BL: (s.business_rules_verified ?? []).join(", ") || "none",
-      // No machine record carries the account a run signed in as, so this is the caller's to --set.
-      AS_USER: "not recorded",
+      // No machine record carries the account a run signed in as, so this is the caller's to --set;
+      // unset, the row is left out rather than printing "not recorded" on every comment.
+      AS_USER: "",
       NEW_CASES: s.new_cases_authored
-        ? `${s.new_cases_authored} authored — PR not linked`
+        ? `${s.new_cases_authored} authored`
         : "none — the existing suites already cover this",
       RELEASE_GATE: "not assessed",
       RELEASE_NOTE: s.release?.fragment ? `${(s.release.layers ?? []).join("/")} — ${s.release.fragment}`
@@ -128,8 +129,8 @@ export function fromVerifyFix(path) {
     // legacy shape and has none, so the cell says `not recorded` rather than reading as "not filed":
     // a finding nobody triaged must not be indistinguishable from one deliberately left alone.
     issues: [...(s.regression_issues ?? []), ...(s.side_effects ?? [])].map(x => {
-      if (typeof x === "string") return { what: compact(x), severity: "", ticket: "not recorded" };
-      const what = compact(x?.summary ?? x?.title ?? x?.check ?? "(unspecified)");
+      if (typeof x === "string") return { what: x, severity: "", ticket: "not recorded" };
+      const what = x?.summary ?? x?.title ?? x?.check ?? "(unspecified)";
       return { what, severity: x?.severity ?? "", ticket: x?.ticket || x?.why || "not recorded" };
     }),
     bugs: (s.bugs_filed ?? []).map(b => typeof b === "string" ? bugEntry(b, "") 
@@ -209,16 +210,18 @@ export function fromRun(runDir, kind, verdict, ticket = null) {
 // The COMMENT's header answers "where, on what, as whom". A machine-written env/build string
 // carries its explanation in parentheses, which is page material: strip the asides and collapse
 // the whitespace. This is a structural removal, never a mid-line cut — the renderer's whole
-// doctrine is that it fails loudly rather than truncating. Applied in templateData only, so the
-// HTML page (renderPage reads m.env / m.build) still shows every string in full.
+// doctrine is that it fails loudly rather than truncating. Applied to the ENV and BUILD header
+// lines in templateData ONLY: in a finding's text a parenthesis is content ("shows $0 (expected
+// $10)"), so bug titles and side effects are never compacted. The page shows every string in full.
 export const compact = (v) => String(v ?? "").replace(/\s*\([^()]*\)/g, "").replace(/\s+/g, " ").trim();
 
 // A bug key alone makes the reader open the ticket to find out whether it matters. Every kind
-// that lists filed bugs shows what each one is ABOUT; `label` is that rendering, built here so
-// the inline templates need no conditional (the engine has no nested sections).
+// that lists filed bugs shows what each one is ABOUT; `label` and `ref` are built here so the
+// templates need no conditional (the engine has no nested sections): `ref` carries the relation
+// in parentheses only when there is one, never `KEY ()`.
 export function bugEntry(key, what = "", severity = "", relation = "") {
-  const w = compact(what);
-  return { key, what: w, severity, relation, label: w ? `${key} — ${w}` : key };
+  const w = String(what ?? "").replace(/\s+/g, " ").trim();
+  return { key, what: w, severity, relation, label: w ? `${key} — ${w}` : key, ref: relation ? `${key} (${relation})` : key };
 }
 
 const SHAPES = { rows: "{ id, text, result, evidence }", areas: "{ area, cases, result }", notTested: "{ item, reason }", context: "{ label, value }" };
@@ -270,6 +273,8 @@ export function templateData(m, dialect = "markdown") {
     TOTAL: m.counts.total, PASSED: m.counts.passed, FAILED: m.counts.failed, BLOCKED: m.counts.blocked, NOT_RUN: m.counts.notRun,
     ...m.lines,
     AREAS: m.areas ?? [], QUESTIONS: m.questions ?? [], BUGS: m.bugs, NOT_FILED: m.notFiled, BEFORE_AFTER: m.beforeAfter, ISSUES: m.issues, FAILURES: m.failures ?? [],
+    // An empty side-effect table means "looked, found nothing" only when the run got that far.
+    ISSUES_NONE: m.verdict === "BLOCKED" ? "Not checked — the verification was blocked" : "Nothing found nearby",
     SHOTS: dialect === "wiki" ? m.shots.map(s => basename(s)) : [],
     PAGE_URL: m.pageUrl ?? null,
   };
