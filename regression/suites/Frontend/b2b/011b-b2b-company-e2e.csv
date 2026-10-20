@@ -212,10 +212,11 @@ Remove items from TechFlow cart (clear cart on both org contexts if needed).","V
 [NETWORK] No 5xx on any page load after org switch
 [API] xAPI me query after switch returns organizationId matching newly selected org","Spinner >8s on org switch, header still shows org-1 after clicking org-2, /company/info still shows org-1 name after switch, 5xx on any page load after switch, JS TypeError in console during switch","[PRE:CLEAR_SESSION]
 Sign out. No data modified.","VCST-5028 | paths: /company/info,/company/members,/account/orders [P5:VERIFIED]","Draft"
-"COMP-E2E-005","Org-Scoped Lockout — Locked Membership Blocks Org Login; Other Orgs Unaffected","Company E2E > Org-Scoped Lockout > [JOURNEY]","Critical","BL-AUTH-012, BL-AUTH-013, BL-B2B-005","ECL-7.3","[PRE:CLEAR_SESSION]
+"COMP-E2E-005","Org-Scoped Lockout — a Locked Membership Never Lands the Session in the Locked Org (Credential Sign-In Falls Back, Explicit Switch Is Refused); Other Orgs Unaffected","Company E2E > Org-Scoped Lockout > [JOURNEY]","Critical","BL-AUTH-012, BL-AUTH-013, BL-B2B-005, BL-AUTH-016","ECL-7.3","[PRE:CLEAR_SESSION]
 1. MULTI_ORG_TF_BR user exists: maintainer in TechFlow, employee in BuildRight.
 2. Admin credentials available for REST API call to lock/unlock membership.
-3. TechFlow membership id: @td(MULTI_ORG_TF_BR.techflow_membership_id).","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, tf_br_email=@td(MULTI_ORG_TF_BR.email), tf_br_password=@td(MULTI_ORG_TF_BR.password), techflow_membership_id=@td(MULTI_ORG_TF_BR.techflow_membership_id), buildright_org_id=@td(MULTI_ORG_TF_BR.org_buildright_id)","--- LAYER: API (lock TechFlow membership) ---
+3. TechFlow membership id: @td(MULTI_ORG_TF_BR.techflow_membership_id).
+Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallback (vc-module-customer PR #321 — open on 2026-10-20; observed on 3.1030.0-pr-321-c54f). On a Customer build without it the fallback expectations do not hold: record the case BLOCKED for the build, never FAIL, and never re-base it to the old behaviour.","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, tf_br_email=@td(MULTI_ORG_TF_BR.email), tf_br_password=@td(MULTI_ORG_TF_BR.password), techflow_membership_id=@td(MULTI_ORG_TF_BR.techflow_membership_id), buildright_org_id=@td(MULTI_ORG_TF_BR.org_buildright_id)","--- LAYER: API (lock TechFlow membership) ---
 [HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.techflow_membership_id)/lock (Authorization: Bearer <admin token>)
 [WAIT] HTTP 200 response
 [ASSERT] response body indicates locked=true for this membership
@@ -233,8 +234,10 @@ Sign out. No data modified.","VCST-5028 | paths: /company/info,/company/members,
 [ACT] click 'Sign in' button
 [WAIT] login response settles
 
-[ASSERT] login is denied OR org-selector auto-picks TechFlow and shows org-specific lock message
-[ASSERT] error message is org-specific (references this organization being blocked), NOT a generic account-locked message
+[ASSERT] sign-in is NOT refused: the storefront lands in BuildRight (the accessible org), never in TechFlow, and the header org indicator shows 'BuildRight'
+[ASSERT] in the account-menu 'Organizations' listbox the TechFlow option is disabled with the lock-closed icon and cannot be selected (keyboard path only — never force the disabled control)
+[CAPTURE] from the network log record the sign-in POST /connect/token response: decode its access_token organization_id claim as $SIGNIN_CLAIM and record its refresh_token as $RT (minted AFTER the lock)
+[HTTP] POST {{FRONT_URL}}/connect/token grant_type=refresh_token refresh_token=$RT storeId={{STORE_ID}} organization_id=@td(MULTI_ORG_TF_BR.org_techflow_id) — record status, error, errors[] and error_description as $SWITCH (a refresh token minted BEFORE the lock is revoked and fails code-less, KB-D1D30720)
 
 --- SCREEN: Login into BuildRight org (unlocked membership) ---
 [PRE:CLEAR_SESSION]
@@ -250,17 +253,19 @@ Sign out. No data modified.","VCST-5028 | paths: /company/info,/company/members,
 
 --- LAYER: API (cleanup: unlock TechFlow membership) ---
 [HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.techflow_membership_id)/unlock (Authorization: Bearer <admin token>)
-[WAIT] HTTP 200","[STATE] After lock: global account remains accessible (/api/platform/security/users/{id}/locked returns {locked:false})
-[DOM] TechFlow login attempt shows verbatim error: ""Your access to organization '...' has been blocked. Please contact your organization administrator."" (not a generic account-locked message) — BL-AUTH-013
-[STATE] BuildRight login succeeds — user reaches storefront home with BuildRight org context
-[DOM] After BuildRight login: header org indicator shows 'BuildRight' and no lock-state indicator is present
-[STATE] After cleanup unlock: subsequent TechFlow login attempt succeeds (regression guard)","[API] POST /lock returns 200; /api/platform/security/users/{userId}/locked returns {locked:false} confirming BL-AUTH-012 preserved
-[API] /connect/token with organization_id=TechFlow after lock returns HTTP 400, code=user_is_locked_in_organization (BL-AUTH-013) — session revoked immediately on lock (not at token expiry; RevokeTokenOrganizationMembershipChangedEventHandler calls TerminateAllUserSessions on lock)
+[WAIT] HTTP 200","[STATE] After lock: global account remains accessible (/api/platform/security/users/{id}/locked returns {locked:false}) {BL} (BL-AUTH-012)
+[STATE] TechFlow password sign-in is NOT refused and never lands in TechFlow: $SIGNIN_CLAIM equals @td(MULTI_ORG_TF_BR.org_buildright_id) {SPEC} (VCST-5496; VCST-6132 + D. Grishin 2026-10-14: every credential sign-in falls back) {BL} (BL-AUTH-016, BL-AUTH-015) {OBSERVED} (API baseline REG-2026-10-20-0125 suite 027 CUST-111/113 and 3x/4a UI, KB-51FB70F2; storefront half pending re-run)
+[DOM] In listbox 'Organizations' the TechFlow option is disabled and renders the lock-closed icon, not selectable {SPEC} (VCST-5317 switcher lock flag) {OBSERVED} (suite 006 B2C-ORG-041, KB-51FB70F2; pending re-run here)
+[BODY] $SWITCH is HTTP 400 with error = 'invalid_grant', code 'user_is_locked_in_organization' and error_description verbatim ""Your access to organization '...' has been blocked. Please contact your organization administrator."" — not a generic account-locked message {SPEC} (VCST-6132 + D. Grishin 2026-10-14: refresh_token still refuses) {BL} (BL-AUTH-013) (refusal relocated here from the password sign-in)
+[STATE] BuildRight login succeeds — user reaches storefront home with BuildRight org context {BL} (BL-AUTH-012)
+[DOM] After BuildRight login: header org indicator shows 'BuildRight' and no lock-state indicator is present {BL} (BL-AUTH-012)
+[STATE] After cleanup unlock: subsequent TechFlow login attempt succeeds (regression guard) {BL} (BL-AUTH-012: the org lock is reversible)","[API] POST /lock returns 200; /api/platform/security/users/{userId}/locked returns {locked:false} confirming BL-AUTH-012 preserved
+[API] /connect/token grant_type=refresh_token with organization_id=TechFlow (refresh token minted after the lock) returns HTTP 400, code=user_is_locked_in_organization (BL-AUTH-013); a password grant with organization_id=TechFlow returns HTTP 200 claim BuildRight (BL-AUTH-016); sessions minted before the lock are revoked immediately (RevokeTokenOrganizationMembershipChangedEventHandler calls TerminateAllUserSessions on lock)
 [API] /connect/token with organization_id=BuildRight after lock returns HTTP 200 (cross-org isolation confirmed)
 [CONSOLE] No unhandled JS errors during lock/unlock flow
-[NETWORK] No 5xx on storefront sign-in page during either org attempt","Lock REST endpoint returns 4xx, global locked=true after org lock (BL-AUTH-012 violation — critical), BuildRight login fails after TechFlow lock (cross-org contamination), org-specific error copy absent (shows generic lockout message), 5xx on /sign-in during locked-org attempt","[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.techflow_membership_id)/unlock
+[NETWORK] No 5xx on storefront sign-in page during either org attempt","Lock REST endpoint returns 4xx, global locked=true after org lock (BL-AUTH-012 violation — critical), BuildRight login fails after TechFlow lock (cross-org contamination), the TechFlow password sign-in is refused or lands in the locked TechFlow, the explicit-switch refusal shows a generic lockout message or a code-less invalid_grant (token minted before the lock — verdict void), 5xx on /sign-in during locked-org attempt","[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.techflow_membership_id)/unlock
 Ensure TechFlow membership is unlocked after test regardless of pass/fail outcome.
-[PRE:CLEAR_SESSION]","VCST-5028 | paths: /sign-in,REST:memberships/lock [P5:login-VERIFIED;REST-NX]","Draft"
+[PRE:CLEAR_SESSION]","VCST-5028 | paths: /sign-in,REST:memberships/lock [P5:login-VERIFIED;REST-NX] | Re-based: VCST-6132 — re-run PASS in REG-2026-10-20-1329 (BLOCKED in REG-2026-10-20-0125)","Draft"
 "COMP-E2E-006","Company Info Edit — Changes Reflected Across Account and Checkout Contexts","Company E2E > Company Info > [JOURNEY]","High","BL-B2B-005, BL-CROSS-008","ECL-7.1","[PRE:CLEAR_SESSION]
 Admin REST API available with {{ADMIN_EMAIL}} / {{ADMIN_PASSWORD}} to provision a disposable AGENT-TEST org + org-maintainer user — this case must NEVER edit the shared TechFlow org (many other cases in this suite depend on its name staying ""TechFlow"").
 NOTE: /company/info's real editable surface is Company Name only (an inline textbox with its own edit-icon → save-icon), a logo uploader, and an Addresses table — there is no description/secondary text field to clear or edit.","front_url={{FRONT_URL}}, back_url={{BACK_URL}}, admin_api_email={{ADMIN_EMAIL}}, admin_api_password={{ADMIN_PASSWORD}}, new_member_password={{DEFAULT_TEST_PASSWORD}}","--- SCREEN: Fixture Setup (REST) ---
