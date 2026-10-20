@@ -1,21 +1,33 @@
 {
-  "runId": "REG-2026-10-15-1720",
+  "runId": "REG-2026-10-19-1307",
   "status": "completed",
-  "startedAt": "2026-10-15T15:20:55.249Z",
-  "windowStart": "2026-10-15T15:20:55.249Z",
+  "startedAt": "2026-10-19T11:08:07.323Z",
+  "windowStart": "2026-10-19T11:08:07.323Z",
   "selection": "093",
   "env": "vcst",
   "scoped": true,
-  "purpose": "VCST-6015 — verify the 5 test-defect fixes from triage of REG-2026-10-15-1548",
-  "ids": "SR-HD-100,SR-HD-102,SR-HD-107,SR-HD-112,SR-HD-115",
+  "purpose": "VCST-5903 /qa-test-fast — scoped regression (Critical/P0 cases only, 18 of 79) of the Sales Rep Hub dashboard (the consumer VcStatWidget is extracted from) on PR theme 2.61.0-pr-2568-3f8a-3f8af63a",
   "suites": {
     "093": {
-      "status": "pending",
-      "lane": "browser"
+      "status": "done",
+      "lane": "browser",
+      "browser": "playwright-chrome",
+      "laneId": 1,
+      "total": 18,
+      "startedAt": "2026-10-19T11:09:47.510Z",
+      "attempts": 1,
+      "cases": "critical",
+      "pass": 12,
+      "fail": 2,
+      "blocked": 4,
+      "completedAt": "2026-10-19T15:34:22.828Z"
     }
   },
-  "finishedAt": "2026-10-15T15:21:05.438Z",
+  "cases": "critical",
+  "stalledAt": "2026-10-19T12:09:33.324Z",
+  "stalledReason": "no progress for 45 min (REG-2026-10-19-1307:in_progress:1:18:17)",
+  "finishedAt": "2026-10-19T12:09:33.324Z",
   "notes": [
-    "ABORTED before dispatch (usage limit) — nothing ran; no results"
+    "resumed after a session usage limit; watcher had marked it stalled"
   ]
 }
