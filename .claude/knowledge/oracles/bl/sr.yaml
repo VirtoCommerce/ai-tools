@@ -80,8 +80,10 @@ rules:
       kind: manual
       ref: 'Pass `currencyCode:"EUR"` → response `currencyCode:"EUR"`, `formattedAmount` uses the € symbol; omit → store default. (Live-confirmed 2026-07-23: EUR echoed, `€816.00`.) Assert the echoed code + symbol, **not** a specific converted amount (FX rate is env-dependent — vcst-qa EUR ≈ 1.0).'
     violation_signal: "`currencyCode` not echoed; `formattedAmount` unlocalized; per-currency figures returned unconverted / double-counted."
-    status: SUSPECT
-    suspect_reason: "[case] SR-HD-053 failed in REG-2026-10-19-1307"
+    status: ACTIVE
+    verified:
+      date: 2026-10-20
+      by: REG-2026-10-20-0917
   - id: BL-SR-005
     title: Statistics scope excludes flag-cancelled / prototype orders unconditionally
     rule: The statistics scope (`salesRepCustomerOrderStatistics` / `salesRepCustomerCartStatistics`) excludes orders and carts flagged prototype or cancelled **at the entity level** (`IsPrototype` / `IsCancelled`) — unconditionally, and this does NOT loosen under any named filter. This differs from the order-*list* scope, which deliberately includes cancelled orders so that `Cancelled` is a real list filter (BL-SR-009). An order whose `Status` field merely reads a cancelled-like value **without** the `IsCancelled` flag (e.g. written directly by an external/ERP integration bypassing the platform cancel workflow) is NOT excluded by this scope and correctly counts toward every statistics figure, including the baseline/all-status one.
@@ -527,8 +529,10 @@ rules:
       kind: manual
       ref: Grab a block via keyboard, move with arrow keys → announcements include position; drive a block to an edge → the edge announcement is distinct; park then restore via keyboard → announcements omit position; end a grab via Escape → the pre-grab position is restored and the cancellation announced; end a grab via any other interaction (e.g. a pointer action on another block) → the pre-grab position must still be restored and the cancellation still announced.
     violation_signal: A reorder or edge announcement omits position; a park/restore announcement includes one; ending a grab by any means other than Escape/blur/tab commits the moved position without restoring it or announcing the cancellation.
-    status: SUSPECT
-    suspect_reason: "[case] SR-HD-030 failed in REG-2026-10-19-1307"
+    status: ACTIVE
+    verified:
+      date: 2026-10-20
+      by: REG-2026-10-20-0917
   - id: BL-SR-030
     title: A save already in flight cannot be duplicated by a rapid repeat trigger
     rule: Triggering Save again while a save is already in flight never results in a second full-document-replace call reaching the backend — exactly one save request is issued per user-intended save, regardless of how a repeat trigger is delivered.
