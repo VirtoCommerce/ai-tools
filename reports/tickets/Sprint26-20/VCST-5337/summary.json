@@ -143,6 +143,36 @@
       "severity": "Medium",
       "provenance": "pre-existing",
       "summary": "Dashboard My customers card has no month-over-month indicator"
+    },
+    {
+      "key": "VCST-6461",
+      "severity": "Medium",
+      "provenance": "pre-existing",
+      "summary": "Admin Sales Reps grid: keyword search on page 2 keeps skip=20 and shows no results"
+    },
+    {
+      "key": "VCST-6462",
+      "severity": "Medium",
+      "provenance": "pre-existing",
+      "summary": "August 2026 sales-rep documents return 403 on download (readers and Administrator)"
+    },
+    {
+      "key": "VCST-6463",
+      "severity": "Medium",
+      "provenance": "pre-existing",
+      "summary": "xAPI: two aliases of one sales-rep field in one operation intermittently fail with ARGUMENT"
+    },
+    {
+      "key": "VCST-6195",
+      "severity": "Medium",
+      "provenance": "pre-existing",
+      "summary": "customer orders: closing the Start chip of a preset leaves the drawer showing the preset (SR-CO-034) — existing ticket, re-confirmed on this build"
+    },
+    {
+      "key": "VCST-6220",
+      "severity": "Medium",
+      "provenance": "pre-existing",
+      "summary": "customer orders: focus lost after Reset filters via keyboard, BL-A11Y-001 (SR-CO-051) — existing ticket, re-confirmed on this build"
     }
   ],
   "bugs_not_filed": [
@@ -162,34 +192,9 @@
       "summary": "previous-calendar-day event under 24 h old reads ~N hours ago, not ~yesterday - asked the owner"
     },
     {
-      "severity": "Medium",
-      "provenance": "pre-existing",
-      "summary": "xAPI: two aliases of one sales-rep field in one operation intermittently fail with ARGUMENT (SR-GQL-157)"
-    },
-    {
-      "severity": "Medium",
-      "provenance": "pre-existing",
-      "summary": "customer orders: closing the Start chip of a preset leaves the drawer showing the preset (SR-CO-034)"
-    },
-    {
-      "severity": "Medium",
-      "provenance": "pre-existing",
-      "summary": "customer orders: focus lost after Reset filters via keyboard, BL-A11Y-001 (SR-CO-051)"
-    },
-    {
-      "severity": "Medium",
-      "provenance": "pre-existing",
-      "summary": "legacy (August) sales-rep documents 403 on download (SR-HD-096/098, SR-EMB-039)"
-    },
-    {
-      "severity": "Medium",
-      "provenance": "pre-existing",
-      "summary": "admin Sales Reps grid search on page 2 keeps skip=20 -> empty grid '2-1 of 1'"
-    },
-    {
       "severity": "Low",
       "provenance": "pre-existing",
-      "summary": "SalesRepCustomer fires twice per profile mount; it-locale dates not localized in My recent orders; de raw i18n key in Created date preset; admin pager label on page 2; no success toast in admin"
+      "summary": "SalesRepCustomer fires twice per profile mount; it-locale dates not localized in My recent orders; de raw i18n key in Created date preset; admin pager label on page 2; no success toast in admin (de raw key = existing VCST-6196)"
     }
   ],
   "test_data": {
