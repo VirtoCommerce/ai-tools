@@ -78,7 +78,11 @@ test("inner: malformed VC_RUN_ARGV, an unknown group, a missing secret", () => {
   assert.equal(bridge(["--inner", "github"], { env: { VC_RUN_ARGV: "gh pr list" } }).status, 64);
   assert.equal(bridge(["--inner", "github"], { env: { VC_RUN_ARGV: "[1]" } }).status, 64);
   assert.equal(bridge(["--inner", "root"], { env: { VC_RUN_ARGV: '["gh","pr","list"]' } }).status, 64);
-  const r = bridge(["--inner", "github"], { env: { VC_RUN_ARGV: '["gh","pr","list"]' } });
+  // Outside a declared project the inner side refuses before it looks at a secret.
+  const none = bridge(["--inner", "github"], { cwd: project(null), env: { VC_RUN_ARGV: '["gh","pr","list"]' } });
+  assert.equal(none.status, 64);
+  assert.match(none.stderr, /no vc-secrets declaration/);
+  const r = bridge(["--inner", "github"], { cwd: project({ tasks: {} }), env: { VC_RUN_ARGV: '["gh","pr","list"]' } });
   assert.equal(r.status, 69);
   assert.match(r.stderr, /without its secret/);
 });
@@ -88,8 +92,19 @@ test("inner env: kept keys + this group's secret only; a caller's other credenti
     PATH: "/bin", Path: "C:\\bin", SystemRoot: "C:\\Windows", TEST_ENV: "qa", LC_ALL: "C",
     GITHUB_FIX_BUGS_TOKEN: TOKEN, ADO_PAT: "adopat0123456789", JIRA_API_TOKEN: "jiratok0123456789",
     AWS_SECRET_ACCESS_KEY: "aws", NODE_OPTIONS: "--require evil.js", GIT_TRACE: "1", GIT_SSH_COMMAND: "evil",
+    VC_FIX_HOME: "/elsewhere", PROJECT_PROFILE_PATH: "/elsewhere/p.json", GH_CONFIG_DIR: "/caller/gh", XDG_CONFIG_HOME: "/caller/xdg",
+    NODE_EXTRA_CA_CERTS: "/caller/ca.pem", GIT_SSL_CAINFO: "/caller/ca.pem", GIT_CONFIG_GLOBAL: "/caller/gitconfig",
   };
-  const { env, secrets } = buildInnerEnv(source, "github", { nodePath: "/n/node", helperPath: "/h/git-credential.mjs" });
+  const { env, secrets } = buildInnerEnv(source, "github", {
+    nodePath: "/n/node", helperPath: "/h/git-credential.mjs", projectRoot: "/proj", ghConfigDir: "/own/gh", gitGlobalConfig: "/own/gitconfig",
+  });
+  // The caller cannot choose the profile, gh's or git's configuration, or a CA: the bridge sets its own.
+  assert.equal(env.VC_FIX_HOME, "/proj");
+  assert.match(env.PROJECT_PROFILE_PATH, /proj[\\/]project-profile\.json$/);
+  assert.equal(env.GH_CONFIG_DIR, "/own/gh");
+  assert.equal(env.GIT_CONFIG_GLOBAL, "/own/gitconfig");
+  for (const k of ["XDG_CONFIG_HOME", "NODE_EXTRA_CA_CERTS", "GIT_SSL_CAINFO"]) assert.equal(env[k], undefined, k);
+  assert.equal(env.GIT_ASKPASS, "");
   assert.deepEqual(Object.keys(secrets), ["GITHUB_FIX_BUGS_TOKEN"]);
   assert.equal(env.GH_TOKEN, TOKEN);
   assert.equal(env.ADO_PAT, undefined);

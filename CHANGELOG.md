@@ -19,7 +19,7 @@ vc-init is the **only writer of `project-profile.json`**: `/qa-bug` (first-run f
 operator stores a PAT with `node "<VC_SECRETS>" set github-pat|ado-pat|jira-token` at a hidden prompt (never
 in the chat) and approves the project's declarations with `vc-secrets trust`. A process receives a token only
 as `node "$VC_RUN" gh|git-gh|git-ado|ado|jira|deliver|onboard …`: the bridge checks the command line against an
-allowlist (no `gh auth`, no `gh pr merge`, no `git -c`, no foreign host), starts `vc-secrets task
+allowlist (no `gh auth`, no `gh pr merge`, `gh api` reads only, no `git pull`, no `git -c`, no foreign host), starts `vc-secrets task
 vc-init-<group>` for a PAT axis or the tool directly for a session login, pins git to a host-scoped credential
 helper with hooks off, and redacts the child's output. New: `vc-fix` `skills/qa-fix-routing/jira.mjs` (Jira
 REST with the host pinned to the profile) and `ado.mjs edit-comment | patch-fields | wiql`.

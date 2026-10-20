@@ -123,8 +123,12 @@ never changes the command the operator approved with `vc-secrets trust`.
   non-https transports off, and masks every spelling of the secret in the child's output.
 
 Refused through the bridge, among others: `gh auth …` (prints the token), `gh pr merge` (no auto-merge),
-`gh extension`/`alias`, `gh api` with a full URL or `--hostname`, `git -c …`, `--upload-pack`, a remote on
-another host or with credentials in its URL, `ado --api-base` off Azure DevOps.
+`gh extension`/`alias`, `gh api` with a full URL or `--hostname`, any `gh api` write or GraphQL call (it reads
+only), `git pull` (fetch, then merge locally), `git -c …`, `--upload-pack`, a remote on another host or with
+credentials in its URL, an Azure DevOps API base off dev.azure.com / *.visualstudio.com (flag or profile).
+The inner side gives gh an empty config directory and git an empty global config, takes the profile from the
+declared project rather than the caller's environment, and finds vc-init through the OS account's home,
+never HOME / USERPROFILE.
 
 **Scope.** Like vc-secrets itself, this reduces accidental and prompt-injection leaks — a token printed, a
 token sent to a host the caller picked, a token persisted into `.git/config`. It is not a boundary against

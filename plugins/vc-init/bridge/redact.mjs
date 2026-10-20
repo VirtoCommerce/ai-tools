@@ -8,7 +8,8 @@
  * goes through here first.
  *
  * Masked forms of each secret value:
- *   - the raw value, and its URL-encoded spelling when that differs;
+ *   - the raw value at ANY length (a password can be short), its URL-encoded and JSON-escaped spellings
+ *     when they differ (a child that prints a JSON body escapes `"`, `\\` and control characters);
  *   - Basic-auth base64 of `<user>:<value>` for the usernames this tooling uses ("" — Azure DevOps'
  *     `:PAT`, `x-access-token` — GitHub, `pat`, and the Jira e-mail when it is known), and of the bare
  *     value. Base64 of a string with an UNKNOWN prefix cannot be matched as a substring (its alignment
@@ -23,21 +24,27 @@ import { StringDecoder } from "node:string_decoder";
 
 export const MASK = "«redacted»";
 
-/** Every spelling of `value` the redactor masks. Values shorter than 6 characters are not masked. */
+/**
+ * Every spelling of `value` the redactor masks. The raw value and its escaped spellings are masked at
+ * any length; the derived base64 forms only from 6 characters, where a match is no longer a coincidence.
+ */
 export function secretForms(value, { emails = [] } = {}) {
   const v = String(value ?? "");
-  if (v.length < 6) return [];
+  if (!v) return [];
   const b64 = (s) => Buffer.from(s, "utf8").toString("base64");
-  const forms = new Set([v, b64(v)]);
+  const exact = new Set([v]);
   const enc = encodeURIComponent(v);
-  if (enc !== v) forms.add(enc);
+  if (enc !== v) exact.add(enc);
+  const json = JSON.stringify(v).slice(1, -1);
+  if (json !== v) exact.add(json);
+  const forms = new Set([b64(v)]);
   for (const user of ["", "x-access-token", "pat", "PAT", "git", ...emails.filter(Boolean)]) {
     const full = b64(`${user}:${v}`);
     forms.add(full);
     // Without its `=` padding, as some loggers trim it.
     forms.add(full.replace(/=+$/, ""));
   }
-  return [...forms].filter((f) => f.length >= 6).sort((a, b) => b.length - a.length);
+  return [...new Set([...exact, ...[...forms].filter((f) => f.length >= 6)])].sort((a, b) => b.length - a.length);
 }
 
 /** Replace every occurrence of every form in `text`. Longest form first, so a shorter one cannot split a longer. */

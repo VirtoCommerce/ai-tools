@@ -257,8 +257,9 @@ hand. For opening the PR, you run the matching command above.
 
 ### Write auth per host
 - **Every remote write goes through the bridge** — `node "$VC_RUN" gh …` and `node "$VC_RUN" git-gh|git-ado
-  [-C <dir>] clone|fetch|pull|push|ls-remote …`. Local-only git (commit, checkout, branch, diff, log,
-  status, rebase, reset) stays plain `git`. The ambient MCP token is read-only. (See
+  [-C <dir>] clone|fetch|push|ls-remote …`. Local-only git (commit, checkout, branch, diff, log,
+  status, merge, rebase, reset) stays plain `git` — to update a checkout, `git-gh fetch` through the bridge
+  and then merge or rebase locally (no `pull`: its merge would run the repository's drivers with the token). The ambient MCP token is read-only. (See
   `knowledge/agents/developers/shared-instructions.md` §GitHub authentication.)
 - **PAT axis or session axis — same command.** On a PAT axis (`auth.github: pat` / `auth.ado: pat`) the
   bridge injects the `github-pat` / `ado-pat` secret from vc-secrets; on a session axis (`gh auth login` /

@@ -19,8 +19,18 @@ test("gh: the commands /qa-fix and /qa-bug use are allowed", () => {
   allowed("gh", ["issue", "create", "--title", "t", "--body", "line one\nline two"]);
   allowed("gh", ["repo", "fork", "VirtoCommerce/vc-frontend", "--clone=false"]);
   allowed("gh", ["api", "repos/VirtoCommerce/vc-platform", "--jq", ".permissions.push"]);
-  allowed("gh", ["api", "graphql", "-f", "query=query { viewer { login } }"]);
-  allowed("gh", ["api", "-f", "body=see https://example.com", "repos/a/b/issues"]);
+});
+
+test("gh api reads only: no write method, no body, no GraphQL", () => {
+  allowed("gh", ["api", "user", "--jq", ".login"]);
+  allowed("gh", ["api", "--paginate", "repos/a/b/tags"]);
+  allowed("gh", ["api", "-X", "GET", "-f", "per_page=100", "repos/a/b/pulls"]);
+  refused("gh", ["api", "-X", "PUT", "repos/a/b/pulls/1/merge"], /reads only/);
+  refused("gh", ["api", "--method=DELETE", "repos/a/b"], /reads only/);
+  refused("gh", ["api", "-XPATCH", "repos/a/b"], /reads only/);
+  refused("gh", ["api", "-f", "body=x", "repos/a/b/issues"], /sends a POST/);
+  refused("gh", ["api", "--input", "body.json", "repos/a/b/pulls/1/merge"], /sends a POST/);
+  refused("gh", ["api", "graphql", "-f", "query=query { viewer { login } }"], /graphql/);
 });
 
 test("gh: anything that prints, manages or bypasses the token is refused", () => {
@@ -55,7 +65,8 @@ test("gh api endpoint detection skips flag values", () => {
   assert.equal(ghApiEndpoint(["-f", "x=1"]), null);
 });
 
-test("git: only clone/fetch/pull/push/ls-remote, with -C as the only global option", () => {
+test("git: only clone/fetch/push/ls-remote, with -C as the only global option — no pull", () => {
+  refused("git-gh", ["-C", "ws", "pull", "origin", "dev"], /git pull is not allowed/);
   allowed("git-gh", ["clone", "https://github.com/VirtoCommerce/vc-frontend", ".fix-workspace/vc-frontend"]);
   allowed("git-gh", ["-C", ".fix-workspace/vc-frontend", "push", "-u", "origin", "claude/qa-autofix/VCST-1"]);
   refused("git-gh", ["fetch", "-u", "sh -c env", "origin"]);

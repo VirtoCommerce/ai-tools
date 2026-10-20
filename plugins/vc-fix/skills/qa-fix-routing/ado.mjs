@@ -223,13 +223,35 @@ async function authHeader() {
 }
 
 // ---- base URL -----------------------------------------------------------------------
+/**
+ * An API base the PAT may be sent to: https on dev.azure.com or *.visualstudio.com, nothing else. The
+ * bridge checks --api-base the same way (vc-init bridge/allowlist.mjs); this covers the profile's value,
+ * which a command line never shows. Exits on anything else. Enforced under the bridge (VC_BRIDGE=1),
+ * where the PAT is the one vc-secrets injected; a direct run uses a token its caller supplied, so a local
+ * test server stays reachable there.
+ */
+export function checkedApiBase(value, source) {
+  if (process.env.VC_BRIDGE !== "1") return String(value).replace(/\/$/, "");
+  let u;
+  try {
+    u = new URL(String(value));
+  } catch {
+    fail(`${source} is not a URL: ${JSON.stringify(value)}`);
+  }
+  const host = u.hostname.toLowerCase();
+  if (u.protocol !== "https:" || !(host === "dev.azure.com" || host.endsWith(".visualstudio.com"))) {
+    fail(`${source} must be an https URL on dev.azure.com or *.visualstudio.com — got ${u.protocol}//${host}; the PAT is never sent elsewhere`);
+  }
+  return String(value).replace(/\/$/, "");
+}
+
 /** axis: "tracker" (Boards work-item ops) | "vcs" (Repos git/PR ops). */
 function base(args, axis = "vcs") {
-  if (args["api-base"]) return String(args["api-base"]).replace(/\/$/, "");
+  if (args["api-base"]) return checkedApiBase(args["api-base"], "--api-base");
   const AZ = axis === "tracker" ? trackerAZ() : vcsAZ();
   const org = args.org || AZ.organization;
   const project = args.project || AZ.project;
-  if (AZ.apiBase && !args.org && !args.project) return String(AZ.apiBase).replace(/\/$/, "");
+  if (AZ.apiBase && !args.org && !args.project) return checkedApiBase(AZ.apiBase, `project-profile.json ${axis === "tracker" ? "tracker" : "vcs"}.azure.apiBase`);
   if (!org || !project) fail(`no org/project — pass --org/--project, or run /project-init (the vc-init plugin) so project-profile.json carries tracker/vcs.azure.\n      (The profile was searched at PROJECT_PROFILE_PATH, then VC_FIX_HOME (${process.env.VC_FIX_HOME || "unset"}), then cwd and its parents from ${process.cwd()}. If it lives elsewhere, set PROJECT_PROFILE_PATH or run from the project root.)`);
   return `https://dev.azure.com/${org}/${encodeURIComponent(project)}`;
 }

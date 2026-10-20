@@ -208,10 +208,25 @@ export function scan(root) {
   return findings;
 }
 
-/** Does the vc-secrets copy of this axis work? Runs the bridge's probe for it. */
+/**
+ * Does the vc-secrets copy of this axis work? Runs the bridge's probe for it — and only when the axis's
+ * task `vc-init-<axis>` is declared: without it the bridge runs the tool directly, on a session login
+ * (or whatever the tool finds on its own), so a pass would prove nothing about vc-secrets and the
+ * plaintext copy must stay. With it the bridge takes the task, whose token comes from vc-secrets alone
+ * (an injected token wins over a file copy, and gh gets an empty config directory).
+ */
 function probeAxis(axis, { root, vcRun }) {
   const probes = { github: ["gh", "api", "user", "--jq", ".login"], ado: ["ado", "whoami"], jira: ["jira", "myself"] };
   if (!probes[axis]) return { ok: false, reason: "no probe for this axis" };
+  let declaredTask = false;
+  for (const f of [".claude/vc-secrets.local.json", ".claude/vc-secrets.json"]) {
+    try {
+      if (JSON.parse(readFileSync(join(root, f), "utf8"))?.tasks?.[`vc-init-${axis}`]) declaredTask = true;
+    } catch {
+      /* absent or unreadable */
+    }
+  }
+  if (!declaredTask) return { ok: false, reason: `vc-init-${axis} is not declared in vc-secrets — run write-secrets-decl.mjs --from-profile; a probe without it would pass on a session login` };
   if (!existsSync(vcRun)) return { ok: false, reason: `no bridge at ${vcRun} — run install-bridge.mjs` };
   const r = spawnSync(process.execPath, [vcRun, ...probes[axis]], { cwd: root, encoding: "utf8", timeout: 120000, windowsHide: true });
   return r.status === 0 ? { ok: true } : { ok: false, reason: `\`node "$VC_RUN" ${probes[axis].join(" ")}\` exited ${r.status}` };

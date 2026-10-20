@@ -50,8 +50,11 @@ test("multi-byte text around a secret survives a split inside a character", () =
   assert.equal(feed([TOKEN], [text.subarray(0, cut), text.subarray(cut)]), `ё ${MASK} ✓`);
 });
 
-test("short values are not masked (they would mangle ordinary output), and no secrets ⇒ passthrough", () => {
-  assert.deepEqual(secretForms("abc"), []);
+test("a password of any length is masked, with its JSON-escaped spelling; no secrets ⇒ passthrough", () => {
+  assert.ok(secretForms("abc").includes("abc"));
+  assert.deepEqual(secretForms(""), []);
+  assert.equal(feed(["pw1"], ["login pw1 ok"]), `login ${MASK} ok`);
+  assert.equal(feed(["p\"w\\1"], [JSON.stringify({ password: "p\"w\\1" })]), `{"password":"${MASK}"}`);
   assert.equal(feed([], ["plain ", "text"]), "plain text");
 });
 

@@ -96,7 +96,8 @@ export function withUser(text, { key, role, login, replace = false }) {
   if (current === login) return { text, change: "unchanged" };
   if (current !== undefined) {
     if (!replace) return { refused: `${loginVar} is already ${JSON.stringify(current)} here — pass --replace to change it` };
-    return { text: String(text).replace(new RegExp(`^(\\s*${loginVar}\\s*=).*$`, "m"), `$1${login}`), change: "replaced" };
+    // A replacer function: a login is data, and `$&` / `$1` in a string replacement would be a pattern.
+    return { text: String(text).replace(new RegExp(`^(\\s*${loginVar}\\s*=).*$`, "m"), (_m, lead) => `${lead}${login}`), change: "replaced" };
   }
   const base = String(text || "");
   const block = `# vc-init user ${key} (${role}) — ${ROLE_TEXT[role]}. Login below; the agent types the password by its NAME: ${key}_PASSWORD\n${loginVar}=${login}\n`;

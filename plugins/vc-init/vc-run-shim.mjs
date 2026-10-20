@@ -27,8 +27,20 @@ const SHIM_CONTRACT = 1;
 const PLUGIN_KEY = "vc-init@ai-tools";
 const ENTRY = path.join("bridge", "run.mjs");
 const [PLUGIN_NAME, MARKETPLACE] = PLUGIN_KEY.split("@");
-// os.homedir(), not $HOME: the inner side is started by vc-secrets with the caller's environment.
-const HOME = os.homedir();
+// The home from the OS account, not os.homedir(): that one follows HOME / USERPROFILE, and the inner
+// side is started by vc-secrets with the caller's environment — a caller could point it at a "vc-init"
+// of its own making. os.userInfo() reads the account database (passwd; the profile of the process token
+// on Windows), which the environment does not change.
+let accountHome;
+try {
+    accountHome = os.userInfo().homedir;
+} catch {
+    accountHome = os.homedir();
+}
+const HOME = accountHome;
+// The inner side (`--inner`, `--playwright`) runs with secrets in its environment: the caller's cwd
+// may not pick between installs there either — it takes the newest one.
+const INNER = ["--inner", "--playwright"].includes(process.argv[2]);
 const CACHE_ROOTS = [path.join(HOME, ".claude", "plugins", "cache"), path.join(HOME, ".codex", "plugins", "cache")];
 
 function fail(message) {
@@ -71,7 +83,9 @@ try {
     // absent or unreadable — the cache walk below covers it
 }
 let entry = null;
-if (records.length > 0) {
+if (records.length > 0 && INNER) {
+    entry = entryIn(pick(records).installPath);
+} else if (records.length > 0) {
     const cwd = path.resolve(process.cwd());
     const matches = records.filter((r) => typeof r.projectPath === "string"
         && (cwd === path.resolve(r.projectPath) || cwd.startsWith(path.resolve(r.projectPath) + path.sep)));

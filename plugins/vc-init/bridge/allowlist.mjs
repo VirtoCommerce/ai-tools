@@ -65,8 +65,12 @@ const GH_COMMANDS = Object.freeze({
   api: null,
 });
 
-/** git sub-commands for git-gh / git-ado. Anything that runs a checkout's own config-driven code is out. */
-const GIT_COMMANDS = Object.freeze(["clone", "fetch", "pull", "push", "ls-remote"]);
+/**
+ * git sub-commands for git-gh / git-ado. Anything that runs a checkout's own config-driven code is out —
+ * `pull` too: its merge runs the repository's merge and filter drivers with the token in git's
+ * environment. Fetch through the bridge, then merge or rebase with plain local git (no token).
+ */
+const GIT_COMMANDS = Object.freeze(["clone", "fetch", "push", "ls-remote"]);
 
 /** git options that can run a command, rewrite config, or reach another host. */
 const GIT_REFUSED_OPTIONS = [
@@ -136,6 +140,8 @@ function checkGh(args) {
     const endpoint = ghApiEndpoint(args.slice(1));
     if (endpoint === null) return no("gh api needs an endpoint");
     if (/:\/\//.test(endpoint)) return no("gh api takes a path on api.github.com, not a full URL");
+    const write = ghApiWrite(args.slice(1), endpoint);
+    if (write) return no(write);
   }
   return ok();
 }
@@ -144,6 +150,29 @@ function checkGh(args) {
 const GH_API_VALUE_FLAGS = new Set(["-X", "--method", "-F", "--field", "-f", "--raw-field", "-H", "--header", "--input", "-q", "--jq", "-t", "--template", "--cache", "-p", "--preview", "--hostname"]);
 
 /** The first positional argument of `gh api …` — its endpoint — or null. */
+/**
+ * `gh api` reads only. A write through it would sidestep the sub-command allowlist above (`gh pr merge`
+ * is `PUT repos/…/pulls/<n>/merge`), and every write the plugins make has a gh command of its own.
+ * GraphQL is out because a mutation is a POST to the same endpoint as a query. Field and input flags
+ * switch gh to POST unless the method is set to GET explicitly. Returns the refusal, or null. Pure.
+ */
+export function ghApiWrite(rest, endpoint) {
+  if (/^\/?graphql$/i.test(endpoint)) return "gh api graphql is not allowed through the bridge — use the gh command for the operation";
+  let method = null;
+  let body = false;
+  for (let i = 0; i < rest.length; i++) {
+    const a = rest[i];
+    const name = flagName(a);
+    const value = () => (a.includes("=") ? a.slice(a.indexOf("=") + 1) : rest[i + 1]);
+    if (name === "-X" || name === "--method") method = String(value() || "").toUpperCase();
+    else if (/^-X./.test(a)) method = a.slice(2).toUpperCase();
+    else if (["-f", "-F", "--field", "--raw-field", "--input"].includes(name)) body = true;
+  }
+  if (method && method !== "GET") return `gh api --method ${method} is not allowed through the bridge — gh api reads only; use the gh command for the write`;
+  if (body && method !== "GET") return "gh api with -f/-F/--field/--input sends a POST — not allowed through the bridge (add --method GET for query parameters)";
+  return null;
+}
+
 export function ghApiEndpoint(rest) {
   for (let i = 0; i < rest.length; i++) {
     const a = rest[i];
@@ -166,7 +195,7 @@ function checkGit(tool, args) {
   const cmd = args[i];
   if (!GIT_COMMANDS.includes(cmd)) return no(`git ${cmd ?? "(nothing)"} is not allowed through the bridge (allowed: ${GIT_COMMANDS.join(", ")}; global options: -C <dir> only)`);
   for (const a of args.slice(i + 1)) {
-    // `-u` is --upload-pack (runs a command) for clone/fetch/pull, but --set-upstream for push.
+    // `-u` is --upload-pack (runs a command) for clone/fetch, but --set-upstream for push.
     if (a === "-u" && cmd === "push") continue;
     if (GIT_REFUSED_OPTIONS.some((re) => re.test(a))) return no(`git option ${a.split("=")[0]} is not allowed through the bridge`);
     const loc = checkGitLocation(a, hosts);

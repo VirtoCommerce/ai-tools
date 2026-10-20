@@ -40,7 +40,8 @@
  * (project-profile.json governance — the host plugin's MCP servers do this job; nothing runs here).
  */
 import { spawn } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import os from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { GROUPS, checkArgv, checkPlaywright, groupOf, toolInGroup } from "./allowlist.mjs";
@@ -112,13 +113,18 @@ export const taskName = (group) => `vc-init-${group}`;
  * credential exported in the shell — is dropped. Names are matched case-insensitively (Windows keeps
  * `Path`, `SystemRoot`, … in mixed case).
  */
+// Not kept, on purpose: the custom-CA variables (a caller-chosen CA would let it read the TLS traffic
+// that carries the token — the proxy variables stay, a proxy cannot read TLS without a trusted CA);
+// GH_CONFIG_DIR / GIT_CONFIG_* (the bridge gives gh and git its own empty configuration, below);
+// VC_FIX_HOME / PROJECT_PROFILE_PATH (the bridge sets them to the declarations' project, so the caller
+// cannot choose the profile a token-holding script takes its host from).
 const ENV_KEEP = [
   "PATH", "PATHEXT", "SYSTEMROOT", "SYSTEMDRIVE", "WINDIR", "COMSPEC", "OS", "PROCESSOR_ARCHITECTURE", "NUMBER_OF_PROCESSORS",
   "HOME", "USERPROFILE", "HOMEDRIVE", "HOMEPATH", "APPDATA", "LOCALAPPDATA", "PROGRAMDATA", "PROGRAMFILES", "PROGRAMFILES(X86)", "COMMONPROGRAMFILES",
   "USERNAME", "USER", "LOGNAME", "SHELL", "TEMP", "TMP", "TMPDIR", "LANG", "LANGUAGE", "TERM", "TZ", "NO_COLOR", "FORCE_COLOR",
-  "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "ALL_PROXY", "NODE_EXTRA_CA_CERTS", "SSL_CERT_FILE", "SSL_CERT_DIR", "GIT_SSL_CAINFO", "REQUESTS_CA_BUNDLE",
-  "XDG_CONFIG_HOME", "XDG_CACHE_HOME", "XDG_DATA_HOME", "GH_CONFIG_DIR", "AZURE_CONFIG_DIR", "GIT_EXEC_PATH",
-  "TEST_ENV", "VC_FIX_HOME", "PROJECT_PROFILE_PATH", "CLAUDE_PROJECT_DIR", "CLAUDE_CODE_SESSION_ID", "HOST_SESSION_ID",
+  "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "ALL_PROXY",
+  "XDG_CACHE_HOME", "XDG_DATA_HOME", "AZURE_CONFIG_DIR", "GIT_EXEC_PATH",
+  "TEST_ENV", "CLAUDE_PROJECT_DIR", "CLAUDE_CODE_SESSION_ID", "HOST_SESSION_ID",
   // Identifiers only. Anything that names a HOST (JIRA_BASE_URL, ADO_ORG, …) is deliberately not
   // passed: the child reads those from the profile and the .env files, so a caller cannot point a
   // token-holding script at another server by exporting a variable.
@@ -126,8 +132,13 @@ const ENV_KEEP = [
 ];
 const ENV_KEEP_PREFIX = ["LC_"];
 
-/** Build the inner child's environment: kept keys + this group's secrets + the bridge's own settings. */
-export function buildInnerEnv(source, group, { nodePath = process.execPath, helperPath = join(selfRoot(), "bridge", "git-credential.mjs") } = {}) {
+/**
+ * Build the inner child's environment: kept keys + this group's secrets + the bridge's own settings.
+ * `projectRoot` — the declarations' directory: the profile and the env files the child reads come from
+ * there, whatever the caller exported. `ghConfigDir` / `gitGlobalConfig` — an empty gh config directory
+ * and an empty global git config the bridge owns, so neither tool reads configuration the caller chose.
+ */
+export function buildInnerEnv(source, group, { nodePath = process.execPath, helperPath = join(selfRoot(), "bridge", "git-credential.mjs"), projectRoot, ghConfigDir, gitGlobalConfig } = {}) {
   const keep = new Set(ENV_KEEP);
   const env = {};
   for (const [k, v] of Object.entries(source)) {
@@ -151,7 +162,13 @@ export function buildInnerEnv(source, group, { nodePath = process.execPath, help
     GH_NO_UPDATE_NOTIFIER: "1",
     GIT_TERMINAL_PROMPT: "0",
     GCM_INTERACTIVE: "never",
+    // An empty askpass is "none": git then neither prompts nor runs a repository's core.askPass.
+    GIT_ASKPASS: "",
+    SSH_ASKPASS: "",
   }, gitConfigEnv({ nodePath, helperPath }));
+  if (projectRoot) Object.assign(env, { VC_FIX_HOME: projectRoot, PROJECT_PROFILE_PATH: join(projectRoot, "project-profile.json") });
+  if (ghConfigDir) env.GH_CONFIG_DIR = ghConfigDir;
+  if (gitGlobalConfig) env.GIT_CONFIG_GLOBAL = gitGlobalConfig;
   return { env, secrets };
 }
 
@@ -164,6 +181,9 @@ export function buildInnerEnv(source, group, { nodePath = process.execPath, help
  *     environment (a checked-out repository's hooks are whatever its last writer left there);
  *   - protocol.allow=never + protocol.https.allow=always: no ext::, file:// or ssh transport;
  *   - core.fsmonitor=false: a repository config cannot name a command for git to run.
+ * With GIT_CONFIG_GLOBAL at an empty file (buildInnerEnv) and only clone / fetch / push / ls-remote
+ * allowed (allowlist.mjs — no pull, so no merge), a token-holding git runs no filter or merge driver:
+ * a fresh clone's config defines none, and fetch / push / ls-remote never run one.
  */
 export function gitConfigEnv({ nodePath = process.execPath, helperPath } = {}) {
   const fwd = (p) => String(p).replace(/\\/g, "/");
@@ -327,8 +347,8 @@ export function runChild(command, args, { env = process.env, secrets = [], email
 
 const USAGE = `usage: node "$VC_RUN" <tool> [args…]
   gh <pr|issue|run|repo|release|search|workflow|label|api> …   GitHub CLI
-  git-gh  [-C <dir>] <clone|fetch|pull|push|ls-remote> …          git on github.com
-  git-ado [-C <dir>] <clone|fetch|pull|push|ls-remote> …          git on Azure Repos
+  git-gh  [-C <dir>] <clone|fetch|push|ls-remote> …               git on github.com (merge locally after fetch)
+  git-ado [-C <dir>] <clone|fetch|push|ls-remote> …               git on Azure Repos
   ado <command> …        vc-fix qa-fix-routing/ado.mjs
   jira <command> …       vc-fix qa-fix-routing/jira.mjs
   deliver …              vc-fix vc-self-check/deliver.mjs
@@ -454,7 +474,14 @@ async function inner(group) {
     say(`refused — ${check.reason}`);
     return EX_REFUSED;
   }
-  const { env, secrets } = buildInnerEnv(process.env, group);
+  // The project is the one whose declarations vc-secrets trusted for this launch — found from the cwd,
+  // exactly as vc-secrets found them. Its profile and env files are the ones the child reads.
+  const decls = findDeclarations(process.cwd());
+  if (!decls) {
+    say("refused — no vc-secrets declaration above the working directory; the inner side runs only inside a declared project");
+    return EX_REFUSED;
+  }
+  const { env, secrets } = buildInnerEnv(process.env, group, { projectRoot: decls.root });
   if (group !== "onboard" && Object.keys(secrets).length === 0) {
     say(`vc-secrets started the ${group} task without its secret (${GROUP_SECRETS[group].join(", ")}) — check the declaration with "node \\"$VC_SECRETS\\" doctor"`);
     return EX_UNAVAILABLE;
@@ -464,11 +491,47 @@ async function inner(group) {
     say(cmd.error);
     return EX_UNAVAILABLE;
   }
-  return runChild(cmd.command, cmd.args, {
-    env,
-    secrets: Object.values(secrets),
-    emails: [process.env.JIRA_EMAIL, process.env.JIRA_USER].filter(Boolean),
-  });
+  // Created only now that the child will run, and removed whatever way it ends.
+  const own = bridgeConfig();
+  try {
+    return await runChild(cmd.command, cmd.args, {
+      env: { ...env, GH_CONFIG_DIR: own.ghConfigDir, GIT_CONFIG_GLOBAL: own.gitGlobalConfig },
+      secrets: Object.values(secrets),
+      emails: [process.env.JIRA_EMAIL, process.env.JIRA_USER].filter(Boolean),
+    });
+  } finally {
+    own.cleanup();
+  }
+}
+
+/**
+ * The bridge's own, empty configuration for one inner launch: a fresh gh config directory and an empty
+ * global git config, under the user's own data directory. The home comes from the OS account
+ * (os.userInfo), not HOME / USERPROFILE, which the caller sets.
+ */
+function bridgeConfig() {
+  let home;
+  try {
+    home = os.userInfo().homedir;
+  } catch {
+    home = os.homedir();
+  }
+  const base = join(home, ".claude", "plugins", "data", "vc-init-ai-tools", "bridge");
+  mkdirSync(base, { recursive: true });
+  const gitGlobalConfig = join(base, "gitconfig-empty");
+  writeFileSync(gitGlobalConfig, "");
+  const ghConfigDir = mkdtempSync(join(base, "gh-"));
+  return {
+    ghConfigDir,
+    gitGlobalConfig,
+    cleanup: () => {
+      try {
+        rmSync(ghConfigDir, { recursive: true, force: true });
+      } catch {
+        /* best effort */
+      }
+    },
+  };
 }
 
 /**
