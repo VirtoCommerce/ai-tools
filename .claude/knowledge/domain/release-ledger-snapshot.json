@@ -1,5 +1,5 @@
 {
-  "generatedIso": "2026-10-16T15:18:34.007Z",
+  "generatedIso": "2026-10-20T15:08:29.578Z",
   "rev": 2,
   "monthsFull": 6,
   "source": {
@@ -14,55 +14,55 @@
       "version": "3.1008.0",
       "month": "2026-10",
       "repo": "vc-module-loyalty",
-      "previousVersion": "3.1003.0"
+      "previousVersion": null
     },
     "Frontend": {
       "version": "2.58.0",
       "month": "2026-10",
       "repo": "vc-frontend",
-      "previousVersion": "2.56.0"
+      "previousVersion": null
     },
     "Platform": {
       "version": "3.1071.0",
       "month": "2026-10",
       "repo": "vc-platform",
-      "previousVersion": "3.1054.0"
+      "previousVersion": null
     },
     "Page Builder": {
       "version": "3.1026.0",
       "month": "2026-10",
       "repo": "vc-module-pagebuilder",
-      "previousVersion": "3.1015.0"
+      "previousVersion": null
     },
     "Sales Rep": {
       "version": "3.1009.0",
       "month": "2026-10",
       "repo": "vc-module-sales-rep",
-      "previousVersion": "3.1006.0"
+      "previousVersion": null
     },
     "Order": {
       "version": "3.1015.0",
       "month": "2026-10",
       "repo": "vc-module-order",
-      "previousVersion": "3.1001.0"
+      "previousVersion": null
     },
     "Customer": {
       "version": "3.1023.0",
       "month": "2026-10",
       "repo": "vc-module-customer",
-      "previousVersion": "3.1021.0"
+      "previousVersion": null
     },
     "Catalog": {
       "version": "3.1044.0",
       "month": "2026-10",
       "repo": "vc-module-catalog",
-      "previousVersion": "3.1037.0"
+      "previousVersion": null
     },
     "Core": {
       "version": "3.1008.0",
       "month": "2026-10",
       "repo": "vc-module-core",
-      "previousVersion": "3.814.0"
+      "previousVersion": null
     },
     "Inventory": {
       "version": "3.1005.0",

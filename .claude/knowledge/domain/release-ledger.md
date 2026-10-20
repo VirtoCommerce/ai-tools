@@ -3,7 +3,7 @@ applicability: universal
 rationale: |
   What shipped in the Virto Commerce product line and when. Upstream release history is
   deployment-independent, so every agent on every deployment reads the same ledger.
-generated: 2026-10-16
+generated: 2026-10-20
 rev: 2
 source: https://www.virtocommerce.org/c/news-digest/15.rss
 ledger_through: 3.1071.0
@@ -15,7 +15,7 @@ exhaustive: false
 
 # VC Release Ledger — what shipped, when
 
-**Generated** 2026-10-16 (rev 2) · **24** monthly digests · **258** features indexed · window 2024-12 → 2026-10
+**Generated** 2026-10-20 (rev 2) · **24** monthly digests · **258** features indexed · window 2024-12 → 2026-10
 
 > **GENERATED FILE — do not edit by hand.** Regenerate: `npm run releases:refresh`.
 > Drift guard: `npm run releases:check` + `scripts/unit/release-ledger.test.mjs` (runs in `npm test`).
@@ -62,39 +62,39 @@ Highest version seen across every retained digest — *not* what is deployed any
 | Backup and Restore | `3.1005.0` | 2026-09 | `vc-module-backup-restore` |
 | Builder.io | `3.1001.0` | 2026-06 | `vc-module-builder-io` |
 | Cart | `3.1005.0` | 2026-07 | `vc-module-cart` |
-| Catalog | `3.1044.0` *(was 3.1037.0)* | 2026-10 | `vc-module-catalog` |
+| Catalog | `3.1044.0` | 2026-10 | `vc-module-catalog` |
 | Catalog CSV Import/Export | `3.1004.0` | 2026-09 | `vc-module-catalog-csv-export-import` |
 | Content | `3.835.0` | 2026-01 | `vc-module-content` |
 | Contentful | `3.1000.0` | 2026-06 | `vc-module-contentful` |
 | Contract | `3.904.0` | 2025-07 | `vc-module-contract` |
-| Core | `3.1008.0` *(was 3.814.0)* | 2026-10 | `vc-module-core` |
-| Customer | `3.1023.0` *(was 3.1021.0)* | 2026-10 | `vc-module-customer` |
+| Core | `3.1008.0` | 2026-10 | `vc-module-core` |
+| Customer | `3.1023.0` | 2026-10 | `vc-module-customer` |
 | CyberSource | `3.803.0` | 2026-01 | `vc-module-cyber-source` |
 | Datatrans | `3.1001.0` | 2026-05 | `vc-module-datatrans` |
 | Elasticsearch 8 | `3.817.0` | 2025-09 | `vc-module-elastic-search-8` |
 | EventBus | `3.807.0` | 2025-01 | `vc-module-event-bus` |
 | File xAPI | `3.907.0` | 2026-01 | `vc-module-file-experience-api` |
-| Frontend | `2.58.0` *(was 2.56.0)* | 2026-10 | `vc-frontend` |
+| Frontend | `2.58.0` | 2026-10 | `vc-frontend` |
 | Google eCommerce Analytics | `4.805.0` | 2025-12 | `vc-module-google-ecommerce-analytics` |
 | Image Tools | `3.807.0` | 2024-11 | `vc-module-image-tools` |
 | Inventory | `3.1005.0` | 2026-09 | `vc-module-inventory` |
-| Loyalty | `3.1008.0` *(was 3.1003.0)* | 2026-10 | `vc-module-loyalty` |
+| Loyalty | `3.1008.0` | 2026-10 | `vc-module-loyalty` |
 | Marketing | `3.1006.0` | 2026-07 | `vc-module-marketing` |
 | News | `3.810.0` | 2025-10 | `vc-module-news` |
 | Notification | `3.1013.0` | 2026-09 | `vc-module-notification` |
 | OpenId Connect | `3.800.0` | 2024-12 | `vc-module-openid-connect` |
-| Order | `3.1015.0` *(was 3.1001.0)* | 2026-10 | `vc-module-order` |
+| Order | `3.1015.0` | 2026-10 | `vc-module-order` |
 | Order management | `3.803.0` | 2025-06 | `vc-module-order-management` |
-| Page Builder | `3.1026.0` *(was 3.1015.0)* | 2026-10 | `vc-module-pagebuilder` |
+| Page Builder | `3.1026.0` | 2026-10 | `vc-module-pagebuilder` |
 | Pages | `3.1004.0` | 2026-06 | `vc-module-pages` |
 | Payment | `3.812.0` | 2026-01 | `vc-module-payment` |
 | Pickup | `3.1004.0` | 2026-09 | `vc-module-x-pickup` |
-| Platform | `3.1071.0` *(was 3.1054.0)* | 2026-10 | `vc-platform` |
+| Platform | `3.1071.0` | 2026-10 | `vc-platform` |
 | Product Review | `3.807.0` | 2024-11 | `vc-module-customer-review` |
 | Product Snapshot | `3.1000.0` | 2026-06 | `vc-module-product-snapshot` |
 | Push messages | `3.808.0` | 2024-12 | `vc-module-push-messages` |
 | Quote | `3.906.0` | 2025-07 | `vc-module-quote` |
-| Sales Rep | `3.1009.0` *(was 3.1006.0)* | 2026-10 | `vc-module-sales-rep` |
+| Sales Rep | `3.1009.0` | 2026-10 | `vc-module-sales-rep` |
 | Sanity | `3.1001.0` | 2026-06 | `vc-module-sanity` |
 | Search | `3.816.0` | 2025-09 | `vc-module-search` |
 | SEO | `3.809.0` | 2025-11 | `vc-module-seo` |
