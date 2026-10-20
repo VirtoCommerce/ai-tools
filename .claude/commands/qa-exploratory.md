@@ -24,8 +24,8 @@ Every session must end with at least one **net-new scenario** (not in any regres
 
 **Three charter sources, and the mode names which one.** Ad-hoc (`checkout`, `catalog`, …) authors the
 charter here, from the coverage map; `sprint` reads it from the plan's §5.3; `ticket` receives it from
-`/qa-test`'s Test Model. **No mode invents a charter another mode owns** — `sprint` STOPs without a plan,
-and `ticket` STOPs without a model.
+the caller's Test Model or test strategy. **No mode invents a charter another mode owns** — `sprint` STOPs without a plan,
+and `ticket` STOPs without one.
 
 ---
 
@@ -36,7 +36,7 @@ and `ticket` STOPs without a model.
 Only for `sprint` / `sprint:XX-YY`. The charter set was already derived at planning time — this step
 loads it and skips the ad-hoc charter authoring in "Exploration Charter" below.
 
-1. Resolve the plan: `sprint` → the most recent `vc/shared/docs/Sprint plans/sprint-*-summary.json`;
+1. Resolve the plan: `sprint` → the most recent `docs/Sprint plans/sprint-*-summary.json`;
    `sprint:XX-YY` → that exact file. No summary.json ⇒ **STOP** and tell the user to run
    `/qa-test-plan XX-YY` first — never improvise a charter set that the plan does not contain.
 2. Read `exploratoryCharters[]`. Each entry carries `mission`, `candidateScenarios[]`, `technique`,
@@ -60,10 +60,9 @@ Step 0a: the charter is **received, not authored**.
 
 1. **Read the charter payload** `/qa-test` passes (its shape:
    [`.claude/skills/qa-test/exploratory-lane.md`](../skills/qa-test/exploratory-lane.md) §6). Its mission
-   is five derived sources — unresolved mechanism-matrix `GAP`/`WAIVED` cells · unresolved reverse edges ·
-   `{HYPOTHESIS}` oracles to ground · ACs `1d` flagged DRIFT/NOT-FOUND/CONTRADICTS · tc:scope at-risk rows.
+   is the derived sources of §3 there — five from the Test Model, a sixth from an approved test strategy.
    **That IS the charter — do not re-derive it, do not widen it.**
-2. **No Test Model, or no unresolved cell in any of the five?** → **STOP** and report the lane skipped with
+2. **No model or strategy charter, or nothing unresolved in any source?** → **STOP** and report the lane skipped with
    that reason. Never improvise a mission, exactly as Step 0a never improvises a charter set the plan does
    not contain. A `/qa-test` FAST run reaches here with no model by construction and is the normal skip.
 3. **Box: SIZED TO SCOPE — 30 min floor, 60 min ceiling**, split ~20% setup · ~65% explore · ~15% write-up.
@@ -72,7 +71,7 @@ Step 0a: the charter is **received, not authored**.
    remains. Getting that backwards produces a pleasant session and no answers to the questions asked.
 4. **Return the three extra fields the caller needs**, beyond the ordinary §Output tables: model
    amendments (with evidence), the **`{OBSERVED}` value per `{HYPOTHESIS}` row** (or *not reached + reason*),
-   and per mission item 1–5 *covered* or *NOT REACHED + reason*. A `PROMOTE` `Fate` here means the caller
+   and per mission item *covered* or *NOT REACHED + reason*. A `PROMOTE` `Fate` here means the caller
    authors that case **in the same run**, not in a later sprint — so name the scenario precisely enough to
    author from.
 5. **File nothing.** Bugs go back to the caller; `/qa-test` `5-triage` grades them, `5-file` files them.

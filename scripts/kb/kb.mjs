@@ -19,7 +19,10 @@
 import { openBase } from './core/base.mjs';
 import { EXIT, HEADLINE, exitFor } from './core/exits.mjs';
 import { OWN_FLUSH_AFTER_MS, SWEEP_AFTER_MS, flush, postVerbSweepAllowed, sweepIfDue } from './core/push.mjs';
-import { pushConfirmRequired, queueDir } from './core/queue.mjs';
+import { accessBlock, accessWhy, liveRateHold, pushConfirmRequired, queueDir } from './core/queue.mjs';
+
+/** Minutes after which a still-queued line means the queue is not draining (`stat`, VCST-6378). */
+const STALE_QUEUE_MIN = 6 * 60;
 import { resolveWho } from './core/who.mjs';
 import { writeToken } from './core/token.mjs';
 import { askLines, captureLines, evidenceLines, noneLines, showLines } from './core/render.mjs';
@@ -42,13 +45,13 @@ import { liveBuild } from './core/build.mjs';
 const HOLD_EVERYWHERE = 'To hold it everywhere, set KB_PUSH_CONFIRM=1 in the `env` of .claude/settings.local.json '
   + 'and restart the session: a shell variable does not reach the MCP server.';
 
-const BOOLEAN_FLAGS = new Set(['dry-run', 'no-sweep', 'json', 'help', 'verify']);
+const BOOLEAN_FLAGS = new Set(['dry-run', 'no-sweep', 'json', 'help', 'verify', 'auto']);
 
 /** A pacing constant in whole minutes, for prose — derived, so the text cannot drift from the code. */
 function minutes(ms) { return Math.round(ms / 60_000); }
 
 function parseArgs(argv) {
-  const out = { _: [], flags: {}, repeated: { anchor: [], scope: [] } };
+  const out = { _: [], flags: {}, repeated: { anchor: [], scope: [], concept: [], 'also-asked': [] } };
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
     if (!a.startsWith('--')) { out._.push(a); continue; }
@@ -72,10 +75,16 @@ const USAGE = `kb — the knowledge base (PLAN v1)
                         --claim "<the claim, in prose>" --deployment <stand, e.g. vcst_qa>
                         --anchor /company/members [--anchor ...] --scope surface=storefront-ui [--scope ...]
                         [--conditions "platform=<v>; setting:<Name>=<v>"]
+                        [--defect <VCST-1234 | suspected> [--fixed-in <Module>@<version>]]
+                        [--ask <handle kb ask printed>]   ties the capture to that question exactly
+                        [--distinct "<why>"]   after a capture was held as similar: what makes it a different fact
+                        [--concept <vocabulary id> ...] [--also-asked "<another way to ask it>" ...]   the retrieval card
                         [--topic "<...>"] [--dry-run]   --dry-run: check the payload, log and queue nothing
                         an anchor is a route, endpoint or GraphQL op, never a label or menu path;
                         contract: ${CONTRACT}
   npm run kb -- confirm KB-XXXXXXXX --deployment <stand, e.g. vcst_qa> [--note "<what you saw>"] [--conditions "<k=v; k=v>"] [--topic "<...>"]
+                        [--defect <VCST-1234 | suspected | none>] [--fixed-in <Module>@<version>]
+                        defect: the behaviour should NOT happen (docs / BL-* checked first); the claim is unchanged
   npm run kb -- dispute KB-XXXXXXXX --deployment <stand, e.g. vcst_qa> --saw "<what you saw instead>" [--conditions "<k=v; k=v>"] [--topic "<...>"]
                         conditions: optional, expected on a dispute -- the build and settings the behaviour may depend on
   npm run kb -- stat [--base <dir>]
@@ -165,8 +174,17 @@ async function main(argv) {
     if (r.backlog?.lines) {
       const age = r.backlog.oldest ? Math.round((Date.now() - Date.parse(r.backlog.oldest)) / 60000) : null;
       out(`backlog   ${r.backlog.lines} line(s) in ${r.backlog.files} queue file(s)${age === null ? '' : `, oldest ${age} min old`}`);
+      // A queue that should have drained in minutes and has not in hours is lines nobody else has seen
+      // (VCST-6378): said loudly, because this is the only copy of them.
+      // Only a backlog a push WOULD take (`due`) is a warning: today's log lines alone wait by design.
+      if (age !== null && age >= STALE_QUEUE_MIN && r.backlog.due) out(`  WARNING the oldest queued line is ${Math.round(age / 60)} h old and due to go — these writes have not reached the base; see "last push" below`);
+      else if (r.backlog.lines && !r.backlog.due) out('  (log lines only: they go with the next change to the base, or with the first push of tomorrow)');
     }
     const p = r.push ?? {};
+    if (liveRateHold(p.rateLimitedUntil)) out(`  RATE LIMITED — GitHub asked for no push before ${p.rateLimitedUntil}; the queue waits`);
+    // Said only while the denial holds for the token this machine would push with (review round 1).
+    const denied = accessBlock(process.env, writeToken().token);
+    if (denied) out(`  NO WRITE ACCESS since ${denied.at} — ${accessWhy(denied.code)}`);
     out(`last push ${p.last ? `${p.last.state} at ${p.last.at}${p.last.commit ? ` ${p.last.commit.slice(0, 7)}` : ''}${p.last.why ? ` — ${p.last.why}` : ''}` : 'none recorded on this machine'}`);
     // Sticky until a push LANDS: a later "nothing to do" must not hide that the queue never drained.
     if (p.lastFailure && p.lastFailure.at !== p.last?.at) out(`  FAILED  ${p.lastFailure.state} at ${p.lastFailure.at}${p.lastFailure.why ? ` — ${p.lastFailure.why}` : ''}`);
@@ -268,7 +286,9 @@ async function main(argv) {
     const r = await capture({
       subject: args.flags.subject, question: args.flags.question, claim: args.flags.claim,
       deployment: args.flags.deployment, method: args.flags.method, conditions: args.flags.conditions,
+      defect: args.flags.defect, fixedIn: args.flags['fixed-in'], ask: args.flags.ask, distinct: args.flags.distinct,
       anchors: args.repeated.anchor, scope: args.repeated.scope,
+      concepts: args.repeated.concept, questions: args.repeated['also-asked'],
     }, opened, { via: VIA, topic: args.flags.topic, dryRun: Boolean(args.flags['dry-run']), builds: liveBuild });
     if (json) out(JSON.stringify(r, null, 2));
     // The CLI has no input schema, so a refusal here also prints the contract card (VCST-6156).
@@ -284,7 +304,7 @@ async function main(argv) {
     const fn = verb === 'confirm' ? confirm : dispute;
     const r = await fn(args._[1], {
       deployment: args.flags.deployment, note: args.flags.note, saw: args.flags.saw, method: args.flags.method,
-      conditions: args.flags.conditions,
+      conditions: args.flags.conditions, defect: args.flags.defect, fixedIn: args.flags['fixed-in'],
     }, opened, { via: VIA, topic: args.flags.topic, builds: liveBuild });
     if (json) out(JSON.stringify(r, null, 2));
     else emit(evidenceLines(verb, r));
@@ -304,6 +324,9 @@ async function main(argv) {
       dryRun: Boolean(args.flags['dry-run']),
       sweep: !args.flags['no-sweep'],
       gate,
+      // `--auto`: the Stop hook's push, which lets log-only lines wait for company (VCST-6378). A person
+      // typing `kb push` means now.
+      auto: Boolean(args.flags.auto),
     });
     if (json) { out(JSON.stringify(r, null, 2)); }
     else if (r.state === 'pushed') {

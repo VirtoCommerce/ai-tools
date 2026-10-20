@@ -83,30 +83,260 @@ export const ORDER_FIXTURES = [
   },
 ];
 
-/**
- * Quote state fixtures. `quoteStatus` is the platform admin status; `adminPriced` means the seeder
- * must apply per-line pricing after create; `buyerAccepted` means it must then mark the quote accepted.
- */
+/* ────────────────────────────────────────────────────────────────────────────────────────────────
+ * QUOTE STATE FIXTURES (VCST-5482, reworked 2026-10-15 for REG-2026-10-15-1115 suite 015).
+ *
+ * WHAT THE PLATFORM DOES — the facts these rows are built on (kb ids, not restated rules):
+ *   - The buyer's quote list (xAPI `quotes`) returns a quote only when customerId = the buyer's LOGIN
+ *     id AND organizationId = the token's current organization (KB-874B24DD). A quote seeded with
+ *     organizationId null is invisible to EVERY buyer — which is what the first version of this file
+ *     produced, so every case built on it was BLOCKED.
+ *   - A quote with no languageCode is listed but `quote(id)` fails ARGUMENT_NULL (KB-97C03EB4); the
+ *     seeder stamps the store's default language.
+ *   - Approve accepts ONLY 'Proposal sent' and converts the quote to an order in the same call,
+ *     ending in 'Ordered'; Decline ends in 'Declined'; there is NO 'Accepted' status (KB-2BCFC8A6,
+ *     vc-module-quote ApproveQuoteCommandHandler). So a quote the buyer can act on is 'Proposal
+ *     sent' — the old QUOTE_WITH_ADMIN_RESPONSE in 'Processing' was indistinguishable from a freshly
+ *     submitted RFQ (SECOND RULE: no link of "admin responded" could fail on it).
+ *   - There is no 'Expired' status: expiry is QuoteRequest.expirationDate only, and the Approve
+ *     handler checks status, not the date (source read, vc-module-quote master). An expired quote is
+ *     therefore 'Proposal sent' + a past expirationDate, which is exactly what QUOTE-022 must probe.
+ *
+ * ISOLATION — per BUYER LOGIN (slot), per seed. Every spec below is seeded once for EACH agent-pool
+ * B2B buyer (test-data/users/agent-user-pool.csv), because suite 015 signs in as the pool buyer of
+ * whichever lane runs it and the list filter is per login. Slot 1 (the suite's manifest lane) owns
+ * the base number and the alias's default `id`/`number`; every slot also gets `id_slot<n>` /
+ * `number_slot<n>` / `buyer_email_slot<n>` in aliases.<env>.json.
+ *
+ * DISPOSABLE vs READ-ONLY. A case that approves or declines a quote CONSUMES it (Proposal sent →
+ * Ordered/Declined), so each consuming case owns its own quote (`disposable: true`, exactly one
+ * consumer) — two cases on one quote means the second one always reads the first one's result
+ * (.claude/rules/test-data.md §DISPOSABLE FIXTURES rule 4). Read-only quotes are shared. Re-seed
+ * (`npm run seed:quotes`) restores every consumed quote.
+ *
+ * Fields: `statusPath` — the statuses applied in order (first = create status, the rest through
+ * PUT /api/quote/requests/{id}/status, so the quote's change log carries real transitions);
+ * `quoteStatus` — the final one (= last of statusPath, and what the fixture file declares);
+ * `expiresInDays` — expirationDate relative to the seed instant (null = no expiry);
+ * `oosLineIndex` — that line is pointed at the permanent OOS product (@td(PROD_OOS)), the others at
+ * in-stock catalog products; `consumers` — the suite-015 case ids that read this alias;
+ * `decides` — what the row lets a case tell apart (or, for a disposable row, what it is used up by).
+ * ──────────────────────────────────────────────────────────────────────────────────────────────── */
+
+/** Quote statuses this file may seed — the live `Quotes.Status` allowed values on vcst (2026-10-15), minus `New`. */
+export const QUOTE_SEEDABLE_STATUSES = ['Processing', 'On hold', 'Proposal sent', 'Ordered', 'Declined'];
+/** The only status a buyer can Approve or Decline from (KB-2BCFC8A6). */
+export const QUOTE_ACTIONABLE_STATUS = 'Proposal sent';
+/** Admin proposal price as a fraction of the product's LIVE catalog list price — strictly below 1, so proposal ≠ catalog. */
+export const DEFAULT_PROPOSAL_RATIO = 0.9;
+
+const PROPOSED = ['Processing', 'Proposal sent'];
+
 export const QUOTE_FIXTURES = [
+  // ── read-only (shared by every case that only looks) ─────────────────────────────────────────
   {
-    key: 'ADMIN-RESPONSE',
-    alias: 'QUOTE_WITH_ADMIN_RESPONSE',
-    fixtureFile: 'quotes/quote-admin-response.json',
-    quoteStatus: 'Processing',
-    adminPriced: true,
-    buyerAccepted: false,
-    blockedCases: ['QUOTE-004', 'QUOTE-005', 'QUOTE-006', 'QUOTE-008', 'QUOTE-009', 'QUOTE-018', 'QUOTE-020', 'QUOTE-021', 'QUOTE-025'],
+    key: 'ADMIN-RESPONSE', alias: 'QUOTE_WITH_ADMIN_RESPONSE', fixtureFile: 'quotes/quote-admin-response.json',
+    statusPath: PROPOSED, quoteStatus: 'Proposal sent', adminPriced: true, buyerAccepted: false,
+    expiresInDays: null, disposable: false,
+    consumers: ['QUOTE-004', 'QUOTE-005', 'QUOTE-009', 'QUOTE-018', 'QUOTE-020', 'QUOTE-021', 'QUOTE-023', 'QUOTE-025'],
+    decides: 'admin responded: per-line proposal price below the live catalog price on 2 lines; the no-expiry member of the QUOTE-023 expiry triad',
   },
   {
-    key: 'ACCEPTED',
-    alias: 'ACCEPTED_QUOTE',
-    fixtureFile: 'quotes/quote-accepted.json',
-    quoteStatus: 'Ordered',
-    adminPriced: true,
-    buyerAccepted: true,
-    blockedCases: ['QUOTE-007', 'QUOTE-024', 'QUOTE-027', 'QUOTE-028', 'QUOTE-030'],
+    key: 'PROCESSING', alias: 'QUOTE_PROCESSING', fixtureFile: 'quotes/quote-processing.json',
+    statusPath: ['Processing'], quoteStatus: 'Processing', adminPriced: false, buyerAccepted: false,
+    expiresInDays: null, disposable: false, consumers: ['QUOTE-012', 'QUOTE-014'],
+    decides: 'submitted, not yet answered — no Approve/Decline may be offered',
+  },
+  {
+    key: 'ON-HOLD', alias: 'QUOTE_ON_HOLD', fixtureFile: 'quotes/quote-on-hold.json',
+    statusPath: ['Processing', 'On hold'], quoteStatus: 'On hold', adminPriced: false, buyerAccepted: false,
+    expiresInDays: null, disposable: false, consumers: ['QUOTE-012', 'QUOTE-014'],
+    decides: 'admin paused processing — a status distinct from Processing in the list',
+  },
+  {
+    key: 'DECLINED', alias: 'QUOTE_DECLINED', fixtureFile: 'quotes/quote-declined.json',
+    statusPath: ['Processing', 'Proposal sent', 'Declined'], quoteStatus: 'Declined', adminPriced: true, buyerAccepted: false,
+    expiresInDays: null, disposable: false, consumers: ['QUOTE-012', 'QUOTE-014', 'QUOTE-024'],
+    decides: 'terminal declined state with a Processing → Proposal sent → Declined change log',
+  },
+  {
+    key: 'ACCEPTED', alias: 'ACCEPTED_QUOTE', fixtureFile: 'quotes/quote-accepted.json',
+    statusPath: ['Processing', 'Proposal sent', 'Ordered'], quoteStatus: 'Ordered', adminPriced: true, buyerAccepted: true,
+    expiresInDays: null, disposable: false, consumers: ['QUOTE-012', 'QUOTE-014', 'QUOTE-024'],
+    decides: 'terminal Ordered state with a 3-step change log; reached by status writes, so NO customer order is linked to it — never use it to assert the order a conversion produced',
+  },
+  {
+    key: 'EXPIRED', alias: 'EXPIRED_QUOTE', fixtureFile: 'quotes/quote-expired.json',
+    statusPath: PROPOSED, quoteStatus: 'Proposal sent', adminPriced: true, buyerAccepted: false,
+    expiresInDays: -3, disposable: false, consumers: ['QUOTE-011', 'QUOTE-023'],
+    decides: 'actionable status with a PAST expirationDate — only the date says it is expired',
+  },
+  {
+    key: 'FUTURE-EXPIRY', alias: 'QUOTE_FUTURE_EXPIRY', fixtureFile: 'quotes/quote-future-expiry.json',
+    statusPath: PROPOSED, quoteStatus: 'Proposal sent', adminPriced: true, buyerAccepted: false,
+    expiresInDays: 30, disposable: false, consumers: ['QUOTE-023'],
+    decides: 'same status as EXPIRED_QUOTE with a FUTURE expirationDate — the pair isolates the date',
+  },
+  // ── disposable (one consuming case each; re-seed restores) ───────────────────────────────────
+  {
+    key: 'TO-ACCEPT', alias: 'QUOTE_TO_ACCEPT', fixtureFile: 'quotes/quote-to-accept.json',
+    statusPath: PROPOSED, quoteStatus: 'Proposal sent', adminPriced: true, buyerAccepted: false,
+    expiresInDays: null, disposable: true, consumers: ['QUOTE-006'], decides: 'used up by Approve',
+  },
+  {
+    key: 'TO-DECLINE', alias: 'QUOTE_TO_DECLINE', fixtureFile: 'quotes/quote-to-decline.json',
+    statusPath: PROPOSED, quoteStatus: 'Proposal sent', adminPriced: true, buyerAccepted: false,
+    expiresInDays: null, disposable: true, consumers: ['QUOTE-008'], decides: 'used up by Decline',
+  },
+  {
+    key: 'TO-CONVERT', alias: 'QUOTE_TO_CONVERT', fixtureFile: 'quotes/quote-to-convert.json',
+    statusPath: PROPOSED, quoteStatus: 'Proposal sent', adminPriced: true, buyerAccepted: false,
+    expiresInDays: null, disposable: true, consumers: ['QUOTE-007'], decides: 'used up by Approve (= convert to order)',
+  },
+  {
+    key: 'TO-CONVERT-REPRICED', alias: 'QUOTE_TO_CONVERT_REPRICED', fixtureFile: 'quotes/quote-to-convert-repriced.json',
+    statusPath: PROPOSED, quoteStatus: 'Proposal sent', adminPriced: true, buyerAccepted: false,
+    expiresInDays: null, disposable: true, proposalRatio: 0.8, consumers: ['QUOTE-027'],
+    decides: 'proposal = 80% of the live catalog price, so an order priced from the catalog instead of the quote differs on every line',
+  },
+  {
+    key: 'TO-CONVERT-MULTILINE', alias: 'QUOTE_TO_CONVERT_MULTILINE', fixtureFile: 'quotes/quote-to-convert-multiline.json',
+    statusPath: PROPOSED, quoteStatus: 'Proposal sent', adminPriced: true, buyerAccepted: false,
+    expiresInDays: null, disposable: true, minLines: 3, distinctLineQuantities: true, consumers: ['QUOTE-028'],
+    decides: '3 lines with different quantities — a partial or quantity-collapsing conversion is visible',
+  },
+  {
+    key: 'TO-CONVERT-STATUS', alias: 'QUOTE_TO_CONVERT_STATUS', fixtureFile: 'quotes/quote-to-convert-status.json',
+    statusPath: PROPOSED, quoteStatus: 'Proposal sent', adminPriced: true, buyerAccepted: false,
+    expiresInDays: null, disposable: true, consumers: ['QUOTE-030'], decides: 'used up by Approve; the case reads the status afterwards',
+  },
+  {
+    key: 'EXPIRED-TO-ACCEPT', alias: 'EXPIRED_QUOTE_TO_ACCEPT', fixtureFile: 'quotes/quote-expired-to-accept.json',
+    statusPath: PROPOSED, quoteStatus: 'Proposal sent', adminPriced: true, buyerAccepted: false,
+    expiresInDays: -3, disposable: true, consumers: ['QUOTE-022'],
+    decides: 'past expirationDate; used up IF Approve succeeds (the handler does not check the date) — kept apart from EXPIRED_QUOTE so a successful approve cannot corrupt QUOTE-011/023',
+  },
+  {
+    key: 'OOS', alias: 'QUOTE_PROPOSAL_OOS', fixtureFile: 'quotes/quote-oos.json',
+    statusPath: PROPOSED, quoteStatus: 'Proposal sent', adminPriced: true, buyerAccepted: false,
+    expiresInDays: null, disposable: true, oosLineIndex: 0, minLines: 2, consumers: ['QUOTE-026'],
+    decides: 'line 1 is the permanent OOS product, line 2 is in stock — "whole conversion refused" and "OOS line silently dropped" look different',
   },
 ];
+
+/** Number of `key` for pool `slot`: the default slot keeps the base number, the others get `-S<n>` (PURE). */
+export const quoteNumberForSlot = (key, slot, defaultSlot = 1) =>
+  (String(slot) === String(defaultSlot) ? quoteNumber(key) : `${quoteNumber(key)}-S${slot}`);
+
+/** expirationDate for `spec` relative to `now` (PURE): ISO string, or null when the spec has no expiry. */
+export function quoteExpiration(spec, now = new Date()) {
+  if (spec.expiresInDays === null || spec.expiresInDays === undefined) return null;
+  return new Date(new Date(now).getTime() + spec.expiresInDays * 86400000).toISOString();
+}
+
+/** 'none' | 'past' | 'future' for an expirationDate as read at `now` (PURE). */
+export function expiryClass(expirationDate, now = new Date()) {
+  if (!expirationDate) return 'none';
+  return new Date(expirationDate).getTime() < new Date(now).getTime() ? 'past' : 'future';
+}
+
+const round2 = (n) => Math.round(n * 100) / 100;
+
+/**
+ * Price quote lines from the LIVE catalog (PURE). `priceOf(productId)` → list price or null.
+ * listPrice/salePrice = the catalog price (what the storefront shows as the item price, KB-563D7FE5);
+ * the admin proposal = round2(catalog × ratio) for the line's quantity, mirrored into selectedTierPrice.
+ * Returns { items, missing } — `missing` lists productIds with no catalog price (the seeder refuses
+ * to build such a quote: a synthetic price makes "proposal differs from catalog" unprovable).
+ */
+export function priceQuoteLines(items = [], priceOf, ratio = DEFAULT_PROPOSAL_RATIO) {
+  const missing = [];
+  const out = items.map((item) => {
+    const list = priceOf(item.productId);
+    if (!(Number(list) > 0)) { missing.push(item.productId); return item; }
+    const qty = Number(item.quantity) || 1;
+    const proposal = round2(Number(list) * ratio);
+    const tier = { quantity: qty, price: proposal };
+    return { ...item, listPrice: Number(list), salePrice: Number(list), proposalPrices: [tier], selectedTierPrice: { ...tier } };
+  });
+  return { items: out, missing };
+}
+
+/**
+ * Set-level design contract for QUOTE_FIXTURES (PURE). Returns problem strings; [] = the set still
+ * discriminates. This is the non-vacuity contract `td:validate:orders` enforces — see the file header
+ * for why each property exists.
+ */
+export function quoteFixtureSetProblems(specs = QUOTE_FIXTURES) {
+  const problems = [];
+  const keys = new Set(); const aliases = new Set();
+  for (const s of specs) {
+    if (keys.has(s.key)) problems.push(`duplicate key ${s.key}`); keys.add(s.key);
+    if (aliases.has(s.alias)) problems.push(`duplicate alias ${s.alias}`); aliases.add(s.alias);
+    if (!Array.isArray(s.statusPath) || !s.statusPath.length) { problems.push(`${s.alias}: statusPath is empty`); continue; }
+    for (const st of s.statusPath) if (!QUOTE_SEEDABLE_STATUSES.includes(st)) problems.push(`${s.alias}: status "${st}" is not a seedable quote status (${QUOTE_SEEDABLE_STATUSES.join(', ')})`);
+    if (s.statusPath.at(-1) !== s.quoteStatus) problems.push(`${s.alias}: quoteStatus "${s.quoteStatus}" is not the last step of statusPath`);
+    if (new Set(s.statusPath).size !== s.statusPath.length) problems.push(`${s.alias}: statusPath repeats a status`);
+    const ratio = s.proposalRatio ?? DEFAULT_PROPOSAL_RATIO;
+    if (!(ratio > 0 && ratio < 1)) problems.push(`${s.alias}: proposalRatio ${ratio} must be in (0,1) — a proposal equal to the catalog price cannot show that the quote price was used`);
+    if (!Array.isArray(s.consumers) || !s.consumers.length) problems.push(`${s.alias}: no consumer case — a fixture nobody reads`);
+    if (s.disposable) {
+      if (s.quoteStatus !== QUOTE_ACTIONABLE_STATUS) problems.push(`${s.alias}: disposable but not "${QUOTE_ACTIONABLE_STATUS}" — the buyer cannot act on it`);
+      if ((s.consumers || []).length !== 1) problems.push(`${s.alias}: disposable with ${(s.consumers || []).length} consumers — the second consumer would read the first one's result`);
+    }
+  }
+  // A case consumes at most one disposable quote, and never one another case also reads.
+  const disposableConsumers = specs.filter((s) => s.disposable).flatMap((s) => s.consumers || []);
+  const dup = disposableConsumers.filter((c, i) => disposableConsumers.indexOf(c) !== i);
+  if (dup.length) problems.push(`case(s) ${[...new Set(dup)].join(', ')} consume more than one disposable quote`);
+  for (const s of specs.filter((x) => !x.disposable)) {
+    const clash = (s.consumers || []).filter((c) => disposableConsumers.includes(c));
+    if (clash.length) problems.push(`${s.alias}: read-only quote also listed for consuming case(s) ${clash.join(', ')}`);
+  }
+  // Expiry triad (QUOTE-023): past, future and no-expiry, all in the SAME actionable status.
+  const triad = specs.filter((s) => !s.disposable && (s.consumers || []).includes('QUOTE-023'));
+  const classes = new Set(triad.map((s) => (s.expiresInDays == null ? 'none' : s.expiresInDays < 0 ? 'past' : 'future')));
+  for (const c of ['past', 'future', 'none']) if (!classes.has(c)) problems.push(`QUOTE-023 expiry triad has no "${c}" member`);
+  if (new Set(triad.map((s) => s.quoteStatus)).size > 1) problems.push('QUOTE-023 expiry triad mixes statuses — the date would no longer be the only difference');
+  // The list cases need several DIFFERENT statuses visible at once.
+  const listStatuses = new Set(specs.filter((s) => !s.disposable && (s.consumers || []).includes('QUOTE-014')).map((s) => s.quoteStatus));
+  if (listStatuses.size < 4) problems.push(`only ${listStatuses.size} distinct statuses among the QUOTE-014 list fixtures (need >= 4)`);
+  // Exactly one spec carries the OOS line, and it keeps an in-stock sibling.
+  const oos = specs.filter((s) => s.oosLineIndex !== undefined);
+  if (oos.length !== 1) problems.push(`${oos.length} specs carry an OOS line (need exactly 1)`);
+  for (const s of oos) if (!(s.minLines >= 2)) problems.push(`${s.alias}: the OOS quote needs minLines >= 2 (an in-stock sibling line)`);
+  return problems;
+}
+
+/**
+ * Judge a LIVE quote against its spec + the buyer it must belong to (PURE). [] = reusable / correct.
+ * `expect = { customerId, organizationId, languageCode, lines, oosProductId }`; `now` decides the expiry class.
+ * Used by the seeder (reuse-or-rebuild) and by td:reconcile (live correctness).
+ */
+export function quoteDriftProblems(spec, live, expect = {}, now = new Date()) {
+  if (!live) return ['absent'];
+  const p = [];
+  if (live.status !== spec.quoteStatus) p.push(`status "${live.status}" (spec "${spec.quoteStatus}")`);
+  if (expect.customerId && live.customerId !== expect.customerId) p.push(`customerId ${live.customerId} is not the buyer's login id ${expect.customerId}`);
+  if (expect.organizationId !== undefined && live.organizationId !== expect.organizationId) p.push(`organizationId ${live.organizationId} is not the buyer's organization ${expect.organizationId}`);
+  if (!live.languageCode) p.push('languageCode is empty — quote(id) fails ARGUMENT_NULL (KB-97C03EB4)');
+  else if (expect.languageCode && live.languageCode !== expect.languageCode) p.push(`languageCode ${live.languageCode} (store ${expect.languageCode})`);
+  const wantExpiry = spec.expiresInDays == null ? 'none' : spec.expiresInDays < 0 ? 'past' : 'future';
+  const gotExpiry = expiryClass(live.expirationDate, now);
+  if (gotExpiry !== wantExpiry) p.push(`expiry is "${gotExpiry}" (spec "${wantExpiry}")`);
+  const items = live.items || [];
+  if (expect.lines !== undefined && items.length !== expect.lines) p.push(`${items.length} line(s) (fixture ${expect.lines})`);
+  for (const it of items) {
+    const tier = it.selectedTierPrice?.price ?? it.proposalPrices?.[0]?.price;
+    if (spec.adminPriced && !(Number(tier) > 0 && Number(tier) < Number(it.listPrice))) p.push(`line ${it.sku}: proposal ${tier} is not below list ${it.listPrice}`);
+  }
+  // The platform does not keep line order on read-back (vcst 2026-10-15), so the OOS line is matched by product.
+  if (spec.oosLineIndex !== undefined && expect.oosProductId) {
+    const oosLines = items.filter((it) => it.productId === expect.oosProductId).length;
+    if (oosLines !== 1) p.push(`${oosLines} line(s) carry the OOS product (need exactly 1, beside in-stock lines)`);
+  }
+  return p;
+}
 
 /** All fixtures flattened (for validators/iteration). */
 export const ALL_FIXTURES = [...ORDER_FIXTURES, ...QUOTE_FIXTURES];
@@ -231,7 +461,9 @@ export function validateFixtureShape(spec, obj, kind /* 'order' | 'quote' */) {
   if (spec.distinctLineQuantities) {
     const qtys = (obj.items || []).map((i) => Number(i.quantity));
     if (qtys.length < 2 || new Set(qtys).size < 2) problems.push(`distinctLineQuantities: needs >=2 lines with DIFFERENT quantities (have ${qtys.join(', ') || 'none'}) — equal quantities make ORD-003 vacuous`);
+    if (kind === 'quote' && new Set(qtys).size !== qtys.length) problems.push(`distinctLineQuantities: every quote line needs its own quantity (have ${qtys.join(', ')}) — a collapsed quantity would hide behind a repeat`);
   }
+  if (spec.minLines && (obj.items || []).length < spec.minLines) problems.push(`needs >= ${spec.minLines} lines (has ${(obj.items || []).length})`);
   if (kind === 'order' && ['Shipped', 'Completed'].includes(spec.orderStatus)) {
     // A shipped/delivered order's storefront detail reads WHERE it went from the shipment's own
     // deliveryAddress, not from order.addresses (kb KB-CC9A98D3: each operation keeps its own copy).
@@ -313,7 +545,9 @@ export function duplicateLineProducts(items = []) {
  * line products are picked from a live catalog page, so comparing against a fresh pick rebuilt every
  * order whenever the catalog moved (2026-10-05: PROCESSING_ORDER's id changed for no reason). Rebuild
  * only when one of these is true:
- *   - the owner or the order status drifted from the spec;
+ *   - the owner, the owner's organization or the order status drifted from the spec (the buyer's xAPI
+ *     `orders` list filters by the token's CURRENT organization, so an order with organizationId null
+ *     or another org is invisible to "my orders" — REG-2026-10-13-W2 suite 086);
  *   - the line QUANTITY multiset differs from the fixture's (a fixture edit — e.g. distinct quantities);
  *   - a live line's product no longer exists (`productsById` has no entry for its productId);
  *   - a live line's quantity violates that product's min/max order quantity (fitsLineQuantity);
@@ -325,9 +559,10 @@ export function duplicateLineProducts(items = []) {
  * exactly the churn this replaces; stock is respected when a line's product is first chosen.
  * Returns `{ rebuild, reasons[] }`.
  */
-export function judgeExistingOrder(spec, fixtureObj, live, productsById, { ownerId = null } = {}) {
+export function judgeExistingOrder(spec, fixtureObj, live, productsById, { ownerId = null, organizationId = null } = {}) {
   const reasons = [];
   if (ownerId && live?.customerId !== ownerId) reasons.push(`owner ${live?.customerId || '(none)'} != ${ownerId}`);
+  if (organizationId && live?.organizationId !== organizationId) reasons.push(`organizationId ${live?.organizationId || '(none)'} != ${organizationId}`);
   if (live?.status !== spec.orderStatus) reasons.push(`status "${live?.status}" != "${spec.orderStatus}"`);
   const qtys = (items) => (items || []).map((i) => Number(i.quantity)).sort((a, b) => a - b).join(',');
   if (qtys(live?.items) !== qtys(fixtureObj?.items)) reasons.push(`line quantities [${qtys(live?.items)}] != fixture [${qtys(fixtureObj?.items)}]`);
@@ -378,16 +613,21 @@ export function finalizeOrderBody(spec, fixtureObj, ctx = {}) {
 
 /**
  * Finalize a QUOTE create body from its fixture + runtime context (PURE). Stamps the runtime
- * customer/org attribution and the target status from the spec.
- * `ctx = { customerId, customerName, organizationId, organizationName }`.
+ * customer/org attribution and the status (`ctx.status` — the first step of statusPath — else the
+ * spec's final status).
+ * `ctx = { status, number, customerId, customerName, organizationId, organizationName, languageCode, expirationDate }`.
  */
 export function finalizeQuoteBody(spec, fixtureObj, ctx = {}) {
   const body = structuredClone(fixtureObj);
-  body.status = spec.quoteStatus;
+  delete body._fixture;
+  body.status = ctx.status ?? spec.quoteStatus;
+  if (ctx.number) body.number = ctx.number;
   if (ctx.customerId) body.customerId = ctx.customerId;
   if (ctx.customerName) body.customerName = ctx.customerName;
   if (ctx.organizationId) body.organizationId = ctx.organizationId;
   if (ctx.organizationName) body.organizationName = ctx.organizationName;
+  if (ctx.languageCode) body.languageCode = ctx.languageCode;
+  if (ctx.expirationDate !== undefined) body.expirationDate = ctx.expirationDate;
   // Propagate the quote's currency onto every QuoteItem (and its proposal tier prices). The platform's
   // QuoteItem.Currency / QuoteTierPrice.Currency columns are NOT NULL, so a create with items missing a
   // currency 500s at the DB layer ("Cannot insert NULL into column 'Currency'"). Currency is a single

@@ -167,7 +167,7 @@ test('a capture points back at the ask it followed — as a pointer, not a copy'
       claim: 'Observed on the deployment: the app receives plain http behind the ingress.',
       deployment: 'vcst_qa',
       anchors: ['/company/gateway'],
-      scope: ['surface=platform'],
+      scope: ['surface=rest'],
     }, opened(), { env, via: 'cli' });
     assert.equal(r.state, 'queued');
 
@@ -221,7 +221,7 @@ test('`after` SURVIVES A FLUSH — the pointer is kept where the flush cannot re
       claim: 'It must.',
       deployment: 'vcst_qa',
       anchors: ['/company/after-a-flush'],
-      scope: ['surface=platform'],
+      scope: ['surface=rest'],
     }, opened(), { env, via: 'cli' });
     assert.equal(r.state, 'queued');
     const [capLine] = await linesOf(env);
@@ -243,7 +243,7 @@ test('`after` names the ask the capture is ABOUT — not merely the last one (PL
       claim: 'Observed.',
       deployment: 'vcst_qa',
       anchors: ['/company/gateway-tls'],
-      scope: ['surface=platform'],
+      scope: ['surface=rest'],
     }, opened(), { env, via: 'cli' });
     assert.equal((await linesOf(env)).at(-1).after, theMiss.at, 'the earlier miss it answers, not the later ask');
 
@@ -272,7 +272,7 @@ test('the asks survive a flush in the sidecar, words and all — the queue alone
       claim: 'At the ingress.',
       deployment: 'vcst_qa',
       anchors: ['/company/gateway-tls2'],
-      scope: ['surface=platform'],
+      scope: ['surface=rest'],
     }, opened(), { env, via: 'cli' });
     assert.equal((await linesOf(env)).at(-1).after, theMiss.at);
   });
@@ -313,7 +313,9 @@ test('a capture refused AT THE DOOR is logged — kinds of problem, never the re
       question: 'does the door log what it turned away',
       claim: 'It does now.',
       deployment: 'vcst_qa',
-      anchors: ['C:/Program Files/Git/cart', '/'],
+      // VCST-6378: a bad anchor beside a good one is now DROPPED, not refused -- so this refusal needs no
+      // usable anchor at all. The mangled one repairs to `/`, the other is `/`: both unstructured.
+      anchors: ['C:/Program Files/Git/', '/'],
       scope: ['surface=storefront-ui'],
     }, opened(), { env, via: 'cli' });
     assert.equal(r.state, 'invalid');
@@ -322,11 +324,11 @@ test('a capture refused AT THE DOOR is logged — kinds of problem, never the re
     const [l] = lines;
     assert.equal(l.kind, 'capture-invalid');
     assert.equal(l.subject, 'a fact with a mangled anchor');
-    // The MSYS prefix is undone first (VCST-6102), so `/cart` is judged as `/cart` and only `/` fails.
+    // The MSYS prefix is undone first (VCST-6102), so the mangled anchor is judged as `/`.
     assert.deepEqual(l.problems.sort(), ['unstructured']);
     assert.equal(l.repaired, 'msys');
-    // The SHAPE of the unstructured anchor, never its text: `/` is a path of zero segments.
-    assert.deepEqual(l.shapes, [{ type: 'path', segments: 0 }]);
+    // The SHAPE of the unstructured anchors, never their text: `/` is a path of zero segments.
+    assert.deepEqual(l.shapes, [{ type: 'path', segments: 0 }, { type: 'path', segments: 0 }]);
     assert.ok(!JSON.stringify(l).includes('Program Files'), 'the rejected coordinate stays on the laptop');
     assert.ok(!('payload' in l) && !('id' in l), 'nothing was queued for the base');
   });
@@ -383,7 +385,7 @@ test('a capture the base holds nothing near records related [] rather than omitt
       claim: 'Observed: annually.',
       deployment: 'vcst_qa',
       anchors: ['/depot/forklifts'],
-      scope: ['surface=platform'],
+      scope: ['surface=rest'],
     }, opened(), { env, via: 'cli' });
     assert.equal(r.state, 'queued');
     assert.equal(r.related.hits.length, 0);
@@ -438,7 +440,7 @@ test('a capture with nothing related prints no related block at all', async () =
       claim: 'Observed: annually.',
       deployment: 'vcst_qa',
       anchors: ['/depot/forklifts'],
-      scope: ['surface=platform'],
+      scope: ['surface=rest'],
     }, opened(), { env, via: 'cli' });
     assert.ok(!captureLines(r).some((l) => l.includes('related')));
   });
@@ -483,7 +485,7 @@ test('a capture records the QUESTION as well as the subject', async () => {
       claim: 'Observed on the depot board: the roster query takes a yard id.',
       deployment: 'vcst_qa',
       anchors: ['/depot/forklifts'],
-      scope: ['surface=platform'],
+      scope: ['surface=rest'],
     }, opened(), { env, via: 'cli' });
     assert.equal(r.state, 'queued');
     // The subject is the claim; the question is the RETRIEVAL KEY, and only one of them says
@@ -723,7 +725,7 @@ test('nothing but an ask carries it — a capture already has its own', async ()
       claim: 'It does not; it reaches the entry.',
       deployment: 'vcptcore_stable',
       anchors: ['/depot/stands'],
-      scope: ['surface=platform'],
+      scope: ['surface=rest'],
     }, opened(), { env, via: 'cli' });
     assert.equal(r.state, 'queued');
     const line = (await linesOf(env)).at(-1);
@@ -784,7 +786,7 @@ test('every line a session writes carries the handle — ask, miss, show and cap
       claim: 'Observed: the handle is on it.',
       deployment: 'vcst_qa',
       anchors: ['/depot/forklifts'],
-      scope: ['surface=platform'],
+      scope: ['surface=rest'],
     }, opened(), { env, via: 'cli' });
 
     const lines = await linesOf(env);
@@ -892,7 +894,7 @@ test('the run handle rides on every line when the env var is set, and on none wh
       claim: 'It does.',
       deployment: 'vcst_qa',
       anchors: ['/depot/runs'],
-      scope: ['surface=platform'],
+      scope: ['surface=rest'],
     }, opened(), { env, via: 'cli' });
     const lines = await linesOf(env);
     assert.ok(lines.length >= 4);

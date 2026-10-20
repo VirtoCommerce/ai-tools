@@ -52,8 +52,8 @@ import { pathToFileURL } from 'node:url';
 import { openBase } from './core/base.mjs';
 import { flush, ownFlushDue, sweepIfDue } from './core/push.mjs';
 import { askLines, captureLines, evidenceLines, noneLines, showLines } from './core/render.mjs';
-import { queueDir } from './core/queue.mjs';
-import { CONDITIONS_SOURCE, DEPLOYMENT_SOURCE, METHOD_SOURCE } from './core/contract.mjs';
+import { accessBlock, accessWhy, queueDir } from './core/queue.mjs';
+import { CONDITIONS_SOURCE, DEFECT_SOURCE, DEPLOYMENT_SOURCE, METHOD_SOURCE } from './core/contract.mjs';
 import { repoRoot, writeToken } from './core/token.mjs';
 import { TOPIC_MAX, ask, capture, confirm, dispute, none, show, stat } from './core/verbs.mjs';
 import { liveBuild } from './core/build.mjs';
@@ -120,15 +120,14 @@ export const TOOLS = Object.freeze([
     description: 'Ask the shared knowledge base what is already known about how the Virto Commerce platform BEHAVES. '
       + 'Use it whenever you are about to assert, write or test something about platform behaviour that could be '
       + 'checked by observation — before grepping, before reasoning it out, before writing the assertion. '
-      + 'Returns matching entries with their trust label, confirmation count and per-observation provenance. '
-      + 'When the base cannot tell whether any close entry states what you asked, it lists a few headlines '
-      + 'instead ("close entries, none certified to answer"): open the one most likely to state your fact with '
-      + 'kb_show, passing the printed ask handle, and rely on it only if its BODY states the fact; if none could, '
-      + 'call kb_none with the handle, then go find out and kb_capture. Being about the same page or feature is not an answer. '
-      + 'Every listed ask ENDS in one of the two -- a kb_show pick or a kb_none -- before you move on: an ask left with '
-      + 'neither is recorded as unresolved, nobody can tell whether the base helped, and the session is reminded of it at the end of your turn. '
-      + 'Says plainly when the base was read and holds nothing (go find out, then kb_capture) and when it could '
-      + 'NOT be read (conclude nothing; retry) — these are different answers and never look alike. '
+      + 'Three answers. (1) ANSWERED: one entry, its body, trust label, confirmations and provenance. '
+      + '(2) A LIST, the usual case ("close entries, none certified to answer"), with a likely / possible / unlikely line (lone: one entry only, no measured odds): '
+      + 'open the headline most likely to state your fact with kb_show, passing the printed ask handle, and rely on it only if '
+      + 'its BODY states the fact; if none could, call kb_none with the handle, then go find out and kb_capture with the same '
+      + 'handle. Being about the same page or feature is not an answer. A list is closed by a kb_show pick, a kb_none, or a '
+      + 'kb_confirm of a listed entry or a kb_capture you make next, when both calls pass the same topic (or the capture passes the ask handle) -- leave it with none of those and the session is reminded at '
+      + 'the end of your turn. (3) NOTHING: the base was read and holds nothing close (go find out, then kb_capture). '
+      + 'Separately, it says when the base could NOT be read (conclude nothing; retry) -- never the same as (3). '
       + 'Name the deployment you are working against, if you know it: the same behaviour differs between stands, '
       + 'and an answer weighed on the wrong one is how this base got its only dispute.',
     inputSchema: {
@@ -139,7 +138,7 @@ export const TOOLS = Object.freeze([
           + 'kb_capture, e.g. vcst_qa, vcptcore_stable. Omit it rather than guess: an absent stand costs nothing, '
           + 'a wrong one is read as fact by everybody after you.'),
         topic: TOPIC,
-        top: { type: 'integer', minimum: 1, maximum: 5, description: 'How many entries to open. Default 3.' },
+        top: { type: 'integer', minimum: 1, maximum: 5, description: 'How many headlines to list when no entry is certified as the answer. Default 3.' },
       },
       required: ['question'],
     },
@@ -183,6 +182,7 @@ export const TOOLS = Object.freeze([
       + 'so the next session does not have to re-derive it. Use after kb_ask returned nothing and you then found out. '
       + 'Refused if an entry already states the same subject at the same anchors and scope — open it (kb_show) and confirm that one instead; '
       + 'a different fact at the same coordinates is recorded as its own entry. '
+      + 'HELD if an active entry at the same coordinate reads like it: confirm that one, or resend with distinct saying why this is another fact. '
       + 'Names back the entries YOU OPENED earlier in this session and asks whether what you just wrote '
       + 'disagrees with any of them — if it does, kb_dispute that entry rather than leaving the base '
       + 'holding two answers to one question. Also lists entries sitting at the same coordinates. '
@@ -199,6 +199,12 @@ export const TOOLS = Object.freeze([
         scope: { type: 'array', items: { type: 'string' }, description: 'axis=value pairs bounding where the fact applies, e.g. surface=storefront-ui. At least one — without scope a storefront fact gets applied to admin.' },
         method: { type: 'string', enum: ['observation', 'source'], description: METHOD_SOURCE },
         conditions: { type: 'array', items: { type: 'string' }, description: `${CONDITIONS_SOURCE}. One key=value per item.` },
+        defect: str(`${DEFECT_SOURCE}. On a capture: a ticket or "suspected".`),
+        fixedIn: str('Optional, with defect: the first build without the defect, <module>@<version>.'),
+        ask: str('The ask handle kb_ask printed, when this fact answers that question. Ties the capture to the ask exactly; without it the base guesses from shared words.'),
+        concepts: { type: 'array', items: { type: 'string' }, description: '1-3 vocabulary concept ids this fact is ABOUT (not every one its text mentions). Ids the vocabulary does not hold are dropped; a dry run or a capture lists the candidates its text names.' },
+        questions: { type: 'array', items: { type: 'string' }, description: 'Up to 6 other ways somebody would ask for this fact -- the retrieval card. Different wordings, not the same question again.' },
+        distinct: str('Only after a capture was HELD as similar to an existing entry: one sentence on what makes this a different fact. Recorded in the entry; without it, confirm the existing entry instead.'),
         topic: TOPIC,
       },
       required: ['subject', 'question', 'claim', 'deployment', 'anchors', 'scope'],
@@ -209,6 +215,7 @@ export const TOOLS = Object.freeze([
     description: 'Record that you saw an existing entry hold true on a deployment — its confirmation count is what a later '
       + 'reader weighs the claim by. Use when kb_ask returned an entry and you then observed the same thing yourself. '
       + 'Open the entry with kb_show first: one this session only saw in a list is refused. '
+      + 'With defect, it also marks the behaviour as one that should NOT happen (a bug), without changing the claim. '
       + PUBLISHED,
     inputSchema: {
       type: 'object',
@@ -218,6 +225,8 @@ export const TOOLS = Object.freeze([
         note: str('Optional: what you saw, if it adds anything the entry does not already say.'),
         method: { type: 'string', enum: ['observation', 'source'], description: METHOD_SOURCE },
         conditions: { type: 'array', items: { type: 'string' }, description: `${CONDITIONS_SOURCE}. One key=value per item.` },
+        defect: str(`${DEFECT_SOURCE}. Marks or re-marks the entry; its claim is not changed.`),
+        fixedIn: str('Optional: the first build without the defect, <module>@<version>. Alone, it completes the marker the entry carries.'),
         topic: TOPIC,
       },
       required: ['id', 'deployment'],
@@ -304,6 +313,19 @@ const text = (lines, isError = false) => ({
 });
 
 /**
+ * A write that was QUEUED while this machine's token is known to be refused (VCST-6378) says so: the
+ * agent was otherwise told "queued" and reported the fact as recorded, while it can never leave the
+ * machine until somebody grants access.
+ */
+function withAccessNote(lines, r, env) {
+  if (r?.state !== 'queued') return lines;
+  // The denial that holds for THIS token (`accessBlock`): a switched token, or one past its re-check,
+  // is not told it cannot write (review round 1).
+  const denied = accessBlock(env, writeToken(env).token);
+  return denied ? [...lines, `  NOT PUBLISHED YET — ${accessWhy(denied.code, env)}`] : lines;
+}
+
+/**
  * The caller's own tool-use id, when the client sends one.
  *
  * WHO ASKED — answered by measurement on 2026-09-19, after being twice declared unanswerable.
@@ -368,11 +390,13 @@ async function callTool(name, args, ctx) {
       const r = await capture({
         subject: args?.subject, question: args?.question, claim: args?.claim,
         deployment: args?.deployment, method: args?.method, conditions: asList(args?.conditions),
+        defect: args?.defect, fixedIn: args?.fixedIn, ask: args?.ask, distinct: args?.distinct,
+        concepts: asList(args?.concepts), questions: asList(args?.questions),
         anchors: asList(args?.anchors), scope: asList(args?.scope),
       }, opened, { env: ctx.env, via: VIA, call: ctx.call, topic: args?.topic, builds: liveBuild });
       // `refused` is not an error: the base already holds the fact, which is the dedup working, and
       // the text hands back the id to confirm instead.
-      return text(captureLines(r, { prefix: 'kb_capture' }), r.state === 'invalid' || FAILED.has(r.state));
+      return text(withAccessNote(captureLines(r, { prefix: 'kb_capture' }), r, ctx.env), r.state === 'invalid' || FAILED.has(r.state));
     }
     case 'kb_confirm':
     case 'kb_dispute': {
@@ -380,9 +404,9 @@ async function callTool(name, args, ctx) {
       const fn = verb === 'confirm' ? confirm : dispute;
       const r = await fn(String(args?.id ?? '').trim(), {
         deployment: args?.deployment, note: args?.note, saw: args?.saw, method: args?.method,
-        conditions: asList(args?.conditions),
+        conditions: asList(args?.conditions), defect: args?.defect, fixedIn: args?.fixedIn,
       }, opened, { env: ctx.env, via: VIA, call: ctx.call, topic: args?.topic, builds: liveBuild });
-      return text(evidenceLines(verb, r), r.state === 'invalid' || FAILED.has(r.state));
+      return text(withAccessNote(evidenceLines(verb, r), r, ctx.env), r.state === 'invalid' || FAILED.has(r.state));
     }
     default:
       return null; // not a tool of ours -- the caller turns that into a JSON-RPC error
@@ -511,7 +535,9 @@ export function createServer({ env = process.env, baseArg = null, ttlMs = 300_00
   async function shutdown() {
     if (sweeping) { try { await sweeping; } catch { /* best effort */ } }
     const { token, from } = writeToken(env);
-    const r = await flush({ env, base: opened.locator, token, includeMine: true }).catch((err) => ({ state: 'failed', why: String(err?.message ?? err) }));
+    // Always `auto` (VCST-6378): closing a session is not a reason to publish its log lines on their own --
+    // they wait for a change or for tomorrow's first push. Changes in the queue still go now.
+    const r = await flush({ env, base: opened.locator, token, includeMine: true, auto: true }).catch((err) => ({ state: 'failed', why: String(err?.message ?? err) }));
     return { ...r, tokenFrom: from };
   }
 
@@ -602,7 +628,7 @@ export function runStdio({ env = process.env, input = process.stdin, output = pr
     ticking = true;
     ownFlushDue({ env })
       .then((due) => (due ? server.shutdown() : null))
-      .then((r) => { if (r && r.state !== 'nothing') note(`flush (timer): ${r.state}${r.commit ? ` ${r.commit.slice(0, 7)}` : ''}`); })
+      .then((r) => { if (r && !['nothing', 'deferred'].includes(r.state)) note(`flush (timer): ${r.state}${r.commit ? ` ${r.commit.slice(0, 7)}` : ''}`); })
       .catch(() => { /* a timer must never take the session down */ })
       .finally(() => { ticking = false; });
   }, FLUSH_TICK_MS);

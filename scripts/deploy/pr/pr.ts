@@ -84,6 +84,8 @@ import { THEME_URL_RE, countChangedLines, editPackagesText, editThemeText, pinne
 import type { Target } from '../lib/manifest.ts';
 import { getAdminToken, liveModules, platformHealthy } from '../lib/live.ts';
 import { Exit, fail } from '../lib/exit.ts';
+import { STORYBOOK_WORKFLOW, buildStorybook, editStorybookText, existingStorybookTag, storybookNeed } from './storybook.ts';
+import type { StorybookNeed } from './storybook.ts';
 
 const JIRA_BASE = (process.env.JIRA_BASE_URL || 'https://virtocommerce.atlassian.net').replace(/\/$/, '');
 const ARTIFACT_RE = /https?:\/\/vc3prerelease\.blob\.core\.windows\.net\/[^\s)"'<>]+?\.zip/gi;
@@ -138,24 +140,43 @@ async function jiraGet(path: string): Promise<any> {
   return res.json();
 }
 export interface PrRef { owner: string; repo: string; number: number; source: string; }
-async function prsFromJira(key: string): Promise<{ summary: string | null; prs: PrRef[] }> {
+/**
+ * dev-status `detail` answers only for the `applicationType` the GitHub integration is registered under, and a
+ * wrong one is an empty 200, not an error. This instance registers the new GitHub app as
+ * `oAuth-com.github.integration.production`, so the type is read from `summary.byInstanceType` instead of
+ * transcribed; `GitHub` stays as the fallback for the legacy DVCS connector. `expected` is the PR count the
+ * summary reports, so a caller can tell "no PRs" from "PRs we could not reach".
+ */
+async function devStatusPrUrls(issueId: string): Promise<{ urls: string[]; expected: number | null }> {
+  const sum = await jiraGet(`/rest/dev-status/latest/issue/summary?issueId=${issueId}`).catch(() => null);
+  const pr = sum?.summary?.pullrequest;
+  const types = new Set([...Object.keys(pr?.byInstanceType ?? {}), 'GitHub']);
+  const urls = new Set<string>();
+  for (const t of types) {
+    const ds = await jiraGet(`/rest/dev-status/latest/issue/detail?issueId=${issueId}&applicationType=${encodeURIComponent(t)}&dataType=pullrequest`).catch(() => null);
+    for (const d of ds?.detail || []) for (const p of d.pullRequests || []) if (p.url) urls.add(p.url);
+  }
+  return { urls: [...urls], expected: typeof pr?.overall?.count === 'number' ? pr.overall.count : null };
+}
+async function prsFromJira(key: string): Promise<{ summary: string | null; prs: PrRef[]; warning?: string }> {
   const issue = await jiraGet(`/rest/api/3/issue/${encodeURIComponent(key)}?fields=summary,description,comment`);
   const found = new Map<string, PrRef>();
   const add = (owner: string, repo: string, number: number, source: string) => {
     const id = `${owner}/${repo}#${number}`;
     if (!found.has(id)) found.set(id, { owner, repo, number: Number(number), source });
   };
-  try {
-    const ds = await jiraGet(`/rest/dev-status/latest/issue/detail?issueId=${issue.id}&applicationType=GitHub&dataType=pullrequest`);
-    for (const d of ds.detail || []) for (const pr of d.pullRequests || []) {
-      PR_URL_RE.lastIndex = 0; const m = PR_URL_RE.exec(pr.url || '');
-      if (m) add(m[1], m[2], +m[3], 'dev-status');
-    }
-  } catch { /* dev-status may be unavailable — fall back to the text scan */ }
+  const ds = await devStatusPrUrls(issue.id);
+  for (const url of ds.urls) {
+    PR_URL_RE.lastIndex = 0; const m = PR_URL_RE.exec(url);
+    if (m) add(m[1], m[2], +m[3], 'dev-status');
+  }
   const blob = JSON.stringify(issue);
   PR_URL_RE.lastIndex = 0; let m: RegExpExecArray | null;
   while ((m = PR_URL_RE.exec(blob)) !== null) add(m[1], m[2], +m[3], 'text');
-  return { summary: issue.fields?.summary ?? null, prs: [...found.values()] };
+  const warning = ds.expected !== null && ds.urls.length < ds.expected
+    ? `ticket ${key}: Jira's Development panel reports ${ds.expected} PR(s) but only ${ds.urls.length} could be read — pass the missing ones with --pr`
+    : undefined;
+  return { summary: issue.fields?.summary ?? null, prs: [...found.values()], warning };
 }
 /**
  * Resolve a single PR's LATEST artifact → a Target (or a reason it has none).
@@ -238,6 +259,7 @@ export async function runPr(args: string[]): Promise<void> {
   const targets: Target[] = [];
   const resolveNotes: string[] = [];
   let summary: string | null = null;
+  let themeRef: PrRef | undefined; // the storefront PR, whose Storybook may need deploying too
 
   if (key) {
     if (!/^[A-Z][A-Z0-9]{1,9}-\d+$/.test(key)) fail(`"${key}" is not a ticket key. Usage: vc-deploy.ts pr <ticket-key> [--pr ...] [--module Id=Ver] [--platform Ver] [--theme url]`);
@@ -251,11 +273,18 @@ export async function runPr(args: string[]): Promise<void> {
       return { summary: null, prs: [] as PrRef[] };
     });
     summary = r.summary;
-    for (const ref of r.prs) { const a = await artifactFromPr(ref); resolveNotes.push(a.note); if (a.target) targets.push(a.target); }
+    if ('warning' in r && r.warning) resolveNotes.push(r.warning);
+    for (const ref of r.prs) {
+      // A previous deploy PR for this ticket is linked to it too; it is the delivery, not an artifact.
+      if (ref.owner === c.deployOwner && ref.repo === c.deployRepo) continue;
+      const a = await artifactFromPr(ref); resolveNotes.push(a.note); if (a.target) targets.push(a.target);
+      if (a.target?.kind === 'theme') themeRef = ref;
+    }
   }
   for (const ref of flags('pr')) {
     const parsed = parsePrRef(ref); if (!parsed) fail(`--pr could not be parsed: "${ref}" (want owner/repo#N or a PR URL).`);
     const a = await artifactFromPr(parsed); resolveNotes.push(a.note); if (a.target) targets.push(a.target);
+    if (a.target?.kind === 'theme') themeRef = parsed;
   }
   for (const raw of flags('module')) {
     const i = raw.indexOf('='); if (i < 0) fail(`--module wants Id=Version, got "${raw}"`);
@@ -279,6 +308,21 @@ export async function runPr(args: string[]): Promise<void> {
   }
   const modules = [...byModule.values()];
   const bundle = [...modules, ...(platformT ? [platformT] : []), ...(themeT ? [themeT] : [])];
+
+  // Storybook: only for a storefront PR that changes what Storybook renders (--storybook forces,
+  // --no-storybook skips). The image is built on --apply only — a dry-run never dispatches CI.
+  let sbNeed: StorybookNeed | null = null;
+  let sbTag: { tag: string; runUrl: string } | null = null;
+  if (themeRef && !has('no-storybook')) {
+    sbNeed = await storybookNeed(themeRef).catch((e) => { resolveNotes.push(`Storybook: could not read PR files (${e.message})`); return null; });
+    if (sbNeed && has('storybook') && !sbNeed.needed) { sbNeed.needed = true; sbNeed.reasons = ['--storybook']; }
+    if (sbNeed?.needed) sbTag = await existingStorybookTag(themeRef, sbNeed).catch(() => null);
+    if (sbNeed) resolveNotes.push(sbNeed.needed
+      ? `Storybook: needed (${sbNeed.reasons.join(', ')}; ${sbNeed.files.length} file(s)) → ${sbTag ? `reusing ${sbTag.tag} (${sbTag.runUrl})` : `--apply builds ${STORYBOOK_WORKFLOW} on ${sbNeed.headRef}`}`
+      : 'Storybook: not needed — the PR changes no stories, ui-kit, styles or Storybook config (--storybook forces it)');
+  }
+  const sbFile = sbNeed?.needed ? await fetchFile(c, c.storybookPath).catch(() => null) : null;
+  if (sbNeed?.needed && !sbFile) { resolveNotes.push(`Storybook: ${c.branch} has no ${c.storybookPath} — not deployed on this env`); sbNeed.needed = false; }
 
   if (!asJson) {
     console.log(`\nDeploy PR artifacts → ${env} (${c.deployOwner}/${c.deployRepo}@${c.branch})`);
@@ -335,6 +379,7 @@ export async function runPr(args: string[]): Promise<void> {
       const label = r.target.kind === 'module' ? r.target.id! : r.target.kind === 'platform' ? 'Platform' : 'Theme';
       console.log(`${label.padEnd(42)}  ${r.current.padEnd(26)}  ${r.proposed}`);
     }
+    if (sbNeed?.needed && sbFile) console.log(`${'Storybook'.padEnd(42)}  ${String(editStorybookText(sbFile.text, '').from ?? 'absent').padEnd(26)}  ${sbTag ? sbTag.tag : `(built on --apply from ${sbNeed.headRef} @ ${sbNeed.headSha.slice(0, 8)})`}`);
     console.log('─'.repeat(104));
     if (pkgTouched) console.log(`packages.json: ${pkgChanged} line(s) change${!pkgMinimal ? `  ⚠ could not do a minimal edit (manifest shape unexpected) — fell back to a full reserialize; JSON is semantically identical, review the PR with "Hide whitespace changes" enabled` : ' (minimal)'}`);
     if (noArtifactPr) console.log('⚠ Some linked PRs have NO CI build yet — they are omitted. Re-run once their CI publishes.');
@@ -365,6 +410,13 @@ export async function runPr(args: string[]): Promise<void> {
       if (!ok) anyMissing = true;
     }
     if (themeT && theme) { const has = THEME_URL_RE.test(theme.text) && theme.text.includes(themeT.themeUrl!.split('/').pop()!); vrows.push({ label: 'Theme', pinned: has ? 'yes' : 'no', liveVer: '—', verdict: has ? 'PINNED' : 'MISSING' }); if (!has) anyMissing = true; }
+    if (sbNeed?.needed && sbFile) {
+      // A storybook-ci tag ends with the 8-char head SHA it was built from.
+      const cur = editStorybookText(sbFile.text, '').from ?? '';
+      const ok = cur.endsWith(`-${sbNeed.headSha.slice(0, 8)}`);
+      vrows.push({ label: 'Storybook', pinned: ok ? 'yes' : 'no', liveVer: '—', verdict: ok ? 'PINNED' : 'MISSING' });
+      if (!ok) anyMissing = true;
+    }
     if (asJson) { console.log(JSON.stringify({ env, branch: c.branch, verify: vrows, allDeployed: !anyMissing }, null, 2)); throw new Exit(anyMissing ? 1 : 0); }
     console.log(`\nVerify — is the bundle deployed on ${env}? (branch pin + live /api/platform/modules)`);
     console.log(`${'Artifact'.padEnd(42)}  ${'Pinned'.padEnd(8)}  ${'Live'.padEnd(16)}  Verdict`);
@@ -396,6 +448,7 @@ export async function runPr(args: string[]): Promise<void> {
     console.log(`  PR title would be: ${title}`);
     if (pkgTouched) console.log(`  packages.json web-edit: ${webEditPkg}`);
     if (newThemeText) console.log(`  artifact.json web-edit: ${webEditTheme}`);
+    if (sbNeed?.needed && !sbTag) console.log(`  Storybook: --apply first runs ${STORYBOOK_WORKFLOW} on ${sbNeed.headRef} (~2 min; also re-tags the image's :latest), then pins the tag it pushed.`);
     console.log(`\nTo open the deploy PR (gated; direct same-repo PR if you have write, else a fork PR — never merges):`);
     const applyArgs = args.filter((a) => a !== '--dry-run' && a !== '--apply' && a !== '--json' && a !== '--verify');
     if (!applyArgs.some((a) => a.startsWith('--env='))) applyArgs.push(`--env=${env}`);
@@ -405,10 +458,24 @@ export async function runPr(args: string[]): Promise<void> {
   }
 
   // ── APPLY (gated write; DIRECT same-repo PR when the account has write, else a fork PR) ──
+  // Storybook first: its build is the slow, fallible step, and a failure here must not leave a
+  // deploy PR that carries the theme without the Storybook the run said it would deploy.
+  let newSbText: string | null = null, sbFrom: string | null = null;
+  if (sbNeed?.needed && sbFile && themeRef) {
+    if (!sbTag) {
+      if (!asJson) console.log(`\nBuilding Storybook: ${STORYBOOK_WORKFLOW} on ${sbNeed.headRef} …`);
+      sbTag = await buildStorybook(themeRef, sbNeed, asJson ? undefined : (l) => console.log(l)).catch((e) => fail(`Storybook: ${e.message} (re-run with --no-storybook to deploy without it)`));
+      if (!asJson) console.log(`  ✓ ${sbTag.tag} (${sbTag.runUrl})`);
+    }
+    const se = editStorybookText(sbFile.text, sbTag.tag);
+    if (!se.from) fail(`${c.storybookPath} has no "Tag" field to replace — review it by hand`);
+    newSbText = se.text; sbFrom = se.from;
+  }
   const headBranch = `${key || 'deploy'}-${c.branch}-deployment`; // vc-ci "<TICKET>-<branch>-deployment" convention
   const body = [
     `Deploy ${bundle.length} PR artifact(s) to **${env}** (\`${c.branch}\`) for QA verification.`, '',
     ...rows.map((r) => `- \`${r.target.kind === 'module' ? r.target.id : r.target.kind}\`: ${r.current} → ${r.proposed}${r.target.source.startsWith('PR') ? ` (${r.target.source})` : ''}`),
+    ...(newSbText && sbTag ? [`- \`storybook\`: ${sbFrom} → ${sbTag.tag} (${sbTag.runUrl})`] : []),
     ...(key ? ['', `Ref: https://virtocommerce.atlassian.net/browse/${key}`] : []),
     ...(pkgMinimal ? [] : ['', '> Manifest shape was unexpected — this fell back to a full reserialize; JSON is semantically identical, review with **"Hide whitespace changes"** enabled.']),
     '', '**DO NOT MERGE until reviewed.** Revert this pin after the change is verified on the env.',
@@ -417,6 +484,7 @@ export async function runPr(args: string[]): Promise<void> {
   const files = [
     ...(pkgTouched ? [{ path: c.packagesPath, text: newPkgText }] : []),
     ...(newThemeText ? [{ path: c.themePath, text: newThemeText }] : []),
+    ...(newSbText ? [{ path: c.storybookPath, text: newSbText }] : []),
   ];
   let r: DeliverResult;
   try { r = await deliverPr({ coords: c, headBranch, title, body, files, forkOwner: flag('fork-owner'), log: asJson ? undefined : (l) => console.log(l) }); }

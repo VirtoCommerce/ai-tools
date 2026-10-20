@@ -12,26 +12,30 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { mintId } from './canonical.mjs';
-import { profileOf, resolveStand } from './stands.mjs';
-import { buildLabel, softDispute } from './gate.mjs';
+import { canonicalBuild, mintId } from './canonical.mjs';
+import { loadPublicProjects, profileOf, resolveStand } from './stands.mjs';
+import { buildLabel, fixState, softDispute } from './gate.mjs';
+import { defectOf, markerProblem, resolveDefect, resolveFixedIn } from './defect.mjs';
 import { codeVersionProblem, isSource, resolveMethod } from './method.mjs';
 import { normalizeConditions, repairConditions } from './conditions.mjs';
 import { parseEntry } from './frontmatter.mjs';
 import { anchorProblems, anchorShape, isSingleSegmentPath, namespaceRoots, neighbours, normalizeAnchor } from './coordinates.mjs';
 import { doorHints } from './door-hints.mjs';
-import { undoMsysRewrite } from './anchors.mjs';
+import { clientSha } from './build.mjs';
+import { canonicalAnchor, undoMsysRewrite } from './anchors.mjs';
+import { hasPersonalPath, loadSecrets, publishProblems, publishRefusal } from './secret-gate.mjs';
 import { claimKey, findDuplicate, identityKey, refusalMessage, subjectTakenMessage } from './identity.mjs';
 import { amendmentsOf, attestsCurrentClaim, buildIndex, buildPath, buildRow, claimHash, countEvidence, distinctDisputes, entryPath, isResolved, supportOf } from './index-build.mjs';
-import { loadIndex, loadManifest, normalizeScope, retrievable } from './index-load.mjs';
+import { SURFACES, SURFACE_SPELLINGS, loadIndex, loadManifest, normalizeScope, retrievable } from './index-load.mjs';
 import {
   DISABLED_WHY, hasSessionId, kbDisabled, log, metaAsks, pendingMutations, queueBacklog, queueDir, readLoop, readMeta, readPushStatus,
   readQueue, sessionId, loopRecord as loopRecordOf,
 } from './queue.mjs';
 import { lastWord, openedHash, openedIds, pointersByAsk } from './loop.mjs';
 import { cachedWho } from './who.mjs';
-import { MIN_RELATED_WORDS, RANKER, rank, rankNeighbours, relatedTo, tokenize } from './rank.mjs';
-import { prepareVocabulary, readVocabulary } from './query.mjs';
+import { RANKER, rank, rankNeighbours, relatedTo, tokenize } from './rank.mjs';
+import { askAbout, askLink } from './pairing.mjs';
+import { parseQuestion, prepareVocabulary, readVocabulary } from './query.mjs';
 import { prepareRetrieval, retrieve } from './retrieve.mjs';
 import { AMBIGUOUS_TOP, FEATURES, decide } from './verdict.mjs';
 
@@ -119,7 +123,10 @@ export function trustOf(evidence = []) {
   // outside RESOLUTIONS still open -- so the reason printed and the number printed cannot disagree.
   const contestedOn = distinctDisputes((Array.isArray(evidence) ? evidence : []).filter((e) => !e?.duplicateSession))
     .filter((e) => e.contested && !isResolved(e)).map((e) => e.contested);
-  return { label, confirmations, fromSource, disputed, resolved, contested, contestedOn, beforeAmendment, sessions, anonymous, operators, operatorsUnknown };
+  // WHETHER IT SHOULD HAPPEN AT ALL (VCST-6317): a separate question from how well it is attested, so a
+  // separate field -- derived from the evidence like everything else here (`defectOf`, core/defect.mjs).
+  const defect = defectOf(evidence);
+  return { label, confirmations, fromSource, disputed, resolved, contested, contestedOn, beforeAmendment, sessions, anonymous, operators, operatorsUnknown, defect };
 }
 
 /**
@@ -134,7 +141,7 @@ export function trustOf(evidence = []) {
 export function describeHit(hit, parsed, { unavailable = null } = {}) {
   const evidence = parsed?.data?.evidence ?? [];
   const trust = unavailable
-    ? { label: 'unread', confirmations: hit.row.trust, disputed: hit.row.disputed, resolved: hit.row.resolved ?? 0, contested: hit.row.contested ?? 0, contestedOn: [], sessions: 0, anonymous: 0, operators: null, operatorsUnknown: 0, provisional: true }
+    ? { label: 'unread', confirmations: hit.row.trust, disputed: hit.row.disputed, resolved: hit.row.resolved ?? 0, contested: hit.row.contested ?? 0, contestedOn: [], sessions: 0, anonymous: 0, operators: null, operatorsUnknown: 0, defect: null, provisional: true }
     : trustOf(evidence);
   const described = {
     id: hit.row.id,
@@ -158,6 +165,8 @@ export function describeHit(hit, parsed, { unavailable = null } = {}) {
       note: e.note ?? null,
       resolved: e.resolved ?? null,
       resolution: e.resolution ?? null,
+      defect: e.defect ?? null,
+      fixedIn: e.fixedIn ?? null,
     })),
     indexTrust: hit.row.trust,
     indexDrift: !unavailable && hit.row.trust !== trust.confirmations
@@ -337,9 +346,14 @@ export const standProblem = (deployment) => resolveStand(deployment).problem ?? 
  */
 async function buildStamp(deployment, { env, dryRun = false, builds = null } = {}) {
   const r = resolveStand(deployment, { env });
-  if (dryRun || !r.known || typeof builds !== 'function') return {};
+  // WHY THERE IS NO STAMP, as a closed code (VCST-6378) -- `missing` rides on the write's log line. For
+  // two days after stamping shipped no live write carried one, and the reason was discarded here, so
+  // the base could not tell an old client from a failed probe from an unknown stand.
+  if (dryRun) return {};
+  if (!r.known) return { missing: 'unknown-stand' };
+  if (typeof builds !== 'function') return { missing: 'no-reader' };
   const b = await builds(r.value, { env });
-  return b.pin ? { item: { build: b.pin }, snapshot: b.snapshot, stand: r.value } : {};
+  return b.pin ? { item: { build: b.pin }, snapshot: b.snapshot, stand: r.value } : { missing: b.code ?? 'unknown' };
 }
 /**
  * WHAT THE WORK WAS -- a short English noun phrase, written by the AGENT and passed with the call.
@@ -568,20 +582,20 @@ const featureLine = (f, names) => Object.fromEntries(names.map((k) => [k, round2
  * `ask` under a verdict ranker: retrieve, read the head's bodies (the re-rank and the headline
  * excerpts need them), decide, log the verdict with what it was decided on, render.
  */
-async function askVerdict({ question, repair, cat, opened, ranker, env, started, via, call, topic, deployment }) {
+async function askVerdict({ question, repair, cat, opened, ranker, env, started, via, call, topic, deployment, top = AMBIGUOUS_TOP }) {
   const rows = retrievable(cat.rows);
   const loc = String(opened.locator ?? '');
   const prep = await remember(`prep\0${loc}\0${rowsKey(rows)}`,
     async () => prepareRetrieval(rows, prepareVocabulary(await readVocabulary(opened.reader))));
   const found = retrieve(prep, question, { fusion: ranker.fusion });
-  const head = found.candidates.slice(0, Math.max(ranker.rerank?.k ?? 0, AMBIGUOUS_TOP));
+  const head = found.candidates.slice(0, Math.max(ranker.rerank?.k ?? 0, AMBIGUOUS_TOP, Math.min(5, Number(top) || 0)));
   const parsed = new Map(await Promise.all(head.map(async (c) => [c.row.id, await remember(`entry\0${loc}\0${c.row.path}`, async () => {
     const r = await opened.reader.readEntry(c.row.path);
     if (!r.ok) return null;
     try { return parseEntry(r.text, c.row.path); } catch { return null; }
   }, { keep: (v) => v !== null })]))); // a failed read (a timeout) is retried next ask, not remembered for a minute
   const bodies = new Map([...parsed].map(([id, p]) => [id, p?.body ?? null]));
-  const d = decide(prep, ranker, question, { retrieval: found, bodies });
+  const d = decide(prep, ranker, question, { retrieval: found, bodies, top });
   const stamp = { rank: ranker.rank, ...context({ via, call, topic }), ...stand(deployment) };
   const common = { kind: 'ask', q: question, ...repair, verdict: d.verdict, p: round2(d.p), f: featureLine(d.features, ranker.model.features) };
 
@@ -603,17 +617,20 @@ async function askVerdict({ question, repair, cat, opened, ranker, env, started,
   if (d.verdict === 'ambiguous') {
     const headlines = d.entries.map((c) => ({
       id: c.row.id, subject: c.row.subject, separating: c.separating, question: c.row.question, body: bodies.get(c.row.id) ?? null,
+      // A headline's `says:` excerpt is the bug's value when the entry is a defect: say so on the headline.
+      defect: defectOf(parsed.get(c.row.id)?.data?.evidence ?? []),
+      defectUnknown: !parsed.get(c.row.id),
     }));
     // No headline is certified, so the agent may be about to go and find out: name what this session
     // already captured and has not published, as the floor-1 miss does, or the same fact is captured twice.
     const queued = await queuedHere(question, { env });
     const written = await log({ ...common, shown: headlines.map((h) => h.id), state: 'ambiguous', ms: Date.now() - started, ...stamp, ...(queued.length ? { queued: queued.map((q) => q.id) } : {}) }, { env });
-    return { state: 'ambiguous', verdict: 'ambiguous', headlines, handle: written.line?.at ?? null, hits: [], queued, rows: cat.rows.length, ...repair };
+    return { state: 'ambiguous', verdict: 'ambiguous', likelihood: d.likelihood, headlines, handle: written.line?.at ?? null, hits: [], queued, rows: cat.rows.length, ...repair };
   }
   const concepts = d.concepts.map((id) => prep.vocab.concepts.get(id)?.label ?? id);
   const queued = await queuedHere(question, { env });
   await log({ ...common, matched: [], state: 'miss', ms: Date.now() - started, ...stamp, ...(queued.length ? { queued: queued.map((q) => q.id) } : {}) }, { env });
-  return { state: 'miss', verdict: 'none', concepts, hits: [], nearMiss: null, queued, rows: cat.rows.length, ...repair };
+  return { state: 'miss', verdict: 'none', concepts, nearest: d.nearest, hits: [], nearMiss: null, queued, rows: cat.rows.length, ...repair };
 }
 
 /** An ask handle is the ask's own `at`: an ISO timestamp, never prose. */
@@ -667,10 +684,14 @@ export async function ask(asked, opened, opts = {}) {
   return r;
 }
 
-/** A build snapshot the base holds, or null -- the one reader the gate and the labels share. */
+/**
+ * A build snapshot the base holds, or null -- the one reader the gate and the labels share. Read through
+ * `canonicalBuild`, so a snapshot written before the theme was read live (the artifact's name,
+ * `vc-theme-b2b-vue-2.60.0-…`) compares in the spelling every new stamp uses: normalised once, here.
+ */
 const buildReader = (opened) => async (pin) => {
   const r = await opened.reader.readEntry(buildPath(pin));
-  try { return r?.ok ? JSON.parse(r.text) : null; } catch { return null; }
+  try { return r?.ok ? canonicalBuild(JSON.parse(r.text)) : null; } catch { return null; }
 };
 
 /**
@@ -681,23 +702,36 @@ const buildReader = (opened) => async (pin) => {
 export const LABEL_DEADLINE_MS = 6_000;
 
 async function labelBuilds(hits, opened, { env = process.env, deployment, builds }) {
+  // A defect's fix against the asker's build (VCST-6317) needs only the asker's snapshot, not the labels'
+  // swagger reads, so it is raced on its own: it is there whenever the build itself arrived in time, even
+  // when the labels miss their deadline. Like the labels, nothing is applied after the answer has gone.
+  let gotFixes;
+  const fixesP = new Promise((r) => { gotFixes = r; });
   const work = (async () => {
     const where = resolveStand(deployment, { env });
-    if (!where.known) return;
+    if (!where.known) return null;
     const mine = await builds(where.value, { env });
-    if (!mine.pin) return;
+    if (!mine.pin) return null;
     const backUrl = profileOf(where.value, { env })?.backUrl?.replace(/\/$/, '') ?? null;
+    // The marker `describeHit` already derived (`trust.defect`); derived here only for a bare hit.
+    gotFixes(hits.map((h) => {
+      const marker = h.trust ? h.trust.defect : h.entryData ? defectOf(h.entryData.evidence ?? []) : null;
+      return marker?.fixedIn ? fixState(marker.fixedIn, mine.snapshot) : null;
+    }));
     const readBuild = buildReader(opened);
     const labels = await Promise.all(hits.map((h) => (h.entryData
       ? buildLabel({ entry: h.entryData, asker: { build: mine.pin, snapshot: mine.snapshot }, readBuild, backUrl })
       : null)));
     return labels;
   })();
+  work.then(() => gotFixes(null), () => gotFixes(null)); // no build: no fix states (a no-op once resolved)
   let timer;
-  const labels = await Promise.race([
-    work.catch(() => null),
-    new Promise((r) => { timer = setTimeout(() => r(null), LABEL_DEADLINE_MS); timer.unref?.(); }),
+  const deadline = new Promise((r) => { timer = setTimeout(() => r(null), LABEL_DEADLINE_MS); timer.unref?.(); });
+  const [fixes, labels] = await Promise.all([
+    Promise.race([fixesP, deadline]),
+    Promise.race([work.catch(() => null), deadline]),
   ]).finally(() => clearTimeout(timer));
+  if (Array.isArray(fixes)) fixes.forEach((f, i) => { if (f) hits[i].fix = f; });
   // Applied only when they all arrived in time: a half-labelled answer would read as "unknown" for the rest.
   if (Array.isArray(labels)) labels.forEach((l, i) => { if (l) hits[i].build = l; });
 }
@@ -717,7 +751,7 @@ async function askRanked(asked, opened, { env = process.env, top = 3, via = null
 
   const verdictRanker = await loadVerdictRanker(opened.reader, { locator: opened.locator, env });
   if (verdictRanker) {
-    return askVerdict({ question, repair, cat, opened, ranker: verdictRanker, env, started, via, call, topic, deployment });
+    return askVerdict({ question, repair, cat, opened, ranker: verdictRanker, env, started, via, call, topic, deployment, top });
   }
 
   const { hits, nearMiss } = rank(question, retrievable(cat.rows), { top });
@@ -821,9 +855,10 @@ export async function show(id, opened, opts = {}) {
   const r = await showEntry(id, opened, opts);
   if (r.state !== 'answer' || !opts.deployment || typeof opts.builds !== 'function') return r;
   try {
-    const hit = { entryData: r.entry };
+    const hit = { entryData: r.entry, trust: r.trust };
     await labelBuilds([hit], opened, opts);
     if (hit.build) r.build = hit.build;
+    if (hit.fix) r.fix = hit.fix;
   } catch { /* a label is an extra */ }
   return r;
 }
@@ -892,64 +927,9 @@ function pairShow(id, env) {
 
 const REQUIRED = ['subject', 'question', 'claim', 'deployment'];
 
-/**
- * The `ask` this capture is ABOUT, as a pointer into the session's own log — or nothing.
- *
- * Panel 6 answers "did the agent go and find out anyway?" and the unhelpful panel "was the answer
- * any use?" by following this pointer, so it has to name the RIGHT ask. It stores that ask's `at`:
- * a POINTER to a line already in this session's log, never a copy of the question — a second copy
- * of a question is a second thing that can disagree with the first.
- *
- * IT USED TO NAME THE LAST ASK, AND THAT WAS WRONG IN BOTH DIRECTIONS (PLAN §23.11). Run `cdb27d99`
- * wrote three captures inside one minute, after one answered ask; all three pointed at it. Measured
- * by the words each capture shares with each of the session's four asks:
- *
- *   KB-D54F3AAB (CFG_* 404s)          the MISS 50 min earlier: 10 · the last ask: 1
- *   KB-7F535D52 (CyberSource flakes)  the last ask: 13 · the nearest other: 7
- *   KB-8BE777BB (org switch header)   at most 2, against any ask
- *
- * So the report read "0 captures after a miss" on the run whose loop had closed exactly as designed,
- * and charged one answer with three captures, two of them about something else. The pointer now
- * goes to the ask the capture shares the most with — ties to the later — and ONLY if that clears
- * the floor `relatedTo` already uses for "speaks to the same thing" (`MIN_RELATED_WORDS`, derived
- * in `rank.mjs`), or the ask names one of the capture's own anchors verbatim — a structured
- * coordinate cannot appear in a question by accident, which is the anchor bonus's own argument. Below the floor there is no
- * pointer: a capture that followed no question is `unprompted`, which is a true reading, and a
- * pointer to the nearest unrelated ask is a false one.
- *
- * ANY ASK OF THE SESSION, not only this agent's. The CFG capture above was written by a subagent
- * about a miss its ORCHESTRATOR hit and handed down in the brief — one session, one loop.
- *
- * Pure, and exported, because it is the part with a wrong answer.
- *
- * @param {Array<{at: string, q: string}>} asks  the session's asks, any order
- * @param {{text: string, anchors?: Array<string|{coordinate: string}>}} capture
- * @returns {string|null} the chosen ask's `at`
- */
-export function askAbout(asks, { text, anchors = [] }) {
-  const mine = new Set(tokenize(text));
-  // Only a coordinate the door would ACCEPT names an ask. A one-segment page (`/cart`) sits in half the
-  // storefront's questions, and a rejected one names everything: `/` is a substring of every question
-  // that mentions a page, which is how a live smoke on 2026-09-23 paired a `capture-invalid` with an
-  // unrelated answer. Either still counts as the words it contributes.
-  // NORMALISED before it is tested or searched for (PR #313 review 2): an ask carries the plain route,
-  // so `{BACK_URL}/api/platform/x` searched for verbatim never matched it and pairing was dead for
-  // every prefixed spelling.
-  const coords = anchors.map((a) => String(typeof a === 'string' ? a : a?.coordinate ?? '').trim())
-    .filter((c) => c && !anchorProblems([c]).length)
-    .map((c) => normalizeAnchor(c))
-    .filter((c) => c && !isSingleSegmentPath(c)).map((c) => c.toLowerCase());
-  let best = null;
-  for (const a of asks) {
-    const q = String(a.q ?? '');
-    const shared = new Set(tokenize(q).filter((t) => mine.has(t))).size;
-    const named = coords.some((c) => q.toLowerCase().includes(c));
-    if (!named && shared < MIN_RELATED_WORDS) continue;
-    const score = (named ? 1_000 : 0) + shared;
-    if (!best || score > best.score || (score === best.score && String(a.at) > best.at)) best = { score, at: String(a.at) };
-  }
-  return best ? best.at : null;
-}
+// `askAbout` -- which ask a capture is about -- lives in `pairing.mjs` so the report can apply the
+// same test to historical lines (VCST-6341). Re-exported here, where its callers already import it.
+export { askAbout } from './pairing.mjs';
 
 /**
  * The session's asks, from BOTH places they live: the queue holds every ask since the last flush,
@@ -964,10 +944,15 @@ async function sessionAsks({ env }) {
   return [...byAt.values()];
 }
 
-const precedingAsk = async ({ env, input }) => askAbout(await sessionAsks({ env }), {
-  text: `${input.subject ?? ''} ${input.question ?? ''}`,
-  anchors: input.anchors ?? [],
-});
+/** `{ after, afterBy }` -- the ask a capture is about, and how it was linked (`askLink`) -- or `{}`. */
+const precedingAsk = async ({ env, input }) => {
+  const link = askLink(await sessionAsks({ env }), {
+    text: `${input.subject ?? ''} ${input.question ?? ''}`,
+    anchors: input.anchors ?? [],
+    handle: input.ask ?? null,
+  });
+  return link ? { after: link.at, afterBy: link.by } : {};
+};
 
 /**
  * Every entry THIS SESSION has already opened and read, newest first.
@@ -1037,6 +1022,17 @@ async function refuseAtDoor(result, input, { env, via, call, topic, repair = {},
   // alone cannot say which (VCST-6102). The SHAPE can — segment count and path/dotted/prose — and
   // it is numbers and an enum, so no part of the rejected value reaches the public log.
   const shapes = (result.problems ?? []).filter((p) => p.kind === 'unstructured').map((p) => anchorShape(p.normalized));
+  // A private-data refusal logs the code and the KINDS only (VCST-6378): its subject is the field most
+  // likely to be the one carrying the value, so it is not logged either.
+  if (result.private) {
+    await log({
+      kind: 'capture-invalid', why: 'private-data', private: result.private, ...repair,
+      ...(await precedingAsk({ env, input })),
+      // No `topic`: it may be the very field that carried the value.
+      ...context({ via, call, topic: null }),
+    }, { env });
+    return result;
+  }
   await log({
     kind: 'capture-invalid',
     subject: String(input.subject ?? '').trim(),
@@ -1044,7 +1040,7 @@ async function refuseAtDoor(result, input, { env, via, call, topic, repair = {},
     ...(result.problems?.length ? { problems: [...new Set(result.problems.map((p) => p.kind))] } : {}),
     ...(shapes.length ? { shapes } : {}),
     ...repair,
-    ...(await precedingAsk({ env, input }).then((after) => (after ? { after } : {}))),
+    ...(await precedingAsk({ env, input })),
     ...context({ via, call, topic }),
   }, { env });
   return result;
@@ -1076,6 +1072,69 @@ function repairShellRewrite(input, env, fields = TEXT_FIELDS) {
   return { input: out, repair: changed ? { repaired: 'msys' } : {} };
 }
 
+/**
+ * The door's privacy check (VCST-6378): every field of a write the base would publish, scanned for a
+ * secret, a deployment host or a personal address. `null` when clean, else an `invalid` result whose
+ * `why` names the fields, the kinds and what to write instead -- and never the value itself.
+ */
+function privateData(fields, env) {
+  const { values, hosts } = loadSecrets(env);
+  const found = publishProblems(fields, { secrets: values, hosts });
+  if (!found.length) return null;
+  return { state: 'invalid', why: publishRefusal(found), private: [...new Set(found.flatMap((p) => p.kinds))] };
+}
+
+/**
+ * The retrieval card a capture can carry from the door (VCST-6378): the WRITER's concepts, kept only
+ * when the vocabulary holds them (at most 3, as the cards are made), and its question variants. Not
+ * derived here, and that was measured: attaching the concepts a capture's own text names (what
+ * `parseQuestion` finds) to the 468 uncarded rows cut the verdict ranker's certified answers on
+ * logs300 dev from 43 to 15 -- the model was fitted on hand cards of 1-3 concepts, not on every
+ * concept a sentence mentions. Those concepts are offered back as `suggested` for the writer to pick
+ * from. Never throws: a vocabulary that cannot be read costs the card, not the capture.
+ */
+async function cardOf(input, opened, { namespaces } = {}) {
+  const questions = [...new Set((Array.isArray(input.questions) ? input.questions : input.questions ? [input.questions] : [])
+    .map((q) => String(q).trim()).filter((q) => q && q !== String(input.question ?? '').trim()))].slice(0, 6).map((q) => q.slice(0, 240));
+  let concepts = [];
+  let suggested = [];
+  try {
+    const vocab = prepareVocabulary(await readVocabulary(opened.reader));
+    const known = (id) => vocab.concepts.has(String(id));
+    concepts = [...new Set((Array.isArray(input.concepts) ? input.concepts : input.concepts ? [input.concepts] : []).map(String).filter(known))].slice(0, 3);
+    const anchors = (input.anchors ?? []).map((a) => String(typeof a === 'string' ? a : a?.coordinate ?? ''));
+    suggested = parseQuestion([input.subject, input.question, ...anchors].join(' '), vocab, { namespaces }).concepts
+      .filter((id) => !concepts.includes(id)).map((id) => ({ id, label: vocab.concepts.get(id)?.label ?? id }));
+  } catch { concepts = []; suggested = []; }
+  return { concepts, questions, suggested };
+}
+
+/** The dropped anchors as the result reports them: what was typed, its kind, and how to write it. */
+const droppedOf = (dropped) => (dropped.length
+  ? { dropped: dropped.map((p) => ({ coordinate: p.coordinate, kind: p.kind, fix: doorHints({ problems: [p] }, {}).problems?.[0]?.fix ?? p.why })) } : {});
+
+/** Subject+question similarity at or above which a same-anchor entry holds a capture (VCST-6378). */
+export const SIMILAR_JACCARD = 0.35;
+/** The lower bar for an entry THIS session opened: it read the original and wrote it again. */
+export const SIMILAR_JACCARD_OPENED = 0.2;
+
+/** Active entries sharing an anchor with the capture whose subject+question read alike, most alike first, at most 3. */
+export function similarEntries(rows, input, opened = new Set()) {
+  const anchorsOf = (list) => new Set((list ?? []).map((a) => normalizeAnchor(typeof a === 'string' ? a : a?.coordinate ?? '')).filter(Boolean));
+  const mine = anchorsOf(input.anchors);
+  const words = new Set(tokenize(`${input.subject ?? ''} ${input.question ?? ''}`));
+  const out = [];
+  for (const r of rows) {
+    if ([...anchorsOf(r.anchors)].every((a) => !mine.has(a))) continue;
+    const theirs = new Set(tokenize(`${r.subject ?? ''} ${r.question ?? ''}`));
+    const shared = [...words].filter((w) => theirs.has(w)).length;
+    const jaccard = shared / ((words.size + theirs.size - shared) || 1);
+    const bar = opened.has(r.id) ? SIMILAR_JACCARD_OPENED : SIMILAR_JACCARD;
+    if (jaccard >= bar) out.push({ id: r.id, subject: r.subject, similarity: Math.round(jaccard * 100) / 100, opened: opened.has(r.id) });
+  }
+  return out.sort((a, b) => b.similarity - a.similarity).slice(0, 3);
+}
+
 /** The marker rides on EVERY result from one place, rather than being threaded through each return. */
 export async function capture(input, opened, opts = {}) {
   const { input: fixed, repair } = repairShellRewrite(input, opts.env ?? process.env);
@@ -1088,6 +1147,23 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   // `--dry-run` on capture and ignored it, so a "check" queued a real capture for the next push.
   const door = { env, via, call, topic, repair, dryRun };
   const note = (line) => (dryRun ? null : log(line, { env }));
+  // A BLANK ANCHOR IS NO ANCHOR (tester run of ai-tools#460): `--anchor " "` used to pass the length
+  // check and publish an entry with an empty coordinate that no hold, dedup or neighbour lookup reaches.
+  const coordOf = (a) => String(typeof a === 'string' ? a : a?.coordinate ?? '');
+  if (Array.isArray(input.anchors)) input = { ...input, anchors: input.anchors.filter((a) => coordOf(a).trim()) };
+  // NOTHING PRIVATE GOES PUBLIC (VCST-6378): checked FIRST, before any other refusal, because every
+  // other refusal logs `subject` and `topic` -- a capture missing its claim must not log the address in
+  // its subject (tester run of ai-tools#460). The writer fixes it while still in the call.
+  // Anchors are scanned AS STORED -- `canonicalAnchor`, which keeps a query string and the case: an
+  // address in `?email=` or a token in a path segment is published with it, so it is refused here.
+  // A scheme+host is removed by that same step, so `https://<stand>/cart` is not refused for a host it
+  // no longer carries. `topic` is scanned too: it is written into the public log line.
+  const exposed = privateData({
+    ...input,
+    anchors: (input.anchors ?? []).map((a) => canonicalAnchor(coordOf(a))),
+    topic,
+  }, env);
+  if (exposed) return refuseAtDoor(exposed, input, door);
   const missing = REQUIRED.filter((f) => !String(input[f] ?? '').trim());
   if (!input.anchors?.length) missing.push('anchor');
   // Every refusal carries `doorHints` -- the fix per anchor, coordinates the writer's own text names,
@@ -1102,12 +1178,34 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   if (where) return refuseAtDoor(doorHints({ state: 'invalid', why: `unusable deployment: ${where}` }, input), input, door);
   const conditions = normalizeConditions(input.conditions);
   if (conditions.problem) return refuseAtDoor(doorHints({ state: 'invalid', why: `unusable conditions: ${conditions.problem}` }, input), input, door);
+  // IS IT A DEFECT (VCST-6317): checked against the docs / BL-* before capture, refused like `method`.
+  const defect = resolveDefect(input.defect, { projects: loadPublicProjects(env) });
+  if (defect.problem) return refuseAtDoor(doorHints({ state: 'invalid', why: `unusable defect: ${defect.problem}` }, input), input, door);
+  if (defect.value === 'none') return refuseAtDoor(doorHints({ state: 'invalid', why: 'unusable defect: `none` withdraws a marker, and a new entry has none to withdraw -- leave defect out' }, input), input, door);
+  const fixedIn = resolveFixedIn(input.fixedIn);
+  if (fixedIn.problem) return refuseAtDoor(doorHints({ state: 'invalid', why: `unusable fixedIn: ${fixedIn.problem}` }, input), input, door);
+  const marker = markerProblem({ defect: defect.value, fixedIn: fixedIn.value }, null);
+  if (marker) return refuseAtDoor(doorHints({ state: 'invalid', why: `unusable fixedIn: ${marker}` }, input), input, door);
+  // A capture refused as a duplicate is told to confirm the incumbent instead: with the marker, or the
+  // agent follows the hint and the defect it established is lost.
+  const markerFlags = defect.value ? ` --defect ${defect.value}${fixedIn.value ? ` --fixed-in ${fixedIn.value}` : ''}` : '';
 
   // Refused at the door, before the base is read -- except a one-segment path (`/cart`), which is
   // a page or a namespace, and only the corpus can say which, so it is judged once the rows are here.
   const problems = anchorProblems(input.anchors)
     .filter((p) => !(p.kind === 'unstructured' && isSingleSegmentPath(p.normalized)));
-  if (problems.length) return refuseAtDoor(doorHints({ state: 'invalid', why: 'unusable anchor(s)', problems }, input), input, door);
+  // ONE BAD ANCHOR NO LONGER SINKS THE CAPTURE (VCST-6378) when a good one remains: it is dropped, and
+  // the result says which and how to write it. Refused only when nothing usable is left.
+  const dropped = [];
+  const keep = (found) => {
+    const bad = new Set(found.map((p) => p.coordinate));
+    const rest = input.anchors.filter((a) => !bad.has(String(typeof a === 'string' ? a : a?.coordinate ?? '').trim()));
+    if (!rest.length) return false;
+    dropped.push(...found);
+    input = { ...input, anchors: rest };
+    return true;
+  };
+  if (problems.length && !keep(problems)) return refuseAtDoor(doorHints({ state: 'invalid', why: 'unusable anchor(s)', problems }, input), input, door);
 
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
@@ -1116,11 +1214,23 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   }
   const namespaces = namespaceRoots(cat.rows);
   const late = anchorProblems(input.anchors, { namespaces });
-  if (late.length) {
+  if (late.length && !keep(late)) {
     return refuseAtDoor(doorHints({ state: 'invalid', why: 'unusable anchor(s)', problems: late }, input, { rows: cat.rows, namespaces }), input, door);
   }
 
+  // `surface` IS A CLOSED SET (VCST-6378): a spelling no reader can place is refused with the list -- 30
+  // active entries carried one. A known alias is accepted AS WRITTEN: readers map it (`surfacesOf`), and
+  // the dedup compares scopes as stored, so rewriting it here would stop a recapture matching its entry.
   const scope = normalizeScope(input.scope);
+  // `Object.hasOwn`: `surface=constructor` must not pass on the prototype (review of ai-tools#460).
+  // An EMPTY `surface=` is an unknown surface too (tester run): it used to never reach the check.
+  const unknownSurface = scope.map((s) => /^surface=(.*)$/.exec(s)?.[1]).filter((v) => v !== undefined && !Object.hasOwn(SURFACE_SPELLINGS, v));
+  if (unknownSurface.length) {
+    return refuseAtDoor(doorHints({
+      state: 'invalid',
+      why: `unknown surface ${unknownSurface.map((s) => `"${s}"`).join(', ')}: use one of ${SURFACES.join(', ')}`,
+    }, input, { namespaces }), input, door);
+  }
   if (!scope.length) {
     return refuseAtDoor(doorHints({
       state: 'invalid',
@@ -1130,7 +1240,7 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   }
 
   // Read BEFORE this capture writes its own line, or the lookback finds nothing but itself.
-  const after = await precedingAsk({ env, input });
+  const link = await precedingAsk({ env, input });
 
   // THE DEDUP CHECK. Runs here against the session's index, and AGAIN at push time against the
   // freshly re-read one -- which is what makes it race-free rather than merely likely (PLAN §2).
@@ -1139,9 +1249,9 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   if (dupe) {
     await note({
       kind: 'capture-refused', dupeOf: dupe.row.id, subject: input.subject,
-      why: 'anchors+scope+claim', when: 'call', ...repair, ...(after ? { after } : {}), ...context({ via, call, topic }),
+      why: 'anchors+scope+claim', when: 'call', ...repair, ...link, ...context({ via, call, topic }),
     });
-    return { state: 'refused', dupeOf: dupe.row, message: refusalMessage(dupe.row) };
+    return { state: 'refused', dupeOf: dupe.row, message: refusalMessage(dupe.row, { carry: markerFlags }) };
   }
 
   const id = mintId(input.subject);
@@ -1161,10 +1271,37 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
     await note({
       kind: 'capture-refused', dupeOf: holder.id, subject: input.subject,
       why: sameSubject ? 'same-subject' : 'id-collision-different-subject', when: 'call',
-      ...repair, ...(after ? { after } : {}), ...context({ via, call, topic }),
+      ...repair, ...link, ...context({ via, call, topic }),
     });
-    return { state: 'refused', reason: 'subject-taken', dupeOf: holder, message: subjectTakenMessage(holder, { sameSubject }) };
+    return { state: 'refused', reason: 'subject-taken', dupeOf: holder, message: subjectTakenMessage(holder, { sameSubject, carry: markerFlags }) };
   }
+  // ALREADY HERE, IN OTHER WORDS (VCST-6378). The dedup above needs the same anchors, scope AND subject; a
+  // second wording of one fact passed it. Measured 2026-10-08..15: about ten new entries duplicated one
+  // that existed -- several written seconds after the same session CONFIRMED the original. So a capture
+  // that shares an anchor with an active entry and reads like it is held, with the entries, and the
+  // writer chooses: confirm the one that says it (add the new detail as the confirm's note), or resend
+  // with `distinct` saying why this is another fact. Thresholds: SIMILAR_JACCARD caught 6 of the 10
+  // known duplicates and 16 of 6,215 same-anchor neighbour pairs; an entry this session OPENED is held
+  // at SIMILAR_JACCARD_OPENED, which catches the confirm-then-recapture three.
+  const distinct = String(input.distinct ?? '').trim();
+  if (!distinct) {
+    // Session-wide, as the confirm gate reads it (tester run of ai-tools#460): a confirm-then-recapture
+    // spans a turn, and the queue flushes at every Stop -- queue-scoped, the lower bar was gone by then.
+    const similar = similarEntries(retrievable(cat.rows), input, await openedEver({ env }));
+    if (similar.length) {
+      await note({
+        kind: 'capture-held', dupeOf: similar[0].id, subject: input.subject, why: 'similar', when: 'call',
+        similar: similar.map((s) => s.id), ...repair, ...link, ...context({ via, call, topic }),
+      });
+      return {
+        state: 'refused', reason: 'similar', similar,
+        message: `an active entry at the same coordinate already reads like this fact: ${similar.map((s) => `${s.id} "${s.subject}"`).join('; ')}. `
+          + `If one of them says it, kb_confirm that one (put any new detail in the confirm's note) -- or, if what you saw contradicts it, kb_dispute it. `
+          + `If this is a DIFFERENT fact, resend the capture with distinct: "<what makes it different>".`,
+      };
+    }
+  }
+  const card = await cardOf(input, opened, { namespaces });
   const stamp = how.value === 'source' ? {} : await buildStamp(input.deployment, { env, dryRun, builds });
   const entry = {
     id,
@@ -1176,12 +1313,19 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
       const [axis, ...rest] = s.split('=');
       return { axis, value: rest.join('=') };
     }),
-    anchors: input.anchors.map((a) => ({ coordinate: typeof a === 'string' ? a : a.coordinate })),
+    // Stored in ONE spelling per place (`canonicalAnchor`, VCST-6378).
+    anchors: [...new Set(input.anchors.map((a) => canonicalAnchor(typeof a === 'string' ? a : a.coordinate)))].map((coordinate) => ({ coordinate })),
+    // THE RETRIEVAL CARD, from the writer at the door (VCST-6378): only 10 of 409 entries written since
+    // 2026-10-06 carried one. See `cardOf` for why it is the writer's and not derived.
+    ...(card.concepts.length ? { concepts: card.concepts.map((cid) => ({ id: cid })) } : {}),
+    ...(card.questions.length ? { questions: card.questions.map((text) => ({ text })) } : {}),
     evidence: [{
       method: how.value,
       deployment: how.value === 'source' ? String(input.deployment).trim() : standName(input.deployment),
       ...stamp.item,
       ...(conditions.value ? { conditions: conditions.value } : {}),
+      ...(defect.value ? { defect: defect.value } : {}),
+      ...(fixedIn.value ? { fixedIn: fixedIn.value } : {}),
       at: new Date().toISOString(),
       by: `session:${sessionId(env)}`,
       // THE OPERATOR, beside the session, because `by` is a SESSION and was being counted as a
@@ -1191,6 +1335,8 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
       // when the token has not resolved; the handle is already in every log line and every commit of
       // this public base, so it crosses no boundary the log has not crossed (`core/who.mjs`).
       ...(cachedWho({ dir: queueDir(env), env }) ? { who: cachedWho({ dir: queueDir(env), env }) } : {}),
+      // Why the writer said this is a different fact from the similar entries it was shown (VCST-6378).
+      ...(distinct ? { note: trimNote(`distinct: ${distinct}`) } : {}),
     }],
   };
 
@@ -1236,16 +1382,22 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   );
 
   if (dryRun) {
-    return { state: 'dry-run', id, entry, why: 'the payload is valid -- nothing was logged or queued (dry run)', read: readRows, alsoHere, related };
+    return { state: 'dry-run', id, entry, why: 'the payload is valid -- nothing was logged or queued (dry run)', read: readRows, alsoHere, related, ...droppedOf(dropped), ...(card.concepts.length ? {} : { suggested: card.suggested }) };
   }
 
   const written = await log({
     kind: 'capture',
     id,
     subject: input.subject,
+    // Which anchor kinds were dropped (VCST-6378) -- kinds only, the rejected text stays on the laptop.
+    ...(dropped.length ? { droppedAnchors: [...new Set(dropped.map((p) => p.kind))] } : {}),
     // WHICH BUILD it was seen on (VCST-6221): a pin, an id -- no prose -- so `kb:report` can say what
     // share of new evidence carries a build. Absent when the stand could not be read.
-    ...(stamp.item?.build ? { build: stamp.item.build } : {}),
+    ...(stamp.item?.build ? { build: stamp.item.build } : stamp.missing ? { buildMissing: stamp.missing } : {}),
+    // Which client wrote it (VCST-6378): the checkout's commit, so a missing stamp has an owner version.
+    ...(clientSha() ? { client: clientSha() } : {}),
+    // Born marked as a defect (VCST-6317), as a closed code -- the ticket key stays on the entry.
+    ...(defect.value ? { defect: defect.value === 'suspected' ? 'suspected' : 'ticket' } : {}),
     // THE QUESTION, not only the subject. The subject is the claim; the question is the RETRIEVAL
     // KEY, and it is the half that decides whether anyone ever finds this entry again. Session 10
     // measured why that distinction is load-bearing: a base subject is a 3-11 token label while
@@ -1258,7 +1410,7 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
     // same standing `q` on `ask` has always had.
     question: input.question,
     ...repair,
-    ...(after ? { after } : {}),
+    ...link,
     // WHAT was surfaced, not how many. It shipped as a count on 2026-09-19 and was too thin within
     // hours of meeting real traffic: a session was shown three related entries, then DISPUTED one --
     // the first dispute in this base's history -- and the log could not say whether the entry it
@@ -1287,7 +1439,7 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   }, { env });
 
   if (written.disabled) return { state: 'disabled', why: written.why };
-  return { state: 'queued', id, entry, queuedTo: written.path, logWrite: written, alsoHere, related, read: readRows };
+  return { state: 'queued', id, entry, queuedTo: written.path, logWrite: written, alsoHere, related, read: readRows, ...droppedOf(dropped), ...(card.concepts.length ? {} : { suggested: card.suggested }) };
 }
 
 // ── confirm / dispute ─────────────────────────────────────────────────────────────────────────
@@ -1295,7 +1447,9 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
 async function appendEvidence(kind, id, input, opened, { env = process.env, via = null, call = null, topic = null, repair = {}, builds = null } = {}) {
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
-    await log({ kind, id, state: cat.state, why: cat.why, ...repair, ...context({ via, call, topic }) }, { env });
+    // The privacy check runs further down, so this early line keeps its topic only when it is clean (retest).
+    const cleanTopic = topic && !privateData({ topic }, env) ? topic : null;
+    await log({ kind, id, state: cat.state, why: cat.why, ...repair, ...context({ via, call, topic: cleanTopic }) }, { env });
     return { state: cat.state, why: cat.why };
   }
   const row = cat.rows.find((r) => r.id.toUpperCase() === String(id).toUpperCase());
@@ -1320,8 +1474,24 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
   const where = how.value === 'source' ? codeVersionProblem(input.deployment) : standProblem(input.deployment);
   if (where) return { state: 'invalid', why: `unusable --deployment: ${where}` };
   if (kind === 'dispute' && !String(input.saw ?? '').trim()) return { state: 'invalid', why: 'dispute needs --saw "<what you saw instead>"' };
+  // The evidence note is where a personal address actually reached the base (VCST-6378): it is free
+  // prose on a public entry. Refused here, logged as a code and kinds only.
+  const exposed = privateData({ note: input.note, saw: input.saw, conditions: input.conditions, topic }, env);
+  if (exposed) {
+    await log({ kind: `${kind}-invalid`, id: row.id, why: 'private-data', private: exposed.private, ...context({ via, call, topic: null }) }, { env });
+    return exposed;
+  }
   const conditions = normalizeConditions(input.conditions);
   if (conditions.problem) return { state: 'invalid', why: `unusable --conditions: ${conditions.problem} (key=value; key=value, e.g. platform=3.1007.27; setting:Store.Name=value)` };
+  // A DEFECT MARKER RIDES ON A CONFIRM (VCST-6317): you saw the behaviour, and it should not happen. On a
+  // dispute it would mark the very claim the dispute says is not what happens.
+  const defect = resolveDefect(input.defect, { projects: loadPublicProjects(env) });
+  if (defect.problem) return { state: 'invalid', why: `unusable --defect: ${defect.problem}` };
+  const fixedIn = resolveFixedIn(input.fixedIn);
+  if (fixedIn.problem) return { state: 'invalid', why: `unusable --fixed-in: ${fixedIn.problem}` };
+  if (kind === 'dispute' && (defect.value || fixedIn.value)) {
+    return { state: 'invalid', why: 'a defect marker goes on a confirm (you saw the behaviour, and it should not happen), not on a dispute -- confirm the entry with --defect, or dispute it without one' };
+  }
   // NO CONFIRM BY EXCERPT (VCST-6191). Evidence raises or lowers the entry's trust for every later
   // reader, so it rests on the whole entry -- its scope, stand and caveats sit below the line an
   // `ambiguous` list prints. An entry this session never opened is refused with the command that opens
@@ -1360,8 +1530,15 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
   // ...BUT THE BODY THE AGENT READ WINS (VCST-6221 step 6). Hashed from the base NOW, a confirm whose
   // `kb_show` came before a judge's `claim-amended` merged would attest the corrected wording it never
   // read. The session's journal holds the hash of the body it opened; the current body is the fallback.
-  const readBody = openedHash([...journal, ...(await readQueue({ env })).lines.map(loopRecordOf).filter(Boolean)], row.id);
+  const queued = (await readQueue({ env })).lines;
+  const readBody = openedHash([...journal, ...queued.map(loopRecordOf).filter(Boolean)], row.id);
   if (readBody) bodyHash = readBody;
+  // `fixedIn` alone completes a marker the entry already carries -- on the base, or set by this session's
+  // own confirm still waiting in the queue. Checked only when the entry was read.
+  const mine = queued.filter((l) => l.kind === 'confirm' && String(l.payload?.id ?? '').toUpperCase() === row.id.toUpperCase() && l.payload.item)
+    .map((l) => l.payload.item);
+  const markerWhy = markerProblem({ defect: defect.value, fixedIn: fixedIn.value }, entry ? defectOf([...(entry.evidence ?? []), ...mine]) : undefined);
+  if (markerWhy) return { state: 'invalid', why: `unusable --fixed-in: ${markerWhy}` };
 
   const stamp = how.value === 'source' ? {} : await buildStamp(input.deployment, { env, builds });
   // A DISAGREEMENT ON ANOTHER BUILD IS A SOFT DISPUTE (VCST-6221, core/gate.mjs): still a dispute the
@@ -1387,6 +1564,8 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
     at: new Date().toISOString(),
     by: `session:${sessionId(env)}`,
     ...(bodyHash ? { bodyHash } : {}),
+    ...(defect.value ? { defect: defect.value } : {}),
+    ...(fixedIn.value ? { fixedIn: fixedIn.value } : {}),
     // Same reason as `capture`: a confirmation from a second SESSION of the same person is not a
     // second opinion, and until this field existed nothing could tell the two apart.
     ...(cachedWho({ dir: queueDir(env), env }) ? { who: cachedWho({ dir: queueDir(env), env }) } : {}),
@@ -1418,9 +1597,14 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
     //
     // It is still in `payload` (local, never published) and still on the entry. Nothing is lost.
     ...(kind === 'confirm' ? { trust: row.trust + 1 } : {}),
+    // Which marker this confirm set (VCST-6317), as a closed code -- the ticket key stays on the entry.
+    ...(defect.value ? { defect: ['suspected', 'none'].includes(defect.value) ? defect.value : 'ticket' } : {}),
+    ...(fixedIn.value ? { fixedIn: true } : {}),
     // The build pin (an id) and whether the gate made it a SOFT dispute (VCST-6221) -- what `kb:report`
     // counts for the stamp share and the soft-dispute rate. The difference itself stays on the entry.
-    ...(stamp.item?.build ? { build: stamp.item.build } : {}),
+    ...(stamp.item?.build ? { build: stamp.item.build } : stamp.missing ? { buildMissing: stamp.missing } : {}),
+    // Which client wrote it (VCST-6378): the checkout's commit, so a missing stamp has an owner version.
+    ...(clientSha() ? { client: clientSha() } : {}),
     ...(contested ? { soft: true } : {}),
     ...repair,
     ...context({ via, call, topic }),
@@ -1636,5 +1820,56 @@ export async function reindex(opened, { env = process.env, write = true, generat
  */
 export function toLogLine(line) {
   const { payload, ...rest } = line;
-  return rest;
+  // A failed flush's `why` is the remote's own error text (VCST-6378) -- a numeric GitHub user id and a
+  // request id among it. It goes public only as a closed code; the text stays in the local queue. This
+  // also covers lines queued by an older client that still wrote `why`.
+  if (rest.kind === 'flush' && 'why' in rest) {
+    const { why, ...kept } = rest;
+    return { ...kept, code: kept.code ?? flushCode({ why, reason: kept.reason }) };
+  }
+  // A LOCAL PATH NEVER GOES PUBLIC (retest of ai-tools#460): a `no-base` line says `no kb.json at
+  // C:\Users\<name>\...`, and an fs error repeats the path. The reason stays; the path is replaced.
+  const out = typeof rest.why === 'string' ? { ...rest, why: withoutLocalPaths(rest.why) } : rest;
+  // `ask` has no door, so a question or topic quoting a file on the writer's machine is rewritten here
+  // (retest 4) -- only when it names a person, since the question is otherwise published verbatim.
+  // If the rewrite left something the detector still reads as personal, the whole field goes (retest 5:
+  // `OneDrive - <Company>` with no drive in front was detected and then published unchanged).
+  for (const k of ['q', 'topic']) {
+    if (typeof out[k] !== 'string' || !hasPersonalPath(out[k])) continue;
+    const rewritten = withoutLocalPaths(out[k]);
+    out[k] = hasPersonalPath(rewritten) ? '<local path>' : rewritten;
+  }
+  return out;
+}
+
+/** Drive paths, UNC paths, `file://` URLs and home-rooted POSIX paths, each replaced by `<local path>`. */
+// A path runs to the next quote, bracket or line end, spaces included (retest 3): `C:\Users\John Smith\kb`
+// and `OneDrive - <Company>` used to leak everything after the first space. The trailing space before
+// a ` (detail)` is given back.
+export function withoutLocalPaths(text) {
+  const tail = String.raw`[^'"()\r\n]*`;
+  const swap = (lead = '') => (m, ...g) => `${typeof g[0] === 'string' && lead ? g[0] : ''}<local path>${/\s+$/.exec(m)?.[0] ?? ''}`;
+  return String(text)
+    // `OneDrive - <Company>` names the employer wherever it stands, drive or not (retest 5), with any dash,
+    // and through an apostrophe or brackets in the name (`O'Brien`, `Contoso (UK)`; retest 6).
+    .replace(new RegExp(String.raw`OneDrive\s*[-‐-―−]\s*[^\\/"\r\n]*`, 'gi'), swap())
+    .replace(new RegExp(String.raw`file:\/\/` + tail, 'gi'), swap())
+    // A separator is required after the drive (retest 4: `Plan B: retry` lost its tail), except before
+    // `Users`, the drive-relative profile form.
+    .replace(new RegExp(String.raw`(?:\b[A-Za-z]:(?:[\\/]|(?=Users\b))|\\\\[^\\\s]+[\\/])` + tail, 'g'), swap())
+    .replace(new RegExp(String.raw`(^|[\s'"(=:])(?:~|\/(?:[a-z]\/)?(?:home|Users|root|tmp|private|mnt|opt|var\/folders|Volumes|workspaces?))\/` + tail, 'g'), swap(true));
+}
+
+/** A failed push, as a closed code: what went wrong, never the remote's words for it. */
+export function flushCode({ why = '', reason = null } = {}) {
+  const w = String(why ?? '');
+  if (/rate limit/i.test(w)) return 'rate-limited';
+  if (/not accessible by|must have push access|saml enforcement|enforced saml|re-authorize the oauth|access restrictions/i.test(w)) return 'no-write-access';
+  if (/bad credentials/i.test(w)) return 'bad-credentials';
+  if (/no GITHUB_TOKEN/i.test(w)) return 'no-token';
+  if (reason === 'conflict' || reason === 'missing' || reason === 'contained') return reason;
+  if (/HTTP 5\d\d/.test(w)) return 'server-error';
+  if (reason === 'denied') return 'denied';
+  if (reason === 'unreachable') return 'unreachable';
+  return 'other';
 }

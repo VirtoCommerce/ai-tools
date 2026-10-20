@@ -117,7 +117,21 @@ const getGrouped = (id) => api('GET', `/api/page-builder-pages/grouped/${id}`, n
 const upsertGrouped = (body) => api('POST', '/api/page-builder-pages/grouped', body, { expectStatus: [200, 201, 204] });
 const publishPage = (id) => api('POST', `/api/page-builder-pages/grouped/publishing/${id}?publish=true`, null, { expectStatus: [200, 201, 204] });
 const deletePage = (id) => api('DELETE', `/api/page-builder-pages/grouped/${id}`, null, { expectStatus: [200, 204, 404] });
-const postPageContent = (id, body) => api('POST', `/api/page-builder-pages/grouped/${id}/content`, body, { expectStatus: [200, 201, 204] });
+// Builds that guard concurrent saves (VCST-6009) answer a bare content POST with 428: read the BODY
+// eTag with includeVersion=true and echo it as If-Match, exactly as seed-pagebuilder-pages.mjs does
+// (@kb(KB-1336804F)). Older builds return no eTag and accept the bare POST.
+async function postPageContent(id, body) {
+  if (DRY_RUN) { verbose(`[DRY] POST /api/page-builder-pages/grouped/${id}/content`); return; }
+  const tok = await token();
+  const v = await rawGet(`/api/page-builder-pages/grouped/${id}/content?draft=true&includeVersion=true`);
+  const eTag = typeof v.doc?.eTag === 'string' ? v.doc.eTag : null;
+  const res = await fetch(`${BACK_URL}/api/page-builder-pages/grouped/${id}/content${eTag ? '?includeVersion=true' : ''}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${tok}`, 'Content-Type': 'application/json', ...(eTag ? { 'If-Match': eTag } : {}) },
+    body: JSON.stringify(body),
+  });
+  if (![200, 201, 204].includes(res.status)) throw new Error(`POST content ${id} -> ${res.status} ${(await res.text().catch(() => '')).slice(0, 160)}`);
+}
 
 async function ensurePage(spec, live, componentIds) {
   const doc = fixture().pages[spec.alias];

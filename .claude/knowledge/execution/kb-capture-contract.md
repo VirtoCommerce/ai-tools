@@ -42,11 +42,32 @@ rewritten into a Windows path (repaired since VCST-6102, but only when the rewri
 | `deployment` | the stand you observed it on | one token: the stand's name or its `TEST_ENV` / host name — the door maps every alias onto the stand's one name, declared as `KB_STAND` in its `.env.<env>` profile (`scripts/kb/core/stands.mjs`). Prose is refused |
 | `method` | how you established it | optional; `observation` (the default) — seen on a live stand — or `source` — read in code, not seen live (§Facts read from source code). Anything else is refused |
 | `conditions` | what the stand was running and how it was set up | optional on `capture` / `confirm`, **expected on `dispute`** — §Conditions |
+| `defect` / `fixedIn` | the behaviour should NOT happen, and since which build it no longer does | optional on `capture` / `confirm` — §Defects |
 
 `confirm` and `dispute` need the entry `id` and `deployment` (`dispute` also `saw`). A superseded id
 is refused with the ids of its successors — confirm or dispute the one you actually observed. An entry
 this session has not opened (`kb_show`, or an answer that printed its body) is refused with the command
 that opens it (VCST-6191): a list line is not the entry, and its caveats sit below it.
+
+**Nothing private goes into any field (VCST-6378) — the base is a public repository.** `capture`,
+`confirm` and `dispute` are refused, with the field and what to write instead, when a field holds a
+personal e-mail address, a value from your secret env, a deployment host, or a token / key shape
+(`scripts/kb/core/secret-gate.mjs`). Name an account by its role or `@td()` alias, a stand by its
+deployment label. Test-domain addresses (`…@example.com`, `…@test-agent.com`, `*.test`) and a UI's
+own placeholder text are fine.
+
+**A capture that reads like an entry already at its coordinate is HELD (VCST-6378)** — same anchor and
+a subject/question this similar to an active entry, or lower when this session opened that entry.
+Nothing is queued: `kb_confirm` the entry that says it (new detail goes in the confirm's `note`), or
+resend with `distinct: "<what makes it a different fact>"`, which is recorded on the new entry.
+**Trust counts sessions, not rows:** a second confirm from the same session, or a confirm of the
+entry this session captured, is kept as history and adds nothing.
+
+**At the door, since VCST-6378:**
+- A bad anchor beside a usable one is **dropped**, not refused. The result names it and says how to write it next time.
+- Anchors are stored in one spelling per place: path parameters become `{id}`, a host is removed, the verb is upper-cased.
+- `surface=` must be one of `SURFACES` or a listed spelling of one (`SURFACE_SPELLINGS`, `scripts/kb/core/index-load.mjs`). Anything else is refused with the list.
+- The retrieval card is optional. It is `concepts` (1–3 vocabulary ids the fact is ABOUT) and `questions` (other ways to ask for it). When no concepts are given, the result lists the vocabulary concepts the text names.
 
 ## Anchors — accepted forms
 
@@ -68,6 +89,8 @@ prefix (the path is kept), a query string or `#fragment` (dropped), an id segmen
 | a button label, field name or dialog title (`Add to cart`, `Payment method`) | `unstructured` | the route of the page it was on as the anchor; the label goes in `claim` |
 | a bare or one-segment namespace (`/api`, `/account`) | `unstructured` | the full route or endpoint you hit |
 | an Admin SPA menu path (`Orders > Returns`) | `menu-path` | the REST call the blade made (HAR / Network); the path goes in `claim` |
+| an Admin SPA address (`#/workspace/return`, `https://…/#/workspace/return`) | `unstructured` (everything after `#` is dropped, so nothing is left) | the REST call the blade made (HAR / Network); the `#/…` route goes in `claim` |
+| the site root (`/`, a bare `{FRONT_URL}/`) | `unstructured` | a request the page sent (HAR / Network); "home page" goes in `claim` |
 | a Windows path (`C:/Program Files/Git/cart`) | `local-path` | the route as typed, with `MSYS_NO_PATHCONV=1` or through MCP |
 
 ## Observation → anchor
@@ -131,7 +154,9 @@ investigation -- one per judging session -- plus confirmations of the NEW body
 
 ## At the end of a turn
 
-Every `ambiguous` list ends in a `kb_show` pick or a `kb_none`. A miss that nothing was written back
+Every `ambiguous` list ends in a `kb_show` pick or a `kb_none` — or in what you do next on the same
+`topic` (both calls must pass it): a `kb_confirm` of a listed entry counts as the pick, a `kb_capture`
+as "none of these". Pass the list's `ask` handle to `kb_capture` and it closes that list whatever the topic. A miss that nothing was written back
 after — or a list left unclosed — is raised once, at the end of the turn, by the `kb-remind` Stop hook
 ([`../../hooks/kb-remind.mjs`](../../hooks/kb-remind.mjs)): capture what you established, or say in one
 line that you did not establish it. `KB_REMIND=0` turns the hook off on a machine.
@@ -157,3 +182,35 @@ what a validator rejects — is captured with `method: source` (VCST-6186). It i
 
 Observed it live as well? Then it is an observation: capture with the default method and say in the
 claim what the code showed.
+
+## Defects
+
+The base records what the platform DOES. A behaviour that should not happen is still captured — how a
+bug shows itself is what whoever fixes or tests it needs — but it carries a **defect marker**
+(VCST-6317), or the next agent reads the bug as the expectation and writes a case that locks it in.
+
+- **Check before you mark.** Behaviour that looks wrong is checked against the docs (VirtoOZ, `/vc-docs`)
+  and the `BL-*` oracles first. They say it should not happen → mark it. They say nothing, or you only
+  feel it is wrong → do not mark it; say what looked odd in the claim. An unexpected value that the docs
+  explain (a setting, a by-design rule) is not a defect.
+- **The values.** `defect`: a bug ticket of a project whose `JIRA_PROJECT_KEY` this repo's tracked config
+  names (`VCST-1234`; `publicProjects`, `scripts/kb/core/stands.mjs`) or `suspected` (no ticket yet, or a
+  ticket in a private tracker — the base is public). `fixedIn`, once it
+  is fixed: the first build without it, `VirtoCommerce.<Module>@<version>`, `platform@<version>` or
+  `theme@<version>` — never a client's own module, the base is public. Anything else is refused.
+- **Where it goes.** At capture, with the fact. On an existing entry, with `kb_confirm` (`--defect` in the
+  CLI): you saw the behaviour, and it should not happen — a ticket filed later re-marks it the same way
+  (`suspected` never replaces a ticket the entry already carries),
+  `fixedIn` alone completes the marker it carries, and `defect: none` withdraws a marker that proved
+  wrong. The claim never changes. A dispute carries no marker.
+- **The judge.** A dispute that saw a marked defect fixed on a later build is `defect-fixed`
+  (`/kb-judge`, `investigation.md` §4): the claim stays, the marker gains its `fixedIn`.
+- **What readers see.** `kb_ask` / `kb_show` print `KNOWN DEFECT VCST-1234: observed behaviour, NOT
+  expected; do not assert it` beside the trust label; with your stand named, a `fixedIn` is compared with
+  your build. **An entry marked as a defect is never the source of an expected result** — the expectation
+  comes from the docs or an oracle; the entry only shows that the bug reproduces
+  ([`cases-that-catch-bugs.md`](cases-that-catch-bugs.md) §2).
+
+The marker rides on the evidence item, not the entry's frontmatter, and the entry's marker is derived
+from it — so a client older than VCST-6317 reads and pushes marked entries unchanged
+(`scripts/kb/core/defect.mjs`, header).

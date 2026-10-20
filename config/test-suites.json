@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-10-12",
-    "totalSuites": 154,
+    "generated": "2026-10-15",
+    "totalSuites": 158,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -140,7 +140,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 54,
+      "testCount": 64,
       "estimatedMinutes": 19,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -574,7 +574,7 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 65,
+      "testCount": 66,
       "estimatedMinutes": 29,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1166,7 +1166,7 @@
       "layer": "frontend",
       "concern": "non-functional",
       "priority": "P2",
-      "testCount": 33,
+      "testCount": 60,
       "estimatedMinutes": 17,
       "agent": "qa-testing-expert",
       "tags": [
@@ -2103,14 +2103,40 @@
     },
     {
       "id": "060b",
-      "name": "Page Builder — Field Types, Asset Library & Operations",
+      "name": "Page Builder — Field Types, Scheduling & Operations",
       "file": "regression/suites/Backend/page-builder/060b-page-builder-fields-assets.csv",
       "domain": "content-cms",
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 70,
-      "estimatedMinutes": 30,
+      "testCount": 58,
+      "estimatedMinutes": 17,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "cms",
+        "design",
+        "content",
+        "builder",
+        "assets",
+        "sprint"
+      ],
+      "requiresModules": [
+        "VirtoCommerce.PageBuilderModule"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "clickDriven": true
+    },
+    {
+      "id": "060c",
+      "name": "Page Builder — Asset Library (picker, pagination, references)",
+      "file": "regression/suites/Backend/page-builder/060c-page-builder-asset-library.csv",
+      "domain": "content-cms",
+      "layer": "backend",
+      "concern": "admin",
+      "priority": "P1",
+      "testCount": 45,
+      "estimatedMinutes": 13,
       "agent": "qa-backend-expert",
       "tags": [
         "cms",
@@ -2477,7 +2503,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 26,
+      "testCount": 38,
       "estimatedMinutes": 15,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -3409,7 +3435,32 @@
       "concern": "functional",
       "priority": "P1",
       "testCount": 79,
-      "estimatedMinutes": 61,
+      "estimatedMinutes": 51,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "sales-rep",
+        "storefront",
+        "hub-dashboard",
+        "saved-layout",
+        "b2b",
+        "feature-gated"
+      ],
+      "requiresModules": [
+        "sales-rep"
+      ],
+      "customerApplicability": "reference",
+      "clickDriven": true
+    },
+    {
+      "id": "093b",
+      "name": "Sales Rep — Hub Plugin Delivery (Module Federation, storefront)",
+      "file": "regression/suites/Frontend/sales-rep/093b-sales-rep-hub-plugin-delivery.csv",
+      "domain": "sales-rep",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 16,
+      "estimatedMinutes": 10,
       "agent": "qa-frontend-expert",
       "tags": [
         "sales-rep",
@@ -3450,7 +3501,7 @@
         "VirtoCommerce.OpenTelemetry",
         "VirtoCommerce.ApplicationInsights"
       ],
-      "notes": "VCST-5544. Needs App Insights READ access (AAD via Connect-AzAccount, or APPINSIGHTS_API_KEY_BACKEND) — without it every telemetry assertion is unverifiable, not failing. Adaptive sampling on the AI resource (~1-in-8) means a single request may leave no telemetry: repeat >=14x or disable sampling before concluding a signal is absent. 4 cases are Manual (InputCaptureMode matrix + bridge-off + breaking-change communication) and need an ISOLATED stand: the settings bind through a cached IOptions and are read only at startup, so each change is an appsettings edit + platform restart. Excluded from the backend/full selections until /qa-test 5g promotion — 19 cases are still Draft and UCPO-005/014/018 intentionally document defects that are OPEN. RESOLUTION RULES (apply to every case in this suite). <SEARCH_TERM>: live-discover a term that returns >=1 product ON THIS env (POST /api/catalog/search/products; take a word from a returned product name) and never hardcode it — the former literal \"bolt\" returned 0 products on a fashion catalog, so the suite did not port between environments. REST context: every /ucp/v1 call also needs context:{currency:{{CURRENCY_CODE}},language:{{CULTURE_NAME}}}; without it even a valid store returns INVALID_OPERATION, because the MCP path defaults it and REST does not. SPAN TYPE: on an OpenTelemetry-exporter build every internal span exports as type=\"InProc\", so filtering on type in (\"UCP\",\"XAPI\",\"MCP\",\"VirtoCommerce\") returns ZERO rows and reads as a telemetry blackout — discriminate on the span NAME prefix (\"UCP \" / \"XAPI \" / \"VC \") or on customDimensions[\"vc.dependency.system\"]. SAMPLING: measured 2026-09-17 at microsoft.sample_rate=50 (not the ~1-in-8 recorded earlier), dropping to 33/25/20 under bursts — fire >=20 requests paced ~0.7s apart before claiming a signal is absent, and state how many you fired."
+      "notes": "VCST-5544. Needs App Insights READ access (AAD via Connect-AzAccount, or APPINSIGHTS_API_KEY_BACKEND) — without it every telemetry assertion is unverifiable, not failing. Adaptive sampling on the AI resource (~1-in-8) means a single request may leave no telemetry: repeat >=14x or disable sampling before concluding a signal is absent. 4 cases are Manual (InputCaptureMode matrix + bridge-off + breaking-change communication) and need an ISOLATED stand: the settings bind through a cached IOptions and are read only at startup, so each change is an appsettings edit + platform restart. Excluded from the backend/full selections until /qa-test 5g promotion — 19 cases are still Draft and UCPO-005/014/018 intentionally document defects that are OPEN. RESOLUTION RULES (apply to every case in this suite). <SEARCH_TERM>: live-discover a term that returns >=1 product ON THIS env (POST /api/catalog/search/products; take a word from a returned product name) and never hardcode it — the former literal \"bolt\" returned 0 products on a fashion catalog, so the suite did not port between environments. REST context: every /ucp/v1 call also needs context:{currency:{{CURRENCY_CODE}},language:{{CULTURE_NAME}}}; without it even a valid store can return INVALID_OPERATION, because the MCP path defaults it and REST does not. Exception observed 2026-10-13 on vcptcore-regression (UCP 3.1010.0): a catalog search WITHOUT store_id and without context returned 200, because UCP__DefaultStoreId/UCP__DefaultCurrency are configured there - send context anyway so the suite ports between environments. SPAN TYPE: on an OpenTelemetry-exporter build every internal span exports as type=\"InProc\", so filtering on type in (\"UCP\",\"XAPI\",\"MCP\",\"VirtoCommerce\") returns ZERO rows and reads as a telemetry blackout — discriminate on the span NAME prefix (\"UCP \" / \"XAPI \" / \"VC \") or on customDimensions[\"vc.dependency.system\"]. SAMPLING: measured 2026-09-17 at microsoft.sample_rate=50 (not the ~1-in-8 recorded earlier), dropping to 33/25/20 under bursts — fire >=20 requests paced ~0.7s apart before claiming a signal is absent, and state how many you fired."
     },
     {
       "id": "095",
@@ -3755,6 +3806,65 @@
       "customerApplicability": "reference",
       "notes": "VCST-6077 (vc-frontend PR #2536). Tasks page redesign: scope chips, date chip, row actions, calendar rail. Every row re-seeds the wall-clock-relative task fixture first (`TEST_ENV=vcst npm run seed:sales-rep-tasks`, decays at local midnight); SR-TK-018 seeds with BROWSER_TZ=America/New_York and sets the browser timezone. Mutating rows restore their task in Cleanup; SR-TK-026 leaves SR_TASK_NODATE_INDIA dated until the next seed. SR-TK-024 asserts the CORRECT focus behaviour and is expected to FAIL on the current build (focus drops to the document root). SR-TK-007, 026, 027 and 028 record observed behaviour pending product-owner answers (All vs U+O+C; canceled-only day; canceled due today in Today). Cases stay Draft until a run promotes them.",
       "clickDriven": true
+    },
+    {
+      "id": "107",
+      "name": "Punchout — storefront session (start link to signed-in buyer)",
+      "file": "regression/suites/Frontend/punchout/107-punchout-storefront-session.csv",
+      "domain": "auth-security",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 8,
+      "estimatedMinutes": 60,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "punchout",
+        "cxml",
+        "sso",
+        "storefront",
+        "journey"
+      ],
+      "requiresModules": [
+        "VirtoCommerce.Punchout"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "notes": "VCST-5886 (Epic VCST-5154). Storefront half of Punchout (API/admin half: 108). PNCF-001 is the [JOURNEY] case. Each case mints its own start link by POSTing a cXML setup (single-use token). PNCF-007 flips the store-wide Punchout.Enabled of the configuration-0 store and PNCF-005 runs ~11 minutes (config-1 session lifetime, beyond the machine runner's 300 s wait cap) — exclusiveGroup keeps 108/107 from running together; run PNCF-005 outside a batch. Env-scoped by requiresModules (effective only when MODULES_ENABLED is set) — select with `punchout`. Cases stay Draft until a run promotes them.",
+      "exclusiveGroup": "store-setting:Punchout.Enabled",
+      "clickDriven": true
+    },
+    {
+      "id": "108",
+      "name": "Punchout — cXML setup, token exchange and Admin user mapping",
+      "file": "regression/suites/Backend/punchout/108-punchout-cxml-token-admin.csv",
+      "domain": "auth-security",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 25,
+      "estimatedMinutes": 90,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "punchout",
+        "cxml",
+        "sso",
+        "token-exchange",
+        "admin"
+      ],
+      "requiresModules": [
+        "VirtoCommerce.Punchout"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "notes": "VCST-5886 (Epic VCST-5154). Env-scoped to deployments carrying the VirtoCommerce.Punchout module (vcptcore_qa1 only today) — PNCH-001 is a PRE-FLIGHT that BLOCKS the suite when the module, the seeded mapping or configuration 0 is missing. requiresModules filters only when MODULES_ENABLED is set; with it empty the suite is selected anyway, so run it by selection `punchout`, not through backend/full. Data: npm run seed:punchout (td:validate:punchout). PNCH-009/010 flip Punchout.Enabled / clear the URL of the configuration-1 store and PNCF-007 flips it on the configuration-0 store: exclusiveGroup serialises them with 107. PNCH-015 waits ~2 min and the token rows need the start-link token out of the cXML response, which REST-CAPTURE cannot read (XML body), so those rows run on the agent lane. Out of scope: cart return (VCST-5887), OrderRequest (VCST-5888). Known gaps NOT asserted: organization selection via API/GraphQL (VCST-6222), mobile label (VCST-6227). Cases stay Draft until a run promotes them.",
+      "exclusiveGroup": "store-setting:Punchout.Enabled",
+      "clickDriven": true,
+      "lanes": {
+        "machine": 13,
+        "browser": 12,
+        "manual": 0
+      }
     }
   ],
   "selections": {
@@ -3888,7 +3998,8 @@
       "exclude": [
         "089",
         "090",
-        "091"
+        "091",
+        "107"
       ]
     },
     "backend": {
@@ -3901,7 +4012,8 @@
         "092",
         "092b",
         "094",
-        "102"
+        "102",
+        "108"
       ]
     },
     "sprint": {
@@ -3923,6 +4035,7 @@
         "092",
         "092b",
         "093",
+        "093b",
         "097"
       ]
     },
@@ -3937,6 +4050,7 @@
         "092",
         "092b",
         "093",
+        "093b",
         "096",
         "097"
       ]
@@ -3951,6 +4065,7 @@
         "092",
         "092b",
         "093",
+        "093b",
         "097"
       ]
     },
@@ -4063,6 +4178,12 @@
     "layout-stability": {
       "include": [
         "048c"
+      ]
+    },
+    "punchout": {
+      "include": [
+        "108",
+        "107"
       ]
     }
   }

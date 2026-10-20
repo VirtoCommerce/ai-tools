@@ -46,6 +46,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Review an oracle (BL: sync from human sources · ECL: docs+live+source)** | `/qa-review-oracles [bl\|ecl\|all] <scope> [--dry-run]` (alias `/qa-review-bl`) | Command |
 | **Refresh the storefront sitemap knowledge file** | `/qa-sitemap [--check] [--no-browser]` | Command |
 | **Review THIS repo's own code diff** | `/code-review-full [branch \| SHA \| PR \| path]` (or the harness's own `/code-review`, `/security-review`, `/simplify`) | Command |
+| **Review a PR in `vc-platform` or a `vc-module-*` repo** (backward compatibility of the NuGet surface first) | `/review-pr-virto` — asks for repo, PR number and local clone | Skill |
 | **Self-diagnose the plugin from session telemetry** | `/vc-self-check [latest \| <session-id>] \| deliver` | Command |
 | **Review / heal / improve a skill, command or agent prompt** | `/prompt-review <name \| path \| changed \| all> [--fix] [--improve] [--dry-run]` | Skill |
 | **Check the stand is fit before testing or analysing against it** (env health, declared vs deployed build, MCP availability) | `/preflight <ticket \| ticket-fast \| exploratory \| lifecycle \| domain-map \| ba> [--ticket KEY] [--components A,B] [--expect Module.Id@version]` (CLI: `npm run preflight`) | Skill |
@@ -58,6 +59,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Report on the knowledge base itself** (what was asked, what it could not answer) | `/kb-report` | Skill |
 | **Settle a disputed knowledge-base entry** (live investigation, verdict as a reviewed PR on the base) | `/kb-judge <KB-id> \| cluster <KB-id> \| next` | Skill |
 | **Build a ticket's test model (fault model) on its own** | `/qa-test-model <ticket-key> [--context <file>]` | Skill |
+| **Choose a ticket's test strategy before running anything** (risks, mix, technique + oracle per risk, artifacts, criteria; one approval) | `/qa-test-strategy <ticket-key> [--domain <slug>] [--yes]` | Skill |
 | **Model how a domain behaves (behaviour graph, stable ids, evidence)** | `/qa-test-mind-map build \| update \| audit <domain-slug>` | Skill |
 | **Declare the data state each behaviour needs / seed one profile** | `/qa-test-data-model build \| update \| audit <domain-slug>` · `/qa-seed-data --profile <id>` | Skill |
 | **Design the test-data combinations a feature needs** | `/qa-generate-data <feature \| flow \| VCST-XXXX>` | Skill |
