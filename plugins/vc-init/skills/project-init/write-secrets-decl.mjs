@@ -38,8 +38,10 @@
  *   [--shim <path to vc-run.mjs>]  default: the installed shim (scripts/install-bridge.mjs)
  *   [--password-envs <env,…>|none] keep these envs' test-user passwords in vc-secrets (option B); added to
  *                                  the envs already declared. "none" returns every env to .env.local (A)
- *   [--password-names <NAME,…>]    passwords beyond ADMIN_PASSWORD/USER_PASSWORD, for the envs above (or
- *                                  every declared env when --password-envs is not given)
+ *   [--password-roles admin,user]  which roles' built-in passwords a NEW env keeps here (§2d asks per role);
+ *                                  default: the roles the declaration already keeps here, else both
+ *   [--password-names <NAME,…>]    passwords beyond the built-ins, for the envs above (or every declared
+ *                                  env when --password-envs is not given)
  *   [--github-mcp <json>|none]     override the `servers.github` declaration (default: lib/github-mcp.mjs
  *                                  GITHUB_MCP_DECL, written only when github is a PAT axis); "none" removes it
  *   [--out <path>]                 default <project>/.claude/vc-secrets.local.json
@@ -58,7 +60,7 @@ import { ensureProjectIgnores } from "./lib/gitignore.mjs";
 import { outputRoot } from "./lib/paths.mjs";
 import { GITHUB_MCP_DECL } from "./lib/github-mcp.mjs";
 import { standDownIfHostGoverned } from "./lib/governance.mjs";
-import { ALWAYS_PASSWORDS, ENV_NAME_RE, declaredLanes, declaredPasswords, isPasswordName, laneServer, onboardTask, passwordSecret, passwordSecretNames } from "./lib/passwords.mjs";
+import { ENV_NAME_RE, ROLES, ROLE_PASSWORD, declaredLanes, declaredPasswords, isPasswordName, laneArgsForEnv, laneServer, onboardTask, passwordSecret, passwordSecretNames, vcSecretsRoles } from "./lib/passwords.mjs";
 import { laneCommands, readTemplateServers } from "./lib/playwright-lanes.mjs";
 
 /** Secret name and the env var it is bound to, per axis. The env names are the runtime contract. */
@@ -78,16 +80,19 @@ export function newProjectId(projectRoot, rand = () => randomBytes(2).toString("
 }
 
 /**
- * The password map after a change: the declared one, plus `addEnvs` (each with ALWAYS_PASSWORDS),
- * plus `addNames` on the given envs (or on every env when none is given). `addEnvs === "none"` clears it.
- * Pure; throws on a bad name.
+ * The password map after a change: the declared one, plus `addEnvs` (each with its roles' built-in
+ * passwords — `roles`, else the roles the map already keeps here, else both), plus `addNames` on the
+ * given envs (or on every env when none is given). `addEnvs === "none"` clears it. Pure; throws on a bad name.
  */
-export function nextPasswords(declaredMap, { addEnvs = [], addNames = [] } = {}) {
+export function nextPasswords(declaredMap, { addEnvs = [], addNames = [], roles } = {}) {
   if (addEnvs === "none") return {};
   for (const e of addEnvs) if (!ENV_NAME_RE.test(e)) throw new Error(`not an environment name: ${JSON.stringify(e)} ([a-z0-9_]+)`);
   for (const n of addNames) if (!isPasswordName(n)) throw new Error(`not a password name: ${JSON.stringify(n)} (upper snake case ending in PASSWORD)`);
+  for (const r of roles || []) if (!ROLES.includes(r)) throw new Error(`not a role: ${JSON.stringify(r)} (${ROLES.join(" | ")})`);
+  const kept = vcSecretsRoles(declaredMap);
+  const builtIns = (roles || (kept.length ? kept : ROLES)).map((r) => ROLE_PASSWORD[r]);
   const out = Object.fromEntries(Object.entries(declaredMap || {}).map(([e, names]) => [e, [...names]]));
-  for (const e of addEnvs) out[e] = [...new Set([...(out[e] || []), ...ALWAYS_PASSWORDS])];
+  for (const e of addEnvs) out[e] = [...new Set([...(out[e] || []), ...builtIns])];
   for (const e of addEnvs.length ? addEnvs : Object.keys(out)) out[e] = [...new Set([...(out[e] || []), ...addNames])];
   for (const e of Object.keys(out)) out[e].sort();
   return out;
@@ -132,7 +137,7 @@ export function buildDeclarations(existing, { pat, shim, projectId, githubServer
     for (const n of pw[e]) secrets[passwordSecret(n, e)] = { backend: "local" };
     envTasks[onboardTask(e)] = { ...task("onboard", axes), env: { ...env(axes), ...bind } };
     for (const lane of Object.keys(laneDefs).sort()) {
-      laneServers[laneServer(lane, e)] = { command: laneDefs[lane].command, args: laneDefs[lane].args, env: { ...bind, npm_config_prefer_offline: "literal:true" } };
+      laneServers[laneServer(lane, e)] = { command: laneDefs[lane].command, args: laneArgsForEnv(laneDefs[lane].args, e), env: { ...bind, npm_config_prefer_offline: "literal:true" } };
     }
   }
   // Owned tasks first, in a fixed order; a person's own tasks after them, in their order.
@@ -221,7 +226,11 @@ function main() {
   const list = (v) => String(v || "").split(",").map((x) => x.trim()).filter(Boolean);
   const passwordChange = args["password-envs"] === undefined && args["password-names"] === undefined
     ? undefined
-    : { addEnvs: args["password-envs"] === "none" ? "none" : list(args["password-envs"]), addNames: list(args["password-names"]) };
+    : {
+      addEnvs: args["password-envs"] === "none" ? "none" : list(args["password-envs"]),
+      addNames: list(args["password-names"]),
+      ...(args["password-roles"] !== undefined ? { roles: list(args["password-roles"]) } : {}),
+    };
   try {
     const report = writeSecretsDecl({ root, pat, shim: args.shim || defaultShimPath(), githubServer, out: args.out, passwordChange });
     console.log(JSON.stringify(report, null, 2));

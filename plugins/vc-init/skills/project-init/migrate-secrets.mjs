@@ -21,7 +21,8 @@
  *
  * Test-user passwords (option B, lib/passwords.mjs) — only when the declaration keeps an env's passwords in
  * vc-secrets; under option A they belong in .env.local and are not findings:
- *   --scan    also lists each `<NAME>_<ENV>` of a declared env in an .env file, and `.env.playwright.local`
+ *   --scan    also lists each `<NAME>_<ENV>` in an .env file whose NAME is declared in vc-secrets for that
+ *             env (a role kept in .env.local on purpose is not listed), and `.env.playwright.local`
  *             (the option-A --secrets file, which nothing reads once the lanes run from vc-secrets).
  *   --strip   removes a password line once `vc-secrets doctor` reports its secret resolvable (stored, and
  *             the checkout trusted) — the login itself is checked by verify-access afterwards — and
@@ -94,9 +95,10 @@ export function stripEnvText(text, keys) {
 }
 
 /**
- * Option B: password keys of the declared envs with a value in a dotenv text — [{ key, line, secret,
- * declared }]. `declared` is false for a name the declaration does not carry for that env (it has to be
- * added with write-secrets-decl --password-names before the line can go). Pure — no value returned.
+ * Option B: password keys with a value in a dotenv text whose name IS declared in vc-secrets for that
+ * env — the duplicates to strip, [{ key, line, secret, declared }]. A name the declaration does not
+ * carry is a role the operator keeps in .env.local (§2d asks per role) and is not a finding. Pure — no
+ * value returned.
  */
 export function scanPasswordText(text, passwords) {
   const envs = Object.keys(passwords || {});
@@ -107,7 +109,7 @@ export function scanPasswordText(text, passwords) {
     if (!m) return;
     const value = m[2].replace(/\s+#.*$/, "").replace(/^['"]|['"]$/g, "").trim();
     const hit = value ? splitSuffixedKey(m[1], envs) : null;
-    if (hit) out.push({ key: m[1], name: hit.name, env: hit.env, line: i + 1, secret: passwordSecret(hit.name, hit.env), declared: passwords[hit.env].includes(hit.name) });
+    if (hit && passwords[hit.env].includes(hit.name)) out.push({ key: m[1], name: hit.name, env: hit.env, line: i + 1, secret: passwordSecret(hit.name, hit.env), declared: passwords[hit.env].includes(hit.name) });
   });
   return out;
 }
@@ -284,7 +286,6 @@ function main() {
       ...(remaining.some((f) => f.kind.startsWith("mcp")) ? ["re-run gen-mcp.mjs — it rewrites .mcp.json without any token"] : []),
       ...(remaining.some((f) => ["github", "ado", "jira"].includes(f.axis)) ? ["store the token(s) whose probe failed: node \"<VC_SECRETS>\" set <github-pat|ado-pat|jira-token>, then re-run --strip"] : []),
       ...remaining.filter((f) => f.axis === "password" && f.declared).map((f) => `store ${f.key}: node "<VC_SECRETS>" set ${f.secret} (and \`trust\` if doctor asks), then re-run --strip`),
-      ...remaining.filter((f) => f.axis === "password" && f.secret && !f.declared).map((f) => `${f.key} is not declared for vc-secrets — add it with write-secrets-decl.mjs --from-profile --password-envs ${f.env} --password-names ${f.name}, or keep it in the file`),
       ...(rotate.length ? [`ROTATE the ${rotate.join(", ")} ${rotate.includes("password") ? "secret" : "token"}(s): a file holding them is or was in git history`] : []),
     ],
   }, null, 2));

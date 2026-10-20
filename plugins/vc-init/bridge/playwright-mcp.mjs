@@ -9,9 +9,12 @@
  * How it is started (option B, skills/project-init/lib/passwords.mjs): the vc-secrets server
  * `playwright-<lane>.<env>`, declared by write-secrets-decl.mjs, is
  *
- *   npx -y -p @playwright/mcp@<pin> node <vc-run shim> --playwright @playwright/mcp@<pin> <lane CLI args>
+ *   npx -y -p @playwright/mcp@<pin> node <vc-run shim> --playwright @playwright/mcp@<pin> --vc-env <env> <lane CLI args>
  *
- * with that env's passwords in its environment (`ADMIN_PASSWORD: secret:admin-password-<env>`, …).
+ * with that env's vc-secrets passwords in its environment (`ADMIN_PASSWORD: secret:admin-password-<env>`, …).
+ * The roles the operator keeps in .env.local instead (typically storefront users, §2d) are read from the
+ * project's `.env.local` for `<env>` (`<NAME>_<ENV>`, else a bare `<NAME>`); a vc-secrets value wins.
+ * Both end up only in this process's memory — no `.env.playwright.local` is generated.
  * npx installs the pinned package and puts its `.bin` on PATH; the shim hands over to this file; this
  * file finds the package through PATH, checks its version against the pin, takes every `*PASSWORD` out
  * of the environment (the browser it starts inherits none) and runs the CLI exactly as
@@ -31,7 +34,7 @@ import dns from "node:dns";
 import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { delimiter, join } from "node:path";
-import { isPasswordName } from "../skills/project-init/lib/passwords.mjs";
+import { ENV_NAME_RE, envFilePasswords, isPasswordName } from "../skills/project-init/lib/passwords.mjs";
 
 const SPEC_RE = /^@playwright\/mcp@(\d+\.\d+\.\d+(?:-[\w.]+)?)$/;
 
@@ -103,6 +106,15 @@ export async function runPlaywrightMcp(argv) {
     say(`the first argument must be the pinned package (@playwright/mcp@x.y.z), got ${JSON.stringify(spec)}`);
     return 64;
   }
+  let env = null;
+  if (args[0] === "--vc-env") {
+    env = args[1];
+    args.splice(0, 2);
+    if (!ENV_NAME_RE.test(String(env || ""))) {
+      say(`--vc-env needs an environment name ([a-z0-9_]+), got ${JSON.stringify(env)}`);
+      return 64;
+    }
+  }
   const why = refusal(args);
   if (why) {
     say(`refused — ${why}`);
@@ -114,8 +126,18 @@ export async function runPlaywrightMcp(argv) {
     say(`@playwright/mcp@${version} is not on PATH — start this through npx -p @playwright/mcp@${version} (the vc-secrets declaration does)`);
     return 69;
   }
-  const { secrets, dropped } = takePasswords(process.env);
+  const { secrets: fromVcSecrets, dropped } = takePasswords(process.env);
   for (const k of dropped) delete process.env[k];
+  // The roles kept in .env.local (§2d), for this lane's env; what vc-secrets injected wins.
+  let fromFile = {};
+  if (env) {
+    try {
+      fromFile = envFilePasswords(readFileSync(join(process.cwd(), ".env.local"), "utf8"), env);
+    } catch {
+      /* no .env.local — every password of this env is in vc-secrets */
+    }
+  }
+  const secrets = { ...fromFile, ...fromVcSecrets };
   if (!Object.keys(secrets).length) say("started without a password — the agent cannot log in on this lane (check the env's secrets: vc-secrets doctor)");
   try {
     dns.setDefaultResultOrder("ipv4first");

@@ -42,7 +42,7 @@ What it writes into the project (all gitignored):
 |---|---|
 | `project-profile.json` | the deployment profile (`schemaVersion` 3): tracker, code host, repos, `auth.{github,ado,jira}`, `governance` |
 | `.env.<env>` | URLs and identifiers (no secret) |
-| `.env.local` | test-user passwords only — or nothing, when they are kept in vc-secrets (below) |
+| `.env.local` | test-user passwords only — those of the roles not kept in vc-secrets (below) |
 | `.claude/vc-secrets.local.json` | the vc-secrets declarations: one `local` secret per PAT axis (`github-pat`, `ado-pat`, `jira-token`), the bridge's `vc-init-*` tasks, the GitHub MCP server; with the passwords in vc-secrets also, per env, its password secrets, `vc-init-onboard.<env>` and the `playwright-<lane>.<env>` servers |
 | `.mcp.json` + `.claude/settings.local.json` | MCP servers; the settings `env` holds `VC_RUN` and `VC_SECRETS` (paths) and no token |
 
@@ -51,7 +51,8 @@ The token step: `/project-init` prints, per token, what it is, where to create i
 changed. The operator runs them in a terminal and replies "done"; `check-secrets.mjs` then reads
 `vc-secrets doctor` and names whatever is still missing.
 
-**Test-user passwords** go one of two ways, chosen at the auth question:
+**Test-user passwords** go one of two ways, chosen at the auth question separately for admins and for
+storefront users (typically admins in vc-secrets, users in `.env.local`, which is easier to edit):
 
 - **vc-secrets (recommended)** — no password in any file. One secret per password per environment
   (`admin-password-<env>`, `user-password-<env>`), stored with `set` like a token. Each Playwright lane in
@@ -59,7 +60,8 @@ changed. The operator runs them in a terminal and replies "done"; `check-secrets
   declared vc-secrets server `playwright-<lane>.<env>`, which starts the pinned `@playwright/mcp` in-process
   (`bridge/playwright-mcp.mjs`) with the passwords as `config.secrets` — a browser agent types the NAME
   (`ADMIN_PASSWORD`), the lane types the value and masks it. The onboarding scripts that log in over the API
-  run as `vc-init-onboard.<env>`. One declaration per env means an env whose passwords are not stored yet
+  run as `vc-init-onboard.<env>`. A lane also reads the passwords of the roles kept in `.env.local` for its
+  env straight from that file, so a mixed setup needs no generated file. One declaration per env means an env whose passwords are not stored yet
   breaks only itself, and switching `TEST_ENV` asks for no new trust.
 - **`.env.local`** — `ADMIN_PASSWORD_<ENV>` …, and `sync-browser-secrets.mjs` generates
   `.env.playwright.local`, the lanes' `--secrets` file. Use it where a script outside vc-init reads a

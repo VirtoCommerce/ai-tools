@@ -22,8 +22,10 @@
  *   --github-auth pat | gh-cli     (client GitHub repos and/or the platform upstream)
  *   --jira-auth   pat | token | oauth   (Jira; `token` is the old spelling of pat)
  *
- * --passwords vc-secrets  (option B, lib/passwords.mjs) the passwords go to vc-secrets as well: nothing
- *   is written to .env.local, and the report names the secrets write-secrets-decl.mjs declares instead.
+ * --admin-passwords / --user-passwords  vc-secrets | env-local  (§2d, lib/passwords.mjs) where each role's
+ *   password lives. A vc-secrets role gets no placeholder here — the report names the secret
+ *   write-secrets-decl.mjs declares instead. Omitted ⇒ what the project's declaration already keeps in
+ *   vc-secrets (so --add-env needs no flag), else .env.local.
  *
  * IDEMPOTENT: appends only the placeholders not already present in `.env.local` (a line matching
  * `^KEY=`), so a re-run never clobbers values the operator has already filled.
@@ -40,7 +42,8 @@ import { resolveOutPath, outputRoot } from "./lib/paths.mjs";
 // every onboarding that aborted before §7 — left the densest secret file unignored (review #4).
 import { ensureProjectIgnores } from "./lib/gitignore.mjs";
 import { PASSWORD_GUIDE, TOKEN_GUIDE } from "./lib/token-guide.mjs";
-import { ALWAYS_PASSWORDS, passwordSecret } from "./lib/passwords.mjs";
+import { ROLES, ROLE_PASSWORD, declaredPasswords, passwordSecret, vcSecretsRoles } from "./lib/passwords.mjs";
+import { join } from "node:path";
 import { emitObservations } from "./lib/diag-obs.mjs";
 import { isHostGoverned } from "./lib/governance.mjs";
 
@@ -60,8 +63,8 @@ function fail(msg) { console.error(`[scaffold-secrets] ${msg}`); process.exit(1)
 
 // Secret catalog: what / why / where + whether it is a per-env credential.
 const CATALOG = {
-  ADMIN_PASSWORD: { perEnv: true, include: () => true, ...PASSWORD_GUIDE.ADMIN_PASSWORD },
-  USER_PASSWORD: { perEnv: true, include: () => true, ...PASSWORD_GUIDE.USER_PASSWORD },
+  ADMIN_PASSWORD: { perEnv: true, include: (o) => o.inVcSecrets !== true || !o.vcRoles.includes("admin"), ...PASSWORD_GUIDE.ADMIN_PASSWORD },
+  USER_PASSWORD: { perEnv: true, include: (o) => o.inVcSecrets !== true || !o.vcRoles.includes("user"), ...PASSWORD_GUIDE.USER_PASSWORD },
 };
 
 function main() {
@@ -93,11 +96,23 @@ function main() {
   }
   const tokens = hostGoverned ? [] : Object.values(TOKEN_GUIDE).filter((g) => patAxes[g.axis]).map((g) => g.secret);
 
-  if (args.passwords !== undefined && !["vc-secrets", "env-local"].includes(args.passwords)) fail(`--passwords must be vc-secrets or env-local, got "${args.passwords}"`);
-  if (args.passwords === "vc-secrets" && !hostGoverned) {
-    console.log(`[scaffold-secrets] passwords go to vc-secrets, not .env.local: ${ALWAYS_PASSWORDS.map((n) => passwordSecret(n, env)).join(", ")} (declared by write-secrets-decl.mjs --password-envs ${env})`);
-    if (tokens.length) console.log(`[scaffold-secrets] tokens go to vc-secrets, not .env.local: ${tokens.join(", ")}`);
-    return;
+  // Where each role's password lives: the flags, else what the declaration already keeps in vc-secrets.
+  let declared = [];
+  try {
+    declared = vcSecretsRoles(declaredPasswords(JSON.parse(readFileSync(join(outputRoot(), ".claude", "vc-secrets.local.json"), "utf8"))));
+  } catch {
+    /* no declaration yet — every role defaults to .env.local */
+  }
+  const vcRoles = [];
+  for (const role of ROLES) {
+    const flag = args[`${role}-passwords`];
+    if (flag !== undefined && !["vc-secrets", "env-local"].includes(flag)) fail(`--${role}-passwords must be vc-secrets or env-local, got "${flag}"`);
+    if (!hostGoverned && (flag === "vc-secrets" || (flag === undefined && declared.includes(role)))) vcRoles.push(role);
+  }
+  opts.inVcSecrets = vcRoles.length > 0;
+  opts.vcRoles = vcRoles;
+  if (vcRoles.length) {
+    console.log(`[scaffold-secrets] ${vcRoles.join(" + ")} passwords go to vc-secrets, not .env.local: ${vcRoles.map((r) => passwordSecret(ROLE_PASSWORD[r], env)).join(", ")} (declared by write-secrets-decl.mjs --password-envs ${env} --password-roles ${vcRoles.join(",")})`);
   }
   const SUFFIX = `_${env.toUpperCase()}`;
   // Default output → the deployment project (process.cwd()); .env.local is loaded from

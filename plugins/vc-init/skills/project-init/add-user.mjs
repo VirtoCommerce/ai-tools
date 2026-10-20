@@ -5,13 +5,15 @@
  *
  * A test user is two values under one KEY: its login, which is not a secret and goes into `.env.<env>`
  * as `<KEY>_LOGIN`, and its password `<KEY>_PASSWORD`, which this script never sees. Where the password
- * goes follows the environment's mode (lib/passwords.mjs):
+ * goes follows where the env keeps its ROLE's passwords (§2d asks per role; lib/passwords.mjs) — the
+ * built-in password of that role (ADMIN_PASSWORD / USER_PASSWORD) being declared for the env says so:
  *
- *   vc-secrets  the env's passwords are declared there → the name is added to that env's declaration
+ *   vc-secrets  the role's passwords are declared there → the name is added to that env's declaration
  *               (write-secrets-decl.mjs: secret `<key>-password-<env>`, bound in vc-init-onboard.<env>
  *               and every playwright-<lane>.<env>). The operator then runs `trust` and `set`.
  *   .env.local  an empty `<KEY>_PASSWORD_<ENV>=` placeholder is appended to `.env.local` for the
- *               operator to fill; sync-browser-secrets.mjs then hands it to the browser lanes.
+ *               operator to fill. A lane run from vc-secrets reads it from there itself; a project with
+ *               no declaration hands it over through sync-browser-secrets.mjs.
  *
  * Either way a browser agent logs in with the login from `<KEY>_LOGIN` and types the password by its
  * NAME — `browser_type(text="<KEY>_PASSWORD")`.
@@ -35,7 +37,7 @@ import { vcSecretsShim } from "../../bridge/vc-secrets-path.mjs";
 import { ensureProjectIgnores } from "./lib/gitignore.mjs";
 import { outputRoot } from "./lib/paths.mjs";
 import { standDownIfHostGoverned } from "./lib/governance.mjs";
-import { ENV_NAME_RE, declaredPasswords, isPasswordName, passwordSecret } from "./lib/passwords.mjs";
+import { ENV_NAME_RE, ROLES, ROLE_PASSWORD, declaredPasswords, isPasswordName, passwordSecret } from "./lib/passwords.mjs";
 import { patAxesFromProfile, writeSecretsDecl } from "./write-secrets-decl.mjs";
 
 /** `.env.<x>` files that are not an environment. */
@@ -112,7 +114,7 @@ export function listEnvs(root) {
   const inVcSecrets = declaredPasswords(readDecl(root));
   return envsIn(readdirSync(root)).map((env) => ({
     env,
-    passwords: inVcSecrets[env] ? "vc-secrets" : ".env.local",
+    passwords: Object.fromEntries(ROLES.map((r) => [r, inVcSecrets[env]?.includes(ROLE_PASSWORD[r]) ? "vc-secrets" : ".env.local"])),
     users: usersIn(readFileSync(join(root, `.env.${env}`), "utf8")).map(({ key, role, loginVar, password, login }) => ({ key, role, loginVar, password, login })),
   }));
 }
@@ -178,7 +180,8 @@ function main() {
   const vcSecrets = JSON.stringify(vcSecretsShim().path || "<VC_SECRETS>");
   const steps = [];
   let password;
-  if (declaredPasswords(readDecl(root))[env]) {
+  const envDecl = declaredPasswords(readDecl(root))[env];
+  if (envDecl?.includes(ROLE_PASSWORD[role])) {
     let decl;
     try {
       decl = writeSecretsDecl({ root, pat: patAxesFromProfile(profile), shim: args.shim || defaultShimPath(), passwordChange: { addEnvs: [env], addNames: [name] } });
@@ -200,7 +203,8 @@ function main() {
     }
     password = { mode: ".env.local", key: suffixed, placeholder: has ? "kept" : "added" };
     steps.push(`fill ${suffixed}= in .env.local (in your editor, never in chat)`);
-    steps.push(`TEST_ENV=${env} node "<vcInit>/skills/project-init/sync-browser-secrets.mjs"`);
+    // A lane run from vc-secrets reads .env.local itself; only a declaration-free project needs the file.
+    if (!envDecl) steps.push(`TEST_ENV=${env} node "<vcInit>/skills/project-init/sync-browser-secrets.mjs"`);
   }
   steps.push("restart Claude Code — the browser lanes and the bridge read the passwords at start");
 

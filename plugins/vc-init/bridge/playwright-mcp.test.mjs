@@ -13,7 +13,7 @@ import { fileURLToPath } from "node:url";
 import { findPackage, pinnedVersion, refusal, takePasswords } from "./playwright-mcp.mjs";
 import { buildInnerEnv, onboardRoute, passwordEnvs } from "./run.mjs";
 import { checkPlaywright } from "./allowlist.mjs";
-import { currentEnv, declaredPasswords, passwordSecret, splitSuffixedKey } from "../skills/project-init/lib/passwords.mjs";
+import { currentEnv, declaredLanes, declaredPasswords, envFilePasswords, passwordSecret, splitSuffixedKey, vcSecretsRoles } from "../skills/project-init/lib/passwords.mjs";
 import { laneCommands } from "../skills/project-init/lib/playwright-lanes.mjs";
 import { buildDeclarations, nextPasswords } from "../skills/project-init/write-secrets-decl.mjs";
 
@@ -87,6 +87,9 @@ test("declarations: per env its secrets, an onboard task with the tokens + its p
     ADMIN_PASSWORD: "secret:admin-password-staging", USER_PASSWORD: "secret:user-password-staging", npm_config_prefer_offline: "literal:true",
   });
   assert.deepEqual(declaredPasswords(d), passwords);
+  // A lane server names its env, so it can read that env's .env.local roles; read back, the lane is env-free.
+  assert.deepEqual(d.servers["playwright-edge.vcst"].args.slice(5, 9), ["--playwright", SPEC, "--vc-env", "vcst"]);
+  assert.deepEqual(declaredLanes(d), LANES);
   // Kept as is when nothing changes; an env removed leaves nothing of it behind.
   const again = buildDeclarations(d, { pat: { jira: true }, shim: SHIM, projectId: "p" });
   assert.equal(JSON.stringify(again), JSON.stringify(d));
@@ -146,4 +149,26 @@ test("a lane of an env with no declaration fails with the envs that have one, an
   assert.match(r.stderr, /no vc-secrets server playwright-chrome\.staging .*declared for vcst/);
   const refused = spawnSync(process.execPath, [RUN, "playwright", "chrome", "--secrets"], { cwd: dir, encoding: "utf8", env });
   assert.equal(refused.status, 64);
+});
+
+test("per role: a new env takes the roles the project keeps in vc-secrets, or the ones asked for", () => {
+  const adminsOnly = nextPasswords({}, { addEnvs: ["vcst"], roles: ["admin"] });
+  assert.deepEqual(adminsOnly, { vcst: ["ADMIN_PASSWORD"] });
+  assert.deepEqual(vcSecretsRoles(adminsOnly), ["admin"]);
+  assert.deepEqual(nextPasswords(adminsOnly, { addEnvs: ["staging"] }), { vcst: ["ADMIN_PASSWORD"], staging: ["ADMIN_PASSWORD"] });
+  assert.deepEqual(nextPasswords({}, { addEnvs: ["qa"] }), { qa: ["ADMIN_PASSWORD", "USER_PASSWORD"] });
+  assert.throws(() => nextPasswords({}, { addEnvs: ["qa"], roles: ["root"] }));
+});
+
+test("a lane reads its own env's .env.local passwords: suffixed first, then bare, never another env's or a token", () => {
+  const text = [
+    "USER_PASSWORD=bare-for-every-env",
+    "USER_PASSWORD_VCST=\"with space # and hash\"",
+    "BUYER2_PASSWORD_VCST=b2 # a note",
+    "ADMIN_PASSWORD_STAGING=other-env",
+    "GITHUB_TOKEN_VCST=never",
+    "EMPTY_PASSWORD_VCST=",
+  ].join("\n");
+  assert.deepEqual(envFilePasswords(text, "vcst"), { USER_PASSWORD: "with space # and hash", BUYER2_PASSWORD: "b2" });
+  assert.deepEqual(envFilePasswords(text, "qa"), { USER_PASSWORD: "bare-for-every-env" });
 });

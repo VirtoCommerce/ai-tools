@@ -434,13 +434,15 @@ Applicable axes:
 | **GitHub** | **always** (the platform upstream is always GitHub; and the client host may be GitHub) | `PAT` (Recommended) → vc-secrets `github-pat` · `Browser login` → `gh auth login` |
 | **Azure DevOps** | tracker = `azure` **OR** code host = `azure-repos` | `PAT` (Recommended) → vc-secrets `ado-pat` · `Browser login` → `az login` |
 | **Jira** | tracker = `jira` | `API token` (Recommended) → vc-secrets `jira-token` · `Atlassian MCP OAuth` (no token) |
-| **Test-user passwords** | always | `vc-secrets` (Recommended) → `admin-password-<env>` / `user-password-<env>`, no password file · `.env.local` → the file, plus a generated `.env.playwright.local` for the browser lanes |
+| **Admin passwords** | always | `vc-secrets` (Recommended) → `admin-password-<env>`, no file · `.env.local` → `ADMIN_PASSWORD_<ENV>` in the file |
+| **Storefront-user passwords** | always | `.env.local` (Recommended — easy to edit when there are many users) → `USER_PASSWORD_<ENV>` in the file · `vc-secrets` → `user-password-<env>`, no file |
 
 Map the answers to the flags every later step takes: `--github-auth pat|gh-cli`, `--ado-auth
-pat|az-login`, `--jira-auth pat|oauth`, `--passwords vc-secrets|env-local`. **Carry the auth ones to
-step 6** — gen-profile writes them to `auth.*` in the profile. The password choice is recorded by the
-vc-secrets declaration itself (3c), not the profile: a `vc-init-onboard.<env>` task there means the
-env's passwords are in vc-secrets (`lib/passwords.mjs`).
+pat|az-login`, `--jira-auth pat|oauth`, `--admin-passwords vc-secrets|env-local`, `--user-passwords
+vc-secrets|env-local`. **Carry the auth ones to step 6** — gen-profile writes them to `auth.*` in the
+profile. The password choices are recorded by the vc-secrets declaration itself (3c), not the profile:
+a role is in vc-secrets when its `ADMIN_PASSWORD` / `USER_PASSWORD` is declared in a
+`vc-init-onboard.<env>` task (`lib/passwords.mjs`), and `--add-env` / `--add-user` follow that.
 
 ## 3. Scaffold the env templates + the vc-secrets declarations, then hand off
 
@@ -469,8 +471,8 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/scaffold-secrets.mjs" \
   --env myqa --tracker jira --jira-auth pat --client-vcs github --github-auth pat --print
 ```
 Writes `ADMIN_PASSWORD_<ENV>` / `USER_PASSWORD_<ENV>` placeholders (app TEST accounts) and NOTHING
-else — and with `--passwords vc-secrets` not even those: it writes nothing and names the password
-secrets 3c declares instead. Its last line names the tokens this topology needs — `tokens go to vc-secrets, not .env.local:
+else — and for a role that goes to vc-secrets (`--admin-passwords` / `--user-passwords vc-secrets`) not
+even its placeholder: it names the secret 3c declares instead. Its last line names the tokens this topology needs — `tokens go to vc-secrets, not .env.local:
 github-pat, jira-token` — which must match what 3c declares. If it warns that `.env.local` still holds
 a token in plaintext (an older onboarding), say so in one line: `/project-init --check` moves it.
 Idempotent.
@@ -488,12 +490,13 @@ stable `projectId`. Prints a JSON report — keep `secrets` and `trustNeeded`. W
 it declares nothing (every axis is a session login) and 3d's token block is empty. A re-run with the
 same answers changes nothing and asks for no new trust.
 
-With `--passwords vc-secrets` (2d) add `--password-envs <env>`: it also declares, for that env, one
-`local` secret per password (`admin-password-<env>`, `user-password-<env>`; `--password-names` adds
-others), the task `vc-init-onboard.<env>` (the onboarding scripts' API logins) and one server
+When either role goes to vc-secrets (2d) add `--password-envs <env> --password-roles <those roles>`
+(`admin`, `user` or `admin,user`): it also declares, for that env, one `local` secret per such password
+(`admin-password-<env>` and/or `user-password-<env>`; `--password-names` adds others), the task `vc-init-onboard.<env>` (the onboarding scripts' API logins) and one server
 `playwright-<lane>.<env>` per Playwright lane — the same lane flags gen-mcp would write, run in-process by
-`bridge/playwright-mcp.mjs` with the passwords in memory only. Declared here, at 3c, so the operator
-trusts it once: gen-mcp (§7) finds it unchanged.
+`bridge/playwright-mcp.mjs` with the passwords in memory only — a lane also reads the `.env.local`
+role's passwords of its env itself, so mixed mode needs no generated file. Declared here, at 3c, so the
+operator trusts it once: gen-mcp (§7) finds it unchanged.
 
 ### 3d. Tell the operator what to do — files, trust, tokens — then pause
 
@@ -506,8 +509,8 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/check-secrets.mjs" --steps
 Then, under a framed `🔒  FILL IN · TRUST · STORE TOKENS` step header (§Output FORMAT), print three
 short parts, in this order:
 
-1. **The files to fill** — `.env.<env>` (URLs/identifiers) and, on the `.env.local` password choice,
-   `.env.local` (test-user passwords), with the placeholder keys each emitted; the inline comments say
+1. **The files to fill** — `.env.<env>` (URLs/identifiers) and, for each role kept in `.env.local`,
+   `.env.local` (its test-user passwords), with the placeholder keys each emitted; the inline comments say
    what each value is and where to get it.
 2. **Approve the declarations** — only when 3c reported `trustNeeded: true`: the operator runs, in
    their own terminal in the project directory, `node "<VC_SECRETS>" trust`, reads what it shows (the
@@ -516,9 +519,9 @@ short parts, in this order:
 3. **Store each token** — the `--steps` block: per token, what it is, why, where to create it, and
    `Store: node "<VC_SECRETS>" set <name>`, which the operator runs in that terminal, pastes the token
    at the HIDDEN prompt and presses Enter. Never offer to take a token in chat; if the operator pastes
-   one anyway, do not repeat it, tell them to revoke it, and continue with `set` for a new one. On the
-   vc-secrets password choice the same block lists each test-user password's `set` command — the same
-   hidden prompt, never chat.
+   one anyway, do not repeat it, tell them to revoke it, and continue with `set` for a new one. For each
+   role kept in vc-secrets the same block lists its passwords' `set` commands — the same hidden prompt,
+   never chat.
 
 For any **browser-login** choice (`gh auth login`, `az login`, Atlassian MCP OAuth) there is no
 token — remind the operator to run that login instead (step 8's `ensure-session.mjs` drives it).
@@ -833,11 +836,12 @@ path) to every Playwright server it finds on disk:
 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/sync-browser-secrets.mjs"
 ```
 
-**Passwords in vc-secrets (3c declared `--password-envs`)?** Skip this command — it says so and writes
-nothing. gen-mcp then writes every lane as `node ${VC_RUN} playwright <lane>`: the bridge resolves the
-current env (`TEST_ENV`, else `.env.test-env`, else the only declared env) and runs the declared server
-`playwright-<lane>.<env>`, so switching `TEST_ENV` needs a restart and nothing else — no file, no new
-trust. Otherwise:
+**Any role's passwords in vc-secrets (3c declared `--password-envs`)?** Skip this command — it says so
+and writes nothing. gen-mcp then writes every lane as `node ${VC_RUN} playwright <lane>`: the bridge
+resolves the current env (`TEST_ENV`, else `.env.test-env`, else the only declared env) and runs the
+declared server `playwright-<lane>.<env>`, which takes the vc-secrets roles from the declaration and the
+`.env.local` roles from that file — so switching `TEST_ENV` needs a restart and nothing else, no
+generated file, no new trust. Both roles in `.env.local`:
 
 It writes `.env.playwright.local` (gitignored) with the CURRENT env's login passwords under their bare
 names — `ADMIN_PASSWORD`, `USER_PASSWORD`, any other `*_PASSWORD` in `.env.local`; never a token. A
@@ -1104,8 +1108,9 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/scaffold-secrets.mjs" --env <new> 
   operator to re-enter tracker/org values they already gave at onboarding.
 - `scaffold-secrets` adds ONLY the `_<ENV>`-suffixed per-env app passwords
   (`ADMIN_PASSWORD_<NEW>` / `USER_PASSWORD_<NEW>`) to the shared `.env.local`. **Passwords in vc-secrets**
-  (`node "$VC_RUN" --where` lists `passwordEnvs`)? Pass `--passwords vc-secrets` (it writes nothing), then
-  declare the new env and show its steps:
+  (`node "$VC_RUN" --where` lists `passwordEnvs`)? `scaffold-secrets` then skips the vc-secrets role's
+  placeholder by itself (it reads the declaration), and you declare the new env — the same roles as the
+  others — and show its steps:
   `node "$CLAUDE_PLUGIN_ROOT/skills/project-init/write-secrets-decl.mjs" --from-profile --password-envs <new> --shim "$VC_RUN"`
   and `check-secrets.mjs --steps`. The new env's lanes and onboard task change the declarations, so the
   pause asks for `trust` plus a `set` per password; an env whose passwords are not stored yet breaks only
@@ -1146,16 +1151,17 @@ marker itself). Only if this path ended before running verify-access, run it man
 `/project-init --add-user` gives an already-onboarded project one more storefront user or admin — a
 second buyer, a support admin — on one or more environments, without the interview. A test user is a
 KEY with two values: the login, which is not a secret and goes into `.env.<env>` as `<KEY>_LOGIN`, and
-the password `<KEY>_PASSWORD`, which you never see. Where the password goes follows each env's mode:
-in vc-secrets (`<key>-password-<env>`, bound into that env's lanes and onboard task) or in `.env.local`
-(`<KEY>_PASSWORD_<ENV>=`, for the operator to fill). `add-user.mjs` does both writes; you only ask.
+the password `<KEY>_PASSWORD`, which you never see. Where the password goes follows where that env
+keeps its ROLE's passwords (§2d): in vc-secrets (`<key>-password-<env>`, bound into that env's lanes and
+onboard task) or in `.env.local` (`<KEY>_PASSWORD_<ENV>=`, for the operator to fill) — typically an
+admin to vc-secrets and a storefront user to `.env.local`. `add-user.mjs` does both writes; you only ask.
 
 1. **Precondition + scan** (no question): `project-profile.json` must exist (else run the full
-   interview). List the environments, their password mode and the users they already have:
+   interview). List the environments, where each role's passwords live and the users they already have:
    ```bash
    node "$CLAUDE_PLUGIN_ROOT/skills/project-init/add-user.mjs" --list
    ```
-   Show it as ONE table (env · passwords · users with their logins).
+   Show it as ONE table (env · admin passwords · user passwords · users with their logins).
 2. **Ask** in one `AskUserQuestion` block: which environment(s) (multi-select, from the scan) and the
    role — `Storefront user` or `Admin`. Then, as plain chat, the KEY (upper snake case, e.g. `BUYER2`;
    offer one from the role) and the login for EACH chosen env — a login usually differs per env. A
