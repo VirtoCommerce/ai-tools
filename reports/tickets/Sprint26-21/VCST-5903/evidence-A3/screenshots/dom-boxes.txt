@@ -1,0 +1,37 @@
+# Accessibility-tree snapshots of the preview iframe (browser_snapshot, boxes=true), playwright-chrome, 2026-10-19 ~15:40Z
+# Story components-organisms-vcstatwidget--basic (label "Revenue this week", description "48 orders", delta "+12% vs last week")
+
+## value = ""  (args=value:)  -> dash branch
+card [16,16,256,156]
+  head [36,33,219,28] "Revenue this week"
+  status [35,32,1,1] ""
+  value--pending [36,67,219,38] "—"
+  description [36,111,219,14] "48 orders"
+  delta [36,131,219,24] "+12% vs last week"
+
+## value = " "  (args=value:+)  -> FAIL: no dash, figure row collapsed
+card [16,16,256,118]            # 156 -> 118 = -38 (= dash row height only; the 6px flex gap stays => a 0-height element is still mounted)
+  head [36,33,219,28] "Revenue this week"
+  status [35,32,1,1] ""
+  description [36,73,219,14] "48 orders"     # y 111 -> 73
+  delta [36,93,219,24] "+12% vs last week"
+
+## value = "   " (three spaces, args=value:+++)  -> same as " " (card 118, description y73)
+
+## value = "0"  (args=value:0)  -> figure "0" [36,67,219,38], card 156  (control: correct)
+
+# Story components-organisms-vcstatwidget--with-suffix (label "Active carts", valueSuffix "items")
+
+## value = " "  (args=value:+)  -> FAIL: unit with no number in the figure row
+card [16,16,256,156]
+  value [36,67,219,38] "items"                 # suffix span only exists in the v-else (has-value) branch
+  description [36,111,219,14] "$2,310.00 in carts"
+  delta [36,137,175,18] "5 abandoned for over 7 days"
+
+## errorText = ""  (Set string, args=errorText:)  -> ready card, "34 items" (control: correct)
+
+## errorText = " " (args=errorText:+)  -> FAIL: figures gone, blank error row
+card [16,16,256,92]
+  head [36,33,219,28] "Active carts"
+  status [35,32,1,1] "Active carts:"      # a11y name; template = "<label>: <errorText>" with errorText " "
+  img (exclamation-circle) [36,74,16,16]  # error row: icon + text " ", no readable message

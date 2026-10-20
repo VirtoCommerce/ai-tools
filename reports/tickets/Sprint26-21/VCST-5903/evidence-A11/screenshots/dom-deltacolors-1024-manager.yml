@@ -1,0 +1,428 @@
+- generic [ref=f5e3] [box=0,0,1024,768]:
+  - generic [ref=f5e4] [box=0,0,1,768]:
+    - navigation "Global" [box=0,0,0,768]:
+      - generic [ref=f5e6] [box=0,-218,24,2097]:
+        - generic [ref=f5e7] [box=12,-202,8,42]:
+          - link "Skip to canvas" [ref=f5e8] [cursor=pointer] [box=19,-181,1,1]:
+            - /url: "#storybook-preview-wrapper"
+          - link "Storybook" [ref=f5e9] [cursor=pointer] [box=16,-195,8,28]:
+            - /url: ./
+            - img "Storybook" [box=20,-192,0,22]
+          - button "Shortcuts" [ref=f5e100] [cursor=pointer] [box=40,-197,32,32]:
+            - img [ref=f5e101] [box=49,-188,14,14]
+        - generic [ref=f5e14] [box=-10000,74,1,1]: Search for components
+        - combobox "Search for components" [ref=f5e15] [box=12,-144,4,32]:
+          - generic [box=14,-142,28,28]:
+            - img [box=21,-135,14,14]
+          - searchbox "Search for components" [box=42,-142,0,28]
+          - code [box=47,-135,23,16]: ⌃ K
+          - button "Tag filters" [ref=f5e109] [cursor=pointer] [box=75,-142,28,28]:
+            - img [ref=f5e110] [box=82,-135,14,14]
+        - generic [box=12,-96,0,1935]:
+          - generic [box=12,-96,0,1935]:
+            - generic [box=12,-96,0,1935]:
+              - generic [box=12,-96,0,1935]:
+                - generic [box=12,-96,0,1935]:
+                  - img [box=12,-96,0,0]
+                  - generic [box=12,-96,0,28]:
+                    - button "Components" [expanded] [ref=f5e118] [cursor=pointer] [box=12,-96,125,28]:
+                      - img [ref=f5e120] [box=20,-86,8,8]
+                      - text: Components
+                    - button "Collapse" [ref=f5e122] [cursor=pointer] [box=137,-96,28,28]:
+                      - img [ref=f5e123] [box=144,-89,14,14]
+                  - button "Atoms" [ref=f5e126] [cursor=pointer] [box=12,-64,14,32]:
+                    - generic [ref=f5e127] [box=20,-57,28,14]:
+                      - img [ref=f5e129] [box=20,-54,8,8]
+                      - img [ref=f5e131] [box=34,-57,14,14]
+                    - generic [ref=f5e134] [box=54,-59,41,19]: Atoms
+                  - button "Molecules" [ref=f5e136] [cursor=pointer] [box=12,-32,14,32]:
+                    - generic [ref=f5e137] [box=20,-25,28,14]:
+                      - img [ref=f5e139] [box=20,-22,8,8]
+                      - img [ref=f5e141] [box=34,-25,14,14]
+                    - generic [ref=f5e144] [box=54,-27,64,19]: Molecules
+                  - button "Organisms" [expanded] [ref=f5e146] [cursor=pointer] [box=12,0,14,32]:
+                    - generic [ref=f5e147] [box=20,7,28,14]:
+                      - img [ref=f5e149] [box=20,10,8,8]
+                      - img [ref=f5e151] [box=34,7,14,14]
+                    - generic [ref=f5e154] [box=54,5,68,19]: Organisms
+                  - button "VcAddToCart" [ref=f5e156] [cursor=pointer] [box=12,32,32,32]:
+                    - generic [ref=f5e157] [box=38,39,28,14]:
+                      - img [ref=f5e159] [box=38,42,8,8]
+                      - img [ref=f5e161] [box=52,39,14,14]
+                    - generic [ref=f5e164] [box=72,37,84,19]: VcAddToCart
+                  - button "VcConfirmationModal" [ref=f5e166] [cursor=pointer] [box=12,64,32,32]:
+                    - generic [ref=f5e167] [box=38,71,28,14]:
+                      - img [ref=f5e169] [box=38,74,8,8]
+                      - img [ref=f5e171] [box=52,71,14,14]
+                    - generic [ref=f5e174] [box=72,69,136,19]: VcConfirmationModal
+                  - button "VcDatePicker" [ref=f5e176] [cursor=pointer] [box=12,96,32,32]:
+                    - generic [ref=f5e177] [box=38,103,28,14]:
+                      - img [ref=f5e179] [box=38,106,8,8]
+                      - img [ref=f5e181] [box=52,103,14,14]
+                    - generic [ref=f5e184] [box=72,101,83,19]: VcDatePicker
+                  - button "VcDateRangePicker" [ref=f5e186] [cursor=pointer] [box=12,128,32,32]:
+                    - generic [ref=f5e187] [box=38,135,28,14]:
+                      - img [ref=f5e189] [box=38,138,8,8]
+                      - img [ref=f5e191] [box=52,135,14,14]
+                    - generic [ref=f5e194] [box=72,133,124,19]: VcDateRangePicker
+                  - button "VcModal" [ref=f5e196] [cursor=pointer] [box=12,160,32,32]:
+                    - generic [ref=f5e197] [box=38,167,28,14]:
+                      - img [ref=f5e199] [box=38,170,8,8]
+                      - img [ref=f5e201] [box=52,167,14,14]
+                    - generic [ref=f5e204] [box=72,165,55,19]: VcModal
+                  - button "VcPagination" [ref=f5e206] [cursor=pointer] [box=12,192,32,32]:
+                    - generic [ref=f5e207] [box=38,199,28,14]:
+                      - img [ref=f5e209] [box=38,202,8,8]
+                      - img [ref=f5e211] [box=52,199,14,14]
+                    - generic [ref=f5e214] [box=72,197,82,19]: VcPagination
+                  - button "VcPopupSidebar" [ref=f5e216] [cursor=pointer] [box=12,224,32,32]:
+                    - generic [ref=f5e217] [box=38,231,28,14]:
+                      - img [ref=f5e219] [box=38,234,8,8]
+                      - img [ref=f5e221] [box=52,231,14,14]
+                    - generic [ref=f5e224] [box=72,229,104,19]: VcPopupSidebar
+                  - button "VcProductButton" [ref=f5e226] [cursor=pointer] [box=12,256,32,32]:
+                    - generic [ref=f5e227] [box=38,263,28,14]:
+                      - img [ref=f5e229] [box=38,266,8,8]
+                      - img [ref=f5e231] [box=52,263,14,14]
+                    - generic [ref=f5e234] [box=72,261,107,19]: VcProductButton
+                  - button "VcProductCard" [ref=f5e236] [cursor=pointer] [box=12,288,32,32]:
+                    - generic [ref=f5e237] [box=38,295,28,14]:
+                      - img [ref=f5e239] [box=38,298,8,8]
+                      - img [ref=f5e241] [box=52,295,14,14]
+                    - generic [ref=f5e244] [box=72,293,94,19]: VcProductCard
+                  - button "VcProductImage" [ref=f5e246] [cursor=pointer] [box=12,320,32,32]:
+                    - generic [ref=f5e247] [box=38,327,28,14]:
+                      - img [ref=f5e249] [box=38,330,8,8]
+                      - img [ref=f5e251] [box=52,327,14,14]
+                    - generic [ref=f5e254] [box=72,325,103,19]: VcProductImage
+                  - button "VcQuantityStepper" [ref=f5e256] [cursor=pointer] [box=12,352,32,32]:
+                    - generic [ref=f5e257] [box=38,359,28,14]:
+                      - img [ref=f5e259] [box=38,362,8,8]
+                      - img [ref=f5e261] [box=52,359,14,14]
+                    - generic [ref=f5e264] [box=72,357,119,19]: VcQuantityStepper
+                  - button "VcStatWidget" [expanded] [ref=f5e266] [cursor=pointer] [box=12,384,32,32]:
+                    - generic [ref=f5e267] [box=38,391,28,14]:
+                      - img [ref=f5e269] [box=38,394,8,8]
+                      - img [ref=f5e271] [box=52,391,14,14]
+                    - generic [ref=f5e274] [box=72,389,88,19]: VcStatWidget
+                  - link "Docs" [ref=f5e276] [cursor=pointer] [box=12,416,58,89]:
+                    - /url: /?path=/docs/components-organisms-vcstatwidget--docs
+                    - img [ref=f5e278] [box=70,423,14,14]
+                    - generic [ref=f5e281] [box=90,421,10,76]: Docs
+                  - link "Basic" [ref=f5e283] [cursor=pointer] [box=12,505,58,108]:
+                    - /url: /?path=/story/components-organisms-vcstatwidget--basic
+                    - img [ref=f5e285] [box=70,512,14,14]
+                    - generic [ref=f5e288] [box=90,510,9,95]: Basic
+                  - link "Colors" [ref=f5e290] [cursor=pointer] [box=12,613,58,127]:
+                    - /url: /?path=/story/components-organisms-vcstatwidget--colors
+                    - img [ref=f5e292] [box=70,620,14,14]
+                    - generic [ref=f5e295] [box=90,618,9,114]: Colors
+                  - generic [box=12,740,0,203]:
+                    - link "Delta Colors" [ref=f5e297] [cursor=pointer] [box=12,740,58,203]:
+                      - /url: /?path=/story/components-organisms-vcstatwidget--delta-colors
+                      - img [ref=f5e299] [box=70,747,14,14]
+                      - generic [ref=f5e302] [box=90,745,11,190]: Delta Colors
+                    - link "Skip to canvas" [ref=f5e303] [cursor=pointer] [box=70,740,1,20]:
+                      - /url: "#storybook-preview-wrapper"
+                  - link "With Suffix" [ref=f5e305] [cursor=pointer] [box=12,943,58,127]:
+                    - /url: /?path=/story/components-organisms-vcstatwidget--with-suffix
+                    - img [ref=f5e307] [box=70,950,14,14]
+                    - generic [ref=f5e310] [box=90,948,15,114]: With Suffix
+                  - link "Loading" [ref=f5e312] [cursor=pointer] [box=12,1070,58,146]:
+                    - /url: /?path=/story/components-organisms-vcstatwidget--loading
+                    - img [ref=f5e314] [box=70,1077,14,14]
+                    - generic [ref=f5e317] [box=90,1075,8,133]: Loading
+                  - link "Error State" [ref=f5e319] [cursor=pointer] [box=12,1216,58,203]:
+                    - /url: /?path=/story/components-organisms-vcstatwidget--error-state
+                    - img [ref=f5e321] [box=70,1223,14,14]
+                    - generic [ref=f5e324] [box=90,1221,9,190]: Error State
+                  - link "Prepend Slot" [ref=f5e326] [cursor=pointer] [box=12,1419,58,222]:
+                    - /url: /?path=/story/components-organisms-vcstatwidget--prepend-slot
+                    - img [ref=f5e328] [box=70,1426,14,14]
+                    - generic [ref=f5e331] [box=90,1424,9,209]: Prepend Slot
+                  - link "Row" [ref=f5e333] [cursor=pointer] [box=12,1641,58,70]:
+                    - /url: /?path=/story/components-organisms-vcstatwidget--row
+                    - img [ref=f5e335] [box=70,1648,14,14]
+                    - generic [ref=f5e338] [box=90,1646,12,57]: Row
+                  - button "VcTable" [ref=f5e340] [cursor=pointer] [box=12,1711,32,32]:
+                    - generic [ref=f5e341] [box=38,1718,28,14]:
+                      - img [ref=f5e343] [box=38,1721,8,8]
+                      - img [ref=f5e345] [box=52,1718,14,14]
+                    - generic [ref=f5e348] [box=72,1716,50,19]: VcTable
+                  - button "VcWidgetSkeleton" [ref=f5e350] [cursor=pointer] [box=12,1743,32,32]:
+                    - generic [ref=f5e351] [box=38,1750,28,14]:
+                      - img [ref=f5e353] [box=38,1753,8,8]
+                      - img [ref=f5e355] [box=52,1750,14,14]
+                    - generic [ref=f5e358] [box=72,1748,118,19]: VcWidgetSkeleton
+                  - button "VcWidget" [ref=f5e360] [cursor=pointer] [box=12,1775,32,32]:
+                    - generic [ref=f5e361] [box=38,1782,28,14]:
+                      - img [ref=f5e363] [box=38,1785,8,8]
+                      - img [ref=f5e365] [box=52,1782,14,14]
+                    - generic [ref=f5e368] [box=72,1780,63,19]: VcWidget
+                  - button "Templates" [ref=f5e370] [cursor=pointer] [box=12,1807,14,32]:
+                    - generic [ref=f5e371] [box=20,1814,28,14]:
+                      - img [ref=f5e373] [box=20,1817,8,8]
+                      - img [ref=f5e375] [box=34,1814,14,14]
+                    - generic [ref=f5e378] [box=54,1812,66,19]: Templates
+          - text: /
+  - main [ref=f5e18] [box=0,0,1024,768]:
+    - region "Toolbar" [ref=f5e19] [box=0,0,1024,40]:
+      - generic [ref=f5e20] [box=-1,-1,1,1]: Toolbar
+      - generic [ref=f5e21] [box=10,0,1004,40]:
+        - generic [ref=f5e22] [box=10,0,520,40]:
+          - button "Show sidebar" [ref=f5e630] [cursor=pointer] [box=10,6,28,28]:
+            - img [ref=f5e631] [box=17,13,14,14]
+          - button "Remount component" [ref=f5e27] [cursor=pointer] [box=55,6,28,28]:
+            - img [ref=f5e28] [box=62,13,14,14]
+          - button "Zoom in" [ref=f5e30] [cursor=pointer] [box=89,6,28,28]:
+            - img [ref=f5e31] [box=96,13,14,14]
+          - button "Zoom out" [ref=f5e34] [cursor=pointer] [box=123,6,28,28]:
+            - img [ref=f5e35] [box=130,13,14,14]
+          - button "Reset zoom" [ref=f5e38] [cursor=pointer] [box=157,6,28,28]:
+            - img [ref=f5e39] [box=164,13,14,14]
+          - button "Apply a grid to the preview" [ref=f5e379] [cursor=pointer] [box=202,6,28,28]:
+            - img [ref=f5e380] [box=209,13,14,14]
+          - button "Change the background of the preview" [ref=f5e383] [cursor=pointer] [box=236,6,28,28]:
+            - img [ref=f5e384] [box=243,13,14,14]
+          - button "Enable measure" [ref=f5e387] [cursor=pointer] [box=270,6,28,28]:
+            - img [ref=f5e388] [box=277,13,14,14]
+          - button "Apply outlines to the preview" [ref=f5e391] [cursor=pointer] [box=304,6,28,28]:
+            - img [ref=f5e392] [box=311,13,14,14]
+          - button "Change the size of the preview" [ref=f5e395] [cursor=pointer] [box=338,6,28,28]:
+            - img [ref=f5e396] [box=345,13,14,14]
+          - button "Vision simulator" [ref=f5e401] [cursor=pointer] [box=372,6,28,28]:
+            - img [ref=f5e402] [box=379,13,14,14]
+          - generic [box=10,20,0,0]:
+            - img [box=10,20,0,0]
+          - button "Select color mode" [ref=f5e408] [cursor=pointer] [box=417,6,28,28]:
+            - img [ref=f5e409] [box=424,13,14,14]
+          - button "Default" [ref=f5e415] [cursor=pointer] [box=451,6,79,28]:
+            - img [ref=f5e416] [box=458,13,14,14]
+            - text: Default
+        - generic [ref=f5e42] [box=884,0,130,40]:
+          - button "Show addons" [ref=f5e634] [cursor=pointer] [box=884,6,28,28]:
+            - img [ref=f5e635] [box=891,13,14,14]
+          - button "Exit full screen" [active] [ref=f5e638] [cursor=pointer] [box=918,6,28,28]:
+            - img [ref=f5e639] [box=925,13,14,14]
+          - link "Open canvas in new tab" [ref=f5e51] [cursor=pointer] [box=952,6,28,28]:
+            - /url: iframe.html?globals=&args=&id=components-organisms-vcstatwidget--delta-colors
+            - img [ref=f5e52] [box=959,13,14,14]
+          - button "Copy canvas link" [ref=f5e55] [cursor=pointer] [box=986,6,28,28]:
+            - img [ref=f5e56] [box=993,13,14,14]
+    - iframe [ref=f5e64] [box=0,40,1024,728]:
+      
+  - generic [ref=f5e65] [box=0,768,1024,1]:
+    - generic [box=0,769,1024,0]:
+      - generic [ref=f5e68] [box=0,769,1024,40]:
+        - tablist [ref=f5e70] [box=0,769,576,40]:
+          - tab "Controls 12" [ref=f5e423] [cursor=pointer] [box=0,769,116,40]:
+            - generic [ref=f5e424] [box=15,779,86,20]:
+              - generic [ref=f5e425] [box=15,783,51,12]: Controls
+              - generic [ref=f5e426] [box=72,779,28,20]: "12"
+          - tab "Actions" [ref=f5e427] [cursor=pointer] [box=116,769,76,40]:
+            - generic [ref=f5e429] [box=131,783,46,12]: Actions
+          - tab "Interactions" [ref=f5e430] [cursor=pointer] [box=191,769,101,40]:
+            - generic [ref=f5e432] [box=206,783,71,12]: Interactions
+          - tab "Accessibility 1" [ref=f5e642] [cursor=pointer] [box=293,769,132,40]:
+            - generic [ref=f5e434] [box=308,779,102,20]:
+              - generic [ref=f5e435] [box=308,783,75,12]: Accessibility
+              - generic [ref=f5e643] [box=389,779,21,20]: "1"
+          - tab "Code" [ref=f5e436] [cursor=pointer] [box=425,769,61,40]
+        - generic [ref=f5e73] [box=952,769,62,40]:
+          - button "Change addon orientation [alt D]" [ref=f5e74] [cursor=pointer] [box=952,775,28,28]:
+            - img [ref=f5e75] [box=959,782,14,14]
+          - button "Hide addons [alt A]" [ref=f5e78] [cursor=pointer] [box=986,775,28,28]:
+            - img [ref=f5e79] [box=993,782,14,14]
+      - generic [ref=f5e442] [box=0,809,1009,1101]:
+        - button "Reset controls" [ref=f5e444] [cursor=pointer] [box=973,815,28,28]:
+          - img [ref=f5e445] [box=980,822,14,14]
+        - table [ref=f5e447] [box=0,809,1009,1101]:
+          - rowgroup [ref=f5e448] [box=0,809,1009,40]:
+            - row "Name Description Default Control" [ref=f5e449] [box=0,809,1009,40]:
+              - columnheader "Name" [ref=f5e450] [box=0,809,252,40]
+              - columnheader "Description" [ref=f5e451] [box=252,809,353,40]
+              - columnheader "Default" [ref=f5e452] [box=605,809,151,40]
+              - columnheader "Control" [ref=f5e453] [box=757,809,252,40]
+          - rowgroup [ref=f5e454] [box=0,849,1009,1061]:
+            - row "Hide props items props Hide props items" [ref=f5e455] [box=0,849,1009,41]:
+              - cell "Hide props items props" [ref=f5e456] [box=0,849,252,41]:
+                - button "Hide props items" [ref=f5e457] [box=0,850,252,40]
+                - generic [ref=f5e458] [box=20,860,232,20]:
+                  - img [ref=f5e459] [box=10,863,12,12]
+                  - text: props
+              - cell "Hide props items" [ref=f5e461] [box=252,849,757,41]:
+                - button "Hide props items" [ref=f5e462] [box=252,850,757,40]
+            - row "label* Metric caption. Every string prop arrives already localized and formatted; the card translates none of them. string - Revenue this week" [ref=f5e463] [box=0,890,1009,104]:
+              - cell "label*" [ref=f5e464] [box=0,890,252,104]
+              - cell "Metric caption. Every string prop arrives already localized and formatted; the card translates none of them. string" [ref=f5e465] [box=252,890,353,104]:
+                - generic [ref=f5e466] [box=267,901,323,60]: Metric caption. Every string prop arrives already localized and formatted; the card translates none of them.
+                - generic [ref=f5e469] [box=267,965,55,19]: string
+              - cell "-" [ref=f5e470] [box=605,890,151,104]
+              - cell "Revenue this week" [ref=f5e471] [box=757,890,252,104]:
+                - textbox [ref=f5e473] [box=772,901,217,32]:
+                  - /placeholder: Edit string...
+                  - text: Revenue this week
+            - row "value The figure itself, pre-formatted (\"$12,480.00\", \"34\"). Without it the card shows a dash. string - $123,456,789.00" [ref=f5e628] [box=0,994,1009,84]:
+              - cell "value" [ref=f5e475] [box=0,994,252,84]
+              - cell "The figure itself, pre-formatted (\"$12,480.00\", \"34\"). Without it the card shows a dash. string" [ref=f5e476] [box=252,994,353,84]:
+                - generic [ref=f5e477] [box=267,1005,323,40]: The figure itself, pre-formatted ("$12,480.00", "34"). Without it the card shows a dash.
+                - generic [ref=f5e480] [box=267,1049,55,19]: string
+              - cell "-" [ref=f5e481] [box=605,994,151,84]
+              - cell "$123,456,789.00" [ref=f5e629] [box=757,994,252,84]:
+                - textbox [ref=f5e484] [box=772,1005,217,32]:
+                  - /placeholder: Edit string...
+                  - text: $123,456,789.00
+            - row "icon Icon before the label, in the accent color. string - cash" [ref=f5e485] [box=0,1078,1009,64]:
+              - cell "icon" [ref=f5e486] [box=0,1078,252,64]
+              - cell "Icon before the label, in the accent color. string" [ref=f5e487] [box=252,1078,353,64]:
+                - generic [ref=f5e488] [box=267,1089,323,20]: Icon before the label, in the accent color.
+                - generic [ref=f5e491] [box=267,1113,55,19]: string
+              - cell "-" [ref=f5e492] [box=605,1078,151,64]
+              - cell "cash" [ref=f5e493] [box=757,1078,252,64]:
+                - textbox [ref=f5e495] [box=772,1089,217,32]:
+                  - /placeholder: Edit string...
+                  - text: cash
+            - row "color Accent of the start-edge bar, the icon and the prepend slot. primary secondary neutral accent info success warning danger \"neutral\" info" [ref=f5e496] [box=0,1142,1009,108]:
+              - cell "color" [ref=f5e497] [box=0,1142,252,108]
+              - cell "Accent of the start-edge bar, the icon and the prepend slot. primary secondary neutral accent info success warning danger" [ref=f5e498] [box=252,1142,353,108]:
+                - generic [ref=f5e500] [box=267,1154,264,38]:
+                  - text: Accent of the start-edge bar, the icon and the
+                  - code [ref=f5e501] [box=267,1174,62,20]: prepend
+                  - text: slot.
+                - generic [ref=f5e503] [box=267,1198,323,46]:
+                  - generic [ref=f5e504] [box=267,1198,62,19]: primary
+                  - generic [ref=f5e505] [box=334,1198,77,19]: secondary
+                  - generic [ref=f5e506] [box=414,1198,62,19]: neutral
+                  - generic [ref=f5e507] [box=481,1198,55,19]: accent
+                  - generic [ref=f5e508] [box=540,1198,41,19]: info
+                  - generic [ref=f5e509] [box=267,1221,62,19]: success
+                  - generic [ref=f5e510] [box=334,1221,62,19]: warning
+                  - generic [ref=f5e511] [box=400,1221,55,19]: danger
+              - cell "\"neutral\"" [ref=f5e512] [box=605,1142,151,108]:
+                - generic [ref=f5e514] [box=620,1153,77,19]: "\"neutral\""
+              - cell "info" [ref=f5e515] [box=757,1142,252,108]:
+                - generic [ref=f5e516] [box=772,1153,217,32]:
+                  - img [box=963,1163,14,12]
+                  - combobox [ref=f5e517] [box=772,1153,217,32]:
+                    - option "Choose option..." [disabled] [box=0,0,0,0]
+                    - option "primary" [box=0,0,0,0]
+                    - option "secondary" [box=0,0,0,0]
+                    - option "neutral" [box=0,0,0,0]
+                    - option "accent" [box=0,0,0,0]
+                    - option "info" [selected] [box=0,0,0,0]
+                    - option "success" [box=0,0,0,0]
+                    - option "warning" [box=0,0,0,0]
+                    - option "danger" [box=0,0,0,0]
+            - row "description Secondary line under the value. string - 48 orders" [ref=f5e518] [box=0,1250,1009,64]:
+              - cell "description" [ref=f5e519] [box=0,1250,252,64]
+              - cell "Secondary line under the value. string" [ref=f5e520] [box=252,1250,353,64]:
+                - generic [ref=f5e521] [box=267,1261,323,20]: Secondary line under the value.
+                - generic [ref=f5e524] [box=267,1285,55,19]: string
+              - cell "-" [ref=f5e525] [box=605,1250,151,64]
+              - cell "48 orders" [ref=f5e526] [box=757,1250,252,64]:
+                - textbox [ref=f5e528] [box=772,1261,217,32]:
+                  - /placeholder: Edit string...
+                  - text: 48 orders
+            - row "delta Comparison line, pinned to the bottom of the card. string - +12% vs last week" [ref=f5e529] [box=0,1314,1009,64]:
+              - cell "delta" [ref=f5e530] [box=0,1314,252,64]
+              - cell "Comparison line, pinned to the bottom of the card. string" [ref=f5e531] [box=252,1314,353,64]:
+                - generic [ref=f5e532] [box=267,1325,323,20]: Comparison line, pinned to the bottom of the card.
+                - generic [ref=f5e535] [box=267,1349,55,19]: string
+              - cell "-" [ref=f5e536] [box=605,1314,151,64]
+              - cell "+12% vs last week" [ref=f5e537] [box=757,1314,252,64]:
+                - textbox [ref=f5e539] [box=772,1325,217,32]:
+                  - /placeholder: Edit string...
+                  - text: +12% vs last week
+            - row "deltaColor Color of delta , e.g. success for growth and danger for a drop. primary secondary neutral accent info success warning danger \"neutral\" success" [ref=f5e540] [box=0,1378,1009,109]:
+              - cell "deltaColor" [ref=f5e541] [box=0,1378,252,109]
+              - cell "Color of delta , e.g. success for growth and danger for a drop. primary secondary neutral accent info success warning danger" [ref=f5e542] [box=252,1378,353,109]:
+                - generic [ref=f5e544] [box=267,1390,280,39]:
+                  - text: Color of
+                  - code [ref=f5e545] [box=317,1390,48,20]: delta
+                  - text: ", e.g."
+                  - code [ref=f5e546] [box=394,1390,62,20]: success
+                  - text: for growth and
+                  - code [ref=f5e547] [box=267,1411,55,20]: danger
+                  - text: for a drop.
+                - generic [ref=f5e549] [box=267,1435,323,46]:
+                  - generic [ref=f5e550] [box=267,1435,62,19]: primary
+                  - generic [ref=f5e551] [box=334,1435,77,19]: secondary
+                  - generic [ref=f5e552] [box=414,1435,62,19]: neutral
+                  - generic [ref=f5e553] [box=481,1435,55,19]: accent
+                  - generic [ref=f5e554] [box=540,1435,41,19]: info
+                  - generic [ref=f5e555] [box=267,1458,62,19]: success
+                  - generic [ref=f5e556] [box=334,1458,62,19]: warning
+                  - generic [ref=f5e557] [box=400,1458,55,19]: danger
+              - cell "\"neutral\"" [ref=f5e558] [box=605,1378,151,109]:
+                - generic [ref=f5e560] [box=620,1389,77,19]: "\"neutral\""
+              - cell "success" [ref=f5e561] [box=757,1378,252,109]:
+                - generic [ref=f5e562] [box=772,1389,217,32]:
+                  - img [box=963,1399,14,12]
+                  - combobox [ref=f5e563] [box=772,1389,217,32]:
+                    - option "Choose option..." [disabled] [box=0,0,0,0]
+                    - option "primary" [box=0,0,0,0]
+                    - option "secondary" [box=0,0,0,0]
+                    - option "neutral" [box=0,0,0,0]
+                    - option "accent" [box=0,0,0,0]
+                    - option "info" [box=0,0,0,0]
+                    - option "success" [selected] [box=0,0,0,0]
+                    - option "warning" [box=0,0,0,0]
+                    - option "danger" [box=0,0,0,0]
+            - row "deltaIcon Icon before delta , e.g. chevron-up . string - chevron-up" [ref=f5e564] [box=0,1487,1009,65]:
+              - cell "deltaIcon" [ref=f5e565] [box=0,1487,252,65]
+              - cell "Icon before delta , e.g. chevron-up . string" [ref=f5e566] [box=252,1487,353,65]:
+                - generic [ref=f5e568] [box=267,1499,233,18]:
+                  - text: Icon before
+                  - code [ref=f5e569] [box=335,1499,48,20]: delta
+                  - text: ", e.g."
+                  - code [ref=f5e570] [box=413,1499,84,20]: chevron-up
+                  - text: .
+                - generic [ref=f5e573] [box=267,1523,55,19]: string
+              - cell "-" [ref=f5e574] [box=605,1487,151,65]
+              - cell "chevron-up" [ref=f5e575] [box=757,1487,252,65]:
+                - textbox [ref=f5e577] [box=772,1498,217,32]:
+                  - /placeholder: Edit string...
+                  - text: chevron-up
+            - row "valueSuffix De-emphasized unit after the value (\"items\"), so the number stays the focal point. string - Set string" [ref=f5e578] [box=0,1552,1009,84]:
+              - cell "valueSuffix" [ref=f5e579] [box=0,1552,252,84]
+              - cell "De-emphasized unit after the value (\"items\"), so the number stays the focal point. string" [ref=f5e580] [box=252,1552,353,84]:
+                - generic [ref=f5e581] [box=267,1563,323,40]: De-emphasized unit after the value ("items"), so the number stays the focal point.
+                - generic [ref=f5e584] [box=267,1607,55,19]: string
+              - cell "-" [ref=f5e585] [box=605,1552,151,84]
+              - cell "Set string" [ref=f5e586] [box=757,1552,252,84]:
+                - button "Set string" [ref=f5e587] [cursor=pointer] [box=772,1563,78,32]
+            - 'row "loading Data in flight: a dash replaces the figures and a loader covers the card. Outranks errorText . boolean - Set boolean" [ref=f5e588] [box=0,1636,1009,85]':
+              - cell "loading" [ref=f5e589] [box=0,1636,252,85]
+              - 'cell "Data in flight: a dash replaces the figures and a loader covers the card. Outranks errorText . boolean" [ref=f5e590] [box=252,1636,353,85]':
+                - generic [ref=f5e592] [box=267,1648,314,38]:
+                  - text: "Data in flight: a dash replaces the figures and a loader covers the card. Outranks"
+                  - code [ref=f5e593] [box=418,1668,77,20]: errorText
+                  - text: .
+                - generic [ref=f5e596] [box=267,1692,62,19]: boolean
+              - cell "-" [ref=f5e597] [box=605,1636,151,85]
+              - cell "Set boolean" [ref=f5e598] [box=757,1636,252,85]:
+                - button "Set boolean" [ref=f5e599] [cursor=pointer] [box=772,1647,91,32]
+            - row "errorText Load failure message; when set, it replaces the figures. string - Set string" [ref=f5e600] [box=0,1721,1009,64]:
+              - cell "errorText" [ref=f5e601] [box=0,1721,252,64]
+              - cell "Load failure message; when set, it replaces the figures. string" [ref=f5e602] [box=252,1721,353,64]:
+                - generic [ref=f5e603] [box=267,1732,323,20]: Load failure message; when set, it replaces the figures.
+                - generic [ref=f5e606] [box=267,1756,55,19]: string
+              - cell "-" [ref=f5e607] [box=605,1721,151,64]
+              - cell "Set string" [ref=f5e608] [box=757,1721,252,64]:
+                - button "Set string" [ref=f5e609] [cursor=pointer] [box=772,1732,78,32]
+            - row "Hide slots items slots Hide slots items" [ref=f5e610] [box=0,1785,1009,41]:
+              - cell "Hide slots items slots" [ref=f5e611] [box=0,1785,252,41]:
+                - button "Hide slots items" [ref=f5e612] [box=0,1786,252,40]
+                - generic [ref=f5e613] [box=20,1796,232,20]:
+                  - img [ref=f5e614] [box=10,1799,12,12]
+                  - text: slots
+              - cell "Hide slots items" [ref=f5e616] [box=252,1785,757,41]:
+                - button "Hide slots items" [ref=f5e617] [box=252,1786,757,40]
+            - row "prepend Content before the icon (added next to it, not instead of it), painted in the accent color, e.g. a drag handle. other - Set object" [ref=f5e618] [box=0,1826,1009,84]:
+              - cell "prepend" [ref=f5e619] [box=0,1826,252,84]
+              - cell "Content before the icon (added next to it, not instead of it), painted in the accent color, e.g. a drag handle. other" [ref=f5e620] [box=252,1826,353,84]:
+                - generic [ref=f5e621] [box=267,1837,323,40]: Content before the icon (added next to it, not instead of it), painted in the accent color, e.g. a drag handle.
+                - generic [ref=f5e624] [box=267,1881,48,19]: other
+              - cell "-" [ref=f5e625] [box=605,1826,151,84]
+              - cell "Set object" [ref=f5e626] [box=757,1826,252,84]:
+                - button "Set object" [ref=f5e627] [cursor=pointer] [box=772,1837,76,28]

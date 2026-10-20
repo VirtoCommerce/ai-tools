@@ -1,0 +1,269 @@
+- generic [ref=e3]:
+  - navigation "Global" [ref=e6]:
+    - generic [ref=e10]:
+      - generic [ref=e11]:
+        - link "Skip to canvas" [ref=e12] [cursor=pointer]:
+          - /url: "#storybook-preview-wrapper"
+        - link "Storybook" [ref=e14] [cursor=pointer]:
+          - /url: ./
+          - img "Storybook" [ref=e15]
+        - button "Shortcuts" [ref=e21] [cursor=pointer]:
+          - img [ref=e22]
+      - generic [ref=e25]: Search for components
+      - combobox "Search for components" [ref=e27]:
+        - generic:
+          - img
+        - searchbox "Search for components" [ref=e28]
+        - code: ⌃ K
+        - button "Tag filters" [ref=e32] [cursor=pointer]:
+          - img [ref=e33]
+      - generic [ref=e35]:
+        - generic [ref=e39]:
+          - img
+          - generic [ref=e40]:
+            - button "Components" [expanded] [ref=e41] [cursor=pointer]:
+              - img [ref=e43]
+              - text: Components
+            - button "Collapse" [ref=e45] [cursor=pointer]:
+              - img [ref=e46]
+          - button "Atoms" [ref=e49] [cursor=pointer]:
+            - generic [ref=e50]:
+              - img [ref=e52]
+              - img [ref=e54]
+            - generic [ref=e57]: Atoms
+          - button "Molecules" [ref=e59] [cursor=pointer]:
+            - generic [ref=e60]:
+              - img [ref=e62]
+              - img [ref=e64]
+            - generic [ref=e67]: Molecules
+          - button "Organisms" [expanded] [ref=e69] [cursor=pointer]:
+            - generic [ref=e70]:
+              - img [ref=e72]
+              - img [ref=e74]
+            - generic [ref=e77]: Organisms
+          - button "VcAddToCart" [ref=e79] [cursor=pointer]:
+            - generic [ref=e80]:
+              - img [ref=e82]
+              - img [ref=e84]
+            - generic [ref=e87]: VcAddToCart
+          - button "VcConfirmationModal" [ref=e89] [cursor=pointer]:
+            - generic [ref=e90]:
+              - img [ref=e92]
+              - img [ref=e94]
+            - generic [ref=e97]: VcConfirmationModal
+          - button "VcDatePicker" [ref=e99] [cursor=pointer]:
+            - generic [ref=e100]:
+              - img [ref=e102]
+              - img [ref=e104]
+            - generic [ref=e107]: VcDatePicker
+          - button "VcDateRangePicker" [ref=e109] [cursor=pointer]:
+            - generic [ref=e110]:
+              - img [ref=e112]
+              - img [ref=e114]
+            - generic [ref=e117]: VcDateRangePicker
+          - button "VcModal" [ref=e119] [cursor=pointer]:
+            - generic [ref=e120]:
+              - img [ref=e122]
+              - img [ref=e124]
+            - generic [ref=e127]: VcModal
+          - button "VcPagination" [ref=e129] [cursor=pointer]:
+            - generic [ref=e130]:
+              - img [ref=e132]
+              - img [ref=e134]
+            - generic [ref=e137]: VcPagination
+          - button "VcPopupSidebar" [ref=e139] [cursor=pointer]:
+            - generic [ref=e140]:
+              - img [ref=e142]
+              - img [ref=e144]
+            - generic [ref=e147]: VcPopupSidebar
+          - button "VcProductButton" [ref=e149] [cursor=pointer]:
+            - generic [ref=e150]:
+              - img [ref=e152]
+              - img [ref=e154]
+            - generic [ref=e157]: VcProductButton
+          - button "VcProductCard" [ref=e159] [cursor=pointer]:
+            - generic [ref=e160]:
+              - img [ref=e162]
+              - img [ref=e164]
+            - generic [ref=e167]: VcProductCard
+          - button "VcProductImage" [ref=e169] [cursor=pointer]:
+            - generic [ref=e170]:
+              - img [ref=e172]
+              - img [ref=e174]
+            - generic [ref=e177]: VcProductImage
+          - button "VcQuantityStepper" [ref=e179] [cursor=pointer]:
+            - generic [ref=e180]:
+              - img [ref=e182]
+              - img [ref=e184]
+            - generic [ref=e187]: VcQuantityStepper
+          - button "VcStatWidget" [expanded] [ref=e189] [cursor=pointer]:
+            - generic [ref=e190]:
+              - img [ref=e192]
+              - img [ref=e194]
+            - generic [ref=e197]: VcStatWidget
+          - link "Docs" [ref=e199] [cursor=pointer]:
+            - /url: /?path=/docs/components-organisms-vcstatwidget--docs
+            - img [ref=e201]
+            - generic [ref=e204]: Docs
+          - generic [ref=e205]:
+            - link "Basic" [ref=e206] [cursor=pointer]:
+              - /url: /?path=/story/components-organisms-vcstatwidget--basic
+              - img [ref=e208]
+              - generic [ref=e211]: Basic
+            - link "Skip to canvas" [ref=e212] [cursor=pointer]:
+              - /url: "#storybook-preview-wrapper"
+          - link "Colors" [ref=e214] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcstatwidget--colors
+            - img [ref=e216]
+            - generic [ref=e219]: Colors
+          - link "Delta Colors" [ref=e221] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcstatwidget--delta-colors
+            - img [ref=e223]
+            - generic [ref=e226]: Delta Colors
+          - link "With Suffix" [ref=e228] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcstatwidget--with-suffix
+            - img [ref=e230]
+            - generic [ref=e233]: With Suffix
+          - link "Loading" [ref=e235] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcstatwidget--loading
+            - img [ref=e237]
+            - generic [ref=e240]: Loading
+          - link "Error State" [ref=e242] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcstatwidget--error-state
+            - img [ref=e244]
+            - generic [ref=e247]: Error State
+          - link "Prepend Slot" [ref=e249] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcstatwidget--prepend-slot
+            - img [ref=e251]
+            - generic [ref=e254]: Prepend Slot
+          - link "Row" [ref=e256] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcstatwidget--row
+            - img [ref=e258]
+            - generic [ref=e261]: Row
+          - button "VcTable" [ref=e263] [cursor=pointer]:
+            - generic [ref=e264]:
+              - img [ref=e266]
+              - img [ref=e268]
+            - generic [ref=e271]: VcTable
+          - button "VcWidgetSkeleton" [ref=e273] [cursor=pointer]:
+            - generic [ref=e274]:
+              - img [ref=e276]
+              - img [ref=e278]
+            - generic [ref=e281]: VcWidgetSkeleton
+          - button "VcWidget" [ref=e283] [cursor=pointer]:
+            - generic [ref=e284]:
+              - img [ref=e286]
+              - img [ref=e288]
+            - generic [ref=e291]: VcWidget
+          - button "Templates" [ref=e293] [cursor=pointer]:
+            - generic [ref=e294]:
+              - img [ref=e296]
+              - img [ref=e298]
+            - generic [ref=e301]: Templates
+        - text: /
+  - main [ref=e303]:
+    - region "Toolbar" [ref=e304]:
+      - generic [ref=e305]: Toolbar
+      - generic [ref=e306]:
+        - generic [ref=e307]:
+          - button "Remount component" [ref=e308] [cursor=pointer]:
+            - img [ref=e309]
+          - button "Zoom in" [ref=e311] [cursor=pointer]:
+            - img [ref=e312]
+          - button "Zoom out" [ref=e315] [cursor=pointer]:
+            - img [ref=e316]
+          - button "Reset zoom" [ref=e319] [cursor=pointer]:
+            - img [ref=e320]
+          - button "Apply a grid to the preview" [ref=e393] [cursor=pointer]:
+            - img [ref=e394]
+          - button "Change the background of the preview" [ref=e397] [cursor=pointer]:
+            - img [ref=e398]
+          - button "Enable measure" [ref=e323] [cursor=pointer]:
+            - img [ref=e324]
+          - button "Apply outlines to the preview" [ref=e327] [cursor=pointer]:
+            - img [ref=e328]
+          - button "Change the size of the preview" [ref=e331] [cursor=pointer]:
+            - img [ref=e332]
+          - button "Vision simulator" [ref=e337] [cursor=pointer]:
+            - img [ref=e338]
+          - generic:
+            - img
+          - button "Select color mode" [ref=e403] [cursor=pointer]:
+            - img [ref=e404]
+          - button "Black gold" [ref=e410] [cursor=pointer]:
+            - img [ref=e411]
+            - text: Black gold
+        - generic [ref=e342]:
+          - button "Go full screen" [ref=e343] [cursor=pointer]:
+            - img [ref=e344]
+          - link "Open canvas in new tab" [ref=e346] [cursor=pointer]:
+            - /url: iframe.html?globals=themePreset:black-gold&args=deltaColor:secondary&id=components-organisms-vcstatwidget--basic
+            - img [ref=e347]
+          - button "Copy canvas link" [ref=e350] [cursor=pointer]:
+            - img [ref=e351]
+    - generic [ref=e358]:
+      - link "Skip to sidebar" [ref=e359] [cursor=pointer]:
+        - /url: "#components-organisms-vcstatwidget--basic"
+      - iframe [ref=e360]:
+        - generic [ref=f4e4]:
+          - generic [ref=f4e5]:
+            - img [ref=f4e7]
+            - generic [ref=f4e11]: Revenue this week
+          - status [ref=f4e12]
+          - generic [ref=f4e13]: $12,480.00
+          - generic [ref=f4e14]: 48 orders
+          - generic [ref=f4e15]:
+            - img [ref=f4e18]
+            - generic [ref=f4e20]: +12% vs last week
+  - generic [ref=e363]:
+    - generic [ref=e365]:
+      - tablist [ref=e367]:
+        - tab "Controls 12" [ref=e413] [cursor=pointer]:
+          - generic [ref=e369]:
+            - generic [ref=e370]: Controls
+            - generic [ref=e414]: "12"
+        - tab "Actions" [ref=e371] [cursor=pointer]:
+          - generic [ref=e373]: Actions
+        - tab "Interactions" [ref=e374] [cursor=pointer]:
+          - generic [ref=e376]: Interactions
+        - tab "Accessibility 1" [active] [ref=e415] [cursor=pointer]:
+          - generic [ref=e378]:
+            - generic [ref=e379]: Accessibility
+            - generic [ref=e416]: "1"
+        - tab "Code" [ref=e380] [cursor=pointer]
+      - generic [ref=e383]:
+        - button "Change addon orientation [alt D]" [ref=e384] [cursor=pointer]:
+          - img [ref=e385]
+        - button "Hide addons [alt A]" [ref=e388] [cursor=pointer]:
+          - img [ref=e389]
+    - generic [ref=e418]:
+      - generic [ref=e419]:
+        - tablist [ref=e420]:
+          - tab "Violations 1" [selected] [ref=e421] [cursor=pointer]:
+            - generic [ref=e422]:
+              - text: Violations
+              - generic [ref=e423]: "1"
+          - tab "Passes 2" [ref=e424] [cursor=pointer]:
+            - generic [ref=e425]:
+              - text: Passes
+              - generic [ref=e426]: "2"
+          - tab "Inconclusive 0" [ref=e427] [cursor=pointer]:
+            - generic [ref=e428]:
+              - text: Inconclusive
+              - generic [ref=e429]: "0"
+        - generic [ref=e430]:
+          - button "Show highlights" [ref=e432] [cursor=pointer]:
+            - img [ref=e433]
+            - generic [ref=e436]: Show highlights
+          - button "Expand all" [ref=e438] [cursor=pointer]:
+            - img [ref=e439]
+          - button "Rerun accessibility scan" [ref=e442] [cursor=pointer]:
+            - img [ref=e443]
+      - generic [ref=e449] [cursor=pointer]:
+        - generic [ref=e450]:
+          - strong [ref=e451]: Color contrast
+          - generic [ref=e452]: color-contrast
+        - generic [ref=e453]: Serious
+        - generic [ref=e454]: "1"
+        - button "Expand details for Color contrast" [ref=e455]:
+          - img [ref=e456]

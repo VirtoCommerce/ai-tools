@@ -1,0 +1,679 @@
+- generic [ref=e3] [box=0,0,1280,900]:
+  - navigation "Global" [ref=e6] [box=0,0,299,900]:
+    - generic [ref=e10] [box=0,0,299,978]:
+      - generic [ref=e11] [box=12,16,275,42]:
+        - link "Skip to canvas" [ref=e12] [cursor=pointer] [box=19,37,1,1]:
+          - /url: "#storybook-preview-wrapper"
+        - link "Storybook" [ref=e14] [cursor=pointer] [box=16,23,215,28]:
+          - /url: ./
+          - img "Storybook" [ref=e15] [box=20,26,110,22]
+        - button "Shortcuts" [ref=e21] [cursor=pointer] [box=255,21,32,32]:
+          - img [ref=e22] [box=264,30,14,14]
+      - generic [ref=e25] [box=-10000,74,1,1]: Search for components
+      - combobox "Search for components" [ref=e27] [box=12,74,275,32]:
+        - generic [box=14,76,28,28]:
+          - img [box=21,83,14,14]
+        - searchbox "Search for components" [ref=e28] [box=42,76,182,28]
+        - code [box=229,83,23,16]: ⌃ K
+        - button "Tag filters" [ref=e32] [cursor=pointer] [box=257,76,28,28]:
+          - img [ref=e33] [box=264,83,14,14]
+      - generic [ref=e35] [box=12,122,275,816]:
+        - generic [ref=e39] [box=12,122,275,816]:
+          - img [box=12,122,0,0]
+          - generic [ref=e40] [box=12,122,275,28]:
+            - button "Components" [expanded] [ref=e41] [cursor=pointer] [box=12,122,125,28]:
+              - img [ref=e43] [box=20,132,8,8]
+              - text: Components
+            - button "Collapse" [ref=e45] [cursor=pointer] [box=259,122,28,28]:
+              - img [ref=e46] [box=266,129,14,14]
+          - button "Atoms" [ref=e49] [cursor=pointer] [box=12,154,275,28]:
+            - generic [ref=e50] [box=20,161,28,14]:
+              - img [ref=e52] [box=20,164,8,8]
+              - img [ref=e54] [box=34,161,14,14]
+            - generic [ref=e57] [box=54,159,41,19]: Atoms
+          - button "Molecules" [ref=e59] [cursor=pointer] [box=12,182,275,28]:
+            - generic [ref=e60] [box=20,189,28,14]:
+              - img [ref=e62] [box=20,192,8,8]
+              - img [ref=e64] [box=34,189,14,14]
+            - generic [ref=e67] [box=54,187,64,19]: Molecules
+          - button "Organisms" [expanded] [ref=e69] [cursor=pointer] [box=12,210,275,28]:
+            - generic [ref=e70] [box=20,217,28,14]:
+              - img [ref=e72] [box=20,220,8,8]
+              - img [ref=e74] [box=34,217,14,14]
+            - generic [ref=e77] [box=54,215,68,19]: Organisms
+          - button "VcAddToCart" [ref=e79] [cursor=pointer] [box=12,238,275,28]:
+            - generic [ref=e80] [box=38,245,28,14]:
+              - img [ref=e82] [box=38,248,8,8]
+              - img [ref=e84] [box=52,245,14,14]
+            - generic [ref=e87] [box=72,243,84,19]: VcAddToCart
+          - button "VcConfirmationModal" [ref=e89] [cursor=pointer] [box=12,266,275,28]:
+            - generic [ref=e90] [box=38,273,28,14]:
+              - img [ref=e92] [box=38,276,8,8]
+              - img [ref=e94] [box=52,273,14,14]
+            - generic [ref=e97] [box=72,271,136,19]: VcConfirmationModal
+          - button "VcDatePicker" [ref=e99] [cursor=pointer] [box=12,294,275,28]:
+            - generic [ref=e100] [box=38,301,28,14]:
+              - img [ref=e102] [box=38,304,8,8]
+              - img [ref=e104] [box=52,301,14,14]
+            - generic [ref=e107] [box=72,299,83,19]: VcDatePicker
+          - button "VcDateRangePicker" [ref=e109] [cursor=pointer] [box=12,322,275,28]:
+            - generic [ref=e110] [box=38,329,28,14]:
+              - img [ref=e112] [box=38,332,8,8]
+              - img [ref=e114] [box=52,329,14,14]
+            - generic [ref=e117] [box=72,327,124,19]: VcDateRangePicker
+          - button "VcModal" [ref=e119] [cursor=pointer] [box=12,350,275,28]:
+            - generic [ref=e120] [box=38,357,28,14]:
+              - img [ref=e122] [box=38,360,8,8]
+              - img [ref=e124] [box=52,357,14,14]
+            - generic [ref=e127] [box=72,355,55,19]: VcModal
+          - button "VcPagination" [ref=e129] [cursor=pointer] [box=12,378,275,28]:
+            - generic [ref=e130] [box=38,385,28,14]:
+              - img [ref=e132] [box=38,388,8,8]
+              - img [ref=e134] [box=52,385,14,14]
+            - generic [ref=e137] [box=72,383,82,19]: VcPagination
+          - button "VcPopupSidebar" [ref=e139] [cursor=pointer] [box=12,406,275,28]:
+            - generic [ref=e140] [box=38,413,28,14]:
+              - img [ref=e142] [box=38,416,8,8]
+              - img [ref=e144] [box=52,413,14,14]
+            - generic [ref=e147] [box=72,411,104,19]: VcPopupSidebar
+          - button "VcProductButton" [ref=e149] [cursor=pointer] [box=12,434,275,28]:
+            - generic [ref=e150] [box=38,441,28,14]:
+              - img [ref=e152] [box=38,444,8,8]
+              - img [ref=e154] [box=52,441,14,14]
+            - generic [ref=e157] [box=72,439,107,19]: VcProductButton
+          - button "VcProductCard" [ref=e159] [cursor=pointer] [box=12,462,275,28]:
+            - generic [ref=e160] [box=38,469,28,14]:
+              - img [ref=e162] [box=38,472,8,8]
+              - img [ref=e164] [box=52,469,14,14]
+            - generic [ref=e167] [box=72,467,94,19]: VcProductCard
+          - button "VcProductImage" [ref=e169] [cursor=pointer] [box=12,490,275,28]:
+            - generic [ref=e170] [box=38,497,28,14]:
+              - img [ref=e172] [box=38,500,8,8]
+              - img [ref=e174] [box=52,497,14,14]
+            - generic [ref=e177] [box=72,495,103,19]: VcProductImage
+          - button "VcQuantityStepper" [ref=e179] [cursor=pointer] [box=12,518,275,28]:
+            - generic [ref=e180] [box=38,525,28,14]:
+              - img [ref=e182] [box=38,528,8,8]
+              - img [ref=e184] [box=52,525,14,14]
+            - generic [ref=e187] [box=72,523,119,19]: VcQuantityStepper
+          - button "VcStatWidget" [expanded] [ref=e189] [cursor=pointer] [box=12,546,275,28]:
+            - generic [ref=e190] [box=38,553,28,14]:
+              - img [ref=e192] [box=38,556,8,8]
+              - img [ref=e194] [box=52,553,14,14]
+            - generic [ref=e197] [box=72,551,88,19]: VcStatWidget
+          - generic [ref=e198] [box=12,574,275,28]:
+            - link "Docs" [ref=e199] [cursor=pointer] [box=12,574,274,28]:
+              - /url: /?path=/docs/components-organisms-vcstatwidget--docs
+              - img [ref=e201] [box=70,581,14,14]
+              - generic [ref=e204] [box=90,579,32,19]: Docs
+            - link "Skip to canvas" [ref=e205] [cursor=pointer] [box=286,574,1,20]:
+              - /url: "#storybook-preview-wrapper"
+          - link "Basic" [ref=e207] [cursor=pointer] [box=12,602,275,28]:
+            - /url: /?path=/story/components-organisms-vcstatwidget--basic
+            - img [ref=e209] [box=70,609,14,14]
+            - generic [ref=e212] [box=90,607,33,19]: Basic
+          - link "Colors" [ref=e214] [cursor=pointer] [box=12,630,275,28]:
+            - /url: /?path=/story/components-organisms-vcstatwidget--colors
+            - img [ref=e216] [box=70,637,14,14]
+            - generic [ref=e219] [box=90,635,40,19]: Colors
+          - link "Delta Colors" [ref=e221] [cursor=pointer] [box=12,658,275,28]:
+            - /url: /?path=/story/components-organisms-vcstatwidget--delta-colors
+            - img [ref=e223] [box=70,665,14,14]
+            - generic [ref=e226] [box=90,663,78,19]: Delta Colors
+          - link "With Suffix" [ref=e228] [cursor=pointer] [box=12,686,275,28]:
+            - /url: /?path=/story/components-organisms-vcstatwidget--with-suffix
+            - img [ref=e230] [box=70,693,14,14]
+            - generic [ref=e233] [box=90,691,71,19]: With Suffix
+          - link "Loading" [ref=e235] [cursor=pointer] [box=12,714,275,28]:
+            - /url: /?path=/story/components-organisms-vcstatwidget--loading
+            - img [ref=e237] [box=70,721,14,14]
+            - generic [ref=e240] [box=90,719,50,19]: Loading
+          - link "Error State" [ref=e242] [cursor=pointer] [box=12,742,275,28]:
+            - /url: /?path=/story/components-organisms-vcstatwidget--error-state
+            - img [ref=e244] [box=70,749,14,14]
+            - generic [ref=e247] [box=90,747,68,19]: Error State
+          - link "Prepend Slot" [ref=e249] [cursor=pointer] [box=12,770,275,28]:
+            - /url: /?path=/story/components-organisms-vcstatwidget--prepend-slot
+            - img [ref=e251] [box=70,777,14,14]
+            - generic [ref=e254] [box=90,775,82,19]: Prepend Slot
+          - link "Row" [ref=e256] [cursor=pointer] [box=12,798,275,28]:
+            - /url: /?path=/story/components-organisms-vcstatwidget--row
+            - img [ref=e258] [box=70,805,14,14]
+            - generic [ref=e261] [box=90,803,29,19]: Row
+          - button "VcTable" [ref=e263] [cursor=pointer] [box=12,826,275,28]:
+            - generic [ref=e264] [box=38,833,28,14]:
+              - img [ref=e266] [box=38,836,8,8]
+              - img [ref=e268] [box=52,833,14,14]
+            - generic [ref=e271] [box=72,831,50,19]: VcTable
+          - button "VcWidgetSkeleton" [ref=e273] [cursor=pointer] [box=12,854,275,28]:
+            - generic [ref=e274] [box=38,861,28,14]:
+              - img [ref=e276] [box=38,864,8,8]
+              - img [ref=e278] [box=52,861,14,14]
+            - generic [ref=e281] [box=72,859,118,19]: VcWidgetSkeleton
+          - button "VcWidget" [ref=e283] [cursor=pointer] [box=12,882,275,28]:
+            - generic [ref=e284] [box=38,889,28,14]:
+              - img [ref=e286] [box=38,892,8,8]
+              - img [ref=e288] [box=52,889,14,14]
+            - generic [ref=e291] [box=72,887,63,19]: VcWidget
+          - button "Templates" [ref=e293] [cursor=pointer] [box=12,910,275,28]:
+            - generic [ref=e294] [box=20,917,28,14]:
+              - img [ref=e296] [box=20,920,8,8]
+              - img [ref=e298] [box=34,917,14,14]
+            - generic [ref=e301] [box=54,915,66,19]: Templates
+        - text: / /
+  - main [ref=e303] [box=300,0,980,900]:
+    - region "Toolbar" [ref=e304] [box=300,0,980,40]:
+      - generic [ref=e305] [box=299,-1,1,1]: Toolbar
+      - generic [ref=e306] [box=310,0,960,40]:
+        - generic [ref=e307] [box=310,0,226,40]:
+          - button "Apply a grid to the preview" [ref=e308] [cursor=pointer] [box=310,6,28,28]:
+            - img [ref=e309] [box=317,13,14,14]
+          - button "Change the background of the preview" [ref=e312] [cursor=pointer] [box=344,6,28,28]:
+            - img [ref=e313] [box=351,13,14,14]
+          - button "Apply outlines to the preview" [ref=e316] [cursor=pointer] [box=378,6,28,28]:
+            - img [ref=e317] [box=385,13,14,14]
+          - button "Select color mode" [ref=e321] [cursor=pointer] [box=423,6,28,28]:
+            - img [ref=e322] [box=430,13,14,14]
+          - button "Default" [ref=e328] [cursor=pointer] [box=457,6,79,28]:
+            - img [ref=e329] [box=464,13,14,14]
+            - text: Default
+        - button "Go full screen" [ref=e332] [cursor=pointer] [box=1242,6,28,28]:
+          - img [ref=e333] [box=1249,13,14,14]
+    - generic [ref=e337] [box=300,40,980,860]:
+      - link "Skip to sidebar" [ref=e338] [cursor=pointer] [box=1152,-50,113,28]:
+        - /url: "#components-organisms-vcstatwidget--docs"
+      - iframe [active] [ref=e339] [box=300,40,980,860]:
+        - generic [ref=f4e5] [box=20,-1157,925,4812]:
+          - heading "VcStatWidget" [level=1] [ref=f4e6] [box=20,-1157,925,36]
+          - generic [ref=f4e8] [box=20,-1096,925,214]:
+            - generic [ref=f4e12] [box=28,-1095,92,40]:
+              - button "Zoom in" [ref=f4e13] [cursor=pointer] [box=28,-1089,28,28]:
+                - img [ref=f4e14] [box=35,-1082,14,14]
+              - button "Zoom out" [ref=f4e17] [cursor=pointer] [box=60,-1089,28,28]:
+                - img [ref=f4e18] [box=67,-1082,14,14]
+              - button "Reset zoom" [ref=f4e21] [cursor=pointer] [box=92,-1089,28,28]:
+                - img [ref=f4e22] [box=99,-1082,14,14]
+            - generic [ref=f4e24] [box=21,-1055,923,172]:
+              - generic [ref=f4e32] [box=51,-1015,256,92]:
+                - generic [ref=f4e33] [box=71,-998,219,28]:
+                  - img [ref=f4e35] [box=71,-991,15,15]
+                  - generic [ref=f4e38] [box=94,-998,126,28]: Revenue this week
+                - status [ref=f4e39] [box=70,-999,1,1]: "Revenue this week: Failed"
+                - generic [ref=f4e725] [box=71,-964,219,24]:
+                  - img [ref=f4e728] [box=71,-957,16,16]
+                  - generic [ref=f4e730] [box=93,-958,38,18]: Failed
+              - button "Show code" [ref=f4e49] [cursor=pointer] [box=865,-908,79,25]
+          - generic [ref=f4e51] [box=20,-842,925,1147]:
+            - button "Reset controls" [ref=f4e53] [cursor=pointer] [box=909,-836,28,28]:
+              - img [ref=f4e54] [box=916,-829,14,14]
+            - table [ref=f4e56] [box=21,-842,925,1147]:
+              - rowgroup [ref=f4e57] [box=22,-842,924,41]:
+                - row "Name Description Default Control" [ref=f4e58] [box=22,-842,924,41]:
+                  - columnheader "Name" [ref=f4e59] [box=22,-842,231,41]
+                  - columnheader "Description" [ref=f4e60] [box=253,-842,323,41]
+                  - columnheader "Default" [ref=f4e61] [box=576,-842,139,41]
+                  - columnheader "Control" [ref=f4e62] [box=714,-842,231,41]
+              - rowgroup [ref=f4e63] [box=22,-801,924,1106]:
+                - row "Hide props items props Hide props items" [ref=f4e64] [box=22,-801,924,41]:
+                  - cell "Hide props items props" [ref=f4e65] [box=22,-801,231,41]:
+                    - button "Hide props items" [ref=f4e66] [box=22,-801,231,40]
+                    - generic [ref=f4e67] [box=42,-791,211,20]:
+                      - img [ref=f4e68] [box=32,-788,12,12]
+                      - text: props
+                  - cell "Hide props items" [ref=f4e70] [box=253,-801,693,41]:
+                    - button "Hide props items" [ref=f4e71] [box=253,-801,693,40]
+                - row "label* Metric caption. Every string prop arrives already localized and formatted; the card translates none of them. string - Revenue this week" [ref=f4e72] [box=22,-760,924,104]:
+                  - cell "label*" [ref=f4e73] [box=22,-760,231,104]
+                  - cell "Metric caption. Every string prop arrives already localized and formatted; the card translates none of them. string" [ref=f4e74] [box=253,-760,323,104]:
+                    - generic [ref=f4e75] [box=268,-750,293,60]: Metric caption. Every string prop arrives already localized and formatted; the card translates none of them.
+                    - generic [ref=f4e78] [box=268,-686,55,19]: string
+                  - cell "-" [ref=f4e79] [box=576,-760,139,104]
+                  - cell "Revenue this week" [ref=f4e80] [box=714,-760,231,104]:
+                    - textbox [ref=f4e82] [box=729,-750,196,32]:
+                      - /placeholder: Edit string...
+                      - text: Revenue this week
+                - row "value The figure itself, pre-formatted (\"$12,480.00\", \"34\"). Without it the card shows a dash. string - $12,480.00" [ref=f4e83] [box=22,-656,924,84]:
+                  - cell "value" [ref=f4e84] [box=22,-656,231,84]
+                  - cell "The figure itself, pre-formatted (\"$12,480.00\", \"34\"). Without it the card shows a dash. string" [ref=f4e85] [box=253,-656,323,84]:
+                    - generic [ref=f4e86] [box=268,-646,293,40]: The figure itself, pre-formatted ("$12,480.00", "34"). Without it the card shows a dash.
+                    - generic [ref=f4e89] [box=268,-602,55,19]: string
+                  - cell "-" [ref=f4e90] [box=576,-656,139,84]
+                  - cell "$12,480.00" [ref=f4e91] [box=714,-656,231,84]:
+                    - textbox [ref=f4e93] [box=729,-646,196,32]:
+                      - /placeholder: Edit string...
+                      - text: $12,480.00
+                - row "icon Icon before the label, in the accent color. string - cash" [ref=f4e94] [box=22,-572,924,64]:
+                  - cell "icon" [ref=f4e95] [box=22,-572,231,64]
+                  - cell "Icon before the label, in the accent color. string" [ref=f4e96] [box=253,-572,323,64]:
+                    - generic [ref=f4e97] [box=268,-562,293,20]: Icon before the label, in the accent color.
+                    - generic [ref=f4e100] [box=268,-538,55,19]: string
+                  - cell "-" [ref=f4e101] [box=576,-572,139,64]
+                  - cell "cash" [ref=f4e102] [box=714,-572,231,64]:
+                    - textbox [ref=f4e104] [box=729,-562,196,32]:
+                      - /placeholder: Edit string...
+                      - text: cash
+                - row "color Accent of the start-edge bar, the icon and the prepend slot. primary secondary neutral accent info success warning danger \"neutral\" info" [ref=f4e105] [box=22,-508,924,109]:
+                  - cell "color" [ref=f4e106] [box=22,-508,231,109]
+                  - cell "Accent of the start-edge bar, the icon and the prepend slot. primary secondary neutral accent info success warning danger" [ref=f4e107] [box=253,-508,323,109]:
+                    - generic [ref=f4e109] [box=268,-496,253,36]:
+                      - text: Accent of the start-edge bar, the icon and the
+                      - code [ref=f4e110] [box=268,-476,62,20]: prepend
+                      - text: slot.
+                    - generic [ref=f4e112] [box=268,-452,293,46]:
+                      - generic [ref=f4e113] [box=268,-452,62,19]: primary
+                      - generic [ref=f4e114] [box=334,-452,77,19]: secondary
+                      - generic [ref=f4e115] [box=415,-452,62,19]: neutral
+                      - generic [ref=f4e116] [box=481,-452,55,19]: accent
+                      - generic [ref=f4e117] [box=268,-429,41,19]: info
+                      - generic [ref=f4e118] [box=312,-429,62,19]: success
+                      - generic [ref=f4e119] [box=379,-429,62,19]: warning
+                      - generic [ref=f4e120] [box=445,-429,55,19]: danger
+                  - cell "\"neutral\"" [ref=f4e121] [box=576,-508,139,109]:
+                    - generic [ref=f4e123] [box=591,-498,77,19]: "\"neutral\""
+                  - cell "info" [ref=f4e124] [box=714,-508,231,109]:
+                    - generic [ref=f4e125] [box=729,-498,196,32]:
+                      - img [box=899,-488,14,12]
+                      - combobox [ref=f4e126] [box=729,-498,196,32]:
+                        - option "Choose option..." [disabled] [box=0,0,0,0]
+                        - option "primary" [box=0,0,0,0]
+                        - option "secondary" [box=0,0,0,0]
+                        - option "neutral" [box=0,0,0,0]
+                        - option "accent" [box=0,0,0,0]
+                        - option "info" [selected] [box=0,0,0,0]
+                        - option "success" [box=0,0,0,0]
+                        - option "warning" [box=0,0,0,0]
+                        - option "danger" [box=0,0,0,0]
+                - row "description Secondary line under the value. string - 48 orders" [ref=f4e127] [box=22,-399,924,64]:
+                  - cell "description" [ref=f4e128] [box=22,-399,231,64]
+                  - cell "Secondary line under the value. string" [ref=f4e129] [box=253,-399,323,64]:
+                    - generic [ref=f4e130] [box=268,-389,293,20]: Secondary line under the value.
+                    - generic [ref=f4e133] [box=268,-365,55,19]: string
+                  - cell "-" [ref=f4e134] [box=576,-399,139,64]
+                  - cell "48 orders" [ref=f4e135] [box=714,-399,231,64]:
+                    - textbox [ref=f4e137] [box=729,-389,196,32]:
+                      - /placeholder: Edit string...
+                      - text: 48 orders
+                - row "delta Comparison line, pinned to the bottom of the card. string - +12% vs last week" [ref=f4e138] [box=22,-335,924,64]:
+                  - cell "delta" [ref=f4e139] [box=22,-335,231,64]
+                  - cell "Comparison line, pinned to the bottom of the card. string" [ref=f4e140] [box=253,-335,323,64]:
+                    - generic [ref=f4e141] [box=268,-325,293,20]: Comparison line, pinned to the bottom of the card.
+                    - generic [ref=f4e144] [box=268,-301,55,19]: string
+                  - cell "-" [ref=f4e145] [box=576,-335,139,64]
+                  - cell "+12% vs last week" [ref=f4e146] [box=714,-335,231,64]:
+                    - textbox [ref=f4e148] [box=729,-325,196,32]:
+                      - /placeholder: Edit string...
+                      - text: +12% vs last week
+                - row "deltaColor Color of delta , e.g. success for growth and danger for a drop. primary secondary neutral accent info success warning danger \"neutral\" success" [ref=f4e149] [box=22,-271,924,111]:
+                  - cell "deltaColor" [ref=f4e150] [box=22,-271,231,111]
+                  - cell "Color of delta , e.g. success for growth and danger for a drop. primary secondary neutral accent info success warning danger" [ref=f4e151] [box=253,-271,323,111]:
+                    - generic [ref=f4e153] [box=268,-259,272,38]:
+                      - text: Color of
+                      - code [ref=f4e154] [box=316,-259,48,20]: delta
+                      - text: ", e.g."
+                      - code [ref=f4e155] [box=391,-259,62,20]: success
+                      - text: for growth and
+                      - code [ref=f4e156] [box=268,-237,55,20]: danger
+                      - text: for a drop.
+                    - generic [ref=f4e158] [box=268,-213,293,46]:
+                      - generic [ref=f4e159] [box=268,-213,62,19]: primary
+                      - generic [ref=f4e160] [box=334,-213,77,19]: secondary
+                      - generic [ref=f4e161] [box=415,-213,62,19]: neutral
+                      - generic [ref=f4e162] [box=481,-213,55,19]: accent
+                      - generic [ref=f4e163] [box=268,-190,41,19]: info
+                      - generic [ref=f4e164] [box=312,-190,62,19]: success
+                      - generic [ref=f4e165] [box=379,-190,62,19]: warning
+                      - generic [ref=f4e166] [box=445,-190,55,19]: danger
+                  - cell "\"neutral\"" [ref=f4e167] [box=576,-271,139,111]:
+                    - generic [ref=f4e169] [box=591,-261,77,19]: "\"neutral\""
+                  - cell "success" [ref=f4e170] [box=714,-271,231,111]:
+                    - generic [ref=f4e171] [box=729,-261,196,32]:
+                      - img [box=899,-251,14,12]
+                      - combobox [ref=f4e172] [box=729,-261,196,32]:
+                        - option "Choose option..." [disabled] [box=0,0,0,0]
+                        - option "primary" [box=0,0,0,0]
+                        - option "secondary" [box=0,0,0,0]
+                        - option "neutral" [box=0,0,0,0]
+                        - option "accent" [box=0,0,0,0]
+                        - option "info" [box=0,0,0,0]
+                        - option "success" [selected] [box=0,0,0,0]
+                        - option "warning" [box=0,0,0,0]
+                        - option "danger" [box=0,0,0,0]
+                - row "deltaIcon Icon before delta , e.g. chevron-up . string - chevron-up" [ref=f4e173] [box=22,-160,924,66]:
+                  - cell "deltaIcon" [ref=f4e174] [box=22,-160,231,66]
+                  - cell "Icon before delta , e.g. chevron-up . string" [ref=f4e175] [box=253,-160,323,66]:
+                    - generic [ref=f4e177] [box=268,-148,229,16]:
+                      - text: Icon before
+                      - code [ref=f4e178] [box=335,-148,48,20]: delta
+                      - text: ", e.g."
+                      - code [ref=f4e179] [box=410,-148,84,20]: chevron-up
+                      - text: .
+                    - generic [ref=f4e182] [box=268,-124,55,19]: string
+                  - cell "-" [ref=f4e183] [box=576,-160,139,66]
+                  - cell "chevron-up" [ref=f4e184] [box=714,-160,231,66]:
+                    - textbox [ref=f4e186] [box=729,-150,196,32]:
+                      - /placeholder: Edit string...
+                      - text: chevron-up
+                - row "valueSuffix De-emphasized unit after the value (\"items\"), so the number stays the focal point. string - Set string" [ref=f4e187] [box=22,-94,924,84]:
+                  - cell "valueSuffix" [ref=f4e188] [box=22,-94,231,84]
+                  - cell "De-emphasized unit after the value (\"items\"), so the number stays the focal point. string" [ref=f4e189] [box=253,-94,323,84]:
+                    - generic [ref=f4e190] [box=268,-84,293,40]: De-emphasized unit after the value ("items"), so the number stays the focal point.
+                    - generic [ref=f4e193] [box=268,-40,55,19]: string
+                  - cell "-" [ref=f4e194] [box=576,-94,139,84]
+                  - cell "Set string" [ref=f4e195] [box=714,-94,231,84]:
+                    - button "Set string" [ref=f4e196] [cursor=pointer] [box=729,-84,75,32]
+                - 'row "loading Data in flight: a dash replaces the figures and a loader covers the card. Outranks errorText . boolean - loading" [ref=f4e703] [box=22,-10,924,86]':
+                  - cell "loading" [ref=f4e198] [box=22,-10,231,86]
+                  - 'cell "Data in flight: a dash replaces the figures and a loader covers the card. Outranks errorText . boolean" [ref=f4e199] [box=253,-10,323,86]':
+                    - generic [ref=f4e201] [box=268,2,266,36]:
+                      - text: "Data in flight: a dash replaces the figures and a loader covers the card. Outranks"
+                      - code [ref=f4e202] [box=454,22,77,20]: errorText
+                      - text: .
+                    - generic [ref=f4e205] [box=268,46,62,19]: boolean
+                  - cell "-" [ref=f4e206] [box=576,-10,139,86]
+                  - cell "loading" [ref=f4e704] [box=714,-10,231,86]:
+                    - generic "loading" [ref=f4e705] [box=729,0,107,28]:
+                      - switch "loading" [ref=f4e706] [cursor=pointer] [box=729,0,107,28]
+                      - generic [ref=f4e707] [cursor=pointer] [box=730,1,58,26]: "False"
+                      - generic [ref=f4e708] [cursor=pointer] [box=788,1,47,26]: "True"
+                - row "errorText Load failure message; when set, it replaces the figures. string - Failed" [ref=f4e731] [box=22,76,924,84]:
+                  - cell "errorText" [ref=f4e210] [box=22,76,231,84]
+                  - cell "Load failure message; when set, it replaces the figures. string" [ref=f4e211] [box=253,76,323,84]:
+                    - generic [ref=f4e212] [box=268,86,293,40]: Load failure message; when set, it replaces the figures.
+                    - generic [ref=f4e215] [box=268,130,55,19]: string
+                  - cell "-" [ref=f4e216] [box=576,76,139,84]
+                  - cell "Failed" [ref=f4e732] [box=714,76,231,84]:
+                    - textbox [active] [ref=f4e724] [box=729,86,196,32]:
+                      - /placeholder: Edit string...
+                      - text: Failed
+                - row "Hide slots items slots Hide slots items" [ref=f4e219] [box=22,160,924,41]:
+                  - cell "Hide slots items slots" [ref=f4e220] [box=22,160,231,41]:
+                    - button "Hide slots items" [ref=f4e221] [box=22,160,231,40]
+                    - generic [ref=f4e222] [box=42,170,211,20]:
+                      - img [ref=f4e223] [box=32,173,12,12]
+                      - text: slots
+                  - cell "Hide slots items" [ref=f4e225] [box=253,160,693,41]:
+                    - button "Hide slots items" [ref=f4e226] [box=253,160,693,40]
+                - row "prepend Content before the icon (added next to it, not instead of it), painted in the accent color, e.g. a drag handle. other - Set object" [ref=f4e227] [box=22,201,924,104]:
+                  - cell "prepend" [ref=f4e228] [box=22,201,231,104]
+                  - cell "Content before the icon (added next to it, not instead of it), painted in the accent color, e.g. a drag handle. other" [ref=f4e229] [box=253,201,323,104]:
+                    - generic [ref=f4e230] [box=268,211,293,60]: Content before the icon (added next to it, not instead of it), painted in the accent color, e.g. a drag handle.
+                    - generic [ref=f4e233] [box=268,275,48,19]: other
+                  - cell "-" [ref=f4e234] [box=576,201,139,104]
+                  - cell "Set object" [ref=f4e235] [box=714,201,231,104]:
+                    - button "Set object" [ref=f4e236] [cursor=pointer] [box=729,211,73,28]
+          - heading "Stories" [level=2] [ref=f4e237] [box=20,361,925,20]:
+            - link [ref=f4e238] [cursor=pointer] [box=-4,361,24,14]:
+              - /url: "#stories"
+            - text: Stories
+          - generic [ref=f4e239] [box=20,393,925,284]:
+            - heading "Basic" [level=3] [ref=f4e240] [box=20,393,925,30]:
+              - link [ref=f4e241] [cursor=pointer] [box=-4,393,24,14]:
+                - /url: "#basic"
+              - text: Basic
+            - generic [ref=f4e243] [box=21,440,923,236]:
+              - generic [ref=f4e251] [box=51,480,256,156]:
+                - generic [ref=f4e252] [box=71,497,219,28]:
+                  - img [ref=f4e254] [box=71,504,15,15]
+                  - generic [ref=f4e257] [box=94,497,126,28]: Revenue this week
+                - status [ref=f4e258] [box=70,496,1,1]
+                - generic [ref=f4e259] [box=71,531,219,38]: $12,480.00
+                - generic [ref=f4e260] [box=71,575,219,14]: 48 orders
+                - generic [ref=f4e261] [box=71,595,219,24]:
+                  - img [ref=f4e264] [box=71,603,14,14]
+                  - generic [ref=f4e266] [box=89,601,114,18]: +12% vs last week
+              - button "Show code" [ref=f4e268] [cursor=pointer] [box=865,651,79,25]
+          - generic [ref=f4e269] [box=20,717,925,798]:
+            - heading "Colors" [level=3] [ref=f4e270] [box=20,717,925,30]:
+              - link [ref=f4e271] [cursor=pointer] [box=-4,717,24,14]:
+                - /url: "#colors"
+              - text: Colors
+            - generic [ref=f4e273] [box=21,764,923,750]:
+              - generic [ref=f4e280] [box=51,804,863,670]:
+                - generic [ref=f4e281] [box=51,804,424,156]:
+                  - generic [ref=f4e282] [box=71,821,387,28]:
+                    - img [ref=f4e284] [box=71,828,15,15]
+                    - generic [ref=f4e287] [box=94,821,57,28]: primary
+                  - status [ref=f4e288] [box=70,820,1,1]
+                  - generic [ref=f4e289] [box=71,855,387,38]: $12,480.00
+                  - generic [ref=f4e290] [box=71,899,387,14]: 48 orders
+                  - generic [ref=f4e291] [box=71,919,387,24]:
+                    - img [ref=f4e294] [box=71,927,14,14]
+                    - generic [ref=f4e296] [box=89,925,114,18]: +12% vs last week
+                - generic [ref=f4e297] [box=491,804,424,156]:
+                  - generic [ref=f4e298] [box=511,821,387,28]:
+                    - img [ref=f4e300] [box=511,828,15,15]
+                    - generic [ref=f4e303] [box=534,821,76,28]: secondary
+                  - status [ref=f4e304] [box=510,820,1,1]
+                  - generic [ref=f4e305] [box=511,855,387,38]: $12,480.00
+                  - generic [ref=f4e306] [box=511,899,387,14]: 48 orders
+                  - generic [ref=f4e307] [box=511,919,387,24]:
+                    - img [ref=f4e310] [box=511,927,14,14]
+                    - generic [ref=f4e312] [box=529,925,114,18]: +12% vs last week
+                - generic [ref=f4e313] [box=51,976,424,156]:
+                  - generic [ref=f4e314] [box=71,993,387,28]:
+                    - img [ref=f4e316] [box=71,999,15,15]
+                    - generic [ref=f4e319] [box=94,993,57,28]: neutral
+                  - status [ref=f4e320] [box=70,992,1,1]
+                  - generic [ref=f4e321] [box=71,1027,387,38]: $12,480.00
+                  - generic [ref=f4e322] [box=71,1070,387,14]: 48 orders
+                  - generic [ref=f4e323] [box=71,1090,387,24]:
+                    - img [ref=f4e326] [box=71,1098,14,14]
+                    - generic [ref=f4e328] [box=89,1096,114,18]: +12% vs last week
+                - generic [ref=f4e329] [box=491,976,424,156]:
+                  - generic [ref=f4e330] [box=511,993,387,28]:
+                    - img [ref=f4e332] [box=511,999,15,15]
+                    - generic [ref=f4e335] [box=534,993,49,28]: accent
+                  - status [ref=f4e336] [box=510,992,1,1]
+                  - generic [ref=f4e337] [box=511,1027,387,38]: $12,480.00
+                  - generic [ref=f4e338] [box=511,1070,387,14]: 48 orders
+                  - generic [ref=f4e339] [box=511,1090,387,24]:
+                    - img [ref=f4e342] [box=511,1098,14,14]
+                    - generic [ref=f4e344] [box=529,1096,114,18]: +12% vs last week
+                - generic [ref=f4e345] [box=51,1147,424,156]:
+                  - generic [ref=f4e346] [box=71,1164,387,28]:
+                    - img [ref=f4e348] [box=71,1171,15,15]
+                    - generic [ref=f4e351] [box=94,1164,30,28]: info
+                  - status [ref=f4e352] [box=70,1163,1,1]
+                  - generic [ref=f4e353] [box=71,1198,387,38]: $12,480.00
+                  - generic [ref=f4e354] [box=71,1242,387,14]: 48 orders
+                  - generic [ref=f4e355] [box=71,1262,387,24]:
+                    - img [ref=f4e358] [box=71,1270,14,14]
+                    - generic [ref=f4e360] [box=89,1268,114,18]: +12% vs last week
+                - generic [ref=f4e361] [box=491,1147,424,156]:
+                  - generic [ref=f4e362] [box=511,1164,387,28]:
+                    - img [ref=f4e364] [box=511,1171,15,15]
+                    - generic [ref=f4e367] [box=534,1164,53,28]: success
+                  - status [ref=f4e368] [box=510,1163,1,1]
+                  - generic [ref=f4e369] [box=511,1198,387,38]: $12,480.00
+                  - generic [ref=f4e370] [box=511,1242,387,14]: 48 orders
+                  - generic [ref=f4e371] [box=511,1262,387,24]:
+                    - img [ref=f4e374] [box=511,1270,14,14]
+                    - generic [ref=f4e376] [box=529,1268,114,18]: +12% vs last week
+                - generic [ref=f4e377] [box=51,1319,424,156]:
+                  - generic [ref=f4e378] [box=71,1336,387,28]:
+                    - img [ref=f4e380] [box=71,1342,15,15]
+                    - generic [ref=f4e383] [box=94,1336,61,28]: warning
+                  - status [ref=f4e384] [box=70,1335,1,1]
+                  - generic [ref=f4e385] [box=71,1370,387,38]: $12,480.00
+                  - generic [ref=f4e386] [box=71,1413,387,14]: 48 orders
+                  - generic [ref=f4e387] [box=71,1433,387,24]:
+                    - img [ref=f4e390] [box=71,1441,14,14]
+                    - generic [ref=f4e392] [box=89,1439,114,18]: +12% vs last week
+                - generic [ref=f4e393] [box=491,1319,424,156]:
+                  - generic [ref=f4e394] [box=511,1336,387,28]:
+                    - img [ref=f4e396] [box=511,1342,15,15]
+                    - generic [ref=f4e399] [box=534,1336,51,28]: danger
+                  - status [ref=f4e400] [box=510,1335,1,1]
+                  - generic [ref=f4e401] [box=511,1370,387,38]: $12,480.00
+                  - generic [ref=f4e402] [box=511,1413,387,14]: 48 orders
+                  - generic [ref=f4e403] [box=511,1433,387,24]:
+                    - img [ref=f4e406] [box=511,1441,14,14]
+                    - generic [ref=f4e408] [box=529,1439,114,18]: +12% vs last week
+              - button "Show code" [ref=f4e410] [cursor=pointer] [box=865,1489,79,25]
+          - generic [ref=f4e411] [box=20,1555,925,455]:
+            - heading "Delta Colors" [level=3] [ref=f4e412] [box=20,1555,925,30]:
+              - link [ref=f4e413] [cursor=pointer] [box=-4,1555,24,14]:
+                - /url: "#delta-colors"
+              - text: Delta Colors
+            - generic [ref=f4e415] [box=21,1602,923,407]:
+              - generic [ref=f4e422] [box=51,1642,863,327]:
+                - generic [ref=f4e423] [box=51,1642,424,156]:
+                  - generic [ref=f4e424] [box=71,1659,387,28]:
+                    - img [ref=f4e426] [box=71,1666,15,15]
+                    - generic [ref=f4e429] [box=94,1659,47,28]: Higher
+                  - status [ref=f4e430] [box=70,1658,1,1]
+                  - generic [ref=f4e431] [box=71,1693,387,38]: $12,480.00
+                  - generic [ref=f4e432] [box=71,1737,387,14]: 48 orders
+                  - generic [ref=f4e433] [box=71,1757,387,24]:
+                    - img [ref=f4e436] [box=71,1765,14,14]
+                    - generic [ref=f4e438] [box=89,1763,114,18]: +12% vs last week
+                - generic [ref=f4e439] [box=491,1642,424,156]:
+                  - generic [ref=f4e440] [box=511,1659,387,28]:
+                    - img [ref=f4e442] [box=511,1666,15,15]
+                    - generic [ref=f4e445] [box=534,1659,45,28]: Watch
+                  - status [ref=f4e446] [box=510,1658,1,1]
+                  - generic [ref=f4e447] [box=511,1693,387,38]: $12,480.00
+                  - generic [ref=f4e448] [box=511,1737,387,14]: 48 orders
+                  - generic [ref=f4e449] [box=511,1757,387,24]:
+                    - img [ref=f4e452] [box=511,1765,14,14]
+                    - generic [ref=f4e454] [box=529,1763,62,18]: 3 overdue
+                - generic [ref=f4e455] [box=51,1814,424,156]:
+                  - generic [ref=f4e456] [box=71,1831,387,28]:
+                    - img [ref=f4e458] [box=71,1837,15,15]
+                    - generic [ref=f4e461] [box=94,1831,44,28]: Lower
+                  - status [ref=f4e462] [box=70,1830,1,1]
+                  - generic [ref=f4e463] [box=71,1865,387,38]: $12,480.00
+                  - generic [ref=f4e464] [box=71,1908,387,14]: 48 orders
+                  - generic [ref=f4e465] [box=71,1928,387,24]:
+                    - img [ref=f4e468] [box=71,1936,14,14]
+                    - generic [ref=f4e470] [box=89,1934,103,18]: "-8% vs last week"
+                - generic [ref=f4e471] [box=491,1814,424,156]:
+                  - generic [ref=f4e472] [box=511,1831,387,28]:
+                    - img [ref=f4e474] [box=511,1837,15,15]
+                    - generic [ref=f4e477] [box=534,1831,80,28]: Unchanged
+                  - status [ref=f4e478] [box=510,1830,1,1]
+                  - generic [ref=f4e479] [box=511,1865,387,38]: $12,480.00
+                  - generic [ref=f4e480] [box=511,1908,387,14]: 48 orders
+                  - generic [ref=f4e481] [box=511,1928,387,24]:
+                    - img [ref=f4e484] [box=511,1936,14,14]
+                    - generic [ref=f4e485] [box=529,1934,97,18]: 0% vs last week
+              - button "Show code" [ref=f4e487] [cursor=pointer] [box=865,1984,79,25]
+          - generic [ref=f4e488] [box=20,2050,925,284]:
+            - heading "With Suffix" [level=3] [ref=f4e489] [box=20,2050,925,30]:
+              - link [ref=f4e490] [cursor=pointer] [box=-4,2050,24,14]:
+                - /url: "#with-suffix"
+              - text: With Suffix
+            - generic [ref=f4e492] [box=21,2097,923,236]:
+              - generic [ref=f4e500] [box=51,2137,256,156]:
+                - generic [ref=f4e501] [box=71,2154,219,28]:
+                  - img [ref=f4e503] [box=71,2161,15,15]
+                  - generic [ref=f4e507] [box=94,2154,86,28]: Active carts
+                - status [ref=f4e508] [box=70,2153,1,1]
+                - generic [ref=f4e509] [box=71,2188,219,38]: 34 items
+                - generic [ref=f4e510] [box=71,2232,219,14]: $2,310.00 in carts
+                - generic [ref=f4e512] [box=71,2258,175,18]: 5 abandoned for over 7 days
+              - button "Show code" [ref=f4e514] [cursor=pointer] [box=865,2308,79,25]
+          - generic [ref=f4e515] [box=20,2374,925,234]:
+            - heading "Loading" [level=3] [ref=f4e516] [box=20,2374,925,30]:
+              - link [ref=f4e517] [cursor=pointer] [box=-4,2374,24,14]:
+                - /url: "#loading"
+              - text: Loading
+            - generic [ref=f4e519] [box=21,2421,923,186]:
+              - generic [ref=f4e527] [box=51,2461,256,106]:
+                - generic [ref=f4e528] [box=71,2478,219,28]:
+                  - img [ref=f4e530] [box=71,2485,15,15]
+                  - generic [ref=f4e533] [box=94,2478,126,28]: Revenue this week
+                - status [ref=f4e534] [box=70,2477,1,1]: "Revenue this week: loading"
+                - generic [ref=f4e535] [box=71,2512,219,38]: —
+              - button "Show code" [ref=f4e540] [cursor=pointer] [box=865,2582,79,25]
+          - generic [ref=f4e541] [box=20,2648,925,220]:
+            - heading "Error State" [level=3] [ref=f4e542] [box=20,2648,925,30]:
+              - link [ref=f4e543] [cursor=pointer] [box=-4,2648,24,14]:
+                - /url: "#error-state"
+              - text: Error State
+            - generic [ref=f4e545] [box=21,2695,923,172]:
+              - generic [ref=f4e553] [box=51,2735,256,92]:
+                - generic [ref=f4e554] [box=71,2752,219,28]:
+                  - img [ref=f4e556] [box=71,2759,15,15]
+                  - generic [ref=f4e559] [box=94,2752,126,28]: Revenue this week
+                - status [ref=f4e560] [box=70,2751,1,1]: "Revenue this week: Couldn't load"
+                - generic [ref=f4e561] [box=71,2786,219,24]:
+                  - img [ref=f4e564] [box=71,2793,16,16]
+                  - generic [ref=f4e566] [box=93,2792,83,18]: Couldn't load
+              - button "Show code" [ref=f4e568] [cursor=pointer] [box=865,2842,79,25]
+          - generic [ref=f4e569] [box=20,2908,925,284]:
+            - heading "Prepend Slot" [level=3] [ref=f4e570] [box=20,2908,925,30]:
+              - link [ref=f4e571] [cursor=pointer] [box=-4,2908,24,14]:
+                - /url: "#prepend-slot"
+              - text: Prepend Slot
+            - generic [ref=f4e573] [box=21,2955,923,236]:
+              - generic [ref=f4e581] [box=51,2995,256,156]:
+                - generic [ref=f4e582] [box=71,3012,219,28]:
+                  - img [ref=f4e585] [box=71,3018,16,16]
+                  - img [ref=f4e589] [box=95,3019,15,15]
+                  - generic [ref=f4e592] [box=118,3012,126,28]: Revenue this week
+                - status [ref=f4e593] [box=70,3011,1,1]
+                - generic [ref=f4e594] [box=71,3046,219,38]: $12,480.00
+                - generic [ref=f4e595] [box=71,3090,219,14]: 48 orders
+                - generic [ref=f4e596] [box=71,3110,219,24]:
+                  - img [ref=f4e599] [box=71,3118,14,14]
+                  - generic [ref=f4e601] [box=89,3116,114,18]: +12% vs last week
+              - button "Show code" [ref=f4e603] [cursor=pointer] [box=865,3166,79,25]
+          - generic [ref=f4e604] [box=20,3232,925,423]:
+            - heading "Row" [level=3] [ref=f4e605] [box=20,3232,925,30]:
+              - link [ref=f4e606] [cursor=pointer] [box=-4,3232,24,14]:
+                - /url: "#row"
+              - text: Row
+            - generic [ref=f4e608] [box=21,3279,923,375]:
+              - generic [ref=f4e615] [box=51,3319,863,295]:
+                - generic [ref=f4e616] [box=51,3319,203,174]:
+                  - generic [ref=f4e617] [box=71,3336,166,28]:
+                    - img [ref=f4e619] [box=71,3343,15,15]
+                    - generic [ref=f4e621] [box=94,3336,143,28]: Orders in “New” status
+                  - status [ref=f4e622] [box=70,3335,1,1]
+                  - generic [ref=f4e623] [box=71,3370,166,38]: "7"
+                  - generic [ref=f4e624] [box=71,3414,166,14]: $3,150.00 total
+                  - generic [ref=f4e626] [box=71,3440,166,36]: of 21 created in the last 7 days
+                - generic [ref=f4e627] [box=270,3319,203,174]:
+                  - generic [ref=f4e628] [box=290,3336,166,28]:
+                    - img [ref=f4e630] [box=290,3343,15,15]
+                    - generic [ref=f4e634] [box=313,3336,118,28]: Orders this week
+                  - status [ref=f4e635] [box=289,3335,1,1]
+                  - generic [ref=f4e636] [box=290,3370,166,38]: "21"
+                  - generic [ref=f4e637] [box=290,3414,166,14]: $9,870.00 total
+                  - generic [ref=f4e638] [box=290,3452,166,24]:
+                    - img [ref=f4e641] [box=290,3460,14,14]
+                    - generic [ref=f4e643] [box=308,3458,36,18]: +12%
+                - generic [ref=f4e644] [box=488,3319,203,174]:
+                  - generic [ref=f4e645] [box=508,3336,166,28]:
+                    - img [ref=f4e647] [box=508,3343,15,15]
+                    - generic [ref=f4e650] [box=531,3336,88,28]: Revenue MTD
+                  - status [ref=f4e651] [box=507,3335,1,1]
+                  - generic [ref=f4e652] [box=508,3370,166,38]: $41,200.00
+                  - generic [ref=f4e653] [box=508,3452,166,24]:
+                    - img [ref=f4e656] [box=508,3460,14,14]
+                    - generic [ref=f4e658] [box=526,3458,24,18]: "-4%"
+                - generic [ref=f4e659] [box=707,3319,207,174]:
+                  - generic [ref=f4e660] [box=727,3336,170,28]:
+                    - img [ref=f4e662] [box=727,3343,15,15]
+                    - generic [ref=f4e665] [box=750,3336,84,28]: Revenue YTD
+                  - status [ref=f4e666] [box=726,3335,1,1]
+                  - generic [ref=f4e667] [box=727,3370,170,38]: $402,900.00
+                  - generic [ref=f4e668] [box=727,3452,170,24]:
+                    - img [ref=f4e671] [box=727,3460,14,14]
+                    - generic [ref=f4e672] [box=745,3458,19,18]: 0%
+                - generic [ref=f4e673] [box=51,3509,424,106]:
+                  - generic [ref=f4e674] [box=71,3526,387,28]:
+                    - img [ref=f4e676] [box=71,3532,15,15]
+                    - generic [ref=f4e679] [box=94,3526,144,28]: Average order value
+                  - status [ref=f4e680] [box=70,3525,1,1]: "Average order value: loading"
+                  - generic [ref=f4e681] [box=71,3560,387,38]: —
+                - generic [ref=f4e685] [box=491,3509,424,106]:
+                  - generic [ref=f4e686] [box=511,3526,387,28]:
+                    - img [ref=f4e688] [box=511,3532,15,15]
+                    - generic [ref=f4e693] [box=534,3526,75,28]: Customers
+                  - status [ref=f4e694] [box=510,3525,1,1]: "Customers: Couldn't load"
+                  - generic [ref=f4e695] [box=511,3573,387,24]:
+                    - img [ref=f4e698] [box=511,3580,16,16]
+                    - generic [ref=f4e700] [box=533,3579,83,18]: Couldn't load
+              - button "Show code" [ref=f4e702] [cursor=pointer] [box=865,3629,79,25]

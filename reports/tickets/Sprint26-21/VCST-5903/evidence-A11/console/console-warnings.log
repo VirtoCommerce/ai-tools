@@ -1,0 +1,22 @@
+Total messages: 9 (Errors: 0, Warnings: 3)
+Returning 11 messages for level "warning"
+
+[WARNING] A preload for 'https://vcst-qa-storybook.govirto.com/assets/mf-entry-bootstrap-0-45719e41.js' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute. @ https://vcst-qa-storybook.govirto.com/cdn-cgi/scripts/7d0fa10a/cloudflare-static/rocket-loader.min.js:0
+[WARNING] Omitted potentially unsafe URL args.
+
+More info: https://storybook.js.org/docs/writing-stories/args?ref=error#setting-args-through-the-url @ https://vcst-qa-storybook.govirto.com/sb-manager/globals-runtime.js:6451
+[WARNING] A preload for 'https://vcst-qa-storybook.govirto.com/assets/mf-entry-bootstrap-0-45719e41.js' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute. @ https://vcst-qa-storybook.govirto.com/cdn-cgi/scripts/7d0fa10a/cloudflare-static/rocket-loader.min.js:0
+[WARNING] The resource https://vcst-qa-storybook.govirto.com/assets/mf-entry-bootstrap-0-45719e41.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://vcst-qa-storybook.govirto.com/iframe.html?viewMode=story&id=components-organisms-vcstatwidget--delta-colors&globals=:0
+[WARNING] Omitted potentially unsafe URL args.
+
+More info: https://storybook.js.org/docs/writing-stories/args?ref=error#setting-args-through-the-url @ https://vcst-qa-storybook.govirto.com/sb-manager/globals-runtime.js:6451
+[WARNING] A preload for 'https://vcst-qa-storybook.govirto.com/assets/mf-entry-bootstrap-0-45719e41.js' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute. @ https://vcst-qa-storybook.govirto.com/cdn-cgi/scripts/7d0fa10a/cloudflare-static/rocket-loader.min.js:0
+[WARNING] A preload for 'https://vcst-qa-storybook.govirto.com/assets/mf-entry-bootstrap-0-45719e41.js' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute. @ https://vcst-qa-storybook.govirto.com/cdn-cgi/scripts/7d0fa10a/cloudflare-static/rocket-loader.min.js:0
+[WARNING] Omitted potentially unsafe URL args.
+
+More info: https://storybook.js.org/docs/writing-stories/args?ref=error#setting-args-through-the-url @ https://vcst-qa-storybook.govirto.com/sb-manager/globals-runtime.js:6451
+[WARNING] A preload for 'https://vcst-qa-storybook.govirto.com/assets/mf-entry-bootstrap-0-45719e41.js' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute. @ https://vcst-qa-storybook.govirto.com/cdn-cgi/scripts/7d0fa10a/cloudflare-static/rocket-loader.min.js:0
+[WARNING] The resource https://vcst-qa-storybook.govirto.com/assets/mf-entry-bootstrap-0-45719e41.js was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://vcst-qa-storybook.govirto.com/iframe.html?viewMode=story&id=components-organisms-vcstatwidget--colors&globals=:0
+[WARNING] Omitted potentially unsafe URL args.
+
+More info: https://storybook.js.org/docs/writing-stories/args?ref=error#setting-args-through-the-url @ https://vcst-qa-storybook.govirto.com/sb-manager/globals-runtime.js:6451

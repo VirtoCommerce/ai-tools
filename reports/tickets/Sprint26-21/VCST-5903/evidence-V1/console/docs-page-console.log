@@ -1,0 +1,22 @@
+[     672ms] [WARNING] A preload for 'https://vcst-qa-storybook.govirto.com/assets/mf-entry-bootstrap-0-45719e41.js' is found, but is not used because the request credentials mode does not match. Consider taking a look at crossorigin attribute. @ https://vcst-qa-storybook.govirto.com/cdn-cgi/scripts/7d0fa10a/cloudflare-static/rocket-loader.min.js:0
+[    1032ms] [LOG] MutationObserver activated for monitoring <head> @ https://vcst-qa-storybook.govirto.com/assets/iframe-Xhj2cj4n.js:2429
+[    1058ms] [LOG] DOM changed in <head>: {addedNodes: 1, removedNodes: 0, target: head} @ https://vcst-qa-storybook.govirto.com/assets/iframe-Xhj2cj4n.js:2429
+[    1086ms] [LOG] DOM changed in <head>: {addedNodes: 1, removedNodes: 0, target: head} @ https://vcst-qa-storybook.govirto.com/assets/iframe-Xhj2cj4n.js:2429
+[    1467ms] [LOG] DOM changed in <head>: {addedNodes: 1, removedNodes: 0, target: head} @ https://vcst-qa-storybook.govirto.com/assets/iframe-Xhj2cj4n.js:2429
+[    1530ms] [LOG] DOM changed in <head>: {addedNodes: 1, removedNodes: 0, target: head} @ https://vcst-qa-storybook.govirto.com/assets/iframe-Xhj2cj4n.js:2429
+[  112953ms] Error: Could not determine window of node. Node was [object HTMLBodyElement]
+    at getWindow (https://vcst-qa-storybook.govirto.com/assets/iframe-Xhj2cj4n.js:350:747)
+    at createEvent (https://vcst-qa-storybook.govirto.com/assets/iframe-Xhj2cj4n.js:351:3685)
+    at dispatchDOMEvent (https://vcst-qa-storybook.govirto.com/assets/iframe-Xhj2cj4n.js:351:7950)
+    at HTMLBodyElement.patchedFocus (https://vcst-qa-storybook.govirto.com/assets/iframe-Xhj2cj4n.js:351:8603)
+    at Oe (https://vcst-qa-storybook.govirto.com/sb-manager/globals-runtime.js:2115:46)
+    at Wk (https://vcst-qa-storybook.govirto.com/sb-manager/globals-runtime.js:5607:56)
+    at Pk (https://vcst-qa-storybook.govirto.com/sb-manager/globals-runtime.js:5582:37)
+    at Ek (https://vcst-qa-storybook.govirto.com/sb-manager/globals-runtime.js:5356:71)
+    at jg (https://vcst-qa-storybook.govirto.com/sb-manager/globals-runtime.js:2651:17)
+    at https://vcst-qa-storybook.govirto.com/sb-manager/globals-runtime.js:5204:27
+[  112954ms] Error: Minified React error #327; visit https://reactjs.org/docs/error-decoder.html?invariant=327 for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at Ek (https://vcst-qa-storybook.govirto.com/sb-manager/globals-runtime.js:5345:31)
+    at jg (https://vcst-qa-storybook.govirto.com/sb-manager/globals-runtime.js:2651:17)
+    at J (https://vcst-qa-storybook.govirto.com/sb-manager/globals-runtime.js:366:19)
+    at MessagePort.R (https://vcst-qa-storybook.govirto.com/sb-manager/globals-runtime.js:393:13)

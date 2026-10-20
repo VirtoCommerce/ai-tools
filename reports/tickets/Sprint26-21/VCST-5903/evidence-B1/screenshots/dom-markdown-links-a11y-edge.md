@@ -1,0 +1,310 @@
+- generic [ref=e3]:
+  - navigation "Global" [ref=e6]:
+    - generic [ref=e10]:
+      - generic [ref=e11]:
+        - link "Skip to canvas" [ref=e12] [cursor=pointer]:
+          - /url: "#storybook-preview-wrapper"
+        - link "Storybook" [ref=e14] [cursor=pointer]:
+          - /url: ./
+          - img "Storybook" [ref=e15]
+        - button "Shortcuts" [ref=e21] [cursor=pointer]:
+          - img [ref=e22]
+      - generic [ref=e25]: Search for components
+      - combobox "Search for components" [ref=e27]:
+        - generic:
+          - img
+        - searchbox "Search for components" [ref=e28]
+        - code: ⌃ K
+        - button "Tag filters" [ref=e32] [cursor=pointer]:
+          - img [ref=e33]
+      - generic [ref=e35]:
+        - generic [ref=e39]:
+          - img
+          - generic [ref=e40]:
+            - button "Components" [expanded] [ref=e41] [cursor=pointer]:
+              - img [ref=e43]
+              - text: Components
+            - button "Collapse" [ref=e45] [cursor=pointer]:
+              - img [ref=e46]
+          - button "Atoms" [expanded] [ref=e49] [cursor=pointer]:
+            - generic [ref=e50]:
+              - img [ref=e52]
+              - img [ref=e54]
+            - generic [ref=e57]: Atoms
+          - button "VcBadge" [ref=e59] [cursor=pointer]:
+            - generic [ref=e60]:
+              - img [ref=e62]
+              - img [ref=e64]
+            - generic [ref=e67]: VcBadge
+          - button "VcBreadcrumbs" [ref=e69] [cursor=pointer]:
+            - generic [ref=e70]:
+              - img [ref=e72]
+              - img [ref=e74]
+            - generic [ref=e77]: VcBreadcrumbs
+          - button "VcCarouselPagination" [ref=e79] [cursor=pointer]:
+            - generic [ref=e80]:
+              - img [ref=e82]
+              - img [ref=e84]
+            - generic [ref=e87]: VcCarouselPagination
+          - button "VcCheckboxGroup" [ref=e89] [cursor=pointer]:
+            - generic [ref=e90]:
+              - img [ref=e92]
+              - img [ref=e94]
+            - generic [ref=e97]: VcCheckboxGroup
+          - button "VcCheckbox" [ref=e99] [cursor=pointer]:
+            - generic [ref=e100]:
+              - img [ref=e102]
+              - img [ref=e104]
+            - generic [ref=e107]: VcCheckbox
+          - button "VcContainer" [ref=e109] [cursor=pointer]:
+            - generic [ref=e110]:
+              - img [ref=e112]
+              - img [ref=e114]
+            - generic [ref=e117]: VcContainer
+          - button "VcIcon" [ref=e119] [cursor=pointer]:
+            - generic [ref=e120]:
+              - img [ref=e122]
+              - img [ref=e124]
+            - generic [ref=e127]: VcIcon
+          - button "VcImage" [ref=e129] [cursor=pointer]:
+            - generic [ref=e130]:
+              - img [ref=e132]
+              - img [ref=e134]
+            - generic [ref=e137]: VcImage
+          - button "VcInfinityScrollLoader" [ref=e139] [cursor=pointer]:
+            - generic [ref=e140]:
+              - img [ref=e142]
+              - img [ref=e144]
+            - generic [ref=e147]: VcInfinityScrollLoader
+          - button "VcInputDetails" [ref=e149] [cursor=pointer]:
+            - generic [ref=e150]:
+              - img [ref=e152]
+              - img [ref=e154]
+            - generic [ref=e157]: VcInputDetails
+          - button "VcLabel" [ref=e159] [cursor=pointer]:
+            - generic [ref=e160]:
+              - img [ref=e162]
+              - img [ref=e164]
+            - generic [ref=e167]: VcLabel
+          - button "VcLineItemProperty Deprecated" [ref=e169] [cursor=pointer]:
+            - generic [ref=e170]:
+              - img [ref=e172]
+              - img [ref=e174]
+            - generic [ref=e176]:
+              - generic [ref=e177]: VcLineItemProperty
+              - generic [ref=e178]: Deprecated
+          - button "VcLink" [ref=e180] [cursor=pointer]:
+            - generic [ref=e181]:
+              - img [ref=e183]
+              - img [ref=e185]
+            - generic [ref=e188]: VcLink
+          - button "VcLoader" [ref=e190] [cursor=pointer]:
+            - generic [ref=e191]:
+              - img [ref=e193]
+              - img [ref=e195]
+            - generic [ref=e198]: VcLoader
+          - button "VcMarkdownRender" [expanded] [ref=e200] [cursor=pointer]:
+            - generic [ref=e201]:
+              - img [ref=e203]
+              - img [ref=e205]
+            - generic [ref=e208]: VcMarkdownRender
+          - link "Docs" [ref=e210] [cursor=pointer]:
+            - /url: /?path=/docs/components-atoms-vcmarkdownrender--docs
+            - img [ref=e212]
+            - generic [ref=e215]: Docs
+          - link "Basic" [ref=e217] [cursor=pointer]:
+            - /url: /?path=/story/components-atoms-vcmarkdownrender--basic
+            - img [ref=e219]
+            - generic [ref=e222]: Basic
+          - link "Basic Html" [ref=e224] [cursor=pointer]:
+            - /url: /?path=/story/components-atoms-vcmarkdownrender--basic-html
+            - img [ref=e226]
+            - generic [ref=e229]: Basic Html
+          - link "Headings" [ref=e231] [cursor=pointer]:
+            - /url: /?path=/story/components-atoms-vcmarkdownrender--headings
+            - img [ref=e233]
+            - generic [ref=e236]: Headings
+          - link "Text Formatting" [ref=e238] [cursor=pointer]:
+            - /url: /?path=/story/components-atoms-vcmarkdownrender--text-formatting
+            - img [ref=e240]
+            - generic [ref=e243]: Text Formatting
+          - generic [ref=e244]:
+            - link "Links" [ref=e245] [cursor=pointer]:
+              - /url: /?path=/story/components-atoms-vcmarkdownrender--links
+              - img [ref=e247]
+              - generic [ref=e250]: Links
+            - link "Skip to canvas" [ref=e251] [cursor=pointer]:
+              - /url: "#storybook-preview-wrapper"
+          - link "Lists" [ref=e253] [cursor=pointer]:
+            - /url: /?path=/story/components-atoms-vcmarkdownrender--lists
+            - img [ref=e255]
+            - generic [ref=e258]: Lists
+          - link "Blockquote" [ref=e260] [cursor=pointer]:
+            - /url: /?path=/story/components-atoms-vcmarkdownrender--blockquote
+            - img [ref=e262]
+            - generic [ref=e265]: Blockquote
+          - link "Code Blocks" [ref=e267] [cursor=pointer]:
+            - /url: /?path=/story/components-atoms-vcmarkdownrender--code-blocks
+            - img [ref=e269]
+            - generic [ref=e272]: Code Blocks
+          - link "Table" [ref=e274] [cursor=pointer]:
+            - /url: /?path=/story/components-atoms-vcmarkdownrender--table
+            - img [ref=e276]
+            - generic [ref=e279]: Table
+          - link "Image" [ref=e281] [cursor=pointer]:
+            - /url: /?path=/story/components-atoms-vcmarkdownrender--image
+            - img [ref=e283]
+            - generic [ref=e286]: Image
+          - link "Horizontal Rule" [ref=e288] [cursor=pointer]:
+            - /url: /?path=/story/components-atoms-vcmarkdownrender--horizontal-rule
+            - img [ref=e290]
+            - generic [ref=e293]: Horizontal Rule
+          - button "VcPriceDisplay" [ref=e295] [cursor=pointer]:
+            - generic [ref=e296]:
+              - img [ref=e298]
+              - img [ref=e300]
+            - generic [ref=e303]: VcPriceDisplay
+          - button "VcProperty" [ref=e305] [cursor=pointer]:
+            - generic [ref=e306]:
+              - img [ref=e308]
+              - img [ref=e310]
+            - generic [ref=e313]: VcProperty
+          - button "VcRadioButton" [ref=e315] [cursor=pointer]:
+            - generic [ref=e316]:
+              - img [ref=e318]
+              - img [ref=e320]
+            - generic [ref=e323]: VcRadioButton
+          - button "VcScrollTopButton" [ref=e325] [cursor=pointer]:
+            - generic [ref=e326]:
+              - img [ref=e328]
+              - img [ref=e330]
+            - generic [ref=e333]: VcScrollTopButton
+          - button "VcScrollbar" [ref=e335] [cursor=pointer]:
+            - generic [ref=e336]:
+              - img [ref=e338]
+              - img [ref=e340]
+            - generic [ref=e343]: VcScrollbar
+          - button "VcSwitch" [ref=e345] [cursor=pointer]:
+            - generic [ref=e346]:
+              - img [ref=e348]
+              - img [ref=e350]
+            - generic [ref=e353]: VcSwitch
+          - button "VcTooltip" [ref=e355] [cursor=pointer]:
+            - generic [ref=e356]:
+              - img [ref=e358]
+              - img [ref=e360]
+            - generic [ref=e363]: VcTooltip
+          - button "Molecules" [ref=e365] [cursor=pointer]:
+            - generic [ref=e366]:
+              - img [ref=e368]
+              - img [ref=e370]
+            - generic [ref=e373]: Molecules
+          - button "Organisms" [ref=e375] [cursor=pointer]:
+            - generic [ref=e376]:
+              - img [ref=e378]
+              - img [ref=e380]
+            - generic [ref=e383]: Organisms
+          - button "Templates" [ref=e385] [cursor=pointer]:
+            - generic [ref=e386]:
+              - img [ref=e388]
+              - img [ref=e390]
+            - generic [ref=e393]: Templates
+        - text: /
+  - main [ref=e395]:
+    - region "Toolbar" [ref=e396]:
+      - generic [ref=e397]: Toolbar
+      - generic [ref=e398]:
+        - generic [ref=e399]:
+          - button "Remount component" [ref=e400] [cursor=pointer]:
+            - img [ref=e401]
+          - button "Zoom in" [ref=e403] [cursor=pointer]:
+            - img [ref=e404]
+          - button "Zoom out" [ref=e407] [cursor=pointer]:
+            - img [ref=e408]
+          - button "Reset zoom" [ref=e411] [cursor=pointer]:
+            - img [ref=e412]
+          - button "Apply a grid to the preview" [ref=e415] [cursor=pointer]:
+            - img [ref=e416]
+          - button "Change the background of the preview" [ref=e419] [cursor=pointer]:
+            - img [ref=e420]
+          - button "Enable measure" [ref=e423] [cursor=pointer]:
+            - img [ref=e424]
+          - button "Apply outlines to the preview" [ref=e427] [cursor=pointer]:
+            - img [ref=e428]
+          - button "Change the size of the preview" [ref=e431] [cursor=pointer]:
+            - img [ref=e432]
+          - button "Vision simulator" [ref=e437] [cursor=pointer]:
+            - img [ref=e438]
+          - generic:
+            - img
+          - button "Select color mode" [ref=e444] [cursor=pointer]:
+            - img [ref=e445]
+          - button "Black gold" [ref=e451] [cursor=pointer]:
+            - img [ref=e452]
+            - text: Black gold
+        - generic [ref=e454]:
+          - button "Go full screen" [ref=e455] [cursor=pointer]:
+            - img [ref=e456]
+          - link "Open canvas in new tab" [ref=e458] [cursor=pointer]:
+            - /url: iframe.html?globals=themePreset:black-gold&id=components-atoms-vcmarkdownrender--links
+            - img [ref=e459]
+          - button "Copy canvas link" [ref=e462] [cursor=pointer]:
+            - img [ref=e463]
+    - generic [ref=e468]:
+      - link "Skip to sidebar" [ref=e469] [cursor=pointer]:
+        - /url: "#components-atoms-vcmarkdownrender--links"
+      - iframe [ref=e470]:
+        - generic [ref=f4e3]:
+          - paragraph [ref=f4e4]:
+            - text: Check out
+            - link "this link" [ref=f4e5] [cursor=pointer]:
+              - /url: https://example.com
+            - text: for more information.
+          - paragraph [ref=f4e6]:
+            - text: You can also use
+            - link "reference-style links" [ref=f4e7] [cursor=pointer]:
+              - /url: https://example.com
+            - text: .
+  - generic [ref=e473]:
+    - generic [ref=e475]:
+      - tablist [ref=e477]:
+        - tab "Controls 1" [ref=e478] [cursor=pointer]:
+          - generic [ref=e479]:
+            - generic [ref=e480]: Controls
+            - generic [ref=e481]: "1"
+        - tab "Actions" [ref=e482] [cursor=pointer]:
+          - generic [ref=e484]: Actions
+        - tab "Interactions" [ref=e485] [cursor=pointer]:
+          - generic [ref=e487]: Interactions
+        - tab "Accessibility" [active] [ref=e488] [cursor=pointer]:
+          - generic [ref=e490]: Accessibility
+        - tab "Code" [ref=e491] [cursor=pointer]
+      - generic [ref=e494]:
+        - button "Change addon orientation [alt D]" [ref=e495] [cursor=pointer]:
+          - img [ref=e496]
+        - button "Hide addons [alt A]" [ref=e499] [cursor=pointer]:
+          - img [ref=e500]
+    - generic [ref=e504]:
+      - generic [ref=e505]:
+        - tablist [ref=e506]:
+          - tab "Violations 0" [selected] [ref=e507] [cursor=pointer]:
+            - generic [ref=e508]:
+              - text: Violations
+              - generic [ref=e509]: "0"
+          - tab "Passes 0" [ref=e510] [cursor=pointer]:
+            - generic [ref=e511]:
+              - text: Passes
+              - generic [ref=e512]: "0"
+          - tab "Inconclusive 0" [ref=e513] [cursor=pointer]:
+            - generic [ref=e514]:
+              - text: Inconclusive
+              - generic [ref=e515]: "0"
+        - generic [ref=e516]:
+          - button "Show highlights" [ref=e518] [cursor=pointer]:
+            - img [ref=e519]
+            - generic [ref=e522]: Show highlights
+          - button "Collapse all" [ref=e524] [cursor=pointer]:
+            - img [ref=e525]
+          - button "Rerun accessibility scan" [ref=e528] [cursor=pointer]:
+            - img [ref=e529]
+      - generic [ref=e536]: No accessibility violations found.

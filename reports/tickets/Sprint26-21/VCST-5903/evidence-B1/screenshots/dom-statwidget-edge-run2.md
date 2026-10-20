@@ -1,0 +1,251 @@
+- generic [ref=f7e3]:
+  - navigation "Global" [ref=f7e6]:
+    - generic [ref=f7e10]:
+      - generic [ref=f7e11]:
+        - link "Skip to canvas" [ref=f7e12] [cursor=pointer]:
+          - /url: "#storybook-preview-wrapper"
+        - link "Storybook" [ref=f7e14] [cursor=pointer]:
+          - /url: ./
+          - img "Storybook" [ref=f7e15]
+        - button "Shortcuts" [ref=f7e21] [cursor=pointer]:
+          - img [ref=f7e22]
+      - generic [ref=f7e25]: Search for components
+      - combobox "Search for components" [ref=f7e27]:
+        - generic:
+          - img
+        - searchbox "Search for components" [ref=f7e28]
+        - code: ⌃ K
+        - button "Tag filters" [ref=f7e143] [cursor=pointer]:
+          - img [ref=f7e144]
+      - generic [ref=f7e29]:
+        - generic [ref=f7e146]:
+          - img
+          - generic [ref=f7e147]:
+            - button "Components" [expanded] [ref=f7e148] [cursor=pointer]:
+              - img [ref=f7e150]
+              - text: Components
+            - button "Collapse" [ref=f7e152] [cursor=pointer]:
+              - img [ref=f7e153]
+          - button "Atoms" [ref=f7e156] [cursor=pointer]:
+            - generic [ref=f7e157]:
+              - img [ref=f7e159]
+              - img [ref=f7e161]
+            - generic [ref=f7e164]: Atoms
+          - button "Molecules" [ref=f7e166] [cursor=pointer]:
+            - generic [ref=f7e167]:
+              - img [ref=f7e169]
+              - img [ref=f7e171]
+            - generic [ref=f7e174]: Molecules
+          - button "Organisms" [expanded] [ref=f7e176] [cursor=pointer]:
+            - generic [ref=f7e177]:
+              - img [ref=f7e179]
+              - img [ref=f7e181]
+            - generic [ref=f7e184]: Organisms
+          - button "VcAddToCart" [ref=f7e186] [cursor=pointer]:
+            - generic [ref=f7e187]:
+              - img [ref=f7e189]
+              - img [ref=f7e191]
+            - generic [ref=f7e194]: VcAddToCart
+          - button "VcConfirmationModal" [ref=f7e196] [cursor=pointer]:
+            - generic [ref=f7e197]:
+              - img [ref=f7e199]
+              - img [ref=f7e201]
+            - generic [ref=f7e204]: VcConfirmationModal
+          - button "VcDatePicker" [ref=f7e206] [cursor=pointer]:
+            - generic [ref=f7e207]:
+              - img [ref=f7e209]
+              - img [ref=f7e211]
+            - generic [ref=f7e214]: VcDatePicker
+          - button "VcDateRangePicker" [ref=f7e216] [cursor=pointer]:
+            - generic [ref=f7e217]:
+              - img [ref=f7e219]
+              - img [ref=f7e221]
+            - generic [ref=f7e224]: VcDateRangePicker
+          - button "VcModal" [ref=f7e226] [cursor=pointer]:
+            - generic [ref=f7e227]:
+              - img [ref=f7e229]
+              - img [ref=f7e231]
+            - generic [ref=f7e234]: VcModal
+          - button "VcPagination" [ref=f7e236] [cursor=pointer]:
+            - generic [ref=f7e237]:
+              - img [ref=f7e239]
+              - img [ref=f7e241]
+            - generic [ref=f7e244]: VcPagination
+          - button "VcPopupSidebar" [ref=f7e246] [cursor=pointer]:
+            - generic [ref=f7e247]:
+              - img [ref=f7e249]
+              - img [ref=f7e251]
+            - generic [ref=f7e254]: VcPopupSidebar
+          - button "VcProductButton" [ref=f7e256] [cursor=pointer]:
+            - generic [ref=f7e257]:
+              - img [ref=f7e259]
+              - img [ref=f7e261]
+            - generic [ref=f7e264]: VcProductButton
+          - button "VcProductCard" [ref=f7e266] [cursor=pointer]:
+            - generic [ref=f7e267]:
+              - img [ref=f7e269]
+              - img [ref=f7e271]
+            - generic [ref=f7e274]: VcProductCard
+          - button "VcProductImage" [ref=f7e276] [cursor=pointer]:
+            - generic [ref=f7e277]:
+              - img [ref=f7e279]
+              - img [ref=f7e281]
+            - generic [ref=f7e284]: VcProductImage
+          - button "VcQuantityStepper" [ref=f7e286] [cursor=pointer]:
+            - generic [ref=f7e287]:
+              - img [ref=f7e289]
+              - img [ref=f7e291]
+            - generic [ref=f7e294]: VcQuantityStepper
+          - button "VcStatWidget" [expanded] [ref=f7e296] [cursor=pointer]:
+            - generic [ref=f7e297]:
+              - img [ref=f7e299]
+              - img [ref=f7e301]
+            - generic [ref=f7e304]: VcStatWidget
+          - link "Docs" [ref=f7e306] [cursor=pointer]:
+            - /url: /?path=/docs/components-organisms-vcstatwidget--docs
+            - img [ref=f7e308]
+            - generic [ref=f7e311]: Docs
+          - generic [ref=f7e312]:
+            - link "Basic" [ref=f7e313] [cursor=pointer]:
+              - /url: /?path=/story/components-organisms-vcstatwidget--basic
+              - img [ref=f7e315]
+              - generic [ref=f7e318]: Basic
+            - link "Skip to canvas" [ref=f7e319] [cursor=pointer]:
+              - /url: "#storybook-preview-wrapper"
+          - link "Colors" [ref=f7e321] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcstatwidget--colors
+            - img [ref=f7e323]
+            - generic [ref=f7e326]: Colors
+          - link "Delta Colors" [ref=f7e328] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcstatwidget--delta-colors
+            - img [ref=f7e330]
+            - generic [ref=f7e333]: Delta Colors
+          - link "With Suffix" [ref=f7e335] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcstatwidget--with-suffix
+            - img [ref=f7e337]
+            - generic [ref=f7e340]: With Suffix
+          - link "Loading" [ref=f7e342] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcstatwidget--loading
+            - img [ref=f7e344]
+            - generic [ref=f7e347]: Loading
+          - link "Error State" [ref=f7e349] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcstatwidget--error-state
+            - img [ref=f7e351]
+            - generic [ref=f7e354]: Error State
+          - link "Prepend Slot" [ref=f7e356] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcstatwidget--prepend-slot
+            - img [ref=f7e358]
+            - generic [ref=f7e361]: Prepend Slot
+          - link "Row" [ref=f7e363] [cursor=pointer]:
+            - /url: /?path=/story/components-organisms-vcstatwidget--row
+            - img [ref=f7e365]
+            - generic [ref=f7e368]: Row
+          - button "VcTable" [ref=f7e370] [cursor=pointer]:
+            - generic [ref=f7e371]:
+              - img [ref=f7e373]
+              - img [ref=f7e375]
+            - generic [ref=f7e378]: VcTable
+          - button "VcWidgetSkeleton" [ref=f7e380] [cursor=pointer]:
+            - generic [ref=f7e381]:
+              - img [ref=f7e383]
+              - img [ref=f7e385]
+            - generic [ref=f7e388]: VcWidgetSkeleton
+          - button "VcWidget" [ref=f7e390] [cursor=pointer]:
+            - generic [ref=f7e391]:
+              - img [ref=f7e393]
+              - img [ref=f7e395]
+            - generic [ref=f7e398]: VcWidget
+          - button "Templates" [ref=f7e400] [cursor=pointer]:
+            - generic [ref=f7e401]:
+              - img [ref=f7e403]
+              - img [ref=f7e405]
+            - generic [ref=f7e408]: Templates
+        - text: / /
+  - main [ref=f7e52]:
+    - region "Toolbar" [ref=f7e53]:
+      - generic [ref=f7e54]: Toolbar
+      - generic [ref=f7e55]:
+        - generic [ref=f7e56]:
+          - button "Remount component" [ref=f7e57] [cursor=pointer]:
+            - img [ref=f7e58]
+          - button "Zoom in" [ref=f7e60] [cursor=pointer]:
+            - img [ref=f7e61]
+          - button "Zoom out" [ref=f7e64] [cursor=pointer]:
+            - img [ref=f7e65]
+          - button "Reset zoom" [ref=f7e68] [cursor=pointer]:
+            - img [ref=f7e69]
+          - button "Apply a grid to the preview" [ref=f7e409] [cursor=pointer]:
+            - img [ref=f7e410]
+          - button "Change the background of the preview" [ref=f7e413] [cursor=pointer]:
+            - img [ref=f7e414]
+          - button "Enable measure" [ref=f7e72] [cursor=pointer]:
+            - img [ref=f7e73]
+          - button "Apply outlines to the preview" [ref=f7e76] [cursor=pointer]:
+            - img [ref=f7e77]
+          - button "Change the size of the preview" [ref=f7e80] [cursor=pointer]:
+            - img [ref=f7e81]
+          - button "Vision simulator" [ref=f7e86] [cursor=pointer]:
+            - img [ref=f7e87]
+          - generic:
+            - img
+          - button "Select color mode" [ref=f7e419] [cursor=pointer]:
+            - img [ref=f7e420]
+          - button "Coffee" [ref=f7e485] [cursor=pointer]:
+            - img [ref=f7e427]
+            - text: Coffee
+        - generic [ref=f7e91]:
+          - button "Go full screen" [ref=f7e92] [cursor=pointer]:
+            - img [ref=f7e93]
+          - link "Open canvas in new tab" [ref=f7e95] [cursor=pointer]:
+            - /url: iframe.html?globals=themePreset:coffee&args=deltaColor:secondary&id=components-organisms-vcstatwidget--basic
+            - img [ref=f7e96]
+          - button "Copy canvas link" [ref=f7e99] [cursor=pointer]:
+            - img [ref=f7e100]
+    - generic [ref=f7e107]:
+      - link "Skip to sidebar" [ref=f7e108] [cursor=pointer]:
+        - /url: "#components-organisms-vcstatwidget--basic"
+      - iframe [ref=f7e109]:
+        
+  - generic [ref=f7e112]:
+    - generic [ref=f7e114]:
+      - tablist [ref=f7e116]:
+        - tab "Controls 12" [ref=f7e429] [cursor=pointer]:
+          - generic [ref=f7e430]:
+            - generic [ref=f7e431]: Controls
+            - generic [ref=f7e432]: "12"
+        - tab "Actions" [ref=f7e433] [cursor=pointer]:
+          - generic [ref=f7e435]: Actions
+        - tab "Interactions" [ref=f7e436] [cursor=pointer]:
+          - generic [ref=f7e438]: Interactions
+        - tab "Accessibility" [ref=f7e486] [cursor=pointer]:
+          - generic [ref=f7e441]: Accessibility
+        - tab "Code" [ref=f7e443] [cursor=pointer]
+      - generic [ref=f7e119]:
+        - button "Change addon orientation [alt D]" [ref=f7e120] [cursor=pointer]:
+          - img [ref=f7e121]
+        - button "Hide addons [alt A]" [ref=f7e124] [cursor=pointer]:
+          - img [ref=f7e125]
+    - generic [ref=f7e487]:
+      - generic [ref=f7e488]:
+        - tablist [ref=f7e489]:
+          - tab "Violations 0" [selected] [ref=f7e490] [cursor=pointer]:
+            - generic [ref=f7e491]:
+              - text: Violations
+              - generic [ref=f7e492]: "0"
+          - tab "Passes 2" [ref=f7e493] [cursor=pointer]:
+            - generic [ref=f7e494]:
+              - text: Passes
+              - generic [ref=f7e495]: "2"
+          - tab "Inconclusive 0" [ref=f7e496] [cursor=pointer]:
+            - generic [ref=f7e497]:
+              - text: Inconclusive
+              - generic [ref=f7e498]: "0"
+        - generic [ref=f7e499]:
+          - button "Show highlights" [ref=f7e501] [cursor=pointer]:
+            - img [ref=f7e502]
+            - generic [ref=f7e505]: Show highlights
+          - button "Collapse all" [ref=f7e507] [cursor=pointer]:
+            - img [ref=f7e508]
+          - button "Rerun accessibility scan" [ref=f7e511] [cursor=pointer]:
+            - img [ref=f7e512]
+      - generic [ref=f7e519]: No accessibility violations found.

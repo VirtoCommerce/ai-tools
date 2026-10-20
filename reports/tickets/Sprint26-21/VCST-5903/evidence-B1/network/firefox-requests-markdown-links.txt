@@ -1,0 +1,10 @@
+13. [POST] https://vcst-qa-storybook.govirto.com/cdn-cgi/rum? => [204] 
+15. [GET] https://vcst-qa-storybook.govirto.com/index.json => [200] 
+39. [POST] https://vcst-qa-storybook.govirto.com/cdn-cgi/rum? => [204] 
+43. [GET] https://vcst-qa-storybook.govirto.com/index.json => [200] 
+44. [POST] https://vcst-qa-storybook.govirto.com/cdn-cgi/rum? => [204] 
+49. [POST] https://vcst-qa-storybook.govirto.com/cdn-cgi/rum? => [204] 
+51. [POST] https://vcst-qa-storybook.govirto.com/cdn-cgi/rum? => [204] 
+56. [POST] https://vcst-qa-storybook.govirto.com/cdn-cgi/rum? => [204] 
+
+Note: 49 static requests not shown, run with "static" option to see them.
