@@ -8,6 +8,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## The real-user hook guards plugin-provided browser servers; exploratory probes opt in — `vc-fix` `0.10.1` — 2026-10-20
+
+**Fixed:** `hooks/enforce-real-user.mjs` was registered with a matcher naming only
+`mcp__playwright-(chrome|firefox|edge|webkit)__…` and `mcp__Chrome_DevTools__…`, so a browser server
+installed from a plugin (`mcp__plugin_<plugin>_<server>__browser_evaluate`) was never checked. Both
+registrations (`plugins/vc-fix/hooks/hooks.json`, `.claude/settings.json`) now match any server:
+`^mcp__.+__(browser_evaluate|browser_run_code_unsafe|evaluate_script)$`.
+
+**Added:** the `/* @exploratory: <charter> — <reason> */` payload sentinel, for exploratory / SBTM probes
+that use the page as an attack tool on purpose (disabled-control bypass, tampered replay, exposed client
+state). A finding from such a probe is a server/API-layer finding, never a UI defect (VCST-5100); the
+sentinel is not for scripted cases or regression runs. `qa/shared-instructions.md` §Browser Interaction
+and the `qa-sbtm` probe examples carry it.
+
+**Verified:** hook payload checks (plugin-namespaced click payload blocked, `@exploratory` passes on
+Playwright and DevTools); matcher checked against legacy, plugin-namespaced and lookalike tool names;
+both hook copies byte-identical; `npm run context:check` green.
+
 ## One renderer for every result comment and report page — `vc-fix` `0.10.0` — unreleased (VCST-5675)
 
 **Added: `/vc-fix:qa-report`.** A finished run becomes one char-budgeted tracker comment and one HTML report
