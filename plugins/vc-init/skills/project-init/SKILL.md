@@ -796,7 +796,20 @@ resolves `$pluginRoot` = the ACTIVE (enabled) install at call time via `claude p
 `knowledge/execution/plugin-root.md`. Result:
 **no re-run of `/project-init` after an upgrade**, no version-stamped path, no stale link.
 
-## 7. Generate `.mcp.json`
+## 7. Generate the browser login secrets, then `.mcp.json`
+
+First the browser lanes' `--secrets` file — it must exist before gen-mcp, which passes it (absolute
+path) to every Playwright server it finds on disk:
+
+```bash
+TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/sync-browser-secrets.mjs"
+```
+
+It writes `.env.playwright.local` (gitignored) with the CURRENT env's login passwords under their bare
+names — `ADMIN_PASSWORD`, `USER_PASSWORD`, any other `*_PASSWORD` in `.env.local`; never a token. A
+browser agent then types the NAME into the password field and Playwright MCP types the value and masks
+it, so the password never enters the model's context or the transcript. It is per env: after switching
+`TEST_ENV` or changing a password, re-run it and restart. It prints names only.
 
 ```bash
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/gen-mcp.mjs" --tracker jira --client-vcs github \
@@ -1074,7 +1087,9 @@ Run with `TEST_ENV=<new>` so the per-env creds resolve. This confirms the new en
 `project-profile.json` and `.mcp.json` are **unchanged** (env-agnostic). **Restate the
 readiness table** in your reply (§8). Then present **Done**: `TEST_ENV=<new>` (per run, or via
 your shell) selects the new environment for every plugin, and close with
-`TEST_ENV=<new> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/next-steps.mjs"` (§9).
+`TEST_ENV=<new> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/next-steps.mjs"` (§9). Before a browser run
+on the new env, `TEST_ENV=<new> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/sync-browser-secrets.mjs"`
+and a restart give the Playwright lanes that env's passwords (§7).
 
 Completion is signalled **automatically** by `verify-access.mjs` above (it fires the terminal-step
 marker itself). Only if this path ended before running verify-access, run it manually as a fallback:
@@ -1216,7 +1231,12 @@ invisible reason:
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/normalize-env.mjs" --env <env>
 ```
 
-Then the readiness table (§8), so a stale token / URL / login surfaces too:
+Then refresh the browser login secrets (§7 — a changed password or env leaves them stale) and the
+readiness table (§8), so a stale token / URL / login surfaces too:
+
+```bash
+TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/sync-browser-secrets.mjs"
+```
 
 ```bash
 FORCE_COLOR=1 TEST_ENV=<env> node "$VC_RUN" onboard verify-access
@@ -1297,6 +1317,7 @@ Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or j
 | `detect-governance.mjs` | §0-host: find a host governance plugin (`lib/governance.mjs` registry) and print the `governance` block it would write; `--governance <host|none>` overrides |
 | `render-scan.mjs` | §4a/§4b: the operator's confirmation tables, verbatim — `--repos` (client repos with default branch + PR target) and `--tracker` (role → state per work-item type) |
 | `next-steps.mjs` | §9: "the project is ready" + what to do now, from the profile and the installed plugins (`--plugins a,b` overrides detection) |
+| `sync-browser-secrets.mjs` | §7: generate `.env.playwright.local` (Playwright `--secrets`) from the current env's passwords — the agent types the NAME, the MCP types the value; `--check` exits 1 when stale |
 | `ensure-session.mjs` | establish the browser-login sessions WITHOUT hand-crafted commands: auto-discovers the ADO org tenant and drives `az login --tenant <guid>` / `gh auth login --web`; `--check` probes only. Run in the background (the login blocks on the browser). Run it DIRECTLY, never through `$VC_RUN` — a session login must not see a token (gh refuses to log in while GH_TOKEN is set). |
 
 > The interview asks only **env name · tracker · code host** + an auth preference

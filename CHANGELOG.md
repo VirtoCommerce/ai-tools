@@ -59,6 +59,13 @@ and /qa-fix, /qa-verify-fix and tracker-ops use it instead of `--state <roleStat
 table is one row per role and one column per type. `STORE_ID` may stay empty: `normalize-env` asks the
 storefront at `FRONT_URL` which store it serves and fills it in.
 
+**Changed: a browser agent types a password's NAME, never its value.** `/project-init` generates
+`.env.playwright.local` (`sync-browser-secrets.mjs`, gitignored) from the current env's test-user passwords
+in `.env.local`, and gen-mcp passes it to every Playwright lane as `--secrets`. vc-fix's agents type
+`ADMIN_PASSWORD` / `USER_PASSWORD` as names; Playwright MCP substitutes and masks the value, so it never
+enters the model's context or the transcript. verify-access warns when the file is missing or stale for
+`TEST_ENV`. The passwords themselves still live in `.env.local`.
+
 **Removed:** the `postman` and `context7` MCP servers from onboarding (each needed an API key in a file);
 `gen-mcp --inline-secrets` (refused); the token placeholders in `.env.local` (`scaffold-secrets` writes
 test-user passwords only).

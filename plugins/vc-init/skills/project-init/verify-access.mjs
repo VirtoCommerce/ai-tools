@@ -63,6 +63,7 @@ import {
 // Slot resolution for the "tracker bug field contract" readiness row (VCST-5582 E-g) — the
 // SAME pure function the create path uses, so the row can't claim a mapping create won't make.
 import { resolveSlots } from "../../scripts/lib/bug-contract.mjs";
+import { SECRETS_FILE as BROWSER_SECRETS_FILE, currentState as browserSecretsState } from "./sync-browser-secrets.mjs";
 import { fileURLToPath } from "url";
 
 let TEST_ENV;
@@ -507,6 +508,20 @@ async function main() {
   for (const ids of enabledIds) {
     add("Plugin root (single install)", "WARN",
       `${ids.join(" and ")} are both enabled — each one's hooks.json starts its own telemetry collector, so spans duplicate and state writes race. Uninstall the old one (/plugin uninstall ${ids.slice(1).join(", ")}) and restart Claude Code`);
+  }
+
+  // 1b'. Browser login: the agent types a password's NAME and Playwright MCP substitutes the value from
+  //      the --secrets file gen-mcp wires in — so the password never enters the model's context. A
+  //      missing or stale file means the agent would have to read the password to type it.
+  try {
+    const bs = browserSecretsState(outputRoot());
+    const regen = `TEST_ENV=${bs.env} node "$CLAUDE_PLUGIN_ROOT/skills/project-init/sync-browser-secrets.mjs", then restart Claude Code`;
+    if (bs.before === null) add("Browser login secrets", "WARN", `no ${BROWSER_SECRETS_FILE} — run ${regen}; gen-mcp then passes it to every Playwright lane`);
+    else if (bs.stale) add("Browser login secrets", "WARN", `${BROWSER_SECRETS_FILE} is out of date for TEST_ENV=${bs.env} (a password changed, or another env) — run ${regen}`);
+    else if (bs.missing.length) add("Browser login secrets", "WARN", `${bs.written.join(", ") || "nothing"} ready; no value for ${bs.missing.join(", ")} in .env.local`);
+    else add("Browser login secrets", "PASS", `${bs.written.join(", ")} — typed by name, never read by the agent`);
+  } catch (e) {
+    add("Browser login secrets", "WARN", `could not check ${BROWSER_SECRETS_FILE}: ${e.message}`);
   }
 
   // 1c. Tokens live in vc-secrets and reach a process only through the $VC_RUN bridge (VCST-6402).

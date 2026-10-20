@@ -20,6 +20,7 @@ step is skipped, never worked around.
 | §3e normalize-env | as usual |
 | §4 `discover-repos`, §4b `discover-tracker`, §5 `derive-context` | **skipped** — the client code host and tracker are read through the host's MCP servers at run time, never with a PAT or `az`. Each script also stands down by itself if run (one `host-governed` line, exit 0) |
 | §6 `gen-profile` | runs, with `--governance <host>` (+ any `--gov-<role>` the operator changed) and the tracker / code host answers; `--repos-json` / `--tracker-json` absent |
+| §7 `sync-browser-secrets` | **skipped** — the browser lanes are the host's |
 | §7 `gen-mcp` | **skipped entirely** — `.mcp.json`, `enabledMcpjsonServers` and the settings `env` are the host's; nothing is written or pruned |
 | §8 `verify-access` | runs directly (not through `$VC_RUN`) and prints the **host-mode readiness table**: the host plugin installed, each mapped server present among the servers it ships, the non-secret URLs. It resolves no secret |
 | §9 `next-steps` | runs as usual; the tracker asks it lists name the host's tracker server |
