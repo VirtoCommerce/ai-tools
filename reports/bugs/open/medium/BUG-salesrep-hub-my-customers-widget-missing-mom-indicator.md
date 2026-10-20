@@ -1,8 +1,8 @@
-# Sales-rep hub "My customers" widget has no month-over-month indicator — High
+# Sales-rep hub "My customers" widget has no month-over-month indicator — Medium
 
 ## Status: CONFIRMED
 
-**Not filed to any tracker** — draft only, awaiting a human decision.
+**Filed:** [VCST-6437](https://virtocommerce.atlassian.net/browse/VCST-6437) on 2026-10-20 (Medium; relates VCST-5337, VCST-5647). Re-graded High → Medium at the VCST-5337 r2 triage: no data is wrong, one trend indicator is missing on one card. Re-confirmed live on vcptcore-qa, SalesRep 3.1015.0-pr-15-e5bc (backend comparison returns orderingCustomersChange 4; page never requests it).
 
 **Env:** vcst-qa @ Platform 3.1064.0, Theme 2.57.0-alpha.2490, SalesRep 3.1008.0-pr-19-5e0f,
 XOrder 3.1011.0, Xapi 3.1020.0

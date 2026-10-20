@@ -26,14 +26,14 @@ Requires an admin toggle of the store setting SalesRep.Enabled to false on {{STO
 [NAV] {{FRONT_URL}}/company/sales-reps
 [WAIT] navigation settles","[DOM] ""Sales reps"" link is absent from the ""Corporate"" section while the setting is disabled {DOC}
 [NAV] /company/sales-reps does not render the Sales Reps table (route/menu injection gated on module settings) {DOC}","none","link or route remains reachable while SalesRep.Enabled=false — gating checks module state client-side only, not the actual setting","[ADMIN] restore SalesRep.Enabled=true on {{STORE_ID}} before ending the session",VCST-5409 | Behavior:sr.store-toggle.off-hides-ui,"Draft"
-"SR-FE-MSR-004","My Sales Reps Table — Name/Email/Phone Render for Served Reps","Storefront > Sales Rep > My Sales Reps > Table","Critical","PROPOSED-BL-SR-UI-TABLE, PROPOSED-BL-SR-AUTH","","[PRE:CLEAR_SESSION]
+SR-FE-MSR-004,My Sales Reps Table — Name/Email/Phone Render for Served Reps,Storefront > Sales Rep > My Sales Reps > Table,Critical,"PROPOSED-BL-SR-UI-TABLE, PROPOSED-BL-SR-AUTH",,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ACME_BUYER]
-ACME_BUYER's org @td(ORG_ACME.id) is served by SR_REP_PRIMARY (active, default store).","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/sales-reps
+ACME_BUYER's org @td(ORG_ACME.id) is served by SR_REP_PRIMARY (active, default store).",front_url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/company/sales-reps
 [WAIT] table rows loaded
 [ASSERT] row for @td(SR_REP_PRIMARY.fullName) is visible","[DOM] the row's ""Name"" cell shows @td(SR_REP_PRIMARY.fullName) {OBSERVED}
 [DOM] the row's ""Email"" cell shows @td(SR_REP_PRIMARY.email) {OBSERVED}
-[DOM] the row's ""Phone"" cell shows a non-empty phone value {DOC}","[API] customerSalesReps items[] fullName/emails[0]/phones[0] match the rendered row (cross-check against 050m SR-GQL-001 contract)
-[CONSOLE] no console errors","Name/Email column blank or shows a raw GUID/i18n key instead of the value; Phone column always blank even when phones[] is populated","none (read-only)",VCST-5409 | Behavior:sr.directory.active-org,"Draft"
+[DOM] the row's ""Phone"" cell shows customerSalesReps phones[0] when the rep has a phone, and renders the empty-cell state (blank, no raw null/undefined) when phones[] is empty -- the seeded reps carry phones: [] on vcptcore-qa, matching SR-FE-MSR-022's empty-phone expectation {OBSERVED}","[API] customerSalesReps items[] fullName/emails[0]/phones[0] match the rendered row (cross-check against 050m SR-GQL-001 contract)
+[CONSOLE] no console errors",Name/Email column blank or shows a raw GUID/i18n key instead of the value; Phone column blank while phones[0] is populated; a populated phone cell with no phone in the API; the literal text null/undefined in the Phone cell,none (read-only),VCST-5409 | Behavior:sr.directory.active-org | VCST-5337 r2 2026-10-20: non-empty-phone requirement removed: seeded reps have phones: [] (REG-2026-10-19-1950 BLOCKED as test defect); the phone cell now follows phones[0] or the empty-cell state,Draft
 "SR-FE-MSR-005","Cross-Org Rep Excluded from Buyer's Sales Reps List","Storefront > Sales Rep > My Sales Reps > Scope","Critical","PROPOSED-BL-SR-SCOPE, PROPOSED-BL-SR-UI-TABLE","ECL-14.3","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ACME_BUYER]
 SR_REP_EXCLUSIVE_TECHFLOW serves ONLY @td(ORG_TECHFLOW.id), never @td(ORG_ACME.id) — proves a rep serving only another org is never leaked to the ACME buyer.","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/company/sales-reps
