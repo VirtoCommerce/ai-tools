@@ -77,3 +77,4 @@ domains:
   - ucp
   - ga4
   - push
+  - ret

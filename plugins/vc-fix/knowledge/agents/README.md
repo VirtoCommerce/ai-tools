@@ -1,11 +1,12 @@
 # Agent System — vc-fix
 
-`vc-fix` ships a narrow slice of the full `vc-qa` agent crew, scoped to five workflows: project
-setup (`/project-init`), bug filing (`/qa-bug`), bug fixing (`/qa-fix` + its dev team), bug
+`vc-fix` ships a narrow slice of the full `vc-qa` agent crew, scoped to these workflows: project
+setup (`/project-init`, `/qa-env-check`), bug filing (`/qa-bug`), bug fixing (`/qa-fix` + its dev team), bug
 verification (`/qa-verify-fix`), online bug monitoring (`/qa-monitoring`), and plugin
-self-diagnostics (`/vc-self-check`) + direct feedback (`/vc-feedback`). **10 agents, 8 commands, 16 skills** — no regression
-orchestration, no BA team, no Storybook/a11y/design-system tooling. Those live only in the full
-`vc-qa` plugin (not shipped here).
+self-diagnostics (`/vc-self-check`) + direct feedback (`/vc-feedback`). No regression
+orchestration, no BA team, no Storybook/a11y/design-system tooling — those live only in the full
+`vc-qa` toolset of the `ai-tools` repo (project-scoped under its `.claude/`, not shipped here).
+Counts: `ls agents commands skills` from the plugin root.
 
 ## Quick Start
 
@@ -21,9 +22,9 @@ orchestration, no BA team, no Storybook/a11y/design-system tooling. Those live o
 
 ---
 
-## Agent Inventory (10 agents)
+## Agent Inventory
 
-### QA specialists (4) — read-only, no shared-instructions file
+### QA specialists — read-only (team framework: `knowledge/agents/qa/shared-instructions.md`)
 
 | Agent | Model | Purpose |
 |-------|-------|---------|
@@ -32,7 +33,7 @@ orchestration, no BA team, no Storybook/a11y/design-system tooling. Those live o
 | **qa-testing-expert** | opus | Interactive testing, debugging, evidence collection — used by `/qa-bug` for live reproduction |
 | **monitor-triage-agent** | sonnet | Classifies a deduplicated App Insights error signature (REAL_BUG / KNOWN_ISSUE / CONFIG_GATED / THIRD_PARTY / TRANSIENT / NOISE) with severity + repo route — used by `/qa-monitoring` |
 
-### Developers team (4) — the only write-capable agents
+### Developers team — the only write-capable agents
 
 The **only write-capable team** (clone / branch / commit / push / open PR via local `git`/`gh`). QA
 agents stay read-only. Driven by `/qa-fix`; reuses the self-contained `skills/qa-fix-routing/`
@@ -52,7 +53,7 @@ Gate-0/1 triage role is spelled out inline in `qa-fix.md`/`qa-bug.md`/`quality-g
 top-level session performs it directly), `ui-ux-expert`, `regression-orchestrator`,
 `test-runner-agent`, `test-management-specialist`, and all 4 `ba-*` agents.
 
-### Self-diagnostics (2) — read-only, invoked by `/vc-self-check`
+### Self-diagnostics — read-only, invoked by `/vc-self-check`
 
 | Agent | Model | Purpose |
 |-------|-------|---------|
@@ -61,7 +62,7 @@ top-level session performs it directly), `ui-ux-expert`, `regression-orchestrato
 
 ---
 
-## Slash Commands (8)
+## Slash Commands
 
 | Command | Purpose |
 |---------|---------|
@@ -74,10 +75,26 @@ top-level session performs it directly), `ui-ux-expert`, `regression-orchestrato
 | `/vc-self-check` | Self-diagnostics (Tier B): read this session's passive telemetry (`hooks/session-telemetry.mjs` → `.vc-fix/diagnostics/`) + transcript + the `knowledge/diagnostics/skill-expectations.md` oracle → per-skill verdict + severity + proposed fix → LOCAL `DIAG-*.md`. `deliver` sub-step contributes a scrubbed, consent-gated PR/issue to VirtoCommerce. Never modifies the install; model-invocable (no `disable-model-invocation`) so the end-of-turn tail-trigger can auto-run it silently; recursion blocked by span-drop + `selfCheckSeen` + per-signature dedup |
 | `/vc-feedback` | Attach an explicit 👍/👎 verdict (with optional note) to the current session's telemetry trace — the main detector of SILENT failures (a task done wrong with no error). Local + silent: recorded by the `UserPromptSubmit` hook; nothing is sent until the separate consent-gated `deliver` step |
 
-**Dropped from the full `vc-qa` crew:** `/qa-smoke`, `/qa-test`, `/qa-regression`,
-`/qa-coverage-gap`, `/qa-test-lifecycle`, `/qa-test-plan`, `/qa-sync-tests`,
-`/qa-seed-data`, `/qa-design`, `/qa-exploratory`, `/qa-status`,
-`/qa-onboarding`, `/qa-hotfix`, `/qa-bundle-check`, `/qa-local-env`, `/ba-analyze` — the in-repo `vc-qa` toolset only, not shipped here.
+**Dropped from the full `vc-qa` crew:** `/qa-smoke`, `/qa-test`, `/qa-test-fast`, `/qa-regression`,
+`/qa-triage-results`, `/qa-test-lifecycle`, `/qa-test-plan`, `/qa-domain-map`, `/qa-review-oracles`,
+`/qa-seed-data`, `/qa-design`, `/qa-exploratory`, `/qa-status`, `/qa-sitemap`, `/qa-teams-watch`,
+`/qa-onboarding`, `/qa-deploy-pr`, `/qa-hotfix`, `/qa-hotfix-check`, `/qa-bundle-check`, `/qa-perf-measure`,
+`/qa-local-env`, `/code-review-full`, `/ba-analyze` — the in-repo `vc-qa` toolset only, not shipped here.
+
+## Skills
+
+Each is `skills/<name>/SKILL.md`; its frontmatter is the argument reference.
+
+| Skill | Purpose |
+|-------|---------|
+| `project-init` | Backs `/project-init`: deps, the short interview, derive-the-rest, write + verify the profile |
+| `qa-fix-routing` | Routing library: which repo owns a bug (client vs platform), direct PR / fork-PR / upstream issue, which VCS + tracker host |
+| `qa-monitoring` | Backs `/qa-monitoring`: App Insights probes, fingerprint dedup, triage, live repro |
+| `vc-self-check` | Backs `/vc-self-check`: spawns the diagnostician, relays the finding, consent-gated `deliver` |
+| `qa-investigate` · `qa-defect` · `qa-evidence` · `qa-risk` · `qa-checklist` | QA method used by `/qa-bug` and `/qa-verify-fix`: reproduce + isolate + root cause, defect lifecycle, evidence capture, risk prioritization, the Bug Fix Verification checklist |
+| `vc-docs` | Documentation lookup — VirtoOZ MCP primary, Context7 fallback |
+| `dotnet-unit-test` · `dotnet-fix` · `angular-admin` | `fullstack-backend`: reproduce as a failing xUnit test → minimal .NET 10 fix; module Admin SPA (AngularJS) fixes |
+| `vue-unit-test` · `vue-fix` · `vc-shell-fix` | `fullstack-frontend`: reproduce as a failing vitest test → minimal Vue 3 / TS fix; module-embedded Vue 3 shell sub-apps |
 
 ---
 
@@ -139,9 +156,9 @@ repo, minus the BA-only files). Includes `business-logic.md`, `graphql-schema.md
 
 ## Customizing Agents
 
-All 8 agents are flat `.md` files at the plugin root `agents/` (plugin agent discovery is
-non-recursive — no team subfolders). The developers team's `shared-instructions.md` lives under
-`knowledge/agents/developers/`. Each agent is a Markdown file with YAML frontmatter (name,
+All agents are flat `.md` files at the plugin root `agents/` (plugin agent discovery is
+non-recursive — no team subfolders). The team frameworks live under `knowledge/agents/`:
+`qa/shared-instructions.md` and `developers/shared-instructions.md` (+ `developers/pr-body-template.md`). Each agent is a Markdown file with YAML frontmatter (name,
 description, model, color). Edit the `.md` file to customize behavior.
 
 ---
@@ -161,4 +178,4 @@ returns thin results or for non-VC libraries. Full tool list and routing rules i
 - Claude Code with subagent/Task tool support
 - MCP servers configured in `.mcp.json` (Playwright chrome/firefox/edge, github)
 - User/IDE-level MCPs configured: Chrome DevTools, Azure, Atlassian, **VirtoOZ**
-- `.env` with environment URLs and credentials (run `npm run env:check` or `/qa-env-check`)
+- `.env.<env>` (URLs) + `.env.local` (credentials), written by `/project-init`; validate with `/qa-env-check`

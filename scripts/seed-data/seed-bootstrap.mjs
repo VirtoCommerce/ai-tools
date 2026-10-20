@@ -8,7 +8,7 @@
  *
  * Order (explicit seed priority — see STEPS[].priority):
  *   preflight    : member-index → catalog+categories+store (ensureVirtualCatalog) → fulfillment-center
- *   priority 30+ : properties → products → configurable → pricing → inventory → bopis
+ *   priority 30+ : properties → products → configurable → pricing → inventory → category-images → bopis
  *                  → company-users → promotions → loyalty → white-labeling
  *   (prices run AFTER products AND configurable so every product is priced; bopis after inventory
  *    so a fulfillment center exists; company-users after the member index is ready.)
@@ -28,6 +28,7 @@
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { liveDatasetProfiles } from '../lib/seed-family.mjs';
 import {
   ROOT, DRY_RUN, VERBOSE, api, auth, assertSafeTarget,
   ensureMemberIndex, ensureFulfillmentCenter, log,
@@ -50,20 +51,27 @@ const TEARDOWN_STEPS = [
   // products, its reps' memberships reference the organisations `company-users` owns, and its
   // documents reference uploaded files. Everything it holds must be released before the steps
   // below start deleting the entities it points at. The family entrypoint reverses its own
-  // internal chain and picks the live profile (fixtures vs demo) off _meta.dataset_profile.
+  // internal chain and picks the live profile (fixtures vs demo) off its stamp (scripts/lib/seed-family.mjs).
   // NOTE: this sweeps only what the CSVs still declare. Entities the CSVs no longer name —
   // hand-made reps, orphaned documents — need `npm run sr:inventory`, which is deliberately not
   // wired into an unattended chain: it can delete things no script can recreate.
-  { name: 'sales-rep', script: 'sales-rep/seed-sales-rep-family.mjs', args: ['--teardown'] },
+  // `demoFamily`: SKIPPED while the family holds its demo — the family reverses whichever chain its stamp
+  // names, so a routine fixtures teardown would otherwise delete a live demo (seed:demo:teardown owns that).
+  { name: 'sales-rep', script: 'sales-rep/seed-sales-rep-family.mjs', args: ['--teardown'], demoFamily: 'sales-rep' },
   // VCST-5748 OTP sign-in accounts — independent of every other domain; deletes only agent-test-otp-* accounts/contacts.
   { name: 'otp-signin', script: 'auth/seed-otp-signin.mjs', args: ['--teardown'] },
   // Wishlists are carts referencing products AND a security account, so they go before both.
   { name: 'wishlists', script: 'wishlists/seed-wishlists.mjs', args: ['--teardown'] },
   // Orders/quotes reference products + users, so sweep them FIRST (before the entities they point at).
+  // VCST-5884 organization returns: its own orders/returns, AGENT-TEST accounts, orgs and two pinned roles.
+  { name: 'returns-org', script: 'orders/seed-org-returns.mjs', args: ['--teardown'] },
   { name: 'quotes', script: 'orders/seed-quotes.mjs', args: ['--teardown'] },
   { name: 'orders', script: 'orders/seed-order-states.mjs', args: ['--teardown'] },
   { name: 'white-labeling', script: 'white-labeling/seed-white-labeling.mjs', args: ['--teardown'] },
   { name: 'rbac', script: 'platform/seed-backoffice-rbac.mjs', args: ['--teardown'] },
+  // VCST-5886 punchout: the OWNED mapping AGENT-TEST-PO-200 + two AGENT-TEST back-office roles/accounts.
+  // Before company-users, whose MULTI_ORG persona the mapping points at. Skips (exit 0) where the module is absent.
+  { name: 'punchout', script: 'punchout/seed-punchout.mjs', args: ['--teardown'] },
   { name: 'cms-pages', script: 'cms/seed-pagebuilder-pages.mjs', args: ['--teardown'] },
   // VCST-5024 org-mode loyalty. TEARDOWN-ONLY here, and deliberately so: the forward seeder places a
   // REAL, non-reversible order to fund LOY_PERSONAL_NOORG (a balance cannot be set on this platform),
@@ -88,6 +96,9 @@ const TEARDOWN_STEPS = [
   // VCST-2945 barcode fixtures — its products, properties, dedicated store and pricelist. Before the
   // inventory / catalog sweeps (its products sit in the AGENT-TEST-SEED catalog on the store FFC).
   { name: 'barcode', script: 'catalog/seed-barcode-fixtures.mjs', args: ['--teardown'] },
+  // VCST-6017 GA4 list fixtures (related anchor + associations, 60-variation family, their pricelist) —
+  // before the fulfillment centers their stock sits on. The cart part is a per-case precondition, not seeded here.
+  { name: 'ga4-lists', script: 'analytics/seed-ga4-lists.mjs', args: ['--teardown', '--only', 'related,variations'] },
   // Variation family + its per-FFC stock records — before the fulfillment centers they sit on.
   { name: 'variation-stock', script: 'inventory/seed-variation-stock.mjs', args: ['--teardown'] },
   { name: 'inventory', script: 'inventory/seed-inventory.mjs', args: ['--teardown'] },
@@ -96,6 +107,9 @@ const TEARDOWN_STEPS = [
   { name: 'configurable', script: 'products/seed-configurable.mjs', args: ['--teardown'] },
   { name: 'products', script: 'products/seed-standard-products.mjs', args: ['--teardown'] },
   { name: 'properties', script: 'catalog/seed-catalog-properties.mjs', args: ['--teardown'] },
+  // Category images before the catalog sweep: it strips our images from every store-catalog category
+  // (real ones included) and deletes the uploaded files — a catalog-first sweep would leave the files.
+  { name: 'category-images', script: 'catalog/seed-category-images.mjs', args: ['--teardown'] },
   // Sweeps every AGENT-TEST-SEED-* catalog + its categories/products/pricelists and unbinds the store.
   { name: 'catalog+categories', script: 'seed-test-data.js', args: ['teardown'] },
 ];
@@ -143,6 +157,10 @@ const STEPS = [
   // names, store-scoped SEO) instead of a date-stamped fork, and seeds into the same catalogs. Runs
   // after inventory(70) so its stock has FFCs. Optional — supplementary to the .mjs product set.
   { name: 'test-data', script: 'seed-test-data.js', args: ['catalog'], required: false, priority: 75 },
+  // Category artwork (test-data/catalogs/category-images.csv). Resolves categories BY NAME inside the
+  // store's catalog, so it runs after store(80) binds that catalog and after every phase that creates
+  // categories. Optional: a name the env does not carry is reported unmatched, never created.
+  { name: 'category-images', script: 'catalog/seed-category-images.mjs', required: false, priority: 85 },
   { name: 'bopis', script: 'bopis/seed-bopis.mjs', required: true, priority: 90 },
   { name: 'company-users', script: 'b2b/seed-company-users.mjs', args: ['all'], required: true, priority: 100 },
   // Org addresses beyond the single inline default baked into orgBody() — needs the org graph (100) first.
@@ -168,11 +186,15 @@ const STEPS = [
   // catalog discovery, so the products phase (40) must already have run. It turns ONLY
   // `Loyalty.Missions.Enable` on and never touches the base `Loyalty.Enable` that suites 075/075b/075c
   // read through LOYALTY_SETTINGS.
-  { name: 'loyalty-missions', script: 'loyalty/seed-loyalty-missions.mjs', required: false, priority: 122 },
+  { name: 'loyalty-missions', script: 'loyalty/seed-loyalty-missions.mjs', required: false, priority: 122, demoFamily: 'loyalty-missions' },
   { name: 'white-labeling', script: 'white-labeling/seed-white-labeling.mjs', required: false, priority: 130 },
   // Restricted back-office (Manager) RBAC account for CMS-123/124 — read-only Page Builder, no
   // builder:update. Independent of the catalog/user graph (own role + account); optional.
   { name: 'rbac', script: 'platform/seed-backoffice-rbac.mjs', required: false, priority: 135 },
+  // VCST-5886 punchout cXML fixtures — after company-users (100): the mappings point at the USER_EMAIL /
+  // MULTI_ORG personas. Optional: VirtoCommerce.Punchout is deployed on vcptcore_qa1 only; elsewhere the
+  // seeder prints one skip line and exits 0. Registers (never creates) the /qa-test-owned AGENT-TEST-PO-100.
+  { name: 'punchout', script: 'punchout/seed-punchout.mjs', required: false, priority: 137 },
   // Reconcile the canonical qa-* PageBuilder pages (status + permalink) so the 059/060 published-page
   // cases resolve. Reconcile-only (no content authoring); reports conflicts. Optional.
   { name: 'cms-pages', script: 'cms/seed-pagebuilder-pages.mjs', required: false, priority: 136 },
@@ -186,7 +208,12 @@ const STEPS = [
   // deployments (the entrypoint then prints one skip line and exits 0), the document library needs
   // `sales-rep-documents` in FileUpload:Scopes, and the task seeder needs a storefront password
   // grant (SALES_REP_EMAIL + SALES_REP_PASSWORD_<ENV>).
-  { name: 'sales-rep', script: 'sales-rep/seed-sales-rep-family.mjs', required: false, priority: 142 },
+  { name: 'sales-rep', script: 'sales-rep/seed-sales-rep-family.mjs', required: false, priority: 142, demoFamily: 'sales-rep' },
+  // VCST-5884 organization returns: creates its own orgs/accounts/roles, then orders on live-discovered
+  // products (40) in the store (80). Optional: needs the Return module + Return.ReturnEnabled on the store.
+  // `demoFamily`: skipped while that family holds its DEMO profile (seed-returns-family.mjs stamps it),
+  // or a routine bootstrap would put AGENT-TEST returns beside the demo in the Admin Return list.
+  { name: 'returns-org', script: 'orders/seed-org-returns.mjs', required: false, priority: 143, demoFamily: 'returns' },
   { name: 'quotes', script: 'orders/seed-quotes.mjs', required: false, priority: 145 },
   // Push Messages inboxes (suite 068): tops the reader's inbox up to a mixed read/unread state and
   // sends the bulk recipient 3 fresh messages. After company-users (100), which creates the
@@ -198,6 +225,10 @@ const STEPS = [
   // VCST-2945 — barcode scanner search fixtures + a dedicated AGENT-TEST store on the store catalog.
   // After inventory (70): it stocks the store FFC. Never writes STORE_ID (fingerprinted before/after).
   { name: 'barcode', script: 'catalog/seed-barcode-fixtures.mjs', required: false, priority: 74 },
+  // VCST-6017 — PDP related-products anchor (catalog associations) + a variation family longer than one
+  // variations page. After inventory (70): it stocks the store's main FFC. The cart/SFL/recently-browsed
+  // state is pooled per account (FIFTH RULE) — a case runs `seed:ga4-lists:cart` as its own precondition.
+  { name: 'ga4-lists', script: 'analytics/seed-ga4-lists.mjs', args: ['--only', 'related,variations'], required: false, priority: 76 },
   // VCST-5705 / CAT-079 + CAT-080 + WISH-30 — two wishlists in two REAL stores. Runs last: it needs
   // the catalog structure and a fulfillment center, and it creates its own products + customer.
   // `required: false` because it hard-aborts on an env with no genuine second store
@@ -227,7 +258,13 @@ function runStep(step) {
   // ── Teardown mode: reverse-order sweep of every domain, then exit. Best-effort per step. ──
   if (TEARDOWN) {
     const tdResults = [];
+    const demoProfiles = liveDatasetProfiles();
     for (const step of TEARDOWN_STEPS) {
+      if (step.demoFamily && /-demo$/.test(demoProfiles[step.demoFamily] || '')) {
+        log(`\n─── teardown ${step.name} skipped — the ${step.demoFamily} family holds its demo profile here (npm run seed:demo:teardown to release it) ───`);
+        tdResults.push({ ...step, status: 'skipped' });
+        continue;
+      }
       const ok = runStep({ ...step, required: false });
       tdResults.push({ ...step, status: ok ? 'ok' : 'warn' });
       if (!ok) log(`⚠ teardown ${step.name} reported a problem — continuing.`);
@@ -250,8 +287,14 @@ function runStep(step) {
 
   // ── Seeder chain ──
   const results = [];
+  const demoProfiles = liveDatasetProfiles();
   for (const step of STEPS) {
     if (SKIP_OPTIONAL && !step.required) { results.push({ ...step, status: 'skipped' }); continue; }
+    if (step.demoFamily && /-demo$/.test(demoProfiles[step.demoFamily] || '')) {
+      log(`\n─── seed:${step.name} skipped — the ${step.demoFamily} family holds its demo profile here (npm run seed:demo:teardown to release it) ───`);
+      results.push({ ...step, status: 'skipped' });
+      continue;
+    }
     const okStep = runStep(step);
     if (okStep) results.push({ ...step, status: 'ok' });
     else if (step.required) {

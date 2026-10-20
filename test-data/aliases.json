@@ -1,7 +1,7 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.60",
+    "version": "1.5.67",
     "changelog_1_5_50": "Suite 083d (loyalty missions E2E) fixture set: MSN_E2E_RUN + MSN_E2E_{ORDERVALUE,ORDERCOUNT,PERSKU,PERSKU_PTS} + MSN_E2E_PRODUCT_{UNIT,A,B,PTS} + MSN_E2E_REWARD_USER. Run REG-2026-08-28-1154 returned 2 PASS / 6 BLOCKED because the shared MSN_* missions had been CONSUMED — MSN_ORDERCOUNT at 2 of 2 Completed, MSN_ORDERVALUE at 5,842,446/100% — and a Completed mission stops accruing entirely (proven by a control pair inside one order: MSN_ZEROTARGET 24 -> 25 while MSN_ORDERCOUNT stayed frozen at 2). Mission progress is per-(user,mission), cumulative, monotonic, frozen at completion, with NO reset path in vc-module-loyalty, so repeatability comes from minting a FRESH mission per run (name carries a run handle) rather than from resetting anything. Products are stable and NOT run-scoped (no per-user state), packSize 1 (MSN_PERSKU_PRODUCT_B steps 0->2->0, so \"quantity exactly 1\" was unachievable) and trackInventory=false. MSN_E2E_PRODUCT_PTS is the first PerSku target priced in the loyalty currency, which is what makes the no-currency-filter question (LoyaltyMissionLogicService.cs:~416 vs LoyaltyProgramHandler.cs:199) askable at all. MSN_E2E_REWARD_USER borrows the per-run ephemeral LOYALTY_ZERO_USER because a 500-PTS reward against LOYALTY_VIP_USER (964,189,233 PTS) cannot demonstrate that the points spent were earned from a mission. Seeder scripts/seed-data/loyalty/seed-missions-e2e.mjs, spec module missions-e2e-specs.mjs, guard npm run td:validate:missions-e2e (a VACUITY guard: it fails when a fixture was not pre-completion at seed time or when the reward stops being legible against the balance).",
     "updated": "GENERATED",
     "changelog_1_5_53": "VCST-5024 top-up — ORG_LOY_MISSION_2 (OrderCountGoal 1, reward 619) and ORG_LOY_MISSION_PARTIAL (OrderCountGoal 2, reward 631), both Published and targeted at AGENT-TEST-ORGLOY like ORG_LOY_MISSION. WHY: ORG_LOY_MISSION was CONSUMED before it could answer anything, because the store-mode flip silently did not take effect (the settings-v2 tenant write returns 204 and updates the tenant-settings read, but the module resolves store.Settings from the store entity, which stayed null) — so the first journey ran in Customer mode and ORG_LOY_A and ORG_LOY_B each completed the count-1 mission and were each granted 617. Once-per-MEMBER is correct Customer-mode behaviour, which is why that mission is KEPT rather than swept: it is the cleanest record that the flip had not landed. But OrderCountGoal progress is terminal per owner with no reset path, so a consumed mission cannot be repaired and a NEW one is the only route back to a decidable question. THE PAIR, NOT JUST THE REPLACEMENT: count 1 alone cannot separate pooled PROGRESS from pooled COMPLETION (it is Completed the instant anything accrues, so \"B sees it done\" fits both readings); count 2 splits them, because after ONE order a pooled implementation reads 1/2 for BOTH members and a user-keyed one reads 1/2 and 0/2, with neither Completed. Rewards are mutually DISTINCT (617/619/631) and distinct from the missions-e2e set (501/509) because all three are live at once against the same group and one order can move more than one — identical rewards would make a balance delta and a points-history row name nothing, the same failure the missions-e2e set hit with four 500s. MECHANICS: each mission spec now owns a sweep NAME-SPACE (AGENT-TEST-MSN-ORGLOY[-<KEY>]-<ts>-<rand>; ORG_LOY_MISSION keeps the empty key so its live name is unchanged), and a seed sweeps only its own predecessors — minting one mission can never delete a sibling, which is what let the consumed generation-1 record survive. New seeder flags --missions-only + --only <ALIAS,...> mint missions while touching NO account, no org, no balance read and placing no order: by this point ORG_LOY_A and ORG_LOY_B carry real pre-flip balances (39,533 and 100,033) and LOY_PERSONAL_NOORG its funding floor (38,916), all of which are load-bearing evidence a full re-seed would have overwritten. Guard npm run td:validate:org-loyalty now fails a duplicate sweep key, a duplicate or missions-e2e-colliding reward, a non-count-1 ORG_LOY_MISSION_2, a count < 2 ORG_LOY_MISSION_PARTIAL, and equal counts across the pair.",
@@ -62,7 +62,14 @@
     "changelog_1_5_57": "VCST-2945 barcode scanner search fixtures: BARCODE_STORE (dedicated AGENT-TEST store on the B2B-mixed catalog — tests own its barcode settings, never B2B-store's) + BARCODE_{GTIN_UNIQUE,FULLTEXT_DISCRIM,GTIN_SHARED,CODE_OR,PROP,VARIATION_MPN,CASE,SPECIAL,REINDEX,STALE_FIELD} (seed:barcode, td:validate:barcode, barcode images under test-data/uploads/barcodes/) + BROWSEFILTERS_READ_ONLY / BROWSEFILTERS_NONE back-office accounts (seed:rbac, td:validate:rbac).",
     "changelog_1_5_58": "VCST-6054 UCP stock-refusal fixtures: PROD_MIN_ABOVE_STOCK (test-products.csv PROD-112 / QA-MINQ-001, minQuantity 3 > stock 2 > 0 -> inventory_unavailable) and PROD_STOCK_DROP (PROD-113 / QA-DROP-001, stock 10 / cart_qty 2 / dropped_stock 1 -> insufficient_stock after an accepted cart). New test-products.csv columns min_quantity (seeded as the product minQuantity) and cart_qty / dropped_stock (scenario quantities, not seeded). Ordering guarded by td:validate:standard check [14]. Both aliases expose id = the runtime product GUID from aliases.<env>.json (seed:products writes it for these two rows only), and seed:products now also writes FC_EAST.id - the FFC their stock sits on.",
     "changelog_1_5_59": "/qa-generate-data (push-messages recipients (domain map G3)): added 12 alias(es) [PUSH_ORG_INBOX, PUSH_ORG_API, PUSH_RECIPIENT_READER, PUSH_RECIPIENT_BYSTANDER, PUSH_RECIPIENT_BULK, PUSH_RECIPIENT_API, PUSH_RECIPIENT_EMPTY, PUSH_DATA_READER_INBOX, PUSH_DATA_TARGETING_PAIR, PUSH_DATA_BULK, PUSH_DATA_EMPTY, PUSH_DATA_API] for combinations; gap fixtures seeded=false pending /qa-seed-data.",
-    "changelog_1_5_60": "Edge-case fixtures (scripts/seed-data/edge-cases): registered ORG_EXACTLY_11, MULTI_ORG_11, ORG_EXACTLY_10, ORG_ADDR22, ORG_ADDR22_ADMIN, DISCONTINUED_ITEM_ORDER, DISCONTINUED_ORDER_BUYER, PERSONAL_NON_ORG_USER — business keys only, runtime ids from aliases.<env>.json; gated by td:validate:edge-cases."
+    "changelog_1_5_60": "Edge-case fixtures (scripts/seed-data/edge-cases): registered ORG_EXACTLY_11, MULTI_ORG_11, ORG_EXACTLY_10, ORG_ADDR22, ORG_ADDR22_ADMIN, DISCONTINUED_ITEM_ORDER, DISCONTINUED_ORDER_BUYER, PERSONAL_NON_ORG_USER — business keys only, runtime ids from aliases.<env>.json; gated by td:validate:edge-cases.",
+    "changelog_1_5_61": "VCST-5884 organization returns fixture set (seed:returns:org): 2 dedicated AGENT-TEST roles (view; view+submit), 7 AGENT-TEST organizations, 16 personas isolating the three grant sources (global / organization-level / membership) and the four blocking memberships, one submitted other-organization return. FIXTURE-GAPs (no alias registered): RETURNS_LEGACY_STORELESS, ORG_RET_OTHER_STORE_RETURN — reasons in org-returns-specs.mjs FIXTURE_GAPS.",
+    "changelog_1_5_62": "VCST-5884 top-up: ORG_RET_LEAVER — a separate non-holder buyer in ORG_RET_VIEWER_ORG whose membership the S21 cases remove and restore per run.",
+    "changelog_1_5_63": "VCST-5884 round 3 returnable capacity: spare orders (spare<N>* fields) on ORG_RET_BUYER (3), ORG_RET_ORGROLE_BUYER, ORG_RET_OTHER_BUYER, ORG_RET_LONG_NAME_BUYER (1 each) — RETURNABLE_LINE_FLOOR in org-returns-specs.mjs, guarded by td:validate:returns-org.",
+    "changelog_1_5_64": "VCST-5884 round 3 top-up: ORG_RET_BUYER spares 3 -> 7 (spare4..7 fields), RETURNABLE_LINE_FLOOR.BUYER 8 -> 16.",
+    "changelog_1_5_65": "RETURNS_ORDER_RECIPIENT: dedicated AGENT-TEST yopmail mailbox for the VCST-5628 returns orders' address emails (seed-return-orders.mjs forces + hard-stops; td:validate:orders §8c).",
+    "changelog_1_5_66": "VCST-6017 GA4 markup product lists: registered PROD_GA4_RELATED_ANCHOR, PROD_GA4_VARIATION_PARENT, CART_GA4_SFL_RB (seed:ga4-lists, scripts/seed-data/analytics) and PB_GA4_PRODUCT_LISTS, PB_GA4_HTML_LISTS (seed:cms-pages:ga4) — business keys only, runtime ids from aliases.<env>.json; gated by td:validate:ga4-lists.",
+    "changelog_1_5_67": "VCST-5884 FIXTURE-GAP ORG_RET_OTHER_STORE_RETURN closed: registered ORG_RET_OTHER_STORE_RETURN (seed:returns:org) — ORG_RET_BUYER submits a return in STORE_ID on its last spare order, then an administrator PUT /api/return moves it to STORE_ID_SECONDARY (mechanism observed by 050o RET-ORG-011); no store setting is touched. RETURNS_LEGACY_STORELESS remains a FIXTURE-GAP."
   },
   "COMPLETED_ORDER": {
     "json": "orders/completed-order",
@@ -105,7 +112,7 @@
       "currency": "currency",
       "id": "id"
     },
-    "notes": "VCST-5482 — RFQ submitted by {{ORG_USER_EMAIL}} with admin per-line pricing applied. Runtime id from aliases.<env>.json (npm run seed:quotes). Unblocks suite 015 QUOTE-004/005/006/008/009/018/020/021/025."
+    "notes": "Quote state \"Proposal sent\" (Processing -> Proposal sent), read-only. admin responded: per-line proposal price below the live catalog price on 2 lines; the no-expiry member of the QUOTE-023 expiry triad. Read by suite 015 QUOTE-004, QUOTE-005, QUOTE-009, QUOTE-018, QUOTE-020, QUOTE-021, QUOTE-023, QUOTE-025. Seeded once PER agent-pool B2B buyer with customerId = that buyer's login id and organizationId = the buyer's live org (KB-874B24DD): id/number/buyer_email/expiration_date = slot 1 (suite 015's chrome lane); id_slot<n>/number_slot<n>/buyer_email_slot<n>/expiration_date_slot<n> for every slot — all runtime, in aliases.<env>.json only. Static status/currency resolve from the fixture. Spec: scripts/seed-data/orders/orders-specs.mjs QUOTE_FIXTURES; guard npm run td:validate:orders; live check npm run td:reconcile [16]; teardown npm run seed:quotes:teardown."
   },
   "ACCEPTED_QUOTE": {
     "json": "quotes/quote-accepted",
@@ -115,7 +122,137 @@
       "currency": "currency",
       "id": "id"
     },
-    "notes": "VCST-5482 — admin-priced RFQ accepted by the buyer (ready to convert). Runtime id from aliases.<env>.json (npm run seed:quotes). Unblocks suite 015 QUOTE-007/024/027/028/030."
+    "notes": "Quote state \"Ordered\" (Processing -> Proposal sent -> Ordered), read-only. terminal Ordered state with a 3-step change log; reached by status writes, so NO customer order is linked to it — never use it to assert the order a conversion produced. Read by suite 015 QUOTE-012, QUOTE-014, QUOTE-024. Seeded once PER agent-pool B2B buyer with customerId = that buyer's login id and organizationId = the buyer's live org (KB-874B24DD): id/number/buyer_email/expiration_date = slot 1 (suite 015's chrome lane); id_slot<n>/number_slot<n>/buyer_email_slot<n>/expiration_date_slot<n> for every slot — all runtime, in aliases.<env>.json only. Static status/currency resolve from the fixture. Spec: scripts/seed-data/orders/orders-specs.mjs QUOTE_FIXTURES; guard npm run td:validate:orders; live check npm run td:reconcile [16]; teardown npm run seed:quotes:teardown."
+  },
+  "QUOTE_PROCESSING": {
+    "json": "quotes/quote-processing",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "id": "id"
+    },
+    "notes": "Quote state \"Processing\" (Processing), read-only. submitted, not yet answered — no Approve/Decline may be offered. Read by suite 015 QUOTE-012, QUOTE-014. Seeded once PER agent-pool B2B buyer with customerId = that buyer's login id and organizationId = the buyer's live org (KB-874B24DD): id/number/buyer_email/expiration_date = slot 1 (suite 015's chrome lane); id_slot<n>/number_slot<n>/buyer_email_slot<n>/expiration_date_slot<n> for every slot — all runtime, in aliases.<env>.json only. Static status/currency resolve from the fixture. Spec: scripts/seed-data/orders/orders-specs.mjs QUOTE_FIXTURES; guard npm run td:validate:orders; live check npm run td:reconcile [16]; teardown npm run seed:quotes:teardown."
+  },
+  "QUOTE_ON_HOLD": {
+    "json": "quotes/quote-on-hold",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "id": "id"
+    },
+    "notes": "Quote state \"On hold\" (Processing -> On hold), read-only. admin paused processing — a status distinct from Processing in the list. Read by suite 015 QUOTE-012, QUOTE-014. Seeded once PER agent-pool B2B buyer with customerId = that buyer's login id and organizationId = the buyer's live org (KB-874B24DD): id/number/buyer_email/expiration_date = slot 1 (suite 015's chrome lane); id_slot<n>/number_slot<n>/buyer_email_slot<n>/expiration_date_slot<n> for every slot — all runtime, in aliases.<env>.json only. Static status/currency resolve from the fixture. Spec: scripts/seed-data/orders/orders-specs.mjs QUOTE_FIXTURES; guard npm run td:validate:orders; live check npm run td:reconcile [16]; teardown npm run seed:quotes:teardown."
+  },
+  "QUOTE_DECLINED": {
+    "json": "quotes/quote-declined",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "id": "id"
+    },
+    "notes": "Quote state \"Declined\" (Processing -> Proposal sent -> Declined), read-only. terminal declined state with a Processing → Proposal sent → Declined change log. Read by suite 015 QUOTE-012, QUOTE-014, QUOTE-024. Seeded once PER agent-pool B2B buyer with customerId = that buyer's login id and organizationId = the buyer's live org (KB-874B24DD): id/number/buyer_email/expiration_date = slot 1 (suite 015's chrome lane); id_slot<n>/number_slot<n>/buyer_email_slot<n>/expiration_date_slot<n> for every slot — all runtime, in aliases.<env>.json only. Static status/currency resolve from the fixture. Spec: scripts/seed-data/orders/orders-specs.mjs QUOTE_FIXTURES; guard npm run td:validate:orders; live check npm run td:reconcile [16]; teardown npm run seed:quotes:teardown."
+  },
+  "EXPIRED_QUOTE": {
+    "json": "quotes/quote-expired",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "id": "id"
+    },
+    "notes": "Quote state \"Proposal sent\" (Processing -> Proposal sent), expirationDate -3d from the seed, read-only. actionable status with a PAST expirationDate — only the date says it is expired. Read by suite 015 QUOTE-011, QUOTE-023. Seeded once PER agent-pool B2B buyer with customerId = that buyer's login id and organizationId = the buyer's live org (KB-874B24DD): id/number/buyer_email/expiration_date = slot 1 (suite 015's chrome lane); id_slot<n>/number_slot<n>/buyer_email_slot<n>/expiration_date_slot<n> for every slot — all runtime, in aliases.<env>.json only. Static status/currency resolve from the fixture. Spec: scripts/seed-data/orders/orders-specs.mjs QUOTE_FIXTURES; guard npm run td:validate:orders; live check npm run td:reconcile [16]; teardown npm run seed:quotes:teardown."
+  },
+  "QUOTE_FUTURE_EXPIRY": {
+    "json": "quotes/quote-future-expiry",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "id": "id"
+    },
+    "notes": "Quote state \"Proposal sent\" (Processing -> Proposal sent), expirationDate +30d from the seed, read-only. same status as EXPIRED_QUOTE with a FUTURE expirationDate — the pair isolates the date. Read by suite 015 QUOTE-023. Seeded once PER agent-pool B2B buyer with customerId = that buyer's login id and organizationId = the buyer's live org (KB-874B24DD): id/number/buyer_email/expiration_date = slot 1 (suite 015's chrome lane); id_slot<n>/number_slot<n>/buyer_email_slot<n>/expiration_date_slot<n> for every slot — all runtime, in aliases.<env>.json only. Static status/currency resolve from the fixture. Spec: scripts/seed-data/orders/orders-specs.mjs QUOTE_FIXTURES; guard npm run td:validate:orders; live check npm run td:reconcile [16]; teardown npm run seed:quotes:teardown."
+  },
+  "QUOTE_TO_ACCEPT": {
+    "json": "quotes/quote-to-accept",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "id": "id"
+    },
+    "notes": "Quote state \"Proposal sent\" (Processing -> Proposal sent), DISPOSABLE — consumed by its one case, re-seed (npm run seed:quotes) restores it. used up by Approve. Read by suite 015 QUOTE-006. Seeded once PER agent-pool B2B buyer with customerId = that buyer's login id and organizationId = the buyer's live org (KB-874B24DD): id/number/buyer_email/expiration_date = slot 1 (suite 015's chrome lane); id_slot<n>/number_slot<n>/buyer_email_slot<n>/expiration_date_slot<n> for every slot — all runtime, in aliases.<env>.json only. Static status/currency resolve from the fixture. Spec: scripts/seed-data/orders/orders-specs.mjs QUOTE_FIXTURES; guard npm run td:validate:orders; live check npm run td:reconcile [16]; teardown npm run seed:quotes:teardown."
+  },
+  "QUOTE_TO_DECLINE": {
+    "json": "quotes/quote-to-decline",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "id": "id"
+    },
+    "notes": "Quote state \"Proposal sent\" (Processing -> Proposal sent), DISPOSABLE — consumed by its one case, re-seed (npm run seed:quotes) restores it. used up by Decline. Read by suite 015 QUOTE-008. Seeded once PER agent-pool B2B buyer with customerId = that buyer's login id and organizationId = the buyer's live org (KB-874B24DD): id/number/buyer_email/expiration_date = slot 1 (suite 015's chrome lane); id_slot<n>/number_slot<n>/buyer_email_slot<n>/expiration_date_slot<n> for every slot — all runtime, in aliases.<env>.json only. Static status/currency resolve from the fixture. Spec: scripts/seed-data/orders/orders-specs.mjs QUOTE_FIXTURES; guard npm run td:validate:orders; live check npm run td:reconcile [16]; teardown npm run seed:quotes:teardown."
+  },
+  "QUOTE_TO_CONVERT": {
+    "json": "quotes/quote-to-convert",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "id": "id"
+    },
+    "notes": "Quote state \"Proposal sent\" (Processing -> Proposal sent), DISPOSABLE — consumed by its one case, re-seed (npm run seed:quotes) restores it. used up by Approve (= convert to order). Read by suite 015 QUOTE-007. Seeded once PER agent-pool B2B buyer with customerId = that buyer's login id and organizationId = the buyer's live org (KB-874B24DD): id/number/buyer_email/expiration_date = slot 1 (suite 015's chrome lane); id_slot<n>/number_slot<n>/buyer_email_slot<n>/expiration_date_slot<n> for every slot — all runtime, in aliases.<env>.json only. Static status/currency resolve from the fixture. Spec: scripts/seed-data/orders/orders-specs.mjs QUOTE_FIXTURES; guard npm run td:validate:orders; live check npm run td:reconcile [16]; teardown npm run seed:quotes:teardown."
+  },
+  "QUOTE_TO_CONVERT_REPRICED": {
+    "json": "quotes/quote-to-convert-repriced",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "id": "id"
+    },
+    "notes": "Quote state \"Proposal sent\" (Processing -> Proposal sent), DISPOSABLE — consumed by its one case, re-seed (npm run seed:quotes) restores it. proposal = 80% of the live catalog price, so an order priced from the catalog instead of the quote differs on every line. Read by suite 015 QUOTE-027. Seeded once PER agent-pool B2B buyer with customerId = that buyer's login id and organizationId = the buyer's live org (KB-874B24DD): id/number/buyer_email/expiration_date = slot 1 (suite 015's chrome lane); id_slot<n>/number_slot<n>/buyer_email_slot<n>/expiration_date_slot<n> for every slot — all runtime, in aliases.<env>.json only. Static status/currency resolve from the fixture. Spec: scripts/seed-data/orders/orders-specs.mjs QUOTE_FIXTURES; guard npm run td:validate:orders; live check npm run td:reconcile [16]; teardown npm run seed:quotes:teardown."
+  },
+  "QUOTE_TO_CONVERT_MULTILINE": {
+    "json": "quotes/quote-to-convert-multiline",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "id": "id"
+    },
+    "notes": "Quote state \"Proposal sent\" (Processing -> Proposal sent), DISPOSABLE — consumed by its one case, re-seed (npm run seed:quotes) restores it. 3 lines with different quantities — a partial or quantity-collapsing conversion is visible. Read by suite 015 QUOTE-028. Seeded once PER agent-pool B2B buyer with customerId = that buyer's login id and organizationId = the buyer's live org (KB-874B24DD): id/number/buyer_email/expiration_date = slot 1 (suite 015's chrome lane); id_slot<n>/number_slot<n>/buyer_email_slot<n>/expiration_date_slot<n> for every slot — all runtime, in aliases.<env>.json only. Static status/currency resolve from the fixture. Spec: scripts/seed-data/orders/orders-specs.mjs QUOTE_FIXTURES; guard npm run td:validate:orders; live check npm run td:reconcile [16]; teardown npm run seed:quotes:teardown."
+  },
+  "QUOTE_TO_CONVERT_STATUS": {
+    "json": "quotes/quote-to-convert-status",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "id": "id"
+    },
+    "notes": "Quote state \"Proposal sent\" (Processing -> Proposal sent), DISPOSABLE — consumed by its one case, re-seed (npm run seed:quotes) restores it. used up by Approve; the case reads the status afterwards. Read by suite 015 QUOTE-030. Seeded once PER agent-pool B2B buyer with customerId = that buyer's login id and organizationId = the buyer's live org (KB-874B24DD): id/number/buyer_email/expiration_date = slot 1 (suite 015's chrome lane); id_slot<n>/number_slot<n>/buyer_email_slot<n>/expiration_date_slot<n> for every slot — all runtime, in aliases.<env>.json only. Static status/currency resolve from the fixture. Spec: scripts/seed-data/orders/orders-specs.mjs QUOTE_FIXTURES; guard npm run td:validate:orders; live check npm run td:reconcile [16]; teardown npm run seed:quotes:teardown."
+  },
+  "EXPIRED_QUOTE_TO_ACCEPT": {
+    "json": "quotes/quote-expired-to-accept",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "id": "id"
+    },
+    "notes": "Quote state \"Proposal sent\" (Processing -> Proposal sent), expirationDate -3d from the seed, DISPOSABLE — consumed by its one case, re-seed (npm run seed:quotes) restores it. past expirationDate; used up IF Approve succeeds (the handler does not check the date) — kept apart from EXPIRED_QUOTE so a successful approve cannot corrupt QUOTE-011/023. Read by suite 015 QUOTE-022. Seeded once PER agent-pool B2B buyer with customerId = that buyer's login id and organizationId = the buyer's live org (KB-874B24DD): id/number/buyer_email/expiration_date = slot 1 (suite 015's chrome lane); id_slot<n>/number_slot<n>/buyer_email_slot<n>/expiration_date_slot<n> for every slot — all runtime, in aliases.<env>.json only. Static status/currency resolve from the fixture. Spec: scripts/seed-data/orders/orders-specs.mjs QUOTE_FIXTURES; guard npm run td:validate:orders; live check npm run td:reconcile [16]; teardown npm run seed:quotes:teardown."
+  },
+  "QUOTE_PROPOSAL_OOS": {
+    "json": "quotes/quote-oos",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "id": "id"
+    },
+    "notes": "Quote state \"Proposal sent\" (Processing -> Proposal sent), DISPOSABLE — consumed by its one case, re-seed (npm run seed:quotes) restores it. line 1 is the permanent OOS product, line 2 is in stock — \"whole conversion refused\" and \"OOS line silently dropped\" look different. Read by suite 015 QUOTE-026. Seeded once PER agent-pool B2B buyer with customerId = that buyer's login id and organizationId = the buyer's live org (KB-874B24DD): id/number/buyer_email/expiration_date = slot 1 (suite 015's chrome lane); id_slot<n>/number_slot<n>/buyer_email_slot<n>/expiration_date_slot<n> for every slot — all runtime, in aliases.<env>.json only. Static status/currency resolve from the fixture. Spec: scripts/seed-data/orders/orders-specs.mjs QUOTE_FIXTURES; guard npm run td:validate:orders; live check npm run td:reconcile [16]; teardown npm run seed:quotes:teardown."
   },
   "CFG_LAPTOP": {
     "file": "products/configurable-products",
@@ -2649,24 +2786,34 @@
   },
   "CFG_FILE_HOODIE": {
     "_inline": true,
-    "productAlias": "CFG-004",
-    "productName": "Hoodie Base with Only File non required",
-    "slug": "physical",
-    "url": "/products-with-options/configurable-caps-shirts/physical",
-    "fullUrl_template": "{{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical",
-    "fileSectionName": "Only File non required",
+    "file": "products/configurable-products",
+    "filter": {
+      "product_id": "CFG-FILE"
+    },
+    "fields": {
+      "productId": "product_id_guid",
+      "fileSectionId": "file_section_id"
+    },
+    "productAlias": "CFG-FILE",
+    "productName": "AGENT-TEST-Config-FileUpload",
+    "slug": "agent-test-config-fileupload",
+    "url": "/products-with-options/cfg-parents/agent-test-config-fileupload",
+    "fullUrl_template": "{{FRONT_URL}}/products-with-options/cfg-parents/agent-test-config-fileupload",
+    "fileSectionName": "Design Upload",
     "fileSectionType": "File",
     "fileSectionIsRequired": false,
     "maxFiles": 5,
-    "maxFileSizeMb": 9.5,
-    "categoryPath": "Products with Options > Configurable Caps & Shirts",
-    "basePrice": 300,
+    "maxFileSizeMb": 1,
+    "maxFileSizeBytes": 1048576,
+    "limits_source": "Storefront fallback, NOT a section or server setting: vc-frontend client-app/shared/files/constants.ts DEFAULT_FILE_MAX_COUNT=5 and DEFAULT_FILE_MAX_SIZE=getBytes({value:1,unit:'megabyte'}) (ui-kit/utilities/file-size.ts base 1024 => 1048576 bytes; constant unchanged since vc-frontend #938, 2024-02-05). option-file.vue calls useFiles('product-configuration'); useFiles keeps these defaults whenever fileUploadOptions(scope:'product-configuration') returns null, which it does on vcst (scope not registered, 2026-10-12). Neither REST /api/catalog/products/configurations nor xAPI productConfiguration exposes a per-section size/count. If the scope is ever registered server-side, its fileUploadOptions.maxFileSize/maxFileCount win and these two fields must be re-read from that query.",
+    "categoryPath": "SEED-Configurables > Configurable Parents",
+    "basePrice": 80,
     "currency": "USD",
-    "captured_at": "2026-04-30",
-    "captured_via": "productConfiguration(configurableProductId,storeId) GraphQL on FRONT_URL/graphql",
-    "notes": "VCST-4826 / VCST-4825 GAP — moves the hardcoded product path out of CFG-FILE-ST-001..003 + CFG-FILE-BVA-001..002. CFG-004 is a Configurable hoodie with exactly one optional File section (None option present, max 5 files, max 9.5MB each). For BVA cases use maxFiles=5 (boundary). For ST cases use the (url, fileSectionId) pair. fileSectionId resolved live from xAPI 2026-04-30 — re-introspect if the underlying product configuration is reseeded.",
-    "_status": "needs-reseed-20260518",
-    "_status_note": "CFG-004 Hoodie File-only optional. No [F?] single-section survivor (Tramadol/Revlimid are [F!])."
+    "captured_at": "2026-10-12",
+    "captured_via": "TEST_ENV=vcst: REST POST /api/catalog/products/configurations/search + xAPI product/productConfiguration(configurableProductId,storeId) + fileUploadOptions(scope:\"product-configuration\") (null) + storefront GET of url (200); runtime GUIDs written to aliases.vcst.json by seed-configurable.mjs --only CFG-FILE (syncEnvAliases via file/filter/fields above).",
+    "notes": "VCST-4826 / VCST-4825 GAP — moves the hardcoded product path out of CFG-FILE-ST-001..002 + CFG-FILE-BVA-001..002 (072e) and backs CFG-GQL-029 (050i). A configurable with exactly ONE optional File section (None option present). Business fields mirror the seeder spec CFG-FILE (scripts/seed-data/products/configurable-specs.mjs) and its row in products/configurable-products.csv; td:validate:cfg fails if they diverge. productId/fileSectionId are runtime GUIDs: they live ONLY in aliases.<env>.json and are rewritten on every `npm run seed:configurable -- --only CFG-FILE`. Same product as CFG_FILE_UPLOAD (which has no section/limit fields). For BVA use maxFiles (count boundary) and maxFileSizeBytes (size boundary — 1 MiB, not 1,000,000).",
+    "_status": "repointed-20261012",
+    "_status_note": "Repointed 2026-10-12 from CFG-004 'Hoodie Base with Only File non required' (demo-catalog product with no seeder spec; gone from vcst — name search empty, old GUID a04bbb3c… resolves to nothing, url 404) to the seeder-owned CFG-FILE. Shape preserved (one optional File section, None option); name/price/section name changed (Hoodie $300 'Only File non required' -> $80 'Design Upload'). maxFileSizeMb corrected 9.5 -> 1 from its real source (limits_source)."
   },
   "CFG_PRODUCT_CONDITIONAL_DEFERRED": {
     "_inline": true,
@@ -2719,7 +2866,7 @@
       "pdfVersion": "1.4",
       "generated_at": "2026-04-30",
       "generator": "scripts/inline node — handcrafted minimal PDF/1.4 (Catalog, Pages, single Page with Helvetica text 'CFG-PDP-048 test fixture - 1 page')",
-      "_purpose": "CFG-PDP-048 happy-path File section upload. Stays well under @td(CFG_FILE_HOODIE.maxFileSizeMb)=9.5 MB and exercises a real PDF MIME type (not octet-stream). Single-page so the configuration preview / receipt rendering paths can render predictably. Re-generate (do NOT mutate this file in place) if the underlying validator changes (e.g., PDF/A required, signature required); update sha256 + sizeBytes if regenerated."
+      "_purpose": "CFG-PDP-048 happy-path File section upload. Stays well under @td(CFG_FILE_HOODIE.maxFileSizeBytes) and exercises a real PDF MIME type (not octet-stream). Single-page so the configuration preview / receipt rendering paths can render predictably. Re-generate (do NOT mutate this file in place) if the underlying validator changes (e.g., PDF/A required, signature required); update sha256 + sizeBytes if regenerated."
     },
     "_status": "unchanged-20260518",
     "_status_note": "File-upload fixture aliases — no product GUID dependency. Unaffected by restore."
@@ -2888,13 +3035,13 @@
     "captured_at": "2026-05-06",
     "captured_via": "productConfiguration GraphQL on https://vcst-qa.govirto.com/graphql",
     "notes": "Wedding cake with conditional 5-section graph: Base (req root) → Creme (opt) → Message (opt) → [Custom text required (req Text, maxLen=50), Image (opt File)]. The richest CFG product in QA — exercises ALL 4 section types (Product/Text/File) AND conditional dependencies AND mixed-required semantics. Use for: (a) mixed-type selection toggle in single batch; (b) conditional cascade interaction with selectedForCheckout flag; (c) parent deselect → does it cascade-disable child configurationItems? (open contract question — PR #114 doesn't specify). Distinct from CFG_WEDDING_CAKE_CONDITIONAL (CFG-023, agent-test-prefixed seed) — YOC-85609878 is the persistent QA fixture.",
-    "_status": "weak-match-20260518",
-    "_status_note": "See CFG_WEDDING_CAKE_CONDITIONAL."
+    "_status": "gone-20261006",
+    "_status_note": "STALE — product YOC-85609878 no longer exists on vcst (2026-10-06: Platform API search/products + listentries by code and by name return nothing; GET /api/catalog/products/f4f27033-… returns empty; storefront slug 404s). Kept, not deleted: regression suite row CFG-GQL-032 (050i-graphql-configurations.csv, already Quarantined) still references it — re-point it at a seeded fixture (e.g. CFG_WEDDING_CAKE_CONDITIONAL / CFG-023 after reseed, or CFG_CHECKLIST_ALLTYPES for all-types coverage). Earlier note: see CFG_WEDDING_CAKE_CONDITIONAL."
   },
   "UPLOAD_FIXTURES": {
     "_inline": true,
     "_directory": "test-data/uploads/",
-    "_purpose": "Curated runtime upload fixtures for File-section selection-mutation tests (CFG-GQL-029 in 050i-graphql-configurations.csv) and storefront file-upload regressions (072-series). Runner uploads the file via REST (POST {BACK_URL}/api/platform/assets/upload OR storefront file-upload mutation) at test time and captures the returned URL into {{UPLOADED_FILE_URL}}. All listed files are <9.5MB so they pass @td(CFG_FILE_HOODIE.maxFileSizeMb) validation. Re-introspect sizeBytes after any directory edit.",
+    "_purpose": "Curated runtime upload fixtures for File-section selection-mutation tests (CFG-GQL-029 in 050i-graphql-configurations.csv) and storefront file-upload regressions (072-series). Runner uploads the file via REST (POST {BACK_URL}/api/platform/assets/upload OR storefront file-upload mutation) at test time and captures the returned URL into {{UPLOADED_FILE_URL}}. All listed files are under @td(CFG_FILE_HOODIE.maxFileSizeBytes) (the storefront 1 MiB fallback — see CFG_FILE_HOODIE.limits_source) so they pass File-section size validation. Re-introspect sizeBytes after any directory edit.",
     "primary": {
       "path": "test-data/uploads/Logo1.png",
       "mimeType": "image/png",
@@ -4346,6 +4493,25 @@
     "id": "",
     "name": "AGENT-TEST-SR-CART-WEST",
     "_notes": "Second active cart, in ORG-004/AcmeWest, so the cross-customer dashboard cart count is >1 and cross-org cart scoping is exercised (BL-SR-002/BL-SR-006). Runtime id in aliases.<env>.json (npm run seed:sales-rep-stats)."
+  },
+  "SR_REP_PERF": {
+    "_inline": true,
+    "seed": "seed:sales-rep-perf",
+    "id": "",
+    "user_id": "",
+    "email": "agent-test-sr-perf@example.com",
+    "fullName": "AGENT-TEST-SR-PERF Rep",
+    "store": "B2B-store",
+    "_notes": "VCST-5755 AC-5 performance-dataset rep. DEDICATED: no other fixture or suite reads its data. Creator of every AGENT-TEST-SRPERF-* order (customerId = its ApplicationUser id, BL-SR-002) across 15 dedicated orgs AGENT-TEST-SR-PERF-ORG-01..15. Shape lives in scripts/seed-data/sales-rep/sales-rep-perf-specs.mjs; id / user_id land in aliases.<env>.json (npm run seed:sales-rep-perf)."
+  },
+  "SR_PERF_DATASET": {
+    "_inline": true,
+    "seed": "seed:sales-rep-perf",
+    "org_ids": "",
+    "order_count": "",
+    "stats_order_count": "",
+    "seeded_at": "",
+    "_notes": "VCST-5755 AC-5 performance dataset summary for the env it was seeded on: semicolon-joined runtime org GUIDs (ORG-01..15 order), the number of AGENT-TEST-SRPERF-* orders present after the last seed, and how many of them the statistics scope counts (not IsCancelled, BL-SR-005). Written by npm run seed:sales-rep-perf; removed by seed:sales-rep-perf:teardown."
   },
   "SR_REP_LOCKABLE": {
     "file": "sales-rep/sales-reps",
@@ -8032,6 +8198,23 @@
     "notes": "VCST-5735 /compare v2 — a configurable whose TWO configuration sections share one display label (\"Finish\"). The compare table keys configuration rows config:<label>, so a shared label is the only shape that can show one row overwriting the other; all 22 pre-existing configurable specs carry distinct section names, so the collision was unreachable however many configurables a case put side by side. The two sections carry DIFFERENT option sets and prices on purpose — identical content would make the rows indistinguishable even when the implementation is correct. Seeded by scripts/seed-data/products/seed-configurable.mjs --only CFG-033; drift-guarded by td:validate:cfg. NAVIGATE VIA {{FRONT_URL}}@td(CFG_DUPLABEL.url).",
     "_status": "authored-20260903"
   },
+  "CFG_CHECKLIST_ALLTYPES": {
+    "file": "products/configurable-products",
+    "filter": {
+      "product_id": "CFG-034"
+    },
+    "fields": {
+      "id": "product_id_guid",
+      "configurationId": "configuration_id",
+      "name": "product_name",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "price": "base_price",
+      "sections": "section_ids"
+    },
+    "notes": "VCST-6027 configurable PDP Price-and-delivery checklist fixture (CFG-034, a cake). 8 sections in order: LAY Layers (Product, REQUIRED root, NO default; BOTH options are long AGENT-TEST-CHK-Layers Top … products, 118 and 122 chars — option order is not controllable, so whichever is selected on load overflows the clamp) · TXT Text (Text, REQUIRED root, maxLength 50) · PHO Photo for the cake topper (File, REQUIRED root) · FIL Filling (Product, REQUIRED, dependsOn LAY; short options — the unclamped Done contrast) · ICE Icing / DEC Decoration (Product, optional) · MSG Message (Text, optional, presets + custom, maxLength 100) · ART a 73-char section name (File, optional). The only fixture with all three REQUIRED link variants (Text / File / Product) on one page and a label long enough to overflow the 2-line clamp — td:validate:cfg FAILS if a Layers label shrinks, a required type disappears, Filling options grow long or Layers gains a default. Section GUIDs resolve per env as @td(CFG_CHECKLIST_ALLTYPES.sections.<KEY>) (LAY/TXT/PHO/FIL/ICE/DEC/MSG/ART) from aliases.<env>.json. Seeded by scripts/seed-data/products/seed-configurable.mjs --only CFG-034. NAVIGATE VIA {{FRONT_URL}}@td(CFG_CHECKLIST_ALLTYPES.url).",
+    "_status": "seeded-20261006"
+  },
   "ORG_LOY_A": {
     "_inline": true,
     "email": "agent-test-orgloy-a@test-agent.com",
@@ -8556,19 +8739,147 @@
     "completed": "true",
     "_notes": "VCST-5732 Sales Rep task fixture (CP4). COMPLETED and due in the FUTURE. Load-bearing: it must NOT appear under \"upcoming\". The second half of the both-directions straddle — if both completed tasks sat in the past, \"completed\" and \"past\" would be one partition and undecidable. DECAY: the due dates are WALL-CLOCK RELATIVE and recomputed at seed time — the three dueOffsetDays:0 tasks stop being \"due today\" at the next UTC MIDNIGHT, at which point they silently become overdue and 2/3/5/4 becomes 5/0/5/4. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks). Tasks are PRIVATE to their owning rep (another rep reads totalCount:0), so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed). Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Seed: npm run seed:sales-rep-tasks. Teardown: npm run seed:sales-rep-tasks:teardown. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
   },
+  "SR_TASK_CANCELED_KILO": {
+    "_inline": true,
+    "id": "",
+    "name": "AGENT-TEST-TASK Kilo canceled past due",
+    "type": "Order Processing",
+    "priority": "Normal",
+    "due_offset_days": "-3",
+    "due_date": "",
+    "completed": "false",
+    "canceled": "true",
+    "_notes": "VCST-6077 Sales Rep task fixture (CN1). CANCELED (isActive=false, completed=false — closed via TaskManagement REST finish?completed=false) and PAST DUE. Load-bearing: must NOT appear in the Overdue tab or badge; day -3 carries ONLY this task, so a calendar dot there is a defect. Test Model VCST-6077 scenarios 3, 6. DECAY: due dates are WALL-CLOCK RELATIVE and recomputed at seed time; the browser's day ends at LOCAL midnight (22:00Z for a CEST lane), and SR_TASK_GROUPS.decays_at_utc in aliases.<env>.json names the instant. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks — it tears down every AGENT-TEST-TASK row of the rep and recreates all 22). Tasks are PRIVATE to their owning rep, so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed); canceled/dateless steps also use the admin token. Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+  },
+  "SR_TASK_CANCELED_LIMA": {
+    "_inline": true,
+    "id": "",
+    "name": "AGENT-TEST-TASK Lima canceled due today",
+    "type": "Customer Support",
+    "priority": "High",
+    "due_offset_days": "0",
+    "due_date": "",
+    "completed": "false",
+    "canceled": "true",
+    "_notes": "VCST-6077 Sales Rep task fixture (CN2). CANCELED and due TODAY (browser-local). Load-bearing: decides whether the Today scope shows a canceled row (SR_TASK_GROUPS.canceled_due_today — not settled, NOT an oracle); must carry no row action. Scenario 6. DECAY: due dates are WALL-CLOCK RELATIVE and recomputed at seed time; the browser's day ends at LOCAL midnight (22:00Z for a CEST lane), and SR_TASK_GROUPS.decays_at_utc in aliases.<env>.json names the instant. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks — it tears down every AGENT-TEST-TASK row of the rep and recreates all 22). Tasks are PRIVATE to their owning rep, so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed); canceled/dateless steps also use the admin token. Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+  },
+  "SR_TASK_CANCELED_HOTEL": {
+    "_inline": true,
+    "id": "",
+    "name": "AGENT-TEST-TASK Hotel canceled due future",
+    "type": "Content Management",
+    "priority": "Low",
+    "due_offset_days": "2",
+    "due_date": "",
+    "completed": "false",
+    "canceled": "true",
+    "_notes": "VCST-6077 Sales Rep task fixture (CN3). CANCELED and due in the FUTURE (+2). Load-bearing: must NOT appear in the Upcoming tab or badge; day +2 carries ONLY this task, so a dot there is a defect. Scenario 6. DECAY: due dates are WALL-CLOCK RELATIVE and recomputed at seed time; the browser's day ends at LOCAL midnight (22:00Z for a CEST lane), and SR_TASK_GROUPS.decays_at_utc in aliases.<env>.json names the instant. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks — it tears down every AGENT-TEST-TASK row of the rep and recreates all 22). Tasks are PRIVATE to their owning rep, so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed); canceled/dateless steps also use the admin token. Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+  },
+  "SR_TASK_NODATE_INDIA": {
+    "_inline": true,
+    "id": "",
+    "name": "AGENT-TEST-TASK India no due date",
+    "type": "Registration Review",
+    "priority": "Normal",
+    "due_offset_days": "",
+    "due_date": "",
+    "completed": "false",
+    "_notes": "VCST-6077 Sales Rep task fixture (ND1). DATELESS (dueDate null, open) — created via TaskManagement REST because createSalesRepTask requires dueDate. Load-bearing: client chips it \"Upcoming\" while every dated tab omits it, so All - (Upcoming+Overdue+Completed) = canceled + dateless (SR_TASK_GROUPS.all_minus_tabs; PO decision, NOT an oracle). Scenarios 7, 16. DECAY: due dates are WALL-CLOCK RELATIVE and recomputed at seed time; the browser's day ends at LOCAL midnight (22:00Z for a CEST lane), and SR_TASK_GROUPS.decays_at_utc in aliases.<env>.json names the instant. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks — it tears down every AGENT-TEST-TASK row of the rep and recreates all 22). Tasks are PRIVATE to their owning rep, so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed); canceled/dateless steps also use the admin token. Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+  },
+  "SR_TASK_EDGE_GOLF": {
+    "_inline": true,
+    "id": "",
+    "name": "AGENT-TEST-TASK Golf edge local midnight",
+    "type": "Order Review",
+    "priority": "Low",
+    "due_offset_days": "0",
+    "due_date": "",
+    "completed": "false",
+    "due_local": "00:00",
+    "due_zone": "browser",
+    "_notes": "VCST-6077 Sales Rep task fixture (EG1). DAY BOUNDARY: open, due at exactly 00:00 BROWSER-LOCAL today (zone resolved at seed time — BROWSER_TZ or the seeding host; for a CEST lane that is 22:00Z the previous UTC day). Load-bearing: a day window built in UTC files it under Overdue / yesterday. Scenario 4. DECAY: due dates are WALL-CLOCK RELATIVE and recomputed at seed time; the browser's day ends at LOCAL midnight (22:00Z for a CEST lane), and SR_TASK_GROUPS.decays_at_utc in aliases.<env>.json names the instant. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks — it tears down every AGENT-TEST-TASK row of the rep and recreates all 22). Tasks are PRIVATE to their owning rep, so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed); canceled/dateless steps also use the admin token. Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+  },
+  "SR_TASK_EDGE_PAPA": {
+    "_inline": true,
+    "id": "",
+    "name": "AGENT-TEST-TASK Papa edge local 2330",
+    "type": "Pricing and Promotions",
+    "priority": "Normal",
+    "due_offset_days": "0",
+    "due_date": "",
+    "completed": "false",
+    "due_local": "23:30",
+    "due_zone": "browser",
+    "_notes": "VCST-6077 Sales Rep task fixture (EG2). DAY BOUNDARY: open, due at 23:30 BROWSER-LOCAL today (21:30Z for CEST). Load-bearing: must stay in Today, not fall out of it. Scenario 4. DECAY: due dates are WALL-CLOCK RELATIVE and recomputed at seed time; the browser's day ends at LOCAL midnight (22:00Z for a CEST lane), and SR_TASK_GROUPS.decays_at_utc in aliases.<env>.json names the instant. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks — it tears down every AGENT-TEST-TASK row of the rep and recreates all 22). Tasks are PRIVATE to their owning rep, so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed); canceled/dateless steps also use the admin token. Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+  },
+  "SR_TASK_EDGE_QUEBEC": {
+    "_inline": true,
+    "id": "",
+    "name": "AGENT-TEST-TASK Quebec edge new york 2330",
+    "type": "Other",
+    "priority": "High",
+    "due_offset_days": "0",
+    "due_date": "",
+    "completed": "false",
+    "due_local": "23:30",
+    "due_zone": "America/New_York",
+    "_notes": "VCST-6077 Sales Rep task fixture (EG3). DAY BOUNDARY: open, due 23:30 America/New_York on New York's today — TOMORROW in UTC and for a CEST browser (future), TODAY for a New York browser. Load-bearing for the UTC-5/-4 case; counts for that view are in SR_TASK_GROUPS_NY. Scenario 18. DECAY: due dates are WALL-CLOCK RELATIVE and recomputed at seed time; the browser's day ends at LOCAL midnight (22:00Z for a CEST lane), and SR_TASK_GROUPS.decays_at_utc in aliases.<env>.json names the instant. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks — it tears down every AGENT-TEST-TASK row of the rep and recreates all 22). Tasks are PRIVATE to their owning rep, so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed); canceled/dateless steps also use the admin token. Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+  },
+  "SR_TASK_EDGE_UNIFORM": {
+    "_inline": true,
+    "id": "",
+    "name": "AGENT-TEST-TASK Uniform edge off screen month",
+    "type": "Order Processing",
+    "priority": "Low",
+    "due_offset_days": "60",
+    "due_date": "",
+    "completed": "false",
+    "_notes": "VCST-6077 Sales Rep task fixture (EG4). OFF-SCREEN: open, due +60 days — more than 48 days ahead, so never on today's month grid (any 7-week grid spans at most 48 days). Load-bearing: the date chip's \"x when its day is off-screen\" fallback. Scenario 11. DECAY: due dates are WALL-CLOCK RELATIVE and recomputed at seed time; the browser's day ends at LOCAL midnight (22:00Z for a CEST lane), and SR_TASK_GROUPS.decays_at_utc in aliases.<env>.json names the instant. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks — it tears down every AGENT-TEST-TASK row of the rep and recreates all 22). Tasks are PRIVATE to their owning rep, so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed); canceled/dateless steps also use the admin token. Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+  },
   "SR_TASK_GROUPS": {
     "_inline": true,
     "open_overdue": "2",
-    "open_today": "3",
-    "open_future": "5",
+    "open_today": "5",
+    "open_future": "7",
     "completed": "4",
-    "total": "14",
+    "canceled": "3",
+    "dateless": "1",
+    "total": "22",
+    "chip_upcoming": "12",
+    "chip_overdue": "2",
+    "chip_completed": "4",
+    "chip_all": "22",
+    "today_scope_excl_canceled": "6",
+    "canceled_due_today": "1",
+    "all_minus_tabs": "4",
     "shared_day_offset": "7",
     "empty_day_offsets": "8,9,10,11,12,13",
     "seeded_at": "",
     "decays_at_utc": "",
     "owner_rep_email": "",
-    "_notes": "VCST-5732 GROUP-SIZE EXPECTATIONS for the Sales Rep task fixture — so no case ever hardcodes a count. All four sizes DIFFER on purpose (overdue=2, today=3, future=5, completed=4): if any two were equal, a filter wired to the wrong predicate would return a plausible number and PASS. shared_day_offset is the one calendar day carrying TWO tasks (multi-task day indicator); empty_day_offsets are the days immediately after it that must carry NONE (empty-day indicator). DECAY: the due dates are WALL-CLOCK RELATIVE and recomputed at seed time — the three dueOffsetDays:0 tasks stop being \"due today\" at the next UTC MIDNIGHT, at which point they silently become overdue and 2/3/5/4 becomes 5/0/5/4. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks). seeded_at / decays_at_utc / owner_rep_email are written per-env by the seeder and are EMPTY here. Tasks are PRIVATE to their owning rep (another rep reads totalCount:0), so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed). Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Seed: npm run seed:sales-rep-tasks. Teardown: npm run seed:sales-rep-tasks:teardown. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+    "browser_tz": "",
+    "_notes": "VCST-5732 + VCST-6077 COUNT EXPECTATIONS for the Sales Rep task fixture (22 rows) — so no case ever hardcodes a count. Values here are derived from the spec rows; the seeder rewrites them in aliases.<env>.json from the PERSISTED rows, classified in the BROWSER's local day (browser_tz). Groups: open_overdue / open_today / open_future / completed / canceled / dateless — all six sizes DIFFER on purpose: if two were equal, a filter wired to the wrong predicate would return a plausible number and PASS. Chips (Test Model reading of PR #2536): chip_upcoming = open dated due today or later (Today is a subset of Upcoming); chip_overdue; chip_completed; chip_all = every row. today_scope_excl_canceled = rows due in the local day incl. completed, excl. canceled; canceled_due_today stated separately (whether the Today scope lists a canceled row is NOT settled). all_minus_tabs = chip_all - (chip_upcoming + chip_overdue + chip_completed) = canceled + dateless — the PR-code expectation and an OPEN PO question (Test Model scenario 7), NOT an oracle. shared_day_offset is the one calendar day carrying TWO tasks; empty_day_offsets must carry NONE. seeded_at / decays_at_utc / owner_rep_email / browser_tz are written per-env by the seeder and are EMPTY here. DECAY: due dates are WALL-CLOCK RELATIVE and recomputed at seed time; the browser's day ends at LOCAL midnight (22:00Z for a CEST lane), and SR_TASK_GROUPS.decays_at_utc in aliases.<env>.json names the instant. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks — it tears down every AGENT-TEST-TASK row of the rep and recreates all 22). Tasks are PRIVATE to their owning rep, so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed); canceled/dateless steps also use the admin token. Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+  },
+  "SR_TASK_GROUPS_NY": {
+    "_inline": true,
+    "time_zone": "America/New_York",
+    "open_overdue": "",
+    "open_today": "",
+    "open_future": "",
+    "completed": "",
+    "canceled": "",
+    "dateless": "",
+    "total": "",
+    "chip_upcoming": "",
+    "chip_overdue": "",
+    "chip_completed": "",
+    "chip_all": "",
+    "today_scope_excl_canceled": "",
+    "canceled_due_today": "",
+    "all_minus_tabs": "",
+    "seeded_at": "",
+    "decays_at_utc": "",
+    "_notes": "VCST-6077 COUNT EXPECTATIONS for a browser switched to America/New_York (Test Model scenario 18). Same fields as SR_TASK_GROUPS, computed by the seeder from the PERSISTED instants classified in New York's local day — so all counts are EMPTY here and live only in aliases.<env>.json. Seeded with a CEST lane zone, the 00:00-CEST edge row becomes New York's YESTERDAY (overdue) and the 23:30-New-York row becomes today; overdue and canceled then tie at 3 in this view, which is acceptable only because canceled has no chip. DECAY: due dates are WALL-CLOCK RELATIVE and recomputed at seed time; the browser's day ends at LOCAL midnight (22:00Z for a CEST lane), and SR_TASK_GROUPS.decays_at_utc in aliases.<env>.json names the instant. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks — it tears down every AGENT-TEST-TASK row of the rep and recreates all 22). Tasks are PRIVATE to their owning rep, so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed); canceled/dateless steps also use the admin token. Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
   },
   "BARCODE_STORE": {
     "_inline": true,
@@ -9265,6 +9576,21 @@
     },
     "notes": "VCST-5883 — a SECOND buyer in the SAME organization as the returns buyer (USER_EMAIL): the negative actor for \"a colleague cannot act on another buyer's return\". It is the existing USER2 persona; the seeder verifies same-org membership live via me.contact.organizations and writes the ids to aliases.<env>.json; it creates nothing. Password = {{USER2_PASSWORD}} (layered env). If USER2 is not in the buyer's org on an env the seeder writes nothing and reports FIXTURE-GAP."
   },
+  "RETURNS_AUTH_BUYER": {
+    "_inline": true,
+    "seed": "seed:returns:decisions",
+    "email": "agent-test-retdec-buyer@yopmail.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "name": "AGENT-TEST-RetDec Buyer",
+    "store_id": "B2B-store",
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "name": "name",
+      "store_id": "store_id"
+    },
+    "notes": "VCST-5883 — the DEDICATED buyer that owns every RETURNS_AUTH_* order and return. A public yopmail inbox (never the env persona USER, whose USER_EMAIL can be a real mailbox: one seed sends ~20 order/return notifications), a Customer account on B2B-store with NO organization. Sign in with [AUTH role=RETURNS_AUTH_BUYER]. Find-or-created by `TEST_ENV=<env> npm run seed:returns:decisions` (or `-- --buyer-only`) via user-provision ensurePersonalAccount; the seeder refuses to write as any other buyer. Spec: DECISION_BUYER in scripts/seed-data/orders/return-decisions-specs.mjs; guard npm run td:validate:orders §9 pins this entry to it. Password {{DEFAULT_TEST_PASSWORD}} (layered env, never a literal). A full `npm run seed:returns:decisions:teardown` deletes it."
+  },
   "RETURNS_AGENT_NO_AUTHORIZE": {
     "seed": "seed:rbac",
     "_inline": true,
@@ -9500,5 +9826,1039 @@
     "userId": "",
     "contactId": "",
     "notes": "AGENT-TEST personal (no-org) storefront customer replacing the real external mailbox {{PERSONAL_USER_VIRTO}} used to point at. Re-points {{PERSONAL_USER_VIRTO}} / {{PERSONAL_USER_VIRTO_PASSWORD}}. No org membership by design (B2C-ORG-031 asserts a non-org user sees default price). Owned by scripts/seed-data/edge-cases (npm run seed:edge-cases; guard npm run td:validate:edge-cases). Runtime ids are EMPTY here by design and come from aliases.<env>.json after the seeder runs — an unseeded env resolves them to \"\" (a clear miss)."
+  },
+  "ORG_RET_VIEWER_ROLE": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "id": "agent-test-org-ret-viewer",
+    "name": "AGENT-TEST-Org-Returns-Viewer",
+    "permissions": "xapi:my_organization:return:view",
+    "fields": {
+      "id": "id",
+      "name": "name",
+      "permissions": "permissions"
+    },
+    "_notes": "VCST-5884 — DEDICATED role holding ONLY [xapi:my_organization:return:view]. Id is PINNED (PUT-upserted, identical on every env). No pre-existing role (Organization maintainer or any shared one) is edited or granted to — the default-role question is the PO's. STATED LIMITS: (1) a case asserting \"no role holds xapi:my_organization:return:view out of the box\" must EXCLUDE AGENT-TEST- roles — these two exist by design; (2) a case that revokes a grant removes it from an AGENT-TEST MEMBERSHIP (or account), never edits this role; a re-seed restores it. Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
+  },
+  "ORG_RET_VIEW_SUBMIT_ROLE": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "id": "agent-test-org-ret-view-submit",
+    "name": "AGENT-TEST-Org-Returns-View-Submit",
+    "permissions": "xapi:my_organization:return:view;xapi:my_organization:return:submit",
+    "fields": {
+      "id": "id",
+      "name": "name",
+      "permissions": "permissions"
+    },
+    "_notes": "VCST-5884 — DEDICATED role holding ONLY [xapi:my_organization:return:view, xapi:my_organization:return:submit]. Id is PINNED (PUT-upserted, identical on every env). No pre-existing role (Organization maintainer or any shared one) is edited or granted to — the default-role question is the PO's. STATED LIMITS: (1) a case asserting \"no role holds xapi:my_organization:return:view out of the box\" must EXCLUDE AGENT-TEST- roles — these two exist by design; (2) a case that revokes a grant removes it from an AGENT-TEST MEMBERSHIP (or account), never edits this role; a re-seed restores it. Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
+  },
+  "ORG_RET_VIEWER_ORG": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "name": "AGENT-TEST-Org-RetViewer",
+    "email": "agent-test-orgret-viewer-org@yopmail.com",
+    "fields": {
+      "id": "id",
+      "name": "name",
+      "email": "email"
+    },
+    "_notes": "VCST-5884 — The organization under test: the buyer, every non-org-level holder and every blocking holder are members. Its email differs from every member's. STATED LIMITS: Its members: ORG_RET_BUYER (non-holder owner), ORG_RET_HOLDER_GLOBAL / _MEMBERSHIP / _SUBMIT, the four blocking holders, ORG_RET_BUYER_NOEMAIL and ORG_RET_MULTI_ORG (org Y). NO organization-level role (every member would inherit it). Returns in it are PER-RUN (cases create them; nothing is seeded here), so its organizationReturns count depends on what other lanes created — assert presence/absence of a NAMED return, never a total, unless the case created all of them. Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
+  },
+  "ORG_RET_ORGROLE_ORG": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "name": "AGENT-TEST-Org-RetOrgRole",
+    "email": "agent-test-orgret-orgrole-org@yopmail.com",
+    "fields": {
+      "id": "id",
+      "name": "name",
+      "email": "email"
+    },
+    "_notes": "VCST-5884 — Carries the view role as an ORGANIZATION-LEVEL role — inherited by every member, so it holds only the org-level holder and its own buyer. STATED LIMITS: Carries ORG_RET_VIEWER_ROLE as an ORGANIZATION-LEVEL role, which EVERY member inherits — ORG_RET_ORGROLE_BUYER therefore holds view too (its token carries 3 permissions). Only HOLDER_ORGROLE + ORGROLE_BUYER are members. Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
+  },
+  "ORG_RET_OTHER_ORG": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "name": "AGENT-TEST-Org-RetOther",
+    "email": "agent-test-orgret-other-org@yopmail.com",
+    "fields": {
+      "id": "id",
+      "name": "name",
+      "email": "email"
+    },
+    "_notes": "VCST-5884 — A second ordinary organization owning ONE submitted return — the cross-organization leak probe. STATED LIMITS: Owns ORG_RET_OTHER_ORG_RETURN. No viewer-org holder is a member. Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
+  },
+  "ORG_RET_SAME_ADDRESS_ORG": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "name": "AGENT-TEST-Org-RetSameAddress",
+    "email": "agent-test-orgret-sameaddr-buyer@yopmail.com",
+    "email_upper": "AGENT-TEST-ORGRET-SAMEADDR-BUYER@yopmail.com",
+    "fields": {
+      "id": "id",
+      "name": "name",
+      "email": "email",
+      "email_upper": "email_upper"
+    },
+    "_notes": "VCST-5884 — Its email EQUALS its buyer's (the order address the buyer email is sent to) — the \"no second email\" boundary. STATED LIMITS: email == ORG_RET_SAME_ADDRESS_BUYER's address (account, contact AND order addresses). email_upper is the same mailbox with the local part upper-cased: the org stores ONE address, so the mixed-case row WRITES email_upper onto this AGENT-TEST org in its STEP and restores email in Cleanup (per-run). Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
+  },
+  "ORG_RET_NOEMAIL_ORG": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "name": "AGENT-TEST-Org-RetNoEmail",
+    "fields": {
+      "id": "id",
+      "name": "name"
+    },
+    "_notes": "VCST-5884 — No email on the organization (Member.Emails empty) — the org copy has nowhere to go. STATED LIMITS: Member.Emails is EMPTY (no `email` field on purpose). Its buyer ORG_RET_NOEMAIL_ORG_BUYER has an email, so the buyer email must still go. Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
+  },
+  "ORG_RET_LONG_NAME_ORG": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "name": "AGENT-TEST-Org-RetLongName International Procurement Service",
+    "email": "agent-test-orgret-longname-org@yopmail.com",
+    "fields": {
+      "id": "id",
+      "name": "name",
+      "email": "email"
+    },
+    "_notes": "VCST-5884 — 60-character name for the organization tab label; its only member is a holder with a 32-character unbroken name. STATED LIMITS: Name is exactly 60 characters with spaces between words. Its only member ORG_RET_LONG_NAME_BUYER is a holder. Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
+  },
+  "ORG_RET_HOME_ORG": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "name": "AGENT-TEST-Org-RetMultiHome",
+    "email": "agent-test-orgret-home-org@yopmail.com",
+    "fields": {
+      "id": "id",
+      "name": "name",
+      "email": "email"
+    },
+    "_notes": "VCST-5884 — Organization X of the multi-org contact: the contact is an ordinary member here, WITHOUT the permission. STATED LIMITS: Organization X of ORG_RET_MULTI_ORG (ordinary member, no permission). Nothing else. Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
+  },
+  "ORG_RET_BUYER": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "email": "agent-test-orgret-buyer@yopmail.com",
+    "login": "agent-test-orgret-buyer@yopmail.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "name": "AGENT-TEST-OrgRet Ketterby",
+    "store_id": "B2B-store",
+    "fields": {
+      "email": "email",
+      "login": "login",
+      "password": "password",
+      "name": "name",
+      "store_id": "store_id",
+      "userId": "userId",
+      "contactId": "contactId",
+      "organizationId": "organizationId",
+      "membershipId": "membershipId",
+      "orderId": "orderId",
+      "orderNumber": "orderNumber",
+      "orderOrganizationId": "orderOrganizationId",
+      "lineAItemId": "lineAItemId",
+      "lineASku": "lineASku",
+      "lineAOrderedQuantity": "lineAOrderedQuantity",
+      "lineBItemId": "lineBItemId",
+      "lineBSku": "lineBSku",
+      "lineBOrderedQuantity": "lineBOrderedQuantity",
+      "seededAt": "seededAt",
+      "spare1OrderId": "spare1OrderId",
+      "spare1OrderNumber": "spare1OrderNumber",
+      "spare1LineAItemId": "spare1LineAItemId",
+      "spare1LineBItemId": "spare1LineBItemId",
+      "spare1SeededAt": "spare1SeededAt",
+      "spare2OrderId": "spare2OrderId",
+      "spare2OrderNumber": "spare2OrderNumber",
+      "spare2LineAItemId": "spare2LineAItemId",
+      "spare2LineBItemId": "spare2LineBItemId",
+      "spare2SeededAt": "spare2SeededAt",
+      "spare3OrderId": "spare3OrderId",
+      "spare3OrderNumber": "spare3OrderNumber",
+      "spare3LineAItemId": "spare3LineAItemId",
+      "spare3LineBItemId": "spare3LineBItemId",
+      "spare3SeededAt": "spare3SeededAt",
+      "spare4OrderId": "spare4OrderId",
+      "spare4OrderNumber": "spare4OrderNumber",
+      "spare4LineAItemId": "spare4LineAItemId",
+      "spare4LineBItemId": "spare4LineBItemId",
+      "spare4SeededAt": "spare4SeededAt",
+      "spare5OrderId": "spare5OrderId",
+      "spare5OrderNumber": "spare5OrderNumber",
+      "spare5LineAItemId": "spare5LineAItemId",
+      "spare5LineBItemId": "spare5LineBItemId",
+      "spare5SeededAt": "spare5SeededAt",
+      "spare6OrderId": "spare6OrderId",
+      "spare6OrderNumber": "spare6OrderNumber",
+      "spare6LineAItemId": "spare6LineAItemId",
+      "spare6LineBItemId": "spare6LineBItemId",
+      "spare6SeededAt": "spare6SeededAt",
+      "spare7OrderId": "spare7OrderId",
+      "spare7OrderNumber": "spare7OrderNumber",
+      "spare7LineAItemId": "spare7LineAItemId",
+      "spare7LineBItemId": "spare7LineBItemId",
+      "spare7SeededAt": "spare7SeededAt"
+    },
+    "_notes": "VCST-5884 — The returns OWNER in the viewer organization. A NON-holder (org-employee only), so its own token never opens the org tab. STATED LIMITS: Memberships — VIEWER: membership roles [org-employee], status Approved; global roles [none]; isAdministrator false. Order AGENT-TEST-ORD-RET-ORG-BUYER: Completed, ONE shipment delivered on the seed day, lineA ordered 40 / lineB 25 (different products, live-discovered). Returnable until the delivery ages out of Return.WindowDays (30 on vcst) — re-seed after that (the seeder rebuilds a stale order, which DELETES the returns on it). Every return a case creates on it is PER-RUN and TERMINAL once submitted/decided/cancelled; an APPROVED return keeps holding units, so after many runs re-seed with --fresh. Its order address email = its account email ≠ ORG_RET_VIEWER_ORG.email. RETURNABLE CAPACITY (round 3): 7 SPARE order(s) AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-1, AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-2, AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-3, AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-4, AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-5, AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-6, AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-7 — same organization, same two products, lineA 40 / lineB 25, delivered on their seed day — 16 independent returnable lines in all (floor 16: a storefront return defaults to a line's FULL quantity, so plan one line per return). Fields spare<N>OrderId / spare<N>OrderNumber / spare<N>LineAItemId / spare<N>LineBItemId (N = 1..7); lineA/lineB SKUs equal lineASku/lineBSku. Spares are ensured without touching the main order: `TEST_ENV=<env> npm run seed:returns:org -- --spares-only`. Password {{DEFAULT_TEST_PASSWORD}} (layered env, never a literal). Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
+  },
+  "ORG_RET_HOLDER_GLOBAL": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "email": "agent-test-orgret-holder-global@yopmail.com",
+    "login": "agent-test-orgret-holder-global@yopmail.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "name": "AGENT-TEST-OrgRet HolderGlobal",
+    "store_id": "B2B-store",
+    "fields": {
+      "email": "email",
+      "login": "login",
+      "password": "password",
+      "name": "name",
+      "store_id": "store_id",
+      "userId": "userId",
+      "contactId": "contactId",
+      "organizationId": "organizationId",
+      "membershipId": "membershipId"
+    },
+    "_notes": "VCST-5884 — Holds the view role as a GLOBAL account role; its membership in the viewer org carries no role. STATED LIMITS: Memberships — VIEWER: membership roles [none], status Approved; global roles [agent-test-org-ret-viewer]; isAdministrator false. No order of its own. Password {{DEFAULT_TEST_PASSWORD}} (layered env, never a literal). Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
+  },
+  "ORG_RET_HOLDER_MEMBERSHIP": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "email": "agent-test-orgret-holder-membership@yopmail.com",
+    "login": "agent-test-orgret-holder-membership@yopmail.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "name": "AGENT-TEST-OrgRet HolderMembership",
+    "store_id": "B2B-store",
+    "fields": {
+      "email": "email",
+      "login": "login",
+      "password": "password",
+      "name": "name",
+      "store_id": "store_id",
+      "userId": "userId",
+      "contactId": "contactId",
+      "organizationId": "organizationId",
+      "membershipId": "membershipId",
+      "orderId": "orderId",
+      "orderNumber": "orderNumber",
+      "orderOrganizationId": "orderOrganizationId",
+      "lineAItemId": "lineAItemId",
+      "lineASku": "lineASku",
+      "lineAOrderedQuantity": "lineAOrderedQuantity",
+      "lineBItemId": "lineBItemId",
+      "lineBSku": "lineBSku",
+      "lineBOrderedQuantity": "lineBOrderedQuantity",
+      "seededAt": "seededAt"
+    },
+    "_notes": "VCST-5884 — Holds EXACTLY the view permission and nothing else, as a MEMBERSHIP role in the viewer org. The primary holder that pairs with ORG_RET_BUYER; has its own order so \"the viewer's own return stays actionable\" is testable. STATED LIMITS: Memberships — VIEWER: membership roles [agent-test-org-ret-viewer], status Approved; global roles [none]; isAdministrator false. Order AGENT-TEST-ORD-RET-ORG-HOLDER-MEMBERSHIP: Completed, ONE shipment delivered on the seed day, lineA ordered 40 / lineB 25 (different products, live-discovered). Returnable until the delivery ages out of Return.WindowDays (30 on vcst) — re-seed after that (the seeder rebuilds a stale order, which DELETES the returns on it). Every return a case creates on it is PER-RUN and TERMINAL once submitted/decided/cancelled; an APPROVED return keeps holding units, so after many runs re-seed with --fresh. Use THIS holder with ORG_RET_BUYER (same org). The plans paired ORG_RET_HOLDER_ORGROLE with ORG_RET_BUYER — that is impossible: an organization-level role would make every viewer-org member a holder. Password {{DEFAULT_TEST_PASSWORD}} (layered env, never a literal). Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
+  },
+  "ORG_RET_HOLDER_SUBMIT": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "email": "agent-test-orgret-holder-submit@yopmail.com",
+    "login": "agent-test-orgret-holder-submit@yopmail.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "name": "AGENT-TEST-OrgRet HolderSubmit",
+    "store_id": "B2B-store",
+    "fields": {
+      "email": "email",
+      "login": "login",
+      "password": "password",
+      "name": "name",
+      "store_id": "store_id",
+      "userId": "userId",
+      "contactId": "contactId",
+      "organizationId": "organizationId",
+      "membershipId": "membershipId"
+    },
+    "_notes": "VCST-5884 — Holds view AND the (unchecked) submit permission as a membership role — must still change nothing on a colleague's return. STATED LIMITS: Memberships — VIEWER: membership roles [agent-test-org-ret-view-submit], status Approved; global roles [none]; isAdministrator false. No order of its own. Password {{DEFAULT_TEST_PASSWORD}} (layered env, never a literal). Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
+  },
+  "ORG_RET_HOLDER_LOCKED": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "email": "agent-test-orgret-holder-locked@yopmail.com",
+    "login": "agent-test-orgret-holder-locked@yopmail.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "name": "AGENT-TEST-OrgRet HolderLocked",
+    "store_id": "B2B-store",
+    "fields": {
+      "email": "email",
+      "login": "login",
+      "password": "password",
+      "name": "name",
+      "store_id": "store_id",
+      "userId": "userId",
+      "contactId": "contactId",
+      "organizationId": "organizationId",
+      "membershipId": "membershipId"
+    },
+    "_notes": "VCST-5884 — HOLDER_MEMBERSHIP with the membership LOCKED (permanent, status Approved) — the lock is the only variable. STATED LIMITS: Memberships — VIEWER: membership roles [agent-test-org-ret-viewer], status Approved, LOCKED; global roles [none]; isAdministrator false. No order of its own. Blocked AT REST, so it cannot obtain a token \"issued before the block\" without a write: the case first restores the membership (Approved / unlock) on this AGENT-TEST account, signs in, re-applies the block, and Cleanup leaves it blocked again (a re-seed also restores it). Observed sign-in on vcst 2026-10-08: the org-scoped grant is 200 but the token carries NO organization and NO permission. Password {{DEFAULT_TEST_PASSWORD}} (layered env, never a literal). Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
+  },
+  "ORG_RET_HOLDER_INVITED": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "email": "agent-test-orgret-holder-invited@yopmail.com",
+    "login": "agent-test-orgret-holder-invited@yopmail.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "name": "AGENT-TEST-OrgRet HolderInvited",
+    "store_id": "B2B-store",
+    "fields": {
+      "email": "email",
+      "login": "login",
+      "password": "password",
+      "name": "name",
+      "store_id": "store_id",
+      "userId": "userId",
+      "contactId": "contactId",
+      "organizationId": "organizationId",
+      "membershipId": "membershipId"
+    },
+    "_notes": "VCST-5884 — HOLDER_MEMBERSHIP with membership status Invited — the status is the only variable. STATED LIMITS: Memberships — VIEWER: membership roles [agent-test-org-ret-viewer], status Invited; global roles [none]; isAdministrator false. No order of its own. Blocked AT REST, so it cannot obtain a token \"issued before the block\" without a write: the case first restores the membership (Approved / unlock) on this AGENT-TEST account, signs in, re-applies the block, and Cleanup leaves it blocked again (a re-seed also restores it). Observed sign-in on vcst 2026-10-08: the org-scoped grant is 400 invalid_grant; the plain grant (no organization_id) is 200 with no organization and no permission. Password {{DEFAULT_TEST_PASSWORD}} (layered env, never a literal). Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
+  },
+  "ORG_RET_HOLDER_REJECTED": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "email": "agent-test-orgret-holder-rejected@yopmail.com",
+    "login": "agent-test-orgret-holder-rejected@yopmail.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "name": "AGENT-TEST-OrgRet HolderRejected",
+    "store_id": "B2B-store",
+    "fields": {
+      "email": "email",
+      "login": "login",
+      "password": "password",
+      "name": "name",
+      "store_id": "store_id",
+      "userId": "userId",
+      "contactId": "contactId",
+      "organizationId": "organizationId",
+      "membershipId": "membershipId"
+    },
+    "_notes": "VCST-5884 — HOLDER_MEMBERSHIP with membership status Rejected — the status is the only variable. STATED LIMITS: Memberships — VIEWER: membership roles [agent-test-org-ret-viewer], status Rejected; global roles [none]; isAdministrator false. No order of its own. Blocked AT REST, so it cannot obtain a token \"issued before the block\" without a write: the case first restores the membership (Approved / unlock) on this AGENT-TEST account, signs in, re-applies the block, and Cleanup leaves it blocked again (a re-seed also restores it). Observed sign-in on vcst 2026-10-08: the org-scoped grant is 400 invalid_grant; the plain grant (no organization_id) is 200 with no organization and no permission. Password {{DEFAULT_TEST_PASSWORD}} (layered env, never a literal). Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
+  },
+  "ORG_RET_HOLDER_DELETED": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "email": "agent-test-orgret-holder-deleted@yopmail.com",
+    "login": "agent-test-orgret-holder-deleted@yopmail.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "name": "AGENT-TEST-OrgRet HolderDeleted",
+    "store_id": "B2B-store",
+    "fields": {
+      "email": "email",
+      "login": "login",
+      "password": "password",
+      "name": "name",
+      "store_id": "store_id",
+      "userId": "userId",
+      "contactId": "contactId",
+      "organizationId": "organizationId",
+      "membershipId": "membershipId"
+    },
+    "_notes": "VCST-5884 — HOLDER_MEMBERSHIP with membership status Deleted — the status is the only variable. STATED LIMITS: Memberships — VIEWER: membership roles [agent-test-org-ret-viewer], status Deleted; global roles [none]; isAdministrator false. No order of its own. Blocked AT REST, so it cannot obtain a token \"issued before the block\" without a write: the case first restores the membership (Approved / unlock) on this AGENT-TEST account, signs in, re-applies the block, and Cleanup leaves it blocked again (a re-seed also restores it). Observed sign-in on vcst 2026-10-08: the org-scoped grant is 400 invalid_grant; the plain grant (no organization_id) is 200 with no organization and no permission. Password {{DEFAULT_TEST_PASSWORD}} (layered env, never a literal). Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
+  },
+  "ORG_RET_BUYER_NOEMAIL": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "email": "agent-test-orgret-buyer-noemail",
+    "login": "agent-test-orgret-buyer-noemail",
+    "account_email": "agent-test-orgret-buyer-noemail@yopmail.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "name": "AGENT-TEST-OrgRet NoEmailBuyer",
+    "store_id": "B2B-store",
+    "fields": {
+      "email": "email",
+      "login": "login",
+      "account_email": "account_email",
+      "password": "password",
+      "name": "name",
+      "store_id": "store_id",
+      "userId": "userId",
+      "contactId": "contactId",
+      "organizationId": "organizationId",
+      "membershipId": "membershipId",
+      "orderId": "orderId",
+      "orderNumber": "orderNumber",
+      "orderOrganizationId": "orderOrganizationId",
+      "lineAItemId": "lineAItemId",
+      "lineASku": "lineASku",
+      "lineAOrderedQuantity": "lineAOrderedQuantity",
+      "lineBItemId": "lineBItemId",
+      "lineBSku": "lineBSku",
+      "lineBOrderedQuantity": "lineBOrderedQuantity",
+      "seededAt": "seededAt"
+    },
+    "_notes": "VCST-5884 — A buyer whose CONTACT and ORDER ADDRESSES carry no email; the login is a plain user name. The platform refuses an account without one, so the ACCOUNT keeps <login>@yopmail.com — the last rung of the buyer-address fallback (order address → contact → account). NOT \"no email anywhere\" (FIXTURE-GAP for that shape). STATED LIMITS: Memberships — VIEWER: membership roles [org-employee], status Approved; global roles [none]; isAdministrator false. Order AGENT-TEST-ORD-RET-ORG-BUYER-NOEMAIL: Completed, ONE shipment delivered on the seed day, lineA ordered 40 / lineB 25 (different products, live-discovered). Returnable until the delivery ages out of Return.WindowDays (30 on vcst) — re-seed after that (the seeder rebuilds a stale order, which DELETES the returns on it). Every return a case creates on it is PER-RUN and TERMINAL once submitted/decided/cancelled; an APPROVED return keeps holding units, so after many runs re-seed with --fresh. FIXTURE-GAP for \"no email ANYWHERE\": users/create refuses an account without one (\"Email '' is invalid.\") and the update keeps it, so the buyer email resolves to account_email (ReturnBuyerResolver: contact email ?? account email; order address first). What this alias proves is the FALLBACK, not the absence. Sign in with `login` (a user name, not an email). `email` is NOT an address: it holds the LOGIN because [AUTH role=…] (scripts/lib/graphql-auth.ts resolveRole) sends @td(<role>.email) as the password-grant `username` and resolves no other field — without it RET-ORG-038 aborted at AUTH (REG-2026-10-08-1840). The grant accepts the user name (vcst 2026-10-09: 200 for both login and account_email). Never use `email` as the buyer's mailbox — that is `account_email`; td:validate:returns-org pins email = login. Password {{DEFAULT_TEST_PASSWORD}} (layered env, never a literal). Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
+  },
+  "ORG_RET_MULTI_ORG": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "email": "agent-test-orgret-multi@yopmail.com",
+    "login": "agent-test-orgret-multi@yopmail.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "name": "AGENT-TEST-OrgRet MultiOrg",
+    "store_id": "B2B-store",
+    "fields": {
+      "email": "email",
+      "login": "login",
+      "password": "password",
+      "name": "name",
+      "store_id": "store_id",
+      "userId": "userId",
+      "contactId": "contactId",
+      "organizationId": "organizationId",
+      "membershipId": "membershipId",
+      "org_x_id": "org_x_id",
+      "org_y_id": "org_y_id",
+      "org_x_membership_id": "org_x_membership_id",
+      "org_y_membership_id": "org_y_membership_id",
+      "orderId": "orderId",
+      "orderNumber": "orderNumber",
+      "orderOrganizationId": "orderOrganizationId",
+      "lineAItemId": "lineAItemId",
+      "lineASku": "lineASku",
+      "lineAOrderedQuantity": "lineAOrderedQuantity",
+      "lineBItemId": "lineBItemId",
+      "lineBSku": "lineBSku",
+      "lineBOrderedQuantity": "lineBOrderedQuantity",
+      "seededAt": "seededAt"
+    },
+    "_notes": "VCST-5884 — A contact in TWO organizations holding the permission in ONE (Y = viewer org, membership role) and not in the other (X = home org). Its own order is raised for X. STATED LIMITS: Memberships — HOME: membership roles [org-employee], status Approved | VIEWER: membership roles [agent-test-org-ret-viewer], status Approved; global roles [none]; isAdministrator false. Order AGENT-TEST-ORD-RET-ORG-MULTI: Completed, ONE shipment delivered on the seed day, lineA ordered 40 / lineB 25 (different products, live-discovered). Returnable until the delivery ages out of Return.WindowDays (30 on vcst) — re-seed after that (the seeder rebuilds a stale order, which DELETES the returns on it). Every return a case creates on it is PER-RUN and TERMINAL once submitted/decided/cancelled; an APPROVED return keeps holding units, so after many runs re-seed with --fresh. Replaces MULTI_ORG_TF_BR for VCST-5884: the shared account could hold the permission in only one org by editing a shared role or adding a third membership other suites count. The plain grant (no organization_id) is NOT deterministic: it picked HOME on the first seed and the VIEWER org after the re-seed (vcst 2026-10-08) — always pass organization_id = org_x_id or org_y_id. Password {{DEFAULT_TEST_PASSWORD}} (layered env, never a literal). Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
+  },
+  "ORG_RET_HOLDER_ORGROLE": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "email": "agent-test-orgret-holder-orgrole@yopmail.com",
+    "login": "agent-test-orgret-holder-orgrole@yopmail.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "name": "AGENT-TEST-OrgRet HolderOrgRole",
+    "store_id": "B2B-store",
+    "fields": {
+      "email": "email",
+      "login": "login",
+      "password": "password",
+      "name": "name",
+      "store_id": "store_id",
+      "userId": "userId",
+      "contactId": "contactId",
+      "organizationId": "organizationId",
+      "membershipId": "membershipId"
+    },
+    "_notes": "VCST-5884 — Holds the view role ONLY through the ORGANIZATION-LEVEL role of ORG_RET_ORGROLE_ORG (membership carries no role, no global role). STATED LIMITS: Memberships — ORGROLE: membership roles [none], status Approved; global roles [none]; isAdministrator false. No order of its own. Lives in ORG_RET_ORGROLE_ORG, NOT in the viewer org — its colleague is ORG_RET_ORGROLE_BUYER. Pair it with ORG_RET_BUYER and organizationReturns(viewer org) is Forbidden for a data reason. Password {{DEFAULT_TEST_PASSWORD}} (layered env, never a literal). Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
+  },
+  "ORG_RET_ORGROLE_BUYER": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "email": "agent-test-orgret-orgrole-buyer@yopmail.com",
+    "login": "agent-test-orgret-orgrole-buyer@yopmail.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "name": "AGENT-TEST-OrgRet OrgRoleBuyer",
+    "store_id": "B2B-store",
+    "fields": {
+      "email": "email",
+      "login": "login",
+      "password": "password",
+      "name": "name",
+      "store_id": "store_id",
+      "userId": "userId",
+      "contactId": "contactId",
+      "organizationId": "organizationId",
+      "membershipId": "membershipId",
+      "orderId": "orderId",
+      "orderNumber": "orderNumber",
+      "orderOrganizationId": "orderOrganizationId",
+      "lineAItemId": "lineAItemId",
+      "lineASku": "lineASku",
+      "lineAOrderedQuantity": "lineAOrderedQuantity",
+      "lineBItemId": "lineBItemId",
+      "lineBSku": "lineBSku",
+      "lineBOrderedQuantity": "lineBOrderedQuantity",
+      "seededAt": "seededAt",
+      "spare1OrderId": "spare1OrderId",
+      "spare1OrderNumber": "spare1OrderNumber",
+      "spare1LineAItemId": "spare1LineAItemId",
+      "spare1LineBItemId": "spare1LineBItemId",
+      "spare1SeededAt": "spare1SeededAt"
+    },
+    "_notes": "VCST-5884 — The colleague whose return HOLDER_ORGROLE reads. It inherits the org-level role too (every member does) — irrelevant to what it is used for. STATED LIMITS: Memberships — ORGROLE: membership roles [org-employee], status Approved; global roles [none]; isAdministrator false. Order AGENT-TEST-ORD-RET-ORG-ORGROLE-BUYER: Completed, ONE shipment delivered on the seed day, lineA ordered 40 / lineB 25 (different products, live-discovered). Returnable until the delivery ages out of Return.WindowDays (30 on vcst) — re-seed after that (the seeder rebuilds a stale order, which DELETES the returns on it). Every return a case creates on it is PER-RUN and TERMINAL once submitted/decided/cancelled; an APPROVED return keeps holding units, so after many runs re-seed with --fresh. RETURNABLE CAPACITY (round 3): 1 SPARE order(s) AGENT-TEST-ORD-RET-ORG-ORGROLE-BUYER-SPARE-1 — same organization, same two products, lineA 40 / lineB 25, delivered on their seed day — 4 independent returnable lines in all (floor 3: a storefront return defaults to a line's FULL quantity, so plan one line per return). Fields spare<N>OrderId / spare<N>OrderNumber / spare<N>LineAItemId / spare<N>LineBItemId (N = 1..1); lineA/lineB SKUs equal lineASku/lineBSku. Spares are ensured without touching the main order: `TEST_ENV=<env> npm run seed:returns:org -- --spares-only`. Password {{DEFAULT_TEST_PASSWORD}} (layered env, never a literal). Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
+  },
+  "ORG_RET_OTHER_BUYER": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "email": "agent-test-orgret-other-buyer@yopmail.com",
+    "login": "agent-test-orgret-other-buyer@yopmail.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "name": "AGENT-TEST-OrgRet Vasquell",
+    "store_id": "B2B-store",
+    "fields": {
+      "email": "email",
+      "login": "login",
+      "password": "password",
+      "name": "name",
+      "store_id": "store_id",
+      "userId": "userId",
+      "contactId": "contactId",
+      "organizationId": "organizationId",
+      "membershipId": "membershipId",
+      "orderId": "orderId",
+      "orderNumber": "orderNumber",
+      "orderOrganizationId": "orderOrganizationId",
+      "lineAItemId": "lineAItemId",
+      "lineASku": "lineASku",
+      "lineAOrderedQuantity": "lineAOrderedQuantity",
+      "lineBItemId": "lineBItemId",
+      "lineBSku": "lineBSku",
+      "lineBOrderedQuantity": "lineBOrderedQuantity",
+      "seededAt": "seededAt",
+      "spare1OrderId": "spare1OrderId",
+      "spare1OrderNumber": "spare1OrderNumber",
+      "spare1LineAItemId": "spare1LineAItemId",
+      "spare1LineBItemId": "spare1LineBItemId",
+      "spare1SeededAt": "spare1SeededAt"
+    },
+    "_notes": "VCST-5884 — Owner of ORG_RET_OTHER_ORG_RETURN in the other organization. STATED LIMITS: Memberships — OTHER: membership roles [org-employee], status Approved; global roles [none]; isAdministrator false. Order AGENT-TEST-ORD-RET-ORG-OTHER-BUYER: Completed, ONE shipment delivered on the seed day, lineA ordered 40 / lineB 25 (different products, live-discovered). Returnable until the delivery ages out of Return.WindowDays (30 on vcst) — re-seed after that (the seeder rebuilds a stale order, which DELETES the returns on it). Every return a case creates on it is PER-RUN and TERMINAL once submitted/decided/cancelled; an APPROVED return keeps holding units, so after many runs re-seed with --fresh. RETURNABLE CAPACITY (round 3): 1 SPARE order(s) AGENT-TEST-ORD-RET-ORG-OTHER-BUYER-SPARE-1 — same organization, same two products, lineA 40 / lineB 25, delivered on their seed day — 4 independent returnable lines in all (floor 3: a storefront return defaults to a line's FULL quantity, so plan one line per return). Fields spare<N>OrderId / spare<N>OrderNumber / spare<N>LineAItemId / spare<N>LineBItemId (N = 1..1); lineA/lineB SKUs equal lineASku/lineBSku. Spares are ensured without touching the main order: `TEST_ENV=<env> npm run seed:returns:org -- --spares-only`. Password {{DEFAULT_TEST_PASSWORD}} (layered env, never a literal). Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
+  },
+  "ORG_RET_SAME_ADDRESS_BUYER": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "email": "agent-test-orgret-sameaddr-buyer@yopmail.com",
+    "login": "agent-test-orgret-sameaddr-buyer@yopmail.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "name": "AGENT-TEST-OrgRet SameAddress",
+    "store_id": "B2B-store",
+    "fields": {
+      "email": "email",
+      "login": "login",
+      "password": "password",
+      "name": "name",
+      "store_id": "store_id",
+      "userId": "userId",
+      "contactId": "contactId",
+      "organizationId": "organizationId",
+      "membershipId": "membershipId",
+      "orderId": "orderId",
+      "orderNumber": "orderNumber",
+      "orderOrganizationId": "orderOrganizationId",
+      "lineAItemId": "lineAItemId",
+      "lineASku": "lineASku",
+      "lineAOrderedQuantity": "lineAOrderedQuantity",
+      "lineBItemId": "lineBItemId",
+      "lineBSku": "lineBSku",
+      "lineBOrderedQuantity": "lineBOrderedQuantity",
+      "seededAt": "seededAt"
+    },
+    "_notes": "VCST-5884 — The buyer whose address (account, contact, order addresses) equals its organization's email. STATED LIMITS: Memberships — SAME_ADDRESS: membership roles [org-employee], status Approved; global roles [none]; isAdministrator false. Order AGENT-TEST-ORD-RET-ORG-SAME-ADDRESS-BUYER: Completed, ONE shipment delivered on the seed day, lineA ordered 40 / lineB 25 (different products, live-discovered). Returnable until the delivery ages out of Return.WindowDays (30 on vcst) — re-seed after that (the seeder rebuilds a stale order, which DELETES the returns on it). Every return a case creates on it is PER-RUN and TERMINAL once submitted/decided/cancelled; an APPROVED return keeps holding units, so after many runs re-seed with --fresh. Its account, contact and order addresses all equal ORG_RET_SAME_ADDRESS_ORG.email. Password {{DEFAULT_TEST_PASSWORD}} (layered env, never a literal). Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
+  },
+  "ORG_RET_NOEMAIL_ORG_BUYER": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "email": "agent-test-orgret-noemailorg-buyer@yopmail.com",
+    "login": "agent-test-orgret-noemailorg-buyer@yopmail.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "name": "AGENT-TEST-OrgRet NoEmailOrgBuyer",
+    "store_id": "B2B-store",
+    "fields": {
+      "email": "email",
+      "login": "login",
+      "password": "password",
+      "name": "name",
+      "store_id": "store_id",
+      "userId": "userId",
+      "contactId": "contactId",
+      "organizationId": "organizationId",
+      "membershipId": "membershipId",
+      "orderId": "orderId",
+      "orderNumber": "orderNumber",
+      "orderOrganizationId": "orderOrganizationId",
+      "lineAItemId": "lineAItemId",
+      "lineASku": "lineASku",
+      "lineAOrderedQuantity": "lineAOrderedQuantity",
+      "lineBItemId": "lineBItemId",
+      "lineBSku": "lineBSku",
+      "lineBOrderedQuantity": "lineBOrderedQuantity",
+      "seededAt": "seededAt"
+    },
+    "_notes": "VCST-5884 — A normal buyer (with email) in the organization that has none. STATED LIMITS: Memberships — NOEMAIL: membership roles [org-employee], status Approved; global roles [none]; isAdministrator false. Order AGENT-TEST-ORD-RET-ORG-NOEMAIL-ORG-BUYER: Completed, ONE shipment delivered on the seed day, lineA ordered 40 / lineB 25 (different products, live-discovered). Returnable until the delivery ages out of Return.WindowDays (30 on vcst) — re-seed after that (the seeder rebuilds a stale order, which DELETES the returns on it). Every return a case creates on it is PER-RUN and TERMINAL once submitted/decided/cancelled; an APPROVED return keeps holding units, so after many runs re-seed with --fresh. Password {{DEFAULT_TEST_PASSWORD}} (layered env, never a literal). Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
+  },
+  "ORG_RET_LONG_NAME_BUYER": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "email": "agent-test-orgret-longname-buyer@yopmail.com",
+    "login": "agent-test-orgret-longname-buyer@yopmail.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "name": "AGENTTESTRetUnbrokenBuyerNameXyz",
+    "store_id": "B2B-store",
+    "fields": {
+      "email": "email",
+      "login": "login",
+      "password": "password",
+      "name": "name",
+      "store_id": "store_id",
+      "userId": "userId",
+      "contactId": "contactId",
+      "organizationId": "organizationId",
+      "membershipId": "membershipId",
+      "orderId": "orderId",
+      "orderNumber": "orderNumber",
+      "orderOrganizationId": "orderOrganizationId",
+      "lineAItemId": "lineAItemId",
+      "lineASku": "lineASku",
+      "lineAOrderedQuantity": "lineAOrderedQuantity",
+      "lineBItemId": "lineBItemId",
+      "lineBSku": "lineBSku",
+      "lineBOrderedQuantity": "lineBOrderedQuantity",
+      "seededAt": "seededAt",
+      "spare1OrderId": "spare1OrderId",
+      "spare1OrderNumber": "spare1OrderNumber",
+      "spare1LineAItemId": "spare1LineAItemId",
+      "spare1LineBItemId": "spare1LineBItemId",
+      "spare1SeededAt": "spare1SeededAt"
+    },
+    "_notes": "VCST-5884 — A holder (membership view role) in the 60-character organization whose order customerName is a 32-character unbroken string: its own returns fill the org tab's Buyer name column. STATED LIMITS: Memberships — LONG_NAME: membership roles [agent-test-org-ret-viewer], status Approved; global roles [none]; isAdministrator false. Order AGENT-TEST-ORD-RET-ORG-LONG-NAME-BUYER: Completed, ONE shipment delivered on the seed day, lineA ordered 40 / lineB 25 (different products, live-discovered). Returnable until the delivery ages out of Return.WindowDays (30 on vcst) — re-seed after that (the seeder rebuilds a stale order, which DELETES the returns on it). Every return a case creates on it is PER-RUN and TERMINAL once submitted/decided/cancelled; an APPROVED return keeps holding units, so after many runs re-seed with --fresh. Name is 32 letters with NO hyphen or space (the AGENT-TEST prefix is written AGENTTEST because a hyphen is a line-break opportunity). It is a holder, so it sees its own returns in the org tab; the order customerName carries the 32-char value, which is what a return snapshots. RETURNABLE CAPACITY (round 3): 1 SPARE order(s) AGENT-TEST-ORD-RET-ORG-LONG-NAME-BUYER-SPARE-1 — same organization, same two products, lineA 40 / lineB 25, delivered on their seed day — 4 independent returnable lines in all (floor 3: a storefront return defaults to a line's FULL quantity, so plan one line per return). Fields spare<N>OrderId / spare<N>OrderNumber / spare<N>LineAItemId / spare<N>LineBItemId (N = 1..1); lineA/lineB SKUs equal lineASku/lineBSku. Spares are ensured without touching the main order: `TEST_ENV=<env> npm run seed:returns:org -- --spares-only`. Password {{DEFAULT_TEST_PASSWORD}} (layered env, never a literal). Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
+  },
+  "ORG_RET_OTHER_ORG_RETURN": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "fields": {
+      "id": "id",
+      "number": "number",
+      "status": "status",
+      "orderId": "orderId",
+      "orderNumber": "orderNumber",
+      "organizationId": "organizationId"
+    },
+    "_notes": "VCST-5884 — the ONE seeded return: ORG_RET_OTHER_BUYER's return in ORG_RET_OTHER_ORG, submitted through xAPI (createReturn → submitReturn, status Requested, customerReference AGENT-TEST-RET-ORG-OTHER-R1). It must never appear for a viewer-org holder (organizationReturns, keyword by its number, return(id) → null). STATED LIMITS: no case may decide/cancel it — a later status is still a valid leak probe (the seeder reuses any non-Draft status) but a Draft is rebuilt. Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
+  },
+  "ORG_RET_OTHER_STORE_RETURN": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "fields": {
+      "id": "id",
+      "number": "number",
+      "status": "status",
+      "storeId": "storeId",
+      "orderId": "orderId",
+      "orderNumber": "orderNumber",
+      "organizationId": "organizationId"
+    },
+    "_notes": "VCST-5884 — a VIEWER-org return that sits in ANOTHER store (formerly a FIXTURE-GAP). ORG_RET_BUYER submits it in {{STORE_ID}} through xAPI (createReturn → submitReturn, customerReference AGENT-TEST-RET-ORG-OTHERSTORE-R1, one unit of lineB on its LAST spare order), then an administrator PUT /api/return moves it to {{STORE_ID_SECONDARY}} — the mechanism 050o RET-ORG-011 observed; no store setting is changed (Return.ReturnEnabled stays false on the target store). Organization stays ORG_RET_VIEWER_ORG. STATED LIMITS: no case may decide, cancel or move it back — the seeder rebuilds it when it is no longer Requested or no longer in the target store. A per-run case that needs to WRITE an other-store return still creates its own (FIFTH RULE). Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. `npm run seed:returns:org:teardown` (or `-- --teardown --only ORG_RET_OTHER_STORE_RETURN` for the return alone) removes it with zero residue."
+  },
+  "ORG_RET_LEAVER": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "email": "agent-test-orgret-leaver@yopmail.com",
+    "login": "agent-test-orgret-leaver@yopmail.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "name": "AGENT-TEST-OrgRet Leaver",
+    "store_id": "B2B-store",
+    "fields": {
+      "email": "email",
+      "login": "login",
+      "password": "password",
+      "name": "name",
+      "store_id": "store_id",
+      "userId": "userId",
+      "contactId": "contactId",
+      "organizationId": "organizationId",
+      "membershipId": "membershipId",
+      "orderId": "orderId",
+      "orderNumber": "orderNumber",
+      "orderOrganizationId": "orderOrganizationId",
+      "lineAItemId": "lineAItemId",
+      "lineASku": "lineASku",
+      "lineAOrderedQuantity": "lineAOrderedQuantity",
+      "lineBItemId": "lineBItemId",
+      "lineBSku": "lineBSku",
+      "lineBOrderedQuantity": "lineBOrderedQuantity",
+      "seededAt": "seededAt"
+    },
+    "_notes": "VCST-5884 — the DEPARTING buyer (S21): a second NON-holder buyer (org-employee membership, no global role, token carries no return permission) in ORG_RET_VIEWER_ORG, the same organization as ORG_RET_BUYER and the holders, with its own order so it can raise a return. STATED LIMITS: Memberships — VIEWER: membership roles [org-employee], status Approved; global roles [none]; isAdministrator false. Order AGENT-TEST-ORD-RET-ORG-LEAVER: Completed, ONE shipment delivered on the seed day, lineA ordered 40 / lineB 25 (different products, live-discovered), order address = this account's AGENT-TEST yopmail address. Returnable until the delivery ages out of Return.WindowDays (30 on vcst) — re-seed after that (a rebuild DELETES the returns on the order). PER-RUN MUTATION: the S21 cases REMOVE this membership (buyer leaves the organization) and RESTORE it in Cleanup; a re-seed also restores it (the seeder recreates a missing membership and re-links contact.organizations). Run the S21 cases serially — two lanes removing/restoring it at once collide. Returns it raises are per-run and TERMINAL once submitted/decided/cancelled; after it leaves, those returns keep the snapshot organization. Password {{DEFAULT_TEST_PASSWORD}} (layered env, never a literal). Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
+  },
+  "ORG_RET_EMPTY_ORG": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "name": "AGENT-TEST-Org-RetEmpty",
+    "email": "agent-test-orgret-empty-org@yopmail.com",
+    "fields": {
+      "id": "id",
+      "name": "name",
+      "email": "email"
+    },
+    "_notes": "VCST-5884 round 3 (REG-2026-10-12-1119 triage) — The ZERO-RETURNS organization (RET-ORG-032 empty leg): its only member is a view holder that owns no order, so no return can exist in it. For RET-ORG-032's EMPTY leg, which could not run on ORG_RET_LONG_NAME_ORG because other cases raise returns there. STATED LIMITS: exactly ONE member, ORG_RET_EMPTY_HOLDER (membership role agent-test-org-ret-viewer, no global role); NO org-level role; NO order is ever seeded in it and no persona raises one, so no return can snapshot it. EMPTINESS IS A LIVE STATE, NOT A GUARANTEE: any lane that raises a return or order for this organization breaks it until teardown — td:validate:returns-org:live [L1]/[L2] FAILS naming each offending return/order (REST POST /api/return/search {organizationId} with no status flag, so drafts and cancelled rows count). Never cite it as a buyer's organization. Seeded by `TEST_ENV=<env> npm run seed:returns:org:isolated` (scripts/seed-data/orders/seed-org-returns.mjs --isolated-only — never touches the shared organizations, the main/spare orders or the returns on them; the full `npm run seed:returns:org` also ensures it; spec org-returns-specs.mjs; guards npm run td:validate:returns-org + td:validate:returns-org:live). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:isolated:teardown` removes the isolated sets with zero residue."
+  },
+  "ORG_RET_EMPTY_HOLDER": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "email": "agent-test-orgret-empty-holder@yopmail.com",
+    "login": "agent-test-orgret-empty-holder@yopmail.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "name": "AGENT-TEST-OrgRet EmptyHolder",
+    "store_id": "B2B-store",
+    "fields": {
+      "email": "email",
+      "login": "login",
+      "password": "password",
+      "name": "name",
+      "store_id": "store_id",
+      "userId": "userId",
+      "contactId": "contactId",
+      "organizationId": "organizationId",
+      "membershipId": "membershipId"
+    },
+    "_notes": "VCST-5884 round 3 — The ONLY member of ORG_RET_EMPTY_ORG: holds the view permission through a membership role (ORG_RET_VIEWER_ROLE, assigned, never edited), owns NO order and is never a buyer — the organization tab it opens has nothing to list. STATED LIMITS: Memberships — EMPTY: membership roles [agent-test-org-ret-viewer], status Approved; global roles [none]; isAdministrator false. The token issued with organization_id = ORG_RET_EMPTY_ORG.id carries xapi:my_organization:return:view (read back by the seeder's sign-in check). NO order, NO spares, NEVER a buyer — a case that raises a return as this account breaks the empty state for every later run. Its organizationReturns is EMPTY only while td:validate:returns-org:live is green. Password {{DEFAULT_TEST_PASSWORD}} (layered env, never a literal). Seeded by `TEST_ENV=<env> npm run seed:returns:org:isolated` (scripts/seed-data/orders/seed-org-returns.mjs --isolated-only — never touches the shared organizations, the main/spare orders or the returns on them; the full `npm run seed:returns:org` also ensures it; spec org-returns-specs.mjs; guards npm run td:validate:returns-org + td:validate:returns-org:live). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:isolated:teardown` removes the isolated sets with zero residue."
+  },
+  "ORG_RET_RENAME_ORG": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "name": "AGENT-TEST-Org-RetRename",
+    "email": "agent-test-orgret-rename-org@yopmail.com",
+    "original_name": "AGENT-TEST-Org-RetRename",
+    "renamed_name": "AGENT-TEST-Org-RetRename-RENAMED",
+    "fields": {
+      "id": "id",
+      "name": "name",
+      "email": "email",
+      "original_name": "original_name",
+      "renamed_name": "renamed_name"
+    },
+    "_notes": "VCST-5884 round 3 (REG-2026-10-12-1119 triage) — The organization RET-ORG-028 RENAMES per run (and restores in Cleanup): its only member is ORG_RET_RENAME_BUYER, so a rename disturbs no other case. STATED LIMITS: exactly ONE member, ORG_RET_RENAME_BUYER; NO org-level role. PUT /api/organizations is a FULL REPLACE (vcst 2026-10-12): a body carrying only id/memberType/name/emails NULLS status (Approved -> null) and description; the membership survives. So the rename and the Cleanup restore should GET the organization and PUT it back whole with only name changed (restore name = original_name) — a minimal-body Cleanup restores the name but leaves status null. original_name (= name) is what RET-ORG-028 restores in Cleanup and what its returns must keep; renamed_name is the value its SETUP writes — both AGENT-TEST-prefixed and different, both read from the spec. PER-RUN MUTATION: the case renames it and restores it; run RET-ORG-028 serially (two lanes renaming at once collide). A run that died before Cleanup leaves it renamed — td:validate:returns-org:live [L4] FAILS, and the isolated seed restores the name (the seeder finds it by either name, so no duplicate is created and teardown still reaches it). Seeded by `TEST_ENV=<env> npm run seed:returns:org:isolated` (scripts/seed-data/orders/seed-org-returns.mjs --isolated-only — never touches the shared organizations, the main/spare orders or the returns on them; the full `npm run seed:returns:org` also ensures it; spec org-returns-specs.mjs; guards npm run td:validate:returns-org + td:validate:returns-org:live). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:isolated:teardown` removes the isolated sets with zero residue."
+  },
+  "ORG_RET_RENAME_BUYER": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "email": "agent-test-orgret-rename-buyer@yopmail.com",
+    "login": "agent-test-orgret-rename-buyer@yopmail.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "name": "AGENT-TEST-OrgRet RenameBuyer",
+    "store_id": "B2B-store",
+    "fields": {
+      "email": "email",
+      "login": "login",
+      "password": "password",
+      "name": "name",
+      "store_id": "store_id",
+      "userId": "userId",
+      "contactId": "contactId",
+      "organizationId": "organizationId",
+      "membershipId": "membershipId",
+      "orderId": "orderId",
+      "orderNumber": "orderNumber",
+      "orderOrganizationId": "orderOrganizationId",
+      "lineAItemId": "lineAItemId",
+      "lineASku": "lineASku",
+      "lineAOrderedQuantity": "lineAOrderedQuantity",
+      "lineBItemId": "lineBItemId",
+      "lineBSku": "lineBSku",
+      "lineBOrderedQuantity": "lineBOrderedQuantity",
+      "seededAt": "seededAt"
+    },
+    "_notes": "VCST-5884 round 3 — The ONLY member of ORG_RET_RENAME_ORG and both roles RET-ORG-028 needs: the buyer that raises RMA_BEFORE and RMA_AFTER on its own order AND the holder (membership view role, the LONG_NAME pattern) that reads them in the organization tab. STATED LIMITS: Memberships — RENAME: membership roles [agent-test-org-ret-viewer], status Approved; global roles [none]; isAdministrator false. Order AGENT-TEST-ORD-RET-ORG-RENAME-BUYER: Completed, ONE shipment delivered on the seed day, lineA ordered 40 / lineB 25 — the SAME two products as ORG_RET_BUYER (read from its live main order, no discovery). 2 independent returnable lines (floor 2: RMA_BEFORE on lineAItemId, RMA_AFTER on lineBItemId — one line per return, because a storefront return defaults to a line's FULL quantity; an API return of quantity 1 leaves the rest returnable). Returnable until the delivery ages out of Return.WindowDays (30 on vcst) — re-seed after that (a rebuild DELETES the returns on the order). Returns it raises are per-run and TERMINAL once submitted; the case cancels them in Cleanup (a cancelled return holds no unit). Order address email = this account's AGENT-TEST yopmail address ≠ ORG_RET_RENAME_ORG.email. Password {{DEFAULT_TEST_PASSWORD}} (layered env, never a literal). Seeded by `TEST_ENV=<env> npm run seed:returns:org:isolated` (scripts/seed-data/orders/seed-org-returns.mjs --isolated-only — never touches the shared organizations, the main/spare orders or the returns on them; the full `npm run seed:returns:org` also ensures it; spec org-returns-specs.mjs; guards npm run td:validate:returns-org + td:validate:returns-org:live). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:isolated:teardown` removes the isolated sets with zero residue."
+  },
+  "RETURNS_ORDER_RECIPIENT": {
+    "_inline": true,
+    "seed": "seed:returns",
+    "email": "agent-test-ret-orders@yopmail.com",
+    "fields": {
+      "email": "email"
+    },
+    "_notes": "VCST-5628 returns orders (RETURN_ORDER_FIXTURES, AGENT-TEST-ORD-RET-A…G + ADM073): the dedicated AGENT-TEST yopmail mailbox every ORDER-ADDRESS email of those orders is forced to before the POST (seed-return-orders.mjs refuses to POST otherwise), so order/return notifications addressed to the order address land here, never in the env persona USER_EMAIL's inbox. STATED LIMITS: no account owns this mailbox; the orders' BUYER ACCOUNT is still the env persona (USER_EMAIL, fallback ORG_USER_EMAIL) because suite 073 signs in as it — a notification the platform addresses to the account email is NOT redirected by this. Single source: RETURN_ORDER_RECIPIENT in scripts/seed-data/orders/orders-specs.mjs; guard npm run td:validate:orders §8c. Applies to orders seeded after 2026-10-12; orders seeded earlier keep their old address until re-seeded."
+  },
+  "PROD_GA4_RELATED_ANCHOR": {
+    "_inline": true,
+    "seed": "seed:ga4-lists",
+    "_comment": "VCST-6017 PDP \"Related products\" widget (list id related_products). AGENT-TEST anchor product with 10 catalog associations (group Accessories — the storefront reads every group, first 30) to live-discovered real products with DISTINCT prices, disjoint from every other VCST-6017 list. 10 > the carousel's max 7 per view (>= lg is the CAROUSEL, < lg the GRID — related-products.vue `lg = smaller(\"lg\")`). Runtime id/url + related_codes/related_ids in aliases.<env>.json. Spec: scripts/seed-data/analytics/ga4-lists-specs.mjs RELATED. Not the \"Recommended / bought together\" widget (XRecommend semantic model, not associations).",
+    "code": "AGENT-TEST-GA4-REL-ANCHOR",
+    "sku": "AGENT-TEST-GA4-REL-ANCHOR",
+    "name": "AGENT-TEST GA4 Related Anchor",
+    "price": 49.99,
+    "currency": "USD",
+    "related_count": 10,
+    "id": "",
+    "url": "",
+    "slug": "",
+    "related_codes": "",
+    "related_ids": ""
+  },
+  "PROD_GA4_VARIATION_PARENT": {
+    "_inline": true,
+    "seed": "seed:ga4-lists",
+    "_comment": "VCST-6017 PDP \"Variations\" widget (variations-default + variations-table, list id variations). AGENT-TEST parent (default template — no VirtoFrontend_UI_Layout=b2c, so Variations not Options) with 60 priced + stocked variations, prices 11.25..85.00 strictly increasing (distinct). The PDP pages the family search by 50 (product.vue variationsItemsPerPage) and the family search counts the parent too (is:product,variation) → 61 rows, 2 pages. Replaces the STALE PROD_VARIATION_PARENT_SALE for VCST-6017 (that product resolves to null on B2B-store on vcst, 2026-10-13). Runtime id/url in aliases.<env>.json.",
+    "code": "AGENT-TEST-GA4-VAR-PARENT",
+    "sku": "AGENT-TEST-GA4-VAR-PARENT",
+    "name": "AGENT-TEST GA4 Variations Parent",
+    "variations_count": 60,
+    "page_size": 50,
+    "first_variation_price": 11.25,
+    "last_variation_price": 85,
+    "currency": "USD",
+    "id": "",
+    "url": "",
+    "slug": "",
+    "pages": ""
+  },
+  "CART_GA4_SFL_RB": {
+    "_inline": true,
+    "seed": "seed:ga4-lists:cart",
+    "_comment": "VCST-6017 scenario #14 cart state for the run account ({{USER_EMAIL}}). `seed:ga4-lists:cart` CONVERGES it from ANY prior state: cart = exactly 1 seeded line at quantity 1 (every other line removed), saved-for-later = exactly 8 seeded items at quantity 1 (foreign items removed; > the cart block's Show-more step of 6), recently browsed = exactly the 6 seeded products (= the cart page's maxProducts 6), all DISJOINT and distinct-priced. Recently browsed is pushed under the seeder's own sessionId (rb_session_id): xRecommend lists the newest maxProducts EVENT ROWS by ModifiedDate and de-duplicates AFTER the take, and a sessionless push stamps every session's row for a product, so a product the browser also visited fills 2+ of the 6 slots (diagnosed 2026-10-13). FIFTH RULE: pooled, test-mutable state — run the seed as the case's PRECONDITION STEP immediately before the cart is opened; a PDP visit by the account after that step changes recently browsed. Runtime codes/ids in aliases.<env>.json.",
+    "url": "/cart",
+    "sfl_show_more_step": 6,
+    "recently_browsed_max": 6,
+    "cart_line_codes": "",
+    "saved_for_later_codes": "",
+    "recently_browsed_codes": "",
+    "cart_line_ids": "",
+    "saved_for_later_ids": "",
+    "recently_browsed_ids": "",
+    "saved_for_later_count": 8,
+    "rb_session_id": ""
+  },
+  "PB_GA4_PRODUCT_LISTS": {
+    "_inline": true,
+    "seed": "seed:cms-pages:ga4",
+    "_comment": "VCST-6017 dedicated Page Builder page carrying EVERY block type that renders products, each with its OWN disjoint, distinct-priced product set: products + predefined-product-list (both products_block — two blocks sharing one list id), products-carousel titled + untitled (title \"\" → data-list-name=\"\"), favorite-products (favorite_products; a filter search, NOT the account's favourites), demo-product-list and product-info (NOT marked by PR #2543 — expect no events). predefined-product-list and the untitled carousel sit below a 2600px spacer (far below a 1080px fold). Content: test-data/cms/page-content.json PB_GA4_PRODUCT_LISTS (@pool markers); runtime group_id in aliases.<env>.json. carousel_card_name / carousel_card_code / carousel_card_images (runtime, aliases.<env>.json): the product of the FIRST products block (pbProducts) that has >= 2 images, so its card renders an image carousel — GA-040 drives it (POOL_PLAN pbProducts multiImage: 1).",
+    "name": "AGENT-TEST GA4 Product Lists",
+    "permalink": "/agent-test-ga4-product-lists",
+    "url": "/agent-test-ga4-product-lists",
+    "culture": "en-US",
+    "expect_status": "Published",
+    "carousel_card_name": "",
+    "carousel_card_code": "",
+    "carousel_card_images": ""
+  },
+  "PB_GA4_HTML_LISTS": {
+    "_inline": true,
+    "seed": "seed:cms-pages:ga4",
+    "_comment": "VCST-6017 scenarios #18/#19 (+ #17 empty): Page Builder text blocks carrying plain HTML in the PR README grammar — list agent_test_html_full (cards with data-product-id/-sku/-name/-price) and list agent_test_html_partial (cards with name + price ONLY) — rendered through v-html-safe, which keeps data-* attributes (verified: pageDocument content round-trips them). Plus a favorite-products block whose filter matches nothing → an EMPTY favorite_products container. Runtime group_id in aliases.<env>.json.",
+    "name": "AGENT-TEST GA4 HTML Product Lists",
+    "permalink": "/agent-test-ga4-html-product-lists",
+    "url": "/agent-test-ga4-html-product-lists",
+    "culture": "en-US",
+    "expect_status": "Published",
+    "full_list_id": "agent_test_html_full",
+    "partial_list_id": "agent_test_html_partial",
+    "empty_favorites_title": "AGENT-TEST GA4 Favorites No Match"
+  },
+  "PUNCHOUT_CONFIG_0": {
+    "_inline": true,
+    "_notes": "VCST-5886 Punchout configuration 0 (Punchout:Configurations:0 app setting, deployed per env via vc-deploy-dev infra/environments.yml — there is no REST read-back). Purpose: happy path — every optional check ON (sender domain + return-URL allow-list), default-length lifetimes. sharedSecret is a {{VAR}} token: the value lives only in .env.local as PUNCHOUT_SHARED_SECRET_0_<TEST_ENV> (e.g. PUNCHOUT_SHARED_SECRET_0_VCPTCORE_QA1), promoted to PUNCHOUT_SHARED_SECRET_0 by config.js / seed-common.mjs. Env facts below are EMPTY in this base file by design; the seeder writes the deployed values to the env overlay. Seeded/registered by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs. VirtoCommerce.Punchout is deployed only on vcptcore_qa1 and vcst — on every other env the seeder skips and these fields resolve to \"\" (a clear miss). Runtime ids live ONLY in aliases.<env>.json.",
+    "seed": "seed:punchout",
+    "index": 0,
+    "sharedSecret": "{{PUNCHOUT_SHARED_SECRET_0}}",
+    "sharedSecret_var": "PUNCHOUT_SHARED_SECRET_0",
+    "purpose": "happy path — every optional check ON (sender domain + return-URL allow-list), default-length lifetimes",
+    "storeId": "",
+    "storeExists": "",
+    "senderDomain": "",
+    "senderDomainCheck": "",
+    "allowedReturnUrl": "",
+    "returnUrlCheck": "",
+    "tokenLifetime": "",
+    "sessionLifetime": "",
+    "tokenLifetimeMinutes": "",
+    "sessionLifetimeMinutes": "",
+    "source": ""
+  },
+  "PUNCHOUT_CONFIG_1": {
+    "_inline": true,
+    "_notes": "VCST-5886 Punchout configuration 1 (Punchout:Configurations:1 app setting, deployed per env via vc-deploy-dev infra/environments.yml — there is no REST read-back). Purpose: checks OFF (no SenderDomain, no AllowedReturnUrls), a DIFFERENT store, short lifetimes (token/session expiry cases). sharedSecret is a {{VAR}} token: the value lives only in .env.local as PUNCHOUT_SHARED_SECRET_1_<TEST_ENV> (e.g. PUNCHOUT_SHARED_SECRET_1_VCPTCORE_QA1), promoted to PUNCHOUT_SHARED_SECRET_1 by config.js / seed-common.mjs. Env facts below are EMPTY in this base file by design; the seeder writes the deployed values to the env overlay. Seeded/registered by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs. VirtoCommerce.Punchout is deployed only on vcptcore_qa1 and vcst — on every other env the seeder skips and these fields resolve to \"\" (a clear miss). Runtime ids live ONLY in aliases.<env>.json.",
+    "seed": "seed:punchout",
+    "index": 1,
+    "sharedSecret": "{{PUNCHOUT_SHARED_SECRET_1}}",
+    "sharedSecret_var": "PUNCHOUT_SHARED_SECRET_1",
+    "purpose": "checks OFF (no SenderDomain, no AllowedReturnUrls), a DIFFERENT store, short lifetimes (token/session expiry cases)",
+    "storeId": "",
+    "storeExists": "",
+    "senderDomain": "",
+    "senderDomainCheck": "",
+    "allowedReturnUrl": "",
+    "returnUrlCheck": "",
+    "tokenLifetime": "",
+    "sessionLifetime": "",
+    "tokenLifetimeMinutes": "",
+    "sessionLifetimeMinutes": "",
+    "source": ""
+  },
+  "PUNCHOUT_CONFIG_2": {
+    "_inline": true,
+    "_notes": "VCST-5886 Punchout configuration 2 (Punchout:Configurations:2 app setting, deployed per env via vc-deploy-dev infra/environments.yml — there is no REST read-back). Purpose: StoreId points at a store that does not exist → mapped identity gets cXML 500 (N15). sharedSecret is a {{VAR}} token: the value lives only in .env.local as PUNCHOUT_SHARED_SECRET_2_<TEST_ENV> (e.g. PUNCHOUT_SHARED_SECRET_2_VCPTCORE_QA1), promoted to PUNCHOUT_SHARED_SECRET_2 by config.js / seed-common.mjs. Env facts below are EMPTY in this base file by design; the seeder writes the deployed values to the env overlay. Seeded/registered by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs. VirtoCommerce.Punchout is deployed only on vcptcore_qa1 and vcst — on every other env the seeder skips and these fields resolve to \"\" (a clear miss). Runtime ids live ONLY in aliases.<env>.json.",
+    "seed": "seed:punchout",
+    "index": 2,
+    "sharedSecret": "{{PUNCHOUT_SHARED_SECRET_2}}",
+    "sharedSecret_var": "PUNCHOUT_SHARED_SECRET_2",
+    "purpose": "StoreId points at a store that does not exist → mapped identity gets cXML 500 (N15)",
+    "storeId": "",
+    "storeExists": "",
+    "senderDomain": "",
+    "senderDomainCheck": "",
+    "allowedReturnUrl": "",
+    "returnUrlCheck": "",
+    "tokenLifetime": "",
+    "sessionLifetime": "",
+    "tokenLifetimeMinutes": "",
+    "sessionLifetimeMinutes": "",
+    "source": ""
+  },
+  "PUNCHOUT_CONFIG_3": {
+    "_inline": true,
+    "_notes": "VCST-5886 Punchout configuration 3 (Punchout:Configurations:3 app setting, deployed per env via vc-deploy-dev infra/environments.yml — there is no REST read-back). Purpose: no StoreId at all → cXML 500 for any identity (N16). sharedSecret is a {{VAR}} token: the value lives only in .env.local as PUNCHOUT_SHARED_SECRET_3_<TEST_ENV> (e.g. PUNCHOUT_SHARED_SECRET_3_VCPTCORE_QA1), promoted to PUNCHOUT_SHARED_SECRET_3 by config.js / seed-common.mjs. Env facts below are EMPTY in this base file by design; the seeder writes the deployed values to the env overlay. Seeded/registered by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs. VirtoCommerce.Punchout is deployed only on vcptcore_qa1 and vcst — on every other env the seeder skips and these fields resolve to \"\" (a clear miss). Runtime ids live ONLY in aliases.<env>.json.",
+    "seed": "seed:punchout",
+    "index": 3,
+    "sharedSecret": "{{PUNCHOUT_SHARED_SECRET_3}}",
+    "sharedSecret_var": "PUNCHOUT_SHARED_SECRET_3",
+    "purpose": "no StoreId at all → cXML 500 for any identity (N16)",
+    "storeId": "",
+    "storeExists": "",
+    "senderDomain": "",
+    "senderDomainCheck": "",
+    "allowedReturnUrl": "",
+    "returnUrlCheck": "",
+    "tokenLifetime": "",
+    "sessionLifetime": "",
+    "tokenLifetimeMinutes": "",
+    "sessionLifetimeMinutes": "",
+    "source": ""
+  },
+  "PUNCHOUT_MAPPING_DEFAULT": {
+    "_inline": true,
+    "_notes": "VCST-5886 punchout user mapping AGENT-TEST-PO-100 → the contact + own security account of the single-org persona (exactly 1 organization): {{USER_EMAIL}} by default, {{ORG_USER_EMAIL}} on vcst (USER_EMAIL has no organization there). Cases read the buyer as persona_email / persona_password, which the env overlay sets to that env's {{VAR}} tokens. created by /qa-test VCST-5886 step 1r; deleted at run close-out — this seeder only registers it. id = mapping id, userId = security account, memberId = contact; currentOrganizationId/otherOrganizationId/organizationCount come from the contact. Seeded/registered by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs. VirtoCommerce.Punchout is deployed only on vcptcore_qa1 and vcst — on every other env the seeder skips and these fields resolve to \"\" (a clear miss). Runtime ids live ONLY in aliases.<env>.json.",
+    "seed": "seed:punchout",
+    "externalId": "AGENT-TEST-PO-100",
+    "persona_email": "{{USER_EMAIL}}",
+    "persona_email_var": "USER_EMAIL",
+    "persona_password": "{{USER_PASSWORD}}",
+    "owned_by_seeder": false,
+    "id": "",
+    "userId": "",
+    "memberId": "",
+    "currentOrganizationId": "",
+    "otherOrganizationId": "",
+    "organizationCount": ""
+  },
+  "PUNCHOUT_MAPPING_MULTI_ORG": {
+    "_inline": true,
+    "_notes": "VCST-5886 punchout user mapping AGENT-TEST-PO-200 → the contact + own security account of {{MULTI_ORG_USER_EMAIL}} (≥2 organizations). seed-punchout.mjs find-or-create; teardown deletes it by id. id = mapping id, userId = security account, memberId = contact; currentOrganizationId/otherOrganizationId/organizationCount come from the contact. Seeded/registered by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs. VirtoCommerce.Punchout is deployed only on vcptcore_qa1 and vcst — on every other env the seeder skips and these fields resolve to \"\" (a clear miss). Runtime ids live ONLY in aliases.<env>.json.",
+    "seed": "seed:punchout",
+    "externalId": "AGENT-TEST-PO-200",
+    "persona_email": "{{MULTI_ORG_USER_EMAIL}}",
+    "persona_email_var": "MULTI_ORG_USER_EMAIL",
+    "owned_by_seeder": true,
+    "id": "",
+    "userId": "",
+    "memberId": "",
+    "currentOrganizationId": "",
+    "otherOrganizationId": "",
+    "organizationCount": ""
+  },
+  "BACKOFFICE_PUNCHOUT_READ": {
+    "_inline": true,
+    "_notes": "AGENT-TEST VCST-5886 BSC-2: opens Companies & contacts (customer:access + customer:read) and sees the Punchout user widget (punchout:read). Holds NO punchout:create/update/delete, so Save/Delete must be disabled and POST/PUT/DELETE /api/punchout-user-mappings must 403. Safe to delete. Back-office Manager account (isAdministrator=false), exactly one role AGENT-TEST-Punchout-Reader. Expected REST: search 200, write 403. Seeded/registered by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs. VirtoCommerce.Punchout is deployed only on vcptcore_qa1 and vcst — on every other env the seeder skips and these fields resolve to \"\" (a clear miss). Runtime ids live ONLY in aliases.<env>.json.",
+    "seed": "seed:punchout",
+    "email": "AGENT-TEST-punchout-reader@test.virtocommerce.com",
+    "login": "AGENT-TEST-punchout-reader@test.virtocommerce.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "userType": "Manager",
+    "role": "AGENT-TEST-Punchout-Reader",
+    "permissions": "customer:access,customer:read,punchout:read",
+    "user_id": "",
+    "role_id": ""
+  },
+  "BACKOFFICE_NO_PUNCHOUT": {
+    "_inline": true,
+    "_notes": "AGENT-TEST VCST-5886 BSC-3: opens Companies & contacts (customer:access + customer:read) with NO punchout:* permission, so the Punchout user widget must be hidden and POST /api/punchout-user-mappings/search must 403. Safe to delete. Back-office Manager account (isAdministrator=false), exactly one role AGENT-TEST-Punchout-None. Expected REST: search 403, write 403. Seeded/registered by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs. VirtoCommerce.Punchout is deployed only on vcptcore_qa1 and vcst — on every other env the seeder skips and these fields resolve to \"\" (a clear miss). Runtime ids live ONLY in aliases.<env>.json.",
+    "seed": "seed:punchout",
+    "email": "AGENT-TEST-no-punchout@test.virtocommerce.com",
+    "login": "AGENT-TEST-no-punchout@test.virtocommerce.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "userType": "Manager",
+    "role": "AGENT-TEST-Punchout-None",
+    "permissions": "customer:access,customer:read",
+    "user_id": "",
+    "role_id": ""
+  },
+  "PB_ASSETS_ROOT": {
+    "_inline": true,
+    "_comment": "VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "folder": "AGENT-TEST-VCST5726"
+  },
+  "PB_ASSETS_P500": {
+    "_inline": true,
+    "_comment": "VCST-5726 F500: 500 PNGs asset-000..asset-499 uploaded in a seeded shuffle (name order != upload order). firstByUpload/lastByUpload are read from the live createdDate. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "folder": "AGENT-TEST-VCST5726/p500",
+    "count": 500,
+    "firstByName": "asset-000.png",
+    "lastByName": "asset-499.png"
+  },
+  "PB_ASSETS_MIXED": {
+    "_inline": true,
+    "_comment": "VCST-5726 FMIX: 20 PDF asset-000..019 + 480 PNG asset-020..499; an image-accept picker shows 480, first asset-020.png. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "folder": "AGENT-TEST-VCST5726/mixed",
+    "count": 500,
+    "imageCount": 480,
+    "firstImage": "asset-020.png"
+  },
+  "PB_ASSETS_FOLDERS": {
+    "_inline": true,
+    "_comment": "VCST-5726 FFOLDERS: 25 sub-folders sub-00..24 + 30 files file-00..29 (totalCount 55 != fileCount 30). VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "folder": "AGENT-TEST-VCST5726/folders",
+    "totalCount": 55,
+    "fileCount": 30
+  },
+  "PB_ASSETS_DEEP": {
+    "_inline": true,
+    "_comment": "VCST-5726 FDEEP: deep/l1/../l5 (3 PNG per level) + deep/l1/b1..b4 (2 PNG each); d5-a.png at the leaf is referenced by 1 page. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "folder": "AGENT-TEST-VCST5726/deep",
+    "leaf": "AGENT-TEST-VCST5726/deep/l1/l2/l3/l4/l5"
+  },
+  "PB_ASSETS_EMPTY": {
+    "_inline": true,
+    "_comment": "VCST-5726 FEMPTY: empty folder. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "folder": "AGENT-TEST-VCST5726/empty",
+    "totalCount": 0
+  },
+  "PB_ASSETS_TPL": {
+    "_inline": true,
+    "_comment": "VCST-5726 FTPL: template-literal names (harmless marker window.__vcst5726). The folder name is rejected by POST /api/assets/folder (lowercase validator) so it is created by uploading tpl-marker.png into it. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "folder": "AGENT-TEST-VCST5726/tpl",
+    "file": "tpl-{{=window.__vcst5726=2}}.png",
+    "tplFolder": "tpl-{{=window.__vcst5726=1}}"
+  },
+  "PB_ASSET_REF_1": {
+    "_inline": true,
+    "_comment": "VCST-5726: p500/asset-007.png referenced by 1 page (AGENT-TEST-VCST5726-ref-1). assetUrl/pageIds/observed counts in aliases.<env>.json. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "rel": "p500/asset-007.png",
+    "expectedRefs": 1
+  },
+  "PB_ASSET_REF_3": {
+    "_inline": true,
+    "_comment": "VCST-5726: p500/asset-025.png referenced by 3 pages (ref-1..3). VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "rel": "p500/asset-025.png",
+    "expectedRefs": 3
+  },
+  "PB_ASSET_REF_2": {
+    "_inline": true,
+    "_comment": "VCST-5726: p500/asset-499.png referenced by 2 pages (ref-1, ref-2) + 2 shared components (AGENT-TEST-VCST5726-sc-1, sc-2) => expectedRefs 4 total (distinct from asset-025 = 3). VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "rel": "p500/asset-499.png",
+    "expectedRefs": 4,
+    "expectedPageRefs": 2,
+    "expectedScRefs": 2
+  },
+  "PB_ASSET_REF_DEEP": {
+    "_inline": true,
+    "_comment": "VCST-5726: deep/l1/l2/l3/l4/l5/d5-a.png referenced by 1 page (ref-4); a folder-level references lookup from deep/ must find it. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "rel": "deep/l1/l2/l3/l4/l5/d5-a.png",
+    "expectedRefs": 1
+  },
+  "PB_ASSET_REF_SC": {
+    "_inline": true,
+    "_comment": "VCST-5726: shared components (sc-1, sc-2) each referencing p500/asset-499.png. Runtime ids in aliases.<env>.json. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "names": [
+      "AGENT-TEST-VCST5726-sc-1",
+      "AGENT-TEST-VCST5726-sc-2"
+    ]
   }
 }

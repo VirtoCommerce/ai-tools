@@ -622,3 +622,154 @@ rollback and would strand the evidence written since.
 **Afterwards.** Make the card mandatory at capture (Decision 8, step 3) as its own change; settle the
 seven contradictions that need a UI/HAR check (`migration/merge/contradictions-2026-10-05.json`);
 recalibrate from the logged `show` / `none` pairs (M6) once a few hundred have accumulated.
+
+## The `ambiguous` list without its `says:` excerpt (VCST-6191 Phase 1, 2026-10-07) -- PASS under the pre-declared rule, by a narrow margin on precision
+
+On 2026-10-06, about half of the 38 real `ambiguous` lists were never closed (20 by the ticket's count, 17
+by the `kb:report` lists panel added with this change, which pairs picks to lists the way the reminder does):
+the agent worked from the ~200-character `says:` excerpt and later confirmed entries it never opened. Arm B drops that line, so the list keeps the
+subject and `answers:` (what to open) but no fact. Same method as the sections above, one variable changed:
+base `vc-knowledge` main @ `f11d658` and its `ranker.json` (verdict-1), frozen for both arms; `judge-harness.mjs
+items` (A) and `items --no-says` (B, byte-identical to A minus the `says:` lines); fresh pickers that see only
+an items batch (~38 items, opaque codes) and the one-open contract, calling the real `kb show` (synthetic,
+isolated queue, nothing pushed). Each arm twice with Sonnet-class pickers, once with Haiku-class.
+Rule, fixed in the ticket before the run: B ships if, pooled over the Sonnet runs, resolved non-partial drops
+<= 2 points, picks precision drops <= 1 point, and controls stay >= 90%.
+
+Sets (rows / `ambiguous` items; non-partial targets, partial targets, controls): logs300 dev + calibration
+208 / 203 (125, 27, 56); wave2 41 / 41 (13, 9, 19); wave3 98 / 98 (28, 36, 34); **live1006** 60 / 57 (48, 11, 1),
+new: every real ask on base main from 2026-10-06 to `f11d658`, labelled like logs300 (two independent passes,
+48/60 agreed, 12 adjudicated; `rank-labelled-set.live1006.json`). Pooled 407 / 399 (214, 83, 110).
+
+| Sonnet, two runs pooled | A: with `says:` | **B: without** | B - A | rule |
+|---|---|---|---|---|
+| picks precision | 395/419 (94.3%) | 383/410 (93.4%) | **-0.86** | >= -1 -- pass |
+| controls end in `none` | 216/220 (98.2%) | 214/220 (97.3%) | -0.9 | B >= 90% -- pass |
+| targets resolved, non-partial | 358/428 (83.6%) | 355/428 (82.9%) | **-0.70** | >= -2 -- pass |
+| targets resolved, partial | 37/166 (22.3%) | 28/166 (16.9%) | -5.4 | -- |
+| right entry opened (all targets) | 436/578 (75.4%) | 416/578 (72.0%) | -3.5 | -- |
+| entries opened per ask | 0.67 | 0.64 | | -- |
+| `none` without opening | 33.1% | 35.8% | +2.8 | -- |
+| mean tokens per ask, opened body included | 754 | **591** | -22% | -- |
+
+| per set, B - A (points) | logs300 | wave2 | wave3 | live1006 |
+|---|---|---|---|---|
+| picks precision | -1.3 | -3.7 | +0.1 | 0.0 |
+| resolved, non-partial | -0.8 | 0.0 | -7.1 | +3.1 |
+
+- **B passes all three lines.** Precision is the tight one: -0.86 against a 1-point limit, while the two B
+  runs alone differ by 1.6 points (92.6% / 94.2%) and the two A runs by 0.1. The verdict is a pass, not a
+  measured equivalence.
+- **What B loses is the partial answer.** Without the excerpt the picker more often says `none` without
+  opening (+2.8 points), which costs partial targets (-5.4) and the right open (-3.5) more than full ones.
+  wave3, the prose questions, carries most of it (-7.1 on full targets, n = 28 per run).
+- Rows the arms disagree on: 38 targets, 2 controls (`says-ab-result.json` `disagreements`). Resolved in both
+  A runs and in neither B run: `L-211` and `L-225` (push audience builder, the same entry), `L-019`
+  (configurationItems on a REST order line), `L-036` (FixedRateTaxProvider), `W3-026` (redeeming with too few
+  points), `W3-096` (order number). The reverse: `L-198` (`PUT /api/inventory/plenty`), `N-002` (legacy
+  `sharedWithId`). Split one run to the other: 15 favour A, 11 favour B.
+- **Haiku-class, sensitivity only:** precision 74.5% / 73.6%, controls 59% / 67%, resolved non-partial
+  79.0% / 81.3% (A / B). A weaker picker relies on topical entries in both arms, which already fails the
+  M4 gate on its own; dropping `says:` does not make it worse. It also reported 29 opens it never made
+  (no matching `kb show` in its own log); those reliances are scored as `none`. Sonnet pickers: 0.
+- **live1006 is weak as a held-out set.** It has one control, and many targets are answered by entries the same
+  sessions captured on the day they asked. It measures choosing among close entries, not coverage. Its labels'
+  `partial` reading was ambiguous in the brief (one entry vs several together), and the adjudicator chose
+  "several together".
+- **Held-out splits spent.** This A/B opened the wave2 and wave3 test splits and the new live1006 set
+  (`.test-openings.jsonl`) and publishes per-row outcomes above, so none of them is blind for the next
+  ranker gate: that gate needs fresh held-out rows (asks logged after 2026-10-07). logs300's test split
+  was not opened.
+- Not changed after the first run: rule, sets, ranker, base. The picker brief gained one line after batch 3
+  of 9 (read the whole `kb show` output, no `head`/`grep`), for both arms alike.
+
+Reproduce (`<b>` a checkout of `vc-knowledge` at `f11d658`; `$q` an isolated `KB_QUEUE_DIR`):
+
+    export KB_SYNTHETIC=1 KB_NO_SWEEP=1 KB_PUSH_CONFIRM=1 KB_QUEUE_DIR=$q
+    node scripts/kb/bench/judge-harness.mjs items --base <b> --ranker <b>/ranker.json [--no-says] \
+      --set scripts/kb/bench/rank-labelled-set.logs300.json --split dev,calibration --salt 6191-logs --out <dir>
+    # wave2 / wave3 / live1006: --split test --open-test, salts 6191-w2 / 6191-w3 / 6191-live
+    node scripts/kb/bench/judge-harness.mjs score --out <dir> --picks <picks.txt>
+
+Picks per item and run, the per-run metrics and the disagreement rows: `scripts/kb/bench/says-ab-result.json`.
+
+## M6, the answer threshold from live pairs (VCST-6342, 2026-10-14) -- 0.957 -> 0.90
+
+Under `verdict-1` the base answered alone on 0 of 739 live asks (2026-10-08..14): the highest live `p`
+was 0.95, just under 0.957, so every ask became a list to read and close. Recalibrated from the logged
+`kb_show` / `kb_none` pairs, as this record planned.
+
+- **Weights stay.** A refit on the 576 judged live asks, cross-validated by session, did not beat the
+  published model (AUC 0.796 vs 0.815 on "the agent picked the top entry").
+- **Threshold.** Live at 0.90: 27 asks answered alone; of the 18 an agent judged, 18 picked that same
+  entry and 0 said none. Labelled sets (v2, logs300, wave2, wave3, live1006; 596 rows, 166 controls,
+  `verdict-bench --decider verdict` against base main): 0.957 -> 9/9, **0.90 -> 31/31, 0 controls**,
+  0.85 -> 62 answers with 3 on controls (`L-123`, `L-155`, `N-points-filter`), which the AC allows zero of.
+- **Limits.** 49/49 puts the lower bound of precision near 94%, at the edge of the 0.95 target; live
+  labels are picks, not truth. Expected effect is about 4% of asks skipping the list.
+- Published as `vc-knowledge#7` (one number in `ranker.json`). Rollback: restore 0.9573352630894495.
+
+## Several entries per question (VCST-6342 6a, 2026-10-14) -- FAIL, the one-open contract stays
+
+A real question often asks two things and the base holds them in two entries; the one-open contract
+cannot be satisfied by such a question (wave2: 1 of 9 partial targets resolved). Arm B
+("parts") lets the agent open one entry per part, same handle, and
+rely on each for its part. Same method as the `says:` A/B above, one variable: base main @ `eed590c`
+and its ranker frozen; `judge-harness items` with the contract line switched, byte-identical but for the contract
+line; wave2 + wave3 + live1006 (197 `ambiguous` items: 89 non-partial targets, 56 partial, 54 controls);
+fresh Sonnet-class pickers, one run per arm, real `kb show` against an isolated queue, a reliance counted
+only when that batch's own log shows the open (0 unverified). The harness now scores several ids per item:
+an item is right only if EVERY entry it relied on is labelled. Rule, declared before the run: B ships if
+picks precision drops <= 1 point, resolved non-partial <= 2 points, controls stay >= 90%, and resolved
+partial rises.
+
+| one run per arm | A: one entry | B: parts | B - A | rule |
+|---|---|---|---|---|
+| picks precision (per item) | 86/103 (83.5%) | 97/134 (72.4%) | **-11.1** | >= -1 -- **fail** |
+| controls end in `none` | 46/54 (85.2%) | 42/54 (77.8%) | -7.4 | B >= 90% -- **fail** |
+| resolved, non-partial | 72/89 (80.9%) | 70/89 (78.7%) | -2.25 | >= -2 -- **fail** |
+| resolved, partial | 14/56 (25.0%) | 27/56 (48.2%) | **+23.2** | rises -- pass |
+| labelled entries of partial targets relied on | 14/123 (11.4%) | 45/123 (36.6%) | +25.2 | -- |
+| relied entries per answered ask | 1.00 | 1.48 | | -- |
+
+- **Permission to rely on a part is permission to rely on a near neighbour.** B covers parts as intended
+  (+23 points on partial targets), and pays for it where nothing should be relied on: four more controls
+  answered and eleven points of precision. The same effect showed in a discarded first A run, whose
+  picker brief itself said "states (part of)" and allowed several ids: 1.46 relied entries per ask and
+  controls at 79.6%. The brief, not only the contract line, moves this number.
+- **Not shipped, and not kept in the code.** Partial answers need a decision the agent is not given today -- which part
+  an entry covers -- before more reliance can be allowed; 6b (the base composing an answer from entries
+  that each clear a part) is the next candidate.
+- One run per arm: the earlier A/B saw 1.6 points between two runs of one arm. Every failed line here is
+  well outside that.
+
+Reproducing it: the bench code and the raw per-run results were not merged; they are in commit `2fe09feb`, kept in PR #444's history on GitHub (an ancestor of `refs/pull/444/head`): `render.mjs` `AMBIGUOUS_CONTRACT_PARTS` / `AMBIGUOUS_CONTRACT_QUOTED` behind `verdictLines({ contract })`, `judge-harness items --contract one|parts|quoted` with several-id picks, and `scripts/kb/bench/parts-ab-result.json`.
+
+### Follow-up runs the same day: a neutral brief, a quotation bar, and the base composing -- all FAIL
+
+Run against the same A (one-entry brief), same items, same frozen base:
+
+| vs A, points | B, neutral picker brief | **C: quote the sentence for the other part** |
+|---|---|---|
+| picks precision | -17.8 | run 1 -1.8; **two runs pooled -6.3** |
+| controls end in `none` | -9.3 | run 1 -1.9; **pooled 6 more answered** |
+| resolved, non-partial | -5.6 | pooled +2.25 |
+| resolved, partial | +16.1 | pooled **+13.4** |
+
+- **The neutral brief made B worse, not better.** The picker brief was not what let neighbours in; the
+  permission was.
+- **C (quote the sentence for the other part) is the best multi-entry contract measured, and still fails.** Run 1
+  sat inside the run-to-run noise on precision, so a confirmatory run was made with its rule declared
+  before it (pooled over two runs: precision drop <= 1 point, at most 2 more controls answered,
+  non-partial >= -2, partial rises). Run 2 widened the gap: pooled -6.3 points of precision and 6 more
+  controls answered. A quote is not a bar a neighbour cannot pass -- a near entry usually HAS a sentence
+  about the other part's topic.
+- **6b, the base composing an answer, was probed offline and not built.** Only 15 of 111 partial
+  targets have both labelled entries among the three headlines, and the joint-coverage gain of the best
+  complement is the same for partial targets and controls (0.13-0.16 vs 0.14): every cut answers more
+  controls than right partial targets.
+- **The one-open contract stays.** Partial questions are a content and question-shape problem -- an agent
+  asking one thing per ask, or an entry that states both halves -- not something the closing rule can
+  absorb at the precision this base is held to.
+
+All arms, both runs and the offline probe: in commit `2fe09feb`, kept in PR #444's history on GitHub (an ancestor of `refs/pull/444/head`): `render.mjs` `AMBIGUOUS_CONTRACT_PARTS` / `AMBIGUOUS_CONTRACT_QUOTED` behind `verdictLines({ contract })`, `judge-harness items --contract one|parts|quoted` with several-id picks, and `scripts/kb/bench/parts-ab-result.json`.

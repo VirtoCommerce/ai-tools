@@ -62,7 +62,8 @@ The 6-step workflow below builds a reusable Postman collection via MCP and execu
 Read **before** executing:
 1. `skills/qa-postman/SKILL.md` — Postman MCP entry point (index of all sub-guides: `mcp-tools.md`, `variables-and-environments.md`, `collections-and-requests.md`, `graphql-authoring.md`, `test-data-fixtures.md`, `execution.md`, `common-mistakes.md`, `examples.md`)
 2. `skills/qa-seed-data/test-data-generation.md` — Entity graph, API endpoints, request bodies, batch patterns, naming
-3. `skills/qa-seed-data/sales-rep-profiles.md` — **before seeding SALES-REP**: the mutually exclusive `fixtures`/`demo` profiles, `sr:inventory`, the marker + ledger that replace the `AGENT-TEST` prefix, and reusing a real person’s account as a rep
+3. `sales-rep-profiles.md` — **before seeding SALES-REP**: `fixtures`/`demo`, `sr:inventory`, marker + ledger, reusing a real account
+4. `demo-profiles.md` — **before seeding a DEMO** (`npm run seed:demo`, every family that has one)
 
 ## Arguments
 

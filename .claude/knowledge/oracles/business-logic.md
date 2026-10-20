@@ -83,6 +83,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Violation signal:** Product shows $0.00 after price list deletion; "Add to Cart" remains enabled; historical order prices change retroactively.
 - **Agents:** qa-frontend-expert, qa-backend-expert, ui-ux-expert
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] BSM-087 failed in REG-2026-10-08-0812
 
 ### BL-PRICE-007: Organization-specific (contract) pricing `[P0-revenue]`
 - **Rule:** When an organization has a dedicated price list assigned, its members see contract prices that override the store default. Contract pricing takes precedence over catalog sale prices but is still subject to tier pricing within the contract list. Users not in the organization never see contract prices.
@@ -135,6 +136,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Docs:** platform/user-guide/docs/cart/overview.md — the cart module reserves stock for cart products until checkout completes
 - **Source:** VP-2862 (Done) — a product with zero stock and zero preorder quantity could still be added and bought; fixed
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] QUOTE-026 failed in REG-2026-10-15-1453
 
 ### BL-CART-003: Coupon + sale interaction `[P0-revenue]`
 - **Rule:** A percentage coupon applies to the already-discounted (sale) price, not the original list price. A fixed-amount coupon subtracts from the cart total after all line-level discounts. If a coupon's minimum order amount is not met after sale discounts, the coupon must be rejected. Only one coupon per cart unless multi-coupon is explicitly enabled.
@@ -271,6 +273,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Docs:** platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/update-xapi-modules.md — the anonymous order creation setting moved to its functional X-module
 - **Source:** vc-frontend `client-app/pages/checkout/index.vue` — no auth guard on the checkout route; a guest may initialize and complete checkout, and the guest order is not linked to an account.
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] CHK-096 failed in REG-2026-10-15-1624
 
 ### BL-CHK-002: Double-submit prevention (Place Order idempotency) `[P0-revenue]`
 - **Rule:** Clicking "Place Order" twice in rapid succession must NOT create two orders. The button must be disabled after first click, and the backend must enforce idempotency (same cart token → same order).
@@ -278,7 +281,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Violation signal:** Two orders with same items created; button remains clickable during processing; no loading indicator.
 - **Agents:** qa-frontend-expert, qa-backend-expert, qa-testing-expert, test-management-specialist
 - **Trust:** INFERRED
-- **Lifecycle:** SUSPECT — [code] vc-frontend@203908b:client-app/shared/checkout/components/proceed-to.vue - the only double-submit guard found is the button disabled while loading; no server-side idempotency (same cart -> same order) found in vc-module-x-order@0288eeb createOrderFromCart path, against the clause 'backend must enforce idempotency' - re-run the check
+- **Lifecycle:** SUSPECT — [case] SMK-013 failed in REG-2026-10-15-1115
 
 ### BL-CHK-003: Address validation by country `[P1-data]`
 - **Rule:** Checkout address forms adapt the **State/Province** requirement to the selected country, but **ZIP/Postal code is required unconditionally regardless of country** (the `postalCode` field's schema has no country branch). State/Province is required when the selected country has one or more regions and is hidden/optional otherwise. US requires state; the address must be validated before proceeding to payment.
@@ -311,6 +314,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Docs:** platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Cart/objects/CartTotalType.md — per-currency bucket with total, subTotal, taxTotal, discountTotal
 - **Source:** VCST-661 (Done) — a '% off cart subtotal' reward ignored which items were selected in the cart; fixed
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] SMK-013 failed in REG-2026-10-15-1115
 
 ### BL-CHK-007: Minimum order amount enforcement `[P0-revenue]`
 - **Rule:** **NOT native to Virto Commerce** (live-verified 2026-07-15: no store-level monetary minimum-order-amount setting and no native cart validator that blocks Place Order on a below-minimum subtotal — native cart validation is quantity/stock/price-based only: MinQuantity/MaxQuantity/PackSize, out-of-stock, price-changed). This invariant applies **ONLY to deployments that add a custom minimum-order validator/setting**. Where such a validator exists: when a store has a minimum order amount configured, the checkout "Place Order" button must be disabled (or checkout blocked) if the cart subtotal (after discounts) is below the minimum. The minimum applies to the subtotal, not the grand total (before shipping/tax). A clear message must indicate the minimum and the shortfall.
@@ -381,6 +385,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Source:** vc-module-core `CounterOptions.cs` — default `ResetCounterType.Daily`; `SequenceNumberGeneratorService.ShouldResetCounter` resets the sequence at the UTC day boundary.
 - **Source:** VP-8617 (Done) — fixed duplicate order numbers generated across users and stores; expected each order number to be unique.
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] SMK-013 failed in REG-2026-10-15-1115
 
 ### BL-ORD-006: Payment state machine (detailed) `[P0-revenue]`
 - **Rule:** Payment states and allowed transitions:
@@ -636,6 +641,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Agents:** qa-frontend-expert, qa-backend-expert
 - **Docs:** storefront/user-guide/docs/account/overview.md (published) — corporate accounts shop on behalf of a company using company-associated addresses; users can switch organizations
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] BSM-078, BSM-092 failed in REG-2026-10-08-0812
 
 ### BL-B2B-002: Organization-specific pricing overrides store default `[P0-revenue]`
 - **Rule:** When an organization has an assigned price list, those prices override the store's default price list for all members of that organization. The priority chain is: organization price list → store default price list → "Unavailable." If the org price list doesn't cover a product, the store default applies as fallback.
@@ -680,6 +686,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Docs:** platform/user-guide/docs/white-labeling/settings.md (published) — white labeling can be enabled/disabled per store in store settings (General)
 - **Docs:** platform/deployment-on-cloud/docs/store-branding.md (published) — white labeling must be enabled in the store before custom branding applies
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] BSM-060, BSM-061 failed in REG-2026-10-08-0812
 
 ### BL-B2B-007: Per-org JWT permission set is org-scoped; pageContext must match it `[P0-revenue]`
 - **Rule:** A JWT issued for org X MUST carry only the `permission[]` derived from `OrganizationMembership.Roles` for (userId, orgX); permissions from any other org MUST NOT appear. `pageContext.user.permissions` (the `me`/GetPageContext projection) MUST equal the active-org JWT `permission[]`. (VCST-5028.)
@@ -864,6 +871,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Docs:** vc-docs platform/user-guide/docs/catalog/import-products-to-catalog.md — to make products visible on the storefront, the catalog must be linked to the store's catalog
 - **Source:** kb KB-2D446A42 (single observation) — a store exposes a physical catalog's products through its virtual catalog
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] BSM-111 failed in REG-2026-10-08-0812
 
 ### BL-CAT-006: Configurable product requires all sections filled `[P0-revenue]`
 - **Rule:** A configurable product (product with required configuration sections/options) cannot be added to cart until all required configuration sections are completed by the customer. The "Add to Cart" button must remain disabled until every required section has a selection. Optional sections may be left empty.
@@ -937,6 +945,7 @@ These invariants span multiple modules and are where the most expensive producti
 - **Agents:** qa-backend-expert, qa-frontend-expert, qa-testing-expert
 - **Docs:** platform/developer-guide/docs/Tutorials-and-How-tos/How-tos/customizing-cart-validation-policies.md (published) — default buyability price policy rejects zero-price products; allowing them needs a code override
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] BSM-087, BSM-111 failed in REG-2026-10-08-0812
 
 ### BL-CROSS-002: Catalog change → search lag → cart price mismatch window `[P0-revenue]`
 - **Rule:** After a product price or availability is changed in Admin, there is a 30-60 second window where the Elasticsearch index still reflects old data. During this window, the storefront may show stale prices. However, the cart/checkout must always use the server-side (current) price — not the cached search index price.
@@ -969,6 +978,7 @@ These invariants span multiple modules and are where the most expensive producti
 - **Docs:** platform/user-guide/docs/order-management/notifications.md (published) — customers get automated email on order creation
 - **Docs:** storefront/user-guide/docs/shopping/checkout-process.md (published) — placed orders are viewable in the account Orders section
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] GA-031 failed in REG-2026-10-13-1726
 
 ### BL-CROSS-006: Feature flag toggle → immediate behavior change `[P1-data]`
 - **Rule:** Store-level feature flags (e.g., `quotesEnabled`, `anonymousUsersAllowed`, `createAnonymousOrderEnabled`) take effect on the storefront without requiring a restart or redeployment. The storefront reads flags from xAPI on each page load. Module-level flags (e.g., module enable/disable) may require a platform restart. The distinction must be documented per flag.
@@ -977,6 +987,7 @@ These invariants span multiple modules and are where the most expensive producti
 - **Agents:** qa-backend-expert, qa-frontend-expert, qa-testing-expert
 - **Docs:** platform/developer-guide/docs/Tutorials-and-How-tos/How-tos/feature-flags.md (published) — public store settings via xAPI control feature activation at runtime
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] BSM-010, BSM-061, BSM-077, BSM-078, BSM-086, BSM-092, BSM-100 failed in REG-2026-10-08-0812
 
 ### BL-CROSS-007: Admin entity deletion → cascade cleanup `[P1-data]`
 - **Rule:** When a top-level entity is deleted in Admin, all dependent data must be cleaned up: (1) delete catalog → products, categories, prices, search index entries removed; (2) delete organization → members disassociated (not deleted), org-specific price lists unlinked; (3) delete store → associated virtual catalog unlinked, orders preserved (historical). No orphaned records should remain in the database.
@@ -984,6 +995,7 @@ These invariants span multiple modules and are where the most expensive producti
 - **Violation signal:** Orphaned products in search after catalog deletion; orphaned prices referencing deleted products; member accounts deleted with org; API returns references to deleted entities.
 - **Agents:** qa-backend-expert, qa-frontend-expert, qa-testing-expert
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] BSM-085, BSM-086 failed in REG-2026-10-08-0812
 
 ### BL-CROSS-008: Organization switch → full context swap `[P0-revenue]`
 - **Rule:** When a B2B user switches organization, ALL of the following must swap atomically: (1) cart — new org's cart loads, (2) addresses — new org's address book, (3) pricing — new org's price list, (4) lists/wish lists — new org's lists, (5) white labeling — new org's theme (if WL enabled), (6) quotes — new org's quotes. Partial swap (e.g., cart changes but prices don't) is a critical bug.
@@ -1016,6 +1028,7 @@ These invariants span multiple modules and are where the most expensive producti
 - **Violation signal:** White screen / 500 error when a dependent service is down; orphan orders created when payment fails; order blocked because email service is down; silent data loss without logging.
 - **Agents:** qa-backend-expert, qa-frontend-expert, qa-testing-expert
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] BSM-044, BSM-045, BSM-046, BSM-047, BSM-054, BSM-058, BSM-060, BSM-062, BSM-073, BSM-083, BSM-106 failed in REG-2026-10-08-0812
 
 ### BL-CROSS-012: Admin entity deletion never creates $0 products `[P0-revenue]`
 - **Rule:** No admin action (price list deletion, catalog reorganization, module disable, currency removal) should ever cause a product with **missing/absent** price data to silently fall back to a purchasable $0.00 on the storefront. The safe state for a product without a valid price is "Unavailable" / "Add to Cart disabled" — never $0.00 with an active purchase button. **EXCEPTION:** an *intentional* $0 price is purchasable only where the deployment has overridden the price-policy specifications (`ProductIsBuyableSpecification.CheckPricePolicy` and its catalog counterpart) to allow it; by default a $0-priced product is not buyable and cannot be added to cart. When auditing, confirm the deployment's price-policy override before treating a $0 purchase as a violation.
@@ -1025,6 +1038,7 @@ These invariants span multiple modules and are where the most expensive producti
 - **Docs:** platform/developer-guide/docs/Tutorials-and-How-tos/How-tos/customizing-cart-validation-policies.md (published) — zero-price products are not buyable by default; enabling requires overriding the price policy
 - **Docs:** platform/developer-guide/docs/Tutorials-and-How-tos/How-tos/customizing-cart-validation-policies.md — default price policy: products with zero price are not buyable; allowing them requires overriding CatalogProductIsBuyableSpecification/ProductIsBuyableSpecification (CheckPricePolicy returns true), a backend customization, not a theme flag
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] BSM-085 failed in REG-2026-10-08-0812
 
 ---
 
@@ -1067,6 +1081,7 @@ These invariants span multiple modules and are where the most expensive producti
 - **Docs:** vc-docs platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Catalog/queries/products.md — storeId is a required argument
 - **Source:** VCST-3003 / VP-8726 (Done) — a bulk add resolved an item code from another catalog; indirect
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] SRCH-011, SRCH-024 failed in REG-2026-10-09-1616
 
 ### BL-SRCH-005: Special characters in search queries `[P2-ux]`
 - **Rule:** Search must handle special characters safely: quotes, ampersands, angle brackets, Unicode, emoji, and SQL/NoSQL injection patterns. Special characters should be escaped or treated as literal text — never interpreted as query operators (unless explicitly supported like `"exact phrase"` search). No 500 errors, no information leakage.
@@ -1224,6 +1239,7 @@ These invariants are extracted from BOPIS suite assertions (suites 036–038). T
 - **Violation signal:** Email shows wrong order total; unresolved template tokens; prices in wrong currency; missing items in email; order number mismatch.
 - **Agents:** qa-backend-expert, qa-testing-expert
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] BSM-082 failed in REG-2026-10-08-0812
 
 ### BL-NOTIF-003: Notification failure does not block order `[P0-revenue]`
 - **Rule:** If the email/notification service fails during order placement, the order must still be created successfully. Notification sending is asynchronous — it must never block or roll back the order transaction. The customer should see the order confirmation page, and the email will be retried in the background.
@@ -1415,6 +1431,7 @@ These invariants hold for any rendered surface — Storybook stories, storefront
 - **Source:** VCST-4816 (Done) — badge count not vertically centered due to wrong flex alignment property; fixed to centre
 - **Source:** VCST-3738 (Done) — misaligned admin module icons adjusted
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] SR-TK-019 failed in REG-2026-10-07-1421
 
 ### BL-UI-006: Touch target size and spacing `[P1-data]`
 - **Rule:** At mobile viewport (≤ 768 px), every interactive element — `<button>`, `<a>`, `<input type="checkbox|radio">`, `[role="button"]`, custom steppers, toggle switches — MUST measure at least **24 × 24 CSS px (WCAG 2.2 SC 2.5.8, Level AA)** and SHOULD reach **44 × 44 (SC 2.5.5, Level AAA)**, with ≥ 8 px gap from any adjacent interactive element. Padding counts toward the target; hit area is `getBoundingClientRect()` of the element including padding, NOT the visible glyph alone. **Two tiers on purpose:** the vc-frontend UI kit ships button sizes 26 / 32 / 38 / 44 / 52 px by design (`vc-button.vue` `--size`), so a flat 44 px bar marks most of the design system as broken — that produced 13 of 36 failures in run REG-2026-07-24-2121. Below AA = defect (FAIL); AA-to-AAA = design-system tradeoff (WARN), cross-check against the derived `UI_KIT_BUTTON_SIZES_PX` before filing.
@@ -1426,6 +1443,7 @@ These invariants hold for any rendered surface — Storybook stories, storefront
 - **Source:** vc-frontend `client-app/ui-kit/components/molecules/button/vc-button.vue` `--size` tiers (xxs 26 / xs 32 / sm 38 / md 44 / lg 52 px); this repo `scripts/lib/measure-layout.ts` `TOUCH_TARGET_AA_MIN_PX` / `classifyTouchTargets()` (FAIL < 24, WARN 24–43).
 - **Source:** VCST-5019 (Cancelled) — 26x26 coupon buttons reported against a 44px bar were not fixed; consistent with the rule treating 24-43px as WARN, not FAIL
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] SR-CO-048 failed in REG-2026-10-07-1421
 
 ### BL-UI-007: Admin editor chrome is keyboard-operable and exposes its state `[P1-data]`
 - **Rule:** Every interactive control an admin surface introduces must be reachable by `Tab` in DOM order, activatable from the keyboard, and must expose the correct role and selected/expanded state to assistive technology plus a non-empty accessible name. A visible focus indicator is required on focus — a control may not remove the platform outline without replacing it. Keyboard focus must never be trapped: an embedded editor that consumes `Tab` for indentation must provide an escape binding so focus can leave it (WCAG 2.1.2 No Keyboard Trap, Level A). Embedded iframes carry a non-empty `title`. Text meets WCAG 2.2 AA contrast 4.5:1 (3:1 for large text); non-text affordances such as icons and focus indicators meet 3:1. **Scope:** this invariant judges the controls a surface itself adds or owns. Pre-existing platform form chrome that fails the same check is a platform-level finding — record it once against the platform, not against every module blade that renders it.
@@ -1877,6 +1895,7 @@ Scoped storefront GraphQL surface for sales representatives (`POST /graphql/sale
 - **Source:** VCST-5304 (Done) — when logged in as a Sales Rep (role), the account left rail gets a separate 'Sales Rep hub' widget
 - **Source:** VCST-5494 (Done) — rep with no org membership was redirected from My customers; fixed so rep-facing hub pages are reachable
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] SR-HD-100, SR-HD-102 failed in REG-2026-10-15-1548
 
 ### BL-SR-012: Filter-aware empty states distinguish "no data" from "nothing matched the filter/search" `[P2-ux]`
 - **Rule:** The orders, top-sellers and my-customers views render **distinct** empty states for "the rep has no data at all" vs "the current filter/search matched nothing" — the latter must offer a way back (clear filter/search), not read as "you have no customers/orders".
@@ -1885,6 +1904,7 @@ Scoped storefront GraphQL surface for sales representatives (`POST /graphql/sale
 - **Agents:** qa-backend-expert, qa-frontend-expert
 - **Source:** vc-frontend PR #2395 ("Filter-aware empty states… distinguish 'nothing matches this filter/search' from 'no data'").
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] SR-TK-023 failed in REG-2026-10-07-1421
 
 ### BL-SR-013: Rep-facing status / money / rule vocabulary localizes by `cultureName`; raw enum/key never surfaces `[P2-ux]`
 - **Rule:** Filter/sort rule labels (`localizedName`), order statuses (`statusDisplayValue`), and `formattedAmount` localize by `cultureName`. The storefront renders the localized label, never a raw enum value or an i18n key.
@@ -2109,6 +2129,7 @@ These invariants hold for any rendered customer-facing surface on the accessibil
 - **Source:** `client-app/shared/cart/components/coupon-card.vue` — the coupon-apply error paragraph is conditionally mounted with `role="alert"` only when an error exists, so its appearance in the DOM itself triggers the assistive-technology alert announcement.
 - **Source:** VCST-5912 (Done) — quantity spinbutton exposed aria-invalid=true and a wrong aria-valuenow on untouched render; fixed
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [bug] VCST-5878 compare table body scroller below md has no focusable content (axe scrollable-region-focusable, Serious) — pre-existing; CMP-047 failed on it in REG-2026-10-12-1832
 
 ---
 
@@ -2297,6 +2318,7 @@ These invariants hold for any rendered customer-facing surface on the accessibil
 - **Source:** vc-frontend `client-app/modules/google-analytics/events.ts` (`viewItemList`, `selectItem`, `viewItem`, `viewSearchResults`, `addItemToWishList`) + `utils.ts` (`productToGtagItem`, `getCategories` — first 5 non-product breadcrumbs mapped to `item_category`/`item_category2..5`).
 - **Source:** VCST-4801 (Done) — GA4 item affiliation showed a placeholder instead of the store name; fixed
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] GA-002, GA-028, GA-029, GA-037, GA-043, GA-052, GA-056, GA-057 failed in REG-2026-10-13-1643
 
 ### BL-GA4-002: Cart mutation events report the cart's own line items and value, never a client-guessed total `[P1-data]`
 - **Rule:** Every cart mutation — `add_to_cart`, `view_cart`, `update_cart_item`, `remove_from_cart`, `clear_cart` — pushes a GA4 event whose `value`/`items[]` are read from the cart/line-item state the mutation itself returns, and whose `items[]` entries follow the same Item Fields schema as catalog events. `clear_cart` reports the value and contents of the cart AS IT WAS immediately before clearing — not zero/empty.
@@ -2322,6 +2344,7 @@ These invariants hold for any rendered customer-facing surface on the accessibil
 - **Source:** VCST-4800 (Done) — purchase event not capturable due to redirect off the completion page; fixed
 - **Source:** VCST-4307 (Done) — add_shipping_info value wrongly reflected shipping cost when switching methods
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] GA-031 failed in REG-2026-10-13-1726
 
 ### BL-GA4-004: GA4 is configured once per page with the session's current currency, language, and (when authenticated) user id `[P1-data]`
 - **Rule:** On every page load, the storefront issues a single `gtag("config", <trackId>, {...})` call whose config object carries the current store currency and the current UI language/culture; when the session is authenticated, it also carries `user_id` set to the logged-in user's own platform id; when the session is anonymous, `user_id` is omitted entirely — never a placeholder or empty string.
@@ -2360,6 +2383,26 @@ These invariants hold for any rendered customer-facing surface on the accessibil
 
 ---
 
+## Domain 28: Returns (BL-RET)
+
+> **Declared 2026-10-06, deliberately EMPTY — no invariant has cleared the evidence bar yet.** The
+> section exists so `.claude/knowledge/domain/returns.md` and `returns.mind-map.json` have a slug to
+> resolve against (`domain:check` DOMAIN-005 until now). The Return module carries two mechanisms on
+> one entity: the legacy admin-created return record, and the buyer self-service request (VCST-5628)
+> that an agent decides per line (VCST-5883). The published guides describe only the first. Returns are
+> judged today only by delegation to general oracles — `BL-AUTH-*` (who may read or decide a return),
+> `BL-B2B-*` (organization scoping) and `BL-NOTIF-*` (exactly-once sends, by analogy only: those are
+> order-email invariants).
+>
+> Candidates surfaced but **not** promoted (each needs a `/qa-review-oracles` three-axis pass): a
+> decision has no reverse path (no un-authorize); a return is decided only through the authorize call,
+> never by setting a status; Draft, Cancelled and Rejected hold no returnable quantity while a decided
+> line holds its approved quantity; every status change sends exactly one email and one push. Surfaces,
+> evidence and the open gaps: `.claude/knowledge/domain/returns.md` §3 and §5; behaviours:
+> `returns.mind-map.json`.
+
+---
+
 ## Invariant Coverage Summary
 
 Generated from `bl/*.yaml` by `npm run bl:render`. P0 rolls up `[P0-revenue]` + `[P0-security]`; P1 rolls up
@@ -2368,32 +2411,33 @@ ticket or a docs page disputes (`status`).
 
 | Domain | ID Range | Total | P0 | P1 | P2 | DECLARED | SUSPECT |
 |--------|----------|-------|----|----|----|----------|---------|
-| Pricing & Discounts | BL-PRICE-001–009 | 9 | 7 | 1 | 1 | 6 | 1 |
-| Cart | BL-CART-001–015 | 15 | 5 | 10 | 0 | 7 | 1 |
-| Checkout | BL-CHK-001–008 | 8 | 5 | 3 | 0 | 1 | 1 |
-| Orders & Fulfillment | BL-ORD-001–010 | 10 | 3 | 7 | 0 | 5 | 1 |
+| Pricing & Discounts | BL-PRICE-001–009 | 9 | 7 | 1 | 1 | 6 | 2 |
+| Cart | BL-CART-001–015 | 15 | 5 | 10 | 0 | 7 | 2 |
+| Checkout | BL-CHK-001–008 | 8 | 5 | 3 | 0 | 1 | 3 |
+| Orders & Fulfillment | BL-ORD-001–010 | 10 | 3 | 7 | 0 | 5 | 2 |
 | Users & Authentication | BL-AUTH-001–017 | 17 | 5 | 11 | 1 | 9 | 3 |
-| B2B / Organization | BL-B2B-001–013 | 13 | 4 | 9 | 0 | 10 | 1 |
-| Catalog & Inventory | BL-CAT-001–012 | 12 | 2 | 6 | 4 | 8 | 4 |
-| Cross-Domain Invariants | BL-CROSS-001–012 | 12 | 7 | 5 | 0 | 5 | 0 |
-| Search | BL-SRCH-001–007 | 7 | 0 | 5 | 2 | 6 | 0 |
+| B2B / Organization | BL-B2B-001–013 | 13 | 4 | 9 | 0 | 10 | 3 |
+| Catalog & Inventory | BL-CAT-001–012 | 12 | 2 | 6 | 4 | 8 | 5 |
+| Cross-Domain Invariants | BL-CROSS-001–012 | 12 | 7 | 5 | 0 | 5 | 6 |
+| Search | BL-SRCH-001–007 | 7 | 0 | 5 | 2 | 6 | 1 |
 | Shipping & BOPIS | BL-SHIP-001–004 | 4 | 2 | 2 | 0 | 2 | 0 |
 | BOPIS-Specific Rules | BL-BOPIS-001–008 | 8 | 1 | 6 | 1 | 3 | 0 |
-| Notifications | BL-NOTIF-001–007 | 7 | 1 | 5 | 1 | 4 | 2 |
+| Notifications | BL-NOTIF-001–007 | 7 | 1 | 5 | 1 | 4 | 3 |
 | Import / Export | BL-IMPEX-001–004 | 4 | 0 | 4 | 0 | 1 | 0 |
 | SEO & URLs | BL-SEO-001–004 | 4 | 0 | 2 | 2 | 2 | 0 |
 | Profile & Member Data | BL-PROFILE-001 | 1 | 0 | 1 | 0 | 0 | 0 |
-| UI Display & Layout Stability | BL-UI-001–007 | 7 | 0 | 2 | 5 | 5 | 1 |
+| UI Display & Layout Stability | BL-UI-001–007 | 7 | 0 | 2 | 5 | 5 | 3 |
 | GraphQL xAPI Contract | BL-GQL-001–004 | 4 | 1 | 2 | 1 | 2 | 2 |
 | Loyalty & Mixed Cart | BL-LOY-001–020 | 19 | 10 | 7 | 2 | 10 | 0 |
 | Payment Processors | BL-PAY-001–004 | 3 | 3 | 0 | 0 | 2 | 0 |
 | White Labeling | BL-WL-001–006 | 6 | 0 | 2 | 4 | 4 | 0 |
-| Sales Rep | BL-SR-001–032 | 32 | 3 | 18 | 11 | 6 | 3 |
-| Accessibility | BL-A11Y-001–004 | 4 | 0 | 4 | 0 | 4 | 3 |
+| Sales Rep | BL-SR-001–032 | 32 | 3 | 18 | 11 | 6 | 5 |
+| Accessibility | BL-A11Y-001–004 | 4 | 0 | 4 | 0 | 4 | 4 |
 | Customer Reviews | BL-CR-001–018 | 9 | 1 | 6 | 2 | 5 | 0 |
 | Platform Administration | BL-PLAT-001–004 | 3 | 0 | 2 | 1 | 3 | 0 |
 | Store Management | BL-STORE-001 | 1 | 0 | 1 | 0 | 1 | 0 |
 | Agentic Commerce / UCP | — | 0 | 0 | 0 | 0 | 0 | 0 |
-| Analytics & Tracking | BL-GA4-001–004 | 4 | 0 | 4 | 0 | 3 | 0 |
+| Analytics & Tracking | BL-GA4-001–004 | 4 | 0 | 4 | 0 | 3 | 2 |
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
-| **Total** | | **223** | **60** | **125** | **38** | **114** | **23** |
+| Returns | — | 0 | 0 | 0 | 0 | 0 | 0 |
+| **Total** | | **223** | **60** | **125** | **38** | **114** | **46** |

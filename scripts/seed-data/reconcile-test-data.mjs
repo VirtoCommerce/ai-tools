@@ -21,6 +21,9 @@
  *                          WITH a role; a multi-org user's memberships carry DIFFERENT roles.
  *   5. Secret hygiene     — no password literals committed in the user CSVs
  *                          (b2b, personal, agent-pool, white-labeling).
+ *  16. Quote fixtures    — every seeded suite-015 quote (aliases.<env>.json, per pool buyer) is
+ *                          owned by that buyer's LOGIN id + live organization, carries a
+ *                          languageCode and its spec status/expiry (KB-874B24DD, KB-97C03EB4).
  *   9. Org address parity — each seeded org's LIVE member address fields
  *                          (regionName/city/postalCode/countryCode/line1) match the
  *                          CSV columns. Catches a seed storing a diverging value —
@@ -42,17 +45,21 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   ROOT, BACK_URL, api, auth, assertSafeTarget, loadAliases, log, SEED_FAMILY, STORE_ID,
+  isLockedOut, hasInertLockoutEnd,
 } from '../lib/seed-common.mjs';
 import { resolveAllRoles, roleByKey } from '../lib/user-roles.mjs';
 import { selectProbeTargets } from './overlay-specs.mjs';
 import { runStoreDefaultsCheck } from './store/check-store-defaults.mjs';
 import { parse } from 'csv-parse/sync';
 import { REP_ONLY_ORG } from './sales-rep/rep-only-org-specs.mjs';
-import { DEMO_PROFILE, DEMO_LEDGER_KEY, demoServedOrgExpectations } from './sales-rep/sales-rep-demo-specs.mjs';
+import { DEMO_PROFILE, DEMO_LEDGER_KEY, SALES_REP_FAMILY, demoServedOrgExpectations } from './sales-rep/sales-rep-demo-specs.mjs';
+import { datasetProfileOf } from '../lib/seed-family.mjs';
 import { classifyStoreFfc, isBlockingStoreFfc, describeStoreFfc } from './store/store-ffc-specs.mjs';
 import {
   PRODUCTS as MSN_E2E_PRODUCTS, productFlagDrift, productFlagDriftMessage,
 } from './loyalty/missions-e2e-specs.mjs';
+import { QUOTE_FIXTURES, quoteDriftProblems } from './orders/orders-specs.mjs';
+import { poolBuyerRows, resolveQuoteBuyer, slotField } from './orders/quote-buyers.mjs';
 
 const WARN_ONLY = process.argv.includes('--warn-only');
 const TEST_ENV = process.env.TEST_ENV || 'vcst';
@@ -63,6 +70,8 @@ const notes = [];
 const fail = (msg) => { problems.push(msg); console.log(`  ✗ ${msg}`); };
 const ok = (msg) => console.log(`  ✓ ${msg}`);
 const warn = (msg) => { notes.push(msg); console.log(`  ⚠ ${msg}`); };
+/** informational only — neither a problem nor a note; never affects the exit code. */
+const info = (msg) => console.log(`  ℹ ${msg}`);
 
 /** Merge aliases.json ← aliases.{TEST_ENV}.json (same precedence as the resolver). */
 function mergedAliases() {
@@ -504,7 +513,8 @@ async function checkSeoComplete() {
  * still authenticates via /connect/token with its declared password, using the SAME grant context
  * the runner uses (graphql-auth.ts acquireToken): context-free for admin roles, storeId-scoped for
  * customer/org roles. A locked account (LOCKOUT_TEST / a blocked rep) failing auth is EXPECTED
- * state, not a drift, so it is skipped. Secret-safe: the password is only sent to /connect/token;
+ * state, not a drift, so it is skipped — "locked" meaning lockoutEnabled AND a future lockoutEnd
+ * (seed-common isLockedOut), never a future lockoutEnd alone. Secret-safe: the password is only sent to /connect/token;
  * no token is retained or written to disk. */
 async function checkAuthDrift() {
   console.log('\n[10] Auth drift (each seeded role authenticates with its declared password)');
@@ -516,10 +526,13 @@ async function checkAuthDrift() {
     try { user = await api('GET', `/api/platform/security/users/${encodeURIComponent(r.email)}`, null, { expectStatus: [200, 404] }); }
     catch (e) { warn(`${r.key}: account probe error for ${r.email} — ${String(e.message).slice(0, 90)}`); continue; }
     if (!user?.id) continue; // absent account already reported in [2] (required→fail / optional→warn)
-    if (user.lockoutEnd && new Date(user.lockoutEnd).getTime() > Date.now()) {
+    // Locked ⇔ lockoutEnabled AND a future lockoutEnd (Identity's IsLockedOutAsync). A future
+    // lockoutEnd with lockout disabled is inert — the account signs in, so the check still runs.
+    if (isLockedOut(user)) {
       warn(`${r.key} → ${r.email}: account locked — auth-drift check skipped (expected for lockout/blocked fixtures)`);
       continue;
     }
+    if (hasInertLockoutEnd(user)) info(`${r.key} → ${r.email}: lockoutEnd ${user.lockoutEnd} set but lockout not enabled — not locked, auth-drift check runs`);
     const ctx = r.kind === 'admin' ? {} : { storeId: STORE_ID };
     const okLogin = await tryLogin(user.userName || r.email, r.password, ctx);
     if (okLogin) ok(`${r.key} → ${r.email} authenticates with ${pwVar} (${r.kind}${ctx.storeId ? `, storeId=${ctx.storeId}` : ', context-free'})`);
@@ -591,7 +604,8 @@ async function checkOverlayGuidLiveness() {
  * — and asserts the LIVE rep record still carries each one. Silent membership loss is now loud.
  *
  * PROFILE-AWARE. The serve-list's source of truth depends on WHICH sales-rep dataset the environment
- * holds, which `_meta.dataset_profile` in `test-data/aliases.<env>.json` records. Under the demo
+ * holds, which `_meta.dataset_profiles['sales-rep']` in `test-data/aliases.<env>.json` records (the
+ * legacy `_meta.dataset_profile` still counts — `datasetProfileOf()` reads both). Under the demo
  * profile the AGENT-TEST fixture reps were deliberately deleted by the changeover, so the committed
  * CSV describes reps that are *supposed* to be absent: asserting it would emit a row of permanent
  * ✗ failures that say nothing about the environment's health, and a check that is always red is a
@@ -613,7 +627,7 @@ async function checkSalesRepServedOrgs() {
   if (existsSync(overlayPath)) {
     try { overlay = JSON.parse(readFileSync(overlayPath, 'utf8')); } catch { overlay = {}; }
   }
-  const profile = overlay?._meta?.dataset_profile || null;
+  const profile = datasetProfileOf(overlay, SALES_REP_FAMILY);
   if (profile === DEMO_PROFILE) { await checkDemoServedOrgs(overlay); return; }
 
   const repsPath = join(ROOT, 'test-data/sales-rep/sales-reps.csv');
@@ -681,14 +695,14 @@ async function checkSalesRepServedOrgs() {
  * re-derived here, so the seeder, the guard and this check read one declaration.
  */
 async function checkDemoServedOrgs(overlay) {
-  console.log(`     dataset_profile = "${DEMO_PROFILE}" (test-data/aliases.${TEST_ENV}.json → _meta)`);
+  console.log(`     dataset_profiles.${SALES_REP_FAMILY} = "${DEMO_PROFILE}" (test-data/aliases.${TEST_ENV}.json → _meta)`);
   console.log('     SKIPPING test-data/sales-rep/sales-reps.csv: the AGENT-TEST fixture reps it declares were');
   console.log('     deliberately removed by the demo changeover, so every row would report a false ✗. Asserting');
   console.log(`     the demo ledger (${DEMO_LEDGER_KEY}) instead — same relationship check, right declaration.`);
 
   const ledger = overlay?.[DEMO_LEDGER_KEY] || null;
   if (!ledger) {
-    warn(`dataset_profile is "${DEMO_PROFILE}" but aliases.${TEST_ENV}.json carries no ${DEMO_LEDGER_KEY} — the demo's served-org attachments are UNVERIFIABLE (and so is its teardown); re-run \`TEST_ENV=${TEST_ENV} npm run seed:sales-rep-family -- --profile demo\` and commit the refreshed overlay`);
+    warn(`dataset_profiles.${SALES_REP_FAMILY} is "${DEMO_PROFILE}" but aliases.${TEST_ENV}.json carries no ${DEMO_LEDGER_KEY} — the demo's served-org attachments are UNVERIFIABLE (and so is its teardown); re-run \`TEST_ENV=${TEST_ENV} npm run seed:sales-rep-family -- --profile demo\` and commit the refreshed overlay`);
     return;
   }
 
@@ -833,6 +847,44 @@ async function checkStoreFulfillmentCenters() {
   }
 }
 
+/* ── 16. Quote fixtures — owner, organization, language, state ─────────────
+ * Live probe only. The buyer's quote list filters on customerId = the buyer's LOGIN id AND
+ * organizationId = the buyer's current org (KB-874B24DD); a seeded quote that drifts on either is
+ * silently absent for the buyer, and every suite-015 case built on it goes BLOCKED. Judged with the
+ * same pure quoteDriftProblems the seeder uses; the buyer is resolved LIVE (quote-buyers.mjs), never
+ * from the pool CSV's informational org columns. A consumed DISPOSABLE quote (Ordered/Declined by a
+ * case) is reported as a note, not a failure: re-seed restores it.
+ */
+async function checkQuoteFixtures() {
+  console.log('\n[16] Quote fixtures (suite 015) — owner, organization, language, state');
+  const overlay = mergedAliases();
+  const store = await api('GET', `/api/stores/${encodeURIComponent(STORE_ID)}`, null, { expectStatus: [200, 404] });
+  const buyers = [];
+  for (const row of poolBuyerRows()) {
+    const b = await resolveQuoteBuyer(api, row);
+    if (b.error) { warn(`quote buyer slot ${b.slot} (${b.email}): ${b.error}`); continue; }
+    buyers.push(b);
+  }
+  const now = new Date();
+  let checked = 0;
+  for (const spec of QUOTE_FIXTURES) {
+    const entry = overlay[spec.alias] || {};
+    for (const b of buyers) {
+      const id = entry[slotField('id', b.slot)];
+      if (!id) { warn(`${spec.alias}: no ${slotField('id', b.slot)} in aliases.${TEST_ENV}.json — run npm run seed:quotes`); continue; }
+      const live = await api('GET', `/api/quote/requests/${encodeURIComponent(id)}`, null, { expectStatus: [200, 204, 404] });
+      checked += 1;
+      if (!live?.id) { fail(`${spec.alias} slot ${b.slot}: quote ${id} does not exist — re-run npm run seed:quotes`); continue; }
+      const drift = quoteDriftProblems(spec, live, { customerId: b.userId, organizationId: b.organizationId, languageCode: store?.defaultLanguage }, now);
+      const consumed = spec.disposable && drift.length && drift.every((d) => d.startsWith('status ')) && ['Ordered', 'Declined'].includes(live.status);
+      if (!drift.length) continue;
+      if (consumed) warn(`${spec.alias} slot ${b.slot}: consumed (${live.status}) — re-seed before its case runs again`);
+      else fail(`${spec.alias} slot ${b.slot} (${live.number}): ${drift.join('; ')}`);
+    }
+  }
+  if (checked) ok(`${checked} seeded quote(s) checked against ${buyers.length} live buyer(s)`);
+}
+
 /* ── main ─────────────────────────────────────────────────────── */
 (async () => {
   console.log(`=== test-data live reconciliation — TEST_ENV=${TEST_ENV} ===`);
@@ -853,6 +905,7 @@ async function checkStoreFulfillmentCenters() {
   await checkStoreDefaults();
   await checkMissionFixtureProductFlags();
   await checkStoreFulfillmentCenters();
+  await checkQuoteFixtures();
 
   console.log('\n=== Summary ===');
   console.log(`  hard problems: ${problems.length}`);

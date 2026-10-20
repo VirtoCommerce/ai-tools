@@ -34,7 +34,8 @@ const REQUIRED_ROW_FIELDS = ['id', 'path', 'subject'];
  * @property {string[]} questions    the retrieval card's questions (schema 2); empty on a schema-1 row
  * @property {string[]} concepts     vocabulary concept ids (schema 2); empty on a schema-1 row
  * @property {number} trust          confirmations, computed at write time from evidence[]
- * @property {number} disputed
+ * @property {number} disputed       OPEN disputes; a judge-resolved one is counted in `resolved`
+ * @property {number} resolved       disputes a judge resolved (VCST-6179); 0 when the row has no key
  * @property {string} index          which declared index this row came from
  */
 
@@ -51,7 +52,9 @@ export function normalizeScope(scope) {
       ? item
       : item && typeof item === 'object' ? `${item.axis}=${item.value}` : '';
     const trimmed = String(text).trim().toLowerCase();
-    if (trimmed && trimmed.includes('=')) out.add(trimmed);
+    // `surface = rest` is `surface=rest`: spaces around the `=` must not make a second spelling (review of ai-tools#460).
+    const eq = trimmed.indexOf('=');
+    if (eq > 0) out.add(`${trimmed.slice(0, eq).trim()}=${trimmed.slice(eq + 1).trim()}`);
   }
   return [...out].sort();
 }
@@ -76,6 +79,12 @@ export const SURFACE_SPELLINGS = {
   'admin-ui': 'admin-ui', 'admin-spa': 'admin-ui',
   'ucp-mcp': 'ucp', 'ucp-rest': 'ucp',
   'vendor-portal-ui': 'vendor-ui',
+  // Spellings agents wrote in 2026-10-08..15 that name ONE surface unambiguously (VCST-6378). `api`,
+  // `notifications` and `search-index` stay unlisted: each names more than one surface across entries.
+  'xapi-graphql': 'xapi',
+  'admin-rest': 'rest', 'platform-rest-admin': 'rest', 'platform-rest-api': 'rest', 'platform-auth': 'rest', 'background-job': 'rest',
+  'admin-shell': 'admin-ui', 'admin-designer': 'admin-ui', 'page-builder-designer': 'admin-ui', 'page-builder-shell': 'admin-ui',
+  'admin-page-builder-designer': 'admin-ui', 'admin-pagebuilder-designer': 'admin-ui', 'hangfire-dashboard': 'admin-ui',
 };
 
 /** The canonical surfaces of a normalised scope, in SURFACES order. */
@@ -116,6 +125,8 @@ export function normalizeRow(raw, { index = 'index.json' } = {}) {
     concepts: idList(raw.concepts),
     trust: Number.isFinite(raw.trust) ? raw.trust : 0,
     disputed: Number.isFinite(raw.disputed) ? raw.disputed : 0,
+    resolved: Number.isFinite(raw.resolved) ? raw.resolved : 0,
+    contested: Number.isFinite(raw.contested) ? raw.contested : 0,
     index,
   };
 }

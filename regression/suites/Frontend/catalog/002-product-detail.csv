@@ -126,15 +126,17 @@ varName=@td(PROD_CMP_VARIATIONS.name)","[NAV] Navigate to {{FRONT_URL}}@td(PROD_
 [STATE] URL reflects virtual catalog category structure","[NETWORK] GET product PDP returns HTTP 200
 [API] GraphQL product query returns catalogId matching virtual catalog
 [CONSOLE] no TypeError or JS errors","Inherited products missing from virtual catalog; product details missing or empty; breadcrumbs showing physical catalog path; PDP returning 4xx; console TypeError","none","E2E-CAT-007, GAP-CS-01 | Promoted: REG-2026-08-25-1128 (2026-08-26)",Automated
-"CAT-046","PDP Description & Properties Inline Sections","Catalog > Product","Medium","BL-CAT-006",,"Product exists with description content and specification properties defined","url={{FRONT_URL}}","[NAV] Navigate to a product detail page on {{FRONT_URL}}
+"CAT-046","PDP Description & Properties Inline Sections","Catalog > Product","Medium","BL-CAT-006",,"Product exists with description content and specification properties defined. Preferably a product whose properties are GROUPED (subgroup toggles under Properties), discovered live by opening PDPs from a catalogue scan; if none is found the flat-layout branch is asserted and the grouped branch is reported N/A, never silently passed","url={{FRONT_URL}}","[NAV] Navigate to a product detail page on {{FRONT_URL}} — a discovered product with grouped properties if one exists, otherwise any product with properties and a description
 [WAIT] wait for PDP to fully load
-[ACT] click 'Expand all' in the Properties block
-[WAIT] wait for the property subgroups to expand","[DOM] PDP renders a 'Properties' block (heading level 2) with property name/value rows {OBSERVED}
-[DOM] the product description renders as a row inside the Properties grid — there is NO dedicated 'Description' h2 section {OBSERVED}
-[DOM] Properties uses a collapsible pattern — an 'Expand all' control plus per-subgroup toggles {OBSERVED}
-[STATE] after 'Expand all', all property subgroups are visible simultaneously {OBSERVED}
+[CAPTURE] GROUPED = true if the Properties block holds subgroup toggles or an 'Expand all' control, else false
+[ACT] if GROUPED, click 'Expand all' in the Properties block
+[WAIT] if GROUPED, wait for the property subgroups to expand","[DOM] PDP renders a 'Properties' block (heading level 2) with property name/value rows {OBSERVED}
+[DOM] the product description is shown on the PDP with non-empty text — either as a dedicated 'Description' h2 section (flat layout, e.g. a product without property groups) or as a row inside the Properties grid (grouped layout) {OBSERVED}
+[DOM] only if GROUPED: Properties uses a collapsible pattern — an 'Expand all' control plus per-subgroup toggles {OBSERVED}
+[STATE] only if GROUPED: after 'Expand all', all property subgroups are visible simultaneously {OBSERVED}
+[DOM] only if NOT GROUPED: no 'Expand all' control is expected and none is asserted {OBSERVED}
 [STATE] a Reviews/Ratings section is NOT expected (not implemented on the storefront PDP) — do not assert it {OBSERVED}","[CONSOLE] no TypeError or JS errors
-[CONSOLE] no Vue hydration warnings on tab switch","Properties block absent; description row empty; 'Expand all' does not expand the subgroups; property rows render without labels or values; console TypeError","none","E2E-CAT-005, GAP-CS-06","Draft"
+[CONSOLE] no Vue hydration warnings on tab switch","Properties block absent; description missing or empty in both placements; property rows render without labels or values; GROUPED product whose 'Expand all' does not expand the subgroups; console TypeError","none","E2E-CAT-005, GAP-CS-06 · Repaired 2026-10-14 (Stable 16 regression VCST-6042): a product without property groups (e.g. WF-3640: 'Properties' h2 plus separate 'Description' h2 with 'See more', no 'Expand all', no subgroups, same on Stable 15) never fit the grouped-only oracle; grouped assertions are now conditional on groups existing","Draft"
 "CAT-050","In-Stock Product PDP - Availability Badge and Add to Cart Enabled","Catalog > Product","High","BL-CAT-006, BL-CART-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 An in-stock product with inventory > 0 exists in the B2B virtual catalog; user authenticated or guest session active","url={{FRONT_URL}}","[NAV] Navigate to any product detail page for an in-stock product on {{FRONT_URL}} (resolve at runtime: xAPI products query with availabilityData.isInStock=true)
@@ -150,18 +152,18 @@ An in-stock product with inventory > 0 exists in the B2B virtual catalog; user a
 [CONSOLE] no TypeError or JS errors","Availability indicator absent; quantity stepper (+) disabled for in-stock product; cart badge not incrementing; add-to-cart returning 4xx; console TypeError","Remove added product from cart after test",Coverage Gap Analysis; GAP-CS-15 | Promoted: REG-2026-08-25-1128 (2026-08-26),Automated
 "CAT-051","Out-of-Stock Product PDP - Unavailable Indicator and Add to Cart Disabled","Catalog > Product","High","BL-CAT-006, BL-CART-002","ECL-2.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-An out-of-stock product (inventory = 0 or availability = false) exists in the B2B virtual catalog; fixture: {{OOS_SKU}} (see test-data/products/test-products.csv PROD-101)","url={{FRONT_URL}}; oos_sku={{OOS_SKU}}","[NAV] Resolve the out-of-stock product PDP URL at runtime using {{OOS_SKU}} — search for the SKU or navigate directly; if {{OOS_SKU}} is not provisioned, skip this case (SEED REQUIRED: OOS product fixture)
+An out-of-stock product (inventory = 0 or availability = false) exists in the B2B virtual catalog; fixture: {{OOS_SKU}} (see test-data/products/test-products.csv PROD-101)","url={{FRONT_URL}}; oos_sku={{OOS_SKU}}","[NAV] Resolve the out-of-stock product PDP URL at runtime using {{OOS_SKU}} — navigate directly to the PDP (SKU search returns 0 with 'Show in stock' on by default); if {{OOS_SKU}} is not provisioned, skip this case (SEED REQUIRED: OOS product fixture)
 [WAIT] Wait for the PDP to fully load
-[ASSERT] Verify an out-of-stock indicator is displayed (e.g., 'Out of stock' or 'Unavailable')
+[ASSERT] Verify the purchase zone shows a non-purchase signal: the 'Stock alert' button when Back-in-Stock is enabled (theme 2.59), or an explicit 'Out of stock' / 'Unavailable' label when it is not
 [ASSERT] Verify the quantity stepper (+) is absent or disabled, or replaced with an alternative CTA
 [ASSERT] Verify the product price is still displayed even if unavailable
 [ACT] Attempt to use the quantity stepper (+) if visible but disabled
-[ASSERT] Verify no item is added to the cart (cart badge unchanged)","[DOM] Out-of-stock indicator clearly visible near product title or price
+[ASSERT] Verify no item is added to the cart (cart badge unchanged)","[DOM] The purchase zone near product title or price shows the 'Stock alert' button (Back-in-Stock enabled; it replaces the quantity stepper and the 'Out of stock' badge that theme 2.51.2 showed) or, with Back-in-Stock disabled, an explicit out-of-stock label — not the enabled stepper and not an 'In stock' label {OBSERVED} (KB-12BED7EA)
 [STATE] Quantity stepper (+) is disabled or absent for out-of-stock product
 [MATH] Cart badge count does not change after attempting add-to-cart on disabled button
 [DOM] Product price still displayed (not hidden)
 [STATE] No way to add the out-of-stock product to cart through the PDP","[NETWORK] no add-to-cart POST fired when button is disabled
-[CONSOLE] no TypeError or JS errors","Out-of-stock indicator absent; quantity stepper (+) enabled for out-of-stock product; cart badge incrementing for out-of-stock product; console TypeError","none","Coverage Gap Analysis; GAP-CS-15; ECL-2.1","Draft"
+[CONSOLE] no TypeError or JS errors","Out-of-stock indicator absent; quantity stepper (+) enabled for out-of-stock product; cart badge incrementing for out-of-stock product; console TypeError","none",Coverage Gap Analysis; GAP-CS-15; ECL-2.1 | Promoted: REG-2026-10-15-1115 (2026-10-15),Automated
 "CAT-052","Currency Switch on Category Page Updates All Product Prices","Catalog > Pricing","Critical","BL-PRICE-005, BL-CAT-006","ECL-3.1","Multiple currencies configured; currency switcher visible. On /catalog some products carry a EUR price-list value while others are USD-only — assert on products that ARE priced in the target currency, not a whole-page collapse (unpriced products hidden/unavailable per BL-PRICE-005)","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/catalog
 [WAIT] Wait for product cards to load
 [ASSERT] Note the current currency symbol and record prices of the first 3 visible product cards
@@ -174,7 +176,7 @@ An out-of-stock product (inventory = 0 or availability = false) exists in the B2
 [MATH] At least 3 product cards show prices in the new currency symbol format
 [DOM] Currency switcher reflects the currently selected currency","[NETWORK] graphql request includes new currency code after switch
 [NETWORK] no 4xx/5xx on currency switch
-[CONSOLE] no TypeError or JS errors","Currency symbol unchanged after switch; prices not updating after currency change; prices showing exchange-rate conversion instead of price-list values; console TypeError","none","Coverage Gap Analysis; GAP-CS-16; ECL-3.1","Draft"
+[CONSOLE] no TypeError or JS errors","Currency symbol unchanged after switch; prices not updating after currency change; prices showing exchange-rate conversion instead of price-list values; console TypeError","none",Coverage Gap Analysis; GAP-CS-16; ECL-3.1 | Promoted: REG-2026-10-15-1115 (2026-10-15),Automated
 "CAT-053","Currency Switch on PDP Updates Product Price to Price List Value","Catalog > Pricing","Critical","BL-PRICE-005, BL-CAT-006","ECL-3.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Multiple currencies configured; product has prices defined in at least 2 currency price lists; currency switcher visible","url={{FRONT_URL}}","[NAV] Navigate to any product detail page on {{FRONT_URL}}
@@ -217,21 +219,21 @@ A product exists that has a price in the default currency but no price defined i
 [ASSERT] Verify navigation to Product A PDP was successful","[DOM] 'RECENTLY BROWSED' carousel appears on /cart after visiting at least 2 products
 [DOM] Previously visited products (A and B) are listed in the RECENTLY BROWSED carousel with non-empty name and image
 [NAV] Clicking a recently browsed item in the carousel navigates to that product's PDP","[NETWORK] no 4xx/5xx on recently browsed data request
-[CONSOLE] no TypeError or JS errors","RECENTLY BROWSED carousel absent from /cart after visiting multiple products; visited products not appearing in the carousel; clicking a recently browsed item fails to navigate; console TypeError","none","Coverage Gap Analysis; GAP-CS-17; Corrected: retargeted from PDP to /cart — live screenshot evidence shows a working 'RECENTLY BROWSED' carousel on the cart page, not the PDP (2026-08-25)","Draft"
+[CONSOLE] no TypeError or JS errors","RECENTLY BROWSED carousel absent from /cart after visiting multiple products; visited products not appearing in the carousel; clicking a recently browsed item fails to navigate; console TypeError","none","Coverage Gap Analysis; GAP-CS-17; Corrected: retargeted from PDP to /cart — live screenshot evidence shows a working 'RECENTLY BROWSED' carousel on the cart page, not the PDP (2026-08-25) | Promoted: REG-2026-10-15-1115 (2026-10-15)",Automated
 "CAT-057","Out-of-Stock PDP Display - Clear Unavailability Messaging","Catalog > Product","High","BL-CART-002, BL-CAT-006","ECL-2.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-An out-of-stock product with inventory = 0 exists and is accessible via PDP URL; fixture: {{OOS_SKU}} (see test-data/products/test-products.csv PROD-101)","url={{FRONT_URL}}; oos_sku={{OOS_SKU}}","[NAV] Resolve the out-of-stock product PDP URL at runtime using {{OOS_SKU}}; if {{OOS_SKU}} is not provisioned, skip this case (SEED REQUIRED: OOS product fixture)
+An out-of-stock product with inventory = 0 exists and is accessible via PDP URL; fixture: {{OOS_SKU}} (see test-data/products/test-products.csv PROD-101)","url={{FRONT_URL}}; oos_sku={{OOS_SKU}}","[NAV] Resolve the out-of-stock product PDP URL at runtime using {{OOS_SKU}} and navigate directly to the PDP (SKU search returns 0 with 'Show in stock' on by default); if {{OOS_SKU}} is not provisioned, skip this case (SEED REQUIRED: OOS product fixture)
 [WAIT] Wait for PDP to fully load
-[ASSERT] Verify an out-of-stock or unavailability message is prominently displayed (e.g., 'Out of stock' or 'Currently unavailable' or 'Sold out')
+[ASSERT] Verify the unavailability signal is prominently displayed: the 'Stock alert' button when Back-in-Stock is enabled (theme 2.59), or an 'Out of stock' / 'Currently unavailable' / 'Sold out' message when it is not
 [ASSERT] Verify the quantity stepper (+) is disabled or replaced with an alternative CTA
-[ASSERT] Verify the product name image description and specifications are still visible
+[ASSERT] Verify the product name image description and specifications, if any, are still visible
 [ASSERT] Verify no quantity input field allows selecting quantities or that the input is disabled
-[SCROLL] Scroll through the full PDP to check for any UI elements that incorrectly suggest the product is purchasable","[DOM] Clear out-of-stock label displayed near the product title or price area or main CTA zone
+[SCROLL] Scroll through the full PDP to check for any UI elements that incorrectly suggest the product is purchasable","[DOM] The main CTA zone shows the 'Stock alert' button (Back-in-Stock enabled) or, with Back-in-Stock disabled, a clear out-of-stock label near the title or price — the zone must not show a purchasable stepper or an 'In stock' label {OBSERVED} (KB-12BED7EA)
 [STATE] Quantity stepper (+) disabled or replaced with non-purchase CTA
 [DOM] Product name image and description fully visible despite out-of-stock status
 [STATE] Quantity selector disabled or absent for out-of-stock product
 [DOM] No misleading 'In stock' or 'Available' label present","[NETWORK] no add-to-cart POST request fired for out-of-stock product
-[CONSOLE] no TypeError or JS errors","Out-of-stock message absent; quantity stepper (+) enabled for zero-inventory product; product information hidden; quantity input active for out-of-stock product; console TypeError","none","Coverage Gap Analysis; GAP-CS-21; ECL-2.1","Draft"
+[CONSOLE] no TypeError or JS errors","Out-of-stock message absent; quantity stepper (+) enabled for zero-inventory product; product information hidden; quantity input active for out-of-stock product; console TypeError","none",Coverage Gap Analysis; GAP-CS-21; ECL-2.1 | Promoted: REG-2026-10-15-1115 (2026-10-15),Automated
 "CAT-058","Low Stock Indicator Displayed When Product Quantity Is Near Threshold","Catalog > Product","High","BL-CART-002, BL-CAT-006","ECL-2.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 A product with low inventory (at or below the configured low-stock warning threshold) exists; the urgency label (e.g. 'Only X left!') is gated by a store setting and may be disabled; fixture: {{LOW_STOCK_SKU}} (see test-data/products/test-products.csv PROD-102)","url={{FRONT_URL}}; low_stock_sku={{LOW_STOCK_SKU}}","[NAV] Resolve the low-stock product PDP URL at runtime using {{LOW_STOCK_SKU}}; if {{LOW_STOCK_SKU}} is not provisioned, skip this case (SEED REQUIRED: low-stock product fixture)
@@ -241,7 +243,7 @@ A product with low inventory (at or below the configured low-stock warning thres
 [ASSERT] If the low-stock urgency label (e.g., 'Only X left!') is enabled via store setting, verify it is displayed and visually distinct; otherwise verify the in-stock count badge alone communicates the low quantity","[DOM] In-stock quantity count badge on PDP reflects the current low quantity (at or below configured threshold)
 [STATE] Quantity stepper (+) remains enabled when product is low stock but not zero
 [DOM] Low-stock urgency label, when enabled via store setting, is visually distinct from standard product information; otherwise the count badge is the sole low-stock signal","[NETWORK] product availability data returned in GraphQL response includes low-stock signal
-[CONSOLE] no TypeError or JS errors","In-stock count badge does not reflect low quantity; quantity stepper (+) incorrectly disabled for low-stock non-zero product; urgency label enabled in store settings but not rendered; console TypeError","none","Coverage Gap Analysis; GAP-CS-21; ECL-2.1","Draft"
+[CONSOLE] no TypeError or JS errors","In-stock count badge does not reflect low quantity; quantity stepper (+) incorrectly disabled for low-stock non-zero product; urgency label enabled in store settings but not rendered; console TypeError","none",Coverage Gap Analysis; GAP-CS-21; ECL-2.1 | Promoted: REG-2026-10-15-1115 (2026-10-15),Automated
 "CAT-COMP-001","Add Product to Compare from PDP","Catalog > Product Comparison","High",,"ECL-7.1","Multiple products exist in catalog. Compare is localStorage-backed and works for guests and authenticated users.","url={{FRONT_URL}}","[NAV] Navigate to any product detail page on {{FRONT_URL}}
 [WAIT] PDP fully loaded with product details
 [ASSERT] Verify the PDP action row (sidebar, alongside 'Add to list' / Share / Print) contains a button 'Add to Compare'
@@ -254,10 +256,13 @@ A product with low inventory (at or below the configured low-stock warning thres
 [WAIT] PDP fully loaded
 [ACT] Click 'Add to Compare' on the second product
 [WAIT] Wait for the success toast and header badge to update
-[ACT] Click the header 'Compare' link to open /compare","[DOM] Second product's button toggles to 'Remove from Compare' (aria-pressed=true)
+[ACT] close the success toast
+[ACT] Click the header 'Compare' link to open /compare
+[WAIT] the compare page renders","[DOM] Second product's button toggles to 'Remove from Compare' (aria-pressed=true)
 [STATE] Header 'Compare' link badge count reaches 2 (there is NO floating compare bar — the count lives in the header link)
-[DOM] The /compare page lists both products side-by-side with their properties (and a 'Show differences only' checkbox + 'Clear list' button)","[API] no GraphQL errors
-[CONSOLE] no uncaught JS errors","Header Compare badge does not reach 2; second product not added; /compare page does not show both products","Open /compare and click 'Clear list'","Coverage Gap Analysis; vc-frontend compare-products.vue","Draft"
+[DOM] The /compare page lists both products side-by-side with their properties, each under its own category tab whose count reflects its products (a category holds at most 5) {OBSERVED}
+[DOM] The /compare page offers an 'All' / 'Differences' toggle for the property rows and the 'Clear all' and 'Clear category' buttons — there is no 'Show differences only' checkbox and no 'Clear list' button in theme 2.59 {OBSERVED}","[API] no GraphQL errors
+[CONSOLE] no uncaught JS errors","Header Compare badge does not reach 2; second product not added; /compare page does not show both products","Open /compare, click 'Clear all' and confirm 'OK'","Coverage Gap Analysis; vc-frontend compare-products.vue · Repaired 2026-10-14 (Stable 16 regression VCST-6042): theme 2.59 compare redesign: 'Show differences only' became an All / Differences toggle, 'Clear list' became 'Clear all' + 'Clear category', compare is per-category tabs, max 5 per category; behaviour (second product added, count 2) unchanged. Mechanism per VirtoOZ StorefrontUserGuide Compare Products (differences only, clear with one click, 5 products max), exact labels {OBSERVED}","Draft"
 "CAT-COMP-003","Navigate to Compare Page","Catalog > Product Comparison","High",,,"User logged in; 2+ products in compare bar","url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}}","[ACT] Click 'Compare' button in the compare bar
 [WAIT] Compare page loads
 [ASSERT] Verify compare page displays products side-by-side","[NAV] URL contains /compare or similar comparison path

@@ -284,6 +284,10 @@ Markdown, outcome-first, evidence referenced not inlined — the same discipline
 template, AMENDS that comment** (`npm run tracker:comment -- --amend <id> --artifact "<round build>"
 --same-round "qa-test --iterate round N"`, `tracker-ops.md` §0) — never a new one. `--same-round` is
 required: each round is a new build, and without it the round guard refuses the amend as a new round.
+**The one exception: the run's comment already holds a published `QA Complete` verdict** — round 1
+ran without `--iterate` and the loop was entered later. That comment is round 1's record, never a delta:
+the exit template posts as a NEW comment and records both ids in `summary.json.tracker.comments[]`
+(`tracker-ops.md` §0 rule 5; the guard refuses the amend as `VERDICT_OVERWRITE`).
 
 ### Artifact refresh between rounds
 

@@ -72,8 +72,15 @@ export function markerSweepInScope(outerId, only) {
   return demoMarkerKey(outerId) === only;
 }
 
-/** The dataset flag written to `_meta.dataset_profile`; the fixtures profile is its counterpart. */
+/**
+ * The family's profile stamp, `_meta.dataset_profiles['sales-rep']` (scripts/lib/seed-family.mjs; the
+ * legacy `_meta.dataset_profile` is still read). The fixtures profile is the demo's counterpart.
+ */
 export const DEMO_PROFILE = 'sales-rep-demo';
+export const SALES_REP_FAMILY = 'sales-rep';
+/** The single-valued `_meta` key this family stamped before the shared engine; read as a fallback. */
+export const SALES_REP_LEGACY_STAMP_KEY = 'dataset_profile';
+export const SALES_REP_PROFILE = Object.freeze({ fixtures: 'sales-rep-fixtures', demo: DEMO_PROFILE });
 
 /**
  * The overlay key the demo id ledger lives under. Declared HERE rather than in the seeder because
@@ -456,7 +463,7 @@ export function buildDemoOrderBody(spec, { org, contact, orgId, customerId, prod
   const items = prices.map((price, i) => {
     const p = products.length ? products[i % products.length] : null;
     return p
-      ? { sku: p.sku, productId: p.id, catalogId: p.catalogId, name: p.name, quantity: 1, price, productType: 'Physical', currency: DEMO_CURRENCY }
+      ? { sku: p.sku, productId: p.id, catalogId: p.catalogId, name: p.name, ...(p.imgSrc ? { imageUrl: p.imgSrc } : {}), quantity: 1, price, productType: 'Physical', currency: DEMO_CURRENCY }
       : { sku: `SKU-${spec.key}-${i + 1}`, productId: `demo-${spec.key}-${i + 1}`, catalogId: 'demo', name: `Item ${i + 1}`, quantity: 1, price, productType: 'Physical', currency: DEMO_CURRENCY };
   });
   const shipAddr = demoOrderAddress(org, contact, 'Shipping');

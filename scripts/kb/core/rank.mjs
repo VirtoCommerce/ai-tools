@@ -55,9 +55,17 @@ export const STOP = new Set([
  * and `members`, which is what makes the worked example in PLAN §3.2 score 4 rather than 2.
  */
 export function tokenize(text) {
+  // UNICODE LETTERS (VCST-6378). `[^a-z0-9]` dropped every non-Latin letter: a question in Russian
+  // produced no terms at all, and `café` lost its last letter. camelCase is NOT split here: tried on
+  // the labelled sets, splitting `productPickupLocations` into its parts moved the calibrated ranker
+  // (logs300 dev answer precision 93% -> 87%) -- that is a change for a refit (VCST-6193), not a
+  // tokenizer edit under a model fitted on the old terms. The Unicode change alone leaves both labelled
+  // sets' bench results identical.
+  // NFKC first: a decomposed `café` (e + U+0301) and the `ﬁ` ligature are the letters they display as.
   return String(text ?? '')
+    .normalize('NFKC')
     .toLowerCase()
-    .split(/[^a-z0-9]+/)
+    .split(/[^\p{L}\p{N}]+/u)
     .filter((t) => t.length > 1 && !STOP.has(t));
 }
 
@@ -209,13 +217,16 @@ export function admissible(hit) {
  * REJECTED candidate too: `nearMiss` is what tells a later reader whether the floor is set too
  * high, and whether some entry is phrased so unlike the way people ask that it can never be found.
  *
+ * `namespaces` may be passed in when `rows` is a SUBSET of the corpus: the roots are a property of the
+ * whole index, and a caller scoring a few rows against it (the report's near-miss panel) would
+ * otherwise get different anchor hits than the ranker did.
+ *
  * @returns {Array<{row, score, overlap, anchors, coverage, admissible}>} sorted best first
  */
-export function scoreRows(question, rows) {
+export function scoreRows(question, rows, { namespaces = namespaceRoots(rows) } = {}) {
   const qTokens = tokenize(question);
   const qSet = new Set(qTokens);
   const qLower = String(question ?? '').toLowerCase();
-  const namespaces = namespaceRoots(rows);
 
   const scored = rows.map((row) => {
     const haystack = new Set(tokenize(`${row.subject} ${row.question}`));

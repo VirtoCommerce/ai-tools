@@ -544,10 +544,10 @@ test_files: 1 small valid file (use different file on second upload)","[NAV] Nav
 [DOM] Second None selection also clears","[CONSOLE] No JS errors across multiple None cycles","Files accumulate across None/Upload cycles; second None selection does not clear; file from first upload reappears on second switch to upload mode","Remove any test-uploaded files","VCST-4826","Reviewed"
 "CFG-FILE-ST-003","File Section - None Option Available and Clears Files for Optional File Section","Configurable Products > File Section > None Clears Files","Medium","PROPOSED-BL-CFG-008","ECL-5.3","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
-- Configurable product with an OPTIONAL File section that has a None option
-- Note: Required file sections do not have None option — skip if product has only required file sections","product_url: @td(CFG_FILE_HOODIE.fullUrl_template)
-section_type: optional file section with None option","[NAV] Navigate to configurable product PDP
-[ASSERT] Verify the File section has a None option (skip test if None is absent — required section)
+- @td(CFG_CHECKLIST_ALLTYPES.name) has an OPTIONAL File section (the long-named one, @td(CFG_CHECKLIST_ALLTYPES.sections.ART)) with a None option
+- Note: Required file sections do not have None option — skip if product has only required file sections","product_url: {{FRONT_URL}}@td(CFG_CHECKLIST_ALLTYPES.url)
+section_type: optional file section with None option","[NAV] Navigate to {{FRONT_URL}}@td(CFG_CHECKLIST_ALLTYPES.url)
+[ASSERT] Verify the optional File section (the long-named one) has a None option (skip test if None is absent — required section)
 [ACT] Upload 2 or more files to the optional File section
 [ASSERT] Verify files appear in list
 [ACT] Click None

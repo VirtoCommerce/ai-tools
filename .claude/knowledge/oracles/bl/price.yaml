@@ -25,6 +25,9 @@ rules:
       ref: "`cart.items[].placedPrice` reflects the stacked discount. Coupon savings are calculated on the post-tier price, not the list price."
     violation_signal: Cart total higher than expected; coupon discount amount equals percentage of list price instead of sale/tier price.
     status: ACTIVE
+    verified:
+      date: 2026-10-15
+      by: REG-2026-10-15-1453
   - id: BL-PRICE-002
     title: Tax calculation position
     rule: Tax is always calculated AFTER all discounts are applied. Tax base = (line total after discounts), not the pre-discount subtotal. Tax rate depends on the shipping address (destination-based).
@@ -57,6 +60,9 @@ rules:
       ref: "No prices display with 0, 1, or 3+ decimal places. Check edge cases: items at $X.X95 should round to $X.X0 (half-up)."
     violation_signal: Price displays like "$12.5" or "$12.456", or rounding inconsistency between line total and cart subtotal.
     status: ACTIVE
+    verified:
+      date: 2026-10-15
+      by: REG-2026-10-15-1115
   - id: BL-PRICE-004
     title: Tiered/volume pricing boundaries
     rule: When a product has tiered pricing (e.g., 1-9 units = $10, 10+ units = $8), the lower price activates at exactly the threshold quantity. All units in the line use the same tier price (not split pricing).
@@ -106,7 +112,8 @@ rules:
       kind: manual
       ref: Delete a price list → storefront products show "Unavailable" (not $0) → existing orders in Admin still display original prices → re-creating a price list with same products restores storefront availability.
     violation_signal: Product shows $0.00 after price list deletion; "Add to Cart" remains enabled; historical order prices change retroactively.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] BSM-087 failed in REG-2026-10-08-0812"
   - id: BL-PRICE-007
     title: Organization-specific (contract) pricing
     rule: When an organization has a dedicated price list assigned, its members see contract prices that override the store default. Contract pricing takes precedence over catalog sale prices but is still subject to tier pricing within the contract list. Users not in the organization never see contract prices.
@@ -141,6 +148,9 @@ rules:
       ref: "Add 3+ items with prices like $19.99, $7.33, $0.10 → manually sum line totals → compare against displayed subtotal. Check multi-quantity lines: qty × unit price = line total exactly."
     violation_signal: Subtotal differs from manual sum of line totals by $0.01+; penny discrepancy grows with more items; line total ≠ qty × unit price.
     status: ACTIVE
+    verified:
+      date: 2026-10-15
+      by: REG-2026-10-15-1115
   - id: BL-PRICE-009
     title: "`discountPercent` is a 4-decimal fraction, rounded away-from-zero, independent of the money rounding policy"
     rule: The `discountPercent` field (backing model `ProductPrice.DiscountPercent`, exposed via GraphQL `PriceType.discountPercent`) is computed as `discountAmount / listPrice`, rounded to exactly **4 decimal places** using **away-from-zero** midpoint rounding — hardcoded, and NOT routed through the pluggable money-rounding-policy extension point (that policy governs currency `MoneyType` amounts only, not this raw decimal fraction). When `listPrice` is zero, the value is `0`. The field is a **fraction** (e.g. `0.1250`), never a whole-number percentage, and is never `null`.

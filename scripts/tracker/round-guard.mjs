@@ -30,7 +30,17 @@ export function ageHours(postedAt, now = Date.now()) {
 
 const norm = (s) => (typeof s === "string" && s.trim() ? s.trim() : null);
 
-export function decide({ mode, entry, commentId, run, artifact, now = Date.now(), hours = ROUND_HOURS_DEFAULT, forceNew, sameRound }) {
+// A PUBLISHED VERDICT is the full 5-report template, headed "QA Complete" — what a developer or PO
+// acts on. An --iterate round DELTA ("QA re-test — round N") is written to be replaced; a verdict is
+// that round's record. Body may be a wiki/markdown string or v3 ADF (its text nodes survive stringify).
+const VERDICT_RE = /\bQA Complete\b/i;
+export function isVerdictBody(body) {
+  if (body == null) return false;
+  return VERDICT_RE.test(typeof body === "string" ? body : JSON.stringify(body));
+}
+export const commentKind = (body) => (isVerdictBody(body) ? "verdict" : "note");
+
+export function decide({ mode, entry, commentId, run, artifact, now = Date.now(), hours = ROUND_HOURS_DEFAULT, forceNew, sameRound, existingIsVerdict }) {
   const mine = norm(artifact), theirs = norm(entry?.artifact);
   const known = Boolean(mine && theirs);
   const age = ageHours(entry?.posted_at, now);
@@ -45,6 +55,13 @@ export function decide({ mode, entry, commentId, run, artifact, now = Date.now()
     return provablyDifferentRun(run, entry) ? { ok: true, code: "DIFFERENT_RUN" } : { ok: false, code: "SAME_RUN" };
   }
 
+  // --same-round folds an --iterate loop's own round DELTAS into one comment; it never authorises
+  // replacing a published verdict with a later build's. VCST-6077, 2026-10-08: round 1 (run without
+  // --iterate) posted a full FAIL report with inline screenshots; the loop's exit round amended it
+  // with round 2's PASS under --same-round and the RED→GREEN record vanished. New build ⇒ new comment.
+  // A verdict is amendable only on a PROVEN same build: an unrecorded build (a comment this checkout's
+  // ledger no longer tracks) is unproven, and --same-round is not proof.
+  if (existingIsVerdict && (sameRound || known) && !(known && mine === theirs)) return { ok: false, code: "VERDICT_OVERWRITE" };
   if (sameRound) return { ok: true, code: "SAME_ROUND_OVERRIDE" };
   if (!entry || String(entry.comment_id) !== String(commentId)) return { ok: true, code: "UNTRACKED" };
   // The comment records a build and this amend names none: comparing is impossible, and the
@@ -88,10 +105,11 @@ export function ledgerAfterAmend(recorded, judged, opts) {
 }
 
 /** The ledger entry after a successful amend: the build it now reports, never the first one. */
-export function amendEntry(entry, { id, run, artifact, sameRound, now = Date.now() }) {
+export function amendEntry(entry, { id, run, artifact, sameRound, kind, now = Date.now() }) {
   return {
     ...(entry ?? {}), comment_id: String(id), run_id: run, amended_at: new Date(now).toISOString(),
     ...(norm(artifact) ? { artifact: norm(artifact) } : {}),
     ...(sameRound ? { same_round_reason: sameRound } : {}),
+    ...(kind ? { kind } : {}),
   };
 }

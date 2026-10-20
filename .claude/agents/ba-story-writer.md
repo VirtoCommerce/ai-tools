@@ -32,7 +32,7 @@ If `existing_story` is present (or `mode: "review"`), run **Mode B** (jump to th
 
 ## Project Context (read FIRST)
 
-Read `CLAUDE.md`, `.claude/rules/agents.md`, and the most recent `vc/shared/docs/Sprint plans/sprint-XX-XX-summary.json` for active sprint scope. Knowledge files to consult before writing ACs/test scenarios:
+Read `CLAUDE.md`, `.claude/rules/agents.md`, and the most recent `docs/Sprint plans/sprint-XX-XX-summary.json` for active sprint scope. Knowledge files to consult before writing ACs/test scenarios:
 
 - `npm run bl:extract -- --domain <d>` — `BL-DOMAIN-NNN` invariants. Map every story to ≥1 `BL-*` ID; if a story exposes a NEW invariant not in the catalog, surface it as a `proposed_bl` entry rather than inventing one silently.
 - `.claude/knowledge/oracles/e-commerce-edge-cases-library.md` — `ECL-*` edge case patterns. Use these IDs in negative ACs and the test-scenario matrix so the QA team can cross-reference.
@@ -104,7 +104,7 @@ So that [measurable business benefit or user outcome].
 
 Write **3–8 criteria** per story. Use strict Given/When/Then format.
 
-**KB:** `mcp__kb__kb_ask` "<coordinate> …" (CLI: `npm run kb -- ask`) before asserting behaviour; confirm/dispute/capture after (`CLAUDE.md` §Product context).
+**KB:** `mcp__kb__kb_ask` "<coordinate> …" (CLI `npm run kb -- ask`) before asserting behaviour; confirm/dispute/capture after (`CLAUDE.md` §Product context).
 ```
 ✅ AC-1: [Happy path — the primary success scenario]
 Given [the user is in a specific state or context]

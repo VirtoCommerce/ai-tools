@@ -1,1 +1,0 @@
-{"ticket":"VCST-6000","capturedAt":"2026-10-05T08:05Z","env":"vcst-qa","result":"BLOCKED","reason":"No vcst-qa fixture with a required File section (slug agent-test-req-file-child-20260519 exists only on vcptcore-qa); reproduction needs a file upload (not read-only); admin Manager signed out in built-in browser. Prior baseline: Jira comment 111075 (2026-10-02)."}

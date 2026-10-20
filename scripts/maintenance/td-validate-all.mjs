@@ -46,7 +46,8 @@ const domains = (() => {
   const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
   return Object.keys(pkg.scripts || {})
     .map((k) => /^td:validate:(.+)$/.exec(k)?.[1])
-    .filter((d) => d && !['warn', 'all'].includes(d))
+    // `:live` guards probe a running stand (credentials + network); this is the offline gate.
+    .filter((d) => d && !['warn', 'all'].includes(d) && !d.endsWith(':live'))
     .sort();
 })();
 

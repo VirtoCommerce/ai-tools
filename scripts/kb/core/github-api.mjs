@@ -27,6 +27,48 @@ export const DEFAULT_TIMEOUT_MS = 20_000;
 /** Ref-update statuses meaning "somebody else moved it" — the compare-and-swap losing, not an error. */
 const CONFLICT_STATUS = new Set([409, 422]);
 
+/**
+ * A 401/403, as one closed code (VCST-6378):
+ *   no-write-access  the token reads the base but may not write it ("Resource not accessible by …")
+ *   bad-credentials  the token was rejected outright (expired, revoked, mistyped) -- every 401
+ *   rate-limited     out of requests: TRANSIENT, so never treated as an access problem
+ *   forbidden        any other 403
+ */
+export function deniedCode(res, json) {
+  const msg = String(json?.message ?? '');
+  const remaining = typeof res?.headers?.get === 'function' ? res.headers.get('x-ratelimit-remaining') : null;
+  if (/rate limit/i.test(msg) || remaining === '0') return 'rate-limited';
+  if (res?.status === 401 || /bad credentials/i.test(msg)) return 'bad-credentials';
+  // The wordings GitHub uses for "this token may not write here" (review round 1): a fine-grained or
+  // classic PAT without the scope, a repo without the collaborator, an org enforcing SAML SSO.
+  if (/not accessible by|must have push access|saml enforcement|enforced saml|re-authorize the oauth|access restrictions/i.test(msg)) return 'no-write-access';
+  return 'forbidden';
+}
+
+/**
+ * When a rate-limited request may be retried, as an ISO time. `retry-after` (seconds) first, then
+ * `x-ratelimit-reset` (epoch seconds) when the primary limit is spent; a secondary limit names
+ * neither, and GitHub's guidance for it is to wait at least a minute -- so a minute.
+ */
+export function retryAtOf(res, json, now = Date.now()) {
+  const get = (h) => (typeof res?.headers?.get === 'function' ? res.headers.get(h) : null);
+  // AT MOST AN HOUR (tester run of ai-tools#460): GitHub's primary window is an hour, so anything longer
+  // is a proxy rewriting the header or clock skew on `x-ratelimit-reset` -- and an uncapped value held
+  // every push, the explicit one included, until 2058.
+  const capped = (ms) => new Date(Math.min(ms, now + RATE_HOLD_MAX_MS)).toISOString();
+  const after = Number(get('retry-after'));
+  if (Number.isFinite(after) && after > 0) return capped(now + after * 1000);
+  const reset = Number(get('x-ratelimit-reset'));
+  if (get('x-ratelimit-remaining') === '0' && Number.isFinite(reset) && reset * 1000 > now) return capped(reset * 1000);
+  return new Date(now + 60_000).toISOString();
+}
+
+/** The longest a rate limit holds pushes: GitHub's primary rate-limit window. */
+export const RATE_HOLD_MAX_MS = 60 * 60 * 1000;
+
+/** The denials that will not cure themselves: the same token will be refused again until somebody acts. */
+export const ACCESS_CODES = Object.freeze(new Set(['no-write-access', 'bad-credentials']));
+
 /** Blob mode for a regular file. The base holds nothing else: no symlinks, no submodules, no exec. */
 export const FILE_MODE = '100644';
 
@@ -166,6 +208,14 @@ export function githubApi({
       ok: false,
       status: res.status,
       reason,
+      // WHICH denial (VCST-6378): a token that cannot write and a token that is out of requests are both
+      // a 403, and only the first is permanent. Classified here, where the status and the remote's
+      // words are both in hand, so no caller has to re-read the prose.
+      ...(reason === 'denied' ? { code: deniedCode(res, json) } : res.status === 429 ? { code: 'rate-limited' } : {}),
+      // WHEN TO TRY AGAIN, for a rate limit (VCST-6378): GitHub says it in a header. 123 pushes on 2026-10-12
+      // retried into the same limit, one per turn, because nothing read it.
+      ...((reason === 'denied' && deniedCode(res, json) === 'rate-limited') || res.status === 429
+        ? { retryAt: retryAtOf(res, json) } : {}),
       detail: `HTTP ${res.status} ${method} ${path}${json?.message ? ` — ${json.message}` : ''}`,
       json,
     };

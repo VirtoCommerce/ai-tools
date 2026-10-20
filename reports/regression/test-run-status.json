@@ -1,31 +1,21 @@
 {
- "runId": "REG-2026-10-06-1457",
- "status": "completed",
- "startedAt": "2026-10-06T14:57:31.844Z",
- "windowStart": "2026-10-06T14:57:31.844Z",
- "selection": "097,014b",
- "env": "vcptcore",
- "scoped": true,
- "purpose": "/qa-test VCST-6001 4c C1 exact set (--ids 17). Delegated: --no-promote.",
- "suites": {
-  "097": {
-   "status": "done",
-   "lane": "browser",
-   "browser": "playwright-chrome",
-   "cases": 14,
-   "pass": 11,
-   "fail": 2,
-   "blocked": 1
+  "runId": "REG-2026-10-15-1720",
+  "status": "completed",
+  "startedAt": "2026-10-15T15:20:55.249Z",
+  "windowStart": "2026-10-15T15:20:55.249Z",
+  "selection": "093",
+  "env": "vcst",
+  "scoped": true,
+  "purpose": "VCST-6015 — verify the 5 test-defect fixes from triage of REG-2026-10-15-1548",
+  "ids": "SR-HD-100,SR-HD-102,SR-HD-107,SR-HD-112,SR-HD-115",
+  "suites": {
+    "093": {
+      "status": "pending",
+      "lane": "browser"
+    }
   },
-  "014b": {
-   "status": "done",
-   "lane": "browser",
-   "browser": "playwright-edge",
-   "cases": 3,
-   "pass": 2,
-   "fail": 1,
-   "blocked": 0
-  }
- },
- "finishedAt": "2026-10-06T15:11:36.635Z"
+  "finishedAt": "2026-10-15T15:21:05.438Z",
+  "notes": [
+    "ABORTED before dispatch (usage limit) — nothing ran; no results"
+  ]
 }
