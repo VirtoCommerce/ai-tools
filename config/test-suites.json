@@ -2343,7 +2343,12 @@
       ],
       "envRiskGate": "staging",
       "customerApplicability": "reference",
-      "clickDriven": true
+      "clickDriven": true,
+      "lanes": {
+        "machine": 8,
+        "browser": 1,
+        "manual": 0
+      }
     },
     {
       "id": "067",
