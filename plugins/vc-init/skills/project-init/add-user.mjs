@@ -20,7 +20,9 @@
  *
  * Usage:
  *   node add-user.mjs --list
- *       JSON: every environment (`.env.<env>` in the project), its password mode and its users.
+ *       JSON: every environment (`.env.<env>` in the project), where each role's passwords live, its
+ *       users, and `nextKeys` — per role the next free numbered KEYs (USER2, USER3, … / ADMIN2, …),
+ *       free in EVERY environment, which the skill offers as the KEY question's options.
  *   node add-user.mjs --env <env> --key <KEY> --role user|admin --login <login> [--replace] [--shim <vc-run>]
  *       one env per call (a login usually differs per env). Prints one JSON report whose `steps` are the
  *       operator's commands, relayed verbatim. --replace overwrites a different login under the same KEY.
@@ -109,6 +111,17 @@ function readDecl(root) {
   }
 }
 
+/** The role's built-in KEY, the stem its numbered KEYs grow from (USER → USER2, USER3, …). */
+const ROLE_STEM = Object.freeze({ user: "USER", admin: "ADMIN" });
+
+/** The next `count` free numbered KEYs of a role, given every KEY in use (any env). Pure. */
+export function nextKeys(role, taken, count = 3) {
+  const used = new Set(taken);
+  const out = [];
+  for (let n = 2; out.length < count; n++) if (!used.has(`${ROLE_STEM[role]}${n}`)) out.push(`${ROLE_STEM[role]}${n}`);
+  return out;
+}
+
 /** Every environment of the project, its password mode and its users. */
 export function listEnvs(root) {
   const inVcSecrets = declaredPasswords(readDecl(root));
@@ -155,7 +168,9 @@ function main() {
   if (!profile) fail(error ? `cannot parse ${path}: ${error}` : `no ${path} — this project is not onboarded; run /project-init first`);
 
   if (args.list) {
-    console.log(JSON.stringify({ envs: listEnvs(root) }, null, 2));
+    const envs = listEnvs(root);
+    const taken = envs.flatMap((e) => e.users.map((u) => u.key));
+    console.log(JSON.stringify({ envs, nextKeys: { user: nextKeys("user", taken), admin: nextKeys("admin", taken) } }, null, 2));
     return;
   }
 

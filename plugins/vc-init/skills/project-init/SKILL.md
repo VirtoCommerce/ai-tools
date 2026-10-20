@@ -1163,17 +1163,21 @@ admin to vc-secrets and a storefront user to `.env.local`. `add-user.mjs` does b
    ```
    Show it as ONE table (env · admin passwords · user passwords · users with their logins).
 2. **Ask** in one `AskUserQuestion` block: which environment(s) (multi-select, from the scan) and the
-   role — `Storefront user` or `Admin`. Then, as plain chat, the KEY (upper snake case, e.g. `BUYER2`;
-   offer one from the role) and the login for EACH chosen env — a login usually differs per env. A
-   KEY already listed in an env is reused there only on the operator's explicit "replace"
-   (`--replace`). Never ask for the password.
-3. **Write**, once per chosen env:
+   role — `Storefront user` or `Admin`.
+3. **Ask the KEY** in a second `AskUserQuestion`, single-select: the options are the scan's
+   `nextKeys.<role>` (`USER2`, `USER3`, `USER4` — or `ADMIN2`, … — free in every env), the first one
+   marked `(Recommended)`; the operator's own KEY goes in **Other** (upper snake case, e.g. `BUYER`). Do
+   not ask the KEY in prose. A KEY already listed in an env is reused there only on the operator's
+   explicit "replace" (`--replace`).
+4. **Ask the login** as plain chat, ONE question per chosen env: *"Enter the email / login of `<KEY>` on
+   `<env>`."* — a login usually differs per env. Never ask for the password.
+5. **Write**, once per chosen env:
    ```bash
    node "$CLAUDE_PLUGIN_ROOT/skills/project-init/add-user.mjs" --env <env> --key <KEY> --role user|admin --login <login> --shim "$VC_RUN"
    ```
    A refusal (bad KEY, built-in `ADMIN`/`USER`, a token-shaped name, an unknown env) is relayed and
    re-asked. Collect every report's `steps`.
-4. **Hand off** under a `🔒  STORE THE PASSWORD` header: the `steps` verbatim, deduplicated — for
+6. **Hand off** under a `🔒  STORE THE PASSWORD` header: the `steps` verbatim, deduplicated — for
    vc-secrets `trust` (when a declaration changed) and `set <key>-password-<env>`, typed at the hidden
    prompt in their own terminal; for `.env.local` the line to fill and the sync-browser-secrets command —
    then the restart. Close with the report's `agent` line: an agent logs in with `<KEY>_LOGIN` and types
