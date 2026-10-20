@@ -1,33 +1,25 @@
 {
-  "runId": "REG-2026-10-19-1307",
+  "runId": "REG-2026-10-20-0917",
   "status": "completed",
-  "startedAt": "2026-10-19T11:08:07.323Z",
-  "windowStart": "2026-10-19T11:08:07.323Z",
+  "startedAt": "2026-10-20T07:17:32.000Z",
+  "windowStart": "2026-10-20T07:17:32.000Z",
   "selection": "093",
   "env": "vcst",
   "scoped": true,
-  "purpose": "VCST-5903 /qa-test-fast — scoped regression (Critical/P0 cases only, 18 of 79) of the Sales Rep Hub dashboard (the consumer VcStatWidget is extracted from) on PR theme 2.61.0-pr-2568-3f8a-3f8af63a",
+  "purpose": "Verify the stale-case repairs of SR-HD-030 / SR-HD-053 (PR #479; failed in REG-2026-10-19-1307)",
+  "ids": "SR-HD-030,SR-HD-053",
   "suites": {
     "093": {
       "status": "done",
       "lane": "browser",
       "browser": "playwright-chrome",
-      "laneId": 1,
-      "total": 18,
-      "startedAt": "2026-10-19T11:09:47.510Z",
-      "attempts": 1,
-      "cases": "critical",
-      "pass": 12,
-      "fail": 2,
-      "blocked": 4,
-      "completedAt": "2026-10-19T15:34:22.828Z"
+      "startedAt": "2026-10-20T07:18:27.288Z",
+      "total": 2,
+      "pass": 2,
+      "fail": 0,
+      "blocked": 0,
+      "finishedAt": "2026-10-20T07:24:22.299Z"
     }
   },
-  "cases": "critical",
-  "stalledAt": "2026-10-19T12:09:33.324Z",
-  "stalledReason": "no progress for 45 min (REG-2026-10-19-1307:in_progress:1:18:17)",
-  "finishedAt": "2026-10-19T12:09:33.324Z",
-  "notes": [
-    "resumed after a session usage limit; watcher had marked it stalled"
-  ]
+  "finishedAt": "2026-10-20T07:25:02.582Z"
 }
