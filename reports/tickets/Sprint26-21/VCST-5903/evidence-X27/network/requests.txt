@@ -1,6 +1,0 @@
-13. [POST] https://vcst-qa-storybook.govirto.com/cdn-cgi/rum? => [204] 
-16. [GET] https://vcst-qa-storybook.govirto.com/index.json => [200] 
-44. [POST] https://vcst-qa-storybook.govirto.com/cdn-cgi/rum? => [204] 
-49. [GET] https://vcst-qa-storybook.govirto.com/index.json => [200] 
-
-Note: 54 static requests not shown, run with "static" option to see them.
