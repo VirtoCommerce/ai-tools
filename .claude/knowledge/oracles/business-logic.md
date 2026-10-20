@@ -1826,6 +1826,7 @@ Scoped storefront GraphQL surface for sales representatives (`POST /graphql/sale
 - **Docs:** platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/SalesRep/queries/salesRepCustomerOrderStatistics.md (published) — currencyCode argument is the reporting currency; response example echoes currencyCode with localized formattedAmount
 - **Source:** module README (Money "converted to `currencyCode` → store default → platform primary"); live probe 2026-07-23.
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] SR-HD-053 failed in REG-2026-10-19-1307
 
 ### BL-SR-005: Statistics scope excludes flag-cancelled / prototype orders unconditionally `[P1-data]`
 - **Rule:** The statistics scope (`salesRepCustomerOrderStatistics` / `salesRepCustomerCartStatistics`) excludes orders and carts flagged prototype or cancelled **at the entity level** (`IsPrototype` / `IsCancelled`) — unconditionally, and this does NOT loosen under any named filter. This differs from the order-*list* scope, which deliberately includes cancelled orders so that `Cancelled` is a real list filter (BL-SR-009). An order whose `Status` field merely reads a cancelled-like value **without** the `IsCancelled` flag (e.g. written directly by an external/ERP integration bypassing the platform cancel workflow) is NOT excluded by this scope and correctly counts toward every statistics figure, including the baseline/all-status one.
@@ -2053,6 +2054,7 @@ Scoped storefront GraphQL surface for sales representatives (`POST /graphql/sale
 - **Agents:** qa-backend-expert, qa-frontend-expert
 - **Source:** module keyboard-sort composable (`moved`/`edge` signal payloads carry position; `parked`/`restored` carry only an id). Live-confirmed: eight verbatim announcement strings captured across grab/move/edge/park/restore/drop; Escape correctly restored on all three regions and a neutral-area click also restored correctly. The same live pass also found a **pointer press on another draggable block while a grab is live silently ends the grab without restoring the pre-grab position and without an announcement**, committing the in-progress move by accident — a confirmed violation of this Rule, tracked as a separate defect rather than reflected as intended behavior.
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] SR-HD-030 failed in REG-2026-10-19-1307
 
 ### BL-SR-030: A save already in flight cannot be duplicated by a rapid repeat trigger `[P2-ux]`
 - **Rule:** Triggering Save again while a save is already in flight never results in a second full-document-replace call reaching the backend — exactly one save request is issued per user-intended save, regardless of how a repeat trigger is delivered.
@@ -2431,7 +2433,7 @@ ticket or a docs page disputes (`status`).
 | Loyalty & Mixed Cart | BL-LOY-001–020 | 19 | 10 | 7 | 2 | 10 | 0 |
 | Payment Processors | BL-PAY-001–004 | 3 | 3 | 0 | 0 | 2 | 0 |
 | White Labeling | BL-WL-001–006 | 6 | 0 | 2 | 4 | 4 | 0 |
-| Sales Rep | BL-SR-001–032 | 32 | 3 | 18 | 11 | 6 | 5 |
+| Sales Rep | BL-SR-001–032 | 32 | 3 | 18 | 11 | 6 | 7 |
 | Accessibility | BL-A11Y-001–004 | 4 | 0 | 4 | 0 | 4 | 4 |
 | Customer Reviews | BL-CR-001–018 | 9 | 1 | 6 | 2 | 5 | 0 |
 | Platform Administration | BL-PLAT-001–004 | 3 | 0 | 2 | 1 | 3 | 0 |
@@ -2440,4 +2442,4 @@ ticket or a docs page disputes (`status`).
 | Analytics & Tracking | BL-GA4-001–004 | 4 | 0 | 4 | 0 | 3 | 2 |
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Returns | — | 0 | 0 | 0 | 0 | 0 | 0 |
-| **Total** | | **223** | **60** | **125** | **38** | **114** | **46** |
+| **Total** | | **223** | **60** | **125** | **38** | **114** | **48** |
