@@ -236,7 +236,7 @@ Sign out. No data modified.","VCST-5028 | paths: /company/info,/company/members,
 [ASSERT] sign-in is NOT refused: the storefront lands in BuildRight (the accessible org), never in TechFlow, and the header org indicator shows 'BuildRight'
 [ASSERT] in the account-menu 'Organizations' listbox the TechFlow option is disabled with the lock-closed icon and cannot be selected (keyboard path only — never force the disabled control)
 [CAPTURE] from the network log record the sign-in POST /connect/token response: decode its access_token organization_id claim as $SIGNIN_CLAIM and record its refresh_token as $RT (minted AFTER the lock)
-[HTTP] POST {{BACK_URL}}/connect/token grant_type=refresh_token refresh_token=$RT storeId={{STORE_ID}} organization_id=@td(MULTI_ORG_TF_BR.org_techflow_id) — record status, error, errors[] and error_description as $SWITCH (a refresh token minted BEFORE the lock is revoked and fails code-less, KB-D1D30720)
+[HTTP] POST {{FRONT_URL}}/connect/token grant_type=refresh_token refresh_token=$RT storeId={{STORE_ID}} organization_id=@td(MULTI_ORG_TF_BR.org_techflow_id) — record status, error, errors[] and error_description as $SWITCH (a refresh token minted BEFORE the lock is revoked and fails code-less, KB-D1D30720)
 
 --- SCREEN: Login into BuildRight org (unlocked membership) ---
 [PRE:CLEAR_SESSION]

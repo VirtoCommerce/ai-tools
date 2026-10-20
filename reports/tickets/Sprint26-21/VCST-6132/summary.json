@@ -39,12 +39,25 @@
     {
       "at": "5-status",
       "hop": "closing",
+      "from": "Ready for test",
+      "to": "Testing",
+      "via": "On QA (id 4)",
+      "by": "qa-lead (inline orchestrator)",
+      "confirmed": true,
+      "confirmed_by": "operator 2026-10-20",
+      "result": "done",
+      "note": "ticket had been moved to Ready for test by someone else during the run; no direct hop to Tested"
+    },
+    {
+      "at": "5-status",
+      "hop": "closing",
       "from": "Testing",
       "to": "Tested",
-      "skipped": "awaiting operator confirmation",
+      "via": "Finish test (id 8)",
       "by": "qa-lead (inline orchestrator)",
-      "confirmed": false,
-      "result": "pending"
+      "confirmed": true,
+      "confirmed_by": "operator 2026-10-20",
+      "result": "done"
     }
   ],
   "timing": {
@@ -270,7 +283,16 @@
       "gate_3_cases": "APPROVE (fresh qa-lead verifier)"
     },
     "counts_note": "total_cases/passed/failed/blocked count CHECKLIST rows (29/27/2/0); C1 counts are in regression.c1 (21P/5F/3B)",
-    "verifier_5_report": "RATIFY PASS WITH NOTES (5 comment corrections applied; its missing-screenshot claim was checked and is wrong — both files exist)"
+    "verifier_5_report": "RATIFY PASS WITH NOTES (5 comment corrections applied; its missing-screenshot claim was checked and is wrong — both files exist)",
+    "tracker_comment": {
+      "id": 112179,
+      "content": "final QA report (PASS WITH NOTES), amended over the developer-questions comment; Q1→VCST-6352, Q2→VCST-6438 answered by Dmitry Grishin 2026-10-20 (comment 112185)",
+      "images": 3
+    },
+    "related_reviews": {
+      "VCST-6438": "comment 112187 — evidence, correction (locked-only-org is no longer a refusal), additions",
+      "VCST-6352": "comment 112188 — Org A/B/C repro + GIF"
+    }
   },
   "ac_analysis": {
     "conditions": 29,
@@ -314,5 +336,23 @@
   "appinsights": {
     "configured": false,
     "reason": "APPINSIGHTS_* not configured for vcptcore_qa1"
+  },
+  "documentation": {
+    "published": true,
+    "audiences": [
+      "customer",
+      "admin",
+      "developer"
+    ],
+    "files": [
+      "reports/ba/vcst-6132-otp-organization-fallback-developer-guide.md"
+    ],
+    "amended": [
+      "reports/ba/vcst-5748-otp-sign-in-guide.md",
+      "reports/ba/Organization roles/ba-admin-doc-VCST-5281-org-membership-status-2026-08-07.md"
+    ],
+    "comment_posted": true,
+    "comment_id": 112193,
+    "refusal": null
   }
 }
