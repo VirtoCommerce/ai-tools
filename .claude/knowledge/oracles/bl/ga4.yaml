@@ -63,8 +63,8 @@ rules:
     violation_signal: "`value` doesn't match the cart's own total; `items[]` empty or wrong product; `clear_cart` reports `value: 0` or `items: []` instead of what was cleared."
     status: ACTIVE
     verified:
-      date: 2026-10-15
-      by: REG-2026-10-15-1624
+      date: 2026-10-20
+      by: REG-2026-10-20-1418
   - id: BL-GA4-003
     title: Checkout-funnel events fire once, in order; `place_order`/`purchase` report the order subtotal excluding tax/shipping with the order's own server id as `transaction_id`
     rule: "The checkout funnel fires, in this order, exactly once per step: `begin_checkout` → `add_shipping_info` → `add_payment_info` → `place_order` → `purchase`. `place_order` and `purchase` both set `transaction_id` to the order's own server-assigned `id` — an opaque, non-empty identifier, **not necessarily the human-readable order number** — and `value` to the order subtotal, EXCLUDING tax and shipping (`shipping`/`tax` are reported as separate fields on the same event). A payment component that fires its own `purchase` call (e.g. a cart-embedded processor) and the shared checkout redirect-path call are mutually exclusive via an existing-order guard: re-paying an already-placed unpaid order never re-fires `purchase`."
