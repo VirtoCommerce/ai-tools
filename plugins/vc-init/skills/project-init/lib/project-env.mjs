@@ -31,7 +31,8 @@ export const LOCAL_HEADER = [
 ].join("\n");
 
 /** Names that look like `.env.<x>` but are not an environment. */
-const NOT_AN_ENV = new Set(["local", "defaults", "example", "template", "backup", "test"]);
+// `test` is not here: it is a valid TEST_ENV name ([a-z0-9_]+), and its file must migrate like any other.
+const NOT_AN_ENV = new Set(["local", "defaults", "example", "template", "backup"]);
 
 /** The `.env.<env>` files in `root` (names only). */
 export function envFileNames(root) {
@@ -51,14 +52,36 @@ function unquote(raw) {
   return v;
 }
 
-/** The value a dotenv TEXT gives `key`: `null` when no line declares it, else the (unquoted) value. */
+/**
+ * The value a dotenv TEXT gives `key`: `null` when no line declares it, else the (unquoted) value.
+ * With duplicates it is the LAST line, the one dotenv keeps.
+ */
 export function readKey(text, key) {
   const re = lineRe(key);
+  let value = null;
   for (const line of String(text ?? "").split(/\r?\n/)) {
     const m = re.exec(line);
-    if (m) return unquote(m[1]);
+    if (m) value = unquote(m[1]);
   }
-  return null;
+  return value;
+}
+
+/**
+ * The `_<ENV>` suffixes a dotenv TEXT declares `key` under (`JIRA_PROJECT_KEY_QA=…` → "QA"). A project that
+ * points two stands at two trackers keeps the key per env this way; config.js / load-layered-env promote the
+ * suffixed value to the base name when TEST_ENV matches.
+ */
+export function keySuffixes(text, key) {
+  const re = new RegExp(`^\\s*(?:export\\s+)?${key}_([A-Z0-9_]+)\\s*=`);
+  return String(text ?? "").split(/\r?\n/).map((l) => re.exec(l)?.[1]).filter(Boolean);
+}
+
+/** A value as dotenv reads it back: quoted when it holds whitespace, `#` or a quote (an unquoted `#` starts a comment). */
+export function serializeValue(v) {
+  const s = String(v ?? "");
+  if (s === "" || !(/[\s#"'=]/.test(s) || s !== s.trim())) return s;
+  // dotenv does not unescape \" — pick the quote the value does not contain.
+  return s.includes('"') ? `'${s}'` : `"${s}"`;
 }
 
 /**
@@ -87,7 +110,8 @@ export function setKey(text, key, value, comment = "") {
   const eol = String(text).includes("\r\n") ? "\r\n" : "\n";
   const lines = String(text).split(/\r?\n/);
   const re = lineRe(key);
-  const idx = lines.findIndex((l) => re.test(l));
+  const idx = lines.findLastIndex((l) => re.test(l));
+  value = serializeValue(value);
   if (idx >= 0) {
     lines[idx] = `${key}=${value}`;
     return lines.join(eol);

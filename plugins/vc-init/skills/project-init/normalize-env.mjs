@@ -58,6 +58,18 @@ function parseArgs(argv) {
 /** key → meta, from scaffold-env's CATALOG (types + requiredness live there, not here). */
 const META = new Map(CATALOG);
 
+/**
+ * The meta a line's key is checked against: its own, or — for a project key kept per env as `KEY_<ENV>` in
+ * .env.local (one tracker per stand) — the base key's, so a suffixed value is validated like the bare one.
+ */
+function metaFor(key) {
+  if (META.has(key)) return META.get(key);
+  for (const [base, meta] of CATALOG) {
+    if (meta.scope === "project" && key.startsWith(`${base}_`) && /^[A-Z0-9_]+$/.test(key.slice(base.length + 1))) return meta;
+  }
+  return null;
+}
+
 /** Strip surrounding whitespace and ONE matching pair of quotes. Applies to every key. */
 function unquote(raw) {
   let v = String(raw ?? "").trim();
@@ -72,7 +84,7 @@ function unquote(raw) {
  * rule set lives here so it is unit-testable without touching a file.
  *   → { value, errors: string[], warnings: string[] }
  */
-export function normalizeValue(key, rawValue, meta = META.get(key) || {}) {
+export function normalizeValue(key, rawValue, meta = metaFor(key) || {}) {
   const errors = [];
   const warnings = [];
   let value = unquote(rawValue);
@@ -105,7 +117,7 @@ export function normalizeValue(key, rawValue, meta = META.get(key) || {}) {
     // still path-shaped (a slug with a slash silently breaks every ADO REST path).
     value = value.replace(/^https?:\/\/dev\.azure\.com\//i, "").replace(/^https?:\/\/[^/]+\//i, "").replace(/\/+$/, "");
     if (/[/\\]/.test(value)) {
-      errors.push(`${key}="${value}" still looks like a path — use the bare Azure DevOps ${key === "ADO_ORG" ? "organization" : "project"} name`);
+      errors.push(`${key}="${value}" still looks like a path — use the bare Azure DevOps ${key.startsWith("ADO_ORG") ? "organization" : "project"} name`);
     }
   }
 
@@ -129,7 +141,7 @@ export function normalizeEnvText(text) {
     const m = /^(\s*)([A-Za-z_][A-Za-z0-9_]*)(\s*=\s*)(.*)$/.exec(line);
     if (!m) return line; // comment / blank / continuation — untouched
     const [, indent, key, , rawValue] = m;
-    if (!META.has(key)) return line; // not ours (an operator's own extra var) — untouched
+    if (!metaFor(key)) return line; // not ours (an operator's own extra var) — untouched
     const res = normalizeValue(key, rawValue);
     errors.push(...res.errors);
     warnings.push(...res.warnings);

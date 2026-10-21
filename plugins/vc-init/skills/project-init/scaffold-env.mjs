@@ -45,7 +45,7 @@ import { resolveOutPath, outputRoot } from "./lib/paths.mjs";
 // earlier in the flow existed un-ignored until then (VCST-5774 review #4). Idempotent — the four
 // writers all call it, and only the first one actually appends.
 import { ensureProjectIgnores } from "./lib/gitignore.mjs";
-import { LOCAL_FILE, LOCAL_HEADER, LOCAL_SECTION, describeMove, keyComment, moveProjectKeys } from "./lib/project-env.mjs";
+import { LOCAL_FILE, LOCAL_HEADER, LOCAL_SECTION, describeMove, keyComment, keySuffixes, moveProjectKeys, readKey } from "./lib/project-env.mjs";
 
 function parseArgs(argv) {
   const a = {};
@@ -133,6 +133,7 @@ function main() {
   const existing = existsSync(outPath) ? readFileSync(outPath, "utf-8") : "";
   const existingLocal = existsSync(localPath) ? readFileSync(localPath, "utf-8") : "";
 
+  const SUFFIX = env.toUpperCase();
   const emitted = [];
   const skipped = [];
   const blocks = [];
@@ -140,11 +141,17 @@ function main() {
   for (const [key, meta] of CATALOG) {
     if (!meta.include(opts)) continue;
     const project = meta.scope === "project";
+    // Same line shapes the move and dotenv accept (`export KEY=`, `KEY =`), not just a bare `KEY=`.
+    if (readKey(project ? existingLocal : existing, key) !== null) { skipped.push(key); continue; }
     // A conflicting key is still in the env files: never add a third copy next to it.
-    const present = (t) => new RegExp(`^\\s*${key}=`, "m").test(t);
-    if (present(project ? existingLocal : existing) || (project && move.conflicts.some((c) => c.key === key))) { skipped.push(key); continue; }
-    (project ? localBlocks : blocks).push(keyComment(key, meta) + `${key}=${meta.def || ""}\n`);
-    emitted.push(project ? `${key} (${LOCAL_FILE})` : key);
+    if (project && move.conflicts.some((c) => c.key === key)) { skipped.push(key); continue; }
+    // Kept per env (`KEY_<ENV>`, one tracker per stand): this env gets its own suffixed line, never a bare
+    // empty one that would fail normalize-env for every env.
+    const suffixes = project ? keySuffixes(existingLocal, key) : [];
+    if (suffixes.includes(SUFFIX)) { skipped.push(`${key}_${SUFFIX}`); continue; }
+    const name = suffixes.length ? `${key}_${SUFFIX}` : key;
+    (project ? localBlocks : blocks).push(keyComment(name, meta) + `${name}=${meta.def || ""}\n`);
+    emitted.push({ key, name, file: project ? LOCAL_FILE : "" });
   }
 
   if (localBlocks.length) {
@@ -175,10 +182,12 @@ function main() {
   }
 
   console.log(`[scaffold-env] ${blocks.length ? "wrote" : "no new placeholders for"} ${outPath}`);
-  const optional = emitted.filter((k) => CATALOG.find(([n]) => n === k)?.[1].optional);
-  const toFill = emitted.filter((k) => !optional.includes(k));
-  if (toFill.length) console.log(`[scaffold-env] to fill: ${toFill.join(", ")}`);
-  if (optional.length) console.log(`[scaffold-env] may stay empty (detected): ${optional.join(", ")}`);
+  // Requiredness is looked up by the CATALOG key; the file is only a label for the operator.
+  const label = (e) => (e.file ? `${e.name} (${e.file})` : e.name);
+  const optional = emitted.filter((e) => CATALOG.find(([n]) => n === e.key)?.[1].optional);
+  const toFill = emitted.filter((e) => !optional.includes(e));
+  if (toFill.length) console.log(`[scaffold-env] to fill: ${toFill.map(label).join(", ")}`);
+  if (optional.length) console.log(`[scaffold-env] may stay empty (detected): ${optional.map(label).join(", ")}`);
   if (skipped.length) console.log(`[scaffold-env] already present (kept): ${skipped.join(", ")}`);
   if (args.print && emitted.length) console.log(`[scaffold-env] placeholders emitted: ${emitted.length}`);
 }

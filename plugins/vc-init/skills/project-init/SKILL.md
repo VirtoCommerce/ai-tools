@@ -471,7 +471,9 @@ none. A project onboarded before that has them in each `.env.<env>`: scaffold-en
 moves them first (`lib/project-env.mjs`) and prints `moved to .env.local …`. When the env files hold
 **different** values for one key it moves nothing and prints `NOT moved <KEY> — the files disagree`:
 relay that line; the operator keeps one value in `.env.local` (or `<KEY>_<ENV>` there per env) and
-deletes the rest.
+deletes the rest. Once a key is kept per env, every later env gets its own `<KEY>_<NEW>` placeholder, never
+a bare empty one. `write-env.mjs` never overwrites a different value already in `.env.local`: it
+refuses that key (exit 1) and says so.
 
 ### 3b. `.env.local` — test-user passwords (`scaffold-secrets.mjs`)
 

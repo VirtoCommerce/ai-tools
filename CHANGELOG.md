@@ -22,6 +22,12 @@ Step C) move these keys out of every `.env.<env>` into `.env.local` (`lib/projec
 above each. When the env files hold different values for one key, nothing is moved and the run prints
 `NOT moved <KEY> — the files disagree`; keep one value in `.env.local` (or `<KEY>_<ENV>` there per env).
 `normalize-env.mjs` now also normalises the project keys in `.env.local` (a trailing slash on `JIRA_BASE_URL`).
+A project that points two stands at two trackers keeps the key per env as `<KEY>_<ENV>` in `.env.local`:
+`scaffold-env.mjs` then adds `<KEY>_<NEW>` for a new env instead of a bare empty line, and `normalize-env.mjs`
+checks those lines like the bare key. `write-env.mjs` refuses (exit 1) a project key whose value differs from the
+one already in `.env.local`, instead of redirecting every other env, and removes the old copy from `.env.<env>`.
+The vc-fix `.env.local.template` ships these keys commented out, with no default: an uncommented line there
+overrides `.env.<env>`.
 
 **Fixed: `normalize-env.mjs` skipped every line of a CRLF file.** A `KEY=value\r` line did not match its line
 pattern, so a file saved by a Windows editor kept its quotes and trailing slashes, and an empty placeholder lost its

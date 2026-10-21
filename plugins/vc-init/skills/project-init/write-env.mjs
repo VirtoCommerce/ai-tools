@@ -49,6 +49,7 @@ import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
 import { outputRoot } from "./lib/paths.mjs";
 import { CATALOG } from "./scaffold-env.mjs";
+import { LOCAL_HEADER, keySuffixes, readKey, removeKey } from "./lib/project-env.mjs";
 
 // The project-level keys — one value for every env — go to .env.local, never .env.<env>.
 const PROJECT_KEYS = new Set(CATALOG.filter(([, m]) => m.scope === "project").map(([k]) => k));
@@ -161,22 +162,37 @@ function main() {
     }
   }
 
-  for (const key of Object.keys(envVars)) {
-    if (!PROJECT_KEYS.has(key)) continue;
-    if (envVars[key] !== undefined && envVars[key] !== null && envVars[key] !== "") secretKv[key] = envVars[key];
-    delete envVars[key];
-  }
-
   // Write into the deployment project (process.cwd()), symmetric with config.js which
   // dotenv-loads these from cwd. VC_FIX_HOME overrides for out-of-project callers.
   const OUTPUT_ROOT = outputRoot();
   const envPath = join(OUTPUT_ROOT, `.env.${envName}`);
   const localPath = join(OUTPUT_ROOT, ".env.local");
 
+  // Project keys: one value for every env, so a different one already in .env.local is another env's
+  // tracker — never overwritten silently (that would redirect the other env's runs). A project that keeps
+  // them per env (`KEY_<ENV>` lines) gets this env's suffixed line. The copy left in .env.<env> by an
+  // older onboarding is removed, so the two files cannot disagree afterwards.
+  const localText = existsSync(localPath) ? readFileSync(localPath, "utf-8") : "";
+  const refused = [];
+  const projectWritten = [];
+  for (const key of Object.keys(envVars)) {
+    if (!PROJECT_KEYS.has(key)) continue;
+    const value = envVars[key];
+    delete envVars[key];
+    if (value === undefined || value === null || value === "") continue;
+    const current = readKey(localText, key);
+    if (keySuffixes(localText, key).length && current === null) secretKv[`${key}${SUFFIX}`] = value;
+    else if (current && current !== String(value)) { refused.push(key); continue; }
+    else secretKv[key] = value;
+    projectWritten.push(key);
+  }
+
   // --- Bucket #2: .env.<env> (non-secret) ---
   let envReport = null;
-  if (Object.keys(envVars).length) {
-    const existing = existsSync(envPath) ? readFileSync(envPath, "utf-8") : "";
+  const envText = existsSync(envPath) ? readFileSync(envPath, "utf-8") : "";
+  const stale = projectWritten.filter((k) => readKey(envText, k) !== null);
+  if (Object.keys(envVars).length || stale.length) {
+    const existing = stale.reduce((t, k) => removeKey(t, k), envText);
     const header = existing
       ? ""
       : [
@@ -189,7 +205,7 @@ function main() {
           "",
         ].join("\n");
     const res = upsert(header + existing, envVars);
-    envReport = { path: envPath, ...res, created: !existing };
+    envReport = { path: envPath, ...res, created: !envText, removed: stale };
     if (!DRY_RUN) writeFileSync(envPath, res.text);
   }
 
@@ -197,17 +213,7 @@ function main() {
   let localReport = null;
   if (Object.keys(secretKv).length) {
     const existing = existsSync(localPath) ? readFileSync(localPath, "utf-8") : "";
-    const header = existing
-      ? ""
-      : [
-          `# ==============================================================================`,
-          `# .env.local — secrets (Bucket #3, GITIGNORED — never commit).`,
-          `# Written by project-init/write-env.mjs. Per-env creds carry the _<ENV> suffix`,
-          `# that config.js promotes to the base name when TEST_ENV matches.`,
-          `# ==============================================================================`,
-          "",
-          "",
-        ].join("\n");
+    const header = existing ? "" : LOCAL_HEADER;
     const res = upsert(header + existing, secretKv);
     localReport = { path: localPath, ...res, created: !existing };
     if (!DRY_RUN) writeFileSync(localPath, res.text);
@@ -216,7 +222,8 @@ function main() {
   // --- Report (names only, never values) ---
   const tag = DRY_RUN ? "[write-env] DRY-RUN — would write" : "[write-env] wrote";
   if (envReport) {
-    console.log(`${tag} ${envReport.path}${envReport.created ? " (created)" : ""}: ${envReport.written.join(", ")}`);
+    console.log(`${tag} ${envReport.path}${envReport.created ? " (created)" : ""}: ${envReport.written.join(", ") || "(no keys)"}`);
+    if (envReport.removed.length) console.log(`[write-env] moved out of ${envReport.path} (now in .env.local): ${envReport.removed.join(", ")}`);
   }
   if (localReport) {
     console.log(`${tag} ${localReport.path}${localReport.created ? " (created)" : ""}: ${localReport.written.join(", ")} [values hidden]`);
@@ -229,6 +236,10 @@ function main() {
     if (localReport) console.log(`[write-env] .env.local keys: ${Object.keys(secretKv).join(", ")}`);
   }
   console.log(`[write-env] done${DRY_RUN ? " (dry-run, no files changed)" : ""}.`);
+  if (refused.length) {
+    console.error(`[write-env] NOT written: ${refused.join(", ")} — .env.local already holds a different value, the one every env uses. Edit .env.local by hand, or keep one value per env as <KEY>_<ENV> there.`);
+    process.exit(1);
+  }
 }
 
 main();
