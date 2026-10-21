@@ -53,12 +53,6 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | W2 | IMGTL-025 | Task over 5 .jpg images and 1 .png: thumbnails only for the .png, success notification with 0 errors | no | same defect as IMGTL-007, file once |
 | W2 | IMGTL-026 | Thumbnail task shows no processed/total progress; the push notification reports 0 of 0 although 13 thumbnails were written | unknown | low, UX |
 | W2 | CHAN-008 | Channel completeness stays 0% after an evaluation that scored the products 62/25/25% | no | pre-existing, not filed yet |
-| W3 | ORDA-076 | Order PUT with an invalid currency or a malformed createdDate returns 500 instead of a validation error | no |  |
-| W3 | ORDA-081 | A refund beyond the captured / remaining amount is accepted | no |  |
-| W3 | ORDA-083 | A fully refunded payment can be refunded again; the payment never reaches Refunded | no |  |
-| W3 | CART-036 | Quantity -1 is committed and persisted | no |  |
-| W3 | CART-066 | Decimal quantity 1.5 kept, no client-side rejection | no |  |
-| W3 | CART-055 | Quantity off the pack size (7 of pack 6) is stored | no |  |
 
 ## Decisions pending
 
