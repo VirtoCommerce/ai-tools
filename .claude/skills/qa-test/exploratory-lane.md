@@ -190,8 +190,11 @@ downstream of the charter — pre-flight, technique selection, the session, the 
 unchanged and not restated here.
 
 ```
-/qa-exploratory ticket <ticket-key>     # Step 3x. Charter from the Test Model; 30-60 min box; chrome/edge
+/qa-exploratory ticket <ticket-key> <env>     # Step 3x. Charter from the Test Model; 30-60 min box; chrome/edge
 ```
+
+Pass the run's env: the lane is a subagent, shares the session's env binding and never re-binds it
+([`run-env.md`](../../knowledge/execution/run-env.md)).
 
 **Auto-invocation is not a risk here and the guard is not the frontmatter flag.** `/qa-exploratory` is
 read-only against the product, files nothing, transitions nothing, and edits no oracle — its only write is
