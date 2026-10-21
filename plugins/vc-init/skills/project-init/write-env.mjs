@@ -185,9 +185,10 @@ function main() {
     delete envVars[key];
     if (value === undefined || value === null || value === "") continue;
     const current = readKey(localText, key);
-    if (keySuffixes(localText, key, envSuffixes).length && current === null) secretKv[`${key}${SUFFIX}`] = value;
+    // Written in the canonical form too: a raw `https://x/` would break `${KEY}/rest/…` until the next normalize-env.
+    if (keySuffixes(localText, key, envSuffixes).length && current === null) secretKv[`${key}${SUFFIX}`] = canon(key, value);
     else if (current && canon(key, current) !== canon(key, value)) { refused.push(key); continue; }
-    else secretKv[key] = value;
+    else secretKv[key] = canon(key, value);
     projectWritten.push(key);
   }
 
