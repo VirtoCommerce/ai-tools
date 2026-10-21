@@ -28,12 +28,17 @@
     "deploy": {
       "pr": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/6966",
       "pin": "VirtoCommerce.Search 3.1010.0 → 3.1011.0-pr-157-9278",
-      "revert_required": true,
+      "revert_required": false,
       "provider_switch": {
         "pr": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/6968",
         "from": "AzureSearch",
         "to": "ElasticSearch8",
         "merged_at": "2026-10-21T10:44:43Z"
+      },
+      "revert": {
+        "pr": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/6970",
+        "merged_at": "2026-10-21T11:56:06Z",
+        "live": "3.1010.0 at 11:59Z"
       }
     }
   },
@@ -155,7 +160,7 @@
     {
       "key": "VCST-6474",
       "severity": "Medium",
-      "provenance": "PRE-EXISTING",
+      "provenance": "PRE-EXISTING (confirmed on 3.1010.0)",
       "relation": "standalone + Relates to VCST-6429",
       "labels": [
         "found-by-agent",
@@ -210,7 +215,7 @@
       {
         "id": "F-1",
         "severity": "Medium",
-        "provenance": "PRE-EXISTING",
+        "provenance": "PRE-EXISTING (confirmed live)",
         "title": "Concurrent indexation: the skipped run's notification shows the running build's progress; the running build's blade freezes",
         "draft": "reports/bugs/open/medium/BUG-indexation-loser-notification-shows-winner-progress-VCST-6474.md",
         "repro_count": "Azure: 8 of ~16 contended runs (2026-10-20); ES8: 3 of 4 probes (2026-10-21, B jobs 401314/401316/401318 hijacked, 401320 clean) — provider-independent",
@@ -244,7 +249,8 @@
         },
         "note": "SRCHJ-007 passed in both C1 runs while ad-hoc probes reproduce it — the case is a probabilistic catcher of an intermittent defect",
         "filed": "VCST-6474",
-        "root_cause_evidence": "pod logs: the 3 hijacked losers (8d40dfd1, da235276, 0f3a62c7) each received 11 progress pushes from pod s69h8, where their winners ran and froze at 4 pushes; clean losers had their winner on the other pod (d5753025 on s69h8 vs winner ce9a3108 on tkdbw). The defect needs both runs on one pod — the platform runs 2 pods"
+        "root_cause_evidence": "pod logs: the 3 hijacked losers (8d40dfd1, da235276, 0f3a62c7) each received 11 progress pushes from pod s69h8, where their winners ran and froze at 4 pushes; clean losers had their winner on the other pod (d5753025 on s69h8 vs winner ce9a3108 on tkdbw). The defect needs both runs on one pod — the platform runs 2 pods",
+        "old_build_check": "vcptcore_qa1 after pin revert (vc-deploy-dev #6970), VirtoCommerce.Search 3.1010.0, ES8, 2026-10-21 11:59-12:01Z: 3 of 6 contended runs hijacked (jobs 401387, 401389, 401399)"
       }
     ]
   },
