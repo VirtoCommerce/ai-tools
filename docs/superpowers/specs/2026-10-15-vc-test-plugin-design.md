@@ -17,7 +17,7 @@
 >
 > **Updated 2026-10-21 (second pass) from the developers' chat** and a fifth, much larger run (VCST-6314, §2b):
 > checks are layered from cheap to expensive, starting with a review of the diff (layer 0), every run has a
-> budget, and developers get their own command. U35–U51 are the owner's (U43–U46 place the strategy, the maps and
+> budget, and developers get their own command. U35–U52 are the owner's (U43–U46 place the strategy, the maps and
 > the data model in the layers; U47–U49 keep the run aimed at significant bugs); U31 is revised by U35. §3a describes the
 > developer command; §2b and §13 follow.
 
@@ -117,6 +117,7 @@ the working tree), and the goal of a run is to make sure there are no significan
 | U49 | Do the expensive layers earn their cost? | **Measured against a plain review.** On the same P3 tickets a control run asks only "review the change and check the ACs", and `run-cost.mjs` measures it the same way (U42). If the layered run finds no more significant bugs than the control, layers 2–3 do not earn their cost and the design is revisited before P4 |
 | U50 | How is a bug report written? (O3) | **From the investigation's output, with no second investigation, and only for Medium or worse.** `qa-bug` takes the investigation file (reproduction, evidence, root-cause hypothesis) as its input and writes the report from it; it does not reproduce or investigate again. A Low gets no report (U25) — except a ticket-related Low, which keeps its reproduction and is offered to `qa-bug` the same way. Its own "create a tracker ticket?" question stays (U11). VCST-6314 spent 12.9% of the run on `qa-bug` after 27.5% on investigations |
 | U51 | How long may the developer command take? | **At most 1–1.5 h of wall clock**, from start to the final list, on a typical ticket. `run-cost.mjs` reports wall clock and active minutes per layer next to tokens and window share (U42). P3 measures both commands on tickets of different sizes — a small fix, a component change, a large multi-PR ticket — and records the times in §2b; a developer run over 1.5 h on a typical ticket fails P3 like a run over budget. For reference: the developer's `/qa-test-fast` run in the chat took about an hour, VCST-6314 took 11 h 34 |
+| U52 | When does the developer hear about a problem? | **The moment it is found, not at the end.** Every blocker and every confirmed problem is reported to the developer as soon as it is known, in any layer: a failed AC check, a confirmed suspicion, a Medium-or-worse finding, and a run blocker (stand down, no access, missing account or data). Each report names the file and line where known, the reproduction, and the `.spec` or check that shows it, so the developer can fix it locally and re-run. Extends U41, which covered layer 0's suspicions only |
 
 **Calls made while writing U24–U31 (the author's, not the owner's — correct any that is wrong).**
 
@@ -141,6 +142,8 @@ gap the review of this spec found between a decision above and the code on `main
 | B11 | U34's 50% needs a per-run total, and §2b gives only per-agent ranges and shares | In P2, `run-cost.mjs` is run on the four §2b sessions' transcripts and their per-run totals (tokens, active minutes) are written into §2b. U34 compares against the comparable run: VCST-6398 for a large ticket, VCST-5903 R1 for a component ticket. Until those totals are written, U34 cannot be checked |
 | B12 | U28 against `.claude/rules/reports.md` §5.0: a tracker comment that makes a UI claim carries its screenshots inline | No conflict once the claim is named for what decided it. An `ac-checks` PASS is an API or script claim, and the comment states it so ("the `.spec` asserted …"), with no screenshot. A `ui-checks` or visual item is decided by a look, keeps the screenshot that decided it, and the comment embeds it per §5.0. `reports.md` does not change |
 | B13 | How U51's 1.5 h splits across the developer command's layers | Layer 0 ≤ 10 min, so the suspicions (U41) reach the developer early; layer 1 ≤ 30 min; layers 2–3 the rest. The measured 14–31 min before the first browser check (§2b) must shrink to layer 0's 10 min. P3's measurements correct the split |
+| B14 | Does the developer command go on after a blocker? | **It stops the layers that depend on it.** A run blocker stops the run; a failed AC or a High/Critical finding stops layers 2–3 for that area — the developer will fix and re-run anyway, so testing on top of a known break spends budget for nothing. Independent areas continue. `--keep-going` overrides the stop |
+| B15 | What does a re-run after a fix do? | **It is incremental, like a round N ≥ 2 (U15).** It reads the previous run's `change-map.json` and results from the run folder, maps only the diff since that run, re-runs first the checks that failed (by their `.spec`), then the checks whose code changed; a check that passed on unchanged code is not re-run. A re-run must cost a fraction of the first run |
 
 ### 2b. Measurement behind U24–U31 (2026-10-21)
 
@@ -231,6 +234,9 @@ its results are the round's base. Steps 1 and 2 are not repeated, and human poin
 ```
 /vc-test:dev-check [<KEY>] [--base <branch>]                         (working name)
  0 CHANGE MAP  git diff <base>...HEAD (+ the ticket's ACs if <KEY>) → change-map.json      ≤ 3% of the window
+               a re-run after a fix maps only the diff since the last run and re-runs failed checks first (B15)
+               every blocker and confirmed problem is reported the moment it is found (U52); a blocker
+               stops the layers that depend on it (B14)
                hotspots linked to mind-map nodes and data profiles, read only (U43, U44); it is the plan (U45)
                → suspicions shown at once, labelled "suspected" (U41)
  1 PROVE       each hotspot by its cheapest proof: existing unit test · API/GraphQL check · .spec   ≤ 7%
