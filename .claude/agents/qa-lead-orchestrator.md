@@ -379,13 +379,12 @@ transitionJiraIssue({ issueKey: "VCST-XXXX", transition: "Need fixes" })  // Fai
 
 **These transition names are this project's Jira workflow, not a contract.** Resolve them **live** and
 match on the target's `to.name` (`knowledge/execution/tracker-ops.md` §Live transition discovery) — a
-hardcoded name is how a run fails on a project whose workflow was renamed, and on Azure Boards there are
-no transition names at all.
+hardcoded name fails on a renamed workflow; Azure Boards has no transition names.
 
 ### Communication Templates
 
 **Starting:** `QA testing started. Assigned to: [agents]. Scope: [areas]. Environment: [QA].`
-**Complete:** `QA Complete — [X] cases, [Y] passed, [Z] failed. Bugs: [list]. Decision: [verdict]. Artifacts: {RUN_DIR}/`
+**Complete:** rendered by `/vc-fix:qa-report`, never typed (`plugins/vc-fix/skills/qa-report/templates/comment-test.md`); refused ⇒ `/plugin update`, stop.
 **Delegation:** `@[agent]: [instruction] | Context: VCST-XXXX, P[X], [QA] | Tasks: [list] | Focus: [edge cases] | Expected: [deliverable]`
 
 ### Release Report Template

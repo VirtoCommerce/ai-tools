@@ -1,21 +1,120 @@
 {
-  "runId": "REG-2026-10-15-1720",
+  "runId": "REG-2026-10-20-1418",
   "status": "completed",
-  "startedAt": "2026-10-15T15:20:55.249Z",
-  "windowStart": "2026-10-15T15:20:55.249Z",
-  "selection": "093",
+  "startedAt": "2026-10-20T14:26:02.000Z",
+  "windowStart": "2026-10-20T14:26:02.000Z",
+  "selection": "083c,093,106,028,014b,098,015,043,072d,072,093b",
   "env": "vcst",
   "scoped": true,
-  "purpose": "VCST-6015 — verify the 5 test-defect fixes from triage of REG-2026-10-15-1548",
-  "ids": "SR-HD-100,SR-HD-102,SR-HD-107,SR-HD-112,SR-HD-115",
+  "cases": "critical",
+  "purpose": "VCST-6398 /qa-test-fast R13 — critical cases of the eight merged areas (vc-frontend-next 3.1.0-pr-11-d67b)",
   "suites": {
+    "106": {
+      "status": "done",
+      "lane": "browser",
+      "browser": "playwright-firefox",
+      "startedAt": "2026-10-20T14:27:50Z",
+      "passed": 0,
+      "failed": 0,
+      "blocked": 1,
+      "skipped": 0
+    },
+    "083c": {
+      "status": "done",
+      "lane": "browser",
+      "browser": "playwright-chrome",
+      "startedAt": "2026-10-20T14:27:50Z",
+      "passed": 13,
+      "failed": 0,
+      "blocked": 5,
+      "skipped": 0
+    },
     "093": {
-      "status": "pending",
-      "lane": "browser"
+      "status": "done",
+      "lane": "browser",
+      "browser": "playwright-firefox",
+      "startedAt": "2026-10-20T14:27:50Z",
+      "passed": 13,
+      "failed": 0,
+      "blocked": 5,
+      "skipped": 0
+    },
+    "028": {
+      "status": "done",
+      "lane": "browser",
+      "browser": "playwright-edge",
+      "startedAt": "2026-10-20T14:27:50Z",
+      "passed": 15,
+      "failed": 0,
+      "blocked": 0,
+      "skipped": 4
+    },
+    "014b": {
+      "status": "done",
+      "lane": "browser",
+      "browser": "playwright-chrome",
+      "passed": 5,
+      "failed": 0,
+      "blocked": 0,
+      "skipped": 1
+    },
+    "098": {
+      "status": "done",
+      "lane": "browser",
+      "browser": "playwright-chrome",
+      "passed": 3,
+      "failed": 0,
+      "blocked": 6,
+      "skipped": 0
+    },
+    "015": {
+      "status": "done",
+      "lane": "browser",
+      "browser": "playwright-chrome",
+      "passed": 0,
+      "failed": 4,
+      "blocked": 0,
+      "skipped": 0
+    },
+    "043": {
+      "status": "done",
+      "lane": "browser",
+      "browser": "playwright-chrome",
+      "passed": 4,
+      "failed": 0,
+      "blocked": 2,
+      "skipped": 1
+    },
+    "072d": {
+      "status": "done",
+      "lane": "browser",
+      "browser": "playwright-edge",
+      "startedAt": "2026-10-20T14:27:50Z",
+      "passed": 1,
+      "failed": 0,
+      "blocked": 0,
+      "skipped": 1
+    },
+    "072": {
+      "status": "done",
+      "lane": "browser",
+      "browser": "playwright-edge",
+      "startedAt": "2026-10-20T14:27:50Z",
+      "passed": 2,
+      "failed": 0,
+      "blocked": 1,
+      "skipped": 13
+    },
+    "093b": {
+      "status": "done",
+      "lane": "browser",
+      "browser": "playwright-firefox",
+      "startedAt": "2026-10-20T14:27:50Z",
+      "passed": 0,
+      "failed": 1,
+      "blocked": 2,
+      "skipped": 0
     }
   },
-  "finishedAt": "2026-10-15T15:21:05.438Z",
-  "notes": [
-    "ABORTED before dispatch (usage limit) — nothing ran; no results"
-  ]
+  "finishedAt": "2026-10-20T15:13:35.490Z"
 }

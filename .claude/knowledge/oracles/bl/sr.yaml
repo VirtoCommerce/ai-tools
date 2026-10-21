@@ -81,6 +81,9 @@ rules:
       ref: 'Pass `currencyCode:"EUR"` → response `currencyCode:"EUR"`, `formattedAmount` uses the € symbol; omit → store default. (Live-confirmed 2026-07-23: EUR echoed, `€816.00`.) Assert the echoed code + symbol, **not** a specific converted amount (FX rate is env-dependent — vcst-qa EUR ≈ 1.0).'
     violation_signal: "`currencyCode` not echoed; `formattedAmount` unlocalized; per-currency figures returned unconverted / double-counted."
     status: ACTIVE
+    verified:
+      date: 2026-10-20
+      by: REG-2026-10-20-1418
   - id: BL-SR-005
     title: Statistics scope excludes flag-cancelled / prototype orders unconditionally
     rule: The statistics scope (`salesRepCustomerOrderStatistics` / `salesRepCustomerCartStatistics`) excludes orders and carts flagged prototype or cancelled **at the entity level** (`IsPrototype` / `IsCancelled`) — unconditionally, and this does NOT loosen under any named filter. This differs from the order-*list* scope, which deliberately includes cancelled orders so that `Cancelled` is a real list filter (BL-SR-009). An order whose `Status` field merely reads a cancelled-like value **without** the `IsCancelled` flag (e.g. written directly by an external/ERP integration bypassing the platform cancel workflow) is NOT excluded by this scope and correctly counts toward every statistics figure, including the baseline/all-status one.
@@ -315,6 +318,9 @@ rules:
       ref: Save a document containing two regions; save again with only one region → reload resolves only that region; the omitted region and its blocks are gone, not carried over from the prior save (SR-GQL-107).
     violation_signal: A region/block omitted from a save survives in the reloaded document (silent merge instead of replace).
     status: ACTIVE
+    verified:
+      date: 2026-10-20
+      by: REG-2026-10-20-1418
   - id: BL-SR-017
     title: Persisted block order and `hidden` are independent, verbatim round-trip fields
     rule: Within a `SalesRepLayoutRegion.blocks[]`, array position is the only signal of render order and `hidden` is a flag independent of position — both are stored and returned exactly as sent, with no server-side reordering, deduplication, or reinterpretation.
@@ -330,6 +336,9 @@ rules:
       ref: Save a region with blocks in a specific order and one block `hidden:true`; reload → same order, same hidden flags (SR-GQL-100/108/109/115).
     violation_signal: Reload returns blocks in a different order than saved; a `hidden:true` block reverts to `false` (or vice versa) without a save.
     status: ACTIVE
+    verified:
+      date: 2026-10-20
+      by: REG-2026-10-20-1418
   - id: BL-SR-018
     title: Save mutation echoes the persisted document, including a fresh UTC `modifiedDate`
     rule: "`saveSalesRepLayout`'s response IS the just-persisted document — the same regions/blocks that were sent, plus a `modifiedDate` set to the save's UTC instant. A caller does not need to re-query `salesRepLayout` after a successful save to see the current state."
@@ -437,6 +446,9 @@ rules:
       ref: Perform a drag/hide/reorder without saving, then reload → the pre-change arrangement still renders; Save once → exactly one save call is issued; a reload and a fresh sign-in both then show the saved arrangement; Cancel and Reset both complete with zero save calls.
     violation_signal: An unsaved change survives a reload; a drag/hide/reorder issues a save call by itself; Cancel or Reset issues a save call; the arrangement differs after sign-out/sign-in.
     status: ACTIVE
+    verified:
+      date: 2026-10-20
+      by: REG-2026-10-20-1418
   - id: BL-SR-025
     title: The block registry owns structure and region placement; the saved document owns only order and hidden, with unknown types dropped and missing blocks appended
     rule: "Which block types exist and which region each renders in is decided by the frontend's block registry alone — never by the saved document. The document contributes only per-block order and a hidden flag. On load: a persisted block type absent from the registry is dropped silently (no error, no placeholder, no orphan entry); a registered block type absent from the document is appended after the document's own blocks; a registered block whose document region disagrees with the registry's region for that type renders in the registry's region, not the document's. Every such deviation self-heals on the next save — the round-trip payload always matches the registry's current structure."
@@ -467,6 +479,9 @@ rules:
       ref: Load a layout-driven surface for a (user, scope, storeId) combination that was never saved → registry defaults render, Edit is enabled, no error/alert appears.
     violation_signal: A never-saved key disables Edit, shows an error/alert, or is otherwise treated the same as a genuine read failure.
     status: ACTIVE
+    verified:
+      date: 2026-10-20
+      by: REG-2026-10-20-1418
   - id: BL-SR-027
     title: The two widget columns are structurally separate drag groups — cross-column drag is impossible in either direction
     rule: The wide and rail widget columns are distinct drag-and-drop groups by construction; no widget can be dropped from one column into the other, regardless of runtime state.
@@ -497,6 +512,9 @@ rules:
       ref: Confirm a stat card renders no dismiss control; drag a stat card into and out of the parked zone — both work, and the drop lands at the drop position, not appended; a widget's dismiss control hides it, and it can only be restored from the hidden-items tray; outside edit mode a parked/hidden item is absent from the page; in edit mode it appears under a "hidden" grouping; the parked/hidden state survives a reload.
     violation_signal: A stat card exposes a dismiss control; a hidden widget can be restored by dragging; a parked/hidden item remains rendered outside edit mode, or its state resets on reload.
     status: ACTIVE
+    verified:
+      date: 2026-10-20
+      by: REG-2026-10-20-1418
   - id: BL-SR-029
     title: Keyboard grab-and-move announces every transition via `aria-live`, with position for reorder and without position for park/restore; however a grab ended by a pointer interruption is a tracked violation
     rule: Grabbing a block for keyboard reordering, moving it, and dropping it all announce via `aria-live`, including position (e.g. "position N of M") for reorder moves and edge cases; park and restore append to the end of their target zone and announce without a position — this asymmetry is intentional. Ending a grab must always restore the pre-grab state and announce the cancellation, regardless of what ends it — an explicit keyboard cancel (Escape / blur / tab-out) or any other interaction that terminates the grab.
@@ -512,6 +530,9 @@ rules:
       ref: Grab a block via keyboard, move with arrow keys → announcements include position; drive a block to an edge → the edge announcement is distinct; park then restore via keyboard → announcements omit position; end a grab via Escape → the pre-grab position is restored and the cancellation announced; end a grab via any other interaction (e.g. a pointer action on another block) → the pre-grab position must still be restored and the cancellation still announced.
     violation_signal: A reorder or edge announcement omits position; a park/restore announcement includes one; ending a grab by any means other than Escape/blur/tab commits the moved position without restoring it or announcing the cancellation.
     status: ACTIVE
+    verified:
+      date: 2026-10-20
+      by: REG-2026-10-20-1418
   - id: BL-SR-030
     title: A save already in flight cannot be duplicated by a rapid repeat trigger
     rule: Triggering Save again while a save is already in flight never results in a second full-document-replace call reaching the backend — exactly one save request is issued per user-intended save, regardless of how a repeat trigger is delivered.
