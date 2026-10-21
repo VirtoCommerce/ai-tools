@@ -193,7 +193,7 @@
     },
     "rerun_b2c_mbr_020": {
       "run_id": "REG-2026-10-21-1043",
-      "result": "PASS — 6/6 assertions, 0 mismatched steps, no workarounds (verifies the PR #491 repair; case promoted Draft -> Automated)",
+      "result": "PASS — 5/5 assertions + cross-layer check, 0 mismatched steps, no workarounds (verifies the PR #491 repair; case promoted Draft -> Automated)",
       "landing": "password sign-in of a member blocked in TechFlow lands BuildRight (claim 91b24624…); TechFlow disabled with a padlock",
       "refresh_token": "400 invalid_grant, user_is_locked_in_organization; errorDescription = the org-specific blocked message (token minted after the block, sent to the storefront host)",
       "persona": "before == after; memberships Approved + unlocked, current = TechFlow, global lock false",
