@@ -152,6 +152,21 @@ from *"the evidence was dropped"*.
 
 **Retention:** Regression/test-lifecycle/coverage screenshots under `reports/regression/REG-*/`, `reports/test-lifecycle/TLC-*/`, `reports/coverage/COV-*/` are gitignored — disposable artifacts referenced from the permanent markdown. Bug evidence (`reports/bugs/screenshots/`) and per-ticket evidence (`reports/tickets/SprintXX-XX/<ticket-key>/screenshots/`, `reports/tickets/<ticket-key>/screenshots/`) stay tracked.
 
+### 5.1a Never hand-capture what the runner already captured
+
+A manual screenshot of a failure is evidence only where nothing else produced one. **Check the lane, not
+the config file** — a key in a config proves nothing until the tool's own schema reads it.
+
+| Lane | Captured on failure without being asked | Manual failure screenshot |
+|---|---|---|
+| **Playwright Test** — a `*.spec.ts` run under a `playwright.config.ts` with `screenshot: "only-on-failure"` + `trace: "retain-on-failure"` | a screenshot and a trace for every browser context the test creates | **Forbidden** in the spec, fixture, hook or helper — point at the runner's file |
+| **Playwright MCP** lanes (the `.mcp.json` servers `/project-init` writes) | **nothing**. `@playwright/mcp` has no `screenshot` option and no notion of a failing test — a `"screenshot": "only-on-failure"` key in any lane config is read by nothing (pinned 0.0.77, checked 2026-10-21) | **Required** — the agent's `browser_take_screenshot` at a FAIL is the only failure image. Never remove it as a duplicate |
+| **Chrome DevTools MCP**; a script driving the Playwright *library* | nothing — no test runner to fail | the capture taken is the only one |
+
+**What this rule never touches:** a capture made for a human reader — the inline tracker image (§5.0,
+still MANDATORY), visual evidence, motion GIFs (§5.2). Where the runner's failure screenshot already shows
+the problem legibly, reuse that file for the comment instead of shooting it again.
+
 ### 5.2 Motion evidence — a GIF when the defect IS the transition
 
 **Conditional, not blanket.** A still answers *"what does this screen look like"*. Some defects are
