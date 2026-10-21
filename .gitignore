@@ -195,3 +195,6 @@ reports/bugs/screenshots/_incoming/
 
 # Tracker attachments downloaded as run INPUT (not a report category, reports.md 1) — kept local
 reports/tickets/**/attachments/
+
+# Playwright spec run output
+playwright-report/
