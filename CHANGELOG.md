@@ -25,8 +25,9 @@ those envs. Outside a session, `QA_TICKET=<KEY>` names the ticket.
 variable resolve to `MASTER_PASSWORD` from `.env.playwright.master`, so the seeders set it. Only the stand's own
 files, or a `PASSWORDS_<ENV>` pin, count; a bare `PASSWORDS` in `.env.local` is ignored with a warning, because it
 would switch the shared stands too. Browser lanes then
-type `MASTER_PASSWORD` in every password field. `secrets:sync` and `secrets:sync:all` copy it as one stable line,
-so a new master stand needs no re-sync and no MCP reconnect. `enforce-secret-token` blocks `MASTER_PASSWORD` in a
+type `MASTER_PASSWORD` in every password field. `secrets:sync:all` copies it into `.env.playwright.all` as one
+stable line, so a new master stand needs no re-sync and no MCP reconnect; the single-env `secrets:sync` writes it
+only for a master stand. `enforce-secret-token` blocks `MASTER_PASSWORD` in a
 session whose stand did not opt in, and a copy older than the master file.
 
 **Changed:**
