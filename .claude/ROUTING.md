@@ -48,6 +48,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Refresh the storefront sitemap knowledge file** | `/qa-sitemap [--check] [--no-browser]` | Command |
 | **Review THIS repo's own code diff** | `/code-review-full [branch \| SHA \| PR \| path]` (or the harness's own `/code-review`, `/security-review`, `/simplify`) | Command |
 | **Review a PR in `vc-platform` or a `vc-module-*` repo** (backward compatibility of the NuGet surface first) | `/review-pr-virto` — asks for repo, PR number and local clone | Skill |
+| **Review a PR that changes GitHub Actions** (`VirtoCommerce/.github` workflows, actions, module templates, or a repo's own `.github/workflows/` — untrusted input vs secrets first, then the contract for consumers; GitHub only, not Azure DevOps) | `/review-pr-gh-workflow <repo> <pr> [<clone>]` | Skill |
 | **Self-diagnose the plugin from session telemetry** | `/vc-self-check [latest \| <session-id>] \| deliver` | Command |
 | **Review / heal / improve a skill, command or agent prompt** | `/prompt-review <name \| path \| changed \| all> [--fix] [--improve] [--dry-run]` | Skill |
 | **Check the stand is fit before testing or analysing against it** (env health, declared vs deployed build, MCP availability) | `/preflight <ticket \| ticket-fast \| exploratory \| lifecycle \| domain-map \| ba> [--ticket KEY] [--components A,B] [--expect Module.Id@version]` (CLI: `npm run preflight`) | Skill |
@@ -169,6 +170,7 @@ Roster detail (model, colour, team framework): [`knowledge/agents/README.md`](kn
 - `regression-orchestrator` — Parallel regression, retries, consolidated reports
 - `test-runner-agent` — Parameterized suite runner (spawned by regression-orchestrator)
 - `ticket-context-analyst` — Read-only, no-browser ticket reader for `/ticket-context` (TICKET / MATERIALS / CHANGE modes); never writes to a tracker, a PR or the `kb`
+- `pr-review-reader` — Read-only helper of `/review-pr-gh-workflow` (Read/Grep/Glob/WebFetch only — no shell, no writes); reads what the lead saved and returns requests for anything else
 
 **BA Team (+ shared-instructions):**
 - `ba-system-analyzer` — Repo structure, module inventory, user flows, pain points; **gathers the evidence for both shared oracles** (BL from human sources only; never edits a CSV)

@@ -1,7 +1,7 @@
 ---
 name: review-pr-virto
 description: Use when asked to review a pull request in a VirtoCommerce platform or vc-module-* GitHub repository ("review PR 123 in vc-module-cart", "look at this x-api PR", "run a review on this PR") — code that ships as NuGet packages to downstream projects the reviewer cannot see. Not for a generic code review of other repositories (/code-review), this repo's own prompt files (/prompt-review), or a /qa-fix local diff before its PR (the vc-fix reviewers).
-compatibility: Requires the gh CLI signed in to GitHub, a local clone of the repository under review, and the Serena MCP server for code navigation. Optional — the Codex CLI with its Claude Code plugin (codex-lens.md), and the dotnet-diag plugin for perf-heavy diffs.
+compatibility: Requires the gh CLI (2.48+, for --slurp) signed in to GitHub, a local clone of the repository under review, and the Serena MCP server for code navigation. Optional — the Codex CLI with its Claude Code plugin (codex-lens.md), and the dotnet-diag plugin for perf-heavy diffs.
 ---
 
 # Review a VirtoCommerce PR
