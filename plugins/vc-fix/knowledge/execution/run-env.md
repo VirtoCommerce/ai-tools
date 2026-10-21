@@ -16,6 +16,8 @@ another session reads is edited.
   would beat the binding. Never fall back to another env silently.
 - **Run inline by another command** (the ai-tools `/qa-test` runs this pipeline for a fix-ready Bug) ⇒ the
   caller already bound the env: do not bind again.
+- **A subagent never binds.** It shares the session id, so binding there re-binds the caller's whole run
+  (`--default` would move it to the project's default env mid-run). Pass the env to it in the brief instead.
 
 ## What the binding does
 

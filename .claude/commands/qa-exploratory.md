@@ -81,7 +81,7 @@ Rationale, the charter derivation table and the record: [`exploratory-lane.md`](
 
 ### Step 0 — Pre-Flight
 
-1. **`npm run env:use -- <env>|--default`** ([`run-env.md`](../knowledge/execution/run-env.md)) unless a caller bound it, then
+1. **`npm run env:use -- <env>|--default`** ([`run-env.md`](../knowledge/execution/run-env.md)), never in `ticket` mode, then
    **`/preflight exploratory --domain <slug> --components <domain's components> [--ticket <KEY>] [--storefront]`**
    ([`../skills/preflight/SKILL.md`](../skills/preflight/SKILL.md)) — env health, the **deployed**
    build, the release-ledger Δ, the 24 h duplicate check (this domain or ticket) and MCP availability, in one
