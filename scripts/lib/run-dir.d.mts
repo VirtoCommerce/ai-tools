@@ -10,7 +10,10 @@ export declare const DEFAULT_TEMPLATE: string;
 /** A tracker key: Jira-style VCST-1234, or a bare-number Azure Boards id. */
 export declare const TICKET_KEY: RegExp;
 
-/** `Sprint-current`, else the newest `reports/tickets/SprintXX-XX`, else null. */
+/** A sprint's folder name (`Sprint26-21`): any number of digits on each side, as `reports:prune` reads it. */
+export declare const SPRINT_DIR: RegExp;
+
+/** `Sprint-current`, else the numerically newest `reports/tickets/Sprint<n>-<n>`, else null. */
 export declare function resolveSprint(root?: string): string | null;
 
 /** `QA_OUTPUT_DIR` (trimmed) or the default template. */
