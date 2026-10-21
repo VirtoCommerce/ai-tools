@@ -5,7 +5,7 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "mcp__(playwright-(chrome|firefox|edge|webkit)|Chrome_DevTools)__(browser_evaluate|browser_run_code_unsafe|evaluate_script)",
+        "matcher": "^mcp__.+__(browser_evaluate|browser_run_code_unsafe|evaluate_script)$",
         "hooks": [
           {
             "type": "command",
