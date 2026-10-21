@@ -124,6 +124,17 @@ function checkGh(args) {
   if (!(cmd in GH_COMMANDS)) return no(`gh ${cmd} is not allowed through the bridge (allowed: ${Object.keys(GH_COMMANDS).join(", ")})`);
   const subs = GH_COMMANDS[cmd];
   if (subs && !subs.includes(sub)) return no(`gh ${cmd} ${sub ?? ""} is not allowed through the bridge (allowed: ${subs.join(", ")})`.replace(/\s+\(/, " ("));
+  // gh's parser also reads combined shorthands — booleans first, then one value flag taking the rest
+  // (`-iXPOST`, `-ifbase=main`, `-wRhost/o/r`). Which letter is boolean differs per command (`-f` is
+  // --fill on `pr create`, a field on `api`), so only a token whose FIRST letter is a value flag of
+  // this command may carry an attached value; any other combination is refused.
+  const valueShorts = cmd === "api" ? GH_API_VALUE_SHORTS : "R";
+  for (let i = 1; i < args.length; i++) {
+    const a = args[i];
+    if (/^-[A-Za-z][^=]/.test(a) && !valueShorts.includes(a[1])) {
+      return no(`gh short flags combined in "${a}" are not allowed through the bridge — write each flag separately`);
+    }
+  }
   for (let i = 1; i < args.length; i++) {
     const a = args[i];
     const name = flagName(a);
@@ -155,6 +166,8 @@ function checkGh(args) {
 }
 
 /** gh api flags that take a value (the next argument, unless written as --flag=value). */
+/** gh api's one-letter flags that take a value (-i is its only boolean shorthand). */
+const GH_API_VALUE_SHORTS = "XFfHqtp";
 const GH_API_VALUE_FLAGS = new Set(["-X", "--method", "-F", "--field", "-f", "--raw-field", "-H", "--header", "--input", "-q", "--jq", "-t", "--template", "--cache", "-p", "--preview", "--hostname"]);
 
 /** The first positional argument of `gh api …` — its endpoint — or null. */

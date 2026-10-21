@@ -123,7 +123,11 @@ export function scanGitConfig(text) {
     if (s) section = s[1];
     const u = /^\s*(?:url|pushurl)\s*=\s*(\S+)/.exec(raw);
     if (u && /^[a-z][a-z0-9+.-]*:\/\/[^/@\s]+@/i.test(u[1])) {
-      out.push({ remote: section, line: i + 1, axis: /@(?:[^/]*\.)?(?:dev\.azure\.com|visualstudio\.com)(?:[:/]|$)/i.test(u[1]) ? "ado" : "github" });
+      const host = (/^[a-z][a-z0-9+.-]*:\/\/[^/@\s]+@([^/:\s]+)/i.exec(u[1])?.[1] || "").toLowerCase();
+      const axis = host === "github.com" ? "github"
+        : host === "dev.azure.com" || host.endsWith(".visualstudio.com") ? "ado"
+        : "unknown"; // GitLab, Bitbucket, … — no vc-secrets copy exists, so it is listed, never stripped
+      out.push({ remote: section, line: i + 1, axis });
     }
   });
   return out;
@@ -308,6 +312,7 @@ function main() {
       ...(remaining.some((f) => f.kind.startsWith("mcp")) ? ["re-run gen-mcp.mjs — it rewrites .mcp.json without any token"] : []),
       ...(remaining.some((f) => ["github", "ado", "jira"].includes(f.axis)) ? ["store the token(s) whose probe failed: node \"<VC_SECRETS>\" set <github-pat|ado-pat|jira-token>, then re-run --strip"] : []),
       ...remaining.filter((f) => f.axis === "password" && f.declared).map((f) => `store ${f.key}: node "<VC_SECRETS>" set ${f.secret} (and \`trust\` if doctor asks), then re-run --strip`),
+      ...remaining.filter((f) => f.kind === "git-remote" && f.axis === "unknown").map((f) => `${f.file} remote ${f.key}: a credential for a host no vc-init axis covers — remove it from the URL by hand (git remote set-url)`),
       ...(rotate.length ? [`ROTATE the ${rotate.join(", ")} ${rotate.includes("password") ? "secret" : "token"}(s): a file holding them is or was in git history`] : []),
     ],
   }, null, 2));

@@ -34,6 +34,13 @@ test("gh api reads only: no write method, no body, no GraphQL", () => {
   // gh takes a short flag's value attached: still a body, still a POST.
   refused("gh", ["api", "repos/a/b/merges", "-fbase=main", "-fhead=feature"], /sends a POST/);
   refused("gh", ["api", "-Fbody=@x.json", "repos/a/b/issues"], /sends a POST/);
+  // Combined shorthands: booleans first, then a value flag taking the rest — refused unless the token
+  // starts with a value flag of the command.
+  refused("gh", ["api", "-iXPOST", "repos/a/b/pulls/1/merge"], /combined/);
+  refused("gh", ["api", "repos/a/b/merges", "-ifbase=main"], /combined/);
+  refused("gh", ["pr", "list", "-wRevil.example/a/b"], /combined/);
+  refused("gh", ["pr", "create", "-fRevil.example/a/b"], /combined/);
+  allowed("gh", ["api", "-XGET", "-fper_page=100", "repos/a/b/pulls"]);
 });
 
 test("gh: -R with its value attached is held to github.com too; repo fork may not run git", () => {

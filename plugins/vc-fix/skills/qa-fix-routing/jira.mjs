@@ -37,7 +37,7 @@
  * plain text, one paragraph per blank-line-separated block. Markdown is NOT converted — use the
  * Atlassian MCP for a Markdown comment, or --wiki for wiki markup.
  */
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { basename, isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
@@ -49,16 +49,19 @@ function fail(msg, code = 1) {
 }
 
 /**
- * Read a `--<flag>` file — relative to VC_FIX_HOME || cwd, like ado.mjs — or exit with one line.
+ * Read a `--<flag>` file — a relative path from the cwd first, then VC_FIX_HOME, like ado.mjs — or
+ * exit with one line.
  * `json`: parse it too, with the same one-line failure.
  */
 function readInput(flag, p, { json = false, raw = false } = {}) {
-  const abs = isAbsolute(String(p)) ? String(p) : resolve(process.env.VC_FIX_HOME || process.cwd(), String(p));
+  const s = String(p);
+  const candidates = isAbsolute(s) ? [s] : [resolve(process.cwd(), s), ...(process.env.VC_FIX_HOME ? [resolve(process.env.VC_FIX_HOME, s)] : [])];
+  const abs = candidates.find((c) => existsSync(c)) || candidates[0];
   let data;
   try {
     data = raw ? readFileSync(abs) : readFileSync(abs, "utf8");
   } catch (e) {
-    fail(`--${flag} "${p}" cannot be read (${e.code || e.message}) — resolved to ${abs}`);
+    fail(`--${flag} "${p}" cannot be read (${e.code || e.message}) — looked in ${candidates.join(" and ")}`);
   }
   if (!json) return data;
   try {

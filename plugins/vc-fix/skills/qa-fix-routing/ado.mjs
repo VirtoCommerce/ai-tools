@@ -370,7 +370,12 @@ function inputRoot() {
 }
 function resolveInput(p) {
   const s = String(p || "");
-  return isAbsolute(s) ? s : resolve(inputRoot(), s);
+  if (isAbsolute(s)) return s;
+  // The caller's cwd first — a file written next to a checkout (`.fix-workspace/<repo>`) is relative
+  // to it — then the project root (VC_FIX_HOME; under the bridge always the declared project). Reading a
+  // local file redirects no request, so the cwd may choose here.
+  const candidates = [resolve(process.cwd(), s), resolve(inputRoot(), s)];
+  return candidates.find((c) => existsSync(c)) || candidates[0];
 }
 /** Read a `--<flag>` file through resolveInput, or exit with one line naming the resolved path. */
 function readInput(flag, p) {
