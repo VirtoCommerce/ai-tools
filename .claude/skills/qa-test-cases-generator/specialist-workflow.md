@@ -66,7 +66,7 @@ means the agent body's, "Frontend Journey Exception" is the section at the end o
  | Caller | Append | Flip |
  |---|---|---|
  | **`/qa-test` Step 3** | you append `Draft` **during the run** | it **stays `Draft`** when the run ends. A later **`/qa-test-lifecycle`** pass flips it via `npm run tc:promote:apply`, citing that run's `RUN_ID`. You do not hand off, and you never promote |
- | **`/qa-test-lifecycle` Phase 6P** | 6P appends (handoff / re-promotion / non-`/qa-test` sources) | 6P flips `Draft → Reviewed` on `qa-lead-orchestrator` approval — step 7 below |
+ | **`/qa-test-lifecycle` Phase 6P** | 6P appends (handoff / re-promotion / non-`/qa-test` sources) | 6P flips `Draft → Reviewed` on `qa-lead-orchestrator` approval — step 7 above |
 10. **Create RTM** — Per-layer coverage: "AC-1 covered by API-042, GQL-042, E2E-042". Target >=95% overall (each applicable layer must have cases for a requirement to count as fully covered)
 11. **Validate (MANDATORY)** — P0/P1 per layer: UI in Playwright, API via Postman/curl, GraphQL in GraphiQL. Fix mismatches
 12. **Deliver Feature Test Matrix** — Test plan path, cases by layer × priority (Draft vs Reviewed counts), coverage %, delegation per layer, JIRA links

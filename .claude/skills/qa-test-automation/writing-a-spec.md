@@ -15,7 +15,7 @@ Read from `/qa-test-automation` step 4–5. Decisions cited by number (D5–D13)
 - Imports: `test`/`expect` from `regression/lib/fixtures.ts` (never from `@playwright/test`), data from
   `regression/lib/data.ts`, cart helpers from `regression/lib/cart.ts`, generated storefront selectors from
   `scripts/lib/storefront-selectors.generated.ts`. Relative paths with a `.js` extension, exactly as the pilots write them.
-- Browser: the suite's `preferredBrowser`, else the manifest default (D13). The spec never picks one.
+- Browser: the manifest default browser (`defaults.preferredBrowser`; a per-suite override is M2, D13). The spec never picks one.
 
 ## Preconditions map to fixtures and API setup
 
