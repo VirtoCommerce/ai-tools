@@ -109,7 +109,7 @@ in lock-step with `EXPECTED_OUTPUT` in `hooks/session-telemetry.mjs`.
 | `/qa-verify-fix` | a ticket transition/update · `READY FOR TEST`/`testing`/`verified`/`reproduc…` · a clean BAIL |
 | `/qa-monitoring` | a `reports/monitoring/` write · `signature`/`dedup`/"no new signatures" · a clean BAIL |
 | `/qa-env-check` | a readiness/`PASS`/`FAIL` verdict table |
-| `/project-init` | a `project-profile.json`/`.mcp.json`/`.env.*` write · a readiness/verify-access table (any mode: full onboarding, `--add-env` = an `.env.*` write + verify table, `--check` = a reconcile summary + verify table) |
+| `/project-init` | a `project-profile.json`/`.mcp.json`/`.env.*` write · a readiness/verify-access table (any mode: full onboarding, `--add-env` = an `.env.*` write + verify table, `--check` = a reconcile summary + verify table) · a clean §0d STOP (vc-secrets not installed) |
 | `/vc-docs` | any activity (lookup skill — never silent_suspect) |
 | **developer skills** (`/dotnet-unit-test`, `/dotnet-fix`, `/angular-admin`, `/vue-unit-test`, `/vue-fix`, `/vc-shell-fix`) | a red→green test run (`vitest`/`tsx --test`/`dotnet test`/`vue-tsc`/…) · a code edit (`Edit`/`Write`) · a pass/fail verdict · a clean BAIL. **NOTE:** these run inside the `fullstack-*` sub-agents, whose transcripts are sidechains the collector **skips** — so this is a DEFENSIVE fallback for a standalone main-session invocation; normally their outcome rolls up to the enclosing `/qa-fix` command span. |
 
@@ -314,11 +314,11 @@ Each entry lists the **expected phases/gates**, the **required outputs**, and
 Step-1 collector's signals can actually surface.
 
 ### `/project-init` — onboard the plugin onto a deployment
-- **Expected phases** (`commands/project-init.md` → the `/project-init` skill): install deps → ask *only* env name + tracker (Jira/Azure Boards) + code host (GitHub/Azure Repos) + auth-per-axis → **derive** projectType/client-org/contribution-mode/fork-account from token + live module/repo scan → write `project-profile.json` + `.env.<env>` + `.env.local` + `.mcp.json` → **verify access** (readiness table).
-- **Required outputs:** `project-profile.json` (valid JSON, at the project root — never under the plugin dir), `.env.<env>` + `.env.local`, `.mcp.json`, and a printed readiness table.
+- **Expected phases** (vc-init's `commands/project-init.md` → the `/project-init` skill — onboarding is the vc-init plugin since VCST-6402; its runs are still judged here, because the collector is vc-fix's): **§0d vc-secrets preflight** (`check-secrets.mjs --preflight`; not installed ⇒ a clean STOP before the interview) + `install-bridge.mjs` (`VC_RUN=<path>`) → install deps → ask *only* env name + tracker (Jira/Azure Boards) + code host (GitHub/Azure Repos) + auth-per-axis → scaffold `.env.<env>` (per-env URLs) + `.env.local` (tracker / code-host connection + test-user passwords) + the vc-secrets declarations → **§3d token pause** (`check-secrets.mjs --steps`, the turn ends on the waiting banner) → **§3e token gate** (`check-secrets.mjs`; exit 1 ⇒ re-ask, never proceed) + `normalize-env.mjs` → **derive** projectType/client-org/contribution-mode/fork-account via `node "$VC_RUN" onboard discover-repos|discover-tracker|derive-context` → write `project-profile.json` + `.mcp.json` → **verify access** (`node "$VC_RUN" onboard verify-access`, readiness table).
+- **Required outputs:** `project-profile.json` (valid JSON, at the project root — never under the plugin dir), `.env.<env>` + `.env.local`, `.claude/vc-secrets.local.json` (when a PAT axis was chosen), `.mcp.json`, and a printed readiness table. **No token in any of them** — tokens live in vc-secrets.
 - **Anti-patterns:**
-  - **S1** — the run ends with no `project-profile.json` written (or it landed under the plugin install dir instead of `outputRoot`), or the verify-access step never ran. *Signal:* required-output missing; `permission_denied`/`tool_error` on the token probe with no recovery.
-  - **S2** — profile written but the readiness table shows a probed axis DOWN and the run proceeded anyway; or it asked the operator what the profile already answers (redundant prompts). *Signal:* `tool_error` on a tracker/host probe inside the verify phase, run still finalized OK.
+  - **S1** — the run ends with no `project-profile.json` written (or it landed under the plugin install dir instead of `outputRoot`), or the verify-access step never ran; or a token was written into a project file (`.env.local`, `.mcp.json`, `.claude/settings.local.json`) or taken in chat. *Signal:* required-output missing; `permission_denied`/`tool_error` on the token probe with no recovery; a Write/Edit of a token key into one of those files.
+  - **S2** — profile written but the readiness table shows a probed axis DOWN and the run proceeded anyway; or it went past a failing §3e token gate; or it asked the operator what the profile already answers (redundant prompts). *Signal:* `tool_error` on a tracker/host probe inside the verify phase, run still finalized OK.
   - **S3** — one `permission_denied` on an optional MCP the skill recovered from (noted, non-blocking).
 
 ### `/qa-bug` — reproduce, evidence, report, (optional) file
@@ -363,6 +363,16 @@ Step-1 collector's signals can actually surface.
   - **S2** — printed READY while a **required** MCP (playwright-chrome/firefox/edge) or a used tracker/host axis probed DOWN (a false-green readiness). *Signal:* `tool_error` on a required probe with a READY verdict.
   - **S3** — an optional MCP (context7/postman) missing, correctly reported as a warning (this is expected behavior, informational only).
 
+### `/qa-report` — the result comment and the report page
+- **Expected phases** (`skills/qa-report/SKILL.md`): resolve source → render (`render.mjs`) → page gate → ask (unless `--confirmed`) → post/amend → finish.
+- **Required outputs:** a rendered comment within its template budget; a page link or the local path; one tracker comment (or none, by the operator's choice).
+- **Anti-patterns:**
+  - **S1** — a comment posted that `render.mjs` did not produce (hand-written or hand-shortened), or a second comment in the same round. *Signal:* a tracker post with no preceding `render.mjs` span; a second POST for one ticket.
+  - **S1** — a page published to an Artifact for a client-owned-code bug (never allowed), or on a `projectType: client` profile without the operator's explicit request. *Signal:* Artifact publish + client profile.
+  - **S2** — exit 2/3 ignored and the step continued. *Signal:* non-zero renderer exit followed by a post.
+  - **S3** — a list collapsed to `+N more` (expected under budget pressure; informational).
+- **Collector note:** the collector's skill vocabulary does not name `qa-report` yet, so its spans bucket to `other`; until it does, these are judged from the transcript (renderer exit codes, tracker posts), not from per-skill spans.
+
 ---
 
 ## 4. Cross-cutting anti-patterns (any skill)
@@ -388,7 +398,7 @@ the diagnostician still confirms the root cause and names the fix:
 ## 5. Worked mappings (for the Tier-2 dry read)
 
 - **Known-good `/qa-env-check`:** span `outcome:"success"`, checks 1–6 + a READY verdict, no browser/write tool_use → **S0 / OK**.
-- **Synthetic broken `/qa-fix`:** span `outcome:"failed"`, a green G2 repro then no PR, `permission_denied` on `gh pr create` (never recovered) → **S1 / BROKEN** (root-cause: PR auth missing → propose checking `GITHUB_FIX_BUGS_TOKEN` / `gh auth status`).
+- **Synthetic broken `/qa-fix`:** span `outcome:"failed"`, a green G2 repro then no PR, `permission_denied` on `gh pr create` (never recovered) → **S1 / BROKEN** (root-cause: PR auth missing → propose checking write scope with `node "$VC_RUN" gh api repos/<o>/<r> --jq .permissions.push` and the `github-pat` in vc-secrets via `/project-init --check`).
 - **Silent `/qa-fix`:** span `outcome:"silent_suspect"` — closed clean, edits made, but no PR-created and no BAIL marker → **S1** (task ended without delivering or bailing; the worst failure mode — no error signal).
 - **Degraded `/qa-bug` (struggle):** span `outcome:"degraded"`, `struggle:["search_thrash","low_yield"]` — 10 searches, no decisive op → **S2** (root-cause: lost in exploration; fix: the skill's Step-1 needs a tighter repro-first path).
 - **Recovered `/qa-bug`:** span `outcome:"recovered"` — one `gh` `tool_error` then a successful retry → **S3 / note only, NOT escalated.**
@@ -423,20 +433,20 @@ node "$pluginRoot/hooks/session-telemetry.mjs" complete --skill "<this-skill-nam
 ```
 
 (`$pluginRoot` = the active install path, resolved at runtime via `claude plugin list --json` — see
-[`../execution/plugin-root.md`](../execution/plugin-root.md); `/project-init` uses `$CLAUDE_PLUGIN_ROOT`,
-consistent with the rest of that skill.)
+[`../execution/plugin-root.md`](../execution/plugin-root.md); `/project-init`, which ships in vc-init,
+runs vc-fix's hook from the `vcFix` path `node "$VC_RUN" --where` prints.)
 
 Rules:
 
 - Run it **exactly once**, at the real end of the workflow (e.g. after the final "Done"/STOP step),
   **AFTER** all user-visible output — never at an intermediate pause, and never before a step that
   still waits on the operator.
-- **NEVER while an operator DECISION is pending** (VCST-5582 D — this is the rule the OPUS run
+- **NEVER while an operator DECISION is pending** (VCST-5582 D — this is the rule a client deployment run
   broke). A skill that asks the operator anything — `/qa-bug`'s Step-5 "create a ticket?", its
   parent-link question, a field-mapping question — emits `complete` only **after** that question is
   answered or the step is explicitly declined. Two things go wrong otherwise: (1) everything the
   skill does after `complete` lands **outside** the span as `parentId: null` orphans, so neither the
-  oracle nor `/vc-self-check` ever evaluates it (on the OPUS run that was the entire
+  oracle nor `/vc-self-check` ever evaluates it (on that run that was the entire
   ticket-creation phase); (2) with the span closed, the `Stop` hook may resume the agent to print a
   verdict, pushing the unanswered question out of view.
 - **Ask with `AskUserQuestion`, not prose.** A prose question ends the turn, which is what lets an

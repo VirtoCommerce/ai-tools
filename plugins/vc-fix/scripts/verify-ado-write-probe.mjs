@@ -3,7 +3,7 @@
 // (skills/project-init/probe-lib.mjs) rest on: an authenticated PAT that LACKS the write scope
 // must be rejected at AUTHORIZATION (HTTP 401/403 → "absent"/"restricted") BEFORE Azure DevOps
 // validates the deliberately-invalid probe body. If a READ-ONLY PAT instead gets 400/409/422
-// ("present"), the probe false-PASSes a read-only token — the "LEO gap" it exists to close would
+// ("present"), the probe false-PASSes a read-only token — the read-only-PAT gap it exists to close would
 // silently stay open. This cannot be settled statically, so run it against a real org with two PATs.
 //
 // USAGE — run ONCE PER PAT and compare (nothing is hardcoded to a specific org/client):
@@ -15,7 +15,7 @@
 //
 // SAFE: both probes send an INVALID body ("{}"), the exact requests the real probes send, so
 // nothing is created/changed/pushed. Prints HTTP status + verdict only; the PAT is never echoed.
-import { probeAdoWorkItemsWrite, probeAdoCodeWrite } from "../skills/project-init/probe-lib.mjs";
+import { probeAdoWorkItemsWrite, probeAdoCodeWrite } from "./lib/probe-lib.mjs";
 
 const ORG = process.env.ADO_ORG || "";
 const PROJECT = process.env.ADO_PROJECT || "";
