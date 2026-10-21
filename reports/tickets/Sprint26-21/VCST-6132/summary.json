@@ -185,23 +185,25 @@
       "ids": 6,
       "pass": 5,
       "fail": 0,
-      "blocked": 0,
+      "blocked": 1,
       "blocked_ids": [
         "B2C-MBR-020 — SECRET_STALE: playwright-edge holds the pre-sync ORG_USER_PASSWORD; needs an MCP restart"
       ],
-      "fixed_after": "COMP-E2E-005/AUTH-075/B2C-MBR-020 refresh_token step repointed from {{BACK_URL}} to {{FRONT_URL}} (issuer mismatch)",
-      "note": "all 6 re-based cases now PASS (B2C-MBR-020 in REG-2026-10-20-2031)"
+      "fixed_after": "COMP-E2E-005/AUTH-075/B2C-MBR-020 refresh_token step repointed from {{BACK_URL}} to {{FRONT_URL}} (issuer mismatch)"
     },
     "rerun_b2c_mbr_020": {
-      "run_id": "REG-2026-10-20-2031",
-      "result": "PASS (5/5 assertions)",
-      "landing": "password sign-in of a member blocked in TechFlow lands BuildRight; TechFlow disabled with padlock",
-      "refresh_token": "400 invalid_grant, user_is_locked_in_organization (token minted after the block, sent to the storefront host)",
-      "persona": "before == after; memberships Approved+unlocked, current=TechFlow, global lock false",
-      "step_drift": "confirm dialog on Block/Unblock; Active column is a status image; sign-in page is OTP-first (password behind a link) — REPAIR candidates, not fixed",
-      "prior_attempts": [
-        "REG-2026-10-20-1547 BLOCKED (ORG_USER forced password change)",
-        "REG-2026-10-20-1728 stalled (session interrupted)"
+      "run_id": "REG-2026-10-21-1043",
+      "result": "PASS — 6/6 assertions, 0 mismatched steps, no workarounds (verifies the PR #491 repair; case promoted Draft -> Automated)",
+      "landing": "password sign-in of a member blocked in TechFlow lands BuildRight (claim 91b24624…); TechFlow disabled with a padlock",
+      "refresh_token": "400 invalid_grant, user_is_locked_in_organization; errorDescription = the org-specific blocked message (token minted after the block, sent to the storefront host)",
+      "persona": "before == after; memberships Approved + unlocked, current = TechFlow, global lock false",
+      "history": [
+        "REG-2026-10-20-1329 BLOCKED (playwright-edge held a stale ORG_USER_PASSWORD)",
+        "REG-2026-10-20-1547 BLOCKED (ORG_USER forced password change — reset by the operator)",
+        "REG-2026-10-20-1728 stalled (session interrupted)",
+        "REG-2026-10-20-2031 PASS with manual workarounds (OTP-first sign-in, Block/Unblock confirm dialog, Active status image, qa1 org ids substituted by hand)",
+        "REG-2026-10-20-2205 FAIL (test-defect in the first repair: email filled before the password-form switch, which clears it)",
+        "REG-2026-10-21-1043 PASS with no workarounds — the repair in PR #491 (steps + aliases.vcptcore_qa1.json MULTI_ORG_TF_BR overlay)"
       ]
     }
   },
