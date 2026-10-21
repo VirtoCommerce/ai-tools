@@ -11,7 +11,8 @@ another session reads is edited.
   a `QA_ENV_PATH` folder, §Where an env's files live), or `--env <env>`
   ⇒ `node "$pluginRoot/scripts/env/use-env.mjs" <env>` (`$pluginRoot`: [`plugin-root.md`](plugin-root.md)).
 - **They name none** ⇒ the same script with `--default`. It binds the default too, so the run keeps one env
-  even if someone edits `.env.test-env` while it runs.
+  even if someone edits `.env.test-env` while it runs. When that moves a session that was on another env, it
+  prints a `⚠ this session was on …` line: show it to the user, who passes the env to stay.
 - **Exit 2 ⇒ STOP** and show its message: an unknown env, or a `TEST_ENV` in the session's environment that
   would beat the binding. Never fall back to another env silently.
 - **Run inline by another command** (the ai-tools `/qa-test` runs this pipeline for a fix-ready Bug) ⇒ the
