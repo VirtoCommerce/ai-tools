@@ -69,7 +69,7 @@ ai-tools/
 │   ├── vc-fix/                     # bug lifecycle + Developers team (self-contained; depends on vc-init)
 │   ├── vc-perf/                    # three-layer performance loop (depends on vc-init + vc-fix)
 │   ├── vc-secrets/                 # secrets launcher for MCP configs
-│   └── vc-frontend/                # theme-fork upstream merges
+│   └── vc-frontend/                # theme-fork upstream merges, storefront plugins
 │
 ├── config/                         # MCP browser configs + test-suites.json manifest
 │   ├── mcp-playwright-{chrome,firefox,edge,mobile}.config.json
