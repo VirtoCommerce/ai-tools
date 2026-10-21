@@ -35,10 +35,12 @@ exactly once. Sum a column by reading every line total, not by assuming the line
 
 - Attach the collector **before** the first navigation: `const traffic = watchCartTraffic(page)`; it records
   console errors, HTTP 4xx/5xx and cart mutations (`regression/lib/cart.ts`).
-- `[CONSOLE]` ⇒ `expect(traffic.consoleErrors).toEqual([])`; `[NETWORK]` ⇒ `expect(traffic.httpErrors).toEqual([])`.
+- `[CONSOLE]` ⇒ `expect(traffic.consoleErrors).toEqual([])`; `[NETWORK]` ⇒ the `/graphql` errors only,
+  `expect(traffic.httpErrors.filter((e) => e.includes("/graphql"))).toEqual([])` — a missing image or a third-party 404 is not the case's failure.
 - `[API]` / `[GQL]` checks on what the storefront sent: read it from the collector, not from a re-issued call.
-  The row may name an operation the storefront does not use; assert on the mutation that carried the effect and
-  say so in a comment (observed names go to the base, `kb_capture`), as `CART-006.spec.ts` does.
+  Assert on the operation the row names, by its root field (`m.field === "<name>"`), as `CART-006.spec.ts` does.
+  If the storefront does not send that operation, the row is stale: report it (D7) — never assert on another
+  mutation instead. The observed name goes to the base (`kb_capture`).
 - Slice by index (`traffic.cartMutations.slice(before)`) so earlier traffic is not attributed to this step.
 - **Evidence is not yours to capture.** Playwright already keeps a screenshot and a trace on failure for every
   context made in a test, including `signedInAs` pages, and a HAR for every spec. Never add a manual failure
@@ -54,9 +56,10 @@ entities carry the `AGENT-TEST-` prefix.
 
 - Sign-in on vcst is **OTP-first**; it is handled inside `save-storage-state.ts` / the fixture. A spec never signs in.
 - A cached storageState goes **stale after roughly 30-80 minutes**. Symptom: `signedInAs(<role>): session not
-  signed in` (BLOCKED). Workaround today: delete `test-results/auth/<role>.json` and rerun (a self-heal is planned).
+  signed in` (BLOCKED). `signedInAs` discards a stale file and signs in again **once** by itself; the error means
+  even the fresh session failed — check the account (locked, OTP) before rerunning.
 - The shared `ADMIN_DEFAULT` account **locks for 10-20 minutes** if full runner runs follow each other back to back.
-- Project flag is written `--project=script` / `--project=runner` (no space). `npm run specs:run` / `specs:runner` carry it.
+- Project flag is written `--project=script` / `--project=runner` (`--project script` works as well). `npm run specs:run` / `specs:runner` carry it.
 - `-g` matches against "project file describe title": `-g "CART-001:"`; for a runner suite `npm run specs:runner -- -g " 050a "` (spaces, no `^`).
 
 ## Anti-flake checklist (tick before the D9 run)
@@ -69,5 +72,5 @@ entities carry the `AGENT-TEST-` prefix.
 - [ ] Collector attached before the first `goto`; console and network asserted last.
 - [ ] `afterEach` cleanup through API; no manual screenshot or evidence path.
 - [ ] Not both `page` and `signedInAs` in one test.
-- [ ] Ran the new spec twice in a row (second run proves the cleanup and the seed are repeatable).
+- [ ] Optional flake check, not the D9 proof: a second run in a row shows the cleanup and the seed are repeatable.
 - [ ] `suites:lint` and `td:validate` clean.

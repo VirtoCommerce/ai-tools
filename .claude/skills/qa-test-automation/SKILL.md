@@ -8,7 +8,7 @@ argument-hint: "<CASE-ID> [--repro]"
 
 A CSV row and its `.spec` are **one case**: the row says WHAT is checked, the spec is HOW a machine runs it.
 Whoever writes the case writes its spec (`test-management-specialist`); this skill is loaded for that
-step and for nothing else. The design and every decision (D1–D16) are in
+step and for nothing else. The design and every decision (D1–D18) are in
 [`docs/superpowers/specs/2026-10-21-suites-reorg-design.md`](../../../docs/superpowers/specs/2026-10-21-suites-reorg-design.md) §4–§8 — **cited here, never restated**.
 
 **Files in this skill (read only the one the step names):**
@@ -19,7 +19,7 @@ step and for nothing else. The design and every decision (D1–D16) are in
 
 | Situation | Do |
 |---|---|
-| A deterministic check **PASSED** in the agent run | Write the spec (D2) |
+| A deterministic check **passed** (its spec's own run, or an agent run) | Write the spec (D2, D18) |
 | A confirmed **bug reproduction** | Write the spec; it must FAIL on an `expect` (D9) |
 | A new API check (GraphQL / REST) that **passed** | A **runner-grammar CSV row**, no spec (D12). A handwritten API spec only for what the grammar cannot express |
 | Exploratory, visual, `vs. DESIGN`, or a check that cannot be scripted | No spec. The row stays; a mini agent wave runs only those rows (D15) |
@@ -45,7 +45,7 @@ step and for nothing else. The design and every decision (D1–D16) are in
    surface ([`practice.md`](practice.md) §Locators); its one headless run (step 5) is the proof. **Only if** the
    selectors cannot be found that way, run the item through Playwright MCP on the lane the suite names
    (`.claude/rules/agents.md` §Parallel Execution — Browser Assignments; secrets only through `--secrets`, bare
-   key names) and use the MCP-reported code as the draft ([`writing-a-spec.md`](writing-a-spec.md) §From the MCP
+   key names; a borrowed lane counts toward the ≤3 browser agents) and use the MCP-reported code as the draft ([`writing-a-spec.md`](writing-a-spec.md) §From the MCP
    log to a spec).
 4. **Write the file** at the layout in [`writing-a-spec.md`](writing-a-spec.md) §Layout and title. One
    case per file. Every observed literal goes through `regression/lib/data.ts`; auth only through the
@@ -85,5 +85,5 @@ step and for nothing else. The design and every decision (D1–D16) are in
 ## Hand-back (your output)
 
 One line per spec: `<CASE-ID> → <path>`, the D9 result (`PASS` / `FAIL on expect: <which>`), `suites:lint`
-and `td:validate` status, anything reported instead of fixed, and the `kb` ids read / confirmed / disputed /
+and `td:validate` status, **"pending D17 fidelity review — the case stays on the agent lane until it passes"**, anything reported instead of fixed, and the `kb` ids read / confirmed / disputed /
 captured.

@@ -103,6 +103,8 @@ export async function cartQuantity(api: APIRequestContext, sku: string): Promise
 /** One storefront GraphQL mutation whose root field returned a cart (`__typename: "CartType"`). */
 export interface CartMutation {
   operationName: string;
+  /** The root field that returned the cart (e.g. `changeCartItemsQuantity`) — the name a CSV row's `[API]` item uses. */
+  field: string;
   errors: unknown[];
   lines: Array<{ sku: string; quantity: number }>;
 }
@@ -136,11 +138,12 @@ export function watchCartTraffic(page: Page) {
     } catch {
       return; // page closed before the body was read — nothing to classify
     }
-    const roots = Object.values(body.data ?? {}) as Array<{ __typename?: string; items?: CartMutation["lines"] } | null>;
-    const cart = roots.find((r) => r?.__typename === "CartType");
+    const roots = Object.entries(body.data ?? {}) as Array<[string, { __typename?: string; items?: CartMutation["lines"] } | null]>;
+    const [field, cart] = roots.find(([, r]) => r?.__typename === "CartType") ?? ["(none)", undefined];
     if (!cart && !body.errors?.length) return;
     cartMutations.push({
       operationName: sent.operationName ?? "(anonymous)",
+      field,
       errors: body.errors ?? [],
       lines: (cart?.items ?? []).map((i) => ({ sku: i.sku, quantity: i.quantity })),
     });

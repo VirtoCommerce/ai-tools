@@ -233,7 +233,7 @@ test("a bad CSV is skipped, not thrown", () => {
   - Run `npm run suites:lanes -- 050a --run-id EQ1` and then `npm run suites:machine -- 050a --run-id EQ1`.
     Do the same for `050m` and `087`.
   - Then run
-    `RUN_ID=EQ1 npx playwright test --project runner -g "^(050a|050m|087) " --reporter=json > <scratch>/eq.json`.
+    `RUN_ID=EQ1 npx playwright test --project runner -g " (050a|050m|087) " --reporter=json > <scratch>/eq.json`.
   - Compare per-case statuses using a scratch script outside the repo.
   - Expected: every case has the same PASS/FAIL, and every runner exit 2 is `skipped`.
 - [ ] **Step 6: Delete the temporary test and commit** with the message
@@ -377,7 +377,7 @@ assert.ok(findSpecLinkErrors(tmp).some(e => /SP-001 .*A-999/.test(e)));
   - `npx playwright test <suite folder>`;
   - `npx playwright test -g "CART-001:"`;
   - `npx playwright test --ui`;
-  - `npm run specs:runner -- -g "^050a "`.
+  - `npm run specs:runner -- -g " 050a "`.
 
 - [ ] **Step 1: Write the files.**
 - [ ] **Step 2: Run `npm run context:check`.** Expected: exit 0, covering DOC-003 paths, BUDGET-004 and the

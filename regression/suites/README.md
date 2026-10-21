@@ -147,7 +147,7 @@ npm run specs:runner -- -g " 050a "                                 # a runner-n
 ```
 
 `-g` matches against "project file describe title", so a `^` anchor never matches. `npm run specs:run` and
-`npm run specs:runner` pin the project (`--project=script` / `--project=runner`, no space between flag and name).
+`npm run specs:runner` pin the project (`--project=script` / `--project=runner`).
 
 ## Related Documentation
 

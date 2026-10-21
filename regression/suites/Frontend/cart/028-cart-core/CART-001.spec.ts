@@ -73,13 +73,10 @@ test("CART-001: Add to Cart - From Product Page", async ({ signedInAs, apiAs }) 
   // [STATE] product appears in cart — read back from the server-side cart, not from the page.
   await expect.poll(() => cartQuantity(api, sku)).toBe(1);
 
-  // [API] the add-to-cart mutation response errors[] is empty. The row names `addItem`; the storefront
-  // sends whichever cart mutation it uses (observed: updateCartQuantity), so the check is on the cart
-  // mutation that returned this SKU's new line, whatever its name.
-  await expect
-    .poll(() => traffic.cartMutations.slice(sinceClick.mutations).some((m) => m.lines.some((l) => l.sku === sku)))
-    .toBe(true);
-  expect(traffic.cartMutations.slice(sinceClick.mutations).flatMap((m) => m.errors)).toEqual([]);
+  // [API] updateCartQuantity mutation response errors[] is empty — the operation the row names (D7).
+  const named = () => traffic.cartMutations.slice(sinceClick.mutations).filter((m) => m.field === "updateCartQuantity");
+  await expect.poll(() => named().some((m) => m.lines.some((l) => l.sku === sku))).toBe(true);
+  expect(named().flatMap((m) => m.errors)).toEqual([]);
 
   // [CONSOLE] no JS errors after add-to-cart click.
   expect(traffic.consoleErrors.slice(sinceClick.console)).toEqual([]);

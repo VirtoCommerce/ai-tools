@@ -56,10 +56,8 @@ test("CART-006: Update Quantity - Increase", async ({ signedInAs, apiAs }) => {
   // [STATE] verify quantity incremented to 2 — read back from the server-side cart.
   await expect.poll(() => cartQuantity(api, sku)).toBe(2);
 
-  // [API] the quantity mutation response errors[] is empty. The row names `changeCartItemQuantity`;
-  // the storefront sends whichever cart mutation it uses (observed: changeCartItemsQuantity), so the
-  // check is on the cart mutation that returned this line at quantity 2, whatever its name.
-  const sent = () => traffic.cartMutations.slice(sinceClick);
+  // [API] changeCartItemsQuantity mutation response errors[] is empty — the operation the row names (D7).
+  const sent = () => traffic.cartMutations.slice(sinceClick).filter((m) => m.field === "changeCartItemsQuantity");
   await expect.poll(() => sent().some((m) => m.lines.some((l) => l.sku === sku && l.quantity === 2))).toBe(true);
   expect(sent().flatMap((m) => m.errors)).toEqual([]);
 

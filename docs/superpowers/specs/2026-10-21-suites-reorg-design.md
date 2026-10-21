@@ -60,7 +60,7 @@ that measure; anything that does not is deferred (§9).
 | # | Decision | By |
 |---|---|---|
 | D1 | A CSV row and its spec are one case. The row describes it, the spec executes it | owner |
-| D2 | A spec is written when a deterministic check **passed**, or as a bug's reproduction. No agent wave runs cases that have a spec | owner |
+| D2 | A spec is written when a deterministic check **passed**, or as a bug's reproduction. No agent wave runs cases that have a spec **approved by the D17 fidelity review**; an unreviewed spec keeps its case on the agent lane | owner |
 | D3 | Round 2 re-runs each prior bug's reproduction through its spec, with no browser agent | owner |
 | D4 | Runner-native GraphQL/REST cases are **not rewritten**. One wrapper spec exposes them to Playwright and executes them with `graphql-runner` (§6) | owner |
 | D5 | Layout: a folder named after the CSV stem, beside the CSV, with one file per case, `<CASE-ID>.spec.ts` | my call |
