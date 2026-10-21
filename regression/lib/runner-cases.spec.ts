@@ -7,9 +7,14 @@ import { expect, test } from "@playwright/test";
 import { evidenceFileFrom, failedAssertionFrom } from "../../scripts/regression/machine-lane.js";
 import { defaultRunId, listRunnerCases, REPO_ROOT, runCase } from "./runner-cases.js";
 
-const runId = process.env.RUN_ID ?? defaultRunId();
+// playwright.config.ts fixes RUN_ID once in the main process; the fallback only serves a direct import.
+const runId = process.env.RUN_ID || defaultRunId();
 const { suites, skipped } = listRunnerCases();
-for (const s of skipped) console.warn(`[runner-cases] skipped ${s.file}: ${s.reason}`);
+// The file is loaded by the main process (collection) and again by every worker, which Playwright
+// restarts after each failed test: warn from the main process only, so the list prints once per run.
+if (process.env.TEST_WORKER_INDEX === undefined) {
+  for (const s of skipped) console.warn(`[runner-cases] skipped ${s.file}: ${s.reason}`);
+}
 
 for (const suite of suites) {
   test.describe(`${suite.id} ${suite.name}`, () => {

@@ -149,6 +149,11 @@ npm run specs:runner -- -g " 050a "                                 # a runner-n
 `-g` matches against "project file describe title", so a `^` anchor never matches. `npm run specs:run` and
 `npm run specs:runner` pin the project (`--project=script` / `--project=runner`, no space between flag and name).
 
+Output: traces, screenshots and HARs go to `test-results/specs/`, or to `<RUN_DIR>/specs/` when `RUN_DIR` is set.
+Playwright empties that folder at the start of every run, which is why it is never `RUN_DIR` itself. One run has
+one `RUN_ID` (taken from the environment, else generated once per run), so every runner case's evidence lands in
+one `reports/regression/<RUN_ID>/` folder.
+
 ## Related Documentation
 
 - [test-suites.json](../../config/test-suites.json) — Regression orchestration manifest (single source of truth)
