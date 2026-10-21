@@ -1,5 +1,5 @@
 // Unit tests for the self-diagnostics consent flags on
-// plugins/vc-fix/skills/project-init/gen-profile.mjs (VCST diag-observability):
+// plugins/vc-init/skills/project-init/gen-profile.mjs (VCST diag-observability):
 // the fresh /project-init interview now asks BOTH selfDiagnostics (local capture) and
 // feedback.mode (upstream delivery), symmetric with the `--check` reconcile path, and
 // passes them as `--self-diagnostics <true|false>` / `--feedback-mode <ask|auto|off>`.
@@ -15,7 +15,7 @@ import { join, resolve, dirname } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 
-const GEN = resolve(dirname(fileURLToPath(import.meta.url)), "../../plugins/vc-fix/skills/project-init/gen-profile.mjs");
+const GEN = resolve(dirname(fileURLToPath(import.meta.url)), "../../plugins/vc-init/skills/project-init/gen-profile.mjs");
 
 function genProfile(home, args) {
   execFileSync(process.execPath, [GEN, ...args], {

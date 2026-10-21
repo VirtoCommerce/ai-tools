@@ -44,7 +44,7 @@
  *   node perftools/counters_metric.mjs <spans.json> --prefix <p> [--idle-gap <ms>] [--since <iso>] [--until <iso>]
  *
  *   <spans.json>  `aspire otel spans <resource> --follow --format Json` output (one JSON array per line)
- *   --prefix      attribute-name prefix the module emits, e.g. `opus.`. REQUIRED and deliberately has
+ *   --prefix      attribute-name prefix the module emits, e.g. `acme.`. REQUIRED and deliberately has
  *                 no default: a wrong-but-plausible default would report an empty table, which is
  *                 indistinguishable from "the code under test emitted nothing".
  *   --idle-gap    seconds-scale gap (ms) that separates runs; default 60000. Back-to-back reps with
@@ -73,7 +73,7 @@ const [file] = positional;
 
 if (!file || prefix === null || prefix === undefined) {
     console.error('usage: node counters_metric.mjs <spans.json> --prefix <p> [--idle-gap <ms>] [--since <iso>] [--until <iso>]');
-    console.error('  e.g. node counters_metric.mjs spans.json --prefix opus.');
+    console.error('  e.g. node counters_metric.mjs spans.json --prefix acme.');
     process.exit(1);
 }
 if (!fs.existsSync(file)) {
