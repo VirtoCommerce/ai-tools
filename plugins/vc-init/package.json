@@ -1,0 +1,10 @@
+{
+  "name": "vc-init",
+  "version": "0.3.0",
+  "description": "Onboarding plugin for Virto Commerce QA — /project-init, the deployment profile writer, and the $VC_RUN bridge that hands vc-secrets tokens to the processes that need them.",
+  "type": "module",
+  "license": "SEE LICENSE IN LICENSE",
+  "dependencies": {
+    "dotenv": "^17.4.2"
+  }
+}

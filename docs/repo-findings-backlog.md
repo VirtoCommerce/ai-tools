@@ -335,3 +335,26 @@ Neither blocks the VCST-4933 work; both make `npm test` red for everyone, which 
   which is a commit SHA, not a build number — so "highest version" ranks SHAs lexically. It returned `d6237840`
   (built 2026-10-06 08:40) over the newer `1044a716` (10:37), silently handing provision a stale theme. Fix: for
   the `pr` channel, rank by blob `Last-Modified` (or by the PR's commit order via the GitHub API), not by suffix.
+
+## `plugins/vc-fix/knowledge/execution/tracker-ops.md` is a TRUNCATED copy — four sections missing
+
+Found 2026-10-12 while adding the `/qa-report` skill (VCST-5675). The repo copy
+`.claude/knowledge/execution/tracker-ops.md` carries **§5a** (ticket field mapping + the Markdown-not-wiki
+body rule), **§5b** (bug-filing relationship), **§5c** (screenshots: attach, then wiki markup via the v2
+comment API) and **§5d** (publishing a deliverable means the deliverable). The plugin copy has none of
+them — it jumps from §4 straight to "§5. Build-version verification".
+
+**Why it matters:** `vc-fix` ships to clients as a self-contained plugin, and plugin commands already
+cite those sections. On a plugin-only install those citations resolve to nothing, so the reader is sent
+to a rule they cannot read — including the one that stops a screenshot silently rendering as nothing at
+`200 OK`.
+
+**Why no gate catches it:** `npm run context:check` walks `CLAUDE.md` plus the repo-root `.claude/` only
+and never descends into `plugins/`, so `DOC-003`/`DOC-004` are blind to every citation inside the plugin.
+
+**Fix:** port §5a–§5d into the plugin copy (Azure specifics already live beside it in
+`knowledge/execution/azure-html-format.md`), and consider widening the `context:check` walk to
+`plugins/**/*.md` so the next one is caught by a gate rather than by hand.
+
+Not fixed inline with VCST-5675: that branch's own citations were reworded to resolve plugin-side, which
+removes the new exposure without touching the pre-existing one.
