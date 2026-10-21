@@ -22,30 +22,46 @@ name the first open step and resume there. **Step 5 updates the fork's own compo
 that gets lost**: a clean build and green tests after step 4 feel like the end, and they are not. The
 log, the push and the PR (step 9) wait until step 5 has run on the merge commit.
 
-Every merge leaves a log in the fork: `upstream-merges/<YYYY-MM-DD>-<ref>.md`, one file per session
-(`-2` for a second one that day), next to `fork-map.json`. The PR body is gone from view once merged and
-`rerere` keeps only *how* a conflict was resolved; the log keeps *why*, the user's decisions, what was
-deferred and what QA could not reach — and the next merge reads it before asking anything. Upstream never
-has the folder and each session writes a new file, so logs cannot conflict. The first logged merge also
-adds `upstream-merges/README.md`: what the folder is, and that upstream merges land as merge commits.
+Every merge leaves a log in the fork, next to `fork-map.json`: `upstream-merges/<YYYY-MM-DD>-<slug>.md`,
+one file per session (`-2` for a second that day). `<slug>` is the ref without `refs/upstream-tags/`, each
+`/` made `-` (`upstream/dev` → `upstream-dev`). A merged PR body drops out of view and `rerere` keeps only
+*how*; the log keeps *why* — decisions, deferrals, what QA could not reach — and the next merge reads it
+before asking anything. Upstream never has the folder and each session writes a new file, so logs cannot
+conflict. The first one also adds `upstream-merges/README.md`: what the folder is, and that upstream merges land as merge
+commits.
 
 ## 1. Set up
 
-**First, name the repositories.** Run `git remote -v` in full — never cut it with `head` — and write
-down which `owner/repo` each remote is, which one this merge writes to (the PR's repository), and
-which one is only read. A clone may carry both: a redesign branch merging its own `origin/dev` can
-live in a fork clone that also has an `upstream` remote, and the same branch name can exist, with a
-PR, in both repositories.
+**First, name the repositories.** Run `git remote -v` in full (never through `head`) and write down
+which `owner/repo` each remote is, which one this merge writes to (the PR's) and which is only read. A
+redesign branch can live in a fork clone that also has an `upstream` remote, and a branch name can exist,
+with a PR, in both.
 
-**Every `gh` command takes `--repo <owner/repo>`.** In a clone with an `upstream` remote, a bare `gh`
-resolves to *upstream*, not `origin` — `gh pr list --head <branch>` then finds upstream's PR for a
-same-named branch, and its checks, conflicts and comments look like the fork's. Check what a bare `gh`
-would hit with `gh repo view --json nameWithOwner`, and pass `--repo` anyway. Upstream PR links in the
-brief, the log and the PR body are written in full (`VirtoCommerce/vc-frontend#2501`): a bare `#2501`
-resolves against the repository it is read in.
+**Every `gh` command takes `--repo <owner/repo>`.** In a clone with an `upstream` remote a bare `gh`
+resolves to *upstream*: `gh pr list --head <branch>` finds upstream's PR for a same-named branch, and its
+checks and comments pass for the fork's. Upstream PR links are written in full
+(`VirtoCommerce/vc-frontend#2501`): a bare `#2501` resolves against the repository it is read in.
 
 **Fetch `origin` first:** `git fetch origin`. Both cases below start from `origin/dev`; a stale ref
 leaves the fork's latest commits out of the merge.
+
+**Before either merge below**, set these in this clone:
+
+```bash
+git config merge.conflictStyle zdiff3   # markers show the base, so each side's intent is visible
+git config rerere.enabled true          # record each resolution, replay it when the same conflict returns
+git config rerere.autoUpdate false      # a replay is applied to the file but not staged: someone reviews it
+git config gc.rerereResolved 365        # default 60 days; upstream merges are often further apart
+```
+
+They stay in this clone's `.git/config` after the merge, so read each first (`git config --get <key>`): a
+different value already set is the user's — ask before replacing it. Tell the user what was set and how to
+undo it (`git config --unset <key>`), and note it in the log.
+
+`rerere` is a safety net, not a resolver: it replays a resolution only for a conflict whose text on both
+sides matches one already resolved in this clone — when a merge is redone (aborted and restarted, a trial
+merge before the real one, a squashed PR merged again). Its cache (`.git/rr-cache`) is local and starts
+empty in a fresh clone; the logs carry the decisions.
 
 **Fork repository** (vc-frontend-next, a customer theme):
 
@@ -57,32 +73,17 @@ leaves the fork's latest commits out of the merge.
 - Ref: `upstream/dev` for vc-frontend-next, a release tag (`refs/upstream-tags/<version>`) for a customer theme.
 - `git merge-base origin/dev <ref>` must print a commit. If it prints nothing, the fork was copied without
   history: stop and report that — this skill does not cover it.
-- `git switch -c chore/merge-upstream-<ref> origin/dev && git merge --no-ff --no-commit <ref>`
-- If `chore/merge-upstream-<ref>` already exists, look before reusing the name. It is a leftover when
+- `git switch -c chore/merge-upstream-<slug> origin/dev && git merge --no-ff --no-commit <ref>`
+- If `chore/merge-upstream-<slug>` already exists, look before reusing the name. It is a leftover when
   `git log origin/dev..<branch>` prints nothing and `git ls-remote origin refs/heads/<branch>` finds no
-  remote copy: recreate it with `git switch -C chore/merge-upstream-<ref> origin/dev` and say so. Commits
+  remote copy: recreate it with `git switch -C chore/merge-upstream-<slug> origin/dev` and say so. Commits
   on it, or a remote copy, mean an unfinished merge: stop and ask whether to resume it or start over
-  under a new name (`chore/merge-upstream-<ref>-2`). A pushed branch is never recreated or force-pushed.
+  under a new name (`chore/merge-upstream-<slug>-2`). A pushed branch is never recreated or force-pushed.
 
 **Redesign branch absorbing its own base** (same repository): the branch is the fork, `origin/dev` is
 upstream. No remote, no new branch — check the branch out, bring it level with its remote copy
 (`git merge --ff-only origin/<branch>`; if that fails, the two have diverged: stop and ask), then
 `git merge --no-ff --no-commit origin/dev`.
-
-Either way, **before the merge command**, in this clone:
-
-```bash
-git config merge.conflictStyle zdiff3   # markers show the base, so each side's intent is visible
-git config rerere.enabled true          # record each resolution, replay it when the same conflict returns
-git config rerere.autoUpdate false      # a replay is applied to the file but not staged: someone reviews it
-git config gc.rerereResolved 365        # default 60 days; upstream merges are often further apart
-```
-
-`rerere` is a safety net, not a resolver: it replays a resolution only for a conflict whose text on both
-sides is identical to one already resolved in this clone. Once a merge lands as a merge commit its
-conflicts do not come back, so a replay happens when a merge is redone — aborted and restarted, a trial
-merge followed by the real one, or a squashed PR merged again. Its cache (`.git/rr-cache`) is local and
-starts empty in a fresh clone; that is fine, the logs carry the decisions.
 
 ## 2. Map every conflict before touching one
 
@@ -195,7 +196,8 @@ and the port brief is answered (or the report found nothing).
 
 - `yarn build-only`, then `npx vite preview --port 3100 --strictPort` (3000 is usually the developer's own
   server) with `APP_BACKEND_URL` in `.env.local`. `vite-plugin-mkcert` runs here too: in a fresh clone,
-  copy `.certificates/` from a clone where the CA is already installed, or `mkcert -install` needs sudo.
+  copy `.certificates/` from a clone where the CA is already installed, or `mkcert -install` adds its CA to
+  the trust store (sudo on Linux and macOS, a confirmation dialog on Windows).
 - Open the home page, then every page the merged files render (catalog, search, the account pages,
   modules). On each: console errors, no `vite-error-overlay`, no error toast or `[role="alert"]`,
   GraphQL responses without `errors`. Cross-origin resources (fonts, analytics) report status 0 — not
@@ -229,26 +231,27 @@ Not covered by the smoke: <what needs data, a role or a device the smoke did not
 - PR body: the brief from step 3 with the decisions filled in, the step 4–7 results, the step 8 checklist,
   and a link to the log.
 - **The branch may already have a PR** — always, for a redesign branch absorbing its base. Find it
-  (`gh pr list --repo <owner/repo> --head <branch> --state open`) and add the merge's section to its body
-  instead of opening a second PR: read the body first, append under a `## Merge of <ref>` heading, and
-  write it back whole with `gh api -X PATCH repos/<owner>/<repo>/pulls/<n> -F body=@<file>`, keeping
-  everything already there (CI fills fields such as an artifact URL into it). Say in the chat that the
-  existing PR was updated, with its link. The step ends when the PR — new or existing — shows the QA
-  checklist.
-- **An upstream merge lands as a merge commit — never squash, never rebase.** Either one drops upstream
-  as a parent: `git merge-base` stays at the old base, so the next merge replays every upstream commit and
-  every conflict of this one. Whoever clicks Merge reads the PR, not this skill, so:
+  (`gh pr list --repo <owner/repo> --head <branch> --state open`) and update it instead of opening a second:
+  read the body, append a `## Merge of <ref>` section, write it back whole with
+  `gh api -X PATCH repos/<owner>/<repo>/pulls/<n> -F body=@<file>` (CI fills fields such as an artifact URL
+  into it), and give its link in the chat. The step ends when the PR shows the QA checklist.
+- **An upstream merge lands as a merge commit — never squash, never rebase.** Either drops upstream as a
+  parent, so the next merge replays every upstream commit and conflict of this one. Whoever clicks Merge
+  reads the PR, not this skill, so:
   - The PR body opens with: `⚠️ Merge with "Create a merge commit" — not squash or rebase. Squashing drops
     <ref> as a parent and the next upstream merge replays all of these conflicts.`
-  - Check the repository before opening the PR:
-    `gh api repos/<owner>/<repo> --jq '{allow_merge_commit, allow_squash_merge, allow_rebase_merge}'` and
-    `gh api repos/<owner>/<repo>/branches/<base>/protection --jq .required_linear_history.enabled`. Merge
-    commits must be allowed and linear history off; if not, say so in the PR and to the user rather than
-    squash. When squash is allowed too — the usual case — the warning line is what prevents it.
-  - After the user merges, confirm it: `git rev-list --parents -1 <merge sha on the base branch>` prints
-    two parents, and `git merge-base origin/dev <ref>` prints the upstream commit merged. If it was
-    squashed, say so at once: the fix is a fresh merge of `<ref>`, which `rerere` (in this same clone)
-    and the log make cheap while they are fresh.
+  - Check the repository before opening the PR. Merge methods:
+    `gh api repos/<owner>/<repo> --jq '{allow_merge_commit, allow_squash_merge, allow_rebase_merge}'`.
+    Linear history: `gh api repos/<owner>/<repo>/rules/branches/<base> --jq '[.[].type]'` (rulesets), and if
+    `gh api repos/<owner>/<repo>/branches/<base> --jq .protected` is true,
+    `…/branches/<base>/protection --jq .required_linear_history.enabled`. Without admin rights the merge
+    methods read `null` and a protected branch's protection reads 404, like an unprotected one: that is
+    unknown, not allowed — tell the user to check the settings. Merge commits must be allowed and linear
+    history off; if not, say so in the PR and to the user rather than squash. When squash is allowed too —
+    the usual case — the warning line is what prevents it.
+  - After the user merges: `git rev-list --parents -1 <merge sha on the base branch>` prints two parents,
+    and `git merge-base origin/dev <ref>` prints the upstream commit merged. If it was squashed, say so at
+    once: the fix is a fresh merge of `<ref>`, cheap while `rerere` and the log are fresh.
 
 ## Common mistakes
 
