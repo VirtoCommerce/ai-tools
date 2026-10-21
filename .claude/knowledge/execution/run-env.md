@@ -11,7 +11,8 @@ else `vcst`).
 - **The arguments name an env** — a bare token with a `.env.<token>` file next to it, or `--env <env>` /
   `--env=<env>` ⇒ `npm run env:use -- <env>`.
 - **They name none** ⇒ `npm run env:use -- --default`. It binds the default too, so the run keeps one env
-  even if someone edits `.env.test-env` while it runs.
+  even if someone edits `.env.test-env` while it runs. When that moves a session that was on another env, it
+  prints a `⚠ this session was on …` line: show it to the user, who passes the env to stay.
 - **Exit 2 ⇒ STOP** and show its message: an unknown env, or a `TEST_ENV` in the session's environment that
   would beat the binding. Never fall back to another env silently.
 - **A command run inline by another keeps the caller's binding** — `/qa-test` running `/vc-fix:qa-verify-fix`
