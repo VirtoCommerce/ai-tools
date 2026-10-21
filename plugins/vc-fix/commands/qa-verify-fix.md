@@ -1,6 +1,6 @@
 ---
 description: "Verify a bug fix: fetch ticket, reproduce original bug, confirm fix, run regression checks, transition the tracker ticket by role."
-argument-hint: "ticket <KEY>"
+argument-hint: "ticket <KEY> [<env>]"
 
 ---
 
@@ -29,6 +29,7 @@ Pick up a READY-FOR-TEST bug ticket, verify the fix on the live environment, and
 ```
 /qa-verify-fix VCST-1234              # Verify a single bug fix
 /qa-verify-fix VCST-1234 VCST-1235    # Verify multiple bug fixes sequentially
+/qa-verify-fix VCST-1234 vcptcore_dev # Verify on another env — binds this session only (Step 0)
 ```
 
 ---
@@ -83,9 +84,15 @@ Reference `tracker-ops.md` / `project-profile.mjs` — don't restate their conte
 
 ## Step 0 — Pre-Flight (per `.claude/templates/agent-dispatch.md`)
 
-1. **Resolve current sprint** — check if `reports/tickets/Sprint-current` exists → use it. Otherwise list `reports/tickets/` and pick the latest `SprintXX-XX` folder. This becomes `{SPRINT}` for all output paths below.
+0. **Bind the env and the run folder** per [`knowledge/execution/run-env.md`](../knowledge/execution/run-env.md)
+   §The run folder: `node "$pluginRoot/scripts/env/run-folder.mjs" use <ticket-key> <env>` when the arguments
+   name an env, else `… use <ticket-key>`. Every script below then resolves the env; the output fills each
+   brief's environment line, prints `RUN_DIR=…` and lists the ticket's prior run folders. **Run inline by
+   `/qa-test`** ⇒ do not bind: for its own ticket the run folder is that run's; for another ticket (a per-bug
+   verify in `--iterate`) take `node "$pluginRoot/scripts/env/run-folder.mjs" dir --ticket <ticket-key>`.
+1. **`{RUN_DIR}`** is that folder. Every output path below is inside it.
 2. **Environment health** — run `/qa-env-check endpoints`. If unhealthy, warn user — fix may not be deployed or env may be stale.
-3. **Duplicate check** — scan `reports/tickets/{SPRINT}/<ticket-key>/` for a verification run in the last 4 hours. If found, warn user and show previous verdict.
+3. **Duplicate check** — scan `{RUN_DIR}` for a verification run in the last 4 hours. If found, warn user and show previous verdict.
 4. **Context7 query** — resolve `/virtocommerce/vc-docs`, query the affected module/feature (e.g., `"order status transitions"`, `"cart price recalculation"`) with `tokens: 8000`. Understand expected post-fix behavior to set correct assertions.
 
 ## Step 1 — Fetch Ticket & Understand the Bug
@@ -160,7 +167,7 @@ VirtoCommerce-internal; a client deployment has no access):
 The strongest verification proves the **same** reproduction goes **RED on the pre-fix build and GREEN on the fixed build** — not merely GREEN once. Establish the baseline here; the Step 5 QA agent runs the identical repro as Phase B **with its own live MCP tools** (browser / API) — this plugin ships no regression runner, so there is no repo `--case` to invoke.
 
 **Phase A — Baseline (pre-fix, RED).** Step 2 forbids testing undeployed code live, so take the RED baseline from — in order:
-- the original `/qa-bug` reproduction already on file (`reports/tickets/.../test-execution-report.md` or `reports/bugs/`); **or**
+- the original `/qa-bug` reproduction already on file (a prior run folder's `test-execution-report.md` or bug report, or `reports/bugs/`); **or**
 - a reproduction the QA agent runs against a **pre-fix build the deployment still has** — a prior release, or a second environment not yet updated; **or**
 - if you legitimately captured the live symptom *before* a deploy you triggered, that run.
 
@@ -253,7 +260,8 @@ Edge Cases:
   - `qa-frontend-expert` / `qa-testing-expert` → `FRONT_URL`
   - `qa-backend-expert` → `BACK_URL` (+ `FRONT_URL` if the fix has a storefront-visible side)
 - Browser server assignment
-- Output path: `reports/tickets/{SPRINT}/<ticket-key>/`
+- Output path: `{RUN_DIR}/`, as the full resolved path; screenshots go to the `SCREENSHOTS=` path `use`
+  printed (a lane that refuses it saves a bare filename and the file is moved in with `mv`)
 - Evidence requirements: screenshot at previously-failing step, console log, network errors, HAR file
 - Instruction to follow `skills/qa-evidence/evidence-capture-policy.md`
 
@@ -265,7 +273,7 @@ Bug: [summary]
 Fix: [what the dev changed]
 Environment: {FRONT_URL} / {BACK_URL}  (use those that apply)
 Browser: {BROWSER_SERVER}
-Output: reports/tickets/{SPRINT}/<ticket-key>/
+Output: {RUN_DIR}/
 
 Steps to Reproduce (run 3 consecutive times):
 1. [step 1]
@@ -283,7 +291,7 @@ Take a screenshot at the step that previously failed.
 Capture console errors and network failures.
 Follow skills/qa-evidence/evidence-capture-policy.md
 
-Write results to reports/tickets/{SPRINT}/<ticket-key>/verification-report.md
+Write results to {RUN_DIR}/verification-report.md
 ```
 
 ---
@@ -318,7 +326,7 @@ before treating any of these QA-side transitions as `auto`/`confirm-once`. Skip 
 is not configured, and note it in the report.
 
 **Tracker comment — every verdict:** write `verification-summary.json` first (Step 7's shape, incl.
-`before_after[]`), then hand it to `/vc-fix:qa-report reports/tickets/{SPRINT}/<ticket-key>/verification-summary.json --kind fix --confirmed --lede "<what was broken, what the fix changed, whether anything near it moved>"`.
+`before_after[]`), then hand it to `/vc-fix:qa-report {RUN_DIR}/verification-summary.json --kind fix --confirmed --lede "<what was broken, what the fix changed, whether anything near it moved>"`.
 It renders the before/after comment within its template budget, embeds the screenshots inline for a UI bug,
 and posts or amends the ONE comment (`tracker-ops.md` §0). Template: `skills/qa-report/templates/comment-fix.md`.
 Never type the comment by hand: if the Skill tool refuses `/vc-fix:qa-report`, the install predates the skill —
@@ -351,7 +359,7 @@ output that hosted artifacts are private until the operator shares them.
 
 ## Step 7 — Deliver Summary
 
-Write `reports/tickets/{SPRINT}/<ticket-key>/verification-summary.json`:
+Write `{RUN_DIR}/verification-summary.json`:
 ```json
 {
   "ticket": "<ticket-key>",
@@ -382,9 +390,9 @@ Write `reports/tickets/{SPRINT}/<ticket-key>/verification-summary.json`:
   "bugs_filed": [],
   "business_rules_verified": ["BL-CART-001"],
   "tracker_transition": {"role": "tested", "state": "TESTED"},
-  "evidence": "reports/tickets/{SPRINT}/<ticket-key>/evidence.html",
+  "evidence": "{RUN_DIR}/evidence.html",
   "evidence_artifact": null,
-  "artifacts": "reports/tickets/{SPRINT}/<ticket-key>/"
+  "artifacts": "{RUN_DIR}/"
 }
 ```
 `before_after[]` is required for VERIFIED / VERIFIED_WITH_NOTES / NEW_REGRESSION (one row per Step 2A RED→GREEN pair, from the captured payloads, never hand-written). The `*_shot` fields are only for UI-layer bugs.
@@ -395,7 +403,7 @@ page; `evidence_artifact` stays `null` unless a hosted Artifact was actually pub
 
 Output to the user: verdict, STR result, checklist score, regressions found, tracker transition, and artifact paths.
 
-**Bug report lifecycle:** locate any matching local bug report in `reports/bugs/open/**` — recursive, it is foldered by severity — (by ticket ID or title keywords), then route by verdict:
+**Bug report lifecycle:** locate any matching local bug report in `reports/bugs/open/**` or a run folder's `bugs/**` (Step 0 listed the run folders) — recursive, foldered by severity — (by ticket ID or title keywords), then route by verdict:
 
 | Verdict | Action on the local bug report |
 |---------|-------------------------------|
@@ -403,6 +411,7 @@ Output to the user: verdict, STR result, checklist score, regressions found, tra
 | FIX_INCOMPLETE / NEW_REGRESSION / INTERMITTENT | Append a `## Verification YYYY-MM-DD` block (verdict + STR result + linked evidence) → leave file in `open/` |
 | BLOCKED | Append a `## Blocked YYYY-MM-DD` note (blocker description) → leave file in `open/` |
 
+A report in a run folder's `bugs/` gets the same block in place; moving it into `reports/bugs/` is the operator's call.
 `reports/bugs/closed/` and `reports/bugs/rejected/` are managed manually (closed by QA lead, rejected during triage) — this command does not move files into them.
 
 **Signal completion (self-diagnostics — the LAST action).** After the summary above — and equally
@@ -435,7 +444,7 @@ Details: [`knowledge/diagnostics/skill-expectations.md`](../knowledge/diagnostic
 - Max 3 concurrent browser agents
 - Always reproduce the original bug first before confirming the fix
 - Prove the fix with a **before/after reproduction** — RED baseline (pre-fix, Phase A) → GREEN on the fixed build (Phase B) — not just a lone GREEN. Cite where the RED baseline came from; never fabricate it
-- Assemble the RED→GREEN evidence page (Step 6A) and link it from the tracker comment + `verification-summary.json`. **Default is a LOCAL file** (`reports/tickets/.../evidence.html`); whether it is ever published is `skills/qa-report/reference.md` §Publish gate, never restated here. For backend/xAPI/API bugs embed the real request & response the QA agent captured (not hand-written); for UI bugs before/after screenshots. Always redact secrets (Authorization/token/PAN)
+- Assemble the RED→GREEN evidence page (Step 6A) and link it from the tracker comment + `verification-summary.json`. **Default is a LOCAL file** (`{RUN_DIR}/evidence.html`); whether it is ever published is `skills/qa-report/reference.md` §Publish gate, never restated here. For backend/xAPI/API bugs embed the real request & response the QA agent captured (not hand-written); for UI bugs before/after screenshots. Always redact secrets (Authorization/token/PAN)
 - STR must pass 3 consecutive times — 2/3 is not sufficient (marks as intermittent)
 - Always query Context7 in Step 0 to understand expected post-fix behavior
 - Tracker transitions follow `profile.tracker.azure.transitionPolicy` (`auto` ⇒ silent by role; `confirm-once`/`ask` ⇒ confirm — the Jira / unscanned default), consistent with `/qa-fix` and `/qa-bug` — **but gated additionally on `qaRoleStatesComplete === true`** for this command's QA-side roles (`tracker-ops.md` §Live transition discovery point 4)

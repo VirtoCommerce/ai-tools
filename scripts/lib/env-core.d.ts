@@ -8,3 +8,9 @@ export declare const CORE_REQUIRED_VARS: readonly string[];
 
 /** Promote every `<KEY>_<TEST_ENV upper-cased>` in process.env to `<KEY>`. */
 export declare function promoteEnvSuffix(testEnv: string): void;
+
+/** What config.js would leave in process.env for `testEnv`, computed without touching process.env. */
+export declare function layeredEnv(
+  testEnv: string,
+  options?: { root?: string; ambient?: Record<string, string | undefined> },
+): Record<string, string | undefined>;

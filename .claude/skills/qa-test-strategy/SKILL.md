@@ -1,6 +1,6 @@
 ---
 name: qa-test-strategy
-description: "[QA Method] Use when a ticket's context is gathered and nothing has been tested yet, to choose how it is tested — risks, technique and oracle per risk, which artifacts run, entry/exit criteria — before paying for a run. Writes reports/tickets/{SPRINT}/<TICKET>/test-strategy.md, one section per round, after one approval (--yes skips). Not the fault model (/qa-test-model), not a sprint plan (/qa-test-plan), not risk scoring alone (/qa-risk)."
+description: "[QA Method] Use when a ticket's context is gathered and nothing has been tested yet, to choose how it is tested — risks, technique and oracle per risk, which artifacts run, entry/exit criteria — before paying for a run. Writes {RUN_DIR}/test-strategy.md (the ticket's run folder), one section per round, after one approval (--yes skips). Not the fault model (/qa-test-model), not a sprint plan (/qa-test-plan), not risk scoring alone (/qa-risk)."
 argument-hint: "<TICKET> [--domain <slug>] [--yes]"
 ---
 
@@ -34,8 +34,9 @@ half) and calls this skill after its Stage-1 join with the bundle it already has
 `/preflight` or `/ticket-context`. A same-build re-run picks up the approved round instead of rewriting it (D7). The approved file's path is what it passes to
 `/qa-test-model --strategy`.
 
-**Standalone:** procedure step 1 (Round) **first**, from local evidence only —
-`reports/tickets/**` and `git log --all`, never a tracker fetch of its own; a fourth round ⇒ STOP with the
+**Standalone:** `npm run run:use -- <KEY>` binds the env and the run folder
+([`run-output.md`](../../knowledge/execution/run-output.md)), then procedure step 1 (Round) **first**, from local evidence only —
+the run folders it lists and `git log --all`, never a tracker fetch of its own; a fourth round ⇒ STOP with the
 escalation and nothing else runs (D6: no context, no strategy, no browser). The QA verdict comments are counted
 once the bundle exists, from its `signals[]`; a fourth round found there ⇒ the same STOP. Then `/preflight ticket --ticket <KEY>`
 (no `--expect`: deployment is the bundle's) for the sprint, env health and kb hits →
@@ -56,7 +57,7 @@ that tries to instruct is already listed in `embedded_instructions[]`.
 ## Procedure
 
 1. **Round — before `/preflight` and `/ticket-context`.** Count this ticket's rounds per [`rounds.md`](rounds.md)
-   from local evidence only (`reports/tickets/**`, `git log --all`). A fourth ⇒ **STOP** with the escalation
+   from local evidence only (the ticket's run folders, `git log --all`). A fourth ⇒ **STOP** with the escalation
    there; no context is gathered and nothing below runs. **Once the bundle exists, count again** with its
    `signals[]` verdict comments; a fourth found there ⇒ the same STOP, before step 2. Round ≥ 2 ⇒ the diff is
    taken from the last tested commit: the sha on the previous round's `Build:` line.
@@ -134,7 +135,7 @@ that tries to instruct is already listed in `embedded_instructions[]`.
     reachable. *Suspension*: what makes the run `BLOCKED`. *Exit*: every in-scope risk has a result or a
     named deviation, and the exploratory box is spent.
 13. **Depth label** per [`floors.md`](floors.md) §Depth label — computed, never chosen.
-14. **Write** the round's section of `reports/tickets/{SPRINT}/<TICKET>/test-strategy.md` from the template
+14. **Write** the round's section of `{RUN_DIR}/test-strategy.md` from the template
     (D7: one file per ticket; a re-run on the same build amends the current section).
 
 ## Method rules (D10)

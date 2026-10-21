@@ -15,13 +15,14 @@
  *   npx tsx scripts/bundle-evidence.ts VCST-5391 --sprint=Sprint-current --check
  *
  * Flags:
- *   --sprint=<S>     place the package under reports/tickets/<S>/<TICKET>/ (else reports/tickets/<TICKET>/)
+ *   --sprint=<S>     the sprint a <sprint> placeholder in the run-folder template takes (the package lands in
+ *                    the ticket's run folder for this env — scripts/lib/run-dir.mjs; ad-hoc: reports/tickets/<TICKET>/)
  *   --browser=<b>    which test-results/<b>/ to scan for raw HAR/video/console (default: chrome)
  *   --symptom="..."  one-line symptom pre-filled into the manifest + worksheet
  *   --check          re-scan an existing package and print the completeness report (no scaffold)
  *
- * Env: resolves TEST_ENV via scripts/lib/resolve-test-env.js, then reads the layered .env files
- *      (.env.defaults → .env.${TEST_ENV} → .env.local) to pre-fill the env header. No hardcoding.
+ * Env: scripts/lib/load-env.mjs — TEST_ENV, the layered .env files and their KEY_<ENV> pins, as
+ *      config.js resolves them — pre-fills the env header. No hardcoding.
  */
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import {
@@ -33,8 +34,8 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { join, relative } from 'node:path';
-import { parse } from 'dotenv';
-import { resolveTestEnv } from '../lib/resolve-test-env.js';
+import { loadEnv } from '../lib/load-env.mjs';
+import { SPRINT_DIR, TICKET_KEY, resolveRunDir, sessionRun } from '../lib/run-dir.mjs';
 
 // ---------- args ----------
 const argv = process.argv.slice(2);
@@ -56,25 +57,36 @@ if (!ticket) {
   );
   process.exit(2);
 }
+// Both become path segments (the run folder, or the ad-hoc reports/tickets/<TICKET>/): only a ticket key and a
+// sprint folder name may, never `..` or a separator.
+if (!TICKET_KEY.test(ticket.toUpperCase())) {
+  console.error(`✗ "${ticket}" is not a ticket key like VCST-1234 (or an Azure Boards id)`);
+  process.exit(2);
+}
+if (sprint && !SPRINT_DIR.test(sprint) && sprint !== 'Sprint-current') {
+  console.error(`✗ --sprint=${sprint}: expected a sprint folder name like Sprint26-21, or Sprint-current`);
+  process.exit(2);
+}
 
 // ---------- env header (no hardcoding) ----------
-const testEnv = resolveTestEnv();
-function loadEnvLayers(env: string): Record<string, string> {
-  const merged: Record<string, string> = {};
-  for (const f of ['.env.defaults', `.env.${env}`, '.env.local']) {
-    if (existsSync(f)) Object.assign(merged, parse(readFileSync(f)));
-  }
-  return merged;
-}
-const envVars = loadEnvLayers(testEnv);
-const FRONT_URL = process.env.FRONT_URL || envVars.FRONT_URL || '<FRONT_URL>';
-const BACK_URL = process.env.BACK_URL || envVars.BACK_URL || '<BACK_URL>';
-const ENV_RISK = process.env.ENV_RISK || envVars.ENV_RISK || 'unknown';
+// With the KEY_<ENV> promotion the header shows the env's own pinned URLs, not a developer's
+// .env.local override (the merge this replaces never promoted).
+const { testEnv } = loadEnv({ fallback: 'vcst' });
+const FRONT_URL = process.env.FRONT_URL || '<FRONT_URL>';
+const BACK_URL = process.env.BACK_URL || '<BACK_URL>';
+const ENV_RISK = process.env.ENV_RISK || 'unknown';
 
 // ---------- package location ----------
-const baseDir = sprint
-  ? join('reports', 'tickets', sprint, ticket)
-  : join('reports', 'tickets', ticket);
+// The ticket's run folder for this env (scripts/lib/run-dir.mjs): the session's bound run, else the folder
+// QA_OUTPUT_DIR resolves to (--sprint fills a <sprint> placeholder). An ad-hoc run with no sprint folder to
+// resolve <sprint> from keeps the old reports/tickets/<TICKET>/ place.
+const bound = sessionRun();
+function packageBase(): string {
+  if (bound && bound.ticket === ticket!.toUpperCase() && bound.env === testEnv) return bound.dir;
+  try { return resolveRunDir({ ticket: ticket!.toUpperCase(), env: testEnv, sprint: sprint || undefined }); }
+  catch { return join('reports', 'tickets', ticket!); }
+}
+const baseDir = packageBase();
 
 const SUBDIRS = ['screenshots', 'network', 'console', 'har', 'source'] as const;
 
