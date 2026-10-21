@@ -22,6 +22,8 @@ Clean regression 30 · regression w/ failures 200 · UI/copy bug 80 · functiona
 ## 5. Screenshots
 **§5.0 MANDATORY:** a tracker comment that makes a UI claim carries its screenshots INLINE (attach, then reference per `tracker-ops.md` §5c), or it is not delivered — a Markdown image path renders as nothing at `200 OK`. Verify from `renderedBody`, never from the status code. Capture/budget rules: policy §5.1.
 
+**§5.1a Never hand-capture what the runner already captured.** Only a Playwright Test run (`playwright.config.ts`) screenshots and traces a failure by itself, so no spec, fixture or hook adds its own. The Playwright MCP lanes save only the HAR (`@playwright/mcp` has no `screenshot` option): an agent's FAIL screenshot there is the only one, so never remove it as a duplicate. Captures made for a human reader (§5.0, §5.2, visual) are untouched. Policy §5.1a.
+
 **§5.2 Motion evidence:** a defect that IS the transition — one session reading one value then acting on another, a state wrong only in sequence, a race — carries a GIF **in addition to** the stills, never instead of them (a reader cannot pause a GIF to quote a number). Static defects stay on stills. 1 GIF per bug, ≤8 frames, ≤5 MB; embeds exactly like a PNG (§5c). Build it from the run's own stills: `npm run gif -- --out clip.gif --fit width a.png b.png`. Policy §5.2.
 
 ## 6. Console & network evidence — policy §6.  ## 7. Naming — policy §7.
