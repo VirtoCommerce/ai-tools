@@ -1,7 +1,7 @@
 {
   "name": "ai-tools",
   "description": "Virto Commerce internal QA tooling, published as a Claude Code marketplace for VC customers running the VC platform.",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "owner": {
     "name": "Virto Commerce",
     "email": "support@virtocommerce.com"
@@ -10,12 +10,17 @@
     {
       "name": "vc-fix",
       "source": "./plugins/vc-fix",
-      "description": "Bug lifecycle for Virto Commerce QA — project setup, bug filing, autonomous fixing, fix verification, online bug monitoring, and self-diagnostics (/vc-self-check). Self-contained plugin (10 agents, 16 skills, 8 commands)."
+      "description": "Bug lifecycle for Virto Commerce QA — bug filing, autonomous fixing, fix verification, online bug monitoring, self-diagnostics (/vc-self-check), and one renderer for every result comment and report page (/vc-fix:qa-report). Onboarding comes from vc-init (installed with it). Self-contained plugin (10 agents, 16 skills, 7 commands)."
+    },
+    {
+      "name": "vc-init",
+      "source": "./plugins/vc-init",
+      "description": "Onboarding for the Virto Commerce QA plugins — /project-init, the only writer of project-profile.json. Every token it and its dependents need (GitHub, Azure DevOps, Jira) is kept in vc-secrets and reaches a process only through the $VC_RUN bridge, so none sits in a project file. Depends on vc-secrets; vc-fix and vc-perf depend on it."
     },
     {
       "name": "vc-perf",
       "source": "./plugins/vc-perf",
-      "description": "Three-layer performance loop — BenchmarkDotNet A/B (L1), k6 load harness (L2), dotnet-trace allocation/CPU/DB attribution (L3), machine-readable perf-verdict, optimization PRs. Depends on vc-fix (reuses its onboarding, routing, and backend dev/review agents). Advisory only."
+      "description": "Three-layer performance loop — BenchmarkDotNet A/B (L1), k6 load harness (L2), dotnet-trace allocation/CPU/DB attribution (L3), machine-readable perf-verdict, optimization PRs. Depends on vc-init (onboarding, profile) and vc-fix (routing, backend dev/review agents). Advisory only."
     },
     {
       "name": "vc-secrets",

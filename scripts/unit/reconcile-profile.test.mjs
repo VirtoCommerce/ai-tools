@@ -1,5 +1,5 @@
 // Unit tests for the /project-init --check reconcile path
-// (plugins/vc-fix/skills/project-init/reconcile-profile.mjs). Reconcile brings a STALE on-disk
+// (plugins/vc-init/skills/project-init/reconcile-profile.mjs). Reconcile brings a STALE on-disk
 // project-profile.json in line with the current schema (PROFILE_DEFAULTS): fill newly-ADDED plain
 // fields with their safe default, DROP fields no longer in the schema, and leave the operator's
 // existing answers UNTOUCHED. This is the one path that can silently clobber user values, so these
@@ -16,7 +16,7 @@ import { join, resolve, dirname } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 
-const RECONCILE = resolve(dirname(fileURLToPath(import.meta.url)), "../../plugins/vc-fix/skills/project-init/reconcile-profile.mjs");
+const RECONCILE = resolve(dirname(fileURLToPath(import.meta.url)), "../../plugins/vc-init/skills/project-init/reconcile-profile.mjs");
 
 function reconcile(home, args = []) {
   execFileSync(process.execPath, [RECONCILE, "--write", ...args], {

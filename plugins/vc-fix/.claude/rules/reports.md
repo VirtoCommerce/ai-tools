@@ -142,6 +142,13 @@ from *"the evidence was dropped"*.
 
 **Skip:** every navigation step in a passing test, loading spinners, login page (unless testing auth), successful form fills mid-flow, same page across browsers when all pass, redundant confirmations of the same bug.
 
+**Element + viewport is the default; `fullPage: true` only when the defect IS the whole page's layout**
+— sections in the wrong order, a block overlapping content below the fold, an overflow that only shows
+across the full scroll height. Take the **element** shot of the thing that is wrong (`browser_take_screenshot`
+with `element` + **`target`**, not `ref`) for the claim, and one viewport shot for context. Anything that
+fits in one element never gets a full-page shot: scaled to `|width=700!` a long page is unreadable. A
+full-page shot replaces the viewport shot, never the element shot, and both count as one item.
+
 **Per-scope budget:**
 
 | Scope | Target | Max |
@@ -153,6 +160,23 @@ from *"the evidence was dropped"*.
 | Exploratory session | anomalies only | 10 |
 
 **Retention:** Regression/test-lifecycle/coverage screenshots under `reports/regression/REG-*/`, `reports/test-lifecycle/TLC-*/`, `reports/coverage/COV-*/` are gitignored — disposable artifacts referenced from the permanent markdown. Bug evidence (`reports/bugs/screenshots/`) and per-ticket evidence (`reports/tickets/SprintXX-XX/<ticket-key>/screenshots/`, `reports/tickets/<ticket-key>/screenshots/`) stay tracked.
+
+### 5.1a Never hand-capture what the runner already captured
+
+A manual screenshot of a failure is evidence only where nothing else produced one. **Check the lane, not
+the config file** — a key in a config proves nothing until the tool's own schema reads it.
+
+| Lane | Captured on failure without being asked | Manual failure screenshot |
+|---|---|---|
+| **Playwright Test** — a `*.spec.ts` run under a `playwright.config.ts` with `screenshot: "only-on-failure"` + `trace: "retain-on-failure"` | a screenshot and a trace for every browser context the test creates | **Forbidden** in the spec, fixture, hook or helper — point at the runner's file |
+| **Playwright MCP** lanes (the `.mcp.json` servers `/project-init` writes) | **nothing**. `@playwright/mcp` has no `screenshot` option and no notion of a failing test — a `"screenshot": "only-on-failure"` key in any lane config is read by nothing (pinned 0.0.77, checked 2026-10-21) | **Required** — the agent's `browser_take_screenshot` at a FAIL is the only failure image. Never remove it as a duplicate |
+| **Chrome DevTools MCP**; a script driving the Playwright *library* | nothing — no test runner to fail | the capture taken is the only one |
+
+**What this rule never touches:** a capture made for a human reader — the inline tracker image (§5.0,
+still MANDATORY), visual evidence, motion GIFs (§5.2). Where the runner's failure screenshot already shows
+the problem legibly, reuse that file for the comment instead of shooting it again. **"Legibly" is judged
+at the width the comment shows it** (`|width=700!`), not at full size: a full viewport readable only when
+zoomed fails the test, so it stays as the context shot and an element shot of the problem is still taken.
 
 ### 5.2 Motion evidence — a GIF when the defect IS the transition
 

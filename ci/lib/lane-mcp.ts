@@ -24,7 +24,7 @@ import { join } from "path";
 /** The template shipped in the repo. */
 export const TEMPLATE_PATH = join("ci", "config", "mcp-playwright-chrome.ci.json");
 /** Pinned MCP version — kept identical to what run-regression.ts used before. */
-export const PLAYWRIGHT_MCP_PACKAGE = "@playwright/mcp@0.0.77";
+export const PLAYWRIGHT_MCP_PACKAGE = "@playwright/mcp@0.0.83";
 
 /** Root for a lane's artifacts. Relative, because the MCP config paths are relative. */
 export function laneOutputDir(laneId: string): string {

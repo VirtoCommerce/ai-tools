@@ -1,7 +1,7 @@
 {
   "name": "vc-fix",
-  "description": "Agentic bug lifecycle for Virto Commerce — project setup, bug filing, autonomous bug fixing, fix verification, and online bug monitoring, plus a self-diagnostics subsystem (/vc-self-check) that passively observes whether the plugin's own skills ran correctly and can report quality issues back to VirtoCommerce (consent-gated, client-code-scrubbed, never touches the client install). Ships 10 agents, 16 skills, 8 commands. A focused subset of vc-qa's bug-lifecycle slice, packaged as a fully self-contained plugin (its own knowledge/, .claude/rules/, config.js, scripts/lib, package.json — not shared with the parent repo's vc-qa content, since a plugin install has no documented way to resolve its own install location for cross-file references). Its repo-routing logic in skills/qa-fix-routing/ is CWD-independent (resolves via import.meta.url); its monitoring dedup logic in skills/qa-monitoring/ is a self-contained extract too — no dependency on ci/.",
-  "version": "0.11.0",
+  "description": "Agentic bug lifecycle for Virto Commerce — bug filing, autonomous bug fixing, fix verification, online bug monitoring, and one renderer for every result comment and report page (/vc-fix:qa-report), plus a self-diagnostics subsystem (/vc-self-check) that passively observes whether the plugin's own skills ran correctly and can report quality issues back to VirtoCommerce (consent-gated, client-code-scrubbed, never touches the client install). Ships 10 agents, 16 skills, 7 commands. Onboarding (/project-init) and the deployment profile come from its dependency vc-init, and every GitHub / Azure DevOps / Jira token reaches its scripts only through vc-init's $VC_RUN bridge (vc-secrets) — no token in any project file. A focused subset of vc-qa's bug-lifecycle slice, packaged as a fully self-contained plugin (its own knowledge/, .claude/rules/, config.js, scripts/lib, package.json — not shared with the parent repo's vc-qa content, since a plugin install has no documented way to resolve its own install location for cross-file references). Its repo-routing logic in skills/qa-fix-routing/ is CWD-independent (resolves via import.meta.url); its monitoring dedup logic in skills/qa-monitoring/ is a self-contained extract too — no dependency on ci/.",
+  "version": "0.13.0",
   "displayName": "Virto Commerce Bug Lifecycle",
   "author": {
     "name": "Virto Commerce",
@@ -17,5 +17,11 @@
     "bugfix",
     "autofix",
     "agentic"
+  ],
+  "dependencies": [
+    {
+      "name": "vc-init",
+      "version": ">=0.1.0"
+    }
   ]
 }

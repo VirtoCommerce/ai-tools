@@ -26,14 +26,17 @@ Target the backend at `perf.backendUrl` from `project-profile.json` (pass it as 
 harness's own env knob — k6 has no direct file-read access to the profile). Pass
 `perf.platformProcess` as `PLATFORM_PROCESS` so the L3 EventPipe sidecar attaches to the right
 backend process (projects that rename the host binary must set this, or the sidecar silently
-skips):
+skips). Read the profile with vc-perf's read-only reader, never with bare `jq` — `--check` stops
+with "run /project-init" when the profile is missing instead of handing `run.sh` empty values (an
+unset key prints its default, or nothing — `run.sh` then applies its own `BASE_URL` default):
 
 ```bash
-BASE_URL="$(jq -r .perf.backendUrl "${PROJECT_PROFILE_PATH:-project-profile.json}")" \
-  STORE_ID="$(jq -r .perf.storeId "${PROJECT_PROFILE_PATH:-project-profile.json}")" \
-  CURRENCY_CODE="$(jq -r '.perf.currencyCode // "USD"' "${PROJECT_PROFILE_PATH:-project-profile.json}")" \
-  CULTURE_NAME="$(jq -r '.perf.cultureName // "en-US"' "${PROJECT_PROFILE_PATH:-project-profile.json}")" \
-  PLATFORM_PROCESS="$(jq -r '.perf.platformProcess // "VirtoCommerce.Platform.Web"' "${PROJECT_PROFILE_PATH:-project-profile.json}")" \
+node "$pluginRoot/scripts/profile-get.mjs" --check &&
+BASE_URL="$(node "$pluginRoot/scripts/profile-get.mjs" perf.backendUrl)" \
+  STORE_ID="$(node "$pluginRoot/scripts/profile-get.mjs" perf.storeId)" \
+  CURRENCY_CODE="$(node "$pluginRoot/scripts/profile-get.mjs" perf.currencyCode USD)" \
+  CULTURE_NAME="$(node "$pluginRoot/scripts/profile-get.mjs" perf.cultureName en-US)" \
+  PLATFORM_PROCESS="$(node "$pluginRoot/scripts/profile-get.mjs" perf.platformProcess VirtoCommerce.Platform.Web)" \
   $pluginRoot/skills/perf-loadtest/loadtests/run.sh steady
 ```
 
@@ -46,7 +49,7 @@ for multi-user concurrency, and orchestration gotchas: `loadtests/README.md`.
 profile) — the `perf.loadtest` keys in `project-profile.json` are not piped in automatically:
 
 - `perf.loadtest.fixtures.productIds` — export `PRODUCT_IDS=<comma-separated ids>` yourself (e.g.
-  `PRODUCT_IDS="$(jq -r '.perf.loadtest.fixtures.productIds | join(",")' "${PROJECT_PROFILE_PATH:-project-profile.json}")"`)
+  `PRODUCT_IDS="$(node "$pluginRoot/scripts/profile-get.mjs" --join , perf.loadtest.fixtures.productIds)"`)
   before invoking `run.sh`; the scenarios read `__ENV.PRODUCT_IDS`, not the profile file.
 - `perf.loadtest.seedEndpoint` — currently **reserved/unused**: no script or scenario in this
   harness reads it. Treat it as documentation of where a seed-users endpoint lives, not a wired

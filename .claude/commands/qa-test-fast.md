@@ -107,7 +107,8 @@ Briefs, the lane split, the data rules and teardown:
 
 1. **Checklist runners** — one per checklist lane section. `qa-frontend-expert` takes
    `playwright-chrome`; `qa-backend-expert` takes `playwright-edge`. `--layer` narrows this to one lane.
-2. **Exploratory** — `/qa-exploratory ticket <TICKET>` → `qa-testing-expert` on `playwright-firefox`.
+2. **Exploratory** — `/qa-exploratory ticket <TICKET> <env>` (the lane never re-binds the env) →
+   `qa-testing-expert` on `playwright-firefox`.
    Only when the strategy's Exploratory row is `RUN`. The charter is that row's risks plus the model's
    unresolved items when a model ran. `--no-explore` drops the lane. That is recorded, never
    silent: against an approved `RUN` it is a deviation — append it to the round's `### Amendments` and list
@@ -141,13 +142,10 @@ Triage, the verdict rules, the report shapes and the tracker comment:
    §5-verdict.2.
 4. **Write `{RUN_DIR}`:** `summary.json`, `verdict.md`, and the updated `testing-checklist.md`.
    Then run `npm run summary:validate`.
-5. **HTML page.** Load the `artifact-design` skill, fill in
-   [`../skills/qa-test-fast/report-template.html`](../skills/qa-test-fast/report-template.html), and
-   publish it as an Artifact for **Anyone at Virto Commerce** — the user sets that in Share
-   ([`verdict.md`](../skills/qa-test-fast/verdict.md) §HTML page).
-6. **Ask once:** "Post the verdict comment to <TICKET>?" Yes ⇒ post it per [`verdict.md`](../skills/qa-test-fast/verdict.md) §Tracker
-   comment, and write the returned id into `summary.json.tracker.comment_id` — a same-build re-run amends that id
-   (Step 0.3); a new build posts a new comment. No status transition.
+5. **HTML page and comment — ONE `/vc-fix:qa-report` call** ([`verdict.md`](../skills/qa-test-fast/verdict.md) §HTML page). It builds the page and the comment. Skill refused ⇒ `/plugin update`, stop the report step.
+6. **The post.** `qa-report` asks the one question (never ask it again here); on yes, write the returned id into
+   `summary.json.tracker.comment_id` — a same-build re-run amends that id (Step 0.3); a new build posts a new
+   comment. No status transition.
 7. **Bank what the run established.** For each platform behaviour the verdict states: matched ⇒
    `kb_confirm`, contradicted ⇒ `kb_dispute`, base held nothing ⇒ `kb_capture`
    (`.claude/knowledge/execution/kb-capture-contract.md`). Public base — nothing client-specific. List the ids in

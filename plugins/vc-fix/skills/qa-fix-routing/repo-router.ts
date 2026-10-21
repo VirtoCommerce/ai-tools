@@ -8,7 +8,7 @@
  * module to (a) suggest a target repo to the triage agent, (b) validate the
  * agent's chosen repo against an allowlist, and (c) check out the source.
  */
-import { execSync } from "child_process";
+import { execFileSync, execSync } from "child_process";
 import { existsSync, mkdirSync, readFileSync } from "fs";
 import { join, resolve } from "path";
 import { loadProjectProfile } from "../../scripts/lib/project-profile.mjs";
@@ -165,16 +165,15 @@ function repoName(repo: string): { owner: string | null; name: string } {
 }
 
 // --- Client repo awareness (from the deployment profile) ---------------------
-// A native-platform deployment has NO client repos, so CLIENT_ORG is "" and
-// repoOwnership() always returns "platform" ⇒ every function below behaves
-// exactly as before. Only a client deployment (project-init wrote a profile with
-// vcs.clientOrg + repos.client) activates the client branches. fix-repos.json is
+// A native-platform deployment has NO client repos, so the client org is "" and
+// repoOwnership() always returns "platform". Only a client deployment (project-init wrote a
+// profile with vcs.clientOrg + repos.client) activates the client branches. fix-repos.json is
 // untouched — platform routing is unchanged.
-const PROFILE = loadProjectProfile();
-/** GitHub/Azure org that owns the CLIENT's custom code ("" for native platform). */
-export const CLIENT_ORG: string = PROFILE.vcs.clientOrg || "";
-const CLIENT_REPOS = PROFILE.repos.client || [];
-
+//
+// Loaded on FIRST USE, not at module load (VCST-6402). A missing profile now stops the caller
+// (ProfileMissingError — "run /project-init"), and a module-level load turned every import of this
+// file into that stop, including callers that only want the pure helpers (computeOwnership,
+// REPO_PROFILES) and the tests that exercise them.
 export type RepoOwnership = "client" | "platform";
 
 /** Optional per-repo toolchain overrides + upstream provenance for a client repo. */
@@ -199,31 +198,58 @@ export interface ClientRepoMeta {
   forkVersion?: string;
 }
 
-const CLIENT_FULL = new Set<string>();
-const CLIENT_BARE = new Set<string>();
-const CLIENT_KINDS = new Map<string, RepoKind>();
-const CLIENT_HOSTS = new Map<string, "github" | "azure-repos">();
-const CLIENT_BRANCHES = new Map<string, string>();
-const CLIENT_META = new Map<string, ClientRepoMeta>();
-for (const r of CLIENT_REPOS) {
-  if (!r?.name) continue;
-  const bare = repoName(r.name).name;
-  CLIENT_FULL.add(r.name);
-  CLIENT_BARE.add(bare);
-  if (r.kind) CLIENT_KINDS.set(bare, r.kind as RepoKind);
-  if (r.host) CLIENT_HOSTS.set(bare, r.host);
-  if (r.defaultBranch) CLIENT_BRANCHES.set(bare, r.defaultBranch);
-  const meta: ClientRepoMeta = {};
-  // Copy the optional string overrides via explicit record views so the const-tuple key index is
-  // not an implicit `any` under strict tsc (the keys aren't all declared on the profile-repo type).
-  const rr = r as unknown as Record<string, unknown>;
-  const mm = meta as unknown as Record<string, unknown>;
-  for (const k of ["installCmd", "buildCmd", "typecheckCmd", "lintCmd", "testCmd", "upstream", "upstreamRef", "forkVersion"] as const) {
-    if (rr[k]) mm[k] = rr[k];
+interface ClientFacts {
+  profile: ReturnType<typeof loadProjectProfile>;
+  org: string;
+  repos: ReturnType<typeof loadProjectProfile>["repos"]["client"];
+  full: Set<string>;
+  bare: Set<string>;
+  kinds: Map<string, RepoKind>;
+  hosts: Map<string, "github" | "azure-repos">;
+  branches: Map<string, string>;
+  meta: Map<string, ClientRepoMeta>;
+}
+let _facts: ClientFacts | null = null;
+function clientFacts(): ClientFacts {
+  if (_facts) return _facts;
+  const profile = loadProjectProfile();
+  const f: ClientFacts = {
+    profile,
+    org: profile.vcs.clientOrg || "",
+    repos: profile.repos.client || [],
+    full: new Set<string>(),
+    bare: new Set<string>(),
+    kinds: new Map<string, RepoKind>(),
+    hosts: new Map<string, "github" | "azure-repos">(),
+    branches: new Map<string, string>(),
+    meta: new Map<string, ClientRepoMeta>(),
+  };
+  for (const r of f.repos) {
+    if (!r?.name) continue;
+    const bare = repoName(r.name).name;
+    f.full.add(r.name);
+    f.bare.add(bare);
+    if (r.kind) f.kinds.set(bare, r.kind as RepoKind);
+    if (r.host) f.hosts.set(bare, r.host);
+    if (r.defaultBranch) f.branches.set(bare, r.defaultBranch);
+    const meta: ClientRepoMeta = {};
+    // Copy the optional string overrides via explicit record views so the const-tuple key index is
+    // not an implicit `any` under strict tsc (the keys aren't all declared on the profile-repo type).
+    const rr = r as unknown as Record<string, unknown>;
+    const mm = meta as unknown as Record<string, unknown>;
+    for (const k of ["installCmd", "buildCmd", "typecheckCmd", "lintCmd", "testCmd", "upstream", "upstreamRef", "forkVersion"] as const) {
+      if (rr[k]) mm[k] = rr[k];
+    }
+    // Booleans must be copied explicitly — a falsy `false` would be dropped by `if (r[k])`.
+    if (typeof r.upstreamRefResolved === "boolean") meta.upstreamRefResolved = r.upstreamRefResolved;
+    if (Object.keys(meta).length) f.meta.set(bare, meta);
   }
-  // Booleans must be copied explicitly — a falsy `false` would be dropped by `if (r[k])`.
-  if (typeof r.upstreamRefResolved === "boolean") meta.upstreamRefResolved = r.upstreamRefResolved;
-  if (Object.keys(meta).length) CLIENT_META.set(bare, meta);
+  _facts = f;
+  return f;
+}
+/** GitHub/Azure org that owns the CLIENT's custom code ("" for native platform). */
+export function clientOrg(): string {
+  return clientFacts().org;
 }
 
 /**
@@ -268,9 +294,9 @@ export function computeOwnership(
 export function repoOwnership(repo: string): RepoOwnership {
   return computeOwnership(repo, {
     platformOrg: REPO_ORG,
-    clientOrg: CLIENT_ORG,
-    clientFull: CLIENT_FULL,
-    clientBare: CLIENT_BARE,
+    clientOrg: clientFacts().org,
+    clientFull: clientFacts().full,
+    clientBare: clientFacts().bare,
   });
 }
 
@@ -316,7 +342,7 @@ export function repoKind(repo: string): RepoKind {
   const { name } = repoName(repo);
   // Client repos: use the kind declared in the profile; else a name heuristic.
   if (repoOwnership(repo) === "client") {
-    const declared = CLIENT_KINDS.get(name);
+    const declared = clientFacts().kinds.get(name);
     if (declared) return declared;
     return /front|storefront|theme|vue|spa/i.test(name) ? "frontend" : "module";
   }
@@ -331,7 +357,7 @@ export function repoProfile(repo: string): RepoProfile {
   // native VC module, or a storefront fork with a non-standard test command). Layer the
   // profile overrides over the kind default; platform repos always use the kind default.
   if (repoOwnership(repo) === "client") {
-    const meta = CLIENT_META.get(repoName(repo).name);
+    const meta = clientFacts().meta.get(repoName(repo).name);
     if (meta) {
       return {
         ...base,
@@ -397,7 +423,7 @@ export function clientUpstream(
   repo: string,
 ): { upstream: string; upstreamRef: string; upstreamRefResolved: boolean; forkVersion: string } | null {
   if (repoOwnership(repo) !== "client") return null;
-  const meta = CLIENT_META.get(repoName(repo).name);
+  const meta = clientFacts().meta.get(repoName(repo).name);
   if (!meta?.upstream) return null;
   return {
     upstream: meta.upstream,
@@ -436,21 +462,21 @@ export function contributionPlan(repo: string): ContributionPlan {
   const ownership = repoOwnership(repo);
   if (ownership === "client") {
     const bare = repoName(repo).name;
-    const host = CLIENT_HOSTS.get(bare) || PROFILE.vcs.clientHost || "github";
+    const host = clientFacts().hosts.get(bare) || clientFacts().profile.vcs.clientHost || "github";
     return {
       ownership,
       host,
       mode: "direct",
       forkOwner: "",
       azure: {
-        organization: PROFILE.vcs.azure?.organization || "",
-        project: PROFILE.vcs.azure?.project || "",
+        organization: clientFacts().profile.vcs.azure?.organization || "",
+        project: clientFacts().profile.vcs.azure?.project || "",
       },
     };
   }
   // platform — always GitHub. Fork mode requires BOTH an explicit fork contribution
   // mode AND a configured account; otherwise direct (the native-platform default).
-  const u = PROFILE.upstream;
+  const u = clientFacts().profile.upstream;
   const fork = u.contributionMode === "fork" && Boolean(u.clientGithubAccount);
   return {
     ownership,
@@ -463,7 +489,7 @@ export function contributionPlan(repo: string): ContributionPlan {
 
 /** Default branch declared for a client repo in the profile (azure-repos has no `gh`). */
 function clientDefaultBranch(repo: string): string | undefined {
-  return CLIENT_BRANCHES.get(repoName(repo).name);
+  return clientFacts().branches.get(repoName(repo).name);
 }
 
 /**
@@ -495,11 +521,11 @@ export function routingReference(): string {
     `- ${REPO_ORG}/vc-platform (platform core, C#)`,
     `- ${REPO_ORG}/vc-module-<name> or ${REPO_ORG}/vc-module-x-<name> (any backend module, C#)`,
   ];
-  if (CLIENT_REPOS.length) {
+  if (clientFacts().repos.length) {
     lines.push(
       ``,
       `Client-owned repos (custom modules / theme / storefront fork — fix & PR go HERE):`,
-      ...CLIENT_REPOS.map((r) => `- ${r.name}${r.kind ? ` (${r.kind})` : ""}`),
+      ...clientFacts().repos.map((r) => `- ${r.name}${r.kind ? ` (${r.kind})` : ""}`),
     );
   }
   lines.push(
@@ -530,28 +556,42 @@ export interface Checkout {
   headRef?: string;
 }
 
+/** Local-only git (checkout, reset, remote, branch): no credential involved. */
 function sh(cmd: string, cwd?: string): string {
   return execSync(cmd, { cwd, encoding: "utf-8", stdio: ["ignore", "pipe", "pipe"] }).trim();
 }
 
+/**
+ * A networked gh / git call, through the $VC_RUN bridge (VCST-6402): the only way a PAT stored in
+ * vc-secrets reaches a process, and on a session axis (gh auth login / az login) the bridge runs the tool
+ * directly — one call for both. `git-gh` / `git-ado` are git against github.com / Azure Repos with the
+ * bridge's host-pinned credential helper. Without $VC_RUN (a project onboarded before the bridge) the tool
+ * runs directly, on whatever session it has. Arguments go as an array: nothing is re-parsed by a shell.
+ */
+function net(tool: "gh" | "git-gh" | "git-ado", args: string[]): string {
+  const opts = { encoding: "utf-8" as const, stdio: ["ignore", "pipe", "pipe"] as ["ignore", "pipe", "pipe"] };
+  const vcRun = process.env.VC_RUN;
+  if (vcRun) return execFileSync(process.execPath, [vcRun, tool, ...args], opts).trim();
+  return execFileSync(tool === "gh" ? "gh" : "git", args, opts).trim();
+}
+
 function detectDefaultBranch(repo: string, fallback: string): string {
   try {
-    return sh(`gh repo view ${repo} --json defaultBranchRef -q .defaultBranchRef.name`);
+    return net("gh", ["repo", "view", repo, "--json", "defaultBranchRef", "-q", ".defaultBranchRef.name"]);
   } catch {
     return fallback;
   }
 }
 
 /**
- * Build the Azure Repos clone/push URL. When ADO_PAT is present it is embedded so
- * a later `git push` authenticates without a credential helper — the workspace
- * (`.fix-workspace`) is gitignored and ephemeral. With `az login` (no PAT) we
- * fall back to a plain URL and rely on the Git Credential Manager / `az` helper.
+ * Build the Azure Repos clone/push URL — ALWAYS without a credential in it (VCST-6402). It used to
+ * embed ADO_PAT, which git then persisted into `.fix-workspace/<repo>/.git/config`: a plaintext token
+ * at rest that outlived the run. Authentication now comes from the git credential helper — the
+ * $VC_RUN bridge's host-pinned one when a PAT is in play (`node "$VC_RUN" git-ado …`, or any git a
+ * bridged process starts, via GIT_CONFIG_*), else the Git Credential Manager / `az` session.
  */
 function azureGitUrl(org: string, project: string, name: string): string {
-  const pat = process.env.ADO_PAT || "";
-  const cred = pat ? `${encodeURIComponent("x-token")}:${pat}@` : "";
-  return `https://${cred}dev.azure.com/${org}/${encodeURIComponent(project)}/_git/${encodeURIComponent(name)}`;
+  return `https://dev.azure.com/${org}/${encodeURIComponent(project)}/_git/${encodeURIComponent(name)}`;
 }
 
 /**
@@ -560,8 +600,9 @@ function azureGitUrl(org: string, project: string, name: string): string {
  * existing checkout is fetched and hard-reset to the remote base.
  *
  * Routed by the deployment profile (see contributionPlan):
- *  - **default** (platform direct / GitHub, or a client repo on GitHub): the
- *    original `gh repo clone <repo>` path — UNCHANGED.
+ *  - **default** (platform direct / GitHub, or a client repo on GitHub): a shallow
+ *    clone of `https://github.com/<repo>.git`.
+ *  Every network step (clone, fetch, gh repo view / fork) runs through $VC_RUN (`net`).
  *  - **fork** (platform, operator = client): ensure the client's fork, clone it as
  *    `origin`, add `upstream`, and branch from `upstream/<base>`. PR head is
  *    `<forkOwner>:<branch>`.
@@ -592,9 +633,11 @@ export function checkoutForFix(
     const baseBranch = clientDefaultBranch(repo) || "main";
     const url = azureGitUrl(plan.azure.organization, plan.azure.project, name);
     if (!existsSync(dest)) {
-      sh(`git clone --depth 1 --branch ${baseBranch} ${JSON.stringify(url)} "${dest}"`);
+      net("git-ado", ["clone", "--depth", "1", "--branch", baseBranch, url, dest]);
     } else {
-      sh(`git fetch origin ${baseBranch} --depth 1`, dest);
+      // A checkout made before VCST-6402 may carry the PAT in its remote URL; reset it to the plain one.
+      sh(`git remote set-url origin ${JSON.stringify(url)}`, dest);
+      net("git-ado", ["-C", dest, "fetch", "origin", baseBranch, "--depth", "1"]);
       sh(`git checkout ${baseBranch}`, dest);
       sh(`git reset --hard origin/${baseBranch}`, dest);
     }
@@ -609,9 +652,10 @@ export function checkoutForFix(
   if (plan.mode === "fork") {
     const baseBranch = detectDefaultBranch(repo, profile.defaultBranch);
     const forkFull = `${plan.forkOwner}/${name}`;
-    sh(`gh repo fork ${repo} --clone=false`); // idempotent: succeeds if fork exists
+    net("gh", ["repo", "fork", repo, "--clone=false"]); // idempotent: succeeds if fork exists
     if (!existsSync(dest)) {
-      sh(`gh repo clone ${forkFull} "${dest}"`);
+      // git-gh, not `gh repo clone`: the bridge refuses that one (it runs git with gh's own helper).
+      net("git-gh", ["clone", `https://github.com/${forkFull}.git`, dest]);
     }
     // Branch from the UPSTREAM base (the fork may be stale).
     try {
@@ -619,7 +663,7 @@ export function checkoutForFix(
     } catch {
       /* upstream remote already present */
     }
-    sh(`git fetch upstream ${baseBranch} --depth 1`, dest);
+    net("git-gh", ["-C", dest, "fetch", "upstream", baseBranch, "--depth", "1"]);
     sh(`git checkout -B ${workBranch} upstream/${baseBranch}`, dest);
     return {
       path: dest, baseBranch, workBranch, repo,
@@ -627,12 +671,12 @@ export function checkoutForFix(
     };
   }
 
-  // --- Default: direct GitHub clone (UNCHANGED from the original path) ---
+  // --- Default: direct GitHub clone ---
   const baseBranch = detectDefaultBranch(repo, profile.defaultBranch);
   if (!existsSync(dest)) {
-    sh(`gh repo clone ${repo} "${dest}" -- --depth 1 --branch ${baseBranch}`);
+    net("git-gh", ["clone", "--depth", "1", "--branch", baseBranch, `https://github.com/${repo}.git`, dest]);
   } else {
-    sh(`git fetch origin ${baseBranch} --depth 1`, dest);
+    net("git-gh", ["-C", dest, "fetch", "origin", baseBranch, "--depth", "1"]);
     sh(`git checkout ${baseBranch}`, dest);
     sh(`git reset --hard origin/${baseBranch}`, dest);
   }

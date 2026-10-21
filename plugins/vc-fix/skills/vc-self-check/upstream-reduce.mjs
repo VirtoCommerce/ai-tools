@@ -692,7 +692,7 @@ const IPISH = /\b(?:\d{1,3}\.){3}\d{1,3}\b/;
 
 /**
  * Does this string contain a WIT field reference name outside the vendor namespaces? A custom
- * namespace (`Leo.Bug.Severity`, `Custom.ReviewState`) is the CLIENT's process definition, which is
+ * namespace (`Acme.Bug.Severity`, `Custom.ReviewState`) is the CLIENT's process definition, which is
  * exactly the class of value we must never echo back to the vendor.
  */
 export function violatesFieldNamespace(text) {

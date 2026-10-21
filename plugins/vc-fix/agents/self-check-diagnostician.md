@@ -81,7 +81,10 @@ For a finding whose root cause is a specific line of **the plugin's OWN shipped 
 provenance fields so the vendor gets a payload they can act on — not `Signal: none · Repo: unknown`:
 
 - `pluginFile` — path **relative to the plugin root** (strip any install/cache prefix), forward
-  slashes, e.g. `skills/project-init/discover-tracker.mjs`.
+  slashes, e.g. `skills/project-init/discover-tracker.mjs`. `/project-init` lives in the **vc-init**
+  plugin since VCST-6402, so a `skills/project-init/…` path is relative to vc-init's install root
+  (read the file there; `node "$VC_RUN" --where` prints it as `vcInit`) — `deliver.mjs` proves it
+  against vc-init's copy, not a vc-fix path.
 - `pluginLine` — integer.
 - `codeExcerpt` — the source line(s) at that location, **copied verbatim from the plugin file you
   read**. It MUST be a literal substring of that file — the orchestrator re-reads the file and drops

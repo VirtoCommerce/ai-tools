@@ -1,5 +1,5 @@
 // Unit tests for the upstream-ref baseline resolver in the SHIPPED plugin copy
-// (plugins/vc-fix/skills/project-init/discover-repos.mjs). Covers the PRIMARY
+// (plugins/vc-init/skills/project-init/discover-repos.mjs). Covers the PRIMARY
 // "append .0 + verify existence" rule and its fallbacks. Pure — no env, no network.
 // Run: `npm test` (tsx --test scripts/unit/**/*.test.mjs).
 //
@@ -11,7 +11,7 @@ import assert from "node:assert/strict";
 import {
   parseSemver,
   pickBaselineTag,
-} from "../../plugins/vc-fix/skills/project-init/discover-repos.mjs";
+} from "../../plugins/vc-init/skills/project-init/discover-repos.mjs";
 
 test("parseSemver: parses bare, v-prefixed, and refs/tags forms; ignores suffix", () => {
   assert.deepEqual(parseSemver("2.49.0"), [2, 49, 0]);

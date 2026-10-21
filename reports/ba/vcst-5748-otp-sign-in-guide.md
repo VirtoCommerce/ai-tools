@@ -18,6 +18,25 @@ h3. For shoppers
 * Prefer a password? Click *Sign in with a password instead*.
 * After 5 failed attempts (codes or passwords) the account is temporarily locked; wait and try again.
 
+h4. If your last company is no longer available (VCST-6132)
+If you belong to more than one company, the storefront remembers the one you used last. When you sign in with a code and that company is no longer usable for you (you were removed from it, your access to it is locked, or your membership is invited, rejected or deleted), you are signed in to another company you can use, the same as with a password.
+# Sign in with a code as above.
+# Check the company name at the top right of the header: it shows the company you are working in.
+# To work in a different company, click your name in the header and pick it under *Organizations*.
+
+!4a-ui-01-A-locked-otp-lands-B.png|width=700!
+_Signed in by code after the last-used company was locked: the header shows the other company._
+
+!4a-ui-07-switcher-A-disabled-padlock.png|width=700!
+_A locked company stays in the list, greyed out with a padlock, and cannot be selected._
+
+* A locked company shows greyed out with a padlock; hover it to read _"This organization is locked. Contact your administrator for access."_
+* A company you were removed from, or where you are invited, rejected or deleted, is not listed.
+* Locked in every company: you are signed in with no company selected, and the company pages are not available. Ask your administrator.
+* Invited, rejected or deleted in every company: sign-in is refused with a message about your organization.
+* If your administrator restores access, your next code sign-in goes back to that company, because the storefront still remembers it.
+* Choosing a blocked company in the header is refused.
+
 h3. For administrators
 *Install:* module *VirtoCommerce.OTP* (depends on Customer, Notifications, Store) on a Platform version that includes custom grant type handlers, plus a storefront theme with the OTP form.
 
@@ -64,3 +83,5 @@ Other codes: {{missing_parameter}}, {{otp_disabled}}, {{user_is_temporary_locked
 
 ----
 _VCST-5748 · verified on vcptcore-qa1 · verdict: PASS WITH NOTES · Not documented: homepage login section (not present on the tested store); code sending to a blocked account (fix pending) · Audiences derived from layer: platform + module + storefront_
+
+_Amended for VCST-6132 (blocked last-used organization): developer details in [vcst-6132-otp-organization-fallback-developer-guide.md]; admin effects in the Organization membership status guide (VCST-5281)._

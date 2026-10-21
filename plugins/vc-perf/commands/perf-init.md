@@ -1,23 +1,26 @@
 ---
-description: Onboard vc-perf onto a deployment — reuse vc-fix's /project-init, then add the perf block to project-profile.json and install perf prerequisites.
+description: Onboard vc-perf onto a deployment — reuse vc-init's /project-init, then add the perf block to project-profile.json (through vc-init's profile-set.mjs) and install perf prerequisites.
 argument-hint: "[env-name]"
 disable-model-invocation: true
 ---
 
 # perf-init
 
-Thin onboarding **on top of vc-fix**. vc-perf declares a dependency on vc-fix, so `/project-init`
-and `project-profile.json` already exist — this command REUSES them and adds only the perf-specific
-config. Do NOT duplicate vc-fix's onboarding, tracker/host/auth questions, or profile machinery.
+Thin onboarding **on top of vc-init**. vc-perf declares a dependency on vc-init — the onboarding
+plugin and the ONLY writer of `project-profile.json` — so `/project-init` and the profile already
+exist; this command REUSES them and adds only the perf-specific config. Do NOT duplicate vc-init's
+onboarding, tracker/host/auth questions, or profile machinery, and never edit `project-profile.json`
+by hand.
 
 ## Steps
 
-1. **Ensure the base profile exists.** If `project-profile.json` is absent, run vc-fix's
-   `/project-init` first (it collects env name, tracker, code host, auth → writes the profile +
-   `.env.<env>` + `.mcp.json`). vc-perf reuses that verbatim — the repo UUID / tracker / contribution
+1. **Ensure the base profile exists.** If `project-profile.json` is absent (`node
+   "$pluginRoot/scripts/profile-get.mjs" --check` exits 2), run vc-init's `/project-init` first (it
+   collects env name, tracker, code host, auth → writes the profile + `.env.<env>` + `.mcp.json`,
+   and stores the tokens in vc-secrets). vc-perf reuses that verbatim — the repo UUID / tracker / contribution
    mode the perf PR needs already live there (`repos.client[]`, `tracker`).
 
-2. **Install perf prerequisites** (detect-then-install, per layer — mirror vc-fix's project-init
+2. **Install perf prerequisites** (detect-then-install, per layer — mirror vc-init's project-init
    prerequisite step; do not bundle binaries):
    - **L3** (universal): `dotnet tool install -g dotnet-counters dotnet-trace dotnet-gcdump`.
    - **L2** (only if load testing): the `k6` binary, or the `grafana/k6` container.
@@ -34,8 +37,21 @@ config. Do NOT duplicate vc-fix's onboarding, tracker/host/auth questions, or pr
      NOT a shell variable, `$CLAUDE_PLUGIN_ROOT` does not expand in the Bash tool shell) ships with
      this plugin and needs nothing installed.
 
-3. **Add the `perf` block to `project-profile.json`** — additive deepMerge, never rewrite the
-   vc-fix profile. Ask only what is perf-specific and not already derivable:
+3. **Add the `perf` block to `project-profile.json`** — ONLY through vc-init's writer, an additive
+   deepMerge that leaves the rest of the profile untouched:
+
+   ```bash
+   node "<vc-init>/skills/project-init/profile-set.mjs" --merge 'perf=<json>'
+   # or, for a larger block written to a scratch file first:
+   node "<vc-init>/skills/project-init/profile-set.mjs" --merge 'perf=@perf-block.json'
+   ```
+
+   `<vc-init>` is the vc-init install path: `node "$VC_RUN" --where` prints it as `vcInit` (or
+   resolve it like `$pluginRoot` with the id `vc-init@ai-tools`, `knowledge/plugin-root.md`); an
+   `@file` is read relative to the project directory. It prints one JSON report. Exit 1 = refused
+   (a malformed block, or `needs-check` — run `/project-init --check`) — fix the cause, never fall
+   back to editing the file; exit 2 = no profile — step 1. Ask only what is perf-specific and not
+   already derivable:
    - how the backend runs locally → `perf.aspireHostPath` (Aspire) or `perf.backendUrl` (plain URL)
    - the store context for load tests → `perf.storeId` + `perf.currencyCode` / `perf.cultureName`
      (defaults `USD` / `en-US`)
@@ -52,11 +68,12 @@ config. Do NOT duplicate vc-fix's onboarding, tracker/host/auth questions, or pr
    real user on the target deployment through `PERF_API_USER` / `PERF_API_PASSWORD` — `run.sh` hard-requires
    both (`: "${PERF_API_USER:?}"`), so onboarding must obtain them or the first run aborts. Ask the operator
    for a load-test user that can complete the scenario end to end (e.g. place an order for `cart-order-loop`),
-   and write the pair to the **gitignored `.env.local`** (the vc-fix per-developer secrets file) — never
+   and write the pair to the **gitignored `.env.local`** (the per-developer test-user passwords file
+   vc-init's `/project-init` scaffolds; tokens live in vc-secrets, not here) — never
    `project-profile.json` and never a committed `.env.<env>`. These are the **local** load credentials, and
    they are deliberately distinct from the cloud `LOGIN` / `PASSWORD` the pipeline environment uses: keep the
    two separate, do not reuse or fall back between them.
 
-5. **Verify** — print the resolved `perf` block and the detected toolchain (which layers are runnable
+5. **Verify** — print the resolved `perf` block (`node "$pluginRoot/scripts/profile-get.mjs" perf`) and the detected toolchain (which layers are runnable
    given the installed prerequisites), and confirm `PERF_API_USER` / `PERF_API_PASSWORD` are present in
    `.env.local` when L2 is in scope (report presence only — never echo the values). Do not proceed to a run.

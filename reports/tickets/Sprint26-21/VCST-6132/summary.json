@@ -1,0 +1,384 @@
+{
+  "ticket": "VCST-6132",
+  "ticket_type": "Task",
+  "flow": "feature-test",
+  "path": "FULL",
+  "path_route": {
+    "decided_at": "1b",
+    "provisional": "FAST at 1a (Task, Medium, single-repo backend diff)",
+    "narrow_story_tokens": null,
+    "escalated_reason": "preflight breaking:vc-module-customer — Customer 3.1021.0 'Invites and status for multi-organization customers' is the membership-status mechanism under test"
+  },
+  "layer": "module",
+  "shape_class": null,
+  "verdict": "PASS_WITH_NOTES",
+  "date": "2026-10-20",
+  "environment": "vcptcore_qa1",
+  "build": {
+    "Customer": "3.1030.0-pr-321-c54f",
+    "Customer_source": "/api/platform/modules = vc-module-customer PR #321 head c54fcfe2 (open, base dev)",
+    "platform": "3.1084.0-pr-3140-9092",
+    "theme": "2.61.0-pr-2575-2024d7ad",
+    "OTP": "3.1000.0",
+    "breaking": [
+      "Customer 3.1021.0 (2026-09) Invites and status for multi-organization customers"
+    ],
+    "prior_round": "Sprint26-20/VCST-6132 (FAST, 2026-10-16, same build): 11/11 PASS at /connect/token, storefront never run"
+  },
+  "status_transitions": [
+    {
+      "at": "1a",
+      "hop": "opening",
+      "from": "Testing",
+      "to": "Testing",
+      "skipped": "already in-testing at run start",
+      "by": "qa-lead (inline orchestrator)",
+      "confirmed": false,
+      "result": "skipped"
+    },
+    {
+      "at": "5-status",
+      "hop": "closing",
+      "from": "Ready for test",
+      "to": "Testing",
+      "via": "On QA (id 4)",
+      "by": "qa-lead (inline orchestrator)",
+      "confirmed": true,
+      "confirmed_by": "operator 2026-10-20",
+      "result": "done",
+      "note": "ticket had been moved to Ready for test by someone else during the run; no direct hop to Tested"
+    },
+    {
+      "at": "5-status",
+      "hop": "closing",
+      "from": "Testing",
+      "to": "Tested",
+      "via": "Finish test (id 8)",
+      "by": "qa-lead (inline orchestrator)",
+      "confirmed": true,
+      "confirmed_by": "operator 2026-10-20",
+      "result": "done"
+    }
+  ],
+  "timing": {
+    "test_window_start": "2026-10-19T22:01:20Z",
+    "test_window_end": "2026-10-20T00:25:00Z",
+    "reachability_minutes": 2,
+    "time_to_first_test_minutes": null,
+    "time_to_first_test_note": "4a dispatched 2026-10-19T22:01:22Z; session restarted mid-run so the run start timestamp was not recorded",
+    "c1_wall_clock_minutes": 116,
+    "reachability_verdict": "REACHABLE — /sign-in OTP default view, code from the notification journal signs in, switcher lists 2 orgs (1r, playwright-chrome)"
+  },
+  "domain_map": {
+    "state": "PRESENT",
+    "maps": [
+      "auth@rev1",
+      "b2b@rev2"
+    ],
+    "mind_map": null,
+    "built_in_run": false,
+    "all_layer_confirmed_at": "1e-confirmed",
+    "unmapped_surfaces": [
+      "grant→SignInResult attribute",
+      "localStorage org key asymmetry (typed email vs userName; no write on sign-in)",
+      "4 org error codes without en.json keys",
+      "b2b D7 contradicted: locked-but-Approved org listed disabled with a padlock",
+      "auth D5 closed: storefront forwards /api/otp/request"
+    ],
+    "surface_source": [
+      ".claude/knowledge/domain/auth.md",
+      ".claude/knowledge/domain/b2b-organizations.md"
+    ]
+  },
+  "discovery": {
+    "ran": true,
+    "report": "reports/exploratory/SBTM-VCST-6132-2026-10-20.md",
+    "box_minutes": 45,
+    "hypotheses_grounded": [
+      "#6 locked A listed disabled+padlock",
+      "#11 removed A + Rejected B → 200 no org (parity)",
+      "#18 localStorage keeps A; restore → lands A",
+      "#20 mixed-case email drops organization_id",
+      "#22 fallback picks list order, ignores Default/Current (Q1)"
+    ],
+    "promoted": [
+      "N1",
+      "N2",
+      "N3",
+      "N4",
+      "N5",
+      "N6",
+      "N8"
+    ],
+    "kept": [
+      "N7 — question Q1 to dev"
+    ]
+  },
+  "visual": {
+    "surface": false,
+    "surface_source": [
+      "no .vue/.scss/.css/blade in diff",
+      "layer module"
+    ]
+  },
+  "test_data": {
+    "surface": false,
+    "dispatched": false,
+    "fixtures_covering": [
+      "{{STORE_ID}}",
+      "{{ADMIN_EMAIL}}",
+      "{{ADMIN_PASSWORD}}",
+      "{{DEFAULT_TEST_PASSWORD}}",
+      "{{FRONT_URL}}",
+      "{{BACK_URL}}",
+      "in-case AGENT-TEST-6132-* orgs + buyer"
+    ],
+    "td_validate": "exit 0",
+    "divergence_resolved": true,
+    "surface_source": [
+      "membership state is what each case mutates — created in-case (FIFTH RULE)",
+      "Org A ≠ Org B, independently mutable"
+    ]
+  },
+  "coverage_triage": {
+    "hits": 70,
+    "confirmed": 64,
+    "repair": [],
+    "re_base": [
+      "CUST-110",
+      "CUST-111",
+      "CUST-113",
+      "B2C-MBR-020",
+      "COMP-E2E-005",
+      "AUTH-075"
+    ],
+    "superseded": [],
+    "unscannable": [
+      "074-contracts (legacy header)"
+    ],
+    "unmatched_observables": [
+      "invalid_organization_id — covered by new OTP-039"
+    ],
+    "surface_source": [
+      "domains auth,b2b",
+      "observables organization_id/otp_email/user_is_locked_in_organization/invalid_organization_id",
+      "BL-AUTH-013/015/016"
+    ]
+  },
+  "regression": {
+    "c1": {
+      "run_id": "REG-2026-10-20-0125",
+      "ids": 29,
+      "pass": 21,
+      "fail": 5,
+      "blocked": 3,
+      "pass_rate": "72.4% (80.8% of executed)",
+      "fails": "OTP-036 (F2), OTP-041 (F1) — expected, held Draft; CUST-110/111/113 — RE-BASE confirmed: password grant now falls back (200), assertions stale",
+      "blocked_reason": "B2C-MBR-020, COMP-E2E-005, AUTH-075 — lane infra (firefox does not substitute --secrets; playwright-edge MCP hung); re-run needed",
+      "report": "reports/regression/REG-2026-10-20-0125/regression-2026-10-20.md",
+      "blocked_triaged": 3,
+      "gate": "metrics:compute --gate feature --blocked-triaged 3 → GO (verify:gate alone: CANNOT EVALUATE, 10.34% BLOCKED > 10%); the 3 BLOCKED are lane infrastructure and also RE-BASE rows — not assessed, not green"
+    },
+    "c2": "not run — removed from /qa-test 2026-09-10; change-scoped release sweep not assessed",
+    "rerun": {
+      "run_id": "REG-2026-10-20-1329",
+      "ids": 6,
+      "pass": 5,
+      "fail": 0,
+      "blocked": 1,
+      "blocked_ids": [
+        "B2C-MBR-020 — SECRET_STALE: playwright-edge holds the pre-sync ORG_USER_PASSWORD; needs an MCP restart"
+      ],
+      "fixed_after": "COMP-E2E-005/AUTH-075/B2C-MBR-020 refresh_token step repointed from {{BACK_URL}} to {{FRONT_URL}} (issuer mismatch)"
+    },
+    "rerun_b2c_mbr_020": {
+      "run_id": "REG-2026-10-21-1043",
+      "result": "PASS — 5/5 assertions + cross-layer check, 0 mismatched steps, no workarounds (verifies the PR #491 repair; case promoted Draft -> Automated)",
+      "landing": "password sign-in of a member blocked in TechFlow lands BuildRight (claim 91b24624…); TechFlow disabled with a padlock",
+      "refresh_token": "400 invalid_grant, user_is_locked_in_organization; errorDescription = the org-specific blocked message (token minted after the block, sent to the storefront host)",
+      "persona": "before == after; memberships Approved + unlocked, current = TechFlow, global lock false",
+      "history": [
+        "REG-2026-10-20-1329 BLOCKED (playwright-edge held a stale ORG_USER_PASSWORD)",
+        "REG-2026-10-20-1547 BLOCKED (ORG_USER forced password change — reset by the operator)",
+        "REG-2026-10-20-1728 stalled (session interrupted)",
+        "REG-2026-10-20-2031 PASS with manual workarounds (OTP-first sign-in, Block/Unblock confirm dialog, Active status image, qa1 org ids substituted by hand)",
+        "REG-2026-10-20-2205 FAIL (test-defect in the first repair: email filled before the password-form switch, which clears it)",
+        "REG-2026-10-21-1043 PASS with no workarounds — the repair in PR #491 (steps + aliases.vcptcore_qa1.json MULTI_ORG_TF_BR overlay)"
+      ]
+    }
+  },
+  "bugs_filed": [],
+  "bugs_not_filed": [
+    {
+      "id": "F1",
+      "severity": "Low",
+      "title": "Code sign-in with a differently-cased email does not send the last-used organization",
+      "draft": "reports/bugs/open/low/BUG-otp-signin-mixed-case-email-drops-last-used-org-VCST-6132.md",
+      "provenance": "PRE-EXISTING"
+    },
+    {
+      "id": "F2",
+      "severity": "Low",
+      "title": "Membership-status refusal shows raw English server text with the organization GUID",
+      "draft": "reports/bugs/open/low/BUG-org-status-refusal-shows-raw-org-guid-VCST-6132.md",
+      "provenance": "PRE-EXISTING"
+    },
+    {
+      "id": "F3",
+      "severity": "Low",
+      "title": "Failed organization switch signs out silently and is saved as last-used (+ locked option reason only in title)",
+      "draft": "reports/bugs/open/low/BUG-failed-org-switch-persisted-silent-signout-VCST-6132.md",
+      "provenance": "PRE-EXISTING"
+    },
+    {
+      "id": "F4",
+      "severity": "Low",
+      "title": "Duplicate organization membership create returns 500",
+      "draft": "reports/bugs/open/low/BUG-membership-create-duplicate-500-VCST-6132.md",
+      "provenance": "PRE-EXISTING"
+    }
+  ],
+  "report": {
+    "page_url": null,
+    "verdict_md": null,
+    "kb": {
+      "read": [
+        "KB-3CBA0D5F",
+        "KB-ED213173",
+        "KB-0080ED6D",
+        "KB-06FE6C8D",
+        "KB-D1D30720"
+      ],
+      "confirmed": [
+        "KB-3CBA0D5F",
+        "KB-FC1BCACF",
+        "KB-D1D30720",
+        "KB-51FB70F2",
+        "KB-509F34F1"
+      ],
+      "disputed": [],
+      "captured": [
+        "KB-51FB70F2",
+        "KB-509F34F1",
+        "KB-FC1BCACF",
+        "KB-DC2411FF",
+        "KB-D59DDAAD"
+      ]
+    },
+    "test_model": "reports/ba/test-models/VCST-6132-2026-10-20.md",
+    "questions": [
+      "Q1 (dev): should the fallback prefer DefaultOrganizationId / CurrentOrganizationId over contact list order?",
+      "Q2 (PO): S2 says the locked org 'is not offered' — the switcher lists it disabled with a padlock (VCST-5317 design). Accept?",
+      "Q3 (dev): sign-in log carries organizationId null for every sign-in and failureReason 'Unknown' for an org-status refusal — expected?"
+    ],
+    "oracle_feedback": [
+      "BL-AUTH-016 rules 1–2 'password grant only' → every credential sign-in (grant sets SignInResult); rule 3 lock-beats-status only without a fallback",
+      "BL-AUTH-013 'invalid_organization_id only on a non-password grant' → only on a grant without SignInResult"
+    ],
+    "residue": "none — 2026-10-16 leftovers (orgs AGENT-TEST-6132-mvaxbhut A/B, contact Agent Tester6132, user agent-test-6132-mvaxbhut@example.com) deleted 2026-10-20; search 6132 = 0 members / 0 users / 0 memberships",
+    "checklist": "reports/tickets/Sprint26-21/VCST-6132/testing-checklist.md",
+    "authored_cases": {
+      "104": [
+        "OTP-029",
+        "OTP-030",
+        "OTP-031",
+        "OTP-032",
+        "OTP-033",
+        "OTP-034",
+        "OTP-035",
+        "OTP-036",
+        "OTP-037",
+        "OTP-038",
+        "OTP-039",
+        "OTP-040",
+        "OTP-041"
+      ],
+      "105": [
+        "OTP-042",
+        "OTP-043",
+        "OTP-044",
+        "OTP-045",
+        "OTP-046",
+        "OTP-047",
+        "OTP-048",
+        "OTP-049",
+        "OTP-050",
+        "OTP-051"
+      ],
+      "status": "Draft",
+      "gate_3_cases": "APPROVE (fresh qa-lead verifier)"
+    },
+    "counts_note": "total_cases/passed/failed/blocked count CHECKLIST rows (29/27/2/0); C1 counts are in regression.c1 (21P/5F/3B)",
+    "verifier_5_report": "RATIFY PASS WITH NOTES (5 comment corrections applied; its missing-screenshot claim was checked and is wrong — both files exist)",
+    "tracker_comment": {
+      "id": 112179,
+      "content": "final QA report (PASS WITH NOTES), amended over the developer-questions comment; Q1→VCST-6352, Q2→VCST-6438 answered by Dmitry Grishin 2026-10-20 (comment 112185)",
+      "images": 3
+    },
+    "related_reviews": {
+      "VCST-6438": "comment 112187 — evidence, correction (locked-only-org is no longer a refusal), additions",
+      "VCST-6352": "comment 112188 — Org A/B/C repro + GIF"
+    }
+  },
+  "ac_analysis": {
+    "conditions": 29,
+    "pass": 27,
+    "fail": 2,
+    "fail_note": "rows 10, 24 — pre-existing storefront gaps, not ticket ACs; every ticket-named condition (S1–S4, R1–R3, technical) PASS on API and storefront",
+    "context": {
+      "1c": "ba-system-analyzer — reach: only password + otp_email set SignInResult on this build; impersonate/external/refresh/authorization_code/punchout do not; switcher source lists locked-but-Approved orgs flagged (b2b map D7 contradicted); localStorage key asymmetry; 4 org codes lack en.json keys",
+      "1d": "ba-story-writer Mode B — 29 atomic conditions (18 story + 11 gap-AC); description vs comment DRIFT (comment wins); S2 switcher DRIFT; no CONTRADICTS"
+    }
+  },
+  "new_cases_authored": 23,
+  "contract": {
+    "surface": false,
+    "surface_source": [
+      "OpenIddict validator, no GraphQL/controller/GraphType in diff"
+    ]
+  },
+  "total_cases": 29,
+  "passed": 27,
+  "failed": 2,
+  "blocked": 0,
+  "agents_dispatched": [
+    "qa-frontend-expert (1r, 4a UI, playwright-chrome)",
+    "ba-system-analyzer (1c)",
+    "ba-story-writer (1d)",
+    "qa-testing-expert (3x, playwright-chrome)",
+    "qa-backend-expert (4a API, REST)",
+    "test-management-specialist (A)",
+    "qa-lead-orchestrator (3-cases verifier)",
+    "regression-orchestrator (4c C1)"
+  ],
+  "business_rules_verified": [
+    "BL-AUTH-012",
+    "BL-AUTH-013",
+    "BL-AUTH-015",
+    "BL-AUTH-016",
+    "BL-B2B-001",
+    "BL-B2B-013"
+  ],
+  "appinsights": {
+    "configured": false,
+    "reason": "APPINSIGHTS_* not configured for vcptcore_qa1"
+  },
+  "documentation": {
+    "published": true,
+    "audiences": [
+      "customer",
+      "admin",
+      "developer"
+    ],
+    "files": [
+      "reports/ba/vcst-6132-otp-organization-fallback-developer-guide.md"
+    ],
+    "amended": [
+      "reports/ba/vcst-5748-otp-sign-in-guide.md",
+      "reports/ba/Organization roles/ba-admin-doc-VCST-5281-org-membership-status-2026-08-07.md"
+    ],
+    "comment_posted": true,
+    "comment_id": 112193,
+    "refusal": null
+  }
+}

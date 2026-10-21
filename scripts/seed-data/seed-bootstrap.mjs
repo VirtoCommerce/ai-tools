@@ -8,7 +8,7 @@
  *
  * Order (explicit seed priority — see STEPS[].priority):
  *   preflight    : member-index → catalog+categories+store (ensureVirtualCatalog) → fulfillment-center
- *   priority 30+ : properties → products → configurable → pricing → inventory → category-images → bopis
+ *   priority 30+ : properties → products → configurable → pricing → inventory → category-images → brands → bopis
  *                  → company-users → promotions → loyalty → white-labeling
  *   (prices run AFTER products AND configurable so every product is priced; bopis after inventory
  *    so a fulfillment center exists; company-users after the member index is ready.)
@@ -109,6 +109,9 @@ const TEARDOWN_STEPS = [
   { name: 'properties', script: 'catalog/seed-catalog-properties.mjs', args: ['--teardown'] },
   // Category images before the catalog sweep: it strips our images from every store-catalog category
   // (real ones included) and deletes the uploaded files — a catalog-first sweep would leave the files.
+  // Brands before the catalog sweep: an owned AGENT-TEST-SEED-Brands catalog is unbound from the store's
+  // brand settings first, and the uploaded logos/banners are deleted (a catalog-first sweep would leave them).
+  { name: 'brands', script: 'catalog/seed-brands.mjs', args: ['--teardown'] },
   { name: 'category-images', script: 'catalog/seed-category-images.mjs', args: ['--teardown'] },
   // Sweeps every AGENT-TEST-SEED-* catalog + its categories/products/pricelists and unbinds the store.
   { name: 'catalog+categories', script: 'seed-test-data.js', args: ['teardown'] },
@@ -161,6 +164,11 @@ const STEPS = [
   // store's catalog, so it runs after store(80) binds that catalog and after every phase that creates
   // categories. Optional: a name the env does not carry is reported unmatched, never created.
   { name: 'category-images', script: 'catalog/seed-category-images.mjs', required: false, priority: 85 },
+  // Storefront Brands catalog (VCST-3286 sample-data brands: logo + banner + Featured). After store(80):
+  // it reads the store's BrandCatalogId and writes the brand settings. Additive — a brand the env already
+  // carries is left alone; only where no brand catalog is configured does it create AGENT-TEST-SEED-Brands.
+  // Optional: skips (exit 0) on a build without the brand settings.
+  { name: 'brands', script: 'catalog/seed-brands.mjs', required: false, priority: 86 },
   { name: 'bopis', script: 'bopis/seed-bopis.mjs', required: true, priority: 90 },
   { name: 'company-users', script: 'b2b/seed-company-users.mjs', args: ['all'], required: true, priority: 100 },
   // Org addresses beyond the single inline default baked into orgBody() — needs the org graph (100) first.

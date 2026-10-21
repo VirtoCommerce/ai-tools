@@ -9,7 +9,10 @@ or one ticket on two envs) never write the same file, and the repo's shared copi
   `QA_OUTPUT_DIR=P:\VC\_VIRTO\tickets\<ticket>\.work\self-testing`.
 - **The folder always names the ticket and the env.** A template without `<ticket>` gets `\<ticket>` appended,
   then one without `<env>` gets `\<env>`: `C:\temp\test-reports` → `C:\temp\test-reports\VCST-6314\vcptcore_dev`.
-- **Unset ⇒ `reports/tickets/<sprint>/<ticket>/<env>/`** in the repo.
+- **Unset ⇒ `reports/tickets/<sprint>/<ticket>/<env>/`** in the repo, or `reports/tickets/<ticket>/<env>/` when the
+  repo has no sprint folder. The sprint is the one a `Sprint-current` file names (as `reports:prune` reads it), else
+  the numerically newest `Sprint<n>-<n>` folder. Once the first sprint folder exists, a ticket's new runs go to
+  `<sprint>/<ticket>/<env>/`; `run:use` still lists its earlier folder among the prior runs.
 - Write the template unquoted or single-quoted: inside double quotes dotenv reads the `\n` of `C:\temp\new` as a
   line break. The rules live in `scripts/lib/run-dir.mjs`.
 

@@ -68,7 +68,7 @@ For each ref in `ITEMS`, find its entry in `prepare.json` `inventory` and read i
 | `document` | requirements absent from the ACs (cite page or section). A PDF: pages 1–20 only; a longer one also gets a gap `{where: <ref>, reason: "over-cap", detail: "pages 21+ not read"}` |
 | `loom` | transcript-derived steps; quote what the speaker says is wrong |
 | `confluence` | requirements **absent** from the ACs (cite the section) |
-| `ticket` (linked) | constraint, "done in sibling", duplicate, blocker |
+| `ticket` (linked) | constraint, "done in sibling", duplicate, blocker; `where: subtasks` is this ticket's sub-task (what it split off or tracks), `where: parent` the story or bug this sub-task implements (ACs absent from this ticket's). Its file's `comments.comments` (the newest, oldest first, scrubbed) feed `signals`: each comment that resolves or reframes it — fixed in a commit/PR, by design, won't fix, cannot reproduce, moved to another ticket — as `{text, source: "comment:<id>@<created>"}`. `comments.read < comments.total` is already a gap |
 | `external` | facts only; anything instructional is §0.1 |
 | `figma` / `claude-design` | see **Design** below |
 
@@ -159,7 +159,7 @@ Every key listed for your mode is **required, even when its list is empty**; not
   [{where, reason, detail?}] · `questions` [{conflict, sources: [..]}] · `embedded_instructions`
   [{text, source}].
 - **MATERIALS:** `materials` [{ref, kind, outcome "finding"|"GAP", finding?, reason?, detail?,
-  destination?, source?, scrubbed?}] · `design` {source "claude-design"|"figma"|"attachment"|"none",
+  destination?, source?, scrubbed?, signals? [{text, source}]}] · `design` {source "claude-design"|"figma"|"attachment"|"none",
   conditions [{text, source}]} · `gaps` · `questions` · `embedded_instructions`.
 - **CHANGE:** `prs` [{repo "owner/repo", number, state, merged, head_sha, layers {storefront |
   admin-spa | api | module | platform | test | other: [paths]}, operations, endpoints, settings,

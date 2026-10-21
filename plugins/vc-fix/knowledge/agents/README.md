@@ -1,7 +1,7 @@
 # Agent System — vc-fix
 
 `vc-fix` ships a narrow slice of the full `vc-qa` agent crew, scoped to these workflows: project
-setup (`/project-init`, `/qa-env-check`), bug filing (`/qa-bug`), bug fixing (`/qa-fix` + its dev team), bug
+setup (`/project-init` — from the `vc-init` dependency — and `/qa-env-check`), bug filing (`/qa-bug`), bug fixing (`/qa-fix` + its dev team), bug
 verification (`/qa-verify-fix`), online bug monitoring (`/qa-monitoring`), and plugin
 self-diagnostics (`/vc-self-check`) + direct feedback (`/vc-feedback`). No regression
 orchestration, no BA team, no Storybook/a11y/design-system tooling — those live only in the full
@@ -11,7 +11,7 @@ Counts: `ls agents commands skills` from the plugin root.
 ## Quick Start
 
 ```
-/project-init                # Onboard: env, bug tracker, code host, project-profile.json
+/project-init                # (vc-init) Onboard: env, bug tracker, code host, project-profile.json
 /qa-bug <description>        # Reproduce, document, optionally file a bug
 /qa-fix VCST-1234            # Autonomous fix of an already-filed bug
 /qa-verify-fix VCST-1234     # Verify a fix, transition the ticket
@@ -58,7 +58,7 @@ top-level session performs it directly), `ui-ux-expert`, `regression-orchestrato
 | Agent | Model | Purpose |
 |-------|-------|---------|
 | **self-check-diagnostician** | sonnet | Tier-2 diagnostician of the client→vendor feedback loop: given one session id, reads its telemetry jsonl + transcript + the `skill-expectations.md` oracle, and returns ONLY a validated finding STRUCT (verdict + severity + evidence + root-cause + proposed fix + vendor-provenance fields). Writes no files, sends nothing. |
-| **self-check-deliverer** | sonnet | Non-interactive deliverer: given the validated finding STRUCT and the operator's single consent, owns the whole delivery (dedup lookup, route selection, body composition, leak scan, sending, telemetry retention) by running `deliver.mjs`. Asks nothing further; the only thing it ever sends is a GitHub Issue/comment on `VirtoCommerce/ai-tools`. |
+| **self-check-deliverer** | sonnet | Non-interactive deliverer: given the validated finding STRUCT and the operator's single consent, owns the whole delivery (dedup lookup, route selection, body composition, leak scan, sending, telemetry retention) by running `deliver.mjs` through the bridge (`node "$VC_RUN" deliver`). Asks nothing further; the only thing it ever sends is a GitHub Issue/comment on `VirtoCommerce/ai-tools`. |
 
 ---
 
@@ -66,7 +66,7 @@ top-level session performs it directly), `ui-ux-expert`, `regression-orchestrato
 
 | Command | Purpose |
 |---------|---------|
-| `/project-init` | Onboard this plugin: env name, bug tracker (Jira/Azure Boards), code host (GitHub/Azure Repos), auth, discover client/platform repo split, write `project-profile.json` + `.env.<env>` + `.mcp.json`, verify access. Day-2 modes (skip the interview): **`--add-env`** adds another environment (URLs + per-env access creds) to an onboarded project; **`--check`** reconciles the profile to the current schema after an upgrade, then verifies |
+| `/project-init` | **Ships in `vc-init`** (a dependency of this plugin; the only writer of `project-profile.json`). Onboard this plugin: env name, bug tracker (Jira/Azure Boards), code host (GitHub/Azure Repos), auth, discover client/platform repo split, write `project-profile.json` + `.env.<env>` + `.mcp.json`, verify access. Day-2 modes (skip the interview): **`--add-env`** adds another environment (URLs + per-env access creds) to an onboarded project; **`--check`** reconciles the profile to the current schema after an upgrade, then verifies |
 | `/qa-bug [description]` | Reproduce, document, and optionally file a bug |
 | `/qa-fix <ticket-key>` | Autonomous fix of an already-filed bug: triage → root-cause + single-repo route → reproduce-as-test → minimal fix → self code-review → branch + PR + CI/E2E → STOP for human review (never auto-merges) |
 | `/qa-verify-fix <ticket-key>` | Verify a bug fix: fetch ticket, reproduce STR, confirm fix, regression checks, transition the ticket |
@@ -87,7 +87,6 @@ Each is `skills/<name>/SKILL.md`; its frontmatter is the argument reference.
 
 | Skill | Purpose |
 |-------|---------|
-| `project-init` | Backs `/project-init`: deps, the short interview, derive-the-rest, write + verify the profile |
 | `qa-fix-routing` | Routing library: which repo owns a bug (client vs platform), direct PR / fork-PR / upstream issue, which VCS + tracker host |
 | `qa-monitoring` | Backs `/qa-monitoring`: App Insights probes, fingerprint dedup, triage, live repro |
 | `vc-self-check` | Backs `/vc-self-check`: spawns the diagnostician, relays the finding, consent-gated `deliver` |
@@ -178,4 +177,4 @@ returns thin results or for non-VC libraries. Full tool list and routing rules i
 - Claude Code with subagent/Task tool support
 - MCP servers configured in `.mcp.json` (Playwright chrome/firefox/edge, github)
 - User/IDE-level MCPs configured: Chrome DevTools, Azure, Atlassian, **VirtoOZ**
-- `.env.<env>` (URLs) + `.env.local` (credentials), written by `/project-init`; validate with `/qa-env-check`
+- `.env.<env>` (URLs) + `.env.local` (test-user passwords only), written by `/project-init` (vc-init); GitHub / Azure DevOps / Jira tokens live in vc-secrets and reach a process only through the bridge `node "$VC_RUN" <tool> …`; validate with `/qa-env-check`

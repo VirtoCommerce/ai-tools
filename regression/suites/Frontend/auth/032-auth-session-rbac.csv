@@ -298,7 +298,7 @@ BuildRight admin (ORG-003 maintainer) is signed in. TECHFLOW_BUYER is a member o
 [STATE] TECHFLOW_BUYER not discoverable in BuildRight admin's member list
 [NETWORK] POST /graphql lockOrganizationContact returns errors[] non-empty for cross-org attempt (AC4)
 [API] GET {{BACK_URL}}/api/members/@td(TECHFLOW_BUYER.platform_id) — isLockedOut unchanged after unauthorized attempt (no state corruption)","[API] Confirm @td(TECHFLOW_BUYER.platform_id) isLockedOut unchanged after cross-org lock attempt","TECHFLOW_BUYER visible in BuildRight member list (org isolation regression in UI); cross-org lockOrganizationContact succeeds (AC4 RBAC regression); TechFlow member lock state changes from unauthorized call","none — rejection flow, no state change expected","VCST-5028; BL-B2B-005; BL-AUTH-003; AC4; PRF-GQL-070; B2C-MBR-022; Synced: VCST-5028 (2026-06-15)","Draft"
-"AUTH-075","[VCST-5028] Multi-Org Member Lived Experience: TechFlow Maintainer -> Switch BuildRight Employee -> Permission Isolation -> Block in BuildRight -> TechFlow Unaffected -> Unblock Restore","Auth > Session > Org-Scoped RBAC [JOURNEY]","Critical","BL-B2B-007; BL-B2B-008; BL-AUTH-012; BL-AUTH-013; BL-B2B-001; BL-B2B-005; BL-AUTH-003","ECL-3.1; ECL-10.2","[PRE:CLEAR_SESSION]
+"AUTH-075","[VCST-5028] Multi-Org Member Lived Experience: TechFlow Maintainer -> Switch BuildRight Employee -> Permission Isolation -> Block in BuildRight -> TechFlow Unaffected -> Unblock Restore","Auth > Session > Org-Scoped RBAC [JOURNEY]","Critical","BL-B2B-007; BL-B2B-008; BL-AUTH-012; BL-AUTH-013; BL-B2B-001; BL-B2B-005; BL-AUTH-003; BL-AUTH-016","ECL-3.1; ECL-10.2","[PRE:CLEAR_SESSION]
 Logged out. Fixture: @td(MULTI_ORG_TF_BR.email) belongs to BOTH TechFlow (org-maintainer) and BuildRight (org-employee).
 Both memberships must be in clean/unlocked state at start of run.
 NOTE [BUG-A FIXED in pr-135-402e]: The empty-permissions-after-org-switch defect was code-fixed in PR#135
@@ -307,7 +307,8 @@ user.Roles; CheckAuthAsync authorizes against the JWT principal). On build pr-13
 vc-frontend 2.52.0-pr-2315-059c the maintainer write UI MUST render; its absence is now a REGRESSION of the
 VCST-5028 fix, not an expected state. Re-verify live on 402e+.
 NOTE [DEPLOY]: lockOrganizationContact returned MISSING_METHOD only on the stale pr-135-cb12 build; the mutations
-are wired in pr-135-402e. REST endpoints remain a valid alternate path.","front_url={{FRONT_URL}}; back_url={{BACK_URL}}; user_email=@td(MULTI_ORG_TF_BR.email); user_password=@td(MULTI_ORG_TF_BR.password); member_id=@td(MULTI_ORG_TF_BR.id); user_id=@td(MULTI_ORG_TF_BR.userId); org_techflow_id=@td(MULTI_ORG_TF_BR.org_techflow_id); org_buildright_id=@td(MULTI_ORG_TF_BR.org_buildright_id); techflow_membership_id=@td(MULTI_ORG_TF_BR.techflow_membership_id); buildright_membership_id=@td(MULTI_ORG_TF_BR.buildright_membership_id)","--- SCREEN: Login into TechFlow (Org A - Maintainer) ---
+are wired in pr-135-402e. REST endpoints remain a valid alternate path.
+Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallback (vc-module-customer PR #321 — open on 2026-10-20; observed on 3.1030.0-pr-321-c54f). On a Customer build without it the fallback expectations do not hold: record the case BLOCKED for the build, never FAIL, and never re-base it to the old behaviour.","front_url={{FRONT_URL}}; back_url={{BACK_URL}}; user_email=@td(MULTI_ORG_TF_BR.email); user_password=@td(MULTI_ORG_TF_BR.password); member_id=@td(MULTI_ORG_TF_BR.id); user_id=@td(MULTI_ORG_TF_BR.userId); org_techflow_id=@td(MULTI_ORG_TF_BR.org_techflow_id); org_buildright_id=@td(MULTI_ORG_TF_BR.org_buildright_id); techflow_membership_id=@td(MULTI_ORG_TF_BR.techflow_membership_id); buildright_membership_id=@td(MULTI_ORG_TF_BR.buildright_membership_id)","--- SCREEN: Login into TechFlow (Org A - Maintainer) ---
 [NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill [data-test-id=email-input] with @td(MULTI_ORG_TF_BR.email)
 [ACT] Fill [data-test-id=password-input] with @td(MULTI_ORG_TF_BR.password)
@@ -349,9 +350,13 @@ are wired in pr-135-402e. REST endpoints remain a valid alternate path.","front_
 [ACT] Fill [data-test-id=email-input] with @td(MULTI_ORG_TF_BR.email)
 [ACT] Fill [data-test-id=password-input] with @td(MULTI_ORG_TF_BR.password)
 [ACT] Click [data-test-id=login-button]
-[WAIT] Org-selector appears OR error appears
-[ACT] Select BuildRight organization (if org-selector shown)
-[ASSERT] [DOM] Org-scoped lockout error: Your access to this organization has been blocked. Please contact your organization administrator [contact the site administrator]. (BL-AUTH-013)
+[WAIT] sign-in completes (it is not refused)
+[ASSERT] [DOM] sign-in is NOT refused and does not land in BuildRight: the header shows TechFlow as the active org (BuildRight is locked)
+[ASSERT] [DOM] in the account-menu 'Organizations' listbox the BuildRight option is disabled with the lock-closed icon and cannot be selected (keyboard path only — never force the disabled control)
+[ASSERT] [STATE] from the network log: the sign-in /connect/token access_token organization_id claim ($LOCKED_ATTEMPT_CLAIM) equals @td(MULTI_ORG_TF_BR.org_techflow_id); record its refresh_token as $RT (minted AFTER the lock)
+[HTTP POST] {{FRONT_URL}}/connect/token grant_type=refresh_token refresh_token=$RT storeId={{STORE_ID}} organization_id=@td(MULTI_ORG_TF_BR.org_buildright_id) — record as $SWITCH (a refresh token minted BEFORE the lock is revoked and fails code-less, KB-D1D30720)
+[ASSERT] [STATUS] 400 with error = invalid_grant
+[ASSERT] [BODY] $SWITCH code is user_is_locked_in_organization and its error_description names the blocked organization (""Your access to organization '...' has been blocked. Please contact your organization administrator."") (BL-AUTH-013)
 --- SCREEN: TechFlow Access Unaffected ---
 [PRE:CLEAR_SESSION]
 [NAV] Navigate to {{FRONT_URL}}/sign-in
@@ -368,18 +373,20 @@ are wired in pr-135-402e. REST endpoints remain a valid alternate path.","front_
 [HTTP POST] {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.buildright_membership_id)/unlock
 [ASSERT] [STATUS] 200
 [HTTP POST] {{BACK_URL}}/api/customer/organization-memberships/search body: {userId: @td(MULTI_ORG_TF_BR.userId)}
-[ASSERT] [BODY] BuildRight membership isLocked=false (fixture restored)","[DOM] TechFlow session: active org shows TechFlow; Company Members accessible with write actions (or BUG-A signal if absent)
-[DOM] BuildRight session: active org shows BuildRight; write actions absent (org-employee)
-[STATUS] BuildRight lock: POST .../lock returns 200; search confirms isLocked=true
-[BODY] Cross-org isolation: TechFlow membership isLocked=false while BuildRight locked (BL-B2B-008)
-[BODY] Global account guard: GET .../locked returns {locked: false} at every stage (BL-AUTH-012)
-[DOM] BuildRight login while locked: org-scoped error displayed (BL-AUTH-013)
-[DOM] TechFlow login after BuildRight block: succeeds without error (BL-AUTH-003)
-[STATUS] BuildRight unlock: POST .../unlock returns 200; isLocked=false","[API] POST {{BACK_URL}}/api/customer/organization-memberships/search body {userId: @td(MULTI_ORG_TF_BR.userId)} - at block screen: BuildRight isLocked=true, TechFlow isLocked=false
+[ASSERT] [BODY] BuildRight membership isLocked=false (fixture restored)","[DOM] TechFlow session: active org shows TechFlow; Company Members accessible with write actions (or BUG-A signal if absent) {BL} (BL-B2B-007)
+[DOM] BuildRight session: active org shows BuildRight; write actions absent (org-employee) {BL} (BL-B2B-005)
+[STATUS] BuildRight lock: POST .../lock returns 200; search confirms isLocked=true {BL} (BL-AUTH-012)
+[BODY] Cross-org isolation: TechFlow membership isLocked=false while BuildRight locked (BL-B2B-008) {BL} (BL-B2B-008)
+[BODY] Global account guard: GET .../locked returns {locked: false} at every stage (BL-AUTH-012) {BL} (BL-AUTH-012)
+[STATE] BuildRight password sign-in while locked is NOT refused and never lands in BuildRight: $LOCKED_ATTEMPT_CLAIM equals @td(MULTI_ORG_TF_BR.org_techflow_id) {SPEC} (VCST-5496; VCST-6132 + D. Grishin 2026-10-14: every credential sign-in falls back) {BL} (BL-AUTH-016, BL-AUTH-015) {OBSERVED} (API baseline REG-2026-10-20-0125 suite 027 CUST-111/113 and 3x/4a UI, KB-51FB70F2; storefront half pending re-run)
+[DOM] In listbox 'Organizations' the BuildRight option is disabled and renders the lock-closed icon, not selectable {SPEC} (VCST-5317 switcher lock flag) {OBSERVED} (suite 006 B2C-ORG-041, KB-51FB70F2; pending re-run here)
+[BODY] $SWITCH is HTTP 400 invalid_grant with code user_is_locked_in_organization and the org-specific error_description {SPEC} (VCST-6132 + D. Grishin 2026-10-14: refresh_token still refuses) {BL} (BL-AUTH-013) (refusal relocated here from the password sign-in)
+[DOM] After the BuildRight lock a TechFlow sign-in succeeds: the header shows ""TechFlow"" and no inline error alert is rendered above the sign-in form {BL} (BL-AUTH-003 -- an org-B lock does not prevent org-A login)
+[STATUS] BuildRight unlock: POST .../unlock returns 200; isLocked=false {BL} (BL-AUTH-012)","[API] POST {{BACK_URL}}/api/customer/organization-memberships/search body {userId: @td(MULTI_ORG_TF_BR.userId)} - at block screen: BuildRight isLocked=true, TechFlow isLocked=false
 [API] GET {{BACK_URL}}/api/platform/security/users/@td(MULTI_ORG_TF_BR.userId)/locked - at every HTTP step: must return {locked: false}
-[API] At unblock screen: search again - BuildRight isLocked=false","Global account locked when org-B membership locked (BL-AUTH-012 violation -- critical); TechFlow login fails after BuildRight block (BL-AUTH-003 org-scope violation); org-scoped error shows generic global-lockout message instead of org-specific text (BL-AUTH-013 regression); BuildRight write actions visible for org-employee (BL-B2B-008 violation); BUG-A regression: TechFlow Company Members shows no Invite button (the fix landed in pr-135-402e -- absence = regression on 402e+)","[HTTP POST] {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.buildright_membership_id)/unlock -- ensure BuildRight membership unlocked
+[API] At unblock screen: search again - BuildRight isLocked=false","Global account locked when org-B membership locked (BL-AUTH-012 violation -- critical); TechFlow login fails after BuildRight block (BL-AUTH-003 org-scope violation); the explicit-switch refusal shows a generic global-lockout message or a code-less invalid_grant (token minted before the lock — verdict void) instead of the org-specific code (BL-AUTH-013 regression); the credential sign-in is refused or lands in the locked BuildRight; BuildRight write actions visible for org-employee (BL-B2B-008 violation); BUG-A regression: TechFlow Company Members shows no Invite button (the fix landed in pr-135-402e -- absence = regression on 402e+)","[HTTP POST] {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.buildright_membership_id)/unlock -- ensure BuildRight membership unlocked
 [HTTP POST] {{BACK_URL}}/api/customer/organization-memberships/@td(MULTI_ORG_TF_BR.techflow_membership_id)/unlock -- defensive unlock for TechFlow
-[PRE:CLEAR_SESSION]","VCST-5028; BA-2026-06-15; BL-B2B-001; BL-AUTH-003; BL-AUTH-012; BL-AUTH-013; BL-B2B-007; BL-B2B-008; Technique: State Transition (TechFlow-active>BuildRight-active>BuildRight-locked>TechFlow-unaffected>restored)","Draft"
+[PRE:CLEAR_SESSION]","VCST-5028; BA-2026-06-15; BL-B2B-001; BL-AUTH-003; BL-AUTH-012; BL-AUTH-013; BL-B2B-007; BL-B2B-008; Technique: State Transition (TechFlow-active>BuildRight-active>BuildRight-locked>TechFlow-unaffected>restored) | Re-based: VCST-6132 — re-run PASS in REG-2026-10-20-1329 (BLOCKED in REG-2026-10-20-0125)","Draft"
 AUTH-076,"Org Access Recovery — Is a 403 Landing Still Reachable, and Does the Account Menu Expose the Org Switcher (Known-Open Storefront Half)",Auth > Org Access Recovery > 403 Landing,High,"BL-AUTH-013, BL-B2B-001","ECL-14.3, ECL-10.2","[PRE:CLEAR_SESSION]
 1. Fixture @td(MULTI_ORG_TF_BR_ALT.email) holds TWO memberships at the seeded baseline: TechFlow (@td(MULTI_ORG_TF_BR_ALT.org_techflow_id), org-maintainer) and BuildRight (@td(MULTI_ORG_TF_BR_ALT.org_buildright_id), org-employee). Baseline per-org OrganizationMembership.Status is Approved on both (declared explicitly) and Contact.Status is Approved, so the effective status resolves to Approved in both orgs; both are unlocked.
 2. FRONTEND LANE fixture — a concurrently running backend-lane case must never bind the same alias, because an OrganizationMembership row is the mutable state this case writes.

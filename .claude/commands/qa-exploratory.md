@@ -59,16 +59,16 @@ model's *unknowns* into observations while there is still time for authoring to 
 Step 0a: the charter is **received, not authored**.
 
 1. **Read the charter payload** `/qa-test` passes (its shape:
-   [`.claude/skills/qa-test/exploratory-lane.md`](../skills/qa-test/exploratory-lane.md) §6). Its mission
+   [`exploratory-lane.md`](../skills/qa-test/exploratory-lane.md) §6). Its mission
    is the derived sources of §3 there — five from the Test Model, a sixth from an approved test strategy.
    **That IS the charter — do not re-derive it, do not widen it.**
 2. **No model or strategy charter, or nothing unresolved in any source?** → **STOP** and report the lane skipped with
    that reason. Never improvise a mission, exactly as Step 0a never improvises a charter set the plan does
    not contain. A `/qa-test` FAST run reaches here with no model by construction and is the normal skip.
 3. **Box: SIZED TO SCOPE — 30 min floor, 60 min ceiling**, split ~20% setup · ~65% explore · ~15% write-up.
-   The caller states the number in the charter; the lane never re-sizes it mid-session. Sizing table: [`skills/qa-test/exploratory-lane.md`](../skills/qa-test/exploratory-lane.md) §5. On overrun
+   The caller states the number in the charter; the lane never re-sizes it mid-session. Sizing table: [`exploratory-lane.md`](../skills/qa-test/exploratory-lane.md) §5. On overrun
    `/qa-test` proceeds on what returned. **Spend the box in charter order**: the five sources first, the open half with whatever
-   remains. Getting that backwards produces a pleasant session and no answers to the questions asked.
+   remains.
 4. **Return the three extra fields the caller needs**, beyond the ordinary §Output tables: model
    amendments (with evidence), the **`{OBSERVED}` value per `{HYPOTHESIS}` row** (or *not reached + reason*),
    and per mission item *covered* or *NOT REACHED + reason*. A `PROMOTE` `Fate` here means the caller
@@ -81,7 +81,8 @@ Rationale, the charter derivation table and the record: [`exploratory-lane.md`](
 
 ### Step 0 — Pre-Flight
 
-1. **`npm run env:use -- <env>|--default`** ([`run-env.md`](../knowledge/execution/run-env.md)) unless a caller bound it, then
+1. **`npm run env:use -- <env>|--default`** ([`run-env.md`](../knowledge/execution/run-env.md)), never in `ticket` mode: there
+   a bare `npm run env:use` prints the session's env, and an `<env>` that differs is a STOP, never a re-bind. Then
    **`/preflight exploratory --domain <slug> --components <domain's components> [--ticket <KEY>] [--storefront]`**
    ([`../skills/preflight/SKILL.md`](../skills/preflight/SKILL.md)) — env health, the **deployed**
    build, the release-ledger Δ, the 24 h duplicate check (this domain or ticket) and MCP availability, in one

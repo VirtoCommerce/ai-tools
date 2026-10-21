@@ -12,7 +12,8 @@ thing it replaces is the proof: a perf change is proven by a **verdict** (`regre
 not by a red→green unit test. See `.claude/rules/perf-gates.md`.
 
 ## Preconditions
-- `project-profile.json` exists with a `perf` block — if not, run `/perf-init` first (which reuses vc-fix's `/project-init`).
+- `project-profile.json` exists with a `perf` block (`node "$pluginRoot/scripts/profile-get.mjs" --required perf` prints it) — if not, run `/perf-init` first (which reuses vc-init's `/project-init`).
+- `$VC_RUN` is set — every push / PR call goes through it (step 7). It is set by `/project-init` (vc-init) in `.claude/settings.local.json` `env`; if it is unset, the project was onboarded before VCST-6402 — run `/project-init --check`.
 
 ## Steps
 
@@ -38,7 +39,10 @@ not by a red→green unit test. See `.claude/rules/perf-gates.md`.
    `claude plugin list --json` — see `knowledge/plugin-root.md`; NOT a shell variable,
    `$CLAUDE_PLUGIN_ROOT` does not expand in the Bash tool shell)
    (cache-key completeness + concurrency on cached instances, thread-safety of mutable cached state).
-7. **PR — open, never merge.** Open the PR on the routed repo via the same mechanics vc-fix uses.
+7. **PR — open, never merge.** Open the PR on the routed repo via the same mechanics vc-fix uses —
+   no token is in any file, so the network side goes through the bridge: `node "$VC_RUN" git-gh -C <dir>
+   push -u origin <branch>` then `node "$VC_RUN" gh pr create …` (Azure Repos: `node "$VC_RUN" git-ado
+   -C <dir> push …` + `node "$VC_RUN" ado create-pr …`). Local git (commit, branch, diff) stays plain `git`.
    The no-auto-merge triple guard applies (`perf-gates.md`): a perf PR ends at "open".
 
 ## What this command does NOT do

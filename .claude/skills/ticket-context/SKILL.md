@@ -38,7 +38,7 @@ swept by the next `prepare` for the key after 24 h.)
 
 `prepare` has already fetched the ticket (named fields + the AC field), built the inventory from the
 tracker's own data, downloaded attachments, scrubbed HAR and logs, extracted video frames, read
-Confluence pages and public pages, and found and read the PRs (ladder rungs 1 and 2 always, merged; rung 3
+Confluence pages and public pages, read each kept linked issue's fields and its newest comments (scrubbed, plain text; every sub-task is a linked issue, and so is the parent of a sub-task, named in any text or not), and found and read the PRs (ladder rungs 1 and 2 always, merged; rung 3
 only when they found no product PR; then one hop of companion PRs their bodies name, marked `found_via`). Do **not** fetch any
 of that again, and do **not** follow a link the inventory does not list.
 

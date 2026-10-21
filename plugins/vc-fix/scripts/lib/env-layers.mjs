@@ -13,9 +13,10 @@
 // therefore beats the root KEY BY KEY, pins included: a ticket's folder can hold its own stand (`.env.vcst_6314`) or
 // override a shared env for that ticket's runs (`.env.vcptcore_dev`). Each file is self-contained: none extends another.
 //
-// MASTER stands: `PASSWORDS=master` in an env's files means every test account on it signs in with ONE password,
+// MASTER stands: `PASSWORDS=master` in an env's own file means every test account on it signs in with ONE password,
 // MASTER_PASSWORD in the root's `.env.playwright.master`. Every test-account password variable resolves to it, and a
 // browser lane types MASTER_PASSWORD in every password field. Without the marker an env keeps its own passwords.
+// Only the env's own file counts: the root's `.env.<env>` for an env the project defines, else its QA_ENV_PATH file.
 //
 // The run's ticket fills `<ticket>`: an explicit argument, else QA_TICKET, else this session's bound run
 // (`npm run run:use`); a folder whose placeholder has no value is skipped.
@@ -57,9 +58,13 @@ export function envPathTemplates({ root = process.cwd(), ambient = process.env }
   return raw.split(';').map((s) => s.trim()).filter(Boolean);
 }
 
-/** The run's ticket: `ticket` when given (null: none), else QA_TICKET, else this session's bound run; or null. */
+/** The run's ticket: `ticket` when given (null, or not a ticket key: none), else QA_TICKET, else this session's bound
+ *  run; or null. It fills a `<ticket>` path segment, so nothing but a key ever does. */
 export function currentTicket({ ticket, root = process.cwd(), ambient = process.env } = {}) {
-  if (ticket !== undefined) return ticket ? String(ticket).toUpperCase() : null;
+  if (ticket !== undefined) {
+    const key = ticket ? String(ticket).toUpperCase() : null;
+    return key && TICKET_KEY.test(key) ? key : null;
+  }
   const named = ambient.QA_TICKET?.trim().toUpperCase();
   if (named && TICKET_KEY.test(named)) return named;
   const sid = ambient.CLAUDE_CODE_SESSION_ID;
@@ -214,18 +219,21 @@ export function testAccountPasswordNames(root = process.cwd(), extra = []) {
  *
  * @param {string} testEnv
  * @param {{ root?: string, ambient?: Record<string, string | undefined>, ticket?: string | null,
- *           ambientWins?: boolean, passwordNames?: Iterable<string> }} [options]
+ *           ambientWins?: boolean, passwordNames?: Iterable<string>, masterValues?: boolean }} [options]
  *   `root`: the project root (default: the cwd); `ambient`: the environment before any loading (default:
  *   process.env); `ticket`: the run's ticket for `<ticket>` folders (default: currentTicket; null: none);
  *   `ambientWins`: what the environment already holds beats every file and pin (runners CI drives with `-e`);
- *   `passwordNames`: test-account password names beyond the scan (the caller's role registry).
+ *   `passwordNames`: test-account password names beyond the scan (the caller's role registry);
+ *   `masterValues: false`: decide PASSWORDS=master but skip the name scan and the master values — for a caller that
+ *   needs only the decision (the enforce-secret-token hook, one process per typed password).
  * @returns {{ env: Record<string, string | undefined>, ticket: string | null, rootFile: boolean, dedicated: string[],
  *   dedicatedKeys: Set<string>, perEnv: Set<string>, master: null | { file: string, found: boolean, names: string[] },
- *   sourceOf: (key: string) => string }}
+ *   ignoredPasswords: null | { value: string | undefined, file: string | null }, sourceOf: (key: string) => string }}
  *   `perEnv`: keys holding this env's own value (a KEY_<ENV> pin, a dedicated file, the master password);
+ *   `ignoredPasswords`: a PASSWORDS value dropped because it did not come from the env's own files;
  *   `sourceOf(key)` names what supplied a key's value — print it next to any target you act on.
  */
-export function layered(testEnv, { root = process.cwd(), ambient = process.env, ticket, ambientWins = false, passwordNames = [] } = {}) {
+export function layered(testEnv, { root = process.cwd(), ambient = process.env, ticket, ambientWins = false, passwordNames = [], masterValues = true } = {}) {
   const suffix = envSuffix(testEnv);
   const env = { ...ambient, TEST_ENV: testEnv };
   const from = new Map(); // key → { file, pin? }: the layer that set its value (file null: the process environment)
@@ -263,15 +271,18 @@ export function layered(testEnv, { root = process.cwd(), ambient = process.env, 
     }
   }
 
-  // PASSWORDS opts in ONE stand: only the env's own files count — its `.env.<env>`, a dedicated file, a
-  // PASSWORDS_<ENV> pin (and, for a CI runner, the environment). A bare PASSWORDS in .env.local, .env.defaults or an
-  // inherited environment would switch every env to the master password, shared stands included, so it is dropped.
+  // PASSWORDS opts in ONE stand, and only from that stand's own file: the root's `.env.<env>` (or its
+  // PASSWORDS_<ENV> pin) for an env the project defines, else the env's own QA_ENV_PATH files; for a CI runner, the
+  // environment. A .env.local line, a .env.defaults one, an inherited environment or a ticket folder's override of a
+  // project env is dropped: each would switch a stand others use, and seeding would reset its accounts to the master
+  // password.
   let ignoredPasswords = null;
-  if (env.PASSWORDS !== undefined || own?.PASSWORDS !== undefined) {
+  const rootPasswords = own ? (own[`PASSWORDS${suffix}`] ?? own.PASSWORDS) : undefined;
+  if (env.PASSWORDS !== undefined || rootPasswords !== undefined) {
     const f = from.get('PASSWORDS');
     const ownValue = !f ? (ambientWins ? env.PASSWORDS : undefined) // the environment: a CI runner's own, else inherited
-      : f.pin || dedicatedKeys.has('PASSWORDS') ? env.PASSWORDS
-        : own?.PASSWORDS; // the env's own file, also under a .env.local override
+      : own ? rootPasswords // a project env: its root file, whatever overrides it
+        : dedicatedKeys.has('PASSWORDS') ? env.PASSWORDS : undefined; // an env only QA_ENV_PATH defines: its files
     if (env.PASSWORDS !== ownValue) {
       ignoredPasswords = { value: env.PASSWORDS, file: f?.file ?? null };
       if (ownValue === undefined) { delete env.PASSWORDS; from.delete('PASSWORDS'); } else put('PASSWORDS', ownValue, `.env.${testEnv}`);
@@ -281,11 +292,19 @@ export function layered(testEnv, { root = process.cwd(), ambient = process.env, 
   let master = null;
   if (usesMaster(env)) {
     const { file, value } = readMaster({ root, ambient });
-    const names = [...testAccountPasswordNames(root, passwordNames)].sort();
-    if (value) {
+    const names = masterValues ? [...testAccountPasswordNames(root, passwordNames)].sort() : [];
+    if (value && masterValues) {
       for (const n of [...names, MASTER_NAME]) if (!held(n)) { put(n, value, MASTER_FILE); perEnv.add(n); }
     }
     master = { file, found: !!value, names };
+  } else if (!ambientWins && ambient[MASTER_NAME]) {
+    // A process that inherited a master stand's values (a script loaded one, then started this one on another env)
+    // keeps them wherever this env sets nothing. Off a master stand those copies of the master password are dropped —
+    // MASTER_PASSWORD and every test-account password equal to it — so this env never signs in or seeds with them.
+    const inherited = ambient[MASTER_NAME];
+    for (const k of Object.keys(env)) {
+      if (!from.has(k) && env[k] === inherited && (k === MASTER_NAME || isLoginSecretName(k))) delete env[k];
+    }
   }
 
   const sourceOf = (key) => {
@@ -311,7 +330,7 @@ export function applyLayered(testEnv, { root = process.cwd(), ticket, ambientWin
   const ambient = { ...process.env };
   const r = layered(testEnv, { root, ambient, ticket, ambientWins, passwordNames });
   for (const [k, v] of Object.entries(r.env)) if (v !== undefined && process.env[k] !== v) process.env[k] = v;
-  for (const k of Object.keys(ambient)) if (!(k in r.env)) delete process.env[k]; // an inherited PASSWORDS `layered` dropped
+  for (const k of Object.keys(ambient)) if (!(k in r.env)) delete process.env[k]; // inherited values `layered` dropped
   warnOnce(testEnv, r, root, ambient);
   return r;
 }
@@ -326,7 +345,8 @@ function warnOnce(testEnv, r, root, ambient) {
     return;
   }
   if (r.ignoredPasswords?.value?.trim().toLowerCase() === 'master' && r.ignoredPasswords.file) {
-    console.warn(`[env] PASSWORDS=master in ${r.ignoredPasswords.file} is ignored: it would switch every env to the master password, shared stands included. Put it in ${testEnv}'s own env file, or PASSWORDS${envSuffix(testEnv)}=master.`);
+    const own = r.rootFile ? `the project root's ${envFile}` : `${testEnv}'s own ${envFile} in its QA_ENV_PATH folder`;
+    console.warn(`[env] PASSWORDS=master from ${r.ignoredPasswords.file} is ignored: only ${own} can make ${testEnv} a master stand. Anything else would switch a stand others use, and seeding would reset its accounts to the master password.`);
   }
   if (r.master && !r.master.found) {
     console.warn(`[env] ${testEnv} says PASSWORDS=master, but there is no ${MASTER_NAME} in ${MASTER_FILE} — its passwords stay unset. Create the file (one password every test account on master stands uses), then npm run secrets:sync:all.`);

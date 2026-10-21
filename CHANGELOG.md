@@ -8,26 +8,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
-## An env's files can live outside the repo; a stand can use one master password — `vc-fix` `0.11.0` — 2026-10-19
+## An env's files can live outside the repo; a stand can use one master password — `vc-fix` `0.13.0` — 2026-10-21
 
 Every ticket now runs on its own stand, and dedicated cloud stands are replacing the shared ones. A stand that
 belongs to one ticket or one machine no longer needs a file in the repo, and every test account on it can sign
-in with one password. `vc-perf` and `vc-secrets` are unchanged.
+in with one password. `vc-init`, `vc-perf` and `vc-secrets` are unchanged.
 
 **Added: env files in dedicated folders (VCST-6350).** `QA_ENV_PATH` in `.env.local` lists folders,
 `;`-separated, the first winning, with `QA_OUTPUT_DIR`'s placeholders: `<ticket>` (the run's ticket),
 `<env>` and `<sprint>`. Each folder may hold `.env.<env>` and `.env.playwright.<env>`, and a file there beats the
 repo's key by key, `KEY_<ENV>` pins included. A ticket's folder holds its own stands (`vcst_6314`) and may
 override a shared env for that ticket's runs. `env:use`, `run:use`, `/preflight --env` and `deploy:pr` accept
-those envs. Outside a session, `QA_TICKET=<KEY>` names the ticket.
+those envs. Outside a session, `QA_TICKET=<KEY>` names the ticket. A ticket run with no env argument binds the
+ticket's own stand when its folder defines exactly one env.
 
 **Added: master stands.** `PASSWORDS=master` in a stand's env file makes every test-account password
 variable resolve to `MASTER_PASSWORD` from `.env.playwright.master`, so the seeders set it. Only the stand's own
-files, or a `PASSWORDS_<ENV>` pin, count; a bare `PASSWORDS` in `.env.local` is ignored with a warning, because it
-would switch the shared stands too. Browser lanes then
-type `MASTER_PASSWORD` in every password field. `secrets:sync` and `secrets:sync:all` copy it as one stable line,
-so a new master stand needs no re-sync and no MCP reconnect. `enforce-secret-token` blocks `MASTER_PASSWORD` in a
-session whose stand did not opt in, and a copy older than the master file.
+env file counts: the root `.env.<env>` for a repo env, else its `QA_ENV_PATH` file. A `PASSWORDS` line in
+`.env.local`, or a ticket folder's override of a repo env, is ignored with a warning: seeding would reset a shared
+stand's accounts to the master password. Browser lanes then type `MASTER_PASSWORD` in every password field.
+`secrets:sync:all` copies it into `.env.playwright.all` as one stable line, so a new master stand needs no re-sync
+and no MCP reconnect; the single-env `secrets:sync` writes it only for a master stand. `enforce-secret-token`
+blocks `MASTER_PASSWORD` in a session whose stand did not opt in, and a copy older than the master file.
 
 **Changed:**
 - One loader: `scripts/lib/env-layers.mjs` holds the order. config.js, `load-env.mjs`, the seeders, the GraphQL
@@ -39,8 +41,11 @@ session whose stand did not opt in, and a copy older than the master file.
   `DEPLOY_BRANCH` and `BACK_URL` from its own files.
 - `/preflight` on a local stand reports `declared` as `local stand` instead of an UNKNOWN that asked for a
   `GIT_TOKEN`. `deployed` and `--expect` read the stand's build as before.
-- `vc-fix`: the plugin's loader, `use-env.mjs` and `run-folder.mjs` find envs in the `QA_ENV_PATH` folders. The
-  env report names `MASTER_PASSWORD` on a master stand.
+
+**Changed (`vc-fix`):**
+- The plugin's loader, `use-env.mjs` and `run-folder.mjs` find envs in the `QA_ENV_PATH` folders, and the env
+  report names `MASTER_PASSWORD` on a master stand. Under the `$VC_RUN` bridge the loader reads the folders from
+  `VC_FIX_HOME`'s `.env.local`, and the tokens the bridge injected still beat every file.
 
 **Upgrade note.** Nothing has to change. Without `QA_ENV_PATH` every env comes from the repo as before. Without
 `PASSWORDS=master` a stand keeps its own passwords. A master stand needs `.env.playwright.master`, then one
@@ -48,11 +53,11 @@ session whose stand did not opt in, and a copy older than the master file.
 
 ---
 
-## Each run gets its own env and its own output folder — `vc-fix` `0.10.0` — 2026-10-17
+## Each run gets its own env and its own output folder — `vc-fix` `0.12.0` — 2026-10-21
 
 Two runs can now go in parallel in one checkout, whether they test two tickets or one ticket on a local
-stand and then a cloud one. Neither edits a shared file or writes the other's output. `vc-perf` and
-`vc-secrets` are unchanged.
+stand and then a cloud one. Neither edits a shared file or writes the other's output. `vc-init`, `vc-perf`
+and `vc-secrets` are unchanged.
 
 **Added: the env is a command argument, bound to the session (#471).** `/qa-test VCST-6314 vcptcore_dev`,
 and the same optional env on `/qa-test-fast`, `/qa-exploratory`, `/qa-deploy-pr` and
@@ -75,18 +80,240 @@ test model, screenshots, evidence packages, bug drafts, the maps and GraphQL sch
 
 **Changed (`vc-fix`):**
 - `/qa-verify-fix` binds the env and the run folder at Step 0 and writes no `{SPRINT}` paths.
+- `/vc-fix:qa-report` finds a run in its run folder: `/qa-test` and `/qa-verify-fix` hand it
+  `{RUN_DIR}/summary.json` / `{RUN_DIR}/verification-summary.json`, and a bare ticket key resolves to the
+  session's run folder, else the ticket's newest one.
 - `/qa-bug` writes into a run folder's `bugs/` when its caller names one.
 - The tracker-comment hooks key their ledger `<TICKET>@<env>`.
-- The plugin's resolver reads `.env.playwright.<env>` and the session binding.
+- The plugin's resolver reads `.env.playwright.<env>` and the session binding. Under the `$VC_RUN`
+  bridge it reads both, like every env file, from `VC_FIX_HOME`, never from the caller's cwd.
 - A ticket key may be a bare Azure Boards id.
 - In self-diagnostics, both copies of the `/qa-bug` expected-output marker also accept a run folder's bug
   report.
 
 **Upgrade note.** Nothing has to change to keep today's behaviour. Without an env argument the run uses
 `.env.test-env` as before. Without `QA_OUTPUT_DIR` the run folder is the old ticket folder plus an `<env>/`
-level, and readers look in both layouts. A `QA_OUTPUT_DIR` outside the project needs
+level, and readers look in both layouts. A project with no `reports/tickets/SprintXX-XX` folder, a new vc-fix client
+for one, gets `reports/tickets/<ticket>/<env>/`. A `QA_OUTPUT_DIR` outside the project needs
 `--allow-unrestricted-file-access` on the Playwright lanes, or each capture saved with a bare filename and
-moved in (`.claude/knowledge/execution/run-output.md` §Screenshots).
+moved in (the plugin's `knowledge/execution/run-env.md` §The run folder; in this repo,
+`.claude/knowledge/execution/run-output.md` §Screenshots).
+
+---
+
+## `@playwright/mcp` 0.0.83 — `vc-fix` `0.11.3`, `vc-init` `0.3.2` — 2026-10-21
+
+**Changed: the `@playwright/mcp` pin moves 0.0.77 → 0.0.83 everywhere it is written** — root `package.json`,
+`ci/lib/lane-mcp.ts` (`PLAYWRIGHT_MCP_PACKAGE`), `ci/run-monitor.ts`, `templates/.mcp.json.example`,
+`docs/onboarding.md`, and in the plugins `vc-init`'s `templates/.mcp.json.example` (what `/project-init` writes
+into `.mcp.json`) and `vc-fix`'s `package.json` (`@playwright/test` and `playwright` went to 1.64.1 in #497). Probed
+2026-10-21 over stdio on Windows: chrome, edge and firefox lanes (with the occlusion pref) navigate and click on
+0.0.83 exactly as on 0.0.77, and a bare-filename screenshot still lands in the server cwd, so `/qa-bug`'s Stage 5
+reconcile stays required.
+
+**Migration: per machine.** Change `@playwright/mcp@0.0.77` to `@playwright/mcp@0.0.83` in your `.mcp.json`, run
+`npx @playwright/mcp@0.0.83 install-browser chromium` and `… install-browser firefox` (0.0.83 bundles its own
+Playwright build and needs its own browsers), then restart the MCP servers.
+
+## `vc-init` `0.3.0`: the tracker / code-host connection lives in `.env.local`, once — 2026-10-21
+
+**Changed: where the project-level keys are written.** `JIRA_BASE_URL`, `JIRA_PROJECT_KEY`, `JIRA_EMAIL`, `ADO_ORG`,
+`ADO_PROJECT` and `CLIENT_REPO_ORG` are one value for the whole project, whatever stand a run targets, but
+`scaffold-env.mjs` wrote them into every `.env.<env>`, so each new env asked for them again and `JIRA_EMAIL` (a
+personal identifier) sat in a file meant for shared URLs. They now go to `.env.local`, once (`scaffold-env.mjs`
+`CATALOG` marks them `scope: "project"`; `write-env.mjs` routes them the same way). Every loader reads
+`.env.local` after `.env.<env>`, so nothing that reads `process.env` changes.
+
+**Migration: automatic.** `scaffold-env.mjs` (`/project-init`, `--add-env`) and `normalize-env.mjs` (`--check`
+Step C) move these keys out of every `.env.<env>` into `.env.local` (`lib/project-env.mjs`), with the comment
+above each. When the env files hold different values for one key, nothing is moved and the run prints
+`NOT moved <KEY> — the files disagree`; keep one value in `.env.local` (or `<KEY>_<ENV>` there per env).
+`normalize-env.mjs` now also normalises the project keys in `.env.local` (a trailing slash on `JIRA_BASE_URL`).
+A project that points two stands at two trackers keeps the key per env as `<KEY>_<ENV>` in `.env.local`:
+`scaffold-env.mjs` then adds `<KEY>_<NEW>` for a new env instead of a bare empty line, and `normalize-env.mjs`
+checks those lines like the bare key. `write-env.mjs` refuses (exit 1) a project key whose value differs from the
+one already in `.env.local`, instead of redirecting every other env, and removes the old copy from `.env.<env>`.
+The vc-fix `.env.local.template` ships these keys commented out, with no default: an uncommented line there
+overrides `.env.<env>`.
+
+**Fixed: `normalize-env.mjs` skipped every line of a CRLF file.** A `KEY=value\r` line did not match its line
+pattern, so a file saved by a Windows editor kept its quotes and trailing slashes, and an empty placeholder lost its
+`\r`. It now splits on the line break and writes the file back with its own line endings; `scaffold-env.mjs` appends
+to a CRLF `.env.local` in CRLF too. Its `--json` output keeps the old top-level fields, summed over both files, and
+adds `files` and `moved`.
+
+**Changed: operator-facing wording.** The token guide said the Jira and GitHub tokens exist so `/qa-fix` can use
+them, the readiness table was titled `/qa-fix readiness`, and an optional MCP placeholder said it was "not needed
+for /qa-fix". vc-init onboards every installed plugin, so these now say "the plugins" / "Plugin readiness". The
+`JIRA_EMAIL` hint says why the email is required: Jira Cloud accepts an API token only together with the account
+email. Messages that name a specific `/qa-fix` gate that would fail are kept as they are.
+
+## `vc-fix` `0.11.2`: docs and messages follow vc-init 0.3.0 — 2026-10-21
+
+`jira.mjs` now says to set `JIRA_EMAIL` in `.env.local`; the `.env.{env}.example` / `.env.local.template`
+references and the `/qa-env-check` bucket table show the tracker / code-host keys in `.env.local`. No runtime
+change: every reader already took these values from `process.env`.
+
+## `vc-init` `0.2.1`: the GitHub token is also handed out as `GITHUB_TOKEN` — 2026-10-21
+
+**Added: `GITHUB_TOKEN` as a second name for the `github-pat` secret.** Skills and agents are moving from
+`GITHUB_FIX_BUGS_TOKEN` / `GITHUB_PERSONAL_ACCESS_TOKEN` to one name, `GITHUB_TOKEN`. This release makes the
+token layer ready before any caller switches: the `vc-init-github` and `vc-init-onboard*` tasks bind both names to
+the same secret, the `$VC_RUN` bridge accepts either one (and gives `gh` the value as `GH_TOKEN`), the git
+credential helper answers `github.com` from either, and `load-layered-env` treats `GITHUB_TOKEN` as a token — an
+injected value is not overridden by `.env.local`, and a plaintext one there is reported. Same value, no new secret.
+The old names stay until every caller has moved; they are removed in a later release.
+
+**Migration:** run `/project-init --check` to rewrite `.claude/vc-secrets.local.json`, then `vc-secrets trust`
+once — the task env changed, so the launcher asks to re-approve it. A declaration left as it was keeps working.
+
+## `vc-init` `0.2.0`: browser work goes only through the Playwright MCP lanes — 2026-10-21
+
+**Added: an always-loaded agent rule in the onboarded project.** `/project-init` (§7) and `/project-init --check`
+(Step C) now run `write-agent-rules.mjs`, which copies `templates/rules/vc-browser.md` into the project's
+`.claude/rules/`. The rule: every browser action goes through a Playwright MCP lane (`playwright-chrome` by
+default) — never the desktop app's browser pane, Claude in Chrome, Chrome DevTools or a browser started from a
+shell. Those cannot type a password; only the lanes get the test-user passwords (vc-secrets or
+`.env.playwright.local`), and the agent types the bare NAME (`ADMIN_PASSWORD`). With no Playwright tool the agent
+stops and reports instead of switching browsers. Before this, agents asked to sign in to a stand kept reaching for
+another browser and stalled at the password field.
+
+The rule sits in the project, not in a plugin, so it binds every plugin there, including ones installed later.
+The script overwrites only files carrying its own marker, leaves a same-named operator file alone, and stands
+down on a host-governed project. The file is **not** gitignored — commit it so the whole team gets the rule.
+**Migration:** an already-onboarded project gets the rule from `/project-init --check`.
+
+---
+
+## The real-user hook guards plugin-provided browser servers; exploratory probes opt in — `vc-fix` `0.11.1` — 2026-10-21
+
+**Fixed:** `hooks/enforce-real-user.mjs` was registered with a matcher naming only
+`mcp__playwright-(chrome|firefox|edge|webkit)__…` and `mcp__Chrome_DevTools__…`, so a browser server
+installed from a plugin (`mcp__plugin_<plugin>_<server>__browser_evaluate`) was never checked. Both
+registrations (`plugins/vc-fix/hooks/hooks.json`, `.claude/settings.json`) now match any server:
+`^mcp__.+__(browser_evaluate|browser_run_code_unsafe|evaluate_script)$`.
+
+**Added:** the `/* @exploratory: <charter> — <reason> */` payload sentinel, for exploratory / SBTM probes
+that use the page as an attack tool on purpose (disabled-control bypass, tampered replay, exposed client
+state). A finding from such a probe is a server/API-layer finding, never a UI defect (VCST-5100); the
+sentinel is not for scripted cases or regression runs. `qa/shared-instructions.md` §Browser Interaction
+and the `qa-sbtm` probe examples carry it.
+
+**Verified:** hook payload checks (plugin-namespaced click payload blocked, `@exploratory` passes on
+Playwright and DevTools); matcher checked against legacy, plugin-namespaced and lookalike tool names;
+both hook copies byte-identical; `npm run context:check` green.
+
+## `vc-init`: onboarding is its own plugin, and no token sits in any file — catalog `0.12.0`, `vc-init` `0.1.0`, `vc-fix` `0.11.0`, `vc-perf` `0.4.0` — VCST-6402
+
+**Added: the `vc-init` plugin** (depends on `vc-secrets`). `/project-init` moved out of `vc-fix`, so `vc-perf`
+no longer pulls in the whole bug lifecycle to onboard. `vc-fix` and `vc-perf` now depend on `vc-init`.
+vc-init is the **only writer of `project-profile.json`**: `/qa-bug` (first-run field answers) and `/perf-init`
+(the `perf` block) write through its `profile-set.mjs`, and `/project-init --check` keeps the `perf` block.
+
+**Added: the `$VC_RUN` bridge — every GitHub / Azure DevOps / Jira token goes through `vc-secrets`.** The
+operator stores a PAT with `node "<VC_SECRETS>" set github-pat|ado-pat|jira-token` at a hidden prompt (never
+in the chat) and approves the project's declarations with `vc-secrets trust`. A process receives a token only
+as `node "$VC_RUN" gh|git-gh|git-ado|ado|jira|deliver|onboard …`: the bridge checks the command line against an
+allowlist (no `gh auth`, no `gh pr merge`, `gh api` reads only, no `git pull`, no `git -c`, no foreign host), starts `vc-secrets task
+vc-init-<group>` for a PAT axis or the tool directly for a session login, pins git to a host-scoped credential
+helper with hooks off, and redacts the child's output. New: `vc-fix` `skills/qa-fix-routing/jira.mjs` (Jira
+REST with the host pinned to the profile) and `ado.mjs edit-comment | patch-fields | wiql`.
+
+**Changed: the GitHub MCP server** runs through `vc-secrets run github` on a PAT axis (pinned `mcp-remote`
+carrying `github-pat` in the Authorization header — verified on Windows `npx.cmd`) and as the hosted server with
+OAuth otherwise. `.claude/settings.local.json` `env` holds only `VC_RUN`.
+
+**BREAKING:** a missing `project-profile.json` now **stops** vc-fix and vc-perf with "run /project-init" —
+the silent native-platform / Jira / GitHub defaults are gone; an unknown `schemaVersion` stops too. The profile
+is `schemaVersion` 3: `auth.{github,ado,jira}` replaces `vcs.auth` / `vcs.authEnv`, and a `governance` block is added (below). **Migration:** run
+`/project-init --check` — it reconciles the profile (deriving the auth axes a schema-1 file never recorded),
+writes the vc-secrets declarations, asks you to `set` each token, and then `migrate-secrets.mjs --strip` removes
+every plaintext copy (`.env.local`, settings `env`, a tokenised `.fix-workspace` remote URL) whose vc-secrets
+copy passes a live probe. A token that sat in a file ever committed to git is flagged for rotation.
+
+**Added: host-governed mode.** On a client project whose own governance plugin owns the MCP servers and the
+secrets (first host: `opus-governance`), `/project-init` detects it, the operator confirms, and the profile
+records `governance.{host, secrets: "host", servers.{tracker,codeHost,github,telemetry,testManagement,browsers},
+stand.writable: false}` — the server per role is the operator's answer, never inferred. Onboarding then writes
+the profile and the non-secret env files only: no vc-secrets, no `$VC_RUN`, no `.mcp.json` or settings, no PAT,
+no `az login`, self-diagnostics off. At run time the bridge refuses every token-bearing tool (exit 78, naming
+the host server), `deliver` refuses, and vc-fix follows `knowledge/execution/host-governance.md`.
+`governance.host: null` (the default) is today's behaviour. `--governance <host|none>` overrides detection.
+
+**Changed: `/project-init` speaks for every plugin, and shows what it asks you to confirm.** It closes
+with "the project is ready to work with" and the asks and commands of the plugins actually installed
+(`next-steps.mjs`: a ticket, the current sprint, then each plugin's entry points) instead of pointing
+at `/qa-fix`. The repo map and the tracker status map are printed in full by `render-scan.mjs` — every
+client repo with its default branch and PR target, every state the scan found with the role mapped to
+it — and the question refers to that table instead of restating the mapping in parentheses.
+
+**Changed: Azure Boards transitions work for every work-item type, not only Bugs.** The tracker scan maps
+roles to states for each type it reads (Bug, Task, User story) into `tracker.azure.roleStatesByType`;
+`ado.mjs transition --role <role>` (and `AzureTracker.transition`) picks the state by the item's own type,
+and /qa-fix, /qa-verify-fix and tracker-ops use it instead of `--state <roleStates[role]>`. The confirmation
+table is one row per role and one column per type. `STORE_ID` may stay empty: `normalize-env` asks the
+storefront at `FRONT_URL` which store it serves and fills it in.
+
+**Changed: a browser agent types a password's NAME, never its value.** vc-fix's agents type
+`ADMIN_PASSWORD` / `USER_PASSWORD` as names; Playwright MCP substitutes and masks the value, so it never
+enters the model's context or the transcript.
+
+**Added: test-user passwords in vc-secrets, asked per role.** `/project-init` asks separately where admin
+passwords live (vc-secrets recommended) and where storefront-user passwords live (`.env.local` recommended —
+easier to edit when there are many). A vc-secrets role gets one `local` secret per password per environment
+(`admin-password-<env>`), declared with a task `vc-init-onboard.<env>` (the onboarding scripts' API logins)
+and a server `playwright-<lane>.<env>` per browser lane. A lane in `.mcp.json` is then
+`node ${VC_RUN} playwright <lane>`: the bridge picks the current `TEST_ENV` and runs that env's server, which
+starts the pinned `@playwright/mcp` in-process (`bridge/playwright-mcp.mjs`) with the passwords in memory as
+`config.secrets` — the vc-secrets roles from the declaration, the `.env.local` roles of that env read straight
+from the file — so no `.env.playwright.local` is written. One declaration per env means an env whose
+passwords are not stored yet breaks only itself, and switching `TEST_ENV` asks for no new trust. With both
+roles in `.env.local`, `sync-browser-secrets.mjs` still generates `.env.playwright.local` for `--secrets`, as
+before. `migrate-secrets` moves a vc-secrets role's lines out of `.env.local` once stored. Only vc-init's
+onboarding scripts read a password through the bridge: a script elsewhere that logs in over the API from the
+env files (vc-fix's module registry, seeders) needs that role kept in `.env.local`.
+
+**Added: `/project-init --add-user`.** Adds another storefront user or admin to one or more environments:
+`add-user.mjs --list` shows each env, where each role's passwords live, its users and the next free numbered
+KEY (`USER2`, `ADMIN2`, …); the operator picks the KEY and gives a login per env; the login goes into
+`.env.<env>` as `<KEY>_LOGIN`, and `<KEY>_PASSWORD` is declared in vc-secrets or added as a `.env.local`
+placeholder by the role. The password itself is only ever typed by the operator in a terminal or editor.
+
+**Fixed: vc-fix's npm dependencies were never installed after the move.** `/project-init` installed only
+vc-init's `node_modules`, so vc-fix's tracker and code-host helpers failed with "Cannot find package
+'dotenv'". `install-deps.mjs` installs the runtime dependencies of every installed plugin into its own
+folder (§1, and `--check` after an update, which lands in a new folder without them); verify-access FAILs
+"Plugin dependencies" when one is missing. `ENV_RISK` is no longer scaffolded (`test` by default; add
+`production` by hand for a production stand).
+
+**Removed:** the `postman` and `context7` MCP servers from onboarding (each needed an API key in a file);
+`gen-mcp --inline-secrets` (refused); the token placeholders in `.env.local` (`scaffold-secrets` writes
+test-user passwords only).
+
+**Verified:** see the PR — `npm test`, `npm run context:check`, `npm run docs:index:check`, the vc-secrets and
+vc-init bridge suites, `claude plugin validate` on vc-init / vc-fix / vc-perf, a secret-at-rest scan of a
+scratch onboarding, and a live browser lane through `vc-secrets run` that typed and masked a vc-secrets
+password and an `.env.local` one.
+
+## One renderer for every result comment and report page — `vc-fix` `0.10.0`, released as part of `0.11.0` (VCST-5675)
+
+**Added: `/vc-fix:qa-report`.** A finished run becomes one char-budgeted tracker comment and one HTML report
+page, rendered from the run's machine record by `skills/qa-report/render.mjs`, never typed by hand. Four
+kinds — `test` (`summary.json`), `fix` (`verification-summary.json`, proven by a `before_after[]` RED→GREEN
+pair), `regression` and `smoke` (the run folder) — each with one template whose front-matter declares its
+`budget` and `lede_max`. Every comment opens with a lede the caller writes; over budget, the lists named in
+`trim` collapse to `+N more` in their declared order, and a comment that still does not fit is exit 3,
+never a cut. The budget is counted on the Markdown before the Jira-wiki / Azure-HTML transform. The page
+publish gate keeps a client project's page local and **never** publishes one for a client-owned-code bug.
+
+**Changed:** `/qa-test`, `/qa-test-fast`, `/qa-verify-fix`, `/qa-regression` and `/qa-smoke` report through
+it, and their own comment templates became pointers. In `/qa-verify-fix` the evidence page is rendered and
+gated inside the Step 6 call, so the one comment carries its link; Step 6A only says what the page is built
+from. A `verification-summary.json` written before this release has no `before_after[]` and is refused for
+a verified fix.
+
+**Verified:** `npm run context:check` green; the renderer exercised against the repo's real `summary.json`
+and `verification-summary.json` records in every dialect.
 
 ---
 

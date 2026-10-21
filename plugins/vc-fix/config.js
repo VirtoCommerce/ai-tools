@@ -165,10 +165,15 @@ const getEnvVar = (name, defaultValue = undefined) => {
     return value || defaultValue;
 };
 
-// Deployment profile (written by /project-init; see scripts/lib/project-profile.mjs).
-// Safe + memoized; returns platform/jira/github defaults when the file is absent,
-// so this load is a no-op for the existing VirtoCommerce-internal setup.
-const profile = loadProjectProfile();
+// Deployment profile (written by vc-init's /project-init; see scripts/lib/project-profile.mjs).
+// Loaded OPTIONALLY here: this module is the env check's backbone, and a missing profile must be
+// reported, not crash the report. The commands that act on the profile (/qa-fix, /qa-bug, …) load
+// it themselves and STOP when it is absent — there are no native-platform defaults any more
+// (VCST-6402). A malformed or too-new profile still throws: that is never a state to report past.
+const profile = loadProjectProfile(undefined, { optional: true });
+if (!profile) {
+    console.warn('No project-profile.json in this project — run /project-init (the vc-init plugin) before /qa-fix, /qa-bug or /qa-verify-fix.');
+}
 
 // Export configuration object
 export const env = {
@@ -278,14 +283,13 @@ export const env = {
     EUR_USER_PASSWORD: getEnvVar('EUR_USER_PASSWORD', ''),
     ORG_USER_EMAIL: getEnvVar('ORG_USER_EMAIL', ''),
 
-    // --- Deployment profile (written by /project-init; see scripts/lib/project-profile.mjs).
+    // --- Deployment profile (written by vc-init's /project-init; see scripts/lib/project-profile.mjs).
     // Tells every skill WHICH infrastructure this checkout targets. When
-    // project-profile.json is absent these resolve to the pre-existing
-    // VirtoCommerce-internal defaults (platform / jira / github), so nothing changes.
-    PROJECT_TYPE: profile.projectType,            // platform | client
-    TRACKER_KIND: profile.tracker.kind,           // jira | azure
-    CLIENT_VCS_HOST: profile.vcs.clientHost,      // github | azure-repos
-    UPSTREAM_ORG: profile.upstream.org,           // GitHub org for platform issues/PRs (VirtoCommerce)
+    // project-profile.json is absent these are undefined and PROFILE is null — run /project-init.
+    PROJECT_TYPE: profile?.projectType,            // platform | client
+    TRACKER_KIND: profile?.tracker.kind,           // jira | azure
+    CLIENT_VCS_HOST: profile?.vcs.clientHost,      // github | azure-repos
+    UPSTREAM_ORG: profile?.upstream.org,           // GitHub org for platform issues/PRs (VirtoCommerce)
     PROFILE: profile                              // full profile object for skills needing detail
 };
 

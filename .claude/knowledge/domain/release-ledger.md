@@ -3,11 +3,11 @@ applicability: universal
 rationale: |
   What shipped in the Virto Commerce product line and when. Upstream release history is
   deployment-independent, so every agent on every deployment reads the same ledger.
-generated: 2026-09-01
-rev: 1
+generated: 2026-10-20
+rev: 2
 source: https://www.virtocommerce.org/c/news-digest/15.rss
-ledger_through: 3.1054.0
-newest_digest: 2026-09
+ledger_through: 3.1071.0
+newest_digest: 2026-10
 stale_after_days: 45
 expires_after_days: 120
 exhaustive: false
@@ -15,7 +15,7 @@ exhaustive: false
 
 # VC Release Ledger — what shipped, when
 
-**Generated** 2026-09-01 (rev 1) · **23** monthly digests · **242** features indexed · window 2024-11 → 2026-09
+**Generated** 2026-10-20 (rev 2) · **24** monthly digests · **258** features indexed · window 2024-12 → 2026-10
 
 > **GENERATED FILE — do not edit by hand.** Regenerate: `npm run releases:refresh`.
 > Drift guard: `npm run releases:check` + `scripts/unit/release-ledger.test.mjs` (runs in `npm test`).
@@ -62,39 +62,39 @@ Highest version seen across every retained digest — *not* what is deployed any
 | Backup and Restore | `3.1005.0` | 2026-09 | `vc-module-backup-restore` |
 | Builder.io | `3.1001.0` | 2026-06 | `vc-module-builder-io` |
 | Cart | `3.1005.0` | 2026-07 | `vc-module-cart` |
-| Catalog | `3.1037.0` | 2026-08 | `vc-module-catalog` |
+| Catalog | `3.1044.0` | 2026-10 | `vc-module-catalog` |
 | Catalog CSV Import/Export | `3.1004.0` | 2026-09 | `vc-module-catalog-csv-export-import` |
 | Content | `3.835.0` | 2026-01 | `vc-module-content` |
 | Contentful | `3.1000.0` | 2026-06 | `vc-module-contentful` |
 | Contract | `3.904.0` | 2025-07 | `vc-module-contract` |
-| Core | `3.814.0` | 2025-01 | `vc-module-core` |
-| Customer | `3.1021.0` | 2026-09 | `vc-module-customer` |
+| Core | `3.1008.0` | 2026-10 | `vc-module-core` |
+| Customer | `3.1023.0` | 2026-10 | `vc-module-customer` |
 | CyberSource | `3.803.0` | 2026-01 | `vc-module-cyber-source` |
 | Datatrans | `3.1001.0` | 2026-05 | `vc-module-datatrans` |
 | Elasticsearch 8 | `3.817.0` | 2025-09 | `vc-module-elastic-search-8` |
 | EventBus | `3.807.0` | 2025-01 | `vc-module-event-bus` |
 | File xAPI | `3.907.0` | 2026-01 | `vc-module-file-experience-api` |
-| Frontend | `2.56.0` | 2026-09 | `vc-frontend` |
+| Frontend | `2.58.0` | 2026-10 | `vc-frontend` |
 | Google eCommerce Analytics | `4.805.0` | 2025-12 | `vc-module-google-ecommerce-analytics` |
 | Image Tools | `3.807.0` | 2024-11 | `vc-module-image-tools` |
 | Inventory | `3.1005.0` | 2026-09 | `vc-module-inventory` |
-| Loyalty | `3.1003.0` | 2026-06 | `vc-module-loyalty` |
+| Loyalty | `3.1008.0` | 2026-10 | `vc-module-loyalty` |
 | Marketing | `3.1006.0` | 2026-07 | `vc-module-marketing` |
 | News | `3.810.0` | 2025-10 | `vc-module-news` |
 | Notification | `3.1013.0` | 2026-09 | `vc-module-notification` |
 | OpenId Connect | `3.800.0` | 2024-12 | `vc-module-openid-connect` |
-| Order | `3.1001.0` | 2026-04 | `vc-module-order` |
+| Order | `3.1015.0` | 2026-10 | `vc-module-order` |
 | Order management | `3.803.0` | 2025-06 | `vc-module-order-management` |
-| Page Builder | `3.1015.0` | 2026-08 | `vc-module-pagebuilder` |
+| Page Builder | `3.1026.0` | 2026-10 | `vc-module-pagebuilder` |
 | Pages | `3.1004.0` | 2026-06 | `vc-module-pages` |
 | Payment | `3.812.0` | 2026-01 | `vc-module-payment` |
 | Pickup | `3.1004.0` | 2026-09 | `vc-module-x-pickup` |
-| Platform | `3.1054.0` | 2026-09 | `vc-platform` |
+| Platform | `3.1071.0` | 2026-10 | `vc-platform` |
 | Product Review | `3.807.0` | 2024-11 | `vc-module-customer-review` |
 | Product Snapshot | `3.1000.0` | 2026-06 | `vc-module-product-snapshot` |
 | Push messages | `3.808.0` | 2024-12 | `vc-module-push-messages` |
 | Quote | `3.906.0` | 2025-07 | `vc-module-quote` |
-| Sales Rep | `3.1006.0` | 2026-09 | `vc-module-sales-rep` |
+| Sales Rep | `3.1009.0` | 2026-10 | `vc-module-sales-rep` |
 | Sanity | `3.1001.0` | 2026-06 | `vc-module-sanity` |
 | Search | `3.816.0` | 2025-09 | `vc-module-search` |
 | SEO | `3.809.0` | 2025-11 | `vc-module-seo` |
@@ -112,6 +112,27 @@ Highest version seen across every retained digest — *not* what is deployed any
 | xRecommend | `3.904.0` | 2025-08 | `vc-module-x-recommend` |
 
 ## 2. Last 6 months in full
+
+### 2026-10 — October 2026 · [digest](https://www.virtocommerce.org/t/864) · edited 2026-10-01
+
+| Feature | Component @ version | Docs |
+|---|---|---|
+| Loyalty missions and challenges | [Loyalty 3.1006.0](https://github.com/VirtoCommerce/vc-module-loyalty/releases/tag/3.1006.0) + [Frontend 2.57.0](https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.57.0) | [doc1](https://docs.virtocommerce.org/storefront/user-guide/latest/account/missions) [doc2](https://docs.virtocommerce.org/platform/user-guide/latest/loyalty/managing-loyalty-missions) |
+| Earning and redeeming loyalty points at the organizational level | [Loyalty 3.1008.0](https://github.com/VirtoCommerce/vc-module-loyalty/releases/tag/3.1008.0) | — |
+| Sign-in log | [Platform 3.1071.0](https://github.com/VirtoCommerce/vc-platform/releases/tag/3.1071.0) | [doc](https://docs.virtocommerce.org/platform/user-guide/latest/security/sign-in-log) |
+| Page-wide anchor linking | [Page Builder 3.1022.0](https://github.com/VirtoCommerce/vc-module-pagebuilder/releases/tag/3.1022.0) | [doc](https://docs.virtocommerce.org/platform/user-guide/latest/page-builder/configure-content-block/#add-links-to-text) |
+| Shared components | [Page Builder 3.1026.0](https://github.com/VirtoCommerce/vc-module-pagebuilder/releases/tag/3.1026.0) | [doc](https://docs.virtocommerce.org/platform/user-guide/latest/page-builder/configure-content-block/#create-and-add-shared-components) |
+| Uploading over an asset improved | [Page Builder 3.1025.0](https://github.com/VirtoCommerce/vc-module-pagebuilder/releases/tag/3.1025.0) | [doc](https://docs.virtocommerce.org/platform/user-guide/latest/page-builder/manage-pages-via-office/#manage-assets) |
+| Shared document library for sales reps | [Sales Rep 3.1006.0](https://github.com/VirtoCommerce/vc-module-sales-rep/releases/tag/3.1006.0) + [Frontend 2.57.0](https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.57.0) | [doc1](https://docs.virtocommerce.org/platform/user-guide/latest/sales-rep/document-library) [doc2](https://docs.virtocommerce.org/storefront/user-guide/latest/account/sales-rep-hub) |
+| Sales rep task management | [Sales Rep 3.1009.0](https://github.com/VirtoCommerce/vc-module-sales-rep/releases/tag/3.1009.0) | [doc](https://docs.virtocommerce.org/storefront/user-guide/latest/account/sales-rep-hub/#calendar) |
+| Product comparison | [Frontend 2.57.0](https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.57.0) | [doc](https://docs.virtocommerce.org/storefront/user-guide/latest/shopping/compare-products/#compare-products) |
+| Order price protection as a service | [Order 3.1015.0](https://github.com/VirtoCommerce/vc-module-order/releases/tag/3.1015.0) | [doc1](https://docs.virtocommerce.org/platform/user-guide/latest/order-management/order-price-restriction) [doc2](https://docs.virtocommerce.org/platform/developer-guide/latest/Fundamentals/Security/authorization/order-price-visibility) |
+| SSO support added for login on behalf | [Frontend 2.57.0](https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.57.0) | [doc](https://docs.virtocommerce.org/storefront/user-guide/latest/account/company-members/#log-in-on-behalf-of-company-member) |
+| Locked organizations can no longer be switched into | [Frontend 2.58.0](https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.58.0) | [doc](https://docs.virtocommerce.org/storefront/user-guide/latest/account/company-members/#block-unblock-delete-company-members) |
+| Configurable customer company roles on the Frontend | [Customer 3.1023.0](https://github.com/VirtoCommerce/vc-module-customer/releases/tag/3.1023.0) | [doc](https://docs.virtocommerce.org/platform/user-guide/latest/contacts/managing-organization-roles/#membership-roles-whitelist) |
+| Facet priority sorting now runs the way it reads | [Catalog 3.1044.0](https://github.com/VirtoCommerce/vc-module-catalog/releases/tag/3.1044.0) | [doc](https://docs.virtocommerce.org/platform/user-guide/latest/catalog/managing-properties/#define-products-sorting-order) |
+| Users belonging to user groups visible right away | [Core 3.1008.0](https://github.com/VirtoCommerce/vc-module-core/releases/tag/3.1008.0) | — |
+| UI Kit improvements | [Frontend 2.58.0](https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.58.0) | — |
 
 ### 2026-09 — September 2026 · [digest](https://www.virtocommerce.org/t/862) · edited 2026-09-01
 
@@ -149,7 +170,7 @@ Highest version seen across every retained digest — *not* what is deployed any
 | Red theme (light and dark modes) release | [Frontend 2.53.0](https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.53.0) | [doc](https://docs.virtocommerce.org/platform/user-guide/latest/content/managing-themes/) |
 | BOPIS pickup locations with pagination | [Frontend 2.53.0](https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.53.0) | — |
 
-### 2026-07 — July 2026 · [digest](https://www.virtocommerce.org/t/857) · edited 2026-07-01
+### 2026-07 — July 2026 · [digest](https://www.virtocommerce.org/t/857)
 
 | Feature | Component @ version | Docs |
 |---|---|---|
@@ -210,26 +231,13 @@ Highest version seen across every retained digest — *not* what is deployed any
 | Google maps dark mode | [Frontend 2.44.0](https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.44.0) | — |
 | Layout template handling aligned with notification template behavior | [Notification 3.1005.0](https://github.com/VirtoCommerce/vc-module-notification/releases/tag/3.1005.0) | [doc](https://docs.virtocommerce.org/platform/developer-guide/latest/Fundamentals/Notifications/notification-templates/#predefined-layout-override-logic) |
 
-### 2026-04 — April 2026 · [digest](https://www.virtocommerce.org/t/847)
-
-| Feature | Component @ version | Docs |
-|---|---|---|
-| Sanity CMS integration | [Sanity 3.1000.0](https://github.com/VirtoCommerce/vc-module-sanity/releases/tag/3.1000.0) | [doc](https://docs.virtocommerce.org/platform/developer-guide/3.0/Extensibility/cms-integrations/sanity-setup/) |
-| Dark mode for Coffee theme | [Frontend 2.43.0](https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.43.0) + [Frontend 2.44.0](https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.44.0) | — |
-| Coupons and promotions upgraded | [Frontend 2.44.0](https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.44.0) + [Marketing 3.1001.0](https://github.com/VirtoCommerce/vc-module-marketing/releases/tag/3.1001.0) + [xMarketing 3.1001.0](https://github.com/VirtoCommerce/vc-module-marketing-experience-api/releases/tag/3.1001.0) | — |
-| Shareable link for product variations | [Frontend 2.43.0](https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.43.0) | — |
-| Pickup widget redesign | [Frontend 2.43.0](https://github.com/VirtoCommerce/vc-frontend/releases/tag/2.43.0) | — |
-| Assets widget added for Categories | [Catalog 3.1006.0](https://github.com/VirtoCommerce/vc-module-catalog/releases/tag/3.1006.0) | — |
-| Category DB search filter by code | [Catalog 3.1010.0](https://github.com/VirtoCommerce/vc-module-catalog/releases/tag/3.1010.0) | — |
-| Configurable section layout improvements | [Catalog 3.1011.0](https://github.com/VirtoCommerce/vc-module-catalog/releases/tag/3.1011.0) | — |
-| Refund number generation improvements | [Order 3.1001.0](https://github.com/VirtoCommerce/vc-module-order/releases/tag/3.1001.0) | — |
-
 ## 3. Older months — index
 
 One line per month. Open the digest for detail; this ledger keeps the join keys, not the prose.
 
 | Month | Digest | Features | Components touched |
 |---|---|---|---|
+| 2026-04 | [t/847](https://www.virtocommerce.org/t/847) | 9 | Catalog, Frontend, Marketing, Order, Sanity, xMarketing |
 | 2026-03 | [t/839](https://www.virtocommerce.org/t/839) | 10 | Frontend, Notification, Order, Platform, SQL Queries, xAPI |
 | 2026-02 | [t/834](https://www.virtocommerce.org/t/834) | 7 | Catalog, Customer, Frontend, Marketing, Page Builder, Platform |
 | 2026-01 | [t/821](https://www.virtocommerce.org/t/821) | 6 | Assets, Builder.io, Content, CyberSource, File xAPI, Frontend, Payment, Platform, xCart |
@@ -260,39 +268,39 @@ The join key for module → suite mapping (`.claude/knowledge/execution/module-s
 | Backup and Restore | 3 | 3.1000.0, 3.1001.2, 3.1005.0 |
 | Builder.io | 3 | 3.806.0, 3.807.0, 3.1001.0 |
 | Cart | 4 | 3.814.0, 3.817.0, 3.835.0, 3.837.0, 3.1005.0 |
-| Catalog | 14 | 3.823.0 … 3.1037.0 (27 releases) |
+| Catalog | 15 | 3.823.0 … 3.1044.0 (28 releases) |
 | Catalog CSV Import/Export | 2 | 3.805.0, 3.1003.0, 3.1004.0 |
 | Content | 1 | 3.835.0 |
 | Contentful | 1 | 3.1000.0 |
 | Contract | 1 | 3.904.0 |
-| Core | 1 | 3.814.0 |
-| Customer | 6 | 3.824.0, 3.826.0, 3.850.0, 3.1010.0, 3.1014.0, 3.1021.0 |
+| Core | 2 | 3.814.0, 3.1008.0 |
+| Customer | 7 | 3.824.0 … 3.1023.0 (7 releases) |
 | CyberSource | 2 | 3.801.0, 3.803.0 |
 | Datatrans | 2 | 3.800.0, 3.803.0, 3.1001.0 |
 | Elasticsearch 8 | 2 | 3.815.0, 3.817.0 |
 | EventBus | 1 | 3.807.0 |
 | File xAPI | 1 | 3.907.0 |
-| Frontend | 22 | 2.9.0 … 2.56.0 (38 releases) |
+| Frontend | 23 | 2.9.0 … 2.58.0 (40 releases) |
 | Google eCommerce Analytics | 1 | 4.805.0 |
 | Image Tools | 1 | 3.807.0 |
 | Inventory | 1 | 3.1005.0 |
-| Loyalty | 1 | 3.1002.0, 3.1003.0 |
+| Loyalty | 2 | 3.1002.0, 3.1003.0, 3.1006.0, 3.1008.0 |
 | Marketing | 5 | 3.815.0, 3.819.0, 3.825.0, 3.1001.0, 3.1006.0 |
 | News | 1 | 3.810.0 |
 | Notification | 9 | 3.810.0 … 3.1013.0 (10 releases) |
 | OpenId Connect | 1 | 3.800.0 |
-| Order | 2 | 3.868.0, 3.1001.0 |
+| Order | 3 | 3.868.0, 3.1001.0, 3.1015.0 |
 | Order management | 1 | 3.803.0 |
-| Page Builder | 6 | 3.818.0 … 3.1015.0 (8 releases) |
+| Page Builder | 7 | 3.818.0 … 3.1026.0 (11 releases) |
 | Pages | 2 | 3.804.0, 3.1004.0 |
 | Payment | 2 | 3.809.0, 3.812.0 |
 | Pickup | 1 | 3.1004.0 |
-| Platform | 16 | 3.854.0 … 3.1054.0 (31 releases) |
+| Platform | 17 | 3.854.0 … 3.1071.0 (32 releases) |
 | Product Review | 1 | 3.807.0 |
 | Product Snapshot | 1 | 3.1000.0 |
 | Push messages | 1 | 3.808.0 |
 | Quote | 2 | 3.823.0, 3.906.0 |
-| Sales Rep | 1 | 3.1002.0, 3.1003.0, 3.1006.0 |
+| Sales Rep | 2 | 3.1002.0, 3.1003.0, 3.1006.0, 3.1009.0 |
 | Sanity | 2 | 3.1000.0, 3.1001.0 |
 | Search | 3 | 3.811.0, 3.812.0, 3.816.0 |
 | SEO | 2 | 3.805.0, 3.809.0 |
@@ -311,13 +319,28 @@ The join key for module → suite mapping (`.claude/knowledge/execution/module-s
 
 ## 5. Parse health
 
-- Versioned headings parsed: **242** · unparsed: **0**
+- Versioned headings parsed: **258** · unparsed: **0**
 - Components with no GitHub release anchor (repo unknown, never invented): **1**
 - Annual roundups skipped (0 versioned headings by construction): The Year 2025 Release Notes; The Year 2024 Release Notes
-- Months retained from the snapshot but now outside the rolling 25-item RSS window (body not re-verified this rev): **0**
+- Months retained from the snapshot but now outside the rolling 25-item RSS window (body not re-verified this rev): **1** — 2024-11
 - Docs links refused by the origin validator (malformed, or an injection attempt): **0**
 
 ## Changelog
+
+### rev 2 — 2026-10-16
+
+| Change |
+|---|
+| NEW MONTH 2026-10 — "Virto’s Release Notes \| October 2026" (16 features) |
+| COMPONENT BUMP Loyalty 3.1003.0 → 3.1008.0 |
+| COMPONENT BUMP Frontend 2.56.0 → 2.58.0 |
+| COMPONENT BUMP Platform 3.1054.0 → 3.1071.0 |
+| COMPONENT BUMP Page Builder 3.1015.0 → 3.1026.0 |
+| COMPONENT BUMP Sales Rep 3.1006.0 → 3.1009.0 |
+| COMPONENT BUMP Order 3.1001.0 → 3.1015.0 |
+| COMPONENT BUMP Customer 3.1021.0 → 3.1023.0 |
+| COMPONENT BUMP Catalog 3.1037.0 → 3.1044.0 |
+| COMPONENT BUMP Core 3.814.0 → 3.1008.0 |
 
 ### rev 1 — 2026-09-01
 

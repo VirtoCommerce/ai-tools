@@ -122,26 +122,14 @@ Test scope: [STR + regression checks]
 ### 3.2 TESTING → TESTED (Finish test)
 
 **Precondition:** Original STR passes 3 consecutive times, no regressions found.
-**Required comment:**
-```
-QA PASSED — Fix verified.
-STR: Passed 3/3 runs
-Regression: [X adjacent checks] — all passed
-Console: No new errors
-Evidence: [screenshot/HAR path]
-```
+**Required comment:** rendered by `/vc-fix:qa-report --kind fix` (`plugins/vc-fix/skills/qa-report/templates/comment-fix.md`) — never typed here.
+The call needs `--lede` (one to three sentences saying what happened; no machine record supplies it) — full invocation in `plugins/vc-fix/commands/qa-verify-fix.md` Step 6. If the Skill tool refuses `vc-fix:qa-report`, the install predates it: run `/plugin update` and stop the report step — never type the comment by hand.
 
 ### 3.3 TESTING → REOPEN (Need fixes)
 
 **Precondition:** STR still fails OR new issue introduced by fix.
-**Required comment:**
-```
-QA FAILED — Reopening.
-Issue: [what still fails or what new issue was found]
-STR: [updated steps if different from original]
-Evidence: [screenshot/HAR path]
-Build: [version/commit tested]
-```
+**Required comment:** rendered by `/vc-fix:qa-report --kind fix` (`plugins/vc-fix/skills/qa-report/templates/comment-fix.md`) — never typed here.
+The call needs `--lede` (one to three sentences saying what happened; no machine record supplies it) — full invocation in `plugins/vc-fix/commands/qa-verify-fix.md` Step 6. If the Skill tool refuses `vc-fix:qa-report`, the install predates it: run `/plugin update` and stop the report step — never type the comment by hand.
 
 ### 3.4 TESTED → DONE (Move to done)
 

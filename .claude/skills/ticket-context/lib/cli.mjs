@@ -9,7 +9,7 @@ import { loadLayeredEnv } from "./env.mjs";
 import { codeHostCredential, readProfile, resolveProfile, trackerCredential } from "./profile.mjs";
 import { GAP_REASONS, SCHEMA, asGap, gap } from "./gap.mjs";
 import { validateDef } from "./schema.mjs";
-import { BASE_FIELDS, LINKED_FIELDS, jiraClient, recencyOrder } from "./jira.mjs";
+import { BASE_FIELDS, LINKED_FIELDS, attachLinkedComments, jiraClient, recencyOrder } from "./jira.mjs";
 import { AC_FIELD_NAME_RE, buildInventory, linkedOverCap, rankLinked, resolveFieldsByName, ticketFields } from "./inventory.mjs";
 import { CAPS, envHosts, fetchPublicPage, htmlToText, planDownloads, safeName } from "./fetch.mjs";
 import { exportFigmaItems, figmaToken } from "./figma.mjs";
@@ -119,9 +119,15 @@ async function prepare() {
     linked = rankLinked(linked, { parentKey: issue.fields.parent?.key ?? null, subtaskKeys: (issue.fields.subtasks ?? []).map((t) => t.key), order });
   }
   const linkedJson = new Map();
+  const linkedFresh = [];
   for (const [n, it] of linked.entries()) {
     if (n >= CAPS.linkedIssues) { it.gap = linkedOverCap(it, n, CAPS.linkedIssues); continue; }
-    try { linkedJson.set(it.key, await jira.issue(it.key, LINKED_FIELDS)); } catch (e) { it.gap = asGap(it.ref, e); }
+    let j;
+    try { j = await jira.issue(it.key, LINKED_FIELDS); } catch (e) { it.gap = asGap(it.ref, e); continue; }
+    // A developer's resolution note on a sub-task ("fixed in <sha>", "by design") lives in its comments, not its fields.
+    const c = await attachLinkedComments(jira, j, it.ref, { gaps, secrets });
+    linkedJson.set(it.key, j);
+    linkedFresh.push(`${j.key}@${j.fields?.updated}@${c}`);
   }
 
   const orgs = profile.repoHosts.filter((h) => h.host === "github").map((h) => h.org);
@@ -145,7 +151,7 @@ async function prepare() {
 
   const fk = freshnessKey({ ticketUpdated: issue.fields.updated, domain, skill: skillFingerprint(),
     prShas: prMeta.map((p) => `${p.ref}@${p.meta?.head?.sha ?? "?"}@${p.meta?.state ?? "?"}@${p.meta?.merged_at ?? ""}`),
-    linkedUpdated: [...linkedJson.values()].map((j) => `${j.key}@${j.fields?.updated}`), env: testEnv });
+    linkedUpdated: linkedFresh, env: testEnv });
   // One cached bundle per env: its deployment facts are that stand's, and two envs must not evict each other.
   const cachedFile = join(cacheDir(key, root), `bundle-${testEnv}.json`);
   if (!has("fresh") && readCached(cachedFile, fk)) { out({ status: "cached", bundle_path: cachedFile }); return; }

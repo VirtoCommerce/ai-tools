@@ -24,7 +24,8 @@ export function skillFingerprint(root = skillRoot()) {
   return h.digest("hex").slice(0, 16);
 }
 
-/** D10: ticket `updated` + each PR's head SHA, state and merge time (a merge invalidates) + linked issues' `updated` +
+/** D10: ticket `updated` + each PR's head SHA, state and merge time (a merge invalidates) + linked issues' `updated`
+ *  and comment count + each read comment's id@updated (a new or edited comment on a sub-task invalidates; jira.mjs) +
  *  the --domain the known-ground lookups used + the skill fingerprint. Confluence/Figma/Loom/pages are not in it (documented). */
 // `env` is part of the key: a bundle records whether each PR is deployed on THIS stand, so another env's bundle
 // is never fresh for this one.

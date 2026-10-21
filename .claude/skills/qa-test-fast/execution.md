@@ -8,7 +8,7 @@ Execution); the visual lane joins it or follows as soon as one lane returns
 |---|---|---|---|---|
 | Storefront | `qa-frontend-expert` | `playwright-chrome` | `@td(AGENT_POOL_SLOT_1.*)` | the checklist's storefront section |
 | Admin + API | `qa-backend-expert` | `playwright-edge` | `@td(AGENT_POOL_SLOT_3.*)` | the Admin/REST/GraphQL section |
-| Exploratory | `qa-testing-expert` | `playwright-firefox` | `@td(AGENT_POOL_SLOT_2.*)` | `/qa-exploratory ticket <TICKET>` |
+| Exploratory | `qa-testing-expert` | `playwright-firefox` | `@td(AGENT_POOL_SLOT_2.*)` | `/qa-exploratory ticket <TICKET> <env>` |
 | Visual | `ui-ux-expert` | Chrome DevTools MCP | the auth path the brief names (§Visual) | the `qa-design` skill's axes, when `visual_surface: true` |
 
 The pool slots are the ones in [`../../knowledge/execution/live-discovery.md`](../../knowledge/execution/live-discovery.md)
@@ -37,7 +37,7 @@ Use the [`agent-dispatch.md`](../../templates/agent-dispatch.md) structure, **in
 
 ## Exploratory
 
-Invoke `/qa-exploratory ticket <TICKET>` — the command, never a re-implementation. The charter
+Invoke `/qa-exploratory ticket <TICKET> <env>` (the run's env; the lane never binds it — [`run-env.md`](../../knowledge/execution/run-env.md)) — the command, never a re-implementation. The charter
 payload has the shape of [`../qa-test/exploratory-lane.md`](../qa-test/exploratory-lane.md) §6, and
 its mission is the strategy's Exploratory row (its R-ids, each with the `{HYPOTHESIS}` oracle or question it
 rests on — source 6 there), plus, when a model ran, the `/qa-test-model` output's item 4 (the unresolved

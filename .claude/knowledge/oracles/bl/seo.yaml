@@ -9,8 +9,8 @@ domain:
     - ui-ux-expert
 rules:
   - id: BL-SEO-001
-    title: Slug uniqueness enforced
-    rule: Every product and category URL slug should be unique within a store and language. Virto Commerce does **NOT** auto-append a numeric suffix; instead the SEO module validates a duplicate on save ("Duplicate URL detected") and surfaces store-level conflicts ("conflicting semantic URLs" with a Resolve-conflicts flow), and the SEO resolver disambiguates any remaining conflicts at request time via its scoring/priority pipeline. Uniqueness is scoped per **store + language** (the same slug may legitimately exist in different stores/languages). Case sensitivity of resolution is DB-collation dependent (case-insensitive under default SQL Server collation).
+    title: Duplicate slugs are resolved at request time by best match
+    rule: A product or category URL slug should be unique within a store and language. When several SEO records still match one permalink, the SEO resolver picks the most relevant one at request time — candidates are filtered by store and language, scored, ordered by score and object-type priority, and the first is the Final result (the **Debug SEO Links** widget shows every stage). Store-level conflict detection ("conflicting semantic URLs" with a Resolve-conflicts flow) goes through the extensible `ISeoDuplicatesDetector` and is opt-in for the catalog — `Catalog.UseSeoDeduplication`, default `false`; while it is off, duplicates are not reported. The same slug may legitimately exist in different stores/languages, and under Long SEO links under different parents (the full path tells them apart). This rule makes no claim about whether a save with a duplicate slug is refused — the docs do not say; what was observed is in the kb (KB-51C67C3F REST category save, KB-AEDF86B2 Admin store SEO list). Case sensitivity of resolution is DB-collation dependent (case-insensitive under default SQL Server collation).
     priority: P1-data
     trust: DECLARED
     source:
@@ -22,12 +22,16 @@ rules:
         ref: VP-7983 (Done) — two products sharing a slug both returned 404; expected both to work or save to be refused
       - kind: resolution
         ref: VCST-1399 (Done) — incorrect redirect for same-named categories; resolver used only last slug segment
+      - kind: doc
+        ref: platform/user-guide/docs/seo/debugging-seo-links.md (docs) — resolution stages Original → … → Ordered (score + object type priority) → Final (the first item with the highest priority is selected)
+      - kind: doc
+        ref: vc-module-catalog README.md (module settings) — Catalog.UseSeoDeduplication, Boolean, default false, "Enable/disable detection of SEO duplicates"
     scope:
       code_ref: vc-module-catalog:src/VirtoCommerce.CatalogModule.Data/Services/CatalogSeoDuplicatesDetector.cs#DetectSeoDuplicatesAsync
     check:
       kind: manual
-      ref: Create Product A with slug "my-product" → create Product B with the same slug in the same store+language → a "Duplicate URL detected" validation and/or a store "conflicting semantic URLs" warning appears (no "-1" suffix is auto-added). Use the store **Debug SEO Links** widget to see how a conflicting slug is scored and resolved.
-    violation_signal: Duplicate slug silently accepted with no validation and no conflict flag; two entities in the same store+language sharing a slug with no resolver disambiguation (one silently hides the other).
+      ref: Give two entities the same slug in one store+language → explain / Debug SEO Links for that permalink lists both as candidates and resolves exactly one as Final, and xAPI slugInfo returns that same one. With Catalog.UseSeoDeduplication = true, the store's "conflicting semantic URLs" warning (GET /api/seoinfos/duplicates) lists the pair; with the default false it lists nothing.
+    violation_signal: A permalink shared by two entities in the same store+language resolves to neither (404 for both, VP-7983) or to a different entity on repeated requests; with Catalog.UseSeoDeduplication = true, the pair is not reported as a conflict.
     status: ACTIVE
   - id: BL-SEO-002
     title: Deleted product returns proper HTTP status

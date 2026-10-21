@@ -413,17 +413,11 @@ Storefront login page accessible; a DEDICATED lockout-test user exists (never us
 [CONSOLE] No TypeError or JS errors","No error shown after failed attempts; 6th attempt with correct password succeeds and user logs in (VCST-5074 regression — lockout not enforced); account existence revealed in lockout message; console TypeError; 500 on any attempt","[SETUP] Create AGENT-TEST-lockout-sf@test.virtocommerce.com via admin if not exists
 [TEARDOWN] Unlock account via POST {{BACK_URL}}/api/platform/security/users/<id>/unlock with admin Bearer token; delete AGENT-TEST- user","VCST-5074, VCST-5149","Draft"
 "AUTH-028","Login on Behalf — Org Maintainer Clicks 'Login on behalf' at /company/members — Confirmation Modal Then Impersonate Flow","Login > Impersonation > Org Maintainer Entry Point","High","BL-AUTH-005, BL-AUTH-006","ECL-14.1","[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:ORG_MAINTAINER]
-Org Maintainer (operator) is logged in. Their assigned role includes StorefrontPermissions.CanImpersonate (platform:security:loginOnBehalf — configured in Admin SPA > Security > Roles). A target org member (IMPERSONATE_TARGET) has a security account and is active in the member list. PR #2280 inserts a confirmation modal between clicking 'Login on behalf' and navigating to /account/impersonate/{userId}. State: authenticated as Org Maintainer → confirmation modal → Continue → silent impersonation.","front_url={{FRONT_URL}}, operator_email=@td(SUPPORT_AGENT.email), operator_password=@td(SUPPORT_AGENT.password), target_user_id=@td(IMPERSONATE_TARGET.userId), target_name=@td(IMPERSONATE_TARGET.name)","[NAV] {{FRONT_URL}}/sign-in
-[ACT] Fill 'Email': @td(SUPPORT_AGENT.email)
-[WAIT] Email field populated
-[ACT] Fill 'Password': @td(SUPPORT_AGENT.password)
-[WAIT] Password field populated
-[ACT] Click 'Sign In'
-[WAIT] Authenticated session established (operator identity visible in header)
+[PRE:SIGNIN_AS:SUPPORT_AGENT]
+Org Maintainer (operator) is logged in. Their assigned role includes StorefrontPermissions.CanImpersonate (platform:security:loginOnBehalf — configured in Admin SPA > Security > Roles). The target (ACME_BUYER2) is a member of the operator's OWN organization (ORG-001, same as SUPPORT_AGENT), has a security account and is active in the member list — /company/members is the operator's own organization's roster (KB-02238DE5), so a member of another organization is never on it. PR #2280 inserts a confirmation modal between clicking 'Login on behalf' and navigating to /account/impersonate/{userId}. State: authenticated as Org Maintainer → confirmation modal → Continue → silent impersonation.","front_url={{FRONT_URL}}, operator_email=@td(SUPPORT_AGENT.email), target_user_id=@td(ACME_BUYER2.platform_id), target_name=@td(ACME_BUYER2.name)","[WAIT] Authenticated session established by [PRE:SIGNIN_AS] (operator identity visible in header)
 [NAV] {{FRONT_URL}}/company/members
 [WAIT] Company members table visible
-[ACT] Locate row for @td(IMPERSONATE_TARGET.name) or any active member who has a security account
+[ACT] Locate the row for @td(ACME_BUYER2.name)
 [ACT] Click the row-level actions button (three-dot menu) on that member's row
 [WAIT] Actions dropdown opens
 [ASSERT] 'Login on behalf' option is visible in the dropdown (operator has CanImpersonate AND target has a security account — PR #2280 members-dropdown-menu.vue gate)
@@ -433,7 +427,7 @@ Org Maintainer (operator) is logged in. Their assigned role includes StorefrontP
 [ASSERT] 'Continue' button visible in modal
 [ASSERT] 'Cancel' button visible in modal
 [ACT] Click 'Continue' button
-[WAIT] Navigation to {{FRONT_URL}}/account/impersonate/@td(IMPERSONATE_TARGET.userId)
+[WAIT] Navigation to {{FRONT_URL}}/account/impersonate/@td(ACME_BUYER2.platform_id)
 [WAIT] Silent flow triggers (operator has CanImpersonate) — VcLoaderOverlay displayed then redirect
 [WAIT] Impersonation completes — banner visible on resulting page","[DOM] 'Login on behalf' option visible in /company/members row actions dropdown when operator has CanImpersonate and target has security account (PR #2280 gate)
 [DOM] Confirmation modal visible after clicking 'Login on behalf': contains 'You are logging in on behalf of {target email/name}' + 'The session will be audited.' text
@@ -442,7 +436,7 @@ Org Maintainer (operator) is logged in. Their assigned role includes StorefrontP
 [STATE] Silent flow fires (operator has CanImpersonate) — ImpersonateForm NOT rendered; VcLoaderOverlay briefly shown
 [STATE] After silent flow: impersonation banner visible; header shows operator name + 'logged in as' + target name","[API] POST /connect/token with grant_type=impersonate returns HTTP 200 after Continue
 [NETWORK] No /connect/token call issued if Cancel is clicked (modal dismissed without side effects)
-[CONSOLE] No JS errors during modal open, Continue click, or silent flow","'Login on behalf' absent from dropdown (CanImpersonate not recognized); confirmation modal not shown after clicking 'Login on behalf' (no gating modal = PR #2280 regression); 'Continue' or 'Cancel' buttons absent from modal; Continue does not navigate to /account/impersonate/{userId}; silent flow not triggered (form rendered instead); impersonation banner absent after flow completes; console TypeError","Stop impersonation via 'Revert back to own account' in header; [PRE:CLEAR_SESSION]","VCST-4906, VCST-4905, VCST-4725, BL-AUTH-005, BL-AUTH-006, ECL-14.1; Added VCST-4906 / PR #2280 (2026-05-14) — covers confirmation modal step introduced by members.vue +44/-6 change; positive counterpart to IMP-015 (absence case)","Draft"
+[CONSOLE] No JS errors during modal open, Continue click, or silent flow","'Login on behalf' absent from dropdown (CanImpersonate not recognized); confirmation modal not shown after clicking 'Login on behalf' (no gating modal = PR #2280 regression); 'Continue' or 'Cancel' buttons absent from modal; Continue does not navigate to /account/impersonate/{userId}; silent flow not triggered (form rendered instead); impersonation banner absent after flow completes; console TypeError","Stop impersonation via 'Revert back to own account' in header; [PRE:CLEAR_SESSION]","VCST-4906, VCST-4905, VCST-4725, BL-AUTH-005, BL-AUTH-006, ECL-14.1; Added VCST-4906 / PR #2280 (2026-05-14) — covers confirmation modal step introduced by members.vue +44/-6 change; positive counterpart to IMP-015 (absence case); Data fix 2026-10-20 (VCST-6042): target moved from IMPERSONATE_TARGET (USR-007, ORG-002 — not on SUPPORT_AGENT's ORG-001 roster) to ACME_BUYER2 (USR-004, ORG-001), the 'or any active member' fallback removed so the case cannot pass on an improvised target, and the duplicate manual sign-in after [PRE:SIGNIN_AS] dropped; assertions unchanged","Draft"
 "AUTH-071","Login — Temporary Lockout Detailed Message on Storefront (PasswordLogin DetailedErrors=true)","Login > Security > Lockout","Medium","BL-AUTH-003; BL-AUTH-004","ECL-3.1","[PRE:CLEAR_SESSION]
 Storefront login page accessible; PasswordLogin__DetailedErrors=true and IdentityOptions__Lockout__MaxFailedAccessAttempts=5 configured (vc-deploy-dev infra/environments.yml @ vcst-qa)
 A DEDICATED AGENT-TEST lockout-test user exists (never use agent pool slot accounts)","front_url={{FRONT_URL}}; back_url={{BACK_URL}}; lockout_user_email=AGENT-TEST-lockout-msg@test.virtocommerce.com; lockout_user_password=ValidLockPw1!","[NAV] {{FRONT_URL}}/sign-in

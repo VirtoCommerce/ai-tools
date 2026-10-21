@@ -15,7 +15,7 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const SRC = readFileSync(resolve(ROOT, "plugins/vc-fix/skills/project-init/discover-tracker.mjs"), "utf8");
+const SRC = readFileSync(resolve(ROOT, "plugins/vc-init/skills/project-init/discover-tracker.mjs"), "utf8");
 
 // The four legal members of WorkItemTypeFieldsExpandLevel.
 const EXPAND_LEVELS = new Set(["none", "allowedvalues", "dependentfields", "all"]);

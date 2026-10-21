@@ -2,6 +2,8 @@
 // The credential is never sent to an origin other than the tracker's (S7); a refusal is a GAP, never a retry.
 import { CAPS, readCapped, timedFetch, timeoutGap } from "./fetch.mjs";
 import { GapError, asGap, gap } from "./gap.mjs";
+import { adfText } from "./inventory.mjs";
+import { redactText } from "./scrub.mjs";
 
 export const BASE_FIELDS = Object.freeze(["summary", "description", "comment", "status", "issuetype", "priority", "labels", "components",
   "attachment", "issuelinks", "parent", "subtasks", "updated", "fixVersions"]);
@@ -78,6 +80,12 @@ export function jiraClient(cred, fetchImpl = fetch) {
       if (fields.includes("comment")) await completeComments(key, issue, gaps);
       return issue;
     },
+    /** The newest `n` comments, newest first, and how many exist. */
+    latestComments: async (key, n) => {
+      const page = await json(`/rest/api/3/issue/${encodeURIComponent(key)}/comment?startAt=0&maxResults=${n}&orderBy=-created`);
+      const comments = (page.comments ?? []).slice(0, n);
+      return { comments, total: Number.isInteger(page.total) ? page.total : comments.length };
+    },
     remoteLinks: (key) => json(`/rest/api/3/issue/${encodeURIComponent(key)}/remotelink`),
     // `detail` answers only for the applicationType the GitHub integration is registered under (a wrong one is an
     // empty 200); the new GitHub app is `oAuth-com.github.integration.production`, so the type comes from `summary`.
@@ -98,6 +106,35 @@ export function jiraClient(cred, fetchImpl = fetch) {
       { label: "attachment download", ms: CAPS.downloadTimeoutMs })).buf,
     confluencePage: (id) => json(`/wiki/api/v2/pages/${encodeURIComponent(id)}?body-format=storage`),
   };
+}
+
+/** A kept linked issue's comments, put on it as `comments: {total, read, comments}` — the CAPS.linkedComments newest,
+ *  oldest first, each `{id, created, updated, text}` (no author: who said it is not testing context). The text is plain
+ *  (ADF flattened, a pasted PR or commit link kept as its URL) and redacted (env secret values, then token shapes): a
+ *  linked issue is one hop further from the reporter than the ticket, and its file is read by an agent whose output
+ *  gate rule 6 scans. Unread comments, a comment cut at CAPS.fieldText, or a failed read are ONE gap on
+ *  `<ref>:comments`; the issue's fields stay either way. Returns the D10 freshness part: count + each read comment's
+ *  id@updated, so a new or edited comment rebuilds the bundle even where the tracker would not bump the issue's `updated`. */
+export async function attachLinkedComments(jira, issue, ref, { cap = CAPS.linkedComments, gaps = [], secrets = new Set() } = {}) {
+  let got;
+  try { got = await jira.latestComments(issue.key, cap); } catch (e) {
+    const g = asGap(`${ref}:comments`, e);
+    gaps.push(gap(`${ref}:comments`, g.reason, `comments not read: ${g.detail ?? g.reason}`));
+    return "c?";
+  }
+  const cut = [];
+  const comments = [...got.comments].reverse().map((c) => {
+    const text = redactText(adfText(c.body), secrets).replace(/\n{3,}/g, "\n\n").trim();
+    if (text.length > CAPS.fieldText) cut.push(`${c.id} (${text.length} chars)`);
+    return { id: String(c.id), created: c.created ?? null, updated: c.updated ?? null, text: text.slice(0, CAPS.fieldText) };
+  });
+  issue.comments = { total: got.total, read: comments.length, comments };
+  const unread = got.total - comments.length;
+  const over = [
+    ...(unread > 0 ? [`${unread} of ${got.total} comments on ${issue.key} not read: the ${comments.length} newest are read`] : []),
+    ...(cut.length ? [`comment ${cut.join(", ")} on ${issue.key} cut to its first ${CAPS.fieldText} chars`] : [])];
+  if (over.length) gaps.push(gap(`${ref}:comments`, "over-cap", over.join("; ")));
+  return `c${got.total}/${comments.map((c) => `${c.id}@${c.updated ?? c.created}`).join(",")}`;
 }
 
 /** D12: the linked issues' recency, as each key's index in one `ORDER BY updated DESC` search (the tracker orders

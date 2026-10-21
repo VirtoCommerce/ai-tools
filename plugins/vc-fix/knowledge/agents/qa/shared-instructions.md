@@ -243,13 +243,15 @@ Values are loaded by `config.js` from layered files (default `TEST_ENV=vcst`): `
 | Admin creds | `ADMIN` / `ADMIN_PASSWORD` |
 | User creds (fallback) | `USER_EMAIL` / `USER_PASSWORD` |
 | User2 creds (fallback) | `USER2_EMAIL` / `USER2_PASSWORD` |
+
+**In a browser, type a `*_PASSWORD` by its NAME, never its value** (`browser_type(text="ADMIN_PASSWORD")`) — Playwright MCP substitutes it (from `.env.playwright.local`, or from vc-secrets when the project keeps its passwords there) and masks it ([`../../../.claude/rules/mcp-browsers.md`](../../../.claude/rules/mcp-browsers.md) §Browser login). Scripts that call an API (a token request) read the value from the env as before.
 | Store | `STORE_ID` |
 | Payment (Skyflow) | `SKYFLOW_VISA`, `SKYFLOW_MASTERCARD`, `SKYFLOW_EXPIRY`, `SKYFLOW_CVV` |
 
 `vc-fix` reproduces one bug at a time — there's no parallel agent-user pool to coordinate (that's
 full `vc-qa` plugin scope, for concurrent regression suites). Use the credentials above directly.
 
-## Sign-Off Format
+## Sign-Off Format (for Teams / qa-lead SendMessage — a tracker comment is `qa-report`'s)
 
 ```
 Testing Complete: [Feature]
@@ -282,7 +284,7 @@ See [`.claude/rules/reports.md`](../../../.claude/rules/reports.md) — the sing
 
 ## Browser Interaction — Mandatory Real-User Behavior
 
-**Hook-enforced.** A `PreToolUse` hook (`hooks/enforce-real-user.mjs`) blocks `browser_evaluate`, `browser_run_code_unsafe`, and `evaluate_script` MCP calls unless the JS payload matches the narrow auto-allow regex list (GraphiQL JWT `execCommand('insertText')`, `dataLayer`/`gtag()`, cross-origin iframe inspection). Do not try to bypass — if your case fits an exception but was blocked, extend the regex.
+**Hook-enforced.** A `PreToolUse` hook (`hooks/enforce-real-user.mjs`) blocks `browser_evaluate`, `browser_run_code_unsafe`, and `evaluate_script` MCP calls on ANY MCP server name (plugin-namespaced ones included) unless the JS payload matches the narrow auto-allow regex list (GraphiQL JWT `execCommand('insertText')`, `dataLayer`/`gtag()`, cross-origin iframe inspection, read-only measurement, `/* @allow-eval */`). **Exploratory / SBTM probes** (`/qa-exploratory`, `/qa-sbtm`) declare themselves with `/* @exploratory: <charter> — <reason> */` in the payload; a finding from such a probe is a server/API-layer finding, never a UI-layer one (VCST-5100), and the sentinel never goes into a scripted test case or regression run. Do not try to bypass — if your case fits an exception but was blocked, extend the regex.
 
 You MUST drive the browser like a real customer:
 

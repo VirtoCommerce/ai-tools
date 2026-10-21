@@ -76,6 +76,7 @@ test-data/
 │   ├── sample-organizations.csv    # Special character testing
 │   └── search-test-data.csv        # Organization search test cases
 ├── catalogs/                        # Catalog seed data
+│   ├── brands.csv                   # storefront Brands catalog, the sample-data brands (seed:brands)
 │   ├── catalogs.csv
 │   ├── categories.csv
 │   ├── category-images.csv          # image file → category name (seed:category-images)
@@ -324,6 +325,9 @@ Real artwork for the store catalog's categories. Each row maps a file in `upload
 - `BARCODE_STALE_FIELD.id` and `.propertyId` in `aliases.<env>.json`. The property id CHANGES on re-create, so re-read it afterwards.
 
 It never touches either store's barcode settings, any other product, prices or stock. Both stores are fingerprinted before and after, and any difference fails the run. It refuses with "run the full seed" when the product or the store itself is missing. Use it instead of the full `seed:barcode` between two sub-flows of one case: the full seed resets `AGENT-TEST-BARCODE`'s settings, reconciles and reindexes every fixture, and runs the multi-minute proof.
+
+### 14d. Brands (catalogs/brands.csv)
+The storefront Brands catalog (`/brands`, brand pages, the "Top brands" logo row): the brands of the vc-sample-data B2B store (VCST-3286), with a logo and banner each in `uploads/brands/`. Brands go into the catalog the store's `BrandCatalogId` names; only when there is none is `AGENT-TEST-SEED-Brands` created, and only that owned catalog gets store settings, the `Featured` property and the `pinned-links` entry written. On an env-owned catalog the seeder adds its brand categories and asset files and nothing else, and logs what `/brands` would still need. A brand the catalog already carries is left alone. Seeded brands are recognised by the code prefix `AGENT-TEST-SEED-BRAND-` or an image in the `catalog/agent-test-brands` asset folder; teardown deletes those, purges their search-index documents, and undoes the owned catalog's writes. Seed: `npm run seed:brands` (`--dry-run`, `--only <brand_code>`, `--reupload`); teardown: `npm run seed:brands:teardown` (all brands; `--only` is refused); guard: `npm run td:validate:brands`. Also runs in `seed:bootstrap` as optional step `brands` (priority 86, after category-images). Products match a brand by NAME, so no id is committed. No aliases.
 
 ### 15. Loyalty missions (no CSV — `scripts/seed-data/loyalty/missions-specs.mjs`)
 The VCST-5319 mission fixtures have **no committed data file**: the side-effect-free spec module IS the

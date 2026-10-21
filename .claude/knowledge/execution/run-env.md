@@ -12,12 +12,20 @@ live) — a ticket's own stand included.
 - **The arguments name an env** — a bare word `run:use` / `env:use` accepts as one (a `.env.<word>` in the
   project root or in a `QA_ENV_PATH` folder, the ticket's own included), or `--env <env>` / `--env=<env>` ⇒
   `npm run env:use -- <env>` (a ticket run: `npm run run:use -- <TICKET> <env>`, which also binds the run folder).
-- **They name none** ⇒ `npm run env:use -- --default`. It binds the default too, so the run keeps one env
-  even if someone edits `.env.test-env` while it runs.
+- **They name none** ⇒ a ticket run (`npm run run:use -- <TICKET>`) binds the ticket's own stand when the ticket's
+  `QA_ENV_PATH` folder defines exactly one env (VCST-6314 → `vcst_6314`), and says so. Otherwise
+  `npm run env:use -- --default`. It binds the default too, so the run keeps one env
+  even if someone edits `.env.test-env` while it runs. When that moves a session that was on another env, it
+  prints a `⚠ this session was on …` line: show it to the user, who passes the env to stay.
 - **Exit 2 ⇒ STOP** and show its message: an unknown env, or a `TEST_ENV` in the session's environment that
   would beat the binding. Never fall back to another env silently.
 - **A command run inline by another keeps the caller's binding** — `/qa-test` running `/vc-fix:qa-verify-fix`
   for a fix-ready Bug binds once, at its own Step 1a; the inline pipeline does not bind again.
+- **A subagent never binds.** It shares the session id, so an `env:use` (or `run:use`) there re-binds the caller's whole run —
+  `--default` would move it to the checkout's default env mid-run. Its caller passes the env (the brief's
+  Environment line, and the argument of a command it hands over: `/qa-exploratory ticket <KEY> <env>`), and a
+  `ticket`-mode `/qa-exploratory` skips `env:use`: it compares that argument with the session's env (a bare
+  `npm run env:use` prints it) and STOPs when they differ.
 
 ## What the binding does
 
@@ -52,9 +60,10 @@ QA_ENV_PATH=P:\VC\_VIRTO\tickets\<ticket>\.work\self-qa;P:\VC\_VIRTO\qa-envs
 - **`.env.playwright.master`** (project root, gitignored) holds `MASTER_PASSWORD=…`: one strong value for every
   master stand, local and cloud. It must pass the platform's password policy (by default 8+ characters with an
   upper- and a lowercase letter), because the seeders set it on accounts.
-- **`PASSWORDS=master`** in a stand's env file opts it in (or `PASSWORDS_<ENV>=master` in `.env.local`; a bare
-  `PASSWORDS` there is ignored, because it would switch every stand, the shared ones too); that file then holds no
-  passwords. Every test-account
+- **`PASSWORDS=master`** in the stand's own env file opts it in: the project root's `.env.<env>` for an env the
+  repo defines, else its file in its `QA_ENV_PATH` folder. A line in `.env.local` or a ticket folder's override of a
+  repo env is ignored with a warning: it would switch a stand others use, and seeding would reset that stand's
+  accounts to the master password. The stand's file then holds no passwords. Every test-account
   password variable resolves to the master value (the role registry, and every name the suites and test-data
   type); other accounts on the stand keep their own. A shared stand keeps per-env passwords unless the team agrees.
 - **The lanes type `MASTER_PASSWORD` in every password field.** `npm run secrets:sync:all` copies it into

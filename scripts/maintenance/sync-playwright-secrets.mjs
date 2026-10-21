@@ -142,7 +142,7 @@ function syncAll() {
   if (conflicts.length) {
     console.error(`✗ refusing to write ${COMBINED_SECRETS_FILE}: a NAME_<ENV> key holds one value, and these differ between the env's run tickets:`);
     for (const c of conflicts) console.error(`  ${c.name}_${c.env.toUpperCase()}: ${c.tickets.map((t) => t ?? 'the shared definition').join(' vs ')}`);
-    console.error("  Give the ticket's stand its own env name (e.g. vcst_6314) or PASSWORDS=master, or drop the override.");
+    console.error("  Give the ticket's stand its own env name (e.g. vcst_6314), or drop the override.");
     process.exit(2);
   }
   if (!envs.length && !masterValue) {

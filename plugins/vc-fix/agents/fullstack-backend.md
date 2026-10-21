@@ -72,8 +72,9 @@ Invoke the development skills:
    layer, RCA). Confirm root cause, not symptom.
 2. **Checkout** — the ONE routed repo, cloned into `<paths.workspace>/<repo-basename>/` on branch
    `<workBranchPrefix><ticket>` (e.g. `claude/qa-autofix/967`). **Base = `contribution.prTarget` /
-   `integrationBranch`** from the profile (often `dev` — do not hardcode). Clone URL + auth =
-   `contribution.cloneUrl` + `contribution.authEnv`. Use **absolute paths** + `git -C "<checkout>"`;
+   `integrationBranch`** from the profile (often `dev` — do not hardcode). Clone `contribution.cloneUrl`
+   through the bridge — `node "$VC_RUN" git-gh clone …` (`git-ado` on Azure Repos), which supplies the
+   credential (`shared-instructions.md` §GitHub authentication). Use **absolute paths** + `git -C "<checkout>"`;
    never `cd` into the workspace as a persisted cwd. (In a native agentic checkout you MAY instead call
    `repo-router.ts` `checkoutForFix`.)
 3. **Restore/install** — `dotnet restore -p:NuGetAudit=false` (C# — the audit opt-out is required, see
@@ -105,19 +106,19 @@ Invoke the development skills:
 7. **Hand to `backend-reviewer`** (Gate 4) BEFORE opening the PR. Revise ≤2 iterations on REQUEST_CHANGES.
 8. **Commit & push & PR** — `git commit` (Conventional Commits + JIRA key), **authored as the human
    token-owner with Claude as `Co-Authored-By`** (CLA Assistant blocks bot-authored commits — exact
-   `git -c user.name/user.email …` pattern in `shared-instructions.md` §Commit identity) → `git push -u
-   origin claude/qa-autofix/<ticket-key>` → `gh pr create` (a normal PR for human review — **not**
-   auto-merged). Write `PR_BODY.md` (template below). **Target follows the repo's ownership** (see
-   `shared-instructions.md` §Where the fix goes): a **client** module → PR on the client repo (GitHub or
-   Azure Repos); a **platform** module with operator=client → a **fork** PR (`--head <forkOwner>:<branch>`);
-   platform + virto-engineer → direct PR (today's default). With no `project-profile.json` this is exactly
-   the direct `VirtoCommerce/*` PR, unchanged.
-9. **Verify CI (Gate 5) — don't assume green.** Poll the PR's checks (`gh pr checks`) until both
+   `git -c user.name/user.email …` pattern in `shared-instructions.md` §Commit identity) → `node "$VC_RUN"
+   git-gh -C "<checkout>" push -u origin claude/qa-autofix/<ticket-key>` → `node "$VC_RUN" gh pr create`
+   (a normal PR for human review — **not** auto-merged). Write `PR_BODY.md` (template below). **Target
+   follows the repo's ownership** (see `shared-instructions.md` §Where the fix goes): a **client** module →
+   PR on the client repo (GitHub, or Azure Repos via `git-ado` push + `node "$VC_RUN" ado create-pr`); a
+   **platform** module with operator=client → a **fork** PR (`--head <forkOwner>:<branch>`);
+   platform + virto-engineer → direct PR. No `project-profile.json` ⇒ STOP (run `/project-init`).
+9. **Verify CI (Gate 5) — don't assume green.** Poll the PR's checks (`node "$VC_RUN" gh pr checks`) until both
    **`Module CI / ci`** (Build = `vc-build Compile`, **Unit Tests** = `vc-build Test`, SonarCloud
    **Quality Gate**, and **Swagger validation** on PRs to `dev`) and **`Module CI / auto-tests`** (the
    shared pytest **`graphql, restapi, e2e`** suites against the built module in a docker-env) resolve,
-   plus `license/cla`. **Green →** capture pass results in the PR body. **Red →** `gh run view <id>
-   --log-failed`, read the failing step / pytest case, **classify the reason and self-correct in the
+   plus `license/cla`. **Green →** capture pass results in the PR body. **Red →** `node "$VC_RUN" gh run
+   view <id> --log-failed`, read the failing step / pytest case, **classify the reason and self-correct in the
    same repo (≤2 iterations), re-push, re-poll** — full reason→action table in `shared-instructions.md`
    §After the PR. Persistent / unrelated-flaky / cross-repo red → STOP + report. (The live storefront
    symptom still needs post-merge deploy verification — the `auto-tests` env is generic, not your exact
@@ -130,15 +131,15 @@ Invoke the development skills:
 ### Observation & action space
 | Channel | Tool |
 |---------|------|
-| Clone / branch / commit / push | **Bash** `git`, `gh repo clone` (via `skills/qa-fix-routing/repo-router.ts` semantics) |
+| Clone / branch / commit / push | **Bash** `node "$VC_RUN" git-gh`/`git-ado` (clone, push); plain `git` (branch, commit) |
 | Build / test | **Bash** `dotnet restore`/`build`/`test`, `npm ci`/`npm test` (per `REPO_PROFILES`) |
 | Find/read the seam (post-clone) | an LSP-backed symbol tool if available (e.g. Serena `get_symbols_overview`/`find_symbol`/`find_referencing_symbols`) — else `Grep`/`Glob`/`Read` |
 | Source edits | an LSP-backed symbol tool's precise edit if available (e.g. Serena `replace_symbol_body`/`insert_after_symbol`/`insert_before_symbol`) — else **Write/Edit** in `.fix-workspace/<repo>/` |
 | Repo read (pre-clone) | `mcp__github__search_code`, `get_file_contents`, `get_pull_request*` |
-| PR open + CI status | `gh pr create`, `gh pr checks`, `mcp__github__get_pull_request_status` |
+| PR open + CI status | `node "$VC_RUN" gh pr create` / `gh pr checks` (or `ado create-pr` on Azure Repos), `mcp__github__get_pull_request_status` |
 
 **FORBIDDEN:** `mcp__github__merge_pull_request`, `gh pr merge` (human-only). Remote-edit tools
-(`create_or_update_file`, `push_files`) are NOT used — commits go via local `git push`. **No browser** —
+(`create_or_update_file`, `push_files`) are NOT used — commits go via a bridged `git-gh`/`git-ado push`. **No browser** —
 for Admin SPA layout/CSS proof you *scaffold* the render harness (`/angular-admin` `visual-render-harness.md`)
 and delegate the browser render/screenshot to `qa-backend-expert`.
 

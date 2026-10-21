@@ -1,46 +1,47 @@
 # vc-fix
 
-Agentic **bug lifecycle** plugin for the Virto Commerce B2B e-commerce platform: project setup,
-bug filing, autonomous bug fixing, fix verification, and online bug monitoring — as a fully
-self-contained Claude Code plugin. Inventory: [`knowledge/agents/README.md`](knowledge/agents/README.md)
+Agentic **bug lifecycle** plugin for the Virto Commerce B2B e-commerce platform: bug filing,
+autonomous bug fixing, fix verification, and online bug monitoring — as a fully self-contained
+Claude Code plugin. Inventory: [`knowledge/agents/README.md`](knowledge/agents/README.md)
 (`ls agents commands skills` for the counts).
 
 Part of the [`ai-tools`](../../.claude-plugin/marketplace.json) marketplace hosted in
-[`ai-tools`](https://github.com/VirtoCommerce/ai-tools), alongside `vc-perf` (the performance loop,
-which **depends on this plugin** — it reuses `/project-init`, the fix routing and the backend
-developer/reviewer agents) and `vc-secrets` (an independent secrets launcher).
+[`ai-tools`](https://github.com/VirtoCommerce/ai-tools). It **depends on `vc-init`** (onboarding:
+`/project-init`, the deployment profile, and the `$VC_RUN` bridge that hands every GitHub / Azure
+DevOps / Jira token to a process from `vc-secrets`), which depends on `vc-secrets`. `vc-perf` (the
+performance loop) depends on this plugin and on `vc-init` — it reuses the fix routing and the backend
+developer/reviewer agents.
 
 ## Install
 
 ```
 /plugin marketplace add VirtoCommerce/ai-tools
-/plugin install vc-fix@ai-tools
+/plugin install vc-fix@ai-tools      # pulls in vc-init and vc-secrets
 /reload-plugins
 ```
 
-Then, in the plugin install directory (Claude Code shows the path after install), run:
+Then, in your deployment project, run (it installs the vc-secrets shim itself and keeps its settings in
+the project's `.claude/settings.local.json` — nothing to add to `~/.claude/settings.json`):
 
 ```
 /project-init
 ```
 
 It interviews you for env name, bug tracker (Jira or Azure Boards), code host (GitHub or Azure
-Repos), and auth — never passwords — then derives the rest (native-platform vs client project,
-fork account) from your token plus a live repo scan, and writes `project-profile.json` +
-`.env.<env>` + `.env.local` + `.mcp.json`. That profile is what routes every `/qa-fix` to the
-right repo and tracker.
+Repos), and auth — never passwords, and never a token in the chat: you store each token yourself with
+`node "<VC_SECRETS>" set <name>` — then derives the rest (native-platform vs client project, fork
+account) from your token plus a live repo scan, and writes `project-profile.json` + `.env.<env>` +
+`.env.local` (test-user passwords only) + `.mcp.json`. That profile is what routes every `/qa-fix`
+to the right repo and tracker — and every command here **stops with "run /project-init"** until it
+exists.
 
 ### project-init modes
 
-`/project-init` has one onboarding flow and two **day-2 modes** that skip the interview:
+`/project-init` belongs to the `vc-init` plugin; its modes (`--add-env` for another environment,
+`--check` after an upgrade — which also moves any token an older onboarding left in a file into
+vc-secrets) are documented in [`../vc-init/README.md`](../vc-init/README.md).
 
-| Invocation | When | What it does |
-|------------|------|--------------|
-| `/project-init` | first onboarding of a deployment | full interview (**env name · tracker · code host · auth · self-diagnostics consent**) → derive `projectType` / client-vs-platform repo split / contribution mode from the token + a live scan → write `project-profile.json` + `.env.<env>` + `.env.local` + `.mcp.json` → verify access |
-| `/project-init --add-env` | day-2: point an already-onboarded project at **another deployment target** (a second QA env, staging, a customer's second site) | asks the new environment name, guards against overwriting an existing `.env.<name>`, then scaffolds `.env.<new>` (its URLs) + the `_<ENV>`-suffixed per-env access creds in `.env.local` — **reusing** the project's tracker/host, leaving cross-env tokens untouched — and verifies the new env with `TEST_ENV=<new>`. Does **not** re-interview, re-scan repos, or rewrite the profile / `.mcp.json` (those are project-level, env-agnostic) |
-| `/project-init --check` | day-2: after a plugin upgrade | reconciles the on-disk `project-profile.json` to the current schema (adds new fields with safe defaults, prunes obsolete ones, re-asks operator-decision fields like the self-diagnostics consent), then re-verifies access |
-
-> An **environment** is only a URL set + its access creds, selected at runtime by `TEST_ENV`.
+> An **environment** is only a URL set + its per-env passwords, selected at runtime by `TEST_ENV`.
 > A different **tracker or code host** is a different *project* — run a fresh `/project-init`
 > in its own directory for that, not `--add-env`.
 
@@ -50,6 +51,7 @@ right repo and tracker.
 /qa-bug <description>        # Reproduce, document, optionally file a bug
 /qa-fix VCST-1234            # Autonomous fix of an already-filed bug — never auto-merges
 /qa-verify-fix VCST-1234     # Verify a fix, transition the ticket
+/qa-report VCST-1234          # The run's ONE tracker comment + its report page
 /qa-monitoring both          # Query App Insights, dedup, triage, live-repro, report
 /qa-env-check                # Validate env vars, endpoints, MCP servers
 /vc-self-check               # Diagnose whether the plugin's own skills ran correctly

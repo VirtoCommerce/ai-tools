@@ -31,6 +31,14 @@ export interface BugContractField {
 }
 
 export interface ProjectProfile {
+  /** Profile schema version (absent in a pre-VCST-6402 file, which reads as 1). */
+  schemaVersion?: number;
+  /** How each credential axis authenticates; "" ⇒ the axis does not apply (VCST-6402). */
+  auth: { github: "" | "pat" | "gh-cli"; ado: "" | "pat" | "az-login"; jira: "" | "pat" | "oauth" };
+  /** vc-perf's block — an open map written by /perf-init through vc-init's profile-set.mjs. */
+  perf?: Record<string, unknown>;
+  /** A host-governed project (schema 3): host plugin key, secrets owner, host MCP server per role. */
+  governance?: { host: string | null; secrets: "host" | "vc-secrets"; servers: { tracker: string; codeHost: string; github: string; telemetry: string; testManagement: string; browsers: string[] }; stand: { writable: boolean } };
   projectType: "platform" | "client";
   operator: "virto-engineer" | "client" | "ask";
   tracker: {
@@ -57,9 +65,6 @@ export interface ProjectProfile {
     clientHost: "github" | "azure-repos";
     clientOrg: string;
     azure: { organization: string; project: string };
-    auth: "gh-cli" | "pat" | "az-login";
-    /** Env var holding the client host's write credential ("" ⇒ ambient session). */
-    authEnv?: string;
     /**
      * PROBED kind of the GitHub credential (VCST-5582 A). "" = never probed.
      * A `fine-grained` PAT can NEVER take the upstream fork/fork-PR/issue path — it is
@@ -83,6 +88,16 @@ export interface ProjectProfile {
   feedback: { mode: "auto" | "ask" | "off" };
 }
 
+export const PROFILE_SCHEMA_VERSION: number;
+export const SUPPORTED_SCHEMA_VERSIONS: number[];
 export const PROFILE_DEFAULTS: ProjectProfile;
+export class ProfileMissingError extends Error { code: "VC_PROFILE_MISSING"; path: string; }
+export class ProfileVersionError extends Error { code: "VC_PROFILE_VERSION"; path: string; }
+export function findProjectProfile(repoRoot?: string, opts?: { walkUp?: boolean }): string;
 export function loadProjectProfile(repoRoot?: string): ProjectProfile;
+export function loadProjectProfile(repoRoot: string | undefined, opts: { optional: true; walkUp?: boolean }): ProjectProfile | null;
+export function loadProjectProfile(repoRoot?: string, opts?: { optional?: false; walkUp?: boolean }): ProjectProfile;
 export function resetProjectProfileCache(): void;
+export function deepMerge<T>(base: T, override: unknown): T;
+export interface AuthAxis { applies: boolean; mode: string; }
+export function authAxes(profile: unknown): { github: AuthAxis; ado: AuthAxis; jira: AuthAxis };

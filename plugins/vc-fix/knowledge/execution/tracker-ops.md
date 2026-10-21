@@ -2,14 +2,21 @@
 
 Single reference for the interactive bug-lifecycle commands (`/qa-bug`, `/qa-fix`,
 `/qa-verify-fix`) so none of them hardcode **Jira + GitHub + VirtoCommerce**. The
-deployment's `project-profile.json` (written by `/project-init`) decides which bug tracker
-and which code host every operation talks to. **With no profile ⇒ Jira / GitHub /
-VirtoCommerce — the original VC-internal behaviour, unchanged.** Commands apply the matrix
-by reading the profile.
+deployment's `project-profile.json` (written by `/project-init`, which lives in the `vc-init`
+plugin) decides which bug tracker and which code host every operation talks to. **A missing
+profile is a STOP — run `/project-init`; there is no Jira / GitHub / VirtoCommerce default
+fallback any more.** Commands apply the matrix by reading the profile.
 
 > Read the profile once at the start of a run: `node -e "console.log(JSON.stringify(require('./scripts/lib/project-profile.mjs')))"`
 > is not exported that way — instead read `project-profile.json` directly (it's gitignored,
-> present only on a configured deployment) or infer the defaults when absent.
+> present only on a configured deployment); absent ⇒ STOP and ask the operator to run `/project-init`.
+>
+> **Tokens never come from a file.** GitHub / Azure DevOps / Jira tokens live in vc-secrets and reach a
+> process only through the bridge: `node "$VC_RUN" gh|git-gh|git-ado|ado|jira …`. `$VC_RUN` is set by
+> `/project-init` (vc-init) in `.claude/settings.local.json` `env`; it is the stable path of the bridge
+> shim. If it is unset, the project was onboarded before VCST-6402 — run `/project-init --check`.
+>
+> **Host-governed project** (`governance.host` set): use the host's MCP servers from `governance.servers.*`, never `$VC_RUN` — [`knowledge/execution/host-governance.md`](host-governance.md).
 
 ## 0. GOLDEN RULE — ONE comment per ticket per run. Amend it; never append to it.
 
@@ -20,8 +27,8 @@ deliver one conclusion — and left them to reconcile which version is current.
 **The rule, and it is absolute:**
 
 1. **One comment per ticket per run.** Compose it locally, post it once, at close-out.
-2. **A correction EDITS that comment — it never becomes a second one.** `PUT /rest/api/3/issue/{key}/comment/{id}`
-   (§0a). New evidence, a retraction, a severity change, a formatting fix: all are edits.
+2. **A correction EDITS that comment — it never becomes a second one.** `node "$VC_RUN" jira edit-comment …`
+   (a `PUT /rest/api/3/issue/{key}/comment/{id}`, §0a). New evidence, a retraction, a severity change, a formatting fix: all are edits.
 3. **Nothing is posted mid-run** "so they know sooner". Findings live in chat and in the local
    report until close-out. If the operator explicitly says *post now*, that post becomes **the**
    comment for the run and everything later amends it.
@@ -64,18 +71,16 @@ issue #360 — the round is now keyed on the build under test.
 The Atlassian MCP was long used as if `addCommentToJiraIssue` could only post, which is precisely why
 corrections turned into new comments. It CAN edit: pass `commentId` (the local `atlassian` server and the
 claude.ai connectors alike; `addOrEditJiraIssueComment` on some connectors). There is still no delete tool; the plugin's hooks guard
-that edit path and treat a ledger comment older than 12 h as a previous round (rule 5). Otherwise use REST directly:
+that edit path and treat a ledger comment older than 12 h as a previous round (rule 5). Otherwise go
+through the bridge (the token stays in vc-secrets; the host is the profile's `tracker.baseUrl`):
 
 ```bash
-# edit an existing comment (auth: JIRA_EMAIL + JIRA_API_TOKEN from .env.local)
-curl -sk -u "$JIRA_EMAIL:$JIRA_API_TOKEN" -X PUT \
-  -H "Content-Type: application/json" \
-  --data @body.json \
-  "https://<site>.atlassian.net/rest/api/3/issue/<KEY>/comment/<COMMENT_ID>"
+# edit an existing comment — body.json = ADF; add --wiki for a wiki-markup (inline-image) body
+node "$VC_RUN" jira edit-comment --key <KEY> --id <COMMENT_ID> --body-file body.json
 ```
 
-Deleting is `DELETE` on the same URL. **Azure Boards:** `PATCH` the work item's comment endpoint
-(`/comments/{id}`, api-version 7.1-preview.4).
+**Azure Boards:** `node "$VC_RUN" ado edit-comment --id <ID> --comment-id <COMMENT_ID> --text-file body.txt`
+(PATCHes the work item's `/comments/{id}`, api-version 7.1-preview.4).
 
 **If you cannot authenticate for a PUT, you do not get to fall back to a new comment.** Say so, hand
 the operator the corrected body, and let them decide.
@@ -99,37 +104,37 @@ the operator the corrected body, and let them decide.
 Use whichever surface is available; prefer the MCP when connected, else the CLI/REST.
 
 > **Azure interactive: use the `ado.mjs` helper, NOT hand-rolled `curl`+`python`.**
-> `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" <get-workitem|create-workitem|comment|transition|upload-attachment|list-states|list-types|create-pr|list-policies|get-file|list-refs>`
-> (org/project/apiBase default from the profile; Basic-PAT/az-login auth, UTF-8, and 302-sign-in detection
-> are built in). This is the fix for last run's repeated Windows grabli — `/tmp` path mismatch between Bash
+> `node "$VC_RUN" ado <get-workitem|create-workitem|comment|edit-comment|patch-fields|wiql|transition|upload-attachment|list-states|list-types|create-pr|list-policies|get-file|list-refs>`
+> (org/project/apiBase default from the profile; the bridge injects the PAT from vc-secrets or runs it on
+> the `az login` session; UTF-8 and 302-sign-in detection are built in). This is the fix for last run's repeated Windows grabli — `/tmp` path mismatch between Bash
 > and Windows Python, `cp1252` `UnicodeDecodeError` on ADO JSON, emoji/`&quot;` entity breakage, `$top`
-> escaping, and ADO REST 400s from inline `-d` JSON. Hand-rolled `curl` is the fallback for a native
-> agentic checkout only. `comment --text-file` (never inline prose with em-dashes); `create-pr`/policy
+> escaping, and ADO REST 400s from inline `-d` JSON. Never hand-roll an authenticated `curl` — it would
+> need the token in the shell, and no file holds it any more. `comment --text-file` (never inline prose with em-dashes); `create-pr`/policy
 > endpoints already use the right `-preview`/`7.1` api-versions.
 >
-> **NEVER pipe a plugin script through `head`/`tail` (or any pager).** `node … ado.mjs … | head`
+> **NEVER pipe a plugin script through `head`/`tail` (or any pager).** `node "$VC_RUN" ado … | head`
 > makes the exit code that of `head` (0), not `ado.mjs` — a `create-workitem` / `transition` that
 > failed 4xx then looks like it *succeeded*, and the self-diagnostics collector, which reads the
 > tool's exit status, records nothing (VCST-5582 C3). If you must shorten the output, redirect to a
-> file and read the file (`node … ado.mjs … > out.json 2>&1; echo "exit=$?"`), or use the tool's own
+> file and read the file (`node "$VC_RUN" ado … > out.json 2>&1; echo "exit=$?"`), or use the tool's own
 > `--json` and read the fields — never a pipe that swallows the status.
 >
 > **Windows / Git-Bash: a `--path` starting with `/` gets MSYS-mangled.** On Git-Bash, MSYS rewrites
 > a leading-slash argument into a Windows path (`/Web/config.js` → `C:/Program Files/Git/Web/config.js`)
 > **before** `ado.mjs` sees it, so `get-file --path /some/repo/path` resolves to the wrong file. `ado.mjs
 > get-file` detects the mangling and prints a hint, but you hit it first — so either prefix the command
-> with `MSYS_NO_PATHCONV=1` (`MSYS_NO_PATHCONV=1 node … ado.mjs get-file --path /src/App.cs`) **or** pass
+> with `MSYS_NO_PATHCONV=1` (`MSYS_NO_PATHCONV=1 node "$VC_RUN" ado get-file --path /src/App.cs`) **or** pass
 > `--path` **without** the leading slash (`--path src/App.cs`). This is a Git-Bash quirk, not an `ado.mjs`
 > bug — it affects any native tool taking a POSIX-looking path argument.
 
-| Op | Jira (`tracker.kind = jira`) | Azure Boards (`tracker.kind = azure`) — via `ado.mjs` |
+| Op | Jira (`tracker.kind = jira`) | Azure Boards (`tracker.kind = azure`) — via `node "$VC_RUN" ado <cmd>` |
 |---|---|---|
-| **Create** a ticket | Atlassian MCP `createJiraIssue` (project = `tracker.projectKey`) | `ado.mjs create-workitem --type Bug --title … --description-file …` (environment/metadata → dedicated fields: `--system-info-file <html>` for the System Info block + repeatable `--field "Custom.Environment=QA"` / `"Custom.Reportedby=QA team"` / `"Custom.Typeofbug=Functional"`; `--assign-self` (owner via `whoami`) + `--iteration current` (active sprint via `current-iteration`) + `--parent <id>` (ask the operator which work item to link under); plus `--severity`/`--priority`/`--tags`/`--attachments`. Leave `ReproSteps` empty — put the whole abstract report in `--description-file` per [`azure-html-format.md`](azure-html-format.md). Returns `{ id, type, title, state, url }`) |
-| **Upload** a screenshot / file | (Jira: MCP attachment) | `ado.mjs upload-attachment --file <path>` → `{ url }`; embed inline as `<img src="{url}">` and/or pass to `create-workitem --attachments "<url1>,<url2>"` |
-| **Resolve** a ticket | Atlassian MCP `getJiraIssue` | `ado.mjs get-workitem --id <n>` (cleaned fields; wraps `GET {base}/_apis/wit/workitems/<n>?$expand=all`) |
-| **Search** by label | Atlassian MCP `searchJiraIssuesUsingJql` (`labels = qa-autofix`) | ADO WIQL `POST {base}/_apis/wit/wiql` — `… WHERE [System.Tags] CONTAINS 'qa-autofix' AND [System.WorkItemType]='Bug'` |
-| **Comment** | Atlassian MCP `addCommentToJiraIssue` | `ado.mjs comment --id <n> --text-file <path>` |
-| **Transition / set state** | Atlassian MCP `transitionJiraIssue` — **discover the transition id live**, never hardcode a name | `ado.mjs transition --id <n> --state <roleStates[role]>` — map ROLE→state via `tracker.azure.roleStates` (scanned per type), never a hardcoded name |
+| **Create** a ticket | Atlassian MCP `createJiraIssue` (project = `tracker.projectKey`) | `ado create-workitem --type Bug --title … --description-file …` (environment/metadata → dedicated fields: `--system-info-file <html>` for the System Info block + repeatable `--field "Custom.Environment=QA"` / `"Custom.Reportedby=QA team"` / `"Custom.Typeofbug=Functional"`; `--assign-self` (owner via `whoami`) + `--iteration current` (active sprint via `current-iteration`) + `--parent <id>` (ask the operator which work item to link under); plus `--severity`/`--priority`/`--tags`/`--attachments`. Leave `ReproSteps` empty — put the whole abstract report in `--description-file` per [`azure-html-format.md`](azure-html-format.md). Returns `{ id, type, title, state, url }`) |
+| **Upload** a screenshot / file | `node "$VC_RUN" jira attach --key <KEY> --file <path>` → `[{ id, filename }]` | `ado upload-attachment --file <path>` → `{ url }`; embed inline as `<img src="{url}">` and/or pass to `create-workitem --attachments "<url1>,<url2>"` |
+| **Resolve** a ticket | Atlassian MCP `getJiraIssue` | `ado get-workitem --id <n>` (cleaned fields; wraps `GET {base}/_apis/wit/workitems/<n>?$expand=all`) |
+| **Search** by label | Atlassian MCP `searchJiraIssuesUsingJql` (`labels = qa-autofix`) | `ado wiql --query "SELECT [System.Id] FROM WorkItems WHERE [System.Tags] CONTAINS 'qa-autofix' AND [System.WorkItemType]='Bug'" [--fields System.Title,System.State]` |
+| **Comment** | Atlassian MCP `addCommentToJiraIssue` | `ado comment --id <n> --text-file <path>` (amend: `ado edit-comment`, §0a) |
+| **Transition / set state** | Atlassian MCP `transitionJiraIssue` — **discover the transition id live**, never hardcode a name | `ado transition --id <n> --role <role>` — the CLI maps ROLE→state for the item's own type via `tracker.azure.roleStatesByType` (scanned per type), never a hardcoded name |
 
 **Created-ticket key follows the tracker** (as in §1): Jira returns a prefixed key (`ABC-123`);
 Azure returns a **bare numeric** id (`12345`). Use that key/id verbatim for the follow-up
@@ -156,7 +161,8 @@ resolve/comment/transition ops and for commit/PR cross-links (Azure: `AB#12345`)
 > NOTHING. Such a comment is attached first, then written as **wiki markup** with
 > `!filename.png|width=700!` through the **v2** comment API, and VERIFIED from
 > `?expand=renderedBody` (one `<img …/attachment/content/N>` per image, zero surviving `!….png!`,
-> zero `<span class="error">`). On Azure Boards the equivalent is `ado.mjs upload-attachment`
+> zero `<span class="error">`) — through the bridge: `jira attach`, then `jira comment --wiki`, then
+> `jira get-comment --rendered`. On Azure Boards the equivalent is `ado upload-attachment`
 > then an inline `<img src="{url}">`. Embedding is MANDATORY for any UI claim, not a style choice —
 > policy and the verification gate: `.claude/rules/reports.md` §5.0.
 >
@@ -170,9 +176,10 @@ resolve/comment/transition ops and for commit/PR cross-links (Azure: `AB#12345`)
 > invisible one** — obeying
 > the size caps in `.claude/rules/reports.md`; and **verified to render** (bold/lists/code actually
 > format) — a literal `**` / `| … |` wall means the wrong dialect was sent, so fix and re-post.
-Auth (never passwords): Jira via the Atlassian MCP OAuth (or `JIRA_API_TOKEN`+`JIRA_EMAIL`);
-Azure via `ADO_PAT` (Basic, empty user) or an `az login` session (`ADO_AUTH=az-login`) — same
-helpers as `skills/qa-fix-routing/ado-rest.ts`.
+Auth (never passwords, never a token in a file): Jira via the Atlassian MCP OAuth, or `node "$VC_RUN" jira …`
+(the `jira-token` secret in vc-secrets); Azure via `node "$VC_RUN" ado …`, which injects the `ado-pat`
+secret or runs on an `az login` session — the profile's `auth.jira` / `auth.ado` decide, and the bridge
+handles both, so a command never branches on it.
 
 ### Live transition discovery — the load-bearing rule
 The former hardcoded Jira transition NAMES ("Take to development", "Go to review", "Ready to
@@ -183,16 +190,18 @@ them. Always resolve the *destination status* by role, then map it to the live w
    - Fix-side (`/qa-fix`): `in-progress` (start work) · `in-review` (PR opened) · `ready-for-test` (awaiting human) · `done`.
    - QA-side (`/qa-verify-fix`): `testing` (QA in progress) · `tested` (QA passed) · `reopen` (QA rejected, back to dev).
    VC-internal Jira reference names for the QA roles: `On QA` → testing, `Finish test` → tested,
-   `Need fixes` / `REOPEN` → reopen. Azure Boards maps every role via `tracker.azure.roleStates`
+   `Need fixes` / `REOPEN` → reopen. Azure Boards maps every role via `tracker.azure.roleStatesByType`
    (the QA roles are scanned best-effort by `/project-init`; hand-edit the profile if missing).
 2. **Jira:** call `getTransitionsForJiraIssue` and pick the transition whose target status best
    matches the role (case-insensitive contains: "progress" / "review" / "test" / "done"). If
    none matches, ask the user which transition to use — do NOT invent an id.
-3. **Azure Boards:** map the role → a `System.State` via `tracker.azure.roleStates` — the map
-   `/project-init` SCANNED from this deployment's process (a custom process is common; e.g. LEO's Bug is
+3. **Azure Boards:** map the role → a `System.State` of the item's OWN work-item type via
+   `tracker.azure.roleStatesByType[<type>]` (`ado transition --role` does it; `roleStates` is the primary
+   type's map, kept for older profiles) — the maps `/project-init`
+   SCANNED from this deployment's process (a custom process is common; e.g. one client process's Bug is
    `{ "in-progress":"On Dev", "in-review":"On Review", "ready-for-test":"Ready for QA", "done":"Closed" }`
    — NOT the generic Agile `Active/Resolved`). If the map lacks the role, read the work item's allowed
-   states (`ado.mjs list-states --type <T>`) and ask the user which state fits.
+   states (`node "$VC_RUN" ado list-states --type <T>`) and ask the user which state fits.
 4. **Honor `tracker.azure.transitionPolicy` — this OVERRIDES the old "always ask":**
    - `auto` (the default once states are scanned) ⇒ transition **silently by role and just log it — do
      NOT open an `AskUserQuestion`.** This is what keeps a client run at ~0 operator questions.
@@ -239,29 +248,32 @@ picks how you clone/push/PR:
 
 | `contributionPlan` result | Clone / push | Open PR |
 |---|---|---|
-| client repo, `host=github` | `gh repo clone` (client org) | `gh pr create` on the client repo |
-| client repo, `host=azure-repos` | `git clone https://dev.azure.com/<org>/<project>/_git/<repo>` (auth: `ADO_PAT` or `az`) | ADO REST `POST {base}/_apis/git/repositories/<repo>/pullrequests?api-version=7.1` |
-| platform repo, `mode=direct` | `gh repo clone VirtoCommerce/<repo>` | `gh pr create` (today's path) |
-| platform repo, `mode=fork` | fork → clone the fork, branch from `upstream/<base>` | `gh pr create --head <forkOwner>:<branch>` |
+| client repo, `host=github` | `node "$VC_RUN" git-gh clone https://github.com/<clientOrg>/<repo>` | `node "$VC_RUN" gh pr create` on the client repo |
+| client repo, `host=azure-repos` | `node "$VC_RUN" git-ado clone https://dev.azure.com/<org>/<project>/_git/<repo>` | `node "$VC_RUN" ado create-pr --repo <repo> …` (wraps `POST {base}/_apis/git/repositories/<repo>/pullrequests?api-version=7.1`) |
+| platform repo, `mode=direct` | `node "$VC_RUN" git-gh clone https://github.com/VirtoCommerce/<repo>` | `node "$VC_RUN" gh pr create` (today's path) |
+| platform repo, `mode=fork` | `node "$VC_RUN" gh repo fork` → `git-gh clone` the fork, branch from `upstream/<base>` | `node "$VC_RUN" gh pr create --head <forkOwner>:<branch>` |
 
 `checkoutForFix(repo, key, ws)` already encodes all four — prefer calling it over doing this by
 hand. For opening the PR, you run the matching command above.
 
 ### Write auth per host
-- **GitHub, PAT host:** all remote git/gh writes as `GH_TOKEN` ← `GITHUB_FIX_BUGS_TOKEN` (`.env.local`);
-  the ambient MCP token is read-only. (See `knowledge/agents/developers/shared-instructions.md` §GitHub authentication.)
-- **GitHub, browser-login host** (`vcs.auth: "gh-cli"`): the ambient `gh` already has write scope —
-  drop the `GH_TOKEN=` prefix (`gh auth status` confirms).
-- **Azure Repos:** `ADO_PAT` embedded in the clone URL, or an `az login` session — never a password.
+- **Every remote write goes through the bridge** — `node "$VC_RUN" gh …` and `node "$VC_RUN" git-gh|git-ado
+  [-C <dir>] clone|fetch|push|ls-remote …`. Local-only git (commit, checkout, branch, diff, log,
+  status, merge, rebase, reset) stays plain `git` — to update a checkout, `git-gh fetch` through the bridge
+  and then merge or rebase locally (no `pull`: its merge would run the repository's drivers with the token). The ambient MCP token is read-only. (See
+  `knowledge/agents/developers/shared-instructions.md` §GitHub authentication.)
+- **PAT axis or session axis — same command.** On a PAT axis (`auth.github: pat` / `auth.ado: pat`) the
+  bridge injects the `github-pat` / `ado-pat` secret from vc-secrets; on a session axis (`gh auth login` /
+  `az login`) it runs the tool directly. Never branch on the profile's `auth.*`, never put a token in a
+  clone URL or an env prefix, never a password. `gh auth *` and `gh pr merge` are refused by the bridge.
 
 ## 4. Preflight ordering — probe the RESOLVED host, after Gate 1
 
 Do the write-credential preflight **after** Gate 1 (once the routed repo — hence its host — is
 known), not before. Probe only the axis `contributionPlan(routeRepo).host` needs:
-- `github` → `GH_TOKEN="$GITHUB_FIX_BUGS_TOKEN" gh api repos/<owner>/<repo> --jq .permissions.push` (or,
-  on a `gh-cli` host, `gh auth status` shows write) — must be `true`.
-- `azure-repos` → a `GET {base}/_apis/git/repositories/<repo>?api-version=7.1` returning JSON
-  (not the 203+HTML sign-in page) proves the PAT/`az` session can reach it.
+- `github` → `node "$VC_RUN" gh api repos/<owner>/<repo> --jq .permissions.push` — must be `true` (on either axis).
+- `azure-repos` → `node "$VC_RUN" ado list-refs --repo <repo>` returning JSON (not the 203+HTML sign-in
+  page) proves the PAT/`az` session can reach it.
 
 A native-platform run resolves `host=github`, `mode=direct` ⇒ exactly the original preflight.
 

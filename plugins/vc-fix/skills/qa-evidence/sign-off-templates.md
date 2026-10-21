@@ -5,7 +5,7 @@
 
 ---
 
-## Frontend Quick Status Report (for Teams/Comment)
+## Frontend Quick Status Report (for Teams / qa-lead SendMessage — a tracker comment is `qa-report`'s)
 
 ```markdown
 Testing Complete: [Feature/Flow] Frontend
@@ -85,7 +85,7 @@ Testing Complete: [Feature/Flow] Frontend
 
 ---
 
-## Backend Quick Status Report (for Teams/Comment)
+## Backend Quick Status Report (for Teams / qa-lead SendMessage — a tracker comment is `qa-report`'s)
 
 ```markdown
 Testing Complete: [Module/Feature] Backend

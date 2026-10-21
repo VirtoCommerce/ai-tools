@@ -42,9 +42,12 @@ You are executing {TASK_DESCRIPTION} for run {RUN_ID}.
   `workspace`, `secretsEnv`) in the prompt. To launch a bundled plugin script, the agent resolves
   `$pluginRoot` = the active install path at runtime via `claude plugin list --json` (not a profile
   field; see `knowledge/execution/plugin-root.md`). The agent resolves every other path from `projectRoot`
-  (`.env`/secrets, workspace, reports), runs git as `git -C "<abs-checkout>"`, and **never `cd`s into the
+  (`.env`/test-user passwords, workspace, reports), runs git as `git -C "<abs-checkout>"`, and **never `cd`s into the
   workspace as a persisted directory** (the Bash cwd drifts between calls and silently breaks relative
-  `source .env.local`). Load secrets only from the absolute `join(projectRoot, secretsEnv)`.
+  paths). Load test-user passwords only from the absolute `join(projectRoot, secretsEnv)`. **No token is in
+  any file:** every network git/gh/tracker call goes through the bridge `node "$VC_RUN" …`, which resolves
+  the credential from vc-secrets or the session login (`knowledge/agents/developers/shared-instructions.md`
+  §GitHub authentication).
 - **Pass the routed repo explicitly.** Include the routed repo name + its `contribution`/`integrationBranch`
   so the agent derives `.fix-workspace/<repo-basename>/` and the branch base/target — never a hardcoded
   `vc-frontend`/`dev`.
@@ -221,7 +224,7 @@ PRs in `vc-frontend` and `vc-module-*` are deployed to QA **while still open** (
 
 For `/qa-verify-fix`:
 
-1. Get PR details: `gh pr view <number> --json title,state,headRefName,labels` — note the branch and any CI build artifact version (often in PR description or CI checks)
+1. Get PR details: `node "$VC_RUN" gh pr view <number> --json title,state,headRefName,labels` — note the branch and any CI build artifact version (often in PR description or CI checks)
 2. Identify which module/theme the PR belongs to (from the repo name)
 3. Cross-reference the module/theme version in `backend/packages.json` or `theme/artifact.json` — look for the PR's **build artifact version** (e.g., alpha/preview version like `2.44.0-alpha.2262`)
 4. If the deploy repo doesn't contain the PR's build version → the PR build is **not yet deployed** to QA. Warn user and ask whether to wait

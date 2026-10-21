@@ -30,6 +30,12 @@
 //      stand — it would send the master password to that stand's sign-in form —
 //      or when the file's copy differs from .env.playwright.master. A name the
 //      file lacks on a master stand is answered with "type MASTER_PASSWORD".
+//   6. On the combined file, a NAME_<ENV> of another env than this session's
+//      (TEST_ENV, its binding, .env.test-env, vcst). The file holds every
+//      non-production env's passwords, so typing another env's name is a sign-in
+//      on the wrong stand, or a page/prompt asking for another stand's password.
+//      CLI and IDE hooks start without CLAUDE_CODE_SESSION_ID (VCST-6091), so the
+//      session id comes from the event, and the binding is read from the project root.
 //
 // Rule source: .claude/knowledge/execution/browser-lanes.md §Browser login secrets.
 // Memory: reference_playwright_secrets_bare_key_name.
@@ -117,7 +123,7 @@ function contract(extra, ctx) {
     `${extra}\n\n` +
     "How Playwright MCP --secrets works:\n" +
     "  - Type the key NAME exactly as the --secrets file spells it:\n" +
-    "      combined .env.playwright.all -> NAME_<ENV>, e.g. browser_type(text=\"ORG_USER_PASSWORD_VCST_QA\")\n" +
+    "      combined .env.playwright.all -> NAME_<ENV>, e.g. browser_type(text=\"ORG_USER_PASSWORD_VCPTCORE_DEV\")\n" +
     "      (ENV = the run's TEST_ENV upper-cased); a single-env file -> the bare NAME,\n" +
     "      e.g. browser_type(text=\"ORG_USER_PASSWORD\").\n" +
     `    This lane reads ${lane}.\n` +
@@ -138,13 +144,16 @@ function contract(extra, ctx) {
 const MASTER_NAME = "MASTER_PASSWORD";
 
 /** This session's stand: the env it resolves (TEST_ENV, its binding, .env.test-env, vcst) layered with its run's
- *  ticket, and whether that stand says PASSWORDS=master. Null without the libraries or on any error. */
+ *  ticket, and whether that stand says PASSWORDS=master. Null without the libraries, on any error, or when neither
+ *  TEST_ENV nor a session id is known: then only a default would answer, and a default is no evidence. */
 function sessionStand(ctx) {
   if (!ctx.lib) return null;
   if (ctx.stand === undefined) {
     try {
+      if (!process.env.TEST_ENV?.trim() && !process.env.CLAUDE_CODE_SESSION_ID) throw new Error("no session id");
       const { env } = ctx.lib.testEnvChoice("vcst");
-      ctx.stand = { env, master: ctx.lib.usesMaster(ctx.lib.layeredEnv(env, { root: ROOT })) };
+      // Only the decision: masterValues false skips the scan of every suite and test-data file for password names.
+      ctx.stand = { env, master: ctx.lib.usesMaster(ctx.lib.layered(env, { root: ROOT, masterValues: false }).env) };
     } catch {
       ctx.stand = null;
     }
@@ -210,11 +219,33 @@ function nearMatches(name, secrets) {
   return near.length ? `Keys that start similarly: ${near.join(", ")}` : "Check the key name against the secrets file.";
 }
 
+/** On the combined file: a NAME_<ENV> of another env than this session's. Null when the name is this session's,
+ *  or when the session's env cannot be read (fail open). */
+function wrongEnvReason(qualified, ctx) {
+  const split = ctx.envs && ctx.lib ? ctx.lib.splitQualifiedName(qualified, ctx.envs) : null;
+  const stand = split ? sessionStand(ctx) : null;
+  if (!split || !stand || split.env === stand.env) return null;
+  const own = stand.master ? MASTER_NAME : `${split.name}_${stand.env.toUpperCase()}`;
+  return (
+    `BLOCKED: ${qualified} is ${split.env}'s password, and this session's env is ${stand.env}.\n` +
+    `To sign in on ${stand.env}, type ${own}. To work on ${split.env}, bind the session to it first:\n` +
+    `npm run env:use -- ${split.env} (a command's env argument does this at its Step 0).`
+  );
+}
+
 /** On the combined file: a name whose value differs from its env's layered value now. No current value
  *  (the env files are not next to the secrets file) is not evidence of staleness — fail open. */
-function staleReason(qualified, secrets, { envs, lib, file }) {
+function staleReason(qualified, secrets, ctx) {
+  const { envs, lib, file } = ctx;
   const split = envs && lib ? lib.splitQualifiedName(qualified, envs) : null;
   if (!split) return null;
+  // A master stand types MASTER_PASSWORD; its NAME_<ENV> in the file is not its password, and a re-sync would only
+  // write the same entry again. (The loader lets only a stand's own file make it a master stand, so this session and
+  // secrets:sync:all agree on it; this answer stays in case they ever do not.)
+  const stand = sessionStand(ctx);
+  if (stand?.master && stand.env === split.env) {
+    return `BLOCKED: this session's stand ${stand.env} uses the master password (PASSWORDS=master): type ${MASTER_NAME}, not ${qualified}.`;
+  }
   const now = lib.layeredEnv(split.env, { root: dirname(file) })[split.name];
   if (!now || now === secrets.get(qualified)) return null;
   return (
@@ -262,6 +293,9 @@ function check(value, secrets, ctx) {
     if (master) return contract(master, ctx);
   }
 
+  const wrongEnv = secrets.has(typed) ? wrongEnvReason(typed, ctx) : null;
+  if (wrongEnv) return contract(wrongEnv, ctx);
+
   const stale = secrets.has(typed) ? staleReason(typed, secrets, ctx) : null;
   return stale ? contract(stale, ctx) : null;
 }
@@ -275,6 +309,17 @@ try {
 
   const values = typedValues(toolName, event.tool_input);
   if (!values.length) process.exit(0);
+
+  // The session's env binding is keyed by CLAUDE_CODE_SESSION_ID, which CLI and IDE hooks do not get: the id is in
+  // the event (VCST-6091; scripts/kb/core/queue.mjs `hookEnv` does the same). The resolver reads the binding and
+  // .env.test-env from the cwd, so resolve from the project root.
+  const sid = typeof event.session_id === "string" && /^[A-Za-z0-9-]+$/.test(event.session_id) ? event.session_id : null;
+  if (!process.env.CLAUDE_CODE_SESSION_ID && sid) process.env.CLAUDE_CODE_SESSION_ID = sid;
+  try {
+    process.chdir(ROOT);
+  } catch {
+    /* no such directory: resolve from the cwd */
+  }
 
   const { file, text, map: secrets } = await loadSecrets();
   if (!secrets.size) process.exit(0);
@@ -291,7 +336,7 @@ try {
     ]);
     lib = {
       combinedEnvs: secretsLib.combinedEnvs, splitQualifiedName: secretsLib.splitQualifiedName, layeredEnv: envCore.layeredEnv,
-      usesMaster: layers.usesMaster, readMaster: layers.readMaster, testEnvChoice: resolver.testEnvChoice,
+      usesMaster: layers.usesMaster, readMaster: layers.readMaster, layered: layers.layered, testEnvChoice: resolver.testEnvChoice,
     };
   } catch {
     /* fail open on the combined-file checks only */

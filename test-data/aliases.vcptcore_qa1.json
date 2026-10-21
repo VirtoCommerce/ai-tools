@@ -711,5 +711,21 @@
     "user_id": "672a38a3-f322-43e0-ba2f-d9a439bc352d",
     "role_id": "AGENT-TEST-Restricted-CMS-Viewer",
     "userName": "AGENT-TEST-restricted-cms@test.virtocommerce.com"
+  },
+  "MULTI_ORG_TF_BR": {
+    "id": "e4a80a20-85a1-4fb3-aad7-e136ea30abd5",
+    "userId": "1fbedcd6-ccd1-4479-8f9a-6cff894ccf2f",
+    "org_techflow_id": "a0a835c4-ec97-4467-914d-9fbfa7500349",
+    "org_buildright_id": "91b24624-6b94-4c29-8969-d87d64f7a45c",
+    "techflow_membership_id": "02843f54afc547058c029706a115c4c7",
+    "buildright_membership_id": "22b667faa4d44bf59d90a13cf6f8ded2"
+  },
+  "MULTI_ORG_TF_BR_ALT": {
+    "id": "6bc1c444-4861-4ea2-8dcc-9e9f8e3c3ce0",
+    "userId": "17d49302-6e59-4cc4-8a74-48e9eb285357",
+    "org_techflow_id": "a0a835c4-ec97-4467-914d-9fbfa7500349",
+    "org_buildright_id": "91b24624-6b94-4c29-8969-d87d64f7a45c",
+    "techflow_membership_id": "55db3264-72e0-47ed-a6a7-decdbc060074",
+    "buildright_membership_id": "ed37b41c-0f47-4947-93cf-bf417106c79b"
   }
 }

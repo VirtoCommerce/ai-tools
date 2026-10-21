@@ -10,12 +10,16 @@ another session reads is edited.
 - **The arguments name an env** — a bare word the script accepts as one (a `.env.<word>` in the project or in
   a `QA_ENV_PATH` folder, §Where an env's files live), or `--env <env>`
   ⇒ `node "$pluginRoot/scripts/env/use-env.mjs" <env>` (`$pluginRoot`: [`plugin-root.md`](plugin-root.md)).
-- **They name none** ⇒ the same script with `--default`. It binds the default too, so the run keeps one env
-  even if someone edits `.env.test-env` while it runs.
+- **They name none** ⇒ for a ticket run (`run-folder.mjs use <TICKET>`) the ticket's own stand when the
+  ticket's `QA_ENV_PATH` folder defines exactly one env; otherwise the same script with `--default`. It binds the default too, so the run keeps one env
+  even if someone edits `.env.test-env` while it runs. When that moves a session that was on another env, it
+  prints a `⚠ this session was on …` line: show it to the user, who passes the env to stay.
 - **Exit 2 ⇒ STOP** and show its message: an unknown env, or a `TEST_ENV` in the session's environment that
   would beat the binding. Never fall back to another env silently.
 - **Run inline by another command** (the ai-tools `/qa-test` runs this pipeline for a fix-ready Bug) ⇒ the
   caller already bound the env: do not bind again.
+- **A subagent never binds.** It shares the session id, so binding there re-binds the caller's whole run
+  (`--default` would move it to the project's default env mid-run). Pass the env to it in the brief instead.
 
 ## What the binding does
 
@@ -34,7 +38,8 @@ session's bound run; outside a session `QA_TICKET=<KEY>`). A dedicated file beat
 pins included: a ticket's folder holds its own stands and may override a shared env for that ticket's runs.
 `scripts/lib/env-layers.mjs` is the order, byte-identical with the ai-tools repo's.
 
-**Master stands:** `PASSWORDS=master` in a stand's env file means every test account on it signs in with ONE
+**Master stands:** `PASSWORDS=master` in a stand's own env file (the project's `.env.<env>` for an env the project
+defines, else its `QA_ENV_PATH` file; nowhere else) means every test account on it signs in with ONE
 password, `MASTER_PASSWORD` in the project's `.env.playwright.master`; every test-account password variable
 resolves to it, and a lane types `MASTER_PASSWORD` in every password field.
 
@@ -56,7 +61,10 @@ on two envs) never write the same file.
 - **Where it is:** `QA_OUTPUT_DIR` in `.env.local`, a path template with optional `<ticket>`, `<env>` and
   `<sprint>` (`QA_OUTPUT_DIR=P:\VC\_VIRTO\tickets\<ticket>\.work\self-testing`). A template without
   `<ticket>` gets `\<ticket>` appended, then one without `<env>` gets `\<env>`. Unset ⇒
-  `reports/tickets/<sprint>/<ticket-key>/<env>/` in the project. Write it unquoted or single-quoted.
+  `reports/tickets/<sprint>/<ticket-key>/<env>/` in the project, or `reports/tickets/<ticket-key>/<env>/` when the
+  project has no `reports/tickets/Sprint<n>-<n>` folder. Once the first one exists, a ticket's new runs go to
+  `<sprint>/<ticket-key>/<env>/`; `… use` still lists its earlier folder among the prior runs. Write it unquoted or
+  single-quoted.
 - **What lands there:** `/qa-verify-fix`'s `verification-report.md`, `verification-summary.json`,
   `evidence.html` and screenshots; an investigation package as `evidence-<UTCstamp>/`; a bug report the run
   files, as `bugs/<critical-high|medium|low>/BUG-*.md` with its screenshots in `bugs/screenshots/<slug>/`.

@@ -1,0 +1,277 @@
+{
+  "ticket": "VCST-6429",
+  "ticket_type": "Review task",
+  "flow": "feature-test",
+  "path": "FULL",
+  "path_route": {
+    "decided_at": "1a",
+    "provisional": null,
+    "narrow_story_tokens": null,
+    "escalated_reason": "Review task §5a: one-file diff but REACH exceeds it — IndexingJobs.RunIndexJobAsync guards every indexation path for all document types"
+  },
+  "layer": "module",
+  "shape_class": null,
+  "verdict": "PASS_WITH_NOTES",
+  "date": "2026-10-20",
+  "environment": "vcptcore_qa1",
+  "build": {
+    "platform": "3.1084.0-pr-3140-9092",
+    "deployed": {
+      "platform": "3.1084.0-pr-3140-9092",
+      "relevant_modules": {
+        "VirtoCommerce.Search": "3.1011.0-pr-157-9278",
+        "VirtoCommerce.AzureSearch": "3.1009.0-pr-61-8c37"
+      }
+    },
+    "Search_source": "vc-deploy-dev PR #6966 (VCST-6429-vcptcore-qa1-deployment → vcptcore-qa1), verified LIVE via /api/platform/modules",
+    "theme": "2.61.0-pr-2564-2fa8-2fa83310",
+    "deploy": {
+      "pr": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/6966",
+      "pin": "VirtoCommerce.Search 3.1010.0 → 3.1011.0-pr-157-9278",
+      "revert_required": false,
+      "provider_switch": {
+        "pr": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/6968",
+        "from": "AzureSearch",
+        "to": "ElasticSearch8",
+        "merged_at": "2026-10-21T10:44:43Z"
+      },
+      "revert": {
+        "pr": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/6970",
+        "merged_at": "2026-10-21T11:56:06Z",
+        "live": "3.1010.0 at 11:59Z"
+      }
+    }
+  },
+  "status_transitions": [
+    {
+      "at": "1a",
+      "hop": "opening",
+      "from": "Testing",
+      "to": "Testing",
+      "skipped": "already in-testing at run start",
+      "by": "qa-lead (inline orchestrator)",
+      "confirmed": false
+    },
+    {
+      "at": "5-status",
+      "hop": "closing",
+      "from": "Testing",
+      "to": "Tested",
+      "transition": "Finish test (id 8)",
+      "by": "qa-lead (inline orchestrator)",
+      "confirmed": true,
+      "confirmed_by": "operator (\"все делай\", 2026-10-21)"
+    }
+  ],
+  "timing": {
+    "test_window_start": "2026-10-20T18:26:00Z",
+    "test_window_end": "2026-10-21T10:56:40Z",
+    "reachability_minutes": 2,
+    "time_to_first_test_minutes": null,
+    "note": "run held ~1.5h earlier on BLOCKED-on-deploy until vc-deploy-dev PR #6966 was merged"
+  },
+  "domain_map": {
+    "state": "PRESENT",
+    "maps": [
+      "srch@rev1"
+    ],
+    "mind_map": ".claude/knowledge/domain/search.mind-map.json",
+    "nodes": [
+      "srch.index.manage",
+      "srch.index.manage.blue-green-swap",
+      "srch.index.freshness"
+    ],
+    "built_in_run": false,
+    "unmapped_surfaces": [
+      "Search index → Indexation process blade concurrency (domain map §5 G5: Index management never live-browsed)"
+    ]
+  },
+  "discovery": {
+    "ran": true,
+    "inline": true,
+    "report": null,
+    "note": "3x run inline by the orchestrator via REST probes, not /qa-exploratory — stated deviation",
+    "findings": [
+      "F-1 loser notification overwritten"
+    ],
+    "context": {
+      "c1": "inline (orchestrator read PR diff + source) — stated deviation",
+      "d1": "skipped — Review task has no ACs"
+    }
+  },
+  "visual": {
+    "surface": false,
+    "surface_source": [
+      "diff = 4 .cs files",
+      "layer module"
+    ]
+  },
+  "contract": {
+    "surface": false,
+    "surface_source": [
+      "no GraphQL/controller/GraphType in diff"
+    ]
+  },
+  "test_data": {
+    "surface": false,
+    "dispatched": false,
+    "fixtures_covering": [
+      "{{BACK_URL}}",
+      "{{STORE_ID}}",
+      "{{ADMIN}}",
+      "{{ADMIN_PASSWORD}}",
+      "live-discover product"
+    ]
+  },
+  "coverage_triage": {
+    "hits": 0,
+    "scanned_by_reading": 33,
+    "confirmed": 33,
+    "repair": [],
+    "re_base": [],
+    "superseded": [],
+    "unscannable": [
+      "061 (legacy 11-column header)"
+    ]
+  },
+  "regression": {
+    "c1": {
+      "run_id": "REG-2026-10-20-1926",
+      "ids": 7,
+      "pass": 7,
+      "fail": 0,
+      "blocked": 0,
+      "pass_rate": "100%",
+      "suite": "regression/suites/Backend/search/061b-search-indexation-jobs.csv",
+      "suite_after_review": "061b keeps SRCHJ-001..006; SRCHJ-007 (F-1 / VCST-6474, pod-dependent, flaky) removed after review — the repro lives in the bug"
+    },
+    "feature_release_gate": "not-assessed",
+    "c1_es8": {
+      "run_id": "REG-2026-10-21-1051",
+      "provider": "ElasticSearch8 3.1011.0 (vc-deploy-dev PR #6968, reverts #6959)",
+      "ids": 7,
+      "pass": 7,
+      "fail": 0,
+      "blocked": 0,
+      "pass_rate": "100%",
+      "note": "runner invoked directly (no regression:plan preflight) — baseline not written"
+    }
+  },
+  "bugs_filed": [
+    {
+      "key": "VCST-6474",
+      "severity": "Medium",
+      "provenance": "PRE-EXISTING (confirmed on 3.1010.0)",
+      "relation": "standalone + Relates to VCST-6429",
+      "labels": [
+        "found-by-agent",
+        "found-in-testing"
+      ],
+      "finding": "F-1"
+    }
+  ],
+  "bugs_not_filed": [
+    {
+      "id": "O-1",
+      "severity": "Low",
+      "title": "Product Index widget shows the indexation time in UTC while the Indexation process blade shows local time"
+    },
+    {
+      "id": "O-2",
+      "severity": "Low",
+      "title": "GET /api/platform/settings/<unregistered name> returns 500 with a stack trace in the body"
+    }
+  ],
+  "new_cases_authored": 6,
+  "ac_analysis": {
+    "conditions": 12,
+    "pass": 10,
+    "fail": 1,
+    "waived": 0,
+    "not_testable": 1,
+    "fail_note": "C12 = pre-existing F-1, not caused by PR #157",
+    "not_testable_note": "C11 lock-store failure / dead holder (graceful restart let the job finish) rests on PR unit tests only",
+    "c10_evidence": "Argo CD logs of platform pods s69h8/tkdbw: ERR Indexation skipped for jobs 401301, 401314, 401316, 401318, 401370"
+  },
+  "total_cases": 7,
+  "passed": 7,
+  "failed": 0,
+  "blocked": 0,
+  "agents_dispatched": [
+    "qa-backend-expert (4a, playwright-edge)",
+    "test-management-specialist (A: 2a + 061b)",
+    "qa-lead-orchestrator (3-cases verifier, REJECT→APPROVE)",
+    "regression-orchestrator (4c C1)"
+  ],
+  "business_rules_verified": [
+    "BL-SRCH-003"
+  ],
+  "appinsights": {
+    "configured": false,
+    "reason": "APPINSIGHTS_* not configured for vcptcore_qa1"
+  },
+  "regression_triage": {
+    "source": "4a checklist + 3x + C1 REG-2026-10-20-1926",
+    "findings": [
+      {
+        "id": "F-1",
+        "severity": "Medium",
+        "provenance": "PRE-EXISTING (confirmed live)",
+        "title": "Concurrent indexation: the skipped run's notification shows the running build's progress; the running build's blade freezes",
+        "draft": "reports/bugs/open/medium/BUG-indexation-loser-notification-shows-winner-progress-VCST-6474.md",
+        "repro_count": "Azure: 8 of ~16 contended runs (2026-10-20); ES8: 3 of 4 probes (2026-10-21, B jobs 401314/401316/401318 hijacked, 401320 clean) — provider-independent",
+        "evidence": {
+          "loser_winner_pairs": [
+            [
+              "83728a4c",
+              "d665c8cd"
+            ],
+            [
+              "cd6af92e",
+              "70657391"
+            ],
+            [
+              "87a7eda2",
+              "21f9d637"
+            ],
+            [
+              "e255323a",
+              "8eabb3c7"
+            ],
+            [
+              "50700d7d",
+              "6d4c8f51"
+            ],
+            [
+              "6c4941b7",
+              "62e19202"
+            ]
+          ]
+        },
+        "note": "SRCHJ-007 passed in both C1 runs while ad-hoc probes reproduce it — the case is a probabilistic catcher of an intermittent defect",
+        "filed": "VCST-6474",
+        "root_cause_evidence": "pod logs: the 3 hijacked losers (8d40dfd1, da235276, 0f3a62c7) each received 11 progress pushes from pod s69h8, where their winners ran and froze at 4 pushes; clean losers had their winner on the other pod (d5753025 on s69h8 vs winner ce9a3108 on tkdbw). The defect needs both runs on one pod — the platform runs 2 pods",
+        "old_build_check": "vcptcore_qa1 after pin revert (vc-deploy-dev #6970), VirtoCommerce.Search 3.1010.0, ES8, 2026-10-21 11:59-12:01Z: 3 of 6 contended runs hijacked (jobs 401387, 401389, 401399)"
+      }
+    ]
+  },
+  "derived_oracle": {
+    "gap": "no BL-* for indexation-job semantics (lock contention, notification ownership)"
+  },
+  "report": {
+    "page_url": null,
+    "kb": {
+      "captured": [
+        "KB-931CC1C4",
+        "KB-E4380CA9",
+        "KB-AD528300"
+      ]
+    },
+    "tracker_comment": {
+      "issue": "VCST-6429",
+      "id": "112236",
+      "format": "REST v2 wiki, 3 inline screenshots verified via renderedBody"
+    }
+  },
+  "screenshots": "reports/tickets/Sprint26-21/VCST-6429/screenshots/"
+}

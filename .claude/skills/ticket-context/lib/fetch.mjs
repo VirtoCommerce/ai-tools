@@ -11,6 +11,7 @@ export const CAPS = Object.freeze({
   diffBytes: 500 * 1024, prFiles: 300, pageTextBytes: 200 * 1024, linkedIssues: 10, redirects: 3,
   fieldText: 20000, // chars kept of the description and of the AC-field text in the bundle's `fields`; the rest is an over-cap gap
   comments: 500, commentPage: 100, // comments read per ticket (oldest first) · page size on the Jira comment endpoint
+  linkedComments: 20, // comments read per kept linked issue — the NEWEST, where a resolution note lands; the rest is an over-cap gap
   pageBytes: 2 * 2 ** 20, // raw bytes read from a public page before it is turned into text
   fetchTimeoutMs: 30_000, downloadTimeoutMs: 120_000, npmTimeoutMs: 300_000, ffmpegTimeoutMs: 120_000,
 });

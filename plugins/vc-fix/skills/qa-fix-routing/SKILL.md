@@ -1,12 +1,12 @@
 ---
 name: qa-fix-routing
-description: Repo/tracker routing library for the vc-fix plugin — decides which external product repo owns a bug (client vs platform), whether the fix delivers as a direct PR, a fork-PR, or an upstream issue, and which VCS/tracker host to talk to. Used by /qa-fix and /project-init. Self-contained — no dependency on the ci/ directory.
+description: Repo/tracker routing library for the vc-fix plugin — decides which external product repo owns a bug (client vs platform), whether the fix delivers as a direct PR, a fork-PR, or an upstream issue, and which VCS/tracker host to talk to. Used by /qa-fix; reads the project-profile.json that vc-init's /project-init writes. Self-contained — no dependency on the ci/ directory.
 ---
 
 # qa-fix-routing — repo + tracker routing library
 
 Self-contained TypeScript library, so the `vc-fix` plugin does not depend on the
-`ci/` directory persisting or being installed. `/qa-fix` and `/project-init` invoke
+`ci/` directory persisting or being installed. `/qa-fix` invokes
 these modules directly (via a `tsx`/`node` one-off script) rather than authoring
 routing logic inline.
 
@@ -56,5 +56,5 @@ imports in `repo-router.ts` and the one-deeper `../../../scripts/lib/...` in the
 ## Consumers
 
 - `commands/qa-fix.md` (Gate 1 routing, Gate 1b provenance, Phase 5 PR delivery, Phase 6 CI-check-contract-by-ownership)
-- `commands/project-init.md` / `skills/project-init/*.mjs` (writes `project-profile.json` that `repoOwnership`/`contributionPlan` read)
+- vc-init's `/project-init` (a separate plugin since VCST-6402, and a dependency of this one) writes the `project-profile.json` that `repoOwnership`/`contributionPlan` read — it runs no module from this directory and carries its own copies of the libs it shares with it
 - `agents/fullstack-backend.md`, `agents/fullstack-frontend.md` (checkout + repo profile for the fix)

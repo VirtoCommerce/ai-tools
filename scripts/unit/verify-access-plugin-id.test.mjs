@@ -1,4 +1,4 @@
-// Unit tests for the vc-fix install picker — plugins/vc-fix/skills/project-init/verify-access.mjs
+// Unit tests for the vc-fix install picker — plugins/vc-init/skills/project-init/verify-access.mjs
 // `pickPluginInstall`. The marketplace was renamed vc-tools → ai-tools on 2026-09-30, so during a
 // migration `claude plugin list` can hold BOTH ids. The picker must prefer the new id whatever order
 // the CLI prints them in (a stale pre-rename install still targets the old repo), and must report
@@ -6,7 +6,7 @@
 // Run: `npm test` (tsx --test scripts/unit/**/*.test.mjs).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { pickPluginInstall } from "../../plugins/vc-fix/skills/project-init/verify-access.mjs";
+import { pickPluginInstall } from "../../plugins/vc-init/skills/project-init/verify-access.mjs";
 
 const entry = (id, enabled) => ({ id, enabled, installPath: `/cache/${id}` });
 

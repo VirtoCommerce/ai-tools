@@ -94,7 +94,7 @@ Azure needs a real attachment URL to render an image inline. Flow:
 
 1. Upload the file and capture its URL:
    ```bash
-   node "$pluginRoot/skills/qa-fix-routing/ado.mjs" upload-attachment --file reports/bugs/screenshots/BUG-x.png
+   node "$VC_RUN" ado upload-attachment --file reports/bugs/screenshots/BUG-x.png
    # → { "url": "https://dev.azure.com/<org>/_apis/wit/attachments/<guid>?fileName=BUG-x.png" }
    ```
 2. Embed it **inside** the relevant `<li>` — never as a bare list item, never outside the `<ol>`:
@@ -224,27 +224,18 @@ was the defect: it is derived from the layout, per type.
 An item filed BEFORE this fix may carry its whole body on an off-form field (e.g. `System.Description`
 when the Bug form only surfaces `ReproSteps`/`SystemInfo`) — invisible on the form. To repair it, copy the
 html to the form-visible body control and clear the off-form field (this is exactly how work item 8452 was
-repaired manually, landing at rev 2). `ado.mjs` has **no generic field-update subcommand** (only
-`comment`/`transition`), so the field PATCH is a direct JSON-Patch REST call:
+repaired manually, landing at rev 2). `ado.mjs` has a generic field-update subcommand, `patch-fields`
+(a JSON-Patch `add` per field; an empty value clears the field; values are written verbatim, with no
+Markdown→HTML conversion), so the repair is two bridge calls and the token never reaches the shell:
 
 ```bash
 # 1. Read the raw off-form html (--json keeps it unstripped) and note the value of the off-form field.
-node "$pluginRoot/skills/qa-fix-routing/ado.mjs" get-workitem --id <ID> --json > wi.json
-# 2. JSON-Patch: write that html into the form-visible body control (from
-#    tracker.formLayout.<Type>.htmlControls) and clear the off-form field. Replace <FORM_VISIBLE_REF>
-#    (e.g. Microsoft.VSTS.TCM.ReproSteps) and <OFF_FORM_REF> (e.g. System.Description):
-# Keep the PAT OUT of argv and shell history: `-u ":$ADO_PAT"` puts the token on the command line,
-# where it is visible to `ps`/process listing and lands in shell history on a shared host. Instead
-# write it to a mode-600 curl config (printf is a shell builtin, so it never forks a process whose
-# argv carries the token) and delete it after.
-umask 077; printf 'user = ":%s"\n' "$ADO_PAT" > .curlauth.tmp
-curl -sS -X PATCH \
-  "https://dev.azure.com/<org>/<project>/_apis/wit/workitems/<ID>?api-version=7.1" \
-  -H "Content-Type: application/json-patch+json" \
-  -K .curlauth.tmp \
-  -d '[{"op":"add","path":"/fields/<FORM_VISIBLE_REF>","value":"<html-from-step-1>"},
-       {"op":"add","path":"/fields/<OFF_FORM_REF>","value":""}]'
-rm -f .curlauth.tmp
+node "$VC_RUN" ado get-workitem --id <ID> --json > wi.json
+# 2. Write that html into the form-visible body control (from tracker.formLayout.<Type>.htmlControls)
+#    and clear the off-form field. fields.json — replace <FORM_VISIBLE_REF> (e.g.
+#    Microsoft.VSTS.TCM.ReproSteps) and <OFF_FORM_REF> (e.g. System.Description):
+#      { "<FORM_VISIBLE_REF>": "<html-from-step-1>", "<OFF_FORM_REF>": "" }
+node "$VC_RUN" ado patch-fields --id <ID> --fields-file fields.json
 ```
 
 Then re-file (or re-run `/qa-bug`) on a re-scanned profile (`/project-init`) so future items bind the
@@ -278,7 +269,7 @@ if it is missing). Per-organization custom fields go via repeatable `--field "<r
 `<ref>` taken from the DISCOVERED contract — never transcribed from another deployment:
 
 ```bash
-node "$pluginRoot/skills/qa-fix-routing/ado.mjs" create-workitem --type Bug \
+node "$VC_RUN" ado create-workitem --type Bug \
   --title "[Orders] Line-item total ignores tier price after quantity bump" \
   --description-file .tmp/desc.html \
   --system-info-file .tmp/sysinfo.html \

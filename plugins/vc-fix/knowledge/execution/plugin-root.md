@@ -1,9 +1,22 @@
 # Resolving `$pluginRoot` — where the plugin's own scripts live
 
 Several commands/skills launch a bundled Node helper by absolute path, e.g.
-`node "$pluginRoot/skills/qa-fix-routing/ado.mjs" …`. `$pluginRoot` is a **placeholder the
+`node "$pluginRoot/skills/<skill>/<script>.mjs" …`. `$pluginRoot` is a **placeholder the
 model fills at runtime** — it is NOT a shell variable and is NOT stored in
 `project-profile.json`.
+
+> **Token-holding scripts are NOT launched this way (VCST-6402).** `ado.mjs`, `jira.mjs` and the
+> self-diagnostics `deliver.mjs` need a GitHub / Azure DevOps / Jira token, and no file holds one any
+> more — the tokens live in vc-secrets. Launch them through the bridge: `node "$VC_RUN" ado …`,
+> `node "$VC_RUN" jira …`, `node "$VC_RUN" deliver …`. The bridge resolves the active `vc-fix` install
+> itself (the same `claude plugin list --json` lookup as below), so no `$pluginRoot` is needed for
+> them. `$VC_RUN` is set by `/project-init` in `.claude/settings.local.json` `env`; if it is unset,
+> the project was onboarded before VCST-6402 — run `/project-init --check`.
+>
+> **`/project-init` lives in the `vc-init` plugin, not here.** `vc-init` is the only writer of
+> `project-profile.json`; any other plugin writes through its `profile-set.mjs`. Its scripts resolve as `<vc-init>` — the
+> same resolver with the id `vc-init@ai-tools`, or more simply `node "$VC_RUN" --where`, which prints
+> `{ vcInit, vcFix, … }`.
 
 ## Why it must be resolved at runtime (not baked)
 
@@ -28,7 +41,7 @@ uninstall `vc-fix@vc-tools` and restart):
 
 ```bash
 PLUGIN_ROOT="$(claude plugin list --json | node -e "const a=JSON.parse(require('fs').readFileSync(0,'utf8'));const ids=['vc-fix@ai-tools','vc-fix@vc-tools'];const pick=f=>ids.map(i=>a.find(x=>x.id===i&&f(x))).find(Boolean);const p=pick(x=>x.enabled)||pick(()=>true);process.stdout.write(p?p.installPath:'')")"
-node "$PLUGIN_ROOT/skills/qa-fix-routing/ado.mjs" <cmd> …
+node "$PLUGIN_ROOT/skills/<skill>/<script>.mjs" …
 ```
 
 PowerShell:
@@ -36,7 +49,7 @@ PowerShell:
 ```powershell
 $list = claude plugin list --json | ConvertFrom-Json
 $PLUGIN_ROOT = @(foreach ($i in 'vc-fix@ai-tools','vc-fix@vc-tools') { $list | Where-Object { $_.id -eq $i -and $_.enabled } })[0].installPath
-node "$PLUGIN_ROOT/skills/qa-fix-routing/ado.mjs" <cmd> …
+node "$PLUGIN_ROOT/skills/<skill>/<script>.mjs" …
 ```
 
 Resolve it **once** per task and reuse `$PLUGIN_ROOT`. Always the active version — no

@@ -788,6 +788,259 @@
       ]
     },
     {
+      "id": "cat.cfg.checklist",
+      "type": "behavior",
+      "name": "The PDP price block lists every configuration section with its state and a link to it",
+      "chain_link": "4",
+      "interfaces": [
+        "storefront"
+      ],
+      "actors": [
+        "buyer (anonymous or signed in)"
+      ],
+      "maturity": "new",
+      "description": "A checklist in the PDP \"Price and delivery\" widget (Share & Actions on mobile): one row per visible section in configuration order, saying whether it is done, required or optional, with a link that opens that section. It explains why Add to cart is disabled; it does not enforce anything.",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-6398 AC-7",
+          "note": "comment 112130: the merge author lists it as checked; a claim, not an observation",
+          "date": "2026-10-19"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-6398 AC-8",
+          "note": "comment 112130: the merge author lists it as checked; a claim, not an observation",
+          "date": "2026-10-19"
+        },
+        {
+          "class": "SPEC",
+          "ref": "vc-frontend#2527",
+          "note": "adds a checklist to the Price and delivery widget for configurable products",
+          "date": "2026-10-20"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-79949FFE",
+          "note": "on a build carrying vc-frontend#2527 the checklist listed a revealed dependent section as an optional row",
+          "date": "2026-10-06"
+        }
+      ],
+      "notes": "Carried into vc-frontend-next by vc-frontend-next#11 (VCST-6398); not yet seen on that build: deployment of the PR is UNKNOWN. integrates with: cart - Edit configuration of a configured cart line (the save-changes guard must not fire on a checklist link)."
+    },
+    {
+      "id": "cat.cfg.checklist.rows-per-section",
+      "type": "branch",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "name": "One row per visible section, in configuration order; a section hidden by dependsOnSectionId has no row",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-frontend#2527",
+          "note": "each visible section becomes a row; sections hidden by dependsOnSectionId are skipped",
+          "date": "2026-10-20"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-6398 AC-7",
+          "note": "comment 112130: the merge author lists it as checked; a claim, not an observation",
+          "date": "2026-10-19"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.checklist.done-label",
+      "type": "branch",
+      "branch_kind": "state",
+      "technique": "DT",
+      "name": "A done Product section reads \"{name} - {product}\"; a done Text or File section reads the name only",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-frontend#2527",
+          "note": "done product: green with selected product; done text/file: green, name only; label clamped to 2 lines with the full text in the title",
+          "date": "2026-10-20"
+        }
+      ],
+      "notes": "The name-only label for a filled OPTIONAL Text/File section is the open PO question: a reviewer quoted VCST-6027 asking for \"{Option name} - {Option value}\", the author answered it is deliberate and left it to the PO (vc-frontend#2527 thread). VCST-6027 itself was not read for this update, so this is recorded as a question, not as a DRIFT."
+    },
+    {
+      "id": "cat.cfg.checklist.required-open",
+      "type": "branch",
+      "branch_kind": "negative",
+      "technique": "DT",
+      "name": "An unfilled required section is a red row \"{name} - required\" with Fill it in (Text), Upload a file (File) or Check it out (Product)",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-frontend#2527",
+          "note": "required rows: red, link text by section type",
+          "date": "2026-10-20"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-6398 AC-7",
+          "note": "comment 112130: the merge author lists it as checked; a claim, not an observation",
+          "date": "2026-10-19"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.checklist.optional-open",
+      "type": "branch",
+      "branch_kind": "happy",
+      "technique": "DT",
+      "name": "An unfilled optional section is a yellow row \"{name} - optional\" with a Review link",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-frontend#2527",
+          "note": "optional rows: yellow, Review link",
+          "date": "2026-10-20"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-6398 AC-7",
+          "note": "comment 112130: the merge author lists it as checked; a claim, not an observation",
+          "date": "2026-10-19"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-6398 AC-8",
+          "note": "comment 112130: the merge author lists it as checked; a claim, not an observation",
+          "date": "2026-10-19"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.checklist.row-vs-gate",
+      "type": "branch",
+      "branch_kind": "negative",
+      "technique": "DT",
+      "name": "A row is green only when the Add to cart gate also counts that section as filled",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "HYPOTHESIS",
+          "ref": "vc-frontend#2527 product-configuration-checklist.vue:81",
+          "note": "a row turns green on a truthy selectedOptionTextValue; whitespace-only text, an uploading or failed file or an invalid value may disagree with the gate (reviewer hotspot, not tested)",
+          "date": "2026-10-20"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-79949FFE",
+          "note": "whitespace-only text in a required Text section reveals its dependent section while the section stays required and Add to cart stays disabled: the visibility rule and the gate already disagree on what a value is",
+          "date": "2026-10-06"
+        }
+      ],
+      "notes": "Whether the row of the whitespace-only required Text section itself stays red was not recorded."
+    },
+    {
+      "id": "cat.cfg.checklist.dependency-live",
+      "type": "branch",
+      "branch_kind": "state",
+      "technique": "ST",
+      "name": "Changing a parent selection adds or removes the dependent row live, and the order stays the configuration order",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-frontend#2527",
+          "note": "rows filtered by isSectionVisible; a row turns green live as the buyer fills the section",
+          "date": "2026-10-20"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-79949FFE",
+          "note": "the revealed dependent section appeared as an optional checklist row",
+          "date": "2026-10-06"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.checklist.link-navigation",
+      "type": "branch",
+      "branch_kind": "state",
+      "technique": "ST",
+      "name": "A checklist link expands its section, scrolls it to the top, focuses its header, leaves the URL unchanged and does not open the save-changes guard",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-6398 AC-8",
+          "note": "comment 112130: the merge author lists it as checked; a claim, not an observation",
+          "date": "2026-10-19"
+        },
+        {
+          "class": "SPEC",
+          "ref": "vc-frontend#2527",
+          "note": "link expands, scrolls (block start), focuses the section header; click.prevent, real href kept; no save-changes guard on a cart edit",
+          "date": "2026-10-20"
+        }
+      ],
+      "notes": "Open author-side risks, not observations: one click may scroll in two ProductConfiguration instances when desktop and mobile layouts are both mounted; the header may end under a sticky app header; a middle-click opens the #product-configuration-section-<id> href."
+    },
+    {
+      "id": "cat.cfg.checklist.collapse-state",
+      "type": "branch",
+      "branch_kind": "state",
+      "technique": "ST",
+      "name": "Collapse state is kept per section; only the first section is expanded initially and a link reopens a section the buyer collapsed",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-frontend#2527",
+          "note": "collapsedSections[id] ?? index !== 0",
+          "date": "2026-10-20"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.checklist.product-switch",
+      "type": "branch",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "name": "Moving from one configurable product to another does not list the previous product's sections",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "HYPOTHESIS",
+          "ref": "vc-frontend#2527 product-configuration-checklist.vue:71",
+          "note": "productId is read once at setup, not reactively",
+          "date": "2026-10-20"
+        }
+      ]
+    },
+    {
+      "id": "cat.cfg.checklist.placement",
+      "type": "branch",
+      "branch_kind": "happy",
+      "technique": "CT",
+      "name": "The checklist shows only for a configurable product, in Price and delivery (Share & Actions on mobile), and is left out of the printout",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-frontend#2527",
+          "note": "rendered under v-if product.isConfigurable; mobile in Share & Actions; print:hidden",
+          "date": "2026-10-20"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-6398 AC-7",
+          "note": "comment 112130: the merge author lists it as checked; a claim, not an observation",
+          "date": "2026-10-19"
+        }
+      ]
+    },
+    {
       "id": "cat.cfg.file",
       "type": "behavior",
       "name": "A File section takes uploads through the file endpoint and carries the returned URL",
@@ -839,7 +1092,8 @@
           "note": "D1: dropzone copy states the exact allowlist, 9.5MB, max 5",
           "date": "2026-09-16"
         }
-      ]
+      ],
+      "notes": "The 9.5 MB and the 10-type list are the product-configuration upload scope of a stand that configures it, not a platform constant (cat.cfg.file.limits-from-scope). Where the scope is not configured, the same limits do not apply."
     },
     {
       "id": "cat.cfg.file.rejected-type",
@@ -854,12 +1108,13 @@
           "ref": "kb:KB-057A596A",
           "date": "2026-09-28"
         }
-      ]
+      ],
+      "notes": "Applies where the upload scope lists extensions. With no scope there is no client-side type check on builds up to 2.60.0-pr-2511-81f1 and an unavailable uploader after it (cat.cfg.file.scope-unavailable)."
     },
     {
       "id": "cat.cfg.file.size-count-limits",
       "type": "branch",
-      "name": "Over 9.5 MB or over 5 files is rejected",
+      "name": "Over the scope's size limit (9.5 MB where configured) or over 5 files is rejected",
       "branch_kind": "boundary",
       "technique": "BVA",
       "status": "UNVERIFIED",
@@ -875,6 +1130,12 @@
           "ref": "domain-map:cat@rev1 §7",
           "note": "G6: source of the constants unknown",
           "date": "2026-09-16"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-057A596A",
+          "note": "limit is stand configuration; 5-file count is the storefront default",
+          "date": "2026-10-13"
         }
       ]
     },
@@ -952,6 +1213,63 @@
           "note": "G3: absence not yet confirmed at source"
         }
       ]
+    },
+    {
+      "id": "cat.cfg.file.limits-from-scope",
+      "type": "branch",
+      "branch_kind": "integration",
+      "technique": "CT",
+      "name": "A File section has no limit of its own: size and type come from fileUploadOptions(scope \"product-configuration\"), which is stand configuration",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-057A596A",
+          "note": "configured stand: 10000000 bytes and the 10-type list; scope not configured: query returns null (vcst, 2026-10-13). Conditions-scoped, resolved dispute",
+          "date": "2026-10-13"
+        }
+      ],
+      "notes": "The 9.5 MB / type list in cat.cfg.file.accepted holds only where the scope is configured. A fixture reads the limits from fileUploadOptions, never from a section."
+    },
+    {
+      "id": "cat.cfg.file.scope-unavailable",
+      "type": "branch",
+      "branch_kind": "negative",
+      "technique": "DT",
+      "name": "With no upload scope configured the File section shows \"File upload is not available.\" and sends no upload request",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-FF711B97",
+          "note": "theme 2.60.0-pr-2511-0a23, vcst_qa: picker disabled, warning replaces the requirements line, 0 POST /api/files/product-configuration over 3 reloads; the 1 MiB / 5-file fallback applied only up to pr-2511-81f1",
+          "date": "2026-10-14"
+        }
+      ],
+      "notes": "Observed on the vc-frontend 2.60.0 PR head, not on vc-frontend-next#11 (deployment UNKNOWN). KB-FF711B97 is DISPUTED on exactly this point; this node does not rely on it as settled."
+    },
+    {
+      "id": "cat.cfg.file.limit-error-message",
+      "type": "branch",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "name": "An oversize file shows an error that states the limit; a failed upload names the scope",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-53AE7807",
+          "note": "pr-2511-0a23: \"File size exceeds the allowed 10MB\" with the limit rendered (other scopes); earlier pr-2511-81f1 rendered the {0} parameter empty (VCST-6281)",
+          "date": "2026-10-14"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-6398 AC-26",
+          "note": "comment 112130: the merge author lists it as checked; a claim, not an observation",
+          "date": "2026-10-19"
+        }
+      ],
+      "notes": "Not observed on a configurable product File section with a configured scope on the 2.60.0 head."
     },
     {
       "id": "cat.cfg.required-gate",
@@ -2402,6 +2720,87 @@
       "from": "cat.cfg.pdp",
       "to": "cat.cfg.author",
       "type": "affected_by"
+    },
+    {
+      "from": "cat.configurable",
+      "to": "cat.cfg.checklist",
+      "type": "contains"
+    },
+    {
+      "from": "cat.cfg.checklist",
+      "to": "cat.cfg.checklist.rows-per-section",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.checklist",
+      "to": "cat.cfg.checklist.done-label",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.checklist",
+      "to": "cat.cfg.checklist.required-open",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.checklist",
+      "to": "cat.cfg.checklist.optional-open",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.checklist",
+      "to": "cat.cfg.checklist.row-vs-gate",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.checklist",
+      "to": "cat.cfg.checklist.dependency-live",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.checklist",
+      "to": "cat.cfg.checklist.link-navigation",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.checklist",
+      "to": "cat.cfg.checklist.collapse-state",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.checklist",
+      "to": "cat.cfg.checklist.product-switch",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.checklist",
+      "to": "cat.cfg.checklist.placement",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.checklist",
+      "to": "cat.cfg.required-gate",
+      "type": "depends_on"
+    },
+    {
+      "from": "cat.cfg.checklist",
+      "to": "cat.cfg.pdp",
+      "type": "depends_on"
+    },
+    {
+      "from": "cat.cfg.file",
+      "to": "cat.cfg.file.limits-from-scope",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.file",
+      "to": "cat.cfg.file.scope-unavailable",
+      "type": "branches_to"
+    },
+    {
+      "from": "cat.cfg.file",
+      "to": "cat.cfg.file.limit-error-message",
+      "type": "branches_to"
     }
-  ]
+  ],
+  "amended": "2026-10-20"
 }

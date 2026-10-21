@@ -1,10 +1,10 @@
 /**
  * Azure DevOps REST auth helpers — shared by azure-tracker (Boards work items)
- * and azure-repos-vcs (Repos / Pull Requests). Mirrors LEO's ado-api.sh.
+ * and azure-repos-vcs (Repos / Pull Requests). Mirrors the curl-based ADO helper it replaced.
  *
  * Auth, NO passwords:
  *   - Default: PAT via env ADO_PAT → Basic auth with an empty username
- *     (LEO `curl -u ":$PAT"`).
+ *     (`curl -u ":$PAT"`).
  *   - Browser/device login: a token from the `az login` session via
  *     @azure/identity (AzureCliCredential), used when ADO_AUTH=az-login or when
  *     no PAT is present. @azure/identity is imported LAZILY (only when this path

@@ -40,10 +40,13 @@ live module graph (`skills/qa-fix-routing/module-registry.ts`). Workspace `.fix-
 > workflow name), ticket-key formats, and the `contributionPlan(repo)` → clone/push/PR matrix. **Every
 > comment this command posts** (BAIL/STOP reason, in-progress/in-review transition notes) follows the
 > `tracker-ops.md` §2 **Comment & body style** rule — Markdown (never Jira wiki), clear, brief,
-> outcome-first, evidence referenced not inlined. **With no
-> profile ⇒ Jira / GitHub / VirtoCommerce, direct PRs — the original behaviour, unchanged.** The single
+> outcome-first, evidence referenced not inlined. **A missing
+> profile is a STOP — run `/project-init` (the `vc-init` plugin); there is no Jira / GitHub / VirtoCommerce
+> default any more.** Every tracker/host call goes through the token bridge `node "$VC_RUN" …` (below). The single
 > hard invariant on a client deployment: **client code never leaves the client project** (`quality-gates.md`
 > §2a); the upstream gets platform contribution only.
+>
+> **Host-governed project** (`governance.host` set): use the host's MCP servers from `governance.servers.*`, never `$VC_RUN` — [`knowledge/execution/host-governance.md`](../knowledge/execution/host-governance.md).
 
 ## Orientation — the deployment profile is the KEY (read it once, first)
 
@@ -53,36 +56,43 @@ declarative source of truth. `/project-init` has **baked** the resolved facts in
 helpers, and do **not** ask the operator what the profile already answers.
 
 - **Paths & cwd discipline** (`profile.paths`): use `paths.projectRoot` as the absolute base for
-  **everything** — `.env`/secrets (`join(projectRoot, paths.secretsEnv)`), `paths.workspace`
-  (`.fix-workspace`), `paths.reports`. **Never `cd` into the workspace**; run git as
-  `git -C <abs>`. Load secrets ONLY from the absolute path (a drifted Bash cwd made a relative
-  `source .env.local` silently empty → an ADO write 302'd and was misdiagnosed). To invoke a
-  bundled plugin script, resolve `$pluginRoot` = the ACTIVE install path at runtime via
-  `claude plugin list --json` (**not** from the profile — there is no baked plugin path; see
+  **everything** — `.env` files (`join(projectRoot, paths.secretsEnv)`, test-user passwords only),
+  `paths.workspace` (`.fix-workspace`), `paths.reports`. **Never `cd` into the workspace**; run local
+  git as `git -C <abs>` and network git as `node "$VC_RUN" git-gh|git-ado -C <abs> …`.
+- **Tokens — the bridge, never a file.** GitHub / Azure DevOps / Jira tokens live in vc-secrets and
+  reach a process only through `node "$VC_RUN" gh|git-gh|git-ado|ado|jira …`; never `source .env.local`
+  for a token, never `GH_TOKEN=…`, never a token in a clone URL. On a PAT axis the bridge injects the
+  secret, on a session axis (`gh auth login` / `az login`) it runs the tool directly — so never branch
+  on `profile.auth.*`. `$VC_RUN` is set by `/project-init` in `.claude/settings.local.json` `env`; unset
+  ⇒ the project was onboarded before VCST-6402 — STOP and ask the operator to run `/project-init --check`.
+  To invoke any other bundled plugin script, resolve `$pluginRoot` = the ACTIVE install path at runtime
+  via `claude plugin list --json` (**not** from the profile; see
   [`knowledge/execution/plugin-root.md`](../knowledge/execution/plugin-root.md)), then `node "$pluginRoot/skills/…"`.
 - **Execution mode** (`profile.runtime`): when `helpersRunnable` is `true` (native agentic
   checkout) you MAY execute the `.ts`/`.mjs` routing helpers; when `false` (installed plugin)
   **read the baked profile fields** — do not try to run/emulate `repo-router.ts` / `provenance.ts`.
 - **Routing / ownership / delivery**: for a client bug, the routed repo is the matching
-  `profile.repos.client[]` entry; its `contribution` block (host, `prApi`, `cloneUrl`, `prTarget`,
-  `authEnv`), `integrationBranch`, `workBranchPrefix`, `toolchain`, `upstream`/`upstreamRef`, and
+  `profile.repos.client[]` entry; its `contribution` block (host, `prApi`, `cloneUrl`, `prTarget`),
+  `integrationBranch`, `workBranchPrefix`, `toolchain`, `upstream`/`upstreamRef`, and
   (frontend) `localVerify` are already resolved. Confirm the RCA anchor; don't re-derive the plan.
 - **Tracker ops** — use the ADO helper, never hand-rolled curl+python (it fixes encoding/auth/escaping):
-  `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" <cmd>` — `get-workitem`, `comment`, `transition`,
+  `node "$VC_RUN" ado <cmd>` — `get-workitem`, `comment`, `edit-comment`, `transition`,
   `create-pr`, `list-policies`, `get-file`, `list-refs` (org/project/apiBase default from the profile).
-  Jira path unchanged (Atlassian MCP).
-- **Status transitions** — map the lifecycle ROLE to a state via `profile.tracker.azure.roleStates`
+  Jira: Atlassian MCP, or `node "$VC_RUN" jira …` for what the MCP does not cover (`tracker-ops.md` §0a).
+- **Status transitions** — `node "$VC_RUN" ado transition --id <n> --role <role>` maps the lifecycle ROLE to
+  the state of the ticket's OWN work-item type (`profile.tracker.azure.roleStatesByType` — a Bug, a Task and a
+  User story can name one role differently)
   (`in-progress` / `in-review` / `ready-for-test` / `done`) — these are the deployment's REAL states
   (e.g. `On Dev` / `On Review` / `Ready for QA` / `Closed`), scanned per work-item type. When
   `tracker.azure.transitionPolicy` is `auto`, transition **silently by role and just log it — do NOT
   ask the operator**. (`confirm-once` = one upfront confirmation; `ask` = the old per-transition ask;
   Jira still discovers transitions live.)
-- **Azure Repos PR**: opened by the **orchestrator** via `ado.mjs create-pr` (the developer agent only
+- **Azure Repos PR**: opened by the **orchestrator** via `node "$VC_RUN" ado create-pr` (the developer agent only
   clones/pushes) — a subagent can't cross an ADO write boundary reliably. Base + target =
   `contribution.prTarget` (= `integrationBranch`, e.g. `dev` — NOT necessarily `defaultBranch`).
-- **No profile / `projectType: platform`**: every field above is empty ⇒ fall back to the original
-  Jira / GitHub / VirtoCommerce behaviour (live transition discovery, `gh pr create`, base `dev`).
-  This section changes nothing for the native platform path.
+- **`projectType: platform`**: the client fields above are empty ⇒ the native Jira / GitHub /
+  VirtoCommerce path (live transition discovery, `node "$VC_RUN" gh pr create`, base `dev`).
+  **No profile at all ⇒ STOP** — ask the operator to run `/project-init`; nothing is defaulted.
 
 ## Usage
 ```
@@ -112,7 +122,7 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
 
 ## Phase 0 — Pre-flight
 1. Resolve the ticket via the **profile's tracker** (`tracker.kind`): Jira → Atlassian MCP
-   `getJiraIssue`; Azure Boards → **`node "$pluginRoot/skills/qa-fix-routing/ado.mjs" get-workitem --id <n>`**
+   `getJiraIssue`; Azure Boards → **`node "$VC_RUN" ado get-workitem --id <n>`**
    (do NOT hand-roll `curl`+`python` — that caused the repeated `/tmp`/`cp1252`/emoji failures last run;
    see [`tracker-ops.md`](../knowledge/execution/tracker-ops.md) §2). Use the ticket **key format the
    tracker gave you** verbatim (`ABC-123` for Jira, a bare `12345` for Azure Boards — not always `VCST-`).
@@ -179,7 +189,7 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
   > **Anchor-first (avoid last run's wrong-anchor detour):** CONFIRM the anchor file actually contains the
   > symptom — **read it first** — before running the provenance byte-diff (comparing the wrong file, e.g. a
   > `<slot/>`-only wrapper, wastes a round and risks a false verdict). Prefer `filename:`/path-scoped
-  > discovery (`ado.mjs get-file`, `filename:<file>` on GitHub) over free-text `search_code` (which
+  > discovery (`node "$VC_RUN" ado get-file`, `filename:<file>` on GitHub) over free-text `search_code` (which
   > returned 0 hits repeatedly last run before a filename query worked).
   Resolve it from the RCA
   anchor's **code provenance** against the fork's upstream (`clientUpstream(routeRepo)` → `{ upstream,
@@ -189,8 +199,8 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
   > fork's own patch version `2.49.7`, neither of which is a git ref (both 422 on `vc-frontend`). Use it
   > as-is when `upstreamRefResolved === true`. Otherwise (`upstreamRefResolved === false`, or the ref 422s
   > when you fetch it) **reconstruct** a resolvable baseline before comparing: try `<major>.<minor>.0`,
-  > then the highest existing `<major>.<minor>.x` (`gh api repos/<upstream>/tags` / `git ls-remote --tags
-  > <upstream>`), then the nearest tag ≤ the line. If NONE resolves → **ASK the operator** for the base
+  > then the highest existing `<major>.<minor>.x` (`node "$VC_RUN" gh api repos/<upstream>/tags` /
+  > `node "$VC_RUN" git-gh ls-remote --tags https://github.com/<upstream>`), then the nearest tag ≤ the line. If NONE resolves → **ASK the operator** for the base
   > tag — do NOT silently treat everything as client (that quietly kills upstream routing). Over-attributing
   > to client is safe; leaking client code upstream is not (§2a), so when in doubt STOP.
   Then fetch the anchor file from the client repo AND from `vc-frontend @ upstreamRef`, then
@@ -204,11 +214,12 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
   upstream **Issue** instead of a PR happens **only** when Gate 0 already judged the bug too-complex /
   multi-repo. (Native platform / no client frontend fork ⇒ this sub-gate is a no-op; the route stays platform.)
 - **Write-credential preflight (now that the host is known):** probe only the axis
-  `contributionPlan(routeRepo).host` needs — GitHub PAT (`GH_TOKEN="$GITHUB_FIX_BUGS_TOKEN" gh api
-  repos/<owner>/<repo> --jq .permissions.push` → `true`), a `gh-cli` browser session (`gh auth status`
-  shows write), or Azure Repos (`GET {base}/_apis/git/repositories/<repo>` returns JSON, not the 203+HTML
-  sign-in). Missing/insufficient → STOP before clone. (`tracker-ops.md` §3–4; native platform resolves to
-  the original `GITHUB_FIX_BUGS_TOKEN` + `VirtoCommerce/<repo>` probe.)
+  `contributionPlan(routeRepo).host` needs, through the bridge (same command on a PAT or a session axis) —
+  GitHub (`node "$VC_RUN" gh api repos/<owner>/<repo> --jq .permissions.push` → `true`) or Azure Repos
+  (`node "$VC_RUN" ado list-refs --repo <repo>` returns JSON, not the 203+HTML sign-in).
+  Missing/insufficient → STOP before clone; a missing secret is fixed by the operator
+  (`node "<VC_SECRETS>" set github-pat` / `ado-pat`, then `/project-init --check`), never by you.
+  (`tracker-ops.md` §3–4; native platform resolves to the `VirtoCommerce/<repo>` probe.)
 - **Upstream token-KIND preflight — only when the plan is a FORK-PR or an upstream Issue** (i.e.
   `contributionPlan(routeRepo).mode === "fork"`, or a Gate-0 upstream Issue). Read
   `profile.vcs.githubForkCapable`: anything other than `"yes"` ⇒ **STOP before clone** and print
@@ -223,7 +234,7 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
   upstream half as well.
 - On PASS: transition the ticket to the **in-progress** role state (Jira: discover the transition live via
   `getTransitionsForJiraIssue`, don't hardcode "Take to development"; Azure Boards: set `System.State` to
-  `profile.tracker.azure.roleStates["in-progress"]` via `ado.mjs transition`). **Follow
+  the `in-progress` state of that item's type via `node "$VC_RUN" ado transition --id <n> --role in-progress`). **Follow
   `tracker.azure.transitionPolicy`: `auto` ⇒ transition silently and just log it (do NOT ask); `ask` ⇒
   confirm first** (Jira, or an unscanned map, defaults to ask). Add a comment naming the routed repo +
   kind + (for a frontend route) the provenance verdict.
@@ -259,18 +270,18 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
 ## Phase 5 — Branch + PR
 > **Owner:** the routed developer agent **commits + pushes**; PR-open ownership depends on the host —
 > `contribution.host == "azure-repos"` ⇒ the **ORCHESTRATOR** opens the PR via
-> `ado.mjs create-pr` (a subagent can't reliably cross an ADO write boundary — it stalled on the
-> permission classifier last run); `github` ⇒ the developer agent opens it with `gh pr create`.
+> `node "$VC_RUN" ado create-pr` (a subagent can't reliably cross an ADO write boundary — it stalled on the
+> permission classifier last run); `github` ⇒ the developer agent opens it with `node "$VC_RUN" gh pr create`.
 > The work branch bases off `contribution.prTarget` (= `integrationBranch`, e.g. `dev`), and the PR
 > **targets that same branch** — not necessarily `defaultBranch`.
 - `git commit` (Conventional Commits + ticket key), **authored as the human token-owner with Claude as
   `Co-Authored-By`** (NOT a bot author — CLA Assistant blocks bot-authored commits; pattern in
-  `knowledge/agents/developers/shared-instructions.md` §Commit identity) → push the work branch → **open the PR on the
-  host `contribution` resolved** (Azure Repos: orchestrator `ado.mjs create-pr --repo <bare> --source
+  `knowledge/agents/developers/shared-instructions.md` §Commit identity) → push the work branch
+  (`node "$VC_RUN" git-gh|git-ado -C <abs> push -u origin <branch>`) → **open the PR on the
+  host `contribution` resolved** (Azure Repos: orchestrator `node "$VC_RUN" ado create-pr --repo <bare> --source
   <branch> --target <prTarget> --title … --description-file … --work-item <id> [--labels a,b]` — one call
-  opens the PR, links the work item, AND applies labels (no separate raw-curl); GitHub `gh pr create`;
-  legacy platform fork-mode `--head <forkOwner>:<branch>` — the four cases +
-  `POST …/pullrequests`; platform fork-mode `--head <forkOwner>:<branch>` — the four cases +
+  opens the PR, links the work item, AND applies labels (no separate raw-curl); GitHub
+  `node "$VC_RUN" gh pr create`; platform fork-mode `--head <forkOwner>:<branch>` — the four cases +
   auth-per-host are in [`tracker-ops.md`](../knowledge/execution/tracker-ops.md) §3). A **normal PR
   for human review — not auto-merged**, **PR title `fix(<key>): <summary>`** (Conventional Commits, ticket
   key in the scope slot; see
@@ -294,7 +305,7 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
   receives it through a later release + fork sync. (An upstream **Issue** instead is only for a Gate-0
   too-complex / multi-repo bail — handled at Gate 0, not here.)
 - Transition the ticket to the **in-review** role state (Jira: live-discover the transition, don't hardcode
-  "Go to review"; Azure Boards: `roleStates["in-review"]` via `ado.mjs transition`; obey
+  "Go to review"; Azure Boards: `node "$VC_RUN" ado transition --id <n> --role in-review`; obey
   `transitionPolicy` — `auto` ⇒ no ask) with the PR link.
 
 ## Phase 6 — Await CI (Gate 5); E2E (Gate 6) is delegated, not run here
@@ -304,15 +315,15 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
   - **Platform repo / platform fork-PR on GitHub** → the full VirtoCommerce contract below (it is the
     *VirtoCommerce-repo* CI contract, not a universal one).
   - **Client repo** (GitHub or Azure Repos) → the client's own PR checks, **discovered live, not assumed**:
-    GitHub client PR → poll whatever `gh pr checks` reports; Azure Repos PR → poll the PR's ADO build
-    policies via `ado.mjs list-policies --repo <bare> --pr <id>` (uses `profile.tracker.azure.projectId`).
+    GitHub client PR → poll whatever `node "$VC_RUN" gh pr checks` reports; Azure Repos PR → poll the PR's ADO build
+    policies via `node "$VC_RUN" ado list-policies --repo <bare> --pr <id>` (uses `profile.tracker.azure.projectId`).
     **If the client repo has no PR checks at all** (empty policy list), Gate 5 = the **local typecheck +
     unit test** (and `build` only if Gate 3 ran it — a template-/style-only diff legitimately skips build)
     already proven green in Gate 3 (per `profile.repos.client[].toolchain`), and the PR is labelled
     **"no CI — local build+test only"**. Never wait on VirtoCommerce-specific jobs (`auto-tests`,
     SonarCloud, `license/cla`) on a client repo — they don't exist there. Read the failing logs, classify,
     self-correct (≤2), re-poll, same as platform.
-- **Platform CI contract (platform repos / fork-PRs):** poll `gh pr checks` /
+- **Platform CI contract (platform repos / fork-PRs):** poll `node "$VC_RUN" gh pr checks` /
   `mcp__github__get_pull_request_status` until the repo's
   GitHub Actions are all `success` + `mergeable`. Wait on **both** PR jobs (background polling, not
   blocking sleeps): (1) the build/test job — **`ci`** (build + unit tests + the **SonarCloud quality
@@ -320,7 +331,7 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
   PRs to `dev`), and (2) the **`auto-tests`** job — the shared pytest **`graphql, restapi, e2e`** suites
   against a real/deployed instance (a vc-frontend PR to `dev` auto-deploys to the `qa` env first) — plus
   `license/cla`. **Storybook CI does not run on PRs** — don't wait on it. **RED → fetch and read the logs
-  before acting** (`gh run view <id> --log-failed`; for `auto-tests`, the failing pytest case + assertion;
+  before acting** (`node "$VC_RUN" gh run view <id> --log-failed`; for `auto-tests`, the failing pytest case + assertion;
   for Sonar, the PR annotations), **classify the reason**, then the developer self-corrects in the SAME
   repo (≤2 iterations), re-pushes, re-polls. Real regression in `auto-tests` on a touched area → fix the
   root cause; unrelated/known-flaky `auto-tests` red → re-run once, then note + escalate (don't contort
@@ -360,7 +371,7 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
   make; it happens later via `/qa-verify-fix` (post-deploy) or a human. (`roleStates["ready-for-test"]`
   stays in the profile for `/qa-verify-fix` to use — `/qa-fix` just doesn't apply it.)
 - **Ensure** the ticket is at `in-review` (`roleStates["in-review"]` = `On Review`) — Phase 5 already set
-  it when the PR opened; if for any reason it isn't there yet, set it now via `ado.mjs transition`
+  it when the PR opened; if for any reason it isn't there yet, set it now via `node "$VC_RUN" ado transition`
   (obey `transitionPolicy` — `auto` ⇒ no ask). Add/confirm a comment: "PR open for review; Gate 6 result;
   awaiting human review + merge".
 - Write `reports/fixes/FIX-*/fix-report.md` + `summary.json` — including `proof_medium`,
@@ -372,7 +383,8 @@ description/STR/attachments as the repro context. Once invoked it **auto-continu
   `/qa-verify-fix <ticket-key>`.
 - **Signal completion (self-diagnostics — the LAST action, on EVERY terminal exit).** After the report /
   PR link above — and **equally** on any earlier Gate 0/1 **BAIL / STOP** (a clean bail is a completed
-  run) — run this once (best-effort, silent, never blocks; `$pluginRoot` was already resolved in Phase 1):
+  run) — run this once (best-effort, silent, never blocks; `$pluginRoot` = the active install path, see
+  [`plugin-root.md`](../knowledge/execution/plugin-root.md)):
   ```bash
   node "$pluginRoot/hooks/session-telemetry.mjs" complete --skill "qa-fix"
   ```
@@ -397,10 +409,10 @@ only push `claude/*` branches by default.
 - Reuse `skills/qa-fix-routing/fix-repos.json` + `skills/qa-fix-routing/repo-router.ts` + `skills/qa-fix-routing/module-registry.ts` — do not
   reinvent routing/checkout. Other org / customer fork → `FIX_REPO_ORG`. Workspace `.fix-workspace/`,
   branch `claude/qa-autofix/<ticket-key>`, output `reports/fixes/FIX-*/`.
-- Never modify existing tests (ADD only). Never auto-merge. Never echo any PAT. **Remote-write auth is
-  per host** (`tracker-ops.md` §3): GitHub PAT host → `GH_TOKEN` ← `GITHUB_FIX_BUGS_TOKEN` (`.env.local`),
-  not the ambient read-only token; GitHub `gh-cli` host → the ambient logged-in `gh`; Azure Repos →
-  `ADO_PAT` / `az login`. Commits are **authored as the human token-owner + `Co-Authored-By: Claude`**
+- Never modify existing tests (ADD only). Never auto-merge. Never echo any PAT. **Remote writes go
+  through the bridge** (`tracker-ops.md` §3): `node "$VC_RUN" gh …` / `git-gh …` on GitHub, `git-ado …` /
+  `ado …` on Azure — the bridge supplies the PAT from vc-secrets or the `gh` / `az` session, never the
+  ambient read-only MCP token, never a token from a file. Commits are **authored as the human token-owner + `Co-Authored-By: Claude`**
   (CLA Assistant blocks bot-authored commits) — patterns in `knowledge/agents/developers/shared-instructions.md`
   §GitHub authentication / §Commit identity.
 - **Client-code containment (§2a) is absolute:** a client-owned repo is never forked / PR'd / issue-filed

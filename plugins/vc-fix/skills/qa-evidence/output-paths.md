@@ -16,7 +16,7 @@ This used to be the gap: `--output-dir` and this file's destination policy both 
 (VCST-5582 C). The chain below connects them — but it is **NOT fully deterministic on the pinned
 `@playwright/mcp` version**, so Stage 5 is a mandatory reconcile, not an after-the-fact tidy:
 
-> **Observed on `@playwright/mcp@0.0.77` (the pinned version — VCST-5702 ITEM 4):** a
+> **Observed on `@playwright/mcp@0.0.77` and re-observed 2026-10-21 on `0.0.83` (the pinned version — VCST-5702 ITEM 4):** a
 > `browser_take_screenshot` with a **bare filename** does NOT reliably resolve against the
 > configured absolute `--output-dir` — it resolves against the **MCP server's own cwd**, so 11
 > captures in one session landed at the project root despite a correct `--output-dir`. Treat Stage 1
@@ -26,7 +26,7 @@ This used to be the gap: `--output-dir` and this file's destination policy both 
 
 | # | Stage | Who | Where |
 |---|-------|-----|-------|
-| 1 | **Capture** — `browser_take_screenshot` with a **bare relative filename**, never a path | the QA agent | playwright-mcp *tries* `--output-dir`, but on 0.0.77 may write to the server cwd |
+| 1 | **Capture** — `browser_take_screenshot` with a **bare relative filename**, never a path | the QA agent | playwright-mcp *tries* `--output-dir`, but on the pinned version may write to the server cwd |
 | 2 | **Landing zone** — `--output-dir` is pinned to an **ABSOLUTE** project path by `/project-init` (`gen-mcp.mjs`) | the MCP server | `reports/bugs/screenshots/_incoming/<browser>/` |
 | 3 | **ONE deterministic move** of the 1–5 captures the report keeps | `/qa-bug` Step 4a | `reports/bugs/screenshots/<bug-slug>/` |
 | 4 | **Reference** — the report cites the FINAL path only | the report | `reports/bugs/screenshots/<bug-slug>/<file>.png` |
@@ -36,7 +36,7 @@ Why absolute at stage 2: playwright-mcp resolves a *relative* `--output-dir` aga
 server's own cwd, which the plugin does not control — that is exactly how the project root became
 the effective target. Why relative at stage 1: playwright-mcp documents *"Prefer relative file
 names to stay within the output directory"*; absolute filenames are undocumented and must not be
-relied on. Why stage 5 is now a **reconcile, not just a report**: on 0.0.77 the file genuinely
+relied on. Why stage 5 is now a **reconcile, not just a report**: on the pinned version the file genuinely
 lands in the wrong place, so naming it is not enough — the step must FIND it (newest matching PNG in
 the server cwd) and MOVE it into `_incoming/<browser>/` before the report can cite it. A capture
 whose file cannot be located is reported as missing, never assumed present.

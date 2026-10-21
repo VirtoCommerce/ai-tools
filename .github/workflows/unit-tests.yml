@@ -74,6 +74,17 @@ jobs:
           test -f plugins/vc-secrets/vc-secrets.test.mjs \
             || { echo "vc-secrets: the file holding the CI sentinel is gone" >&2; exit 1; }
           node --test "$pattern"
+      # The vc-init bridge suite (VCST-6402): the $VC_RUN dispatcher hands vc-secrets tokens to gh, git and
+      # the plugin scripts, so its allowlist, credential helper and redactor are credential-handling code
+      # with committed tests — the same exception as vc-secrets, and the same empty-glob floor.
+      - name: vc-init bridge suite
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          pattern="plugins/vc-init/bridge/**/*.test.mjs"
+          count=$(node -e 'console.log(require("node:fs").globSync(process.argv[1]).length)' "$pattern")
+          test "$count" -gt 0 || { echo "vc-init: no test file matches $pattern" >&2; exit 1; }
+          node --test "$pattern"
       # Typecheck is a SEPARATE, narrower gate: ci/tsconfig.json covers ci/*.ts + ci/lib/ +
       # scripts/**/*.ts only. Stated explicitly because a green "typecheck" on a change that is all
       # .mjs proves nothing about that change — a claim made, and wrongly relied on, in this very PR.
