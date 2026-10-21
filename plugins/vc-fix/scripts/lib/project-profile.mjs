@@ -1,27 +1,43 @@
 /**
- * scripts/lib/project-profile.mjs
+ * scripts/lib/project-profile.mjs — vc-fix's READ-ONLY copy. vc-init owns the schema and is the only
+ * writer (plugins/vc-init/scripts/lib/project-profile.mjs); PROFILE_DEFAULTS here must match it field
+ * for field, and the same commit changes both.
  *
  * Single source of truth for the DEPLOYMENT PROFILE — the description of what
  * infrastructure THIS checkout of the QA plugin is wired against:
  *   - projectType: native-platform vs a client project with custom modules
  *   - tracker:     Jira vs Azure Boards (bug tracker)
  *   - vcs:         GitHub vs Azure Repos for the CLIENT's own code
+ *   - auth:        how each credential axis (GitHub / Azure DevOps / Jira) authenticates
  *   - upstream:    the VirtoCommerce GitHub org (always GitHub) where platform
  *                  fixes are PR'd / platform bugs are filed as issues
  *   - repos:       the discovered client/platform repo map
+ *   - perf:        vc-perf's block (written through profile-set.mjs by /perf-init)
  *
- * Written by `/project-init` (gen-profile.mjs). Read by:
- *   - config.js                → every skill sees it via `env.PROFILE`
- *   - skills/qa-fix-routing/trackers/*   → which tracker adapter to use
- *   - skills/qa-fix-routing/repo-router.ts → client-vs-platform ownership routing
- *   - /qa-fix + developer agents
+ * vc-init is the ONLY writer (VCST-6402): `/project-init` (gen-profile.mjs, reconcile-profile.mjs)
+ * and profile-set.mjs, which /qa-bug and /perf-init call instead of editing the file. vc-fix and
+ * vc-perf carry read-only loader copies of PROFILE_DEFAULTS; when a field is added here, the same
+ * commit adds it there.
  *
- * SAFE DEFAULTS: when project-profile.json is ABSENT (fresh checkout, or the
- * existing VirtoCommerce-internal QA setup) this returns the exact pre-existing
- * behaviour — projectType "platform", tracker "jira", client VCS "github",
- * upstream "VirtoCommerce". No file present ⇒ nothing changes.
+ * NO SILENT DEFAULTS for a missing file any more. A consumer (vc-fix, vc-perf) that finds no
+ * project-profile.json stops and says "run /project-init" — `loadProjectProfile` below throws
+ * ProfileMissingError / ProfileVersionError; only vc-init's writer-side copy is tolerant, because
+ * onboarding itself has to run before the file exists.
+ *
+ * `schemaVersion` — PROFILE_SCHEMA_VERSION below. A file without it is a version-1 profile
+ * (written before VCST-6402: single `vcs.auth`, tokens in .env.local) and is still READ;
+ * `/project-init --check` migrates it. A file with a HIGHER version than a reader knows was
+ * written by a newer vc-init, and the reader stops rather than guess.
  *
  * @typedef {Object} ProjectProfile
+ * @property {number} schemaVersion
+ * @property {{github:""|"pat"|"gh-cli", ado:""|"pat"|"az-login", jira:""|"pat"|"oauth"}} auth
+ *   how each axis authenticates. `pat` ⇒ the token lives in vc-secrets and reaches a process only
+ *   through the $VC_RUN bridge; a session value (`gh-cli`, `az-login`, `oauth`) ⇒ the tool's own
+ *   login. "" ⇒ the axis does not apply to this deployment (e.g. `ado` on Jira + GitHub).
+ * @property {Record<string, any>} perf  vc-perf's block — an open map, kept wholesale by reconcile
+ * @property {{host:string|null, secrets:"host"|"vc-secrets", servers:Record<string,string|string[]>, stand:{writable:boolean}}} governance
+ *   a host-governed project (schema 3): see the PROFILE_DEFAULTS comment
  * @property {"platform"|"client"} projectType
  * @property {"virto-engineer"|"client"|"ask"} operator
  * @property {{kind:"jira"|"azure", baseUrl:string, projectKey:string,
@@ -33,11 +49,11 @@
  *   projectId:string, stateMap:Record<string,string>,
  *   workItemTypes:Record<string,object>,
  *   roleStates:Record<"in-progress"|"in-review"|"ready-for-test"|"testing"|"tested"|"reopen"|"done", string>,
+ *   roleStatesByType:Record<string, Record<string, string>>,
  *   transitionPolicy:"auto"|"confirm-once"|"ask",
  *   qaRoleStatesComplete:boolean}}} tracker
  * @property {{clientHost:"github"|"azure-repos", clientOrg:string,
- *   azure:{organization:string, project:string}, auth:"gh-cli"|"pat"|"az-login",
- *   authEnv:string, githubTokenKind:""|"classic"|"fine-grained"|"gh-cli"|"none",
+ *   azure:{organization:string, project:string}, githubTokenKind:""|"classic"|"fine-grained"|"gh-cli"|"none",
  *   githubForkCapable:""|"yes"|"no"|"unknown"}} vcs
  * @property {{host:"github", org:string, fileIssues:boolean,
  *   contributionMode:"fork"|"direct", clientGithubAccount:string}} upstream
@@ -90,14 +106,18 @@
  * @property {string} [passEnv]  env var with the storefront password (default USER_PASSWORD)
  */
 import { readFileSync, existsSync } from "fs";
-import { join } from "path";
+import { dirname, join, resolve } from "path";
+
+/** The profile schema this plugin writes. Bump it when a reader could misread an older shape. */
+export const PROFILE_SCHEMA_VERSION = 3;
 
 /** @type {ProjectProfile} */
 export const PROFILE_DEFAULTS = {
+  schemaVersion: PROFILE_SCHEMA_VERSION,
   projectType: "platform",
   operator: "virto-engineer",
 
-  // runtime — how a skill orients itself. DEFAULT (no profile) = the original
+  // runtime — how a skill orients itself. DEFAULT (a profile written without --runtime-mode) = the original
   // VirtoCommerce-internal agentic checkout where the .ts/.mjs helpers ACTUALLY RUN
   // headless. /project-init generating a PLUGIN profile overrides this to
   // { mode:"plugin", helpersRunnable:false } so the interactive command reads the
@@ -166,6 +186,7 @@ export const PROFILE_DEFAULTS = {
       // No auto-migration: a profile generated before the QA roles / heuristic existed keeps
       // its old map until /project-init (discover-tracker) is re-run to refresh it.
       roleStates: {},
+      roleStatesByType: {},
       // Fix-side completeness signal (in-progress/in-review/ready-for-test/done all found by the
       // discover-tracker scan). Baked as a canonical boolean under tracker.azure.* so readers do
       // not have to re-derive it from transitionPolicy or the map (VCST-5582 E3). Defaults false.
@@ -186,10 +207,6 @@ export const PROFILE_DEFAULTS = {
     clientHost: "github",
     clientOrg: "",
     azure: { organization: "", project: "", apiBase: "" },
-    auth: "gh-cli",
-    // authEnv: which env var carries the WRITE credential for the client host
-    //   (github PAT ⇒ "GITHUB_FIX_BUGS_TOKEN"; azure-repos ⇒ "ADO_PAT"; empty ⇒ session/gh-cli).
-    authEnv: "",
     // githubTokenKind / githubForkCapable — the PROBED kind of the GitHub credential
     // (VCST-5582 A), written by /project-init from probe-lib.classifyGithubTokenKind().
     //   githubTokenKind:   "" (unprobed) | "classic" | "fine-grained" | "gh-cli" | "none"
@@ -212,6 +229,17 @@ export const PROFILE_DEFAULTS = {
     clientGithubAccount: "",
   },
   repos: { client: [], platform: [] },
+
+  // auth — HOW each credential axis authenticates (VCST-6402; replaces the single `vcs.auth`,
+  // which described only the client host and said nothing about the upstream or the tracker).
+  //   github: "pat" | "gh-cli"     — always applies (the platform upstream is always GitHub)
+  //   ado:    "pat" | "az-login"   — Azure Boards tracker or Azure Repos code host
+  //   jira:   "pat" | "oauth"      — Jira tracker (`pat` = an Atlassian API token)
+  //   ""                            — the axis does not apply to this deployment
+  // A `pat` axis keeps its token in vc-secrets (`github-pat` / `ado-pat` / `jira-token`) and a
+  // process gets it only through `node "$VC_RUN" <tool> …`; the bridge reads this block to decide
+  // whether to go through vc-secrets at all — a session axis runs the tool directly.
+  auth: { github: "", ado: "", jira: "" },
 
   // buildVerify.source — where /qa-fix confirms deployed versions in Phase 0.
   //   "" (default) ⇒ auto by projectType/kind; "vc-deploy-dev" (native platform),
@@ -243,10 +271,29 @@ export const PROFILE_DEFAULTS = {
   //   auto = the Issue route files automatically (scrubbed) + prints the filed URL; a PR/fork-PR
   //          is handed off as ready `gh` commands (a human always opens the PR).
   feedback: { mode: "ask" },
+
+  // perf — vc-perf's block (aspireHostPath / backendUrl / storeId / benchmark / loadtest …). An
+  // OPEN MAP here: its keys are vc-perf's to define, so reconcile keeps it wholesale and never
+  // prunes it, and `/perf-init` writes it through profile-set.mjs `--merge perf=<json>`.
+  perf: {},
+
+  // governance — a HOST-GOVERNED project (VCST-6402 step 8): the client runs its own governance
+  // plugin (rules, approved MCP servers, its own secret wrapper) and our plugins are a guest.
+  //   host:    the host plugin's registry key (vc-init lib/governance.mjs HOSTS) | null (= not governed)
+  //   secrets: "host" — no token path of ours runs at all (bridge refuses, no vc-secrets, no PAT, no
+  //            az login) | "vc-secrets" — the normal VCST-6402 flow
+  //   servers: the host's MCP server key per role — operator-confirmed, never inferred
+  //   stand.writable: false on a governed project (no seeding/mutation of the client's stands)
+  governance: {
+    host: null,
+    secrets: "vc-secrets",
+    servers: { tracker: "", codeHost: "", github: "", telemetry: "", testManagement: "", browsers: [] },
+    stand: { writable: true },
+  },
 };
 
 /** Recursive merge: objects merge key-by-key; arrays + scalars are replaced wholesale. */
-function deepMerge(base, override) {
+export function deepMerge(base, override) {
   if (override === undefined || override === null) return base;
   if (Array.isArray(base) || Array.isArray(override)) return override;
   if (typeof base !== "object" || typeof override !== "object") return override;
@@ -255,36 +302,123 @@ function deepMerge(base, override) {
   return out;
 }
 
-let _cache;
 
 /**
- * Load + memoize the deployment profile, layered over PROFILE_DEFAULTS.
- * Path: PROJECT_PROFILE_PATH env override, else <repoRoot>/project-profile.json.
- * Never throws — a missing/malformed file falls back to defaults with a warning.
- * @param {string} [repoRoot]
- * @returns {ProjectProfile}
+ * A consumer cannot run without the deployment profile: which tracker, which code host, which
+ * repos are the client's. It used to fall back to the native-platform / Jira / GitHub defaults
+ * here, silently — so a client project that had never been onboarded filed its bugs into the
+ * VirtoCommerce defaults and routed its fixes upstream. Since VCST-6402 a missing file STOPS the
+ * caller with the one instruction that fixes it.
  */
-export function loadProjectProfile(repoRoot = process.cwd()) {
-  if (_cache) return _cache;
-  const path =
-    process.env.PROJECT_PROFILE_PATH || join(repoRoot, "project-profile.json");
-  let profile = PROFILE_DEFAULTS;
-  if (existsSync(path)) {
-    try {
-      const raw = JSON.parse(readFileSync(path, "utf-8"));
-      delete raw._meta;
-      profile = deepMerge(PROFILE_DEFAULTS, raw);
-    } catch (err) {
-      console.warn(
-        `[project-profile] Failed to read/parse ${path}: ${err.message}. Using defaults.`,
-      );
-    }
+export class ProfileMissingError extends Error {
+  constructor(path) {
+    super(`No deployment profile at ${path} — run /project-init (the vc-init plugin) in this project first. ` +
+      "vc-fix no longer falls back to the native-platform / Jira / GitHub defaults.");
+    this.name = "ProfileMissing";
+    this.code = "VC_PROFILE_MISSING";
+    this.path = path;
   }
-  _cache = profile;
+}
+
+/** A profile this reader cannot interpret: unparsable, or a schemaVersion it does not know. */
+export class ProfileVersionError extends Error {
+  constructor(path, detail) {
+    super(`Cannot read the deployment profile at ${path}: ${detail}`);
+    this.name = "ProfileVersion";
+    this.code = "VC_PROFILE_VERSION";
+    this.path = path;
+  }
+}
+
+/** Schema versions this reader understands. A file without `schemaVersion` is version 1. */
+export const SUPPORTED_SCHEMA_VERSIONS = [1, 2, PROFILE_SCHEMA_VERSION];
+
+/**
+ * Where the profile lives: PROJECT_PROFILE_PATH, else VC_FIX_HOME (the project root a tool launched
+ * from elsewhere is pointed at), else <repoRoot>/project-profile.json. With `walkUp`, the parents of
+ * repoRoot are searched too — a command run inside `.fix-workspace/<repo>` still finds the project's
+ * profile at the project root.
+ */
+export function findProjectProfile(repoRoot = process.cwd(), { walkUp = false } = {}) {
+  if (process.env.PROJECT_PROFILE_PATH) return process.env.PROJECT_PROFILE_PATH;
+  if (process.env.VC_FIX_HOME) return join(resolve(process.env.VC_FIX_HOME), "project-profile.json");
+  const first = join(resolve(repoRoot), "project-profile.json");
+  if (!walkUp || existsSync(first)) return first;
+  let dir = resolve(repoRoot);
+  for (let i = 0; i < 8; i++) {
+    const parent = dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+    const candidate = join(dir, "project-profile.json");
+    if (existsSync(candidate)) return candidate;
+  }
+  return first;
+}
+
+const _cache = new Map();
+
+/**
+ * Load the deployment profile, layered over PROFILE_DEFAULTS (so a field added after the file was
+ * written reads as its default).
+ *
+ * Throws ProfileMissingError when there is no file, and ProfileVersionError when the file cannot be
+ * parsed or names a schemaVersion this reader does not know (a newer vc-init wrote it). With
+ * `{ optional: true }` a missing file returns null instead — for a caller that reports the absence
+ * itself (config.js's env check). Only a successfully read profile is memoized, keyed by path.
+ *
+ * @param {string} [repoRoot]
+ * @param {{ optional?: boolean, walkUp?: boolean }} [opts]
+ * @returns {ProjectProfile|null}
+ */
+export function loadProjectProfile(repoRoot = process.cwd(), { optional = false, walkUp = false } = {}) {
+  const path = findProjectProfile(repoRoot, { walkUp });
+  if (_cache.has(path)) return _cache.get(path);
+  if (!existsSync(path)) {
+    if (optional) return null;
+    throw new ProfileMissingError(path);
+  }
+  let raw;
+  try {
+    raw = JSON.parse(readFileSync(path, "utf-8"));
+  } catch (err) {
+    throw new ProfileVersionError(path, `it is not valid JSON (${err.message}). Fix or regenerate it with /project-init --check.`);
+  }
+  delete raw._meta;
+  const version = raw.schemaVersion === undefined ? 1 : raw.schemaVersion;
+  if (!SUPPORTED_SCHEMA_VERSIONS.includes(version)) {
+    throw new ProfileVersionError(path, typeof version === "number" && version > PROFILE_SCHEMA_VERSION
+      ? `schemaVersion ${version} was written by a newer vc-init than this vc-fix understands (up to ${PROFILE_SCHEMA_VERSION}). Update vc-fix.`
+      : `schemaVersion ${JSON.stringify(version)} is not one this vc-fix understands (${SUPPORTED_SCHEMA_VERSIONS.join(", ")}). Run /project-init --check.`);
+  }
+  const profile = deepMerge(PROFILE_DEFAULTS, raw);
+  _cache.set(path, profile);
   return profile;
 }
 
-/** Drop the memoized profile (used by gen-profile after writing, and by tests). */
+/** Drop the memoized profiles (tests, and a process that rewrites the file mid-run). */
 export function resetProjectProfileCache() {
-  _cache = undefined;
+  _cache.clear();
+}
+
+/**
+ * Which credential axes apply, and how each authenticates — `auth.*` (schema 2), falling back to
+ * what a version-1 profile recorded. Same rule as vc-init's copy.
+ * @param {object} profile
+ */
+export function authAxes(profile) {
+  const p = profile || {};
+  const tracker = p.tracker?.kind || "jira";
+  const host = p.vcs?.clientHost || "github";
+  const legacy = p.vcs?.auth;
+  const a = p.auth || {};
+  const githubLegacy = host === "github" && (legacy === "pat" || legacy === "gh-cli") ? legacy
+    : p.vcs?.githubTokenKind === "gh-cli" ? "gh-cli"
+      : ["classic", "fine-grained"].includes(p.vcs?.githubTokenKind) ? "pat" : "";
+  const adoApplies = tracker === "azure" || host === "azure-repos";
+  const adoLegacy = host === "azure-repos" && (legacy === "pat" || legacy === "az-login") ? legacy : "";
+  return {
+    github: { applies: true, mode: a.github || githubLegacy },
+    ado: { applies: adoApplies, mode: adoApplies ? (a.ado || adoLegacy) : "" },
+    jira: { applies: tracker === "jira", mode: tracker === "jira" ? (a.jira || "") : "" },
+  };
 }

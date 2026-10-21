@@ -8,7 +8,99 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
-## One renderer for every result comment and report page — `vc-fix` `0.10.0` — unreleased (VCST-5675)
+## `vc-init`: onboarding is its own plugin, and no token sits in any file — catalog `0.12.0`, `vc-init` `0.1.0`, `vc-fix` `0.11.0`, `vc-perf` `0.4.0` — VCST-6402
+
+**Added: the `vc-init` plugin** (depends on `vc-secrets`). `/project-init` moved out of `vc-fix`, so `vc-perf`
+no longer pulls in the whole bug lifecycle to onboard. `vc-fix` and `vc-perf` now depend on `vc-init`.
+vc-init is the **only writer of `project-profile.json`**: `/qa-bug` (first-run field answers) and `/perf-init`
+(the `perf` block) write through its `profile-set.mjs`, and `/project-init --check` keeps the `perf` block.
+
+**Added: the `$VC_RUN` bridge — every GitHub / Azure DevOps / Jira token goes through `vc-secrets`.** The
+operator stores a PAT with `node "<VC_SECRETS>" set github-pat|ado-pat|jira-token` at a hidden prompt (never
+in the chat) and approves the project's declarations with `vc-secrets trust`. A process receives a token only
+as `node "$VC_RUN" gh|git-gh|git-ado|ado|jira|deliver|onboard …`: the bridge checks the command line against an
+allowlist (no `gh auth`, no `gh pr merge`, `gh api` reads only, no `git pull`, no `git -c`, no foreign host), starts `vc-secrets task
+vc-init-<group>` for a PAT axis or the tool directly for a session login, pins git to a host-scoped credential
+helper with hooks off, and redacts the child's output. New: `vc-fix` `skills/qa-fix-routing/jira.mjs` (Jira
+REST with the host pinned to the profile) and `ado.mjs edit-comment | patch-fields | wiql`.
+
+**Changed: the GitHub MCP server** runs through `vc-secrets run github` on a PAT axis (pinned `mcp-remote`
+carrying `github-pat` in the Authorization header — verified on Windows `npx.cmd`) and as the hosted server with
+OAuth otherwise. `.claude/settings.local.json` `env` holds only `VC_RUN`.
+
+**BREAKING:** a missing `project-profile.json` now **stops** vc-fix and vc-perf with "run /project-init" —
+the silent native-platform / Jira / GitHub defaults are gone; an unknown `schemaVersion` stops too. The profile
+is `schemaVersion` 3: `auth.{github,ado,jira}` replaces `vcs.auth` / `vcs.authEnv`, and a `governance` block is added (below). **Migration:** run
+`/project-init --check` — it reconciles the profile (deriving the auth axes a schema-1 file never recorded),
+writes the vc-secrets declarations, asks you to `set` each token, and then `migrate-secrets.mjs --strip` removes
+every plaintext copy (`.env.local`, settings `env`, a tokenised `.fix-workspace` remote URL) whose vc-secrets
+copy passes a live probe. A token that sat in a file ever committed to git is flagged for rotation.
+
+**Added: host-governed mode.** On a client project whose own governance plugin owns the MCP servers and the
+secrets (first host: `opus-governance`), `/project-init` detects it, the operator confirms, and the profile
+records `governance.{host, secrets: "host", servers.{tracker,codeHost,github,telemetry,testManagement,browsers},
+stand.writable: false}` — the server per role is the operator's answer, never inferred. Onboarding then writes
+the profile and the non-secret env files only: no vc-secrets, no `$VC_RUN`, no `.mcp.json` or settings, no PAT,
+no `az login`, self-diagnostics off. At run time the bridge refuses every token-bearing tool (exit 78, naming
+the host server), `deliver` refuses, and vc-fix follows `knowledge/execution/host-governance.md`.
+`governance.host: null` (the default) is today's behaviour. `--governance <host|none>` overrides detection.
+
+**Changed: `/project-init` speaks for every plugin, and shows what it asks you to confirm.** It closes
+with "the project is ready to work with" and the asks and commands of the plugins actually installed
+(`next-steps.mjs`: a ticket, the current sprint, then each plugin's entry points) instead of pointing
+at `/qa-fix`. The repo map and the tracker status map are printed in full by `render-scan.mjs` — every
+client repo with its default branch and PR target, every state the scan found with the role mapped to
+it — and the question refers to that table instead of restating the mapping in parentheses.
+
+**Changed: Azure Boards transitions work for every work-item type, not only Bugs.** The tracker scan maps
+roles to states for each type it reads (Bug, Task, User story) into `tracker.azure.roleStatesByType`;
+`ado.mjs transition --role <role>` (and `AzureTracker.transition`) picks the state by the item's own type,
+and /qa-fix, /qa-verify-fix and tracker-ops use it instead of `--state <roleStates[role]>`. The confirmation
+table is one row per role and one column per type. `STORE_ID` may stay empty: `normalize-env` asks the
+storefront at `FRONT_URL` which store it serves and fills it in.
+
+**Changed: a browser agent types a password's NAME, never its value.** vc-fix's agents type
+`ADMIN_PASSWORD` / `USER_PASSWORD` as names; Playwright MCP substitutes and masks the value, so it never
+enters the model's context or the transcript.
+
+**Added: test-user passwords in vc-secrets, asked per role.** `/project-init` asks separately where admin
+passwords live (vc-secrets recommended) and where storefront-user passwords live (`.env.local` recommended —
+easier to edit when there are many). A vc-secrets role gets one `local` secret per password per environment
+(`admin-password-<env>`), declared with a task `vc-init-onboard.<env>` (the onboarding scripts' API logins)
+and a server `playwright-<lane>.<env>` per browser lane. A lane in `.mcp.json` is then
+`node ${VC_RUN} playwright <lane>`: the bridge picks the current `TEST_ENV` and runs that env's server, which
+starts the pinned `@playwright/mcp` in-process (`bridge/playwright-mcp.mjs`) with the passwords in memory as
+`config.secrets` — the vc-secrets roles from the declaration, the `.env.local` roles of that env read straight
+from the file — so no `.env.playwright.local` is written. One declaration per env means an env whose
+passwords are not stored yet breaks only itself, and switching `TEST_ENV` asks for no new trust. With both
+roles in `.env.local`, `sync-browser-secrets.mjs` still generates `.env.playwright.local` for `--secrets`, as
+before. `migrate-secrets` moves a vc-secrets role's lines out of `.env.local` once stored. Only vc-init's
+onboarding scripts read a password through the bridge: a script elsewhere that logs in over the API from the
+env files (vc-fix's module registry, seeders) needs that role kept in `.env.local`.
+
+**Added: `/project-init --add-user`.** Adds another storefront user or admin to one or more environments:
+`add-user.mjs --list` shows each env, where each role's passwords live, its users and the next free numbered
+KEY (`USER2`, `ADMIN2`, …); the operator picks the KEY and gives a login per env; the login goes into
+`.env.<env>` as `<KEY>_LOGIN`, and `<KEY>_PASSWORD` is declared in vc-secrets or added as a `.env.local`
+placeholder by the role. The password itself is only ever typed by the operator in a terminal or editor.
+
+**Fixed: vc-fix's npm dependencies were never installed after the move.** `/project-init` installed only
+vc-init's `node_modules`, so vc-fix's tracker and code-host helpers failed with "Cannot find package
+'dotenv'". `install-deps.mjs` installs the runtime dependencies of every installed plugin into its own
+folder (§1, and `--check` after an update, which lands in a new folder without them); verify-access FAILs
+"Plugin dependencies" when one is missing. `ENV_RISK` is no longer scaffolded (`test` by default; add
+`production` by hand for a production stand).
+
+**Removed:** the `postman` and `context7` MCP servers from onboarding (each needed an API key in a file);
+`gen-mcp --inline-secrets` (refused); the token placeholders in `.env.local` (`scaffold-secrets` writes
+test-user passwords only).
+
+**Verified:** see the PR — `npm test`, `npm run context:check`, `npm run docs:index:check`, the vc-secrets and
+vc-init bridge suites, `claude plugin validate` on vc-init / vc-fix / vc-perf, a secret-at-rest scan of a
+scratch onboarding, and a live browser lane through `vc-secrets run` that typed and masked a vc-secrets
+password and an `.env.local` one.
+
+## One renderer for every result comment and report page — `vc-fix` `0.10.0`, released as part of `0.11.0` (VCST-5675)
 
 **Added: `/vc-fix:qa-report`.** A finished run becomes one char-budgeted tracker comment and one HTML report
 page, rendered from the run's machine record by `skills/qa-report/render.mjs`, never typed by hand. Four

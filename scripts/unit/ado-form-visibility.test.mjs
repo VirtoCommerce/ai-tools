@@ -20,7 +20,7 @@ import {
 } from "../../plugins/vc-fix/skills/qa-fix-routing/bug-contract.mjs";
 import { shapeWorkItem } from "../../plugins/vc-fix/skills/qa-fix-routing/ado.mjs";
 import { buildBugFields } from "../../plugins/vc-fix/skills/qa-fix-routing/ado-html.mjs";
-import { pinnedPlaywrightVersion } from "../../plugins/vc-fix/skills/project-init/gen-mcp.mjs";
+import { pinnedPlaywrightVersion } from "../../plugins/vc-init/skills/project-init/gen-mcp.mjs";
 import {
   OPUS_FORM_HTML_CONTROLS, DESCRIPTION_ON_FORM_CONTROLS, OPUS_LAYOUT_WIT, OPUS_XMLFORM_WIT,
   OPUS_BUG_73, LEO_OPUS_BUG_FIELDS, FIELD_TYPES,
@@ -437,7 +437,7 @@ test("review HIGH-1: no contract + layout — a default body is REBOUND to an on
       // path. What matters is it does NOT stop at an off-form refusal.
       execFileSync(process.execPath, [ADO, "create-workitem", "--type", "Bug", "--title", "x", "--description-file", "body.md",
         "--api-base", "http://127.0.0.1:9", "--no-preflight"], {
-        cwd: dir, encoding: "utf8", env: { ...process.env, PROJECT_PROFILE_PATH: join(dir, "project-profile.json"), ADO_PAT: "dummy", ADO_AUTH: "pat" },
+        cwd: dir, encoding: "utf8", env: { ...process.env, PROJECT_PROFILE_PATH: join(dir, "project-profile.json"), ADO_PAT: "dummy", ADO_AUTH: "pat", VC_ADO_TEST_LOOPBACK: "1" },
       });
     } catch (e) {
       stderr = String(e.stderr || e.stdout || e.message);
@@ -478,7 +478,7 @@ test("review MED-3: an off-form systemInfo folds into the body instead of failin
       execFileSync(process.execPath, [ADO, "create-workitem", "--type", "Bug", "--title", "x",
         "--description-file", "body.md", "--system-info-file", "sysinfo.md",
         "--api-base", "http://127.0.0.1:9", "--no-preflight"], {
-        cwd: dir, encoding: "utf8", env: { ...process.env, PROJECT_PROFILE_PATH: join(dir, "project-profile.json"), ADO_PAT: "dummy", ADO_AUTH: "pat" },
+        cwd: dir, encoding: "utf8", env: { ...process.env, PROJECT_PROFILE_PATH: join(dir, "project-profile.json"), ADO_PAT: "dummy", ADO_AUTH: "pat", VC_ADO_TEST_LOOPBACK: "1" },
       });
     } catch (e) {
       stderr = String(e.stderr || e.stdout || e.message);
@@ -607,7 +607,7 @@ test("--strict: create-workitem exits 2 when the read-back verify fails (fieldsO
     writeFileSync(join(dir, "project-profile.json"), strictProfile(apiBase));
     const argsBase = [ADO, "create-workitem", "--type", "Bug", "--title", "x", "--description-file", "body.md",
       "--api-base", apiBase, "--no-preflight"];
-    const env = { ...process.env, PROJECT_PROFILE_PATH: join(dir, "project-profile.json"), ADO_PAT: "dummy" };
+    const env = { ...process.env, PROJECT_PROFILE_PATH: join(dir, "project-profile.json"), ADO_PAT: "dummy", VC_ADO_TEST_LOOPBACK: "1" };
 
     // WITHOUT --strict: prints the payload, exits 0 (unchanged behaviour) — but fieldsOk is false.
     const soft = await runAsync(argsBase, { cwd: dir, encoding: "utf8", env });
