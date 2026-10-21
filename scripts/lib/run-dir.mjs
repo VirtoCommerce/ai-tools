@@ -89,6 +89,10 @@ export function laneScreenshots(dir, root = outputRoot()) {
 
 /** The subfolders `runLayout` puts inside a run folder (never an env name). */
 const LAYOUT_DIRS = new Set(['screenshots', 'exploratory', 'bugs', 'knowledge']);
+/** What a run writes into its folder (`runLayout`, the reports beside it, `/qa-verify-fix`'s files, an evidence
+ *  package). A folder holding none of them is not a run — a pre-env ticket folder's own subfolder (`api/`), say. */
+const RUN_ENTRY = /^(?:summary\.json|verdict\.md|test-strategy\.md|testing-checklist\.md|test-model\.md|design-report\.md|triage-report\.md|verification-(?:report\.md|summary\.json)|evidence\.html|graphql-fixtures-validation\.md|\.graphql-schema\.cache\.json|screenshots|exploratory|bugs|knowledge|evidence-.+)$/;
+const isRunFolder = (dir) => { try { return readdirSync(dir).some((n) => RUN_ENTRY.test(n)); } catch { return false; } };
 
 /** Where each artifact of a run lives inside its folder — the one statement of the layout. */
 export function runLayout(dir) {
@@ -148,8 +152,8 @@ export function priorRunDirs({ ticket, template = runDirTemplate(), root = outpu
     const envAt = full.split(/[\\/]+/).findIndex((seg) => /<env>/i.test(seg));
     for (const dir of globDirs(abs)) {
       const env = resolve(dir).split(/[\\/]+/).at(envAt - full.split(/[\\/]+/).length);
-      // `*` in the env place also matches a pre-env folder's own subfolders (screenshots/ …): not an env.
-      if (env && TEST_ENV_PATTERN.test(env) && !LAYOUT_DIRS.has(env)) out.set(dir, { dir, env });
+      // `*` in the env place also matches a pre-env folder's own subfolders (screenshots/, api/ …): not an env.
+      if (env && TEST_ENV_PATTERN.test(env) && !LAYOUT_DIRS.has(env) && isRunFolder(dir)) out.set(dir, { dir, env });
     }
   }
   // A pre-env folder counts only when it holds files itself — under the default layout it is also the parent
