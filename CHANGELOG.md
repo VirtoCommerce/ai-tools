@@ -8,13 +8,56 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
-## Each run gets its own env and output folder; an env's files can live outside the repo — `vc-fix` `0.12.0` — 2026-10-21
+## An env's files can live outside the repo; a stand can use one master password — `vc-fix` `0.13.0` — 2026-10-21
+
+Every ticket now runs on its own stand, and dedicated cloud stands are replacing the shared ones. A stand that
+belongs to one ticket or one machine no longer needs a file in the repo, and every test account on it can sign
+in with one password. `vc-init`, `vc-perf` and `vc-secrets` are unchanged.
+
+**Added: env files in dedicated folders (VCST-6350).** `QA_ENV_PATH` in `.env.local` lists folders,
+`;`-separated, the first winning, with `QA_OUTPUT_DIR`'s placeholders: `<ticket>` (the run's ticket),
+`<env>` and `<sprint>`. Each folder may hold `.env.<env>` and `.env.playwright.<env>`, and a file there beats the
+repo's key by key, `KEY_<ENV>` pins included. A ticket's folder holds its own stands (`vcst_6314`) and may
+override a shared env for that ticket's runs. `env:use`, `run:use`, `/preflight --env` and `deploy:pr` accept
+those envs. Outside a session, `QA_TICKET=<KEY>` names the ticket. A ticket run with no env argument binds the
+ticket's own stand when its folder defines exactly one env.
+
+**Added: master stands.** `PASSWORDS=master` in a stand's env file makes every test-account password
+variable resolve to `MASTER_PASSWORD` from `.env.playwright.master`, so the seeders set it. Only the stand's own
+env file counts: the root `.env.<env>` for a repo env, else its `QA_ENV_PATH` file. A `PASSWORDS` line in
+`.env.local`, or a ticket folder's override of a repo env, is ignored with a warning: seeding would reset a shared
+stand's accounts to the master password. Browser lanes then type `MASTER_PASSWORD` in every password field.
+`secrets:sync:all` copies it into `.env.playwright.all` as one stable line, so a new master stand needs no re-sync
+and no MCP reconnect; the single-env `secrets:sync` writes it only for a master stand. `enforce-secret-token`
+blocks `MASTER_PASSWORD` in a session whose stand did not opt in, and a copy older than the master file.
+
+**Changed:**
+- One loader: `scripts/lib/env-layers.mjs` holds the order. config.js, `load-env.mjs`, the seeders, the GraphQL
+  and layout runners, deploy and the ticket-context skill apply it, and the plugin has a byte-identical copy.
+  The "no `.env.<env>`" warning moved from the resolver to the loader.
+- `secrets:sync:all` reads every ticket's folder and writes atomically. It refuses a name whose value differs
+  between a shared env and a ticket's override of it.
+- `/qa-deploy-pr` refuses an env whose `BACK_URL` is on this machine, and reads a dedicated cloud stand's
+  `DEPLOY_BRANCH` and `BACK_URL` from its own files.
+- `/preflight` on a local stand reports `declared` as `local stand` instead of an UNKNOWN that asked for a
+  `GIT_TOKEN`. `deployed` and `--expect` read the stand's build as before.
+
+**Changed (`vc-fix`):**
+- The plugin's loader, `use-env.mjs` and `run-folder.mjs` find envs in the `QA_ENV_PATH` folders, and the env
+  report names `MASTER_PASSWORD` on a master stand. Under the `$VC_RUN` bridge the loader reads the folders from
+  `VC_FIX_HOME`'s `.env.local`, and the tokens the bridge injected still beat every file.
+
+**Upgrade note.** Nothing has to change. Without `QA_ENV_PATH` every env comes from the repo as before. Without
+`PASSWORDS=master` a stand keeps its own passwords. A master stand needs `.env.playwright.master`, then one
+`npm run secrets:sync:all` and a reconnect of the `playwright-*` servers.
+
+---
+
+## Each run gets its own env and its own output folder — `vc-fix` `0.12.0` — 2026-10-21
 
 Two runs can now go in parallel in one checkout, whether they test two tickets or one ticket on a local
-stand and then a cloud one. Neither edits a shared file or writes the other's output. And as every ticket now
-runs on its own stand, and dedicated cloud stands replace the shared ones, a stand that belongs to one ticket or
-one machine no longer needs a file in the repo, and every test account on it can sign in with one password.
-`vc-init`, `vc-perf` and `vc-secrets` are unchanged.
+stand and then a cloud one. Neither edits a shared file or writes the other's output. `vc-init`, `vc-perf`
+and `vc-secrets` are unchanged.
 
 **Added: the env is a command argument, bound to the session (#471).** `/qa-test VCST-6314 vcptcore_dev`,
 and the same optional env on `/qa-test-fast`, `/qa-exploratory`, `/qa-deploy-pr` and
@@ -35,35 +78,6 @@ there, and the scripts that write run output follow the binding: summary, verdic
 test model, screenshots, evidence packages, bug drafts, the maps and GraphQL schema it refreshes, and
 `/qa-verify-fix`'s files.
 
-**Added: env files in dedicated folders (VCST-6350).** `QA_ENV_PATH` in `.env.local` lists folders,
-`;`-separated, the first winning, with `QA_OUTPUT_DIR`'s placeholders: `<ticket>` (the run's ticket),
-`<env>` and `<sprint>`. Each folder may hold `.env.<env>` and `.env.playwright.<env>`, and a file there beats the
-repo's key by key, `KEY_<ENV>` pins included. A ticket's folder holds its own stands (`vcst_6314`) and may
-override a shared env for that ticket's runs. `env:use`, `run:use`, `/preflight --env` and `deploy:pr` accept
-those envs. Outside a session, `QA_TICKET=<KEY>` names the ticket. A ticket run with no env argument binds the
-ticket's own stand when its folder defines exactly one env.
-
-**Added: master stands.** `PASSWORDS=master` in a stand's env file makes every test-account password
-variable resolve to `MASTER_PASSWORD` from `.env.playwright.master`, so the seeders set it. Only the stand's own
-env file counts: the root `.env.<env>` for a repo env, else its `QA_ENV_PATH` file. A `PASSWORDS` line in
-`.env.local`, or a ticket folder's override of a repo env, is ignored with a warning: seeding would reset a shared
-stand's accounts to the master password. Browser lanes then
-type `MASTER_PASSWORD` in every password field. `secrets:sync:all` copies it into `.env.playwright.all` as one
-stable line, so a new master stand needs no re-sync and no MCP reconnect; the single-env `secrets:sync` writes it
-only for a master stand. `enforce-secret-token` blocks `MASTER_PASSWORD` in a
-session whose stand did not opt in, and a copy older than the master file.
-
-**Changed:**
-- One loader: `scripts/lib/env-layers.mjs` holds the order. config.js, `load-env.mjs`, the seeders, the GraphQL
-  and layout runners, deploy and the ticket-context skill apply it, and the plugin has a byte-identical copy.
-  The "no `.env.<env>`" warning moved from the resolver to the loader.
-- `secrets:sync:all` reads every ticket's folder and writes atomically. It refuses a name whose value differs
-  between a shared env and a ticket's override of it.
-- `/qa-deploy-pr` refuses an env whose `BACK_URL` is on this machine, and reads a dedicated cloud stand's
-  `DEPLOY_BRANCH` and `BACK_URL` from its own files.
-- `/preflight` on a local stand reports `declared` as `local stand` instead of an UNKNOWN that asked for a
-  `GIT_TOKEN`. `deployed` and `--expect` read the stand's build as before.
-
 **Changed (`vc-fix`):**
 - `/qa-verify-fix` binds the env and the run folder at Step 0 and writes no `{SPRINT}` paths.
 - `/vc-fix:qa-report` finds a run in its run folder: `/qa-test` and `/qa-verify-fix` hand it
@@ -76,9 +90,6 @@ session whose stand did not opt in, and a copy older than the master file.
 - A ticket key may be a bare Azure Boards id.
 - In self-diagnostics, both copies of the `/qa-bug` expected-output marker also accept a run folder's bug
   report.
-- The plugin's loader, `use-env.mjs` and `run-folder.mjs` find envs in the `QA_ENV_PATH` folders, and the env
-  report names `MASTER_PASSWORD` on a master stand. Under the `$VC_RUN` bridge the loader reads the folders from
-  `VC_FIX_HOME`'s `.env.local`, and the tokens the bridge injected still beat every file.
 
 **Upgrade note.** Nothing has to change to keep today's behaviour. Without an env argument the run uses
 `.env.test-env` as before. Without `QA_OUTPUT_DIR` the run folder is the old ticket folder plus an `<env>/`
@@ -86,9 +97,7 @@ level, and readers look in both layouts. A project with no `reports/tickets/Spri
 for one, gets `reports/tickets/<ticket>/<env>/`. A `QA_OUTPUT_DIR` outside the project needs
 `--allow-unrestricted-file-access` on the Playwright lanes, or each capture saved with a bare filename and
 moved in (the plugin's `knowledge/execution/run-env.md` §The run folder; in this repo,
-`.claude/knowledge/execution/run-output.md` §Screenshots). Without `QA_ENV_PATH` every env comes from the repo
-as before. Without `PASSWORDS=master` a stand keeps its own passwords. A master stand needs
-`.env.playwright.master`, then one `npm run secrets:sync:all` and a reconnect of the `playwright-*` servers.
+`.claude/knowledge/execution/run-output.md` §Screenshots).
 
 ---
 
