@@ -1,6 +1,6 @@
 {
   "//": "TEMPLATE — copy to .mcp.json (gitignored) and replace every <PLACEHOLDER>. Restart the MCP servers after editing. Windows uses `cmd /c npx`; on Linux/macOS drop the `cmd` + `/c` and call `npx` directly.",
-  "//secrets": "The `--secrets .env.playwright.all` on each Playwright server lets a suite log in by typing the secret NAME — the MCP substitutes the value + redacts it, so no password enters the agent transcript. `npm run secrets:sync:all` generates the file: every env's login passwords with the env in the name (browser_type text=ORG_USER_PASSWORD_VCST_QA), plus MASTER_PASSWORD from .env.playwright.master, which every PASSWORDS=master stand types. One set of lanes then serves every env and every master stand with no restart. It holds login passwords ONLY — NEVER point --secrets at .env.local, which also holds API tokens/keys. One env only: `npm run secrets:sync` writes .env.playwright.local with bare names (templates/.env.playwright.local.template); point --secrets there instead. Drop the `--secrets` lines from the Playwright servers if you don't run browser-login suites. See .claude/knowledge/execution/browser-lanes.md and run-env.md.",
+  "//secrets": "The `--secrets .env.playwright.all` on each Playwright server lets a suite log in by typing the secret NAME — the MCP substitutes the value + redacts it, so no password enters the agent transcript. `npm run secrets:sync:all` generates the file: every env's login passwords with the env in the name (browser_type text=ORG_USER_PASSWORD_VCPTCORE_DEV), plus MASTER_PASSWORD from .env.playwright.master, which every PASSWORDS=master stand types. One set of lanes then serves every env and every master stand with no restart. It holds login passwords ONLY — NEVER point --secrets at .env.local, which also holds API tokens/keys. One env only: `npm run secrets:sync` writes .env.playwright.local with bare names (templates/.env.playwright.local.template); point --secrets there instead. Drop the `--secrets` lines from the Playwright servers if you don't run browser-login suites. See .claude/knowledge/execution/browser-lanes.md and run-env.md.",
   "//isolation": "Each lane's --config sets an isolated browser (an in-memory profile per server), so parallel Claude Code sessions never share cookies or a profile lock. Keep it, or pass --isolated when a server has no config file.",
   "//output": "A run writes its screenshots into its run folder (QA_OUTPUT_DIR). When that folder is outside the project, add --allow-unrestricted-file-access to each Playwright server's args: a lane otherwise writes only inside its output folder and the project. The flag also lets the lane read local files and file:// URLs, so it is your call.",
   "mcpServers": {
@@ -10,7 +10,7 @@
       "args": [
         "/c",
         "npx",
-        "@playwright/mcp@0.0.77",
+        "@playwright/mcp@0.0.83",
         "--config",
         "config/mcp-playwright-chrome.config.json",
         "--secrets",
@@ -23,7 +23,7 @@
       "args": [
         "/c",
         "npx",
-        "@playwright/mcp@0.0.77",
+        "@playwright/mcp@0.0.83",
         "--config",
         "config/mcp-playwright-firefox.config.json",
         "--secrets",
@@ -36,7 +36,7 @@
       "args": [
         "/c",
         "npx",
-        "@playwright/mcp@0.0.77",
+        "@playwright/mcp@0.0.83",
         "--config",
         "config/mcp-playwright-edge.config.json",
         "--secrets",
@@ -50,7 +50,7 @@
       "args": [
         "/c",
         "npx",
-        "@playwright/mcp@0.0.77",
+        "@playwright/mcp@0.0.83",
         "--config",
         "config/mcp-playwright-mobile.config.json",
         "--secrets",

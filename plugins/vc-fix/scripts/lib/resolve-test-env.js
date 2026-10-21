@@ -10,11 +10,21 @@ export function envSuffix(testEnv) {
   return `_${testEnv.toUpperCase()}`;
 }
 
+/**
+ * Where the env files are read from: the working directory — except under the $VC_RUN bridge
+ * (VC_BRIDGE=1), whose inner side pins VC_FIX_HOME to the project whose vc-secrets declarations were
+ * trusted. There the caller's cwd must not choose the stand URLs a token or a password is sent to, so
+ * every file below (the selectors, the env's passwords) is read from here, and the loader takes its root from here.
+ */
+export function envDir() {
+  return process.env.VC_BRIDGE === '1' && process.env.VC_FIX_HOME ? process.env.VC_FIX_HOME : '.';
+}
+
 /** This Claude Code session's env binding, `.vc-fix/session-env/<CLAUDE_CODE_SESSION_ID>` (gitignored),
  *  written by `npm run env:use`. Null outside a Claude Code session. Subagents share the session id, so
  *  their shells read the same binding. */
 export function sessionEnvFile(sessionId = process.env.CLAUDE_CODE_SESSION_ID) {
-  return sessionId && /^[A-Za-z0-9-]+$/.test(sessionId) ? join('.vc-fix', 'session-env', sessionId) : null;
+  return sessionId && /^[A-Za-z0-9-]+$/.test(sessionId) ? join(envDir(), '.vc-fix', 'session-env', sessionId) : null;
 }
 
 const readSelector = (file) => (existsSync(file) ? parse(readFileSync(file)).TEST_ENV?.trim() : undefined);
@@ -34,7 +44,7 @@ export function testEnvChoice(fallback = 'vcst') {
   const session = sessionEnvFile();
   const bound = session ? readSelector(session) : undefined;
   if (bound) return { env: bound, source: 'session' };
-  const checkout = readSelector('.env.test-env');
+  const checkout = readSelector(join(envDir(), '.env.test-env'));
   if (checkout) return { env: checkout, source: '.env.test-env' };
   return { env: fallback, source: 'default' };
 }
@@ -80,7 +90,7 @@ export function resolveTestEnv(fallback = 'vcst') {
 }
 
 function exposeEnvSecrets(testEnv) {
-  const file = `.env.playwright.${testEnv}`;
+  const file = join(envDir(), `.env.playwright.${testEnv}`);
   if (!existsSync(file)) return;
   const suffix = envSuffix(testEnv);
   for (const [key, value] of Object.entries(parse(readFileSync(file)))) {

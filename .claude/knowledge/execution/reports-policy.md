@@ -70,7 +70,7 @@ Four rules, each of which was a live fork:
 | Artifact | What it is | Rules |
 |---|---|---|
 | `verification-summary.json` | Small structured verdict record (ticket, verdict, build, deployment, evidence paths) — the `/qa-verify-fix` analogue of `/qa-test`'s `summary.json` | Structured only, no narrative prose. It does not replace the `verification-report.md` narrative (category 6) — write both |
-| `evidence.html` | The RED→GREEN evidence page linked from the tracker comment | **Reference the sibling screenshots (`<img src="screenshots/NAME.png">`) — never inline them as `data:` base64 in the committed copy.** A single inlined PNG cost 124 KB on one 124 000-char line, duplicating a PNG already tracked in the same folder byte-for-byte and making the diff unreviewable. Keep the committed page **under ~40 KB**. Base64 self-containment is required only for the *published* Artifact variant, which is never committed |
+| `evidence.html` | The RED→GREEN evidence page linked from the tracker comment | Rendered by `qa-report` (`--images ref`); **Reference the sibling screenshots (`<img src="screenshots/NAME.png">`) — never inline them as `data:` base64 in the committed copy.** A single inlined PNG cost 124 KB on one 124 000-char line, duplicating a PNG already tracked in the same folder byte-for-byte and making the diff unreviewable. Keep the committed page **under ~40 KB**. Base64 self-containment is required only for the *published* Artifact variant, which is never committed |
 
 Line caps in §2 apply to **narrative** files. A generated evidence page is exempt from the line cap but bound by the size + no-inlined-image rules above.
 
@@ -103,6 +103,7 @@ Line caps in §2 apply to **narrative** files. A generated evidence page is exem
 | BA report | 80–150 | 250 (exec summary ≤5 sentences; diagram OR prose, not both) |
 | Release note — per-ticket fragment (`reports/ba/release-notes/`) | **15–40** | 60 (one evidence item, never two and never zero; the version/derivation footer is mandatory and counts toward the cap) |
 | Ticket documentation — the tracker **comment** (`/qa-test` 5-docs) | **30–80** | 120 — a **target for a well-written guide, never a licence to truncate one.** `.claude/knowledge/execution/tracker-ops.md` §5d: publishing a deliverable means the deliverable *in full*, and a summary plus a repo path is not a delivery. A body that genuinely will not fit is **split one comment per audience**, never abridged and never replaced by a `reports/ba/` path. Screenshots follow §5c (attach, then a wiki-markup reference — which makes the whole Jira body wiki), not a bare repo path |
+| Result tracker comment (`/vc-fix:qa-report`) | — | the **char** budget in its template's front-matter (`plugins/vc-fix/skills/qa-report/templates/comment-*.md`) — never restated here |
 | Release note — aggregate (`reports/ba/release-notes/release-*.md`) | 40–80 | 150 (link fragments, never inline them; the `Not included` section is mandatory even when empty) |
 | Monitoring summary | **15–40** | 100 (confirmed / needs-review / dismissed tables; reference telemetry by portal link; a truncated top-frames stack — ≤6 lines — is OK for confirmed/needs-review items, but never full multi-frame dumps) |
 | Per-ticket QA report (each file in the folder) | 30–60 | 120 (one file per check type; a bug found during the check still files separately to `reports/bugs/`, referenced by link, not inlined) |
@@ -226,6 +227,12 @@ next to the claim; the viewport shot proves where it lives. Both count as one it
 below. Mechanism — `element` + **`target`** (not `ref`) on `browser_take_screenshot`, and `scale:"device"`
 when a still needs to survive zooming: [`browser-lanes.md`](browser-lanes.md) §Screenshot resolution.
 
+**Element + viewport is the default; `fullPage: true` only when the defect IS the whole page's layout**
+— sections in the wrong order, a footer or block overlapping content below the fold, a gap or overflow
+that only shows across the full scroll height. Anything that fits in one element (a toast, a field, a
+price, a control) never gets a full-page shot: scaled to `|width=700!` a long page is unreadable. A
+full-page shot replaces the viewport shot, never the element shot, and still counts as one item.
+
 **Per-scope budget:**
 
 | Scope | Target | Max |
@@ -246,6 +253,32 @@ reason: the RED→GREEN transition is what the loop is for, so the RED must surv
 
 **Retention:** Regression/test-lifecycle/coverage screenshots under `reports/regression/REG-*/`, `reports/test-lifecycle/TLC-*/`, `reports/coverage/COV-*/` are gitignored — disposable artifacts referenced from the permanent markdown. Bug evidence (`reports/bugs/screenshots/`) and per-ticket evidence (`reports/tickets/SprintXX-XX/VCST-XXXX/screenshots/`, `reports/tickets/VCST-XXXX/screenshots/`) stay tracked.
 
+
+### 5.1a Never hand-capture what the runner already captured
+
+A manual screenshot of a failure is evidence only where nothing else produced one. **Before you call a
+capture a duplicate, check the lane, not the config file** — a key in a config proves nothing until the
+tool's own schema reads it.
+
+| Lane | Captured on failure without being asked | Manual failure screenshot |
+|---|---|---|
+| **Playwright Test** — a `*.spec.ts` run under `playwright.config.ts` with `use: { screenshot: "only-on-failure", trace: "retain-on-failure" }` | a screenshot and a trace for **every browser context the test creates**, in the run's `outputDir` | **Forbidden.** No `page.screenshot()` / `testInfo.attach()` of the failure moment in a spec, fixture, hook or helper — point at the runner's file instead |
+| **Playwright MCP** lanes — `config/mcp-playwright-*.config.json`, `ci/config/mcp-playwright-chrome.ci.json` | **only the HAR** (`contextOptions.recordHar`). `@playwright/mcp` has no `screenshot` option and no notion of a failing test (config schema of the pinned 0.0.77, checked 2026-10-21). The `"screenshot": "only-on-failure"` key those files carried, and `config/test-suites.json` `defaults.screenshotOnFailure`, were read by nothing and were removed — do not re-add them | **Required** — the agent's `browser_take_screenshot` at a FAIL is the only failure image (`.claude/agents/test-runner-agent.md` step 8). Never remove it as a duplicate |
+| **Chrome DevTools MCP**; a Node script driving the Playwright *library* (e.g. `scripts/layout/layout-runner.ts`) | nothing — there is no test runner to fail | the capture the agent or script takes is the only one |
+
+**What this rule never touches.** It removes a capture a machine already made *of the same moment for the
+same purpose*. A capture made for a human reader is a different artefact and stays: the inline tracker
+image (§5.0, still MANDATORY), the element shot of the problem place (§5.1), visual and `vs. DESIGN`
+evidence (`.claude/skills/qa-design/`), and motion GIFs (§5.2). Where the runner's failure screenshot
+already shows the problem place legibly, reuse that file for the comment instead of shooting it again.
+**"Legibly" is judged at the width the comment shows it** (`|width=700!`), not at full size: a full
+viewport readable only when zoomed fails the test, so it stays as the context shot and the element shot
+of §5.1 is still taken.
+
+**Why it is a rule, in both directions.** A duplicate costs the image tokens of a second capture and
+leaves a triager two artefacts to reconcile. The opposite mistake costs more: on 2026-10-21 the MCP lanes'
+dead `screenshot` key (since removed) was read as proof that MCP runs capture failures by themselves —
+acting on it would have deleted the only failure image those runs produce.
 
 ### 5.2 Motion evidence — a GIF when the defect IS the transition
 

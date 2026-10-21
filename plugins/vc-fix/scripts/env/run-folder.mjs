@@ -11,9 +11,11 @@
 // The folder comes from QA_OUTPUT_DIR (.env.local): scripts/lib/run-dir.mjs holds the template rules and the
 // layout; knowledge/execution/run-env.md is the procedure. Exit 2: a refusal (unknown env, bad key, a template
 // that cannot resolve).
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { BindError, bindSessionEnv, describeSessionEnv, pruneStale } from '../lib/session-env.mjs';
+import { sessionEnvFile } from '../lib/resolve-test-env.js';
+import { dedicatedEnvs } from '../lib/env-layers.mjs';
 import { TICKET_KEY, completeTemplate, priorRunDirs, resolveRunDir, runDirTemplate, laneScreenshots, runLayout, sessionRun } from '../lib/run-dir.mjs';
 import { loadLayeredEnv } from '../lib/load-layered-env.mjs';
 
@@ -31,6 +33,13 @@ const quote = (v) => {
   throw new BindError(`the run folder path ${v} holds both ' and \` — no dotenv quoting carries it`);
 };
 
+/** The env a ticket's own QA_ENV_PATH folder defines, when it defines exactly one (`.env.vcst_6314` for VCST-6314);
+ *  else null. A ticket run with no env argument binds it instead of the project's default. */
+function ticketStand(ticket) {
+  const envs = new Set(dedicatedEnvs().filter((e) => e.ticket === ticket && !e.secrets).map((e) => e.env));
+  return envs.size === 1 ? [...envs][0] : null;
+}
+
 function use() {
   if (args.includes('--clear')) {
     const had = runFile && existsSync(runFile);
@@ -42,18 +51,32 @@ function use() {
   const positionals = args.filter((a, i) => !a.startsWith('--') && !(envAt !== -1 && i === envAt + 1));
   const ticket = positionals[0]?.toUpperCase();
   if (!ticket || !TICKET_KEY.test(ticket)) throw new BindError(`use needs a ticket key (VCST-1234, or an Azure Boards id) first, got "${positionals[0] ?? ''}"`);
-  if (bindSessionEnv(value('--env') ?? positionals[1], { reason: `run-folder use ${ticket}`, ticket }) === null) {
+  // A run folder that cannot resolve or be created (an unmounted drive in QA_OUTPUT_DIR) must change nothing: keep
+  // the env binding to put it back, and write the run binding only once the folder exists — else the new env would
+  // sit beside the previous run's folder.
+  const envFile = sessionEnvFile();
+  const envBefore = envFile && existsSync(envFile) ? readFileSync(envFile, 'utf8') : null;
+  const named = value('--env') ?? positionals[1];
+  // No env named: the ticket's own stand when its QA_ENV_PATH folder defines exactly one env, else the default.
+  const ownStand = named ? null : ticketStand(ticket);
+  if (ownStand) console.log(`env: ${ownStand} — ${ticket}'s own stand (the only env its QA_ENV_PATH folder defines)`);
+  if (bindSessionEnv(named ?? ownStand ?? undefined, { reason: `run-folder use ${ticket}`, ticket }) === null) {
     console.log('not in a Claude Code session (no CLAUDE_CODE_SESSION_ID): nothing is bound; TEST_ENV resolves per process');
   }
   const { testEnv, lines } = describeSessionEnv({ ticket });
   let dir;
-  try { dir = resolveRunDir({ ticket, env: testEnv }); } catch (e) { throw new BindError(e.message); }
-  mkdirSync(join(dir, 'screenshots'), { recursive: true }); // a Playwright lane never creates a folder
-  if (runFile) {
-    mkdirSync(dirname(runFile), { recursive: true });
-    writeFileSync(runFile, `# This Claude Code session's run: vc-fix run-folder use, ${new Date().toISOString()}\nRUN_DIR=${quote(dir)}\nTICKET=${ticket}\nTEST_ENV=${testEnv}\n`);
-    pruneStale(dirname(runFile));
+  try {
+    dir = resolveRunDir({ ticket, env: testEnv });
+    mkdirSync(join(dir, 'screenshots'), { recursive: true }); // a Playwright lane never creates a folder
+    if (runFile) {
+      mkdirSync(dirname(runFile), { recursive: true });
+      writeFileSync(runFile, `# This Claude Code session's run: vc-fix run-folder use, ${new Date().toISOString()}\nRUN_DIR=${quote(dir)}\nTICKET=${ticket}\nTEST_ENV=${testEnv}\n`);
+    }
+  } catch (e) {
+    if (envFile) { if (envBefore === null) rmSync(envFile, { force: true }); else writeFileSync(envFile, envBefore); }
+    throw new BindError(dir ? `cannot create the run folder ${dir}: ${e.message}` : e.message);
   }
+  if (runFile) pruneStale(dirname(runFile));
   for (const line of lines) console.log(line);
   console.log(`RUN_DIR=${dir}${runFile ? '' : '  (not bound: no Claude Code session)'}`);
   const shots = laneScreenshots(dir);

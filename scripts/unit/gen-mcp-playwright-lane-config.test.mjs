@@ -6,7 +6,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { join } from "node:path";
-import { preferProjectPlaywrightConfig } from "../../plugins/vc-fix/skills/project-init/gen-mcp.mjs";
+import { preferProjectPlaywrightConfig } from "../../plugins/vc-init/skills/project-init/gen-mcp.mjs";
 
 const ROOT = join("/proj");
 const cfgFor = (l) => join(ROOT, "config", "mcp-playwright-" + l + ".config.json");

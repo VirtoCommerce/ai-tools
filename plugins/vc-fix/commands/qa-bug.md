@@ -20,10 +20,13 @@ Create a structured bug report from a description, screenshot, or observed issue
 > [`knowledge/execution/tracker-ops.md`](../knowledge/execution/tracker-ops.md) for the per-tracker
 > resolve/comment/**create** recipes, ticket-key formats (Jira `ABC-123` vs Azure Boards bare `12345`),
 > the host-aware code-read mechanism (§3), and the platform-only build-version check (§5). App Insights
-> identifiers are env-resolved (`APPINSIGHTS_*` / `AZURE_*`), never literals. **With no profile ⇒ Jira /
-> GitHub / `vc-deploy-dev` / `vcst` App Insights — the original behaviour, unchanged.** The platform
+> identifiers are env-resolved (`APPINSIGHTS_*` / `AZURE_*`), never literals. **A missing profile is a
+> STOP — run `/project-init` (the `vc-init` plugin); there is no Jira / GitHub / `vc-deploy-dev` default any
+> more.** Every tracker/host call goes through the token bridge `node "$VC_RUN" …` (`tracker-ops.md` top). The platform
 > code search always stays on GitHub (the upstream is public GitHub even when the client's own code
 > lives on Azure Repos).
+>
+> **Host-governed project** (`governance.host` set): use the host's MCP servers from `governance.servers.*`, never `$VC_RUN` — [`knowledge/execution/host-governance.md`](../knowledge/execution/host-governance.md).
 
 ## Usage
 ```
@@ -58,12 +61,12 @@ Create a structured bug report from a description, screenshot, or observed issue
 
 **If a ticket key is provided:**
 - Resolve ticket details via the profile's tracker (`tracker-ops.md` §2), using the tracker's own key format (Jira `ABC-123` / Azure Boards bare `12345`):
-  - **Jira** (`tracker.kind = jira`, or no profile) → Atlassian MCP `getJiraIssue`
-  - **Azure Boards** (`tracker.kind = azure`) → `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" get-workitem --id <n>` (do NOT hand-roll `curl`+`python`). Resolve `$pluginRoot` = the active install path at runtime via `claude plugin list --json` (not the profile; see [`knowledge/execution/plugin-root.md`](../knowledge/execution/plugin-root.md)) — applies to every `$pluginRoot/…` invocation below too.
+  - **Jira** (`tracker.kind = jira`) → Atlassian MCP `getJiraIssue` (or `node "$VC_RUN" jira get --key <KEY>`)
+  - **Azure Boards** (`tracker.kind = azure`) → `node "$VC_RUN" ado get-workitem --id <n>` (do NOT hand-roll `curl`+`python`). The bridge resolves the vc-fix install and supplies the token itself; for the other `$pluginRoot/…` invocations below, resolve `$pluginRoot` = the active install path at runtime via `claude plugin list --json` (not the profile; see [`knowledge/execution/plugin-root.md`](../knowledge/execution/plugin-root.md)).
   - **NEVER pipe an `ado.mjs` call (or any plugin script) through `head`/`tail`.** A pipe makes the shell report `head`'s exit code (0), so a failed `create-workitem`/`transition` looks successful and the self-diagnostics collector — which reads the tool's exit status — records nothing (VCST-5582 C3). Redirect to a file and read it, or use `--json`; never `… | head`.
 - Use qa-testing-expert to reproduce based on ticket description
 - Follow `/qa-investigate` common VC patterns (P1–P8) to isolate the layer
-- Add QA evidence to the ticket as a comment (Jira `addCommentToJiraIssue` / Azure `ado.mjs comment --id <n> --text-file <path>`)
+- Add QA evidence to the ticket as a comment (Jira `addCommentToJiraIssue` / Azure `node "$VC_RUN" ado comment --id <n> --text-file <path>`)
 
 **If screenshot provided:**
 - Read the screenshot to identify the page and issue
@@ -91,14 +94,14 @@ Validate the failing scenario across all four layers. Record per-layer PASS / FA
 > names to stay within the output directory"*; absolute paths are undocumented, so nothing may be
 > built on them. `/project-init` pins each Playwright server's `--output-dir` to an **absolute**
 > path inside this project — `reports/bugs/screenshots/_incoming/<browser>/`. On the pinned
-> `@playwright/mcp@0.0.77`, a bare filename is **not guaranteed** to land there: 0.0.77 may resolve
+> `@playwright/mcp@0.0.83`, a bare filename is **not guaranteed** to land there: it may resolve
 > it against the MCP server's own cwd — which can be the project root (VCST-5582 C). So a capture
 > may appear at the project root, and Step 4 MUST reconcile it (locate → move) rather than assume it
 > is already under `--output-dir`.
 >
 > Do **not** try to place a screenshot at its final location during capture, and do not guess where
 > it went. `_incoming/` is a landing zone; Step 4 performs ONE deterministic move (including the
-> reconcile from the server cwd when 0.0.77 misplaced it). Mechanism + the mandatory reconcile step:
+> reconcile from the server cwd when the server misplaced it). Mechanism + the mandatory reconcile step:
 > [`skills/qa-evidence/output-paths.md`](../skills/qa-evidence/output-paths.md).
 
 ### Layer 1 — Storefront Frontend (vc-frontend)
@@ -162,8 +165,8 @@ sync, never invent a different one.
 > (`repos.client`). You don't decide ownership here; you provide the strongest RCA anchor so `/qa-fix`
 > Gate 1/1b can. For a **Layer-1 storefront** bug on a client fork especially, capture a precise **RCA
 > anchor (file:line)** — that anchor is what lets `/qa-fix` tell a *client customization* from an
-> *unmodified-platform* bug (provenance; see `qa-fix.md` Gate 1b). When no profile is present, the owning
-> repo is always the VirtoCommerce one — unchanged.
+> *unmodified-platform* bug (provenance; see `qa-fix.md` Gate 1b). On a native-platform profile
+> (`projectType: platform`) the owning repo is always the VirtoCommerce one.
 
 ---
 
@@ -198,7 +201,7 @@ routing confidence LOW and say why — `/qa-fix` will still re-validate, but an 
 
 **Source code research — host depends on repo ownership (`tracker-ops.md` §3):**
 - **Platform repos always stay on GitHub MCP** (the VirtoCommerce upstream is public GitHub, even when the client's own code lives on Azure Repos): search `VirtoCommerce/vc-frontend` for the affected component/page (`search_code` with keywords from error messages, URL paths, or component names); for a backend bug search the relevant module repo (`org:VirtoCommerce vc-module-*`), using `/qa-investigate` layer isolation to pick the module.
-- **A client-owned repo is searched on its host** (`vcs.clientHost` / the routed `repos.client[]` entry): `github` → GitHub MCP `search_code` scoped to the client org (keep it **tightly scoped** — `repo:`/`path:`/`filename:` + an exact symbol; a broad repo-wide query can return an oversized response); `azure-repos` → `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" search --q "<symbol>" [--repo <name>]` (ADO Code Search; org/project from the profile), or `ado.mjs get-file` to read a known path. Note: the ADO Code Search API **requires a `Project` filter and only accepts a `Repository` filter when `Project` is also present** (`Repository` alone → *"Filter [Repository] is found but filter [Project] is not."*) — `ado.mjs search` sends the pair for you. ADO has no cross-repo GitHub-style `search_code`; narrow by module then read files.
+- **A client-owned repo is searched on its host** (`vcs.clientHost` / the routed `repos.client[]` entry): `github` → GitHub MCP `search_code` scoped to the client org (keep it **tightly scoped** — `repo:`/`path:`/`filename:` + an exact symbol; a broad repo-wide query can return an oversized response); `azure-repos` → `node "$VC_RUN" ado search --q "<symbol>" [--repo <name>]` (ADO Code Search; org/project from the profile), or `node "$VC_RUN" ado get-file` to read a known path. Note: the ADO Code Search API **requires a `Project` filter and only accepts a `Repository` filter when `Project` is also present** (`Repository` alone → *"Filter [Repository] is found but filter [Project] is not."*) — `ado.mjs search` sends the pair for you. ADO has no cross-repo GitHub-style `search_code`; narrow by module then read files.
 - Check recent commits and PRs in the affected file for recent changes that may have introduced the regression
 - Look for related issues/PRs: `search_issues` (GitHub) with error text or feature keywords
 
@@ -239,7 +242,7 @@ mv reports/bugs/screenshots/_incoming/*/<kept>.png <bugs>/screenshots/<slug>/
 - The report then references the **final** path (`<bugs>/screenshots/<slug>/<file>.png`) —
   never an `_incoming/` path and never a bare filename.
 - If a capture is not where you expect, **list `reports/bugs/screenshots/_incoming/`** — do not
-  guess a path. A guessed path was one of the two `Read` failures on the OPUS run.
+  guess a path. A guessed path was one of the two `Read` failures on a client deployment run.
 
 Generate a report in `reports/bugs/open/<bucket>/` — `critical-high/` · `medium/` · `low/` (when the caller names a ticket run's folder — `/qa-test`, `/qa-test-fast`, `/qa-triage-results` — in `<run folder>/bugs/<bucket>/` instead: `knowledge/execution/run-env.md` §The run folder), chosen by the severity the report declares (`.claude/rules/reports.md` §1a; a straddling grade files at the lower bucket), using this naming convention:
 `BUG-{Short-Description}.md` or `BUG-{Short-Description}-<ticket-key>.md` (if a JIRA ticket is known)
@@ -321,29 +324,31 @@ instead of re-deriving it. Fill it from Step 2 (owning layer) + Step 3a (exact r
 **Ask via `AskUserQuestion`** — question `"Create a bug-tracker ticket for this bug?"`, options
 **"Yes — create the ticket"** / **"No — keep the local report only"**. Use the tool, **never prose**:
 a prose question ENDS THE TURN, which lets an end-of-turn hook (the self-diagnostics tail-trigger)
-resume the agent and push the question out of view — exactly what happened on the OPUS deployment
+resume the agent and push the question out of view — exactly what happened on a client deployment
 (VCST-5582 D). `AskUserQuestion` blocks inside the turn, so nothing can bury it. This is the same
 mechanism the parent-link question below already uses.
 
 If yes, **create via the profile's tracker** (`tracker-ops.md` §2 — Create), Type = Bug:
-- **Jira** (`tracker.kind = jira`, or no profile) → Atlassian MCP `createJiraIssue`, project = `tracker.projectKey` (falls back to `env.JIRA_PROJECT_KEY`, default `VCST` for backwards compatibility; customer sets their own). Body = **GitHub-flavored Markdown, NOT Jira wiki markup** (the MCP converts MD→ADF; wiki markup like `h2.`/`{code}`/`*bold*` renders literally — VCST-5212), and follow `tracker-ops.md` §2 **Comment & body style** (clear, brief, outcome-first, structured — not a wall of text). Same rule for any follow-up comment.
-  - **Screenshots — attach AND embed inline.** A filename in the body is not evidence anyone opens. Unlike the Azure path below (whose HTML description takes an `<img src>` directly), Jira needs a 4-step dance, and **step 2 is the trap**:
-    1. **Upload** — the Atlassian MCP has **no attachment tool**; use REST, multipart, with the mandatory `X-Atlassian-Token: no-check` header (multiple files per request OK): `POST {JIRA_BASE_URL}/rest/api/3/issue/{key}/attachments` → `200` + `[{id, filename}]`.
-    2. **Resolve the Media Services ID.** ADF `media.attrs.id` is a **Media Services UUID**, **NOT the numeric Jira attachment id** — passing the attachment id fails the whole request with `400 ATTACHMENT_VALIDATION_ERROR`. The UUID is absent from the attachment metadata; take it from the content endpoint's redirect: `GET /rest/api/3/attachment/content/{attachmentId}` with `redirect: 'manual'` → **`303`**, `Location: https://api.media.atlassian.com/file/<UUID>/binary?token=…`.
-    3. **PUT the description as ADF.** `width`/`height` are **required** or the image won't display — read them from the PNG IHDR (`buf.readUInt32BE(16)` / `(20)`), never guess. `collection` is the empty string (verified against a Jira-authored node). Safest pattern: `GET …/issue/{key}?fields=description` (already ADF), push the nodes onto `description.content`, `PUT …/issue/{key}` with `{fields:{description}}` → `204` — that preserves the MD-converted body instead of hand-authoring the whole doc.
+- **Jira** (`tracker.kind = jira`) → Atlassian MCP `createJiraIssue`, project = `tracker.projectKey` (falls back to `env.JIRA_PROJECT_KEY`; customer sets their own). Body = **GitHub-flavored Markdown, NOT Jira wiki markup** (the MCP converts MD→ADF; wiki markup like `h2.`/`{code}`/`*bold*` renders literally — VCST-5212), and follow `tracker-ops.md` §2 **Comment & body style** (clear, brief, outcome-first, structured — not a wall of text). Same rule for any follow-up comment.
+  - **Screenshots — attach AND embed inline.** A filename in the body is not evidence anyone opens. Unlike the Azure path below (whose HTML description takes an `<img src>` directly), Jira needs a 4-step dance, and **step 2 is the trap**. Every step runs through the bridge (`node "$VC_RUN" jira …`, host = the profile's `tracker.baseUrl`; the token stays in vc-secrets):
+    1. **Upload** — the Atlassian MCP has **no attachment tool**; `node "$VC_RUN" jira attach --key <KEY> --file a.png [--file b.png]` (a multipart `POST …/issue/{key}/attachments` with the mandatory `X-Atlassian-Token: no-check` header) → `[{id, filename}]`.
+    2. **Resolve the Media Services ID.** ADF `media.attrs.id` is a **Media Services UUID**, **NOT the numeric Jira attachment id** — passing the attachment id fails the whole request with `400 ATTACHMENT_VALIDATION_ERROR`. The UUID is absent from the attachment metadata; it lives in the content endpoint's `303` redirect (`Location: https://api.media.atlassian.com/file/<UUID>/binary?token=…`) — `node "$VC_RUN" jira media-id --attachment <attachmentId>` → `{ uuid }` reads it for you.
+    3. **PUT the description as ADF.** `width`/`height` are **required** or the image won't display — read them from the PNG IHDR (`buf.readUInt32BE(16)` / `(20)`), never guess. `collection` is the empty string (verified against a Jira-authored node). Safest pattern: `node "$VC_RUN" jira get --key <KEY> --fields description` (already ADF), push the nodes onto `description.content`, write `{"description": …}` to a file and `node "$VC_RUN" jira update --key <KEY> --fields-file fields.json` (a `PUT …/issue/{key}` with `{fields}`) — that preserves the MD-converted body instead of hand-authoring the whole doc.
        ```js
        { type: 'mediaSingle', attrs: { width, widthType: 'pixel', layout: 'align-start' },
          content: [{ type: 'media', attrs: { type: 'file', id: '<UUID>', alt: '<filename>',
                                              collection: '', width, height } }] }
        ```
-    4. **Verify it renders** — persisted ≠ rendered. Read back `?fields=description&expand=renderedFields` and assert the HTML contains `<img src="…/rest/api/3/attachment/content/{attachmentId}" …>`. No `<img>` ⇒ the node is wrong; don't claim success.
+    4. **Verify it renders** — persisted ≠ rendered. Read back `node "$VC_RUN" jira get --key <KEY> --fields description --expand renderedFields` and assert the HTML contains `<img src="…/rest/api/3/attachment/content/{attachmentId}" …>`. No `<img>` ⇒ the node is wrong; don't claim success.
     **Do not bother trying** (each fails): markdown `![alt](file.png)` → silently dropped (MD→ADF can't resolve a filename to an attachment); wiki `!file.png!` → renders literally (VCST-5212 class); `attrs.id` = attachment id → `400`. Embed the 1–3 images that show the defect (`.claude/rules/reports.md` §5); attach-only is fine for supporting shots.
 - **Azure Boards** (`tracker.kind = azure`) → the work item is the **lean, replayable** version of the bug, not a copy of the markdown report. Its field set is **DISCOVERED, never hardcoded** (VCST-5582 E): `project-profile.json` `tracker.fields.Bug[]` carries THIS organization's contract — `{ ref, name, required, type, allowedValues?, defaultValue? }` — scanned by `/project-init`. Body format follows [`knowledge/execution/azure-html-format.md`](../knowledge/execution/azure-html-format.md) (the single source of truth for the SHAPE); whether a field is HTML is **derived from its contract `type`** (`html` ⇒ HTML, `plainText` ⇒ text), not assumed.
   - **The `body` slot = abstract Summary → Preconditions → Steps → Actual → Expected**, and nothing else competes with them. The concrete field the `body` slot lands in is **resolved per work-item TYPE from the scanned form layout** (`tracker.formLayout.<Type>`), never assumed: on the Agile process a Bug's body is `Microsoft.VSTS.TCM.ReproSteps` while a User Story / Task use `System.Description` — and a field can exist in the contract yet be off the form, where the body would be invisible (VCST-5702 ITEM 0). The Summary is 1–3 sentences with **no user-specific data** (no emails, IDs, order numbers, GUIDs, names) — reproducible by anyone who meets the Preconditions. The VC extras (4-Layer Validation, Module Versions, Root Cause Analysis, Fix Routing) go into **one collapsed `🔧 Technical Details` block below**, trimmed to the essentials — never as top-level sections. Pass `--repro-file` only when the type has a **distinct form-visible** `repro` field; when the body target is the only html control on the form, a `--repro` is folded into the body automatically (create resolves this from the layout — never assume which field is hidden).
   - **Metadata → dedicated fields, never a description section.** Do **NOT** hardcode `Custom.Environment` / `Custom.Reportedby` / `Custom.Typeofbug` — those exist in ONE organization's process and are rejected or silently blank anywhere else. Instead read `tracker.fields.Bug[]` and fill the fields it lists, via the semantic slots in [`skills/qa-fix-routing/bug-contract.mjs`](../skills/qa-fix-routing/bug-contract.mjs) (`environment`, `bugType`, `reportedBy`, `systemInfo`, `foundIn`, `severity`, `priority`, …). Resolution order: an explicit `tracker.fieldMap` override → auto-match on name/ref + type → **ask once** (below). `tracker.fieldDefaults` supplies per-deployment constants (e.g. `Custom.Environment = QA`) — a stored default, never a per-bug guess. The build/theme/browser/repro-rate go to the `systemInfo` slot via `--system-info-file <sysinfo.html>`.
-  - **First creation on a deployment — ONE question per unmapped REQUIRED field.** `create-workitem` refuses to POST while a contract-`required` field has no value and no default, and names each one with its `allowedValues`. Ask the operator via **`AskUserQuestion`**, offering those discovered values as the options, then **persist** the answer so it is asked exactly once per deployment:
+  - **First creation on a deployment — ONE question per unmapped REQUIRED field.** `create-workitem` refuses to POST while a contract-`required` field has no value and no default, and names each one with its `allowedValues`. Ask the operator via **`AskUserQuestion`**, offering those discovered values as the options, then **persist** the answer so it is asked exactly once per deployment. `project-profile.json` has one
+    writer — the `vc-init` plugin — so the write goes through its `profile-set.mjs`; resolve `<vc-init>`
+    with `node "$VC_RUN" --where` (the `vcInit` field):
     ```bash
-    node "$pluginRoot/skills/project-init/reconcile-profile.mjs" --write \
+    node "<vc-init>/skills/project-init/profile-set.mjs" \
       --set 'tracker.fieldDefaults.<field-ref>=<the operator's answer>'
     # a slot BINDING instead of a constant value:
     #   --set 'tracker.fieldMap.<slot>=<field-ref>'
@@ -352,12 +357,12 @@ If yes, **create via the profile's tracker** (`tracker-ops.md` §2 — Create), 
     # remainder of the path becomes ONE flat key rather than nested objects.
     ```
     Ask at the FIRST bug creation, never at onboarding — the operator has context here that they do not have during the interview.
-  - **Screenshots first:** upload each and capture the URL — `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" upload-attachment --file <png>` → `{ url }`. Embed inline in the relevant `<li>` via `<img src="{url}" width="700">`. `--attachments` takes **URLs**, never local paths (the pre-flight rejects a path).
+  - **Screenshots first:** upload each and capture the URL — `node "$VC_RUN" ado upload-attachment --file <png>` → `{ url }`. Embed inline in the relevant `<li>` via `<img src="{url}" width="700">`. `--attachments` takes **URLs**, never local paths (the pre-flight rejects a path).
   - **Assignee & sprint are automatic:** pass `--assign-self` (the token/session owner) and `--iteration current` (the team's active sprint, so the bug lands in the sprint and not the backlog).
   - **Parent link — ALWAYS offer REAL candidates first (mandatory).** A blind "No parent" + free-text
     "Other" prompt is exactly how a bug ends up unparented — the free text comes back empty. So FETCH
     real candidates, THEN ask with them pre-filled:
-    1. **Fetch (mandatory, always run it):** `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" list-parent-candidates --top 2`
+    1. **Fetch (mandatory, always run it):** `node "$VC_RUN" ado list-parent-candidates --top 2`
        → `{ candidates:[{id,type,title,state}], iterationPath, … }` — open User Story / Epic / Feature in
        the resolved current sprint, newest-changed first. If it returns `candidates: []`, retry ONCE with
        `--any-iteration` (the current sprint may have no open stories).
@@ -377,14 +382,14 @@ If yes, **create via the profile's tracker** (`tracker-ops.md` §2 — Create), 
          third time. Create the bug **without** `--parent`, then state plainly to the operator that the
          parent is **unset** and can be added afterwards with a link-only relation PATCH on the created
          work item (add `System.LinkTypes.Hierarchy-Reverse` → the parent id), no re-file needed.
-  - **Create:** `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" create-workitem --type Bug --title <summary> --description-file <desc.html> --system-info-file <sysinfo.html> [--field "<Ref>=<value>" …from the contract] --severity <"2 - High"> --priority <N> --tags <...> --attachments "<url1>,<url2>" --assign-self --iteration current [--parent <id>]` (org/project default from the profile).
+  - **Create:** `node "$VC_RUN" ado create-workitem --type Bug --title <summary> --description-file <desc.html> --system-info-file <sysinfo.html> [--field "<Ref>=<value>" …from the contract] --severity <"2 - High"> --priority <N> --tags <...> --attachments "<url1>,<url2>" --assign-self --iteration current [--parent <id>]` (org/project default from the profile).
   - **What it does for you, before and after the POST:**
     - **Pre-flight (ONE message, nothing created):** resolves and stats every `--*-file` against `VC_FIX_HOME || cwd` (shown as an ABSOLUTE path when missing), resolves the `--assign-self` identity and `--iteration current`, checks the attachment URLs, and probes the Work-Items **write** scope non-mutatingly. Every problem is reported together with the exact PAT scope to grant.
     - **Contract validation:** a picklist value outside `allowedValues` and a required-but-empty field both block the POST — a doomed request is never sent, and a field this organization lacks is dropped rather than rejected.
     - **Read-back (E-e):** re-reads the created item and returns `fieldsOk` + a per-field **PASS/MISSING** table (`verifyTable`) with **Status / On form / Images** columns + `stillMissing`. A 200 from ADO means "an item exists", not "the fields are populated". Statuses: **PASS · MISSING** (empty), **OFF_FORM** (written to a field NOT on the form — an invisible body, never a PASS, VCST-5702 ITEM 0), **IMAGES_MISSING** (submitted N `<img>`, fewer than N came back as attachment-backed images — the "persisted ≠ rendered" gap, ITEM 1). A refillable MISSING is PATCHed **once** and re-verified (`patchedAfterCreate`); an OFF_FORM/IMAGES_MISSING is reported, not silently retried. The receiving body field is echoed as `bodyField`.
-    - **Verify inline rendering with `get-workitem --json`, never a raw curl.** The stripped default `get-workitem` output now also reports an image **count** per html field + `hasSystemInfo`/`hasIterationPath`, so it can't imply images are absent; to eyeball the actual `<img src="…/_apis/wit/attachments/…">` tags, read the raw item: `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" get-workitem --id <ID> --json` (ITEM 2).
+    - **Verify inline rendering with `get-workitem --json`, never a raw curl.** The stripped default `get-workitem` output now also reports an image **count** per html field + `hasSystemInfo`/`hasIterationPath`, so it can't imply images are absent; to eyeball the actual `<img src="…/_apis/wit/attachments/…">` tags, read the raw item: `node "$VC_RUN" ado get-workitem --id <ID> --json` (ITEM 2).
     - Returns `{ id, type, title, state, url, contract, contractAccounting, bodyField, fieldsOk, verifyTable, … }`.
-  - **On a create failure: FIX THE INPUT — never retry with fields removed.** Dropping fields until the POST succeeds is exactly how the OPUS work item ended up with its fields unset. The one automatic exception is handled for you: an **optional** field the server itself rejected is dropped and the create retried **once** (reported as `selfHealed`). A **required** field is never dropped — STOP and ask the operator.
+  - **On a create failure: FIX THE INPUT — never retry with fields removed.** Dropping fields until the POST succeeds is exactly how a client work item ended up with its fields unset. The one automatic exception is handled for you: an **optional** field the server itself rejected is dropped and the create retried **once** (reported as `selfHealed`). A **required** field is never dropped — STOP and ask the operator.
   - **Fallback ladder (E-f) — "universal" must not mean "fragile":** contract in the profile ⇒ use it · contract absent ⇒ re-run `/project-init`'s tracker scan, or proceed and let the create report `contract: "unverified defaults"` · metadata unreachable (read permission / offline) ⇒ the legacy field set is sent, **clearly labelled "unverified defaults"** in your report to the operator · a specific field rejected ⇒ the single self-heal above.
   - **Safety net:** `create-workitem` auto-converts Markdown→HTML for html-typed fields if any slips through, but author HTML directly for the clean, structured result — don't lean on the net.
 
@@ -434,7 +439,7 @@ ls -1 *.png *.har *.zip *.webm 2>/dev/null   # also catches an already-ignored f
 - **Nothing found** → say so in one line: `root clean — no stray artifacts`.
 - **Something found** → **NAME each file** (and its size/mtime) in your final message, THEN move it
   into `reports/bugs/screenshots/<slug>/` if it is evidence, or delete it if it is a temp file.
-  Naming it is the point: the OPUS telemetry could not pin down WHICH writer produced the
+  Naming it is the point: a client deployment's telemetry could not pin down WHICH writer produced the
   root-level files, so a silent move would erase the only clue if the pattern repeats
   (VCST-5582 C). Report it as an observation, not a failure — the run still succeeded.
 
@@ -446,7 +451,7 @@ folder's `bugs/`), browser captures under `reports/bugs/screenshots/`, scratch f
 > **ORDERING RULE — never signal completion while an operator decision is pending.** `complete
 > --skill` is emitted **only after** the Step-5 ticket was created **or** explicitly declined (and
 > after any parent-link / field-mapping question was answered). Signalling early is what broke the
-> OPUS run (VCST-5582 D/E1): `complete` fired at 11:04:19Z while the ticket question was still
+> A client deployment run (VCST-5582 D/E1): `complete` fired at 11:04:19Z while the ticket question was still
 > unanswered, so the whole ticket-creation phase ran OUTSIDE the span (`parentId: null` orphans) and
 > was never diagnosed — and the `Stop` hook, seeing a closed span, resumed the agent and buried the
 > question. The collector now also defers a `Stop` that finds an unanswered `AskUserQuestion`

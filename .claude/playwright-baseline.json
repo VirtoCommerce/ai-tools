@@ -53,8 +53,6 @@
   "sharedSettings": {
     "viewport": { "width": 1920, "height": 1080 },
     "isolated": true,
-    "screenshot": "only-on-failure",
-    "recordVideo": "on-failure",
     "recordHar": true,
     "harOmitContent": true
   },

@@ -9,7 +9,8 @@
 // The run folder always names both the ticket and the env: a template without `<ticket>` gets `<ticket>`
 // appended, then one without `<env>` gets `<env>` appended — so two tickets, or one ticket on two envs (a local
 // stand, then a cloud one), never share a file. Unset ⇒ `reports/tickets/<sprint>/<ticket>` (+ `<env>`) under
-// the project root. A relative template resolves against the project root — outputRoot(): VC_FIX_HOME, else the
+// the project root; a project with no sprint folder (a new one, a vc-fix client) drops the `<sprint>` folder:
+// `reports/tickets/<ticket>/<env>`. A relative template resolves against the project root — outputRoot(): VC_FIX_HOME, else the
 // cwd, as plugins/CLAUDE.md defines it, so this file is the same in the vc-fix plugin
 // (plugins/vc-fix/scripts/lib/run-dir.mjs — keep the two byte-identical). Write the template unquoted or
 // single-quoted in .env.local: inside double quotes dotenv reads `\n` in `C:\temp\new` as a line break.
@@ -36,14 +37,39 @@ export const TICKET_KEY = /^(?:[A-Z][A-Z0-9]*-\d+|\d+)$/;
 const JIRA_KEY = /^[A-Z][A-Z0-9]*-\d+$/;
 const PLACEHOLDER = /<(ticket|env|sprint)>/gi;
 
-/** The current sprint folder name under `reports/tickets/`: `Sprint-current` when present, else the newest
- *  `SprintXX-XX`; null when none exists. (Moved here from scripts/preflight/policy.ts.) */
+/** A sprint's folder name (`Sprint26-21`), as `reports:prune` reads it: any number of digits on each side. */
+export const SPRINT_DIR = /^Sprint\d+-\d+$/;
+
+/** `Sprint26-14` → 2614, so `Sprint26-9` sorts before `Sprint26-10` (`reports:prune`'s `sprintOrdinal`). */
+const sprintOrdinal = (name) => {
+  const m = /^Sprint(\d+)-(\d+)$/.exec(name);
+  return m ? Number(m[1]) * 100 + Number(m[2]) : -1;
+};
+
+/** The current sprint folder name under `reports/tickets/`: the sprint a `Sprint-current` FILE names (the marker
+ *  `reports:prune` reads), else a `Sprint-current` folder, else the numerically newest `Sprint<n>-<n>`; null when
+ *  none exists. (Moved here from scripts/preflight/policy.ts.) */
 export function resolveSprint(root = outputRoot()) {
   const dir = join(root, 'reports', 'tickets');
   if (!existsSync(dir)) return null;
   const names = readdirSync(dir);
-  if (names.includes('Sprint-current')) return 'Sprint-current';
-  return names.filter((n) => /^Sprint\d{2}-\d{2}$/.test(n)).sort().at(-1) ?? null;
+  if (names.includes('Sprint-current')) {
+    const marker = join(dir, 'Sprint-current');
+    try {
+      if (!statSync(marker).isFile()) return 'Sprint-current';
+      const named = readFileSync(marker, 'utf8').trim();
+      if (SPRINT_DIR.test(named)) return named;
+    } catch { /* removed meanwhile */ }
+  }
+  return names.filter((n) => SPRINT_DIR.test(n)).sort((a, b) => sprintOrdinal(a) - sprintOrdinal(b)).at(-1) ?? null;
+}
+
+/** The template without its `<sprint>` folder — the layout of a project with no sprint folder
+ *  (`reports/tickets/<ticket>/<env>`); the template itself when it has no `<sprint>`; null when `<sprint>` sits
+ *  inside a longer folder name, which cannot be dropped. */
+function withoutSprintSegment(template) {
+  const out = template.replace(/^<sprint>[\\/]+/i, '').replace(/[\\/]+<sprint>(?=[\\/]|$)/gi, '');
+  return /<sprint>/i.test(out) ? null : out;
 }
 
 /** `QA_OUTPUT_DIR` as the loaded env holds it (trimmed), else the default template. */
@@ -67,10 +93,14 @@ export function completeTemplate(template) {
 export function resolveRunDir({ ticket, env, sprint, template = runDirTemplate(), root = outputRoot() }) {
   if (!TICKET_KEY.test(ticket ?? '')) throw new Error(`run folder: "${ticket}" is not a ticket key like VCST-1234 (or an Azure Boards id)`);
   if (!TEST_ENV_PATTERN.test(env ?? '')) throw new Error(`run folder: "${env}" is not a TEST_ENV name ([a-z0-9_]+)`);
-  const full = completeTemplate(template);
-  const needSprint = /<sprint>/i.test(full);
-  const sprintName = needSprint ? (sprint ?? resolveSprint(root)) : null;
-  if (needSprint && !sprintName) throw new Error('run folder: the template names <sprint>, and there is no reports/tickets/SprintXX-XX (or Sprint-current) folder to take it from — create the current sprint folder, or set QA_OUTPUT_DIR in .env.local without <sprint>');
+  let full = completeTemplate(template);
+  const sprintName = /<sprint>/i.test(full) ? (sprint ?? resolveSprint(root)) : null;
+  if (/<sprint>/i.test(full) && !sprintName) {
+    // No sprint folder to take it from: the `<sprint>` folder is dropped (reports/tickets/<ticket>/<env>).
+    const bare = withoutSprintSegment(full);
+    if (bare === null) throw new Error('run folder: the template names <sprint> inside a folder name, and there is no reports/tickets/SprintXX-XX (or Sprint-current) to take it from — create the current sprint folder, or set QA_OUTPUT_DIR in .env.local without <sprint>');
+    full = bare;
+  }
   const values = { ticket, env, sprint: sprintName };
   const path = full.replace(PLACEHOLDER, (_, name) => values[name.toLowerCase()]);
   return isAbsolute(path) ? resolve(path) : resolve(root, path);
@@ -89,6 +119,10 @@ export function laneScreenshots(dir, root = outputRoot()) {
 
 /** The subfolders `runLayout` puts inside a run folder (never an env name). */
 const LAYOUT_DIRS = new Set(['screenshots', 'exploratory', 'bugs', 'knowledge']);
+/** What a run writes into its folder (`runLayout`, the reports beside it, `/qa-verify-fix`'s files, an evidence
+ *  package). A folder holding none of them is not a run — a pre-env ticket folder's own subfolder (`api/`), say. */
+const RUN_ENTRY = /^(?:summary\.json|verdict\.md|test-strategy\.md|testing-checklist\.md|test-model\.md|design-report\.md|triage-report\.md|verification-(?:report\.md|summary\.json)|evidence\.html|graphql-fixtures-validation\.md|\.graphql-schema\.cache\.json|screenshots|exploratory|bugs|knowledge|evidence-.+)$/;
+const isRunFolder = (dir) => { try { return readdirSync(dir).some((n) => RUN_ENTRY.test(n)); } catch { return false; } };
 
 /** Where each artifact of a run lives inside its folder — the one statement of the layout. */
 export function runLayout(dir) {
@@ -135,21 +169,28 @@ export function globDirs(pattern) {
 
 /**
  * Every existing run folder of a ticket — its env folders under the configured template and under the default
- * one, and the folders written before the env level existed (`reports/tickets/<Sprint>/<TICKET>/` itself, and
- * the ad-hoc `reports/tickets/<TICKET>/`). Prior artifacts are READ from all of them; a run WRITES only into its
- * own. Each entry: `{ dir, env }`, env null for a pre-env folder.
+ * one, each also without its `<sprint>` folder (a project with no sprint folder writes there), and the folders
+ * written before the env level existed (`reports/tickets/<Sprint>/<TICKET>/` itself, and the ad-hoc
+ * `reports/tickets/<TICKET>/`). Prior artifacts are READ from all of them; a run WRITES only into its own. Each
+ * entry: `{ dir, env }`, env null for a pre-env folder.
  */
 export function priorRunDirs({ ticket, template = runDirTemplate(), root = outputRoot() }) {
   const out = new Map();
-  for (const t of new Set([template, DEFAULT_TEMPLATE])) {
+  const layouts = new Set();
+  for (const t of [template, DEFAULT_TEMPLATE]) {
     const full = completeTemplate(t);
+    layouts.add(full);
+    const bare = withoutSprintSegment(full);
+    if (bare) layouts.add(bare);
+  }
+  for (const full of layouts) {
     const pattern = full.replace(/<ticket>/gi, ticket).replace(/<sprint>/gi, '*').replace(/<env>/gi, '*');
     const abs = isAbsolute(pattern) ? pattern : join(root, pattern);
     const envAt = full.split(/[\\/]+/).findIndex((seg) => /<env>/i.test(seg));
     for (const dir of globDirs(abs)) {
       const env = resolve(dir).split(/[\\/]+/).at(envAt - full.split(/[\\/]+/).length);
-      // `*` in the env place also matches a pre-env folder's own subfolders (screenshots/ …): not an env.
-      if (env && TEST_ENV_PATTERN.test(env) && !LAYOUT_DIRS.has(env)) out.set(dir, { dir, env });
+      // `*` in the env place also matches a pre-env folder's own subfolders (screenshots/, api/ …): not an env.
+      if (env && TEST_ENV_PATTERN.test(env) && !LAYOUT_DIRS.has(env) && isRunFolder(dir)) out.set(dir, { dir, env });
     }
   }
   // A pre-env folder counts only when it holds files itself — under the default layout it is also the parent

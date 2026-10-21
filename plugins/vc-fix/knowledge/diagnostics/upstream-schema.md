@@ -72,7 +72,7 @@ UpstreamFinding = {
 `validateUpstream(struct, ctx)` takes a `ctx = { files: Map<pluginRelPath, content>, denyValues:
 string[], states: string[], evidence: string|null, httpClasses: Set<string> }` assembled by
 `deliver.mjs` (`buildProvenanceCtx`): the content of each cited plugin file (read from the INSTALLED
-plugin, read-only), every value it can name from the client's `.env.*` and `project-profile.json`,
+plugin, read-only — vc-fix, or vc-init for a `skills/project-init/…` file, since VCST-6402), every value it can name from the client's `.env.*` and `project-profile.json`,
 and — when a session id is known — the lowercased corpus of everything the COLLECTOR captured this
 session (`obs` evidence snippets + span error detail + the obs HTTP-class codes). **Without a `ctx`
 every v3 string is dropped** — unproven is the default, so a code path that forgets the context fails
@@ -210,10 +210,11 @@ still zero free text.
 
 ### Source — the diagnostician's struct on stdin (PR #172 items 1, 2)
 
-`deliver` reads the finding struct from **stdin**. There is no source precedence any more and no
-report parsing: the `self-check-diagnostician` subagent produces the struct (assigning severity and
-subject, which the collector cannot express, and adding the v3 provenance fields from the plugin's own
-source), and the orchestrator pipes it in. `deliver` re-validates it through `validateUpstream(struct,
+`deliver` reads the finding struct from **`--input <file>`** (or stdin). There is no source precedence
+any more and no report parsing: the `self-check-diagnostician` subagent produces the struct (assigning
+severity and subject, which the collector cannot express, and adding the v3 provenance fields from the
+plugin's own source), and the orchestrator hands it in — `node "$VC_RUN" deliver --input <file>`
+(VCST-6402: the GitHub token lives in vc-secrets and reaches `deliver.mjs` only through that bridge). `deliver` re-validates it through `validateUpstream(struct,
 ctx)` — so an out-of-vocabulary enum is coerced and an unproven/client-tainted string is dropped — but
 it derives nothing from prose.
 

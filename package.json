@@ -200,6 +200,7 @@
     "report:graphql": "npx tsx scripts/graphql/generate-graphql-html-report.ts",
     "report:graphql:open": "npx tsx scripts/graphql/generate-graphql-html-report.ts --open",
     "report:regression": "npx tsx scripts/regression/generate-regression-html-report.ts",
+    "report:render": "node plugins/vc-fix/skills/qa-report/render.mjs",
     "report:regression:open": "npx tsx scripts/regression/generate-regression-html-report.ts --open",
     "report:regression:portable": "npx tsx scripts/regression/generate-regression-html-report.ts --embed-images",
     "report:regression:watch": "npx tsx scripts/regression/generate-regression-html-report.ts --watch --open",
@@ -332,6 +333,9 @@
     "seed:category-images": "node scripts/seed-data/catalog/seed-category-images.mjs",
     "seed:category-images:teardown": "node scripts/seed-data/catalog/seed-category-images.mjs --teardown",
     "td:validate:category-images": "node scripts/seed-data/catalog/validate-category-images-data.mjs",
+    "seed:brands": "node scripts/seed-data/catalog/seed-brands.mjs",
+    "seed:brands:teardown": "node scripts/seed-data/catalog/seed-brands.mjs --teardown",
+    "td:validate:brands": "node scripts/seed-data/catalog/validate-brands-data.mjs",
     "carts:check": "node scripts/seed-data/carts/check-competing-carts.mjs",
     "carts:sweep": "node scripts/seed-data/carts/check-competing-carts.mjs --apply",
     "seed:loyalty-missions": "node scripts/seed-data/loyalty/seed-loyalty-missions.mjs",
@@ -402,26 +406,25 @@
   },
   "homepage": "https://github.com/VirtoCommerce/ai-tools#readme",
   "dependencies": {
-    "@azure/identity": "^4.13.1",
-    "@playwright/mcp": "^0.0.77",
-    "csv-parse": "^6.1.0",
+    "@azure/identity": "^4.14.0",
+    "@playwright/mcp": "^0.0.83",
+    "csv-parse": "^7.0.3",
     "dotenv": "^17.4.2",
-    "graphql": "^16.14.0",
-    "pptxgenjs": "^4.0.1",
+    "graphql": "^16.14.2",
     "yaml": "^2.9.1"
   },
   "devDependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.140",
-    "@playwright/test": "^1.61.1",
-    "@types/node": "^22.19.19",
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^22.20.5",
     "ajv": "^8.20.0",
     "cross-env": "^7.0.3",
-    "csv-stringify": "^6.7.0",
-    "playwright": "^1.61.1",
-    "tsx": "^4.0.0",
+    "csv-stringify": "^6.9.0",
+    "playwright": "^1.64.1",
+    "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   },
   "allowScripts": {
-    "esbuild@0.27.4": true
+    "esbuild@0.28.2": true
   }
 }

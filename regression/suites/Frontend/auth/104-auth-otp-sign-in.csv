@@ -393,3 +393,975 @@ OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE
 [STATE] No horizontal page scroll appears at any point {SPEC}
 [STATE] The real code afterwards signs the customer in {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /api/otp/request or /connect/token other than the one asserted",Text painted outside the input; page widens with a horizontal scrollbar; a GUID or URL accepted into the cells; cells broken after the paste,Sign out through the account menu so the next case starts anonymous,VCST-5748 · Archetype:RENDER · Technique:EG | Promoted: REG-2026-10-15-1115 (2026-10-15),Automated
+OTP-029,"[JOURNEY] OTP sign-in with a locked last-used organization lands in the other organization, and returns to it once unlocked",Auth > OTP Sign-In > Organization fallback,Critical,"BL-AUTH-016, BL-AUTH-015, BL-B2B-001",,"[PRE:CLEAR_SESSION]
+Create in-case (FIFTH RULE; random-data uniqueEmail/uniqueOrgName, AGENT-TEST-6132 prefix): Org A and Org B and ONE buyer whose contact is an active member of each (userName == email, password {{DEFAULT_TEST_PASSWORD}}). The contact read-back order of its organizations is not relied on: every case pins the organization it needs through the header switcher or CurrentOrganizationId. Shared personas (MULTI_ORG_USER_*, MULTI_ORG_TF_BR*) are never touched.
+OtpSignIn.Enabled is on for {{STORE_ID}}: the fixture's own POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
+Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); SMTP is not relied on; no code within 90s = BLOCKED.
+One fresh code per sign-in and no session is carried across a state change (a lock ends the locked organization's sessions).
+State under test: Org A is the buyer's last-used organization (stored choice and server CurrentOrganizationId both A), then Org A is locked; Org B stays active and Approved.
+Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallback (vc-module-customer PR #321 — open on 2026-10-20; observed on 3.1030.0-pr-321-c54f). On a Customer build without it the fallback expectations do not hold: record the case BLOCKED for the build, never FAIL, and never re-base it to the old behaviour.","storeId={{STORE_ID}}, storefront={{FRONT_URL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[PRE:CLEAR_SESSION] start the storefront lane from an empty browser session (cookies, localStorage, tokens) before any fixture or sign-in step
+--- LAYER: Fixture (REST, created in-case) ---
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[SETUP] Generate with random-data (AGENT-TEST-6132 prefix): orgAName, orgBName (uniqueOrgName) and email (uniqueEmail) - the email is also the userName
+[HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Organization"",""name"":orgAName}, then the same for orgBName; capture orgAId, orgBId
+[HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Contact"",""firstName"":""Agent"",""lastName"":""T6132"",""fullName"":""Agent T6132"",""name"":""Agent T6132"",""emails"":[email],""organizations"":[orgAId,orgBId]}; capture contactId
+[HTTP] POST {{BACK_URL}}/api/platform/security/users/create {""userName"":email,""email"":email,""password"":""{{DEFAULT_TEST_PASSWORD}}"",""storeId"":""{{STORE_ID}}"",""memberId"":contactId,""userType"":""Customer"",""emailConfirmed"":true,""status"":""Approved""}; GET {{BACK_URL}}/api/platform/security/users/{email} and capture userId
+[HTTP] POST {{BACK_URL}}/api/platform/security/roles/search {""keyword"":""Purchasing agent"",""take"":5}; capture roleId, roleName
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships {""userId"":userId,""organizationId"":orgAId,""organizationName"":orgAName,""roles"":[{""roleId"":roleId,""roleName"":roleName}],""isLocked"":false}, then the same for orgB
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search {""userId"":userId,""take"":50}; capture mA and mB (the membership ids of orgA and orgB)
+[ASSERT] both memberships read back isCurrentlyLocked=false with an empty status (Inherit) - otherwise BLOCKED: the fixture did not land and a fallback verdict on it proves nothing
+[HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, {""storeId"":""{{STORE_ID}}"",""email"":email} - anything but 200 with succeeded=true means OTP is off on {{STORE_ID}} or the buyer is refused: BLOCKED, never FAIL
+--- SCREEN: Make the organization the buyer last used (a switch is what stores the choice) ---
+--- SCREEN: Sign in by code (0) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': email
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[CAPTURE] code0 = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the 6 digits of code0 into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
+[CAPTURE] from the network log: the POST {{FRONT_URL}}/connect/token (grant_type=otp_email) request body as req0 (record whether organization_id is present and its value) and its response as res0 (status, error, errors[], access_token, refresh_token); decode the access_token payload and record its organization_id claim as claim0
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] listbox 'Organizations' is rendered
+[ACT] Click the option named ""<orgBName>"" in listbox 'Organizations'
+[WAIT] the organization name in the header reads ""<orgBName>""
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] listbox 'Organizations' is rendered
+[ACT] Click the option named ""<orgAName>"" in listbox 'Organizations'
+[WAIT] the organization name in the header reads ""<orgAName>""
+[STATE] read localStorage key organization-id-<email> (the key is the userName) = orgAId AND GET {{BACK_URL}}/api/members/{contactId} currentOrganizationId = orgAId - a mismatch on either is BLOCKED: without the stored choice naming the organization this case acts on, a broken build and a fixed one are indistinguishable
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] the account menu is open
+[ACT] Click the sign-out button (data-test-id=""sign-out-button"")
+[WAIT] the session is anonymous
+--- LAYER: Admin (REST) - lock the last-used organization ---
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/{mA}/lock {""lockoutEnd"":null}; then POST .../search {""userId"":userId,""take"":50} and read back isCurrentlyLocked=true for orgA (a /lock on an unknown id answers 200 with a null body - never trust the status alone)
+[HTTP] GET {{BACK_URL}}/api/platform/security/users/{userId}/locked
+--- SCREEN: Sign in by code (1) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': email
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the 6 digits of code1 into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
+[CAPTURE] from the network log: the POST {{FRONT_URL}}/connect/token (grant_type=otp_email) request body as req1 (record whether organization_id is present and its value) and its response as res1 (status, error, errors[], access_token, refresh_token); decode the access_token payload and record its organization_id claim as claim1
+--- SCREEN: Signed in ---
+[ASSERT] The account menu shows the signed-in customer; /sign-in is no longer the current page; no error alert was shown on the code step
+[ASSERT] The organization name in the header reads ""<orgBName>""
+[HTTP] GET {{BACK_URL}}/api/members/{contactId}; capture currentOrganizationId as currentAfterFallback
+--- LAYER: Admin (REST) - restore the organization ---
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/{mA}/unlock; read back isCurrentlyLocked=false for orgA
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] the account menu is open
+[ACT] Click the sign-out button (data-test-id=""sign-out-button"")
+[WAIT] the session is anonymous
+--- SCREEN: Sign in by code (2) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': email
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[CAPTURE] code2 = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the 6 digits of code2 into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
+[CAPTURE] from the network log: the POST {{FRONT_URL}}/connect/token (grant_type=otp_email) request body as req2 (record whether organization_id is present and its value) and its response as res2 (status, error, errors[], access_token, refresh_token); decode the access_token payload and record its organization_id claim as claim2
+--- SCREEN: Signed in again ---
+[ASSERT] The organization name in the header reads ""<orgAName>""
+[HTTP] POST {{BACK_URL}}/api/platform/security/sign-in-log/search {""keyword"":email,""userName"":email,""take"":12,""sort"":""createdDate:desc""}","[STATE] req1 carries organization_id = orgAId - the stored last-used choice the build resends (premise of the case, not the verdict) {OBSERVED}
+[STATUS] res1 is HTTP 200 and carries an access_token - the code sign-in is not refused because the last-used organization is locked {SPEC} (VCST-6132 story S2: the buyer signs in and lands in Org B)
+[BODY] claim1 equals orgBId and is NOT orgAId {SPEC} (VCST-6132 story S2)
+[DOM] No inline error alert is rendered above the 'Code' field, no text starting 'shared.account' (raw translation key) is visible, and the URL is no longer /sign-in {SPEC} (VCST-6132 story S2)
+[DOM] The organization name in the header reads ""<orgBName>"" after the fallback {SPEC} (VCST-6132 story S2)
+[STATE] currentAfterFallback equals orgBId - the substituted organization is persisted as the contact's current organization {BL} (BL-AUTH-015)
+[BODY] GET /api/platform/security/users/{userId}/locked answers {""locked"": false} - an organization lock never touches the account {BL} (BL-AUTH-012)
+[STATE] After the unlock and a new code sign-in req2 carries organization_id = orgAId and res2 is HTTP 200 {SPEC} (VCST-6132 regression: the last-used organization is still respected)
+[BODY] claim2 equals orgAId and the organization name in the header reads ""<orgAName>"" {SPEC} (VCST-6132 regression: last-used respected) {OBSERVED} (3x N3, 2026-10-20)
+[COUNT] The Sign-in log search returns three Type OTP rows for the buyer (one per code sign-in in this case), all succeeded, none with a failure reason {SPEC} (VCST-6132 story S2: a fallback is a successful sign-in)","[ADMIN] Security > Sign-in log has Type OTP rows for the buyer, all succeeded=true (the fallback sign-in is not logged as a failure)
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","MID-JOURNEY: the code step shows an organization error instead of signing the buyer in (the build still refuses an org-scoped otp_email grant); the buyer lands with the locked Org A label, or with no organization label although Org B is active; after the unlock the second sign-in lands in Org B instead of Org A (the last-used choice was lost); the global /locked flag reads true after an organization lock; the fallback sign-in is logged as failed; spinner visible >5s, console.error with TypeError, 4xx/5xx other than the asserted one","Restore every membership touched (unlock, status back to Inherit, re-add Member of companies together with its membership row and verify both rows), then DELETE {{BACK_URL}}/api/platform/security/users?names=email, DELETE {{BACK_URL}}/api/members?ids=contactId&ids=orgAId&ids=orgBId and read back that the user and the three members no longer resolve; sign out of the storefront if a session is open",VCST-6132 · Archetype:FALLBACK · Technique:FLOW · Probe:VC-B2B-005 | Promoted: REG-2026-10-20-0125 (2026-10-20),Automated
+OTP-030,OTP sign-in after removal from the last-used organization lands in the remaining organization,Auth > OTP Sign-In > Organization fallback,High,BL-AUTH-016,,"[PRE:CLEAR_SESSION]
+Create in-case (FIFTH RULE; random-data uniqueEmail/uniqueOrgName, AGENT-TEST-6132 prefix): Org A and Org B and ONE buyer whose contact is an active member of each (userName == email, password {{DEFAULT_TEST_PASSWORD}}). The contact read-back order of its organizations is not relied on: every case pins the organization it needs through the header switcher or CurrentOrganizationId. Shared personas (MULTI_ORG_USER_*, MULTI_ORG_TF_BR*) are never touched.
+OtpSignIn.Enabled is on for {{STORE_ID}}: the fixture's own POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
+Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); SMTP is not relied on; no code within 90s = BLOCKED.
+One fresh code per sign-in and no session is carried across a state change (a lock ends the locked organization's sessions).
+State under test: the last-used organization is Org A, then Org A is removed from the contact (Member of companies); Org B stays active.
+Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallback (vc-module-customer PR #321 — open on 2026-10-20; observed on 3.1030.0-pr-321-c54f). On a Customer build without it the fallback expectations do not hold: record the case BLOCKED for the build, never FAIL, and never re-base it to the old behaviour.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}","[PRE:CLEAR_SESSION] start the storefront lane from an empty browser session (cookies, localStorage, tokens) before any fixture or sign-in step
+--- LAYER: Fixture (REST, created in-case) ---
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[SETUP] Generate with random-data (AGENT-TEST-6132 prefix): orgAName, orgBName (uniqueOrgName) and email (uniqueEmail) - the email is also the userName
+[HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Organization"",""name"":orgAName}, then the same for orgBName; capture orgAId, orgBId
+[HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Contact"",""firstName"":""Agent"",""lastName"":""T6132"",""fullName"":""Agent T6132"",""name"":""Agent T6132"",""emails"":[email],""organizations"":[orgAId,orgBId]}; capture contactId
+[HTTP] POST {{BACK_URL}}/api/platform/security/users/create {""userName"":email,""email"":email,""password"":""{{DEFAULT_TEST_PASSWORD}}"",""storeId"":""{{STORE_ID}}"",""memberId"":contactId,""userType"":""Customer"",""emailConfirmed"":true,""status"":""Approved""}; GET {{BACK_URL}}/api/platform/security/users/{email} and capture userId
+[HTTP] POST {{BACK_URL}}/api/platform/security/roles/search {""keyword"":""Purchasing agent"",""take"":5}; capture roleId, roleName
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships {""userId"":userId,""organizationId"":orgAId,""organizationName"":orgAName,""roles"":[{""roleId"":roleId,""roleName"":roleName}],""isLocked"":false}, then the same for orgB
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search {""userId"":userId,""take"":50}; capture mA and mB (the membership ids of orgA and orgB)
+[ASSERT] both memberships read back isCurrentlyLocked=false with an empty status (Inherit) - otherwise BLOCKED: the fixture did not land and a fallback verdict on it proves nothing
+[HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, {""storeId"":""{{STORE_ID}}"",""email"":email} - anything but 200 with succeeded=true means OTP is off on {{STORE_ID}} or the buyer is refused: BLOCKED, never FAIL
+--- SCREEN: Make the organization the buyer last used (a switch is what stores the choice) ---
+--- SCREEN: Sign in by code (0) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': email
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[CAPTURE] code0 = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the 6 digits of code0 into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
+[CAPTURE] from the network log: the POST {{FRONT_URL}}/connect/token (grant_type=otp_email) request body as req0 (record whether organization_id is present and its value) and its response as res0 (status, error, errors[], access_token, refresh_token); decode the access_token payload and record its organization_id claim as claim0
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] listbox 'Organizations' is rendered
+[ACT] Click the option named ""<orgBName>"" in listbox 'Organizations'
+[WAIT] the organization name in the header reads ""<orgBName>""
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] listbox 'Organizations' is rendered
+[ACT] Click the option named ""<orgAName>"" in listbox 'Organizations'
+[WAIT] the organization name in the header reads ""<orgAName>""
+[STATE] read localStorage key organization-id-<email> (the key is the userName) = orgAId AND GET {{BACK_URL}}/api/members/{contactId} currentOrganizationId = orgAId - a mismatch on either is BLOCKED: without the stored choice naming the organization this case acts on, a broken build and a fixed one are indistinguishable
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] the account menu is open
+[ACT] Click the sign-out button (data-test-id=""sign-out-button"")
+[WAIT] the session is anonymous
+--- LAYER: Admin (REST) - remove the last-used organization ---
+[HTTP] GET {{BACK_URL}}/api/members/{contactId}; set organizations=[orgBId] and PUT {{BACK_URL}}/api/contacts with that body (removing an organization deletes its membership row and its roles); read back: organizations = [orgBId] and the membership search has NO row for orgAId
+--- SCREEN: Sign in by code (1) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': email
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the 6 digits of code1 into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
+[CAPTURE] from the network log: the POST {{FRONT_URL}}/connect/token (grant_type=otp_email) request body as req1 (record whether organization_id is present and its value) and its response as res1 (status, error, errors[], access_token, refresh_token); decode the access_token payload and record its organization_id claim as claim1
+--- SCREEN: Signed in ---
+[ASSERT] The account menu shows the signed-in customer and /sign-in is no longer the current page
+[ASSERT] The organization name in the header reads ""<orgBName>""
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] the account menu is open
+[ACT] Record every option of listbox 'Organizations' if the list is rendered
+--- LAYER: Admin (REST) - restore ---
+[HTTP] GET {{BACK_URL}}/api/members/{contactId}; set organizations=[orgAId,orgBId] and PUT {{BACK_URL}}/api/contacts; then POST {{BACK_URL}}/api/customer/organization-memberships {""userId"":userId,""organizationId"":orgAId,""organizationName"":orgAName,""roles"":[{""roleId"":roleId,""roleName"":roleName}],""isLocked"":false} (re-adding the organization creates NO membership row), search again and capture the new id as mA (the old id is gone); read back both memberships present, isCurrentlyLocked=false and an empty status - this restore is part of the case, verify it","[STATUS] res1 is HTTP 200 with an access_token - a buyer removed from one company can still sign in by code {SPEC} (VCST-6132 story S1)
+[BODY] res1 carries NO error invalid_organization_id and claim1 equals orgBId {SPEC} (VCST-6132 story S1: the removed-organization path falls back instead of refusing)
+[DOM] No inline error alert is rendered above the 'Code' field, the URL is no longer /sign-in and the organization name in the header reads ""<orgBName>"" {SPEC} (VCST-6132 story S1)
+[COUNT] No option named orgAName exists anywhere in the account menu - the removed organization is not offered {BL} (BL-AUTH-015)","[API] the /connect/token otp_email response is 200 and its organization_id claim is orgBId
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","the code step shows an invalid-organization error or a generic failure after the buyer was removed from the last-used company (the original symptom); the header shows Org A after the removal; the claim names an organization the buyer no longer belongs to; spinner visible >5s, console.error with TypeError, 4xx/5xx other than the asserted one","Restore every membership touched (unlock, status back to Inherit, re-add Member of companies together with its membership row and verify both rows), then DELETE {{BACK_URL}}/api/platform/security/users?names=email, DELETE {{BACK_URL}}/api/members?ids=contactId&ids=orgAId&ids=orgBId and read back that the user and the three members no longer resolve; sign out of the storefront if a session is open",VCST-6132 · Archetype:FALLBACK · Technique:EP | Promoted: REG-2026-10-20-0125 (2026-10-20),Automated
+OTP-031,"OTP sign-in with an Invited membership in the last-used organization lands in the other organization, which alone is offered",Auth > OTP Sign-In > Organization fallback,High,"BL-AUTH-015, BL-B2B-013",,"[PRE:CLEAR_SESSION]
+Create in-case (FIFTH RULE; random-data uniqueEmail/uniqueOrgName, AGENT-TEST-6132 prefix): Org A and Org B and ONE buyer whose contact is an active member of each (userName == email, password {{DEFAULT_TEST_PASSWORD}}). The contact read-back order of its organizations is not relied on: every case pins the organization it needs through the header switcher or CurrentOrganizationId. Shared personas (MULTI_ORG_USER_*, MULTI_ORG_TF_BR*) are never touched.
+OtpSignIn.Enabled is on for {{STORE_ID}}: the fixture's own POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
+Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); SMTP is not relied on; no code within 90s = BLOCKED.
+One fresh code per sign-in and no session is carried across a state change (a lock ends the locked organization's sessions).
+State under test: the last-used organization is Org A, then the membership of Org A is set to status Invited; Org B stays Approved.
+Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallback (vc-module-customer PR #321 — open on 2026-10-20; observed on 3.1030.0-pr-321-c54f). On a Customer build without it the fallback expectations do not hold: record the case BLOCKED for the build, never FAIL, and never re-base it to the old behaviour.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}","[PRE:CLEAR_SESSION] start the storefront lane from an empty browser session (cookies, localStorage, tokens) before any fixture or sign-in step
+--- LAYER: Fixture (REST, created in-case) ---
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[SETUP] Generate with random-data (AGENT-TEST-6132 prefix): orgAName, orgBName (uniqueOrgName) and email (uniqueEmail) - the email is also the userName
+[HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Organization"",""name"":orgAName}, then the same for orgBName; capture orgAId, orgBId
+[HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Contact"",""firstName"":""Agent"",""lastName"":""T6132"",""fullName"":""Agent T6132"",""name"":""Agent T6132"",""emails"":[email],""organizations"":[orgAId,orgBId]}; capture contactId
+[HTTP] POST {{BACK_URL}}/api/platform/security/users/create {""userName"":email,""email"":email,""password"":""{{DEFAULT_TEST_PASSWORD}}"",""storeId"":""{{STORE_ID}}"",""memberId"":contactId,""userType"":""Customer"",""emailConfirmed"":true,""status"":""Approved""}; GET {{BACK_URL}}/api/platform/security/users/{email} and capture userId
+[HTTP] POST {{BACK_URL}}/api/platform/security/roles/search {""keyword"":""Purchasing agent"",""take"":5}; capture roleId, roleName
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships {""userId"":userId,""organizationId"":orgAId,""organizationName"":orgAName,""roles"":[{""roleId"":roleId,""roleName"":roleName}],""isLocked"":false}, then the same for orgB
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search {""userId"":userId,""take"":50}; capture mA and mB (the membership ids of orgA and orgB)
+[ASSERT] both memberships read back isCurrentlyLocked=false with an empty status (Inherit) - otherwise BLOCKED: the fixture did not land and a fallback verdict on it proves nothing
+[HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, {""storeId"":""{{STORE_ID}}"",""email"":email} - anything but 200 with succeeded=true means OTP is off on {{STORE_ID}} or the buyer is refused: BLOCKED, never FAIL
+--- SCREEN: Make the organization the buyer last used (a switch is what stores the choice) ---
+--- SCREEN: Sign in by code (0) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': email
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[CAPTURE] code0 = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the 6 digits of code0 into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
+[CAPTURE] from the network log: the POST {{FRONT_URL}}/connect/token (grant_type=otp_email) request body as req0 (record whether organization_id is present and its value) and its response as res0 (status, error, errors[], access_token, refresh_token); decode the access_token payload and record its organization_id claim as claim0
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] listbox 'Organizations' is rendered
+[ACT] Click the option named ""<orgBName>"" in listbox 'Organizations'
+[WAIT] the organization name in the header reads ""<orgBName>""
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] listbox 'Organizations' is rendered
+[ACT] Click the option named ""<orgAName>"" in listbox 'Organizations'
+[WAIT] the organization name in the header reads ""<orgAName>""
+[STATE] read localStorage key organization-id-<email> (the key is the userName) = orgAId AND GET {{BACK_URL}}/api/members/{contactId} currentOrganizationId = orgAId - a mismatch on either is BLOCKED: without the stored choice naming the organization this case acts on, a broken build and a fixed one are indistinguishable
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] the account menu is open
+[ACT] Click the sign-out button (data-test-id=""sign-out-button"")
+[WAIT] the session is anonymous
+--- LAYER: Admin (REST) - set the last-used organization to Invited ---
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search {""userId"":userId,""take"":50}; take the orgA membership, set ""status"":""Invited"" and PUT {{BACK_URL}}/api/customer/organization-memberships/{mA} with that body; read back status = Invited
+--- SCREEN: Sign in by code (1) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': email
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the 6 digits of code1 into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
+[CAPTURE] from the network log: the POST {{FRONT_URL}}/connect/token (grant_type=otp_email) request body as req1 (record whether organization_id is present and its value) and its response as res1 (status, error, errors[], access_token, refresh_token); decode the access_token payload and record its organization_id claim as claim1
+--- SCREEN: Signed in ---
+[ASSERT] The account menu shows the signed-in customer and /sign-in is no longer the current page
+[ASSERT] The organization name in the header reads ""<orgBName>""
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] the account menu is open
+[ACT] Record every option of listbox 'Organizations' if the list is rendered
+--- LAYER: Admin (REST) - restore ---
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search {""userId"":userId,""take"":50}; take the orgA membership, set ""status"":null (Inherit) and PUT {{BACK_URL}}/api/customer/organization-memberships/{mA} with that body; read back status = empty","[STATUS] res1 is HTTP 200 with an access_token - a Invited membership in the last-used organization does not stop a code sign-in while another organization is accessible {SPEC} (VCST-6132 story S3)
+[BODY] claim1 equals orgBId and res1 carries no user_invitation_pending_in_organization error {SPEC} (VCST-6132 story S3)
+[DOM] No inline error alert is rendered above the 'Code' field, the URL is no longer /sign-in and the organization name in the header reads ""<orgBName>"" {SPEC} (VCST-6132 story S3)
+[COUNT] No option named orgAName exists in the account menu - only organizations the buyer can access are offered {BL} (BL-AUTH-015)
+[STATE] After the restore the membership of orgA reads back with an empty status (Inherit) {BL} (BL-B2B-013)","[API] the /connect/token otp_email response is 200 and its organization_id claim is orgBId
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","the code step shows user_invitation_pending_in_organization instead of signing the buyer in; the buyer lands with no organization or in Org A; the switcher offers Org A while its status is Invited; spinner visible >5s, console.error with TypeError, 4xx/5xx other than the asserted one","Restore every membership touched (unlock, status back to Inherit, re-add Member of companies together with its membership row and verify both rows), then DELETE {{BACK_URL}}/api/platform/security/users?names=email, DELETE {{BACK_URL}}/api/members?ids=contactId&ids=orgAId&ids=orgBId and read back that the user and the three members no longer resolve; sign out of the storefront if a session is open",VCST-6132 · Archetype:FALLBACK · Technique:EP | Promoted: REG-2026-10-20-0125 (2026-10-20),Automated
+OTP-032,OTP sign-in with a Rejected membership in the last-used organization lands in the other organization,Auth > OTP Sign-In > Organization fallback,High,"BL-AUTH-015, BL-B2B-013",,"[PRE:CLEAR_SESSION]
+Create in-case (FIFTH RULE; random-data uniqueEmail/uniqueOrgName, AGENT-TEST-6132 prefix): Org A and Org B and ONE buyer whose contact is an active member of each (userName == email, password {{DEFAULT_TEST_PASSWORD}}). The contact read-back order of its organizations is not relied on: every case pins the organization it needs through the header switcher or CurrentOrganizationId. Shared personas (MULTI_ORG_USER_*, MULTI_ORG_TF_BR*) are never touched.
+OtpSignIn.Enabled is on for {{STORE_ID}}: the fixture's own POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
+Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); SMTP is not relied on; no code within 90s = BLOCKED.
+One fresh code per sign-in and no session is carried across a state change (a lock ends the locked organization's sessions).
+State under test: the last-used organization is Org A, then the membership of Org A is set to status Rejected; Org B stays Approved.
+Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallback (vc-module-customer PR #321 — open on 2026-10-20; observed on 3.1030.0-pr-321-c54f). On a Customer build without it the fallback expectations do not hold: record the case BLOCKED for the build, never FAIL, and never re-base it to the old behaviour.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}","[PRE:CLEAR_SESSION] start the storefront lane from an empty browser session (cookies, localStorage, tokens) before any fixture or sign-in step
+--- LAYER: Fixture (REST, created in-case) ---
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[SETUP] Generate with random-data (AGENT-TEST-6132 prefix): orgAName, orgBName (uniqueOrgName) and email (uniqueEmail) - the email is also the userName
+[HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Organization"",""name"":orgAName}, then the same for orgBName; capture orgAId, orgBId
+[HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Contact"",""firstName"":""Agent"",""lastName"":""T6132"",""fullName"":""Agent T6132"",""name"":""Agent T6132"",""emails"":[email],""organizations"":[orgAId,orgBId]}; capture contactId
+[HTTP] POST {{BACK_URL}}/api/platform/security/users/create {""userName"":email,""email"":email,""password"":""{{DEFAULT_TEST_PASSWORD}}"",""storeId"":""{{STORE_ID}}"",""memberId"":contactId,""userType"":""Customer"",""emailConfirmed"":true,""status"":""Approved""}; GET {{BACK_URL}}/api/platform/security/users/{email} and capture userId
+[HTTP] POST {{BACK_URL}}/api/platform/security/roles/search {""keyword"":""Purchasing agent"",""take"":5}; capture roleId, roleName
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships {""userId"":userId,""organizationId"":orgAId,""organizationName"":orgAName,""roles"":[{""roleId"":roleId,""roleName"":roleName}],""isLocked"":false}, then the same for orgB
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search {""userId"":userId,""take"":50}; capture mA and mB (the membership ids of orgA and orgB)
+[ASSERT] both memberships read back isCurrentlyLocked=false with an empty status (Inherit) - otherwise BLOCKED: the fixture did not land and a fallback verdict on it proves nothing
+[HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, {""storeId"":""{{STORE_ID}}"",""email"":email} - anything but 200 with succeeded=true means OTP is off on {{STORE_ID}} or the buyer is refused: BLOCKED, never FAIL
+--- SCREEN: Make the organization the buyer last used (a switch is what stores the choice) ---
+--- SCREEN: Sign in by code (0) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': email
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[CAPTURE] code0 = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the 6 digits of code0 into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
+[CAPTURE] from the network log: the POST {{FRONT_URL}}/connect/token (grant_type=otp_email) request body as req0 (record whether organization_id is present and its value) and its response as res0 (status, error, errors[], access_token, refresh_token); decode the access_token payload and record its organization_id claim as claim0
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] listbox 'Organizations' is rendered
+[ACT] Click the option named ""<orgBName>"" in listbox 'Organizations'
+[WAIT] the organization name in the header reads ""<orgBName>""
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] listbox 'Organizations' is rendered
+[ACT] Click the option named ""<orgAName>"" in listbox 'Organizations'
+[WAIT] the organization name in the header reads ""<orgAName>""
+[STATE] read localStorage key organization-id-<email> (the key is the userName) = orgAId AND GET {{BACK_URL}}/api/members/{contactId} currentOrganizationId = orgAId - a mismatch on either is BLOCKED: without the stored choice naming the organization this case acts on, a broken build and a fixed one are indistinguishable
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] the account menu is open
+[ACT] Click the sign-out button (data-test-id=""sign-out-button"")
+[WAIT] the session is anonymous
+--- LAYER: Admin (REST) - set the last-used organization to Rejected ---
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search {""userId"":userId,""take"":50}; take the orgA membership, set ""status"":""Rejected"" and PUT {{BACK_URL}}/api/customer/organization-memberships/{mA} with that body; read back status = Rejected
+--- SCREEN: Sign in by code (1) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': email
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the 6 digits of code1 into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
+[CAPTURE] from the network log: the POST {{FRONT_URL}}/connect/token (grant_type=otp_email) request body as req1 (record whether organization_id is present and its value) and its response as res1 (status, error, errors[], access_token, refresh_token); decode the access_token payload and record its organization_id claim as claim1
+--- SCREEN: Signed in ---
+[ASSERT] The account menu shows the signed-in customer and /sign-in is no longer the current page
+[ASSERT] The organization name in the header reads ""<orgBName>""
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] the account menu is open
+[ACT] Record every option of listbox 'Organizations' if the list is rendered
+--- LAYER: Admin (REST) - restore ---
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search {""userId"":userId,""take"":50}; take the orgA membership, set ""status"":null (Inherit) and PUT {{BACK_URL}}/api/customer/organization-memberships/{mA} with that body; read back status = empty","[STATUS] res1 is HTTP 200 with an access_token - a Rejected membership in the last-used organization does not stop a code sign-in while another organization is accessible {SPEC} (VCST-6132 story S3)
+[BODY] claim1 equals orgBId and res1 carries no user_is_rejected_in_organization error {SPEC} (VCST-6132 story S3)
+[DOM] No inline error alert is rendered above the 'Code' field, the URL is no longer /sign-in and the organization name in the header reads ""<orgBName>"" {SPEC} (VCST-6132 story S3)
+[COUNT] No option named orgAName exists in the account menu - only organizations the buyer can access are offered {BL} (BL-AUTH-015)
+[STATE] After the restore the membership of orgA reads back with an empty status (Inherit) {BL} (BL-B2B-013)","[API] the /connect/token otp_email response is 200 and its organization_id claim is orgBId
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","the code step shows user_is_rejected_in_organization instead of signing the buyer in; the buyer lands with no organization or in Org A; the switcher offers Org A while its status is Rejected; spinner visible >5s, console.error with TypeError, 4xx/5xx other than the asserted one","Restore every membership touched (unlock, status back to Inherit, re-add Member of companies together with its membership row and verify both rows), then DELETE {{BACK_URL}}/api/platform/security/users?names=email, DELETE {{BACK_URL}}/api/members?ids=contactId&ids=orgAId&ids=orgBId and read back that the user and the three members no longer resolve; sign out of the storefront if a session is open",VCST-6132 · Archetype:FALLBACK · Technique:EP | Promoted: REG-2026-10-20-0125 (2026-10-20),Automated
+OTP-033,OTP sign-in with a Deleted membership in the last-used organization lands in the other organization without offering the deleted one,Auth > OTP Sign-In > Organization fallback,Medium,"BL-AUTH-015, BL-B2B-013",,"[PRE:CLEAR_SESSION]
+Create in-case (FIFTH RULE; random-data uniqueEmail/uniqueOrgName, AGENT-TEST-6132 prefix): Org A and Org B and ONE buyer whose contact is an active member of each (userName == email, password {{DEFAULT_TEST_PASSWORD}}). The contact read-back order of its organizations is not relied on: every case pins the organization it needs through the header switcher or CurrentOrganizationId. Shared personas (MULTI_ORG_USER_*, MULTI_ORG_TF_BR*) are never touched.
+OtpSignIn.Enabled is on for {{STORE_ID}}: the fixture's own POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
+Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); SMTP is not relied on; no code within 90s = BLOCKED.
+One fresh code per sign-in and no session is carried across a state change (a lock ends the locked organization's sessions).
+State under test: the last-used organization is Org A, then the membership of Org A is set to status Deleted; Org B stays Approved.
+Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallback (vc-module-customer PR #321 — open on 2026-10-20; observed on 3.1030.0-pr-321-c54f). On a Customer build without it the fallback expectations do not hold: record the case BLOCKED for the build, never FAIL, and never re-base it to the old behaviour.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}","[PRE:CLEAR_SESSION] start the storefront lane from an empty browser session (cookies, localStorage, tokens) before any fixture or sign-in step
+--- LAYER: Fixture (REST, created in-case) ---
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[SETUP] Generate with random-data (AGENT-TEST-6132 prefix): orgAName, orgBName (uniqueOrgName) and email (uniqueEmail) - the email is also the userName
+[HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Organization"",""name"":orgAName}, then the same for orgBName; capture orgAId, orgBId
+[HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Contact"",""firstName"":""Agent"",""lastName"":""T6132"",""fullName"":""Agent T6132"",""name"":""Agent T6132"",""emails"":[email],""organizations"":[orgAId,orgBId]}; capture contactId
+[HTTP] POST {{BACK_URL}}/api/platform/security/users/create {""userName"":email,""email"":email,""password"":""{{DEFAULT_TEST_PASSWORD}}"",""storeId"":""{{STORE_ID}}"",""memberId"":contactId,""userType"":""Customer"",""emailConfirmed"":true,""status"":""Approved""}; GET {{BACK_URL}}/api/platform/security/users/{email} and capture userId
+[HTTP] POST {{BACK_URL}}/api/platform/security/roles/search {""keyword"":""Purchasing agent"",""take"":5}; capture roleId, roleName
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships {""userId"":userId,""organizationId"":orgAId,""organizationName"":orgAName,""roles"":[{""roleId"":roleId,""roleName"":roleName}],""isLocked"":false}, then the same for orgB
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search {""userId"":userId,""take"":50}; capture mA and mB (the membership ids of orgA and orgB)
+[ASSERT] both memberships read back isCurrentlyLocked=false with an empty status (Inherit) - otherwise BLOCKED: the fixture did not land and a fallback verdict on it proves nothing
+[HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, {""storeId"":""{{STORE_ID}}"",""email"":email} - anything but 200 with succeeded=true means OTP is off on {{STORE_ID}} or the buyer is refused: BLOCKED, never FAIL
+--- SCREEN: Make the organization the buyer last used (a switch is what stores the choice) ---
+--- SCREEN: Sign in by code (0) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': email
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[CAPTURE] code0 = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the 6 digits of code0 into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
+[CAPTURE] from the network log: the POST {{FRONT_URL}}/connect/token (grant_type=otp_email) request body as req0 (record whether organization_id is present and its value) and its response as res0 (status, error, errors[], access_token, refresh_token); decode the access_token payload and record its organization_id claim as claim0
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] listbox 'Organizations' is rendered
+[ACT] Click the option named ""<orgBName>"" in listbox 'Organizations'
+[WAIT] the organization name in the header reads ""<orgBName>""
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] listbox 'Organizations' is rendered
+[ACT] Click the option named ""<orgAName>"" in listbox 'Organizations'
+[WAIT] the organization name in the header reads ""<orgAName>""
+[STATE] read localStorage key organization-id-<email> (the key is the userName) = orgAId AND GET {{BACK_URL}}/api/members/{contactId} currentOrganizationId = orgAId - a mismatch on either is BLOCKED: without the stored choice naming the organization this case acts on, a broken build and a fixed one are indistinguishable
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] the account menu is open
+[ACT] Click the sign-out button (data-test-id=""sign-out-button"")
+[WAIT] the session is anonymous
+--- LAYER: Admin (REST) - set the last-used organization to Deleted ---
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search {""userId"":userId,""take"":50}; take the orgA membership, set ""status"":""Deleted"" and PUT {{BACK_URL}}/api/customer/organization-memberships/{mA} with that body; read back status = Deleted
+--- SCREEN: Sign in by code (1) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': email
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the 6 digits of code1 into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
+[CAPTURE] from the network log: the POST {{FRONT_URL}}/connect/token (grant_type=otp_email) request body as req1 (record whether organization_id is present and its value) and its response as res1 (status, error, errors[], access_token, refresh_token); decode the access_token payload and record its organization_id claim as claim1
+--- SCREEN: Signed in ---
+[ASSERT] The account menu shows the signed-in customer and /sign-in is no longer the current page
+[ASSERT] The organization name in the header reads ""<orgBName>""
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] the account menu is open
+[ACT] Record every option of listbox 'Organizations' if the list is rendered
+--- LAYER: Admin (REST) - restore ---
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search {""userId"":userId,""take"":50}; take the orgA membership, set ""status"":null (Inherit) and PUT {{BACK_URL}}/api/customer/organization-memberships/{mA} with that body; read back status = empty","[STATUS] res1 is HTTP 200 with an access_token - a Deleted membership in the last-used organization does not stop a code sign-in {SPEC} (VCST-6132 story S3)
+[BODY] claim1 equals orgBId and res1 carries no user_is_removed_from_organization error {SPEC} (VCST-6132 story S3)
+[DOM] No inline error alert is rendered above the 'Code' field, the URL is no longer /sign-in and the organization name in the header reads ""<orgBName>"" {SPEC} (VCST-6132 story S3)
+[COUNT] With one accessible organization left the account menu renders no 'Organizations' list and no option named orgAName {OBSERVED} (3x N2, 2026-10-20)
+[STATE] After the restore the membership of orgA reads back with an empty status (Inherit) {BL} (BL-B2B-013)","[API] the /connect/token otp_email response is 200 and its organization_id claim is orgBId
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","the code step shows user_is_removed_from_organization instead of signing the buyer in; the buyer lands with no organization or in Org A; the switcher offers Org A while its status is Deleted; spinner visible >5s, console.error with TypeError, 4xx/5xx other than the asserted one","Restore every membership touched (unlock, status back to Inherit, re-add Member of companies together with its membership row and verify both rows), then DELETE {{BACK_URL}}/api/platform/security/users?names=email, DELETE {{BACK_URL}}/api/members?ids=contactId&ids=orgAId&ids=orgBId and read back that the user and the three members no longer resolve; sign out of the storefront if a session is open",VCST-6132 · Archetype:FALLBACK · Technique:EP | Promoted: REG-2026-10-20-0125 (2026-10-20),Automated
+OTP-034,Organization switcher after a fallback from a locked last-used organization does not let the buyer back into it,Auth > OTP Sign-In > Organization fallback,High,"BL-AUTH-015, BL-AUTH-016",,"[PRE:CLEAR_SESSION]
+Create in-case (FIFTH RULE; random-data uniqueEmail/uniqueOrgName, AGENT-TEST-6132 prefix): Org A and Org B and ONE buyer whose contact is an active member of each (userName == email, password {{DEFAULT_TEST_PASSWORD}}). The contact read-back order of its organizations is not relied on: every case pins the organization it needs through the header switcher or CurrentOrganizationId. Shared personas (MULTI_ORG_USER_*, MULTI_ORG_TF_BR*) are never touched.
+OtpSignIn.Enabled is on for {{STORE_ID}}: the fixture's own POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
+Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); SMTP is not relied on; no code within 90s = BLOCKED.
+One fresh code per sign-in and no session is carried across a state change (a lock ends the locked organization's sessions).
+State under test: after an OTP fallback from a locked last-used Org A the buyer is in Org B; the switcher still lists Org A.
+Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallback (vc-module-customer PR #321 — open on 2026-10-20; observed on 3.1030.0-pr-321-c54f). On a Customer build without it the fallback expectations do not hold: record the case BLOCKED for the build, never FAIL, and never re-base it to the old behaviour.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}","[PRE:CLEAR_SESSION] start the storefront lane from an empty browser session (cookies, localStorage, tokens) before any fixture or sign-in step
+--- LAYER: Fixture (REST, created in-case) ---
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[SETUP] Generate with random-data (AGENT-TEST-6132 prefix): orgAName, orgBName (uniqueOrgName) and email (uniqueEmail) - the email is also the userName
+[HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Organization"",""name"":orgAName}, then the same for orgBName; capture orgAId, orgBId
+[HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Contact"",""firstName"":""Agent"",""lastName"":""T6132"",""fullName"":""Agent T6132"",""name"":""Agent T6132"",""emails"":[email],""organizations"":[orgAId,orgBId]}; capture contactId
+[HTTP] POST {{BACK_URL}}/api/platform/security/users/create {""userName"":email,""email"":email,""password"":""{{DEFAULT_TEST_PASSWORD}}"",""storeId"":""{{STORE_ID}}"",""memberId"":contactId,""userType"":""Customer"",""emailConfirmed"":true,""status"":""Approved""}; GET {{BACK_URL}}/api/platform/security/users/{email} and capture userId
+[HTTP] POST {{BACK_URL}}/api/platform/security/roles/search {""keyword"":""Purchasing agent"",""take"":5}; capture roleId, roleName
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships {""userId"":userId,""organizationId"":orgAId,""organizationName"":orgAName,""roles"":[{""roleId"":roleId,""roleName"":roleName}],""isLocked"":false}, then the same for orgB
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search {""userId"":userId,""take"":50}; capture mA and mB (the membership ids of orgA and orgB)
+[ASSERT] both memberships read back isCurrentlyLocked=false with an empty status (Inherit) - otherwise BLOCKED: the fixture did not land and a fallback verdict on it proves nothing
+[HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, {""storeId"":""{{STORE_ID}}"",""email"":email} - anything but 200 with succeeded=true means OTP is off on {{STORE_ID}} or the buyer is refused: BLOCKED, never FAIL
+--- SCREEN: Make the organization the buyer last used (a switch is what stores the choice) ---
+--- SCREEN: Sign in by code (0) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': email
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[CAPTURE] code0 = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the 6 digits of code0 into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
+[CAPTURE] from the network log: the POST {{FRONT_URL}}/connect/token (grant_type=otp_email) request body as req0 (record whether organization_id is present and its value) and its response as res0 (status, error, errors[], access_token, refresh_token); decode the access_token payload and record its organization_id claim as claim0
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] listbox 'Organizations' is rendered
+[ACT] Click the option named ""<orgBName>"" in listbox 'Organizations'
+[WAIT] the organization name in the header reads ""<orgBName>""
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] listbox 'Organizations' is rendered
+[ACT] Click the option named ""<orgAName>"" in listbox 'Organizations'
+[WAIT] the organization name in the header reads ""<orgAName>""
+[STATE] read localStorage key organization-id-<email> (the key is the userName) = orgAId AND GET {{BACK_URL}}/api/members/{contactId} currentOrganizationId = orgAId - a mismatch on either is BLOCKED: without the stored choice naming the organization this case acts on, a broken build and a fixed one are indistinguishable
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] the account menu is open
+[ACT] Click the sign-out button (data-test-id=""sign-out-button"")
+[WAIT] the session is anonymous
+--- LAYER: Admin (REST) ---
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/{mA}/lock {""lockoutEnd"":null}; then POST .../search {""userId"":userId,""take"":50} and read back isCurrentlyLocked=true for orgA (a /lock on an unknown id answers 200 with a null body - never trust the status alone)
+--- SCREEN: Sign in by code (1) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': email
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the 6 digits of code1 into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
+[CAPTURE] from the network log: the POST {{FRONT_URL}}/connect/token (grant_type=otp_email) request body as req1 (record whether organization_id is present and its value) and its response as res1 (status, error, errors[], access_token, refresh_token); decode the access_token payload and record its organization_id claim as claim1
+--- SCREEN: Switcher after the fallback ---
+[ASSERT] The organization name in the header reads ""<orgBName>""
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] listbox 'Organizations' is rendered
+[ACT] Record the state of each option in listbox 'Organizations' (name, [selected], disabled, lock-closed icon)
+[CAPTURE] start recording every POST /connect/token from this point as switchReqs
+[KEY] Press Tab until focus reaches listbox 'Organizations', ArrowDown to the option named orgAName and press Enter (keyboard path only - never force the disabled control, VC-EXEC-003)
+[WAIT] the interaction settles (~2s)
+[ASSERT] Record the organization name in the header after the keypress","[COUNT] listbox 'Organizations' renders exactly two options, one named orgBName and one named orgAName {OBSERVED} (3x N1, 2026-10-20)
+[DOM] The option named orgAName is disabled and renders the lock-closed icon - it is not selectable {SPEC} (VCST-5317 switcher lock flag; VCST-6132 story S2 'Org A is not offered', read as not selectable) {OBSERVED} (3x N1, 2026-10-20)
+[DOM] The option named orgBName is selected, enabled and renders no lock-closed icon {SPEC} (VCST-6132 story S2) {OBSERVED} (3x N1, 2026-10-20)
+[COUNT] switchReqs holds zero /connect/token requests naming orgAId - a locked organization never reaches the token layer {SPEC} (VCST-5317 click guard)
+[DOM] After the keypress the organization name in the header still reads ""<orgBName>"" {SPEC} (VCST-6132 story S2)","[API] GET {{BACK_URL}}/api/members/{contactId} currentOrganizationId = orgBId after the sign-in (write-back) and still orgBId after the keypress
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","an ENABLED Org A option that switches the session into it, or a /connect/token naming orgAId after the keypress; the lock icon is missing while the option is disabled; BOTH options render disabled; the header changes to Org A or to no organization after the keypress; spinner visible >5s, console.error with TypeError, 4xx/5xx other than the asserted one","Restore every membership touched (unlock, status back to Inherit, re-add Member of companies together with its membership row and verify both rows), then DELETE {{BACK_URL}}/api/platform/security/users?names=email, DELETE {{BACK_URL}}/api/members?ids=contactId&ids=orgAId&ids=orgBId and read back that the user and the three members no longer resolve; sign out of the storefront if a session is open",VCST-6132 · Archetype:SCOPE · Technique:EG · Probe:VC-B2B-005 | Promoted: REG-2026-10-20-0125 (2026-10-20),Automated
+OTP-035,OTP sign-in when every organization is locked succeeds with no organization context,Auth > OTP Sign-In > Organization fallback,High,"BL-AUTH-016, BL-AUTH-015",,"[PRE:CLEAR_SESSION]
+Create in-case (FIFTH RULE; random-data uniqueEmail/uniqueOrgName, AGENT-TEST-6132 prefix): Org A and Org B and ONE buyer whose contact is an active member of each (userName == email, password {{DEFAULT_TEST_PASSWORD}}). The contact read-back order of its organizations is not relied on: every case pins the organization it needs through the header switcher or CurrentOrganizationId. Shared personas (MULTI_ORG_USER_*, MULTI_ORG_TF_BR*) are never touched.
+OtpSignIn.Enabled is on for {{STORE_ID}}: the fixture's own POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
+Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); SMTP is not relied on; no code within 90s = BLOCKED.
+One fresh code per sign-in and no session is carried across a state change (a lock ends the locked organization's sessions).
+State under test: the last-used organization is Org A, then BOTH Org A and Org B memberships are locked (permanent) - no accessible organization remains.
+Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallback (vc-module-customer PR #321 — open on 2026-10-20; observed on 3.1030.0-pr-321-c54f). On a Customer build without it the fallback expectations do not hold: record the case BLOCKED for the build, never FAIL, and never re-base it to the old behaviour.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}","[PRE:CLEAR_SESSION] start the storefront lane from an empty browser session (cookies, localStorage, tokens) before any fixture or sign-in step
+--- LAYER: Fixture (REST, created in-case) ---
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[SETUP] Generate with random-data (AGENT-TEST-6132 prefix): orgAName, orgBName (uniqueOrgName) and email (uniqueEmail) - the email is also the userName
+[HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Organization"",""name"":orgAName}, then the same for orgBName; capture orgAId, orgBId
+[HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Contact"",""firstName"":""Agent"",""lastName"":""T6132"",""fullName"":""Agent T6132"",""name"":""Agent T6132"",""emails"":[email],""organizations"":[orgAId,orgBId]}; capture contactId
+[HTTP] POST {{BACK_URL}}/api/platform/security/users/create {""userName"":email,""email"":email,""password"":""{{DEFAULT_TEST_PASSWORD}}"",""storeId"":""{{STORE_ID}}"",""memberId"":contactId,""userType"":""Customer"",""emailConfirmed"":true,""status"":""Approved""}; GET {{BACK_URL}}/api/platform/security/users/{email} and capture userId
+[HTTP] POST {{BACK_URL}}/api/platform/security/roles/search {""keyword"":""Purchasing agent"",""take"":5}; capture roleId, roleName
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships {""userId"":userId,""organizationId"":orgAId,""organizationName"":orgAName,""roles"":[{""roleId"":roleId,""roleName"":roleName}],""isLocked"":false}, then the same for orgB
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search {""userId"":userId,""take"":50}; capture mA and mB (the membership ids of orgA and orgB)
+[ASSERT] both memberships read back isCurrentlyLocked=false with an empty status (Inherit) - otherwise BLOCKED: the fixture did not land and a fallback verdict on it proves nothing
+[HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, {""storeId"":""{{STORE_ID}}"",""email"":email} - anything but 200 with succeeded=true means OTP is off on {{STORE_ID}} or the buyer is refused: BLOCKED, never FAIL
+--- SCREEN: Make the organization the buyer last used (a switch is what stores the choice) ---
+--- SCREEN: Sign in by code (0) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': email
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[CAPTURE] code0 = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the 6 digits of code0 into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
+[CAPTURE] from the network log: the POST {{FRONT_URL}}/connect/token (grant_type=otp_email) request body as req0 (record whether organization_id is present and its value) and its response as res0 (status, error, errors[], access_token, refresh_token); decode the access_token payload and record its organization_id claim as claim0
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] listbox 'Organizations' is rendered
+[ACT] Click the option named ""<orgBName>"" in listbox 'Organizations'
+[WAIT] the organization name in the header reads ""<orgBName>""
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] listbox 'Organizations' is rendered
+[ACT] Click the option named ""<orgAName>"" in listbox 'Organizations'
+[WAIT] the organization name in the header reads ""<orgAName>""
+[STATE] read localStorage key organization-id-<email> (the key is the userName) = orgAId AND GET {{BACK_URL}}/api/members/{contactId} currentOrganizationId = orgAId - a mismatch on either is BLOCKED: without the stored choice naming the organization this case acts on, a broken build and a fixed one are indistinguishable
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] the account menu is open
+[ACT] Click the sign-out button (data-test-id=""sign-out-button"")
+[WAIT] the session is anonymous
+--- LAYER: Admin (REST) - lock every organization ---
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/{mA}/lock {""lockoutEnd"":null}; then POST .../search {""userId"":userId,""take"":50} and read back isCurrentlyLocked=true for orgA (a /lock on an unknown id answers 200 with a null body - never trust the status alone)
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/{mB}/lock {""lockoutEnd"":null}; then POST .../search {""userId"":userId,""take"":50} and read back isCurrentlyLocked=true for orgB (a /lock on an unknown id answers 200 with a null body - never trust the status alone)
+[HTTP] GET {{BACK_URL}}/api/platform/security/users/{userId}/locked
+[HTTP] GET {{BACK_URL}}/api/members/{contactId}; capture currentOrganizationId as currentBefore - must read orgAId
+--- SCREEN: Sign in by code (1) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': email
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the 6 digits of code1 into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
+[CAPTURE] from the network log: the POST {{FRONT_URL}}/connect/token (grant_type=otp_email) request body as req1 (record whether organization_id is present and its value) and its response as res1 (status, error, errors[], access_token, refresh_token); decode the access_token payload and record its organization_id claim as claim1
+--- SCREEN: Signed in without an organization ---
+[ASSERT] The account menu shows the signed-in customer and /sign-in is no longer the current page
+[ACT] Record the landing URL
+[ACT] Record the organization name in the header (if any)
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] the account menu is open
+[ACT] Record the disabled state of each option in listbox 'Organizations'
+[HTTP] GET {{BACK_URL}}/api/members/{contactId}; capture currentOrganizationId as currentAfter","[STATUS] res1 is HTTP 200 and carries an access_token - no accessible organization left is not a refusal {SPEC} (VCST-6132 story S4a: the sign-in succeeds with no organization selected) {BL} (BL-AUTH-016)
+[BODY] claim1 is absent: the token carries NO organization_id claim, in particular neither orgAId nor orgBId {SPEC} (VCST-6132 story S4a)
+[DOM] No inline error alert is rendered above the 'Code' field and the URL is no longer /sign-in {SPEC} (VCST-6132 story S4a)
+[DOM] The organization name in the header is empty: it reads neither ""<orgAName>"" nor ""<orgBName>"" {SPEC} (VCST-6132 story S4a)
+[COUNT] Zero options of listbox 'Organizations' are enabled - every listed organization is disabled with the lock-closed icon {OBSERVED} (suite 006 B2C-ORG-045, password path)
+[STATE] currentAfter equals currentBefore (orgAId): nothing resolved, so the write-back is skipped {BL} (BL-AUTH-015) {OBSERVED} (3x N6, 2026-10-20)
+[BODY] GET /api/platform/security/users/{userId}/locked answers {""locked"": false} {BL} (BL-AUTH-012)","[API] the /connect/token otp_email response is 200 and its access_token has no organization_id claim (the landing page, /account/dashboard or /403, is RECORDED, not asserted)
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","the code step shows an organization error and the buyer cannot sign in although no status blocks them (400 instead of 200); the token carries an organization_id claim of a locked organization; the header shows a locked organization as the active one; the write-back moves CurrentOrganizationId although nothing resolved; spinner visible >5s, console.error with TypeError, 4xx/5xx other than the asserted one","Restore every membership touched (unlock, status back to Inherit, re-add Member of companies together with its membership row and verify both rows), then DELETE {{BACK_URL}}/api/platform/security/users?names=email, DELETE {{BACK_URL}}/api/members?ids=contactId&ids=orgAId&ids=orgBId and read back that the user and the three members no longer resolve; sign out of the storefront if a session is open",VCST-6132 · Archetype:FALLBACK · Technique:BVA | Promoted: REG-2026-10-20-0125 (2026-10-20),Automated
+OTP-036,OTP sign-in when every membership is Rejected is refused with the organization-specific message on the code screen,Auth > OTP Sign-In > Organization fallback,High,"BL-AUTH-013, BL-AUTH-016",,"[PRE:CLEAR_SESSION]
+Create in-case (FIFTH RULE; random-data uniqueEmail/uniqueOrgName, AGENT-TEST-6132 prefix): Org A and Org B and ONE buyer whose contact is an active member of each (userName == email, password {{DEFAULT_TEST_PASSWORD}}). The contact read-back order of its organizations is not relied on: every case pins the organization it needs through the header switcher or CurrentOrganizationId. Shared personas (MULTI_ORG_USER_*, MULTI_ORG_TF_BR*) are never touched.
+OtpSignIn.Enabled is on for {{STORE_ID}}: the fixture's own POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
+Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); SMTP is not relied on; no code within 90s = BLOCKED.
+One fresh code per sign-in and no session is carried across a state change (a lock ends the locked organization's sessions).
+State under test: the last-used organization is Org A, then BOTH memberships are set to status Rejected - no accessible organization, and a blocking status (not a lock) is the cause.
+Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallback (vc-module-customer PR #321 — open on 2026-10-20; observed on 3.1030.0-pr-321-c54f). On a Customer build without it the fallback expectations do not hold: record the case BLOCKED for the build, never FAIL, and never re-base it to the old behaviour.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}","--- LAYER: Fixture (REST, created in-case) ---
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[SETUP] Generate with random-data (AGENT-TEST-6132 prefix): orgAName, orgBName (uniqueOrgName) and email (uniqueEmail) - the email is also the userName
+[HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Organization"",""name"":orgAName}, then the same for orgBName; capture orgAId, orgBId
+[HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Contact"",""firstName"":""Agent"",""lastName"":""T6132"",""fullName"":""Agent T6132"",""name"":""Agent T6132"",""emails"":[email],""organizations"":[orgAId,orgBId]}; capture contactId
+[HTTP] POST {{BACK_URL}}/api/platform/security/users/create {""userName"":email,""email"":email,""password"":""{{DEFAULT_TEST_PASSWORD}}"",""storeId"":""{{STORE_ID}}"",""memberId"":contactId,""userType"":""Customer"",""emailConfirmed"":true,""status"":""Approved""}; GET {{BACK_URL}}/api/platform/security/users/{email} and capture userId
+[HTTP] POST {{BACK_URL}}/api/platform/security/roles/search {""keyword"":""Purchasing agent"",""take"":5}; capture roleId, roleName
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships {""userId"":userId,""organizationId"":orgAId,""organizationName"":orgAName,""roles"":[{""roleId"":roleId,""roleName"":roleName}],""isLocked"":false}, then the same for orgB
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search {""userId"":userId,""take"":50}; capture mA and mB (the membership ids of orgA and orgB)
+[ASSERT] both memberships read back isCurrentlyLocked=false with an empty status (Inherit) - otherwise BLOCKED: the fixture did not land and a fallback verdict on it proves nothing
+[HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, {""storeId"":""{{STORE_ID}}"",""email"":email} - anything but 200 with succeeded=true means OTP is off on {{STORE_ID}} or the buyer is refused: BLOCKED, never FAIL
+--- SCREEN: Make the organization the buyer last used (a switch is what stores the choice) ---
+--- SCREEN: Sign in by code (0) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': email
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[CAPTURE] code0 = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the 6 digits of code0 into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
+[CAPTURE] from the network log: the POST {{FRONT_URL}}/connect/token (grant_type=otp_email) request body as req0 (record whether organization_id is present and its value) and its response as res0 (status, error, errors[], access_token, refresh_token); decode the access_token payload and record its organization_id claim as claim0
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] listbox 'Organizations' is rendered
+[ACT] Click the option named ""<orgBName>"" in listbox 'Organizations'
+[WAIT] the organization name in the header reads ""<orgBName>""
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] listbox 'Organizations' is rendered
+[ACT] Click the option named ""<orgAName>"" in listbox 'Organizations'
+[WAIT] the organization name in the header reads ""<orgAName>""
+[STATE] read localStorage key organization-id-<email> (the key is the userName) = orgAId AND GET {{BACK_URL}}/api/members/{contactId} currentOrganizationId = orgAId - a mismatch on either is BLOCKED: without the stored choice naming the organization this case acts on, a broken build and a fixed one are indistinguishable
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] the account menu is open
+[ACT] Click the sign-out button (data-test-id=""sign-out-button"")
+[WAIT] the session is anonymous
+--- LAYER: Admin (REST) ---
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search {""userId"":userId,""take"":50}; take the orgA membership, set ""status"":""Rejected"" and PUT {{BACK_URL}}/api/customer/organization-memberships/{mA} with that body; read back status = Rejected
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search {""userId"":userId,""take"":50}; take the orgB membership, set ""status"":""Rejected"" and PUT {{BACK_URL}}/api/customer/organization-memberships/{mB} with that body; read back status = Rejected
+--- SCREEN: Sign in by code (1) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': email
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the 6 digits of code1 into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
+[CAPTURE] from the network log: the POST {{FRONT_URL}}/connect/token (grant_type=otp_email) request body as req1 (record whether organization_id is present and its value) and its response as res1 (status, error, errors[], access_token, refresh_token); decode the access_token payload and record its organization_id claim as claim1
+--- SCREEN: Code step after the refusal ---
+[ASSERT] The page stays on /sign-in
+[ACT] Count the visible error alerts above 'Code'
+[ACT] Read the text of that alert
+--- LAYER: Admin (REST) - restore ---
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search {""userId"":userId,""take"":50}; take the orgA membership, set ""status"":null (Inherit) and PUT {{BACK_URL}}/api/customer/organization-memberships/{mA} with that body; read back status = empty
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search {""userId"":userId,""take"":50}; take the orgB membership, set ""status"":null (Inherit) and PUT {{BACK_URL}}/api/customer/organization-memberships/{mB} with that body; read back status = empty","[STATUS] res1 is HTTP 400 with error = invalid_grant and no access_token {SPEC} (VCST-6132 story S4b: with only blocked organizations the sign-in fails with the membership-status error)
+[COUNT] res1 errors[] holds exactly one entry {BL} (BL-AUTH-016)
+[BODY] the single errors[] entry has code user_is_rejected_in_organization {BL} (BL-AUTH-013) {OBSERVED} (3x N5, 2026-10-20)
+[DOM] The code step stays on /sign-in and shows exactly one inline error alert whose text names the organization-specific refusal (access to an organization rejected), not the generic ""That code didn't work."" text {BL} (BL-AUTH-013: org-specific copy, never the generic message)
+[DOM] The text of the inline alert above the 'Code' field contains neither the value of orgAId nor of orgBId nor any GUID - no internal organization id is shown to the buyer {BL} (BL-AUTH-013: the storefront surfaces localized org-specific copy, not raw server text)
+[DOM] The text of the inline alert above the 'Code' field is not the raw server string ""Your access to organization '<id>' has been rejected"" and not an untranslated key starting 'shared.account' {BL} (BL-AUTH-013)","[API] POST /connect/token otp_email -> 400 invalid_grant with one errors[] entry, code user_is_rejected_in_organization
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","KNOWN DIVERGENCE (suspect 3x-S2, 2026-10-20): the build renders the raw English server text with the organization GUID on the code step - expected to FAIL on the two copy assertions until the product localizes the message; do NOT flip the expectation. A 200 into a Rejected organization (the fallback leaked past a blocking status); more than one errors[] entry; the generic message; spinner visible >5s, console.error with TypeError, 4xx/5xx other than the asserted one","Set both memberships back to Inherit before teardown. Restore every membership touched (unlock, status back to Inherit, re-add Member of companies together with its membership row and verify both rows), then DELETE {{BACK_URL}}/api/platform/security/users?names=email, DELETE {{BACK_URL}}/api/members?ids=contactId&ids=orgAId&ids=orgBId and read back that the user and the three members no longer resolve; sign out of the storefront if a session is open",VCST-6132 · Archetype:SILENT · Technique:BVA · Known divergence 3x-S2 = unfiled Low draft F2 (summary.json bugs_not_filed),Draft
+OTP-037,OTP sign-in with no accessible organization left after a removal signs in without organization context and company pages are unreachable,Auth > OTP Sign-In > Organization fallback,Medium,"BL-AUTH-016, BL-B2B-001",,"[PRE:CLEAR_SESSION]
+Create in-case (FIFTH RULE; random-data uniqueEmail/uniqueOrgName, AGENT-TEST-6132 prefix): Org A and Org B and ONE buyer whose contact is an active member of each (userName == email, password {{DEFAULT_TEST_PASSWORD}}). The contact read-back order of its organizations is not relied on: every case pins the organization it needs through the header switcher or CurrentOrganizationId. Shared personas (MULTI_ORG_USER_*, MULTI_ORG_TF_BR*) are never touched.
+OtpSignIn.Enabled is on for {{STORE_ID}}: the fixture's own POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
+Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); SMTP is not relied on; no code within 90s = BLOCKED.
+One fresh code per sign-in and no session is carried across a state change (a lock ends the locked organization's sessions).
+State under test: the last-used organization is Org A, then Org A is removed from the contact and the membership of Org B is set to Rejected - nothing accessible is left.
+Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallback (vc-module-customer PR #321 — open on 2026-10-20; observed on 3.1030.0-pr-321-c54f). On a Customer build without it the fallback expectations do not hold: record the case BLOCKED for the build, never FAIL, and never re-base it to the old behaviour.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}","[PRE:CLEAR_SESSION] start the storefront lane from an empty browser session (cookies, localStorage, tokens) before any fixture or sign-in step
+--- LAYER: Fixture (REST, created in-case) ---
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[SETUP] Generate with random-data (AGENT-TEST-6132 prefix): orgAName, orgBName (uniqueOrgName) and email (uniqueEmail) - the email is also the userName
+[HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Organization"",""name"":orgAName}, then the same for orgBName; capture orgAId, orgBId
+[HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Contact"",""firstName"":""Agent"",""lastName"":""T6132"",""fullName"":""Agent T6132"",""name"":""Agent T6132"",""emails"":[email],""organizations"":[orgAId,orgBId]}; capture contactId
+[HTTP] POST {{BACK_URL}}/api/platform/security/users/create {""userName"":email,""email"":email,""password"":""{{DEFAULT_TEST_PASSWORD}}"",""storeId"":""{{STORE_ID}}"",""memberId"":contactId,""userType"":""Customer"",""emailConfirmed"":true,""status"":""Approved""}; GET {{BACK_URL}}/api/platform/security/users/{email} and capture userId
+[HTTP] POST {{BACK_URL}}/api/platform/security/roles/search {""keyword"":""Purchasing agent"",""take"":5}; capture roleId, roleName
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships {""userId"":userId,""organizationId"":orgAId,""organizationName"":orgAName,""roles"":[{""roleId"":roleId,""roleName"":roleName}],""isLocked"":false}, then the same for orgB
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search {""userId"":userId,""take"":50}; capture mA and mB (the membership ids of orgA and orgB)
+[ASSERT] both memberships read back isCurrentlyLocked=false with an empty status (Inherit) - otherwise BLOCKED: the fixture did not land and a fallback verdict on it proves nothing
+[HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, {""storeId"":""{{STORE_ID}}"",""email"":email} - anything but 200 with succeeded=true means OTP is off on {{STORE_ID}} or the buyer is refused: BLOCKED, never FAIL
+--- SCREEN: Make the organization the buyer last used (a switch is what stores the choice) ---
+--- SCREEN: Sign in by code (0) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': email
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[CAPTURE] code0 = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the 6 digits of code0 into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
+[CAPTURE] from the network log: the POST {{FRONT_URL}}/connect/token (grant_type=otp_email) request body as req0 (record whether organization_id is present and its value) and its response as res0 (status, error, errors[], access_token, refresh_token); decode the access_token payload and record its organization_id claim as claim0
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] listbox 'Organizations' is rendered
+[ACT] Click the option named ""<orgBName>"" in listbox 'Organizations'
+[WAIT] the organization name in the header reads ""<orgBName>""
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] listbox 'Organizations' is rendered
+[ACT] Click the option named ""<orgAName>"" in listbox 'Organizations'
+[WAIT] the organization name in the header reads ""<orgAName>""
+[STATE] read localStorage key organization-id-<email> (the key is the userName) = orgAId AND GET {{BACK_URL}}/api/members/{contactId} currentOrganizationId = orgAId - a mismatch on either is BLOCKED: without the stored choice naming the organization this case acts on, a broken build and a fixed one are indistinguishable
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] the account menu is open
+[ACT] Click the sign-out button (data-test-id=""sign-out-button"")
+[WAIT] the session is anonymous
+--- LAYER: Admin (REST) ---
+[HTTP] GET {{BACK_URL}}/api/members/{contactId}; set organizations=[orgBId] and PUT {{BACK_URL}}/api/contacts with that body (removing an organization deletes its membership row and its roles); read back: organizations = [orgBId] and the membership search has NO row for orgAId
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search {""userId"":userId,""take"":50}; take the orgB membership, set ""status"":""Rejected"" and PUT {{BACK_URL}}/api/customer/organization-memberships/{mB} with that body; read back status = Rejected
+[HTTP] GET {{BACK_URL}}/api/members/{contactId}; capture currentOrganizationId as currentBefore
+--- SCREEN: Sign in by code (1) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': email
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the 6 digits of code1 into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
+[CAPTURE] from the network log: the POST {{FRONT_URL}}/connect/token (grant_type=otp_email) request body as req1 (record whether organization_id is present and its value) and its response as res1 (status, error, errors[], access_token, refresh_token); decode the access_token payload and record its organization_id claim as claim1
+--- SCREEN: Signed in without an organization ---
+[ASSERT] The account menu shows the signed-in customer and /sign-in is no longer the current page
+[ACT] Record the organization name in the header (if any)
+[NAV] Navigate to {{FRONT_URL}}/company/info
+[WAIT] the navigation settles - a redirect is expected; record the landing URL
+[HTTP] GET {{BACK_URL}}/api/members/{contactId}; capture currentOrganizationId as currentAfter
+--- LAYER: Admin (REST) - restore ---
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search {""userId"":userId,""take"":50}; take the orgB membership, set ""status"":null (Inherit) and PUT {{BACK_URL}}/api/customer/organization-memberships/{mB} with that body; read back status = empty
+[HTTP] GET {{BACK_URL}}/api/members/{contactId}; set organizations=[orgAId,orgBId] and PUT {{BACK_URL}}/api/contacts; then POST {{BACK_URL}}/api/customer/organization-memberships {""userId"":userId,""organizationId"":orgAId,""organizationName"":orgAName,""roles"":[{""roleId"":roleId,""roleName"":roleName}],""isLocked"":false} (re-adding the organization creates NO membership row), search again and capture the new id as mA (the old id is gone); read back both memberships present, isCurrentlyLocked=false and an empty status - this restore is part of the case, verify it","[STATUS] res1 is HTTP 200 with an access_token - the sign-in succeeds with no organization context {SPEC} (VCST-6132 story S4: no accessible organization means a sign-in without an organization) {OBSERVED} (3x N6/N8, 2026-10-20)
+[BODY] claim1 is absent: the token carries no organization_id claim {SPEC} (VCST-6132 story S4) {OBSERVED} (3x N6, 2026-10-20)
+[DOM] The header shows the customer name ""Agent T6132"" and no organization name {OBSERVED} (3x N8, 2026-10-20)
+[NAV] {{FRONT_URL}}/company/info does not render the company page: it redirects to /account/dashboard {BL} (BL-AUTH-016: a session without an organization context has no org-scoped navigation) {OBSERVED} (3x N8, 2026-10-20)
+[STATE] currentAfter equals currentBefore - the Rejected organization was never written back {BL} (BL-AUTH-015)","[API] the /connect/token otp_email response is 200 and its access_token has no organization_id claim
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","the buyer is refused with an organization error although no organization is accessible (the removed path never validates the fallback target); the token carries the Rejected Org B; /company/info renders for a buyer without an organization; spinner visible >5s, console.error with TypeError, 4xx/5xx other than the asserted one","Set the membership of Org B back to Inherit before teardown. Restore every membership touched (unlock, status back to Inherit, re-add Member of companies together with its membership row and verify both rows), then DELETE {{BACK_URL}}/api/platform/security/users?names=email, DELETE {{BACK_URL}}/api/members?ids=contactId&ids=orgAId&ids=orgBId and read back that the user and the three members no longer resolve; sign out of the storefront if a session is open",VCST-6132 · Archetype:FALLBACK · Technique:BVA | Promoted: REG-2026-10-20-0125 (2026-10-20),Automated
+OTP-038,OTP sign-in with the last-used organization active still lands in that organization,Auth > OTP Sign-In > Organization fallback,High,BL-AUTH-015,,"[PRE:CLEAR_SESSION]
+Create in-case (FIFTH RULE; random-data uniqueEmail/uniqueOrgName, AGENT-TEST-6132 prefix): Org A and Org B and ONE buyer whose contact is an active member of each (userName == email, password {{DEFAULT_TEST_PASSWORD}}). The contact read-back order of its organizations is not relied on: every case pins the organization it needs through the header switcher or CurrentOrganizationId. Shared personas (MULTI_ORG_USER_*, MULTI_ORG_TF_BR*) are never touched.
+OtpSignIn.Enabled is on for {{STORE_ID}}: the fixture's own POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
+Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); SMTP is not relied on; no code within 90s = BLOCKED.
+One fresh code per sign-in and no session is carried across a state change (a lock ends the locked organization's sessions).
+State under test: both organizations are active; the last-used organization is Org B and the SERVER CurrentOrganizationId is Org A, so a build that ignores the sent organization lands in Org A and is told apart from the correct Org B.
+Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallback (vc-module-customer PR #321 — open on 2026-10-20; observed on 3.1030.0-pr-321-c54f). On a Customer build without it the fallback expectations do not hold: record the case BLOCKED for the build, never FAIL, and never re-base it to the old behaviour.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}","[PRE:CLEAR_SESSION] start the storefront lane from an empty browser session (cookies, localStorage, tokens) before any fixture or sign-in step
+--- LAYER: Fixture (REST, created in-case) ---
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[SETUP] Generate with random-data (AGENT-TEST-6132 prefix): orgAName, orgBName (uniqueOrgName) and email (uniqueEmail) - the email is also the userName
+[HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Organization"",""name"":orgAName}, then the same for orgBName; capture orgAId, orgBId
+[HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Contact"",""firstName"":""Agent"",""lastName"":""T6132"",""fullName"":""Agent T6132"",""name"":""Agent T6132"",""emails"":[email],""organizations"":[orgAId,orgBId]}; capture contactId
+[HTTP] POST {{BACK_URL}}/api/platform/security/users/create {""userName"":email,""email"":email,""password"":""{{DEFAULT_TEST_PASSWORD}}"",""storeId"":""{{STORE_ID}}"",""memberId"":contactId,""userType"":""Customer"",""emailConfirmed"":true,""status"":""Approved""}; GET {{BACK_URL}}/api/platform/security/users/{email} and capture userId
+[HTTP] POST {{BACK_URL}}/api/platform/security/roles/search {""keyword"":""Purchasing agent"",""take"":5}; capture roleId, roleName
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships {""userId"":userId,""organizationId"":orgAId,""organizationName"":orgAName,""roles"":[{""roleId"":roleId,""roleName"":roleName}],""isLocked"":false}, then the same for orgB
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search {""userId"":userId,""take"":50}; capture mA and mB (the membership ids of orgA and orgB)
+[ASSERT] both memberships read back isCurrentlyLocked=false with an empty status (Inherit) - otherwise BLOCKED: the fixture did not land and a fallback verdict on it proves nothing
+[HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, {""storeId"":""{{STORE_ID}}"",""email"":email} - anything but 200 with succeeded=true means OTP is off on {{STORE_ID}} or the buyer is refused: BLOCKED, never FAIL
+--- SCREEN: Make the organization the buyer last used (a switch is what stores the choice) ---
+--- SCREEN: Sign in by code (0) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': email
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[CAPTURE] code0 = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the 6 digits of code0 into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
+[CAPTURE] from the network log: the POST {{FRONT_URL}}/connect/token (grant_type=otp_email) request body as req0 (record whether organization_id is present and its value) and its response as res0 (status, error, errors[], access_token, refresh_token); decode the access_token payload and record its organization_id claim as claim0
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] listbox 'Organizations' is rendered
+[ACT] Click the option named ""<orgAName>"" in listbox 'Organizations'
+[WAIT] the organization name in the header reads ""<orgAName>""
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] listbox 'Organizations' is rendered
+[ACT] Click the option named ""<orgBName>"" in listbox 'Organizations'
+[WAIT] the organization name in the header reads ""<orgBName>""
+[STATE] read localStorage key organization-id-<email> (the key is the userName) = orgBId AND GET {{BACK_URL}}/api/members/{contactId} currentOrganizationId = orgBId - a mismatch on either is BLOCKED: without the stored choice naming the organization this case acts on, a broken build and a fixed one are indistinguishable
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] the account menu is open
+[ACT] Click the sign-out button (data-test-id=""sign-out-button"")
+[WAIT] the session is anonymous
+--- LAYER: Admin (REST) - make the server-side current organization differ from the stored choice ---
+[HTTP] GET {{BACK_URL}}/api/members/{contactId}; set currentOrganizationId=orgAId and PUT {{BACK_URL}}/api/contacts; read back currentOrganizationId = orgAId
+--- SCREEN: Sign in by code (1) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': email
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the 6 digits of code1 into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
+[CAPTURE] from the network log: the POST {{FRONT_URL}}/connect/token (grant_type=otp_email) request body as req1 (record whether organization_id is present and its value) and its response as res1 (status, error, errors[], access_token, refresh_token); decode the access_token payload and record its organization_id claim as claim1
+--- SCREEN: Signed in ---
+[ASSERT] The organization name in the header reads ""<orgBName>""
+[HTTP] GET {{BACK_URL}}/api/members/{contactId}; capture currentOrganizationId as currentAfter","[STATE] req1 carries organization_id = orgBId - the stored last-used choice {OBSERVED} (3x N3, 2026-10-20)
+[STATUS] res1 is HTTP 200 with an access_token {SPEC} (VCST-6132 regression: sign-in with the last-used organization active)
+[BODY] claim1 equals orgBId and is NOT orgAId {SPEC} (VCST-6132 regression: OTP with the last-used organization active lands in it)
+[DOM] The organization name in the header reads ""<orgBName>"" {SPEC} (VCST-6132 regression)
+[STATE] currentAfter equals orgBId - the request organization is persisted as current {BL} (BL-AUTH-015)","[API] the /connect/token otp_email response is 200 and its organization_id claim is orgBId
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","the fallback now overrides a usable last-used organization: the buyer lands in the current or default organization (Org A) instead of Org B; the header label and the claim disagree; spinner visible >5s, console.error with TypeError, 4xx/5xx other than the asserted one","Restore every membership touched (unlock, status back to Inherit, re-add Member of companies together with its membership row and verify both rows), then DELETE {{BACK_URL}}/api/platform/security/users?names=email, DELETE {{BACK_URL}}/api/members?ids=contactId&ids=orgAId&ids=orgBId and read back that the user and the three members no longer resolve; sign out of the storefront if a session is open",VCST-6132 · Archetype:FALLBACK · Technique:EP | Promoted: REG-2026-10-20-0125 (2026-10-20),Automated
+OTP-039,"Switching in the header to an organization the buyer was locked in during the session is refused, never re-pointed",Auth > OTP Sign-In > Organization fallback,High,BL-AUTH-016,,"[PRE:CLEAR_SESSION]
+Create in-case (FIFTH RULE; random-data uniqueEmail/uniqueOrgName, AGENT-TEST-6132 prefix): Org A and Org B and ONE buyer whose contact is an active member of each (userName == email, password {{DEFAULT_TEST_PASSWORD}}). The contact read-back order of its organizations is not relied on: every case pins the organization it needs through the header switcher or CurrentOrganizationId. Shared personas (MULTI_ORG_USER_*, MULTI_ORG_TF_BR*) are never touched.
+OtpSignIn.Enabled is on for {{STORE_ID}}: the fixture's own POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
+Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); SMTP is not relied on; no code within 90s = BLOCKED.
+One fresh code per sign-in and no session is carried across a state change (a lock ends the locked organization's sessions).
+State under test: the buyer is signed in by code in Org A with a live session; Org B (non-active) is then locked mid-session; the explicit switch to Org B is a refresh_token grant, which gets no fallback; a second session then probes an organization the buyer was removed from.
+Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallback (vc-module-customer PR #321 — open on 2026-10-20; observed on 3.1030.0-pr-321-c54f). On a Customer build without it the fallback expectations do not hold: record the case BLOCKED for the build, never FAIL, and never re-base it to the old behaviour.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}","[PRE:CLEAR_SESSION] start the storefront lane from an empty browser session (cookies, localStorage, tokens) before any fixture or sign-in step
+--- LAYER: Fixture (REST, created in-case) ---
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[SETUP] Generate with random-data (AGENT-TEST-6132 prefix): orgAName, orgBName (uniqueOrgName) and email (uniqueEmail) - the email is also the userName
+[HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Organization"",""name"":orgAName}, then the same for orgBName; capture orgAId, orgBId
+[HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Contact"",""firstName"":""Agent"",""lastName"":""T6132"",""fullName"":""Agent T6132"",""name"":""Agent T6132"",""emails"":[email],""organizations"":[orgAId,orgBId]}; capture contactId
+[HTTP] POST {{BACK_URL}}/api/platform/security/users/create {""userName"":email,""email"":email,""password"":""{{DEFAULT_TEST_PASSWORD}}"",""storeId"":""{{STORE_ID}}"",""memberId"":contactId,""userType"":""Customer"",""emailConfirmed"":true,""status"":""Approved""}; GET {{BACK_URL}}/api/platform/security/users/{email} and capture userId
+[HTTP] POST {{BACK_URL}}/api/platform/security/roles/search {""keyword"":""Purchasing agent"",""take"":5}; capture roleId, roleName
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships {""userId"":userId,""organizationId"":orgAId,""organizationName"":orgAName,""roles"":[{""roleId"":roleId,""roleName"":roleName}],""isLocked"":false}, then the same for orgB
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search {""userId"":userId,""take"":50}; capture mA and mB (the membership ids of orgA and orgB)
+[ASSERT] both memberships read back isCurrentlyLocked=false with an empty status (Inherit) - otherwise BLOCKED: the fixture did not land and a fallback verdict on it proves nothing
+[HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, {""storeId"":""{{STORE_ID}}"",""email"":email} - anything but 200 with succeeded=true means OTP is off on {{STORE_ID}} or the buyer is refused: BLOCKED, never FAIL
+[HTTP] GET {{BACK_URL}}/api/members/{contactId}; set currentOrganizationId=orgAId and PUT {{BACK_URL}}/api/contacts; read back currentOrganizationId = orgAId
+--- SCREEN: Sign in by code (1) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': email
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the 6 digits of code1 into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
+[CAPTURE] from the network log: the POST {{FRONT_URL}}/connect/token (grant_type=otp_email) request body as req1 (record whether organization_id is present and its value) and its response as res1 (status, error, errors[], access_token, refresh_token); decode the access_token payload and record its organization_id claim as claim1
+--- SCREEN: Signed in (Org A) ---
+[ASSERT] The organization name in the header reads ""<orgAName>""
+[CAPTURE] refresh1 = refresh_token of res1 (taken from the sign-in response just recorded)
+--- LAYER: Admin (REST) - lock the organization the buyer will switch to ---
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/{mB}/lock {""lockoutEnd"":null}; then POST .../search {""userId"":userId,""take"":50} and read back isCurrentlyLocked=true for orgB (a /lock on an unknown id answers 200 with a null body - never trust the status alone)
+--- SCREEN: UI switch attempt ---
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] listbox 'Organizations' is rendered
+[ACT] Record the disabled state of the option named ""<orgBName>""
+[KEY] Press Tab until focus reaches listbox 'Organizations', ArrowDown to the option named orgBName and press Enter (keyboard path only - never force the disabled control, VC-EXEC-003)
+[ASSERT] Record the organization name in the header after the keypress
+--- LAYER: API - the explicit switch the UI guard hides ---
+[HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=refresh_token, refresh_token=refresh1, storeId={{STORE_ID}}, organization_id=orgBId - record status, error, errors[] and any access_token as sw1
+--- LAYER: API - an organization the buyer was removed from (a fresh session and a fresh refresh token: a consumed one fails with a code-less invalid_grant that mimics the org refusal) ---
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/{mB}/unlock; read back isCurrentlyLocked=false for orgB
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] the account menu is open
+[ACT] Click the sign-out button (data-test-id=""sign-out-button"")
+[WAIT] the session is anonymous
+--- SCREEN: Sign in by code (2) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': email
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[CAPTURE] code2 = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the 6 digits of code2 into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
+[CAPTURE] from the network log: the POST {{FRONT_URL}}/connect/token (grant_type=otp_email) request body as req2 (record whether organization_id is present and its value) and its response as res2 (status, error, errors[], access_token, refresh_token); decode the access_token payload and record its organization_id claim as claim2
+[CAPTURE] refresh2 = refresh_token of res2
+[HTTP] GET {{BACK_URL}}/api/members/{contactId}; set organizations=[orgAId] and PUT {{BACK_URL}}/api/contacts with that body (removing an organization deletes its membership row and its roles); read back: organizations = [orgAId] and the membership search has NO row for orgBId
+[HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=refresh_token, refresh_token=refresh2, storeId={{STORE_ID}}, organization_id=orgBId - record status, error, errors[] and any access_token as sw2
+--- LAYER: Admin (REST) - restore ---
+[HTTP] GET {{BACK_URL}}/api/members/{contactId}; set organizations=[orgAId,orgBId] and PUT {{BACK_URL}}/api/contacts; then POST {{BACK_URL}}/api/customer/organization-memberships {""userId"":userId,""organizationId"":orgBId,""organizationName"":orgBName,""roles"":[{""roleId"":roleId,""roleName"":roleName}],""isLocked"":false} (re-adding the organization creates NO membership row), search again and capture the new id as mB (the old id is gone); read back both memberships present, isCurrentlyLocked=false and an empty status - this restore is part of the case, verify it","[DOM] In the UI the option named ""<orgBName>"" is disabled; after the keypress the organization name in the header still reads ""<orgAName>"" {SPEC} (VCST-5317 click guard)
+[STATUS] sw1 is HTTP 400 with error = invalid_grant and carries no access_token - an explicit switch (refresh_token) to a locked organization is refused, never re-pointed {SPEC} (VCST-6132: the refresh_token grant still fails) {BL} (BL-AUTH-016)
+[BODY] sw1 errors[] holds exactly one entry with code user_is_locked_in_organization {BL} (BL-AUTH-013)
+[STATUS] sw2 is HTTP 400 with error = invalid_grant and carries no access_token - an explicit switch to an organization the buyer is no longer in is refused, not substituted {SPEC} (VCST-6132: the refresh_token grant still fails)
+[BODY] sw2 errors[] holds exactly one entry with code invalid_organization_id {BL} (BL-AUTH-013)","[API] two refresh_token grants answer 400 invalid_grant with an organization code and no access_token
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","the fallback leaked into the explicit switch: sw1 or sw2 answers 200 and silently lands in the other organization; a code-less invalid_grant (consumed refresh token - the verdict is void, take a fresh one); the header changes after the disabled option was activated; spinner visible >5s, console.error with TypeError, 4xx/5xx other than the asserted one","Unlock Org B and re-add the removed organization before teardown. Restore every membership touched (unlock, status back to Inherit, re-add Member of companies together with its membership row and verify both rows), then DELETE {{BACK_URL}}/api/platform/security/users?names=email, DELETE {{BACK_URL}}/api/members?ids=contactId&ids=orgAId&ids=orgBId and read back that the user and the three members no longer resolve; sign out of the storefront if a session is open",VCST-6132 · Archetype:SCOPE · Technique:DT · Probe:VC-B2B-005 | Promoted: REG-2026-10-20-0125 (2026-10-20),Automated
+OTP-040,After a fallback sign-in the stored last-used organization survives reload and is honoured again once restored,Auth > OTP Sign-In > Organization fallback,Medium,BL-AUTH-015,,"[PRE:CLEAR_SESSION]
+Create in-case (FIFTH RULE; random-data uniqueEmail/uniqueOrgName, AGENT-TEST-6132 prefix): Org A and Org B and ONE buyer whose contact is an active member of each (userName == email, password {{DEFAULT_TEST_PASSWORD}}). The contact read-back order of its organizations is not relied on: every case pins the organization it needs through the header switcher or CurrentOrganizationId. Shared personas (MULTI_ORG_USER_*, MULTI_ORG_TF_BR*) are never touched.
+OtpSignIn.Enabled is on for {{STORE_ID}}: the fixture's own POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
+Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); SMTP is not relied on; no code within 90s = BLOCKED.
+One fresh code per sign-in and no session is carried across a state change (a lock ends the locked organization's sessions).
+State under test: the last-used organization is Org A and Org A is locked; the code sign-in falls back to Org B; the stored choice is then read, the page is reloaded, and Org A is restored.
+Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallback (vc-module-customer PR #321 — open on 2026-10-20; observed on 3.1030.0-pr-321-c54f). On a Customer build without it the fallback expectations do not hold: record the case BLOCKED for the build, never FAIL, and never re-base it to the old behaviour.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}","[PRE:CLEAR_SESSION] start the storefront lane from an empty browser session (cookies, localStorage, tokens) before any fixture or sign-in step
+--- LAYER: Fixture (REST, created in-case) ---
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[SETUP] Generate with random-data (AGENT-TEST-6132 prefix): orgAName, orgBName (uniqueOrgName) and email (uniqueEmail) - the email is also the userName
+[HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Organization"",""name"":orgAName}, then the same for orgBName; capture orgAId, orgBId
+[HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Contact"",""firstName"":""Agent"",""lastName"":""T6132"",""fullName"":""Agent T6132"",""name"":""Agent T6132"",""emails"":[email],""organizations"":[orgAId,orgBId]}; capture contactId
+[HTTP] POST {{BACK_URL}}/api/platform/security/users/create {""userName"":email,""email"":email,""password"":""{{DEFAULT_TEST_PASSWORD}}"",""storeId"":""{{STORE_ID}}"",""memberId"":contactId,""userType"":""Customer"",""emailConfirmed"":true,""status"":""Approved""}; GET {{BACK_URL}}/api/platform/security/users/{email} and capture userId
+[HTTP] POST {{BACK_URL}}/api/platform/security/roles/search {""keyword"":""Purchasing agent"",""take"":5}; capture roleId, roleName
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships {""userId"":userId,""organizationId"":orgAId,""organizationName"":orgAName,""roles"":[{""roleId"":roleId,""roleName"":roleName}],""isLocked"":false}, then the same for orgB
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search {""userId"":userId,""take"":50}; capture mA and mB (the membership ids of orgA and orgB)
+[ASSERT] both memberships read back isCurrentlyLocked=false with an empty status (Inherit) - otherwise BLOCKED: the fixture did not land and a fallback verdict on it proves nothing
+[HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, {""storeId"":""{{STORE_ID}}"",""email"":email} - anything but 200 with succeeded=true means OTP is off on {{STORE_ID}} or the buyer is refused: BLOCKED, never FAIL
+--- SCREEN: Make the organization the buyer last used (a switch is what stores the choice) ---
+--- SCREEN: Sign in by code (0) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': email
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[CAPTURE] code0 = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the 6 digits of code0 into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
+[CAPTURE] from the network log: the POST {{FRONT_URL}}/connect/token (grant_type=otp_email) request body as req0 (record whether organization_id is present and its value) and its response as res0 (status, error, errors[], access_token, refresh_token); decode the access_token payload and record its organization_id claim as claim0
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] listbox 'Organizations' is rendered
+[ACT] Click the option named ""<orgBName>"" in listbox 'Organizations'
+[WAIT] the organization name in the header reads ""<orgBName>""
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] listbox 'Organizations' is rendered
+[ACT] Click the option named ""<orgAName>"" in listbox 'Organizations'
+[WAIT] the organization name in the header reads ""<orgAName>""
+[STATE] read localStorage key organization-id-<email> (the key is the userName) = orgAId AND GET {{BACK_URL}}/api/members/{contactId} currentOrganizationId = orgAId - a mismatch on either is BLOCKED: without the stored choice naming the organization this case acts on, a broken build and a fixed one are indistinguishable
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] the account menu is open
+[ACT] Click the sign-out button (data-test-id=""sign-out-button"")
+[WAIT] the session is anonymous
+--- LAYER: Admin (REST) ---
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/{mA}/lock {""lockoutEnd"":null}; then POST .../search {""userId"":userId,""take"":50} and read back isCurrentlyLocked=true for orgA (a /lock on an unknown id answers 200 with a null body - never trust the status alone)
+--- SCREEN: Sign in by code (1) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': email
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the 6 digits of code1 into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
+[CAPTURE] from the network log: the POST {{FRONT_URL}}/connect/token (grant_type=otp_email) request body as req1 (record whether organization_id is present and its value) and its response as res1 (status, error, errors[], access_token, refresh_token); decode the access_token payload and record its organization_id claim as claim1
+--- SCREEN: After the fallback ---
+[ASSERT] The organization name in the header reads ""<orgBName>""
+[STATE] read localStorage key organization-id-<email> as keyAfterFallback
+[ACT] Reload the page
+[STATE] read localStorage key organization-id-<email> as keyAfterReload; the session is still signed in
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] the account menu is open
+[ACT] Click the sign-out button (data-test-id=""sign-out-button"")
+[WAIT] the session is anonymous
+--- LAYER: Admin (REST) - restore the organization ---
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/{mA}/unlock; read back isCurrentlyLocked=false for orgA
+--- SCREEN: Sign in by code (2) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': email
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[CAPTURE] code2 = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the 6 digits of code2 into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
+[CAPTURE] from the network log: the POST {{FRONT_URL}}/connect/token (grant_type=otp_email) request body as req2 (record whether organization_id is present and its value) and its response as res2 (status, error, errors[], access_token, refresh_token); decode the access_token payload and record its organization_id claim as claim2
+--- SCREEN: Signed in again ---
+[ASSERT] The organization name in the header reads ""<orgAName>""","[STATE] keyAfterFallback equals orgAId - signing in never rewrites the stored last-used choice; only a switch does {OBSERVED} (3x N3, 2026-10-20) {BL} (BL-AUTH-015)
+[STATE] keyAfterReload equals orgAId and the session survives the reload (the account menu still shows the customer) {OBSERVED} (3x N3, 2026-10-20)
+[STATE] req2 carries organization_id = orgAId {SPEC} (VCST-6132 regression: the last-used organization is still respected)
+[BODY] claim2 equals orgAId and the organization name in the header reads ""<orgAName>"" - once the organization is restored the buyer lands in it again {SPEC} (VCST-6132 regression) {OBSERVED} (3x N3, 2026-10-20)","[API] the second /connect/token otp_email response is 200 and its organization_id claim is orgAId
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","the stored choice is rewritten to Org B by the fallback, so the restored Org A is never honoured again (the buyer is stranded in Org B); a stale stored value breaks the reload; the second sign-in lands in Org B although Org A is restored; spinner visible >5s, console.error with TypeError, 4xx/5xx other than the asserted one","Restore every membership touched (unlock, status back to Inherit, re-add Member of companies together with its membership row and verify both rows), then DELETE {{BACK_URL}}/api/platform/security/users?names=email, DELETE {{BACK_URL}}/api/members?ids=contactId&ids=orgAId&ids=orgBId and read back that the user and the three members no longer resolve; sign out of the storefront if a session is open",VCST-6132 · Archetype:STALE · Technique:ST | Promoted: REG-2026-10-20-0125 (2026-10-20),Automated
+OTP-041,OTP sign-in typed with different letter case still resends the last-used organization,Auth > OTP Sign-In > Organization fallback,Low,BL-AUTH-015,,"[PRE:CLEAR_SESSION]
+Create in-case (FIFTH RULE; random-data uniqueEmail/uniqueOrgName, AGENT-TEST-6132 prefix): Org A and Org B and ONE buyer whose contact is an active member of each (userName == email, password {{DEFAULT_TEST_PASSWORD}}). The contact read-back order of its organizations is not relied on: every case pins the organization it needs through the header switcher or CurrentOrganizationId. Shared personas (MULTI_ORG_USER_*, MULTI_ORG_TF_BR*) are never touched.
+OtpSignIn.Enabled is on for {{STORE_ID}}: the fixture's own POST /api/otp/request answering anything but 200 succeeded=true makes the case BLOCKED, never FAIL.
+Sign-in codes are read from the notification journal (OtpSignInEmailNotification for the buyer); SMTP is not relied on; no code within 90s = BLOCKED.
+One fresh code per sign-in and no session is carried across a state change (a lock ends the locked organization's sessions).
+State under test: both organizations are active; the stored last-used organization (key organization-id-<userName>) is Org B while the SERVER CurrentOrganizationId is Org A, so sending the stored choice and sending nothing give different organizations; the buyer then types the email in a different letter case than the userName.
+Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallback (vc-module-customer PR #321 — open on 2026-10-20; observed on 3.1030.0-pr-321-c54f). On a Customer build without it the fallback expectations do not hold: record the case BLOCKED for the build, never FAIL, and never re-base it to the old behaviour.","storeId={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, storefront={{FRONT_URL}}","--- LAYER: Fixture (REST, created in-case) ---
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[SETUP] Generate with random-data (AGENT-TEST-6132 prefix): orgAName, orgBName (uniqueOrgName) and email (uniqueEmail) - the email is also the userName
+[HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Organization"",""name"":orgAName}, then the same for orgBName; capture orgAId, orgBId
+[HTTP] POST {{BACK_URL}}/api/members {""memberType"":""Contact"",""firstName"":""Agent"",""lastName"":""T6132"",""fullName"":""Agent T6132"",""name"":""Agent T6132"",""emails"":[email],""organizations"":[orgAId,orgBId]}; capture contactId
+[HTTP] POST {{BACK_URL}}/api/platform/security/users/create {""userName"":email,""email"":email,""password"":""{{DEFAULT_TEST_PASSWORD}}"",""storeId"":""{{STORE_ID}}"",""memberId"":contactId,""userType"":""Customer"",""emailConfirmed"":true,""status"":""Approved""}; GET {{BACK_URL}}/api/platform/security/users/{email} and capture userId
+[HTTP] POST {{BACK_URL}}/api/platform/security/roles/search {""keyword"":""Purchasing agent"",""take"":5}; capture roleId, roleName
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships {""userId"":userId,""organizationId"":orgAId,""organizationName"":orgAName,""roles"":[{""roleId"":roleId,""roleName"":roleName}],""isLocked"":false}, then the same for orgB
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search {""userId"":userId,""take"":50}; capture mA and mB (the membership ids of orgA and orgB)
+[ASSERT] both memberships read back isCurrentlyLocked=false with an empty status (Inherit) - otherwise BLOCKED: the fixture did not land and a fallback verdict on it proves nothing
+[HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, {""storeId"":""{{STORE_ID}}"",""email"":email} - anything but 200 with succeeded=true means OTP is off on {{STORE_ID}} or the buyer is refused: BLOCKED, never FAIL
+--- SCREEN: Make the organization the buyer last used (a switch is what stores the choice) ---
+--- SCREEN: Sign in by code (0) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': email
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[CAPTURE] code0 = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the 6 digits of code0 into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
+[CAPTURE] from the network log: the POST {{FRONT_URL}}/connect/token (grant_type=otp_email) request body as req0 (record whether organization_id is present and its value) and its response as res0 (status, error, errors[], access_token, refresh_token); decode the access_token payload and record its organization_id claim as claim0
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] listbox 'Organizations' is rendered
+[ACT] Click the option named ""<orgAName>"" in listbox 'Organizations'
+[WAIT] the organization name in the header reads ""<orgAName>""
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] listbox 'Organizations' is rendered
+[ACT] Click the option named ""<orgBName>"" in listbox 'Organizations'
+[WAIT] the organization name in the header reads ""<orgBName>""
+[STATE] read localStorage key organization-id-<email> (the key is the userName) = orgBId AND GET {{BACK_URL}}/api/members/{contactId} currentOrganizationId = orgBId - a mismatch on either is BLOCKED: without the stored choice naming the organization this case acts on, a broken build and a fixed one are indistinguishable
+[ACT] Click the account button (data-test-id=""account-button"")
+[WAIT] the account menu is open
+[ACT] Click the sign-out button (data-test-id=""sign-out-button"")
+[WAIT] the session is anonymous
+--- LAYER: Admin (REST) - make the server-side current organization differ from the stored choice ---
+[HTTP] GET {{BACK_URL}}/api/members/{contactId}; set currentOrganizationId=orgAId and PUT {{BACK_URL}}/api/contacts; read back currentOrganizationId = orgAId
+[SETUP] typedEmail = email with its first letter upper-cased (a different letter case than the userName; the OTP request still resolves the account)
+--- SCREEN: Sign in by code (1) ---
+[NAV] Navigate to {{FRONT_URL}}/sign-in
+[ACT] Fill 'Email': typedEmail
+[CAPTURE] T0 = current UTC time, taken immediately before the click
+[ACT] Click 'Continue'
+[WAIT] the 'Check your email' step is shown
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":email,""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to email created after T0 appears (SMTP may be off - the message is journaled either way); no message in 90s = BLOCKED, never FAIL
+[CAPTURE] code1 = the 6-digit value inside <strong>...</strong> in that message body
+[ACT] Type the 6 digits of code1 into 'Code' (sign-in auto-submits on the 6th digit)
+[WAIT] the page leaves /sign-in, or an inline error alert appears above 'Code'
+[CAPTURE] from the network log: the POST {{FRONT_URL}}/connect/token (grant_type=otp_email) request body as req1 (record whether organization_id is present and its value) and its response as res1 (status, error, errors[], access_token, refresh_token); decode the access_token payload and record its organization_id claim as claim1
+--- SCREEN: Signed in ---
+[ASSERT] The account menu shows the signed-in customer and /sign-in is no longer the current page
+[ASSERT] Record the organization name in the header","[STATE] req1 carries organization_id = orgBId although the email was typed in a different letter case than the userName {SPEC} (VCST-6132 context: the storefront sends the organization the buyer last switched to)
+[BODY] claim1 equals orgBId and is NOT orgAId {SPEC} (VCST-6132 regression: the last-used organization is respected)
+[DOM] The organization name in the header reads ""<orgBName>"" {SPEC} (VCST-6132 regression: last-used respected)","[API] the /connect/token otp_email response is 200; the request body carries organization_id
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","KNOWN SUSPECT (3x-S1, 2026-10-20): a differently-cased email makes the build send no organization_id, so the buyer lands in the server-side current organization (Org A) instead of the last-used Org B - expected to FAIL until the stored key is read by the userName; do NOT flip the expectation. A refusal of the differently-cased email (the account must resolve); spinner visible >5s, console.error with TypeError, 4xx/5xx other than the asserted one","Restore every membership touched (unlock, status back to Inherit, re-add Member of companies together with its membership row and verify both rows), then DELETE {{BACK_URL}}/api/platform/security/users?names=email, DELETE {{BACK_URL}}/api/members?ids=contactId&ids=orgAId&ids=orgBId and read back that the user and the three members no longer resolve; sign out of the storefront if a session is open",VCST-6132 · Archetype:STALE · Technique:EG · Known divergence 3x-S1 = unfiled Low draft F1 (summary.json bugs_not_filed),Draft
