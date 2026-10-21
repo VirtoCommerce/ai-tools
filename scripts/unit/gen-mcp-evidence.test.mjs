@@ -1,5 +1,5 @@
 // Unit tests for the evidence-destination half of
-// plugins/vc-fix/skills/project-init/gen-mcp.mjs (VCST-5582 C).
+// plugins/vc-init/skills/project-init/gen-mcp.mjs (VCST-5582 C).
 //
 // The defect: screenshots taken during a /qa-bug run appeared at the PROJECT ROOT. The template's
 // `--output-dir` was RELATIVE (`test-results/<browser>`), which playwright-mcp resolves against the
@@ -18,15 +18,15 @@ import { withTempDir } from "./_test-helpers.mjs";
 // The production auditor + the SHARED secret-prefix matcher. Imported rather than copied: the
 // test used to carry its own `SECRET_SHAPE` regex, so a change to what production considers a
 // credential would silently stop being what the test checks for.
-import { findLiteralSecrets } from "../../plugins/vc-fix/skills/project-init/verify-access.mjs";
-import { SECRET_PREFIX_RE } from "../../plugins/vc-fix/hooks/redact.mjs";
-import { ensureGitignoreEntries, absolutizeOutputDir, ensureNodeOptions, extractNpxSpecs, classifyWarmResults, enableOAuthIfNoPat, resolveTokens, injectTokenRefs } from "../../plugins/vc-fix/skills/project-init/gen-mcp.mjs";
+import { findLiteralSecrets } from "../../plugins/vc-init/skills/project-init/verify-access.mjs";
+import { SECRET_PREFIX_RE } from "../../plugins/vc-init/scripts/lib/redact.mjs";
+import { ensureGitignoreEntries, absolutizeOutputDir, ensureNodeOptions, extractNpxSpecs, classifyWarmResults, pruneSettingsEnv, githubEntryFor, TOKEN_ENV_KEYS } from "../../plugins/vc-init/skills/project-init/gen-mcp.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const SCRIPT = join(ROOT, "plugins/vc-fix/skills/project-init/gen-mcp.mjs");
-const TEMPLATE = join(ROOT, "plugins/vc-fix/templates/.mcp.json.example");
+const SCRIPT = join(ROOT, "plugins/vc-init/skills/project-init/gen-mcp.mjs");
+const TEMPLATE = join(ROOT, "plugins/vc-init/templates/.mcp.json.example");
 const PLAYWRIGHT = ["playwright-chrome", "playwright-firefox", "playwright-edge"];
-const PI_DIR = join(ROOT, "plugins/vc-fix/skills/project-init");
+const PI_DIR = join(ROOT, "plugins/vc-init/skills/project-init");
 
 function outputDirOf(server) {
   const i = server.args.indexOf("--output-dir");
@@ -137,11 +137,12 @@ test("ensureNodeOptions (#220): idempotent, preserves other env, overrides a con
 });
 
 // ─── #220 items 3/4 — auth contracts (http servers ignore env; archived github package) ──
-test("template (#220 item 3): context7 passes its key as a HEADER, not env (an http MCP ignores env)", () => {
-  const c7 = JSON.parse(readFileSync(TEMPLATE, "utf8")).mcpServers.context7;
-  assert.equal(c7.type, "http");
-  assert.equal(c7.headers?.CONTEXT7_API_KEY, "<CONTEXT7_API_KEY>");
-  assert.ok(!c7.env, "context7 must not carry an inert env block");
+test("template (VCST-6402 D2): postman and context7 are gone — each needed an API key in a file", () => {
+  const servers = JSON.parse(readFileSync(TEMPLATE, "utf8")).mcpServers;
+  assert.equal(servers.postman, undefined);
+  assert.equal(servers.context7, undefined);
+  // …and no server left in the template carries a key placeholder at all.
+  assert.doesNotMatch(JSON.stringify(servers), /<[A-Z0-9_]+>/);
 });
 
 test("template (#220 item 3): figma is OAuth-only — no inert FIGMA_API_KEY (env or header)", () => {
@@ -152,7 +153,7 @@ test("template (#220 item 3): figma is OAuth-only — no inert FIGMA_API_KEY (en
   assert.ok(!fig.headers, "figma takes no key header (OAuth only)");
 });
 
-test("template (#220 item 4): github is the official REMOTE server, not the archived npx package", () => {
+test("template (#220 item 4 / VCST-6402): github is the hosted server, header-less — no token placeholder", () => {
   const cfg = JSON.parse(readFileSync(TEMPLATE, "utf8"));
   // No SERVER runs the archived package (a `//` doc comment naming it is fine).
   for (const [name, def] of Object.entries(cfg.mcpServers)) {
@@ -161,25 +162,28 @@ test("template (#220 item 4): github is the official REMOTE server, not the arch
   const gh = cfg.mcpServers.github;
   assert.equal(gh.type, "http");
   assert.match(gh.url, /api\.githubcopilot\.com\/mcp/);
-  assert.match(gh.headers?.Authorization || "", /^Bearer <GITHUB_PERSONAL_ACCESS_TOKEN>$/);
+  assert.equal(gh.headers, undefined, "the token reaches the server through vc-secrets, never a header in a file");
 });
 
-test("gen-mcp (#220 item 4 / VCST-5774): the github Bearer header carries a ${VAR} REF, never the PAT", () => withTempDir((dir) => {
-  runGenMcp(dir, [], { GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_itemfour" });
-  const gh = JSON.parse(readFileSync(join(dir, ".mcp.json"), "utf8")).mcpServers.github;
-  assert.equal(gh.headers.Authorization, "Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}");
-  // …and the VALUE lands in settings.local.json `env`, which is what feeds the expansion.
-  const settings = JSON.parse(readFileSync(join(dir, ".claude", "settings.local.json"), "utf8"));
-  assert.equal(settings.env.GITHUB_PERSONAL_ACCESS_TOKEN, "ghp_itemfour");
+test("gen-mcp (VCST-6402): a PAT github axis points .mcp.json at `vc-secrets run github` and declares the server", () => withTempDir((dir) => {
+  runGenMcp(dir, ["--github-auth", "pat", "--vc-run", join(dir, "vc-run.mjs")], { GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_itemfour000000000000" });
+  const gh = readMcp(dir).mcpServers.github;
+  assert.deepEqual(gh, { type: "stdio", command: "node", args: ["${VC_SECRETS}", "run", "github"] });
+  const decl = JSON.parse(readFileSync(join(dir, ".claude", "vc-secrets.local.json"), "utf8"));
+  assert.equal(decl.servers.github.env.GITHUB_PERSONAL_ACCESS_TOKEN, "secret:github-pat");
+  assert.ok(decl.servers.github.args.some((a) => /^mcp-remote@\d/.test(a)), "mcp-remote is pinned to an exact version");
+  // The token in the generator's environment reaches NEITHER file.
+  const settings = readSettings(dir);
+  assert.equal(settings.env.VC_RUN, join(dir, "vc-run.mjs"));
+  assert.ok(!JSON.stringify(settings).includes("ghp_itemfour"), "no token in settings.local.json");
+  assert.ok(!readFileSync(join(dir, ".claude", "vc-secrets.local.json"), "utf8").includes("ghp_itemfour"));
 }));
 
-test("enableOAuthIfNoPat (#220 item 4): an unresolved Bearer placeholder is DROPPED so the server can OAuth", () => {
-  // No PAT → injectTokens leaves the literal placeholder → drop the header (OAuth fallback).
-  const noPat = enableOAuthIfNoPat({ type: "http", url: "https://api.githubcopilot.com/mcp/", headers: { Authorization: "Bearer <GITHUB_PERSONAL_ACCESS_TOKEN>" } });
-  assert.ok(!("Authorization" in noPat.headers), "the broken placeholder header must be removed");
-  // A resolved token → header kept verbatim.
-  const withPat = enableOAuthIfNoPat({ type: "http", headers: { Authorization: "Bearer ghp_real" } });
-  assert.equal(withPat.headers.Authorization, "Bearer ghp_real");
+test("githubEntryFor (VCST-6402): pat ⇒ a vc-secrets call, a session axis ⇒ the hosted server with OAuth", () => {
+  assert.deepEqual(githubEntryFor("pat").args, ["${VC_SECRETS}", "run", "github"]);
+  const oauth = githubEntryFor("gh-cli");
+  assert.equal(oauth.type, "http");
+  assert.equal(oauth.headers, undefined);
 });
 
 // ─── #220 item 5 — pure telemetry mapping for warm results (the load-bearing bit; no network) ──
@@ -275,36 +279,20 @@ test("absolutizeOutputDir: a server with no --output-dir (github, postman, …) 
 // published a live token. D3: with no PAT env it copied `gh auth token` — the operator's CLI OAuth
 // session — into the file; two projects were found on disk carrying a `gho_…` that way.
 
-test("VCST-5774 D1: NO resolved credential value appears anywhere in the generated .mcp.json", () => withTempDir((dir) => {
-  runGenMcp(dir, ["--with", "postman,context7"], {
+test("VCST-6402: NO credential from the environment reaches .mcp.json or settings.local.json", () => withTempDir((dir) => {
+  runGenMcp(dir, ["--github-auth", "pat", "--with", "postman,context7"], {
     GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_leakcanary1234567890",
+    GITHUB_FIX_BUGS_TOKEN: "ghp_leakcanaryalias12345",
     POSTMAN_API_KEY: "PMAK-leakcanary-0987654321",
     CONTEXT7_API_KEY: "ctx7_leakcanary",
   });
-  const raw = readFileSync(join(dir, ".mcp.json"), "utf8");
-  assert.doesNotMatch(raw, SECRET_PREFIX_RE, "a secret-shaped literal reached .mcp.json");
-  for (const v of ["ghp_leakcanary1234567890", "PMAK-leakcanary-0987654321"]) {
-    assert.ok(!raw.includes(v), `${v} reached .mcp.json`);
+  for (const f of [".mcp.json", join(".claude", "settings.local.json"), join(".claude", "vc-secrets.local.json")]) {
+    const raw = readFileSync(join(dir, f), "utf8");
+    assert.doesNotMatch(raw, SECRET_PREFIX_RE, `a secret-shaped literal reached ${f}`);
+    for (const v of ["ghp_leakcanary1234567890", "ghp_leakcanaryalias12345", "PMAK-leakcanary-0987654321", "ctx7_leakcanary"]) {
+      assert.ok(!raw.includes(v), `${v} reached ${f}`);
+    }
   }
-  assert.ok(!raw.includes("ctx7_leakcanary"), "the context7 key value reached .mcp.json");
-  // Each one is present as an indirection instead, and the values live in settings `env`.
-  for (const v of ["GITHUB_PERSONAL_ACCESS_TOKEN", "POSTMAN_API_KEY", "CONTEXT7_API_KEY"]) {
-    assert.ok(raw.includes("${" + v + "}"), `${v} is not referenced as \${${v}}`);
-  }
-  const env = JSON.parse(readFileSync(join(dir, ".claude", "settings.local.json"), "utf8")).env;
-  assert.equal(env.GITHUB_PERSONAL_ACCESS_TOKEN, "ghp_leakcanary1234567890");
-  assert.equal(env.POSTMAN_API_KEY, "PMAK-leakcanary-0987654321");
-  assert.equal(env.CONTEXT7_API_KEY, "ctx7_leakcanary");
-}));
-
-test("VCST-5774 D1: an ALIAS env var (GITHUB_FIX_BUGS_TOKEN) resolves under the canonical name", () => withTempDir((dir) => {
-  // .env.local documents GITHUB_FIX_BUGS_TOKEN; the reference must still read ${GITHUB_PERSONAL_ACCESS_TOKEN}
-  // so the indirection and the settings key agree whichever alias supplied the value.
-  runGenMcp(dir, [], { GITHUB_PERSONAL_ACCESS_TOKEN: "", GITHUB_FIX_BUGS_TOKEN: "ghp_fromalias12345678" });
-  const gh = JSON.parse(readFileSync(join(dir, ".mcp.json"), "utf8")).mcpServers.github;
-  assert.equal(gh.headers.Authorization, "Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}");
-  const env = JSON.parse(readFileSync(join(dir, ".claude", "settings.local.json"), "utf8")).env;
-  assert.equal(env.GITHUB_PERSONAL_ACCESS_TOKEN, "ghp_fromalias12345678");
 }));
 
 test("VCST-5774 D2: .mcp.json and the other generated local files are ALWAYS gitignored", () => withTempDir((dir) => {
@@ -359,70 +347,52 @@ test("VCST-5774 D3: with no PAT env the generator does NOT shell out to `gh auth
   assert.ok(!settings.env?.GITHUB_PERSONAL_ACCESS_TOKEN, "nothing to bridge when nothing resolved");
 }));
 
-test("VCST-5774: --inline-secrets restores the literal, and then writes NO second copy to settings", () => withTempDir((dir) => {
-  runGenMcp(dir, ["--inline-secrets"], { GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_deliberateinline12" });
-  const gh = JSON.parse(readFileSync(join(dir, ".mcp.json"), "utf8")).mcpServers.github;
-  assert.equal(gh.headers.Authorization, "Bearer ghp_deliberateinline12");
-  const settings = JSON.parse(readFileSync(join(dir, ".claude", "settings.local.json"), "utf8"));
-  assert.ok(!settings.env?.GITHUB_PERSONAL_ACCESS_TOKEN, "the value must not be duplicated into settings");
+test("VCST-6402: --inline-secrets is refused — and nothing is written", () => withTempDir((dir) => {
+  const res = spawnSync(process.execPath, [SCRIPT, "--inline-secrets"], { cwd: dir, encoding: "utf8", env: { ...process.env, ...BLANK_TOKENS, VC_FIX_HOME: dir } });
+  assert.equal(res.status, 1);
+  assert.match(res.stderr, /--inline-secrets was removed/);
+  assert.ok(!existsSync(join(dir, ".mcp.json")), "a refused run writes nothing");
+  // `--inline-secrets false` is still accepted as a no-op (the flag parser's false/0/no/off rule).
+  runGenMcp(dir, ["--inline-secrets", "false"]);
+  assert.ok(existsSync(join(dir, ".mcp.json")));
 }));
 
-test("VCST-5774: a REVOKED credential is pruned from settings.local.json on the next run", () => withTempDir((dir) => {
-  // The value now lives in settings `env`, which Claude Code exports to every session AND
-  // subprocess — a strictly wider blast radius than the .mcp.json header it replaced. So a merge
-  // that never prunes leaves a revoked token ambient forever, while .mcp.json reads perfectly
-  // clean and the readiness row says PASS. That combination is undetectable by inspection.
-  runGenMcp(dir, [], { GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_firstrun1234567890" });
-  assert.equal(readSettings(dir).env.GITHUB_PERSONAL_ACCESS_TOKEN, "ghp_firstrun1234567890");
-
-  const out = runGenMcp(dir, [], {
-    GITHUB_PERSONAL_ACCESS_TOKEN: "", GITHUB_FIX_BUGS_TOKEN: "", GIT_TOKEN: "", GITHUB_TOKEN: "",
-  });
+test("VCST-6402: a token the VCST-5774 design left in settings env is KEPT and reported; a removed server's key goes", () => withTempDir((dir) => {
+  // Between VCST-5774 and VCST-6402 the PAT VALUE lived in settings.local.json `env`, exported to every
+  // session and subprocess. gen-mcp reports it and says where it belongs, but does not delete it: only
+  // migrate-secrets --strip does, after the vc-secrets copy passed a probe (it may be the only working one).
+  mkdirSync(join(dir, ".claude"), { recursive: true });
+  writeFileSync(join(dir, ".claude", "settings.local.json"), JSON.stringify({ env: { GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_firstrun1234567890", POSTMAN_API_KEY: "PMAK-x" } }));
+  const out = runGenMcp(dir);
   const settings = readSettings(dir);
-  assert.equal(settings.env?.GITHUB_PERSONAL_ACCESS_TOKEN, undefined, "the revoked value must be gone");
-  assert.match(out, /\[gen-mcp\][^\n]*removed[^\n]*GITHUB_PERSONAL_ACCESS_TOKEN/, "the removal is reported, not silent");
-  assert.match(out, /\.env\.local/, "…and the notice names the durable source that would restore it");
-  // …and the config correctly falls back to OAuth, as it already did.
-  assert.ok(!("Authorization" in (readMcp(dir).mcpServers.github.headers ?? {})));
+  assert.equal(settings.env?.GITHUB_PERSONAL_ACCESS_TOKEN, "ghp_firstrun1234567890", "a live token is never deleted here");
+  assert.equal(settings.env?.POSTMAN_API_KEY, undefined, "a removed server's key goes");
+  assert.match(out, /\[gen-mcp\][^\n]*still holds[^\n]*GITHUB_PERSONAL_ACCESS_TOKEN/, "the plaintext token is reported, not silent");
+  assert.match(out, /vc-secrets/, "…and the notice names where the token belongs now");
 }));
 
-test("VCST-5774: an operator's OWN settings env keys survive the prune", () => withTempDir((dir) => {
-  runGenMcp(dir, [], { GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_firstrun1234567890" });
-  const p = join(dir, ".claude", "settings.local.json");
-  const s = JSON.parse(readFileSync(p, "utf8"));
-  s.env.MY_OWN_SETTING = "keep-me";
-  writeFileSync(p, JSON.stringify(s, null, 2));
-
-  runGenMcp(dir, [], { GITHUB_PERSONAL_ACCESS_TOKEN: "", GITHUB_FIX_BUGS_TOKEN: "", GIT_TOKEN: "", GITHUB_TOKEN: "" });
+test("VCST-6402: an operator's OWN settings keys survive the prune; VC_RUN is added", () => withTempDir((dir) => {
+  mkdirSync(join(dir, ".claude"), { recursive: true });
+  writeFileSync(join(dir, ".claude", "settings.local.json"), JSON.stringify({ env: { MY_OWN_SETTING: "keep-me", ADO_PAT: "x" }, permissions: { deny: ["Bash(gh pr merge:*)"] } }));
+  runGenMcp(dir, ["--vc-run", "/stable/vc-run.mjs"]);
   const after = readSettings(dir);
-  assert.equal(after.env.MY_OWN_SETTING, "keep-me", "only vars the generator OWNS may be pruned");
-  assert.equal(after.env.GITHUB_PERSONAL_ACCESS_TOKEN, undefined);
+  assert.equal(after.env.MY_OWN_SETTING, "keep-me", "an operator's own key is never touched");
+  assert.equal(after.env.ADO_PAT, "x", "a token is kept for migrate-secrets to strip after its probe");
+  assert.equal(after.env.VC_RUN, "/stable/vc-run.mjs");
+  assert.deepEqual(after.permissions.deny, ["Bash(gh pr merge:*)"]);
 }));
 
-test("VCST-5774: switching to --inline-secrets leaves exactly ONE copy of the credential", () => withTempDir((dir) => {
-  // The skip-writing-to-settings branch only ever prevented a NEW write. After a normal run the
-  // value was already there, so `--inline-secrets` produced a literal in .mcp.json AND kept the
-  // settings copy — two copies, which is what its own comment says it avoids.
-  runGenMcp(dir, [], { GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_bbbbbbbbbb1234567890" });
-  assert.equal(readSettings(dir).env.GITHUB_PERSONAL_ACCESS_TOKEN, "ghp_bbbbbbbbbb1234567890");
-
-  runGenMcp(dir, ["--inline-secrets"], { GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_bbbbbbbbbb1234567890" });
-  assert.equal(readMcp(dir).mcpServers.github.headers.Authorization, "Bearer ghp_bbbbbbbbbb1234567890");
-  assert.equal(readSettings(dir).env?.GITHUB_PERSONAL_ACCESS_TOKEN, undefined,
-    "the settings copy must be removed when the value moves into .mcp.json");
-}));
-
-test("VCST-5774: revoking ONE managed credential leaves the others in place", () => withTempDir((dir) => {
-  // Every other prune test uses a single credential, and the re-merge of still-resolved values
-  // masks an over-eager prune — so the multi-token case is the one that can actually catch it.
-  const live = { POSTMAN_API_KEY: "PMAK-keepme-1234567890", CONTEXT7_API_KEY: "ctx7_keepme_value" };
-  runGenMcp(dir, ["--with", "postman,context7"], { GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_aaaa1234567890abcd", ...live });
-  const out = runGenMcp(dir, ["--with", "postman,context7"], { GITHUB_PERSONAL_ACCESS_TOKEN: "", ...live });
-  const env = readSettings(dir).env;
-  assert.equal(env.GITHUB_PERSONAL_ACCESS_TOKEN, undefined, "the revoked one goes");
-  assert.equal(env.POSTMAN_API_KEY, live.POSTMAN_API_KEY, "an unrelated LIVE credential must not be collateral");
-  assert.equal(env.CONTEXT7_API_KEY, live.CONTEXT7_API_KEY);
-  assert.doesNotMatch(out, /removed[^\n]*POSTMAN_API_KEY/);
+test("VCST-6402: --with postman/context7 is skipped with a note — the servers never ship", () => withTempDir((dir) => {
+  mkdirSync(join(dir, ".claude"), { recursive: true });
+  writeFileSync(join(dir, ".claude", "settings.local.json"), JSON.stringify({ enabledMcpjsonServers: ["postman", "context7"] }));
+  const out = runGenMcp(dir, ["--with", "postman,context7,figma"]);
+  assert.match(out, /--with postman: that server was removed/);
+  const mcp = readMcp(dir).mcpServers;
+  assert.equal(mcp.postman, undefined);
+  assert.equal(mcp.context7, undefined);
+  const enabled = readSettings(dir).enabledMcpjsonServers;
+  assert.ok(!enabled.includes("postman") && !enabled.includes("context7"));
+  assert.ok(enabled.includes("figma-remote-mcp"), "the other extras still work");
 }));
 
 test("VCST-5774: the generator's own output passes the auditor that guards it", () => withTempDir((dir) => {
@@ -450,20 +420,17 @@ test("VCST-5774: the generator's own output passes the auditor that guards it", 
   assert.deepEqual(planted.weak.sort(), ["probeArgs.args[2]", "probeNest.env.CREDS.TOKEN", "probeUrl.url"]);
 }));
 
-test("resolveTokens / injectTokenRefs: pure — precedence, ${VAR} refs, unresolved left alone", () => {
-  assert.deepEqual(resolveTokens({ GITHUB_FIX_BUGS_TOKEN: "b", GIT_TOKEN: "c" }),
-    { "<GITHUB_PERSONAL_ACCESS_TOKEN>": { varName: "GITHUB_PERSONAL_ACCESS_TOKEN", value: "b" } });
-  assert.deepEqual(resolveTokens({ GITHUB_PERSONAL_ACCESS_TOKEN: "a", GITHUB_FIX_BUGS_TOKEN: "b" }),
-    { "<GITHUB_PERSONAL_ACCESS_TOKEN>": { varName: "GITHUB_PERSONAL_ACCESS_TOKEN", value: "a" } });
-  assert.deepEqual(resolveTokens({}), {}, "an absent key resolves to nothing, so the placeholder survives");
-
-  const resolved = resolveTokens({ GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_x" });
-  const server = { headers: { Authorization: "Bearer <GITHUB_PERSONAL_ACCESS_TOKEN>", Other: "<CONTEXT7_API_KEY>" }, args: ["--k", "<GITHUB_PERSONAL_ACCESS_TOKEN>"] };
-  const out = injectTokenRefs(server, resolved);
-  assert.equal(out.headers.Authorization, "Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}", "embedded position is substituted");
-  assert.equal(out.args[1], "${GITHUB_PERSONAL_ACCESS_TOKEN}", "nested arrays are walked");
-  assert.equal(out.headers.Other, "<CONTEXT7_API_KEY>", "an UNRESOLVED placeholder is left intact for unresolvedPlaceholders()");
-  assert.equal(injectTokenRefs(server, resolved, { inline: true }).headers.Authorization, "Bearer ghp_x");
+test("pruneSettingsEnv: pure — removed servers' keys go, live tokens are kept and listed, VC_RUN is set", () => {
+  const env = Object.fromEntries(TOKEN_ENV_KEYS.map((k) => [k, "v"]));
+  const { settings, pruned, kept } = pruneSettingsEnv({ env: { ...env, KEEP: "1" }, enabledMcpjsonServers: ["github", "postman"], other: 1 }, { vcRun: "/p/vc-run.mjs" });
+  assert.deepEqual(pruned.sort(), ["CONTEXT7_API_KEY", "POSTMAN_API_KEY"]);
+  assert.deepEqual(kept.sort(), TOKEN_ENV_KEYS.filter((k) => !["CONTEXT7_API_KEY", "POSTMAN_API_KEY"].includes(k)).sort());
+  for (const k of kept) assert.equal(settings.env[k], "v", k);
+  assert.equal(settings.env.KEEP, "1");
+  assert.equal(settings.env.VC_RUN, "/p/vc-run.mjs");
+  assert.deepEqual(settings.enabledMcpjsonServers, ["github"]);
+  assert.equal(settings.other, 1);
+  assert.deepEqual(pruneSettingsEnv({ env: { POSTMAN_API_KEY: "x" } }).settings, {}, "an env left empty is removed");
 });
 
 test("gen-mcp: adds the landing-zone ignore entries to the project's .gitignore", () => withTempDir((dir) => {
@@ -510,43 +477,9 @@ function seedSession(dir, sid = "gen-mcp-sess-1") {
   return sid;
 }
 
-test("item 8b: an EMBEDDED placeholder (\"Bearer <POSTMAN_API_KEY>\") resolves when the key IS set", () => withTempDir((dir) => {
-  // The old injectTokens replaced a value ONLY when the entire string equalled a placeholder, so
-  // `"Authorization": "Bearer <POSTMAN_API_KEY>"` shipped unresolved even with the key set (→ 401).
-  // It now resolves to the ${VAR} indirection, in place — the embedded-position fix is unchanged.
-  runGenMcp(dir, ["--with", "postman"], { POSTMAN_API_KEY: "PMAK-testkey-1234567890" });
-  const cfg = JSON.parse(readFileSync(join(dir, ".mcp.json"), "utf8"));
-  const auth = cfg.mcpServers.postman.headers.Authorization;
-  assert.equal(auth, "Bearer ${POSTMAN_API_KEY}", "the embedded placeholder is substituted in place");
-  assert.doesNotMatch(auth, /<POSTMAN_API_KEY>/);
-  const settings = JSON.parse(readFileSync(join(dir, ".claude", "settings.local.json"), "utf8"));
-  assert.equal(settings.env.POSTMAN_API_KEY, "PMAK-testkey-1234567890");
-}));
-
-// This test used to assert the OPPOSITE: `--with postman` + a blank POSTMAN_API_KEY had to emit a
-// degraded_artifact. That encoded the bug — scaffold-secrets.mjs emits POSTMAN_API_KEY /
-// CONTEXT7_API_KEY as OPTIONAL and documents "blank ⇒ that MCP server stays disabled", so a blank
-// optional key is the operator's choice, not a degraded artifact. gen-mcp now leaves such an extra
-// DEFINED but dormant, which removes the cause of the observation rather than reporting it. The
-// warn+observation path below is unchanged and still guards any server we DO enable (see the 8c
-// audit); with the current template only optional extras carry a key placeholder, github falling
-// back to OAuth, so it stands as the safety net for the next template addition.
-test("item 8a: an unresolved OPTIONAL extra is left dormant and emits NO mcp_config observation", () => withTempDir((dir) => {
-  const sid = seedSession(dir);
-  // GITHUB token present (so github resolves), POSTMAN key ABSENT → postman must not be enabled.
-  runGenMcp(dir, ["--with", "postman"], { GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_present", POSTMAN_API_KEY: "" });
-  const enabled = JSON.parse(readFileSync(join(dir, ".claude", "settings.local.json"), "utf8")).enabledMcpjsonServers;
-  assert.ok(!enabled.includes("postman"), `postman must stay dormant (enabled: ${enabled.join(", ")})`);
-  // dormant, not deleted — the def stays so filling the key and re-running enables it
-  assert.ok(JSON.parse(readFileSync(join(dir, ".mcp.json"), "utf8")).mcpServers.postman, "postman stays DEFINED");
-  const obs = readObsRecords(dir).filter((o) => o.subject === "mcp_config");
-  assert.deepEqual(obs, [], "a deliberately-blank optional key is not a degraded artifact");
-  assert.equal(sid, "gen-mcp-sess-1");
-}));
-
-test("item 8a: a fully-resolved config emits NO mcp_config observation", () => withTempDir((dir) => {
+test("item 8a: a generated config emits NO mcp_config observation (the template carries no placeholder)", () => withTempDir((dir) => {
   seedSession(dir);
-  runGenMcp(dir, ["--with", "postman"], { GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_present", POSTMAN_API_KEY: "PMAK-set" });
+  runGenMcp(dir, ["--github-auth", "pat", "--vc-run", join(dir, "vc-run.mjs"), "--with", "figma"]);
   assert.equal(readObsRecords(dir).filter((o) => o.subject === "mcp_config").length, 0, "nothing unresolved ⇒ no observation");
 }));
 
