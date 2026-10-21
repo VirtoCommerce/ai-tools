@@ -58,8 +58,8 @@ Three buckets — this table is the definition; there is no separate configurati
 | Bucket | Source | Examples |
 |--------|--------|----------|
 | Plugin-supplied | `.env.defaults` | Sandbox card numbers, Builder.io public URL |
-| Customer-required (per env) | `.env.${TEST_ENV}` | `FRONT_URL`, `BACK_URL`, `STORE_ID`, `STOREFRONT_PROFILE`, `MODULES_ENABLED`, `JIRA_PROJECT_KEY` (+ `ENV_RISK`, optional — `test` when unset, set `production` by hand for a production stand) |
-| Customer-secret | `.env.local` (gitignored) | `USER_PASSWORD_*`, `ADMIN_PASSWORD_*`, `FIGMA_API_KEY` |
+| Customer-required (per env) | `.env.${TEST_ENV}` | `FRONT_URL`, `BACK_URL`, `STORE_ID`, `STOREFRONT_PROFILE`, `MODULES_ENABLED` (+ `ENV_RISK`, optional — `test` when unset, set `production` by hand for a production stand) |
+| Project-wide (every env) + customer-secret | `.env.local` (gitignored) | `JIRA_BASE_URL`, `JIRA_PROJECT_KEY`, `JIRA_EMAIL` / `ADO_ORG`, `ADO_PROJECT`, `CLIENT_REPO_ORG`; `USER_PASSWORD_*`, `ADMIN_PASSWORD_*`, `FIGMA_API_KEY` |
 
 Report: `X/Y` required vars set, plus active `TEST_ENV`. List any missing with their bucket.
 
