@@ -402,7 +402,7 @@
   "homepage": "https://github.com/VirtoCommerce/ai-tools#readme",
   "dependencies": {
     "@azure/identity": "^4.14.0",
-    "@playwright/mcp": "^0.0.77",
+    "@playwright/mcp": "^0.0.83",
     "csv-parse": "^7.0.3",
     "dotenv": "^17.4.2",
     "graphql": "^16.14.2",
