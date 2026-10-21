@@ -6,7 +6,7 @@
 // purpose, so there is no other way for a spec to reach them.
 import { test as base, expect, request, type APIRequestContext, type Page, type BrowserContext } from "@playwright/test";
 import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { env } from "./data.js";
@@ -34,9 +34,13 @@ function stateFileFor(role: string): string {
   return join(STATE_DIR, `${role}.json`);
 }
 
-/** Create `test-results/auth/<role>.json` by running the repo's own sign-in script (secrets stay in that process). */
-function ensureStateFile(role: string): string {
+/**
+ * Create `test-results/auth/<role>.json` by running the repo's own sign-in script (secrets stay in that
+ * process). `fresh` discards an existing file first — used once when a saved session has expired.
+ */
+function ensureStateFile(role: string, fresh = false): string {
   const file = stateFileFor(role);
+  if (fresh) rmSync(file, { force: true });
   if (existsSync(file)) return file;
   const out = spawnSync(process.execPath, [TSX_CLI, SAVE_STATE_SCRIPT, role], { cwd: ROOT, encoding: "utf-8" });
   if (!existsSync(file)) {
@@ -65,28 +69,32 @@ export const test = base.extend<{
 
   /**
    * A new context holding the saved session for `role`, HAR-recorded. Returns the page left on
-   * `FRONT_URL` (home) after the session check. Throws — a fixture error, not an expect failure —
-   * when the saved session does not actually sign in. Do not combine with the plain `page` fixture in
+   * `FRONT_URL` (home) after the session check. A saved session that no longer signs in (expired, or
+   * minted on another stand) is discarded and re-created ONCE; if the fresh one fails too, it throws —
+   * a fixture error, not an expect failure, so D8 classes it BLOCKED, never a product FAIL. Do not combine with the plain `page` fixture in
    * one test: both write `session.har` (later calls here write `session-<n>.har`).
    */
   signedInAs: async ({ browser }, use, testInfo) => {
     const opened: Array<{ context: BrowserContext }> = [];
     await use(async (role: string) => {
-      const storageState = ensureStateFile(role);
-      const har = opened.length === 0 ? "session.har" : `session-${opened.length}.har`;
-      // The project's viewport / locale (and trace + screenshot-on-failure) apply to any context made via
-      // browser.newContext() inside a test (Playwright's own before/after-create hooks), so none is repeated here.
-      const context = await browser.newContext({
-        storageState,
-        recordHar: { path: testInfo.outputPath(har), content: "embed" },
-      });
-      const page = await context.newPage();
-      opened.push({ context });
       const front = env("FRONT_URL");
-      await page.goto(`${front}${SIGNED_IN_ONLY_PATH}`, { waitUntil: "networkidle" });
-      if (await onSignInPage(page)) throw new Error(`signedInAs(${role}): session not signed in`);
-      await page.goto(front, { waitUntil: "load" });
-      return page;
+      for (const fresh of [false, true]) {
+        const storageState = ensureStateFile(role, fresh);
+        const har = opened.length === 0 ? "session.har" : `session-${opened.length}.har`;
+        // The project's viewport / locale (and trace + screenshot-on-failure) apply to any context made via
+        // browser.newContext() inside a test (Playwright's own before/after-create hooks), so none is repeated here.
+        const context = await browser.newContext({
+          storageState,
+          recordHar: { path: testInfo.outputPath(har), content: "embed" },
+        });
+        const page = await context.newPage();
+        opened.push({ context });
+        await page.goto(`${front}${SIGNED_IN_ONLY_PATH}`, { waitUntil: "networkidle" });
+        if (await onSignInPage(page)) continue; // a stale session: retry once with a freshly minted one
+        await page.goto(front, { waitUntil: "load" });
+        return page;
+      }
+      throw new Error(`signedInAs(${role}): session not signed in, even after re-creating ${role}.json`);
     });
     for (const { context } of opened) await context.close(); // flushes the HAR
   },
