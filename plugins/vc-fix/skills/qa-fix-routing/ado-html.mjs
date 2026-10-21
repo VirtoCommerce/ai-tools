@@ -261,7 +261,7 @@ export function buildBugFields(input = {}) {
   // scanned form layout (VCST-5702 ITEM 0) — never assumed. On the Agile process a Bug's body is
   // Microsoft.VSTS.TCM.ReproSteps while a User Story / Task use System.Description, and
   // System.Description may not even be ON the Bug form — writing to it then yields an item whose
-  // body is INVISIBLE (the OPUS symptom: create reported PASS on an off-form field). The caller
+  // body is INVISIBLE (the VCST-5702 symptom: create reported PASS on an off-form field). The caller
   // (create-workitem) passes the form-visible target it resolved via resolveSlots; absent a
   // contract these fall back to the three canonical refs (the "unverified defaults" rung).
   const bodyRef = input.bodyRef || "System.Description";

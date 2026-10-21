@@ -1,5 +1,5 @@
 {
-  "_note": "vc-perf REUSES vc-fix's project-profile.json (via the vc-fix dependency) and ADDS this `perf` block through an additive deepMerge. This file documents ONLY the perf delta; the base fields (tracker, vcs, repos, runtime, paths) come from vc-fix's /project-init and are not restated here. Values below are placeholders for a client project — replace per deployment.",
+  "_note": "vc-init owns project-profile.json and is its only writer (vc-perf depends on it); /perf-init ADDS this `perf` block through vc-init's skills/project-init/profile-set.mjs --merge 'perf=<json>' (an additive deepMerge) — never edit the profile by hand. This file documents ONLY the perf delta; the base fields (tracker, vcs, repos, runtime, paths) come from vc-init's /project-init and are not restated here. Values below are placeholders for a client project — replace per deployment.",
   "perf": {
     "backendUrl": "https://localhost:8090",
     "aspireHostPath": "../../aspire-host",
