@@ -76,7 +76,7 @@ Fuller treatment in the ai-tools repo: `.claude/knowledge/execution/tracker-ops.
 
 The one source for whether a report page is published (moved here from `/qa-verify-fix` 6A).
 
-- **Native project** (`projectType` other than `client`, or no profile): publishing uploads a run's
+- **Native project** (`projectType` other than `client`): publishing uploads a run's
   evidence to an external host, so publish `page.html` as an Artifact **only after the operator agrees**
   (`--confirmed` covers posting the comment, never this). On agreement the link goes into the comment and
   the ticket's machine record; a private page reaches no one, so the operator sets sharing to the
