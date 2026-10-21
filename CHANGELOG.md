@@ -8,7 +8,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
-## `vc-init` `0.3.1`: the `$VC_RUN` bridge no longer takes `~/.claude` for a project — 2026-10-21
+## `vc-init` `0.3.3`: the `$VC_RUN` bridge no longer takes `~/.claude` for a project — 2026-10-21
 
 **Fixed.** `bridge/run.mjs` `findDeclarations` walked up from the cwd and stopped at the first
 `.claude/vc-secrets*.json`, which for any undeclared folder under `$HOME` was the user-scope
@@ -16,6 +16,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 own declaration instead of refusing. It now skips `~/.claude` exactly as vc-secrets' `configPaths` does. This was
 the `run.test.mjs` failure on Windows machines with a user-level declaration (exit 69 instead of 64), where
 `os.tmpdir()` sits inside the profile.
+
+## `@playwright/mcp` 0.0.83 — `vc-fix` `0.11.3`, `vc-init` `0.3.2` — 2026-10-21
+
+**Changed: the `@playwright/mcp` pin moves 0.0.77 → 0.0.83 everywhere it is written** — root `package.json`,
+`ci/lib/lane-mcp.ts` (`PLAYWRIGHT_MCP_PACKAGE`), `ci/run-monitor.ts`, `templates/.mcp.json.example`,
+`docs/onboarding.md`, and in the plugins `vc-init`'s `templates/.mcp.json.example` (what `/project-init` writes
+into `.mcp.json`) and `vc-fix`'s `package.json` (`@playwright/test` and `playwright` went to 1.64.1 in #497). Probed
+2026-10-21 over stdio on Windows: chrome, edge and firefox lanes (with the occlusion pref) navigate and click on
+0.0.83 exactly as on 0.0.77, and a bare-filename screenshot still lands in the server cwd, so `/qa-bug`'s Stage 5
+reconcile stays required.
+
+**Migration: per machine.** Change `@playwright/mcp@0.0.77` to `@playwright/mcp@0.0.83` in your `.mcp.json`, run
+`npx @playwright/mcp@0.0.83 install-browser chromium` and `… install-browser firefox` (0.0.83 bundles its own
+Playwright build and needs its own browsers), then restart the MCP servers.
 
 ## `vc-init` `0.3.0`: the tracker / code-host connection lives in `.env.local`, once — 2026-10-21
 

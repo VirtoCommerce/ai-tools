@@ -10,7 +10,7 @@
   },
   "license": "SEE LICENSE IN LICENSE",
   "dependencies": {
-    "@playwright/mcp": "^0.0.77",
+    "@playwright/mcp": "^0.0.83",
     "dotenv": "^17.4.2"
   },
   "devDependencies": {
