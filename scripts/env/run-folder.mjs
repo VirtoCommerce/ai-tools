@@ -19,6 +19,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { dirname, join } from 'node:path';
 import { BindError, bindSessionEnv, describeSessionEnv, pruneStale } from '../lib/session-env.mjs';
 import { sessionEnvFile } from '../lib/resolve-test-env.js';
+import { dedicatedEnvs } from '../lib/env-layers.mjs';
 import { TICKET_KEY, allRunDirs, completeTemplate, priorRunDirs, resolveRunDir, runDirTemplate, laneScreenshots, runLayout, sessionRun } from '../lib/run-dir.mjs';
 import { loadEnv } from '../lib/load-env.mjs';
 
@@ -51,6 +52,13 @@ function listPrior(ticket, own) {
   for (const p of prior) console.log(`    ${p.dir}  (${p.env ?? 'before the env level'})`);
 }
 
+/** The env a ticket's own QA_ENV_PATH folder defines, when it defines exactly one (`.env.vcst_6314` for VCST-6314);
+ *  else null. A ticket run with no env argument binds it instead of the checkout default. */
+function ticketStand(ticket) {
+  const envs = new Set(dedicatedEnvs().filter((e) => e.ticket === ticket && !e.secrets).map((e) => e.env));
+  return envs.size === 1 ? [...envs][0] : null;
+}
+
 function use() {
   if (args.includes('--clear')) {
     const had = runFile && existsSync(runFile);
@@ -62,7 +70,11 @@ function use() {
   const positionals = args.filter((a, i) => !a.startsWith('--') && !(envAt !== -1 && i === envAt + 1));
   const ticket = positionals[0]?.toUpperCase();
   if (!ticket || !TICKET_KEY.test(ticket)) throw new BindError(`run:use needs a ticket key (VCST-1234, or an Azure Boards id) first, got "${positionals[0] ?? ''}"`);
-  const envArg = value('--env') ?? positionals[1];
+  const named = value('--env') ?? positionals[1];
+  // No env named: the ticket's own stand when its QA_ENV_PATH folder defines exactly one env, else the default.
+  const ownStand = named ? null : ticketStand(ticket);
+  if (ownStand) console.log(`env: ${ownStand} — ${ticket}'s own stand (the only env its QA_ENV_PATH folder defines)`);
+  const envArg = named ?? ownStand ?? undefined;
   // A run folder that cannot resolve must change nothing: keep the env binding to put it back, and write the run
   // binding only once the folder resolved — else the new env would sit beside the previous run's folder.
   const envFile = sessionEnvFile();

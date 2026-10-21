@@ -15,6 +15,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { dirname, join } from 'node:path';
 import { BindError, bindSessionEnv, describeSessionEnv, pruneStale } from '../lib/session-env.mjs';
 import { sessionEnvFile } from '../lib/resolve-test-env.js';
+import { dedicatedEnvs } from '../lib/env-layers.mjs';
 import { TICKET_KEY, completeTemplate, priorRunDirs, resolveRunDir, runDirTemplate, laneScreenshots, runLayout, sessionRun } from '../lib/run-dir.mjs';
 import { loadLayeredEnv } from '../lib/load-layered-env.mjs';
 
@@ -32,6 +33,13 @@ const quote = (v) => {
   throw new BindError(`the run folder path ${v} holds both ' and \` — no dotenv quoting carries it`);
 };
 
+/** The env a ticket's own QA_ENV_PATH folder defines, when it defines exactly one (`.env.vcst_6314` for VCST-6314);
+ *  else null. A ticket run with no env argument binds it instead of the project's default. */
+function ticketStand(ticket) {
+  const envs = new Set(dedicatedEnvs().filter((e) => e.ticket === ticket && !e.secrets).map((e) => e.env));
+  return envs.size === 1 ? [...envs][0] : null;
+}
+
 function use() {
   if (args.includes('--clear')) {
     const had = runFile && existsSync(runFile);
@@ -47,7 +55,11 @@ function use() {
   // binding only once the folder resolved — else the new env would sit beside the previous run's folder.
   const envFile = sessionEnvFile();
   const envBefore = envFile && existsSync(envFile) ? readFileSync(envFile, 'utf8') : null;
-  if (bindSessionEnv(value('--env') ?? positionals[1], { reason: `run-folder use ${ticket}`, ticket }) === null) {
+  const named = value('--env') ?? positionals[1];
+  // No env named: the ticket's own stand when its QA_ENV_PATH folder defines exactly one env, else the default.
+  const ownStand = named ? null : ticketStand(ticket);
+  if (ownStand) console.log(`env: ${ownStand} — ${ticket}'s own stand (the only env its QA_ENV_PATH folder defines)`);
+  if (bindSessionEnv(named ?? ownStand ?? undefined, { reason: `run-folder use ${ticket}`, ticket }) === null) {
     console.log('not in a Claude Code session (no CLAUDE_CODE_SESSION_ID): nothing is bound; TEST_ENV resolves per process');
   }
   const { testEnv, lines } = describeSessionEnv({ ticket });
