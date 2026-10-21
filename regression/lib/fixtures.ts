@@ -69,33 +69,26 @@ export const test = base.extend<{
    * when the saved session does not actually sign in. Do not combine with the plain `page` fixture in
    * one test: both write `session.har` (later calls here write `session-<n>.har`).
    */
-  signedInAs: async ({ browser, viewport, locale }, use, testInfo) => {
-    const opened: Array<{ context: BrowserContext; page: Page }> = [];
+  signedInAs: async ({ browser }, use, testInfo) => {
+    const opened: Array<{ context: BrowserContext }> = [];
     await use(async (role: string) => {
       const storageState = ensureStateFile(role);
       const har = opened.length === 0 ? "session.har" : `session-${opened.length}.har`;
+      // The project's viewport / locale (and trace + screenshot-on-failure) apply to any context made via
+      // browser.newContext() inside a test (Playwright's own before/after-create hooks), so none is repeated here.
       const context = await browser.newContext({
-        viewport,
-        locale,
         storageState,
         recordHar: { path: testInfo.outputPath(har), content: "embed" },
       });
       const page = await context.newPage();
-      opened.push({ context, page });
+      opened.push({ context });
       const front = env("FRONT_URL");
       await page.goto(`${front}${SIGNED_IN_ONLY_PATH}`, { waitUntil: "networkidle" });
       if (await onSignInPage(page)) throw new Error(`signedInAs(${role}): session not signed in`);
       await page.goto(front, { waitUntil: "load" });
       return page;
     });
-    for (const { context, page } of opened) {
-      if (testInfo.status !== testInfo.expectedStatus) {
-        // The built-in screenshot-on-failure only sees the `page` fixture, not contexts made here.
-        const shot = await page.screenshot().catch(() => undefined);
-        if (shot) await testInfo.attach("signedInAs-failure.png", { body: shot, contentType: "image/png" });
-      }
-      await context.close(); // flushes the HAR
-    }
+    for (const { context } of opened) await context.close(); // flushes the HAR
   },
 
   apiAs: async ({}, use) => {
