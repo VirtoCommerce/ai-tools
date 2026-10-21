@@ -1,0 +1,253 @@
+# Steps 1a–1b — intake: fetch, route, the two I/O waves
+
+Split out of [`../../commands/qa-test.md`](../../commands/qa-test.md), which keeps the ordered list and the
+gate and cites this file for the detail. Read it when you are running `1a`/`1b`, or changing what the
+pipeline establishes before it dispatches anything.
+
+**The env/build pre-flight is [`/preflight`](../preflight/SKILL.md), and only that** — this file is the
+intake around it: fetch, routing, the opening status hop, the two I/O waves, the axes and `2-map`.
+
+**Everything downstream depends on this step and nothing here is optional.** `1a` decides which pipeline
+runs at all; `1b` establishes what build it runs against and derives the six axes. A wrong answer here is
+not corrected later — it is inherited by every step that follows.
+
+The **derivation contract for the six axes** (2b–2g) is [`axes.md`](axes.md); this file covers the fetch,
+the classification, the routing branch, the **opening status hop** that closes `1a`, and the wave
+structure.
+
+**`1a` ends with the OPENING STATUS HOP** — on the `feature-test` branch only, after routing, `qa-lead`
+moves the ticket to its in-testing status with no confirmation. Rules, skips and the record:
+[`.claude/knowledge/execution/ticket-status-transitions.md`](../../knowledge/execution/ticket-status-transitions.md).
+It is here rather than at Step 4 because *in testing* means **QA owns this ticket**, which is true when the
+run is accepted — at Step 4 the board read the ticket as unclaimed through `1a`-`3`, i.e. through the
+context gathering, the Test Model, authoring and seeding that are 30+ minutes of real QA work on FULL.
+
+---
+
+## 1a — Fetch the scope, classify type × status, route
+
+**Fetch first** — every later sub-part depends on these fields.
+
+- **Tracker ticket** — Atlassian MCP `getJiraIssue` (summary, Type, Priority, Status, Components, ACs). Not
+  configured → ask the user to paste the details. Linked PR → GitHub MCP `get_pull_request` +
+  `get_pull_request_files`. Confirm the ticket is in a testable status.
+- **Read the ticket comments (both paths, always).** The description is the plan; the **comments are what
+  actually happened** — the real repro, PO/dev clarifications, scope changes, "fixed in build X" /
+  "reopened because…" notes, and prior QA findings the description never carries. Fold the load-bearing
+  facts into the Test Model's `Ticket signals`; a comment that narrows the repro or moves the goalposts
+  changes what you test. On a PR, review threads flag the reviewer's own risk areas.
+- **Analyze the attachments (both paths, always).** Screenshots, mockups, logs, HAR and short videos are
+  primary evidence — **open them**, don't just note they exist. A screenshot usually shows the exact
+  expected-vs-actual (seeds 5-verdict.1 and each case's assertion); a design mockup is the visual oracle; a
+  log/HAR/stack trace narrows the repro and the affected layer. Download each attachment and `Read` it.
+  Reference the concrete finding, not the filename. An attachment that can't be fetched is a **noted gap**,
+  never a silent skip.
+- **Resolve the parent Epic** (FULL only; on FAST name it in one line). Fetch the Epic (summary +
+  Epic-level ACs) and its child-story list with statuses, then classify the siblings: **Done** = the
+  integration surface this story plugs into (its seams must still work → fold into the checklist +
+  regression selection); **In-progress / blocked** = dependencies (a hard one may force a BLOCKED verdict or
+  a stubbed boundary — say which); **this story** = the slice under test. Place the story in the Epic's
+  end-to-end flow. Lands in the model's `Epic context`. No parent Epic ⇒ skip with a one-line note.
+- **A PR** — map extensions: `.cs`/`.csproj` → Backend, `.vue`/`.ts`/`.tsx`/`.jsx` → Frontend,
+  `.css`/`.scss` → Styling. This is the coarse read; `1b` item 2b refines it into the layer token set
+  (`storefront`/`admin-spa`/`api`/`module`/`platform`) using the repo identity, which the extension
+  alone cannot give — a `.cs` file is `api` in `*ExperienceApi*` and `module` anywhere else.
+  **A feature name** — use it to determine the affected areas.
+- **Identify applicable domain(s)** — map to the `/qa-checklist` domains (`ls .claude/skills/qa-checklist/` for the live list).
+
+**Then classify and route** — per `ticket-routing.md`, which owns the matrix:
+
+1. **Normalize the type** — JIRA `fields.issuetype.name` / Azure `System.WorkItemType` per `tracker-ops.md`
+   §5a, mapped to a canonical type through the profile's `workItemTypes` map. For a PR / bare feature, infer
+   from diff size + surface.
+2. **Normalize the status to a role** — `fix-ready` / `hotfix-ready` / `not-fixed` / `testable`, resolved
+   live (`defect-lifecycle-workflow.md` §2 + `tracker-ops.md` §Live transition discovery). Never hardcode a
+   status name.
+3. **Look up the FLOW** in `ticket-routing.md` §4, then the **EFFORT** (FAST/FULL) in §5 when the flow is
+   `feature-test`. Record **flow + type + path** — all three are `summary.json` fields, persisted at 5-report.3; the path gates
+   Steps 1c/1d, 3 and 5. Fail-safe defaults (§6): unresolvable → `feature-test` FULL; when in doubt → FULL.
+4. **Derive the SHAPE CLASS** — `ticket-routing.md` §5c, `feature-test` branch only. It costs **no I/O**: the
+   signals come off the same diff read items 1 and 3 already did, and `1b` item 2c re-reads the same
+   extensions for `visual_surface`. It is the one classifier that fails **closed** — §5c says why, and the
+   direction is the opposite of every other default on this page. Record `summary.json.shape_class` with its
+   sources, as every axis does; `null` means never derived, which is a gap rather than a `false`. What a
+   `ui-kit` run then owes: [`ui-kit-class.md`](ui-kit-class.md).
+
+Then branch on the resolved FLOW:
+
+- **`feature-test`** (Story / Task / Technical task / Review task / Epic, and a `not-fixed` Bug) → continue to `1b` and
+  run the five-step pipeline at the resolved FAST/FULL effort. (A `not-fixed` Bug runs FAST to
+  reproduce/characterize the defect live and attach fresh evidence — there is no fix to *verify* yet;
+  state the next step is `/vc-fix:qa-fix <ticket-key>`.) This is the rest of this document.
+- **`verify-fix`** (a `fix-ready` Bug) → **run `/vc-fix:qa-verify-fix` inline (see below)**; do not run Steps 2–5.
+- **`hotfix-verify`** (a `hotfix-ready` Bug) → **STOP** with a one-line pointer: `Run /qa-hotfix-check
+  <ticket-key>` (hotfix delivery/verification is that command's job). File nothing; transition nothing.
+- **`Sub-task`** → resolve the parent work item and re-enter this classification as the **parent's**
+  type × status; route on that.
+
+### Flow = `verify-fix` — run `/vc-fix:qa-verify-fix` inline
+
+`/qa-test` **runs the `/vc-fix:qa-verify-fix` pipeline inline** in this same session — **execute its Steps 0–7 as
+written** ([`qa-verify-fix.md`](../../../plugins/vc-fix/commands/qa-verify-fix.md)); do not duplicate or paraphrase them here. The
+feature-test authoring / AC-reconcile / promotion machinery is **not** run: a fix-ready Bug needs its fix
+verified, not new cases authored. The run ends at the verify-fix verdict.
+
+**Fail-safe (per `ticket-routing.md` §6):** if a `fix-ready` Bug has no STR **and** no linked fix PR,
+`verify-fix` has nothing to prove RED→GREEN against → fall back to the `feature-test` FAST path and note
+the missing repro basis, rather than forcing an empty verification.
+
+## 1b — Pre-flight (`/preflight`), the I/O waves and the six axes
+
+**TWO I/O waves** — the round-trip is the unit being saved ([`sequencing.md`](sequencing.md) §Concurrency).
+This table is the one statement of the structure; `commands/qa-test.md` and `sequencing.md` cite it.
+
+| Wave | Issue in ONE message |
+|---|---|
+| *(before A)* | **2g `domain_map`** — the slug from `1a` + one frontmatter read; no other input, so it derives first, and `2-map` in wave A reads in the order it sets |
+| **A** | **`/preflight ticket …`** (item 1) — env health, `declared`/`deployed`, the `2-release` ledger Δ, sprint, duplicate check and MCP availability in one call · **2-map** · 2b's local reads |
+| *(no I/O)* | derive the other **five** axes (2b–2f) from what wave A returned — pure computation |
+| **B** | 2d's two refreshers **and** 2e's `tc:scope` scan (scope + risk terms only) **and** 2f's `td:validate` resolution check, concurrently — the items gated on a derived token. `2d` costs ~8.6 s; `tc:scope` ~1 s |
+
+**The SCAN is all that happens here.** Disposing its hits is the `2a` phase of Artifact A at Step 3 — one
+agent, `test-management-specialist`, disposes and then authors ([`coverage-triage.md`](coverage-triage.md)
+§2a-own). Nothing in `1b` waits on that, and this scan's at-risk rows are also charter source 5 for `3x`.
+
+**The wave-B scan carries SCOPE and RISK TERMS only — never `--cases`/`--also-ids`.** Those model what
+will execute, and at wave B neither input exists: Artifact A is authored at Step 3, and the `RE-BASE` ids
+are the *output* of the disposition this very scan feeds. Passing them here would mark every future Draft
+row `FILTERED_OUT` — the exact failure the step exists to prevent. The run-fate prediction is made once the
+inputs exist, at the **Step-3 gate re-run**. Measured rationale and the list of things that must **not** be parallelised — the serial suite
+append, one `suites:sync`, no verifier beside its own doer, no two suites on one disposable fixture set:
+[`skills/qa-test/sequencing.md`](sequencing.md) §Concurrency.
+
+1. **`/preflight ticket --ticket <KEY> --components <…> [--expect <PR module@version>] [--storefront]`**
+   — one call for env health, `declared` vs `deployed` (a failed probe is `UNKNOWN`, never `declared`),
+   the release-ledger Δ, `{SPRINT}`, the duplicate check and MCP availability, in one output form with
+   a remediation loop ([`../preflight/SKILL.md`](../preflight/SKILL.md)). **What `/preflight` returns is a
+   fact; what it means here is `/qa-test`'s:** a `breaking:*` row in the component under test **forces
+   FULL** and is a third leg for `1d`'s AC↔implementation check; a `not-deployed:*` or `expect` row is
+   BLOCKED-on-deploy — never a FAIL, never a filed bug, never `{DOC}`. **PR testing:** `--expect` is the
+   linked PR's module and version (`module@version`; a storefront PR is `vc-frontend@<theme zip version>`); a NOT READY `expect` row carries the `/qa-deploy-pr`
+   remedy and `/preflight` asks before running it. Store the block as `summary.json.preflight`.
+   **`summary.json.build` (the `build` the 2b row reads) keeps its contract:** `build.declared` ← `facts.declared` (the git state; `build.relevant_modules`
+   is its module list and is never a version source) · `build.deployed` ← `facts.deployed` (ground truth;
+   `UNKNOWN` stays `UNKNOWN`, never filled from `declared`): `build.deployed.platform` = `facts.deployed.platform` (the live version from the Admin page, or `"UNKNOWN (<reason>)"`),
+   `build.deployed.relevant_modules` = `{Id: version}` from `facts.deployed.modules` for the run's components (`UNKNOWN`
+   when `deployed` is) · `build.theme` = `facts.declared.theme`, labelled declared · `build.deployed.theme` = `facts.deployedTheme` (the live storefront bundle's version, or `"UNKNOWN (<reason>)"`) · `build.releasedThrough` ← `facts.ledger`
+   (the Δ vs `deployed`: `.behind[]` ← `facts.ledger.releasedNotDeployed[]`, `.breaking[]` ← `facts.ledger.breaking[]`;
+   `build.releasedThrough` is `UNKNOWN` when `facts.ledger` or its `releasedNotDeployed` is — never an empty or full `behind[]`). `{SPRINT}` is the `sprint` fact; if it
+   is null, create `reports/tickets/<sprint>/` once the sprint name is known (the `sprint` row's remedy).
+2b–2g. **Derive the SIX PRE-FLIGHT AXES — one mechanism, six instances.** Pure computation over
+    what wave A returned; no operator input. Single source of truth for the contract they share and the
+    ways they differ: [`skills/qa-test/axes.md`](axes.md). **Cite it; do not restate it.**
+
+    | | Token | Derived from | Unresolved ⇒ | When true |
+    |---|---|---|---|---|
+    | **2b** | `layer` | the PR diff → repo identity (`REPO_PROFILES` + `resolveOwningSubApp()`) · `regression.suites[]` → `config/test-suites.json` · which of theme/module/platform `build` moved · `bugs_filed[]` → fix-PR repo · the ticket's Components → `module-suite-map.md` | **`null` + `UNRESOLVED`** — fails **CLOSED**; **never default to `storefront`** | 5-status/5-docs audience routing |
+    | **2c** | `visual_surface` | `.vue`/`.scss`/`.css`/`.html`/blade/icons/tokens in the diff · derived layer `storefront`/`admin-spa` · a target suite `layer: frontend` | `true` | Step 4 dispatches `ui-ux-expert` ([`visual-axis.md`](visual-axis.md)) |
+    | **2d** | `contract_surface` | `.graphql`/`*ExperienceApi*`/`*.Web/Controllers`/GraphType files · derived layer `api` · suite tags `graphql`/`xapi` · an AC naming a query/mutation/field | `true` | **both** refreshers, concurrently, in ONE message ([`contract-refresh.md`](contract-refresh.md)) |
+    | **2e** | `coverage_surface` | the ticket's `1a` domains + derived layer + the target suites' manifest `domain`/`tags`/`requiresModules` — **never diff paths** (a path token may only ADD a suite) · the observables the change moves · the `BL-*`/`ECL-*` it amends | `true` | `tc:scope` in wave B, **scope + risk terms only** ([`coverage-triage.md`](coverage-triage.md)) |
+    | **2f** | `data_surface` | **a LADDER over the four data layers, in order** (`.claude/rules/test-data.md`): (1) the `1e-plan` rows' (FAST: the Artifact-B conditions') own `@td()`/`{{VAR}}` refs → `npm run td:validate` in wave B · (2) **`live-discover` — can the env supply it ALREADY?** ([`live-discovery.md`](../../knowledge/execution/live-discovery.md)) · (3) the Part-0 value chain: does any link under test need a **divergence** those values lack · (4) the ticket/diff: a genuinely new entity type, store/org/role, pricing or inventory shape | **`false`** — fails **CLOSED** | Step **3a** dispatches `test-data-engineer`. **`false` ⇒ no dispatch**, and the run names the fixtures covering the plan ([`authoring.md`](authoring.md) §3a) |
+    | **2g** | `domain_map` | the `1a` slug → `.claude/knowledge/domain/<name>.md` frontmatter (`domain_slug`, `stale_after_days`) + the `.mind-map.json` beside it | **`unresolved` + recommend** — fails OPEN on the build, never blocks | `2-map`'s read order; FULL builds a missing map at `1c-map` |
+
+    **The union of 2b's sources 1 and 2 decides `layer`**; more than one member ⇒ `cross-layer`, with the
+    members in `release.layers[]` and sources 3–5 used only when 1 and 2 both yield nothing. Sources 1 and
+    2 disagreeing while `1a` routed the ticket single-layer FAST ⇒ `layers_conflict: true`, surfaced in the
+    fragment's own footer — a contradiction between the routing decision and the layer is for a human.
+
+    **Three rules, from `axes.md` §2 — they apply to all six and are not repeated per axis:** each token
+    is **derived, never asked, never defaulted**; each records `<axis>.surface_source[]` **always**, where
+    `null` means the source was not consulted (a gap, not a zero); and a **`false` is recorded with its
+    sources**, because an omitted block reads as a clean axis. **None of them changes the effort** — an
+    axis is a LANE trigger, never an EFFORT trigger, and never promotes FAST → FULL.
+
+    **Effort (`axes.md` §4): FULL derives and runs all six. FAST derives and applies `layer` and
+    `data_surface`** — the first because 5-status/5-docs need it and it dispatches nothing, the second because it can
+    only ever *remove* a dispatch, so gating it behind a flag would restore the cost it exists to end. The
+    other **three** — `2c`/`2d`/`2e` — are **opt-in** there via `--visual` / `--contract` / `--coverage` /
+    `--axes`, default off. Each of those has run at most **once in 28 recorded runs**, so mandatory-on-FAST
+    was a prediction rather than a measurement; revisit per axis at 5+ runs.
+
+    **2d is the only axis that issues I/O in `1b`, and it must run BEFORE `1c` dispatches** — `1c`, `1d`,
+    `1e` and the Step-3b authoring pack all read `graphql-schema.md`, so a refresh after them changes
+    nothing. Their briefs then carry the snapshot's **rev**, never just its path. A failed refresh records
+    `UNKNOWN` and **never** falls back to the committed snapshot.
+
+    ```bash
+    npm run schema:refresh                      # → knowledge/api/graphql-schema.md — ~8.5s
+    npm run graphql:fixtures:validate:refresh   # → the runner cache + the fixture gate — ~1.8s
+    ```
+
+---
+
+## 2-map — read what already exists on this surface (MANDATORY, both paths)
+
+Item **2-map** of wave A above. `commands/qa-test.md` names it in its `1b` summary and cites this section
+for the rest. It is the step that decides whether the run starts from what is already known or
+re-derives it, so its two reads happen **in this order**, and the order is the point: **the DOMAIN
+MAP first, then the per-ticket prior art.**
+
+**Read order is decided by the `domain_map` token (2g), not by prose.** The axis is derived before this
+item runs and its four states each say what to do — `PRESENT` read it first · `STALE` read it and treat
+every claim as a hypothesis · `ABSENT` skip to the prior art · `unresolved` recommend. **Contract, fail
+direction and the two-moment all-layer rule: [`axes.md`](axes.md) §2g — cite it, do not
+restate it here.** Record the block; **`null` means the axis never ran, which is a gap, not `ABSENT`.**
+
+**1. The domain map** — `.claude/knowledge/domain/<name>.md` whose `domain_slug` matches this ticket's
+domain (shape: `domain-map.md`). The feature-scoped, persistent answer to *what exists and where*: actors,
+value chain, **surface inventory per layer**, where the layers **disagree**, and the shape of existing
+coverage. It supplies `1e` clause 11's chain position and clause 11b's surface list, and its `D*`
+disagreement rows are **ready-made defect hypotheses** — already grounded, already numbered. Like the
+release ledger it is a **pointer index that can never ground an assertion as `{DOC}`**.
+**On `ABSENT` + an all-layer chain, `2g` sets `recommended: true`.** **FULL builds the map in this run**
+(item `1c-map`); **FAST recommends `/qa-domain-map <slug>` in one line and proceeds.** Either way nothing
+blocks — a FAST run, a single-layer chain or a failed build records `Domain map: ABSENT — chain position
+unverified` at `1e`. **`STALE` is never auto-refreshed.**
+
+**1a. Its mind map**, when 2g recorded `domain_map.mind_map` (`/qa-test-mind-map`). This is the behaviour
+graph beside the map. Read the nodes in the ticket's slice: they are what `1e` Part 0 cites and what the
+`1e-plan` rows name as `behavior`. Its `DRIFT` and `UNVERIFIED` nodes are open questions to hand to `1c`.
+Then read `npm run models:check -- --json` for the same slice and hand two lists to Artifact A's `2a`:
+nodes with no stamped case (`TM-014`) and integration points no case exercises (`TM-032`), which are
+the gaps the run authors when `2a` confirms them, and suspect cases (`TM-017`), which `2a` disposes
+like any other hit ([`coverage-triage.md`](coverage-triage.md) §3).
+Like the map, it is never an oracle. `null` ⇒ skip it; no run builds one inline ([`axes.md`](axes.md) §2g).
+
+**2. The per-ticket prior art**, read directly — `reports/ba/<domain folder>/` (prior BA analysis),
+`reports/ba/test-models/` (prior test models), and the tickets already tested here
+(`reports/tickets/**/summary.json`). (The generated index that used to front these sources was removed 2026-09-08 — read the sources directly, 
+dated by their filenames or `git log`.) 
+Two questions, and the second is the one that lets you design a test.
+
+**The bibliography** — carry four things forward: the prior BA analysis, the prior test model, the domain
+knowledge docs (the mind map's path among them, when 2g found one), and the tickets already tested here.
+
+**The `Test object` block — what the thing IS.** Purpose (the value chain) · the **operations** you can
+perform on it · the **data** whose properties its assertions read · the **variants** that change its
+behaviour without changing its code · the **constraints** that must hold, with what a violation costs.
+Carry these into `1e`: they are the condition space's raw material, and a `1e` that starts from them is
+modelling a mechanism rather than enumerating screens. **You cannot design an experiment on an object
+whose properties you do not know** — you can only walk its surfaces, which is the measured Loyalty
+Missions failure (127 cases, 71 of them placing zero orders, the mechanism end-to-end at 11%).
+
+**`UNDECLARED` in that block is the run's FIRST finding, not a blank.** Purpose and reverse edges live in
+exactly one place — a Test Model Part 0 — so `UNDECLARED` means nobody has written down what this surface
+is for (measured: **1 of 13 domains** has a declared purpose). On FULL, establishing it is `1e`'s opening
+move and writing the model fills the cell for the next ticket; on FAST, say so in the checklist rather
+than inventing one. Name in one line what you found, and **name it when a domain has
+none** — `sales-rep` carries 11 prior BA deliverables and 2 tested tickets, `auth-security` carries zero,
+and those are different starting positions.
+
+Two limits travel with it. It is a **pointer index, never behaviour** — the same limit
+`release-ledger.md` carries, so it can tell you a prior analysis exists and can never ground an assertion
+as `{DOC}`. And **every entry is DATED because every entry may be stale**: prior art is a hypothesis about
+current behaviour, confirmed against the `2-release` ledger Δ **since that document's date** and a live
+check before anything is built on it (the map's own §1 carries the axis table and the
+`CONFIRMED`/`DRIFT`/`MISSING`/`UNVERIFIED` verdicts). Reading a stale deliverable and repeating it is
+worse than reading none, because it arrives with a written deliverable's authority. Three consumers: the `1c` brief (so
+`ba-system-analyzer` starts from the prior analysis instead of re-deriving it), `1e` (**a later round of the
+SAME ticket amends that model in place; another ticket on this surface writes its own file and carries the
+predecessor's Part 0 forward, citing it** — what is forbidden either way is a second independently-derived
+model of one surface, and VCST-5346 already has two:
+[`test-model.md`](../qa-test-model/test-model.md) §Why it is a durable file), and `5-docs` (an existing guide
+for this surface is amended, never forked).

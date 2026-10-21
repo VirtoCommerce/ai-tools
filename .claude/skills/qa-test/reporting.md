@@ -90,26 +90,12 @@ comment, never a second one** (`tracker-ops.md` §0). **Every post and amend pas
 `declared`. That is what lets a retest of a NEW build post a new comment instead of being folded into
 the old one (§0 rule 5):
 
-```
-QA Complete — [X] cases, [Y] passed, [Z] failed.
-AC review: [N] story ACs ([weak]/[ok]), [M] gap-ACs; AC↔impl: [satisfied]/[drift]/[contradicts]/[not-found]. AC coverage: [pct]%.
-DoD: [met]/[total] ([pct]%), or "none stated".
-Change-scoped regression: [suite IDs] — [pass rate] ([RUN_ID]).
-Regression triage: [N] confirmed bugs, [M] test-case fixes applied, [K] dismissed.
-App Insights (test window): [N] correlated — [confirmed/needs-review/none].
-Business rules verified: [BL-* list]. Bugs: [list, with relationship — sub-task/linked/standalone — or None].
-Not filed (below severity floor): [N] Low — [one line each + reports/bugs/open/low/<file>.md], or None.
-Release gate: [GO/CONDITIONAL GO/NO-GO recommendation]. Decision: [verdict].
-Release note: [<layer>/<audience> — /ba-analyze docs release <ticket-key>], or "none — <refusal>".
-Evidence: reports/tickets/{SPRINT}/<ticket-key>/screenshots/
-```
-
-The `Release note` line is **mandatory too, and says `none — <refusal>` when there is no fragment** —
-the person reading the tracker is the one who will later run the aggregate, so a silent omission there
-costs a ticket nobody knows to include.
-
-The `Not filed` line is **mandatory and says `None` when there are none** — an omitted line is
-indistinguishable from a run that found no Low issues.
+**Runs after §3 has written `summary.json`** — the comment is rendered from it:
+`/vc-fix:qa-report reports/tickets/{SPRINT}/<ticket-key>/summary.json --kind test --confirmed --lede "<one to three sentences: what the ticket now does on the surface a user touches, and what the verdict turns on>" --set RELEASE_GATE="<§1 recommendation>"`.
+The template (`plugins/vc-fix/skills/qa-report/templates/comment-test.md`) is the only copy; its `Not filed` and
+`Release note` lines are mandatory and print `None` / `none — <refusal>` rather than disappear, because an omitted
+line is indistinguishable from a clean run. Skill refused ⇒ the vc-fix install predates it: tell the user to run
+`/plugin update` and stop this step — never type the comment by hand.
 
 **`--iterate`:** this full template is posted **once, at loop exit**. Rounds 1…N−1 write the much
 shorter **round delta** into that same comment instead — round 1 posts it, later rounds and the exit

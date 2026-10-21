@@ -144,30 +144,21 @@ IMGTL-026,Thumbnail Task Progress Monitoring,Processing,Functional,Medium,4m,Thu
 - Task status transitions from 'Running' to 'Completed' after all images are processed
 - Final status clearly indicates completion
 - No timeout or error during the monitoring period",,Not Automated
-IMGTL-027,Tooltip Validation on Thumbnail Settings,UI Operations,Functional,Medium,3m,Thumbnail task settings panel open; admin logged into ${BACK_URL},"1. Navigate to ${BACK_URL} > Image Tools > Thumbnails
-2. Open a thumbnail task to access its settings panel
-3. Hover the mouse cursor over the Width field label or its info icon
-4. Wait 1-2 seconds for tooltip to appear and record the tooltip text
-5. Hover over the Height field label or its info icon
-6. Record the tooltip text
-7. Hover over the JPEG Quality field label or its info icon
-8. Hover over the Resize Method dropdown label or its info icon","- Tooltip appears on hover for each settings field within 2 seconds
-- Tooltip text is descriptive and accurately explains the field's purpose
-- Tooltips disappear when the cursor moves away
-- No tooltip shows raw key names, HTML tags, or empty content
-- All tooltips are readable and correctly localized in the active UI language",C338426,Not Automated
-IMGTL-028,Thumbnail Output Format — PNG vs JPEG,Thumbnail Settings,Functional,Medium,4m,Thumbnail task with configurable output format; product images available; admin logged into ${BACK_URL},"1. Navigate to ${BACK_URL} > Image Tools > Thumbnails
-2. Open a thumbnail task and locate the Output Format setting
-3. Set Output Format to JPEG
-4. Set dimensions to 300x300 and quality to 85
-5. Run the task on a sample product image
-6. Download and inspect the output file extension and format
-7. Change Output Format to PNG
-8. Run the task on the same sample product image
-9. Download and inspect the PNG output file","- JPEG output format produces a file with .jpg or .jpeg extension
-- JPEG file uses lossy compression; file size is smaller than PNG for the same image
-- PNG output format produces a file with .png extension
-- PNG file supports lossless compression; file size is typically larger than JPEG
-- Both formats render the image at the correct 300x300 dimensions
-- PNG output preserves transparency if the source image has an alpha channel
-- Both tasks complete without errors",,Not Automated
+IMGTL-027,Static Help Text On Thumbnail Setting Fields,UI Operations,Functional,Medium,3m,Thumbnail task settings panel open; admin logged into ${BACK_URL},"1. Navigate to ${BACK_URL} > Image Tools > Thumbnails
+2. Open a thumbnail setting (Thumbnails settings blade) to access its fields
+3. Read the help text shown below the Name field
+4. Read the help text below Thumbnail file name suffix, Resize method, Width (pixels) and Height (pixels)
+5. Read the help text below Background color, Anchor position and JPEG quality
+6. Switch the admin UI language if another locale is available and re-read the texts","- Every setting field carries static help text below it (no hover tooltips or info icons exist) {OBSERVED}
+- Texts are descriptive, e.g. 'Thumbnail width in pixels', 'Resize method which will be used for image transformation', 'Output JPEG quality' {OBSERVED}
+- No help text shows a raw resource key, HTML tags or empty content
+- Texts are localized in the active UI language","C338426 | Repaired 2026-10-14 (Stable 16 regression VCST-6042): thumbnail fields have static help text below each field, not hover tooltips {OBSERVED}. Catches: missing translation (raw key shown), empty or HTML-polluted help text",Not Automated
+IMGTL-028,Thumbnail Output Keeps The Source Format - PNG With Transparency,Thumbnail Settings,Functional,Medium,4m,Thumbnail setting 300x300 (fixed size); a PNG source image with an alpha channel in the task's image folder; admin logged into ${BACK_URL},"1. Navigate to ${BACK_URL} > Image Tools > Thumbnails
+2. Open a thumbnail setting and verify its fields: Name, Thumbnail file name suffix, Resize method, Width, Height, Background color, Anchor position, JPEG quality - there is no Output Format setting
+3. Set dimensions to 300x300
+4. Click Run, then in the 'Thumbnail generation' dialog choose Regenerate ('Process changes' is disabled for a never-run task) and run it on the PNG source image
+5. Download and inspect the generated thumbnail file extension, format and size
+6. Inspect the PNG alpha channel","- No Output Format setting exists; the output keeps the source format {OBSERVED}
+- A PNG source produces a .png thumbnail of 300x300 pixels
+- PNG transparency is preserved (RGBA, PNG colour type 6) {OBSERVED}
+- The task completes without errors","Repaired 2026-10-14 (Stable 16 regression VCST-6042): thumbnail settings have no Output Format option; output keeps the source format {OBSERVED}. Catches: PNG output re-encoded to another format, alpha lost, wrong dimensions",Not Automated

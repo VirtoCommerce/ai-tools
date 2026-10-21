@@ -208,7 +208,7 @@ Full gate definitions: `skills/qa-metrics/quality-gates.md`
 | `gh` CLI (Bash) | CI/CD: `gh pr checks`; complex `gh api` calls |
 | context7 MCP | VC documentation: `resolve-library-id`, `query-docs` |
 | Playwright MCP (3) | Verify fixes: `playwright-chrome`, `playwright-firefox`, `playwright-edge` |
-| Postman MCP | Review API tests: `getCollection({ model: "full" })`, `getCollections`. (No `runCollection` exists — to actually execute, hand off to Newman / Postman CLI; see `qa-postman/execution.md`.) |
+| Postman MCP | Review API tests: `getCollection({ model: "full" })`, `getCollections`. (No `runCollection` exists — to execute, hand off to Newman / Postman CLI; see `qa-postman/execution.md`.) |
 
 ### Judge — How to Evaluate Agent Reports
 
@@ -239,13 +239,13 @@ NOT run the step you are checking, and you are a **different agent than the step
 the *Judge* role above into an explicit gate check. You do **not** re-run the pipeline and you do **not**
 execute the step yourself — you re-derive the evidence and rule on ONE gate. Same asymmetric bias as the
 developers' reviewer (`backend-reviewer.md`): **when in doubt, REJECT.** A wrong APPROVE lets a defect
-through the whole lifecycle; a REJECT just costs one revise loop.
+through the whole lifecycle; a REJECT costs one revise loop.
 
 **Inputs** the orchestrator passes you: `{ step, gate_criteria, source_of_truth, deterministic_cmd? }` plus
 the doer's output artifact and where it lives.
 
 **How you re-derive (never trust the doer's summary):**
-- **FIRST, one command: `npm run verify:gate -- --gate <3-exec|3|5-verdict|5-report|5g> [--suite <csv>] [--run-id <ID>]`.** (`3-exec` takes **no `--suite`** — it fires before Artifact A exists. `5g` remains a valid gate of the script — it now serves `/qa-test-lifecycle` Phase 6P, not a `/qa-test` step.)
+- **FIRST, one command: `npm run verify:gate -- --gate <3-exec|3|5-verdict|5-report|5g> [--suite <csv>] [--run-id <ID>]`.** (`3-exec` takes **no `--suite`** — it fires before Artifact A exists. `5g` is still a valid gate: it serves `/qa-test-lifecycle` Phase 6P, not a `/qa-test` step.)
   It runs that gate's whole deterministic core, prints each exit code with how to read it, and — at
   `5g` — computes what `tc:promote` **actually wrote** by diffing the suite CSV against `HEAD`
   (status flips that were not `Draft → Automated`, any non-status column that moved, rows added or
@@ -289,19 +289,17 @@ CONFIDENCE: HIGH|MEDIUM|LOW
 
 | Gate | Step | Hard STOP? | You re-derive |
 |---|---|---|---|
-| Checklist + data ready | **`3-exec`** | **no — INLINE** | `verify:gate --gate 3-exec` (no `--suite`). The doer self-checks it. **You are not dispatched here on purpose:** this gate releases execution, and putting a dispatch in front of it would re-create the wait the 2026-09-10 restructure removed. Its clauses are a script plus a list comparison |
+| Checklist + data ready | **`3-exec`** | **no — INLINE** | `verify:gate --gate 3-exec` (no `--suite`). The doer self-checks it; not dispatched on purpose, because it releases execution |
 | Authored cases reviewed, PENDING-A closed | **3** | **yes** | `verify:gate --gate 3 --suite <csv>` — it runs `suites:review` · `td:validate` · `tc:scope` for you; then confirm **`tc:scope` used the same scope and risk terms `1b` item 2e derived**, which the sheet lists as UNCHECKED. **Every `PENDING-A` recorded at `3-exec` must now resolve to a real appended row** — one that survives is a REJECT, not a note. **When `data_surface` was `false`, re-derive the skip** rather than the seed: the planned rows resolve AND no link under test needs a divergence the fixtures lack (`skills/qa-test/authoring.md` §3a). **This gate releases `4c` (C1) only** — the verdict's own evidence is already being gathered by `4a` while you rule, which is why it can be a hard STOP without holding the run |
 | AC/DoD reconciled | **5-verdict** | **no — INLINE** | `verify:gate --gate 5-verdict --run-id <ID>`. **Not a dispatch** since 2026-09-16 (`skills/qa-test/close-out.md` §5-verdict) |
 | Feature Release Gate ratified | **5-report** | no — non-blocking | `verify:gate --gate 5-report [--run-id <a release `/qa-regression` RUN_ID, when one exists>]`, then re-evaluate from the raw inputs per `skills/qa-metrics/quality-gates.md` §1a. **`/qa-test` runs no release-scoped sweep** (`5r`/C2 removed 2026-09-10), so the change-scoped-regression criterion ratifies as **`not-assessed`** — never as a pass, and never by substituting C1's number |
 | Promotion flip | **`/qa-test-lifecycle` 6P** | **yes** | `verify:gate --gate 5g --suite <csv>` (lint + the promotion diff vs HEAD) + the execution evidence behind a sample of `{OBSERVED}` upgrades. **Not a `/qa-test` gate** — that command stopped promoting 2026-09-10. `/qa-regression` **6.5** needs no dispatch: it rewrites no assertion, and its only write is `tc:promote:apply`'s field-compared flip |
 
-Steps 1, 2, 4, 5-verdict, 5-file, 5-status, 5-docs and all of FAST self-check inline. On
-`--iterate`, **5-report** fires once, at loop exit.
+Steps 1, 2, 4, 5-verdict, 5-file, 5-status, 5-docs and all of FAST self-check inline. On `--iterate`, **5-report** fires once, at loop exit.
+**Outside `/qa-test`:** on a Critical risk `/qa-test-strategy` sends `node .claude/skills/qa-test-strategy/lib/check-strategy.mjs --strategy <path> --bundle <path>` (no `verify:gate`); a hard STOP before the user is asked.
 
 `verify:gate` passes `--run-id` through to `compute-metrics` and **refuses to run gate 5-verdict/5-report without
-one**: unscoped, that call returns the whole-history pass rate, not this run's claim. To invoke
-the metric directly instead it is `npx tsx scripts/regression/compute-metrics.ts --gate feature --run-id
-<RUN_ID>` — not an npm script.
+one**: unscoped, it returns the whole-history pass rate, not this run's claim.
 
 At the **promotion gate** (`/qa-test-lifecycle` 6P), `verify:gate --gate 5g --suite <csv>` has already re-run `suites:review` and
 already computed the promotion diff: **`tc:promote` only ever writes `Automated`, and only onto a row that
@@ -381,13 +379,12 @@ transitionJiraIssue({ issueKey: "VCST-XXXX", transition: "Need fixes" })  // Fai
 
 **These transition names are this project's Jira workflow, not a contract.** Resolve them **live** and
 match on the target's `to.name` (`knowledge/execution/tracker-ops.md` §Live transition discovery) — a
-hardcoded name is how a run fails on a project whose workflow was renamed, and on Azure Boards there are
-no transition names at all.
+hardcoded name fails on a renamed workflow; Azure Boards has no transition names.
 
 ### Communication Templates
 
 **Starting:** `QA testing started. Assigned to: [agents]. Scope: [areas]. Environment: [QA].`
-**Complete:** `QA Complete — [X] cases, [Y] passed, [Z] failed. Bugs: [list]. Decision: [verdict]. Artifacts: reports/tickets/SprintXX-XX/VCST-XXXX/`
+**Complete:** rendered by `/vc-fix:qa-report`, never typed (`plugins/vc-fix/skills/qa-report/templates/comment-test.md`); refused ⇒ `/plugin update`, stop.
 **Delegation:** `@[agent]: [instruction] | Context: VCST-XXXX, P[X], [QA] | Tasks: [list] | Focus: [edge cases] | Expected: [deliverable]`
 
 ### Release Report Template

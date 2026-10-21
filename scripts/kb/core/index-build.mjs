@@ -29,12 +29,35 @@ export function countEvidence(evidence = []) {
   // (`duplicateSession`, merge-entries.mjs) is kept for provenance and not counted: one agent seeing
   // one fact once, filed twice, is one observation, not a corroboration.
   const items = (Array.isArray(evidence) ? evidence : []).filter((e) => !e?.duplicateSession);
-  const contradicting = items.filter((e) => e?.contradicts);
+  const contradicting = distinctDisputes(items);
   // `disputed` counts the OPEN disputes only. A dispute a judge resolved stays on the entry -- it is
   // the history of the claim -- but it no longer flags it: before this, an entry a human had already
   // settled (KB-27B4CD10, 2026-09-20) was served as DISPUTED forever (VCST-6179).
   const resolved = contradicting.filter(isResolved).length;
-  return { trust: supportOf(items).length, disputed: contradicting.length - resolved, resolved };
+  // A SOFT dispute (`contested`, VCST-6221 core/gate.mjs) is an open dispute made on another build: the
+  // judge sees it like any other, but it does not flag the entry DISPUTED for readers. Counted apart.
+  const open = contradicting.filter((e) => !isResolved(e));
+  const contested = open.filter((e) => e.contested).length;
+  return { trust: supportOf(items).length, disputed: open.length - contested, resolved, contested };
+}
+
+/**
+ * The contradicting items, ONE PER DISPUTE. A split followed by a merge can carry one dispute into an
+ * entry twice -- same `by`, same `at`, each copy stamped with a different `mergedFrom` -- and counted
+ * per item, KB-2F64A447 showed 8 open disputes where four sessions had disputed it (vc-knowledge@main,
+ * 2026-10-12). `applyResolution` already closes every copy of one dispute together; this counts them
+ * together. A dispute stays OPEN while any copy is open, so a half-closed pair is never hidden. An
+ * item without `by` or `at` cannot be matched to another and counts on its own.
+ */
+export function distinctDisputes(items = []) {
+  const byKey = new Map();
+  (Array.isArray(items) ? items : []).forEach((e, i) => {
+    if (!e?.contradicts) return;
+    const key = e.by && e.at != null ? `${e.by}|${e.at}` : `#${i}`;
+    const kept = byKey.get(key);
+    if (!kept || (isResolved(kept) && !isResolved(e))) byKey.set(key, e);
+  });
+  return [...byKey.values()];
 }
 
 /** The judge's own observation (`kb:disputes observe`): made of the behaviour the verdict settles. */
@@ -97,12 +120,17 @@ export function attestsCurrentClaim(e, amendments = []) {
 export function supportOf(evidence = []) {
   const items = (Array.isArray(evidence) ? evidence : []).filter((e) => !e?.duplicateSession);
   const amendments = amendmentsOf(items);
-  const investigators = new Set();
+  // ONE SESSION, ONE OBSERVATION (VCST-6378) -- the rule the judge's investigation already followed, now
+  // for every item. Measured 2026-10-08..15: 100 of 255 confirms came from the session that captured the
+  // entry, often within the hour, and 37 times one session confirmed one entry again. Each raised the
+  // trust label, so "4 confirmations" could mean one agent looking four times. The first attesting item
+  // of each session counts; the rest stay on the entry as history. An item with no `by` still counts.
+  const sessions = new Set();
   return items.filter((e) => {
     if (e?.contradicts || !attestsCurrentClaim(e, amendments)) return false;
-    if (!isInvestigation(e) || !e.by) return true;
-    if (investigators.has(e.by)) return false;
-    investigators.add(e.by);
+    if (!e.by) return true;
+    if (sessions.has(e.by)) return false;
+    sessions.add(e.by);
     return true;
   });
 }
@@ -117,14 +145,17 @@ export function supportOf(evidence = []) {
  *   conditions-scoped    both sides were right under different settings; the entry names the condition
  *   split                the entry held two facts; each now lives in its own entry
  *   dispute-wrong        the entry holds; the dispute misread what it saw
+ *   defect-fixed         the entry describes a DEFECT and the dispute saw it fixed (VCST-6317): the claim
+ *                        stays as the bug's description, and the item carries `defect` + `fixedIn`
  *
- * A value outside this list resolves nothing -- a typo must not close a dispute silently.
+ * A value outside this list resolves nothing -- a typo must not close a dispute silently. A client from
+ * before a value existed reads that dispute as open: stale, never wrong.
  */
-export const RESOLUTIONS = Object.freeze(['claim-amended', 'version-scoped', 'conditions-scoped', 'split', 'dispute-wrong']);
+export const RESOLUTIONS = Object.freeze(['claim-amended', 'version-scoped', 'conditions-scoped', 'split', 'dispute-wrong', 'defect-fixed']);
 export const isResolved = (e) => Boolean(e?.contradicts) && RESOLUTIONS.includes(e?.resolved);
 
 /** The fields a resolution writes onto a contradicting item -- the only in-place edit an item ever gets. */
-export const RESOLUTION_FIELDS = Object.freeze(['resolved', 'resolvedAt', 'resolvedBy', 'resolvedIn', 'resolution', 'amendedFrom']);
+export const RESOLUTION_FIELDS = Object.freeze(['resolved', 'resolvedAt', 'resolvedBy', 'resolvedIn', 'resolution', 'amendedFrom', 'defect', 'fixedIn']);
 
 /** An anchor is `{coordinate}` or a bare string; both name one place. Rows carry it as written. */
 const anchorText = (a) => String(typeof a === 'string' ? a : a?.coordinate ?? '').trim();
@@ -137,7 +168,7 @@ const anchorText = (a) => String(typeof a === 'string' ? a : a?.coordinate ?? ''
  * anything. A diff nobody can read is a diff nobody reviews.
  */
 export function buildRow(data, path) {
-  const { trust, disputed, resolved } = countEvidence(data.evidence);
+  const { trust, disputed, resolved, contested } = countEvidence(data.evidence);
   // The card and the retirement pointer are written only when the entry has them. A key on every
   // row would change every row the first time a client from this change pushed, and a client from
   // before it would take the key off again on its next push -- the same row flapping between two
@@ -161,11 +192,14 @@ export function buildRow(data, path) {
     disputed,
     // Only when there is one, for the reason the card keys above are optional.
     ...(resolved ? { resolved } : {}),
+    ...(contested ? { contested } : {}),
   };
 }
 
 /** Where an entry lives, given its id. One rule, so the index and the writer cannot disagree. */
 export const entryPath = (id) => `entries/${id}.md`;
+/** Where a build's snapshot lives (VCST-6221): one rule for the writer (push) and the readers (gate, labels). */
+export const buildPath = (pin) => `builds/${pin}.json`;
 
 /**
  * The whole index file.
@@ -175,8 +209,32 @@ export const entryPath = (id) => `entries/${id}.md`;
  * rebuilding the same corpus get the same bytes. `count` is the field `stat` compares against the
  * number of blobs under `entries/` to detect drift in ONE call (PLAN §2).
  */
+/**
+ * A retirement pointer, collapsed to ACTIVE entries (VCST-6378). A split's child can itself be split
+ * or merged later, and the base held 9 pointers to entries that were themselves superseded: a reader
+ * following one landed on another retired entry. Each id is followed to the active entries at the end
+ * of its chain (cycle-safe); one whose chain reaches nothing active is kept as written, so a pointer is
+ * never lost. The entry file is untouched -- the index row is what readers follow.
+ */
+export function collapseSuperseded(rows) {
+  const byId = new Map(rows.map((r) => [String(r.id).toUpperCase(), r]));
+  const ends = (id, seen = new Set()) => {
+    const key = String(id).toUpperCase();
+    const r = byId.get(key);
+    if (!r || seen.has(key)) return [];
+    seen.add(key);
+    if (String(r.status ?? 'active') !== 'superseded') return [r.id];
+    return (r.supersededBy ?? []).flatMap((n) => ends(n, seen));
+  };
+  return rows.map((r) => {
+    if (!r.supersededBy?.length) return r;
+    const active = [...new Set(r.supersededBy.flatMap((n) => { const e = ends(n); return e.length ? e : [n]; }))];
+    return active.join() === r.supersededBy.join() ? r : { ...r, supersededBy: active };
+  });
+}
+
 export function buildIndex(rows, { generated = new Date().toISOString() } = {}) {
-  const sorted = [...rows].sort((a, b) => a.id.localeCompare(b.id));
+  const sorted = collapseSuperseded([...rows]).sort((a, b) => a.id.localeCompare(b.id));
   // Schema 2 is DERIVED from the rows -- any row carrying a card or a retirement pointer -- never
   // chosen by the caller: a pushing client must not turn a migrated index back into schema 1, nor
   // stamp 2 on a base that holds no schema-2 field (VCST-6122 Decision 8).

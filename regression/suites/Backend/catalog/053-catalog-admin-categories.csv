@@ -227,17 +227,16 @@
 [STATE] Deleted unit no longer appears in the group list
 [STATE] Group integrity is maintained after unit deletion","[API] GET /api/catalog/measures/{groupId} — verify unit lifecycle
 [CONSOLE] No errors","Unit not created; conversion factor not saved; delete leaves unit in UI; group integrity broken","none (unit created and deleted within test)","Catalog admin coverage gap (TLC-2026-06-23); see BL-CAT-008","Not Automated"
-"CATA-044","Category Automatic Links","Catalog > Category > Links","Medium","BL-CAT-002","","Admin logged in to Backend ({{BACK_URL}}), category linked to a virtual catalog","adminUrl={{BACK_URL}}","[NAV] Navigate to Catalog module
-[NAV] Open a category that has virtual catalog associations
-[NAV] Navigate to the Links tab
-[ASSERT] Verify automatic links from virtual catalog assignments are listed
-[ASSERT] Inspect each link for correct catalog and path information
-[ASSERT] Confirm no stale or broken links appear after catalog restructuring","[STATE] Links tab is accessible on the category blade
-[STATE] Automatic links reflect current virtual catalog associations
-[STATE] Link details (catalog name, path) are accurate
-[STATE] Stale links from deleted associations are not shown
-[STATE] No errors appear when viewing the Links tab","[API] GET /api/catalog/categories/{id}/links — verify links array
-[CONSOLE] No errors","Stale links shown after reassignment; broken link navigation; links tab errors","none","Catalog admin coverage gap (TLC-2026-06-23)","Not Automated"
+"CATA-044","Category Automatic Links Blade Is A Query-Based Generator","Catalog > Category > Links","Medium","BL-CAT-002","","Admin logged in to Backend ({{BACK_URL}}); a category is linked to a virtual catalog (Link) and has no automatic-link query","adminUrl={{BACK_URL}}; category=live-discover(a category with non-empty links[] and no AutomaticLinkQuery)","[NAV] Navigate to Catalog module and open the category from Test_Data
+[ASSERT] Read the Links and Automatic links widget counts
+[NAV] Open the Links blade and verify the virtual-catalog assignment is listed there
+[NAV] Open the Automatic links blade
+[ASSERT] Verify the controls: a Catalog selector, 'Enter product search query' field and the Save, Reset, Preview, Create and Delete toolbar buttons
+[ASSERT] Verify the blade opens without errors and does not list the virtual-catalog assignment","[STATE] Links widget count = links[] length of the category (virtual-catalog assignment counted here) {OBSERVED}
+[STATE] Automatic links widget count = 0 for a category without an automatic-link query {OBSERVED}
+[STATE] The Automatic links blade is a query-driven generator (Catalog + search query), not a list of virtual-catalog assignments {OBSERVED}
+[STATE] No errors appear when opening either blade {OBSERVED}","[API] GET /api/catalog/categories/{id} - links[] has the assignment
+[CONSOLE] No errors","Assignment missing from Links or listed under Automatic links; Automatic links count non-zero without a query; blade errors on open; a toolbar button or the query field missing","none","Catalog admin coverage gap (TLC-2026-06-23) | Repaired 2026-10-14 (Stable 16 regression VCST-6042): Automatic links is the query-based auto-linking feature (KB-91520A68), not virtual-catalog assignments (those appear under Links); case rewritten accordingly. Behaviour {OBSERVED}","Not Automated"
 "CATA-054","Move Category Across Catalogs - Cascade CatalogId to Subcategories","Catalog > Categories > Move","High","BL-CAT-011","ECL-5.1","Admin logged in; two distinct physical (non-virtual) catalogs exist (source + destination)","srcCatalog=any physical catalog (discover via POST /api/catalog/catalogs/search, pick isVirtual=false); dstCatalog=a different physical catalog; parentCat=AGENT-TEST-MOVE-PARENT-{run}; childCat=AGENT-TEST-MOVE-CHILD-{run}; adminUrl={{BACK_URL}}","[NAV] Open Catalog module > open srcCatalog
 [ACT] Create category parentCat in srcCatalog root
 [ACT] Open parentCat > create subcategory childCat inside it

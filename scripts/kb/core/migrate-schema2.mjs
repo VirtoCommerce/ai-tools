@@ -19,6 +19,7 @@ import { createHash } from 'node:crypto';
 
 import { mintId } from './canonical.mjs';
 import { parseEntry, stringifyFrontmatter } from './frontmatter.mjs';
+import { isResolved } from './index-build.mjs';
 import { SURFACES } from './index-load.mjs';
 
 export const MIN_QUESTIONS = 3;
@@ -94,6 +95,27 @@ export function migrate(files, plans, vocabulary) {
     if (plan.action !== 'split') { problems.push(`${plan.id}: unknown action "${plan.action}"`); continue; }
 
     const children = plan.children ?? [];
+    // EACH OPEN DISPUTE GOES TO ONE CHILD (VCST-6221 step 4). Copying the parent's whole evidence made a
+    // dispute about one clause an open dispute on EVERY child: 22 of the 60 items judged on 2026-10-08
+    // were such copies. Confirmations and settled disputes are still copied -- trust is not reset by a
+    // migration nobody observed, and a settled dispute is history -- but an OPEN dispute must be
+    // assigned: `disputes: { "<its at>": <child number, 1-based> | "judge" }`. "judge" means the planner
+    // cannot tell which clause it contradicts; it goes to the first child ONCE, flagged `splitUndecided`.
+    const parentEvidence = parent.data.evidence ?? [];
+    const openAt = [...new Set(parentEvidence.filter((e) => e.contradicts && !isResolved(e)).map((e) => String(e.at)))];
+    const assigned = plan.disputes ?? {};
+    for (const at of openAt) {
+      const to = assigned[at];
+      if (to === undefined) problems.push(`${plan.id}: the open dispute at ${at} is not assigned -- set disputes["${at}"] to the child (1..${children.length}) whose clause it contradicts, or "judge"`);
+      else if (to !== 'judge' && !(Number.isInteger(to) && to >= 1 && to <= children.length)) problems.push(`${plan.id}: disputes["${at}"] is ${JSON.stringify(to)}, not a child number (1..${children.length}) or "judge"`);
+    }
+    const evidenceFor = (n) => parentEvidence.flatMap((e) => {
+      if (!(e.contradicts && !isResolved(e))) return [{ ...e, splitFrom: plan.id }];
+      const to = assigned[String(e.at)];
+      if (to === n) return [{ ...e, splitFrom: plan.id }];
+      if (to === 'judge' && n === 1) return [{ ...e, splitFrom: plan.id, splitUndecided: true }];
+      return [];
+    });
     if (children.length < 2) problems.push(`${plan.id}: a split needs at least two children`);
     const parentAnchors = new Set((parent.data.anchors ?? []).map((a) => a.coordinate));
     const ids = [];
@@ -118,7 +140,7 @@ export function migrate(files, plans, vocabulary) {
         appliesTo: withSurfaces(parent.data.appliesTo, child.surface),
         anchors: (child.anchors ?? []).map((coordinate) => ({ coordinate })),
         ...(parent.data.arrivesAt ? { arrivesAt: parent.data.arrivesAt } : {}),
-        evidence: (parent.data.evidence ?? []).map((e) => ({ ...e, splitFrom: plan.id })),
+        evidence: evidenceFor(i + 1),
       };
       const path = `entries/${id}.md`;
       writes.set(path, `${stringifyFrontmatter(entry)}\n${String(child.body).replace(/\s+$/, '')}\n`);

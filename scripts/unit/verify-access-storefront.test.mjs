@@ -1,5 +1,5 @@
 // Unit tests for the storefront-user login readiness check (D2) —
-// plugins/vc-fix/skills/project-init/verify-access.mjs `probeStorefrontLogin`.
+// plugins/vc-init/skills/project-init/verify-access.mjs `probeStorefrontLogin`.
 //
 // A storefront shopper is NOT a platform user, so the plain platform password grant (no storeId)
 // 400s by construction — a right and a wrong password were then indistinguishable and the row
@@ -9,7 +9,7 @@
 // Run: `npm test` (tsx --test scripts/unit/**/*.test.mjs).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { probeStorefrontLogin } from "../../plugins/vc-fix/skills/project-init/verify-access.mjs";
+import { probeStorefrontLogin } from "../../plugins/vc-init/skills/project-init/verify-access.mjs";
 
 // A fake fetch: the no-storeId grant 400s (the storefront-only shopper), the store-scoped grant
 // resolves per config. Records calls so a test can prove the fallback actually fired.

@@ -10,7 +10,7 @@
  * WHY validate dates instead of trusting `$timeframe=current`: Azure DevOps still flags an
  * iteration as `attributes.timeFrame:"current"` even when NO iteration brackets today (a dormant
  * team's last sprint keeps the flag). Trusting the flag stamped a 3-year-dead "Sprint 12.5 Launch"
- * onto an OPUS bug. An iteration is current ONLY when startDate <= today <= finishDate.
+ * onto a client bug. An iteration is current ONLY when startDate <= today <= finishDate.
  *
  * CRITICAL — compare DATE-ONLY. finishDate is stored at `T00:00:00Z` (a midnight timestamp for the
  * sprint's last calendar day), so a raw `new Date(finish) >= now` timestamp compare wrongly REJECTS

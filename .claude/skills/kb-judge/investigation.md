@@ -95,15 +95,24 @@ Per dispute (per contradicting evidence item), one of:
 | Each side is right under its own setting / role / store / entity state | `conditions-scoped` | the body names the condition; a closed-vocabulary axis goes in `appliesTo` |
 | The entry holds two facts and the dispute is about the other one | `split` | split the entry (below); the dispute is resolved on the child it does not concern |
 | The entry holds on the conditions the dispute named; the dispute misread its observation | `dispute-wrong` | nothing in the claim; the resolution says what the dispute misread |
+| The entry describes a **defect** (docs or a `BL-*` rule say it should not happen) and the dispute saw it fixed; the source history names the fix | `defect-fixed` | nothing in the claim (it is how the bug shows itself on an unfixed build); `resolve --defect <ticket\|suspected> --fixed-in <Module>@<version>` writes the marker readers see (`kb-capture-contract.md` §Defects) |
 | Not established — a source unreachable, or the reproduction inconclusive | **no verdict** | the dispute stays OPEN; the PR says what is missing |
 
-**A split made by the schema-2 migration copied every evidence item of the parent to every child**,
-disputes included (`splitFrom` on the item). Such a dispute is often about the sibling: resolve it on
-the child it does not concern as `split`, naming the sibling in `--why`, and judge it on the child it
-does concern.
+**A soft dispute** (`contested` on the item, `DISPUTE (soft)` in the dossier) was made on a different build
+than every confirmation; the field holds the computed difference. It is a hypothesis, not a verdict: the
+replay of 91 settled disputes found the claim simply wrong in about a third of such cases (20 of 65), so establish
+whether the named difference causes the behaviour before choosing `version-scoped`.
+
+**A split made before VCST-6221 copied every evidence item of the parent to every child**, disputes
+included (`splitFrom` on the item). Such a dispute is often about the sibling: resolve it on the child
+it does not concern as `split`, naming the sibling in `--why`, and judge it on the child it does
+concern.
 
 To split an entry: write a `split` plan and apply it with `npm run kb:migrate-schema2 -- --stamp …`
-then `--apply` on the base checkout (its header has the plan shape). Each child then carries the
-parent's whole evidence; resolve each dispute on each child as above. Split **before** recording the
+then `--apply` on the base checkout (its header has the plan shape). Each child carries the parent's
+confirmations and settled disputes; each OPEN dispute goes to one child only, named in the plan as
+`"disputes": { "<the dispute's at>": <child number, 1-based> | "judge" }` — a plan that leaves one
+unassigned is refused. `"judge"` (you cannot tell which clause it contradicts) puts it on the first child
+once, flagged `splitUndecided`. Split **before** recording the
 investigation's `observe` items, and record each on the child it concerns — an item written on the
 parent first is copied to every child.

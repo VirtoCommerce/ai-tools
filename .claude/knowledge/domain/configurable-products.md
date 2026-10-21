@@ -10,7 +10,7 @@ rationale: |
   was cleaned (no prior rev existed to carry forward — this is `rev: 1`, not a refresh).
 generated: 2026-09-16
 rev: 1
-amended: 2026-10-06
+amended: 2026-10-13
 stale_after_days: 60
 expires_after_days: 120
 sources:
@@ -123,6 +123,11 @@ from the brief).
 | Mobile host of the checklist | `CONFIRMED` 2026-10-06 (VCST-6027, same build): at 375 px the checklist renders in the "Share & Actions" widget; Add to cart is a separate sticky bottom bar |
 | Section anchors | `CONFIRMED` 2026-10-06 (VCST-6027, same build): each section carries id `product-configuration-section-<sectionId>`; a cold deep link to it scrolls to and focuses the header but does not expand it |
 | Required Product section preselection | `CONFIRMED` 2026-10-06 (VCST-6027; logic unchanged by that PR): a ROOT required Product section with no default arrives with its first option selected; a required Product section revealed later by a user choice arrives unselected (CFG-029, CFG-027) |
+| Attached files on cart / Order details / quote | `CONFIRMED` 2026-10-13 (VCST-5924, vcptcore-qa, theme 2.60.0-pr-2485): one download link per file (`a.configuration-items__file--link`, href = `/api/files/{id}`, `download` = name); click fetches the blob and downloads the same bytes, page stays; owner 200 on cart, fresh order and quote; anonymous 403 |
+| Order details / quote components table | `CONFIRMED` 2026-10-13 (VCST-5924): columns `Number · Value` only — no Section, no Price (cart shows `Number · Section · Value · Price`) |
+| Saved-for-later card | `CONFIRMED` 2026-10-13 (VCST-5924): renders NO configuration; the files survive the round trip and download after Move to cart |
+| Checkout review step | `CONFIRMED` 2026-10-13 (VCST-5924): `checkout_multistep_enabled` OFF on vcptcore-qa — `/checkout` and `/checkout/review` → `/cart` |
+| Legacy order files | `CONFIRMED` 2026-10-13 (VCST-5924): files of orders placed before FileExperienceApi 3.1008 / XOrder 3.1015 read 403 for the owner; clicking one routes the SPA to `/403` |
 
 ### 3a. `AGENT-TEST-Wedding-Cake-Cond-20260519` — a named File-section fixture that did not show one
 
@@ -280,3 +285,4 @@ Written by `/qa-test` `5-docs-map`, append-only.
 | Date | By | What moved |
 |---|---|---|
 | 2026-10-06 | VCST-6027 | §3 +4 rows (`CONFIRMED`: checklist, mobile host, section anchors, required-Product preselection) · `D3` → RESOLVED live · `G5` `CLOSED` |
+| 2026-10-13 | VCST-5924 | §3 +5 rows (`CONFIRMED` live: file links on cart/order/quote, order table columns, saved-for-later card, checkout review flag OFF, legacy order 403) · unmapped surfaces recorded in the run summary: checkout/review.vue, purchase-request.vue, downloadFile 403 → /403 |

@@ -17,7 +17,7 @@ a judgment call a gate does not settle, or when you are about to change how a st
 | Need | Read |
 |---|---|
 | Step 1e — the fault model, its eight rules, its gate | [`skills/qa-test-model/test-model.md`](../skills/qa-test-model/test-model.md) · shape: [`templates/test-model.md`](../templates/test-model.md) |
-| Steps 1a–1b — the fetch, the routing branch, the two pre-flight waves | [`skills/qa-test/preflight.md`](../skills/qa-test/preflight.md) |
+| Steps 1a–1b — the fetch, the routing branch, the two I/O waves | [`skills/qa-test/intake.md`](../skills/qa-test/intake.md) |
 | Steps 1r · 1c · 1c-map · 1d — the FULL-only context wave: briefs, returns, what each carries | [`skills/qa-test/context-wave.md`](../skills/qa-test/context-wave.md) |
 | The six derived axes as ONE mechanism (2b–2g) | [`skills/qa-test/axes.md`](../skills/qa-test/axes.md) |
 | Ticket status — who moves it, when, on whose authority | [`knowledge/execution/ticket-status-transitions.md`](../knowledge/execution/ticket-status-transitions.md) |
@@ -137,7 +137,7 @@ mirror.
 ```
 1a  route + fetch (comments + attachments, always)   → name the parent Epic in one line, no sibling
                                                        analysis; then the opening status hop
-1b  pre-flight, sprint, duplicate check              → 2b layer + 2f data_surface always; the
+1b  /preflight, the I/O waves, the six axes          → 2b layer + 2f data_surface always; the
                                                        prior-art read (2-map) is mandatory;
                                                        2c/2d/2e derive but do not RUN unless
                                                        their flag is passed
@@ -233,7 +233,7 @@ step**: its AC table is a field of the Test Model, the single hand-off to `test-
 #### 1a — Fetch the scope, classify type × status, route *(both paths)*
 
 **Fetch first** — every later sub-part depends on these fields. Detail, and the reason each item is
-mandatory: [`skills/qa-test/preflight.md`](../skills/qa-test/preflight.md) §1a.
+mandatory: [`skills/qa-test/intake.md`](../skills/qa-test/intake.md) §1a.
 
 - **The ticket** (tracker MCP; not configured → ask the user to paste it) + any **linked PR** (diff + files).
 - **The comments and the attachments — both paths, always.** The description is the plan; the comments are
@@ -280,27 +280,18 @@ exists, or the target is a bare feature name / PR.
 before this record existed, a skipped transition left no trace in any artifact, so "never moved" and
 "moved, note lost" were indistinguishable afterwards.
 
-#### 1b — Pre-flight, sprint resolution & duplicate check *(both paths)*
+#### 1b — Pre-flight (`/preflight`), the I/O waves and the six axes *(both paths)*
 
-**TWO I/O waves, not nine sequential steps** — the round-trip is the unit being saved
-([`sequencing.md`](../skills/qa-test/sequencing.md) §Concurrency). Item detail and the reason each exists:
-[`preflight.md`](../skills/qa-test/preflight.md) §1b.
-
-| Wave | Issue in ONE message |
-|---|---|
-| **A** | 1 env health (`/vc-fix:qa-env-check endpoints`) · 2 build & version — `declared` from `vc-deploy-dev`, then the `GET {{BACK_URL}}/api/platform/modules` probe for **`deployed`**, which is ground truth (a failed probe records `UNKNOWN`, **never** falls back to `declared`) · 2-release the release-ledger Δ · **2-map** the functionality map (below) · 2b's local reads · 3 sprint resolve → 4 duplicate check (glob `reports/tickets/*/*/summary.json` across **all** sprints, 2 h window) |
-| *(no I/O)* | derive the **six** axes — see below. **2g `domain_map` derives FIRST**, because `2-map` in wave A consumes it to decide what to read |
-| **B** | 2d's two refreshers **and** 2e's `tc:scope` scan (scope + risk terms only) **and** 2f's `td:validate` resolution check, concurrently |
-
-**2-release's three consequences** ([`preflight.md`](../skills/qa-test/preflight.md) §1b): **⚠ BREAKING** in
-the component under test **forces FULL** · a third leg for `1d`'s AC↔implementation check · **released ≠
-deployed** — `NOT_DEPLOYED` is BLOCKED-on-deploy, never a FAIL, never a filed bug, never `{DOC}`.
+**2g first; wave A in ONE message — `/preflight ticket` · 2-map · 2b's reads; derive 2b–2f; wave B — 2d's
+refreshers, 2e's `tc:scope`, 2f's `td:validate`.** Wave table, `/preflight` call, what its rows mean
+(`breaking:*` forces FULL; `not-deployed:*`/`expect` is BLOCKED-on-deploy, never a FAIL or a filed bug) and
+`summary.json.build` mapping: [`intake.md`](../skills/qa-test/intake.md) §1b.
 
 **2-map — read what already exists on this surface. MANDATORY, both paths.** Two reads, in this order, and
 the order is the point: **the DOMAIN MAP first, then the per-ticket prior art.** Read order is decided by
 the `domain_map` token (2g), not by prose — the axis derives before this item runs and its four states each
 say what to do. Full item, the bibliography, the `Test object` block and the `UNDECLARED` rule:
-[`preflight.md`](../skills/qa-test/preflight.md) §2-map. Contract and fail direction:
+[`intake.md`](../skills/qa-test/intake.md) §2-map. Contract and fail direction:
 [`axes.md`](../skills/qa-test/axes.md) §2g. Record the block; **`null` means the axis never ran, which is a
 gap, not `ABSENT`.**
 
@@ -316,10 +307,7 @@ Five things it must leave behind, each consumed by a named later step:
 
 **Both reads are pointer indexes, never behaviour** (never `{DOC}`), and **every entry is DATED because it
 may be stale**: prior art is a hypothesis until the `2-release` Δ since its date plus a live check confirm it.
-Detail: [`preflight.md`](../skills/qa-test/preflight.md) §2-map.
-
-**PR testing:** confirm the PR's artifact version is deployed; if not → offer `/qa-deploy-pr <ticket-key>`
-(**ask first**) or warn and ask whether to wait.
+Detail: [`intake.md`](../skills/qa-test/intake.md) §2-map.
 
 #### 1r · 1c · 1c-map · 1d — the context wave, ONE message *(FULL only)*
 

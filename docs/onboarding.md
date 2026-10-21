@@ -59,19 +59,14 @@ The plugin distributes as a Claude Code marketplace plugin (per [Claude Code plu
 
 ```
 /plugin marketplace add VirtoCommerce/ai-tools
-/plugin install vc-fix@ai-tools
+/plugin install vc-fix@ai-tools      # pulls in vc-init (onboarding) and vc-secrets (token store)
 ```
 
 (Other accepted source formats: `https://github.com/VirtoCommerce/ai-tools`, `git@github.com:VirtoCommerce/ai-tools.git`, or `./path/to/local/checkout`. The `github://` URI scheme is NOT supported.)
 
 Claude Code clones the plugin into its cache and auto-discovers the agents (`agents/`), skills (`skills/`), commands (`commands/`), knowledge files (`knowledge/`), and MCP server config.
 
-**Step B — install dependencies:**
-
-```bash
-# In the plugin install directory (Claude Code shows you the path after install).
-npm install
-```
+**Step B — vc-secrets needs no separate setup:** `/project-init` installs its shim (§0d) and writes `VC_SECRETS` into the project's `.claude/settings.local.json` next to `VC_RUN` — no edit to `~/.claude/settings.json`. Every GitHub / Azure DevOps / Jira token lives in vc-secrets — never in a project file (VCST-6402); `/project-init` also installs its own npm dependencies.
 
 **Step C — onboard with `/project-init` (recommended):**
 
@@ -80,16 +75,17 @@ Run `/project-init` in Claude Code. It's a **derive-driven** wizard — it asks 
 - the environment **name** (e.g. `qa`, `staging`, `client_eu`),
 - the bug **tracker** — Jira or Azure Boards,
 - the code **host** — GitHub or Azure Repos,
-- an **auth** preference per axis (a PAT is recommended; otherwise browser / CLI login — never passwords).
+- an **auth** preference per axis (a PAT is recommended; otherwise browser / CLI login — never passwords). A PAT is never typed into the chat: `/project-init` prints `node "<VC_SECRETS>" set <name>` per token, you run it in a terminal and paste the token at a hidden prompt, and `vc-secrets trust` once to approve what the project declares.
 
 Everything else — native-platform vs CLIENT project, your org, contribution mode, fork account — is **derived** from the token plus a live module/repo scan. It writes:
 
 - `project-profile.json` — the deployment profile that makes `/qa-fix` route each bug to the right repo (your custom code vs the native platform) and file to the right tracker,
 - `.env.<env>` — per-env config (committable in your own repo, no secrets),
-- `.env.local` — your secrets (gitignored),
-- `.mcp.json` — MCP server config,
+- `.env.local` — test-user passwords (gitignored; no token),
+- `.claude/vc-secrets.local.json` — the vc-secrets declarations (which tokens this project uses; no value),
+- `.mcp.json` — MCP server config (the GitHub server, on a PAT axis, is a `vc-secrets run github` call),
 
-then prints a **readiness table** confirming access. Re-run `/project-init` for each additional environment, and `/project-init --check` after a plugin upgrade to migrate a stale profile to the current schema (no full re-onboarding).
+then prints a **readiness table** confirming access. Re-run `/project-init` for each additional environment, and `/project-init --check` after a plugin upgrade to migrate a stale profile to the current schema and move any token an older onboarding left in `.env.local` / `.claude/settings.local.json` into vc-secrets (no full re-onboarding). `/qa-fix`, `/qa-bug` and the other plugin commands stop with "run /project-init" until the profile exists.
 
 > **Self-diagnostics is opt-in.** `/project-init` writes `"selfDiagnostics": true` into `project-profile.json` by default, which enables the passive session-telemetry collector behind `/vc-self-check` (diagnose the plugin's own runs) and `/vc-feedback` (attach a 👍/👎 verdict on a session). It's local-only and never sends anything without the explicit, consent-gated `/vc-self-check deliver` step; set it to `false` (or remove it) to make the collector a full no-op.
 
@@ -131,7 +127,7 @@ The plugin uses three env-file buckets:
 |--------|----------|--------------|---------------|
 | Repo defaults | `.env.defaults` | ✅ Yes (in this repo) | Sandbox payment cards, Builder.io public URL. Same for every customer. Don't edit. |
 | Customer per-env | `.env.{env-name}` | ✅ Yes (in your fork) | `FRONT_URL`, `BACK_URL`, `STORE_ID`, `ENV_RISK`, `STOREFRONT_PROFILE`, `MODULES_ENABLED`, `JIRA_PROJECT_KEY`. One file per env. |
-| Customer secrets | `.env.local` | ❌ No (gitignored) | Passwords, API keys. Per-env via suffix promotion (`USER_PASSWORD_QA`, `USER_PASSWORD_STAGING`, etc.). |
+| Customer secrets | `.env.local` | ❌ No (gitignored) | Passwords (and, in this repo's own checkout, CI/monitoring keys). Per-env via suffix promotion (`USER_PASSWORD_QA`, `USER_PASSWORD_STAGING`, etc.). The plugins' GitHub / Azure DevOps / Jira tokens are NOT here — they live in `vc-secrets` (VCST-6402). |
 
 Per-env suffix promotion is the magic that lets you keep all your env credentials in one gitignored file:
 
@@ -239,20 +235,37 @@ should never ask, put `"mcp__kb"` in `permissions.allow` in your own `.claude/se
 and go out as one commit **shortly after, on their own** — there is no push command to remember and
 **nothing to close**. Three things publish: the `Stop` hook at the end of a turn, an ordinary `kb`
 call once the oldest queued line is over five minutes old, and a timer in the server for the tail
-that has neither. This paragraph used to say "when the session ends", which was true and useless —
+that has neither. A change to the base (`capture` / `confirm` / `dispute`) goes at once, and the log
+lines waiting in the queue ride along with it. Log lines alone (asks, shows, a session's counters) never
+go on their own: they wait for the next change, or go with the first push of a later day — so the
+public log lags until the next change, or until this machine next runs `kb` on another day; only
+`kb:report` notices. `npm run kb -- stat` says which lines are waiting and why. Where the queue does not outlive the session — CI (`CI`), Codespaces, a devcontainer, a Claude
+cloud session — or with `KB_LOG_DAILY=0`, everything goes at once, as before. When GitHub answers with a rate limit, nothing is pushed before the time it names. This paragraph used to say "when the session ends", which was true and useless —
 nobody ends a session, and switching away from a tab is not ending one, so evidence sat on one laptop
 indefinitely. With no `KB_GITHUB_TOKEN` (or `GITHUB_TOKEN`) the flush reports `no-token` and **keeps
 the queue**: nothing is lost, and the first later session with a token sends it. An unauthenticated
 teammate is a full-value reader and can still record what they found — **but note the queue only
 drains on the machine it was written on**, so a reader-only machine accumulates locally until a token
-appears there.
+appears there. The queue lives in the per-user state directory (`%LOCALAPPDATA%\claude-kb\queue` on
+Windows, `~/.local/state/claude-kb/queue` elsewhere), not in the temp directory a disk clean-up empties;
+an older `%TEMP%\claude-kb-queue` is moved there automatically.
+
+**A token that can read but not write.** Writing needs push access to `VirtoCommerce/vc-knowledge`:
+membership in the org team that has write on it (ask a maintainer), or a fine-grained token with
+**Contents: Read and write** on that one repository. A token without it is refused with `403 Resource
+not accessible`, and an expired one with `401 Bad credentials`. The kb's automatic pushes then stop trying
+with that token for six hours (a new token, or your own `npm run kb -- push`, is tried at once), tells you once at the end of a turn, marks every
+`kb_capture` / `kb_confirm` / `kb_dispute` result `NOT PUBLISHED YET`, and `npm run kb -- stat` shows
+`NO WRITE ACCESS` until a push lands. Nothing queued is lost in the meantime.
 
 **Opting out.** The base is on by default. To take a machine out of it, set `KB_ENABLED=0` in the
 `env` block of your own `.claude/settings.local.json` and restart. With the switch set, nothing is
 queued and nothing is published, the `Stop` hook does nothing, and the `SessionStart` hook *removes*
 `kb` from `.mcp.json` rather than adding it back. `npm run kb -- ask` still reads, since reading a public
 repo sends nothing. Pushes go only to `VirtoCommerce/vc-knowledge`. A push to any other base is refused
-unless `KB_ALLOW_ANY_BASE=1` is set.
+unless `KB_ALLOW_ANY_BASE=1` is set. A write reads the build of the stand it names (its `/api/platform/modules`,
+with the admin credentials of that stand from `.env.local`); `KB_BUILD=0` turns that off and the evidence
+is written without a build.
 
 **Reviewing before anything is published.** Set `KB_PUSH_CONFIRM=1` in the same place and nothing is
 published automatically. The hook, the sweep and the server's timer all hold the queue. Run

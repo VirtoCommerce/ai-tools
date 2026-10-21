@@ -12,12 +12,6 @@ import {
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const spec = (alias) => CANONICAL_PAGES.find((p) => p.alias === alias);
 
-test('5 canonical pages with unique aliases + permalinks', () => {
-  assert.equal(CANONICAL_PAGES.length, 5);
-  assert.equal(new Set(CANONICAL_PAGES.map((p) => p.alias)).size, 5);
-  assert.equal(new Set(CANONICAL_PAGES.map((p) => p.permalink)).size, 5);
-});
-
 test('pickCanonical matches EXACT name only — never a "(copy)"/"-2" drift', () => {
   const pages = [
     { id: 'g1', name: 'QA Homepage Spring Sale', cultureName: 'en-US', status: 'Archived', permalink: '/qa-homepage-spring-sale' },

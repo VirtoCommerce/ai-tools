@@ -173,7 +173,7 @@ const TRACKED_ROOTS = [
 function isSprintDirName(name) { return /^Sprint\d+-\d+$/.test(name); }
 
 /** `Sprint26-14` -> [26, 14], comparable/subtractable as a flat ordinal. Confirmed against real
- * sprint-plan dates (vc/shared/docs/Sprint plans/*-summary.json): sprints are ~14 days apart
+ * sprint-plan dates (docs/Sprint plans/*-summary.json): sprints are ~14 days apart
  * (Sprint26-12 start 06-15 -> Sprint26-13 start 06-29 -> Sprint26-14 start 07-13). */
 function sprintOrdinal(name) {
   const m = name.match(/^Sprint(\d+)-(\d+)$/);

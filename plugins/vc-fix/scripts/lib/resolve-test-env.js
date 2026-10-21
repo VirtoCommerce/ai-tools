@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { parse } from 'dotenv';
 
 /**
@@ -21,10 +22,20 @@ import { parse } from 'dotenv';
  * @param {string} [fallback='vcst'] repo default when nothing else is set
  * @returns {string} the resolved TEST_ENV
  */
+/**
+ * Where the env files are read from: the working directory — except under the $VC_RUN bridge
+ * (VC_BRIDGE=1), whose inner side pins VC_FIX_HOME to the project whose vc-secrets declarations were
+ * trusted. There the caller's cwd must not choose the stand URLs a token or a password is sent to.
+ */
+export function envDir() {
+  return process.env.VC_BRIDGE === '1' && process.env.VC_FIX_HOME ? process.env.VC_FIX_HOME : '.';
+}
+
 export function resolveTestEnv(fallback = 'vcst') {
   let testEnv = process.env.TEST_ENV?.trim();
-  if (!testEnv && existsSync('.env.test-env')) {
-    testEnv = parse(readFileSync('.env.test-env')).TEST_ENV?.trim();
+  const selector = join(envDir(), '.env.test-env');
+  if (!testEnv && existsSync(selector)) {
+    testEnv = parse(readFileSync(selector)).TEST_ENV?.trim();
   }
   testEnv = testEnv || fallback;
   process.env.TEST_ENV = testEnv; // normalize for all downstream readers

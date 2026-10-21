@@ -35,19 +35,21 @@ import { writeRefusal } from './base.mjs';
 import { coordinatesOf, githubApi } from './github-api.mjs';
 import { claimKey, findDuplicate } from './identity.mjs';
 import { parseEntry, stringifyFrontmatter } from './frontmatter.mjs';
-import { buildIndex, buildRow, claimHash, entryPath } from './index-build.mjs';
+import { buildIndex, buildPath, buildRow, claimHash, entryPath } from './index-build.mjs';
+
+export { buildPath };
 import { idList, normalizeRow } from './index-load.mjs';
 import { flagDuplicateSessions } from './sync-base.mjs';
 import { gateQueue, loadSecrets } from './secret-gate.mjs';
 import {
   DISABLED_WHY, HELD_WHY, MUTATIONS, composeLine, isSynthetic, pushConfirmRequired, kbDisabled, log, metaTranscripts, orderQueue, queueDir, queuePath, readMeta,
-  readQueue, recordPush, releaseConsumed, runOf, sessionId,
+  readQueue, recordPush, releaseConsumed, runOf, sessionId, accessBlock, accessWhy, rateHold, tokenPrint, linesWouldGo, QUEUE_IDLE_MS,
 } from './queue.mjs';
 import {
   REACH_IDLE_MS, dropReach, idleReaches, lineWork, markSent, ownReachDue, reachLine, reachPath, readReach, sessionKeyOf, unsent,
   workIn,
 } from './reach.mjs';
-import { toLogLine } from './verbs.mjs';
+import { flushCode, standName, toLogLine } from './verbs.mjs';
 import { cachedWho } from './who.mjs';
 import { stampCallersFromTranscripts } from './caller.mjs';
 
@@ -55,7 +57,7 @@ import { stampCallersFromTranscripts } from './caller.mjs';
 export const RETENTION_DAYS = 90;
 
 /** How stale the last flush must be before an ordinary `kb` invocation opportunistically sweeps. */
-export const SWEEP_AFTER_MS = 30 * 60 * 1000;
+export const SWEEP_AFTER_MS = QUEUE_IDLE_MS;
 
 /**
  * How old this session's OLDEST unpublished line may get before an ordinary `kb` call publishes it.
@@ -332,6 +334,7 @@ const stampFile = (env) => join(queueDir(env), '.last-flush');
  * make every `kb` invocation retry the push for as long as the network is down, which is exactly
  * the hammering PLAN §7 rules out ("no in-session retry loop"). The cadence is the retry policy.
  */
+
 export async function shouldSweep({ env = process.env, now = () => new Date() } = {}) {
   try {
     const s = await stat(stampFile(env));
@@ -407,9 +410,28 @@ export function appendEvidence(text, item, where) {
   return { text: `${stringifyFrontmatter(next)}\n${body}`, data: next };
 }
 
-/** Two evidence items are ONE observation when these agree. Exact on purpose: see `appendEvidence`. */
+/**
+ * Two evidence items are ONE observation when these agree. Exact on purpose: see `appendEvidence`.
+ * The stand is compared by its ONE name (VCST-6189), so an item queued as `vcst` by an older client
+ * still matches the same observation already on the base as `vcst_qa`, and is not appended twice.
+ */
 const EVIDENCE_KEY = ['at', 'by', 'method', 'deployment', 'contradicts'];
-export const sameEvidence = (a, b) => EVIDENCE_KEY.every((k) => (a?.[k] ?? null) === (b?.[k] ?? null));
+const keyOf = (e, k) => (k === 'deployment' && e?.[k] != null ? standName(e[k]) : e?.[k] ?? null);
+export const sameEvidence = (a, b) => EVIDENCE_KEY.every((k) => keyOf(a, k) === keyOf(b, k));
+
+/**
+ * A queued line with its stand named as the base names it (VCST-6189). The door has done this since
+ * the map existed; a queue written by an OLDER client -- or before a profile gained its KB_STAND --
+ * reaches the base through here, so the rename happens at push too and no old spelling is re-added.
+ */
+export function onCanonicalStands(line) {
+  const p = line?.payload;
+  if (!p) return line;
+  const fold = (e) => (e && typeof e.deployment === 'string' ? { ...e, deployment: standName(e.deployment) } : e);
+  if (p.item) return { ...line, payload: { ...p, item: fold(p.item) } };
+  if (Array.isArray(p.entry?.evidence)) return { ...line, payload: { ...p, entry: { ...p.entry, evidence: p.entry.evidence.map(fold) } } };
+  return line;
+}
 
 /** A new entry's file. The trailing newline is added if the claim did not carry one. */
 export function entryText(entry, body) {
@@ -494,8 +516,18 @@ export async function applyQueue({ lines, rows, read, at = new Date() }) {
     return true;
   };
 
-  for (const line of lines) {
-    if (!MUTATIONS.includes(line.kind) || !line.payload) continue;
+  for (const queued of lines) {
+    if (!MUTATIONS.includes(queued.kind) || !queued.payload) continue;
+    const line = onCanonicalStands(queued);
+    // THE BUILD BEHIND A STAMP (VCST-6221), written once: `builds/<pin>.json` is content-addressed, so a
+    // second writer of the same build finds the file and writes nothing. Snapshot without a stamped
+    // item (a refused capture below) still lands -- it is a true fact about a build, not a claim.
+    const snap = line.payload.build;
+    const pinned = line.payload.item?.build ?? line.payload.entry?.evidence?.[0]?.build;
+    if (snap && pinned && !files.has(buildPath(pinned)) && (await read(buildPath(pinned))) == null) {
+      files.set(buildPath(pinned), `${JSON.stringify({ pin: pinned, ...snap }, null, 2)}
+`);
+    }
 
     if (line.kind === 'capture') {
       const { entry, body } = line.payload;
@@ -642,9 +674,13 @@ export function expiredLogs(paths, { at = new Date(), days = RETENTION_DAYS, pre
 /**
  * The containment check, applied to EVERY push and not only the first.
  *
- * A push writes entries, the index and logs. Anything else is either a bug in the path arithmetic
- * or a payload that arrived from somewhere it should not have, and in a shared public repository
- * the correct response to both is to stop rather than to find out afterwards.
+ * A push writes entries, the index, logs and -- since VCST-6221 -- the content-addressed build
+ * snapshot `builds/<pin>.json` (`buildPath()`). That last one is admitted in exactly its own shape:
+ * ONE segment under `builds/`, a 16-char lowercase-hex pin (`buildPin()`), `.json` -- never a free prefix like `entries/`,
+ * because a pin arrives on a queue line and is only as trustworthy as whatever wrote it. Anything
+ * else is either a bug in the path arithmetic or a payload that arrived from somewhere it should not
+ * have, and in a shared public repository the correct response to both is to stop rather than to
+ * find out afterwards.
  */
 export function outsideBase(paths, prefix) {
   const p = prefix ? `${prefix}/` : '';
@@ -662,7 +698,9 @@ export function outsideBase(paths, prefix) {
     }
     const norm = parts.join('/');
     if (norm !== path) return true;
-    return !(norm === `${p}index.json` || norm.startsWith(`${p}entries/`) || norm.startsWith(`${p}log/`));
+    if (norm === `${p}index.json` || norm.startsWith(`${p}entries/`) || norm.startsWith(`${p}log/`)) return false;
+    // `builds/<pin>.json` and nothing else under `builds/`: no sub-folder, no other extension.
+    return !(norm.startsWith(`${p}builds/`) && /^[0-9a-f]{16}\.json$/.test(norm.slice(`${p}builds/`.length)));
   });
 }
 
@@ -700,7 +738,8 @@ export async function flush(opts = {}) {
   const r = await flushOnce(opts);
   // Keyed on the REQUEST, not the result: a dry run can end in `nothing`, `no-base` or
   // `foreign-base` too, and none of those may overwrite the status of the last real push.
-  if (!opts.dryRun && !['declined', 'disabled'].includes(r.state)) await recordPush(r, { env: opts.env ?? process.env, at: (opts.now ?? (() => new Date()))() });
+  // `deferred` is not a push outcome (round 3): recorded, it hid the real last push in `kb stat`.
+  if (!opts.dryRun && !['declined', 'disabled', 'deferred'].includes(r.state)) await recordPush(r, { env: opts.env ?? process.env, at: (opts.now ?? (() => new Date()))() });
   return r;
 }
 
@@ -715,6 +754,7 @@ async function flushOnce({
   includeMine = true,
   dryRun = false,
   gate = null,
+  auto = false,
   maxAttempts = MAX_ATTEMPTS,
   retryDelayMs = RETRY_DELAY_MS,
   sleep = (ms) => new Promise((r) => { setTimeout(r, ms); }),
@@ -826,6 +866,30 @@ async function flushOnce({
     return { state: 'nothing', session, why: 'the queue is empty' };
   }
 
+  // LOG LINES TRAVEL AS PASSENGERS, OR ONCE A DAY (VCST-6378). An automatic push -- the Stop hook, the
+  // own flush, the server's timer, the close of a session -- used to commit every turn's asks on their
+  // own: 325 of the 863 commits of 2026-10-08..15 carried nothing but log lines, and 264 nothing but a
+  // session's counters. Now a push goes when the queue holds a CHANGE to the base (capture / confirm /
+  // dispute, which somebody may be about to ask for -- the log rides along), or when it holds a line
+  // from an EARLIER DAY (UTC): the first push of a day carries what the days before left behind. Log
+  // lines and counters alone wait, on this machine, in the durable queue (`queueDir`). That holds for
+  // another session's idle file and for a session's counters too. Never deferred: the operator's
+  // `kb push`, a dry run, and CI (`CI` set, or KB_LOG_DAILY=0), where the queue dies with the container.
+  if (auto && !dryRun) {
+    const real = loaded.flatMap((f) => (f.virtual ? [] : f.lines));
+    // `linesWouldGo` (queue.mjs) is the one rule; a harvested `session` line counts by its `lastAt`.
+    if (!linesWouldGo(real, { env, now: now().getTime() })) {
+      // The stamp paces the sweep: touched, the next ordinary call does not run this cycle again at once.
+      await touchStamp({ env, now });
+      return {
+        state: 'deferred',
+        session,
+        queued: real.length,
+        why: 'only log lines -- they go with the next change to the base, or with the first push of tomorrow',
+      };
+    }
+  }
+
   // WHO CALLED, derived from this machine's transcripts before anything leaves it (`core/caller.mjs`).
   // Before the secret gate, so the stamped line is the one the gate judges.
   // A CLI line is matched only inside the transcripts its own session recorded (`metaTranscripts`).
@@ -862,6 +926,30 @@ async function flushOnce({
       session,
       queued: loaded.reduce((n, f) => n + f.lines.length, 0),
       why: 'no GITHUB_TOKEN — the queue is kept and the first session with one will push it',
+    };
+  }
+
+  // THE SAME TOKEN WAS REFUSED ALREADY (VCST-6378): held without a request until `DENIED_RECHECK_MS`
+  // has passed or the token changed. No `flush` line either -- the refusal is on record once, and 296
+  // copies of it are what this replaces. A dry run reads, so it is never held.
+  // OUT OF REQUESTS (VCST-6378): GitHub said when to come back; nothing is sent before then.
+  const rateUntil = !dryRun && !injected ? rateHold(env, now().getTime()) : null;
+  if (rateUntil) {
+    await touchStamp({ env, now });
+    return { state: 'rate-held', session, code: 'rate-limited', queued: loaded.reduce((n, f) => n + f.lines.length, 0), why: `GitHub rate limit: no push before ${rateUntil}` };
+  }
+  // ONLY AUTOMATIC PUSHES ARE HELD (review round 1): an operator who typed `kb push` -- typically right
+  // after a maintainer granted access to the SAME token -- gets the request. If it lands, `recordPush`
+  // clears the denial for everyone; if it is refused again, the denial is re-recorded.
+  const blocked = auto && !dryRun && !injected ? accessBlock(env, token, now().getTime()) : null;
+  if (blocked) {
+    await touchStamp({ env, now });
+    return {
+      state: 'denied-held',
+      session,
+      code: blocked.code,
+      queued: loaded.reduce((n, f) => n + f.lines.length, 0),
+      why: accessWhy(blocked.code, env),
     };
   }
 
@@ -938,10 +1026,19 @@ async function flushOnce({
   // with the next real push as a failure that never happened, and `kb stat` would report it.
   const why = last?.detail ?? last?.why ?? 'unknown';
   const reason = last?.reason ?? null;
-  const failed = { state: 'failed', session, attempts: attempt, why, reason, queued: allLines.length, kept: loaded.map((f) => f.path) };
+  const failed = {
+    state: 'failed', session, attempts: attempt, why, reason, queued: allLines.length, kept: loaded.map((f) => f.path),
+    // Which denial, and whose token (a fingerprint), so `recordPush` can hold the next push of it.
+    ...(last?.code ? { code: last.code } : {}),
+    ...(last?.code && token ? { tokenPrint: tokenPrint(token) } : {}),
+    ...(last?.retryAt ? { retryAt: last.retryAt } : {}),
+  };
   if (dryRun) return { ...failed, dryRun: true };
   await touchStamp({ env, now });
-  await log({ kind: 'flush', ok: false, attempts: attempt, why, reason }, { env });
+  // A CLOSED CODE in the line, never `why` (VCST-6378): `why` carries GitHub's own message, which names
+  // the token owner's numeric user id and a request id ("API rate limit exceeded for user ID …"), and
+  // 123 such lines reached the public log on 2026-10-12. The operator still gets `why` in the result.
+  await log({ kind: 'flush', ok: false, attempts: attempt, reason, code: last?.code ?? flushCode({ why, reason }) }, { env });
   return failed;
 }
 
@@ -975,7 +1072,9 @@ export async function ownFlushDue({ env = process.env, now = () => new Date() } 
     if (!lines.length) return false;
     const oldest = lines.map((l) => Date.parse(l?.at ?? '')).filter((n) => Number.isFinite(n)).sort()[0];
     if (!Number.isFinite(oldest)) return true; // undatable lines are already anomalous — publish them
-    return now().getTime() - oldest > OWN_FLUSH_AFTER_MS;
+    // ...and only when the push would actually GO (VCST-6378): without this, a queue of today's log
+    // lines kept the server's 60 s timer and every CLI verb starting a push that only deferred, all day.
+    return now().getTime() - oldest > OWN_FLUSH_AFTER_MS && linesWouldGo(lines, { env, now: now().getTime() });
   } catch { return false; }
 }
 
@@ -984,7 +1083,14 @@ export async function sweepIfDue({ env = process.env, base = null, token = null,
     if (env.KB_NO_SWEEP || kbDisabled(env)) return { state: 'off' };
     if (!coordinatesOf(base)) return { state: 'off', why: 'not a writable base' };
     const mineDue = await ownFlushDue({ env, now });
-    const due = await queueFiles({ env, now, sweep: true, includeMine: false });
+    // Another session's idle file counts only when a push would TAKE it (`linesWouldGo`, round 3): one
+    // holding only today's log lines started a full flush cycle on every MCP call and CLI verb, to defer.
+    const idle = await queueFiles({ env, now, sweep: true, includeMine: false });
+    const due = [];
+    for (const f of idle) {
+      const { lines } = await readQueue({ env, path: f.path });
+      if (linesWouldGo(lines, { env, now: now().getTime() })) due.push(f);
+    }
     if (!mineDue && !due.length) return { state: 'nothing' };
     // The stamp paces the OPPORTUNISTIC sweep of other people's files. It must not gate our own
     // queue: the stamp is touched by every flush, including one that pushed nothing of ours, so
@@ -992,7 +1098,7 @@ export async function sweepIfDue({ env = process.env, base = null, token = null,
     // flush is self-pacing instead — a successful push removes the queue file, so the next one
     // cannot come due until five minutes after the next line is written.
     if (!mineDue && !(await shouldSweep({ env, now }))) return { state: 'too-soon' };
-    return await flush({ env, base, token, now, fetchImpl, includeMine: mineDue, sweep: true });
+    return await flush({ env, base, token, now, fetchImpl, includeMine: mineDue, sweep: true, auto: true });
   } catch (err) {
     const r = { state: 'failed', why: String(err?.message ?? err) };
     await recordPush(r, { env, at: now() });
@@ -1167,10 +1273,10 @@ async function buildPush({ api, prefix, full, loaded, allLines, counts, session,
 
   const outside = outsideBase([...writes.map((w) => w.path), ...deletions], prefix);
   if (outside.length) {
-    // ALWAYS, not only on the first push. A path outside the three the base owns is either a bug in
+    // ALWAYS, not only on the first push. A path outside the four the base owns is either a bug in
     // the path arithmetic or a payload from somewhere it should not have come from, and in a shared
     // public repository the right answer to both is to stop.
-    return { state: 'failed', reason: 'contained', detail: `refusing to touch ${outside.length} path(s) outside ${prefix || '<root>'}/{entries,index.json,log}: ${outside.slice(0, 5).join(', ')}` };
+    return { state: 'failed', reason: 'contained', detail: `refusing to touch ${outside.length} path(s) outside ${prefix || '<root>'}/{entries,index.json,log,builds/<pin>.json}:${outside.slice(0, 5).join(', ')}` };
   }
 
   return {
