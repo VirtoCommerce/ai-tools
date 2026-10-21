@@ -1,5 +1,5 @@
 // Unit tests for the generated-file secret-hygiene readiness checks (VCST-5774 B4) —
-// plugins/vc-fix/skills/project-init/verify-access.mjs `findLiteralSecrets`,
+// plugins/vc-init/skills/project-init/verify-access.mjs `findLiteralSecrets`,
 // `findSettingsSecrets` and the pure `gradeSecretHygiene` decision table.
 //
 // gen-mcp.mjs now emits `${VAR}` indirections instead of literal credentials, but that fix lives in
@@ -14,7 +14,7 @@
 // Run: `npm test` (tsx --test scripts/unit/**/*.test.mjs).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { findLiteralSecrets, findSettingsSecrets, gradeSecretHygiene } from "../../plugins/vc-fix/skills/project-init/verify-access.mjs";
+import { findLiteralSecrets, findSettingsSecrets, gradeSecretHygiene } from "../../plugins/vc-init/skills/project-init/verify-access.mjs";
 
 const cfg = (servers) => JSON.stringify({ mcpServers: servers });
 /** "certain" | "suspected" | "clean" — the only distinction the grading actually consumes. */
@@ -214,8 +214,8 @@ const CASES = [
     // `hits && !ignored` FAIL fired with "one `git add -A` publishes it" on a project with no git
     // at all — and 4 of the 5 leaking projects VCST-5774 found on disk were exactly that shape.
     over: { hits: CERTAIN, inRepo: false, ignored: false }, status: "WARN", notMatch: [/git add -A/] },
-  { name: "certain literal in a properly-ignored .mcp.json — WARN naming the escape hatch",
-    over: { hits: CERTAIN }, status: "WARN", match: [/--inline-secrets/] },
+  { name: "certain literal in a properly-ignored .mcp.json — WARN: tokens belong in vc-secrets (VCST-6402)",
+    over: { hits: CERTAIN }, status: "WARN", match: [/vc-secrets/, /--check/], notMatch: [/--inline-secrets/] },
   { name: "SUSPECTED value in an exposed file caps at WARN — it may be a filename, not a secret",
     over: { weak: SUSPECT, ignored: false }, status: "WARN", match: [/may hold a credential/, /srv\.args\[2\]/] },
   { name: "SUSPECTED value in an ignored file — WARN, still not a blocker",
@@ -233,9 +233,11 @@ const CASES = [
   { name: "unparsable AND exposed — the exposure is still reported",
     // A broken JSON must not also hide the ignore-state finding.
     over: { unparsable: true, ignored: false }, status: "WARN", match: [/not gitignored/] },
-  { name: "settings: a contained credential is the TARGET state, not a defect",
+  { name: "settings: a contained credential is no longer the target state — WARN to move it (VCST-6402)",
+    // Between VCST-5774 and VCST-6402 settings.local.json `env` WAS the PAT's home and this row read
+    // PASS. Tokens now live in vc-secrets, so an upgraded project's leftover is reported and moved.
     over: { kind: "settings", file: ".claude/settings.local.json", hits: ["env.GITHUB_PERSONAL_ACCESS_TOKEN"] },
-    status: "PASS", match: [/by design/] },
+    status: "WARN", match: [/vc-secrets/, /--check/], notMatch: [/by design/] },
   { name: "settings: the same credential in a committable file is a FAIL",
     // The fix's own new secret location must be guarded too — auditing only .mcp.json would have
     // left it unchecked.

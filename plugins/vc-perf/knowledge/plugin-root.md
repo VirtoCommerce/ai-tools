@@ -65,5 +65,10 @@ If neither resolves, stop and tell the operator the plugin install could not be 
   root the same way with vc-fix's ids — `vc-fix@ai-tools`, then `vc-fix@vc-tools` — see `vc-fix`'s own
   `plugin-root.md`. The two resolutions are independent; never assume `vc-perf` and `vc-fix`
   share an install path.
+- **vc-init** (a dependency since VCST-6402) owns `/project-init` and is the only writer of
+  `project-profile.json`; `/perf-init` writes its `perf` block through
+  `<vc-init>/skills/project-init/profile-set.mjs`. Resolve `<vc-init>` the same way with the id
+  `vc-init@ai-tools`, or more simply read `vcInit` from `node "$VC_RUN" --where`. Again an
+  independent resolution — never derive it from `vc-perf`'s path.
 - `~/.claude/plugins/installed_plugins.json` carries the same data but is an **internal,
   undocumented** file — prefer `claude plugin list --json`.

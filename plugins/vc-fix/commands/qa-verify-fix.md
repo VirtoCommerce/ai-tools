@@ -22,8 +22,8 @@ Pick up a READY-FOR-TEST bug ticket, verify the fix on the live environment, and
 > mechanism (§3), and the platform-only build-version check (§5). `/project-init`'s tracker scan
 > already leaves the QA-side role states — `roleStates["testing"]` / `["tested"]` / `["reopen"]`
 > (+ `["done"]`) — in the profile **specifically for this command to consume** (`/qa-fix` only ever
-> *reads* `roleStates`; it never writes to it). **With no profile ⇒ Jira / `gh` /
-> `vc-deploy-dev` — the original behaviour, unchanged.**
+> *reads* `roleStates`; it never writes to it). **A missing profile is a STOP — run `/project-init`
+> (the `vc-init` plugin); there is no Jira / `gh` / `vc-deploy-dev` default any more.**
 
 ## Usage
 ```
@@ -39,29 +39,31 @@ Pick up a READY-FOR-TEST bug ticket, verify the fix on the live environment, and
 Before Step 0, read `project-profile.json` from the project root once and treat it as the
 declarative source of truth (mirroring `/qa-fix`'s Orientation block). `/project-init` has **baked**
 the resolved facts into it, so do **not** re-derive tracker/host behaviour and do **not** ask the
-operator what the profile already answers. **Absent profile ⇒ every field below is empty ⇒ fall back
-to the Jira / GitHub / `vc-deploy-dev` behaviour — this section changes nothing for the native path.**
+operator what the profile already answers. **Absent profile ⇒ STOP and ask the operator to run
+`/project-init`** — a native VirtoCommerce deployment has a profile too; nothing is defaulted.
 
 - **Paths & cwd discipline** (`profile.paths`): use `paths.projectRoot` as the absolute base for
-  everything — `.env`/secrets (`join(projectRoot, paths.secretsEnv)`), `paths.reports`. To invoke a
-  bundled plugin script (`ado.mjs`), resolve `$pluginRoot` = the ACTIVE install path at runtime via
-  `claude plugin list --json` (there is no baked plugin path in the profile; see
-  [`knowledge/execution/plugin-root.md`](../knowledge/execution/plugin-root.md)). Load secrets
-  ONLY from the absolute path. **Never print a PAT/token — and never inline the literal value in a
-  command.** `ado.mjs` reads `ADO_PAT` from the environment; make sure it's loaded from `.env.local`
-  (e.g. sourced into the shell) rather than pasted as `ADO_PAT="…"` in front of each call.
+  everything — `.env` files (`join(projectRoot, paths.secretsEnv)`, test-user passwords only),
+  `paths.reports`. **No tracker/host token is in any file** — GitHub / Azure DevOps / Jira tokens live in
+  vc-secrets and reach a process only through the bridge `node "$VC_RUN" gh|ado|jira …`, which runs the
+  same command on a PAT axis or a session axis (never branch on `auth.*`). `$VC_RUN` is set by
+  `/project-init` in `.claude/settings.local.json` `env`; unset ⇒ the project was onboarded before
+  VCST-6402 — run `/project-init --check`. **Host-governed project** (`governance.host` set): use the host's MCP servers from `governance.servers.*`, never `$VC_RUN` — [`knowledge/execution/host-governance.md`](../knowledge/execution/host-governance.md). To invoke any other bundled plugin script, resolve
+  `$pluginRoot` = the ACTIVE install path at runtime via `claude plugin list --json` (see
+  [`knowledge/execution/plugin-root.md`](../knowledge/execution/plugin-root.md)). **Never print a
+  PAT/token, never source one into the shell, never inline one in a command.**
 - **Execution mode** (`profile.runtime`): when `helpersRunnable` is `false` (installed plugin) read
   the baked profile fields — do not try to run/emulate the `.ts` routing helpers.
 - **Tracker** (`profile.tracker.kind`): `jira` ⇒ Atlassian MCP; `azure` ⇒ the ADO helper
-  `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" <cmd>` (`get-workitem`, `comment`, `transition`,
+  `node "$VC_RUN" ado <cmd>` (`get-workitem`, `comment`, `transition`,
   `get-file`, `list-refs`, `list-states`; org/project/apiBase default from the profile). Use the
   tracker's own **key format** (`profile.tracker.ticketKeyFormat`): Jira `ABC-123`, Azure Boards a
   **bare numeric** `12345` — never assume `VCST-`.
-- **QA-side role → state** (`profile.tracker.azure.roleStates`): map the lifecycle ROLE to a real
+- **QA-side role → state** (`profile.tracker.azure.roleStatesByType`, one map per work-item type): map the lifecycle ROLE to a real
   deployment state — `testing` (QA in progress) · `tested` (QA passed) · `reopen` (QA rejected, back
-  to dev) · `done` (final). These are the deployment's REAL states (e.g. LEO's Bug: `testing`→`On QA`,
+  to dev) · `done` (final). These are the deployment's REAL states (e.g. one client process's Bug: `testing`→`On QA`,
   `tested`→`Tested on QA`, `reopen`→`Reopen`, `done`→`Closed`). The QA roles are scanned best-effort;
-  **if a role is absent from an older profile, fall back to `ask` + `ado.mjs list-states --type Bug`
+  **if a role is absent from an older profile, fall back to `ask` + `node "$VC_RUN" ado list-states --type Bug`
   and confirm the state with the operator — do NOT invent a state.**
 - **Transition policy** (`profile.tracker.azure.transitionPolicy` + `.qaRoleStatesComplete`): see
   `tracker-ops.md` §Live transition discovery point 4 for the full auto/confirm-once/ask semantics —
@@ -71,9 +73,9 @@ to the Jira / GitHub / `vc-deploy-dev` behaviour — this section changes nothin
 - **Build-verify source** (`profile.buildVerify.source`): `vc-deploy-dev` (native — GitHub MCP read
   of the deploy manifest), `modules-endpoint` (client — `GET {BACK_URL}/api/platform/modules`),
   `ticket` (frontend-only client — take the storefront version from the ticket). Empty/`""` ⇒ auto by
-  `projectType` = the native `vc-deploy-dev` path. See `tracker-ops.md` §5.
-- **Code host** (`profile.vcs.clientHost` / the routed repo's host): `github` ⇒ `gh pr view`/`gh pr
-  diff`; `azure-repos` ⇒ `ado.mjs` (`list-refs` / `get-file`, or ADO REST for PR details). See
+  `projectType` (native ⇒ `vc-deploy-dev`). See `tracker-ops.md` §5.
+- **Code host** (`profile.vcs.clientHost` / the routed repo's host): `github` ⇒ `node "$VC_RUN" gh pr
+  view` / `gh pr diff`; `azure-repos` ⇒ `node "$VC_RUN" ado list-refs` / `ado get-file`. See
   `tracker-ops.md` §3.
 
 Reference `tracker-ops.md` / `project-profile.mjs` — don't restate their content below.
@@ -96,8 +98,8 @@ Reference `tracker-ops.md` / `project-profile.mjs` — don't restate their conte
 ## Step 1 — Fetch Ticket & Understand the Bug
 
 **Fetch the ticket** via the profile's tracker (`tracker-ops.md` §2), using the tracker's own key format:
-- **Jira** (`tracker.kind = jira`, or no profile) → Atlassian MCP `getJiraIssue`.
-- **Azure Boards** (`tracker.kind = azure`) → `node "$pluginRoot/skills/qa-fix-routing/ado.mjs" get-workitem --id <n>` (do NOT hand-roll `curl`+`python`).
+- **Jira** (`tracker.kind = jira`) → Atlassian MCP `getJiraIssue` (or `node "$VC_RUN" jira get --key <KEY>`).
+- **Azure Boards** (`tracker.kind = azure`) → `node "$VC_RUN" ado get-workitem --id <n>` (do NOT hand-roll `curl`+`python`).
 
 If the tracker is not configured/reachable, ask the user to paste:
 - Summary, Severity, Priority, Component, Affected Domain
@@ -117,8 +119,8 @@ If the tracker is not configured/reachable, ask the user to paste:
   - Admin SPA / modules / REST API → `backend-admin-checklists.md`
   - GraphQL xAPI → `graphql-checklist.md`
 - Linked PR — read it on the resolved **code host** (`vcs.clientHost` / the routed repo's host; `tracker-ops.md` §3):
-  - **GitHub** (or no profile) → `gh pr view <number>` and `gh pr diff <number> --name-only`
-  - **Azure Repos** → `ado.mjs list-refs` / `ado.mjs get-file` for the changed files/branch, or an ADO REST `GET …/pullRequests/<id>` for PR details (the ticket usually cross-links it via `AB#<n>`)
+  - **GitHub** → `node "$VC_RUN" gh pr view <number>` and `node "$VC_RUN" gh pr diff <number> --name-only`
+  - **Azure Repos** → `node "$VC_RUN" ado list-refs` / `ado get-file` for the changed files/branch (the ticket usually cross-links the PR via `AB#<n>`)
 - Root cause (from dev comment or PR description)
 
 **Output before proceeding:**
@@ -145,7 +147,7 @@ VirtoCommerce-internal; a client deployment has no access):
    - **`vc-deploy-dev`** (native platform; also the default when the source is `""`/absent) — use **GitHub MCP** to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev`. Branch defaults to `vcst-qa`; switch to the branch matching `TEST_ENV` (`vcptcore`, `virtostart`, …) when running against another env.
    - **`modules-endpoint`** (client) — `GET {BACK_URL}/api/platform/modules` with an admin token; the deployment reports its own module/Platform versions. (Theme/storefront version comes from the storefront or the ticket.)
    - **`ticket`** (frontend-only client bug) — take the storefront version from the ticket's system info; do NOT call the admin modules endpoint (that's a backend check needing a token).
-2. **Cross-check the PR build against the running version** — read the linked PR on the resolved code host (`tracker-ops.md` §3): GitHub (or no profile) → `gh pr view <number> --json title,state,headRefName`; Azure Repos → `ado.mjs list-refs` / an ADO REST `GET …/pullRequests/<id>`. The deployed-to-QA artifact of an open PR is a **branch/alpha build** (e.g. `2.49.7-alpha.NNNN`).
+2. **Cross-check the PR build against the running version** — read the linked PR on the resolved code host (`tracker-ops.md` §3): GitHub → `node "$VC_RUN" gh pr view <number> --json title,state,headRefName`; Azure Repos → `node "$VC_RUN" ado list-refs` (the PR's source branch). The deployed-to-QA artifact of an open PR is a **branch/alpha build** (e.g. `2.49.7-alpha.NNNN`).
 3. **Decide DEPLOYED vs NOT-DEPLOYED from explicit signals — never assume deployed:**
    - **NOT deployed** if ANY of: the linked PR is still **open / active (not merged)** and its branch build is not the one running; the running storefront/module version is a **plain release** (e.g. `2.49.7`) rather than the PR's **alpha/branch build** (e.g. `2.49.7-alpha.NNNN`); or the running version simply does not match the PR artifact.
    - **Deployed** only when the running version equals the PR's build artifact.
@@ -153,7 +155,7 @@ VirtoCommerce-internal; a client deployment has no access):
 
 **STOP gate — if NOT deployed:**
 - Do **NOT** transition the ticket to `testing`, do **NOT** dispatch the verification agent, do **NOT** run the STR.
-- Post ONE factual comment (Jira `addCommentToJiraIssue` / Azure `ado.mjs comment --id <n> --text-file <path>`): fix **not yet deployed** — name the running version vs the expected PR build → verification **deferred**. Leave the ticket at its **current** state: **no transition**, and specifically **no `reopen`** (an undeployed fix is not a failed fix). `transitionPolicy` does not apply here — there is no role transition to make, so this is silent regardless of `auto`/`ask`. End with a **BLOCKED** verdict (§Step 6).
+- Post ONE factual comment (Jira `addCommentToJiraIssue` / Azure `node "$VC_RUN" ado comment --id <n> --text-file <path>`): fix **not yet deployed** — name the running version vs the expected PR build → verification **deferred**. Leave the ticket at its **current** state: **no transition**, and specifically **no `reopen`** (an undeployed fix is not a failed fix). `transitionPolicy` does not apply here — there is no role transition to make, so this is silent regardless of `auto`/`ask`. End with a **BLOCKED** verdict (§Step 6).
 - Only re-poll if the operator explicitly asks to wait. Never test old code.
 
 **Record** the confirmed platform / theme / module versions — reused verbatim in the Step 3 comment and the final report.
@@ -180,13 +182,13 @@ The strongest verification proves the **same** reproduction goes **RED on the pr
 ## Step 3 — Transition to TESTING (only after Step 2 confirms DEPLOYED)
 
 With the fix confirmed deployed, transition the ticket to the **`testing`** role state (`tracker-ops.md` §Live transition discovery — resolve by ROLE, never a hardcoded name):
-- **Jira** (or no profile) → `getTransitionsForJiraIssue`, then `transitionJiraIssue` on the transition whose target status matches the `testing` role (the VC-internal Jira reference name for this role is `On QA`).
-- **Azure Boards** → `ado.mjs transition --id <n> --state <roleStates["testing"]>` (e.g. `On QA`). If `roleStates["testing"]` is **absent** from an older profile: do NOT invent a state, and do **NOT** write it into `project-profile.json` (persisting scanned roles is `/project-init`'s job). Fall back to policy `ask`, run **`ado.mjs list-states --type Bug` live** (don't trust the profile's cached state list), confirm the state with the operator for THIS run only, and recommend running `/project-init` to persist the QA roles.
+- **Jira** → `getTransitionsForJiraIssue`, then `transitionJiraIssue` on the transition whose target status matches the `testing` role (the VC-internal Jira reference name for this role is `On QA`).
+- **Azure Boards** → `node "$VC_RUN" ado transition --id <n> --role testing` (e.g. `On QA` — the CLI picks the state for the item's own type). If it reports **no state mapped** for that role: do NOT invent a state, and do **NOT** write it into `project-profile.json` (persisting scanned roles is `/project-init`'s job). Fall back to policy `ask`, run **`node "$VC_RUN" ado list-states --type Bug` live** (don't trust the profile's cached state list), confirm the state with the operator for THIS run only, and recommend running `/project-init` to persist the QA roles.
 
 **Honor the transition policy per `tracker-ops.md` §Live transition discovery point 4** — including the
 QA-side `qaRoleStatesComplete` gate: only apply `auto`/`confirm-once` when it's `true`, else `ask`.
 
-Add a tracker comment (Jira `addCommentToJiraIssue` / Azure `ado.mjs comment --id <n> --text-file <path>`) — state only what Step 2 **confirmed**, never a presumptive "deployed". A verification of a build newer than the ticket's last QA comment is a **new** comment, never an edit of the old one — an edit notifies nobody (`tracker-ops.md` §0 rule 5). Follow `tracker-ops.md` §2 **Comment & body style**: clear, brief, outcome-first, evidence referenced not inlined. **On Jira, write Markdown** (`##`/`**`/`` ` ``/`-` lists) — never Jira wiki markup. **On Azure, write the comment as HTML** (`<b>`, `<br/>`, `<ul>/<li>`, `<code>`) per [`azure-html-format.md`](../knowledge/execution/azure-html-format.md) — a plain-text/Markdown comment collapses into one unreadable paragraph; the plain block below is illustrative content, not the literal wire format:
+Add a tracker comment (Jira `addCommentToJiraIssue` / Azure `node "$VC_RUN" ado comment --id <n> --text-file <path>`) — state only what Step 2 **confirmed**, never a presumptive "deployed". A verification of a build newer than the ticket's last QA comment is a **new** comment, never an edit of the old one — an edit notifies nobody (`tracker-ops.md` §0 rule 5). Follow `tracker-ops.md` §2 **Comment & body style**: clear, brief, outcome-first, evidence referenced not inlined. **On Jira, write Markdown** (`##`/`**`/`` ` ``/`-` lists) — never Jira wiki markup. **On Azure, write the comment as HTML** (`<b>`, `<br/>`, `<ul>/<li>`, `<code>`) per [`azure-html-format.md`](../knowledge/execution/azure-html-format.md) — a plain-text/Markdown comment collapses into one unreadable paragraph; the plain block below is illustrative content, not the literal wire format:
 ```
 Starting QA verification.
 Platform: [PlatformVersion confirmed deployed in Step 2]
@@ -315,59 +317,43 @@ or two role transitions from `testing`:
 > hit *during* verification, e.g. env down mid-run).
 
 **Resolve each role → the live workflow** (`tracker-ops.md` §2, §Live transition discovery):
-- **Jira** (or no profile) → `getTransitionsForJiraIssue`, pick the transition whose target status matches the role (case-insensitive contains: "test" for `tested`, "reopen"/"fix" for `reopen`, "done" for `done`). The VC-internal Jira reference names for these roles are `Finish test` → `tested`, `Move to Done` → `done`, `Need fixes` → `reopen` — use them to recognize the transition, never as a hardcoded id.
-- **Azure Boards** → `ado.mjs transition --id <n> --state <roleStates[role]>` (LEO: `tested`→`Tested on QA`, `reopen`→`Reopen`, `done`→`Closed`). If a QA role is absent from an older profile, fall back to `ask` + `ado.mjs list-states --type Bug` and confirm the state with the operator — don't invent a state.
+- **Jira** → `getTransitionsForJiraIssue`, pick the transition whose target status matches the role (case-insensitive contains: "test" for `tested`, "reopen"/"fix" for `reopen`, "done" for `done`). The VC-internal Jira reference names for these roles are `Finish test` → `tested`, `Move to Done` → `done`, `Need fixes` → `reopen` — use them to recognize the transition, never as a hardcoded id.
+- **Azure Boards** → `node "$VC_RUN" ado transition --id <n> --role <role>` (e.g. `tested`→`Tested on QA`, `reopen`→`Reopen`, `done`→`Closed`). If a QA role is absent from an older profile, fall back to `ask` + `node "$VC_RUN" ado list-states --type <the item's type>` and confirm the state with the operator — don't invent a state.
 
 **Honor the transition policy per `tracker-ops.md` §Live transition discovery point 4** — this
 replaces the old "Ask the user before transitioning", **and** requires `qaRoleStatesComplete === true`
 before treating any of these QA-side transitions as `auto`/`confirm-once`. Skip entirely if the tracker
 is not configured, and note it in the report.
 
-**Tracker comment for VERIFIED (`testing` → `tested`):**
-```
-QA PASSED — Fix verified.
-STR: Passed 3/3 runs
-Regression: [X] adjacent checks — all passed
-Console: No new errors
-Side effects: None
-Evidence: {RUN_DIR}/
-Business rules verified: [BL-* list or "N/A"]
-```
-
-**Tracker comment for REOPEN (`testing` → `reopen`):**
-```
-QA FAILED — Reopening.
-Issue: [what still fails or what new issue was found]
-STR result: [X/3 passed]
-Evidence: {RUN_DIR}/
-Build: [version/commit tested]
-Environment: [URL]
-```
+**Tracker comment — every verdict:** write `verification-summary.json` first (Step 7's shape, incl.
+`before_after[]`), then hand it to `/vc-fix:qa-report {RUN_DIR}/verification-summary.json --kind fix --confirmed --lede "<what was broken, what the fix changed, whether anything near it moved>"`.
+It renders the before/after comment within its template budget, embeds the screenshots inline for a UI bug,
+and posts or amends the ONE comment (`tracker-ops.md` §0). Template: `skills/qa-report/templates/comment-fix.md`.
+Never type the comment by hand: if the Skill tool refuses `/vc-fix:qa-report`, the install predates the skill —
+tell the user to run `/plugin update` and stop the report step.
 
 ---
 
-## Step 6A — Assemble the Evidence Page (local by default; external publish is gated)
+## Step 6A — What the Evidence Page Is Built From (the page itself is `qa-report`'s)
 
-For a **VERIFIED / VERIFIED-WITH-NOTES / NEW-REGRESSION** verdict, assemble ONE self-contained HTML evidence page from the Phase A/B captures. **Load the `artifact-design` skill first**; utilitarian/technical treatment (theme-aware light+dark, semantic PASS/stale coloring, no flashy hero).
+For a **VERIFIED / VERIFIED-WITH-NOTES / NEW-REGRESSION** verdict the evidence page is rendered, gated and
+linked **inside the Step 6 `qa-report` call** — this step adds no second page flow. `qa-report` fills
+`skills/qa-report/templates/page.html` from the same `verification-summary.json` (before → after table, build
+strip, evidence), runs its publish gate (`skills/qa-report/reference.md` §Publish gate: native ⇒ Artifact after
+asking; client ⇒ local `evidence.html`, **never** published for client-owned code), and on a publish re-renders
+with `--page-url` **before** it posts, so the one comment already carries the link. Your part is what goes into
+the record: **always** redact secrets before Step 7 writes the pair.
 
-**Always include:** verdict badge · build/env strip (platform, module/theme, PR) · the bug + root cause (2–3 lines) · a **before → after table** (Phase A RED vs Phase B GREEN) · the run tally · the checklist · footer notes (any temporary deploy-repin to revert, evidence file paths).
+**What to capture in Phase A/B (feeds `before_after[]`):**
 
-**Layer-scoped snippet — the core of the page:**
-
-| Bug layer | Snippet to embed |
+| Bug layer | Snippet to capture |
 |---|---|
 | **xAPI / REST-API / module** | The real **request & response**: the trigger call, the GraphQL/REST **request**, the **fixed-build response** (fresh values highlighted), and the **same request's pre-fix response** for contrast (stale values). Use the payloads the QA agent captured in Phase A/B — **never hand-write them**. Optionally append the fix diff (PR files via the code host) as a secondary snippet. |
-| **Storefront / Admin-SPA / visual** | Before/after screenshots (embed as data URIs) + the corrected computed style / DOM value. |
+| **Storefront / Admin-SPA / visual** | Before/after screenshots + the corrected computed style / DOM value. |
 
-**Where it goes — profile-aware, containment-first (this is what matters on a client deployment):**
-
-- **Default = a LOCAL file.** Write the page to `{RUN_DIR}/evidence.html` and link that path from the tracker comment + summary. Nothing leaves this machine — always safe, and the normal outcome.
-- **Publishing it as a hosted Claude Artifact uploads the content to an external host**, so it is **opt-in and gated by project type** (`profile.projectType`):
-  - **Native-platform project** (`projectType` ≠ `client`, or no profile): the defect is VirtoCommerce's own on public repos → you MAY publish, after asking the operator.
-  - **Client project** (`projectType === "client"`): do **NOT** auto-publish — the reproduction carries the client's endpoints, identifiers, and data. Publish **only** if the operator explicitly asks **and** the page is scrubbed of every client host / path / identifier / datum / secret — and **NEVER** for a **client-owned-code** bug (quality-gates §2a: client code and data never leave the client's project). When unsure, keep it local.
-- **Always** redact secrets (Authorization / token / password / PAN) regardless of destination.
-
-Record the result in `verification-summary.json`: `evidence` = the local path (always); `evidence_artifact` = the hosted URL **only when actually published**. If you did publish, note in your output that hosted artifacts are private until the operator shares them.
+`qa-report` records the outcome in `verification-summary.json`: `evidence` = the local path (always);
+`evidence_artifact` = the hosted URL **only when actually published**. If a page was published, note in your
+output that hosted artifacts are private until the operator shares them.
 
 ---
 
@@ -389,10 +375,17 @@ Write `{RUN_DIR}/verification-summary.json`:
   "agent_used": "qa-frontend-expert",
   "str_result": "3/3",
   "baseline_reproduction": "RED (pre-fix, live) | from-qa-bug | pinned-build",
+  "before_after": [
+    {"check": "<what was compared — a value, a status, a screen>", "before": "<Phase A RED observation>", "after": "<Phase B GREEN observation>",
+     "before_shot": "screenshots/<file>.png", "after_shot": "screenshots/<file>.png"}
+  ],
   "checklist_total": 10,
   "checklist_passed": 10,
   "checklist_failed": 0,
-  "regression_issues": [],
+  "$comment_side_effects": "Each entry carries its DISPOSITION, so a finding nobody triaged is never indistinguishable from one deliberately left alone. A bare string is the legacy shape and renders its ticket cell as `not recorded`.",
+  "regression_issues": [
+    {"summary": "<what is wrong, in the reader's words>", "severity": "Low|Medium|High", "ticket": "<key, when it was filed>", "why": "<the reason, when it was not>"}
+  ],
   "side_effects": [],
   "bugs_filed": [],
   "business_rules_verified": ["BL-CART-001"],
@@ -402,6 +395,8 @@ Write `{RUN_DIR}/verification-summary.json`:
   "artifacts": "{RUN_DIR}/"
 }
 ```
+`before_after[]` is required for VERIFIED / VERIFIED_WITH_NOTES / NEW_REGRESSION (one row per Step 2A RED→GREEN pair, from the captured payloads, never hand-written). The `*_shot` fields are only for UI-layer bugs.
+
 (`tracker_transition.role` is the lifecycle role applied; `state` is the resolved destination status —
 Jira `TESTED`, Azure `roleStates["tested"]` e.g. `Tested on QA`. `evidence` is the always-written local
 page; `evidence_artifact` stays `null` unless a hosted Artifact was actually published per Step 6A's gate.)
@@ -428,7 +423,7 @@ node "$pluginRoot/hooks/session-telemetry.mjs" complete --skill "qa-verify-fix"
 ```
 
 So the vc-fix self-diagnostics collector prints its one-line clean/health status **exactly once**
-after the run. `$pluginRoot` = the active install path — reuse if already resolved this run, else
+after the run. `$pluginRoot` = the active install path, resolved via
 `claude plugin list --json` (see [`knowledge/execution/plugin-root.md`](../knowledge/execution/plugin-root.md)).
 Details: [`knowledge/diagnostics/skill-expectations.md`](../knowledge/diagnostics/skill-expectations.md)
 §Signal completion.
@@ -439,9 +434,9 @@ Details: [`knowledge/diagnostics/skill-expectations.md`](../knowledge/diagnostic
 
 - Follow `skills/qa-evidence/output-paths.md` for artifact output paths and naming conventions
 - Follow `.claude/templates/agent-dispatch.md` for dispatch conventions, browser fallback, and error handling; tracker transitions follow `knowledge/execution/tracker-ops.md` (profile-driven, by role)
-- Read the deployment profile once (Orientation) and route every tracker/host/build-verify op through it; **no profile ⇒ Jira / `gh` / `vc-deploy-dev`, unchanged**
-- Never print a PAT/token, and never inline the literal (`ADO_PAT="…"`) in a command — load it from `.env.local`; all externally-facing content in English
-- Never write `project-profile.json` — persisting scanned tracker roles/states is `/project-init`'s job. A missing QA role ⇒ `ask` + live `ado.mjs list-states --type Bug` for THIS run only, then recommend the operator run `/project-init`
+- Read the deployment profile once (Orientation) and route every tracker/host/build-verify op through it; **no profile ⇒ STOP, run `/project-init`**
+- Never print a PAT/token, and never read one from a file or inline it in a command — every tracker/host call goes through `node "$VC_RUN" …`; all externally-facing content in English
+- Never write `project-profile.json` — persisting scanned tracker roles/states is `/project-init`'s job. A missing QA role ⇒ `ask` + live `node "$VC_RUN" ado list-states --type Bug` for THIS run only, then recommend the operator run `/project-init`
 - Browser fallback: chrome→firefox, edge→chrome, firefox→edge (max 1 retry)
 - Never use WebKit — not supported on Windows
 - Never assign two agents to the same browser server simultaneously
@@ -449,7 +444,7 @@ Details: [`knowledge/diagnostics/skill-expectations.md`](../knowledge/diagnostic
 - Max 3 concurrent browser agents
 - Always reproduce the original bug first before confirming the fix
 - Prove the fix with a **before/after reproduction** — RED baseline (pre-fix, Phase A) → GREEN on the fixed build (Phase B) — not just a lone GREEN. Cite where the RED baseline came from; never fabricate it
-- Assemble the RED→GREEN evidence page (Step 6A) and link it from the tracker comment + `verification-summary.json`. **Default is a LOCAL file** (`{RUN_DIR}/evidence.html`) — nothing leaves this machine. Publishing it as a hosted Claude Artifact is **opt-in**: fine for a native-platform bug after asking the operator; on a **client** project it needs operator consent **and** scrubbing of every client host/path/identifier/datum, and is **never** done for a client-owned-code bug (§2a). For backend/xAPI/API bugs embed the real request & response the QA agent captured (not hand-written); for UI bugs before/after screenshots. Always redact secrets (Authorization/token/PAN)
+- Assemble the RED→GREEN evidence page (Step 6A) and link it from the tracker comment + `verification-summary.json`. **Default is a LOCAL file** (`{RUN_DIR}/evidence.html`); whether it is ever published is `skills/qa-report/reference.md` §Publish gate, never restated here. For backend/xAPI/API bugs embed the real request & response the QA agent captured (not hand-written); for UI bugs before/after screenshots. Always redact secrets (Authorization/token/PAN)
 - STR must pass 3 consecutive times — 2/3 is not sufficient (marks as intermittent)
 - Always query Context7 in Step 0 to understand expected post-fix behavior
 - Tracker transitions follow `profile.tracker.azure.transitionPolicy` (`auto` ⇒ silent by role; `confirm-once`/`ask` ⇒ confirm — the Jira / unscanned default), consistent with `/qa-fix` and `/qa-bug` — **but gated additionally on `qaRoleStatesComplete === true`** for this command's QA-side roles (`tracker-ops.md` §Live transition discovery point 4)

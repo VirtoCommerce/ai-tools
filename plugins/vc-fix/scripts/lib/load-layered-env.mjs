@@ -18,8 +18,20 @@
  * caught, degraded warning (a best-effort notifier that must never fail the
  * run it's reporting on).
  */
-import { resolveTestEnv } from "./resolve-test-env.js";
-import { applyLayered } from "./env-layers.mjs";
+import { join, resolve } from "node:path";
+import { envDir, resolveTestEnv } from "./resolve-test-env.js";
+import { applyLayered, readEnvFile } from "./env-layers.mjs";
+
+/** Token env vars that belong in vc-secrets, never in a file (VCST-6402). */
+export const TOKEN_KEYS = ["GITHUB_FIX_BUGS_TOKEN", "ADO_PAT", "JIRA_API_TOKEN"];
+
+let warnedPlaintext = false;
+
+/** The token keys (or their _<ENV>-suffixed spellings) a parsed .env file holds a value for. */
+export function plaintextTokenKeys(parsed) {
+  const keys = Object.entries(parsed || {}).filter(([, v]) => String(v ?? "").trim() !== "").map(([k]) => k);
+  return TOKEN_KEYS.filter((t) => keys.some((k) => k === t || k.startsWith(`${t}_`)));
+}
 
 /**
  * @param {string} [fallback]
@@ -34,6 +46,23 @@ export function loadLayeredEnv(fallback = "vcst", { ticket } = {}) {
       `Invalid TEST_ENV="${TEST_ENV}". Must match [a-z0-9_]+ (use underscores, not hyphens — the _<ENV> suffix promotion depends on it).`,
     );
   }
-  applyLayered(TEST_ENV, { root: process.cwd(), ticket });
+  // Under the $VC_RUN bridge (VCST-6402) the tokens arrive from vc-secrets in the environment. Every file
+  // layer beats the environment, so a stale plaintext token left in .env.local (or in a QA_ENV_PATH file)
+  // would silently WIN over the one the operator stored in vc-secrets — snapshot the injected ones and put
+  // them back after the layers (and after the _<ENV> promotion, which can override too).
+  const injected = process.env.VC_BRIDGE === "1"
+    ? Object.fromEntries(TOKEN_KEYS.filter((k) => process.env[k]).map((k) => [k, process.env[k]]))
+    : {};
+  // Under the bridge the files come from the trusted project, not the cwd (resolve-test-env.js envDir) — the
+  // QA_ENV_PATH folders too, since `layered` reads them from that root's .env.local.
+  const root = resolve(envDir());
+  applyLayered(TEST_ENV, { root, ticket });
+  Object.assign(process.env, injected);
+  const plaintext = plaintextTokenKeys(readEnvFile(join(root, ".env.local")));
+  if (plaintext.length && !warnedPlaintext) {
+    warnedPlaintext = true;
+    process.stderr.write(`[env] ⚠ .env.local holds ${plaintext.join(", ")} in plaintext — tokens live in vc-secrets now; run /project-init --check to move them there and strip the file
+`);
+  }
   return TEST_ENV;
 }

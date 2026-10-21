@@ -1,0 +1,77 @@
+{
+  "ticket": "VCST-6452",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "date": "2026-10-21",
+  "environment": "localhost theme, API vcst-qa",
+  "build": {
+    "platform": "vcst-qa",
+    "theme": "2.61.0-pr-2593 (local)",
+    "relevant_modules": {},
+    "pr_build": "vc-frontend#2593 @296d1234 (open, not deployed)",
+    "baseline_build": "2.61.0-alpha.2590 (local, pre-fix)"
+  },
+  "agent_used": "qa-frontend-expert",
+  "str_result": "3/3",
+  "baseline_reproduction": "RED live on pre-fix 2.61.0-alpha.2590, locale chunk delayed 1.5 s",
+  "method_note": "Natural reloads on localhost never reproduce the race (0/5 on pre-fix), so the quotes en locale chunk (/assets/en-*.js carrying quote_number_label) was held 1500 ms on both builds; the identical harness ran on each.",
+  "before_after": [
+    {
+      "check": "List headers",
+      "before": "raw keys, 5/5",
+      "after": "translated, 10/10",
+      "before_shot": "screenshots/RED-prefix-list-modeD-raw-keys.png",
+      "after_shot": "screenshots/GREEN-fix-list-modeD-settled-translated.png"
+    },
+    {
+      "check": "List title",
+      "before": "quotes.meta.title, 5/5",
+      "after": "Quote requests, 10/10"
+    },
+    {
+      "check": "Detail title",
+      "before": "quote_details.title, or # without number",
+      "after": "Quote request #<number>, 7/7",
+      "before_shot": "screenshots/RED-prefix-detail-modeD-title-raw-quote_details.title.png",
+      "after_shot": "screenshots/GREEN-fix-detail-modeD-settled-title-numbered.png"
+    },
+    {
+      "check": "Edit title",
+      "before": "quote_details.title, 2/2",
+      "after": "Quote request #<number>, 6/6"
+    }
+  ],
+  "checklist_total": 10,
+  "checklist_passed": 10,
+  "checklist_failed": 0,
+  "regression_issues": [
+    {
+      "summary": "de quotes page: Date/Status/Total headers stay English (pre-existing, not from this fix)",
+      "severity": "Medium",
+      "why": "not filed, operator decision"
+    },
+    {
+      "summary": "GA4 page_view title on quote edit lacks the number",
+      "severity": "Low",
+      "why": "below filing floor"
+    },
+    {
+      "summary": "Language menu shows two plain 'English' entries",
+      "severity": "Low",
+      "why": "below filing floor"
+    }
+  ],
+  "side_effects": [],
+  "bugs_filed": [],
+  "business_rules_verified": [
+    "VC-UI-007"
+  ],
+  "tracker_transition": {
+    "role": "tested",
+    "state": "Tested",
+    "path": "Ready for test -> Testing -> Tested",
+    "comment_id": "112246"
+  },
+  "evidence": "reports/tickets/Sprint26-21/VCST-6452/",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-21/VCST-6452/"
+}
