@@ -75,6 +75,7 @@ that measure; anything that does not is deferred (§9).
 | D14 | Harness in this repo first. vc-test gets a self-contained copy in M3, as vc-fix does | owner |
 | D15 | A passed check that cannot be scripted gets a CSV row with no spec, and a mini agent wave runs only those rows | owner |
 | D16 | `test-management-specialist.md` must get under the 19K cap. Its detail moves into its skills' supporting files, and the spec hand-off is added inside that budget | owner |
+| D17 | A new or changed spec passes a **fidelity review** before it replaces the agent in a regression run. It is a new `/qa-review-tests` dimension, done by a fresh agent that is not the spec's author, once per spec change (not per run). It builds the table "row item (Assertions, Cross_Layer_Checks) → `expect` → OK / WEAKENED / MISSING". Any WEAKENED or MISSING item means the case stays on the agent lane. The approval lapses when the spec or its row changes; how that is recorded and detected is the builder's call (§8, M3) | owner |
 
 ## 5. Layout
 
@@ -145,8 +146,10 @@ orchestrator calls.
    - then, loading `/qa-test-automation`, the spec, with every observed literal replaced through `data.ts`.
 3. **The one run (D9).** A spec that does not behave as D9 requires is a defect of the spec. It never changes
    the checklist verdict.
-4. **Rows without a spec (D15)** run in one mini agent wave.
-5. **Round 2:** spec `PASS` ⇒ `FIXED`; `expect` `FAIL` ⇒ `NOT FIXED`; `BLOCKED` (spec defect) ⇒ the agent
+4. **Fidelity review (D17).** A fresh reviewer maps every row item to its `expect`. Until it approves, the case
+   keeps running on the agent lane, and a round-2 replay of an unreviewed reproduction is confirmed by the agent.
+5. **Rows without a spec (D15)** run in one mini agent wave.
+6. **Round 2:** spec `PASS` ⇒ `FIXED`; `expect` `FAIL` ⇒ `NOT FIXED`; `BLOCKED` (spec defect) ⇒ the agent
    replays that row only.
 
 ## 9. Gates and scripts in M1
@@ -178,5 +181,5 @@ orchestrator calls.
 |---|---|
 | **M1 Foundation** (§9) | `npx playwright test --project runner` gives the same verdicts as `suites:machine` on `050a`, `050m` and `087`. Three pilot specs for `028` pass on `vcst`, and one deliberately broken expectation fails as an `expect`. `suites:lint`, `td:validate` and `context:check` are green. `test-management-specialist.md` is under 19K and its baseline entry is deleted |
 | **M2 Lane** | `/qa-regression 028` runs the pilot cases through Playwright and sends only the rest to the agent |
-| **M3 Authoring** | One real ticket. Round 1 leaves specs for its passed scriptable items and its bug reproductions. Round 2 replays the reproductions with no browser agent. Tokens are measured against round 1 |
+| **M3 Authoring** | One real ticket. Round 1 leaves specs for its passed scriptable items and its bug reproductions, and each spec passes the D17 fidelity review, including the three M1 pilots. Round 2 replays the reproductions with no browser agent. Tokens are measured against round 1, counting the review |
 | **M4 CI** | The CI runner executes existing specs before the agent run |
