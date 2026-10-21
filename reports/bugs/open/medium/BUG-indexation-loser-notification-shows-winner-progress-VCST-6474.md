@@ -24,4 +24,5 @@ Evidence: notification ids / jobIds in `reports/tickets/Sprint26-21/VCST-6429/su
 ## Notes
 - Why it matters: PR #157 makes lock contention visible on the notification; this defect makes the skipped run's notification describe a different run, so the admin cannot trust either blade.
 - Code pointer (vc-module-search, head 927871e8): `IndexingJobs` is a singleton (`Module.cs:43`) holding one `IndexProgressHandler`; `RunIndexJobAsync` calls `_progressHandler.Start(...)` before `TryExecuteAsync`, so the skipped run reassigns the shared notification and the running build's `Progress()` writes into it. Same order on base e462accd.
+- Pod logs (2 platform pods): it happens only when both runs land on the same pod — the 3 hijacked skipped runs received 11 progress pushes from pod s69h8 where their winners ran (winners froze at 4); clean cases had the winner on the other pod.
 - Old-build comparison on vcst-qa (3.1010.0) did not reproduce, but that env runs a different job engine and likely several instances — inconclusive.

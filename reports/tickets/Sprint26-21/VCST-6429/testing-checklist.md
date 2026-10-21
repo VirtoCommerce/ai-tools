@@ -4,7 +4,7 @@ Ticket: VCST-6429 (Review task) · PR VirtoCommerce/vc-module-search#157 · Flow
 Env: vcptcore_qa1 · VirtoCommerce.Search 3.1011.0-pr-157-9278 · Platform 3.1084.0-pr-3140-9092 · provider Azure AI Search (all 7 types)
 Model: reports/ba/test-models/VCST-6429-2026-10-20.md · Domain map: .claude/knowledge/domain/search.md rev 1
 Test data: live-discover only (data_surface=false) — any active Product P from `GET {{BACK_URL}}/api/search/indexes` scope; an `AGENT-TEST-` product for C9
-Verdict: **PASS WITH NOTES** — every PR claim testable on the stand holds on Azure AI Search AND ElasticSearch8; C10 (Error log) and C11 (lock-store failure / dead holder) rest on PR unit tests only; C12 is pre-existing defect F-1
+Verdict: **PASS WITH NOTES** — every PR claim testable on the stand holds on Azure AI Search AND ElasticSearch8; C10 Error log confirmed in pod logs; C11 (lock-store failure / dead holder) rests on PR unit tests only; C12 is pre-existing defect F-1
 
 | # | Condition | Source | Covered by | Verdict | Evidence |
 |---|---|---|---|---|---|
@@ -17,7 +17,7 @@ Verdict: **PASS WITH NOTES** — every PR claim testable on the stand holds on A
 | C7 | Cancel a running Build → "Indexation has been canceled"; the next Build completes | PR claim 4 (lockToken); S7 | checklist + SRCHJ-006 | PASS | d815cfc6 / 400309 canceled at 200/413; next 53707dbd 413/413; SRCHJ-006 PASS |
 | C8 | Run ending with an indexation error releases the lock | S6 | checklist (ES8, 2026-10-21) | PASS | errored run 33df81db / job 401335 "Indexation completed with errors" (unknown document type → inner catch; Hangfire Succeeded); next build d623e2b1 / 401336 completed 3/3. Error induced by an unknown document type, not by the provider — same inner catch + finally path |
 | C9 | Renamed product is found by its new name in storefront search within 120 s | BL-SRCH-003; S8 | checklist only (existing SRCHA-015/025) | PASS | found after 2.1 s (0.7 s during a full build); name restored |
-| C10 | Contention is logged at Error level | PR claim 2; S9 | GAP — App Insights not configured on vcptcore-qa1 | NOT TESTABLE | — |
+| C10 | Contention is logged at Error level | PR claim 2; S9 | checklist (Argo CD pod logs, 2026-10-21) | PASS | pod s69h8: `ERR Indexation skipped: the 'IndexationJob' lock is held by another run, so nothing was indexed. JobId: 401370, User: admin, DocumentTypes: Category` at 11:40:41, each preceded by `Lock status: Conflicted … vcptcore-qa1:IndexationJob`; same line for jobs 401301, 401314, 401316, 401318. No `could not run under the lock` line (no lock-store failure occurred) |
 | C11 | Lock-store failure / lock lost / dead holder → job failed, notification sealed, lease expires | PR claim 3; S10/S11 | GAP (env) + one restart attempt | NOT TESTABLE (inconclusive) | POST /api/platform/modules/restart at Product 50/413 (2026-10-21 11:08:22Z): shutdown is graceful — job 401333 finished Succeeded before the process stopped, so the holder was never killed mid-run. Lock was free right after restart (next build 3/3). Redis-down / hard kill need infra access; PR unit tests only |
 | C12 | The loser's notification is not overwritten with the winner's progress; the winner's own blade keeps progressing | 3x observation | checklist + SRCHJ-007 | FAIL — pre-existing F-1 (does not fail the ticket) | 8 of ~16 contended runs; C12-ui-category-loser-400338-shows-product-413.png, C5-C12-ui-loser-blade-r3-*.png; SRCHJ-007 passed once in C1 (intermittent) |
 
