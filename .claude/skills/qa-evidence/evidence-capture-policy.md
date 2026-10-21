@@ -6,6 +6,8 @@
 >
 > **One exception:** the 3-tier report verbosity (Compact / Detailed / Sign-Off) did **not** move with the rest — it is defined in [`SKILL.md`](SKILL.md) §Report Verbosity Tiers and cited from `qa-metrics/quality-metrics-catalog.md`. The paragraph below implies it moved; it did not.
 >
+> **Which lanes screenshot a failure by themselves** (and so need no manual capture of it): [`.claude/rules/reports.md`](../../rules/reports.md) §5.1a.
+>
 > This stub is kept at its original path so the 20+ existing references across skills, commands, agent definitions, and historical sprint artifacts continue to resolve.
 
 ## Why one file
