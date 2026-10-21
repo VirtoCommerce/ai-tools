@@ -2164,6 +2164,7 @@
       "testCount": 48,
       "estimatedMinutes": 33,
       "agent": "qa-backend-expert",
+      "exclusiveGroup": "search-index:IndexationJob",
       "tags": [
         "search",
         "indexing",
@@ -2189,6 +2190,7 @@
       "testCount": 7,
       "estimatedMinutes": 25,
       "agent": "qa-backend-expert",
+      "exclusiveGroup": "search-index:IndexationJob",
       "tags": [
         "search",
         "indexing",
