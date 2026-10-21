@@ -8,6 +8,37 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## `vc-frontend`: theme forks and storefront plugins — catalog `0.13.0`, `vc-frontend` `0.1.0` — 2026-10-21
+
+**Added: the `vc-frontend` plugin** (`defaultEnabled: false`) with three skills: two for teams that keep a fork of
+the storefront theme (vc-frontend-next, customer themes), one for a backend module that ships a storefront plugin. Its description and README say the skills can make mistakes
+and every change needs human review.
+
+- **`merge-upstream`** brings upstream `VirtoCommerce/vc-frontend` (its `dev` or a release tag) into the fork, or a
+  redesign branch's own base into it. The fork keeps its markup, styles and tokens; upstream's behavior is carried
+  into them. Every conflict is briefed before it is resolved; every upstream line is traced into the result; the
+  ported code is covered by mutation-checked tests; the built app is smoke-tested with `vite preview`. The PR gets a
+  QA checklist — an existing PR for the branch is updated rather than duplicated — and lands as a merge commit: the
+  skill checks the repository settings, puts the warning at the top of the PR and confirms two parents after the
+  merge. Each merge leaves a log in the fork's `upstream-merges/`, which the next merge reads before asking anything.
+  Every `gh` call names its repository, because a bare `gh` in a clone with an `upstream` remote resolves to
+  upstream. `git rerere` is on as a safety net for a merge that has to be redone; a leftover empty merge branch is
+  recreated, one with work on it is left for the user to decide.
+- **`port-upstream-to-fork`**, which `merge-upstream` calls after the merge. A merge delivers an upstream change only
+  to the file upstream changed; when the fork renders its own component there, the change merges cleanly and reaches
+  nobody. `fork-drift.mjs` builds the fork and upstream commits with the repository's own Vite config and compares
+  Rollup's module graphs (name-level imports through barrels, tree-shaking, Sass partials) to list upstream code the
+  fork no longer renders, render sites it dropped, and changes to files a committed `fork-map.json` says the fork
+  replaced. The skill briefs each upstream commit as port / already / n/a / lost feature, ports the approved ones
+  with a mutation-checked test, and keeps the map current.
+- **`mf-new-plugin`** makes a backend module ship a storefront plugin (scenario S1a of vc-frontend's Module
+  Federation docs). vc-frontend's `create:plugin --module` writes only new files; the skill edits the module's own
+  `.csproj`, `module.manifest` and `.gitignore` after the user approves the diffs, copying versions only from what
+  `check:plugin-module` prints. Its report says whether the sources are wired or the package is verified too
+  (`--artifact`). It never commits, and reports CI without editing it, because module CI is updated centrally.
+
+---
+
 ## Each run gets its own env and its own output folder — `vc-fix` `0.12.0` — 2026-10-21
 
 Two runs can now go in parallel in one checkout, whether they test two tickets or one ticket on a local
