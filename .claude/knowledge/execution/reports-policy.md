@@ -250,7 +250,7 @@ tool's own schema reads it.
 | Lane | Captured on failure without being asked | Manual failure screenshot |
 |---|---|---|
 | **Playwright Test** — a `*.spec.ts` run under `playwright.config.ts` with `use: { screenshot: "only-on-failure", trace: "retain-on-failure" }` | a screenshot and a trace for **every browser context the test creates**, in the run's `outputDir` | **Forbidden.** No `page.screenshot()` / `testInfo.attach()` of the failure moment in a spec, fixture, hook or helper — point at the runner's file instead |
-| **Playwright MCP** lanes — `config/mcp-playwright-*.config.json`, `ci/config/mcp-playwright-chrome.ci.json` | **only the HAR** (`contextOptions.recordHar`). `@playwright/mcp` has no `screenshot` option and no notion of a failing test: the `"screenshot": "only-on-failure"` key in those files is read by nothing (config schema of the pinned 0.0.77, checked 2026-10-21), and neither is `config/test-suites.json` `defaults.screenshotOnFailure` | **Required** — the agent's `browser_take_screenshot` at a FAIL is the only failure image (`.claude/agents/test-runner-agent.md` step 8). Never remove it as a duplicate |
+| **Playwright MCP** lanes — `config/mcp-playwright-*.config.json`, `ci/config/mcp-playwright-chrome.ci.json` | **only the HAR** (`contextOptions.recordHar`). `@playwright/mcp` has no `screenshot` option and no notion of a failing test (config schema of the pinned 0.0.77, checked 2026-10-21). The `"screenshot": "only-on-failure"` key those files carried, and `config/test-suites.json` `defaults.screenshotOnFailure`, were read by nothing and were removed — do not re-add them | **Required** — the agent's `browser_take_screenshot` at a FAIL is the only failure image (`.claude/agents/test-runner-agent.md` step 8). Never remove it as a duplicate |
 | **Chrome DevTools MCP**; a Node script driving the Playwright *library* (e.g. `scripts/layout/layout-runner.ts`) | nothing — there is no test runner to fail | the capture the agent or script takes is the only one |
 
 **What this rule never touches.** It removes a capture a machine already made *of the same moment for the
@@ -261,8 +261,8 @@ already shows the problem place legibly, reuse that file for the comment instead
 
 **Why it is a rule, in both directions.** A duplicate costs the image tokens of a second capture and
 leaves a triager two artefacts to reconcile. The opposite mistake costs more: on 2026-10-21 the MCP lanes'
-dead `screenshot` key was read as proof that MCP runs capture failures by themselves — acting on it would
-have deleted the only failure image those runs produce.
+dead `screenshot` key (since removed) was read as proof that MCP runs capture failures by themselves —
+acting on it would have deleted the only failure image those runs produce.
 
 ### 5.2 Motion evidence — a GIF when the defect IS the transition
 
