@@ -1232,5 +1232,12 @@
     "id": "c4291a98-4eb2-4d9f-96ed-174c040030e5",
     "createdDate": "2026-10-20T08:10:48.0924622Z",
     "customerId": "87af2675-adc2-423b-bc87-93c6d33691ea"
+  },
+  "SR_BULK_DATASET": {
+    "org_ids": "7c5fc2d9-7461-4758-90a0-5332c66563b5;1b50626e-296e-411f-91a4-637da8ede014",
+    "order_count": "1230",
+    "stats_order_count": "1208",
+    "large_stats_total": "2452452",
+    "seeded_at": "2026-10-21T08:19:07.967Z"
   }
 }

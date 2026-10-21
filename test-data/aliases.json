@@ -4524,6 +4524,16 @@
     "seeded_at": "",
     "_notes": "VCST-5755 AC-5 performance dataset summary for the env it was seeded on: semicolon-joined runtime org GUIDs (ORG-01..15 order), the number of AGENT-TEST-SRPERF-* orders present after the last seed, and how many of them the statistics scope counts (not IsCancelled, BL-SR-005). Written by npm run seed:sales-rep-perf; removed by seed:sales-rep-perf:teardown."
   },
+  "SR_BULK_DATASET": {
+    "_inline": true,
+    "seed": "seed:sales-rep-bulk",
+    "org_ids": "",
+    "order_count": "",
+    "stats_order_count": "",
+    "large_stats_total": "",
+    "seeded_at": "",
+    "_notes": "Bulk-volume dataset on the PLAIN rep SR_REP_PRIMARY (089 SR-FE-052 + hub large-number layout): two dedicated orgs AGENT-TEST-SR-BULK-ORG-01 (LARGE: >= 1000 statistics orders, >= $1,000,000) and -02 (MID: 3-digit count, 6-digit money) that SR_REP_PRIMARY serves, holding AGENT-TEST-SRBULK-NNNNNN orders created with customerId = the rep's ApplicationUser id. All orders are dated the seed day (createdDate is server-assigned), so YTD = MTD = today. org_ids = runtime GUIDs (LARGE;MID); counts/total = what the seed recorded. Shape in scripts/seed-data/sales-rep/sales-rep-bulk-specs.mjs; guard td:validate:sr-bulk. Written by npm run seed:sales-rep-bulk; cleared by seed:sales-rep-bulk:teardown (which also drops the two memberships)."
+  },
   "SR_REP_LOCKABLE": {
     "file": "sales-rep/sales-reps",
     "filter": {
