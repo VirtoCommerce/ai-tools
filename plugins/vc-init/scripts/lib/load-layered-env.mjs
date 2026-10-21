@@ -18,7 +18,8 @@
  * run it's reporting on).
  */
 import { config as dotenv } from "dotenv";
-import { resolveTestEnv } from "./resolve-test-env.js";
+import { join } from "node:path";
+import { envDir, resolveTestEnv } from "./resolve-test-env.js";
 
 /** Token env vars that belong in vc-secrets, never in a file (VCST-6402). */
 export const TOKEN_KEYS = ["GITHUB_FIX_BUGS_TOKEN", "ADO_PAT", "JIRA_API_TOKEN"];
@@ -47,9 +48,11 @@ export function loadLayeredEnv(fallback = "vcst") {
   const injected = process.env.VC_BRIDGE === "1"
     ? Object.fromEntries(Object.keys(process.env).filter((k) => (TOKEN_KEYS.includes(k) || /^[A-Z][A-Z0-9_]*PASSWORD$/.test(k)) && process.env[k]).map((k) => [k, process.env[k]]))
     : {};
-  dotenv({ path: ".env.defaults", quiet: true });
-  dotenv({ path: `.env.${TEST_ENV}`, override: true, quiet: true });
-  const local = dotenv({ path: ".env.local", override: true, quiet: true });
+  // Under the bridge the files come from the trusted project, not the cwd (resolve-test-env.js envDir).
+  const dir = envDir();
+  dotenv({ path: join(dir, ".env.defaults"), quiet: true });
+  dotenv({ path: join(dir, `.env.${TEST_ENV}`), override: true, quiet: true });
+  const local = dotenv({ path: join(dir, ".env.local"), override: true, quiet: true });
   const SUFFIX = `_${TEST_ENV.toUpperCase()}`;
   for (const [key, value] of Object.entries(process.env)) {
     if (key.endsWith(SUFFIX) && value) process.env[key.slice(0, -SUFFIX.length)] = value;

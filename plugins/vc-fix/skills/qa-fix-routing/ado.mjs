@@ -226,12 +226,12 @@ async function authHeader() {
 /**
  * An API base the PAT may be sent to: https on dev.azure.com or *.visualstudio.com, nothing else. The
  * bridge checks --api-base the same way (vc-init bridge/allowlist.mjs); this covers the profile's value,
- * which a command line never shows. Exits on anything else. Enforced under the bridge (VC_BRIDGE=1),
- * where the PAT is the one vc-secrets injected; a direct run uses a token its caller supplied, so a local
- * test server stays reachable there.
+ * which a command line never shows. Exits on anything else — on every path, because every request
+ * carries a credential: the PAT vc-secrets injected, or the Azure AD bearer of the user's own `az login`.
+ * The one exception is a loopback test server, and only outside the bridge with the test switch
+ * VC_ADO_TEST_LOOPBACK=1 set (scripts/unit/ado-form-visibility.test.mjs); the bridge never passes it on.
  */
 export function checkedApiBase(value, source) {
-  if (process.env.VC_BRIDGE !== "1") return String(value).replace(/\/$/, "");
   let u;
   try {
     u = new URL(String(value));
@@ -239,8 +239,10 @@ export function checkedApiBase(value, source) {
     fail(`${source} is not a URL: ${JSON.stringify(value)}`);
   }
   const host = u.hostname.toLowerCase();
-  if (u.protocol !== "https:" || !(host === "dev.azure.com" || host.endsWith(".visualstudio.com"))) {
-    fail(`${source} must be an https URL on dev.azure.com or *.visualstudio.com — got ${u.protocol}//${host}; the PAT is never sent elsewhere`);
+  const testLoopback = process.env.VC_ADO_TEST_LOOPBACK === "1" && process.env.VC_BRIDGE !== "1"
+    && ["127.0.0.1", "localhost", "[::1]"].includes(host);
+  if (!testLoopback && (u.protocol !== "https:" || !(host === "dev.azure.com" || host.endsWith(".visualstudio.com")))) {
+    fail(`${source} must be an https URL on dev.azure.com or *.visualstudio.com — got ${u.protocol}//${host}; no credential (PAT or az login bearer) is sent anywhere else`);
   }
   return String(value).replace(/\/$/, "");
 }

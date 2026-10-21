@@ -181,6 +181,9 @@ export function buildInnerEnv(source, group, { nodePath = process.execPath, help
  *     environment (a checked-out repository's hooks are whatever its last writer left there);
  *   - protocol.allow=never + protocol.https.allow=always: no ext::, file:// or ssh transport;
  *   - core.fsmonitor=false: a repository config cannot name a command for git to run.
+ * The SYSTEM config is still read, on purpose: it is admin-owned (GIT_CONFIG_SYSTEM is not passed from
+ * the caller), and on Git for Windows it carries the TLS backend and CA bundle git needs to reach
+ * https at all; its credential.helper is reset by the first pair above.
  * With GIT_CONFIG_GLOBAL at an empty file (buildInnerEnv) and only clone / fetch / push / ls-remote
  * allowed (allowlist.mjs — no pull, so no merge), a token-holding git runs no filter or merge driver:
  * a fresh clone's config defines none, and fetch / push / ls-remote never run one.
