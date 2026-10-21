@@ -231,9 +231,17 @@ function wrongEnvReason(qualified, ctx) {
 
 /** On the combined file: a name whose value differs from its env's layered value now. No current value
  *  (the env files are not next to the secrets file) is not evidence of staleness — fail open. */
-function staleReason(qualified, secrets, { envs, lib, file }) {
+function staleReason(qualified, secrets, ctx) {
+  const { envs, lib, file } = ctx;
   const split = envs && lib ? lib.splitQualifiedName(qualified, envs) : null;
   if (!split) return null;
+  // A master stand types MASTER_PASSWORD; its NAME_<ENV> in the file is not its password, and a re-sync would only
+  // write the same entry again. (The loader lets only a stand's own file make it a master stand, so this session and
+  // secrets:sync:all agree on it; this answer stays in case they ever do not.)
+  const stand = sessionStand(ctx);
+  if (stand?.master && stand.env === split.env) {
+    return `BLOCKED: this session's stand ${stand.env} uses the master password (PASSWORDS=master): type ${MASTER_NAME}, not ${qualified}.`;
+  }
   const now = lib.layeredEnv(split.env, { root: dirname(file) })[split.name];
   if (!now || now === secrets.get(qualified)) return null;
   return (

@@ -133,7 +133,8 @@ on its local stand, then on a cloud stand. So:
    it. The kb token resolver and the hotfix scripts keep their own reads (tokens; the vcptcore stands at the root).
 3. **Env detection is one lookup** (`findEnv`, with the run's ticket): `env:use`, `run:use`, `/preflight --env`,
    `deploy:pr`. An "unknown env" error lists the repo's envs only. No `env:list` / `env:show` (T3 stays as built).
-4. **Master stands.** `PASSWORDS=master` in a stand's env file: every test-account password variable (the role
+4. **Master stands.** `PASSWORDS=master` in a stand's own env file (the root `.env.<env>` for a repo env, never an
+   override or `.env.local`, so a shared stand cannot be switched for one ticket): every test-account password variable (the role
    registry and every name the suites and test-data type) resolves to `MASTER_PASSWORD` from
    `.env.playwright.master`, so the seeders set it; the lanes type `MASTER_PASSWORD` in every password field.
    `secrets:sync` / `secrets:sync:all` copy it as one stable line — a new master stand needs no re-sync and no MCP
