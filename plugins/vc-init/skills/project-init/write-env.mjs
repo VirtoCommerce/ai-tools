@@ -49,7 +49,8 @@ import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
 import { outputRoot } from "./lib/paths.mjs";
 import { CATALOG } from "./scaffold-env.mjs";
-import { LOCAL_HEADER, keySuffixes, readKey, removeKey } from "./lib/project-env.mjs";
+import { LOCAL_HEADER, envSuffixesIn, keySuffixes, readKey, removeKey } from "./lib/project-env.mjs";
+import { normalizeValue } from "./normalize-env.mjs";
 
 // The project-level keys — one value for every env — go to .env.local, never .env.<env>.
 const PROJECT_KEYS = new Set(CATALOG.filter(([, m]) => m.scope === "project").map(([k]) => k));
@@ -175,14 +176,17 @@ function main() {
   const localText = existsSync(localPath) ? readFileSync(localPath, "utf-8") : "";
   const refused = [];
   const projectWritten = [];
+  const envSuffixes = envSuffixesIn(OUTPUT_ROOT, envName);
+  // Compared as normalize-env would store them, so `https://x/` and `https://x` are one value, not a conflict.
+  const canon = (key, v) => normalizeValue(key, v).value;
   for (const key of Object.keys(envVars)) {
     if (!PROJECT_KEYS.has(key)) continue;
     const value = envVars[key];
     delete envVars[key];
     if (value === undefined || value === null || value === "") continue;
     const current = readKey(localText, key);
-    if (keySuffixes(localText, key).length && current === null) secretKv[`${key}${SUFFIX}`] = value;
-    else if (current && current !== String(value)) { refused.push(key); continue; }
+    if (keySuffixes(localText, key, envSuffixes).length && current === null) secretKv[`${key}${SUFFIX}`] = value;
+    else if (current && canon(key, current) !== canon(key, value)) { refused.push(key); continue; }
     else secretKv[key] = value;
     projectWritten.push(key);
   }

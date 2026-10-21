@@ -36,11 +36,11 @@
  * Flags: --env <name> (or --file <path>), --check (never write), --json, --quiet.
  */
 import { readFileSync, writeFileSync, existsSync } from "fs";
-import { dirname, join, resolve } from "path";
+import { basename, dirname, join, resolve } from "path";
 import { fileURLToPath } from "url";
 import { CATALOG } from "./scaffold-env.mjs";
 import { resolveOutPath } from "./lib/paths.mjs";
-import { LOCAL_FILE, describeMove, moveProjectKeys } from "./lib/project-env.mjs";
+import { LOCAL_FILE, describeMove, envSuffixesIn, moveProjectKeys } from "./lib/project-env.mjs";
 import { probeStorefrontBackend } from "./lib/storefront-probe.mjs";
 
 function parseArgs(argv) {
@@ -61,11 +61,14 @@ const META = new Map(CATALOG);
 /**
  * The meta a line's key is checked against: its own, or — for a project key kept per env as `KEY_<ENV>` in
  * .env.local (one tracker per stand) — the base key's, so a suffixed value is validated like the bare one.
+ * `envSuffixes` are the project's REAL env names, uppercased; only the caller normalising .env.local passes
+ * them. Anything else (`ADO_ORG_URL`, `JIRA_BASE_URL_OVERRIDE`, any key in .env.<env>) is the operator's own
+ * variable and stays untouched.
  */
-function metaFor(key) {
+function metaFor(key, envSuffixes = []) {
   if (META.has(key)) return META.get(key);
   for (const [base, meta] of CATALOG) {
-    if (meta.scope === "project" && key.startsWith(`${base}_`) && /^[A-Z0-9_]+$/.test(key.slice(base.length + 1))) return meta;
+    if (meta.scope === "project" && key.startsWith(`${base}_`) && envSuffixes.includes(key.slice(base.length + 1))) return meta;
   }
   return null;
 }
@@ -127,9 +130,11 @@ export function normalizeValue(key, rawValue, meta = metaFor(key) || {}) {
 /**
  * Normalize a whole dotenv TEXT. Comments, blank lines, ordering, and unknown keys are
  * preserved byte-for-byte; only a known CATALOG key's VALUE can change.
+ * `envSuffixes` (only for .env.local): the project's env names, uppercased, under which a project key may be
+ * kept per env as `KEY_<ENV>` — see metaFor.
  *   → { text, changes: [{key, from, to}], errors, warnings }
  */
-export function normalizeEnvText(text) {
+export function normalizeEnvText(text, { envSuffixes = [] } = {}) {
   const changes = [];
   const errors = [];
   const warnings = [];
@@ -141,8 +146,9 @@ export function normalizeEnvText(text) {
     const m = /^(\s*)([A-Za-z_][A-Za-z0-9_]*)(\s*=\s*)(.*)$/.exec(line);
     if (!m) return line; // comment / blank / continuation — untouched
     const [, indent, key, , rawValue] = m;
-    if (!metaFor(key)) return line; // not ours (an operator's own extra var) — untouched
-    const res = normalizeValue(key, rawValue);
+    const meta = metaFor(key, envSuffixes);
+    if (!meta) return line; // not ours (an operator's own extra var) — untouched
+    const res = normalizeValue(key, rawValue, meta);
     errors.push(...res.errors);
     warnings.push(...res.warnings);
     const before = String(rawValue ?? "");
@@ -194,11 +200,13 @@ async function main() {
   const move = moveProjectKeys(dirname(path), CATALOG.filter(([, m]) => m.scope === "project"), { dryRun: !!args.check });
   for (const line of describeMove(move)) log(`[normalize-env] ${args.check ? "(--check, not written) " : ""}${line}`);
 
+  // The env names a per-env project key may carry in .env.local: every .env.<env> here, plus this one.
+  const envSuffixes = envSuffixesIn(dirname(path), args.env, basename(path).replace(/^\.env\./, ""));
   const files = [path, join(dirname(path), LOCAL_FILE)].filter((p, i) => i === 0 || existsSync(p));
   const reports = [];
   for (const [i, file] of files.entries()) {
     const original = readFileSync(file, "utf-8");
-    const normalized = normalizeEnvText(original);
+    const normalized = normalizeEnvText(original, { envSuffixes: i === 0 ? [] : envSuffixes });
     const { changes, errors, warnings } = normalized;
     let { text } = normalized;
     if (i === 0 && !errors.length) {

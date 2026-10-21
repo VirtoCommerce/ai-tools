@@ -45,7 +45,7 @@ import { resolveOutPath, outputRoot } from "./lib/paths.mjs";
 // earlier in the flow existed un-ignored until then (VCST-5774 review #4). Idempotent — the four
 // writers all call it, and only the first one actually appends.
 import { ensureProjectIgnores } from "./lib/gitignore.mjs";
-import { LOCAL_FILE, LOCAL_HEADER, LOCAL_SECTION, describeMove, keyComment, keySuffixes, moveProjectKeys, readKey } from "./lib/project-env.mjs";
+import { LOCAL_FILE, LOCAL_HEADER, LOCAL_SECTION, describeMove, envSuffixesIn, keyComment, keySuffixes, moveProjectKeys, readKey } from "./lib/project-env.mjs";
 
 function parseArgs(argv) {
   const a = {};
@@ -134,6 +134,7 @@ function main() {
   const existingLocal = existsSync(localPath) ? readFileSync(localPath, "utf-8") : "";
 
   const SUFFIX = env.toUpperCase();
+  const envSuffixes = envSuffixesIn(dirname(outPath), env);
   const emitted = [];
   const skipped = [];
   const blocks = [];
@@ -147,7 +148,7 @@ function main() {
     if (project && move.conflicts.some((c) => c.key === key)) { skipped.push(key); continue; }
     // Kept per env (`KEY_<ENV>`, one tracker per stand): this env gets its own suffixed line, never a bare
     // empty one that would fail normalize-env for every env.
-    const suffixes = project ? keySuffixes(existingLocal, key) : [];
+    const suffixes = project ? keySuffixes(existingLocal, key, envSuffixes) : [];
     if (suffixes.includes(SUFFIX)) { skipped.push(`${key}_${SUFFIX}`); continue; }
     const name = suffixes.length ? `${key}_${SUFFIX}` : key;
     (project ? localBlocks : blocks).push(keyComment(name, meta) + `${name}=${meta.def || ""}\n`);

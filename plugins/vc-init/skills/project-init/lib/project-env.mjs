@@ -71,14 +71,25 @@ export function readKey(text, key) {
  * points two stands at two trackers keeps the key per env this way; config.js / load-layered-env promote the
  * suffixed value to the base name when TEST_ENV matches.
  */
-export function keySuffixes(text, key) {
+export function keySuffixes(text, key, envSuffixes) {
   const re = new RegExp(`^\\s*(?:export\\s+)?${key}_([A-Z0-9_]+)\\s*=`);
-  return String(text ?? "").split(/\r?\n/).map((l) => re.exec(l)?.[1]).filter(Boolean);
+  // Only a REAL env name makes a suffix: `ADO_ORG_URL` is the operator's own variable, not ADO_ORG for env "URL".
+  return String(text ?? "").split(/\r?\n/).map((l) => re.exec(l)?.[1]).filter((s) => s && envSuffixes.includes(s));
 }
 
-/** A value as dotenv reads it back: quoted when it holds whitespace, `#` or a quote (an unquoted `#` starts a comment). */
+/** The env names of the project in `root` as `_<ENV>` suffixes (uppercased), plus any `extra` env being added. */
+export function envSuffixesIn(root, ...extra) {
+  const names = [...envFileNames(root).map((n) => n.slice(".env.".length)), ...extra];
+  return [...new Set(names.filter((e) => typeof e === "string" && e).map((e) => e.toUpperCase()))];
+}
+
+/**
+ * A value as dotenv reads it back: quoted when it holds whitespace, `#` or a quote (an unquoted `#` starts a
+ * comment). `null` when it holds BOTH quote characters — dotenv cannot read that back, so it is refused.
+ */
 export function serializeValue(v) {
   const s = String(v ?? "");
+  if (s.includes('"') && s.includes("'")) return null;
   if (s === "" || !(/[\s#"'=]/.test(s) || s !== s.trim())) return s;
   // dotenv does not unescape \" — pick the quote the value does not contain.
   return s.includes('"') ? `'${s}'` : `"${s}"`;
@@ -111,7 +122,9 @@ export function setKey(text, key, value, comment = "") {
   const lines = String(text).split(/\r?\n/);
   const re = lineRe(key);
   const idx = lines.findLastIndex((l) => re.test(l));
+  const raw = value;
   value = serializeValue(value);
+  if (value === null) throw new Error(`${key}: a value with both " and ' cannot be written to a dotenv file (${String(raw).length} chars)`);
   if (idx >= 0) {
     lines[idx] = `${key}=${value}`;
     return lines.join(eol);
@@ -164,6 +177,10 @@ export function moveProjectKeys(root, catalog, { dryRun = false } = {}) {
       result.conflicts.push({ key, values: { ...values, ...(localValue ? { [LOCAL_FILE]: localValue } : {}) } });
       continue;
     }
+    if (distinct.length === 1 && serializeValue(distinct[0]) === null) {
+      result.conflicts.push({ key, values, reason: "the value holds both \" and ' — dotenv cannot read that back from a quoted line; fix it in place" });
+      continue;
+    }
     // An unfilled placeholder moves too, so normalize-env still stops on it in its new home.
     if ((distinct.length === 1 && !localValue) || (distinct.length === 0 && localValue === null)) {
       if (local === "") local = LOCAL_HEADER;
@@ -194,6 +211,7 @@ export function describeMove({ moved, cleaned, conflicts }) {
   if (moved.length) lines.push(`moved to ${LOCAL_FILE} (same for every env): ${moved.map((m) => `${m.key} ← ${m.from.join(", ")}`).join("; ")}`);
   if (cleaned.length) lines.push(`removed from the env files (${LOCAL_FILE} already holds it): ${cleaned.map((m) => `${m.key} ← ${m.from.join(", ")}`).join("; ")}`);
   for (const c of conflicts) {
+    if (c.reason) { lines.push(`NOT moved ${c.key} — ${c.reason}`); continue; }
     lines.push(`NOT moved ${c.key} — the files disagree (${Object.entries(c.values).map(([f, v]) => `${f}: ${v || "(empty)"}`).join(", ")}); keep one value in ${LOCAL_FILE}, or ${c.key}_<ENV> there per env, and delete the rest`);
   }
   return lines;
