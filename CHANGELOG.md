@@ -8,6 +8,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## `vc-init` `0.3.1`: the `$VC_RUN` bridge no longer takes `~/.claude` for a project — 2026-10-21
+
+**Fixed.** `bridge/run.mjs` `findDeclarations` walked up from the cwd and stopped at the first
+`.claude/vc-secrets*.json`, which for any undeclared folder under `$HOME` was the user-scope
+`~/.claude/vc-secrets.json`, so the home directory became the project root: the inner side ran against the user's
+own declaration instead of refusing. It now skips `~/.claude` exactly as vc-secrets' `configPaths` does. This was
+the `run.test.mjs` failure on Windows machines with a user-level declaration (exit 69 instead of 64), where
+`os.tmpdir()` sits inside the profile.
+
 ## `vc-init` `0.3.0`: the tracker / code-host connection lives in `.env.local`, once — 2026-10-21
 
 **Changed: where the project-level keys are written.** `JIRA_BASE_URL`, `JIRA_PROJECT_KEY`, `JIRA_EMAIL`, `ADO_ORG`,
