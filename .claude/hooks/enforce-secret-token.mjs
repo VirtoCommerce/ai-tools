@@ -34,6 +34,8 @@
 //      (TEST_ENV, its binding, .env.test-env, vcst). The file holds every
 //      non-production env's passwords, so typing another env's name is a sign-in
 //      on the wrong stand, or a page/prompt asking for another stand's password.
+//      CLI and IDE hooks start without CLAUDE_CODE_SESSION_ID (VCST-6091), so the
+//      session id comes from the event, and the binding is read from the project root.
 //
 // Rule source: .claude/knowledge/execution/browser-lanes.md §Browser login secrets.
 // Memory: reference_playwright_secrets_bare_key_name.
@@ -142,11 +144,13 @@ function contract(extra, ctx) {
 const MASTER_NAME = "MASTER_PASSWORD";
 
 /** This session's stand: the env it resolves (TEST_ENV, its binding, .env.test-env, vcst) layered with its run's
- *  ticket, and whether that stand says PASSWORDS=master. Null without the libraries or on any error. */
+ *  ticket, and whether that stand says PASSWORDS=master. Null without the libraries, on any error, or when neither
+ *  TEST_ENV nor a session id is known: then only a default would answer, and a default is no evidence. */
 function sessionStand(ctx) {
   if (!ctx.lib) return null;
   if (ctx.stand === undefined) {
     try {
+      if (!process.env.TEST_ENV?.trim() && !process.env.CLAUDE_CODE_SESSION_ID) throw new Error("no session id");
       const { env } = ctx.lib.testEnvChoice("vcst");
       // Only the decision: masterValues false skips the scan of every suite and test-data file for password names.
       ctx.stand = { env, master: ctx.lib.usesMaster(ctx.lib.layered(env, { root: ROOT, masterValues: false }).env) };
@@ -305,6 +309,17 @@ try {
 
   const values = typedValues(toolName, event.tool_input);
   if (!values.length) process.exit(0);
+
+  // The session's env binding is keyed by CLAUDE_CODE_SESSION_ID, which CLI and IDE hooks do not get: the id is in
+  // the event (VCST-6091; scripts/kb/core/queue.mjs `hookEnv` does the same). The resolver reads the binding and
+  // .env.test-env from the cwd, so resolve from the project root.
+  const sid = typeof event.session_id === "string" && /^[A-Za-z0-9-]+$/.test(event.session_id) ? event.session_id : null;
+  if (!process.env.CLAUDE_CODE_SESSION_ID && sid) process.env.CLAUDE_CODE_SESSION_ID = sid;
+  try {
+    process.chdir(ROOT);
+  } catch {
+    /* no such directory: resolve from the cwd */
+  }
 
   const { file, text, map: secrets } = await loadSecrets();
   if (!secrets.size) process.exit(0);

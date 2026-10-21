@@ -35,7 +35,7 @@ import {
 } from 'node:fs';
 import { join, relative } from 'node:path';
 import { loadEnv } from '../lib/load-env.mjs';
-import { TICKET_KEY, resolveRunDir, sessionRun } from '../lib/run-dir.mjs';
+import { SPRINT_DIR, TICKET_KEY, resolveRunDir, sessionRun } from '../lib/run-dir.mjs';
 
 // ---------- args ----------
 const argv = process.argv.slice(2);
@@ -63,8 +63,8 @@ if (!TICKET_KEY.test(ticket.toUpperCase())) {
   console.error(`✗ "${ticket}" is not a ticket key like VCST-1234 (or an Azure Boards id)`);
   process.exit(2);
 }
-if (sprint && !/^Sprint(?:\d{2}-\d{2}|-current)$/.test(sprint)) {
-  console.error(`✗ --sprint=${sprint}: expected SprintXX-XX or Sprint-current`);
+if (sprint && !SPRINT_DIR.test(sprint) && sprint !== 'Sprint-current') {
+  console.error(`✗ --sprint=${sprint}: expected a sprint folder name like Sprint26-21, or Sprint-current`);
   process.exit(2);
 }
 

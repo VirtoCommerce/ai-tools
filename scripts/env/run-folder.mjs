@@ -75,23 +75,26 @@ function use() {
   const ownStand = named ? null : ticketStand(ticket);
   if (ownStand) console.log(`env: ${ownStand} — ${ticket}'s own stand (the only env its QA_ENV_PATH folder defines)`);
   const envArg = named ?? ownStand ?? undefined;
-  // A run folder that cannot resolve must change nothing: keep the env binding to put it back, and write the run
-  // binding only once the folder resolved — else the new env would sit beside the previous run's folder.
+  // A run folder that cannot resolve or be created (an unmounted drive in QA_OUTPUT_DIR) must change nothing: keep
+  // the env binding to put it back, and write the run binding only once the folder exists — else the new env would
+  // sit beside the previous run's folder.
   const envFile = sessionEnvFile();
   const envBefore = envFile && existsSync(envFile) ? readFileSync(envFile, 'utf8') : null;
   if (bindSessionEnv(envArg, { reason: `run:use ${ticket}`, ticket }) === null) console.log('not in a Claude Code session (no CLAUDE_CODE_SESSION_ID): nothing is bound; TEST_ENV resolves per process');
   const { testEnv, sourceOf, lines } = describeSessionEnv({ ticket });
   let dir;
-  try { dir = resolveRunDir({ ticket, env: testEnv }); } catch (e) {
+  try {
+    dir = resolveRunDir({ ticket, env: testEnv });
+    mkdirSync(join(dir, 'screenshots'), { recursive: true }); // a Playwright lane never creates a folder
+    if (runFile) {
+      mkdirSync(dirname(runFile), { recursive: true });
+      writeFileSync(runFile, `# This Claude Code session's run: npm run run:use, ${new Date().toISOString()}\nRUN_DIR=${quote(dir)}\nTICKET=${ticket}\nTEST_ENV=${testEnv}\n`);
+    }
+  } catch (e) {
     if (envFile) { if (envBefore === null) rmSync(envFile, { force: true }); else writeFileSync(envFile, envBefore); }
-    throw new BindError(e.message);
+    throw new BindError(dir ? `cannot create the run folder ${dir}: ${e.message}` : e.message);
   }
-  mkdirSync(join(dir, 'screenshots'), { recursive: true }); // a Playwright lane never creates a folder
-  if (runFile) {
-    mkdirSync(dirname(runFile), { recursive: true });
-    writeFileSync(runFile, `# This Claude Code session's run: npm run run:use, ${new Date().toISOString()}\nRUN_DIR=${quote(dir)}\nTICKET=${ticket}\nTEST_ENV=${testEnv}\n`);
-    pruneStale(dirname(runFile));
-  }
+  if (runFile) pruneStale(dirname(runFile));
   for (const line of lines) console.log(line);
   console.log(`RUN_DIR=${dir}${runFile ? '' : '  (not bound: no Claude Code session)'}`);
   const shots = laneScreenshots(dir);
