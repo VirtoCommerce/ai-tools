@@ -30,6 +30,10 @@
 //      stand — it would send the master password to that stand's sign-in form —
 //      or when the file's copy differs from .env.playwright.master. A name the
 //      file lacks on a master stand is answered with "type MASTER_PASSWORD".
+//   6. On the combined file, a NAME_<ENV> of another env than this session's
+//      (TEST_ENV, its binding, .env.test-env, vcst). The file holds every
+//      non-production env's passwords, so typing another env's name is a sign-in
+//      on the wrong stand, or a page/prompt asking for another stand's password.
 //
 // Rule source: .claude/knowledge/execution/browser-lanes.md §Browser login secrets.
 // Memory: reference_playwright_secrets_bare_key_name.
@@ -117,7 +121,7 @@ function contract(extra, ctx) {
     `${extra}\n\n` +
     "How Playwright MCP --secrets works:\n" +
     "  - Type the key NAME exactly as the --secrets file spells it:\n" +
-    "      combined .env.playwright.all -> NAME_<ENV>, e.g. browser_type(text=\"ORG_USER_PASSWORD_VCST_QA\")\n" +
+    "      combined .env.playwright.all -> NAME_<ENV>, e.g. browser_type(text=\"ORG_USER_PASSWORD_VCPTCORE_DEV\")\n" +
     "      (ENV = the run's TEST_ENV upper-cased); a single-env file -> the bare NAME,\n" +
     "      e.g. browser_type(text=\"ORG_USER_PASSWORD\").\n" +
     `    This lane reads ${lane}.\n` +
@@ -144,7 +148,8 @@ function sessionStand(ctx) {
   if (ctx.stand === undefined) {
     try {
       const { env } = ctx.lib.testEnvChoice("vcst");
-      ctx.stand = { env, master: ctx.lib.usesMaster(ctx.lib.layeredEnv(env, { root: ROOT })) };
+      // Only the decision: masterValues false skips the scan of every suite and test-data file for password names.
+      ctx.stand = { env, master: ctx.lib.usesMaster(ctx.lib.layered(env, { root: ROOT, masterValues: false }).env) };
     } catch {
       ctx.stand = null;
     }
@@ -210,6 +215,20 @@ function nearMatches(name, secrets) {
   return near.length ? `Keys that start similarly: ${near.join(", ")}` : "Check the key name against the secrets file.";
 }
 
+/** On the combined file: a NAME_<ENV> of another env than this session's. Null when the name is this session's,
+ *  or when the session's env cannot be read (fail open). */
+function wrongEnvReason(qualified, ctx) {
+  const split = ctx.envs && ctx.lib ? ctx.lib.splitQualifiedName(qualified, ctx.envs) : null;
+  const stand = split ? sessionStand(ctx) : null;
+  if (!split || !stand || split.env === stand.env) return null;
+  const own = stand.master ? MASTER_NAME : `${split.name}_${stand.env.toUpperCase()}`;
+  return (
+    `BLOCKED: ${qualified} is ${split.env}'s password, and this session's env is ${stand.env}.\n` +
+    `To sign in on ${stand.env}, type ${own}. To work on ${split.env}, bind the session to it first:\n` +
+    `npm run env:use -- ${split.env} (a command's env argument does this at its Step 0).`
+  );
+}
+
 /** On the combined file: a name whose value differs from its env's layered value now. No current value
  *  (the env files are not next to the secrets file) is not evidence of staleness — fail open. */
 function staleReason(qualified, secrets, { envs, lib, file }) {
@@ -262,6 +281,9 @@ function check(value, secrets, ctx) {
     if (master) return contract(master, ctx);
   }
 
+  const wrongEnv = secrets.has(typed) ? wrongEnvReason(typed, ctx) : null;
+  if (wrongEnv) return contract(wrongEnv, ctx);
+
   const stale = secrets.has(typed) ? staleReason(typed, secrets, ctx) : null;
   return stale ? contract(stale, ctx) : null;
 }
@@ -291,7 +313,7 @@ try {
     ]);
     lib = {
       combinedEnvs: secretsLib.combinedEnvs, splitQualifiedName: secretsLib.splitQualifiedName, layeredEnv: envCore.layeredEnv,
-      usesMaster: layers.usesMaster, readMaster: layers.readMaster, testEnvChoice: resolver.testEnvChoice,
+      usesMaster: layers.usesMaster, readMaster: layers.readMaster, layered: layers.layered, testEnvChoice: resolver.testEnvChoice,
     };
   } catch {
     /* fail open on the combined-file checks only */
