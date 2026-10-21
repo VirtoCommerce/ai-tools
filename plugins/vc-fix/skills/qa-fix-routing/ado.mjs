@@ -19,7 +19,8 @@
  * Usage (org/project default from the profile; --org/--project override):
  *   node ado.mjs get-workitem   --id 967
  *   node ado.mjs comment        --id 967 --text-file body.txt   # or --text "..."
- *   node ado.mjs transition     --id 967 --state Active
+ *   node ado.mjs transition     --id 967 --role in-review     # state from the item's own type
+ *   node ado.mjs transition     --id 967 --state Active       # a state verbatim
  *   node ado.mjs list-types                                     # work item type names
  *   node ado.mjs list-states    --type Bug                      # states for a type
  *   node ado.mjs create-workitem --type Bug --title "..." --description-file body.md \
@@ -58,6 +59,12 @@
  *                               --target refs/heads/dev --title "fix(AB#967): ..." \
  *                               --description-file pr.md [--work-item 967] [--draft]
  *   node ado.mjs list-policies  --repo frontend --pr 1200
+ *   node ado.mjs edit-comment   --id 967 --comment-id 4711 --text-file body.txt   # the amend path
+ *   node ado.mjs patch-fields   --id 967 --field "System.Description=" --fields-file fields.json
+ *   node ado.mjs wiql           --query "SELECT [System.Id] FROM WorkItems WHERE …" [--fields System.Title] [--top 50]
+ *
+ * Token-holding calls run through the vc-init bridge (VCST-6402): `node "$VC_RUN" ado <command> …`
+ * gives this process ADO_PAT from vc-secrets for a PAT axis, or runs it as is for an `az login` axis.
  *
  * Exit non-zero on any HTTP >=400 or an auth redirect. `--json` prints the raw body.
  */
@@ -65,6 +72,7 @@ import { readFileSync, existsSync, statSync } from "fs";
 import { fileURLToPath } from "url";
 import { basename, dirname, isAbsolute, join, resolve } from "path";
 import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
+import { loadProjectProfile } from "../../scripts/lib/project-profile.mjs";
 // The per-ORGANIZATION bug field contract (VCST-5582 E) — discovery lives in
 // /project-init's discover-tracker.mjs; the pure contract logic is shared here so the scan
 // and the payload builder can never disagree. See bug-contract.mjs's header.
@@ -74,7 +82,7 @@ import {
 } from "./bug-contract.mjs";
 // Non-mutating ADO write-scope probe, reused from /project-init's readiness table so
 // "your PAT is read-only" is told ONCE, up front, in the same words on both surfaces.
-import { discoverAdoWorkItemId, probeAdoWorkItemsWrite } from "../project-init/probe-lib.mjs";
+import { discoverAdoWorkItemId, probeAdoWorkItemsWrite } from "../../scripts/lib/probe-lib.mjs";
 // Azure HTML conversion + the Bug JSON-Patch builder live in a shared module so the CLI here
 // and the TS tracker (trackers/azure-tracker.ts) can't drift. ensureAzureHtml/mdToHtml are
 // re-exported below for the unit test that imports them from this file.
@@ -101,32 +109,18 @@ try {
 }
 
 // ---- profile (defaults for org/project/apiBase/projectId/repoId) --------------------
-// cwd-drift-proof: honor PROJECT_PROFILE_PATH, else search cwd AND walk up parent dirs
-// (so `create-pr` invoked from inside .fix-workspace/<repo> still finds the project profile
-// at the project root — the "no org/project" grabli from the run's create-pr cwd-drift).
+// The shared loader (scripts/lib/project-profile.mjs): PROJECT_PROFILE_PATH, then VC_FIX_HOME, then
+// cwd and its parents — so `create-pr` invoked from inside .fix-workspace/<repo> still finds the
+// project profile at the project root (the "no org/project" grabli from the run's create-pr
+// cwd-drift). OPTIONAL here, because every sub-command also takes --org/--project/--api-base and can
+// run without a profile; the stop for a missing one is in base(), where the org/project is needed.
+// A malformed or too-new profile is never optional.
 function loadProfile() {
-  const candidates = [];
-  if (process.env.PROJECT_PROFILE_PATH) candidates.push(process.env.PROJECT_PROFILE_PATH);
-  // Honor VC_FIX_HOME (the write-root the readers use — see inputRoot()) so a tool launched from an
-  // unrelated cwd still finds the deployment's profile, matching where /project-init wrote it.
-  if (process.env.VC_FIX_HOME) candidates.push(join(resolve(process.env.VC_FIX_HOME), "project-profile.json"));
-  let dir = process.cwd();
-  for (let i = 0; i < 8; i++) {
-    candidates.push(join(dir, "project-profile.json"));
-    const parent = dirname(dir);
-    if (parent === dir) break;
-    dir = parent;
+  try {
+    return loadProjectProfile(process.cwd(), { optional: true, walkUp: true }) || {};
+  } catch (e) {
+    fail(e.message);
   }
-  for (const path of candidates) {
-    try {
-      const raw = JSON.parse(readFileSync(path, "utf-8"));
-      delete raw._meta;
-      return raw;
-    } catch {
-      /* try next */
-    }
-  }
-  return {};
 }
 const PROFILE = loadProfile();
 // Two DISTINCT axes, not one merged object: tracker.azure (Boards — org/project/apiBase
@@ -150,6 +144,20 @@ function trackerAZ() {
     apiBase: TRACKER_AZ.apiBase,
     projectId: TRACKER_AZ.projectId || VCS_AZ.projectId,
   };
+}
+
+/**
+ * The state a lifecycle role maps to for one work-item TYPE: tracker.azure.roleStatesByType[type]
+ * (matched case-insensitively), else — on a profile scanned before per-type maps existed — the
+ * primary type's tracker.azure.roleStates. "" when nothing is mapped: never guess a state.
+ */
+export function roleStateFor(type, role, az = TRACKER_AZ) {
+  const byType = az.roleStatesByType && typeof az.roleStatesByType === "object" ? az.roleStatesByType : {};
+  if (Object.keys(byType).length) {
+    const key = Object.keys(byType).find((k) => k.toLowerCase() === String(type || "").toLowerCase());
+    return (key && byType[key]?.[role]) || "";
+  }
+  return (az.roleStates || {})[role] || "";
 }
 
 /** Repos (git/PR) ops: list-refs, get-file, create-pr, list-policies. */
@@ -206,23 +214,47 @@ async function authHeader() {
   try {
     ({ AzureCliCredential } = await import("@azure/identity"));
   } catch {
-    fail(`Azure DevOps auth unavailable: set ADO_PAT (recommended) or install @azure/identity and run \`az login\`.\n      (ADO_PAT is read from .env.local under VC_FIX_HOME || cwd = ${inputRoot()} — confirm it is set there, not just exported in another shell.)`);
+    fail(`Azure DevOps auth unavailable: no ADO_PAT in this process and no @azure/identity for an \`az login\` session.\n      A PAT is stored in vc-secrets and reaches this script only when it runs as \`node "$VC_RUN" ado …\` — run it that way (cwd = ${inputRoot()}). Not set up yet: /project-init --check.`);
   }
   const tok = await new AzureCliCredential().getToken(ADO_RESOURCE);
-  if (!tok?.token) fail(`Azure DevOps auth unavailable: set ADO_PAT, or run \`az login\` and set ADO_AUTH=az-login.\n      (ADO_PAT is read from .env.local under VC_FIX_HOME || cwd = ${inputRoot()}.)`);
+  if (!tok?.token) fail(`Azure DevOps auth unavailable: run as \`node "$VC_RUN" ado …\` (the PAT comes from vc-secrets), or \`az login\` for a session axis.\n      (cwd = ${inputRoot()}; not set up yet: /project-init --check.)`);
   _bearer = { token: tok.token, exp: tok.expiresOnTimestamp };
   return `Bearer ${tok.token}`;
 }
 
 // ---- base URL -----------------------------------------------------------------------
+/**
+ * An API base the PAT may be sent to: https on dev.azure.com or *.visualstudio.com, nothing else. The
+ * bridge checks --api-base the same way (vc-init bridge/allowlist.mjs); this covers the profile's value,
+ * which a command line never shows. Exits on anything else — on every path, because every request
+ * carries a credential: the PAT vc-secrets injected, or the Azure AD bearer of the user's own `az login`.
+ * The one exception is a loopback test server, and only outside the bridge with the test switch
+ * VC_ADO_TEST_LOOPBACK=1 set (scripts/unit/ado-form-visibility.test.mjs); the bridge never passes it on.
+ */
+export function checkedApiBase(value, source) {
+  let u;
+  try {
+    u = new URL(String(value));
+  } catch {
+    fail(`${source} is not a URL: ${JSON.stringify(value)}`);
+  }
+  const host = u.hostname.toLowerCase();
+  const testLoopback = process.env.VC_ADO_TEST_LOOPBACK === "1" && process.env.VC_BRIDGE !== "1"
+    && ["127.0.0.1", "localhost", "[::1]"].includes(host);
+  if (!testLoopback && (u.protocol !== "https:" || !(host === "dev.azure.com" || host.endsWith(".visualstudio.com")))) {
+    fail(`${source} must be an https URL on dev.azure.com or *.visualstudio.com — got ${u.protocol}//${host}; no credential (PAT or az login bearer) is sent anywhere else`);
+  }
+  return String(value).replace(/\/$/, "");
+}
+
 /** axis: "tracker" (Boards work-item ops) | "vcs" (Repos git/PR ops). */
 function base(args, axis = "vcs") {
-  if (args["api-base"]) return String(args["api-base"]).replace(/\/$/, "");
+  if (args["api-base"]) return checkedApiBase(args["api-base"], "--api-base");
   const AZ = axis === "tracker" ? trackerAZ() : vcsAZ();
   const org = args.org || AZ.organization;
   const project = args.project || AZ.project;
-  if (AZ.apiBase && !args.org && !args.project) return String(AZ.apiBase).replace(/\/$/, "");
-  if (!org || !project) fail(`no org/project — pass --org/--project or set tracker/vcs.azure in project-profile.json.\n      (The profile was searched at PROJECT_PROFILE_PATH, then VC_FIX_HOME (${process.env.VC_FIX_HOME || "unset"}), then cwd and its parents from ${process.cwd()}. If it lives elsewhere, set PROJECT_PROFILE_PATH or run from the project root.)`);
+  if (AZ.apiBase && !args.org && !args.project) return checkedApiBase(AZ.apiBase, `project-profile.json ${axis === "tracker" ? "tracker" : "vcs"}.azure.apiBase`);
+  if (!org || !project) fail(`no org/project — pass --org/--project, or run /project-init (the vc-init plugin) so project-profile.json carries tracker/vcs.azure.\n      (The profile was searched at PROJECT_PROFILE_PATH, then VC_FIX_HOME (${process.env.VC_FIX_HOME || "unset"}), then cwd and its parents from ${process.cwd()}. If it lives elsewhere, set PROJECT_PROFILE_PATH or run from the project root.)`);
   return `https://dev.azure.com/${org}/${encodeURIComponent(project)}`;
 }
 
@@ -282,7 +314,7 @@ async function call(method, url, { body, contentType } = {}) {
     redirect: "manual",
   });
   if (res.status >= 300 && res.status < 400) {
-    fail(`HTTP ${res.status} redirect to sign-in for ${method} ${url}\n      => ADO auth not accepted. Is ADO_PAT loaded (absolute path to .env.local) and non-empty/valid?`);
+    fail(`HTTP ${res.status} redirect to sign-in for ${method} ${url}\n      => ADO auth not accepted. Run through the bridge (\`node "$VC_RUN" ado …\`) so the stored PAT is used; if it was, the PAT is expired or lacks scope — store a new one with \`node "<VC_SECRETS>" set ado-pat\`.`);
   }
   const text = await res.text();
   let data;
@@ -329,7 +361,7 @@ async function callSoft(method, url, { body, contentType } = {}) {
 // ─── the bug field contract (VCST-5582 E) ─────────────────────────────────────────────
 /**
  * Where a `--*-file` path resolves from. `VC_FIX_HOME || cwd`, symmetric with the rest of the
- * plugin (skills/project-init/lib/paths.mjs `outputRoot()`), NOT bare cwd. The OPUS run died on
+ * plugin (skills/project-init/lib/paths.mjs `outputRoot()`), NOT bare cwd. A client deployment run died on
  * a raw `ENOENT … readFileUtf8` Node stack because `resolve(path)` used the process cwd, which
  * is not necessarily the project the report was written into.
  */
@@ -338,7 +370,21 @@ function inputRoot() {
 }
 function resolveInput(p) {
   const s = String(p || "");
-  return isAbsolute(s) ? s : resolve(inputRoot(), s);
+  if (isAbsolute(s)) return s;
+  // The caller's cwd first — a file written next to a checkout (`.fix-workspace/<repo>`) is relative
+  // to it — then the project root (VC_FIX_HOME; under the bridge always the declared project). Reading a
+  // local file redirects no request, so the cwd may choose here.
+  const candidates = [resolve(process.cwd(), s), resolve(inputRoot(), s)];
+  return candidates.find((c) => existsSync(c)) || candidates[0];
+}
+/** Read a `--<flag>` file through resolveInput, or exit with one line naming the resolved path. */
+function readInput(flag, p) {
+  const abs = resolveInput(p);
+  try {
+    return readFileSync(abs, "utf-8");
+  } catch (e) {
+    fail(`--${flag} "${p}" cannot be read (${e.code || e.message}) — resolved to ${abs}; relative paths resolve against VC_FIX_HOME || cwd = ${inputRoot()}`);
+  }
 }
 
 /** The discovered contract for a work-item type, or [] when none was scanned. */
@@ -505,7 +551,7 @@ const COMMANDS = {
 
   async comment(args) {
     if (!args.id) fail("--id required");
-    const text = args["text-file"] ? readFileSync(resolve(args["text-file"]), "utf-8") : args.text;
+    const text = args["text-file"] ? readInput("text-file", args["text-file"]) : args.text;
     if (!text) fail("--text or --text-file required");
     // Comments are an HTML field — convert Markdown so it doesn't render as a single
     // unreadable blob. Pass `--raw` to skip the guard (already-HTML author content is
@@ -519,17 +565,93 @@ const COMMANDS = {
     return { id: d.id, ok: true };
   },
 
+  // `--role <role>` maps a lifecycle role to the state of THIS item's type (a Task and a Bug can name
+  // the same role differently); `--state <name>` sets a state verbatim.
   async transition(args) {
-    if (!args.id || !args.state) fail("--id and --state required");
+    if (!args.id || (!args.state && !args.role)) fail("--id and --role <role> (or --state <name>) required");
+    let state = args.state ? String(args.state) : "";
+    let type = "";
+    if (!state) {
+      const item = await call("GET", `${base(args, "tracker")}/_apis/wit/workitems/${args.id}?fields=System.WorkItemType&${V}`);
+      type = item.fields?.["System.WorkItemType"] || "";
+      state = roleStateFor(type, String(args.role));
+      if (!state) {
+        fail(`no state is mapped for role "${args.role}" on ${type || "this"} work items — ask the operator which state to use ` +
+          `(ado list-states --type "${type}"), then pass --state, or map it with /project-init --check`);
+      }
+    }
     const d = await call(
       "PATCH",
       `${base(args, "tracker")}/_apis/wit/workitems/${args.id}?${V}`,
       {
-        body: [{ op: "add", path: "/fields/System.State", value: String(args.state) }],
+        body: [{ op: "add", path: "/fields/System.State", value: state }],
         contentType: "application/json-patch+json",
       },
     );
-    return { id: d.id, state: d.fields?.["System.State"] };
+    return { id: d.id, ...(type ? { type, role: String(args.role) } : {}), state: d.fields?.["System.State"] };
+  },
+
+  // Edit an existing comment — the amend path of tracker-ops §0 (one comment per ticket per run).
+  async "edit-comment"(args) {
+    if (!args.id || !args["comment-id"]) fail("--id and --comment-id required");
+    const text = args["text-file"] ? readInput("text-file", args["text-file"]) : args.text;
+    if (!text) fail("--text or --text-file required");
+    const body = args.raw ? String(text) : ensureAzureHtml(text);
+    const d = await call(
+      "PATCH",
+      `${base(args, "tracker")}/_apis/wit/workItems/${args.id}/comments/${enc(args["comment-id"])}?api-version=7.1-preview.4`,
+      { body: { text: body } },
+    );
+    return { id: d.id, ok: true };
+  },
+
+  // Set arbitrary work-item fields (a JSON-Patch `add` per field) — the repair path
+  // azure-html-format.md §Repairing used to hand-roll with curl and a PAT in a temp file
+  // (VCST-6402: the token reaches this process through `node "$VC_RUN" ado …`, never a file).
+  //   --field "Ref.Path=value"            (repeatable; value taken literally)
+  //   --fields-file fields.json           ({ "Ref.Path": "value", … } — for html bodies)
+  // An empty value clears the field. Values are written as given: no Markdown→HTML conversion.
+  async "patch-fields"(args) {
+    if (!args.id) fail("--id required");
+    const fields = {};
+    if (args["fields-file"]) {
+      let parsed;
+      try {
+        parsed = JSON.parse(readInput("fields-file", args["fields-file"]));
+      } catch (e) {
+        fail(`--fields-file: ${e.message}`);
+      }
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) fail("--fields-file must hold a JSON object { \"Ref.Path\": value }");
+      Object.assign(fields, parsed);
+    }
+    for (const kv of args.field || []) {
+      const eq = String(kv).indexOf("=");
+      if (eq < 1) fail(`--field "${kv}" — expected Ref.Path=value`);
+      fields[kv.slice(0, eq)] = kv.slice(eq + 1);
+    }
+    const refs = Object.keys(fields);
+    if (!refs.length) fail("nothing to set — pass --field Ref=value or --fields-file");
+    for (const ref of refs) if (!/^[A-Za-z][\w.]*$/.test(ref)) fail(`"${ref}" is not a field reference name`);
+    const d = await call(
+      "PATCH",
+      `${base(args, "tracker")}/_apis/wit/workitems/${args.id}?${V}`,
+      { body: refs.map((ref) => ({ op: "add", path: `/fields/${ref}`, value: fields[ref] })), contentType: "application/json-patch+json" },
+    );
+    return { id: d.id, rev: d.rev, set: refs };
+  },
+
+  // Run a WIQL query — the Azure Boards search of tracker-ops §2. Returns the matching ids, and with
+  // --fields the listed fields of the first --top items (default 50).
+  async wiql(args) {
+    const query = args["query-file"] ? readInput("query-file", args["query-file"]) : args.query;
+    if (!query) fail("--query or --query-file required");
+    const top = Math.max(1, Math.min(200, Number(args.top) || 50));
+    const d = await call("POST", `${base(args, "tracker")}/_apis/wit/wiql?$top=${top}&${V}`, { body: { query: String(query) } });
+    const ids = (d.workItems || []).map((w) => w.id).slice(0, top);
+    if (!args.fields || !ids.length) return { count: ids.length, ids };
+    const fieldList = String(args.fields).split(",").map((f) => f.trim()).filter(Boolean);
+    const items = await call("GET", `${orgUrl(args)}/_apis/wit/workitems?ids=${ids.join(",")}&fields=${fieldList.map(enc).join(",")}&${V}`);
+    return { count: ids.length, items: (items.value || []).map((w) => ({ id: w.id, ...w.fields })) };
   },
 
   async "list-types"(args) {
@@ -742,7 +864,7 @@ const COMMANDS = {
     let reproRef = "Microsoft.VSTS.TCM.ReproSteps";
     let systemInfoRef = "Microsoft.VSTS.TCM.SystemInfo";
     // Body/repro/systemInfo content, possibly merged: on a process whose only html control is the
-    // body target (e.g. OPUS: ReproSteps is the body, no distinct repro/systemInfo field), the repro
+    // body target (e.g. a Bug whose ReproSteps is the body, no distinct repro/systemInfo field), the repro
     // and systemInfo text fold INTO the body so nothing is silently dropped and no duplicate op is
     // emitted. `systemInfoFolded` tells the buildBugFields call below not to ALSO emit it separately.
     let bodyContent = description;
@@ -809,7 +931,7 @@ const COMMANDS = {
 
     // ─── FORM-VISIBILITY BINDING + OFF-FORM REFUSAL (VCST-5702 ITEM 0.3; review HIGH-1/MED-3) ──
     // Runs whenever a form layout was scanned, INDEPENDENT of whether a field contract is present.
-    // The OPUS silent failure — the whole body written to off-form System.Description, reported PASS —
+    // The VCST-5702 silent failure — the whole body written to off-form System.Description, reported PASS —
     // is reachable with NO contract too: discover-tracker's layout scan and field-contract scan are
     // SEPARATE best-effort calls, so a profile can carry `formLayout` while `fields` is empty (the
     // contract call failed, the layout call didn't). Gating this on the LAYOUT, not the contract,
@@ -881,7 +1003,7 @@ const COMMANDS = {
     // but NOT conditional form rules ("required when State = X"), so a contract-clean payload
     // can still be rejected. Parse WHICH field the rejection is about and drop/keep precisely
     // that one — a REQUIRED field is never dropped (STOP + ask instead), and we never retry by
-    // shrinking the payload blindly, which is how the OPUS bug ended up with empty fields.
+    // shrinking the payload blindly, which is how a client bug ended up with empty fields.
     let healed = null;
     if (!res.ok && res.status >= 400 && res.status < 500) {
       const r = classifyFieldRejection(res.message, contract);
@@ -1043,7 +1165,7 @@ const COMMANDS = {
   async "create-pr"(args) {
     for (const k of ["repo", "source", "target", "title"]) if (!args[k]) fail(`--${k} required`);
     const description = args["description-file"]
-      ? readFileSync(resolve(args["description-file"]), "utf-8")
+      ? readInput("description-file", args["description-file"])
       : args.description || "";
     const body = {
       sourceRefName: args.source.startsWith("refs/") ? args.source : `refs/heads/${args.source}`,
@@ -1106,7 +1228,7 @@ const COMMANDS = {
     const AZ = vcsAZ();
     const org = args.org || AZ.organization;
     const project = args.project || AZ.project;
-    if (!org || !project) fail("search: no org/project — pass --org/--project or set vcs/tracker.azure in project-profile.json");
+    if (!org || !project) fail("search: no org/project — pass --org/--project, or run /project-init (the vc-init plugin) so project-profile.json carries vcs/tracker.azure");
     // ADO Code Search REST lives on the almsearch.* host (NOT dev.azure.com) and REQUIRES a
     // filters.Project; a filters.Repository sent WITHOUT Project fails with
     //   "Filter [Repository] is found but filter [Project] is not."

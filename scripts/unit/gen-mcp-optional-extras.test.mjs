@@ -1,13 +1,11 @@
 // Unit tests for optional-extra gating in
-// plugins/vc-fix/skills/project-init/gen-mcp.mjs.
+// plugins/vc-init/skills/project-init/gen-mcp.mjs.
 //
-// The defect (self-diagnostics `project-init/mcp_config`, DEGRADED): the enable loop did
-// `for (const e of extras) if (extraMap[e]) enabled.add(extraMap[e])` — every `--with` extra was
-// enabled with no check that its token had resolved. scaffold-secrets.mjs emits POSTMAN_API_KEY /
-// CONTEXT7_API_KEY as OPTIONAL placeholders and documents "blank ⇒ that MCP server stays disabled",
-// so onboarding shipped `.mcp.json` with context7 enabled and a literal `<CONTEXT7_API_KEY>` — a
-// server that cannot start — and then reported it as a degraded artifact against a key the operator
-// deliberately left blank. An unresolved optional extra now stays DEFINED but dormant.
+// The original defect (self-diagnostics `project-init/mcp_config`, DEGRADED): every `--with` extra was
+// enabled with no check that its token had resolved, so `.mcp.json` shipped context7 with a literal
+// `<CONTEXT7_API_KEY>`. Since VCST-6402 the key-taking extras (postman, context7) are gone altogether —
+// no token is read from a file — so what is left to guard is that a removed extra never ships and a
+// key-less extra is enabled as asked.
 // Run: `npm test` (tsx --test scripts/unit/**/*.test.mjs).
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -16,10 +14,10 @@ import { readFileSync } from "node:fs";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { withTempDir } from "./_test-helpers.mjs";
-import { unresolvedPlaceholders } from "../../plugins/vc-fix/skills/project-init/gen-mcp.mjs";
+import { unresolvedPlaceholders } from "../../plugins/vc-init/skills/project-init/gen-mcp.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const SCRIPT = join(ROOT, "plugins/vc-fix/skills/project-init/gen-mcp.mjs");
+const SCRIPT = join(ROOT, "plugins/vc-init/skills/project-init/gen-mcp.mjs");
 
 function runGenMcp(dir, args = [], extraEnv = {}) {
   return execFileSync(process.execPath, [SCRIPT, ...args], {
@@ -47,32 +45,18 @@ test("unresolvedPlaceholders: reports each unresolved name once, and nothing whe
 });
 
 // ─── the regression: blank optional key ⇒ defined but dormant ─────────────────────
-test("--with context7 + blank key: NOT enabled, still defined, no degraded-artifact warn", () => {
-  withTempDir((dir) => {
-    const out = runGenMcp(dir, ["--tracker", "azure", "--client-vcs", "azure-repos", "--with", "context7"], {
-      CONTEXT7_API_KEY: "",
-    });
-    assert.ok(!enabledOf(dir).includes("context7"), `enabled: ${enabledOf(dir).join(", ")}`);
-    // dormant, not deleted — filling the key and re-running is all it takes
-    assert.ok(serversOf(dir).context7, "context7 stays DEFINED in .mcp.json");
-    // the blank optional key is the documented outcome, so it must not be reported as degraded
-    assert.doesNotMatch(out, /unresolved <CONTEXT7_API_KEY>/);
-    assert.match(out, /context7: defined but NOT enabled/);
-  });
-});
-
-test("--with context7 + a real key: enabled, and the placeholder is substituted", () => {
+test("--with context7: removed in VCST-6402 — not defined, not enabled, and the run says so", () => {
   withTempDir((dir) => {
     const out = runGenMcp(dir, ["--tracker", "azure", "--client-vcs", "azure-repos", "--with", "context7"], {
       CONTEXT7_API_KEY: "ctx7_real",
     });
-    assert.ok(enabledOf(dir).includes("context7"), `enabled: ${enabledOf(dir).join(", ")}`);
-    assert.deepEqual(unresolvedPlaceholders(serversOf(dir).context7), []);
-    assert.doesNotMatch(out, /context7: defined but NOT enabled/);
+    assert.ok(!enabledOf(dir).includes("context7"), `enabled: ${enabledOf(dir).join(", ")}`);
+    assert.equal(serversOf(dir).context7, undefined, "a removed server is not even defined");
+    assert.match(out, /--with context7: that server was removed/);
+    assert.doesNotMatch(out, /unresolved </);
   });
 });
 
-// A key-less extra must be unaffected — the gate keys off placeholders, not off "is an extra".
 test("--with devtools: enabled without any key (no placeholder to resolve)", () => {
   withTempDir((dir) => {
     runGenMcp(dir, ["--tracker", "azure", "--client-vcs", "azure-repos", "--with", "devtools"], {
