@@ -42,7 +42,7 @@ try {
   const mcpJson = readMcpJson(ROOT);
   const mcp = { ...checkMcpStatic(forFlag, loadMcpRequirements(ROOT), mcpJson.json), jsonError: mcpJson.error };
   const sprint = forFlag === "ticket" || forFlag === "ticket-fast" ? resolveSprint(ROOT) : null;
-  const duplicate = findDuplicate(ROOT, forFlag, { ticket, domain, now });
+  const duplicate = findDuplicate(ROOT, forFlag, { ticket, domain, env: facts.env, now });
   const checks = buildChecks({ for: forFlag, ticket, domain, expect, facts, mcp, sprint, duplicate });
   const verdict = isBlocking(checks) ? "NOT READY" : "READY";
   if (argv.includes("--json")) console.log(JSON.stringify({ for: forFlag, ticket: ticket ?? null, domain: domain ?? null, sprint, duplicate, facts, mcp, checks, verdict }, null, 2));
