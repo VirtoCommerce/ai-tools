@@ -177,8 +177,8 @@ test("SKILL.md: the split summary (already-reported vs new) is part of the contr
 });
 
 test("SKILL.md + command: /project-init no longer asks the delivery mode (item 4)", () => {
-  const skill = readFileSync(join(ROOT, "plugins/vc-fix/skills/project-init/SKILL.md"), "utf8");
-  const cmd = readFileSync(join(ROOT, "plugins/vc-fix/commands/project-init.md"), "utf8");
+  const skill = readFileSync(join(ROOT, "plugins/vc-init/skills/project-init/SKILL.md"), "utf8");
+  const cmd = readFileSync(join(ROOT, "plugins/vc-init/commands/project-init.md"), "utf8");
   assert.match(skill, /NOT asked here|is NOT asked/i, "§0c documents the removal");
   assert.doesNotMatch(cmd, /--feedback-mode <ask\|auto\|off> from the/, "the interview no longer passes --feedback-mode");
 });

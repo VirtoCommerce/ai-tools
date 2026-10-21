@@ -135,17 +135,11 @@ import { redact } from "./redact.mjs";
 import { loadExpected, findExpected } from "./expected.mjs";
 
 // ─── output root resolution ────────────────────────────────────────────────
-// Canonical definition lives in skills/project-init/lib/paths.mjs `outputRoot()`
-// (VC_FIX_HOME || process.cwd()). Prefer importing it; fall back to the inline
-// equivalent. Either way the result is the project dir — NEVER the plugin dir.
+// The same rule as vc-init's skills/project-init/lib/paths.mjs `outputRoot()`
+// (VC_FIX_HOME || process.cwd()), inlined: /project-init moved to the vc-init plugin
+// (VCST-6402), so there is no sibling module to import any more — and a plugin has no
+// reliable path to another plugin's files. The result is the project dir — NEVER the plugin dir.
 async function resolveOutputRoot() {
-  try {
-    const url = new URL("../skills/project-init/lib/paths.mjs", import.meta.url);
-    const mod = await import(url.href);
-    if (typeof mod.outputRoot === "function") return mod.outputRoot();
-  } catch {
-    /* fall through */
-  }
   return process.env.VC_FIX_HOME ? resolve(process.env.VC_FIX_HOME) : process.cwd();
 }
 
@@ -400,9 +394,28 @@ function clampNum(n) {
 // `discover_tracker`. That is what makes an observation attributable to the failing STEP rather
 // than to "some Bash call", which is the difference between a usable finding and a shrug.
 const PLUGIN_SCRIPT_RE = /[/\\](?:hooks|skills|scripts)[/\\][\w./\\-]*?([\w-]+)\.mjs\b/;
+// Since VCST-6402 a plugin script that needs a token is launched through the vc-init bridge —
+// `node "$VC_RUN" onboard verify-access …`, `node "$VC_RUN" ado comment …` — so the command line names
+// the bridge and a GROUP, not the .mjs. The bridge's script groups (onboard/ado/jira/deliver) run
+// plugin code and count as plugin-owned; the subject is the onboard script, else the group. The
+// bridge is named either by its variable or, once expanded, by its file `vc-run.mjs`. inputStr is
+// JSON.stringify(input), so a quote around the path arrives as `\"`.
+const VC_RUN_SCRIPT_RE = /(?:\$\{?VC_RUN\}?|vc-run\.mjs)["'\\]*\s+(onboard|ado|jira|deliver)\b(?:\s+["'\\]*([\w-]+))?/;
 function opSubject(toolName, inputStr) {
-  const m = PLUGIN_SCRIPT_RE.exec(String(inputStr || ""));
+  const s = String(inputStr || "");
+  const bridged = VC_RUN_SCRIPT_RE.exec(s);
+  if (bridged) return obsSubject(bridged[1] === "onboard" && bridged[2] ? bridged[2] : bridged[1]);
+  const m = PLUGIN_SCRIPT_RE.exec(s);
   return obsSubject(m ? m[1] : toolName);
+}
+/** Install roots whose scripts count as the plugin's own: this plugin, and vc-init — which owns
+ *  /project-init since VCST-6402 and is the dependency every vc-fix install pulls in. vc-init sits
+ *  beside this plugin as `<root>/../vc-init` in a checkout and under `<root>/../../vc-init/<version>`
+ *  in an install (`<root>` = `<cache>/<marketplace>/vc-fix/<version>`), so the prefix is that
+ *  version-less directory. */
+function ownedRoots(root) {
+  return [resolve(root), resolve(root, "..", "vc-init"), resolve(root, "..", "..", "vc-init")]
+    .map((r) => r.replace(/\\+/g, "/").replace(/\/+$/, "").toLowerCase());
 }
 /** Did this op run a script the PLUGIN owns? ROUTING needs this (item 7): a client's own failing
  *  build is recorded like everything else, but it must NOT arm the plugin's diagnostician. A bare
@@ -414,6 +427,7 @@ function opSubject(toolName, inputStr) {
  *  Derived once, while the input is still in hand. */
 function opIsPluginScript(inputStr) {
   const s = String(inputStr || "");
+  if (VC_RUN_SCRIPT_RE.test(s)) return true; // a bridged plugin script — the bridge never runs client code
   if (!PLUGIN_SCRIPT_RE.test(s)) return false; // not even a hooks//skills//scripts .mjs reference
   // Unambiguous convention: the plugin invokes its own scripts via `$CLAUDE_PLUGIN_ROOT/{hooks,
   // skills,scripts}/…` (the model may keep the literal marker); a client build never references
@@ -427,8 +441,7 @@ function opIsPluginScript(inputStr) {
   let root;
   try { root = pluginRoot(); } catch { return false; }
   const flat = s.replace(/\\+/g, "/").toLowerCase();
-  const rootN = resolve(root).replace(/\\+/g, "/").replace(/\/+$/, "").toLowerCase();
-  return flat.includes(rootN + "/");
+  return ownedRoots(root).some((rootN) => flat.includes(rootN + "/"));
 }
 function opSubjectOf(sp) {
   return sp ? (sp.subject || obsSubject(sp.name)) : "unknown";
@@ -2164,7 +2177,7 @@ async function cmdFinalize(ev) {
   // `background_tasks` is present on every current-CC Stop/SubagentStop but is NOT scoped to this
   // session: it also lists `run_in_background` SHELL tasks and background work owned by OTHER
   // sessions. Trusting its length EXCLUSIVELY made a foreign shell task force perpetual deferral —
-  // the LEO /project-init run (2026-07-22) recorded 3× `deferred` with agent_calls:0 and an empty
+  // a client /project-init run (2026-07-22) recorded 3× `deferred` with agent_calls:0 and an empty
   // openOps because a different session's background shell task showed up here. So we defer ONLY
   // when a pending background item corresponds to one of THIS session's OWN open AGENT ops.
   const bgTasks = Array.isArray(ev.background_tasks) ? ev.background_tasks : [];
@@ -2200,7 +2213,7 @@ async function cmdFinalize(ev) {
   }
   // Classify the `background_tasks` entries. `ownedPendingAgents` = entries that match one of OUR
   // agent ops by id/tool_use_id. `sawAgentKindBg` = at least one entry is an AGENT/subagent (not a
-  // shell/bash task), regardless of id. The kind split is the LEO fix's core: a `run_in_background`
+  // shell/bash task), regardless of id. The kind split is the 2026-07-22 fix's core: a `run_in_background`
   // SHELL task (foreign or ours) must NEVER cause a defer; only a genuine agent can.
   let ownedPendingAgents = 0;
   let sawAgentKindBg = false;
@@ -2214,7 +2227,7 @@ async function cmdFinalize(ev) {
     if (ids.some((x) => ownAgentIds.has(x))) ownedPendingAgents++;
   }
   // Hard guard (belt-and-suspenders): with ZERO open agent ops of ours, nothing of ours can be in a
-  // sidechain — NEVER defer, whatever `background_tasks` says (this is the LEO agent_calls:0 case).
+  // sidechain — NEVER defer, whatever `background_tasks` says (this is the 2026-07-22 agent_calls:0 case).
   // Otherwise, when the field is present, defer if either (a) a bg entry matches one of our agent ops
   // by id, OR (b) a bg entry is agent-KIND and we have an open agent op younger than ORPHAN_MS — this
   // covers a platform that keys an agent bg task by a distinct `agent_id` (≠ our tool_use_id), so a
@@ -2243,7 +2256,7 @@ async function cmdFinalize(ev) {
   // ─── an unanswered OPERATOR QUESTION also defers (VCST-5582 D) ───────────────
   // An `AskUserQuestion` tool_use with no matching tool_result means the operator is being asked
   // something right now. A `{decision:"block"}` here would RESUME the agent and push that question
-  // out of view — the OPUS failure: `/qa-bug`'s Step-5 "create a bug-tracker ticket?" was buried by
+  // out of view — the VCST-5582 D failure: `/qa-bug`'s Step-5 "create a bug-tracker ticket?" was buried by
   // the self-diagnostics tail-trigger, so the ticket phase ran unattended and undiagnosed. So this
   // Stop is a CHECKPOINT, exactly like a pending sub-agent: record a durable `deferred` decision and
   // return WITHOUT draining/closing spans or surfacing anything. The real verdict lands on the
@@ -2466,7 +2479,7 @@ async function cmdFinalize(ev) {
   // its `/project-init` UserPromptSubmit — which fired BEFORE the flag existed — was a no-op and NO
   // command span opened. Its `complete` signal is then the only proof the plugin ran; without this OR
   // the healthy run would be misjudged "no-plugin-activity" and its clean line withheld (residual
-  // opt-in blind spot, LEO deployment 2026-07-22). It never over-fires on a plain dev turn (no
+  // opt-in blind spot, client deployment 2026-07-22). It never over-fires on a plain dev turn (no
   // `complete` is emitted there — and a stray cross-session marker is filtered by the sid guard above).
   const pluginActivity = Boolean(state.sawPluginSpan) || Boolean(state.anySkillSeen) || completeForThisSession;
   // Clean line (default ON): gated on an EXPLICIT completion signal, NOT on per-turn plugin

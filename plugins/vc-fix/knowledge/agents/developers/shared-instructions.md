@@ -110,8 +110,8 @@ A deployment may be the native VirtoCommerce platform **or** a CLIENT project wi
 modules / theme / storefront fork. The routed repo's **ownership** decides where your PR (or, when
 unfixable, an issue) goes. Ownership is **data, not guesswork**: `skills/qa-fix-routing/repo-router.ts` `repoOwnership(repo)`
 returns `client` or `platform` from `project-profile.json` (written by `/project-init`); `contributionPlan(repo)`
-returns `{ ownership, host, mode, forkOwner }`. **When no profile is present, every repo is `platform` /
-GitHub / `direct` — i.e. the original VirtoCommerce-internal behaviour, unchanged.**
+returns `{ ownership, host, mode, forkOwner }`. **A missing `project-profile.json` is a STOP — run
+`/project-init`; there is no default routing to fall back on.**
 
 | Routed repo | Where the PR goes | How |
 |-------------|-------------------|-----|
@@ -163,53 +163,56 @@ platform code — NEVER client source, in any form.** This outranks fixing the b
   on a maybe-client repo.
 
 ## GitHub authentication (the write token)
-The ambient `gh`/`git` session on this host is logged in as the **read-only** GitHub MCP token — it
-**cannot** push. All remote write operations (clone, push, PR) must run as the **dedicated write
-token** `GITHUB_FIX_BUGS_TOKEN` from `.env.local` (gitignored), exposed to `gh`/`git` as `GH_TOKEN`
-(`GH_TOKEN` takes precedence over the ambient `GITHUB_TOKEN`). `skills/qa-fix-routing/repo-router.ts`
-stays token-name-agnostic (it just consumes ambient `gh`).
+**Host-governed project** (`governance.host` set): use the host's MCP servers from `governance.servers.*`, never `$VC_RUN` — [`knowledge/execution/host-governance.md`](../../execution/host-governance.md) — the bridge refuses there.
 
-Load the token once per shell command (it does not persist between Bash calls) and **never print it**:
+**No token lives in a file, and you never handle one.** Every **network** git/gh operation — clone,
+fetch, pull, push, ls-remote, and every `gh` call — goes through the bridge `node "$VC_RUN" …`. The
+bridge resolves the write credential itself: on a PAT axis (`auth.github: "pat"`) it reads `github-pat`
+from vc-secrets and hands it to that one process; on a session axis (`gh-cli`) it runs the tool on the
+operator's `gh auth login` session. The command is the same either way — **do not branch on the
+profile's auth mode**, and never export `GH_TOKEN` or add a credential helper yourself (the bridge pins
+its own host-scoped one). Local-only git (`commit`, `checkout`, `branch`, `diff`, `log`, `status`,
+`rebase`, `reset`) stays plain `git`.
 ```bash
-FIX=$(grep '^GITHUB_FIX_BUGS_TOKEN=' .env.local | sed 's/^GITHUB_FIX_BUGS_TOKEN=//' | awk '{print $1}')
-GH_TOKEN="$FIX" gh repo clone VirtoCommerce/<repo> ...          # clone  (gh honours GH_TOKEN)
-GH_TOKEN="$FIX" git -c credential.helper='!gh auth git-credential' push -u origin claude/qa-autofix/<ticket-key>
-GH_TOKEN="$FIX" gh pr create ...                                # PR
+node "$VC_RUN" git-gh clone https://github.com/VirtoCommerce/<repo>.git <checkout>   # clone
+node "$VC_RUN" git-gh -C <checkout> push -u origin claude/qa-autofix/<ticket-key>    # push
+node "$VC_RUN" gh pr create --repo VirtoCommerce/<repo> ...                          # PR
+node "$VC_RUN" gh api user --jq .login                                               # who am I
+node "$VC_RUN" gh api repos/<owner>/<repo> --jq .permissions.push                    # write scope?
 ```
-The explicit `-c credential.helper='!gh auth git-credential'` on `git push` is **required**: this
-host's default helper is the Windows credential manager, which would otherwise serve the wrong (read)
-token. `gh` commands need only the `GH_TOKEN=` prefix.
+The bridge refuses `gh auth *`, `gh repo clone` (use `git-gh clone`), `gh pr checkout`, `gh pr merge`,
+`-c` on git, and credentials in a URL. `$VC_RUN` is set by `/project-init` (vc-init) in
+`.claude/settings.local.json` `env`; if it is unset, the project was onboarded before VCST-6402 — run
+`/project-init --check`. A missing or rejected credential is fixed by the operator (`node
+"<VC_SECRETS>" set github-pat`, then `/project-init --check`), never by you.
 
-### When `gh` is already logged in (browser login), or the host is Azure Repos
-The `GH_TOKEN=` prefix above is specific to a host whose **ambient** `gh` is the read-only GitHub MCP
-token. A client deployment configured by `/project-init` with `vcs.auth: "gh-cli"` instead runs
-`gh auth login` (browser), so the **ambient** `gh`/`git` session already has write scope — in that case
-**drop the `GH_TOKEN=` prefix and the explicit credential helper**; plain `gh`/`git` already authenticate
-(`gh auth status` confirms). Only fall back to the token-prefix form when `gh auth status` shows a
-read-only / wrong identity. Check `project-profile.json` → `vcs.auth` to know which you're on
-(`gh-cli` = ambient login; `pat` = a token in `.env.local`).
-
-For a **client repo on Azure Repos** (`vcs.clientHost: "azure-repos"`), GitHub auth doesn't apply: clone
-with the Azure Git URL `https://dev.azure.com/<org>/<project>/_git/<repo>` and authenticate with
-`ADO_PAT` (`.env.local`) or an `az login` session (`ADO_AUTH=az-login`) — **never a password**. Open the
-PR with the Azure DevOps REST `POST …/_apis/git/repositories/<repo>/pullrequests` (as
-`skills/qa-fix-routing/vcs/azure-repos-vcs.ts` does). `gh pr create` is GitHub-only.
+### Azure Repos
+For a **client repo on Azure Repos** (`vcs.clientHost: "azure-repos"`), the same bridge applies with the
+`git-ado` and `ado` tools — the bridge resolves `ado-pat` from vc-secrets or uses the `az login` session.
+Clone with the Azure Git URL (no credentials in it) and open the PR with `ado create-pr`; `gh pr create`
+is GitHub-only.
+```bash
+node "$VC_RUN" git-ado clone https://dev.azure.com/<org>/<project>/_git/<repo> <checkout>
+node "$VC_RUN" git-ado -C <checkout> push -u origin claude/qa-autofix/<ticket-key>
+node "$VC_RUN" ado create-pr --repo <repo> --source refs/heads/claude/qa-autofix/<ticket-key> \
+  --target refs/heads/<integrationBranch> --title "fix(<ticket-key>): ..." --description-file PR_BODY.md
+```
 
 ### Commit identity — author as the human, NOT a bot (CLA)
-Commits **must be authored by the human who owns the write token** (the GitHub account behind
-`GITHUB_FIX_BUGS_TOKEN`), with **Claude as a `Co-Authored-By:` trailer** —
+Commits **must be authored by the human who owns the write credential** (the GitHub account the bridge
+authenticates as — `node "$VC_RUN" gh api user`), with **Claude as a `Co-Authored-By:` trailer** —
 never the reverse. The VirtoCommerce org runs **CLA Assistant** on PRs: it blocks until every commit
 **author** has signed the CLA. A commit authored by a bot identity (e.g. `Claude QA Auto-Fix
 <noreply@anthropic.com>`, login `claude`) waits forever on an identity no human can sign for, stalling
 the PR. (2026-06-08 incident: a backend auto-fix PR sat blocked until the commit was re-authored to the
 human + force-pushed — `23c309b → 7056057` — at which point CLA re-evaluated → **signed/success**.)
 
-Derive the author from the token owner so it generalizes across customers/forks (no hardcoded name) and
+Derive the author from the credential owner so it generalizes across customers/forks (no hardcoded name) and
 always maps to a CLA-signable account; set it **per-commit** (don't rely on ambient `git config`):
 ```bash
-GH_LOGIN=$(GH_TOKEN="$FIX" gh api user --jq .login)
-GH_NAME=$(GH_TOKEN="$FIX" gh api user --jq '.name // .login')
-GH_UID=$(GH_TOKEN="$FIX" gh api user --jq .id)
+GH_LOGIN=$(node "$VC_RUN" gh api user --jq .login)
+GH_NAME=$(node "$VC_RUN" gh api user --jq '.name // .login')
+GH_UID=$(node "$VC_RUN" gh api user --jq .id)
 git -c user.name="$GH_NAME" -c user.email="${GH_UID}+${GH_LOGIN}@users.noreply.github.com" \
   commit -m "fix(<scope>): <imperative summary> (<ticket-key>)
 
@@ -254,8 +257,8 @@ green. The product repos run **two** PR jobs you must wait on (plus `license/cla
 
 Poll until both resolve (re-poll on an interval; don't block-sleep), then act:
 ```bash
-GH_TOKEN="$FIX" gh pr checks <pr-url-or-branch>             # status of every check
-GH_TOKEN="$FIX" gh pr view <pr> --json statusCheckRollup    # machine-readable rollup
+node "$VC_RUN" gh pr checks <pr-url-or-branch>             # status of every check
+node "$VC_RUN" gh pr view <pr> --json statusCheckRollup    # machine-readable rollup
 ```
 (`/qa-fix` owns this poll directly; the analyze-and-fix loop below is yours. Note: **Storybook
 CI does NOT run on PRs** — it's push-only — so don't wait on it.)
@@ -265,8 +268,8 @@ CI does NOT run on PRs** — it's push-only — so don't wait on it.)
   live PR). Never merge.
 - **Any check RED → fetch and READ the logs before touching anything.** Don't guess from the check name:
   ```bash
-  GH_TOKEN="$FIX" gh run view <run-id> --log-failed          # only the failing steps' logs
-  GH_TOKEN="$FIX" gh run view --job <job-id> --log           # full log of a specific job
+  node "$VC_RUN" gh run view <run-id> --log-failed          # only the failing steps' logs
+  node "$VC_RUN" gh run view --job <job-id> --log           # full log of a specific job
   ```
   For the Sonar gate, read the PR's SonarCloud check annotations; for `auto-tests`, read the failing
   pytest case name + assertion in the job log. **Classify the reason, then act:**
@@ -308,7 +311,7 @@ CI does NOT run on PRs** — it's push-only — so don't wait on it.)
 4. **No breaking changes.** No public REST/GraphQL/DTO/contract change, DB schema/migration, domain
    event shape, or `module.manifest` change. Any of these → STOP (Gate 0 boundary).
 5. **No secrets.** Never read, echo, or commit credentials/connection strings/`.env*`/`*.Development.json`.
-   The GitHub PAT stays in the env used by `gh`/`git`; never print it.
+   The PAT stays in vc-secrets and reaches only the process the bridge starts; never print it.
 6. **No auto-merge.** Forbidden: `mcp__github__merge_pull_request`, `gh pr merge`. PRs are opened for
    human review and never merged (a normal PR via `gh pr create`).
 7. **Preserve BL-* invariants.** A fix that passes the STR but breaks a `BL-*` rule is a regression.

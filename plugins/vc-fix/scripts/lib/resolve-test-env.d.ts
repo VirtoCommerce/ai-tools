@@ -1,9 +1,12 @@
 /**
  * Resolve the active TEST_ENV from (in precedence order): process.env.TEST_ENV,
- * a gitignored `.env.test-env` file, then `fallback`. Writes the result back to
- * process.env.TEST_ENV. See resolve-test-env.js for full docs.
+ * this session's binding, a gitignored `.env.test-env` file, then `fallback`. Writes
+ * the result back to process.env.TEST_ENV. See resolve-test-env.js for full docs.
  */
 export declare function resolveTestEnv(fallback?: string): string;
+
+/** Where the env files are read from: `.`, or VC_FIX_HOME under the $VC_RUN bridge (VC_BRIDGE=1). */
+export declare function envDir(): string;
 
 /** What picked the env: the environment's TEST_ENV, this session's binding, .env.test-env, or the default. */
 export type TestEnvSource = 'TEST_ENV' | 'session' | '.env.test-env' | 'default';

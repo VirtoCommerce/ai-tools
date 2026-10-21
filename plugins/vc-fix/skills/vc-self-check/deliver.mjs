@@ -51,7 +51,6 @@
 import { readFileSync, writeFileSync, readdirSync, existsSync, statSync, unlinkSync } from "node:fs";
 import { resolve, join, dirname } from "node:path";
 import { pathToFileURL, fileURLToPath } from "node:url";
-import { resolveGithubToken, probeGithubUpstream, GITHUB_UPSTREAM_REMEDY } from "../project-init/probe-lib.mjs";
 import {
   validateUpstream, fingerprintStruct, findingKey, severityRank, verdictRank, subjectEnum,
 } from "./upstream-reduce.mjs";
@@ -90,6 +89,53 @@ function diagDir() {
 /** This file lives at <pluginRoot>/skills/vc-self-check/deliver.mjs. */
 function pluginRootOfThisFile() {
   return resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
+}
+/** Import the first module of `specs` (relative to this file) that exists; throw when none does. */
+async function importFirst(specs) {
+  for (const spec of specs) {
+    const url = new URL(spec, import.meta.url);
+    if (existsSync(fileURLToPath(url))) return import(url.href);
+  }
+  throw new Error(`deliver.mjs: none of ${specs.join(", ")} exists beside ${fileURLToPath(import.meta.url)}`);
+}
+// probe-lib is resolved by a FIRST-MATCH chain, not a static import, so this file stays byte-identical
+// across its two homes: the plugin keeps the probes at <pluginRoot>/scripts/lib/probe-lib.mjs since
+// /project-init moved to the vc-init plugin (VCST-6402), while the in-repo `.claude/` mirror still finds
+// them beside the root /project-init skill. A static import can name only one of the two.
+const { resolveGithubToken, probeGithubUpstream, GITHUB_UPSTREAM_REMEDY } = await importFirst([
+  "../../scripts/lib/probe-lib.mjs",
+  "../project-init/probe-lib.mjs",
+]);
+/**
+ * Every install root a finding's `pluginFile` may be relative to, in priority order: this plugin
+ * first, then the vc-init plugin, which owns /project-init since VCST-6402 — a finding about
+ * `skills/project-init/discover-tracker.mjs` is proven against vc-init's copy, not against a path
+ * vc-fix no longer ships. vc-init sits beside this plugin as `<pluginRoot>/../vc-init` in a
+ * checkout and as `<cache>/<marketplace>/vc-init/<version>` in an install (where `<pluginRoot>` is
+ * `<cache>/<marketplace>/vc-fix/<version>`); the highest version wins there.
+ */
+export function provenanceRoots(pluginRoot) {
+  const roots = [resolve(pluginRoot)];
+  const sibling = resolve(pluginRoot, "..", "vc-init");
+  if (existsSync(join(sibling, ".claude-plugin", "plugin.json"))) roots.push(sibling);
+  const cached = resolve(pluginRoot, "..", "..", "vc-init");
+  let versions = [];
+  try {
+    versions = readdirSync(cached).filter((v) => existsSync(join(cached, v, ".claude-plugin", "plugin.json")));
+  } catch {
+    /* no cached vc-init — nothing to add */
+  }
+  const key = (v) => v.split("-")[0].split(".").map((p) => (/^\d+$/.test(p) ? Number(p) : -1));
+  const newer = (a, b) => {
+    const [x, y] = [key(a), key(b)];
+    for (let i = 0; i < Math.max(x.length, y.length); i++) {
+      if ((x[i] ?? 0) !== (y[i] ?? 0)) return (x[i] ?? 0) > (y[i] ?? 0);
+    }
+    return false;
+  };
+  const best = versions.reduce((acc, v) => (acc === null || newer(v, acc) ? v : acc), null);
+  if (best !== null) roots.push(join(cached, best));
+  return [...new Set(roots)];
 }
 
 // ─── consent (VCST-5509) — feedback.mode gates OUTBOUND delivery only ─────────
@@ -295,12 +341,17 @@ export function buildProvenanceCtx(struct, { pluginRoot = pluginRootOfThisFile()
     const rel = typeof f?.pluginFile === "string" ? f.pluginFile : "";
     if (!rel || files.has(rel)) continue;
     if (rel.includes("..") || /^[/\\]/.test(rel) || /^[A-Za-z]:/.test(rel)) continue; // never escape the plugin
-    const abs = resolve(pluginRoot, rel);
-    if (!abs.startsWith(resolve(pluginRoot))) continue;
-    try {
-      if (existsSync(abs) && statSync(abs).isFile()) files.set(rel, readFileSync(abs, "utf8"));
-    } catch {
-      /* unreadable ⇒ unproven ⇒ the field is dropped */
+    for (const base of provenanceRoots(pluginRoot)) {
+      const abs = resolve(base, rel);
+      if (!abs.startsWith(base)) continue;
+      try {
+        if (existsSync(abs) && statSync(abs).isFile()) {
+          files.set(rel, readFileSync(abs, "utf8"));
+          break;
+        }
+      } catch {
+        /* unreadable ⇒ unproven ⇒ try the next root; none ⇒ the field is dropped */
+      }
     }
   }
   const deny = new Set();
@@ -833,7 +884,8 @@ function nextStepsFor({ route, results, confirmed }) {
     return [
       "No token or no upstream rights — nothing can be sent from this machine.",
       "Authenticate, then re-run to deliver (the local telemetry is kept until then):",
-      "  export GITHUB_FIX_BUGS_TOKEN=<PAT>   # or:  gh auth login",
+      "  node \"<VC_SECRETS>\" set github-pat   # a PAT, stored in vc-secrets — then run this as: node \"$VC_RUN\" deliver …",
+      "  gh auth login                         # or a browser session",
     ];
   }
   if (confirmed) {
@@ -1086,6 +1138,18 @@ export async function main(argv = process.argv.slice(2), { stdin = process.stdin
     const removed = purgeSession({ dir: diagDir(), sid });
     const out = { action: "purge", session: sid || null, removed };
     emit(args.json, out, removed.length ? `Purged ${removed.length} local artifact(s) for session ${sid || "(none given)"}.` : `Nothing to purge${sid ? ` for session ${sid}` : " — pass --session <sid>"}.`);
+    return;
+  }
+
+  // A HOST-GOVERNED project (project-profile.json `governance.host`, VCST-6402 step 8): the client's
+  // governance plugin owns every outbound channel and secret, so no self-diagnostics data leaves for
+  // the VirtoCommerce GitHub — not even a deduplicated +1. Local --purge (above) still works.
+  const governance = readProfileObj()?.governance;
+  if (governance?.host || governance?.secrets === "host") {
+    const out = { action: "disabled", reason: "host-governed", host: governance.host || null, session: args.session || null };
+    emit(args.json, out,
+      `Upstream delivery is disabled on a host-governed project (${governance.host || "host"}). Nothing sent, nothing drafted — ` +
+      `the host's rules decide what leaves this project.`);
     return;
   }
 

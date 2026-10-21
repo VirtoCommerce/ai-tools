@@ -212,7 +212,7 @@ tags **its request's own activity** with `<prefix>count.<name>` (exact integers)
 `<prefix>time.<name>` (accumulated ms).
 
 ```bash
-node perftools/counters_metric.mjs spans.json --prefix opus. [--since <iso>] [--until <iso>]
+node perftools/counters_metric.mjs spans.json --prefix acme. [--since <iso>] [--until <iso>]
 ```
 
 Because these ride on the request's own server span, reading them is a group-by rather than an
