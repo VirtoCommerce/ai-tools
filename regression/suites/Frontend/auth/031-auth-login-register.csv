@@ -166,7 +166,7 @@
 [ACT] Leave 'Email' field empty
 [ACT] Fill 'Password': 'AnyPassword1!'
 [ACT] Click 'Sign In'","[DOM] Inline error: 'Email is required' or equivalent shown on Email field
-[STATE] Form does not submit","[CONSOLE] no TypeError or JS errors","Form submits with empty email; no validation message; console TypeError","none","regression-qa-theme-26.csv","Automated"
+[STATE] Form does not submit","[CONSOLE] no TypeError or JS errors","Form submits with empty email; no validation message; console TypeError","none",regression-qa-theme-26.csv | Behavior:auth.signin.password.empty-input | DataProfile:profile.auth.password-empty-input,"Automated"
 "AUTH-017","Login - Invalid User","Login > Validation","Medium","BL-AUTH-002","","Login page open","url={{FRONT_URL}}/sign-in","[NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': 'nonexistent_{{timestamp}}@example.com'
 [ACT] Fill 'Password': 'AnyPassword1!'
@@ -174,7 +174,7 @@
 [WAIT] Wait for error response","[DOM] Generic error message shown: 'Invalid credentials' or equivalent
 [STATE] No user-specific information leaked in error (no 'user not found')
 [STATE] User remains on login page","[NETWORK] POST /connect/token returns 4xx
-[CONSOLE] no TypeError or JS errors","User existence leaked in error message; 500 error returned; console TypeError","none","regression-qa-theme-26.csv","Automated"
+[CONSOLE] no TypeError or JS errors","User existence leaked in error message; 500 error returned; console TypeError","none",regression-qa-theme-26.csv | Behavior:auth.signin.password.wrong-credentials | DataProfile:profile.auth.password-wrong-credentials,"Automated"
 "AUTH-018","Login - Invalid Password","Login > Validation","Medium","BL-AUTH-002","ECL-14.1","Valid user exists in system","url={{FRONT_URL}}/sign-in;email={{USER_EMAIL}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': {{USER_EMAIL}}
 [ACT] Fill 'Password': 'WrongPassword999!'
@@ -183,7 +183,7 @@
 [STATE] Login denied
 [STATE] access_failed count incremented in platform","[NETWORK] POST /connect/token returns 4xx
 [API] mutation errors[] is empty
-[CONSOLE] no TypeError or JS errors","Login succeeds with wrong password; no error shown; console TypeError","none","regression-qa-theme-26.csv","Automated"
+[CONSOLE] no TypeError or JS errors","Login succeeds with wrong password; no error shown; console TypeError","none",regression-qa-theme-26.csv | Behavior:auth.signin.password.wrong-credentials | DataProfile:profile.auth.password-wrong-credentials,"Automated"
 "AUTH-019","Login - Email Verification Required","Login > Validation","Medium","BL-AUTH-001","ECL-6.1","User registered but email not yet verified; mandatory verification enabled","url={{FRONT_URL}}/sign-in;email=unverified+{{timestamp}}@example.com;password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': unverified+{{timestamp}}@example.com
 [ACT] Fill 'Password': {{USER_PASSWORD}}
@@ -191,7 +191,7 @@
 [WAIT] Wait for response","[DOM] Error message: email verification required shown
 [DOM] Option to resend verification email present
 [STATE] Login denied until email is verified","[NETWORK] POST /connect/token returns 4xx
-[CONSOLE] no TypeError or JS errors","Unverified user allowed to log in; no verification message; console TypeError","none","regression-qa-theme-26.csv","Automated"
+[CONSOLE] no TypeError or JS errors","Unverified user allowed to log in; no verification message; console TypeError","none",regression-qa-theme-26.csv | Behavior:auth.signin.password.unverified-email | DataProfile:profile.auth.password-unverified-email,"Automated"
 "AUTH-020","Login - Temporary Lockout","Login > Security","Medium","BL-AUTH-004","ECL-3.1","Valid user account; account lockout enabled after 5 failed attempts","url={{FRONT_URL}}/sign-in;email={{USER_EMAIL}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': {{USER_EMAIL}}
 [ACT] Fill 'Password': 'WrongPass1!'
@@ -204,7 +204,7 @@
 [ACT] Attempt login again with correct credentials","[DOM] Lockout error message shown after 5 failed attempts
 [STATE] Login with correct credentials fails during lockout period
 [STATE] Login succeeds after lockout timeout expires","[NETWORK] POST /connect/token returns 4xx during lockout
-[CONSOLE] no TypeError or JS errors","No lockout after 5 failures; lockout persists beyond timeout; correct password accepted during lockout; console TypeError","none","regression-qa-theme-26.csv","Manual"
+[CONSOLE] no TypeError or JS errors","No lockout after 5 failures; lockout persists beyond timeout; correct password accepted during lockout; console TypeError","none",regression-qa-theme-26.csv | Behavior:auth.lockout.temporary | Behavior:auth.lockout.expire,"Manual"
 "AUTH-021","Login - Org-Blocked User (VCST-5028)","Login > Security","Medium","BL-B2B-002; BL-AUTH-003","","User blocked by org admin in their primary org (org-scoped block via lockOrganizationContact). NOTE: With VCST-5028 'blocked' means org-scoped. This case tests blocking within the user's primary org.","url={{FRONT_URL}}/sign-in","[NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email' with blocked user email (blocked in their org by org admin)
 [ACT] Fill 'Password' with blocked user password
@@ -219,7 +219,7 @@
 [ASSERT] Microsoft login URL observed (login.microsoftonline.com)","[DOM] 'Sign in with Microsoft' button present on login page
 [NAV] Browser redirects to Microsoft OAuth endpoint
 [STATE] After completing Microsoft auth; user redirected back and logged in","[CONSOLE] no TypeError or JS errors
-[NETWORK] Redirect to Microsoft OAuth endpoint occurs","SSO button missing; redirect fails; redirect URL not Microsoft; console TypeError","Logout after test","regression-qa-theme-26.csv","Manual"
+[NETWORK] Redirect to Microsoft OAuth endpoint occurs","SSO button missing; redirect fails; redirect URL not Microsoft; console TypeError","Logout after test",regression-qa-theme-26.csv | Behavior:auth.signin.external,"Manual"
 "AUTH-026","SSO - Google Enabled","SSO > Google","Medium","BL-AUTH-005","","Google SSO configured in admin; login page accessible","url={{FRONT_URL}}/sign-in","[NAV] Navigate to {{FRONT_URL}}/sign-in
 [ASSERT] 'Sign in with Google' button visible
 [ACT] Click 'Sign in with Google'
@@ -227,7 +227,7 @@
 [ASSERT] Google OAuth URL observed (accounts.google.com)","[DOM] 'Sign in with Google' button present on login page
 [NAV] Browser redirects to Google OAuth endpoint
 [STATE] After completing Google auth; user redirected back and logged in","[CONSOLE] no TypeError or JS errors
-[NETWORK] Redirect to Google OAuth endpoint occurs","SSO button missing; redirect fails; redirect not to Google; console TypeError","Logout after test","regression-qa-theme-26.csv","Manual"
+[NETWORK] Redirect to Google OAuth endpoint occurs","SSO button missing; redirect fails; redirect not to Google; console TypeError","Logout after test",regression-qa-theme-26.csv | Behavior:auth.signin.external,"Manual"
 "AUTH-052","Password Reset - Forgot Password UI Flow","Password Reset > UI","High","BL-AUTH-002","ECL-4.2","Login page accessible; valid user email in system","email={{USER_EMAIL}};front_url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
 [ASSERT] 'Forgot Password' or 'Reset Password' link visible on login page
 [ACT] Click 'Forgot Password' link
@@ -242,7 +242,7 @@
 [DOM] Success message shown after submission: 'check your email' or equivalent
 [STATE] No error message shown for valid email","[NETWORK] POST to password reset endpoint returns HTTP 200
 [CONSOLE] no TypeError or JS errors
-[NETWORK] No 4xx/5xx on reset request","Forgot Password link missing on login page; reset page does not load; submission returns error for valid email; 4xx/5xx on reset endpoint; console TypeError","none","E2E-AUTH-004","Automated"
+[NETWORK] No 4xx/5xx on reset request","Forgot Password link missing on login page; reset page does not load; submission returns error for valid email; 4xx/5xx on reset endpoint; console TypeError","none",E2E-AUTH-004 | Behavior:auth.password-reset | DataProfile:profile.auth.password-reset,"Automated"
 "AUTH-053","Password Reset - Non-Existent Email","Password Reset > Validation","Medium","BL-AUTH-002","ECL-4.2, ECL-14.1","Forgot password page accessible","front_url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Click 'Forgot Password' link
 [WAIT] Wait for forgot password page to load
@@ -251,7 +251,7 @@
 [WAIT] Wait for response","[DOM] Same generic success message shown as for valid email (no user enumeration)
 [STATE] No indication whether email exists in system (security best practice)
 [DOM] No error message revealing 'user not found'","[NETWORK] POST to password reset endpoint returns HTTP 200 (same as valid email)
-[CONSOLE] no TypeError or JS errors","Different response for non-existent email vs valid email (user enumeration vulnerability); error message reveals user existence; console TypeError","none","E2E-AUTH-004","Automated"
+[CONSOLE] no TypeError or JS errors","Different response for non-existent email vs valid email (user enumeration vulnerability); error message reveals user existence; console TypeError","none",E2E-AUTH-004 | Behavior:auth.password-reset.unknown-email | DataProfile:profile.auth.password-reset-unknown-email,"Automated"
 "AUTH-054","Email Case Sensitivity - Login with Different Case","Login > Email Handling","Medium","BL-AUTH-001","ECL-4.1","Valid user account with known email; login page accessible","email={{USER_EMAIL}};password={{USER_PASSWORD}};front_url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': {{USER_EMAIL}} converted to UPPERCASE
 [ACT] Fill 'Password': {{USER_PASSWORD}}
@@ -268,7 +268,7 @@
 [STATE] Login succeeds regardless of email case (mixed case)
 [STATE] Authenticated user profile shows original registered email
 [NAV] User redirected to account after successful login","[NETWORK] POST /connect/token returns HTTP 200 for both case variants
-[CONSOLE] no TypeError or JS errors","Login fails with different email casing; different behavior for uppercase vs lowercase; console TypeError","Logout after test","","Automated"
+[CONSOLE] no TypeError or JS errors","Login fails with different email casing; different behavior for uppercase vs lowercase; console TypeError","Logout after test",Behavior:auth.signin.password.input-normalisation | DataProfile:profile.auth.password-input-normalisation,"Automated"
 "AUTH-055","Password with Leading and Trailing Spaces","Login > Password Handling","Medium","BL-AUTH-001","ECL-4.2","Valid user account with known password; login page accessible","email={{USER_EMAIL}};password={{USER_PASSWORD}};front_url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/sign-in
 [ACT] Fill 'Email': {{USER_EMAIL}}
 [ACT] Fill 'Password': ' {{USER_PASSWORD}} ' (with leading and trailing spaces)
@@ -282,7 +282,7 @@
 [WAIT] Wait for validation or error response","[STATE] Password with spaces: either trimmed (login succeeds) or preserved (login fails) - document actual behavior
 [DOM] Spaces-only password shows validation error or login failure
 [STATE] Form does not submit with spaces-only password as valid","[NETWORK] POST /connect/token response observed for space-padded password
-[CONSOLE] no TypeError or JS errors","Spaces-only password accepted as valid; inconsistent trimming behavior between registration and login; console TypeError","none","","Automated"
+[CONSOLE] no TypeError or JS errors","Spaces-only password accepted as valid; inconsistent trimming behavior between registration and login; console TypeError","none",Behavior:auth.signin.password.input-normalisation | DataProfile:profile.auth.password-input-normalisation,"Automated"
 "AUTH-056","Special Characters in Name Fields During Registration","Registration > Data Integrity","Medium","BL-AUTH-001","ECL-7.2","Registration page accessible; unique test email available","front_url={{FRONT_URL}};password={{USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/sign-up
 [ACT] Select 'Personal' account type
 [ACT] Fill 'First Name': ""O'Brien""
@@ -411,7 +411,7 @@ Storefront login page accessible; a DEDICATED lockout-test user exists (never us
 [STATE] User NOT logged in after 6th attempt (correct password) — locked state prevents access","[API] POST /connect/token for attempt 6 with correct password returns non-200 (400 or 401) — lockout enforced
 [NETWORK] No 5xx errors during any attempt
 [CONSOLE] No TypeError or JS errors","No error shown after failed attempts; 6th attempt with correct password succeeds and user logs in (VCST-5074 regression — lockout not enforced); account existence revealed in lockout message; console TypeError; 500 on any attempt","[SETUP] Create AGENT-TEST-lockout-sf@test.virtocommerce.com via admin if not exists
-[TEARDOWN] Unlock account via POST {{BACK_URL}}/api/platform/security/users/<id>/unlock with admin Bearer token; delete AGENT-TEST- user","VCST-5074, VCST-5149","Draft"
+[TEARDOWN] Unlock account via POST {{BACK_URL}}/api/platform/security/users/<id>/unlock with admin Bearer token; delete AGENT-TEST- user","VCST-5074, VCST-5149 | Behavior:auth.lockout.temporary | DataProfile:profile.auth.lockout-temporary","Draft"
 "AUTH-028","Login on Behalf — Org Maintainer Clicks 'Login on behalf' at /company/members — Confirmation Modal Then Impersonate Flow","Login > Impersonation > Org Maintainer Entry Point","High","BL-AUTH-005, BL-AUTH-006","ECL-14.1","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SUPPORT_AGENT]
 Org Maintainer (operator) is logged in. Their assigned role includes StorefrontPermissions.CanImpersonate (platform:security:loginOnBehalf — configured in Admin SPA > Security > Roles). The target (ACME_BUYER2) is a member of the operator's OWN organization (ORG-001, same as SUPPORT_AGENT), has a security account and is active in the member list — /company/members is the operator's own organization's roster (KB-02238DE5), so a member of another organization is never on it. PR #2280 inserts a confirmation modal between clicking 'Login on behalf' and navigating to /account/impersonate/{userId}. State: authenticated as Org Maintainer → confirmation modal → Continue → silent impersonation.","front_url={{FRONT_URL}}, operator_email=@td(SUPPORT_AGENT.email), target_user_id=@td(ACME_BUYER2.platform_id), target_name=@td(ACME_BUYER2.name)","[WAIT] Authenticated session established by [PRE:SIGNIN_AS] (operator identity visible in header)
@@ -436,7 +436,7 @@ Org Maintainer (operator) is logged in. Their assigned role includes StorefrontP
 [STATE] Silent flow fires (operator has CanImpersonate) — ImpersonateForm NOT rendered; VcLoaderOverlay briefly shown
 [STATE] After silent flow: impersonation banner visible; header shows operator name + 'logged in as' + target name","[API] POST /connect/token with grant_type=impersonate returns HTTP 200 after Continue
 [NETWORK] No /connect/token call issued if Cancel is clicked (modal dismissed without side effects)
-[CONSOLE] No JS errors during modal open, Continue click, or silent flow","'Login on behalf' absent from dropdown (CanImpersonate not recognized); confirmation modal not shown after clicking 'Login on behalf' (no gating modal = PR #2280 regression); 'Continue' or 'Cancel' buttons absent from modal; Continue does not navigate to /account/impersonate/{userId}; silent flow not triggered (form rendered instead); impersonation banner absent after flow completes; console TypeError","Stop impersonation via 'Revert back to own account' in header; [PRE:CLEAR_SESSION]","VCST-4906, VCST-4905, VCST-4725, BL-AUTH-005, BL-AUTH-006, ECL-14.1; Added VCST-4906 / PR #2280 (2026-05-14) — covers confirmation modal step introduced by members.vue +44/-6 change; positive counterpart to IMP-015 (absence case); Data fix 2026-10-20 (VCST-6042): target moved from IMPERSONATE_TARGET (USR-007, ORG-002 — not on SUPPORT_AGENT's ORG-001 roster) to ACME_BUYER2 (USR-004, ORG-001), the 'or any active member' fallback removed so the case cannot pass on an improvised target, and the duplicate manual sign-in after [PRE:SIGNIN_AS] dropped; assertions unchanged","Draft"
+[CONSOLE] No JS errors during modal open, Continue click, or silent flow","'Login on behalf' absent from dropdown (CanImpersonate not recognized); confirmation modal not shown after clicking 'Login on behalf' (no gating modal = PR #2280 regression); 'Continue' or 'Cancel' buttons absent from modal; Continue does not navigate to /account/impersonate/{userId}; silent flow not triggered (form rendered instead); impersonation banner absent after flow completes; console TypeError","Stop impersonation via 'Revert back to own account' in header; [PRE:CLEAR_SESSION]","VCST-4906, VCST-4905, VCST-4725, BL-AUTH-005, BL-AUTH-006, ECL-14.1; Added VCST-4906 / PR #2280 (2026-05-14) — covers confirmation modal step introduced by members.vue +44/-6 change; positive counterpart to IMP-015 (absence case); Data fix 2026-10-20 (VCST-6042): target moved from IMPERSONATE_TARGET (USR-007, ORG-002 — not on SUPPORT_AGENT's ORG-001 roster) to ACME_BUYER2 (USR-004, ORG-001), the 'or any active member' fallback removed so the case cannot pass on an improvised target, and the duplicate manual sign-in after [PRE:SIGNIN_AS] dropped; assertions unchanged | Behavior:auth.impersonate","Draft"
 "AUTH-071","Login — Temporary Lockout Detailed Message on Storefront (PasswordLogin DetailedErrors=true)","Login > Security > Lockout","Medium","BL-AUTH-003; BL-AUTH-004","ECL-3.1","[PRE:CLEAR_SESSION]
 Storefront login page accessible; PasswordLogin__DetailedErrors=true and IdentityOptions__Lockout__MaxFailedAccessAttempts=5 configured (vc-deploy-dev infra/environments.yml @ vcst-qa)
 A DEDICATED AGENT-TEST lockout-test user exists (never use agent pool slot accounts)","front_url={{FRONT_URL}}; back_url={{BACK_URL}}; lockout_user_email=AGENT-TEST-lockout-msg@test.virtocommerce.com; lockout_user_password=ValidLockPw1!","[NAV] {{FRONT_URL}}/sign-in
@@ -452,7 +452,7 @@ A DEDICATED AGENT-TEST lockout-test user exists (never use agent pool slot accou
 [DOM] After the 5th attempt the banner switches to the temporary-lockout message: ""Your account has been temporarily locked. Please try again later.""
 [STATE] User remains unauthenticated on /sign-in throughout (no session established)","[NETWORK] POST {{BACK_URL}}/connect/token returns HTTP 400 error=invalid_grant; attempt 5 response body code=user_is_temporary_locked_out
 [CONSOLE] No TypeError or JS errors","5th attempt still shows the generic credential message (DetailedErrors off or lockout not triggered); lockout banner appears before the 5th attempt; storefront renders the raw error code instead of localized text; user becomes authenticated; console TypeError; 500 on any attempt","[SETUP] Create lockout_user_email via admin if not exists
-[TEARDOWN] Unlock via POST {{BACK_URL}}/api/platform/security/users/<id>/unlock with admin Bearer token; delete AGENT-TEST- user","VCST-5074, VCST-5149; vc-deploy-dev infra/environments.yml (PasswordLogin__DetailedErrors)","Draft"
+[TEARDOWN] Unlock via POST {{BACK_URL}}/api/platform/security/users/<id>/unlock with admin Bearer token; delete AGENT-TEST- user","VCST-5074, VCST-5149; vc-deploy-dev infra/environments.yml (PasswordLogin__DetailedErrors) | Behavior:auth.lockout.temporary.storefront-message | DataProfile:profile.auth.lockout-storefront-message","Draft"
 "AUTH-072","Login — Org User Temporary Lockout Shows Temporary Message, Not Permanent Block (VCST-5374 regression)","Login > Security > Lockout","High","BL-AUTH-003; BL-AUTH-004","ECL-3.1","[PRE:CLEAR_SESSION]
 Storefront login accessible; an ORG-MEMBER account is available via {{ORG_USER_EMAIL}} (belongs to an organization)
 PasswordLogin__DetailedErrors=true and Lockout 5 attempts / 0:15:0 configured; VCST-5374 fix deployed (vc-module-customer >= the PR #303 build / its released version)","front_url={{FRONT_URL}}; back_url={{BACK_URL}}; org_user_email={{ORG_USER_EMAIL}}","[NAV] {{FRONT_URL}}/sign-in
@@ -462,7 +462,7 @@ PasswordLogin__DetailedErrors=true and Lockout 5 attempts / 0:15:0 configured; V
 [ACT] Click 'Sign In'; repeat for 5 total attempts
 [WAIT] Error banner updates after the 5th attempt","[DOM] After the 5th attempt the banner reads the TEMPORARY message: ""Your account has been temporarily locked. Please try again later."" — and NOT the permanent ""You have been blocked. You can not reach any information or create the order… contact the site administrator""
 [NETWORK] POST {{BACK_URL}}/connect/token attempt 5 → HTTP 400, code=user_is_temporary_locked_out (NOT user_is_locked_out) — VCST-5374 fix
-[STATE] User remains unauthenticated on /sign-in","[CONSOLE] No TypeError or JS errors","Banner shows the permanent ""You have been blocked… contact the site administrator"" message, or attempt-5 code is user_is_locked_out for an org user (VCST-5374 regression); lockout banner appears before the 5th attempt; user becomes authenticated; console TypeError","[TEARDOWN] Unlock org_user via POST {{BACK_URL}}/api/platform/security/users/<id>/unlock with admin Bearer token","VCST-5374","Draft"
+[STATE] User remains unauthenticated on /sign-in","[CONSOLE] No TypeError or JS errors","Banner shows the permanent ""You have been blocked… contact the site administrator"" message, or attempt-5 code is user_is_locked_out for an org user (VCST-5374 regression); lockout banner appears before the 5th attempt; user becomes authenticated; console TypeError","[TEARDOWN] Unlock org_user via POST {{BACK_URL}}/api/platform/security/users/<id>/unlock with admin Bearer token",VCST-5374 | Behavior:auth.lockout.temporary.storefront-message,"Draft"
 "AUTH-073","Email-Verification Registration Leaves Contact.Status=Locked Forever — Login Succeeds, Org-Scoped Access Blocked (Root Cause, VCST-5281)","Registration > Email Verification > Status Lifecycle > [Regression]","Critical","BL-AUTH-001","ECL-3.1","[PRE:CLEAR_SESSION]
 Store has requireEmailVerification enabled for new registrations (VirtoCommerce.Customer RegisterRequestCommandHandler.ToContact sets Contact.Status='Locked' at registration time when email verification is required). ConfirmEmailCommandHandler only calls SetLockoutEndDateAsync(user, null) on confirmation — it does NOT reset Contact.Status back to 'Approved'. Root cause identified in the VCST-5281 /qa-test run (2026-07-29): this leaves EVERY self-registered user on an email-verification store carrying a global Contact.Status of 'Locked' forever, even after confirming their email and being able to sign in. Since EffectiveStatus = membership.Status ?? contact.Status ?? 'Approved' and 132/132 memberships have no per-row override, this permanently blocks the org from every org-scoped query (BL-B2B-005). If requireEmailVerification is NOT enabled on this store, mark this case BLOCKED with that note rather than FAIL — the defect is conditional on that store setting.","front_url={{FRONT_URL}}, back_url={{BACK_URL}}","[SETUP] Generate timestamp suffix: auth073-{epoch_ms} — capture as $TS_SUFFIX
 [NAV] {{FRONT_URL}}/sign-up
@@ -495,4 +495,4 @@ Store has requireEmailVerification enabled for new registrations (VirtoCommerce.
 [STATE] Contact.Status remains 'Locked' after email confirmation — never reset to 'Approved' {SPEC}
 [STATE] A user in this state, once given any org membership with no per-row status override, is blocked from every org-scoped query (BL-B2B-005) — this is the downstream symptom exercised end-to-end in COMP-E2E-024/025 (011b) and B2C-ORG-040 (006) {BL}","[API] GET /api/members/{contactId} 'status' field = 'Locked' both immediately after registration and after email confirmation (no transition observed)
 [CONSOLE] no uncaught JS errors during registration, confirmation, or login
-[NETWORK] no 4xx/5xx on sign-up, confirm-email, or sign-in requests","Contact.Status resolves to 'Approved' after confirmation (would indicate the defect is already fixed — reconfirm as a PASS, not a failure, if observed); login itself fails after confirmation (a different regression than the one under test); requireEmailVerification is not enabled on this store (mark BLOCKED with that note, not FAIL)","[SAVE] Delete the AGENT-TEST fixture user via Admin SPA (Platform > Security > Users) or REST DELETE {{BACK_URL}}/api/platform/security/users?names=AGENT-TEST-auth073-$TS_SUFFIX@yopmail.com; DELETE {{BACK_URL}}/api/members?ids=$CONTACT_ID","VCST-5281; root_cause + testing-checklist.md conditions #40/#41","Draft"
+[NETWORK] no 4xx/5xx on sign-up, confirm-email, or sign-in requests","Contact.Status resolves to 'Approved' after confirmation (would indicate the defect is already fixed — reconfirm as a PASS, not a failure, if observed); login itself fails after confirmation (a different regression than the one under test); requireEmailVerification is not enabled on this store (mark BLOCKED with that note, not FAIL)","[SAVE] Delete the AGENT-TEST fixture user via Admin SPA (Platform > Security > Users) or REST DELETE {{BACK_URL}}/api/platform/security/users?names=AGENT-TEST-auth073-$TS_SUFFIX@yopmail.com; DELETE {{BACK_URL}}/api/members?ids=$CONTACT_ID",VCST-5281; root_cause + testing-checklist.md conditions #40/#41 | Behavior:auth.signin.password.unverified-email | DataProfile:profile.auth.password-unverified-email,"Draft"
