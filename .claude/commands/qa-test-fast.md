@@ -107,7 +107,8 @@ Briefs, the lane split, the data rules and teardown:
 
 1. **Checklist runners** — one per checklist lane section. `qa-frontend-expert` takes
    `playwright-chrome`; `qa-backend-expert` takes `playwright-edge`. `--layer` narrows this to one lane.
-2. **Exploratory** — `/qa-exploratory ticket <TICKET>` → `qa-testing-expert` on `playwright-firefox`.
+2. **Exploratory** — `/qa-exploratory ticket <TICKET> <env>` (the lane never re-binds the env) →
+   `qa-testing-expert` on `playwright-firefox`.
    Only when the strategy's Exploratory row is `RUN`. The charter is that row's risks plus the model's
    unresolved items when a model ran. `--no-explore` drops the lane. That is recorded, never
    silent: against an approved `RUN` it is a deviation — append it to the round's `### Amendments` and list
