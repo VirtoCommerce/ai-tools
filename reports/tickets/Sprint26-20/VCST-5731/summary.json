@@ -6,7 +6,7 @@
     "system": "jira",
     "comment_id": "112157",
     "artifact": "theme 2.61.0-pr-2458-3f0b; SalesRep 3.1015.0-pr-15-e5bc; GA 4.1005.0-pr-61-5267",
-    "amend_pending": "2026-10-21 GA read-back"
+    "amended": "2026-10-21 GA read-back complete"
   },
   "path": "FULL",
   "verdict": "PASS WITH NOTES",
@@ -24,9 +24,12 @@
     {
       "at": "5-status",
       "from": "Testing",
-      "to": null,
-      "made": false,
-      "reason": "awaiting operator confirmation"
+      "to": "Tested",
+      "made": true,
+      "transition": "Finish test",
+      "confirmed_by": "operator 2026-10-20 (after GA read-back)",
+      "reason": "PASS WITH NOTES",
+      "at_time": "2026-10-21T07:07Z"
     }
   ],
   "bugs_filed": [],
