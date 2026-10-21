@@ -11,8 +11,8 @@
   },
   "layer": "cross-layer",
   "shape_class": null,
-  "verdict": "FAIL",
-  "date": "2026-10-20",
+  "verdict": "PASS_WITH_NOTES",
+  "date": "2026-10-21",
   "environment": "vcptcore_qa1",
   "build": {
     "Punchout": "3.1000.0-pr-2-05b5",
@@ -39,19 +39,20 @@
       "version-mismatch banner on every page in the #2575 build ('VirtoCommerce.SalesRep 3.1014.0 ≥ 3.1013.0') — not VCST-5887",
       "Punchout.Enabled on B2B-store left OFF 11:44:39Z–12:43Z by an interrupted API lane; restored by the orchestrator (full-store PUT), setup probe 200"
     ],
-    "next": "Only open item: the team decision on R2-B5/PNCR-029 (stale cXML replay after a cart change, High draft). Then verdict, tracker transition. suites:sync for the 109 count (27→35) is blocked by two unrelated untracked suites (099, subscription/093).",
+    "next": "Done for VCST-5887. Follow-ups outside this ticket: separate task for the stale-cart replay / cXML edit; punchout-only cart task; suites:sync for suite 109 count once 099 and subscription/093 are registered.",
     "AzureSearch": "3.1009.0-pr-61-8c37 (Oleg Zhuk, fixes the PR #59 $select regression that broke xAPI search)",
     "bugs_pending_filing": [
       {
         "draft": "reports/bugs/open/critical-high/BUG-punchout-replay-sends-stale-cxml-after-cart-change.md",
         "severity": "High",
         "provenance": "IN-SCOPE",
-        "relationship": "Sub-task of VCST-5887"
+        "relationship": "Sub-task of VCST-5887",
+        "status": "not filed — deferred to a separate task by the operator (2026-10-21)"
       }
     ],
-    "round_2_decision": "2026-10-20 operator: verdict held — the stale replay after a cart change (R2-B5/PNCR-029, High draft) goes to a team discussion, no Sub-task filed, no tracker comment, no transition yet. Author will fix ONLY: replay of a returned session while Punchout.Enabled is off (R2-A7). Kept as is (by decision): replay instead of SessionExpired on a second click (QA guide case 2 stale); no errorCode console line; cart not refreshed after a CartIsEmpty refusal; cart not cleared after a return / next session reuses the same cart.",
+    "round_2_decision": "2026-10-20 operator: verdict held — the stale replay after a cart change (R2-B5/PNCR-029, High draft) goes to a team discussion, no Sub-task filed, no tracker comment, no transition yet. Author will fix ONLY: replay of a returned session while Punchout.Enabled is off (R2-A7). Kept as is (by decision): replay instead of SessionExpired on a second click (QA guide case 2 stale); no errorCode console line; cart not refreshed after a CartIsEmpty refusal; cart not cleared after a return / next session reuses the same cart. | 2026-10-21 operator: R2-B5 and requisition edit → separate task; no cart clearing, a punchout-only cart in a separate task; VCST-5887 → Tested (PASS WITH NOTES).",
     "round_3": "6/6 PASS (2026-10-20 17:08–17:40Z): R3-1 returned session + Punchout.Enabled off → StoreNotConfigured, no replay (fix 05b55ba); R3-2 en/de toasts; R3-3 replay intact after restore; R3-4 owner check intact; R3-5 storefront in an iframe → return page replaces the whole window (fix 2fa8331); R3-6 direct submit. Store windows ~40 s and ~1.5 min, restored and read back true.",
-    "tracker_round_3": "comment 112218 (round 3 results + question to Oleg Zhuk: should the cart be cleared after the return / per-session cart), 2 inline screenshots, mention rendered",
+    "tracker_round_3": "comment 112218 (round 3 + question to Oleg Zhuk, amended 2026-10-21 with the PASS WITH NOTES verdict and the separate-task decisions)",
     "oracle": ".claude/knowledge/oracles/bl/punchout.yaml — BL-PUNCHOUT-001..009 (DECLARED, source: QA guide 2026-10-12 + operator decisions 2026-10-20)",
     "kb": "queued: dispute KB-6A5F88F8; capture KB-7BA531B3 (replay), KB-B2D1325E (cart resolution, cart kept), KB-232D4C5C (375 px footer overlap)"
   },
@@ -70,11 +71,13 @@
       "at": "5-status",
       "hop": "closing",
       "from": "Testing",
-      "to": "Testing",
-      "skipped": "held by operator — team discussion of the High finding",
+      "to": "Tested",
+      "skipped": null,
       "by": "qa-lead (inline orchestrator)",
-      "confirmed": false,
-      "result": "pending"
+      "confirmed": true,
+      "result": "done",
+      "transition": "Finish test (id 8)",
+      "reason": "operator 2026-10-21: the stale-cart replay (R2-B5) and editing a sent requisition go to a separate task; cart clearing replaced by a planned punchout-only cart task"
     }
   ],
   "timing": {
