@@ -166,12 +166,22 @@ export class AzureTracker implements Tracker {
     // to the raw name itself when neither map has it.
     // A per-type map (tracker.azure.roleStatesByType) wins: a Task and a Bug can name one role
     // differently, so the item's own type is read first.
+    // Same rule as ado.mjs roleStateFor: the per-type map when there is one, else the flat map — and a
+    // ROLE that neither resolves is never written as a state (System.State = "in-review" is a guess
+    // Azure either rejects or, worse, accepts on a process that happens to have such a state).
     let roleState = this.roleStates[transitionName] || "";
+    let type = "";
     if (Object.keys(this.roleStatesByType).length) {
       const item = await this.req("GET", `/_apis/wit/workitems/${encodeURIComponent(key)}?fields=System.WorkItemType&api-version=${API_VERSION}`);
-      const type = item.ok ? String(((await item.json()) as any)?.fields?.["System.WorkItemType"] || "") : "";
+      type = item.ok ? String(((await item.json()) as any)?.fields?.["System.WorkItemType"] || "") : "";
       const typeKey = Object.keys(this.roleStatesByType).find((k) => k.toLowerCase() === type.toLowerCase());
       roleState = (typeKey && this.roleStatesByType[typeKey][transitionName]) || "";
+    }
+    const isRoleKey = transitionName in this.roleStates
+      || Object.values(this.roleStatesByType).some((m) => m && transitionName in m);
+    if (!roleState && isRoleKey) {
+      this.log(`ADO: transition ${key} → ${transitionName} NOT applied — no state is mapped to that role for work-item type "${type || "unknown"}" (tracker.azure.roleStatesByType); map it with /project-init --check, or move the item by hand`);
+      return;
     }
     const targetState = roleState || this.stateMap[transitionName] || transitionName;
     const res = await this.req(

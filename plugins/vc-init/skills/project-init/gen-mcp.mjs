@@ -20,9 +20,10 @@
  *   - No other server takes a token: postman and context7 were removed (VCST-6402 D2), atlassian /
  *     figma / azure-mcp sign in by themselves.
  *   - settings.local.json `env` gets VC_RUN and VC_SECRETS (the two shims' paths — not secrets; the
- *     project's own setting, so ~/.claude/settings.json is never asked for) and LOSES every
- *     token key it may hold from the VCST-5774 design, which put the PAT value there for `${VAR}`
- *     expansion. Each pruned name is printed; `/project-init --check` moves the value to vc-secrets.
+ *     project's own setting, so ~/.claude/settings.json is never asked for). A token key it still
+ *     holds from the VCST-5774 design (the PAT value for `${VAR}` expansion) is KEPT and reported:
+ *     only migrate-secrets.mjs --strip removes one, after the vc-secrets copy passed its probe — a copy
+ *     it kept on purpose may be the only working one. The removed servers' keys (postman, context7) go.
  *   - `--inline-secrets` is refused: it existed to write a credential literal into .mcp.json.
  *   - Every generated file is gitignored BEFORE it is written (`lib/gitignore.mjs`), and a settings
  *     file that is unparsable or already tracked halts the run (preflightWriteTargets).
@@ -318,17 +319,21 @@ export const TOKEN_ENV_KEYS = [
 
 /** Servers removed from onboarding (VCST-6402 D2): each needed an API key in a file. */
 export const REMOVED_SERVERS = ["postman", "context7"];
+/** Their keys: no server reads them any more, so they are removed outright. */
+export const REMOVED_SERVER_KEYS = ["POSTMAN_API_KEY", "CONTEXT7_API_KEY"];
 
 /**
- * The settings object with every token key pruned from `env` and VC_RUN + VC_SECRETS set. Pure.
+ * The settings object with VC_RUN + VC_SECRETS set and the removed servers' keys pruned from `env`.
+ * Every other token key stays (`kept`): deleting one is migrate-secrets' job, after a live probe. Pure.
  * VC_SECRETS lives here, in the project, not in ~/.claude/settings.json: it is what `${VC_SECRETS}`
  * in this project's .mcp.json expands from, and nothing outside the project needs it.
- * @returns {{ settings: object, pruned: string[] }}
+ * @returns {{ settings: object, pruned: string[], kept: string[] }}
  */
 export function pruneSettingsEnv(settings, { vcRun, vcSecrets } = {}) {
   const next = { ...settings };
   const env = { ...(settings.env || {}) };
-  const pruned = TOKEN_ENV_KEYS.filter((k) => k in env);
+  const pruned = REMOVED_SERVER_KEYS.filter((k) => k in env);
+  const kept = TOKEN_ENV_KEYS.filter((k) => k in env && !REMOVED_SERVER_KEYS.includes(k));
   for (const k of pruned) delete env[k];
   if (vcRun) env.VC_RUN = vcRun;
   if (vcSecrets) env.VC_SECRETS = vcSecrets;
@@ -337,7 +342,7 @@ export function pruneSettingsEnv(settings, { vcRun, vcSecrets } = {}) {
   if (Array.isArray(next.enabledMcpjsonServers)) {
     next.enabledMcpjsonServers = next.enabledMcpjsonServers.filter((n) => !REMOVED_SERVERS.includes(n));
   }
-  return { settings: next, pruned };
+  return { settings: next, pruned, kept };
 }
 
 /** The github server entry for the axis: a vc-secrets call (PAT) or the hosted server (session). Pure. */
@@ -526,7 +531,7 @@ function main() {
   // settings.local.json (gitignored): the enabled set, VC_RUN, and NO token. Already read + validated
   // by the preflight above; an unparsable file halted the run there rather than being replaced (#1).
   mkdirSync(dirname(settingsPath), { recursive: true });
-  const { settings, pruned } = pruneSettingsEnv(existingSettings, { vcRun, vcSecrets });
+  const { settings, pruned, kept } = pruneSettingsEnv(existingSettings, { vcRun, vcSecrets });
   settings.enabledMcpjsonServers = enabledList;
   writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + "\n");
   console.log(`[gen-mcp] enabled servers: ${enabledList.join(", ")}`);
@@ -535,9 +540,12 @@ function main() {
     console.warn("[gen-mcp] ⚠ no vc-secrets shim found, so VC_SECRETS was not written and the github server (`node ${VC_SECRETS} run github`) cannot start — run /project-init --check (§0d installs the shim).");
   }
   if (pruned.length) {
-    // console.warn: this branch DELETES a value the operator may still need, so the way back is named.
-    console.warn(`[gen-mcp] ⚠ removed ${pruned.join(", ")} from ${settingsPath} — tokens live in vc-secrets now (VCST-6402). If that value is still in use, store it with \`node "<VC_SECRETS>" set <name>\` (or run /project-init --check), then rotate it: it sat in a file exported to every session.`);
-    emitObservations([{ class: "self_reported_warn", subject: "plaintext_token_in_settings", code: "NONE", evidence: { snippet: `${pruned.length} token key(s) pruned from settings env` } }], { skill: "project-init" });
+    console.log(`[gen-mcp] removed ${pruned.join(", ")} from ${settingsPath} — their servers are no longer generated (VCST-6402).`);
+  }
+  if (kept.length) {
+    // Kept, not deleted: it may be the only working copy (migrate-secrets keeps one whose vc-secrets probe failed).
+    console.warn(`[gen-mcp] ⚠ ${settingsPath} still holds ${kept.join(", ")} in plaintext — tokens live in vc-secrets now (VCST-6402). Store it with \`node "<VC_SECRETS>" set <name>\`, then /project-init --check (migrate-secrets --strip removes it once the vc-secrets copy works); rotate it — it sat in a file exported to every session.`);
+    emitObservations([{ class: "self_reported_warn", subject: "plaintext_token_in_settings", code: "NONE", evidence: { snippet: `${kept.length} token key(s) still in settings env` } }], { skill: "project-init" });
   }
 
   // A server whose definition still carries a `<PLACEHOLDER>` cannot start — a guard for a hand-edited

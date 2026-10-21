@@ -8,7 +8,7 @@
  * module to (a) suggest a target repo to the triage agent, (b) validate the
  * agent's chosen repo against an allowlist, and (c) check out the source.
  */
-import { execSync } from "child_process";
+import { execFileSync, execSync } from "child_process";
 import { existsSync, mkdirSync, readFileSync } from "fs";
 import { join, resolve } from "path";
 import { loadProjectProfile } from "../../scripts/lib/project-profile.mjs";
@@ -556,13 +556,28 @@ export interface Checkout {
   headRef?: string;
 }
 
+/** Local-only git (checkout, reset, remote, branch): no credential involved. */
 function sh(cmd: string, cwd?: string): string {
   return execSync(cmd, { cwd, encoding: "utf-8", stdio: ["ignore", "pipe", "pipe"] }).trim();
 }
 
+/**
+ * A networked gh / git call, through the $VC_RUN bridge (VCST-6402): the only way a PAT stored in
+ * vc-secrets reaches a process, and on a session axis (gh auth login / az login) the bridge runs the tool
+ * directly — one call for both. `git-gh` / `git-ado` are git against github.com / Azure Repos with the
+ * bridge's host-pinned credential helper. Without $VC_RUN (a project onboarded before the bridge) the tool
+ * runs directly, on whatever session it has. Arguments go as an array: nothing is re-parsed by a shell.
+ */
+function net(tool: "gh" | "git-gh" | "git-ado", args: string[]): string {
+  const opts = { encoding: "utf-8" as const, stdio: ["ignore", "pipe", "pipe"] as ["ignore", "pipe", "pipe"] };
+  const vcRun = process.env.VC_RUN;
+  if (vcRun) return execFileSync(process.execPath, [vcRun, tool, ...args], opts).trim();
+  return execFileSync(tool === "gh" ? "gh" : "git", args, opts).trim();
+}
+
 function detectDefaultBranch(repo: string, fallback: string): string {
   try {
-    return sh(`gh repo view ${repo} --json defaultBranchRef -q .defaultBranchRef.name`);
+    return net("gh", ["repo", "view", repo, "--json", "defaultBranchRef", "-q", ".defaultBranchRef.name"]);
   } catch {
     return fallback;
   }
@@ -585,8 +600,9 @@ function azureGitUrl(org: string, project: string, name: string): string {
  * existing checkout is fetched and hard-reset to the remote base.
  *
  * Routed by the deployment profile (see contributionPlan):
- *  - **default** (platform direct / GitHub, or a client repo on GitHub): the
- *    original `gh repo clone <repo>` path — UNCHANGED.
+ *  - **default** (platform direct / GitHub, or a client repo on GitHub): a shallow
+ *    clone of `https://github.com/<repo>.git`.
+ *  Every network step (clone, fetch, gh repo view / fork) runs through $VC_RUN (`net`).
  *  - **fork** (platform, operator = client): ensure the client's fork, clone it as
  *    `origin`, add `upstream`, and branch from `upstream/<base>`. PR head is
  *    `<forkOwner>:<branch>`.
@@ -617,11 +633,11 @@ export function checkoutForFix(
     const baseBranch = clientDefaultBranch(repo) || "main";
     const url = azureGitUrl(plan.azure.organization, plan.azure.project, name);
     if (!existsSync(dest)) {
-      sh(`git clone --depth 1 --branch ${baseBranch} ${JSON.stringify(url)} "${dest}"`);
+      net("git-ado", ["clone", "--depth", "1", "--branch", baseBranch, url, dest]);
     } else {
       // A checkout made before VCST-6402 may carry the PAT in its remote URL; reset it to the plain one.
       sh(`git remote set-url origin ${JSON.stringify(url)}`, dest);
-      sh(`git fetch origin ${baseBranch} --depth 1`, dest);
+      net("git-ado", ["-C", dest, "fetch", "origin", baseBranch, "--depth", "1"]);
       sh(`git checkout ${baseBranch}`, dest);
       sh(`git reset --hard origin/${baseBranch}`, dest);
     }
@@ -636,9 +652,10 @@ export function checkoutForFix(
   if (plan.mode === "fork") {
     const baseBranch = detectDefaultBranch(repo, profile.defaultBranch);
     const forkFull = `${plan.forkOwner}/${name}`;
-    sh(`gh repo fork ${repo} --clone=false`); // idempotent: succeeds if fork exists
+    net("gh", ["repo", "fork", repo, "--clone=false"]); // idempotent: succeeds if fork exists
     if (!existsSync(dest)) {
-      sh(`gh repo clone ${forkFull} "${dest}"`);
+      // git-gh, not `gh repo clone`: the bridge refuses that one (it runs git with gh's own helper).
+      net("git-gh", ["clone", `https://github.com/${forkFull}.git`, dest]);
     }
     // Branch from the UPSTREAM base (the fork may be stale).
     try {
@@ -646,7 +663,7 @@ export function checkoutForFix(
     } catch {
       /* upstream remote already present */
     }
-    sh(`git fetch upstream ${baseBranch} --depth 1`, dest);
+    net("git-gh", ["-C", dest, "fetch", "upstream", baseBranch, "--depth", "1"]);
     sh(`git checkout -B ${workBranch} upstream/${baseBranch}`, dest);
     return {
       path: dest, baseBranch, workBranch, repo,
@@ -654,12 +671,12 @@ export function checkoutForFix(
     };
   }
 
-  // --- Default: direct GitHub clone (UNCHANGED from the original path) ---
+  // --- Default: direct GitHub clone ---
   const baseBranch = detectDefaultBranch(repo, profile.defaultBranch);
   if (!existsSync(dest)) {
-    sh(`gh repo clone ${repo} "${dest}" -- --depth 1 --branch ${baseBranch}`);
+    net("git-gh", ["clone", "--depth", "1", "--branch", baseBranch, `https://github.com/${repo}.git`, dest]);
   } else {
-    sh(`git fetch origin ${baseBranch} --depth 1`, dest);
+    net("git-gh", ["-C", dest, "fetch", "origin", baseBranch, "--depth", "1"]);
     sh(`git checkout ${baseBranch}`, dest);
     sh(`git reset --hard origin/${baseBranch}`, dest);
   }

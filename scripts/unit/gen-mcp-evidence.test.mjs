@@ -357,17 +357,17 @@ test("VCST-6402: --inline-secrets is refused — and nothing is written", () => 
   assert.ok(existsSync(join(dir, ".mcp.json")));
 }));
 
-test("VCST-6402: a token the VCST-5774 design left in settings env is pruned, and the removal is reported", () => withTempDir((dir) => {
+test("VCST-6402: a token the VCST-5774 design left in settings env is KEPT and reported; a removed server's key goes", () => withTempDir((dir) => {
   // Between VCST-5774 and VCST-6402 the PAT VALUE lived in settings.local.json `env`, exported to every
-  // session and subprocess. An upgraded project still has it; the next gen-mcp run must take it out
-  // and say how to get it back — vc-secrets, not a file.
+  // session and subprocess. gen-mcp reports it and says where it belongs, but does not delete it: only
+  // migrate-secrets --strip does, after the vc-secrets copy passed a probe (it may be the only working one).
   mkdirSync(join(dir, ".claude"), { recursive: true });
   writeFileSync(join(dir, ".claude", "settings.local.json"), JSON.stringify({ env: { GITHUB_PERSONAL_ACCESS_TOKEN: "ghp_firstrun1234567890", POSTMAN_API_KEY: "PMAK-x" } }));
   const out = runGenMcp(dir);
   const settings = readSettings(dir);
-  assert.equal(settings.env?.GITHUB_PERSONAL_ACCESS_TOKEN, undefined, "the token must be gone");
-  assert.equal(settings.env?.POSTMAN_API_KEY, undefined);
-  assert.match(out, /\[gen-mcp\][^\n]*removed[^\n]*GITHUB_PERSONAL_ACCESS_TOKEN/, "the removal is reported, not silent");
+  assert.equal(settings.env?.GITHUB_PERSONAL_ACCESS_TOKEN, "ghp_firstrun1234567890", "a live token is never deleted here");
+  assert.equal(settings.env?.POSTMAN_API_KEY, undefined, "a removed server's key goes");
+  assert.match(out, /\[gen-mcp\][^\n]*still holds[^\n]*GITHUB_PERSONAL_ACCESS_TOKEN/, "the plaintext token is reported, not silent");
   assert.match(out, /vc-secrets/, "…and the notice names where the token belongs now");
 }));
 
@@ -376,8 +376,8 @@ test("VCST-6402: an operator's OWN settings keys survive the prune; VC_RUN is ad
   writeFileSync(join(dir, ".claude", "settings.local.json"), JSON.stringify({ env: { MY_OWN_SETTING: "keep-me", ADO_PAT: "x" }, permissions: { deny: ["Bash(gh pr merge:*)"] } }));
   runGenMcp(dir, ["--vc-run", "/stable/vc-run.mjs"]);
   const after = readSettings(dir);
-  assert.equal(after.env.MY_OWN_SETTING, "keep-me", "only token keys may be pruned");
-  assert.equal(after.env.ADO_PAT, undefined);
+  assert.equal(after.env.MY_OWN_SETTING, "keep-me", "an operator's own key is never touched");
+  assert.equal(after.env.ADO_PAT, "x", "a token is kept for migrate-secrets to strip after its probe");
   assert.equal(after.env.VC_RUN, "/stable/vc-run.mjs");
   assert.deepEqual(after.permissions.deny, ["Bash(gh pr merge:*)"]);
 }));
@@ -420,14 +420,17 @@ test("VCST-5774: the generator's own output passes the auditor that guards it", 
   assert.deepEqual(planted.weak.sort(), ["probeArgs.args[2]", "probeNest.env.CREDS.TOKEN", "probeUrl.url"]);
 }));
 
-test("pruneSettingsEnv: pure — every token key goes, other keys stay, VC_RUN is set, removed servers leave the enabled list", () => {
+test("pruneSettingsEnv: pure — removed servers' keys go, live tokens are kept and listed, VC_RUN is set", () => {
   const env = Object.fromEntries(TOKEN_ENV_KEYS.map((k) => [k, "v"]));
-  const { settings, pruned } = pruneSettingsEnv({ env: { ...env, KEEP: "1" }, enabledMcpjsonServers: ["github", "postman"], other: 1 }, { vcRun: "/p/vc-run.mjs" });
-  assert.deepEqual(pruned.sort(), [...TOKEN_ENV_KEYS].sort());
-  assert.deepEqual(settings.env, { KEEP: "1", VC_RUN: "/p/vc-run.mjs" });
+  const { settings, pruned, kept } = pruneSettingsEnv({ env: { ...env, KEEP: "1" }, enabledMcpjsonServers: ["github", "postman"], other: 1 }, { vcRun: "/p/vc-run.mjs" });
+  assert.deepEqual(pruned.sort(), ["CONTEXT7_API_KEY", "POSTMAN_API_KEY"]);
+  assert.deepEqual(kept.sort(), TOKEN_ENV_KEYS.filter((k) => !["CONTEXT7_API_KEY", "POSTMAN_API_KEY"].includes(k)).sort());
+  for (const k of kept) assert.equal(settings.env[k], "v", k);
+  assert.equal(settings.env.KEEP, "1");
+  assert.equal(settings.env.VC_RUN, "/p/vc-run.mjs");
   assert.deepEqual(settings.enabledMcpjsonServers, ["github"]);
   assert.equal(settings.other, 1);
-  assert.deepEqual(pruneSettingsEnv({ env: { GH_TOKEN: "x" } }).settings, {}, "an env left empty is removed");
+  assert.deepEqual(pruneSettingsEnv({ env: { POSTMAN_API_KEY: "x" } }).settings, {}, "an env left empty is removed");
 });
 
 test("gen-mcp: adds the landing-zone ignore entries to the project's .gitignore", () => withTempDir((dir) => {
