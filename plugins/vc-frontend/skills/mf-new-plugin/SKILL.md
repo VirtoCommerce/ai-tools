@@ -40,8 +40,8 @@ Stop and report, changing nothing, when:
 | `$WEB/StorefrontApp/` exists but is untracked (`git status --porcelain` shows `?? …StorefrontApp/`) | an earlier run stopped, or it is someone's uncommitted work. Show what is in it (`git ls-files --others --exclude-standard -- StorefrontApp` in `$WEB`), then offer to go on from step 3, or to move it out of the module repo and start over. Never delete it. Move it only on the user's yes, and out of the repo: a copy left inside the `*.Web` project would be built into the module |
 | the module repo has other uncommitted changes | the diffs in step 3 must show only this skill's edits. On a resumed run, its own earlier edits to the three module files may stay; show them in step 3 |
 | the module repo is on its default branch | ask for a branch first |
-| `corepack yarn node -e 0` in `$FRONTEND` fails | corepack is missing, or the Node version is outside the checkout's `engines.node`: its Yarn refuses to run then, and the plugin builds through corepack (S1a, before you start, 2). Show Yarn's message, which names the required range, and say what to install |
-| the facade is not released: `curl -sfIL -o /dev/null https://github.com/VirtoCommerce/vc-frontend/releases/download/core-v<version>/vc-frontend-core-<version>.tgz` fails, `<version>` being `$FRONTEND/client-app/core-api/package.json`'s | the plugin's install would 404 in step 4. Read S1a ⚠️ 3 to the user and ask how to go on |
+| `corepack yarn node -e 0` in `$FRONTEND` fails | the plugin builds through corepack (S1a, before you start, 2), and the checkout's Yarn refuses to run on a Node outside its `engines.node`. Show the message, which says which it is: no corepack (command not found), the wrong Node (it names the required range), or no `yarn install` yet ("running an install might help") |
+| the facade is not released: `curl -sIL -o /dev/null -w '%{http_code}' https://github.com/VirtoCommerce/vc-frontend/releases/download/core-v<version>/vc-frontend-core-<version>.tgz` prints `404`, `<version>` being `$FRONTEND/client-app/core-api/package.json`'s | the plugin's install would 404 in step 4. Read S1a ⚠️ 3 to the user and ask how to go on. Any other code but `200`, or no answer, means GitHub could not be reached, not that the facade is unreleased: say so |
 
 Then confirm with the user, in one message:
 
@@ -140,8 +140,8 @@ Offer each; do only what the user wants.
 ## Never
 
 1. Commit, push, or hand-edit a file outside the module's `.csproj`, `module.manifest` and `.gitignore`, except
-   `$FRONTEND/.env.local` in step 5, restored afterwards. What the tools write (`StorefrontApp/` from
-   `create:plugin`, its `yarn.lock` from the install, `artifacts/` from `vc-build`) is theirs.
+   `$FRONTEND/.env.local` in step 5, restored afterwards. What the generator, the installs and the builds
+   write (`StorefrontApp/`, its `yarn.lock`, `artifacts/`, …) is theirs.
 2. Lower a version, or write one the check did not print.
 3. Hand-edit `@vc-frontend/core` files, or anything else under `$FRONTEND`. Never `git checkout` or `git restore` a file
    there: it may hold the user's own work.
