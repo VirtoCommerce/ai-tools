@@ -11,6 +11,7 @@ Guest session (not logged in); Products in cart with BOPIS-eligible items; At le
 [WAIT] pickup location modal opens
 [ACT] select a pickup location from the list
 [ACT] click 'Select'
+[WAIT] selection applied; 'Confirm' enabled
 [ACT] click 'Confirm'
 [WAIT] modal closes; selected pickup location shown in cart
 [ACT] click 'Checkout' or 'Proceed to Checkout'
