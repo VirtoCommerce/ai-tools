@@ -63,11 +63,15 @@ import { standDownIfHostGoverned } from "./lib/governance.mjs";
 import { ENV_NAME_RE, ROLES, ROLE_PASSWORD, declaredLanes, declaredPasswords, isPasswordName, laneArgsForEnv, laneServer, onboardTask, passwordSecret, passwordSecretNames, vcSecretsRoles } from "./lib/passwords.mjs";
 import { laneCommands, readTemplateServers } from "./lib/playwright-lanes.mjs";
 
-/** Secret name and the env var it is bound to, per axis. The env names are the runtime contract. */
+/**
+ * Secret name and the env vars it is bound to, per axis. The env names are the runtime contract.
+ * GitHub's one secret goes out under two names: GITHUB_FIX_BUGS_TOKEN for what reads it today, and
+ * GITHUB_TOKEN, the name every skill and agent is moving to — same value, so a caller can switch first.
+ */
 export const AXIS_SECRETS = Object.freeze({
-  github: { secret: "github-pat", env: "GITHUB_FIX_BUGS_TOKEN" },
-  ado: { secret: "ado-pat", env: "ADO_PAT" },
-  jira: { secret: "jira-token", env: "JIRA_API_TOKEN" },
+  github: { secret: "github-pat", env: ["GITHUB_FIX_BUGS_TOKEN", "GITHUB_TOKEN"] },
+  ado: { secret: "ado-pat", env: ["ADO_PAT"] },
+  jira: { secret: "jira-token", env: ["JIRA_API_TOKEN"] },
 });
 
 /** Task names this writer owns. */
@@ -121,7 +125,7 @@ export function buildDeclarations(existing, { pat, shim, projectId, githubServer
   for (const name of Object.keys(servers)) if (/^playwright-[a-z0-9]+\.[a-z0-9_]+$/.test(name)) delete servers[name];
 
   const axes = Object.keys(AXIS_SECRETS).filter((a) => pat[a]);
-  const env = (list) => Object.fromEntries(list.map((a) => [AXIS_SECRETS[a].env, `secret:${AXIS_SECRETS[a].secret}`]));
+  const env = (list) => Object.fromEntries(list.flatMap((a) => AXIS_SECRETS[a].env.map((name) => [name, `secret:${AXIS_SECRETS[a].secret}`])));
   const task = (group, list) => ({ command: "node", args: [shim, "--inner", group], env: env(list) });
   const owned = {};
   for (const a of axes) {

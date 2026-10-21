@@ -23,8 +23,8 @@ test("one secret + one task per PAT axis, and an onboard task carrying all of th
   const d = buildDeclarations(null, { pat: { github: true, ado: true, jira: false }, shim: SHIM, projectId: "vcqa-x-0000" });
   assert.deepEqual(Object.keys(d.secrets), ["github-pat", "ado-pat"]);
   assert.deepEqual(Object.keys(d.tasks), ["vc-init-github", "vc-init-ado", "vc-init-onboard"]);
-  assert.deepEqual(d.tasks["vc-init-github"], { command: "node", args: [SHIM, "--inner", "github"], env: { GITHUB_FIX_BUGS_TOKEN: "secret:github-pat" } });
-  assert.deepEqual(d.tasks["vc-init-onboard"].env, { GITHUB_FIX_BUGS_TOKEN: "secret:github-pat", ADO_PAT: "secret:ado-pat" });
+  assert.deepEqual(d.tasks["vc-init-github"], { command: "node", args: [SHIM, "--inner", "github"], env: { GITHUB_FIX_BUGS_TOKEN: "secret:github-pat", GITHUB_TOKEN: "secret:github-pat" } });
+  assert.deepEqual(d.tasks["vc-init-onboard"].env, { GITHUB_FIX_BUGS_TOKEN: "secret:github-pat", GITHUB_TOKEN: "secret:github-pat", ADO_PAT: "secret:ado-pat" });
   assert.equal(d.projectId, "vcqa-x-0000");
 });
 

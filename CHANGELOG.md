@@ -8,6 +8,76 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## `vc-init` `0.3.0`: the tracker / code-host connection lives in `.env.local`, once — 2026-10-21
+
+**Changed: where the project-level keys are written.** `JIRA_BASE_URL`, `JIRA_PROJECT_KEY`, `JIRA_EMAIL`, `ADO_ORG`,
+`ADO_PROJECT` and `CLIENT_REPO_ORG` are one value for the whole project, whatever stand a run targets, but
+`scaffold-env.mjs` wrote them into every `.env.<env>`, so each new env asked for them again and `JIRA_EMAIL` (a
+personal identifier) sat in a file meant for shared URLs. They now go to `.env.local`, once (`scaffold-env.mjs`
+`CATALOG` marks them `scope: "project"`; `write-env.mjs` routes them the same way). Every loader reads
+`.env.local` after `.env.<env>`, so nothing that reads `process.env` changes.
+
+**Migration: automatic.** `scaffold-env.mjs` (`/project-init`, `--add-env`) and `normalize-env.mjs` (`--check`
+Step C) move these keys out of every `.env.<env>` into `.env.local` (`lib/project-env.mjs`), with the comment
+above each. When the env files hold different values for one key, nothing is moved and the run prints
+`NOT moved <KEY> — the files disagree`; keep one value in `.env.local` (or `<KEY>_<ENV>` there per env).
+`normalize-env.mjs` now also normalises the project keys in `.env.local` (a trailing slash on `JIRA_BASE_URL`).
+A project that points two stands at two trackers keeps the key per env as `<KEY>_<ENV>` in `.env.local`:
+`scaffold-env.mjs` then adds `<KEY>_<NEW>` for a new env instead of a bare empty line, and `normalize-env.mjs`
+checks those lines like the bare key. `write-env.mjs` refuses (exit 1) a project key whose value differs from the
+one already in `.env.local`, instead of redirecting every other env, and removes the old copy from `.env.<env>`.
+The vc-fix `.env.local.template` ships these keys commented out, with no default: an uncommented line there
+overrides `.env.<env>`.
+
+**Fixed: `normalize-env.mjs` skipped every line of a CRLF file.** A `KEY=value\r` line did not match its line
+pattern, so a file saved by a Windows editor kept its quotes and trailing slashes, and an empty placeholder lost its
+`\r`. It now splits on the line break and writes the file back with its own line endings; `scaffold-env.mjs` appends
+to a CRLF `.env.local` in CRLF too. Its `--json` output keeps the old top-level fields, summed over both files, and
+adds `files` and `moved`.
+
+**Changed: operator-facing wording.** The token guide said the Jira and GitHub tokens exist so `/qa-fix` can use
+them, the readiness table was titled `/qa-fix readiness`, and an optional MCP placeholder said it was "not needed
+for /qa-fix". vc-init onboards every installed plugin, so these now say "the plugins" / "Plugin readiness". The
+`JIRA_EMAIL` hint says why the email is required: Jira Cloud accepts an API token only together with the account
+email. Messages that name a specific `/qa-fix` gate that would fail are kept as they are.
+
+## `vc-fix` `0.11.2`: docs and messages follow vc-init 0.3.0 — 2026-10-21
+
+`jira.mjs` now says to set `JIRA_EMAIL` in `.env.local`; the `.env.{env}.example` / `.env.local.template`
+references and the `/qa-env-check` bucket table show the tracker / code-host keys in `.env.local`. No runtime
+change: every reader already took these values from `process.env`.
+
+## `vc-init` `0.2.1`: the GitHub token is also handed out as `GITHUB_TOKEN` — 2026-10-21
+
+**Added: `GITHUB_TOKEN` as a second name for the `github-pat` secret.** Skills and agents are moving from
+`GITHUB_FIX_BUGS_TOKEN` / `GITHUB_PERSONAL_ACCESS_TOKEN` to one name, `GITHUB_TOKEN`. This release makes the
+token layer ready before any caller switches: the `vc-init-github` and `vc-init-onboard*` tasks bind both names to
+the same secret, the `$VC_RUN` bridge accepts either one (and gives `gh` the value as `GH_TOKEN`), the git
+credential helper answers `github.com` from either, and `load-layered-env` treats `GITHUB_TOKEN` as a token — an
+injected value is not overridden by `.env.local`, and a plaintext one there is reported. Same value, no new secret.
+The old names stay until every caller has moved; they are removed in a later release.
+
+**Migration:** run `/project-init --check` to rewrite `.claude/vc-secrets.local.json`, then `vc-secrets trust`
+once — the task env changed, so the launcher asks to re-approve it. A declaration left as it was keeps working.
+
+## `vc-init` `0.2.0`: browser work goes only through the Playwright MCP lanes — 2026-10-21
+
+**Added: an always-loaded agent rule in the onboarded project.** `/project-init` (§7) and `/project-init --check`
+(Step C) now run `write-agent-rules.mjs`, which copies `templates/rules/vc-browser.md` into the project's
+`.claude/rules/`. The rule: every browser action goes through a Playwright MCP lane (`playwright-chrome` by
+default) — never the desktop app's browser pane, Claude in Chrome, Chrome DevTools or a browser started from a
+shell. Those cannot type a password; only the lanes get the test-user passwords (vc-secrets or
+`.env.playwright.local`), and the agent types the bare NAME (`ADMIN_PASSWORD`). With no Playwright tool the agent
+stops and reports instead of switching browsers. Before this, agents asked to sign in to a stand kept reaching for
+another browser and stalled at the password field.
+
+The rule sits in the project, not in a plugin, so it binds every plugin there, including ones installed later.
+The script overwrites only files carrying its own marker, leaves a same-named operator file alone, and stands
+down on a host-governed project. The file is **not** gitignored — commit it so the whole team gets the rule.
+**Migration:** an already-onboarded project gets the rule from `/project-init --check`.
+
+---
+
 ## The real-user hook guards plugin-provided browser servers; exploratory probes opt in — `vc-fix` `0.11.1` — 2026-10-21
 
 **Fixed:** `hooks/enforce-real-user.mjs` was registered with a matcher naming only
