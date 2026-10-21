@@ -17,7 +17,7 @@
 
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { copyFileSync, existsSync, lstatSync, mkdirSync, readFileSync, symlinkSync, unlinkSync } from "node:fs";
+import { copyFileSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -47,18 +47,31 @@ const MAP_PATH = typeof args.map === "string" ? path.resolve(args.map) : path.jo
 const CACHE = path.join(ROOT, "node_modules", ".cache", "fork-drift");
 // Outside the repository: Vite treats any path containing node_modules as a dependency and leaves its
 // template-literal imports (locales, sign-in providers) unexpanded.
-const WORKTREES = path.join(tmpdir(), `fork-drift-${createHash("sha1").update(ROOT).digest("hex").slice(0, 8)}`);
+// realpath: Windows can report the temp folder by its 8.3 short name, which Vite expands, so ids would not match the root.
+const WORKTREES = path.join(realpathSync.native(tmpdir()), `fork-drift-${createHash("sha1").update(ROOT).digest("hex").slice(0, 8)}`);
 const NOT_RENDERED = /^client-app\/(core-api|public)\//;
 
 // ---------- building the graphs ----------
 
 // Unlink the borrowed node_modules first: a recursive delete that follows the link (a junction on Windows)
-// would empty the checkout's own node_modules.
+// would empty the checkout's own node_modules. Node's rmSync never follows one; prune drops the registration.
 function removeWorktree(wt) {
   const link = path.join(wt, "node_modules");
   if (lstatSync(link, { throwIfNoEntry: false })?.isSymbolicLink()) unlinkSync(link);
-  git("worktree", "remove", "--force", wt);
+  rmSync(wt, { recursive: true, force: true, maxRetries: 5 });
+  git("worktree", "prune");
 }
+
+// A killed run (closed terminal, kill -9) leaves its worktree and link behind; remove them all before building.
+// A temp folder emptied by a reboot leaves worktrees registered, and `worktree add` refuses the path.
+function removeLeftovers() {
+  git("worktree", "prune");
+  if (existsSync(WORKTREES)) for (const d of readdirSync(WORKTREES)) removeWorktree(path.join(WORKTREES, d));
+}
+
+// Ctrl+C reaches the build too. With a listener Node is not killed, the build returns, and the finally block
+// in buildGraph cleans up.
+process.on("SIGINT", () => process.exit(130));
 
 function buildGraph(sha) {
   // v2: graphs cached before the worktrees left node_modules are missing files, so they are not reused.
@@ -66,20 +79,18 @@ function buildGraph(sha) {
   if (existsSync(graphPath) && !args.rebuild) return JSON.parse(readFileSync(graphPath, "utf8"));
   mkdirSync(CACHE, { recursive: true });
   const wt = path.join(WORKTREES, `wt-${sha.slice(0, 12)}`);
-  // A temp folder emptied by a reboot leaves its worktrees registered, and `worktree add` refuses the path.
-  git("worktree", "prune");
-  if (existsSync(wt)) removeWorktree(wt);
   git("worktree", "add", "--detach", wt, sha);
 
   try {
     // Reuse the checkout's node_modules when the commit locks the same dependencies; install otherwise.
-    const sameLock = existsSync(path.join(ROOT, "yarn.lock")) && git("show", `${sha}:yarn.lock`) === readFileSync(path.join(ROOT, "yarn.lock"), "utf8").trim();
+    // Compared as git blobs: with core.autocrlf the checkout has CRLF and the commit LF.
+    const sameLock = existsSync(path.join(ROOT, "yarn.lock")) && git("rev-parse", `${sha}:yarn.lock`) === git("hash-object", path.join(ROOT, "yarn.lock"));
     // "junction": a Windows directory link that needs no admin rights; ignored elsewhere.
     if (sameLock) symlinkSync(path.join(ROOT, "node_modules"), path.join(wt, "node_modules"), "junction");
     else {
       process.stderr.write(`fork-drift: ${sha.slice(0, 9)} locks different dependencies — running yarn install in its worktree\n`);
-      // Through a shell, so Windows finds yarn.cmd.
-      const install = spawnSync("yarn install --immutable", { cwd: wt, shell: true, stdio: ["ignore", "inherit", "inherit"] });
+      // Through a shell, so Windows finds yarn.cmd. Its output goes to stderr: stdout carries the report (--json).
+      const install = spawnSync("yarn install --immutable", { cwd: wt, shell: true, stdio: ["ignore", 2, 2] });
       if (install.status !== 0) throw new Error(`yarn install failed for ${sha.slice(0, 9)}`);
     }
 
@@ -92,6 +103,7 @@ function buildGraph(sha) {
       maxBuffer: 1 << 28,
     });
     if (build.status !== 0 || !existsSync(graphPath)) {
+      if (build.signal) throw new Error(`build of ${sha.slice(0, 9)} interrupted (${build.signal})`);
       throw new Error(`vite build failed for ${sha.slice(0, 9)}\n${(build.stderr || build.stdout).slice(-4000)}`);
     }
   } finally {
@@ -180,6 +192,7 @@ for (const r of map.replacements ?? []) for (const u of r.upstream) mappedUpstre
 const ignored = new Map((map.ignored ?? []).map((i) => [i.upstream, i.reason]));
 const status = (f) => (ignored.has(f) ? `ignored: ${ignored.get(f)}` : mappedUpstream.has(f) ? `mapped → ${mappedUpstream.get(f).fork.join(", ")}` : "NOT in the map");
 
+removeLeftovers();
 const fork = analyse(buildGraph(FORK));
 const up = analyse(buildGraph(TO));
 const forkTree = new Set(git("ls-tree", "-r", "--name-only", FORK, "client-app").split("\n"));
