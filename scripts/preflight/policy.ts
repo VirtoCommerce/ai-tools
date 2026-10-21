@@ -7,6 +7,9 @@ import { join } from "node:path";
 import { baseOf, isUnknown, type EnvFacts, type ReleasedNotDeployed } from "../lib/env-facts.ts";
 import type { McpStatic } from "./mcp-static.ts";
 import { cmpSemver } from "../maintenance/refresh-release-ledger.mjs";
+import { priorRunDirs, resolveSprint, runLayout } from "../lib/run-dir.mjs";
+
+export { resolveSprint };
 
 export type ChangeFor = "ticket" | "ticket-fast" | "exploratory" | "lifecycle" | "domain-map" | "ba";
 export const CHANGE_FOR: readonly ChangeFor[] = ["ticket", "ticket-fast", "exploratory", "lifecycle", "domain-map", "ba"];
@@ -28,14 +31,6 @@ const SECRET = /PASSWORD|TOKEN|SECRET|KEY/;
 
 const ok = (id: string, found: string): Check => ({ id, status: "OK", found, who: null, do: null, diagnose: [] });
 
-export function resolveSprint(root: string): string | null {
-  const dir = join(root, "reports/tickets");
-  if (!existsSync(dir)) return null;
-  const names = readdirSync(dir);
-  if (names.includes("Sprint-current")) return "Sprint-current";
-  const sprints = names.filter((n) => /^Sprint\d{2}-\d{2}$/.test(n)).sort();
-  return sprints.at(-1) ?? null;
-}
 
 /**
  * A comparable id for the deployed MODULE set: `modules:<12 hex of sha1 over the sorted "id@version" lines>`.
@@ -74,21 +69,23 @@ function storefrontRemedy(reason: string, env: string): { who: Who; do: string }
   return { who: "me", do: "wait and re-run" };
 }
 
-export function findDuplicate(root: string, f: ChangeFor, opts: { ticket?: string; domain?: string; now: Date }): Duplicate | null {
+export function findDuplicate(root: string, f: ChangeFor, opts: { ticket?: string; domain?: string; env?: string; now: Date }): Duplicate | null {
   const windowMin = DUP_WINDOW_MIN[f];
   if (windowMin === null) return null;
   const candidates: string[] = [];
+  // A ticket's run folders (scripts/lib/run-dir.mjs): this env's, and those written before the env level.
+  // Another env's folder is a parallel run, not a duplicate.
+  const runDirs = opts.ticket ? priorRunDirs({ ticket: opts.ticket, root }).filter((r) => r.env === null || !opts.env || r.env === opts.env) : [];
   if (isTicket(f) && opts.ticket) {
-    const base = join(root, "reports/tickets");
-    if (existsSync(base)) {
-      try {
-        for (const sprint of readdirSync(base)) {
-          const p = join(base, sprint, opts.ticket, "summary.json");
-          if (existsSync(p)) candidates.push(p);
-        }
-      } catch { /* unreadable dir ⇒ skip */ }
-    }
+    for (const r of runDirs) if (existsSync(runLayout(r.dir).summary)) candidates.push(runLayout(r.dir).summary);
   } else if (!isTicket(f) && (opts.domain || opts.ticket)) {
+    // A ticket's exploratory sessions live in its run folders.
+    if (f === "exploratory") {
+      for (const r of runDirs) {
+        const dir = runLayout(r.dir).exploratory;
+        try { for (const n of readdirSync(dir)) if (n.startsWith("SBTM-")) candidates.push(join(dir, n)); } catch { /* none */ }
+      }
+    }
     const [dir, prefix] = f === "exploratory" ? ["reports/exploratory", "SBTM-"] : ["reports/test-lifecycle", "TLC-"];
     const base = join(root, dir);
     // Session files are named by ticket (SBTM-VCST-5317-…) as often as by domain: match either.

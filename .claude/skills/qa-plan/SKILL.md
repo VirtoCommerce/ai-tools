@@ -41,7 +41,7 @@ Create test plans and detailed test cases using the comprehensive E2E scenario c
 
 4. **Output format:**
    ```
-   reports/tickets/SprintXX-XX/VCST-XXXX/
+   {RUN_DIR}/       (the ticket's run folder: npm run --silent run:dir -- --ticket VCST-XXXX)
    ├── test-plan.md
    ├── test-cases.md (or test-cases.csv)
    └── testrail-import.csv

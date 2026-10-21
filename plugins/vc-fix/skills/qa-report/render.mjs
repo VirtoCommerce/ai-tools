@@ -3,8 +3,8 @@
 // char budget) + the HTML page. Posts NOTHING; posting, the publish gate and the yes/no are the
 // skill's (SKILL.md). Templates and budgets: ./templates/*.md front-matter — never restated.
 //
-//   node render.mjs --kind test       --source reports/tickets/<S>/<T>/summary.json              --out <dir>
-//   node render.mjs --kind fix        --source reports/tickets/<S>/<T>/verification-summary.json --out <dir> [--dialect wiki]
+//   node render.mjs --kind test       --source <run folder>/summary.json              --out <dir>
+//   node render.mjs --kind fix        --source <run folder>/verification-summary.json --out <dir> [--dialect wiki]
 //   node render.mjs --kind regression --source reports/regression/<REG-…>   --verdict GO          --out <dir> [--ticket K] [--bugs "K1:what it is about,K2"]
 //   node render.mjs --kind smoke      --source reports/regression/<SMOKE-…> --verdict NO_GO       --out <dir>
 //   common: --lede "<1-3 sentences>" (required) [--title T] [--extra file.json] [--set KEY=VALUE]...

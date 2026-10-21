@@ -8,6 +8,8 @@
     "specs:run": "playwright test --project=script",
     "specs:runner": "playwright test --project=runner",
     "env:use": "node scripts/env/use-env.mjs",
+    "run:use": "node scripts/env/run-folder.mjs use",
+    "run:dir": "node scripts/env/run-folder.mjs dir",
     "secrets:sync": "node scripts/maintenance/sync-playwright-secrets.mjs",
     "secrets:check": "node scripts/maintenance/sync-playwright-secrets.mjs --check",
     "secrets:sync:all": "node scripts/maintenance/sync-playwright-secrets.mjs --all",
