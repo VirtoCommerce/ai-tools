@@ -187,8 +187,10 @@ function upstreamCommits(f) {
 }
 
 const map = existsSync(MAP_PATH) ? JSON.parse(readFileSync(MAP_PATH, "utf8")) : { replacements: [], ignored: [] };
+// A hand-edited entry may leave out either list.
+const replacements = (map.replacements ?? []).map((r) => ({ ...r, fork: r.fork ?? [], upstream: r.upstream ?? [] }));
 const mappedUpstream = new Map();
-for (const r of map.replacements ?? []) for (const u of r.upstream) mappedUpstream.set(u, r);
+for (const r of replacements) for (const u of r.upstream) mappedUpstream.set(u, r);
 const ignored = new Map((map.ignored ?? []).map((i) => [i.upstream, i.reason]));
 const status = (f) => (ignored.has(f) ? `ignored: ${ignored.get(f)}` : mappedUpstream.has(f) ? `mapped → ${mappedUpstream.get(f).fork.join(", ")}` : "NOT in the map");
 
@@ -254,7 +256,7 @@ function signals(src) {
   for (const m of src.matchAll(/\bdata-(?!test-id)([a-z-]+)=/g)) s.add(`data-${m[1]}`);
   return s;
 }
-const mappedFork = new Set((map.replacements ?? []).flatMap((r) => r.fork));
+const mappedFork = new Set(replacements.flatMap((r) => r.fork));
 const forkOnly = [...fork.rendered].filter((f) => reportable(f) && /\.(vue|ts)$/.test(f) && !upTree.has(f) && !fromTree.has(f) && !mappedFork.has(f));
 const upstreamSignals = forkOnly.length ? [...up.rendered].filter((f) => reportable(f) && /\.(vue|ts)$/.test(f)).map((f) => [f, signals(source(TO, f))]) : [];
 const unmapped = forkOnly.map((f) => {
@@ -271,7 +273,7 @@ const unmapped = forkOnly.map((f) => {
 });
 
 // E. Map entries naming missing files.
-const stale = (map.replacements ?? []).flatMap((r) => [
+const stale = replacements.flatMap((r) => [
   ...r.fork.filter((f) => !forkTree.has(f)).map((f) => `fork: ${f}`),
   ...r.upstream.filter((f) => !upTree.has(f)).map((f) => `upstream: ${f}`),
 ]);

@@ -44,7 +44,7 @@ It installs disabled. Enable it in `/plugin`, or with `claude plugin enable vc-f
 
 - 🔀 **Merge the PR with "Create a merge commit".** Never squash, never rebase. Either one makes the
   next upstream merge replay every conflict again.
-- 📓 **Every merge leaves a log** in the fork: `upstream-merges/<date>-<ref>.md`. The next merge reads
+- 📓 **Every merge leaves a log** in the fork: `upstream-merges/<date>-<slug>.md`. The next merge reads
   it first, so decisions aren't asked twice.
 - 🗺 **`fork-map.json`** (fork root) says which upstream files the fork's components replace. The skill
   proposes updates to it at every merge. Use `ignored` rarely: it hides a file from every future report.

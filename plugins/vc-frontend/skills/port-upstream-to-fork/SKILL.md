@@ -142,7 +142,7 @@ N upstream changes the merge did not deliver: X to port, Y n/a, Z already, W los
 Nothing is ported before the user answers.
 
 The verdicts, the map changes and the user's answers go into the session's log
-(`upstream-merges/<YYYY-MM-DD>-<ref>.md`, sections "Ports" and "Lost features and deferrals" of
+(`upstream-merges/<YYYY-MM-DD>-<slug>.md`, sections "Ports" and "Lost features and deferrals" of
 `vc-frontend:merge-upstream`'s `log-template.md`). Called from `vc-frontend:merge-upstream`, that is the
 merge's log; run alone as an audit, start a log of its own from the same template.
 
