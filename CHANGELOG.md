@@ -87,7 +87,8 @@ test model, screenshots, evidence packages, bug drafts, the maps and GraphQL sch
 `.env.test-env` as before. Without `QA_OUTPUT_DIR` the run folder is the old ticket folder plus an `<env>/`
 level, and readers look in both layouts. A `QA_OUTPUT_DIR` outside the project needs
 `--allow-unrestricted-file-access` on the Playwright lanes, or each capture saved with a bare filename and
-moved in (`.claude/knowledge/execution/run-output.md` §Screenshots).
+moved in (the plugin's `knowledge/execution/run-env.md` §The run folder; in this repo,
+`.claude/knowledge/execution/run-output.md` §Screenshots).
 
 ---
 
