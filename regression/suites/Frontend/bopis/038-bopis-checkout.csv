@@ -1,29 +1,35 @@
 "ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
-"BOPIS-095","Guest BOPIS Checkout — Select Pickup and Complete Order","BOPIS > Guest Checkout","High","BL-BOPIS-001","ECL-14.1","[PRE:CLEAR_SESSION]
+BOPIS-095,Guest BOPIS Checkout: Select Pickup and Complete Order,BOPIS > Guest Checkout,High,BL-BOPIS-001,ECL-14.1,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-Guest session (not logged in); Products in cart with BOPIS-eligible items; At least one pickup location configured; guest checkout enabled (createAnonymousOrderEnabled=true)","url={{FRONT_URL}};sku={{TEST_SKU}}","[SETUP] generate guest email for this run: smoke-bopis-095-{current_unix_ms}@test-agent.com — store as $GUEST_EMAIL_095 for use in subsequent steps
+Guest session (not logged in); Products in cart with BOPIS-eligible items; At least one pickup location configured; guest checkout enabled (createAnonymousOrderEnabled=true)",url={{FRONT_URL}};sku={{TEST_SKU}},"[SETUP] generate guest email for this run: smoke-bopis-095-{current_unix_ms}@test-agent.com and store as $GUEST_EMAIL_095 for use in subsequent steps
 [NAV] {{FRONT_URL}}/cart
 [ASSERT] user is not authenticated (no account menu visible)
 [ACT] click 'Pickup' radio button in delivery options
+[WAIT] pickup delivery option applied
 [ACT] click 'Select pickup location'
 [WAIT] pickup location modal opens
 [ACT] select a pickup location from the list
-[ACT] click 'Select' then 'Confirm'
+[ACT] click 'Select'
+[WAIT] selection applied; 'Confirm' enabled
+[ACT] click 'Confirm'
 [WAIT] modal closes; selected pickup location shown in cart
 [ACT] click 'Checkout' or 'Proceed to Checkout'
 [WAIT] checkout page loads
 [ACT] enter guest email address $GUEST_EMAIL_095 in email field
 [ACT] fill in required guest contact fields (name, phone if required)
 [ACT] click 'Place Order' or 'Submit Order'
-[WAIT] order confirmation page loads","[DOM] pickup location name and address shown in cart summary before checkout
-[DOM] checkout page does not force account creation before proceeding
-[DOM] order confirmation page displays pickup location details (store name, address)
-[DOM] order confirmation shows fulfillment type as 'Pickup' (not 'Delivery' or 'Shipping')
-[STATE] no shipping address section visible on order confirmation
-[FORMAT] confirmation email or on-screen confirmation references pickup location","[CONSOLE] no JS errors during guest checkout flow
+[WAIT] order confirmation page loads
+[ASSERT] the completed page shows the order-placed notification
+[ADMIN] navigate to Admin > Orders > find the order by $GUEST_EMAIL_095
+[ASSERT] the order detail shows the selected pickup location (name and address) and no shipping address","[DOM] pickup location name and address shown in cart summary before checkout {SPEC}
+[DOM] checkout page does not force account creation before proceeding {SPEC}
+[DOM] the order completed page shows the order-placed notification (it is a plain notification and carries no pickup details) {DOC}
+[ADMIN] the order detail shows the selected pickup location name and address {OBSERVED}
+[STATE] the order detail has no shipping address (delivery address absent) for the pickup shipment {OBSERVED}
+[STATE] the order shipment is a pickup shipment (pickupLocation set), not a delivery shipment {OBSERVED}","[CONSOLE] no JS errors during guest checkout flow
 [NETWORK] POST /cart/checkout returns 2xx; no 4xx auth errors blocking guest
-[API] order created with fulfillment type = pickup; no shipping address attached","Guest blocked at checkout with 'Login required' message; Pickup location details missing from order confirmation; Shipping address section appears on confirmation; Order confirmation shows wrong fulfillment type; guest checkout disabled (BL-CHK-001 — verify createAnonymousOrderEnabled=true in store settings before running)","Navigate to account creation page if needed; otherwise no cleanup required","Coverage Gap Analysis","Draft"
+[API] order created with the selected pickupLocation.id on its shipment; no shipping address attached",Guest blocked at checkout with 'Login required' message; pickup location missing or wrong on the order detail; a shipping address attached to the pickup order; the order created as a delivery shipment; guest checkout disabled (BL-CHK-001: verify createAnonymousOrderEnabled=true in store settings before running),Navigate to account creation page if needed; otherwise no cleanup required,"Coverage Gap Analysis; Corrected: VCST-6042 (2026-10-21) — REPAIR — STALE_TEST (run REG-2026-10-15-W3): the case expected pickup details, a fulfillment-type label and a confirmation e-mail format on the /checkout/completed page. Per the Storefront User Guide (Checkout, last step) that page is a plain order-placed notification, so the pickup assertions moved to the order detail (Admin; a guest has no account order list) and the e-mail format assertion was dropped. Source: docs.virtocommerce.org/storefront/user-guide/shopping/checkout-process",Draft
 "BOPIS-081","Guest BOPIS Order — Post-Purchase Account Registration","BOPIS > Guest Checkout","High","BL-BOPIS-001","ECL-14.1","Guest user (no active session); a completed BOPIS order exists in the current session with order confirmation page open; the guest email used in that order is known and captured as $GUEST_EMAIL_095; post-purchase registration option is available; createAnonymousOrderEnabled=true","url={{FRONT_URL}};sku={{TEST_SKU}};password={{USER_PASSWORD}}","[SETUP] $GUEST_EMAIL_095 must already be captured from the prior guest BOPIS checkout in this session (the email used during that checkout)
 [NAV] {{FRONT_URL}}/cart
 [ACT] complete guest BOPIS checkout (select pickup location, enter $GUEST_EMAIL_095 as email, place order)

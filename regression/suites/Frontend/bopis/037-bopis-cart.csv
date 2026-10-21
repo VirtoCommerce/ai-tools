@@ -319,17 +319,22 @@ PickPoints modal open; ADDR_NY alias resolves to a seeded city with pickup locat
 [ASSERT] all displayed locations are in @td(ADDR_NY.city)","[STATE] only @td(ADDR_NY.city) locations shown after City filter applied
 [STATE] map shows only markers in @td(ADDR_NY.city)
 [DOM] City filter chip displayed with @td(ADDR_NY.city) value","[CONSOLE] no TypeError or JS errors during City filter interaction","Locations outside @td(ADDR_NY.city) shown; Map not updating for city filter; City filter chip not shown","Close modal; navigate away","C413541","Manual"
-"BOPIS-060","Facet Filter: State Disabled for Non-US/CA Countries","BOPIS > Cart > Filters","Medium","BL-BOPIS-003","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+BOPIS-060,Facet Filter: State/Province Options Follow the Selected Country,BOPIS > Cart > Filters,Medium,BL-BOPIS-003,ECL-14.2,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-PickPoints modal open","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+PickPoints modal open; at least two countries among the pickup locations, at least one of them with regions in its State/Province facet. The State/Province facet is data-driven (built from the pickup locations of the current result set), not gated by a US/CA rule.",url={{FRONT_URL}},"[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
-[ACT] select a non-US/CA country (e.g., Denmark)
-[WAIT] country filter applied
-[ACT] attempt to interact with State/Province filter
-[ASSERT] State/Province filter is disabled for non-US/CA country
-[ASSERT] no invalid filter combination possible","[STATE] State/Province filter disabled when non-US/CA country selected
-[STATE] prevents invalid Country + State filter combination","[CONSOLE] no TypeError or JS errors when State filter disabled","State filter active for non-US/CA country; Invalid Country + State filter combination possible","Close modal; navigate away","C413543","Manual"
+[ACT] open the Country facet
+[ACT] select one country from the options it offers (read the option from the facet, do not hardcode a country)
+[WAIT] country filter applied; location list refreshes
+[ACT] open the State/Province facet
+[ASSERT] every State/Province option listed is a region of the selected country
+[ACT] select one State/Province option
+[WAIT] location list refreshes
+[ASSERT] every listed location is in the selected country AND the selected region
+[ACT] reset the filters","[DOM] State/Province facet options contain only regions that belong to the selected country (no region of another country is listed) {SPEC}
+[STATE] after selecting a region, every listed location belongs to the selected country and region; no invalid Country + State combination returns locations of another country {SPEC}
+[STATE] for a selected country whose locations carry regions, the State/Province facet is enabled and lists at least one region {OBSERVED}",[CONSOLE] no TypeError or JS errors when State filter disabled,a region of another country listed under the selected country; a Country + State combination returning locations from a different country; State/Province facet listing every region regardless of the Country filter,Close modal; navigate away,"C413543; Corrected: VCST-6042 (2026-10-21) — REPAIR — STALE_TEST (run REG-2026-10-15-W3): the case asserted the State/Province facet is disabled outside US/CA; no rule says so and the facet is data-driven (observed enabled for Germany, listing its regions). Analogous data-driven facet behaviour: KB-F0FDB3F2",Manual
 "BOPIS-061","Search by ZIP Code","BOPIS > Cart > Search","High","BL-BOPIS-003","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 PickPoints modal open from cart","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
@@ -354,23 +359,38 @@ PickPoints modal open from cart; ADDR_NY alias resolves to a street with nearby 
 [ASSERT] address searching functional for the resolved street value","[STATE] address search returns locations near @td(ADDR_NY.street)
 [STATE] address searching functional for partial street names","[CONSOLE] no TypeError or JS errors during address search
 [NETWORK] geocoding API returns 2xx response for address search","Address search returns no results for @td(ADDR_NY.street); Address searching not functional","Close modal; navigate away","C413550","Manual"
-"BOPIS-063","Search with Special Characters (Apostrophe + Ampersand)","BOPIS > Cart > Search","Medium","BL-BOPIS-007","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+BOPIS-063,Search with Special Characters (Apostrophe + Ampersand),BOPIS > Cart > Search,Medium,BL-BOPIS-007,ECL-14.2,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-PickPoints modal open; Special character queries are environment-agnostic nonsense/synthetic inputs not tied to real location names","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
+PickPoints modal open; the ""O'Brien's"" and ""Arts & Crafts"" inputs are synthetic and tolerant (results or empty state), but the unique no-match keywords generated in the SETUP step match no location by construction, so they MUST yield the empty state.",url={{FRONT_URL}},"[SETUP] generate a unique token for this run: zq{current_unix_ms} (letters+digits only, matches no pickup location name) and store as $NOMATCH_063
+[NAV] {{FRONT_URL}}/cart
 [ACT] click 'Select pickup location'
 [WAIT] pickup modal opens
-[ACT] type ""O'Brien's"" in search field (apostrophe-containing name — synthetic test input)
+[ACT] type ""O'Brien's"" in search field (apostrophe-containing name, synthetic test input)
 [WAIT] results update (results or no-results state acceptable; crash is not)
 [ASSERT] application does not crash or produce a JS error on apostrophe input
 [ASSERT] results or empty-state message shown correctly
 [ACT] clear search field
-[ACT] type 'Arts & Crafts' in search field (ampersand-containing name — synthetic test input)
+[ACT] type 'Arts & Crafts' in search field (ampersand-containing name, synthetic test input)
 [WAIT] results update
 [ASSERT] application does not crash or produce a JS error on ampersand input
-[ASSERT] search API does not return 4xx/5xx for either special character query","[STATE] apostrophe input handled without crash or API error
-[STATE] ampersand input handled without crash or API error
-[STATE] special characters properly escaped in search API calls — no injection or encoding errors","[CONSOLE] no TypeError or JS errors on special character search
-[NETWORK] search API does not return 4xx/5xx for apostrophe or ampersand queries","Application error or crash on apostrophe input; 4xx/5xx API response for special character queries; XSS or injection behavior triggered","Close modal; navigate away","C413551","Manual"
+[ASSERT] search API does not return 4xx/5xx for either special character query
+[ACT] clear search field
+[ACT] type ""$NOMATCH_063's"" in search field (apostrophe + a token that matches no location)
+[WAIT] results update
+[ASSERT] the no-results empty state is shown, no location card is listed
+[ACT] clear search field
+[ACT] type ""$NOMATCH_063 & Co"" in search field (ampersand + a token that matches no location)
+[WAIT] results update
+[ASSERT] the no-results empty state is shown, no location card is listed
+[ACT] clear search field
+[ASSERT] with the field empty the full location list is back","[STATE] apostrophe input handled without crash or API error {SPEC}
+[STATE] ampersand input handled without crash or API error {SPEC}
+[STATE] search API responds 2xx with no errors[] for apostrophe and ampersand keywords (no injection or encoding error) {SPEC}
+[DOM] a keyword containing an apostrophe that matches no location (""$NOMATCH_063's"") shows the empty state and lists zero locations, never the full list {DOC} (Platform Developer Guide, Search query syntax reference: a keyword may contain ' and &; VCST-6477)
+[DOM] a keyword containing an ampersand that matches no location (""$NOMATCH_063 & Co"") shows the empty state and lists zero locations, never the full list {DOC} (Search query syntax reference; VCST-6477)
+[API] the cartPickupLocations request for each of those two keywords returns totalCount = 0, equal to the store-level pickupLocations count for the same keyword (0) {DOC} (Search query syntax reference; VCST-6477 — on the Stable 16 build the scoped queries return every location, KB-8D5B9AC9)","[CONSOLE] no TypeError or JS errors on special character search
+[NETWORK] search API does not return 4xx/5xx for apostrophe or ampersand queries
+[NETWORK] cartPickupLocations totalCount for the no-match ' and & keywords is 0, not the unfiltered total","Application error or crash on apostrophe input; 4xx/5xx API response for special character queries; XSS or injection behavior triggered; a no-match keyword containing ' or & lists every location (keyword silently dropped: vc-module-search SearchPhrase grammar, VCST-6477)",Close modal; navigate away,"C413551; Corrected: VCST-6042 (2026-10-21) — STRENGTHENED, not weakened (run REG-2026-10-15-W3): the original assertions passed on a real defect, VCST-6477 (a keyword with ' or & is dropped by the search-phrase parser and the cart/product-scoped queries return all locations while store-level pickupLocations returns 0). Added no-match ' and & keywords that must show the empty state / totalCount 0; expected to FAIL until VCST-6477 is fixed. Catches:VCST-6477. Source vc-module-search@3.1010.0 SearchPhrase.g4; KB-8D5B9AC9, KB-7A6171A9",Manual
 "BOPIS-064","Search with Whitespace Only","BOPIS > Cart > Search","Medium","BL-BOPIS-007","ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 PickPoints modal open","url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart
@@ -531,23 +551,28 @@ Pickup selected and location confirmed; No billing address saved for user","url=
 [ASSERT] order NOT placed without billing address","[DOM] billing address form visible in checkout for BOPIS order
 [STATE] order cannot be placed without billing address even in pickup mode
 [DOM] validation error message shown when billing address missing","[CONSOLE] no TypeError or JS errors during billing address validation in BOPIS checkout","Billing address form hidden in BOPIS checkout; Order placed without billing address; No validation error for missing billing address","Cancel order via admin if placed erroneously","C410943","Manual"
-"BOPIS-075","Cross-Layer: xAPI Order Shows Pickup FFC","BOPIS > Cart > Cross-Layer","Critical","BL-BOPIS-002,BL-BOPIS-006","ECL-14.1,ECL-14.4","[PRE:SIGNIN_AS:USER_DEFAULT]
+BOPIS-075,Cross-Layer: xAPI Order Shows the Selected Pickup Location,BOPIS > Cart > Cross-Layer,Critical,"BL-BOPIS-002,BL-BOPIS-006","ECL-14.1,ECL-14.4","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
-BOPIS order placed successfully; xAPI access available; Admin access available","url={{FRONT_URL}};back={{BACK_URL}};admin={{ADMIN_URL}};admin_email={{ADMIN_EMAIL}};admin_password={{ADMIN_PASSWORD}};email={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart
-[ACT] add product and confirm pickup location
+BOPIS order placed successfully; xAPI access available; Admin access available",url={{FRONT_URL}};back={{BACK_URL}};admin={{ADMIN_URL}};admin_email={{ADMIN_EMAIL}};admin_password={{ADMIN_PASSWORD}};email={{USER_EMAIL}};password={{USER_PASSWORD}};sku={{TEST_SKU}},"[NAV] {{FRONT_URL}}/cart
+[ACT] add product to cart
+[WAIT] cart updated with the product
+[ACT] confirm pickup location
+[WAIT] pickup location shown in cart
 [ACT] complete checkout to place order
 [WAIT] order confirmation shown
-[ACT] query xAPI: GET order by ID; inspect shipments[] array
-[ASSERT] shipments[].fulfillmentCenterId = selected pickup location ID
+[ACT] query xAPI: GET order by ID
+[ACT] in the order query select shipments[].pickupLocation { id name }
+[ACT] read the shipments[] array from the response
+[ASSERT] shipments[].pickupLocation.id = selected pickup location ID
 [ADMIN] navigate to Admin > Orders > find the order
 [ASSERT] Admin order view shows pickup location name and address
-[ASSERT] no shipping cost in stored order","[API] xAPI order shipments[].fulfillmentCenterId = selected pickup location ID
-[ADMIN] Admin order view shows correct pickup location name and address
-[STATE] no shipping cost in stored order data
-[STATE] order data consistent between xAPI response and Admin view","[API] mutation errors[] is empty for all selectPickupLocation mutations during checkout
-[NETWORK] xAPI order query returns 2xx with correct fulfillmentCenterId
+[ASSERT] no shipping cost in stored order","[API] xAPI order shipments[].pickupLocation.id = selected pickup location ID and pickupLocation.name = the selected location name {OBSERVED} (the shipment stores the pickup location in PickupLocationId, exposed as shipments[].pickupLocation; fulfillmentCenterId is a separate field and is not asserted)
+[ADMIN] Admin order view shows correct pickup location name and address {SPEC}
+[STATE] no shipping cost in stored order data {SPEC}
+[STATE] order data consistent between xAPI response and Admin view {SPEC}","[API] mutation errors[] is empty for all selectPickupLocation mutations during checkout
+[NETWORK] xAPI order query returns 2xx with the correct pickupLocation.id
 [ADMIN] verify pickup location name in Admin order view matches storefront selection
-[CONSOLE] no TypeError or JS errors during order placement","xAPI order does not show fulfillmentCenterId; Admin shows wrong or missing pickup location; Shipping cost present in stored order despite pickup fulfillment","Cancel order via admin","checklist-K","Manual"
+[CONSOLE] no TypeError or JS errors during order placement",xAPI order shipment has no pickupLocation or a different pickup location id; Admin shows wrong or missing pickup location; Shipping cost present in stored order despite pickup fulfillment,Cancel order via admin,"checklist-K; Corrected: VCST-6042 (2026-10-21) — REPAIR — ASSERTION_DEFECT (run REG-2026-10-15-W3): the case asserted shipments[].fulfillmentCenterId = pickup location id; the order shipment stores the pickup location in PickupLocationId (xAPI shipments[].pickupLocation), and fulfillmentCenterId is a different, nullable field. Source vc-module-x-order OrderShipmentType (pickupLocation resolved from Shipment.PickupLocationId); vc-module-shipping PickupLocation.FulfillmentCenterId is a separate property",Manual
 "BOPIS-076","Cross-Layer: Cart API Shows $0 Shipping","BOPIS > Cart > Cross-Layer","High","BL-BOPIS-002","ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Pickup selected and location confirmed in cart; DevTools Network tab accessible","url={{FRONT_URL}};back={{BACK_URL}};sku={{TEST_SKU}}","[NAV] {{FRONT_URL}}/cart

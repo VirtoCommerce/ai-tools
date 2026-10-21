@@ -64,16 +64,19 @@ Product in list","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD
 [DOM] product row no longer present in the list-detail table after removal
 [STATE] list item count decrements by 1 after removal","[API] mutation errors[] is empty
 [CONSOLE] no uncaught JS errors",Remove button missing; product still visible after removal; no confirmation prompt; list count not updated,none,VCST-3928; Verified: live selector pass (2026-08-05); removal confirmation-dialog copy and success-toast text not yet confirmed — still open,Automated
-B2C-LIST-007,Rename/Edit List,B2C Features > Lists,Medium,BL-B2B-002,,"[PRE:SIGNIN_AS:USER_DEFAULT]
-List exists","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] {{FRONT_URL}}/account/lists
-2. [ACT] click the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
-3. [ACT] click 'Edit'
-4. [ACT] change the name field (`[data-test-id=""wishlist-name-input""]`) to 'Summer 2026'
-5. [ACT] click 'Save' (`[data-test-id=""wishlist-settings-save-button""]`)
-6. [ASSERT] verify the list name updated on /account/lists and on the list-detail heading","[DOM] kebab menu (`[data-test-id=""wishlist-card-menu-button""]`) opens exactly 'Edit' / 'Delete' — no Share entry
-[DOM] Edit dialog reuses the create dialog's Name (`[data-test-id=""wishlist-name-input""]`) and Description fields
-[DOM] list name 'Summer 2026' updates on both the /account/lists card and the list-detail heading
-[STATE] products in the list are unaffected by the rename (same row count, same items)",[CONSOLE] no uncaught JS errors,Edit option missing; name change not persisting; list name not updated in all locations,none,VCST-3928; Verified: live selector pass (2026-08-05),Manual
+B2C-LIST-007,Rename List from the Card Menu (Rename / Share / Remove list),B2C Features > Lists,Medium,BL-B2B-002,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+List exists and the signed-in user owns it (theme 2.59.0 list-sharing rework: the owner's card menu is Rename / Share / Remove list).","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [SETUP] generate a unique list name for this run: AGENT-TEST-List-{current_unix_ms} and store as $LIST_NAME_007; note the list's current name as $LIST_NAME_ORIG_007
+2. [NAV] {{FRONT_URL}}/account/lists
+3. [ACT] click the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+4. [ASSERT] the menu offers Rename, Share and Remove list
+5. [ACT] click 'Rename'
+6. [ACT] change the name field to $LIST_NAME_007
+7. [ACT] click 'Save'
+8. [ASSERT] verify the list name updated on /account/lists and on the list-detail heading","[DOM] kebab menu (`[data-test-id=""wishlist-card-menu-button""]`) opens exactly Rename / Share / Remove list {OBSERVED} (theme 2.59.0; KB-C075BDF9)
+[DOM] Rename dialog edits the Name and Description only; it has no sharing options (sharing lives in the Share dialog) {OBSERVED} (KB-C075BDF9)
+[DOM] list name $LIST_NAME_007 updates on both the /account/lists card and the list-detail heading {SPEC}
+[STATE] the list's sharing scope is unchanged by the rename {OBSERVED} (Rename saves listId/listName/description only; KB-C075BDF9)
+[STATE] products in the list are unaffected by the rename (same row count, same items) {SPEC}",[CONSOLE] no uncaught JS errors,"Rename option missing; menu still offers Edit / Delete (pre-2.59.0 theme: report as environment drift, not a defect); name change not persisting; list name not updated in all locations; sharing scope changed by a rename",rename the list back to $LIST_NAME_ORIG_007,"VCST-3928; Verified: live selector pass (2026-08-05); Corrected: VCST-6042 (2026-10-21) — REPAIR — STALE_TEST (run REG-2026-10-15-W3): card menu is Rename / Share / Remove list since theme 2.59.0 (list-sharing rework, vc-frontend #2476), not Edit / Delete; fixed list name 'Summer 2026' replaced by a unique per-run name; Cleanup restores the original name. KB-C075BDF9",Manual
 B2C-LIST-008,Delete List,B2C Features > Lists,Medium,BL-B2B-002,,"[PRE:SIGNIN_AS:USER_DEFAULT]
 List exists with products","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] open /account/lists
 2. [ACT] click the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
@@ -97,18 +100,19 @@ List exists, sharing enabled","url={{FRONT_URL}},user={{USER_EMAIL}},password={{
 [DOM] Public link generated as shareable URL
 [DOM] Opening link shows list in read-only mode
 [STATE] Share modal shows list as 'Shared'",[CONSOLE] no uncaught JS errors,Share button missing; public link not generated; shared list not accessible without login; shared link editable by external users,none,"VCST-3928; Blocked: live selector pass on a customer account (USER_DEFAULT) found no Share control anywhere in the list UI (kebab menu = Edit/Delete only) — not observed on a customer account, needs confirmation (possibly org-gated or a store-setting toggle), not treated as refuted (2026-08-05)",Manual
-B2C-LIST-010,Share List via Email,B2C Features > Lists,Medium,BL-B2B-002,,"[PRE:SIGNIN_AS:USER_DEFAULT]
-List exists","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Open list page
-2. [ACT] Click Share
-3. [ACT] Select Email option
-4. [ACT] Enter recipient email: friend@example.com
-5. [ACT] Add optional message
-6. [ACT] Click Send
-7. [ASSERT] Verify email received with correct details","[DOM] Email share option available in share modal
-[DOM] Form shows: Recipient email field, optional message field
-[EMAIL] Recipient receives invitation email
-[EMAIL] Email contains: List name, sender name, item count, view link
-[DOM] Clicking link in email opens the list",[CONSOLE] no uncaught JS errors,Email share option missing; email not delivered; email missing list details or view link,none,"VCST-3928; Blocked: live selector pass on a customer account (USER_DEFAULT) found no Email-share option anywhere in the list UI (kebab menu = Edit/Delete only, no Share entry) — not observed on a customer account, needs confirmation, not treated as refuted (2026-08-05)",Manual
+B2C-LIST-010,Share Dialog Offers Access Scopes and a Copyable Link (No Email Option),B2C Features > Lists,Medium,BL-B2B-002,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+List exists and the signed-in user owns it. Theme 2.59.0 list-sharing rework: sharing is configured in a dedicated Share dialog by access scope; the e-mail/push notification applies only to a sales representative sharing with specific customers.","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] {{FRONT_URL}}/account/lists
+2. [ACT] click the list's kebab menu and choose 'Share'
+3. [ASSERT] the dialog titled 'Share <list name>' opens with a 'Who can access' group
+4. [ASSERT] observe the scope options offered
+5. [ACT] choose a shared scope (Anyone with link)
+6. [ASSERT] the Link field appears with a Copy button
+7. [ACT] click Copy
+8. [ASSERT] the copy is confirmed","[DOM] Share dialog titled 'Share <list name>' with a 'Who can access' group offering Private, My organization and Anyone with link (Specific customers is offered to a sales representative) {OBSERVED} (KB-799D20A6; docs list the scopes Private / Organization / Anyone (readonly) / Customer)
+[DOM] no Email share option and no recipient-email field is offered to a regular customer {OBSERVED} (KB-799D20A6; Storefront User Guide, Lists: sharing is by access scope)
+[DOM] choosing Anyone with link shows a Link field with a Copy button {OBSERVED} (KB-799D20A6)
+[STATE] the Link field value is a non-empty URL {SPEC}
+[DOM] Copy gives visible confirmation {SPEC}",[CONSOLE] no uncaught JS errors,Share entry missing from the card menu; scope options missing or mislabeled; Link field empty or without a Copy button after choosing Anyone with link; an Email option appears for a regular customer (unexpected new capability: re-baseline against docs),set the list's sharing scope back to Private,"VCST-3928; Blocked: live selector pass on a customer account (USER_DEFAULT) found no Email-share option anywhere in the list UI (kebab menu = Edit/Delete only, no Share entry) — not observed on a customer account, needs confirmation, not treated as refuted (2026-08-05); Corrected: VCST-6042 (2026-10-21) — REPAIR — ASSERTION_DEFECT (run REG-2026-10-15-W3): an e-mail share for a regular customer was never observed and is not documented; the Storefront User Guide (Lists) describes sharing by access scope (Private / Organization / Anyone (readonly) / Customer) and e-mail + push only for a sales rep sharing with customers. Rewritten to the Share dialog scope options + link copy; the sales-rep customer-share e-mail is covered by the sales-rep sharing cases in this suite. Source docs.virtocommerce.org/storefront/user-guide/account/lists; KB-799D20A6",Manual
 B2C-LIST-011,Mark List as Private/Shared,B2C Features > Lists,Medium,BL-B2B-002,,"[PRE:SIGNIN_AS:USER_DEFAULT]
 List exists","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Open list settings via Edit
 2. [ACT] Toggle privacy: Private → Shared
@@ -129,17 +133,20 @@ Product already added to list","url={{FRONT_URL}},user={{USER_EMAIL}},password={
 [DOM] clicking it reopens the 'Please select list' modal (not a separate tooltip) showing which list(s) hold the product under 'Already in the lists'
 [DOM] the modal offers unchecking the pre-checked list, or checking another list under 'Add to other lists' — no separate 'remove from list' menu exists outside the modal
 [STATE] the pre-checked 'Already in the lists' checkbox with no re-add action means duplicate-add to the same list is structurally prevented",[CONSOLE] no uncaught JS errors,Heart icon not filled for product already in list; tooltip missing; no options shown on clicking filled heart,none,"VCST-3928; Audited: 2026-08-05 (live selector pass, playwright-edge, vcst-qa Platform 3.1055.0/theme 2.55.0-pr-2412); Source: OBSERVED — duplicate-add-to-same-list confirmed prevented structurally (pre-checked, no re-add action)",Manual
-B2C-LIST-013,Move Product Between Lists,B2C Features > Lists,Medium,BL-B2B-002,ECL-7.3,"[PRE:SIGNIN_AS:USER_DEFAULT]
-Product in list A, list B exists","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Open list A
-2. [ACT] Click menu on product
-3. [ACT] Select 'Move to...'
-4. [ACT] Select list B
-5. [ASSERT] Verify product moved to list B
-6. [ASSERT] Verify product no longer in list A","[DOM] Move option available in product context menu
-[DOM] List selector shows all available lists
-[DOM] Product removed from list A
-[DOM] Product added to list B (no duplicate in A)
-[DOM] Success message shown",[CONSOLE] no uncaught JS errors,Move option missing; product duplicated in both lists after move; product disappears from both lists,none,"VCST-3928; Synced: lifecycle lists/SFL (2026-08-05); Verified: live selector pass attempted (2026-08-05) — no per-row 'move between lists' selector observed on the list-detail table (only remove-item-button + add-to-cart control per row); the add-to-list modal's checkbox add/remove may serve this purpose but was not confirmed as a row-level move affordance — still unblocked, needs targeted verification",Manual
+B2C-LIST-013,Add a Product to a Second List via the Add-to-List Modal (No Row-Level Move),B2C Features > Lists,Medium,BL-B2B-002,ECL-7.3,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Product in list A, list B exists. Theme 2.59.0: the list-detail row offers only remove-item and add-to-cart (no 'Move to...'); a product is put into lists through the add-to-list modal opened from the product card.","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Open list A
+2. [ASSERT] the product row offers remove-item and add-to-cart only, no 'Move to...' entry
+3. [NAV] open the same product's card or page
+4. [ACT] click the add-to-list (heart) control
+5. [ASSERT] the popup lists the user's lists, including A and B
+6. [ACT] select list B
+7. [ACT] click 'Save'
+8. [ASSERT] the success notification appears
+9. [NAV] open list B and then list A","[DOM] the list-detail row has no 'Move to...' entry, only remove-item and add-to-cart {OBSERVED} (live selector pass 2026-08-05)
+[DOM] the add-to-list popup lists all of the user's lists, including A and B {DOC} (Storefront User Guide, Products Lists)
+[DOM] success notification shown after Save {DOC}
+[DOM] product present in list B after Save {SPEC}
+[STATE] product still present in list A, once (no duplicate, no implicit move) {SPEC}",[CONSOLE] no uncaught JS errors,popup missing list A or B; product not added to B; product duplicated in A; product disappears from A without being removed; a 'Move to...' entry appears on the row (new capability: re-baseline),remove the product from list B (open list B and use the remove-item control on its row),"VCST-3928; Synced: lifecycle lists/SFL (2026-08-05); Verified: live selector pass attempted (2026-08-05) — no per-row 'move between lists' selector observed on the list-detail table (only remove-item-button + add-to-cart control per row); the add-to-list modal's checkbox add/remove may serve this purpose but was not confirmed as a row-level move affordance — still unblocked, needs targeted verification; Corrected: VCST-6042 (2026-10-21) — REPAIR — ASSERTION_DEFECT (run REG-2026-10-15-W3): the row-level 'Move to...' action was never observed (live selector pass 2026-08-05: only remove-item and add-to-cart per row) and is not documented; the Storefront User Guide (Products Lists) describes adding a product to chosen lists through the heart popup + Save. Rewritten to that flow; whether unchecking list A in the popup removes the product is unconfirmed and deliberately not asserted. Source docs.virtocommerce.org/storefront/user-guide/shopping/lists",Manual
 B2C-LIST-014,List - Out of Stock Product Handling,B2C Features > Lists,High,BL-B2B-002,ECL-2.2,"[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 List contains out of stock product","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Add product to list while in stock

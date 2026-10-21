@@ -564,8 +564,7 @@ Buyer logged in as {{USER_EMAIL}}; mobile viewport (375px width); account has or
 [DOM] expanded filter shows status options
 [STATE] selecting filter updates results while panel is open
 [STATE] collapsing filter panel preserves the active filter
-[DOM] active filter indicator visible even when panel is collapsed
-[STATE] filter panel closes and filtered results remain visible",[CONSOLE] no JS errors on filter toggle at mobile viewport; [NETWORK] 2xx on filtered request at mobile,filters take up full screen space at mobile width pushing content below fold; filter toggle absent; selecting filter causes page to jump to top; collapsing panel clears the active filter,none,Coverage Gap Analysis — GAP-F02,Draft
+[STATE] filter panel closes and filtered results remain visible",[CONSOLE] no JS errors on filter toggle at mobile viewport; [NETWORK] 2xx on filtered request at mobile,filters take up full screen space at mobile width pushing content below fold; filter toggle absent; selecting filter causes page to jump to top; collapsing panel clears the active filter,none,"Coverage Gap Analysis — GAP-F02 | Corrected: VCST-6042 (2026-10-21) — SPLIT (run REG-2026-10-15-W3): the assertion that an active-filter indicator is visible at 375px is dropped — the chips are hidden below the lg breakpoint (1024px) by design (vc-frontend@2.59.0 orders.vue .orders__chips), the applied filter is visible only inside the filter sidebar; KB-ACB009C9. The accessible-name check of the icon-only filter button is its own case, ORD-104",Draft
 ORD-028,Mobile - Order Detail Responsive Layout,Orders > Mobile,High,BL-ORD-003,ECL-7.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 Buyer logged in as {{USER_EMAIL}}; mobile viewport (375px width); order exists with line items and shipping address and payment info",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[ACT] resize browser to 375px width
 [NAV] navigate to /account/orders
@@ -585,7 +584,6 @@ Buyer logged in as {{USER_EMAIL}}; order exists with 2+ line items including pro
 [WAIT] wait for detail page
 [ASSERT] verify each line item shows product image thumbnail
 [ASSERT] verify each line item shows product name as a clickable link
-[ASSERT] verify each line item shows SKU
 [ASSERT] verify each line item shows quantity ordered
 [ASSERT] verify each line item shows unit price
 [ASSERT] verify each line item shows line total (qty x unit price)
@@ -593,11 +591,10 @@ Buyer logged in as {{USER_EMAIL}}; order exists with 2+ line items including pro
 [ACT] click product name link on first item
 [WAIT] Wait for the resulting view to settle","[DOM] product image thumbnail rendered per line item (not broken/placeholder)
 [DOM] product name displayed as clickable link
-[DOM] SKU shown per line item
 [MATH] line total = unit price x quantity for each row
 [NAV] clicking product name navigates to correct PDP
 [FORMAT] prices displayed with 2 decimal places and currency symbol
-[STATE] navigation to product detail page",[API] GET order detail returns line items with imageUrl and name and sku and qty and unitPrice and lineTotal; [CONSOLE] no errors on order detail page; [NETWORK] image URLs return 2xx (no broken images),product images missing or show broken placeholder; product name not clickable; SKU absent from line items; line total does not equal qty x unit price; clicking product name leads to 404,none,Coverage Gap Analysis — GAP-F03,Draft
+[STATE] navigation to product detail page",[API] GET order detail returns line items with imageUrl and name and sku and qty and unitPrice and lineTotal; [CONSOLE] no errors on order detail page; [NETWORK] image URLs return 2xx (no broken images),product images missing or show broken placeholder; product name not clickable; line total does not equal qty x unit price; clicking product name leads to 404,none,"Coverage Gap Analysis — GAP-F03 | Corrected: VCST-6042 (2026-10-21) — REPAIR — TEST_DEFECT (run REG-2026-10-15-W3): the SKU step, assertion and failure signal are removed; order detail lines show image, name, price, quantity and total but no SKU text by design (vc-frontend 2.59.0 order-line-items.vue passes with-image/with-properties/with-price/with-total; VcLineItems uses sku only as the data-product-sku attribute) and the Storefront User Guide (Orders) promises none. The [API] sku field check is kept. Source vc-frontend@2.59.0 order-line-items.vue, vc-line-items.vue L72",Draft
 ORD-030,Order Detail - Shipment Tracking Link Display,Orders > Detail,High,"BL-ORD-003, BL-ORD-007",ECL-7.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 @td(SHIPPED_ORDER.number) env var set (shipped order with tracking number assigned in admin); buyer logged in as {{USER_EMAIL}}",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};shipped_order=@td(SHIPPED_ORDER.number),"[NAV] Navigate to /account/orders
 [ACT] locate order @td(SHIPPED_ORDER.number) and click to open detail
@@ -615,10 +612,11 @@ ORD-030,Order Detail - Shipment Tracking Link Display,Orders > Detail,High,"BL-O
 ORD-031,Order Detail - Payment Method Display,Orders > Detail,High,BL-ORD-001,ECL-1.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 Buyer logged in as {{USER_EMAIL}}; order exists with a payment that has been authorized/captured",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[NAV] Navigate to /account/orders
 [ACT] click on an order to open detail
-[WAIT] wait for detail page","[DOM] payment section present on order detail page
-[DOM] payment method name or logo visible
-[STATE] payment status displayed (Paid or Authorized etc.)
-[MATH] payment amount = order grand total",[API] GET order detail returns payment info with method and status and amount; [CONSOLE] no errors in payment section rendering,payment section absent from order detail; payment method name/logo missing; payment status missing; payment amount does not match order total,none,Coverage Gap Analysis — GAP-F03,Draft
+[WAIT] wait for detail page
+[ASSERT] the Payment method widget is present in the order detail sidebar
+[ASSERT] the widget shows the payment method logo and name","[DOM] Payment method widget present on the order detail page {OBSERVED}
+[DOM] payment method logo and name visible in the widget, the name equal to the payment method name on the order {OBSERVED}
+[STATE] the Order summary Total = the order grand total returned by the API (the amount lives in Order summary, not in the Payment method widget) {OBSERVED}",[API] GET order detail returns payment info with the payment method name and the order total; [CONSOLE] no errors in payment section rendering,Payment method widget absent from order detail; payment method name/logo missing; Order summary Total not equal to the API order total,none,"Coverage Gap Analysis — GAP-F03 | Corrected: VCST-6042 (2026-10-21) — REPAIR — TEST_DEFECT (run REG-2026-10-15-W3): the Payment method widget shows only the logo and the method name by design, so the payment status and payment amount assertions are dropped (the amount is checked against the Order summary Total instead). Source vc-frontend@2.59.0 pages/account/order-details.vue L163-177 (widget binds logoUrl and paymentMethodName only); Storefront User Guide (Orders) lists no payment status or amount",Draft
 ORD-032,Order Detail - Shipping and Billing Address Display,Orders > Detail,High,BL-ORD-005,ECL-6.3,"[PRE:SIGNIN_AS:USER_DEFAULT]
 Buyer logged in as {{USER_EMAIL}}; order exists with distinct shipping and billing addresses",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[NAV] Navigate to /account/orders
 [ACT] click on an order
@@ -793,9 +791,9 @@ Related existing Draft coverage (cited in References) covers invalid character m
 [WAIT] blur handling settles","[DOM] after blur, an 'Invalid date format' message (or equivalent rendered prose) is shown for the Start date segment
 [STATE] Apply button is disabled while the unparseable value stands
 [NETWORK] no orders request fires for the unparseable value, before or after blur",[CONSOLE] no unhandled exception thrown parsing 99/99/9999,an error message renders before blur (breaks the documented blur-gated UX); no message ever renders after blur; Apply remains enabled with an unparseable date present; a request is sent with the literal invalid value,Click 'Reset' to clear the date filter before ending the session,"VCST-5097; LIVE-VERIFIED 2026-09-09 vcptcore-qa storefront, theme 2.58.0-pr-2402-d7e2-d7e218e7 (vc-frontend PR #2402, OPEN/not merged at authoring time -- re-ground these cases if the PR's base changes before merge); related: ORD-071 (character masking, distinct from calendar-validity)",Draft
-ORD-093,Date Range Filter -- Reopening the Popover Repeatedly Preserves a Valid Range (Validity Latching),Orders > Filtering > Date Range,High,BL-ORD-001,ECL-3.2,"[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:SR_REP_PRIMARY]
-This is the PR's headline fix: a previously-applied valid range must not degrade (phantom error, Apply stuck disabled) across repeated close/reopen cycles of the same popover instance.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{SR_REP_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+ORD-093,Date Range Filter -- Reopening the Popover Keeps a Valid Range; Apply Is Disabled While Nothing Changed and Enabled After Any Change,Orders > Filtering > Date Range,High,BL-ORD-001,ECL-3.2,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER_DEFAULT]
+Targets the VCST-5097 fix (PR #2402, in theme 2.59.0): a previously-applied valid range must not degrade (phantom validation error) across repeated close/reopen cycles of the same popover instance. Apply is dirty-gated by design: it is disabled while the draft equals the applied filters, so an unchanged reopen has Apply disabled, not enabled. The buyer has orders on at least two distinct dates.",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[NAV] Navigate to {{FRONT_URL}}/account/orders
 [WAIT] orders list rendered
 [KEY] live-discover two distinct order dates D_A < D_B
 [ACT] click 'Filters' button
@@ -807,20 +805,25 @@ This is the PR's headline fix: a previously-applied valid range must not degrade
 [WAIT] filtered list rendered, popover closed
 [ACT] click 'Filters' to reopen (cycle 1)
 [WAIT] popover visible
-[ASSERT] Start shows D_A, End shows D_B, no validation error, Apply enabled
+[ASSERT] Start shows D_A, End shows D_B, no validation error, Apply disabled
 [ACT] click outside the popover to close it WITHOUT changing anything
 [WAIT] popover closed
 [ACT] click 'Filters' to reopen (cycle 2)
 [WAIT] popover visible
-[ASSERT] Start shows D_A, End shows D_B, no validation error, Apply enabled
+[ASSERT] Start shows D_A, End shows D_B, no validation error, Apply disabled
 [ACT] click outside the popover to close it WITHOUT changing anything
 [WAIT] popover closed
 [ACT] click 'Filters' to reopen (cycle 3)
 [WAIT] popover visible
-[ASSERT] Start shows D_A, End shows D_B, no validation error, Apply enabled","[STATE] across all 3 reopen cycles, Start and End values are preserved exactly as applied (D_A/D_B)
-[STATE] no phantom validation error ever appears on any of the 3 reopen cycles
-[STATE] Apply is never stuck disabled on any of the 3 reopen cycles
-[DOM] every order row's 'Date' column value remains within D_A..D_B on the page behind the popover throughout all 3 cycles (reopening the popover itself neither clears nor reapplies the filter)",[CONSOLE] no JS errors across any of the 3 reopen cycles,any reopen shows a phantom 'invalid range' error for a range that was valid when applied; any reopen shows Apply disabled despite unchanged valid values; Start/End values reset or clear on reopen when the underlying filter is still active,Click 'Reset' to clear the date filter before ending the session,"VCST-5097; LIVE-VERIFIED 2026-09-09 vcptcore-qa storefront, theme 2.58.0-pr-2402-d7e2-d7e218e7 (vc-frontend PR #2402, OPEN/not merged at authoring time -- re-ground these cases if the PR's base changes before merge); this case targets the specific defect class the PR fixes -- validity state failing to latch across popover remounts",Draft
+[ASSERT] Start shows D_A, End shows D_B, no validation error, Apply disabled
+[ACT] tick one status checkbox
+[ASSERT] Apply enabled
+[ACT] untick the same status checkbox
+[ASSERT] Apply disabled again","[STATE] across all 3 reopen cycles, Start and End values are preserved exactly as applied (D_A/D_B) {OBSERVED}
+[STATE] no phantom validation error ever appears on any of the 3 reopen cycles (the range stays valid after reopen) {OBSERVED}
+[STATE] on every unchanged reopen Apply is disabled (draft equals the applied filters) {OBSERVED}
+[STATE] ticking any status checkbox enables Apply, and reverting it disables Apply again {OBSERVED}
+[DOM] every order row's 'Date' column value remains within D_A..D_B on the page behind the popover throughout all 3 cycles (reopening the popover itself neither clears nor reapplies the filter) {OBSERVED}",[CONSOLE] no JS errors across any of the 3 reopen cycles,"any reopen shows a phantom 'invalid range' error for a range that was valid when applied; Apply enabled on an unchanged reopen, or still disabled after a real change (dirty gate broken); Start/End values reset or clear on reopen when the underlying filter is still active",Click 'Reset' to clear the date filter before ending the session,"VCST-5097; LIVE-VERIFIED 2026-09-09 vcptcore-qa storefront, theme 2.58.0-pr-2402-d7e2-d7e218e7 (vc-frontend PR #2402, OPEN/not merged at authoring time -- re-ground these cases if the PR's base changes before merge); this case targets the specific defect class the PR fixes -- validity state failing to latch across popover remounts | Corrected: VCST-6042 (2026-10-21) — REPAIR — TEST_DEFECT (run REG-2026-10-15-W3): the case expected Apply ENABLED after an unchanged reopen, contradicting the dirty-gated design (orders-filter.vue L45 :disabled=""!isFilterDirty || !isDateRangeValid"", unchanged since 2.50.0); the real target (no validity latch, values preserved) passes on 2.59.0. Persona re-grounded from SR_REP_PRIMARY (needs the SalesRep module) to the order-history buyer USER_DEFAULT used by the neighbouring ORD cases. Source vc-frontend@2.59.0 orders-filter.vue; KB-9A68468D",Draft
 ORD-094,Date Range Filter -- Switching Filter Type Away From and Back To 'Custom Date' Resets Reversed State,Orders > Filtering > Date Range,Medium,BL-ORD-001,ECL-3.2,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
 Continuation of the validity-latching fix area (ORD-093): a reversed, invalid Custom-date range must not leak its disabled state into an unrelated preset, and switching back to Custom must start clean, not resurrect the stale invalid pair.","front_url={{FRONT_URL}}, email=@td(SR_REP_PRIMARY.email), password={{SR_REP_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
@@ -917,3 +920,15 @@ The store exposes exactly 3 locales: en-US, de-DE, es-ES. This case runs the rev
 [ACT] switch locale to es-ES; repeat the same reversed-range entry
 [ASSERT] the es-ES validation message renders as ""La fecha de fin debe ser igual o posterior a la fecha de inicio"" -- real translated prose, no raw i18n key, no English fallback text","[DOM] the validation message element's text does not equal the literal key string 'ui_kit.date_range_input.invalid_range' in either locale
 [DOM] the validation message element's text does not equal the English string 'End date must be on or after start date' when de-DE/es-ES is active",[CONSOLE] no i18n-missing-key warnings logged for either locale,either locale shows the raw i18n key instead of translated prose; either locale silently falls back to English; the translated string is present but does not match the confirmed wording,Switch locale back to the default (en-US); click 'Reset' to clear the date filter before ending the session,"VCST-5097; LIVE-VERIFIED 2026-09-09 vcptcore-qa storefront, theme 2.58.0-pr-2402-d7e2-d7e218e7 (vc-frontend PR #2402, OPEN/not merged at authoring time -- re-ground these cases if the PR's base changes before merge); exact translated strings confirmed live: de-DE ""Enddatum muss auf oder nach dem Startdatum liegen"", es-ES ""La fecha de fin debe ser igual o posterior a la fecha de inicio""",Draft
+ORD-104,Mobile - Order Filters Icon Button Exposes an Accessible Name (WCAG 2.2 SC 4.1.2),Orders > Mobile > Accessibility,Medium,BL-ORD-003,ECL-3.2,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Buyer logged in as {{USER_EMAIL}}; mobile viewport (375px width); account has orders. KNOWN FAILING until VCST-6482 is fixed: vc-frontend orders-mobile-filters.vue passes no aria-label or title to its icon-only button, so the control is unnamed in the accessibility tree. Do not soften this case to match the build.",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[ACT] resize browser to 375px width
+[NAV] navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders list rendered
+[ACT] take an accessibility snapshot
+[ASSERT] locate the icon-only 44x44 button to the left of the orders search box (opens the Filters sidebar) and read its accessible name from the accessibility tree (not from DOM text)
+[ASSERT] read the accessible name of the neighbouring search icon button for comparison
+[ACT] resize browser to 1280px width
+[WAIT] desktop filters control rendered
+[ASSERT] read the accessible name of the desktop Filters button","[DOM] the icon-only filter button at 375px has a non-empty accessible name in the accessibility tree (aria-label, aria-labelledby or exposed text) {SPEC} (WCAG 2.2 SC 4.1.2 Name, Role, Value)
+[DOM] that accessible name equals the name of the desktop Filters button at 1280px ('Filters') {OBSERVED} (the desktop control is named 'Filters')
+[DOM] the neighbouring search icon button has an accessible name (the pattern the filter button must follow) {OBSERVED}",[CONSOLE] no JS errors on the orders page at mobile viewport,the filter icon button appears as an unnamed button in the accessibility snapshot at 375px; screen-reader users get an unlabelled control,none,"Catches: VCST-6482 (real a11y defect, KB-BC61FC6B: vc-frontend orders-mobile-filters.vue L2-6 passes no aria-label to VcButton; the case must keep failing until it is fixed); split from ORD-027 (VCST-6042, run REG-2026-10-15-W3); source vc-frontend@2.59.0 orders-mobile-filters.vue, orders.vue | Archetype:PARITY | Technique:EG",Draft
