@@ -78,7 +78,7 @@ It needs:
 
 - a vc-frontend checkout with `yarn install` done, whose facade is not newer than the storefronts the plugin is
   for (it becomes the plugin's floor);
-- Node 22 with corepack for the vc-frontend checkout (its `engines` refuse 24); the module build takes 22 or 24;
+- for the vc-frontend checkout, corepack and a Node version its `engines.node` accepts; the module build takes 22 or 24;
 - the module repo on a branch, with no uncommitted changes;
 - for the package: the .NET SDK the module targets, and `vc-build`.
 
