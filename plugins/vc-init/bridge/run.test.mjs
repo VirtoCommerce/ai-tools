@@ -47,8 +47,9 @@ test("outer: a PAT axis goes through `vc-secrets task vc-init-<group>` with the 
 
 test("outer: a PAT axis with vc-secrets missing stops with the install instruction", () => {
   const dir = project({ tasks: { [taskName("ado")]: { command: "node" } } });
-  // HOME is the temp project, so the default shim path the bridge falls back to holds nothing.
-  const r = bridge(["ado", "whoami"], { cwd: dir, env: { HOME: dir } });
+  // HOME is an empty temp dir, so the default shim path the bridge falls back to holds nothing. Not the
+  // project itself: HOME/.claude is the user scope, which findDeclarations skips, as vc-secrets does.
+  const r = bridge(["ado", "whoami"], { cwd: dir, env: { HOME: mkdtempSync(join(tmpdir(), "vc-run-home-")) } });
   assert.equal(r.status, 69);
   assert.match(r.stderr, /project-init --check/);
 });
@@ -154,6 +155,17 @@ test("declarations: the nearest .claude/vc-secrets*.json up the tree decides the
   assert.equal(taskDeclared(d, "github"), true);
   assert.equal(taskDeclared(d, "ado"), false);
   assert.equal(taskDeclared(null, "github"), false);
+});
+
+test("declarations: ~/.claude is the user scope, never a project, as in vc-secrets", () => {
+  const home = project({ tasks: { [taskName("github")]: {} } });
+  const below = join(home, "work", "undeclared");
+  mkdirSync(below, { recursive: true });
+  // Not `null`: on Windows os.tmpdir() sits inside the real profile, so the climb may still reach a
+  // developer's own ~/.claude, which this fake HOME does not name. What matters is that HOME is not it.
+  assert.notEqual(findDeclarations(below, { HOME: home })?.root, home);
+  // The same tree under another HOME is an ordinary declared project.
+  assert.equal(findDeclarations(below, { HOME: project(null) }).root, home);
 });
 
 test("runChild: a child that prints its secret has it masked on both streams", async () => {
