@@ -42,6 +42,7 @@ import { resolveOutPath, outputRoot } from "./lib/paths.mjs";
 // every onboarding that aborted before §7 — left the densest secret file unignored (review #4).
 import { ensureProjectIgnores } from "./lib/gitignore.mjs";
 import { PASSWORD_GUIDE, TOKEN_GUIDE } from "./lib/token-guide.mjs";
+import { LOCAL_HEADER } from "./lib/project-env.mjs";
 import { ROLES, ROLE_PASSWORD, declaredPasswords, passwordSecret, vcSecretsRoles } from "./lib/passwords.mjs";
 import { join } from "node:path";
 import { emitObservations } from "./lib/diag-obs.mjs";
@@ -132,7 +133,7 @@ function main() {
       `# ${key} — ${meta.what}\n` +
       `#   Why:   ${meta.why}\n` +
       `#   Where: ${meta.where}\n` +
-      (meta.optional ? `#   Optional: leave blank to skip — the MCP server above just stays disabled; not needed for /qa-fix.\n` : ``) +
+      (meta.optional ? `#   Optional: leave blank to skip — the MCP server above just stays disabled; no plugin requires it.\n` : ``) +
       (meta.perEnv ? `#   (per-env: config.js promotes ${name} → ${key} when TEST_ENV=${env})\n` : ``) +
       `${name}=\n`
     );
@@ -142,16 +143,7 @@ function main() {
   if (blocks.length) {
     const header = existing
       ? `\n# === /project-init secret placeholders (${env}) — fill in the values below ===\n`
-      : [
-          `# ==============================================================================`,
-          `# .env.local — secrets (Bucket #3, GITIGNORED — never commit).`,
-          `# Templated by project-init/scaffold-secrets.mjs — test-user PASSWORDS only. FILL IN`,
-          `# each value below. Per-env creds carry the _<ENV> suffix config.js promotes to the`,
-          `# base name when TEST_ENV matches. API tokens do NOT go here: they are stored in`,
-          `# vc-secrets (node "$VC_SECRETS" set <name>) and reach a process only via $VC_RUN.`,
-          `# ==============================================================================`,
-          ``, ``,
-        ].join("\n");
+      : LOCAL_HEADER;
     const body = header + blocks.join("\n");
     const ignored = ensureProjectIgnores(outputRoot());
     if (ignored.length) console.log(`[scaffold-secrets] .gitignore += ${ignored.join(", ")}`);

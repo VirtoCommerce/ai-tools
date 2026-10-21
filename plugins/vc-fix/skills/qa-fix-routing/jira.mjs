@@ -17,7 +17,7 @@
  * a token and the command line is the caller's. Paths must be `/rest/…`; `request` refuses a full URL
  * and refuses DELETE (deleting tracker data is a human decision).
  *
- * Auth: Basic `JIRA_EMAIL:JIRA_API_TOKEN` (JIRA_EMAIL is an identifier, read from .env.<env>).
+ * Auth: Basic `JIRA_EMAIL:JIRA_API_TOKEN` (JIRA_EMAIL is an identifier, read from .env.local).
  * Prints JSON on stdout; exits non-zero on an HTTP error. NEVER prints the token.
  *
  * Commands:
@@ -153,7 +153,7 @@ function main() {
   const token = process.env.JIRA_API_TOKEN || "";
   const email = process.env.JIRA_EMAIL || process.env.JIRA_USER || "";
   if (!token) fail("no JIRA_API_TOKEN in this process. The token is stored in vc-secrets and reaches this script only as `node \"$VC_RUN\" jira …`; on an Atlassian-OAuth axis use the Atlassian MCP instead. Not set up yet: /project-init --check.");
-  if (!email) fail("no JIRA_EMAIL — set it in .env.<env> (it is an identifier, not a secret)");
+  if (!email) fail("no JIRA_EMAIL — set it in .env.local (an identifier, not a secret — the same for every env)");
   const auth = `Basic ${Buffer.from(`${email}:${token}`).toString("base64")}`;
 
   const call = async (method, path, { body, headers = {}, raw = false, redirect = "follow" } = {}) => {
