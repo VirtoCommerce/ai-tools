@@ -114,11 +114,12 @@ Offer each; do only what the user wants.
 - **Local storefront:** S1a step 5. It needs a backend in `$FRONTEND/.env.local` and `module_federation_enabled: true`,
   the default; a fork that turned it off is the user's to change. Before changing `.env.local`, copy it aside: git
   cannot restore it. Afterwards put it back, and compare `git status` in `$FRONTEND` with what it was before step 5.
-  The two servers need ports 3000 (storefront) and 3001 (plugin), and vite moves to the next free port without
-  saying so: the storefront would then sit on 3001 and load itself as the plugin. Append `--strictPort` to both
-  `yarn preview` commands, so a busy port fails the start instead. That server may be the user's, so ask, and
-  never stop it. Start both previews in the background, wait until each answers, and when done stop exactly
-  those two.
+  S1a uses ports 3001 (plugin) and 3000 (storefront), but vite takes the next free port when one is busy, and the
+  server on the busy one may be the user's: never stop it. Take each port from the server's own output instead:
+  start the plugin's preview in the background and read the port from the `Local:` line vite prints; build the
+  storefront with that port in `APP_MODULES_FEDERATION_REMOTES`, start its preview in the background and read its
+  port the same way; open `/<plugin-name>` there. A URL that answers proves nothing, since it may be someone
+  else's server; only the `Local:` line of a process you started counts. When done, stop exactly those two.
 - **Package:** run the check with `--artifact <zip>` on the module's zip, from its CI or built the way CI does
   (📁 module repo `vc-build compress`, which needs the .NET SDK; the zip lands in `artifacts/`). ✅ the plugin sits
   at the zip root, not under `bin/` (S1a ⚠️ 1).
