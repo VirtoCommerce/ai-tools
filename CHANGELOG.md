@@ -8,6 +8,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## Dependencies: Playwright 1.64.1, `@playwright/mcp` 0.0.83 — `vc-fix` `0.11.3`, `vc-init` `0.3.1` — 2026-10-21
+
+**Changed: the `@playwright/mcp` pin moves 0.0.77 → 0.0.83 everywhere it is written** — root `package.json`,
+`ci/lib/lane-mcp.ts` (`PLAYWRIGHT_MCP_PACKAGE`), `ci/run-monitor.ts`, `templates/.mcp.json.example`,
+`docs/onboarding.md`, and in the plugins `vc-init`'s `templates/.mcp.json.example` (what `/project-init` writes
+into `.mcp.json`) and `vc-fix`'s `package.json`. `@playwright/test` and `playwright` move 1.61.1 → 1.64.1. Probed
+2026-10-21 over stdio on Windows: chrome, edge and firefox lanes (with the occlusion pref) navigate and click on
+0.0.83 exactly as on 0.0.77, and a bare-filename screenshot still lands in the server cwd, so `/qa-bug`'s Stage 5
+reconcile stays required.
+
+**Migration: per machine.** Change `@playwright/mcp@0.0.77` to `@playwright/mcp@0.0.83` in your `.mcp.json`, run
+`npx @playwright/mcp@0.0.83 install-browser chromium` and `… install-browser firefox` (0.0.83 bundles its own
+Playwright build and needs its own browsers), then restart the MCP servers.
+
+Also in this change: `pptxgenjs` removed (unused), `csv-parse` 7.0.3 (GHSA-8cw4-87c7-c6xx), minor/patch bumps and
+transitive audit fixes — `npm audit` 12 → 0.
+
 ## `vc-init` `0.3.0`: the tracker / code-host connection lives in `.env.local`, once — 2026-10-21
 
 **Changed: where the project-level keys are written.** `JIRA_BASE_URL`, `JIRA_PROJECT_KEY`, `JIRA_EMAIL`, `ADO_ORG`,
