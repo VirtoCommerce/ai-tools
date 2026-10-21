@@ -89,7 +89,9 @@ the agent. Regression over the existing corpus is outside vc-test v1, but it mus
 | D8 | A failing spec | `FAIL` only when an assertion step fails. A failure before or outside the assertions (locator, navigation, auth, timeout) is `BLOCKED` as a spec defect and falls back to the agent (§8) | my call |
 | D9 | A new spec is unverified | It runs **once** after authoring: deterministic, seconds, no agent. This is a check of the spec, not the agent wave D2 removed. A passed check must PASS; a bug reproduction must FAIL on an assertion step (§9) | my call, check it |
 | D10 | `Automation_Status` | No new value. `Automated` widens to "executable without a human: by an agent, the runner or a spec" | my call |
-| D11 | Who writes specs | The suite's single author: `test-management-specialist`. The one-author-per-suite rule covers the CSV **and** its spec folder (§9) | my call |
+| D11 | Who writes what | `test-management-specialist` keeps writing the CSV cases. A **new agent, `test-automation-engineer`**, writes the specs. It may read the CSV but never edit it, so a failing spec can only be fixed in the spec, which enforces D7 by role. The one-author-per-suite rule holds as a **sequential hand-over**: the specialist writes the row and hands the suite over, then the engineer writes the spec. The two never work in one suite at the same time (§9) | owner |
+| D17 | The engineer's knowledge | A new skill, **`/qa-test-automation`**. Its `SKILL.md` stays short. The practice lives in supporting files: locator priority, web-first `expect` with no fixed waits, the `A<n>` / `X<n>` mapping, the data door and auth fixtures, isolation and cleanup, an anti-flake checklist, and how `vc-frontend` changes typically break a spec. The engineer also owns spec repairs: `STALE`, `spec-defect` from triage, and the M5 backfill. Model: Opus, like the dev agents, because a spec is code | owner (names, split) · my call (model, contents) |
+| D18 | `test-management-specialist`'s prompt | **Must shrink.** It is about 27K chars against the 19K BUDGET-004 cap, and is on the baseline that may only go down. Detail moves into its skills' supporting files until the agent definition is under the cap. The hand-over to the engineer is added inside that budget, never on top of it | owner |
 | D12 | A newly passed API check | It is written as a **runner-grammar CSV row** (`[GQL-OP]` / `[REST-OP]`), which lands on the machine lane with no spec. A handwritten API spec is only for what the grammar cannot express, such as logic between calls. This follows from D4 | my call |
 | D13 | `Cross_Layer_Checks` | They are expectations too. Each item maps to `test.step('X<n>: …')`. `[CONSOLE]` and `[NETWORK]` are scored by fixture collectors. `X<n>` failures are `FAIL` like `A<n>`. The cell is in the hash. `Failure_Signals` is a diagnostic hint, not executed and not hashed | my call |
 | D15 | Where the harness is built | **In this repo first (M1–M2)**, where the corpus lives. In M3, vc-test gets its own self-contained copy, as vc-fix does (`plugins/CLAUDE.md`): paths resolve through `outputRoot()` / `pluginRoot()`, and the `SP-*` rules sit in the plugin's copy of the suite lint. Clients get specs with vc-test v1 | owner |
@@ -148,7 +150,7 @@ playwright.config.ts               ← repo root
   spec is normative only for *how*: locators, waits, the order of API calls. Consequences:
   - A row edit, such as a `REPAIR` by `/qa-review-tests --fix` or `/qa-test` 2a, changes the hash. The spec
     becomes **STALE**. Lint warns without failing, so the CSV edit is not blocked. A stale case routes to the
-    browser lane until its author updates the spec and re-stamps it.
+    browser lane until `test-automation-engineer` updates the spec and re-stamps it.
   - Re-stamping without changing the spec to match is the one way to defeat the guard. The re-stamp command
     says so, and `/qa-review-tests` reviews re-stamps.
   - A spec that disagrees with a passing agent run of its CSV row is a **spec** defect. A spec that passes
@@ -211,15 +213,19 @@ exported) or spawning `tsx scripts/graphql/graphql-runner.ts --case <csv>:<ID>` 
    - Where exactly it lives is the builder's choice, within `results/` or the vc-test run folder.
    - Items that are exploratory, visual, `vs. DESIGN`, or have an assertion a script cannot score, keep no
      log and get no spec.
-2. **Authoring (U18, the single author).** `test-management-specialist`, in its one dispatch:
-   - writes the CSV row (with `Catches:` for a bug);
-   - writes `<ID>.spec.ts` from the action log;
-   - replaces every observed literal with `env()` / `td()` / `discover` / `random` (§10), keeping UI strings
-     as `{OBSERVED}` text locators;
-   - stamps the hash.
+2. **Authoring, in two hand-overs (D11).**
+   - **The case.** `test-management-specialist`, in its one U18 dispatch, writes the CSV rows (with
+     `Catches:` for a bug), marks which rows have an action log, and hands the suite back.
+   - **The spec.** `test-automation-engineer`, dispatched once per suite with file paths only (the CSV, the
+     row IDs, the action logs):
+     - writes `<ID>.spec.ts` for each row;
+     - replaces every observed literal with `env()` / `td()` / `discover` / `random` (§10), keeping UI
+       strings as `{OBSERVED}` text locators;
+     - stamps the hash.
    
-   The spec folder belongs to the same author for the duration of the change, exactly like the CSV.
-3. **The one run (D9).** `npm run case:run -- <ID>`, on the same build. A passed check must PASS. A bug
+   A row the engineer cannot script, or whose expectation it thinks is wrong, is reported back, never
+   edited. It then falls to the mini wave of D16.
+3. **The one run (D9)**, run by the engineer. `npm run case:run -- <ID>`, on the same build. A passed check must PASS. A bug
    reproduction must FAIL on an A-step, which is the "prove it fails once" of `cases-that-catch-bugs.md`. Any
    other outcome is a defect of the spec, fixed by the author before close-out. It never changes the verdict,
    which was decided on the checklist (vc-test U18).
@@ -293,7 +299,10 @@ exported) or spawning `tsx scripts/graphql/graphql-runner.ts --case <csv>:<ID>` 
 - **Elsewhere:**
   - `regression/suites/README.md`;
   - `.claude/skills/qa-test-cases-generator/test-case-template.md`, for the `Automated` meaning;
-  - `test-management-specialist` (authoring specs);
+  - **new** `.claude/agents/test-automation-engineer.md` and **new** `.claude/skills/qa-test-automation/`
+    (D11, D17), plus a row in `.claude/rules/agents.md` §QA Team (no browser lane: it runs specs through
+    Playwright, not through MCP);
+  - `test-management-specialist`: the hand-over, and the prompt diet under the 19K cap (D18);
   - `/qa-test-fast` execution (action log);
   - `regression-orchestrator` Step 3 (`suites:script`);
   - `/qa-review-tests` (a spec dimension, including re-stamps);
@@ -310,7 +319,7 @@ and teaching gates about them.
 | Phase | Content | Exit criterion |
 |---|---|---|
 | **M0** | This spec approved | — |
-| **M1 Foundation** | config, `regression/lib/*`, the wrapper, `case:show` / `case:run`, the `SP-*` and `td:validate` rules, the audit pathspec, the doc updates. **Pilot:** 3 handwritten specs for `Automated` UI cases with scoreable assertions in `028` (cart core) | `npx playwright test --project runner` gives the same verdicts as `suites:machine` for every case of `050a`, `050m` and `087` in one run. The 3 pilot specs pass on `vcst`. A deliberately broken expectation in one pilot spec fails on an A-step. `suites:lint` and `td:validate` are green |
+| **M1 Foundation** | config, `regression/lib/*`, the wrapper, `case:show` / `case:run`, the `SP-*` and `td:validate` rules, the audit pathspec, the doc updates; `test-automation-engineer` + `/qa-test-automation` (D17); the `test-management-specialist` prompt diet (D18). **Pilot:** 3 specs, written by `test-automation-engineer`, for `Automated` UI cases with scoreable assertions in `028` (cart core) | `npx playwright test --project runner` gives the same verdicts as `suites:machine` for every case of `050a`, `050m` and `087` in one run. `test-management-specialist.md` is under 19K chars and its baseline entry is deleted. The 3 pilot specs pass on `vcst`. A deliberately broken expectation in one pilot spec fails on an A-step. `suites:lint` and `td:validate` are green |
 | **M2 Lane** | §8 in `suites:lanes`, `suites:script`, merge and promote; `regression-orchestrator` Step 3 | `/qa-regression 028` routes the 3 pilot cases to `script` and the merged `suite-028-results.json` keeps its shape. A stale pilot spec routes to `browser` |
 | **M3 Authoring** | §9 in `/qa-test-fast` and vc-test (U18 and U15 amended); the vc-test self-contained copy of the harness and the `SP-*` lint (D15); the mini wave for rows without a spec (D16) | One real ticket: round 1 leaves specs for its passed scriptable items and its bug reproductions. Round 2 replays the reproductions through specs with no browser agent. Tokens and wall-clock are measured against the ticket's round 1 |
 | **M4 CI** | §11 M4 rows | A CI `smoke` run executes the specs that exist without an agent, and the agent prompt receives only the remaining rows |
