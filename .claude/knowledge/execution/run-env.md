@@ -20,7 +20,8 @@ else `vcst`).
 - **A subagent never binds.** It shares the session id, so an `env:use` there re-binds the caller's whole run —
   `--default` would move it to the checkout's default env mid-run. Its caller passes the env (the brief's
   Environment line, and the argument of a command it hands over: `/qa-exploratory ticket <KEY> <env>`), and a
-  `ticket`-mode `/qa-exploratory` skips `env:use`.
+  `ticket`-mode `/qa-exploratory` skips `env:use`: it compares that argument with the session's env (a bare
+  `npm run env:use` prints it) and STOPs when they differ.
 
 ## What the binding does
 
