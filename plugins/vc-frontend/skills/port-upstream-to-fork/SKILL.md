@@ -154,8 +154,9 @@ The verdicts, the map changes and the user's answers go into the session's log
 (`upstream-merges/<YYYY-MM-DD>-<slug>.md`, sections "Ports" and "Lost features and deferrals" of
 `vc-frontend:merge-upstream`'s `log-template.md`). Called from `vc-frontend:merge-upstream`, that is the
 merge's log, and the ports join its branch and PR. Run alone as an audit, start a log of its own from the
-same template, and commit on a new branch: `git switch --no-track -c chore/port-upstream-<YYYY-MM-DD>
-origin/dev`. Push only when the user says so; the PR body carries the QA checklist.
+same template, and commit on a new branch from the fork's base (`vc-frontend:merge-upstream` step 1):
+`git switch --no-track -c chore/port-upstream-<YYYY-MM-DD> origin/<base>`. Push and open the PR only under
+the gates of `vc-frontend:merge-upstream` step 9; the PR body carries the QA checklist.
 
 ## 5. Port and prove it
 
@@ -164,7 +165,7 @@ origin/dev`. Push only when the user says so; the PR body carries the QA checkli
 - Upstream's tests cover upstream's component, not the fork's. Write `<name>.upstream.test.ts` next to the
   fork's component (`<name>` = its file name without `.vue`), adapting upstream's assertions for that change;
   name `describe`/`it` by behavior. Then, for each ported line or condition in turn: copy the component to
-  the scratchpad (not `git checkout`), delete that line, run `yarn test:unit run <test file>` and watch it
+  the scratchpad (not `git checkout`), delete that line, run `corepack yarn test:unit run <test file>` and watch it
   fail, restore the component from the copy and watch it pass. Delete the copies.
 - Smoke the page that renders the fork's component as `vc-frontend:merge-upstream` step 7 describes,
   in the state the change is about (signed in, a breakpoint, a screen reader name via the accessibility tree).

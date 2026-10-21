@@ -1,6 +1,6 @@
 # <upstream ref> into <fork branch> — <YYYY-MM-DD>
 
-- Range: `<merge base sha>`..`<upstream sha>` (<N> upstream commits)
+- Base: `<base>`; range: `<merge base sha>`..`<upstream sha>` (<N> upstream commits)
 - Merge commit: `<sha>`; ports: `<sha>` …
 - Branch: `<merge branch>` — its PR lands as a merge commit, never squash or rebase
 
@@ -43,7 +43,7 @@ New tests: <`*.upstream.test.ts` files, and the mutation each was checked with>
 
 ## Smoke
 
-- Backend: <APP_BACKEND_URL>
+- Backend: <which environment; no credentials, tokens or signed-in user details>
 - Checked: <pages and states, one line each>
 - Not reachable: <what needed data, a role, a setting or a device — it went to QA>
 

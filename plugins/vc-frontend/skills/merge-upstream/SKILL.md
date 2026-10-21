@@ -1,7 +1,7 @@
 ---
 name: merge-upstream
-description: "Use when bringing upstream vc-frontend changes (its dev branch or a release tag) into a theme fork — vc-frontend-next or a customer's storefront theme — or when a long-lived redesign branch has to absorb its base branch and the merge conflicts."
-argument-hint: "[upstream ref: upstream/dev | <release tag> | origin/dev for a redesign branch]"
+description: "Use when bringing upstream vc-frontend changes (its dev branch or a release tag) into a theme fork — vc-frontend-next or a customer's storefront theme — or when a long-lived vc-frontend redesign branch has to absorb its base branch and the merge conflicts."
+argument-hint: "[upstream ref: upstream/dev | <release tag> | origin/<base> for a redesign branch]"
 ---
 
 # merge-upstream — bring vc-frontend into a theme fork
@@ -13,7 +13,7 @@ styles and tokens, and carries upstream's logic, props, events, i18n keys and fi
 
 The merge stops for the user up to three times: after the brief (step 3), after the port brief when
 `port-upstream-to-fork` finds something (step 5), and before the push (step 9). Nothing is merged into
-the fork's `dev` by this skill — the user merges the PR.
+the fork's base branch by this skill — the user merges the PR.
 
 **Track the nine steps as a checklist from the start** (a task list where the client has one); close a
 step only when it is done or the user said, in those words, to skip it. A request mid-merge — a
@@ -41,8 +41,13 @@ in full (`VirtoCommerce/vc-frontend#2501`): a bare `#2501` resolves against the 
 **Start from a clean tree:** `git status --porcelain` prints nothing, or stop and ask the user to commit or
 stash. Uncommitted edits ride into the merge commit, and `git merge --abort` cannot always restore them.
 
-**Fetch `origin` first:** `git fetch --prune origin`. Both cases below start from `origin/dev`; a stale ref
-leaves the fork's latest commits out, and `--prune` drops branches the remote deleted.
+**Name the base:** `<base>` below is the branch the merge PR targets — the fork's default branch
+(`gh repo view <owner/repo> --json defaultBranchRef --jq .defaultBranchRef.name`; `dev` in vc-frontend-next),
+or the branch a redesign branch was cut from. Ask if unsure; note it in the log.
+
+**Fetch `origin` first:** `git fetch --prune origin`. Both cases below start from `origin/<base>`; a stale
+ref leaves the fork's latest commits out, and `--prune` drops branches the remote deleted. Run `yarn` as
+`corepack yarn` unless `yarn --version` prints 4.x: a global Yarn 1 refuses vc-frontend's `packageManager`.
 
 **Before either merge below**, set these in this clone:
 
@@ -53,6 +58,7 @@ git config rerere.autoUpdate false      # a replay is applied to the file but no
 git config gc.rerereResolved 365        # default 60 days; upstream merges are often further apart
 ```
 
+`zdiff3` needs git 2.35 or newer (`git --version`); with an older git use `diff3`.
 They stay in this clone's `.git/config`, so read each first (`git config --get <key>`): a different value
 is the user's — ask before replacing it. Tell the user what was set and how to undo it
 (`git config --unset <key>`), and note it in the log.
@@ -69,22 +75,22 @@ same text on both sides (a merge redone, a trial merge, a squashed PR merged aga
 - Fetch upstream's tags into their own namespace, so they cannot collide with the fork's:
   `git fetch --no-tags upstream '+refs/heads/dev:refs/remotes/upstream/dev' '+refs/tags/*:refs/upstream-tags/*'`
 - Ref: `upstream/dev` for vc-frontend-next, a release tag (`refs/upstream-tags/<version>`) for a customer theme.
-- `git merge-base origin/dev <ref>` must print a commit. If it prints nothing, the fork was copied without
+- `git merge-base origin/<base> <ref>` must print a commit. If it prints nothing, the fork was copied without
   history: stop and report that — this skill does not cover it. If `git merge-base --is-ancestor <ref>
-  origin/dev` succeeds, the ref is merged already: say so and stop (`port-upstream-to-fork` can still audit).
-- `git switch --no-track -c chore/merge-upstream-<slug> origin/dev` (a branch that tracks `origin/dev` points a
-  bare `git push` at `dev`), `yarn check-locales > <scratchpad>/locales-before.txt 2>&1` (step 4 compares
+  origin/<base>` succeeds, the ref is merged already: say so and stop (`port-upstream-to-fork` can still audit).
+- `git switch --no-track -c chore/merge-upstream-<slug> origin/<base>` (a branch that tracks it points a
+  bare `git push` at `<base>`), `yarn check-locales > <scratchpad>/locales-before.txt 2>&1` (step 4 compares
   against it), then `git merge --no-ff --no-commit <ref>`.
-- If `chore/merge-upstream-<slug>` exists and neither it (`git log origin/dev..<branch>`) nor
-  `origin/<branch>` (`git merge-base --is-ancestor origin/<branch> origin/dev`) has commits `origin/dev`
-  lacks, it is finished or a leftover: recreate it (`git switch --no-track -C …`) and say so. Otherwise ask
+- If `chore/merge-upstream-<slug>` exists and neither it (`git log origin/<base>..<branch>`) nor
+  `origin/<branch>` (`git merge-base --is-ancestor origin/<branch> origin/<base>`) has commits
+  `origin/<base>` lacks, it is finished or a leftover: recreate it (`git switch --no-track -C …`) and say so. Otherwise ask
   whether to resume it or start over as `chore/merge-upstream-<slug>-2`; never recreate or force-push it.
 
-**Redesign branch absorbing its own base** (same repository): the branch is the fork, `origin/dev` is
+**Redesign branch absorbing its own base** (same repository): the branch is the fork, `origin/<base>` is
 upstream. No remote, no new branch — check the branch out, bring it level with its remote copy
 (`git merge --ff-only origin/<branch>`; if that fails, the two have diverged: stop and ask). If
-`git merge-base --is-ancestor origin/dev HEAD` succeeds, there is nothing to merge: say so and stop.
-Otherwise save `locales-before.txt` as above, then `git merge --no-ff --no-commit origin/dev`.
+`git merge-base --is-ancestor origin/<base> HEAD` succeeds, there is nothing to merge: say so and stop.
+Otherwise save `locales-before.txt` as above, then `git merge --no-ff --no-commit origin/<base>`.
 
 ## 2. Map every conflict before touching one
 
@@ -162,7 +168,7 @@ decisions, who made them), and fill it in as later steps produce results.
   out into the merge: that overwrites the resolution.
 - Format only the files you resolved: `prettier --write` on a file the fork left unformatted rewrites it.
 - Commit the merge locally once the checks are done: `chore: merge upstream vc-frontend <ref>` (or
-  `chore: merge dev into <branch>`), each conflict and its resolution in the body. Note its SHA in the log:
+  `chore: merge <base> into <branch>`), each conflict and its resolution in the body. Note its SHA in the log:
   steps 5 and 6 read its parents. Nothing is pushed yet. **The next action is step 5**, whatever else was
   asked in the meantime.
 
@@ -196,20 +202,22 @@ and the port brief is answered (or the report found nothing).
    `git checkout`), watch a test fail, restore. A ported line no test fails on is uncovered.
 2. Write a test only for uncovered ported behavior, in `<component>.upstream.test.ts` beside the component
    (the suffix never exists upstream, so it cannot conflict, and says the fork's markup must keep it
-   green). Name `describe`/`it` by behavior, no ticket numbers. Commit the tests on the merge branch.
+   green). Name `describe`/`it` by behavior, no ticket numbers. Commit them:
+   `test: guard upstream <behavior> in the fork's markup`.
 
 ## 7. Smoke the built app
 
 - `yarn build-only`, then `yarn preview --port 3100 --strictPort` in the background, with `APP_BACKEND_URL`
   in `.env.local` (3000 is usually the developer's own server; if 3100 is taken, pick another port and leave
-  that server alone). It serves https: `vite-plugin-mkcert` runs here too: in a fresh clone,
-  copy `.certificates/` from a clone where the CA is already installed, or `mkcert -install` adds its CA to
-  the trust store (sudo on Linux and macOS, a confirmation dialog on Windows).
+  that server alone). It serves https through `vite-plugin-mkcert`: in a fresh clone, copy `.certificates/`
+  from a clone whose CA is installed, or the user runs `mkcert -install` themselves — it adds a CA to the OS
+  trust store, so never run it for them.
 - Open the home page, then every page the merged files render (catalog, search, account pages, modules).
   On each: no console errors, `vite-error-overlay`, error toast or `[role="alert"]`, and GraphQL responses
   without `errors`. Cross-origin resources (fonts, analytics) at status 0 are not a failure.
 - Exercise each upstream feature in the merge on the page, in the state that switches it on (a query
-  param, a setting, a signed-in user). Note what the backend could not reach — it goes to QA.
+  param, a setting, a signed-in user — the user signs in; no credentials go into the log or the PR). Note
+  what the backend could not reach — it goes to QA.
 - Stop the preview you started, and only that one.
 
 ## 8. QA checklist
@@ -227,7 +235,7 @@ Not covered by the smoke: <what needs data, a role or a device the smoke did not
 
 - **Gate:** every step 1–8 is done or skipped by the user in words. Step 5 open → go back to it now; the
   log's Ports section is filled from its drift report, so a log without one is not finished.
-- The merge commit (step 4) and the ports (step 5) are already committed. Push only after the user says
+- The merge commit (step 4), the ports (step 5) and the tests (step 6) are already committed. Push only after the user says
   so, and never with `--force`: `git push -u origin <branch>`.
 - Finish the log: every template section, from steps 3–8 and the port's brief. "Decisions that carry
   forward" holds only rules a later merge must keep, each with its reason (a fork identifier deliberately
@@ -239,23 +247,12 @@ Not covered by the smoke: <what needs data, a role or a device the smoke did not
 - **The branch may already have a PR** — always, for a redesign branch absorbing its base. Find it
   (`gh pr list --repo <owner/repo> --head <branch> --state open`) and update it, not a second one: read the
   body (CI fills fields such as an artifact URL into it), append `## Merge of <ref>`, write it back whole
-  with `gh api -X PATCH repos/<owner>/<repo>/pulls/<n> -F body=@<file>`, and give its link. The step ends
+  with `gh api -X PATCH repos/<owner>/<repo>/pulls/<n> -F body=@<scratchpad>/pr-body.md`, and give its link. The step ends
   when the PR shows the QA checklist.
-- **An upstream merge lands as a merge commit — never squash, never rebase.** Either drops upstream as a
-  parent, so the next merge replays every upstream commit and conflict of this one. Whoever clicks Merge
-  reads the PR, not this skill, so:
-  - The PR body opens with: `⚠️ Merge with "Create a merge commit" — not squash or rebase. Squashing drops
-    <ref> as a parent and the next upstream merge replays all of these conflicts.`
-  - Before opening the PR, check that merge commits are allowed and linear history is off:
-    `gh api repos/<owner>/<repo> --jq '{allow_merge_commit, allow_squash_merge, allow_rebase_merge}'`,
-    `gh api repos/<owner>/<repo>/rules/branches/<base> --jq '[.[].type]'`, and for a protected base
-    `…/branches/<base>/protection --jq .required_linear_history.enabled`. Without admin rights these read
-    `null` or 404: unknown, not allowed — tell the user to check. If not allowed, say so in the PR and to the
-    user rather than squash. When squash is allowed too, the warning line is what prevents it.
-  - After the user merges: `git fetch origin`, then `git rev-list --parents -1 <merge sha on the base
-    branch>` prints the commit and its two parents, and `git merge-base --is-ancestor <ref> origin/dev`
-    succeeds. If it was squashed, say so at once: the fix is a fresh merge of `<ref>`, cheap while `rerere`
-    and the log are fresh.
+- **An upstream merge lands as a merge commit — never squash, never rebase**: either drops upstream as a
+  parent, and the next merge replays every conflict of this one. Open the PR body with the warning line,
+  check the repository's merge settings before opening it, and verify the landing after the user merges,
+  as [landing.md](landing.md) says.
 
 ## Common mistakes
 

@@ -25,7 +25,7 @@ It installs disabled. Enable it in `/plugin`, or with `claude plugin enable vc-f
 
 | You want to… | Run |
 |---|---|
-| Bring upstream into the fork (`upstream/dev`, a release tag, or `origin/dev` into a redesign branch) | `/vc-frontend:merge-upstream <ref>` |
+| Bring upstream into the fork (`upstream/dev`, a release tag, or `origin/<base>` into a redesign branch) | `/vc-frontend:merge-upstream <ref>` |
 | Find upstream fixes the fork never got, because it renders its own component instead | `/vc-frontend:port-upstream-to-fork` |
 | Make a backend module ship a storefront plugin (Module Federation) | `/vc-frontend:mf-new-plugin <name> <*.Web path>` |
 
