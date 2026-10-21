@@ -9,7 +9,9 @@ import { loadConfigFromFile, mergeConfig, normalizePath } from "vite";
 
 // Vite module ids use forward slashes on every OS; a Windows cwd has backslashes and would match none.
 const root = normalizePath(process.cwd());
-const loaded = await loadConfigFromFile({ command: "build", mode: "production" }, path.join(process.cwd(), "vite.config.ts"), process.cwd());
+// No file named: Vite finds the repository's own config under any of its names (vite.config.ts, .js, .mts …).
+const loaded = await loadConfigFromFile({ command: "build", mode: "production" }, undefined, process.cwd());
+if (!loaded) throw new Error(`fork-drift: no vite.config.* in ${root}`);
 
 const APP = `${root}/client-app/`;
 const parsed = new Map(); // id -> { imports: [{ source, names }], reexports: [{ source, imported, exported }] }
@@ -54,7 +56,7 @@ const graphDump = {
     const rendered = {};
     for (const chunk of Object.values(bundle)) {
       if (chunk.type !== "chunk") continue;
-      for (const [id, m] of Object.entries(chunk.modules)) rendered[id] = m.renderedLength;
+      for (const [id, m] of Object.entries(chunk.modules)) rendered[id] = Math.max(rendered[id] ?? 0, m.renderedLength);
     }
     const modules = {};
     for (const id of this.getModuleIds()) {

@@ -9,7 +9,7 @@
 // --to       the upstream side: upstream/dev, a release tag, or M^2 for a merge commit M (with --fork M)
 // --from     start of the upstream range whose commits are listed (default: merge-base of --fork and --to)
 // --fork     the fork's commit to analyse (default: HEAD — committed state; uncommitted edits are ignored)
-// --map      the fork map (default: fork-map.json in the repository root, when present)
+// --map      the fork map (default: fork-map.json in the repository root, when present; read from the working tree)
 // --rebuild  ignore cached graphs
 //
 // Each tree is built once per commit in a temporary worktree under the OS temp folder; graphs are cached
@@ -51,6 +51,10 @@ if (FROM === TO) {
   process.exit(2);
 }
 const MAP_PATH = typeof args.map === "string" ? path.resolve(args.map) : path.join(ROOT, "fork-map.json");
+if (!existsSync(path.join(ROOT, "node_modules", "vite", "bin", "vite.js"))) {
+  console.error(`fork-drift: no node_modules in ${ROOT} — run \`corepack yarn install\` there first`);
+  process.exit(2);
+}
 const CACHE = path.join(ROOT, "node_modules", ".cache", "fork-drift");
 // Outside the repository: Vite treats any path containing node_modules as a dependency and leaves its
 // template-literal imports (locales, sign-in providers) unexpanded.
@@ -97,9 +101,10 @@ function removeLeftovers() {
   }
 }
 
-// Ctrl+C reaches the build too. With a listener Node is not killed, the build returns, and the finally block
-// in buildGraph cleans up.
-process.on("SIGINT", () => process.exit(130));
+// Ctrl+C, and a timeout that kills the process tree, reach the build too. With a listener Node is not killed,
+// the build returns, and the finally block in buildGraph cleans up. `kill -9` and `taskkill /F` cannot be
+// caught: the next run removes what they leave.
+for (const [signal, code] of [["SIGINT", 130], ["SIGTERM", 143], ["SIGHUP", 129]]) process.on(signal, () => process.exit(code));
 
 function buildGraph(sha) {
   const graphPath = path.join(CACHE, `graph-${BUILD_ID}-${sha}.json`);
@@ -115,13 +120,21 @@ function buildGraph(sha) {
   try {
     // Reuse the checkout's node_modules when the commit locks the same dependencies; install otherwise.
     // Compared as git blobs: with core.autocrlf the checkout has CRLF and the commit LF.
-    const sameLock = existsSync(path.join(ROOT, "yarn.lock")) && git("rev-parse", `${sha}:yarn.lock`) === git("hash-object", path.join(ROOT, "yarn.lock"));
+    const lockAt = (spec) => {
+      try {
+        return git("rev-parse", spec);
+      } catch {
+        return null;
+      }
+    };
+    const sameLock = existsSync(path.join(ROOT, "yarn.lock")) && lockAt(`${sha}:yarn.lock`) === git("hash-object", path.join(ROOT, "yarn.lock"));
     // "junction": a Windows directory link that needs no admin rights; ignored elsewhere.
     if (sameLock) symlinkSync(path.join(ROOT, "node_modules"), path.join(wt, "node_modules"), "junction");
     else {
       process.stderr.write(`fork-drift: ${sha.slice(0, 9)} locks different dependencies — running yarn install in its worktree\n`);
-      // Through a shell, so Windows finds yarn.cmd. Its output goes to stderr: stdout carries the report (--json).
-      const install = spawnSync("yarn install --immutable", { cwd: wt, shell: true, stdio: ["ignore", 2, 2] });
+      // Through corepack, which runs the Yarn the commit pins (a global Yarn 1 refuses it), and through a shell,
+      // so Windows finds corepack.cmd. Its output goes to stderr: stdout carries the report (--json).
+      const install = spawnSync("corepack yarn install --immutable", { cwd: wt, shell: true, stdio: ["ignore", 2, 2] });
       if (install.status !== 0) throw new Error(`yarn install failed for ${sha.slice(0, 9)}`);
     }
 
@@ -222,14 +235,13 @@ function analyse(graph) {
 
 // ---------- report ----------
 
-const commitCache = new Map();
-function upstreamCommits(f) {
-  if (!commitCache.has(f)) {
-    const log = git("log", "--format=%h %s", `${FROM}..${TO}`, "--", f);
-    commitCache.set(f, log ? log.split("\n") : []);
-  }
-  return commitCache.get(f);
+// One `git log` for the whole range: a process per file takes minutes on a tree of thousands of files.
+const commitsByFile = new Map();
+for (const entry of git("-c", "core.quotePath=false", "log", "--format=%x00%h %s", "--name-only", `${FROM}..${TO}`).split("\0").slice(1)) {
+  const [subject, ...files] = entry.split("\n");
+  for (const f of files.filter(Boolean)) commitsByFile.set(f, [...(commitsByFile.get(f) ?? []), subject]);
 }
+const upstreamCommits = (f) => commitsByFile.get(f) ?? [];
 
 const map = existsSync(MAP_PATH) ? JSON.parse(readFileSync(MAP_PATH, "utf8")) : { replacements: [], ignored: [] };
 const isPaths = (v) => v === undefined || (Array.isArray(v) && v.every((p) => typeof p === "string"));
@@ -268,7 +280,8 @@ const upTree = new Set(git("ls-tree", "-r", "--name-only", TO, "client-app").spl
 const reportable = (f) => !NOT_RENDERED.test(f) && f.startsWith("client-app/");
 
 // A. Upstream renders it, the fork does not.
-const notRendered = [...up.rendered]
+// Sorted throughout: the build's module order varies, and two reports of the same range should diff clean.
+const notRendered = [...up.rendered].sort()
   .filter((f) => reportable(f) && !fork.rendered.has(f))
   .map((f) => ({
     file: f,
@@ -280,7 +293,7 @@ const notRendered = [...up.rendered]
   }));
 
 // A2. Stylesheets upstream compiles and the fork does not.
-const notCompiled = [...up.styles]
+const notCompiled = [...up.styles].sort()
   .filter((f) => reportable(f) && !fork.styles.has(f))
   .map((f) => ({
     file: f,
@@ -290,13 +303,13 @@ const notCompiled = [...up.styles]
   }));
 
 // B. Both render it, but upstream renders it from places the fork no longer does.
-const droppedSites = [...up.rendered]
+const droppedSites = [...up.rendered].sort()
   .filter((f) => reportable(f) && fork.rendered.has(f))
   .map((f) => {
     const forkUsers = fork.users.get(f) ?? new Set();
     // A user the fork's tree lacks and never had is new upstream code not merged yet — not a dropped site.
     const lost = [...(up.users.get(f) ?? [])].filter((u) => !forkUsers.has(u) && (forkTree.has(u) || fromTree.has(u)));
-    return { file: f, lostUsers: lost, forkUsers: [...forkUsers], commits: upstreamCommits(f), status: status(f) };
+    return { file: f, lostUsers: lost.sort(), forkUsers: [...forkUsers].sort(), commits: upstreamCommits(f), status: status(f) };
   })
   .filter((d) => d.lostUsers.length);
 
@@ -306,13 +319,26 @@ const portCandidates = [...mappedUpstream.entries()]
   .filter((c) => c.commits.length);
 
 // D. Fork-only rendered files not in the map, with the upstream files they share the most with.
-const source = (ref, f) => {
-  try {
-    return git("show", `${ref}:${f}`);
-  } catch {
-    return "";
+// The sources of many files through one `git cat-file --batch`, not a `git show` each.
+function sources(ref, files) {
+  const batch = spawnSync("git", ["cat-file", "--batch"], { cwd: ROOT, input: files.map((f) => `${ref}:${f}\n`).join(""), maxBuffer: 1 << 30 });
+  const buf = batch.stdout;
+  const result = new Map();
+  let at = 0;
+  for (const f of files) {
+    const eol = buf.indexOf(10, at);
+    const header = buf.toString("utf8", at, eol);
+    at = eol + 1;
+    if (!/ blob \d+$/.test(header)) {
+      result.set(f, "");
+      continue;
+    }
+    const size = Number(header.split(" ").pop());
+    result.set(f, buf.toString("utf8", at, at + size));
+    at += size + 1;
   }
-};
+  return result;
+}
 function signals(src) {
   const s = new Set();
   for (const m of src.matchAll(/from\s+["'](@\/(?!ui-kit)[^"']+)["']/g)) s.add(`import ${m[1]}`);
@@ -323,9 +349,12 @@ function signals(src) {
 }
 const mappedFork = new Set(replacements.flatMap((r) => r.fork));
 const forkOnly = [...fork.rendered].filter((f) => reportable(f) && /\.(vue|ts)$/.test(f) && !upTree.has(f) && !fromTree.has(f) && !mappedFork.has(f));
-const upstreamSignals = forkOnly.length ? [...up.rendered].filter((f) => reportable(f) && /\.(vue|ts)$/.test(f)).map((f) => [f, signals(source(TO, f))]) : [];
+const upstreamFiles = forkOnly.length ? [...up.rendered].filter((f) => reportable(f) && /\.(vue|ts)$/.test(f)) : [];
+const upstreamSources = sources(TO, upstreamFiles);
+const forkSources = sources(FORK, forkOnly);
+const upstreamSignals = upstreamFiles.map((f) => [f, signals(upstreamSources.get(f))]);
 const unmapped = forkOnly.map((f) => {
-  const own = signals(source(FORK, f));
+  const own = signals(forkSources.get(f));
   const matches = upstreamSignals
     .map(([u, theirs]) => {
       const shared = [...own].filter((s) => theirs.has(s));
