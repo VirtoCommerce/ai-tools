@@ -59,8 +59,11 @@ export interface Layered {
   dedicatedKeys: Set<string>;
   /** Keys holding this env's own value: a KEY_<ENV> pin, a dedicated file, the master password. */
   perEnv: Set<string>;
-  /** Set when the env says PASSWORDS=master. */
+  /** Set when the env says PASSWORDS=master. `names` is empty under `masterValues: false`. */
   master: { file: string; found: boolean; names: string[] } | null;
+  /** A PASSWORDS value that was dropped because it did not come from the env's own files (a bare one in
+   *  .env.local, say), and where it came from; null when none was. */
+  ignoredPasswords: { value: string | undefined; file: string | null } | null;
   /** What supplied a key's value. */
   sourceOf(key: string): string;
 }
@@ -70,6 +73,8 @@ export interface LayerOptions extends LookupOptions {
   ambientWins?: boolean;
   /** Test-account password names beyond the scan (a role registry). */
   passwordNames?: Iterable<string>;
+  /** false: decide PASSWORDS=master but skip the test-account name scan and the master values (default true). */
+  masterValues?: boolean;
 }
 
 /** An env's variables in the one order, without touching process.env. */
