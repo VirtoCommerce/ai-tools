@@ -10,7 +10,8 @@ another session reads is edited.
 - **The arguments name an env** — a bare word the script accepts as one (a `.env.<word>` in the project or in
   a `QA_ENV_PATH` folder, §Where an env's files live), or `--env <env>`
   ⇒ `node "$pluginRoot/scripts/env/use-env.mjs" <env>` (`$pluginRoot`: [`plugin-root.md`](plugin-root.md)).
-- **They name none** ⇒ the same script with `--default`. It binds the default too, so the run keeps one env
+- **They name none** ⇒ for a ticket run (`run-folder.mjs use <TICKET>`) the ticket's own stand when the
+  ticket's `QA_ENV_PATH` folder defines exactly one env; otherwise the same script with `--default`. It binds the default too, so the run keeps one env
   even if someone edits `.env.test-env` while it runs. When that moves a session that was on another env, it
   prints a `⚠ this session was on …` line: show it to the user, who passes the env to stay.
 - **Exit 2 ⇒ STOP** and show its message: an unknown env, or a `TEST_ENV` in the session's environment that
@@ -37,7 +38,8 @@ session's bound run; outside a session `QA_TICKET=<KEY>`). A dedicated file beat
 pins included: a ticket's folder holds its own stands and may override a shared env for that ticket's runs.
 `scripts/lib/env-layers.mjs` is the order, byte-identical with the ai-tools repo's.
 
-**Master stands:** `PASSWORDS=master` in a stand's env file means every test account on it signs in with ONE
+**Master stands:** `PASSWORDS=master` in a stand's own env file (the project's `.env.<env>` for an env the project
+defines, else its `QA_ENV_PATH` file; nowhere else) means every test account on it signs in with ONE
 password, `MASTER_PASSWORD` in the project's `.env.playwright.master`; every test-account password variable
 resolves to it, and a lane types `MASTER_PASSWORD` in every password field.
 

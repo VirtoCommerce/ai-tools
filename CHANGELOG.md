@@ -19,12 +19,14 @@ in with one password. `vc-perf` and `vc-secrets` are unchanged.
 `<env>` and `<sprint>`. Each folder may hold `.env.<env>` and `.env.playwright.<env>`, and a file there beats the
 repo's key by key, `KEY_<ENV>` pins included. A ticket's folder holds its own stands (`vcst_6314`) and may
 override a shared env for that ticket's runs. `env:use`, `run:use`, `/preflight --env` and `deploy:pr` accept
-those envs. Outside a session, `QA_TICKET=<KEY>` names the ticket.
+those envs. Outside a session, `QA_TICKET=<KEY>` names the ticket. A ticket run with no env argument binds the
+ticket's own stand when its folder defines exactly one env.
 
 **Added: master stands.** `PASSWORDS=master` in a stand's env file makes every test-account password
 variable resolve to `MASTER_PASSWORD` from `.env.playwright.master`, so the seeders set it. Only the stand's own
-files, or a `PASSWORDS_<ENV>` pin, count; a bare `PASSWORDS` in `.env.local` is ignored with a warning, because it
-would switch the shared stands too. Browser lanes then
+env file counts: the root `.env.<env>` for a repo env, else its `QA_ENV_PATH` file. A `PASSWORDS` line in
+`.env.local`, or a ticket folder's override of a repo env, is ignored with a warning: seeding would reset a shared
+stand's accounts to the master password. Browser lanes then
 type `MASTER_PASSWORD` in every password field. `secrets:sync:all` copies it into `.env.playwright.all` as one
 stable line, so a new master stand needs no re-sync and no MCP reconnect; the single-env `secrets:sync` writes it
 only for a master stand. `enforce-secret-token` blocks `MASTER_PASSWORD` in a
