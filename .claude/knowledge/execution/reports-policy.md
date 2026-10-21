@@ -258,6 +258,9 @@ same purpose*. A capture made for a human reader is a different artefact and sta
 image (§5.0, still MANDATORY), the element shot of the problem place (§5.1), visual and `vs. DESIGN`
 evidence (`.claude/skills/qa-design/`), and motion GIFs (§5.2). Where the runner's failure screenshot
 already shows the problem place legibly, reuse that file for the comment instead of shooting it again.
+**"Legibly" is judged at the width the comment shows it** (`|width=700!`), not at full size: a full
+viewport readable only when zoomed fails the test, so it stays as the context shot and the element shot
+of §5.1 is still taken.
 
 **Why it is a rule, in both directions.** A duplicate costs the image tokens of a second capture and
 leaves a triager two artefacts to reconcile. The opposite mistake costs more: on 2026-10-21 the MCP lanes'

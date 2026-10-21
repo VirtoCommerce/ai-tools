@@ -165,7 +165,9 @@ the config file** — a key in a config proves nothing until the tool's own sche
 
 **What this rule never touches:** a capture made for a human reader — the inline tracker image (§5.0,
 still MANDATORY), visual evidence, motion GIFs (§5.2). Where the runner's failure screenshot already shows
-the problem legibly, reuse that file for the comment instead of shooting it again.
+the problem legibly, reuse that file for the comment instead of shooting it again. **"Legibly" is judged
+at the width the comment shows it** (`|width=700!`), not at full size: a full viewport readable only when
+zoomed fails the test, so it stays as the context shot and an element shot of the problem is still taken.
 
 ### 5.2 Motion evidence — a GIF when the defect IS the transition
 
