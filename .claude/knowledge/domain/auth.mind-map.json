@@ -683,7 +683,7 @@
       "drift": {
         "expected": "ECL-4.3 Account Takeover lists OTP reuse as an edge case; suite 105 OTP-018 expects a used code to be refused",
         "observed": "otp_email accepted the same code twice with a fresh token each time (kb:KB-06FE6C8D, vcptcore_qa1 2026-09-29); the Identity Email token provider is stateless",
-        "route": "UNFILED — vc-module-otp (single-use codes); no tracker key yet"
+        "route": "VCST-6490"
       },
       "notes": "MFA (vc-module-mfa#1) adds a used-code store for its own codes only.",
       "requires": [
@@ -2409,7 +2409,8 @@
         "expected": "BL-AUTH-008: self-impersonation must have a defined non-circular outcome",
         "observed": "a circular operator==target token is accepted as a harmless no-op; VCST-5174 closed as by design (IMP-017, REG-2026-09-07-1342)",
         "route": "/qa-review-oracles — BL-AUTH-008 is SUSPECT, VCST-5174 asks to review or retire it"
-      }
+      },
+      "notes": "Oracle review 2026-10-21 (/qa-review-oracles bl auth): VCST-5174 is Cancelled with a By-design closing comment, and a Cancelled ticket is not a resolution source (bl-audit-criteria §0), so the rule stays SUSPECT. RETIRE or a rewrite to the by-design outcome is proposed and waits for the owner to confirm (BL-AUDIT-2026-10-21)."
     },
     {
       "type": "branch",
@@ -2437,7 +2438,8 @@
       },
       "requires": [
         "data.auth.session.impersonating"
-      ]
+      ],
+      "notes": "Oracle review 2026-10-21 (/qa-review-oracles bl auth): VCST-5174 is Cancelled with a By-design closing comment, and a Cancelled ticket is not a resolution source (bl-audit-criteria §0), so the rule stays SUSPECT. RETIRE or a rewrite to the by-design outcome is proposed and waits for the owner to confirm (BL-AUDIT-2026-10-21)."
     },
     {
       "type": "branch",
