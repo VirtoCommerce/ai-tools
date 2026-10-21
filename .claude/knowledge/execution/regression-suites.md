@@ -162,7 +162,7 @@ The measured losses behind every line above:
 ## Executable specs beside a suite
 
 A case that passed deterministically, or a bug's reproduction, has a Playwright `.spec` beside its row. Design and
-decisions D1–D16: [`docs/superpowers/specs/2026-10-21-suites-reorg-design.md`](../../../docs/superpowers/specs/2026-10-21-suites-reorg-design.md) §4–§8 — cited, not restated. Authoring: the skill
+decisions D1–D17: [`docs/superpowers/specs/2026-10-21-suites-reorg-design.md`](../../../docs/superpowers/specs/2026-10-21-suites-reorg-design.md) §4–§8 — cited, not restated. Authoring: the skill
 [`/qa-test-automation`](../../skills/qa-test-automation/SKILL.md), loaded only while writing a spec.
 
 - **Layout (D5).** `<suite>.csv` stays; a folder with the CSV's stem sits beside it and holds `<CASE-ID>.spec.ts`,

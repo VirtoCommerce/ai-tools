@@ -8,7 +8,7 @@ argument-hint: "<CASE-ID> [--repro]"
 
 A CSV row and its `.spec` are **one case**: the row says WHAT is checked, the spec is HOW a machine runs it.
 Whoever writes the case writes its spec (`test-management-specialist`); this skill is loaded for that
-step and for nothing else. The design and every decision (D1–D16) are in
+step and for nothing else. The design and every decision (D1–D17) are in
 [`docs/superpowers/specs/2026-10-21-suites-reorg-design.md`](../../../docs/superpowers/specs/2026-10-21-suites-reorg-design.md) §4–§8 — **cited here, never restated**.
 
 **Files in this skill (read only the one the step names):**
