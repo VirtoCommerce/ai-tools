@@ -1,6 +1,14 @@
 # BUG: [GA4][Catalog] Category infinite scroll: each page's view_item_list repeats every product already shown — Medium
 
-## Status: READY_TO_SUBMIT
+## Status: FIXED
+**Found by:** agent — testing VCST-6398
+
+## Resolution
+- **Fixed in:** VirtoCommerce/vc-frontend#2594 (head 5ab19015, open at verification; vc-frontend-next picks it up through the release merge)
+- **Tracker:** VCST-6453 (Tested)
+- **Verified:** 2026-10-21, pre-merge on the PR build `2.61.0-pr-2594-5ab1-5ab19015` (local frontend-only stand, API -> vcst-qa); RED baseline on vcst-qa `2.61.0-pr-2570-5cc5`
+- **Verification method:** /qa-verify-fix VCST-6453 (STR 3/3) - `reports/tickets/Sprint26-21/VCST-6453/verification-summary.json`
+- **Open notes:** `index` restarts at 0 per page event (product decision); re-check on a shared stand after deploy
 **Found by:** agent — testing VCST-6398
 **Tracker:** [VCST-6453](https://virtocommerce.atlassian.net/browse/VCST-6453) (standalone Bug, relates to VCST-6398; labels found-by-agent, found-in-testing; auto-fix labels withheld — vc-frontend-next is not in the /qa-fix allowed repo set)
 
