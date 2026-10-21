@@ -22,9 +22,9 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 
 | Verdict | Rows |
 |---|---|
-| REAL_BUG | 57 |
+| REAL_BUG | 52 |
 | BY_DESIGN | 3 |
-| TEST_DEFECT | 58 |
+| TEST_DEFECT | 63 |
 | DATA | 59 |
 | ENV_CONFIG | 36 |
 | DUPLICATE | 2 |
@@ -61,14 +61,9 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | W3 | PRICE-031 | Export of price list assignments never completes (same ExportJob failure) | yes | same defect as PRICE-008, file once |
 | W3 | PRICE-008 | Generic Export (price lists) never completes: ExportJob cannot deserialize the abstract ExportDataQuery under BackgroundJobs | yes |  |
 | W3 | PRICE-055 | Export with the minimal pricing role: no providers load, and the export itself never completes | yes | same defect as PRICE-008, file once |
-| W3 | CFG-VAR-013 | productConfiguration returns options [] for a Variation section (admin POST also drops them) | unknown |  |
-| W3 | CFG-VAR-001 | PDP Variation section renders an empty radiogroup | unknown | same defect as CFG-VAR-013, file once |
-| W3 | CFG-VAR-007 | Optional Variation section cannot be added with None (no Add to cart) | unknown | same defect as CFG-VAR-013, file once |
-| W3 | CFG-VAR-017 | Admin POST product configuration drops Variation options (200, options []) | unknown | same defect as CFG-VAR-013, file once |
 | W3 | CFG-VAR-009 | Cart Components list shows a blank value for the Variation item | unknown |  |
 | W3 | CFG-VAR-011 | Checkout line shows a blank Variation value (order holds it) | unknown | same defect as CFG-VAR-009, file once |
 | W3 | CFG-VAR-012 | Order detail Components row empty for the Variation item | unknown | same defect as CFG-VAR-009, file once |
-| W3 | CFG-VAR-015 | updateConfigurationItem on a Variation section appends instead of replacing (325 instead of 280) | unknown |  |
 | W3 | CFG-MOB-001 | Mobile/tablet: configurable option rows show a bare Total label (price hidden) | no |  |
 | W3 | ORD-027 | 375px orders filter: no active-filter indicator when the panel is collapsed; icon button has no accessible name | unknown |  |
 | W3 | ORD-029 | Order detail lines show no SKU | unknown |  |
