@@ -2,7 +2,7 @@
 
 - Range: `<merge base sha>`..`<upstream sha>` (<N> upstream commits)
 - Merge commit: `<sha>`; ports: `<sha>` …
-- PR: <link, once opened> — lands as a merge commit, never squash or rebase
+- Branch: `<merge branch>` — its PR lands as a merge commit, never squash or rebase
 
 ## Decisions that carry forward
 
@@ -36,7 +36,8 @@ Map changes: <entries added or changed in fork-map.json, or "none">
 
 | Check | Result |
 |---|---|
-| validate:types / lint / test:unit / check-locales / build-only | <pass, or the failure and whether both parents have it> |
+| validate:types / lint / test:unit / build-only | <pass, or the failure and whether both parents have it> |
+| check-locales | <keys missing now that were not before the merge, or "none new"> |
 
 New tests: <`*.upstream.test.ts` files, and the mutation each was checked with>
 

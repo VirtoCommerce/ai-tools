@@ -15,35 +15,34 @@ The merge stops for the user up to three times: after the brief (step 3), after 
 `port-upstream-to-fork` finds something (step 5), and before the push (step 9). Nothing is merged into
 the fork's `dev` by this skill — the user merges the PR.
 
-**Track the nine steps as a checklist from the start** (a task list where the client has one), and
-close a step only when it is done or the user has said, in those words, to skip it. A request that
-arrives mid-merge — a screenshot, a report, a question — is done *in addition*: when it is finished,
-name the first open step and resume there. **Step 5 updates the fork's own components and is the step
-that gets lost**: a clean build and green tests after step 4 feel like the end, and they are not. The
-log, the push and the PR (step 9) wait until step 5 has run on the merge commit.
+**Track the nine steps as a checklist from the start** (a task list where the client has one); close a
+step only when it is done or the user said, in those words, to skip it. A request mid-merge — a
+screenshot, a question — is done *in addition*, then resume at the first open step. **Step 5 updates the
+fork's own components and is the step that gets lost**: a green build after step 4 feels like the end,
+and is not. The log, push and PR (step 9) wait until step 5 has run on the merge commit.
 
 Every merge leaves a log in the fork, next to `fork-map.json`: `upstream-merges/<YYYY-MM-DD>-<slug>.md`,
 one file per session (`-2` for a second that day). `<slug>` is the ref without `refs/upstream-tags/`, each
-`/` made `-` (`upstream/dev` → `upstream-dev`). A merged PR body drops out of view and `rerere` keeps only
-*how*; the log keeps *why* — decisions, deferrals, what QA could not reach — and the next merge reads it
-before asking anything. Upstream never has the folder and each session writes a new file, so logs cannot
-conflict. The first one also adds `upstream-merges/README.md`: what the folder is, and that upstream merges land as merge
-commits.
+`/` made `-` (`upstream/dev` → `upstream-dev`). `rerere` keeps only *how*; the log keeps *why* — decisions,
+deferrals, what QA could not reach — and the next merge reads it before asking anything. One new file per
+session, in a folder upstream never has, so logs cannot conflict. The first one also adds
+`upstream-merges/README.md`: what the folder is, and that upstream merges land as merge commits.
 
 ## 1. Set up
 
-**First, name the repositories.** Run `git remote -v` in full (never through `head`) and write down
-which `owner/repo` each remote is, which one this merge writes to (the PR's) and which is only read. A
-redesign branch can live in a fork clone that also has an `upstream` remote, and a branch name can exist,
-with a PR, in both.
+**First, name the repositories.** Run `git remote -v` in full (never through `head`) and write down which
+`owner/repo` each remote is, which one this merge writes to (the PR's) and which is only read: a branch
+name can exist, with a PR, in both.
 
-**Every `gh` command takes `--repo <owner/repo>`.** In a clone with an `upstream` remote a bare `gh`
-resolves to *upstream*: `gh pr list --head <branch>` finds upstream's PR for a same-named branch, and its
-checks and comments pass for the fork's. Upstream PR links are written in full
-(`VirtoCommerce/vc-frontend#2501`): a bare `#2501` resolves against the repository it is read in.
+**Every `gh` command takes `--repo <owner/repo>`.** With an `upstream` remote a bare `gh` resolves to
+*upstream*, and upstream's PR for a same-named branch passes for the fork's. Upstream PR links are written
+in full (`VirtoCommerce/vc-frontend#2501`): a bare `#2501` resolves against the repository it is read in.
 
-**Fetch `origin` first:** `git fetch origin`. Both cases below start from `origin/dev`; a stale ref
-leaves the fork's latest commits out of the merge.
+**Start from a clean tree:** `git status --porcelain` prints nothing, or stop and ask the user to commit or
+stash. Uncommitted edits ride into the merge commit, and `git merge --abort` cannot always restore them.
+
+**Fetch `origin` first:** `git fetch --prune origin`. Both cases below start from `origin/dev`; a stale ref
+leaves the fork's latest commits out, and `--prune` drops branches the remote deleted.
 
 **Before either merge below**, set these in this clone:
 
@@ -54,60 +53,64 @@ git config rerere.autoUpdate false      # a replay is applied to the file but no
 git config gc.rerereResolved 365        # default 60 days; upstream merges are often further apart
 ```
 
-They stay in this clone's `.git/config` after the merge, so read each first (`git config --get <key>`): a
-different value already set is the user's — ask before replacing it. Tell the user what was set and how to
-undo it (`git config --unset <key>`), and note it in the log.
+They stay in this clone's `.git/config`, so read each first (`git config --get <key>`): a different value
+is the user's — ask before replacing it. Tell the user what was set and how to undo it
+(`git config --unset <key>`), and note it in the log.
 
-`rerere` is a safety net, not a resolver: it replays a resolution only for a conflict whose text on both
-sides matches one already resolved in this clone — when a merge is redone (aborted and restarted, a trial
-merge before the real one, a squashed PR merged again). Its cache (`.git/rr-cache`) is local and starts
-empty in a fresh clone; the logs carry the decisions.
+`rerere` is a safety net, not a resolver: it replays only a conflict resolved before in this clone with the
+same text on both sides (a merge redone, a trial merge, a squashed PR merged again). Its cache
+(`.git/rr-cache`) is local and starts empty in a fresh clone; the logs carry the decisions.
 
 **Fork repository** (vc-frontend-next, a customer theme):
 
-- Work in a clone of the fork and add upstream there:
-  `git remote add upstream https://github.com/VirtoCommerce/vc-frontend.git`.
-  The fork and upstream are separate repositories — never add the fork as a remote of an upstream checkout.
-- Fetch upstream tags into their own namespace, so they cannot collide with the fork's:
+- Work in a clone of the fork (never add the fork as a remote of an upstream checkout) and add upstream,
+  with no tags of its own fetched into the fork's `refs/tags` (tell the user, as above):
+  `git remote add upstream https://github.com/VirtoCommerce/vc-frontend.git && git config remote.upstream.tagOpt --no-tags`
+- Fetch upstream's tags into their own namespace, so they cannot collide with the fork's:
   `git fetch --no-tags upstream '+refs/heads/dev:refs/remotes/upstream/dev' '+refs/tags/*:refs/upstream-tags/*'`
 - Ref: `upstream/dev` for vc-frontend-next, a release tag (`refs/upstream-tags/<version>`) for a customer theme.
 - `git merge-base origin/dev <ref>` must print a commit. If it prints nothing, the fork was copied without
-  history: stop and report that — this skill does not cover it.
-- `git switch -c chore/merge-upstream-<slug> origin/dev && git merge --no-ff --no-commit <ref>`
-- If `chore/merge-upstream-<slug>` already exists, look before reusing the name. It is a leftover when
-  `git log origin/dev..<branch>` prints nothing and `git ls-remote origin refs/heads/<branch>` finds no
-  remote copy: recreate it with `git switch -C chore/merge-upstream-<slug> origin/dev` and say so. Commits
-  on it, or a remote copy, mean an unfinished merge: stop and ask whether to resume it or start over
-  under a new name (`chore/merge-upstream-<slug>-2`). A pushed branch is never recreated or force-pushed.
+  history: stop and report that — this skill does not cover it. If `git merge-base --is-ancestor <ref>
+  origin/dev` succeeds, the ref is merged already: say so and stop (`port-upstream-to-fork` can still audit).
+- `git switch --no-track -c chore/merge-upstream-<slug> origin/dev` (a branch that tracks `origin/dev` points a
+  bare `git push` at `dev`), `yarn check-locales > <scratchpad>/locales-before.txt 2>&1` (step 4 compares
+  against it), then `git merge --no-ff --no-commit <ref>`.
+- If `chore/merge-upstream-<slug>` exists and neither it (`git log origin/dev..<branch>`) nor
+  `origin/<branch>` (`git merge-base --is-ancestor origin/<branch> origin/dev`) has commits `origin/dev`
+  lacks, it is finished or a leftover: recreate it (`git switch --no-track -C …`) and say so. Otherwise ask
+  whether to resume it or start over as `chore/merge-upstream-<slug>-2`; never recreate or force-push it.
 
 **Redesign branch absorbing its own base** (same repository): the branch is the fork, `origin/dev` is
 upstream. No remote, no new branch — check the branch out, bring it level with its remote copy
-(`git merge --ff-only origin/<branch>`; if that fails, the two have diverged: stop and ask), then
-`git merge --no-ff --no-commit origin/dev`.
+(`git merge --ff-only origin/<branch>`; if that fails, the two have diverged: stop and ask). If
+`git merge-base --is-ancestor origin/dev HEAD` succeeds, there is nothing to merge: say so and stop.
+Otherwise save `locales-before.txt` as above, then `git merge --no-ff --no-commit origin/dev`.
 
 ## 2. Map every conflict before touching one
 
 **Read the earlier logs first** (`upstream-merges/`, newest first): every "Decisions that carry forward"
 section, and the "Lost features and deferrals" of the latest few. A conflict an earlier decision already
-settles is resolved the same way and cited in the brief (`per upstream-merges/<file>`), not asked again —
-unless upstream changed the very thing the decision rests on, which the brief then says. A missing folder
-means this is the first logged merge.
+settles is resolved the same way and cited (`per upstream-merges/<file>`), not asked again — unless
+upstream changed what the decision rests on, which the brief then says. No folder: the first logged merge.
 
 **Replayed resolutions first.** The merge prints `Resolved '<file>' using previous resolution.` for each
-conflict `rerere` replayed; `git diff --name-only --diff-filter=U` still lists those files, but without
-markers. Each one is a conflict like any other: map it below and put it in the brief as
-`✅ replayed by rerere — <what the replay did>`, checked against the fork's and upstream's diffs. It is
-staged only after the brief is answered, never on the strength of the replay.
+conflict `rerere` replayed; `git diff --name-only --diff-filter=U` still lists them, without markers. Map
+each like any conflict and brief it as `✅ replayed by rerere — <what the replay did>`, checked against both
+sides' diffs. It is staged only after the brief is answered.
 
-Set `BASE=$(git merge-base HEAD MERGE_HEAD)` and `export LC_ALL=C` (`comm` needs the same collation as
-`sort`). For each conflicted file read the fork's change (`git diff $BASE HEAD -- <f>`), upstream's
-(`git diff $BASE MERGE_HEAD -- <f>`) and the upstream commits behind it
-(`git log --oneline $BASE..MERGE_HEAD -- <f>`); open the upstream PR to learn its intent
+For each conflicted file read the fork's change (`git diff MERGE_HEAD...HEAD -- <f>`), upstream's
+(`git diff HEAD...MERGE_HEAD -- <f>`; three dots diff from the merge base) and the upstream commits behind
+it (`git log --oneline HEAD..MERGE_HEAD -- <f>`); open the upstream PR to learn its intent
 (`gh pr view <n> --repo <upstream owner/repo>`).
 
-List the files **both sides changed that merged cleanly**:
-`comm -12 <(git diff --name-only $BASE HEAD | sort) <(git diff --name-only $BASE MERGE_HEAD | sort)`,
-minus the conflicted ones. A clean merge can still be wrong: a fork token can override a variable upstream
+List the files **both sides changed that merged cleanly**, minus the conflicted ones (`comm` needs
+`sort`'s collation, hence `LC_ALL=C`):
+
+```bash
+export LC_ALL=C; comm -12 <(git diff --name-only MERGE_HEAD...HEAD | sort) <(git diff --name-only HEAD...MERGE_HEAD | sort)
+```
+
+A clean merge can still be wrong: a fork token can override a variable upstream
 just fixed, and a conflicted file's clean hunks can pair one side's API with the other side's code
 (a `computed` reading a prop the other side removed).
 
@@ -116,8 +119,8 @@ just fixed, and a conflicted file's clean hunks can pair one side's API with the
 | Fork restyled a template, upstream added behavior to it (conditions, props, handlers) | Fork's markup; port upstream's behavioral edits into it. Translate identifiers the fork renamed (e.g. `isMobile` → `isCompact`) only after checking they mean the same breakpoint. |
 | The same feature built on both sides | Upstream's API — prop names, i18n keys, component split — with the fork's visual deltas reapplied. Keeping the fork's API re-conflicts on every later merge. |
 | A variable or token renamed on both sides | Upstream's names, the fork's values. |
-| Generated: `yarn.lock`, `**/api/graphql/types.ts`, `client-app/core-api/contract/` | Never hand-merged. `yarn install` rewrites the lockfile; GraphQL types follow the backend, so take upstream's and regenerate (`yarn generate:graphql-types`) if a backend is reachable; the contract comes from `yarn build:core-types`. |
-| Versions and package name | Root `package.json`: the fork's `name` and app version — the fork releases its own versions, and its build archives are named after `name`. `client-app/core-api/package.json`: the higher one. |
+| Generated: `yarn.lock`, `**/api/graphql/types.ts`, `client-app/core-api/contract/` | Never hand-merged: `yarn install` rewrites the lockfile; take upstream's GraphQL types and regenerate (`yarn generate:graphql-types`) if a backend is reachable; the contract comes from `yarn build:core-types`. |
+| Versions and package name | Root `package.json`: the fork's `name` and app version (the fork releases its own; archives are named after `name`). `client-app/core-api/package.json`: the higher one. |
 | Docs | Both sides' content, corrected against the merged code. |
 | Upstream's test for a component the fork refactored | Keep upstream's assertions; change only its mocks/setup to the fork's dependencies. |
 
@@ -139,71 +142,75 @@ N conflicts: X obvious, Y need you.
 ```
 
 One heading per conflict; related files share one; the hardest is marked ❗. Clean-but-risky files from
-step 2 go in as ⚠️ items. A resolution taken from an earlier log says so: `✅ <resolution> (per
-upstream-merges/<file>)`.
+step 2 go in as ⚠️ items. A resolution from an earlier log says `(per upstream-merges/<file>)`.
 
-Start the session's log from [log-template.md](log-template.md) as soon as the user answers: the
-conflicts, the decisions and who made them. Fill it in as the later steps produce results.
+Start the session's log from [log-template.md](log-template.md) once the user answers (conflicts,
+decisions, who made them), and fill it in as later steps produce results.
 
 ## 4. Resolve and verify the build
 
-- Apply the agreed resolutions, then check for leftovers: `git diff --check`. `git add` each replayed
-  file only once its replay matches what the brief agreed. If it does not, run `git rerere forget <file>`
-  (the file is left as it is) and correct it: without the `forget`, `rerere` keeps the old resolution
-  and replays it again at the next merge.
+- Apply the agreed resolutions, then check for leftovers: `git diff --check; git diff --cached --check`.
+  Stage only the files you resolved, not the log (step 9 commits it). `git add` a replayed file only once
+  its replay matches the brief. If it does not, `git rerere forget <file>` (the file stays as it is) and
+  correct it: without the `forget`, `rerere` replays the old resolution at the next merge.
 - Run `yarn install`, any regeneration from step 2, `yarn validate:types`, `yarn lint`,
-  `yarn test:unit --run`, `yarn check-locales`, `yarn build-only`.
+  `yarn test:unit --run`, `yarn check-locales`, `yarn build-only`. `check-locales` always exits 0: a key
+  missing now but not in `locales-before.txt` is a failure (lost by the merge, or untranslated upstream).
 - A failure the merge caused is fixed in the merge commit. A failure already present on both parents is
-  reported, not fixed: re-run the failing check against each parent's version of the file to tell which.
-- Format only the files you resolved. `prettier --write` on a file the fork had left unformatted rewrites
-  it whole — leave those as they were.
-- Commit the merge locally once the checks are done — steps 5 and 6 read it as `HEAD^1`/`HEAD^2`:
-  `chore: merge upstream vc-frontend <ref>` (or `chore: merge dev into <branch>`), each conflict and its
-  resolution in the body. Nothing is pushed yet. **The next action is step 5**, whatever else was asked
-  in the meantime.
+  reported, not fixed. To tell which, run the check in a temporary worktree of each parent
+  (`git worktree add --detach "$(mktemp -d)" HEAD`, then `MERGE_HEAD`), never by checking a parent's file
+  out into the merge: that overwrites the resolution.
+- Format only the files you resolved: `prettier --write` on a file the fork left unformatted rewrites it.
+- Commit the merge locally once the checks are done: `chore: merge upstream vc-frontend <ref>` (or
+  `chore: merge dev into <branch>`), each conflict and its resolution in the body. Note its SHA in the log:
+  steps 5 and 6 read its parents. Nothing is pushed yet. **The next action is step 5**, whatever else was
+  asked in the meantime.
 
 ## 5. Update the fork: trace every upstream change into the result — never skipped
 
 For every file in step 2's two lists, the lines upstream added must exist in the merged file, or be
-replaced by a resolution you can name:
+replaced by a resolution you can name. Skip the regenerated files (lockfile, GraphQL types, contract). Run
+it as one command (a shell variable does not reach the next call), `M` being the merge commit:
 
 ```bash
-export LC_ALL=C; P1=HEAD^1; P2=HEAD^2; BASE=$(git merge-base $P1 $P2)   # after the merge commit
-git diff -U0 $BASE $P2 -- "$f" | grep '^+' | grep -v '^+++' | sed 's/^+[[:space:]]*//' | grep -v '^$' | sort -u > up.txt
-git show HEAD:"$f" | sed 's/^[[:space:]]*//' | sort -u > merged.txt
-comm -23 up.txt merged.txt        # each line printed needs a reason
+M=<merge sha>; T=$(mktemp -d); export LC_ALL=C
+for f in <the files>; do
+  git diff -U0 $M^1...$M^2 -- "$f" | grep '^+' | grep -v '^+++' | sed 's/^+[[:space:]]*//' | grep -v '^$' | sort -u > "$T/up.txt"
+  git show $M:"$f" | sed 's/^[[:space:]]*//' | sort -u > "$T/merged.txt"
+  comm -23 "$T/up.txt" "$T/merged.txt" | sed "s|^|$f: |"   # each line printed needs a reason
+done; rm -rf "$T"
 ```
 
 Then the case no line diff shows: **upstream changed code the fork no longer renders**, or renders from
-fewer places. **REQUIRED SUB-SKILL:** run `vc-frontend:port-upstream-to-fork` on the merge commit. Its
+fewer places. **REQUIRED SUB-SKILL:** run `vc-frontend:port-upstream-to-fork` on the merge commit `M`. Its
 brief is the second pause; its ports are committed on this branch and join this PR.
 
 Both halves run on every merge, a quiet one too: a range with no conflicts can still change a component
-the fork replaced. "Nothing to port" is a result of this step — say it with the drift report's sections
-— never a reason to skip it. Step 5 is done when the line trace has a reason for every printed line,
+the fork replaced. "Nothing to port" is a result, said with the drift report's sections, never a skip. Step 5 is done when the line trace has a reason for every printed line,
 and the port brief is answered (or the report found nothing).
 
 ## 6. Tests
 
-1. Upstream's own tests for each feature it changed run against the fork's markup in step 4. Prove they
-   guard the ported code: remove one ported condition at a time (back the file up with `cp`, not
-   `git checkout`) and watch a test fail. A ported line no test fails on is uncovered.
-2. Write a test only for uncovered ported behavior, in `<component>.upstream.test.ts` beside the component.
-   The suffix never exists upstream, so the file can never conflict, and it tells the next person that the
-   fork's markup must keep it green. Name `describe`/`it` by behavior, no ticket numbers.
+1. Upstream's tests for each feature it changed ran against the fork's markup in step 4. Prove they guard
+   the ported code: remove one ported condition at a time (back the file up with `cp`, not
+   `git checkout`), watch a test fail, restore. A ported line no test fails on is uncovered.
+2. Write a test only for uncovered ported behavior, in `<component>.upstream.test.ts` beside the component
+   (the suffix never exists upstream, so it cannot conflict, and says the fork's markup must keep it
+   green). Name `describe`/`it` by behavior, no ticket numbers. Commit the tests on the merge branch.
 
 ## 7. Smoke the built app
 
-- `yarn build-only`, then `npx vite preview --port 3100 --strictPort` (3000 is usually the developer's own
-  server) with `APP_BACKEND_URL` in `.env.local`. `vite-plugin-mkcert` runs here too: in a fresh clone,
+- `yarn build-only`, then `yarn preview --port 3100 --strictPort` in the background, with `APP_BACKEND_URL`
+  in `.env.local` (3000 is usually the developer's own server; if 3100 is taken, pick another port and leave
+  that server alone). It serves https: `vite-plugin-mkcert` runs here too: in a fresh clone,
   copy `.certificates/` from a clone where the CA is already installed, or `mkcert -install` adds its CA to
   the trust store (sudo on Linux and macOS, a confirmation dialog on Windows).
-- Open the home page, then every page the merged files render (catalog, search, the account pages,
-  modules). On each: console errors, no `vite-error-overlay`, no error toast or `[role="alert"]`,
-  GraphQL responses without `errors`. Cross-origin resources (fonts, analytics) report status 0 — not
-  a failure.
+- Open the home page, then every page the merged files render (catalog, search, account pages, modules).
+  On each: no console errors, `vite-error-overlay`, error toast or `[role="alert"]`, and GraphQL responses
+  without `errors`. Cross-origin resources (fonts, analytics) at status 0 are not a failure.
 - Exercise each upstream feature in the merge on the page, in the state that switches it on (a query
   param, a setting, a signed-in user). Note what the backend could not reach — it goes to QA.
+- Stop the preview you started, and only that one.
 
 ## 8. QA checklist
 
@@ -221,51 +228,44 @@ Not covered by the smoke: <what needs data, a role or a device the smoke did not
 - **Gate:** every step 1–8 is done or skipped by the user in words. Step 5 open → go back to it now; the
   log's Ports section is filled from its drift report, so a log without one is not finished.
 - The merge commit (step 4) and the ports (step 5) are already committed. Push only after the user says
-  so, and never with `--force`.
-- Finish the log: every section of the template, filled from steps 3–8 and the port's brief. "Decisions
-  that carry forward" holds only rules a later merge must keep, each with its reason — a fork identifier
-  that is deliberately not upstream's, a fork value kept over an upstream fix, a feature left out on
-  purpose. One-off resolutions stay in the Conflicts table. Commit it last, before the push:
-  `docs: log upstream merge <ref>`. If the user corrects a decision during the PR, update the log in the
-  same branch.
+  so, and never with `--force`: `git push -u origin <branch>`.
+- Finish the log: every template section, from steps 3–8 and the port's brief. "Decisions that carry
+  forward" holds only rules a later merge must keep, each with its reason (a fork identifier deliberately
+  not upstream's, a fork value kept over an upstream fix, a feature left out on purpose); one-off
+  resolutions stay in the Conflicts table. Commit it last, before the push: `docs: log upstream merge
+  <ref>`. A decision the user corrects during the PR is updated in the log on the same branch.
 - PR body: the brief from step 3 with the decisions filled in, the step 4–7 results, the step 8 checklist,
   and a link to the log.
 - **The branch may already have a PR** — always, for a redesign branch absorbing its base. Find it
-  (`gh pr list --repo <owner/repo> --head <branch> --state open`) and update it instead of opening a second:
-  read the body, append a `## Merge of <ref>` section, write it back whole with
-  `gh api -X PATCH repos/<owner>/<repo>/pulls/<n> -F body=@<file>` (CI fills fields such as an artifact URL
-  into it), and give its link in the chat. The step ends when the PR shows the QA checklist.
+  (`gh pr list --repo <owner/repo> --head <branch> --state open`) and update it, not a second one: read the
+  body (CI fills fields such as an artifact URL into it), append `## Merge of <ref>`, write it back whole
+  with `gh api -X PATCH repos/<owner>/<repo>/pulls/<n> -F body=@<file>`, and give its link. The step ends
+  when the PR shows the QA checklist.
 - **An upstream merge lands as a merge commit — never squash, never rebase.** Either drops upstream as a
   parent, so the next merge replays every upstream commit and conflict of this one. Whoever clicks Merge
   reads the PR, not this skill, so:
   - The PR body opens with: `⚠️ Merge with "Create a merge commit" — not squash or rebase. Squashing drops
     <ref> as a parent and the next upstream merge replays all of these conflicts.`
-  - Check the repository before opening the PR. Merge methods:
-    `gh api repos/<owner>/<repo> --jq '{allow_merge_commit, allow_squash_merge, allow_rebase_merge}'`.
-    Linear history: `gh api repos/<owner>/<repo>/rules/branches/<base> --jq '[.[].type]'` (rulesets), and if
-    `gh api repos/<owner>/<repo>/branches/<base> --jq .protected` is true,
-    `…/branches/<base>/protection --jq .required_linear_history.enabled`. Without admin rights the merge
-    methods read `null` and a protected branch's protection reads 404, like an unprotected one: that is
-    unknown, not allowed — tell the user to check the settings. Merge commits must be allowed and linear
-    history off; if not, say so in the PR and to the user rather than squash. When squash is allowed too —
-    the usual case — the warning line is what prevents it.
-  - After the user merges: `git rev-list --parents -1 <merge sha on the base branch>` prints two parents,
-    and `git merge-base origin/dev <ref>` prints the upstream commit merged. If it was squashed, say so at
-    once: the fix is a fresh merge of `<ref>`, cheap while `rerere` and the log are fresh.
+  - Before opening the PR, check that merge commits are allowed and linear history is off:
+    `gh api repos/<owner>/<repo> --jq '{allow_merge_commit, allow_squash_merge, allow_rebase_merge}'`,
+    `gh api repos/<owner>/<repo>/rules/branches/<base> --jq '[.[].type]'`, and for a protected base
+    `…/branches/<base>/protection --jq .required_linear_history.enabled`. Without admin rights these read
+    `null` or 404: unknown, not allowed — tell the user to check. If not allowed, say so in the PR and to the
+    user rather than squash. When squash is allowed too, the warning line is what prevents it.
+  - After the user merges: `git fetch origin`, then `git rev-list --parents -1 <merge sha on the base
+    branch>` prints the commit and its two parents, and `git merge-base --is-ancestor <ref> origin/dev`
+    succeeds. If it was squashed, say so at once: the fix is a fresh merge of `<ref>`, cheap while `rerere`
+    and the log are fresh.
 
 ## Common mistakes
 
 | Mistake | Instead |
 |---|---|
 | The fork added as a remote of an upstream checkout | A separate clone of the fork, with upstream as its remote |
-| Resolving before the brief is answered | Brief, wait, resolve |
 | Taking upstream's whole file to "get the fix" into a restyled component | Fork's markup + upstream's behavior |
-| Hand-merging `types.ts` or the lockfile | Regenerate |
 | Checking only the conflicted files | Also the files both sides changed, and `vc-frontend:port-upstream-to-fork` for code the fork stopped rendering |
-| Stopping after a green build, or after a side request mid-merge, without step 5 | Step 5 right after the merge commit; a side request is done in addition, then resume at the first open step |
+| Stopping after a green build, or a side request, without step 5 | Step 5 right after the merge commit; then resume at the first open step |
 | Trusting a passing upstream test without a mutation | Remove a ported line, watch it fail |
-| A bare `gh` in a clone with an `upstream` remote | `--repo <owner/repo>` on every `gh` command; it otherwise reads and writes upstream |
 | Force-pushing a rejected push, or recreating a pushed branch to start over | The remote moved: fetch and merge it. Start over under a new branch name |
 | Squash- or rebase-merging an upstream merge | A merge commit; the PR body's first line says so |
-| Asking again what an earlier log already decided | Read `upstream-merges/` in step 2; cite the log |
-| Decisions only in the PR body or the chat | The session's log in `upstream-merges/`, committed with the merge |
+| Decisions only in the PR body or the chat | The session's log in `upstream-merges/`, committed on the merge branch (step 9) |

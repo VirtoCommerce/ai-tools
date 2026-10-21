@@ -35,8 +35,8 @@ It installs disabled. Enable it in `/plugin`, or with `claude plugin enable vc-f
 2. **[PAUSE] You answer a brief.** One block per conflict, with a recommendation. Only the real decisions are questions.
 3. It resolves them, then runs types, lint, tests, locales and the build.
 4. **It checks nothing upstream got lost**, line by line, and in components the fork replaced.
-5. It writes tests for ported code nothing covered, and proves each one fails when the port is removed.
-6. **[PAUSE] A second brief, if needed:** fixes to port into the fork's own components.
+5. **[PAUSE] A second brief, if needed:** fixes to port into the fork's own components.
+6. It writes tests for ported code nothing covered, and proves each one fails when the port is removed.
 7. It smoke-tests the built app against a backend you name.
 8. **[PAUSE] You say when to push.** It opens the PR — or updates the branch's existing one — with a QA checklist.
 
