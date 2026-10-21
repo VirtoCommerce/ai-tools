@@ -3,10 +3,12 @@
 // here is fixed in this file or reported as a product finding — never by editing the row's expectation.
 import { test, expect } from "../../../../lib/fixtures.js";
 import { env, td } from "../../../../lib/data.js";
-import { addToCart, cartQuantity, formatMoney, money, resetCart, watchCartTraffic } from "../../../../lib/cart.js";
+import { addToCart, cartQuantity, formatMoney, money, resetCart, sentMutation, watchCartTraffic } from "../../../../lib/cart.js";
 import { testIdSelector } from "../../../../../scripts/lib/storefront-selectors.generated.js";
 
 const ROLE = "USER_DEFAULT";
+/** The mutation the row's [API] item names — asserted by name, never substituted (D7). */
+const API_MUTATION = "changeCartItemsQuantity";
 
 // Cleanup: "Restore or remove item" — removed.
 test.afterEach(async ({ apiAs }) => {
@@ -64,11 +66,9 @@ test("CART-007: Update Quantity - Decrease", async ({ signedInAs, apiAs }) => {
   // [STATE] verify quantity decremented to 1 — read back from the server-side cart.
   await expect.poll(() => cartQuantity(api, sku)).toBe(1);
 
-  // [API] the quantity mutation response errors[] is empty. The row names `changeCartItemQuantity`;
-  // the storefront sends whichever cart mutation it uses (observed: changeCartItemsQuantity), so the
-  // check is on the cart mutation that returned this line at quantity 1, whatever its name.
-  const sent = () => traffic.cartMutations.slice(sinceClick);
-  await expect.poll(() => sent().some((m) => m.lines.some((l) => l.sku === sku && l.quantity === 1))).toBe(true);
+  // [API] changeCartItemsQuantity mutation response errors[] is empty — the mutation the row names, by name.
+  const sent = () => sentMutation(traffic.cartMutations.slice(sinceClick), API_MUTATION);
+  await expect.poll(() => sent().length, { message: `${API_MUTATION} was sent after the click` }).toBeGreaterThan(0);
   expect(sent().flatMap((m) => m.errors)).toEqual([]);
 
   // [CONSOLE] no JS errors.

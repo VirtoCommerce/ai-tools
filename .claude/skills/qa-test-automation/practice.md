@@ -36,9 +36,11 @@ exactly once. Sum a column by reading every line total, not by assuming the line
 - Attach the collector **before** the first navigation: `const traffic = watchCartTraffic(page)`; it records
   console errors, HTTP 4xx/5xx and cart mutations (`regression/lib/cart.ts`).
 - `[CONSOLE]` ⇒ `expect(traffic.consoleErrors).toEqual([])`; `[NETWORK]` ⇒ `expect(traffic.httpErrors).toEqual([])`.
-- `[API]` / `[GQL]` checks on what the storefront sent: read it from the collector, not from a re-issued call.
-  The row may name an operation the storefront does not use; assert on the mutation that carried the effect and
-  say so in a comment (observed names go to the base, `kb_capture`), as `CART-006.spec.ts` does.
+- `[API]` / `[GQL]` checks on what the storefront sent: read it from the collector, not from a re-issued call,
+  and assert the operation **the row names, by name** (`sentMutation(traffic.cartMutations, "<root field>")`), as
+  `CART-006.spec.ts` does. If the storefront does not send that operation, the spec FAILS; never substitute the
+  operation it does send. A stale row goes to `/qa-review-tests --fix` with the observed name (and `kb_capture`),
+  a changed product is a finding (D7).
 - Slice by index (`traffic.cartMutations.slice(before)`) so earlier traffic is not attributed to this step.
 - **Evidence is not yours to capture.** Playwright already keeps a screenshot and a trace on failure for every
   context made in a test, including `signedInAs` pages, and a HAR for every spec. Never add a manual failure
@@ -71,5 +73,7 @@ entities carry the `AGENT-TEST-` prefix.
 - [ ] Collector attached before the first `goto`; console and network asserted last.
 - [ ] `afterEach` cleanup through API; no manual screenshot or evidence path.
 - [ ] Not both `page` and `signedInAs` in one test.
-- [ ] Ran the new spec twice in a row (second run proves the cleanup and the seed are repeatable).
 - [ ] `suites:lint` and `td:validate` clean.
+
+Optional, and outside D9: a second run of the same spec shows the cleanup and the seed are repeatable. It is
+not the one run, and its result never replaces the D9 verdict.
