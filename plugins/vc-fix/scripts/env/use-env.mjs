@@ -49,6 +49,7 @@ if (clear) {
       fail(`this session's environment sets TEST_ENV=${shell}, which beats a session binding: the run would still use ${shell}. ` +
         'Start Claude Code from a shell without TEST_ENV, or run this on that env.');
     }
+    const before = existsSync(file) ? parse(readFileSync(file)).TEST_ENV?.trim() : undefined;
     mkdirSync(dirname(file), { recursive: true });
     writeFileSync(file, `# This Claude Code session's env: vc-fix use-env (${requested ? 'argument' : 'default'}), ${new Date().toISOString()}\nTEST_ENV=${env}\n`);
     const cutoff = Date.now() - STALE_DAYS * 86_400_000;
@@ -56,6 +57,8 @@ if (clear) {
       const p = join(dirname(file), name);
       try { if (statSync(p).mtimeMs < cutoff) rmSync(p); } catch { /* another session removed it */ }
     }
+    // No env named: the default can move a session off the stand it was on — say so, never silently.
+    if (!requested && before && before !== env) console.log(`⚠ this session was on ${before}; it is now bound to ${env}, the default. Pass an env to stay on ${before}.`);
   }
 }
 
