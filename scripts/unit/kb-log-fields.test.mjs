@@ -17,7 +17,7 @@ import { RUN_MAX, loopPath, metaPath, queueDir, queuePath, readQueue } from '../
 import { fingerprint, whoPath } from '../kb/core/who.mjs';
 import { localReader } from '../kb/core/reader.mjs';
 import { RANKER } from '../kb/core/rank.mjs';
-import { DEPLOYMENT_MAX, NOTE_MAX, TOPIC_MAX, ask, askAbout, capture, confirm, dispute, show } from '../kb/core/verbs.mjs';
+import { NOTE_MAX, TOPIC_MAX, ask, askAbout, capture, confirm, dispute, show } from '../kb/core/verbs.mjs';
 import { captureLines } from '../kb/core/render.mjs';
 
 const FIXTURE = join(import.meta.dirname, 'fixtures', 'kb-base');
@@ -167,7 +167,7 @@ test('a capture points back at the ask it followed — as a pointer, not a copy'
       claim: 'Observed on the deployment: the app receives plain http behind the ingress.',
       deployment: 'vcst_qa',
       anchors: ['/company/gateway'],
-      scope: ['surface=platform'],
+      scope: ['surface=rest'],
     }, opened(), { env, via: 'cli' });
     assert.equal(r.state, 'queued');
 
@@ -221,7 +221,7 @@ test('`after` SURVIVES A FLUSH — the pointer is kept where the flush cannot re
       claim: 'It must.',
       deployment: 'vcst_qa',
       anchors: ['/company/after-a-flush'],
-      scope: ['surface=platform'],
+      scope: ['surface=rest'],
     }, opened(), { env, via: 'cli' });
     assert.equal(r.state, 'queued');
     const [capLine] = await linesOf(env);
@@ -243,7 +243,7 @@ test('`after` names the ask the capture is ABOUT — not merely the last one (PL
       claim: 'Observed.',
       deployment: 'vcst_qa',
       anchors: ['/company/gateway-tls'],
-      scope: ['surface=platform'],
+      scope: ['surface=rest'],
     }, opened(), { env, via: 'cli' });
     assert.equal((await linesOf(env)).at(-1).after, theMiss.at, 'the earlier miss it answers, not the later ask');
 
@@ -272,7 +272,7 @@ test('the asks survive a flush in the sidecar, words and all — the queue alone
       claim: 'At the ingress.',
       deployment: 'vcst_qa',
       anchors: ['/company/gateway-tls2'],
-      scope: ['surface=platform'],
+      scope: ['surface=rest'],
     }, opened(), { env, via: 'cli' });
     assert.equal((await linesOf(env)).at(-1).after, theMiss.at);
   });
@@ -313,7 +313,9 @@ test('a capture refused AT THE DOOR is logged — kinds of problem, never the re
       question: 'does the door log what it turned away',
       claim: 'It does now.',
       deployment: 'vcst_qa',
-      anchors: ['C:/Program Files/Git/cart', '/'],
+      // VCST-6378: a bad anchor beside a good one is now DROPPED, not refused -- so this refusal needs no
+      // usable anchor at all. The mangled one repairs to `/`, the other is `/`: both unstructured.
+      anchors: ['C:/Program Files/Git/', '/'],
       scope: ['surface=storefront-ui'],
     }, opened(), { env, via: 'cli' });
     assert.equal(r.state, 'invalid');
@@ -322,11 +324,11 @@ test('a capture refused AT THE DOOR is logged — kinds of problem, never the re
     const [l] = lines;
     assert.equal(l.kind, 'capture-invalid');
     assert.equal(l.subject, 'a fact with a mangled anchor');
-    // The MSYS prefix is undone first (VCST-6102), so `/cart` is judged as `/cart` and only `/` fails.
+    // The MSYS prefix is undone first (VCST-6102), so the mangled anchor is judged as `/`.
     assert.deepEqual(l.problems.sort(), ['unstructured']);
     assert.equal(l.repaired, 'msys');
-    // The SHAPE of the unstructured anchor, never its text: `/` is a path of zero segments.
-    assert.deepEqual(l.shapes, [{ type: 'path', segments: 0 }]);
+    // The SHAPE of the unstructured anchors, never their text: `/` is a path of zero segments.
+    assert.deepEqual(l.shapes, [{ type: 'path', segments: 0 }, { type: 'path', segments: 0 }]);
     assert.ok(!JSON.stringify(l).includes('Program Files'), 'the rejected coordinate stays on the laptop');
     assert.ok(!('payload' in l) && !('id' in l), 'nothing was queued for the base');
   });
@@ -383,7 +385,7 @@ test('a capture the base holds nothing near records related [] rather than omitt
       claim: 'Observed: annually.',
       deployment: 'vcst_qa',
       anchors: ['/depot/forklifts'],
-      scope: ['surface=platform'],
+      scope: ['surface=rest'],
     }, opened(), { env, via: 'cli' });
     assert.equal(r.state, 'queued');
     assert.equal(r.related.hits.length, 0);
@@ -438,7 +440,7 @@ test('a capture with nothing related prints no related block at all', async () =
       claim: 'Observed: annually.',
       deployment: 'vcst_qa',
       anchors: ['/depot/forklifts'],
-      scope: ['surface=platform'],
+      scope: ['surface=rest'],
     }, opened(), { env, via: 'cli' });
     assert.ok(!captureLines(r).some((l) => l.includes('related')));
   });
@@ -483,7 +485,7 @@ test('a capture records the QUESTION as well as the subject', async () => {
       claim: 'Observed on the depot board: the roster query takes a yard id.',
       deployment: 'vcst_qa',
       anchors: ['/depot/forklifts'],
-      scope: ['surface=platform'],
+      scope: ['surface=rest'],
     }, opened(), { env, via: 'cli' });
     assert.equal(r.state, 'queued');
     // The subject is the claim; the question is the RETRIEVAL KEY, and only one of them says
@@ -663,7 +665,7 @@ test('a stand name is folded on SPELLING only — into the entry and the log ali
       subject: 'a fact seen on a stand typed with a hyphen',
       question: 'is a stand typed with a hyphen the same stand',
       claim: 'It is.',
-      deployment: 'vcst qa',
+      deployment: 'VCST-Qa',
       anchors: ['/company/hyphen-stand'],
       scope: ['surface=storefront-ui'],
     }, opened(), { env, via: 'cli' });
@@ -672,17 +674,6 @@ test('a stand name is folded on SPELLING only — into the entry and the log ali
     assert.equal(confirmed.deployment, 'vcst_qa');
     assert.equal(confirmed.payload.item.deployment, 'vcst_qa', 'the entry, not only the log line');
     assert.equal(captured.payload.entry.evidence[0].deployment, 'vcst_qa');
-  });
-});
-
-test('a stand NAME is never mapped — `vcst` stays `vcst`, not `vcst_qa`', async () => {
-  // The line `canonicalStand` must not cross: `vcst` onto `vcst_qa` needs a table nobody owns.
-  await withQueue(async (env) => {
-    opens(env, EXISTING_ID);
-    await confirm(EXISTING_ID, { deployment: 'vcst' }, opened(), { env, via: 'cli' });
-    const [line] = await linesOf(env);
-    assert.equal(line.deployment, 'vcst');
-    assert.equal(line.payload.item.deployment, 'vcst');
   });
 });
 
@@ -723,62 +714,6 @@ test('an evidence NOTE is bounded too - the one prose field every agent actually
   });
 });
 
-test('an over-long deployment is BOUNDED — "verbatim" is about normalising, not about length', async () => {
-  // F1 (PLAN §22.3). The field is caller-supplied and lands in a PUBLIC, APPEND-ONLY log where a
-  // line cannot be edited or withdrawn, and nothing between the tool call and the file had a view
-  // on its size — so an agent that put a paragraph here published a paragraph, against §7's "ids
-  // and subjects only, never prose". The bound is imported, never transcribed (GOLDEN RULE).
-  //
-  // "Verbatim" survives intact, because it was always a promise about NORMALISING: no case-fold,
-  // no mapping `vcst` onto `vcst_qa`, no opinion about what a stand is called. The test below this
-  // one is the one that pins that, and it is unchanged.
-  const LONG = `vcst_qa ${'x'.repeat(DEPLOYMENT_MAX * 3)}`;
-  assert.ok(LONG.length > DEPLOYMENT_MAX, 'the fixture must actually exceed the bound');
-  await withQueue(async (env) => {
-    await ask(ANSWERED, opened(), { env, via: 'cli', deployment: LONG });
-    await ask(MISSED_COLD, opened(), { env, via: 'cli', deployment: LONG });
-    const lines = await linesOf(env);
-    for (const l of lines) assert.equal(l.deployment.length, DEPLOYMENT_MAX);
-    // Deterministic, so an ask and the confirm that follows it still join on the same stand.
-    assert.equal(lines[0].deployment, lines[1].deployment);
-  });
-
-  // A BOUND, NOT A VALIDATOR: it is set far clear of every stand name this base has ever held —
-  // the longest, `vcptcore_stable`, is 15 characters — so a real value is never touched.
-  await withQueue(async (env) => {
-    for (const stand of ['vcst_qa', 'vcptcore_stable', 'vcptcore_qa1', 'virtostart']) {
-      await ask(ANSWERED, opened(), { env, via: 'cli', deployment: stand });
-    }
-    const lines = await linesOf(env);
-    assert.deepEqual(lines.map((l) => l.deployment), ['vcst_qa', 'vcptcore_stable', 'vcptcore_qa1', 'virtostart']);
-  });
-});
-
-test('the cap is a property of the FIELD, so confirm writes the same bounded deployment ask does', async () => {
-  // One public log, one `deployment` key, two verbs writing it — a bound only one of them applies
-  // is a bound the log does not have. `confirm` used to put `input.deployment` on the line
-  // directly, bypassing the very function that holds the rule.
-  const LONG = `vcst_qa ${'x'.repeat(DEPLOYMENT_MAX * 3)}`;
-  await withQueue(async (env) => {
-    await ask(ANSWERED, opened(), { env, via: 'cli', deployment: LONG });
-    await confirm(EXISTING_ID, { deployment: LONG }, opened(), { env, via: 'cli' });
-    const [asked, confirmed] = await linesOf(env);
-    assert.equal(confirmed.kind, 'confirm');
-    assert.equal(confirmed.deployment.length, DEPLOYMENT_MAX);
-    assert.equal(confirmed.deployment, asked.deployment, 'both doors, one rule');
-  });
-});
-
-test('the deployment is recorded verbatim — the log reports, it does not normalise', async () => {
-  // The base already holds `vcst` once against `vcst_qa` 33 times. Ironing that out on the way in
-  // would need a mapping with no source of truth behind it, and would hide the one thing worth
-  // knowing: that two callers disagree about what the stand is called.
-  await withQueue(async (env) => {
-    await ask(ANSWERED, opened(), { env, via: 'cli', deployment: '  vcst  ' });
-    assert.equal((await linesOf(env)).at(-1).deployment, 'vcst', 'trimmed, and otherwise untouched');
-  });
-});
-
 test('nothing but an ask carries it — a capture already has its own', async () => {
   // `capture` puts the deployment in the ENTRY's evidence, where it is a property of the
   // observation. A second copy on the capture's log line would be the duplicate-field defect §7
@@ -790,7 +725,7 @@ test('nothing but an ask carries it — a capture already has its own', async ()
       claim: 'It does not; it reaches the entry.',
       deployment: 'vcptcore_stable',
       anchors: ['/depot/stands'],
-      scope: ['surface=platform'],
+      scope: ['surface=rest'],
     }, opened(), { env, via: 'cli' });
     assert.equal(r.state, 'queued');
     const line = (await linesOf(env)).at(-1);
@@ -851,7 +786,7 @@ test('every line a session writes carries the handle — ask, miss, show and cap
       claim: 'Observed: the handle is on it.',
       deployment: 'vcst_qa',
       anchors: ['/depot/forklifts'],
-      scope: ['surface=platform'],
+      scope: ['surface=rest'],
     }, opened(), { env, via: 'cli' });
 
     const lines = await linesOf(env);
@@ -959,7 +894,7 @@ test('the run handle rides on every line when the env var is set, and on none wh
       claim: 'It does.',
       deployment: 'vcst_qa',
       anchors: ['/depot/runs'],
-      scope: ['surface=platform'],
+      scope: ['surface=rest'],
     }, opened(), { env, via: 'cli' });
     const lines = await linesOf(env);
     assert.ok(lines.length >= 4);

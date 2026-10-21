@@ -24,8 +24,8 @@ Every session must end with at least one **net-new scenario** (not in any regres
 
 **Three charter sources, and the mode names which one.** Ad-hoc (`checkout`, `catalog`, …) authors the
 charter here, from the coverage map; `sprint` reads it from the plan's §5.3; `ticket` receives it from
-`/qa-test`'s Test Model. **No mode invents a charter another mode owns** — `sprint` STOPs without a plan,
-and `ticket` STOPs without a model.
+the caller's Test Model or test strategy. **No mode invents a charter another mode owns** — `sprint` STOPs without a plan,
+and `ticket` STOPs without one.
 
 ---
 
@@ -36,7 +36,7 @@ and `ticket` STOPs without a model.
 Only for `sprint` / `sprint:XX-YY`. The charter set was already derived at planning time — this step
 loads it and skips the ad-hoc charter authoring in "Exploration Charter" below.
 
-1. Resolve the plan: `sprint` → the most recent `vc/shared/docs/Sprint plans/sprint-*-summary.json`;
+1. Resolve the plan: `sprint` → the most recent `docs/Sprint plans/sprint-*-summary.json`;
    `sprint:XX-YY` → that exact file. No summary.json ⇒ **STOP** and tell the user to run
    `/qa-test-plan XX-YY` first — never improvise a charter set that the plan does not contain.
 2. Read `exploratoryCharters[]`. Each entry carries `mission`, `candidateScenarios[]`, `technique`,
@@ -46,7 +46,7 @@ loads it and skips the ad-hoc charter authoring in "Exploration Charter" below.
    suites need them.
 4. `lane` is any of the three Playwright lanes — `playwright-firefox` is click-capable since 2026-09-08
    (`.claude/rules/agents.md` §Parallel Execution). If all three are busy, QUEUE.
-5. Still run Steps 0.1–0.5 below (env health, build versions, 24 h duplicate check, docs, coverage map)
+5. Still run Steps 0.1–0.5 (item 1 is `/preflight`) below (env health, build versions, 24 h duplicate check, docs, coverage map)
    — the charter says *what* to explore, pre-flight establishes *against what build*.
 
 Rationale + the C1–C4 / D1–D3 derivation: `.claude/skills/qa-sbtm/sprint-charter-selection.md`.
@@ -60,10 +60,9 @@ Step 0a: the charter is **received, not authored**.
 
 1. **Read the charter payload** `/qa-test` passes (its shape:
    [`.claude/skills/qa-test/exploratory-lane.md`](../skills/qa-test/exploratory-lane.md) §6). Its mission
-   is five derived sources — unresolved mechanism-matrix `GAP`/`WAIVED` cells · unresolved reverse edges ·
-   `{HYPOTHESIS}` oracles to ground · ACs `1d` flagged DRIFT/NOT-FOUND/CONTRADICTS · tc:scope at-risk rows.
+   is the derived sources of §3 there — five from the Test Model, a sixth from an approved test strategy.
    **That IS the charter — do not re-derive it, do not widen it.**
-2. **No Test Model, or no unresolved cell in any of the five?** → **STOP** and report the lane skipped with
+2. **No model or strategy charter, or nothing unresolved in any source?** → **STOP** and report the lane skipped with
    that reason. Never improvise a mission, exactly as Step 0a never improvises a charter set the plan does
    not contain. A `/qa-test` FAST run reaches here with no model by construction and is the normal skip.
 3. **Box: SIZED TO SCOPE — 30 min floor, 60 min ceiling**, split ~20% setup · ~65% explore · ~15% write-up.
@@ -72,29 +71,29 @@ Step 0a: the charter is **received, not authored**.
    remains. Getting that backwards produces a pleasant session and no answers to the questions asked.
 4. **Return the three extra fields the caller needs**, beyond the ordinary §Output tables: model
    amendments (with evidence), the **`{OBSERVED}` value per `{HYPOTHESIS}` row** (or *not reached + reason*),
-   and per mission item 1–5 *covered* or *NOT REACHED + reason*. A `PROMOTE` `Fate` here means the caller
+   and per mission item *covered* or *NOT REACHED + reason*. A `PROMOTE` `Fate` here means the caller
    authors that case **in the same run**, not in a later sprint — so name the scenario precisely enough to
    author from.
 5. **File nothing.** Bugs go back to the caller; `/qa-test` `5-triage` grades them, `5-file` files them.
-   Everything else in Steps 0.1–0.5 below still runs — the charter says *what* to explore, pre-flight
+   Everything else in Steps 0.1–0.5 (item 1 is `/preflight`) below still runs — the charter says *what* to explore, pre-flight
    establishes *against what build*.
 
 Rationale, the charter derivation table and the record: [`exploratory-lane.md`](../skills/qa-test/exploratory-lane.md).
 
-### Step 0 — Pre-Flight (per `.claude/templates/agent-dispatch.md`)
+### Step 0 — Pre-Flight
 
-1. **Environment health** — run `/qa-env-check endpoints`. If unhealthy, warn user.
-2. **Build & version verification** — fetch deployed versions per `agent-dispatch.md § Build Verification`:
-   - Use GitHub MCP to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa` by default; use the branch matching `TEST_ENV` for other envs)
-   - Record platform version and theme version — include in the session report header
-3. **Duplicate check** — scan `reports/exploratory/` for an `SBTM-*` session on the same domain in the last 24 hours. If found, warn user and show previous findings.
+1. **`/preflight exploratory --domain <slug> --components <domain's components> [--ticket <KEY>] [--storefront]`**
+   ([`../skills/preflight/SKILL.md`](../skills/preflight/SKILL.md)) — env health, the **deployed**
+   build, the release-ledger Δ, the 24 h duplicate check (this domain or ticket) and MCP availability, in one
+   output form. Record the block in the session report header.
 3a. **What shipped recently** — read `.claude/knowledge/domain/release-ledger.md` §1–§2 for the components in scope (map domain → component via [module-suite-map.md](../knowledge/execution/module-suite-map.md)). Carry the newest 1–2 months' features into Step 5's coverage map.
 
    **This is the strongest C1 signal this pre-flight can compute.** A feature that shipped last month is in *neither* of Step 5's subtract-lists **by construction**: no suite asserts it (nobody has authored one yet) and `vc-bug-catalog.md` has never recorded a failure in it (nobody has run it here). It is not *probably* uncovered — it is **provably** uncovered. A **⚠ BREAKING** row is stronger still: it names a surface whose contract moved, i.e. C4 latent blast radius with a date on it.
 
-   Two boundaries: the ledger says what was **released upstream**, not what is **deployed** on this env — cross it against the `deployed` probe from item 2 and drop anything `NOT_DEPLOYED`, since a session cannot explore what isn't there. And it carries **no behaviour**, so it tells you *where* to look, never *what correct looks like* — that is item 4 and §5a's BL axis.
+   Two boundaries: the ledger says what was **released upstream**, not what is **deployed** — `/preflight`
+   already crossed the two; drop every `not-deployed:*` row, since a session cannot explore what isn't there. And it carries **no behaviour**, so it tells you *where* to look, never *what correct looks like* — that is item 4 and §5a's BL axis.
 
-4. **Docs query (VirtoOZ MCP)** — via the `/vc-docs` skill, query the target domain against the topic-scoped VirtoOZ tools (`StorefrontUserGuide` for storefront flows, `StorefrontDeveloperGuide` / `FrontendSourceCode` for behavior, `B2BExperts` for B2B) — e.g. `"checkout workflow"`, `"B2B organizations members"`, `"catalog product properties"`. Extract feature inventory to guide exploration — ensure the agent covers all documented features, not just obvious ones. Context7 (`/virtocommerce/vc-docs`) is a fallback only if VirtoOZ is unavailable.
+4. **Docs query** — done inside `/preflight` step 3 (kb first, then VirtoOZ via `/vc-docs`). For an item-3a feature, query VirtoOZ after `/preflight`. Extract feature inventory to guide exploration — ensure the agent covers all documented features, not just obvious ones. Context7 (`/virtocommerce/vc-docs`) is a fallback only if VirtoOZ is unavailable.
 
    **VirtoOZ answers "how is it meant to work", never "what is new".** Its release corpus stops at Platform 3.917.1 while production is past 3.1050, so for a feature from item 3a it will typically return the *pre-existing* page for that area and nothing about the change. That is not a miss to retry — it is the division of labour: 3a supplies what is new, this step supplies the intended behaviour where docs exist, and where they do not the session is on the `{OBSERVED}` axis (see `agents/qa/shared-instructions.md` §Live-Verification).
 5. **Coverage map** — for the target domain, identify what's *already covered*:

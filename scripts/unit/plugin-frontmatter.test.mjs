@@ -1,7 +1,7 @@
 // Guards the YAML frontmatter of every markdown component this repo ships — both the distributed
 // plugins and the project-scoped `.claude/` surface Claude Code auto-discovers here (VCST-5807).
 //
-// `plugins/vc-fix/skills/project-init/SKILL.md` carried a ~1020-character UNQUOTED `description:`
+// `plugins/vc-init/skills/project-init/SKILL.md` carried a ~1020-character UNQUOTED `description:`
 // scalar containing a colon-space — "…Day-2 modes skip the interview: `--add-env` adds…". In YAML a
 // `: ` inside a plain scalar IS the key/value separator, so the parser saw a malformed mapping and
 // abandoned the whole block; `claude plugin validate` reported that the skill "loads with empty

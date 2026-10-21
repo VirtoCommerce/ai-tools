@@ -3,6 +3,8 @@
 > **Status: for review.** §9 records the decisions taken (D1–D12, by the owner on 2026-10-09); none are open.
 > §13 records the dry-run findings behind D8–D12. The prototype — `/qa-test-fast` as the single `/qa-test`
 > under D1–D12 — is draft PR #416; `/qa-test` FAST/FULL are untouched until §8 passes. Tracked in VCST-6249.
+>
+> **2026-10-14:** `/qa-test-strategy` lands standalone (plan `docs/superpowers/plans/2026-10-14-qa-test-strategy.md`), with floors and the gate as scripts; the single `/qa-test` is the next plan.
 
 ## 1. Problem
 

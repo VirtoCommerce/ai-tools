@@ -84,5 +84,30 @@
       { "type": "text", "text": "FAQ: How do I reset my password? Navigate to Account Settings and Security. What are support hours? Monday to Friday, 8 AM to 6 PM EST. How do I escalate a ticket? Reply with ESCALATE in the subject." },
       { "type": "title", "heading": "h2", "title": "Need More Help?", "subtitle": "Our support team is here for you" }
     ]
+  },
+
+  "PB_GA4_PRODUCT_LISTS": {
+    "_comment": "VCST-6017 GA4 markup lists. One AGENT-TEST page carrying every Page Builder block type that renders products, each with its OWN pool group (@pool:<key> → ../analytics/ga4-lists-specs.mjs POOL_PLAN; disjoint, distinct prices). Marked by PR #2543: products + predefined-product-list (both products-block.vue, list id products_block — two blocks sharing one list id on purpose), products-carousel (products_carousel; one titled, one with title \"\" → data-list-name=\"\"), favorite-products (favorite_products; a filter search, NOT the account's favourites). NOT marked: demo-product-list (embedded products, no link) and product-info (embedded product; expected: no view_item). The spacer pushes predefined-product-list and the untitled carousel far below a 1080px fold.",
+    "settings": { "header": "AGENT-TEST GA4 Product Lists", "hideBreadcrumbs": false },
+    "content": [
+      { "id": "products01", "type": "products", "title": "AGENT-TEST GA4 Products Block", "subtitle": "type products", "cardType": "full", "columnsAmountDesktop": "4", "columnsAmountTablet": "3", "skus": "@pool:pbProducts" },
+      { "id": "carousel02", "type": "products-carousel", "title": "AGENT-TEST GA4 Carousel", "subtitle": "type products-carousel, titled", "cardType": "full", "slidesPerView": 4, "skus": "@pool:pbCarouselTitled" },
+      { "id": "favorites03", "type": "favorite-products", "title": { "text": "AGENT-TEST GA4 Favorites" }, "subtitle": { "text": "type favorite-products" }, "viewMode": "grid", "count": "@pool-count:pbFavorites", "filter": "@pool-filter:pbFavorites" },
+      { "id": "demo04", "type": "demo-product-list", "title": "AGENT-TEST GA4 Demo List (not marked)", "content": "type demo-product-list", "products": "@pool-demo:pbDemo" },
+      { "id": "productinfo05", "type": "product-info", "product": "@pool-product:pbProductInfo", "variations": [] },
+      { "id": "spacer06", "type": "text", "heading": "h3", "title": "Below the fold", "text": "<div data-agent-test=\"below-fold-spacer\" style=\"height:2600px\"></div>" },
+      { "id": "predefined07", "type": "predefined-product-list", "title": "AGENT-TEST GA4 Predefined List", "subtitle": "type predefined-product-list, below the fold", "cardType": "full", "columnsAmountDesktop": "4", "columnsAmountTablet": "3", "skus": "@pool:pbPredefined" },
+      { "id": "carousel08", "type": "products-carousel", "title": "", "subtitle": null, "cardType": "full", "slidesPerView": 4, "skus": "@pool:pbCarouselUntitled" }
+    ]
+  },
+
+  "PB_GA4_HTML_LISTS": {
+    "_comment": "VCST-6017 scenarios #18/#19 + #17 empty: plain HTML in a text block (rendered through v-html-safe, which keeps data-* attributes) in the PR README's grammar. @@cards:<key>@@ = full cards (id, sku, name, price); @@cards-partial:<key>@@ = name + price only. The favorite-products block searches a code no product carries, so it renders an EMPTY favorite_products container.",
+    "settings": { "header": "AGENT-TEST GA4 HTML Product Lists", "hideBreadcrumbs": false },
+    "content": [
+      { "id": "html01", "type": "text", "heading": "h3", "title": "AGENT-TEST HTML Full Cards", "text": "<div data-vc-track=\"product-list\" data-list-id=\"agent_test_html_full\" data-list-name=\"AGENT-TEST HTML Full Cards\">@@cards:htmlFull@@</div>" },
+      { "id": "html02", "type": "text", "heading": "h3", "title": "AGENT-TEST HTML Name Price Only", "text": "<div data-vc-track=\"product-list\" data-list-id=\"agent_test_html_partial\" data-list-name=\"AGENT-TEST HTML Name Price Only\">@@cards-partial:htmlPartial@@</div>" },
+      { "id": "favorites03", "type": "favorite-products", "title": { "text": "AGENT-TEST GA4 Favorites No Match" }, "subtitle": { "text": "empty container" }, "viewMode": "grid", "count": 4, "filter": "\"code\":\"AGENT-TEST-GA4-NO-SUCH-SKU\"" }
+    ]
   }
 }

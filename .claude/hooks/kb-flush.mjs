@@ -24,15 +24,18 @@
  *    and exits immediately. The hook itself is tens of milliseconds.
  * 2. IT MUST NOT WRITE TO STDOUT. A Stop hook's stdout is a control channel; stray text there can
  *    change what the session does. Everything here is silent, and it exits 0 whatever happens — a
- *    flush that can fail a session is worse than a flush that is late.
+ *    flush that can fail a session is worse than a flush that is late. The ONE exception is a
+ *    `{"systemMessage": …}` object, printed once per refused token (VCST-6378): it is shown to the
+ *    person and changes nothing about the turn.
  */
 import { spawn } from 'node:child_process';
 import { closeSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
-import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { REACH_IDLE_MS, advanceReach, idleReaches, markTried, ownReachDue } from '../../scripts/kb/core/reach.mjs';
-import { hasSessionId, hookEnv, isSynthetic, kbDisabled, pushConfirmRequired, runOf, sessionId } from '../../scripts/kb/core/queue.mjs';
+import {
+  accessBlock, accessWhy, claimDeniedNotice, rateHold, linesWouldGo, logsImmediate, QUEUE_IDLE_MS, hasSessionId, hookEnv, isSynthetic, kbDisabled, pushConfirmRequired, queueDir, runOf, sessionId,
+} from '../../scripts/kb/core/queue.mjs';
 import { cachedWho } from '../../scripts/kb/core/who.mjs';
 import { writeToken } from '../../scripts/kb/core/token.mjs';
 
@@ -43,6 +46,35 @@ function queueHasWork(dir) {
       if (statSync(join(dir, name)).size > 0) return true;
     }
   } catch { /* no queue directory yet — nothing has ever been asked */ }
+  return false;
+}
+
+/**
+ * Would a push go now (VCST-6378)? The same rule the push applies (`queue.mjs` `linesWouldGo`), over
+ * what the push would TAKE: this session's queue file, another session's only once it has sat idle for
+ * QUEUE_IDLE_MS, and idle sessions' counter states by the day they last worked. Otherwise a turn that
+ * only asked starts a process that answers `deferred`.
+ */
+function pushWouldGo(dir, env, session, staleStates) {
+  if (logsImmediate(env)) return true; // everything goes, the session's own counters included
+  const now = Date.now();
+  const today = new Date(now).toISOString().slice(0, 10);
+  if (staleStates.some((s) => String(s.lastAt ?? '').slice(0, 10) < today || logsImmediate(env))) return true;
+  try {
+    for (const name of readdirSync(dir)) {
+      if (!name.endsWith('.jsonl')) continue;
+      const path = join(dir, name);
+      if (name !== `${session}.jsonl` && now - statSync(path).mtimeMs < QUEUE_IDLE_MS) continue;
+      const lines = [];
+      for (const raw of readFileSync(path, 'utf8').split('\n')) {
+        if (!raw.trim()) continue;
+        // A torn line is skipped, as the push's own reader skips it: counting it would spawn a push on
+        // every turn that only answers `deferred` (review round 1).
+        try { lines.push(JSON.parse(raw)); } catch { /* torn */ }
+      }
+      if (linesWouldGo(lines, { env, now })) return true;
+    }
+  } catch { /* no queue directory: nothing to send */ }
   return false;
 }
 
@@ -60,7 +92,17 @@ function main() {
   // opted out contributes neither a push nor a `session` line (`queue.mjs` `kbDisabled`).
   if (kbDisabled(process.env)) return;
 
-  const dir = process.env.KB_QUEUE_DIR || join(tmpdir(), 'claude-kb-queue');
+  // THE SAME DIRECTORY EVERY OTHER kb PROCESS USES, from the one function that names it (VCST-6378 moved
+  // it out of the temp directory). A copy of the rule here is how the two would drift.
+  const dir = queueDir(process.env);
+
+  // A TOKEN THAT CANNOT WRITE IS SAID ONCE, to the person (VCST-6378) -- a `systemMessage`, which is shown
+  // and changes nothing about the turn, unlike a block. `claimDeniedNotice` marks it told before it is
+  // printed, so a crash costs the notice, never a repeat.
+  // Only while the denial holds for the token this machine pushes with (round 2): a switched token is not
+  // told it cannot write.
+  const notice = accessBlock(process.env, writeToken(process.env).token) ? claimDeniedNotice(process.env) : null;
+  if (notice) process.stdout.write(JSON.stringify({ systemMessage: accessWhy(notice.code, process.env) }));
 
   // THE IDENTITY COMES FROM `sessionId()`, NOT FROM THE PAYLOAD, and the difference is not cosmetic:
   // they are two different identifiers. The hook payload's `session_id` is the TRANSCRIPT's id
@@ -98,7 +140,8 @@ function main() {
   // A SESSION THAT NEVER ASKED STILL HAS TO REACH THE BASE, which is exactly the case the old
   // early return dropped: no queue work meant no push, so the sessions worth knowing about were the
   // ones that could never report themselves. A finished session's counters are queue work now.
-  const stale = idleReaches(dir, { session, idleMs: REACH_IDLE_MS }).length > 0;
+  const staleStates = idleReaches(dir, { session, idleMs: REACH_IDLE_MS });
+  const stale = staleStates.length > 0;
   // AND THIS SESSION'S OWN COUNTERS, when it has nothing else to send (VCST-6091): at once the first
   // time, then at most every `OWN_REACH_EVERY_MS`. Without it a session that never asked reached the
   // base only when a later session on this machine happened to sweep it — days later, or never.
@@ -115,8 +158,15 @@ function main() {
   if (due) markTried(dir, session);
   const mine = due && Boolean(writeToken(env).token);
   if (!queueHasWork(dir) && !stale && !mine) return;
+  // Only log lines from today, or counters alone: they wait for a change or for tomorrow (VCST-6378).
+  if (!pushWouldGo(dir, env, session, staleStates)) return;
   // KB_PUSH_CONFIRM=1: a detached child has nobody to ask, so it would only hold. Not spawned.
   if (pushConfirmRequired(process.env)) return;
+  // THIS TOKEN WAS REFUSED and the refusal still holds (VCST-6378): the push would only say so again,
+  // so no process is started. A changed token, or the re-check interval passing, lets the next one go.
+  if (accessBlock(env, writeToken(env).token)) return;
+  // OUT OF REQUESTS until GitHub's retry time (VCST-6378): the push would only be held, so none starts.
+  if (rateHold(env)) return;
 
   // `$CLAUDE_PROJECT_DIR` is set for hooks; resolving from this file is the fallback that survives
   // being invoked from somewhere else.
@@ -134,7 +184,7 @@ function main() {
     out = openSync(logFile, 'a');
   } catch { /* an unwritable log must not cost the push */ }
 
-  const child = spawn(process.execPath, [join(root, 'scripts', 'kb', 'kb.mjs'), 'push'], {
+  const child = spawn(process.execPath, [join(root, 'scripts', 'kb', 'kb.mjs'), 'push', '--auto'], {
     cwd: root,
     detached: true,
     stdio: ['ignore', out, out],

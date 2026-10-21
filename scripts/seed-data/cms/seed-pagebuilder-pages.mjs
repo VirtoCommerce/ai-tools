@@ -25,21 +25,23 @@
  *   TEST_ENV=vcst npm run seed:cms-pages -- --dry-run --verbose
  *   TEST_ENV=vcst npm run seed:cms-pages:teardown     # re-archive (never deletes — md keep-for-reuse)
  *
- * Flags: --dry-run, --verbose, --teardown.
+ * Flags: --dry-run, --verbose, --teardown, --only <ALIAS[,ALIAS]> (e.g. PB_GA4_PRODUCT_LISTS,PB_GA4_HTML_LISTS).
  */
 
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  assertSafeTarget, auth, api, log, verbose, DRY_RUN, TEARDOWN, STORE_ID, writeEnvAliasOverride,
+  assertSafeTarget, auth, api, log, verbose, DRY_RUN, TEARDOWN, ONLY, STORE_ID, writeEnvAliasOverride,
   ROOT, BACK_URL, ADMIN, ADMIN_PASSWORD, discoverCatalogProducts, loadCsv,
 } from '../../lib/seed-common.mjs';
 import {
   CANONICAL_PAGES, STATUS, pickCanonical, permalinkConflict, draftBody, permalinkBody,
   updateBody, isoOffsetDays, pickPromoteCandidate, pickByNameCulture, familyDuplicates,
   CONTENT_FILE, contentDocFor, parseContentDoc, blockCount, buildContentBody, maxDiscover,
-  createGroupedBody,
+  createGroupedBody, usesPool, sameContent,
 } from './pagebuilder-pages-specs.mjs';
+import { discoverGa4Pool } from '../analytics/ga4-pool.mjs';
+import { pageAliasFields } from '../analytics/ga4-lists-specs.mjs';
 
 // Content is served/accepted as text/plain JSON, which seed-common's api() (JSON-only) can't READ,
 // so raw fetch with a locally-minted token. Loaded once.
@@ -59,8 +61,34 @@ async function getContent(groupId, draft = false) {
   return parseContentDoc(await r.text().catch(() => ''));
 }
 async function postContent(groupId, body) {
-  // Write via seed-common api() (JSON request; text/plain response is fine — we ignore it).
-  await api('POST', `/api/page-builder-pages/grouped/${groupId}/content`, body, { expectStatus: [200, 201, 204] });
+  // Builds that guard concurrent saves need the content version token: read it with includeVersion=true
+  // and echo it as If-Match (the BODY eTag — the edge proxy weakens the ETag header; @kb(KB-1336804F)).
+  // Older builds return no eTag and accept the bare POST, so the header is sent only when one exists.
+  const tok = await contentToken();
+  const vr = await fetch(`${BACK_URL}/api/page-builder-pages/grouped/${groupId}/content?draft=true&includeVersion=true`, { headers: { Authorization: `Bearer ${tok}` } });
+  let eTag = null;
+  try { const v = JSON.parse(await vr.text()); eTag = typeof v?.eTag === 'string' ? v.eTag : null; } catch { /* plain document: no version support */ }
+  const res = await fetch(`${BACK_URL}/api/page-builder-pages/grouped/${groupId}/content${eTag ? '?includeVersion=true' : ''}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${tok}`, 'Content-Type': 'application/json', ...(eTag ? { 'If-Match': eTag } : {}) },
+    body: JSON.stringify(body),
+  });
+  if (![200, 201, 204].includes(res.status)) throw new Error(`POST content ${groupId} -> ${res.status} ${(await res.text().catch(() => '')).slice(0, 160)}`);
+}
+
+/** Canonical pages this run touches: all, or only the --only aliases (comma-separated). */
+function inScope() {
+  if (!ONLY) return CANONICAL_PAGES;
+  const want = new Set(String(ONLY).split(',').map((s) => s.trim()).filter(Boolean));
+  const picked = CANONICAL_PAGES.filter((s) => want.has(s.alias));
+  if (picked.length !== want.size) throw new Error(`--only: unknown alias(es) ${[...want].filter((a) => !picked.some((s) => s.alias === a)).join(', ')}`);
+  return picked;
+}
+
+let _poolCache = null;
+async function ga4Pool() {
+  if (!_poolCache) _poolCache = await discoverGa4Pool({ backUrl: BACK_URL, storeId: STORE_ID });
+  return _poolCache;
 }
 
 let _fixture = null;
@@ -94,13 +122,21 @@ async function ensurePageState(page, spec, culture, { schedule } = {}) {
   const inWindow = full?.startDate && Date.parse(full.startDate) < now
     && full?.endDate && Date.parse(full.endDate) > now + 7 * 86400000;
   const scheduleOk = wantSchedule ? inWindow : (!full?.startDate && !full?.endDate);
-  if (haveContent && scheduleOk && full?.status === STATUS.PUBLISHED) {
+  const doc = contentDocFor(loadContentFixture(), spec, culture);
+  // ownedContent (AGENT-TEST pages): the fixture IS the content — rebuild it (re-resolving the pool) and
+  // compare, so a drifted page or a re-partitioned pool is rewritten instead of "kept".
+  let owned = null;
+  if (spec.ownedContent && doc) {
+    owned = buildContentBody(doc, { skus: await discoverSkus(maxDiscover(doc)), pool: usesPool(doc) ? await ga4Pool() : null });
+  }
+  const contentOk = owned ? sameContent(live, owned) : haveContent;
+  if (contentOk && scheduleOk && full?.status === STATUS.PUBLISHED) {
     return `content ok (${blockCount(live)} blocks${wantSchedule ? ', in-window' : ''}, kept)`;
   }
   // Desired content: keep existing blocks; else fill from the fixture (resolving @discover SKUs live).
-  const doc = contentDocFor(loadContentFixture(), spec, culture);
   let contentBody, fillNote;
-  if (haveContent) { contentBody = { settings: live.settings || {}, content: live.content }; fillNote = `content kept (${blockCount(live)} blocks)`; }
+  if (owned) { contentBody = owned; fillNote = `${haveContent ? 'rewrote' : 'filled'} ${owned.content.length} owned blocks (pool-resolved)`; }
+  else if (haveContent) { contentBody = { settings: live.settings || {}, content: live.content }; fillNote = `content kept (${blockCount(live)} blocks)`; }
   else if (doc) {
     const skus = await discoverSkus(maxDiscover(doc));
     contentBody = buildContentBody(doc, { skus });
@@ -322,7 +358,7 @@ async function seed() {
   const results = [];
   const writeback = {};
 
-  for (const spec of CANONICAL_PAGES) {
+  for (const spec of inScope()) {
     // Multi-language (PAGE-3): two single-culture pages share the permalink; dedicated reconcile.
     if (spec.multiLang) {
       const { result, enId, frId, notes } = await reconcileMultiLang(spec, pages);
@@ -385,7 +421,12 @@ async function seed() {
     const changed = !/^content ok/.test(stateNote);
     const action = created ? 'CREATED' : (conflict ? 'CONFLICT' : (statusResult === 'ok' && !permalinkNote && !changed ? 'OK' : 'RECONCILED'));
     results.push({ alias: spec.alias, name: spec.name, group: chosen.id, action, detail: [createNote, statusResult, permalinkNote, stateNote, cultureNote.trim()].filter(Boolean).join('; ') });
-    if (chosen.id) writeback[spec.alias] = { _inline: true, group_id: chosen.id, permalink: spec.permalink };
+    if (chosen.id) {
+      // A pool-backed page also publishes the runtime facts its cases read (e.g. the multi-image card name).
+      const doc = contentDocFor(loadContentFixture(), spec, spec.culture);
+      const poolFields = doc && usesPool(doc) ? pageAliasFields(spec.alias, await ga4Pool()) : {};
+      writeback[spec.alias] = { _inline: true, group_id: chosen.id, permalink: spec.permalink, ...poolFields };
+    }
     log(`  ${action.padEnd(10)} ${spec.name} — ${results[results.length - 1].detail || 'Published @ ' + spec.permalink}`);
   }
 
@@ -406,7 +447,7 @@ async function seed() {
 async function teardown() {
   // Re-archive the canonical pages we manage (md: keep for reuse, never delete).
   const pages = await searchPages();
-  for (const spec of CANONICAL_PAGES) {
+  for (const spec of inScope()) {
     const chosen = pickCanonical(pages, spec);
     if (!chosen?.id) { verbose(`teardown: ${spec.name} not found`); continue; }
     if (chosen.status === STATUS.ARCHIVED) { verbose(`teardown: ${spec.name} already Archived`); continue; }

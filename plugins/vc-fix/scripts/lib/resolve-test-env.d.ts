@@ -4,3 +4,4 @@
  * process.env.TEST_ENV. See resolve-test-env.js for full docs.
  */
 export declare function resolveTestEnv(fallback?: string): string;
+export declare function envDir(): string;

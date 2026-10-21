@@ -58,6 +58,8 @@ jobs:
         run: npm run docs:index:check
       - name: qa-test:doclint — /qa-test command↔skill integrity
         run: npm run qa-test:doclint
+      - name: kb stand map — every tracked .env profile declares KB_STAND (VCST-6189)
+        run: npm run kb:stands
       - name: suites:lint — manifest ↔ CSV sync, global case IDs, XREF-001
         run: npm run suites:lint
       - name: td:validate — every @td() resolves, no hardcoded GUIDs

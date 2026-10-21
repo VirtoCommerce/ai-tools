@@ -18,13 +18,17 @@
 import { lastWord, pointersByAsk } from './loop.mjs';
 import { queuedWrite } from './queue.mjs';
 import { canonicalStand } from './canonical.mjs';
-import { MIN_COVERAGE, MIN_WORDS } from './rank.mjs';
+import { MIN_COVERAGE, MIN_WORDS, scoreRows } from './rank.mjs';
+import { namespaceRoots } from './coordinates.mjs';
+import { coordinatesIn } from './query.mjs';
+import { normalizeRow } from './index-load.mjs';
+import { pairedOnlyBySubstring } from './pairing.mjs';
 import { isLegacyProcessKey, lineTouches, lineWork, sessionKeyOf } from './reach.mjs';
 
 /** Log kinds this analysis knows about. Anything else is counted and otherwise ignored. */
 export const KNOWN_KINDS = Object.freeze([
   'ask', 'show', 'capture', 'capture-refused', 'capture-invalid', 'confirm', 'dispute', 'flush', 'reindex', 'redacted',
-  'confirm-invalid', 'dispute-invalid',
+  'confirm-invalid', 'dispute-invalid', 'capture-held',
 ]);
 
 // ── the numbers §15 is judged by, DECLARED HERE AND NOT PASSED IN ──────────────────────────────
@@ -176,26 +180,48 @@ export function indexLookup(rows = []) {
  *
  * `unreachable` is NOT a miss and is counted separately. Folding it in would inflate the work queue
  * with questions the base may well answer — the one confusion §3.5 forbids.
+ *
+ * NOR IS AN UNCLOSED LIST (VCST-6341). Under the verdict ranker an ask is `ambiguous` until the
+ * agent closes it, and `resolveVerdicts` reads one nobody closed as a miss. That is right for every
+ * panel asking "did the base certify anything?" and wrong for this one, which asks "what does the
+ * base not hold?": an agent that walked away from three candidates without a word said nothing
+ * about them. Measured 2026-10-12..14: 108 of 209 "misses" were unclosed lists, so the work queue
+ * was half closure failures. They are ranked apart, under `unclosed`, never dropped.
  */
 export function misses(lines) {
-  const groups = new Map();
+  const rank = (groups) => [...groups.values()]
+    .map((g) => ({ question: g.question, count: g.count, sessions: g.sessions.size, last: g.last }))
+    .sort((a, b) => b.count - a.count || b.sessions - a.sessions || a.question.localeCompare(b.question));
+  const coverage = new Map();
+  const unclosed = new Map();
   let unreachable = 0;
+  // Every miss ASK, keyed or not: the ranked lists group by question text and drop an empty one, which
+  // is right for a work queue and wrong for a denominator (the verdict's row 3 reads these).
+  let coverageAsks = 0;
+  let unclosedAsks = 0;
   for (const l of lines) {
     if (l.kind !== 'ask') continue;
     if (l.state === 'unreachable') { unreachable += 1; continue; }
     if (l.state !== 'miss') continue;
+    if (l.closedBy === 'unclosed') unclosedAsks += 1; else coverageAsks += 1;
     const key = questionKey(l.q);
     if (!key) continue;
+    const groups = l.closedBy === 'unclosed' ? unclosed : coverage;
     const g = groups.get(key) ?? { key, question: l.q, count: 0, sessions: new Set(), last: '' };
     g.count += 1;
     g.sessions.add(l._session);
     if (String(l.at ?? '') > g.last) { g.last = String(l.at ?? ''); g.question = l.q; }
     groups.set(key, g);
   }
-  const ranked = [...groups.values()]
-    .map((g) => ({ question: g.question, count: g.count, sessions: g.sessions.size, last: g.last }))
-    .sort((a, b) => b.count - a.count || b.sessions - a.sessions || a.question.localeCompare(b.question));
-  return { ranked, unreachable, total: ranked.reduce((n, g) => n + g.count, 0) };
+  const ranked = rank(coverage);
+  const open = rank(unclosed);
+  return {
+    ranked,
+    unreachable,
+    total: ranked.reduce((n, g) => n + g.count, 0),
+    unclosed: { ranked: open, total: open.reduce((n, g) => n + g.count, 0), asks: unclosedAsks },
+    asks: coverageAsks,
+  };
 }
 
 // ── Panel 1a — near misses, the floor's own error bar ──────────────────────────────────────────
@@ -224,17 +250,73 @@ export function misses(lines) {
  * already clears `MIN_COVERAGE` can only have been stopped by `MIN_WORDS`. That is reported as
  * `rejectedBy: 'words'`; everything else is `'coverage'`, which is the safe way round — the words
  * case is provable, the coverage case is the default.
+ *
+ * UNDER THE VERDICT RANKER THE LINE CARRIES NO `nearMiss` (VCST-6341), and this panel went blind:
+ * an `ambiguous` ask logs the candidates it SHOWED, and the floor that writes `nearMiss` never runs.
+ * Measured 2026-10-12..14: 0 of 209 misses carried one, so §15's second row could only ever say
+ * NOT ENOUGH DATA. For an ask the agent closed with `kb_none` the rejected candidates are known —
+ * they are `shown` — so the best of them is scored here, against the index snapshot, with the
+ * ranker's own `scoreRows`, and reported as `rejectedBy: 'agent'`. Same question the floor row
+ * asks: the base put this in front of the agent and it was turned away — was it answerable?
+ * An UNCLOSED list is not a rejection (nobody judged it) and is counted apart, outside `missTotal`.
  */
 export function nearMisses(lines, idx) {
   const rows = [];
   const byCandidate = new Map();
   let missTotal = 0;
   let withoutNearMiss = 0;
+  let unclosed = 0;
+  let shownNotInIndex = 0;
+  // Normalised once, and only when a verdict-ranker miss needs it; the namespace roots are computed
+  // over the WHOLE index once, so scoring the 1-3 shown rows gives the anchor hits the ranker saw.
+  let catalog = null;
+  const indexRows = () => {
+    if (!catalog) {
+      const byId = new Map();
+      for (const raw of idx.byId.values()) {
+        try { const r = normalizeRow(raw); byId.set(r.id, r); } catch { /* a malformed index row costs itself, not the panel */ }
+      }
+      catalog = { byId, namespaces: namespaceRoots([...byId.values()]) };
+    }
+    return catalog;
+  };
 
   for (const l of lines) {
     if (l.kind !== 'ask' || l.state !== 'miss') continue;
+    if (l.closedBy === 'unclosed') { unclosed += 1; continue; }
     missTotal += 1;
-    const nm = l.nearMiss;
+    let nm = l.nearMiss;
+    let rejectedBy = null;
+    if (!nm && l.closedBy === 'none' && Array.isArray(l.shown) && l.shown.length) {
+      const shown = new Set(l.shown.map(String));
+      const { byId, namespaces } = indexRows();
+      // A shown id the snapshot lacks, or holds only as a row too malformed to normalise, cannot be
+      // scored: counted as "not in the index", never as "scored nothing".
+      // The card questions are part of what the verdict ranker matched on; `scoreRows` reads only
+      // subject + question, so they are folded into the question here, or coverage reads low and a
+      // candidate a human should read stays under the 0.45 band.
+      const shownRows = [...shown].map((id) => byId.get(id)).filter(Boolean)
+        .map((r) => ({ ...r, question: [r.question, ...(r.questions ?? [])].join(' ') }));
+      if (!shownRows.length) { shownNotInIndex += 1; continue; }
+      // The candidate that covered MOST of the question, not the best-scored: the panel's review band is
+      // a coverage band, and an agent-rejected list's error bar is its closest candidate by that measure.
+      // OVER THE QUESTION'S PROSE, NOT ITS COORDINATES (VCST-6378). A route or an operation in the question
+      // shares its words with every entry anchored on the same endpoint family: of the 31 real rows this
+      // band held on 2026-10-12..14, 24 were correct rejections whose only overlap was
+      // `/api/platform/security/users`, `/account/returns` and the like, and 0 were answers the agent
+      // turned away. Whether the coordinate matched is the ranker's business; this band asks whether the
+      // candidate says what was asked.
+      const prose = coordinatesIn(String(l.q ?? ''), { namespaces })
+        .reduce((q, c) => q.split(c.raw).join(' '), String(l.q ?? ''));
+      const best = scoreRows(prose, shownRows, { namespaces })
+        .reduce((b, h) => (!b || h.coverage > b.coverage ? h : b), null);
+      // Zero coverage is "nothing near", not a near miss: counted with the misses that scored nothing,
+      // or it would lift the §15 row's n towards a PASS on rows that say nothing about the band.
+      if (best && best.coverage > 0) {
+        nm = { id: best.row.id, score: best.score, coverage: Math.round(best.coverage * 100) / 100 };
+        rejectedBy = 'agent';
+      }
+    }
     const coverage = Number(nm?.coverage);
     if (!nm || !Number.isFinite(coverage)) {
       // Nothing scored above zero at all. That is a different fact from "something nearly made it"
@@ -254,7 +336,7 @@ export function nearMisses(lines, idx) {
       session: l._session,
       at: String(l.at ?? ''),
       inBand: coverage >= NEAR_MISS_REVIEW,
-      rejectedBy: coverage >= MIN_COVERAGE ? 'words' : 'coverage',
+      rejectedBy: rejectedBy ?? (coverage >= MIN_COVERAGE ? 'words' : 'coverage'),
     };
     rows.push(row);
     const g = byCandidate.get(id)
@@ -282,6 +364,8 @@ export function nearMisses(lines, idx) {
     inBand: rows.filter((r) => r.inBand),
     missTotal,
     withoutNearMiss,
+    unclosed,
+    shownNotInIndex,
     floor: MIN_COVERAGE,
     minWords: MIN_WORDS,
     review: NEAR_MISS_REVIEW,
@@ -319,7 +403,7 @@ export function captureLoop(lines) {
   }
 
   const rows = [];
-  const counts = { afterMiss: 0, afterAnswer: 0, unlinked: 0, dangling: 0, refusedAfterMiss: 0 };
+  const counts = { afterMiss: 0, afterAnswer: 0, afterUnclosed: 0, unlinked: 0, dangling: 0, refusedAfterMiss: 0 };
 
   for (const l of lines) {
     // A `capture` logged with a `state` and no `id` is a failure to reach the base, not a write.
@@ -329,7 +413,12 @@ export function captureLoop(lines) {
 
     const ask = l.after ? askAt.get(`${l._session}\0${String(l.after)}`) : null;
     let link;
-    if (!l.after) { link = 'unlinked'; counts.unlinked += 1; } else if (!ask) { link = 'dangling'; counts.dangling += 1; } else if (ask.state === 'miss') {
+    if (!l.after) { link = 'unlinked'; counts.unlinked += 1; } else if (!ask) { link = 'dangling'; counts.dangling += 1; } else if (ask.state === 'miss' && ask.closedBy === 'unclosed') {
+      // An UNCLOSED list is not a miss (see `misses`): nobody said the base lacked the fact, so a
+      // capture after one is not "exit 1 produced knowledge" and must not pass §15 row 3 (VCST-6341).
+      link = 'after-unclosed';
+      if (isCapture) counts.afterUnclosed += 1;
+    } else if (ask.state === 'miss') {
       // A verdict ranker's `ambiguous` arrives here already resolved to `miss` or `answer`
       // (resolveVerdicts). An `unreachable` or disabled ask is not the loop: the base was never read.
       link = 'after-miss';
@@ -460,7 +549,19 @@ export function evidence(lines, idx) {
     }
     return rows.get(key);
   };
+  // VCST-6221: how much of the window's new evidence carries a machine-read build, and how many of its
+  // disputes the gate made SOFT (made on another build: still judged, not DISPUTED for readers).
+  const writes = lines.filter((l) => ['capture', 'confirm', 'dispute'].includes(l.kind) && l.id && !l.state);
+  const stamped = writes.filter((l) => l.build).length;
+  // WHY THE REST CARRY NONE (VCST-6378): the `buildMissing` code a write logs, and which client wrote it.
+  // Lines from a client older than the code say nothing, and are counted as `unreported`.
+  const missing = {};
+  for (const l of writes) if (!l.build) { const k = l.buildMissing ? String(l.buildMissing) : 'unreported'; missing[k] = (missing[k] ?? 0) + 1; }
+  const clients = [...new Set(writes.map((l) => l.client).filter(Boolean))].sort();
+  const soft = lines.filter((l) => l.kind === 'dispute' && l.id && l.soft).length;
   for (const l of lines) {
+    // A confirm or dispute with a `state` did not land (no base, unreachable): counted nowhere (tester run).
+    if (l.state) continue;
     if (l.kind === 'confirm' && l.id) {
       const r = get(l.id);
       r.confirms += 1;
@@ -485,6 +586,7 @@ export function evidence(lines, idx) {
     openDisputes: live.reduce((n, r) => n + (Number(r.disputed) || 0), 0),
     resolvedEntries: live.filter((r) => r.resolved > 0).length,
     resolvedDisputes: live.reduce((n, r) => n + (Number(r.resolved) || 0), 0),
+    softOpen: live.reduce((n, r) => n + (Number(r.contested) || 0), 0),
     active: live.length,
   };
   return {
@@ -493,6 +595,7 @@ export function evidence(lines, idx) {
     contested: all.filter((r) => r.disputes > 0 && r.confirms > 0),
     confirms: all.reduce((n, r) => n + r.confirms, 0),
     disputes: all.reduce((n, r) => n + r.disputes, 0),
+    builds: { writes: writes.length, stamped, soft, missing, clients },
   };
 }
 
@@ -587,6 +690,9 @@ export function doorStats(lines, atDoor, closing = new Set()) {
     abandoned: new Set(atDoor.filter((r) => r.pairedBy !== 'subject').map(fact)).size,
     pairedByAsk: atDoor.filter((r) => r.pairedBy === 'ask').length,
     firstAttempt: intents ? (outcomes - closing.size) / intents : null,
+    // Captures that landed by DROPPING a bad anchor instead of being refused (VCST-6378) -- each one is
+    // a refusal the old door would have counted, so this is the door change's own measure.
+    droppedNotRefused: lines.filter((l) => l.kind === 'capture' && l.id && Array.isArray(l.droppedAnchors) && l.droppedAnchors.length).length,
     byDoor: split('via'),
     byWho: split('who'),
   };
@@ -597,7 +703,19 @@ export function doorStats(lines, atDoor, closing = new Set()) {
  * is not a problem — it is §2's guard working, and simultaneously a direct measure of how often
  * `ask` fails to find something the base already holds.
  */
-export function refusals(lines, idx) {
+export function refusals(all, idx) {
+  // COUNTED APART (VCST-6378, review round 3): a private-data refusal logs no subject (it may carry the
+  // value), so it cannot pair with its resend and would merge into one "fact" per session; a similar
+  // HOLD landed nothing and is not a duplicate; refused evidence is not a capture at all. Each is
+  // counted on its own line and kept out of the door's attempts, retries and abandoned facts.
+  const isPrivate = (l) => l.kind === 'capture-invalid' && l.why === 'private-data';
+  const lines = all.filter((l) => !isPrivate(l));
+  const evidenceRefused = {};
+  for (const l of all) {
+    if (l.kind !== 'confirm-invalid' && l.kind !== 'dispute-invalid') continue;
+    const k = `${l.kind.replace('-invalid', '')}:${l.why ?? '?'}`;
+    evidenceRefused[k] = (evidenceRefused[k] ?? 0) + 1;
+  }
   const rows = [];
   const byTarget = new Map();
   // TURNED AWAY AT THE DOOR (`capture-invalid`) — a different failure from a duplicate, counted
@@ -640,6 +758,9 @@ export function refusals(lines, idx) {
     atDoor,
     atDoorRetried: atDoor.filter((r) => r.pairedBy === 'subject').length,
     door,
+    privateRefused: all.filter(isPrivate).length,
+    held: all.filter((l) => l.kind === 'capture-held').length,
+    evidenceRefused,
     repeatTargets: [...byTarget.entries()].filter(([, n]) => n > 1)
       .map(([id, n]) => ({ id, subject: idx.subjectOf(id), count: n }))
       .sort((a, b) => b.count - a.count),
@@ -689,6 +810,12 @@ export function refusals(lines, idx) {
  *      rate a function of push timing.
  *   4. AN ASK WITH NO `matched` IS NOT UNHELPFUL. That is a miss, and it is panel 1's. An `ambiguous`
  *      ask arrives here already resolved by `resolveVerdicts` (its pick, or a miss).
+ *   5. ONE KNOWN-BAD POINTER IS UNDONE (VCST-6341). Until this change `askAbout` let a capture
+ *      anchored `/account/returns` claim a question about `/account/returns?scope=organization`;
+ *      measured 2026-10-12..14, that is how a returns-pagination answer was charged with a sidebar
+ *      word-break capture. A pair that rested ONLY on that prefix match (`pairedOnlyBySubstring`)
+ *      is `unpaired` -- counted and shown, never decidable. Every other historical pointer stands:
+ *      it was an older rule's honest output, and re-judging it would rewrite the denominator.
  *
  * The rate is over DECIDABLE pairs — not over all asks. An ask nobody captured against is not
  * evidence either way, and putting it in the denominator would let the rate fall simply because the
@@ -708,6 +835,7 @@ export function unhelpful(lines, idx) {
   let undecidable = 0;
   let unprompted = 0;
   let afterMiss = 0;
+  let unpaired = 0;
 
   for (const [session, events] of bySession) {
     // Asks indexed by their OWN `at`, which is what a capture's `after` points at. Exact, so no
@@ -751,6 +879,26 @@ export function unhelpful(lines, idx) {
       const matched = matchedOf(ask);
       if (!matched.length) { afterMiss += 1; continue; }
 
+      const capSubject = String(cap.subject ?? idx.subjectOf(cap.id));
+      const capQuestion = String(cap.question ?? idx.byId.get(String(cap.id))?.question ?? '');
+      const capRaw = idx.byId.get(String(cap.id))?.anchors ?? [];
+      // A writer that NAMED the ask (`afterBy: handle`) paired it exactly: no substring guess to discount (tester run).
+      if (cap.afterBy !== 'handle' && pairedOnlyBySubstring(ask.q, { text: `${capSubject} ${capQuestion}`, anchors: capRaw })) {
+        unpaired += 1;
+        rows.push({
+          verdict: 'unpaired',
+          session,
+          question: String(ask.q ?? ''),
+          matched: matched.map(String),
+          captureId: String(cap.id),
+          captureSubject: capSubject,
+          captureAnchors: [...idx.anchorsOf(cap.id)],
+          overlap: [],
+          why: 'paired only because a capture anchor is the prefix of a longer coordinate in the question',
+        });
+        continue;
+      }
+
       const pool = new Set();
       for (const id of matched) for (const a of idx.anchorsOf(id)) pool.add(a);
       // An ask whose OWN matched rows are not in the index cannot be judged either — the pool
@@ -779,6 +927,13 @@ export function unhelpful(lines, idx) {
       const overlap = [...capAnchors].filter((a) => pool.has(a));
       rows.push({
         verdict: overlap.length ? 'helpful' : 'unhelpful',
+        // HOW THE PAIR WAS MADE (VCST-6378): `handle` -- the writer named the ask, exact; anything else was
+        // guessed by the writer from shared words or a coordinate, and a guess pairs a capture of a
+        // DIFFERENT fact found in the same work about one time in three (measured 2026-10-08..15: 9 of 25
+        // flagged rows). No rule over the text separates those (coordinate and word overlap were both
+        // measured and both fail), so guessed pairs are still counted -- and the exact rate is reported
+        // beside the overall one.
+        link: cap.afterBy === 'handle' ? 'handle' : 'guessed',
         session,
         question: String(ask.q ?? ''),
         matched: matched.map(String),
@@ -792,6 +947,7 @@ export function unhelpful(lines, idx) {
   }
 
   const flagged = rows.filter((r) => r.verdict === 'unhelpful');
+  const exact = rows.filter((r) => r.link === 'handle' && (r.verdict === 'helpful' || r.verdict === 'unhelpful'));
   return {
     rows: rows.filter((r) => r.verdict !== 'helpful').concat(rows.filter((r) => r.verdict === 'helpful')),
     flagged,
@@ -803,9 +959,13 @@ export function unhelpful(lines, idx) {
     // and `afterMiss` how many followed a miss, which is the loop working rather than a bad answer.
     unprompted,
     afterMiss,
+    unpaired,
     // §11 gates "ranking beyond token overlap" on a rate above ~15%. It is reported, never acted on
     // here: this function measures, and the decision is a human's.
     rate: decidable ? flagged.length / decidable : null,
+    // Over the pairs the writer named exactly. `null` until captures carry the ask handle.
+    exact: { decidable: exact.length, flagged: exact.filter((r) => r.verdict === 'unhelpful').length },
+    rateExact: exact.length ? exact.filter((r) => r.verdict === 'unhelpful').length / exact.length : null,
   };
 }
 
@@ -855,7 +1015,7 @@ export const NEEDS_READING = 'NEEDS READING';
  * with rows in the band is reported as NOT ENOUGH DATA *with the rows named*, never as a FAIL: a
  * FAIL there would be the script claiming a judgement it has no way to make.
  */
-export function verdict({ unhelpful: u, nearMisses: nm, loop }) {
+export function verdict({ unhelpful: u, nearMisses: nm, loop, misses: m = null }) {
   const rows = [];
 
   // 1 ── unhelpful-answer rate ≤ 15% (PLAN §11's trigger, reused).
@@ -906,9 +1066,13 @@ export function verdict({ unhelpful: u, nearMisses: nm, loop }) {
     if (band > 0) {
       // A candidate in the review band is DATA the operator has to read, not an absence of it.
       state = NEEDS_READING;
+      // Under the verdict ranker there is no floor to re-cut: the candidate was SHOWN and the agent
+      // turned it away, so two in-band rows say the agent rejected answers, or entries read like answers they are not.
+      const byAgent = nm.inBand.filter((r) => r.rejectedBy === 'agent').length;
       detail = `${band} near-miss row(s) at coverage ≥ ${NEAR_MISS_REVIEW} — a human must read them and`
         + ' decide whether they were answerable. This script does not judge that'
-        + `${band > 1 ? '. §15.3: one is a signal, two mean the floor is too high' : ''}.`;
+        + `${byAgent ? `. ${byAgent} of them were shown and rejected by the agent (kb_none): read whether the candidate answered` : ''}`
+        + `${band - byAgent > 1 ? '. §15.3 (floor rows): one is a signal, two mean the floor is too high' : ''}.`;
     } else if (n < MIN_SAMPLE) {
       state = NO_DATA;
       detail = `no near-miss reached ${NEAR_MISS_REVIEW}, but only ${n} miss(es) carried a candidate at all`
@@ -931,7 +1095,9 @@ export function verdict({ unhelpful: u, nearMisses: nm, loop }) {
 
   // 3 ── at least one capture following a miss, via `after` (PLAN §14.4, §15.3).
   {
-    const n = nm.missTotal;
+    // Misses only -- an unclosed list is neither in n nor in `loop.afterMiss` (captureLoop counts a capture
+    // after one as `afterUnclosed`). Counted by the misses panel, which owns the number.
+    const n = m ? (m.asks ?? m.total) : nm.missTotal;
     const hit = loop.afterMiss;
     let state;
     let detail;
@@ -1181,9 +1347,13 @@ export function topics(lines) {
   for (const l of lines) {
     const t = typeof l.topic === 'string' && l.topic ? l.topic : null;
     if (!t) { untopiced += 1; continue; }
-    const row = by.get(t) ?? { topic: t, lines: 0, asks: 0, misses: 0, captures: 0, sessions: new Set(), runs: new Set(), first: l.at, last: l.at };
+    const row = by.get(t) ?? { topic: t, lines: 0, asks: 0, misses: 0, unclosed: 0, captures: 0, sessions: new Set(), runs: new Set(), first: l.at, last: l.at };
     row.lines += 1;
-    if (l.kind === 'ask') { row.asks += 1; if (l.state === 'miss') row.misses += 1; }
+    if (l.kind === 'ask') {
+      row.asks += 1;
+      // An unclosed list is a closure failure, not a gap in the topic's coverage (VCST-6341, see `misses`).
+      if (l.state === 'miss') { if (l.closedBy === 'unclosed') row.unclosed += 1; else row.misses += 1; }
+    }
     if (l.kind === 'capture') row.captures += 1;
     if (l._session) row.sessions.add(l._session);
     if (l.run) row.runs.add(l.run);
@@ -1272,7 +1442,8 @@ export function lists(lines) {
   // it never did (the fact was dropped). doorStats' pairing, applied to the evidence door: `refused`
   // counts attempts, `landed` / `abandoned` count FACTS -- one per (session, entry) -- so an agent that
   // retried three times and gave up is one abandoned confirmation, not three.
-  const refused = lines.filter((l) => l.kind === 'confirm-invalid' || l.kind === 'dispute-invalid');
+  // `not-opened` only: a private-data refusal is the privacy door, counted in `refusals`, not this gate (tester run).
+  const refused = lines.filter((l) => (l.kind === 'confirm-invalid' || l.kind === 'dispute-invalid') && l.why !== 'private-data');
   const firstRefusal = new Map();
   for (const r of refused) {
     const key = `${r._session ?? ''}\0${String(r.id ?? '').toUpperCase()}`;
@@ -1348,7 +1519,8 @@ export function resolveVerdicts(lines) {
   // classified one ask two ways (PR #400 review).
   const bySession = new Map();
   for (const l of lines) {
-    if (l.kind !== 'ask' && l.kind !== 'show' && l.kind !== 'none') continue;
+    // confirm / capture too (VCST-6378): a later one on the same topic closes an open list (`pointersByAsk`).
+    if (!['ask', 'show', 'none', 'confirm', 'capture'].includes(l.kind)) continue;
     const s = l._session ?? '';
     if (!bySession.has(s)) bySession.set(s, []);
     bySession.get(s).push(l);
@@ -1356,10 +1528,14 @@ export function resolveVerdicts(lines) {
   const pointers = new Map([...bySession].map(([s, ls]) => [s, pointersByAsk(ls)]));
   return lines.map((l) => {
     if (l.kind !== 'ask' || l.state !== 'ambiguous') return l;
-    const word = lastWord(pointers.get(l._session ?? '')?.get(String(l.at)));
+    const said = pointers.get(l._session ?? '')?.get(String(l.at));
+    const word = lastWord(said, { owner: l.agent ?? null });
+    // Closed by what the agent did next rather than by a word: `closedVia` names the verb of the record
+    // that DECIDED it (`lastWord`'s `by`), never just the last record seen (review round 1).
+    const via = word.by ? { closedVia: word.by } : {};
     return word.verdict === 'picked' && word.ids.length
-      ? { ...l, state: 'answer', matched: word.ids, closedBy: 'show' }
-      : { ...l, state: 'miss', matched: [], closedBy: word.verdict === 'none' ? 'none' : 'unclosed' };
+      ? { ...l, state: 'answer', matched: word.ids, closedBy: 'show', ...via }
+      : { ...l, state: 'miss', matched: [], closedBy: word.verdict === 'none' ? 'none' : 'unclosed', ...via };
   });
 }
 
@@ -1373,8 +1549,16 @@ export function analyse({ lines = [], rows = [], meta = {} } = {}) {
   // the line is still in the base, still readable, still auditable, and the header says how many
   // were set aside. A measurement that quietly removed its own inputs would be the same defect the
   // filter exists to fix.
-  const notSynthetic = lines.filter((l) => l.synthetic !== true);
-  const syntheticLines = lines.length - notSynthetic.length;
+  // A SESSION THE OPERATOR NAMES AS A CHECK is set aside like a synthetic line (VCST-6378): a live check of
+  // the tooling run without KB_SYNTHETIC=1 (session 5354023a, the kb-remind check) made 13 of one
+  // window's 61 near-miss rows, unmarked. The mark cannot be added after the fact; `--exclude-sessions` can.
+  const excluded = new Set((Array.isArray(meta.excludeSessions) ? meta.excludeSessions : []).map(String));
+  const notSynthetic = lines.filter((l) => l.synthetic !== true && !excluded.has(String(l._session ?? '')));
+  // Counted APART from the synthetic lines (tester run of ai-tools#460): they are a named check, not a
+  // benchmark, and a name that matched no session is said -- a typo must not read as "nothing to exclude".
+  const setAside = lines.filter((l) => l.synthetic !== true && excluded.has(String(l._session ?? '')));
+  const seen = new Set(setAside.map((l) => String(l._session)));
+  const syntheticLines = lines.filter((l) => l.synthetic === true).length;
   // SCOPED TO ONE RUN, when the operator named one. Filtered HERE and not in `report.mjs` for the
   // reason the synthetic filter is here: every panel and the §15 verdict must be computed from the
   // same set of lines, and a filter applied at the caller is one a second caller forgets. The
@@ -1405,6 +1589,12 @@ export function analyse({ lines = [], rows = [], meta = {} } = {}) {
       ...meta,
       synthetic: syntheticLines,
       syntheticAsks: lines.filter((l) => l.synthetic === true && l.kind === 'ask').length,
+      excludedSessions: excluded.size ? {
+        lines: setAside.length,
+        asks: setAside.filter((l) => l.kind === 'ask').length,
+        matched: [...excluded].filter((s) => seen.has(s)),
+        unmatched: [...excluded].filter((s) => !seen.has(s)),
+      } : null,
       // THE SCOPE IS PART OF THE NUMBER (PLAN §15.2): a report headed "last 30 days" that actually
       // analysed one run is a figure nobody can reproduce. `outOfRun` is what the filter set aside,
       // printed rather than dropped, for the same reason the synthetic count is.
@@ -1417,6 +1607,6 @@ export function analyse({ lines = [], rows = [], meta = {} } = {}) {
     panels,
     // The §15 gate, computed from the panels above rather than from the lines again — one
     // derivation, so a number in the verdict can never disagree with the panel it came from.
-    verdict: verdict({ unhelpful: panels.unhelpful, nearMisses: panels.nearMisses, loop: panels.loop }),
+    verdict: verdict({ unhelpful: panels.unhelpful, nearMisses: panels.nearMisses, loop: panels.loop, misses: panels.misses }),
   };
 }

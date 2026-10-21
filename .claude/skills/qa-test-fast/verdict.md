@@ -56,6 +56,10 @@ bug. The calls run sequentially because `qa-bug` may take a browser lane.
 
 ## Verdict
 
+**Reconcile the strategy first**, per [`../qa-test-strategy/SKILL.md`](../qa-test-strategy/SKILL.md)
+§Reconcile: fill the round's `### Reconciliation`, apply its cap (a High/Critical risk without a result is
+never `PASS`), and write `summary.json.strategy` — never null once a strategy ran.
+
 The vocabulary and the decision rules are [`../qa-test/close-out.md`](../qa-test/close-out.md)
 §5-verdict.2 — `PASS` / `PASS_WITH_NOTES` / `FAIL` / `BLOCKED`. The conditions it reconciles are the
 checklist's AC items. A `Low` finding never makes a FAIL, and an accessibility finding never blocks a
@@ -101,7 +105,7 @@ functional ticket.
 Created <n> AGENT-TEST- entities · removed <n> · settings restored and re-read: <list | none>
 
 ## Context used
-Model <path> · Checklist <path> · Domain map <state> · Mind map <path | SKIPPED: reason> · Exploratory <SBTM path | ran:false reason> · PRs <repo#n list>
+Strategy <path · Round N> · Model <path | SKIP — no MODEL risk> · Checklist <path> · Domain map <state> · Mind map <path | SKIPPED: reason> · Exploratory <SBTM path | ran:false reason> · PRs <repo#n list>
 ```
 
 **Mind-map findings** go into `summary.json.domain_map.mind_map_findings[]`: a node the run
@@ -115,17 +119,7 @@ or path that returns becomes the finding's proposed route. They are handed to th
 
 ## HTML page
 
-Load the `artifact-design` skill, then copy
-[`report-template.html`](report-template.html) to your scratchpad and fill in its `{{…}}` slots from
-`verdict.md`; the env, the ticket summary, the date and the checklist pass counts come from
-`summary.json`. The page states no finding `verdict.md` does not carry. The page:
-- embeds at most 4 screenshots, as `data:` URIs (the page must stand alone and stay under 1 MB)
-- links every bug report and the other files by their repo path
-
-Publish it with the Artifact tool. **Then**, after it is
-published, add the link as a `Page: <url>` line directly under `verdict.md`'s one-sentence line and
-into `summary.json.report.page_url`. The page is built from `verdict.md`, so the link can only be added
-afterwards.
+Write the page's extras to `<scratchpad>/extra.json` from `verdict.md`: `lede` = the one sentence — **mandatory**, and it is what satisfies D7 for this caller; `rows` = the AC table (`id`, `text`, `result`, `evidence`); `notTested`; `context` = the Data and Context-used lines as `{label, value}`; `shots` ≤ 4. Then run `/vc-fix:qa-report reports/tickets/{SPRINT}/<TICKET>/summary.json --kind test --extra <scratchpad>/extra.json`. It loads `artifact-design`, publishes the page, renders the comment with its link, and asks the one question in §Tracker comment. Skill refused ⇒ the install predates it: `/plugin update`, stop the report step — never type the page or comment by hand.
 
 **Audience: Anyone at Virto Commerce.** The page is read by the ticket's developers and PO through the
 tracker comment's link, so it is shared org-wide, not kept to its author. The Artifact tool publishes
@@ -135,13 +129,6 @@ private page reaches no one. Never describe the page as private in the comment o
 
 ## Tracker comment
 
-Ask once: *"Post the verdict comment to <TICKET>?"* On yes:
-- post it per [`../qa-test/reporting.md`](../qa-test/reporting.md) §5-report.2 (`npm run tracker:comment`),
-  with `--artifact "<build.deployed>"`, then write the returned id into `summary.json.tracker.comment_id` —
-  a same-build re-run amends it; a re-run on a NEW build posts a new comment ([`../../knowledge/execution/tracker-ops.md`](../../knowledge/execution/tracker-ops.md) §0 rule 5)
-- it is **one** comment, amended and never appended to, per
-  [`../../knowledge/execution/tracker-ops.md`](../../knowledge/execution/tracker-ops.md) §0
-- screenshots go **inline**, verified from `renderedBody` ([`../../rules/reports.md`](../../rules/reports.md) §5.0)
-- its content is `verdict.md` minus the Context section, plus the page link
+The question, the post and the amend are `qa-report`'s §4–§5. Write the returned id into `summary.json.tracker.comment_id` (the `tracker:comment` helper mirrors it).
 
 No status transition, whatever the verdict.

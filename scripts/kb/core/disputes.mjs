@@ -10,10 +10,11 @@
 // declared. The hints are hypotheses for the judge to test live, never a verdict: a dispute is
 // settled by a fresh investigation (stands, storefront, Admin, docs, source), not from the papers.
 
-import { amendmentsOf, attestsCurrentClaim, claimHash, isInvestigation, isResolved, RESOLUTIONS } from './index-build.mjs';
+import { amendmentsOf, attestsCurrentClaim, claimHash, distinctDisputes, isInvestigation, isResolved, RESOLUTIONS } from './index-build.mjs';
 
 export { isInvestigation };
 import { parseConditions } from './conditions.mjs';
+import { defectOf, resolveDefect, resolveFixedIn } from './defect.mjs';
 import { NOTE_MAX } from './verbs.mjs';
 
 const lower = (s) => String(s ?? '').trim().toLowerCase();
@@ -66,7 +67,8 @@ export function disputeState(entry) {
   const d = entry.data;
   if (String(d.status ?? 'active') !== 'active') return null;
   const items = counted(d.evidence);
-  const open = items.filter((e) => e.contradicts && !isResolved(e));
+  const disputes = distinctDisputes(items);
+  const open = disputes.filter((e) => !isResolved(e));
   if (!open.length) return null;
   // What the queue weighs against the dispute: confirmations of the claim as it stands, NOT the
   // judge's own investigation. Counted as support, a judge's `observe` raised `confirmations`, lit the
@@ -83,7 +85,7 @@ export function disputeState(entry) {
     subject: String(d.subject ?? ''),
     confirmations: support.length,
     open: open.length,
-    resolved: items.filter(isResolved).length,
+    resolved: disputes.filter(isResolved).length,
     invalidResolutions: items.filter((e) => e.contradicts && e.resolved && !isResolved(e)).length,
     firstOpenAt,
     concepts: idsIn(d.concepts),
@@ -94,6 +96,8 @@ export function disputeState(entry) {
     otherStand: open.some((e) => e.deployment && !supportStands.has(lower(e.deployment))),
     confirmedSince: support.filter((e) => after(e.at, firstOpenAt)).length,
     withConditions: items.filter((e) => e.conditions).length,
+    // Soft disputes (VCST-6221): made on another build; the gate's computed difference, for the hint.
+    contested: open.filter((e) => e.contested).map((e) => e.contested),
   };
 }
 
@@ -103,6 +107,7 @@ export function hints(s) {
   if (s.selfDisputed) out.push('one session both confirmed and disputed it: the entry may hold two facts (split?)');
   if (s.splitFrom.length) out.push(`its evidence came through a split of ${s.splitFrom.join(', ')}: a dispute may belong to a sibling`);
   if (s.otherStand) out.push('a dispute was made on a stand no confirmation names: build or configuration difference?');
+  if (s.contested?.length) out.push(`${s.contested.length} soft dispute(s) -- made on another build than every confirmation (${s.contested[0]}): did that difference cause it (version-scoped), or is the claim wrong?`);
   if (s.confirmedSince) out.push(`${s.confirmedSince} confirmation(s) arrived after the first open dispute: dispute wrong, or two conditions?`);
   if (s.withConditions === 0) out.push('no evidence item records its conditions: the investigation must establish them on every stand');
   if (s.invalidResolutions) out.push(`${s.invalidResolutions} item(s) carry an unknown resolution value and count as open`);
@@ -182,12 +187,15 @@ export function dossier(entry, { exp = null, state = null } = {}) {
     `- scope: ${(d.appliesTo ?? []).map((a) => `${a.axis}=${a.value}`).join(', ') || '—'}`,
     `- concepts: ${idsIn(d.concepts).join(', ') || '—'}`,
   ];
+  // A disputed DEFECT is often "it was a bug and it got fixed" (VCST-6317): the judge sees the marker first.
+  const marker = defectOf(items);
+  if (marker) lines.push(`- defect: ${marker.defect}${marker.fixedIn ? `, fixed in ${marker.fixedIn}` : ''} -- a dispute that saw it fixed is \`defect-fixed\`, not \`claim-amended\``);
   if (exp) lines.push(`- served since the first open dispute: ${exp.asks} ask(s), ${exp.shows} show(s)`);
   if (state) for (const h of hints(state)) lines.push(`- hint: ${h}`);
   const amendments = amendmentsOf(items);
   lines.push('', '| # | side | stand | conditions | builds in note | at | by | resolution |', '|---|---|---|---|---|---|---|---|');
   items.forEach((e, i) => {
-    const side = e.duplicateSession ? 'dup' : e.contradicts ? 'DISPUTE' : isInvestigation(e) ? 'investigation'
+    const side = e.duplicateSession ? 'dup' : e.contradicts ? (e.contested ? 'DISPUTE (soft)' : 'DISPUTE') : isInvestigation(e) ? 'investigation'
       : attestsCurrentClaim(e, amendments) ? 'confirm' : 'confirm (pre-amendment)';
     const cond = e.conditions ? Object.entries(parseConditions(e.conditions)).map(([k, v]) => cell(`${k}=${v}`)).join('<br>') : '—';
     const builds = [e.platformVersion, ...mentionedBuilds(e.note)].filter(Boolean).join(', ') || '—';
@@ -276,9 +284,26 @@ export const RESOLUTION_MAX = 600;
  * `amendedFrom` (with `claim-amended`) is the hash of the body the verdict corrects, as `main` holds
  * it; it is written on the resolution so confirmations of that body stop counting even when they
  * reach `main` after this resolution (`attestsCurrentClaim`, index-build.mjs).
+ *
+ * `defect` / `fixedIn` (with `defect-fixed`, VCST-6317): the entry describes a bug and the dispute saw it
+ * fixed. The claim stays -- it is how the bug shows itself, which whoever meets an unfixed build needs --
+ * and the marker the readers see (`defectOf`, core/defect.mjs) gains its `fixedIn`. `defect` defaults to
+ * the marker the entry already carries; one of the two must name the bug.
  */
-export function applyResolution(data, { at, by: disputedBy = null, verdict, why, ref, session, pending = [], amendedFrom = null, now = new Date() }) {
+export function applyResolution(data, { at, by: disputedBy = null, verdict, why, ref, session, pending = [], amendedFrom = null, defect = null, fixedIn = null, projects = null, now = new Date() }) {
   if (!RESOLUTIONS.includes(verdict)) return { problem: `--verdict must be one of: ${RESOLUTIONS.join(', ')}` };
+  let marker = null;
+  if (verdict === 'defect-fixed') {
+    const d = resolveDefect(defect, { projects });
+    const f = resolveFixedIn(fixedIn);
+    if (d.problem) return { problem: `--defect: ${d.problem}` };
+    if (f.problem) return { problem: `--fixed-in: ${f.problem}` };
+    if (!f.value) return { problem: 'defect-fixed needs --fixed-in <module>@<version>: the first build the dispute saw without the defect' };
+    if (d.value === 'none') return { problem: '--defect none withdraws a marker; defect-fixed says the defect was real and is fixed -- give its ticket or `suspected`, or leave --defect out to keep the entry\'s marker' };
+    const named = d.value ?? defectOf(data.evidence ?? [])?.defect ?? null;
+    if (!named) return { problem: `defect-fixed needs --defect <ticket | suspected>: ${data.id} carries no defect marker to complete` };
+    marker = { defect: named, fixedIn: f.value };
+  } else if (defect || fixedIn) return { problem: '--defect / --fixed-in go with --verdict defect-fixed only' };
   const reason = String(why ?? '').trim();
   if (!reason) return { problem: '--why is required: one sentence a reader of the entry can check' };
   if (reason.length > RESOLUTION_MAX) return { problem: `--why is over ${RESOLUTION_MAX} characters; the argument belongs in the PR, the conclusion here` };
@@ -309,6 +334,7 @@ export function applyResolution(data, { at, by: disputedBy = null, verdict, why,
     resolvedIn: String(ref).trim(),
     resolution: reason,
     ...(verdict === 'claim-amended' && amendedFrom ? { amendedFrom } : {}),
+    ...(marker ?? {}),
   }));
   return { data: { ...data, evidence } };
 }

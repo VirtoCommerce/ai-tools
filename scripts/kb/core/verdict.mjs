@@ -185,23 +185,62 @@ function separating(cands, i, vocab) {
  *   `entries` is what the verdict hands over: one candidate for `answer`, the headlines for
  *   `ambiguous`, none for `none`. `concepts` are, for `none`, the question's own concepts -- which no entry carries.
  */
-export function decide(prep, ranker, question, { retrieval = null, bodies = null } = {}) {
+/**
+ * HOW LIKELY THE TOP HEADLINE IS TO BE THE ANSWER, said beside an `ambiguous` list (VCST-6378). Read off
+ * the agents' own closes, 2026-10-01..15, 901 lists: at p >= 0.6 the agent picked a headline 85-92% of
+ * the time, below 0.2 about one time in four (39 picks, 111 nones). A label, never a cut: one in four is
+ * too many answers to hide, and an answer an agent never opens becomes the duplicate it then captures.
+ */
+export const LIKELY_P = 0.6;
+export const UNLIKELY_P = 0.2;
+export const likelihood = (p) => (p >= LIKELY_P ? 'likely' : p < UNLIKELY_P ? 'unlikely' : 'possible');
+
+export function decide(prep, ranker, question, { retrieval = null, bodies = null, top = AMBIGUOUS_TOP } = {}) {
   const found = retrieval ?? retrieve(prep, question, { fusion: ranker.fusion });
   // A ranker re-ranks only when it says so (`rerank`), and only when the caller brought the bodies.
   const r = ranker.rerank && bodies ? rerankByBodies(prep, found, bodies, ranker.rerank) : found;
   const f = featuresOf(prep, r);
   // ranker.json stores an unreachable answer threshold as null: JSON has no Infinity.
   const answer = ranker.thresholds.answer ?? Infinity;
-  const p = r.candidates.length ? probability(ranker.model, f) : 0;
-  const verdict = !r.candidates.length ? 'none' : p >= answer ? 'answer' : 'ambiguous';
-  const listed = verdict === 'answer' ? r.candidates.slice(0, 1)
-    : verdict === 'ambiguous' ? r.candidates.slice(0, AMBIGUOUS_TOP) : [];
+  // THE NONE ZONE (VCST-6378) is the base's to set, like the answer threshold: `thresholds.none` in
+  // ranker.json. Absent -- as it is until a fit shows a band where agents almost never pick -- there is
+  // none, and a low p is an `ambiguous` list labelled `unlikely`. Measured 2026-10-01..15: even below
+  // p 0.15, 22 of 89 closed lists were picks.
+  const noneBelow = Number.isFinite(ranker.thresholds.none) ? ranker.thresholds.none : -Infinity;
+  // A LONE CANDIDATE HAS NO RIVAL, so its two margins are not measured: `featuresOf` reads them as 1, a
+  // value no fitted ask had -- 0 of 1,535 real asks of 2026-10 retrieved exactly one candidate -- and the
+  // positive weights turned "Stripe" or "the capital of France" into a certified answer at p 0.94-0.998
+  // (tester run of ai-tools#460). Scored with both margins at the model's mean, and never certified:
+  // one headline the agent opens, not an answer it is told to trust.
+  // Rivals that scored nothing are no rivals: a top padded with zero-score candidates from a channel that
+  // matched nothing kept margins of 1 and was certified again ("identifier", "bank"; retest of ai-tools#460).
+  // Counted BEFORE the body re-rank, which lifts every head candidate by its text coverage and so would
+  // turn a zero-score rival into one.
+  const lone = found.candidates.filter((c) => (c.fused ?? 0) > 0).length <= 1 && r.candidates.length > 0;
+  const neutral = (name) => ranker.model.mean?.[ranker.model.features.indexOf(name)];
+  const scored = lone ? { ...f, margin: neutral('margin') ?? f.margin, sentenceMargin: neutral('sentenceMargin') ?? f.sentenceMargin } : f;
+  const p = r.candidates.length ? probability(ranker.model, scored) : 0;
+  const verdict = !r.candidates.length || p < noneBelow ? 'none' : p >= answer && !lone ? 'answer' : 'ambiguous';
+  // `top` is the caller's (kb_ask's argument), bounded to what an agent can read: 1..5.
+  const n = Math.min(5, Math.max(1, Math.floor(Number(top)) || AMBIGUOUS_TOP));
+  // A lone list shows its one scored entry, not the zero-score rivals the re-rank lifted beside it.
+  const scoredTop = found.candidates[0]?.row.id;
+  const pool = lone ? r.candidates.filter((c) => c.row.id === scoredTop) : r.candidates;
+  const listed = verdict === 'answer' ? pool.slice(0, 1)
+    : verdict === 'ambiguous' ? pool.slice(0, n) : [];
   const entries = listed.map((c, i) => ({ ...c, separating: verdict === 'ambiguous' ? separating(listed, i, prep.vocab) : null }));
   // `none` happens only when NO channel found a candidate, concepts included -- so the question's own
   // concepts are, by construction, concepts no entry is filed under. Said as that, never as "nearest
   // concepts the base holds": that is the one thing they are not.
   const near = r.parsed.concepts.slice(0, 3);
-  return { verdict, p, features: f, entries, candidates: r.candidates, parsed: r.parsed, concepts: verdict === 'none' ? near : [] };
+  return {
+    // A lone candidate gets no band: the bands quote pick rates read off lists with rivals (tester run).
+    verdict, p, likelihood: verdict === 'ambiguous' ? (lone ? 'lone' : likelihood(p)) : null, features: f, entries, candidates: r.candidates, parsed: r.parsed,
+    // Unfiled concepts only when NOTHING was found: under the none threshold there were candidates, filed under them.
+    concepts: verdict === 'none' && !r.candidates.length ? near : [],
+    // Below the none threshold there WERE candidates: the nearest is named, so "holds nothing close" is checkable.
+    nearest: verdict === 'none' && r.candidates.length ? { id: r.candidates[0].row.id, subject: r.candidates[0].row.subject } : null,
+  };
 }
 
 // ── thresholds ────────────────────────────────────────────────────────────────────────────────

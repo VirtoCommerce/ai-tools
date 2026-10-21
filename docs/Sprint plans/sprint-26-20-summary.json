@@ -1,0 +1,445 @@
+{
+  "sprint": "Sprint26-20",
+  "jiraSprintName": "VCST Sprint 26-20",
+  "jiraSprintId": 2717,
+  "jiraBoardId": 126,
+  "startDate": "2026-10-05",
+  "endDate": "2026-10-19",
+  "datesInferred": false,
+  "sprintOpenAtPlanTime": true,
+  "planCreated": "2026-10-14",
+  "doneCounts": {
+    "stories": 18,
+    "bugs": 34,
+    "tasks": 21,
+    "techDebt": 1,
+    "spikes": 1,
+    "reviewTasks": 1,
+    "total": 76
+  },
+  "sprintIssueTotal": 224,
+  "testRelevantCount": 48,
+  "outOfScopeCount": 28,
+  "mergedFrontendPRs": 35,
+  "mergedFrontendPRsOnDev": 34,
+  "mergedFrontendProductPRs": 28,
+  "mergedModulePRs": 44,
+  "mergedModuleRepos": 27,
+  "excludedCiSweepPRs": 40,
+  "environment": {
+    "platform": "3.1079.0",
+    "storefrontTheme": "2.60.0-pr-2543 (unmerged PR build of VCST-6017; 7 behind dev)",
+    "sitemapRev": 11,
+    "modulesReadAt": "2026-10-14T09:02:04Z",
+    "pendingDeploy": [
+      "VCST-5817 (#2522)",
+      "VCST-5880 (#2518)",
+      "VCST-5884 storefront (#2523)",
+      "VCST-5924 (#2485)",
+      "VCST-6265 (#2571)",
+      "VCST-6307 (#2574)",
+      "VCST-5995 storefront half (#2485)"
+    ],
+    "notInstalled": [
+      "vc-module-import (VCST-6247)",
+      "vc-module-punchout (VCST-5886)",
+      "vc-module-audit-log"
+    ],
+    "prBuilds": {
+      "SalesRep": "3.1014.0-pr-13-4fbb"
+    },
+    "otpInstalled": "3.1000.0"
+  },
+  "domains": [
+    {
+      "name": "Configurable products — file attachments",
+      "likelihood": 5,
+      "impact": 4,
+      "score": 20,
+      "level": "Critical"
+    },
+    {
+      "name": "Lists sharing & Wishlist authorization",
+      "likelihood": 5,
+      "impact": 4,
+      "score": 20,
+      "level": "Critical"
+    },
+    {
+      "name": "Cart & order validation core",
+      "likelihood": 4,
+      "impact": 5,
+      "score": 20,
+      "level": "Critical"
+    },
+    {
+      "name": "Platform API authorization",
+      "likelihood": 4,
+      "impact": 4,
+      "score": 16,
+      "level": "Critical"
+    },
+    {
+      "name": "Sales Rep hub (Tasks, dashboard, filters)",
+      "likelihood": 4,
+      "impact": 4,
+      "score": 16,
+      "level": "Critical"
+    },
+    {
+      "name": "Returns — organization returns",
+      "likelihood": 4,
+      "impact": 4,
+      "score": 16,
+      "level": "Critical"
+    },
+    {
+      "name": "UI kit & storefront a11y / layout",
+      "likelihood": 3,
+      "impact": 4,
+      "score": 12,
+      "level": "High"
+    },
+    {
+      "name": "Punchout (cXML)",
+      "likelihood": 3,
+      "impact": 4,
+      "score": 12,
+      "level": "High"
+    },
+    {
+      "name": "Image Tools thumbnails (CVE library swap)",
+      "likelihood": 4,
+      "impact": 3,
+      "score": 12,
+      "level": "High"
+    },
+    {
+      "name": "Page Builder",
+      "likelihood": 5,
+      "impact": 2,
+      "score": 10,
+      "level": "High"
+    },
+    {
+      "name": "Auth / OTP",
+      "likelihood": 2,
+      "impact": 5,
+      "score": 10,
+      "level": "High"
+    },
+    {
+      "name": "Search bar & analytics",
+      "likelihood": 3,
+      "impact": 3,
+      "score": 9,
+      "level": "Medium"
+    },
+    {
+      "name": "Platform settings & SEO admin",
+      "likelihood": 3,
+      "impact": 3,
+      "score": 9,
+      "level": "Medium"
+    },
+    {
+      "name": "Push messages audience",
+      "likelihood": 3,
+      "impact": 3,
+      "score": 9,
+      "level": "Medium"
+    },
+    {
+      "name": "Storefront orders date filter",
+      "likelihood": 2,
+      "impact": 4,
+      "score": 8,
+      "level": "Medium"
+    },
+    {
+      "name": "SQL Queries",
+      "likelihood": 2,
+      "impact": 3,
+      "score": 6,
+      "level": "Medium"
+    }
+  ],
+  "suitesActivated": [
+    "042",
+    "043",
+    "045",
+    "046",
+    "048c",
+    "002",
+    "004",
+    "098",
+    "028",
+    "029",
+    "011",
+    "013",
+    "015",
+    "014",
+    "014b",
+    "014c",
+    "072",
+    "072b",
+    "072d",
+    "072e",
+    "072f",
+    "007",
+    "104",
+    "089",
+    "091",
+    "093",
+    "097",
+    "106",
+    "033",
+    "100",
+    "078",
+    "078b",
+    "078c",
+    "078d",
+    "049",
+    "020",
+    "101",
+    "034",
+    "050i",
+    "050b1",
+    "050b4",
+    "050b5",
+    "050c",
+    "050h",
+    "050m",
+    "050d",
+    "050o",
+    "050l",
+    "059",
+    "060",
+    "060b",
+    "066",
+    "053",
+    "068",
+    "069",
+    "062",
+    "073",
+    "073a",
+    "073b",
+    "085",
+    "099",
+    "076",
+    "105"
+  ],
+  "suitesActivatedCount": 63,
+  "suitesActivatedFrontend": 30,
+  "suitesActivatedBackend": 33,
+  "suitesVerifiedAgainstManifest": true,
+  "manifestSuiteTotal": 154,
+  "manifestFindings": [
+    "M1: loyalty group still omits 075d and 075e (carried from 26-19, re-checked; no loyalty ticket this sprint)",
+    "M2: sprint selection excludes 11 of the 63 activated suites (043, 045, 046, 050m, 068, 069, 076, 089, 091, 093, 097); the Sales Rep Critical domain (except new 106), Image Tools, GA and Push do not run under regression:plan sprint",
+    "M3: a returns selection now exists (014c, 050o, 073, 073a, 073b); still omits 014/014b and 057/058/068 (partly closed)",
+    "M4: auth now includes 104/105 (partly closed); still lacks 044/049/020/102; backend excludes 092/092b/050m/050m2/094/102; no ucp or task-management selection; NEW: sales-rep group omits 106 and configurable-products group omits 014/015",
+    "M5: module-suite-map.md has no mention of 094/095/097/102/103/104/105/106/014b/UCP/OTP/Punchout and says \"All 99 suites\" against 154 (still open)",
+    "M6: BL domains ret, push, ucp declared and empty (Returns Critical has no oracle); no OTP, Page Builder, Image Tools, Punchout or file-ownership invariant (OTP-001 cites BL-AUTH-015, the org-resolution chain); domain maps for Returns and Auth now exist, none for Task Management, Punchout, Image Tools, Platform security, Lists sharing",
+    "M7: 007 B2C-LIST-043 ([Automated], promoted) asserts the pre-VCST-5707 single-recipient behaviour as {OBSERVED}; stale inverted oracle, will FAIL on a build with vc-frontend #2476; REPAIR via /qa-review-tests --fix",
+    "M8: sendCustomerCommunication input contract unverified: 050m SR-GQL-042..053 and 007 B2C-LIST-041/048/049 send singular organizationId, 050h WISH-040 sends organizationIds; graphql-schema.md lists no input fields (introspect InputSendCustomerCommunicationType)",
+    "M9: scripts/seed-data/cms/seed-pagebuilder-shared-components.mjs:120 (npm run seed:pb-shared) posts raw grouped page content without If-Match; will 428 on PageBuilder 3.1034.0 (seed-pagebuilder-pages.mjs already sends the token)",
+    "M10: brief vs repo — 069b cited in Jira does not exist (only 069); WISH-045 FIXTURE-GAP note contradicted by KB-6E56FB4B; OTP now installed on vcst; 6248/6214/5670 out of scope (48 scoped, 51 flagged)"
+  ],
+  "newCasesEstimate": "97-156",
+  "newCasesFirstWave": 36,
+  "newSuitesProposed": [
+    "regression/suites/Frontend/cross-cutting/107-ui-kit-accessibility.csv",
+    "regression/suites/Backend/import-export/108-import-module-authz.csv",
+    "regression/suites/Backend/punchout/109-punchout-cxml.csv",
+    "regression/suites/Frontend/punchout/110-punchout-storefront.csv",
+    "regression/suites/Backend/sql-queries/111-sql-queries.csv"
+  ],
+  "coverageGapsOpen": [
+    "GAP-01",
+    "GAP-02",
+    "GAP-03",
+    "GAP-04",
+    "GAP-05",
+    "GAP-06",
+    "GAP-07",
+    "GAP-08",
+    "GAP-09",
+    "GAP-10",
+    "GAP-11",
+    "GAP-12",
+    "GAP-13",
+    "GAP-14",
+    "GAP-15",
+    "GAP-16",
+    "GAP-17",
+    "GAP-18",
+    "GAP-19",
+    "GAP-20",
+    "GAP-21",
+    "GAP-22",
+    "GAP-23",
+    "GAP-24",
+    "GAP-25",
+    "GAP-CF-01",
+    "GAP-CF-02",
+    "GAP-CF-03",
+    "GAP-CF-04",
+    "GAP-CF-05",
+    "GAP-CF-06",
+    "GAP-CF-07",
+    "GAP-CF-08",
+    "GAP-CF-09",
+    "GAP-CF-10",
+    "GAP-CF-11",
+    "GAP-CF-12",
+    "GAP-CF-13",
+    "GAP-CF-14",
+    "GAP-CF-15",
+    "GAP-CF-16",
+    "GAP-CF-17",
+    "GAP-CF-18",
+    "GAP-CF-19",
+    "GAP-CF-20",
+    "GAP-CF-21"
+  ],
+  "coverageGapsClosed": [
+    "VCST-5884/6107 org returns (014c, 050o, 073a, 073b; 53 stamped rows)",
+    "VCST-5880 compare one table (098 CMP-036..053)",
+    "VCST-6077 Tasks (106 SR-TK-001..029) and 26-19 GAP-03 UI half",
+    "VCST-6001 (097 SR-CO-039..051); VCST-6175 closed by existing 097 SR-CO-032",
+    "VCST-6027 checklist (072f CFG-CHK-001..028)",
+    "VCST-5707/5925/5728/6104/6116/5850 (007 36 rows, 050h 15 rows incl. WISH-040 multi-org send)",
+    "VCST-5944 (050l 5 rows, 068 10 rows)",
+    "26-19 GAP-01 OTP (104/105)",
+    "26-19 GAP-04/05/06 Returns (014c, 050o, 073a RET-AUTH-009..015, 028..031)"
+  ],
+  "coverageGapsNoTargetSuite": [
+    "GAP-07 (propose regression/suites/Backend/import-export/108-import-module-authz.csv)",
+    "GAP-08 (propose regression/suites/Backend/punchout/109-punchout-cxml.csv + regression/suites/Frontend/punchout/110-punchout-storefront.csv)",
+    "GAP-19 (propose regression/suites/Frontend/cross-cutting/107-ui-kit-accessibility.csv; resolves 26-19 GAP-CF-01)",
+    "GAP-23 (propose regression/suites/Backend/sql-queries/111-sql-queries.csv)"
+  ],
+  "exploratoryCharters": [
+    {
+      "id": "EXP-01",
+      "domain": "UI kit & storefront a11y / layout (12, High)",
+      "signals": [
+        "C1: GAP-19, no UI-kit suite (carried)"
+      ],
+      "mission": "Discover consumers broken by the shared-component changes of this sprint (VcButton loading, VcTextarea label, VcSelect inside VcModal, quantity-stepper description) that no component-level case can catch",
+      "candidateScenarios": [
+        "Every loading-VcButton consumer: stable name, double submit still refused while aria-busy",
+        "Every VcTextarea consumer: label focuses, invalid state links its message",
+        "VcSelect inside each modal/drawer incl. uncovered Region: Escape closes dropdown first, focus returns"
+      ],
+      "technique": "User-flow edge enumeration · Galumphing",
+      "lane": "playwright-firefox",
+      "timeboxMin": 30,
+      "owner": "qa-testing-expert (+ ui-ux-expert)"
+    },
+    {
+      "id": "EXP-02",
+      "domain": "Configurable products — file attachments (20, Critical)",
+      "signals": [
+        "C2: 5 tickets at L=5 across 5 repos",
+        "C3: GAP-01/02/03 name 050i, 015, 014, 072b"
+      ],
+      "mission": "Discover what happens to a buyer's uploaded configuration file at every seam of its life (upload, cart, clear, quote conversion, order, reorder) and who can open it",
+      "candidateScenarios": [
+        "File on cart -> quote -> clear/delete cart -> order via another path: owner still opens, colleague refused",
+        "Order placed before vs after the fix: what the buyer sees on a 403",
+        "Replace file while editing a configured line, reorder from history, 0-byte plus real file, with and without a scope minimum"
+      ],
+      "technique": "Soap Opera · Scenario tour",
+      "lane": "playwright-chrome",
+      "timeboxMin": 30,
+      "owner": "qa-frontend-expert (qa-backend-expert verifies API/403)"
+    },
+    {
+      "id": "EXP-03",
+      "domain": "Lists sharing & Wishlist authorization (20, Critical)",
+      "signals": [
+        "C2: 7 tickets at L=5 on one PR set (x-cart #141, sales-rep #21, cart #194, vc-frontend #2476)"
+      ],
+      "mission": "Discover role x scope x action seams of the reworked sharing model that the 51 stamped cases do not name",
+      "candidateScenarios": [
+        "Co-owner (Write member) on an Organization-scope list: every verb incl. message-only edit that answers 200 and writes nothing",
+        "Target-organization member who is also a colleague; rep stops serving a target after sharing",
+        "Widen/narrow transitions with link sharing re-enabled, old link 404, message-only edit sends nothing"
+      ],
+      "technique": "Feature-pair matrix · Boundary-of-features",
+      "lane": "playwright-edge",
+      "timeboxMin": 30,
+      "owner": "qa-backend-expert (qa-frontend-expert on menus)"
+    },
+    {
+      "id": "EXP-04",
+      "domain": "Sales Rep hub (16, Critical)",
+      "signals": [
+        "C2: 7 tickets at L=4 across vc-frontend, sales-rep and a statistics cache; sales-rep is a PR build"
+      ],
+      "mission": "Discover seams between the Tasks page, the date-range filter, the layout empty state and the statistics cache on the build that is actually deployed",
+      "candidateScenarios": [
+        "Buyer places and cancels an order while the rep watches Dashboard, My customers, Customer profile",
+        "Hide every block via Edit layout on Dashboard and Customer page, save, reload, restore, at 375 and by keyboard",
+        "Customer-orders filters together: date range + status chip + de-DE zero-match + west-of-UTC browser; Task module present vs absent"
+      ],
+      "technique": "Feature-pair matrix · Boundary-of-features",
+      "lane": "playwright-chrome",
+      "timeboxMin": 30,
+      "owner": "qa-frontend-expert"
+    },
+    {
+      "id": "EXP-05",
+      "domain": "Page Builder (10, High)",
+      "signals": [
+        "C2: 4 tickets at L=5 on one module (PRs #165/#167/#170) + carried zero-coverage Shared Components (GAP-11)"
+      ],
+      "mission": "Discover how the Designer behaves under two authors and under a browser that denies the clipboard",
+      "candidateScenarios": [
+        "Two tabs on one page: stale tab warned, edits kept, recovery; does copy-page/clone need a token now; stale tab vs publish/unpublish/draft",
+        "Actions menu with clipboard denied/prompt/granted in Firefox, Chrome, Edge: Save selected as Shared Component -> reload -> where used; create in a store the author may not see",
+        "Keyboard only: section-tree reach, ArrowUp/Down reorder, Escape and focus return at 375 beside the AI assistant button"
+      ],
+      "technique": "Soap Opera · Saboteur",
+      "lane": "playwright-firefox",
+      "timeboxMin": 30,
+      "owner": "qa-testing-expert (qa-backend-expert on API)"
+    }
+  ],
+  "criticalTickets": [
+    "VCST-5995",
+    "VCST-5999",
+    "VCST-6000",
+    "VCST-5924",
+    "VCST-6027",
+    "VCST-5925",
+    "VCST-5707",
+    "VCST-5728",
+    "VCST-5850",
+    "VCST-6104",
+    "VCST-6116",
+    "VCST-6125",
+    "VCST-6089",
+    "VCST-6247",
+    "VCST-6276",
+    "VCST-6077",
+    "VCST-6001",
+    "VCST-6175",
+    "VCST-6153",
+    "VCST-6180",
+    "VCST-5687",
+    "VCST-5755",
+    "VCST-5884",
+    "VCST-6107",
+    "VCST-6176"
+  ],
+  "entryBlockers": [
+    "FRONT_URL serves dev >= #2574 (today: unmerged VCST-6017 PR build)",
+    "SalesRep 3.1014.0-pr-13 matched to #18/#21",
+    "Permission fixture with/without tax:read, tax:update, personalization:update",
+    "PO owner for spec conflicts: 6077 rail width, 5990, 6011 Paste, 5884 AC-4"
+  ],
+  "artifacts": "vc/shared/docs/Sprint plans/"
+}

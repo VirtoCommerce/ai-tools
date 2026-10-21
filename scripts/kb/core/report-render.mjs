@@ -103,9 +103,11 @@ function panelNearMisses(p) {
     esc(r.subject) || (r.inIndex ? '' : '<span class="muted">not in the index snapshot</span>'),
     `<span class="q">${esc(r.question)}</span>`,
     esc(r.score),
-    r.rejectedBy === 'words'
-      ? `<span class="muted">word count (&lt;&nbsp;${esc(p.minWords)}); coverage already cleared the floor</span>`
-      : '<span class="muted">coverage</span>',
+    r.rejectedBy === 'agent'
+      ? '<span class="muted">the agent (<code>kb_none</code> on the list it was shown)</span>'
+      : r.rejectedBy === 'words'
+        ? `<span class="muted">word count (&lt;&nbsp;${esc(p.minWords)}); coverage already cleared the floor</span>`
+        : '<span class="muted">coverage</span>',
     esc(r.session),
   ]);
   const repeats = p.repeats.map((g) => `<code>${esc(g.id)}</code>&nbsp;×${esc(g.count)}`
@@ -118,13 +120,16 @@ function panelNearMisses(p) {
       derivation sat at <strong>0.45</strong> — one word below. So
       <strong>anything at or above ${esc(p.review)} is a row a human must read</strong>: either the
       floor refused a question it should have answered, or an entry is phrased so unlike the way
-      people ask that it is invisible. The log cannot tell which.
+      people ask that it is invisible. The log cannot tell which. Under the verdict ranker there is
+      no floor: a row marked <em>the agent</em> is the best candidate an ask SHOWED before the agent
+      closed it with <code>kb_none</code>, scored here against the index.
       ${p.repeats.length ? '' : '<em>A candidate that near-misses repeatedly is the second case, and is worth rewriting rather than re-cutting the floor.</em>'}</p>
     <p class="metric">
       <strong class="${p.inBand.length ? 'bad' : ''}">${esc(p.inBand.length)}</strong> row(s) at
       coverage ≥ ${esc(p.review)} · <strong>${esc(p.rows.length)}</strong> of
       <strong>${esc(p.missTotal)}</strong> miss(es) carried a candidate
-      <span class="muted">(${esc(p.withoutNearMiss)} scored nothing at all — not a floor problem)</span>
+      <span class="muted">(${esc(p.withoutNearMiss)} scored nothing at all — not a floor problem${p.shownNotInIndex ? `; ${esc(p.shownNotInIndex)} showed only entries missing from, or unreadable in, the index snapshot` : ''})</span>
+      ${p.unclosed ? `<br><span class="muted">${esc(p.unclosed)} unclosed list(s) left out: nobody rejected their candidates, so there is no near-miss to read.</span>` : ''}
     </p>
     ${repeats ? `<p class="metric">Repeatedly near-missed: ${repeats}</p>` : ''}
     ${rows.length ? table(['coverage', 'candidate', 'subject', 'the question it missed', 'score', 'stopped by', 'session'], rows)
@@ -149,6 +154,12 @@ function header(report) {
     notes.push(`<strong>${m.synthetic}</strong> line(s) in this window are marked <code>synthetic</code>`
       + `${m.syntheticAsks ? ` (${m.syntheticAsks} of them asks)` : ''} — a benchmark, demo or acceptance run. `
       + 'They are excluded from every panel below: a stopwatch is not demand.');
+  }
+  const x = m.excludedSessions;
+  if (x) {
+    notes.push(`<strong>${x.lines}</strong> line(s)${x.asks ? ` (${x.asks} of them asks)` : ''} of the session(s) named by `
+      + `<code>--exclude-sessions</code> (${esc(x.matched.join(', ') || 'none matched')}) are set aside from every panel below`
+      + (x.unmatched.length ? `; <strong>${esc(x.unmatched.join(', '))}</strong> matched no session in this window` : ''));
   }
   // A report headed "last 30 days" that actually read three named sessions publishes a number
   // nobody can reproduce -- PLAN §15.2's objection, in the header.
@@ -179,12 +190,14 @@ function header(report) {
 }
 
 function panelMisses(p) {
-  const rows = p.ranked.map((m) => [
+  const asRow = (m) => [
     `<b>${esc(m.count)}</b>`,
     esc(m.sessions),
     `<span class="q">${esc(m.question)}</span>`,
     `<code>${esc(when(m.last))}</code>`,
-  ]);
+  ];
+  const rows = p.ranked.map(asRow);
+  const open = (p.unclosed?.ranked ?? []).map(asRow);
   return `<section id="misses">
     <h2>1 · Misses — the work queue</h2>
     <p class="lede">A question asked and not answered. Ranked by repeat count: asked three times and
@@ -192,12 +205,18 @@ function panelMisses(p) {
       ${p.unreachable ? `<em>${p.unreachable} ask(s) in this window were <code>unreachable</code>, not misses — the base was not read, so they say nothing about coverage.</em>` : ''}</p>
     ${rows.length ? table(['asked', 'sessions', 'question', 'last'], rows)
     : empty('No misses in this window. Either coverage is good, or nobody asked anything the base does not hold — panel 2 says which.')}
+    ${open.length ? `<h3>Unclosed lists — not misses</h3>
+    <p class="lede">The base showed candidates and the agent closed the list with neither
+      <code>kb_show</code> nor <code>kb_none</code>. Nobody judged them, so these say nothing about
+      what the base holds; they are a closure failure, read beside the per-agent lists panel.
+      <strong>${esc(p.unclosed.total)}</strong> ask(s).</p>
+    ${table(['asked', 'sessions', 'question', 'last'], open)}` : ''}
   </section>`;
 }
 
 function panelUnhelpful(p) {
   const rows = p.rows.filter((r) => r.verdict !== 'helpful').map((r) => [
-    r.verdict === 'unhelpful' ? '<span class="bad">unhelpful</span>' : '<span class="muted">undecidable</span>',
+    r.verdict === 'unhelpful' ? '<span class="bad">unhelpful</span>' : `<span class="muted">${esc(r.verdict)}</span>`,
     `<span class="q">${esc(r.question)}</span>`,
     `<div class="ids">${(r.matchedSubjects ?? r.matched.map((id) => ({ id, subject: '' })))
       .map((m) => `<div><code>${esc(m.id)}</code> ${esc(m.subject)}</div>`).join('')}</div>`,
@@ -216,7 +235,7 @@ function panelUnhelpful(p) {
     <p class="metric">
       <strong>${esc(p.flagged.length)}</strong> unhelpful of <strong>${esc(p.decidable)}</strong> decidable
       = <strong class="${p.rate != null && p.rate > 0.15 ? 'bad' : ''}">${esc(pct(p.rate))}</strong>
-      <span class="muted">(${esc(p.undecidable)} undecidable — the entry or the matched rows are not in the index snapshot)</span>
+      <span class="muted">(${esc(p.undecidable)} undecidable — the entry or the matched rows are not in the index snapshot${p.unpaired ? `; ${esc(p.unpaired)} unpaired — the capture named the ask only through a longer coordinate's prefix, so it is not evidence about it` : ''})</span>
     </p>
     <p class="muted">The denominator is pairs a capture <em>pointed at</em>, not all asks and not
       every later capture: until 2026-09-22 this paired every answered ask with every subsequent
@@ -281,7 +300,8 @@ function panelEvidence(p) {
     <h2>5 · Confirmations and disputes</h2>
     <p class="lede">Where a fact was seen to hold again, and where it did not.
       <strong>${esc(p.confirms)}</strong> confirmation(s), <strong>${esc(p.disputes)}</strong> dispute(s).
-      ${p.queue ? `Dispute queue now: <strong${p.queue.openEntries ? ' class="bad"' : ''}>${esc(p.queue.openEntries)}</strong> of ${esc(p.queue.active)} active entries hold ${esc(p.queue.openDisputes)} open dispute(s); ${esc(p.queue.resolvedDisputes)} resolved on ${esc(p.queue.resolvedEntries)} entr(ies) (<code>npm run kb:disputes -- list</code>, <code>/kb-judge</code>).` : ''}
+      ${p.builds ? `${esc(p.builds.stamped)} of ${esc(p.builds.writes)} write(s) carry a machine-read build; ${esc(p.builds.soft)} dispute(s) were soft (made on another build than every confirmation — judged, not shown as DISPUTED).` : ''}
+      ${p.queue ? `Dispute queue now: <strong${p.queue.openEntries ? ' class="bad"' : ''}>${esc(p.queue.openEntries)}</strong> of ${esc(p.queue.active)} active entries hold ${esc(p.queue.openDisputes)} open dispute(s); ${esc(p.queue.resolvedDisputes)} resolved on ${esc(p.queue.resolvedEntries)} entr(ies)${p.queue.softOpen ? `, plus ${esc(p.queue.softOpen)} soft dispute(s) still to judge` : ''} (<code>npm run kb:disputes -- list</code>, <code>/kb-judge</code>).` : ''}
       ${p.contested.length ? `<strong class="bad">${p.contested.length} entry/entries are contested</strong> — confirmed and disputed both. A disputed entry with four confirmations is the single most decision-worthy row in this report.` : ''}</p>
     ${rows.length ? table(['id', 'subject', 'confirms', 'disputes', 'deployments', 'saw instead'], rows)
     : empty('Nobody confirmed or disputed anything in this window. Not "everything holds" — nobody checked.')}
@@ -367,6 +387,7 @@ function panelTopics(p) {
     esc(r.lines),
     esc(r.asks),
     r.misses ? `<strong class="bad">${esc(r.misses)}</strong>` : esc(r.misses),
+    esc(r.unclosed ?? 0),
     esc(r.captures),
     esc(r.sessions),
     r.runs.length ? r.runs.map((x) => `<code>${esc(x)}</code>`).join(' ') : '<span class="muted">—</span>',
@@ -385,7 +406,7 @@ function panelTopics(p) {
     ${p.untopiced ? `<p class="metric"><strong>${esc(p.untopiced)} line(s) carry no topic</strong>
       &mdash; written before the field existed, or by an agent that passed none. They are counted
       here and nowhere else: a bucket called "unknown" would invent a subject nobody wrote.</p>` : ''}
-    ${rows.length ? table(['topic', 'lines', 'asks', 'missed', 'captures', 'sessions', 'run(s)', 'first', 'last'], rows)
+    ${rows.length ? table(['topic', 'lines', 'asks', 'missed', 'unclosed', 'captures', 'sessions', 'run(s)', 'first', 'last'], rows)
     : empty('No topic on any line in this window — nothing has passed one yet.')}
   </section>`;
 }
@@ -536,21 +557,34 @@ export function renderText(report) {
   // is a number nobody can reproduce.
   const scoped = m.run ? `${scope}, run ${m.run}${m.outOfRun ? ` [${m.outOfRun} line(s) outside it excluded]` : ''}` : scope;
   out.push(`${m.files ?? 0} log file(s), ${report.sessions} session(s), ${p.questions.totalAsks} ask(s), ${scoped}`
-    + (m.synthetic ? `  [+${m.synthetic} synthetic line(s)${m.syntheticAsks ? `, ${m.syntheticAsks} ask(s)` : ''} excluded]` : ''));
-  out.push(`  misses         ${p.misses.ranked.length} distinct (${p.misses.total} asks)${p.misses.unreachable ? `, ${p.misses.unreachable} unreachable` : ''}`);
+    + (m.synthetic ? `  [+${m.synthetic} synthetic line(s)${m.syntheticAsks ? `, ${m.syntheticAsks} ask(s)` : ''} excluded]` : '')
+    + (m.excludedSessions ? `  [+${m.excludedSessions.lines} line(s), ${m.excludedSessions.asks} ask(s) of excluded session(s) ${m.excludedSessions.matched.join(', ') || '(none matched)'} set aside]` : ''));
+  if (m.excludedSessions?.unmatched?.length) out.push(`  WARNING --exclude-sessions named ${m.excludedSessions.unmatched.join(', ')}, which matched no session in this window`);
+  out.push(`  misses         ${p.misses.ranked.length} distinct (${p.misses.total} asks)${p.misses.unreachable ? `, ${p.misses.unreachable} unreachable` : ''}`
+    + `${p.misses.unclosed?.total ? `; ${p.misses.unclosed.total} unclosed list(s) counted apart` : ''}`);
   out.push(`  near misses    ${p.nearMisses.rows.length} rejected candidate(s); `
     + `${p.nearMisses.inBand.length} at coverage >= ${p.nearMisses.review}`
     + `${p.nearMisses.rows.length ? `, top ${p.nearMisses.rows[0].coverage.toFixed(2)}` : ''}`);
-  out.push(`  unhelpful      ${p.unhelpful.flagged.length}/${p.unhelpful.decidable} decidable = ${pct(p.unhelpful.rate)} (${p.unhelpful.undecidable} undecidable, ${p.unhelpful.unprompted} unprompted, ${p.unhelpful.afterMiss} after a miss)`);
+  out.push(`  unhelpful      ${p.unhelpful.flagged.length}/${p.unhelpful.decidable} decidable = ${pct(p.unhelpful.rate)} (${p.unhelpful.undecidable} undecidable, ${p.unhelpful.unpaired ?? 0} unpaired, ${p.unhelpful.unprompted} unprompted, ${p.unhelpful.afterMiss} after a miss)`);
+  // VCST-6378: the rate over pairs the writer named exactly (kb_capture's `ask`); a guessed pair can be a different fact.
+  if (p.unhelpful.exact) out.push(`                 exact pairs (ask handle) ${p.unhelpful.exact.flagged}/${p.unhelpful.exact.decidable}${p.unhelpful.rateExact === null ? ' -- none yet' : ` = ${pct(p.unhelpful.rateExact)}`}; the rest were guessed from the text`);
   out.push(`  entries served ${p.entries.used.length} of ${p.entries.indexed} indexed; ${p.entries.never.length} never served here`);
   out.push(`  evidence       ${p.evidence.confirms} confirm, ${p.evidence.disputes} dispute, ${p.evidence.contested.length} contested`);
+  if (p.evidence.builds) out.push(`  builds         ${p.evidence.builds.stamped} of ${p.evidence.builds.writes} write(s) carry a build; ${p.evidence.builds.soft} soft dispute(s) (on another build)${p.evidence.queue ? `; ${p.evidence.queue.softOpen ?? 0} soft dispute(s) open on the base` : ''}`);
+  const why = Object.entries(p.evidence.builds?.missing ?? {}).sort((a, b) => b[1] - a[1]);
+  if (why.length) out.push(`  no build       ${why.map(([k, n]) => `${k} ${n}`).join(', ')}${p.evidence.builds.clients?.length ? `; clients ${p.evidence.builds.clients.join(', ')}` : ''}`);
   out.push(`  refusals       ${p.refusals.total} as duplicate, ${p.refusals.atDoor.length} turned away at the door`
-    + `${p.refusals.atDoor.length ? ` (${p.refusals.atDoorRetried} retried and landed)` : ''}`);
+    + `${p.refusals.atDoor.length ? ` (${p.refusals.atDoorRetried} retried and landed)` : ''}`
+    + `${p.refusals.held ? `; ${p.refusals.held} held as similar to an entry` : ''}`
+    + `${p.refusals.privateRefused ? `; ${p.refusals.privateRefused} refused for private data` : ''}`);
+  const ev = Object.entries(p.refusals.evidenceRefused ?? {});
+  if (ev.length) out.push(`  evidence       refused: ${ev.map(([k, n]) => `${k} ${n}`).join(', ')}`);
   const d = p.refusals.door;
   if (d?.attempts) {
     const doors = Object.entries(d.byDoor).map(([k, v]) => `${k} ${v.refused}/${v.attempts}`).join(', ');
     out.push(`  door           ${d.refused}/${d.attempts} capture attempts refused = ${pct(d.rate)} (${doors}); `
-      + `first attempt ${pct(d.firstAttempt)}; ${d.abandoned} fact(s) abandoned${d.pairedByAsk ? ` (${d.pairedByAsk} refusal(s) likely reworded retries)` : ''}`);
+      + `first attempt ${pct(d.firstAttempt)}; ${d.abandoned} fact(s) abandoned${d.pairedByAsk ? ` (${d.pairedByAsk} refusal(s) likely reworded retries)` : ''}`
+      + `${d.droppedNotRefused ? `; ${d.droppedNotRefused} landed by dropping a bad anchor` : ''}`);
   }
   // THE DENOMINATOR, printed with the panels rather than after them, because it is the line that
   // decides how to read every other number here. `n/a` and not `0%` when nothing is accounted for:

@@ -48,6 +48,11 @@ Code and the live stand agreeing is **not** a source for an expectation: any bug
 two always agree (BL 2.0 §7.3a, the oracle problem). Only AC, docs or a bug resolution can make an
 observed behaviour the expected one.
 
+**A kb entry marked as a defect is never an expected result.** `KNOWN DEFECT` / `SUSPECTED DEFECT` beside
+its trust label means the base saw the behaviour and it should not happen: take the expectation from the
+docs or an oracle, and use the entry only as proof that the bug reproduces (`Catches:` its ticket)
+([`kb-capture-contract.md`](kb-capture-contract.md) §Defects).
+
 ## 3. Every functional case names the bug it would catch
 
 `References` already carries `Archetype:<TOKEN> · Technique:<TOKEN>` (`skills/qa-test/authoring.md`

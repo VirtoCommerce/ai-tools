@@ -1,4 +1,4 @@
-// Unit tests for plugins/vc-fix/skills/project-init/normalize-env.mjs (VCST-5582 B).
+// Unit tests for plugins/vc-init/skills/project-init/normalize-env.mjs (VCST-5582 B).
 //
 // The defect: `.env.<env>` was hand-filled from the scaffold-env template and the interview
 // resumed on the operator's "done" with NO validation. A URL pasted with a trailing `/` (or
@@ -15,10 +15,10 @@ import { writeFileSync, readFileSync } from "node:fs";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { withTempDir } from "./_test-helpers.mjs";
-import { normalizeValue, normalizeEnvText } from "../../plugins/vc-fix/skills/project-init/normalize-env.mjs";
-import { CATALOG } from "../../plugins/vc-fix/skills/project-init/scaffold-env.mjs";
+import { normalizeValue, normalizeEnvText } from "../../plugins/vc-init/skills/project-init/normalize-env.mjs";
+import { CATALOG } from "../../plugins/vc-init/skills/project-init/scaffold-env.mjs";
 
-const SCRIPT = resolve(dirname(fileURLToPath(import.meta.url)), "../../plugins/vc-fix/skills/project-init/normalize-env.mjs");
+const SCRIPT = resolve(dirname(fileURLToPath(import.meta.url)), "../../plugins/vc-init/skills/project-init/normalize-env.mjs");
 
 // ─── the single source of truth (no transcribed rule table) ───────────────────────
 test("normalize-env drives off scaffold-env's CATALOG, not a private copy of the rules", () => {
@@ -77,11 +77,13 @@ test("normalizeValue: a missing scheme is a hard ERROR", () => {
 });
 
 test("normalizeValue: an unfilled placeholder is a hard ERROR", () => {
-  for (const key of ["FRONT_URL", "BACK_URL", "STORE_ID", "USER_EMAIL"]) {
+  for (const key of ["FRONT_URL", "BACK_URL", "USER_EMAIL"]) {
     const r = normalizeValue(key, "");
     assert.equal(r.errors.length, 1, key);
     assert.match(r.errors[0], /still empty/);
   }
+  // STORE_ID may stay empty: the CLI detects it from the storefront (detectStoreId).
+  assert.equal(normalizeValue("STORE_ID", "").errors.length, 0);
   // …and a quoted-empty / whitespace-only value counts as unfilled too.
   assert.match(normalizeValue("FRONT_URL", '   ""   ').errors[0], /still empty/);
 });
@@ -143,7 +145,7 @@ test("normalizeEnvText: preserves comments, blanks, order, and unknown keys byte
 });
 
 test("normalizeEnvText: reports every error in the file at once, not just the first", () => {
-  const { errors } = normalizeEnvText(["FRONT_URL=", "BACK_URL=back.example.com", "STORE_ID="].join("\n"));
+  const { errors } = normalizeEnvText(["FRONT_URL=", "BACK_URL=back.example.com", "USER_EMAIL="].join("\n"));
   assert.equal(errors.length, 3);
 });
 
@@ -188,10 +190,10 @@ test("CLI: --check reports but never writes", () => withTempDir((dir) => {
 }));
 
 test("CLI: an unfilled placeholder fails loudly (exit 1) BEFORE the repo scan", () => withTempDir((dir) => {
-  writeFileSync(join(dir, ".env.opus_qa"), GOOD_ENV.replace("STORE_ID=B2B-store", "STORE_ID="));
+  writeFileSync(join(dir, ".env.opus_qa"), GOOD_ENV.replace("USER_EMAIL=qa@example.com", "USER_EMAIL="));
   const r = runCli(dir, ["--env", "opus_qa"]);
   assert.equal(r.code, 1);
-  assert.match(r.stderr, /STORE_ID is still empty/);
+  assert.match(r.stderr, /USER_EMAIL is still empty/);
   assert.match(r.stderr, /NOT READY/);
 }));
 

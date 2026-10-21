@@ -114,14 +114,19 @@ async function prsFromJira(key) {
     const id = `${owner}/${repo}#${number}`;
     if (!found.has(id)) found.set(id, { owner, repo, number: Number(number), source });
   };
-  // (a) dev-status API (the "Development" panel) — most authoritative when GitHub is linked.
-  try {
-    const ds = await jiraGet(`/rest/dev-status/latest/issue/detail?issueId=${issue.id}&applicationType=GitHub&dataType=pullrequest`);
-    for (const d of ds.detail || []) for (const pr of d.pullRequests || []) {
+  // (a) dev-status API (the "Development" panel) — most authoritative when GitHub is linked. `detail` answers
+  // only for the applicationType the integration is registered under (a wrong one is an empty 200), and the
+  // new GitHub app registers as `oAuth-com.github.integration.production` — so read the type from `summary`,
+  // keeping `GitHub` for the legacy DVCS connector.
+  const sum = await jiraGet(`/rest/dev-status/latest/issue/summary?issueId=${issue.id}`).catch(() => null);
+  const types = new Set([...Object.keys(sum?.summary?.pullrequest?.byInstanceType ?? {}), "GitHub"]);
+  for (const t of types) {
+    const ds = await jiraGet(`/rest/dev-status/latest/issue/detail?issueId=${issue.id}&applicationType=${encodeURIComponent(t)}&dataType=pullrequest`).catch(() => null);
+    for (const d of ds?.detail || []) for (const pr of d.pullRequests || []) {
       const m = PR_URL_RE.exec(pr.url || ""); PR_URL_RE.lastIndex = 0;
       if (m) add(m[1], m[2], m[3], "dev-status");
     }
-  } catch (e) { /* dev-status may be unavailable; fall back to text scan */ }
+  }
   // (b) regex over the whole issue payload (description ADF + comments) for PR URLs.
   const blob = JSON.stringify(issue);
   let m; PR_URL_RE.lastIndex = 0;
