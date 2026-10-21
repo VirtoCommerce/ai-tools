@@ -69,6 +69,9 @@ rules:
       steps: Create product → wait 120s → search by name → found. Update name → wait 120s → search by new name → found, old name → not found. Delete product → wait 120s → search → not found.
     violation_signal: New product not findable after 120s; deleted product still in search results; updated fields not reflected in search; ghost/phantom results.
     status: ACTIVE
+    verified:
+      date: 2026-10-21
+      by: REG-2026-10-21-1051
   - id: BL-SRCH-004
     title: Search respects store and catalog scope
     rule: Search results are scoped to the current store's virtual catalog. Products from other stores or unlinked physical catalogs must never appear in search results. The search API requires `storeId` context — omitting it is an API contract violation.

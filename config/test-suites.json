@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-10-20",
-    "totalSuites": 159,
+    "generated": "2026-10-21",
+    "totalSuites": 160,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -2171,6 +2171,31 @@
         "admin",
         "range-facets",
         "sprint"
+      ],
+      "requiresModules": [
+        "search"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
+    },
+    {
+      "id": "061b",
+      "name": "Search Indexation Jobs",
+      "file": "regression/suites/Backend/search/061b-search-indexation-jobs.csv",
+      "domain": "catalog-search",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 7,
+      "estimatedMinutes": 25,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "search",
+        "indexing",
+        "admin",
+        "api",
+        "rest",
+        "background-jobs"
       ],
       "requiresModules": [
         "search"
