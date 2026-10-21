@@ -61,10 +61,13 @@ leaves the fork's latest commits out of the merge.
 - If `chore/merge-upstream-<ref>` already exists, look before reusing the name. It is a leftover when
   `git log origin/dev..<branch>` prints nothing and `git ls-remote origin refs/heads/<branch>` finds no
   remote copy: recreate it with `git switch -C chore/merge-upstream-<ref> origin/dev` and say so. Commits
-  on it, or a remote copy, mean an unfinished merge: stop and ask whether to resume it or start over.
+  on it, or a remote copy, mean an unfinished merge: stop and ask whether to resume it or start over
+  under a new name (`chore/merge-upstream-<ref>-2`). A pushed branch is never recreated or force-pushed.
 
 **Redesign branch absorbing its own base** (same repository): the branch is the fork, `origin/dev` is
-upstream. No remote, no new branch — check the branch out and `git merge --no-ff --no-commit origin/dev`.
+upstream. No remote, no new branch — check the branch out, bring it level with its remote copy
+(`git merge --ff-only origin/<branch>`; if that fails, the two have diverged: stop and ask), then
+`git merge --no-ff --no-commit origin/dev`.
 
 Either way, **before the merge command**, in this clone:
 
@@ -215,7 +218,8 @@ Not covered by the smoke: <what needs data, a role or a device the smoke did not
 
 - **Gate:** every step 1–8 is done or skipped by the user in words. Step 5 open → go back to it now; the
   log's Ports section is filled from its drift report, so a log without one is not finished.
-- The merge commit (step 4) and the ports (step 5) are already committed. Push only after the user says so.
+- The merge commit (step 4) and the ports (step 5) are already committed. Push only after the user says
+  so, and never with `--force`.
 - Finish the log: every section of the template, filled from steps 3–8 and the port's brief. "Decisions
   that carry forward" holds only rules a later merge must keep, each with its reason — a fork identifier
   that is deliberately not upstream's, a fork value kept over an upstream fix, a feature left out on
@@ -258,6 +262,7 @@ Not covered by the smoke: <what needs data, a role or a device the smoke did not
 | Stopping after a green build, or after a side request mid-merge, without step 5 | Step 5 right after the merge commit; a side request is done in addition, then resume at the first open step |
 | Trusting a passing upstream test without a mutation | Remove a ported line, watch it fail |
 | A bare `gh` in a clone with an `upstream` remote | `--repo <owner/repo>` on every `gh` command; it otherwise reads and writes upstream |
+| Force-pushing a rejected push, or recreating a pushed branch to start over | The remote moved: fetch and merge it. Start over under a new branch name |
 | Squash- or rebase-merging an upstream merge | A merge commit; the PR body's first line says so |
 | Asking again what an earlier log already decided | Read `upstream-merges/` in step 2; cite the log |
 | Decisions only in the PR body or the chat | The session's log in `upstream-merges/`, committed with the merge |
