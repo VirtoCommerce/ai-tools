@@ -94,14 +94,14 @@ Validate the failing scenario across all four layers. Record per-layer PASS / FA
 > names to stay within the output directory"*; absolute paths are undocumented, so nothing may be
 > built on them. `/project-init` pins each Playwright server's `--output-dir` to an **absolute**
 > path inside this project — `reports/bugs/screenshots/_incoming/<browser>/`. On the pinned
-> `@playwright/mcp@0.0.77`, a bare filename is **not guaranteed** to land there: 0.0.77 may resolve
+> `@playwright/mcp@0.0.83`, a bare filename is **not guaranteed** to land there: it may resolve
 > it against the MCP server's own cwd — which can be the project root (VCST-5582 C). So a capture
 > may appear at the project root, and Step 4 MUST reconcile it (locate → move) rather than assume it
 > is already under `--output-dir`.
 >
 > Do **not** try to place a screenshot at its final location during capture, and do not guess where
 > it went. `_incoming/` is a landing zone; Step 4 performs ONE deterministic move (including the
-> reconcile from the server cwd when 0.0.77 misplaced it). Mechanism + the mandatory reconcile step:
+> reconcile from the server cwd when the server misplaced it). Mechanism + the mandatory reconcile step:
 > [`skills/qa-evidence/output-paths.md`](../skills/qa-evidence/output-paths.md).
 
 ### Layer 1 — Storefront Frontend (vc-frontend)
