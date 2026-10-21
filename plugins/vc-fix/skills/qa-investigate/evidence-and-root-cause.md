@@ -29,8 +29,7 @@ npx tsx scripts/bundle-evidence.ts VCST-5391 --sprint=Sprint-current --check
 ```
 
 > **In `vc-fix`:** `scripts/bundle-evidence.ts` is full `vc-qa` plugin only, not shipped here.
-> Create the package dir by hand at the path in "Package location" below (`reports/tickets/<TICKET>/evidence-<UTCstamp>/`
-> — `vc-fix` has no sprint context, so always use the ad-hoc path), with `screenshots/ network/ console/ har/`
+> Create the package dir by hand at the path in "Package location" below (`<run folder>/evidence-<UTCstamp>/`), with `screenshots/ network/ console/ har/`
 > subfolders, and write `evidence-index.md` / `root-cause.md` yourself following the manifest/worksheet
 > shapes below (Part A's table is the `evidence-index.md` checklist; Part B is `root-cause.md`). There is
 > no `--check` completeness script — self-verify against Part A's **M** rows before writing the bug report.
@@ -48,9 +47,11 @@ What the script does (full `vc-qa` plugin only):
   empty, whether the trace ID is filled, and whether the worksheet's alternatives are ruled out. A clean
   `--check` is the gate before you write the bug report.
 
-Package location (matches `output-paths.md`):
-- `--sprint=<S>` → `tests/<S>/<TICKET>/evidence-<UTCstamp>/`
-- otherwise → `reports/tickets/<TICKET>/evidence-<UTCstamp>/` (ad-hoc, no sprint context)
+Package location — `<run folder>/evidence-<UTCstamp>/`
+([`run-env.md`](../../knowledge/execution/run-env.md) §The run folder):
+- the session's bound run when it is this ticket's on this env;
+- otherwise the ticket's run folder for the env: `node "$pluginRoot/scripts/env/run-folder.mjs" dir --ticket <TICKET>`;
+- a template that cannot resolve → `reports/tickets/<TICKET>/evidence-<UTCstamp>/` (ad-hoc).
 
 ---
 

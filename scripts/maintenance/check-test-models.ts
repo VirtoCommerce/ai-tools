@@ -8,6 +8,8 @@
  *   npm run models:check -- --json              machine output (findings + derived coverage + suspects)
  *   npm run models:check -- --plan <profile-id> the ordered requirement plan /qa-seed-data executes
  *   npm run models:check -- --base <git-ref>    stable-id baseline (default HEAD)
+ *   npm run models:check -- --maps <dir>        mind maps in <dir> replace the repo's same-named ones (inside a
+ *                                               bound ticket run: its knowledge/domain/ — scripts/lib/run-dir.mjs)
  *
  * WHY. A suite CSV row was the only artifact that said what a case covers and what data it needs, so
  * every behaviour change had to be re-found by reading prose. These two layers make both questions
@@ -59,6 +61,7 @@ import type { ValidateFunction } from "ajv";
 import { SECTION_RE } from "../knowledge/lint-ecl.ts";
 import { BL_DIR, readDomains } from "../knowledge/bl-yaml.ts";
 import { parseSuite, loadDesignVocabulary, isCanonicalHeader } from "../test-cases/append-test-cases-to-suite.ts";
+import { sessionRunPath } from "../lib/run-dir.mjs";
 
 // fileURLToPath, not .pathname — a space in the repo path ("My Projects") URL-encodes to %20.
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
@@ -722,16 +725,39 @@ function exportNames(text: string | null): Set<string> | null {
   return new Set([...text.matchAll(/export\s+(?:async\s+)?(?:function\s*\*?|const|let)\s+([A-Za-z_][A-Za-z0-9_]*)/g)].map((m) => m[1]));
 }
 
+/**
+ * Inside a ticket run (scripts/lib/run-dir.mjs) the run's own copies in `<run folder>/knowledge/domain/`
+ * replace the repo's same-named maps: a run writes the map it builds or updates there, and that map is the one
+ * checked and signalled. `--maps <dir>` names another overlay folder. Set by main().
+ */
+let MAP_OVERLAY: string | null = null;
+
 function domainMapRevs(): Map<string, number> | null {
-  if (!existsSync(MAP_DIR)) return null;
+  if (!existsSync(MAP_DIR) && !MAP_OVERLAY) return null;
   const out = new Map<string, number>();
-  for (const f of readdirSync(MAP_DIR).filter((x) => x.endsWith(".md"))) {
-    const fm = readFileSync(join(MAP_DIR, f), "utf8").match(/^---\r?\n([\s\S]*?)\r?\n---/);
-    const slug = fm?.[1].match(/^domain_slug:\s*(\S+)/m)?.[1];
-    const rev = fm?.[1].match(/^rev:\s*(\d+)/m)?.[1];
-    if (slug) out.set(slug, Number(rev ?? 0));
+  for (const dir of [MAP_DIR, MAP_OVERLAY].filter((d): d is string => !!d && existsSync(d))) {
+    for (const f of readdirSync(dir).filter((x) => x.endsWith(".md"))) {
+      const fm = readFileSync(join(dir, f), "utf8").match(/^---\r?\n([\s\S]*?)\r?\n---/);
+      const slug = fm?.[1].match(/^domain_slug:\s*(\S+)/m)?.[1];
+      const rev = fm?.[1].match(/^rev:\s*(\d+)/m)?.[1];
+      if (slug) out.set(slug, Number(rev ?? 0));
+    }
   }
   return out;
+}
+
+/** The repo's mind maps with the overlay's same-named ones in their place. An overlay map keeps the repo path as
+ *  its `file`, so its stable-id baseline is the committed map it updates (none for a map new in this run). */
+function withOverlay(base: Loaded<MindMap>[], findings: Finding[]): Loaded<MindMap>[] {
+  if (!MAP_OVERLAY || !existsSync(MAP_OVERLAY)) return base;
+  const repoFile = (name: string) => relative(ROOT, join(MAP_DIR, name)).replace(/\\/g, "/");
+  const byName = new Map(base.map((m) => [m.file.split("/").pop()!, m]));
+  for (const m of loadJsonDir<MindMap>(MAP_OVERLAY, ".mind-map.json", findings)) {
+    const name = m.file.split("/").pop()!;
+    byName.set(name, { file: repoFile(name), doc: m.doc });
+    console.error(`[models:check] ${name}: this run's copy (${join(MAP_OVERLAY, name)}) replaces the repo's`);
+  }
+  return [...byName.values()].sort((a, b) => a.file.localeCompare(b.file));
 }
 
 /** The BL ids the records hold (`bl/*.yaml`, BL 2.0 M4) — not the generated markdown. */
@@ -856,7 +882,8 @@ async function main(): Promise<void> {
   const base = opt("--base") ?? "HEAD";
 
   const findings: Finding[] = [];
-  const mindMaps = loadJsonDir<MindMap>(MAP_DIR, ".mind-map.json", findings);
+  MAP_OVERLAY = opt("--maps") ?? sessionRunPath("domain");
+  const mindMaps = withOverlay(loadJsonDir<MindMap>(MAP_DIR, ".mind-map.json", findings), findings);
   const dataModels = loadJsonDir<DataModel>(MODEL_DIR, ".data-model.json", findings);
 
   if (!mindMaps.length && !dataModels.length && !findings.length) {

@@ -220,7 +220,8 @@ artifacts.json ────┘                                                  
                                                                        │
         testing-checklist.md + extras.json ─► trace.mjs reconcile ─► triage ─► verdict
 ```
-`*` adapter. Reports land where they do today, `reports/tickets/{SPRINT}/<KEY>/` relative to `outputRoot()`:
+`*` adapter. Reports land where they do today, the ticket's run folder (`QA_OUTPUT_DIR`, by default
+`reports/tickets/<sprint>/<KEY>/<env>/` relative to `outputRoot()`):
 `test-strategy.md`, `testing-checklist.md`, `summary.json`, `verdict.md`. `bundle.json`, `capabilities.json`
 and `run-plan.json` are working state under `.vc-fix/`, never reports.
 
