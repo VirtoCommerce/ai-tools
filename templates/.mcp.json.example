@@ -8,7 +8,7 @@
       "args": [
         "/c",
         "npx",
-        "@playwright/mcp@0.0.77",
+        "@playwright/mcp@0.0.83",
         "--config",
         "config/mcp-playwright-chrome.config.json",
         "--secrets",
@@ -21,7 +21,7 @@
       "args": [
         "/c",
         "npx",
-        "@playwright/mcp@0.0.77",
+        "@playwright/mcp@0.0.83",
         "--config",
         "config/mcp-playwright-firefox.config.json",
         "--secrets",
@@ -34,7 +34,7 @@
       "args": [
         "/c",
         "npx",
-        "@playwright/mcp@0.0.77",
+        "@playwright/mcp@0.0.83",
         "--config",
         "config/mcp-playwright-edge.config.json",
         "--secrets",
@@ -48,7 +48,7 @@
       "args": [
         "/c",
         "npx",
-        "@playwright/mcp@0.0.77",
+        "@playwright/mcp@0.0.83",
         "--config",
         "config/mcp-playwright-mobile.config.json",
         "--secrets",
