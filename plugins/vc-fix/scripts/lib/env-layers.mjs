@@ -57,9 +57,13 @@ export function envPathTemplates({ root = process.cwd(), ambient = process.env }
   return raw.split(';').map((s) => s.trim()).filter(Boolean);
 }
 
-/** The run's ticket: `ticket` when given (null: none), else QA_TICKET, else this session's bound run; or null. */
+/** The run's ticket: `ticket` when given (null, or not a ticket key: none), else QA_TICKET, else this session's bound
+ *  run; or null. It fills a `<ticket>` path segment, so nothing but a key ever does. */
 export function currentTicket({ ticket, root = process.cwd(), ambient = process.env } = {}) {
-  if (ticket !== undefined) return ticket ? String(ticket).toUpperCase() : null;
+  if (ticket !== undefined) {
+    const key = ticket ? String(ticket).toUpperCase() : null;
+    return key && TICKET_KEY.test(key) ? key : null;
+  }
   const named = ambient.QA_TICKET?.trim().toUpperCase();
   if (named && TICKET_KEY.test(named)) return named;
   const sid = ambient.CLAUDE_CODE_SESSION_ID;
@@ -214,18 +218,21 @@ export function testAccountPasswordNames(root = process.cwd(), extra = []) {
  *
  * @param {string} testEnv
  * @param {{ root?: string, ambient?: Record<string, string | undefined>, ticket?: string | null,
- *           ambientWins?: boolean, passwordNames?: Iterable<string> }} [options]
+ *           ambientWins?: boolean, passwordNames?: Iterable<string>, masterValues?: boolean }} [options]
  *   `root`: the project root (default: the cwd); `ambient`: the environment before any loading (default:
  *   process.env); `ticket`: the run's ticket for `<ticket>` folders (default: currentTicket; null: none);
  *   `ambientWins`: what the environment already holds beats every file and pin (runners CI drives with `-e`);
- *   `passwordNames`: test-account password names beyond the scan (the caller's role registry).
+ *   `passwordNames`: test-account password names beyond the scan (the caller's role registry);
+ *   `masterValues: false`: decide PASSWORDS=master but skip the name scan and the master values — for a caller that
+ *   needs only the decision (the enforce-secret-token hook, one process per typed password).
  * @returns {{ env: Record<string, string | undefined>, ticket: string | null, rootFile: boolean, dedicated: string[],
  *   dedicatedKeys: Set<string>, perEnv: Set<string>, master: null | { file: string, found: boolean, names: string[] },
- *   sourceOf: (key: string) => string }}
+ *   ignoredPasswords: null | { value: string | undefined, file: string | null }, sourceOf: (key: string) => string }}
  *   `perEnv`: keys holding this env's own value (a KEY_<ENV> pin, a dedicated file, the master password);
+ *   `ignoredPasswords`: a PASSWORDS value dropped because it did not come from the env's own files;
  *   `sourceOf(key)` names what supplied a key's value — print it next to any target you act on.
  */
-export function layered(testEnv, { root = process.cwd(), ambient = process.env, ticket, ambientWins = false, passwordNames = [] } = {}) {
+export function layered(testEnv, { root = process.cwd(), ambient = process.env, ticket, ambientWins = false, passwordNames = [], masterValues = true } = {}) {
   const suffix = envSuffix(testEnv);
   const env = { ...ambient, TEST_ENV: testEnv };
   const from = new Map(); // key → { file, pin? }: the layer that set its value (file null: the process environment)
@@ -281,8 +288,8 @@ export function layered(testEnv, { root = process.cwd(), ambient = process.env, 
   let master = null;
   if (usesMaster(env)) {
     const { file, value } = readMaster({ root, ambient });
-    const names = [...testAccountPasswordNames(root, passwordNames)].sort();
-    if (value) {
+    const names = masterValues ? [...testAccountPasswordNames(root, passwordNames)].sort() : [];
+    if (value && masterValues) {
       for (const n of [...names, MASTER_NAME]) if (!held(n)) { put(n, value, MASTER_FILE); perEnv.add(n); }
     }
     master = { file, found: !!value, names };
