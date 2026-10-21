@@ -59,7 +59,7 @@ removed once the new command has passed validation (§10 P4).
 | U10 | Committed tests | An exception like `plugins/vc-secrets/`: the knowledge-store write router and the write-zone check get **committed** tests; everything else follows the repository rule (temporary tests, deleted before commit) |
 | U11 | Where the run asks a human | **Two points only.** *Before execution*: approve the strategy (and, on the same build, re-run or reuse). *After the verdict*: `qa-bug` runs for each confirmed bug and asks its own "create a tracker ticket?" question (`qa-bug` is used as it is), then the run asks once whether to post the tracker comment. Nothing asks between the two points; `--yes` answers only the first |
 | U12 | How much of the bundle the strategy reads | **The whole bundle**, so nothing is missed; the token cost is accepted |
-| U13 | Who writes the checklist | **The orchestrator, inline** — it already holds the bundle and the strategy, and a subagent would need them retold |
+| U13 | Who writes the checklist | **Revised 2026-10-21 (O2): a new narrow agent**, not the orchestrator. The checklist stays, but thin: one row per AC and per strategy risk, naming its proof — a `.spec` or API check id, the exploratory charter, or a `ui-checks` item — so `trace.mjs` and the verdict can show AC → proof. The agent's brief is file paths only (strategy, `change-map.json`); it writes the checklist and then the `.spec` and API checks its rows name. The developer command has no checklist: the change map is its plan (U45). *(Was:)* **The orchestrator, inline** — it already holds the bundle and the strategy, and a subagent would need them retold |
 | U14 | `qa-triage-results` cannot be called by the Skill tool (`disable-model-invocation: true`) | **Remove the flag** in the plugin's canonical copy |
 | U15 | Round N ≥ 2 | **Revised 2026-10-21: a refresh, not a re-run** (§3). Nothing round 1 built is rebuilt — no `/ticket-context`, no new strategy, no test model or maps. The round fetches only what changed, re-runs every prior bug's reproduction (`FIXED` / `NOT FIXED`), checks what sits next to the fix and finishes what was left unresulted. Anything new in the ticket is **appended** to the strategy without asking, and human point 1 is skipped. *(Was: a delta strategy built anew each round.)* |
 | U16 | May the run create or change data on the stand? | **Yes, only on a non-production stand** the profile declares as such and the probe matches; otherwise the run is read-only and every item that needs a write is BLOCKED with that reason. Everything created is deleted by ledger id |
@@ -182,7 +182,7 @@ five-hour window (18% of the week); its token figure was measured differently (U
  2 STRATEGY  /qa-test-strategy (whole bundle + change map, U45) → test-strategy.md   floors · gate · verifier if Critical
              ── HUMAN POINT 1: approve the strategy (--yes) ──
  3 RUN       plan-run.mjs → run-plan.json → waves            only RUN rows, ≤3 browser lanes;
-             the checklist is written by the orchestrator inline (U13); ACs proved by API checks and
+             a narrow agent writes the thin checklist, then its .spec/API checks (U13 revised); ACs proved by API checks and
              .spec scripts (U27); exploratory is the main browser lane (U26); evidence on failure only (U28)
  4 CLOSE     trace.mjs reconcile → /qa-triage-results → qa-investigate (Medium+ only, U29) → verdict (decided here, final)
              Low / cosmetic findings → one line under "Noticed" (U25)
@@ -570,10 +570,10 @@ Every step ends in one of four states: **OK**, **SKIP**(reason), **BLOCKED**(rea
 
 ## 13. Open questions
 
-Two open (2026-10-21, second pass); O1 is settled.
+One open (2026-10-21, second pass); O1 and O2 are settled.
 
 | # | Question | Resolution |
 |---|---|---|
 | O1 | On a host-governed project the bridge refuses tokens, and a script cannot call the host's MCP servers. Is the context step in v1 there? | **Yes** (owner, 2026-10-21) — the orchestrator reads through the host's servers and writes the same raw files: U23, §7 |
-| O2 | U13 has the orchestrator write the checklist inline, but VCST-6314's main session was 18% of the run at 2.5M output, against U30's short-context rule. Does the checklist move to a fresh agent? | open |
+| O2 | U13 has the orchestrator write the checklist inline, but VCST-6314's main session was 18% of the run at 2.5M output, against U30's short-context rule. Does the checklist move to a fresh agent? | **Yes** (owner, 2026-10-21) — a new narrow agent writes a thin checklist (AC/risk → proof) and the `.spec`/API checks it names: U13 revised |
 | O3 | `qa-bug` (U11: used as it is) was 12.9% of VCST-6314. Is the report written from the investigation's output, without a second investigation, and only for Medium or worse? | open |
