@@ -8,6 +8,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## `vc-init` `0.2.1`: the GitHub token is also handed out as `GITHUB_TOKEN` — 2026-10-21
+
+**Added: `GITHUB_TOKEN` as a second name for the `github-pat` secret.** Skills and agents are moving from
+`GITHUB_FIX_BUGS_TOKEN` / `GITHUB_PERSONAL_ACCESS_TOKEN` to one name, `GITHUB_TOKEN`. This release makes the
+token layer ready before any caller switches: the `vc-init-github` and `vc-init-onboard*` tasks bind both names to
+the same secret, the `$VC_RUN` bridge accepts either one (and gives `gh` the value as `GH_TOKEN`), the git
+credential helper answers `github.com` from either, and `load-layered-env` treats `GITHUB_TOKEN` as a token — an
+injected value is not overridden by `.env.local`, and a plaintext one there is reported. Same value, no new secret.
+The old names stay until every caller has moved; they are removed in a later release.
+
+**Migration:** run `/project-init --check` to rewrite `.claude/vc-secrets.local.json`, then `vc-secrets trust`
+once — the task env changed, so the launcher asks to re-approve it. A declaration left as it was keeps working.
+
 ## `vc-init` `0.2.0`: browser work goes only through the Playwright MCP lanes — 2026-10-21
 
 **Added: an always-loaded agent rule in the onboarded project.** `/project-init` (§7) and `/project-init --check`

@@ -22,7 +22,7 @@ import { join } from "node:path";
 import { envDir, resolveTestEnv } from "./resolve-test-env.js";
 
 /** Token env vars that belong in vc-secrets, never in a file (VCST-6402). */
-export const TOKEN_KEYS = ["GITHUB_FIX_BUGS_TOKEN", "ADO_PAT", "JIRA_API_TOKEN"];
+export const TOKEN_KEYS = ["GITHUB_FIX_BUGS_TOKEN", "GITHUB_TOKEN", "ADO_PAT", "JIRA_API_TOKEN"];
 
 let warnedPlaintext = false;
 

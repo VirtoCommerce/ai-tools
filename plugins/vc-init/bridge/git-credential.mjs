@@ -8,7 +8,7 @@
  * appears in a URL, a remote, `.git/config` or argv.
  *
  * It answers `get` only when the request is https to a host the token belongs to:
- *   github.com                          → GITHUB_FIX_BUGS_TOKEN (username x-access-token)
+ *   github.com                          → GITHUB_FIX_BUGS_TOKEN or GITHUB_TOKEN (username x-access-token)
  *   dev.azure.com, *.visualstudio.com   → ADO_PAT               (username pat; Azure DevOps ignores it)
  * Any other host — a remote somebody pointed elsewhere, a redirect — gets an empty answer, so git
  * fails to authenticate there instead of handing the token over. `store` and `erase` are no-ops: the
@@ -21,7 +21,7 @@ import { fileURLToPath } from "node:url";
 import { hostAllowed } from "./allowlist.mjs";
 
 const RULES = [
-  { hosts: ["github.com"], env: ["GITHUB_FIX_BUGS_TOKEN", "GH_TOKEN"], username: "x-access-token" },
+  { hosts: ["github.com"], env: ["GITHUB_FIX_BUGS_TOKEN", "GITHUB_TOKEN", "GH_TOKEN"], username: "x-access-token" },
   { hosts: ["dev.azure.com", "*.visualstudio.com"], env: ["ADO_PAT"], username: "pat" },
 ];
 

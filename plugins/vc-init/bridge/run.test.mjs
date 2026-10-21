@@ -23,7 +23,7 @@ function project(decl) {
 
 function bridge(args, { cwd, env = {} } = {}) {
   const clean = { ...process.env };
-  for (const k of ["VC_SECRETS", "VC_RUN_ARGV", "GITHUB_FIX_BUGS_TOKEN", "ADO_PAT", "JIRA_API_TOKEN", "VC_FIX_HOME", "PROJECT_PROFILE_PATH"]) delete clean[k];
+  for (const k of ["VC_SECRETS", "VC_RUN_ARGV", "GITHUB_FIX_BUGS_TOKEN", "GITHUB_TOKEN", "GH_TOKEN", "ADO_PAT", "JIRA_API_TOKEN", "VC_FIX_HOME", "PROJECT_PROFILE_PATH"]) delete clean[k];
   return spawnSync(process.execPath, [RUN, ...args], { cwd, env: { ...clean, ...env }, encoding: "utf8" });
 }
 
@@ -127,6 +127,10 @@ test("inner env: kept keys + this group's secret only; a caller's other credenti
   const onboard = buildInnerEnv(source, "onboard").secrets;
   assert.deepEqual(Object.keys(onboard).sort(), ["ADO_PAT", "GITHUB_FIX_BUGS_TOKEN", "JIRA_API_TOKEN"]);
   assert.equal(buildInnerEnv(source, "ado").env.ADO_AUTH, "pat");
+  // GITHUB_TOKEN is the same secret under its new name: alone it is the whole github secret, and gh gets it.
+  const renamed = buildInnerEnv({ PATH: "/bin", GITHUB_TOKEN: TOKEN }, "github");
+  assert.deepEqual(Object.keys(renamed.secrets), ["GITHUB_TOKEN"]);
+  assert.equal(renamed.env.GH_TOKEN, TOKEN);
 });
 
 test("git config: the helper is reset then pinned, hooks and other transports are off", () => {

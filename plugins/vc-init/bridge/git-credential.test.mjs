@@ -11,6 +11,7 @@ const env = { GITHUB_FIX_BUGS_TOKEN: "ghp_TESTTOKEN0123456789", ADO_PAT: "adopat
 
 test("github.com gets the GitHub token as x-access-token", () => {
   assert.equal(answerFor({ protocol: "https", host: "github.com" }, env), "username=x-access-token\npassword=ghp_TESTTOKEN0123456789\n");
+  assert.equal(answerFor({ protocol: "https", host: "github.com" }, { GITHUB_TOKEN: "ghp_RENAMED0123456789" }), "username=x-access-token\npassword=ghp_RENAMED0123456789\n");
 });
 
 test("Azure DevOps hosts get the ADO PAT", () => {
