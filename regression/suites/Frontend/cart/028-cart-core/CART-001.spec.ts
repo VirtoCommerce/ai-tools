@@ -3,10 +3,12 @@
 // here is fixed in this file or reported as a product finding — never by editing the row's expectation.
 import { test, expect } from "../../../../lib/fixtures.js";
 import { env, td } from "../../../../lib/data.js";
-import { cartQuantity, resetCart, watchCartTraffic } from "../../../../lib/cart.js";
+import { cartQuantity, resetCart, sentMutation, watchCartTraffic } from "../../../../lib/cart.js";
 import { testIdSelector } from "../../../../../scripts/lib/storefront-selectors.generated.js";
 
 const ROLE = "USER_DEFAULT";
+/** The mutation the row's [API] item names — asserted by name, never substituted (D7). */
+const API_MUTATION = "updateCartQuantity";
 
 /** The header cart link reads "<count><label>" with no separator ("1Cart"); match the leading count only. */
 const badgeShows = (count: number) => new RegExp(`^\\s*${count}(?!\\d)`);
@@ -18,8 +20,15 @@ test.afterEach(async ({ apiAs }) => {
 
 test("CART-001: Add to Cart - From Product Page", async ({ signedInAs, apiAs }) => {
   const sku = td("@td(BUYABLE_NO_MIN_QTY.sku)");
-  const productId = td("@td(BUYABLE_NO_MIN_QTY.id)");
-  const productSlug = td("@td(BUYABLE_NO_MIN_QTY.slug)");
+  // The product card links by id or by slug — which one the storefront routes by is per environment.
+  // `slug` is a column of the base fixture, so it is always set; `id` is a seed write-back that only
+  // some environments carry, and td() refuses an empty value, so the id is used only where it exists.
+  const linkKeys = new Set([td("@td(BUYABLE_NO_MIN_QTY.slug)")]);
+  try {
+    linkKeys.add(td("@td(BUYABLE_NO_MIN_QTY.id)"));
+  } catch {
+    /* no id written back on this TEST_ENV: the slug alone identifies the card */
+  }
 
   // [PRE:RESET_CART] before the session opens, so the header renders the emptied cart.
   const api = await apiAs(ROLE);
@@ -33,10 +42,10 @@ test("CART-001: Add to Cart - From Product Page", async ({ signedInAs, apiAs }) 
   await page.goto(`${env("FRONT_URL")}/search?q=${encodeURIComponent(sku)}`);
 
   // [ACT] click the matching product card for the SKU to open its PDP — the card whose product link
-  // points at this product (by id or by slug: which one the storefront routes by is per environment).
+  // points at this product.
   await page
     .getByRole("main")
-    .locator(`a[href*="${productId}"], a[href*="${productSlug}"]`)
+    .locator([...linkKeys].map((key) => `a[href*="${key}"]`).join(", "))
     .filter({ hasText: /\S/ })
     .first()
     .click();
@@ -70,13 +79,10 @@ test("CART-001: Add to Cart - From Product Page", async ({ signedInAs, apiAs }) 
   // [STATE] product appears in cart — read back from the server-side cart, not from the page.
   await expect.poll(() => cartQuantity(api, sku)).toBe(1);
 
-  // [API] the add-to-cart mutation response errors[] is empty. The row names `addItem`; the storefront
-  // sends whichever cart mutation it uses (observed: updateCartQuantity), so the check is on the cart
-  // mutation that returned this SKU's new line, whatever its name.
-  await expect
-    .poll(() => traffic.cartMutations.slice(sinceClick.mutations).some((m) => m.lines.some((l) => l.sku === sku)))
-    .toBe(true);
-  expect(traffic.cartMutations.slice(sinceClick.mutations).flatMap((m) => m.errors)).toEqual([]);
+  // [API] updateCartQuantity mutation response errors[] is empty — the mutation the row names, by name.
+  const sent = () => sentMutation(traffic.cartMutations.slice(sinceClick.mutations), API_MUTATION);
+  await expect.poll(() => sent().length, { message: `${API_MUTATION} was sent after the '+' click` }).toBeGreaterThan(0);
+  expect(sent().flatMap((m) => m.errors)).toEqual([]);
 
   // [CONSOLE] no JS errors after add-to-cart click.
   expect(traffic.consoleErrors.slice(sinceClick.console)).toEqual([]);

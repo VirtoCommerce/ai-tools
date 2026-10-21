@@ -7,6 +7,7 @@
 //     cartQuantity(api, sku)      `[STATE]` read-back of one line's quantity
 //   Page side:
 //     watchCartTraffic(page)      `[CONSOLE]` / `[NETWORK]` / `[API]` collectors for Cross_Layer_Checks
+//     sentMutation(list, field)   the collected mutations whose root field is the one a row's `[API]` names
 //     money / formatMoney         `[MATH]` — parse and format amounts the way the culture writes them
 //
 // Every GraphQL operation below was taken from the introspected schema (scripts/.graphql-schema.cache.json,
@@ -100,19 +101,36 @@ export async function cartQuantity(api: APIRequestContext, sku: string): Promise
   return cart.items.filter((i) => i.sku === sku).reduce((sum, i) => sum + i.quantity, 0);
 }
 
-/** One storefront GraphQL mutation whose root field returned a cart (`__typename: "CartType"`). */
+/** One storefront GraphQL mutation whose root field returned a cart (`__typename: "CartType"`), or that failed. */
 export interface CartMutation {
   operationName: string;
+  /**
+   * The mutation's root fields — the name a row's `[API]` item uses (`updateCartQuantity`,
+   * `changeCartItemsQuantity`), which is not the client's operation name. Taken from the response's
+   * `data` keys, or from the sent query when `data` is empty (a failed mutation).
+   */
+  fields: string[];
   errors: unknown[];
   lines: Array<{ sku: string; quantity: number }>;
+}
+
+/** The root field of a mutation document: `mutation Op($a: T!) { rootField(…) { … } }` -> `rootField`. */
+function rootFieldOf(query: string): string[] {
+  const field = query.match(/^\s*mutation\b[^{]*\{\s*(?:\w+\s*:\s*)?(\w+)/)?.[1];
+  return field ? [field] : [];
+}
+
+/** The collected mutations whose root field is `field` — the operation a row's `[API]` item names. */
+export function sentMutation(mutations: CartMutation[], field: string): CartMutation[] {
+  return mutations.filter((m) => m.fields.includes(field));
 }
 
 /**
  * Collectors for a spec's Cross_Layer_Checks, attached to `page` from the moment of the call:
  * - `consoleErrors` — `[CONSOLE]`: uncaught page errors plus console messages of type `error`;
  * - `httpErrors`    — `[NETWORK]`: every response with status >= 400 (`"<status> <method> <url>"`);
- * - `cartMutations` — `[API]`: every GraphQL mutation the storefront sent that returned a cart,
- *   with its `errors[]` and the lines of the cart it returned.
+ * - `cartMutations` — `[API]`: every GraphQL mutation the storefront sent that returned a cart (or
+ *   failed), with its root field names, its `errors[]` and the lines of the cart it returned.
  * Call it before the step it observes; slice by the array length taken just before an action to
  * keep only what that action caused.
  */
@@ -139,8 +157,10 @@ export function watchCartTraffic(page: Page) {
     const roots = Object.values(body.data ?? {}) as Array<{ __typename?: string; items?: CartMutation["lines"] } | null>;
     const cart = roots.find((r) => r?.__typename === "CartType");
     if (!cart && !body.errors?.length) return;
+    const dataKeys = Object.keys(body.data ?? {});
     cartMutations.push({
       operationName: sent.operationName ?? "(anonymous)",
+      fields: dataKeys.length > 0 ? dataKeys : rootFieldOf(sent.query),
       errors: body.errors ?? [],
       lines: (cart?.items ?? []).map((i) => ({ sku: i.sku, quantity: i.quantity })),
     });

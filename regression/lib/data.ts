@@ -17,7 +17,11 @@ export function env(name: string): string {
 
 let resolver: TestDataResolver | undefined;
 
-/** Resolve an `@td(ALIAS.field)` expression; throws, with the reason, when it does not resolve. */
+/**
+ * Resolve an `@td(ALIAS.field)` expression; throws, with the reason, when it does not resolve OR resolves
+ * to an empty value (a column with no value on this TEST_ENV). An empty string is never a usable datum:
+ * built into a locator it matches everything (`[href*=""]`), so it would turn a data gap into a FAIL.
+ */
 export function td(ref: string): string {
   resolver ??= new TestDataResolver(join(ROOT, "test-data"), process.env.TEST_ENV);
   const out = resolver.resolve(ref);
@@ -25,6 +29,7 @@ export function td(ref: string): string {
     const inner = ref.match(/@td\(([^)]*)\)/)?.[1] ?? ref;
     throw new Error(`td: ${ref} did not resolve — ${JSON.stringify(resolver.explainMiss(inner))}`);
   }
+  if (!out.trim()) throw new Error(`td: ${ref} resolved to an empty value (TEST_ENV=${process.env.TEST_ENV})`);
   return out;
 }
 
