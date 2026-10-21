@@ -6,6 +6,7 @@ import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lo
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { TestDataResolver } from '../lib/test-data-resolver.js';
+import { resolveTestEnv } from '../lib/resolve-test-env.js';
 
 const [inputPath, outputPath] = process.argv.slice(2);
 
@@ -14,6 +15,9 @@ if (!inputPath || !outputPath) {
   process.exit(1);
 }
 
+// The resolver layers aliases.<TEST_ENV>.json. Resolve the env as config.js does (TEST_ENV, else
+// .env.test-env, else vcst): unresolved, it ignored .env.test-env and layered no overlay at all.
+resolveTestEnv('vcst');
 const resolver = new TestDataResolver(join(process.cwd(), 'test-data'));
 const content = readFileSync(inputPath, 'utf-8');
 const resolved = resolver.resolveCSV(content);
