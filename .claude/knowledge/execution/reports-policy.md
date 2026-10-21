@@ -220,6 +220,12 @@ next to the claim; the viewport shot proves where it lives. Both count as one it
 below. Mechanism — `element` + **`target`** (not `ref`) on `browser_take_screenshot`, and `scale:"device"`
 when a still needs to survive zooming: [`browser-lanes.md`](browser-lanes.md) §Screenshot resolution.
 
+**Element + viewport is the default; `fullPage: true` only when the defect IS the whole page's layout**
+— sections in the wrong order, a footer or block overlapping content below the fold, a gap or overflow
+that only shows across the full scroll height. Anything that fits in one element (a toast, a field, a
+price, a control) never gets a full-page shot: scaled to `|width=700!` a long page is unreadable. A
+full-page shot replaces the viewport shot, never the element shot, and still counts as one item.
+
 **Per-scope budget:**
 
 | Scope | Target | Max |

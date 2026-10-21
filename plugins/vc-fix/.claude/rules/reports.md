@@ -140,6 +140,13 @@ from *"the evidence was dropped"*.
 
 **Skip:** every navigation step in a passing test, loading spinners, login page (unless testing auth), successful form fills mid-flow, same page across browsers when all pass, redundant confirmations of the same bug.
 
+**Element + viewport is the default; `fullPage: true` only when the defect IS the whole page's layout**
+— sections in the wrong order, a block overlapping content below the fold, an overflow that only shows
+across the full scroll height. Take the **element** shot of the thing that is wrong (`browser_take_screenshot`
+with `element` + **`target`**, not `ref`) for the claim, and one viewport shot for context. Anything that
+fits in one element never gets a full-page shot: scaled to `|width=700!` a long page is unreadable. A
+full-page shot replaces the viewport shot, never the element shot, and both count as one item.
+
 **Per-scope budget:**
 
 | Scope | Target | Max |
