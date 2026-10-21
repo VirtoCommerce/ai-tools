@@ -17,7 +17,7 @@
 >
 > **Updated 2026-10-21 (second pass) from the developers' chat** and a fifth, much larger run (VCST-6314, §2b):
 > checks are layered from cheap to expensive, starting with a review of the diff (layer 0), every run has a
-> budget, and developers get their own command. U35–U52 are the owner's (U43–U46 place the strategy, the maps and
+> budget, and developers get their own command. U35–U54 are the owner's (U43–U46 place the strategy, the maps and
 > the data model in the layers; U47–U49 keep the run aimed at significant bugs); U31 is revised by U35. §3a describes the
 > developer command; §2b and §13 follow.
 
@@ -118,6 +118,8 @@ the working tree), and the goal of a run is to make sure there are no significan
 | U50 | How is a bug report written? (O3) | **From the investigation's output, with no second investigation, and only for Medium or worse.** `qa-bug` takes the investigation file (reproduction, evidence, root-cause hypothesis) as its input and writes the report from it; it does not reproduce or investigate again. A Low gets no report (U25) — except a ticket-related Low, which keeps its reproduction and is offered to `qa-bug` the same way. Its own "create a tracker ticket?" question stays (U11). VCST-6314 spent 12.9% of the run on `qa-bug` after 27.5% on investigations |
 | U51 | How long may the developer command take? | **At most 1–1.5 h of wall clock**, from start to the final list, on a typical ticket. `run-cost.mjs` reports wall clock and active minutes per layer next to tokens and window share (U42). P3 measures both commands on tickets of different sizes — a small fix, a component change, a large multi-PR ticket — and records the times in §2b; a developer run over 1.5 h on a typical ticket fails P3 like a run over budget. For reference: the developer's `/qa-test-fast` run in the chat took about an hour, VCST-6314 took 11 h 34 |
 | U52 | When does the developer hear about a problem? | **The moment it is found, not at the end.** Every blocker and every confirmed problem is reported to the developer as soon as it is known, in any layer: a failed AC check, a confirmed suspicion, a Medium-or-worse finding, and a run blocker (stand down, no access, missing account or data). Each report names the file and line where known, the reproduction, and the `.spec` or check that shows it, so the developer can fix it locally and re-run. Extends U41, which covered layer 0's suspicions only |
+| U53 | Who runs a kept `.spec` after its run? | **It is the base of the future regression.** A kept `.spec` caught its bug once; unrun, it stays silent at the next break. Running the kept `.spec` set regularly — on a module change, nightly or in CI — is an obligation of this design, specified in the suites-reorganization design (B1) together with the layout, and it is the regression that replaces the one U7 takes out. Until that design lands, the kept `.spec` are still run by U54 and by a re-run (B15) |
+| U54 | Can a person run a kept `.spec` without a full run? | **Yes, in v1: `/vc-test:spec` (working name)** runs one kept `.spec`, a list of them or a folder — from the corpus or a run folder — locally, through U32's bridge tool with the current environment's test-user passwords, under the same constraints (B10). It prints pass/fail per `.spec` with the failure's output; no tracker or kb write, no browser agent, no LLM work beyond starting it. A developer re-checks a case, QA re-checks a moved one |
 
 **Calls made while writing U24–U31 (the author's, not the owner's — correct any that is wrong).**
 
@@ -261,6 +263,7 @@ rest (U38).
 | `skills/qa-test-model/`, `qa-exploratory/`, `qa-triage-results/` (ticket mode), `qa-design/` | **moved** canonical copies; `qa-triage-results` loses `disable-model-invocation` (U14) | `vc-fix` agents and skills |
 | `vc-fix`: `qa-checklist`, `qa-investigate`, `qa-bug`, `qa-risk`, `qa-evidence`, agents `qa-*-expert` | **reused**. One `vc-fix` version bump for three changes: `qa-bug` takes an investigation file as its input and does not investigate again (U50); `qa-checklist` Mode 5 names the risk id in Ref and gains `--from-strategy`; the tracker CLIs the bridge runs (`qa-fix-routing/jira.mjs`, `ado.mjs`) gain the connectors' read commands (§7) | — |
 | `vc-init`: `/project-init` (`--add-user`, `--add-env`), `project-profile.json`, `profile-set.mjs`, the `$VC_RUN` bridge, the Playwright lanes `node "$VC_RUN" playwright <lane>` | **reused** (U19–U21). `vc-test` carries a read-only profile loader copy that STOPs on a missing profile or an unknown `schemaVersion`. One `vc-init` version bump for three changes: `test` added to `profile-set.mjs` `MERGEABLE` and to the reconcile schema; a bridge tool that runs `playwright test` and node check scripts with the test-user passwords (U32, constrained by B10); the pinned GraphQL read in the allowlist (B8) — each with committed bridge tests | — |
+| `commands/vc-test-spec.md` → `/vc-test:spec` | runs kept `.spec` files locally through the U32 bridge tool; pass/fail per file (U54) | `vc-init` bridge |
 | `commands/vc-test-init.md` → `/vc-test:init` | writes the `test` block through `profile-set.mjs`; checks accounts per role (U21) | `vc-init` |
 | `skills/qa-test-data-model/`, `qa-generate-data/`, `qa-seed-data/` + command, agent `test-data-engineer`, `lib/seed/` engine | **moved and refactored** (§6a, U17); domain seeders stay project content | profile, `capabilities.json`, the project store |
 | `skills/qa-test-cases-generator/`, agent `test-management-specialist`, the suite lint and promote scripts | **moved** (U18 revised): the specialist writes the CSV row of each kept `.spec` in the agent-native case format, and `Draft → Automated` promotion follows from the `.spec` having passed. There is no new-case wave, so `test-runner-agent` is not moved. Not the regression orchestration — that stays out (U7) | the project's corpus path from the profile |
@@ -555,7 +558,8 @@ Every step ends in one of four states: **OK**, **SKIP**(reason), **BLOCKED**(rea
   `regression:select`'s blanket selection (V7: 33–91 suites per ticket, because every path token that matches
   manifest vocabulary widens the selection), and repairing stale cases through `/qa-test-lifecycle`. Writing and
   running the ticket's **new** cases is in (U18); the stale case list goes to the project store's test
-  documentation.
+  documentation. The regular run of the **kept `.spec`** set is not out of scope in principle: it is the next
+  regression and is specified in the suites-reorganization design (U53); a single `.spec` runs today through U54.
 - **Client domain-map and mind-map builders** writing into the project store (U6).
 
 ## 12. Risks
