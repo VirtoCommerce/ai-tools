@@ -143,33 +143,7 @@ If the user passes an incompatible combo (e.g. `--seed=b2b` with `catalog` selec
 
 **1b. Resolve selection into suite IDs.** Default path: look up the selection in the manifest's `selections` block.
 
-**1c. Sprint-plan resolution** (only when selection is `sprint` or `sprint:XX-YY`, and `--no-plan` is NOT set):
-
-The static `sprint` selection group in `test-suites.json` is a generic "all P0+P1" superset. When a sprint test plan exists for the active sprint, prefer its **Section 5.1 suite list** — it's been risk-scored and scoped to the actual Done items.
-
-Resolution order:
-
-1. **Explicit pin** (`sprint:XX-YY`) → read `docs/Sprint plans/sprint-{XX-YY}-summary.json`. If missing → abort with a clear error: "No sprint plan found for {XX-YY}. Run /qa-test-plan {XX-YY} first, or use --no-plan to fall back to the static group."
-
-2. **Bare `sprint`** → auto-detect the active sprint plan:
-   - List `docs/Sprint plans/sprint-*-summary.json` files
-   - Pick the one whose `endDate` is closest to (but not after) today's date — i.e. the most-recent-completed sprint plan
-   - If no plan files exist → fall back to the static group from `test-suites.json`, log a warning: "No sprint plan found in docs/Sprint plans/ — using static sprint selection group. Run /qa-test-plan to generate a plan-driven selection."
-
-3. **Read** `summary.json` and extract `suitesActivated[]` — these are the suite IDs to run. Validate every ID exists in `test-suites.json` (warn and drop unknowns rather than failing).
-
-3a. **Layer filter** (only if `--frontend` or `--backend` is set) — narrow `suitesActivated[]` to the requested layer by classifying each suite against the layer directory its CSV lives under in `config/test-suites.json` (`regression/suites/Frontend/` vs `Backend/`) — this matches the plan's §5.1.1 / §5.1.2 sub-tables. `--frontend` keeps Frontend suites, `--backend` keeps Backend. Log the dropped-by-layer count. If the filter leaves zero suites, abort with a clear note ("Plan {XX-YY} has no {layer} suites in §5.1"). `--frontend`/`--backend` are mutually exclusive — reject if both are passed.
-
-4. **Resolved-from-plan output** — log to the run report header:
-   ```
-   Selection: sprint (resolved from docs/Sprint plans/sprint-26-09-summary.json)
-   Sprint: Sprint26-09 (2026-04-29 – 2026-05-15)
-   Suites: 042, 044, 049, 078, 082, 031, 032, 033, 020, 026, 027, … (46 from suitesActivated[])
-   Test cases: <sum of the manifest testCount for the resolved set>
-   Plan link: docs/Sprint plans/sprint-26-09-test-plan.md
-   ```
-
-5. **`--no-plan` opt-out** → skip 1c entirely; use the static `sprint` group from the manifest.
+**1c. Sprint-plan resolution** (`sprint` / `sprint:XX-YY`, unless `--no-plan`) — prefer the plan's §5.1 suites over the static group: resolution order, the `--frontend`/`--backend` layer filter and the run-report header are in [`regression-selection.md`](../knowledge/execution/regression-selection.md) §Plan-driven selection. A stable-bundle regression in waves is run with [`/qa-run`](qa-run.md) `stable:<N> <wave>`, not here.
 
 **1d. Other selections** (`smoke`, `critical`, `full`, `frontend`, `backend`, comma-separated IDs) → manifest-only, no plan lookup.
 

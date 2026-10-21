@@ -1,7 +1,7 @@
 # Bug-Evidence Collections — an OPTIONAL artifact for a narrow class of defect
 
 A Postman collection attached to a bug ticket, which reproduces the defect end to end and **flips
-green when the defect is fixed**. Not a report (it is not one of the ten categories in
+green when the defect is fixed**. Not a report (it is not one of the eleven categories in
 [`reports.md`](../../rules/reports.md) §1) and not a regression suite — a third thing, with a
 different audience and a shorter life than either.
 

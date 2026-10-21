@@ -1,0 +1,57 @@
+{
+ "wave": "W3",
+ "owner": "Elena Kutasina",
+ "status": "RUN_DONE",
+ "runIds": [
+  "REG-2026-10-15-W3"
+ ],
+ "totals": {
+  "planned": 900,
+  "executed": 817,
+  "pass": 498,
+  "fail": 95,
+  "blocked": 221,
+  "skipped": 3,
+  "ambiguous": 0
+ },
+ "notRun": [
+  {
+   "suites": [
+    "056"
+   ],
+   "cases": 48,
+   "reason": "not started before the usage limit"
+  },
+  {
+   "suites": [
+    "065"
+   ],
+   "cases": 20,
+   "reason": "not started before the usage limit"
+  },
+  {
+   "suites": [
+    "050b1",
+    "050b2",
+    "050b3",
+    "050b4",
+    "050b5",
+    "050c"
+   ],
+   "cases": 13,
+   "reason": "browser lane of these GraphQL suites not run"
+  },
+  {
+   "suites": [
+    "050h"
+   ],
+   "cases": 1,
+   "reason": "manual case"
+  }
+ ],
+ "handovers": [],
+ "updatedAt": "2026-10-16",
+ "personas": "config.js personas USER, ORG_USER, EUR, MULTI_ORG and ACME_BUYER as resolved from Elena Kutasina's .env.local; a parallel owner must use different accounts",
+ "untriaged": 29,
+ "evidence": "Raw results, HAR and screenshots stay in the owner's local run folders reports/regression/<runId>/ (gitignored); each filed bug carries its own evidence in Jira."
+}

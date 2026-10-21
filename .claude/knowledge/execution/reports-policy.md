@@ -5,7 +5,7 @@
 
 **This file is the only place the report policy lives.** All other files (`shared-instructions.md`, `evidence-capture-policy.md`, skill SKILLs, agent definitions) point here. Reports are read by humans on a deadline — long reports get skimmed and bugs get missed. Long-form reasoning, investigation logs, and progress updates belong in SendMessage to the orchestrator, never on disk.
 
-## 1. Only Ten Report Categories Allowed
+## 1. Only Eleven Report Categories Allowed
 
 | # | Category | Path | When |
 |---|----------|------|------|
@@ -19,6 +19,7 @@
 | 8 | Exploratory session report | `reports/exploratory/SBTM-*.md` | One report per `/qa-sbtm` / `/qa-exploratory` charter — read back by later sessions for the 24h duplicate-charter check |
 | 9 | Coverage generation report | `reports/coverage/COV-*/` | One consolidated `coverage-generation-report.md` per `/qa-coverage-gap` run (the run's own intermediate `gap-inventory.json`/`batch-*-results.json` are pipeline working data, not narrative report bloat — §2's cap applies to the markdown digest, not those) |
 | 10 | Performance investigation report | `reports/performance/{topic}-investigation-<date>.md` | A standalone performance investigation with findings worth keeping past the session that produced them. Written by **`/qa-perf-measure`** (deployed-env dependency-count / N+1 measurement); ticket-scoped runs may land as a category-6 per-ticket report instead |
+| 11 | Release regression record | `regression/releases/<release>/` — **tracked** (not under `reports/`) | A stable-bundle regression split into waves that several QA run in parallel: `release.json` plan, per-wave `state.json` / `ledger.csv` / `report.md`, generated `PROGRESS.md`. It is the one regression artifact that must outlive its author's session, which is why it is not in the gitignored `reports/regression/`. Layout, fields and caps: [`release-folder.md`](../../skills/qa-run/release-folder.md); a wave `report.md` keeps the regression-with-failures cap of §2. Written by `/qa-test-plan stable <N>` and `/qa-run stable:<N> <wave>` |
 
 **Where artifacts must NOT go.** Two separation rules, previously stated only in the retired
 `skills/qa-evidence/output-paths.md` and easy to lose with it:
@@ -69,7 +70,7 @@ Line caps in §2 apply to **narrative** files. A generated evidence page is exem
 
 **Do NOT create files for:** per-suite intermediate JSON, coverage working files, standalone screenshot dumps, progress/status markdown, debug logs, investigation notes, per-step screenshots, side-by-side comparisons against prior runs, or anything labeled "draft"/"WIP"/"context". Return those via SendMessage. Evidence screenshots go **inline** in the bug report (not as separate `.md`).
 
-**Not a report category — self-diagnostics artifacts.** The `vc-fix` self-diagnostics subsystem writes to `<outputRoot>/.vc-fix/diagnostics/` — the passive collector's `<session_id>.jsonl` (+ `.state.json`), the `/vc-self-check` `DIAG-*.md`, and the `deliver` `DELIVERY-*.md`. These are **gitignored diagnostic artifacts**, NOT one of the ten report categories above; the `DIAG-*.md`/`DELIVERY-*.md` still obey the monitoring-summary size discipline (§2, target 15–40, cap ~100). They are **ephemeral, not archived**: the lifecycle is log → analyze (`/vc-self-check`) → contribute (`deliver` PR/issue) → **delete**. Once a finding is contributed upstream the PR/issue is the source of truth, so `deliver` removes the processed session's own artifacts (only that session — never others); nothing is deleted when nothing was delivered. So they don't accumulate and need no manual cleanup.
+**Not a report category — self-diagnostics artifacts.** The `vc-fix` self-diagnostics subsystem writes to `<outputRoot>/.vc-fix/diagnostics/` — the passive collector's `<session_id>.jsonl` (+ `.state.json`), the `/vc-self-check` `DIAG-*.md`, and the `deliver` `DELIVERY-*.md`. These are **gitignored diagnostic artifacts**, NOT one of the eleven report categories above; the `DIAG-*.md`/`DELIVERY-*.md` still obey the monitoring-summary size discipline (§2, target 15–40, cap ~100). They are **ephemeral, not archived**: the lifecycle is log → analyze (`/vc-self-check`) → contribute (`deliver` PR/issue) → **delete**. Once a finding is contributed upstream the PR/issue is the source of truth, so `deliver` removes the processed session's own artifacts (only that session — never others); nothing is deleted when nothing was delivered. So they don't accumulate and need no manual cleanup.
 
 **BL audit report — the receipt, not the source of truth.** `/qa-review-bl` writes `reports/knowledge/BL-AUDIT-<date>.md` — the receipt of a BL sync run (one operation per rule with its human source or bug key, what was written to `bl/<slug>.yaml`, and what was not — findings for the bug path, `kb` observations, proposed retirements). The edits themselves land in the git-tracked YAML; nothing unapplied is staged anywhere else — BL-AUDIT is just the log of that run (operation table + Applied + Not-applied + coverage reconciliation; reference the `git diff` rather than inlining it).
 
@@ -404,7 +405,7 @@ Report categories don't accumulate forever — each has a lifecycle:
 - **Git-tracked report folders** (`reports/tickets/<Sprint>/<TICKET>/`) age out the same way via
   `npm run reports:prune -- --target=tracked --apply` — `git rm` + one commit, gated by the last commit
   date on that path (not filesystem mtime). The current sprint is always skipped regardless of age.
-- **`vc/shared/archive/sprints/`** (VC-internal, not one of the ten categories above, but the single
+- **`vc/shared/archive/sprints/`** (VC-internal, not one of the eleven categories above, but the single
   largest tracked report-like tree in the repo) is pruned by the same `--target=tracked` run.
 - **Durable categories never prune**: `reports/bugs/`, `reports/ba/` (**including `release-notes/`** —
   a release note is the record of what shipped, so it outlives every run that produced it; do not add

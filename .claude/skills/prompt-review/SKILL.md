@@ -101,7 +101,7 @@ and BL ids. Every grep/sweep hit is a **candidate**; confirm it before it become
 **`all` mode is triage-only:** one row per prompt file with: breach (over cap, not in baseline) ·
 overage vs baseline · DOC findings · sweep UNRESOLVED count · grep hits. Sort by those columns in
 that order, print the table, recommend the top 5 for individual runs, and stop. The table stays in chat — a triage file on
-disk is a report outside the ten categories (`.claude/rules/reports.md` §1).
+disk is a report outside the eleven categories (`.claude/rules/reports.md` §1).
 
 ## Step 2 — Read the target whole, find its callers
 
@@ -138,7 +138,7 @@ file:line · what · failure scenario (BLOCKER/MAJOR only) · fix`.
   preferring the doc (`.claude/rules/agents.md` — a doc is authoritative for MECHANISM, not SURFACE).
 
 Verdict per `review-dimensions.md` §Verdict. Print in chat — **no report file** (prompt reviews
-are not one of the ten categories, `.claude/rules/reports.md` §1). For more than 12 findings, keep
+are not one of the eleven categories, `.claude/rules/reports.md` §1). For more than 12 findings, keep
 the table to one line per MINOR/NIT. Stop here unless `--fix` / `--improve`.
 
 ## Step 4 — HEAL (`--fix`)

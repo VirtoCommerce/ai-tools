@@ -1,5 +1,7 @@
 # /qa-test-plan Stable-Release Planning — Implementation Plan
 
+> **Status 2026-10-16 (ai-tools #467):** the command structure of this plan is in place — `/qa-test-plan` is a router (`sprint-mode.md`, `plan-sections.md`, `stable-mode.md` under `.claude/knowledge/execution/test-plan/`), and `/qa-regression` §1c moved to `regression-selection.md` §Plan-driven selection. Two deviations, agreed in that PR: the stable plan is written to `regression/releases/stable-<N>/` (plan + wave state + triage ledger, so several QA can run waves in parallel), and it is run with the new `/qa-run stable:<N> <wave>` (skill `qa-run`, built to move into a plugin) instead of a `stable:N` selection on `/qa-regression`. Waves are priority tier (critical → high → rest, as here) × domain group. **Not done yet:** `release:scope` (release → PR → Jira trace; `release:diff` covers the component diff), `release:cases`, `deploy:bundle`, `release:compare`, `stable next`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Extend `/qa-test-plan` from sprint-only to stable-release planning. It should turn a `VirtoCommerce/vc-modules` bundle diff (vN-1 → vN) into an acceptance + upgrade-path plan that runs on `vcptcore-regression`, and also produce a forecast of the next stable.
