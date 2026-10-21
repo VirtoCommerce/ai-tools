@@ -14,6 +14,11 @@
 > **Updated 2026-10-21 from the developers' trial of `/qa-test-fast`** and a measurement of four real runs (§2b):
 > a run was too expensive for what it found. U24–U34 make it lighter, cheaper and aimed at significant bugs;
 > U15 (rounds) and U18 (new cases) are revised; B1–B7, and B8–B12 from the review, are the author's calls, open to correction. §3, §4, §4.1, §5.1, §8, §9, §10 and §12 follow.
+>
+> **Updated 2026-10-21 (second pass) from the developers' chat** and a fifth, much larger run (VCST-6314, §2b):
+> checks are layered from cheap to expensive, starting with a review of the diff (layer 0), every run has a
+> budget, and developers get their own command. U35–U42 are the owner's; U31 is revised by U35. §3a describes the
+> developer command; §2b and §13 follow.
 
 ## 1. Problem and goal
 
@@ -82,10 +87,26 @@ the measurement in §2b.
 | U28 | Evidence | **On failure only.** Screenshots are taken, and the recorded HAR is read, attached and cited, for a FAIL and for a Medium-or-worse finding. A PASS keeps the script's output or a text snapshot. The lanes keep recording HAR (B5); no video is recorded (removed from the lane configs 2026-09-21). A `ui-checks` or visual item the tracker comment cites as a UI claim keeps the screenshot that decided it (B12) |
 | U29 | What gets an investigation? | **Medium or worse only.** Triage deduplicates first. A Low gets no investigate agent |
 | U30 | The cost shape | **Short agents with a narrow start.** The brief is file paths plus only the skill its step needs. Tool calls are batched, and no agent outlives its one job. The verdict, summary, comment and page are written by a fresh small-context agent, not by the orchestrator. `verdict.md` reports tokens and active minutes per step, read from the session log by a plugin script (`lib/run-cost.mjs`) — the before/after number, with no separate tool to run |
-| U31 | One command or a light one for developers? | **One command, depth by risk.** A simple ticket is fast because its strategy selects little, not because someone picked a lighter mode. QA and developers run the same command and find the same bugs |
+| U31 | One command or a light one for developers? | **Revised 2026-10-21 by U35: a separate developer command on the same engine.** *(Was:)* **One command, depth by risk.** A simple ticket is fast because its strategy selects little, not because someone picked a lighter mode. QA and developers run the same command and find the same bugs |
 | U32 | How do `.spec` scripts and API checks get test-user passwords? | **A new `$VC_RUN` bridge tool in `vc-init`** runs `playwright test` and the node check scripts with the run's test-user passwords, as `bridge/playwright-mcp.mjs` does for the browser lanes. A role kept only in `vc-secrets` is therefore usable by a script. The same tool runs the seeding engine, which settles §6a's open choice. It is the first bridge tool that runs code no plugin ships, so it carries the constraints of B10 |
 | U33 | Which accounts does the access probe (U26) use? | **Accounts created on the fly.** The "other user" (and the other organization it belongs to) is created right before the probe as an `AGENT-TEST-` entity and deleted by ledger id at teardown. No second account per role is registered in advance. Creating them is a write, so it needs a writable stand (U16); on a stand that is not writable the cross-user probe is BLOCKED with that reason, and the anonymous probe still runs |
 | U34 | When has P3 passed on cost? | **At most 50% of the §2b baseline on a comparable ticket**, and every Medium the baseline found on VCST-6398 is found again. The baseline is the per-run total `run-cost.mjs` measures on the §2b sessions (B11) |
+
+**Layered checks, a budget per run, and a developer command (owner, 2026-10-21, second pass).** Grounded in the
+developers' chat: VCST-6314 ran past the five-hour limit twice, a developer rated `/qa-test-fast` 1 of 5 ("a plain
+review would find the same in minutes", "I fix what I find, I do not want it published", 5,000+ changed files in
+the working tree), and the goal of a run is to make sure there are no significant bugs, not to hunt for bugs.
+
+| # | Question | Decision |
+|---|---|---|
+| U35 | One command or a separate one for developers? | **A separate developer command** (`/vc-test:dev-check`, working name) on the same engine — the same layers, agents and scripts. Its posture differs (§3a): the input is the local diff of the branch (`git diff <base>...HEAD`), a ticket key is optional and only supplies the ACs; no tracker, kb, page or corpus write, and no human point; everything it writes lands outside the working repository |
+| U36 | How is a run layered? | **Cheapest first; each layer runs only for the risks the previous one left uncovered.** 0 — review of the diff (U37). 1 — scripted proof: an existing unit test, an API/GraphQL check, a `.spec` (U27). 2 — exploratory in a browser, only for hotspots in a significant zone (U39). 3 — investigation and bug report, Medium or worse only (U29). **Stop rule:** when every hotspot is covered by layers 0–1 and none is in a significant zone, layer 2 does not run and the run ends |
+| U37 | What is layer 0? | **A change map, not a code review.** One short agent reads only the diff and the ACs and writes `change-map.json`: (a) AC ↔ code — the lines that implement each AC; an AC with no code is a FAIL candidate decided without a browser, code with no AC is hidden behaviour to check; (b) hotspots — changed lines with a testable consequence, in the hotspot format of `/ticket-context` CHANGE, each with the cheapest proof that can decide it; (c) a significant-zone tag per hotspot (U39); (d) suspicions from the code — a wrong condition, a missing permission check, a null path — each with its line, a hypothesis that a layer-1 check confirms or refutes, never a bug by itself. In the QA command it runs after the context step and feeds the strategy; on a PR it reuses the CHANGE analysis instead of reading the diff again. It is not `review-pr-virto`, whose subject is NuGet surface compatibility |
+| U38 | How much may a run spend? | **A budget set before the run, as a share of the five-hour usage window:** the developer command **15–20%** (layer 0 ≤ 3%, layer 1 ≤ 7%, the rest for layers 2–3), the QA command **50%**. The strategy (QA) or the change map (developer) plans inside it. A QA plan over budget is shown at human point 1 with what it would drop; the developer command, which asks nothing, runs what fits and lists the risks it did not run. U34's relative criterion stays for P3 |
+| U39 | What is significant? | **Medium or worse** (U24, U25): access and permissions, money, data loss or leak, a wrong order state, a broken buyer path. Only a hotspot tagged with one of these zones is eligible for layer 2 |
+| U40 | Where do the developer command's new cases go? | **Into the run folder, not the corpus.** A passing `.spec` is kept in the run folder with a draft CSV row; QA moves it into the corpus (the `test-management-specialist`, U18). The developer command never writes to the corpus or to the developer's working tree |
+| U41 | When does the developer see the suspicions from layer 0? | **At once, before layer 1 starts**, labelled *suspected*, with file and line — a developer acts on them while the checks run. The final list marks each one confirmed (with its check) or refuted |
+| U42 | One measure of cost | `run-cost.mjs` (U30) reports, per step and per run, **input-equivalent tokens and the share of the five-hour window**. The two numbers quoted in the chat (3.42B against 2.46M) were different measures — every turn's re-read against an agent's final context — and must not be compared again |
 
 **Calls made while writing U24–U31 (the author's, not the owner's — correct any that is wrong).**
 
@@ -126,6 +147,21 @@ needs, are not recorded here yet; `run-cost.mjs` measures them in P2 (B11).
 | Every Medium came from outside the diff; the change's own defects were Low | Mediums: VCST-6452, 6453, 6454 (and 6094 re-confirmed); ticket defects: 6427, 6428, 6448, 6449, 6098 | U24, U25 |
 | Investigations are expensive and often end in a question | ~1.1M units each; 11 investigations confirmed 6 bugs in 6398; 2 of 4 ended as questions in 5903 R1 | U29 |
 | Writing happens at peak context | the verdict, bugs and page are written by the orchestrator at 300–400k context, 8–12% of a run | U30 |
+
+**A fifth run, VCST-6314 (20–21 Oct, a developer's `/qa-test-fast`), measured by its operator.** 3,418.6M input
+tokens (cache reads 91–99%), 3.1M output, 45 subagents, 21 h 12 of agent time, 11 h 34 wall clock — about 6 h of
+it two pauses on the spend limit. A smaller developer run on another ticket took about an hour and 36% of a
+five-hour window (18% of the week); its token figure was measured differently (U42).
+
+| Part of VCST-6314 | Share of input | Answered by |
+|---|---|---|
+| Live investigations (10 agents) | 27.5% | U29, U36 layer 3 |
+| Main session — orchestrator, plus the strategy, model, checklist and close-out it wrote (2.5M output) | 18.0% | U30; U13 keeps the checklist inline — see §13 O2 |
+| `qa-bug` reports and filing (10 agents, 4 h 27) | 12.9% | open — §13 O3 |
+| Regression (orchestrator + 4 runners) | 10.6% | U7 |
+| Visual lane / lane A (storefront checklist) | 7.3% / 7.1% | U26, U27 |
+| Mind-map update inside the run | 2.5% | U6 (no map builders in a run) |
+| The run did not fit the five-hour window twice | — | U38 |
 
 ## 3. The shape
 
@@ -177,6 +213,24 @@ its results are the round's base. Steps 1 and 2 are not repeated, and human poin
              · the appended risks, by the same rules as round 1 (U25–U29)
  4–5         as round 1; verdict.md lists every prior bug with its result, and NOT FIXED is a FAIL of the round
 ```
+
+## 3a. The developer command (U35)
+
+```
+/vc-test:dev-check [<KEY>] [--base <branch>]                         (working name)
+ 0 CHANGE MAP  git diff <base>...HEAD (+ the ticket's ACs if <KEY>) → change-map.json      ≤ 3% of the window
+               → suspicions shown at once, labelled "suspected" (U41)
+ 1 PROVE       each hotspot by its cheapest proof: existing unit test · API/GraphQL check · .spec   ≤ 7%
+               → stop here when nothing uncovered is in a significant zone (U36)
+ 2 EXPLORE     exploratory charter on the significant-zone hotspots only (U39)
+ 3 CONFIRM     qa-investigate, Medium or worse only
+               → result: confirmed / refuted suspicions, findings by severity, kept .spec + draft rows,
+                 tokens and window share per layer (U42)
+```
+
+No tracker, kb, page or corpus write and no human point; everything lands in the run folder outside the
+working repository (`QA_OUTPUT_DIR`). A run that would exceed 20% of the window runs what fits and lists the
+rest (U38).
 
 ## 4. Components
 
@@ -506,8 +560,10 @@ Every step ends in one of four states: **OK**, **SKIP**(reason), **BLOCKED**(rea
 
 ## 13. Open questions
 
-None open.
+Two open (2026-10-21, second pass); O1 is settled.
 
 | # | Question | Resolution |
 |---|---|---|
 | O1 | On a host-governed project the bridge refuses tokens, and a script cannot call the host's MCP servers. Is the context step in v1 there? | **Yes** (owner, 2026-10-21) — the orchestrator reads through the host's servers and writes the same raw files: U23, §7 |
+| O2 | U13 has the orchestrator write the checklist inline, but VCST-6314's main session was 18% of the run at 2.5M output, against U30's short-context rule. Does the checklist move to a fresh agent? | open |
+| O3 | `qa-bug` (U11: used as it is) was 12.9% of VCST-6314. Is the report written from the investigation's output, without a second investigation, and only for Medium or worse? | open |
