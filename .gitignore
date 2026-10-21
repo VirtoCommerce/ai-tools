@@ -5,6 +5,8 @@ node_modules
 # Layered env files — secrets stay local, per-env scaffolds are committed
 .env.local
 .env.*.local
+# Per-env Playwright MCP secrets (.env.playwright.<env>) hold passwords — never committed
+/.env.playwright.*
 !.env.defaults
 !.env.vcst
 !.env.vcptcore
