@@ -98,12 +98,17 @@ export function hostRefusal(tool, governance) {
   return `host-governed project: use the ${server} MCP server from ${governance.host || "the host plugin"} (see project-profile.json governance.servers) — ${tool} does not run through $VC_RUN here`;
 }
 
-/** The env var each group's secret arrives in (the task declaration binds it to `secret:<name>`). */
+/**
+ * The env vars each group's secret arrives in (the task declaration binds them to `secret:<name>`).
+ * GitHub's token has two names, both bound to github-pat: a declaration written before GITHUB_TOKEN
+ * existed carries only GITHUB_FIX_BUGS_TOKEN, one written after the old name is dropped will carry
+ * only GITHUB_TOKEN — either alone is the whole secret.
+ */
 export const GROUP_SECRETS = Object.freeze({
-  github: ["GITHUB_FIX_BUGS_TOKEN"],
+  github: ["GITHUB_FIX_BUGS_TOKEN", "GITHUB_TOKEN"],
   ado: ["ADO_PAT"],
   jira: ["JIRA_API_TOKEN"],
-  onboard: ["GITHUB_FIX_BUGS_TOKEN", "ADO_PAT", "JIRA_API_TOKEN"],
+  onboard: ["GITHUB_FIX_BUGS_TOKEN", "GITHUB_TOKEN", "ADO_PAT", "JIRA_API_TOKEN"],
 });
 
 /** The vc-secrets task name for a group. */
@@ -155,7 +160,8 @@ export function buildInnerEnv(source, group, { nodePath = process.execPath, help
     for (const [name, v] of Object.entries(source)) if (isPasswordName(name) && typeof v === "string" && v.length) secrets[name] = v;
   }
   Object.assign(env, secrets);
-  if (secrets.GITHUB_FIX_BUGS_TOKEN) env.GH_TOKEN = secrets.GITHUB_FIX_BUGS_TOKEN;
+  const githubToken = secrets.GITHUB_FIX_BUGS_TOKEN || secrets.GITHUB_TOKEN;
+  if (githubToken) env.GH_TOKEN = githubToken;
   if (secrets.ADO_PAT) env.ADO_AUTH = "pat";
   Object.assign(env, {
     VC_BRIDGE: "1",
