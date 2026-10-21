@@ -53,8 +53,10 @@ entities carry the `AGENT-TEST-` prefix.
 ## Running notes you will meet
 
 - Sign-in on vcst is **OTP-first**; it is handled inside `save-storage-state.ts` / the fixture. A spec never signs in.
-- A cached storageState goes **stale after roughly 30-80 minutes**. Symptom: `signedInAs(<role>): session not
-  signed in` (BLOCKED). Workaround today: delete `test-results/auth/<role>.json` and rerun (a self-heal is planned).
+- A cached storageState goes **stale after roughly 30-80 minutes**; `signedInAs` heals it itself. Sessions are
+  cached per env and role (`test-results/auth/<TEST_ENV>/<role>.json`); a cached file that is unreadable or no
+  longer signs in is recreated once. Only a session made just now that still does not sign in throws
+  `signedInAs(<role>): session not signed in` (BLOCKED): the account or the sign-in form is broken, not the cache.
 - The shared `ADMIN_DEFAULT` account **locks for 10-20 minutes** if full runner runs follow each other back to back.
 - Project flag is written `--project=script` / `--project=runner` (no space). `npm run specs:run` / `specs:runner` carry it.
 - `-g` matches against "project file describe title": `-g "CART-001:"`; for a runner suite `npm run specs:runner -- -g " 050a "` (spaces, no `^`).

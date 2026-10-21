@@ -8,8 +8,10 @@
  *   passed straight into page.fill(); it is never console.log'd.
  * - Logs ONLY: alias, success/failure, cookie count, and the output path. No secret
  *   values, no token strings.
- * - Output: test-results/auth/<alias>.json (gitignored dir). These files contain
- *   live session tokens — they are disposable and must stay out of git.
+ * - Output: test-results/auth/<alias>.json (gitignored dir), or <AUTH_STATE_DIR>/<alias>.json when
+ *   AUTH_STATE_DIR is set (the spec fixtures pass test-results/auth/<TEST_ENV>). These files contain
+ *   live session tokens — they are disposable and must stay out of git. Written atomically (temp
+ *   file + rename), so a reader never sees a half-written file.
  *
  * Run:  npx tsx scripts/auth/save-storage-state.ts [ALIAS ...]
  *       (no args => generate the default account set below)
@@ -19,8 +21,8 @@
  */
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { chromium } from "playwright";
-import { mkdirSync, writeFileSync } from "fs";
-import { join } from "path";
+import { mkdirSync, renameSync, writeFileSync } from "fs";
+import { join, relative } from "path";
 import { fileURLToPath } from "url";
 import "../../config.js"; // loads .env layers into process.env
 import { resolveRole } from "../lib/graphql-auth.js";
@@ -28,7 +30,7 @@ import { resolveRole } from "../lib/graphql-auth.js";
 // FRONT_URL and OUT_DIR are read where they are used: importing this module (for the selectors
 // below) must not exit the process or create directories — only the CLI does that.
 const TEST_DATA_DIR = join(process.cwd(), "test-data");
-const OUT_DIR = join(process.cwd(), "test-results", "auth");
+const OUT_DIR = process.env.AUTH_STATE_DIR || join(process.cwd(), "test-results", "auth");
 
 // Default account set covering suites 006 / 008 / 033 primaries + secondaries.
 const DEFAULT_ALIASES = [
@@ -106,11 +108,13 @@ async function loginAndSave(alias: string, FRONT_URL: string): Promise<boolean> 
   try {
     await page.goto(`${FRONT_URL}/sign-in`, { waitUntil: "networkidle", timeout: 60000 });
 
-    await firstVisible(page, [...SWITCH_TO_PASSWORD_SELECTORS, ...EMAIL_SELECTORS], 20000); // whichever form hydrates first
+    // Whichever form hydrates first: the OTP form (its switch link) or the password form. The OTP form has
+    // an email input too, so waiting on the email input would not tell the two apart.
+    await firstVisible(page, [...SWITCH_TO_PASSWORD_SELECTORS, ...PWD_SELECTORS], 20000);
     const switchEl = await firstVisible(page, SWITCH_TO_PASSWORD_SELECTORS);
     if (switchEl) await switchEl.click();
-    const emailEl = await firstVisible(page, EMAIL_SELECTORS, 20000);
-    const pwdEl = await firstVisible(page, PWD_SELECTORS);
+    const pwdEl = await firstVisible(page, PWD_SELECTORS, 20000); // the password form renders after the click
+    const emailEl = await firstVisible(page, EMAIL_SELECTORS);
     const submitEl = await firstVisible(page, SUBMIT_SELECTORS);
     if (!emailEl || !pwdEl || !submitEl) {
       console.log(`  ${alias}: FAIL — sign-in form fields not found`);
@@ -137,8 +141,10 @@ async function loginAndSave(alias: string, FRONT_URL: string): Promise<boolean> 
     }
 
     const out = join(OUT_DIR, `${alias}.json`);
-    writeFileSync(out, JSON.stringify(state, null, 2));
-    console.log(`  ${alias}: OK — saved ${cookieCount} cookies → test-results/auth/${alias}.json`);
+    const tmp = `${out}.${process.pid}.tmp`;
+    writeFileSync(tmp, JSON.stringify(state, null, 2));
+    renameSync(tmp, out);
+    console.log(`  ${alias}: OK — saved ${cookieCount} cookies → ${relative(process.cwd(), out).replace(/\\/g, "/")}`);
     return true;
   } catch (e: any) {
     console.log(`  ${alias}: ERROR — ${e.message.split("\n")[0]}`);
