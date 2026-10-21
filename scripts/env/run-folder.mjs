@@ -15,9 +15,10 @@
 // `.vc-fix/session-run/<CLAUDE_CODE_SESSION_ID>`; subagents share the session id, so they see the same folder.
 // Exit 2: a refusal (unknown env, bad ticket key, a template that cannot resolve).
 import '../lib/sync-stdio.mjs'; // before any output: a piped stdout must not lose its tail to process.exit()
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { BindError, bindSessionEnv, describeSessionEnv, pruneStale } from '../lib/session-env.mjs';
+import { sessionEnvFile } from '../lib/resolve-test-env.js';
 import { TICKET_KEY, allRunDirs, completeTemplate, priorRunDirs, resolveRunDir, runDirTemplate, laneScreenshots, runLayout, sessionRun } from '../lib/run-dir.mjs';
 import { loadEnv } from '../lib/load-env.mjs';
 
@@ -62,10 +63,17 @@ function use() {
   const ticket = positionals[0]?.toUpperCase();
   if (!ticket || !TICKET_KEY.test(ticket)) throw new BindError(`run:use needs a ticket key (VCST-1234, or an Azure Boards id) first, got "${positionals[0] ?? ''}"`);
   const envArg = value('--env') ?? positionals[1];
+  // A run folder that cannot resolve must change nothing: keep the env binding to put it back, and write the run
+  // binding only once the folder resolved — else the new env would sit beside the previous run's folder.
+  const envFile = sessionEnvFile();
+  const envBefore = envFile && existsSync(envFile) ? readFileSync(envFile, 'utf8') : null;
   if (bindSessionEnv(envArg, { reason: `run:use ${ticket}` }) === null) console.log('not in a Claude Code session (no CLAUDE_CODE_SESSION_ID): nothing is bound; TEST_ENV resolves per process');
   const { testEnv, sourceOf, lines } = describeSessionEnv();
   let dir;
-  try { dir = resolveRunDir({ ticket, env: testEnv }); } catch (e) { throw new BindError(e.message); }
+  try { dir = resolveRunDir({ ticket, env: testEnv }); } catch (e) {
+    if (envFile) { if (envBefore === null) rmSync(envFile, { force: true }); else writeFileSync(envFile, envBefore); }
+    throw new BindError(e.message);
+  }
   mkdirSync(join(dir, 'screenshots'), { recursive: true }); // a Playwright lane never creates a folder
   if (runFile) {
     mkdirSync(dirname(runFile), { recursive: true });
