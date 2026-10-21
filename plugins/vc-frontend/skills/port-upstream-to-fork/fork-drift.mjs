@@ -12,11 +12,13 @@
 // --map      the fork map (default: fork-map.json in the repository root, when present)
 // --rebuild  ignore cached graphs
 //
-// Each tree is built once per commit in a temporary worktree; graphs are cached under
-// node_modules/.cache/fork-drift/. A build takes about a minute.
+// Each tree is built once per commit in a temporary worktree under the OS temp folder; graphs are cached
+// under node_modules/.cache/fork-drift/. A build takes about a minute.
 
 import { execFileSync, spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { copyFileSync, existsSync, lstatSync, mkdirSync, readFileSync, symlinkSync, unlinkSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -43,6 +45,9 @@ const TO = git("rev-parse", `${args.to}^{commit}`);
 const FROM = typeof args.from === "string" ? git("rev-parse", `${args.from}^{commit}`) : git("merge-base", FORK, TO);
 const MAP_PATH = typeof args.map === "string" ? path.resolve(args.map) : path.join(ROOT, "fork-map.json");
 const CACHE = path.join(ROOT, "node_modules", ".cache", "fork-drift");
+// Outside the repository: Vite treats any path containing node_modules as a dependency and leaves its
+// template-literal imports (locales, sign-in providers) unexpanded.
+const WORKTREES = path.join(tmpdir(), `fork-drift-${createHash("sha1").update(ROOT).digest("hex").slice(0, 8)}`);
 const NOT_RENDERED = /^client-app\/(core-api|public)\//;
 
 // ---------- building the graphs ----------
@@ -56,36 +61,42 @@ function removeWorktree(wt) {
 }
 
 function buildGraph(sha) {
-  const graphPath = path.join(CACHE, `graph-${sha}.json`);
+  // v2: graphs cached before the worktrees left node_modules are missing files, so they are not reused.
+  const graphPath = path.join(CACHE, `graph-v2-${sha}.json`);
   if (existsSync(graphPath) && !args.rebuild) return JSON.parse(readFileSync(graphPath, "utf8"));
   mkdirSync(CACHE, { recursive: true });
-  const wt = path.join(CACHE, `wt-${sha.slice(0, 12)}`);
+  const wt = path.join(WORKTREES, `wt-${sha.slice(0, 12)}`);
+  // A temp folder emptied by a reboot leaves its worktrees registered, and `worktree add` refuses the path.
+  git("worktree", "prune");
   if (existsSync(wt)) removeWorktree(wt);
   git("worktree", "add", "--detach", wt, sha);
 
-  // Reuse the checkout's node_modules when the commit locks the same dependencies; install otherwise.
-  const sameLock = existsSync(path.join(ROOT, "yarn.lock")) && git("show", `${sha}:yarn.lock`) === readFileSync(path.join(ROOT, "yarn.lock"), "utf8").trim();
-  // "junction": a Windows directory link that needs no admin rights; ignored elsewhere.
-  if (sameLock) symlinkSync(path.join(ROOT, "node_modules"), path.join(wt, "node_modules"), "junction");
-  else {
-    process.stderr.write(`fork-drift: ${sha.slice(0, 9)} locks different dependencies — running yarn install in its worktree\n`);
-    // Through a shell, so Windows finds yarn.cmd.
-    const install = spawnSync("yarn install --immutable", { cwd: wt, shell: true, stdio: ["ignore", "inherit", "inherit"] });
-    if (install.status !== 0) throw new Error(`yarn install failed in ${wt}`);
-  }
+  try {
+    // Reuse the checkout's node_modules when the commit locks the same dependencies; install otherwise.
+    const sameLock = existsSync(path.join(ROOT, "yarn.lock")) && git("show", `${sha}:yarn.lock`) === readFileSync(path.join(ROOT, "yarn.lock"), "utf8").trim();
+    // "junction": a Windows directory link that needs no admin rights; ignored elsewhere.
+    if (sameLock) symlinkSync(path.join(ROOT, "node_modules"), path.join(wt, "node_modules"), "junction");
+    else {
+      process.stderr.write(`fork-drift: ${sha.slice(0, 9)} locks different dependencies — running yarn install in its worktree\n`);
+      // Through a shell, so Windows finds yarn.cmd.
+      const install = spawnSync("yarn install --immutable", { cwd: wt, shell: true, stdio: ["ignore", "inherit", "inherit"] });
+      if (install.status !== 0) throw new Error(`yarn install failed for ${sha.slice(0, 9)}`);
+    }
 
-  copyFileSync(path.join(HERE, "graph.vite.config.mjs"), path.join(wt, ".fork-drift.vite.config.mjs"));
-  process.stderr.write(`fork-drift: building ${sha.slice(0, 9)}…\n`);
-  const build = spawnSync(process.execPath, [path.join(wt, "node_modules", "vite", "bin", "vite.js"), "build", "--config", ".fork-drift.vite.config.mjs"], {
-    cwd: wt,
-    env: { ...process.env, GRAPH_OUT: graphPath, GRAPH_DIST: path.join(wt, ".fork-drift-dist") },
-    encoding: "utf8",
-    maxBuffer: 1 << 28,
-  });
-  if (build.status !== 0 || !existsSync(graphPath)) {
-    throw new Error(`vite build failed for ${sha.slice(0, 9)} — worktree kept at ${wt}\n${(build.stderr || build.stdout).slice(-4000)}`);
+    copyFileSync(path.join(HERE, "graph.vite.config.mjs"), path.join(wt, ".fork-drift.vite.config.mjs"));
+    process.stderr.write(`fork-drift: building ${sha.slice(0, 9)}…\n`);
+    const build = spawnSync(process.execPath, [path.join(wt, "node_modules", "vite", "bin", "vite.js"), "build", "--config", ".fork-drift.vite.config.mjs"], {
+      cwd: wt,
+      env: { ...process.env, GRAPH_OUT: graphPath, GRAPH_DIST: path.join(wt, ".fork-drift-dist") },
+      encoding: "utf8",
+      maxBuffer: 1 << 28,
+    });
+    if (build.status !== 0 || !existsSync(graphPath)) {
+      throw new Error(`vite build failed for ${sha.slice(0, 9)}\n${(build.stderr || build.stdout).slice(-4000)}`);
+    }
+  } finally {
+    removeWorktree(wt);
   }
-  removeWorktree(wt);
   return JSON.parse(readFileSync(graphPath, "utf8"));
 }
 
