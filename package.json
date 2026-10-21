@@ -5,6 +5,8 @@
   "main": "config.js",
   "scripts": {
     "env:check": "node get_variables_env.js",
+    "specs:run": "playwright test --project script",
+    "specs:runner": "playwright test --project runner",
     "secrets:sync": "node scripts/maintenance/sync-playwright-secrets.mjs",
     "secrets:check": "node scripts/maintenance/sync-playwright-secrets.mjs --check",
     "gif": "node scripts/lib/make-gif.mjs",

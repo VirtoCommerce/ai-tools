@@ -11,6 +11,6 @@
     "rootDir": "..",
     "resolveJsonModule": true
   },
-  "include": ["*.ts", "lib/*.ts", "../scripts/**/*.ts"],
+  "include": ["*.ts", "lib/*.ts", "../scripts/**/*.ts", "../regression/**/*.ts", "../playwright.config.ts"],
   "exclude": ["node_modules", "dist"]
 }
