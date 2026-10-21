@@ -60,3 +60,8 @@ Column headers "Quote number / Date / Status / Total" and tab titles "Quote requ
 - **Component / module:** `client-app/modules/quotes` (pages `quotes.vue`, `view-quote.vue`, `edit-quote.vue`; `index.ts`)
 - **RCA anchor:** `client-app/modules/quotes/index.ts:81` `void loadModuleLocale(i18n, "quotes")`; `client-app/modules/quotes/pages/quotes.vue:173` `const columns = ref<VcTableColumnType[]>([`
 - **Routing confidence:** HIGH — fix-forward: make `columns` a `computed` and pass a getter title to `usePageHead` (smallest), or await module locales before mount
+
+## Verification 2026-10-21
+- **Verdict:** VERIFIED WITH NOTES on a local build of VirtoCommerce/vc-frontend#2593 (`2.61.0-pr-2593-296d-296d1234`, open, not merged), with the API proxied to vcst. STR passed 3/3 and the checklist 10/10. Jira moved to Tested; QA comment 112246.
+- **RED→GREEN:** same local stack and buyer, with the quotes en locale chunk held 1.5 s. Pre-fix `2.61.0-alpha.2590`: raw headers and titles on 5/5 list loads and 3/3 detail loads. Fix: translated on 10/10 list loads, and the detail and edit titles carry the quote number (7/7, 6/6). Evidence: `reports/tickets/Sprint26-21/VCST-6452/`.
+- **Kept in open/:** the fix is not merged or deployed. vcst (vc-frontend-next) still runs the affected code until the release merge. Move this file to `fixed/` after a live re-check there.
