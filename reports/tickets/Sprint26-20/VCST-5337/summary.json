@@ -6,7 +6,7 @@
     "system": "jira",
     "comment_id": "112156",
     "artifact": "theme 2.61.0-pr-2458-3f0b; SalesRep 3.1015.0-pr-15-e5bc; GA 4.1005.0-pr-61-5267",
-    "amend_pending": "2026-10-21 GA read-back (USR-004 search/view of 2026-10-19 17:41Z; 2026-10-20 traffic from suite 109)"
+    "amended": "2026-10-21 GA read-back complete"
   },
   "path": "FULL",
   "path_route": {
@@ -83,9 +83,12 @@
     {
       "at": "5-status",
       "from": "Testing",
-      "to": null,
-      "made": false,
-      "reason": "awaiting operator confirmation; GA read-back amend pending 2026-10-21"
+      "to": "Tested",
+      "made": true,
+      "transition": "Finish test",
+      "confirmed_by": "operator 2026-10-20 (after GA read-back)",
+      "reason": "PASS WITH NOTES",
+      "at_time": "2026-10-21T07:07Z"
     }
   ],
   "agents_dispatched": [
@@ -219,9 +222,9 @@
       "not_found": 4
     },
     "conditions_total": 68,
-    "conditions_with_evidence": 62,
+    "conditions_with_evidence": 64,
     "ac_dod_estimate": {
-      "ac_coverage_pct": 0.91,
+      "ac_coverage_pct": 0.94,
       "dod_total": 0,
       "dod_met": 0,
       "dod_pct": null
@@ -241,21 +244,24 @@
       "reads": [
         "2026-10-20 02:30Z - none visible",
         "2026-10-20 05:05Z - none visible",
-        "2026-10-20 18:10Z - ledger A visible except USR-004 search/view"
+        "2026-10-20 18:10Z - ledger A visible except USR-004 search/view",
+        "2026-10-21 07:06Z - both ledgers complete: all must-appear rows visible, no must-not row anywhere"
       ],
       "verdicts": {
         "F-1": "PASS",
         "F-2": "PASS",
         "F-5/N-8": "PASS (4 logins = 3 planted + 1 lane-B storefront sign-in at 17:49:29Z; the failed attempt was anonymous and not counted)",
         "N-10": "PASS",
-        "AC-5": "PASS"
+        "AC-5": "PASS",
+        "AC-4": "PASS (& / % \" term intact)",
+        "AC-5 URL search": "PASS (not listed)"
       },
-      "pending": "USR-004 rows; 2026-10-20 traffic"
+      "pending": null,
+      "lag": "most rows <20 h, slowest ~37 h"
     },
     "not_evidenced": [
       "N-4..N-6 without the GA module (no env)",
-      "D-35 impersonation (no rep entry)",
-      "USR-004 GA rows + 2026-10-20 traffic (pending read-back)"
+      "D-35 impersonation (no rep entry)"
     ]
   }
 }

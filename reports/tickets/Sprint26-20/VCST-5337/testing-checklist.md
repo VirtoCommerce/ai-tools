@@ -47,4 +47,4 @@ Lanes: A = qa-frontend-expert (playwright-firefox, storefront UI) · B = qa-back
 | **Hub regression (moved theme → module)** |||||
 | R-1 | Suites 089, 090, 091, 093, 093b, 097, 106 (storefront) + 050m (API) | per suite | R | now | DONE — all 13 Sales Rep suites, no regression from the plugin move; VCST-6437 filed (pre-existing) |
 
-**Verdict 2026-10-20: PASS WITH NOTES** (both tickets). GA read-back pending for one member’s 2026-10-19 rows and the 2026-10-20 traffic — amend on 2026-10-21.
+**Verdict 2026-10-20: PASS WITH NOTES** (both tickets). GA read-back completed 2026-10-21 07:06Z — all planted member rows visible, no rep / signed-out / URL-search rows. Tickets moved to Tested 2026-10-21 07:07Z.
