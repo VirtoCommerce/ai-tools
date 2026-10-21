@@ -8,10 +8,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
-## `vc-frontend`: merging upstream vc-frontend into a theme fork — catalog `0.13.0`, `vc-frontend` `0.1.0` — 2026-10-21
+## `vc-frontend`: theme forks and storefront plugins — catalog `0.13.0`, `vc-frontend` `0.1.0` — 2026-10-21
 
-**Added: the `vc-frontend` plugin** (`defaultEnabled: false`) with two skills, for teams that keep a fork of the
-storefront theme (vc-frontend-next, customer themes). Its description and README say the skills can make mistakes
+**Added: the `vc-frontend` plugin** (`defaultEnabled: false`) with three skills: two for teams that keep a fork of
+the storefront theme (vc-frontend-next, customer themes), one for a backend module that ships a storefront plugin. Its description and README say the skills can make mistakes
 and every change needs human review.
 
 - **`merge-upstream`** brings upstream `VirtoCommerce/vc-frontend` (its `dev` or a release tag) into the fork, or a
@@ -31,8 +31,52 @@ and every change needs human review.
   fork no longer renders, render sites it dropped, and changes to files a committed `fork-map.json` says the fork
   replaced. The skill briefs each upstream commit as port / already / n/a / lost feature, ports the approved ones
   with a mutation-checked test, and keeps the map current.
+- **`mf-new-plugin`** makes a backend module ship a storefront plugin (scenario S1a of vc-frontend's Module
+  Federation docs). vc-frontend's `create:plugin --module` writes only new files; the skill edits the module's own
+  `.csproj`, `module.manifest` and `.gitignore` after the user approves the diffs, copying versions only from what
+  `check:plugin-module` prints. Its report says whether the sources are wired or the package is verified too
+  (`--artifact`). It never commits, and reports CI without editing it, because module CI is updated centrally.
 
 ---
+
+## `vc-init` `0.3.0`: the tracker / code-host connection lives in `.env.local`, once — 2026-10-21
+
+**Changed: where the project-level keys are written.** `JIRA_BASE_URL`, `JIRA_PROJECT_KEY`, `JIRA_EMAIL`, `ADO_ORG`,
+`ADO_PROJECT` and `CLIENT_REPO_ORG` are one value for the whole project, whatever stand a run targets, but
+`scaffold-env.mjs` wrote them into every `.env.<env>`, so each new env asked for them again and `JIRA_EMAIL` (a
+personal identifier) sat in a file meant for shared URLs. They now go to `.env.local`, once (`scaffold-env.mjs`
+`CATALOG` marks them `scope: "project"`; `write-env.mjs` routes them the same way). Every loader reads
+`.env.local` after `.env.<env>`, so nothing that reads `process.env` changes.
+
+**Migration: automatic.** `scaffold-env.mjs` (`/project-init`, `--add-env`) and `normalize-env.mjs` (`--check`
+Step C) move these keys out of every `.env.<env>` into `.env.local` (`lib/project-env.mjs`), with the comment
+above each. When the env files hold different values for one key, nothing is moved and the run prints
+`NOT moved <KEY> — the files disagree`; keep one value in `.env.local` (or `<KEY>_<ENV>` there per env).
+`normalize-env.mjs` now also normalises the project keys in `.env.local` (a trailing slash on `JIRA_BASE_URL`).
+A project that points two stands at two trackers keeps the key per env as `<KEY>_<ENV>` in `.env.local`:
+`scaffold-env.mjs` then adds `<KEY>_<NEW>` for a new env instead of a bare empty line, and `normalize-env.mjs`
+checks those lines like the bare key. `write-env.mjs` refuses (exit 1) a project key whose value differs from the
+one already in `.env.local`, instead of redirecting every other env, and removes the old copy from `.env.<env>`.
+The vc-fix `.env.local.template` ships these keys commented out, with no default: an uncommented line there
+overrides `.env.<env>`.
+
+**Fixed: `normalize-env.mjs` skipped every line of a CRLF file.** A `KEY=value\r` line did not match its line
+pattern, so a file saved by a Windows editor kept its quotes and trailing slashes, and an empty placeholder lost its
+`\r`. It now splits on the line break and writes the file back with its own line endings; `scaffold-env.mjs` appends
+to a CRLF `.env.local` in CRLF too. Its `--json` output keeps the old top-level fields, summed over both files, and
+adds `files` and `moved`.
+
+**Changed: operator-facing wording.** The token guide said the Jira and GitHub tokens exist so `/qa-fix` can use
+them, the readiness table was titled `/qa-fix readiness`, and an optional MCP placeholder said it was "not needed
+for /qa-fix". vc-init onboards every installed plugin, so these now say "the plugins" / "Plugin readiness". The
+`JIRA_EMAIL` hint says why the email is required: Jira Cloud accepts an API token only together with the account
+email. Messages that name a specific `/qa-fix` gate that would fail are kept as they are.
+
+## `vc-fix` `0.11.2`: docs and messages follow vc-init 0.3.0 — 2026-10-21
+
+`jira.mjs` now says to set `JIRA_EMAIL` in `.env.local`; the `.env.{env}.example` / `.env.local.template`
+references and the `/qa-env-check` bucket table show the tracker / code-host keys in `.env.local`. No runtime
+change: every reader already took these values from `process.env`.
 
 ## `vc-init` `0.2.1`: the GitHub token is also handed out as `GITHUB_TOKEN` — 2026-10-21
 

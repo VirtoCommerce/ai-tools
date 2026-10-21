@@ -8,8 +8,12 @@
  *
  *   Bucket #2  .env.<env>   (committed, NON-secret) — per-env URLs / identifiers /
  *              risk: FRONT_URL, BACK_URL, STORE_ID, ENV_RISK, STOREFRONT_PROFILE,
- *              MODULES_ENABLED, JIRA_PROJECT_KEY, ADMIN/USER emails, JIRA_EMAIL, …
- *   Bucket #3  .env.local   (gitignored, SECRET) — passwords + tokens + API keys.
+ *              MODULES_ENABLED, ADMIN/USER emails, …
+ *   Bucket #3  .env.local   (gitignored) — passwords + tokens + API keys, AND the
+ *              project-level keys scaffold-env.mjs CATALOG marks `scope: "project"`
+ *              (JIRA_BASE_URL / JIRA_PROJECT_KEY / JIRA_EMAIL, ADO_ORG / ADO_PROJECT,
+ *              CLIENT_REPO_ORG): the same for every env, so they arrive in envVars but
+ *              are written here, un-suffixed (lib/project-env.mjs).
  *              Per-env credentials are written with the `_<ENV>` suffix that
  *              config.js promotes to the base name when TEST_ENV=<env>; global
  *              tokens (GitHub/Jira/ADO/Postman/Context7/Figma) are written un-suffixed.
@@ -44,6 +48,12 @@
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
 import { outputRoot } from "./lib/paths.mjs";
+import { CATALOG } from "./scaffold-env.mjs";
+import { LOCAL_HEADER, envSuffixesIn, keySuffixes, readKey, removeKey } from "./lib/project-env.mjs";
+import { normalizeValue } from "./normalize-env.mjs";
+
+// The project-level keys — one value for every env — go to .env.local, never .env.<env>.
+const PROJECT_KEYS = new Set(CATALOG.filter(([, m]) => m.scope === "project").map(([k]) => k));
 
 // Secret keys that are GLOBAL (one value across all envs) → never get the _<ENV>
 // suffix. Everything else in `secrets` is treated as a per-env credential.
@@ -132,7 +142,7 @@ function main() {
   const SUFFIX = `_${envName.toUpperCase()}`;
   const suffixCreds = payload.suffixCreds !== false; // default true
 
-  const envVars = payload.envVars || {};
+  const envVars = { ...(payload.envVars || {}) };
   const secrets = payload.secrets || {};
   if (!Object.keys(envVars).length && !Object.keys(secrets).length) {
     fail("nothing to write: both envVars and secrets are empty.");
@@ -159,10 +169,35 @@ function main() {
   const envPath = join(OUTPUT_ROOT, `.env.${envName}`);
   const localPath = join(OUTPUT_ROOT, ".env.local");
 
+  // Project keys: one value for every env, so a different one already in .env.local is another env's
+  // tracker — never overwritten silently (that would redirect the other env's runs). A project that keeps
+  // them per env (`KEY_<ENV>` lines) gets this env's suffixed line. The copy left in .env.<env> by an
+  // older onboarding is removed, so the two files cannot disagree afterwards.
+  const localText = existsSync(localPath) ? readFileSync(localPath, "utf-8") : "";
+  const refused = [];
+  const projectWritten = [];
+  const envSuffixes = envSuffixesIn(OUTPUT_ROOT, envName);
+  // Compared as normalize-env would store them, so `https://x/` and `https://x` are one value, not a conflict.
+  const canon = (key, v) => normalizeValue(key, v).value;
+  for (const key of Object.keys(envVars)) {
+    if (!PROJECT_KEYS.has(key)) continue;
+    const value = envVars[key];
+    delete envVars[key];
+    if (value === undefined || value === null || value === "") continue;
+    const current = readKey(localText, key);
+    // Written in the canonical form too: a raw `https://x/` would break `${KEY}/rest/…` until the next normalize-env.
+    if (keySuffixes(localText, key, envSuffixes).length && current === null) secretKv[`${key}${SUFFIX}`] = canon(key, value);
+    else if (current && canon(key, current) !== canon(key, value)) { refused.push(key); continue; }
+    else secretKv[key] = canon(key, value);
+    projectWritten.push(key);
+  }
+
   // --- Bucket #2: .env.<env> (non-secret) ---
   let envReport = null;
-  if (Object.keys(envVars).length) {
-    const existing = existsSync(envPath) ? readFileSync(envPath, "utf-8") : "";
+  const envText = existsSync(envPath) ? readFileSync(envPath, "utf-8") : "";
+  const stale = projectWritten.filter((k) => readKey(envText, k) !== null);
+  if (Object.keys(envVars).length || stale.length) {
+    const existing = stale.reduce((t, k) => removeKey(t, k), envText);
     const header = existing
       ? ""
       : [
@@ -175,7 +210,7 @@ function main() {
           "",
         ].join("\n");
     const res = upsert(header + existing, envVars);
-    envReport = { path: envPath, ...res, created: !existing };
+    envReport = { path: envPath, ...res, created: !envText, removed: stale };
     if (!DRY_RUN) writeFileSync(envPath, res.text);
   }
 
@@ -183,17 +218,7 @@ function main() {
   let localReport = null;
   if (Object.keys(secretKv).length) {
     const existing = existsSync(localPath) ? readFileSync(localPath, "utf-8") : "";
-    const header = existing
-      ? ""
-      : [
-          `# ==============================================================================`,
-          `# .env.local — secrets (Bucket #3, GITIGNORED — never commit).`,
-          `# Written by project-init/write-env.mjs. Per-env creds carry the _<ENV> suffix`,
-          `# that config.js promotes to the base name when TEST_ENV matches.`,
-          `# ==============================================================================`,
-          "",
-          "",
-        ].join("\n");
+    const header = existing ? "" : LOCAL_HEADER;
     const res = upsert(header + existing, secretKv);
     localReport = { path: localPath, ...res, created: !existing };
     if (!DRY_RUN) writeFileSync(localPath, res.text);
@@ -202,7 +227,8 @@ function main() {
   // --- Report (names only, never values) ---
   const tag = DRY_RUN ? "[write-env] DRY-RUN — would write" : "[write-env] wrote";
   if (envReport) {
-    console.log(`${tag} ${envReport.path}${envReport.created ? " (created)" : ""}: ${envReport.written.join(", ")}`);
+    console.log(`${tag} ${envReport.path}${envReport.created ? " (created)" : ""}: ${envReport.written.join(", ") || "(no keys)"}`);
+    if (envReport.removed.length) console.log(`[write-env] moved out of ${envReport.path} (now in .env.local): ${envReport.removed.join(", ")}`);
   }
   if (localReport) {
     console.log(`${tag} ${localReport.path}${localReport.created ? " (created)" : ""}: ${localReport.written.join(", ")} [values hidden]`);
@@ -215,6 +241,10 @@ function main() {
     if (localReport) console.log(`[write-env] .env.local keys: ${Object.keys(secretKv).join(", ")}`);
   }
   console.log(`[write-env] done${DRY_RUN ? " (dry-run, no files changed)" : ""}.`);
+  if (refused.length) {
+    console.error(`[write-env] NOT written: ${refused.join(", ")} — .env.local already holds a different value, the one every env uses. Edit .env.local by hand, or keep one value per env as <KEY>_<ENV> there.`);
+    process.exit(1);
+  }
 }
 
 main();
