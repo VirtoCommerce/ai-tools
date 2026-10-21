@@ -37,9 +37,18 @@ export const TICKET_KEY = /^(?:[A-Z][A-Z0-9]*-\d+|\d+)$/;
 const JIRA_KEY = /^[A-Z][A-Z0-9]*-\d+$/;
 const PLACEHOLDER = /<(ticket|env|sprint)>/gi;
 
+/** A sprint's folder name (`Sprint26-21`), as `reports:prune` reads it: any number of digits on each side. */
+export const SPRINT_DIR = /^Sprint\d+-\d+$/;
+
+/** `Sprint26-14` → 2614, so `Sprint26-9` sorts before `Sprint26-10` (`reports:prune`'s `sprintOrdinal`). */
+const sprintOrdinal = (name) => {
+  const m = /^Sprint(\d+)-(\d+)$/.exec(name);
+  return m ? Number(m[1]) * 100 + Number(m[2]) : -1;
+};
+
 /** The current sprint folder name under `reports/tickets/`: the sprint a `Sprint-current` FILE names (the marker
- *  `reports:prune` reads), else a `Sprint-current` folder, else the newest `SprintXX-XX`; null when none exists.
- *  (Moved here from scripts/preflight/policy.ts.) */
+ *  `reports:prune` reads), else a `Sprint-current` folder, else the numerically newest `Sprint<n>-<n>`; null when
+ *  none exists. (Moved here from scripts/preflight/policy.ts.) */
 export function resolveSprint(root = outputRoot()) {
   const dir = join(root, 'reports', 'tickets');
   if (!existsSync(dir)) return null;
@@ -49,10 +58,10 @@ export function resolveSprint(root = outputRoot()) {
     try {
       if (!statSync(marker).isFile()) return 'Sprint-current';
       const named = readFileSync(marker, 'utf8').trim();
-      if (/^Sprint\d+-\d+$/.test(named)) return named;
+      if (SPRINT_DIR.test(named)) return named;
     } catch { /* removed meanwhile */ }
   }
-  return names.filter((n) => /^Sprint\d{2}-\d{2}$/.test(n)).sort().at(-1) ?? null;
+  return names.filter((n) => SPRINT_DIR.test(n)).sort((a, b) => sprintOrdinal(a) - sprintOrdinal(b)).at(-1) ?? null;
 }
 
 /** The template without its `<sprint>` folder — the layout of a project with no sprint folder
