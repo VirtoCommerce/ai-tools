@@ -200,7 +200,7 @@ function main() {
   if (envDecl?.includes(ROLE_PASSWORD[role])) {
     let decl;
     try {
-      decl = writeSecretsDecl({ root, pat: patAxesFromProfile(profile), shim: args.shim || defaultShimPath(), passwordChange: { addEnvs: [env], addNames: [name] } });
+      decl = writeSecretsDecl({ root, pat: patAxesFromProfile(profile), shim: args.shim || defaultShimPath(), passwordChange: { addEnvs: [env], addNames: [name], roles: [] /* the env is declared: add this name, no built-in */ } });
     } catch (e) {
       fail(e.message);
     }

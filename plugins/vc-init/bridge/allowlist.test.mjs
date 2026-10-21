@@ -31,6 +31,19 @@ test("gh api reads only: no write method, no body, no GraphQL", () => {
   refused("gh", ["api", "-f", "body=x", "repos/a/b/issues"], /sends a POST/);
   refused("gh", ["api", "--input", "body.json", "repos/a/b/pulls/1/merge"], /sends a POST/);
   refused("gh", ["api", "graphql", "-f", "query=query { viewer { login } }"], /graphql/);
+  // gh takes a short flag's value attached: still a body, still a POST.
+  refused("gh", ["api", "repos/a/b/merges", "-fbase=main", "-fhead=feature"], /sends a POST/);
+  refused("gh", ["api", "-Fbody=@x.json", "repos/a/b/issues"], /sends a POST/);
+});
+
+test("gh: -R with its value attached is held to github.com too; repo fork may not run git", () => {
+  refused("gh", ["pr", "list", "-Revil.example/a/b"], /must name github.com/);
+  allowed("gh", ["pr", "list", "-Racme/web"]);
+  allowed("gh", ["repo", "fork", "VirtoCommerce/vc-frontend", "--clone=false"]);
+  refused("gh", ["repo", "fork", "VirtoCommerce/vc-frontend"], /--clone=false/);
+  refused("gh", ["repo", "fork", "VirtoCommerce/vc-frontend", "--clone"], /--clone=false/);
+  refused("gh", ["repo", "fork", "VirtoCommerce/vc-frontend", "--clone=false", "--remote"], /--remote/);
+  allowed("gh", ["repo", "fork", "VirtoCommerce/vc-frontend", "--clone=false", "--remote=false"]);
 });
 
 test("gh: anything that prints, manages or bypasses the token is refused", () => {

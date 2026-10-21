@@ -224,6 +224,10 @@ function main() {
     }
   }
   const list = (v) => String(v || "").split(",").map((x) => x.trim()).filter(Boolean);
+  if (args["password-roles"] !== undefined && args["password-envs"] === undefined) {
+    console.error("[write-secrets-decl] --password-roles needs --password-envs: it chooses the built-in passwords of the envs being added");
+    process.exit(1);
+  }
   const passwordChange = args["password-envs"] === undefined && args["password-names"] === undefined
     ? undefined
     : {

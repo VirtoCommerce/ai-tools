@@ -61,10 +61,11 @@ test("outer: the exit code of the task is propagated", () => {
 });
 
 test("inner: a tool from another group is refused (no escalation between axes)", () => {
-  const r = bridge(["--inner", "github"], { env: { VC_RUN_ARGV: JSON.stringify(["ado", "whoami"]), GITHUB_FIX_BUGS_TOKEN: TOKEN } });
+  const cwd = project({ tasks: {} });
+  const r = bridge(["--inner", "github"], { cwd, env: { VC_RUN_ARGV: JSON.stringify(["ado", "whoami"]), GITHUB_FIX_BUGS_TOKEN: TOKEN } });
   assert.equal(r.status, 64);
   assert.match(r.stderr, /does not belong to the github group/);
-  const r2 = bridge(["--inner", "onboard"], { env: { VC_RUN_ARGV: JSON.stringify(["gh", "api", "user"]), GITHUB_FIX_BUGS_TOKEN: TOKEN } });
+  const r2 = bridge(["--inner", "onboard"], { cwd, env: { VC_RUN_ARGV: JSON.stringify(["gh", "api", "user"]), GITHUB_FIX_BUGS_TOKEN: TOKEN } });
   assert.equal(r2.status, 64);
 });
 
@@ -72,6 +73,16 @@ test("inner: the allowlist is re-checked — VC_RUN_ARGV is caller-controlled", 
   const r = bridge(["--inner", "github"], { env: { VC_RUN_ARGV: JSON.stringify(["gh", "auth", "token"]), GITHUB_FIX_BUGS_TOKEN: TOKEN } });
   assert.equal(r.status, 64);
   assert.ok(!r.stdout.includes(TOKEN) && !r.stderr.includes(TOKEN));
+});
+
+test("inner: host governance comes from the declared project, not a PROJECT_PROFILE_PATH the caller set", () => {
+  const dir = project({ tasks: {} });
+  const elsewhere = project(null);
+  writeFileSync(join(elsewhere, "project-profile.json"), JSON.stringify({ governance: { host: "x", secrets: "host" } }));
+  const r = bridge(["--inner", "github"], { cwd: dir, env: { VC_RUN_ARGV: '["gh","pr","list"]', PROJECT_PROFILE_PATH: join(elsewhere, "project-profile.json") } });
+  assert.equal(r.status, 69, r.stderr);
+  writeFileSync(join(dir, "project-profile.json"), JSON.stringify({ governance: { host: "x", secrets: "host" } }));
+  assert.equal(bridge(["--inner", "github"], { cwd: dir, env: { VC_RUN_ARGV: '["gh","pr","list"]' } }).status, 78);
 });
 
 test("inner: malformed VC_RUN_ARGV, an unknown group, a missing secret", () => {

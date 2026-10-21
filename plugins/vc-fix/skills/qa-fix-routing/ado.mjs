@@ -372,6 +372,15 @@ function resolveInput(p) {
   const s = String(p || "");
   return isAbsolute(s) ? s : resolve(inputRoot(), s);
 }
+/** Read a `--<flag>` file through resolveInput, or exit with one line naming the resolved path. */
+function readInput(flag, p) {
+  const abs = resolveInput(p);
+  try {
+    return readFileSync(abs, "utf-8");
+  } catch (e) {
+    fail(`--${flag} "${p}" cannot be read (${e.code || e.message}) — resolved to ${abs}; relative paths resolve against VC_FIX_HOME || cwd = ${inputRoot()}`);
+  }
+}
 
 /** The discovered contract for a work-item type, or [] when none was scanned. */
 function contractFor(type) {
@@ -537,7 +546,7 @@ const COMMANDS = {
 
   async comment(args) {
     if (!args.id) fail("--id required");
-    const text = args["text-file"] ? readFileSync(resolve(args["text-file"]), "utf-8") : args.text;
+    const text = args["text-file"] ? readInput("text-file", args["text-file"]) : args.text;
     if (!text) fail("--text or --text-file required");
     // Comments are an HTML field — convert Markdown so it doesn't render as a single
     // unreadable blob. Pass `--raw` to skip the guard (already-HTML author content is
@@ -580,7 +589,7 @@ const COMMANDS = {
   // Edit an existing comment — the amend path of tracker-ops §0 (one comment per ticket per run).
   async "edit-comment"(args) {
     if (!args.id || !args["comment-id"]) fail("--id and --comment-id required");
-    const text = args["text-file"] ? readFileSync(resolve(args["text-file"]), "utf-8") : args.text;
+    const text = args["text-file"] ? readInput("text-file", args["text-file"]) : args.text;
     if (!text) fail("--text or --text-file required");
     const body = args.raw ? String(text) : ensureAzureHtml(text);
     const d = await call(
@@ -603,7 +612,7 @@ const COMMANDS = {
     if (args["fields-file"]) {
       let parsed;
       try {
-        parsed = JSON.parse(readFileSync(resolve(args["fields-file"]), "utf-8"));
+        parsed = JSON.parse(readInput("fields-file", args["fields-file"]));
       } catch (e) {
         fail(`--fields-file: ${e.message}`);
       }
@@ -629,7 +638,7 @@ const COMMANDS = {
   // Run a WIQL query — the Azure Boards search of tracker-ops §2. Returns the matching ids, and with
   // --fields the listed fields of the first --top items (default 50).
   async wiql(args) {
-    const query = args["query-file"] ? readFileSync(resolve(args["query-file"]), "utf-8") : args.query;
+    const query = args["query-file"] ? readInput("query-file", args["query-file"]) : args.query;
     if (!query) fail("--query or --query-file required");
     const top = Math.max(1, Math.min(200, Number(args.top) || 50));
     const d = await call("POST", `${base(args, "tracker")}/_apis/wit/wiql?$top=${top}&${V}`, { body: { query: String(query) } });
@@ -1151,7 +1160,7 @@ const COMMANDS = {
   async "create-pr"(args) {
     for (const k of ["repo", "source", "target", "title"]) if (!args[k]) fail(`--${k} required`);
     const description = args["description-file"]
-      ? readFileSync(resolve(args["description-file"]), "utf-8")
+      ? readInput("description-file", args["description-file"])
       : args.description || "";
     const body = {
       sourceRefName: args.source.startsWith("refs/") ? args.source : `refs/heads/${args.source}`,

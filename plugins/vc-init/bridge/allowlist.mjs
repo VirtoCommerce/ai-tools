@@ -57,7 +57,7 @@ const GH_COMMANDS = Object.freeze({
   pr: ["create", "view", "list", "checks", "comment", "edit", "ready", "diff", "status", "close", "reopen"],
   issue: ["create", "list", "view", "comment", "edit", "close", "reopen"],
   run: ["view", "list", "watch", "rerun", "download"],
-  repo: ["view", "fork", "list"],
+  repo: ["view", "fork", "list"], // fork only with --clone=false and no --remote (checkGh)
   release: ["view", "list"],
   search: ["issues", "prs", "code", "repos", "commits"],
   workflow: ["view", "list"],
@@ -129,12 +129,20 @@ function checkGh(args) {
     const name = flagName(a);
     if (name === "--hostname") return no("gh --hostname is not allowed — the token is for github.com only");
     if (name === "--show-token") return no("gh --show-token is not allowed");
-    if (name === "--repo" || name === "-R") {
-      const v = a.includes("=") ? a.slice(a.indexOf("=") + 1) : args[i + 1];
+    // A short flag takes its value attached too (`-Rhost/owner/repo`), as gh parses it.
+    const attachedR = /^-R[^=]/.test(a) ? a.slice(2) : null;
+    if (name === "--repo" || name === "-R" || attachedR !== null) {
+      const v = attachedR !== null ? attachedR : a.includes("=") ? a.slice(a.indexOf("=") + 1) : args[i + 1];
       if (typeof v === "string" && v.split("/").length > 2 && !/^github\.com\//i.test(v)) {
         return no(`gh ${name} ${v}: a HOST/OWNER/REPO form must name github.com`);
       }
     }
+  }
+  if (cmd === "repo" && sub === "fork") {
+    // --clone / --remote make gh run git with ITS OWN credential helper — the reason `repo clone` and
+    // `pr checkout` are out. Clone through git-gh instead.
+    if (!args.includes("--clone=false")) return no("gh repo fork needs --clone=false through the bridge — clone the fork with git-gh");
+    if (args.some((a) => /^--(remote|remote-name)(=|$)/.test(a) && a !== "--remote=false")) return no("gh repo fork --remote is not allowed through the bridge — add the remote with plain git");
   }
   if (cmd === "api") {
     const endpoint = ghApiEndpoint(args.slice(1));
@@ -167,6 +175,8 @@ export function ghApiWrite(rest, endpoint) {
     if (name === "-X" || name === "--method") method = String(value() || "").toUpperCase();
     else if (/^-X./.test(a)) method = a.slice(2).toUpperCase();
     else if (["-f", "-F", "--field", "--raw-field", "--input"].includes(name)) body = true;
+    // gh also takes a short flag's value attached: `-fbase=main`, `-Fx=@file`.
+    else if (/^-[fF]./.test(a)) body = true;
   }
   if (method && method !== "GET") return `gh api --method ${method} is not allowed through the bridge — gh api reads only; use the gh command for the write`;
   if (body && method !== "GET") return "gh api with -f/-F/--field/--input sends a POST — not allowed through the bridge (add --method GET for query parameters)";

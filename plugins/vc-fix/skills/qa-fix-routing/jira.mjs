@@ -38,7 +38,7 @@
  * Atlassian MCP for a Markdown comment, or --wiki for wiki markup.
  */
 import { readFileSync } from "node:fs";
-import { basename, resolve } from "node:path";
+import { basename, isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
 import { loadProjectProfile } from "../../scripts/lib/project-profile.mjs";
@@ -46,6 +46,26 @@ import { loadProjectProfile } from "../../scripts/lib/project-profile.mjs";
 function fail(msg, code = 1) {
   console.error(`[jira] ${msg}`);
   process.exit(code);
+}
+
+/**
+ * Read a `--<flag>` file — relative to VC_FIX_HOME || cwd, like ado.mjs — or exit with one line.
+ * `json`: parse it too, with the same one-line failure.
+ */
+function readInput(flag, p, { json = false, raw = false } = {}) {
+  const abs = isAbsolute(String(p)) ? String(p) : resolve(process.env.VC_FIX_HOME || process.cwd(), String(p));
+  let data;
+  try {
+    data = raw ? readFileSync(abs) : readFileSync(abs, "utf8");
+  } catch (e) {
+    fail(`--${flag} "${p}" cannot be read (${e.code || e.message}) — resolved to ${abs}`);
+  }
+  if (!json) return data;
+  try {
+    return JSON.parse(data);
+  } catch (e) {
+    fail(`--${flag} "${p}" is not valid JSON (${e.message})`);
+  }
 }
 
 /** Parse flags; `--file` repeats. */
@@ -102,7 +122,7 @@ export function textToAdf(text) {
 
 function readBody(args) {
   if (!args["body-file"]) fail("--body-file required");
-  const text = readFileSync(resolve(args["body-file"]), "utf8");
+  const text = readInput("body-file", args["body-file"]);
   if (args.wiki) return { v: 2, body: { body: text } };
   try {
     const doc = JSON.parse(text);
@@ -185,7 +205,7 @@ function main() {
     attach: async () => {
       if (!args.file.length) fail("--file <path> required (repeatable)");
       const form = new FormData();
-      for (const f of args.file) form.append("file", new Blob([readFileSync(resolve(f))]), basename(f));
+      for (const f of args.file) form.append("file", new Blob([readInput("file", f, { raw: true })]), basename(f));
       const out = await call("POST", `/rest/api/3/issue/${key()}/attachments`, { body: form, headers: { "X-Atlassian-Token": "no-check" } });
       return (Array.isArray(out) ? out : []).map((a) => ({ id: a.id, filename: a.filename }));
     },
@@ -199,7 +219,7 @@ function main() {
     },
     update: () => {
       if (!args["fields-file"]) fail("--fields-file required");
-      const parsed = JSON.parse(readFileSync(resolve(args["fields-file"]), "utf8"));
+      const parsed = readInput("fields-file", args["fields-file"], { json: true });
       const body = parsed && parsed.fields ? parsed : { fields: parsed };
       return call("PUT", `/rest/api/3/issue/${key()}`, { body }).then(() => ({ ok: true }));
     },
@@ -215,7 +235,7 @@ function main() {
     request: () => {
       const method = String(args.method || "GET").toUpperCase();
       if (!["GET", "POST", "PUT"].includes(method)) fail(`--method ${method} is not allowed (GET, POST, PUT)`);
-      const body = args["body-file"] ? JSON.parse(readFileSync(resolve(args["body-file"]), "utf8")) : undefined;
+      const body = args["body-file"] ? readInput("body-file", args["body-file"], { json: true }) : undefined;
       return call(method, String(args.path || ""), { body });
     },
   };

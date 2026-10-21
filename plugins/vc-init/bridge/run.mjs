@@ -63,10 +63,11 @@ const HOST_ROLE = Object.freeze({ gh: "github", "git-gh": "github", deliver: "gi
  * and its parents), or null. Read-only; an unreadable profile reads as not governed — the scripts the
  * bridge launches stop on it themselves.
  */
-export function findGovernance(start = process.cwd()) {
+export function findGovernance(start = process.cwd(), { useEnv = true } = {}) {
   const candidates = [];
-  if (process.env.PROJECT_PROFILE_PATH) candidates.push(process.env.PROJECT_PROFILE_PATH);
-  if (process.env.VC_FIX_HOME) candidates.push(join(resolve(process.env.VC_FIX_HOME), "project-profile.json"));
+  // The inner side passes useEnv:false and the declarations root: the caller sets those variables.
+  if (useEnv && process.env.PROJECT_PROFILE_PATH) candidates.push(process.env.PROJECT_PROFILE_PATH);
+  if (useEnv && process.env.VC_FIX_HOME) candidates.push(join(resolve(process.env.VC_FIX_HOME), "project-profile.json"));
   let dir = resolve(start);
   for (let i = 0; i < 12; i++) {
     candidates.push(join(dir, "project-profile.json"));
@@ -396,7 +397,7 @@ async function outer(argv) {
   // vc-secrets then launches must come from the same file.
   const decls = findDeclarations(process.cwd());
   const route = group === "onboard"
-    ? onboardRoute(decls, currentEnv(process.cwd(), passwordEnvs(decls)))
+    ? onboardRoute(decls, currentEnv(decls ? decls.root : process.cwd(), passwordEnvs(decls)))
     : { task: taskDeclared(decls, group) ? taskName(group) : null, env: null };
   if (route.task) {
     const { path: shim, present, source } = vcSecretsShim();
@@ -430,7 +431,7 @@ async function playwrightLane(args) {
   }
   const decls = findDeclarations(process.cwd());
   const envs = passwordEnvs(decls);
-  const env = currentEnv(process.cwd(), envs);
+  const env = currentEnv(decls ? decls.root : process.cwd(), envs);
   const server = laneServer(args[0], env);
   if (!declared(decls, server, "servers")) {
     say(envs.length
@@ -463,7 +464,15 @@ async function inner(group) {
     return EX_REFUSED;
   }
   const [tool, ...args] = argv;
-  const refusal = hostRefusal(tool, findGovernance(process.cwd()));
+  // The project is the one whose declarations vc-secrets trusted for this launch — found from the cwd,
+  // exactly as vc-secrets found them. Its profile and env files are the ones the child reads, and its
+  // profile alone says whether the project is host-governed.
+  const decls = findDeclarations(process.cwd());
+  if (!decls) {
+    say("refused — no vc-secrets declaration above the working directory; the inner side runs only inside a declared project");
+    return EX_REFUSED;
+  }
+  const refusal = hostRefusal(tool, findGovernance(decls.root, { useEnv: false }));
   if (refusal) {
     say(refusal);
     return EX_CONFIG;
@@ -475,13 +484,6 @@ async function inner(group) {
   const check = checkArgv(tool, args);
   if (!check.ok) {
     say(`refused — ${check.reason}`);
-    return EX_REFUSED;
-  }
-  // The project is the one whose declarations vc-secrets trusted for this launch — found from the cwd,
-  // exactly as vc-secrets found them. Its profile and env files are the ones the child reads.
-  const decls = findDeclarations(process.cwd());
-  if (!decls) {
-    say("refused — no vc-secrets declaration above the working directory; the inner side runs only inside a declared project");
     return EX_REFUSED;
   }
   const { env, secrets } = buildInnerEnv(process.env, group, { projectRoot: decls.root });

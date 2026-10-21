@@ -114,7 +114,7 @@ export function scanPasswordText(text, passwords) {
   return out;
 }
 
-/** Credentials in a git config's remote URLs: [{ remote, line }]. Pure. */
+/** Credentials in a git config's remote URLs: [{ remote, line, axis }] — the axis from that URL's own host. Pure. */
 export function scanGitConfig(text) {
   const out = [];
   let section = "";
@@ -122,7 +122,9 @@ export function scanGitConfig(text) {
     const s = /^\s*\[(.+?)\]\s*$/.exec(raw);
     if (s) section = s[1];
     const u = /^\s*(?:url|pushurl)\s*=\s*(\S+)/.exec(raw);
-    if (u && /^[a-z][a-z0-9+.-]*:\/\/[^/@\s]+@/i.test(u[1])) out.push({ remote: section, line: i + 1 });
+    if (u && /^[a-z][a-z0-9+.-]*:\/\/[^/@\s]+@/i.test(u[1])) {
+      out.push({ remote: section, line: i + 1, axis: /@(?:[^/]*\.)?(?:dev\.azure\.com|visualstudio\.com)(?:[:/]|$)/i.test(u[1]) ? "ado" : "github" });
+    }
   });
   return out;
 }
@@ -199,7 +201,7 @@ export function scan(root) {
       const cfg = join(ws, repo, ".git", "config");
       if (!existsSync(cfg)) continue;
       for (const hit of scanGitConfig(readFileSync(cfg, "utf8"))) {
-        findings.push({ file: relative(root, cfg).replace(/\\/g, "/"), kind: "git-remote", key: hit.remote, line: hit.line, axis: /dev\.azure\.com|visualstudio\.com/.test(readFileSync(cfg, "utf8")) ? "ado" : "github", tracked: false, everCommitted: false });
+        findings.push({ file: relative(root, cfg).replace(/\\/g, "/"), kind: "git-remote", key: hit.remote, line: hit.line, axis: hit.axis, tracked: false, everCommitted: false });
       }
     }
   }
@@ -257,8 +259,13 @@ function strip(root, findings, okAxes, storedSecrets = new Set()) {
       writeFileSync(p, `${JSON.stringify(doc, null, 2)}\n`);
       stripped.push(...list);
     } else if (kind === "git-remote") {
+      // Only the lines of the axes whose probe passed — another remote in the same file keeps its URL.
+      const lines = new Set(list.map((f) => f.line));
       const text = readFileSync(p, "utf8");
-      writeFileSync(p, text.replace(/^(\s*(?:url|pushurl)\s*=\s*)(\S+)/gm, (m, lead, url) => lead + stripUserinfo(url)));
+      const out = text.split(/(\r?\n)/).map((part, i) => (i % 2 === 0 && lines.has(i / 2 + 1)
+        ? part.replace(/^(\s*(?:url|pushurl)\s*=\s*)(\S+)/, (m, lead, url) => lead + stripUserinfo(url))
+        : part)).join("");
+      writeFileSync(p, out);
       stripped.push(...list);
     }
     // mcp-header / mcp-literal / profile-literal: not edited here — gen-mcp rewrites .mcp.json, and a
