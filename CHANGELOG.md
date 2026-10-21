@@ -22,6 +22,12 @@ reconcile stays required.
 `npx @playwright/mcp@0.0.83 install-browser chromium` and `… install-browser firefox` (0.0.83 bundles its own
 Playwright build and needs its own browsers), then restart the MCP servers.
 
+**Fixed (`vc-init`): the `$VC_RUN` bridge took `~/.claude` for a project.** `bridge/run.mjs` `findDeclarations`
+walked up from the cwd and stopped at the first `.claude/vc-secrets*.json`, which for any undeclared folder under
+`$HOME` was the user-scope `~/.claude/vc-secrets.json`, so the home directory became the project root. It now
+skips `~/.claude` exactly as vc-secrets' `configPaths` does. This was the `run.test.mjs` failure on Windows
+machines with a user-level declaration (exit 69 instead of 64).
+
 Also in this change: `pptxgenjs` removed (unused), `csv-parse` 7.0.3 (GHSA-8cw4-87c7-c6xx), minor/patch bumps and
 transitive audit fixes — `npm audit` 12 → 0.
 
