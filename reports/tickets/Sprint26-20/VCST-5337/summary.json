@@ -51,7 +51,7 @@
     "test_window_start": "2026-10-19T17:29:00Z",
     "finished_at": "2026-10-20T18:40:00Z",
     "reachability_minutes": 2,
-    "note": "Env switched vcptcore-qa1 -> vcptcore-qa at operator request (qa1 had none of the three builds). 3x discovery folded into 4a lanes A/B (lane budget). 1e amended as Round 2 of the existing model. One double-runner incident in the hub regression (2026-10-19 ~18:10Z): results discarded and re-run. Fixtures repaired/added mid-run. 5-report verifier not dispatched. Round 2; tested together with VCST-5731. Checklist: reports/tickets/Sprint26-20/VCST-5337/testing-checklist.md. Repo findings: docs/repo-findings-backlog.md B-62..B-66. Relative-time question (SR-ACT-027) resolved by the ticket owner 2026-10-21: under 24 h reads ~N hours ago; ~yesterday only for the previous calendar day at >= 24 h — by design."
+    "note": "Env switched vcptcore-qa1 -> vcptcore-qa at operator request (qa1 had none of the three builds). 3x discovery folded into 4a lanes A/B (lane budget). 1e amended as Round 2 of the existing model. One double-runner incident in the hub regression (2026-10-19 ~18:10Z): results discarded and re-run. Fixtures repaired/added mid-run. 5-report verifier not dispatched. Round 2; tested together with VCST-5731. Checklist: reports/tickets/Sprint26-20/VCST-5337/testing-checklist.md. Repo findings: docs/repo-findings-backlog.md B-62..B-66. Relative-time question (SR-ACT-027) resolved by the ticket owner 2026-10-21: under 24 h reads ~N hours ago; ~yesterday only for the previous calendar day at >= 24 h — by design. 2026-10-21: large-number layout probe (DOM substitution, en+de, 320-1440 px) + real data (seed:sales-rep-bulk, 1,230 orders, $2.45M in one org) — activity surfaces and dashboard clean; customer-profile KPI cards clip/wrap (VCST-6470). Live localization de/fr/ru/pl/pt: strings, raw keys and plurals OK; English month-name dates (VCST-6469), de layout nits (VCST-6471/6472). Store has 13 languages."
   },
   "environment": "vcptcore-qa - https://vcptcore-qa-storefront.govirto.com / https://vcptcore-qa.govirto.com, store B2B-store",
   "build": {
@@ -176,6 +176,32 @@
       "severity": "Medium",
       "provenance": "pre-existing",
       "summary": "customer orders: focus lost after Reset filters via keyboard, BL-A11Y-001 (SR-CO-051) — existing ticket, re-confirmed on this build"
+    },
+    {
+      "key": "VCST-6469",
+      "severity": "Medium",
+      "provenance": "pre-existing",
+      "summary": "Dates with a month name render in English in every locale except en/de (vc-frontend datetimeFormats); visible on the new activity surfaces"
+    },
+    {
+      "key": "VCST-6470",
+      "severity": "Medium",
+      "provenance": "pre-existing",
+      "summary": "Customer profile KPI cards: large amount cut off (en) / currency breaks onto a second line (de)"
+    },
+    {
+      "key": "VCST-6471",
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "[de] Customer activity widget title breaks inside the word",
+      "note": "filed below the floor at the operator request"
+    },
+    {
+      "key": "VCST-6472",
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "[de] Customer activity Summary splits the last web login date at 320 px",
+      "note": "filed below the floor at the operator request"
     }
   ],
   "bugs_not_filed": [
@@ -200,7 +226,8 @@
       "SR_REP_PRIMARY layouts reset to never-saved",
       "tasks fixture re-seeded 2026-10-20 05:05Z (decays 21:00Z)",
       "SR_STATS_CART_SPLIT moved to the 'default' cart (BuildRight)",
-      "ORDER_UNSERVED_BUYER + USR-030 in ORG-005"
+      "ORDER_UNSERVED_BUYER + USR-030 in ORG-005",
+      "SR_BULK_DATASET: AGENT-TEST-SR-BULK-ORG-01/02 served by SR_REP_PRIMARY, 1,230 orders (teardown: npm run seed:sales-rep-bulk:teardown)"
     ]
   },
   "screenshots": "reports/tickets/Sprint26-20/VCST-5337/screenshots/",
