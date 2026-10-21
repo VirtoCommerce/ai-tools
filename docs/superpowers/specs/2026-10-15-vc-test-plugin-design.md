@@ -10,6 +10,10 @@
 > profile moved from `vc-fix` to `vc-init`, and no token sits in a file any more — a process receives one only
 > through the `$VC_RUN` bridge. U2 and §4, §6, §6a, §7, §8, §9, §10 and §12 follow; U19–U23 are the adaptation,
 > confirmed by the owner on 2026-10-21 (U23 settles the one question it opened, §13).
+>
+> **Updated 2026-10-21 from the developers' trial of `/qa-test-fast`** and a measurement of four real runs (§2b):
+> a run was too expensive for what it found. U24–U34 make it lighter, cheaper and aimed at significant bugs;
+> U15 (rounds) and U18 (new cases) are revised; B1–B7 are the author's calls, open to correction. §3, §4, §4.1, §5.1, §8, §9, §10 and §12 follow.
 
 ## 1. Problem and goal
 
@@ -50,10 +54,10 @@ removed once the new command has passed validation (§10 P4).
 | U12 | How much of the bundle the strategy reads | **The whole bundle**, so nothing is missed; the token cost is accepted |
 | U13 | Who writes the checklist | **The orchestrator, inline** — it already holds the bundle and the strategy, and a subagent would need them retold |
 | U14 | `qa-triage-results` cannot be called by the Skill tool (`disable-model-invocation: true`) | **Remove the flag** in the plugin's canonical copy |
-| U15 | Round N ≥ 2 | **A delta strategy that proves the fixes**: the diff from the last tested commit; every bug from round N−1 is a risk with its original reproduction as a checklist item, decided `FIXED` / `NOT FIXED`, plus a risk for what sits next to the fix; every unresulted risk carries over; the verdict lists each prior bug's result |
+| U15 | Round N ≥ 2 | **Revised 2026-10-21: a refresh, not a re-run** (§3). Nothing round 1 built is rebuilt — no `/ticket-context`, no new strategy, no test model or maps. The round fetches only what changed, re-runs every prior bug's reproduction (`FIXED` / `NOT FIXED`), checks what sits next to the fix and finishes what was left unresulted. Anything new in the ticket is **appended** to the strategy without asking, and human point 1 is skipped. *(Was: a delta strategy built anew each round.)* |
 | U16 | May the run create or change data on the stand? | **Yes, only on a non-production stand** the profile declares as such and the probe matches; otherwise the run is read-only and every item that needs a write is BLOCKED with that reason. Everything created is deleted by ledger id |
 | U17 | Test-data building in v1 | **The whole family moves into the plugin in v1, refactored** (owner, revising "seeders as an adapter"): `qa-test-data-model`, `qa-generate-data`, `qa-seed-data` (skill + command), the `test-data-engineer` agent and the seeding engine become the plugin's canonical copies and work on a client's project too. This repository's domain seeders and fixtures stay here as the platform project's **content**, as a client's live in the client's project. The refactor makes the family lighter, adapted to any project and flexible (§6a) |
-| U18 | Write new test cases, and run them? | **Yes — after the verdict, then one run of the new cases only** (owner, revising redesign D2 for this flow). The single author is the **`test-management-specialist` agent** (fresh context, Sonnet; its brief is file paths — checklist with results and evidence, strategy, bug reports — so nothing is retold, and the orchestrator never writes the corpus): cases from the passing checklist items and from every bug's reproduction (`Catches:` that bug). One wave runs only the new cases. A new case that fails is a defect **of the case** — fixed or marked, never a change to the verdict, which was decided on the checklist. Cases land in the project's agent-native corpus; a client's own suites (Playwright, TestRail, …) are untouched |
+| U18 | Write new test cases, and run them? | **Revised 2026-10-21 (U27):** a new case is a passing scripted check kept as a `.spec` file — it already ran in the run, so there is **no separate new-case wave**. The `test-management-specialist` still writes the case's CSV row (description, `Catches:`), linked to its `.spec` by case id. The `.spec` suite sits next to the CSV suite; its layout and the CSV↔`.spec` sync rule come from the separate suites-reorganization design. *(Was:)* **Yes — after the verdict, then one run of the new cases only** (owner, revising redesign D2 for this flow). The single author is the **`test-management-specialist` agent** (fresh context, Sonnet; its brief is file paths — checklist with results and evidence, strategy, bug reports — so nothing is retold, and the orchestrator never writes the corpus): cases from the passing checklist items and from every bug's reproduction (`Catches:` that bug). One wave runs only the new cases. A new case that fails is a defect **of the case** — fixed or marked, never a change to the verdict, which was decided on the checklist. Cases land in the project's agent-native corpus; a client's own suites (Playwright, TestRail, …) are untouched |
 | U10 | Committed tests | An exception like `plugins/vc-secrets/`: the knowledge-store write router and the write-zone check get **committed** tests; everything else follows the repository rule (temporary tests, deleted before commit) |
 
 **Adaptation to VCST-6402 (owner, 2026-10-21).**
@@ -66,6 +70,51 @@ removed once the new command has passed validation (§10 P4).
 | U22 | A host-governed project (`governance.host` set) | The bridge refuses every token-bearing tool there, and `governance.stand.writable` is `false`. `vc-test` honours both: the stand is read-only whatever `/vc-test:init` declared, and the connectors go through the host's servers (U23) |
 | U23 | How does the context step read the tracker and the code host there? | **In v1, through the host's MCP servers, by the orchestrator.** A script cannot call an MCP tool, so the orchestrator replaces the two bridge fetches of §7: it reads the issue and the PRs through the servers the profile maps (`governance.servers.tracker`, `governance.servers.codeHost`) and writes **the same raw files**, in the same schema, that the bridge route writes. The bundle step and everything after it do not know which route ran |
 
+**Lighter, cheaper, aimed at significant bugs (owner, 2026-10-21).** Grounded in the developers' feedback and
+the measurement in §2b.
+
+| # | Question | Decision |
+|---|---|---|
+| U24 | What is a run for? | **Significant bugs, and evidence that the ACs hold.** A significant bug is Medium or worse — access and permissions, money, data loss or leak, a wrong order state, a broken buyer path — wherever the run meets it. A long list of cosmetics is not the goal |
+| U25 | Which findings get work? | **Filtered by severity, not by scope.** A Low or cosmetic finding (an a11y nit, copy, spacing) gets one line under "Noticed": no investigation, no screenshot, no bug. A ticket-related Low keeps its reproduction and is offered to `qa-bug`. Medium or worse is investigated and offered to `qa-bug` **even outside the ticket's diff** — every Medium in the measured runs was outside it (§2b) |
+| U26 | Where does the browser time go? | **Exploratory is the main browser lane.** Its charter comes from the strategy and points at U24's kinds of failure on the touched surfaces and their neighbours. It always includes an access probe: each touched endpoint is called as an anonymous user and as another user (U33) |
+| U27 | How are the ACs proved? | **Cheapest proof first, no browser agent driving the checklist.** Each checklist item is decided by an API/GraphQL check or a Playwright `.spec` script, run by a short-lived agent. A browser agent takes only the items a script cannot decide (a visual judgement), in the `ui-checks` lane. A passing script is kept as the item's `.spec` — the new case (U18) |
+| U28 | Evidence | **On failure only.** Screenshots, HAR and video are taken for a FAIL and for a Medium-or-worse finding. A PASS keeps the script's output or a text snapshot |
+| U29 | What gets an investigation? | **Medium or worse only.** Triage deduplicates first. A Low gets no investigate agent |
+| U30 | The cost shape | **Short agents with a narrow start.** The brief is file paths plus only the skill its step needs. Tool calls are batched, and no agent outlives its one job. The verdict, summary, comment and page are written by a fresh small-context agent, not by the orchestrator. `verdict.md` reports tokens and active minutes per step, read from the session log by a plugin script (`lib/run-cost.mjs`) — the before/after number, with no separate tool to run |
+| U31 | One command or a light one for developers? | **One command, depth by risk.** A simple ticket is fast because its strategy selects little, not because someone picked a lighter mode. QA and developers run the same command and find the same bugs |
+| U32 | How do `.spec` scripts and API checks get test-user passwords? | **A new `$VC_RUN` bridge tool in `vc-init`** runs `playwright test` and the node check scripts with the run's test-user passwords, as `bridge/playwright-mcp.mjs` does for the browser lanes. A role kept only in `vc-secrets` is therefore usable by a script. The same tool runs the seeding engine, which settles §6a's open choice |
+| U33 | Which accounts does the access probe (U26) use? | **Accounts created on the fly.** The "other user" (and the other organization it belongs to) is created right before the probe as an `AGENT-TEST-` entity and deleted by ledger id at teardown. No second account per role is registered in advance. Creating them is a write, so it needs a writable stand (U16); on a stand that is not writable the cross-user probe is BLOCKED with that reason, and the anonymous probe still runs |
+| U34 | When has P3 passed on cost? | **At most 50% of the §2b baseline on a comparable ticket**, and every Medium the baseline found on VCST-6398 is found again |
+
+**Calls made while writing U24–U31 (the author's, not the owner's — correct any that is wrong).**
+
+| # | Gap | Call |
+|---|---|---|
+| B1 | The `.spec` layout comes from the suites-reorganization design, which is not written yet | P1 does not need it. `ac-checks` and `case-authoring` in P2 start only after that design is approved. A kept `.spec` lives in the project's corpus path from the profile. It runs with the project's own `@playwright/test` when the project has one, else with the plugin's |
+| B2 | Which prior bugs a round N ≥ 2 re-runs | Only the ticket's own bugs. Out-of-scope and pre-existing bugs have their own tickets: the verdict lists their current status, but they are not re-run and never fail the round — the same rule as today's close-out |
+| B3 | Round 1's `bundle.json` is swept after 24 h, and round N needs it | At round 1's close the bundle is copied into the ticket's report folder. Round N's new material is read by the same read-only, scrubbed analysts, scoped to the delta: CHANGE for new commits and PRs, TICKET for new comments. The orchestrator never reads a raw diff inline (§8) |
+| B4 | Writing a `.spec` without a browser | The author first uses source and the generated selector surface. Only when those are not enough does it borrow a browser lane, which then counts toward the ≤3 limit. A headless `.spec` run is not an MCP lane and does not count; `ac-checks` runs them one at a time |
+| B5 | U28 against `CLAUDE.md` "Always capture HAR" | No conflict: the lanes keep recording HAR, which costs no tokens. U28 governs what is read, attached and cited, and when screenshots are taken: only for a FAIL or a Medium-or-worse finding. `CLAUDE.md` does not change |
+| B6 | Where the verdict rules live after P4, and how Medium/Low map to them | The verdict table moves from `.claude/skills/qa-test/close-out.md` into the plugin with today's meaning. An in-scope Critical or High bug is a FAIL; an in-scope Medium is PASS WITH NOTES; an out-of-scope bug never fails the ticket |
+| B7 | May the access probe call a mutation? | Only on a writable stand (U16), where its accounts are created anyway (U33). On a stand that is not writable it calls queries and reads only, and lists every mutation it skipped |
+
+### 2b. Measurement behind U24–U31 (2026-10-21)
+
+Four real `/qa-test-fast` runs: VCST-5903 rounds 1 and 2, VCST-6398 and VCST-2945. VCST-2945 ran the older
+command shape and serves as a contrast. Tokens come from the session transcripts, deduplicated per message, and
+include every subagent. "Share" is a share of input-equivalent units, not of billing.
+
+| Finding | Numbers | Answered by |
+|---|---|---|
+| Cost is the context re-read on every turn, not the work | every agent starts at 77–110k tokens and lives 100–500 turns at 190–330k; only 27–34% of turns batch tool calls; output is 2–4% of cost | U30 |
+| Regression bought nothing about the change | 28.5% (5903 R1) and 45.9% (6398) of a run; 0 failures caused by the change; the rest were old bugs and stale cases | U7 |
+| Checklist lanes buy PASS evidence, rarely bugs | 0 bugs for 13% of 6398; 0 new bugs for ~50% of 2945; 2 Lows for 9% of 5903 R1 | U27 |
+| Exploratory and visual find the bugs | exploratory found 6 of 11 filed bugs; visual found the one Medium a11y bug | U26 |
+| Every Medium came from outside the diff; the change's own defects were Low | Mediums: VCST-6452, 6453, 6454 (and 6094 re-confirmed); ticket defects: 6427, 6428, 6448, 6449, 6098 | U24, U25 |
+| Investigations are expensive and often end in a question | ~1.1M units each; 11 investigations confirmed 6 bugs in 6398; 2 of 4 ended as questions in 5903 R1 | U29 |
+| Writing happens at peak context | the verdict, bugs and page are written by the orchestrator at 300–400k context, 8–12% of a run | U30 |
+
 ## 3. The shape
 
 ```
@@ -76,11 +125,13 @@ removed once the new command has passed validation (§10 P4).
  2 STRATEGY  /qa-test-strategy (whole bundle) → test-strategy.md   floors · gate · verifier if Critical
              ── HUMAN POINT 1: approve the strategy (--yes) ──
  3 RUN       plan-run.mjs → run-plan.json → waves            only RUN rows, ≤3 browser lanes;
-             the checklist is written by the orchestrator inline (U13)
- 4 CLOSE     trace.mjs reconcile → /qa-triage-results → qa-investigate → verdict (decided here, final)
- 5 CASES     test-management-specialist authors new cases (passing items + bug reproductions) → lint → one wave runs only them
-             → Draft / Automated per case; a failing new case is a case defect (U18)
-             → verdict.md + HTML (verdict + new cases)
+             the checklist is written by the orchestrator inline (U13); ACs proved by API checks and
+             .spec scripts (U27); exploratory is the main browser lane (U26); evidence on failure only (U28)
+ 4 CLOSE     trace.mjs reconcile → /qa-triage-results → qa-investigate (Medium+ only, U29) → verdict (decided here, final)
+             Low / cosmetic findings → one line under "Noticed" (U25)
+ 5 CASES     passing .spec checks kept as the new cases; test-management-specialist writes their CSV rows (U18)
+             — no separate wave
+             → verdict.md + HTML (verdict, new cases, tokens and minutes per step), written by a fresh agent (U30)
              ── HUMAN POINT 2: qa-bug per confirmed bug (its own question) · post the comment? ──
              → knowledge write-back
 ```
@@ -98,11 +149,22 @@ version of the ticket's `summary.json` (distinct builds; validation finding V9: 
 history keeps it) and the reconciled round sections of `test-strategy.md` — and recounted from the bundle's
 verdict comments once it exists.
 
-**Round N ≥ 2 is a delta that proves the fixes (U15).** The strategy reads round N−1's section: the diff is taken
-from the last tested commit; each bug round N−1 found becomes a risk "fixed, and nothing next to it broke" whose
-checklist item is the bug's original reproduction, decided `FIXED` or `NOT FIXED`; a second risk covers the code
-next to the fix; every unresulted risk carries over. The floors still read the whole PR diff, so they err upward.
-`verdict.md` lists every prior bug with its result, and a `NOT FIXED` one is a FAIL of the round.
+**Round N ≥ 2 is a refresh, not a re-run (U15).** Round 1's bundle, strategy, test model, maps and checklist with
+its results are the round's base. Steps 1 and 2 are not repeated, and human point 1 is skipped.
+
+```
+ 0 PROBE     as round 1 (route, round count)
+ 1 REFRESH   rounds.mjs delta: commits since the last tested SHA · tracker comments since the last verdict ·
+             the build now deployed (F6)                       a short fetch, not /ticket-context
+ 2 APPEND    "Round N" section appended to test-strategy.md; round 1's sections are not changed.
+             Anything new in the ticket — a new PR, a changed AC, a new area — is appended as risks
+             without asking; the appended section still passes the floors (a script, cheap)
+ 3 RUN       · every prior bug: its reproduction re-run (its .spec where one exists) → FIXED / NOT FIXED
+             · a check next to each fix, scoped to the fix's diff
+             · items left BLOCKED or unresulted in round N−1
+             · the appended risks, by the same rules as round 1 (U25–U29)
+ 4–5         as round 1; verdict.md lists every prior bug with its result, and NOT FIXED is a FAIL of the round
+```
 
 ## 4. Components
 
@@ -113,14 +175,15 @@ next to the fix; every unresulted risk carries over. The floors still read the w
 | `skills/qa-test-strategy/` | **moved**; floors read `capabilities.json` (§5.2); Artifacts rows come from the registry | `artifacts.json`, `capabilities.json` |
 | `skills/qa-test-model/`, `qa-exploratory/`, `qa-triage-results/` (ticket mode), `qa-design/` | **moved** canonical copies; `qa-triage-results` loses `disable-model-invocation` (U14) | `vc-fix` agents and skills |
 | `vc-fix`: `qa-checklist`, `qa-investigate`, `qa-bug`, `qa-risk`, `qa-evidence`, agents `qa-*-expert` | **reused**; `qa-bug` unchanged. One `vc-fix` version bump for two changes: `qa-checklist` Mode 5 names the risk id in Ref and gains `--from-strategy`; the tracker CLIs the bridge runs (`qa-fix-routing/jira.mjs`, `ado.mjs`) gain the connectors' read commands (§7) | — |
-| `vc-init`: `/project-init` (`--add-user`, `--add-env`), `project-profile.json`, `profile-set.mjs`, the `$VC_RUN` bridge, the Playwright lanes `node "$VC_RUN" playwright <lane>` | **reused** (U19–U21). `vc-test` carries a read-only profile loader copy that STOPs on a missing profile or an unknown `schemaVersion`. One change, one `vc-init` version bump: `test` added to `profile-set.mjs` `MERGEABLE` and to the reconcile schema | — |
+| `vc-init`: `/project-init` (`--add-user`, `--add-env`), `project-profile.json`, `profile-set.mjs`, the `$VC_RUN` bridge, the Playwright lanes `node "$VC_RUN" playwright <lane>` | **reused** (U19–U21). `vc-test` carries a read-only profile loader copy that STOPs on a missing profile or an unknown `schemaVersion`. One `vc-init` version bump for two changes: `test` added to `profile-set.mjs` `MERGEABLE` and to the reconcile schema; a bridge tool that runs `playwright test` and node check scripts with the test-user passwords (U32), with its allowlist entry and committed bridge tests | — |
 | `commands/vc-test-init.md` → `/vc-test:init` | writes the `test` block through `profile-set.mjs`; checks accounts per role (U21) | `vc-init` |
 | `skills/qa-test-data-model/`, `qa-generate-data/`, `qa-seed-data/` + command, agent `test-data-engineer`, `lib/seed/` engine | **moved and refactored** (§6a, U17); domain seeders stay project content | profile, `capabilities.json`, the project store |
-| `skills/qa-test-cases-generator/`, agents `test-management-specialist` and `test-runner-agent`, the suite lint and promote scripts | **moved** (U18): the specialist authors in the agent-native case format, a runner for the new-case wave, `Draft → Automated` promotion. Not the regression orchestration — that stays out (U7) | the project's corpus path from the profile |
+| `skills/qa-test-cases-generator/`, agent `test-management-specialist`, the suite lint and promote scripts | **moved** (U18 revised): the specialist writes the CSV row of each kept `.spec` in the agent-native case format, and `Draft → Automated` promotion follows from the `.spec` having passed. There is no new-case wave, so `test-runner-agent` is not moved. Not the regression orchestration — that stays out (U7) | the project's corpus path from the profile |
 | `lib/artifacts.json` | the only list of artifacts (§5.1) | — |
 | `lib/capabilities.mjs` | probes the install, writes `capabilities.json` | profile, env, MCP list, project files |
 | `lib/plan-run.mjs` | approved strategy + registry + capabilities → `run-plan.json` | the three above |
-| `lib/route.mjs` · `lib/rounds.mjs` · `lib/trace.mjs` | routing · round count · checklist↔risk trace and reconciliation | the strategy reader |
+| `lib/route.mjs` · `lib/rounds.mjs` · `lib/trace.mjs` | routing · round count and the round-N delta (U15) · checklist↔risk trace and reconciliation | the strategy reader, connectors |
+| `lib/run-cost.mjs` | tokens and active minutes per step, from the session and subagent logs, into `verdict.md` (U30) | the session log |
 | `lib/knowledge-store.mjs` | the one reader/writer of project and platform knowledge (§6) | profile |
 | `lib/write-zones.mjs` | at close, checks every changed file against the zones the registry allows | `artifacts.json`, git |
 
@@ -140,7 +203,8 @@ artifacts.json ────┘                                                  
                           wave 1  test-data ‖ test-model ‖ mind-map* ‖ contract-refresh*
                           wave 2  exploratory           (when the strategy says FIRST)
                           wave 3  checklist ── trace.mjs check
-                          wave 4  checklist-runners ‖ exploratory (ALONGSIDE) ‖ visual   (≤3 browser lanes)
+                          wave 4  ac-checks (API + .spec, no browser agent) ‖ exploratory (ALONGSIDE) ‖ visual ‖ ui-checks
+                                  (≤3 browser lanes; ac-checks takes none)
                                                                        │
         testing-checklist.md + extras.json ─► trace.mjs reconcile ─► triage ─► verdict
 ```
@@ -166,8 +230,10 @@ list.
   "order": "strategy" }
 ```
 
-v1 entries: `test-data`, `test-model`, `mind-map`\*, `contract-refresh`\*, `checklist`, `exploratory`, `checklist-runners`
-(storefront + admin/API lanes), `visual`, `verifier`, `case-authoring`, `new-case-run`. Adding an artifact = an entry + its skill; the command does
+v1 entries: `test-data`, `test-model`, `mind-map`\*, `contract-refresh`\*, `checklist`, `exploratory`,
+`ac-checks` (API/GraphQL checks and Playwright `.spec` scripts, no browser agent, U27), `ui-checks` (a browser agent
+for the items a script cannot decide), `visual`, `verifier`, `case-authoring` (CSV rows for the kept `.spec`, U18).
+`checklist-runners` and `new-case-run` are gone (2026-10-21). Adding an artifact = an entry + its skill; the command does
 not change. `model` is per entry (§8).
 
 ### 5.2 Capabilities and the rule "unavailable is not doubt"
@@ -268,10 +334,9 @@ This repository's seeders become the first project content on the new engine and
 `td:validate` and `td:reconcile` stay green on the platform project before and after.
 
 **Passwords for the engine.** Today's seeders read test-user passwords from the env files and do not go through
-the bridge, so a role whose password the operator kept in `vc-secrets` is invisible to them. The engine either
-runs as a declared `vc-secrets` task (as `vc-init-onboard.<env>` does for onboarding) or logs in only as roles
-kept in `.env.local`; P2b picks one, and a role it cannot log in as is `FIXTURE-GAP`, never a prompt for the
-password.
+the bridge, so a role whose password the operator kept in `vc-secrets` is invisible to them. Settled by U32: the
+engine runs through the same new `$VC_RUN` tool as the `.spec` scripts and receives the passwords there. A role
+it still cannot log in as is `FIXTURE-GAP`, never a prompt for the password.
 
 The rules themselves — never hardcode, a fixture is designed from the chain's question, evidence output is not a
 case's business, create in the case what the environment can take away — travel with the plugin as its own copy
@@ -341,13 +406,30 @@ reads. With no profile the run STOPs with "run /project-init" (U19) — there is
 | public-kb leak | the platform-write refusal in `knowledge-store.mjs` is code, not prompt |
 
 **Speed.** The bundle is cached 24 h and its analysts run in parallel; waves are parallel inside; probes remove
-dead dispatches before they happen; a light strategy runs neither the model nor exploratory. The known slow step
-is `/ticket-context`'s join (O6, up to 5 min); speeding it up is part of P2.
+dead dispatches before they happen; a light strategy skips the test model; exploratory runs whenever the
+ticket has a UI or API surface (U26). Steps 0–2 are serial and took 14–31 min before the first browser action in
+the measured runs (§2b); round N ≥ 2 skips them (U15). The known slow step is `/ticket-context`'s join (O6, up to
+5 min); speeding it up is part of P2.
 
 **Tokens.** A thin command; skills load only for `RUN` rows; files, not summaries, between steps; scripts own
 the deterministic work (floors, gate, plan, trace, rounds, routing); `model` per registry entry. Measured in the
 `/ticket-context` validation: analysts on Opus cost 2.5× the old Stage 1, on Sonnet about 1.7×; the default is
 chosen per entry in P2 from that measurement.
+
+What the cost actually is (§2b): every agent turn re-reads the whole context, so the cost is **turns × context**,
+not output. The rules that follow from it (U30):
+
+- **Short agents.** One job per agent. A lane does not run for hundreds of turns: ACs go to scripts (U27), and a
+  browser agent gets a bounded charter.
+- **A narrow start.** A brief is file paths plus the one skill the step needs, not the repository's whole rule
+  tier. A client install starts lighter than this repository, and P2 measures both.
+- **Batched tool calls.** Independent reads and probes go out in one turn.
+- **Writing in a fresh agent.** The verdict, summary, comment and page are written by an agent that starts
+  from the result files, not by the orchestrator at 300–400k context.
+- **Fewer, shorter evidence turns.** Screenshots only on failure (U28); investigations only for Medium or worse
+  (U29).
+- **The number in every verdict.** `lib/run-cost.mjs` writes tokens and active minutes per step, so every change
+  to the flow is judged against the 2026-10-21 baseline (§2b).
 
 ## 9. Error handling
 
@@ -361,6 +443,8 @@ Every step ends in one of four states: **OK**, **SKIP**(reason), **BLOCKED**(rea
 | route `unresolved`, a fourth round, no human and no `--yes` at approval | STOP |
 | a subagent's internal error | work directly, no retry of the same delegation (`.claude/rules/agents.md` §Agent Delegation) |
 | a browser lane fails | one retry, then the fallback browser |
+| an AC check cannot be scripted (the result needs a visual judgement) | the item moves to `ui-checks`, never SKIP |
+| a script check fails | it is triaged like any FAIL; screenshots and HAR are captured then, by re-running that one check with evidence on (U28) |
 | a risk without a result after the run | back to execution once, then a deviation with its reason; an unresulted High/Critical caps the verdict below PASS |
 | a re-run on the same build | resumes from the first incomplete wave in `run-plan.json`; the approved strategy is reused |
 | nobody answers human point 2 (headless, CI) | no bug is filed and no comment is posted; the reports and `verdict.md` are the output |
@@ -369,10 +453,10 @@ Every step ends in one of four states: **OK**, **SKIP**(reason), **BLOCKED**(rea
 
 | Phase | Delivers | Checked by |
 |---|---|---|
-| **P1 Foundation** | plugin manifest, `vc-init` + `vc-fix` dependencies, marketplace entry; the `vc-init` change (`test` in `MERGEABLE` + schema) and the `vc-fix` change (connector read commands in `jira.mjs`/`ado.mjs`), each with its version bump and tag; `/vc-test:init` (U21: stand declared writable or not, knowledge-store path, accounts per role checked); `ticket-context` and `qa-test-strategy` moved; tracker/host interfaces with Jira, GitHub, Azure Boards and Azure Repos, fetching through `$VC_RUN`, and the host-governed route through the host's MCP servers into the same raw schema (§7, U23); `capabilities.mjs`; F6 via `/api/platform/modules`; `knowledge-store.mjs` (+ committed tests); the "unavailable is not doubt" rule in the floors | `claude plugin validate`; committed store tests and `vc-init`'s committed bridge tests green; temporary tests for the rest; `/ticket-context` + strategy from the plugin on VCST-5097, with tokens only in `vc-secrets`, reproduce today's bundle and gate result; Azure connectors against recorded responses; the host-governed route: raw files written from recorded host-server responses give the same bundle as the bridge route on the same ticket |
-| **P2 Flow** | `artifacts.json`, `plan-run.mjs`, `route.mjs`, `rounds.mjs`, `trace.mjs`, `write-zones.mjs` (+ committed tests); the command with its two human points; new-case authoring and the new-case wave (U18); execution skills moved (`qa-triage-results` invocable); `qa-checklist` risk ids (`vc-fix` bump); the round-N delta that proves fixes; the join speed-up (O6); per-entry models | `--dry-run` on 3 tickets: wave plan, gates, no outward write |
+| **P1 Foundation** | plugin manifest, `vc-init` + `vc-fix` dependencies, marketplace entry; the `vc-init` change (`test` in `MERGEABLE` + schema; the script-runner bridge tool, U32) and the `vc-fix` change (connector read commands in `jira.mjs`/`ado.mjs`), each with its version bump and tag; `/vc-test:init` (U21: stand declared writable or not, knowledge-store path, accounts per role checked); `ticket-context` and `qa-test-strategy` moved; tracker/host interfaces with Jira, GitHub, Azure Boards and Azure Repos, fetching through `$VC_RUN`, and the host-governed route through the host's MCP servers into the same raw schema (§7, U23); `capabilities.mjs`; F6 via `/api/platform/modules`; `knowledge-store.mjs` (+ committed tests); the "unavailable is not doubt" rule in the floors | `claude plugin validate`; committed store tests and `vc-init`'s committed bridge tests green; temporary tests for the rest; `/ticket-context` + strategy from the plugin on VCST-5097, with tokens only in `vc-secrets`, reproduce today's bundle and gate result; Azure connectors against recorded responses; the host-governed route: raw files written from recorded host-server responses give the same bundle as the bridge route on the same ticket |
+| **P2 Flow** | `artifacts.json`, `plan-run.mjs`, `route.mjs`, `rounds.mjs`, `trace.mjs`, `write-zones.mjs` (+ committed tests); the command with its two human points; `ac-checks` (API checks + `.spec` scripts) and `ui-checks` (U27); the kept `.spec` with its CSV row (U18 revised; layout from the suites-reorganization design); the severity filter and Medium-only investigation (U25, U29); exploratory as the main lane with its significant-bug charter and access probe (U26); evidence on failure (U28); the round-N refresh (U15); `run-cost.mjs` and the fresh writing agent (U30); execution skills moved (`qa-triage-results` invocable); `qa-checklist` risk ids (`vc-fix` bump); the join speed-up (O6); per-entry models | `--dry-run` on 3 tickets: wave plan, gates, no outward write |
 | **P2b Test data** | the test-data family moved and refactored (§6a): lighter skills, the engine with generic platform operations, this repository's seeders ported as project content | `td:validate` + `td:reconcile` green on the platform project before and after; one domain seeded and torn down from the plugin on a non-production stand; BUDGET-004 for every moved `SKILL.md` |
-| **P3 Validation, stage 1 — native platform** | live runs on 3–5 VC tickets in this repository (Story, Review task, Technical task, UI-only, Bug not-fixed) on Jira + GitHub, with the plugin installed the way a client installs it | redesign §8 measures (R3 not slower on a small ticket, R4 nothing FULL ran is lost on a large one, no floor overridden by hand); the platform store receives the kb writes |
+| **P3 Validation, stage 1 — native platform** | live runs on 3–5 VC tickets in this repository (Story, Review task, Technical task, UI-only, Bug not-fixed) on Jira + GitHub, with the plugin installed the way a client installs it | redesign §8 measures (R3 not slower on a small ticket, R4 nothing FULL ran is lost on a large one, no floor overridden by hand); the platform store receives the kb writes; against the §2b baseline (U34): at most 50% of its tokens on a comparable ticket, and VCST-6398 re-run finds every Medium the baseline found; a round 2 costs a fraction of round 1 |
 | **P4 Removal** — after stage 1 passes | `/qa-test` FAST/FULL, `/qa-test-fast`, `ticket-routing.md` §5–§5d, Artifact A, `3-cases`, `1e-plan` removed; `ci/run-full-cycle.ts`, `ci/run-suite-audit.ts` and the other consumers repointed or cleaned; the plugin tagged for internal use (`docs/release-process.md`) | `npm run context:check`, `npm test`, CI |
 | **P5 Validation, stage 2 — real client project** | at least one live run on the **real client Azure DevOps project**, with the plugin installed in the client's checkout | Azure Boards + Azure Repos read end to end — through the host's servers if the project is host-governed (U23); SKIPs for missing adapters; every write inside the client's `outputRoot()` and project store; zero platform writes. Its reports stay in the client's project; only anonymous measures are recorded here. A pass releases the plugin to clients (marketplace description + tag) |
 
@@ -399,6 +483,10 @@ Every step ends in one of four states: **OK**, **SKIP**(reason), **BLOCKED**(rea
 | Every command added to `jira.mjs` / `ado.mjs` widens what a token-holding process may do | reads only — writes keep their existing commands; each new command uses the host the profile pins, as the existing ones do |
 
 | On a host-governed project the raw ticket and PR responses pass through the orchestrator's context (U23) | the fetch writes files and keeps no summary of them; its token cost is measured on the client project in P5, and the bundle step and the analysts are the same on both routes |
+| Scripted AC checks miss what only a human-like look sees | an item a script cannot decide goes to `ui-checks` (§9); exploratory and visual still run in a browser; P3 re-runs a §2b ticket and must find its Mediums again |
+| The severity filter drops a Low that mattered | it is never deleted, only not worked: one line under "Noticed" in the verdict, visible to the reader, who can ask for it to be filed |
+| Exploratory results vary between runs | its charter comes from the strategy's risks and always contains the access probe, so the high-impact checks are fixed; the free part is where variance is wanted |
+| A round N ≥ 2 trusts round 1's context, which may have gone stale | the refresh reads commits, comments and the deployed build since the last verdict; whatever is new is appended as risks without asking (U15) |
 
 ## 13. Open questions
 
