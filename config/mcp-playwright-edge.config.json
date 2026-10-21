@@ -19,6 +19,5 @@
       "deviceScaleFactor": 2
     }
   },
-  "outputDir": "./test-results/edge",
-  "screenshot": "only-on-failure"
+  "outputDir": "./test-results/edge"
 }

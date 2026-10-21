@@ -43,8 +43,7 @@
     "retryDelayMs": 30000,
     "rateLimitDelayMs": 60000,
     "harCapture": true,
-    "maxParallelAgents": 3,
-    "screenshotOnFailure": true
+    "maxParallelAgents": 3
   },
   "browserPool": [
     {
