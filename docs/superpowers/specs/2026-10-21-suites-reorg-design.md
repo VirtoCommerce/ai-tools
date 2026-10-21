@@ -157,7 +157,7 @@ orchestrator calls.
 | `suites:lint` (`scripts/test-cases/sync-test-suites.ts`) | two fatal checks: **SP-001** a spec whose ID has no row in the sibling CSV; **SP-002** a spec whose file name and `test()` title disagree |
 | `td:validate` (`scripts/test-data/validate-td-refs.ts`) | scans `regression/**/*.spec.ts`. **DV-025** (fatal) flags a literal URL, GUID, e-mail, `reports/` path, `process.env` or `config.js` import outside `regression/lib/` |
 | `ci/run-suite-audit.ts:391-408` | git pathspecs narrowed to `regression/suites/**/*.csv` |
-| `scripts/auth/save-storage-state.ts` | takes any role, not only its fixed alias list |
+| `scripts/auth/save-storage-state.ts` | no change: it already takes aliases as arguments, and the fixture calls it for a missing state file |
 | `package.json`, `.gitignore`, tsconfig and typecheck-hook scope | entries for the new files |
 | `.claude/skills/qa-test-automation/` | **new**. Short `SKILL.md`; locator, waiting, data and anti-flake practice in supporting files |
 | `.claude/agents/test-management-specialist.md` | under 19K chars (D16); one line pointing at `/qa-test-automation` |
