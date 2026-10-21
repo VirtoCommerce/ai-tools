@@ -17,7 +17,8 @@
 >
 > **Updated 2026-10-21 (second pass) from the developers' chat** and a fifth, much larger run (VCST-6314, §2b):
 > checks are layered from cheap to expensive, starting with a review of the diff (layer 0), every run has a
-> budget, and developers get their own command. U35–U42 are the owner's; U31 is revised by U35. §3a describes the
+> budget, and developers get their own command. U35–U46 are the owner's (U43–U46 place the strategy, the maps and
+> the data model in the layers); U31 is revised by U35. §3a describes the
 > developer command; §2b and §13 follow.
 
 ## 1. Problem and goal
@@ -107,6 +108,10 @@ the working tree), and the goal of a run is to make sure there are no significan
 | U40 | Where do the developer command's new cases go? | **Into the run folder, not the corpus.** A passing `.spec` is kept in the run folder with a draft CSV row; QA moves it into the corpus (the `test-management-specialist`, U18). The developer command never writes to the corpus or to the developer's working tree |
 | U41 | When does the developer see the suspicions from layer 0? | **At once, before layer 1 starts**, labelled *suspected*, with file and line — a developer acts on them while the checks run. The final list marks each one confirmed (with its check) or refuted |
 | U42 | One measure of cost | `run-cost.mjs` (U30) reports, per step and per run, **input-equivalent tokens and the share of the five-hour window**. The two numbers quoted in the chat (3.42B against 2.46M) were different measures — every turn's re-read against an agent's final context — and must not be compared again |
+| U43 | May a run build or update a domain map, a mind map or the data model? | **No — in a run they are only read.** Updating them is a separate job (`/qa-domain-map`, `/qa-test-mind-map`, `/qa-test-data-model`, after a merge or once a sprint). `mind-map` leaves wave 1 and the registry (§4.1, §5.1). A domain with no map is tested from the diff alone, and the verdict says the map was missing; the run does not build it (VCST-6314 spent 2.5% doing that) |
+| U44 | What does layer 0 take from the maps? | **The change map links every hotspot to a mind-map node and to a data profile.** The node gives the neighbours of the change — where the exploratory charter goes (U26) — and the significant zone (U39), taken from the node rather than guessed from code. The data profile from the data model names the state a layer-1 or layer-2 check needs, so the seeder prepares exactly that state (FIFTH RULE still decides seed versus create-in-case). With no map or model, the link is empty and the hotspot falls back to the diff |
+| U45 | Where does the strategy sit? | **In the QA command only, with the change map as an input** next to the bundle. Per risk it chooses the layer that proves it — a script (layer 1) or exploratory (layer 2) — inside the 50% budget (U38). The developer command has no strategy: the change map is its plan (§3a) |
+| U46 | When is a test model built? | **Only when the strategy selects it** — a large or Critical ticket. For other tickets the change map covers the fault model's role; a light strategy already skips it (§8) |
 
 **Calls made while writing U24–U31 (the author's, not the owner's — correct any that is wrong).**
 
@@ -170,7 +175,8 @@ five-hour window (18% of the week); its token figure was measured differently (U
  0 PROBE     capabilities.mjs → capabilities.json            what this install can do
              route (type × status role → job) · rounds.mjs   a fourth round STOPs before any context
  1 CONTEXT   /ticket-context <KEY> → bundle.json             parallel analysts, cached 24 h
- 2 STRATEGY  /qa-test-strategy (whole bundle) → test-strategy.md   floors · gate · verifier if Critical
+             layer 0: change map from the CHANGE analysis + mind map + data model → change-map.json (U37, U44)
+ 2 STRATEGY  /qa-test-strategy (whole bundle + change map, U45) → test-strategy.md   floors · gate · verifier if Critical
              ── HUMAN POINT 1: approve the strategy (--yes) ──
  3 RUN       plan-run.mjs → run-plan.json → waves            only RUN rows, ≤3 browser lanes;
              the checklist is written by the orchestrator inline (U13); ACs proved by API checks and
@@ -219,6 +225,7 @@ its results are the round's base. Steps 1 and 2 are not repeated, and human poin
 ```
 /vc-test:dev-check [<KEY>] [--base <branch>]                         (working name)
  0 CHANGE MAP  git diff <base>...HEAD (+ the ticket's ACs if <KEY>) → change-map.json      ≤ 3% of the window
+               hotspots linked to mind-map nodes and data profiles, read only (U43, U44); it is the plan (U45)
                → suspicions shown at once, labelled "suspected" (U41)
  1 PROVE       each hotspot by its cheapest proof: existing unit test · API/GraphQL check · .spec   ≤ 7%
                → stop here when nothing uncovered is in a significant zone (U36)
@@ -266,7 +273,7 @@ Every hand-off is a file, never a summary in a brief.
 capabilities.json ─┐
 bundle.json ───────┼─► test-strategy.md (approved) ─► plan-run.mjs ─► run-plan.json
 artifacts.json ────┘                                                   │
-                          wave 1  test-data ‖ test-model ‖ mind-map* ‖ contract-refresh*
+                          wave 1  test-data ‖ test-model (if selected, U46) ‖ contract-refresh*
                           wave 2  exploratory           (when the strategy says FIRST)
                           wave 3  checklist ── trace.mjs check
                           wave 4  ac-checks (API + .spec, no browser agent) ‖ exploratory (ALONGSIDE) ‖ visual ‖ ui-checks
@@ -297,7 +304,7 @@ list.
   "order": "strategy" }
 ```
 
-v1 entries: `test-data`, `test-model`, `mind-map`\*, `contract-refresh`\*, `checklist`, `exploratory`,
+v1 entries: `test-data`, `test-model`, `contract-refresh`\*, `checklist`, `exploratory`,
 `ac-checks` (API/GraphQL checks and Playwright `.spec` scripts, no browser agent, U27), `ui-checks` (a browser agent
 for the items a script cannot decide), `visual`, `verifier`, `case-authoring` (CSV rows for the kept `.spec`, U18).
 `checklist-runners` and `new-case-run` are gone (2026-10-21). Adding an artifact = an entry + its skill; the command does
