@@ -6,18 +6,18 @@
 //
 //   node fork-drift.mjs --to <upstream ref> [--from <ref>] [--fork <ref>] [--map <file>] [--json] [--rebuild]
 //
-// --to       the upstream side: upstream/dev, a release tag, or HEAD^2 right after a merge commit
+// --to       the upstream side: upstream/dev, a release tag, or M^2 for a merge commit M (with --fork M)
 // --from     start of the upstream range whose commits are listed (default: merge-base of --fork and --to)
 // --fork     the fork's commit to analyse (default: HEAD — committed state; uncommitted edits are ignored)
 // --map      the fork map (default: fork-map.json in the repository root, when present)
 // --rebuild  ignore cached graphs
 //
 // Each tree is built once per commit in a temporary worktree under the OS temp folder; graphs are cached
-// under node_modules/.cache/fork-drift/. A build takes about a minute.
+// under node_modules/.cache/fork-drift/, by commit and by this script's version. A build takes about a minute.
 
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { copyFileSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, unlinkSync } from "node:fs";
+import { copyFileSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, rmdirSync, rmSync, symlinkSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -31,7 +31,9 @@ for (let i = 0; i < argv.length; i++) {
   args[argv[i].slice(2)] = next === undefined || next.startsWith("--") ? true : next;
 }
 
-const git = (...a) => execFileSync("git", a, { encoding: "utf8", maxBuffer: 1 << 28 }).trim();
+// Every git call runs at the repository root: path arguments (client-app, pathspecs) are relative to the cwd.
+const ROOT = execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
+const git = (...a) => execFileSync("git", a, { cwd: ROOT, encoding: "utf8", maxBuffer: 1 << 28 }).trim();
 const out = (line = "") => process.stdout.write(line + "\n");
 
 if (typeof args.to !== "string") {
@@ -39,16 +41,24 @@ if (typeof args.to !== "string") {
   process.exit(2);
 }
 
-const ROOT = git("rev-parse", "--show-toplevel");
 const FORK = git("rev-parse", `${typeof args.fork === "string" ? args.fork : "HEAD"}^{commit}`);
 const TO = git("rev-parse", `${args.to}^{commit}`);
 const FROM = typeof args.from === "string" ? git("rev-parse", `${args.from}^{commit}`) : git("merge-base", FORK, TO);
+// An empty range lists no commits, and every section would read "None changed upstream".
+if (FROM === TO) {
+  const hint = typeof args.from === "string" ? "" : ` — ${args.to} is already in the fork's history; right after a merge commit M pass --from "$(git merge-base M^1 M^2)"`;
+  console.error(`fork-drift: the range ${FROM.slice(0, 9)}..${TO.slice(0, 9)} is empty${hint}`);
+  process.exit(2);
+}
 const MAP_PATH = typeof args.map === "string" ? path.resolve(args.map) : path.join(ROOT, "fork-map.json");
 const CACHE = path.join(ROOT, "node_modules", ".cache", "fork-drift");
 // Outside the repository: Vite treats any path containing node_modules as a dependency and leaves its
 // template-literal imports (locales, sign-in providers) unexpanded.
 // realpath: Windows can report the temp folder by its 8.3 short name, which Vite expands, so ids would not match the root.
 const WORKTREES = path.join(realpathSync.native(tmpdir()), `fork-drift-${createHash("sha1").update(ROOT).digest("hex").slice(0, 8)}`);
+// Each run builds in its own folder, so two runs on one checkout never remove each other's worktrees.
+const RUN = path.join(WORKTREES, `run-${process.pid}`);
+const BUILD_ID = createHash("sha1").update(readFileSync(fileURLToPath(import.meta.url))).update(readFileSync(path.join(HERE, "graph.vite.config.mjs"))).digest("hex").slice(0, 8);
 const NOT_RENDERED = /^client-app\/(core-api|public)\//;
 
 // ---------- building the graphs ----------
@@ -62,11 +72,29 @@ function removeWorktree(wt) {
   git("worktree", "prune");
 }
 
-// A killed run (closed terminal, kill -9) leaves its worktree and link behind; remove them all before building.
-// A temp folder emptied by a reboot leaves worktrees registered, and `worktree add` refuses the path.
+const alive = (pid) => {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return error.code === "EPERM";
+  }
+};
+
+// A killed run (closed terminal, kill -9, a timeout) leaves its worktree and link behind; remove those of every
+// run that is gone before building. A temp folder emptied by a reboot leaves worktrees registered, and
+// `worktree add` refuses the path.
 function removeLeftovers() {
   git("worktree", "prune");
-  if (existsSync(WORKTREES)) for (const d of readdirSync(WORKTREES)) removeWorktree(path.join(WORKTREES, d));
+  if (!existsSync(WORKTREES)) return;
+  for (const d of readdirSync(WORKTREES)) {
+    const run = /^run-(\d+)$/.exec(d);
+    if (run && alive(Number(run[1]))) continue;
+    const dir = path.join(WORKTREES, d);
+    // A run folder holds its worktrees; earlier versions kept them directly here, as wt-<sha>.
+    if (run) for (const wt of readdirSync(dir)) removeWorktree(path.join(dir, wt));
+    removeWorktree(dir);
+  }
 }
 
 // Ctrl+C reaches the build too. With a listener Node is not killed, the build returns, and the finally block
@@ -74,11 +102,14 @@ function removeLeftovers() {
 process.on("SIGINT", () => process.exit(130));
 
 function buildGraph(sha) {
-  // v2: graphs cached before the worktrees left node_modules are missing files, so they are not reused.
-  const graphPath = path.join(CACHE, `graph-v2-${sha}.json`);
+  const graphPath = path.join(CACHE, `graph-${BUILD_ID}-${sha}.json`);
   if (existsSync(graphPath) && !args.rebuild) return JSON.parse(readFileSync(graphPath, "utf8"));
   mkdirSync(CACHE, { recursive: true });
-  const wt = path.join(WORKTREES, `wt-${sha.slice(0, 12)}`);
+  // Written under its own name and moved into place only once the build passed: an interrupted or failed
+  // build never leaves a graph that a later run would reuse.
+  const pending = `${graphPath}.${process.pid}.tmp`;
+  mkdirSync(RUN, { recursive: true });
+  const wt = path.join(RUN, `wt-${sha.slice(0, 12)}`);
   git("worktree", "add", "--detach", wt, sha);
 
   try {
@@ -98,15 +129,17 @@ function buildGraph(sha) {
     process.stderr.write(`fork-drift: building ${sha.slice(0, 9)}…\n`);
     const build = spawnSync(process.execPath, [path.join(wt, "node_modules", "vite", "bin", "vite.js"), "build", "--config", ".fork-drift.vite.config.mjs"], {
       cwd: wt,
-      env: { ...process.env, GRAPH_OUT: graphPath, GRAPH_DIST: path.join(wt, ".fork-drift-dist") },
+      env: { ...process.env, GRAPH_OUT: pending, GRAPH_DIST: path.join(wt, ".fork-drift-dist") },
       encoding: "utf8",
       maxBuffer: 1 << 28,
     });
-    if (build.status !== 0 || !existsSync(graphPath)) {
+    if (build.status !== 0 || !existsSync(pending)) {
       if (build.signal) throw new Error(`build of ${sha.slice(0, 9)} interrupted (${build.signal})`);
       throw new Error(`vite build failed for ${sha.slice(0, 9)}\n${(build.stderr || build.stdout).slice(-4000)}`);
     }
+    renameSync(pending, graphPath);
   } finally {
+    rmSync(pending, { force: true });
     removeWorktree(wt);
   }
   return JSON.parse(readFileSync(graphPath, "utf8"));
@@ -138,10 +171,22 @@ function analyse(graph) {
     if (name === "*") return [id, ...m.reexports.filter((r) => r.id).flatMap((r) => provider(r.id, r.imported === "*" ? "*" : r.imported, seen))];
     const direct = m.reexports.find((r) => r.exported === name && r.id);
     if (direct) return direct.imported === "*" ? provider(direct.id, "*", seen) : provider(direct.id, direct.imported, seen);
-    for (const star of m.reexports.filter((r) => r.exported === "*" && r.id)) {
-      if (modules[star.id]?.exports.includes(name)) return provider(star.id, name, seen);
+    // `export *` never forwards `default`.
+    if (name !== "default") {
+      for (const star of m.reexports.filter((r) => r.exported === "*" && r.id)) {
+        if (exportsName(star.id, name)) return provider(star.id, name, seen);
+      }
     }
     return [id];
+  }
+
+  // Rollup lists each `export *` in `exports` as "*", not the names behind it, so follow the chain.
+  function exportsName(id, name, seen = new Set()) {
+    if (seen.has(id)) return false;
+    seen.add(id);
+    const m = modules[id];
+    if (!m) return false;
+    return m.exports.includes(name) || m.reexports.some((r) => r.exported === "*" && r.id && exportsName(r.id, name, seen));
   }
 
   // users: file -> Set(rendered files that use it by name)
@@ -172,7 +217,7 @@ function analyse(graph) {
       for (const p of provider(extra, "*")) add(p, user);
     }
   }
-  return { rendered, present, users, unresolved, styles, hasWatched: Array.isArray(graph.watched) };
+  return { rendered, present, users, unresolved, styles };
 }
 
 // ---------- report ----------
@@ -187,6 +232,17 @@ function upstreamCommits(f) {
 }
 
 const map = existsSync(MAP_PATH) ? JSON.parse(readFileSync(MAP_PATH, "utf8")) : { replacements: [], ignored: [] };
+const isPaths = (v) => v === undefined || (Array.isArray(v) && v.every((p) => typeof p === "string"));
+const mapError = !Array.isArray(map.replacements ?? []) || !Array.isArray(map.ignored ?? [])
+  ? "replacements and ignored must be lists"
+  : [
+      ...(map.replacements ?? []).map((r, i) => (r && isPaths(r.fork) && isPaths(r.upstream) ? "" : `replacements[${i}]: fork and upstream must be lists of paths`)),
+      ...(map.ignored ?? []).map((g, i) => (typeof g?.upstream === "string" ? "" : `ignored[${i}]: upstream must be a path`)),
+    ].find(Boolean);
+if (mapError) {
+  console.error(`fork-drift: ${MAP_PATH}: ${mapError}`);
+  process.exit(2);
+}
 // A hand-edited entry may leave out either list.
 const replacements = (map.replacements ?? []).map((r) => ({ ...r, fork: r.fork ?? [], upstream: r.upstream ?? [] }));
 const mappedUpstream = new Map();
@@ -195,8 +251,17 @@ const ignored = new Map((map.ignored ?? []).map((i) => [i.upstream, i.reason]));
 const status = (f) => (ignored.has(f) ? `ignored: ${ignored.get(f)}` : mappedUpstream.has(f) ? `mapped → ${mappedUpstream.get(f).fork.join(", ")}` : "NOT in the map");
 
 removeLeftovers();
-const fork = analyse(buildGraph(FORK));
-const up = analyse(buildGraph(TO));
+// Graphs from another version of this script are never read again.
+if (existsSync(CACHE)) for (const f of readdirSync(CACHE)) if (!f.startsWith(`graph-${BUILD_ID}-`)) rmSync(path.join(CACHE, f), { force: true });
+let fork, up;
+try {
+  fork = analyse(buildGraph(FORK));
+  up = analyse(buildGraph(TO));
+} finally {
+  try {
+    rmdirSync(RUN);
+  } catch {}
+}
 const forkTree = new Set(git("ls-tree", "-r", "--name-only", FORK, "client-app").split("\n"));
 const fromTree = new Set(git("ls-tree", "-r", "--name-only", FROM, "client-app").split("\n"));
 const upTree = new Set(git("ls-tree", "-r", "--name-only", TO, "client-app").split("\n"));
@@ -310,8 +375,7 @@ if (args.json) {
   changedFirst(notRendered, (i) => `- ${i.file} — ${i.why} (${i.status})`);
   out();
   out("## A2. Stylesheets upstream compiles, the fork does not");
-  if (!fork.hasWatched || !up.hasWatched) out("Unknown: a cached graph predates style tracking — rerun with --rebuild.");
-  else changedFirst(notCompiled, (i) => `- ${i.file} — ${i.why} (${i.status})`);
+  changedFirst(notCompiled, (i) => `- ${i.file} — ${i.why} (${i.status})`);
   out();
   out("## B. Rendered by both, but from fewer places in the fork");
   changedFirst(droppedSites, (i) => `- ${i.file} (${i.status})\n    used upstream by, not in the fork: ${i.lostUsers.join(", ")}\n    used in the fork by: ${i.forkUsers.join(", ") || "—"}`);
