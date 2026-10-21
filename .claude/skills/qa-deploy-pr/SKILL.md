@@ -1,7 +1,7 @@
 ---
 name: qa-deploy-pr
 description: "[QA Methodology] Gather ALL fresh CI prerelease artifacts for a change (modules + platform + vc-frontend) and deploy them together to the test env (vc-deploy-dev@<TEST_ENV branch>) in ONE manifest update: resolve a tracker ticket's linked PRs across all repos (or an explicit --module/--platform/--theme/--pr set) → each PR's latest vc3prerelease build → minimal-diff repin of backend/packages.json (AzureBlob/BlobName + PlatformVersion) and theme/artifact.json → dry-run combined diff (default) or a gated deploy PR (direct same-repo when the account has write, else a fork PR) → --verify polls the env-branch pin + /api/platform/modules per target. Never merges (a human merges to deploy); writes route through gh's keyring token; prints the web-edit URL when it can't push. Unblocks /qa-test PR#N and /qa-verify-fix."
-argument-hint: "<ticket-key> [--pr owner/repo#N ...] [--module Id=Ver ...] [--platform Ver] [--theme <url>] [--env <name>] [--apply] [--verify]"
+argument-hint: "<ticket-key> [<env>] [--pr owner/repo#N ...] [--module Id=Ver ...] [--platform Ver] [--theme <url>] [--env <name>] [--apply] [--verify]"
 disable-model-invocation: true
 ---
 
@@ -33,7 +33,8 @@ and the manifest-commit + `/api/platform/modules` patterns from `scripts/hotfix/
 ```bash
 # DRY-RUN (default) — resolve every artifact, print the combined diff + web-edit URL. No writes.
 npm run deploy:pr -- <ticket-key>                       # all of the ticket's linked PRs
-npm run deploy:pr -- <ticket-key> --env=vcst            # explicit env (default = resolved TEST_ENV)
+npm run deploy:pr -- <ticket-key> vcst                  # explicit env: a bare env name, --env vcst or --env=vcst
+                                                        # (default = this session's resolved TEST_ENV; an unknown env fails)
 npm run deploy:pr -- --pr=VirtoCommerce/vc-module-cart#412 --pr=VirtoCommerce/vc-frontend#2280
 npm run deploy:pr -- --module=VirtoCommerce.Cart=3.1007.0-pr-412-ab12 --theme=<vc3prerelease-url>
 
@@ -86,8 +87,9 @@ npm run deploy:pr:apply -- <ticket-key> --env=vcst      # a human reviews + merg
 Both QA envs are `BRANCH_MAP` entries, not convention: env name ≠ branch name for either. A new env
 whose branch differs from its name needs a `BRANCH_MAP` row or a `DEPLOY_BRANCH` in its `.env.<env>`.
 
-`--verify`'s live column needs the env's admin password. It is read in `config.js`'s own promotion
-form first — `ADMIN_PASSWORD_<ENV>` (e.g. `ADMIN_PASSWORD_VCPTCORE`) — then the
+`--verify`'s live column needs the env's admin password. It is read in `config.js`'s own order: a
+`.env.local` pin in the promotion form first — `ADMIN_PASSWORD_<ENV>` (e.g. `ADMIN_PASSWORD_VCPTCORE`) —
+then `ADMIN_PASSWORD` from the env's own password file `.env.playwright.<env>`, then the
 `ADMIN_PASSWORD_VCPTCORE_<STABLE|REGRESSION>` forms, then generic `ADMIN_PASSWORD`. A missing
 per-env password degrades `--verify` to branch-pin-only (`live` reads `?`), it never fails the run.
 

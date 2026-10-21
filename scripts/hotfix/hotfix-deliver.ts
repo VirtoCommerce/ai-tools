@@ -130,8 +130,13 @@ function loadEnvCoords(env: string, passwordOverride?: string): EnvCoords {
     throw new Error(`${file} is missing DEPLOY_REPO/DEPLOY_BRANCH/DEPLOY_PACKAGES_PATH — add the deploy coords (see .env.vcptcore_stable).`);
   }
   const suffix = key.toUpperCase(); // per-env secret override, e.g. ADMIN_PASSWORD_STABLE
+  // scripts/deploy/lib/env.ts's order: the .env.local pin, then the env's own password file
+  // (.env.playwright.vcptcore_<key>, which this skipped — a machine that keeps env passwords only there
+  // fell through to Password1), then the legacy suffix form and the shared fallbacks.
   const password = passwordOverride
-    || local[`ADMIN_PASSWORD_VCPTCORE_${suffix}`] || local[`ADMIN_PASSWORD_${suffix}`]
+    || local[`ADMIN_PASSWORD_VCPTCORE_${suffix}`]
+    || readEnvFile(resolve(REPO_ROOT, `.env.playwright.vcptcore_${key}`)).ADMIN_PASSWORD
+    || local[`ADMIN_PASSWORD_${suffix}`]
     || local.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || 'Password1';
   return {
     env: key, file, deployOwner, deployRepo, branch: e.DEPLOY_BRANCH, path: e.DEPLOY_PACKAGES_PATH,

@@ -143,7 +143,7 @@ never-parallelise table is there.
 | Admin SPA, APIs, modules, GraphQL, backend | `qa-backend-expert` | `playwright-edge` |
 | Storybook components, accessibility, design system, the `vs. DESIGN` spec diff | `ui-ux-expert` | Chrome DevTools MCP |
 | Cross-browser, debugging | `qa-testing-expert` | `playwright-firefox` |
-| **Step-3x discovery (FULL)** — **invoke `/qa-exploratory ticket <ticket-key>`**, do not hand-roll a session | that command's own | any free browser lane (all 3 click since 2026-09-08) |
+| **Step-3x discovery (FULL)** — **invoke `/qa-exploratory ticket <ticket-key> <env>`**, do not hand-roll a session | that command's own | any free browser lane (all 3 click since 2026-09-08) |
 
 The last row is a **Step-3 phase, not a Step-4 lane** — it has closed before execution dispatches, so it
 never counts against the max-3 cap that governs the rows above it.
