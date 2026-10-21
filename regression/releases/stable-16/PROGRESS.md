@@ -61,8 +61,6 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | W3 | PRICE-031 | Export of price list assignments never completes (same ExportJob failure) | yes | same defect as PRICE-008, file once |
 | W3 | PRICE-008 | Generic Export (price lists) never completes: ExportJob cannot deserialize the abstract ExportDataQuery under BackgroundJobs | yes |  |
 | W3 | PRICE-055 | Export with the minimal pricing role: no providers load, and the export itself never completes | yes | same defect as PRICE-008, file once |
-| W3 | CFG-MOB-001 | Mobile/tablet: configurable option rows show a bare Total label (price hidden) | no |  |
-| W3 | ORD-027 | 375px orders filter: no active-filter indicator when the panel is collapsed; icon button has no accessible name | no |  |
 | W3 | CART-036 | Quantity -1 is committed and persisted | no |  |
 | W3 | CART-066 | Decimal quantity 1.5 kept, no client-side rejection | no |  |
 | W3 | CART-055 | Quantity off the pack size (7 of pack 6) is stored | no |  |
