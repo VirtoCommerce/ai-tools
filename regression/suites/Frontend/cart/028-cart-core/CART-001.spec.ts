@@ -57,7 +57,10 @@ test("CART-001: Add to Cart - From Product Page", async ({ signedInAs, apiAs }) 
     http: traffic.httpErrors.length,
     mutations: traffic.cartMutations.length,
   };
-  await stepper.getByRole("button", { name: "Increase quantity" }).click();
+  // The row's own failure ("'+' not visible or stays loading") must read as an expect FAIL, not an action timeout (D8).
+  const plus = stepper.getByRole("button", { name: "Increase quantity" });
+  await expect(plus).toBeEnabled();
+  await plus.click();
 
   // [WAIT] + [DOM] "in Cart" indicator visible adjacent to stepper showing "1".
   const inCart = buyBox.getByTitle("in Cart");

@@ -7,17 +7,19 @@ import { expect, test } from "@playwright/test";
 import { evidenceFileFrom, failedAssertionFrom } from "../../scripts/regression/machine-lane.js";
 import { defaultRunId, listRunnerCases, REPO_ROOT, runCase } from "./runner-cases.js";
 
-const runId = process.env.RUN_ID ?? defaultRunId();
+const runId = process.env.RUN_ID ?? defaultRunId(); // set once in playwright.config.ts
 const { suites, skipped } = listRunnerCases();
 for (const s of skipped) console.warn(`[runner-cases] skipped ${s.file}: ${s.reason}`);
 
 for (const suite of suites) {
   test.describe(`${suite.id} ${suite.name}`, () => {
-    const seen = new Set<string>();
+    const seen = new Map<string, number>();
     for (const c of suite.cases) {
       const title = `${c.id}: ${c.title}`;
-      const unique = seen.has(title) ? `${title} (duplicate id)` : title;
-      seen.add(title);
+      const n = (seen.get(title) ?? 0) + 1;
+      seen.set(title, n);
+      // Any repeat gets its own suffix: a duplicate test title makes Playwright reject the whole file.
+      const unique = n === 1 ? title : `${title} (duplicate id ${n})`;
       test(unique, async () => {
         test.setTimeout(300_000); // runCase is synchronous: a case runs to completion, then the clock is read
         const { code, stdout, stderr } = runCase(suite.csv, c.id, runId);
