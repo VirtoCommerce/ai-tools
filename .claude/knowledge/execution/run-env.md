@@ -16,7 +16,7 @@ else `vcst`).
   would beat the binding. Never fall back to another env silently.
 - **A command run inline by another keeps the caller's binding** — `/qa-test` running `/vc-fix:qa-verify-fix`
   for a fix-ready Bug binds once, at its own Step 1a; the inline pipeline does not bind again.
-- **A subagent never binds.** It shares the session id, so an `env:use` there re-binds the caller's whole run —
+- **A subagent never binds.** It shares the session id, so an `env:use` (or `run:use`) there re-binds the caller's whole run —
   `--default` would move it to the checkout's default env mid-run. Its caller passes the env (the brief's
   Environment line, and the argument of a command it hands over: `/qa-exploratory ticket <KEY> <env>`), and a
   `ticket`-mode `/qa-exploratory` skips `env:use`.
