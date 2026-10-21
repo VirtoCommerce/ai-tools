@@ -2187,7 +2187,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 7,
+      "testCount": 6,
       "estimatedMinutes": 25,
       "agent": "qa-backend-expert",
       "exclusiveGroup": "search-index:IndexationJob",

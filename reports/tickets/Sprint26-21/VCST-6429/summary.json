@@ -142,7 +142,8 @@
       "fail": 0,
       "blocked": 0,
       "pass_rate": "100%",
-      "suite": "regression/suites/Backend/search/061b-search-indexation-jobs.csv"
+      "suite": "regression/suites/Backend/search/061b-search-indexation-jobs.csv",
+      "suite_after_review": "061b keeps SRCHJ-001..006; SRCHJ-007 (F-1 / VCST-6474, pod-dependent, flaky) removed after review — the repro lives in the bug"
     },
     "feature_release_gate": "not-assessed",
     "c1_es8": {
@@ -181,7 +182,7 @@
       "title": "GET /api/platform/settings/<unregistered name> returns 500 with a stack trace in the body"
     }
   ],
-  "new_cases_authored": 7,
+  "new_cases_authored": 6,
   "ac_analysis": {
     "conditions": 12,
     "pass": 10,
