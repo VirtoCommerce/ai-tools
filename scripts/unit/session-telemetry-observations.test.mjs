@@ -220,7 +220,7 @@ test("the degradation marker does NOT fire on file content the agent merely READ
     run(home, "init", { session_id: "fp", transcript_path: t });
     run(home, "prompt", { session_id: "fp", transcript_path: t, prompt: "/qa-bug x" });
     appendLines(t, [
-      toolUse("2026-07-29T10:00:00.000Z", "t1", "Read", { file_path: "plugins/vc-fix/skills/project-init/discover-tracker.mjs" }),
+      toolUse("2026-07-29T10:00:00.000Z", "t1", "Read", { file_path: "plugins/vc-init/skills/project-init/discover-tracker.mjs" }),
       toolResult("2026-07-29T10:00:01.000Z", "t1", false, 'console.error("… will fall back to the legacy field set, labelled \\"unverified defaults\\".")'),
     ]);
     run(home, "finalize", { session_id: "fp", transcript_path: t, background_tasks: [] });
