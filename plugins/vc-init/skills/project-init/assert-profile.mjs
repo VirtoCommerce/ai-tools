@@ -157,7 +157,7 @@ function main() {
     for (const v of violations) console.log(`   • ${v.subject}: ${v.snippet}`);
     console.log("");
   } else {
-    console.log("  + profile shape — every /qa-fix + /qa-bug input is fully populated.\n");
+    console.log("  + profile shape — every input the plugins read is fully populated.\n");
   }
   // ALWAYS 0 — a diagnostic must not become a second readiness gate (verify-access owns that).
   process.exit(0);

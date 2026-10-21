@@ -36,10 +36,11 @@
  * Flags: --env <name> (or --file <path>), --check (never write), --json, --quiet.
  */
 import { readFileSync, writeFileSync, existsSync } from "fs";
-import { resolve } from "path";
+import { dirname, join, resolve } from "path";
 import { fileURLToPath } from "url";
 import { CATALOG } from "./scaffold-env.mjs";
 import { resolveOutPath } from "./lib/paths.mjs";
+import { LOCAL_FILE, describeMove, moveProjectKeys } from "./lib/project-env.mjs";
 import { probeStorefrontBackend } from "./lib/storefront-probe.mjs";
 
 function parseArgs(argv) {
@@ -120,7 +121,10 @@ export function normalizeEnvText(text) {
   const changes = [];
   const errors = [];
   const warnings = [];
-  const lines = String(text ?? "").split("\n");
+  // CRLF files (an editor on Windows) are split on the line break itself: a trailing `\r` is not
+  // matched by `.`, so every `KEY=value\r` line used to pass through unnormalised.
+  const eol = String(text ?? "").includes("\r\n") ? "\r\n" : "\n";
+  const lines = String(text ?? "").split(/\r?\n/);
   const out = lines.map((line) => {
     const m = /^(\s*)([A-Za-z_][A-Za-z0-9_]*)(\s*=\s*)(.*)$/.exec(line);
     if (!m) return line; // comment / blank / continuation — untouched
@@ -133,7 +137,7 @@ export function normalizeEnvText(text) {
     if (res.value !== before) changes.push({ key, from: before, to: res.value });
     return `${indent}${key}=${res.value}`;
   });
-  return { text: out.join("\n"), changes, errors, warnings };
+  return { text: out.join(eol), changes, errors, warnings };
 }
 
 /** The value a dotenv TEXT gives a key ("" when the key is absent or empty). */
@@ -147,7 +151,8 @@ function envValue(text, key) {
  * store it serves. Returns the text with the value filled, or an error when it cannot be detected.
  */
 export async function detectStoreId(text, probe = probeStorefrontBackend) {
-  const lines = String(text ?? "").split("\n");
+  const eol = String(text ?? "").includes("\r\n") ? "\r\n" : "\n";
+  const lines = String(text ?? "").split(/\r?\n/);
   const idx = lines.findIndex((l) => /^\s*STORE_ID\s*=/.test(l));
   if (idx < 0 || envValue(text, "STORE_ID")) return { text };
   const frontUrl = envValue(text, "FRONT_URL");
@@ -157,7 +162,7 @@ export async function detectStoreId(text, probe = probeStorefrontBackend) {
     return { text, error: `STORE_ID is empty and the storefront at ${frontUrl || backUrl || "(no FRONT_URL)"} did not name its store — fill STORE_ID in (Platform → Stores)` };
   }
   lines[idx] = lines[idx].slice(0, lines[idx].indexOf("=") + 1) + found.storeId;
-  return { text: lines.join("\n"), storeId: found.storeId };
+  return { text: lines.join(eol), storeId: found.storeId };
 }
 
 async function main() {
@@ -169,37 +174,59 @@ async function main() {
       : null;
   if (!path) { console.error("[normalize-env] missing --env <name> (or --file <path>)."); process.exit(1); }
   if (!existsSync(path)) { console.error(`[normalize-env] ${path} does not exist — run scaffold-env.mjs first.`); process.exit(1); }
+  const log = (line) => { if (!args.json && !args.quiet) console.log(line); };
 
-  const original = readFileSync(path, "utf-8");
-  const normalized = normalizeEnvText(original);
-  const { changes, errors, warnings } = normalized;
-  let { text } = normalized;
-  if (!errors.length) {
-    const store = await detectStoreId(text);
-    if (store.error) errors.push(store.error);
-    else if (store.storeId) { text = store.text; changes.push({ key: "STORE_ID", from: "", to: store.storeId, detected: true }); }
-  }
-  const wrote = !args.check && text !== original;
-  if (wrote) writeFileSync(path, text);
+  // The tracker / code-host connection is the same for every env and lives in .env.local
+  // (lib/project-env.mjs). A project onboarded before that has it in each .env.<env>: move it now,
+  // so the file checked below is the one a run reads.
+  const move = moveProjectKeys(dirname(path), CATALOG.filter(([, m]) => m.scope === "project"), { dryRun: !!args.check });
+  for (const line of describeMove(move)) log(`[normalize-env] ${args.check ? "(--check, not written) " : ""}${line}`);
 
-  if (args.json) {
-    console.log(JSON.stringify({ path, changes, errors, warnings, wrote, ok: errors.length === 0 }, null, 2));
-  } else if (!args.quiet) {
-    console.log(`[normalize-env] ${path}`);
+  const files = [path, join(dirname(path), LOCAL_FILE)].filter((p, i) => i === 0 || existsSync(p));
+  const reports = [];
+  for (const [i, file] of files.entries()) {
+    const original = readFileSync(file, "utf-8");
+    const normalized = normalizeEnvText(original);
+    const { changes, errors, warnings } = normalized;
+    let { text } = normalized;
+    if (i === 0 && !errors.length) {
+      const store = await detectStoreId(text);
+      if (store.error) errors.push(store.error);
+      else if (store.storeId) { text = store.text; changes.push({ key: "STORE_ID", from: "", to: store.storeId, detected: true }); }
+    }
+    const wrote = !args.check && text !== original;
+    if (wrote) writeFileSync(file, text);
+    reports.push({ path: file, changes, errors, warnings, wrote });
+
+    log(`[normalize-env] ${file}`);
     if (changes.length) {
       // Line-by-line, so the operator SEES what was corrected rather than trusting a silent fix.
-      for (const c of changes) console.log(c.detected ? `[normalize-env] detected ${c.key}=${c.to} from the storefront` : `[normalize-env] fixed ${c.key}: "${c.from}" → "${c.to}"`);
-      console.log(`[normalize-env] ${wrote ? "rewrote" : "would rewrite (--check)"} ${changes.length} value(s)`);
+      for (const c of changes) log(c.detected ? `[normalize-env] detected ${c.key}=${c.to} from the storefront` : `[normalize-env] fixed ${c.key}: "${c.from}" → "${c.to}"`);
+      log(`[normalize-env] ${wrote ? "rewrote" : "would rewrite (--check)"} ${changes.length} value(s)`);
     } else {
-      console.log("[normalize-env] nothing to normalize — all values already canonical");
+      log("[normalize-env] nothing to normalize — all values already canonical");
     }
-    for (const w of warnings) console.log(`[normalize-env] WARN  ${w}`);
-    for (const e of errors) console.error(`[normalize-env] ERROR ${e}`);
+    for (const w of warnings) log(`[normalize-env] WARN  ${w}`);
+    if (!args.json && !args.quiet) for (const e of errors) console.error(`[normalize-env] ERROR ${e}`);
   }
 
+  const errors = reports.flatMap((r) => r.errors);
+  if (args.json) {
+    // The top-level fields keep their pre-.env.local shape, summed over both files; `files` has each one.
+    console.log(JSON.stringify({
+      path,
+      changes: reports.flatMap((r) => r.changes),
+      errors,
+      warnings: reports.flatMap((r) => r.warnings),
+      wrote: reports.some((r) => r.wrote),
+      ok: errors.length === 0,
+      files: reports,
+      moved: move,
+    }, null, 2));
+  }
   if (errors.length) {
     if (!args.json && !args.quiet) {
-      console.error(`[normalize-env] NOT READY — fix the ${errors.length} error(s) above in ${path}, then re-run.`);
+      console.error(`[normalize-env] NOT READY — fix the ${errors.length} error(s) above in ${reports.filter((r) => r.errors.length).map((r) => r.path).join(" and ")}, then re-run.`);
     }
     process.exit(1);
   }

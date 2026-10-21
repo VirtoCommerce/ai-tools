@@ -8,6 +8,39 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## `vc-init` `0.3.0`: the tracker / code-host connection lives in `.env.local`, once — 2026-10-21
+
+**Changed: where the project-level keys are written.** `JIRA_BASE_URL`, `JIRA_PROJECT_KEY`, `JIRA_EMAIL`, `ADO_ORG`,
+`ADO_PROJECT` and `CLIENT_REPO_ORG` are one value for the whole project, whatever stand a run targets, but
+`scaffold-env.mjs` wrote them into every `.env.<env>`, so each new env asked for them again and `JIRA_EMAIL` (a
+personal identifier) sat in a file meant for shared URLs. They now go to `.env.local`, once (`scaffold-env.mjs`
+`CATALOG` marks them `scope: "project"`; `write-env.mjs` routes them the same way). Every loader reads
+`.env.local` after `.env.<env>`, so nothing that reads `process.env` changes.
+
+**Migration: automatic.** `scaffold-env.mjs` (`/project-init`, `--add-env`) and `normalize-env.mjs` (`--check`
+Step C) move these keys out of every `.env.<env>` into `.env.local` (`lib/project-env.mjs`), with the comment
+above each. When the env files hold different values for one key, nothing is moved and the run prints
+`NOT moved <KEY> — the files disagree`; keep one value in `.env.local` (or `<KEY>_<ENV>` there per env).
+`normalize-env.mjs` now also normalises the project keys in `.env.local` (a trailing slash on `JIRA_BASE_URL`).
+
+**Fixed: `normalize-env.mjs` skipped every line of a CRLF file.** A `KEY=value\r` line did not match its line
+pattern, so a file saved by a Windows editor kept its quotes and trailing slashes, and an empty placeholder lost its
+`\r`. It now splits on the line break and writes the file back with its own line endings; `scaffold-env.mjs` appends
+to a CRLF `.env.local` in CRLF too. Its `--json` output keeps the old top-level fields, summed over both files, and
+adds `files` and `moved`.
+
+**Changed: operator-facing wording.** The token guide said the Jira and GitHub tokens exist so `/qa-fix` can use
+them, the readiness table was titled `/qa-fix readiness`, and an optional MCP placeholder said it was "not needed
+for /qa-fix". vc-init onboards every installed plugin, so these now say "the plugins" / "Plugin readiness". The
+`JIRA_EMAIL` hint says why the email is required: Jira Cloud accepts an API token only together with the account
+email. Messages that name a specific `/qa-fix` gate that would fail are kept as they are.
+
+## `vc-fix` `0.11.2`: docs and messages follow vc-init 0.3.0 — 2026-10-21
+
+`jira.mjs` now says to set `JIRA_EMAIL` in `.env.local`; the `.env.{env}.example` / `.env.local.template`
+references and the `/qa-env-check` bucket table show the tracker / code-host keys in `.env.local`. No runtime
+change: every reader already took these values from `process.env`.
+
 ## `vc-init` `0.2.1`: the GitHub token is also handed out as `GITHUB_TOKEN` — 2026-10-21
 
 **Added: `GITHUB_TOKEN` as a second name for the `github-pat` secret.** Skills and agents are moving from

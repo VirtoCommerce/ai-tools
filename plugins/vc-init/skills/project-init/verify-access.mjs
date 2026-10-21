@@ -2,7 +2,7 @@
 /**
  * skills/project-init/verify-access.mjs
  *
- * Full /qa-fix readiness checkup after /project-init. Reports PASS / FAIL / WARN /
+ * Full plugin readiness checkup after /project-init. Reports PASS / FAIL / WARN /
  * SKIP per check in a bordered table; never throws; never prints secret values.
  * Exit code 0 if no hard FAIL, 1 otherwise.
  *
@@ -1014,7 +1014,7 @@ function renderTable(rows) {
   const fails = rows.filter((r) => r.status === "FAIL");
 
   console.log("");
-  console.log(`  ${paint(ANSI.bold, `/qa-fix readiness — TEST_ENV=${resolveTestEnv("vcst")}`)}`);
+  console.log(`  ${paint(ANSI.bold, `Plugin readiness — TEST_ENV=${resolveTestEnv("vcst")}`)}`);
   console.log(line("┌", "┬", "┐"));
   console.log(headRow(H.name, H.status, H.detail));
   console.log(line("├", "┼", "┤"));

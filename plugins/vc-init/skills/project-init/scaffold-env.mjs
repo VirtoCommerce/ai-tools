@@ -9,6 +9,10 @@
  * then confirms the filled values. Its sibling scaffold-secrets.mjs does the same
  * for the secret `.env.local`.
  *
+ * Keys marked `scope: "project"` (the tracker / code-host connection — the same for every
+ * environment) go to `.env.local` instead, once, and never into `.env.<env>`. Before writing,
+ * a project onboarded with them in `.env.<env>` has them moved over (lib/project-env.mjs).
+ *
  * Fields are topology-driven (flags below) and limited to what the plugin needs to
  * run (config.js core-required non-secrets + the tracker connection). ENV_RISK and
  * ADMIN are pre-filled with safe defaults; everything else is an empty placeholder.
@@ -34,13 +38,14 @@
  * the fix pipeline auto-creates the fork under it (`gh repo fork`). No manual entry.
  */
 import { readFileSync, writeFileSync, existsSync } from "fs";
-import { resolve } from "path";
+import { dirname, join, resolve } from "path";
 import { fileURLToPath } from "url";
 import { resolveOutPath, outputRoot } from "./lib/paths.mjs";
 // Protect BEFORE creating. gen-mcp's .gitignore block only ran at §7, so every file created
 // earlier in the flow existed un-ignored until then (VCST-5774 review #4). Idempotent — the four
 // writers all call it, and only the first one actually appends.
 import { ensureProjectIgnores } from "./lib/gitignore.mjs";
+import { LOCAL_FILE, LOCAL_HEADER, LOCAL_SECTION, describeMove, keyComment, moveProjectKeys } from "./lib/project-env.mjs";
 
 function parseArgs(argv) {
   const a = {};
@@ -64,6 +69,7 @@ function fail(msg) { console.error(`[scaffold-env] ${msg}`); process.exit(1); }
 //   type "ado-slug"  — a bare Azure DevOps org/project name, never a URL.
 //   no `def`         — the operator MUST fill it; still empty ⇒ a hard failure.
 //   warnOnPath       — a path component on this URL is almost certainly a paste mistake.
+//   scope "project"  — the same for every environment: written to `.env.local`, not `.env.<env>`.
 export const CATALOG = [
   // ENV_RISK is not scaffolded: config.js defaults it to `test`, and nothing in the plugins branches on
   // it beyond a warning. An operator who points a project at a production stand adds
@@ -78,24 +84,24 @@ export const CATALOG = [
     what: "Admin login (identifier, NOT the password).", where: "usually 'admin'." }],
   ["USER_EMAIL",       { include: () => true,
     what: "Storefront test-user email.", where: "an existing storefront TEST account." }],
-  ["JIRA_BASE_URL",    { include: (o) => o.tracker === "jira", type: "url",
+  ["JIRA_BASE_URL",    { include: (o) => o.tracker === "jira", type: "url", scope: "project",
     // No warnOnPath: a self-hosted Jira Server can legitimately live at https://host/jira.
     what: "Jira base URL.", where: "e.g. https://acme.atlassian.net" }],
-  ["JIRA_PROJECT_KEY", { include: (o) => o.tracker === "jira",
+  ["JIRA_PROJECT_KEY", { include: (o) => o.tracker === "jira", scope: "project",
     what: "Jira project key for bug filing.", where: "e.g. VCST." }],
-  ["JIRA_EMAIL",       { include: (o) => o.tracker === "jira",
-    what: "Jira login email (identifier, pairs with JIRA_API_TOKEN in .env.local).",
-    where: "your Atlassian account email." }],
+  ["JIRA_EMAIL",       { include: (o) => o.tracker === "jira", scope: "project",
+    what: "Jira login email: the account the API token belongs to. Jira Cloud accepts a token only together with this email (identifier, not a secret).",
+    where: "the Atlassian account email you create the API token under." }],
   // Emitted for Azure Boards (tracker) OR an Azure Repos code host — a Jira + azure-repos
   // client still needs ADO_ORG/ADO_PROJECT (discover-repos scan + the client checkout read
   // them, and it is the client org for routing). Mirrors ADO_PAT's gate in scaffold-secrets.
-  ["ADO_ORG",          { include: (o) => o.tracker === "azure" || o.clientVcs === "azure-repos", type: "ado-slug",
+  ["ADO_ORG",          { include: (o) => o.tracker === "azure" || o.clientVcs === "azure-repos", type: "ado-slug", scope: "project",
     what: "Azure DevOps organization.", where: "dev.azure.com/<org> → just the <org> part." }],
-  ["ADO_PROJECT",      { include: (o) => o.tracker === "azure" || o.clientVcs === "azure-repos", type: "ado-slug",
+  ["ADO_PROJECT",      { include: (o) => o.tracker === "azure" || o.clientVcs === "azure-repos", type: "ado-slug", scope: "project",
     what: "Azure DevOps project (Boards / Repos).", where: "the project holding your work items / repos." }],
   // Only for a GitHub-hosted client: the client org is a distinct GitHub namespace.
   // For azure-repos it is redundant with ADO_ORG/ADO_PROJECT, so it is NOT emitted.
-  ["CLIENT_REPO_ORG",  { include: (o) => o.projectType === "client" && o.clientVcs === "github",
+  ["CLIENT_REPO_ORG",  { include: (o) => o.projectType === "client" && o.clientVcs === "github", scope: "project",
     what: "GitHub org that owns your CUSTOM/client repos (modules, theme, storefront fork).",
     where: "e.g. acme-corp — routes client bugs to your repos (gen-profile --client-org)." }],
 ];
@@ -115,20 +121,41 @@ function main() {
   // Default output → the deployment project (process.cwd()); config.js dotenv-loads
   // `.env.${env}` relative to cwd, so this must land there. --out still overrides.
   const outPath = resolveOutPath(args.out, `.env.${env}`);
+  const localPath = join(dirname(outPath), LOCAL_FILE);
+  const ignored = ensureProjectIgnores(outputRoot());
+  if (ignored.length) console.log(`[scaffold-env] .gitignore += ${ignored.join(", ")}`);
+
+  // A project onboarded before the split keeps its tracker connection in every .env.<env>: move it first,
+  // so the checks below see where it lives now and nothing is emitted twice.
+  const move = moveProjectKeys(dirname(outPath), CATALOG.filter(([, m]) => m.scope === "project"));
+  for (const line of describeMove(move)) console.log(`[scaffold-env] ${line}`);
+
   const existing = existsSync(outPath) ? readFileSync(outPath, "utf-8") : "";
+  const existingLocal = existsSync(localPath) ? readFileSync(localPath, "utf-8") : "";
 
   const emitted = [];
   const skipped = [];
   const blocks = [];
+  const localBlocks = [];
   for (const [key, meta] of CATALOG) {
     if (!meta.include(opts)) continue;
-    if (new RegExp(`^\\s*${key}=`, "m").test(existing)) { skipped.push(key); continue; }
-    blocks.push(
-      `# ${key} — ${meta.what}\n` +
-      `#   ${meta.where}\n` +
-      `${key}=${meta.def || ""}\n`
-    );
-    emitted.push(key);
+    const project = meta.scope === "project";
+    // A conflicting key is still in the env files: never add a third copy next to it.
+    const present = (t) => new RegExp(`^\\s*${key}=`, "m").test(t);
+    if (present(project ? existingLocal : existing) || (project && move.conflicts.some((c) => c.key === key))) { skipped.push(key); continue; }
+    (project ? localBlocks : blocks).push(keyComment(key, meta) + `${key}=${meta.def || ""}\n`);
+    emitted.push(project ? `${key} (${LOCAL_FILE})` : key);
+  }
+
+  if (localBlocks.length) {
+    // The section a move just opened (or an earlier run wrote) is reused, never repeated.
+    const header = !existingLocal ? LOCAL_HEADER
+      : existingLocal.includes(LOCAL_SECTION) ? "\n"
+      : `\n${LOCAL_SECTION}\n`;
+    const added = (existingLocal && !existingLocal.endsWith("\n") ? "\n" : "") + header + localBlocks.join("\n");
+    // Keep the file's own line endings: an operator's editor may have saved it CRLF.
+    writeFileSync(localPath, existingLocal + (existingLocal.includes("\r\n") ? added.replace(/\n/g, "\r\n") : added));
+    console.log(`[scaffold-env] wrote ${localPath} (project settings, shared by every env)`);
   }
 
   if (blocks.length) {
@@ -138,13 +165,12 @@ function main() {
           `# ==============================================================================`,
           `# .env.${env} — per-env URLs / identifiers (Bucket #2, committed, NO secrets).`,
           `# Templated by project-init/scaffold-env.mjs. FILL IN each value below, then`,
-          `# run verify-access.mjs. Secrets for this env live in .env.local.`,
+          `# run verify-access.mjs. What is the same for every env (the tracker /`,
+          `# code-host connection) and the test-user passwords live in .env.local.`,
           `# Activate: TEST_ENV=${env} npm run env:check`,
           `# ==============================================================================`,
           ``, ``,
         ].join("\n");
-    const ignored = ensureProjectIgnores(outputRoot());
-    if (ignored.length) console.log(`[scaffold-env] .gitignore += ${ignored.join(", ")}`);
     writeFileSync(outPath, existing + header + blocks.join("\n"));
   }
 

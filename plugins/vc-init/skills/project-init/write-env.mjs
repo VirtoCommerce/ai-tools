@@ -8,8 +8,12 @@
  *
  *   Bucket #2  .env.<env>   (committed, NON-secret) — per-env URLs / identifiers /
  *              risk: FRONT_URL, BACK_URL, STORE_ID, ENV_RISK, STOREFRONT_PROFILE,
- *              MODULES_ENABLED, JIRA_PROJECT_KEY, ADMIN/USER emails, JIRA_EMAIL, …
- *   Bucket #3  .env.local   (gitignored, SECRET) — passwords + tokens + API keys.
+ *              MODULES_ENABLED, ADMIN/USER emails, …
+ *   Bucket #3  .env.local   (gitignored) — passwords + tokens + API keys, AND the
+ *              project-level keys scaffold-env.mjs CATALOG marks `scope: "project"`
+ *              (JIRA_BASE_URL / JIRA_PROJECT_KEY / JIRA_EMAIL, ADO_ORG / ADO_PROJECT,
+ *              CLIENT_REPO_ORG): the same for every env, so they arrive in envVars but
+ *              are written here, un-suffixed (lib/project-env.mjs).
  *              Per-env credentials are written with the `_<ENV>` suffix that
  *              config.js promotes to the base name when TEST_ENV=<env>; global
  *              tokens (GitHub/Jira/ADO/Postman/Context7/Figma) are written un-suffixed.
@@ -44,6 +48,10 @@
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
 import { outputRoot } from "./lib/paths.mjs";
+import { CATALOG } from "./scaffold-env.mjs";
+
+// The project-level keys — one value for every env — go to .env.local, never .env.<env>.
+const PROJECT_KEYS = new Set(CATALOG.filter(([, m]) => m.scope === "project").map(([k]) => k));
 
 // Secret keys that are GLOBAL (one value across all envs) → never get the _<ENV>
 // suffix. Everything else in `secrets` is treated as a per-env credential.
@@ -132,7 +140,7 @@ function main() {
   const SUFFIX = `_${envName.toUpperCase()}`;
   const suffixCreds = payload.suffixCreds !== false; // default true
 
-  const envVars = payload.envVars || {};
+  const envVars = { ...(payload.envVars || {}) };
   const secrets = payload.secrets || {};
   if (!Object.keys(envVars).length && !Object.keys(secrets).length) {
     fail("nothing to write: both envVars and secrets are empty.");
@@ -151,6 +159,12 @@ function main() {
       secretKv[`${key}${SUFFIX}`] = val;
       suffixedNote.push(`${key} → ${key}${SUFFIX}`);
     }
+  }
+
+  for (const key of Object.keys(envVars)) {
+    if (!PROJECT_KEYS.has(key)) continue;
+    if (envVars[key] !== undefined && envVars[key] !== null && envVars[key] !== "") secretKv[key] = envVars[key];
+    delete envVars[key];
   }
 
   // Write into the deployment project (process.cwd()), symmetric with config.js which

@@ -57,7 +57,7 @@ export const TOKEN_GUIDE = {
   JIRA_API_TOKEN: {
     axis: "jira", secret: "jira-token",
     what: "Jira API token (used together with JIRA_EMAIL for Basic auth).",
-    why: "Lets /qa-fix comment on and transition Jira issues.",
+    why: "Lets the plugins read, file, comment on and transition Jira issues.",
     where: "id.atlassian.com → Manage account → Security → API tokens → Create API token.",
   },
   GITHUB_FIX_BUGS_TOKEN: {
@@ -78,7 +78,7 @@ export const TOKEN_GUIDE = {
     // `gh auth login` for the upstream + a fine-grained token for the client's own org — vc-fix
     // .claude/rules/quality-gates.md §1a.
     what: "GitHub Personal Access Token — classic, NOT fine-grained.",
-    why: "Lets /qa-fix open PRs on your own repos and contribute fixes/issues to the VirtoCommerce upstream.",
+    why: "Lets the plugins read your repos, open PRs on them and contribute fixes/issues to the VirtoCommerce upstream.",
     // The last hop matters: even on the "Tokens (classic)" page the "Generate new token" button
     // opens a menu whose FIRST item is fine-grained, so the classic item is named verbatim.
     where: "github.com → Settings → Developer settings → Personal access tokens → Tokens (classic) → \"Generate new token\" ▾ → \"Generate new token (classic)\". Scope: repo.",
