@@ -42,7 +42,8 @@ on two envs) never write the same file.
 - **Where it is:** `QA_OUTPUT_DIR` in `.env.local`, a path template with optional `<ticket>`, `<env>` and
   `<sprint>` (`QA_OUTPUT_DIR=P:\VC\_VIRTO\tickets\<ticket>\.work\self-testing`). A template without
   `<ticket>` gets `\<ticket>` appended, then one without `<env>` gets `\<env>`. Unset ⇒
-  `reports/tickets/<sprint>/<ticket-key>/<env>/` in the project. Write it unquoted or single-quoted.
+  `reports/tickets/<sprint>/<ticket-key>/<env>/` in the project, or `reports/tickets/<ticket-key>/<env>/` when the
+  project has no `reports/tickets/SprintXX-XX` folder. Write it unquoted or single-quoted.
 - **What lands there:** `/qa-verify-fix`'s `verification-report.md`, `verification-summary.json`,
   `evidence.html` and screenshots; an investigation package as `evidence-<UTCstamp>/`; a bug report the run
   files, as `bugs/<critical-high|medium|low>/BUG-*.md` with its screenshots in `bugs/screenshots/<slug>/`.
