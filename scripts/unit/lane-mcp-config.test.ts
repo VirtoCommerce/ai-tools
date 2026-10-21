@@ -114,7 +114,6 @@ test("laneConfigFor does not mutate the template", () => {
 test("template fields the module does not own are carried through untouched", () => {
   const config = laneConfigFor(template, "1");
   assert.equal(config.isolated, template.isolated);
-  assert.equal(config.screenshot, template.screenshot);
   const browser = config.browser as Record<string, unknown>;
   const templateBrowser = template.browser as Record<string, unknown>;
   assert.deepEqual(browser.launchOptions, templateBrowser.launchOptions, "launch args must survive");

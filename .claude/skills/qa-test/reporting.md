@@ -91,7 +91,7 @@ comment, never a second one** (`tracker-ops.md` §0). **Every post and amend pas
 the old one (§0 rule 5):
 
 **Runs after §3 has written `summary.json`** — the comment is rendered from it:
-`/vc-fix:qa-report reports/tickets/{SPRINT}/<ticket-key>/summary.json --kind test --confirmed --lede "<one to three sentences: what the ticket now does on the surface a user touches, and what the verdict turns on>" --set RELEASE_GATE="<§1 recommendation>"`.
+`/vc-fix:qa-report {RUN_DIR}/summary.json --kind test --confirmed --lede "<one to three sentences: what the ticket now does on the surface a user touches, and what the verdict turns on>" --set RELEASE_GATE="<§1 recommendation>"`.
 The template (`plugins/vc-fix/skills/qa-report/templates/comment-test.md`) is the only copy; its `Not filed` and
 `Release note` lines are mandatory and print `None` / `none — <refusal>` rather than disappear, because an omitted
 line is indistinguishable from a clean run. Skill refused ⇒ the vc-fix install predates it: tell the user to run
@@ -108,7 +108,7 @@ run without `--iterate`) is never amended by the exit template — it posts as a
 
 ### 3. Persist `summary.json`
 
-Write `reports/tickets/{SPRINT}/<ticket-key>/summary.json` per
+Write `{RUN_DIR}/summary.json` per
 [`.claude/templates/qa-test-summary.schema.json`](../../templates/qa-test-summary.schema.json): `path`, the
 AC-analysis + `ac_dod_estimate` block, counts, the **`regression`** block (`c1` only — `c2` was removed with `5r`) and `regression_triage`, `bugs_filed`
 with relationship + severity, `bugs_not_filed`, the **`timing`** block,
@@ -263,7 +263,7 @@ should) auto-fire it. When `refusal` is null, state exactly this:
 
 ```
 /ba-analyze docs release <ticket-key>
-# layer=<layer> · audience=<audience> · summary.json: reports/tickets/{SPRINT}/<ticket-key>/summary.json
+# layer=<layer> · audience=<audience> · summary.json: {RUN_DIR}/summary.json
 ```
 
 Those four facts are the whole hand-off — the follow-up run re-derives nothing. When `refusal` is
@@ -312,7 +312,7 @@ table).
 
 ```
 /ba-analyze docs ticket <ticket-key> --publish
-# layer=<layer> · audiences=<derived list> · summary.json: reports/tickets/{SPRINT}/<ticket-key>/summary.json
+# layer=<layer> · audiences=<derived list> · summary.json: {RUN_DIR}/summary.json
 ```
 
 `ba-doc-writer` runs **alone** (same reason as `doc_scope: release` — there is no per-ticket

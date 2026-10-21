@@ -5,6 +5,8 @@ node_modules
 # Layered env files — secrets stay local, per-env scaffolds are committed
 .env.local
 .env.*.local
+# Per-env Playwright MCP secrets (.env.playwright.<env>) hold passwords — never committed
+/.env.playwright.*
 !.env.defaults
 !.env.vcst
 !.env.vcptcore
@@ -26,6 +28,8 @@ settings.json
 .mcp.json
 scripts/.graphql-schema.cache.json
 scripts/.graphql-schema.*.cache.json
+# A ticket run's own schema caches (scripts/lib/run-dir.mjs) when its run folder sits under reports/tickets/
+reports/tickets/**/.graphql-schema*.cache.json
 # Ad-hoc/run-less graphql-runner evidence (no --run-id) — scratch, not tied to a run
 scripts/.graphql-evidence/
 
@@ -79,6 +83,9 @@ tests/screenshots/**/*.png
 # reports/tickets/<TICKET>/screenshots/. Run-scoped evidence (reports/regression/,
 # reports/test-lifecycle/, reports/coverage/) stays ignored — it is disposable.
 !reports/tickets/**/screenshots/*.png
+# A ticket run's bug reports keep their screenshots one level deeper, as reports/bugs/ does:
+# <run folder>/bugs/screenshots/<bug-slug>/*.png (.claude/knowledge/execution/run-output.md).
+!reports/tickets/**/bugs/screenshots/**/*.png
 
 # VCST-2945 scannable barcode images ARE committed test data: the storefront scanner's file-upload
 # path decodes them and `td:validate:barcode` checks each one's stamped value against the spec.

@@ -19,7 +19,7 @@ Design, the deviations from the original proposal, and why: [`docs/decisions/tes
 | Layer | Question | Artifact |
 |---|---|---|
 | Domain map | What exists, and where are its surfaces? | `.claude/knowledge/domain/<name>.md` |
-| Test model | What should THIS ticket test? | `reports/ba/test-models/*.md` (Part 0 cites node ids) |
+| Test model | What should THIS ticket test? | a run folder's `test-model.md`, promoted to `reports/ba/test-models/*.md` (Part 0 cites node ids) |
 | **Mind map** | **How can the domain behave?** | **`.claude/knowledge/domain/<name>.mind-map.json`** |
 | Data model | What state must exist first? | `test-data/models/<name>.data-model.json` → [`/qa-test-data-model`](../qa-test-data-model/SKILL.md) |
 | Oracles | What MUST be true? | `BL-*` / `ECL-*` — the only behavioural oracle |
@@ -61,7 +61,10 @@ cross-domain edges drawn in the source-side map; in `build` step 10, `Behavior:`
 ## Pre-flight (every mode)
 
 0. **Resolve the slug to files.** The domain map is the `.claude/knowledge/domain/*.md` whose
-   `domain_slug` matches the argument. The mind map is that file's basename + `.mind-map.json`
+   `domain_slug` matches the argument. **Inside a ticket run** (`npm run --silent run:dir` prints a folder)
+   both maps are read from `{RUN_DIR}/knowledge/domain/` first and written only there — an update copies
+   the shared map in before editing it; promotion is by hand
+   ([`run-output.md`](../../knowledge/execution/run-output.md); `npm run run:use -- --clear` writes the shared copy). The mind map is that file's basename + `.mind-map.json`
    (`loyalty-missions.md` ⇒ `loyalty-missions.mind-map.json`), and its `domain_slug` field holds the slug.
 1. **Domain map first.** `npm run domain:check`. If there is no map for `<slug>`, STOP and run
    `/qa-domain-map <slug>`: the mind map is derived from the map's value chain. If the map is STALE,

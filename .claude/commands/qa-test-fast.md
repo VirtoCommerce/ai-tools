@@ -1,6 +1,6 @@
 ---
 description: "[Testing] Use when a ticket needs a fast but GROUNDED test pass — more than /qa-test FAST's single-agent checklist, less than /qa-test FULL's verifier-gated pipeline. Context from the PR diff, the ticket and the domain map feeds an approved test strategy; its MODEL risks get a test model, and with the mind map they feed one traced checklist; the checklist and, when the strategy asks for one, an exploratory session run in parallel with test data made on the fly, plus the qa-design visual lane when the ticket is UI-visible; the run ends in a short human-readable verdict. feature-test route only."
-argument-hint: "<TICKET> [--layer fe|be|both] [--no-explore] [--no-visual] [--dry-run]"
+argument-hint: "<TICKET> [<env>] [--layer fe|be|both] [--no-explore] [--no-visual] [--dry-run]"
 disable-model-invocation: true
 ---
 
@@ -33,6 +33,12 @@ behind every step, the rationalization table and the red flags are in
 
 ## Step 0 — Pre-flight (inline)
 
+**Env and run folder first.** `npm run run:use -- <TICKET> [<env>]` binds this session's env
+([`run-env.md`](../knowledge/execution/run-env.md); no env argument ⇒ the default) and its run folder
+`{RUN_DIR}` ([`run-output.md`](../knowledge/execution/run-output.md)). Every script below then resolves both, its
+output fills the Environment line of every brief, and **every file this run writes goes into `{RUN_DIR}`** —
+the domain map, mind map and GraphQL schema it builds or refreshes included (layout: run-output.md).
+
 1. **Route.** Fetch the ticket and route it per
    [`../knowledge/execution/ticket-routing.md`](../knowledge/execution/ticket-routing.md). Anything
    other than `feature-test` ⇒ **STOP** and name the right command (`/qa-verify-fix`,
@@ -43,11 +49,11 @@ behind every step, the rationalization table and the red flags are in
    both runs probed the deployed modules) and MCP availability, and runs its own remediation loop. A `not-deployed:*`
    row is BLOCKED-on-deploy, never a FAIL. **No `--expect` here:** the PRs are found in Stage 1, where
    `/ticket-context` asks the same core per PR.
-3. **Prior artifacts are inputs.** For this ticket, glob `reports/tickets/*/<TICKET>/`,
-   `reports/ba/test-models/<TICKET>-*` and `reports/bugs/**`. A prior model is amended, never forked.
-   Prior bugs are the dedupe baseline `qa-bug` checks against. A prior run on a **different build**
-   supplies context, never results.
-   **A prior `summary.json` on the SAME build** is handled before anything runs:
+3. **Prior artifacts are inputs.** For this ticket, read the prior run folders `run:use` listed (every env),
+   `reports/ba/test-models/<TICKET>-*` (the older place) and `reports/bugs/**`. A prior model is amended into
+   `{RUN_DIR}/test-model.md`, never forked. Prior bugs are the dedupe baseline `qa-bug` checks against. A
+   prior run on a **different build** supplies context, never results.
+   **A prior `summary.json` on the SAME build** (this env's folder) is handled before anything runs:
    - Show its verdict, date and tracker comment id.
    - Ask once whether to re-run. A re-run overwrites that folder's files, so if they are uncommitted,
      ask the user to commit them first.
@@ -86,7 +92,7 @@ Full briefs, merge rules and the context bundle:
 5. **Wave 3.** Run `/qa-checklist <TICKET> --from-model --strategy <test-strategy.md> [--mind-map <slug>]`
    (always Mode 5, which reads no model when the strategy ran none; `--mind-map` only when the mind map
    ran) and write the result to
-   `reports/tickets/{SPRINT}/<TICKET>/testing-checklist.md`.
+   `{RUN_DIR}/testing-checklist.md`.
 6. **Stage gate.** The strategy gate passed and the round is approved. When a model ran, every model gate
    clause is `PASS`/`FIXED`. Every in-scope risk, scenario row and node is either an item or an omission
    line. Every item has a Data cell.
@@ -101,7 +107,8 @@ Briefs, the lane split, the data rules and teardown:
 
 1. **Checklist runners** — one per checklist lane section. `qa-frontend-expert` takes
    `playwright-chrome`; `qa-backend-expert` takes `playwright-edge`. `--layer` narrows this to one lane.
-2. **Exploratory** — `/qa-exploratory ticket <TICKET>` → `qa-testing-expert` on `playwright-firefox`.
+2. **Exploratory** — `/qa-exploratory ticket <TICKET> <env>` (the lane never re-binds the env) →
+   `qa-testing-expert` on `playwright-firefox`.
    Only when the strategy's Exploratory row is `RUN`. The charter is that row's risks plus the model's
    unresolved items when a model ran. `--no-explore` drops the lane. That is recorded, never
    silent: against an approved `RUN` it is a deviation — append it to the round's `### Amendments` and list
@@ -133,7 +140,7 @@ Triage, the verdict rules, the report shapes and the tracker comment:
    by ledger id ([`execution.md`](../skills/qa-test-fast/execution.md) §Data) and re-read.
 3. **Verdict.** Decide it per [`../skills/qa-test/close-out.md`](../skills/qa-test/close-out.md)
    §5-verdict.2.
-4. **Write the ticket folder:** `summary.json`, `verdict.md`, and the updated `testing-checklist.md`.
+4. **Write `{RUN_DIR}`:** `summary.json`, `verdict.md`, and the updated `testing-checklist.md`.
    Then run `npm run summary:validate`.
 5. **HTML page and comment — ONE `/vc-fix:qa-report` call** ([`verdict.md`](../skills/qa-test-fast/verdict.md) §HTML page). It builds the page and the comment. Skill refused ⇒ `/plugin update`, stop the report step.
 6. **The post.** `qa-report` asks the one question (never ask it again here); on yes, write the returned id into

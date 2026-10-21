@@ -21,7 +21,7 @@ Investigate a suspected bug using a structured 5-phase process: Reproduce → Is
 
    **Scaffold the evidence package up front** so every artifact has one home and nothing is missed
    (`scripts/bundle-evidence.ts` is full `vc-qa` plugin only, not shipped in `vc-fix` — create the
-   package dir by hand at `reports/tickets/<TICKET>/evidence-<UTCstamp>/` with
+   package dir by hand at `<run folder>/evidence-<UTCstamp>/` (`evidence-and-root-cause.md` §Package location) with
    `screenshots/ network/ console/ har/` subfolders, and write `evidence-index.md` /
    `root-cause.md` yourself; see `evidence-and-root-cause.md` §0 for the exact shapes).
 
@@ -69,7 +69,7 @@ Investigate a suspected bug using a structured 5-phase process: Reproduce → Is
    - Write bug report using templates in `skills/qa-defect/defect-report-templates.md` — reference the package artifacts, don't inline them (`reports.md` §8)
    - Include the **env header** (§1) and the **Fix Routing block** (owning layer + repo + `repoKind`, per `qa-bug.md` Step 4) so `/qa-fix` Gate 1 can confirm rather than re-derive
    - For regressions, add the **Regression block** (§8C Step 4): introducing commit/PR, first-bad & last-good versions, why it broke, revert-safe vs. fix-forward
-   - Save to `reports/bugs/`
+   - Save to `reports/bugs/` — or the caller's run folder's `bugs/` (`/qa-bug` Step 4)
    - Optionally create a tracker ticket via `/qa-bug` Step 5 (tracker-ops Create — Jira `createJiraIssue` / Azure `ado.mjs create-workitem`)
 
 ## Rules
