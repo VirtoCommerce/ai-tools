@@ -237,7 +237,7 @@ export function extractNpxSpecs(servers) {
 /**
  * The PINNED @playwright/mcp version from the generated servers (VCST-5702 ITEM 4). Emitted at
  * project-init so a mismatch between the pinned spec and the version actually installed surfaces
- * HERE: on @playwright/mcp 0.0.77 a bare screenshot filename resolves against the MCP server's OWN
+ * HERE: on @playwright/mcp 0.0.77 and 0.0.83 (re-observed 2026-10-21) a bare screenshot filename resolves against the MCP server's OWN
  * cwd, NOT the configured absolute --output-dir (VCST-5582 C), so the exact version is load-bearing.
  * Pure. Returns "" when no playwright server is present, "unpinned" when the spec carries no @version.
  */
@@ -522,10 +522,10 @@ function main() {
     : `[gen-mcp] browser passwords: ${existsSync(join(projectRoot, ".env.playwright.local")) ? ".env.playwright.local, passed as --secrets" : "no .env.playwright.local yet — run sync-browser-secrets.mjs, then gen-mcp again"}`);
   console.log(`[gen-mcp] browser evidence lands in ${join(projectRoot, ...EVIDENCE_INCOMING)}\\<browser> (absolute — never the project root, whatever cwd the MCP server starts in)`);
   // VCST-5702 ITEM 4 — emit the PINNED @playwright/mcp version so a version mismatch surfaces at
-  // project-init. On 0.0.77 a bare screenshot filename resolves against the server cwd, not the
+  // project-init. On 0.0.77 and 0.0.83 a bare screenshot filename resolves against the server cwd, not the
   // configured --output-dir, so Stage 5 (output-paths.md) MUST reconcile the file into _incoming/.
   if (pwVersion) {
-    console.log(`[gen-mcp] @playwright/mcp pinned at ${pwVersion} — capture with a BARE filename; on 0.0.77 it lands in the server cwd, so /qa-bug reconciles it into _incoming/ (output-paths.md Stage 5).`);
+    console.log(`[gen-mcp] @playwright/mcp pinned at ${pwVersion} — capture with a BARE filename; on 0.0.77–0.0.83 it lands in the server cwd, so /qa-bug reconciles it into _incoming/ (output-paths.md Stage 5).`);
   }
 
   // settings.local.json (gitignored): the enabled set, VC_RUN, and NO token. Already read + validated

@@ -1,7 +1,7 @@
 ---
 name: preflight
 description: "Environment and build pre-flight before work against a stand: env health, deployed build, MCP availability, one output form. Use at the start of /qa-test, /qa-test-fast, /qa-exploratory, /qa-test-lifecycle, /qa-domain-map, /ba-analyze, /qa-regression, /qa-smoke. Not for the /qa-test axes 2b–2g, ticket fetching or routing, or per-case [PRE:*] tags."
-argument-hint: "<ticket|ticket-fast|exploratory|lifecycle|domain-map|ba> [--ticket KEY] [--components A,B] [--domain slug] [--expect Module.Id@version] [--storefront] [--ci]  |  <regression|smoke> <selection: name or ids> [--run-id <RUN_ID>] [--preflight-out <run-folder>/preflight.json] [--accept drift:<id>,…] [--ci]"
+argument-hint: "<ticket|ticket-fast|exploratory|lifecycle|domain-map|ba> [--ticket KEY] [--components A,B] [--domain slug] [--expect Module.Id@version] [--env <env>] [--storefront] [--ci]  |  <regression|smoke> <selection: name or ids> [--run-id <RUN_ID>] [--preflight-out <run-folder>/preflight.json] [--accept drift:<id>,…] [--ci]"
 ---
 
 # /preflight — is this stand fit for the work, and what does it run?
@@ -14,12 +14,15 @@ step the user chooses.
 ## Step 1 — run the CLI for your scope
 
 ```bash
-npm run preflight -- --for <for> [--ticket KEY] [--components A,B] [--domain slug] [--expect Module.Id@version] [--storefront] --json
+npm run preflight -- --for <for> [--ticket KEY] [--components A,B] [--domain slug] [--expect Module.Id@version] [--env <env>] [--storefront] --json
 ```
 
 - `--components` — the ticket's components (ledger names, `vc-module-*` repos or `VirtoCommerce.*` ids).
 - `--expect` — the PR artifact under test (`/qa-test`: the linked PR's module + version). A storefront (`vc-frontend`) PR is `--expect vc-frontend@<version from the theme zip name>`: it is checked against the live storefront bundle (`facts.deployedTheme`), not the modules API.
 - `--storefront` — the scope touches the storefront (adds the anonymous `InitializeApplication` probe).
+- `--env` — check that env instead of the one this session resolves. A run never needs it: its Step 0 bound
+  the env for the session (`npm run env:use`, [`run-env.md`](../../knowledge/execution/run-env.md)), and this
+  CLI reads that binding.
 - `--ci` — this skill's own flag (the caller is non-interactive, step 4); never pass it to the CLI, which rejects an unknown flag with exit `1`.
 - Exit `0` READY (warnings allowed) · `2` NOT READY · `1` usage error — fix the flags · `3` the script could not run: report its message and STOP, never improvise the facts by hand.
 - The verdict counts BLOCKs only: `UNKNOWN` rows are listed and counted but do not by themselves make a run NOT READY. The exception is `ticket` / `ticket-fast`: an `--expect` whose deployed state is `UNKNOWN` is a BLOCK.

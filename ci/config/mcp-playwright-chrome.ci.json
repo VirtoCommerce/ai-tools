@@ -25,6 +25,5 @@
     }
   },
   "isolated": true,
-  "outputDir": "./test-results/chrome",
-  "screenshot": "only-on-failure"
+  "outputDir": "./test-results/chrome"
 }

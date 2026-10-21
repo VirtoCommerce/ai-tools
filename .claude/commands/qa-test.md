@@ -1,6 +1,6 @@
 ---
 description: "Test a tracker ticket, feature area, or PR. Step 1a routes by ticket type × status (per ticket-routing.md) to the right flow — a fix-ready Bug runs /vc-fix:qa-verify-fix inline, a refactor/migration/dependency bump takes the fixed-shape technical-change flow (2a + a blast-radius regression, no feature test), else feature-test at a FAST path (a checklist; the design/a11y visual lane under --visual) or a FULL path (mandatory Test Model, case authoring, independent verifier gates). Regression is C1 — the exact set of cases this run wrote or changed. Dispatches specialist agents, correlates App Insights logs for the test window, and produces a verdict. --iterate drives a bounded test→fix→re-test loop; --epic runs a series of sibling stories with cross-story integration."
-argument-hint: "<ticket-key> | feature name | PR #NNN | --epic <EPIC-KEY> [--iterate [--max-rounds N]] [--visual|--contract|--coverage|--axes]"
+argument-hint: "<ticket-key> | feature name | PR #NNN | --epic <EPIC-KEY> [--iterate [--max-rounds N]] [--visual|--contract|--coverage|--axes] [<env>]"
 disable-model-invocation: true
 ---
 
@@ -232,8 +232,8 @@ step**: its AC table is a field of the Test Model, the single hand-off to `test-
 
 #### 1a — Fetch the scope, classify type × status, route *(both paths)*
 
-**Fetch first** — every later sub-part depends on these fields. Detail, and the reason each item is
-mandatory: [`skills/qa-test/intake.md`](../skills/qa-test/intake.md) §1a.
+**Bind the env** (`npm run env:use`, [`run-env.md`](../knowledge/execution/run-env.md)), **then fetch** — every
+later sub-part depends on these fields. Detail and why each item is mandatory: [`skills/qa-test/intake.md`](../skills/qa-test/intake.md) §1a.
 
 - **The ticket** (tracker MCP; not configured → ask the user to paste it) + any **linked PR** (diff + files).
 - **The comments and the attachments — both paths, always.** The description is the plan; the comments are
@@ -253,7 +253,7 @@ for `feature-test`, the **EFFORT**, then the **SHAPE CLASS** (§5c) off the same
 | Flow | Then |
 |---|---|
 | `feature-test` | continue to `1b` and run the pipeline at the resolved effort — the rest of this document. A `ui-kit` shape class changes what that path produces (§5c) |
-| `verify-fix` | **run `/vc-fix:qa-verify-fix` inline — execute its Steps 0–7 as written** ([`plugins/vc-fix/commands/qa-verify-fix.md`](../../plugins/vc-fix/commands/qa-verify-fix.md)). Steps 2–5 do not run. **Fail-safe:** a `fix-ready` Bug with no STR *and* no linked fix PR has nothing to prove RED→GREEN against → fall back to `feature-test` FAST and note the missing repro basis |
+| `verify-fix` | **run `/vc-fix:qa-verify-fix` inline — execute its Steps 0–7 as written** ([`plugins/vc-fix/commands/qa-verify-fix.md`](../../plugins/vc-fix/commands/qa-verify-fix.md)). Steps 2–5 do not run. **Fail-safe** (no STR *and* no fix PR): [`intake.md`](../skills/qa-test/intake.md) §1a |
 | `hotfix-verify` | **STOP** — `Run /qa-hotfix-check <ticket-key>`. File nothing; transition nothing |
 | `technical-change` | run the fixed-shape flow — [`technical-change.md`](../skills/qa-test/technical-change.md). `2a` + a standard `/qa-regression` over the blast radius, then **Step 5 in full**; the checklist only if the ticket has machinery to verify. No Test Model, no authoring |
 | a **Sub-task** | resolve the parent and re-enter this classification as the **parent's** type × status |

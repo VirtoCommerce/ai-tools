@@ -25,12 +25,12 @@
  * Usage:
  *   npx tsx scripts/validate-graphql-fixtures.ts           # validate with cached schema
  *   npx tsx scripts/validate-graphql-fixtures.ts --refresh # refresh schema from live
+ *   npx tsx scripts/validate-graphql-fixtures.ts --refresh --url https://custom-url.com
  *   npx tsx scripts/validate-graphql-fixtures.ts --json    # emit JSON instead of markdown
  */
 
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
-import { config as loadDotenv } from "dotenv";
-import { resolveTestEnv } from "../lib/resolve-test-env.js";
+import { loadEnv } from "../lib/load-env.mjs";
 import { readdirSync, readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import { join, resolve, basename } from "path";
 import {
@@ -41,13 +41,10 @@ import {
   validateQuery,
 } from "../lib/graphql-validator.js";
 
-// Layered, TEST_ENV-aware env load (later files override earlier; no legacy root `.env`).
-// Mirrors scripts/lib/seed-common.mjs — a bare loadDotenv() reads only `.env`, which does
-// not exist in this repo, so `--refresh` introspection would see no BACK_URL.
-const _TEST_ENV = resolveTestEnv("vcst");
-loadDotenv({ path: ".env.defaults" });
-loadDotenv({ path: `.env.${_TEST_ENV}`, override: true });
-loadDotenv({ path: ".env.local", override: true });
+// The layered env WITH config.js's `KEY_<ENV>` promotion. The three bare loads this replaces
+// left it out, so `.env.local`'s BACK_URL beat the env's own pin (BACK_URL_VCPTCORE_DEV) and
+// `--refresh` cached the wrong backend's schema. The files beat a shell BACK_URL; --url overrides.
+const { testEnv, sourceOf } = loadEnv({ fallback: "vcst" });
 
 const ROOT = resolve(process.cwd());
 const FIXTURES_DIR = join(ROOT, "test-data", "graphql");
@@ -84,10 +81,12 @@ interface ValidationResult {
 
 function parseArgs() {
   const argv = process.argv.slice(2);
+  const urlIdx = argv.indexOf("--url");
   return {
     refresh: argv.includes("--refresh"),
     json: argv.includes("--json"),
     dryRun: argv.includes("--dry-run"),
+    url: urlIdx !== -1 ? argv[urlIdx + 1] : undefined,
   };
 }
 
@@ -179,16 +178,21 @@ function extractHeader(lines: string[], path: string): FixtureHeader {
 
 async function main() {
   const args = parseArgs();
-  const backUrl = process.env.BACK_URL;
+  const backUrl = args.url ?? process.env.BACK_URL;
+  if (args.url && !args.refresh) {
+    // Without --refresh the cached schema is validated; the URL would only relabel the report.
+    console.error("--url needs --refresh");
+    process.exit(2);
+  }
 
   // Schema load / refresh
   let schema;
   if (args.refresh) {
     if (!backUrl) {
-      console.error("--refresh requires BACK_URL in .env");
+      console.error(`--refresh needs a backend: no BACK_URL in .env.defaults / .env.${testEnv} / .env.local, and no --url`);
       process.exit(2);
     }
-    console.log(`Refreshing schema from ${backUrl}/graphql...`);
+    console.log(`Refreshing schema from ${backUrl}/graphql (TEST_ENV=${testEnv}; ${args.url ? "--url" : sourceOf("BACK_URL")})...`);
     const intro = await introspect({ backUrl });
     saveSchemaCache(intro, SCHEMA_CACHE);
     schema = buildSchema(intro);

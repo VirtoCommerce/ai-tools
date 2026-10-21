@@ -1,6 +1,6 @@
 ---
 description: "Discover scenarios the regression suite doesn't cover. Discovery-first exploratory session — every run must surface a net-new scenario."
-argument-hint: "[sprint|sprint:XX-YY|ticket <KEY>|checkout|catalog|B2B|mobile|new]"
+argument-hint: "[sprint|sprint:XX-YY|ticket <KEY>|checkout|catalog|B2B|mobile|new] [<env>]"
 ---
 
 # /qa-exploratory — Scenario Discovery Session
@@ -46,7 +46,7 @@ loads it and skips the ad-hoc charter authoring in "Exploration Charter" below.
    suites need them.
 4. `lane` is any of the three Playwright lanes — `playwright-firefox` is click-capable since 2026-09-08
    (`.claude/rules/agents.md` §Parallel Execution). If all three are busy, QUEUE.
-5. Still run Steps 0.1–0.5 (item 1 is `/preflight`) below (env health, build versions, 24 h duplicate check, docs, coverage map)
+5. Still run Steps 0.1–0.5 (item 1 is `/preflight`) below
    — the charter says *what* to explore, pre-flight establishes *against what build*.
 
 Rationale + the C1–C4 / D1–D3 derivation: `.claude/skills/qa-sbtm/sprint-charter-selection.md`.
@@ -59,30 +59,31 @@ model's *unknowns* into observations while there is still time for authoring to 
 Step 0a: the charter is **received, not authored**.
 
 1. **Read the charter payload** `/qa-test` passes (its shape:
-   [`.claude/skills/qa-test/exploratory-lane.md`](../skills/qa-test/exploratory-lane.md) §6). Its mission
+   [`exploratory-lane.md`](../skills/qa-test/exploratory-lane.md) §6). Its mission
    is the derived sources of §3 there — five from the Test Model, a sixth from an approved test strategy.
    **That IS the charter — do not re-derive it, do not widen it.**
 2. **No model or strategy charter, or nothing unresolved in any source?** → **STOP** and report the lane skipped with
    that reason. Never improvise a mission, exactly as Step 0a never improvises a charter set the plan does
    not contain. A `/qa-test` FAST run reaches here with no model by construction and is the normal skip.
 3. **Box: SIZED TO SCOPE — 30 min floor, 60 min ceiling**, split ~20% setup · ~65% explore · ~15% write-up.
-   The caller states the number in the charter; the lane never re-sizes it mid-session. Sizing table: [`skills/qa-test/exploratory-lane.md`](../skills/qa-test/exploratory-lane.md) §5. On overrun
+   The caller states the number in the charter; the lane never re-sizes it mid-session. Sizing table: [`exploratory-lane.md`](../skills/qa-test/exploratory-lane.md) §5. On overrun
    `/qa-test` proceeds on what returned. **Spend the box in charter order**: the five sources first, the open half with whatever
-   remains. Getting that backwards produces a pleasant session and no answers to the questions asked.
+   remains.
 4. **Return the three extra fields the caller needs**, beyond the ordinary §Output tables: model
    amendments (with evidence), the **`{OBSERVED}` value per `{HYPOTHESIS}` row** (or *not reached + reason*),
    and per mission item *covered* or *NOT REACHED + reason*. A `PROMOTE` `Fate` here means the caller
    authors that case **in the same run**, not in a later sprint — so name the scenario precisely enough to
    author from.
 5. **File nothing.** Bugs go back to the caller; `/qa-test` `5-triage` grades them, `5-file` files them.
-   Everything else in Steps 0.1–0.5 (item 1 is `/preflight`) below still runs — the charter says *what* to explore, pre-flight
-   establishes *against what build*.
+   Everything else in Steps 0.1–0.5 (item 1 is `/preflight`) below still runs, as in `sprint` mode.
 
 Rationale, the charter derivation table and the record: [`exploratory-lane.md`](../skills/qa-test/exploratory-lane.md).
 
 ### Step 0 — Pre-Flight
 
-1. **`/preflight exploratory --domain <slug> --components <domain's components> [--ticket <KEY>] [--storefront]`**
+1. **`npm run env:use -- <env>|--default`** ([`run-env.md`](../knowledge/execution/run-env.md)), never in `ticket` mode: there
+   a bare `npm run env:use` prints the session's env, and an `<env>` that differs is a STOP, never a re-bind. Then
+   **`/preflight exploratory --domain <slug> --components <domain's components> [--ticket <KEY>] [--storefront]`**
    ([`../skills/preflight/SKILL.md`](../skills/preflight/SKILL.md)) — env health, the **deployed**
    build, the release-ledger Δ, the 24 h duplicate check (this domain or ticket) and MCP availability, in one
    output form. Record the block in the session report header.
