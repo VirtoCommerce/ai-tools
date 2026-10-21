@@ -1,6 +1,6 @@
 ---
 name: project-init
-description: "Initialize / onboard the Virto Commerce plugins (vc-fix, vc-perf, …) onto a deployment. Checks that vc-secrets is installed, installs deps, then asks the operator only what genuinely shapes the config — the environment NAME, the tracker (Jira / Azure Boards), the code host (GitHub / Azure Repos), and an auth preference per axis (PAT recommended, else browser/CLI login). Every PAT is stored in vc-secrets by the operator in a terminal — never typed in chat, never written to a file — and reaches a process only through the $VC_RUN bridge. Everything else — native-platform or CLIENT project, the client org, the contribution mode, the fork account — is DERIVED from the token + the filled env + a live module/repo scan. Writes project-profile.json + .env.<env> + .env.local (test-user passwords only) + .mcp.json + the vc-secrets declarations, and verifies access. That one profile is what every installed plugin reads — vc-fix routes a bug to the RIGHT repo and tracker with it, vc-perf finds the stand and the code with it. Use when standing the plugins up on a new machine or for a new customer. On a host-governed project (a client governance plugin owns MCP servers and secrets) it writes the profile and env files only and skips every token / MCP step. Day-2 modes skip the interview: `--add-env` adds another environment (URLs + per-env passwords) to an already-onboarded project; `--add-user` adds another storefront user or admin (login in `.env.<env>`, password in vc-secrets or `.env.local`); `--check` reconciles an existing profile to the current schema, moves any plaintext token into vc-secrets, then verifies."
+description: "Initialize / onboard the Virto Commerce plugins (vc-fix, vc-perf, …) onto a deployment. Checks that vc-secrets is installed, installs deps, then asks the operator only what genuinely shapes the config — the environment NAME, the tracker (Jira / Azure Boards), the code host (GitHub / Azure Repos), and an auth preference per axis (PAT recommended, else browser/CLI login). Every PAT is stored in vc-secrets by the operator in a terminal — never typed in chat, never written to a file — and reaches a process only through the $VC_RUN bridge. Everything else — native-platform or CLIENT project, the client org, the contribution mode, the fork account — is DERIVED from the token + the filled env + a live module/repo scan. Writes project-profile.json + .env.<env> + .env.local (test-user passwords only) + .mcp.json + the vc-secrets declarations + the always-loaded rule that browser work goes only through the Playwright MCP lanes (.claude/rules/vc-browser.md), and verifies access. That one profile is what every installed plugin reads — vc-fix routes a bug to the RIGHT repo and tracker with it, vc-perf finds the stand and the code with it. Use when standing the plugins up on a new machine or for a new customer. On a host-governed project (a client governance plugin owns MCP servers and secrets) it writes the profile and env files only and skips every token / MCP step. Day-2 modes skip the interview: `--add-env` adds another environment (URLs + per-env passwords) to an already-onboarded project; `--add-user` adds another storefront user or admin (login in `.env.<env>`, password in vc-secrets or `.env.local`); `--check` reconciles an existing profile to the current schema, moves any plaintext token into vc-secrets, then verifies."
 ---
 
 # /project-init — deploy & wire this QA plugin for a customer
@@ -43,6 +43,7 @@ operator can do now, built from the plugins actually installed.
 | `.env.<env>` + `.env.local` | Both scaffolded as **commented templates** the operator fills in — no values are asked in the interview. `scaffold-env.mjs` writes `.env.<env>` (URLs/identifiers/tracker connection); `scaffold-secrets.mjs` writes `.env.local` — **test-user passwords only** (`_<ENV>`-suffixed). No token goes into either. |
 | `.claude/vc-secrets.local.json` (gitignored) | the vc-secrets declarations (`write-secrets-decl.mjs`): one `local` secret per PAT axis (`github-pat` / `ado-pat` / `jira-token`), the `vc-init-*` tasks the `$VC_RUN` bridge dispatches to, and the GitHub MCP server. Reviewed and approved by the operator with `vc-secrets trust` |
 | `.mcp.json` + `.claude/settings.local.json` | MCP servers enabled for the chosen tracker/VCS (via `gen-mcp.mjs`); `settings.local.json` `env` carries `VC_RUN` (a path, not a secret) and no token. The Playwright servers are configured entirely via CLI flags (`--browser` / `--isolated` / `--viewport-size` / `--output-dir`). Only `playwright-chrome` is enabled by default; `playwright-firefox` / `playwright-edge` stay defined for opt-in cross-browser runs. |
+| `.claude/rules/vc-browser.md` (**committed**, not ignored) | the always-loaded agent rule (`write-agent-rules.mjs`, §7): every browser action goes through a Playwright MCP lane — never the built-in browser pane, Claude in Chrome, Chrome DevTools or a Bash-started browser, none of which can type a password. Lives in the project so it binds every plugin, including ones installed later. Copied from `templates/rules/` |
 
 ## Pipeline
 
@@ -827,7 +828,7 @@ resolves `$pluginRoot` = the ACTIVE (enabled) install at call time via `claude p
 `knowledge/execution/plugin-root.md`. Result:
 **no re-run of `/project-init` after an upgrade**, no version-stamped path, no stale link.
 
-## 7. Generate the browser login secrets, then `.mcp.json`
+## 7. Generate the browser login secrets, then `.mcp.json`, then the browser rule
 
 First the browser lanes' `--secrets` file — it must exist before gen-mcp, which passes it (absolute
 path) to every Playwright server it finds on disk:
@@ -881,6 +882,20 @@ the settings file is unparsable or already tracked by git. `--inline-secrets` is
 
 If gen-mcp reports that the vc-secrets declarations changed, the operator runs `node "<VC_SECRETS>"
 trust` again before restarting.
+
+Last, the agent rule — every browser action goes through a Playwright MCP lane:
+
+```bash
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/write-agent-rules.mjs"
+```
+
+It copies `templates/rules/*.md` into the project's `.claude/rules/` (today `vc-browser.md`), which
+Claude Code loads on every turn and every subagent dispatch, whichever plugin is running — so the rule
+binds plugins installed after onboarding too. Without it agents reach for the built-in browser pane,
+Claude in Chrome or Chrome DevTools to sign in to a stand and stall at the password field: none of them
+types a password, and only the Playwright lanes get one (from vc-secrets or `.env.playwright.local`).
+It overwrites only files carrying its own marker, leaves a same-named operator file alone, and is
+**not** gitignored — tell the operator to commit it so teammates get the rule.
 
 ## 8. Verify access — full readiness checkup
 
@@ -1332,11 +1347,12 @@ invisible reason:
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/normalize-env.mjs" --env <env>
 ```
 
-Then refresh the browser login secrets (§7 — a changed password or env leaves them stale) and the
-readiness table (§8), so a stale token / URL / login surfaces too:
+Then refresh the browser login secrets (§7 — a changed password or env leaves them stale), the agent
+rules (§7 — a plugin upgrade may bring a new or changed one) and the readiness table (§8), so a stale token / URL / login surfaces too:
 
 ```bash
 TEST_ENV=<env> node "$CLAUDE_PLUGIN_ROOT/skills/project-init/sync-browser-secrets.mjs"
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/write-agent-rules.mjs"   # §7: add / update the browser rule
 ```
 
 ```bash
@@ -1420,6 +1436,7 @@ Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or j
 | `render-scan.mjs` | §4a/§4b: the operator's confirmation tables, verbatim — `--repos` (client repos with default branch + PR target) and `--tracker` (role → state per work-item type) |
 | `next-steps.mjs` | §9: "the project is ready" + what to do now, from the profile and the installed plugins (`--plugins a,b` overrides detection) |
 | `sync-browser-secrets.mjs` | §7: generate `.env.playwright.local` (Playwright `--secrets`) from the current env's passwords — the agent types the NAME, the MCP types the value; `--check` exits 1 when stale |
+| `write-agent-rules.mjs` | §7 / `--check` Step C: copy `templates/rules/*.md` (the browser-only-through-Playwright rule) into the project's `.claude/rules/`, so it binds every plugin, current and future; overwrites only its own marked files; `--check` exits 1 when missing or stale. Stands down when host-governed |
 | `install-deps.mjs` | §1 / `--check`: `npm install --omit=dev` in the folder of every installed plugin of this marketplace (from `claude plugin list`, not a fixed list) that lacks a runtime dependency (`--check` only reports) |
 | `ensure-session.mjs` | establish the browser-login sessions WITHOUT hand-crafted commands: auto-discovers the ADO org tenant and drives `az login --tenant <guid>` / `gh auth login --web`; `--check` probes only. Run in the background (the login blocks on the browser). Run it DIRECTLY, never through `$VC_RUN` — a session login must not see a token (gh refuses to log in while GH_TOKEN is set). |
 

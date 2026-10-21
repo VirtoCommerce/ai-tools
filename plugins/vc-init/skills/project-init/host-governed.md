@@ -22,6 +22,7 @@ step is skipped, never worked around.
 | §6 `gen-profile` | runs, with `--governance <host>` (+ any `--gov-<role>` the operator changed) and the tracker / code host answers; `--repos-json` / `--tracker-json` absent |
 | §7 `sync-browser-secrets` | **skipped** — the browser lanes are the host's |
 | §7 `gen-mcp` | **skipped entirely** — `.mcp.json`, `enabledMcpjsonServers` and the settings `env` are the host's; nothing is written or pruned |
+| §7 `write-agent-rules` | **skipped** — the browser lanes and the rules that govern them are the host's (the script stands down by itself) |
 | §8 `verify-access` | runs directly (not through `$VC_RUN`) and prints the **host-mode readiness table**: the host plugin installed, each mapped server present among the servers it ships, the non-secret URLs. It resolves no secret |
 | §9 `next-steps` | runs as usual; the tracker asks it lists name the host's tracker server |
 | `ensure-session` | **skipped** — no `az login`, no `gh auth login` |

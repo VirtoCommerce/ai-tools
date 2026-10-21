@@ -8,6 +8,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## `vc-init` `0.2.0`: browser work goes only through the Playwright MCP lanes — 2026-10-21
+
+**Added: an always-loaded agent rule in the onboarded project.** `/project-init` (§7) and `/project-init --check`
+(Step C) now run `write-agent-rules.mjs`, which copies `templates/rules/vc-browser.md` into the project's
+`.claude/rules/`. The rule: every browser action goes through a Playwright MCP lane (`playwright-chrome` by
+default) — never the desktop app's browser pane, Claude in Chrome, Chrome DevTools or a browser started from a
+shell. Those cannot type a password; only the lanes get the test-user passwords (vc-secrets or
+`.env.playwright.local`), and the agent types the bare NAME (`ADMIN_PASSWORD`). With no Playwright tool the agent
+stops and reports instead of switching browsers. Before this, agents asked to sign in to a stand kept reaching for
+another browser and stalled at the password field.
+
+The rule sits in the project, not in a plugin, so it binds every plugin there, including ones installed later.
+The script overwrites only files carrying its own marker, leaves a same-named operator file alone, and stands
+down on a host-governed project. The file is **not** gitignored — commit it so the whole team gets the rule.
+**Migration:** an already-onboarded project gets the rule from `/project-init --check`.
+
+---
+
 ## The real-user hook guards plugin-provided browser servers; exploratory probes opt in — `vc-fix` `0.11.1` — 2026-10-21
 
 **Fixed:** `hooks/enforce-real-user.mjs` was registered with a matcher naming only

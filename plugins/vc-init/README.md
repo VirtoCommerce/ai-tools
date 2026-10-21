@@ -46,6 +46,12 @@ What it writes into the project (all gitignored):
 | `.claude/vc-secrets.local.json` | the vc-secrets declarations: one `local` secret per PAT axis (`github-pat`, `ado-pat`, `jira-token`), the bridge's `vc-init-*` tasks, the GitHub MCP server; with the passwords in vc-secrets also, per env, its password secrets, `vc-init-onboard.<env>` and the `playwright-<lane>.<env>` servers |
 | `.mcp.json` + `.claude/settings.local.json` | MCP servers; the settings `env` holds `VC_RUN` and `VC_SECRETS` (paths) and no token |
 
+One more file is meant to be **committed**: `.claude/rules/vc-browser.md`, the always-loaded rule that every
+browser action goes through a Playwright MCP lane — never the built-in browser pane, Claude in Chrome,
+Chrome DevTools or a browser started from a shell, none of which can type a password. It sits in the project,
+not in a plugin, so it binds every plugin in it, including ones installed later (`write-agent-rules.mjs`,
+source `templates/rules/`).
+
 The token step: `/project-init` prints, per token, what it is, where to create it and the exact command
 — `node "<VC_SECRETS>" set github-pat` — plus `node "<VC_SECRETS>" trust` when the declarations are new or
 changed. The operator runs them in a terminal and replies "done"; `check-secrets.mjs` then reads
