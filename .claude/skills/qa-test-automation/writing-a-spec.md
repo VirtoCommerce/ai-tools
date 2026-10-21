@@ -1,4 +1,4 @@
-# Writing a spec — layout, link, data, MCP log, the one run
+# Writing a spec — layout, link, data, MCP log (fallback), the one run
 
 Read from `/qa-test-automation` step 4–5. Decisions cited by number (D5–D13): [`docs/superpowers/specs/2026-10-21-suites-reorg-design.md`](../../../docs/superpowers/specs/2026-10-21-suites-reorg-design.md) §4–§8.
 
@@ -37,6 +37,8 @@ Fixture states that other things can move (auto-enrolment, expiry, pooled state)
 seeded: [`../../rules/test-data.md`](../../rules/test-data.md) FIFTH RULE, DISPOSABLE FIXTURES rules.
 
 ## From the MCP log to a spec
+
+The fallback only (D18): used when a spec cannot be written from source and the generated selectors.
 
 1. Take the code Playwright MCP reports for the **passed** run (or the reproduction). It is a draft, not the spec.
 2. **Replace every observed literal** with its source: a URL becomes `env("FRONT_URL")` + path; an SKU, coupon

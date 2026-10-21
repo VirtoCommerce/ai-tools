@@ -12,7 +12,7 @@ step and for nothing else. The design and every decision (D1–D16) are in
 [`docs/superpowers/specs/2026-10-21-suites-reorg-design.md`](../../../docs/superpowers/specs/2026-10-21-suites-reorg-design.md) §4–§8 — **cited here, never restated**.
 
 **Files in this skill (read only the one the step names):**
-[`writing-a-spec.md`](writing-a-spec.md) — layout, title, preconditions, MCP log to spec, the one run ·
+[`writing-a-spec.md`](writing-a-spec.md) — layout, title, preconditions, writing from source (MCP log as fallback), the one run ·
 [`practice.md`](practice.md) — locators, waits, `[MATH]`, collectors, cleanup, anti-flake checklist.
 
 ## When a spec is written (and when it is not)
@@ -41,10 +41,12 @@ step and for nothing else. The design and every decision (D1–D16) are in
    (`/vc-docs`) for what the platform is *supposed* to do, then **observe live** last. Docs bind MECHANISM,
    never SURFACE (labels, control types, counts are `{OBSERVED}`). Rule: [`CLAUDE.md`](../../../CLAUDE.md)
    §Essential Rules → *Product context*; authoring step: [`../../knowledge/agents/authoring-standard.md`](../../knowledge/agents/authoring-standard.md) §5.
-3. **Get the Playwright code from a real run.** Run the checklist item through Playwright MCP on the
-   lane the suite names (`.claude/rules/agents.md` §Parallel Execution — Browser Assignments; secrets only through
-   `--secrets`, bare key names). The MCP-reported code for the passed run is your draft
-   ([`writing-a-spec.md`](writing-a-spec.md) §From the MCP log to a spec).
+3. **Write from source first (D18).** Draft the spec from the component/source and the generated selector
+   surface ([`practice.md`](practice.md) §Locators); its one headless run (step 5) is the proof. **Only if** the
+   selectors cannot be found that way, run the item through Playwright MCP on the lane the suite names
+   (`.claude/rules/agents.md` §Parallel Execution — Browser Assignments; secrets only through `--secrets`, bare
+   key names) and use the MCP-reported code as the draft ([`writing-a-spec.md`](writing-a-spec.md) §From the MCP
+   log to a spec).
 4. **Write the file** at the layout in [`writing-a-spec.md`](writing-a-spec.md) §Layout and title. One
    case per file. Every observed literal goes through `regression/lib/data.ts`; auth only through the
    fixtures in `regression/lib/fixtures.ts` ([`../../rules/test-data.md`](../../rules/test-data.md), all

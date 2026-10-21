@@ -69,12 +69,13 @@ that measure; anything that does not is deferred (§9).
 | D8 | An `expect` failure is `FAIL`. Any other error is `BLOCKED` with `spec-defect` in its notes: an action or navigation timeout, a fixture or auth failure | my call |
 | D9 | A new spec runs **once** after it is written: deterministic, seconds, no agent. A passed check must PASS; a bug reproduction must FAIL on an `expect` | my call |
 | D10 | `Automation_Status` gets no new value | my call |
-| D11 | **No new agent.** Whoever writes the case writes its spec, which today is `test-management-specialist`, loading the skill `/qa-test-automation` **only** while writing a spec. The skill costs nothing on any other dispatch | owner |
+| D11 | **No new agent.** Whoever writes the case writes its spec, which today is `test-management-specialist` (in a vc-test run, the narrow checklist agent — vc-test U55), loading the skill `/qa-test-automation` **only** while writing a spec. The skill costs nothing on any other dispatch | owner |
 | D12 | A newly passed API check is written as a runner-grammar CSV row, which needs no spec. A handwritten API spec is only for what the grammar cannot express | my call |
 | D13 | A spec runs once, on the suite's `preferredBrowser` or else the manifest default | my call |
 | D14 | Harness in this repo first. vc-test gets a self-contained copy in M3, as vc-fix does | owner |
 | D15 | A passed check that cannot be scripted gets a CSV row with no spec, and a mini agent wave runs only those rows | owner |
 | D16 | `test-management-specialist.md` must get under the 19K cap. Its detail moves into its skills' supporting files, and the spec hand-off is added inside that budget | owner |
+| D18 | A spec is written **directly** from source and the generated selectors and run at once; recording Playwright code from an MCP browser pass is the fallback, not the default — the default has no browser agent per checklist item (vc-test U27, B4, U55) | owner, 2026-10-21 |
 | D17 | A new or changed spec passes a **fidelity review** before it replaces the agent in a regression run. It is a new `/qa-review-tests` dimension, done by a fresh agent that is not the spec's author, once per spec change (not per run). It builds the table "row item (Assertions, Cross_Layer_Checks) → `expect` → OK / WEAKENED / MISSING". Any WEAKENED or MISSING item means the case stays on the agent lane. The approval lapses when the spec or its row changes; how that is recorded and detected is the builder's call (§8, M3) | owner |
 
 ## 5. Layout
@@ -139,11 +140,14 @@ orchestrator calls.
 
 ## 8. Authoring and round 2
 
-1. **Execution.** The specialist runs the checklist item through Playwright MCP. For a `PASS`, or for a
-   reproduced bug, it keeps the Playwright code that MCP reports, in the run's gitignored folder.
-2. **Authoring.** `test-management-specialist` writes:
-   - the CSV row;
-   - then, loading `/qa-test-automation`, the spec, with every observed literal replaced through `data.ts`.
+1. **Writing (default).** The spec is written **directly** from source and the generated storefront selectors
+   (`selectors:sync`), with every literal through `data.ts`, and run at once headless (D9). No browser agent
+   drives the check first. **Fallback:** only when the selectors cannot be found that way, the author runs the
+   item through Playwright MCP and uses the code MCP reports as a draft, kept in the run's gitignored folder
+   (D18).
+2. **Authoring.** The CSV row is written by `test-management-specialist`; the spec, loading
+   `/qa-test-automation`, by whoever writes the case (D11) — in a vc-test run that is the narrow checklist
+   agent, which also writes the runner rows (vc-test U55).
 3. **The one run (D9).** A spec that does not behave as D9 requires is a defect of the spec. It never changes
    the checklist verdict.
 4. **Fidelity review (D17).** A fresh reviewer maps every row item to its `expect`. Until it approves, the case
