@@ -32,7 +32,7 @@
       "summary": "The 3-wrong-code limit of the MFA code step is held per backend instance: with requests spread over instances (no affinity cookie), 4 wrong codes and then the right one sign in.",
       "found_by": "control run, /qa-test-fast round 2, 2026-10-22",
       "corroborated_by": "vc-test live run C-8: codes 1-4 answered invalid_code, the 5th hit the platform account lockout; code_attempts_exceeded never appeared",
-      "jira": null
+      "jira": "VCST-6506"
     }
   ],
   "move_aside_before_run": {
@@ -44,7 +44,7 @@
     "kb_entries_created_after": "cutoff",
     "kb_ids": [],
     "bug_catalog_ids": [],
-    "jira_issues": ["the X5 issue, once filed", "VCST-6504"]
+    "jira_issues": ["VCST-6506", "VCST-6504"]
   },
   "pass": {
     "must_find": ["X5"],
