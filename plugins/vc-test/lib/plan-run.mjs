@@ -11,19 +11,33 @@ const MAX_BROWSER_LANES = 3;
 
 export function planRun({ strategy, registry, capabilities }) {
   if (!APPROVED.has(strategy.status)) return { ok: false, errors: [`round ${strategy.round}: strategy is not approved (Status: ${strategy.status ?? "missing"})`] };
-  const byRow = new Map(registry.artifacts.filter((e) => e.row).map((e) => [e.row, e]));
-  const unread = strategy.rows.filter((r) => r.decision === null && !(r.row in registry.rows_not_run));
+  // The scenario template (`per: "scenario"`) is instantiated from the strategy's `### Scenarios` table, never from an Artifacts row.
+  const tpl = registry.artifacts.find((e) => e.per === "scenario");
+  const byRow = new Map(registry.artifacts.filter((e) => e.row && !e.per).map((e) => [e.row, e]));
+  const isScenarioRow = (r) => tpl && r.row === tpl.row;
+  const unread = strategy.rows.filter((r) => r.decision === null && !(r.row in registry.rows_not_run) && !isScenarioRow(r));
   if (unread.length) return { ok: false, errors: unread.map((r) => `${r.row}: decision "${r.cell ?? ""}" is neither RUN nor SKIP — the cell must start with one of them`) };
   const selected = new Map();
   const notRun = [];
-  for (const r of strategy.rows.filter((x) => x.decision === "RUN")) {
+  for (const r of strategy.rows.filter((x) => x.decision === "RUN" && !isScenarioRow(x))) {
     const entry = byRow.get(r.row);
     if (entry) selected.set(entry.id, { entry, order: r.order });
     else notRun.push({ row: r.row, reason: registry.rows_not_run[r.row] ?? "not in the vc-test registry" });
   }
-  for (const e of registry.artifacts) if (e.derivedFrom && selected.has(e.derivedFrom)) selected.set(e.id, { entry: e, order: null });
-
   const errors = [];
+  if (tpl) {
+    for (const sc of strategy.scenarios ?? []) {
+      const proof = tpl.proofs?.[sc.proof];
+      const id = `scenario:${sc.s}`;
+      if (!proof) errors.push(`${sc.s}: Proof "${sc.proof}" is not one of ${Object.keys(tpl.proofs ?? {}).join(", ")}`);
+      else if (selected.has(id)) errors.push(`${sc.s}: listed twice in the Scenarios table`);
+      else { const { proofs, per, ...rest } = tpl; selected.set(id, { entry: { ...rest, id, row: null, lane: proof.lane, requires: proof.requires }, order: null, scenario: sc }); }
+    }
+  }
+  // A derived artifact follows an artifact id or a row name ("Scenarios" = at least one scenario instantiated).
+  const active = (d) => selected.has(d) || (tpl?.row === d && [...selected.values()].some((s) => s.scenario));
+  for (const e of registry.artifacts) if (e.derivedFrom && active(e.derivedFrom)) selected.set(e.id, { entry: e, order: null });
+
   if (registry.artifacts.some((e) => e.id === "checklist") && !selected.has("checklist")) errors.push("Checklist is not RUN — nothing would decide the ACs");
   for (const s of selected.values()) {
     const missing = s.entry.requires.filter((cap) => !capabilities[cap]);
@@ -42,16 +56,22 @@ export function planRun({ strategy, registry, capabilities }) {
     if (!base.has(id)) base.set(id, 1 + Math.max(0, ...needsOf(selected.get(id)).map(baseWave)));
     return base.get(id);
   };
-  const ordered = [...selected.keys()].sort((a, b) => baseWave(a) - baseWave(b) || a.localeCompare(b));
+  const byId = (a, b) => a.localeCompare(b, "en", { numeric: true });
+  const ordered = [...selected.keys()].sort((a, b) => baseWave(a) - baseWave(b) || byId(a, b));
   const wave = new Map();
   const browserCount = [];
+  // Scenarios that write the same setting never share a wave, and two global writers never do either (one global window at a time).
+  const writeKey = (w) => `${w.scope}/${w.name}`;
+  const writersIn = [];
+  const clash = (w, sc) => (writersIn[w] ?? []).some((o) => o.writes.some((x) => x.scope === "global") && sc.writes.some((x) => x.scope === "global")
+    || o.writes.some((x) => sc.writes.some((y) => writeKey(x) === writeKey(y))));
   for (const id of ordered) {
     const s = selected.get(id);
     let w = 1 + Math.max(0, ...needsOf(s).map((n) => wave.get(n)));
-    if (s.entry.lane?.startsWith("browser:") && !s.missing) {
-      while ((browserCount[w] ?? 0) >= MAX_BROWSER_LANES) w++;
-      browserCount[w] = (browserCount[w] ?? 0) + 1;
-    }
+    const browser = s.entry.lane?.startsWith("browser:") && !s.missing;
+    while ((browser && (browserCount[w] ?? 0) >= MAX_BROWSER_LANES) || (s.scenario && clash(w, s.scenario))) w++;
+    if (browser) browserCount[w] = (browserCount[w] ?? 0) + 1;
+    if (s.scenario) (writersIn[w] ??= []).push(s.scenario);
     wave.set(id, w);
   }
   const waves = [];
@@ -60,7 +80,7 @@ export function planRun({ strategy, registry, capabilities }) {
     const { entry, missing } = selected.get(id);
     (waves[w] ??= []).push({ id, lane: entry.lane, run: entry.run, ...(missing ? { missing } : {}) });
   }
-  return { ok: true, waves: waves.filter(Boolean).map((w) => w.sort((a, b) => a.id.localeCompare(b.id))), notRun };
+  return { ok: true, waves: waves.filter(Boolean).map((w) => w.sort((a, b) => byId(a.id, b.id))), notRun };
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {

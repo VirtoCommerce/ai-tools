@@ -1,15 +1,6 @@
 {
-  "$comment": "The only list of artifacts (spec §5.1). `row` is the strategy's Artifacts row as .claude/templates/test-strategy.md names it; `derivedFrom` marks an artifact selected whenever that one is. `needs` waits only for selected artifacts. `writes` is relative to the run folder <run>.",
+  "$comment": "The only list of artifacts (spec §5.1). `row` is the strategy's Artifacts row as .claude/templates/test-strategy.md names it; `derivedFrom` marks an artifact selected whenever that artifact or row is (\"Scenarios\" = at least one scenario in the strategy's `### Scenarios` table). `per: \"scenario\"` is a template the planner instantiates once per approved scenario as `scenario:S-n`; `proofs` gives its lane and capabilities by the scenario's Proof. `needs` waits only for selected artifacts. `writes` is relative to the run folder <run>.",
   "artifacts": [
-    {
-      "id": "test-model",
-      "row": "Test model",
-      "run": { "skill": "qa-test-model", "model": "opus" },
-      "needs": [],
-      "lane": null,
-      "requires": [],
-      "writes": ["<run>/test-model.md"]
-    },
     {
       "id": "contract-refresh",
       "row": "Contract refresh",
@@ -23,7 +14,7 @@
       "id": "checklist",
       "row": "Checklist",
       "run": { "agent": "test-management-specialist", "brief": "briefs/checklist.md", "model": "sonnet" },
-      "needs": ["test-model"],
+      "needs": [],
       "lane": null,
       "requires": [],
       "writes": ["<run>/testing-checklist.md"]
@@ -31,7 +22,7 @@
     {
       "id": "ac-checks",
       "row": null,
-      "derivedFrom": "checklist",
+      "derivedFrom": "Scenarios",
       "run": { "agent": "qa-backend-expert", "brief": "briefs/ac-checks.md", "model": "sonnet" },
       "needs": ["checklist"],
       "lane": null,
@@ -39,20 +30,22 @@
       "writes": ["<run>/testing-checklist.md", "<run>/ac-checks/**"]
     },
     {
-      "id": "ui-checks",
-      "row": null,
-      "derivedFrom": "checklist",
-      "run": { "agent": "qa-frontend-expert", "brief": "briefs/ui-checks.md", "model": "sonnet" },
-      "needs": ["checklist", "ac-checks"],
-      "lane": "browser:playwright-chrome",
-      "requires": ["front-url", "mcp:playwright-chrome"],
+      "id": "scenario",
+      "row": "Scenarios",
+      "per": "scenario",
+      "run": { "brief": "briefs/scenario-run.md", "agent": "general-purpose", "model": "sonnet" },
+      "needs": ["checklist"],
+      "proofs": {
+        "api": { "lane": null, "requires": ["back-url"] },
+        "browser": { "lane": "browser:playwright-chrome", "requires": ["front-url", "mcp:playwright-chrome"] }
+      },
       "writes": ["<run>/testing-checklist.md", "<run>/screenshots/**"]
     },
     {
       "id": "exploratory",
       "row": "Exploratory",
       "run": { "skill": "qa-exploratory", "agent": "qa-testing-expert", "model": "sonnet" },
-      "needs": ["test-model"],
+      "needs": [],
       "order": "strategy",
       "lane": "browser:playwright-firefox",
       "requires": ["front-url", "mcp:playwright-firefox"],
@@ -69,6 +62,7 @@
     }
   ],
   "rows_not_run": {
+    "Test model": "U63 — no separate test model",
     "Mind map": "U43 — read only in a run",
     "Coverage triage + regression": "U7 — no regression in vc-test",
     "Verifier": "run by /qa-test-strategy before approval",
