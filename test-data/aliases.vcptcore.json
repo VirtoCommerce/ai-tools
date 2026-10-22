@@ -897,7 +897,6 @@
         "key": "DEMO_REP_PRIMARY",
         "salesRepId": "22834dc4-95ce-4631-a730-48dd72c81c25",
         "userId": "13f6769b-f820-4a60-97ea-113116691855",
-        "email": "agent-test-vcst5293-182326@example.com",
         "priorOrganizations": [
           {
             "organizationId": "e941220a-289d-46b3-a212-bd66f0b9f4c3",
@@ -1094,7 +1093,6 @@
         "type": "cart",
         "key": "DRCART-PRI-NW",
         "id": "087dad1e-afb2-4893-917e-d3d57677db15",
-        "owner": "agent-test-vcst5293-182326@example.com",
         "org": "DORG-NORTHWIND",
         "createdByRep": "DEMO_REP_PRIMARY",
         "itemsCount": 2
@@ -1103,7 +1101,6 @@
         "type": "cart",
         "key": "DRCART-PRI-CN",
         "id": "d4921636-c577-47ff-95ba-a4f8ee8af059",
-        "owner": "agent-test-vcst5293-182326@example.com",
         "org": "DORG-CONTOSO",
         "createdByRep": "DEMO_REP_PRIMARY",
         "itemsCount": 2
@@ -1112,7 +1109,6 @@
         "type": "cart",
         "key": "DRCART-PRI-FB",
         "id": "ae42a19b-dd99-4a13-97be-7e4e80faef8e",
-        "owner": "agent-test-vcst5293-182326@example.com",
         "org": "DORG-FABRIKAM",
         "createdByRep": "DEMO_REP_PRIMARY",
         "itemsCount": 2
