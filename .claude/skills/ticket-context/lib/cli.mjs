@@ -36,6 +36,8 @@ const readOutput = (dir, name, errors) => { try { return readJson(join(dir, name
 const USAGE = "usage: cli.mjs prepare <KEY> [--domain <slug>] [--fresh] [--before <iso>] [--hide <KEY,KEY>] | attach --prepare <p> --ref <ref> (--file <path> | --gap <reason> [--detail <text>]) | save --prepare <p> --agent <id> --as <file> | merge-change --prepare <p> | deploy --prepare <p> | known --prepare <p> | compose --prepare <p> | check --prepare <p> | finish --prepare <p> | abort --prepare <p> | redeploy <KEY> --bundle <p>";
 const ISO_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?(?:Z|[+-]\d{2}:\d{2})$/;
 function usage(msg) { console.error(`✗ ${msg}\n${USAGE}`); process.exit(1); }
+// flag()/has() read only `--name value`: a `--before=<iso>` would be ignored and a blind prepare would run unblinded.
+for (const a of argv) if (/^--[a-z-]+=/.test(a)) usage(`${a.split("=")[0]}: write \`${a.split("=")[0]} <value>\`, not \`=\``);
 const root = outputRoot();
 const ignored = (p) => isIgnored(root, p);
 const prepPath = () => flag("prepare") ?? usage("--prepare <path to prepare.json> is required");
