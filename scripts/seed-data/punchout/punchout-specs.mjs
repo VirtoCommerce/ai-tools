@@ -92,19 +92,9 @@ export const DEPLOYED_CONFIGS = {
            tokenLifetime: '', sessionLifetime: '' },
     },
   },
-  vcst: {
-    source: 'vc-deploy-dev#6935 infra/environments.yml (Punchout__Configurations__0..3), branch vcst-qa',
-    configs: {
-      0: { storeId: 'B2B-store', storeExists: true, senderDomain: 'NetworkId', allowedReturnUrls: ['https://punchoutcommerce.com/*'],
-           tokenLifetime: '00:15:00', sessionLifetime: '04:00:00' },
-      1: { storeId: 'QA-STORE', storeExists: true, senderDomain: '', allowedReturnUrls: [],
-           tokenLifetime: '00:02:00', sessionLifetime: '00:10:00' },
-      2: { storeId: 'AGENT-TEST-no-such-store', storeExists: false, senderDomain: '', allowedReturnUrls: [],
-           tokenLifetime: '', sessionLifetime: '' },
-      3: { storeId: '', storeExists: false, senderDomain: '', allowedReturnUrls: [],
-           tokenLifetime: '', sessionLifetime: '' },
-    },
-  },
+  // vcst (vc-deploy-dev#6935) is NOT listed: as of 2026-10-22 the vcst-qa branch's backend/packages.json carries no
+  // VirtoCommerce.Punchout module, so its Punchout__Configurations app settings (0..2, no Id; 3 removed) are read by
+  // nothing. Re-add an entry here — with the Ids the PR #2 build requires — when the module is deployed there again.
 };
 
 /** `{{VAR}}` token for a configuration's secret — the only form a committed file may carry. */
