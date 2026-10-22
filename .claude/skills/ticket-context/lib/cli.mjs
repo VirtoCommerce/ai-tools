@@ -9,7 +9,7 @@ import { LAYERS_GAP, loadLayeredEnv } from "./env.mjs";
 import { codeHostCredential, readProfile, resolveProfile, trackerCredential } from "./profile.mjs";
 import { GAP_REASONS, SCHEMA, asGap, gap } from "./gap.mjs";
 import { validateDef } from "./schema.mjs";
-import { BASE_FIELDS, LINKED_FIELDS, attachLinkedComments, blindIssue, jiraClient, recencyOrder } from "./jira.mjs";
+import { BASE_FIELDS, LINKED_FIELDS, attachLinkedComments, blindIssue, jiraClient, recencyOrder, withoutHidden } from "./jira.mjs";
 import { AC_FIELD_NAME_RE, buildInventory, linkedOverCap, rankLinked, resolveFieldsByName, ticketFields } from "./inventory.mjs";
 import { CAPS, envHosts, fetchPublicPage, htmlToText, planDownloads, safeName } from "./fetch.mjs";
 import { exportFigmaItems, figmaToken } from "./figma.mjs";
@@ -85,6 +85,7 @@ async function prepare() {
   if (domain !== null && !DOMAIN_RE.test(domain)) usage("--domain must be a slug: letters, digits, '-' or '_'");
   // A blind prepare (U67): nothing posted after `before`, and no link to a `hide` key, reaches the bundle.
   const before = flag("before") ?? null;
+  if (has("before") && (!before || before.startsWith("--"))) usage("--before needs an ISO-8601 instant, e.g. 2026-10-22T10:17:38Z"); // a typo must never fall back to a normal run
   if (before !== null && Number.isNaN(Date.parse(before))) usage("--before must be an ISO-8601 instant, e.g. 2026-10-22T10:17:38Z");
   const hideRaw = flag("hide");
   if (has("hide") && !hideRaw) usage("--hide needs a comma-separated list of ticket keys");
@@ -117,8 +118,8 @@ async function prepare() {
   const parent = issue.fields.parent;
   if (parent?.key) {
     epic = { key: parent.key, title: parent.fields?.summary ?? "" };
-    siblings = (await jira.search(`parent = ${parent.key} AND key != ${key} ORDER BY updated DESC`, ["summary", "status"]).catch((e) => { gaps.push(asGap("siblings", e)); return []; }))
-      .map((s) => ({ key: s.key, title: s.fields?.summary ?? "", status: s.fields?.status?.name ?? null, done: s.fields?.status?.statusCategory?.key === "done" }));
+    siblings = withoutHidden((await jira.search(`parent = ${parent.key} AND key != ${key} ORDER BY updated DESC`, ["summary", "status"]).catch((e) => { gaps.push(asGap("siblings", e)); return []; }))
+      .map((s) => ({ key: s.key, title: s.fields?.summary ?? "", status: s.fields?.status?.name ?? null, done: s.fields?.status?.statusCategory?.key === "done" })), hide); // a hidden known-bug ticket under the same epic is not a sibling to a blind run
   }
 
   let linked = inv.items.filter((i) => i.kind === "ticket" && !i.gap);

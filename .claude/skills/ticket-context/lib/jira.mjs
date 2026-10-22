@@ -34,6 +34,13 @@ export function blindIssue(issue, { before, hide = [] } = {}) {
   return out;
 }
 
+/** Rows (epic siblings, search hits) a blind run must not carry: whatever names a `hide` key is dropped (U67). */
+export function withoutHidden(rows, hide = []) {
+  if (!hide.length) return rows;
+  const hidden = new Set(hide);
+  return rows.filter((r) => !hidden.has(r?.key));
+}
+
 export function jiraClient(cred, fetchImpl = fetch) {
   const origin = new URL(cred.base).origin;
   async function get(pathOrUrl, { method = "GET", body, accept = "application/json", ms = CAPS.fetchTimeoutMs } = {}) {
