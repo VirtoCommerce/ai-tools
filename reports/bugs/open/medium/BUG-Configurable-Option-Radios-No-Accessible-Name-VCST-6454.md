@@ -56,3 +56,11 @@ Each radio is announced with its option's name (e.g. the product name, or "None"
 - **Component / module:** configurable product configuration — `option-product.vue`, `option-product-none.vue`
 - **RCA anchor:** `client-app/shared/catalog/components/configuration/option-product.vue:4` `<VcRadioButton`
 - **Routing confidence:** HIGH — pass `:aria-label="product.name"` (and the translated "None") in the two option files; no ui-kit change
+
+## Verification 2026-10-22
+- **Verdict:** VERIFIED WITH NOTES (`/qa-test VCST-6454 localhost` → verify-fix). STR 3/3, checklist 10/10.
+- **Build:** VirtoCommerce/vc-frontend#2599 @ aadc7e3f, theme `vc-theme-b2b-vue-2.61.0-pr-2599-aadc`, run locally with the API proxied to vcst-qa. The pre-fix control was the vcst-qa storefront (`2.61.0-pr-2570`).
+- **Result:** cake page 18/18 → 0/18 unnamed radios; Bed page 4/4 → 0/4; axe `label` 18 → 0; "None" is localized (de: "Keine").
+- **Ticket:** VCST-6454 → Tested. Comment 112290.
+- **Left in `open/`:** the PR is not merged or deployed, and vc-frontend-next still needs the same change. Move to `fixed/` once #2599 is on a stand.
+- **Evidence:** `reports/tickets/Sprint26-21/VCST-6454/localhost/` (verification-report.md, verification-summary.json).

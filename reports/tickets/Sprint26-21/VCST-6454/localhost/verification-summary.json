@@ -1,0 +1,105 @@
+{
+  "ticket": "VCST-6454",
+  "flow": "verify-fix",
+  "type": "Bug",
+  "path": "verify-fix",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "date": "2026-10-22",
+  "environment": "http://localhost (frontend-only, API proxied to https://vcst-qa.govirto.com, store B2B-store)",
+  "build": {
+    "platform": "vcst-qa (remote, unchanged)",
+    "theme": "vc-theme-b2b-vue-2.61.0-pr-2599-aadc (local, X-VC-Local-Theme fe-169714872a92)",
+    "relevant_modules": {},
+    "pr_build": "VirtoCommerce/vc-frontend#2599 @ aadc7e3f (open, not merged)"
+  },
+  "control": {
+    "environment": "https://vcst-qa-storefront.govirto.com",
+    "theme": "vc-theme-b2b-vue-2.61.0-pr-2570-2fc9 (no fix)"
+  },
+  "agent_used": "qa-frontend-expert",
+  "browser": "playwright-chrome (Chromium 1920x1080, guest, axe-core 4.10.2)",
+  "str_result": "3/3",
+  "baseline_reproduction": "RED (pre-fix, live) on the vcst-qa storefront, same backend and data",
+  "before_after": [
+    {
+      "check": "Wedding cake, all 5 sections expanded: unnamed option radios",
+      "before": "18 of 18",
+      "after": "0 of 18 (3 runs)"
+    },
+    {
+      "check": "Wedding cake, axe label violations",
+      "before": "18",
+      "after": "0"
+    },
+    {
+      "check": "Bed with Additional Options, all sections expanded: unnamed option radios",
+      "before": "4 of 4",
+      "after": "0 of 4 (3 runs)"
+    },
+    {
+      "check": "None radio name, German storefront",
+      "before": "no name",
+      "after": "Keine"
+    }
+  ],
+  "checklist_total": 10,
+  "checklist_passed": 10,
+  "checklist_failed": 0,
+  "regression_issues": [
+    {
+      "summary": "Switching language twice on a product whose URL exists in one language ends on 404",
+      "severity": "Medium",
+      "ticket": "VCST-6501",
+      "why": "Pre-existing (also on vcst-qa without the fix); filed standalone, related"
+    },
+    {
+      "summary": "The None row placeholder image has no alt (axe image-alt)",
+      "severity": "Low",
+      "ticket": null,
+      "why": "Pre-existing; below the filing floor"
+    }
+  ],
+  "side_effects": [],
+  "bugs_filed": [
+    {
+      "key": "VCST-6501",
+      "title": "Language switch through two languages without the URL ends on 404",
+      "severity": "Medium"
+    }
+  ],
+  "business_rules_verified": [
+    "BL-A11Y-002",
+    "BL-A11Y-001"
+  ],
+  "open_items": [
+    "PR #2599 is open and unmerged; vcst-qa still runs a theme without the fix. Re-check on a shared stand after deploy.",
+    "VirtoCommerce/vc-frontend-next has the same code and still needs the same 2-line change."
+  ],
+  "status_transitions": [
+    {
+      "at": "verify-fix Step 3",
+      "from": "Ready for test",
+      "to": "Testing",
+      "transition": "On QA",
+      "confirmed_by_operator": true
+    },
+    {
+      "at": "verify-fix Step 6",
+      "from": "Testing",
+      "to": "Tested",
+      "transition": "Finish test",
+      "confirmed_by_operator": true
+    }
+  ],
+  "tracker": {
+    "comment_id": "112290",
+    "mode": "amend (same build, same session; posted earlier at the operator's request)"
+  },
+  "tracker_transition": {
+    "role": "tested",
+    "state": "Tested"
+  },
+  "evidence": "reports/tickets/Sprint26-21/VCST-6454/localhost/verification-report.md",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-21/VCST-6454/localhost/"
+}

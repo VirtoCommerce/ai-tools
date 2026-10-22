@@ -1,0 +1,36 @@
+{
+  "ticket": "VCST-6478",
+  "flow": "verify-fix",
+  "ticket_type": "Bug",
+  "path": null,
+  "env": "localhost",
+  "status_transitions": [
+    {
+      "at": "verify-fix.3",
+      "from": "Ready for test",
+      "to": "Testing",
+      "transition": "On QA",
+      "confirmed_by_operator": true
+    },
+    {
+      "at": "verify-fix.6",
+      "from": "Testing",
+      "to": "Tested",
+      "transition": "Finish test",
+      "confirmed_by_operator": true
+    }
+  ],
+  "tracker": {
+    "comment_id": "112295",
+    "comment_amended": "2026-10-22T16:23:25+03:00"
+  },
+  "verdict": "VERIFIED_WITH_NOTES",
+  "verification_summary": "verification-summary.json",
+  "bugs_not_filed": [
+    "select_item item index absent (follow-up)",
+    "recommended-list items have no discount",
+    "multi-image card image click: no select_item",
+    "empty /cart pushes view_cart + begin_checkout",
+    "GA doc names brand vs item_brand"
+  ]
+}

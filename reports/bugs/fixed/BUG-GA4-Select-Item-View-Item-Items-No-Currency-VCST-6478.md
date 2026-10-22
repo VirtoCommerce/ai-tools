@@ -1,6 +1,6 @@
 # BUG: [GA4][Catalog] select_item and view_item items carry no currency (select_item items also no index) — Low
 
-## Status: READY_TO_SUBMIT
+## Status: FIXED
 **Found by:** agent — testing VCST-6453
 **Tracker:** [VCST-6478](https://virtocommerce.atlassian.net/browse/VCST-6478) (standalone Bug, relates to VCST-6453; filed below the /qa-test severity floor at the operator's request; labels found-by-agent, found-in-testing, vc-fix, qa-autofix)
 
@@ -54,3 +54,9 @@ Each item in `select_item` and `view_item` follows the documented Item fields: `
 - **Component / module:** `client-app/modules/google-analytics/events.ts` (`selectItem`, `viewItem`, `addItemToWishList`)
 - **RCA anchor:** `events.ts` `selectItem` → `productToGtagItem(item)` (no index/context)
 - **Routing confidence:** HIGH — pass the current currency (and, for select_item, the list id/name and the card index the caller knows) into `productToGtagItem`
+
+## Resolution
+- **Fixed in:** [vc-frontend#2598](https://github.com/VirtoCommerce/vc-frontend/pull/2598) (open, not merged), build `2.61.0-pr-2598-fd57-fd578365`
+- **Tracker:** VCST-6478 → Tested, 2026-10-22, verdict VERIFIED WITH NOTES
+- **Method:** dataLayer RED on vcst-qa (theme `2.61.0-pr-2570-2fc9-2fc9261a`), then GREEN 3/3 on a local frontend-only stand proxied to vcst-qa. The checks also covered add_to_wishlist, the search dropdown, recommendations, recently browsed and a switch to EUR. Evidence: `reports/tickets/Sprint26-21/VCST-6478/localhost/evidence/`
+- **Not fixed:** the `select_item` item `index`. It was left out of the PR's scope on purpose and is a follow-up.
