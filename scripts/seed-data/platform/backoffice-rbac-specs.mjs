@@ -666,6 +666,96 @@ export function assertReturnAgentRolePermissions(permissions = RETURN_AGENT_ROLE
   });
 }
 
+// ============================================================================
+// VCST-6260 — Admin shell global search (Ctrl+K) provider RBAC (SHELL_SEARCH_NOREAD / SHELL_SEARCH_READ)
+// ============================================================================
+//
+// vc-platform PR #3134 adds a global search to the Admin shell with providers for menu, apps, settings,
+// users and roles, each scoped by permissions. The Settings provider is shown on platform:setting:access
+// but its data call (GET /api/platform/settings/v2/global/schema) needs platform:setting:read; the users
+// and roles providers have the same split (platform:security:access vs platform:security:read, which is
+// also what users/roles search require). So the pair below differs in EXACTLY the two read permissions:
+//   NOREAD = base                                   → provider groups may appear, their data calls 403
+//   READ   = base + setting:read + security:read    → the same groups return results
+// An implementation that hides the group, shows "Search failed", or leaks results gives a different
+// observation on NOREAD, and READ is the control that the group works at all for a non-admin.
+// Base = setting:access + security:access + catalog:access: Catalog is the ONE business menu item both
+// accounts can see; order:access and pricing:access are absent so Orders/Pricing must NOT appear in the
+// menu provider's results for either account.
+//
+// Permission names read live on vcptcore-qa1 2026-10-21 (platform 3.1087.0-pr-3134-a3d2) from
+// GET /api/platform/security/permissions. `platform:access` does NOT exist on this build (same finding as
+// the catalog-link and return-agent fixtures), so it cannot be granted; userType Manager is what lets the
+// accounts sign in to the back office. Both accounts share one password secret (SHELL_SEARCH_PASSWORD).
+export const SHELL_SEARCH_READ_PERMISSIONS = ['platform:setting:read', 'platform:security:read'];
+export const SHELL_SEARCH_BASE_PERMISSIONS = ['platform:setting:access', 'platform:security:access', 'catalog:access'];
+// Never granted to either account: the other business menu items, and every settings/security WRITE.
+export const SHELL_SEARCH_NEVER_PERMISSIONS = [
+  'order:access', 'pricing:access',
+  'platform:setting:update',
+  'platform:security:create', 'platform:security:update', 'platform:security:delete',
+];
+
+export const SHELL_SEARCH_NOREAD_REQUIRED_PERMISSIONS = [...SHELL_SEARCH_BASE_PERMISSIONS];
+export const SHELL_SEARCH_NOREAD_EXCLUDED_PERMISSIONS = [...SHELL_SEARCH_READ_PERMISSIONS, ...SHELL_SEARCH_NEVER_PERMISSIONS];
+export const SHELL_SEARCH_NOREAD_EXCLUDED_PERMISSION = 'platform:setting:read';
+export const SHELL_SEARCH_NOREAD_ROLE = {
+  role_id: 'AGENT-TEST-Shell-Search-NoRead',
+  role_name: 'AGENT-TEST-Shell-Search-NoRead',
+  description: 'AGENT-TEST back-office role for VCST-6260 (Admin shell global search): platform:setting:access + platform:security:access + catalog:access, EXCLUDES platform:setting:read and platform:security:read (and order/pricing access). The settings/users/roles providers are visible by access but their data calls must not return results. Differs from AGENT-TEST-Shell-Search-Read by exactly the two read permissions. Safe to delete.',
+  permissions: [...SHELL_SEARCH_NOREAD_REQUIRED_PERMISSIONS],
+};
+export const SHELL_SEARCH_NOREAD_ACCOUNT = {
+  aliasName: 'SHELL_SEARCH_NOREAD',
+  email: 'AGENT-TEST-shell-search-noread@test.virtocommerce.com',
+  userType: 'Manager',
+  isAdministrator: false,
+  passwordVar: 'SHELL_SEARCH_PASSWORD',
+  passwordFallback: 'Password1!',
+};
+
+export const SHELL_SEARCH_READ_REQUIRED_PERMISSIONS = [...SHELL_SEARCH_BASE_PERMISSIONS, ...SHELL_SEARCH_READ_PERMISSIONS];
+export const SHELL_SEARCH_READ_EXCLUDED_PERMISSIONS = [...SHELL_SEARCH_NEVER_PERMISSIONS];
+export const SHELL_SEARCH_READ_EXCLUDED_PERMISSION = 'order:access';
+export const SHELL_SEARCH_READ_ROLE = {
+  role_id: 'AGENT-TEST-Shell-Search-Read',
+  role_name: 'AGENT-TEST-Shell-Search-Read',
+  description: 'AGENT-TEST back-office role for VCST-6260 (Admin shell global search): the NoRead base PLUS platform:setting:read and platform:security:read, still no order/pricing access and no settings/security write. Control pair: settings/users/roles providers must return results. Safe to delete.',
+  permissions: [...SHELL_SEARCH_READ_REQUIRED_PERMISSIONS],
+};
+export const SHELL_SEARCH_READ_ACCOUNT = {
+  aliasName: 'SHELL_SEARCH_READ',
+  email: 'AGENT-TEST-shell-search-read@test.virtocommerce.com',
+  userType: 'Manager',
+  isAdministrator: false,
+  passwordVar: 'SHELL_SEARCH_PASSWORD',
+  passwordFallback: 'Password1!',
+};
+
+/** Data calls of the settings / users / roles providers — the --verify probe expects 403 vs 200 per account. */
+export const SETTINGS_SCHEMA_ENDPOINT = '/api/platform/settings/v2/global/schema';
+export const USERS_SEARCH_ENDPOINT = '/api/platform/security/users/search';
+export const ROLES_SEARCH_ENDPOINT = '/api/platform/security/roles/search';
+export const SHELL_SEARCH_EXPECTED_STATUS = {
+  SHELL_SEARCH_NOREAD: { settingsSchema: 403, usersSearch: 403, rolesSearch: 403 },
+  SHELL_SEARCH_READ: { settingsSchema: 200, usersSearch: 200, rolesSearch: 200 },
+};
+
+export function assertShellSearchNoReadRolePermissions(permissions = SHELL_SEARCH_NOREAD_ROLE.permissions) {
+  assertPermissionSet(permissions, {
+    required: SHELL_SEARCH_NOREAD_REQUIRED_PERMISSIONS,
+    excluded: SHELL_SEARCH_NOREAD_EXCLUDED_PERMISSIONS,
+    label: 'shell search no-read (VCST-6260)',
+  });
+}
+export function assertShellSearchReadRolePermissions(permissions = SHELL_SEARCH_READ_ROLE.permissions) {
+  assertPermissionSet(permissions, {
+    required: SHELL_SEARCH_READ_REQUIRED_PERMISSIONS,
+    excluded: SHELL_SEARCH_READ_EXCLUDED_PERMISSIONS,
+    label: 'shell search read (VCST-6260)',
+  });
+}
+
 const GUID_RE = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/i;
 /** Scan text for a runtime platform GUID that must never be committed to a spec/fixture. */
 export function findGuidLeaks(text) {

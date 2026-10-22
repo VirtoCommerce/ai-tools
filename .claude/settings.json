@@ -14,7 +14,7 @@
         ]
       },
       {
-        "matcher": "mcp__playwright-(chrome|firefox|edge|webkit)__(browser_type|browser_fill_form)",
+        "matcher": "^mcp__playwright-[a-z]+__(browser_type|browser_fill_form)$",
         "hooks": [
           {
             "type": "command",

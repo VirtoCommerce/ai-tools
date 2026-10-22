@@ -202,3 +202,12 @@ reports/bugs/screenshots/_incoming/
 
 # Tracker attachments downloaded as run INPUT (not a report category, reports.md 1) — kept local
 reports/tickets/**/attachments/
+
+# Playwright spec run output
+playwright-report/
+
+# Playwright .spec output in a ticket run folder (<RUN_DIR>/specs/): HARs and traces carry session
+# cookies and Authorization headers — never committed.
+reports/tickets/**/specs/
+reports/tickets/**/*.har
+reports/tickets/**/trace.zip

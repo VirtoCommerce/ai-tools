@@ -1,0 +1,1028 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+PNCR-001,"[JOURNEY] Punchout — buyer reviews a 3-line cart, clicks Create requisition, the ERP receives exactly those lines",Punchout > Requisition (PunchOutOrderMessage),Critical,"BL-CART-003, BL-PUNCHOUT-001, BL-PUNCHOUT-002, BL-PUNCHOUT-008",,"Dedicated punchout buyer @td(PUNCHOUT_MAPPING_REQUISITION.externalId) (one organization, own account); Punchout.Enabled on for the configuration-0 store; desktop viewport 1920x1080. Setup resets the buyer to one empty `default` cart. Products are live-discovered, never fixed. The journey is one continuous flow because the defect lives in the seam between the cart the buyer reviews and the message the module builds.","secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password)","--- SCREEN: ERP setup ---
+[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>); read the buyer carts through the storefront GraphQL `carts` query with a password-grant token for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] cart names, ids and line SKUs → CARTS_BEFORE; discard the token
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-001-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+--- SCREEN: start page landing (fresh context) ---
+[NAV] {{START_URL}} in a fresh browser context
+[WAIT] the storefront leaves /punchout/ and loads the signed-in home page
+[ASSERT] the account menu shows the buyer, not 'Sign in', and the label 'Punchout mode' is in the top header
+--- SCREEN: catalog ---
+[DISCOVER] live-discover 3 distinct orderable B2B-store product(s): availability true, stock at least the quantity used, no min/max-order rule, not configurable, no variations; USD list price whose after-promotion unit price has at most 2 decimals (the storewide 20% line promotion must not produce a sub-cent price here); [CAPTURE] SKU, name and placed unit price of each → P1..P3; fewer found → case BLOCKED (data), never FAIL
+[NAV] {{frontUrl}}/search?q={{P1.sku}}
+[ACT] click 'Add to cart' on the product with SKU {{P1.sku}}
+[WAIT] the cart notification appears
+[NAV] {{frontUrl}}/search?q={{P2.sku}}
+[ACT] click 'Add to cart' on the product with SKU {{P2.sku}} after setting its quantity to 3
+[WAIT] the cart notification appears
+[NAV] {{frontUrl}}/search?q={{P3.sku}}
+[ACT] click 'Add to cart' on the product with SKU {{P3.sku}}
+[WAIT] the cart notification appears
+--- SCREEN: cart ---
+[NAV] {{frontUrl}}/cart
+[WAIT] cart page loaded
+[ASSERT] three cart rows for P1, P2 and P3 with quantities 1, 3 and 1
+--- SCREEN: checkout ---
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[ASSERT] a button labelled 'Create requisition' is present and no button labelled 'Place order' is present
+[READ] the order summary lines (SKU, quantity, line total) and the items subtotal; [CAPTURE] → CHK_LINES, CHK_SUBTOTAL
+--- SCREEN: requisition sent ---
+[ACT] click 'Create requisition'
+[WAIT] the page or the control state settles
+[ASSERT] immediately after the click the button shows its loading state and is not clickable
+[WAIT] the browser lands on the return page and it echoes the cXML
+[READ] the echoed PunchOutOrderMessage; [CAPTURE] it → CXML","[DOM] on the checkout page of a punchout session the button is labelled 'Create requisition' and 'Place order' is absent {SPEC}
+[COUNT] the cXML holds exactly 3 ItemIn elements {SPEC}
+[REL] the set of SupplierPartID values in the cXML == the SKUs P1, P2, P3 shown in CHK_LINES {SPEC}
+[REL] each ItemIn quantity == the quantity added for the same SKU {SPEC}
+[MATH] each UnitPrice/Money == the after-promotion unit price shown for that line in CHK_LINES, printed with exactly 2 decimals {SPEC}
+[REL] Total/Money == CHK_SUBTOTAL (shipping and tax are outside the message by design) {SPEC}
+[REL] the BuyerCookie in the cXML == COOKIE {SPEC}
+[STATE] the browser location is the return page after the click {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",button still labelled Place order in punchout mode; a different set of SKUs or quantities in the cXML than at checkout (mid-journey: the cart the buyer reviewed is not the cart sent); button clickable again while the request is in flight; stays on checkout with an error toast; Total differs from the checkout subtotal,run `npm run seed:punchout:reset-carts` again so the dedicated buyer is left with only an empty `default` cart; sign out,VCST-5887 · Archetype:SILENT · Technique:FLOW,Draft
+PNCR-002,Punchout requisition — a named cart created by another xAPI client: the cart sent is the cart the buyer sees,Punchout > Requisition (PunchOutOrderMessage),Critical,BL-PUNCHOUT-001,,"Dedicated punchout buyer; Punchout.Enabled on. The lines the buyer reviews sit in a NAMED cart that another channel (mobile, UCP create_cart, an integration) created through xAPI `addItem` with a `cartName`; the empty `default` cart exists beside it. The client-app never sends a cartName, so this state is unreachable through the storefront UI alone and must be built by API. Oracle: the QA guide, Step 3, ""items match the storefront cart"". Bug A (the module read only the cart named `default`) is fixed in vc-module-punchout PR #2 (rounds 2 and 3 PASS); this case stays as the regression guard for the cart resolution.","secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>); read the buyer carts through the storefront GraphQL `carts` query with a password-grant token for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] cart names, ids and line SKUs → CARTS_BEFORE; discard the token
+[DISCOVER] live-discover two distinct orderable B2B-store products X and Y (availability true, stock at least 1, no min/max-order rule, not configurable, no variations); [CAPTURE] SKUs → PX, PY; fewer found → case BLOCKED (data)
+[SETUP] with the buyer's password-grant token: xAPI `addItem` for PX into the `default` cart (no cartName); then xAPI `addItem` for PY with cartName 'AGENT-PNCR-named-<timestamp>' (as another client would); [CAPTURE] both cart ids and names → CARTS_AFTER_SETUP
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-002-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[NAV] {{START_URL}} in a fresh browser context
+[WAIT] the storefront leaves /punchout/ and loads the signed-in home page
+[ASSERT] the account menu shows the buyer, not 'Sign in', and the label 'Punchout mode' is in the top header
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[READ] the SKUs the checkout page lists; [CAPTURE] → SCREEN_SKUS
+[ACT] click 'Create requisition'
+[WAIT] the browser lands on the return page and it echoes the cXML
+[READ] the echoed PunchOutOrderMessage; [CAPTURE] it → CXML","[REL] the set of SupplierPartID values in the cXML == SCREEN_SKUS (the cart the buyer reviewed is the cart sent) {SPEC}
+[DER] SCREEN_SKUS contains PY, the named cart's product, when the storefront shows the named cart {OBSERVED}
+[COUNT] the cXML holds exactly as many ItemIn elements as the checkout page shows lines {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",the cXML carries PX (the hidden default cart) while the checkout page shows PY; ERP receives goods the buyer never reviewed; a toast instead of navigation; mid-flow: the cart shown at checkout changes between the cart page and the click,run `npm run seed:punchout:reset-carts` again so the dedicated buyer is left with only an empty `default` cart; sign out,VCST-5887 · Archetype:SCOPE · Technique:EG · Catches:VCST-5887,Draft
+PNCR-003,Punchout requisition — the button and the message follow the cart that is actually sent: an invalid default cart is not sent while a valid named cart is on screen,Punchout > Requisition (PunchOutOrderMessage),High,BL-PUNCHOUT-001,,"Dedicated punchout buyer; Punchout.Enabled on. Two carts: the `default` cart holds product A with a quantity above stock (invalid, set through the API), and a NAMED cart created through xAPI with a cartName holds product B with a valid quantity — the storefront displays the named cart. The client-app never sends a cartName, so this state is built by API. Oracle: the QA guide, Step 3 — the buyer reviews one cart and that cart is the one sent. Regression guard for the fixed Bug A (the module read only `default` while the button validated the displayed cart, so the INVALID default cart could be sent): rounds 2 and 3 PASS.","secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>); read the buyer carts through the storefront GraphQL `carts` query with a password-grant token for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] cart names, ids and line SKUs → CARTS_BEFORE; discard the token
+[DISCOVER] live-discover two distinct orderable B2B-store products A and B with stock above 1 (no min/max-order rule, not configurable, no variations) → PA, PB, STOCK_A; fewer found → case BLOCKED (data), never FAIL
+[SETUP] with the buyer's password-grant token: `addItem` PA into the `default` cart (no cartName)
+[SETUP] `changeCartItemQuantity` on that line to STOCK_A + 1
+[SETUP] `addItem` PB, quantity 1, into a named cart 'AGENT-PNCR-named-<timestamp>'
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-003-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[NAV] {{START_URL}} in a fresh browser context
+[WAIT] the storefront leaves /punchout/ and loads the signed-in home page
+[ASSERT] the account menu shows the buyer, not 'Sign in', and the label 'Punchout mode' is in the top header
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[READ] whether 'Create requisition' is enabled, the SKUs of the cart on screen and any validation messages; [CAPTURE] → BUTTON_ENABLED, SHOWN_SKUS, SHOWN_ERRORS
+[ASSERT] the state of the button is read before any click
+[ACT] click 'Create requisition' only if it is enabled
+[WAIT] the page settles
+[READ] the SupplierPartID values in the cXML if the browser reached the return page, otherwise none; the toast text and the errorCode of the createPunchoutRequisition GraphQL response of the click; [CAPTURE] → SENT_SKUS, TOAST, CODE","[REL] when a message was sent, SENT_SKUS == SHOWN_SKUS, the cart the buyer reviewed is the cart sent {SPEC}
+[DOM] the SKU of PA, the line with the invalid quantity, is absent from the sent cXML {SPEC}
+[REL] BUTTON_ENABLED == true only if the cart that is actually sent has no line with a validation error {SPEC}
+[STATE] SHOWN_ERRORS is empty, so the displayed named cart is valid and the button is enabled for it {OBSERVED}
+[STATE] no 'PRODUCT_QTY_INSUFFICIENT' error is the reason for a refusal of the cart that holds PB {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql","the button is enabled and the cXML carries PA, the invalid default cart, while the screen showed PB; the button is disabled although the displayed cart is valid; the message holds a line the buyer never reviewed; mid-flow: the cart shown at checkout differs from the cart posted",run `npm run seed:punchout:reset-carts` again so the dedicated buyer is left with only an empty `default` cart; sign out,VCST-5887 · Archetype:SCOPE · Technique:EG · Catches:VCST-5887 · Triage:REG-2026-10-14-0944 ASSERTION_DEFECT console→GraphQL,Draft
+PNCR-004,"Punchout requisition — cXML header and envelope: From/To swapped from setup, no SharedSecret, BuyerCookie echoed, operationAllowed create",Punchout > Requisition (PunchOutOrderMessage),High,"BL-PUNCHOUT-006, BL-PUNCHOUT-007",,"Dedicated punchout buyer; Punchout.Enabled on; one orderable product in the cart. The setup request names From buyer-co and To supplier so the swap can be checked as a relation, not as a literal. Oracle: the QA guide, Step 4 table, and the cXML 1.2.041 DTD.","secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>); read the buyer carts through the storefront GraphQL `carts` query with a password-grant token for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] cart names, ids and line SKUs → CARTS_BEFORE; discard the token
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-004-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[NAV] {{START_URL}} in a fresh browser context
+[WAIT] the storefront leaves /punchout/ and loads the signed-in home page
+[ASSERT] the account menu shows the buyer, not 'Sign in', and the label 'Punchout mode' is in the top header
+[DISCOVER] live-discover 1 distinct orderable B2B-store product(s): availability true, stock at least the quantity used, no min/max-order rule, not configurable, no variations; USD list price whose after-promotion unit price has at most 2 decimals (the storewide 20% line promotion must not produce a sub-cent price here); [CAPTURE] SKU, name and placed unit price of each → P1..P1; fewer found → case BLOCKED (data), never FAIL
+[NAV] {{frontUrl}}/search?q={{P1.sku}}
+[ACT] click 'Add to cart' on the product with SKU {{P1.sku}}
+[WAIT] the cart notification appears
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[ACT] click 'Create requisition'
+[WAIT] the browser lands on the return page and it echoes the cXML
+[READ] the echoed PunchOutOrderMessage; [CAPTURE] it → CXML
+[READ] Header From, To and Sender credentials, UserAgent, BuyerCookie, the PunchOutOrderMessage operationAllowed attribute, and per ItemIn SupplierPartID, SupplierPartAuxiliaryID, UnitOfMeasure and Description xml:lang
+[HTTP] read the buyer's `default` cart line ids through the storefront GraphQL `cart` query with the page's own session; [CAPTURE] → LINE_IDS","[REL] Header From Identity in the cXML == the To Identity of the setup request (supplier) and Header To Identity == the From Identity of the setup request (buyer-co) {SPEC}
+[REL] the Sender credential in the cXML == the From credential of the message {SPEC}
+[DOM] the posted cXML contains no 'SharedSecret' element anywhere {SPEC}
+[DOM] the value of {{secret0}} and the last path segment of START_URL are absent from the posted cXML {OBSERVED}
+[REL] BuyerCookie in the cXML == COOKIE {SPEC}
+[DOM] UserAgent is 'Virto Commerce Punchout' and PunchOutOrderMessage operationAllowed is 'create' {SPEC}
+[REL] SupplierPartID == the SKU of P1 and SupplierPartAuxiliaryID == the cart line id in LINE_IDS {SPEC}
+[FORMAT] UnitPrice/Money matches /^[0-9]+[.][0-9]{2}$/ and Description has an xml:lang attribute {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",From and To not swapped; SharedSecret or the session token appears in the document; BuyerCookie missing or changed; line id or SKU swapped; no xml:lang; the return page reports a cXML parse error,run `npm run seed:punchout:reset-carts` again so the dedicated buyer is left with only an empty `default` cart; sign out,VCST-5887 · Archetype:PARITY · Technique:EP,Draft
+PNCR-005,Punchout requisition — an unselected cart line is not sent and not counted in Total,Punchout > Requisition (PunchOutOrderMessage),High,"BL-PUNCHOUT-001, BL-PUNCHOUT-002",,"Dedicated punchout buyer; Punchout.Enabled on; three lines in the default cart, one of which is unticked (""selected for checkout"" off) before the requisition. Oracle: the QA guide, case 3 — only selected lines are sent and counted.","secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>); read the buyer carts through the storefront GraphQL `carts` query with a password-grant token for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] cart names, ids and line SKUs → CARTS_BEFORE; discard the token
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-005-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[NAV] {{START_URL}} in a fresh browser context
+[WAIT] the storefront leaves /punchout/ and loads the signed-in home page
+[ASSERT] the account menu shows the buyer, not 'Sign in', and the label 'Punchout mode' is in the top header
+[DISCOVER] live-discover 3 distinct orderable B2B-store product(s): availability true, stock at least the quantity used, no min/max-order rule, not configurable, no variations; USD list price whose after-promotion unit price has at most 2 decimals (the storewide 20% line promotion must not produce a sub-cent price here); [CAPTURE] SKU, name and placed unit price of each → P1..P3; fewer found → case BLOCKED (data), never FAIL
+[NAV] {{frontUrl}}/search?q={{P1.sku}}
+[ACT] click 'Add to cart' on the product with SKU {{P1.sku}}
+[WAIT] the cart notification appears
+[NAV] {{frontUrl}}/search?q={{P2.sku}}
+[ACT] click 'Add to cart' on the product with SKU {{P2.sku}} after setting its quantity to 2
+[WAIT] the cart notification appears
+[NAV] {{frontUrl}}/search?q={{P3.sku}}
+[ACT] click 'Add to cart' on the product with SKU {{P3.sku}}
+[WAIT] the cart notification appears
+[NAV] {{frontUrl}}/cart
+[ACT] untick the 'selected for checkout' checkbox of the row for P2
+[WAIT] the cart totals refresh
+[READ] the items subtotal of the selected lines; [CAPTURE] → CART_SELECTED_SUBTOTAL
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[ASSERT] the checkout summary lists only P1 and P3
+[ACT] click 'Create requisition'
+[WAIT] the browser lands on the return page and it echoes the cXML
+[READ] the echoed PunchOutOrderMessage; [CAPTURE] it → CXML","[COUNT] the cXML holds exactly 2 ItemIn elements {SPEC}
+[DOM] the ItemIn for P2 is absent from the cXML {SPEC}
+[REL] Total/Money == CART_SELECTED_SUBTOTAL {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",P2 appears in the cXML; Total includes the unticked line; three ItemIn although one line was deselected; the checkout summary lists P2,run `npm run seed:punchout:reset-carts` again so the dedicated buyer is left with only an empty `default` cart; sign out,VCST-5887 · Archetype:SCOPE · Technique:BVA,Draft
+PNCR-006,"Punchout requisition — nothing selected: Create requisition is disabled; deselecting after checkout rendered gives CartIsEmpty, not a send",Punchout > Requisition (PunchOutOrderMessage),Medium,BL-PUNCHOUT-001,,"Dedicated punchout buyer; Punchout.Enabled on; one orderable product in the cart. Two sub-cases: every line unticked before checkout (button disabled), and every line unticked through the API AFTER the checkout page rendered (server answers CartIsEmpty). Oracle: the QA guide, case 4 and the error table.","secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>); read the buyer carts through the storefront GraphQL `carts` query with a password-grant token for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] cart names, ids and line SKUs → CARTS_BEFORE; discard the token
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-006-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[NAV] {{START_URL}} in a fresh browser context
+[WAIT] the storefront leaves /punchout/ and loads the signed-in home page
+[ASSERT] the account menu shows the buyer, not 'Sign in', and the label 'Punchout mode' is in the top header
+[DISCOVER] live-discover 1 distinct orderable B2B-store product(s): availability true, stock at least the quantity used, no min/max-order rule, not configurable, no variations; USD list price whose after-promotion unit price has at most 2 decimals (the storewide 20% line promotion must not produce a sub-cent price here); [CAPTURE] SKU, name and placed unit price of each → P1..P1; fewer found → case BLOCKED (data), never FAIL
+[NAV] {{frontUrl}}/search?q={{P1.sku}}
+[ACT] click 'Add to cart' on the product with SKU {{P1.sku}}
+[WAIT] the cart notification appears
+[NAV] {{frontUrl}}/cart
+[ACT] untick every 'selected for checkout' checkbox in the cart
+[WAIT] the page or the control state settles
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[READ] whether the 'Create requisition' button is enabled; [CAPTURE] → DISABLED_WHEN_EMPTY
+[NAV] {{frontUrl}}/cart
+[ACT] tick the row again
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[ASSERT] the 'Create requisition' button is enabled
+[SETUP] with the buyer's password-grant token: xAPI `unSelectAllCartItems` on the `default` cart
+[ACT] click 'Create requisition'
+[WAIT] the page settles
+[READ] the toast text, the errorCode of the createPunchoutRequisition GraphQL response of the click, whether the browser left checkout, the button enabled state; [CAPTURE] → TOAST, GQL_CODE, LEFT_CHECKOUT, BUTTON_AFTER","[STATE] DISABLED_WHEN_EMPTY == true, the button is disabled when nothing is selected {SPEC}
+[DOM] after the late deselect a toast is visible and it is not a raw translation key {SPEC}
+[DATA] GQL_CODE == 'CartIsEmpty', the errorCode of the createPunchoutRequisition GraphQL response of the click {SPEC}
+[STATE] LEFT_CHECKOUT == false, nothing was sent to the return URL {SPEC}
+[STATE] BUTTON_AFTER == enabled, the buyer can retry after the failure {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",button enabled with nothing selected; an empty requisition reaches the return page; no toast after the failure; button stuck in loading; errorCode other than CartIsEmpty,run `npm run seed:punchout:reset-carts` again so the dedicated buyer is left with only an empty `default` cart; sign out,VCST-5887 · Archetype:BOUNDARY · Technique:BVA · Triage:REG-2026-10-14-0944 ASSERTION_DEFECT console→GraphQL,Draft
+PNCR-007,Punchout requisition — a line-level promotion: UnitPrice is the placed price and Total includes the line discount,Punchout > Requisition (PunchOutOrderMessage),High,"BL-CART-003, BL-PUNCHOUT-002",,"Dedicated punchout buyer; Punchout.Enabled on. Every B2B-store product carries the storewide line promotion (QA Category Percent, 20%), so there is no un-promoted contrast line — the case compares each line with its own list price. Products are constrained so the after-promotion price has at most 2 decimals; the sub-cent case is a separate concern. Oracle: the QA guide, case 5 — UnitPrice is the placed price and Total includes the line discount.","secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>); read the buyer carts through the storefront GraphQL `carts` query with a password-grant token for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] cart names, ids and line SKUs → CARTS_BEFORE; discard the token
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-007-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[NAV] {{START_URL}} in a fresh browser context
+[WAIT] the storefront leaves /punchout/ and loads the signed-in home page
+[ASSERT] the account menu shows the buyer, not 'Sign in', and the label 'Punchout mode' is in the top header
+[DISCOVER] live-discover 2 distinct orderable B2B-store product(s): availability true, stock at least the quantity used, no min/max-order rule, not configurable, no variations; USD list price whose after-promotion unit price has at most 2 decimals (the storewide 20% line promotion must not produce a sub-cent price here); [CAPTURE] SKU, name and placed unit price of each → P1..P2; fewer found → case BLOCKED (data), never FAIL
+[NAV] {{frontUrl}}/search?q={{P1.sku}}
+[ACT] click 'Add to cart' on the product with SKU {{P1.sku}} after setting its quantity to 2
+[WAIT] the cart notification appears
+[NAV] {{frontUrl}}/search?q={{P2.sku}}
+[ACT] click 'Add to cart' on the product with SKU {{P2.sku}}
+[WAIT] the cart notification appears
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[READ] per line the list price, the placed (after-promotion) unit price and the quantity; the items subtotal; [CAPTURE] → LINES, CHK_SUBTOTAL
+[ACT] click 'Create requisition'
+[WAIT] the browser lands on the return page and it echoes the cXML
+[READ] the echoed PunchOutOrderMessage; [CAPTURE] it → CXML","[REL] each UnitPrice/Money == the placed unit price of the same SKU in LINES {SPEC}
+[REL] each UnitPrice/Money != the list price of the same SKU in LINES {SPEC}
+[MATH] Total/Money == the sum of (UnitPrice x quantity) over the ItemIn lines, to the cent {SPEC}
+[REL] Total/Money == CHK_SUBTOTAL {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",UnitPrice equals the list price so the ERP is charged without the line discount; Total higher than the checkout subtotal; Total differs from the line sum,run `npm run seed:punchout:reset-carts` again so the dedicated buyer is left with only an empty `default` cart; sign out,VCST-5887 · Archetype:MONEY · Technique:EP,Draft
+PNCR-008,Punchout requisition — cart-level percentage and fixed-amount coupons are both excluded from Total (known limitation guard),Punchout > Requisition (PunchOutOrderMessage),High,BL-PUNCHOUT-002,,"Dedicated punchout buyer; Punchout.Enabled on. Three requisitions on the SAME cart (a return leaves the cart unchanged) with a fresh session each: no coupon, then a cart-level percentage coupon @td(COUPON_20PCT.code), then a cart-level fixed coupon @td(COUPON_FIXED5.code). Guard for a stated limitation: the QA guide says cart-level discounts are excluded from Total. Observed on qa1 2026-10-14: both kinds are excluded. The case fails if the two kinds start to disagree. Avoid products with an automatic cart reward.","secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, couponPct=@td(COUPON_20PCT.code), couponFixed=@td(COUPON_FIXED5.code), buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>); read the buyer carts through the storefront GraphQL `carts` query with a password-grant token for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] cart names, ids and line SKUs → CARTS_BEFORE; discard the token
+[DISCOVER] live-discover 2 distinct orderable B2B-store product(s): availability true, stock at least the quantity used, no min/max-order rule, not configurable, no variations; USD list price whose after-promotion unit price has at most 2 decimals (the storewide 20% line promotion must not produce a sub-cent price here); [CAPTURE] SKU, name and placed unit price of each → P1..P2; fewer found → case BLOCKED (data), never FAIL
+[NAV] {{frontUrl}}/search?q={{P1.sku}}
+[ACT] click 'Add to cart' on the product with SKU {{P1.sku}} after setting its quantity to 2
+[WAIT] the cart notification appears
+[NAV] {{frontUrl}}/search?q={{P2.sku}}
+[ACT] click 'Add to cart' on the product with SKU {{P2.sku}}
+[WAIT] the cart notification appears
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-008-a-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[NAV] {{START_URL}} in a fresh browser context
+[WAIT] the storefront leaves /punchout/ and loads the signed-in home page
+[ASSERT] the account menu shows the buyer, not 'Sign in', and the label 'Punchout mode' is in the top header
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[ACT] click 'Create requisition'
+[WAIT] the browser lands on the return page and it echoes the cXML
+[READ] the echoed PunchOutOrderMessage; [CAPTURE] it → CXML
+[CAPTURE] Total/Money and the UnitPrice list → TOTAL_NONE, PRICES_NONE
+[NAV] {{frontUrl}}/cart
+[ACT] fill 'Promo code': {{couponPct}}
+[ACT] click 'Apply'
+[WAIT] the discount row appears in the cart summary
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-008-b-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[NAV] {{START_URL}} in a fresh browser context
+[WAIT] signed-in home page loaded
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[ACT] click 'Create requisition'
+[WAIT] the browser lands on the return page and it echoes the cXML
+[READ] the echoed PunchOutOrderMessage; [CAPTURE] it → CXML
+[CAPTURE] Total/Money and the UnitPrice list → TOTAL_PCT, PRICES_PCT
+[NAV] {{frontUrl}}/cart
+[ACT] remove the coupon {{couponPct}}
+[ACT] fill 'Promo code': {{couponFixed}}
+[ACT] click 'Apply'
+[WAIT] the discount row shows the fixed amount
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-008-c-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[NAV] {{START_URL}} in a fresh browser context
+[WAIT] signed-in home page loaded
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[ACT] click 'Create requisition'
+[WAIT] the browser lands on the return page and it echoes the cXML
+[READ] the echoed PunchOutOrderMessage; [CAPTURE] it → CXML
+[CAPTURE] Total/Money and the UnitPrice list → TOTAL_FIXED, PRICES_FIXED","[REL] TOTAL_PCT == TOTAL_NONE, the cart-level percentage coupon is excluded from Total {SPEC}
+[REL] TOTAL_FIXED == TOTAL_NONE, the cart-level fixed coupon is excluded from Total {SPEC}
+[REL] TOTAL_PCT == TOTAL_FIXED, both kinds behave the same way {SPEC}
+[REL] PRICES_PCT == PRICES_NONE and PRICES_FIXED == PRICES_NONE, cart-level coupons are not allocated into UnitPrice {OBSERVED}
+[DOM] a discount row is visible in the cart summary after each coupon was applied {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",Total drops with one kind of coupon but not the other; UnitPrice changes with a coupon; the coupon was not applied so the case proves nothing (no discount row); a session reused across the three requisitions,run `npm run seed:punchout:reset-carts` again so the dedicated buyer is left with only an empty `default` cart; sign out,VCST-5887 · Archetype:MONEY · Technique:DT,Draft
+PNCR-009,"Punchout requisition — UnitOfMeasure is the product measure unit, or EA when empty",Punchout > Requisition (PunchOutOrderMessage),Medium,BL-PUNCHOUT-007,,"Dedicated punchout buyer; Punchout.Enabled on. One line of the owned UoM product (MeasureUnit 'box') and one line of the owned plain product (no MeasureUnit, expected EA fallback). The fixtures are the owned products @td(PUNCHOUT_PRODUCT_UOM.sku) and @td(PUNCHOUT_PRODUCT_PLAIN.sku) and the EUR price list @td(PUNCHOUT_PRICELIST_EUR.name), all provisioned by `npm run seed:punchout`. Probe before the case: the catalog search for each SKU returns an orderable product (availability true, stock above 0); a missing fixture makes the case BLOCKED (fixture), never FAIL. live-discover is only a fallback when the alias is empty. The storewide line promotion may or may not apply to these products, so no discount percentage is asserted: UnitPrice is compared with the placed price read from the cart. Oracle: the QA guide, case 6 — UnitOfMeasure is the product's unit, or EA when empty.","secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, uomSku=@td(PUNCHOUT_PRODUCT_UOM.sku), uomUnit=@td(PUNCHOUT_PRODUCT_UOM.measureUnit), plainSku=@td(PUNCHOUT_PRODUCT_PLAIN.sku), buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>); read the buyer carts through the storefront GraphQL `carts` query with a password-grant token for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] cart names, ids and line SKUs → CARTS_BEFORE; discard the token
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-009-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[NAV] {{START_URL}} in a fresh browser context
+[WAIT] the storefront leaves /punchout/ and loads the signed-in home page
+[ASSERT] the account menu shows the buyer, not 'Sign in', and the label 'Punchout mode' is in the top header
+[NAV] {{frontUrl}}/search?q={{uomSku}}
+[ACT] click 'Add to cart' on the product with SKU {{uomSku}}
+[WAIT] the cart notification appears
+[NAV] {{frontUrl}}/search?q={{plainSku}}
+[ACT] click 'Add to cart' on the product with SKU {{plainSku}}
+[WAIT] the cart notification appears
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[READ] per line the placed unit price shown at checkout; [CAPTURE] → CHK_PRICES
+[ACT] click 'Create requisition'
+[WAIT] the browser lands on the return page and it echoes the cXML
+[READ] the echoed PunchOutOrderMessage; [CAPTURE] it → CXML
+[READ] ItemDetail/UnitOfMeasure and UnitPrice per line","[REL] the UnitOfMeasure of the ItemIn whose SupplierPartID == {{uomSku}} == {{uomUnit}} {SPEC}
+[DOM] the UnitOfMeasure of the ItemIn whose SupplierPartID == {{plainSku}} is 'EA' {SPEC}
+[DOM] every ItemDetail has a non-empty 'UnitOfMeasure' element {SPEC}
+[REL] each UnitPrice/Money == the placed unit price of the same SKU in CHK_PRICES {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",the box line prints EA (the unit is ignored); the plain line has an empty or missing unit; units swapped between the two lines; UnitPrice differs from the placed price at checkout,run `npm run seed:punchout:reset-carts` again so the dedicated buyer is left with only an empty `default` cart; sign out,VCST-5887 · Archetype:PARITY · Technique:EP,Draft
+PNCR-010,Punchout requisition — after a currency switch the cXML prices and currency follow the selected currency,Punchout > Requisition (PunchOutOrderMessage),High,"BL-CART-004, BL-PRICE-005, BL-PUNCHOUT-002",ECL-12.1,"Dedicated punchout buyer; Punchout.Enabled on. The owned plain product is priced in EUR by the owned EUR price list (assigned to the configuration-0 store), so the storefront can switch to EUR with an orderable line. The fixtures are the owned products @td(PUNCHOUT_PRODUCT_UOM.sku) and @td(PUNCHOUT_PRODUCT_PLAIN.sku) and the EUR price list @td(PUNCHOUT_PRICELIST_EUR.name), all provisioned by `npm run seed:punchout`. Probe before the case: the catalog search for each SKU returns an orderable product (availability true, stock above 0); a missing fixture makes the case BLOCKED (fixture), never FAIL. live-discover is only a fallback when the alias is empty. The storewide line promotion may or may not apply to these products, so no discount percentage is asserted: UnitPrice is compared with the placed price read from the cart. Oracle: BL-CART-004 and BL-PRICE-005 — the cart and its prices follow the selected currency.","secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, plainSku=@td(PUNCHOUT_PRODUCT_PLAIN.sku), plainPriceEur=@td(PUNCHOUT_PRODUCT_PLAIN.price_eur), eurList=@td(PUNCHOUT_PRICELIST_EUR.name), buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>); read the buyer carts through the storefront GraphQL `carts` query with a password-grant token for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] cart names, ids and line SKUs → CARTS_BEFORE; discard the token
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-010-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[NAV] {{START_URL}} in a fresh browser context
+[WAIT] the storefront leaves /punchout/ and loads the signed-in home page
+[ASSERT] the account menu shows the buyer, not 'Sign in', and the label 'Punchout mode' is in the top header
+[ACT] select 'EUR' in the header currency selector
+[WAIT] the page reloads with EUR prices
+[NAV] {{frontUrl}}/search?q={{plainSku}}
+[ACT] click 'Add to cart' on the product with SKU {{plainSku}}
+[WAIT] the cart notification appears
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[READ] the placed unit price and the currency symbol shown at checkout; [CAPTURE] → CHK_PRICE, CHK_CUR
+[ACT] click 'Create requisition'
+[WAIT] the browser lands on the return page and it echoes the cXML
+[READ] the echoed PunchOutOrderMessage; [CAPTURE] it → CXML","[REL] every Money/@currency in the cXML == 'EUR' {BL}
+[REL] UnitPrice/Money == CHK_PRICE, the placed price read from the cart {SPEC}
+[DOM] 'USD' is absent from every Money/@currency while the storefront currency is EUR {BL}
+[REL] the cart line for {{plainSku}} is present in the EUR cart, so no CartNotFound toast was shown {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",Money/@currency is USD while the buyer shopped in EUR; prices re-read in the default currency; a CartNotFound toast because the cart lookup keyed on a different currency; the EUR price is absent so the line is not orderable (fixture),run `npm run seed:punchout:reset-carts` again so the dedicated buyer is left with only an empty `default` cart; sign out,VCST-5887 · Archetype:MONEY · Technique:PW,Draft
+PNCR-011,Punchout requisition — product names with XML special and non-Latin characters produce a well-formed cXML,Punchout > Requisition (PunchOutOrderMessage),Medium,BL-PUNCHOUT-007,,"Dedicated punchout buyer; Punchout.Enabled on. Needs orderable B2B-store products whose names carry an ampersand and a non-Latin (Cyrillic) letter; discovered live by searching the catalog, none found → that half BLOCKED (data). Oracle: the QA guide — the return page shows the cart without cXML errors.","secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>); read the buyer carts through the storefront GraphQL `carts` query with a password-grant token for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] cart names, ids and line SKUs → CARTS_BEFORE; discard the token
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-011-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[NAV] {{START_URL}} in a fresh browser context
+[WAIT] the storefront leaves /punchout/ and loads the signed-in home page
+[ASSERT] the account menu shows the buyer, not 'Sign in', and the label 'Punchout mode' is in the top header
+[DISCOVER] live-discover (catalog search) an orderable product whose name contains '&' (PAMP) and one whose name contains Cyrillic letters (PCYR); none found → that half BLOCKED (data)
+[NAV] {{frontUrl}}/search?q={{PAMP.sku}}
+[ACT] click 'Add to cart' on the product with SKU {{PAMP.sku}}
+[WAIT] the cart notification appears
+[NAV] {{frontUrl}}/search?q={{PCYR.sku}}
+[ACT] click 'Add to cart' on the product with SKU {{PCYR.sku}}
+[WAIT] the cart notification appears
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[READ] the product names as the checkout page shows them → CHK_NAMES
+[ACT] click 'Create requisition'
+[WAIT] the browser lands on the return page and it echoes the cXML
+[READ] the echoed PunchOutOrderMessage; [CAPTURE] it → CXML
+[READ] the return page's parse result (error banner or none) and each Description text","[STATE] the return page shows no cXML parse error and no error banner {SPEC}
+[REL] each Description text in the cXML == the product name shown at checkout for the same line, characters intact {SPEC}
+[COUNT] the cXML holds one ItemIn per cart line {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",return page reports malformed XML; ampersand shown as &amp; literally or the line dropped; Cyrillic replaced by question marks; MessageError toast and no navigation,run `npm run seed:punchout:reset-carts` again so the dedicated buyer is left with only an empty `default` cart; sign out,VCST-5887 · Archetype:BOUNDARY · Technique:EG,Draft
+PNCR-012,Punchout requisition — comma-decimal storefront culture still prints UnitPrice and Total with a dot,Punchout > Requisition (PunchOutOrderMessage),High,BL-PUNCHOUT-007,ECL-12.1,"Dedicated punchout buyer; Punchout.Enabled on; the storefront offers a language with a comma decimal separator (de). Oracle: the QA guide, case 8 — the cXML uses a dot as the decimal separator regardless of culture. Observed on qa1 2026-10-14 that the dot holds under de; ECL-12.1 guard.","secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>); read the buyer carts through the storefront GraphQL `carts` query with a password-grant token for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] cart names, ids and line SKUs → CARTS_BEFORE; discard the token
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-012-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[NAV] {{START_URL}} in a fresh browser context
+[WAIT] the storefront leaves /punchout/ and loads the signed-in home page
+[ASSERT] the account menu shows the buyer, not 'Sign in', and the label 'Punchout mode' is in the top header
+[ACT] select 'Deutsch' in the header language selector
+[WAIT] the page reloads in German
+[DISCOVER] live-discover 1 distinct orderable B2B-store product(s): availability true, stock at least the quantity used, no min/max-order rule, not configurable, no variations; USD list price whose after-promotion unit price has at most 2 decimals (the storewide 20% line promotion must not produce a sub-cent price here); [CAPTURE] SKU, name and placed unit price of each → P1..P1; fewer found → case BLOCKED (data), never FAIL
+[NAV] {{frontUrl}}/search?q={{P1.sku}}
+[ACT] click 'Add to cart' on the product with SKU {{P1.sku}} after setting its quantity to 3
+[WAIT] the cart notification appears
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[READ] the unit price as printed at checkout (with a comma decimal separator in German) → CHK_PRICE_DE
+[ACT] click 'Bestellanforderung erstellen' (the German label of the button, from the module's de locale)
+[WAIT] the browser lands on the return page and it echoes the cXML
+[READ] the echoed PunchOutOrderMessage; [CAPTURE] it → CXML","[FORMAT] every UnitPrice/Money and Total/Money in the cXML matches /^[0-9]+[.][0-9]{2}$/ {SPEC}
+[DOM] no Money amount contains a ',' character {SPEC}
+[REL] the digits of UnitPrice/Money == the digits of CHK_PRICE_DE with the comma read as the decimal separator {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql","a comma decimal separator in the cXML (125,00); the amount read as 12500 by the ERP; the page shows a German label but the buyer cannot find the button",run `npm run seed:punchout:reset-carts` again so the dedicated buyer is left with only an empty `default` cart; sign out,VCST-5887 · Archetype:PARITY · Technique:EP,Draft
+PNCR-013,Punchout requisition — a second Create requisition on a returned session (Back button) is refused with SessionReturned and sends nothing,Punchout > Requisition (PunchOutOrderMessage),High,BL-PUNCHOUT-003,ECL-1.2,"Dedicated punchout buyer; Punchout.Enabled on. One successful requisition is made first; then the buyer returns to the storefront with the browser Back button and clicks again on the same, already returned session. Oracle: the developer's final design: the replay is removed and a second return of a session is refused with errorCode SessionReturned (vc-module-punchout PR #2 head c49023f, deployed and verified on vcptcore-qa1 2026-10-22; supersedes the earlier replay design and the QA guide case 2). TOAST NOTE: the theme mapping for SessionReturned (vc-frontend c83fdf2, en 'Requisition already sent.') is not deployed yet, so the case asserts the errorCode, nothing sent and a toast that is not a raw key; the final text is added when the theme ships. This is the storefront path; PNCR-028 is the API path.","secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>); read the buyer carts through the storefront GraphQL `carts` query with a password-grant token for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] cart names, ids and line SKUs → CARTS_BEFORE; discard the token
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-013-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[NAV] {{START_URL}} in a fresh browser context
+[WAIT] the storefront leaves /punchout/ and loads the signed-in home page
+[ASSERT] the account menu shows the buyer, not 'Sign in', and the label 'Punchout mode' is in the top header
+[DISCOVER] live-discover 1 distinct orderable B2B-store product(s): availability true, stock at least the quantity used, no min/max-order rule, not configurable, no variations; USD list price whose after-promotion unit price has at most 2 decimals (the storewide 20% line promotion must not produce a sub-cent price here); [CAPTURE] SKU, name and placed unit price of each → P1..P1; fewer found → case BLOCKED (data), never FAIL
+[NAV] {{frontUrl}}/search?q={{P1.sku}}
+[ACT] click 'Add to cart' on the product with SKU {{P1.sku}}
+[WAIT] the cart notification appears
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[ACT] click 'Create requisition'
+[WAIT] the browser lands on the return page and it echoes the cXML
+[READ] the echoed PunchOutOrderMessage; [CAPTURE] it, and its payloadID → CXML_1, PAYLOAD_1
+[ACT] press the browser Back button until the checkout page is shown again
+[WAIT] the checkout page is loaded
+[READ] whether the page still shows punchout mode ('Punchout mode' label) and the 'Create requisition' button enabled; [CAPTURE] → STILL_PUNCHOUT, BUTTON_ENABLED_AGAIN
+[ACT] click 'Create requisition' a second time
+[WAIT] the page settles
+[READ] where the browser is, whether a toast is visible, the toast text, the errorCode and the url, formField and cxml of the CreatePunchoutRequisition GraphQL response of the click, whether anything was posted to the return URL, the number of return-page arrivals, the button enabled state; [CAPTURE] → LOCATION2, TOAST2, CODE2, PAYLOAD_RESP, ARRIVALS_2, BUTTON_2","[DATA] CODE2 == 'SessionReturned' and url, formField and cxml of the CreatePunchoutRequisition GraphQL response are null {SPEC}
+[STATE] ARRIVALS_2 == 1 and LOCATION2 is the checkout page: nothing was posted a second time, so exactly one document (CXML_1) was received in total {SPEC}
+[DOM] a toast is visible after the second click and it is not a raw translation key {SPEC}
+[STATE] BUTTON_2 == enabled, the buyer is not stuck after the refusal {SPEC}
+[STATE] STILL_PUNCHOUT == true and BUTTON_ENABLED_AGAIN == true after Back, so the buyer can reach the refusal through the storefront {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql","a second document reaches the return URL (the replay is back, or a new document is built); the second click answers SessionExpired or no errorCode instead of SessionReturned; a raw translation key or no toast; a blank page or crash after Back; the button stuck loading",run `npm run seed:punchout:reset-carts` again so the dedicated buyer is left with only an empty `default` cart; sign out,VCST-5887 · Archetype:REPLAY · Technique:ST · Triage:REG-2026-10-14-0944 ASSERTION_DEFECT console→GraphQL,Draft
+PNCR-014,Punchout requisition — double click / repeated Enter sends exactly one requisition,Punchout > Requisition (PunchOutOrderMessage),High,BL-PUNCHOUT-003,ECL-5.1,"Dedicated punchout buyer; Punchout.Enabled on. Two fresh sessions, one per click sequence: the button is double-clicked in the first, Enter is repeated on it in the second. HONESTY NOTE: under the browser tool the ""repeated Enter"" half is effectively a single Enter (the first Enter navigates away before a second key event lands), so the double-click half is the real check. Oracle: the QA guide, case 9 — exactly one requisition. The builder runs before the atomic status claim, so two in-flight requests both do the work; the loser must be refused without a toast flashing before navigation.","secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>); read the buyer carts through the storefront GraphQL `carts` query with a password-grant token for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] cart names, ids and line SKUs → CARTS_BEFORE; discard the token
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-014-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[NAV] {{START_URL}} in a fresh browser context
+[WAIT] the storefront leaves /punchout/ and loads the signed-in home page
+[ASSERT] the account menu shows the buyer, not 'Sign in', and the label 'Punchout mode' is in the top header
+[DISCOVER] live-discover 1 distinct orderable B2B-store product(s): availability true, stock at least the quantity used, no min/max-order rule, not configurable, no variations; USD list price whose after-promotion unit price has at most 2 decimals (the storewide 20% line promotion must not produce a sub-cent price here); [CAPTURE] SKU, name and placed unit price of each → P1..P1; fewer found → case BLOCKED (data), never FAIL
+[NAV] {{frontUrl}}/search?q={{P1.sku}}
+[ACT] click 'Add to cart' on the product with SKU {{P1.sku}}
+[WAIT] the cart notification appears
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[ACT] start counting POST requests to /graphql with the operation CreatePunchoutRequisition
+[ACT] double-click 'Create requisition'
+[WAIT] the browser lands on the return page and it echoes the cXML
+[READ] the echoed PunchOutOrderMessage; [CAPTURE] it → CXML
+[READ] the number of CreatePunchoutRequisition requests, the number of return-page arrivals, whether an error toast was visible before the navigation; [CAPTURE] → REQ_COUNT_1, ARRIVALS_1, EARLY_TOAST_1
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-014-b-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[NAV] {{START_URL}} in a fresh browser context
+[WAIT] the storefront leaves /punchout/ and loads the signed-in home page
+[ASSERT] the account menu shows the buyer, not 'Sign in', and the label 'Punchout mode' is in the top header
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[ACT] start counting POST requests to /graphql with the operation CreatePunchoutRequisition
+[ACT] focus 'Create requisition'
+[ACT] press Enter twice in quick succession
+[WAIT] the browser lands on the return page and it echoes the cXML
+[READ] the echoed PunchOutOrderMessage; [CAPTURE] it → CXML
+[READ] the number of CreatePunchoutRequisition requests, the number of return-page arrivals, whether an error toast was visible before the navigation; [CAPTURE] → REQ_COUNT_2, ARRIVALS_2, EARLY_TOAST_2","[COUNT] REQ_COUNT_1 == 1 and REQ_COUNT_2 == 1, one CreatePunchoutRequisition request per click sequence {SPEC}
+[COUNT] ARRIVALS_1 == 1 and ARRIVALS_2 == 1, exactly one requisition reaches the return page per session {SPEC}
+[STATE] EARLY_TOAST_1 == false and EARLY_TOAST_2 == false, no error toast is visible before the navigation {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",two CreatePunchoutRequisition requests for one click sequence; two return-page arrivals; an error toast shown and then the page navigates; one of the two requests answers SessionReturned or SessionExpired and the buyer sees a failure although one requisition was sent,run `npm run seed:punchout:reset-carts` again so the dedicated buyer is left with only an empty `default` cart; sign out,VCST-5887 · Archetype:RACE · Technique:ST,Draft
+PNCR-015,"Punchout requisition — same session in two tabs: exactly one document reaches the return page, the other tab is refused",Punchout > Requisition (PunchOutOrderMessage),Medium,BL-PUNCHOUT-003,ECL-5.1,"Dedicated punchout buyer; Punchout.Enabled on. One session, two tabs of the same browser context both on the checkout page; the button is clicked in both, tab 2 immediately after tab 1. Oracle: the developer's final design: the replay is removed and a second return of a session is refused with errorCode SessionReturned (vc-module-punchout PR #2 head c49023f, deployed and verified on vcptcore-qa1 2026-10-22; supersedes the earlier replay design and the QA guide case 2). TOAST NOTE: the theme mapping for SessionReturned (vc-frontend c83fdf2, en 'Requisition already sent.') is not deployed yet, so the case asserts the errorCode, nothing sent and a toast that is not a raw key; the final text is added when the theme ships. HONESTY NOTE: the two clicks are only near-simultaneous. If the second request reaches the server after the first has returned it gets SessionReturned; only if both are in flight at once does the loser race the atomic return and may get SessionExpired. The case accepts either refusal and records which one happened; what it never accepts is two documents. The race half is exercised at the API in PNCR-030.","secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>); read the buyer carts through the storefront GraphQL `carts` query with a password-grant token for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] cart names, ids and line SKUs → CARTS_BEFORE; discard the token
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-015-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[NAV] {{START_URL}} in a fresh browser context
+[WAIT] the storefront leaves /punchout/ and loads the signed-in home page
+[ASSERT] the account menu shows the buyer, not 'Sign in', and the label 'Punchout mode' is in the top header
+[DISCOVER] live-discover 1 distinct orderable B2B-store product(s): availability true, stock at least the quantity used, no min/max-order rule, not configurable, no variations; USD list price whose after-promotion unit price has at most 2 decimals (the storewide 20% line promotion must not produce a sub-cent price here); [CAPTURE] SKU, name and placed unit price of each → P1..P1; fewer found → case BLOCKED (data), never FAIL
+[NAV] {{frontUrl}}/search?q={{P1.sku}}
+[ACT] click 'Add to cart' on the product with SKU {{P1.sku}}
+[WAIT] the cart notification appears
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[NAV] {{frontUrl}}/checkout in a second tab of the same browser context
+[WAIT] the checkout page is loaded in both tabs
+[ACT] click 'Create requisition' in tab 1
+[WAIT] the page or the control state settles
+[ACT] click 'Create requisition' in tab 2 immediately afterwards
+[WAIT] both tabs settle
+[READ] which tabs reached the return page, the errorCode and the cxml of the CreatePunchoutRequisition GraphQL response of each click, the toast text of a tab that did not navigate, the number of return-page arrivals, the button enabled state of that tab; [CAPTURE] → WINNER, CODE_1, CODE_2, LOSER_TOAST, ARRIVALS, LOSER_BUTTON
+[READ] whether the second request overlapped the first (SessionExpired = overlapped; SessionReturned = it arrived after the first had returned); [CAPTURE] → PATH_TAKEN (race | sequential)","[COUNT] ARRIVALS == 1: exactly one document reached the return page in total, never two {SPEC}
+[DATA] the winner's response carries a non-empty cxml and the other response carries errorCode 'SessionReturned' (sequential) or 'SessionExpired' (race) with cxml null {SPEC}
+[DOM] the tab that did not navigate shows a toast that is not a raw translation key and LOSER_BUTTON == enabled {SPEC}
+[STATE] PATH_TAKEN is recorded in the result as race or sequential; either refusal is a pass, a third outcome is a FAIL {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",two documents reach the return page for one session (a replay or a second build); both tabs refused (nothing sent); a refusal with an errorCode other than SessionReturned or SessionExpired; the losing tab crashes or stays in loading; no toast in a tab that did not navigate,run `npm run seed:punchout:reset-carts` again so the dedicated buyer is left with only an empty `default` cart; sign out,VCST-5887 · Archetype:RACE · Technique:EG · Triage:REG-2026-10-14-0944 ASSERTION_DEFECT console→GraphQL,Draft
+PNCR-016,"Punchout requisition — a password sign-in (also after a punchout session and sign-out) shows Place order, not Create requisition",Punchout > Requisition (PunchOutOrderMessage),High,BL-PUNCHOUT-008,,"Dedicated punchout buyer with a known password @td(PUNCHOUT_MAPPING_REQUISITION.password); Punchout.Enabled on. Two checks: a plain password sign-in (never a punchout session) and a password sign-in AFTER a punchout session and a sign-out. The rendered button carries data-test-id place-order-button in both modes, so the label is the discriminator, never the test id. Oracle: VC-AUTH-001 — a stale isPunchoutMode flag.","secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>); read the buyer carts through the storefront GraphQL `carts` query with a password-grant token for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] cart names, ids and line SKUs → CARTS_BEFORE; discard the token
+[NAV] {{frontUrl}}/sign-in in a fresh browser context
+[ACT] fill 'Email': {{buyerEmail}}
+[ACT] fill 'Password': {{buyerPassword}}
+[ACT] click 'Sign in'
+[WAIT] signed-in home page loaded
+[DISCOVER] live-discover 1 distinct orderable B2B-store product(s): availability true, stock at least the quantity used, no min/max-order rule, not configurable, no variations; USD list price whose after-promotion unit price has at most 2 decimals (the storewide 20% line promotion must not produce a sub-cent price here); [CAPTURE] SKU, name and placed unit price of each → P1..P1; fewer found → case BLOCKED (data), never FAIL
+[NAV] {{frontUrl}}/search?q={{P1.sku}}
+[ACT] click 'Add to cart' on the product with SKU {{P1.sku}}
+[WAIT] the cart notification appears
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[READ] the label of the checkout order button and whether 'Punchout mode' is in the header; [CAPTURE] → LABEL_PLAIN, MODE_PLAIN
+[ACT] click the user name in the top header
+[WAIT] the account popup is visible
+[ACT] click 'Logout' in the account popup
+[WAIT] the page or the control state settles
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-016-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[NAV] {{START_URL}} in a fresh browser context
+[WAIT] the storefront leaves /punchout/ and loads the signed-in home page
+[ASSERT] the account menu shows the buyer, not 'Sign in', and the label 'Punchout mode' is in the top header
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[READ] the label of the checkout order button; [CAPTURE] → LABEL_PUNCHOUT
+[ACT] click the user name in the top header
+[WAIT] the account popup is visible
+[ACT] click 'Logout' in the account popup
+[WAIT] the page or the control state settles
+[NAV] {{frontUrl}}/sign-in
+[ACT] fill 'Email': {{buyerEmail}}
+[ACT] fill 'Password': {{buyerPassword}}
+[ACT] click 'Sign in'
+[WAIT] signed-in home page loaded
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[READ] the label of the checkout order button and whether 'Punchout mode' is in the header; [CAPTURE] → LABEL_AFTER, MODE_AFTER","[DOM] LABEL_PLAIN is 'Place order' and no button labelled 'Create requisition' is shown {SPEC}
+[STATE] MODE_PLAIN == false, no 'Punchout mode' label {SPEC}
+[DOM] LABEL_PUNCHOUT is 'Create requisition' {SPEC}
+[DOM] LABEL_AFTER is 'Place order' and no button labelled 'Create requisition' is shown {SPEC}
+[STATE] MODE_AFTER == false after signing out of punchout mode and back in by password {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",Create requisition shown to a password-signed-in buyer (cannot place an order); Place order shown in a punchout session (requisition bypassed); the Punchout mode label stays after the password sign-in,run `npm run seed:punchout:reset-carts` again so the dedicated buyer is left with only an empty `default` cart; sign out,VCST-5887 · Archetype:STALE · Technique:ST,Draft
+PNCR-017,Punchout requisition — quantities changed in the cart after reaching checkout are the quantities sent,Punchout > Requisition (PunchOutOrderMessage),High,BL-PUNCHOUT-001,,"Dedicated punchout buyer; Punchout.Enabled on. The buyer reaches checkout, goes back to the cart, changes a quantity, and returns to checkout before clicking. Oracle: the QA guide, case 12 and VC-CART-005 — the message carries the current quantities, not a cached cart.","secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>); read the buyer carts through the storefront GraphQL `carts` query with a password-grant token for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] cart names, ids and line SKUs → CARTS_BEFORE; discard the token
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-017-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[NAV] {{START_URL}} in a fresh browser context
+[WAIT] the storefront leaves /punchout/ and loads the signed-in home page
+[ASSERT] the account menu shows the buyer, not 'Sign in', and the label 'Punchout mode' is in the top header
+[DISCOVER] live-discover 2 distinct orderable B2B-store product(s): availability true, stock at least the quantity used, no min/max-order rule, not configurable, no variations; USD list price whose after-promotion unit price has at most 2 decimals (the storewide 20% line promotion must not produce a sub-cent price here); [CAPTURE] SKU, name and placed unit price of each → P1..P2; fewer found → case BLOCKED (data), never FAIL
+[NAV] {{frontUrl}}/search?q={{P1.sku}}
+[ACT] click 'Add to cart' on the product with SKU {{P1.sku}}
+[WAIT] the cart notification appears
+[NAV] {{frontUrl}}/search?q={{P2.sku}}
+[ACT] click 'Add to cart' on the product with SKU {{P2.sku}}
+[WAIT] the cart notification appears
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[READ] quantities and the items subtotal at checkout → QTY_BEFORE, SUBTOTAL_BEFORE
+[NAV] {{frontUrl}}/cart
+[ACT] set the quantity of P1 to 4
+[WAIT] the totals refresh
+[READ] the items subtotal in the cart; [CAPTURE] → SUBTOTAL_AFTER
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[ACT] click 'Create requisition'
+[WAIT] the browser lands on the return page and it echoes the cXML
+[READ] the echoed PunchOutOrderMessage; [CAPTURE] it → CXML","[DER] the ItemIn for P1 has quantity 4 {SPEC}
+[DER] the ItemIn for P2 has quantity 1 {SPEC}
+[REL] Total/Money == SUBTOTAL_AFTER and != SUBTOTAL_BEFORE {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",the cXML carries quantity 1 for P1 (the pre-change cart); Total equals the pre-change subtotal; the checkout page shows the new quantity but the message does not,run `npm run seed:punchout:reset-carts` again so the dedicated buyer is left with only an empty `default` cart; sign out,VCST-5887 · Archetype:STALE · Technique:ST,Draft
+PNCR-018,"Punchout requisition — clicking after the session lifetime (config 1, 10 min) is refused",Punchout > Requisition (PunchOutOrderMessage),High,,ECL-1.2,"ENVIRONMENT REQUIRED (a miss makes the case BLOCKED, never FAIL): the configuration-1 store @td(PUNCHOUT_CONFIG_1.storeId) is served by a storefront host different from {{FRONT_URL}}. Probe: [AUTH role=ADMIN_DEFAULT] GET {{BACK_URL}}/api/stores/{{store1}} and compare the host of its Url with the host of {{FRONT_URL}}; equal hosts → BLOCKED (environment). On vcptcore_qa1 the New-super store shares the B2B-store host, so a configuration-1 start link signs into the wrong store; the case becomes executable on an environment with a New-super host. Dedicated punchout buyer mapped for configuration 1 as well. Oracle: the QA guide, case 13 (session lifetime).","secret1={{PUNCHOUT_SHARED_SECRET_1}}, domain1=@td(PUNCHOUT_CONFIG_1.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), store1=@td(PUNCHOUT_CONFIG_1.storeId), sessionMinutes=@td(PUNCHOUT_CONFIG_1.sessionLifetimeMinutes), ident=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password)","[AUTH role=ADMIN_DEFAULT]
+[REST-OP store1]
+GET {{BACK_URL}}/api/stores/{{store1}}
+[REST-EXEC store1]
+[ASSERT] the host of the store Url differs from the host of {{frontUrl}}; otherwise stop the case as BLOCKED (environment)
+[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>); read the buyer carts through the storefront GraphQL `carts` query with a password-grant token for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] cart names, ids and line SKUs → CARTS_BEFORE; discard the token
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest for configuration 1: Sender Credential domain={{domain1}}, Identity={{ident}}, SharedSecret={{secret1}}, BuyerCookie AGENT-PNCR-018-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL
+[NAV] {{START_URL}} in a fresh browser context
+[WAIT] signed-in home page of the configuration-1 store loaded
+[DISCOVER] live-discover 1 distinct orderable B2B-store product(s): availability true, stock at least the quantity used, no min/max-order rule, not configurable, no variations; USD list price whose after-promotion unit price has at most 2 decimals (the storewide 20% line promotion must not produce a sub-cent price here); [CAPTURE] SKU, name and placed unit price of each → P1..P1; fewer found → case BLOCKED (data), never FAIL
+[NAV] {{frontUrl}}/search?q={{P1.sku}}
+[ACT] click 'Add to cart' on the product with SKU {{P1.sku}}
+[WAIT] the cart notification appears
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[WAIT] {{sessionMinutes}} minutes plus 30 seconds without touching the page
+[ACT] click 'Create requisition'
+[WAIT] the page settles
+[READ] where the browser is, the toast text, the errorCode of the createPunchoutRequisition GraphQL response of the click, whether the return page was reached; [CAPTURE] → LOCATION, TOAST, CODE, ARRIVED","[STATE] ARRIVED == false, no requisition is sent on an expired session {SPEC}
+[DATA] CODE == 'SessionExpired', the errorCode of the createPunchoutRequisition GraphQL response of the click, or the buyer is signed out by a redirect to sign-in {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",a requisition reaches the return page after the session lifetime; the buyer stays signed in past the lifetime and the click is accepted; BLOCKED probe skipped and the case reports FAIL on a shared-host environment,run `npm run seed:punchout:reset-carts` again so the dedicated buyer is left with only an empty `default` cart; sign out,VCST-5887 · Archetype:LIFECYCLE · Technique:BVA · Triage:REG-2026-10-14-0944 ASSERTION_DEFECT console→GraphQL,Draft
+PNCR-019,Punchout requisition — Punchout.Enabled turned off on the store mid-session gives StoreNotConfigured,Punchout > Requisition (PunchOutOrderMessage),High,BL-PUNCHOUT-005,,"Changes the store-wide setting Punchout.Enabled of the configuration-0 store, so it runs alone (exclusiveGroup store-setting:Punchout.Enabled). Write it through the Admin SPA store Settings > Punchout (Save), never PUT /api/stores with a partial body; read it back before the click and again after the restore. Dedicated punchout buyer; one session is started with the setting ON, then the setting is turned OFF mid-session. Oracle: the QA guide, case 14 — StoreNotConfigured.","secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, store0=@td(PUNCHOUT_CONFIG_0.storeId), admin={{ADMIN}}, buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>); read the buyer carts through the storefront GraphQL `carts` query with a password-grant token for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] cart names, ids and line SKUs → CARTS_BEFORE; discard the token
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-019-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[NAV] {{START_URL}} in a fresh browser context
+[WAIT] the storefront leaves /punchout/ and loads the signed-in home page
+[ASSERT] the account menu shows the buyer, not 'Sign in', and the label 'Punchout mode' is in the top header
+[DISCOVER] live-discover 1 distinct orderable B2B-store product(s): availability true, stock at least the quantity used, no min/max-order rule, not configurable, no variations; USD list price whose after-promotion unit price has at most 2 decimals (the storewide 20% line promotion must not produce a sub-cent price here); [CAPTURE] SKU, name and placed unit price of each → P1..P1; fewer found → case BLOCKED (data), never FAIL
+[NAV] {{frontUrl}}/search?q={{P1.sku}}
+[ACT] click 'Add to cart' on the product with SKU {{P1.sku}}
+[WAIT] the cart notification appears
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[SETUP] turn 'Punchout Enabled' off on the store {{store0}} (Admin SPA store Settings > Punchout, Save) and read the setting back → OFF_CONFIRMED
+[ACT] click 'Create requisition'
+[WAIT] the page settles
+[READ] the toast text, the errorCode of the createPunchoutRequisition GraphQL response of the click, whether the browser left checkout, the button enabled state; [CAPTURE] → TOAST, CODE, LEFT, BUTTON_AFTER
+[SETUP] turn 'Punchout Enabled' back on and read the setting back → ON_CONFIRMED","[STATE] OFF_CONFIRMED == true, the setting really was off at the click {SPEC}
+[DATA] CODE == 'StoreNotConfigured', the errorCode of the createPunchoutRequisition GraphQL response of the click {SPEC}
+[STATE] LEFT == false, nothing was sent to the return URL {SPEC}
+[DOM] a toast is visible and it is not a raw translation key {SPEC}
+[STATE] ON_CONFIRMED == true, the setting is restored {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",a requisition reaches the return page for a store that disabled punchout; no toast; the setting left off after the case (every other punchout suite then breaks),"set 'Punchout Enabled' on the store {{store0}} back to its value before the case and read it back, even if the case aborted midway; run `npm run seed:punchout:reset-carts` so the dedicated buyer is left with only an empty `default` cart; sign out",VCST-5887 · Archetype:CONFIG · Technique:DT · Triage:REG-2026-10-14-0944 ASSERTION_DEFECT console→GraphQL,Draft
+PNCR-020,Punchout requisition — multi-organization buyer: the current organization's cart is sent and no organization switcher is offered in punchout mode,Punchout > Requisition (PunchOutOrderMessage),High,"BL-B2B-001, BL-AUTH-015",,"Multi-organization buyer @td(PUNCHOUT_MAPPING_MULTI_ORG.externalId) (mapped to the multi-org persona with at least 2 organizations). A punchout session fixes the current organization; the storefront shows no organization switcher in punchout mode. A distinct product is placed in the current organization's cart through the API before the session, and a different product in the other organization's cart. Oracle: BL-B2B-001 and BL-AUTH-015. This persona's carts are not covered by the dedicated buyer's reset: read them, never delete another run's carts.","secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), identMulti=@td(PUNCHOUT_MAPPING_MULTI_ORG.externalId), orgNow=@td(PUNCHOUT_MAPPING_MULTI_ORG.currentOrganizationId), orgOther=@td(PUNCHOUT_MAPPING_MULTI_ORG.otherOrganizationId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, buyerEmail={{MULTI_ORG_USER_EMAIL}}, buyerPassword={{MULTI_ORG_USER_PASSWORD}}","[DISCOVER] live-discover two distinct orderable B2B-store products PA and PB; none → case BLOCKED (data)
+[AUTH] password grant for the multi-org persona's own account; read its carts for organization {{orgNow}} and for {{orgOther}} through the storefront GraphQL `carts` query; [CAPTURE] cart ids and line SKUs → CARTS_BEFORE
+[SETUP] with that token: xAPI `addItem` PA into the default cart of organization {{orgNow}} and PB into the default cart of organization {{orgOther}}; discard the token
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: Sender Credential domain={{domain0}}, Identity={{identMulti}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-020-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL
+[NAV] {{START_URL}} in a fresh browser context
+[WAIT] signed-in home page loaded
+[ASSERT] no organization switcher is offered in the header
+[READ] the current organization id through the storefront GraphQL `me` query with the page's own session; [CAPTURE] → CURRENT_ORG
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[READ] the SKUs listed at checkout → SCREEN_SKUS
+[ACT] click 'Create requisition'
+[WAIT] the browser lands on the return page and it echoes the cXML
+[READ] the echoed PunchOutOrderMessage; [CAPTURE] it → CXML","[REL] CURRENT_ORG == {{orgNow}} {BL}
+[REL] the set of SupplierPartID values in the cXML == SCREEN_SKUS {SPEC}
+[DOM] the cXML contains the SKU of PA and not the SKU of PB (the other organization's cart is never sent) {BL}
+[DOM] the organization switcher is absent from the header in punchout mode {OBSERVED}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",the cXML carries PB (the other organization's goods); an organization switcher is offered mid-session; CURRENT_ORG differs from the organization the mapping resolved,"remove PA from the default cart of {{orgNow}} and PB from the default cart of {{orgOther}} through the API, leaving the carts as in CARTS_BEFORE; sign out",VCST-5887 · Archetype:SCOPE · Technique:PW,Draft
+PNCR-021,[JOURNEY-2] Punchout requisition on configuration 1 (store New-super),Punchout > Requisition (PunchOutOrderMessage),Medium,,,"ENVIRONMENT REQUIRED (a miss makes the case BLOCKED, never FAIL): the configuration-1 store @td(PUNCHOUT_CONFIG_1.storeId) is served by a storefront host different from {{FRONT_URL}} — probe: [AUTH role=ADMIN_DEFAULT] GET {{BACK_URL}}/api/stores/{{store1}} and compare the host of its Url with the host of {{FRONT_URL}}. On vcptcore_qa1 both stores share one host (the config-1 session signs into B2B-store and the return answers SessionNotFound), so the case is BLOCKED there. A mapping for configuration 1 is required. Oracle: the QA guide — the module is configuration-independent and builds the message from the session store.","secret1={{PUNCHOUT_SHARED_SECRET_1}}, domain1=@td(PUNCHOUT_CONFIG_1.senderDomain), store1=@td(PUNCHOUT_CONFIG_1.storeId), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password)","[AUTH role=ADMIN_DEFAULT]
+[REST-OP store1]
+GET {{BACK_URL}}/api/stores/{{store1}}
+[REST-EXEC store1]
+[ASSERT] the host of the store Url differs from the host of {{frontUrl}}; otherwise stop the case as BLOCKED (environment)
+--- SCREEN: ERP setup (configuration 1) ---
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: Sender Credential domain={{domain1}}, Identity={{ident}}, SharedSecret={{secret1}}, BuyerCookie AGENT-PNCR-021-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+--- SCREEN: configuration-1 store ---
+[NAV] {{START_URL}} in a fresh browser context
+[WAIT] signed-in home page of the configuration-1 store loaded
+[DISCOVER] live-discover 1 distinct orderable B2B-store product(s): availability true, stock at least the quantity used, no min/max-order rule, not configurable, no variations; USD list price whose after-promotion unit price has at most 2 decimals (the storewide 20% line promotion must not produce a sub-cent price here); [CAPTURE] SKU, name and placed unit price of each → P1..P1; fewer found → case BLOCKED (data), never FAIL
+[NAV] {{frontUrl}}/search?q={{P1.sku}}
+[ACT] click 'Add to cart' on the product with SKU {{P1.sku}}
+[WAIT] the cart notification appears
+[ASSERT] the cart notification appears for P1
+--- SCREEN: checkout ---
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[READ] the store currency and the lines at checkout → CHK_CUR, CHK_LINES
+[ASSERT] the button is labelled 'Create requisition'
+--- SCREEN: requisition sent ---
+[ACT] click 'Create requisition'
+[WAIT] the browser lands on the return page and it echoes the cXML
+[READ] the echoed PunchOutOrderMessage; [CAPTURE] it → CXML","[REL] every Money/@currency in the cXML == CHK_CUR {SPEC}
+[REL] the set of SupplierPartID values in the cXML == the SKUs in CHK_LINES {SPEC}
+[STATE] the browser location is the return page {SPEC}
+[DOM] no 'try again' toast was shown on the way {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",SessionNotFound toast and no navigation (the builder read B2B-store); currency of the other store; mid-journey: the start link lands in a store other than the configuration's store,run `npm run seed:punchout:reset-carts` again so the dedicated buyer is left with only an empty `default` cart; sign out,VCST-5887 · Archetype:PARITY · Technique:EP,Draft
+PNCR-022,Punchout requisition — configurable product line carries the configured price and the same SKU as an order line,Punchout > Requisition (PunchOutOrderMessage),Medium,BL-PUNCHOUT-007,,"Dedicated punchout buyer; Punchout.Enabled on; at least one configurable product the storefront can add with its required sections (an alias of the CFG family, discovered live, whose required sections are read from the product page first); BLOCKED (data) when none can be added. Oracle: the developer's QA guide — Step 4 'SupplierPartID = Product SKU'; for a configurable line that SKU is the cart-line SKU an order line for the same configuration also carries (`Configuration-<product code>`, decided on VCST-5887 2026-10-15), and the price printed for the line is the line's placed price as shown at checkout.","secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>); read the buyer carts through the storefront GraphQL `carts` query with a password-grant token for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] cart names, ids and line SKUs → CARTS_BEFORE; discard the token
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-022-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[NAV] {{START_URL}} in a fresh browser context
+[WAIT] the storefront leaves /punchout/ and loads the signed-in home page
+[ASSERT] the account menu shows the buyer, not 'Sign in', and the label 'Punchout mode' is in the top header
+[DISCOVER] live-discover a configurable product on the B2B-store from the CFG family (@td aliases CFG_LAPTOP / CFG_RING / CFG_HOODIE) that is orderable; read its required sections; [CAPTURE] SKU → PCFG; none → case BLOCKED (data)
+[NAV] the product page of {{PCFG.sku}}
+[ACT] choose an option in every required section
+[ACT] click 'Add to cart'
+[WAIT] the cart notification appears
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[READ] the configured line's unit price and the selected option names at checkout → CHK_PRICE, CHK_OPTIONS
+[ACT] click 'Create requisition'
+[WAIT] the browser lands on the return page and it echoes the cXML
+[READ] the echoed PunchOutOrderMessage; [CAPTURE] it → CXML","[REL] the ItemIn SupplierPartID == the `sku` of the configurable line in the storefront GraphQL cart (`Configuration-<PCFG code>`, the value createOrderFromCart writes to the order line), not the bare code of PCFG and not the code of a selected option {SPEC}
+[REL] UnitPrice/Money == CHK_PRICE, the price including the selected options {SPEC}
+[COUNT] the cXML holds one ItemIn for the configurable product {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",UnitPrice is the base price without options; a configuration item appears as its own ItemIn or as the SupplierPartID; the configurable line is missing from the message,run `npm run seed:punchout:reset-carts` again so the dedicated buyer is left with only an empty `default` cart; sign out,VCST-5887 · Archetype:MONEY · Technique:EG,Draft
+PNCR-023,Punchout requisition — variation product line carries the variation SKU,Punchout > Requisition (PunchOutOrderMessage),Medium,BL-PUNCHOUT-007,,"Dedicated punchout buyer; Punchout.Enabled on; an orderable B2B-store product that has variations (hasVariations true) with an in-stock variation; BLOCKED (data) when none. Oracle: the QA guide — SupplierPartID is the product SKU, here the variation's own SKU.","secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>); read the buyer carts through the storefront GraphQL `carts` query with a password-grant token for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] cart names, ids and line SKUs → CARTS_BEFORE; discard the token
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-023-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[NAV] {{START_URL}} in a fresh browser context
+[WAIT] the storefront leaves /punchout/ and loads the signed-in home page
+[ASSERT] the account menu shows the buyer, not 'Sign in', and the label 'Punchout mode' is in the top header
+[DISCOVER] live-discover an orderable product with variations and one of its in-stock variations; [CAPTURE] the parent SKU → PARENT, the variation SKU → PVAR; none → case BLOCKED (data)
+[NAV] the product page of the parent {{PARENT}}
+[ACT] select the variation {{PVAR}}
+[ACT] click 'Add to cart'
+[WAIT] the cart notification appears
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[READ] the SKU shown for the line at checkout → CHK_SKU
+[ACT] click 'Create requisition'
+[WAIT] the browser lands on the return page and it echoes the cXML
+[READ] the echoed PunchOutOrderMessage; [CAPTURE] it → CXML","[REL] the ItemIn SupplierPartID == PVAR {SPEC}
+[DOM] the parent SKU {{PARENT}} is absent from every SupplierPartID {SPEC}
+[REL] the ItemIn SupplierPartID == CHK_SKU {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",the ERP receives the parent SKU and orders a different product; SupplierPartID empty for a variation line,run `npm run seed:punchout:reset-carts` again so the dedicated buyer is left with only an empty `default` cart; sign out,VCST-5887 · Archetype:PARITY · Technique:EP,Draft
+PNCR-024,"Punchout requisition — every error path shows a code-specific message (not the generic one), carries the errorCode in the GraphQL response, and re-enables the button",Punchout > Requisition (PunchOutOrderMessage),Medium,BL-PUNCHOUT-009,,"Dedicated punchout buyer; Punchout.Enabled on. Every error path the run can reach on the storefront: CartIsEmpty (all lines unticked via the API after the page rendered), SessionReturned is not asserted here: a second click on a returned session is PNCR-013 and its dedicated toast text is not deployed yet. The oracle is the QA guide error table, superseded for the toast by the operator decision that each errorCode has its own translated message (theme 2.61.0-pr-2564-e8b3, verified); the generic fallback is the value of key punchout.errors.create_requisition_failed in client-app/modules/punchout/locales/en.json, read from the locale and never typed here, and it is the expected text only for an UNKNOWN code, which this case does not reach. The exact per-code texts are asserted in PNCR-033 (CartIsEmpty) and PNCR-034 (StoreNotConfigured); this case asserts that a known code never falls back to the generic text.","secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>); read the buyer carts through the storefront GraphQL `carts` query with a password-grant token for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] cart names, ids and line SKUs → CARTS_BEFORE; discard the token
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-024-a-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[NAV] {{START_URL}} in a fresh browser context
+[WAIT] the storefront leaves /punchout/ and loads the signed-in home page
+[ASSERT] the account menu shows the buyer, not 'Sign in', and the label 'Punchout mode' is in the top header
+[DISCOVER] live-discover 1 distinct orderable B2B-store product(s): availability true, stock at least the quantity used, no min/max-order rule, not configurable, no variations; USD list price whose after-promotion unit price has at most 2 decimals (the storewide 20% line promotion must not produce a sub-cent price here); [CAPTURE] SKU, name and placed unit price of each → P1..P1; fewer found → case BLOCKED (data), never FAIL
+[NAV] {{frontUrl}}/search?q={{P1.sku}}
+[ACT] click 'Add to cart' on the product with SKU {{P1.sku}}
+[WAIT] the cart notification appears
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[SETUP] with the buyer's password-grant token: xAPI `unSelectAllCartItems` on the `default` cart
+[ACT] click 'Create requisition'
+[WAIT] the page settles
+[READ] the toast text, the errorCode of the createPunchoutRequisition GraphQL response of the click, the button enabled state, whether the button was in its loading state at the end; [CAPTURE] → TOAST_A, CODE_A, BUTTON_A, LOADING_A
+[ACT] select 'Deutsch' in the header language selector
+[WAIT] the page reloads in German
+[NAV] {{frontUrl}}/cart
+[ACT] tick the 'selected for checkout' checkbox of the line for {{P1.sku}}
+[WAIT] the totals refresh
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[ASSERT] the German 'Bestellanforderung erstellen' button is enabled (the language switch reloaded the cart from the server)
+[SETUP] with the buyer's password-grant token: xAPI `unSelectAllCartItems` on the `default` cart
+[ACT] click 'Bestellanforderung erstellen'
+[WAIT] the page or the control state settles
+[READ] the toast text; [CAPTURE] → TOAST_DE
+[SETUP] with the token: xAPI `selectCartItems` for every line so the cart is whole again
+[ACT] click 'Create requisition'
+[WAIT] the browser lands on the return page and it echoes the cXML
+[READ] the echoed PunchOutOrderMessage; [CAPTURE] it → CXML
+[READ] the button state after the success (still in the punchout checkout, enabled or loading); [CAPTURE] → BUTTON_AFTER_SUCCESS","[DOM] TOAST_A is shown and is not a raw translation key (no 'punchout.errors' text) {SPEC}
+[REL] TOAST_A != the generic fallback, the value of key punchout.errors.create_requisition_failed in client-app/modules/punchout/locales/en.json, for the known code CODE_A == 'CartIsEmpty' {SPEC}
+[DATA] CODE_A == 'CartIsEmpty', the errorCode of the createPunchoutRequisition GraphQL response of the click {SPEC}
+[STATE] BUTTON_A == enabled and LOADING_A == false after the failure {SPEC}
+[REL] TOAST_DE != TOAST_A, the toast is translated in German {SPEC}
+[STATE] the success path ended on the return page {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",silent failure with no toast; raw key in the toast; the generic fallback text for a known code; button stuck in loading after an error; toast English under the German storefront; the error code missing from the GraphQL response,run `npm run seed:punchout:reset-carts` again so the dedicated buyer is left with only an empty `default` cart; sign out,VCST-5887 · Archetype:SILENT · Technique:EP · Triage:REG-2026-10-14-0944 ASSERTION_DEFECT console→GraphQL,Draft
+PNCR-025,"Punchout requisition — the cart is posted only to the session's return URL, never to a host the configuration does not allow (configuration 0)",Punchout > Requisition (PunchOutOrderMessage),High,,,"Dedicated punchout buyer; Punchout.Enabled on; configuration 0, whose allow-list is @td(PUNCHOUT_CONFIG_0.allowedReturnUrl). Only the configuration-0 half is authored: configuration 1 (empty allow-list) cannot be reached on vcptcore_qa1 because its store shares the B2B-store host, and the setup-time half (a setup request whose return URL host is not in that allow-list is answered with cXML Status 400 on configuration 0, so no session starts) is a REST-layer behaviour this case does not exercise: here the session is always set up with the allowed return URL, and the case checks only where the browser posts the cart. Oracle: the QA guide, AllowedReturnUrls — the cart goes only to the host the session was set up with.","secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>); read the buyer carts through the storefront GraphQL `carts` query with a password-grant token for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] cart names, ids and line SKUs → CARTS_BEFORE; discard the token
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-025-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[NAV] {{START_URL}} in a fresh browser context
+[WAIT] the storefront leaves /punchout/ and loads the signed-in home page
+[ASSERT] the account menu shows the buyer, not 'Sign in', and the label 'Punchout mode' is in the top header
+[DISCOVER] live-discover 1 distinct orderable B2B-store product(s): availability true, stock at least the quantity used, no min/max-order rule, not configurable, no variations; USD list price whose after-promotion unit price has at most 2 decimals (the storewide 20% line promotion must not produce a sub-cent price here); [CAPTURE] SKU, name and placed unit price of each → P1..P1; fewer found → case BLOCKED (data), never FAIL
+[NAV] {{frontUrl}}/search?q={{P1.sku}}
+[ACT] click 'Add to cart' on the product with SKU {{P1.sku}}
+[WAIT] the cart notification appears
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[ACT] start recording every form action URL on the page
+[ACT] start recording every outbound request target
+[ACT] click 'Create requisition'
+[WAIT] the browser leaves checkout
+[READ] the URL the hidden form posted to and the final location; [CAPTURE] → POST_URL, FINAL_LOCATION","[REL] the origin of POST_URL == the origin of {{retUrl}}, the return URL given at setup {SPEC}
+[REL] the origin of FINAL_LOCATION == the origin of {{retUrl}} {SPEC}
+[DOM] the host of POST_URL is present in the allow-list of configuration 0 {SPEC}
+[COUNT] no request carrying the cXML field went to any other host {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",the cart is posted to a host other than the setup return URL; the form action is empty or the storefront origin; the cXML field appears in a request to a third-party host,run `npm run seed:punchout:reset-carts` again so the dedicated buyer is left with only an empty `default` cart; sign out,VCST-5887 · Archetype:SCOPE · Technique:EG,Draft
+PNCR-026,Punchout requisition — a password token or another buyer's punchout token cannot return a session's cart,Punchout > Requisition (PunchOutOrderMessage),Critical,BL-PUNCHOUT-004,,"Dedicated punchout buyer; Punchout.Enabled on. The xAPI mutation createPunchoutRequisition takes no session id — the session travels in the access token — so a foreign session cannot be named. The variants that can be built: a password-grant token of the same buyer, no token at all, and a real punchout token used with a different storeId. Each must answer errorCode SessionNotFound with no cxml. A foreign session id is a signed claim and cannot be expressed; that gap is by design. Oracle: the QA guide error table.","secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, store0=@td(PUNCHOUT_CONFIG_0.storeId), store1=@td(PUNCHOUT_CONFIG_1.storeId), buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>); read the buyer carts through the storefront GraphQL `carts` query with a password-grant token for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] cart names, ids and line SKUs → CARTS_BEFORE; discard the token
+[AUTH] password grant for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] the access token → PW_TOKEN
+[GQL-OP pw]
+mutation CreatePunchoutRequisition($command: CreatePunchoutRequisitionCommandType!) { createPunchoutRequisition(command: $command) { url formField cxml errorCode } }
+variables: { ""command"": { ""storeId"": ""{{store0}}"", ""cultureName"": ""en-US"", ""currencyCode"": ""USD"" } }
+auth: PW_TOKEN
+[GQL-EXEC pw]
+[GQL-OP anon]
+the same mutation with no Authorization header
+[GQL-EXEC anon]
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-026-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[HTTP] POST {{backUrl}}/connect/token grant_type=punchout&session_token=<the token tail of START_URL>&storeId={{store0}}; [CAPTURE] access_token → PO_TOKEN
+[GQL-OP otherstore]
+the same mutation with storeId {{store1}} and auth PO_TOKEN
+[GQL-EXEC otherstore]","[DATA label=pw] data.createPunchoutRequisition.errorCode = SessionNotFound {SPEC}
+[NULL label=pw] data.createPunchoutRequisition.cxml is null {SPEC}
+[DATA label=anon] data.createPunchoutRequisition.errorCode = SessionNotFound {SPEC}
+[NULL label=anon] data.createPunchoutRequisition.cxml is null {SPEC}
+[DATA label=otherstore] data.createPunchoutRequisition.errorCode = SessionNotFound {SPEC}
+[NULL label=otherstore] data.createPunchoutRequisition.cxml is null {SPEC}
+[ERRORS label=otherstore] errors[] is empty or carries no stack trace {BL}","[API] errors[] is empty in the GraphQL response
+[NETWORK] no 4xx/5xx on /graphql",a non-punchout token returns a cart message; an anonymous call returns data; the same token with another store returns the session's cart; errors[] carries a stack trace instead of an errorCode,run `npm run seed:punchout:reset-carts` again so the dedicated buyer is left with only an empty `default` cart; sign out,VCST-5887 · Archetype:SCOPE · Technique:DT,Draft
+PNCR-027,Punchout requisition — with no default cart the cart on screen is still the cart sent; with no lines at all nothing is sent,Punchout > Requisition (PunchOutOrderMessage),High,BL-PUNCHOUT-001,,"Dedicated punchout buyer; Punchout.Enabled on. Half 1: the buyer has NO cart named `default`; one named cart (created through xAPI `addItem` with a cartName) holds the lines shown on screen. Oracle: the QA guide, Step 3 — the cart the buyer reviewed is the cart sent; a refusal for a screen that lists lines would send nothing although the buyer reviewed goods. Bug A (the module read only `default`, so CartNotFound while the screen showed the named cart) is fixed (rounds 2 and 3 PASS); this half is a regression guard for the cart resolution. Half 2 (boundary): no cart holds any line, the screen lists none; the error table answers CartNotFound and nothing is sent, or the button is disabled. The reset recipe leaves an EMPTY default cart, so the case deletes it again immediately before the click and is BLOCKED (precondition) if it still exists.","secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>); read the buyer carts through the storefront GraphQL `carts` query with a password-grant token for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] cart names, ids and line SKUs → CARTS_BEFORE; discard the token
+[DISCOVER] live-discover one orderable B2B-store product PN (availability true, stock at least 1, no min/max-order rule, not configurable, no variations) → PN; none → case BLOCKED (data), never FAIL
+[SETUP] with the buyer's password-grant token: `addItem` PN into a named cart 'AGENT-PNCR-named-<timestamp>'
+[SETUP] xAPI `removeCart` on the `default` cart; read the carts again; [CAPTURE] → CARTS_AFTER_SETUP
+[ASSERT] CARTS_AFTER_SETUP holds no cart named default and one named cart with PN
+--- half 1: lines on screen ---
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-027-a-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[NAV] {{START_URL}} in a fresh browser context
+[WAIT] the storefront leaves /punchout/ and loads the signed-in home page
+[ASSERT] the account menu shows the buyer, not 'Sign in', and the label 'Punchout mode' is in the top header
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[READ] the SKUs listed at checkout and whether 'Create requisition' is enabled; [CAPTURE] → SCREEN_SKUS, BUTTON_ENABLED
+[READ] the buyer's carts through the storefront GraphQL `carts` query with a password-grant token; [CAPTURE] cart names and ids → CARTS_BEFORE_CLICK
+[SETUP] if a cart named default exists in CARTS_BEFORE_CLICK, DELETE {{backUrl}}/api/carts?ids=<its id> as [AUTH role=ADMIN_DEFAULT], then read the carts again
+[ASSERT] no cart named default exists now; otherwise stop the case as BLOCKED (precondition), never FAIL
+[ACT] click 'Create requisition' only if it is enabled
+[WAIT] the page settles
+[READ] the SupplierPartID values in the cXML if the browser reached the return page, otherwise none; the toast text and the errorCode of the createPunchoutRequisition GraphQL response of the click; [CAPTURE] → SENT_SKUS, TOAST, CODE
+--- half 2: no lines anywhere ---
+[SETUP] with the token: xAPI `removeCart` on every cart of the buyer; read the carts again
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-027-b-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[NAV] {{START_URL}} in a fresh browser context
+[WAIT] the storefront leaves /punchout/ and loads the signed-in home page
+[ASSERT] the account menu shows the buyer, not 'Sign in', and the label 'Punchout mode' is in the top header
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[READ] the SKUs listed at checkout and whether 'Create requisition' is enabled; [CAPTURE] → SCREEN_SKUS_2, BUTTON_ENABLED_2
+[ACT] click 'Create requisition' only if it is enabled
+[WAIT] the page settles
+[READ] the errorCode of the createPunchoutRequisition GraphQL response of the click and whether the browser left checkout; [CAPTURE] → CODE_2, LEFT_2","[REL] SENT_SKUS == SCREEN_SKUS, the cart on screen is the cart sent, even though no cart is named default {SPEC}
+[DATA] CODE != 'CartNotFound', the errorCode of the createPunchoutRequisition GraphQL response of the click, while SCREEN_SKUS lists PN {SPEC}
+[COUNT] SCREEN_SKUS_2 has 0 entries, no line is listed {OBSERVED}
+[STATE] with no lines on screen, BUTTON_ENABLED_2 == false or (CODE_2 == 'CartNotFound' and LEFT_2 == false) {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",the screen lists PN and the requisition answers CartNotFound (the buyer reviewed goods that are not sent); a message built from some other cart; with no lines anywhere a message is posted; no toast after a refusal; the setup left a default cart so the case proves nothing,run `npm run seed:punchout:reset-carts` again so the dedicated buyer is left with only an empty `default` cart; sign out,VCST-5887 · Archetype:SCOPE · Technique:EG · Catches:VCST-5887 · Triage:REG-2026-10-14-0944 ASSERTION_DEFECT console→GraphQL,Draft
+PNCR-028,"Punchout requisition — API: calling CreatePunchoutRequisition again on a returned session answers SessionReturned with no cxml, twice, and stores one message",Punchout > Requisition (PunchOutOrderMessage),High,BL-PUNCHOUT-003,,"Dedicated punchout buyer; Punchout.Enabled on. Product {{p1}} is the seeded plain punchout product (AGENT-TEST-PO-PLAIN-001); other products are live-discovered. Setup resets the buyer to one empty `default` cart. The API path of the second return (PNCR-013 is the browser Back-button path): one session, one cart line, the session returned by its own punchout token, then the same token calls the mutation twice more. Oracle: the developer's final design: the replay is removed and a second return of a session is refused with errorCode SessionReturned (vc-module-punchout PR #2 head c49023f, deployed and verified on vcptcore-qa1 2026-10-22; supersedes the earlier replay design and the QA guide case 2). TOAST NOTE: the theme mapping for SessionReturned (vc-frontend c83fdf2, en 'Requisition already sent.') is not deployed yet, so the case asserts the errorCode, nothing sent and a toast that is not a raw key; the final text is added when the theme ships.","secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password), p1=@td(PUNCHOUT_PRODUCT_PLAIN.sku)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>); read the buyer carts through the storefront GraphQL `carts` query with a password-grant token for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] cart names, ids and line SKUs → CARTS_BEFORE; discard the token
+[AUTH] password grant for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] the access token → PW_TOKEN
+[SETUP] with PW_TOKEN: xAPI `addItem` for {{p1}} quantity 1 into the `default` cart (no cartName); discard the token
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-028-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[HTTP] POST {{backUrl}}/connect/token grant_type=punchout&session_token=<the token tail of START_URL>&storeId={{store0}}; [CAPTURE] access_token → PO_TOKEN
+[GQL-OP first]
+mutation CreatePunchoutRequisition($command: CreatePunchoutRequisitionCommandType!) { createPunchoutRequisition(command: $command) { url formField cxml errorCode } }
+variables: { ""command"": { ""storeId"": ""{{store0}}"", ""cultureName"": ""en-US"", ""currencyCode"": ""USD"" } }
+auth: PO_TOKEN
+[GQL-EXEC first]
+[READ] how many PunchoutOrderMessage rows exist for COOKIE through the module's REST search as [AUTH role=ADMIN_DEFAULT], when the module exposes one; not exposed → MSG_COUNT_1 = not-observable (that single assertion is then skipped and said so, never failed); [CAPTURE] → MSG_COUNT_1
+[GQL-OP again1]
+the same mutation with auth PO_TOKEN
+[GQL-EXEC again1]
+[GQL-OP again2]
+the same mutation with auth PO_TOKEN
+[GQL-EXEC again2]
+[READ] how many PunchoutOrderMessage rows exist for COOKIE through the module's REST search as [AUTH role=ADMIN_DEFAULT], when the module exposes one; not exposed → MSG_COUNT_2 = not-observable (that single assertion is then skipped and said so, never failed); [CAPTURE] → MSG_COUNT_2","[DATA label=first] data.createPunchoutRequisition.cxml is non-null {SPEC}
+[DATA label=again1] data.createPunchoutRequisition.errorCode = SessionReturned {SPEC}
+[NULL label=again1] data.createPunchoutRequisition.cxml is null {SPEC}
+[NULL label=again1] data.createPunchoutRequisition.url is null {SPEC}
+[NULL label=again1] data.createPunchoutRequisition.formField is null {SPEC}
+[DATA label=again2] data.createPunchoutRequisition.errorCode = SessionReturned {SPEC}
+[NULL label=again2] data.createPunchoutRequisition.cxml is null {SPEC}
+[NULL label=again2] data.createPunchoutRequisition.url is null {SPEC}
+[NULL label=again2] data.createPunchoutRequisition.formField is null {SPEC}
+[COUNT] MSG_COUNT_2 == 1 when observable: one document in total, the refusals store no message {SPEC}","[API] errors[] carries no stack trace on any GraphQL response this flow issues
+[NETWORK] no 5xx on /graphql or /connect/token","a repeat call returns a cxml (the replay is back) or builds a new document; a second stored message after a repeat call; the repeat call answers SessionExpired, SessionNotFound or no errorCode instead of SessionReturned; url or formField present on a refusal; errors[] carries a stack trace",run `npm run seed:punchout:reset-carts` again so the dedicated buyer is left with only an empty `default` cart; sign out,VCST-5887 · Archetype:REPLAY · Technique:ST,Draft
+PNCR-029,Punchout requisition — cart changed after the return: the second click is refused with SessionReturned and neither the old nor a new document is sent,Punchout > Requisition (PunchOutOrderMessage),Medium,BL-PUNCHOUT-003,,"Dedicated punchout buyer; Punchout.Enabled on. Product {{p1}} is the seeded plain punchout product (AGENT-TEST-PO-PLAIN-001); other products are live-discovered. Setup resets the buyer to one empty `default` cart. One session. After the first requisition the buyer changes the cart (adds a second product, raises the quantity of the first) and clicks Create requisition again on the same returned session. Oracle: the developer's final design: the replay is removed and a second return of a session is refused with errorCode SessionReturned (vc-module-punchout PR #2 head c49023f, deployed and verified on vcptcore-qa1 2026-10-22; supersedes the earlier replay design and the QA guide case 2). TOAST NOTE: the theme mapping for SessionReturned (vc-frontend c83fdf2, en 'Requisition already sent.') is not deployed yet, so the case asserts the errorCode, nothing sent and a toast that is not a raw key; the final text is added when the theme ships. The decided behaviour: the refusal is independent of the cart, so neither the old document nor a document built from the changed cart reaches the return URL.","secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password), p1=@td(PUNCHOUT_PRODUCT_PLAIN.sku)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>); read the buyer carts through the storefront GraphQL `carts` query with a password-grant token for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] cart names, ids and line SKUs → CARTS_BEFORE; discard the token
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-029-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[NAV] {{START_URL}} in a fresh browser context
+[WAIT] the storefront leaves /punchout/ and loads the signed-in home page
+[ASSERT] the account menu shows the buyer, not 'Sign in', and the label 'Punchout mode' is in the top header
+[NAV] {{frontUrl}}/search?q={{p1}}
+[ACT] click 'Add to cart' on the product with SKU {{p1}}
+[WAIT] the cart notification appears
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[DISCOVER] live-discover 1 orderable B2B-store product P2 other than {{p1}}: availability true, stock at least 2, no min/max-order rule, not configurable, no variations; [CAPTURE] its SKU → P2; none found → case BLOCKED (data), never FAIL
+[ACT] click 'Create requisition'
+[WAIT] the browser lands on the return page and it echoes the cXML
+[READ] the SupplierPartID values and quantities of the echoed PunchOutOrderMessage; [CAPTURE] → FIRST_SET, CXML_1
+[ACT] press the browser Back button until the cart or checkout page is shown again
+[WAIT] the page is loaded
+[NAV] {{frontUrl}}/search?q={{P2}}
+[ACT] click 'Add to cart' on the product with SKU {{P2}}
+[WAIT] the cart notification appears
+[NAV] {{frontUrl}}/cart
+[ACT] raise the quantity of the line for {{p1}} to 2
+[WAIT] the totals refresh
+[READ] the SKUs and quantities of the cart lines shown; [CAPTURE] → CART_NOW
+[ASSERT] CART_NOW differs from FIRST_SET (P2 present, {{p1}} quantity 2), otherwise stop the case as BLOCKED (precondition): an unchanged cart would not show that the refusal is independent of the cart
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[ACT] click 'Create requisition'
+[WAIT] the page settles
+[READ] where the browser is, the toast text, the errorCode and the cxml of the CreatePunchoutRequisition GraphQL response of the click, whether anything was posted to the return URL, the number of return-page arrivals; [CAPTURE] → LOCATION_2, TOAST_2, CODE_2, ARRIVALS_2","[DATA] CODE_2 == 'SessionReturned' and the cxml of the CreatePunchoutRequisition GraphQL response is null: neither the old document nor a document built from the changed cart is returned {SPEC}
+[STATE] ARRIVALS_2 == 1 and LOCATION_2 is not the return page: nothing was posted a second time, so exactly one document (CXML_1, without {{P2}} and without quantity 2 for {{p1}}) was received in total {SPEC}
+[DOM] a toast is visible after the second click and it is not a raw translation key {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",a document containing P2 or quantity 2 reaches the return URL (a rebuild from the changed cart); the old document is posted again (the replay is back); the second click answers SessionExpired or no errorCode instead of SessionReturned; case passes with an unchanged cart (vacuous),run `npm run seed:punchout:reset-carts` again so the dedicated buyer is left with only an empty `default` cart; sign out,VCST-5887 · Archetype:REPLAY · Technique:EG,Draft
+PNCR-030,Punchout requisition — two parallel calls on an Active session never produce two different documents,Punchout > Requisition (PunchOutOrderMessage),High,BL-PUNCHOUT-003,,"Dedicated punchout buyer; Punchout.Enabled on. Product {{p1}} is the seeded plain punchout product (AGENT-TEST-PO-PLAIN-001); other products are live-discovered. Setup resets the buyer to one empty `default` cart. Three attempts, each on its own fresh Active session, each with two createPunchoutRequisition calls issued at the same instant with the same punchout token. On an Active session both calls race to the atomic return and the loser is refused with SessionReturned or SessionExpired. The case is API-only on purpose: a browser cannot make two requests start together. Oracle: the developer's final design: the replay is removed and a second return of a session is refused with errorCode SessionReturned (vc-module-punchout PR #2 head c49023f, deployed and verified on vcptcore-qa1 2026-10-22; supersedes the earlier replay design and the QA guide case 2). TOAST NOTE: the theme mapping for SessionReturned (vc-frontend c83fdf2, en 'Requisition already sent.') is not deployed yet, so the case asserts the errorCode, nothing sent and a toast that is not a raw key; the final text is added when the theme ships. Exactly one document per session; a later sequential call gets SessionReturned.","secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, store0=@td(PUNCHOUT_CONFIG_0.storeId), buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password), p1=@td(PUNCHOUT_PRODUCT_PLAIN.sku)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>); read the buyer carts through the storefront GraphQL `carts` query with a password-grant token for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] cart names, ids and line SKUs → CARTS_BEFORE; discard the token
+[AUTH] password grant for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] the access token → PW_TOKEN
+[SETUP] with PW_TOKEN: xAPI `addItem` for {{p1}} quantity 1 into the `default` cart (no cartName); discard the token
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-030-a-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[HTTP] POST {{backUrl}}/connect/token grant_type=punchout&session_token=<the token tail of START_URL>&storeId={{store0}}; [CAPTURE] access_token → PO_TOKEN_1
+[ACT] prepare two parallel connections to POST {{backUrl}}/graphql, each sending the CreatePunchoutRequisition mutation exactly as written in PNCR-026 (storeId {{store0}}, cultureName en-US, currencyCode USD) with auth PO_TOKEN_1, held until both are ready
+[ACT] release both requests at the same instant
+[READ] both raw responses; [CAPTURE] → RESP_A1, RESP_B1
+[READ] for each response: errorCode, and the SHA-256 of cxml when present; [CAPTURE] → CODES_1, HASHES_1
+[ACT] after both responses are in, send the same mutation once more with auth PO_TOKEN_1 (sequential)
+[READ] the errorCode and the cxml of that later response; [CAPTURE] → LATER_CODE_1, LATER_CXML_1
+[READ] how many PunchoutOrderMessage rows exist for COOKIE through the module's REST search as [AUTH role=ADMIN_DEFAULT], when the module exposes one; not exposed → MSG_COUNT = not-observable (that single assertion is then skipped and said so, never failed); [CAPTURE] → MSG_COUNT_1
+[SETUP] repeat the attempt for sessions -b and -c; [CAPTURE] → CODES_2, HASHES_2, LATER_CODE_2, CODES_3, HASHES_3, LATER_CODE_3","[REL] for every attempt, the set of distinct non-empty cxml hashes has at most one element: two different documents for one session never happen {SPEC}
+[STATE] for every attempt, exactly one response carries a non-empty cxml and the other carries errorCode 'SessionReturned' or 'SessionExpired' with cxml null: one document per session, never two {SPEC}
+[DATA] for every attempt, LATER_CODE == 'SessionReturned' and LATER_CXML is null {SPEC}
+[STATE] for every attempt, at least one response carries a non-empty cxml {SPEC}
+[COUNT] MSG_COUNT == 1 per attempt when observable, parallel calls store one message for the session {SPEC}
+[ERRORS] errors[] is empty or carries no stack trace on every response {BL}","[API] errors[] carries no stack trace on any GraphQL response this flow issues
+[NETWORK] no 5xx on /graphql or /connect/token","two responses with different cxml hashes for one session (two documents reach the ERP); both responses empty (the session is consumed and nothing is sent); both responses carry a cxml, identical or not (the replay is back or two documents were built); the later sequential call returns a cxml or an errorCode other than SessionReturned; a response carrying a stack trace instead of an errorCode; attempt outcomes differ in kind between the three attempts and the case reports only one (the race is intermittent: report all three)",run `npm run seed:punchout:reset-carts` again so the dedicated buyer is left with only an empty `default` cart; sign out,VCST-5887 · Archetype:RACE · Technique:CT,Draft
+PNCR-031,"Punchout requisition — a password token, an anonymous call or another store cannot read a RETURNED session's cXML",Punchout > Requisition (PunchOutOrderMessage),Critical,BL-PUNCHOUT-004,,"Dedicated punchout buyer; Punchout.Enabled on. Product {{p1}} is the seeded plain punchout product (AGENT-TEST-PO-PLAIN-001); other products are live-discovered. Setup resets the buyer to one empty `default` cart. The session is RETURNED first with its own punchout token, and the same token's own repeat call is refused with SessionReturned as a control, so the refusals below cannot pass because the session does not exist (SessionReturned differs from SessionNotFound). The mutation takes no session id (the session travels in the token), so a foreign session cannot be named: the variants that can be built are a password-grant token, no token, and the real token with another store. Oracle: the QA guide error table and the owner check, which precedes the returned check; the developer's final design (PR #2 head c49023f, verified on qa1 2026-10-22): a second return is SessionReturned, the replay is removed.","secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, store0=@td(PUNCHOUT_CONFIG_0.storeId), store1=@td(PUNCHOUT_CONFIG_1.storeId), buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password), p1=@td(PUNCHOUT_PRODUCT_PLAIN.sku)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>); read the buyer carts through the storefront GraphQL `carts` query with a password-grant token for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] cart names, ids and line SKUs → CARTS_BEFORE; discard the token
+[AUTH] password grant for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] the access token → PW_TOKEN
+[SETUP] with PW_TOKEN: xAPI `addItem` for {{p1}} quantity 1 into the `default` cart (no cartName)
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-031-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[HTTP] POST {{backUrl}}/connect/token grant_type=punchout&session_token=<the token tail of START_URL>&storeId={{store0}}; [CAPTURE] access_token → PO_TOKEN
+[GQL-OP first]
+mutation CreatePunchoutRequisition($command: CreatePunchoutRequisitionCommandType!) { createPunchoutRequisition(command: $command) { url formField cxml errorCode } }
+variables: { ""command"": { ""storeId"": ""{{store0}}"", ""cultureName"": ""en-US"", ""currencyCode"": ""USD"" } }
+auth: PO_TOKEN
+[GQL-EXEC first]
+[GQL-OP again]
+the same mutation with auth PO_TOKEN (control on the now Returned session)
+[GQL-EXEC again]
+[GQL-OP pw]
+the same mutation with auth PW_TOKEN
+[GQL-EXEC pw]
+[GQL-OP anon]
+the same mutation with no Authorization header
+[GQL-EXEC anon]
+[GQL-OP otherstore]
+the same mutation with storeId {{store1}} and auth PO_TOKEN
+[GQL-EXEC otherstore]","[DATA label=first] data.createPunchoutRequisition.cxml is non-null {SPEC}
+[DATA label=again] data.createPunchoutRequisition.errorCode = SessionReturned, the owner's own repeat call is refused as returned and not as SessionNotFound {SPEC}
+[NULL label=again] data.createPunchoutRequisition.cxml is null {SPEC}
+[DATA label=pw] data.createPunchoutRequisition.errorCode = SessionNotFound {SPEC}
+[NULL label=pw] data.createPunchoutRequisition.cxml is null {SPEC}
+[DATA label=anon] data.createPunchoutRequisition.errorCode = SessionNotFound {SPEC}
+[NULL label=anon] data.createPunchoutRequisition.cxml is null {SPEC}
+[DATA label=otherstore] data.createPunchoutRequisition.errorCode = SessionNotFound {SPEC}
+[NULL label=otherstore] data.createPunchoutRequisition.cxml is null {SPEC}
+[ERRORS label=otherstore] errors[] is empty or carries no stack trace {BL}","[API] errors[] carries no stack trace on any GraphQL response this flow issues
+[NETWORK] no 5xx on /graphql or /connect/token","a password token, an anonymous call or the real token with another store receives a cxml of a returned session (a cart document leaks to a caller that does not own it); the control answers SessionNotFound or returns a cxml (the session does not exist, or the replay is back; the case proves nothing); errors[] carries a stack trace",run `npm run seed:punchout:reset-carts` again so the dedicated buyer is left with only an empty `default` cart; sign out,VCST-5887 · Archetype:SCOPE · Technique:EG,Draft
+PNCR-032,Punchout requisition — the newest typed list cart (saved for later) is not the cart sent,Punchout > Requisition (PunchOutOrderMessage),High,BL-PUNCHOUT-001,,"Dedicated punchout buyer; Punchout.Enabled on. Product {{p1}} is the seeded plain punchout product (AGENT-TEST-PO-PLAIN-001); other products are live-discovered. Setup resets the buyer to one empty `default` cart. Two carts: the shopping cart (default, one line for {{p1}}) and a typed list cart created AFTER it through xAPI `addItem` with a cartType (Saved for later) holding another product. Query.cart resolves the newest-created cart without a type, so the typed cart must not win. The handler no longer sends a cartName, which is the change under test. Oracle: the QA guide Step 3, the items match the storefront cart.","secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, store0=@td(PUNCHOUT_CONFIG_0.storeId), buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password), p1=@td(PUNCHOUT_PRODUCT_PLAIN.sku)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>); read the buyer carts through the storefront GraphQL `carts` query with a password-grant token for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] cart names, ids and line SKUs → CARTS_BEFORE; discard the token
+[DISCOVER] live-discover 1 orderable B2B-store product P2 other than {{p1}}: availability true, stock at least 2, no min/max-order rule, not configurable, no variations; [CAPTURE] its SKU → P2; none found → case BLOCKED (data), never FAIL
+[AUTH] password grant for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] the access token → PW_TOKEN
+[SETUP] with PW_TOKEN: xAPI `addItem` for {{p1}} quantity 1 into the `default` cart (no cartName)
+[SETUP] with PW_TOKEN: xAPI `addItem` for {{P2}} quantity 1 with cartType 'SavedForLater' and cartName 'AGENT-PNCR-032-<timestamp>', so it is created after the shopping cart; read the carts through `carts`; [CAPTURE] cart names, types, ids, createdDate and line SKUs → CARTS_AFTER_SETUP
+[ASSERT] CARTS_AFTER_SETUP holds the default cart with {{p1}} and a newer cart with a non-empty cartType holding {{P2}}, otherwise stop the case as BLOCKED (precondition): the typed cart could not be built, so the case proves nothing
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-032-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[NAV] {{START_URL}} in a fresh browser context
+[WAIT] the storefront leaves /punchout/ and loads the signed-in home page
+[ASSERT] the account menu shows the buyer, not 'Sign in', and the label 'Punchout mode' is in the top header
+[NAV] {{frontUrl}}/cart
+[WAIT] the cart page is loaded
+[READ] the SKUs of the lines shown; [CAPTURE] → SCREEN_SKUS
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[ACT] click 'Create requisition'
+[WAIT] the page settles
+[READ] the SupplierPartID values of the echoed PunchOutOrderMessage if the browser reached the return page, otherwise none; the toast and the errorCode of the CreatePunchoutRequisition GraphQL response; [CAPTURE] → SENT_SKUS, TOAST, CODE","[REL] SCREEN_SKUS == {{p1}} only: the storefront shows the shopping cart, not the typed cart {SPEC}
+[REL] SENT_SKUS == SCREEN_SKUS, the cart on screen is the cart sent {SPEC}
+[DOM] the SupplierPartID of {{P2}}, the saved-for-later line, is absent from the cXML {SPEC}","[API] errors[] carries no stack trace on any GraphQL response this flow issues
+[NETWORK] no 5xx on /graphql or /connect/token",the cXML carries P2 (the buyer's saved-for-later goods reach the ERP); the requisition answers CartNotFound or CartIsEmpty while the screen lists P1; the storefront itself shows the typed cart as the cart (the case then reports that precondition instead),run `npm run seed:punchout:reset-carts` again so the dedicated buyer is left with only an empty `default` cart; sign out,VCST-5887 · Archetype:SCOPE · Technique:EG,Draft
+PNCR-033,"Punchout requisition — CartIsEmpty shows its own message in English and German, not the generic text",Punchout > Requisition (PunchOutOrderMessage),Medium,BL-PUNCHOUT-009,,"Dedicated punchout buyer; Punchout.Enabled on. Product {{p1}} is the seeded plain punchout product (AGENT-TEST-PO-PLAIN-001); other products are live-discovered. Setup resets the buyer to one empty `default` cart. Reachable errorCode on the storefront: CartIsEmpty (every line unticked through the API after the page rendered). Each code has its own translated message after the change; the generic text no longer applies. Expected English text for CartIsEmpty: 'Select at least one item in your cart to create a requisition.' (from the change's locale keys). The German text is not transcribed here: the case derives it as different from the English text, not a raw key, and different from the German text of another code. A second click on a returned session answers SessionReturned (PNCR-013); SessionExpired is reachable only through the session lifetime or a race (PNCR-018, PNCR-030).","secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password), p1=@td(PUNCHOUT_PRODUCT_PLAIN.sku)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>); read the buyer carts through the storefront GraphQL `carts` query with a password-grant token for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] cart names, ids and line SKUs → CARTS_BEFORE; discard the token
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-033-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[NAV] {{START_URL}} in a fresh browser context
+[WAIT] the storefront leaves /punchout/ and loads the signed-in home page
+[ASSERT] the account menu shows the buyer, not 'Sign in', and the label 'Punchout mode' is in the top header
+[NAV] {{frontUrl}}/search?q={{p1}}
+[ACT] click 'Add to cart' on the product with SKU {{p1}}
+[WAIT] the cart notification appears
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[AUTH] password grant for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] the access token → PW_TOKEN
+[SETUP] with PW_TOKEN: xAPI `unSelectAllCartItems` on the `default` cart
+[ACT] click 'Create requisition'
+[WAIT] the page settles
+[READ] the toast text, the errorCode of the CreatePunchoutRequisition GraphQL response of the click, whether the browser left checkout, the button enabled state, whether the button is in its loading state; [CAPTURE] → TOAST_EN, CODE_EN, LEFT_EN, BUTTON_EN, LOADING_EN
+[ACT] select 'Deutsch' in the header language selector
+[WAIT] the page reloads in German
+[NAV] {{frontUrl}}/cart
+[ACT] tick the 'selected for checkout' checkbox of the line for {{p1}}
+[WAIT] the totals refresh
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[SETUP] with PW_TOKEN: xAPI `unSelectAllCartItems` on the `default` cart
+[ACT] click 'Bestellanforderung erstellen'
+[WAIT] the page settles
+[READ] the toast text, the errorCode of the CreatePunchoutRequisition GraphQL response of the click; [CAPTURE] → TOAST_DE, CODE_DE","[DATA] CODE_EN == 'CartIsEmpty' and CODE_DE == 'CartIsEmpty', the errorCode of the CreatePunchoutRequisition GraphQL response {SPEC}
+[DOM] TOAST_EN == 'Select at least one item in your cart to create a requisition.' {SPEC}
+[REL] TOAST_DE != TOAST_EN, the message is translated in German {SPEC}
+[DOM] TOAST_DE and TOAST_EN are not a raw translation key (no 'punchout.' text) {SPEC}
+[STATE] LEFT_EN == false and BUTTON_EN == enabled and LOADING_EN == false, nothing was sent and the buyer can retry {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",the generic text instead of the CartIsEmpty message; a raw translation key; English text under the German storefront; the message of another code (for example the session-expired text) for an empty cart; button stuck in loading after the failure; mid-flow: the language switch loses the punchout session,run `npm run seed:punchout:reset-carts` again so the dedicated buyer is left with only an empty `default` cart; sign out,VCST-5887 · Archetype:SILENT · Technique:DT,Draft
+PNCR-034,"Punchout requisition — StoreNotConfigured shows its own message in English and German (two tabs, no reload) and a RETURNED session answers StoreNotConfigured while the store is off, SessionReturned after the restore",Punchout > Requisition (PunchOutOrderMessage),Medium,"BL-PUNCHOUT-005, BL-PUNCHOUT-009",,"Changes the store-wide setting Punchout.Enabled of the configuration-0 store, so it runs alone (exclusiveGroup store-setting:Punchout.Enabled). Write it through the Admin SPA store Settings > Punchout (Save), never PUT /api/stores with a partial body; read it back before the click and again after the restore. Dedicated punchout buyer; Punchout.Enabled on. Product {{p1}} is the seeded plain punchout product (AGENT-TEST-PO-PLAIN-001); other products are live-discovered. Setup resets the buyer to one empty `default` cart. ORDER MATTERS: a page reload with Punchout.Enabled off drops punchout mode, so both storefront tabs (tab 1 English, tab 2 German via /de) are opened and on the checkout page BEFORE the setting is turned off, and nothing is reloaded afterwards: click in tab 1, click in tab 2. A second session S2 is returned before the setting goes off and called again while it is off. Expected English text for StoreNotConfigured: 'Punchout is not set up for this store. Please contact the store administrator.' (from the change's locale keys). The German text is read, not typed: it must differ from the English text and not be a raw key. Oracle: the QA guide case 14 for the code, the change's locale keys for the text; a returned session answers StoreNotConfigured while the store is off (the store check precedes the returned check) and SessionReturned again after the restore, never a replay (developer's final design, PR #2 head c49023f, verified on qa1 2026-10-22).","secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, store0=@td(PUNCHOUT_CONFIG_0.storeId), admin={{ADMIN}}, buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password), p1=@td(PUNCHOUT_PRODUCT_PLAIN.sku)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>); read the buyer carts through the storefront GraphQL `carts` query with a password-grant token for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] cart names, ids and line SKUs → CARTS_BEFORE; discard the token
+[AUTH] password grant for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] the access token → PW_TOKEN
+[SETUP] with PW_TOKEN: xAPI `addItem` for {{p1}} quantity 1 into the `default` cart (no cartName); discard the token
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-034-s2-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL_S2; [CAPTURE] the BuyerCookie → COOKIE_S2
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[HTTP] POST {{backUrl}}/connect/token grant_type=punchout&session_token=<the token tail of START_URL_S2>&storeId={{store0}}; [CAPTURE] access_token → PO_TOKEN_S2
+[GQL-OP ret]
+mutation CreatePunchoutRequisition($command: CreatePunchoutRequisitionCommandType!) { createPunchoutRequisition(command: $command) { url formField cxml errorCode } }
+variables: { ""command"": { ""storeId"": ""{{store0}}"", ""cultureName"": ""en-US"", ""currencyCode"": ""USD"" } }
+auth: PO_TOKEN_S2
+[GQL-EXEC ret]
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-034-s1-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL_S1; [CAPTURE] the BuyerCookie → COOKIE_S1
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[NAV] {{START_URL_S1}} in a fresh browser context (tab 1)
+[WAIT] the storefront leaves /punchout/ and loads the signed-in home page
+[ASSERT] the account menu shows the buyer, not 'Sign in', and the label 'Punchout mode' is in the top header
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[NAV] {{frontUrl}}/de/cart in a second tab of the same browser context (tab 2)
+[WAIT] the cart page is loaded in German
+[NAV] {{frontUrl}}/de/checkout in tab 2
+[WAIT] the checkout page is loaded in German and shows the button 'Bestellanforderung erstellen'
+[SETUP] turn 'Punchout Enabled' off on the store {{store0}} (Admin SPA store Settings > Punchout, Save) and read the setting back → OFF_CONFIRMED
+[ACT] in tab 1 click 'Create requisition'
+[WAIT] the page settles
+[READ] the toast text, the errorCode of the CreatePunchoutRequisition GraphQL response of the click, whether the browser left checkout, the button enabled state; [CAPTURE] → TOAST_EN, CODE_EN, LEFT_EN, BUTTON_EN
+[ACT] in tab 2 click 'Bestellanforderung erstellen'
+[WAIT] the page settles
+[READ] the toast text, the errorCode of the click and whether the browser left checkout; [CAPTURE] → TOAST_DE, CODE_DE, LEFT_DE
+[GQL-OP retoff]
+the same mutation with auth PO_TOKEN_S2 while the setting is off (S2 is already Returned)
+[GQL-EXEC retoff]
+[SETUP] turn 'Punchout Enabled' on again on the store {{store0}} and read the setting back → ON_CONFIRMED
+[GQL-OP retrestored]
+the same mutation with auth PO_TOKEN_S2 after the restore
+[GQL-EXEC retrestored]","[STATE] OFF_CONFIRMED == true, the setting really was off at the click {SPEC}
+[DATA] CODE_EN == 'StoreNotConfigured' and CODE_DE == 'StoreNotConfigured' {SPEC}
+[DOM] TOAST_EN == 'Punchout is not set up for this store. Please contact the store administrator.' {SPEC}
+[REL] TOAST_DE != TOAST_EN, the message is translated in German {SPEC}
+[DOM] TOAST_DE and TOAST_EN are not a raw translation key (no 'punchout.' text) {SPEC}
+[STATE] LEFT_EN == false and LEFT_DE == false, nothing was sent to the return URL {SPEC}
+[DATA label=ret] data.createPunchoutRequisition.cxml is non-null, S2 returns before the setting goes off {SPEC}
+[DATA label=retoff] data.createPunchoutRequisition.errorCode = StoreNotConfigured {SPEC}
+[NULL label=retoff] data.createPunchoutRequisition.cxml is null, nothing is returned for a returned session while the store is off {SPEC}
+[DATA label=retrestored] data.createPunchoutRequisition.errorCode = SessionReturned, the session is refused as returned again after the restore {SPEC}
+[NULL label=retrestored] data.createPunchoutRequisition.cxml is null, there is no replay {SPEC}
+[STATE] ON_CONFIRMED == true, the setting is restored {SPEC}","[API] errors[] carries no stack trace on any GraphQL response this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 5xx on /graphql or /connect/token","the generic text instead of the StoreNotConfigured message; a raw translation key; English text in the German tab; a requisition reaches the return URL for a store that disabled punchout; a returned session returns a cxml while the store is off or after the restore, or answers anything but StoreNotConfigured while off and SessionReturned after the restore; the setting left off after the case (every other punchout suite then breaks)","set 'Punchout Enabled' on the store {{store0}} back to its value before the case and read it back, even if the case aborted midway; run `npm run seed:punchout:reset-carts` so the dedicated buyer is left with only an empty `default` cart; sign out",VCST-5887 · Archetype:SILENT · Technique:DT,Draft
+PNCR-035,"Punchout requisition — punchout checkout hides shipping, payment, comment and the quote widget and the button works with them empty; a password sign-in keeps them all",Punchout > Requisition (PunchOutOrderMessage),High,BL-PUNCHOUT-008,,"Dedicated punchout buyer; Punchout.Enabled on. Product {{p1}} is the seeded plain punchout product (AGENT-TEST-PO-PLAIN-001); other products are live-discovered. Setup resets the buyer to one empty `default` cart. The same buyer and the same cart are looked at twice, in two separate browser contexts: first through a plain password sign-in (regular checkout, the baseline), then through a punchout start link. The section headings and the quote widget label are READ from the baseline, never typed here, so the punchout assertions compare against what the regular checkout really shows. Oracle: the change's checkout sections and quote widget rules (shipping, payment and comment sections hidden and the button gated only on shown sections in punchout mode; quote widget hidden when a module owns place-order).","secret0={{PUNCHOUT_SHARED_SECRET_0}}, domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_REQUISITION.externalId), frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, buyerEmail=@td(PUNCHOUT_MAPPING_REQUISITION.email), buyerPassword=@td(PUNCHOUT_MAPPING_REQUISITION.password), p1=@td(PUNCHOUT_PRODUCT_PLAIN.sku)","[SETUP] run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>); read the buyer carts through the storefront GraphQL `carts` query with a password-grant token for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] cart names, ids and line SKUs → CARTS_BEFORE; discard the token
+--- SCREEN: regular checkout (password sign-in, baseline) ---
+[NAV] {{frontUrl}}/sign-in in a fresh browser context
+[ACT] fill 'Email': {{buyerEmail}}
+[ACT] fill 'Password': {{buyerPassword}}
+[ACT] click 'Sign in'
+[WAIT] the signed-in home page is loaded
+[NAV] {{frontUrl}}/search?q={{p1}}
+[ACT] click 'Add to cart' on the product with SKU {{p1}}
+[WAIT] the cart notification appears
+[NAV] {{frontUrl}}/cart
+[WAIT] the cart page is loaded
+[READ] the label of the quote widget in the order summary (the control that offers to add the cart items to a quote), or none; [CAPTURE] → QUOTE_REGULAR
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[READ] the headings of every checkout section (shipping, payment, comment and any other), the main button label and whether an incomplete-data hint is shown; [CAPTURE] → SECTIONS_REGULAR, BUTTON_REGULAR, HINT_REGULAR
+[ASSERT] HINT_REGULAR is non-empty and the regular main button is disabled — shipping/payment are incomplete for this buyer; otherwise stop the case as BLOCKED (precondition): the hidden-section defect cannot show
+[ACT] click the user name in the top header
+[WAIT] the account popup is open
+[ACT] click 'Logout' in the account popup
+[WAIT] the storefront shows the signed-out header
+--- SCREEN: punchout checkout (same buyer, same cart) ---
+[SETUP] POST {{backUrl}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: From Identity buyer-co, To Identity supplier, Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BuyerCookie AGENT-PNCR-035-<timestamp>, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL; [CAPTURE] the BuyerCookie → COOKIE
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+[NAV] {{START_URL}} in a fresh browser context
+[WAIT] the storefront leaves /punchout/ and loads the signed-in home page
+[ASSERT] the account menu shows the buyer, not 'Sign in', and the label 'Punchout mode' is in the top header
+[NAV] {{frontUrl}}/cart
+[WAIT] the cart page is loaded
+[READ] whether the quote widget is present in the order summary; [CAPTURE] → QUOTE_PUNCHOUT
+[NAV] {{frontUrl}}/checkout
+[WAIT] the checkout page is loaded
+[READ] the headings of every checkout section, the main button label and enabled state, whether an incomplete-data hint is shown; [CAPTURE] → SECTIONS_PUNCHOUT, BUTTON_PUNCHOUT, ENABLED_PUNCHOUT, HINT_PUNCHOUT
+[AUTH] password grant for {{buyerEmail}} / {{buyerPassword}}; [CAPTURE] the access token → PW_TOKEN
+[SETUP] with PW_TOKEN: xAPI `unSelectAllCartItems` on the `default` cart; reload the page
+[READ] the main button enabled state with no line selected; [CAPTURE] → ENABLED_NONE
+[SETUP] with PW_TOKEN: xAPI `selectCartItems` for every line so the cart is whole again
+[ACT] click 'Create requisition'
+[WAIT] the browser lands on the return page and it echoes the cXML
+[READ] the SupplierPartID values of the echoed PunchOutOrderMessage; [CAPTURE] → SENT_SKUS","[DOM] SECTIONS_REGULAR lists a shipping, a payment and a comment (or other) section and BUTTON_REGULAR is 'Place order': the baseline is the regular checkout {SPEC}
+[DOM] an element with the text QUOTE_REGULAR is present in the order summary of the regular cart page: the baseline shows the quote widget {SPEC}
+[REL] SECTIONS_PUNCHOUT contains none of the section headings of SECTIONS_REGULAR for shipping, payment and comment {SPEC}
+[DOM] no element with the text HINT_REGULAR is present next to the button on the punchout checkout {SPEC}
+[DOM] no element with the text QUOTE_REGULAR is present in the order summary of the punchout cart page {SPEC}
+[STATE] BUTTON_PUNCHOUT is 'Create requisition' and ENABLED_PUNCHOUT == true with no shipping address and no payment method entered {SPEC}
+[STATE] ENABLED_NONE == false, the button is disabled when no line is selected {SPEC}
+[REL] SENT_SKUS == {{p1}}, the requisition goes through with the hidden sections empty {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql","button disabled in punchout mode because a hidden shipping or payment section is incomplete; incomplete-data hint shown in punchout mode; quote widget still shown in punchout mode; regular checkout missing shipping, payment or comment sections or the quote widget (a stale punchout flag after sign-out); regular checkout showing 'Create requisition'; a requisition that carries the section data",run `npm run seed:punchout:reset-carts` again so the dedicated buyer is left with only an empty `default` cart; sign out,VCST-5887 · Archetype:RENDER · Technique:DT,Draft

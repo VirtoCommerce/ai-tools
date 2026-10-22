@@ -1,0 +1,431 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+PLAT-106,"[JOURNEY] Admin shell — collapse menu, find Settings with Ctrl+K, change a setting, reload: menu state and value both kept",Platform > Admin Shell (Classic),Critical,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Platform build contains vc-platform PR #3134 (squash c401260), Platform 3.1088.0+ (served bundle checked, VC-DEPLOY-003); menu state is Expanded; the Settings blade offers one harmless Integer setting (e.g. Back In Stock batch size) - record its name as setting_name and its current non-null value as prior_value","admin={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}","[NAV] open {{BACK_URL}} in a fresh browser context at 1920x1080, English UI, Classic look
+[ACT] sign in as {{ADMIN_EMAIL}} with {{ADMIN_PASSWORD}}
+[WAIT] the Admin SPA shell renders
+[ACT] click the ""Collapse menu"" button at the bottom of the main menu
+[WAIT] the menu shrinks to icons and the button name flips to ""Expand menu""
+[KEY] press Ctrl+K, type ""settings"" in the global search, press Enter on the Settings result
+[BLADE] the Settings workspace opens; open the group holding setting_name
+[ACT] change setting_name to prior_value + 1
+[ACT] click Save
+[WAIT] the success notification
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[HTTP] GET {{BACK_URL}}/api/platform/settings/v2/global/values - capture the value of setting_name as after_save
+[NAV] reload the page (F5)
+[WAIT] the shell renders
+[ACT] open the same setting in the Settings blade
+[HTTP] GET {{BACK_URL}}/api/platform/settings/v2/me/values - capture the MainMenu.State entry
+[ACT] set setting_name back to prior_value
+[ACT] click ""Save""
+[WAIT] the success notification
+[ACT] click ""Expand menu""
+[WAIT] the UI settles and the result of the action is rendered
+[HTTP] GET settings/v2/global/values - capture setting_name as after_cleanup","[STATE] after the reload the menu is still collapsed (icons only, button named ""Expand menu"") {SPEC}
+[BODY] the MainMenu.State entry from GET settings/v2/me/values says collapsed {OBSERVED}
+[FORM] the Settings blade shows prior_value + 1 for setting_name after the reload {SPEC}
+[BODY] GET settings/v2/global/values returns prior_value + 1 for setting_name {SPEC}
+[BLADE] the Ctrl+K search opens the Settings workspace in one step, without a duplicate blade {SPEC}
+[BODY] after_cleanup equals prior_value {SPEC}","[CONSOLE] no TypeError or JS error across the whole journey
+[NETWORK] the save is POST {{BACK_URL}}/api/platform/settings/v2/global/values and returns 204; no other 4xx/5xx","Spinner visible >5s, Blade does not open within 10s, console.error with TypeError",Restore the setting to its original value (not null); expand the menu,"VCST-6260 · Archetype:LIFECYCLE · Technique:FLOW · Journey L1 open > L2 collapse (persisted) > L3 search > L5 save > reload. PR vc-platform#3134 body (Main menu, Header, Settings v2); 3x EX-01 observed collapsed state kept across a new context. Catches: mechanism - toggle moved into a new footer and all v2 saves routed through a new SaveValuesAsync",Draft
+PLAT-107,Main menu collapsed state follows the user to a new browser session,Platform > Admin Shell (Classic),High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Platform build contains vc-platform PR #3134 (squash c401260), Platform 3.1088.0+ (served bundle checked, VC-DEPLOY-003); menu state is Expanded for {{ADMIN_EMAIL}}","admin={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}","[ACT] in browser context A: sign in as {{ADMIN_EMAIL}} at {{BACK_URL}}
+[ACT] click ""Collapse menu""
+[WAIT] the menu shows icons only and the button reads ""Expand menu""
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[HTTP] GET {{BACK_URL}}/api/platform/settings/v2/me/values - capture the MainMenu.State entry
+[ACT] close context A completely (no shared cookies or localStorage)
+[ACT] in a NEW isolated browser context B: open {{BACK_URL}}
+[ACT] sign in as {{ADMIN_EMAIL}}
+[WAIT] the shell renders
+[ACT] in context B click ""Expand menu""
+[WAIT] the UI settles and the result of the action is rendered
+[HTTP] GET settings/v2/me/values again - capture the MainMenu.State entry","[BODY] after the first collapse the MainMenu.State entry says collapsed {OBSERVED}
+[STATE] right after sign-in in context B the menu is already collapsed and the button reads ""Expand menu"" {OBSERVED}
+[STATE] after ""Expand menu"" in context B the labels are visible and the persisted MainMenu.State entry says expanded {SPEC}","[CONSOLE] no JS errors in either context
+[NETWORK] profile save and read calls return 2xx","Spinner visible >5s, Blade does not open within 10s, console.error with TypeError",Expand the menu,"VCST-6260 · Archetype:STALE · Technique:ST · 3x EX-01 PASS on vcptcore_qa1 (collapsed survives a fresh browser context + sign-in). Catches: mechanism - collapse footer bound to an isolated scope, state written via profiles/currentuser",Draft
+PLAT-108,"Main menu in a short window — list scrolls above the Collapse menu footer, last item reachable",Platform > Admin Shell (Classic),Medium,BL-UI-004,ECL-7.4,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Platform build contains vc-platform PR #3134 (squash c401260), Platform 3.1088.0+ (served bundle checked, VC-DEPLOY-003); menu Expanded; Classic look","admin={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}","[NAV] open {{BACK_URL}} in a fresh browser context at 1920x1080, English UI, Classic look
+[ACT] sign in as {{ADMIN_EMAIL}} with {{ADMIN_PASSWORD}}
+[WAIT] the Admin SPA shell renders
+[ACT] resize the window to 1920x600
+[WAIT] the shell re-lays out
+[ACT] scroll the ""Main menu"" list to its end
+[ACT] click ""Collapse menu""
+[WAIT] the UI settles and the result of the action is rendered
+[ACT] scroll the ""Main menu"" list to its end in the collapsed state
+[ACT] resize the window to 1920x1080","[DOM] the ""Main menu"" panel bottom edge equals the window height, nothing runs below the window {SPEC}
+[DOM] the menu list scrolls inside the panel and the ""Collapse menu"" footer stays visible above the window bottom {SPEC}
+[DOM] the last menu item is fully visible after scrolling, not covered by the footer, in both states {BL}
+[DOM] no horizontal scrollbar is visible on the document body {BL}",[CONSOLE] no JS errors on resize,"Spinner visible >5s, Blade does not open within 10s, console.error with TypeError",none,VCST-6260 · Archetype:RENDER · Technique:BVA · Model #3; PR body: menu no longer runs 60 px below the window; BL-UI-004; ECL-7.4. Checklist M3 PASS at 1920x600 (round 1). Catches: .bar height 100% minus header with a pinned footer,Draft
+PLAT-109,Phone drawer after collapsing on desktop — labels and items still usable,Platform > Admin Shell (Classic),High,"BL-UI-004, BL-UI-006",ECL-7.4,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Platform build contains vc-platform PR #3134 (squash c401260), Platform 3.1088.0+ (served bundle checked, VC-DEPLOY-003); viewport starts 1920x1080; menu Expanded; run on a lane where resize works (chrome or edge)","admin={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}","[NAV] open {{BACK_URL}} in a fresh browser context at 1920x1080, English UI, Classic look
+[ACT] sign in as {{ADMIN_EMAIL}} with {{ADMIN_PASSWORD}}
+[WAIT] the Admin SPA shell renders
+[ACT] click ""Collapse menu"" on desktop
+[WAIT] the UI settles and the result of the action is rendered
+[ACT] resize the window to 393x852
+[WAIT] the header shows the menu button and the desktop menu is hidden
+[ACT] click the ""Menu"" button in the header
+[WAIT] the drawer opens
+[ACT] click the Settings item in the drawer
+[WAIT] the UI settles and the result of the action is rendered
+[ACT] resize back to 1920x1080
+[ACT] click ""Expand menu""
+[WAIT] the UI settles and the result of the action is rendered","[DOM] the drawer shows the text label ""Settings"" visible next to its icon although the stored state is collapsed {SPEC}
+[DOM] each drawer item such as ""Settings"" is visible with a hit area of at least 24x24 CSS px {BL}
+[BLADE] the tap on Settings opens the Settings workspace and closes the drawer {SPEC}
+[STATE] after returning to 1920 the menu is still collapsed (state restored, not lost) {SPEC}",[CONSOLE] no JS errors during the resize steps,"Spinner visible >5s, Blade does not open within 10s, console.error with TypeError",Restore desktop size; expand the menu,"VCST-6260 · Archetype:CONFIG · Technique:ST · Model #4; PR body Responsive: drawer below 768 px; BL-UI-004, BL-UI-006; ECL-7.4. Catches: mechanism - .nav-bar.__collapsed is a profile-driven class applied regardless of viewport",Draft
+PLAT-110,"Keyboard - Collapse menu button reachable and toggles with Enter, its name flips, Ctrl+K opens search, Esc closes it",Platform > Admin Shell (Classic),Medium,"BL-A11Y-001, BL-A11Y-002",ECL-15.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Platform build contains vc-platform PR #3134 (squash c401260), Platform 3.1088.0+ (served bundle checked, VC-DEPLOY-003); keyboard only for the actions below","admin={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}","[NAV] open {{BACK_URL}} in a fresh browser context at 1920x1080, English UI, Classic look
+[ACT] sign in as {{ADMIN_EMAIL}} with {{ADMIN_PASSWORD}}
+[WAIT] the Admin SPA shell renders
+[KEY] press Tab repeatedly from the page start and record the focus order until the ""Collapse menu"" button and the search field are reached
+[KEY] press Enter on the focused ""Collapse menu"" button
+[WAIT] the menu collapses
+[CAPTURE] the accessible name of the button after Enter
+[KEY] press Enter on the focused button again
+[WAIT] the menu expands
+[CAPTURE] the accessible name of the button after the second Enter
+[KEY] press Ctrl+K, type ""ord"", press Esc
+[KEY] open a blade with a text editor or textarea and focus it
+[KEY] press Ctrl+K and type a character
+[CAPTURE] which element has focus and whether the editor content changed","[DOM] the ""Collapse menu"" button is reachable by Tab and toggles with Enter {OBSERVED}
+[REL] the accessible name of the button after the first Enter is ""Expand menu"" and after the second Enter is ""Collapse menu"" {OBSERVED}
+[KEY] Ctrl+K focuses the search field and Esc closes the results list {SPEC}
+[KEY] Ctrl+K pressed inside an editor moves focus to the search field and the typed character is not inserted into the editor {OBSERVED}",[CONSOLE] no JS errors,"Spinner visible >5s, Blade does not open within 10s, console.error with TypeError",none,"VCST-6260 · Archetype:RENDER · Technique:EP · Model #5; ECL-15.1. Round 1: name flips via title. Operator decision 2026-10-21: focus indicator, aria-expanded and combobox a11y are not bugs, not asserted. Catches: mechanism - new chrome controls added in templates without aria attributes · operator decision 2026-10-21: BL-UI-007 focus-indicator/expanded-state not required for the Classic shell chrome",Draft
+PLAT-111,"Global search — empty result, alias scoping, long and special-character query, rapid typing",Platform > Admin Shell (Classic),High,,ECL-7.3,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Platform build contains vc-platform PR #3134 (squash c401260), Platform 3.1088.0+ (served bundle checked, VC-DEPLOY-003); at least one user and one role with known names (user_name, role_name)","admin={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}","[NAV] open {{BACK_URL}} in a fresh browser context at 1920x1080, English UI, Classic look
+[ACT] sign in as {{ADMIN_EMAIL}} with {{ADMIN_PASSWORD}}
+[WAIT] the Admin SPA shell renders
+[KEY] Ctrl+K and type ""zzzqqq-no-such-thing""
+[WAIT] the result area settles
+[KEY] clear, type ""user:"" followed by user_name, then ""role:"" followed by role_name
+[KEY] clear and type a 200-character string
+[KEY] clear and type ""<script>alert(1)</script>"" and then a string of emoji
+[KEY] type ""ord"" one character at a time as fast as possible
+[KEY] open the Orders result with Enter, press Ctrl+K and open Orders again","[DOM] the zero-hit query shows an empty-state message in the search results, not a blank box (visible) {SPEC}
+[DOM] ""user:"" lists only users and ""role:"" lists only roles {SPEC}
+[DOM] the 200-character and the special-character queries show no error toast, and no injected <script> element is present in the page {BL}
+[DOM] after rapid typing only the groups for the final query ""ord"" are visible, no mixed groups {SPEC}
+[BLADE] opening an already open item focuses the existing blade without a duplicate {OBSERVED}","[CONSOLE] no unhandled TypeError
+[NETWORK] superseded search requests show as cancelled, not as 4xx/5xx","Spinner visible >5s, Blade does not open within 10s, console.error with TypeError",none,"VCST-6260 · Archetype:SILENT · Technique:EG · Model #6; PR body Header global search + docs/developer-guide/global-search.md; ECL-7.3. Catches: mechanism - new globalSearch.js with 150 ms debounce, abort and alias parsing · operator decision 2026-10-21: BL-UI-007 focus-indicator/expanded-state not required for the Classic shell chrome",Draft
+PLAT-112,"Global search scoping — no-read role sees no Settings/Users/Roles, read role sees them, no menu items beyond permissions",Platform > Admin Shell (Classic),Critical,,,"[PRE:CLEAR_SESSION]
+Platform build contains vc-platform PR #3134 (squash c401260), Platform 3.1088.0+ (served bundle checked, VC-DEPLOY-003); user_name, role_name and setting_word are discovered at run time with the admin token (first userName from POST security/users/search, first role name from POST security/roles/search, first word of a setting group title from GET settings/v2/global/schema); accounts @td(SHELL_SEARCH_NOREAD.email) and @td(SHELL_SEARCH_READ.email) are seeded (seed:rbac; td:validate:rbac green) - if not, BLOCKED (FIXTURE-GAP), never PASS","noread_email=@td(SHELL_SEARCH_NOREAD.email), noread_password_var=@td(SHELL_SEARCH_NOREAD.password_var), read_email=@td(SHELL_SEARCH_READ.email), read_password_var=@td(SHELL_SEARCH_READ.password_var), admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[HTTP] POST {{BACK_URL}}/api/platform/security/users/search with the admin token and body {""take"":1} - capture the first userName as user_name
+[HTTP] POST {{BACK_URL}}/api/platform/security/roles/search with the admin token and body {""take"":1} - capture the first role name as role_name
+[HTTP] GET {{BACK_URL}}/api/platform/settings/v2/global/schema with the admin token - capture the first word of the first setting group title as setting_word
+--- SCREEN: SHELL_SEARCH_NOREAD (setting/security access, no read) ---
+[PRE:SIGNIN_AS:SHELL_SEARCH_NOREAD]
+[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username=noread_email, password = the secret named by noread_password_var in .env.local) - capture noread_token
+[HTTP] GET {{BACK_URL}}/api/platform/settings/v2/global/schema with noread_token
+[HTTP] POST {{BACK_URL}}/api/platform/security/users/search with noread_token and body {""take"":5}
+[HTTP] POST {{BACK_URL}}/api/platform/security/roles/search with noread_token and body {""take"":5}
+[HTTP] POST {{BACK_URL}}/api/order/customerOrders/search with noread_token and body {""take"":1}
+[NAV] open {{BACK_URL}} as noread
+[KEY] press Ctrl+K and type ""cat""
+[CAPTURE] the result groups for ""cat""
+[KEY] clear the search field and type ""ord""
+[CAPTURE] the result groups for ""ord""
+[KEY] clear the search field and type ""pricing""
+[CAPTURE] the result groups for ""pricing""
+[KEY] press Enter on the first remaining result for ""ord"", if any
+[CAPTURE] the blade that opened, if any
+[KEY] clear the search field and type setting_word
+[CAPTURE] the result groups for the setting word
+[KEY] clear the search field and type user_name
+[CAPTURE] the result groups for user_name
+[KEY] clear the search field and type role_name
+[CAPTURE] the result groups for role_name
+[PRE:VERIFY_AUTH:SHELL_SEARCH_NOREAD]
+--- SCREEN: SHELL_SEARCH_READ (the same plus setting:read and security:read) ---
+[PRE:SIGNIN_AS:SHELL_SEARCH_READ]
+[AUTH] POST {{BACK_URL}}/connect/token for read_email with the secret named by read_password_var - capture read_token
+[HTTP] GET {{BACK_URL}}/api/platform/settings/v2/global/schema with read_token
+[HTTP] POST {{BACK_URL}}/api/platform/security/users/search with read_token and body {""take"":5}
+[HTTP] POST {{BACK_URL}}/api/platform/security/roles/search with read_token and body {""take"":5}
+[HTTP] POST {{BACK_URL}}/api/order/customerOrders/search with read_token and body {""take"":1}
+[NAV] open {{BACK_URL}} as read
+[KEY] press Ctrl+K and type setting_word, user_name and role_name in turn
+[CAPTURE] the result groups for each of the three
+[KEY] clear the search field and type ""ord""
+[CAPTURE] the result groups for ""ord""
+[KEY] clear the search field and type ""pricing""
+[CAPTURE] the result groups for ""pricing""","[STATUS] with noread_token the settings schema call, users/search and roles/search return 403 {OBSERVED}
+[STATUS] with noread_token the order search POST /api/order/customerOrders/search returns 403 {SPEC}
+[STATUS] with read_token the order search returns 403, setting:read and security:read do not grant order access {SPEC}
+[DOM] for noread the ""Menu"" group lists ""Catalog"" for ""cat"" {SPEC}
+[DOM] for noread ""ord"" and ""pricing"" return no ""Orders"" or ""Pricing"" menu result and no Orders blade opens on Enter {SPEC}
+[DOM] for noread the setting, user and role words yield no ""Settings"", ""Users"" or ""Roles"" result (hidden group or a contained ""Search failed"") and no user or role name is visible {SPEC}
+[STATUS] with read_token the schema, users/search and roles/search calls return 200 {OBSERVED}
+[DOM] for read the ""Settings"", ""Users"" and ""Roles"" groups are visible and list what the APIs return to this token {SPEC}
+[DOM] for read ""ord"" and ""pricing"" return no ""Orders"" or ""Pricing"" menu result (no menu permission) {SPEC}
+[STATE] the shell stays usable for noread: no uncaught error, no blocked UI {BL}","[CONSOLE] for noread no unhandled rejection from the search providers
+[NETWORK] only the 403s above are expected 4xx","Spinner visible >5s, Blade does not open within 10s, console.error with TypeError",none,"VCST-6260 · Archetype:SCOPE · Technique:DT · Role:SHELL_SEARCH_NOREAD,SHELL_SEARCH_READ (Part 0r BSC-1 and BSC-2, Not allowed items asserted at the server). Catches: mechanism - settings provider gates on setting:access while its schema call needs setting:read",Draft
+PLAT-113,"Settings v2 — a valid save through global, Store tenant and me is read back by v1 GET, v2 GET and the Settings blade",Platform > Admin Shell (Classic) > Settings v2,High,,,"Platform build contains vc-platform PR #3134 (squash c401260), Platform 3.1088.0+ (served bundle checked, VC-DEPLOY-003); store {{STORE_ID}}; one harmless global Integer setting (global_setting), one Store-tenant setting of type Boolean or ShortText discovered from GET {{BACK_URL}}/api/platform/settings/v2/tenant/Store/schema (store_setting; BLOCKED, not FAIL, if none exists), one UserProfile setting VirtoCommerce.Platform.UI.ShowMeridian (me_setting); original non-null values captured first; store_new_value = the negation of the original for a Boolean store_setting, or the original value + ""-qa"" (""qa"" when the original is empty) for a ShortText store_setting","admin={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}, store={{STORE_ID}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[HTTP] GET {{BACK_URL}}/api/platform/settings/v2/tenant/Store/schema with the admin token - capture the first Boolean or ShortText Store setting as store_setting, BLOCKED (not FAIL) if none exists
+[HTTP] GET settings/v2/global/values, tenant/Store/{{STORE_ID}}/values and me/values - capture originals
+[HTTP] POST {{BACK_URL}}/api/platform/settings/v2/global/values {global_setting: original + 1}
+[HTTP] POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values {store_setting: store_new_value}
+[HTTP] POST {{BACK_URL}}/api/platform/settings/v2/me/values {me_setting: flipped}
+[HTTP] read each back through GET {{BACK_URL}}/api/platform/settings/<name> (v1) and GET settings/v2/<scope>/values
+[ADMIN] open the Settings blade (global) and the store Settings widget and read the displayed values
+[HTTP] POST each setting back to its captured non-null original","[STATUS] all three saves return 204 {OBSERVED}
+[BODY] v1 GET and v2 GET return the new value for each of the three settings: global_setting = original + 1, store_setting = store_new_value, me_setting = the negation of its original {SPEC}
+[FORM] the Settings blade and the store settings widget show the new values {SPEC}
+[BODY] after cleanup all three equal their captured original values {SPEC}","[ADMIN] values visible in the blade after reload
+[NETWORK] no 4xx/5xx other than the expected 204s","Spinner visible >5s, 4xx/5xx on the endpoint under test, empty or malformed response body",Save every setting back to its original non-null value (store_setting back to its original value),VCST-6260 · Archetype:PARITY · Technique:PW · Model #8; checklist S1/S3 PASS round 1; PlatformDeveloperGuide module-manifest: v2 me/* contract. Catches: mechanism - all three v2 save routes now share a new SaveValuesAsync,Draft
+PLAT-114,"Settings v2 — unknown name, wrong tenant, empty body, mixed valid+invalid are refused with 400 and nothing is saved",Platform > Admin Shell (Classic) > Settings v2,Critical,,,"Platform build contains vc-platform PR #3134 (squash c401260), Platform 3.1088.0+ (served bundle checked, VC-DEPLOY-003); store {{STORE_ID}}; one valid name per scope and a snapshot of their values","admin={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}, store={{STORE_ID}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[CAPTURE] snapshot of one global setting, one Store setting and one UserProfile setting
+[HTTP] POST me/values with a Store setting - capture status and message
+[HTTP] POST me/values with a global setting
+[HTTP] POST global/values with an unknown name
+[HTTP] POST tenant/Store/{{STORE_ID}}/values with an unknown name
+[HTTP] POST me/values with an unknown name only
+[HTTP] POST tenant/Store/{{STORE_ID}}/values with a UserProfile setting
+[HTTP] POST tenant/NoSuchType/x/values with any name
+[HTTP] POST me/values with {} and then with a non-JSON body
+[HTTP] POST me/values with {valid_name: new_value, unknown_name: 1} and then GET valid_name
+[HTTP] POST any value that changed back to its snapshot","[STATUS] a Store or global setting through me/values returns 400 naming the tenant type {OBSERVED}
+[STATUS] an unknown setting name returns 400, not 500, on each of global/values, tenant/Store/{{STORE_ID}}/values and me/values {SPEC}
+[STATUS] a UserProfile setting through tenant/Store and an unknown tenant type both return 400 {OBSERVED}
+[STATUS] an empty object and a non-JSON body return 400 {OBSERVED}
+[BODY] after the mixed valid+unknown body the valid setting still has its snapshot value (all-or-nothing) {OBSERVED}",[NETWORK] no 5xx on any of the refusals,"Spinner visible >5s, 4xx/5xx on the endpoint under test, empty or malformed response body",POST any value that changed back to its snapshot value (never null),"VCST-6260 · Archetype:BOUNDARY · Technique:DT · KB-973D7517 (observed 2026-10-21 on 3.1087.0-pr-3134-a3d2). PR #3134 Breaking changes: 400 with the reason for unknown and out-of-scope names. Catches: out-of-scope setting stored under a profile, batch half-saved. Never a replaceAll on global/Store",Draft
+PLAT-116,Settings v2 me/values?replaceAll=true - a {valid + unknown} body is refused with 400 and writes nothing: the profile keeps every value,Platform > Admin Shell (Classic) > Settings v2,High,,,"Platform build contains vc-platform PR #3134 (squash c401260), Platform 3.1088.0+ (served bundle checked, VC-DEPLOY-003); snapshot of me/values taken first (includes MainMenu.State)","admin={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[CAPTURE] snapshot of GET settings/v2/me/values
+[HTTP] POST me/values?replaceAll=true with {FullDateThreshold: 7, unknown_name: 1} - capture status
+[HTTP] GET me/values and compare every key with the snapshot
+[HTTP] POST me/values?replaceAll=true with the full snapshot to restore (never null)","[STATUS] {valid + unknown} returns 400 {OBSERVED}
+[BODY] after it every own-profile value including MainMenu.State equals the snapshot (nothing reset) {OBSERVED}",[NETWORK] only the refusals above are 4xx/5xx,"Spinner visible >5s, 4xx/5xx on the endpoint under test, empty or malformed response body",Save every profile setting back to its snapshot value (never null),"VCST-6260 · Archetype:BOUNDARY · Technique:DT · 3x net-new #1 (SBTM-VCST-6260-2026-10-21): atomic for unknown (400). Operator decision 2026-10-21: wrong-typed and allowedValues validation are accepted pre-existing behaviour, not asserted. Catches: a rejected replaceAll body wipes menu layout and favourites. Model #10a",Draft
+PLAT-118,"Settings v2 me/values?replaceAll=true with an empty body — only the caller profile resets, global and Store values are untouched",Platform > Admin Shell (Classic) > Settings v2,Medium,,,"Platform build contains vc-platform PR #3134 (squash c401260), Platform 3.1088.0+ (served bundle checked, VC-DEPLOY-003); store {{STORE_ID}}; snapshot of me/values; global and Store scopes are out of scope for this case; one global setting (global_setting) and one Store setting (store_setting) read first","admin={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}, store={{STORE_ID}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[CAPTURE] snapshot of me/values, the value of global_setting and the value of store_setting
+[HTTP] POST {{BACK_URL}}/api/platform/settings/v2/me/values?replaceAll=true with {}
+[HTTP] GET me/values
+[HTTP] GET settings/v2/global/values and tenant/Store/{{STORE_ID}}/values for the two captured settings
+[HTTP] POST me/values?replaceAll=true with the full snapshot to restore (never null)","[STATUS] the empty-body replaceAll on me returns 204 {OBSERVED}
+[BODY] every own-profile value is back at its default {OBSERVED}
+[BODY] global_setting and store_setting are unchanged {SPEC}
+[BODY] after cleanup the profile equals the snapshot {SPEC}",[ADMIN] menu state after reload equals the restored value,"Spinner visible >5s, 4xx/5xx on the endpoint under test, empty or malformed response body",Save every profile setting back to its snapshot value (never null),VCST-6260 · Archetype:SCOPE · Technique:EG · 3x net-new #4 (UserProfile only; global/Store scopes are out of scope for this case). Catches: an empty replaceAll through the profile route resets more than the caller profile. Model #10c,Draft
+PLAT-119,Settings v2 me/values — a user without setting permissions saves a UserProfile setting but cannot save a global or Store setting,Platform > Admin Shell (Classic) > Settings v2,High,,,"[PRE:CLEAR_SESSION]
+Platform build contains vc-platform PR #3134 (squash c401260), Platform 3.1088.0+ (served bundle checked, VC-DEPLOY-003); account @td(SHELL_SEARCH_NOREAD.email) seeded (missing => BLOCKED FIXTURE-GAP); store {{STORE_ID}}; one Store-tenant setting of type Boolean or ShortText discovered from GET {{BACK_URL}}/api/platform/settings/v2/tenant/Store/schema (store_setting; BLOCKED, not FAIL, if none exists)","noread_email=@td(SHELL_SEARCH_NOREAD.email), noread_password_var=@td(SHELL_SEARCH_NOREAD.password_var), store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[HTTP] GET {{BACK_URL}}/api/platform/settings/v2/global/values with the admin token - capture global_setting (a harmless Integer global setting read from settings/v2/global/schema) as g0
+[HTTP] GET {{BACK_URL}}/api/platform/settings/v2/tenant/Store/schema with the admin token - capture the first Boolean or ShortText Store setting as store_setting, BLOCKED (not FAIL) if none exists
+[HTTP] GET {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values with the admin token - capture the value of store_setting as s0
+[AUTH] POST {{BACK_URL}}/connect/token for noread_email with the secret named by noread_password_var - capture noread_token
+[HTTP] GET {{BACK_URL}}/api/platform/settings/v2/me/values with noread_token - capture VirtoCommerce.Platform.UI.ShowMeridian as m0
+[HTTP] POST {{BACK_URL}}/api/platform/settings/v2/me/values with noread_token and body {ShowMeridian: not m0}
+[HTTP] POST {{BACK_URL}}/api/platform/settings/v2/me/values with noread_token and body {global_setting: g0} (its own current value, a no-op if wrongly accepted)
+[HTTP] POST {{BACK_URL}}/api/platform/settings/v2/me/values with noread_token and body {store_setting: s0} (its own current value, a no-op if wrongly accepted)
+[ASSERT] if either of the two previous POSTs returned 2xx, stop the case as FAIL and go straight to the restore step
+[HTTP] POST {{BACK_URL}}/api/platform/settings/v2/global/values with noread_token and body {global_setting: g0}
+[HTTP] POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values with noread_token and body {store_setting: s0}
+[HTTP] GET global values and tenant/Store/{{STORE_ID}} values with the admin token - capture g1 and s1
+[HTTP] POST {{BACK_URL}}/api/platform/settings/v2/me/values with noread_token and body {ShowMeridian: m0}
+[HTTP] POST global/values with the admin token and body {global_setting: g0}, and tenant/Store/{{STORE_ID}}/values with {store_setting: s0}, only if g1 or s1 differs from g0 or s0","[STATUS] the UserProfile save through me/values returns 204 for a user without setting permissions {DOC}
+[STATUS] the Store setting body and the global setting body through me/values return 400 {OBSERVED}
+[STATUS] global/values and tenant/Store/{{STORE_ID}}/values return 403 for the noread token {OBSERVED}
+[REL] g1 equals g0 and s1 equals s0, compared against the admin baseline read before any noread POST {SPEC}",[NETWORK] no 5xx,"Spinner visible >5s, 4xx/5xx on the endpoint under test, empty or malformed response body",Restore the UserProfile setting,"VCST-6260 · Archetype:SCOPE · Technique:DT · Role:SHELL_SEARCH_NOREAD. PlatformDeveloperGuide 06-module-manifest-file: no platform:setting:* permission is required to manage own profile settings. Catches: me/* carries no permission attribute, only the tenant-type check stops out-of-scope names",Draft
+PLAT-120,"Module blades in Classic desktop — toolbars, grids and nested blades unchanged at 1920 and 1280",Platform > Admin Shell (Classic),Critical,"BL-UI-004, BL-UI-001",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Platform build contains vc-platform PR #3134 (squash c401260), Platform 3.1088.0+ (served bundle checked, VC-DEPLOY-003); Classic look; each of the eight module workspaces (Catalog, Orders, Customers, Pricing, Marketing, Store, Notifications, Import/Export) has at least one openable entity","admin={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}","[NAV] open {{BACK_URL}} in a fresh browser context at 1920x1080, English UI, Classic look
+[ACT] sign in as {{ADMIN_EMAIL}} with {{ADMIN_PASSWORD}}
+[WAIT] the Admin SPA shell renders
+[ACT] open a product blade from the ""Catalog"" menu entry at 1920x1080
+[WAIT] the blade renders
+[ACT] open an order blade from the ""Orders"" menu entry
+[WAIT] the blade renders
+[ACT] open a contact blade from the ""Customers"" menu entry
+[WAIT] the blade renders
+[ACT] open a price list blade from the ""Pricing"" menu entry
+[WAIT] the blade renders
+[ACT] open a promotion blade from the ""Marketing"" menu entry
+[WAIT] the blade renders
+[ACT] open a store blade with its Settings from the ""Stores"" menu entry
+[WAIT] the blade renders
+[ACT] open a template blade from the ""Notifications"" menu entry
+[WAIT] the blade renders
+[ACT] open the ""Import"" blade from the ""Catalog"" menu entry
+[WAIT] the blade renders
+[CAPTURE] for each of the eight blades, the toolbar actions visible and the actions listed under ""More"" at 1920x1080 as set_1920
+[ACT] open a second nested blade from the ""Catalog"" product blade
+[WAIT] the nested blade renders
+[ACT] click ""Maximize"" on the nested blade
+[WAIT] the blade fills the workspace
+[ACT] click ""Restore"" on the nested blade
+[WAIT] the two blades sit side by side again
+[ACT] scroll the grid inside each list blade to its last row
+[ACT] resize the window to 1280x800
+[WAIT] the shell re-lays out
+[CAPTURE] for each of the eight blades, the toolbar actions visible and the actions listed under ""More"" at 1280x800 as set_1280","[REL] for each of the eight blades set_1280 equals set_1920 (visible actions plus the ""More"" items), so narrowing the window loses no action {SPEC}
+[NEG] no toolbar button is cut off or hidden outside the blade width at 1920 or 1280 {SPEC}
+[GRID] list grids end inside the blade and the last row is reachable {SPEC}
+[DOM] two nested blades are visible side by side and the workspace shows a horizontal scrollbar only when the blades exceed the width {SPEC}
+[BLADE] ""Maximize"" fills the workspace and ""Restore"" returns the side-by-side layout in the nested blade {SPEC}
+[DOM] the spine button the PR adds to every blade is visible and does not overlap the blade title {BL}","[CONSOLE] no Angular errors while opening the eight modules
+[NETWORK] no 4xx/5xx on blade data calls","Spinner visible >5s, Blade does not open within 10s, console.error with TypeError",none,"VCST-6260 · Archetype:RENDER · Technique:EP · Model #12. PR body: desktop blade behaviour is unchanged; BL-UI-001, BL-UI-004; bladeNavigation.js +203. Catches: mechanism - spine button, toolbar width maths and $bladeElement touch every module blade",Draft
+PLAT-121,"Dashboard widgets — mouse drag kept on desktop, no drag in stacked layout, saved layout not rewritten",Platform > Admin Shell (Classic),Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Platform build contains vc-platform PR #3134 (squash c401260), Platform 3.1088.0+ (served bundle checked, VC-DEPLOY-003); dashboard shows its widgets; note the saved widget order (widget_order)","admin={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}","[NAV] open {{BACK_URL}} in a fresh browser context at 1920x1080, English UI, Classic look
+[ACT] sign in as {{ADMIN_EMAIL}} with {{ADMIN_PASSWORD}}
+[WAIT] the Admin SPA shell renders
+[ACT] at 1920 drag one dashboard widget with the mouse to another position
+[ACT] release
+[ACT] reload
+[ACT] read the widget order
+[ACT] resize the window to 700 px wide
+[ACT] try to drag a widget
+[ACT] resize back to 1920
+[ACT] read the widget order
+[ACT] drag the widget back to the original position","[WIDGET] the mouse drag moves the widget at 1920 {SPEC}
+[WIDGET] below 768 px the widgets are stacked and cannot be dragged {SPEC}
+[WIDGET] after returning to 1920 the order equals the one saved before the resize (the stacked layout was not written) {OBSERVED}
+[WIDGET] the original order is restored at the end {SPEC}",[CONSOLE] no JS errors on resize,"Spinner visible >5s, Blade does not open within 10s, console.error with TypeError",Restore the original widget order,VCST-6260 · Archetype:CONFIG · Technique:ST · Model #13; PR body: mouse users keep drag; widget.js gridsterOptions toggled by a media query. Catches: mechanism - gridsterOptions toggled live by a media-query listener,Draft
+PLAT-122,"Phone 393 px — header, drawer, env label, dialogs, grids, settings and tiles fit without overlap or horizontal scroll",Platform > Admin Shell (Classic),High,"BL-UI-004, BL-UI-006",ECL-7.4,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Platform build contains vc-platform PR #3134 (squash c401260), Platform 3.1088.0+ (served bundle checked, VC-DEPLOY-003); Classic look; Chrome or Edge lane (firefox resize hung in 3x)","admin={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}","[NAV] open {{BACK_URL}} in a fresh browser context at 1920x1080, English UI, Classic look
+[ACT] sign in as {{ADMIN_EMAIL}} with {{ADMIN_PASSWORD}}
+[WAIT] the Admin SPA shell renders
+[ACT] set the viewport to 393x852
+[WAIT] the shell re-lays out
+[ACT] click the ""Menu"" button in the header
+[WAIT] the drawer opens
+[CAPTURE] document scrollWidth and window innerWidth with the drawer open
+[ACT] click ""Settings"" in the drawer
+[WAIT] the Settings workspace renders
+[CAPTURE] document scrollWidth and window innerWidth on the Settings screen
+[ACT] open a blade with a grid, for example the ""Orders"" list
+[WAIT] the grid renders
+[CAPTURE] document scrollWidth and window innerWidth on the grid screen
+[ACT] open a confirmation dialog by closing a blade with unsaved changes
+[WAIT] the dialog renders
+[CAPTURE] the dialog box width and window innerWidth
+[ACT] open the dashboard from the ""Dashboard"" menu entry
+[WAIT] the KPI tiles render
+[CAPTURE] the position of the value and of the label inside one KPI tile and document scrollWidth","[DOM] dashboard KPI tiles show the value visible above its label, as on desktop {SPEC}
+[REL] on every captured screen document scrollWidth equals window innerWidth {BL}",[CONSOLE] no JS errors,"Spinner visible >5s, Blade does not open within 10s, console.error with TypeError",none,"VCST-6260 · Archetype:RENDER · Technique:EP · Model #14. BL-UI-004, BL-UI-006; ECL-7.4. Catches: mechanism - _modern-mobile.sass now applies to Classic below 768 px. KPI value-above-label holds on 3.1088.0-pr-3134-c475",Draft
+PLAT-123,Phone 393 px — search icon opens search and results open a blade,Platform > Admin Shell (Classic),Medium,,ECL-7.4,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Platform build contains vc-platform PR #3134 (squash c401260), Platform 3.1088.0+ (served bundle checked, VC-DEPLOY-003); viewport 393x852","admin={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}","[NAV] open {{BACK_URL}} in a fresh browser context at 1920x1080, English UI, Classic look
+[ACT] sign in as {{ADMIN_EMAIL}} with {{ADMIN_PASSWORD}}
+[WAIT] the Admin SPA shell renders
+[ACT] set viewport 393x852
+[ACT] tap the ""Search"" icon in the header
+[ACT] type ""ord""
+[ACT] tap the Orders result
+[ACT] tap the ""Search"" icon again
+[ACT] tap outside the panel","[DOM] the ""Search"" icon opens the search input and the results list is visible {SPEC}
+[BLADE] tapping a result opens its workspace and closes the panel {SPEC}
+[REL] the title of the opened blade equals the label of the tapped result ""Orders"" {SPEC}
+[NEG] opening search does not create a horizontal page scroll (scrollWidth equals innerWidth) {BL}",[CONSOLE] no JS errors,"Spinner visible >5s, Blade does not open within 10s, console.error with TypeError",none,VCST-6260 · Archetype:RENDER · Technique:EP · Model #15; PR body: on narrow screens search is an icon; ECL-7.4. Catches: mechanism - search collapses to an icon below 768 in new _header-search.sass,Draft
+PLAT-124,Phone 393 px - at depth 3 only the deepest blade and its direct parent strip show; tapping the strip returns to the parent,Platform > Admin Shell (Classic),High,BL-UI-004,ECL-7.4,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Platform build contains vc-platform PR #3134 (squash c401260), Platform 3.1088.0+ (served bundle checked, VC-DEPLOY-003); viewport 393x852; a catalog with a category and a product that opens a nested blade chain of depth 3","admin={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}","[NAV] open {{BACK_URL}} in a fresh browser context at 1920x1080, English UI, Classic look
+[ACT] sign in as {{ADMIN_EMAIL}} with {{ADMIN_PASSWORD}}
+[WAIT] the Admin SPA shell renders
+[ACT] set the viewport to 393x852
+[WAIT] the shell re-lays out
+[ACT] open the ""Catalog"" menu entry
+[WAIT] the category list renders
+[ACT] open a category
+[WAIT] the product list renders
+[ACT] open a product
+[WAIT] the product blade renders
+[ACT] open a nested blade from that product, the third level
+[WAIT] the deepest blade renders
+[CAPTURE] the visible blade title, the number of folded strips and document scrollWidth against window innerWidth
+[ACT] tap the labelled strip of the direct parent blade
+[WAIT] the parent blade is shown
+[CAPTURE] the visible blade title and the number of strips as after_tap","[BLADE] only the deepest blade is shown and only its direct parent shows as a labelled strip {OBSERVED} (accepted by the operator 2026-10-21)
+[REL] after tapping the parent strip the visible blade title equals the title of that parent blade {OBSERVED} (accepted by the operator 2026-10-21)
+[NEG] at depth 3 no horizontal page scroll appears (scrollWidth equals innerWidth) {BL}","[CONSOLE] no JS errors (a columnDefs TypeError was seen once at phone width in round 1, BE-17)","Spinner visible >5s, Blade does not open within 10s, console.error with TypeError",none,"VCST-6260 · Archetype:BOUNDARY · Technique:BVA · Model #16 (book mode: direct parent strip + tap to go back, accepted by the operator 2026-10-21); PR body: blades show one at a time with the parent folded; UIP-DEEP. Catches: mechanism - new layoutBook folding in bladeNavigation.js",Draft
+PLAT-125,"German and Russian UI — collapse footer, license label, env tab, search placeholder and group titles do not clip",Platform > Admin Shell (Classic),Medium,BL-UI-004,ECL-7.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Platform build contains vc-platform PR #3134 (squash c401260), Platform 3.1088.0+ (served bundle checked, VC-DEPLOY-003); admin language selectable in the user profile; switched back to English in Cleanup","admin={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}","[NAV] open {{BACK_URL}} in a fresh browser context at 1920x1080, English UI, Classic look
+[ACT] sign in as {{ADMIN_EMAIL}} with {{ADMIN_PASSWORD}}
+[WAIT] the Admin SPA shell renders
+[ACT] switch the admin language to German in the user profile
+[WAIT] the shell reloads in German
+[ACT] set the viewport to 1280x800
+[WAIT] the shell re-lays out
+[ACT] click the ""Collapse menu"" footer in its German label
+[WAIT] the menu is collapsed
+[CAPTURE] German at 1280x800: the ""Collapse menu"" footer label, license label, environment tab, search placeholder and group titles, with their boxes and document scrollWidth
+[ACT] set the viewport to 393x852
+[WAIT] the shell re-lays out
+[CAPTURE] German at 393x852: the same labels, their boxes and document scrollWidth
+[ACT] switch the admin language to Russian in the user profile
+[WAIT] the shell reloads in Russian
+[ACT] set the viewport to 1280x800
+[WAIT] the shell re-lays out
+[CAPTURE] Russian at 1280x800: the same labels, their boxes and document scrollWidth
+[ACT] set the viewport to 393x852
+[WAIT] the shell re-lays out
+[CAPTURE] Russian at 393x852: the same labels, their boxes and document scrollWidth
+[ACT] switch the admin language back to English in the user profile
+[WAIT] the shell reloads in English","[DOM] the ""Collapse menu"" footer, license label, environment tab, search placeholder and group titles are visible with complete text or an ellipsis with a tooltip, never a mid-word cut {BL}
+[DOM] no label is visible overlapping its neighbour at 1280 or 393 {BL}
+[DOM] in German and Russian document scrollWidth equals the window width, no horizontal scroll visible {BL}",[CONSOLE] no missing-translation warnings for the new strings,"Spinner visible >5s, Blade does not open within 10s, console.error with TypeError",Switch the admin language back to English,VCST-6260 · Archetype:BOUNDARY · Technique:EP · Model #17; 13 locale files got 51 new strings; BL-UI-004; ECL-7.1. Catches: mechanism - pill and footer widths sized for English,Draft
+PLAT-126,"Choose your look (demo) — Ctrl+Alt+T, Cancel and Esc restore Classic, Apply survives reload, no dialog at sign-in",Platform > Admin Shell (Classic),Low,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Platform build contains vc-platform PR #3134 (squash c401260), Platform 3.1088.0+ (served bundle checked, VC-DEPLOY-003); Classic look; localStorage has no look keys","admin={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}","[NAV] open {{BACK_URL}} in a fresh browser context at 1920x1080, English UI, Classic look
+[ACT] sign in as {{ADMIN_EMAIL}} with {{ADMIN_PASSWORD}}
+[WAIT] the Admin SPA shell renders
+[CAPTURE] start recording network requests; the filter is requests whose URL contains settings/v2/me
+[CAPTURE] the html class and the page background computed colour as look_0
+[CAPTURE] the localStorage look keys as keys_0
+[KEY] press Ctrl+Alt+T
+[WAIT] the ""Choose your look"" dialog renders
+[ACT] choose ""Dark"" in the dialog
+[WAIT] the live preview renders
+[ACT] click ""Cancel""
+[WAIT] the dialog closes
+[CAPTURE] the html class and the page background computed colour as look_cancel
+[KEY] press Ctrl+Alt+T
+[WAIT] the dialog renders
+[ACT] choose ""Dark"" in the dialog
+[WAIT] the live preview renders
+[KEY] press Esc
+[WAIT] the dialog closes
+[CAPTURE] the html class and the page background computed colour as look_esc
+[KEY] press Ctrl+Alt+T
+[WAIT] the dialog renders
+[ACT] choose ""Dark"" in the dialog
+[WAIT] the live preview renders
+[ACT] click ""Apply""
+[WAIT] the look is applied
+[CAPTURE] the localStorage look keys as keys_apply
+[NAV] reload the page (F5)
+[WAIT] the shell renders
+[CAPTURE] the html class and the localStorage look keys as keys_reload
+[KEY] press Ctrl+Alt+T
+[WAIT] the dialog renders
+[ACT] choose ""Classic"" in the dialog
+[ACT] click ""Apply""
+[WAIT] the look is applied
+[ACT] remove the look keys from localStorage
+[NAV] sign out of the Admin SPA
+[WAIT] the sign-in page renders
+[NAV] sign in again as {{ADMIN_EMAIL}} with {{ADMIN_PASSWORD}}
+[WAIT] the shell renders
+[CAPTURE] whether a look dialog is visible, and the recorded requests to settings/v2/me","[DOM] Ctrl+Alt+T opens the ""Choose your look"" dialog, visible {SPEC}
+[REL] after ""Cancel"" the html class and the page background computed colour equal look_0, the Classic look is restored {SPEC}
+[REL] after Esc the html class and the page background computed colour equal look_0, the Classic look is restored {SPEC}
+[REL] keys_reload equals keys_apply and the html class after the reload is the Dark look, so Apply persists across reload {SPEC}
+[NEG] the recorded requests to settings/v2/me contain no request caused by the look change {SPEC}
+[DOM] the ""Choose your look"" dialog is absent after sign-in {SPEC}",[CONSOLE] no JS errors,"Spinner visible >5s, Blade does not open within 10s, console.error with TypeError",Choose Classic and clear the look keys from localStorage,"VCST-6260 · Archetype:STALE · Technique:ST · Model #18; PR body Modern looks (demo only, localStorage). The Cursor summary on the PR is stale on this point. Catches: mechanism - new theme.js/themeWelcome.js with localStorage persistence · Cancel/Esc write Theme=classic, ThemePreset=gray to localStorage - accepted (demo-only), operator 2026-10-21",Draft
+PLAT-127,"Classic colours unchanged after the CSS-variable conversion — login, dashboard, grid selection, form errors, dialog, filter panel",Platform > Admin Shell (Classic),High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ADMIN]
+Platform build contains vc-platform PR #3134 (squash c401260), Platform 3.1088.0+ (served bundle checked, VC-DEPLOY-003); Classic look. Baseline = the LITERAL hex of each element at the pre-PR dev, VirtoCommerce/vc-platform commit c401260^1 (the parent of the squash commit), read from the sass files at that commit.","admin={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}","[NAV] open {{BACK_URL}} signed out
+[WAIT] the login page renders
+[CAPTURE] the computed colours of the ""Log in"" button and the page background as now_colour
+[ACT] sign in as {{ADMIN_EMAIL}} with {{ADMIN_PASSWORD}}
+[WAIT] the dashboard renders
+[CAPTURE] for each of the dashboard, a grid with a ""selected"" row and a hovered row, a form with a validation error, a dialog header, a filter panel, the settings blade and the sign-in log, the computed colour of the element as now_colour
+[CAPTURE] for the ""Log in"" button, the page background and each of the same elements, baseline_hex read from the literal hex in the sass files of VirtoCommerce/vc-platform at c401260^1 (cite file and line in the evidence)","[REL] for the ""Log in"" button and the page background now_colour equals baseline_hex converted to rgb {SPEC}
+[REL] for each in-app element (dashboard, grid selected and hovered row, validation-error form, dialog header, filter panel, settings blade, sign-in log) now_colour equals baseline_hex converted to rgb {SPEC}",[CONSOLE] no CSS load errors,"Spinner visible >5s, Blade does not open within 10s, console.error with TypeError",none,"VCST-6260 · Archetype:RENDER · Technique:EP · Model #19; PR body: Classic renders as before; ~30 sass files converted #hex to var(--vc-*, #hex); login baseline observed in 3x. Catches: mechanism - mechanical #hex to var() conversion",Draft

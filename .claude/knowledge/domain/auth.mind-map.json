@@ -1,0 +1,3443 @@
+{
+  "$schema": "../../templates/mind-map.schema.json",
+  "schema_version": "1.0",
+  "domain_slug": "auth",
+  "domain_map_rev": 2,
+  "generated": "2026-10-21",
+  "metadata": {
+    "scope": "Storefront and Admin sign-in (password, emailed code, MFA second factor, external IdP, punchout as a method), organization resolution at sign-in, lockout, Admin entry restriction, API challenge, impersonation, sign-out and session termination, password reset, sign-in log. Registration, password policy and org membership mechanics are out, as in the domain map.",
+    "built_from": "auth.md rev 2 (§1-§6), BL-AUTH-001..017 (bl:extract --domain auth), suites 031/032/033/082/101/104/105 titles + References + Automation_Status, test models VCST-5748-2026-09-29 and VCST-6132-2026-10-20 Part 0, scripts/seed-data/auth/otp-signin-specs.mjs header, vc-module-mfa#1 / vc-module-otp#3 / vc-frontend#2570 as read for the domain map",
+    "kb_read": "2026-10-21 - impersonate grant self/nested: miss; sign-out /connect/logout: hit KB-761B2013; plus the domain-map pass hits KB-06FE6C8D KB-08CC76A3 KB-3CBA0D5F KB-9AF5645D KB-0080ED6D KB-4E1FD1E8 KB-83483C4E KB-262ADDFB KB-8646A9CB KB-C196A782 KB-CC18E96D KB-3466E783 KB-1D5CC609 KB-D42D6CAA KB-6B10CB0E KB-A3E16349 KB-12E99BF8 KB-EF3CB7FB KB-7A4C260E KB-444EF3F4 KB-CA2AE929 KB-675F86C2 KB-9D80EE6B KB-33B89BDD",
+    "not_modelled": "No auth data model exists yet, so requires/produces are omitted; the requirement ids are listed in the build result for /qa-test-data-model build. Suite 101 rows are Draft and decide sign-in-log details below the behaviour level; only rows that decide a node are stamped."
+  },
+  "nodes": [
+    {
+      "id": "auth.access",
+      "type": "feature",
+      "name": "Signing in and account access",
+      "status": "CONFIRMED",
+      "description": "A visitor establishes an authenticated session by one of several methods, the platform resolves the organization the session acts in, and the session holds until it ends or is refused. Purpose reconstructed in the domain map (UNDECLARED in the guides).",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §1",
+          "note": "purpose reconstructed from source + live, both stands",
+          "date": "2026-10-21"
+        }
+      ],
+      "notes": "integrates with: b2b — organization membership status and lock (BL-B2B-013; b2b-organizations.md); integrates with: store settings — OtpSignIn.Enabled, MultiFactorAuthentication.StoreMode, trustedGroups, authentication types; integrates with: notifications — OtpSignInEmailNotification, MfaSignInEmailNotification; integrates with: ucp — OAuth for agents (ucp.md); integrates with: punchout — the punchout grant (suites 107/108)"
+    },
+    {
+      "id": "auth.state.account.unlocked",
+      "type": "state",
+      "name": "Account: not locked out",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §1 link 5",
+          "note": "LockoutEnd empty; sign-in proceeds",
+          "date": "2026-10-21"
+        }
+      ]
+    },
+    {
+      "id": "auth.state.account.temporarily-locked",
+      "type": "state",
+      "name": "Account: temporarily locked out after failed attempts",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-262ADDFB",
+          "note": "user_is_temporary_locked_out on the password grant",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-8646A9CB",
+          "note": "five failures lock the account temporarily"
+        }
+      ]
+    },
+    {
+      "id": "auth.state.account.locked",
+      "type": "state",
+      "name": "Account: locked by an administrator",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-1D5CC609",
+          "note": "Lock account in the Admin user toolbar",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "DOC",
+          "ref": "test-data/aliases.json changelog_1_4_5",
+          "note": "admin lock persists LockoutEnd 9999-12-31 and /locked returns locked:true",
+          "date": "2026-05-14"
+        }
+      ]
+    },
+    {
+      "id": "auth.state.session.anonymous",
+      "type": "state",
+      "name": "Session: anonymous",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §1 actors",
+          "note": "anonymous visitor",
+          "date": "2026-10-21"
+        }
+      ]
+    },
+    {
+      "id": "auth.state.session.signed-in",
+      "type": "state",
+      "name": "Session: signed in as oneself",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §1 link 4",
+          "note": "tokens stored client-side, me called, account menu shown",
+          "date": "2026-10-21"
+        }
+      ]
+    },
+    {
+      "id": "auth.state.session.impersonating",
+      "type": "state",
+      "name": "Session: operator acting as another user",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-07-1342",
+          "note": "IMP-010 banner shows operator and target",
+          "date": "2026-09-07"
+        }
+      ]
+    },
+    {
+      "id": "auth.state.session.awaiting-second-factor",
+      "type": "state",
+      "name": "Session: password accepted, second factor pending",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-module-mfa#1",
+          "note": "password grant answers two_factor_required with a twoFactorToken",
+          "date": "2026-10-19"
+        }
+      ],
+      "maturity": "new"
+    },
+    {
+      "id": "auth.state.otp-code.issued",
+      "type": "state",
+      "name": "OTP code: issued and unused",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §2 API",
+          "note": "POST /api/otp/request schedules OtpSignInEmailNotification",
+          "date": "2026-10-21"
+        }
+      ]
+    },
+    {
+      "id": "auth.state.otp-code.used",
+      "type": "state",
+      "name": "OTP code: used for a sign-in (still valid inside its window)",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-06FE6C8D",
+          "note": "the same code signs in a second time",
+          "date": "2026-09-29"
+        }
+      ]
+    },
+    {
+      "id": "auth.state.otp-code.expired",
+      "type": "state",
+      "name": "OTP code: past its token-provider lifetime",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "reports/ba/test-models/VCST-5748-2026-09-29.md Part 0",
+          "note": "state diagram: Issued -> Expired when the window passes; lifetime owned by the Identity Email token provider",
+          "date": "2026-09-29"
+        }
+      ]
+    },
+    {
+      "id": "auth.state.mfa-ticket.issued",
+      "type": "state",
+      "name": "MFA two-factor token: issued, awaiting a code",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-module-mfa#1",
+          "note": "DataProtection ticket with user, store, security stamp and provider",
+          "date": "2026-10-19"
+        }
+      ],
+      "maturity": "new"
+    },
+    {
+      "id": "auth.state.mfa-ticket.redeemed",
+      "type": "state",
+      "name": "MFA two-factor token: redeemed for tokens",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-module-mfa#1",
+          "note": "single redemption; a used-code store refuses the same code",
+          "date": "2026-10-19"
+        }
+      ],
+      "maturity": "new",
+      "terminal": true
+    },
+    {
+      "id": "auth.state.mfa-ticket.expired",
+      "type": "state",
+      "name": "MFA two-factor token: expired unredeemed",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-module-mfa#1",
+          "note": "expires after MultiFactorAuthentication:TwoFactorTokenLifetime",
+          "date": "2026-10-19"
+        }
+      ],
+      "maturity": "new",
+      "terminal": true
+    },
+    {
+      "id": "auth.signin.method-choice",
+      "type": "behavior",
+      "name": "The sign-in page offers the methods the store enables",
+      "chain_link": "1",
+      "status": "CONFIRMED",
+      "interfaces": [
+        "storefront",
+        "admin-ui",
+        "graphql"
+      ],
+      "actors": [
+        "anonymous visitor",
+        "back-office user"
+      ],
+      "description": "Storefront /sign-in opens on the emailed-code form when OTP is on, with password one link behind and IdP buttons; the Admin login offers password and IdPs, no OTP.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §1 link 1",
+          "note": "both stands, live",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-15-1115",
+          "note": "OTP-001 starts from the code form",
+          "date": "2026-10-15"
+        }
+      ],
+      "requires": [
+        "data.auth.store.otp-enabled",
+        "data.auth.store.auth-types"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.method-choice.otp-off",
+      "name": "Store OTP setting off: the page shows only the password form",
+      "branch_kind": "state",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "description": "Feature switch off: the pre-OTP sign-in page an existing store relies on.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-15-1115",
+          "note": "OTP-007",
+          "date": "2026-10-15"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §2 API",
+          "note": "OtpSignIn.Enabled is public; xAPI store settings expose it",
+          "date": "2026-10-21"
+        }
+      ],
+      "requires": [
+        "data.auth.store.otp-disabled"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.method-choice.idp-buttons",
+      "name": "IdP buttons follow the store authentication types, minus Virto",
+      "branch_kind": "integration",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-6B10CB0E",
+          "note": "store blade vs xAPI authenticationTypes vs storefront buttons",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §3 D2",
+          "note": "lists differ by surface and stand",
+          "date": "2026-10-21"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.method-choice.auth-types-blade",
+      "name": "Switching all authentication types off in the store blade leaves OTP and MFA on",
+      "branch_kind": "integration",
+      "technique": "DT",
+      "status": "DRIFT",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §3 D7",
+          "note": "Authentication blade lists Password and IdPs only; OTP and MFA are switched elsewhere",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/azure-ad/enabling-authentication-types",
+          "note": "\"Enable/ disable one or all available authentication types.\"",
+          "date": "2026-10-21"
+        }
+      ],
+      "drift": {
+        "expected": "PlatformUserGuide Enable Authentication Types: the Authentication widget enables or disables all available types",
+        "observed": "OTP is enabled under Settings → OTP Sign-In and MFA under Platform/Store → Security; the blade has no OTP or MFA row (domain-map:auth@rev2 §3 D7, qa1 2026-10-21)",
+        "route": "vc-module-otp#2"
+      },
+      "notes": "vc-module-otp#2 with vc-module-store#189 would put OTP into the blade; open, not deployed on either stand."
+    },
+    {
+      "id": "auth.signin.password",
+      "type": "behavior",
+      "name": "A user signs in with email and password",
+      "chain_link": "2",
+      "status": "CONFIRMED",
+      "interfaces": [
+        "storefront",
+        "admin-ui",
+        "rest"
+      ],
+      "state_before": "auth.state.session.anonymous",
+      "state_after": "auth.state.session.signed-in",
+      "description": "POST /connect/token grant_type=password; storeId required for a store-bound customer.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §1 link 2",
+          "note": "live both stands",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-0407F36E",
+          "note": "storefront form calls REST /connect/token, not GraphQL",
+          "date": "2026-09-29"
+        }
+      ],
+      "requires": [
+        "data.auth.account.store-contact"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.password.wrong-credentials",
+      "name": "An unknown user or a wrong password is refused with one collapsed error",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-3466E783",
+          "note": "login_failed on the wire, UserNotFound in the sign-in log",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §2 API",
+          "note": "nonexistent user → 400 invalid_grant login_failed",
+          "date": "2026-10-21"
+        }
+      ],
+      "notes": "Whether a wrong password for an EXISTING user is also login_failed is G2.",
+      "requires": [
+        "data.auth.input.unknown-email"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.password.empty-input",
+      "name": "An empty email or password does not submit",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "AUTH-016",
+          "note": "case title: Login - Empty Email"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.password.input-normalisation",
+      "name": "Email letter case and surrounding spaces in the password are normalised or kept",
+      "branch_kind": "boundary",
+      "technique": "EP",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "AUTH-054"
+        },
+        {
+          "class": "SPEC",
+          "ref": "AUTH-055"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.password.store-rule",
+      "name": "Only a contact of the store, or of a store it trusts, signs in to that store",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-A3E16349",
+          "note": "trusted store 200; foreign or no-store account user_cannot_login_in_store",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-7A4C260E",
+          "note": "store rule checked before the password",
+          "date": "2026-09-29"
+        }
+      ],
+      "notes": "Domain map G6 closed for the password grant; trustedGroups differ per stand (§1 variants).",
+      "requires": [
+        "data.auth.account.trusted-store-contact",
+        "data.auth.account.foreign-store-contact",
+        "data.auth.account.no-store-contact"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.password.admin-no-store",
+      "name": "A platform administrator signs in without a store",
+      "branch_kind": "permission",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-83483C4E",
+          "note": "admin password grant needs no storeId",
+          "date": "2026-10-01"
+        }
+      ],
+      "requires": [
+        "data.auth.account.admin"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.password.unverified-email",
+      "name": "An account with an unconfirmed email under a verification-required store",
+      "branch_kind": "state",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "HYPOTHESIS",
+          "ref": "BL-AUTH-002",
+          "note": "SUSPECT: source says such an account is locked until confirmed, the rule describes a signed-in unverified user"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §5 G17",
+          "note": "Stores.EmailVerificationRequired differs per stand",
+          "date": "2026-10-21"
+        }
+      ],
+      "notes": "Cases AUTH-019, AUTH-073 sit on this question.",
+      "requires": [
+        "data.auth.store.email-verification-required",
+        "data.auth.account.unconfirmed-email"
+      ]
+    },
+    {
+      "id": "auth.signin.otp",
+      "type": "behavior",
+      "name": "A user signs in with a code emailed to them",
+      "chain_link": "2",
+      "status": "CONFIRMED",
+      "interfaces": [
+        "storefront",
+        "rest"
+      ],
+      "state_before": "auth.state.session.anonymous",
+      "state_after": "auth.state.session.signed-in",
+      "description": "POST /api/otp/request, then /connect/token grant_type=otp_email. Released as VirtoCommerce.OTP 3.1000.0.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-15-1115",
+          "note": "OTP-001 journey",
+          "date": "2026-10-15"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §2 API",
+          "note": "request + grant shapes, both stands",
+          "date": "2026-10-21"
+        }
+      ],
+      "notes": "integrates with: notifications — OtpSignInEmailNotification carries the code",
+      "requires": [
+        "data.auth.store.otp-enabled"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.otp.happy",
+      "name": "A requested code signs the user in",
+      "branch_kind": "happy",
+      "technique": "FLOW",
+      "status": "CONFIRMED",
+      "state_before": "auth.state.otp-code.issued",
+      "state_after": "auth.state.otp-code.used",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-15-1115",
+          "note": "OTP-001",
+          "date": "2026-10-15"
+        }
+      ],
+      "requires": [
+        "data.auth.otp-code.issued"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.otp.request",
+      "name": "Requesting a code issues one and answers with the masked address",
+      "branch_kind": "happy",
+      "technique": "FLOW",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §2 API",
+          "note": "200 {succeeded, error, maskedEmail, lockoutSecondsRemaining}",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-33B89BDD",
+          "note": "response shape from OTP 3.1000.0-pr-1-11d6",
+          "date": "2026-10-01"
+        }
+      ],
+      "requires": [
+        "data.auth.account.store-contact"
+      ],
+      "produces": [
+        "data.auth.otp-code.issued"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.otp.wrong-code",
+      "name": "A wrong code shows one error and can be re-entered",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-15-1115",
+          "note": "OTP-002",
+          "date": "2026-10-15"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-08CC76A3",
+          "note": "wrong code clears the field",
+          "date": "2026-10-01"
+        }
+      ],
+      "requires": [
+        "data.auth.otp-code.issued"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.otp.code-input",
+      "name": "The code field takes six digits and submits on the sixth",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-15-1115",
+          "note": "OTP-004, OTP-005",
+          "date": "2026-10-15"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-08CC76A3",
+          "note": "digits only, auto-submit at 6, paste accepted",
+          "date": "2026-10-01"
+        }
+      ],
+      "requires": [
+        "data.auth.input.malformed-codes"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.otp.resend",
+      "name": "Resend issues a new code and clears the error",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-15-1115",
+          "note": "OTP-006",
+          "date": "2026-10-15"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-08CC76A3",
+          "note": "Resend says \"New code sent.\"",
+          "date": "2026-10-01"
+        }
+      ],
+      "notes": "Whether the previous code stays valid after a resend is open (OTP-021, Draft).",
+      "requires": [
+        "data.auth.otp-code.issued"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.otp.replay",
+      "name": "A code that already signed in signs in again inside its lifetime",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "DRIFT",
+      "state_before": "auth.state.otp-code.used",
+      "state_after": "auth.state.otp-code.used",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-06FE6C8D",
+          "note": "second otp_email call with the same code returned 200",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "SPEC",
+          "ref": "OTP-018",
+          "note": "Draft case expects the same code cannot sign in twice"
+        }
+      ],
+      "drift": {
+        "expected": "ECL-4.3 Account Takeover lists OTP reuse as an edge case; suite 105 OTP-018 expects a used code to be refused",
+        "observed": "otp_email accepted the same code twice with a fresh token each time (kb:KB-06FE6C8D, vcptcore_qa1 2026-09-29); the Identity Email token provider is stateless",
+        "route": "VCST-6490"
+      },
+      "notes": "MFA (vc-module-mfa#1) adds a used-code store for its own codes only.",
+      "requires": [
+        "data.auth.otp-code.issued"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.otp.expired-code",
+      "name": "A code past its lifetime is refused like a wrong code",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "CONFIRMED",
+      "state_before": "auth.state.otp-code.issued",
+      "state_after": "auth.state.otp-code.expired",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-15-1115",
+          "note": "OTP-012: a code used after its lifetime gets the wrong-code error",
+          "date": "2026-10-15"
+        },
+        {
+          "class": "DOC",
+          "ref": "reports/ba/test-models/VCST-5748-2026-09-29.md Part 0",
+          "note": "TOTP window owned by the Identity Email provider",
+          "date": "2026-09-29"
+        }
+      ],
+      "requires": [
+        "data.auth.otp-code.issued"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.otp.off",
+      "name": "With the store setting off, the API refuses a code request and a code grant",
+      "branch_kind": "state",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §2 API",
+          "note": "store with OTP off → otp_disabled",
+          "date": "2026-10-21"
+        }
+      ],
+      "notes": "A code requested before the switch-off and used after it is OTP-022 (Draft).",
+      "requires": [
+        "data.auth.store.otp-disabled",
+        "data.auth.account.store-contact"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.otp.unknown-email.detailed-errors-off",
+      "name": "With detailed errors off, an unknown email gets the same answer as a real one",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-9AF5645D",
+          "note": "unknown address gets \"Check your email\", no email sent",
+          "date": "2026-10-01"
+        }
+      ],
+      "requires": [
+        "data.auth.input.unknown-email"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.otp.unknown-email.detailed-errors-on",
+      "name": "With detailed errors on, an unknown email is refused with user_not_found",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §3 D11",
+          "note": "user_not_found with the masked input address, both stands",
+          "date": "2026-10-21"
+        }
+      ],
+      "notes": "The domain map routes this as a suspected account-existence disclosure (D11); the password grant and /forgot-password hide existence on the same stands.",
+      "requires": [
+        "data.auth.input.unknown-email"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.otp.store-rule",
+      "name": "A contact of a foreign store gets no code; a trusted-store contact does",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-otp OtpService.CanSignInToStoreAsync",
+          "note": "source read for rev 1 of the domain map",
+          "date": "2026-09-29"
+        }
+      ],
+      "notes": "Live on the request shape since OTP 3.1000.0 is unverified (cases OTP-023, OTP-024 are Draft).",
+      "requires": [
+        "data.auth.account.trusted-store-contact",
+        "data.auth.account.foreign-store-contact",
+        "data.auth.account.no-store-contact"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.otp.lockout-disabled-account",
+      "name": "An account with lockout disabled cannot sign in by code",
+      "branch_kind": "permission",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §1 actors",
+          "note": "qa1 admin has lockoutEnabled=false and OTP refuses it with lockout_disabled",
+          "date": "2026-10-21"
+        }
+      ],
+      "requires": [
+        "data.auth.account.lockout-disabled"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.otp.admin-exempt",
+      "name": "An administrator or non-contact account passes the OTP store rule",
+      "branch_kind": "permission",
+      "technique": "EP",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-otp OtpService.CanSignInToStoreAsync",
+          "note": "returns true for administrators and non-Contact members",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §5 G9",
+          "note": "whether the storefront session then works is open",
+          "date": "2026-10-21"
+        }
+      ],
+      "requires": [
+        "data.auth.account.backoffice-lockout-enabled"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.otp.storefront-origin",
+      "name": "The code request reaches the platform through the storefront address",
+      "branch_kind": "integration",
+      "technique": "EG",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §3 D5",
+          "note": "/api/otp/request answers 200 on both storefront origins; closed since rev 1",
+          "date": "2026-10-21"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.otp.homepage-section",
+      "name": "The homepage login section runs the same code flow",
+      "branch_kind": "integration",
+      "technique": "EP",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-frontend login-form-section.vue",
+          "note": "OTP-aware since vc-frontend#2477",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §5 G19",
+          "note": "not rendered on either stand",
+          "date": "2026-10-21"
+        }
+      ],
+      "requires": [
+        "data.auth.account.store-contact"
+      ]
+    },
+    {
+      "id": "auth.signin.mfa",
+      "type": "behavior",
+      "name": "A password sign-in asks for an emailed second-factor code",
+      "chain_link": "2",
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "interfaces": [
+        "storefront",
+        "admin-ui",
+        "rest"
+      ],
+      "description": "VCST-5904. Password grant answers two_factor_required; the code is exchanged at grant_type=mfa. Required by MultiFactorAuthentication.Enabled or the store StoreMode. Deployed on vcst, switched off.",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5904"
+        },
+        {
+          "class": "SPEC",
+          "ref": "vc-module-mfa#1",
+          "note": "PR body",
+          "date": "2026-10-19"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-C196A782",
+          "note": "mfa grant and /api/mfa endpoints exist; error shape with a bogus token",
+          "date": "2026-10-21"
+        }
+      ],
+      "notes": "PR-stage: vc-platform#3133, vc-module-mfa#1, vc-module-otp#3, vc-frontend#2570 are open and deployed on vcst only (domain-map D14). Re-read after they merge."
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.mfa.off",
+      "name": "MFA not required: a password sign-in completes in one step",
+      "branch_kind": "state",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "maturity": "new",
+      "description": "Feature switch off: the pre-MFA sign-in every existing store relies on.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-CC18E96D",
+          "note": "MultiFactorAuthentication.Enabled false on vcst, StoreMode unset",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §1 link 4",
+          "note": "storefront password sign-in to the account area on vcst with MFA installed",
+          "date": "2026-10-21"
+        }
+      ],
+      "requires": [
+        "data.auth.store.mfa-off",
+        "data.auth.account.store-contact"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.mfa.required-challenge",
+      "name": "With MFA required, a correct password returns a two-factor challenge instead of tokens",
+      "branch_kind": "happy",
+      "technique": "FLOW",
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "state_before": "auth.state.session.anonymous",
+      "state_after": "auth.state.session.awaiting-second-factor",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-module-mfa#1",
+          "note": "400 two_factor_required with twoFactorToken, provider, providers",
+          "date": "2026-10-19"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §5 G10",
+          "note": "needs the setting flipped",
+          "date": "2026-10-21"
+        }
+      ],
+      "requires": [
+        "data.auth.store.mfa-required",
+        "data.auth.account.mfa-eligible"
+      ],
+      "produces": [
+        "data.auth.mfa-ticket.issued"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.mfa.verify-code",
+      "name": "The emailed code exchanged at the mfa grant signs the user in",
+      "branch_kind": "happy",
+      "technique": "FLOW",
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "state_before": "auth.state.session.awaiting-second-factor",
+      "state_after": "auth.state.session.signed-in",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-module-mfa#1",
+          "note": "tokens carry amr=mfa, kept on refresh",
+          "date": "2026-10-19"
+        }
+      ],
+      "requires": [
+        "data.auth.mfa-ticket.issued"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.mfa.ticket-expiry",
+      "name": "An unredeemed two-factor token expires",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "state_before": "auth.state.mfa-ticket.issued",
+      "state_after": "auth.state.mfa-ticket.expired",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-module-mfa#1",
+          "note": "TwoFactorTokenLifetime",
+          "date": "2026-10-19"
+        }
+      ],
+      "requires": [
+        "data.auth.mfa-ticket.issued"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.mfa.store-mode",
+      "name": "Global setting and store mode decide who needs a second factor",
+      "branch_kind": "state",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-module-mfa#1",
+          "note": "a store relaxes the global setting only for its own customers; the user's own store is also consulted",
+          "date": "2026-10-19"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-CC18E96D",
+          "note": "settings exist: global Boolean, store dropdown, not exposed by xAPI",
+          "date": "2026-10-21"
+        }
+      ],
+      "requires": [
+        "data.auth.store.mfa-required"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.mfa.invalid-token",
+      "name": "A forged or stale two-factor token is refused on the grant and on resend",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "CONFIRMED",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-C196A782",
+          "note": "invalid_two_factor_token on grant_type=mfa, /api/mfa/resend and /api/mfa/signin/send",
+          "date": "2026-10-21"
+        }
+      ],
+      "requires": [
+        "data.auth.mfa-ticket.forged"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.mfa.wrong-code-limit",
+      "name": "Wrong codes count toward a code limit and the account lockout",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-module-mfa#1",
+          "note": "MaxCodeAttempts, code_attempts_exceeded; failures count toward lockout",
+          "date": "2026-10-19"
+        }
+      ],
+      "requires": [
+        "data.auth.mfa-ticket.issued"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.mfa.resend",
+      "name": "Resend sends a new code after a cooldown",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-module-mfa#1",
+          "note": "POST /api/mfa/resend; CodeResendInterval",
+          "date": "2026-10-19"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-frontend#2570",
+          "note": "MfaVerifyForm counts down resendSecondsRemaining",
+          "date": "2026-10-21"
+        }
+      ],
+      "requires": [
+        "data.auth.mfa-ticket.issued"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.mfa.resend-storefront-origin",
+      "name": "Resend from the storefront reaches the platform",
+      "branch_kind": "integration",
+      "technique": "EG",
+      "status": "DRIFT",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-12E99BF8",
+          "note": "/api/mfa/resend answers nginx 405 on the vcst storefront origin",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-frontend#2570",
+          "note": "useMfaSignIn calls the relative path /api/mfa/resend",
+          "date": "2026-10-21"
+        }
+      ],
+      "drift": {
+        "expected": "vc-frontend#2570 calls /api/mfa/resend relative to the storefront origin and expects the platform to answer",
+        "observed": "the vcst storefront origin answers nginx 405 for /api/mfa/resend while /connect/token and /api/otp/request on the same host reach the platform (domain-map:auth@rev2 §3 D8)",
+        "route": "vc-frontend#2570"
+      },
+      "notes": "Same class as rev 1 D5 for /api/otp. Not driven through the UI because MFA is off.",
+      "requires": [
+        "data.auth.mfa-ticket.issued"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.mfa.otp-skips",
+      "name": "A code sign-in does not ask for a second factor",
+      "branch_kind": "integration",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-module-otp#3",
+          "note": "Skip the second factor for the OTP grant",
+          "date": "2026-10-19"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §5 G11",
+          "note": "needs MFA required + an OTP-eligible user",
+          "date": "2026-10-21"
+        }
+      ],
+      "notes": "External sign-in opts out the same way per vc-module-mfa#1.",
+      "requires": [
+        "data.auth.store.mfa-required",
+        "data.auth.account.mfa-eligible",
+        "data.auth.store.otp-enabled"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.mfa.backoffice",
+      "name": "The Admin login asks for the code in its own dialog step",
+      "branch_kind": "integration",
+      "technique": "FLOW",
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-module-mfa#1",
+          "note": "POST /api/mfa/signin/send + /signin/verify, TwoFactorSignInAsync",
+          "date": "2026-10-19"
+        }
+      ],
+      "requires": [
+        "data.auth.platform.mfa-global-on",
+        "data.auth.account.admin"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.signin.mfa.provider-unavailable",
+      "name": "An account the email provider cannot serve is refused with mfa_provider_not_available",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-module-mfa#1",
+          "note": "unconfirmed email or inactive MfaSignInEmailNotification",
+          "date": "2026-10-19"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §5 G12",
+          "note": "which existing accounts this would block",
+          "date": "2026-10-21"
+        }
+      ]
+    },
+    {
+      "id": "auth.signin.external",
+      "type": "behavior",
+      "name": "A user signs in through an external identity provider",
+      "chain_link": "1",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "storefront",
+        "admin-ui"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §5 G5",
+          "note": "no IdP credentials on either stand; buttons observed only",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "SPEC",
+          "ref": "AUTH-025"
+        },
+        {
+          "class": "SPEC",
+          "ref": "AUTH-026"
+        }
+      ]
+    },
+    {
+      "id": "auth.signin.punchout",
+      "type": "behavior",
+      "name": "A punchout start link signs in the mapped contact",
+      "chain_link": "1",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "storefront",
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §1 actors",
+          "note": "sign-in log carries punchout rows on qa1; the journey is not walked",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-CA2AE929",
+          "note": "an invalid start token lands on the anonymous homepage, grant 400 login_failed",
+          "date": "2026-10-13"
+        }
+      ],
+      "notes": "integrates with: punchout — cXML setup and token exchange (suites 107/108, excluded from the domain map). vcptcore_qa1 only (D14)."
+    },
+    {
+      "id": "auth.org.resolve",
+      "type": "behavior",
+      "name": "A sign-in lands in an organization the user can still use",
+      "chain_link": "3",
+      "status": "CONFIRMED",
+      "interfaces": [
+        "storefront",
+        "rest"
+      ],
+      "oracle_refs": [
+        "BL-AUTH-015",
+        "BL-AUTH-016"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-AUTH-015"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-20-0125",
+          "note": "OTP-038 lands in the last-used org",
+          "date": "2026-10-20"
+        }
+      ],
+      "notes": "integrates with: b2b — membership status and lock decide accessibility (BL-B2B-013).",
+      "requires": [
+        "data.auth.buyer.multi-org-blockable"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.org.resolve.last-used-resend",
+      "name": "The storefront resends the last-used organization on every sign-in",
+      "branch_kind": "integration",
+      "technique": "ST",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-0080ED6D",
+          "note": "code sign-in sends the last-used organization_id",
+          "date": "2026-10-01"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-20-0125",
+          "note": "OTP-040",
+          "date": "2026-10-20"
+        }
+      ],
+      "requires": [
+        "data.auth.membership.last-used-diverges"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.org.resolve.fallback",
+      "name": "A credential sign-in naming an unusable organization lands in another accessible one",
+      "branch_kind": "state",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "oracle_refs": [
+        "BL-AUTH-016"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-AUTH-016"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-3CBA0D5F",
+          "note": "otp_email falls back like password",
+          "date": "2026-10-20"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-20-0125",
+          "note": "OTP-029..033, OTP-042, OTP-047",
+          "date": "2026-10-20"
+        }
+      ],
+      "requires": [
+        "data.auth.membership.one-unusable"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.org.resolve.no-org-left",
+      "name": "With every organization locked, the sign-in succeeds with no organization",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "status": "CONFIRMED",
+      "oracle_refs": [
+        "BL-AUTH-016"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-AUTH-016"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-20-0125",
+          "note": "OTP-035, OTP-037",
+          "date": "2026-10-20"
+        }
+      ],
+      "requires": [
+        "data.auth.membership.none-accessible"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.org.resolve.status-refusal",
+      "name": "With every membership at a blocking status, the sign-in is refused with one status code",
+      "branch_kind": "negative",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "oracle_refs": [
+        "BL-AUTH-013",
+        "BL-AUTH-016"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-AUTH-013"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-20-0125",
+          "note": "OTP-043, OTP-044",
+          "date": "2026-10-20"
+        }
+      ],
+      "requires": [
+        "data.auth.membership.all-blocking-status"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.org.resolve.explicit-switch-refused",
+      "name": "An explicit switch to a blocked organization is refused, never re-pointed",
+      "branch_kind": "negative",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "oracle_refs": [
+        "BL-AUTH-012",
+        "BL-AUTH-016"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-AUTH-012"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-20-0125",
+          "note": "OTP-039",
+          "date": "2026-10-20"
+        }
+      ],
+      "requires": [
+        "data.auth.membership.one-unusable"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.org.resolve.write-back",
+      "name": "The resolved organization is stored as the contact's current one",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "CONFIRMED",
+      "oracle_refs": [
+        "BL-AUTH-015"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-AUTH-015"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-20-0125",
+          "note": "OTP-049",
+          "date": "2026-10-20"
+        }
+      ],
+      "requires": [
+        "data.auth.membership.one-unusable",
+        "data.auth.membership.none-accessible"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.org.resolve.global-lock-wins",
+      "name": "A globally locked-out account is refused with the account lockout, not an organization fallback",
+      "branch_kind": "state",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "oracle_refs": [
+        "BL-AUTH-012"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-AUTH-012"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-20-0125",
+          "note": "OTP-051",
+          "date": "2026-10-20"
+        }
+      ],
+      "requires": [
+        "data.auth.buyer.globally-locked"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.org.resolve.switcher-lists-locked",
+      "name": "The organization list keeps a locked organization, disabled, and hides blocking-status ones",
+      "branch_kind": "state",
+      "technique": "EP",
+      "status": "DRIFT",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-20-0125",
+          "note": "OTP-034",
+          "date": "2026-10-20"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §3 D9",
+          "note": "locked org stays listed with a padlock; Invited/Rejected/Deleted are not listed",
+          "date": "2026-10-21"
+        }
+      ],
+      "drift": {
+        "expected": "StorefrontUserGuide Company members: \"Every company you belong to is listed\" and, in the same paragraph, \"Only companies you currently have access to appear here.\" (https://docs.virtocommerce.org/storefront/user-guide/account/company-members)",
+        "observed": "a locked organization stays listed and disabled; Invited, Rejected and Deleted are not listed (VCST-6132 run on vcptcore_qa1, REG-2026-10-20-0125)",
+        "route": "UNFILED — VirtoCommerce docs, StorefrontUserGuide company-members page contradicts itself"
+      },
+      "requires": [
+        "data.auth.membership.one-unusable"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.org.resolve.mfa-leg",
+      "name": "The organization fallback also applies to the mfa grant",
+      "branch_kind": "integration",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-customer#321",
+          "note": "release note: Fall back to an accessible organization on OTP and MFA sign-in",
+          "date": "2026-10-21"
+        }
+      ],
+      "requires": [
+        "data.auth.store.mfa-required"
+      ]
+    },
+    {
+      "id": "auth.session.establish",
+      "type": "behavior",
+      "name": "A signed-in session unlocks the account surfaces",
+      "chain_link": "4",
+      "status": "CONFIRMED",
+      "interfaces": [
+        "storefront",
+        "admin-ui",
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §1 link 4",
+          "note": "storefront on vcst, Admin on qa1",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-761B2013",
+          "note": "sign-in is a full document load",
+          "date": "2026-10-15"
+        }
+      ],
+      "requires": [
+        "data.auth.session.signed-in"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.session.establish.protected-route",
+      "name": "An anonymous visit to an account page goes to sign-in and returns after it",
+      "branch_kind": "permission",
+      "technique": "EP",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "AUTH-060"
+        },
+        {
+          "class": "SPEC",
+          "ref": "AUTH-061"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.session.establish.expiry",
+      "name": "A session that expires mid-flow asks to sign in again and keeps the work",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "CONFIRMED",
+      "oracle_refs": [
+        "BL-AUTH-001"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-AUTH-001"
+        },
+        {
+          "class": "SPEC",
+          "ref": "AUTH-048"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.session.establish.remember-me",
+      "name": "Remember me keeps the session across a browser restart",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §3 D13",
+          "note": "guide says it saves credentials; kb records it as vestigial",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-9D80EE6B",
+          "note": "vestigial on vcst_qa",
+          "date": "2026-09-15"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.session.establish.token-validation",
+      "name": "A revoked token stops authorizing API calls",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "AUTH-062"
+        },
+        {
+          "class": "SPEC",
+          "ref": "AUTH-063"
+        },
+        {
+          "class": "SPEC",
+          "ref": "AUTH-057"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.session.establish.password-change",
+      "name": "Changing the password invalidates the user's other sessions",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §6",
+          "note": "release ledger: Session invalidation on password change, Platform 3.1027.0, unverified",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "SPEC",
+          "ref": "AUTH-064"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.session.establish.cross-tab",
+      "name": "Signing in or out in one tab reloads the other tabs",
+      "branch_kind": "integration",
+      "technique": "EG",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-15-1115",
+          "note": "OTP-011",
+          "date": "2026-10-15"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-675F86C2",
+          "note": "cross-tab reload on the Next storefront",
+          "date": "2026-10-20"
+        }
+      ]
+    },
+    {
+      "id": "auth.access.admin-entry",
+      "type": "behavior",
+      "name": "A signed-in account without any permission is kept out of the Admin",
+      "chain_link": "5",
+      "status": "CONFIRMED",
+      "interfaces": [
+        "admin-ui"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-1D5CC609",
+          "note": "zero-permission Customer lands on #!/contact-admin",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §3 D10",
+          "note": "guide says \"Contact admin for support\", screen reads \"Access denied\"",
+          "date": "2026-10-21"
+        }
+      ],
+      "requires": [
+        "data.auth.account.no-permission-customer"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.access.admin-entry.configured-rule",
+      "name": "A configured account-type or permission rule changes who may enter",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/developer-guide/Fundamentals/Security/authorization/restrict-admin-ui-access",
+          "note": "PlatformUI.Access",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §5 G15",
+          "note": "only the default observed",
+          "date": "2026-10-21"
+        }
+      ]
+    },
+    {
+      "id": "auth.access.api-challenge",
+      "type": "behavior",
+      "name": "An API call without the right identity gets a status code, never a login page",
+      "chain_link": "5",
+      "status": "CONFIRMED",
+      "interfaces": [
+        "rest"
+      ],
+      "oracle_refs": [
+        "BL-AUTH-014",
+        "BL-AUTH-017"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-AUTH-014"
+        },
+        {
+          "class": "BL",
+          "ref": "BL-AUTH-017"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.access.api-challenge.anonymous",
+      "name": "An anonymous API call gets 401 with no redirect",
+      "branch_kind": "permission",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "oracle_refs": [
+        "BL-AUTH-014"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-AUTH-014"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.access.api-challenge.forbidden",
+      "name": "A signed-in caller without the permission gets 403",
+      "branch_kind": "permission",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "oracle_refs": [
+        "BL-AUTH-014"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-AUTH-014"
+        }
+      ],
+      "requires": [
+        "data.auth.session.signed-in"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.access.api-challenge.malformed-body",
+      "name": "A malformed request body gets 400, never 500",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "CONFIRMED",
+      "oracle_refs": [
+        "BL-AUTH-017"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-AUTH-017"
+        }
+      ],
+      "requires": [
+        "data.auth.input.malformed-bodies"
+      ]
+    },
+    {
+      "id": "auth.lockout.temporary",
+      "type": "behavior",
+      "name": "Repeated failed sign-ins lock the account for a while",
+      "chain_link": "5",
+      "status": "CONFIRMED",
+      "interfaces": [
+        "storefront",
+        "admin-ui",
+        "rest"
+      ],
+      "oracle_refs": [
+        "BL-AUTH-003"
+      ],
+      "state_before": "auth.state.account.unlocked",
+      "state_after": "auth.state.account.temporarily-locked",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-AUTH-003"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-8646A9CB",
+          "note": "five failures → temporary lockout"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-262ADDFB",
+          "note": "user_is_temporary_locked_out",
+          "date": "2026-10-21"
+        }
+      ],
+      "requires": [
+        "data.auth.account.lockout-disposable"
+      ],
+      "produces": [
+        "data.auth.account.temporarily-locked"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.lockout.temporary.shared-counter",
+      "name": "Wrong passwords and wrong codes share one failed-attempt counter",
+      "branch_kind": "integration",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:auth@rev2 §1 link 5",
+          "note": "one counter shared by password and OTP grants; OTP calls AccessFailedAsync",
+          "date": "2026-10-21"
+        }
+      ],
+      "notes": "Live observation of the shared counter is OTP-020 (Draft).",
+      "requires": [
+        "data.auth.account.lockout-shared-counter",
+        "data.auth.store.otp-enabled"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.lockout.temporary.otp-codes",
+      "name": "Wrong codes alone lock the account at the same threshold",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "OTP-019"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §6",
+          "note": "for codes UNVERIFIED",
+          "date": "2026-10-21"
+        }
+      ],
+      "requires": [
+        "data.auth.account.lockout-otp-codes",
+        "data.auth.store.otp-enabled"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.lockout.temporary.countdown-password",
+      "name": "The password refusal carries no countdown while locked",
+      "branch_kind": "boundary",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-262ADDFB",
+          "note": "lockoutSecondsRemaining null on the password grant even while locked",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §3 D4",
+          "note": "field is part of the shared token-error envelope",
+          "date": "2026-10-21"
+        }
+      ],
+      "requires": [
+        "data.auth.account.temporarily-locked"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.lockout.temporary.countdown-otp",
+      "name": "A code refusal while locked carries the seconds remaining",
+      "branch_kind": "boundary",
+      "technique": "EP",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §5 G1",
+          "note": "populated value never observed",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "DOC",
+          "ref": "reports/ba/test-models/VCST-5748-2026-09-29.md Part 0",
+          "note": "account_locked + lockoutSecondsRemaining only with DetailedErrors",
+          "date": "2026-09-29"
+        }
+      ],
+      "requires": [
+        "data.auth.account.temporarily-locked"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.lockout.temporary.storefront-message",
+      "name": "The storefront tells a temporarily locked user to retry later, not that they are blocked",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "AUTH-071"
+        },
+        {
+          "class": "SPEC",
+          "ref": "AUTH-072",
+          "note": "VCST-5374 regression"
+        }
+      ],
+      "requires": [
+        "data.auth.account.temporarily-locked"
+      ]
+    },
+    {
+      "id": "auth.lockout.expire",
+      "type": "behavior",
+      "name": "A temporary lockout ends on its own",
+      "chain_link": "7",
+      "status": "UNVERIFIED",
+      "state_before": "auth.state.account.temporarily-locked",
+      "state_after": "auth.state.account.unlocked",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §1 reverse edges",
+          "note": "lockout expiry unverified live",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/auth/otp-signin-specs.mjs",
+          "note": "header: observed 5 failures, 120 s on vcptcore_qa1; never assume a length"
+        }
+      ],
+      "requires": [
+        "data.auth.account.temporarily-locked"
+      ]
+    },
+    {
+      "id": "auth.lockout.admin-lock",
+      "type": "behavior",
+      "name": "An administrator locks an account",
+      "chain_link": "5",
+      "status": "CONFIRMED",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "state_before": "auth.state.account.unlocked",
+      "state_after": "auth.state.account.locked",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-1D5CC609",
+          "note": "Lock account in the user toolbar",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-444EF3F4",
+          "note": "a platform-locked user gets user_is_locked_out",
+          "date": "2026-09-15"
+        }
+      ],
+      "requires": [
+        "data.auth.account.block-target",
+        "data.auth.account.admin"
+      ],
+      "produces": [
+        "data.auth.account.admin-locked"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.lockout.admin-lock.blocked-page",
+      "name": "A locked user is sent to the blocked page on the storefront",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §2 Storefront",
+          "note": "/blocked \"Your account is blocked\"",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-444EF3F4",
+          "note": "storefront maps user_is_locked_out to the blocked message",
+          "date": "2026-09-15"
+        }
+      ],
+      "requires": [
+        "data.auth.account.admin-locked"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.lockout.admin-lock.no-code",
+      "name": "A locked account receives no sign-in code",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "OTP-028"
+        }
+      ],
+      "requires": [
+        "data.auth.account.admin-locked"
+      ]
+    },
+    {
+      "id": "auth.lockout.admin-unlock",
+      "type": "behavior",
+      "name": "An administrator unlocks an account",
+      "chain_link": "7",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "admin-ui"
+      ],
+      "state_before": "auth.state.account.locked",
+      "state_after": "auth.state.account.unlocked",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §5 G8",
+          "note": "unlock control label unobserved; needs a locked account",
+          "date": "2026-10-21"
+        }
+      ],
+      "requires": [
+        "data.auth.account.admin-locked",
+        "data.auth.account.admin"
+      ]
+    },
+    {
+      "id": "auth.impersonate",
+      "type": "behavior",
+      "name": "An operator signs in on behalf of another user",
+      "chain_link": "6",
+      "status": "CONFIRMED",
+      "interfaces": [
+        "storefront",
+        "admin-ui",
+        "rest"
+      ],
+      "state_before": "auth.state.session.signed-in",
+      "state_after": "auth.state.session.impersonating",
+      "description": "grant_type=impersonate, gated by platform:security:loginOnBehalf; from Company → Members or the Admin user blade.",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/security/login-on-behalf",
+          "note": "Permissions section",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-07-1342",
+          "note": "IMP-010, IMP-020",
+          "date": "2026-09-07"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §2 API",
+          "note": "permission id confirmed",
+          "date": "2026-10-21"
+        }
+      ],
+      "requires": [
+        "data.auth.operator.login-on-behalf",
+        "data.auth.target.with-security-account"
+      ],
+      "produces": [
+        "data.auth.session.impersonating"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.impersonate.verification-form",
+      "name": "An operator not yet signed in confirms their own password first",
+      "branch_kind": "happy",
+      "technique": "FLOW",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-07-1342",
+          "note": "IMP-005, IMP-006",
+          "date": "2026-09-07"
+        },
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/security/login-on-behalf",
+          "note": "prompt to re-enter your credentials",
+          "date": "2026-10-21"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.impersonate.admin-entry",
+      "name": "The Admin Login on behalf button opens the storefront impersonation page",
+      "branch_kind": "integration",
+      "technique": "FLOW",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-EF3CB7FB",
+          "note": "opens /account/impersonate/<id> in a new tab",
+          "date": "2026-09-20"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-1D5CC609",
+          "note": "button in the user toolbar",
+          "date": "2026-10-21"
+        }
+      ],
+      "requires": [
+        "data.auth.account.admin"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.impersonate.banner",
+      "name": "The operator banner stays on every page during the session",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "CONFIRMED",
+      "oracle_refs": [
+        "BL-AUTH-010"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-AUTH-010"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-07-1342",
+          "note": "IMP-011",
+          "date": "2026-09-07"
+        }
+      ],
+      "requires": [
+        "data.auth.session.impersonating"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.impersonate.acts-as-target",
+      "name": "Cart and orders during the session belong to the target",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-07-1342",
+          "note": "IMP-020, IMP-021, IMP-025",
+          "date": "2026-09-07"
+        }
+      ],
+      "requires": [
+        "data.auth.session.impersonating"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.impersonate.revert",
+      "name": "Back to operator restores the operator session without signing in again",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "CONFIRMED",
+      "oracle_refs": [
+        "BL-AUTH-011"
+      ],
+      "state_before": "auth.state.session.impersonating",
+      "state_after": "auth.state.session.signed-in",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-AUTH-011"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-07-1342",
+          "note": "IMP-031, IMP-042, IMP-043",
+          "date": "2026-09-07"
+        }
+      ],
+      "requires": [
+        "data.auth.session.impersonating"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.impersonate.no-permission",
+      "name": "An operator without the permission cannot start a session",
+      "branch_kind": "permission",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "IMP-036",
+          "note": "verified live 2026-05-12, vcst-qa",
+          "date": "2026-05-12"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-07-1342",
+          "note": "IMP-039 shows the action only with the permission",
+          "date": "2026-09-07"
+        }
+      ],
+      "requires": [
+        "data.auth.operator.no-login-on-behalf"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.impersonate.target-without-account",
+      "name": "A member with no security account is not a target",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/security/login-on-behalf",
+          "note": "\"Only members who already have a security (login) account are valid targets.\"",
+          "date": "2026-10-21"
+        }
+      ],
+      "requires": [
+        "data.auth.target.without-security-account"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.impersonate.cross-org",
+      "name": "An operator targets a user of another organization",
+      "branch_kind": "permission",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-07-1342",
+          "note": "IMP-018",
+          "date": "2026-09-07"
+        }
+      ],
+      "requires": [
+        "data.auth.target.other-org"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.impersonate.no-target-guard",
+      "name": "The grant does not refuse an Administrator target, and the token carries the Administrator role",
+      "branch_kind": "permission",
+      "technique": "EG",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-4E1FD1E8",
+          "note": "non-admin operator minted a token carrying the target Administrator role",
+          "date": "2026-10-02"
+        },
+        {
+          "class": "DOC",
+          "ref": "test-data/aliases.json changelog_1_4_6",
+          "note": "no status gate: Locked or Invited targets get a usable token over REST",
+          "date": "2026-05-14"
+        }
+      ],
+      "notes": "Recorded as observed behaviour, not as expected behaviour; suite 082 IMP-022 sits on it. The REST no-status-gate note of 2026-05-14 is superseded for Locked targets by IMP-049 (re-locked 2026-07-15: 400).",
+      "requires": [
+        "data.auth.account.admin"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.impersonate.target-status",
+      "name": "A locked target is refused; an invited target is signed in",
+      "branch_kind": "state",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "IMP-049",
+          "note": "Reviewed; re-locked 2026-07-15: the impersonate grant answers 400 for a Locked target, Invited succeeds"
+        },
+        {
+          "class": "DOC",
+          "ref": "test-data/aliases.json changelog_1_4_6",
+          "note": "first run 2026-05-14: no status gate over REST; Blocked → /blocked on the storefront",
+          "date": "2026-05-14"
+        }
+      ],
+      "notes": "The two observations disagree by date (May: no gate; July: 400); the later one is a Reviewed case, not a promoted run, so the node stays UNVERIFIED until a run confirms it.",
+      "requires": [
+        "data.auth.target.locked",
+        "data.auth.target.invited"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.impersonate.self",
+      "name": "Impersonating oneself",
+      "branch_kind": "boundary",
+      "technique": "EG",
+      "status": "DRIFT",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-07-1342",
+          "note": "IMP-017 harmless no-op",
+          "date": "2026-09-07"
+        },
+        {
+          "class": "BL",
+          "ref": "BL-AUTH-008",
+          "note": "SUSPECT"
+        }
+      ],
+      "drift": {
+        "expected": "BL-AUTH-008: self-impersonation must have a defined non-circular outcome",
+        "observed": "a circular operator==target token is accepted as a harmless no-op; VCST-5174 closed as by design (IMP-017, REG-2026-09-07-1342)",
+        "route": "/qa-review-oracles — BL-AUTH-008 is SUSPECT, VCST-5174 asks to review or retire it"
+      },
+      "notes": "Oracle review 2026-10-21 (/qa-review-oracles bl auth): VCST-5174 is Cancelled with a By-design closing comment, and a Cancelled ticket is not a resolution source (bl-audit-criteria §0), so the rule stays SUSPECT. RETIRE or a rewrite to the by-design outcome is proposed and waits for the owner to confirm (BL-AUDIT-2026-10-21)."
+    },
+    {
+      "type": "branch",
+      "id": "auth.impersonate.nested",
+      "name": "Switching target inside an active impersonation session",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "DRIFT",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "IMP-013",
+          "note": "Reviewed; target switch by design"
+        },
+        {
+          "class": "BL",
+          "ref": "BL-AUTH-009",
+          "note": "SUSPECT"
+        }
+      ],
+      "drift": {
+        "expected": "BL-AUTH-009: nested impersonation is forbidden",
+        "observed": "retargeting inside an authorized operator session is intended; VCST-5174 closed as by design (IMP-013)",
+        "route": "/qa-review-oracles — BL-AUTH-009 is SUSPECT per VCST-5174"
+      },
+      "requires": [
+        "data.auth.session.impersonating"
+      ],
+      "notes": "Oracle review 2026-10-21 (/qa-review-oracles bl auth): VCST-5174 is Cancelled with a By-design closing comment, and a Cancelled ticket is not a resolution source (bl-audit-criteria §0), so the rule stays SUSPECT. RETIRE or a rewrite to the by-design outcome is proposed and waits for the owner to confirm (BL-AUDIT-2026-10-21)."
+    },
+    {
+      "type": "branch",
+      "id": "auth.impersonate.locked-org-refused",
+      "name": "Impersonation naming an organization the target is locked in is refused, never re-pointed",
+      "branch_kind": "integration",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "oracle_refs": [
+        "BL-AUTH-016"
+      ],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-AUTH-016"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-20-0125",
+          "note": "OTP-048",
+          "date": "2026-10-20"
+        }
+      ],
+      "requires": [
+        "data.auth.membership.one-unusable",
+        "data.auth.account.admin"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.impersonate.mfa-code",
+      "name": "The impersonation dialog asks for the second-factor code when MFA applies",
+      "branch_kind": "integration",
+      "technique": "FLOW",
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-frontend#2570",
+          "note": "impersonation dialog uses the same code step",
+          "date": "2026-10-21"
+        }
+      ],
+      "requires": [
+        "data.auth.store.mfa-required"
+      ]
+    },
+    {
+      "id": "auth.session.signout",
+      "type": "behavior",
+      "name": "A user signs out from the account menu",
+      "chain_link": "7",
+      "status": "CONFIRMED",
+      "interfaces": [
+        "storefront",
+        "admin-ui"
+      ],
+      "oracle_refs": [
+        "BL-AUTH-007"
+      ],
+      "state_before": "auth.state.session.signed-in",
+      "state_after": "auth.state.session.anonymous",
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-AUTH-007"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-761B2013",
+          "note": "Logout lands on /sign-in?returnUrl=<page> with a full reload",
+          "date": "2026-10-15"
+        }
+      ],
+      "requires": [
+        "data.auth.session.signed-in"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.session.signout.token-revoked",
+      "name": "A token used after sign-out is rejected",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "AUTH-024"
+        },
+        {
+          "class": "SPEC",
+          "ref": "AUTH-057"
+        }
+      ]
+    },
+    {
+      "id": "auth.session.terminate",
+      "type": "behavior",
+      "name": "An administrator ends a user's sessions",
+      "chain_link": "7",
+      "status": "UNVERIFIED",
+      "interfaces": [
+        "admin-ui"
+      ],
+      "state_before": "auth.state.session.signed-in",
+      "state_after": "auth.state.session.anonymous",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-1D5CC609",
+          "note": "Active sessions widget with Terminate all",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §5 G16",
+          "note": "effect of terminating needs a mutation",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/contacts/managing-contacts",
+          "note": "View active sessions. Terminate a single session. Terminate all sessions.",
+          "date": "2026-10-21"
+        }
+      ],
+      "requires": [
+        "data.auth.session.signed-in",
+        "data.auth.account.admin"
+      ]
+    },
+    {
+      "id": "auth.password-reset",
+      "type": "behavior",
+      "name": "A user resets a forgotten password by email",
+      "status": "CONFIRMED",
+      "interfaces": [
+        "storefront",
+        "admin-ui"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §2 Storefront",
+          "note": "/forgot-password, one Email field",
+          "date": "2026-10-21"
+        }
+      ],
+      "requires": [
+        "data.auth.account.store-contact"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.password-reset.unknown-email",
+      "name": "An unknown address gets the same confirmation as a real one",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §3 D11",
+          "note": "\"We sent you a reset password link to your inbox\" for a nonexistent address",
+          "date": "2026-10-21"
+        }
+      ],
+      "requires": [
+        "data.auth.input.unknown-email"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.password-reset.link",
+      "name": "The emailed link sets a new password",
+      "branch_kind": "happy",
+      "technique": "FLOW",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "AUTH-052"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §2 Storefront",
+          "note": "/reset-password route source-only",
+          "date": "2026-10-21"
+        }
+      ]
+    },
+    {
+      "id": "auth.audit.signin-log",
+      "type": "behavior",
+      "name": "Every sign-in attempt is recorded with its method and outcome",
+      "status": "CONFIRMED",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-D42D6CAA",
+          "note": "Type and Outcome vocabularies, MFA rows, signInType values",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §2 Admin",
+          "note": "grid, tiles, filters on both stands",
+          "date": "2026-10-21"
+        }
+      ],
+      "requires": [
+        "data.auth.account.admin"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.audit.signin-log.true-cause",
+      "name": "The log keeps the real failure reason the wire hides",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-3466E783",
+          "note": "login_failed on the wire, UserNotFound in the log",
+          "date": "2026-10-21"
+        }
+      ],
+      "requires": [
+        "data.auth.input.unknown-email"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.audit.signin-log.method-types",
+      "name": "Each method is logged under its own type",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-D42D6CAA",
+          "note": "Password, OTP, Impersonation, ImpersonationRevert, Logout; MFA on vcst; punchout on qa1",
+          "date": "2026-10-21"
+        }
+      ],
+      "requires": [
+        "data.auth.account.store-contact"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.audit.signin-log.awaiting-second-factor",
+      "name": "A password accepted pending a second factor is logged as awaiting it",
+      "branch_kind": "state",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §2 Admin",
+          "note": "Outcome \"Awaiting second factor\" on vcst",
+          "date": "2026-10-21"
+        }
+      ],
+      "requires": [
+        "data.auth.mfa-ticket.issued"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.audit.signin-log.type-filter",
+      "name": "The type filter can select every logged method",
+      "branch_kind": "integration",
+      "technique": "EP",
+      "status": "DRIFT",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-D42D6CAA",
+          "note": "filter offers \"Sign-in code\" which lists MFA rows; no OTP option",
+          "date": "2026-10-21"
+        }
+      ],
+      "drift": {
+        "expected": "vc-module-mfa#1 QA step 7: \"The type filter of the log list has MFA\"; OTP rows exist, so OTP should be selectable",
+        "observed": "vcst filter offers \"Sign-in code\" (selecting it lists MFA rows), no MFA option and no OTP option (domain-map:auth@rev2 §3 D6)",
+        "route": "vc-module-mfa#1"
+      }
+    },
+    {
+      "type": "branch",
+      "id": "auth.audit.signin-log.recording-off",
+      "name": "With recording off, ordinary sign-ins are not logged but Login on behalf still is",
+      "branch_kind": "state",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "SIL-020"
+        },
+        {
+          "class": "SPEC",
+          "ref": "SIL-021"
+        }
+      ],
+      "requires": [
+        "data.auth.platform.signin-log-off"
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "auth.audit.signin-log.read-permission",
+      "name": "Reading the log needs its own permission",
+      "branch_kind": "permission",
+      "technique": "EP",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §2 API",
+          "note": "platform:security:sign_in_log:read exists in the catalog",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "SPEC",
+          "ref": "SIL-023"
+        }
+      ],
+      "requires": [
+        "data.auth.account.no-signin-log-permission"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "auth.access",
+      "to": "auth.signin.method-choice",
+      "type": "contains"
+    },
+    {
+      "from": "auth.signin.method-choice",
+      "to": "auth.signin.method-choice.otp-off",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.method-choice",
+      "to": "auth.signin.method-choice.idp-buttons",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.method-choice",
+      "to": "auth.signin.method-choice.auth-types-blade",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.access",
+      "to": "auth.signin.password",
+      "type": "contains"
+    },
+    {
+      "from": "auth.signin.password",
+      "to": "auth.signin.password.wrong-credentials",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.password",
+      "to": "auth.signin.password.empty-input",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.password",
+      "to": "auth.signin.password.input-normalisation",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.password",
+      "to": "auth.signin.password.store-rule",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.password",
+      "to": "auth.signin.password.admin-no-store",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.password",
+      "to": "auth.signin.password.unverified-email",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.access",
+      "to": "auth.signin.otp",
+      "type": "contains"
+    },
+    {
+      "from": "auth.signin.otp",
+      "to": "auth.signin.otp.happy",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.otp",
+      "to": "auth.signin.otp.request",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.otp",
+      "to": "auth.signin.otp.wrong-code",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.otp",
+      "to": "auth.signin.otp.code-input",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.otp",
+      "to": "auth.signin.otp.resend",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.otp",
+      "to": "auth.signin.otp.replay",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.otp",
+      "to": "auth.signin.otp.expired-code",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.otp",
+      "to": "auth.signin.otp.off",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.otp",
+      "to": "auth.signin.otp.unknown-email.detailed-errors-off",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.otp",
+      "to": "auth.signin.otp.unknown-email.detailed-errors-on",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.otp",
+      "to": "auth.signin.otp.store-rule",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.otp",
+      "to": "auth.signin.otp.lockout-disabled-account",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.otp",
+      "to": "auth.signin.otp.admin-exempt",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.otp",
+      "to": "auth.signin.otp.storefront-origin",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.otp",
+      "to": "auth.signin.otp.homepage-section",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.access",
+      "to": "auth.signin.mfa",
+      "type": "contains"
+    },
+    {
+      "from": "auth.signin.mfa",
+      "to": "auth.signin.mfa.off",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.mfa",
+      "to": "auth.signin.mfa.required-challenge",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.mfa",
+      "to": "auth.signin.mfa.verify-code",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.mfa",
+      "to": "auth.signin.mfa.ticket-expiry",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.mfa",
+      "to": "auth.signin.mfa.store-mode",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.mfa",
+      "to": "auth.signin.mfa.invalid-token",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.mfa",
+      "to": "auth.signin.mfa.wrong-code-limit",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.mfa",
+      "to": "auth.signin.mfa.resend",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.mfa",
+      "to": "auth.signin.mfa.resend-storefront-origin",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.mfa",
+      "to": "auth.signin.mfa.otp-skips",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.mfa",
+      "to": "auth.signin.mfa.backoffice",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.signin.mfa",
+      "to": "auth.signin.mfa.provider-unavailable",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.access",
+      "to": "auth.signin.external",
+      "type": "contains"
+    },
+    {
+      "from": "auth.access",
+      "to": "auth.signin.punchout",
+      "type": "contains"
+    },
+    {
+      "from": "auth.access",
+      "to": "auth.org.resolve",
+      "type": "contains"
+    },
+    {
+      "from": "auth.org.resolve",
+      "to": "auth.org.resolve.last-used-resend",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.org.resolve",
+      "to": "auth.org.resolve.fallback",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.org.resolve",
+      "to": "auth.org.resolve.no-org-left",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.org.resolve",
+      "to": "auth.org.resolve.status-refusal",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.org.resolve",
+      "to": "auth.org.resolve.explicit-switch-refused",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.org.resolve",
+      "to": "auth.org.resolve.write-back",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.org.resolve",
+      "to": "auth.org.resolve.global-lock-wins",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.org.resolve",
+      "to": "auth.org.resolve.switcher-lists-locked",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.org.resolve",
+      "to": "auth.org.resolve.mfa-leg",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.access",
+      "to": "auth.session.establish",
+      "type": "contains"
+    },
+    {
+      "from": "auth.session.establish",
+      "to": "auth.session.establish.protected-route",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.session.establish",
+      "to": "auth.session.establish.expiry",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.session.establish",
+      "to": "auth.session.establish.remember-me",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.session.establish",
+      "to": "auth.session.establish.token-validation",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.session.establish",
+      "to": "auth.session.establish.password-change",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.session.establish",
+      "to": "auth.session.establish.cross-tab",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.access",
+      "to": "auth.access.admin-entry",
+      "type": "contains"
+    },
+    {
+      "from": "auth.access.admin-entry",
+      "to": "auth.access.admin-entry.configured-rule",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.access",
+      "to": "auth.access.api-challenge",
+      "type": "contains"
+    },
+    {
+      "from": "auth.access.api-challenge",
+      "to": "auth.access.api-challenge.anonymous",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.access.api-challenge",
+      "to": "auth.access.api-challenge.forbidden",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.access.api-challenge",
+      "to": "auth.access.api-challenge.malformed-body",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.access",
+      "to": "auth.lockout.temporary",
+      "type": "contains"
+    },
+    {
+      "from": "auth.lockout.temporary",
+      "to": "auth.lockout.temporary.shared-counter",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.lockout.temporary",
+      "to": "auth.lockout.temporary.otp-codes",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.lockout.temporary",
+      "to": "auth.lockout.temporary.countdown-password",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.lockout.temporary",
+      "to": "auth.lockout.temporary.countdown-otp",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.lockout.temporary",
+      "to": "auth.lockout.temporary.storefront-message",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.access",
+      "to": "auth.lockout.expire",
+      "type": "contains"
+    },
+    {
+      "from": "auth.access",
+      "to": "auth.lockout.admin-lock",
+      "type": "contains"
+    },
+    {
+      "from": "auth.lockout.admin-lock",
+      "to": "auth.lockout.admin-lock.blocked-page",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.lockout.admin-lock",
+      "to": "auth.lockout.admin-lock.no-code",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.access",
+      "to": "auth.lockout.admin-unlock",
+      "type": "contains"
+    },
+    {
+      "from": "auth.access",
+      "to": "auth.impersonate",
+      "type": "contains"
+    },
+    {
+      "from": "auth.impersonate",
+      "to": "auth.impersonate.verification-form",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.impersonate",
+      "to": "auth.impersonate.admin-entry",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.impersonate",
+      "to": "auth.impersonate.banner",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.impersonate",
+      "to": "auth.impersonate.acts-as-target",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.impersonate",
+      "to": "auth.impersonate.revert",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.impersonate",
+      "to": "auth.impersonate.no-permission",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.impersonate",
+      "to": "auth.impersonate.target-without-account",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.impersonate",
+      "to": "auth.impersonate.cross-org",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.impersonate",
+      "to": "auth.impersonate.no-target-guard",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.impersonate",
+      "to": "auth.impersonate.target-status",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.impersonate",
+      "to": "auth.impersonate.self",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.impersonate",
+      "to": "auth.impersonate.nested",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.impersonate",
+      "to": "auth.impersonate.locked-org-refused",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.impersonate",
+      "to": "auth.impersonate.mfa-code",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.access",
+      "to": "auth.session.signout",
+      "type": "contains"
+    },
+    {
+      "from": "auth.session.signout",
+      "to": "auth.session.signout.token-revoked",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.access",
+      "to": "auth.session.terminate",
+      "type": "contains"
+    },
+    {
+      "from": "auth.access",
+      "to": "auth.password-reset",
+      "type": "contains"
+    },
+    {
+      "from": "auth.password-reset",
+      "to": "auth.password-reset.unknown-email",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.password-reset",
+      "to": "auth.password-reset.link",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.access",
+      "to": "auth.audit.signin-log",
+      "type": "contains"
+    },
+    {
+      "from": "auth.audit.signin-log",
+      "to": "auth.audit.signin-log.true-cause",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.audit.signin-log",
+      "to": "auth.audit.signin-log.method-types",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.audit.signin-log",
+      "to": "auth.audit.signin-log.awaiting-second-factor",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.audit.signin-log",
+      "to": "auth.audit.signin-log.type-filter",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.audit.signin-log",
+      "to": "auth.audit.signin-log.recording-off",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.audit.signin-log",
+      "to": "auth.audit.signin-log.read-permission",
+      "type": "branches_to"
+    },
+    {
+      "from": "auth.state.account.unlocked",
+      "to": "auth.state.account.temporarily-locked",
+      "type": "transitions_to",
+      "via": "auth.lockout.temporary"
+    },
+    {
+      "from": "auth.state.account.temporarily-locked",
+      "to": "auth.state.account.unlocked",
+      "type": "transitions_to",
+      "via": "auth.lockout.expire"
+    },
+    {
+      "from": "auth.state.account.unlocked",
+      "to": "auth.state.account.locked",
+      "type": "transitions_to",
+      "via": "auth.lockout.admin-lock"
+    },
+    {
+      "from": "auth.state.account.locked",
+      "to": "auth.state.account.unlocked",
+      "type": "transitions_to",
+      "via": "auth.lockout.admin-unlock"
+    },
+    {
+      "from": "auth.state.session.anonymous",
+      "to": "auth.state.session.signed-in",
+      "type": "transitions_to",
+      "via": "auth.signin.password"
+    },
+    {
+      "from": "auth.state.session.anonymous",
+      "to": "auth.state.session.signed-in",
+      "type": "transitions_to",
+      "via": "auth.signin.otp"
+    },
+    {
+      "from": "auth.state.session.anonymous",
+      "to": "auth.state.session.awaiting-second-factor",
+      "type": "transitions_to",
+      "via": "auth.signin.mfa.required-challenge"
+    },
+    {
+      "from": "auth.state.session.awaiting-second-factor",
+      "to": "auth.state.session.signed-in",
+      "type": "transitions_to",
+      "via": "auth.signin.mfa.verify-code"
+    },
+    {
+      "from": "auth.state.session.signed-in",
+      "to": "auth.state.session.impersonating",
+      "type": "transitions_to",
+      "via": "auth.impersonate"
+    },
+    {
+      "from": "auth.state.session.impersonating",
+      "to": "auth.state.session.signed-in",
+      "type": "transitions_to",
+      "via": "auth.impersonate.revert"
+    },
+    {
+      "from": "auth.state.session.signed-in",
+      "to": "auth.state.session.anonymous",
+      "type": "transitions_to",
+      "via": "auth.session.signout"
+    },
+    {
+      "from": "auth.state.session.signed-in",
+      "to": "auth.state.session.anonymous",
+      "type": "transitions_to",
+      "via": "auth.session.terminate"
+    },
+    {
+      "from": "auth.state.otp-code.issued",
+      "to": "auth.state.otp-code.used",
+      "type": "transitions_to",
+      "via": "auth.signin.otp.happy"
+    },
+    {
+      "from": "auth.state.otp-code.used",
+      "to": "auth.state.otp-code.used",
+      "type": "transitions_to",
+      "via": "auth.signin.otp.replay",
+      "note": "replay: the code is not consumed (kb:KB-06FE6C8D)"
+    },
+    {
+      "from": "auth.state.otp-code.issued",
+      "to": "auth.state.otp-code.expired",
+      "type": "transitions_to",
+      "via": "auth.signin.otp.expired-code"
+    },
+    {
+      "from": "auth.state.mfa-ticket.issued",
+      "to": "auth.state.mfa-ticket.redeemed",
+      "type": "transitions_to",
+      "via": "auth.signin.mfa.verify-code"
+    },
+    {
+      "from": "auth.state.mfa-ticket.issued",
+      "to": "auth.state.mfa-ticket.expired",
+      "type": "transitions_to",
+      "via": "auth.signin.mfa.ticket-expiry"
+    },
+    {
+      "from": "auth.signin.mfa",
+      "to": "auth.signin.password",
+      "type": "depends_on",
+      "note": "the second factor follows an accepted password"
+    },
+    {
+      "from": "auth.org.resolve",
+      "to": "auth.signin.password",
+      "type": "depends_on",
+      "note": "credential sign-ins feed the organization validator"
+    },
+    {
+      "from": "auth.lockout.temporary",
+      "to": "auth.signin.otp",
+      "type": "affected_by",
+      "note": "wrong codes count toward the same lockout"
+    },
+    {
+      "from": "auth.signin.mfa.wrong-code-limit",
+      "to": "auth.lockout.temporary",
+      "type": "affected_by",
+      "note": "wrong MFA codes count toward the lockout"
+    },
+    {
+      "from": "auth.org.resolve",
+      "to": "sr.access.lock-membership",
+      "type": "affected_by",
+      "note": "a membership locked from the Contacts side removes that org from resolution"
+    }
+  ]
+}

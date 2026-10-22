@@ -76,7 +76,7 @@ async function warnIfPresetUnresolvable(name, where) {
 // secret variants, e.g. ADMIN_PASSWORD_VCPTCORE1 — without it `.env.local`'s base ADMIN_PASSWORD clobbers the
 // inline override and auth fails with invalid_grant), the env's QA_ENV_PATH files, and on a PASSWORDS=master
 // stand the master password for every test account.
-const { testEnv: _TEST_ENV, promoted } = loadEnv();
+const { testEnv: _TEST_ENV, promoted, master: _MASTER } = loadEnv();
 /**
  * Base keys that actually got a per-env value this run (a pin, a dedicated file, the master password). Promotion
  * is a SILENT no-op when the suffixed key is absent or misnamed — the base value simply stays in place — so callers that
@@ -177,6 +177,18 @@ export async function auth() {
     const body = (await res.text().catch(() => '')).slice(0, 200);
     // `invalid_grant` is almost always a per-env credential that never resolved, not a real
     // outage — so say which key the loader looked for instead of leaving the caller to guess.
+    // A master stand signs the admin in with the master password too: an admin still on its own password fails here.
+    if (/invalid_grant/i.test(body) && _MASTER) {
+      throw new Error(
+        `auth failed: ${res.status} ${body}
+`
+        + `  ${_TEST_ENV} is a master stand (PASSWORDS=master): ${ADMIN} signs in with MASTER_PASSWORD from .env.playwright.master,
+`
+        + `  like every test account. Set ${ADMIN}'s password on ${new URL(BACK_URL).host} to the master password, or take
+`
+        + `  PASSWORDS=master out of the stand's env file. Stop re-running until then: each attempt is a failed admin login.`,
+      );
+    }
     if (/invalid_grant/i.test(body) && !PROMOTED_PER_ENV.has('ADMIN_PASSWORD')) {
       throw new Error(
         `auth failed: ${res.status} ${body}\n`

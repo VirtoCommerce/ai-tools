@@ -14,6 +14,12 @@
 > **Updated 2026-10-21 from the developers' trial of `/qa-test-fast`** and a measurement of four real runs (§2b):
 > a run was too expensive for what it found. U24–U34 make it lighter, cheaper and aimed at significant bugs;
 > U15 (rounds) and U18 (new cases) are revised; B1–B7, and B8–B12 from the review, are the author's calls, open to correction. §3, §4, §4.1, §5.1, §8, §9, §10 and §12 follow.
+>
+> **Updated 2026-10-21 (second pass) from the developers' chat** and a fifth, much larger run (VCST-6314, §2b):
+> checks are layered from cheap to expensive, starting with a review of the diff (layer 0), every run has a
+> budget, and developers get their own command. U35–U55 are the owner's (U43–U46 place the strategy, the maps and
+> the data model in the layers; U47–U49 keep the run aimed at significant bugs); U31 is revised by U35. §3a describes the
+> developer command; §2b and §13 follow.
 
 ## 1. Problem and goal
 
@@ -51,9 +57,9 @@ removed once the new command has passed validation (§10 P4).
 | U8 | Orchestrator shape | **Registry + planner**: `artifacts.json` declares the artifacts, `plan-run.mjs` computes the waves, the command executes the plan |
 | U9 | Removal timing and validation stages | Build → **stage 1**: validate on 3–5 native-platform tickets → remove FAST/FULL/`/qa-test-fast` → **stage 2**: validate on the real client project → release to clients |
 | U10 | Committed tests | An exception like `plugins/vc-secrets/`: the knowledge-store write router and the write-zone check get **committed** tests; everything else follows the repository rule (temporary tests, deleted before commit) |
-| U11 | Where the run asks a human | **Two points only.** *Before execution*: approve the strategy (and, on the same build, re-run or reuse). *After the verdict*: `qa-bug` runs for each confirmed bug and asks its own "create a tracker ticket?" question (`qa-bug` is used as it is), then the run asks once whether to post the tracker comment. Nothing asks between the two points; `--yes` answers only the first |
+| U11 | Where the run asks a human | **Two points only.** *Before execution*: approve the strategy (and, on the same build, re-run or reuse). *After the verdict*: `qa-bug` runs for each confirmed bug — from its investigation's output, U50 — and asks its own "create a tracker ticket?" question (`qa-bug` is used as it is), then the run asks once whether to post the tracker comment. Nothing asks between the two points; `--yes` answers only the first |
 | U12 | How much of the bundle the strategy reads | **The whole bundle**, so nothing is missed; the token cost is accepted |
-| U13 | Who writes the checklist | **The orchestrator, inline** — it already holds the bundle and the strategy, and a subagent would need them retold |
+| U13 | Who writes the checklist | **Revised 2026-10-21 (O2): a new narrow agent**, not the orchestrator. The checklist stays, but thin: one row per AC and per strategy risk, naming its proof — a `.spec` or API check id, the exploratory charter, or a `ui-checks` item — so `trace.mjs` and the verdict can show AC → proof. The agent's brief is file paths only (strategy, `change-map.json`); it writes the checklist and then the `.spec` and API checks its rows name. The developer command has no checklist: the change map is its plan (U45). *(Was:)* **The orchestrator, inline** — it already holds the bundle and the strategy, and a subagent would need them retold |
 | U14 | `qa-triage-results` cannot be called by the Skill tool (`disable-model-invocation: true`) | **Remove the flag** in the plugin's canonical copy |
 | U15 | Round N ≥ 2 | **Revised 2026-10-21: a refresh, not a re-run** (§3). Nothing round 1 built is rebuilt — no `/ticket-context`, no new strategy, no test model or maps. The round fetches only what changed, re-runs every prior bug's reproduction (`FIXED` / `NOT FIXED`), checks what sits next to the fix and finishes what was left unresulted. Anything new in the ticket is **appended** to the strategy without asking, and human point 1 is skipped. *(Was: a delta strategy built anew each round.)* |
 | U16 | May the run create or change data on the stand? | **Yes, only on a non-production stand** the profile declares as such and the probe matches; otherwise the run is read-only and every item that needs a write is BLOCKED with that reason. Everything created is deleted by ledger id |
@@ -82,16 +88,45 @@ the measurement in §2b.
 | U28 | Evidence | **On failure only.** Screenshots are taken, and the recorded HAR is read, attached and cited, for a FAIL and for a Medium-or-worse finding. A PASS keeps the script's output or a text snapshot. The lanes keep recording HAR (B5); no video is recorded (removed from the lane configs 2026-09-21). A `ui-checks` or visual item the tracker comment cites as a UI claim keeps the screenshot that decided it (B12) |
 | U29 | What gets an investigation? | **Medium or worse only.** Triage deduplicates first. A Low gets no investigate agent |
 | U30 | The cost shape | **Short agents with a narrow start.** The brief is file paths plus only the skill its step needs. Tool calls are batched, and no agent outlives its one job. The verdict, summary, comment and page are written by a fresh small-context agent, not by the orchestrator. `verdict.md` reports tokens and active minutes per step, read from the session log by a plugin script (`lib/run-cost.mjs`) — the before/after number, with no separate tool to run |
-| U31 | One command or a light one for developers? | **One command, depth by risk.** A simple ticket is fast because its strategy selects little, not because someone picked a lighter mode. QA and developers run the same command and find the same bugs |
+| U31 | One command or a light one for developers? | **Revised 2026-10-21 by U35: a separate developer command on the same engine.** *(Was:)* **One command, depth by risk.** A simple ticket is fast because its strategy selects little, not because someone picked a lighter mode. QA and developers run the same command and find the same bugs |
 | U32 | How do `.spec` scripts and API checks get test-user passwords? | **A new `$VC_RUN` bridge tool in `vc-init`** runs `playwright test` and the node check scripts with the run's test-user passwords, as `bridge/playwright-mcp.mjs` does for the browser lanes. A role kept only in `vc-secrets` is therefore usable by a script. The same tool runs the seeding engine, which settles §6a's open choice. It is the first bridge tool that runs code no plugin ships, so it carries the constraints of B10 |
 | U33 | Which accounts does the access probe (U26) use? | **Accounts created on the fly.** The "other user" (and the other organization it belongs to) is created right before the probe as an `AGENT-TEST-` entity and deleted by ledger id at teardown. No second account per role is registered in advance. Creating them is a write, so it needs a writable stand (U16); on a stand that is not writable the cross-user probe is BLOCKED with that reason, and the anonymous probe still runs |
 | U34 | When has P3 passed on cost? | **At most 50% of the §2b baseline on a comparable ticket**, and every Medium the baseline found on VCST-6398 is found again. The baseline is the per-run total `run-cost.mjs` measures on the §2b sessions (B11) |
+
+**Layered checks, a budget per run, and a developer command (owner, 2026-10-21, second pass).** Grounded in the
+developers' chat: VCST-6314 ran past the five-hour limit twice, a developer rated `/qa-test-fast` 1 of 5 ("a plain
+review would find the same in minutes", "I fix what I find, I do not want it published", 5,000+ changed files in
+the working tree), and the goal of a run is to make sure there are no significant bugs, not to hunt for bugs.
+
+| # | Question | Decision |
+|---|---|---|
+| U35 | One command or a separate one for developers? | **A separate developer command** (`/vc-test:dev-check`, working name) on the same engine — the same layers, agents and scripts. Its posture differs (§3a): the input is the local diff of the branch (`git diff <base>...HEAD`), a ticket key is optional and only supplies the ACs; no tracker, kb, page or corpus write, and no human point; everything it writes lands outside the working repository |
+| U36 | How is a run layered? | **Cheapest first; each layer runs only for the risks the previous one left uncovered.** 0 — review of the diff (U37). 1 — scripted proof: an existing unit test, an API/GraphQL check, a `.spec` (U27). 2 — exploratory in a browser, only for hotspots in a significant zone (U39). 3 — investigation and bug report, Medium or worse only (U29). **Stop rule:** when every hotspot is covered by layers 0–1 and none is in a significant zone, layer 2 does not run and the run ends — **in the developer command only; the QA command keeps an exploratory floor (U47)** |
+| U37 | What is layer 0? | **A change map, not a code review.** One short agent reads only the diff and the ACs and writes `change-map.json`: (a) AC ↔ code — the lines that implement each AC; an AC with no code is a FAIL candidate decided without a browser, code with no AC is hidden behaviour to check; (b) hotspots — changed lines with a testable consequence, in the hotspot format of `/ticket-context` CHANGE, each with the cheapest proof that can decide it; (c) a significant-zone tag per hotspot (U39); (d) suspicions from the code — a wrong condition, a missing permission check, a null path — each with its line, a hypothesis that a layer-1 check confirms or refutes, never a bug by itself. In the QA command it runs after the context step and feeds the strategy; on a PR it reuses the CHANGE analysis instead of reading the diff again. It is not `review-pr-virto`, whose subject is NuGet surface compatibility |
+| U38 | How much may a run spend? | **A budget set before the run, as a share of the five-hour usage window:** the developer command **15–20%** (layer 0 ≤ 3%, layer 1 ≤ 7%, the rest for layers 2–3), the QA command **50%**. The strategy (QA) or the change map (developer) plans inside it. A QA plan over budget is shown at human point 1 with what it would drop; the developer command, which asks nothing, runs what fits and lists the risks it did not run. U34's relative criterion stays for P3 |
+| U39 | What is significant? | **Medium or worse** (U24, U25): access and permissions, money, data loss or leak, a wrong order state, a broken buyer path. Only a hotspot tagged with one of these zones is eligible for layer 2 |
+| U40 | Where do the developer command's new cases go? | **Into the run folder, not the corpus.** A passing `.spec` is kept in the run folder with a draft CSV row; QA moves it into the corpus (the `test-management-specialist`, U18), after the fidelity review (U55). The developer command never writes to the corpus or to the developer's working tree |
+| U41 | When does the developer see the suspicions from layer 0? | **At once, before layer 1 starts**, labelled *suspected*, with file and line — a developer acts on them while the checks run. The final list marks each one confirmed (with its check) or refuted |
+| U42 | One measure of cost | `run-cost.mjs` (U30) reports, per step and per run, **input-equivalent tokens and the share of the five-hour window**. The two numbers quoted in the chat (3.42B against 2.46M) were different measures — every turn's re-read against an agent's final context — and must not be compared again |
+| U43 | May a run build or update a domain map, a mind map or the data model? | **No — in a run they are only read.** Updating them is a separate job (`/qa-domain-map`, `/qa-test-mind-map`, `/qa-test-data-model`, after a merge or once a sprint). `mind-map` leaves wave 1 and the registry (§4.1, §5.1). A domain with no map is tested from the diff alone, and the verdict says the map was missing; the run does not build it (VCST-6314 spent 2.5% doing that) |
+| U44 | What does layer 0 take from the maps? | **The change map links every hotspot to a mind-map node and to a data profile.** The node gives the neighbours of the change — where the exploratory charter goes (U26) — and the significant zone (U39), taken from the node rather than guessed from code. The data profile from the data model names the state a layer-1 or layer-2 check needs, so the seeder prepares exactly that state (FIFTH RULE still decides seed versus create-in-case). With no map or model, the link is empty and the hotspot falls back to the diff |
+| U45 | Where does the strategy sit? | **In the QA command only, with the change map as an input** next to the bundle. Per risk it chooses the layer that proves it — a script (layer 1) or exploratory (layer 2) — inside the 50% budget (U38). The developer command has no strategy: the change map is its plan (§3a) |
+| U46 | When is a test model built? | **Only when the strategy selects it** — a large or Critical ticket. For other tickets the change map covers the fault model's role; a light strategy already skips it (§8) |
+| U47 | May the QA command skip exploratory? | **No.** Every Medium in the measured runs came from outside the diff (§2b), so a stop rule keyed on the diff would cut exactly the lane that found them, and the mind-map neighbours (U44) help only where a map exists. The QA command always runs a short exploratory charter on the significant zones (U39) of the touched domain, inside its 50% budget; the stop rule (U36) applies to the developer command only |
+| U48 | When has P3 passed on finding bugs? | **The run re-finds known significant bugs.** P3 re-runs tickets whose Medium-or-worse bugs were already found (VCST-6398 with VCST-6452, 6453, 6454). A run that misses one fails P3 even inside its budget — cost alone never passes P3 |
+| U49 | Do the expensive layers earn their cost? | **Measured against a plain review.** On the same P3 tickets a control run asks only "review the change and check the ACs", and `run-cost.mjs` measures it the same way (U42). If the layered run finds no more significant bugs than the control, layers 2–3 do not earn their cost and the design is revisited before P4 |
+| U50 | How is a bug report written? (O3) | **From the investigation's output, with no second investigation, and only for Medium or worse.** `qa-bug` takes the investigation file (reproduction, evidence, root-cause hypothesis) as its input and writes the report from it; it does not reproduce or investigate again. A Low gets no report (U25) — except a ticket-related Low, which keeps its reproduction and is offered to `qa-bug` the same way. Its own "create a tracker ticket?" question stays (U11). VCST-6314 spent 12.9% of the run on `qa-bug` after 27.5% on investigations |
+| U51 | How long may the developer command take? | **At most 1–1.5 h of wall clock**, from start to the final list, on a typical ticket. `run-cost.mjs` reports wall clock and active minutes per layer next to tokens and window share (U42). P3 measures both commands on tickets of different sizes — a small fix, a component change, a large multi-PR ticket — and records the times in §2b; a developer run over 1.5 h on a typical ticket fails P3 like a run over budget. For reference: the developer's `/qa-test-fast` run in the chat took about an hour, VCST-6314 took 11 h 34 |
+| U52 | When does the developer hear about a problem? | **The moment it is found, not at the end.** Every blocker and every confirmed problem is reported to the developer as soon as it is known, in any layer: a failed AC check, a confirmed suspicion, a Medium-or-worse finding, and a run blocker (stand down, no access, missing account or data). Each report names the file and line where known, the reproduction, and the `.spec` or check that shows it, so the developer can fix it locally and re-run. Extends U41, which covered layer 0's suspicions only |
+| U53 | Who runs a kept `.spec` after its run? | **It is the base of the future regression.** A kept `.spec` caught its bug once; unrun, it stays silent at the next break. Running the kept `.spec` set regularly — on a module change, nightly or in CI — is an obligation of this design, specified in the suites-reorganization design ([spec](2026-10-21-suites-reorg-design.md), PR #500) (its M4 CI phase) together with the layout (B1), and it is the regression that replaces the one U7 takes out. Until that design lands, the kept `.spec` are still run by U54 and by a re-run (B15) |
+| U54 | Can a person run a kept `.spec` without a full run? | **Yes, in v1: `/vc-test:spec` (working name)** runs one kept `.spec`, a list of them or a folder — from the corpus or a run folder — locally, through U32's bridge tool with the current environment's test-user passwords, under the same constraints (B10). It prints pass/fail per `.spec` with the failure's output; no tracker or kb write, no browser agent, no LLM work beyond starting it. A developer re-checks a case, QA re-checks a moved one |
+| U55 | How does vc-test meet the suites-reorganization design (PR #500)? | **Two reconciliations (owner, 2026-10-21).** (1) **Who writes the `.spec`:** in a vc-test run, the narrow agent that writes the thin checklist (U13 revised) writes the `.spec` and the runner rows, and the `test-management-specialist` writes only the CSV rows (U18). The specialist keeps writing specs in this repository's regression work outside a run (D11). Both load the same `/qa-test-automation` skill, so a spec is written by one set of rules. (2) **How a `.spec` comes about:** written directly from source and the generated selectors and run headless at once (U27, B4); recording Playwright code from an MCP browser pass (PR #500 §8) is the fallback when selectors cannot be found that way, not the default — the default path has no browser agent per checklist item. The design's fidelity review (D17) applies: a kept `.spec` replaces the agent in a regression only after it. For the developer command it happens when QA moves the `.spec` into the corpus (U40) |
 
 **Calls made while writing U24–U31 (the author's, not the owner's — correct any that is wrong).**
 
 | # | Gap | Call |
 |---|---|---|
-| B1 | The `.spec` layout comes from the suites-reorganization design, which is not written yet | P1 does not need it. `ac-checks` and `case-authoring` in P2 start only after that design is approved. A kept `.spec` lives in the project's corpus path from the profile. It runs with the project's own `@playwright/test` when the project has one, else with the plugin's |
+| B1 | The `.spec` layout and the CSV ↔ `.spec` link | **Settled by the suites-reorganization design ([spec](2026-10-21-suites-reorg-design.md), PR #500):** a folder named after the CSV stem beside it, one `<CASE-ID>.spec.ts` per case (D5); the link is the case ID, nothing written into the CSV (D6); a passed API check is a runner-grammar CSV row, not a spec (D12); test data only through `regression/lib/data.ts`, passwords only through its auth fixtures. A kept `.spec` runs with the project's own `@playwright/test` when the project has one, else with the plugin's. The harness lives in this repository first and is copied into the plugin in its M3 (D14), with the fixtures moved onto U32's bridge tool instead of `.env.local` |
 | B2 | Which prior bugs a round N ≥ 2 re-runs | Only the ticket's own bugs. Out-of-scope and pre-existing bugs have their own tickets: the verdict lists their current status, but they are not re-run and never fail the round — the same rule as today's close-out |
 | B3 | Round 1's `bundle.json` is swept after 24 h, and round N needs it | At round 1's close the bundle is copied into the ticket's report folder. Round N's new material is read by the same read-only, scrubbed analysts, scoped to the delta: CHANGE for new commits and PRs, TICKET for new comments. The orchestrator never reads a raw diff inline (§8) |
 | B4 | Writing a `.spec` without a browser | The author first uses source and the generated selector surface. Only when those are not enough does it borrow a browser lane, which then counts toward the ≤3 limit. A headless `.spec` run is not an MCP lane and does not count; `ac-checks` runs them one at a time |
@@ -109,6 +144,9 @@ gap the review of this spec found between a decision above and the code on `main
 | B10 | U32's tool runs agent-written `.spec` files, the project's Playwright config and node scripts while holding passwords — what `bridge/allowlist.mjs` exists to refuse ("runs code the caller chooses") | The tool gets its own group, holding only the current environment's **test-user passwords**, never a tracker or host token (`toolInGroup` keeps the other groups out), and only for an environment the profile's `test` block lists. Its argv is fixed: `playwright test` with the plugin's pinned config, or `node <script>`, on files under the run's folder or the project's corpus path only — no `-e`, `--require`, `--import`, `NODE_OPTIONS` or other config. Its stdout and stderr go through `redact.mjs` with the password values. Residual risk, accepted: a script can read its own environment. The secret is a non-production test-user password an MCP lane can already type, never a token. Committed bridge tests cover every refusal |
 | B11 | U34's 50% needs a per-run total, and §2b gives only per-agent ranges and shares | In P2, `run-cost.mjs` is run on the four §2b sessions' transcripts and their per-run totals (tokens, active minutes) are written into §2b. U34 compares against the comparable run: VCST-6398 for a large ticket, VCST-5903 R1 for a component ticket. Until those totals are written, U34 cannot be checked |
 | B12 | U28 against `.claude/rules/reports.md` §5.0: a tracker comment that makes a UI claim carries its screenshots inline | No conflict once the claim is named for what decided it. An `ac-checks` PASS is an API or script claim, and the comment states it so ("the `.spec` asserted …"), with no screenshot. A `ui-checks` or visual item is decided by a look, keeps the screenshot that decided it, and the comment embeds it per §5.0. `reports.md` does not change |
+| B13 | How U51's 1.5 h splits across the developer command's layers | Layer 0 ≤ 10 min, so the suspicions (U41) reach the developer early; layer 1 ≤ 30 min; layers 2–3 the rest. The measured 14–31 min before the first browser check (§2b) must shrink to layer 0's 10 min. P3's measurements correct the split |
+| B14 | Does the developer command go on after a blocker? | **It stops the layers that depend on it.** A run blocker stops the run; a failed AC or a High/Critical finding stops layers 2–3 for that area — the developer will fix and re-run anyway, so testing on top of a known break spends budget for nothing. Independent areas continue. `--keep-going` overrides the stop |
+| B15 | What does a re-run after a fix do? | **It is incremental, like a round N ≥ 2 (U15).** It reads the previous run's `change-map.json` and results from the run folder, maps only the diff since that run, re-runs first the checks that failed (by their `.spec`), then the checks whose code changed; a check that passed on unchanged code is not re-run. A re-run must cost a fraction of the first run |
 
 ### 2b. Measurement behind U24–U31 (2026-10-21)
 
@@ -127,6 +165,21 @@ needs, are not recorded here yet; `run-cost.mjs` measures them in P2 (B11).
 | Investigations are expensive and often end in a question | ~1.1M units each; 11 investigations confirmed 6 bugs in 6398; 2 of 4 ended as questions in 5903 R1 | U29 |
 | Writing happens at peak context | the verdict, bugs and page are written by the orchestrator at 300–400k context, 8–12% of a run | U30 |
 
+**A fifth run, VCST-6314 (20–21 Oct, a developer's `/qa-test-fast`), measured by its operator.** 3,418.6M input
+tokens (cache reads 91–99%), 3.1M output, 45 subagents, 21 h 12 of agent time, 11 h 34 wall clock — about 6 h of
+it two pauses on the spend limit. A smaller developer run on another ticket took about an hour and 36% of a
+five-hour window (18% of the week); its token figure was measured differently (U42).
+
+| Part of VCST-6314 | Share of input | Answered by |
+|---|---|---|
+| Live investigations (10 agents) | 27.5% | U29, U36 layer 3 |
+| Main session — orchestrator, plus the strategy, model, checklist and close-out it wrote (2.5M output) | 18.0% | U30; U13 revised: a narrow agent writes the checklist (O2) |
+| `qa-bug` reports and filing (10 agents, 4 h 27) | 12.9% | U50 |
+| Regression (orchestrator + 4 runners) | 10.6% | U7 |
+| Visual lane / lane A (storefront checklist) | 7.3% / 7.1% | U26, U27 |
+| Mind-map update inside the run | 2.5% | U6 (no map builders in a run) |
+| The run did not fit the five-hour window twice | — | U38 |
+
 ## 3. The shape
 
 ```
@@ -134,10 +187,11 @@ needs, are not recorded here yet; `run-cost.mjs` measures them in P2 (B11).
  0 PROBE     capabilities.mjs → capabilities.json            what this install can do
              route (type × status role → job) · rounds.mjs   a fourth round STOPs before any context
  1 CONTEXT   /ticket-context <KEY> → bundle.json             parallel analysts, cached 24 h
- 2 STRATEGY  /qa-test-strategy (whole bundle) → test-strategy.md   floors · gate · verifier if Critical
+             layer 0: change map from the CHANGE analysis + mind map + data model → change-map.json (U37, U44)
+ 2 STRATEGY  /qa-test-strategy (whole bundle + change map, U45) → test-strategy.md   floors · gate · verifier if Critical
              ── HUMAN POINT 1: approve the strategy (--yes) ──
  3 RUN       plan-run.mjs → run-plan.json → waves            only RUN rows, ≤3 browser lanes;
-             the checklist is written by the orchestrator inline (U13); ACs proved by API checks and
+             a narrow agent writes the thin checklist, then its .spec/API checks (U13 revised); ACs proved by API checks and
              .spec scripts (U27); exploratory is the main browser lane (U26); evidence on failure only (U28)
  4 CLOSE     trace.mjs reconcile → /qa-triage-results → qa-investigate (Medium+ only, U29) → verdict (decided here, final)
              Low / cosmetic findings → one line under "Noticed" (U25)
@@ -178,6 +232,28 @@ its results are the round's base. Steps 1 and 2 are not repeated, and human poin
  4–5         as round 1; verdict.md lists every prior bug with its result, and NOT FIXED is a FAIL of the round
 ```
 
+## 3a. The developer command (U35)
+
+```
+/vc-test:dev-check [<KEY>] [--base <branch>]                         (working name)
+ 0 CHANGE MAP  git diff <base>...HEAD (+ the ticket's ACs if <KEY>) → change-map.json      ≤ 3% of the window
+               a re-run after a fix maps only the diff since the last run and re-runs failed checks first (B15)
+               every blocker and confirmed problem is reported the moment it is found (U52); a blocker
+               stops the layers that depend on it (B14)
+               hotspots linked to mind-map nodes and data profiles, read only (U43, U44); it is the plan (U45)
+               → suspicions shown at once, labelled "suspected" (U41)
+ 1 PROVE       each hotspot by its cheapest proof: existing unit test · API/GraphQL check · .spec   ≤ 7%
+               → stop here when nothing uncovered is in a significant zone (U36)
+ 2 EXPLORE     exploratory charter on the significant-zone hotspots only (U39)
+ 3 CONFIRM     qa-investigate, Medium or worse only
+               → result: confirmed / refuted suspicions, findings by severity, kept .spec + draft rows,
+                 tokens and window share per layer (U42)
+```
+
+No tracker, kb, page or corpus write and no human point; everything lands in the run folder outside the
+working repository (`QA_OUTPUT_DIR`). A run that would exceed 20% of the window runs what fits and lists the
+rest (U38).
+
 ## 4. Components
 
 | Unit | Does | Depends on |
@@ -186,8 +262,9 @@ its results are the round's base. Steps 1 and 2 are not repeated, and human poin
 | `skills/ticket-context/` | **moved** from `.claude/skills/`; connectors extracted (§7) | connectors, `knowledge-store.mjs` (read) |
 | `skills/qa-test-strategy/` | **moved**; floors read `capabilities.json` (§5.2); Artifacts rows come from the registry | `artifacts.json`, `capabilities.json` |
 | `skills/qa-test-model/`, `qa-exploratory/`, `qa-triage-results/` (ticket mode), `qa-design/` | **moved** canonical copies; `qa-triage-results` loses `disable-model-invocation` (U14) | `vc-fix` agents and skills |
-| `vc-fix`: `qa-checklist`, `qa-investigate`, `qa-bug`, `qa-risk`, `qa-evidence`, agents `qa-*-expert` | **reused**; `qa-bug` unchanged. One `vc-fix` version bump for two changes: `qa-checklist` Mode 5 names the risk id in Ref and gains `--from-strategy`; the tracker CLIs the bridge runs (`qa-fix-routing/jira.mjs`, `ado.mjs`) gain the connectors' read commands (§7) | — |
+| `vc-fix`: `qa-checklist`, `qa-investigate`, `qa-bug`, `qa-risk`, `qa-evidence`, agents `qa-*-expert` | **reused**. One `vc-fix` version bump for three changes: `qa-bug` takes an investigation file as its input and does not investigate again (U50); `qa-checklist` Mode 5 names the risk id in Ref and gains `--from-strategy`; the tracker CLIs the bridge runs (`qa-fix-routing/jira.mjs`, `ado.mjs`) gain the connectors' read commands (§7) | — |
 | `vc-init`: `/project-init` (`--add-user`, `--add-env`), `project-profile.json`, `profile-set.mjs`, the `$VC_RUN` bridge, the Playwright lanes `node "$VC_RUN" playwright <lane>` | **reused** (U19–U21). `vc-test` carries a read-only profile loader copy that STOPs on a missing profile or an unknown `schemaVersion`. One `vc-init` version bump for three changes: `test` added to `profile-set.mjs` `MERGEABLE` and to the reconcile schema; a bridge tool that runs `playwright test` and node check scripts with the test-user passwords (U32, constrained by B10); the pinned GraphQL read in the allowlist (B8) — each with committed bridge tests | — |
+| `commands/vc-test-spec.md` → `/vc-test:spec` | runs kept `.spec` files locally through the U32 bridge tool; pass/fail per file (U54) | `vc-init` bridge |
 | `commands/vc-test-init.md` → `/vc-test:init` | writes the `test` block through `profile-set.mjs`; checks accounts per role (U21) | `vc-init` |
 | `skills/qa-test-data-model/`, `qa-generate-data/`, `qa-seed-data/` + command, agent `test-data-engineer`, `lib/seed/` engine | **moved and refactored** (§6a, U17); domain seeders stay project content | profile, `capabilities.json`, the project store |
 | `skills/qa-test-cases-generator/`, agent `test-management-specialist`, the suite lint and promote scripts | **moved** (U18 revised): the specialist writes the CSV row of each kept `.spec` in the agent-native case format, and `Draft → Automated` promotion follows from the `.spec` having passed. There is no new-case wave, so `test-runner-agent` is not moved. Not the regression orchestration — that stays out (U7) | the project's corpus path from the profile |
@@ -212,7 +289,7 @@ Every hand-off is a file, never a summary in a brief.
 capabilities.json ─┐
 bundle.json ───────┼─► test-strategy.md (approved) ─► plan-run.mjs ─► run-plan.json
 artifacts.json ────┘                                                   │
-                          wave 1  test-data ‖ test-model ‖ mind-map* ‖ contract-refresh*
+                          wave 1  test-data ‖ test-model (if selected, U46) ‖ contract-refresh*
                           wave 2  exploratory           (when the strategy says FIRST)
                           wave 3  checklist ── trace.mjs check
                           wave 4  ac-checks (API + .spec, no browser agent) ‖ exploratory (ALONGSIDE) ‖ visual ‖ ui-checks
@@ -243,7 +320,7 @@ list.
   "order": "strategy" }
 ```
 
-v1 entries: `test-data`, `test-model`, `mind-map`\*, `contract-refresh`\*, `checklist`, `exploratory`,
+v1 entries: `test-data`, `test-model`, `contract-refresh`\*, `checklist`, `exploratory`,
 `ac-checks` (API/GraphQL checks and Playwright `.spec` scripts, no browser agent, U27), `ui-checks` (a browser agent
 for the items a script cannot decide), `visual`, `verifier`, `case-authoring` (CSV rows for the kept `.spec`, U18).
 `checklist-runners` and `new-case-run` are gone (2026-10-21). Adding an artifact = an entry + its skill; the command does
@@ -472,7 +549,7 @@ Every step ends in one of four states: **OK**, **SKIP**(reason), **BLOCKED**(rea
 | **P1 Foundation** | plugin manifest, `vc-init` + `vc-fix` dependencies, marketplace entry; the `vc-init` change (`test` in `MERGEABLE` + schema; the script-runner bridge tool, U32 + B10; the pinned GraphQL read, B8) and the `vc-fix` change (connector read commands in `jira.mjs`/`ado.mjs`), each with its version bump and tag; `/vc-test:init` (U21: stand declared writable or not, knowledge-store path, accounts per role checked); `ticket-context` and `qa-test-strategy` moved; tracker/host interfaces with Jira, GitHub, Azure Boards and Azure Repos, fetching through `$VC_RUN`, and the host-governed route through the host's MCP servers into the same raw schema (§7, U23); `capabilities.mjs`; F6 via `/api/platform/modules`; `knowledge-store.mjs` (+ committed tests); the "unavailable is not doubt" rule in the floors | `claude plugin validate`; committed store tests and `vc-init`'s committed bridge tests green, including every B8 and B10 refusal; temporary tests for the rest; `/ticket-context` + strategy from the plugin on VCST-5097, with tokens only in `vc-secrets`, reproduce today's bundle and gate result; Azure connectors against recorded responses; the host-governed route: raw files written from recorded host-server responses give the same bundle as the bridge route on the same ticket |
 | **P2 Flow** | `artifacts.json`, `plan-run.mjs`, `route.mjs`, `rounds.mjs`, `trace.mjs`, `write-zones.mjs` (+ committed tests); the command with its two human points; `ac-checks` (API checks + `.spec` scripts) and `ui-checks` (U27); the kept `.spec` with its CSV row (U18 revised; layout from the suites-reorganization design); the severity filter and Medium-only investigation (U25, U29); exploratory as the main lane with its significant-bug charter and access probe (U26); evidence on failure (U28); the round-N refresh (U15); `run-cost.mjs` and the fresh writing agent (U30), with the §2b per-run totals measured by it (B11); execution skills moved (`qa-triage-results` invocable); `qa-checklist` risk ids (`vc-fix` bump); the join speed-up (O6); per-entry models | `--dry-run` on 3 tickets: wave plan, gates, no outward write |
 | **P2b Test data** | the test-data family moved and refactored (§6a): lighter skills, the engine with generic platform operations, this repository's seeders ported as project content | `td:validate` + `td:reconcile` green on the platform project before and after; one domain seeded and torn down from the plugin on a non-production stand; BUDGET-004 for every moved `SKILL.md` |
-| **P3 Validation, stage 1 — native platform** | live runs on 3–5 VC tickets in this repository (Story, Review task, Technical task, UI-only, Bug not-fixed) on Jira + GitHub, with the plugin installed the way a client installs it | redesign §8 measures (R3 not slower on a small ticket, R4 nothing FULL ran is lost on a large one, no floor overridden by hand); the platform store receives the kb writes; against the §2b baseline (U34): at most 50% of the comparable run's per-run total (B11), and VCST-6398 re-run finds every Medium the baseline found; a round 2 costs a fraction of round 1 |
+| **P3 Validation, stage 1 — native platform** | live runs on 3–5 VC tickets in this repository (Story, Review task, Technical task, UI-only, Bug not-fixed) on Jira + GitHub, with the plugin installed the way a client installs it | redesign §8 measures (R3 not slower on a small ticket, R4 nothing FULL ran is lost on a large one, no floor overridden by hand); the platform store receives the kb writes; against the §2b baseline (U34): at most 50% of the comparable run's per-run total (B11), and VCST-6398 re-run finds every Medium the baseline found (VCST-6452, 6453, 6454 — U48; a miss fails P3 whatever the cost); a control plain-review run on the same tickets, and the layered run finds more significant bugs than it (U49); wall clock per command on a small, a component and a large ticket, the developer command at most 1.5 h on a typical one (U51); a round 2 costs a fraction of round 1 |
 | **P4 Removal** — after stage 1 passes | `/qa-test` FAST/FULL, `/qa-test-fast`, `ticket-routing.md` §5–§5d, Artifact A, `3-cases`, `1e-plan` removed; `ci/run-full-cycle.ts`, `ci/run-suite-audit.ts` and the other consumers repointed or cleaned; the plugin tagged for internal use (`docs/release-process.md`) | `npm run context:check`, `npm test`, CI |
 | **P5 Validation, stage 2 — real client project** | at least one live run on the **real client Azure DevOps project**, with the plugin installed in the client's checkout | Azure Boards + Azure Repos read end to end — through the host's servers if the project is host-governed (U23); SKIPs for missing adapters; every write inside the client's `outputRoot()` and project store; zero platform writes. Its reports stay in the client's project; only anonymous measures are recorded here. A pass releases the plugin to clients (marketplace description + tag) |
 
@@ -482,7 +559,8 @@ Every step ends in one of four states: **OK**, **SKIP**(reason), **BLOCKED**(rea
   `regression:select`'s blanket selection (V7: 33–91 suites per ticket, because every path token that matches
   manifest vocabulary widens the selection), and repairing stale cases through `/qa-test-lifecycle`. Writing and
   running the ticket's **new** cases is in (U18); the stale case list goes to the project store's test
-  documentation.
+  documentation. The regular run of the **kept `.spec`** set is not out of scope in principle: it is the next
+  regression and is specified in the suites-reorganization design ([spec](2026-10-21-suites-reorg-design.md), PR #500) (U53); a single `.spec` runs today through U54.
 - **Client domain-map and mind-map builders** writing into the project store (U6).
 
 ## 12. Risks
@@ -506,8 +584,10 @@ Every step ends in one of four states: **OK**, **SKIP**(reason), **BLOCKED**(rea
 
 ## 13. Open questions
 
-None open.
+None open; O1–O3 are settled.
 
 | # | Question | Resolution |
 |---|---|---|
 | O1 | On a host-governed project the bridge refuses tokens, and a script cannot call the host's MCP servers. Is the context step in v1 there? | **Yes** (owner, 2026-10-21) — the orchestrator reads through the host's servers and writes the same raw files: U23, §7 |
+| O2 | U13 has the orchestrator write the checklist inline, but VCST-6314's main session was 18% of the run at 2.5M output, against U30's short-context rule. Does the checklist move to a fresh agent? | **Yes** (owner, 2026-10-21) — a new narrow agent writes a thin checklist (AC/risk → proof) and the `.spec`/API checks it names: U13 revised |
+| O3 | `qa-bug` (U11: used as it is) was 12.9% of VCST-6314. Is the report written from the investigation's output, without a second investigation, and only for Medium or worse? | **Yes** (owner, 2026-10-21): U50 |

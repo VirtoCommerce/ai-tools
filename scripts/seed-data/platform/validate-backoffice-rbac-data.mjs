@@ -3,9 +3,10 @@
  * scripts/seed-data/platform/validate-backoffice-rbac-data.mjs
  *
  * STATIC drift-guard for the back-office RBAC fixtures (no network). Wired as `td:validate:rbac`.
- * Covers both fixtures the seeder owns:
+ * Covers the fixtures the seeder owns:
  *   - RESTRICTED_CMS_ADMIN   (CMS-123/124): read-only Page Builder, NO builder:update.
  *   - CATALOG_LINK_RESTRICTED (VCST-5318):  products-only Map/Link, NO catalog:categories:link.
+ *   - SHELL_SEARCH_NOREAD / SHELL_SEARCH_READ (VCST-6260): pair differing by exactly setting:read + security:read.
  *
  * Asserts:
  *   1. each restricted role's permission set is correct (holds its base/link perms, EXCLUDES its
@@ -34,6 +35,9 @@ import {
   BROWSEFILTERS_NONE_ROLE, BROWSEFILTERS_NONE_ACCOUNT, BROWSEFILTERS_NONE_EXCLUDED_PERMISSION, assertBrowseFiltersNoneRolePermissions,
   BROWSEFILTERS_READ_PERMISSION,
   RETURN_AGENT_ROLE, RETURN_AGENT_ACCOUNT, RETURN_AGENT_EXCLUDED_PERMISSION, assertReturnAgentRolePermissions,
+  SHELL_SEARCH_NOREAD_ROLE, SHELL_SEARCH_NOREAD_ACCOUNT, SHELL_SEARCH_NOREAD_EXCLUDED_PERMISSION, assertShellSearchNoReadRolePermissions,
+  SHELL_SEARCH_READ_ROLE, SHELL_SEARCH_READ_ACCOUNT, SHELL_SEARCH_READ_EXCLUDED_PERMISSION, assertShellSearchReadRolePermissions,
+  SHELL_SEARCH_READ_PERMISSIONS, SHELL_SEARCH_NEVER_PERMISSIONS,
   findGuidLeaks,
 } from './backoffice-rbac-specs.mjs';
 
@@ -75,6 +79,18 @@ function checkAlias(role, account, excludedPermission) {
     fail(`alias ${account.aliasName}.excluded_permission "${excludedPermission}" is INCOHERENT — the role actually grants it`);
   } else {
     ok(`alias ${account.aliasName}.excluded_permission "${excludedPermission}" is coherent (declared + genuinely absent from the role)`);
+  }
+
+  // An alias that declares its permission set (business key for the browser lane) must match the spec.
+  if (Array.isArray(alias.permissions)) {
+    const want = [...role.permissions].sort().join(','); const got = [...alias.permissions].sort().join(',');
+    if (want !== got) fail(`alias ${account.aliasName}.permissions [${got}] drifted from the spec role [${want}]`);
+    else ok(`alias ${account.aliasName}.permissions match the spec role`);
+  }
+  if (Array.isArray(alias.excluded_permissions)) {
+    const granted = alias.excluded_permissions.filter((p) => role.permissions.includes(p));
+    if (granted.length) fail(`alias ${account.aliasName}.excluded_permissions lists ${granted.join(', ')} but the role grants it`);
+    else ok(`alias ${account.aliasName}.excluded_permissions are all genuinely absent from the role`);
   }
 
   const aliasLeaks = findGuidLeaks(JSON.stringify(alias));
@@ -122,6 +138,24 @@ catch (e) { fail(e.message); }
 try { assertReturnAgentRolePermissions(); ok(`role "${RETURN_AGENT_ROLE.role_name}" is a return agent (VCST-5883) — holds ${RETURN_AGENT_ROLE.permissions.join(', ')}, excludes ${RETURN_AGENT_EXCLUDED_PERMISSION}`); }
 catch (e) { fail(e.message); }
 
+try { assertShellSearchNoReadRolePermissions(); ok(`role "${SHELL_SEARCH_NOREAD_ROLE.role_name}" holds ${SHELL_SEARCH_NOREAD_ROLE.permissions.join(', ')}, excludes ${SHELL_SEARCH_READ_PERMISSIONS.join(' + ')} (VCST-6260 shell search: provider data calls 403)`); }
+catch (e) { fail(e.message); }
+
+try { assertShellSearchReadRolePermissions(); ok(`role "${SHELL_SEARCH_READ_ROLE.role_name}" holds ${SHELL_SEARCH_READ_ROLE.permissions.join(', ')} (VCST-6260 control: provider data calls 200)`); }
+catch (e) { fail(e.message); }
+
+// The VCST-6260 pair must differ by EXACTLY the two read permissions, and neither may hold order/pricing
+// access or a settings/security write — otherwise a provider difference could come from something else.
+{
+  const a = new Set(SHELL_SEARCH_READ_ROLE.permissions); const b = new Set(SHELL_SEARCH_NOREAD_ROLE.permissions);
+  const diff = [...a].filter((x) => !b.has(x)).concat([...b].filter((x) => !a.has(x))).sort();
+  const want = [...SHELL_SEARCH_READ_PERMISSIONS].sort();
+  if (diff.length === want.length && diff.every((x, i) => x === want[i])) ok(`Shell-search roles differ by exactly ${want.join(' + ')}`);
+  else fail(`Shell-search roles must differ by exactly ${want.join(' + ')}, they differ by [${diff.join(', ')}]`);
+  const leak = SHELL_SEARCH_NEVER_PERMISSIONS.filter((p) => a.has(p) || b.has(p));
+  if (leak.length) fail(`Shell-search roles must not hold ${leak.join(', ')}`); else ok('Shell-search roles hold no order/pricing access and no settings/security write');
+}
+
 // 2. no GUID in the spec module (single scan covers both fixtures)
 const specSrc = readFileSync(join(ROOT, 'scripts/seed-data/platform/backoffice-rbac-specs.mjs'), 'utf8');
 const specLeaks = findGuidLeaks(specSrc);
@@ -139,6 +173,8 @@ checkAlias(CATALOG_READONLY_ROLE, CATALOG_READONLY_ACCOUNT, CATALOG_READONLY_EXC
 checkAlias(BROWSEFILTERS_READONLY_ROLE, BROWSEFILTERS_READONLY_ACCOUNT, BROWSEFILTERS_READONLY_EXCLUDED_PERMISSION);
 checkAlias(BROWSEFILTERS_NONE_ROLE, BROWSEFILTERS_NONE_ACCOUNT, BROWSEFILTERS_NONE_EXCLUDED_PERMISSION);
 checkAlias(RETURN_AGENT_ROLE, RETURN_AGENT_ACCOUNT, RETURN_AGENT_EXCLUDED_PERMISSION);
+checkAlias(SHELL_SEARCH_NOREAD_ROLE, SHELL_SEARCH_NOREAD_ACCOUNT, SHELL_SEARCH_NOREAD_EXCLUDED_PERMISSION);
+checkAlias(SHELL_SEARCH_READ_ROLE, SHELL_SEARCH_READ_ACCOUNT, SHELL_SEARCH_READ_EXCLUDED_PERMISSION);
 
 console.log(`\n${problems.length ? `FAILED — ${problems.length} problem(s)` : 'OK'}`);
 process.exit(problems.length ? 1 : 0);

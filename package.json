@@ -5,6 +5,9 @@
   "main": "config.js",
   "scripts": {
     "env:check": "node get_variables_env.js",
+    "specs:run": "playwright test --project=script",
+    "specs:runner": "playwright test --project=runner",
+    "specs:debug": "playwright test --project=script --debug=cli",
     "env:use": "node scripts/env/use-env.mjs",
     "run:use": "node scripts/env/run-folder.mjs use",
     "run:dir": "node scripts/env/run-folder.mjs dir",
@@ -384,6 +387,7 @@
     "td:validate:push-audience": "node scripts/seed-data/push-messages/validate-push-audience-data.mjs",
     "seed:punchout": "node scripts/seed-data/punchout/seed-punchout.mjs",
     "seed:punchout:verify": "node scripts/seed-data/punchout/seed-punchout.mjs --verify-only",
+    "seed:punchout:reset-carts": "node scripts/seed-data/punchout/seed-punchout.mjs --reset-buyer-carts",
     "seed:punchout:teardown": "node scripts/seed-data/punchout/seed-punchout.mjs --teardown",
     "td:validate:punchout": "node scripts/seed-data/punchout/validate-punchout-data.mjs",
     "kb:sync-base": "node scripts/kb/sync-base.mjs",
@@ -415,6 +419,7 @@
   },
   "devDependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.140",
+    "@playwright/cli": "0.1.22",
     "@playwright/test": "^1.64.1",
     "@types/node": "^22.20.5",
     "ajv": "^8.20.0",

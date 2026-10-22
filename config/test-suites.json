@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-10-21",
-    "totalSuites": 160,
+    "generated": "2026-10-22",
+    "totalSuites": 162,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -581,6 +581,27 @@
         "users",
         "roles",
         "settings",
+        "sprint"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "universal",
+      "clickDriven": true
+    },
+    {
+      "id": "020b",
+      "name": "Platform Admin Shell — Classic theme (menu, search, Settings v2 save, responsive)",
+      "file": "regression/suites/Backend/platform/020b-admin-shell-classic.csv",
+      "domain": "platform-config",
+      "layer": "backend",
+      "concern": "admin",
+      "priority": "P1",
+      "testCount": 20,
+      "estimatedMinutes": 40,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "platform",
+        "settings",
+        "admin-shell",
         "sprint"
       ],
       "envRiskGate": "staging",
@@ -3921,6 +3942,33 @@
         "browser": 12,
         "manual": 0
       }
+    },
+    {
+      "id": "109",
+      "name": "Punchout — Create requisition (PunchOutOrderMessage)",
+      "file": "regression/suites/Frontend/punchout/109-punchout-requisition.csv",
+      "domain": "auth-security",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 35,
+      "estimatedMinutes": 150,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "punchout",
+        "cxml",
+        "requisition",
+        "storefront",
+        "journey"
+      ],
+      "requiresModules": [
+        "VirtoCommerce.Punchout"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "notes": "VCST-5887 (Epic VCST-5154). Create requisition at checkout: the storefront builds a cXML PunchOutOrderMessage and posts it to the session's return URL. PNCR-001 is the [JOURNEY] case. Every cart-content case uses the dedicated buyer PUNCHOUT_MAPPING_REQUISITION (AGENT-TEST-PO-300) and resets its carts in Setup and Cleanup (npm run seed:punchout:reset-carts), so run the suite on one lane and never beside another suite that uses that buyer. PNCR-019 and PNCR-034 flip the store-wide Punchout.Enabled of the configuration-0 store, so they serialise via the suite exclusiveGroup store-setting:Punchout.Enabled. PNCR-018 waits out a 10-minute session; PNCR-018 and PNCR-021 need a configuration-1 store on its own storefront host and are BLOCKED (environment) on vcptcore_qa1, where New-super shares the B2B-store host. Bug A (the module read only the cart named default) is fixed in vc-module-punchout PR #2, so PNCR-002, PNCR-003 and PNCR-027 are regression guards for the cart resolution. A second return of a session is REFUSED with errorCode SessionReturned (the replay was removed in vc-module-punchout PR #2 head c49023f): PNCR-013 browser Back, PNCR-015 two tabs, PNCR-028 API, PNCR-029 cart changed after the return (neither the old nor a new document is sent), PNCR-030 parallel calls (one document, the loser gets SessionReturned or SessionExpired); with Punchout.Enabled off a returned session answers StoreNotConfigured and SessionReturned again after the restore (PNCR-034). The SessionReturned toast text (vc-frontend c83fdf2) is not asserted until the theme ships. Per-errorCode toast texts are the design (PNCR-033, PNCR-034). Env-scoped by requiresModules, so it is meant for vcptcore_qa1 only — select with `punchout`. Cases stay Draft until a run promotes them.",
+      "exclusiveGroup": "store-setting:Punchout.Enabled",
+      "clickDriven": true
     }
   ],
   "selections": {
@@ -4004,6 +4052,7 @@
     "platform": {
       "include": [
         "020",
+        "020b",
         "021",
         "063",
         "101"
@@ -4239,7 +4288,8 @@
     "punchout": {
       "include": [
         "108",
-        "107"
+        "107",
+        "109"
       ]
     }
   }

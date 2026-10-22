@@ -1,0 +1,2151 @@
+{
+  "$schema": "../../.claude/templates/test-data-model.schema.json",
+  "schema_version": "1.0",
+  "domain_slug": "auth",
+  "generated": "2026-10-21",
+  "metadata": {
+    "scope": "The data states the auth mind map behaviours require: run personas, the OTP sign-in fixtures, disposable lockout and block accounts, the VCST-6132 case-created buyer and its membership states, the impersonation personas, and the store and platform switches (OTP, MFA, sign-in log).",
+    "mind_map": ".claude/knowledge/domain/auth.mind-map.json",
+    "domain_map": ".claude/knowledge/domain/auth.md rev 2",
+    "built_from": "/qa-test-data-model build auth, 2026-10-21 — no live observation; seeders and aliases read at source, suite Preconditions read for the informal contract",
+    "known_limit": "MFA requirements are PR-stage (vc-module-mfa#1) and every MFA state is a SEEDER GAP: there is no dedicated MFA store or account, and the switches are shared by every suite that signs in."
+  },
+  "requirements": [
+    {
+      "id": "data.auth.store.otp-enabled",
+      "entity": "Store",
+      "purpose": "The store every OTP case signs in to, with code sign-in switched on.",
+      "required_state": {
+        "OtpSignIn.Enabled": true,
+        "store": "{{STORE_ID}}"
+      },
+      "lifecycle": "STATIC",
+      "acquisition": {
+        "strategy": "EXISTING"
+      },
+      "td_alias": "STORE_PRIMARY.id",
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "On, the default /sign-in view is the code form and POST /api/otp/request answers succeeded; data.auth.store.otp-disabled is the same store with the switch off, so the pair decides the OTP-off branches.",
+      "limits": "Environment configuration: no seeder sets it. B2B-store holds it on both stands today (vcst, vcptcore_qa1). A setting saved through settings v2 can reach the Stores API minutes late (KB-5B1912FA, suspected defect), so a case that just restored it polls the storefront before relying on it.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §1 variants",
+          "note": "OtpSignIn.Enabled true on B2B-store on vcst and vcptcore_qa1; every other store false or unset",
+          "date": "2026-10-21"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.auth.store.otp-disabled",
+      "entity": "Store",
+      "purpose": "The run store with code sign-in switched off for the duration of one case.",
+      "required_state": {
+        "OtpSignIn.Enabled": false,
+        "store": "{{STORE_ID}}"
+      },
+      "relationships": [
+        {
+          "requirement": "data.auth.store.otp-enabled",
+          "required": true,
+          "note": "the case flips the shared store and restores it"
+        }
+      ],
+      "lifecycle": "STEP",
+      "acquisition": {
+        "strategy": "TRANSITION",
+        "executor": "case",
+        "from_state": {
+          "OtpSignIn.Enabled": true
+        },
+        "transition": "Admin Stores > store > Settings > OTP Sign-In > General: switch \"Enable OTP sign-in\" off and Save; confirm with POST /api/otp/request answering otp_disabled before the next step"
+      },
+      "td_alias": "STORE_PRIMARY.id",
+      "cleanup": {
+        "required": true,
+        "via": "the case's Cleanup switches OtpSignIn.Enabled back on and polls /sign-in (or /api/otp/request) until the code form returns"
+      },
+      "discriminates": "Same store, same account, switch off: /sign-in shows only the password form and the API refuses with otp_disabled, against the code form and succeeded with the switch on. The pre-feature behaviour an existing store relies on.",
+      "limits": "Store-wide toggle on the shared run store: every OTP case in 104 and 105 and the VCST-6132 cases read it, so OTP-007 and OTP-022 run alone. It does not break [PRE:SIGNIN_AS], whose password form becomes the default view.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §2 API",
+          "note": "POST /api/otp/request on a store with OTP off answers otp_disabled",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "SPEC",
+          "ref": "regression/suites/Frontend/auth/104-auth-otp-sign-in.csv OTP-007",
+          "note": "Automated; flips and restores the setting"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.auth.store.auth-types",
+      "entity": "Store",
+      "purpose": "The run store's authentication types, which decide the external sign-in buttons.",
+      "required_state": {
+        "authentication_types": "Password plus at least one external provider, active",
+        "store": "{{STORE_ID}}"
+      },
+      "lifecycle": "STATIC",
+      "acquisition": {
+        "strategy": "EXISTING"
+      },
+      "td_alias": "STORE_PRIMARY.id",
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "The storefront buttons follow xAPI authenticationTypes minus Password and Virto: vcst lists Password, AzureAD, GoogleSSO and shows two buttons; vcptcore_qa1 adds virto and still shows two. A store whose list is Password only would make the button branch undecidable.",
+      "limits": "Environment configuration, different per stand (domain map D2). The OTP and MFA switches are NOT in this list (D7), so this data cannot decide them.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §2 Admin + Storefront",
+          "note": "store Authentication blade and xAPI authenticationTypes read on both stands",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "KB-6B10CB0E"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.auth.store.trusted-pair",
+      "entity": "Store",
+      "purpose": "A run store that trusts at least one other store, so a contact of the trusted store may sign in to it.",
+      "required_state": {
+        "store": "{{STORE_ID}}",
+        "trustedGroups": "contains at least one other existing store"
+      },
+      "lifecycle": "STATIC",
+      "acquisition": {
+        "strategy": "EXISTING"
+      },
+      "td_alias": "STORE_PRIMARY.id",
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "Gives the trusted-store contact a store that is not the run store yet is accepted, which is what separates the trust rule from the own-store rule.",
+      "limits": "Environment configuration: vcptcore_qa1 B2B-store <-> New-super, vcst B2B-store -> Electronics. The seeder resolves the trusted store live (TRUSTED_TOKEN) and skips the trusted account on a stand whose run store trusts none (planScope), which makes the trusted branch undecidable there.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §1 variants",
+          "note": "trustedGroups read on both stands",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/auth/otp-signin-specs.mjs",
+          "note": "TRUSTED_TOKEN resolved from STORE_ID live trustedGroups",
+          "date": "2026-10-21"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.auth.store.email-verification-required",
+      "entity": "Store",
+      "purpose": "A run store that requires a confirmed email before an account may sign in.",
+      "required_state": {
+        "Stores.EmailVerificationRequired": true,
+        "store": "{{STORE_ID}}"
+      },
+      "lifecycle": "STATIC",
+      "acquisition": {
+        "strategy": "EXISTING"
+      },
+      "td_alias": "STORE_PRIMARY.id",
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "With it on, an unconfirmed account is held back; with it off (vcst B2B-store) the same account signs in, so the unverified-email branch is decidable only where it is on.",
+      "limits": "Stand-dependent: true on vcptcore_qa1 B2B-store, false on vcst B2B-store (domain map G17). On vcst the cases need the setting switched on, which no case does today. What an unconfirmed account sees is itself open (G17).",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §1 variants",
+          "note": "vcst B2B-store false, vcptcore_qa1 B2B-store true",
+          "date": "2026-10-21"
+        }
+      ],
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "data.auth.store.mfa-off",
+      "entity": "Store",
+      "purpose": "The run store on a stand where no second factor is required.",
+      "required_state": {
+        "MultiFactorAuthentication.Enabled": false,
+        "MultiFactorAuthentication.StoreMode": "Use global setting",
+        "store": "{{STORE_ID}}"
+      },
+      "lifecycle": "STATIC",
+      "acquisition": {
+        "strategy": "EXISTING"
+      },
+      "td_alias": "STORE_PRIMARY.id",
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "The pre-feature state: a correct password returns tokens in one step. data.auth.store.mfa-required is the same store with the store mode on, which returns two_factor_required instead.",
+      "limits": "vcst: global setting false and StoreMode unset on all 7 stores (2026-10-21). vcptcore_qa1 has no MFA module, so the state holds trivially there. Another session ran MFA on vcst on 2026-10-21 (domain map G10): read the setting before relying on it.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §1 variants",
+          "note": "MultiFactorAuthentication.Enabled false, StoreMode null on every vcst store",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "KB-CC18E96D"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.auth.store.mfa-required",
+      "entity": "Store",
+      "purpose": "A store whose customers must pass an emailed second factor after their password.",
+      "required_state": {
+        "MultiFactorAuthentication.StoreMode": "Enabled",
+        "MultiFactorAuthentication.Enabled": "false (global) — the store mode alone requires it"
+      },
+      "relationships": [
+        {
+          "requirement": "data.auth.store.mfa-off",
+          "required": true,
+          "note": "reached from the off state and restored to it"
+        }
+      ],
+      "lifecycle": "STEP",
+      "acquisition": {
+        "strategy": "TRANSITION",
+        "executor": "case",
+        "from_state": {
+          "MultiFactorAuthentication.StoreMode": "Use global setting"
+        },
+        "transition": "Admin Stores > store > Settings > Security > Multi-factor authentication = Enabled, Save; read the setting back before the sign-in step"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "the case's Cleanup sets Multi-factor authentication back to Use global setting and reads it back"
+      },
+      "discriminates": "Same account, same password: the store mode on returns 400 two_factor_required with a twoFactorToken, off returns tokens. A store mode on while the global switch stays off separates the per-store rule from the platform-wide one.",
+      "limits": "SEEDER GAP and PR-stage (vc-module-mfa#1, deployed on vcst only). On {{STORE_ID}} the toggle would put every [PRE:SIGNIN_AS] suite (75 suite files) into BLOCKED for its duration, so it needs a store no other suite signs in to — none is seeded. Never the global switch for this (data.auth.platform.mfa-global-on).",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa#1 README (gh, 2026-10-21)",
+          "note": "MultiFactorAuthentication.StoreMode: Use global setting / Enabled / Disabled; the rules also read the user's own store",
+          "date": "2026-10-21"
+        }
+      ],
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "data.auth.platform.mfa-global-on",
+      "entity": "PlatformSetting",
+      "purpose": "The platform-wide second-factor switch on, which also covers the Backoffice and every store-less password sign-in.",
+      "required_state": {
+        "MultiFactorAuthentication.Enabled": true
+      },
+      "relationships": [
+        {
+          "requirement": "data.auth.store.mfa-off",
+          "required": true,
+          "note": "reached from the stand default and restored to it"
+        }
+      ],
+      "lifecycle": "STEP",
+      "acquisition": {
+        "strategy": "TRANSITION",
+        "executor": "case",
+        "from_state": {
+          "MultiFactorAuthentication.Enabled": false
+        },
+        "transition": "Admin Settings > Platform > Security > Multi-factor authentication on, Save, read back"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "the case's Cleanup switches it off and reads it back; until then no other suite may run on the stand"
+      },
+      "discriminates": "On, the Admin login asks for a code and a store-less password grant answers two_factor_required; off, both complete in one step. The only state that decides the Backoffice branch.",
+      "limits": "Platform-wide: while on, every Admin sign-in, every [PRE:SIGNIN_AS] suite and the 179 suite rows that take a password grant (86 of them naming ADMIN_EMAIL) stop at the code step. A whole-stand exclusive window, never a shared regression slot. PR-stage (vc-module-mfa#1).",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa#1 README (gh, 2026-10-21)",
+          "note": "global setting in Settings > Platform > Security; Backoffice code screen",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §2 Admin",
+          "note": "the toggle exists, off, on vcst",
+          "date": "2026-10-21"
+        }
+      ],
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "data.auth.platform.signin-log-off",
+      "entity": "PlatformSetting",
+      "purpose": "Sign-in attempt recording switched off for one case.",
+      "required_state": {
+        "VirtoCommerce.Platform.Security.SignInLogEnabled": false
+      },
+      "lifecycle": "STEP",
+      "acquisition": {
+        "strategy": "TRANSITION",
+        "executor": "case",
+        "from_state": {
+          "VirtoCommerce.Platform.Security.SignInLogEnabled": true
+        },
+        "transition": "Settings > Platform > Sign In Log > Record sign-in attempts off, Save, read back"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "the case's Cleanup restores Record sign-in attempts = On"
+      },
+      "discriminates": "Recording off: an ordinary sign-in leaves no row while a Login on behalf still does. With recording on both leave rows, so the pair decides the recording-off branch.",
+      "limits": "Platform-wide: every case that asserts a sign-in log row (101, 105 OTP-026, 082 sign-in log checks) must not run meanwhile.",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "regression/suites/Backend/platform/101-platform-sign-in-log.csv SIL-020",
+          "note": "Draft; setting name from the case"
+        }
+      ],
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "data.auth.input.unknown-email",
+      "entity": "EmailAddress",
+      "purpose": "An address no account on the stand uses.",
+      "required_state": {
+        "registered": false
+      },
+      "lifecycle": "STATIC",
+      "acquisition": {
+        "strategy": "EXISTING"
+      },
+      "td_alias": "OTP_INPUTS.unknownEmail",
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "A real account and this address must get the same answer on the password form, /forgot-password and (DetailedErrors off) the OTP form; on the OTP API with DetailedErrors on they differ (user_not_found). The comparison needs one address that is certainly unregistered.",
+      "limits": "A fixed address: if anyone registers it, every unknown-email branch passes vacuously. Cases confirm it is still unknown before asserting. Whether the OTP form discloses it depends on PasswordLogin:DetailedErrors, which is on on both stands today (domain map D11), so the detailed-errors-off branch is not decidable there.",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "test-data/auth/otp-inputs.json unknownEmail",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "KB-3466E783",
+          "note": "a nonexistent user gets login_failed on the wire and UserNotFound in the log"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.auth.input.malformed-codes",
+      "entity": "OtpInput",
+      "purpose": "Code strings the code field must reject or normalise.",
+      "required_state": {
+        "kinds": "letters mixed with digits, more than six digits, spaced paste"
+      },
+      "lifecycle": "STATIC",
+      "acquisition": {
+        "strategy": "EXISTING"
+      },
+      "td_alias": "OTP_INPUTS.malformedCodes",
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "Each value sits on one side of a boundary of the six-digit field (non-digit, seventh digit, separator), so the field filter and the sixth-digit auto-submit are decidable.",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "test-data/auth/otp-inputs.json malformedCodes",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "KB-08CC76A3",
+          "note": "digits only, auto-submit at 6, 7 digits cut to 6, spaced paste accepted"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.auth.input.malformed-bodies",
+      "entity": "OtpInput",
+      "purpose": "Request bodies with a missing parameter for the OTP endpoints.",
+      "required_state": {
+        "kinds": "one body per missing parameter (email, storeId, code)"
+      },
+      "lifecycle": "STATIC",
+      "acquisition": {
+        "strategy": "EXISTING"
+      },
+      "td_alias": "OTP_INPUTS.missingParamBodies",
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "One missing field per body, so a 400 missing_parameter is attributable to that field and a 500 is never mistaken for validation.",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "test-data/auth/otp-inputs.json missingParamBodies",
+          "date": "2026-10-21"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.auth.account.store-contact",
+      "entity": "User",
+      "purpose": "The run persona: a storefront Customer of the run store that signs in by password or by code.",
+      "required_state": {
+        "userType": "Customer",
+        "store": "{{STORE_ID}}",
+        "lockoutEnabled": true,
+        "emailConfirmed": true,
+        "password": "not expired",
+        "locked": false
+      },
+      "relationships": [
+        {
+          "requirement": "data.auth.store.otp-enabled",
+          "required": false,
+          "note": "only the code sign-in needs it"
+        }
+      ],
+      "lifecycle": "FIXTURE",
+      "shared_state": "Its failed-attempt counter, its lock, its current organization and its sessions are shared by every storefront suite that signs in as the run user. A case that types a wrong password or code (AUTH-018, OTP-018) moves the counter and must zero it with one good sign-in; locking it is never allowed. On vcst it is the same login as SUPPORT_AGENT, 082's operator.",
+      "acquisition": {
+        "strategy": "EXISTING"
+      },
+      "td_alias": "RUN_USER.email_env",
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "The account that does exist, next to data.auth.input.unknown-email that does not, and next to the trusted, foreign and no-store contacts that differ from it only in their store.",
+      "limits": "A different account per stand (vcst: b2b/users.csv USR-001; vcptcore_qa1: a personal account), so nothing about its organization is asserted. Its password is the env value, not a seeded one.",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": ".env.vcst / .env.vcptcore_qa1 USER_EMAIL",
+          "note": "the committed per-env binding",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "SPEC",
+          "ref": "regression/suites/Frontend/auth/104-auth-otp-sign-in.csv OTP-001",
+          "note": "Precondition: a contact of STORE_ID with lockout enabled and a non-expired password"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.auth.account.admin",
+      "entity": "User",
+      "purpose": "The platform administrator: reads the notification journal and the sign-in log, flips settings, locks and unlocks accounts, signs in to the Admin.",
+      "required_state": {
+        "userType": "Administrator",
+        "isAdministrator": true
+      },
+      "lifecycle": "STATIC",
+      "acquisition": {
+        "strategy": "EXISTING"
+      },
+      "td_alias": "ADMIN_USER.email_env_var",
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "The store-less account: it signs in to the Admin without a storeId while a storefront contact is refused there, and it is the target an operator should not reach (impersonation no-target-guard).",
+      "limits": "Never a lockout or block fixture. On vcst it is lockable and was temporarily locked repeatedly on 2026-10-21 by other callers (domain map G12, KB-262ADDFB): a case finding it locked is BLOCKED, not FAIL. On vcptcore_qa1 lockoutEnabled is false, which makes the OTP grant refuse it (lockout_disabled), so it cannot decide the OTP admin-exempt branch.",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "test-data/aliases.json ADMIN_USER",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "KB-262ADDFB",
+          "note": "vcst admin answered user_is_temporary_locked_out",
+          "date": "2026-10-21"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.auth.account.trusted-store-contact",
+      "entity": "User",
+      "purpose": "A Customer contact whose store is one the run store trusts.",
+      "required_state": {
+        "userType": "Customer",
+        "lockoutEnabled": true,
+        "emailConfirmed": true,
+        "store": "a store in {{STORE_ID}}.trustedGroups"
+      },
+      "lifecycle": "FIXTURE",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:otp-signin",
+      "td_alias": "OTP_TRUSTED_STORE_CONTACT.email",
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "Differs from the foreign-store contact only in the store: trusted, so a sign-in to the run store succeeds (200) where the foreign one is refused with user_cannot_login_in_store. Without the divergence the trust rule is invisible.",
+      "status": "CONFIRMED",
+      "relationships": [
+        {
+          "requirement": "data.auth.store.trusted-pair",
+          "required": true
+        }
+      ],
+      "shared_state": "Read-only for every case: nothing locks it. A wrong code would move its failed-attempt counter; seed:otp-signin:rearm zeros it.",
+      "limits": "Skipped by the seeder on a stand whose run store trusts no other store.",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/auth/otp-signin-specs.mjs",
+          "note": "OTP_TRUSTED_STORE_CONTACT, storeId resolved from trustedGroups",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §5 G6",
+          "note": "password grant 200 for a contact of the trusted store on vcptcore_qa1",
+          "date": "2026-10-21"
+        }
+      ]
+    },
+    {
+      "id": "data.auth.account.foreign-store-contact",
+      "entity": "User",
+      "purpose": "A Customer contact of a store id that exists on no stand.",
+      "required_state": {
+        "userType": "Customer",
+        "lockoutEnabled": true,
+        "emailConfirmed": true,
+        "store": "AGENT-TEST-OTP-FOREIGN-STORE (exists nowhere)"
+      },
+      "lifecycle": "FIXTURE",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:otp-signin",
+      "td_alias": "OTP_FOREIGN_STORE_CONTACT.email",
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "The negative twin of the trusted-store contact: same shape, a store that can never be the run store or trusted by it, so the refusal is the store rule and nothing else.",
+      "status": "CONFIRMED",
+      "shared_state": "Read-only: every sign-in by it is refused before a code is sent, so nothing accumulates.",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/auth/otp-signin-specs.mjs",
+          "note": "FOREIGN_STORE_ID = AGENT-TEST-OTP-FOREIGN-STORE; expectOutcome user_cannot_login_in_store",
+          "date": "2026-10-21"
+        }
+      ]
+    },
+    {
+      "id": "data.auth.account.no-store-contact",
+      "entity": "User",
+      "purpose": "A Customer contact with no store at all.",
+      "required_state": {
+        "userType": "Customer",
+        "lockoutEnabled": true,
+        "emailConfirmed": true,
+        "store": "none"
+      },
+      "lifecycle": "FIXTURE",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:otp-signin",
+      "td_alias": "OTP_NO_STORE_CONTACT.email",
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "Separates \"belongs to no store\" from \"belongs to another store\": the foreign contact has a store id that is not trusted, this one has none.",
+      "status": "CONFIRMED",
+      "shared_state": "Read-only: refused before a code is sent.",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/auth/otp-signin-specs.mjs",
+          "note": "OTP_NO_STORE_CONTACT storeId empty",
+          "date": "2026-10-21"
+        }
+      ]
+    },
+    {
+      "id": "data.auth.account.lockout-disposable",
+      "entity": "User",
+      "purpose": "A storefront Customer account that a storefront lockout case may lock with wrong passwords.",
+      "required_state": {
+        "userType": "Customer",
+        "store": "{{STORE_ID}}",
+        "lockoutEnabled": true,
+        "accessFailedCount": 0,
+        "locked": false,
+        "prefix": "AGENT-TEST-"
+      },
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE",
+        "executor": "case"
+      },
+      "td_alias": "LOCKOUT_TEST_USERS.sf_login",
+      "cleanup": {
+        "required": true,
+        "via": "the case's Cleanup: unlock by user id (POST /api/platform/security/users/{id}/unlock, KB-2C4FA5E9) and delete the AGENT-TEST- account; the AGENT-TEST prefix sweep is the backstop"
+      },
+      "discriminates": "An account nobody else signs in as, so its failed-attempt counter counts only this case's wrong passwords: five lock it, four do not.",
+      "limits": "No seeder: the case creates it when missing (AUTH-070 Cleanup [SETUP]). The alias records the vcst account created 2026-05-29; AUTH-071 uses its own AGENT-TEST address of the same shape. The lockout window is env configuration — never assume its length.",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "test-data/aliases.json LOCKOUT_TEST_USERS",
+          "note": "created on vcst-qa 2026-05-29 via users/create; AGENT-TEST throwaway",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "SPEC",
+          "ref": "regression/suites/Frontend/auth/031-auth-login-register.csv AUTH-070",
+          "note": "Draft"
+        }
+      ],
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "data.auth.account.lockout-otp-codes",
+      "entity": "User",
+      "purpose": "A disposable account that wrong codes alone lock.",
+      "required_state": {
+        "userType": "Customer",
+        "store": "{{STORE_ID}}",
+        "lockoutEnabled": true,
+        "emailConfirmed": true,
+        "accessFailedCount": 0,
+        "locked": false
+      },
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:otp-signin",
+      "td_alias": "OTP_LOCKOUT_USER_1.email",
+      "cleanup": {
+        "required": true,
+        "via": "npm run seed:otp-signin:rearm before the next run (unlock + failed-attempt count 0) — never between a lockout observation and its audit; npm run seed:otp-signin:teardown removes it"
+      },
+      "discriminates": "Only wrong codes are sent to it, so a lock at the threshold is attributable to codes; data.auth.account.lockout-shared-counter mixes codes and passwords on a second account to show the counter is shared.",
+      "limits": "One case per run (105 OTP-019): a second case on it would read the first one's failed attempts. The case leaves it locked for the platform lockout window (observed 5 failures, 120 s on vcptcore_qa1 — env configuration).",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/auth/otp-signin-specs.mjs",
+          "note": "OTP_LOCKOUT_USER_1: destructive, one account per case",
+          "date": "2026-10-21"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.auth.account.lockout-shared-counter",
+      "entity": "User",
+      "purpose": "A disposable account that a mix of wrong codes and wrong passwords locks.",
+      "required_state": {
+        "userType": "Customer",
+        "store": "{{STORE_ID}}",
+        "lockoutEnabled": true,
+        "emailConfirmed": true,
+        "accessFailedCount": 0,
+        "locked": false
+      },
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:otp-signin",
+      "td_alias": "OTP_LOCKOUT_USER_2.email",
+      "cleanup": {
+        "required": true,
+        "via": "npm run seed:otp-signin:rearm before the next run (unlock + failed-attempt count 0) — never between a lockout observation and its audit; npm run seed:otp-signin:teardown removes it"
+      },
+      "discriminates": "Wrong codes and wrong passwords alternate on it and neither alone reaches the threshold, so the lock proves one shared counter rather than two separate ones.",
+      "limits": "One case per run (105 OTP-020): a second case on it would read the first one's failed attempts. The case leaves it locked for the platform lockout window (observed 5 failures, 120 s on vcptcore_qa1 — env configuration).",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/auth/otp-signin-specs.mjs",
+          "note": "OTP_LOCKOUT_USER_2: destructive, one account per case",
+          "date": "2026-10-21"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.auth.account.temporarily-locked",
+      "entity": "User",
+      "purpose": "A disposable account inside its temporary lockout window.",
+      "required_state": {
+        "lockoutEnd": "in the future, set by failed attempts",
+        "locked_by": "the failed-attempt threshold"
+      },
+      "lifecycle": "DERIVED",
+      "source": {
+        "produced_by": "auth.lockout.temporary",
+        "field": "the account the case just locked"
+      },
+      "acquisition": {
+        "strategy": "DERIVE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "Locked by failed attempts, not by an administrator: the storefront tells it to retry later and the lock ends on its own, where data.auth.account.admin-locked is sent to /blocked and stays locked.",
+      "limits": "Lives only for the env's lockout window; an observation must be captured inside it.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "KB-8646A9CB",
+          "note": "five failures lock the account temporarily"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "KB-262ADDFB",
+          "note": "user_is_temporary_locked_out with lockoutSecondsRemaining null on the password grant",
+          "date": "2026-10-21"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.auth.account.block-target",
+      "entity": "User",
+      "purpose": "A disposable account an administrator blocks inside one case.",
+      "required_state": {
+        "userType": "Customer",
+        "store": "{{STORE_ID}}",
+        "lockoutEnabled": true,
+        "emailConfirmed": true,
+        "locked": false
+      },
+      "lifecycle": "FIXTURE",
+      "shared_state": "Its lock flag: OTP-028 sets it in Steps and clears it in Cleanup, so no other case may use the account and none may assert it is unlocked while OTP-028 runs.",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:otp-signin",
+      "td_alias": "OTP_BLOCKED_USER.email",
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "Its own account, so \"an administrator-blocked account receives no code\" never depends on the order the lockout cases run in or on another case's cleanup.",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/auth/otp-signin-specs.mjs",
+          "note": "OTP_BLOCKED_USER: destructive, administrator-blocked by OTP-028",
+          "date": "2026-10-21"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.auth.account.admin-locked",
+      "entity": "User",
+      "purpose": "An account an administrator locked.",
+      "required_state": {
+        "lockoutEnd": "9999-12-31",
+        "locked_by": "administrator (POST /api/platform/security/users/{id}/lock)"
+      },
+      "lifecycle": "DERIVED",
+      "source": {
+        "produced_by": "auth.lockout.admin-lock",
+        "field": "the locked user id"
+      },
+      "acquisition": {
+        "strategy": "DERIVE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "Permanent until unlocked, against the temporary failed-attempt lock: /blocked instead of retry-later, and no code is sent.",
+      "limits": "Lock and unlock take the user id, never the user name (KB-2C4FA5E9); unlock leaves lockoutEnd at the minimum date, not null.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "KB-2C4FA5E9",
+          "note": "lock by id sets lockoutEnd 9999-12-31",
+          "date": "2026-10-21"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.auth.account.unconfirmed-email",
+      "entity": "User",
+      "purpose": "A freshly registered account whose email was never confirmed.",
+      "required_state": {
+        "emailConfirmed": false,
+        "store": "{{STORE_ID}}"
+      },
+      "relationships": [
+        {
+          "requirement": "data.auth.store.email-verification-required",
+          "required": true
+        }
+      ],
+      "lifecycle": "STEP",
+      "acquisition": {
+        "strategy": "CREATE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "the case's Cleanup deletes the account; an AGENT-TEST- address keeps the prefix sweep as the backstop"
+      },
+      "discriminates": "Same store, an unconfirmed against a confirmed account: held back against signed in, decidable only on a store that requires verification.",
+      "limits": "AUTH-019 registers unverified+<timestamp>@example.com, outside the AGENT-TEST sweep. Only vcptcore_qa1 requires verification today.",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "regression/suites/Frontend/auth/031-auth-login-register.csv AUTH-019, AUTH-073"
+        }
+      ],
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "data.auth.account.lockout-disabled",
+      "entity": "User",
+      "purpose": "A storefront Customer account with lockout disabled, which the OTP grant refuses.",
+      "required_state": {
+        "userType": "Customer",
+        "lockoutEnabled": false,
+        "store": "{{STORE_ID}}"
+      },
+      "lifecycle": "FIXTURE",
+      "shared_state": "Read-only: every code request for it is refused (lockout_disabled), so nothing accumulates.",
+      "acquisition": {
+        "strategy": "CREATE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "a seed:otp-signin extension with teardown (AGENT-TEST-OTP prefix sweep)"
+      },
+      "discriminates": "The only difference from the run persona is lockoutEnabled false, so a refusal is the lockout rule and not the store rule.",
+      "limits": "SEEDER GAP: seed:otp-signin creates every account with lockoutEnabled true on purpose; no Customer account with it false exists. vcptcore_qa1 admin has it false but is a back-office account (out of scope for a public-inbox fixture).",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §1 Actors",
+          "note": "vcptcore_qa1 admin lockoutEnabled false; OTP refuses accounts without lockout (lockout_disabled)",
+          "date": "2026-10-21"
+        }
+      ],
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "data.auth.account.backoffice-lockout-enabled",
+      "entity": "User",
+      "purpose": "A back-office (non-Contact) account with lockout enabled, to test the OTP store-rule exemption.",
+      "required_state": {
+        "userType": "Administrator or Manager",
+        "hasContact": false,
+        "lockoutEnabled": true,
+        "inbox": "readable only by us"
+      },
+      "lifecycle": "FIXTURE",
+      "shared_state": "Its failed-attempt counter; a back-office account must never sit on a public inbox.",
+      "acquisition": {
+        "strategy": "CREATE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "a future seeder with teardown; until then the case deletes it"
+      },
+      "discriminates": "A non-Contact account that the OTP store rule exempts and the password store rule refuses — the only data that shows the two rules differ.",
+      "limits": "SEEDER GAP by design: the two back-office OTP accounts were retired because their inboxes were public (RETIRED_ACCOUNTS). Needs an inbox only the team can read.",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/auth/otp-signin-specs.mjs",
+          "note": "RETIRED_ACCOUNTS OTP_ADMIN_LOCKOUT_ON, OTP_MANAGER_NON_CONTACT",
+          "date": "2026-10-21"
+        }
+      ],
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "data.auth.account.mfa-eligible",
+      "entity": "User",
+      "purpose": "A storefront account the email second factor can serve, on a store that requires it.",
+      "required_state": {
+        "userType": "Customer",
+        "emailConfirmed": true,
+        "lockoutEnabled": true,
+        "store": "the MFA-required store"
+      },
+      "relationships": [
+        {
+          "requirement": "data.auth.store.mfa-required",
+          "required": true
+        }
+      ],
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "the case's Cleanup deletes the account (AGENT-TEST- prefix sweep backstop)"
+      },
+      "discriminates": "Confirmed email and lockout enabled are what the email provider needs; an unconfirmed twin is refused with mfa_provider_not_available, so the pair separates \"MFA applies\" from \"MFA cannot be served\".",
+      "limits": "SEEDER GAP: no seeder makes a dedicated MFA account or store. Its code is read from the notification journal (MfaSignInEmailNotification), not SMTP. PR-stage (vc-module-mfa#1).",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa#1 README (gh, 2026-10-21)",
+          "note": "the email provider needs a confirmed email",
+          "date": "2026-10-21"
+        }
+      ],
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "data.auth.account.no-permission-customer",
+      "entity": "User",
+      "purpose": "A storefront account holding no platform permission at all.",
+      "required_state": {
+        "userType": "Customer",
+        "organization": "none",
+        "permissions": "none"
+      },
+      "lifecycle": "FIXTURE",
+      "shared_state": "Read-only: it only signs in to the Admin and is turned away.",
+      "acquisition": {
+        "strategy": "EXISTING"
+      },
+      "td_alias": "PERSONAL_NON_ORG_USER.email",
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "No organization means no organization role and therefore no permission; an organization member carries org-role permissions and would be let into the Admin, so only a no-org account decides the default rule.",
+      "limits": "That it holds zero permissions is assumed from having no organization, not read. Seeded by seed:edge-cases.",
+      "evidence": [
+        {
+          "class": "HYPOTHESIS",
+          "ref": "test-data/aliases.json PERSONAL_NON_ORG_USER",
+          "note": "no org membership by design",
+          "date": "2026-10-21"
+        }
+      ],
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "data.auth.account.no-signin-log-permission",
+      "entity": "User",
+      "purpose": "A back-office account without the sign-in log read permission.",
+      "required_state": {
+        "userType": "Manager",
+        "permissions": "excludes platform:security:sign_in_log:read"
+      },
+      "lifecycle": "STEP",
+      "acquisition": {
+        "strategy": "CREATE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "the case's Cleanup deletes the throwaway account"
+      },
+      "discriminates": "Same Admin, the read permission missing: the log is refused where the administrator reads it.",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "regression/suites/Backend/platform/101-platform-sign-in-log.csv SIL-023",
+          "note": "created by the case"
+        }
+      ],
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "data.auth.buyer.multi-org-blockable",
+      "entity": "Contact",
+      "purpose": "A buyer created by the case with an active, Approved membership in two organizations it also creates.",
+      "required_state": {
+        "organizations": "Org A and Org B, both created by the case",
+        "memberships": "both Approved, unlocked",
+        "userName": "equals email",
+        "password": "{{DEFAULT_TEST_PASSWORD}}",
+        "store": "{{STORE_ID}}"
+      },
+      "relationships": [
+        {
+          "requirement": "data.auth.account.admin",
+          "required": true,
+          "note": "the case creates the buyer and its organizations through the admin API and reads codes from the notification journal"
+        }
+      ],
+      "lifecycle": "STEP",
+      "acquisition": {
+        "strategy": "CREATE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "the case's Cleanup restores every membership it touched, deletes the login, the contact and both organizations and reads them back; the AGENT-TEST-6132 prefix is the sweep backstop"
+      },
+      "discriminates": "Two organizations whose membership state the case moves independently: one blocked and the other usable is the fallback, both blocked is no-organization or refusal. Shared personas (MULTI_ORG_USER_*, MULTI_ORG_TF_BR*) would carry other suites' state into the answer.",
+      "limits": "Identity from random-data (uniqueEmail, uniqueOrgName) with the AGENT-TEST-6132 prefix. The order the contact lists its organizations in is not relied on.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-6132 run, reports/tickets/Sprint26-21/VCST-6132/summary.json",
+          "note": "every VCST-6132 case built and removed this buyer",
+          "date": "2026-10-20"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "KB-3CBA0D5F"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.auth.membership.one-unusable",
+      "entity": "OrganizationMembership",
+      "purpose": "Exactly one of the buyer's two memberships unusable, the other usable.",
+      "required_state": {
+        "unusable": "one of Org A / Org B: removed, locked, Invited, Rejected or Deleted",
+        "usable": "the other, Approved and unlocked"
+      },
+      "relationships": [
+        {
+          "requirement": "data.auth.buyer.multi-org-blockable",
+          "required": true
+        }
+      ],
+      "lifecycle": "STEP",
+      "acquisition": {
+        "strategy": "TRANSITION",
+        "executor": "case",
+        "from_state": {
+          "orgA": "Approved, unlocked",
+          "orgB": "Approved, unlocked"
+        },
+        "transition": "lock the membership (POST .../organization-memberships/{id}/lock), set its status, or remove the organization from the contact; read the membership back before the sign-in"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "the case's Cleanup restores every membership it touched, deletes the login, the contact and both organizations and reads them back; the AGENT-TEST-6132 prefix is the sweep backstop"
+      },
+      "discriminates": "One blocked and one usable organization: a credential sign-in naming the blocked one lands in the other with HTTP 200, while an explicit refresh_token switch or an impersonate grant naming it is refused. The same state gives opposite answers per grant, which is what the fallback is.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-6132 run, reports/tickets/Sprint26-21/VCST-6132/summary.json",
+          "date": "2026-10-20"
+        }
+      ],
+      "status": "CONFIRMED",
+      "constraints": {
+        "fallback_cases": "the unusable one is the last-used organization (stored choice and CurrentOrganizationId)",
+        "switch_cases": "the unusable one is the NON-active organization, blocked mid-session",
+        "variant": "one case per blocking cause; a lock is not a status"
+      },
+      "limits": "A membership write revokes refresh tokens minted before it (BL-AUTH-013): a switch case mints its token after the change."
+    },
+    {
+      "id": "data.auth.membership.none-accessible",
+      "entity": "OrganizationMembership",
+      "purpose": "No usable organization left, but not every membership at the same blocking status.",
+      "required_state": {
+        "variants": "both locked | Org A removed + Org B Rejected | Org A locked + Org B Rejected"
+      },
+      "relationships": [
+        {
+          "requirement": "data.auth.buyer.multi-org-blockable",
+          "required": true
+        }
+      ],
+      "lifecycle": "STEP",
+      "acquisition": {
+        "strategy": "TRANSITION",
+        "executor": "case",
+        "from_state": {
+          "orgA": "Approved, unlocked",
+          "orgB": "Approved, unlocked"
+        },
+        "transition": "lock, remove or set status on both memberships as the variant names; read both back"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "the case's Cleanup restores every membership it touched, deletes the login, the contact and both organizations and reads them back; the AGENT-TEST-6132 prefix is the sweep backstop"
+      },
+      "discriminates": "Nothing accessible and no single blocking status: the sign-in succeeds with no organization context (HTTP 200, no organization claim), against data.auth.membership.all-blocking-status, where the same \"nothing accessible\" is refused with one status code.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-6132 run, reports/tickets/Sprint26-21/VCST-6132/summary.json",
+          "date": "2026-10-20"
+        }
+      ],
+      "status": "CONFIRMED",
+      "limits": "Which mixed variants sign in without an organization is the VCST-6132 rule (BL-AUTH-016); the variants are kept as one requirement because they share the outcome."
+    },
+    {
+      "id": "data.auth.membership.all-blocking-status",
+      "entity": "OrganizationMembership",
+      "purpose": "Every membership at the same blocking status.",
+      "required_state": {
+        "both": "Invited | Rejected | Deleted (the same status on Org A and Org B)"
+      },
+      "relationships": [
+        {
+          "requirement": "data.auth.buyer.multi-org-blockable",
+          "required": true
+        }
+      ],
+      "lifecycle": "STEP",
+      "acquisition": {
+        "strategy": "TRANSITION",
+        "executor": "case",
+        "from_state": {
+          "orgA": "Approved, unlocked",
+          "orgB": "Approved, unlocked"
+        },
+        "transition": "set the same blocking status on both memberships; read both back"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "the case's Cleanup restores every membership it touched, deletes the login, the contact and both organizations and reads them back; the AGENT-TEST-6132 prefix is the sweep backstop"
+      },
+      "discriminates": "All at one blocking status: refused with exactly one membership-status code (user_invitation_pending_in_organization / user_is_rejected_in_organization / user_is_removed_from_organization), against none-accessible, which signs in without an organization.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-6132 run, reports/tickets/Sprint26-21/VCST-6132/summary.json",
+          "date": "2026-10-20"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.auth.membership.last-used-diverges",
+      "entity": "OrganizationMembership",
+      "purpose": "Both organizations usable, with the stored last-used organization different from the server's current one.",
+      "required_state": {
+        "orgA": "Approved, CurrentOrganizationId on the server",
+        "orgB": "Approved, the stored last-used choice in the browser"
+      },
+      "relationships": [
+        {
+          "requirement": "data.auth.buyer.multi-org-blockable",
+          "required": true
+        }
+      ],
+      "lifecycle": "STEP",
+      "acquisition": {
+        "strategy": "TRANSITION",
+        "executor": "case",
+        "from_state": {
+          "orgA": "Approved, unlocked",
+          "orgB": "Approved, unlocked"
+        },
+        "transition": "sign in, switch to Org B in the header so the browser stores it, then set the contact's CurrentOrganizationId back to Org A"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "the case's Cleanup restores every membership it touched, deletes the login, the contact and both organizations and reads them back; the AGENT-TEST-6132 prefix is the sweep backstop"
+      },
+      "discriminates": "The stored choice and the server value disagree, so a build that ignores the sent organization_id lands in A and one that honours it lands in B. With the two equal the case could not tell them apart.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-6132 run, reports/tickets/Sprint26-21/VCST-6132/summary.json",
+          "date": "2026-10-20"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.auth.buyer.globally-locked",
+      "entity": "User",
+      "purpose": "The buyer's platform account globally locked while one of its organizations is also locked.",
+      "required_state": {
+        "account": "locked by an administrator (lockoutEnd 9999-12-31)",
+        "orgA": "locked",
+        "orgB": "Approved, unlocked"
+      },
+      "relationships": [
+        {
+          "requirement": "data.auth.buyer.multi-org-blockable",
+          "required": true
+        }
+      ],
+      "lifecycle": "STEP",
+      "acquisition": {
+        "strategy": "TRANSITION",
+        "executor": "case",
+        "from_state": {
+          "orgA": "Approved, unlocked",
+          "orgB": "Approved, unlocked"
+        },
+        "transition": "lock Org A's membership, then lock the platform account by user id (KB-2C4FA5E9); read both back"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "the case's Cleanup restores every membership it touched, deletes the login, the contact and both organizations and reads them back; the AGENT-TEST-6132 prefix is the sweep backstop"
+      },
+      "discriminates": "An organization fallback is available (Org B) yet the account lock must win: refused with the account lockout, not re-pointed to Org B.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-6132 run, reports/tickets/Sprint26-21/VCST-6132/summary.json",
+          "date": "2026-10-20"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.auth.operator.login-on-behalf",
+      "entity": "User",
+      "purpose": "A company member whose role carries Login on behalf.",
+      "required_state": {
+        "role": "Organization maintainer",
+        "permission": "platform:security:loginOnBehalf",
+        "store": "B2B-store"
+      },
+      "lifecycle": "FIXTURE",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:b2b",
+      "td_alias": "SUPPORT_AGENT.email",
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "The same kind of company account as data.auth.operator.no-login-on-behalf, differing only in loginOnBehalf: the action appears and the grant succeeds for this one only.",
+      "status": "CONFIRMED",
+      "shared_state": "Its own session: starting an impersonation replaces it, and impersonating a locked target ends it (IMP-049). On vcst it is also the run persona {{USER_EMAIL}} (RUN_USER), so never lock it or leave wrong passwords on it.",
+      "limits": "users.csv records ORG-001, but on vcst its contact resolves to TechFlow (aliases.json changelog 1.4.5); the shared organization with the target is a live fact, not a CSV fact.",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "test-data/b2b/users.csv USR-001 + test-data/aliases.json NO_IMPERSONATE_OPERATOR notes",
+          "note": "org-maintainer has loginOnBehalf",
+          "date": "2026-10-21"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "KB-4E1FD1E8",
+          "note": "an Organization maintainer operator holds platform:security:loginOnBehalf"
+        }
+      ]
+    },
+    {
+      "id": "data.auth.operator.no-login-on-behalf",
+      "entity": "User",
+      "purpose": "A company member who manages members but lacks Login on behalf.",
+      "required_state": {
+        "role": "Organization manager",
+        "permission": "no platform:security:loginOnBehalf",
+        "store": "B2B-store"
+      },
+      "lifecycle": "FIXTURE",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:b2b",
+      "td_alias": "NO_IMPERSONATE_OPERATOR.email",
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "Full member management but no loginOnBehalf, so an absent action or a refused grant is the permission and not a missing member-management right.",
+      "status": "CONFIRMED",
+      "shared_state": "Read-only for impersonation cases.",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "test-data/aliases.json NO_IMPERSONATE_OPERATOR",
+          "note": "USR-023, Organization manager, no loginOnBehalf",
+          "date": "2026-10-21"
+        }
+      ]
+    },
+    {
+      "id": "data.auth.target.with-security-account",
+      "entity": "User",
+      "purpose": "A colleague of the operator who has a security account.",
+      "required_state": {
+        "role": "Purchasing agent",
+        "security_account": true,
+        "store": "B2B-store"
+      },
+      "lifecycle": "FIXTURE",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:b2b",
+      "td_alias": "IMPERSONATE_TARGET.email",
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "A real target with a login, against data.auth.target.without-security-account, which the Members page offers no action for.",
+      "status": "CONFIRMED",
+      "shared_state": "Its cart and orders: impersonation cases add lines and place orders as it (IMP-020/021/025), so never assert its cart empty or its order count. AUTH-039 also blocks a member of its shape — run them apart.",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "test-data/b2b/users.csv USR-007 + test-data/aliases.json IMPERSONATE_TARGET",
+          "date": "2026-10-21"
+        }
+      ]
+    },
+    {
+      "id": "data.auth.target.other-org",
+      "entity": "User",
+      "purpose": "A member of an organization the operator does not belong to.",
+      "required_state": {
+        "organization": "BuildRight (ORG-003)",
+        "security_account": true
+      },
+      "lifecycle": "FIXTURE",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:b2b",
+      "td_alias": "OTHER_ORG_USER.email",
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "Genuinely another organization than both the operator and the same-org target, so a refusal is the cross-organization rule.",
+      "status": "CONFIRMED",
+      "shared_state": "Read-only for impersonation cases.",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "test-data/aliases.json OTHER_ORG_USER",
+          "note": "USR-008, fixed 2026-05-12 after pointing at the same user as IMPERSONATE_TARGET",
+          "date": "2026-10-21"
+        }
+      ]
+    },
+    {
+      "id": "data.auth.target.without-security-account",
+      "entity": "Contact",
+      "purpose": "A member of the operator's organization that has no security account.",
+      "required_state": {
+        "organization": "the operator's",
+        "security_account": false
+      },
+      "relationships": [
+        {
+          "requirement": "data.auth.operator.login-on-behalf",
+          "required": true
+        }
+      ],
+      "lifecycle": "STEP",
+      "acquisition": {
+        "strategy": "CREATE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "the case's Cleanup deletes the contact (AGENT-TEST- prefix sweep backstop)"
+      },
+      "discriminates": "Same organization as the target with a login, no account: the Login on behalf action is absent for it alone.",
+      "limits": "No seeded contact without a login exists in the operator's organization; the case creates one.",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "regression/suites/Frontend/auth/082-auth-impersonation.csv IMP-040",
+          "note": "Manual"
+        }
+      ],
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "data.auth.target.locked",
+      "entity": "User",
+      "purpose": "A target whose platform account is locked.",
+      "required_state": {
+        "lockoutEnd": "9999-12-31",
+        "organization": "TechFlow"
+      },
+      "lifecycle": "FIXTURE",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:impersonation",
+      "td_alias": "IMPERSONATE_TARGET_BLOCKED.email",
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "Locked against invited against active: what the grant and the storefront do for each status is the open question (target-status), and it needs all three.",
+      "status": "CONFIRMED",
+      "shared_state": "RESERVED and load-bearing: its lock is the state under test. Never unlock it, never sign in as it.",
+      "limits": "The REST answer for it is contested (a 2026-05-14 changelog says 200, IMP-049 re-checked 2026-07-15 says 400).",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "test-data/aliases.json IMPERSONATE_TARGET_BLOCKED",
+          "note": "seeded 2026-05-14 by seed:impersonation, re-applies the lock",
+          "date": "2026-10-21"
+        }
+      ]
+    },
+    {
+      "id": "data.auth.target.invited",
+      "entity": "User",
+      "purpose": "A target that was invited and never confirmed its email.",
+      "required_state": {
+        "emailConfirmed": false,
+        "organization": "TechFlow"
+      },
+      "lifecycle": "FIXTURE",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:impersonation",
+      "td_alias": "IMPERSONATE_TARGET_INVITED.email",
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "Invited, not locked: separates a verification gate from a lock in the impersonation answer.",
+      "status": "CONFIRMED",
+      "shared_state": "RESERVED: confirming its email would end the state under test.",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "test-data/aliases.json IMPERSONATE_TARGET_INVITED",
+          "note": "seeded 2026-05-14, emailConfirmed false",
+          "date": "2026-10-21"
+        }
+      ]
+    },
+    {
+      "id": "data.auth.session.impersonating",
+      "entity": "Session",
+      "purpose": "An operator session acting as the target.",
+      "required_state": {
+        "sub": "the target",
+        "vc_operator_user_id": "the operator"
+      },
+      "lifecycle": "DERIVED",
+      "source": {
+        "produced_by": "auth.impersonate",
+        "field": "the impersonation access token"
+      },
+      "acquisition": {
+        "strategy": "DERIVE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "A token whose subject is the target while the operator claim names the operator: banner, cart and revert are judged against two different identities, which a plain sign-in as the target could not separate.",
+      "limits": "Ends with Back to operator or sign-out; a case never reuses another case's impersonation session.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "KB-EF3CB7FB",
+          "note": "the storefront impersonate page posts /connect/token for the target"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.auth.session.signed-in",
+      "entity": "Session",
+      "purpose": "The run persona signed in to the storefront by the case.",
+      "required_state": {
+        "account": "the run persona",
+        "tokens": "issued by any sign-in method"
+      },
+      "lifecycle": "DERIVED",
+      "source": {
+        "requirement": "data.auth.account.store-contact",
+        "field": "the access token from the case's own sign-in step"
+      },
+      "acquisition": {
+        "strategy": "DERIVE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "A session the case just made, so expiry, revocation and sign-out act on a token whose issue time the case knows.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:auth@rev2 §1 link 4",
+          "note": "storefront keeps tokens client-side and calls me",
+          "date": "2026-10-21"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.auth.otp-code.issued",
+      "entity": "OtpCode",
+      "purpose": "A sign-in code the case requested for an account, read from the notification journal.",
+      "required_state": {
+        "issued_to": "the account the case requested it for",
+        "read_from": "OtpSignInEmailNotification in the notification journal",
+        "used": false
+      },
+      "relationships": [
+        {
+          "requirement": "data.auth.account.admin",
+          "required": true,
+          "note": "the journal is read with the admin"
+        }
+      ],
+      "lifecycle": "DERIVED",
+      "source": {
+        "produced_by": "auth.signin.otp.request",
+        "field": "the six-digit code in the notification body"
+      },
+      "acquisition": {
+        "strategy": "DERIVE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "A real code beside a code never issued: valid against invalid_code. Used once and then replayed, it decides whether codes are single-use.",
+      "limits": "SMTP is not relied on; no code in the journal within 90 s makes the case BLOCKED. A code stays valid for the token provider's lifetime even after use (KB-06FE6C8D), so one code is never shared between two cases.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "KB-06FE6C8D",
+          "note": "a real code read from the notification journal signed in twice",
+          "date": "2026-09-29"
+        }
+      ],
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "data.auth.mfa-ticket.issued",
+      "entity": "TwoFactorToken",
+      "purpose": "The two-factor token a password sign-in returns when a second factor is required, plus the emailed code.",
+      "required_state": {
+        "twoFactorToken": "from the 400 two_factor_required body",
+        "code": "from MfaSignInEmailNotification in the journal",
+        "redeemed": false
+      },
+      "relationships": [
+        {
+          "requirement": "data.auth.account.admin",
+          "required": true,
+          "note": "the journal is read with the admin"
+        }
+      ],
+      "lifecycle": "DERIVED",
+      "source": {
+        "produced_by": "auth.signin.mfa.required-challenge",
+        "field": "twoFactorToken + the emailed code"
+      },
+      "acquisition": {
+        "strategy": "DERIVE",
+        "executor": "case"
+      },
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "A genuine ticket against a forged one (data.auth.mfa-ticket.forged): redeemed for tokens against invalid_two_factor_token.",
+      "limits": "Never observed: MFA is off on every stand. Lifetime TwoFactorTokenLifetime (10 min by default per the PR).",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-mfa#1 README (gh, 2026-10-21)",
+          "note": "two_factor_required carries twoFactorToken, provider, providers; the mfa grant exchanges it",
+          "date": "2026-10-21"
+        }
+      ],
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "data.auth.mfa-ticket.forged",
+      "entity": "TwoFactorToken",
+      "purpose": "An opaque string presented as a two-factor token.",
+      "required_state": {
+        "issued_by_platform": false
+      },
+      "lifecycle": "DYNAMIC",
+      "acquisition": {
+        "strategy": "GENERATE",
+        "generator": "randomComment"
+      },
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "Never issued, so the grant and resend must refuse it with invalid_two_factor_token whatever the MFA settings are.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "KB-C196A782",
+          "note": "mfa grant and /api/mfa/resend refuse a bogus token on vcst",
+          "date": "2026-10-21"
+        }
+      ],
+      "status": "CONFIRMED"
+    }
+  ],
+  "profiles": [
+    {
+      "id": "profile.auth.password-empty-input",
+      "behavior": "auth.signin.password.empty-input",
+      "purpose": "Data for auth.signin.password.empty-input.",
+      "requirements": [
+        "data.auth.account.store-contact"
+      ]
+    },
+    {
+      "id": "profile.auth.password-wrong-credentials",
+      "behavior": "auth.signin.password.wrong-credentials",
+      "purpose": "Data for auth.signin.password.wrong-credentials.",
+      "requirements": [
+        "data.auth.account.store-contact",
+        "data.auth.input.unknown-email"
+      ],
+      "notes": "A wrong password on the run persona moves its shared failed-attempt counter: one good sign-in afterwards zeros it."
+    },
+    {
+      "id": "profile.auth.password-input-normalisation",
+      "behavior": "auth.signin.password.input-normalisation",
+      "purpose": "Data for auth.signin.password.input-normalisation.",
+      "requirements": [
+        "data.auth.account.store-contact"
+      ]
+    },
+    {
+      "id": "profile.auth.password-unverified-email",
+      "behavior": "auth.signin.password.unverified-email",
+      "purpose": "Data for auth.signin.password.unverified-email.",
+      "requirements": [
+        "data.auth.store.email-verification-required",
+        "data.auth.account.unconfirmed-email"
+      ],
+      "notes": "Decidable only where the run store requires verification (vcptcore_qa1 today)."
+    },
+    {
+      "id": "profile.auth.password-reset",
+      "behavior": "auth.password-reset",
+      "purpose": "Data for auth.password-reset.",
+      "requirements": [
+        "data.auth.account.store-contact"
+      ]
+    },
+    {
+      "id": "profile.auth.password-reset-unknown-email",
+      "behavior": "auth.password-reset.unknown-email",
+      "purpose": "Data for auth.password-reset.unknown-email.",
+      "requirements": [
+        "data.auth.input.unknown-email"
+      ]
+    },
+    {
+      "id": "profile.auth.lockout-temporary",
+      "behavior": "auth.lockout.temporary",
+      "purpose": "Data for auth.lockout.temporary.",
+      "requirements": [
+        "data.auth.account.lockout-disposable"
+      ]
+    },
+    {
+      "id": "profile.auth.lockout-storefront-message",
+      "behavior": "auth.lockout.temporary.storefront-message",
+      "purpose": "Data for auth.lockout.temporary.storefront-message.",
+      "requirements": [
+        "data.auth.account.lockout-disposable",
+        "data.auth.account.temporarily-locked"
+      ]
+    },
+    {
+      "id": "profile.auth.lockout-otp-codes",
+      "behavior": "auth.lockout.temporary.otp-codes",
+      "purpose": "Data for auth.lockout.temporary.otp-codes.",
+      "requirements": [
+        "data.auth.store.otp-enabled",
+        "data.auth.account.lockout-otp-codes"
+      ]
+    },
+    {
+      "id": "profile.auth.lockout-shared-counter",
+      "behavior": "auth.lockout.temporary.shared-counter",
+      "purpose": "Data for auth.lockout.temporary.shared-counter.",
+      "requirements": [
+        "data.auth.store.otp-enabled",
+        "data.auth.account.lockout-shared-counter"
+      ]
+    },
+    {
+      "id": "profile.auth.admin-lock-no-code",
+      "behavior": "auth.lockout.admin-lock.no-code",
+      "purpose": "Data for auth.lockout.admin-lock.no-code.",
+      "requirements": [
+        "data.auth.account.admin",
+        "data.auth.account.block-target",
+        "data.auth.account.admin-locked"
+      ]
+    },
+    {
+      "id": "profile.auth.session-expiry",
+      "behavior": "auth.session.establish.expiry",
+      "purpose": "Data for auth.session.establish.expiry.",
+      "requirements": [
+        "data.auth.session.signed-in"
+      ]
+    },
+    {
+      "id": "profile.auth.session-remember-me",
+      "behavior": "auth.session.establish.remember-me",
+      "purpose": "Data for auth.session.establish.remember-me.",
+      "requirements": [
+        "data.auth.session.signed-in"
+      ]
+    },
+    {
+      "id": "profile.auth.session-protected-route",
+      "behavior": "auth.session.establish.protected-route",
+      "purpose": "Data for auth.session.establish.protected-route.",
+      "requirements": [
+        "data.auth.session.signed-in"
+      ]
+    },
+    {
+      "id": "profile.auth.session-cross-tab",
+      "behavior": "auth.session.establish.cross-tab",
+      "purpose": "Data for auth.session.establish.cross-tab.",
+      "requirements": [
+        "data.auth.session.signed-in"
+      ]
+    },
+    {
+      "id": "profile.auth.signout-token-revoked",
+      "behavior": "auth.session.signout.token-revoked",
+      "purpose": "Data for auth.session.signout.token-revoked.",
+      "requirements": [
+        "data.auth.session.signed-in"
+      ]
+    },
+    {
+      "id": "profile.auth.api-forbidden",
+      "behavior": "auth.access.api-challenge.forbidden",
+      "purpose": "Data for auth.access.api-challenge.forbidden.",
+      "requirements": [
+        "data.auth.session.signed-in"
+      ]
+    },
+    {
+      "id": "profile.auth.api-malformed-body",
+      "behavior": "auth.access.api-challenge.malformed-body",
+      "purpose": "Data for auth.access.api-challenge.malformed-body.",
+      "requirements": [
+        "data.auth.input.malformed-bodies"
+      ]
+    },
+    {
+      "id": "profile.auth.otp-happy",
+      "behavior": "auth.signin.otp.happy",
+      "purpose": "Data for auth.signin.otp.happy.",
+      "requirements": [
+        "data.auth.store.otp-enabled",
+        "data.auth.account.store-contact",
+        "data.auth.otp-code.issued"
+      ]
+    },
+    {
+      "id": "profile.auth.otp-wrong-code",
+      "behavior": "auth.signin.otp.wrong-code",
+      "purpose": "Data for auth.signin.otp.wrong-code.",
+      "requirements": [
+        "data.auth.store.otp-enabled",
+        "data.auth.account.store-contact",
+        "data.auth.otp-code.issued"
+      ]
+    },
+    {
+      "id": "profile.auth.otp-code-input",
+      "behavior": "auth.signin.otp.code-input",
+      "purpose": "Data for auth.signin.otp.code-input.",
+      "requirements": [
+        "data.auth.store.otp-enabled",
+        "data.auth.input.malformed-codes"
+      ]
+    },
+    {
+      "id": "profile.auth.otp-resend",
+      "behavior": "auth.signin.otp.resend",
+      "purpose": "Data for auth.signin.otp.resend.",
+      "requirements": [
+        "data.auth.store.otp-enabled",
+        "data.auth.account.store-contact",
+        "data.auth.otp-code.issued"
+      ]
+    },
+    {
+      "id": "profile.auth.otp-replay",
+      "behavior": "auth.signin.otp.replay",
+      "purpose": "Data for auth.signin.otp.replay.",
+      "requirements": [
+        "data.auth.store.otp-enabled",
+        "data.auth.account.store-contact",
+        "data.auth.otp-code.issued"
+      ],
+      "notes": "A replay that the product refuses records a failed attempt on the shared run persona: the case zeros the counter with one good grant."
+    },
+    {
+      "id": "profile.auth.otp-expired-code",
+      "behavior": "auth.signin.otp.expired-code",
+      "purpose": "Data for auth.signin.otp.expired-code.",
+      "requirements": [
+        "data.auth.store.otp-enabled",
+        "data.auth.account.store-contact",
+        "data.auth.otp-code.issued"
+      ]
+    },
+    {
+      "id": "profile.auth.otp-off",
+      "behavior": "auth.signin.otp.off",
+      "purpose": "Data for auth.signin.otp.off.",
+      "requirements": [
+        "data.auth.store.otp-disabled",
+        "data.auth.account.store-contact"
+      ]
+    },
+    {
+      "id": "profile.auth.otp-unknown-email-detailed-errors-off",
+      "behavior": "auth.signin.otp.unknown-email.detailed-errors-off",
+      "purpose": "Data for auth.signin.otp.unknown-email.detailed-errors-off.",
+      "requirements": [
+        "data.auth.store.otp-enabled",
+        "data.auth.input.unknown-email"
+      ],
+      "notes": "Needs PasswordLogin:DetailedErrors off, which no stand runs today (both on, domain map D11): not decidable on vcst or vcptcore_qa1 until it is."
+    },
+    {
+      "id": "profile.auth.otp-store-rule",
+      "behavior": "auth.signin.otp.store-rule",
+      "purpose": "Data for auth.signin.otp.store-rule.",
+      "requirements": [
+        "data.auth.store.otp-enabled",
+        "data.auth.store.trusted-pair",
+        "data.auth.account.trusted-store-contact",
+        "data.auth.account.foreign-store-contact",
+        "data.auth.account.no-store-contact"
+      ]
+    },
+    {
+      "id": "profile.auth.otp-homepage-section",
+      "behavior": "auth.signin.otp.homepage-section",
+      "purpose": "Data for auth.signin.otp.homepage-section.",
+      "requirements": [
+        "data.auth.store.otp-enabled",
+        "data.auth.account.store-contact"
+      ],
+      "notes": "Also needs a homepage CMS block carrying the login section, which neither stand renders (domain map G19); no data model entry until a seeder builds one."
+    },
+    {
+      "id": "profile.auth.method-choice-otp-off",
+      "behavior": "auth.signin.method-choice.otp-off",
+      "purpose": "Data for auth.signin.method-choice.otp-off.",
+      "requirements": [
+        "data.auth.store.auth-types",
+        "data.auth.store.otp-disabled"
+      ]
+    },
+    {
+      "id": "profile.auth.org-fallback",
+      "behavior": "auth.org.resolve.fallback",
+      "purpose": "Data for auth.org.resolve.fallback.",
+      "requirements": [
+        "data.auth.account.admin",
+        "data.auth.buyer.multi-org-blockable",
+        "data.auth.membership.one-unusable"
+      ],
+      "notes": "The VCST-6132 cases sign in by code, so they also need data.auth.store.otp-enabled; it is outside this node's closure because the fallback is the same for every credential grant."
+    },
+    {
+      "id": "profile.auth.org-switcher-lists-locked",
+      "behavior": "auth.org.resolve.switcher-lists-locked",
+      "purpose": "Data for auth.org.resolve.switcher-lists-locked.",
+      "requirements": [
+        "data.auth.account.admin",
+        "data.auth.buyer.multi-org-blockable",
+        "data.auth.membership.one-unusable"
+      ],
+      "notes": "Variant: the unusable organization is locked (a status-blocked one is not listed)."
+    },
+    {
+      "id": "profile.auth.org-no-org-left",
+      "behavior": "auth.org.resolve.no-org-left",
+      "purpose": "Data for auth.org.resolve.no-org-left.",
+      "requirements": [
+        "data.auth.account.admin",
+        "data.auth.buyer.multi-org-blockable",
+        "data.auth.membership.none-accessible"
+      ]
+    },
+    {
+      "id": "profile.auth.org-status-refusal",
+      "behavior": "auth.org.resolve.status-refusal",
+      "purpose": "Data for auth.org.resolve.status-refusal.",
+      "requirements": [
+        "data.auth.account.admin",
+        "data.auth.buyer.multi-org-blockable",
+        "data.auth.membership.all-blocking-status"
+      ]
+    },
+    {
+      "id": "profile.auth.org-explicit-switch-refused",
+      "behavior": "auth.org.resolve.explicit-switch-refused",
+      "purpose": "Data for auth.org.resolve.explicit-switch-refused.",
+      "requirements": [
+        "data.auth.account.admin",
+        "data.auth.buyer.multi-org-blockable",
+        "data.auth.membership.one-unusable"
+      ],
+      "notes": "Variant: the NON-active organization is blocked mid-session; the refresh token is minted after the change."
+    },
+    {
+      "id": "profile.auth.org-last-used-resend",
+      "behavior": "auth.org.resolve.last-used-resend",
+      "purpose": "Data for auth.org.resolve.last-used-resend.",
+      "requirements": [
+        "data.auth.account.admin",
+        "data.auth.buyer.multi-org-blockable",
+        "data.auth.membership.last-used-diverges"
+      ]
+    },
+    {
+      "id": "profile.auth.org-write-back",
+      "behavior": "auth.org.resolve.write-back",
+      "purpose": "Data for auth.org.resolve.write-back.",
+      "requirements": [
+        "data.auth.account.admin",
+        "data.auth.buyer.multi-org-blockable",
+        "data.auth.membership.one-unusable",
+        "data.auth.membership.none-accessible"
+      ],
+      "notes": "Two states in order: Org A locked (fallback writes Org B), then Org B locked too."
+    },
+    {
+      "id": "profile.auth.org-global-lock-wins",
+      "behavior": "auth.org.resolve.global-lock-wins",
+      "purpose": "Data for auth.org.resolve.global-lock-wins.",
+      "requirements": [
+        "data.auth.account.admin",
+        "data.auth.buyer.multi-org-blockable",
+        "data.auth.buyer.globally-locked"
+      ]
+    },
+    {
+      "id": "profile.auth.impersonate",
+      "behavior": "auth.impersonate",
+      "purpose": "Data for auth.impersonate.",
+      "requirements": [
+        "data.auth.operator.login-on-behalf",
+        "data.auth.target.with-security-account"
+      ]
+    },
+    {
+      "id": "profile.auth.impersonate-verification-form",
+      "behavior": "auth.impersonate.verification-form",
+      "purpose": "Data for auth.impersonate.verification-form.",
+      "requirements": [
+        "data.auth.operator.login-on-behalf",
+        "data.auth.target.with-security-account"
+      ]
+    },
+    {
+      "id": "profile.auth.impersonate-admin-entry",
+      "behavior": "auth.impersonate.admin-entry",
+      "purpose": "Data for auth.impersonate.admin-entry.",
+      "requirements": [
+        "data.auth.account.admin",
+        "data.auth.target.with-security-account"
+      ]
+    },
+    {
+      "id": "profile.auth.impersonate-banner",
+      "behavior": "auth.impersonate.banner",
+      "purpose": "Data for auth.impersonate.banner.",
+      "requirements": [
+        "data.auth.operator.login-on-behalf",
+        "data.auth.target.with-security-account",
+        "data.auth.session.impersonating"
+      ]
+    },
+    {
+      "id": "profile.auth.impersonate-acts-as-target",
+      "behavior": "auth.impersonate.acts-as-target",
+      "purpose": "Data for auth.impersonate.acts-as-target.",
+      "requirements": [
+        "data.auth.operator.login-on-behalf",
+        "data.auth.target.with-security-account",
+        "data.auth.session.impersonating"
+      ]
+    },
+    {
+      "id": "profile.auth.impersonate-revert",
+      "behavior": "auth.impersonate.revert",
+      "purpose": "Data for auth.impersonate.revert.",
+      "requirements": [
+        "data.auth.operator.login-on-behalf",
+        "data.auth.target.with-security-account",
+        "data.auth.session.impersonating"
+      ]
+    },
+    {
+      "id": "profile.auth.impersonate-nested",
+      "behavior": "auth.impersonate.nested",
+      "purpose": "Data for auth.impersonate.nested.",
+      "requirements": [
+        "data.auth.operator.login-on-behalf",
+        "data.auth.target.with-security-account",
+        "data.auth.session.impersonating"
+      ]
+    },
+    {
+      "id": "profile.auth.impersonate-no-permission",
+      "behavior": "auth.impersonate.no-permission",
+      "purpose": "Data for auth.impersonate.no-permission.",
+      "requirements": [
+        "data.auth.operator.no-login-on-behalf",
+        "data.auth.target.with-security-account"
+      ]
+    },
+    {
+      "id": "profile.auth.impersonate-self",
+      "behavior": "auth.impersonate.self",
+      "purpose": "Data for auth.impersonate.self.",
+      "requirements": [
+        "data.auth.operator.login-on-behalf"
+      ]
+    },
+    {
+      "id": "profile.auth.impersonate-cross-org",
+      "behavior": "auth.impersonate.cross-org",
+      "purpose": "Data for auth.impersonate.cross-org.",
+      "requirements": [
+        "data.auth.operator.login-on-behalf",
+        "data.auth.target.other-org"
+      ]
+    },
+    {
+      "id": "profile.auth.impersonate-no-target-guard",
+      "behavior": "auth.impersonate.no-target-guard",
+      "purpose": "Data for auth.impersonate.no-target-guard.",
+      "requirements": [
+        "data.auth.account.admin"
+      ]
+    },
+    {
+      "id": "profile.auth.impersonate-target-without-account",
+      "behavior": "auth.impersonate.target-without-account",
+      "purpose": "Data for auth.impersonate.target-without-account.",
+      "requirements": [
+        "data.auth.operator.login-on-behalf",
+        "data.auth.target.without-security-account"
+      ]
+    },
+    {
+      "id": "profile.auth.impersonate-target-status",
+      "behavior": "auth.impersonate.target-status",
+      "purpose": "Data for auth.impersonate.target-status.",
+      "requirements": [
+        "data.auth.operator.login-on-behalf",
+        "data.auth.target.locked",
+        "data.auth.target.invited"
+      ],
+      "notes": "Both targets are RESERVED: read-only, never unlocked or confirmed."
+    },
+    {
+      "id": "profile.auth.impersonate-locked-org-refused",
+      "behavior": "auth.impersonate.locked-org-refused",
+      "purpose": "Data for auth.impersonate.locked-org-refused.",
+      "requirements": [
+        "data.auth.account.admin",
+        "data.auth.buyer.multi-org-blockable",
+        "data.auth.membership.one-unusable"
+      ],
+      "notes": "The operator is the administrator and the target the case-created buyer, not the 082 personas."
+    },
+    {
+      "id": "profile.auth.signin-log-method-types",
+      "behavior": "auth.audit.signin-log.method-types",
+      "purpose": "Data for auth.audit.signin-log.method-types.",
+      "requirements": [
+        "data.auth.account.admin",
+        "data.auth.account.store-contact"
+      ],
+      "notes": "The run persona signs in by password and by code to produce one row per method; the administrator reads them."
+    },
+    {
+      "id": "profile.auth.signin-log-true-cause",
+      "behavior": "auth.audit.signin-log.true-cause",
+      "purpose": "Data for auth.audit.signin-log.true-cause.",
+      "requirements": [
+        "data.auth.account.admin",
+        "data.auth.input.unknown-email"
+      ]
+    },
+    {
+      "id": "profile.auth.signin-log-recording-off",
+      "behavior": "auth.audit.signin-log.recording-off",
+      "purpose": "Data for auth.audit.signin-log.recording-off.",
+      "requirements": [
+        "data.auth.account.admin",
+        "data.auth.platform.signin-log-off"
+      ]
+    },
+    {
+      "id": "profile.auth.signin-log-read-permission",
+      "behavior": "auth.audit.signin-log.read-permission",
+      "purpose": "Data for auth.audit.signin-log.read-permission.",
+      "requirements": [
+        "data.auth.account.admin",
+        "data.auth.account.no-signin-log-permission"
+      ]
+    },
+    {
+      "id": "profile.auth.signin-log-type-filter",
+      "behavior": "auth.audit.signin-log.type-filter",
+      "purpose": "Data for auth.audit.signin-log.type-filter.",
+      "requirements": [
+        "data.auth.account.admin"
+      ]
+    }
+  ]
+}

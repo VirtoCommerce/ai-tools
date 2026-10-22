@@ -1,7 +1,7 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.67",
+    "version": "1.5.68",
     "changelog_1_5_50": "Suite 083d (loyalty missions E2E) fixture set: MSN_E2E_RUN + MSN_E2E_{ORDERVALUE,ORDERCOUNT,PERSKU,PERSKU_PTS} + MSN_E2E_PRODUCT_{UNIT,A,B,PTS} + MSN_E2E_REWARD_USER. Run REG-2026-08-28-1154 returned 2 PASS / 6 BLOCKED because the shared MSN_* missions had been CONSUMED — MSN_ORDERCOUNT at 2 of 2 Completed, MSN_ORDERVALUE at 5,842,446/100% — and a Completed mission stops accruing entirely (proven by a control pair inside one order: MSN_ZEROTARGET 24 -> 25 while MSN_ORDERCOUNT stayed frozen at 2). Mission progress is per-(user,mission), cumulative, monotonic, frozen at completion, with NO reset path in vc-module-loyalty, so repeatability comes from minting a FRESH mission per run (name carries a run handle) rather than from resetting anything. Products are stable and NOT run-scoped (no per-user state), packSize 1 (MSN_PERSKU_PRODUCT_B steps 0->2->0, so \"quantity exactly 1\" was unachievable) and trackInventory=false. MSN_E2E_PRODUCT_PTS is the first PerSku target priced in the loyalty currency, which is what makes the no-currency-filter question (LoyaltyMissionLogicService.cs:~416 vs LoyaltyProgramHandler.cs:199) askable at all. MSN_E2E_REWARD_USER borrows the per-run ephemeral LOYALTY_ZERO_USER because a 500-PTS reward against LOYALTY_VIP_USER (964,189,233 PTS) cannot demonstrate that the points spent were earned from a mission. Seeder scripts/seed-data/loyalty/seed-missions-e2e.mjs, spec module missions-e2e-specs.mjs, guard npm run td:validate:missions-e2e (a VACUITY guard: it fails when a fixture was not pre-completion at seed time or when the reward stops being legible against the balance).",
     "updated": "GENERATED",
     "changelog_1_5_53": "VCST-5024 top-up — ORG_LOY_MISSION_2 (OrderCountGoal 1, reward 619) and ORG_LOY_MISSION_PARTIAL (OrderCountGoal 2, reward 631), both Published and targeted at AGENT-TEST-ORGLOY like ORG_LOY_MISSION. WHY: ORG_LOY_MISSION was CONSUMED before it could answer anything, because the store-mode flip silently did not take effect (the settings-v2 tenant write returns 204 and updates the tenant-settings read, but the module resolves store.Settings from the store entity, which stayed null) — so the first journey ran in Customer mode and ORG_LOY_A and ORG_LOY_B each completed the count-1 mission and were each granted 617. Once-per-MEMBER is correct Customer-mode behaviour, which is why that mission is KEPT rather than swept: it is the cleanest record that the flip had not landed. But OrderCountGoal progress is terminal per owner with no reset path, so a consumed mission cannot be repaired and a NEW one is the only route back to a decidable question. THE PAIR, NOT JUST THE REPLACEMENT: count 1 alone cannot separate pooled PROGRESS from pooled COMPLETION (it is Completed the instant anything accrues, so \"B sees it done\" fits both readings); count 2 splits them, because after ONE order a pooled implementation reads 1/2 for BOTH members and a user-keyed one reads 1/2 and 0/2, with neither Completed. Rewards are mutually DISTINCT (617/619/631) and distinct from the missions-e2e set (501/509) because all three are live at once against the same group and one order can move more than one — identical rewards would make a balance delta and a points-history row name nothing, the same failure the missions-e2e set hit with four 500s. MECHANICS: each mission spec now owns a sweep NAME-SPACE (AGENT-TEST-MSN-ORGLOY[-<KEY>]-<ts>-<rand>; ORG_LOY_MISSION keeps the empty key so its live name is unchanged), and a seed sweeps only its own predecessors — minting one mission can never delete a sibling, which is what let the consumed generation-1 record survive. New seeder flags --missions-only + --only <ALIAS,...> mint missions while touching NO account, no org, no balance read and placing no order: by this point ORG_LOY_A and ORG_LOY_B carry real pre-flip balances (39,533 and 100,033) and LOY_PERSONAL_NOORG its funding floor (38,916), all of which are load-bearing evidence a full re-seed would have overwritten. Guard npm run td:validate:org-loyalty now fails a duplicate sweep key, a duplicate or missions-e2e-colliding reward, a non-count-1 ORG_LOY_MISSION_2, a count < 2 ORG_LOY_MISSION_PARTIAL, and equal counts across the pair.",
@@ -69,7 +69,8 @@
     "changelog_1_5_64": "VCST-5884 round 3 top-up: ORG_RET_BUYER spares 3 -> 7 (spare4..7 fields), RETURNABLE_LINE_FLOOR.BUYER 8 -> 16.",
     "changelog_1_5_65": "RETURNS_ORDER_RECIPIENT: dedicated AGENT-TEST yopmail mailbox for the VCST-5628 returns orders' address emails (seed-return-orders.mjs forces + hard-stops; td:validate:orders §8c).",
     "changelog_1_5_66": "VCST-6017 GA4 markup product lists: registered PROD_GA4_RELATED_ANCHOR, PROD_GA4_VARIATION_PARENT, CART_GA4_SFL_RB (seed:ga4-lists, scripts/seed-data/analytics) and PB_GA4_PRODUCT_LISTS, PB_GA4_HTML_LISTS (seed:cms-pages:ga4) — business keys only, runtime ids from aliases.<env>.json; gated by td:validate:ga4-lists.",
-    "changelog_1_5_67": "VCST-5884 FIXTURE-GAP ORG_RET_OTHER_STORE_RETURN closed: registered ORG_RET_OTHER_STORE_RETURN (seed:returns:org) — ORG_RET_BUYER submits a return in STORE_ID on its last spare order, then an administrator PUT /api/return moves it to STORE_ID_SECONDARY (mechanism observed by 050o RET-ORG-011); no store setting is touched. RETURNS_LEGACY_STORELESS remains a FIXTURE-GAP."
+    "changelog_1_5_67": "VCST-5884 FIXTURE-GAP ORG_RET_OTHER_STORE_RETURN closed: registered ORG_RET_OTHER_STORE_RETURN (seed:returns:org) — ORG_RET_BUYER submits a return in STORE_ID on its last spare order, then an administrator PUT /api/return moves it to STORE_ID_SECONDARY (mechanism observed by 050o RET-ORG-011); no store setting is touched. RETURNS_LEGACY_STORELESS remains a FIXTURE-GAP.",
+    "changelog_1_5_68": "Registered RUN_USER — the binding of the env's storefront run persona ({{USER_EMAIL}} / {{USER_PASSWORD}} on {{STORE_ID}}), values only in the layered .env, like ADMIN_USER. No account is created or changed: the alias exists so test-data/models/auth.data-model.json (data.auth.account.store-contact) can address the persona through @td() instead of a bare {{VAR}}."
   },
   "COMPLETED_ORDER": {
     "json": "orders/completed-order",
@@ -3697,6 +3698,14 @@
     "password_env_var": "ADMIN_PASSWORD",
     "role_alias": "ADMIN_ROLE_TESTER",
     "user_type": "Administrator"
+  },
+  "RUN_USER": {
+    "_inline": true,
+    "_comment": "The env's storefront run persona: a Customer contact of {{STORE_ID}} with lockout enabled. Email + password come from the layered .env (USER_EMAIL + USER_PASSWORD); this alias records the binding only. It is a different account per env (vcst: b2b/users.csv USR-001, the same login as SUPPORT_AGENT / ACME_ADMIN; vcptcore_qa1: a personal account), so never assert on its organization. Shared by every storefront suite that signs in as the run user: a case that locks it, blocks it or leaves wrong passwords on it breaks them all, 082's impersonation operator included on vcst.",
+    "email_env": "USER_EMAIL",
+    "password_env": "USER_PASSWORD",
+    "store_env": "STORE_ID",
+    "user_type": "Customer"
   },
   "PUSH_MSG_SEED": {
     "_inline": true,
@@ -9604,6 +9613,54 @@
     "excluded_permission": "return:authorize",
     "user_type": "Manager"
   },
+  "SHELL_SEARCH_NOREAD": {
+    "seed": "seed:rbac",
+    "_inline": true,
+    "_comment": "VCST-6260 (Admin shell global search, vc-platform PR #3134) back-office account WITHOUT the read permissions: holds platform:setting:access + platform:security:access + catalog:access, EXCLUDES platform:setting:read and platform:security:read (and order:access, pricing:access, settings/security writes). The settings/users/roles providers gate on *:access but their data calls need *:read — expected GET /api/platform/settings/v2/global/schema 403, POST users/search 403, POST roles/search 403; the menu provider shows Catalog but not Orders/Pricing. Differs from SHELL_SEARCH_READ by exactly the two read permissions. Single source of truth: scripts/seed-data/platform/backoffice-rbac-specs.mjs; seed: npm run seed:rbac -- --only SHELL_SEARCH_NOREAD,SHELL_SEARCH_READ (add --verify for the live proof); drift-guard: npm run td:validate:rbac; teardown: npm run seed:rbac:teardown -- --only SHELL_SEARCH_NOREAD,SHELL_SEARCH_READ. Runtime platform_id/user_id/role_id/userName resolve from aliases.<env>.json. platform:access does not exist on this build; userType Manager is the back-office entry. isAdministrator=false so the gate applies. The PASSWORD is a {{SHELL_SEARCH_PASSWORD}} secret from .env.local (never committed), shared by both accounts.",
+    "email": "AGENT-TEST-shell-search-noread@test.virtocommerce.com",
+    "login": "AGENT-TEST-shell-search-noread@test.virtocommerce.com",
+    "password": "{{SHELL_SEARCH_PASSWORD}}",
+    "password_var": "SHELL_SEARCH_PASSWORD",
+    "role": "AGENT-TEST-Shell-Search-NoRead",
+    "permissions": [
+      "platform:setting:access",
+      "platform:security:access",
+      "catalog:access"
+    ],
+    "excluded_permission": "platform:setting:read",
+    "excluded_permissions": [
+      "platform:setting:read",
+      "platform:security:read",
+      "order:access",
+      "pricing:access"
+    ],
+    "is_administrator": false,
+    "user_type": "Manager"
+  },
+  "SHELL_SEARCH_READ": {
+    "seed": "seed:rbac",
+    "_inline": true,
+    "_comment": "VCST-6260 control account: the SHELL_SEARCH_NOREAD base PLUS platform:setting:read and platform:security:read, still no order:access / pricing:access and no settings/security write. Expected schema 200, users/search 200, roles/search 200 — the settings/users/roles providers return results for a non-admin; Orders/Pricing still absent from the menu provider. Single source of truth: scripts/seed-data/platform/backoffice-rbac-specs.mjs; seed: npm run seed:rbac -- --only SHELL_SEARCH_NOREAD,SHELL_SEARCH_READ (add --verify for the live proof); drift-guard: npm run td:validate:rbac; teardown: npm run seed:rbac:teardown -- --only SHELL_SEARCH_NOREAD,SHELL_SEARCH_READ. Runtime platform_id/user_id/role_id/userName resolve from aliases.<env>.json. platform:access does not exist on this build; userType Manager is the back-office entry. isAdministrator=false so the gate applies. The PASSWORD is a {{SHELL_SEARCH_PASSWORD}} secret from .env.local (never committed), shared by both accounts.",
+    "email": "AGENT-TEST-shell-search-read@test.virtocommerce.com",
+    "login": "AGENT-TEST-shell-search-read@test.virtocommerce.com",
+    "password": "{{SHELL_SEARCH_PASSWORD}}",
+    "password_var": "SHELL_SEARCH_PASSWORD",
+    "role": "AGENT-TEST-Shell-Search-Read",
+    "permissions": [
+      "platform:setting:access",
+      "platform:security:access",
+      "catalog:access",
+      "platform:setting:read",
+      "platform:security:read"
+    ],
+    "excluded_permission": "order:access",
+    "excluded_permissions": [
+      "order:access",
+      "pricing:access"
+    ],
+    "is_administrator": false,
+    "user_type": "Manager"
+  },
   "OTP_LOCKOUT_USER_1": {
     "_inline": true,
     "_notes": "VCST-5748 DESTRUCTIVE lockout fixture — consumer: suite 105 — wrong codes lock the account at the platform threshold. Customer contact + account on {{STORE_ID}}, lockoutEnabled true, emailConfirmed true. Isolation is per ACCOUNT: exactly ONE case may use this alias per run (a second case would read the first one's failed-attempt count). The case leaves it LOCKED for the platform lockout window; re-seed before the next run, never between a lockout observation and its audit. Seeded by scripts/seed-data/auth/seed-otp-signin.mjs (idempotent; re-running RE-ARMS a locked account: unlock + accessFailedCount 0); teardown: node scripts/seed-data/auth/seed-otp-signin.mjs --teardown; guard: node scripts/seed-data/auth/validate-otp-signin-data.mjs; live shape check: --verify-only. Business keys committed here; runtime ids (id = contact, user_id = security account) ONLY in aliases.<env>.json.",
@@ -10649,6 +10706,8 @@
     "sharedSecret": "{{PUNCHOUT_SHARED_SECRET_0}}",
     "sharedSecret_var": "PUNCHOUT_SHARED_SECRET_0",
     "purpose": "happy path — every optional check ON (sender domain + return-URL allow-list), default-length lifetimes",
+    "configurationId": "",
+    "deployed": "",
     "storeId": "",
     "storeExists": "",
     "senderDomain": "",
@@ -10669,6 +10728,8 @@
     "sharedSecret": "{{PUNCHOUT_SHARED_SECRET_1}}",
     "sharedSecret_var": "PUNCHOUT_SHARED_SECRET_1",
     "purpose": "checks OFF (no SenderDomain, no AllowedReturnUrls), a DIFFERENT store, short lifetimes (token/session expiry cases)",
+    "configurationId": "",
+    "deployed": "",
     "storeId": "",
     "storeExists": "",
     "senderDomain": "",
@@ -10689,6 +10750,8 @@
     "sharedSecret": "{{PUNCHOUT_SHARED_SECRET_2}}",
     "sharedSecret_var": "PUNCHOUT_SHARED_SECRET_2",
     "purpose": "StoreId points at a store that does not exist → mapped identity gets cXML 500 (N15)",
+    "configurationId": "",
+    "deployed": "",
     "storeId": "",
     "storeExists": "",
     "senderDomain": "",
@@ -10703,12 +10766,16 @@
   },
   "PUNCHOUT_CONFIG_3": {
     "_inline": true,
-    "_notes": "VCST-5886 Punchout configuration 3 (Punchout:Configurations:3 app setting, deployed per env via vc-deploy-dev infra/environments.yml — there is no REST read-back). Purpose: no StoreId at all → cXML 500 for any identity (N16). sharedSecret is a {{VAR}} token: the value lives only in .env.local as PUNCHOUT_SHARED_SECRET_3_<TEST_ENV> (e.g. PUNCHOUT_SHARED_SECRET_3_VCPTCORE_QA1), promoted to PUNCHOUT_SHARED_SECRET_3 by config.js / seed-common.mjs. Env facts below are EMPTY in this base file by design; the seeder writes the deployed values to the env overlay. Seeded/registered by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs. VirtoCommerce.Punchout is deployed only on vcptcore_qa1 and vcst — on every other env the seeder skips and these fields resolve to \"\" (a clear miss). Runtime ids live ONLY in aliases.<env>.json.",
+    "_notes": "VCST-5886 Punchout configuration 3 — RETIRED 2026-10-14 (VCST-5887). Punchout PR #2 (build 3.1000.0-pr-2) validates the configurations at platform START and refuses one without an Id or a StoreId, so vc-deploy-dev#6926 removed configuration 3 from vcptcore-qa1 and gave 0..2 their Ids (qa1-punchout-0/1/2). Its secret {{PUNCHOUT_SHARED_SECRET_3}} now matches no configuration and answers cXML 401 (unknown secret), never 500. The alias stays registered only so a case still citing it resolves; every env fact resolves to \"\" and deployed=false. The \"no StoreId\" scenario is a startup failure (deployment check), not a cXML answer — do not build a case on this alias. Seeded/registered by scripts/seed-data/punchout/seed-punchout.mjs; guard npm run td:validate:punchout; spec punchout-specs.mjs (CONFIG_SPECS[3].retired).",
     "seed": "seed:punchout",
     "index": 3,
     "sharedSecret": "{{PUNCHOUT_SHARED_SECRET_3}}",
     "sharedSecret_var": "PUNCHOUT_SHARED_SECRET_3",
-    "purpose": "no StoreId at all → cXML 500 for any identity (N16)",
+    "purpose": "RETIRED — was: no StoreId at all → cXML 500 for any identity (N16)",
+    "retired": true,
+    "retiredReason": "not deployable since Punchout PR #2: platform start refuses a configuration without Id/StoreId (vc-deploy-dev#6926 removed it, 2026-10-14); its secret now answers cXML 401",
+    "configurationId": "",
+    "deployed": "",
     "storeId": "",
     "storeExists": "",
     "senderDomain": "",
@@ -10860,5 +10927,97 @@
       "AGENT-TEST-VCST5726-sc-1",
       "AGENT-TEST-VCST5726-sc-2"
     ]
+  },
+  "PUNCHOUT_MAPPING_REQUISITION": {
+    "_inline": true,
+    "_notes": "VCST-5887 DEDICATED punchout buyer + mapping AGENT-TEST-PO-300 — isolated from {{USER_EMAIL}} (AGENT-TEST-PO-100), which is shared with other runs and holds a dozen named carts. Contact \"AGENT-TEST-Punchout Buyer\" + Customer account @td(PUNCHOUT_MAPPING_REQUISITION.email) (password {{B2B_USER_PASSWORD}}) + ONE org membership (Purchasing agent, org-scoped) in the single org of the {{USER_EMAIL}} persona (derived live, so it prices like the default persona). Use it for every cart-content / requisition case; run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>) in Setup AND Cleanup — it deletes every cart of this buyer and mints the empty `default` cart via xAPI (DISPOSABLE FIXTURES rule 4: two suites using this buyer are serialised). Seeded by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown deletes mapping, carts, membership, account, contact); guard npm run td:validate:punchout. Runtime ids (id = mapping, userId, memberId = contact, organizationId) live ONLY in aliases.<env>.json.",
+    "seed": "seed:punchout",
+    "externalId": "AGENT-TEST-PO-300",
+    "email": "AGENT-TEST-punchout-buyer@test.virtocommerce.com",
+    "login": "AGENT-TEST-punchout-buyer@test.virtocommerce.com",
+    "password": "{{B2B_USER_PASSWORD}}",
+    "password_var": "B2B_USER_PASSWORD",
+    "org_role": "Purchasing agent",
+    "organization_from_persona_var": "USER_EMAIL",
+    "owned_by_seeder": true,
+    "id": "",
+    "userId": "",
+    "memberId": "",
+    "organizationId": "",
+    "currentOrganizationId": "",
+    "otherOrganizationId": "",
+    "organizationCount": ""
+  },
+  "PUNCHOUT_PRODUCT_UOM": {
+    "_inline": true,
+    "_notes": "VCST-5887 OWNED punchout product with MeasureUnit \"box\" — a distinctive value, NOT the EA fallback, so a cXML ItemIn <UnitOfMeasure> that ignores the product's unit fails on this line. Sibling of @td(PUNCHOUT_PRODUCT_PLAIN) (same shape, no MeasureUnit). In the category of the standard fixture PROD-001 (test-products.csv; derived live, linked into config 0's store catalog), stocked (@td(PUNCHOUT_PRODUCT_UOM.stock)) on that store's main fulfillment center, priced ONLY by @td(PUNCHOUT_PRICELIST_USD) (price_usd) and @td(PUNCHOUT_PRICELIST_EUR) (price_eur). Add it to the dedicated buyer's cart as @td(PUNCHOUT_MAPPING_REQUISITION); reset carts with npm run seed:punchout:reset-carts. Seeded by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout, or `--only catalog` for just these fixtures; teardown seed:punchout:teardown, also `--teardown --only catalog`; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs §5. Runtime ids live ONLY in aliases.<env>.json.",
+    "seed": "seed:punchout",
+    "sku": "AGENT-TEST-PO-UOM-001",
+    "code": "AGENT-TEST-PO-UOM-001",
+    "name": "AGENT-TEST-Punchout UoM Box Product",
+    "measureUnit": "box",
+    "price_usd": "24.00",
+    "price_eur": "21.50",
+    "stock": "500",
+    "placement": "PROD-001 (test-data/products/test-products.csv)",
+    "owned_by_seeder": true,
+    "id": "",
+    "catalogId": "",
+    "categoryId": "",
+    "ffcId": ""
+  },
+  "PUNCHOUT_PRODUCT_PLAIN": {
+    "_inline": true,
+    "_notes": "VCST-5887 OWNED punchout product with NO MeasureUnit — the fallback side of the UoM pair (@td(PUNCHOUT_PRODUCT_UOM)) and the plain in-stock EUR line. Same category (PROD-001's), stock location and price lists as the UoM product, different amounts in both currencies (so a swapped or wrong-currency line is visible by amount). Seeded by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout, or `--only catalog` for just these fixtures; teardown seed:punchout:teardown, also `--teardown --only catalog`; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs §5. Runtime ids live ONLY in aliases.<env>.json.",
+    "seed": "seed:punchout",
+    "sku": "AGENT-TEST-PO-PLAIN-001",
+    "code": "AGENT-TEST-PO-PLAIN-001",
+    "name": "AGENT-TEST-Punchout Plain Product",
+    "measureUnit": "",
+    "price_usd": "12.00",
+    "price_eur": "10.75",
+    "stock": "500",
+    "placement": "PROD-001 (test-data/products/test-products.csv)",
+    "owned_by_seeder": true,
+    "id": "",
+    "catalogId": "",
+    "categoryId": "",
+    "ffcId": ""
+  },
+  "PUNCHOUT_PRICELIST_USD": {
+    "_inline": true,
+    "_notes": "VCST-5887 OWNED USD price list, assigned by STORE (unconditional) to config 0's store and config 1's store; it prices ONLY the two AGENT-TEST-PO-* products, so no other product's price moves. storeIds / assignmentIds are per env. Seeded by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout, or `--only catalog` for just these fixtures; teardown seed:punchout:teardown, also `--teardown --only catalog`; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs §5. Runtime ids live ONLY in aliases.<env>.json.",
+    "seed": "seed:punchout",
+    "name": "AGENT-TEST-Punchout-USD",
+    "currency": "USD",
+    "products": "PUNCHOUT_PRODUCT_UOM,PUNCHOUT_PRODUCT_PLAIN",
+    "owned_by_seeder": true,
+    "id": "",
+    "storeIds": "",
+    "assignmentIds": ""
+  },
+  "PUNCHOUT_PRICELIST_EUR": {
+    "_inline": true,
+    "_notes": "VCST-5887 OWNED EUR price list, assigned by STORE (unconditional) to config 0's store only; it prices ONLY the two AGENT-TEST-PO-* products (price_eur on each product alias) and, being EUR, cannot touch any USD price. A cart in EUR for @td(PUNCHOUT_MAPPING_REQUISITION) prices both lines from it. Seeded by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout, or `--only catalog` for just these fixtures; teardown seed:punchout:teardown, also `--teardown --only catalog`; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs §5. Runtime ids live ONLY in aliases.<env>.json.",
+    "seed": "seed:punchout",
+    "name": "AGENT-TEST-Punchout-EUR",
+    "currency": "EUR",
+    "products": "PUNCHOUT_PRODUCT_UOM,PUNCHOUT_PRODUCT_PLAIN",
+    "owned_by_seeder": true,
+    "id": "",
+    "storeIds": "",
+    "assignmentIds": ""
+  },
+  "PUNCHOUT_STORE_FFC_CONFIG_1": {
+    "_inline": true,
+    "_notes": "VCST-5887 config 1's store main fulfillment center. The seeder sets it to config 0's store main FFC ONLY when it has none (GET → change that one field → PUT the full store → GET + diff every other field, which must be identical), records the previous value, and teardown restores it only if it still holds the seeded value. owned=false means somebody else assigned it and the seeder leaves it alone. Makes a product of that store addable (no PRODUCT_FFC_QTY). Seeded by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout, or `--only catalog` for just these fixtures; teardown seed:punchout:teardown, also `--teardown --only catalog`; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs §5. Runtime ids live ONLY in aliases.<env>.json.",
+    "seed": "seed:punchout",
+    "field": "mainFulfillmentCenterId",
+    "storeId": "",
+    "sourceStoreId": "",
+    "ffcId": "",
+    "assignedFfcId": "",
+    "previousValue": "",
+    "owned": ""
   }
 }

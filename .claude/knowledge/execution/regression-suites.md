@@ -158,3 +158,23 @@ transport. Never assume a forwarded fact landed; if it matters, it belongs in th
 The measured losses behind every line above:
 [`docs/decisions/regression-history.md`](../../../docs/decisions/regression-history.md)
 §Shared-tree losses.
+
+## Executable specs beside a suite
+
+A case that passed deterministically, or a bug's reproduction, has a Playwright `.spec` beside its row. Design and
+decisions D1–D18: [`docs/superpowers/specs/2026-10-21-suites-reorg-design.md`](../../../docs/superpowers/specs/2026-10-21-suites-reorg-design.md) §4–§8 — cited, not restated. Authoring: the skill
+[`/qa-test-automation`](../../skills/qa-test-automation/SKILL.md), loaded only while writing a spec.
+
+- **Layout (D5).** `<suite>.csv` stays; a folder with the CSV's stem sits beside it and holds `<CASE-ID>.spec.ts`,
+  one case per file. Worked examples: `regression/suites/Frontend/cart/028-cart-core/CART-001.spec.ts`.
+- **The link is the case ID (D6).** File name = `test()` title prefix = CSV `ID`; nothing is written into the CSV or
+  the manifest. `suites:lint` fails on a spec whose ID has no row (**SP-001**) or whose name and title disagree
+  (**SP-002**); `td:validate` fails a hardcode in a spec (**DV-025**).
+- **The CSV is the truth for WHAT (D7).** A failing spec is fixed in the spec or reported as a finding, never by
+  editing the row's expectation ([`cases-that-catch-bugs.md`](cases-that-catch-bugs.md)).
+- **Outcomes (D8).** An `expect` failure is `FAIL`. Any other error (action or navigation timeout, fixture or auth
+  failure) is `BLOCKED` with `spec-defect` in its notes.
+- **One author covers the spec folder.** The one-author-per-change rule above covers the CSV **and** its sibling
+  folder as one unit; a second writer in either is forbidden for the same reasons, and a conflict is never
+  resolved with git.
+- **Runner-native rows (D4)** are not rewritten: `regression/lib/runner-cases.spec.ts` exposes them to Playwright.

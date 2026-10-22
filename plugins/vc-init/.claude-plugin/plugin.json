@@ -1,7 +1,7 @@
 {
   "name": "vc-init",
   "description": "Onboarding for the Virto Commerce QA plugins — /project-init asks only the environment name, bug tracker, code host and an auth preference, derives the rest from a live scan, and is the ONLY writer of project-profile.json. Every token it needs (GitHub, Azure DevOps, Jira) is stored by vc-secrets and handed to a process at launch through the $VC_RUN bridge, so no token sits in .env.local, .mcp.json or a settings env block. vc-fix and vc-perf depend on it.",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "displayName": "Virto Commerce Onboarding",
   "author": {
     "name": "Virto Commerce",

@@ -40,7 +40,7 @@
  * (project-profile.json governance — the host plugin's MCP servers do this job; nothing runs here).
  */
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -217,13 +217,25 @@ export function gitConfigEnv({ nodePath = process.execPath, helperPath } = {}) {
  * The nearest vc-secrets declaration files, walking up from `start` the way vc-secrets does: the first
  * directory holding `.claude/vc-secrets.local.json` or `.claude/vc-secrets.json`. Returns the parsed
  * files (local and project) found there, or null.
+ *
+ * `~/.claude` is skipped, as vc-secrets' configPaths skips it: it is the USER scope's home, and the walk
+ * passes through it for any cwd under $HOME. Taking it for a project made the home directory the
+ * project root, so a call from an undeclared folder ran against the user's own declaration.
  */
-export function findDeclarations(start = process.cwd()) {
+export function findDeclarations(start = process.cwd(), env = process.env) {
+  const canonical = (p) => {
+    try {
+      return realpathSync(p);
+    } catch {
+      return resolve(p);
+    }
+  };
+  const userClaude = canonical(join(env.HOME || os.homedir(), ".claude"));
   let dir = resolve(start);
   for (;;) {
     const local = join(dir, ".claude", "vc-secrets.local.json");
     const project = join(dir, ".claude", "vc-secrets.json");
-    if (existsSync(local) || existsSync(project)) {
+    if ((existsSync(local) || existsSync(project)) && canonical(join(dir, ".claude")) !== userClaude) {
       const read = (f) => {
         if (!existsSync(f)) return null;
         try {

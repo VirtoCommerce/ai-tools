@@ -30,7 +30,7 @@ browser automation with AI agents, **not** traditional `.spec.js` files. The rep
 | [CLAUDE.md](CLAUDE.md) | Project instructions for Claude Code (overrides defaults) |
 | [.claude/ROUTING.md](.claude/ROUTING.md) | "When to use what" — task → command / skill / agent |
 | [.claude/](.claude/) | The project-scoped `vc-qa` surface: agents, skills, commands, rules, knowledge, hooks |
-| [plugins/](plugins/) | The marketplace plugins: [`vc-init`](plugins/vc-init/README.md) · [`vc-fix`](plugins/vc-fix/README.md) · `vc-perf` · [`vc-secrets`](plugins/vc-secrets/README.md) |
+| [plugins/](plugins/) | The marketplace plugins: [`vc-init`](plugins/vc-init/README.md) · [`vc-fix`](plugins/vc-fix/README.md) · `vc-perf` · [`vc-secrets`](plugins/vc-secrets/README.md) · [`vc-frontend`](plugins/vc-frontend/README.md) |
 | [config/](config/) | MCP browser configs + `test-suites.json` manifest |
 | [regression/suites/](regression/suites/) | Module-aligned CSV suites (Frontend/ + Backend/) — `npm run suites:lint` prints the totals |
 | [test-data/](test-data/) | `@td()` alias registry + CSV fixtures |
@@ -68,7 +68,8 @@ ai-tools/
 │   ├── vc-init/                    # onboarding (/project-init), the profile writer, the $VC_RUN token bridge
 │   ├── vc-fix/                     # bug lifecycle + Developers team (self-contained; depends on vc-init)
 │   ├── vc-perf/                    # three-layer performance loop (depends on vc-init + vc-fix)
-│   └── vc-secrets/                 # secrets launcher for MCP configs
+│   ├── vc-secrets/                 # secrets launcher for MCP configs
+│   └── vc-frontend/                # theme-fork upstream merges, storefront plugins
 │
 ├── config/                         # MCP browser configs + test-suites.json manifest
 │   ├── mcp-playwright-{chrome,firefox,edge,mobile}.config.json

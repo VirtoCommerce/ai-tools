@@ -388,7 +388,7 @@ async function main(): Promise<void> {
     ? audit.result.split("SUMMARY_MD_START")[1].split("SUMMARY_MD_END")[0].trim()
     : "_(the audit produced no structured summary — see the run log)_";
 
-  const changed = sh(`git status --porcelain regression/suites config/test-suites.json`, { allowFail: true }).trim();
+  const changed = sh(`git status --porcelain "regression/suites/**/*.csv" config/test-suites.json`, { allowFail: true }).trim();
   if (!changed) {
     log(`No CSV changes (AUDIT_STATUS: ${status}). Nothing to PR — leaving the branch unpushed.`);
     writeFileSync(join(outputDir, "summary.json"), JSON.stringify({ RUN_ID, suite: suite.id, status, applied: false }, null, 2) + "\n");
@@ -400,12 +400,12 @@ async function main(): Promise<void> {
     // An auto-fix that introduces a new Blocker/Critical is reverted, not shipped.
     log("Deterministic gate FAILED — reverting the applied edits, no PR.");
     console.log(g.detail);
-    sh(`git checkout -- regression/suites config/test-suites.json`, { allowFail: true });
+    sh(`git checkout -- "regression/suites/**/*.csv" config/test-suites.json`, { allowFail: true });
     writeFileSync(join(outputDir, "summary.json"), JSON.stringify({ RUN_ID, suite: suite.id, status: "GATE_FAILED", applied: false }, null, 2) + "\n");
     process.exit(2);
   }
 
-  sh(`git add regression/suites config/test-suites.json`);
+  sh(`git add "regression/suites/**/*.csv" config/test-suites.json`);
   const title = `test(qa): triangulate suite ${suite.id} — ${suite.name}`;
   const msgFile = join(outputDir, "commit-msg.txt");
   writeFileSync(

@@ -21,18 +21,14 @@ import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lo
 import { chromium } from "playwright";
 import { mkdirSync, writeFileSync } from "fs";
 import { join } from "path";
+import { fileURLToPath } from "url";
 import "../../config.js"; // loads .env layers into process.env
 import { resolveRole } from "../lib/graphql-auth.js";
 
-const FRONT_URL = process.env.FRONT_URL;
-if (!FRONT_URL) {
-  console.error("FRONT_URL not set — aborting.");
-  process.exit(1);
-}
-
+// FRONT_URL and OUT_DIR are read where they are used: importing this module (for the selectors
+// below) must not exit the process or create directories — only the CLI does that.
 const TEST_DATA_DIR = join(process.cwd(), "test-data");
 const OUT_DIR = join(process.cwd(), "test-results", "auth");
-mkdirSync(OUT_DIR, { recursive: true });
 
 // Default account set covering suites 006 / 008 / 033 primaries + secondaries.
 const DEFAULT_ALIASES = [
@@ -45,23 +41,23 @@ const DEFAULT_ALIASES = [
   "MULTI_ORG_TF_BR",
 ];
 
-const aliases = process.argv.slice(2).length
-  ? process.argv.slice(2)
-  : DEFAULT_ALIASES;
-
 // Sign-in selectors (test-execution-preflight.md). Two known data-test-id forms.
-const EMAIL_SELECTORS = [
+export const EMAIL_SELECTORS = [
   '[data-test-id="sign-in-page.email-input"]',
   '[data-test-id="email-input"]',
 ];
-const PWD_SELECTORS = [
+export const PWD_SELECTORS = [
   '[data-test-id="sign-in-page.password-input"]',
   '[data-test-id="password-input"]',
 ];
-const SUBMIT_SELECTORS = [
+export const SUBMIT_SELECTORS = [
   '[data-test-id="sign-in-page.login-button"]',
   '[data-test-id="login-button"]',
 ];
+
+// The sign-in page now opens on a one-time-code form (email + "Continue"); the password form sits
+// behind this link. Observed live on vcst 2026-10-21. Absent on builds that open on the password form.
+export const SWITCH_TO_PASSWORD_SELECTORS = ['[data-test-id="otp-email-switch-to-password-link"]'];
 
 async function firstVisible(page: any, selectors: string[], waitMs = 0) {
   // Optionally wait for any of the selectors to hydrate (SPA).
@@ -79,7 +75,7 @@ async function firstVisible(page: any, selectors: string[], waitMs = 0) {
   return null;
 }
 
-async function loginAndSave(alias: string): Promise<boolean> {
+async function loginAndSave(alias: string, FRONT_URL: string): Promise<boolean> {
   // Accounts whose env-var naming doesn't fit resolveRole's {ROLE}_EMAIL pattern.
   const OVERRIDE: Record<string, { emailEnv: string; passwordEnv: string }> = {
     PERSONAL_USER_VIRTO: { emailEnv: "PERSONAL_USER_VIRTO", passwordEnv: "PERSONAL_USER_VIRTO_PASSWORD" },
@@ -110,6 +106,9 @@ async function loginAndSave(alias: string): Promise<boolean> {
   try {
     await page.goto(`${FRONT_URL}/sign-in`, { waitUntil: "networkidle", timeout: 60000 });
 
+    await firstVisible(page, [...SWITCH_TO_PASSWORD_SELECTORS, ...EMAIL_SELECTORS], 20000); // whichever form hydrates first
+    const switchEl = await firstVisible(page, SWITCH_TO_PASSWORD_SELECTORS);
+    if (switchEl) await switchEl.click();
     const emailEl = await firstVisible(page, EMAIL_SELECTORS, 20000);
     const pwdEl = await firstVisible(page, PWD_SELECTORS);
     const submitEl = await firstVisible(page, SUBMIT_SELECTORS);
@@ -150,13 +149,24 @@ async function loginAndSave(alias: string): Promise<boolean> {
   }
 }
 
-(async () => {
+async function main(): Promise<void> {
+  const FRONT_URL = process.env.FRONT_URL;
+  if (!FRONT_URL) {
+    console.error("FRONT_URL not set — aborting.");
+    process.exit(1);
+  }
+  mkdirSync(OUT_DIR, { recursive: true });
+  const aliases = process.argv.slice(2).length ? process.argv.slice(2) : DEFAULT_ALIASES;
   console.log(`Generating storageState for: ${aliases.join(", ")}`);
   const results: Record<string, boolean> = {};
-  for (const a of aliases) results[a] = await loginAndSave(a);
+  for (const a of aliases) results[a] = await loginAndSave(a, FRONT_URL);
   const ok = Object.values(results).filter(Boolean).length;
   console.log(`\nDone: ${ok}/${aliases.length} accounts authenticated.`);
   const failed = Object.entries(results).filter(([, v]) => !v).map(([k]) => k);
   if (failed.length) console.log(`Not generated: ${failed.join(", ")}`);
   process.exit(0);
-})();
+}
+
+// Same CLI guard as scripts/graphql/graphql-runner.ts: importing this module must not run it.
+const isCli = !!process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+if (isCli) main();
