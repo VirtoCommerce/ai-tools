@@ -1,0 +1,52 @@
+{
+  "description": "Layer 0's output (spec U37, U44). One hotspot per bundle hotspot plus any the agent adds; zones are U39's significant zones.",
+  "$defs": {
+    "source": { "type": "string", "pattern": "^[^:\\s]+:[^:]+:[0-9]+$" },
+    "location": { "type": "string", "pattern": "^[^:\\s]+:[^:]+(:[0-9]+)?$" },
+    "text": { "type": "string", "minLength": 1 },
+    "acRow": {
+      "type": "object", "additionalProperties": false, "required": ["ac", "status", "code"],
+      "properties": {
+        "ac": { "type": "string", "pattern": "^AC-[0-9]+$" },
+        "status": { "enum": ["IMPLEMENTED", "NO CODE"] },
+        "code": { "type": "array", "items": { "$ref": "#/$defs/source" } }
+      }
+    },
+    "hidden": {
+      "type": "object", "additionalProperties": false, "required": ["source", "what"],
+      "properties": { "source": { "$ref": "#/$defs/location" }, "what": { "$ref": "#/$defs/text" } }
+    },
+    "hotspot": {
+      "type": "object", "additionalProperties": false, "required": ["id", "source", "risk", "proof", "zone", "node", "profile"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^H-[0-9]+$" },
+        "source": { "$ref": "#/$defs/location" },
+        "risk": { "$ref": "#/$defs/text" },
+        "proof": { "enum": ["unit", "api", "ui", "exploratory"] },
+        "zone": { "enum": ["access", "money", "data", "order-state", "buyer-path", "none"] },
+        "node": { "type": ["string", "null"] },
+        "profile": { "type": ["string", "null"] }
+      }
+    },
+    "suspicion": {
+      "type": "object", "additionalProperties": false, "required": ["id", "source", "hypothesis", "check"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^S-[0-9]+$" },
+        "source": { "$ref": "#/$defs/source" },
+        "hypothesis": { "$ref": "#/$defs/text" },
+        "check": { "type": "string", "pattern": "^H-[0-9]+$" }
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "ticket", "acs", "hidden", "hotspots", "suspicions"],
+  "properties": {
+    "schema": { "const": "vc-test/change-map/1" },
+    "ticket": { "type": "string", "pattern": "^[A-Z][A-Z0-9]*-[0-9]+$" },
+    "acs": { "type": "array", "items": { "$ref": "#/$defs/acRow" } },
+    "hidden": { "type": "array", "items": { "$ref": "#/$defs/hidden" } },
+    "hotspots": { "type": "array", "items": { "$ref": "#/$defs/hotspot" } },
+    "suspicions": { "type": "array", "items": { "$ref": "#/$defs/suspicion" } }
+  }
+}
