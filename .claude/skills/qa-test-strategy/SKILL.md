@@ -172,7 +172,7 @@ carrying `floor:F11` about configuration (the script checks only the token and t
    risk on a `{HYPOTHESIS}` oracle takes technique `MODEL`. **6d** F6 fired ⇒ the header says `Deployed: NO`.
    **6e** (M9) `Test model` is `RUN` if and only if a risk has technique `MODEL`. **6f** (M10) no risk carries more than one `floor:` token.
    **6g** the header's `Change map:` line names the map the gate was given, or `none` when it was given none (F12).
-   **6h** with a change map (vc-test, no regression — U7): `Coverage triage + regression` is `SKIP`, and a fired F5 puts the cases at risk and `/qa-regression <suites>` in Out of scope.
+   **6h** with a change map (vc-test, no regression — U7): `Coverage triage + regression` is `SKIP`, and a fired F5 puts every suite at risk and `/qa-regression <suites>` in Out of scope.
 7. Every project risk has a mitigation or `accepted`.
 8. Concurrent browser lanes ≤ 3 (method rules); an API, script or `none` lane takes no slot.
 9. Exit criteria are observable.
