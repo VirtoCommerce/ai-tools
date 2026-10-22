@@ -9,7 +9,11 @@
  *
  * - Never writes a token/key-shaped name — least privilege is why this file is separate from
  *   .env.local. An existing line shaped like one is DROPPED and named.
- * - Any other line already in the file that nothing derives is KEPT verbatim (it may be file-only).
+ * - A derived name the env has no value for keeps the file's earlier value only when the file was generated for this
+ *   env (or carries no stamp: a file kept by hand). Off a master stand, no earlier value that IS the master password
+ *   is kept: a sync on a master stand writes it under every name, and an env switch would carry it to another stand.
+ * - Any other line already in the file that nothing derives is KEPT verbatim (it may be file-only) — except a copy of
+ *   the master password, as above.
  * - A derived name nobody has a value for is NOT written (an empty value would type ''): it is listed
  *   in the header and printed, with the suites that need it — a human adds it to .env.local.
  * - Prints names and counts only, never a value. Re-parses what it would write and refuses on mismatch.
@@ -71,18 +75,27 @@ if (all) syncAll();
 const file = readSecretsFile(root);
 /** @type {Map<string, string>} */
 const next = new Map();
-const missing = [], dropped = [], keptFileOnly = [], unserialisable = [];
+const missing = [], dropped = [], keptFileOnly = [], unserialisable = [], otherEnv = [], masterCopies = [];
 
-for (const n of [...derived.keys()].sort()) {
-  const v = process.env[n] || file.values.get(n) || '';
-  if (v) next.set(n, v); else missing.push(n);
-}
 // A master stand's lanes type MASTER_PASSWORD in every password field (the loader set it from .env.playwright.master).
 const onMaster = usesMaster(process.env) && process.env[MASTER_NAME];
+const masterValue = readMaster({ root, ambient }).value;
+const isMasterCopy = (v) => !onMaster && !!masterValue && v === masterValue;
+for (const n of [...derived.keys()].sort()) {
+  const old = file.values.get(n);
+  let v = process.env[n] || '';
+  if (!v && old) {
+    if (file.env && file.env !== testEnv) otherEnv.push(n);
+    else if (isMasterCopy(old)) masterCopies.push(n);
+    else v = old;
+  }
+  if (v) next.set(n, v); else missing.push(n);
+}
 if (onMaster) next.set(MASTER_NAME, process.env[MASTER_NAME]);
 for (const [n, v] of file.values) {
   if (derived.has(n) || n === MASTER_NAME) continue; // MASTER_PASSWORD: set above on a master stand, never kept from an old file
   if (/TOKEN|API|KEY|SECRET/.test(n)) { dropped.push(n); continue; }
+  if (isMasterCopy(v)) { masterCopies.push(n); continue; }
   if (v) { next.set(n, v); keptFileOnly.push(n); }
 }
 
@@ -119,6 +132,8 @@ if (added.length) console.log(`  added:     ${added.join(', ')}`);
 if (updated.length) console.log(`  updated:   ${updated.join(', ')}  (value differed from the layered env)`);
 if (keptFileOnly.length) console.log(`  kept:      ${keptFileOnly.join(', ')}  (in the file only — not derived, nothing to compare)`);
 if (dropped.length) console.log(`  dropped:   ${dropped.join(', ')}  (token/key-shaped — never in the browser secrets file)`);
+if (otherEnv.length) console.log(`  not kept:  ${otherEnv.join(', ')}  (only the file had a value, and it was generated for ${file.env}: that env's password)`);
+if (masterCopies.length) console.log(`  not kept:  ${masterCopies.join(', ')}  (the file's value is the master password, and ${testEnv} is not a master stand)`);
 for (const n of missing) console.log(`  MISSING:   ${n} — needed by ${[...derived.get(n)].join(', ')}; add it to .env.local (team secret store), then re-run`);
 if (onMaster) {
   console.log(`  master:    ${testEnv} uses the master password — the lanes type ${MASTER_NAME}`);
