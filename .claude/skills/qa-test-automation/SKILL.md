@@ -12,7 +12,7 @@ step and for nothing else. The design and every decision (D1–D18) are in
 [`docs/superpowers/specs/2026-10-21-suites-reorg-design.md`](../../../docs/superpowers/specs/2026-10-21-suites-reorg-design.md) §4–§8 — **cited here, never restated**.
 
 **Files in this skill (read only the one the step names):**
-[`writing-a-spec.md`](writing-a-spec.md) — layout, title, preconditions, writing from source (MCP log as fallback), the one run ·
+[`writing-a-spec.md`](writing-a-spec.md) — layout, title, preconditions, writing from source (a `playwright-cli` session as fallback), the one run ·
 [`practice.md`](practice.md) — locators, waits, `[MATH]`, collectors, cleanup, anti-flake checklist.
 
 ## When a spec is written (and when it is not)
@@ -43,10 +43,10 @@ step and for nothing else. The design and every decision (D1–D18) are in
    §Essential Rules → *Product context*; authoring step: [`../../knowledge/agents/authoring-standard.md`](../../knowledge/agents/authoring-standard.md) §5.
 3. **Write from source first (D18).** Draft the spec from the component/source and the generated selector
    surface ([`practice.md`](practice.md) §Locators); its one headless run (step 5) is the proof. **Only if** the
-   selectors cannot be found that way, run the item through Playwright MCP on the lane the suite names
-   (`.claude/rules/agents.md` §Parallel Execution — Browser Assignments; secrets only through `--secrets`, bare
-   key names; a borrowed lane counts toward the ≤3 browser agents) and use the MCP-reported code as the draft ([`writing-a-spec.md`](writing-a-spec.md) §From the MCP
-   log to a spec).
+   selectors cannot be found that way, pause the draft spec with `npm run specs:debug -- -g "<CASE-ID>:"` and
+   attach `npx playwright-cli attach <session>`: sign-in and data come from the spec's own fixtures, and each CLI
+   action prints the Playwright line to keep ([`writing-a-spec.md`](writing-a-spec.md) §From a CLI session to a
+   spec). The session counts toward the ≤3 browser agents. Do not install the CLI's own skills.
 4. **Write the file** at the layout in [`writing-a-spec.md`](writing-a-spec.md) §Layout and title. One
    case per file. Every observed literal goes through `regression/lib/data.ts`; auth only through the
    fixtures in `regression/lib/fixtures.ts` ([`../../rules/test-data.md`](../../rules/test-data.md), all
