@@ -32,16 +32,20 @@ plugin's folder (`plugins/vc-test` in this checkout). Run every command from the
 2. `node <plugin>/lib/capabilities.mjs --key <TICKET> --mcp <comma list>` — the list names the browser servers
    this session has, from `playwright-chrome`, `playwright-firefox`, `playwright-edge`, `chrome-devtools`. Its
    `stand.writable` goes into every brief that may create data.
+3. **Domain slug.** Take the candidate from the ticket's components and summary and check it with
+   `npm run bl:extract -- --has-domain <slug>`. None checks out ⇒ run without one; F2 then fires on doubt.
 
 ## 1 — Context
 
-Run the `ticket-context` skill: `/ticket-context <TICKET>`. Its STOPs are this run's. A `NOT DEPLOYED:` line in
+Run the `ticket-context` skill: `/ticket-context <TICKET> --domain <slug>` (no `--domain` only when step 0 found
+none). The domain brings the domain map, the `BL-*` rules and the mind map into the bundle. Its STOPs are this run's. A `NOT DEPLOYED:` line in
 the bundle's `blockers[]` ⇒ the run is BLOCKED on deploy: write `verdict.md` with that line and stop.
 
 ## 2 — Layer 0: the change map
 
 Dispatch one `general-purpose` agent (model `sonnet`), description `[vc-test:change-map] <TICKET>`, brief: "Read
-and follow `<plugin>/briefs/change-map.md`" + `BUNDLE`, `MIND_MAP`/`DATA_MODEL` when they exist, `OUT =
+and follow `<plugin>/briefs/change-map.md`" + `BUNDLE`, `MIND_MAP` / `DATA_MODEL` for the step-0 slug when the
+files exist, `OUT =
 <WORK>/change-map.json`. Then run `node <plugin>/lib/check-change-map.mjs --map <OUT> --bundle
 <BUNDLE>` yourself; exit 2 ⇒ send the errors back once, a second failure ⇒ STOP.
 
