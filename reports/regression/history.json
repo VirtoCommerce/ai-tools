@@ -3624,7 +3624,7 @@
   {
     "runId": "REG-2026-10-20-1332",
     "date": "2026-10-20",
-    "suiteId": "109",
+    "suiteId": "110",
     "suiteName": "Sales Rep - Customer Activity & Insights (storefront)",
     "environment": "vcptcore",
     "browser": "playwright-chrome",
