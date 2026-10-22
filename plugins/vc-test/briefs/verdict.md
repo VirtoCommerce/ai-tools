@@ -24,7 +24,7 @@ nothing and re-open no page. Dispatch description: `[vc-test:verdict] <KEY>`.
      screenshot, no bug (spec U25).
   3. **Not tested, and why** also lists every `notRun` row of `RUN_PLAN` with its reason, and every `SKIP` row of
      the strategy.
-  4. **Suspicions** — each layer-0 suspicion with `confirmed (<Ref>)` or `refuted (<Ref>)`.
+  4. **Suspicions** — each layer-0 suspicion with `confirmed (C-n)` or `refuted (C-n)`, naming the checklist item.
   5. **`## Cost`** at the end — the `RUN_COST` table as given.
 
 Return **only** the path and the verdict word.

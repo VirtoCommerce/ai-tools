@@ -12,6 +12,8 @@ const MAX_BROWSER_LANES = 3;
 export function planRun({ strategy, registry, capabilities }) {
   if (!APPROVED.has(strategy.status)) return { ok: false, errors: [`round ${strategy.round}: strategy is not approved (Status: ${strategy.status ?? "missing"})`] };
   const byRow = new Map(registry.artifacts.filter((e) => e.row).map((e) => [e.row, e]));
+  const unread = strategy.rows.filter((r) => r.decision === null && !(r.row in registry.rows_not_run));
+  if (unread.length) return { ok: false, errors: unread.map((r) => `${r.row}: decision "${r.cell ?? ""}" is neither RUN nor SKIP — the cell must start with one of them`) };
   const selected = new Map();
   const notRun = [];
   for (const r of strategy.rows.filter((x) => x.decision === "RUN")) {
@@ -22,6 +24,7 @@ export function planRun({ strategy, registry, capabilities }) {
   for (const e of registry.artifacts) if (e.derivedFrom && selected.has(e.derivedFrom)) selected.set(e.id, { entry: e, order: null });
 
   const errors = [];
+  if (registry.artifacts.some((e) => e.id === "checklist") && !selected.has("checklist")) errors.push("Checklist is not RUN — nothing would decide the ACs");
   for (const { entry } of selected.values()) {
     for (const cap of entry.requires) if (!capabilities[cap]) errors.push(`${entry.row ?? entry.id}: needs ${cap}, which this install does not have`);
   }

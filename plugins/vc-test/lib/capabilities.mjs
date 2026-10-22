@@ -7,7 +7,10 @@ import { pathToFileURL } from "node:url";
 import { argOf, workDir } from "./paths.mjs";
 
 const URLS = { "back-url": "BACK_URL", "front-url": "FRONT_URL" };
-const mcpKey = (name) => `mcp:${String(name).trim().toLowerCase().replace(/\s+/g, "-")}`;
+const mcpKey = (name) => `mcp:${String(name).trim().toLowerCase().replace(/[\s_]+/g, "-")}`;
+// U16: only a declaration makes the stand writable. config.js defaults an unset ENV_RISK to "test", so the raw
+// env value is read here: unset or staging/production ⇒ read-only.
+const WRITABLE_RISK = new Set(["dev", "test"]);
 
 export async function reach(url) {
   try { await fetch(url, { method: "GET", signal: AbortSignal.timeout(5000) }); return true; } catch { return false; }
@@ -22,6 +25,9 @@ export async function probe({ env, mcp, reach: reachFn = reach }) {
     if (!caps[cap]) caps.missing.push(`${cap}: ${url} did not answer`);
   }
   for (const name of mcp) if (String(name).trim()) caps[mcpKey(name)] = true;
+  const risk = env.ENV_RISK ? String(env.ENV_RISK).toLowerCase() : null;
+  caps.stand = { writable: WRITABLE_RISK.has(risk),
+    reason: risk ? `ENV_RISK=${risk}` : "ENV_RISK not declared in the env files — read-only" };
   return caps;
 }
 

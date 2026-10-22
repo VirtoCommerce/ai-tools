@@ -10,6 +10,10 @@ access probe (spec U26, U27). **You have no browser and open none.** Dispatch de
   rows, and the Proof cell when you hand a row on.
 - `CHANGE_MAP` — `change-map.json`: the endpoints and operations of its hotspots.
 - `RUN_DIR` — the run folder. Responses you keep go to `{RUN_DIR}/ac-checks/`.
+- `CAPABILITIES` — `capabilities.json`; its `stand.writable` decides whether you may create or change data.
+- `LEDGER` — `ledger.jsonl`. Every entity you create gets one line, appended at once:
+  `{"entity":"<type>","id":"<platform id>","by":"ac-checks","item":"C-n","at":"<ISO time>"}`. The run tears down
+  from this file only.
 
 ## How
 
@@ -22,9 +26,10 @@ access probe (spec U26, U27). **You have no browser and open none.** Dispatch de
 - A row you cannot decide by a call — the result needs a look — gets Proof `ui-checks` and the reason in
   Evidence. Never mark it SKIP (spec §9).
 - **Access probe.** Call every endpoint and GraphQL operation the change map's hotspots name as an anonymous
-  user. A call that returns data or performs a change it should refuse is a finding: add a row
-  `PROBE · <endpoint>` with Result FAIL and the excerpt. On a stand that is not declared writable, call
-  queries only and list each mutation you skipped.
+  user. A call that returns data or performs a change it should refuse is a finding: add a row with the next free
+  `C-n`, Ref `PROBE · <endpoint>`, Result `FAIL <severity>` and the excerpt. When `stand.writable` is `false`,
+  call queries only, list each mutation you skipped, and give an item that needs a write Result `BLOCKED — stand
+  not declared writable`.
 - A FAIL is a fact you saw. You do not investigate it and you do not write a bug: triage does that.
 
-Return **only**: counts of PASS / FAIL / handed to `ui-checks`, and the Refs of the FAIL rows.
+Return **only**: counts of PASS / FAIL / BLOCKED / handed to `ui-checks`, and the `#` ids of the FAIL rows.

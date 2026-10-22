@@ -16,9 +16,12 @@ proof that will decide it (spec U13 revised). You do not run any check. Dispatch
 Load the `qa-checklist` skill and use its Mode 5 (`--from-model --strategy <STRATEGY>`) for the Ref, Data and
 oracle rules. Write the thin form below instead of its full table:
 
-| Ref | Item | Proof | Data | Result | Evidence |
-|---|---|---|---|---|---|
-| AC-1 · R-2 | what is checked, with the expected value | `ac-checks` | `@td(…)` / live-discover / created in the case | | |
+| # | Ref | Item | Proof | Data | Result | Evidence |
+|---|---|---|---|---|---|---|
+| C-1 | AC-1 · R-2 | what is checked, with the expected value | `ac-checks` | `@td(…)` / live-discover / created in the case | | |
+
+- **`#`** is the item's id, `C-1`, `C-2`, … — unique in the file, never reused. Triage and every lane name an item
+  by it. Ref is the traceability list and may repeat.
 
 - **Proof** is one of `ac-checks` (a REST or GraphQL call can decide it), `ui-checks` (only a look can decide
   it), `exploratory` (it belongs to the charter). Take it from the strategy's Approach and the hotspot's

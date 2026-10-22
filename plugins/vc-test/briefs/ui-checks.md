@@ -8,6 +8,8 @@ Dispatch description: `[vc-test:ui-checks] <KEY>`.
 - `CHECKLIST` — `{RUN_DIR}/testing-checklist.md`. You write only the Result and Evidence cells of `ui-checks`
   rows.
 - `RUN_DIR` — the run folder; `npm run --silent run:dir` reprints it and its `SCREENSHOTS=` path.
+- `CAPABILITIES` and `LEDGER` — as in `ac-checks.md`: create data only when `stand.writable` is `true`, and append
+  every entity you create to the ledger with `"by":"ui-checks"`.
 
 ## How
 
@@ -18,4 +20,4 @@ Dispatch description: `[vc-test:ui-checks] <KEY>`.
   states a UI claim the tracker comment will cite keeps the screenshot that decided it (B12).
 - A FAIL is a fact you saw; you do not investigate it.
 
-Return **only**: counts of PASS / FAIL and the Refs of the FAIL rows.
+Return **only**: counts of PASS / FAIL / BLOCKED and the `#` ids of the FAIL rows.

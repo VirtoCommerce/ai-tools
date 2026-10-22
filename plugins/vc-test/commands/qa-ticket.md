@@ -8,7 +8,12 @@ disable-model-invocation: true
 
 You orchestrate **inline** and hold only paths: every hand-off is a file, never a summary in a brief (spec
 §4.1). Design: `docs/superpowers/specs/2026-10-15-vc-test-plugin-design.md` §3. `<plugin>` below is this
-plugin's folder (`plugins/vc-test` in this checkout). Run every command from the project root.
+plugin's folder (`plugins/vc-test` in this checkout). Run every command from the project root. `WORK` is
+`.vc-fix/vc-test/<TICKET>/` (the scripts' working state: `capabilities.json`, `change-map.json`, `run-plan.json`,
+`ledger.jsonl`, `run-cost.json`).
+
+**Precondition:** the `claude/vc-test-skill-changes` branch is merged — it gives `qa-test-strategy` its
+`--change-map` input and floor F12, and `qa-triage-results` its `--min-severity`. Without them, STOP.
 
 ## Rules
 
@@ -24,7 +29,9 @@ plugin's folder (`plugins/vc-test` in this checkout). Run every command from the
 ## 0 — Probe
 
 1. `npm run run:use -- <TICKET> [<env>]` → note `RUN_DIR`. Record the start time as ISO (`date -u +%FT%TZ`).
-2. `node <plugin>/lib/capabilities.mjs --key <TICKET> --mcp <comma list of the MCP servers this session has>`.
+2. `node <plugin>/lib/capabilities.mjs --key <TICKET> --mcp <comma list>` — the list names the browser servers
+   this session has, from `playwright-chrome`, `playwright-firefox`, `playwright-edge`, `chrome-devtools`. Its
+   `stand.writable` goes into every brief that may create data.
 
 ## 1 — Context
 
@@ -35,17 +42,17 @@ the bundle's `blockers[]` ⇒ the run is BLOCKED on deploy: write `verdict.md` w
 
 Dispatch one `general-purpose` agent (model `sonnet`), description `[vc-test:change-map] <TICKET>`, brief: "Read
 and follow `<plugin>/briefs/change-map.md`" + `BUNDLE`, `MIND_MAP`/`DATA_MODEL` when they exist, `OUT =
-.vc-fix/vc-test/<TICKET>/change-map.json`. Then run `node <plugin>/lib/check-change-map.mjs --map <OUT> --bundle
+<WORK>/change-map.json`. Then run `node <plugin>/lib/check-change-map.mjs --map <OUT> --bundle
 <BUNDLE>` yourself; exit 2 ⇒ send the errors back once, a second failure ⇒ STOP.
 
 **Show the suspicions now** — one line each, `suspected`, with file and line (U41).
 
 ## 3 — Strategy (human point 1)
 
-Run the `qa-test-strategy` skill inline from its procedure step 2, with the bundle **and** `change-map.json` as
-inputs. For every risk, Approach names the layer that proves it: a script (`ac-checks`) or exploratory (U45).
-**Exploratory is never `SKIP`** on a ticket with a UI or API surface (U47): its charter covers the change
-map's hotspots in a significant zone. Its gate, verifier and one approval question run as the skill says.
+Run the `qa-test-strategy` skill inline from its procedure step 2, with the bundle and `--change-map
+<WORK>/change-map.json` (its floors and its gate both read it; F12 makes Exploratory RUN on a significant-zone
+hotspot). For every risk, Approach names the layer that proves it: a script (`ac-checks`) or exploratory (U45).
+Its gate, verifier and one approval question run as the skill says.
 
 ## 4 — Plan
 
@@ -55,7 +62,8 @@ report its errors and STOP. **`--dry-run` stops here**: print the waves and `not
 ## 5 — Waves
 
 One message per wave of `run-plan.json`, every entry dispatched as its `run` says, with `RUN_DIR`,
-`CHANGE_MAP` and `STRATEGY` paths:
+`CHANGE_MAP`, `STRATEGY`, `CAPABILITIES` and `LEDGER` (`<WORK>/ledger.jsonl`) paths. Every agent that creates
+data appends each entity to the ledger as `ac-checks.md` says:
 
 | id | How |
 |---|---|
@@ -65,15 +73,19 @@ One message per wave of `run-plan.json`, every entry dispatched as its `run` say
 | `exploratory` | `qa-testing-expert` on `playwright-firefox`: `/qa-exploratory ticket <TICKET> <env>`; charter = the strategy's Exploratory row + the change map's hotspots with a `zone` other than `none` + the anonymous access probe |
 | `visual` | `ui-ux-expert` on Chrome DevTools MCP; its brief's first line makes it invoke the Skill tool with `skill: "qa-design"` (`.claude/skills/qa-test/visual-axis.md` §2, §4, §5) |
 
-Each exploratory and visual finding becomes a checklist row (Ref `EXP-n` / `VIS-n`) with its severity.
+**You are the writer of the rows no lane owns**, after the checklist exists and the exploratory and visual lanes
+have returned: (a) the Result and Evidence of every row whose Proof is `exploratory`, from the session's notes —
+PASS, `FAIL <severity>`, or `BLOCKED — <reason>`, never empty; (b) one new row per exploratory or visual finding,
+with the next free `C-n`, Ref `EXP-n` / `VIS-n`, Result `FAIL <Critical|High|Medium|Low>` and the notes path as
+Evidence. A row with an empty Result is unresulted and stops triage.
 
 ## 6 — Triage, then Medium-only investigation
 
-1. Run the `qa-triage-results` skill with `ticket <TICKET>` — **without `--verify`** (U29). A non-empty
-   `unresulted[]` ⇒ back to step 5 once.
-2. Sort its result by severity. **Low / cosmetic** ⇒ "Noticed". **Medium or worse** that it listed as
-   `needs-review` ⇒ one `[vc-test:investigate]` dispatch each, invoking `vc-fix:qa-investigate`, ≤ 3 at a time.
-   A Low candidate is never investigated here.
+1. Run the `qa-triage-results` skill with `ticket <TICKET> --min-severity P2` — only Medium or worse is
+   reproduced live (U29). A non-empty `unresulted[]` ⇒ fill those rows (step 5's writer rule) and triage once
+   more; still non-empty ⇒ STOP and list them.
+2. **Below floor** and Low / cosmetic ⇒ "Noticed". **Medium or worse** it listed as `needs-review` ⇒ one
+   `[vc-test:investigate]` dispatch each, invoking `vc-fix:qa-investigate`, ≤ 3 at a time.
 
 ## 7 — Verdict
 
@@ -84,5 +96,5 @@ Each exploratory and visual finding becomes a checklist row (Ref `EXP-n` / `VIS-
 ## 8 — Human point 2
 
 For each confirmed Medium-or-worse bug, `/vc-fix:qa-bug` with its investigation package (U50), one at a time;
-its own question decides filing. Tear down what the run created, by ledger id. Then print `verdict.md`'s first
-two lines and its path.
+its own question decides filing. Tear down every entity in `<WORK>/ledger.jsonl`, newest first, by its id —
+never by prefix; name any that could not be deleted. Then print `verdict.md`'s first two lines and its path.

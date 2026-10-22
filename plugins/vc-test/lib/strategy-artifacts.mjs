@@ -22,7 +22,7 @@ export function readStrategy(md) {
   const sec = lastRound(String(md).replace(/\r\n?/g, "\n"));
   const head = /^## Round (\d+)/.exec(sec);
   const status = /^Status:\s*(APPROVED|CHANGED|AUTO|DRAFT)\b/m.exec(sec)?.[1] ?? null;
-  const table = rows(block(sec, "Artifacts")).map(([row, cell]) => ({ row, ...decisionOf(cell ?? "") }));
+  const table = rows(block(sec, "Artifacts")).map(([row, cell]) => ({ row, ...decisionOf(cell ?? ""), cell: cell ?? "" }));
   return { round: head ? Number(head[1]) : 0, status, rows: table };
 }
 
