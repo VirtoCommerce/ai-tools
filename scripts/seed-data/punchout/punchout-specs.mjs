@@ -6,8 +6,11 @@
  *
  * What it declares, and where each value's source of truth is:
  *
- *  1. CONFIGURATIONS — the four `Punchout:Configurations` entries are PLATFORM APP SETTINGS, deployed
- *     per env through vc-deploy-dev `infra/environments.yml` (qa1: vc-deploy-dev#6693). There is no
+ *  1. CONFIGURATIONS — the `Punchout:Configurations` entries are PLATFORM APP SETTINGS, deployed
+ *     per env through vc-deploy-dev `infra/environments.yml` (qa1: vc-deploy-dev#6693, then #6926 —
+ *     Punchout PR #2 validates the options at platform START and refuses a configuration without an
+ *     `Id` or a `StoreId`, so #6926 added Ids qa1-punchout-0..2 and REMOVED configuration 3; its alias
+ *     stays registered as RETIRED so a case still citing it resolves to "" + a reason). There is no
  *     REST endpoint that reads them back, so the deployment is the source of truth and this module
  *     records what was deployed, keyed by TEST_ENV, with its provenance. The seeder writes these
  *     facts to aliases.<env>.json ONLY for an env listed here — every other env resolves them to ""
@@ -18,6 +21,11 @@
  *     `PUNCHOUT_SHARED_SECRET_<n>_<TEST_ENV>`.
  *
  *  2. MAPPINGS — punchout user mappings (`/api/punchout-user-mappings`).
+ *     - REQUISITION `AGENT-TEST-PO-300` → a DEDICATED buyer this seeder provisions (contact + Customer
+ *       account + ONE org membership, VCST-5887). Exists because {{USER_EMAIL}} is shared by every run
+ *       and holds a dozen named carts, so "the cart sent = the default cart" was unobservable on it.
+ *       Its carts are emptied by `--reset-buyer-carts` (case Setup + Cleanup). Owned: teardown deletes
+ *       mapping, membership, account and contact.
  *     - DEFAULT  `AGENT-TEST-PO-100` → the {{USER_EMAIL}} persona (contact in exactly ONE org — the
  *       single-org side of the org-resolution pair; MULTI_ORG is the other side). CREATED BY /qa-test 1r, deleted at
  *       run close-out. This seeder only REGISTERS it (writes its ids) and must NEVER create, change or
@@ -57,8 +65,12 @@ export const CONFIG_SPECS = [
   { alias: 'PUNCHOUT_CONFIG_2', index: 2, secretVar: 'PUNCHOUT_SHARED_SECRET_2',
     purpose: 'StoreId points at a store that does not exist → mapped identity gets cXML 500 (N15)' },
   { alias: 'PUNCHOUT_CONFIG_3', index: 3, secretVar: 'PUNCHOUT_SHARED_SECRET_3',
-    purpose: 'no StoreId at all → cXML 500 for any identity (N16)' },
+    purpose: 'RETIRED — was: no StoreId at all → cXML 500 for any identity (N16)',
+    retired: 'not deployable since Punchout PR #2 (build 3.1000.0-pr-2): PunchoutOptionsValidator runs at platform start and refuses a configuration without Id/StoreId, so vc-deploy-dev#6926 removed it from vcptcore-qa1 (2026-10-14). Its secret now matches no configuration (cXML 401). The "no StoreId" scenario is a startup failure, not a cXML answer — test it as a deployment check, not with this alias.' },
 ];
+
+/** Configurations a deployment can actually carry (the retired one is excluded everywhere it is probed). */
+export const ACTIVE_CONFIG_SPECS = CONFIG_SPECS.filter((c) => !c.retired);
 
 /** Platform default lifetimes when a configuration omits them (developer notes, VCST-5886). */
 export const DEFAULT_TOKEN_LIFETIME = '00:15:00';
@@ -70,31 +82,19 @@ export const DEFAULT_SESSION_LIFETIME = '04:00:00';
  */
 export const DEPLOYED_CONFIGS = {
   vcptcore_qa1: {
-    source: 'vc-deploy-dev#6693 infra/environments.yml (Punchout__Configurations__0..3), deployed 2026-10-01',
+    source: 'vc-deploy-dev#6693 infra/environments.yml (Punchout__Configurations__0..3, 2026-10-01) + #6926 (Ids qa1-punchout-0..2 added, configuration 3 removed, 2026-10-14)',
     configs: {
-      0: { storeId: 'B2B-store', storeExists: true, senderDomain: 'NetworkId', allowedReturnUrls: ['https://punchoutcommerce.com/*'],
+      0: { id: 'qa1-punchout-0', storeId: 'B2B-store', storeExists: true, senderDomain: 'NetworkId', allowedReturnUrls: ['https://punchoutcommerce.com/*'],
            tokenLifetime: '00:15:00', sessionLifetime: '04:00:00' },
-      1: { storeId: 'New-super', storeExists: true, senderDomain: '', allowedReturnUrls: [],
+      1: { id: 'qa1-punchout-1', storeId: 'New-super', storeExists: true, senderDomain: '', allowedReturnUrls: [],
            tokenLifetime: '00:02:00', sessionLifetime: '00:10:00' },
-      2: { storeId: 'AGENT-TEST-no-such-store', storeExists: false, senderDomain: '', allowedReturnUrls: [],
-           tokenLifetime: '', sessionLifetime: '' },
-      3: { storeId: '', storeExists: false, senderDomain: '', allowedReturnUrls: [],
+      2: { id: 'qa1-punchout-2', storeId: 'AGENT-TEST-no-such-store', storeExists: false, senderDomain: '', allowedReturnUrls: [],
            tokenLifetime: '', sessionLifetime: '' },
     },
   },
-  vcst: {
-    source: 'vc-deploy-dev#6935 infra/environments.yml (Punchout__Configurations__0..3), branch vcst-qa',
-    configs: {
-      0: { storeId: 'B2B-store', storeExists: true, senderDomain: 'NetworkId', allowedReturnUrls: ['https://punchoutcommerce.com/*'],
-           tokenLifetime: '00:15:00', sessionLifetime: '04:00:00' },
-      1: { storeId: 'QA-STORE', storeExists: true, senderDomain: '', allowedReturnUrls: [],
-           tokenLifetime: '00:02:00', sessionLifetime: '00:10:00' },
-      2: { storeId: 'AGENT-TEST-no-such-store', storeExists: false, senderDomain: '', allowedReturnUrls: [],
-           tokenLifetime: '', sessionLifetime: '' },
-      3: { storeId: '', storeExists: false, senderDomain: '', allowedReturnUrls: [],
-           tokenLifetime: '', sessionLifetime: '' },
-    },
-  },
+  // vcst (vc-deploy-dev#6935) is NOT listed: as of 2026-10-22 the vcst-qa branch's backend/packages.json carries no
+  // VirtoCommerce.Punchout module, so its Punchout__Configurations app settings (0..2, no Id; 3 removed) are read by
+  // nothing. Re-add an entry here — with the Ids the PR #2 build requires — when the module is deployed there again.
 };
 
 /** `{{VAR}}` token for a configuration's secret — the only form a committed file may carry. */
@@ -110,6 +110,8 @@ export function configOverlayFields(spec, deployed) {
   const tokenLifetime = deployed.tokenLifetime || DEFAULT_TOKEN_LIFETIME;
   const sessionLifetime = deployed.sessionLifetime || DEFAULT_SESSION_LIFETIME;
   return {
+    deployed: true,
+    configurationId: deployed.id || '',
     storeId: deployed.storeId,
     storeExists: deployed.storeExists,
     senderDomain: deployed.senderDomain,
@@ -120,6 +122,15 @@ export function configOverlayFields(spec, deployed) {
     sessionLifetime,
     tokenLifetimeMinutes: hhmmssToMinutes(tokenLifetime),
     sessionLifetimeMinutes: hhmmssToMinutes(sessionLifetime),
+  };
+}
+
+/** Overlay for a RETIRED configuration (pure): every env fact empty, the reason carried. */
+export function retiredOverlayFields(spec) {
+  return {
+    deployed: false, retired: true, retiredReason: spec.retired, configurationId: '', storeId: '', storeExists: false,
+    senderDomain: '', senderDomainCheck: false, allowedReturnUrl: '', returnUrlCheck: false,
+    tokenLifetime: '', sessionLifetime: '', tokenLifetimeMinutes: null, sessionLifetimeMinutes: null,
   };
 }
 
@@ -138,7 +149,21 @@ export const MAPPING_SPECS = [
     owned: false, maxOrganizations: 1, ownerNote: 'created by /qa-test VCST-5886 step 1r; deleted at run close-out — this seeder only registers it' },
   { alias: 'PUNCHOUT_MAPPING_MULTI_ORG', externalId: 'AGENT-TEST-PO-200', personaEmailVar: 'MULTI_ORG_USER_EMAIL',
     owned: true, minOrganizations: 2, ownerNote: 'seed-punchout.mjs find-or-create; teardown deletes it by id' },
+  { alias: 'PUNCHOUT_MAPPING_REQUISITION', externalId: 'AGENT-TEST-PO-300', owned: true, maxOrganizations: 1,
+    ownerNote: 'seed-punchout.mjs provisions the buyer AND the mapping (find-or-create); teardown deletes mapping, membership, account, contact',
+    buyer: {
+      email: 'AGENT-TEST-punchout-buyer@test.virtocommerce.com',
+      firstName: 'AGENT-TEST-Punchout', lastName: 'Buyer',
+      passwordToken: '{{B2B_USER_PASSWORD}}',
+      // The org is DERIVED, never transcribed: the single org of this persona's contact, so the buyer
+      // prices exactly like the default punchout persona and differs from it ONLY by owning its carts.
+      organizationFromPersonaVar: 'USER_EMAIL',
+      orgRoleName: 'Purchasing agent',
+    } },
 ];
+
+/** The mapping whose persona the seeder provisions itself (vs. an existing env persona). */
+export const isProvisionedBuyer = (spec) => Boolean(spec && spec.buyer);
 
 /** External ids this seeder must never delete or mutate, whatever a search returns. */
 export const PROTECTED_EXTERNAL_IDS = new Set(MAPPING_SPECS.filter((m) => !m.owned).map((m) => m.externalId));
@@ -248,9 +273,19 @@ export const VERIFY_PROBES = [
     config: 2, mapping: 'PUNCHOUT_MAPPING_MULTI_ORG', domain: 'NetworkId', returnUrl: ALLOWED_RETURN_URL, expectCode: '500', provesMapping: true },
   { name: 'config2 + unmapped identity → 401 (control: the 500 above is the mapping, not the config)',
     config: 2, identity: 'AGENT-TEST-PO-UNMAPPED', domain: 'NetworkId', returnUrl: ALLOWED_RETURN_URL, expectCode: '401' },
-  { name: 'config3 + unmapped identity → 500 (no StoreId)',
-    config: 3, identity: 'AGENT-TEST-PO-UNMAPPED', domain: 'NetworkId', returnUrl: ALLOWED_RETURN_URL, expectCode: '500' },
+  { name: 'config2 + mapped REQUISITION → 500 (dedicated buyer mapping is active and recognised)',
+    config: 2, mapping: 'PUNCHOUT_MAPPING_REQUISITION', domain: 'NetworkId', returnUrl: ALLOWED_RETURN_URL, expectCode: '500', provesMapping: true },
 ];
+
+/**
+ * Cart reset scope (pure): from a /api/carts/search page, the cart ids that belong to the dedicated
+ * buyer and may be deleted. Every cart type goes (default, named, SavedForLater, wishlists) — the
+ * buyer exists only for punchout cases — but never a cart of another customer the search returned.
+ */
+export function buyerCartTargets(results = [], userId) {
+  if (!userId) return [];
+  return results.filter((c) => c && c.id && c.customerId === userId).map((c) => c.id);
+}
 
 const xmlEscape = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
@@ -276,3 +311,141 @@ ${bfp}
 
 /** cXML Status code from a response body, or null. */
 export const cxmlStatusCode = (xml) => (/<Status[^>]*\bcode="(\d+)"/.exec(String(xml || '')) || [])[1] || null;
+
+// ── 5. Catalog fixtures: UoM product pair, punchout price lists, config-1 store FFC (VCST-5887) ─
+// Why the punchout seeder owns these rather than seed:products / seed:pricing / seed:store:
+//  - seed:products is CSV-driven (test-products.csv) and has no MeasureUnit column; its price lists
+//    are date-named, shared by ~100 rows and assigned by CATALOG — a punchout fixture added there
+//    would be torn down with (or tear down) unrelated rows.
+//  - seed:pricing prices DISCOVERED products in bulk; seed:store configures STORE_ID from stores.csv
+//    by a whole-store reconcile. Neither may touch config 1's store (New-super), which is not ours.
+// So: two OWNED products, two OWNED store-scoped price lists that price ONLY those products, and one
+// guarded field write on config 1's store, all reversed by `--teardown` (also `--only catalog`).
+//
+// SECOND RULE pairs this section carries:
+//  - UoM vs PLAIN: the same shape except MeasureUnit — a distinctive value ('box') vs none, so a cXML
+//    <UnitOfMeasure> that ignores the product (always the fallback) FAILS on the UoM line, and one that
+//    leaks a non-empty default FAILS on the plain line. 'box' is deliberately not 'EA' (the fallback).
+//  - USD vs EUR: every product's EUR amount differs from its USD amount, and the two products differ
+//    from each other in both currencies, so a line priced in the wrong currency or swapped with its
+//    sibling is visible in the amount alone.
+
+/**
+ * Placement is DERIVED, never transcribed: the products go into the catalog + category of the standard
+ * fixture this row of test-products.csv names (resolved live by its sku). That category is already in
+ * the store's catalog, so the seeder writes no catalog or category. (seed-common ensureCategoryPath is
+ * deliberately not used: on an env still on the date-named layout — vcptcore_qa1 — it would create a
+ * whole AGENT-TEST-SEED catalog pair.)
+ */
+export const PRODUCT_PLACEMENT = { csv: 'test-data/products/test-products.csv', keyColumn: 'product_id', key: 'PROD-001', codeColumn: 'sku' };
+export const PRODUCT_MIN_STOCK = 100;
+export const FALLBACK_UOM = 'EA';
+
+export const PRODUCT_SPECS = [
+  { alias: 'PUNCHOUT_PRODUCT_UOM', code: 'AGENT-TEST-PO-UOM-001', name: 'AGENT-TEST-Punchout UoM Box Product',
+    measureUnit: 'box', stock: 500, prices: { USD: 24.0, EUR: 21.5 },
+    purpose: 'MeasureUnit "box" — the cXML ItemIn UnitOfMeasure must carry the product value, not the EA fallback' },
+  { alias: 'PUNCHOUT_PRODUCT_PLAIN', code: 'AGENT-TEST-PO-PLAIN-001', name: 'AGENT-TEST-Punchout Plain Product',
+    measureUnit: '', stock: 500, prices: { USD: 12.0, EUR: 10.75 },
+    purpose: 'no MeasureUnit — the sibling of the UoM product (fallback side of the pair); plain in-stock EUR line' },
+];
+
+/**
+ * One OWNED price list per currency, assigned by STORE (not catalog) with an empty condition tree, so
+ * every shopper of that store resolves it — and it prices nothing but PRODUCT_SPECS, so no existing
+ * product's USD or EUR price can move. `stores` names which configuration's store(s) get an
+ * assignment: config 0 (B2B-store) always; the USD list also config 1's store, so a product there is
+ * priced once that store has a fulfillment center (EUR is not a currency of config 1's store).
+ */
+export const PRICELIST_SPECS = [
+  { alias: 'PUNCHOUT_PRICELIST_USD', name: 'AGENT-TEST-Punchout-USD', currency: 'USD', priority: 100, storesFromConfigs: [0, 1] },
+  { alias: 'PUNCHOUT_PRICELIST_EUR', name: 'AGENT-TEST-Punchout-EUR', currency: 'EUR', priority: 100, storesFromConfigs: [0] },
+];
+export const assignmentName = (pl, storeId) => `${pl.name} → ${storeId}`;
+
+/** PUT /api/products/prices rows for one product in one owned price list (pure). */
+export function priceRows(spec, pricelist, pricelistId, productId) {
+  const amount = spec.prices[pricelist.currency];
+  if (amount == null) return [];
+  return [{ pricelistId, productId, currency: pricelist.currency, list: amount, minQuantity: 1 }];
+}
+
+/** POST /api/catalog/products body (pure — the caller adds the store SEO record). */
+export function productBody(spec, { catalogId, categoryId, seoInfos = [] }) {
+  return {
+    catalogId, categoryId, code: spec.code, name: spec.name, productType: 'Physical', vendor: 'QA',
+    isActive: true, isBuyable: true, trackInventory: true, measureUnit: spec.measureUnit || null, seoInfos,
+  };
+}
+
+/**
+ * Config 1's store gets ONE fulfillment-center field: its main FFC, set to config 0's store's main FFC
+ * (derived live — never a transcribed GUID), only when it has none (null or dangling). An FFC someone
+ * else assigned is left alone and not owned. Written GET → change only this field → PUT the FULL body
+ * → GET + diff every other field (KB-2CBB229F: PUT /api/stores replaces the whole entity).
+ */
+export const STORE_FFC_SPEC = {
+  alias: 'PUNCHOUT_STORE_FFC_CONFIG_1', targetConfig: 1, sourceConfig: 0, field: 'mainFulfillmentCenterId',
+};
+
+/** Store fields a PUT may legitimately change besides the one we set (audit stamps). */
+export const STORE_AUDIT_FIELDS = new Set(['modifiedDate', 'modifiedBy']);
+
+/**
+ * Decide the store-FFC write (pure). `liveFfcIds` = FFCs that exist; `recorded` = the overlay entry a
+ * previous seed wrote ({ owned, assignedFfcId, previousValue }).
+ * → { action: 'set'|'none', value, previous, owned }
+ */
+export function planStoreFfc({ current, desired, liveFfcIds, recorded }) {
+  const live = liveFfcIds instanceof Set ? liveFfcIds : new Set(liveFfcIds || []);
+  if (current && current === desired && recorded?.owned && recorded.assignedFfcId === desired) {
+    return { action: 'none', value: desired, previous: recorded.previousValue ?? '', owned: true };
+  }
+  if (current && live.has(current)) return { action: 'none', value: current, previous: '', owned: false };
+  return { action: 'set', value: desired, previous: current || '', owned: true };
+}
+
+/** Decide the teardown restore (pure): only an owned assignment still holding our value is reverted. */
+export function planStoreFfcRestore({ current, recorded }) {
+  if (!recorded?.owned || !recorded.assignedFfcId) return { action: 'skip', reason: 'not owned by this seeder' };
+  if (current !== recorded.assignedFfcId) return { action: 'skip', reason: `changed since the seed (now ${current || 'null'}) — not reverting someone else's value` };
+  return { action: 'restore', value: recorded.previousValue || null };
+}
+
+/**
+ * Deep diff of two store payloads (pure): every path whose value differs, except `allowed` top-level
+ * fields and audit stamps at any depth. An array whose elements are all objects with a string `name`
+ * (store `settings`) is compared BY NAME, not by index: a full-body PUT /api/stores was observed to
+ * return the same 125 settings in a different order (vcptcore_qa1 2026-10-14: Stores.SeoLinksType
+ * moved from index 8 to 112), which an index-wise diff reports as hundreds of false changes. Other
+ * arrays compare index-wise. Returns [{ path, before, after }].
+ */
+const byName = (arr) => Array.isArray(arr) && arr.length > 0 && arr.every((x) => x && typeof x === 'object' && typeof x.name === 'string');
+export function diffStore(before, after, allowed = new Set()) {
+  const out = [];
+  const walk = (a, b, path) => {
+    const key = path[path.length - 1];
+    if (path.length === 1 && allowed.has(key)) return;
+    if (STORE_AUDIT_FIELDS.has(key)) return;
+    if ((byName(a) || byName(b)) && Array.isArray(a) && Array.isArray(b) && (byName(a) || !a.length) && (byName(b) || !b.length)) {
+      const ma = new Map(a.map((x) => [x.name, x])); const mb = new Map(b.map((x) => [x.name, x]));
+      if (ma.size !== a.length || mb.size !== b.length) { out.push({ path: path.join('.'), before: `${a.length} items`, after: `${b.length} items (duplicate names)` }); return; }
+      for (const n of new Set([...ma.keys(), ...mb.keys()])) walk(ma.get(n), mb.get(n), [...path, n]);
+      return;
+    }
+    if (a && b && typeof a === 'object' && typeof b === 'object' && Array.isArray(a) === Array.isArray(b)) {
+      const keys = Array.isArray(a) ? [...Array(Math.max(a.length, b.length)).keys()] : [...new Set([...Object.keys(a), ...Object.keys(b)])];
+      for (const k of keys) walk(a[k], b[k], [...path, k]);
+      return;
+    }
+    if (JSON.stringify(a ?? null) !== JSON.stringify(b ?? null)) out.push({ path: path.join('.'), before: a ?? null, after: b ?? null });
+  };
+  for (const k of new Set([...Object.keys(before || {}), ...Object.keys(after || {})])) walk(before?.[k], after?.[k], [k]);
+  return out;
+}
+
+/** Ownership guard for teardown (pure): only AGENT-TEST products whose code is a spec code. */
+export function teardownProductTargets(found = [], specs = PRODUCT_SPECS) {
+  const codes = new Set(specs.map((s) => s.code));
+  return found.filter((p) => p && p.id && codes.has(p.code) && String(p.name || '').startsWith(SEED_PREFIX)).map((p) => p.id);
+}
