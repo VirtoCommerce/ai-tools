@@ -1,6 +1,6 @@
 ---
 description: "Triage a completed regression run's — or, with `ticket <KEY>`, a /qa-test or /qa-test-fast run's checklist — non-passing cases (FAIL / BLOCKED / SKIPPED): collect each + its trace/screenshots/console/network evidence + the CSV row → dedup & flag cross-run flakiness → classify each into real-product-bug vs test-defect (bad steps / bad assertion / stale test data / stale test) vs flaky/env/known → live-verify the real ones → auto-apply test-case fixes (with confirmation) and draft bug reports → STOP for human (never files a tracker ticket, never triggers /qa-fix). Interactive-first; a headless ci/run-triage-results.ts twin is a later follow-up. Reuses scripts/lib/regression-triage.ts + ci/agents/regression-triage-agent.md + /qa-review-tests + /vc-fix:qa-investigate."
-argument-hint: "[RUN_ID | latest | ticket <KEY>] [--fix] [--verify]"
+argument-hint: "[RUN_ID | latest | ticket <KEY>] [--fix] [--verify] [--min-severity P0|P1|P2|P3]"
 disable-model-invocation: true
 ---
 
@@ -30,6 +30,7 @@ mode). `--fix` is ignored in this mode, and the report says so.
 
 - **`--fix`** — enables Phase 5 write actions: delegate test-defect classes to `/qa-review-tests suite <ID> --fix` (which asks before each CSV write) and draft `reports/bugs/open/<severity>/` files (inside a ticket run, the run folder's `bugs/<severity>/`) for confirmed real bugs. **Without `--fix`, the flow is report-only** — it changes no test case, bug draft or tracker and recommends the exact follow-up command per failure. It still writes its own bookkeeping in both modes: the fingerprint store (`--record`, gitignored), `reports/regression/history.json` (Phase 2 — **tracked**, so it shows in `git status`), and the Phase 6 `triage-report.md`.
 - **`--verify`** — live-reproduce **every** `REAL_BUG` candidate (default: only `CONFIDENCE: HIGH` candidates are reproduced live; MEDIUM/LOW are listed as needs-review).
+- **`--min-severity P0|P1|P2|P3`** — a severity floor for Phase 4: a `REAL_BUG` candidate whose `SEVERITY` is below it is **never reproduced live**, with or without `--verify`. It is returned as `below floor (<SEVERITY>)` with its evidence — never `needs-review`, never drafted — and listed in Phase 6's *Below floor* table. `/vc-test:qa-ticket` passes `P2`, so only Medium or worse is investigated (vc-test spec U29). Default: no floor.
 
 > **Hard orchestration rule.** You orchestrate; you do not execute. Run the deterministic collector, delegate classification to the triage agent, delegate live verification to the QA experts, delegate CSV fixes to `/qa-review-tests`, delegate bug drafting to `/qa-bug`. You only: parse the args, run the deterministic collectors (Phases 1–2), run the gates, write the Phase 6 report, and print the verdict. **You never edit a CSV, never open a browser, never write to a bug tracker, never call `/qa-fix`.** The end state is always a report + (optionally) applied test fixes + drafted bugs awaiting human review.
 
@@ -78,7 +79,7 @@ Bias: when a case can't be confidently attributed to product-or-test, it stays `
 ## Phase 4 — Live-verify the real-bug candidates
 > **Owner:** `qa-frontend-expert` (REPRO_LAYER frontend) / `qa-backend-expert` (backend)
 
-For each `REAL_BUG` candidate that is `CONFIDENCE: HIGH` (or **all** of them under `--verify`): delegate a **live reproduction** to the layer's QA expert against the current env. **The brief's first instruction: invoke the Skill tool with `skill: "vc-fix:qa-investigate"`, running ahead of `/vc-fix:qa-bug`.** That makes it stop at its gate and return an evidence package (`evidence-index.md` + `root-cause.md`) instead of writing a report (its Step 8). The package goes under the packet's `ticketDir` in ticket mode, and under `reports/regression/{RUN_ID}/evidence/` otherwise. The brief carries the `Observed behaviour` line (`.claude/templates/agent-dispatch.md` §Agent Prompt Structure), so the repro BANKS what it establishes. One candidate per dispatch, at most 3 at a time, each on its own lane. **`vc-fix` not installed** ⇒ no investigation and no draft: the candidate is listed as `needs-review` with the install line.
+For each `REAL_BUG` candidate that is `CONFIDENCE: HIGH` (or **all** of them under `--verify`), and at or above `--min-severity` when one is given: delegate a **live reproduction** to the layer's QA expert against the current env. **The brief's first instruction: invoke the Skill tool with `skill: "vc-fix:qa-investigate"`, running ahead of `/vc-fix:qa-bug`.** That makes it stop at its gate and return an evidence package (`evidence-index.md` + `root-cause.md`) instead of writing a report (its Step 8). The package goes under the packet's `ticketDir` in ticket mode, and under `reports/regression/{RUN_ID}/evidence/` otherwise. The brief carries the `Observed behaviour` line (`.claude/templates/agent-dispatch.md` §Agent Prompt Structure), so the repro BANKS what it establishes. One candidate per dispatch, at most 3 at a time, each on its own lane. **`vc-fix` not installed** ⇒ no investigation and no draft: the candidate is listed as `needs-review` with the install line.
 - **Reproduced live** → `confirmed real bug`, with its package path.
 - **Did not reproduce** → downgrade to `needs-review` (could be already-fixed-since-run, flaky, or env). Do not draft a bug.
 `STALE_TEST` candidates are confirmed cheaply via `/qa-review-tests suite <ID> --verify` (Dimension 8 env-check: is the control renamed/moved/removed?) rather than a full repro.
@@ -93,12 +94,13 @@ Route each CLASS by the **routing table in the skill's `.claude/skills/qa-triage
 ## Phase 6 — Triage report + verdict
 > **Owner:** `qa-lead-orchestrator`
 
-Write **`reports/regression/{RUN_ID}/triage-report.md`** — an addendum inside the existing regression-summary category (NOT a new report type). **Ticket mode:** `<ticketDir>/triage-report.md` — a ticket-check report beside the checklist (`.claude/rules/reports.md` §1, category 6) — and the confirmed-bugs table carries each bug's investigation-package path in place of a draft link. Three tables (mirrors `/qa-monitoring`):
+Write **`reports/regression/{RUN_ID}/triage-report.md`** — an addendum inside the existing regression-summary category (NOT a new report type). **Ticket mode:** `<ticketDir>/triage-report.md` — a ticket-check report beside the checklist (`.claude/rules/reports.md` §1, category 6) — and the confirmed-bugs table carries each bug's investigation-package path in place of a draft link. Three tables (mirrors `/qa-monitoring`), and a fourth under `--min-severity`:
 1. **Confirmed real bugs** — case, severity, repo, root cause, draft link, trace ref.
 2. **Test-case fixes** — case, CLASS, suite, the fix (applied or recommended).
 3. **Dismissed** — case, CLASS (`FLAKY`/`ENV`/`KNOWN_ISSUE`), reason.
+4. **Below floor** (`--min-severity` only) — case, severity, root cause, evidence path; not investigated, not drafted.
 
-Header: run ID / date / env / #failures / #real-bugs / #test-defects / #dismissed. Reference traces + screenshots by path — never inline the JSON. Footer: **"No tracker ticket filed, no fix triggered — human decides."** Keep within the regression-with-failures size cap in `.claude/rules/reports.md`.
+Header: run ID / date / env / #failures / #real-bugs / #test-defects / #dismissed (+ #below-floor under `--min-severity`). Reference traces + screenshots by path — never inline the JSON. Footer: **"No tracker ticket filed, no fix triggered — human decides."** Keep within the regression-with-failures size cap in `.claude/rules/reports.md`.
 
 Deliver a concise verdict to the user: counts per bucket, the report path, and the recommended next commands.
 
