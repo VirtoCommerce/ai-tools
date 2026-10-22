@@ -6,7 +6,9 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 
 const AGENT_ID_RE = /^[A-Za-z0-9_-]+$/;
-export const projectDirName = (cwd) => String(cwd).replace(/[^A-Za-z0-9]/g, "-");
+/** Claude Code's projects folder: under CLAUDE_CONFIG_DIR when it is set, else ~/.claude. */
+export const projectsRoot = () => join(process.env.CLAUDE_CONFIG_DIR || join(homedir(), ".claude"), "projects");
+const subdirs = (dir) => { try { return readdirSync(dir, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => join(dir, d.name)); } catch { return []; } };
 
 /** The returned JSON object, as text: the last SubagentHandback message, else the last assistant message's text. */
 export function extractAgentOutput(lines) {
@@ -25,13 +27,15 @@ export function extractAgentOutput(lines) {
   try { const v = JSON.parse(text); return v && typeof v === "object" && !Array.isArray(v) ? text : null; } catch { return null; }
 }
 
-/** `<projects>/<project>/<any session>/subagents/agent-<id>.jsonl`, newest first; null when there is none. */
-export function findAgentTranscript(agentId, { projectsDir = join(homedir(), ".claude", "projects"), cwd = process.cwd() } = {}) {
+/**
+ * `<projects>/<any project>/<any session>/subagents/agent-<id>.jsonl`, newest first; null when there is none. Every
+ * project folder is searched, not the one the cwd names: the session's folder is keyed by where it STARTED, so a `cd`
+ * or a worktree entered mid-session would miss it. An agent id is unique, so this finds one file.
+ */
+export function findAgentTranscript(agentId, { projectsDir = projectsRoot() } = {}) {
   if (!AGENT_ID_RE.test(String(agentId))) throw new Error(`not an agent id: "${agentId}"`);
-  const project = join(projectsDir, projectDirName(cwd));
-  if (!existsSync(project)) return null;
-  const hits = readdirSync(project, { withFileTypes: true }).filter((d) => d.isDirectory())
-    .map((d) => join(project, d.name, "subagents", `agent-${agentId}.jsonl`)).filter((p) => existsSync(p));
+  const hits = subdirs(projectsDir).flatMap(subdirs)
+    .map((session) => join(session, "subagents", `agent-${agentId}.jsonl`)).filter((p) => existsSync(p));
   return hits.sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)[0] ?? null;
 }
 
