@@ -12,7 +12,7 @@ frozen bundle does **not** get it for free — the bundle intentionally trails `
 the fix to a frozen bundle you cut a **hotfix**: a new patch `X.Y.(Z+1)` on the bundle's existing
 `X.Y` line, produced from a `support/<X.Y>` branch.
 
-This skill productizes the manual flow Oleg described (choose branch → find commit → cherry-pick →
+This skill productizes the manual flow the release owner described (choose branch → find commit → cherry-pick →
 commit → "Release Hotfix"). Terminal entry: [`/qa-hotfix`](../../commands/qa-hotfix.md).
 
 > Twin relationship: `/qa-hotfix` is to hotfix releases what [`/qa-bundle-check`](../qa-bundle-check/SKILL.md)
@@ -124,7 +124,7 @@ so it's repo/task-level, not per-bundle):
 | 6 | **Regression environment** | after the release deploys, run regression on the support line | RED → hand off |
 
 Checks 1–3 are mechanized in the precheck (no clone); 4–6 are enforced downstream (write step /
-release workflow / regression). **Golden rule (Oleg): if anything looks like it could break —
+release workflow / regression). **Golden rule (release owner): if anything looks like it could break —
 STOP, analyze, and involve a developer.** A `⚠` on check 1 or 3 makes the precheck exit `1` and
 **suppresses the "Next steps" write plan** — it is not a hotfix candidate until a human clears it.
 A `⚠` on check 2 is advisory (heuristic) but still requires a developer's explicit "not breaking"

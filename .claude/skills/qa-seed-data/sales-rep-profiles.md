@@ -141,7 +141,7 @@ role** marks a user as a rep without tying them to any specific customer"*, and 
 data**: Model a rep from a contact, a login account, and a role, with no new data structures."*
 `{DOC}`. So for an account that already has a contact and a login, the safe promotion is a
 GET-merge-PUT on `/api/platform/security/users` adding the role — that endpoint carries **no
-password field at all**. Verified live 2026-09-23 on `oleg@virtoworks.com`: adding
+password field at all**. Verified live 2026-09-23 on the second demo rep's account: adding
 `Advanced Sales Representative` made `GET /api/sales-rep/{memberId}` resolve with
 `hasGlobalSalesRepRole: true` and put him in `POST /api/sales-rep/search`, with no second Contact
 created (the rep id is his existing contact id).
@@ -151,10 +151,11 @@ created (the rep id is his existing contact id).
 membership with it, buyer roles included; adding a served org only adds the sales-rep role to an
 existing membership (measured on virtostart 2026-10-22, `KB-D173BBB8`). `attachServedOrgs()`
 therefore refuses the write, with a SKIP naming the organizations, while it would drop any. The
-third rep (`DEMO_REP_SWITCHER`) is that case: its own ten-organization book (`DORG-SW-*`) is also where he holds buyer
-memberships with varied roles, two of them locked — and a LOCKED membership takes that organization
+third rep (`DEMO_REP_SWITCHER`) is that case: its own ten-organization book (`DORG-SW-*`) is also
+where it holds buyer memberships with varied roles, two of them locked — and a LOCKED membership takes that organization
 out of the rep's hub entirely (customers, orders, statistics; `KB-3AD6DEAA`, confirmed live
-2026-10-22), so his hub shows 8 customers, not 10.
+2026-10-22), so its hub shows 8 customers, not 10. Its email is set only in `.env.local`
+(`SR_DEMO_REP_SWITCHER_EMAIL_<ENV>`) — a real colleague, kept out of the repo.
 
 **`storeCatalog: true`** on a `DEMO_ORGS` row draws its product pool from the store's own catalog
 (read live from `GET /api/stores/{id}`), not from every catalog the admin search reaches. On
@@ -165,7 +166,7 @@ catalogs: orders accept them, carts refuse them (`PRODUCT_PRICE_INVALID`). The `
 Document library** — no sidebar link, no dashboard widget. A demo rep who must show documents needs
 `Advanced Sales Representative`.
 
-**Passwords.** `SR_DEMO_REP_{VOLKOVA,ZHUK}_PASSWORD_<ENV>` in `.env.local` are only ever **read**, to
+**Passwords.** `SR_DEMO_REP_{PRIMARY,SECOND,SWITCHER}_PASSWORD_<ENV>` in `.env.local` are only ever **read**, to
 mint a rep-scoped token for tasks, rep carts and the four Customer-scoped shared lists (tasks are
 private to their owner, so there is no admin REST surface for them). Without them every one of those
 steps falls back to an operator's login-on-behalf (the chain below); only when no operator works
@@ -208,12 +209,12 @@ carries `sales-rep:access` — the hub renders in full, Document library and all
 memberships**: no customers, no orders, every counter 0, and **no error anywhere**. It reads exactly
 like broken seed data.
 
-Measured on the contact *Alla Volkova*, who has both:
+Measured on the primary demo rep's contact, which has both:
 
 | Account | userId | Org memberships | `salesRepCustomers` |
 |---|---|---|---|
-| `alla.volkova@virtoway.com` | `db222b30…` | **0** | **0** |
-| `Alla.Volkova@virtoworks.com` | `27b89463…` = `rep.userId` | **6** | **6** (+ 8 orders) |
+| the contact's first email | `db222b30…` | **0** | **0** |
+| the contact's second email | `27b89463…` = `rep.userId` | **6** | **6** (+ 8 orders) |
 
 Both tokens carry `sales-rep:access`. The only difference is which account the memberships are on.
 
@@ -301,10 +302,10 @@ discovery is the only place that can be caught.
 
 - Holds **neither** profile. The sales-rep surface was swept via `sr:inventory:delete` (14 reps, 31
   orders, 16 documents, 14 organizations, 2 roles) and the demo has not been seeded live yet.
-- **Alla Volkova** — `Advanced Sales Representative`, a rep here since 2022. `protected`.
-- **Oleg Zhuk** — `Advanced Sales Representative` as of 2026-09-23 (promoted by the §5 global-role
-  path). His Contact `status` is `New` where both other reps are `Approved` — noted, not changed; it
+- **Primary demo rep** (`DEMO_REP_PRIMARY`) — `Advanced Sales Representative`, a rep here since 2022. `protected`.
+- **Second demo rep** (`DEMO_REP_SECOND`) — `Advanced Sales Representative` as of 2026-09-23 (promoted by the §5 global-role
+  path). Its Contact `status` is `New` where both other reps are `Approved` — noted, not changed; it
   is a real person's record and `New` is not the platform's known sign-in blocker (`Invited` is).
-- **Maria Smith** — a colleague actively placing orders, not part of the demo. `protected`.
+- **A colleague** actively placing orders, not part of the demo. `protected`.
 - Outstanding before a full demo seed: both `SR_DEMO_REP_*_PASSWORD_VIRTOSTART` values, without which
   nothing is skipped any more — the operator fallback covers tasks, rep carts and Customer lists.

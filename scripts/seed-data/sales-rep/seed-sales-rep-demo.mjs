@@ -53,7 +53,7 @@ import {
   demoMarker, isDemoMarker, markerSweepInScope, demoProblems,
   buildDemoFileBytes, buildDemoDocumentRequest, buildDemoOrderBody,
   demoOrderNumber, ordersInPostOrder, productNeedByOrg, isDemoSafeProduct,
-  orgByKey, contactByKey, roleSeesDocuments, SALES_REP_ROLE_ADVANCED, documentSourceRel,
+  orgByKey, contactByKey, repEmailEnvKeys, roleSeesDocuments, SALES_REP_ROLE_ADVANCED, documentSourceRel,
   DEMO_LISTS, listProductNeedByOrg, DEMO_LIST_SCOPE, DEMO_CARTS, DEMO_REP_CARTS, cartProductNeedByOrg, resolveTaskText,
 } from './sales-rep-demo-specs.mjs';
 
@@ -115,6 +115,12 @@ async function allReps() {
 }
 
 /**
+ * A rep's email: `<emailVar>_<ENV>` first (the form .env.local uses), then `<emailVar>`. Reps are real
+ * people, so the address is read from the env every time and never written to the ledger.
+ */
+const repEmail = (spec) => String(repEmailEnvKeys(spec, TEST_ENV).map((k) => process.env[k]).find(Boolean) || '').trim().toLowerCase();
+
+/**
  * Resolve each declared rep to a LIVE sales-rep record, or explain precisely why it cannot be used.
  * Never creates anything: a rep who is not already a rep is reported, not provisioned.
  */
@@ -134,7 +140,7 @@ async function resolveReps() {
   const resolved = [];
 
   for (const spec of DEMO_REPS) {
-    const email = String(process.env[spec.emailVar] || '').trim().toLowerCase();
+    const email = repEmail(spec);
     if (!email) {
       log(`SKIP rep ${spec.key} (${spec.fullName}) — ${spec.emailVar} is not set.`);
       log(`     Set it in .env.${TEST_ENV}. This seeder will not guess an email: attaching sales-rep`);
@@ -162,7 +168,7 @@ async function resolveReps() {
     // — so signing in with the other email yields a token that carries sales-rep:access (the hub
     // renders in full) over ZERO granting memberships, i.e. an empty customer list, empty orders and
     // zero counters, with no error anywhere. Measured live on virtostart 2026-09-23: the contact
-    // "Alla Volkova" has two accounts; the one this variable named had 0 memberships while the rep
+    // the primary demo rep has two accounts; the one this variable named had 0 memberships while the rep
     // record's had 6. Whoever looks at that screen concludes the DATA is broken.
     const repUserName = String(full?.userName || '').trim().toLowerCase();
     if (repUserName && repUserName !== email) {
@@ -393,7 +399,7 @@ async function attachServedOrgs(reps, orgs) {
     }
     attachments.push({
       type: 'rep-attachment', key: r.spec.key, salesRepId: r.rep.id, userId: r.rep.userId,
-      email: r.email, priorOrganizations: priorOrgs,
+      priorOrganizations: priorOrgs,
       addedOrgIds: added.map((k) => orgs[k].id),
       servedOrgIds: organizations.map((o) => o.organizationId),
     });
@@ -738,7 +744,7 @@ async function teardown() {
   if (taskRows.length && !DRY_RUN) {
     for (const a of attachments) {
       const spec = DEMO_REPS.find((r) => r.key === a.key);
-      const token = await repToken({ spec, email: a.email, rep: { userId: a.userId } });
+      const token = await repToken({ spec, email: repEmail(spec), rep: { userId: a.userId } });
       if (!token) { log(`  tasks for ${a.key}: unreachable without a token — left in place.`); continue; }
       const gql = makeGql(token);
       const mine = taskRows.filter((t) => t.ownerUserId === a.userId);
@@ -1053,7 +1059,7 @@ async function ensureRepCarts(orgs, pools, reps, cursor) {
     }
     const off = (cart?.items || []).filter((i) => i.selectedForCheckout === false).length;
     log(`rep cart: ${r.spec.fullName} @ ${org.name} — ${cart?.itemsCount || 0} line(s), ${off} not for checkout, ${cart?.total?.formattedAmount}`);
-    created.push({ type: 'cart', key: spec.key, id: cart.id, owner: r.email, org: spec.org, createdByRep: spec.rep, itemsCount: cart?.itemsCount || 0 });
+    created.push({ type: 'cart', key: spec.key, id: cart.id, org: spec.org, createdByRep: spec.rep, itemsCount: cart?.itemsCount || 0 });
   }
   return created;
 }

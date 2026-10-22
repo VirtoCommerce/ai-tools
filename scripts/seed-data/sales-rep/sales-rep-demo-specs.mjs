@@ -352,10 +352,12 @@ export const roleSeesDocuments = (roleName) => String(roleName || '').trim() ===
  */
 export const DEMO_REPS = [
   {
-    key: 'DEMO_REP_VOLKOVA',
-    emailVar: 'SR_DEMO_REP_VOLKOVA_EMAIL',
-    passwordVar: 'SR_DEMO_REP_VOLKOVA_PASSWORD',
-    firstName: 'Alla', lastName: 'Volkova', fullName: 'Alla Volkova',
+    key: 'DEMO_REP_PRIMARY',
+    emailVar: 'SR_DEMO_REP_PRIMARY_EMAIL',
+    passwordVar: 'SR_DEMO_REP_PRIMARY_PASSWORD',
+    // Real colleagues' accounts: the identity lives ONLY in the env (emailVar, set per machine in
+    // .env.local), never in the repo. These labels are for log lines only.
+    firstName: 'Primary', lastName: 'Rep', fullName: 'Primary demo rep',
     store: DEMO_STORE,
     // Required, not aspirational: this rep is the one who demonstrates the document library, and
     // the basic role has no link and no widget for it. Verified live 2026-09-23: she already holds
@@ -367,29 +369,31 @@ export const DEMO_REPS = [
       + 'demo ATTACHES served organizations rather than creating an account.',
   },
   {
-    key: 'DEMO_REP_ZHUK',
-    emailVar: 'SR_DEMO_REP_ZHUK_EMAIL',
-    passwordVar: 'SR_DEMO_REP_ZHUK_PASSWORD',
-    firstName: 'Oleg', lastName: 'Zhuk', fullName: 'Oleg Zhuk',
+    key: 'DEMO_REP_SECOND',
+    emailVar: 'SR_DEMO_REP_SECOND_EMAIL',
+    passwordVar: 'SR_DEMO_REP_SECOND_PASSWORD',
+    firstName: 'Second', lastName: 'Rep', fullName: 'Second demo rep',
     store: DEMO_STORE,
     // Either role works for this rep — he demonstrates the customer/order side, not documents. The
     // seeder reports whichever he actually holds rather than requiring one.
     salesRepRole: null,
     showsDocuments: false,
     servedOrgs: ['DORG-CONTOSO', 'DORG-WINGTIP'],
-    purpose: 'Second rep, smaller book, sharing Contoso with Volkova so the multi-rep-per-customer '
+    purpose: 'Second rep, smaller book, sharing Contoso with the primary rep so the multi-rep-per-customer '
       + 'surface is non-degenerate.',
   },
   {
     key: 'DEMO_REP_SWITCHER',
     emailVar: 'SR_DEMO_REP_SWITCHER_EMAIL',
     passwordVar: 'SR_DEMO_REP_SWITCHER_PASSWORD',
+    // A real colleague's account, so the identity lives ONLY in the env (SR_DEMO_REP_SWITCHER_EMAIL,
+    // set per machine in .env.local) and nowhere in the repo. These labels are for log lines only.
     firstName: 'Switcher', lastName: 'Rep', fullName: 'Switcher demo rep',
     store: DEMO_STORE,
     // Verified live 2026-10-22: already Advanced on virtostart, so documents are reachable.
     salesRepRole: SALES_REP_ROLE_ADVANCED,
     showsDocuments: true,
-    // His OWN book, shared with nobody: the ten organizations of the org-switcher mockup. He also
+    // Its OWN book, shared with nobody: the ten organizations of the org-switcher mockup. The rep also
     // holds buyer memberships in them (varied roles, two LOCKED), which is the mockup's point.
     // Attaching ADDS the sales-rep role to those memberships and keeps the others; detaching
     // deletes the whole membership (measured 2026-10-22, see attachServedOrgs()).
@@ -397,7 +401,7 @@ export const DEMO_REPS = [
       'DORG-SW-NWTOOLS', 'DORG-SW-BAYSIDE', 'DORG-SW-BLUERIDGE', 'DORG-SW-CEDARPOINT', 'DORG-SW-COASTAL',
       'DORG-SW-DRIFTINN', 'DORG-SW-GREENLEAF', 'DORG-SW-HARBORLIGHT', 'DORG-SW-IRONWOOD', 'DORG-SW-LAKEVIEW',
     ],
-    purpose: 'QA colleague checking the sales-rep hub on a ten-customer book of his own, including the '
+    purpose: 'Third rep: a ten-customer book of its own for working the sales-rep hub, including the '
       + 'organization switcher with locked memberships.',
   },
 ];
@@ -541,27 +545,27 @@ export const documentSourceRel = (spec) => (spec?.sourceFile ? `${DEMO_UPLOADS_D
 
 /** Tasks. Real business copy — a rep hub whose task list reads "AGENT-TEST-TASK 04" demos nothing. */
 export const DEMO_TASKS = [
-  { key: 'DTSK-V-01', rep: 'DEMO_REP_VOLKOVA', name: 'Follow up on Northwind reorder', type: 'Call', priority: 'High', dueInDays: 0, description: 'Margaret confirmed budget; confirm quantities for the Q4 fastener line.' },
-  { key: 'DTSK-V-02', rep: 'DEMO_REP_VOLKOVA', name: 'Send Q4 price list to Contoso', type: 'Email', priority: 'High', dueInDays: 0, description: 'Priya asked for the updated list ahead of their planning cycle.' },
-  { key: 'DTSK-V-03', rep: 'DEMO_REP_VOLKOVA', name: 'Prepare volume pricing proposal — Fabrikam', type: 'Task', priority: 'Normal', dueInDays: 2, description: 'Model tier breaks at 500 / 1000 / 2500 units.' },
-  { key: 'DTSK-V-04', rep: 'DEMO_REP_VOLKOVA', name: 'Quarterly business review — Fabrikam Industrial', type: 'Meeting', priority: 'Normal', dueInDays: 5, description: 'Review service levels and the pending power-station trial.' },
-  { key: 'DTSK-V-05', rep: 'DEMO_REP_VOLKOVA', name: 'Chase cancelled order {{order:DORD-CN-02}} with Contoso', type: 'Call', priority: 'Normal', dueInDays: 1, description: 'Understand why the plant buyer cancelled and whether it can be recovered.' },
-  { key: 'DTSK-V-06', rep: 'DEMO_REP_VOLKOVA', name: 'Update credit terms for Northwind', type: 'Task', priority: 'Low', dueInDays: 9, description: 'Net-30 extension approved by finance; update the account record.' },
+  { key: 'DTSK-P-01', rep: 'DEMO_REP_PRIMARY', name: 'Follow up on Northwind reorder', type: 'Call', priority: 'High', dueInDays: 0, description: 'Margaret confirmed budget; confirm quantities for the Q4 fastener line.' },
+  { key: 'DTSK-P-02', rep: 'DEMO_REP_PRIMARY', name: 'Send Q4 price list to Contoso', type: 'Email', priority: 'High', dueInDays: 0, description: 'Priya asked for the updated list ahead of their planning cycle.' },
+  { key: 'DTSK-P-03', rep: 'DEMO_REP_PRIMARY', name: 'Prepare volume pricing proposal — Fabrikam', type: 'Task', priority: 'Normal', dueInDays: 2, description: 'Model tier breaks at 500 / 1000 / 2500 units.' },
+  { key: 'DTSK-P-04', rep: 'DEMO_REP_PRIMARY', name: 'Quarterly business review — Fabrikam Industrial', type: 'Meeting', priority: 'Normal', dueInDays: 5, description: 'Review service levels and the pending power-station trial.' },
+  { key: 'DTSK-P-05', rep: 'DEMO_REP_PRIMARY', name: 'Chase cancelled order {{order:DORD-CN-02}} with Contoso', type: 'Call', priority: 'Normal', dueInDays: 1, description: 'Understand why the plant buyer cancelled and whether it can be recovered.' },
+  { key: 'DTSK-P-06', rep: 'DEMO_REP_PRIMARY', name: 'Update credit terms for Northwind', type: 'Task', priority: 'Low', dueInDays: 9, description: 'Net-30 extension approved by finance; update the account record.' },
   // Overdue (past due, still open) and completed — so every Calendar tab has something in it.
-  { key: 'DTSK-V-07', rep: 'DEMO_REP_VOLKOVA', name: 'Call Fabrikam about the Plant 2 outage', type: 'Call', priority: 'High', dueInDays: -3, description: 'Elena asked for a call back on backup power options after last week\'s line stoppage.' },
-  { key: 'DTSK-V-08', rep: 'DEMO_REP_VOLKOVA', name: 'Send revised fastener quote to Northwind', type: 'Email', priority: 'Normal', dueInDays: -1, description: 'Daniel is waiting on the Grade 8 pricing before he releases order {{order:DORD-NW-03}}.' },
-  { key: 'DTSK-V-09', rep: 'DEMO_REP_VOLKOVA', name: 'Confirm delivery of order {{order:DORD-NW-01}}', type: 'Call', priority: 'Normal', dueInDays: -4, completed: true, description: 'Margaret confirmed the full shipment arrived at the Seattle yard.' },
-  { key: 'DTSK-V-10', rep: 'DEMO_REP_VOLKOVA', name: 'Send credit application to Contoso', type: 'Email', priority: 'Normal', dueInDays: -2, completed: true, description: 'Priya returned the signed form the same day.' },
+  { key: 'DTSK-P-07', rep: 'DEMO_REP_PRIMARY', name: 'Call Fabrikam about the Plant 2 outage', type: 'Call', priority: 'High', dueInDays: -3, description: 'Elena asked for a call back on backup power options after last week\'s line stoppage.' },
+  { key: 'DTSK-P-08', rep: 'DEMO_REP_PRIMARY', name: 'Send revised fastener quote to Northwind', type: 'Email', priority: 'Normal', dueInDays: -1, description: 'Daniel is waiting on the Grade 8 pricing before he releases order {{order:DORD-NW-03}}.' },
+  { key: 'DTSK-P-09', rep: 'DEMO_REP_PRIMARY', name: 'Confirm delivery of order {{order:DORD-NW-01}}', type: 'Call', priority: 'Normal', dueInDays: -4, completed: true, description: 'Margaret confirmed the full shipment arrived at the Seattle yard.' },
+  { key: 'DTSK-P-10', rep: 'DEMO_REP_PRIMARY', name: 'Send credit application to Contoso', type: 'Email', priority: 'Normal', dueInDays: -2, completed: true, description: 'Priya returned the signed form the same day.' },
 
-  { key: 'DTSK-Z-01', rep: 'DEMO_REP_ZHUK', name: 'Onboard Wingtip Electrical Supply', type: 'Meeting', priority: 'High', dueInDays: 0, description: 'First full account review with James; walk through the portal.' },
-  { key: 'DTSK-Z-02', rep: 'DEMO_REP_ZHUK', name: 'Confirm delivery window for Wingtip order {{order:DORD-WT-02}}', type: 'Call', priority: 'High', dueInDays: 1, description: 'Customer needs delivery before the end of the month.' },
-  { key: 'DTSK-Z-03', rep: 'DEMO_REP_ZHUK', name: 'Share safety data sheets with Contoso', type: 'Email', priority: 'Normal', dueInDays: 2, description: 'Plant compliance requested SDS for the lubricant range.' },
-  { key: 'DTSK-Z-04', rep: 'DEMO_REP_ZHUK', name: 'Review Contoso account with Alla', type: 'Meeting', priority: 'Normal', dueInDays: 3, description: 'Shared account — align on coverage before the next quarter.' },
-  { key: 'DTSK-Z-05', rep: 'DEMO_REP_ZHUK', name: 'Prepare Wingtip volume quote', type: 'Task', priority: 'Normal', dueInDays: 6, description: 'Quote the conduit and cabling lines at committed annual volume.' },
-  { key: 'DTSK-Z-06', rep: 'DEMO_REP_ZHUK', name: 'Archive closed opportunities', type: 'Task', priority: 'Low', dueInDays: 12, description: 'Housekeeping on last quarter’s pipeline.' },
-  { key: 'DTSK-Z-07', rep: 'DEMO_REP_ZHUK', name: 'Resolve invoice query on order {{order:DORD-WT-01}}', type: 'Call', priority: 'High', dueInDays: -2, description: 'James flagged a freight line he did not expect on the invoice.' },
-  { key: 'DTSK-Z-08', rep: 'DEMO_REP_ZHUK', name: 'Kick-off call with Wingtip', type: 'Meeting', priority: 'Normal', dueInDays: -5, completed: true, description: 'Introduced the portal and agreed a monthly check-in.' },
-  { key: 'DTSK-Z-09', rep: 'DEMO_REP_ZHUK', name: 'Send terms of sale to Contoso', type: 'Email', priority: 'Low', dueInDays: -1, completed: true, description: 'Shared the Terms and Conditions of Sale from the document library.' },
+  { key: 'DTSK-Q-01', rep: 'DEMO_REP_SECOND', name: 'Onboard Wingtip Electrical Supply', type: 'Meeting', priority: 'High', dueInDays: 0, description: 'First full account review with James; walk through the portal.' },
+  { key: 'DTSK-Q-02', rep: 'DEMO_REP_SECOND', name: 'Confirm delivery window for Wingtip order {{order:DORD-WT-02}}', type: 'Call', priority: 'High', dueInDays: 1, description: 'Customer needs delivery before the end of the month.' },
+  { key: 'DTSK-Q-03', rep: 'DEMO_REP_SECOND', name: 'Share safety data sheets with Contoso', type: 'Email', priority: 'Normal', dueInDays: 2, description: 'Plant compliance requested SDS for the lubricant range.' },
+  { key: 'DTSK-Q-04', rep: 'DEMO_REP_SECOND', name: 'Review Contoso account with the co-rep', type: 'Meeting', priority: 'Normal', dueInDays: 3, description: 'Shared account — align on coverage before the next quarter.' },
+  { key: 'DTSK-Q-05', rep: 'DEMO_REP_SECOND', name: 'Prepare Wingtip volume quote', type: 'Task', priority: 'Normal', dueInDays: 6, description: 'Quote the conduit and cabling lines at committed annual volume.' },
+  { key: 'DTSK-Q-06', rep: 'DEMO_REP_SECOND', name: 'Archive closed opportunities', type: 'Task', priority: 'Low', dueInDays: 12, description: 'Housekeeping on last quarter’s pipeline.' },
+  { key: 'DTSK-Q-07', rep: 'DEMO_REP_SECOND', name: 'Resolve invoice query on order {{order:DORD-WT-01}}', type: 'Call', priority: 'High', dueInDays: -2, description: 'James flagged a freight line he did not expect on the invoice.' },
+  { key: 'DTSK-Q-08', rep: 'DEMO_REP_SECOND', name: 'Kick-off call with Wingtip', type: 'Meeting', priority: 'Normal', dueInDays: -5, completed: true, description: 'Introduced the portal and agreed a monthly check-in.' },
+  { key: 'DTSK-Q-09', rep: 'DEMO_REP_SECOND', name: 'Send terms of sale to Contoso', type: 'Email', priority: 'Low', dueInDays: -1, completed: true, description: 'Shared the Terms and Conditions of Sale from the document library.' },
 
   { key: 'DTSK-S-01', rep: 'DEMO_REP_SWITCHER', name: 'Follow up on Drift Inn lobby displays', type: 'Call', priority: 'High', dueInDays: 0, description: 'Noah wants the second batch of front-desk monitors before the season opens.' },
   { key: 'DTSK-S-02', rep: 'DEMO_REP_SWITCHER', name: 'Send holiday price list to Blue Ridge', type: 'Email', priority: 'High', dueInDays: 0, description: 'Samuel asked for the updated list ahead of their holiday buying.' },
@@ -705,6 +709,13 @@ export const orgByKey = (key) => DEMO_ORGS.find((o) => o.key === key) || null;
 export const contactByKey = (key) => DEMO_CONTACTS.find((c) => c.key === key) || null;
 export const repByKey = (key) => DEMO_REPS.find((r) => r.key === key) || null;
 
+/**
+ * The env keys a rep's email is read from, most specific first: `<emailVar>_<ENV>` (the form
+ * .env.local uses, since the address names a real person and is kept out of the committed env files),
+ * then `<emailVar>`. Pure — the caller reads process.env.
+ */
+export const repEmailEnvKeys = (spec, testEnv) => [`${spec.emailVar}_${String(testEnv || '').toUpperCase()}`, spec.emailVar];
+
 /** Orders in POST order. `seq` ascending, so the intended latest row lands last. */
 export const ordersInPostOrder = () => [...DEMO_ORDERS].sort((a, b) => a.seq - b.seq);
 
@@ -769,10 +780,10 @@ export const DEMO_LIST_NAME_MAX = 25;
 
 export const DEMO_LISTS = [
   // The rep curates for each customer she serves — the sales-rep half.
-  { key: 'DLIST-NW-REP', scope: 'Customer', author: 'DEMO_REP_VOLKOVA', org: 'DORG-NORTHWIND', name: 'Q1 Stock Up — Fasteners', description: 'Curated by Alla for the Seattle yard ahead of the Q1 build season. Prices held to the volume agreement.', items: 5 },
-  { key: 'DLIST-CN-REP', scope: 'Customer', author: 'DEMO_REP_VOLKOVA', org: 'DORG-CONTOSO', name: 'Printer Fleet Refresh', description: 'Replacement models for the Columbus print room, matched to the fleet already on site.', items: 4 },
-  { key: 'DLIST-FB-REP', scope: 'Customer', author: 'DEMO_REP_VOLKOVA', org: 'DORG-FABRIKAM', name: 'Backup Power Proposal', description: 'Portable power options for line-side outages at Plant 2, sized from the last incident report.', items: 4 },
-  { key: 'DLIST-WT-REP', scope: 'Customer', author: 'DEMO_REP_ZHUK', org: 'DORG-WINGTIP', name: 'Van Stock Recommendation', description: 'Suggested van stock for the field crews, based on the last two restock cycles.', items: 3 },
+  { key: 'DLIST-NW-REP', scope: 'Customer', author: 'DEMO_REP_PRIMARY', org: 'DORG-NORTHWIND', name: 'Q1 Stock Up — Fasteners', description: 'Curated for the Seattle yard ahead of the Q1 build season. Prices held to the volume agreement.', items: 5 },
+  { key: 'DLIST-CN-REP', scope: 'Customer', author: 'DEMO_REP_PRIMARY', org: 'DORG-CONTOSO', name: 'Printer Fleet Refresh', description: 'Replacement models for the Columbus print room, matched to the fleet already on site.', items: 4 },
+  { key: 'DLIST-FB-REP', scope: 'Customer', author: 'DEMO_REP_PRIMARY', org: 'DORG-FABRIKAM', name: 'Backup Power Proposal', description: 'Portable power options for line-side outages at Plant 2, sized from the last incident report.', items: 4 },
+  { key: 'DLIST-WT-REP', scope: 'Customer', author: 'DEMO_REP_SECOND', org: 'DORG-WINGTIP', name: 'Van Stock Recommendation', description: 'Suggested van stock for the field crews, based on the last two restock cycles.', items: 3 },
   // A buyer shares with their own colleagues — the other half, so the demo shows both.
   { key: 'DLIST-NW-ORG', scope: 'Organization', author: 'DCT-NW-2', org: 'DORG-NORTHWIND', name: 'Site Consumables', description: 'Everyday consumables kept on the shelf; top up when the bin is half empty.', items: 3 },
   { key: 'DLIST-CN-ORG', scope: 'Organization', author: 'DCT-CN-2', org: 'DORG-CONTOSO', name: 'Print Room Standing Order', description: 'Monthly consumables for the print room.', items: 3 },
@@ -811,11 +822,11 @@ export const DEMO_CARTS = [
  * so the tile's second figure ("… not for checkout") reads non-zero instead of a permanent 0.
  */
 export const DEMO_REP_CARTS = [
-  { key: 'DRCART-VOL-NW', rep: 'DEMO_REP_VOLKOVA', org: 'DORG-NORTHWIND', items: 3, quantities: [20, 10, 5], unselect: 1 },
-  { key: 'DRCART-VOL-CN', rep: 'DEMO_REP_VOLKOVA', org: 'DORG-CONTOSO', items: 2, quantities: [2, 6], unselect: 0 },
-  { key: 'DRCART-VOL-FB', rep: 'DEMO_REP_VOLKOVA', org: 'DORG-FABRIKAM', items: 2, quantities: [1, 3], unselect: 1 },
-  { key: 'DRCART-ZHK-CN', rep: 'DEMO_REP_ZHUK', org: 'DORG-CONTOSO', items: 2, quantities: [4, 2], unselect: 0 },
-  { key: 'DRCART-ZHK-WT', rep: 'DEMO_REP_ZHUK', org: 'DORG-WINGTIP', items: 3, quantities: [15, 8, 3], unselect: 1 },
+  { key: 'DRCART-PRI-NW', rep: 'DEMO_REP_PRIMARY', org: 'DORG-NORTHWIND', items: 3, quantities: [20, 10, 5], unselect: 1 },
+  { key: 'DRCART-PRI-CN', rep: 'DEMO_REP_PRIMARY', org: 'DORG-CONTOSO', items: 2, quantities: [2, 6], unselect: 0 },
+  { key: 'DRCART-PRI-FB', rep: 'DEMO_REP_PRIMARY', org: 'DORG-FABRIKAM', items: 2, quantities: [1, 3], unselect: 1 },
+  { key: 'DRCART-SEC-CN', rep: 'DEMO_REP_SECOND', org: 'DORG-CONTOSO', items: 2, quantities: [4, 2], unselect: 0 },
+  { key: 'DRCART-SEC-WT', rep: 'DEMO_REP_SECOND', org: 'DORG-WINGTIP', items: 3, quantities: [15, 8, 3], unselect: 1 },
   { key: 'DRCART-SW-NWT', rep: 'DEMO_REP_SWITCHER', org: 'DORG-SW-NWTOOLS', items: 3, quantities: [6, 3, 1], unselect: 1 },
   { key: 'DRCART-SW-DRI', rep: 'DEMO_REP_SWITCHER', org: 'DORG-SW-DRIFTINN', items: 2, quantities: [12, 4], unselect: 0 },
   { key: 'DRCART-SW-LKV', rep: 'DEMO_REP_SWITCHER', org: 'DORG-SW-LAKEVIEW', items: 2, quantities: [2, 5], unselect: 1 },
