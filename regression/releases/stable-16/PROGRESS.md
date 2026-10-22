@@ -51,7 +51,6 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | W2 | IMGTL-007 | ImageTools never thumbnails .jpg originals, so JPEG quality settings cannot take effect | no | pre-existing; also IMGTL-024, IMGTL-025 |
 | W2 | IMGTL-024 | JPEG 50% vs 95% comparison impossible: no JPEG thumbnail is produced from .jpg sources | no | same defect as IMGTL-007, file once |
 | W2 | IMGTL-025 | Task over 5 .jpg images and 1 .png: thumbnails only for the .png, success notification with 0 errors | no | same defect as IMGTL-007, file once |
-| W2 | IMGTL-026 | Thumbnail task shows no processed/total progress; the push notification reports 0 of 0 although 13 thumbnails were written | unknown | low, UX |
 | W2 | CHAN-008 | Channel completeness stays 0% after an evaluation that scored the products 62/25/25% | no | pre-existing, not filed yet |
 
 ## Decisions pending
