@@ -30,11 +30,13 @@ export function resolveTestEnv(root, env = process.env) {
   return fromSession || read(join(root, ".env.test-env")) || "vcst";
 }
 
-export function loadLayeredEnv(root) {
+/** `ticket`: the ticket being analysed. It fills QA_ENV_PATH's `<ticket>`, so this process and the `deploy:pr` /
+ *  `preflight --ticket` children it starts (which keep what they inherit) see that ticket's stands. */
+export function loadLayeredEnv(root, ticket) {
   const testEnv = resolveTestEnv(root);
   process.env.TEST_ENV = testEnv;
   if (layers) {
-    layers.applyLayered(testEnv, { root });
+    layers.applyLayered(testEnv, { root, ticket });
     return testEnv;
   }
   config({ path: join(root, ".env.defaults"), quiet: true });
