@@ -8,6 +8,8 @@ import { fileURLToPath } from "node:url";
 import { computeFloors, domainMapTextOf, isAbandoned, p01NamesOf, readJsonOrExit } from "./floors.mjs";
 
 const CAP = 120; // lines per round section (D9)
+// The browser lanes of agents.md §Parallel Execution, by server name or the template's short form (chrome, edge, …).
+const BROWSER_LANE = /playwright|devtools|browser|\b(chrome|chromium|edge|firefox|webkit|mobile)\b/i;
 const lastRound = (md) => { const i = md.lastIndexOf("\n## Round "); return i < 0 ? "" : md.slice(i + 1); };
 // A heading counts only as the template writes it: a renamed one ("### Risk register") is missing, never matched.
 const HEADING = (h) => new RegExp(`^### ${h}[ \\t]*$`, "m");
@@ -67,9 +69,13 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names, chan
   const running = (name) => /^RUN\b/i.test((artifacts.get(name) ?? "").trim());
   const isModel = (r) => /\bMODEL\b/.test(approach.find((a) => a.r === r)?.technique ?? "");
   const names = (x, id) => new RegExp(`\\bfloor:${id}\\b`).test(x.source);
+  // vc-test (a change map is given) runs no regression (vc-test spec U7, §5.3): F5 then asks for the cases at risk and
+  // the follow-up in Out of scope (6h), not for the regression row.
+  const vcTest = changeMap !== null;
+  const requiredFor = (id) => (vcTest && id === "F5" ? [] : ARTIFACTS_FOR[id] ?? []);
   for (const id of fired) {
     if (!new RegExp(`\\b${id}\\b`).test(firedLine)) errors.push(`6: ${id} fired but is not on the 'Floors fired:' line`);
-    for (const name of ARTIFACTS_FOR[id] ?? []) if (!running(name)) errors.push(`6: ${id} fired but '${name}' is not RUN (SKIP, N/A, missing or other)`);
+    for (const name of requiredFor(id)) if (!running(name)) errors.push(`6: ${id} fired but '${name}' is not RUN (SKIP, N/A, missing or other)`);
     if (MODEL_RISK_FOR[id] && !risks.some((x) => names(x, id) && isModel(x.r)))
       errors.push(`6: ${id} fired but no risk carries floor:${id} in its Source with technique MODEL (${MODEL_RISK_FOR[id]} risk, M10)`);
   }
@@ -87,12 +93,15 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names, chan
   if (named && !changeMapPath) errors.push(`6g: the header names change map ${named} but the gate was not given it (--change-map)`);
   else if (!named && changeMapPath) errors.push(`6g: the gate was given --change-map ${changeMapPath} but no 'Change map:' line names it`);
   else if (named && resolve(named) !== resolve(changeMapPath)) errors.push(`6g: the header names change map ${named}, the gate was given ${changeMapPath}`);
+  if (vcTest && running("Coverage triage + regression")) errors.push("6h: 'Coverage triage + regression' is RUN, but regression is not run by vc-test (U7) — SKIP it and list the cases at risk in Out of scope");
+  if (vcTest && fired.includes("F5") && !/\/qa-regression\b/.test(outOfScope)) errors.push("6h: F5 fired under vc-test (U7) — Out of scope lists the cases at risk, their residual risk and the follow-up `/qa-regression <suites>`");
   for (const x of risks) {
     const own = Object.keys(MODEL_RISK_FOR).filter((id) => names(x, id));
     if (own.length > 1) errors.push(`6f: ${x.r} carries ${own.map((id) => `floor:${id}`).join(" and ")} — one floor, one risk (M10)`);
   }
 
-  const lanes = new Set(approach.map((a) => a.lane.split("·")[0].trim()).filter(Boolean));
+  // Only a browser lane counts toward the three (agents.md §Parallel Execution); an API, script or `none` lane takes no slot.
+  const lanes = new Set(approach.map((a) => a.lane.split("·")[0].trim()).filter((l) => BROWSER_LANE.test(l)));
   if (lanes.size > 3 && !/^Lanes sequenced:/m.test(sec)) errors.push(`8: ${lanes.size} browser lanes and no 'Lanes sequenced:' line`);
   const lines = sec.trimEnd().split("\n").length;
   if (lines > CAP) errors.push(`10: round section is ${lines} lines (cap ${CAP})`);
