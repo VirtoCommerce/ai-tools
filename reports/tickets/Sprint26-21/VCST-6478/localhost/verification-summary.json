@@ -1,0 +1,88 @@
+{
+  "ticket": "VCST-6478",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "date": "2026-10-22",
+  "environment": "http://localhost (frontend-only; API proxied to vcst-qa, store B2B-store)",
+  "build": {
+    "platform": "vcst-qa (remote, unchanged)",
+    "theme": "2.61.0-pr-2598-fd57-fd578365",
+    "relevant_modules": {},
+    "pr_build": "vc-theme-b2b-vue-2.61.0-pr-2598-fd57-fd578365 (VirtoCommerce/vc-frontend#2598 head fd57836)",
+    "baseline_theme": "2.61.0-pr-2570-2fc9-2fc9261a (vcst-qa storefront)"
+  },
+  "agent_used": "qa-frontend-expert",
+  "str_result": "3/3",
+  "baseline_reproduction": "RED (pre-fix, live on vcst-qa)",
+  "before_after": [
+    {
+      "check": "select_item item (/printers card)",
+      "before": "no currency, no list id/name",
+      "after": "currency USD; list id/name = event"
+    },
+    {
+      "check": "view_item item",
+      "before": "no currency",
+      "after": "currency = event (USD)"
+    },
+    {
+      "check": "add_to_wishlist item",
+      "before": "no currency",
+      "after": "currency = event (USD)"
+    },
+    {
+      "check": "select_item: search, recommendations, recently browsed",
+      "before": "no currency, no list id/name",
+      "after": "currency + list id/name = event"
+    },
+    {
+      "check": "currency switched to EUR",
+      "before": "n/a",
+      "after": "items and event EUR"
+    }
+  ],
+  "checklist_total": 10,
+  "checklist_passed": 9,
+  "checklist_failed": 0,
+  "checklist_notes": "#3 select_item item index: ABSENT. The ticket's Expected asks for it, and the PR deliberately leaves it out. The operator accepted this as VERIFIED_WITH_NOTES, with index to be covered by a follow-up: VCST-6502.",
+  "regression_issues": [],
+  "side_effects": [
+    {
+      "summary": "select_item item index still absent (ticket Expected)",
+      "severity": "Low",
+      "why": "out of PR scope; filed as VCST-6502"
+    },
+    {
+      "summary": "Recommended-list items have no discount (price 199.99 vs shown $100.00)",
+      "severity": "Low",
+      "why": "pre-existing"
+    },
+    {
+      "summary": "Multi-image card: image click changes slide, no select_item",
+      "severity": "Low",
+      "why": "pre-existing"
+    },
+    {
+      "summary": "Empty /cart pushes view_cart + begin_checkout, value 0",
+      "severity": "Low",
+      "why": "pre-existing, KB-EA61E19F"
+    },
+    {
+      "summary": "GA doc names item field brand; build sends item_brand",
+      "severity": "Low",
+      "why": "doc nit"
+    }
+  ],
+  "bugs_filed": [
+    {"key": "VCST-6502", "summary": "select_item item has no index", "severity": "Low", "outcome": "Cancelled, covered by vc-frontend#2598; verified in round 2"}
+  ],
+  "business_rules_verified": [
+    "BL-GA4-001"
+  ],
+  "tracker_transition": {
+    "role": "tested",
+    "state": "Tested"
+  },
+  "evidence": "local run folder evidence/, not published (public repository)",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-21/VCST-6478/localhost/"
+}

@@ -180,6 +180,31 @@ if (!/DEMO_LEDGER_KEY/.test(seederSrc)) {
     + 'and reports each non-member id as STALE — a wave of false failures for ids that were never members.');
 } else ok(`LEDGER_KEY = "${LEDGER_KEY_IN_SEEDER}" — skipped by selectProbeTargets()`);
 
+// [7] the demo reps stay anonymous in committed files --------------------------
+// The reps are real colleagues' accounts. Their addresses live only in .env.local; a ledger row or a
+// committed .env.<env> that carries one puts a real person into a public-to-the-team file, and
+// nothing else in the repo would notice. Test accounts (agent-test-*, example/test-agent domains) are fine.
+console.log('\n[7] Demo rep identities stay out of committed files');
+const TEST_ADDRESS = /^agent-test|@example\.(com|org|net)$|@test-agent\.com$/i;
+let anonChecked = 0;
+for (const name of readdirSync(join(ROOT, 'test-data')).filter((n) => /^aliases\..+\.json$/.test(n))) {
+  let ledger;
+  try { ledger = JSON.parse(readFileSync(join(ROOT, 'test-data', name), 'utf8'))[DEMO_LEDGER_KEY]; } catch { continue; }
+  for (const e of ledger?.entities || []) {
+    anonChecked++;
+    if (e.type === 'rep-attachment' && e.email) fail(`test-data/${name}: rep-attachment ${e.key} carries an email — the seeder reads it from the env; remove the field`);
+    if (e.type === 'cart' && e.createdByRep && e.owner) fail(`test-data/${name}: rep cart ${e.key} carries owner "${e.owner}" — a rep's address; remove the field`);
+  }
+}
+for (const name of readdirSync(ROOT).filter((n) => /^\.env\.[a-z0-9_]+$/.test(n) && !['.env.local', '.env.backup', '.env.test-env'].includes(n))) {
+  for (const [, key, value] of readFileSync(join(ROOT, name), 'utf8').matchAll(/^(SR_DEMO_(?:REP_[A-Z0-9]+_EMAIL|PROTECTED_EMAILS)[A-Z0-9_]*)=(.*)$/gm)) {
+    anonChecked++;
+    const real = value.split(',').map((a) => a.trim()).filter((a) => a && !TEST_ADDRESS.test(a));
+    if (real.length) fail(`${name}: ${key} names ${real.length} real address(es) — move it to .env.local as ${key.replace(/_[A-Z0-9]+$/, '') === key ? key + '_<ENV>' : key}; protection belongs in SR_DEMO_PROTECTED_EMAIL_SHA256`);
+  }
+}
+if (!problems.some((p) => / carries an email | carries owner | names \d+ real address/.test(p))) ok(`${anonChecked} ledger row(s) / env assignment(s) checked — no demo rep address committed`);
+
 // ---- report ----------------------------------------------------------------
 console.log('\n=== sales-rep DEMO dataset validation ===');
 console.log(`  hard problems: ${problems.length} | warnings: ${warnings.length}`);

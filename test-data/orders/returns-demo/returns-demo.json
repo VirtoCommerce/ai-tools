@@ -168,7 +168,7 @@
       "key": "DRO-AV-01",
       "org": "DORG-NORTHWIND",
       "owner": {
-        "rep": "DEMO_REP_VOLKOVA",
+        "rep": "DEMO_REP_PRIMARY",
         "login": "record"
       },
       "deliveredDaysAgo": 4,
@@ -188,7 +188,7 @@
       "key": "DRO-AV-02",
       "org": "DORG-CONTOSO",
       "owner": {
-        "rep": "DEMO_REP_VOLKOVA",
+        "rep": "DEMO_REP_PRIMARY",
         "login": "record"
       },
       "deliveredDaysAgo": 11,
@@ -204,7 +204,7 @@
       "key": "DRO-AV-03",
       "org": "DORG-FABRIKAM",
       "owner": {
-        "rep": "DEMO_REP_VOLKOVA",
+        "rep": "DEMO_REP_PRIMARY",
         "login": "email"
       },
       "deliveredDaysAgo": 7,
@@ -224,7 +224,7 @@
       "key": "DRO-AV-04",
       "org": "DORG-NORTHWIND",
       "owner": {
-        "rep": "DEMO_REP_VOLKOVA",
+        "rep": "DEMO_REP_PRIMARY",
         "login": "email"
       },
       "deliveredDaysAgo": 2,
@@ -240,7 +240,7 @@
       "key": "DRO-AV-05",
       "org": "DORG-FABRIKAM",
       "owner": {
-        "rep": "DEMO_REP_VOLKOVA",
+        "rep": "DEMO_REP_PRIMARY",
         "login": "record"
       },
       "deliveredDaysAgo": 1,
@@ -260,7 +260,7 @@
       "key": "DRO-AV-06",
       "org": "DORG-CONTOSO",
       "owner": {
-        "rep": "DEMO_REP_VOLKOVA",
+        "rep": "DEMO_REP_PRIMARY",
         "login": "email"
       },
       "deliveredDaysAgo": 1,
@@ -703,7 +703,7 @@
     ],
     "reps": [
       {
-        "key": "DEMO_REP_VOLKOVA",
+        "key": "DEMO_REP_PRIMARY",
         "orgs": [
           "DORG-NORTHWIND",
           "DORG-CONTOSO",
