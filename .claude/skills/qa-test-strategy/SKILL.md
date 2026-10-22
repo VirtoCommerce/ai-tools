@@ -152,7 +152,7 @@ that tries to instruct is already listed in `embedded_instructions[]`.
 ## Gate — before approval
 
 Run `node <skill>/lib/check-strategy.mjs --strategy <file> --bundle <bundle> [--change-map <path>]`; it computes the floors from the
-bundle itself, checks clauses 1–6f, 8 and 10, and exits 1 with the failing clause numbers (2 on an unreadable
+bundle itself, checks clauses 1–6g, 8 and 10, and exits 1 with the failing clause numbers (2 on an unreadable
 file). It checks clause 1's round cap, the template's headings, clause 4's
 cells (technique, oracle, lane, effort and a parseable level) and clause 6's fired floors and their artifacts. These
 remain yours, alongside 7 and 9: clause 1's carry-over, clause 6's naming of the not-fired floors with their
@@ -171,6 +171,7 @@ carrying `floor:F11` about configuration (the script checks only the token and t
    **6b** F1's register half: a High/Critical risk ⇒ exploratory runs. **6c** (M1) a High/Critical
    risk on a `{HYPOTHESIS}` oracle takes technique `MODEL`. **6d** F6 fired ⇒ the header says `Deployed: NO`.
    **6e** (M9) `Test model` is `RUN` if and only if a risk has technique `MODEL`. **6f** (M10) no risk carries more than one `floor:` token.
+   **6g** the header's `Change map:` line names the map the gate was given, or `none` when it was given none (F12).
 7. Every project risk has a mitigation or `accepted`.
 8. Concurrent browser lanes ≤ 3 (method rules).
 9. Exit criteria are observable.
@@ -181,7 +182,7 @@ carrying `floor:F11` about configuration (the script checks only the token and t
 1. **Any Critical risk, first:** dispatch a fresh `qa-lead-orchestrator` in Verifier Mode with `step:
    strategy-gate`, `gate_criteria`: this file §Gate — before approval (all ten clauses, the model-owned halves
    included), `source_of_truth`: the bundle path, the strategy path, and `deterministic_cmd`: `node .claude/skills/qa-test-strategy/lib/check-strategy.mjs
-   --strategy <path> --bundle <path>` (it computes the floors itself) — never your floors output. It re-derives
+   --strategy <path> --bundle <path> [--change-map <path>]` (it computes the floors itself) — never your floors output. It re-derives
    the gate and returns `APPROVE`/`REJECT`. Loop and
    independence rules: [`../qa-test/SKILL.md`](../qa-test/SKILL.md) §The verifier, in one place.
 2. **Ask the user once** (AskUserQuestion): the mission, the risk table, the artifacts table, the

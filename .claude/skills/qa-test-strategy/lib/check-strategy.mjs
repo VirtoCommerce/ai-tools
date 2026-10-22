@@ -23,7 +23,7 @@ const ARTIFACTS_FOR = { F1: ["Exploratory"], F2: ["Exploratory"], F3: ["Visual l
 // at most one such token. A fixed token, not a bare id, so a passing mention of "F10" in prose never counts.
 const MODEL_RISK_FOR = { F2: "a purpose", F10: "an org-context", F11: "a configuration" };
 
-export function checkStrategy(md, bundle, { domainMapText = null, p01Names, changeMap = null } = {}) {
+export function checkStrategy(md, bundle, { domainMapText = null, p01Names, changeMap = null, changeMapPath = null } = {}) {
   if (bundle?.schema !== "ticket-context/1") return { round: 0, errors: ["0: bundle is not a ticket-context/1 bundle"] };
   md = String(md).replace(/\r\n?/g, "\n"); // a CRLF checkout (core.autocrlf) reads the same as the LF file
   const floors = computeFloors(bundle, { domainMapText, changeMap, ...(p01Names ? { p01Names } : {}) });
@@ -80,6 +80,13 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names, chan
   const modelRisks = risks.filter((x) => isModel(x.r)).map((x) => x.r);
   if (modelRisks.length && !running("Test model")) errors.push(`6e: ${modelRisks.join(", ")} technique MODEL ⇒ Test model is RUN (M9)`);
   if (!modelRisks.length && running("Test model")) errors.push("6e: Test model is RUN but no risk has technique MODEL — SKIP — no MODEL risk (M9)");
+  // 6g: F12 reads a file the caller passes, so the header names it and the gate must be given the same one — otherwise
+  // leaving --change-map off the gate would turn F12 off unseen.
+  const cm = /^Change map:[ \t]*(.*)$/m.exec(sec)?.[1].trim() ?? "";
+  const named = cm && !/^none\b/i.test(cm) ? cm : null;
+  if (named && !changeMapPath) errors.push(`6g: the header names change map ${named} but the gate was not given it (--change-map)`);
+  else if (!named && changeMapPath) errors.push(`6g: the gate was given --change-map ${changeMapPath} but no 'Change map:' line names it`);
+  else if (named && resolve(named) !== resolve(changeMapPath)) errors.push(`6g: the header names change map ${named}, the gate was given ${changeMapPath}`);
   for (const x of risks) {
     const own = Object.keys(MODEL_RISK_FOR).filter((id) => names(x, id));
     if (own.length > 1) errors.push(`6f: ${x.r} carries ${own.map((id) => `floor:${id}`).join(" and ")} — one floor, one risk (M10)`);
@@ -98,8 +105,9 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   let md;
   try { md = readFileSync(arg("strategy"), "utf8"); } catch (e) { console.error(`check-strategy.mjs: cannot read ${arg("strategy")} (${e.code ?? e.message})`); process.exit(2); }
   const bundle = readJsonOrExit(arg("bundle"), "check-strategy.mjs");
-  const changeMap = arg("change-map") ? readJsonOrExit(arg("change-map"), "check-strategy.mjs") : null;
-  const res = checkStrategy(md, bundle, { domainMapText: domainMapTextOf(bundle), p01Names: p01NamesOf(), changeMap });
+  const changeMapPath = arg("change-map") || null;
+  const changeMap = changeMapPath ? (readJsonOrExit(changeMapPath, "check-strategy.mjs") ?? {}) : null; // a `null` file is a map in doubt
+  const res = checkStrategy(md, bundle, { domainMapText: domainMapTextOf(bundle), p01Names: p01NamesOf(), changeMap, changeMapPath });
   console.log(JSON.stringify(res, null, 2));
   process.exit(res.errors.length ? 1 : 0);
 }
