@@ -26,7 +26,8 @@
 > [`docs/decisions/vc-test-design-history.md`](../../decisions/vc-test-design-history.md); §4.1 and §5.1 are
 > corrected; B16–B17 are new. O4–O7 are open, each with a proposal (§13). U56 (the owner's, same day) names the
 > agents the plugin carries — three moved, four new with narrow tools — and moves `/qa-test-automation`; §4 and §10
-> follow.
+> follow. The prototype's dry and live runs on VCST-5904 and a control run are in §2b; U57–U59 (owner's) fix the
+> two causes of the bug it missed, enforced by the strategy gate's clauses 11–12 and its verifier.
 
 ## 1. Problem and goal
 
@@ -129,6 +130,9 @@ the working tree), and the goal of a run is to make sure there are no significan
 | U54 | Can a person run a kept `.spec` without a full run? | **Yes, in v1: `/vc-test:spec` (working name)** runs one kept `.spec`, a list of them or a folder — from the corpus or a run folder — locally, through U32's bridge tool with the current environment's test-user passwords, under the same constraints (B10). It prints pass/fail per `.spec` with the failure's output; no tracker or kb write, no browser agent, no LLM work beyond starting it. A developer re-checks a case, QA re-checks a moved one |
 | U55 | How does vc-test meet the suites-reorganization design (M1 merged in PR #500)? | **Two reconciliations (owner, 2026-10-21).** (1) **Who writes the `.spec`:** in a vc-test run, the narrow agent that writes the thin checklist (U13 revised) writes the `.spec` and the runner rows, and the `test-management-specialist` writes only the CSV rows (U18). The specialist keeps writing specs in this repository's regression work outside a run (D11). Both load the same `/qa-test-automation` skill, so a spec is written by one set of rules. (2) **How a `.spec` comes about:** written directly from source and the generated selectors and run headless at once (U27, B4); recording Playwright code from an MCP browser pass (that design's §8) is the fallback when selectors cannot be found that way, not the default — the default path has no browser agent per checklist item. The design's fidelity review (D17) applies: a kept `.spec` replaces the agent in a regression only after it. For the developer command it happens when QA moves the `.spec` into the corpus (U40) |
 | U56 | Which agents does the plugin carry, and with which tools? | **Owner, 2026-10-22.** *Moved* — canonical copies in the plugin, deleted from `.claude/` in the same phase (U2): `ticket-context-analyst` with `/ticket-context` (P1); `ui-ux-expert` with `qa-design`, or the visual lane that F3/F8 require has no agent on a client (P2); and the strategy verifier as its own agent, `strategy-verifier`, cut from `qa-lead-orchestrator`'s Verifier Mode — it re-derives the gate for a Critical risk and is read-only; the orchestrator itself does not move (P1). *New* — each a plugin agent definition with narrow tools, replacing the prototype's general-purpose agent with a brief: `change-map` (layer 0, U37: Read/Grep/Glob, no network, no shell, like the `/ticket-context` analysts); `checklist-writer` (U13 revised: writes the thin checklist, then the `.spec` files and runner rows its items name, loading `/qa-test-automation` per U55: Read/Grep/Glob/Write/Edit inside the run folder, no shell — `ac-checks` runs what it writes); `verdict-writer` (U30: Read, and Write into the run folder only); `fetch` (B9, host-governed projects only: the read tools of the two mapped servers, and Write into the raw folder only). *`/qa-test-automation` moves* with them (P2), with its own copy of the `.spec` harness (suites-reorganization D14, at its M3) |
+| U57 | The stand's configuration cannot be read — what decides the result? | **Owner, 2026-10-22 (§2b, VCST-5904).** **An unknown configuration never cancels the oracle.** When an AC, a `BL-*` rule or the documentation names a value (a limit, a lifetime, an interval), the check asserts that value. An observation that differs is a FAIL, or — when the stand may be configured otherwise — a named configuration question in the verdict with the observed value; never "record the observed value" with no PASS/FAIL. A risk whose AC names the value keeps its `{SPEC}`/`{DOC}` oracle whatever the Inputs could not read |
+| U58 | What may a project risk hold? | **Owner, 2026-10-22.** **A project risk is about the test project — access, data, environment, time — never about how the product behaves.** A statement about product behaviour ("the limit is in memory per instance") is a product risk with its own check, however the stand constrains testing it. An accepted project risk never changes how a product risk is decided |
+| U59 | Limits and state held in memory | **Owner, 2026-10-22.** **A scaled-out check.** Any limit, counter, cache, lockout or session state the change holds gets technique `SCALE`: the check spreads its requests so they can land on more than one backend instance (fresh connections, enough repetitions), and it states how many instances it saw. A stand proven to run one instance turns it into a named residual risk in Out of scope, never a silent pass |
 
 **Calls made while writing U24–U31 (the author's, not the owner's — correct any that is wrong).**
 
@@ -194,6 +198,31 @@ five-hour window (18% of the week); its token figure was measured differently (U
 | Visual lane / lane A (storefront checklist) | 7.3% / 7.1% | U26, U27 |
 | Mind-map update inside the run | 2.5% | U6 (no map builders in a run) |
 | The run did not fit the five-hour window twice | — | U38 |
+
+**The prototype on VCST-5904 (22 Oct, MFA by email, deep, six PRs), measured with `run-cost.mjs`.** A dry run
+(steps 0–4; two `/ticket-context` passes because the MFA build changed between them, three verifier rounds)
+cost 91.6M, 75% of it in the orchestrator: 162 turns at an average 422k context. After #508 (strategy in its own
+agent, rule 8) and #513 (analyst outputs saved from transcripts), the live run from the approved strategy cost
+**113.8M** — 15% of the VCST-6398 baseline, 27% with the dry run — with the orchestrator at 11.9M (10.5%). The
+browser lanes cost the most: ui-checks 26.3M, visual 20.5M, exploratory 19.9M, ac-checks 18.9M. 96 active
+minutes, 167 wall (a pause while a colleague tested the same stand). Verdict BLOCKED; one Medium filed
+(VCST-6504, code-cell border contrast).
+
+**A control run on the same build** — a colleague's own run of the ticket (round 2) — found the bug that blocks
+the story, and this run did not:
+
+| Finding | Control | vc-test prototype | Why the prototype missed it |
+|---|---|---|---|
+| X5 — the 3-wrong-code limit is held per backend instance; 4 wrong codes then the right one sign in | **High, FAIL** | the data was there (C-8: codes 1–4 `invalid_code`, the 5th hit the platform's account lockout; the module's `code_attempts_exceeded` never fired) and C-8 was recorded PASS | the strategy accepted "the limit is in memory per instance" as project risk P9, and P10 told R4 to "record the observed limit instead of asserting the defaults" because the stand's appsettings were unreadable — the oracle (AC-7, the documented 3) was dropped; the verifier approved it three times |
+| Backoffice code screen accessibility | Medium | not run | plan gap: browser rows need global MFA, which only the browserless ac-checks window turned on |
+| Storefront code step | tested | not run | the shared B2B-store setting write was refused, and the run's own stores have no storefront URL |
+| Parallel wrong passwords pass the lockout (B5) · OTP code signs in twice (B13 = VCST-6490) | High, pre-existing / known | out of scope by the strategy | — (same residual risk both ways) |
+| Doors past MFA (OTP alone, refresh token minted before MFA, Disabled store for an admin) · layout, border, 18 px links | PO questions · Low | the same (C-34, C-38, C-27 · C-70, C-71) | — |
+
+By U49 the layered run did not find more significant bugs than the control on this ticket. U57–U59 answer the
+two causes of the miss. The two plan gaps (a browser row that needs a setting window only a browserless lane
+opens; a storefront row with no store it may change) are prototype defects to fix in the command before the next
+live run, not design decisions.
 
 ## 3. The shape
 
