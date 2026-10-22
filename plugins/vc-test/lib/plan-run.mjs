@@ -26,6 +26,7 @@ export function planRun({ strategy, registry, capabilities }) {
   }
   const errors = [];
   if (tpl) {
+    if (strategy.rows.some((r) => r.row === tpl.row && r.decision === "SKIP") && (strategy.scenarios ?? []).length) errors.push(`${tpl.row} row is SKIP but the table lists scenarios (U62)`);
     for (const sc of strategy.scenarios ?? []) {
       const proof = tpl.proofs?.[sc.proof];
       const id = `scenario:${sc.s}`;
@@ -78,7 +79,7 @@ export function planRun({ strategy, registry, capabilities }) {
   for (const id of ordered) {
     const w = wave.get(id) - 1;
     const { entry, missing } = selected.get(id);
-    (waves[w] ??= []).push({ id, lane: entry.lane, run: entry.run, ...(missing ? { missing } : {}) });
+    (waves[w] ??= []).push({ id, lane: entry.lane, run: entry.run, ...(selected.get(id).scenario?.exploratory ? { exploratory: true } : {}), ...(missing ? { missing } : {}) });
   }
   return { ok: true, waves: waves.filter(Boolean).map((w) => w.sort((a, b) => byId(a.id, b.id))), notRun };
 }

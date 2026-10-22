@@ -42,16 +42,6 @@
       "writes": ["<run>/testing-checklist.md", "<run>/screenshots/**"]
     },
     {
-      "id": "exploratory",
-      "row": "Exploratory",
-      "run": { "skill": "qa-exploratory", "agent": "qa-testing-expert", "model": "sonnet" },
-      "needs": [],
-      "order": "strategy",
-      "lane": "browser:playwright-firefox",
-      "requires": ["front-url", "mcp:playwright-firefox"],
-      "writes": ["<run>/exploratory/**", "<run>/screenshots/**"]
-    },
-    {
       "id": "visual",
       "row": "Visual lane",
       "run": { "skill": "qa-design", "agent": "ui-ux-expert", "model": "sonnet" },
@@ -63,6 +53,7 @@
   ],
   "rows_not_run": {
     "Test model": "U63 — no separate test model",
+    "Exploratory": "U65 — the free class-3 scenario in the Scenarios list",
     "Mind map": "U43 — read only in a run",
     "Coverage triage + regression": "U7 — no regression in vc-test",
     "Verifier": "run by /qa-test-strategy before approval",

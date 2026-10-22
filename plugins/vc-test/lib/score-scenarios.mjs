@@ -88,7 +88,7 @@ const cell = (v) => String(v).replace(/\s*\n\s*/g, " ").replace(/\|/g, "/").trim
 export function renderScenarios({ selected, notSelected = [], rejected = [], candidates }) {
   const lines = ["### Scenarios", "", "| S | Class | What it does | Bug it hunts | Why likely | Score | Proof | Writes |", "|---|---|---|---|---|---|---|---|"];
   for (const s of selected) {
-    const why = `${s.signals.map((g) => `${g.kind} (${brief(g.ref)})`).join(", ") || "no signal"} · R-?`;
+    const why = s.exploratory ? "exploratory (free) · R-?" : `${s.signals.map((g) => `${g.kind} (${brief(g.ref)})`).join(", ") || "no signal"} · R-?`;
     const writes = s.writes.length ? s.writes.map((w) => `${w.scope}/${w.name}`).join(";") : "—";
     lines.push(`| ${[s.s, s.cls, s.title, s.hunts, why, s.score, s.proof, writes].map(cell).join(" | ")} |`);
   }
