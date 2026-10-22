@@ -157,9 +157,8 @@ node skills/qa-local-env/resolve-theme.mjs alpha          # newest alpha (…-al
 node skills/qa-local-env/resolve-theme.mjs pr 2350 --url  # newest build of a specific PR
 ```
 All channels list the **vc3prerelease blob** (the anonymous `packages` container CI publishes every
-theme build to — modules, themes, storybook), exclude the `…-storybook-*` sub-family, and return the
-newest match: `latest`/`alpha` by version (base version, then alpha build number); `pr <N>` by blob
-publish time (`Last-Modified`), because a PR build's `-<sha>` suffix has no order. `--url` prints only the ZIP URL for
+theme build to), exclude the `…-storybook-*` sub-family, and return the newest match: `latest`/`alpha`
+by version, `pr <N>` by publish time (`-<sha>` has no order). `--url` prints only the ZIP URL for
 `$(…)` capture; `--json` for machine use. A `VCST-XXXX` task's own PR theme (`resolve-task.mjs`) takes
 precedence over a channel keyword. The blob is anonymous-listable **and** -readable, so no Azure token
 is needed.
