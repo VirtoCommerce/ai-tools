@@ -7,7 +7,7 @@
  * `AGENT-TEST` string on any surface a viewer can see. Declarations and derivations live in
  * sales-rep-demo-specs.mjs; this file is resolve-then-write plus its own teardown.
  *
- * REUSED ACCOUNTS ARE HANDLED WITH DELIBERATE COWARDICE. The two reps are real people, so this
+ * REUSED ACCOUNTS ARE HANDLED WITH DELIBERATE COWARDICE. The reps are real people, so this
  * seeder NEVER calls `ensureRep()` and never goes near `POST /api/sales-rep`. That endpoint is a
  * CREATE shape (it takes a password) and the fixture seeder calls `resetSecurityPassword()` on
  * every reseed of an existing rep — pointing either at a colleague's email would reset their
@@ -348,7 +348,17 @@ async function ensureBuyerAccounts(orgs, contacts) {
 
     await stripSeededGlobalRoles(spec.email);
     const existing = await searchMemberships(userId);
-    await ensureOrgMembership(userId, org.id, org.name, role.id, existing, false, spec.email, 'Approved');
+    // ensureOrgMembership reconciles roles to EXACTLY the declared one. The returns demo adds its
+    // "Organization returns manager" role to these same buyers (seed-returns-demo.mjs), so a reseed
+    // here used to strip it and break that demo. Already holding the declared role, unlocked and
+    // Approved is converged — extra roles a sibling demo granted are not drift.
+    const current = existing.find((m) => m.organizationId === org.id);
+    const holdsRole = (current?.roles || []).some((x) => (x.roleId || x.id) === role.id);
+    if (holdsRole && current.isLocked === false && current.status === 'Approved') {
+      verbose(`membership ${spec.email} @ ${org.name} already holds "${spec.role}" — extra roles kept`);
+    } else {
+      await ensureOrgMembership(userId, org.id, org.name, role.id, existing, false, spec.email, 'Approved');
+    }
 
     created.push({
       type: 'account', key: spec.key, id: userId, email: spec.email,
@@ -388,6 +398,21 @@ async function attachServedOrgs(reps, orgs) {
       servedOrgIds: organizations.map((o) => o.organizationId),
     });
     if (!added.length) { verbose(`rep ${r.spec.key}: already serves every demo org`); continue; }
+    // PUT /api/sales-rep overwrites the rep CONTACT's organizations[] with the served list, and an
+    // organization dropped from it takes the rep's whole membership with it — buyer roles included.
+    // Measured on virtostart 2026-10-22: a contact listing 12 orgs, PUT with 5 served, and 8 of the
+    // user's own memberships were gone. So the write is refused while it would drop anything.
+    const contact = DRY_RUN ? null : await api('GET', `/api/members/${r.rep.id}`, null, { expectStatus: [200, 404] });
+    const servedIds = new Set(organizations.map((o) => o.organizationId));
+    const dropped = (contact?.organizations || []).filter((id) => !servedIds.has(id));
+    if (dropped.length) {
+      log(`  SKIP attaching ${r.spec.key}: the contact also belongs to ${dropped.length} organization(s) it does not serve`);
+      log(`       (${dropped.join(', ')}). PUT /api/sales-rep would remove them and DELETE the memberships`);
+      log('       there. Make them served orgs, or remove them from the contact deliberately, then re-run.');
+      // Nothing was attached, so teardown must not detach anything either.
+      attachments[attachments.length - 1] = { ...attachments[attachments.length - 1], addedOrgIds: [], servedOrgIds: priorOrgs.map((o) => o.organizationId) };
+      continue;
+    }
     await api('PUT', '/api/sales-rep', { ...r.rep, organizations }, { expectStatus: [200, 201, 204] });
     log(`rep ${r.spec.key}: +${added.length} demo org(s) (${added.join(', ')}); ${organizations.length} total, ${priorOrgs.length} pre-existing preserved`);
   }
@@ -1156,9 +1181,15 @@ async function main() {
   // A scoped run (--only) produced a SUBSET, so it MERGES into the ledger instead of replacing it.
   // Replacing it once dropped every contact id; the next full run fell back to a member search the
   // index had not caught up with, and created seven duplicate buyers (vcst, 2026-09-24).
+  // Tasks, lists and carts need a rep or buyer token and SKIP when none is available — but the rows
+  // an earlier run recorded still name live entities. Dropping them orphaned 28 (virtostart,
+  // 2026-10-22: no rep password, no operator), so a full run carries them forward; teardown's
+  // deletes tolerate 404, so a row whose entity is already gone costs nothing.
+  const CARRIED = new Set(['task', 'list', 'cart']);
+  const notRewritten = (e) => !entities.some((n) => n.type === e.type && n.key === e.key);
   const merged = ONLY
-    ? [...(readLedger().entities || []).filter((e) => !entities.some((n) => n.type === e.type && n.key === e.key)), ...entities]
-    : entities;
+    ? [...(readLedger().entities || []).filter(notRewritten), ...entities]
+    : [...entities, ...(PRIOR_LEDGER.entities || []).filter((e) => CARRIED.has(e.type) && notRewritten(e))];
   writeLedger(merged);
 
   const skipped = reps.filter((r) => r.skipped);

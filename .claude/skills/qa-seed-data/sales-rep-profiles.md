@@ -124,7 +124,7 @@ sweep a silent no-op that *reports success*. Re-run this probe after a platform 
 
 ## 5. Reusing a real person's account as a rep
 
-The demo's two reps are real colleagues. Three rules follow, and the seeder enforces all three:
+The demo's reps are real colleagues. Three rules follow, and the seeder enforces all three:
 
 1. **Never `POST /api/sales-rep` for them.** It is a CREATE shape carrying `password`, and
    `ensureRep()` in `seed-sales-rep.mjs` calls `resetSecurityPassword()` on every reseed of an
@@ -145,6 +145,14 @@ password field at all**. Verified live 2026-09-23 on `oleg@virtoworks.com`: addi
 `Advanced Sales Representative` made `GET /api/sales-rep/{memberId}` resolve with
 `hasGlobalSalesRepRole: true` and put him in `POST /api/sales-rep/search`, with no second Contact
 created (the rep id is his existing contact id).
+
+**A rep who also holds buyer memberships.** `PUT /api/sales-rep` overwrites the rep contact's
+`organizations[]` with the served list, and an organization dropped from it takes the rep's WHOLE
+membership with it, buyer roles included; adding a served org only adds the sales-rep role to an
+existing membership (measured on virtostart 2026-10-22, `KB-D173BBB8`). `attachServedOrgs()`
+therefore refuses the write, with a SKIP naming the organizations, while it would drop any. Ilya
+Tsarenko is that case: his own ten-organization book (`DORG-IT-*`) is also where he holds buyer
+memberships with varied roles, two of them locked.
 
 **Which role matters.** Per `domain/sales-rep.md` §3b, a plain `Sales Representative` gets **no
 Document library** — no sidebar link, no dashboard widget. A demo rep who must show documents needs
