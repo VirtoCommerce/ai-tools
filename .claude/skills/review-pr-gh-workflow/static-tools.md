@@ -74,7 +74,7 @@ under `checklist/security.md` (it can turn checks off).
 
 ## Codex lenses (optional)
 
-As `/review-pr-virto` Step 3 and [`../review-pr-virto/codex-lens.md`](../review-pr-virto/codex-lens.md),
+As `../review-pr-virto/SKILL.md` §Optional: Codex lenses and [`../review-pr-virto/codex-lens.md`](../review-pr-virto/codex-lens.md),
 with these focus texts instead of the .NET ones:
 
 - *design*: "Contract of reusable workflows, actions and templates for consumers in other

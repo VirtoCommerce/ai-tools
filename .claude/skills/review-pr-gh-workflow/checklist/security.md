@@ -1,7 +1,8 @@
 # Security — what untrusted input can reach a privileged context
 
 Each item names a well-known GitHub Actions rule so the reviewer knows where to look. A finding that
-rests on one cites the `docs.github.com` page it checked (`SKILL.md` §Reading the code) — notably
+rests on one cites the `docs.github.com` page it checked (a helper, which cannot fetch, marks it
+`needs docs check` with the page) (`SKILL.md` §Reading the code) — notably
 *Security hardening for GitHub Actions* and *Events that trigger workflows*.
 
 The question under every item: **who can cause this to run, with what input, and holding which
@@ -15,10 +16,21 @@ credentials?**
   `refs/pull/<n>/merge`) followed by anything that executes it: a build, `npm install` (lifecycle
   scripts), `dotnet build` / `restore` (MSBuild targets in the PR), a test run, a script from the PR's
   tree, a local action (`uses: ./…`) resolved from the checked-out head. That is the "pwn request":
-  **blocker** when a fork can open the PR.
+  **blocker** when a fork can open the PR. **Gating does not make it safe on its own.** The
+  repository's approval setting for fork PRs does not apply: `pull_request_target` runs always,
+  regardless of it (*Managing GitHub Actions settings for a repository*). A label or approval gate
+  (`types: [labeled]`, an environment with reviewers) protects only the commit the maintainer looked
+  at, so a gated job must check out `head.sha` from the event, never `head.ref` — the branch can be
+  pushed to after the approval and before the checkout (TOCTOU).
 - **`workflow_run`** runs privileged after another workflow — often one that a fork PR triggered.
   Artifacts, caches and outputs from the triggering run are attacker-controlled: downloading them and
   executing, extracting over the workspace, or interpolating their content is the same class.
+- **Cache poisoning.** The docs name it for `pull_request_target`. Code from the PR that runs in a
+  job with the **base branch's cache scope** — `pull_request_target`, `workflow_run`, or any
+  privileged job that builds the PR — can write a cache entry under a key a later privileged run on
+  the default branch restores: a dependency directory, a build output, a tool binary. The restore is
+  then the execution. Flag `actions/cache` (or a `setup-*` action with `cache:`) in such a job, and a
+  key built from files the PR controls (lockfiles from the PR head).
 - **`issue_comment`, `discussion`** and similar fire on actions outsiders can take, and run with the
   default branch's workflow and secrets (`GITHUB_REF` is the default branch). Read the `if:` that gates on
   `author_association`, team membership or actor; a missing or spoofable guard (matching a comment
@@ -54,7 +66,12 @@ credentials?**
   ends; a callee that now needs a scope its callers do not grant breaks them (`contract.md`).
 - **`id-token: write`** (OIDC to a cloud) — whatever can run in that job can assume the cloud role the
   trust policy allows. Read which branches, environments or events the policy is meant for and whether
-  the trigger now reaches beyond them.
+  the trigger now reaches beyond them. **A branch-based policy is not an event filter:** per *OpenID
+  Connect* (security reference), `sub` carries `pull_request` only for pull request events and the
+  branch otherwise. Inferred, not stated there: a `workflow_run` job, which runs on the default branch,
+  then presents the same `ref:refs/heads/main` subject as a push to `main`. Neither it nor
+  `pull_request_target` is named on the page; treat a policy that trusts the default branch as reachable from both until the claims are
+  checked, and prefer an `environment` claim behind protection rules.
 - **`actions/checkout` persists the token** into `.git/config` by default (`persist-credentials`).
   In a job that later runs untrusted code or uploads the workspace as an artifact, that is a leaked
   token; `persist-credentials: false` is the safe shape.

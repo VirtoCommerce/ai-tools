@@ -4,7 +4,7 @@ The code in `run:` blocks **and** in the files an action executes: `actions/*/sc
 `actions/*/src/**` and the `main`/`pre`/`post` entry of a Node action. `security.md` covers what reaches
 a script from outside (`${{ }}` in `run:`, `GITHUB_ENV`); this file covers what the script then does.
 Claims about shell or runtime behaviour cite the page they rest on, on a host in the hook's `WEB_HOSTS`
-(`SKILL.md` §Inputs) — anything else the helper cannot fetch. The ones below are checked:
+(`SKILL.md` §Inputs) — anything else prompts the user. The ones below are checked:
 [workflow syntax → `shell`](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax),
 [about_Preference_Variables](https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_preference_variables).
 

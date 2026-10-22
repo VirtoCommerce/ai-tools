@@ -168,7 +168,7 @@ Roster detail (model, colour, team framework): [`knowledge/agents/README.md`](kn
 - `regression-orchestrator` — Parallel regression, retries, consolidated reports
 - `test-runner-agent` — Parameterized suite runner (spawned by regression-orchestrator)
 - `ticket-context-analyst` — Read-only, no-browser ticket reader for `/ticket-context` (TICKET / MATERIALS / CHANGE modes); never writes to a tracker, a PR or the `kb`
-- `pr-review-reader` — Read-only helper of `/review-pr-gh-workflow` (Read/Grep/Glob/WebFetch only — no shell, no writes); reads what the lead saved and returns requests for anything else
+- `pr-review-reader` — Read-only helper of `/review-pr-gh-workflow` (Read only, by the paths its brief lists — no search, no shell, no writes, no network); reads what the lead saved and returns requests for anything else
 
 **BA Team (+ shared-instructions):**
 - `ba-system-analyzer` — Repo structure, module inventory, user flows, pain points; **gathers the evidence for both shared oracles** (BL from human sources only; never edits a CSV)

@@ -1,6 +1,12 @@
 #!/usr/bin/env node
 // PreToolUse hook — approves, without a prompt, exactly the calls /review-pr-gh-workflow makes
-// many times per run, and nothing else.
+// many times per run, and nothing else. It only ever adds "allow"; it never denies.
+//
+// It does NOT keep credential files out of a review. What a session reads is sent to the model
+// provider, and a PR can ask for a read; a name-based deny routed through `if` filters was tried and
+// bypassed three times (device-prefixed paths, Grep globs, shell indirection) — `if` is best-effort by
+// the docs. The hard control is `permissions.deny` in the user's own settings. What this skill does
+// rely on is the helpers' tool list: pr-review-reader has Read only, so it can send nothing anywhere.
 //
 // Why a hook and not `permissions.allow`: measured 2026-10-15, the `permissions` block of this
 // tracked .claude/settings.json was not applied in VS Code sessions (`/permissions` listed only
@@ -10,43 +16,41 @@
 //
 // Allows (prints permissionDecision "allow"):
 //   - Read / Grep / Glob of a path that resolves inside <tmp>/claude*/<this project's slug>/<session>/
-//     scratchpad/pr-<N>/ or …/scratchpad/wt/ — the only two subtrees prepare.mjs writes. Never a
-//     credential-looking file name (.env, *.pem, *.key, id_rsa…), never a Grep/Glob whose pattern
-//     climbs out (`..` or absolute).
+//     scratchpad/pr-<N>/ or …/scratchpad/wt/ — the only two subtrees prepare.mjs writes. A Read of a
+//     credential-looking file name (.env, .mcp.json, *.pem, *.key, id_rsa…) is left to the normal rules
+//     (by name only — the scratch holds PR data); never a Grep/Glob whose pattern climbs out (`..` or absolute).
 //   - WebFetch of a documentation page in WEB_HOSTS below — THE list of hosts the review cites; the
-//     skill, its checklists and the reader agent point here instead of naming hosts themselves.
+//     skill and its checklists point here instead of naming hosts themselves. No query string (it
+//     could carry data to that host), except `?view=` on learn.microsoft.com; a fragment never leaves.
 //   - Bash running prepare.mjs as ONE plain command (no control characters at all, no shell
 //     metacharacters, no quoting tricks) from the project directory, so the script that runs is
 //     this repository's, not one a PR planted under a worktree.
 // Everything else: prints nothing, so the normal permission rules decide.
-//
-// `reader` mode (argument `reader`) — the pr-review-reader agent's own PreToolUse hook (its frontmatter;
-// it runs only while that agent does). The inverse: DENIES every Read / Grep / Glob outside the review
-// scratch and the two review skills' own files (.claude/skills/review-pr-gh-workflow/, …/review-pr-virto/),
-// every credential-looking file name, every Grep/Glob without an explicit path, and every WebFetch
-// outside WEB_HOSTS. Read-only by tool list is not enough on its own: inside the project `Read` needs
-// no prompt (`.env.local`, `.mcp.json`), and WebFetch is a way out — a PR that talks the helper into
-// reading one and fetching a URL with it must hit a wall, not a prompt the user may click through.
-// Fails CLOSED to "deny" on any error. Prints nothing when the call is in bounds.
 // Paths are filtered lexically BEFORE the filesystem is touched: a UNC or device path never reaches
 // existsSync/realpath (on Windows that alone opens an SMB connection).
 // Fails CLOSED to "no decision" on any error — a hook bug must never widen access.
 // Known width, accepted: the scratch check matches this project's slug but not the session (any
 // session of this project, and of a project whose path differs only in punctuation, which the slug
-// folds); and SENSITIVE filters Read by name only — Grep content in the scratch can still print a
-// `.env` the PR itself added, which is PR data, not a credential of this machine.
-// Cost: one node start, ~220 ms measured on Windows. settings.json therefore registers it with an
-// `if` filter where one works — scratchpad Reads and the prepare.mjs command — so it never runs for
-// the ordinary Read / Bash calls of every other session in this repository. Grep, Glob and WebFetch
-// have no filter (observed 2026-10-15): a `Read(...)` rule in `if` does not match Grep/Glob, and
-// `WebFetch(domain:docs.github.com)` in `if` kept the hook from running at all. WebFetch is rare;
-// Grep/Glob pay the start-up cost on every call.
+// folds).
+//
+// Registration — observed 2026-10-21 with Claude Code 2.1.282 (CLI) and 2.1.304 (VS Code), trusted folders:
+//   - The lead: the SKILL's frontmatter, which Claude Code registers when /review-pr-gh-workflow is
+//     invoked and keeps for the rest of THAT session only — WebFetch, the prepare.mjs command, and
+//     Grep/Glob behind a shell `case` that starts node only for a scratch path. WebFetch has no `if`:
+//     `WebFetch(domain:docs.github.com)` kept the hook from running.
+//   - The helpers: one settings.json entry, `Read` with `if: "Read(//**/scratchpad/**)"`, so no process
+//     starts for any other Read in any session. Inside a subagent only settings hooks ran: the docs say
+//     an agent's own frontmatter `hooks:` run while it does, but a marker hook there did NOT fire for a
+//     foreground or a background helper (three runs), and the skill's hooks fired in the lead only.
+//     Re-check before relying on either. Grep and Glob are not registered there — a path rule in `if`
+//     never matched them, so they would cost every session a shell start per call; hence the helper
+//     has no Grep or Glob.
 
 import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { isAbsolute, relative, resolve, sep, basename } from "node:path";
 
-const SENSITIVE = /^(\.env.*|\.envrc|\.netrc|\.pgpass|\.npmrc|\.git-credentials|\.htpasswd|secrets\.json|credentials\.json|id_rsa.*|id_ed25519.*|.*\.(pem|key|pfx|p12))$/i;
+const SENSITIVE = /^(\.env.*|\.envrc|\.netrc|\.pgpass|\.npmrc|\.git-credentials|\.htpasswd|\.mcp\.json|secrets\.json|credentials\.json|id_rsa.*|id_ed25519.*|.*\.(pem|key|pfx|p12))$/i;
 // Literal spaces only; arguments are paths (forward slashes, optionally in double quotes for a space),
 // numbers, refs and names — never $, backticks, backslashes, single quotes, globs or redirections.
 // `~` only inside a word (the 8.3 form `ANDREW~1` of the scratchpad, which is what a session is told on
@@ -91,19 +95,6 @@ function inReviewScratch(p, cwd) {
 const climbs = (pattern) => typeof pattern === "string" &&
   (pattern.split(/[\\/]/).includes("..") || isAbsolute(pattern) || /^[A-Za-z]:/.test(pattern));
 
-// The review skills' own files, which a helper brief names (the checklist/ paths, review-pr-virto's
-// shared rules). Reader mode only — the lead reads them without a prompt anyway.
-const SKILL_DIRS = [".claude/skills/review-pr-gh-workflow", ".claude/skills/review-pr-virto"];
-function inSkillDocs(p, cwd) {
-  if (!PROJECT || typeof p !== "string" || !p || CONTROL.test(p) || /^(\\\\|\/\/)/.test(p)) return false;
-  const abs = isAbsolute(p) ? p : resolve(cwd ?? process.cwd(), p);
-  if (!existsSync(abs)) return false;
-  const target = real(abs);
-  if (!target) return false;
-  const rel = relative(PROJECT, target).split(sep).join("/");
-  return SKILL_DIRS.some((d) => rel === d || rel.startsWith(d + "/"));
-}
-
 // host → the path prefix a page must have there ("" = any). A new host the checklists cite goes here.
 const WEB_HOSTS = {
   "docs.github.com": "",                       // GitHub Actions semantics
@@ -118,6 +109,7 @@ function webAllowed(url) {
   try {
     const u = new URL(url);
     if (u.protocol !== "https:" || u.username || u.password || u.port || !Object.hasOwn(WEB_HOSTS, u.hostname)) return false;
+    if (u.search && !(u.hostname === "learn.microsoft.com" && /^\?view=[\w.-]+$/.test(u.search))) return false;
     const prefix = WEB_HOSTS[u.hostname];
     if (prefix === "powershell") return /^\/([a-z]{2}-[a-z]{2}\/)?powershell\//i.test(u.pathname);
     return u.pathname.startsWith(prefix);
@@ -139,34 +131,6 @@ function decide(input) {
     return !!PROJECT && !!cwd && cwd.toLowerCase() === PROJECT.toLowerCase();
   }
   return false;
-}
-
-// Reader mode: true = in bounds (no output), false = deny.
-function inBounds(input) {
-  const t = input.tool_name;
-  const ti = input.tool_input ?? {};
-  const local = (p) => inReviewScratch(p, input.cwd) || inSkillDocs(p, input.cwd);
-  if (t === "Read") return local(ti.file_path) && !SENSITIVE.test(basename(ti.file_path));
-  if (t === "Glob") return local(ti.path) && !climbs(ti.pattern);
-  if (t === "Grep") return local(ti.path) && !climbs(ti.glob);
-  if (t === "WebFetch") return webAllowed(ti.url);
-  return true; // the agent has no other tools; anything else is the normal rules' business
-}
-
-const deny = (reason) => process.stdout.write(JSON.stringify({
-  hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: reason },
-}));
-
-if (process.argv[2] === "reader") {
-  try {
-    const input = JSON.parse(readFileSync(0, "utf8"));
-    if (!inBounds(input))
-      deny("pr-review-reader: outside the review scratch, the review skills' files and the docs hosts " +
-        "(Grep/Glob need an explicit path) — list it under `requests` for the lead instead");
-  } catch {
-    deny("pr-review-reader guard: could not read the call — denied (fails closed)");
-  }
-  process.exit(0);
 }
 
 try {

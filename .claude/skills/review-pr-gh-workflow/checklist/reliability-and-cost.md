@@ -12,7 +12,7 @@ row).
   key that is too broad (`${{ github.workflow }}` alone) makes unrelated branches cancel each other.
 - **Caching.** A cache key that never changes (stale dependencies forever) or always changes (no hits);
   a cache restored into a job that a fork can write to and read back into a privileged one
-  (`security.md`, cache poisoning).
+  (`security.md`, the *Cache poisoning* item).
 - **Artifacts.** Size and `retention-days` for large uploads; an upload of the whole workspace where
   one file is needed (also the token-leak case in `security.md`).
 - **Redundant runs.** A workflow triggered on both `push` and `pull_request` for the same branch runs

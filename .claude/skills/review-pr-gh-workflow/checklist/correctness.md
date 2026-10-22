@@ -21,7 +21,8 @@
   (evaluates empty); a matrix whose `include`/`exclude` drops a combination the author meant to keep;
   `fail-fast` cancelling the siblings whose result was wanted.
 - **Values crossing steps and jobs.** Step outputs through `$GITHUB_OUTPUT` (the old `::set-output`
-  command is disabled); a multi-line value without the delimiter form; an output referenced by a
+  command is deprecated — its removal was postponed, so it still works and only warns; flag it as a
+  minor, not as a break); a multi-line value without the delimiter form; an output referenced by a
   misspelt step `id` (evaluates empty, no error); an environment variable set in one job and read in
   another (jobs do not share an environment).
 - **Release and publish paths** — version derivation, tag creation, package push, changelog. Run the

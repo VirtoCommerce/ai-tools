@@ -11,6 +11,16 @@
 //   node .claude/skills/review-pr-gh-workflow/prepare.mjs log <scratch> <repo> <pr> <run-id> [--failed]
 //   node .claude/skills/review-pr-gh-workflow/prepare.mjs runs <repo> <workflow> [limit]
 //
+// The main form (<repo> <pr> <clone> <scratch>):
+//   - saves body.md, files.txt and checks.txt to <scratch>/pr-<pr>/;
+//   - fetches the base branch and pull/<pr>/head, adds (on a re-run, re-points) a detached worktree at
+//     <scratch>/wt/pr-<pr>, and diffs against the right base — origin/<baseRef> for an open PR, the
+//     PR's base commit for a merged or closed one (its base branch already contains it);
+//   - checks both ends — worktree HEAD equals the API's head SHA, the three-dot file list equals the
+//     API files list (`verified`; exit 1 when not) — and saves pr.diff;
+//   - counts threads, reviews and comments and saves only the non-empty ones;
+//   - lists other open PRs touching the same files, and the PR's own runs at its head.
+//
 // Contract — keep it: the hook .claude/hooks/review-pr-allow.mjs approves this script without a prompt.
 //   - GitHub: reads only — REST GETs (`gh api` without -f/-F/-X), GraphQL `query` (never a
 //     `mutation`; GraphQL is POST by protocol), `gh pr checks`, `gh pr list`, `gh run list`,
@@ -19,6 +29,7 @@
 //     branch, the PR's pull ref, tags), `git worktree add/remove/prune` and `update-ref -d` of the
 //     ref it created. Git LFS is off (a PR's .lfsconfig must not pick a host); symlinks in the PR are
 //     checked out as plain files; the worktree skips node_modules/ and dist/ except the PR's own files.
+//   - No argument starts with `-` (none becomes a gh/git option); no submodule is fetched.
 //   - No git hook and no fsmonitor runs: every git call points core.hooksPath at an empty temp
 //     directory (removed on exit). A relative hooksPath in the clone (husky's `.husky/_`) resolves
 //     inside the worktree, i.e. the PR's tree — so `worktree add`, `checkout` and every ref update
@@ -66,8 +77,11 @@ const gh = (args, opts) => run("gh", args, opts);
 // The empty hooks directory: see the contract above. Absolute, fresh, ours — never a path a PR can write.
 const NO_HOOKS = mkdtempSync(join(tmpdir(), "review-pr-no-hooks-"));
 process.on("exit", () => rmSync(NO_HOOKS, { recursive: true, force: true }));
+// submodule.recurse=false: a user's global `true` would make checkout fetch the submodules the PR's
+// .gitmodules names — a host the PR chose.
 const GIT_C = ["-c", "core.longpaths=true", "-c", "core.symlinks=false",
-  "-c", `core.hooksPath=${NO_HOOKS}`, "-c", "core.fsmonitor=false"];
+  "-c", `core.hooksPath=${NO_HOOKS}`, "-c", "core.fsmonitor=false", "-c", "submodule.recurse=false",
+  "-c", "fetch.recurseSubmodules=false"];
 const git = (dir, args, opts) => run("git", [...GIT_C, "-C", dir, ...args], opts);
 const gitOk = (dir, args) => ok("git", [...GIT_C, "-C", dir, ...args]);
 const api = (path, jq) => gh(["api", path, "--paginate", ...(jq ? ["--jq", jq] : [])]);
@@ -103,6 +117,10 @@ function cloneDir(arg, repo) {
 }
 
 const sub = process.argv[2];
+// No argument may start with `-`: it would reach gh or git as an option (`search --web` opened a
+// browser). The one flag this script takes is `log … --failed`.
+for (const a of process.argv.slice(2))
+  if (a.startsWith("-") && !(sub === "log" && a === "--failed")) die(`an argument may not start with "-": ${a}`);
 
 // ── fetch: save files of another repository at a ref (callees, census callers) ─
 //   → <scratch>/pr-<pr>/files/<owner>/<repo>@<ref>/<path>; JSON {ref, commit, files, missing}.

@@ -51,6 +51,10 @@ against them.
   `paths:` / `paths-ignore:` / `branches:` filter means the workflow no longer runs at all on some
   PRs: a required check that never reports blocks the merge; one dropped from the required list
   silently stops gating. The review cannot see branch protection — name the dependency.
+- **Merge queue.** In a repository that uses one, a required check must also trigger on
+  `merge_group` — a separate event from `pull_request` and `push`; without it the check never reports
+  for the queued PR and the merge fails (*Events that trigger workflows* → `merge_group`). A PR that
+  adds a required workflow, or changes the `on:` of one, without it is a finding.
 - **`workflow_run` consumers** match the triggering workflow by its `name:`. Renaming a workflow
   silently stops every `workflow_run` listener on it.
 - **Artifact and cache names, environment names, concurrency groups** shared between workflows:
