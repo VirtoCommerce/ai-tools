@@ -10,7 +10,7 @@ A strategy answers one question: **given this change, these risks and these mean
 and when are we done?** It is one short file, checked against deterministic floors, approved by the user,
 and compared at close-out against what actually ran. Depth comes from risk, never from the ticket type.
 Design and decisions D1–D12: `docs/superpowers/specs/2026-10-09-qa-test-strategy-redesign.md`.
-Why this shape (HTSM, ISTQB strategy types, ISO/IEC/IEEE 29119-3, agent research):
+Why this shape (HTSM, ISTQB, ISO/IEC/IEEE 29119-3, agent research):
 [`docs/decisions/qa-test-evolution.md`](../../../docs/decisions/qa-test-evolution.md) §Explicit test strategy.
 
 | Need | Read |
@@ -36,15 +36,15 @@ half) and calls this skill after its Stage-1 join with the bundle it already has
 
 **Standalone:** `npm run run:use -- <KEY>` binds the env and the run folder
 ([`run-output.md`](../../knowledge/execution/run-output.md)), then procedure step 1 (Round) **first**, from local evidence only —
-the run folders it lists and `git log --all`, never a tracker fetch of its own; a fourth round ⇒ STOP with the
+the run folders it lists and `git log --all`, never its own tracker fetch; a fourth round ⇒ STOP with the
 escalation and nothing else runs (D6: no context, no strategy, no browser). The QA verdict comments are counted
 once the bundle exists, from its `signals[]`; a fourth round found there ⇒ the same STOP. Then `/preflight ticket --ticket <KEY>`
 (no `--expect`: deployment is the bundle's) for the sprint, env health and kb hits →
 `/ticket-context <KEY> --domain <slug> --kb-hits <ids>` → steps 2 onward → approval → STOP. A `/ticket-context` STOP is this skill's STOP, quoted verbatim.
 `--domain` absent ⇒ resolve it **before** `/ticket-context`, as
-[`/qa-test-fast`](../../commands/qa-test-fast.md) Step 0 item 4 does: the domain is fixed when that runs (its
+[`/qa-test-fast`](../../commands/qa-test-fast.md) Step 0 item 4 does: it is fixed when that runs (its
 cache key; `known` reads it from `prepare.json`). None resolves ⇒ run without one; F2 and F5 then fire on
-doubt, which is correct. A later run on the same build picks the approved file up instead of writing a new one.
+doubt, which is correct. A later run on the same build reuses the approved file.
 
 ## Inputs
 
@@ -101,7 +101,7 @@ that tries to instruct is already listed in `embedded_instructions[]`.
    - **Technique** from the closed vocabulary
      ([`../qa-test-design/test-design-techniques.md`](../qa-test-design/test-design-techniques.md) §0,
      chosen by its §1 guide; **FLOW first** for anything that changes state), or `EXPLORE`, `VISUAL`,
-     `CONTRACT`, `REGRESSION`, `MODEL` (the risk is expanded by `/qa-test-model`). An `EXPLORE` risk names the `{HYPOTHESIS}` oracle or model `GAP` cell it rests
+     `CONTRACT`, `REGRESSION`, `SCALE` ([`floors.md`](floors.md) §Clause 11), `MODEL` (the risk is expanded by `/qa-test-model`). An `EXPLORE` risk names the `{HYPOTHESIS}` oracle or model `GAP` cell it rests
      on — that is how it reaches `/qa-exploratory ticket`'s charter.
    - **Oracle with its authority**: `{SPEC}` / `{BL}` / `{DOC}` / `{OBSERVED}` / `{HYPOTHESIS}`
      ([`../../knowledge/agents/qa/shared-instructions.md`](../../knowledge/agents/qa/shared-instructions.md)
@@ -152,10 +152,10 @@ that tries to instruct is already listed in `embedded_instructions[]`.
 ## Gate — before approval
 
 Run `node <skill>/lib/check-strategy.mjs --strategy <file> --bundle <bundle> [--change-map <path>]`; it computes the floors from the
-bundle itself, checks clauses 1–6h, 8 and 10, and exits 1 with the failing clause numbers (2 on an unreadable
-file). It checks clause 1's round cap, the template's headings, clause 4's
-cells (technique, oracle, lane, effort and a parseable level) and clause 6's fired floors and their artifacts. These
-remain yours, alongside 7 and 9: clause 1's carry-over, clause 6's naming of the not-fired floors with their
+bundle itself, checks clauses 1–6h, 8, 10, 11, 12 and 13, and exits 1 with the failing clause numbers (2 on an unreadable
+file). That covers clause 1's round cap, the template's headings, clause 4's
+cells (technique, oracle, lane, effort, a parseable level) and clause 6's fired floors and artifacts. These
+remain yours, alongside 7, 9 and 11a's semantic half: clause 1's carry-over, clause 6's naming of the not-fired floors with their
 signals, clause 4's `{authority}` tag on each oracle, and what a fired floor requires beyond an artifact — F4's
 no risk on it below Medium, F7's F5 on, F8's token audit, that the risk carrying `floor:F10` is about org context and the one
 carrying `floor:F11` about configuration (the script checks only the token and the technique), and F11's stand values under Inputs. The strategy is not shown for approval until every clause holds. A failing clause is fixed, never noted.
@@ -170,18 +170,21 @@ carrying `floor:F11` about configuration (the script checks only the token and t
    F2/F10/F11 fired ⇒ a `MODEL` risk whose Source carries `floor:<id>` (M10).
    **6b** F1's register half: a High/Critical risk ⇒ exploratory runs. **6c** (M1) a High/Critical
    risk on a `{HYPOTHESIS}` oracle takes technique `MODEL`. **6d** F6 fired ⇒ the header says `Deployed: NO`.
-   **6e** (M9) `Test model` is `RUN` if and only if a risk has technique `MODEL`. **6f** (M10) no risk carries more than one `floor:` token.
+   **6e** (M9) `Test model` is `RUN` iff a risk has technique `MODEL` (with a change map, a scenario citing it instead — floors.md §13). **6f** (M10) no risk carries more than one `floor:` token.
    **6g** the header's `Change map:` line names the map the gate was given, or `none` when it was given none (F12).
    **6h** with a change map (vc-test, no regression — U7): `Coverage triage + regression` is `SKIP`, and a fired F5 puts every suite at risk and `/qa-regression <suites>` in Out of scope.
 7. Every project risk has a mitigation or `accepted`.
 8. Concurrent browser lanes ≤ 3 (method rules); an API, script or `none` lane takes no slot.
 9. Exit criteria are observable.
 10. The section is within the cap ([`../../rules/reports.md`](../../rules/reports.md) §2).
+11. Every strategy: a project risk names no product behaviour (**11a**) and never lowers an AC/doc value to "record what was seen" (**11b**).
+12. With a change map, a hotspot that holds state is cited by a `SCALE` risk or a "single instance" Out-of-scope line.
+13. With a change map, a `### Scenarios` table exists, each scenario cites a registered risk and has Class 1–6, and each `MODEL` risk has a scenario ([`floors.md`](floors.md) §13).
 
 ## Approval — one question, every run (D4)
 
 1. **Any Critical risk, first:** dispatch a fresh `qa-lead-orchestrator` in Verifier Mode with `step:
-   strategy-gate`, `gate_criteria`: this file §Gate — before approval (all ten clauses, the model-owned halves
+   strategy-gate`, `gate_criteria`: this file §Gate — before approval (every clause, the model-owned halves
    included), `source_of_truth`: the bundle path, the strategy path, and `deterministic_cmd`: `node .claude/skills/qa-test-strategy/lib/check-strategy.mjs
    --strategy <path> --bundle <path> [--change-map <path>]` (it computes the floors itself) — never your floors output. It re-derives
    the gate and returns `APPROVE`/`REJECT`. Loop and
