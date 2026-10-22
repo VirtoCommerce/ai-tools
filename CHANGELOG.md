@@ -19,17 +19,26 @@ in with one password. `vc-init`, `vc-perf` and `vc-secrets` are unchanged.
 `<env>` and `<sprint>`. Each folder may hold `.env.<env>` and `.env.playwright.<env>`, and a file there beats the
 repo's key by key, `KEY_<ENV>` pins included. A ticket's folder holds its own stands (`vcst_6314`) and may
 override a shared env for that ticket's runs. `env:use`, `run:use`, `/preflight --env` and `deploy:pr` accept
-those envs. Outside a session, `QA_TICKET=<KEY>` names the ticket. A ticket run with no env argument binds the
-ticket's own stand when its folder defines exactly one env.
+those envs. `QA_TICKET=<KEY>` in the environment names the ticket and beats a session's bound run, as `TEST_ENV`
+beats the env binding: `run:use` refuses another ticket while it is set. A ticket run with no env argument binds
+the ticket's own stand when its folder defines exactly one env the repo does not. An override of a repo env never
+moves that stand: the loader warns when it changes the env's `BACK_URL`, `FRONT_URL` or `ENV_RISK`, and deploy
+reads a repo env from the repo's files only. A session bound to an env no file defines any more stops every loader
+with an error instead of running on `.env.local`'s stand.
 
 **Added: master stands.** `PASSWORDS=master` in a stand's env file makes every test-account password
-variable resolve to `MASTER_PASSWORD` from `.env.playwright.master`, so the seeders set it. Only the stand's own
-env file counts: the root `.env.<env>` for a repo env, else its `QA_ENV_PATH` file. A `PASSWORDS` line in
+variable resolve to `MASTER_PASSWORD` from `.env.playwright.master`, so the seeders set it. The platform admin's
+`ADMIN_PASSWORD` is one of them: the stand's admin must use the master password too. Only the stand's own
+env file counts: the root `.env.<env>` for a repo env, else its `QA_ENV_PATH` file, and never on an
+`ENV_RISK=production` stand. A `PASSWORDS` line in
 `.env.local`, or a ticket folder's override of a repo env, is ignored with a warning: seeding would reset a shared
 stand's accounts to the master password. Browser lanes then type `MASTER_PASSWORD` in every password field.
 `secrets:sync:all` copies it into `.env.playwright.all` as one stable line, so a new master stand needs no re-sync
-and no MCP reconnect; the single-env `secrets:sync` writes it only for a master stand. `enforce-secret-token`
-blocks `MASTER_PASSWORD` in a session whose stand did not opt in, and a copy older than the master file.
+and no MCP reconnect; the single-env `secrets:sync` writes it only for a master stand, keeps an earlier value only
+from a file generated for the same env, and never carries a copy of the master password to another stand.
+`enforce-secret-token` blocks the master password (`MASTER_PASSWORD`, or any name holding a copy of it) in a session
+whose stand did not opt in or that nothing chose, a copy older than the master file, and any name from a single-env
+`--secrets` file generated for another env. It now guards every `playwright-*` lane (`playwright-mobile` was missed).
 
 **Changed:**
 - One loader: `scripts/lib/env-layers.mjs` holds the order. config.js, `load-env.mjs`, the seeders, the GraphQL
@@ -40,7 +49,14 @@ blocks `MASTER_PASSWORD` in a session whose stand did not opt in, and a copy old
 - `/qa-deploy-pr` refuses an env whose `BACK_URL` is on this machine, and reads a dedicated cloud stand's
   `DEPLOY_BRANCH` and `BACK_URL` from its own files.
 - `/preflight` on a local stand reports `declared` as `local stand` instead of an UNKNOWN that asked for a
-  `GIT_TOKEN`. `deployed` and `--expect` read the stand's build as before.
+  `GIT_TOKEN`. `deployed` and `--expect` read the stand's build as before, and a missing build no longer advises
+  `/qa-deploy-pr`.
+- The ticket-context skill imports the loader at run time: an install without `scripts/lib/env-layers.mjs` reads
+  the root's files as before and reports a GAP instead of failing to start.
+
+**Fixed:** the runners that let the environment win (`ci:regression`, `ci:monitor`, `deploy:pr`, `/preflight`)
+took `.env.playwright.<env>` for the environment: the resolver had put it there as `KEY_<ENV>` first, so it beat a
+CI `-e` value and a `.env.local` pin. They now resolve only the env's name and let the loader read that file.
 
 **Changed (`vc-fix`):**
 - The plugin's loader, `use-env.mjs` and `run-folder.mjs` find envs in the `QA_ENV_PATH` folders, and the env
