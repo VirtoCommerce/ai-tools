@@ -1,6 +1,7 @@
 // plugins/vc-test/lib/teardown.mjs — tears a run down from its ledger only (spec §6a Teardown): entities newest first
 // by id, never by prefix, name or email; a changed setting restored to its first "before" only while the stand still
-// holds the run's last "after". A line written on another stand (env + host), or with no stamp, is refused, and
+// holds the run's last "after" — a global one only inside the U68 window (window.mjs), never unannounced: a refused
+// window goes to a human. A line written on another stand (env + host), or with no stamp, is refused, and
 // nothing runs on a stand the run may not write to (U16). Anything it cannot do safely is listed for a human, never
 // guessed. Each result is appended to the ledger, so a re-run skips what is done.
 // CLI: node plugins/vc-test/lib/teardown.mjs --key <KEY> [--dry-run]   (exit 2: something is left; 3: refused)
@@ -74,7 +75,10 @@ export function planTeardown(entries, here = null) {
   return { actions, manual, unknown, foreign };
 }
 
-export async function executeTeardown(plan, api, now = () => new Date().toISOString()) {
+// A restore is of a GLOBAL setting (planTeardown sends a store's to a human), so it is written only inside the U68
+// window: `win.open` / `win.close` (the CLI wires window.mjs openWindow / closeWindow). A refused window is a line for a human —
+// the setting is never written unannounced. The close names the value the stand actually holds afterwards.
+export async function executeTeardown(plan, api, now = () => new Date().toISOString(), win = null) {
   const results = [], manual = [];
   for (const a of plan.actions) {
     let teardown;
@@ -82,15 +86,28 @@ export async function executeTeardown(plan, api, now = () => new Date().toISOStr
       if (a.kind === "skip") teardown = `skipped: ${a.reason}`;
       else if (a.kind === "restore") {
         const entry = await api("GET", `/api/platform/settings/${enc(a.name)}`);
+        const opened = entry?.name && isDeepStrictEqual(entry.value, a.expect)
+          ? (win ? await win.open({ id: a.id, value: JSON.stringify(a.value) }) : { ok: false, reason: "no window to write a global setting in" })
+          : null;
         if (!entry?.name) {
           manual.push(`${a.id}: not found on the stand — restore by hand to ${JSON.stringify(a.value)}`);
           teardown = "skipped: not found";
         } else if (!isDeepStrictEqual(entry.value, a.expect)) {
           manual.push(`${a.id}: changed since the run left it (now ${JSON.stringify(entry.value)}, the run left ${JSON.stringify(a.expect)}) — restore to ${JSON.stringify(a.value)} only if no one else changed it`);
           teardown = "skipped: changed since the run";
+        } else if (!opened.ok) {
+          manual.push(`${a.id}: the global window was refused (${opened.reason}) — restore by hand to ${JSON.stringify(a.value)}, announced in the team channel`);
+          teardown = `skipped: window refused (${opened.reason})`;
         } else {
-          await api("POST", "/api/platform/settings", [{ ...entry, value: a.value }]);
-          teardown = "restored";
+          let onStand = entry.value;
+          try {
+            await api("POST", "/api/platform/settings", [{ ...entry, value: a.value }]);
+            onStand = (await api("GET", `/api/platform/settings/${enc(a.name)}`))?.value;
+            teardown = isDeepStrictEqual(onStand, a.value) ? "restored" : `failed: read back ${JSON.stringify(onStand)}`;
+          } catch (err) { teardown = `failed: ${String(err?.message ?? err).slice(0, 200)}`; }
+          const failed = teardown !== "restored";
+          if (failed) manual.push(`${a.id}: RESTORE FAILED, the stand holds ${JSON.stringify(onStand)} — restore by hand to ${JSON.stringify(a.value)}`);
+          await win.close({ id: a.id, value: `${JSON.stringify(onStand)}${failed ? " RESTORE FAILED" : ""}` });
         }
       } else teardown = (await DELETERS[a.entity](api, a)) ?? "deleted";
     } catch (err) { teardown = `failed: ${String(err?.message ?? err).slice(0, 200)}`; }
@@ -120,7 +137,14 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   const { assertSafeTarget, auth, api } = await import(pathToFileURL(common).href);
   assertSafeTarget();
   await auth();
-  const { results, manual } = await executeTeardown(plan, (method, path, body) => api(method, path, body, { expectStatus: [200, 201, 204, 404] }));
+  const { openWindow, closeWindow } = await import("./window.mjs");
+  const windowLeft = [];
+  const win = { // a refused open or a failed close is reported, never thrown: the rest of the teardown still runs
+    open: async ({ id, value }) => { const r = await openWindow({ key, setting: id, value }); return { ok: r.code === 0, reason: r.out.reason }; },
+    close: async ({ id, value }) => { const r = await closeWindow({ key, setting: id, value }); if (r.code) windowLeft.push(`${id}: window close ${r.out.status}${r.out.released ? "" : " — the lock was not released"}`); return r; },
+  };
+  const { results, manual } = await executeTeardown(plan, (method, path, body) => api(method, path, body, { expectStatus: [200, 201, 204, 404] }), undefined, win);
+  manual.push(...windowLeft);
   for (const r of results) appendFileSync(ledger, `${JSON.stringify({ ...r, ...here })}\n`);
   const failed = results.filter((r) => r.teardown.startsWith("failed"));
   const left = [...plan.manual, ...manual];

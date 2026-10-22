@@ -21,12 +21,23 @@ function decisionOf(cell) {
   return { decision, order, reason };
 }
 
+// The `### Scenarios` table score-scenarios.mjs renders: | S | Class | What | Bug | Why | Score | Proof | Writes |.
+// Writes is "—" or `scope/name` joined by ";" — split each at its FIRST "/" (a store id carries none).
+function writesOf(cell) {
+  return String(cell ?? "").split(";").map((w) => w.trim()).filter((w) => w && w !== "—").map((w) => {
+    const i = w.indexOf("/");
+    return i < 0 ? { scope: w, name: "" } : { scope: w.slice(0, i), name: w.slice(i + 1) };
+  });
+}
+
 export function readStrategy(md) {
   const sec = lastRound(String(md).replace(/\r\n?/g, "\n"));
   const head = /^## Round (\d+)/.exec(sec);
   const status = /^Status:\s*(APPROVED|CHANGED|AUTO|DRAFT)\b/m.exec(sec)?.[1] ?? null;
   const table = rows(block(sec, "Artifacts")).map(([row, cell]) => ({ row, ...decisionOf(cell ?? ""), cell: cell ?? "" }));
-  return { round: head ? Number(head[1]) : 0, status, rows: table };
+  const scenarios = rows(block(sec, "Scenarios")).filter((c) => /^S-\d+$/.test(c[0] ?? ""))
+    .map((c) => ({ s: c[0], cls: Number(c[1]), proof: (c[6] ?? "").toLowerCase(), exploratory: /^exploratory/i.test(c[4] ?? ""), writes: writesOf(c[7]) }));
+  return { round: head ? Number(head[1]) : 0, status, rows: table, scenarios };
 }
 
 export function loadRegistry(path = join(LIB, "artifacts.json")) {

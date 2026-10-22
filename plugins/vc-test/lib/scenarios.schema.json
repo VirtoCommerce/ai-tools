@@ -1,0 +1,43 @@
+{
+  "description": "The scenario generator's candidates.json (spec U60, U61, U68). Each candidate is one scenario the generator proposes; score-scenarios.mjs checks, ranks and selects them. cls is U60's class 1-6 in its order.",
+  "$defs": {
+    "text": { "type": "string", "minLength": 1 },
+    "signal": {
+      "type": "object", "additionalProperties": false, "required": ["kind", "ref"],
+      "properties": {
+        "kind": { "enum": ["state-in-memory", "new-door", "setting-other-consumers", "untested", "prior-bug"] },
+        "ref": { "$ref": "#/$defs/text" }
+      }
+    },
+    "write": {
+      "type": "object", "additionalProperties": false, "required": ["scope", "name"],
+      "properties": {
+        "scope": { "type": "string", "pattern": "^(global|store:.+)$" },
+        "name": { "$ref": "#/$defs/text" }
+      }
+    },
+    "candidate": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "cls", "title", "steps", "hunts", "signals", "zone", "proof", "writes", "storeCreated"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^C-[0-9]+$" },
+        "cls": { "enum": [1, 2, 3, 4, 5, 6] },
+        "title": { "$ref": "#/$defs/text" },
+        "steps": { "type": ["array", "string"], "items": { "$ref": "#/$defs/text" } },
+        "hunts": { "$ref": "#/$defs/text" },
+        "signals": { "type": "array", "items": { "$ref": "#/$defs/signal" } },
+        "zone": { "enum": ["access", "money", "data", "order-state", "buyer-path", "none"] },
+        "proof": { "enum": ["api", "browser"] },
+        "writes": { "type": "array", "items": { "$ref": "#/$defs/write" } },
+        "storeCreated": { "type": "boolean" },
+        "exploratory": { "type": "boolean" }
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["candidates"],
+  "properties": {
+    "candidates": { "type": "array", "items": { "$ref": "#/$defs/candidate" } }
+  }
+}
