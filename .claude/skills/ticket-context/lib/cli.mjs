@@ -5,7 +5,7 @@ import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from "no
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { assertKey, cacheDir, isInside, newRunDir, outputRoot, removeRunDir, sweepStaleRuns } from "./paths.mjs";
-import { loadLayeredEnv } from "./env.mjs";
+import { LAYERS_GAP, loadLayeredEnv } from "./env.mjs";
 import { codeHostCredential, readProfile, resolveProfile, trackerCredential } from "./profile.mjs";
 import { GAP_REASONS, SCHEMA, asGap, gap } from "./gap.mjs";
 import { validateDef } from "./schema.mjs";
@@ -89,6 +89,7 @@ async function prepare() {
   if (!tcred.ok) { out({ status: "no-tracker", gap: gap("ticket", tcred.reason, tcred.detail) }); process.exit(3); }
   const jira = jiraClient(tcred);
   const gaps = [];
+  if (LAYERS_GAP) gaps.push(gap("env", "not-available-in-install", LAYERS_GAP));
 
   const allFields = await jira.fields();
   const acFields = resolveFieldsByName(allFields, profile.fieldMap.acceptanceCriteria, AC_FIELD_NAME_RE);
