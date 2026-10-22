@@ -8,49 +8,72 @@
  * and every token path (the $VC_RUN bridge, gen-mcp, write-secrets-decl, migrate-secrets, the
  * discovery probes, self-diagnostics delivery) stands down.
  *
- * The registry below is the only place a host is described: its plugin id(s) and the MCP server KEYS
- * it ships, per role. Nothing else — no org, URL or tenant belongs here. Adding a host is one entry.
- * The role→server mapping is a DEFAULT the operator confirms or overrides during /project-init; which
- * server serves the tracker and which the code host is the operator's answer, never inferred.
+ * No host is named here. A host is FOUND: a plugin bound to THIS folder (installed for it with project
+ * or local scope, or enabled in its own `.claude/settings*.json`) that ships MCP servers AND a
+ * `SessionStart` hook — the shape of a plugin that brings a project's rules and its approved servers.
+ * A plugin installed for the whole machine is a tool, not a project's governance, and one installed
+ * for another folder never counts. The operator confirms the candidate; nothing is assumed from a name.
  */
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import os from "node:os";
 import { join, resolve } from "node:path";
 
 /** Roles a host server can fill. `browsers` is a list; the rest are one server key each. */
 export const ROLES = ["tracker", "codeHost", "github", "telemetry", "testManagement", "browsers"];
 
-export const HOSTS = Object.freeze({
-  "opus-governance": {
-    pluginIds: ["opus-governance@opus-tools"],
-    servers: {
-      tracker: "azure-mcp-work",
-      codeHost: "azure-mcp-dev",
-      github: "github",
-      telemetry: "azure-monitor",
-      testManagement: "testrail",
-      browsers: ["playwright-chrome", "playwright-edge", "playwright-firefox"],
-    },
-  },
-});
+/**
+ * How a test user signs in to the client's website on a host-governed project:
+ *   host-secrets     the host keeps each test user's password in a slot of its own secret wrapper and
+ *                    hands it to its browser servers — the agent types the slot's NAME;
+ *   manual-operator  the host declares no slots: the operator signs in by hand.
+ */
+export const WEBSITE_AUTH = ["host-secrets", "manual-operator"];
+
+/** The marketplaces our own plugins come from — never a candidate host. */
+export const OWN_MARKETPLACES = ["ai-tools", "vc-tools"];
+
+/** A host is recorded by its plugin id: `<plugin>@<marketplace>`. */
+export const PLUGIN_ID_RE = /^[A-Za-z0-9._-]+@[A-Za-z0-9._-]+$/;
 
 /** The governance block for a host (or none). Pure. */
-export function governanceBlock(host, overrides = {}) {
-  if (!host) return { host: null, secrets: "vc-secrets", servers: emptyServers(), stand: { writable: true } };
-  const reg = HOSTS[host];
-  if (!reg) throw new Error(`unknown governance host "${host}" (known: ${Object.keys(HOSTS).join(", ")})`);
-  const servers = { ...reg.servers, browsers: [...reg.servers.browsers] };
+export function governanceBlock(host, overrides = {}, extras = {}) {
+  if (!host) return { host: null, secrets: "vc-secrets", servers: emptyServers(), stand: { writable: true }, ...emptyExtras() };
+  if (!PLUGIN_ID_RE.test(String(host))) throw new Error(`governance host "${host}" is not a plugin id (<plugin>@<marketplace>)`);
+  const servers = emptyServers();
   for (const role of ROLES) {
     if (overrides[role] === undefined) continue;
     servers[role] = role === "browsers"
       ? String(overrides[role]).split(",").map((s) => s.trim()).filter(Boolean)
       : String(overrides[role]);
   }
-  return { host, secrets: "host", servers, stand: { writable: false } };
+  return { host, secrets: "host", servers, stand: { writable: false }, ...emptyExtras(), ...cleanExtras(extras) };
 }
 
 export function emptyServers() {
   return { tracker: "", codeHost: "", github: "", telemetry: "", testManagement: "", browsers: [] };
+}
+
+/** The answers a host-governed block carries besides the servers. */
+export function emptyExtras() {
+  return { websiteAuth: "", envs: {} };
+}
+
+function cleanExtras(extras) {
+  const out = {};
+  if (typeof extras.websiteAuth === "string") out.websiteAuth = extras.websiteAuth;
+  if (extras.envs && typeof extras.envs === "object") out.envs = { ...extras.envs };
+  return out;
+}
+
+/** Parse `ours=host,ours2=host2` into an env map. Throws on a malformed pair. Pure. */
+export function parseEnvMap(text) {
+  const out = {};
+  for (const pair of String(text || "").split(",").map((s) => s.trim()).filter(Boolean)) {
+    const m = /^([a-z0-9_]+)=([a-z0-9_]+)$/.exec(pair);
+    if (!m) throw new Error(`env map "${pair}" is not <env>=<host env> ([a-z0-9_]+ on both sides)`);
+    out[m[1]] = m[2];
+  }
+  return out;
 }
 
 /** Is this profile (raw or layered) host-governed? Pure. */
@@ -66,43 +89,39 @@ function readJson(path) {
   }
 }
 
-/**
- * Find an installed host governance plugin: Claude Code's install registry (a record for one of the
- * host's plugin ids), or the project's `.claude/settings.json` `enabledPlugins`. Returns the first match.
- * @returns {{ host: string, pluginId: string, installPath: string|null, source: string } | null}
- */
-export function detectHost({ projectRoot = process.cwd(), home = process.env.HOME || os.homedir() } = {}) {
-  const registry = readJson(join(home, ".claude", "plugins", "installed_plugins.json"));
-  const settings = readJson(join(resolve(projectRoot), ".claude", "settings.json"));
-  for (const [host, reg] of Object.entries(HOSTS)) {
-    for (const id of reg.pluginIds) {
-      const records = Array.isArray(registry?.plugins?.[id]) ? registry.plugins[id].filter((r) => r && typeof r === "object") : [];
-      if (records.length) {
-        const withPath = records.find((r) => typeof r.installPath === "string" && existsSync(r.installPath));
-        return { host, pluginId: id, installPath: withPath ? withPath.installPath : null, source: "installed_plugins.json" };
-      }
-      if (settings?.enabledPlugins && settings.enabledPlugins[id]) {
-        return { host, pluginId: id, installPath: null, source: ".claude/settings.json enabledPlugins" };
-      }
-    }
-  }
-  return null;
+/** One spelling for a directory, so a registry `projectPath` and the project root compare. Pure. */
+export function samePath(a, b, platform = process.platform) {
+  if (!a || !b) return false;
+  const norm = (p) => {
+    const s = resolve(String(p)).replace(/[\\/]+$/, "");
+    return platform === "win32" ? s.replace(/\//g, "\\").toLowerCase() : s;
+  };
+  return norm(a) === norm(b);
 }
 
-/** The install path of a host's plugin from the registry, or null. */
-export function hostInstallPath(host, { home = process.env.HOME || os.homedir() } = {}) {
-  const reg = HOSTS[host];
-  if (!reg) return null;
-  const registry = readJson(join(home, ".claude", "plugins", "installed_plugins.json"));
-  for (const id of reg.pluginIds) {
-    const recs = Array.isArray(registry?.plugins?.[id]) ? registry.plugins[id] : [];
-    const r = recs.find((x) => x && typeof x.installPath === "string" && existsSync(x.installPath));
-    if (r) return r.installPath;
-  }
-  return null;
+/** The install record bound to THIS folder: project or local scope for exactly it. Pure. */
+export function folderRecord(records, projectRoot) {
+  const list = (Array.isArray(records) ? records : []).filter((r) => r && typeof r === "object");
+  return list.find((r) => (r.scope === "project" || r.scope === "local") && samePath(r.projectPath, projectRoot)) || null;
 }
 
-/** The MCP server keys a host plugin ships: its `.mcp.json` and its plugin.json `mcpServers` (read-only). */
+/** Any install record whose files exist (the version this machine runs). Pure apart from the exists check. */
+function anyInstall(records, { exists = existsSync } = {}) {
+  const list = (Array.isArray(records) ? records : []).filter((r) => r && typeof r.installPath === "string");
+  return list.find((r) => exists(r.installPath)) || null;
+}
+
+/** The project's settings `enabledPlugins` (local wins over shared): id → boolean. */
+function enabledInSettings(projectRoot) {
+  const out = {};
+  for (const file of ["settings.json", "settings.local.json"]) {
+    const map = readJson(join(resolve(projectRoot), ".claude", file))?.enabledPlugins;
+    if (map && typeof map === "object") for (const [id, v] of Object.entries(map)) if (typeof v === "boolean") out[id] = v;
+  }
+  return out;
+}
+
+/** The MCP server keys a plugin ships: its `.mcp.json` and its plugin.json `mcpServers` (read-only). */
 export function hostServerKeys(installPath) {
   const keys = new Set();
   if (!installPath) return keys;
@@ -111,6 +130,78 @@ export function hostServerKeys(installPath) {
     if (servers && typeof servers === "object" && !Array.isArray(servers)) for (const k of Object.keys(servers)) keys.add(k);
   }
   return keys;
+}
+
+/** Does a plugin run something at session start (its hooks file or plugin.json `hooks`)? */
+export function hasSessionStartHook(installPath) {
+  if (!installPath) return false;
+  for (const doc of [readJson(join(installPath, "hooks", "hooks.json")), readJson(join(installPath, ".claude-plugin", "plugin.json"))]) {
+    const hooks = doc?.hooks;
+    if (hooks && typeof hooks === "object" && Array.isArray(hooks.SessionStart) && hooks.SessionStart.length) return true;
+  }
+  return false;
+}
+
+/** A plugin's own setup command(s): its skills and commands named for setup / init / onboarding. */
+export function setupCommandsOf(installPath) {
+  const out = [];
+  if (!installPath) return out;
+  const names = (dir, strip) => {
+    try {
+      return readdirSync(join(installPath, dir)).map((n) => n.replace(strip, ""));
+    } catch {
+      return [];
+    }
+  };
+  for (const n of [...names("skills", /$/), ...names("commands", /\.md$/)]) {
+    if (/(^|[-_])(setup|init|onboard|onboarding|bootstrap)([-_]|$)/i.test(n) && !out.includes(`/${n}`)) out.push(`/${n}`);
+  }
+  return out;
+}
+
+/**
+ * Every plugin bound to THIS folder that looks like a project's governance: installed for it (project
+ * or local scope) or enabled in its own settings, not switched off there, not one of ours, and shipping
+ * MCP servers plus a `SessionStart` hook. Ordered: an install for this folder first.
+ * @returns {{ pluginId: string, installPath: string|null, source: string, servers: string[], setupCommands: string[] }[]}
+ */
+export function hostCandidates({ projectRoot = process.cwd(), home = process.env.HOME || os.homedir(), machineWide = false } = {}) {
+  const registry = readJson(join(home, ".claude", "plugins", "installed_plugins.json"))?.plugins || {};
+  const enabled = enabledInSettings(projectRoot);
+  const ids = new Set([...Object.keys(registry), ...Object.keys(enabled).filter((id) => enabled[id])]);
+  const out = [];
+  for (const id of ids) {
+    if (!PLUGIN_ID_RE.test(id) || OWN_MARKETPLACES.includes(id.split("@")[1]) || enabled[id] === false) continue;
+    const bound = folderRecord(registry[id], projectRoot);
+    const userWide = (Array.isArray(registry[id]) ? registry[id] : []).find((r) => r && r.scope === "user");
+    let source;
+    if (bound) source = `installed for this folder (${bound.scope} scope)`;
+    else if (enabled[id] === true) source = "enabled in this folder's .claude/settings";
+    else if (machineWide && userWide) source = "installed for the whole machine (user scope)";
+    else continue;
+    const rec = bound && typeof bound.installPath === "string" && existsSync(bound.installPath) ? bound : anyInstall(registry[id]);
+    const installPath = rec?.installPath || null;
+    const servers = [...hostServerKeys(installPath)];
+    if (!servers.length || !hasSessionStartHook(installPath)) continue;
+    out.push({ pluginId: id, installPath, source, folderBound: !source.startsWith("installed for the whole"), servers, setupCommands: setupCommandsOf(installPath) });
+  }
+  const rank = (c) => (c.source.startsWith("installed for this folder") ? 2 : c.folderBound ? 1 : 0);
+  return out.sort((a, b) => rank(b) - rank(a));
+}
+
+/** The first host candidate bound to this folder, or null (a machine-wide one is only ever offered). */
+export function detectHost(opts = {}) {
+  const [first] = hostCandidates({ ...opts, machineWide: false });
+  return first ? { host: first.pluginId, pluginId: first.pluginId, installPath: first.installPath, source: first.source } : null;
+}
+
+/** The install path of a host plugin as this folder runs it: its install for this folder, else any. */
+export function hostInstallPath(host, { projectRoot = process.cwd(), home = process.env.HOME || os.homedir() } = {}) {
+  if (!PLUGIN_ID_RE.test(String(host || ""))) return null;
+  const records = readJson(join(home, ".claude", "plugins", "installed_plugins.json"))?.plugins?.[host];
+  const bound = folderRecord(records, projectRoot);
+  if (bound && typeof bound.installPath === "string" && existsSync(bound.installPath)) return bound.installPath;
+  return anyInstall(records)?.installPath || null;
 }
 
 /** The one line a token path prints when it stands down on a host-governed project. */

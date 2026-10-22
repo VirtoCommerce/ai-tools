@@ -64,8 +64,8 @@ function fail(msg) { console.error(`[scaffold-secrets] ${msg}`); process.exit(1)
 
 // Secret catalog: what / why / where + whether it is a per-env credential.
 const CATALOG = {
-  ADMIN_PASSWORD: { perEnv: true, include: (o) => o.inVcSecrets !== true || !o.vcRoles.includes("admin"), ...PASSWORD_GUIDE.ADMIN_PASSWORD },
-  USER_PASSWORD: { perEnv: true, include: (o) => o.inVcSecrets !== true || !o.vcRoles.includes("user"), ...PASSWORD_GUIDE.USER_PASSWORD },
+  ADMIN_PASSWORD: { perEnv: true, include: (o) => !o.hostGoverned && (o.inVcSecrets !== true || !o.vcRoles.includes("admin")), ...PASSWORD_GUIDE.ADMIN_PASSWORD },
+  USER_PASSWORD: { perEnv: true, include: (o) => !o.hostGoverned && (o.inVcSecrets !== true || !o.vcRoles.includes("user")), ...PASSWORD_GUIDE.USER_PASSWORD },
 };
 
 function main() {
@@ -110,6 +110,9 @@ function main() {
     if (flag !== undefined && !["vc-secrets", "env-local"].includes(flag)) fail(`--${role}-passwords must be vc-secrets or env-local, got "${flag}"`);
     if (!hostGoverned && (flag === "vc-secrets" || (flag === undefined && declared.includes(role)))) vcRoles.push(role);
   }
+  // A host-governed project keeps no password in a file of ours: the host's wrapper holds them
+  // (add-user hands out its slots), or the operator signs in by hand.
+  opts.hostGoverned = hostGoverned;
   opts.inVcSecrets = vcRoles.length > 0;
   opts.vcRoles = vcRoles;
   if (vcRoles.length) {

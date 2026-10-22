@@ -27,6 +27,11 @@
  *       one env per call (a login usually differs per env). Prints one JSON report whose `steps` are the
  *       operator's commands, relayed verbatim. --replace overwrites a different login under the same KEY.
  *
+ * On a host-governed project whose host keeps the passwords (governance.websiteAuth "host-secrets"), a user
+ * takes one of the host's password SLOTS instead (hostMain below):
+ *   node add-user.mjs --list            every env, its host website env, and each slot: free or whose
+ *   node add-user.mjs --env <env> --slot <SLOT> --role user|admin --login <login> [--note "<one line>"] [--replace]
+ *
  * Exit: 0 done (or nothing to do), 1 a bad argument or a refusal (the JSON / stderr says why).
  */
 import { appendFileSync, existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
@@ -38,7 +43,8 @@ import { defaultShimPath } from "../../scripts/install-bridge.mjs";
 import { vcSecretsShim } from "../../bridge/vc-secrets-path.mjs";
 import { ensureProjectIgnores } from "./lib/gitignore.mjs";
 import { outputRoot } from "./lib/paths.mjs";
-import { standDownIfHostGoverned } from "./lib/governance.mjs";
+import { hostInstallPath, standDownIfHostGoverned } from "./lib/governance.mjs";
+import { hostState, storeCommand } from "./lib/host-adapter.mjs";
 import { ENV_NAME_RE, ROLES, ROLE_PASSWORD, declaredPasswords, isPasswordName, passwordSecret } from "./lib/passwords.mjs";
 import { patAxesFromProfile, writeSecretsDecl } from "./write-secrets-decl.mjs";
 
@@ -90,7 +96,7 @@ export function usersIn(text) {
  * The `.env.<env>` text with the user's block added or its login changed. Pure.
  * @returns {{ text: string, change: "added"|"replaced"|"unchanged" } | { refused: string }}
  */
-export function withUser(text, { key, role, login, replace = false }) {
+export function withUser(text, { key, role, login, replace = false, note = "", password = `${key}_PASSWORD`, where = "" }) {
   const loginVar = `${key}_LOGIN`;
   const current = parse(String(text || ""))[loginVar];
   if (current === login) return { text, change: "unchanged" };
@@ -100,7 +106,7 @@ export function withUser(text, { key, role, login, replace = false }) {
     return { text: String(text).replace(new RegExp(`^(\\s*${loginVar}\\s*=).*$`, "m"), (_m, lead) => `${lead}${login}`), change: "replaced" };
   }
   const base = String(text || "");
-  const block = `# vc-init user ${key} (${role}) — ${ROLE_TEXT[role]}. Login below; the agent types the password by its NAME: ${key}_PASSWORD\n${loginVar}=${login}\n`;
+  const block = `# vc-init user ${key} (${role}) — ${note || ROLE_TEXT[role]}. Login below; the agent types the password by its NAME: ${password}${where ? ` (${where})` : ""}\n${loginVar}=${login}\n`;
   return { text: `${base}${base && !base.endsWith("\n") ? "\n" : ""}${base ? "\n" : ""}${block}`, change: "added" };
 }
 
@@ -156,6 +162,88 @@ function fail(message) {
   process.exit(1);
 }
 
+/** The host website environment an `.env.<env>` is: the profile's map, else a same-named host env. Pure. */
+export function hostEnvFor(env, governance, hostEnvs) {
+  const mapped = governance?.envs?.[env];
+  if (mapped) return hostEnvs.includes(mapped) ? mapped : null;
+  return hostEnvs.includes(env) ? env : null;
+}
+
+/** Why a note is not usable, or null. It lands in a one-line `#` comment. Pure. */
+export function noteProblem(note) {
+  if (note === undefined || note === "") return null;
+  if (/[\r\n]/.test(note) || note.length > 160) return "--note is one line of at most 160 characters";
+  return null;
+}
+
+/**
+ * A host-governed project whose host keeps test-user passwords (governance.websiteAuth "host-secrets"): the
+ * host declares fixed password SLOTS per website environment (lib/host-adapter.mjs), each with the
+ * NAME a browser agent types. A user takes a free slot of its environment: the login and a one-line
+ * note go into `.env.<env>` (the built-in ADMIN / USER have no slot there and are not offered), and
+ * the operator stores the password with the host's wrapper — never this script, never a file.
+ */
+function hostMain(root, profile, args) {
+  const g = profile.governance;
+  const installPath = hostInstallPath(g.host, { projectRoot: root });
+  if (!installPath) fail(`${g.host} is not installed for this folder — install it first (the host's own instructions)`);
+  const state = hostState(g.host, installPath, root);
+  const { slots, hostEnvs } = state;
+  if (!slots.length) fail(`${g.host} declares no test-user password slots — sign in by hand (gen-profile --gov-website-auth manual-operator)`);
+  const envView = (env) => {
+    const hostEnv = hostEnvFor(env, g, hostEnvs);
+    const users = usersIn(readFileSync(join(root, `.env.${env}`), "utf8")).filter((u) => !BUILT_IN.some((b) => b.key === u.key));
+    return {
+      env,
+      hostEnv,
+      slots: slots.filter((s) => s.hostEnv === hostEnv).map((s) => {
+        const u = users.find((x) => x.key === s.slot);
+        return { slot: s.slot, password: s.password, secret: s.secret, login: u?.login || "", role: u?.role || "", free: !u };
+      }),
+    };
+  };
+
+  if (args.list) {
+    const envs = envsIn(readdirSync(root)).map(envView);
+    console.log(JSON.stringify({ host: g.host, websiteAuth: "host-secrets", hostEnvs, envs,
+      unmapped: envs.filter((e) => !e.hostEnv).map((e) => e.env) }, null, 2));
+    return;
+  }
+
+  const { env, role, login, note = "" } = args;
+  const slot = args.slot || args.key;
+  if (!ENV_NAME_RE.test(String(env || ""))) fail("--env <name> is required ([a-z0-9_]+)");
+  if (!existsSync(join(root, `.env.${env}`))) fail(`no .env.${env} — the environments here are: ${envsIn(readdirSync(root)).join(", ") || "(none)"}; add one with /project-init --add-env`);
+  const view = envView(env);
+  if (!view.hostEnv) fail(`.env.${env} is not mapped to a ${g.host} website environment (${hostEnvs.join(", ")}) — gen-profile --gov-envs ${env}=<one of them>`);
+  const target = view.slots.find((s) => s.slot === slot);
+  if (!target) fail(`--slot must be one of ${view.slots.map((s) => s.slot).join(", ")} (the ${g.host} slots for ${view.hostEnv})`);
+  if (!["user", "admin"].includes(role)) fail("--role must be user (storefront) or admin (back office)");
+  const lp = loginProblem(login);
+  if (lp) fail(lp);
+  const np = noteProblem(note);
+  if (np) fail(np);
+
+  const envFile = join(root, `.env.${env}`);
+  const next = withUser(readFileSync(envFile, "utf8"), { key: slot, role, login, note, password: target.password, where: `${g.host} slot ${target.secret}`, replace: !!args.replace });
+  if (next.refused) fail(next.refused);
+  if (next.change !== "unchanged") writeFileSync(envFile, next.text);
+  const store = storeCommand(state.wrapper, target.secret);
+  console.log(JSON.stringify({
+    env,
+    hostEnv: view.hostEnv,
+    user: { key: slot, role, loginVar: `${slot}_LOGIN`, login, password: target.password, envFile: `.env.${env}`, login_change: next.change },
+    password: { mode: "host", host: g.host, secret: target.secret },
+    steps: [
+      store
+        ? `${store}    # in your own terminal: hidden input — paste the password, never into the chat`
+        : `store the password as the secret "${target.secret}" with ${g.host}'s own secret tool${state.wrapper ? ` (${state.wrapper})` : ""} — ${state.setupCommands[0] || "its setup"} shows how; in your own terminal, never in the chat`,
+      "restart Claude Code — the browser servers read the passwords at start",
+    ],
+    agent: `log in with ${slot}_LOGIN from .env.${env} and type the password by its NAME: browser_type(text="${target.password}")`,
+  }, null, 2));
+}
+
 function main() {
   let args;
   try {
@@ -164,8 +252,9 @@ function main() {
     fail(e.message);
   }
   const root = outputRoot();
-  standDownIfHostGoverned(root, "add-user skipped: the host's secret wrapper owns the test users", { json: true });
   const { raw: profile, error, path } = readProjectProfile(root);
+  if (profile?.governance?.host && profile.governance.websiteAuth === "host-secrets") return hostMain(root, profile, args);
+  standDownIfHostGoverned(root, "add-user skipped: test users sign in by hand here (governance.websiteAuth is not host-secrets)", { json: true });
   if (!profile) fail(error ? `cannot parse ${path}: ${error}` : `no ${path} — this project is not onboarded; run /project-init first`);
 
   if (args.list) {

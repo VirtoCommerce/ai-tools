@@ -38,6 +38,8 @@
  *                              block is kept, like `perf`.
  *   --gov-tracker <key> --gov-code-host <key> --gov-github <key> --gov-telemetry <key>
  *   --gov-test-management <key> --gov-browsers <k1,k2>   operator overrides of the host's server per role
+ *   --gov-website-auth host-secrets|manual-operator   how test users sign in to the client's website
+ *   --gov-envs <env>=<host env>,…   which host website environment each `.env.<env>` is (added, never dropped)
  *
  *   # Merge a discovered repo map (output of discover-repos.mjs) into an existing profile:
  *   node skills/project-init/gen-profile.mjs --repos-json repos.json --merge --print
@@ -54,7 +56,7 @@ import { resolve } from "path";
 import { PROFILE_DEFAULTS, PROFILE_SCHEMA_VERSION } from "../../scripts/lib/project-profile.mjs";
 import { outputRoot, resolveOutPath } from "./lib/paths.mjs";
 import { ensureProjectIgnores } from "./lib/gitignore.mjs";
-import { HOSTS, governanceBlock } from "./lib/governance.mjs";
+import { PLUGIN_ID_RE, WEBSITE_AUTH, governanceBlock, parseEnvMap } from "./lib/governance.mjs";
 
 // A work-item field whose VALUE is time-varying (a sprint/area NODE id: System.IterationId /
 // System.AreaId). Persisting it as a fieldDefaults constant silently files future bugs into a
@@ -90,6 +92,27 @@ function parseArgs(argv) {
     }
   }
   return args;
+}
+
+/**
+ * The answers of a host-governed block besides its servers (`--gov-website-auth`,
+ * `--gov-envs <env>=<host env>,…`), merged over what the block already holds: an env map ADDS
+ * environments, it never drops one.
+ */
+function governanceExtras(args, current = {}) {
+  const extras = {};
+  if (args["gov-website-auth"] !== undefined) {
+    if (!WEBSITE_AUTH.includes(args["gov-website-auth"])) fail(`Invalid --gov-website-auth "${args["gov-website-auth"]}". Allowed: ${WEBSITE_AUTH.join(" | ")}`);
+    extras.websiteAuth = args["gov-website-auth"];
+  }
+  if (args["gov-envs"] !== undefined) {
+    try {
+      extras.envs = { ...(current?.envs || {}), ...parseEnvMap(args["gov-envs"]) };
+    } catch (e) {
+      fail(`--gov-envs: ${e.message}`);
+    }
+  }
+  return extras;
 }
 
 function fail(msg) {
@@ -153,8 +176,8 @@ function main() {
     if (existing.perf && typeof existing.perf === "object") base.perf = existing.perf;
     if (existing.governance && typeof existing.governance === "object") base = deepMerge(base, { governance: existing.governance });
   }
-  if (args.governance !== undefined && args.governance !== "none" && !HOSTS[args.governance]) {
-    fail(`Invalid --governance "${args.governance}". Allowed: ${Object.keys(HOSTS).join(" | ")} | none`);
+  if (args.governance !== undefined && args.governance !== "none" && !PLUGIN_ID_RE.test(String(args.governance))) {
+    fail(`Invalid --governance "${args.governance}". Allowed: a plugin id (<plugin>@<marketplace>) | none`);
   }
 
   // Build the override patch from flags (only set what was provided).
@@ -323,9 +346,21 @@ function main() {
   else if (effectiveType === "platform") set("buildVerify.source", "vc-deploy-dev");
 
   let profile = deepMerge(base, patch);
+  const govExtras = governanceExtras(args, profile.governance);
   if (args.governance !== undefined) {
-    const overrides = { tracker: args["gov-tracker"], codeHost: args["gov-code-host"], github: args["gov-github"], telemetry: args["gov-telemetry"], testManagement: args["gov-test-management"], browsers: args["gov-browsers"] };
-    profile = { ...profile, governance: governanceBlock(args.governance === "none" ? null : args.governance, overrides) };
+    const host = args.governance === "none" ? null : args.governance;
+    const flagged = { tracker: args["gov-tracker"], codeHost: args["gov-code-host"], github: args["gov-github"], telemetry: args["gov-telemetry"], testManagement: args["gov-test-management"], browsers: args["gov-browsers"] };
+    // Re-running with the SAME host (§6 after §0-host, or --check) keeps what was confirmed earlier;
+    // only a flag changes a role. A different host starts from that host's defaults.
+    const same = host && profile.governance?.host === host ? profile.governance : null;
+    const kept = same ? { ...same.servers, browsers: (same.servers?.browsers || []).join(",") } : {};
+    const overrides = Object.fromEntries(Object.keys(flagged).map((k) => [k, flagged[k] !== undefined ? flagged[k] : kept[k]]));
+    const extras = same ? { websiteAuth: same.websiteAuth, envs: same.envs, ...govExtras } : govExtras;
+    profile = { ...profile, governance: governanceBlock(host, overrides, extras) };
+  } else if (profile.governance?.host) {
+    // A day-2 run (--add-env) on a governed project: fold the answers
+    // into the block that is already there, and keep everything else.
+    profile = { ...profile, governance: { ...profile.governance, ...govExtras } };
   }
 
   // Prune infra sub-objects that don't apply to the chosen tracker / code host, so the written

@@ -45,6 +45,7 @@ import { resolveOutPath, outputRoot } from "./lib/paths.mjs";
 // earlier in the flow existed un-ignored until then (VCST-5774 review #4). Idempotent — the four
 // writers all call it, and only the first one actually appends.
 import { ensureProjectIgnores } from "./lib/gitignore.mjs";
+import { isHostGoverned } from "./lib/governance.mjs";
 import { LOCAL_FILE, LOCAL_HEADER, LOCAL_SECTION, describeMove, envSuffixesIn, keyComment, keySuffixes, moveProjectKeys, readKey } from "./lib/project-env.mjs";
 
 function parseArgs(argv) {
@@ -59,6 +60,7 @@ function parseArgs(argv) {
   return a;
 }
 function fail(msg) { console.error(`[scaffold-env] ${msg}`); process.exit(1); }
+function readJsonOrNull(p) { try { return JSON.parse(readFileSync(p, "utf8")); } catch { return null; } }
 
 // key → { def?, type?, warnOnPath?, what, where }.  include() gates topology-specific keys.
 //
@@ -80,9 +82,9 @@ export const CATALOG = [
     what: "Admin SPA / platform URL.", where: "e.g. https://platform.example.com" }],
   ["STORE_ID",         { include: () => true, optional: true,
     what: "Primary store identifier — leave EMPTY to detect it from FRONT_URL.", where: "fill it only if detection fails: Platform → Stores, e.g. B2B-store." }],
-  ["ADMIN",            { def: "admin", include: () => true,
+  ["ADMIN",            { def: "admin", include: (o) => !o.hostGoverned,
     what: "Admin login (identifier, NOT the password).", where: "usually 'admin'." }],
-  ["USER_EMAIL",       { include: () => true,
+  ["USER_EMAIL",       { include: (o) => !o.hostGoverned,
     what: "Storefront test-user email.", where: "an existing storefront TEST account." }],
   ["JIRA_BASE_URL",    { include: (o) => o.tracker === "jira", type: "url", scope: "project",
     // No warnOnPath: a self-hosted Jira Server can legitimately live at https://host/jira.
@@ -117,6 +119,9 @@ function main() {
     projectType: args["project-type"] || "platform",
     contributionMode: args["contribution-mode"] || "fork",
     clientVcs: args["client-vcs"] || "github",
+    // A host-governed project has no built-in ADMIN / USER: its test users take the host's password
+    // slots (add-user.mjs), so a login here would point at a password that exists nowhere.
+    hostGoverned: isHostGoverned(readJsonOrNull(join(outputRoot(), "project-profile.json"))),
   };
   // Default output → the deployment project (process.cwd()); config.js dotenv-loads
   // `.env.${env}` relative to cwd, so this must land there. --out still overrides.

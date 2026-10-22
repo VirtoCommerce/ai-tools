@@ -8,6 +8,43 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## `vc-init` `0.4.0`, `vc-fix` `0.12.1`: a host is found by its shape, and guest mode reads what its own setup left — 2026-10-22
+
+**Fixed: detection no longer turns other projects into guests.** `detectHost` counted any install record of a
+known host plugin, so a client governance plugin installed for one folder (`--scope project`) made
+`/project-init` offer guest mode in every Virto checkout on the same machine.
+
+**Changed: no host is named in the plugins any more.** The `HOSTS` registry is gone. A candidate host is a
+plugin bound to the folder — installed for it with project or local scope, or enabled in its own
+`.claude/settings*.json` — that is not one of ours and ships MCP servers and a `SessionStart` hook; a plugin
+installed for the whole machine is only offered, never picked. The profile records it by plugin id
+(`<plugin>@<marketplace>`); `--governance` takes one.
+
+**Changed: the host sets the person up, vc-init sets the project up.** The host's own setup command (its skill
+or command named for setup / init / onboarding) owns the role, the sign-in, its secrets and which of its
+servers stay on; vc-init never runs or repeats it. `detect-governance.mjs` prints the host's `state`
+(`lib/host-adapter.mjs`, read-only): whether that setup ran here (no role has two servers on), each server
+that is on and the role it fills — by the MCP package it launches, through a wrapper when the plugin declares
+one — and the test-user password slots its browser servers launch with (`<ENV>_<SLOT>_PASSWORD` from a secret
+reference). Not set up ⇒ `/project-init` stops with the host's command. The code host is never inferred.
+
+**Added: test users on the host's password slots.** `governance` gains `websiteAuth` (`host-secrets` |
+`manual-operator`) and `envs` (`.env.<env>` → host website env); gen-profile takes `--gov-website-auth` and
+`--gov-envs`, and a re-run with the same host keeps the confirmed servers and the env map. `add-user` offers
+the host's free slots, writes the login and a one-line note to `.env.<env>` and hands the operator the way to
+store the slot's secret (the wrapper's own `set` verb when its usage offers one); no built-in `ADMIN` /
+`USER_EMAIL` and no password placeholder is written on such a project. `verify-access` checks that the
+host's setup ran here, that the profile names the servers that are on, and every env's mapping and test
+users. vc-fix's `host-governance.md` says how an agent signs in: the login as text, the password by the
+slot's NAME, or by hand when `manual-operator`.
+
+**Verified.** On a machine with a client governance plugin installed for one folder and its setup already run
+there: no candidate for this repository or its parent folder; the folder's plugin found in any letter case,
+its work-items, test-management, telemetry and three browser servers classified by package, its setup
+command found, 10 slots on two environments, the store command read from the wrapper's usage. A sandbox
+project went through gen-profile → scaffold-env → scaffold-secrets → add-user → reconcile → verify-access in
+both states (setup not run / run). 3912 unit tests and the vc-init bridge tests pass.
+
 ## `vc-init` `0.3.3`: the `$VC_RUN` bridge no longer takes `~/.claude` for a project — 2026-10-21
 
 **Fixed.** `bridge/run.mjs` `findDeclarations` walked up from the cwd and stopped at the first
