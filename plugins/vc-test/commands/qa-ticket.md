@@ -25,6 +25,9 @@ plugin's folder (`plugins/vc-test` in this checkout). Run every command from the
 5. **A brief is paths plus the one skill its step needs.** Never paste the bundle, the strategy or a result.
 6. ≤ 3 browser lanes at once (`run-plan.json` already respects it); one browser session per agent.
 7. A Low or cosmetic finding gets one line under "Noticed" — no investigation, no screenshot, no bug (U25).
+8. **Every turn of yours re-reads your whole context**, so keep it small: start the run in a fresh session, never
+   read a skill's supporting files or a script's source unless a step fails, and cut a script's output to what the
+   step needs (its exit code and summary line; `| tail -n 20` on anything that prints a table or JSON).
 
 ## 0 — Probe
 
@@ -53,10 +56,14 @@ files exist, `OUT =
 
 ## 3 — Strategy (human point 1)
 
-Run the `qa-test-strategy` skill inline from its procedure step 2, with the bundle and `--change-map
-<WORK>/change-map.json` (its floors and its gate both read it; F12 makes Exploratory RUN on a significant-zone
-hotspot). For every risk, Approach names the layer that proves it: a script (`ac-checks`) or exploratory (U45).
-Its gate, verifier and one approval question run as the skill says.
+**You do not write the strategy** — its reading, gate loop and verifier loop cost the most orchestrator turns
+(dry run on VCST-5904). Dispatch one `general-purpose` agent (model `opus`), description `[vc-test:strategy]
+<TICKET>`, brief: "Read and follow `<plugin>/briefs/strategy.md`" + `BUNDLE`, `CHANGE_MAP`, `RUN_DIR`. It writes
+the round as `Status: DRAFT`, passes the gate and the verifier, and returns the approval summary and the path.
+
+Then ask the one approval question (AskUserQuestion) with that summary. *Change* ⇒ SendMessage the same agent the
+user's words and ask again on its new summary. *Approve* ⇒ you set the section's `Status:` line yourself
+(`APPROVED (<who>, <date>)`, or `AUTO (--yes)` under `--yes`) — one Edit, no re-read of the file.
 
 ## 4 — Plan
 
