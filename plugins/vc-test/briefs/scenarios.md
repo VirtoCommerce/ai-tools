@@ -72,9 +72,11 @@ suspicion (or the suspicion in Gaps).
   `writes: []`, `storeCreated: false`, the most significant zone touched, and `hunts` = its charter — the touched
   surfaces and their mind-map neighbours, aimed at access, money, data, order state and a broken buyer path (U24).
 
-**Benchmark (`CUTOFF` given, U67):** do not read `known.kb` or `known.prior_runs` — skip them, even if the
-bundle you were given has them — and open no kb, no earlier run folder, nothing under `reports/bugs/` or
-`<plugin>/benchmarks/`, and no bug catalog.
+**Benchmark (`CUTOFF` given, U67):** read only your inputs above, the schema and the scorer this brief names. Never
+`docs/superpowers/**`, `.superpowers/**`, `.claude/worktrees/**`, `<plugin>/benchmarks/**` or git history (no
+`git log`, `show`, `blame`, `diff`); never resolve a U-id by grepping the spec — a U-id here is a label, this brief
+is the whole rule. Do not read `known.kb` or `known.prior_runs` — skip them, even if the bundle you were given has
+them — and open no kb, no earlier run folder, nothing under `reports/bugs/`, and no bug catalog.
 
 ## 4 — Score, and return
 

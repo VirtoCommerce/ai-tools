@@ -1,15 +1,15 @@
 ---
-description: "[Testing] PROTOTYPE vc-test QA command — one feature-test ticket by scenarios: context → change map → approved scenario list → one agent per scenario beside the background AC run → triage → verdict, costed per step and scenario. --benchmark runs it blind (U67). ai-tools checkout only."
+description: "[Testing] PROTOTYPE vc-test — one feature-test ticket by scenarios: context → change map → approved scenarios, one agent each, beside the background AC run → triage → verdict, costed. --benchmark runs it blind (U67). ai-tools checkout only."
 argument-hint: "<TICKET> [<env>] [--yes] [--dry-run] [--benchmark]"
 disable-model-invocation: true
 ---
 
 # /vc-test:qa-ticket — one ticket, the bugs a checklist misses
 
-You orchestrate **inline** and hold only paths: every hand-off is a file, never a summary (spec §4.1).
-Design: `docs/superpowers/specs/2026-10-15-vc-test-plugin-design.md` §3, U60–U68. `<plugin>` is this plugin's
-folder (`plugins/vc-test` here). Run every command from the project root. `WORK` is `.vc-fix/vc-test/<TICKET>/<env>/`;
-`BA` is `node <plugin>/lib/bench-aside.mjs`.
+You orchestrate **inline** and hold only paths: every hand-off is a file, never a summary.
+Design: `docs/superpowers/specs/2026-10-15-vc-test-plugin-design.md` §3, U60–U68 — never opened in a benchmark.
+`<plugin>` is this plugin's folder (`plugins/vc-test` here). Run every command from the project root. `WORK` is
+`.vc-fix/vc-test/<TICKET>/<env>/`; `BA` is `node <plugin>/lib/bench-aside.mjs`.
 **Dispatch `<x>` (`<model>`) with P** = a `general-purpose` agent of that model, description `[vc-test:<x>] <TICKET>`,
 brief "Read and follow `<plugin>/briefs/<x>.md`" + the paths P.
 
@@ -17,21 +17,25 @@ brief "Read and follow `<plugin>/briefs/<x>.md`" + the paths P.
 
 1. **Two human points only**: the scenario list's approval (step 3, `--yes` answers it) and step 8. Nothing else asks.
 2. **No ticket status transition, no tracker comment** — `verdict.md` is the output.
-3. **Bugs only through `/vc-fix:qa-bug`**, one call per confirmed Medium-or-worse bug, after its own question.
+3. **Bugs only through `/vc-fix:qa-bug`** (step 8); a benchmark files none.
 4. **Every dispatch's description starts `[vc-test:<step>]`**, a skill's too: `run-cost.mjs` counts by it.
 5. **A brief is paths plus the one skill its step needs.** Never paste the bundle, the strategy or a result.
-6. One browser lane per agent, never two agents on one browser server, ≤ 3 at once (`run-plan.json` keeps both).
+6. One browser lane per agent, ≤ 3 at once (`run-plan.json` keeps both).
 7. A Low or cosmetic finding gets one line under "Noticed" — no investigation, no screenshot, no bug (U25).
-8. **Every turn re-reads your context**: start fresh, read no supporting file or script source unless a step fails, keep a script's exit code and summary (`| tail -n 20`).
-9. **A STOP once step 5 has begun tears down first** (step 8); any STOP removes `<WORK>/prepare/`; a benchmark STOP after a done `aside` ends with its `restore`.
-10. **Benchmark (U67):** only the verdict gets the definition (`BENCHMARK`), you never read it; every dispatch and skill before it (triage, investigate, visual too) gets `CUTOFF` = `before` and "no kb, no bug catalog, no tracker, no earlier run folder".
+8. **Every turn re-reads your context**: read no supporting file or script source unless a step fails; keep a
+   script's exit code and summary (`| tail -n 20`).
+9. **A STOP once step 5 has begun tears down first** (step 8); any STOP removes `<WORK>/prepare/`; **every STOP
+   after `aside` ran** ends with the benchmark close (step 8).
+10. **Benchmark (U67)**: a fresh session; you open no path `briefs/blind.md` says **Never** to. Only the verdict gets
+    `BENCHMARK`; every dispatch and skill before it gets `CUTOFF` = `before`, plus `<plugin>/briefs/blind.md` if it
+    has no brief here (triage, investigate, visual).
 
 ## 0 — Probe
 
 1. `npm run run:use -- <TICKET> [<env>]` → note `RUN_DIR` and the start time (`date -u +%FT%TZ`).
-2. **`--benchmark`** (U67): `node <plugin>/lib/benchmark.mjs --key <TICKET>`. Exit 2 ⇒ STOP "the benchmark build
-   moved"; 3, 1 or a `hide_pending` entry ⇒ STOP. Keep `before`, `hide`, `run_dir`. `BA aside --key <TICKET>`: exit 2
-   ⇒ STOP, no `restore`; 3 ⇒ `BA restore --key <TICKET>`, STOP. Run 0.1 again: a prior run folder ⇒ STOP. Round 1.
+2. **`--benchmark`** (U67): `node <plugin>/lib/benchmark.mjs --key <TICKET>`. Exit ≠ 0 or a `hide_pending`
+   entry ⇒ STOP (2: "the benchmark build moved"). Keep `before`, `hide`, `run_dir`. `BA aside --key <TICKET>`: exit
+   2 ⇒ STOP, no close; 3 ⇒ STOP. Re-run 0.1: a prior run folder ⇒ STOP. Round 1.
 3. `node <plugin>/lib/capabilities.mjs --key <TICKET> --mcp <list>` — which of `playwright-chrome`,
    `playwright-firefox`, `playwright-edge`, `chrome-devtools` you have.
 4. **Domain slug** from the ticket's components and summary, checked by `npm run bl:extract -- --has-domain <slug>`;
@@ -55,13 +59,12 @@ A `NOT DEPLOYED:` line in `blockers[]` ⇒ BLOCKED on deploy: write `verdict.md`
 
 ## 3 — Strategy (human point 1)
 
-**You do not write the strategy.** Dispatch `strategy` (`opus`) with `BUNDLE`, `CHANGE_MAP`, `SCENARIOS_TABLE =
-<WORK>/scenarios.md`, `SCENARIOS = <WORK>/scenarios.json`, `RUN_DIR`. It writes `### Scenarios`, passes the gate and
-the verifier, and returns the approval summary. Its round must still say `Status: DRAFT` (`grep -m1 '^Status:'`),
-else back once, then STOP.
+**You do not write the strategy.** Dispatch `strategy` (`opus`) with `BUNDLE`, `CHANGE_MAP`,
+`SCENARIOS_TABLE = <WORK>/scenarios.md`, `SCENARIOS = <WORK>/scenarios.json`, `RUN_DIR`. It returns the approval
+summary once gate and verifier pass; its round must still say `Status: DRAFT`, else back once, then STOP.
 
-Ask (AskUserQuestion) with that summary: the scenario list, the windows it will announce in the
-team channel (U68), a `Shared store:` the user named. **Approving it approves those posts.** *Change* (add, strike,
+Ask (AskUserQuestion) with that summary: the scenarios, the windows to announce in the team channel
+(U68), a `Shared store:` to name. **Approving it approves those posts.** *Change* (add, strike,
 reorder, a store) ⇒ SendMessage the agent the user's words, ask again on the new summary.
 *Approve* ⇒ you set `Status:` (`APPROVED (<who>, <date>)`, or `AUTO (--yes)`) — one Edit, no re-read.
 
@@ -82,30 +85,31 @@ One message per wave of `run-plan.json`; each brief gets `RUN_DIR`, `STRATEGY`, 
 | `checklist`, `ac-checks`, `scenario:S-n` | its `run.agent` and `run.model`, `[vc-test:<id>] <TICKET>`, brief "Read and follow `<plugin>/<run.brief>`"; checklist + `CHANGE_MAP`; ac-checks + `CHECKLIST`, `CHANGE_MAP`, `CAPABILITIES`; a scenario + `S`, `SCENARIOS`, `BUNDLE`, `CAPABILITIES`, `LANE` = its `lane`, `EXPLORATORY` = its `exploratory` |
 | `visual` | `ui-ux-expert` on Chrome DevTools MCP, brief opening with Skill `qa-design` (`.claude/skills/qa-test/visual-axis.md` §2, §4, §5) |
 
-**A scenario whose Writes cell names `global/…` is BLOCKED before dispatch** if `node <plugin>/lib/window.mjs check`
-exits 1: append its row as `briefs/scenario-run.md` §Results says, `BLOCKED — no channel to announce the window
-(U68)`. After the visual lane, a row per finding that way: `#` `VIS-<m>`, Proof `visual`, `FAIL <severity>`.
+**A `global/…` writer is BLOCKED before dispatch** if `node <plugin>/lib/window.mjs check` exits 1: write its row,
+`BLOCKED — no channel to announce the window (U68)`, to `<RUN_DIR>/scenarios/S-n.rows.md`. The visual lane's
+findings: a row each in `scenarios/visual.rows.md`, `VIS-<m>`, Proof `visual`, `FAIL <severity>`. **After each
+wave**: `node <plugin>/lib/scenario-rows.mjs merge --run-dir <RUN_DIR> --ids <its S-n,…[,visual]>`; exit 2 ⇒
+`missing` / `refused` back to their agent once, merge those again.
 
 ## 6 — Triage, then Medium-only investigation
 
-1. The `qa-triage-results` skill, `ticket <TICKET> --min-severity P2` — only Medium+ is reproduced live (U29); in a
-   benchmark, no known-issue match from `vc-bug-catalog` or the tracker. `unresulted[]` rows ⇒ back to their agent
-   once, triage again; still some ⇒ STOP, list them.
-2. **Below floor** and Low / cosmetic ⇒ "Noticed". **Medium or worse** listed `needs-review` ⇒ one
-   `[vc-test:investigate]` dispatch each, invoking `vc-fix:qa-investigate`, ≤ 3 at a time.
+1. The `qa-triage-results` skill, `ticket <TICKET> --min-severity P2` — only Medium+ is reproduced live (U29).
+   `unresulted[]` rows ⇒ back to their agent once, triage again; still some ⇒ STOP, list them.
+2. **Below floor**, Low, cosmetic ⇒ "Noticed". **Medium+** listed `needs-review` ⇒ a `[vc-test:investigate]`
+   dispatch each, invoking `vc-fix:qa-investigate`, ≤ 3 at a time.
 
 ## 7 — Verdict
 
 1. `node <plugin>/lib/run-cost.mjs --since <start> --key <TICKET>` → keep its Markdown table.
-2. Dispatch a fresh `verdict` (`sonnet`) with the paths its brief lists (in a benchmark `BENCHMARK =
-   <plugin>/benchmarks/<TICKET>.json`) and the table.
+2. Dispatch a fresh `verdict` (`sonnet`) with the paths its brief lists, the table, and in a benchmark
+   `BENCHMARK = <plugin>/benchmarks/<TICKET>.json`.
 
 ## 8 — Human point 2
 
-Each confirmed Medium-or-worse bug: `/vc-fix:qa-bug` with its investigation package (U50), one at a time; its own
-question decides filing. Tear down: `node <plugin>/lib/teardown.mjs --key <TICKET>`. Exit 2 ⇒ name what failed
-and its `manual`, `unknown`, `foreign` lists; exit 3 ⇒ the stand is not writable, all of it is manual. Print
-`verdict.md`'s first two lines and path.
+Each confirmed Medium+ bug: `/vc-fix:qa-bug` with its investigation package (U50), one at a time; its own
+question decides filing — a benchmark skips this (its verdict marks them `would file`). Tear down: `node
+<plugin>/lib/teardown.mjs --key <TICKET>`. Exit 2 ⇒ name what failed and its `manual`, `unknown`, `foreign` lists;
+3 ⇒ the stand is not writable: all manual. Print `verdict.md`'s first two lines and path.
 
-**Benchmark close** (last): `BA restore --key <TICKET> --run-dir <run_dir>`; exit 2 ⇒ name its `taken` (left in
-`.vc-fix/bench-aside/`). Print the verdict's path under `run_dir`.
+**Benchmark close** (last): `BA restore --key <TICKET> --run-dir <run_dir>` — exit 3 ⇒ once more (it resumes), then
+print its JSON; 2 ⇒ name its `taken`. Then `npm run run:use -- --clear`; print the verdict's path under `run_dir`.

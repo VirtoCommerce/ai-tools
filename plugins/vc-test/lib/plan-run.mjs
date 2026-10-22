@@ -69,23 +69,30 @@ export function planRun({ strategy, registry, capabilities }) {
   const wave = new Map();
   const browserCount = [];
   const lanesIn = []; // wave -> lanes taken: two browser entries never share one (one browser session per agent)
-  // Scenarios that write the same setting never share a wave, and two global writers never do either (one global window at a time).
+  // Scenarios that write the same setting never share a wave. A scenario that writes a GLOBAL setting runs alone in its
+  // wave — no other scenario, no ac-checks, nothing: the flipped value would falsify what its wave-mates observe (and a
+  // second global window could not open). An entry with `missing` is not dispatched, so it takes no room.
   const writeKey = (w) => `${w.scope}/${w.name}`;
   const writersIn = [];
-  const clash = (w, sc) => (writersIn[w] ?? []).some((o) => o.writes.some((x) => x.scope === "global") && sc.writes.some((x) => x.scope === "global")
-    || o.writes.some((x) => sc.writes.some((y) => writeKey(x) === writeKey(y))));
+  const clash = (w, sc) => (writersIn[w] ?? []).some((o) => o.writes.some((x) => sc.writes.some((y) => writeKey(x) === writeKey(y))));
+  const isGlobal = (s) => !!s.scenario?.writes.some((x) => x.scope === "global");
+  const runningIn = []; // wave -> how many dispatched entries it holds
+  const globalIn = []; // wave -> it holds a global writer
   for (const id of ordered) {
     const s = selected.get(id);
     let w = 1 + Math.max(0, ...needsOf(s).map((n) => wave.get(n)));
     const browser = (s.pool || s.entry.lane?.startsWith("browser:")) && !s.missing;
     const freeLane = (x) => (s.pool ? s.pool.find((l) => !lanesIn[x]?.has(l)) : !lanesIn[x]?.has(s.entry.lane));
-    while ((browser && ((browserCount[w] ?? 0) >= MAX_BROWSER_LANES || !freeLane(w))) || (s.scenario && clash(w, s.scenario))) w++;
+    const alone = (x) => s.missing || (isGlobal(s) ? !runningIn[x] : !globalIn[x]);
+    while ((browser && ((browserCount[w] ?? 0) >= MAX_BROWSER_LANES || !freeLane(w))) || (s.scenario && clash(w, s.scenario)) || !alone(w)) w++;
     if (browser) {
       s.lane = s.pool ? freeLane(w) : s.entry.lane;
       browserCount[w] = (browserCount[w] ?? 0) + 1;
       (lanesIn[w] ??= new Set()).add(s.lane);
     }
     if (s.scenario) (writersIn[w] ??= []).push(s.scenario);
+    if (!s.missing) runningIn[w] = (runningIn[w] ?? 0) + 1;
+    if (isGlobal(s)) globalIn[w] = true;
     wave.set(id, w);
   }
   const waves = [];

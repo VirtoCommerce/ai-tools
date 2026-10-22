@@ -8,12 +8,15 @@
 //            exit 2 before any rename (an earlier benchmark did not restore; never restore over it).
 //   restore --key <KEY> [--run-dir <dir>]   with --run-dir: move what the globs name now (this run's folders) to
 //            bench-aside/<KEY>/run/, rename every earlier folder back, then move run/ to <dir> (benchmark.mjs's
-//            run_dir) with the manifest beside it. Without --run-dir: only the earlier folders go back (a failed aside).
+//            run_dir) with the manifest beside it. Every STOP after aside uses this form, a failed aside too (a folder
+//            aside never moved is not the run's and stays). Without --run-dir: only the earlier folders go back.
+//            Each move is recorded in the manifest as it happens, so after exit 3 the same restore, run again, finishes.
 //   blind   --bundle <file> --out <file>   the bundle without known.kb and known.prior_runs.
 //   keep-prepare --prepare <prepare.json> --key <KEY>   copy prepare.json and its prs[].diff_path files to
 //            <WORK>/prepare/ (any run, not only a benchmark), the paths rewritten to the copies; prints the copy's path.
 // Exit: 0 done; 1 usage or a glob that leaves the output root; 2 refused (aside already there, nothing set aside, a
-// name already taken); 3 a rename failed part-way (the manifest lists what moved: `restore` without --run-dir).
+// name already taken); 3 a rename failed part-way — the JSON names what moved and what did not (aside: run
+// `restore --run-dir`; restore: run it again).
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmdirSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -50,6 +53,8 @@ export function expand(root, glob) {
 }
 
 const uniq = (xs) => [...new Set(xs)].sort();
+// Only the outermost of nested paths: moving a folder moves what is inside it.
+const tops = (xs) => uniq(xs).filter((p, _, all) => !all.some((o) => o !== p && p.startsWith(`${o}/`)));
 const move = (from, to) => { mkdirSync(dirname(to), { recursive: true }); renameSync(from, to); };
 
 // Remove the folders under dir that are empty, bottom-up, never recursively: rmdir fails on anything left inside.
@@ -59,53 +64,72 @@ function pruneEmpty(dir) {
   try { rmdirSync(dir); } catch { /* not empty: it keeps what it holds */ }
 }
 
+// The manifest is the state of a set-aside: `planned` (what aside meant to move), `earlier` (what is in bench-aside now),
+// `back` (put back by restore), `run` (this run's folders moved into bench-aside/run). It is saved after every move.
 export function aside({ key, globs, root = outputRoot() }) {
   const base = join(root, ...ASIDE, key);
   if (existsSync(base)) return { code: 2, out: { status: "refused", reason: `${fwd(relative(root, base))} exists — an earlier benchmark did not restore; restore it by hand first` } };
-  const paths = uniq(globs.flatMap((g) => expand(root, g)));
-  const manifest = { key, globs, at: new Date().toISOString(), earlier: [] };
+  const paths = tops(globs.flatMap((g) => expand(root, g)));
+  const manifest = { key, globs, at: new Date().toISOString(), planned: paths, earlier: [], back: [], run: [] };
   mkdirSync(base, { recursive: true });
   const save = () => writeFileSync(join(base, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
   save();
   for (const p of paths) {
     try { move(join(root, p), join(base, "earlier", p)); } catch (e) {
-      return { code: 3, out: { status: "partial", failed: p, reason: e.code ?? e.message, moved: manifest.earlier } };
+      return { code: 3, out: { status: "partial", failed: p, reason: e.code ?? e.message, moved: manifest.earlier, not_moved: paths.filter((x) => !manifest.earlier.includes(x)) } };
     }
     manifest.earlier.push(p); save();
   }
   return { code: 0, out: { status: "aside", moved: manifest.earlier } };
 }
 
+// Every step reads and updates the manifest, so a restore that failed part-way (exit 3) is finished by running it again.
 export function restore({ key, runDir, root = outputRoot() }) {
   const base = join(root, ...ASIDE, key);
   const mf = join(base, "manifest.json");
   if (!existsSync(mf)) return { code: 2, out: { status: "refused", reason: `nothing set aside for ${key}` } };
   const manifest = JSON.parse(readFileSync(mf, "utf8"));
-  const run = [], back = [], taken = [];
-  if (runDir) {
-    for (const p of uniq(manifest.globs.flatMap((g) => expand(root, g)))) { move(join(root, p), join(base, "run", p)); run.push(p); }
+  for (const k of ["planned", "back", "run"]) manifest[k] ??= k === "planned" ? [...manifest.earlier] : [];
+  const save = () => writeFileSync(mf, JSON.stringify(manifest, null, 2) + "\n");
+  const report = (extra) => ({ run: manifest.run, back: manifest.back, left: manifest.earlier, ...extra });
+  const partial = (failed, e) => ({ code: 3, out: report({ status: "partial", failed, reason: e.code ?? e.message, retry: "run the same restore again once the cause is fixed" }) });
+  const taken = [];
+  if (runDir && !manifest.archivedRun) {
+    // This run's folders: what the globs name now, except an earlier folder already back and one aside never moved.
+    const notRun = new Set(manifest.planned.filter((p) => !manifest.earlier.includes(p)));
+    for (const p of tops(manifest.globs.flatMap((g) => expand(root, g))).filter((x) => !notRun.has(x))) {
+      if (existsSync(join(base, "run", p))) { taken.push(`${ASIDE.join("/")}/${key}/run/${p}`); continue; }
+      try { move(join(root, p), join(base, "run", p)); } catch (e) { return partial(p, e); }
+      manifest.run = uniq([...manifest.run, p]); save();
+    }
   }
-  for (const p of manifest.earlier) {
+  for (const p of [...manifest.earlier]) {
     if (existsSync(join(root, p))) { taken.push(p); continue; } // never over a folder that is there now
-    move(join(base, "earlier", p), join(root, p)); back.push(p);
+    try { move(join(base, "earlier", p), join(root, p)); } catch (e) { return partial(p, e); }
+    manifest.earlier = manifest.earlier.filter((x) => x !== p);
+    manifest.back = uniq([...manifest.back, p]); save();
   }
   let archived = null;
-  if (runDir && !taken.length) {
+  if (!taken.length && runDir) {
     const dest = resolve(root, runDir);
-    if (existsSync(dest)) taken.push(fwd(relative(root, dest)));
-    else {
-      mkdirSync(join(base, "run"), { recursive: true });
-      renameSync(mf, join(base, "run", "bench-aside.json"));
-      move(join(base, "run"), dest);
-      archived = fwd(relative(root, dest));
+    archived = fwd(relative(root, dest));
+    if (!manifest.archivedRun) {
+      if (existsSync(dest)) taken.push(archived);
+      else {
+        try { mkdirSync(join(base, "run"), { recursive: true }); move(join(base, "run"), dest); } catch (e) { return partial(archived, e); }
+        manifest.archivedRun = archived; save();
+      }
     }
-  } else if (!runDir && !taken.length) { // a failed aside put back: the manifest is kept beside, never deleted
+    if (!taken.length) {
+      try { renameSync(mf, join(dest, "bench-aside.json")); } catch (e) { return partial(`${archived}/bench-aside.json`, e); }
+    }
+  } else if (!taken.length) { // a failed aside put back: the manifest is kept beside, never deleted
     archived = fwd(join(...ASIDE, `${key}-restored-${Date.now()}.json`));
-    renameSync(mf, join(root, archived));
+    try { renameSync(mf, join(root, archived)); } catch (e) { return partial(archived, e); }
   }
   pruneEmpty(base);
-  const out = { status: taken.length ? "refused" : "restored", run, back, archived, ...(taken.length ? { taken, reason: "a name is already taken — those stay in bench-aside for a human" } : {}) };
-  return { code: taken.length ? 2 : 0, out };
+  if (taken.length) return { code: 2, out: report({ status: "refused", taken, reason: "a name is already taken — those stay in bench-aside for a human" }) };
+  return { code: 0, out: report({ status: "restored", archived }) };
 }
 
 export function blind(bundle) {

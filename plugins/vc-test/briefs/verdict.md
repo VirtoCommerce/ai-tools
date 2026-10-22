@@ -33,10 +33,14 @@ nothing and re-open no page. Dispatch description: `[vc-test:verdict] <KEY>`.
      the `C-n` or `SC-<n>.<m>` row that decided it.
   5. **`## Cost`** at the end — the `RUN_COST` table as given, then **per scenario** one line — S-n · class ·
      its worst Result · significant bugs it found · the tokens and minutes of its `scenario:S-n` row; then the
-     counts proposed (`selected` + `notSelected` + `rejected`) / selected / run (U66).
+     counts proposed / selected / run (U66). Read selected from the strategy's last-round `### Scenarios` table (its
+     rows, after every swap, add and strike at approval), not from `scenarios.json`; proposed is `scenarios.json`'s
+     `selected` + `notSelected` + `rejected` plus each row added at approval (`Changed rows:` `added`, Why likely
+     `added at approval`); run is the scenarios with an `SC` row.
   6. **`## Benchmark`**, only with `BENCHMARK` (U67): that the run was a benchmark; what was hidden from every
      agent before you — the comments after the cutoff, the hidden issues, the moved-aside run folders, `known.kb`
      and `known.prior_runs`, the kb, `reports/bugs/` and the bug catalog; and each known bug `found (<row id>)` or
-     `missed` — a miss against the control.
+     `missed` — a miss against the control. A benchmark files no bug: under `## Bugs` each confirmed Medium-or-worse
+     bug is marked `would file` with its investigation package's path, and nothing else is done with it.
 
 Return **only** the path and the verdict word.

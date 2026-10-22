@@ -13,9 +13,12 @@ scenario cites a risk. The orchestrator asks the user; you never do. Dispatch de
   generator's `<WORK>/candidates.json`.
 - `RUN_DIR` — the run folder. `CUTOFF` — given only in a benchmark run.
 
-**Benchmark (`CUTOFF` given, U67):** no kb, no earlier run folder, nothing under `reports/bugs/` or
-`<plugin>/benchmarks/` (`<plugin>` is the folder above this brief's), no bug catalog — for you and for the
-verifier you dispatch: put this line into its brief.
+**Benchmark (`CUTOFF` given, U67):** read only your inputs above and the `qa-test-strategy` skill (`<plugin>` is the
+folder above this brief's). Never `docs/superpowers/**`, `.superpowers/**`, `.claude/worktrees/**`,
+`<plugin>/benchmarks/**` or git history (no `git log`, `show`, `blame`, `diff`); never resolve a U-id by grepping
+the spec — a U-id here is a label, this brief is the whole rule. No kb, no earlier run folder, nothing under
+`reports/bugs/`, no bug catalog. This holds for you and for the verifier you dispatch: put this paragraph into its
+brief.
 
 ## How
 
@@ -32,7 +35,10 @@ verifier you dispatch: put this line into its brief.
 2. **Write `### Scenarios`** (after `### Approach per risk`, gate clause 13): the scorer's table as it is — never
    change a What, Bug, Score, Proof or Writes cell — with each `R-?` replaced by the id of the risk the scenario
    hunts, as the Risks table writes it (`R2`). No risk fits ⇒ register one; never force a fit. Under the table:
-   `Shared store: none`, and each Not selected scenario goes to Out of scope with its residual risk (U61).
+   `Shared store: none`, and each Not selected scenario goes to Out of scope with its residual risk (U61). Then
+   `Changed rows:` — every row whose `S-n` no longer names the `scenarios.json` `selected` entry with that `s`:
+   `S-4 = C-12` (swapped in), `S-2 = was S-3` (renumbered), `S-9 added`, comma-separated; `Changed rows: none`
+   when there is none. The scenario agents find their steps by it.
    Artifacts: `Scenarios | RUN — S-1…S-n`, `Exploratory | RUN — S-k, the free class-3 scenario` (U47; the gate's
    6b and F1 read this row), `Test model | SKIP — scenarios cover the MODEL risks`.
 3. Write the round with `Status: DRAFT`. Run the gate until it exits 0; when a risk is Critical, run the skill's
@@ -49,9 +55,9 @@ verifier you dispatch: put this line into its brief.
    Critical), and return the same summary again. **Strike** ⇒ the row leaves the table and goes to Out of scope as
    "struck at approval" with its residual risk. **Add** (by the user or the verifier) ⇒ the next `S-n` with every
    cell filled: Class 1–6, What, Bug, Why likely `added at approval · R<k>`, Score `—`, Proof `api` or `browser`,
-   and Writes (`global/<name>`, `store:<id>/<name>`, `;`-separated, or `—`) — the planner and the runner read
-   only these; its windows join the summary. **Reorder** ⇒ renumber `S-n` in the new order. **A shared store
-   named** ⇒ `Shared store: <id> (named by the user at approval)`.
+   and Writes (`global/<name>`, `store:<id>/<name>`, `;`-separated, or `—`) — the planner and the runner read only
+   these; its windows join the summary. **Reorder** ⇒ renumber `S-n` in the new order. Every add, swap and renumber
+   goes into `Changed rows:`. **A shared store named** ⇒ `Shared store: <id> (named by the user at approval)`.
 
 ## Return — this and nothing else
 

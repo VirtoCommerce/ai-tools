@@ -51,6 +51,24 @@ export async function announce({ webhook = process.env.TEAMS_WEBHOOK_URL, phase,
   } catch (err) { return { ok: false, reason: `the announcement request failed (${err?.name ?? "error"})` }; } // never err.message: it can carry the URL
 }
 
+// The CLI's open and close, for a caller in this process (teardown.mjs). The env must already be loaded.
+export async function openWindow({ key, setting, value, maxSeconds = 120, lockPath = defaultLockPath(), fetch }) {
+  const got = acquire({ key, setting, maxSeconds, lockPath });
+  if (!got.ok) { // an unreadable lock is never reclaimed automatically: a human decides
+    return { code: 2, out: got.holder ? { status: "refused", reason: "another window is open", holder: got.holder }
+      : { status: "refused", reason: `unreadable lock file — delete ${lockPath} if no window is open`, lock: lockPath } };
+  }
+  const told = await announce({ phase: "open", key, setting, value, maxSeconds, ...(fetch ? { fetch } : {}) });
+  if (!told.ok) { release({ key, lockPath }); return { code: 2, out: { status: "refused", reason: told.reason, released: true } }; }
+  return { code: 0, out: { status: "open", key, setting, maxSeconds } };
+}
+
+export async function closeWindow({ key, setting, value, maxSeconds = 120, lockPath = defaultLockPath(), fetch }) {
+  const told = await announce({ phase: "close", key, setting, value, maxSeconds, ...(fetch ? { fetch } : {}) });
+  const freed = release({ key, lockPath });
+  return { code: told.ok && freed.ok ? 0 : 2, out: { status: told.ok ? "closed" : "closed-unannounced", reason: told.reason, released: freed.ok } };
+}
+
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   const [cmd] = process.argv.slice(2);
   const config = join(process.cwd(), "config.js");
@@ -69,22 +87,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
     console.error("usage: window.mjs open|close --key <KEY> --setting <name> --value <v> [--max-s 120] | window.mjs check"); process.exit(1);
   }
   await import(pathToFileURL(config).href); // runs the layered env loader into process.env (TEAMS_WEBHOOK_URL from .env.local)
-  const say = (o) => console.log(JSON.stringify(o));
-  if (cmd === "open") {
-    const got = acquire({ key, setting, maxSeconds });
-    if (!got.ok) {
-      const lock = defaultLockPath(); // an unreadable lock is never reclaimed automatically: a human decides
-      say(got.holder ? { status: "refused", reason: "another window is open", holder: got.holder }
-        : { status: "refused", reason: `unreadable lock file — delete ${lock} if no window is open`, lock });
-      process.exit(2);
-    }
-    const told = await announce({ phase: "open", key, setting, value, maxSeconds });
-    if (!told.ok) { release({ key }); say({ status: "refused", reason: told.reason, released: true }); process.exit(2); }
-    say({ status: "open", key, setting, maxSeconds });
-  } else {
-    const told = await announce({ phase: "close", key, setting, value, maxSeconds });
-    const freed = release({ key });
-    say({ status: told.ok ? "closed" : "closed-unannounced", reason: told.reason, released: freed.ok });
-    if (!told.ok || !freed.ok) process.exit(2);
-  }
+  const r = await (cmd === "open" ? openWindow : closeWindow)({ key, setting, value, maxSeconds });
+  console.log(JSON.stringify(r.out));
+  process.exit(r.code);
 }

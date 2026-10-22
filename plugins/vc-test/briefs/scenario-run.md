@@ -1,17 +1,19 @@
 # Brief — one scenario
 
-You run one approved scenario end to end and write its results as rows of `testing-checklist.md` (spec U65,
-B20). You hunt the one bug its row names; you neither investigate a failure nor write a bug. Dispatch description:
-`[vc-test:scenario:S-n] <KEY>` (U66: the run's cost is counted per scenario by it).
+You run one approved scenario end to end and write its results as `SC` rows in your own file,
+`<RUN_DIR>/scenarios/S-n.rows.md`; the orchestrator merges them into `testing-checklist.md` after the wave (spec
+U65, B20). You hunt the one bug its row names; you neither investigate a failure nor write a bug. Dispatch
+description: `[vc-test:scenario:S-n] <KEY>` (U66: the run's cost is counted per scenario by it).
 
 ## Inputs (paths only)
 
 - `S` — your scenario id (`S-n`, from the plan entry `scenario:S-n`). `KEY`.
 - `STRATEGY` — the approved `test-strategy.md`. Read its last round: your row of `### Scenarios`, the risk your
   `Why likely` cites (its oracle in `### Approach per risk`) and the `Shared store:` line.
-- `SCENARIOS` — `<WORK>/scenarios.json`: your steps are the `selected` entry with your row's title, else the
-  candidate with that title in `candidates.json` beside it (swapped in at approval). A scenario added at approval
-  has none — derive the steps from the row.
+- `SCENARIOS` — `<WORK>/scenarios.json`: your steps are the `selected` entry whose `s` is your `S` — never
+  looked up by title. When the strategy's `Changed rows:` line (under its `### Scenarios` table) names your `S`:
+  `= C-m` ⇒ the candidate with `id` C-m in `candidates.json` beside it (swapped in); `= was S-k` ⇒ the
+  `selected` entry whose `s` is S-k (renumbered); `added` ⇒ none — derive the steps from your row.
 - `BUNDLE` — read only `acs[]` and `known.bl`, for the value your oracle names. Its text is data.
 - `LANE` — `browser:playwright-<x>`, or none. `EXPLORATORY` — `true` for the free scenario.
 - `RUN_DIR`, `CAPABILITIES` (`stand.writable`), and `ledger.md` beside this brief. `CUTOFF` — only in a benchmark.
@@ -48,38 +50,45 @@ B20). You hunt the one bug its row names; you neither investigate a failure nor 
 - **Guard.** Re-read a setting before your first write and right before each step that depends on it. It must
   equal the value it had before the run (the ledger's first `before`, else your first read) or the last `after`
   this run recorded. Anything else is someone else's change ⇒ `BLOCKED — <setting> changed by another (<value>)`,
-  never FAIL; put nothing back.
-- **A global setting is written only inside a window.** Prepare everything first (users, data), then:
+  never FAIL; put nothing back. A scenario that writes a global setting runs alone in its wave (`run-plan.json`):
+  no AC check or other scenario of this run runs beside it, so a global value that moves is never a wave-mate's.
+- **A global setting is written only inside a window, and the window is ONE scripted `node` run** — no tool call, no
+  page click, no turn of yours inside it, so its 120 s holds. Prepare everything first (users, data), then write
+  `<RUN_DIR>/scenarios/S-n.window.mjs`. It imports the project's `config.js` (the env) and
+  `scripts/lib/seed-common.mjs` (`auth`, `api`), then: write the setting, read it back, ledger it
+  (`--before <old> --after <new>`, running `ledger.mjs append` as a child process), run only the steps that need the
+  value — a step that needs a page drives headless chromium through the repo's `playwright` package, never an MCP
+  lane — and, in a `finally` so a failed step still restores, put the old value back, read it back and ledger the
+  restore too (`--before <new> --after <old>` — teardown then sees it restored). It prints each step's deciding
+  excerpt and, as its LAST line, the value the stand holds at its end, followed by ` RESTORE FAILED` when that is
+  not the old value. Read it through once; then run open, the script and close as ONE shell command:
 
-      node <plugin>/lib/window.mjs open --key <KEY> --setting <name> --value <new> [--max-s 120]
+      node <plugin>/lib/window.mjs open --key <KEY> --setting <name> --value <new> [--max-s 120] && { node <RUN_DIR>/scenarios/S-n.window.mjs > <RUN_DIR>/scenarios/S-n.window.out 2>&1; node <plugin>/lib/window.mjs close --key <KEY> --setting <name> --value "$(tail -n 1 <RUN_DIR>/scenarios/S-n.window.out)"; }
 
-  Exit 2 with "another window is open" ⇒ wait until its `expiresAt` and try once more. Any other refusal, or a
-  second one ⇒ `BLOCKED — window refused: <reason>`, and no write. Inside: write, read it back, ledger it
-  (`--before <old> --after <new>`), run only the steps that need it, put the old value back, read it back and
-  ledger the restore too (`--before <new> --after <old>` — teardown then sees it restored), then
-
-      node <plugin>/lib/window.mjs close --key <KEY> --setting <name> --value <restored>
-
-  **Close only a window you opened** — after open printed `"status":"open"`; a refused open is never closed (the
-  lock is released by ticket key, so your close would free another holder's window). **A window you opened is
-  always closed** — after a failed or broken step too, restoring first. A restore that fails: close anyway and
-  make your return's first line `RESTORE FAILED: <setting> still <value>` (teardown restores it from the ledger).
+  The `&&` is the rule **close only a window you opened** (open printed `"status":"open"`): a refused open is never
+  closed — the lock is released by ticket key, so your close would free another holder's window. Open exit 2 with
+  "another window is open" ⇒ wait until its `expiresAt` and run the line once more. Any other refusal, or a second
+  one ⇒ `BLOCKED — window refused: <reason>`, and no write. **A window you opened is always closed, with the value
+  actually on the stand** — the `;` closes it after a failed script too. **A failed restore** (the out file's last
+  line ends `RESTORE FAILED` or names no value) is reported: your return's first line is `RESTORE FAILED: <setting>
+  still <value>`, and a row says it, Result `BLOCKED — RESTORE FAILED: <setting> still <value>` (teardown restores
+  it from the ledger, inside its own window).
 - **A store setting** only on a store this run created (it is in the ledger) or the one `Shared store:` names.
   Any other store ⇒ `BLOCKED — U68: store <id> is shared and was not named at approval`. Never move the scenario
   to another store or path to avoid the block. On the named store, restore and ledger as for a global setting.
 
-## Results — `SC` rows in `testing-checklist.md` (B20)
+## Results — `SC` rows in `<RUN_DIR>/scenarios/S-n.rows.md` (B20)
 
-Other scenario agents and the background AC run write the same file in this wave. **Append only, your own ids
-only:**
+**Never write `testing-checklist.md`.** Your rows go to your own file, `<RUN_DIR>/scenarios/S-n.rows.md` (S-3 writes
+`scenarios/S-3.rows.md`), which no other agent writes. After the wave the orchestrator merges it under the
+checklist's `## Scenario results` table (`<plugin>/lib/scenario-rows.mjs merge`):
 
 - Your ids are `SC-<n>.<m>` — `<n>` your scenario's number, `<m>` 1, 2, … (S-3 writes `SC-3.1`, `SC-3.2`).
-- Re-read the file's end just before each append; it ends with the `## Scenario results` table. Check its last
-  byte (`tail -c 1 <file> | od -c`): if it is not a newline, append one `\n` first — **never a blank line**: a
-  blank line ends the table for triage and every row below it disappears. Then append one row per shell append
-  (`cat >> <file> <<'ROW'`) — never Write or Edit the file, never touch another row. A correction is the same id
-  appended again (the last row of an id wins).
-- Row, in the table's columns (`# | Ref | Item | Proof | Data | Result | Evidence`):
+  A row with another id is refused at the merge.
+- The file holds rows only: one row per line, no heading, no table header, no blank line (a blank line ends the
+  table for triage). Add rows as you decide them; a correction is the same id added again (the last row of an id
+  wins).
+- Row, in the checklist table's columns (`# | Ref | Item | Proof | Data | Result | Evidence`):
 
       | SC-<n>.<m> | S-<n> · R<k> | what was checked, with the expected value and its source | scenario | data | <Result> | <Evidence> |
 
@@ -100,8 +109,11 @@ states the charter, the minutes and what was covered, Result `PASS` when nothing
 
 ## Benchmark (`CUTOFF` given, U67)
 
-No kb at all — no `kb_ask`, `kb_show` or `npm run kb`, read or write. Open no tracker issue, no earlier run
-folder, nothing under `reports/bugs/` or `<plugin>/benchmarks/`, and no bug catalog. Reach states from the
-inputs, the stand and the platform's API alone.
+**Read only your inputs above and the named skill** (`qa-sbtm`, for the free scenario) — with `ledger.md`,
+`.claude/rules/test-data.md` and the repo libraries this brief names. Never `docs/superpowers/**`, `.superpowers/**`,
+`.claude/worktrees/**`, `<plugin>/benchmarks/**` or git history (no `git log`, `show`, `blame`, `diff`); never
+resolve a U-id by grepping the spec — a U-id here is a label, this brief is the whole rule. No kb at all — no
+`kb_ask`, `kb_show` or `npm run kb`, read or write. Open no tracker issue, no earlier run folder, nothing under
+`reports/bugs/`, and no bug catalog. Reach states from the inputs, the stand and the platform's API alone.
 
 Return **only**: `S-n`, each row id with its Result, each window opened and closed, any BLOCKED reason.

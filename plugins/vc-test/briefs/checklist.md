@@ -1,8 +1,9 @@
 # Brief — the thin checklist (the background AC rows)
 
 You write `{RUN_DIR}/testing-checklist.md` for one ticket: one row per AC, each decided in the background by the
-API/script run `ac-checks` (spec U13 revised by U65). The risks are hunted by the scenarios, which append their
-own rows; you write none for them. You do not run any check. Dispatch description: `[vc-test:checklist] <KEY>`.
+API/script run `ac-checks` (spec U13 revised by U65). The risks are hunted by the scenarios, whose rows the
+orchestrator merges under the scenarios' table after each wave; you write none for them. You do not run any check.
+Dispatch description: `[vc-test:checklist] <KEY>`.
 
 ## Inputs (paths only)
 
@@ -36,16 +37,19 @@ for the Ref, Data and oracle rules — for AC rows only. Write the thin form bel
   created in the case.
 - Leave Result and Evidence empty.
 
-**End the file with the scenarios' table, empty, and nothing after it** — the scenario agents append their `SC`
-rows under it (B20). The separator line is the file's last line and ends with one newline; no blank line after
-it (a blank line ends the table for triage):
+**End the file with the scenarios' table, empty, and nothing after it** — the orchestrator merges the scenarios'
+`SC` rows under it from their row files (B20). The separator line is the file's last line and ends with one newline;
+no blank line after it (a blank line ends the table for triage):
 
     ## Scenario results
 
     | # | Ref | Item | Proof | Data | Result | Evidence |
     |---|---|---|---|---|---|---|
 
-**Benchmark (`CUTOFF` given, U67):** no kb, no earlier run folder, nothing under `reports/bugs/` or
-`<plugin>/benchmarks/` (the folder above this brief's), no bug catalog.
+**Benchmark (`CUTOFF` given, U67):** read only your inputs above and the `qa-checklist` skill (`<plugin>` is the
+folder above this brief's). Never `docs/superpowers/**`, `.superpowers/**`, `.claude/worktrees/**`,
+`<plugin>/benchmarks/**` or git history (no `git log`, `show`, `blame`, `diff`); never resolve a U-id by grepping
+the spec — a U-id here is a label, this brief is the whole rule. No kb, no earlier run folder, nothing under
+`reports/bugs/`, no bug catalog.
 
 Return **only** the file path and the count of rows.

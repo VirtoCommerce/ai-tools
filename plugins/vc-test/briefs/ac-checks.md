@@ -7,8 +7,9 @@ Dispatch description: `[vc-test:ac-checks] <KEY>`.
 ## Inputs (paths only)
 
 - `CHECKLIST` — `{RUN_DIR}/testing-checklist.md`. You write only the Result and Evidence cells of `ac-checks`
-  rows, and the probe rows below. The scenario agents append rows under `## Scenario results` while you run:
-  re-read the file right before each write, change only your own rows, and never touch that table.
+  rows, and the probe rows below. No other agent writes the file while you run (the scenarios write their own row
+  files, merged by the orchestrator after the wave); change only your own rows and never touch the
+  `## Scenario results` table.
 - `CHANGE_MAP` — `change-map.json`: the endpoints and operations of its hotspots.
 - `STRATEGY` — `test-strategy.md`, read only for its last round's `Shared store:` line. `CUTOFF` — only in a
   benchmark.
@@ -39,15 +40,19 @@ Dispatch description: `[vc-test:ac-checks] <KEY>`.
 - **A `SCALE` row** (spec U59): send every request on a fresh connection (no keep-alive, no shared client), repeat
   past the limit by at least the number of instances you suspect, and record any instance marker the responses
   carry (a header, a cookie, a server id). Seeing one instance only is `BLOCKED — one instance seen`, never PASS.
-- **Settings (U68).** **You never write a global setting:** a row that needs one is `BLOCKED — needs a global
-  window (U68)`, and a scenario covers it. A store setting only on a store this run created or the strategy's
-  `Shared store:`, restored when done; each write and its restore go into the ledger. Re-read a setting before you
-  write it and before each row that depends on it; a value that is neither its value before the run nor this
-  run's last ledger `after` is another's change ⇒ `BLOCKED`, never FAIL.
+- **Settings (U68).** **You never write a global setting:** a row that needs one is
+  `BLOCKED — needs a global window (U68)`, and a scenario covers it. A scenario that writes a global setting runs in
+  a wave of its own (`run-plan.json`), never beside you, so no global value this run flips moves under your checks.
+  A store setting only on a store this run created or the strategy's `Shared store:`, restored when done; each write
+  and its restore go into the ledger. Re-read a setting before you write it and before each row that depends on it;
+  a value that is neither its value before the run nor this run's last ledger `after` is another's change ⇒
+  `BLOCKED`, never FAIL.
 - A FAIL is a fact you saw. You do not investigate it and you do not write a bug: triage does that.
 
-**Benchmark (`CUTOFF` given, U67):** no kb, no earlier run folder, nothing under `reports/bugs/` or
-`<plugin>/benchmarks/`, no bug catalog.
+**Benchmark (`CUTOFF` given, U67):** read only your inputs above, `ledger.md` and the files `live-discovery.md`
+names. Never `docs/superpowers/**`, `.superpowers/**`, `.claude/worktrees/**`, `<plugin>/benchmarks/**` or git
+history (no `git log`, `show`, `blame`, `diff`); never resolve a U-id by grepping the spec — a U-id here is a label,
+this brief is the whole rule. No kb, no earlier run folder, nothing under `reports/bugs/`, no bug catalog.
 
 Return **only**: counts of PASS / FAIL / BLOCKED (and how many BLOCKED need a look or a global window), and the
 `#` ids of the FAIL rows.
