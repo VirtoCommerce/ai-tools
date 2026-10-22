@@ -155,10 +155,13 @@ export const DEMO_ORGS = [
   // The ten organizations of the storefront organization-switcher mockup. The NAMES are the
   // mockup's, so they must match exactly: on virtostart they already exist (created 2026-10-22
   // with Ilya's own memberships), and ensureOrgs() adopts an existing org by name.
-  // The virtostart catalog is a mixed marketplace with almost no garden products (measured
-  // 2026-10-22: "garden", "plant", "hose", "pruning" each yield 0–4 usable names), so the two
-  // garden-themed names draw from the nearest families the catalog actually carries — gifts and
-  // decor — rather than from a phrase whose pool would come back empty.
+  //
+  // `storeCatalog: true` — draw from the STORE's catalog only (resolved live from DEMO_STORE), not
+  // from every catalog the admin search reaches. Measured on virtostart 2026-10-22: B2B-store's
+  // catalog is electronics, and the name-matched marketplace products the admin search returns are
+  // NOT in it, so a rep cannot put them in a cart (PRODUCT_PRICE_INVALID on every candidate) and
+  // Top sellers would link to products the storefront does not show. Hence technology families:
+  // every one of these businesses buys IT, and only store products make carts and lists work.
   {
     key: 'DORG-IT-NWTOOLS',
     name: 'Northwind Tools',
@@ -166,9 +169,10 @@ export const DEMO_ORGS = [
     city: 'Portland', regionName: 'Oregon', postalCode: '97209',
     countryCode: 'USA', countryName: 'United States',
     phone: '+1 503 555 0171', email: 'orders@northwindtools.example',
-    productSearch: 'tool',
-    productMatch: /\b(tools?|toolkit|screwdriver|wrench|pliers|hammer|drill)\b/i,
-    productExclude: /\b(mop|cleaner|scrubber|stickers?|kids|toys?|nail|hair|makeup)\b/i,
+    productSearch: 'laptop',
+    productMatch: /\b(laptops?|notebook|chromebook|macbook)\b/i,
+    productExclude: /\b(memory|so-dimm|ddr\d|sleeve|bag|case)\b/i,
+    storeCatalog: true,
   },
   {
     key: 'DORG-IT-BAYSIDE',
@@ -177,9 +181,10 @@ export const DEMO_ORGS = [
     city: 'San Francisco', regionName: 'California', postalCode: '94111',
     countryCode: 'USA', countryName: 'United States',
     phone: '+1 415 555 0136', email: 'hello@baysidegardengift.example',
-    productSearch: 'gift',
-    productMatch: /\b(gifts?|ornament|figurine|keychain)\b/i,
-    productExclude: /\b(coffee|kids|toys?|stickers?|lingerie|sexy)\b/i,
+    productSearch: 'tablet',
+    productMatch: /\b(tablets?|tab|ipad)\b/i,
+    productExclude: /\b(protection|case|cover|protector|keyboard)\b/i,
+    storeCatalog: true,
   },
   {
     key: 'DORG-IT-BLUERIDGE',
@@ -188,8 +193,10 @@ export const DEMO_ORGS = [
     city: 'Asheville', regionName: 'North Carolina', postalCode: '28801',
     countryCode: 'USA', countryName: 'United States',
     phone: '+1 828 555 0154', email: 'buying@blueridgemercantile.example',
-    productSearch: 'coffee',
-    productMatch: /\b(coffee|espresso|mug)\b/i,
+    productSearch: 'phone',
+    productMatch: /\b(phone|iphone|pixel|galaxy|redmi|smartphone)\b/i,
+    productExclude: /\b(case|protection|protector|holder|watch|tab)\b/i,
+    storeCatalog: true,
   },
   {
     key: 'DORG-IT-CEDARPOINT',
@@ -198,9 +205,9 @@ export const DEMO_ORGS = [
     city: 'Sandusky', regionName: 'Ohio', postalCode: '44870',
     countryCode: 'USA', countryName: 'United States',
     phone: '+1 419 555 0187', email: 'kitchen@cedarpointprovisions.example',
-    productSearch: 'kitchen',
-    productMatch: /\b(kitchen|cookware|cutting board|utensils?|food processor|chopper)\b/i,
-    productExclude: /\bcoffee\b/i,
+    productSearch: 'router',
+    productMatch: /\b(router|gateway|access point|mesh)\b/i,
+    storeCatalog: true,
   },
   {
     key: 'DORG-IT-COASTAL',
@@ -209,9 +216,10 @@ export const DEMO_ORGS = [
     city: 'Charleston', regionName: 'South Carolina', postalCode: '29401',
     countryCode: 'USA', countryName: 'United States',
     phone: '+1 843 555 0163', email: 'studio@coastaldecor.example',
-    productSearch: 'lamp',
-    productMatch: /\b(lamps?|lighting|chandelier|sconce|lampshade)\b/i,
-    productExclude: /\b(camera|surveillance|monitor|uv|nail)\b/i,
+    productSearch: 'tv',
+    productMatch: /\b(tv|television|qled|oled)\b/i,
+    productExclude: /\b(mount|stand|monitor)\b/i,
+    storeCatalog: true,
   },
   {
     key: 'DORG-IT-DRIFTINN',
@@ -220,9 +228,10 @@ export const DEMO_ORGS = [
     city: 'San Diego', regionName: 'California', postalCode: '92109',
     countryCode: 'USA', countryName: 'United States',
     phone: '+1 619 555 0148', email: 'purchasing@driftinnresort.example',
-    productSearch: 'chair',
-    productMatch: /\b(chairs?|stool|lounge|recliner|armchair)\b/i,
-    productExclude: /\b(kids|children|toys?|car seat)\b/i,
+    productSearch: 'monitor',
+    productMatch: /\b(monitor|display)\b/i,
+    productExclude: /\b(arm|mount|stand|protector)\b/i,
+    storeCatalog: true,
   },
   {
     key: 'DORG-IT-GREENLEAF',
@@ -231,9 +240,10 @@ export const DEMO_ORGS = [
     city: 'Minneapolis', regionName: 'Minnesota', postalCode: '55403',
     countryCode: 'USA', countryName: 'United States',
     phone: '+1 612 555 0119', email: 'store@greenleafgarden.example',
-    productSearch: 'decor',
-    productMatch: /\b(decor|decoration|decorative|ornament|vase)\b/i,
-    productExclude: /\b(stickers?|scrapbook\w*|kawaii|journal|kids|toys?)\b/i,
+    productSearch: 'speaker',
+    productMatch: /\b(speaker|echo|homepod|soundbar)\b/i,
+    productExclude: /\bspeakerphone\b/i,
+    storeCatalog: true,
   },
   {
     key: 'DORG-IT-HARBORLIGHT',
@@ -242,10 +252,9 @@ export const DEMO_ORGS = [
     city: 'Baltimore', regionName: 'Maryland', postalCode: '21202',
     countryCode: 'USA', countryName: 'United States',
     phone: '+1 410 555 0192', email: 'shop@harborlightgifts.example',
-    productSearch: 'light',
-    productMatch: /\b(lights?|led|lantern|night ?light)\b/i,
-    // Lamps belong to Coastal Décor; screen protectors match "light" only through "anti blue light".
-    productExclude: /\b(anti.blue|privacy|tempered|glass|screen|camera|lamps?)\b/i,
+    productSearch: 'camera',
+    productMatch: /\b(camera|webcam)\b/i,
+    storeCatalog: true,
   },
   {
     key: 'DORG-IT-IRONWOOD',
@@ -254,9 +263,9 @@ export const DEMO_ORGS = [
     city: 'Pittsburgh', regionName: 'Pennsylvania', postalCode: '15219',
     countryCode: 'USA', countryName: 'United States',
     phone: '+1 412 555 0125', email: 'procurement@ironwoodindustrial.example',
-    productSearch: 'safety',
-    productMatch: /\b(safety|protective|helmet|goggles|gloves?|vest)\b/i,
-    productExclude: /\b(safe box|cash|money|coin|bulletproof|ballistic|kids|baby)\b/i,
+    productSearch: 'nas',
+    productMatch: /\b(nas|diskstation|lockerstor)\b/i,
+    storeCatalog: true,
   },
   {
     key: 'DORG-IT-LAKEVIEW',
@@ -265,9 +274,10 @@ export const DEMO_ORGS = [
     city: 'Lake Placid', regionName: 'New York', postalCode: '12946',
     countryCode: 'USA', countryName: 'United States',
     phone: '+1 518 555 0177', email: 'gear@lakeviewoutfitters.example',
-    productSearch: 'camping',
-    productMatch: /\b(camping|tent|hiking|sleeping bag|backpack)\b/i,
-    productExclude: /\b(cooker|kids|toys?)\b/i,
+    productSearch: 'headset',
+    productMatch: /\b(headsets?|headphones?|earbuds?)\b/i,
+    productExclude: /\bvr\b/i,
+    storeCatalog: true,
   },
 ];
 
@@ -553,12 +563,12 @@ export const DEMO_TASKS = [
   { key: 'DTSK-Z-08', rep: 'DEMO_REP_ZHUK', name: 'Kick-off call with Wingtip', type: 'Meeting', priority: 'Normal', dueInDays: -5, completed: true, description: 'Introduced the portal and agreed a monthly check-in.' },
   { key: 'DTSK-Z-09', rep: 'DEMO_REP_ZHUK', name: 'Send terms of sale to Contoso', type: 'Email', priority: 'Low', dueInDays: -1, completed: true, description: 'Shared the Terms and Conditions of Sale from the document library.' },
 
-  { key: 'DTSK-I-01', rep: 'DEMO_REP_TSARENKO', name: 'Follow up on Drift Inn lobby refit', type: 'Call', priority: 'High', dueInDays: 0, description: 'Noah wants the second batch of lounge chairs before the season opens.' },
+  { key: 'DTSK-I-01', rep: 'DEMO_REP_TSARENKO', name: 'Follow up on Drift Inn lobby displays', type: 'Call', priority: 'High', dueInDays: 0, description: 'Noah wants the second batch of front-desk monitors before the season opens.' },
   { key: 'DTSK-I-02', rep: 'DEMO_REP_TSARENKO', name: 'Send holiday price list to Blue Ridge', type: 'Email', priority: 'High', dueInDays: 0, description: 'Samuel asked for the updated list ahead of their holiday buying.' },
-  { key: 'DTSK-I-03', rep: 'DEMO_REP_TSARENKO', name: 'Prepare PPE reorder — Ironwood Industrial', type: 'Task', priority: 'Normal', dueInDays: 2, description: 'Frank needs safety-gear quantities for the new night shift.' },
+  { key: 'DTSK-I-03', rep: 'DEMO_REP_TSARENKO', name: 'Size the NAS expansion — Ironwood Industrial', type: 'Task', priority: 'Normal', dueInDays: 2, description: 'Frank needs storage for camera footage from the new night shift.' },
   { key: 'DTSK-I-04', rep: 'DEMO_REP_TSARENKO', name: 'Quarterly review — Northwind Tools', type: 'Meeting', priority: 'Normal', dueInDays: 4, description: 'Walk Rachel through order history and the volume pricing tiers.' },
   { key: 'DTSK-I-05', rep: 'DEMO_REP_TSARENKO', name: 'Chase cancelled order {{order:DORD-IT-BLR-02}} with Blue Ridge', type: 'Call', priority: 'Normal', dueInDays: 1, description: 'Hannah cancelled it; find out whether it can be rebooked.' },
-  { key: 'DTSK-I-06', rep: 'DEMO_REP_TSARENKO', name: 'Spring restock plan for Lakeview Outfitters', type: 'Task', priority: 'Low', dueInDays: 8, description: 'Camping season inventory, sized from last year\'s sell-through.' },
+  { key: 'DTSK-I-06', rep: 'DEMO_REP_TSARENKO', name: 'Headset refresh for Lakeview Outfitters', type: 'Task', priority: 'Low', dueInDays: 8, description: 'Replace the store-floor headsets before the spring season.' },
   { key: 'DTSK-I-07', rep: 'DEMO_REP_TSARENKO', name: 'Call Harbor Light about portal access', type: 'Call', priority: 'High', dueInDays: -2, description: 'Their organization access is locked; confirm who approves the unlock.' },
   { key: 'DTSK-I-08', rep: 'DEMO_REP_TSARENKO', name: 'Send revised quote to Cedar Point', type: 'Email', priority: 'Normal', dueInDays: -1, description: 'Diego is waiting on pricing before he releases order {{order:DORD-IT-CDP-02}}.' },
   { key: 'DTSK-I-09', rep: 'DEMO_REP_TSARENKO', name: 'Confirm delivery of order {{order:DORD-IT-DRI-01}}', type: 'Call', priority: 'Normal', dueInDays: -4, completed: true, description: 'Noah confirmed the full delivery arrived at the resort.' },
@@ -767,8 +777,8 @@ export const DEMO_LISTS = [
   { key: 'DLIST-NW-ORG', scope: 'Organization', author: 'DCT-NW-2', org: 'DORG-NORTHWIND', name: 'Site Consumables', description: 'Everyday consumables kept on the shelf; top up when the bin is half empty.', items: 3 },
   { key: 'DLIST-CN-ORG', scope: 'Organization', author: 'DCT-CN-2', org: 'DORG-CONTOSO', name: 'Print Room Standing Order', description: 'Monthly consumables for the print room.', items: 3 },
   // Ilya Tsarenko's book.
-  { key: 'DLIST-IT-DRI-REP', scope: 'Customer', author: 'DEMO_REP_TSARENKO', org: 'DORG-IT-DRIFTINN', name: 'Lobby Refit Picks', description: 'Seating options for the lobby refit, matched to the chairs already on the terrace.', items: 3 },
-  { key: 'DLIST-IT-BLR-ORG', scope: 'Organization', author: 'DCT-IT-BLR-2', org: 'DORG-IT-BLUERIDGE', name: 'Holiday Shelf Restock', description: 'Coffee lines that sell out first in December.', items: 3 },
+  { key: 'DLIST-IT-DRI-REP', scope: 'Customer', author: 'DEMO_REP_TSARENKO', org: 'DORG-IT-DRIFTINN', name: 'Lobby Refit Picks', description: 'Display options for the lobby refit, matched to the screens already at the front desk.', items: 3 },
+  { key: 'DLIST-IT-BLR-ORG', scope: 'Organization', author: 'DCT-IT-BLR-2', org: 'DORG-IT-BLUERIDGE', name: 'Holiday Shelf Restock', description: 'Phones that sell out first in December.', items: 3 },
 ];
 
 /**
@@ -787,9 +797,10 @@ export const DEMO_CARTS = [
   { key: 'DCART-FB-1', contact: 'DCT-FB-1', items: 2, quantities: [1, 2] },
   { key: 'DCART-FB-2', contact: 'DCT-FB-2', items: 2, quantities: [3, 8] },
   { key: 'DCART-WT-1', contact: 'DCT-WT-1', items: 3, quantities: [12, 4, 2] },
-  // None for Ilya Tsarenko's book: on virtostart its product families carry no store price, so the
-  // cart refuses every candidate (PRODUCT_PRICE_INVALID, measured 2026-10-22). Orders are written
-  // through the admin API and need no price, which is why his customers still have order history.
+  { key: 'DCART-IT-NWT-2', contact: 'DCT-IT-NWT-2', items: 2, quantities: [5, 2] },
+  { key: 'DCART-IT-BLR-1', contact: 'DCT-IT-BLR-1', items: 2, quantities: [3, 1] },
+  { key: 'DCART-IT-DRI-2', contact: 'DCT-IT-DRI-2', items: 3, quantities: [10, 4, 2] },
+  { key: 'DCART-IT-IRW-2', contact: 'DCT-IT-IRW-2', items: 2, quantities: [2, 1] },
 ];
 
 /**

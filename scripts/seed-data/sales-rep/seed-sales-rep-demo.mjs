@@ -431,6 +431,21 @@ async function attachServedOrgs(reps, orgs) {
  */
 // `need` lets a second consumer (the shared lists) ask for its own per-org counts. The claim set
 // is per CALL, so lists and orders draw independently — two callers are not meant to share a pool.
+/**
+ * The store's own catalog id, read live (never transcribed). An org declaring `storeCatalog: true`
+ * draws only from it, because the admin search otherwise reaches every catalog and returns products
+ * the store does not sell — fine for an order written through the admin API, refused by a cart.
+ */
+let STORE_CATALOG_ID;
+async function storeCatalogId() {
+  if (STORE_CATALOG_ID === undefined) {
+    const store = await api('GET', `/api/stores/${STORE_ID}`, null, { expectStatus: [200, 404] }).catch(() => null);
+    STORE_CATALOG_ID = store?.catalog || null;
+    if (!STORE_CATALOG_ID) log(`  WARN store ${STORE_ID} has no catalog — storeCatalog orgs fall back to every catalog.`);
+  }
+  return STORE_CATALOG_ID;
+}
+
 async function discoverProductPools(need = productNeedByOrg()) {
   if (DRY_RUN) return {};
   const claimed = new Set();
@@ -442,7 +457,8 @@ async function discoverProductPools(need = productNeedByOrg()) {
     // but not relevance-bounded (see productMatch in the spec module), it carries near-duplicate
     // rows for the same physical product, and it still serves this repo's own fixture products.
     // Capped: discoverCatalogProducts asks for twice this, and a search over ~1000 fails SILENTLY to [].
-    const found = await discoverCatalogProducts(api, Math.min(want * 8 + 40, 450), { searchPhrase: org.productSearch, withImages: true }).catch(() => []);
+    const catalogId = org.storeCatalog ? await storeCatalogId() : null;
+    const found = await discoverCatalogProducts(api, Math.min(want * 8 + 40, 450), { searchPhrase: org.productSearch, withImages: true, catalogId }).catch(() => []);
     const seenName = new Set();
     const usable = [];
     for (const p of found) {
