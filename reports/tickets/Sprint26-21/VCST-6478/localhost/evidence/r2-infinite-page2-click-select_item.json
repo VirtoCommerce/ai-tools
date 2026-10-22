@@ -1,0 +1,55 @@
+{
+  "dlLength": 38,
+  "from": 33,
+  "events": [
+    {
+      "dlIndex": 33,
+      "name": "select_item",
+      "payload": {
+        "item_list_id": "category_printers_page_2",
+        "item_list_name": "Category \"Printers\" (page 2)",
+        "related_id": "d6019d4d27e44854a58ebbd5428b873b",
+        "related_type": "category",
+        "items": [
+          {
+            "index": 5,
+            "item_id": "564268302",
+            "item_name": "Xerox WorkCentre 3215/NI Monochrome Laser Printer",
+            "affiliation": "B2B-store",
+            "currency": "USD",
+            "item_list_id": "category_printers_page_2",
+            "item_list_name": "Category \"Printers\" (page 2)",
+            "price": 149,
+            "discount": 0,
+            "item_category": "Catalog",
+            "item_category2": "Printers",
+            "item_category3": "Inkjet Printers",
+            "item_category4": "Inkjet Monochrome"
+          }
+        ]
+      }
+    },
+    {
+      "dlIndex": 34,
+      "name": "view_item",
+      "payload": {
+        "currency": "USD",
+        "value": 149,
+        "items": [
+          {
+            "item_id": "564268302",
+            "item_name": "Xerox WorkCentre 3215/NI Monochrome Laser Printer",
+            "affiliation": "B2B-store",
+            "currency": "USD",
+            "price": 149,
+            "discount": 0,
+            "item_category": "Catalog",
+            "item_category2": "Printers",
+            "item_category3": "Inkjet Printers",
+            "item_category4": "Inkjet Monochrome"
+          }
+        ]
+      }
+    }
+  ]
+}

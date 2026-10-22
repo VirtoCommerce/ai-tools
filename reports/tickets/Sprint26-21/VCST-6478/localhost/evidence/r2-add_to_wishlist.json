@@ -1,0 +1,33 @@
+{
+  "check": "R2-8 add_to_wishlist item currency (wishlist part)",
+  "build": "vc-theme-b2b-vue-2.61.0-pr-2598-9b6d-9b6db3d9",
+  "page": "/printers (category card 'Add to list' -> dialog -> list 'l3' -> Save)",
+  "browser": "playwright-chrome (chromium), signed in, store currency USD",
+  "verdict": "PASS",
+  "add_to_wishlist": {
+    "dataLayer_index": 23,
+    "event": "add_to_wishlist",
+    "payload": {
+      "currency": "USD",
+      "value": 20,
+      "items": [
+        {
+          "item_id": "564698896",
+          "item_name": "Brother MFC-L6700DW Wireless Monochrome All-in-One Laser Printer, Copy/Fax/Print/Scan",
+          "affiliation": "B2B-store",
+          "currency": "USD",
+          "price": 20,
+          "discount": 0,
+          "item_category": "Catalog",
+          "item_category2": "Printers",
+          "item_category3": "Laser Printers",
+          "item_category4": "Laser Monochrome"
+        }
+      ]
+    }
+  },
+  "assertions": {
+    "item.currency == event.currency (USD)": true
+  },
+  "cleanup": "product 564698896 removed from list 'l3' afterwards (list back to 0 items)"
+}
