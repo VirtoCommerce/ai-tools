@@ -5,9 +5,11 @@
 // lock; the window is microseconds against a 120 s, human-gated lock, so it is accepted.
 // The webhook URL is a secret: it is never printed and never put into a reason.
 // CLI: node plugins/vc-test/lib/window.mjs open|close --key <KEY> --setting <name> --value <v> [--max-s 120]
+//      node plugins/vc-test/lib/window.mjs check   → exit 0 when TEAMS_WEBHOOK_URL is set, 1 when not; prints nothing
 //   open = acquire, announce (a failed announce releases the lock again); close = announce, release (always).
-//   exit 0: done; 1: usage; 2: refused (window held, or no announcement)
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+//   Every subcommand loads the project's config.js first, so a webhook kept in .env.local is seen.
+//   exit 0: done; 1: usage (check: not set); 2: refused (window held, or no announcement); 3: no config.js here
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { argOf, outputRoot } from "./paths.mjs";
@@ -51,11 +53,22 @@ export async function announce({ webhook = process.env.TEAMS_WEBHOOK_URL, phase,
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   const [cmd] = process.argv.slice(2);
+  const config = join(process.cwd(), "config.js");
+  if (!existsSync(config)) { console.error("no config.js here — run from the project root"); process.exit(3); }
+  if (cmd === "check") {
+    // The layered env loader prints its own lines; check prints nothing, so they are silenced while it loads.
+    const saved = { log: console.log, warn: console.warn, info: console.info, error: console.error };
+    const quiet = () => {};
+    Object.assign(console, { log: quiet, warn: quiet, info: quiet, error: quiet });
+    try { await import(pathToFileURL(config).href); } finally { Object.assign(console, saved); }
+    process.exit(process.env.TEAMS_WEBHOOK_URL ? 0 : 1); // the value itself is never printed
+  }
   const [key, setting, value] = ["key", "setting", "value"].map((n) => argOf(process.argv, n));
   const maxSeconds = Number(argOf(process.argv, "max-s") ?? 120);
   if (!["open", "close"].includes(cmd) || !key || !setting || value === undefined || !(maxSeconds > 0)) {
-    console.error("usage: window.mjs open|close --key <KEY> --setting <name> --value <v> [--max-s 120]"); process.exit(1);
+    console.error("usage: window.mjs open|close --key <KEY> --setting <name> --value <v> [--max-s 120] | window.mjs check"); process.exit(1);
   }
+  await import(pathToFileURL(config).href); // runs the layered env loader into process.env (TEAMS_WEBHOOK_URL from .env.local)
   const say = (o) => console.log(JSON.stringify(o));
   if (cmd === "open") {
     const got = acquire({ key, setting, maxSeconds });

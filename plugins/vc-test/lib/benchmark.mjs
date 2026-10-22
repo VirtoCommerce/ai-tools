@@ -2,6 +2,8 @@
 // A benchmark pins the build a ticket is re-run on; before each run the stand is checked against it with the same
 // read-only `npm run deploy:pr -- <KEY> --verify`, and a different version on any line voids the run.
 // CLI: node plugins/vc-test/lib/benchmark.mjs --key <KEY>   → { ok, moved, unverifiable, pin_only, run_dir, before (the cutoff ISO), move_aside (run-folder globs), hide, hide_pending };
+// run_dir is the ARCHIVE destination, not where the run works: the run works in fresh folders after
+// bench-aside.mjs aside, and `bench-aside.mjs restore --run-dir <run_dir>` files it there — valid only after restore.
 // exit 2 when moved, 3 when a module's live version cannot be read, 1 on a bad definition (e.g. no parsable cutoff).
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -83,7 +85,9 @@ export function cutoffOf(def) {
   return def.cutoff;
 }
 
-export const benchRunDir =(runDir, n) => join(runDir, `bench-${n}`);
+// Where a finished benchmark run is archived (`<WORK>/bench-<n>`), not where it runs: it sits inside a move_aside folder,
+// so it exists only after `bench-aside.mjs restore --run-dir` has put the earlier folders back and moved the run in.
+export const benchRunDir = (runDir, n) => join(runDir, `bench-${n}`);
 
 function nextBench(dir) {
   const used = existsSync(dir) ? readdirSync(dir).map((d) => /^bench-(\d+)$/.exec(d)?.[1]).filter(Boolean).map(Number) : [];
@@ -108,7 +112,7 @@ function main(argv) {
   const issues = def.hide?.jira_issues ?? [];
   console.log(JSON.stringify({
     ok, moved, unverifiable, pin_only,
-    run_dir: benchRunDir(dir, nextBench(dir)),
+    run_dir: benchRunDir(dir, nextBench(dir)), // the archive destination: bench-aside.mjs restore moves the finished run here (valid after restore)
     before, // the cutoff instant (ISO) — what /ticket-context prepare --before takes
     move_aside: def.move_aside_before_run?.paths ?? [], // run-folder globs to move out before the run, never a cutoff
     hide: issues.filter((i) => KEY_RE.test(i)),

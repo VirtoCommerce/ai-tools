@@ -60,8 +60,8 @@ verifier you dispatch: put this line into its brief.
   `S-n · class · what it does · the bug it hunts · why likely · proof`; Not selected as a count plus the top three
   by score, each with its residual risk; **the windows it will announce** — per scenario writing a global setting,
   `S-n · <setting> → <value from its steps> · ≤ 120 s, announced in the team channel` (if
-  `node -e "process.exit(process.env.TEAMS_WEBHOOK_URL ? 0 : 1)"` exits 1 — read the exit code only, never the
-  value — say those scenarios will be BLOCKED: no channel to announce the window, U68);
+  `node <plugin>/lib/window.mjs check` exits 1 — it prints nothing; never read the variable yourself — say those
+  scenarios will be BLOCKED: no channel to announce the window, U68);
   each scenario that writes a store it does not create, with "name the store at approval or it is BLOCKED"; the
   Out of scope list; the depth label.
 
