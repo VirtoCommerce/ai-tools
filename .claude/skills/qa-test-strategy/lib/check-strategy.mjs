@@ -18,15 +18,15 @@ const rows = (text) => text.split("\n").filter((l) => /^\|/.test(l) && !/^[\s|:-
 // No floor maps to "Test model": the model runs if and only if a risk has technique MODEL (6e, M9), and the floors
 // that used to force it now force a MODEL risk instead (MODEL_RISK_FOR; F1's half is 6c).
 const ARTIFACTS_FOR = { F1: ["Exploratory"], F2: ["Exploratory"], F3: ["Visual lane"], F8: ["Visual lane"],
-  F5: ["Coverage triage + regression"] };
+  F5: ["Coverage triage + regression"], F12: ["Exploratory"] };
 // A fired floor here needs its OWN risk: Source carries the token `floor:<id>`, technique is MODEL (M10). A risk carries
 // at most one such token. A fixed token, not a bare id, so a passing mention of "F10" in prose never counts.
 const MODEL_RISK_FOR = { F2: "a purpose", F10: "an org-context", F11: "a configuration" };
 
-export function checkStrategy(md, bundle, { domainMapText = null, p01Names } = {}) {
+export function checkStrategy(md, bundle, { domainMapText = null, p01Names, changeMap = null } = {}) {
   if (bundle?.schema !== "ticket-context/1") return { round: 0, errors: ["0: bundle is not a ticket-context/1 bundle"] };
   md = String(md).replace(/\r\n?/g, "\n"); // a CRLF checkout (core.autocrlf) reads the same as the LF file
-  const floors = computeFloors(bundle, { domainMapText, ...(p01Names ? { p01Names } : {}) });
+  const floors = computeFloors(bundle, { domainMapText, changeMap, ...(p01Names ? { p01Names } : {}) });
   const errors = [];
   const sec = lastRound(md);
   const head = /^## Round (\d+)/.exec(sec);
@@ -94,11 +94,12 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names } = {
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const arg = (n) => { const i = process.argv.indexOf(`--${n}`); return i < 0 ? null : process.argv[i + 1]; };
-  if (!arg("strategy") || !arg("bundle")) { console.error("usage: check-strategy.mjs --strategy <md> --bundle <json>"); process.exit(1); }
+  if (!arg("strategy") || !arg("bundle")) { console.error("usage: check-strategy.mjs --strategy <md> --bundle <json> [--change-map <json>]"); process.exit(1); }
   let md;
   try { md = readFileSync(arg("strategy"), "utf8"); } catch (e) { console.error(`check-strategy.mjs: cannot read ${arg("strategy")} (${e.code ?? e.message})`); process.exit(2); }
   const bundle = readJsonOrExit(arg("bundle"), "check-strategy.mjs");
-  const res = checkStrategy(md, bundle, { domainMapText: domainMapTextOf(bundle), p01Names: p01NamesOf() });
+  const changeMap = arg("change-map") ? readJsonOrExit(arg("change-map"), "check-strategy.mjs") : null;
+  const res = checkStrategy(md, bundle, { domainMapText: domainMapTextOf(bundle), p01Names: p01NamesOf(), changeMap });
   console.log(JSON.stringify(res, null, 2));
   process.exit(res.errors.length ? 1 : 0);
 }

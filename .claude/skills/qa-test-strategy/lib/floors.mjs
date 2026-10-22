@@ -44,7 +44,7 @@ const floor = (id, fired, signal, requires = []) => ({ id, fired, signal, requir
 /** A PR closed without merge never shipped: it is not change surface (check-bundle counts it out the same way). */
 export const isAbandoned = (p) => p.state === "closed" && p.merged === false;
 
-export function computeFloors(bundle, { domainMapText = null, p01Names = P01_DEFAULT } = {}) {
+export function computeFloors(bundle, { domainMapText = null, p01Names = P01_DEFAULT, changeMap = null } = {}) {
   const fields = bundle.fields ?? {};
   const p01 = new Set(p01Names.map((n) => String(n).toLowerCase()));
   const prs = (bundle.change?.prs ?? []).filter((p) => !p.context_only && !p.gap && !isAbandoned(p));
@@ -123,8 +123,14 @@ export function computeFloors(bundle, { domainMapText = null, p01Names = P01_DEF
   const f11 = diffFloor("F11", key ? `setting: ${key[0]}` : hb.length ? `hidden behaviour: ${hb.map((r) => r.item).join(", ")}` : read ? `setting read: ${read[0]}` : null,
     "no setting key, setting read or feature-flags/default-values row", ["a configuration risk with technique MODEL, Source carrying floor:F11", "stand values in Inputs"]);
 
+  // F12 reads vc-test's layer-0 change map, only when the caller passes one (vc-test spec U47).
+  const zoned = (changeMap?.hotspots ?? []).filter((h) => h.zone && h.zone !== "none");
+  const f12 = !changeMap ? floor("F12", false, "no change map (vc-test layer 0 did not run)")
+    : floor("F12", zoned.length > 0, zoned.length ? `significant-zone hotspots: ${zoned.slice(0, 5).map((h) => `${h.id} (${h.zone})`).join(", ")}`
+      : "no hotspot in a significant zone", ["exploratory on the significant-zone hotspots"]);
+
   return { product_prs: prs.length, floors: [f1, f2, f3, f4, f5, f6, f7, f8,
-    floor("F9", false, "doubt rule — applied inside every floor above"), f10, f11] };
+    floor("F9", false, "doubt rule — applied inside every floor above"), f10, f11, f12] };
 }
 
 /** A JSON file, or one line naming the file and the reason, then exit 2 — never a stack trace. */
@@ -151,7 +157,9 @@ export function p01NamesOf() {
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const i = process.argv.indexOf("--bundle");
-  if (i < 0 || !process.argv[i + 1]) { console.error("usage: floors.mjs --bundle <bundle.json>"); process.exit(1); }
+  if (i < 0 || !process.argv[i + 1]) { console.error("usage: floors.mjs --bundle <bundle.json> [--change-map <change-map.json>]"); process.exit(1); }
   const bundle = readJsonOrExit(process.argv[i + 1], "floors.mjs");
-  console.log(JSON.stringify(computeFloors(bundle, { domainMapText: domainMapTextOf(bundle), p01Names: p01NamesOf() }), null, 2));
+  const m = process.argv.indexOf("--change-map");
+  const changeMap = m < 0 ? null : readJsonOrExit(process.argv[m + 1], "floors.mjs");
+  console.log(JSON.stringify(computeFloors(bundle, { domainMapText: domainMapTextOf(bundle), p01Names: p01NamesOf(), changeMap }), null, 2));
 }
