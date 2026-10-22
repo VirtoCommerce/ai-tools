@@ -4,7 +4,7 @@
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
     "generated": "2026-10-22",
-    "totalSuites": 160,
+    "totalSuites": 161,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -573,7 +573,7 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 86,
+      "testCount": 66,
       "estimatedMinutes": 29,
       "agent": "qa-backend-expert",
       "tags": [
@@ -581,6 +581,27 @@
         "users",
         "roles",
         "settings",
+        "sprint"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "universal",
+      "clickDriven": true
+    },
+    {
+      "id": "020b",
+      "name": "Platform Admin Shell — Classic theme (menu, search, Settings v2 save, responsive)",
+      "file": "regression/suites/Backend/platform/020b-admin-shell-classic.csv",
+      "domain": "platform-config",
+      "layer": "backend",
+      "concern": "admin",
+      "priority": "P1",
+      "testCount": 20,
+      "estimatedMinutes": 40,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "platform",
+        "settings",
+        "admin-shell",
         "sprint"
       ],
       "envRiskGate": "staging",
@@ -4004,6 +4025,7 @@
     "platform": {
       "include": [
         "020",
+        "020b",
         "021",
         "063",
         "101"

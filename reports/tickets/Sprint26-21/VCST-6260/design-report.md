@@ -1,5 +1,7 @@
 # VCST-6260 — track 4v design / a11y report (Round 2 FULL)
 
+> Screenshots referenced below (`UI-*`, `LOOK-*`) are ephemeral run evidence and are not committed; they stay with the local run folder.
+
 Build: Platform 3.1087.0-pr-3134-a3d2 (header label read live) on vcptcore_qa1. Browser: Chrome DevTools MCP only. Look: Classic (the PR's default). Viewports 1280 and 393 (touch emulation). F7 fix efd7f75 is NOT deployed on this build.
 Screenshots: `screenshots/UI-*.png`.
 

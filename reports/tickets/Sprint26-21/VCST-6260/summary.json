@@ -125,7 +125,7 @@
   "regression": {
     "c1": {
       "run_id": "REG-2026-10-21-1800",
-      "cases": "PLAT-106..PLAT-127 (22 Draft at run time); after the operator decision PLAT-115/117 deleted, PLAT-110/116/122/123/124 revised -> 20 Draft: PLAT-106..114, 116, 118..127",
+      "cases": "PLAT-106..PLAT-127 (22 Draft at run time); after the operator decision PLAT-115/117 deleted, PLAT-110/116/122/123/124 revised -> 20 Draft in suite 020b (split out of 020, ceiling 81): PLAT-106..114, 116, 118..127",
       "passed": 14,
       "failed": 7,
       "blocked": 1,
@@ -182,6 +182,13 @@
       "severity": "Low",
       "provenance": "IN-SCOPE",
       "title": "phone QA pill over search; long names as '…'; 1 px overflow; Swagger lacks 400; double-escaped empty-state query; Settings toolbar 'More' after hard reload"
+    },
+    {
+      "id": "V-05 note",
+      "severity": "Low",
+      "provenance": "IN-SCOPE",
+      "title": "Look dialog: Cancel/Esc restore Classic visually but still write Theme=classic / ThemePreset=gray to localStorage",
+      "note": "accepted — demo-only feature (operator 2026-10-21); PLAT-126 asserts the visual restore only"
     }
   ],
   "test_data": {
@@ -224,7 +231,7 @@
       }
     ],
     "questions_for_dev": [
-      "Two questions raised to the developer in the VCST-6260 tracker comment (not recorded in this public repo)"
+      "Two questions for the developer are kept in the VCST-6260 tracker comment"
     ],
     "modern_looks": {
       "scope": "operator: not to be tested (demo-only per PR)",

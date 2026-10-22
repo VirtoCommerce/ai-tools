@@ -73,4 +73,4 @@ Window 2026-10-21 13:05:39Z–13:19:25Z. Teardown verified by REST: all changed 
 | X-2 | Console / network across both lanes; served bundle is pr-3134 (VC-DEPLOY-003) | — | 4a, 4v | PASS with notes | no PR-attributable errors; 404 app logos, SignalR 1006 (env); bundle contains PR features |
 
 **Not run, by decision:** `replaceAll` on `global` / `tenant/Store` (10c) — would reset shared settings on a shared stand; raised to the developer as a question. 10c on UserProfile already observed by 3x.
-**`PENDING-A`:** closed at `3-cases` (verifier APPROVE after one REJECT round). 2a: 29 hits + 063/064/076 all CONFIRMED, no REPAIR/RE-BASE. After the operator decision (2026-10-21): PLAT-115/117 deleted; PLAT-110/116/122/123/124 revised — suite 020 carries 20 Draft cases PLAT-106..114, 116, 118..127.
+**`PENDING-A`:** closed at `3-cases` (verifier APPROVE after one REJECT round). 2a: 29 hits + 063/064/076 all CONFIRMED, no REPAIR/RE-BASE. After the operator decision (2026-10-21): PLAT-115/117 deleted; PLAT-110/116/122/123/124 revised — suite 020b (Admin Shell Classic, split out of 020 — 020 stays at 66) carries 20 Draft cases PLAT-106..114, 116, 118..127.
