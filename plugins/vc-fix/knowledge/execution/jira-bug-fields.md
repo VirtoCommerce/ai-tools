@@ -33,10 +33,26 @@ written into this plugin.** Before the create, read the Bug type's field metadat
 **Never filled by `/qa-bug`:** Assignee, Sprint, QA engineer, Fix versions, Parent, and any field the
 site fills itself after a release (VC's `Theme release`). They belong to whoever triages or ships the bug.
 
+**Structure every rich-text field — never a wall of text.** One fact per list item:
+
+| Field | Shape |
+|---|---|
+| Description | 1–2 lead sentences, then a list: **Found in:** …, **New in <release>:** yes/no |
+| Steps to reproduce | `orderedList`, one action per step; UI names in bold (**Run** → **Regenerate**) |
+| Expected result | `bulletList`, one expectation per item |
+| Actual result | `bulletList` of what was observed, then a bold **Cause** line with its own list (when known), then the screenshot |
+| Environment | `bulletList`: **Stand:**, **Versions:**, **Settings:**, **Surface:**, **Screenshot:** (when it is from another build); then the **Need hotfixes:** line |
+
+Bold (`strong` mark) the label or the key value — the message the user sees, the wrong number. Put
+endpoints, field names, settings, file names with lines and literal values in `code` marks. Verify with
+`jira get --key <KEY> --fields <ids> --expand renderedFields`: each field has its `<li>`, `<b>`/`<strong>`
+and `<code>`; a field rendered as bare `<p>` blocks is re-sent. Measured on VCST-6500: the same text sent
+as paragraphs came back from the reader as unreadable.
+
 A rich-text field (`schema.type = "doc"` on the v3 API) takes **ADF**, not Markdown — the MCP's
 Markdown→ADF conversion covers the Description only. Create with the MCP, then set the other fields
 with one `node "$VC_RUN" jira update --key <KEY> --fields-file fields.json` carrying ADF for every
-rich-text field (a paragraph per line, an `orderedList` for the steps); or create everything at once
+rich-text field, shaped as above (`orderedList` / `bulletList`, `strong` and `code` marks); or create everything at once
 with `jira request --method POST --path /rest/api/3/issue --body-file issue.json`.
 
 ## 2. Links
