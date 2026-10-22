@@ -1,18 +1,21 @@
-# Brief — ac-checks (API and GraphQL, no browser)
+# Brief — ac-checks (the background AC run: API and GraphQL, no browser)
 
 You decide every `ac-checks` row of `testing-checklist.md` by a REST or GraphQL call, and run the anonymous
-access probe (spec U26, U27). **You have no browser and open none.** Dispatch description:
-`[vc-test:ac-checks] <KEY>`.
+access probe (spec U26, U27, U65). The scenario agents run beside you. **You have no browser and open none.**
+Dispatch description: `[vc-test:ac-checks] <KEY>`.
 
 ## Inputs (paths only)
 
 - `CHECKLIST` — `{RUN_DIR}/testing-checklist.md`. You write only the Result and Evidence cells of `ac-checks`
-  rows, and the Proof cell when you hand a row on.
+  rows, and the probe rows below. The scenario agents append rows under `## Scenario results` while you run:
+  re-read the file right before each write, change only your own rows, and never touch that table.
 - `CHANGE_MAP` — `change-map.json`: the endpoints and operations of its hotspots.
+- `STRATEGY` — `test-strategy.md`, read only for its last round's `Shared store:` line.
 - `RUN_DIR` — the run folder. Responses you keep go to `{RUN_DIR}/ac-checks/`.
 - `CAPABILITIES` — `capabilities.json`; its `stand.writable` decides whether you may create or change data.
 - `KEY` and `ledger.md` (beside this brief) — every entity you create and every setting you change is recorded as
-  it says, with `--by ac-checks`. The run tears down from that ledger only.
+  it says, with `--by ac-checks`. The run tears down from that ledger only. `<plugin>` is the folder above this
+  brief's.
 
 ## How
 
@@ -22,19 +25,26 @@ access probe (spec U26, U27). **You have no browser and open none.** Dispatch de
   never a password in a file, a brief or your output.
 - **Evidence** for a row is the command you ran and a short excerpt of the response that decides it (status,
   the field and its value). Save a full response to `{RUN_DIR}/ac-checks/<Ref>.json` only for a FAIL.
-- A row you cannot decide by a call — the result needs a look — gets Proof `ui-checks` and the reason in
-  Evidence. Never mark it SKIP (spec §9).
+- A row you cannot decide by a call — the result needs a look — gets Result `BLOCKED — needs a look (U65: no
+  ui-checks lane)` and what a look would have to decide in Evidence. Never mark it SKIP (spec §9).
 - **Access probe.** Call every endpoint and GraphQL operation the change map's hotspots name as an anonymous
-  user. A call that returns data or performs a change it should refuse is a finding: add a row with the next free
-  `C-n`, Ref `PROBE · <endpoint>`, Result `FAIL <severity>` and the excerpt. When `stand.writable` is `false`,
-  call queries only, list each mutation you skipped, and give an item that needs a write Result `BLOCKED — stand
-  not declared writable`.
+  user. A call that returns data or performs a change it should refuse is a finding: add a row at the end of the
+  AC table (above `## Scenario results`) with the next free `C-n`, Ref `PROBE · <endpoint>`, Result
+  `FAIL <severity>` and the excerpt. When `stand.writable` is `false`, call queries only, list each mutation you
+  skipped, and give an item that needs a write Result `BLOCKED — stand not declared writable`.
 - **The row's expected value is the oracle** (spec U57). An observation that differs is FAIL; if the stand may be
   configured otherwise, write FAIL with the observed value and "configuration question: <setting>" in Evidence —
   never a PASS that only records what happened.
 - **A `SCALE` row** (spec U59): send every request on a fresh connection (no keep-alive, no shared client), repeat
   past the limit by at least the number of instances you suspect, and record any instance marker the responses
   carry (a header, a cookie, a server id). Seeing one instance only is written as such, not as PASS.
+- **Settings (U68).** Re-read a setting before you write it and before each row that depends on it; a value that
+  is neither its value before the run nor this run's last ledger `after` is another's change ⇒ `BLOCKED`, never
+  FAIL. A global setting only inside `node <plugin>/lib/window.mjs open` … `close` (`--key <KEY> --setting <name>
+  --value <v>`), exactly as `scenario-run.md` §Settings says; a refused open ⇒ the row is BLOCKED with its reason,
+  never a write without the window. A store setting only on a store this run created or the strategy's
+  `Shared store:`.
 - A FAIL is a fact you saw. You do not investigate it and you do not write a bug: triage does that.
 
-Return **only**: counts of PASS / FAIL / BLOCKED / handed to `ui-checks`, and the `#` ids of the FAIL rows.
+Return **only**: counts of PASS / FAIL / BLOCKED (and how many BLOCKED need a look), and the `#` ids of the FAIL
+rows.
