@@ -55,11 +55,17 @@ export function envFilePath(env: string, ticket?: string | null): string {
   return findEnv(name, { root: REPO_ROOT, ticket }) ?? resolve(REPO_ROOT, `.env.${name}`);
 }
 
-/** A BACK_URL on this machine (localhost, a loopback address): a local stand, which nothing deploys to. */
+/**
+ * A BACK_URL on this machine: a local stand, which nothing deploys to. localhost, a loopback or unspecified address
+ * in IPv4 or IPv6 form — IPv4-mapped too, which the URL parser writes in hex (`[::ffff:127.0.0.1]` → `::ffff:7f00:1`)
+ * — and Docker's names for the host (`host.docker.internal`, any `*.docker.internal`).
+ */
 export function isLocalUrl(url: string): boolean {
   let host: string;
   try { host = new URL(url).hostname.replace(/^\[|\]$/g, ''); } catch { return false; }
-  return host === 'localhost' || host.endsWith('.localhost') || /^127\./.test(host) || host === '::1' || host === '0.0.0.0';
+  return host === 'localhost' || host.endsWith('.localhost') || /^127\./.test(host) || host === '0.0.0.0'
+    || host === '::1' || host === '::' || /^::ffff:(7f[0-9a-f]{2}:[0-9a-f]{1,4}|0:0)$/.test(host)
+    || host.endsWith('.docker.internal');
 }
 
 /** What says where an env is deployed and probed, and as whom. */

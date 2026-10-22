@@ -46,7 +46,8 @@ whose stand did not opt in or that nothing chose, a copy older than the master f
   The "no `.env.<env>`" warning moved from the resolver to the loader.
 - `secrets:sync:all` reads every ticket's folder and writes atomically. It refuses a name whose value differs
   between a shared env and a ticket's override of it.
-- `/qa-deploy-pr` refuses an env whose `BACK_URL` is on this machine, and reads a dedicated cloud stand's
+- `/qa-deploy-pr` refuses an env whose `BACK_URL` is on this machine (localhost, a loopback or unspecified address in
+  IPv4 or IPv6 form, a Docker `*.docker.internal` name), and reads a dedicated cloud stand's
   `DEPLOY_BRANCH` and `BACK_URL` from its own files.
 - `/preflight` on a local stand reports `declared` as `local stand` instead of an UNKNOWN that asked for a
   `GIT_TOKEN`. `deployed` and `--expect` read the stand's build as before, and a missing build no longer advises

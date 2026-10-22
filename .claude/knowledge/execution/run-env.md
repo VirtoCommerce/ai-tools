@@ -104,6 +104,9 @@ single-env file ([`browser-lanes.md`](browser-lanes.md) §Browser login secrets)
 - **vc-init's own loader keeps the order before `QA_ENV_PATH`:** its `sync-browser-secrets.mjs` (`/project-init`)
   reads the project root's files only — no dedicated folders, no master stands. A stand in a `QA_ENV_PATH` folder,
   or a master stand, gets its lane passwords from `npm run secrets:sync:all` here.
-- **A local stand is not a deploy target:** `/qa-deploy-pr` refuses an env whose `BACK_URL` is on this machine.
+- **A local stand is not a deploy target:** `/qa-deploy-pr` refuses an env whose `BACK_URL` is on this machine:
+  localhost, a loopback or unspecified address (IPv4 or IPv6, IPv4-mapped included) or a Docker `*.docker.internal`
+  name. Other names for it — `localhost.`, its hostname or LAN address — and a `BACK_URL` with no scheme are not
+  recognised: write a local stand's `BACK_URL` as `http://localhost:<port>`.
 - **One stand per run, not one run per stand:** nothing here stops two sessions from testing on the same stand
   at once. That is a lease question (VCST-6349), not this file's.
