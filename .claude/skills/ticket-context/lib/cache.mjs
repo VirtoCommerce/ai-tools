@@ -33,6 +33,13 @@ export function freshnessKey({ ticketUpdated, prShas = [], linkedUpdated = [], d
   return createHash("sha256").update(JSON.stringify({ t: ticketUpdated, p: [...prShas].sort(), l: [...linkedUpdated].sort(), d: domain ?? null, s: skill ?? null, e: env ?? null, ...(benchmark ? { b: benchmark } : {}) })).digest("hex").slice(0, 16);
 }
 
+/** The cached bundle's file name: one per env, and a blind bundle (U67) under its own name per cutoff and hidden keys,
+ *  so a benchmark and a normal run never evict each other and no consumer mistakes one for the other. */
+export function bundleFile(env, benchmark = null) {
+  const blind = benchmark ? `-blind-${createHash("sha256").update(JSON.stringify({ before: benchmark.before, hide: [...(benchmark.hide ?? [])].sort() })).digest("hex").slice(0, 8)}` : "";
+  return `bundle${env ? `-${env}` : ""}${blind}.json`;
+}
+
 /**
  * Ask git about the FULL path only. git answers correctly for a file that does not exist yet under an ignored
  * directory, and honours negations (`.vc-fix/*` + `!.vc-fix/context/`). Checking ancestor directories too would

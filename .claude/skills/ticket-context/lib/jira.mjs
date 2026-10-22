@@ -7,20 +7,30 @@ import { redactText } from "./scrub.mjs";
 
 export const BASE_FIELDS = Object.freeze(["summary", "description", "comment", "status", "issuetype", "priority", "labels", "components",
   "attachment", "issuelinks", "parent", "subtasks", "updated", "fixVersions"]);
-export const LINKED_FIELDS = Object.freeze(["summary", "description", "status", "issuetype", "updated", "resolution"]);
+export const LINKED_FIELDS = Object.freeze(["summary", "description", "status", "issuetype", "created", "updated", "resolution"]); // `created`: a blind run drops a linked issue filed after its cutoff (U67)
+
+/** True when `created` is an instant after the cutoff `before`, both compared as instants, never as strings (offsets
+ *  differ). No cutoff, or an unparsable `created`, is false: a missing date is kept, never guessed away. */
+export function postedAfter(created, before) {
+  if (!before) return false;
+  return Date.parse(created) > Date.parse(before);
+}
 
 /** A benchmark run must not see what was posted after its cutoff (U67). Applied once, after every comment page is
- *  merged and before the inventory is built: comments created after `before` (instants, not strings — offsets differ)
- *  leave `fields.comment` and their index-paired `renderedFields.comment` twin together, and an issue link or sub-task
- *  naming a `hide` key is dropped, so no later step ever reads either. No option given: the issue comes back as it was. */
+ *  merged and before the inventory is built: comments created after `before` leave `fields.comment` and their
+ *  index-paired `renderedFields.comment` twin together; attachments created after it leave `fields.attachment`, so an
+ *  image inline in a dropped comment never becomes an inventory item (one a kept text still names is a gap); and an
+ *  issue link or sub-task naming a `hide` key is dropped, so no later step ever reads either. No option given: the
+ *  issue comes back as it was. */
 export function blindIssue(issue, { before, hide = [] } = {}) {
   const cutoff = before ? Date.parse(before) : NaN;
   const hidden = new Set(hide);
   if (Number.isNaN(cutoff) && !hidden.size) return issue;
   const out = { ...issue, fields: { ...issue.fields } };
+  if (!Number.isNaN(cutoff) && Array.isArray(issue.fields?.attachment)) out.fields.attachment = issue.fields.attachment.filter((a) => !postedAfter(a?.created, before));
   const c = issue.fields?.comment;
   if (!Number.isNaN(cutoff) && Array.isArray(c?.comments)) {
-    const keep = c.comments.map((x) => !(Date.parse(x?.created) > cutoff)); // an unparsable time is kept, never guessed away
+    const keep = c.comments.map((x) => !postedAfter(x?.created, before));
     out.fields.comment = { ...c, comments: c.comments.filter((_, i) => keep[i]) };
     out.fields.comment.total = Math.min(c.total ?? Infinity, out.fields.comment.comments.length);
     const rc = issue.renderedFields?.comment;
@@ -34,11 +44,23 @@ export function blindIssue(issue, { before, hide = [] } = {}) {
   return out;
 }
 
-/** Rows (epic siblings, search hits) a blind run must not carry: whatever names a `hide` key is dropped (U67). */
+/** Rows a blind run must not carry — epic siblings, search hits, and the inventory's `kind: "ticket"` items however
+ *  they got there (an issue link, a remote link, a key in a text): whatever names a `hide` key is dropped (U67). */
 export function withoutHidden(rows, hide = []) {
   if (!hide.length) return rows;
   const hidden = new Set(hide);
   return rows.filter((r) => !hidden.has(r?.key));
+}
+
+/** A blind run's PRs (U67): a PR created after `before` is dropped wherever the ladder found it (dev-status, a link,
+ *  the key or commit search, a named companion). Its date is its metadata's `created_at`, or the key search's when the
+ *  metadata could not be read; a PR with neither is kept. `sameKey` (the key search's hits, which `later_prs` reads) is
+ *  cut the same way. No cutoff: both come back as they were. */
+export function blindPrs(prMeta, sameKey = [], before = null) {
+  if (!before) return { prMeta, sameKey };
+  const searched = new Map(sameKey.map((s) => [String(s.ref).toLowerCase(), s.created_at]));
+  const late = (p) => postedAfter(p.meta?.created_at ?? searched.get(String(p.ref).toLowerCase()), before);
+  return { prMeta: prMeta.filter((p) => !late(p)), sameKey: sameKey.filter((s) => !postedAfter(s.created_at, before)) };
 }
 
 export function jiraClient(cred, fetchImpl = fetch) {
@@ -146,13 +168,20 @@ export function jiraClient(cred, fetchImpl = fetch) {
  *  linked issue is one hop further from the reporter than the ticket, and its file is read by an agent whose output
  *  gate rule 6 scans. Unread comments, a comment cut at CAPS.fieldText, or a failed read are ONE gap on
  *  `<ref>:comments`; the issue's fields stay either way. Returns the D10 freshness part: count + each read comment's
- *  id@updated, so a new or edited comment rebuilds the bundle even where the tracker would not bump the issue's `updated`. */
-export async function attachLinkedComments(jira, issue, ref, { cap = CAPS.linkedComments, gaps = [], secrets = new Set() } = {}) {
+ *  id@updated, so a new or edited comment rebuilds the bundle even where the tracker would not bump the issue's `updated`.
+ *  `before` (a blind run, U67): a comment created after it is dropped before anything is counted. */
+export async function attachLinkedComments(jira, issue, ref, { cap = CAPS.linkedComments, gaps = [], secrets = new Set(), before = null } = {}) {
   let got;
   try { got = await jira.latestComments(issue.key, cap); } catch (e) {
     const g = asGap(`${ref}:comments`, e);
     gaps.push(gap(`${ref}:comments`, g.reason, `comments not read: ${g.detail ?? g.reason}`));
     return "c?";
+  }
+  if (before) {
+    // The page is newest first, so every unread comment is older than the ones read: the dropped ones leave the
+    // total too, and no count or gap reveals that later comments exist.
+    const kept = got.comments.filter((c) => !postedAfter(c.created, before));
+    got = { comments: kept, total: got.total - (got.comments.length - kept.length) };
   }
   const cut = [];
   const comments = [...got.comments].reverse().map((c) => {
