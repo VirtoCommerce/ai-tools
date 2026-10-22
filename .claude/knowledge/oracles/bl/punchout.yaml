@@ -1,0 +1,208 @@
+# yaml-language-server: $schema=../../../../templates/bl.schema.json
+domain:
+  heading: "Domain 29: Punchout (BL-PUNCHOUT)"
+  prefixes:
+    - BL-PUNCHOUT
+  agents:
+    - qa-frontend-expert
+    - qa-backend-expert
+  intro: |-
+    > **First invariants, drafted 2026-10-20 from VCST-5887 (Create requisition -> cXML PunchOutOrderMessage).**
+    > The human sources are the developer's QA guide (Jira comment of 2026-10-12; the ticket has no AC field) and
+    > the developer and operator decisions of 2026-10-20..22 that supersede parts of it (a second return of a
+    > session is refused, per-code error messages). Code and live runs only fill `verified` and `scope`. Not promoted, each needing a human
+    > decision or source first: rounding of `Total` for a
+    > sub-cent line price, the console `errorCode` line, access token and session id absent from the cXML, what the
+    > punchout checkout hides, whether the cart is cleared after a return. Surfaces: suites 107, 108, 109.
+rules:
+  - id: BL-PUNCHOUT-001
+    title: The requisition carries the cart the buyer sees, selected lines only
+    rule: "The cXML PunchOutOrderMessage built by Create requisition contains exactly the cart the storefront shows and validates: one `ItemIn` per cart line that is selected for checkout, with `quantity` equal to the line quantity at the moment of the click. A line that is not selected is not sent. When the buyer has more than one cart (for example a named cart created by another channel), the cart sent is the one on screen, never another cart. A quantity changed in the cart after reaching checkout is the quantity sent. With no line selected, Create requisition is disabled."
+    priority: P0-revenue
+    trust: DECLARED
+    source:
+      - kind: ac
+        ref: "VCST-5887 developer QA guide (Jira comment 2026-10-12, no AC field) — Step 3 \"the items match the storefront cart\"; case 3 \"only selected items are returned: 2 ItemIn\"; case 4 \"no item selected: Create requisition is disabled\"; case 12 \"the cXML has the updated quantities and total\""
+      - kind: live
+        ref: "VCST-5887 checklist round 1 B3/B4/A4 (a named cart on screen, the default cart sent: FAIL), round 2 R2-B1/R2-B2/R2-A1/R2-A6/R2-B11 (fixed, PASS); B5, B6, B18 PASS"
+    scope:
+      module: VirtoCommerce.Punchout
+    check:
+      kind: manual
+      ref: "Cases PNCR-001, PNCR-002, PNCR-003, PNCR-005, PNCR-006, PNCR-017, PNCR-027, PNCR-032. Fill a cart with 3 lines (one quantity above 1), untick one, change one quantity at checkout, click Create requisition; on the return page assert one ItemIn per selected line with the screen quantities and no unselected line. Then give the same buyer a second cart with different lines (created through xAPI with a cart name) and assert the cart sent is the one displayed. Untick every line and assert the button is disabled."
+    violation_signal: The return page shows a line the buyer did not select, a quantity different from the screen, or a different cart than the one displayed (even a valid one); OR the button is enabled by one cart while another is sent.
+    status: ACTIVE
+    verified:
+      date: 2026-10-20
+      version: Punchout 3.1000.0-pr-2-05b5, theme 2.61.0-pr-2564-2fa8
+      by: VCST-5887 /qa-test rounds 2-3
+  - id: BL-PUNCHOUT-002
+    title: cXML Total is the sum of line totals after line discounts
+    rule: "`PunchOutOrderMessageHeader/Total/Money` is the sum of the sent lines' totals (unit price x quantity after line-level discounts) in the cart currency. Cart-level discounts (coupons), shipping and taxes are not included. `UnitPrice` is the placed per-unit price after the line discount, not the list price. After a currency switch on the storefront the currency and the prices follow the selected currency."
+    priority: P0-revenue
+    trust: DECLARED
+    source:
+      - kind: ac
+        ref: "VCST-5887 developer QA guide (Jira comment 2026-10-12) — Step 4 Total \"sum of line totals (price x quantity after line discounts), with the cart currency; cart-level discounts, shipping and taxes are not included\"; case 3 \"Total counts only the selected items\"; case 5 \"UnitPrice is the price per unit, Total includes the line discount\"; case 7 currency; section 5 known limitation \"Total does not include cart-level discounts, shipping or taxes\""
+      - kind: live
+        ref: "VCST-5887 checklist B1, B5, B7, B8, B11 PASS. B9 (a 3-decimal placed price: Total 239.98 against 239.97 from the printed UnitPrice) is OPEN, not covered by this rule"
+    scope:
+      module: VirtoCommerce.Punchout
+    check:
+      kind: manual
+      ref: "Cases PNCR-001, PNCR-005, PNCR-007, PNCR-008, PNCR-010. Cart with line-promoted lines: assert UnitPrice equals the placed price on the checkout page and Total equals the sum of the line totals shown. Apply a cart-level percentage coupon and a fixed coupon separately: Total is unchanged. Switch currency (if an orderable product exists in it): Money/@currency and prices follow."
+    violation_signal: Total includes a cart-level discount, shipping or tax; OR UnitPrice is the list price while a line discount applies; OR the currency differs from the cart currency.
+    status: ACTIVE
+    verified:
+      date: 2026-10-20
+      version: Punchout 3.1000.0-pr-2-05b5, theme 2.61.0-pr-2564-2fa8
+      by: VCST-5887 /qa-test rounds 1-3
+  - id: BL-PUNCHOUT-003
+    title: A session returns its cart at most once
+    rule: "A punchout session returns its cart at most once: after a successful return, any later Create requisition by the session owner (a repeated call, browser Back and click, a second tab, also after the cart changed since the return) is refused with `SessionReturned`, url and cXML are null, and nothing is posted to the procurement system. Two parallel calls on an Active session produce exactly one document; the loser gets `SessionReturned` or `SessionExpired`, never a second document. A double click or repeated Enter sends exactly one requisition, and the button shows a loading state and cannot be clicked again while it runs."
+    priority: P0-revenue
+    trust: DECLARED
+    source:
+      - kind: ac
+        ref: "VCST-5887 developer QA guide (Jira comment 2026-10-12) — Step 3 \"loading state and cannot be clicked again\"; case 9 \"only one requisition is sent, one PunchoutOrderMessage row\""
+      - kind: ac
+        ref: "Developer decision 2026-10-21 in VCST-5887, relayed by the QA lead: \"a second return is forbidden\"; implemented in vc-module-punchout PR #2 c49023f (errorCode SessionReturned). Supersedes the 2026-10-20 operator decision (author commit 33d791f) that made the replay of the stored cXML the design, and the guide's case 2 (SessionExpired). A human decision, not a Jira resolution"
+      - kind: live
+        ref: "VCST-5887 checklist round 4 R4-1..R4-5, R4-7 PASS on Punchout 3.1000.0-pr-2-c490 (repeat call, Back, changed cart, two tabs, three parallel attempts: loser SessionReturned 1x / SessionExpired 2x); round 1 B15, B16 (one mutation per double click)"
+    scope:
+      module: VirtoCommerce.Punchout
+    check:
+      kind: manual
+      ref: "Cases PNCR-013, PNCR-014, PNCR-015, PNCR-028, PNCR-029, PNCR-030. Return a cart once, then call again with the same token (API, browser Back, a second tab) and again after changing the cart: SessionReturned, url and cxml null, nothing reaches the return URL. Double click and double Enter: one mutation. Two parallel calls on a fresh session, several attempts: exactly one document."
+    violation_signal: A second call on a returned session returns or posts a cXML (the stored one or a new one), also after a cart change; OR two documents leave one session; OR a double click sends two requisitions; OR a returned session answers with a code other than SessionReturned (when the store is enabled).
+    status: ACTIVE
+    verified:
+      date: 2026-10-22
+      by: REG-2026-10-22-0943
+  - id: BL-PUNCHOUT-004
+    title: Only the session owner obtains a session's document
+    rule: "`createPunchoutRequisition` answers only the buyer who holds the punchout session's own token. A password-grant token of the same buyer, an anonymous call, and a call from another user or another store return `SessionNotFound` and no cXML, for an active session and for one that has already returned its cart."
+    priority: P0-security
+    trust: DECLARED
+    source:
+      - kind: ac
+        ref: "VCST-5887 developer QA guide (Jira comment 2026-10-12) — section 4 error table: `SessionNotFound` \"the session does not exist, or it belongs to another user or store\""
+      - kind: live
+        ref: "VCST-5887 checklist A1, R2-A4, R3-4 and round 4 R4-8 (the owner check comes before the returned check) PASS for a password token, an anonymous call and another storeId. Not observed: another buyer's punchout token (no free second buyer)"
+    scope:
+      module: VirtoCommerce.Punchout
+    check:
+      kind: manual
+      ref: "Cases PNCR-026, PNCR-031. Call createPunchoutRequisition on an active and on a returned session with the buyer's password token, with no token, and with a token of another store: errorCode SessionNotFound, cxml null. Control: the owner's own call on an active session succeeds, and on a returned one gets SessionReturned."
+    violation_signal: A non-owner call returns cXML, or answers with a code other than SessionNotFound that reveals the session exists.
+    status: ACTIVE
+    verified:
+      date: 2026-10-22
+      by: REG-2026-10-22-0943
+  - id: BL-PUNCHOUT-005
+    title: A store with Punchout.Enabled off returns nothing, returned sessions included
+    rule: "When `Punchout.Enabled` is off on the store, Create requisition returns `StoreNotConfigured` and nothing is sent to the procurement system: for an active session and also for a session that has already returned its cart (the store check comes before the returned check). When the setting is turned back on, a returned session gets `SessionReturned` again."
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: ac
+        ref: "VCST-5887 developer QA guide (Jira comment 2026-10-12) — case 14 \"Punchout.Enabled off: StoreNotConfigured\"; section 4 `StoreNotConfigured` \"the store does not exist, or punchout is disabled for it\""
+      - kind: ac
+        ref: "Operator decision 2026-10-20 (QA lead; fixed in vc-module-punchout 05b55ba) — a returned session with Punchout.Enabled off must get StoreNotConfigured; kept after the SessionReturned change (developer decision 2026-10-21, c49023f). A human decision, not a Jira resolution"
+      - kind: live
+        ref: "VCST-5887 checklist round 1 A11 PASS (active session); round 2 R2-A7 replayed while off (the defect); round 3 R3-1, R3-2 PASS; round 4 R4-6 PASS on Punchout 3.1000.0-pr-2-c490 (returned S1 StoreNotConfigured while off, SessionReturned after restore)"
+    scope:
+      module: VirtoCommerce.Punchout
+    check:
+      kind: manual
+      ref: "Cases PNCR-019, PNCR-034. One window: session S1 returned earlier, session S2 active; turn Punchout.Enabled off, call S1 (API) and click on S2 (browser): StoreNotConfigured both, nothing sent. Restore the setting and read it back, then call S1 again: SessionReturned."
+    violation_signal: With the setting off, a cXML is posted or returned; OR a returned session answers SessionReturned instead of StoreNotConfigured while the setting is off; OR the call fails with another code.
+    status: ACTIVE
+    verified:
+      date: 2026-10-22
+      by: REG-2026-10-22-0943
+  - id: BL-PUNCHOUT-006
+    title: The cXML never carries the SharedSecret
+    rule: "`Header/Sender/Credential` of the PunchOutOrderMessage repeats `From` (domain and Identity) and carries no `SharedSecret`; `UserAgent` is `Virto Commerce Punchout`. The configuration's shared secret appears nowhere in the posted document."
+    priority: P0-security
+    trust: DECLARED
+    source:
+      - kind: ac
+        ref: "VCST-5887 developer QA guide (Jira comment 2026-10-12) — Step 4 `Header/Sender/Credential`: \"Same as From. There is no SharedSecret. UserAgent = Virto Commerce Punchout\""
+      - kind: live
+        ref: "VCST-5887 checklist B2, A5 PASS (no SharedSecret in the posted cXML)"
+    scope:
+      module: VirtoCommerce.Punchout
+    check:
+      kind: manual
+      ref: "Cases PNCR-004, PNCR-001. Read the raw cXML on the return page: Sender equals From, no SharedSecret element, and a text search of the whole document for the configuration's shared secret finds nothing."
+    violation_signal: A SharedSecret element, or the secret's text, appears anywhere in the posted cXML.
+    status: ACTIVE
+    verified:
+      date: 2026-10-20
+      version: Punchout 3.1000.0-pr-2-05b5
+      by: VCST-5887 /qa-test rounds 1-3
+  - id: BL-PUNCHOUT-007
+    title: The cXML envelope and line fields follow the setup request and the cart
+    rule: "`From` and `To` are the setup request's `To` and `From` swapped; `BuyerCookie` is echoed unchanged; `PunchOutOrderMessageHeader/@operationAllowed` is `create`. Per line: `SupplierPartID` is the product SKU, `SupplierPartAuxiliaryID` is the cart line item id, `UnitPrice` has 2 decimals and a dot as the decimal separator whatever the storefront language, `UnitOfMeasure` is the product measure unit or `EA` when it is empty, `Description` is the product name with an `xml:lang`. A name with XML special or non-Latin characters is escaped and the document stays well formed."
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: ac
+        ref: "VCST-5887 developer QA guide (Jira comment 2026-10-12) — Step 4 field table; case 6 measure unit or EA; case 8 language, \"the cXML is still valid\""
+      - kind: live
+        ref: "VCST-5887 checklist B2, B10, B12, B13, R2-B3 PASS. SupplierPartID of a configurable line is the line SKU (`Configuration-<sku>`), the SKU the order line carries; recorded by design 2026-10-15, so the Step 4 \"Product SKU\" wording is read as the line SKU"
+    scope:
+      module: VirtoCommerce.Punchout
+    check:
+      kind: manual
+      ref: "Cases PNCR-004, PNCR-009, PNCR-011, PNCR-012, PNCR-022, PNCR-023. Compare the raw cXML with the setup request and the checkout page field by field as in Step 4; repeat with a product with and without a measure unit, a name containing & and Cyrillic, and a comma-decimal language."
+    violation_signal: From and To not swapped, BuyerCookie changed, a comma in UnitPrice or Total, an empty UnitOfMeasure, or a document the return page rejects as malformed.
+    status: ACTIVE
+    verified:
+      date: 2026-10-20
+      version: Punchout 3.1000.0-pr-2-05b5
+      by: VCST-5887 /qa-test rounds 1-2
+  - id: BL-PUNCHOUT-008
+    title: Create requisition replaces Place order only in punchout mode
+    rule: "In a punchout session the checkout shows `Create requisition` where `Place order` normally is, and does not show `Place order`; the buyer need not fill in shipping or payment because the procurement system handles them. After a regular login-and-password sign-in (also after a punchout session and sign-out) the checkout shows `Place order` and not `Create requisition`. A successful requisition creates no order and reserves no inventory."
+    priority: P1-ux
+    trust: DECLARED
+    source:
+      - kind: ac
+        ref: "VCST-5887 developer QA guide (Jira comment 2026-10-12) — flow step 3 \"In punchout mode this button replaces Place order\"; Step 3 \"you don't need to fill in shipping or payment\"; case 10 \"regular login: Place order is shown, Create requisition is not\""
+      - kind: live
+        ref: "VCST-5887 checklist B1, B17, R2-B12, B25 PASS (no order created, inventory unchanged)"
+    scope:
+      module: VirtoCommerce.Punchout
+    check:
+      kind: manual
+      ref: "Cases PNCR-001, PNCR-016, PNCR-035. Punchout session: assert the button label and the absence of Place order with empty shipping and payment. Sign out, sign in by password as the same buyer: Place order present, Create requisition absent. After a requisition, assert the buyer's order list and stock are unchanged."
+    violation_signal: Both buttons shown, or Create requisition shown after a password sign-in; OR an order is created or stock is reserved by a requisition.
+    status: ACTIVE
+    verified:
+      date: 2026-10-20
+      version: Punchout 3.1000.0-pr-2-05b5, theme 2.61.0-pr-2564-2fa8
+      by: VCST-5887 /qa-test rounds 1-3
+  - id: BL-PUNCHOUT-009
+    title: A failed requisition names its reason, sends nothing and leaves the buyer able to retry
+    rule: "Each failure `errorCode` (SessionNotFound, SessionExpired, SessionReturned, StoreNotConfigured, ConfigurationError, CartNotFound, CartIsEmpty, MessageError) shows its own message to the buyer, translated in the storefront languages, instead of one generic text. A failure sends nothing to the procurement system, the buyer stays on the checkout page and the button is active again. A failure before the cart is built (CartIsEmpty, StoreNotConfigured) does not consume the session."
+    priority: P2-ux
+    trust: DECLARED
+    source:
+      - kind: ac
+        ref: "VCST-5887 developer QA guide (Jira comment 2026-10-12) — section 4 error code table; \"the storefront shows a message and stays on the checkout page\""
+      - kind: ac
+        ref: "Operator decision 2026-10-20 (QA lead; per-code messages are the design) supersedes the guide's section 5 \"the error notification is generic\". A human decision, not a Jira resolution"
+      - kind: live
+        ref: "VCST-5887 checklist R2-B10 (CartIsEmpty en/de), R3-2 (StoreNotConfigured en/de) PASS; round 4 R4-2 (SessionReturned shows the generic fallback text; the specific message waits for the theme deployment of vc-frontend c83fdf2, not yet deployed); B6 session not burned by CartIsEmpty"
+    scope:
+      module: VirtoCommerce.Punchout
+    check:
+      kind: manual
+      ref: "Cases PNCR-024, PNCR-033, PNCR-034. Reach CartIsEmpty (deselect every line through the API after render) and StoreNotConfigured in en and de: assert a message specific to the code (not the generic text), nothing posted, button active; retry after fixing the cause succeeds for CartIsEmpty."
+    violation_signal: The generic text shown for a code that has its own message; OR an untranslated message in a supported language; OR the button stays disabled or the session is consumed after a failure that sent nothing.
+    status: ACTIVE
+    verified:
+      date: 2026-10-22
+      by: REG-2026-10-22-0943
