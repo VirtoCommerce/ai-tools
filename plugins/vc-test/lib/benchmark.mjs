@@ -1,7 +1,8 @@
 // plugins/vc-test/lib/benchmark.mjs — a blind benchmark's definition and its build check (spec U67, O8).
 // A benchmark pins the build a ticket is re-run on; before each run the stand is checked against it with the same
 // read-only `npm run deploy:pr -- <KEY> --verify`, and a different version on any line voids the run.
-// CLI: node plugins/vc-test/lib/benchmark.mjs --key <KEY>   → { ok, moved, unverifiable, pin_only, run_dir, before, hide, hide_pending }, exit 2 when moved, 3 when a module's live version cannot be read.
+// CLI: node plugins/vc-test/lib/benchmark.mjs --key <KEY>   → { ok, moved, unverifiable, pin_only, run_dir, before (the cutoff ISO), move_aside (run-folder globs), hide, hide_pending };
+// exit 2 when moved, 3 when a module's live version cannot be read, 1 on a bad definition (e.g. no parsable cutoff).
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -20,8 +21,9 @@ export function loadBenchmark(key) {
 }
 
 // Both tables of the deploy:pr output: `Artifact Current Proposed` (what the branch pins — the Platform line carries
-// the image tag) and `Artifact Pinned Live Verdict`. `live` is the live module version, or the Platform image tag /
-// Theme file name when the row is LIVE or PINNED; null where the check could not read it. `live_source` says which.
+// the image tag) and `Artifact Pinned Live Verdict`. Row = { artifact, pinned, verdict, live, pin }. `live` is a MODULE's
+// live version (null when the column reads `?`/`—`); Platform and Theme are never read live, so their `live` is always
+// null and `pin` is all there is (the value the env branch pins). `pin` is null for an unpinned row.
 export function parseVerify(text) {
   const lines = String(text).split(/\r?\n/);
   const section = (header) => {
@@ -75,7 +77,13 @@ export function compareBuild(def, rows) {
   return { ok: moved.length === 0 && unverifiable.length === 0, moved, unverifiable, pin_only };
 }
 
-export const benchRunDir = (runDir, n) => join(runDir, `bench-${n}`);
+// The instant a blind run reads "before" (everything the ticket accrued after it is hidden): the definition's `cutoff`.
+export function cutoffOf(def) {
+  if (typeof def?.cutoff !== "string" || !Number.isFinite(Date.parse(def.cutoff))) throw new Error(`benchmark ${def?.ticket ?? "?"}: cutoff is missing or not a date: ${JSON.stringify(def?.cutoff)}`);
+  return def.cutoff;
+}
+
+export const benchRunDir =(runDir, n) => join(runDir, `bench-${n}`);
 
 function nextBench(dir) {
   const used = existsSync(dir) ? readdirSync(dir).map((d) => /^bench-(\d+)$/.exec(d)?.[1]).filter(Boolean).map(Number) : [];
@@ -87,6 +95,7 @@ function main(argv) {
   const key = argOf(argv, "key");
   if (!key) { console.error("usage: benchmark.mjs --key <KEY>"); return 64; }
   const def = loadBenchmark(key);
+  const before = cutoffOf(def); // fail before the 60 s verify, not after
   const win = process.platform === "win32"; // npm is npm.cmd there, which only spawns through a shell; the key is KEY_RE-checked
   const r = spawnSync(win ? "npm.cmd" : "npm", ["run", "deploy:pr", "--", key, "--verify"], { shell: win, encoding: "utf8", maxBuffer: 16 * 1024 * 1024 });
   if (r.error) throw r.error;
@@ -100,11 +109,15 @@ function main(argv) {
   console.log(JSON.stringify({
     ok, moved, unverifiable, pin_only,
     run_dir: benchRunDir(dir, nextBench(dir)),
-    before: def.move_aside_before_run?.paths ?? [],
+    before, // the cutoff instant (ISO) — what /ticket-context prepare --before takes
+    move_aside: def.move_aside_before_run?.paths ?? [], // run-folder globs to move out before the run, never a cutoff
     hide: issues.filter((i) => KEY_RE.test(i)),
     hide_pending: issues.filter((i) => !KEY_RE.test(i)),
   }, null, 2));
   return moved.length ? 2 : unverifiable.length ? 3 : 0;
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) process.exitCode = main(process.argv.slice(2));
+if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+  try { process.exitCode = main(process.argv.slice(2)); }
+  catch (e) { console.error(`benchmark: ${e.message}`); process.exitCode = 1; }
+}
