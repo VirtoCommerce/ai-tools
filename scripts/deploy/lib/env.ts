@@ -29,14 +29,19 @@ export interface EnvCoords {
  * against the `.env.local` JIRA_API_TOKEN of whoever ran it → Jira 404 on a ticket that exists.
  * An AMBIENT value (real process env — an inline `VAR=x npm run …`, or CI) still outranks every
  * file, which is why this tracks file-supplied keys instead of using dotenv's own `override`.
+ * An ambient value that is an UNEXPANDED placeholder (`${env:ADMIN}`, `${ADMIN}`) counts as unset:
+ * an IDE that forwards `${env:X}` for a variable it does not have passes the literal through, and
+ * outranking the files with it sent `username=${env:ADMIN}` to /connect/token on every pre-flight.
  */
+const UNEXPANDED = /^\$\{(env:)?[A-Za-z_][A-Za-z0-9_]*\}$/;
 export function loadEnvFiles(testEnv: string): void {
   const fromFile = new Set<string>();
   for (const f of ['.env.defaults', `.env.${testEnv}`, '.env.local']) {
     const p = resolve(REPO_ROOT, f);
     if (!existsSync(p)) continue;
     for (const [k, v] of Object.entries(parseDotenv(readFileSync(p)))) {
-      if (process.env[k] === undefined || fromFile.has(k)) { process.env[k] = v; fromFile.add(k); }
+      const ambient = process.env[k];
+      if (ambient === undefined || UNEXPANDED.test(ambient) || fromFile.has(k)) { process.env[k] = v; fromFile.add(k); }
     }
   }
 }
