@@ -32,7 +32,13 @@ export function planRun({ strategy, registry, capabilities }) {
       const id = `scenario:${sc.s}`;
       if (!proof) errors.push(`${sc.s}: Proof "${sc.proof}" is not one of ${Object.keys(tpl.proofs ?? {}).join(", ")}`);
       else if (selected.has(id)) errors.push(`${sc.s}: listed twice in the Scenarios table`);
-      else { const { proofs, per, ...rest } = tpl; selected.set(id, { entry: { ...rest, id, row: null, lane: proof.lane, requires: proof.requires }, order: null, scenario: sc }); }
+      else {
+        // A browser proof draws its lane from the pool at wave placement; a lane without its MCP server is not in it.
+        const pool = proof.lanes?.filter((l) => capabilities[`mcp:${l.slice("browser:".length)}`]);
+        if (pool && !pool.length) errors.push(`${id}: needs one of ${proof.lanes.map((l) => `mcp:${l.slice("browser:".length)}`).join(", ")}, which this install does not have`);
+        const { proofs, per, ...rest } = tpl;
+        selected.set(id, { entry: { ...rest, id, row: null, lane: null, requires: proof.requires }, order: null, scenario: sc, ...(pool ? { pool } : {}) });
+      }
     }
   }
   // A derived artifact follows an artifact id or a row name ("Scenarios" = at least one scenario instantiated).
@@ -58,9 +64,11 @@ export function planRun({ strategy, registry, capabilities }) {
     return base.get(id);
   };
   const byId = (a, b) => a.localeCompare(b, "en", { numeric: true });
-  const ordered = [...selected.keys()].sort((a, b) => baseWave(a) - baseWave(b) || byId(a, b));
+  // A fixed-lane entry is placed before a scenario of the same base wave, so a scenario takes a lane the others left free.
+  const ordered = [...selected.keys()].sort((a, b) => baseWave(a) - baseWave(b) || !!selected.get(a).scenario - !!selected.get(b).scenario || byId(a, b));
   const wave = new Map();
   const browserCount = [];
+  const lanesIn = []; // wave -> lanes taken: two browser entries never share one (one browser session per agent)
   // Scenarios that write the same setting never share a wave, and two global writers never do either (one global window at a time).
   const writeKey = (w) => `${w.scope}/${w.name}`;
   const writersIn = [];
@@ -69,9 +77,14 @@ export function planRun({ strategy, registry, capabilities }) {
   for (const id of ordered) {
     const s = selected.get(id);
     let w = 1 + Math.max(0, ...needsOf(s).map((n) => wave.get(n)));
-    const browser = s.entry.lane?.startsWith("browser:") && !s.missing;
-    while ((browser && (browserCount[w] ?? 0) >= MAX_BROWSER_LANES) || (s.scenario && clash(w, s.scenario))) w++;
-    if (browser) browserCount[w] = (browserCount[w] ?? 0) + 1;
+    const browser = (s.pool || s.entry.lane?.startsWith("browser:")) && !s.missing;
+    const freeLane = (x) => (s.pool ? s.pool.find((l) => !lanesIn[x]?.has(l)) : !lanesIn[x]?.has(s.entry.lane));
+    while ((browser && ((browserCount[w] ?? 0) >= MAX_BROWSER_LANES || !freeLane(w))) || (s.scenario && clash(w, s.scenario))) w++;
+    if (browser) {
+      s.lane = s.pool ? freeLane(w) : s.entry.lane;
+      browserCount[w] = (browserCount[w] ?? 0) + 1;
+      (lanesIn[w] ??= new Set()).add(s.lane);
+    }
     if (s.scenario) (writersIn[w] ??= []).push(s.scenario);
     wave.set(id, w);
   }
@@ -79,7 +92,7 @@ export function planRun({ strategy, registry, capabilities }) {
   for (const id of ordered) {
     const w = wave.get(id) - 1;
     const { entry, missing } = selected.get(id);
-    (waves[w] ??= []).push({ id, lane: entry.lane, run: entry.run, ...(selected.get(id).scenario?.exploratory ? { exploratory: true } : {}), ...(missing ? { missing } : {}) });
+    (waves[w] ??= []).push({ id, lane: selected.get(id).lane ?? entry.lane, run: entry.run, ...(selected.get(id).scenario?.exploratory ? { exploratory: true } : {}), ...(missing ? { missing } : {}) });
   }
   return { ok: true, waves: waves.filter(Boolean).map((w) => w.sort((a, b) => byId(a.id, b.id))), notRun };
 }

@@ -1,5 +1,5 @@
 {
-  "$comment": "The only list of artifacts (spec §5.1). `row` is the strategy's Artifacts row as .claude/templates/test-strategy.md names it; `derivedFrom` marks an artifact selected whenever that artifact or row is (\"Scenarios\" = at least one scenario in the strategy's `### Scenarios` table). `per: \"scenario\"` is a template the planner instantiates once per approved scenario as `scenario:S-n`; `proofs` gives its lane and capabilities by the scenario's Proof. `needs` waits only for selected artifacts. `writes` is relative to the run folder <run>.",
+  "$comment": "The only list of artifacts (spec §5.1). `row` is the strategy's Artifacts row as .claude/templates/test-strategy.md names it; `derivedFrom` marks an artifact selected whenever that artifact or row is (\"Scenarios\" = at least one scenario in the strategy's `### Scenarios` table). `per: \"scenario\"` is a template the planner instantiates once per approved scenario as `scenario:S-n`; `proofs` gives its capabilities by the scenario's Proof, and for a browser proof the pool of lanes (tried in order, each needing its own `mcp:<name>`; no two browser entries in a wave share a lane — one browser session per agent). `needs` waits only for selected artifacts. `writes` is relative to the run folder <run>.",
   "artifacts": [
     {
       "id": "contract-refresh",
@@ -37,7 +37,7 @@
       "needs": ["checklist"],
       "proofs": {
         "api": { "lane": null, "requires": ["back-url"] },
-        "browser": { "lane": "browser:playwright-chrome", "requires": ["front-url", "mcp:playwright-chrome"] }
+        "browser": { "lanes": ["browser:playwright-chrome", "browser:playwright-edge", "browser:playwright-firefox"], "requires": ["front-url"] }
       },
       "writes": ["<run>/testing-checklist.md", "<run>/screenshots/**"]
     },
