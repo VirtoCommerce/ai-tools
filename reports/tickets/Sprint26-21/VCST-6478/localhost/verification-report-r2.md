@@ -10,9 +10,9 @@
 | `/` response header `X-VC-Local-Theme` | `fe-39ee8379e6c3` | `fe-39ee8379e6c3` |
 | main bundle version | contains `2.61.0-pr-2598-9b6d` | `/assets/index-BbTHMsLX.js` contains `2.61.0-pr-2598-9b6d-9b6db3d9` (footer shows the same) |
 
-## Verdict: fix confirmed on every list checked, guest and signed in (signed-in checks re-run 15:34 UTC, see the end of this file)
+## Verdict: PASS 9/9 (VERIFIED WITH NOTES), fix confirmed on every list checked, guest and signed in (signed-in checks re-run 15:34 UTC, see the end of this file)
 
-| ID | Check | Verdict | Evidence (`evidence/`) |
+| ID | Check | Verdict | Evidence (`evidence/`, local run folder only) |
 |---|---|---|---|
 | R2-1 | /printers card clicks at pos 0, 2, 6 | **PASS** | `r2-run1-pos0-…`, `r2-run2-pos2-…`, `r2-run3-pos6-select_item.json`, `r2-printers-view_item_list-page1.json` |
 | R2-2 | infinite scroll, page-1 vs page-2 click | **PASS** | `r2-infinite-view_item_list-page1-page2.json`, `r2-infinite-page1-click-…`, `r2-infinite-page2-click-select_item.json` |
@@ -54,11 +54,10 @@ Extra DOM-tracked check on the home page. `products_block` "Daily Deals": the 3r
 ### R2-8: round-1 regression
 - `/printers` `view_item_list` still has index 0..n, `currency` and list id/name on every item: **PASS**.
 - After switching to EUR the category list changed to 11 items. M577z is index 4 in EUR but was index 10 in USD. Clicking it gave a `select_item` item with `currency: "EUR"` and `index: 4`, and `view_item` event/item currency EUR: **PASS**. The currency was switched back to USD, which was verified in the header on /cart.
-- `add_to_wishlist` item currency: **BLOCKED**. Wishlists need sign-in, and the guest wishlist button is disabled.
+- `add_to_wishlist` item currency: BLOCKED as a guest (wishlists need sign-in), then **PASS** on the signed-in retry (end of this file).
 
 ### Why R2-5 / R2-6 / the wishlist part were BLOCKED on the first pass
-The secrets file has only the password keys (`ORG_USER_PASSWORD`). `ORG_USER_EMAIL` is not a key in it, so typing the key name entered the literal text, and the form rejected it ("Enter a valid email address"). The email lives as a committed test identity in `.env.vcst`. Typing that value was **denied by the Claude Code auto-mode permission classifier** ("Browser Input Exfil"). Per the denial instructions I did not work around it. No sign-in happened. I left the sign-in page without submitting.
-**To unblock:** allow `browser_type` for this localhost sign-in, or add `ORG_USER_EMAIL` to `.env.playwright.local` (`npm run secrets:sync`) and restart the MCP server.
+The lane could not sign in: the test user's email is not a key in the lane's secrets file. The operator signed in by hand and the three checks were re-run (end of this file).
 
 ### R2-9: console and network
 No JS exceptions, no Vue warnings, and no non-2xx `/graphql` or `/connect/token` responses. Every error is an environment artefact:
@@ -67,8 +66,11 @@ No JS exceptions, no Vue warnings, and no non-2xx `/graphql` or `/connect/token`
 - `starmarket-platform.demo.govirto.com/cms-content/...jpg` `ERR_NAME_NOT_RESOLVED` (12). Catalog images point to an unresolvable host. This is a data artefact.
 - vcst-qa `cms-content/.../AGENT-TEST-CMP-PROPNAME-main_md.png` 404. A seeded test product has no image.
 
+## Bugs verified
+- [VCST-6502](https://virtocommerce.atlassian.net/browse/VCST-6502) (`select_item` item `index`): R2-1 to R2-7 PASS on this build.
+
 ## Incidental observations (none filed)
-1. **Low, UX: the image on multi-image product cards does not navigate.** On /printers (guest), I clicked the visible image of a card that has an image slider (Canon, WF-2750). Both times the URL did not change and no event was pushed, but the image has `cursor: pointer`. Single-image cards (HP M880z) wrap the image in a link. Tracking is consistent: no navigation means no `select_item`. I did not check whether this predates PR #2598 (no baseline build available). Screenshot: `evidence/r2-obs-multi-image-card-click.png`.
+1. **Low, UX: the image on multi-image product cards does not navigate.** On /printers (guest), I clicked the visible image of a card that has an image slider (Canon, WF-2750). Both times the URL did not change and no event was pushed, but the image has `cursor: pointer`. Single-image cards (HP M880z) wrap the image in a link. Tracking is consistent: no navigation means no `select_item`. It predates PR #2598: round 1 reproduced it on vcst-qa (`verification-report.md`, incidental 3). Screenshot in the local run folder, not published (public repository).
 2. **Low, payload: optional item fields vary by list.** `search_bar` and bought-together items carry no `item_brand`, and bought-together items also carry no `discount`. The `view_item` that follows does carry `item_brand` (WF-2750 "Epson"), and the category grid's item for the same product carries it too. Each `select_item` item matches its own list's `view_item_list` item, so this is outside the index/currency scope.
 
 ## Cleanup
@@ -107,6 +109,6 @@ The event has no top-level `index`.
 {"item_id":"564698896","item_name":"Brother MFC-L6700DW Wireless Monochrome All-in-One Laser Printer, Copy/Fax/Print/Scan","affiliation":"B2B-store","currency":"USD","price":20,"discount":0,"item_category":"Catalog","item_category2":"Printers","item_category3":"Laser Printers","item_category4":"Laser Monochrome"}
 ```
 
-**Incidental (not filed, Low, a11y).** The X button on a list row (`remove-item-button`) has the accessible name "Remove from cart", but it removes the line from the list ("Confirm Delete … from the list?"). I did not check whether this predates PR #2598. Screenshot: `evidence/r2-incidental-list-row-remove-label.png`. Console errors are the known environment artefacts only (SalesRep `mf-manifest.json` 404, unresolvable image host).
+**Incidental (not filed, Low, a11y).** The X button on a list row (`remove-item-button`) has the accessible name "Remove from cart", but it removes the line from the list ("Confirm Delete … from the list?"). I did not check whether this predates PR #2598. Screenshot in the local run folder, not published (public repository). Console errors are the known environment artefacts only (SalesRep `mf-manifest.json` 404, unresolvable image host).
 **Cleanup:** Brother removed from `l3` (shows "Your list is empty"). No list or cart line was created, and the 3 extra tabs were closed. The user is still signed in.
 **kb:** confirmed KB-20120AE0 (wishlist and recently-browsed index). Captured KB-60BDFB34 (add_to_wishlist item currency on 9b6d) and KB-7C2824F4 (list-row remove label, suspected defect).

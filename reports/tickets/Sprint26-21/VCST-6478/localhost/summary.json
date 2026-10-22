@@ -25,6 +25,16 @@
       "to": "Tested",
       "transition": null,
       "reason": "already Tested; PR not merged, so no move to Done"
+    },
+    {
+      "ticket": "VCST-6502",
+      "at": "2026-10-22T17:07:56+03:00",
+      "from": "To do",
+      "to": "Cancelled",
+      "transition": null,
+      "actor": "operator's Jira account (changelog); whether by hand or by an agent is not recorded",
+      "reason": "covered by vc-frontend#2598, verified in round 2",
+      "note": "past Tested: no agent may make this move (ticket-status-transitions.md)"
     }
   ],
   "tracker": {
@@ -34,8 +44,10 @@
   },
   "verdict": "VERIFIED_WITH_NOTES",
   "verification_summary": "verification-summary.json",
+  "bugs_filed": [
+    {"key": "VCST-6502", "summary": "select_item item has no index", "round": 1, "severity": "Low", "outcome": "Cancelled, covered by vc-frontend#2598; verified in round 2"}
+  ],
   "bugs_not_filed": [
-    "select_item item index absent (follow-up)",
     "recommended-list items have no discount",
     "multi-image card image click: no select_item",
     "empty /cart pushes view_cart + begin_checkout",
@@ -55,7 +67,7 @@
       "verdict": "VERIFIED_WITH_NOTES",
       "comment_id": "112299",
       "summary": "verification-summary-r2.json",
-      "includes": "VCST-6502 (select_item index), cancelled as covered by the PR"
+      "includes": "VCST-6502 (select_item index), verified on this build"
     }
   ]
 }

@@ -1,6 +1,6 @@
 # VCST-6478 — fix verification (GA4 select_item / view_item item fields)
 
-**Verdict: FIXED** for currency and list id/name on every path checked; `index` on the select_item item is still absent (expected, deliberately out of scope of PR #2598).
+**Verdict: PASS 9/10 (VERIFIED WITH NOTES)** for currency and list id/name on every path checked; `index` on the select_item item is still absent (expected, deliberately out of scope of PR #2598).
 
 | | Build | Proof |
 |---|---|---|
@@ -12,7 +12,7 @@ Capture method: the storefront is an SPA, so a card click is a client-side route
 survives it. Before each action I noted `dataLayer.length` and read `dataLayer.slice(n)` filtered to
 gtag `['event', name, payload]` objects (the shape this build pushes). No beforeunload hook was needed.
 Recently-browsed opens a new tab; select_item was read in the originating tab.
-Raw JSON: `evidence/` (one file per check/run). HAR: `test-results/chrome/har/session.har` (lane default).
+Raw JSON (`evidence/`, one file per check/run) stays in the local run folder, not published (public repository). HAR: `test-results/chrome/har/session.har` (lane default).
 
 ## Results
 
@@ -20,7 +20,7 @@ Raw JSON: `evidence/` (one file per check/run). HAR: `test-results/chrome/har/se
 |---|---|---|---|
 | 1 | RED baseline on vcst-qa `/printers` | PASS (bug reproduced) | `red-select_item-view_item.json`, `red-view_item_list.json` |
 | 2 | GREEN STR x3 (Canon idx0, Brother, Epson WF-2750) | PASS 3/3 | `green-run{1,2,3}-select_item-view_item.json` |
-| 3 | `index` on select_item item (localhost) | ABSENT (recorded; ticket Expected not met, known/deferred) | same files |
+| 3 | `index` on select_item item (localhost) | ABSENT (recorded; ticket Expected not met): filed as VCST-6502, fixed in round 2 | same files |
 | 4 | add_to_wishlist item currency = event currency (signed in) | PASS (RED: item had no currency) | `green-check4-add_to_wishlist.json`, `red-check4-add_to_wishlist.json` |
 | 5 | view_item_list items keep index/currency/list id/name | PASS (13/13 items, index 0..12) | `green-check5-view_item_list.json` |
 | 6 | Header search dropdown select_item | PASS (RED: no currency/list fields) | `green-check6-*.json`, `red-check6-*.json` |
@@ -57,6 +57,9 @@ GREEN view_item (event `{"currency":"USD","value":189}`) item:
 - Both envs: `/api/files/<id>_sm` 404 on the Canon PDP; third-party image 404 (`images.netdirector.co.uk`);
   `starmarket-platform.demo.govirto.com` ERR_NAME_NOT_RESOLVED on the WF-2750 PDP (catalog data points at a dead host).
 - All `/graphql` POSTs on localhost returned 200; no new JS exceptions.
+
+## Bugs filed
+- [VCST-6502](https://virtocommerce.atlassian.net/browse/VCST-6502): `select_item` item has no `index` (check 3). Folded into #2598 and verified in round 2.
 
 ## Incidental findings (not filed; all reproduce on vcst-qa, so pre-existing, not caused by PR #2598)
 1. **begin_checkout / view_cart fire on loading an empty /cart** (signed in): `begin_checkout {value:0, items_count:0}`.

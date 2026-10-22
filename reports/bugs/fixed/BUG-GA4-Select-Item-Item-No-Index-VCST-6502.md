@@ -23,9 +23,9 @@ The `select_item` item carries `index` equal to the product's position in that l
 - `view_item_list` (`category_printers_page_1`): Brother MFC-L6700DW (`564698896`) has `index: 2`.
 - `select_item` after a click on that card: the item has `currency`, `item_list_id` and `item_list_name`, but no `index` key.
 - Same for card 0 (Canon `566903892`) and card 6 (Epson `555929564`). This is the same on the pre-fix vcst-qa theme and on the PR #2598 build.
-- The evidence is the dataLayer payload, not a screenshot: `reports/tickets/Sprint26-21/VCST-6478/localhost/evidence/green-run{1,2,3}-select_item-view_item.json` and `green-check5-view_item_list.json`.
+- The evidence is the dataLayer payload, not a screenshot: `green-run{1,2,3}-select_item-view_item.json` and `green-check5-view_item_list.json` in the local run folder, not published (public repository); the deciding values are quoted above.
 
-## Root Cause Analysis (vc-frontend `dev`)
+## Root Cause Analysis (vc-frontend#2598 at build `fd57`; on `dev`, `selectItem()` passes no context at all, see VCST-6478)
 - The event contract has no slot for a position: `core/types/analytics.ts` `selectItem: [item, params?: EventParamsType & ListPropertiesType]`.
 - `modules/google-analytics/events.ts` `selectItem()` calls `productToGtagItem(item, undefined, {...})`, which passes the index as `undefined`. `utils.ts` `productToGtagItem` already accepts `index` as its 2nd argument.
 - Callers know the position but drop it. Category grid clicks go through `core/plugins/dom-analytics/rules.ts` (rule `selectItem`, target `product-link`, from `product-card`). The search dropdown calls `analytics("selectItem", product, searchBarListProperties)` in `search-dropdown.vue`. The other callers are cart, compare, lists and saved-for-later.
@@ -41,5 +41,5 @@ The `select_item` item carries `index` equal to the product's position in that l
 
 ## Resolution
 - **Fixed in:** [vc-frontend#2598](https://github.com/VirtoCommerce/vc-frontend/pull/2598) commits `87dfacf` + `44a9561`, which are in the same PR as VCST-6478 at the operator's request.
-- **Tracker:** VCST-6502 → Cancelled on 2026-10-22, with a comment saying it is covered by that PR. Live verification is tracked on VCST-6478, round 2.
+- **Tracker:** VCST-6502 → Cancelled on 2026-10-22 17:07 +03:00 under the operator's Jira account (changelog), with a comment saying it is covered by that PR. No agent may move a ticket past Tested (`ticket-status-transitions.md`); the run record does not say whether the move was made by hand. Live verification is tracked on VCST-6478, round 2.
 - **Behaviour change in the same commit:** on the category grid, `select_item` now names the clicked product's own page list (`category_<slug>_page_<n>`), not the last loaded page.
