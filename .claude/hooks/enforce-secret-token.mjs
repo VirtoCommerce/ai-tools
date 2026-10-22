@@ -30,10 +30,12 @@
 //      stand — it would reach that stand's sign-in form: MASTER_PASSWORD, and any
 //      name whose value is a copy of it (a single-env file synced on a master stand
 //      holds it under every name) unless the stand's own value for that name is
-//      the same. Also when the stand cannot be told: no TEST_ENV and no session id,
-//      or only the vcst default chose it. And MASTER_PASSWORD when the file's copy
-//      differs from .env.playwright.master. A name the file lacks on a master stand
-//      is answered with "type MASTER_PASSWORD".
+//      the same. Also when the stand cannot be confirmed: no TEST_ENV and no session
+//      id, only the vcst default chose it, its env files could not be layered, or the
+//      hook could not load the repo's env libraries (then MASTER_PASSWORD only: the
+//      name needs no library). And MASTER_PASSWORD when the file's copy differs from
+//      .env.playwright.master. A name the file lacks on a master stand is answered
+//      with "type MASTER_PASSWORD".
 //   6. On the combined file, a NAME_<ENV> of another env than this session's
 //      (TEST_ENV, its binding, .env.test-env, vcst). The file holds every
 //      non-production env's passwords, so typing another env's name is a sign-in
@@ -45,7 +47,8 @@
 //
 // Rule source: .claude/knowledge/execution/browser-lanes.md §Browser login secrets.
 // Memory: reference_playwright_secrets_bare_key_name.
-// Fails OPEN on any error — a hook bug must never block legitimate work.
+// Fails OPEN on any error — a hook bug must never block legitimate work — except
+// for the master password (item 5), which goes nowhere this hook cannot confirm.
 
 import { readFileSync } from "node:fs";
 import { resolve, isAbsolute, dirname, basename } from "node:path";
@@ -153,9 +156,9 @@ const MASTER_NAME = "MASTER_PASSWORD";
 const resync = (ctx) => (ctx.envs ? "npm run secrets:sync:all" : "npm run secrets:sync");
 
 /** This session's stand: the env it resolves (TEST_ENV, its binding, .env.test-env, vcst), what chose it, its values
- *  layered with its run's ticket, and whether it says PASSWORDS=master. `{ unknown }` when neither TEST_ENV nor a
- *  session id is known: then only a default would answer, and a default is no evidence. Null without the libraries
- *  or on any error (fail open). */
+ *  layered with its run's ticket, and whether it says PASSWORDS=master. `{ unknown: why }` when it cannot be told:
+ *  neither TEST_ENV nor a session id is known (only a default would answer, and a default is no evidence), or
+ *  layering its env files failed. Null without the libraries. */
 function sessionStand(ctx) {
   if (!ctx.lib) return null;
   if (ctx.stand === undefined) {
@@ -168,8 +171,8 @@ function sessionStand(ctx) {
         const values = ctx.lib.layered(env, { root: ROOT, masterValues: false }).env;
         ctx.stand = { env, source, master: ctx.lib.usesMaster(values), values };
       }
-    } catch {
-      ctx.stand = null;
+    } catch (e) {
+      ctx.stand = { unknown: `its env files could not be layered: ${String(e?.message ?? e).split("\n")[0]}` };
     }
   }
   return ctx.stand;
@@ -181,17 +184,22 @@ const knownStand = (ctx) => {
   return stand && !stand.unknown ? stand : null;
 };
 
+/** The block for the master password when this session's stand cannot be confirmed (`why`). */
+const unconfirmed = (typed, why) =>
+  `BLOCKED: ${typed} would send the master password to a stand this session cannot confirm (${why}).\n` +
+  "The master password goes only to a master stand (PASSWORDS=master): fix that, then bind the session to one (npm run env:use -- <env>).";
+
 /** The master password goes only to a stand that uses it. `name` is a hit in the file: MASTER_PASSWORD, or a name
  *  whose value is a copy of the master password (the file's or .env.playwright.master's). Blocked when this session's
- *  stand does not say PASSWORDS=master — unless its own value for the name is that same password — and when no stand
- *  of its own chose it; MASTER_PASSWORD also when the file's copy is not .env.playwright.master's. */
+ *  stand does not say PASSWORDS=master — unless its own value for the name is that same password — and when the
+ *  stand cannot be confirmed; MASTER_PASSWORD also when the file's copy is not .env.playwright.master's. Without the
+ *  libraries no master value can be read, so only MASTER_PASSWORD itself is blocked then. */
 function masterReason(name, secrets, ctx) {
-  if (!ctx.lib) return null;
+  if (!ctx.lib) return name === MASTER_NAME ? unconfirmed(MASTER_NAME, "the hook could not load the repo's env libraries: run npm ci") : null;
   const master = ctx.lib.readMaster({ root: ROOT }).value;
   const value = secrets.get(name);
   if (name !== MASTER_NAME && !(value && (value === master || value === secrets.get(MASTER_NAME)))) return null;
   const stand = sessionStand(ctx);
-  if (!stand) return null;
   if (!stand.unknown && name !== MASTER_NAME) {
     const split = ctx.envs ? ctx.lib.splitQualifiedName(name, ctx.envs) : null;
     if (split && split.env !== stand.env) return null; // another env's name: wrongEnvReason answers it
@@ -199,10 +207,7 @@ function masterReason(name, secrets, ctx) {
   }
   const typed = name === MASTER_NAME ? MASTER_NAME : `${name} (its value is the master password)`;
   if (stand.unknown || stand.source === "default") {
-    return (
-      `BLOCKED: ${typed} would send the master password to a stand this session never chose (${stand.unknown ?? `only the ${stand.env} default: no TEST_ENV, binding or .env.test-env`}).\n` +
-      "The master password goes only to a master stand (PASSWORDS=master). Bind the session first: npm run env:use -- <env>."
-    );
+    return unconfirmed(typed, stand.unknown ?? `only the ${stand.env} default chose it: no TEST_ENV, binding or .env.test-env`);
   }
   if (!stand.master) {
     return (
