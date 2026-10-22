@@ -20,7 +20,10 @@ import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { parse } from 'dotenv';
 import { USER_ROLES } from './user-roles.mjs';
 import { layeredEnv } from './env-core.js';
-import { envSuffix, TEST_ENV_PATTERN } from './resolve-test-env.js';
+import { envSuffix } from './resolve-test-env.js';
+import { dedicatedEnvs, envFolders, isLoginSecretName, knownEnvs, readEnvFile, usesMaster } from './env-layers.mjs';
+
+export { isLoginSecretName };
 
 export const SECRETS_FILE = '.env.playwright.local';
 /** The header line that stamps which TEST_ENV the values were resolved for. */
@@ -34,16 +37,11 @@ export const ENV_STAMP = /^#\s*generated-for:\s*TEST_ENV=([a-z0-9_]+)\s*$/m;
  */
 export const COMBINED_SECRETS_FILE = '.env.playwright.all';
 const ENVS_LINE = /^# envs: (.*)$/m;
-/** `.env.<name>` files that are not envs — the same set scripts/kb/core/stands.mjs skips. */
-const NOT_AN_ENV = new Set(['local', 'defaults', 'backup']);
 
-/**
- * A login password NAME: `X_PASSWORD`. Least privilege is the point of a separate file — a page or a
- * prompt injection can make an agent type any registered name — so a token/key-shaped name is never
- * one, whatever it ends with. A per-env suffix (`X_PASSWORD_VCST`) is collapsed by the loader and
- * is not a name a case types.
- */
-export const isLoginSecretName = (n) => /^[A-Z][A-Z0-9_]*_PASSWORD$/.test(n) && !/TOKEN|API|KEY|SECRET/.test(n);
+// isLoginSecretName (scripts/lib/env-layers.mjs): a login password NAME, `X_PASSWORD`. Least privilege is the point of
+// a separate file — a page or a prompt injection can make an agent type any registered name — so a token/key-shaped
+// name is never one, whatever it ends with. A per-env suffix (`X_PASSWORD_VCST`) is collapsed by the loader and is
+// not a name a case types.
 
 /** Every login-password name a text mentions, `{{X_PASSWORD}}` or bare. */
 export function namesInText(text) {
@@ -188,46 +186,69 @@ export function declaredSecretsFile(root) {
 }
 
 /**
- * The envs the combined file covers: every `.env.<env>` under `root` with a TEST_ENV-shaped name, except
- * `.env.defaults` / `.env.local` / `.env.backup`, and except an env whose layered `ENV_RISK` or own file
- * says production — every lane loads the combined file, and a run never types a production password.
+ * The envs the combined file covers, with the run tickets whose folders define or override each: every `.env.<env>`
+ * in the project root (ticket null) and in the QA_ENV_PATH folders, every ticket's (scripts/lib/env-layers.mjs) —
+ * except `.env.defaults` / `.env.local` / `.env.backup`, and except an env any of whose layered values or own files
+ * says ENV_RISK=production: every lane loads the combined file, and a run never types a production password.
+ * @returns {{ envs: string[], excluded: { env: string, reason: string }[], tickets: Map<string, (string | null)[]> }}
  */
 export function combinedEnvCandidates(root, ambient = process.env) {
+  const tickets = new Map();
+  const add = (env, ticket) => {
+    if (!tickets.has(env)) tickets.set(env, []);
+    if (!tickets.get(env).includes(ticket)) tickets.get(env).push(ticket);
+  };
+  const dedicated = dedicatedEnvs({ root, ambient });
+  for (const env of knownEnvs(root)) add(env, null);
+  for (const d of dedicated) if (!d.secrets) add(d.env, d.ticket);
+  for (const d of dedicated) if (d.secrets && tickets.has(d.env)) add(d.env, d.ticket); // a ticket's passwords for a defined env
   const out = [], excluded = [];
-  const names = readdirSync(root).map((f) => /^\.env\.(.+)$/.exec(f)?.[1]).filter((n) => n && TEST_ENV_PATTERN.test(n) && !NOT_AN_ENV.has(n));
-  for (const env of names.sort()) {
-    const own = parse(readFileSync(join(root, `.env.${env}`)));
-    const risk = [layeredEnv(env, { root, ambient }).ENV_RISK, own.ENV_RISK, own[`ENV_RISK${envSuffix(env)}`]];
+  for (const env of [...tickets.keys()].sort()) {
+    const risk = tickets.get(env).flatMap((ticket) => {
+      const own = [root, ...envFolders({ env, ticket, root, ambient })].map((dir) => readEnvFile(join(dir, `.env.${env}`))).filter(Boolean);
+      return [layeredEnv(env, { root, ambient, ticket }).ENV_RISK, ...own.flatMap((o) => [o.ENV_RISK, o[`ENV_RISK${envSuffix(env)}`]])];
+    });
     if (risk.some((r) => r?.trim().toLowerCase() === 'production')) excluded.push({ env, reason: 'ENV_RISK=production' });
     else out.push(env);
   }
-  return { envs: out, excluded };
+  return { envs: out, excluded, tickets };
 }
 
 /**
- * Every env's value for each name, keyed `NAME_<ENV>`, from that env's layered env (config.js order).
- * Only the writer of the combined file may call this: it returns values. A name an env has no value for
- * is listed under that env's `missing`; an env with no value at all is excluded.
+ * Every env's value for each name, keyed `NAME_<ENV>`, from that env's layered env (config.js order) — once per
+ * run ticket that defines or overrides it. One key holds one value, so a name whose value differs between them is a
+ * CONFLICT, never an entry. A master stand (PASSWORDS=master) gets no entries: its lanes type MASTER_PASSWORD.
+ * Only the writer of the combined file may call this: it returns values. A name an env has no value for is listed
+ * under that env's `missing`; an env with no value at all is excluded.
  * @param {string} root
  * @param {Iterable<string>} names
  * @param {{ ambient?: Record<string, string | undefined> }} [options] the environment before any loading
  */
 export function combinedSecretValues(root, names, { ambient = process.env } = {}) {
-  const { envs: candidates, excluded } = combinedEnvCandidates(root, ambient);
+  const { envs: candidates, excluded, tickets } = combinedEnvCandidates(root, ambient);
   const sorted = [...new Set(names)].sort();
-  const entries = new Map(), envs = [];
+  const entries = new Map(), envs = [], master = [], conflicts = [];
   for (const env of candidates) {
-    const values = layeredEnv(env, { root, ambient });
-    const have = sorted.filter((n) => values[n]);
-    if (!have.length) { excluded.push({ env, reason: 'no password values' }); continue; }
+    const contexts = tickets.get(env).map((ticket) => ({ ticket, values: layeredEnv(env, { root, ambient, ticket }) }));
+    const own = contexts.filter((c) => !usesMaster(c.values));
+    if (own.length < contexts.length) master.push({ env, tickets: contexts.filter((c) => usesMaster(c.values)).map((c) => c.ticket) });
+    if (!own.length) continue;
+    const have = [], clash = [];
+    for (const n of sorted) {
+      const values = new Set(own.map((c) => c.values[n]).filter(Boolean));
+      if (values.size > 1) clash.push(n);
+      else if (values.size) have.push(n);
+    }
+    for (const n of clash) conflicts.push({ env, name: n, tickets: own.filter((c) => c.values[n]).map((c) => c.ticket) });
+    if (!have.length) { if (!clash.length) excluded.push({ env, reason: 'no password values' }); continue; }
     for (const n of have) {
       const qualified = n + envSuffix(env);
       if (entries.has(qualified)) throw new Error(`${qualified} would be written for two envs; rename one of them`);
-      entries.set(qualified, { env, name: n, value: values[n] });
+      entries.set(qualified, { env, name: n, value: own.map((c) => c.values[n]).find(Boolean) });
     }
-    envs.push({ env, written: have.length, missing: sorted.filter((n) => !values[n]) });
+    envs.push({ env, written: have.length, missing: sorted.filter((n) => !have.includes(n) && !clash.includes(n)) });
   }
-  return { entries, envs, excluded };
+  return { entries, envs, excluded, master, conflicts };
 }
 
 /**

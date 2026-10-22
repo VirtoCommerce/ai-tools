@@ -11,6 +11,7 @@ import { classifyRun, gatherActivity, loadStatus, type Classification } from "./
 import { gateSuites, resolveRequiredModule, type GatingResult, type SuiteRef } from "./requires.ts";
 import { baselineDelta, readBaseline, type ModuleChange } from "./baseline.ts";
 import { classifySecretNames, declaredSecretsFile, readSecretsFile, splitQualifiedName, suiteSecretCases } from "../lib/browser-secrets.mjs";
+import { MASTER_NAME, usesMaster } from "../lib/env-layers.mjs";
 
 export type BuildFor = "regression" | "smoke";
 
@@ -18,8 +19,9 @@ export type BuildFor = "regression" | "smoke";
  * The browser-lane passwords the selected suites type, against the playwright-* MCP `--secrets` file the
  * nearest `.mcp.json` declares (`.env.playwright.local` when none does). A name the file lacks is typed as a
  * literal and the case BLOCKs on sign-in mid-run, so it is decided here. On the combined
- * `.env.playwright.all` a name is looked up as NAME_<ENV> for this run's env. `gated`: suites EVERY case
- * of which needs an undeclared name.
+ * `.env.playwright.all` a name is looked up as NAME_<ENV> for this run's env. On a master stand
+ * (PASSWORDS=master) every name is typed as MASTER_PASSWORD, so that one name is what the file must hold.
+ * `gated`: suites EVERY case of which needs an undeclared name.
  */
 export interface SecretsGate {
   names: string[];
@@ -35,8 +37,13 @@ export function computeSecretsGate(root: string, browserSuites: string[], env: s
   const declared = declaredSecretsFile(root);
   const file = declared ? readSecretsFile(root, declared) : readSecretsFile(root);
   const combined = file.envs !== null;
-  // The combined file's NAME_<ENV> entries for this env, under their bare names.
-  const view = combined
+  const master = usesMaster(processEnv);
+  // What a lane substitutes for each name: on a master stand MASTER_PASSWORD's value, else the combined file's
+  // NAME_<ENV> entries for this env under their bare names, else the single-env file's.
+  const masterHeld = file.values.get(MASTER_NAME);
+  const view = master
+    ? { values: new Map(masterHeld ? names.map((n): [string, string] => [n, masterHeld]) : []) }
+    : combined
     ? { values: new Map([...file.values].flatMap(([q, v]): [string, string][] => {
         const split = splitQualifiedName(q, file.envs!);
         return split?.env === env ? [[split.name, v]] : [];
@@ -45,8 +52,10 @@ export function computeSecretsGate(root: string, browserSuites: string[], env: s
   const cls = classifySecretNames(names, view, processEnv);
   // A file generated for (or a combined file without) another TEST_ENV holds another stand's values:
   // every env-backed name is unsynced.
-  const otherEnv = file.exists && (combined ? !file.envs!.includes(env) : file.env !== null && file.env !== env);
-  const unsynced = otherEnv ? names.filter((n) => processEnv[n]) : cls.unsynced;
+  const otherEnv = !master && file.exists && (combined ? !file.envs!.includes(env) : file.env !== null && file.env !== env);
+  const unsynced = master
+    ? (cls.unsynced.length ? [MASTER_NAME] : [])
+    : otherEnv ? names.filter((n) => processEnv[n]) : cls.unsynced;
   const undeclared = cls.undeclared.map((name) => ({
     name, cases: Object.fromEntries(Object.entries(perSuite).filter(([, s]) => s.byName[name]).map(([id, s]) => [id, s.byName[name]])),
   }));

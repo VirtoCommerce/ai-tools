@@ -30,8 +30,7 @@ import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lo
 import { readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync } from "fs";
 import { resolve, join, basename, dirname } from "path";
 import { fileURLToPath } from "url";
-import { config as loadDotenv } from "dotenv";
-import { resolveTestEnv } from "../lib/resolve-test-env.js";
+import { loadEnv } from "../lib/load-env.mjs";
 import { parse as parseCsv } from "csv-parse/sync";
 import {
   introspect,
@@ -72,24 +71,12 @@ import {
 import { GraphQLSchema } from "graphql";
 import { sessionRunPath } from "../lib/run-dir.mjs";
 
-// Layered, TEST_ENV-aware env load (later files override earlier; no legacy root `.env`).
-// Mirrors scripts/lib/seed-common.mjs — a bare loadDotenv() reads only `.env`, which
-// does not exist in this repo, so live `--case` runs would see no BACK_URL / @td() creds.
+// Layered, TEST_ENV-aware env load (scripts/lib/load-env.mjs: the one order every loader applies — the layers, the
+// `_${TEST_ENV.toUpperCase()}` promotion, the QA_ENV_PATH files, the master password). A bare dotenv config() reads
+// only `.env`, which does not exist in this repo, so live `--case` runs would see no BACK_URL / @td() creds.
 // Intentionally does NOT import config.js: the runner only needs BACK_URL + OAuth creds
 // and must not be blocked by config.js's strict CORE validation of storefront-test vars.
-const _TEST_ENV = resolveTestEnv("vcst");
-loadDotenv({ path: ".env.defaults" });
-loadDotenv({ path: `.env.${_TEST_ENV}`, override: true });
-loadDotenv({ path: ".env.local", override: true });
-
-// Per-env override promotion: any key ending in `_${TEST_ENV.toUpperCase()}` is
-// promoted to its base name, so `.env.local` can carry per-env credential variants.
-const _ENV_SUFFIX = `_${_TEST_ENV.toUpperCase()}`;
-for (const [key, value] of Object.entries(process.env)) {
-  if (key.endsWith(_ENV_SUFFIX) && value) {
-    process.env[key.slice(0, -_ENV_SUFFIX.length)] = value;
-  }
-}
+const { testEnv: _TEST_ENV } = loadEnv({ fallback: "vcst" });
 
 const ROOT = resolve(process.cwd());
 // Inside a ticket run (`npm run run:use`) the cache is the run's own, the one its refresh wrote — the env's schema,
