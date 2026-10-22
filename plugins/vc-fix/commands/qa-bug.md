@@ -34,7 +34,12 @@ Create a structured bug report from a description, screenshot, or observed issue
 /qa-bug VCST-1234                                   # Bug from a JIRA ticket (adds QA evidence)
 /qa-bug screenshot path/to/screenshot.png           # Bug from a screenshot
 /qa-bug "<defect>" found-by:agent-testing VCST-1234 # Filed by an agent flow (also agent-regression <RUN_ID>)
+/qa-bug "<defect>" --evidence <dir> --link VCST-6042 --confirmed   # From a /qa-investigate package, pre-approved by the caller
 ```
+
+- `--evidence <dir>` — a `/qa-investigate` evidence package (`evidence-index.md`, `root-cause.md`, screenshots). Steps 1–3 read it instead of reproducing again (Step 1).
+- `--link <KEY>[:<type>]` — repeatable; the ticket this bug relates to (Relates by default). Jira: [`knowledge/execution/jira-bug-fields.md`](../knowledge/execution/jira-bug-fields.md) §2.
+- `--confirmed` — the caller already holds the operator's yes for filing this bug (e.g. `/qa-run` asked once for the whole wave); Step 5 does not ask again. Without it Step 5 asks as before.
 
 ---
 
@@ -49,6 +54,12 @@ Create a structured bug report from a description, screenshot, or observed issue
 3. **Duplicate check** — scan `reports/bugs/open/**` (recursively — it is foldered by severity), `reports/bugs/fixed/` and, for a ticket's bug, the `bugs/` of every run folder of the ticket (`node "$pluginRoot/scripts/env/run-folder.mjs" dir --ticket <key> --prior`) for existing bug reports with the same component/title. If found in `open/`, warn user and show existing report. If found in `fixed/`, check whether it's a regression (same bug resurfaced).
 
 ## Step 1 — Gather Bug Details
+
+**If `--evidence <dir>` is given:** `/qa-investigate` has already reproduced, isolated and anchored this bug, so
+Steps 1–3 READ the package — STR, layer result, screenshots, requests and the root cause with its code anchor
+come from `evidence-index.md` and `root-cause.md` — and do not reproduce it a second time. Reproduce again only
+when the package was made on a different build than Step 0 found deployed, or it lacks a reproduction or a
+screenshot for a UI claim; say which in the report.
 
 > **Skills:** Use `/qa-investigate` for structured 5-phase investigation (reproduce → isolate layer → gather evidence → root cause → hand off). Use `/qa-evidence` for capture rules and naming conventions.
 
@@ -321,6 +332,15 @@ instead of re-deriving it. Fill it from Step 2 (owning layer) + Step 3a (exact r
 
 > **Skills:** Use `/qa-defect triage <ticket-key>` for triage routing (duplicate check, classification, assignment). Use `/qa-risk` to assess severity if unclear.
 
+**Duplicate search in the tracker, before asking.** Search the tracker for the same defect — Jira: JQL
+`text ~ "<key terms>"` over the bug's project **and** the other projects the site files product bugs in;
+Azure: WIQL on the title. A real duplicate ⇒ do not file: add the evidence to that ticket and report its key.
+A related but different ticket (same area, another symptom, or the same symptom on a path that was fixed)
+⇒ file, link it (Relates), and say in one clause of the Description how it differs.
+
+**With `--confirmed`, skip the question below** — the caller already holds the operator's yes for this bug —
+and go straight to the create. Otherwise:
+
 **Ask via `AskUserQuestion`** — question `"Create a bug-tracker ticket for this bug?"`, options
 **"Yes — create the ticket"** / **"No — keep the local report only"**. Use the tool, **never prose**:
 a prose question ENDS THE TURN, which lets an end-of-turn hook (the self-diagnostics tail-trigger)
@@ -329,8 +349,8 @@ resume the agent and push the question out of view — exactly what happened on 
 mechanism the parent-link question below already uses.
 
 If yes, **create via the profile's tracker** (`tracker-ops.md` §2 — Create), Type = Bug:
-- **Jira** (`tracker.kind = jira`) → Atlassian MCP `createJiraIssue`, project = `tracker.projectKey` (falls back to `env.JIRA_PROJECT_KEY`; customer sets their own). Body = **GitHub-flavored Markdown, NOT Jira wiki markup** (the MCP converts MD→ADF; wiki markup like `h2.`/`{code}`/`*bold*` renders literally — VCST-5212), and follow `tracker-ops.md` §2 **Comment & body style** (clear, brief, outcome-first, structured — not a wall of text). Same rule for any follow-up comment.
-  - **Screenshots — attach AND embed inline.** A filename in the body is not evidence anyone opens. Unlike the Azure path below (whose HTML description takes an `<img src>` directly), Jira needs a 4-step dance, and **step 2 is the trap**. Every step runs through the bridge (`node "$VC_RUN" jira …`, host = the profile's `tracker.baseUrl`; the token stays in vc-secrets):
+- **Jira** (`tracker.kind = jira`) → **the Bug's own fields first: read [`knowledge/execution/jira-bug-fields.md`](../knowledge/execution/jira-bug-fields.md) before the create.** It discovers the Bug type's fields from the issue-type metadata (no field id is written in this plugin), puts Steps / Expected / Actual / Environment / Error message / components into their fields when the project has them (else as Description sections), leaves Assignee, Sprint, QA engineer, Fix versions and Parent alone, adds the `--link` and duplicate-search links, puts each screenshot inside the field it proves, and decides **Need hotfixes** by code against the two latest stable bundles (§4). Then Atlassian MCP `createJiraIssue`, project = `tracker.projectKey` (falls back to `env.JIRA_PROJECT_KEY`; customer sets their own). Description = **GitHub-flavored Markdown, NOT Jira wiki markup** (the MCP converts MD→ADF; wiki markup like `h2.`/`{code}`/`*bold*` renders literally — VCST-5212), and follow `tracker-ops.md` §2 **Comment & body style** (clear, brief, outcome-first, structured — not a wall of text). Same rule for any follow-up comment.
+  - **Screenshots — attach AND embed inline**, inside the Actual / Expected / Steps field when the project has it (the same steps below, applied to that field — `jira-bug-fields.md` §3), else in the description. A filename in the body is not evidence anyone opens. Unlike the Azure path below (whose HTML description takes an `<img src>` directly), Jira needs a 4-step dance, and **step 2 is the trap**. Every step runs through the bridge (`node "$VC_RUN" jira …`, host = the profile's `tracker.baseUrl`; the token stays in vc-secrets):
     1. **Upload** — the Atlassian MCP has **no attachment tool**; `node "$VC_RUN" jira attach --key <KEY> --file a.png [--file b.png]` (a multipart `POST …/issue/{key}/attachments` with the mandatory `X-Atlassian-Token: no-check` header) → `[{id, filename}]`.
     2. **Resolve the Media Services ID.** ADF `media.attrs.id` is a **Media Services UUID**, **NOT the numeric Jira attachment id** — passing the attachment id fails the whole request with `400 ATTACHMENT_VALIDATION_ERROR`. The UUID is absent from the attachment metadata; it lives in the content endpoint's `303` redirect (`Location: https://api.media.atlassian.com/file/<UUID>/binary?token=…`) — `node "$VC_RUN" jira media-id --attachment <attachmentId>` → `{ uuid }` reads it for you.
     3. **PUT the description as ADF.** `width`/`height` are **required** or the image won't display — read them from the PNG IHDR (`buf.readUInt32BE(16)` / `(20)`), never guess. `collection` is the empty string (verified against a Jira-authored node). Safest pattern: `node "$VC_RUN" jira get --key <KEY> --fields description` (already ADF), push the nodes onto `description.content`, write `{"description": …}` to a file and `node "$VC_RUN" jira update --key <KEY> --fields-file fields.json` (a `PUT …/issue/{key}` with `{fields}`) — that preserves the MD-converted body instead of hand-authoring the whole doc.
@@ -395,7 +415,7 @@ If yes, **create via the profile's tracker** (`tracker-ops.md` §2 — Create), 
 
 Fields either way:
 - Summary: from bug title
-- Description: the full structured report — **Jira** = markdown; **Azure** = HTML (`azure-html-format.md`)
+- Description: **Jira** = markdown, the context only when the project has its own Steps / Expected / Actual / Environment fields (`jira-bug-fields.md` §1), else the full structured report; **Azure** = HTML (`azure-html-format.md`)
 - Priority: mapped from severity (Critical→Highest, High→High, Medium→Medium, Low→Low — Jira; Azure uses the numeric `Priority` field)
 - **Origin labels (VC's own Jira only — never on a client project's tracker).** Say who found the bug: `found-by-agent` + `found-in-testing` (a `/qa-test` run) or `found-in-regression` (a regression run or its triage) when the report's `**Found by:**` line says `agent — testing …` or `agent — regression …` (Step 1); `reported-by-human` when a person found it and asked for it to be filed, and whenever the origin is unclear. Rule: `knowledge/execution/tracker-ops.md` §2a.
 - **Labels / Tags — apply `vc-fix` AND `qa-autofix` when `/qa-fix` could fix this bug.** These two labels ARE the auto-fix queue: the hourly `/qa-fix` routine selects tickets by them, so an eligible bug missing them is never picked up. Jira → the `labels` field; Azure Boards → `--tags` (`System.Tags`). Apply **both, or neither** — never one.
@@ -421,6 +441,9 @@ Fields either way:
    image dance and the Azure `<img src>` both persist ≠ render — say which you confirmed).
 6. whether the auto-fix labels (`vc-fix` + `qa-autofix`) were applied — and, when they were
    withheld, the Gate-0 bail reason in one line, so the operator can add them by hand if they disagree.
+7. Jira: which Bug fields were filled and which stayed in the description (no such field), the links
+   added, and **Need hotfixes** — set (bundles + versions), not set (already fixed on the line, or in
+   neither bundle), or undetermined (no code anchor).
 
 Then transition and move on. Only after this decision is complete does the run signal completion
 (see §Signal completion — the ordering rule).

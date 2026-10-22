@@ -1,0 +1,88 @@
+# Jira Bug fields — what `/qa-bug` fills, how it finds them, and Need hotfixes
+
+Read by `/qa-bug` Step 5 on the **Jira** path (`tracker.kind = jira`, or no profile). The Azure Boards
+path has its own discovered contract (`skills/qa-fix-routing/bug-contract.mjs`); a Jira collector for
+that contract is still a follow-up, so on Jira the fields are **discovered live, per create**, as below.
+
+## 1. Discover the Bug's fields — never transcribe an id
+
+A Jira project's Bug type carries its own custom fields, and their ids differ per site. **No field id is
+written into this plugin.** Before the create, read the Bug type's field metadata once:
+
+- Atlassian MCP `getJiraIssueTypeMetaWithFields` (project = `tracker.projectKey`, the Bug issue type,
+  `requiredFieldsOnly: false`), or `node "$VC_RUN" jira request --method GET --path /rest/api/3/issue/createmeta/{projectKey}/issuetypes/{issueTypeId}`.
+- Match each slot below by the field's **display name** (case-insensitive) and keep its `fieldId`,
+  `schema` and `allowedValues`. A slot whose field the project does not have stays in the Description as
+  a section — nothing is dropped.
+
+| Slot | Field name to match | Value |
+|---|---|---|
+| Summary | `Summary` | What is broken and where, one line |
+| Description | `Description` | **Context only**: the defect in 1–3 sentences, where it was found (release / wave / case or ticket), related tickets. Not the steps |
+| Steps | `Steps to reproduce` | Numbered steps from the evidence package |
+| Expected | `Expected result` | The expected behaviour and its source (docs, BL, previous release) |
+| Actual | `Actual result` | What was observed, with the numbers |
+| Environment | `Environment` | Stand, Platform, theme, the owning module's version, browser; plus the Need-hotfixes line (§4) |
+| Error message | `Error message` | The verbatim error, when there is one (HTTP body message, exception text) |
+| Components type | `Components type` | The layer the fix lands in, from `allowedValues` (e.g. Platform / Theme / Both) |
+| Platform / Theme components | `Platform components`, `Theme components` | The owning module or storefront area, **only a value from `allowedValues`**; no match ⇒ leave empty |
+| Priority | `Priority` | From the severity (Step 5 mapping) |
+| Labels | `Labels` | Origin labels (`tracker-ops.md` §2a) and, when eligible, the auto-fix pair |
+| Need hotfixes | `Need hotfixes` | §4 |
+
+**Never filled by `/qa-bug`:** Assignee, Sprint, QA engineer, Fix versions, Parent, and any field the
+site fills itself after a release (VC's `Theme release`). They belong to whoever triages or ships the bug.
+
+A rich-text field (`schema.type = "doc"` on the v3 API) takes **ADF**, not Markdown — the MCP's
+Markdown→ADF conversion covers the Description only. Create with the MCP, then set the other fields
+with one `node "$VC_RUN" jira update --key <KEY> --fields-file fields.json` carrying ADF for every
+rich-text field (a paragraph per line, an `orderedList` for the steps); or create everything at once
+with `jira request --method POST --path /rest/api/3/issue --body-file issue.json`.
+
+## 2. Links
+
+- `--link <KEY>[:<type>]` (repeatable) — a Relates link by default to the ticket the caller names
+  (`/qa-run` passes the release ticket, `/qa-test` the ticket under test). The link type is one of the
+  site's own (`jira request --method GET --path /rest/api/3/issueLinkType`), created with
+  `jira request --method POST --path /rest/api/3/issueLink`; never a Parent link, which is an epic in most projects.
+- Every related ticket the duplicate search (Step 5) found but judged **not** a duplicate is linked
+  Relates too, and the Description names why it differs in one clause.
+
+## 3. Screenshots go into the field they prove
+
+The image that shows the defect goes **inside Actual result**; an image of the correct behaviour (the
+same screen at another width, or on the previous release) goes inside **Expected result**; a step whose
+input is not obvious may carry its own image inside **Steps to reproduce**. The Description carries none.
+
+Mechanism — the same four steps as for the Description in `/qa-bug` Step 5 (upload → Media Services
+UUID from the `303` `Location` → ADF `mediaSingle` with `width`/`height` from the PNG header → PUT),
+applied to the custom rich-text field instead of `description`. **Verify with
+`jira get --key <KEY> --fields <fieldId> --expand renderedFields`**: each field must contain one `<img …/attachment/content/{id}>` per image. A
+field that persisted the node but renders no `<img>` is not delivered; fall back to the inline-image
+comment (`tracker-ops.md` §2, the wiki carve-out) and say so in the result.
+
+## 4. Need hotfixes — decided by code, against the two latest stable bundles
+
+Only on VirtoCommerce's own tracker (a native-platform profile, `projectType: platform`, or no profile). A client project
+has no stable bundles of its own: skip this section there.
+
+1. **Which bundles.** List `bundles/` in `VirtoCommerce/vc-modules` and take the **two highest `vN`
+   folders** — never a version number written into a prompt; when a new bundle is cut, the pair moves.
+2. **Which version.** Read each bundle's `package.json` and take the pinned version of the repo that
+   owns the defect (the Fix Routing block's repo; `vc-frontend` for the theme).
+3. **Is the defect there.** Open the defect's code anchor (`root-cause.md` / the Fix Routing block names
+   the file and lines) at each pinned tag. The defective code present in **either** bundle ⇒ the flag is
+   set, **whatever the priority** — the decision to actually hotfix stays with the product owner.
+   Different code with the same visible defect (e.g. a value not masked at all in the older bundle)
+   counts as present.
+4. **Already fixed on that line** (a newer same-line patch contains the fix — `/qa-bundle-check`) ⇒ no
+   hotfix; the bundle needs that patch picked up. Say so in Environment instead of setting the flag.
+5. **No code anchor** ⇒ leave the flag unset and write `Need hotfixes: undetermined — no code anchor`.
+6. **Never confirm it on a stand.** The decision is the code at the bundle's pinned tag; a stand can
+   drift from its bundle in either direction.
+
+**Setting it.** The field is a checkbox/select: set the option **by its `id` from `allowedValues`**, not
+by its text — option values can carry whitespace (VC's reads `" true"`, so `{"value":"true"}` is a 400).
+Append one line to Environment:
+`Need hotfixes: the defect is in the code of the two latest stable bundles (vA, vB) — <repo> <verA> / <verB>: <anchor>.`
+(or `… only in vB …`, or the reason it was not set).
