@@ -152,7 +152,14 @@ membership with it, buyer roles included; adding a served org only adds the sale
 existing membership (measured on virtostart 2026-10-22, `KB-D173BBB8`). `attachServedOrgs()`
 therefore refuses the write, with a SKIP naming the organizations, while it would drop any. The
 third rep (`DEMO_REP_SWITCHER`) is that case: its own ten-organization book (`DORG-SW-*`) is also where he holds buyer
-memberships with varied roles, two of them locked.
+memberships with varied roles, two of them locked — and a LOCKED membership takes that organization
+out of the rep's hub entirely (customers, orders, statistics; `KB-3AD6DEAA`, confirmed live
+2026-10-22), so his hub shows 8 customers, not 10.
+
+**`storeCatalog: true`** on a `DEMO_ORGS` row draws its product pool from the store's own catalog
+(read live from `GET /api/stores/{id}`), not from every catalog the admin search reaches. On
+virtostart the store sells electronics while name-matched marketplace products live in other
+catalogs: orders accept them, carts refuse them (`PRODUCT_PRICE_INVALID`). The `DORG-SW-*` book uses it.
 
 **Which role matters.** Per `domain/sales-rep.md` §3b, a plain `Sales Representative` gets **no
 Document library** — no sidebar link, no dashboard widget. A demo rep who must show documents needs
