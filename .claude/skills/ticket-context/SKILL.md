@@ -18,7 +18,8 @@ failed · `3` could not run.
 ## Step 0 — prepare (script)
 
 `node "<skill>/lib/cli.mjs" prepare <KEY> [--domain <slug>] [--fresh]` — the domain is part of the cache
-key, and Step 5 reads it from `prepare.json`.
+key, and Step 5 reads it from `prepare.json`. A benchmark run adds `--before <iso>` (drops comments created
+after it) and `--hide <KEY,KEY>` (drops links to those tickets); both are part of the cache key.
 
 - `status: "cached"` → deployment is never cached: run
   `node "<skill>/lib/cli.mjs" redeploy <KEY> --bundle <bundle_path>`, then go to Step 7. `redeploy`

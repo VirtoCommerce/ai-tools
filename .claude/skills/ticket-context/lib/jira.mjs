@@ -9,6 +9,31 @@ export const BASE_FIELDS = Object.freeze(["summary", "description", "comment", "
   "attachment", "issuelinks", "parent", "subtasks", "updated", "fixVersions"]);
 export const LINKED_FIELDS = Object.freeze(["summary", "description", "status", "issuetype", "updated", "resolution"]);
 
+/** A benchmark run must not see what was posted after its cutoff (U67). Applied once, after every comment page is
+ *  merged and before the inventory is built: comments created after `before` (instants, not strings — offsets differ)
+ *  leave `fields.comment` and their index-paired `renderedFields.comment` twin together, and an issue link or sub-task
+ *  naming a `hide` key is dropped, so no later step ever reads either. No option given: the issue comes back as it was. */
+export function blindIssue(issue, { before, hide = [] } = {}) {
+  const cutoff = before ? Date.parse(before) : NaN;
+  const hidden = new Set(hide);
+  if (Number.isNaN(cutoff) && !hidden.size) return issue;
+  const out = { ...issue, fields: { ...issue.fields } };
+  const c = issue.fields?.comment;
+  if (!Number.isNaN(cutoff) && Array.isArray(c?.comments)) {
+    const keep = c.comments.map((x) => !(Date.parse(x?.created) > cutoff)); // an unparsable time is kept, never guessed away
+    out.fields.comment = { ...c, comments: c.comments.filter((_, i) => keep[i]) };
+    out.fields.comment.total = Math.min(c.total ?? Infinity, out.fields.comment.comments.length);
+    const rc = issue.renderedFields?.comment;
+    out.renderedFields = { ...issue.renderedFields };
+    if (Array.isArray(rc?.comments)) out.renderedFields.comment = { ...rc, comments: rc.comments.filter((_, i) => keep[i] ?? true) };
+  }
+  if (hidden.size) {
+    if (Array.isArray(out.fields.issuelinks)) out.fields.issuelinks = out.fields.issuelinks.filter((l) => !hidden.has((l.outwardIssue ?? l.inwardIssue)?.key));
+    if (Array.isArray(out.fields.subtasks)) out.fields.subtasks = out.fields.subtasks.filter((t) => !hidden.has(t?.key));
+  }
+  return out;
+}
+
 export function jiraClient(cred, fetchImpl = fetch) {
   const origin = new URL(cred.base).origin;
   async function get(pathOrUrl, { method = "GET", body, accept = "application/json", ms = CAPS.fetchTimeoutMs } = {}) {

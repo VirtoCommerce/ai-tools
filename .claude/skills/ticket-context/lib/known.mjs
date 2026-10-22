@@ -83,7 +83,7 @@ export function priorRuns(root, key, run = null) {
   return out;
 }
 
-export function knownGround({ root, key, domain, prs, operations = [], runDir, run = runNpmJson }) {
+export function knownGround({ root, key, domain, prs, operations = [], runDir, run = runNpmJson, benchmark = null }) {
   const gaps = [];
   const known = { domain_map: { state: "unresolved", path: null }, mind_map: { path: null }, bl: [], cases_at_risk: [], kb: [], prior_runs: [] };
   const need = (s) => {
@@ -141,6 +141,6 @@ export function knownGround({ root, key, domain, prs, operations = [], runDir, r
     if (r.json) known.cases_at_risk.push(...(r.json.hits ?? []).map((h) => ({ suite: h.suiteId, case: h.caseId, title: h.title, via: "tc:scope" })));
     else failed("tc:scope", r);
   }
-  known.prior_runs = priorRuns(root, key, run);
+  known.prior_runs = benchmark ? [] : priorRuns(root, key, run); // a blind run reads no earlier result for its own ticket
   return { known, gaps };
 }

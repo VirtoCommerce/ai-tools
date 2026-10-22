@@ -9,7 +9,7 @@ import { LAYERS_GAP, loadLayeredEnv } from "./env.mjs";
 import { codeHostCredential, readProfile, resolveProfile, trackerCredential } from "./profile.mjs";
 import { GAP_REASONS, SCHEMA, asGap, gap } from "./gap.mjs";
 import { validateDef } from "./schema.mjs";
-import { BASE_FIELDS, LINKED_FIELDS, attachLinkedComments, jiraClient, recencyOrder } from "./jira.mjs";
+import { BASE_FIELDS, LINKED_FIELDS, attachLinkedComments, blindIssue, jiraClient, recencyOrder } from "./jira.mjs";
 import { AC_FIELD_NAME_RE, buildInventory, linkedOverCap, rankLinked, resolveFieldsByName, ticketFields } from "./inventory.mjs";
 import { CAPS, envHosts, fetchPublicPage, htmlToText, planDownloads, safeName } from "./fetch.mjs";
 import { exportFigmaItems, figmaToken } from "./figma.mjs";
@@ -33,7 +33,7 @@ const writeJson = (p, o) => writeFileSync(p, JSON.stringify(o, null, 2));
 /** An output a model (or the runner) wrote: unparsable is a schema failure naming the file — the documented
  *  re-dispatch path (exit 2) — never a crash (exit 3). */
 const readOutput = (dir, name, errors) => { try { return readJson(join(dir, name)); } catch { errors.push(`${name}: not valid JSON`); return undefined; } };
-const USAGE = "usage: cli.mjs prepare <KEY> [--domain <slug>] [--fresh] | attach --prepare <p> --ref <ref> (--file <path> | --gap <reason> [--detail <text>]) | save --prepare <p> --agent <id> --as <file> | merge-change --prepare <p> | deploy --prepare <p> | known --prepare <p> | compose --prepare <p> | check --prepare <p> | finish --prepare <p> | abort --prepare <p> | redeploy <KEY> --bundle <p>";
+const USAGE = "usage: cli.mjs prepare <KEY> [--domain <slug>] [--fresh] [--before <iso>] [--hide <KEY,KEY>] | attach --prepare <p> --ref <ref> (--file <path> | --gap <reason> [--detail <text>]) | save --prepare <p> --agent <id> --as <file> | merge-change --prepare <p> | deploy --prepare <p> | known --prepare <p> | compose --prepare <p> | check --prepare <p> | finish --prepare <p> | abort --prepare <p> | redeploy <KEY> --bundle <p>";
 function usage(msg) { console.error(`✗ ${msg}\n${USAGE}`); process.exit(1); }
 const root = outputRoot();
 const ignored = (p) => isIgnored(root, p);
@@ -83,6 +83,14 @@ async function prepare() {
   try { sweepStaleRuns(key, { root }); } catch { /* a failed sweep never blocks the run; the next prepare retries */ }
   const domain = flag("domain") ?? null; // part of the freshness key: known ground differs per domain
   if (domain !== null && !DOMAIN_RE.test(domain)) usage("--domain must be a slug: letters, digits, '-' or '_'");
+  // A blind prepare (U67): nothing posted after `before`, and no link to a `hide` key, reaches the bundle.
+  const before = flag("before") ?? null;
+  if (before !== null && Number.isNaN(Date.parse(before))) usage("--before must be an ISO-8601 instant, e.g. 2026-10-22T10:17:38Z");
+  const hideRaw = flag("hide");
+  if (has("hide") && !hideRaw) usage("--hide needs a comma-separated list of ticket keys");
+  const hide = (hideRaw ?? "").split(",").map((k) => k.trim()).filter(Boolean);
+  for (const k of hide) try { assertKey(k); } catch (e) { usage(`--hide: ${e.message}`); }
+  const benchmark = before || hide.length ? { before, hide } : null;
   const testEnv = loadLayeredEnv(root, key);
   const profile = resolveProfile(readProfile(root));
   const tcred = trackerCredential(profile);
@@ -96,7 +104,7 @@ async function prepare() {
   const linkFields = resolveFieldsByName(allFields, profile.fieldMap.prototype, /prototype/i);
   if (!acFields.length) gaps.push(gap("ac_fields", "not-found", "no custom field named 'Acceptance' or 'Acceptance criteria' and no tracker.fieldMap.acceptanceCriteria — ACs are read from description and comments"));
   // Comments past the first page are paged in before the inventory and ticket.json see the issue; any unread rest is a gap.
-  const issue = await jira.issue(key, [...BASE_FIELDS, ...acFields.map((f) => f.id), ...linkFields.map((f) => f.id)], { gaps });
+  const issue = blindIssue(await jira.issue(key, [...BASE_FIELDS, ...acFields.map((f) => f.id), ...linkFields.map((f) => f.id)], { gaps }), benchmark ?? {});
   const remote = await jira.remoteLinks(key).catch((e) => { gaps.push(asGap("remotelinks", e)); return []; });
   const devPrUrls = await jira.devPrUrls(issue.id).catch((e) => { gaps.push(asGap("dev-status", e)); return []; });
   const inv = buildInventory({ issue, remoteLinks: remote, trackerBase: tcred.base, acFieldIds: acFields.map((f) => f.id), linkFieldIds: linkFields.map((f) => f.id), devPrUrls });
@@ -153,7 +161,7 @@ async function prepare() {
 
   const fk = freshnessKey({ ticketUpdated: issue.fields.updated, domain, skill: skillFingerprint(),
     prShas: prMeta.map((p) => `${p.ref}@${p.meta?.head?.sha ?? "?"}@${p.meta?.state ?? "?"}@${p.meta?.merged_at ?? ""}`),
-    linkedUpdated: linkedFresh, env: testEnv });
+    linkedUpdated: linkedFresh, env: testEnv, benchmark });
   // One cached bundle per env: its deployment facts are that stand's, and two envs must not evict each other.
   const cachedFile = join(cacheDir(key, root), `bundle-${testEnv}.json`);
   if (!has("fresh") && readCached(cachedFile, fk)) { out({ status: "cached", bundle_path: cachedFile }); return; }
@@ -219,7 +227,7 @@ async function prepare() {
 
     const prepared = { schema: "ticket-context-prepare/1", ticket: key, env: testEnv, tracker: profile.tracker, project_type: profile.projectType, domain, run_dir: runDir, run_dir_in_project: inProject,
       fetched_at: new Date().toISOString(), ticket_updated: issue.fields.updated, freshness_key: fk, fields: tf.fields, ticket_json: ticketJson,
-      ac_fields: acFields, link_fields: linkFields, epic, siblings, inventory: inv.items, prs, rung: ladder.rung, ladder: ladder.ladder, gaps };
+      ...(benchmark ? { benchmark } : {}), ac_fields: acFields, link_fields: linkFields, epic, siblings, inventory: inv.items, prs, rung: ladder.rung, ladder: ladder.ladder, gaps };
     const prepPathOut = join(runDir, "prepare.json");
     writeJson(prepPathOut, prepared);
     out({ status: "prepared", prepare_path: prepPathOut, run_dir: runDir, run_dir_in_project: inProject, inventory: inv.items.length, prs: prs.length,
@@ -305,7 +313,7 @@ function known() {
       operations = [...new Set(c.prs.flatMap((x) => [...list(x?.operations), ...list(x?.endpoints)]))];
     } catch { extra.push(gap("known.observables", "unreadable", "change.out.json is not valid CHANGE output — no operations or endpoints passed to tc:scope")); }
   }
-  const k = knownGround({ root, key: prep.ticket, domain: prep.domain ?? undefined, prs: prep.prs, operations, runDir: prep.run_dir });
+  const k = knownGround({ root, key: prep.ticket, domain: prep.domain ?? undefined, prs: prep.prs, operations, runDir: prep.run_dir, benchmark: prep.benchmark ?? null });
   k.gaps.push(...extra);
   writeJson(join(prep.run_dir, OUT_FILES.known), k);
   out({ status: "known", domain_map: k.known.domain_map.state, bl: k.known.bl.length, cases_at_risk: k.known.cases_at_risk.length, prior_runs: k.known.prior_runs.length, gaps: k.gaps.length });
