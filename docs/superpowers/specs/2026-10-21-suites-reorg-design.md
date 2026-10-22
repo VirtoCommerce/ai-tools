@@ -77,6 +77,7 @@ that measure; anything that does not is deferred (§9).
 | D16 | `test-management-specialist.md` must get under the 19K cap. Its detail moves into its skills' supporting files, and the spec hand-off is added inside that budget | owner |
 | D18 | A spec is written **directly** from source and the generated selectors and run at once; a `playwright-cli` session attached to the paused draft spec (`--debug=cli`, signed in by its own fixtures) is the fallback, and its printed code the draft, not the default — the default has no browser agent per checklist item (vc-test U27, B4, U55) | owner, 2026-10-21 |
 | D17 | A new or changed spec passes a **fidelity review** before it replaces the agent in a regression run. It is a new `/qa-review-tests` dimension, done by a fresh agent that is not the spec's author, once per spec change (not per run). It builds the table "row item (Assertions, Cross_Layer_Checks) → `expect` → OK / WEAKENED / MISSING". Any WEAKENED or MISSING item means the case stays on the agent lane. The approval lapses when the spec or its row changes; how that is recorded and detected is the builder's call (§8, M3) | owner |
+| D19 | **Spec-first for a case born scriptable — an experiment (M3b), not yet the rule.** The spec is written alone, with the case's contract in its header; the CSV row is **generated** from it as an index, with no prose Steps, and is never hand-edited. Every `expect` names the source of its expectation (AC, `BL-*`, doc), so the expectation still comes from outside the build. Agent-only cases and the existing corpus keep the full hand-written row. Until M3b passes, D1, D6, D7 and D11 hold as written (§8a) | owner, 2026-10-22 |
 
 ## 5. Layout
 
@@ -156,6 +157,37 @@ orchestrator calls.
 6. **Round 2:** spec `PASS` ⇒ `FIXED`; `expect` `FAIL` ⇒ `NOT FIXED`; `BLOCKED` (spec defect) ⇒ the agent
    replays that row only.
 
+## 8a. Spec-first, the CSV as an index (D19, experiment)
+
+**Why.** Today a scriptable case is written twice: a row with its steps in prose, then a spec with the same
+steps in code. That costs the author's tokens twice and leaves two copies that can drift.
+
+**What the row does that must not be lost.**
+1. **An expectation independent of the build.** The row states what *should* happen before anyone looks at the
+   page. An author who writes only the spec takes both the expectation and the check from the same screen and
+   can encode the build as it is — the review of M1 found exactly that in the pilots (an `[API]` check on
+   "whichever mutation carried the effect"), and it was the row that showed it. D17 compares the spec with the row.
+2. **The metadata the rest of the system reads:** priority (`regression:select`, `suites:filter`, `tc:rank`),
+   `Catches:`, `Behavior:`, `BL-*`/`ECL-*` references, coverage and triage.
+3. **A description for what no script runs** — visual and exploratory cases stay with the agent.
+
+**The shape under test.**
+- The spec's header carries the case's contract: ID, title, priority, `Catches:`, `Behavior:`, and the
+  expected outcomes.
+- **Every `expect` names its source** in a comment: an AC of the ticket, a `BL-*` id, or a doc page. A gate fails
+  an `expect` with no source; this replaces the hand-written row as the guard against encoding the build.
+- `suites:sync` generates the CSV row from the header (no prose Steps; `Automation_Status` from the spec's
+  state). The generated row is never edited by hand; SP-001/SP-002 still check the link.
+- D17 compares the spec with the cited sources instead of with a hand-written row.
+
+**Out of the experiment:** the existing corpus, agent-only cases (full row as today), and runner-grammar API rows (D12).
+
+**M3b exit — decided by numbers, then D1/D6/D7/D11 are revised or D19 is dropped:** the next five new
+scriptable cases are written spec-first, and
+- tokens per case are measured against the row-then-spec path;
+- the D17 review, given a spec with one deliberately weakened `expect`, still grades it WEAKENED without a row;
+- `regression:select`, `suites:filter` and `tc:rank` select the generated rows as they select hand-written ones.
+
 ## 9. Gates and scripts in M1
 
 | Item | Change |
@@ -186,4 +218,5 @@ orchestrator calls.
 | **M1 Foundation** (§9) | `npx playwright test --project runner` gives the same verdicts as `suites:machine` on `050a`, `050m` and `087`. Three pilot specs for `028` pass on `vcst`, and one deliberately broken expectation fails as an `expect`. `suites:lint`, `td:validate` and `context:check` are green. `test-management-specialist.md` is under 19K and its baseline entry is deleted |
 | **M2 Lane** | `/qa-regression 028` runs the pilot cases through Playwright and sends only the rest to the agent |
 | **M3 Authoring** | One real ticket. Round 1 leaves specs for its passed scriptable items and its bug reproductions, and each spec passes the D17 fidelity review, including the three M1 pilots. Round 2 replays the reproductions with no browser agent. Tokens are measured against round 1, counting the review |
+| **M3b Spec-first (D19)** | §8a's three checks pass on five new scriptable cases; then D1, D6, D7 and D11 are revised to match, or D19 is dropped |
 | **M4 CI** | The CI runner executes existing specs before the agent run |
