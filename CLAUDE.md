@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Agentic QA system** for the Virto Commerce B2B e-commerce platform. Tests are executed through natural language prompts via MCP servers (Playwright, Chrome DevTools) — LLM-powered browser automation, NOT traditional `.spec.js` files.
+**Agentic QA system** for the Virto Commerce B2B e-commerce platform. Tests are agent-run CSV cases driven via MCP servers (Playwright, Chrome DevTools), with a Playwright `.spec` beside a case once it is deterministic.
 
 This repo hosts the **`ai-tools` Claude Code marketplace** (`.claude-plugin/marketplace.json`) — its entries are what it distributes, so read them rather than a count here, which was already wrong once. One is **`vc-fix`** (`plugins/vc-fix/`) — the bug-lifecycle slice: `/qa-bug`, `/qa-fix` (+ its `fullstack-backend`/`fullstack-frontend`/`backend-reviewer`/`frontend-reviewer` dev team), `/qa-verify-fix`, `/qa-monitoring` (+ `monitor-triage-agent`), and `/vc-self-check` (the self-diagnostics subsystem — see below) + `/vc-feedback` (`ls plugins/vc-fix/{agents,skills,commands}` for the live counts). Teammates/customers add the marketplace with `/plugin marketplace add VirtoCommerce/ai-tools`, install via `/plugin install vc-fix@ai-tools` (which pulls in `vc-init` and `vc-secrets`). `vc-fix` is **fully self-contained, not repo-coupled** — its own `plugins/vc-fix/knowledge/`, `.claude/rules/`, `config.js`, `scripts/lib/`, `package.json` etc. are duplicated from the repo root, not referenced in place — deliberately; why, and how plugin paths resolve (`outputRoot()` vs `pluginRoot()`): `plugins/CLAUDE.md`.
 

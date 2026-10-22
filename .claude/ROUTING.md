@@ -98,6 +98,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 - `/qa-checklist` — Oracle-grounded test-writing checklists (storefront + backend/admin + GraphQL domains)
 - `/qa-test-design` — Derivation techniques. **`FLOW` runs FIRST** on any state-changing feature (model the value chain; the parameter-space techniques EP/BVA/DT/ST/PW/CT/EG only refine a link FLOW has already named)
 - `/qa-test-cases-generator` — Agent-native enriched-CSV cases from tickets, features, checklists or legacy suites
+- `/qa-test-automation` — Writing or repairing the Playwright `.spec` beside a CSV case (loaded only while writing a spec)
 - `/qa-risk` — Risk-based prioritization (5×5 matrix)
 - `/qa-sbtm` — SBTM charters, heuristics, tours, debrief, sprint charter selection
 - `/qa-domain-map` (command) — Build or refresh `domain/<slug>.md`: the persistent, feature-scoped answer to "what is this and where are its surfaces"; freshness `npm run domain:check`
