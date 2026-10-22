@@ -8,6 +8,94 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## `vc-init` `0.3.3`: the `$VC_RUN` bridge no longer takes `~/.claude` for a project — 2026-10-21
+
+**Fixed.** `bridge/run.mjs` `findDeclarations` walked up from the cwd and stopped at the first
+`.claude/vc-secrets*.json`, which for any undeclared folder under `$HOME` was the user-scope
+`~/.claude/vc-secrets.json`, so the home directory became the project root: the inner side ran against the user's
+own declaration instead of refusing. It now skips `~/.claude` exactly as vc-secrets' `configPaths` does. This was
+the `run.test.mjs` failure on Windows machines with a user-level declaration (exit 69 instead of 64), where
+`os.tmpdir()` sits inside the profile.
+
+## `vc-frontend`: theme forks and storefront plugins — catalog `0.13.0`, `vc-frontend` `0.1.0` — 2026-10-21
+
+**Added: the `vc-frontend` plugin** (`defaultEnabled: false`) with three skills: two for teams that keep a fork of
+the storefront theme (vc-frontend-next, customer themes), one for a backend module that ships a storefront plugin. Its description and README say the skills can make mistakes
+and every change needs human review.
+
+- **`merge-upstream`** brings upstream `VirtoCommerce/vc-frontend` (its `dev` or a release tag) into the fork, or a
+  redesign branch's own base into it. The fork keeps its markup, styles and tokens; upstream's behavior is carried
+  into them. Every conflict is briefed before it is resolved; every upstream line is traced into the result; the
+  ported code is covered by mutation-checked tests; the built app is smoke-tested with `vite preview`. The PR gets a
+  QA checklist — an existing PR for the branch is updated rather than duplicated — and lands as a merge commit: the
+  skill checks the repository settings, puts the warning at the top of the PR and confirms two parents after the
+  merge. Each merge leaves a log in the fork's `upstream-merges/`, which the next merge reads before asking anything.
+  Every `gh` call names its repository, because a bare `gh` in a clone with an `upstream` remote resolves to
+  upstream. `git rerere` is on as a safety net for a merge that has to be redone; a leftover empty merge branch is
+  recreated, one with work on it is left for the user to decide.
+- **`port-upstream-to-fork`**, which `merge-upstream` calls after the merge. A merge delivers an upstream change only
+  to the file upstream changed; when the fork renders its own component there, the change merges cleanly and reaches
+  nobody. `fork-drift.mjs` builds the fork and upstream commits with the repository's own Vite config and compares
+  Rollup's module graphs (name-level imports through barrels, tree-shaking, Sass partials) to list upstream code the
+  fork no longer renders, render sites it dropped, and changes to files a committed `fork-map.json` says the fork
+  replaced. The skill briefs each upstream commit as port / already / n/a / lost feature, ports the approved ones
+  with a mutation-checked test, and keeps the map current.
+- **`mf-new-plugin`** makes a backend module ship a storefront plugin (scenario S1a of vc-frontend's Module
+  Federation docs). vc-frontend's `create:plugin --module` writes only new files; the skill edits the module's own
+  `.csproj`, `module.manifest` and `.gitignore` after the user approves the diffs, copying versions only from what
+  `check:plugin-module` prints. Its report says whether the sources are wired or the package is verified too
+  (`--artifact`). It never commits, and reports CI without editing it, because module CI is updated centrally.
+
+---
+
+## Each run gets its own env and its own output folder — `vc-fix` `0.12.0` — 2026-10-21
+
+Two runs can now go in parallel in one checkout, whether they test two tickets or one ticket on a local
+stand and then a cloud one. Neither edits a shared file or writes the other's output. `vc-init`, `vc-perf`
+and `vc-secrets` are unchanged.
+
+**Added: the env is a command argument, bound to the session (#471).** `/qa-test VCST-6314 vcptcore_dev`,
+and the same optional env on `/qa-test-fast`, `/qa-exploratory`, `/qa-deploy-pr` and
+`/vc-fix:qa-verify-fix ticket <KEY> [<env>]`. Step 0 binds it into `.vc-fix/session-env/<session id>`
+(`npm run env:use`; in the plugin, `scripts/env/use-env.mjs`). Every script the session and its subagents
+run resolves `TEST_ENV`, then that binding, then `.env.test-env`, then `vcst`. `env:check` and the
+`[config]` line name where the env came from.
+
+**Added: per-env passwords and one `--secrets` file for every env (#471).** `.env.playwright.<env>` holds
+one env's passwords, read as `KEY_<ENV>`. `npm run secrets:sync:all` writes `.env.playwright.all`, which holds
+every env's names as `NAME_<ENV>`. `enforce-secret-token` and `/preflight` read the combined file.
+
+**Added: one output folder per ticket and env (#472).** `QA_OUTPUT_DIR` in `.env.local` is a path template
+with optional `<ticket>`, `<env>` and `<sprint>`. A missing `<ticket>` or `<env>` is appended. Unset, the
+folder is `reports/tickets/<sprint>/<ticket>/<env>/`. `npm run run:use -- <KEY> [<env>]` (in the plugin,
+`scripts/env/run-folder.mjs use`) binds the env and the folder at Step 0. Everything a run writes lands
+there, and the scripts that write run output follow the binding: summary, verdict, checklist, strategy,
+test model, screenshots, evidence packages, bug drafts, the maps and GraphQL schema it refreshes, and
+`/qa-verify-fix`'s files.
+
+**Changed (`vc-fix`):**
+- `/qa-verify-fix` binds the env and the run folder at Step 0 and writes no `{SPRINT}` paths.
+- `/vc-fix:qa-report` finds a run in its run folder: `/qa-test` and `/qa-verify-fix` hand it
+  `{RUN_DIR}/summary.json` / `{RUN_DIR}/verification-summary.json`, and a bare ticket key resolves to the
+  session's run folder, else the ticket's newest one.
+- `/qa-bug` writes into a run folder's `bugs/` when its caller names one.
+- The tracker-comment hooks key their ledger `<TICKET>@<env>`.
+- The plugin's resolver reads `.env.playwright.<env>` and the session binding. Under the `$VC_RUN`
+  bridge it reads both, like every env file, from `VC_FIX_HOME`, never from the caller's cwd.
+- A ticket key may be a bare Azure Boards id.
+- In self-diagnostics, both copies of the `/qa-bug` expected-output marker also accept a run folder's bug
+  report.
+
+**Upgrade note.** Nothing has to change to keep today's behaviour. Without an env argument the run uses
+`.env.test-env` as before. Without `QA_OUTPUT_DIR` the run folder is the old ticket folder plus an `<env>/`
+level, and readers look in both layouts. A project with no `reports/tickets/SprintXX-XX` folder, a new vc-fix client
+for one, gets `reports/tickets/<ticket>/<env>/`. A `QA_OUTPUT_DIR` outside the project needs
+`--allow-unrestricted-file-access` on the Playwright lanes, or each capture saved with a bare filename and
+moved in (the plugin's `knowledge/execution/run-env.md` §The run folder; in this repo,
+`.claude/knowledge/execution/run-output.md` §Screenshots).
+
+---
+
 ## `@playwright/mcp` 0.0.83 — `vc-fix` `0.11.3`, `vc-init` `0.3.2` — 2026-10-21
 
 **Changed: the `@playwright/mcp` pin moves 0.0.77 → 0.0.83 everywhere it is written** — root `package.json`,

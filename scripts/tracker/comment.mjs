@@ -32,14 +32,17 @@
 //                   comment. Re-attaching a same-name file is reused only when the size matches; a changed
 //                   file uploads as a new attachment and the link points at the new one.
 //
-// Ledger: .tracker-comments.json (gitignored) maps ticket -> {comment_id, run_id, …}.
-// It is what makes the rule mechanical instead of a judgment call, and it is what
-// the PreToolUse hook reads. It is also mirrored into
-// reports/tickets/*/<TICKET>/summary.json as `tracker.comment_id` when that file exists.
+// Ledger: .tracker-comments.json (gitignored) maps `<TICKET>@<env>` -> {comment_id, run_id, …}: one ticket
+// tested on two envs is two runs, each with its own comment (an entry written before the env was part of the
+// key is `<TICKET>` alone; it is read as this env's and replaced by the next write). It is what makes the rule
+// mechanical instead of a judgment call, and it is what the PreToolUse hook reads. It is also mirrored into
+// the run folder's summary.json (scripts/lib/run-dir.mjs) as `tracker.comment_id` when that file exists.
 
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from "node:fs";
 import { resolve, join } from "node:path";
+import { resolveTestEnv } from "../lib/resolve-test-env.js";
+import { priorRunDirs, runLayout, sessionRun } from "../lib/run-dir.mjs";
 import { wikiMarkupRefusal } from "../lib/jira-body-format.mjs";
 import { markdownToAdf } from "./markdown-to-adf.mjs";
 import { decide, roundHours, sessionRunId, effectiveEntry, ledgerAfterAmend, isVerdictBody, commentKind } from "./round-guard.mjs";
@@ -89,16 +92,26 @@ const readLedger = () => {
 };
 const writeLedger = (l) => writeFileSync(LEDGER, JSON.stringify(l, null, 2) + "\n");
 
+/** This run's env — the session's binding included (resolve-test-env.js) — and the ledger key it makes. */
+const ENV = resolveTestEnv("vcst");
+const entryKey = (ticket) => `${ticket}@${ENV}`;
+const entryOf = (ledger, ticket) => ledger[entryKey(ticket)] ?? ledger[ticket];
+const setEntry = (ledger, ticket, entry) => { ledger[entryKey(ticket)] = entry; delete ledger[ticket]; };
+
 /** A "run" is a Claude Code session when we have one, else an explicit --run-id. */
 const runId = (a) => a.runId ?? sessionRunId();
 
-/** Mirror the id into the ticket's summary.json when one exists (best effort). */
+/** Mirror the id into this run's summary.json when one exists (best effort): the session's bound run folder
+ *  for the ticket, else the newest summary in one of the ticket's run folders for this env or from before the
+ *  env level. Another env's summary describes another run. */
 function mirrorToSummary(ticket, commentId) {
-  const base = resolve(ROOT, "reports/tickets");
-  if (!existsSync(base)) return null;
-  for (const sprint of readdirSync(base)) {
-    const f = join(base, sprint, ticket, "summary.json");
-    if (!existsSync(f)) continue;
+  const bound = sessionRun();
+  const dirs = bound && bound.ticket === ticket && bound.env === ENV
+    ? [bound.dir]
+    : priorRunDirs({ ticket }).filter((r) => r.env === ENV || r.env === null).map((r) => r.dir);
+  const files = dirs.map((d) => runLayout(d).summary).filter((f) => existsSync(f))
+    .sort((x, y) => statSync(y).mtimeMs - statSync(x).mtimeMs);
+  for (const f of files) {
     try {
       const j = JSON.parse(readFileSync(f, "utf8"));
       j.tracker = { ...(j.tracker ?? {}), comment_id: String(commentId) };
@@ -209,7 +222,7 @@ if (a.mode === "list") {
   if (!rows.length) console.log("\n  (ledger empty — no comment posted from this checkout yet)\n");
   else {
     console.log("");
-    for (const [t, e] of rows) console.log(`  ${t.padEnd(14)} comment ${String(e.comment_id).padEnd(10)} run=${e.run_id}  ${e.posted_at}`);
+    for (const [t, e] of rows) console.log(`  ${t.padEnd(30)} comment ${String(e.comment_id).padEnd(10)} run=${e.run_id}  ${e.posted_at}`);
     console.log("");
   }
   process.exit(0);
@@ -236,7 +249,7 @@ if (a.mode === "get") {
 if (a.mode === "delete") {
   if (a.dryRun) { console.log(`\n  [dry-run] DELETE comment ${a.id} on ${a.ticket}\n`); process.exit(0); }
   await jira("DELETE", `/rest/api/3/issue/${a.ticket}/comment/${a.id}`);
-  if (ledger[a.ticket]?.comment_id === String(a.id)) { delete ledger[a.ticket]; writeLedger(ledger); }
+  if (entryOf(ledger, a.ticket)?.comment_id === String(a.id)) { delete ledger[entryKey(a.ticket)]; delete ledger[a.ticket]; writeLedger(ledger); }
   console.log(`\n  ✓ deleted comment ${a.id} on ${a.ticket}\n`);
   process.exit(0);
 }
@@ -269,7 +282,7 @@ const thisRun = runId(a);
 // The ledger is per checkout: an amend of a comment it does not know (another worktree or clone
 // posted it), or one whose entry has no posted_at, takes its age from Jira itself. Skipped on
 // --dry-run, which must stay offline.
-const recorded = ledger[a.ticket];
+const recorded = entryOf(ledger, a.ticket);
 const tracked = recorded && String(recorded.comment_id) === String(a.id);
 // --same-round can fold a new build into this comment, so whether it holds a PUBLISHED VERDICT must
 // be known: from the ledger's `kind` when this checkout posted it, else from Jira's own body.
@@ -391,7 +404,7 @@ if (a.mode === "amend") {
   if (a.dryRun) { console.log(`\n  [dry-run] PUT (api v${API}) comment ${a.id} on ${a.ticket} (${body.length} chars)\n`); process.exit(0); }
   await jira("PUT", `/rest/api/${API}/issue/${a.ticket}/comment/${a.id}`, { body: wireBody });
   // Amending an OLDER comment must not erase the current round's entry (round-guard.mjs ledgerAfterAmend).
-  ledger[a.ticket] = ledgerAfterAmend(recorded, existing, { id: a.id, run: thisRun, artifact: a.artifact, sameRound: a.sameRound, kind: commentKind(body) });
+  setEntry(ledger, a.ticket, ledgerAfterAmend(recorded, existing, { id: a.id, run: thisRun, artifact: a.artifact, sameRound: a.sameRound, kind: commentKind(body) }));
   writeLedger(ledger);
   console.log(`\n  ✓ amended comment ${a.id} on ${a.ticket} (api v${API}) — an edit notifies NOBODY; a new build is a new comment (--artifact)`);
   await reportRender(a.id);
@@ -402,11 +415,11 @@ if (a.mode === "amend") {
 // post
 if (a.dryRun) { console.log(`\n  [dry-run] POST (api v${API}) comment on ${a.ticket} (${body.length} chars)${a.forceNew ? ` — force-new: ${a.forceNew}` : ""}\n`); process.exit(0); }
 const created = await jira("POST", `/rest/api/${API}/issue/${a.ticket}/comment`, { body: wireBody });
-ledger[a.ticket] = {
+setEntry(ledger, a.ticket, {
   comment_id: String(created.id), run_id: thisRun, posted_at: new Date().toISOString(), kind: commentKind(body),
   ...(a.artifact ? { artifact: a.artifact.trim() } : {}),
   ...(a.forceNew ? { force_new_reason: a.forceNew } : {}),
-};
+});
 writeLedger(ledger);
 const mirrored = mirrorToSummary(a.ticket, created.id);
 console.log(`\n  ✓ posted comment ${created.id} on ${a.ticket} (api v${API})`);

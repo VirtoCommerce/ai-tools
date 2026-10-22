@@ -132,6 +132,23 @@ Authoring guides:
 
 ---
 
+## Executable specs beside a suite
+
+A case that is deterministic gets a Playwright `.spec` in a folder named after its CSV stem, one file per case
+(`028-cart-core.csv` beside `028-cart-core/CART-001.spec.ts`). The row is the truth for what is checked; the spec
+never changes it. Layout, rules and authoring: [`regression-suites.md`](../../.claude/knowledge/execution/regression-suites.md)
+§Executable specs beside a suite and the skill `/qa-test-automation`.
+
+```
+npx playwright test regression/suites/Frontend/cart/028-cart-core   # one suite folder
+npx playwright test -g "CART-001:"                                  # one case by ID
+npx playwright test --ui                                            # interactive UI mode
+npm run specs:runner -- -g " 050a "                                 # a runner-native suite (wrapper), spaces included
+```
+
+`-g` matches against "project file describe title", so a `^` anchor never matches. `npm run specs:run` and
+`npm run specs:runner` pin the project (`--project=script` / `--project=runner`).
+
 ## Related Documentation
 
 - [test-suites.json](../../config/test-suites.json) — Regression orchestration manifest (single source of truth)
