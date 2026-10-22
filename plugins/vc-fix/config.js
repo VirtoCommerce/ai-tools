@@ -1,12 +1,14 @@
-import { config } from 'dotenv';
 import { resolveTestEnv, testEnvChoice } from './scripts/lib/resolve-test-env.js';
+import { applyLayered } from './scripts/lib/env-layers.mjs';
 import { loadProjectProfile } from './scripts/lib/project-profile.mjs';
 
 // Layered env loader. Precedence (later overrides earlier):
 //   1. .env.defaults       — cross-env constants (sandbox cards, builder.io URL)
 //   2. .env.${TEST_ENV}    — per-env URLs/identifiers (vcst | vcptcore | virtostart)
 //   3. .env.local          — secrets (passwords, tokens) — gitignored
-//   4. process.env         — already wins (CI passes via -e flags)
+//   4. the env's files in the QA_ENV_PATH folders — they beat 1-3 key by key
+//   5. PASSWORDS=master    — every test account's password is MASTER_PASSWORD (.env.playwright.master)
+// The order is scripts/lib/env-layers.mjs `layered` (byte-identical with the ai-tools repo's).
 // The legacy monolithic .env file was removed — all values live in the layered
 // files above. Per-env scaffolds are committed; secrets stay in .env.local.
 //
@@ -28,19 +30,10 @@ if (!/^[a-z0-9_]+$/.test(TEST_ENV)) {
     process.exit(1);
 }
 
-config({ path: '.env.defaults' });
-config({ path: `.env.${TEST_ENV}`, override: true });
-config({ path: '.env.local', override: true });
-
-// Per-env override promotion: any key ending in `_${TEST_ENV.toUpperCase()}`
-// is promoted to its base name. Lets `.env.local` carry per-env password
-// variants (e.g. USER_PASSWORD_VIRTOSTART) without leaking into committed files.
-const ENV_SUFFIX = `_${TEST_ENV.toUpperCase()}`;
-for (const [key, value] of Object.entries(process.env)) {
-    if (key.endsWith(ENV_SUFFIX) && value) {
-        process.env[key.slice(0, -ENV_SUFFIX.length)] = value;
-    }
-}
+// The layers and the per-env override promotion — any key ending in `_${TEST_ENV.toUpperCase()}` is promoted to
+// its base name, so `.env.local` can carry per-env password variants (e.g. USER_PASSWORD_VIRTOSTART) — then the
+// QA_ENV_PATH folders and the master password: scripts/lib/env-layers.mjs.
+applyLayered(TEST_ENV, { root: process.cwd() });
 
 // ENV_RISK: safety-by-config (not by env name). Production-risk envs block
 // admin-write suites by default; opt-in via --allow-admin-writes-on-prod.

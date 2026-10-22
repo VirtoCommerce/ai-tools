@@ -5,7 +5,7 @@ import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from "no
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { assertKey, cacheDir, isInside, newRunDir, outputRoot, removeRunDir, sweepStaleRuns } from "./paths.mjs";
-import { loadLayeredEnv } from "./env.mjs";
+import { LAYERS_GAP, loadLayeredEnv } from "./env.mjs";
 import { codeHostCredential, readProfile, resolveProfile, trackerCredential } from "./profile.mjs";
 import { GAP_REASONS, SCHEMA, asGap, gap } from "./gap.mjs";
 import { validateDef } from "./schema.mjs";
@@ -83,12 +83,13 @@ async function prepare() {
   try { sweepStaleRuns(key, { root }); } catch { /* a failed sweep never blocks the run; the next prepare retries */ }
   const domain = flag("domain") ?? null; // part of the freshness key: known ground differs per domain
   if (domain !== null && !DOMAIN_RE.test(domain)) usage("--domain must be a slug: letters, digits, '-' or '_'");
-  const testEnv = loadLayeredEnv(root);
+  const testEnv = loadLayeredEnv(root, key);
   const profile = resolveProfile(readProfile(root));
   const tcred = trackerCredential(profile);
   if (!tcred.ok) { out({ status: "no-tracker", gap: gap("ticket", tcred.reason, tcred.detail) }); process.exit(3); }
   const jira = jiraClient(tcred);
   const gaps = [];
+  if (LAYERS_GAP) gaps.push(gap("env", "not-available-in-install", LAYERS_GAP));
 
   const allFields = await jira.fields();
   const acFields = resolveFieldsByName(allFields, profile.fieldMap.acceptanceCriteria, AC_FIELD_NAME_RE);
@@ -329,7 +330,7 @@ function composeCmd() {
 
 function gate(prep) {
   const bundle = readJson(join(prep.run_dir, "bundle.json"));
-  loadLayeredEnv(root); // so an env-layer FIGMA_TOKEN is in the secret set here too, as it was in prepare
+  loadLayeredEnv(root, prep.ticket); // so an env-layer FIGMA_TOKEN is in the secret set here too, as it was in prepare
   return { bundle, errors: checkBundle(bundle, prep, { secrets: loadSecretValues(root) }) };
 }
 

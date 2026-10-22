@@ -34,6 +34,7 @@ import {
   discoverCatalogProducts, makeProductPng,
 } from '../../lib/seed-common.mjs';
 import { resolvePassword } from '../../lib/user-provision.mjs';
+import { DEMO_REPS, repEmailEnvKeys } from '../sales-rep/sales-rep-demo-specs.mjs';
 import {
   DEMO_ORGS, DEMO_RET_ORDERS, DEMO_RET_LEDGER_KEY, SR_DEMO_LEDGER_KEY, RETURNS_PROFILE, OUTCOME,
   DEMO_WINDOW_DAYS_ASSUMED, DEMO_RET_REQUIRED_ORDER_STATUS,
@@ -75,7 +76,9 @@ function salesRepDemoBase() {
     if (e.type === 'account') buyers[e.key] = { userId: e.id, email: e.email, orgId: e.orgId };
   }
   const reps = {};
-  for (const e of l?.entities || []) if (e.type === 'rep-attachment') reps[e.key] = { userId: e.userId, email: e.email };
+  // The sales-rep ledger no longer stores a rep's email (a real person); the env holds it.
+  const repEmailOf = (key) => { const spec = DEMO_REPS.find((r) => r.key === key); return spec ? (repEmailEnvKeys(spec, TEST_ENV).map((k) => process.env[k]).find(Boolean) || '').trim() : ''; };
+  for (const e of l?.entities || []) if (e.type === 'rep-attachment') reps[e.key] = { userId: e.userId, email: e.email || repEmailOf(e.key) };
   return { present: !!l, orgs, buyers, reps, owners: { ...buyers } };
 }
 
@@ -120,7 +123,7 @@ async function buyerToken(email, password, organizationId) {
 /**
  * A token acting as a rep login inside one organization: the rep's own password when the env has it
  * (SR_DEMO_REP_<NAME>_PASSWORD[_ENV]), else an operator holding platform:security:loginOnBehalf logs in
- * on her behalf (the same operator chain as the sales-rep demo). Never written to disk.
+ * on the rep's behalf (the same operator chain as the sales-rep demo). Never written to disk.
  */
 async function repToken(owner, repKey, organizationId) {
   const env = TEST_ENV.toUpperCase();
@@ -424,7 +427,8 @@ function accessGrantees(base) {
     // A rep's contact can have TWO logins and only one is the rep record's (sales-rep-profiles.md §5):
     // both get it, so the view works whichever one the presenter signs in with.
     if (att?.userId) out.push({ who: r.key, userId: att.userId, orgIds });
-    if (att?.email) out.push({ who: r.key, email: att.email, orgIds });
+    const email = base.reps[r.key]?.email || att?.email; // env-resolved: the sales-rep ledger no longer stores it
+    if (email) out.push({ who: r.key, email, orgIds });
   }
   return out;
 }
@@ -607,7 +611,7 @@ async function main() {
     tokens[k] = DRY_RUN ? 'dry' : await ownerToken(base, o, password);
     if (!tokens[k]) {
       throw new Error(isRepOwned(o)
-        ? `cannot act as ${base.owners[ownerKeyOf(o)]?.email} in ${o.org}: no SR_DEMO_REP_*_PASSWORD and no operator (SR_DEMO_OPERATOR_*, IMPERSONATION_ADMIN_*, USER2_*) that can log in on her behalf`
+        ? `cannot act as ${base.owners[ownerKeyOf(o)]?.email} in ${o.org}: no SR_DEMO_REP_*_PASSWORD and no operator (SR_DEMO_OPERATOR_*, IMPERSONATION_ADMIN_*, USER2_*) that can log in on the rep's behalf`
         : `${base.owners[ownerKeyOf(o)].email} cannot sign in to ${STORE_ID} with SR_DEMO_BUYER_PASSWORD — check .env.local`);
     }
   }

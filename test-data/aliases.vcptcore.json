@@ -824,80 +824,79 @@
       },
       {
         "type": "task",
-        "key": "DTSK-V-01",
+        "key": "DTSK-P-01",
         "id": "d5c8d1cb-cbca-49a0-b003-d2231d9a2387",
         "ownerUserId": "13f6769b-f820-4a60-97ea-113116691855",
         "name": "Follow up on Northwind reorder"
       },
       {
         "type": "task",
-        "key": "DTSK-V-02",
+        "key": "DTSK-P-02",
         "id": "65421e6e-e363-405b-b099-c23deec24f3e",
         "ownerUserId": "13f6769b-f820-4a60-97ea-113116691855",
         "name": "Send Q4 price list to Contoso"
       },
       {
         "type": "task",
-        "key": "DTSK-V-03",
+        "key": "DTSK-P-03",
         "id": "c1383529-b961-411d-82b1-334978f6f05f",
         "ownerUserId": "13f6769b-f820-4a60-97ea-113116691855",
         "name": "Prepare volume pricing proposal — Fabrikam"
       },
       {
         "type": "task",
-        "key": "DTSK-V-04",
+        "key": "DTSK-P-04",
         "id": "4c8252de-a143-4e1f-a385-4c604be6ed25",
         "ownerUserId": "13f6769b-f820-4a60-97ea-113116691855",
         "name": "Quarterly business review — Fabrikam Industrial"
       },
       {
         "type": "task",
-        "key": "DTSK-V-05",
+        "key": "DTSK-P-05",
         "id": "0a268075-55b3-4e25-80b0-8d83f126af6c",
         "ownerUserId": "13f6769b-f820-4a60-97ea-113116691855",
         "name": "Chase cancelled order SO-992788 with Contoso"
       },
       {
         "type": "task",
-        "key": "DTSK-V-06",
+        "key": "DTSK-P-06",
         "id": "8bdaace9-0201-4399-a3cb-420d27554815",
         "ownerUserId": "13f6769b-f820-4a60-97ea-113116691855",
         "name": "Update credit terms for Northwind"
       },
       {
         "type": "task",
-        "key": "DTSK-V-07",
+        "key": "DTSK-P-07",
         "id": "e0b0483e-5794-4fc6-98b7-964f2c868a54",
         "ownerUserId": "13f6769b-f820-4a60-97ea-113116691855",
         "name": "Call Fabrikam about the Plant 2 outage"
       },
       {
         "type": "task",
-        "key": "DTSK-V-08",
+        "key": "DTSK-P-08",
         "id": "edc48410-f101-4779-bcb9-cafdd14d5a90",
         "ownerUserId": "13f6769b-f820-4a60-97ea-113116691855",
         "name": "Send revised fastener quote to Northwind"
       },
       {
         "type": "task",
-        "key": "DTSK-V-09",
+        "key": "DTSK-P-09",
         "id": "48848868-f288-4888-ae06-0c20c2ae1dae",
         "ownerUserId": "13f6769b-f820-4a60-97ea-113116691855",
         "name": "Confirm delivery of order SO-619637"
       },
       {
         "type": "task",
-        "key": "DTSK-V-10",
+        "key": "DTSK-P-10",
         "id": "eb58c33a-f14a-4301-939b-176f89a335bc",
         "ownerUserId": "13f6769b-f820-4a60-97ea-113116691855",
         "name": "Send credit application to Contoso"
       },
       {
         "type": "rep-attachment",
-        "key": "DEMO_REP_VOLKOVA",
+        "key": "DEMO_REP_PRIMARY",
         "salesRepId": "22834dc4-95ce-4631-a730-48dd72c81c25",
         "userId": "13f6769b-f820-4a60-97ea-113116691855",
-        "email": "agent-test-vcst5293-182326@example.com",
         "priorOrganizations": [
           {
             "organizationId": "e941220a-289d-46b3-a212-bd66f0b9f4c3",
@@ -986,7 +985,7 @@
         "name": "Q1 Stock Up — Fasteners",
         "scope": "Customer",
         "org": "DORG-NORTHWIND",
-        "author": "Alla Volkova",
+        "author": "Primary demo rep",
         "itemsCount": 0,
         "shareUrl": "https://vcptcore-qa-storefront.govirto.com/shared-list/c1b9de42-f099-4e81-8816-d4d42ba751a7"
       },
@@ -997,7 +996,7 @@
         "name": "Printer Fleet Refresh",
         "scope": "Customer",
         "org": "DORG-CONTOSO",
-        "author": "Alla Volkova",
+        "author": "Primary demo rep",
         "itemsCount": 4,
         "shareUrl": "https://vcptcore-qa-storefront.govirto.com/shared-list/5c255f04-5d2f-4dd6-bac3-afd149a59628"
       },
@@ -1008,7 +1007,7 @@
         "name": "Backup Power Proposal",
         "scope": "Customer",
         "org": "DORG-FABRIKAM",
-        "author": "Alla Volkova",
+        "author": "Primary demo rep",
         "itemsCount": 4,
         "shareUrl": "https://vcptcore-qa-storefront.govirto.com/shared-list/18fe9976-47f3-4feb-a5f0-5c2a51c67939"
       },
@@ -1092,29 +1091,26 @@
       },
       {
         "type": "cart",
-        "key": "DRCART-VOL-NW",
+        "key": "DRCART-PRI-NW",
         "id": "087dad1e-afb2-4893-917e-d3d57677db15",
-        "owner": "agent-test-vcst5293-182326@example.com",
         "org": "DORG-NORTHWIND",
-        "createdByRep": "DEMO_REP_VOLKOVA",
+        "createdByRep": "DEMO_REP_PRIMARY",
         "itemsCount": 2
       },
       {
         "type": "cart",
-        "key": "DRCART-VOL-CN",
+        "key": "DRCART-PRI-CN",
         "id": "d4921636-c577-47ff-95ba-a4f8ee8af059",
-        "owner": "agent-test-vcst5293-182326@example.com",
         "org": "DORG-CONTOSO",
-        "createdByRep": "DEMO_REP_VOLKOVA",
+        "createdByRep": "DEMO_REP_PRIMARY",
         "itemsCount": 2
       },
       {
         "type": "cart",
-        "key": "DRCART-VOL-FB",
+        "key": "DRCART-PRI-FB",
         "id": "ae42a19b-dd99-4a13-97be-7e4e80faef8e",
-        "owner": "agent-test-vcst5293-182326@example.com",
         "org": "DORG-FABRIKAM",
-        "createdByRep": "DEMO_REP_VOLKOVA",
+        "createdByRep": "DEMO_REP_PRIMARY",
         "itemsCount": 2
       }
     ]
