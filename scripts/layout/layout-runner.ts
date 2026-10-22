@@ -94,9 +94,8 @@ import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lo
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import { join, basename } from "path";
 import { parse as parseCsv } from "csv-parse/sync";
-import { config as loadDotenv } from "dotenv";
 import { chromium, type Browser, type BrowserContext, type Page } from "playwright";
-import { resolveTestEnv } from "../lib/resolve-test-env.js";
+import { loadEnv } from "../lib/load-env.mjs";
 
 import {
   LAYOUT_SNIPPETS,
@@ -123,10 +122,11 @@ import {
 import { TestDataResolver } from "../lib/test-data-resolver.js";
 import { roleByKey, resolveRole } from "../lib/user-roles.mjs";
 
-// Layered, TEST_ENV-aware env load — mirrors graphql-runner.ts / seed-common.mjs.
-// A bare loadDotenv() reads only `.env`, which does not exist in this repo, so live
-// runs would see no FRONT_URL and no credentials for [AUTH]. Deliberately does NOT
-// import config.js, whose strict CORE validation would block a layout-only run.
+// Layered, TEST_ENV-aware env load — scripts/lib/load-env.mjs, the one order graphql-runner.ts and seed-common.mjs
+// apply too (the layers, the `FOO_VCST` → `FOO` promotion, the QA_ENV_PATH files, the master password). A bare
+// dotenv config() reads only `.env`, which does not exist in this repo, so live runs would see no FRONT_URL and no
+// credentials for [AUTH]. Deliberately does NOT import config.js, whose strict CORE validation would block a
+// layout-only run.
 // NOTE: --env is honoured by re-reading TEST_ENV below, so it must be applied first.
 {
   const argv = process.argv.slice(2);
@@ -135,16 +135,7 @@ import { roleByKey, resolveRole } from "../lib/user-roles.mjs";
     process.env.TEST_ENV = argv[envIdx + 1];
   }
 }
-const TEST_ENV = resolveTestEnv("vcst");
-loadDotenv({ path: ".env.defaults" });
-loadDotenv({ path: `.env.${TEST_ENV}`, override: true });
-loadDotenv({ path: ".env.local", override: true });
-
-// Per-env override promotion: `FOO_VCST` → `FOO`, so `.env.local` can carry variants.
-const ENV_SUFFIX = `_${TEST_ENV.toUpperCase()}`;
-for (const [key, value] of Object.entries(process.env)) {
-  if (key.endsWith(ENV_SUFFIX) && value) process.env[key.slice(0, -ENV_SUFFIX.length)] = value;
-}
+const { testEnv: TEST_ENV } = loadEnv({ fallback: "vcst" });
 
 // ---------------------------------------------------------------------------
 // CLI

@@ -779,5 +779,19 @@
     "assignedFfcId": "142ba5568ae4454aad553ece41b9c3b5",
     "previousValue": "",
     "owned": true
+  },
+  "SHELL_SEARCH_NOREAD": {
+    "_inline": true,
+    "platform_id": "cf7ddc24-7b25-4c4b-b0f2-60d5a08fc6dc",
+    "user_id": "cf7ddc24-7b25-4c4b-b0f2-60d5a08fc6dc",
+    "role_id": "AGENT-TEST-Shell-Search-NoRead",
+    "userName": "AGENT-TEST-shell-search-noread@test.virtocommerce.com"
+  },
+  "SHELL_SEARCH_READ": {
+    "_inline": true,
+    "platform_id": "6a0ac2a6-20d2-421e-9dc6-087454a7b1f3",
+    "user_id": "6a0ac2a6-20d2-421e-9dc6-087454a7b1f3",
+    "role_id": "AGENT-TEST-Shell-Search-Read",
+    "userName": "AGENT-TEST-shell-search-read@test.virtocommerce.com"
   }
 }

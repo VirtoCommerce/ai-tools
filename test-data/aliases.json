@@ -9613,6 +9613,54 @@
     "excluded_permission": "return:authorize",
     "user_type": "Manager"
   },
+  "SHELL_SEARCH_NOREAD": {
+    "seed": "seed:rbac",
+    "_inline": true,
+    "_comment": "VCST-6260 (Admin shell global search, vc-platform PR #3134) back-office account WITHOUT the read permissions: holds platform:setting:access + platform:security:access + catalog:access, EXCLUDES platform:setting:read and platform:security:read (and order:access, pricing:access, settings/security writes). The settings/users/roles providers gate on *:access but their data calls need *:read — expected GET /api/platform/settings/v2/global/schema 403, POST users/search 403, POST roles/search 403; the menu provider shows Catalog but not Orders/Pricing. Differs from SHELL_SEARCH_READ by exactly the two read permissions. Single source of truth: scripts/seed-data/platform/backoffice-rbac-specs.mjs; seed: npm run seed:rbac -- --only SHELL_SEARCH_NOREAD,SHELL_SEARCH_READ (add --verify for the live proof); drift-guard: npm run td:validate:rbac; teardown: npm run seed:rbac:teardown -- --only SHELL_SEARCH_NOREAD,SHELL_SEARCH_READ. Runtime platform_id/user_id/role_id/userName resolve from aliases.<env>.json. platform:access does not exist on this build; userType Manager is the back-office entry. isAdministrator=false so the gate applies. The PASSWORD is a {{SHELL_SEARCH_PASSWORD}} secret from .env.local (never committed), shared by both accounts.",
+    "email": "AGENT-TEST-shell-search-noread@test.virtocommerce.com",
+    "login": "AGENT-TEST-shell-search-noread@test.virtocommerce.com",
+    "password": "{{SHELL_SEARCH_PASSWORD}}",
+    "password_var": "SHELL_SEARCH_PASSWORD",
+    "role": "AGENT-TEST-Shell-Search-NoRead",
+    "permissions": [
+      "platform:setting:access",
+      "platform:security:access",
+      "catalog:access"
+    ],
+    "excluded_permission": "platform:setting:read",
+    "excluded_permissions": [
+      "platform:setting:read",
+      "platform:security:read",
+      "order:access",
+      "pricing:access"
+    ],
+    "is_administrator": false,
+    "user_type": "Manager"
+  },
+  "SHELL_SEARCH_READ": {
+    "seed": "seed:rbac",
+    "_inline": true,
+    "_comment": "VCST-6260 control account: the SHELL_SEARCH_NOREAD base PLUS platform:setting:read and platform:security:read, still no order:access / pricing:access and no settings/security write. Expected schema 200, users/search 200, roles/search 200 — the settings/users/roles providers return results for a non-admin; Orders/Pricing still absent from the menu provider. Single source of truth: scripts/seed-data/platform/backoffice-rbac-specs.mjs; seed: npm run seed:rbac -- --only SHELL_SEARCH_NOREAD,SHELL_SEARCH_READ (add --verify for the live proof); drift-guard: npm run td:validate:rbac; teardown: npm run seed:rbac:teardown -- --only SHELL_SEARCH_NOREAD,SHELL_SEARCH_READ. Runtime platform_id/user_id/role_id/userName resolve from aliases.<env>.json. platform:access does not exist on this build; userType Manager is the back-office entry. isAdministrator=false so the gate applies. The PASSWORD is a {{SHELL_SEARCH_PASSWORD}} secret from .env.local (never committed), shared by both accounts.",
+    "email": "AGENT-TEST-shell-search-read@test.virtocommerce.com",
+    "login": "AGENT-TEST-shell-search-read@test.virtocommerce.com",
+    "password": "{{SHELL_SEARCH_PASSWORD}}",
+    "password_var": "SHELL_SEARCH_PASSWORD",
+    "role": "AGENT-TEST-Shell-Search-Read",
+    "permissions": [
+      "platform:setting:access",
+      "platform:security:access",
+      "catalog:access",
+      "platform:setting:read",
+      "platform:security:read"
+    ],
+    "excluded_permission": "order:access",
+    "excluded_permissions": [
+      "order:access",
+      "pricing:access"
+    ],
+    "is_administrator": false,
+    "user_type": "Manager"
+  },
   "OTP_LOCKOUT_USER_1": {
     "_inline": true,
     "_notes": "VCST-5748 DESTRUCTIVE lockout fixture — consumer: suite 105 — wrong codes lock the account at the platform threshold. Customer contact + account on {{STORE_ID}}, lockoutEnabled true, emailConfirmed true. Isolation is per ACCOUNT: exactly ONE case may use this alias per run (a second case would read the first one's failed-attempt count). The case leaves it LOCKED for the platform lockout window; re-seed before the next run, never between a lockout observation and its audit. Seeded by scripts/seed-data/auth/seed-otp-signin.mjs (idempotent; re-running RE-ARMS a locked account: unlock + accessFailedCount 0); teardown: node scripts/seed-data/auth/seed-otp-signin.mjs --teardown; guard: node scripts/seed-data/auth/validate-otp-signin-data.mjs; live shape check: --verify-only. Business keys committed here; runtime ids (id = contact, user_id = security account) ONLY in aliases.<env>.json.",
