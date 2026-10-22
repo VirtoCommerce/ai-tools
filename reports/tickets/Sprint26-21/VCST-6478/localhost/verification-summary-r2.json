@@ -31,9 +31,10 @@
     {"summary": "List row remove button is labelled Remove from cart", "severity": "Low", "why": "a11y label; not checked against dev"}
   ],
   "bugs_filed": [],
+  "bugs_verified": ["VCST-6502"],
   "business_rules_verified": ["BL-GA4-001"],
   "tracker_transition": {"role": "tested", "state": "Tested"},
-  "evidence": "reports/tickets/Sprint26-21/VCST-6478/localhost/evidence/ (r2-*)",
+  "evidence": "local run folder evidence/ (r2-*), not published (public repository)",
   "evidence_artifact": null,
   "artifacts": "reports/tickets/Sprint26-21/VCST-6478/localhost/"
 }
