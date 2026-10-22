@@ -141,10 +141,20 @@ the user stops it.
 
 ## Step 6 — ASK: file the real bugs?
 
-Show the `DRAFT` rows (new-in-release first, one per defect). Ask which to file. Filing follows the tracker rules —
-[`../rules/reports.md`](../../rules/reports.md) §0–§0b and [`tracker-ops.md`](../../knowledge/execution/tracker-ops.md):
-labels, screenshots inline, linked to `release.json` `ticket`. Replace `DRAFT` with the key of each one filed. Never file
-without the user's yes for that bug.
+Show the `DRAFT` rows (new-in-release first, one per defect). Ask which to file. Never file without the user's yes for
+that bug.
+
+1. **Re-verify on the build that is deployed NOW** — a DRAFT is only as good as the build it was seen on, and the
+   stand moves (Stable 16: a "new in release" export failure was the stand lagging the bundle, not the bundle). Live
+   repro through `vc-fix:qa-investigate`, one candidate per dispatch, ≤3 at a time, each on its own lane; it leaves an
+   evidence package (screenshots, requests, the deciding source) under `reports/regression/<RUN_ID>/evidence/<case>/`.
+   Not reproduced ⇒ change the row's verdict, do not file. A bug without screenshots is not filed.
+2. **File through `/vc-fix:qa-bug`**, one call per confirmed bug, handing it that evidence package — it owns the
+   duplicate check, the tracker fields, the origin labels (`found-by-agent` + `found-in-regression`), the inline
+   screenshots and the render check ([`../rules/reports.md`](../../rules/reports.md) §0–§0b,
+   [`tracker-ops.md`](../../knowledge/execution/tracker-ops.md)). Link each to `release.json` `ticket`. Do not hand-roll
+   the tracker call: a second filing path drifts from the first.
+3. Replace `DRAFT` with the key; the other rows of the same defect become `DUPLICATE` with that key.
 
 ## Step 7 — ASK: put it in GitHub?
 
