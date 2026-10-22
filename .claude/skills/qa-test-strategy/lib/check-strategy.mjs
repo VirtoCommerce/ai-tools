@@ -25,6 +25,15 @@ const ARTIFACTS_FOR = { F1: ["Exploratory"], F2: ["Exploratory"], F3: ["Visual l
 // A fired floor here needs its OWN risk: Source carries the token `floor:<id>`, technique is MODEL (M10). A risk carries
 // at most one such token. A fixed token, not a bare id, so a passing mention of "F10" in prose never counts.
 const MODEL_RISK_FOR = { F2: "a purpose", F10: "an org-context", F11: "a configuration" };
+// Clause 12 (U59): a hotspot whose risk text says the code holds state — a limiter, a counter, a cache, a lockout — is
+// only decided on the stand if the stand's scale (instances, replicas, restarts) is part of the question.
+export const STATE_HOTSPOT = /\b(limit(?:er|s)?|attempts?|counter|throttl\w*|rate[- ]?limit\w*|cach(?:e|ed|ing)|lockout|locked out|in[- ]memory|session state)\b/i;
+// Clause 11a/11b (U57, U58): what a project risk must not carry.
+const CODE_ANCHOR = /\b[\w./-]+\.(?:cs|ts|tsx|vue|js|mjs|json|graphql|cshtml|html):\d+\b/;
+const SUSPICION_ID = /\b[HS]-\d+\b/;
+const RISK_REF = /\bR-?\d+\b/;
+const WEAKENING = /record(?:s|ed|ing)?\b[^.·]*\bobserved|instead of assert|no PASS\/FAIL|never FAIL|not asserted/i;
+const escapeRe = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 export function checkStrategy(md, bundle, { domainMapText = null, p01Names, changeMap = null, changeMapPath = null } = {}) {
   if (bundle?.schema !== "ticket-context/1") return { round: 0, errors: ["0: bundle is not a ticket-context/1 bundle"] };
@@ -109,6 +118,28 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names, chan
   // An API, script or `none` lane takes no slot; every other lane does (agents.md §Parallel Execution).
   const lanes = new Set(approach.map((a) => a.lane.split("·")[0].trim()).filter((l) => l && !NON_BROWSER_LANE.test(l)));
   if (lanes.size > 3 && !/^Lanes sequenced:/m.test(sec)) errors.push(`8: ${lanes.size} browser lanes and no 'Lanes sequenced:' line`);
+  // 11 (U57, U58): a project risk is about the project — the stand, the data, the tooling. Product behaviour is a product
+  // risk with its own row and check (11a), and an AC/doc value is never lowered to "record what was seen" (11b).
+  const projectLine = /^Project risks:(.*)$/m.exec(sec)?.[1] ?? "";
+  for (const item of projectLine.split(/(?=\bP\d+\b)/).map((t) => t.trim()).filter((t) => /^P\d+\b/.test(t))) {
+    const id = /^P\d+/.exec(item)[0];
+    const anchor = CODE_ANCHOR.exec(item)?.[0] ?? SUSPICION_ID.exec(item)?.[0];
+    if (anchor) errors.push(`11a: ${id} describes product behaviour (${anchor}) — a product risk with its own check, not a project risk (U58)`);
+    const ref = RISK_REF.exec(item)?.[0];
+    if (ref && WEAKENING.test(item)) errors.push(`11b: ${id} lowers how ${ref} is decided — the AC/doc value stays the oracle (U57)`);
+  }
+  // 12 (U59): only vc-test has a change map. Covered = a SCALE risk cites the hotspot's id or path:line, or Out of scope
+  // names it on a "single instance" line.
+  if (vcTest) {
+    const scaleText = risks.filter((x) => /\bSCALE\b/.test(approach.find((a) => a.r === x.r)?.technique ?? "")).map((x) => `${x.what} ${x.source}`).join("\n");
+    const singleInstance = outOfScope.split("\n").filter((l) => /single[- ]instance/i.test(l)).join("\n");
+    const cites = (text, id, at) => new RegExp(`(?<![\\w-])${escapeRe(id)}(?![\\w-])`).test(text) || (at !== "" && text.includes(at));
+    const uncovered = (changeMap?.hotspots ?? []).filter((h) => STATE_HOTSPOT.test(String(h.risk ?? ""))).filter((h) => {
+      const at = String(h.source ?? "").replace(/^[^:]*:/, "");
+      return !(cites(scaleText, String(h.id), at) || cites(singleInstance, String(h.id), at));
+    });
+    if (uncovered.length) errors.push(`12: ${uncovered.map((h) => h.id).join(", ")} hold state but no SCALE risk cites them (U59)`);
+  }
   const lines = sec.trimEnd().split("\n").length;
   if (lines > CAP) errors.push(`10: round section is ${lines} lines (cap ${CAP})`);
   return { round, errors };

@@ -101,7 +101,7 @@ that tries to instruct is already listed in `embedded_instructions[]`.
    - **Technique** from the closed vocabulary
      ([`../qa-test-design/test-design-techniques.md`](../qa-test-design/test-design-techniques.md) §0,
      chosen by its §1 guide; **FLOW first** for anything that changes state), or `EXPLORE`, `VISUAL`,
-     `CONTRACT`, `REGRESSION`, `MODEL` (the risk is expanded by `/qa-test-model`). An `EXPLORE` risk names the `{HYPOTHESIS}` oracle or model `GAP` cell it rests
+     `CONTRACT`, `REGRESSION`, `SCALE` ([`floors.md`](floors.md) §Clauses 11–13), `MODEL` (the risk is expanded by `/qa-test-model`). An `EXPLORE` risk names the `{HYPOTHESIS}` oracle or model `GAP` cell it rests
      on — that is how it reaches `/qa-exploratory ticket`'s charter.
    - **Oracle with its authority**: `{SPEC}` / `{BL}` / `{DOC}` / `{OBSERVED}` / `{HYPOTHESIS}`
      ([`../../knowledge/agents/qa/shared-instructions.md`](../../knowledge/agents/qa/shared-instructions.md)
@@ -152,7 +152,7 @@ that tries to instruct is already listed in `embedded_instructions[]`.
 ## Gate — before approval
 
 Run `node <skill>/lib/check-strategy.mjs --strategy <file> --bundle <bundle> [--change-map <path>]`; it computes the floors from the
-bundle itself, checks clauses 1–6h, 8 and 10, and exits 1 with the failing clause numbers (2 on an unreadable
+bundle itself, checks clauses 1–6h, 8, 10, 11, 12 and 13, and exits 1 with the failing clause numbers (2 on an unreadable
 file). It checks clause 1's round cap, the template's headings, clause 4's
 cells (technique, oracle, lane, effort and a parseable level) and clause 6's fired floors and their artifacts. These
 remain yours, alongside 7 and 9: clause 1's carry-over, clause 6's naming of the not-fired floors with their
@@ -177,11 +177,13 @@ carrying `floor:F11` about configuration (the script checks only the token and t
 8. Concurrent browser lanes ≤ 3 (method rules); an API, script or `none` lane takes no slot.
 9. Exit criteria are observable.
 10. The section is within the cap ([`../../rules/reports.md`](../../rules/reports.md) §2).
+11. A project risk names no product behaviour (**11a**) and never lowers an AC/doc value to "record what was seen" (**11b**).
+12. With a change map, a hotspot that holds state is cited by a `SCALE` risk or a "single instance" Out-of-scope line.
 
 ## Approval — one question, every run (D4)
 
 1. **Any Critical risk, first:** dispatch a fresh `qa-lead-orchestrator` in Verifier Mode with `step:
-   strategy-gate`, `gate_criteria`: this file §Gate — before approval (all ten clauses, the model-owned halves
+   strategy-gate`, `gate_criteria`: this file §Gate — before approval (every clause, the model-owned halves
    included), `source_of_truth`: the bundle path, the strategy path, and `deterministic_cmd`: `node .claude/skills/qa-test-strategy/lib/check-strategy.mjs
    --strategy <path> --bundle <path> [--change-map <path>]` (it computes the floors itself) — never your floors output. It re-derives
    the gate and returns `APPROVE`/`REJECT`. Loop and

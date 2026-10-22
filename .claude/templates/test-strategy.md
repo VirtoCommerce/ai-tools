@@ -38,7 +38,7 @@ Regression-averse <✔/—: why> · Process-compliant <✔/—: why>
 | R | Technique / approach | Oracle {authority} | Layer · tool | Lane · agent | Effort |
 |---|---|---|---|---|---|
 | R1 | FLOW, DT | AC-2 {SPEC} | storefront · Playwright | chrome · qa-frontend-expert | high |
-<!-- Technique tokens: test-design-techniques.md §0 + EXPLORE · VISUAL · CONTRACT · REGRESSION · MODEL (expanded by /qa-test-model). -->
+<!-- Technique tokens: test-design-techniques.md §0 + EXPLORE · VISUAL · CONTRACT · REGRESSION · SCALE · MODEL (expanded by /qa-test-model). -->
 
 ### Artifacts
 | Artifact | Decision |

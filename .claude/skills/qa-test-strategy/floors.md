@@ -88,3 +88,19 @@ The stale rows are listed in the strategy's Artifacts row with their reason and 
 
 In the strategy it is computed from the planned `RUN` rows; at close-out, from what ran. The label is for people reading reports. No rule, floor or gate reads it, so it cannot drift from what ran.
 It never appears in a risk row; a risk carries **effort** (`low` / `medium` / `high`, D12).
+
+## Clauses 11–13 — vc-test runs
+
+The script half of SKILL.md §Gate clauses 11–13. 11 reads the `Project risks:` line, one item per `P<n>`; 12 runs only with a change map (a vc-test run). Each error names its item or hotspot, so a fix is aimed.
+
+### 11a — a project risk is not a product risk (U58)
+
+A project risk is about the run's world: the stand, its settings, the data, the tooling. An item that carries a code anchor (`path.ext:line`, for `cs ts tsx vue js mjs json graphql cshtml html`) or a hotspot / suspicion id (`H-n`, `S-n`) describes product behaviour. That is a **product risk** — its own `R-n` row with a technique, an oracle and a check — and an `accepted` project line lets it escape unchecked.
+
+### 11b — the AC/doc value stays the oracle (U57)
+
+An item that names a risk (`R-n`) and says it only *records* what it observed, or *instead of asserting*, `no PASS/FAIL`, `never FAIL`, `not asserted`, lowers how that risk is decided. A value the AC or the docs state stays the oracle: an unknown stand setting is **checked at entry** (a probe or a settings read), never a reason to turn the assertion into a recording. If the value cannot be known, the risk is `{HYPOTHESIS}` and goes to the PO (method rules), not to a quiet downgrade.
+
+### 12 — held state needs a SCALE risk (U59)
+
+A hotspot whose `risk` text matches `STATE_HOTSPOT` (`limit/limiter`, `attempt(s)`, `counter`, `throttle`, `rate limit`, `cache`, `lockout`, `in-memory`, `session state`) holds state — what it holds can differ per instance, per restart or per replica. It is covered when either (a) a risk with technique `SCALE` cites its id or its `path:line` (the hotspot `source` without the leading `repo:`) in What or Source, or (b) an Out of scope line names it and says `single instance` — with the check that established it. `SCALE` is a technique token like `EXPLORE`: the case exercises the state across more than one instance, restart or session, or states why that cannot happen. The match is on the hotspot's text, so a hotspot that only mentions e.g. `lockout` in passing is also asked for — answer it with the (b) line, not by dropping the id.
