@@ -40,10 +40,16 @@ Regression-averse <✔/—: why> · Process-compliant <✔/—: why>
 | R1 | FLOW, DT | AC-2 {SPEC} | storefront · Playwright | chrome · qa-frontend-expert | high |
 <!-- Technique tokens: test-design-techniques.md §0 + EXPLORE · VISUAL · CONTRACT · REGRESSION · SCALE · MODEL (expanded by /qa-test-model). -->
 
+### Scenarios
+<!-- vc-test runs only (clause 13, floors.md §13); the list is generated before the risks, so add the R-n to Why likely. -->
+| S | Class | What it does | Bug it hunts | Why likely | Score | Proof | Writes |
+|---|---|---|---|---|---|---|---|
+| S-1 | <1–6> | <the action on the stand> | <the bug it hunts> | <why a bug is likely here> · R1 | <n> | <what proves it> | <none / what it writes> |
+
 ### Artifacts
 | Artifact | Decision |
 |---|---|
-| Test model | RUN (new \| amend <path>) — iff a risk has technique MODEL \| SKIP — no MODEL risk |
+| Test model | RUN (new \| amend <path>) — iff a risk has technique MODEL \| SKIP — no MODEL risk \| SKIP — scenarios cover the MODEL risks (vc-test) |
 | Mind map | RUN \| SKIP — <reason> |
 | Checklist | RUN (always) |
 | Exploratory | RUN <box> min, FIRST \| ALONGSIDE — charter: <R-ids> \| SKIP — <reason> |

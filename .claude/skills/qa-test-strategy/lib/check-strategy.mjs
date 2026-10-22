@@ -94,7 +94,8 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names, chan
   for (const x of high) { const a = approach.find((y) => y.r === x.r); if (a && /\{HYPOTHESIS\}/.test(a.oracle) && !isModel(x.r)) errors.push(`6c: ${x.r} High/Critical on {HYPOTHESIS} needs MODEL (M1)`); }
   if (fired.includes("F6") && !/Deployed:\s*NO\b/.test(sec)) errors.push("6d: F6 fired but the header does not say 'Deployed: NO'");
   const modelRisks = risks.filter((x) => isModel(x.r)).map((x) => x.r);
-  if (modelRisks.length && !running("Test model")) errors.push(`6e: ${modelRisks.join(", ")} technique MODEL ⇒ Test model is RUN (M9)`);
+  // Under vc-test the scenarios, not a model file, carry a MODEL risk (B18): 6e's "RUN" half becomes clause 13.
+  if (!vcTest && modelRisks.length && !running("Test model")) errors.push(`6e: ${modelRisks.join(", ")} technique MODEL ⇒ Test model is RUN (M9)`);
   if (!modelRisks.length && running("Test model")) errors.push("6e: Test model is RUN but no risk has technique MODEL — SKIP — no MODEL risk (M9)");
   // 6g: F12 reads a file the caller passes, so the header names it and the gate must be given the same one — otherwise
   // leaving --change-map off the gate would turn F12 off unseen.
@@ -139,6 +140,21 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names, chan
       return !(cites(scaleText, String(h.id), at) || cites(singleInstance, String(h.id), at));
     });
     if (uncovered.length) errors.push(`12: ${uncovered.map((h) => h.id).join(", ")} hold state but no SCALE risk cites them (U59)`);
+  }
+  // 13 (B18, U62): only vc-test lists scenarios. Each cites a registered risk in its Why-likely cell (the writer adds the
+  // R-n after the risks exist), its Class is one of U60's six, and every MODEL risk is cited by at least one scenario.
+  if (vcTest) {
+    const scenarios = rows(block(sec, "Scenarios")).map(([s, cls, , , why]) => ({ s: s ?? "", cls: cls ?? "", why: why ?? "" })).filter((x) => x.s);
+    const citedBy = new Set();
+    for (const x of scenarios) {
+      const refs = [...x.why.matchAll(new RegExp(RISK_REF.source, "g"))].map((m) => m[0].replace("-", ""));
+      refs.forEach((r) => citedBy.add(r));
+      if (!refs.length) errors.push(`13: ${x.s} cites no risk`);
+      for (const r of refs) if (!registered.has(r)) errors.push(`13: ${x.s} cites ${r}, which is not a registered risk`);
+      const c = Number(/^\W*(\d+)\b/.exec(x.cls)?.[1]);
+      if (!(c >= 1 && c <= 6)) errors.push(`13: ${x.s} Class "${x.cls}" is not 1–6`);
+    }
+    for (const r of modelRisks) if (!citedBy.has(r)) errors.push(`13: ${r} (MODEL) has no scenario`);
   }
   const lines = sec.trimEnd().split("\n").length;
   if (lines > CAP) errors.push(`10: round section is ${lines} lines (cap ${CAP})`);

@@ -91,7 +91,7 @@ It never appears in a risk row; a risk carries **effort** (`low` / `medium` / `h
 
 ## Clauses 11–13 — vc-test runs
 
-The script half of SKILL.md §Gate clauses 11–13. 11 reads the `Project risks:` line, one item per `P<n>`; 12 runs only with a change map (a vc-test run). Each error names its item or hotspot, so a fix is aimed.
+The script half of SKILL.md §Gate clauses 11–13. 11 reads the `Project risks:` line, one item per `P<n>`; 12 and 13 run only with a change map (a vc-test run). Each error names its item or hotspot, so a fix is aimed.
 
 ### 11a — a project risk is not a product risk (U58)
 
@@ -104,3 +104,13 @@ An item that names a risk (`R-n`) and says it only *records* what it observed, o
 ### 12 — held state needs a SCALE risk (U59)
 
 A hotspot whose `risk` text matches `STATE_HOTSPOT` (`limit/limiter`, `attempt(s)`, `counter`, `throttle`, `rate limit`, `cache`, `lockout`, `in-memory`, `session state`) holds state — what it holds can differ per instance, per restart or per replica. It is covered when either (a) a risk with technique `SCALE` cites its id or its `path:line` (the hotspot `source` without the leading `repo:`) in What or Source, or (b) an Out of scope line names it and says `single instance` — with the check that established it. `SCALE` is a technique token like `EXPLORE`: the case exercises the state across more than one instance, restart or session, or states why that cannot happen. The match is on the hotspot's text, so a hotspot that only mentions e.g. `lockout` in passing is also asked for — answer it with the (b) line, not by dropping the id.
+
+### 13 — every scenario cites a risk, every MODEL risk has a scenario (B18)
+
+A vc-test run lists its scenarios in `### Scenarios` (columns `S | Class | What it does | Bug it hunts | Why likely | Score | Proof | Writes`, after `### Approach per risk`). The list is generated before the risks exist, so a scenario cites its risk **inside the `Why likely` cell** (`… · R2`) and the strategy writer adds that `R-n`. Three checks, each error naming its scenario or risk:
+
+- **(a)** a scenario whose `Why likely` cites no `R-n` ⇒ `13: S-2 cites no risk`; one citing an `R-n` the Risks table does not register ⇒ `13: S-2 cites R9, which is not a registered risk`.
+- **(b)** a risk with technique `MODEL` that no scenario cites ⇒ `13: R1 (MODEL) has no scenario`.
+- **(c)** `Class` is a number 1–6, U60's six classes in its order; anything else ⇒ `13: S-1 Class "7" is not 1–6`.
+
+**6e under vc-test.** With a change map, 6e no longer requires `Test model` RUN for a MODEL risk — the scenarios carry it, so write `SKIP — scenarios cover the MODEL risks`; check (b) is the replacement. `Test model` RUN with no MODEL risk is still refused. Without a change map, 6e and clause 13 behave as before (no `### Scenarios` heading is read).
