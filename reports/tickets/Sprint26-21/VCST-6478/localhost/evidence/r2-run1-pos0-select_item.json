@@ -1,0 +1,151 @@
+{
+  "dlLength": 14,
+  "from": 9,
+  "events": [
+    {
+      "dlIndex": 9,
+      "name": "select_item",
+      "payload": {
+        "item_list_id": "category_printers_page_1",
+        "item_list_name": "Category \"Printers\" (page 1)",
+        "related_id": "d6019d4d27e44854a58ebbd5428b873b",
+        "related_type": "category",
+        "items": [
+          {
+            "index": 0,
+            "item_id": "566903892",
+            "item_name": "Canon Imageclass WiFi MF232W Monochrome Laser Printer/Scanner/Copier",
+            "affiliation": "B2B-store",
+            "currency": "USD",
+            "item_list_id": "category_printers_page_1",
+            "item_list_name": "Category \"Printers\" (page 1)",
+            "price": 189,
+            "discount": 0,
+            "item_category": "Catalog",
+            "item_category2": "Printers",
+            "item_category3": "Laser Printers",
+            "item_category4": "Laser Monochrome"
+          }
+        ]
+      }
+    },
+    {
+      "dlIndex": 11,
+      "name": "view_item",
+      "payload": {
+        "currency": "USD",
+        "value": 189,
+        "items": [
+          {
+            "item_id": "566903892",
+            "item_name": "Canon Imageclass WiFi MF232W Monochrome Laser Printer/Scanner/Copier",
+            "affiliation": "B2B-store",
+            "currency": "USD",
+            "price": 189,
+            "discount": 0,
+            "item_category": "Catalog",
+            "item_category2": "Printers",
+            "item_category3": "Laser Printers",
+            "item_category4": "Laser Monochrome"
+          }
+        ]
+      }
+    },
+    {
+      "dlIndex": 12,
+      "name": "view_item_list",
+      "payload": {
+        "item_list_id": "recommended_products_bought-together",
+        "item_list_name": "Customers bought together Canon Imageclass WiFi MF232W Monochrome Laser Printer/Scanner/Copier",
+        "related_id": "08c33cfc9f664426a52fac8882da2df0",
+        "related_type": "product",
+        "items": [
+          {
+            "index": 0,
+            "item_id": "ALCE0128",
+            "item_name": "Animal Crossing New Horizons Nintendo Switch Game Deals 100% Original Physical Game Card Simulation Genre for Switch OLED Lite",
+            "affiliation": "B2B-store",
+            "currency": "USD",
+            "item_list_id": "recommended_products_bought-together",
+            "item_list_name": "Customers bought together Canon Imageclass WiFi MF232W Monochrome Laser Printer/Scanner/Copier",
+            "price": 59.99,
+            "item_category": "Catalog",
+            "item_category2": "Accessories",
+            "item_category3": "Aliexpress",
+            "item_category4": "Consumer Electronics",
+            "item_category5": "Game Deals"
+          },
+          {
+            "index": 1,
+            "item_id": "55557702",
+            "item_name": "Xerox WorkCentre 3335DNI Mono Laser Multifunction Printer/Copier/Scanner/Fax Machine",
+            "affiliation": "B2B-store",
+            "currency": "USD",
+            "item_list_id": "recommended_products_bought-together",
+            "item_list_name": "Customers bought together Canon Imageclass WiFi MF232W Monochrome Laser Printer/Scanner/Copier",
+            "price": 349,
+            "item_category": "Catalog",
+            "item_category2": "Printers",
+            "item_category3": "Laser Printers",
+            "item_category4": "Laser Monochrome"
+          },
+          {
+            "index": 2,
+            "item_id": "201482",
+            "item_name": "PEPSI COLA REGULAR CRATE 28X0.20L",
+            "affiliation": "B2B-store",
+            "currency": "USD",
+            "item_list_id": "recommended_products_bought-together",
+            "item_list_name": "Customers bought together Canon Imageclass WiFi MF232W Monochrome Laser Printer/Scanner/Copier",
+            "price": 25,
+            "item_category": "Catalog",
+            "item_category2": "Soft Drinks",
+            "item_category3": "Soda"
+          },
+          {
+            "index": 3,
+            "item_id": "YER-80407217",
+            "item_name": "Configurable Hat",
+            "affiliation": "B2B-store",
+            "currency": "USD",
+            "item_list_id": "recommended_products_bought-together",
+            "item_list_name": "Customers bought together Canon Imageclass WiFi MF232W Monochrome Laser Printer/Scanner/Copier",
+            "price": 16,
+            "item_category": "Catalog",
+            "item_category2": "Products with options",
+            "item_category3": "Configurable caps & shirts"
+          },
+          {
+            "index": 4,
+            "item_id": "WH-001",
+            "item_name": "AGENT-TEST-Wireless-Headphones",
+            "affiliation": "B2B-store",
+            "currency": "USD",
+            "item_list_id": "recommended_products_bought-together",
+            "item_list_name": "Customers bought together Canon Imageclass WiFi MF232W Monochrome Laser Printer/Scanner/Copier",
+            "price": 99.99,
+            "item_category": "Catalog",
+            "item_category2": "Electronics — B2B Store",
+            "item_category3": "Audio & Video Equipment",
+            "item_category4": "Business Headsets & Speakers"
+          },
+          {
+            "index": 5,
+            "item_id": "553684135",
+            "item_name": "Epson WorkForce WF-3640 All-in-One Printer",
+            "affiliation": "B2B-store",
+            "currency": "USD",
+            "item_list_id": "recommended_products_bought-together",
+            "item_list_name": "Customers bought together Canon Imageclass WiFi MF232W Monochrome Laser Printer/Scanner/Copier",
+            "price": 199.99,
+            "item_category": "Catalog",
+            "item_category2": "Printers",
+            "item_category3": "Laser Printers",
+            "item_category4": "Laser Color"
+          }
+        ],
+        "items_count": 6
+      }
+    }
+  ]
+}

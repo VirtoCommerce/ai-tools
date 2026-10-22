@@ -18,11 +18,19 @@
       "to": "Tested",
       "transition": "Finish test",
       "confirmed_by_operator": true
+    },
+    {
+      "at": "verify-fix.6 round 2",
+      "from": "Tested",
+      "to": "Tested",
+      "transition": null,
+      "reason": "already Tested; PR not merged, so no move to Done"
     }
   ],
   "tracker": {
     "comment_id": "112295",
-    "comment_amended": "2026-10-22T16:23:25+03:00"
+    "comment_amended": "2026-10-22T16:23:25+03:00",
+    "comment_id_round2": "112299"
   },
   "verdict": "VERIFIED_WITH_NOTES",
   "verification_summary": "verification-summary.json",
@@ -32,5 +40,22 @@
     "multi-image card image click: no select_item",
     "empty /cart pushes view_cart + begin_checkout",
     "GA doc names brand vs item_brand"
+  ],
+  "rounds": [
+    {
+      "round": 1,
+      "build": "2.61.0-pr-2598-fd57-fd578365",
+      "verdict": "VERIFIED_WITH_NOTES",
+      "comment_id": "112295",
+      "summary": "verification-summary.json"
+    },
+    {
+      "round": 2,
+      "build": "2.61.0-pr-2598-9b6d-9b6db3d9",
+      "verdict": "VERIFIED_WITH_NOTES",
+      "comment_id": "112299",
+      "summary": "verification-summary-r2.json",
+      "includes": "VCST-6502 (select_item index), cancelled as covered by the PR"
+    }
   ]
 }

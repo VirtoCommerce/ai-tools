@@ -1,6 +1,6 @@
 # BUG: [GA4][Catalog] select_item item has no index (list position) — Low
 
-## Status: FILED
+## Status: FIXED (verified live in VCST-6478 round 2, comment 112299)
 **Found by:** agent, while verifying VCST-6478
 **Tracker:** [VCST-6502](https://virtocommerce.atlassian.net/browse/VCST-6502) (Bug, Low, labels found-by-agent + found-in-testing; filed below the floor at the operator's request). **Relates to:** VCST-6478. Its PR, vc-frontend#2598, fixed `currency` and the list id/name but deliberately left `index` out.
 
@@ -38,3 +38,8 @@ The `select_item` item carries `index` equal to the product's position in that l
 - **Component:** `client-app/modules/google-analytics/events.ts` `selectItem`, plus the place the position comes from: `core/plugins/dom-analytics/rules.ts` / the product-card attributes, and `search-dropdown.vue`.
 - **Fix shape:** carry the position in the event params (e.g. `index` in `ListPropertiesType`), pass it to `productToGtagItem(item, params.index, ...)`, and have the DOM rule and the search dropdown supply it. The event's signature is used by `extendEvents` consumers, so add the position without breaking it.
 - **Routing confidence:** HIGH
+
+## Resolution
+- **Fixed in:** [vc-frontend#2598](https://github.com/VirtoCommerce/vc-frontend/pull/2598) commits `87dfacf` + `44a9561`, which are in the same PR as VCST-6478 at the operator's request.
+- **Tracker:** VCST-6502 → Cancelled on 2026-10-22, with a comment saying it is covered by that PR. Live verification is tracked on VCST-6478, round 2.
+- **Behaviour change in the same commit:** on the category grid, `select_item` now names the clicked product's own page list (`category_<slug>_page_<n>`), not the last loaded page.

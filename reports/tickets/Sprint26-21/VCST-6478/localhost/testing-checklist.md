@@ -18,3 +18,19 @@ Oracle: `BL-GA4-001`. StorefrontDeveloperGuide → Google Analytics Events → I
 | 8 | `select_item` from a line item (cart, signed in), which goes through the unchanged `lineItemToGtagItem` path | No regression compared with vcst-qa. |
 | 9 | Currency switch (if the store offers more than one currency) | The item `currency` follows the selected currency, and so does the event `currency`. |
 | 10 | Console / network | The fix introduces no new console errors and no failed requests. |
+
+## Round 2: build `pr-2598-9b6d` (commits `87dfacf` + `44a9561` + `9b6db3d`, `index` added; VCST-6502 is folded into this PR)
+
+Same stand: localhost frontend-only, API proxied to vcst-qa `B2B-store`. Baseline (before the fix): the round-1 RED captures plus the `fd57` build for `index`.
+
+| # | Check | Expected |
+|---|---|---|
+| R2-1 | STR × 3 on `/printers` (cards 0, 2, 6) | `select_item` item: `currency`, list id/name equal to the event's, and `index` equal to the card's `index` in that page's `view_item_list`. No `index` at event level. `view_item` item `currency` equals the event's |
+| R2-2 | Infinite scroll: load page 2, click a page-1 card, then a page-2 card | Each `select_item` names its own page list (`..._page_1` / `..._page_2`) with that page's index |
+| R2-3 | Header search dropdown, 3rd product | `index: 2`, `item_list_id: search_bar` |
+| R2-4 | PDP "Customers bought together" (DOM rule), 2nd card | `index` equals its place in that list's `view_item_list` |
+| R2-5 | Cart "Recently browsed" (DOM rule, signed in) | same as R2-4 |
+| R2-6 | Wishlist list details (signed in, list with ≥2 products), click the 2nd product | `index: 1`, `item_list_id: wishlist` |
+| R2-7 | Compare page (2+ products), click the 2nd | `index` equals its place in the `compare_products` `view_item_list` |
+| R2-8 | Round-1 regression: `add_to_wishlist` / `view_item` currency, `view_item_list` items, EUR switch | Unchanged from round 1 (PASS) |
+| R2-9 | Console / network | No new errors vs round 1 |
