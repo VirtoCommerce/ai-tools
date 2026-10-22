@@ -1,0 +1,22 @@
+{
+  "ticket": "VCST-6375",
+  "repo": "VirtoCommerce/vc-frontend",
+  "kind": "frontend",
+  "branch": "claude/qa-autofix/VCST-6375",
+  "base": "dev@63e274af",
+  "commit": "871e7eb5bf7fcfa758b771f71433b76b735f7e7f",
+  "pr": "https://github.com/VirtoCommerce/vc-frontend/pull/2588",
+  "gates": {
+    "G0": "PASS",
+    "G1": "PASS",
+    "G2": "PASS",
+    "G3": "PASS",
+    "G4": "APPROVE",
+    "G5": "RED_UNRELATED (sales-rep-tasks-page.test.ts, pre-existing on other PRs)",
+    "G6": "NOT_RUN_BY_DESIGN (needs deploy verification)",
+    "G7": "STOPPED_FOR_HUMAN_REVIEW"
+  },
+  "ticket_status": "In progress (transition declined by operator)",
+  "jira_comment_id": "112197",
+  "confidence": "HIGH"
+}
