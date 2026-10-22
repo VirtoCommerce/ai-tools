@@ -57,6 +57,11 @@ import {
   BROWSEFILTERS_NONE_ROLE, BROWSEFILTERS_NONE_ACCOUNT, BROWSEFILTERS_NONE_EXCLUDED_PERMISSION,
   assertBrowseFiltersNoneRolePermissions,
   BARCODE_SEARCH_ENDPOINT, BARCODE_FIELDS_ENDPOINT, BROWSEFILTERS_EXPECTED_STATUS,
+  SHELL_SEARCH_NOREAD_ROLE, SHELL_SEARCH_NOREAD_ACCOUNT, SHELL_SEARCH_NOREAD_EXCLUDED_PERMISSION,
+  SHELL_SEARCH_NOREAD_REQUIRED_PERMISSIONS, SHELL_SEARCH_NOREAD_EXCLUDED_PERMISSIONS, assertShellSearchNoReadRolePermissions,
+  SHELL_SEARCH_READ_ROLE, SHELL_SEARCH_READ_ACCOUNT, SHELL_SEARCH_READ_EXCLUDED_PERMISSION,
+  SHELL_SEARCH_READ_REQUIRED_PERMISSIONS, SHELL_SEARCH_READ_EXCLUDED_PERMISSIONS, assertShellSearchReadRolePermissions,
+  SETTINGS_SCHEMA_ENDPOINT, USERS_SEARCH_ENDPOINT, ROLES_SEARCH_ENDPOINT, SHELL_SEARCH_EXPECTED_STATUS,
 } from './backoffice-rbac-specs.mjs';
 import { STORE as BARCODE_STORE } from '../catalog/barcode-specs.mjs';
 
@@ -394,6 +399,26 @@ async function verifyReturnAgentNoAuthorize() {
   return ok1 && s.status === 200 && a.status === 403;
 }
 
+// --- VCST-6260: shell global search provider data calls — 403 without the read perms, 200 with ---
+// Read-only probes (GET schema + two searches with take:1). /currentuser proves the exact grant first;
+// the per-endpoint statuses are what make the pair DISCRIMINATING — if NOREAD got 200 the providers
+// would leak, if READ got 403 the control proves nothing.
+async function verifyShellSearch(account, required, excluded) {
+  const expected = SHELL_SEARCH_EXPECTED_STATUS[account.aliasName];
+  const ok1 = await verifyEffectivePermissions(account, required, excluded, `${account.aliasName} (VCST-6260 shell search)`);
+  const tok = await loginToken(account.email, resolvePassword(account));
+  if (!tok) return false;
+  const h = { Authorization: `Bearer ${tok}`, 'Content-Type': 'application/json' };
+  const got = {
+    settingsSchema: (await fetch(`${BACK_URL}${SETTINGS_SCHEMA_ENDPOINT}`, { headers: h })).status,
+    usersSearch: (await fetch(`${BACK_URL}${USERS_SEARCH_ENDPOINT}`, { method: 'POST', headers: h, body: JSON.stringify({ take: 1 }) })).status,
+    rolesSearch: (await fetch(`${BACK_URL}${ROLES_SEARCH_ENDPOINT}`, { method: 'POST', headers: h, body: JSON.stringify({ take: 1 }) })).status,
+  };
+  const ok2 = Object.keys(expected).every((k) => got[k] === expected[k]);
+  log(`  ${ok2 ? '✓' : '✗'} schema ${got.settingsSchema} · users/search ${got.usersSearch} · roles/search ${got.rolesSearch} (expected ${expected.settingsSchema} / ${expected.usersSearch} / ${expected.rolesSearch})`);
+  return ok1 && ok2;
+}
+
 async function loginToken(email, password) {
   try {
     const res = await fetch(`${BACK_URL}/connect/token`, {
@@ -473,6 +498,16 @@ const FIXTURES = [
   {
     role: RETURN_AGENT_ROLE, account: RETURN_AGENT_ACCOUNT,
     assertPerms: assertReturnAgentRolePermissions, excluded: RETURN_AGENT_EXCLUDED_PERMISSION, verify: verifyReturnAgentNoAuthorize,
+  },
+  {
+    role: SHELL_SEARCH_NOREAD_ROLE, account: SHELL_SEARCH_NOREAD_ACCOUNT,
+    assertPerms: assertShellSearchNoReadRolePermissions, excluded: SHELL_SEARCH_NOREAD_EXCLUDED_PERMISSIONS.join(', '),
+    verify: () => verifyShellSearch(SHELL_SEARCH_NOREAD_ACCOUNT, SHELL_SEARCH_NOREAD_REQUIRED_PERMISSIONS, SHELL_SEARCH_NOREAD_EXCLUDED_PERMISSIONS),
+  },
+  {
+    role: SHELL_SEARCH_READ_ROLE, account: SHELL_SEARCH_READ_ACCOUNT,
+    assertPerms: assertShellSearchReadRolePermissions, excluded: SHELL_SEARCH_READ_EXCLUDED_PERMISSIONS.join(', '),
+    verify: () => verifyShellSearch(SHELL_SEARCH_READ_ACCOUNT, SHELL_SEARCH_READ_REQUIRED_PERMISSIONS, SHELL_SEARCH_READ_EXCLUDED_PERMISSIONS),
   },
 ];
 

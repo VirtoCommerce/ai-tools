@@ -95,10 +95,13 @@ yourself. Skip CHANGE only when `prepare.json` `prs` is **non-empty** and every 
 `prs` is never a skip: CHANGE runs, because rung 4 (paths the ticket names) is its job.
 
 Save each returned JSON **verbatim** to `<run_dir>/ticket.out.json`, `materials.out.json`,
-`change.out.json`. A split CHANGE saves each output verbatim to `change.<n>.out.json` (`n` = 1, 2, …),
+`change.out.json` with `node "<skill>/lib/cli.mjs" save --prepare <prepare_path> --agent <id> --as <file>` — `<id>`
+is the agent id its hand-back names. The script reads the output from the agent's own transcript; **never retype
+it** (a retyped output is paid twice: as your output and in every later turn). `no-json` (exit 2) ⇒ re-dispatch
+that mode once; `status: "not-found"` (exit 3) ⇒ save it by hand, verbatim; any other exit 3 ⇒ report it and STOP. A split CHANGE saves each output the same way, `save … --as change.<n>.out.json` (`n` = 1, 2, …),
 then runs `node "<skill>/lib/cli.mjs" merge-change --prepare <prepare_path>`, which concatenates them into
 `change.out.json`; its exit 2 names the file that fails `changeOut` — re-dispatch that PR once, quoting
-the errors, save the answer over that same file and merge again (a second failure ⇒ `abort`, STOP). Never edit an agent's output to make it pass.
+the errors, `save` the answer over that same file and merge again (a second failure ⇒ `abort`, STOP). Never edit an agent's output to make it pass.
 
 ## Step 3 — the join: PR ↔ AC (you)
 
