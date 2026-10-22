@@ -1,6 +1,6 @@
 // plugins/vc-test/lib/plan-run.mjs — approved strategy + registry + capabilities → run-plan.json (spec §4.1, §5.2).
 // CLI: node plugins/vc-test/lib/plan-run.mjs --strategy <test-strategy.md> --key <KEY>   (exit 2 when refused)
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { argOf, workDir } from "./paths.mjs";
@@ -25,8 +25,11 @@ export function planRun({ strategy, registry, capabilities }) {
 
   const errors = [];
   if (registry.artifacts.some((e) => e.id === "checklist") && !selected.has("checklist")) errors.push("Checklist is not RUN — nothing would decide the ACs");
-  for (const { entry } of selected.values()) {
-    for (const cap of entry.requires) if (!capabilities[cap]) errors.push(`${entry.row ?? entry.id}: needs ${cap}, which this install does not have`);
+  for (const s of selected.values()) {
+    const missing = s.entry.requires.filter((cap) => !capabilities[cap]);
+    // A derived lane is not the strategy's choice, so a missing capability blocks only its rows at run time.
+    if (s.entry.derivedFrom && missing.length) s.missing = missing;
+    else for (const cap of missing) errors.push(`${s.entry.row ?? s.entry.id}: needs ${cap}, which this install does not have`);
   }
   if (errors.length) return { ok: false, errors };
 
@@ -45,7 +48,7 @@ export function planRun({ strategy, registry, capabilities }) {
   for (const id of ordered) {
     const s = selected.get(id);
     let w = 1 + Math.max(0, ...needsOf(s).map((n) => wave.get(n)));
-    if (s.entry.lane?.startsWith("browser:")) {
+    if (s.entry.lane?.startsWith("browser:") && !s.missing) {
       while ((browserCount[w] ?? 0) >= MAX_BROWSER_LANES) w++;
       browserCount[w] = (browserCount[w] ?? 0) + 1;
     }
@@ -54,7 +57,8 @@ export function planRun({ strategy, registry, capabilities }) {
   const waves = [];
   for (const id of ordered) {
     const w = wave.get(id) - 1;
-    (waves[w] ??= []).push({ id, lane: selected.get(id).entry.lane, run: selected.get(id).entry.run });
+    const { entry, missing } = selected.get(id);
+    (waves[w] ??= []).push({ id, lane: entry.lane, run: entry.run, ...(missing ? { missing } : {}) });
   }
   return { ok: true, waves: waves.filter(Boolean).map((w) => w.sort((a, b) => a.id.localeCompare(b.id))), notRun };
 }
@@ -63,7 +67,9 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   const [file, key] = [argOf(process.argv, "strategy"), argOf(process.argv, "key")];
   if (!file || !key) { console.error("usage: plan-run.mjs --strategy <test-strategy.md> --key <KEY>"); process.exit(1); }
   const dir = workDir(key);
-  const capabilities = JSON.parse(readFileSync(join(dir, "capabilities.json"), "utf8"));
+  const capsFile = join(dir, "capabilities.json");
+  if (!existsSync(capsFile)) { console.log(JSON.stringify({ ok: false, errors: [`no ${capsFile} — run step 0 (capabilities.mjs) on this env first`] })); process.exit(2); }
+  const capabilities = JSON.parse(readFileSync(capsFile, "utf8"));
   const plan = planRun({ strategy: readStrategy(readFileSync(file, "utf8")), registry: loadRegistry(), capabilities });
   const out = join(dir, "run-plan.json");
   writeFileSync(out, JSON.stringify({ ticket: key, strategy: file, createdAt: new Date().toISOString(), ...plan }, null, 2) + "\n");

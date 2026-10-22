@@ -29,6 +29,12 @@ oracle rules. Write the thin form below instead of its full table:
 - Every AC is a row. An AC the change map marks `NO CODE` is still a row, with the Item saying so.
 - Every in-scope risk is a row or an omission line under the table (`R-n — omitted: <reason>`).
 - Every suspicion is a row whose Ref is its `S-n` and whose Proof is its hotspot's.
+- **An item whose Ref names an AC or a `BL-*` states the value it expects from that source** — a limit, a
+  lifetime, an interval — and decides PASS or FAIL on it, even when the stand's configuration is unknown. Never
+  write "record the observed value, no PASS/FAIL" (spec U57).
+- **An item on a limit, counter, cache, lockout or session state gets a second row with technique `SCALE`**:
+  the same check with requests spread over fresh connections so they can reach more than one backend instance
+  (spec U59).
 - Data follows `.claude/rules/test-data.md`: no literal values; a state the environment can take away is
   created in the case.
 - Leave Result and Evidence empty.

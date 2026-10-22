@@ -8,8 +8,8 @@ Dispatch description: `[vc-test:ui-checks] <KEY>`.
 - `CHECKLIST` — `{RUN_DIR}/testing-checklist.md`. You write only the Result and Evidence cells of `ui-checks`
   rows.
 - `RUN_DIR` — the run folder; `npm run --silent run:dir` reprints it and its `SCREENSHOTS=` path.
-- `CAPABILITIES` and `LEDGER` — as in `ac-checks.md`: create data only when `stand.writable` is `true`, and append
-  every entity you create to the ledger with `"by":"ui-checks"`.
+- `CAPABILITIES`, `KEY` and `ledger.md` (beside this brief) — create data only when `stand.writable` is `true`, and
+  record every entity you create as `ledger.md` says, with `--by ui-checks`.
 
 ## How
 

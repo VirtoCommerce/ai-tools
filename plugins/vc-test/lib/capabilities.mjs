@@ -25,10 +25,14 @@ export async function probe({ env, mcp, reach: reachFn = reach }) {
     if (!caps[cap]) caps.missing.push(`${cap}: ${url} did not answer`);
   }
   for (const name of mcp) if (String(name).trim()) caps[mcpKey(name)] = true;
-  const risk = env.ENV_RISK ? String(env.ENV_RISK).toLowerCase() : null;
-  caps.stand = { writable: WRITABLE_RISK.has(risk),
-    reason: risk ? `ENV_RISK=${risk}` : "ENV_RISK not declared in the env files — read-only" };
+  caps.stand = standOf(env);
   return caps;
+}
+
+// Shared with teardown.mjs, so the run and its teardown agree on whether this stand may be written to.
+export function standOf(env) {
+  const risk = env.ENV_RISK ? String(env.ENV_RISK).toLowerCase() : null;
+  return { writable: WRITABLE_RISK.has(risk), reason: risk ? `ENV_RISK=${risk}` : "ENV_RISK not declared in the env files — read-only" };
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {

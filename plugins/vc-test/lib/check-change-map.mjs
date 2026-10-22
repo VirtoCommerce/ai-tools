@@ -14,6 +14,12 @@ export function checkChangeMap(map, bundle) {
   if (errors.length) return errors;
   const mapped = new Set(map.acs.map((a) => a.ac));
   for (const ac of bundle.acs ?? []) if (!mapped.has(ac.id)) errors.push(`${ac.id}: not in the change map`);
+  const bundleAcs = new Set((bundle.acs ?? []).map((a) => a.id));
+  for (const a of map.acs) if (!bundleAcs.has(a.ac)) errors.push(`${a.ac}: not an AC of the bundle`);
+  for (const [list, what] of [[map.hotspots, "hotspots"], [map.suspicions, "suspicions"]]) {
+    const seen = new Set();
+    for (const x of list) { if (seen.has(x.id)) errors.push(`${x.id}: two ${what} share this id`); seen.add(x.id); }
+  }
   const sources = new Set(map.hotspots.map((h) => h.source));
   for (const pr of bundle.change?.prs ?? []) {
     for (const h of pr.hotspots ?? []) if (!sources.has(h.source)) errors.push(`${h.source}: bundle hotspot not in the change map`);

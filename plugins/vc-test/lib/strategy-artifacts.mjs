@@ -13,7 +13,10 @@ const rows = (text) => text.split("\n").filter((l) => /^\|/.test(l) && !/^[\s|:-
 
 function decisionOf(cell) {
   const decision = /^SKIP\b/i.test(cell) ? "SKIP" : /^RUN\b/i.test(cell) ? "RUN" : null;
-  const order = decision === "RUN" ? (/\bFIRST\b/.exec(cell)?.[0] ?? /\bALONGSIDE\b/.exec(cell)?.[0] ?? null) : null;
+  // The first FIRST/ALONGSIDE the cell names, in any case, that is not negated ("ALONGSIDE, not FIRST").
+  const order = decision === "RUN"
+    ? ([...cell.matchAll(/\b(FIRST|ALONGSIDE)\b/gi)].find((m) => !/\bnot\s+$/i.test(cell.slice(0, m.index)))?.[1].toUpperCase() ?? null)
+    : null;
   const reason = decision === "SKIP" ? cell.replace(/^SKIP\s*(?:—|-|:)?\s*/i, "").trim() : "";
   return { decision, order, reason };
 }

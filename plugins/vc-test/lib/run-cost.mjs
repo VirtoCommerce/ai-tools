@@ -1,7 +1,7 @@
 // plugins/vc-test/lib/run-cost.mjs — tokens and minutes per step of a run, read from the Claude Code session logs
 // (spec U30, U42). inputTotal = input + cache creation + cache read, the input-equivalent measure of §2b; output is
 // reported beside it. A subagent's step is its dispatch description's `[vc-test:<id>]` prefix.
-// CLI: node plugins/vc-test/lib/run-cost.mjs --since <iso> [--session <id>|latest] [--key <KEY>] [--out <file>]
+// CLI: node plugins/vc-test/lib/run-cost.mjs --since <iso> [--session <id>|latest (default: this session)] [--key <KEY>] [--out <file>]
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -12,7 +12,7 @@ const ACTIVE_GAP_S = 120;
 const FIELDS = ["input", "cacheCreation", "cacheRead", "output", "inputTotal"];
 
 export const projectDirName = (cwd) => String(cwd).replace(/[^A-Za-z0-9]/g, "-");
-const stepOf = (description) => /^\[vc-test:([a-z0-9-]+)\]/.exec(description ?? "")?.[1] ?? "other";
+const stepOf = (description) => /^\[vc-test:([A-Za-z0-9:._-]+)\]/.exec(description ?? "")?.[1] ?? "other";
 const min = (s) => Math.round((s / 60) * 10) / 10;
 
 export function cost({ mainLines, subagents, since }) {
@@ -63,9 +63,11 @@ export function toMarkdown({ steps, total }) {
 
 function sessionFiles(sessionArg) {
   const dir = join(homedir(), ".claude", "projects", projectDirName(process.cwd()));
-  const id = !sessionArg || sessionArg === "latest"
+  // This session by default: with two sessions open in one repo, the newest log may be the other one.
+  const wanted = sessionArg ?? process.env.CLAUDE_CODE_SESSION_ID;
+  const id = !wanted || wanted === "latest"
     ? readdirSync(dir).filter((f) => f.endsWith(".jsonl")).sort((a, b) => statSync(join(dir, b)).mtimeMs - statSync(join(dir, a)).mtimeMs)[0]?.replace(/\.jsonl$/, "")
-    : sessionArg;
+    : wanted;
   if (!id || !existsSync(join(dir, `${id}.jsonl`))) throw new Error(`no session log ${id ?? "(none)"} in ${dir}`);
   const subDir = join(dir, id, "subagents");
   const subagents = existsSync(subDir) ? readdirSync(subDir).filter((f) => f.endsWith(".jsonl")).map((f) => {
@@ -77,7 +79,7 @@ function sessionFiles(sessionArg) {
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   const since = argOf(process.argv, "since");
-  if (!since || !Number.isFinite(Date.parse(since))) { console.error("usage: run-cost.mjs --since <iso> [--session <id>|latest] [--key <KEY>] [--out <file>]"); process.exit(1); }
+  if (!since || !Number.isFinite(Date.parse(since))) { console.error("usage: run-cost.mjs --since <iso> [--session <id>|latest (default: this session)] [--key <KEY>] [--out <file>]"); process.exit(1); }
   const { id, mainLines, subagents } = sessionFiles(argOf(process.argv, "session"));
   const result = { session: id, since, ...cost({ mainLines, subagents, since }) };
   const key = argOf(process.argv, "key");

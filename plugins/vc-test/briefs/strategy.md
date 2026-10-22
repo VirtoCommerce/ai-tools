@@ -15,6 +15,12 @@ orchestrator asks the user; you never do. Dispatch description: `[vc-test:strate
    round), with `--change-map <CHANGE_MAP>` on `floors.mjs` and on `check-strategy.mjs`, and the header line
    `Change map: <CHANGE_MAP>`. For every risk, Approach names the layer that proves it: a script (lane `none` or
    `api`, run by `ac-checks`) or exploratory (vc-test spec U45).
+   - **The named value is the oracle (U57).** A risk whose AC, `BL-*` rule or documentation names a value (a limit,
+     a lifetime, an interval) asserts that value, whatever stand configuration you could not read — never "record
+     the observed value". A stand that may be configured otherwise is a named configuration question, not a PASS.
+   - **A project risk is about the test project — access, data, environment, time (U58).** A statement about how
+     the product behaves ("the limit is held per instance") is a product risk with its own check, however hard the
+     stand makes it to test; an accepted project risk never changes how a product risk is decided.
 2. Write the round with `Status: DRAFT`. Run the gate until it exits 0; when a risk is Critical, run the skill's
    verifier until it approves. Fix what they reject; never weaken a floor to pass.
 3. **Do not ask the approval question.** Skip the skill's Approval step.
