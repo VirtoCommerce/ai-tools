@@ -1,7 +1,9 @@
 // plugins/vc-test/lib/window.mjs — the global settings window (U68): a run may change a GLOBAL platform setting only
 // inside a short window, one window at a time, announced in the team channel when it opens and when it closes.
 // The lock is one file, created with an exclusive create (never read-then-write); a lock past `expiresAt` is reclaimed
-// once. The webhook URL is a secret: it is never printed and never put into a reason.
+// once. Two processes reclaiming one stale lock at the same instant can have the second rm delete the first one's fresh
+// lock; the window is microseconds against a 120 s, human-gated lock, so it is accepted.
+// The webhook URL is a secret: it is never printed and never put into a reason.
 // CLI: node plugins/vc-test/lib/window.mjs open|close --key <KEY> --setting <name> --value <v> [--max-s 120]
 //   open = acquire, announce (a failed announce releases the lock again); close = announce, release (always).
 //   exit 0: done; 1: usage; 2: refused (window held, or no announcement)
@@ -42,7 +44,7 @@ export async function announce({ webhook = process.env.TEAMS_WEBHOOK_URL, phase,
     $schema: "http://adaptivecards.io/schemas/adaptive-card.json", type: "AdaptiveCard", version: "1.4", msteams: { width: "Full" },
     body: [{ type: "TextBlock", size: "Medium", weight: "Bolder", text: title }, { type: "FactSet", facts }] } }] };
   try {
-    const res = await fetch(webhook, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(card) });
+    const res = await fetch(webhook, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(card), signal: AbortSignal.timeout(10_000) });
     return res.ok ? { ok: true } : { ok: false, reason: `the channel answered status ${res.status}` };
   } catch (err) { return { ok: false, reason: `the announcement request failed (${err?.name ?? "error"})` }; } // never err.message: it can carry the URL
 }
@@ -57,7 +59,12 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   const say = (o) => console.log(JSON.stringify(o));
   if (cmd === "open") {
     const got = acquire({ key, setting, maxSeconds });
-    if (!got.ok) { say({ status: "refused", reason: "another window is open", holder: got.holder }); process.exit(2); }
+    if (!got.ok) {
+      const lock = defaultLockPath(); // an unreadable lock is never reclaimed automatically: a human decides
+      say(got.holder ? { status: "refused", reason: "another window is open", holder: got.holder }
+        : { status: "refused", reason: `unreadable lock file — delete ${lock} if no window is open`, lock });
+      process.exit(2);
+    }
     const told = await announce({ phase: "open", key, setting, value, maxSeconds });
     if (!told.ok) { release({ key }); say({ status: "refused", reason: told.reason, released: true }); process.exit(2); }
     say({ status: "open", key, setting, maxSeconds });
