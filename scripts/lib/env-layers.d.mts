@@ -70,7 +70,8 @@ export interface Layered {
 }
 
 export interface LayerOptions extends LookupOptions {
-  /** What the environment already holds beats every file and pin (CI `-e`). */
+  /** What the environment already holds beats every file and pin (CI `-e`) — but never PASSWORDS, and never a copy of
+   *  an inherited MASTER_PASSWORD. */
   ambientWins?: boolean;
   /** Test-account password names beyond the scan (a role registry). */
   passwordNames?: Iterable<string>;

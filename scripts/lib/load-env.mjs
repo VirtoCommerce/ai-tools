@@ -27,7 +27,9 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
  *
  * `ambientWins` is for runners that CI drives with `-e` (ci/run-regression.ts, ci/run-monitor.ts): what
  * the process environment already held beats every file and every file's pin, and the files only fill
- * the gaps — config.js's documented intent for CI ("process.env wins"), which its overrides do not do.
+ * the gaps — config.js's documented intent for CI ("process.env wins"), which its overrides do not do. Two
+ * exceptions (env-layers.mjs `layered`): PASSWORDS comes only from the stand's own file, and a copy of an inherited
+ * MASTER_PASSWORD is not the environment's own.
  *
  * @param {{ fallback?: string, ambientWins?: boolean, root?: string, ticket?: string | null }} [options] `fallback`:
  *   TEST_ENV to use when nothing selects one; `ticket`: the run's ticket for QA_ENV_PATH's `<ticket>` (default: QA_TICKET,
