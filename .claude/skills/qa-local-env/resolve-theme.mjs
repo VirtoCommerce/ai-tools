@@ -15,14 +15,16 @@
 //   alpha    newest alpha build — `x.y.z-alpha.<N>` (the rolling main-branch build vcst-dev runs);
 //            highest base version, then highest alpha build number
 //   pr <N>   newest build of PR #N — `x.y.z-pr-<N>-<sha>` (handy when you know the PR but not the task);
-//            newest by blob publish time (Last-Modified), because the `<sha>` suffix carries no order
+//            newest by blob publish time (Last-Modified), because the `<sha>` suffix carries no order.
+//            Last-Modified moves when CI re-uploads an old commit's build; Creation-Time would not, but the
+//            anonymous listing omits it without an x-ms-version header
 //
 // USAGE
 //   node resolve-theme.mjs latest                 # → -FrontendUrl line + summary
 //   node resolve-theme.mjs alpha                  # newest alpha
 //   node resolve-theme.mjs pr 2350                 # newest build of PR #2350
 //   node resolve-theme.mjs alpha --url            # print ONLY the bare ZIP URL (for capture)
-//   node resolve-theme.mjs latest --json          # {channel, version, file, url}
+//   node resolve-theme.mjs latest --json          # {channel, pr, version, file, url, published}
 //
 //   --url             print only the resolved ZIP URL (nothing else) — for `$(…)` capture
 //   --json            print the resolution as JSON
@@ -121,8 +123,8 @@ async function main() {
   if (o.json) { console.log(JSON.stringify({ channel: o.channel, pr: o.pr, version, file, url, published }, null, 2)); return; }
 
   console.log(`resolve-theme :: ${o.channel}${o.pr ? ` #${o.pr}` : ""} → ${version}`);
-  console.log(`  file  : ${file}`);
-  console.log(`  url   : ${url}`);
+  console.log(`  file      : ${file}`);
+  console.log(`  url       : ${url}`);
   if (published) console.log(`  published : ${published}`);
   console.log(`\n  provision frontend : -FrontendUrl "${url}"`);
   console.log(`  e.g.  pwsh -File skills/qa-local-env/provision.ps1 -Action up \\`);

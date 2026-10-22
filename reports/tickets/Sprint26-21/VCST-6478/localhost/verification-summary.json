@@ -43,13 +43,13 @@
   "checklist_total": 10,
   "checklist_passed": 9,
   "checklist_failed": 0,
-  "checklist_notes": "#3 select_item item index: ABSENT. The ticket's Expected asks for it, and the PR deliberately leaves it out. The operator accepted this as VERIFIED_WITH_NOTES, with index to be covered by a follow-up.",
+  "checklist_notes": "#3 select_item item index: ABSENT. The ticket's Expected asks for it, and the PR deliberately leaves it out. The operator accepted this as VERIFIED_WITH_NOTES, with index to be covered by a follow-up: VCST-6502.",
   "regression_issues": [],
   "side_effects": [
     {
       "summary": "select_item item index still absent (ticket Expected)",
       "severity": "Low",
-      "why": "out of PR scope; follow-up"
+      "why": "out of PR scope; filed as VCST-6502"
     },
     {
       "summary": "Recommended-list items have no discount (price 199.99 vs shown $100.00)",
@@ -72,7 +72,9 @@
       "why": "doc nit"
     }
   ],
-  "bugs_filed": [],
+  "bugs_filed": [
+    {"key": "VCST-6502", "summary": "select_item item has no index", "severity": "Low", "outcome": "Cancelled, covered by vc-frontend#2598; verified in round 2"}
+  ],
   "business_rules_verified": [
     "BL-GA4-001"
   ],
@@ -80,7 +82,7 @@
     "role": "tested",
     "state": "Tested"
   },
-  "evidence": "reports/tickets/Sprint26-21/VCST-6478/localhost/evidence/",
+  "evidence": "local run folder evidence/, not published (public repository)",
   "evidence_artifact": null,
   "artifacts": "reports/tickets/Sprint26-21/VCST-6478/localhost/"
 }

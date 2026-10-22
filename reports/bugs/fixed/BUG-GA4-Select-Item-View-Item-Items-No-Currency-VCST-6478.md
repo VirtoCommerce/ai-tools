@@ -1,4 +1,4 @@
-# BUG: [GA4][Catalog] select_item and view_item items carry no currency (select_item items also no index) — Low
+# BUG: [GA4][Catalog] select_item and view_item items carry no currency — Low
 
 ## Status: FIXED
 **Found by:** agent — testing VCST-6453
@@ -56,7 +56,7 @@ Each item in `select_item` and `view_item` follows the documented Item fields: `
 - **Routing confidence:** HIGH — pass the current currency (and, for select_item, the list id/name and the card index the caller knows) into `productToGtagItem`
 
 ## Resolution
-- **Fixed in:** [vc-frontend#2598](https://github.com/VirtoCommerce/vc-frontend/pull/2598) (open, not merged), build `2.61.0-pr-2598-fd57-fd578365`
-- **Tracker:** VCST-6478 → Tested, 2026-10-22, verdict VERIFIED WITH NOTES
-- **Method:** dataLayer RED on vcst-qa (theme `2.61.0-pr-2570-2fc9-2fc9261a`), then GREEN 3/3 on a local frontend-only stand proxied to vcst-qa. The checks also covered add_to_wishlist, the search dropdown, recommendations, recently browsed and a switch to EUR. Evidence: `reports/tickets/Sprint26-21/VCST-6478/localhost/evidence/`
-- **Not fixed:** the `select_item` item `index`. It was left out of the PR's scope on purpose and is a follow-up.
+- **Fixed in:** [vc-frontend#2598](https://github.com/VirtoCommerce/vc-frontend/pull/2598) (open, not merged). Round 1 verified `currency` and the list id/name on build `2.61.0-pr-2598-fd57-fd578365` (comment 112295). Round 2 verified the `select_item` item `index` on build `2.61.0-pr-2598-9b6d-9b6db3d9` (comment 112299).
+- **Tracker:** VCST-6478 → Tested, 2026-10-22, verdict VERIFIED WITH NOTES (both rounds)
+- **Method:** dataLayer RED on vcst-qa (theme `2.61.0-pr-2570-2fc9-2fc9261a`), then GREEN 3/3 on a local frontend-only stand proxied to vcst-qa. The checks also covered add_to_wishlist, the search dropdown, recommendations, recently browsed and a switch to EUR. Report: `reports/tickets/Sprint26-21/VCST-6478/localhost/verification-report.md`; raw dataLayer captures stay in the local run folder, not published (public repository)
+- **`index`:** left out of round 1 on purpose, filed as [VCST-6502](https://virtocommerce.atlassian.net/browse/VCST-6502), then folded into the same PR (commits `87dfacf` + `44a9561`) and verified in round 2 (`verification-report-r2.md`).
