@@ -11,9 +11,8 @@ access probe (spec U26, U27). **You have no browser and open none.** Dispatch de
 - `CHANGE_MAP` — `change-map.json`: the endpoints and operations of its hotspots.
 - `RUN_DIR` — the run folder. Responses you keep go to `{RUN_DIR}/ac-checks/`.
 - `CAPABILITIES` — `capabilities.json`; its `stand.writable` decides whether you may create or change data.
-- `LEDGER` — `ledger.jsonl`. Every entity you create gets one line, appended at once:
-  `{"entity":"<type>","id":"<platform id>","by":"ac-checks","item":"C-n","at":"<ISO time>"}`. The run tears down
-  from this file only.
+- `KEY` and `ledger.md` (beside this brief) — every entity you create and every setting you change is recorded as
+  it says, with `--by ac-checks`. The run tears down from that ledger only.
 
 ## How
 

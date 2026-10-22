@@ -2,6 +2,7 @@
   "description": "Layer 0's output (spec U37, U44). One hotspot per bundle hotspot plus any the agent adds; zones are U39's significant zones.",
   "$defs": {
     "source": { "type": "string", "pattern": "^[^:\\s]+:[^:]+:[0-9]+$" },
+    "location": { "type": "string", "pattern": "^[^:\\s]+:[^:]+(:[0-9]+)?$" },
     "text": { "type": "string", "minLength": 1 },
     "acRow": {
       "type": "object", "additionalProperties": false, "required": ["ac", "status", "code"],
@@ -13,13 +14,13 @@
     },
     "hidden": {
       "type": "object", "additionalProperties": false, "required": ["source", "what"],
-      "properties": { "source": { "$ref": "#/$defs/source" }, "what": { "$ref": "#/$defs/text" } }
+      "properties": { "source": { "$ref": "#/$defs/location" }, "what": { "$ref": "#/$defs/text" } }
     },
     "hotspot": {
       "type": "object", "additionalProperties": false, "required": ["id", "source", "risk", "proof", "zone", "node", "profile"],
       "properties": {
         "id": { "type": "string", "pattern": "^H-[0-9]+$" },
-        "source": { "$ref": "#/$defs/source" },
+        "source": { "$ref": "#/$defs/location" },
         "risk": { "$ref": "#/$defs/text" },
         "proof": { "enum": ["unit", "api", "ui", "exploratory"] },
         "zone": { "enum": ["access", "money", "data", "order-state", "buyer-path", "none"] },

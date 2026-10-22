@@ -9,11 +9,8 @@ disable-model-invocation: true
 You orchestrate **inline** and hold only paths: every hand-off is a file, never a summary in a brief (spec
 §4.1). Design: `docs/superpowers/specs/2026-10-15-vc-test-plugin-design.md` §3. `<plugin>` below is this
 plugin's folder (`plugins/vc-test` in this checkout). Run every command from the project root. `WORK` is
-`.vc-fix/vc-test/<TICKET>/` (the scripts' working state: `capabilities.json`, `change-map.json`, `run-plan.json`,
-`ledger.jsonl`, `run-cost.json`).
-
-**Precondition:** the `claude/vc-test-skill-changes` branch is merged — it gives `qa-test-strategy` its
-`--change-map` input and floor F12, and `qa-triage-results` its `--min-severity`. Without them, STOP.
+`.vc-fix/vc-test/<TICKET>/<env>/` (the scripts' working state, one per env: `capabilities.json`, `change-map.json`,
+`run-plan.json`, `ledger.jsonl`, `run-cost.json`).
 
 ## Rules
 
@@ -28,6 +25,7 @@ plugin's folder (`plugins/vc-test` in this checkout). Run every command from the
 8. **Every turn of yours re-reads your whole context**, so keep it small: start the run in a fresh session, never
    read a skill's supporting files or a script's source unless a step fails, and cut a script's output to what the
    step needs (its exit code and summary line; `| tail -n 20` on anything that prints a table or JSON).
+9. **A STOP once step 5 has begun tears down first** (step 8's `teardown.mjs`), then stops: no data outlives the run.
 
 ## 0 — Probe
 
@@ -60,6 +58,8 @@ files exist, `OUT =
 (dry run on VCST-5904). Dispatch one `general-purpose` agent (model `opus`), description `[vc-test:strategy]
 <TICKET>`, brief: "Read and follow `<plugin>/briefs/strategy.md`" + `BUNDLE`, `CHANGE_MAP`, `RUN_DIR`. It writes
 the round as `Status: DRAFT`, passes the gate and the verifier, and returns the approval summary and the path.
+Its round must still say `Status: DRAFT` (`grep -m1 '^Status:'`): anything else ⇒ send it back once, then STOP —
+only you write an approval.
 
 Then ask the one approval question (AskUserQuestion) with that summary. *Change* ⇒ SendMessage the same agent the
 user's words and ask again on its new summary. *Approve* ⇒ you set the section's `Status:` line yourself
@@ -73,8 +73,9 @@ report its errors and STOP. **`--dry-run` stops here**: print the waves and `not
 ## 5 — Waves
 
 One message per wave of `run-plan.json`, every entry dispatched as its `run` says, with `RUN_DIR`,
-`CHANGE_MAP`, `STRATEGY`, `CAPABILITIES` and `LEDGER` (`<WORK>/ledger.jsonl`) paths. Every agent that creates
-data appends each entity to the ledger as `ac-checks.md` says:
+`CHANGE_MAP`, `STRATEGY`, `CAPABILITIES` and `KEY`. Every brief that may create data — `ac-checks`, `ui-checks`,
+exploratory, visual, investigate — also names `<plugin>/briefs/ledger.md`. An entry with `missing` is not
+dispatched: its rows get Result `BLOCKED — needs <missing>`.
 
 | id | How |
 |---|---|
@@ -108,6 +109,7 @@ Evidence. A row with an empty Result is unresulted and stops triage.
 
 For each confirmed Medium-or-worse bug, `/vc-fix:qa-bug` with its investigation package (U50), one at a time;
 its own question decides filing. Tear down with `node <plugin>/lib/teardown.mjs --key <TICKET>` (`--dry-run` shows
-the plan): ledger entities only, newest first, by id; settings back to their first `before`. Exit 2 ⇒ name what
-failed, what it left for a human (`manual`) and what it did not know (`unknown`). Then print `verdict.md`'s first
-two lines and its path.
+the plan): ledger entities of this stand only, newest first, by id; a setting back to its first `before` while the
+stand still holds the run's `after`. Exit 2 ⇒ name what failed, what it left for a human (`manual`), what it did not
+know (`unknown`) and what another stand wrote (`foreign`); exit 3 ⇒ the stand is not writable, all of it is manual.
+Then print `verdict.md`'s first two lines and its path.

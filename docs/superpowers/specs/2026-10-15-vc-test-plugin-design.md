@@ -24,10 +24,11 @@
 > **Updated 2026-10-22 from a review of this spec.** U14 is already true on `main`; the suites-reorganization M1
 > is merged (PR #500); the superseded wording of U13, U15, U18 and U31 moved to
 > [`docs/decisions/vc-test-design-history.md`](../../decisions/vc-test-design-history.md); §4.1 and §5.1 are
-> corrected; B16–B17 are new. O4–O7 are open, each with a proposal (§13). U56 (the owner's, same day) names the
+> corrected; B16–B17 are new. O4–O9 are open, each with a proposal (§13). U56 (the owner's, same day) names the
 > agents the plugin carries — three moved, four new with narrow tools — and moves `/qa-test-automation`; §4 and §10
 > follow. The prototype's dry and live runs on VCST-5904 and a control run are in §2b; U57–U59 (owner's) fix the
-> two causes of the bug it missed, enforced by the strategy gate's clauses 11–12 and its verifier. U60–U66 (owner's)
+> two causes of the bug it missed, to be enforced by the strategy gate's clauses 11–12 and its verifier, built in
+> P0 (§10); until then the prototype's strategy brief states U57 and U58. U60–U66 (owner's)
 > make the run scenario-driven: six classes of complex bugs, scored likelihood × cost, the scenario list approved at
 > human point 1, no separate test model, one agent per scenario, every decision measured (§2c) on a blind benchmark (U67);
 > §3, §4.1 and §10 (new P0) follow.

@@ -35,9 +35,12 @@
       "jira": null
     }
   ],
+  "move_aside_before_run": {
+    "paths": ["reports/tickets/*/VCST-5904/**", ".vc-fix/vc-test/VCST-5904/**", ".vc-fix/context/VCST-5904/**"],
+    "note": "the run writes its own output and state here, so these cannot be hidden from it: the earlier runs' files are moved out before the benchmark run starts and back after it, so it starts from none of them"
+  },
   "hide": {
     "ticket_comments_after": "cutoff",
-    "run_folders": ["reports/tickets/*/VCST-5904/**", ".vc-fix/vc-test/VCST-5904/**", ".vc-fix/context/VCST-5904/**"],
     "kb_entries_created_after": "cutoff",
     "kb_ids": [],
     "bug_catalog_ids": [],
