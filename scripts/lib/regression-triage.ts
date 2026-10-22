@@ -33,6 +33,7 @@ import { join, isAbsolute } from "path";
 import { fileURLToPath } from "url";
 import { parse as parseCsv } from "csv-parse/sync";
 import { resolveTestEnv } from "./resolve-test-env.js";
+import { priorRunDirs, sessionRun, ticketOfRunDir } from "./run-dir.mjs";
 
 export const REG_ROOT = join("reports", "regression");
 export const TRIAGE_STORE_PATH = join(REG_ROOT, ".triage-fingerprints.json");
@@ -587,7 +588,6 @@ export function readRunIssues(runDir: string, store?: TriageStore): IssueInput[]
 // (`ci/agents/regression-triage-agent.md`) triages both. No fingerprint store, no history: a
 // checklist item is not a regression case and has no cross-run outcome series.
 
-export const TICKETS_ROOT = join("reports", "tickets");
 const CHECKLIST_FILE = "testing-checklist.md";
 
 /**
@@ -610,16 +610,23 @@ function splitRow(line: string): string[] {
   return line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map((c) => c.trim());
 }
 
-/** Resolve a ticket key or a ticket folder path to the folder holding its checklist. */
-export function resolveTicketDir(arg: string): string {
+/**
+ * Resolve a ticket key or a ticket folder path to the folder holding its checklist: this session's bound run
+ * folder for the ticket and env, else the env's run folder, else a folder from before the env level
+ * (scripts/lib/run-dir.mjs). Another env's folder never answers — its checklist describes another deployment.
+ */
+export function resolveTicketDir(arg: string, env = process.env.TEST_ENV ?? "vcst"): string {
   if (!arg) throw new Error("collect --ticket needs a ticket key or a ticket folder");
   if (existsSync(join(arg, CHECKLIST_FILE))) return arg;
-  if (!existsSync(TICKETS_ROOT)) throw new Error(`No ${TICKETS_ROOT}/ directory`);
-  const hits = readdirSync(TICKETS_ROOT)
-    .map((sprint) => join(TICKETS_ROOT, sprint, arg))
+  const ticket = arg.toUpperCase();
+  const bound = sessionRun();
+  if (bound && bound.ticket === ticket && bound.env === env && existsSync(join(bound.dir, CHECKLIST_FILE))) return bound.dir;
+  const newest = (dirs: string[]) => dirs
     .filter((d) => existsSync(join(d, CHECKLIST_FILE)))
     .sort((a, b) => statSync(join(b, CHECKLIST_FILE)).mtimeMs - statSync(join(a, CHECKLIST_FILE)).mtimeMs);
-  if (!hits.length) throw new Error(`No ${TICKETS_ROOT}/*/${arg}/${CHECKLIST_FILE}`);
+  const runs = priorRunDirs({ ticket });
+  const hits = [...newest(runs.filter((r) => r.env === env).map((r) => r.dir)), ...newest(runs.filter((r) => r.env === null).map((r) => r.dir))];
+  if (!hits.length) throw new Error(`No ${CHECKLIST_FILE} in a run folder of ${ticket} for ${env} (npm run run:dir -- --ticket ${ticket} --prior lists them)`);
   return hits[0]; // newest checklist wins when a ticket spans sprints
 }
 
@@ -637,7 +644,7 @@ export interface ChecklistRead {
  * `screenshots/` files named in the row, or whose name carries the item id as a token.
  */
 export function readChecklistIssues(ticketDir: string, env = process.env.TEST_ENV ?? "vcst"): ChecklistRead {
-  const ticket = ticketDir.split(/[\\/]/).filter(Boolean).pop() ?? "";
+  const ticket = ticketOfRunDir(ticketDir) ?? "";
   const lines = readFileSync(join(ticketDir, CHECKLIST_FILE), "utf-8").split(/\r?\n/);
   const shotsDir = join(ticketDir, "screenshots");
   const shots = existsSync(shotsDir) ? readdirSync(shotsDir).filter((f) => /\.(png|jpe?g|webp|gif)$/i.test(f)) : [];
@@ -954,8 +961,8 @@ function main(): void {
   const maxPerBatch = maxIdx !== -1 ? Math.max(1, Number(rest[maxIdx + 1]) || DEFAULT_MAX_BATCH) : DEFAULT_MAX_BATCH;
 
   if (cmd === "collect" && runArg === "--ticket") {
-    const ticketDir = resolveTicketDir(rest[0]);
     const env = process.env.TEST_ENV ?? "vcst";
+    const ticketDir = resolveTicketDir(rest[0], env);
     const { issues, unresulted, advisoryCount } = readChecklistIssues(ticketDir, env);
     const batches = groupIssues(issues, maxPerBatch);
     console.log(JSON.stringify({

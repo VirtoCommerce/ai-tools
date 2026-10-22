@@ -12,9 +12,9 @@ Every item traces to its source, and every in-scope source row is either an item
 
 | Input | Where | Missing ⇒ |
 |---|---|---|
-| Test model | `reports/ba/test-models/<TICKET>-*.md` with all of its rounds. Where two dated files exist for one ticket (a legacy fork), use the newest, plus the rows it declares still valid from the older file | **STOP** — run `/qa-test-model <TICKET>` first. Mode 5 without a model is Mode 2. **Except with `--strategy`** whose `Test model` row is `SKIP — no MODEL risk`: then no model is read and none is required |
-| Strategy (`--strategy`) | the last `## Round N` of `reports/tickets/{SPRINT}/<TICKET>/test-strategy.md`, approved (`Status:` not `DRAFT`) | not given ⇒ Mode 5 as before. Given but `DRAFT` ⇒ **STOP** — the strategy is a contract only once approved |
-| Mind map | `.claude/knowledge/domain/<name>.mind-map.json` for the slug (`--mind-map`, else the model's `Mind map:` header) | proceed; write `Mind map: ABSENT` in the header. A missing map is recorded, never a blocker |
+| Test model | `{RUN_DIR}/test-model.md` with all of its rounds ([`run-output.md`](../../knowledge/execution/run-output.md)); a ticket modelled before run folders has `reports/ba/test-models/<TICKET>-*.md`, and where two dated files exist for it (a legacy fork), use the newest, plus the rows it declares still valid from the older file | **STOP** — run `/qa-test-model <TICKET>` first. Mode 5 without a model is Mode 2. **Except with `--strategy`** whose `Test model` row is `SKIP — no MODEL risk`: then no model is read and none is required |
+| Strategy (`--strategy`) | the last `## Round N` of `{RUN_DIR}/test-strategy.md`, approved (`Status:` not `DRAFT`) | not given ⇒ Mode 5 as before. Given but `DRAFT` ⇒ **STOP** — the strategy is a contract only once approved |
+| Mind map | `<name>.mind-map.json` for the slug (`--mind-map`, else the model's `Mind map:` header): the run's copy in `{RUN_DIR}/knowledge/domain/` first, else `.claude/knowledge/domain/` | proceed; write `Mind map: ABSENT` in the header. A missing map is recorded, never a blocker |
 
 ## Procedure
 
