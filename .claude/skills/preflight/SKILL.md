@@ -22,7 +22,9 @@ npm run preflight -- --for <for> [--ticket KEY] [--components A,B] [--domain slu
 - `--storefront` — the scope touches the storefront (adds the anonymous `InitializeApplication` probe).
 - `--env` — check that env instead of the one this session resolves. A run never needs it: its Step 0 bound
   the env for the session (`npm run env:use`, [`run-env.md`](../../knowledge/execution/run-env.md)), and this
-  CLI reads that binding.
+  CLI reads that binding. A ticket's own stand is an env too (`--ticket` fills `QA_ENV_PATH`'s `<ticket>`). On a
+  local stand (`BACK_URL` on this machine) `declared` reads `local stand`: there is no vc-deploy-dev manifest, and
+  `deployed` plus `--expect` read the build off the stand.
 - `--ci` — this skill's own flag (the caller is non-interactive, step 4); never pass it to the CLI, which rejects an unknown flag with exit `1`.
 - Exit `0` READY (warnings allowed) · `2` NOT READY · `1` usage error — fix the flags · `3` the script could not run: report its message and STOP, never improvise the facts by hand.
 - The verdict counts BLOCKs only: `UNKNOWN` rows are listed and counted but do not by themselves make a run NOT READY. The exception is `ticket` / `ticket-fast`: an `--expect` whose deployed state is `UNKNOWN` is a BLOCK.
