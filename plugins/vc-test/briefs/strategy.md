@@ -11,7 +11,11 @@ scenario cites a risk. The orchestrator asks the user; you never do. Dispatch de
 - `SCENARIOS_TABLE` — `<WORK>/scenarios.md`: the scorer's `### Scenarios` table, its Not selected and Rejected
   lists, and the generator's Gaps. `SCENARIOS` — `<WORK>/scenarios.json`, the same as data, beside the
   generator's `<WORK>/candidates.json`.
-- `RUN_DIR` — the run folder.
+- `RUN_DIR` — the run folder. `CUTOFF` — given only in a benchmark run.
+
+**Benchmark (`CUTOFF` given, U67):** no kb, no earlier run folder, nothing under `reports/bugs/` or
+`<plugin>/benchmarks/` (`<plugin>` is the folder above this brief's), no bug catalog — for you and for the
+verifier you dispatch: put this line into its brief.
 
 ## How
 
@@ -23,8 +27,8 @@ scenario cites a risk. The orchestrator asks the user; you never do. Dispatch de
      a lifetime, an interval) asserts that value, whatever stand configuration you could not read — never "record
      the observed value". A stand that may be configured otherwise is a named configuration question, not a PASS.
    - **A project risk is about the test project — access, data, environment, time (U58).** A statement about how
-     the product behaves ("the limit is held per instance") is a product risk with its own check, however hard the
-     stand makes it to test; an accepted project risk never changes how a product risk is decided.
+     the product behaves ("the check is skipped when the setting is off") is a product risk with its own check,
+     however hard the stand makes it to test; an accepted project risk never changes how a product risk is decided.
 2. **Write `### Scenarios`** (after `### Approach per risk`, gate clause 13): the scorer's table as it is — never
    change a What, Bug, Score, Proof or Writes cell — with each `R-?` replaced by the id of the risk the scenario
    hunts, as the Risks table writes it (`R2`). No risk fits ⇒ register one; never force a fit. Under the table:
@@ -43,18 +47,21 @@ scenario cites a risk. The orchestrator asks the user; you never do. Dispatch de
 4. **Do not ask the approval question.** Skip the skill's Approval step.
 5. If the orchestrator sends you a change from the user, apply it, re-run the gate (and the verifier when a risk is
    Critical), and return the same summary again. **Strike** ⇒ the row leaves the table and goes to Out of scope as
-   "struck at approval" with its residual risk. **Add** ⇒ the next `S-n`, Score `—`, Why likely
-   `added at approval · R<k>`. **Reorder** ⇒ renumber `S-n` in the new order. **A shared store named** ⇒
-   `Shared store: <id> (named by the user at approval)`.
+   "struck at approval" with its residual risk. **Add** (by the user or the verifier) ⇒ the next `S-n` with every
+   cell filled: Class 1–6, What, Bug, Why likely `added at approval · R<k>`, Score `—`, Proof `api` or `browser`,
+   and Writes (`global/<name>`, `store:<id>/<name>`, `;`-separated, or `—`) — the planner and the runner read
+   only these; its windows join the summary. **Reorder** ⇒ renumber `S-n` in the new order. **A shared store
+   named** ⇒ `Shared store: <id> (named by the user at approval)`.
 
 ## Return — this and nothing else
 
 - the strategy path, the gate result (exit code), the verifier verdict;
 - **the approval summary, ≤ 40 lines** (U62): the mission; **the scenario list** in score order — one line each,
-  `S-n · class · what it does · the bug it hunts · why likely · proof`; Not selected, one line each with its
-  residual risk; **the windows it will announce** — per scenario writing a global setting, `S-n · <setting> →
-  <value from its steps> · ≤ 120 s, announced in the team channel` (if `TEAMS_WEBHOOK_URL` is unset — check the
-  name, never print the value — say those scenarios will be BLOCKED: no channel to announce the window, U68);
+  `S-n · class · what it does · the bug it hunts · why likely · proof`; Not selected as a count plus the top three
+  by score, each with its residual risk; **the windows it will announce** — per scenario writing a global setting,
+  `S-n · <setting> → <value from its steps> · ≤ 120 s, announced in the team channel` (if
+  `node -e "process.exit(process.env.TEAMS_WEBHOOK_URL ? 0 : 1)"` exits 1 — read the exit code only, never the
+  value — say those scenarios will be BLOCKED: no channel to announce the window, U68);
   each scenario that writes a store it does not create, with "name the store at approval or it is BLOCKED"; the
   Out of scope list; the depth label.
 

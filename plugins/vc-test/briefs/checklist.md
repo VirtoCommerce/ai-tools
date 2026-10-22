@@ -8,12 +8,12 @@ own rows; you write none for them. You do not run any check. Dispatch descriptio
 
 - `STRATEGY` — the approved `test-strategy.md` (its last `## Round N`).
 - `CHANGE_MAP` — `change-map.json` (layer 0): ACs with `NO CODE`, hotspots with `proof` and `zone`, suspicions.
-- `RUN_DIR` — the run folder.
+- `RUN_DIR` — the run folder. `CUTOFF` — only in a benchmark.
 
 ## How
 
-Load the `qa-checklist` skill and use its Mode 5 (`--from-model --strategy <STRATEGY>`; this run has no model) for the Ref, Data and oracle rules —
-for AC rows only. Write the thin form below instead of its full table:
+Load the `qa-checklist` skill and use its Mode 5 (`--from-model --strategy <STRATEGY>`; this run has no model)
+for the Ref, Data and oracle rules — for AC rows only. Write the thin form below instead of its full table:
 
 | # | Ref | Item | Proof | Data | Result | Evidence |
 |---|---|---|---|---|---|---|
@@ -37,11 +37,15 @@ for AC rows only. Write the thin form below instead of its full table:
 - Leave Result and Evidence empty.
 
 **End the file with the scenarios' table, empty, and nothing after it** — the scenario agents append their `SC`
-rows under it (B20):
+rows under it (B20). The separator line is the file's last line and ends with one newline; no blank line after
+it (a blank line ends the table for triage):
 
     ## Scenario results
 
     | # | Ref | Item | Proof | Data | Result | Evidence |
     |---|---|---|---|---|---|---|
+
+**Benchmark (`CUTOFF` given, U67):** no kb, no earlier run folder, nothing under `reports/bugs/` or
+`<plugin>/benchmarks/` (the folder above this brief's), no bug catalog.
 
 Return **only** the file path and the count of rows.

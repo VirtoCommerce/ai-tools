@@ -6,11 +6,12 @@ nothing and re-open no page. Dispatch description: `[vc-test:verdict] <KEY>`.
 ## Inputs (paths only)
 
 - `STRATEGY` — `test-strategy.md`; `CHECKLIST` — `testing-checklist.md` with its results (the `C-n` AC rows and the
-  scenarios' `SC-<n>.<m>` rows); `CHANGE_MAP` — `change-map.json`; `SCENARIOS` — `<WORK>/scenarios.json` (proposed,
-  selected, not selected); `RUN_PLAN` — `run-plan.json` (its `notRun`); `TRIAGE` — `triage-report.md` and the
-  `evidence-*/` investigation packages; `design-report.md` when the visual lane ran; `RUN_COST` — the Markdown table
-  `run-cost.mjs` printed.
-- `BENCHMARK` — only in a benchmark run: the benchmark definition (`<plugin>/benchmarks/<KEY>.json`).
+  scenarios' `SC-<n>.<m>` rows); `CHANGE_MAP` — `change-map.json`; `SCENARIOS` — `<WORK>/scenarios.json`
+  (`selected`, `notSelected`, `rejected`); `RUN_PLAN` — `run-plan.json` (its `notRun`); `TRIAGE` —
+  `triage-report.md` and the `evidence-*/` investigation packages; `design-report.md` when the visual lane ran;
+  `RUN_COST` — the Markdown table `run-cost.mjs` printed.
+- `BENCHMARK` — only in a benchmark run: the benchmark definition (`<plugin>/benchmarks/<KEY>.json`). You are the
+  only agent of the run that reads it.
 
 ## Rules (cited, not restated)
 
@@ -24,17 +25,18 @@ nothing and re-open no page. Dispatch description: `[vc-test:verdict] <KEY>`.
      (`Significant bugs: 1 in scope, 2 outside`), then the one sentence (spec B16).
   2. **`## Noticed`** after Bugs — every Low or cosmetic finding as one line, with where it was seen; no
      screenshot, no bug (spec U25).
-  3. **Not tested, and why** also lists every `notRun` row of `RUN_PLAN` with its reason, every `SKIP` row of
-     the strategy, every scenario not selected or struck at approval (U61), every scenario or row `BLOCKED` with
-     its reason, and every AC row `BLOCKED — needs a look` (U65) — each with its residual risk.
+  3. **Not tested, and why** also lists every `notRun` row of `RUN_PLAN` with its reason — except `Exploratory`,
+     which ran as the free class-3 scenario (U65) — every `SKIP` row of the strategy, every scenario not selected or
+     struck at approval (U61), every scenario or row `BLOCKED` with its reason, and every AC row
+     `BLOCKED — needs a look` or `BLOCKED — needs a global window` (U65, U68) — each with its residual risk.
   4. **Suspicions** — each layer-0 suspicion with `confirmed (<id>)`, `refuted (<id>)` or `not checked`, naming
      the `C-n` or `SC-<n>.<m>` row that decided it.
   5. **`## Cost`** at the end — the `RUN_COST` table as given, then **per scenario** one line — S-n · class ·
-     its worst Result · significant bugs it found · the tokens and minutes of its `scenario:S-n` row; then the counts
-     proposed / selected / run (U66).
-  6. **`## Benchmark`**, only with `BENCHMARK` (U67): that the run was a benchmark; what was hidden — the cutoff,
-     the comments after it, the hidden issues, the moved-aside run folders, the kb entries after the cutoff; the kb
-     entries the agents set aside (every `kb set aside (benchmark):` in the checklist and in `SCENARIOS`'s Gaps
-     file, `<WORK>/scenarios.md`); and each known bug `found (<row id>)` or `missed` — a miss against the control.
+     its worst Result · significant bugs it found · the tokens and minutes of its `scenario:S-n` row; then the
+     counts proposed (`selected` + `notSelected` + `rejected`) / selected / run (U66).
+  6. **`## Benchmark`**, only with `BENCHMARK` (U67): that the run was a benchmark; what was hidden from every
+     agent before you — the comments after the cutoff, the hidden issues, the moved-aside run folders, `known.kb`
+     and `known.prior_runs`, the kb, `reports/bugs/` and the bug catalog; and each known bug `found (<row id>)` or
+     `missed` — a miss against the control.
 
 Return **only** the path and the verdict word.

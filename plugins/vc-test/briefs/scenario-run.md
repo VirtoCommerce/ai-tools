@@ -24,11 +24,11 @@ B20). You hunt the one bug its row names; you neither investigate a failure nor 
   `configuration question: <setting>` in Evidence. A behaviour no source decides, which your row names as the bug,
   is `FAIL <severity> — PO question: <q>`. Never "recorded", never a PASS that only says what happened. Severity by
   consequence: access, money, data, order state or a broken buyer path is Medium or worse (U24).
-- **Another mechanism must not answer for the one under test.** When a platform guard (an account lockout, a rate
-  limit) can refuse before the check you hunt, the error code says which one answered; the hunted check never
-  firing is a FAIL, not a PASS hidden behind the other.
+- **Another mechanism must not answer for the one under test.** When another guard can refuse before the check
+  you hunt, the error code says which one answered; the hunted check never firing is a FAIL, not a PASS hidden
+  behind the other.
 - **`SCALE` (U59)** — any limit, counter, cache, lockout or session state: every request on a fresh connection (no
-  keep-alive, no shared client, no affinity cookie), past the limit by at least the instances you suspect, each
+  keep-alive, no shared client or cookie jar), past the limit by at least the instances you suspect, each
   response's instance marker recorded (a header, a cookie, a server id). Evidence states how many instances you
   saw; one instance seen ⇒ `BLOCKED — one instance seen; the cross-instance case is untested (U59)`.
 - **Data** follows `.claude/rules/test-data.md`: created in the case with the `AGENT-TEST-` prefix, live-discovered,
@@ -37,17 +37,19 @@ B20). You hunt the one bug its row names; you neither investigate a failure nor 
   change goes into the ledger at once, as `ledger.md` says, with `--by scenario:S-n`.
 - **Browser** only when `LANE` names one, and only that server's tools — one session, yours alone. Sign in through
   the lane's secrets by bare key name, never a password value. No `LANE` ⇒ no browser.
-- **What the platform does** (where a code is delivered, which header marks an instance): ask the kb first —
+- **What the platform does** (how to reach a state, where an artifact is delivered): ask the kb first —
   `mcp__kb__kb_ask` (load it with `ToolSearch`), else `npm run kb -- ask "<q>"`, the endpoint or page path in the
-  question. A kb entry tells you how to reach a state; it is never the oracle.
+  question. A kb entry tells you how to reach a state; it is never the oracle. **In a benchmark, no kb** (below).
 
 ## Settings (U65, U68)
 
+- **Only what point 1 approved.** You write only the settings your row's `Writes` cell lists, at the scope it
+  names. Any other setting a step would need ⇒ `BLOCKED — not approved at point 1: <setting>`.
 - **Guard.** Re-read a setting before your first write and right before each step that depends on it. It must
   equal the value it had before the run (the ledger's first `before`, else your first read) or the last `after`
   this run recorded. Anything else is someone else's change ⇒ `BLOCKED — <setting> changed by another (<value>)`,
   never FAIL; put nothing back.
-- **A global setting is written only inside a window.** Prepare everything first (users, data, codes), then:
+- **A global setting is written only inside a window.** Prepare everything first (users, data), then:
 
       node <plugin>/lib/window.mjs open --key <KEY> --setting <name> --value <new> [--max-s 120]
 
@@ -58,7 +60,9 @@ B20). You hunt the one bug its row names; you neither investigate a failure nor 
 
       node <plugin>/lib/window.mjs close --key <KEY> --setting <name> --value <restored>
 
-  **Close always** — after a failed or broken step too, restoring first. A restore that fails: close anyway and
+  **Close only a window you opened** — after open printed `"status":"open"`; a refused open is never closed (the
+  lock is released by ticket key, so your close would free another holder's window). **A window you opened is
+  always closed** — after a failed or broken step too, restoring first. A restore that fails: close anyway and
   make your return's first line `RESTORE FAILED: <setting> still <value>` (teardown restores it from the ledger).
 - **A store setting** only on a store this run created (it is in the ledger) or the one `Shared store:` names.
   Any other store ⇒ `BLOCKED — U68: store <id> is shared and was not named at approval`. Never move the scenario
@@ -70,9 +74,11 @@ Other scenario agents and the background AC run write the same file in this wave
 only:**
 
 - Your ids are `SC-<n>.<m>` — `<n>` your scenario's number, `<m>` 1, 2, … (S-3 writes `SC-3.1`, `SC-3.2`).
-- Re-read the file's end just before each append; it ends with the `## Scenario results` table. Append one row per
-  shell append (`cat >> <file> <<'ROW'`), right under the last row — never Write or Edit the file, never touch
-  another row. A correction is the same id appended again (the last row of an id wins).
+- Re-read the file's end just before each append; it ends with the `## Scenario results` table. Check its last
+  byte (`tail -c 1 <file> | od -c`): if it is not a newline, append one `\n` first — **never a blank line**: a
+  blank line ends the table for triage and every row below it disappears. Then append one row per shell append
+  (`cat >> <file> <<'ROW'`) — never Write or Edit the file, never touch another row. A correction is the same id
+  appended again (the last row of an id wins).
 - Row, in the table's columns (`# | Ref | Item | Proof | Data | Result | Evidence`):
 
       | SC-<n>.<m> | S-<n> · R<k> | what was checked, with the expected value and its source | scenario | data | <Result> | <Evidence> |
@@ -89,13 +95,13 @@ only:**
 A time-boxed charter in the `qa-exploratory` style — load the `qa-sbtm` skill for its form. The charter is your
 row's `Bug it hunts` cell. 30 minutes: 5 to set up, 20 to explore (the first 10 seeking surprises), 5 to write.
 Stay on the touched surfaces and their neighbours, aimed at U24's failures; re-validating known paths is not the
-session. Each finding is an `SC` row; the last row states the charter, the minutes and what was covered, Result
-`PASS` when nothing was found.
+session. Write no notes file, whatever the skill's form says: each finding is an `SC` row, and the last row
+states the charter, the minutes and what was covered, Result `PASS` when nothing was found.
 
 ## Benchmark (`CUTOFF` given, U67)
 
-Open no tracker issue, no earlier run folder, nothing under `reports/bugs/` or `<plugin>/benchmarks/`, and no bug
-catalog. A kb entry observed after `CUTOFF`, or one you cannot date (`kb_show`), is not used: write it into the
-row's Evidence as `kb set aside (benchmark): <id>`. Write nothing to the kb.
+No kb at all — no `kb_ask`, `kb_show` or `npm run kb`, read or write. Open no tracker issue, no earlier run
+folder, nothing under `reports/bugs/` or `<plugin>/benchmarks/`, and no bug catalog. Reach states from the
+inputs, the stand and the platform's API alone.
 
 Return **only**: `S-n`, each row id with its Result, each window opened and closed, any BLOCKED reason.

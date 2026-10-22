@@ -10,7 +10,8 @@ Dispatch description: `[vc-test:ac-checks] <KEY>`.
   rows, and the probe rows below. The scenario agents append rows under `## Scenario results` while you run:
   re-read the file right before each write, change only your own rows, and never touch that table.
 - `CHANGE_MAP` — `change-map.json`: the endpoints and operations of its hotspots.
-- `STRATEGY` — `test-strategy.md`, read only for its last round's `Shared store:` line.
+- `STRATEGY` — `test-strategy.md`, read only for its last round's `Shared store:` line. `CUTOFF` — only in a
+  benchmark.
 - `RUN_DIR` — the run folder. Responses you keep go to `{RUN_DIR}/ac-checks/`.
 - `CAPABILITIES` — `capabilities.json`; its `stand.writable` decides whether you may create or change data.
 - `KEY` and `ledger.md` (beside this brief) — every entity you create and every setting you change is recorded as
@@ -37,14 +38,16 @@ Dispatch description: `[vc-test:ac-checks] <KEY>`.
   never a PASS that only records what happened.
 - **A `SCALE` row** (spec U59): send every request on a fresh connection (no keep-alive, no shared client), repeat
   past the limit by at least the number of instances you suspect, and record any instance marker the responses
-  carry (a header, a cookie, a server id). Seeing one instance only is written as such, not as PASS.
-- **Settings (U68).** Re-read a setting before you write it and before each row that depends on it; a value that
-  is neither its value before the run nor this run's last ledger `after` is another's change ⇒ `BLOCKED`, never
-  FAIL. A global setting only inside `node <plugin>/lib/window.mjs open` … `close` (`--key <KEY> --setting <name>
-  --value <v>`), exactly as `scenario-run.md` §Settings says; a refused open ⇒ the row is BLOCKED with its reason,
-  never a write without the window. A store setting only on a store this run created or the strategy's
-  `Shared store:`.
+  carry (a header, a cookie, a server id). Seeing one instance only is `BLOCKED — one instance seen`, never PASS.
+- **Settings (U68).** **You never write a global setting:** a row that needs one is `BLOCKED — needs a global
+  window (U68)`, and a scenario covers it. A store setting only on a store this run created or the strategy's
+  `Shared store:`, restored when done; each write and its restore go into the ledger. Re-read a setting before you
+  write it and before each row that depends on it; a value that is neither its value before the run nor this
+  run's last ledger `after` is another's change ⇒ `BLOCKED`, never FAIL.
 - A FAIL is a fact you saw. You do not investigate it and you do not write a bug: triage does that.
 
-Return **only**: counts of PASS / FAIL / BLOCKED (and how many BLOCKED need a look), and the `#` ids of the FAIL
-rows.
+**Benchmark (`CUTOFF` given, U67):** no kb, no earlier run folder, nothing under `reports/bugs/` or
+`<plugin>/benchmarks/`, no bug catalog.
+
+Return **only**: counts of PASS / FAIL / BLOCKED (and how many BLOCKED need a look or a global window), and the
+`#` ids of the FAIL rows.
