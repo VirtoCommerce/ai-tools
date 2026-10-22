@@ -26,8 +26,8 @@ TEST_ENV=virtostart npm run seed:demo -- --family returns
 
 Delivered orders and returns on the sales-rep demo's four organizations — eight buyer orders with fourteen returns covering every status the store allows —
 Draft, Requested ×3, New (agent-logged), Approved ×2, PartiallyApproved ×2, Processing ×2, Rejected, Cancelled,
-Completed — plus two freshly delivered orders with no return for a live Request-return walkthrough. **Alla's own orders**
-(fixture `owner: {rep, login}`): three per login (`record` and `email`) in her served orgs, four returns each
+Completed — plus two freshly delivered orders with no return for a live Request-return walkthrough. **The primary demo rep's own orders**
+(fixture `owner: {rep, login}`): three per login (`record` and `email`) in that rep's served orgs, four returns each
 on "My returns", every order still returnable so **Request return** shows; returns are submitted as her via her
 password or, without it, an operator logging in on her behalf.
 
@@ -46,7 +46,7 @@ password or, without it, an operator logging in on her behalf.
 - **Organization returns view:** no role on the store carries `xapi:my_organization:return:view`, so the
   demo owns a role, `Organization returns manager` (view + submit; submit is unchecked on Return 3.1005 —
   colleagues' returns stay view-only), and ADDS it to the memberships listed in the
-  fixture's `orgReturnsAccess` (maintainer buyers + both of Alla's logins in her served orgs). Built-in roles
+  fixture's `orgReturnsAccess` (maintainer buyers + both of the primary rep's logins in its served orgs). Built-in roles
   are never edited. When the store's membership-roles whitelist is active, the role is appended to it so the
   Admin picker offers it (`seed:membership-roles` keeps it while the demo holds). Teardown removes all of it.
 

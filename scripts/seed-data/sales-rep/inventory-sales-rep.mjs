@@ -77,19 +77,19 @@ const DEMO_MARK = 'DEMO-SR';
 
 /**
  * Accounts the demo REUSES — real people. Never deleted, never password-reset, never counted toward
- * residue. Sourced from the env so adding a person needs no code change; alla.volkova@virtoway.com
- * is the committed default because the demo brief names her explicitly.
+ * residue. Sourced from the env ONLY: the addresses name real colleagues, so they live in .env.local
+ * (SR_DEMO_PROTECTED_EMAILS_<ENV>) and the demo reps' own SR_DEMO_REP_*_EMAIL[_<ENV>], never in a
+ * committed file. With none configured, --delete refuses to run (see main()).
  */
+const envOf = (key) => process.env[`${key}_${TEST_ENV.toUpperCase()}`] || process.env[key] || '';
 const PROTECTED_EMAILS = new Set(
-  (process.env.SR_DEMO_PROTECTED_EMAILS || 'alla.volkova@virtoway.com')
+  envOf('SR_DEMO_PROTECTED_EMAILS')
     .split(',')
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean)
     .concat(
       [
-        (process.env.SR_DEMO_REP_ZHUK_EMAIL || '').trim().toLowerCase(),
-        (process.env.SR_DEMO_REP_VOLKOVA_EMAIL || '').trim().toLowerCase(),
-        (process.env[`SR_DEMO_REP_SWITCHER_EMAIL_${TEST_ENV.toUpperCase()}`] || process.env.SR_DEMO_REP_SWITCHER_EMAIL || '').trim().toLowerCase(),
+        ...['SR_DEMO_REP_PRIMARY_EMAIL', 'SR_DEMO_REP_SECOND_EMAIL', 'SR_DEMO_REP_SWITCHER_EMAIL'].map((k) => envOf(k).trim().toLowerCase()),
       ].filter(Boolean),
     ),
 );
@@ -479,6 +479,11 @@ async function main() {
   assertSafeTarget();
 
   if (DELETE) {
+    if (!PROTECTED_EMAILS.size) {
+      console.error('ABORT: --delete with NO protected accounts configured. Set SR_DEMO_PROTECTED_EMAILS_<ENV> and the');
+      console.error('       SR_DEMO_REP_*_EMAIL_<ENV> addresses in .env.local first — they name real people and are not committed.');
+      process.exit(2);
+    }
     // The overlay this run rewrites is COMMITTED for vcst/vcptcore. An env mismatch here would blank
     // the alias file every suite resolves @td() through, so it is a hard stop, not a warning.
     if (!ENV_CONFIRM || ENV_CONFIRM !== TEST_ENV) {

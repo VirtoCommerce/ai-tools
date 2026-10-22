@@ -34,6 +34,7 @@ import {
   discoverCatalogProducts, makeProductPng,
 } from '../../lib/seed-common.mjs';
 import { resolvePassword } from '../../lib/user-provision.mjs';
+import { DEMO_REPS, repEmailEnvKeys } from '../sales-rep/sales-rep-demo-specs.mjs';
 import {
   DEMO_ORGS, DEMO_RET_ORDERS, DEMO_RET_LEDGER_KEY, SR_DEMO_LEDGER_KEY, RETURNS_PROFILE, OUTCOME,
   DEMO_WINDOW_DAYS_ASSUMED, DEMO_RET_REQUIRED_ORDER_STATUS,
@@ -75,7 +76,9 @@ function salesRepDemoBase() {
     if (e.type === 'account') buyers[e.key] = { userId: e.id, email: e.email, orgId: e.orgId };
   }
   const reps = {};
-  for (const e of l?.entities || []) if (e.type === 'rep-attachment') reps[e.key] = { userId: e.userId, email: e.email };
+  // The sales-rep ledger no longer stores a rep's email (a real person); the env holds it.
+  const repEmailOf = (key) => { const spec = DEMO_REPS.find((r) => r.key === key); return spec ? (repEmailEnvKeys(spec, TEST_ENV).map((k) => process.env[k]).find(Boolean) || '').trim() : ''; };
+  for (const e of l?.entities || []) if (e.type === 'rep-attachment') reps[e.key] = { userId: e.userId, email: e.email || repEmailOf(e.key) };
   return { present: !!l, orgs, buyers, reps, owners: { ...buyers } };
 }
 

@@ -53,7 +53,7 @@ import {
   demoMarker, isDemoMarker, markerSweepInScope, demoProblems,
   buildDemoFileBytes, buildDemoDocumentRequest, buildDemoOrderBody,
   demoOrderNumber, ordersInPostOrder, productNeedByOrg, isDemoSafeProduct,
-  orgByKey, contactByKey, roleSeesDocuments, SALES_REP_ROLE_ADVANCED, documentSourceRel,
+  orgByKey, contactByKey, repEmailEnvKeys, roleSeesDocuments, SALES_REP_ROLE_ADVANCED, documentSourceRel,
   DEMO_LISTS, listProductNeedByOrg, DEMO_LIST_SCOPE, DEMO_CARTS, DEMO_REP_CARTS, cartProductNeedByOrg, resolveTaskText,
 } from './sales-rep-demo-specs.mjs';
 
@@ -118,7 +118,7 @@ async function allReps() {
  * A rep's email: `<emailVar>_<ENV>` first (the form .env.local uses), then `<emailVar>`. Reps are real
  * people, so the address is read from the env every time and never written to the ledger.
  */
-const repEmail = (spec) => String(process.env[`${spec.emailVar}_${TEST_ENV.toUpperCase()}`] || process.env[spec.emailVar] || '').trim().toLowerCase();
+const repEmail = (spec) => String(repEmailEnvKeys(spec, TEST_ENV).map((k) => process.env[k]).find(Boolean) || '').trim().toLowerCase();
 
 /**
  * Resolve each declared rep to a LIVE sales-rep record, or explain precisely why it cannot be used.
@@ -168,7 +168,7 @@ async function resolveReps() {
     // — so signing in with the other email yields a token that carries sales-rep:access (the hub
     // renders in full) over ZERO granting memberships, i.e. an empty customer list, empty orders and
     // zero counters, with no error anywhere. Measured live on virtostart 2026-09-23: the contact
-    // "Alla Volkova" has two accounts; the one this variable named had 0 memberships while the rep
+    // the primary demo rep has two accounts; the one this variable named had 0 memberships while the rep
     // record's had 6. Whoever looks at that screen concludes the DATA is broken.
     const repUserName = String(full?.userName || '').trim().toLowerCase();
     if (repUserName && repUserName !== email) {
