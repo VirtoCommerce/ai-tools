@@ -97,12 +97,14 @@ npm run release:status -- stable-<N> --write
 
 1. **The PR to `main`** with the release folder — branch `claude/qa-release/stable-<N>-plan`, the user's git identity,
    body in English (what changed, the wave grid, prerequisites, how to claim). **Never merge.**
-2. **One tracker sub-task per wave** under `--ticket` (`Stable <N> regression — <wave> <title>`, unassigned). Required
+2. **One tracker sub-task per wave** under `--ticket` — `npm run release:report -- stable-<N> --subtasks` shows them,
+   `--apply` creates them and writes each key into `release.json` `waves[].subtask`. Required
    whenever more than one person runs waves: the sub-task is the claim (contract §8). On a *no*, say the waves must then
    run one person at a time.
 
-The release ticket's single progress comment belongs to the planner, refreshed from `PROGRESS.md`
-([`../../../rules/reports.md`](../../../rules/reports.md) §0). Next command for each QA:
+The release ticket gets **one new comment per finished wave**, posted by whoever finished it (`/qa-run` Step 7,
+`release:report --post`): each one carries the whole release as of that wave, so the latest is the current state.
+Next command for each QA:
 `/qa-run stable:<N> <wave> --claim`.
 
 ## Rules

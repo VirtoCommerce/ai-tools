@@ -4,14 +4,14 @@
 
 Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1 · 2.59.0
 
-**Executed 2057 · PASS 1479 · FAIL 171 · BLOCKED 358** · ledger 190 rows
+**Executed 2057 · PASS 1479 · FAIL 171 · BLOCKED 358** · ledger 219 rows
 
 | Wave | Scope | Owner | Status | Planned | Executed | PASS | FAIL | BLOCKED | FAIL without a verdict | Ledger | Runs |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | W0 | Smoke gate | Elena Kutasina | DONE | 149 | 149 | 100 | 4 | 19 | 0 | 5 | REG-2026-10-12-1659 |
 | W1 | Platform & infrastructure | Elena Kutasina | DONE | 538 | 538 | 436 | 19 | 67 | 0 | 26 | REG-2026-10-13-0035 REG-2026-10-13-1241-UCP |
 | W2 | Catalog & search | Elena Kutasina | TRIAGED | 611 | 553 | 445 | 53 | 51 | 0 | 58 | REG-2026-10-13-W2 |
-| W3 | Purchase flow | Elena Kutasina | RUN_DONE | 900 | 817 | 498 | 95 | 221 | 29 | 101 | REG-2026-10-15-W3 |
+| W3 | Purchase flow | Elena Kutasina | TRIAGED | 900 | 817 | 498 | 95 | 221 | 0 | 130 | REG-2026-10-15-W3 |
 | W4 | Returns, B2B, accounts | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W5 | Marketing & content | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W6 | Theme cross-cutting + gap sessions | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
@@ -22,12 +22,12 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 
 | Verdict | Rows |
 |---|---|
-| REAL_BUG | 40 |
+| REAL_BUG | 42 |
 | BY_DESIGN | 3 |
-| TEST_DEFECT | 50 |
-| DATA | 57 |
-| ENV_CONFIG | 34 |
-| DUPLICATE | 2 |
+| TEST_DEFECT | 69 |
+| DATA | 59 |
+| ENV_CONFIG | 39 |
+| DUPLICATE | 3 |
 | FLAKY | 1 |
 | PENDING_DECISION | 3 |
 
@@ -53,14 +53,6 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | W2 | IMGTL-025 | Task over 5 .jpg images and 1 .png: thumbnails only for the .png, success notification with 0 errors | no | same defect as IMGTL-007, file once |
 | W2 | IMGTL-026 | Thumbnail task shows no processed/total progress; the push notification reports 0 of 0 although 13 thumbnails were written | unknown | low, UX |
 | W2 | CHAN-008 | Channel completeness stays 0% after an evaluation that scored the products 62/25/25% | no | pre-existing, not filed yet |
-| W3 | ORDA-076 | Order PUT with an invalid currency or a malformed createdDate returns 500 instead of a validation error | no |  |
-| W3 | ORDA-104 | Order price protection leaks: a user without order:read_prices gets capture and refund amounts via childrenOperations and the Admin operati… | yes |  |
-| W3 | ORDA-113 | Admin operations tree does not mirror the masked price state for a price-denied user | yes | same defect as ORDA-104, file once |
-| W3 | ORDA-081 | A refund beyond the captured / remaining amount is accepted | no |  |
-| W3 | ORDA-083 | A fully refunded payment can be refunded again; the payment never reaches Refunded | no |  |
-| W3 | PRICE-031 | Export of price list assignments never completes (same ExportJob failure) | yes | same defect as PRICE-008, file once |
-| W3 | PRICE-008 | Generic Export (price lists) never completes: ExportJob cannot deserialize the abstract ExportDataQuery under BackgroundJobs | yes |  |
-| W3 | PRICE-055 | Export with the minimal pricing role: no providers load, and the export itself never completes | yes | same defect as PRICE-008, file once |
 
 ## Decisions pending
 

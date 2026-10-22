@@ -1,0 +1,72 @@
+{
+  "_meta": {
+    "description": "What a suite's cases need from the stand that the suite CSV cannot express: a store setting, a platform setting, a payment method, a key in vc-deploy-dev infra/environments.yml (headers, FileUpload scopes, KnownAssetHosts). Read by the regression pre-flight (scripts/regression/requirements.ts) before every run and every release wave; personas ([PRE:SIGNIN_AS:*]) and fixtures (@td()) are derived from the CSVs and are NOT declared here.",
+    "kinds": "storeSetting · platformSetting · paymentMethod (isActive) · deployConfig (dotted path in the env's block of infra/environments.yml; prefix:true for an indexed list) · uploadScope (a FileUpload__Scopes__N__Scope value)",
+    "match": "equals · notEquals · nonEmpty · allowedIncludes (platformSetting: values its dictionary must offer) · (none = must be set). level: warn (default — the named cases will BLOCK) or block (the suite cannot run meaningfully).",
+    "personas": "personas: a persona or @td() fixture alias (or PREFIX*) → the module it needs. Without that module on the stand its cases are NOT DEPLOYED: they leave the plan (not run, not counted, not triaged), like a suite whose requiresModules is not deployed.",
+    "skip": "Every case a WARN/BLOCK row names is recorded BLOCKED with that row's reason and NOT run (regression:plan --run-blocked runs them anyway).",
+    "provenance": "Every entry below was a BLOCKED or FAIL cause in the Stable 16 regression on vcptcore_regression (regression/releases/stable-16/), with the exact cases it hit. Names were read live from the platform API and from vc-deploy-dev infra/environments.yml on 2026-10-16. Add an entry when a triage verdict is ENV_CONFIG; remove one when the cases stop needing it."
+  },
+  "personas": {
+    "SALES_REP": { "module": "VirtoCommerce.SalesRep", "why": "the sales-rep account is a rep contact of the SalesRep module (seed:sales-rep → /api/sales-rep/*)" },
+    "ORG_REP_ONLY": { "module": "VirtoCommerce.SalesRep", "why": "an organization served only by a sales rep (seed:sales-rep)" },
+    "SR_*": { "module": "VirtoCommerce.SalesRep", "why": "the sales-rep personas are rep contacts of the SalesRep module (seed:sales-rep → /api/sales-rep/*)" }
+  },
+  "suites": {
+    "001": [
+      { "kind": "storeSetting", "name": "Catalog.BrandStoreSetting.BrandsEnabled", "equals": true, "cases": ["CAT-035", "CAT-036", "CAT-037"], "why": "the /brands page and brand facets" }
+    ],
+    "002": [
+      { "kind": "deployConfig", "name": "storefront.headers.Cross-Origin-Embedder-Policy", "notEquals": "require-corp", "cases": ["CAT-AURL-001"], "why": "require-corp blocks product images served from another origin; the reference envs use unsafe-none" }
+    ],
+    "003": [
+      { "kind": "storeSetting", "name": "Order.PurchasedProductStoreFilter.Enable", "equals": true, "cases": ["CAT-016"], "why": "the 'Purchased before' filter on the category page" }
+    ],
+    "005": [
+      { "kind": "storeSetting", "name": "Order.PurchasedProductStoreFilter.Enable", "equals": true, "cases": ["SRCH-NEW-013"], "why": "the 'Purchased before' filter in search" }
+    ],
+    "015": [
+      { "kind": "platformSetting", "name": "Quotes.Status", "allowedIncludes": ["On hold", "Declined"], "cases": ["QUOTE-004", "QUOTE-005", "QUOTE-006", "QUOTE-007", "QUOTE-008", "QUOTE-009", "QUOTE-011", "QUOTE-012", "QUOTE-014", "QUOTE-018", "QUOTE-020", "QUOTE-021", "QUOTE-022", "QUOTE-023", "QUOTE-024", "QUOTE-025", "QUOTE-026", "QUOTE-027", "QUOTE-028", "QUOTE-030"], "why": "seed:quotes writes the On hold / Declined quote fixtures and refuses a status the platform's dictionary does not offer" }
+    ],
+    "036": [
+      { "kind": "storeSetting", "name": "Shipping.Bopis.GoogleMaps.Enabled", "equals": true, "cases": ["BOPIS-001", "BOPIS-003", "BOPIS-008", "BOPIS-009", "BOPIS-011", "BOPIS-012", "BOPIS-013", "BOPIS-014", "BOPIS-017", "BOPIS-018", "BOPIS-022", "BOPIS-087", "BOPIS-091", "BOPIS-092", "BOPIS-093", "BOPIS-094", "BOPIS-096", "BOPIS-097", "BOPIS-098", "BOPIS-099", "BOPIS-100", "BOPIS-101", "BOPIS-102", "BOPIS-103", "BOPIS-104", "BOPIS-105", "BOPIS-106", "BOPIS-107", "BOPIS-108"], "why": "the pickup-location map" }
+    ],
+    "037": [
+      { "kind": "storeSetting", "name": "Shipping.Bopis.GoogleMaps.Enabled", "equals": true, "cases": ["BOPIS-080", "BOPIS-109"], "why": "the pickup-location map in the cart" }
+    ],
+    "041": [
+      { "kind": "paymentMethod", "name": "SkyflowPaymentMethod", "equals": true, "cases": ["PAY-UX-001", "PAY-UX-002", "PAY-PERF-001", "PAY-DECLINE-001", "PAY-DECLINE-002", "PAY-DECLINE-003", "PAY-DECLINE-004", "PAY-DECLINE-005", "PAY-XLAY-001", "PAY-DECLINE-006", "PAY-DECLINE-007", "PAY-SWITCH-001", "PAY-DECLINE-008"], "why": "card payment through Skyflow" }
+    ],
+    "042": [
+      { "kind": "storeSetting", "name": "Quotes.EnableQuotes", "equals": true, "cases": ["SMK-005"], "why": "/account/quotes for an organization maintainer" },
+      { "kind": "paymentMethod", "name": "SkyflowPaymentMethod", "equals": true, "cases": ["SMK-034"], "why": "card payment through Skyflow" }
+    ],
+    "050a": [
+      { "kind": "storeSetting", "name": "Catalog.BrandStoreSetting.BrandsEnabled", "equals": true, "cases": ["CAT-GQL-106"], "why": "brand data in xAPI catalog queries" }
+    ],
+    "050b5": [
+      { "kind": "paymentMethod", "name": "SkyflowPaymentMethod", "equals": true, "cases": ["CVAL-GQL-012"], "why": "skyflowCards / deleteSkyflowCard" }
+    ],
+    "050c": [
+      { "kind": "paymentMethod", "name": "SkyflowPaymentMethod", "equals": true, "cases": ["CART-PAY-GQL-001", "CART-PAY-GQL-003"], "why": "Skyflow among availablePaymentMethods" }
+    ],
+    "050i": [
+      { "kind": "uploadScope", "name": "product-configuration", "cases": ["CFG-GQL-029", "CFG-GQL-030", "CFG-GQL-032"], "why": "file options of configurable products (rest upload answers INVALID_SCOPE without it)" }
+    ],
+    "050n": [
+      { "kind": "deployConfig", "name": "platform.config.VirtoCommerce__StoreAssets__KnownAssetHosts__", "prefix": true, "cases": ["SAU-GQL-007"], "why": "asset URLs already on a known host are not rewritten (VCST-5089)" }
+    ],
+    "072": [
+      { "kind": "deployConfig", "name": "storefront.headers.Cross-Origin-Embedder-Policy", "notEquals": "require-corp", "cases": ["CFG-MOB-001"], "why": "require-corp blocks configurator option images from another origin" }
+    ],
+    "078": [
+      { "kind": "storeSetting", "name": "Sitemap.ExportToAssets.EnableExportToAssetsJob", "equals": true, "cases": ["BSM-058"], "why": "/sitemap.xml is produced by the export-to-assets job" }
+    ],
+    "088": [
+      { "kind": "uploadScope", "name": "review-images", "cases": ["REV-SF-006"], "why": "image upload in the review form (INVALID_SCOPE without it)" }
+    ],
+    "095": [
+      { "kind": "storeSetting", "name": "Sitemap.ExportToAssets.EnableExportToAssetsJob", "equals": true, "cases": ["BGJ-054"], "why": "the sitemap export job and /sitemap.xml" }
+    ]
+  }
+}

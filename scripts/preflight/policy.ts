@@ -12,7 +12,14 @@ export type ChangeFor = "ticket" | "ticket-fast" | "exploratory" | "lifecycle" |
 export const CHANGE_FOR: readonly ChangeFor[] = ["ticket", "ticket-fast", "exploratory", "lifecycle", "domain-map", "ba"];
 export type Status = "OK" | "WARN" | "BLOCK" | "UNKNOWN";
 export type Who = "me" | "me, with OK" | "you";
-export interface Check { id: string; status: Status; found: string; who: Who | null; do: string | null; diagnose: string[] }
+export interface Check {
+  id: string; status: Status; found: string; who: Who | null; do: string | null; diagnose: string[];
+  /** Build-scoped only: the cases (`<suite>/<caseId>`) this row predicts will BLOCK. The regression pre-flight
+   *  turns them into its `skip` map, so they are recorded BLOCKED with this row's reason instead of being run. */
+  cases?: string[];
+  /** Build-scoped only: these cases need a module this stand does not have — they leave the plan (not BLOCKED). */
+  notDeployed?: string;
+}
 export interface Duplicate { path: string; ageMinutes: number; verdict: string | null; priorBuild: string | null; priorPlatform: string | null }
 export interface PolicyInput {
   for: ChangeFor; ticket?: string; domain?: string; expect?: { module: string; version: string };

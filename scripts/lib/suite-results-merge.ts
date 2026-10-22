@@ -25,7 +25,7 @@
  * That is the same failure shape as a dropped test, and it is the reason `lane_lost` exists.
  */
 
-export type CaseLane = "machine" | "browser" | "manual" | "deprecated";
+export type CaseLane = "machine" | "browser" | "manual" | "deprecated" | "preflight";
 
 /**
  * The lanes that never dispatch anything, and the note each one earns in the results.
@@ -88,6 +88,14 @@ export interface MergeInput {
     readonly keptCases: number;
     readonly sourceCases: number;
   };
+  /**
+   * The lanes plan's `preBlocked`: cases planned in the `preflight` lane because the pre-flight predicts they BLOCK.
+   * No lane ran them, so they are recorded BLOCKED with that reason — never `lane_lost`, which would send
+   * someone looking for a dead lane, and never dropped, which would shrink the suite.
+   */
+  preBlocked?: ReadonlyArray<{ id: string; reason: string }>;
+  /** The lanes plan's `notDeployed`: out of the plan, so out of every count — carried only so the report names them. */
+  notDeployed?: ReadonlyArray<{ id: string; module: string }>;
 }
 
 export interface MergeResult {
@@ -143,9 +151,18 @@ export function mergeSuiteResults(input: MergeInput): MergeResult {
     }
   }
 
+  const preReason = new Map((input.preBlocked ?? []).map((p) => [p.id, p.reason]));
+
   // Every planned case must exist. Absent = the lane never reported it.
   for (const [id, lane] of plannedLane) {
     if (merged.has(id)) continue;
+    if (lane === "preflight") {
+      merged.set(id, {
+        row: { id, status: "BLOCKED", lane, notes: preReason.get(id) ?? "pre-flight: predicted to BLOCK, not run", blockedBy: "preflight" },
+        source: "(plan)",
+      });
+      continue;
+    }
     const nonExecuting = NON_EXECUTING_LANES[lane];
     if (nonExecuting) {
       // Visible as a deliberate non-run, never as a quiet absence.
@@ -201,6 +218,11 @@ export function mergeSuiteResults(input: MergeInput): MergeResult {
     completedAt: latest(input.fragments, "completedAt"),
     totalCases: total,
     // Scope provenance — absent on a normal run, so a full envelope is byte-identical to before.
+    // Cases out of the plan as not deployed make this a PARTIAL run of the suite, exactly like a --cases slice:
+    // calibration must not read its duration as the whole suite's.
+    ...(!input.caseFilter && input.notDeployed?.length
+      ? { scoped: true, unfilteredTotal: total + input.notDeployed.length }
+      : {}),
     ...(input.caseFilter
       ? {
           scoped: true,
@@ -215,6 +237,7 @@ export function mergeSuiteResults(input: MergeInput): MergeResult {
     skipped: tally.SKIPPED,
     passRate: total > 0 ? `${((tally.PASS / total) * 100).toFixed(1)}%` : "0.0%",
     lanes: laneCounts(ordered),
+    ...(input.notDeployed?.length ? { notDeployed: input.notDeployed } : {}),
     testCases: ordered,
     bugs: input.fragments.flatMap((f) => (Array.isArray(f.envelope.bugs) ? f.envelope.bugs : [])),
     errors: [...input.fragments.flatMap((f) => (Array.isArray(f.envelope.errors) ? f.envelope.errors : [])), ...warnings],

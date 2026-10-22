@@ -11,6 +11,8 @@ import { classifyRun, gatherActivity, loadStatus, type Classification } from "./
 import { gateSuites, resolveRequiredModule, type GatingResult, type SuiteRef } from "./requires.ts";
 import { baselineDelta, readBaseline, type ModuleChange } from "./baseline.ts";
 import { SECRETS_FILE, classifySecretNames, readSecretsFile, suiteSecretCases } from "../lib/browser-secrets.mjs";
+import { requirementChecks } from "./requirements.ts";
+import { loadManifest } from "../../ci/lib/suite-manifest.js";
 
 export type BuildFor = "regression" | "smoke";
 
@@ -61,7 +63,8 @@ export function secretsChecks(s: SecretsGate, env: string): Check[] {
   for (const u of s.undeclared) {
     const parts = Object.entries(u.cases).map(([suite, ids]) => gated.has(suite) ? `${suite} (all cases — leaves the plan)` : `${suite}: ${ids.join(", ")}`);
     checks.push({ id: `secret:${u.name}`, status: "WARN", found: `${u.name} has no value in .env.local or ${SECRETS_FILE} — report BLOCKED, no sign-in attempt: ${parts.join("; ")}`,
-      who: "you", do: `add ${u.name} to .env.local (team secret store), then ${fix}`, diagnose: [] });
+      who: "you", do: `add ${u.name} to .env.local (team secret store), then ${fix}`, diagnose: [],
+      cases: Object.entries(u.cases).filter(([suite]) => !gated.has(suite)).flatMap(([suite, ids]) => ids.map((id) => `${suite}/${id}`)) });
   }
   if (s.file.exists && !s.unsynced.length && !s.undeclared.length)
     checks.push(ok("secrets", `${s.names.length} password name(s) the selected browser suites type are registered`));
@@ -84,6 +87,54 @@ export interface RegressionPreflight {
   for: BuildFor; selection: string; facts: EnvFacts; mcp: Mcp; gating: GatingResult; secrets: SecretsGate;
   changedSince: ModuleChange[] | Unknown; baselineRunId: string | null; falseFailureRisk: string[];
   accepted: string[]; checks: Check[]; verdict: "READY" | "NOT READY";
+  /**
+   * suite → case → reason: the cases a WARN/BLOCK row predicts will BLOCK. `suites:lanes` reads this from the run
+   * folder's preflight.json and plans them in the `preflight` lane, which nothing executes; `suites:merge` records
+   * them BLOCKED with this reason. A run then spends no browser time and no model tokens on a case whose outcome is
+   * already known — and the counts stay whole, because the case is still in the suite's total. Empty when the
+   * caller passed `--run-blocked` (`skipDisabled`).
+   */
+  skip: Record<string, Record<string, string>>;
+  skipDisabled?: boolean;
+  /**
+   * suite → case → module: cases that need a module this stand does not have. They are NOT in the plan —
+   * `suites:lanes` drops them, so they are neither run, nor counted, nor triaged — the case-level twin of a
+   * gated suite. `--run-blocked` does not bring them back: nothing could run them here.
+   */
+  notDeployed: Record<string, Record<string, string>>;
+}
+
+export function notDeployedMap(checks: Check[]): Record<string, Record<string, string>> {
+  const out: Record<string, Record<string, string>> = {};
+  for (const c of checks) {
+    if (!c.notDeployed || !c.cases?.length) continue;
+    for (const key of c.cases) {
+      const i = key.indexOf("/");
+      if (i > 0) (out[key.slice(0, i)] ??= {})[key.slice(i + 1)] ??= c.notDeployed;
+    }
+  }
+  return out;
+}
+
+/**
+ * The rows' predicted BLOCKs, per suite and case. When several rows name one case, the most upstream cause gives
+ * the reason: a setting (`req:`) explains why a fixture could not be seeded, a persona why its fixtures are absent.
+ */
+const CAUSE_RANK = ["req:", "persona:", "secret:", "fixture:"];
+const rank = (id: string) => { const i = CAUSE_RANK.findIndex((p) => id.startsWith(p)); return i < 0 ? CAUSE_RANK.length : i; };
+export function skipMap(checks: Check[]): Record<string, Record<string, string>> {
+  const out: Record<string, Record<string, string>> = {};
+  for (const c of [...checks].sort((a, b) => rank(a.id) - rank(b.id))) {
+    if ((c.status !== "WARN" && c.status !== "BLOCK") || !c.cases?.length || c.notDeployed) continue;
+    const reason = `pre-flight ${c.id}: ${c.found.split(" — ")[0]}`.slice(0, 240);
+    for (const key of c.cases) {
+      const i = key.indexOf("/");
+      if (i < 1) continue;
+      const suite = key.slice(0, i), id = key.slice(i + 1);
+      (out[suite] ??= {})[id] ??= reason;
+    }
+  }
+  return out;
 }
 
 const ok = (id: string, found: string): Check => ({ id, status: "OK", found, who: null, do: null, diagnose: [] });
@@ -200,6 +251,10 @@ export async function runRegressionPreflight(o: {
   root: string; now?: Date; env?: string; runId?: string; accept?: string[];
   /** Suites a browser agent types into — the only ones the secrets file matters for. Default: all. */
   browserSuites?: string[];
+  /** Case-level checks (personas, fixtures, declared settings — requirements.ts). Default on; off only for an offline plan. */
+  requirements?: boolean;
+  /** false = `--run-blocked`: run the predicted-BLOCKED cases anyway (the `skip` map stays empty). Default true. */
+  skipBlocked?: boolean;
 }): Promise<RegressionPreflight> {
   const now = o.now ?? new Date();
   const required = [...new Set(o.suites.flatMap((s) => (s.requiresModules ?? []).map((e) => resolveRequiredModule(e).pascal)))];
@@ -220,7 +275,29 @@ export async function runRegressionPreflight(o: {
     smokeGates: o.for === "smoke" ? runSmokeGates(o.root) : null,
     smokeDuplicate: o.for === "smoke" ? smokeDuplicateToday(o.root, now) : null,
   });
+  // What THESE cases need from the stand — only for suites that will actually run (gated ones are already out).
+  if (o.requirements !== false) {
+    const gated = new Set(gating.gated.map((g) => g.suite));
+    let files = new Map<string, string>();
+    try { files = new Map(loadManifest().suites.map((s) => [s.id, s.file])); } catch { /* manifest problems are reported above */ }
+    const run = o.suites.filter((s) => !gated.has(s.id) && files.has(s.id)).map((s) => ({ id: s.id, file: files.get(s.id)! }));
+    checks.push(...await requirementChecks({ root: o.root, env: facts.env, suites: run }));
+  }
+  const absent = notDeployedMap(checks);
+  const nAbsent = Object.values(absent).reduce((n, m) => n + Object.keys(m).length, 0);
+  if (nAbsent) checks.push({ id: "not-deployed", status: "WARN", who: null, do: null, diagnose: [],
+    found: `${nAbsent} case(s) in ${Object.keys(absent).length} suite(s) need a module this stand does not have (${[...new Set(Object.values(absent).flatMap((m) => Object.values(m)))].join(", ")}) — they leave the plan` });
+  const predicted = skipMap(checks);
+  // A case that leaves the plan is never also "recorded BLOCKED".
+  for (const [s, m] of Object.entries(absent)) for (const id of Object.keys(m)) delete predicted[s]?.[id];
+  const nCases = Object.values(predicted).reduce((n, m) => n + Object.keys(m).length, 0);
+  const skipBlocked = o.skipBlocked !== false;
+  if (nCases) checks.push(skipBlocked
+    ? { id: "skip", status: "WARN", found: `${nCases} case(s) in ${Object.keys(predicted).length} suite(s) are recorded BLOCKED without running — each with the reason of its row above`,
+        who: "me", do: "fix those rows and re-run the pre-flight before the run; --run-blocked runs them anyway", diagnose: [] }
+    : { id: "skip", status: "WARN", found: `--run-blocked: ${nCases} case(s) the rows above predict will BLOCK are run anyway`, who: null, do: null, diagnose: [] });
   return {
+    skip: skipBlocked ? predicted : {}, ...(skipBlocked ? {} : { skipDisabled: true }), notDeployed: absent,
     for: o.for, selection: o.selection, facts, mcp, gating, secrets, changedSince, baselineRunId: baseline?.runId ?? null,
     falseFailureRisk: falseFailureRisk(changedSince, gating), accepted: o.accept ?? [], checks, verdict: isBlocking(checks) ? "NOT READY" : "READY",
   };
