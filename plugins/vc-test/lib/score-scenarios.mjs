@@ -5,7 +5,9 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { validateDef } from "../../../.claude/skills/ticket-context/lib/schema.mjs"; // prototype: the skill stays in place
+// PENDING: this prototype imports the schema validator from .claude/skills/ticket-context/lib/ (the skill stays where it is);
+// moving a copy of it into this plugin is not done yet.
+import { validateDef } from "../../../.claude/skills/ticket-context/lib/schema.mjs";
 import { KEY_RE, argOf, currentEnv, outputRoot, workDir } from "./paths.mjs";
 
 const SCHEMA = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), "scenarios.schema.json"), "utf8"));
@@ -14,7 +16,7 @@ export const MAX_SCENARIOS = 12; // B19, until O7 sets a token budget
 export const LIKELIHOOD_CAP = 5;
 export const WEIGHTS = { "state-in-memory": 3, "new-door": 2, "setting-other-consumers": 2, "prior-bug": 2, untested: 1 };
 export const IMPACT = { access: 5, money: 5, data: 4, "order-state": 4, "buyer-path": 3, none: 1 };
-// The strategy gate's clause 12 pattern, duplicated here: a plugin never imports from .claude/ (but for the schema validator).
+// The strategy gate's clause 12 pattern, duplicated here rather than imported from .claude/ (the validator import above is the one exception).
 export const STATE_IN_MEMORY = /\b(limit(?:er|s)?|attempts?|counter|throttl\w*|rate[- ]?limit\w*|cach(?:e|ed|ing)|lockout|locked out|in[- ]memory|session state)\b/i;
 
 // A signal is a claim the likelihood rests on; two kinds can be checked against the inputs, so they are.
@@ -29,16 +31,21 @@ function signalProblem(sig, { hotspots, untested }) {
 }
 
 export function scoreScenarios({ candidates, changeMap, bundle, max = MAX_SCENARIOS }) {
+  if (!Number.isInteger(max) || max < 1) throw new Error("max must be a positive integer");
   const ctx = {
     hotspots: changeMap?.hotspots ?? [],
     untested: new Set((bundle?.change?.prs ?? []).flatMap((p) => p.untested ?? []).map((u) => String(u).trim())),
   };
   const rejected = [];
   const ok = [];
+  const seen = new Set();
   for (const [i, cand] of (candidates ?? []).entries()) {
     const id = cand?.id ?? `#${i + 1}`;
+    if (seen.has(id)) { rejected.push({ id, reason: `duplicate id ${id}` }); continue; }
+    seen.add(id);
     const errors = validateDef(cand, SCHEMA, "candidate");
     if (errors.length) { rejected.push({ id, reason: `invalid candidate: ${errors.join("; ")}` }); continue; }
+    if (cand.exploratory && cand.cls !== 3) { rejected.push({ id, reason: "exploratory must be class 3" }); continue; }
     const problem = cand.signals.map((s) => signalProblem(s, ctx)).find(Boolean);
     if (problem) { rejected.push({ id, reason: problem }); continue; }
     const likelihood = Math.min(LIKELIHOOD_CAP, cand.signals.reduce((n, s) => n + WEIGHTS[s.kind], 0));
@@ -65,10 +72,12 @@ export function scoreScenarios({ candidates, changeMap, bundle, max = MAX_SCENAR
   }
   const selected = picked.map((c, i) => ({ c, i })).sort((a, b) => b.c.score - a.c.score || a.i - b.i)
     .map(({ c }, i) => ({ s: `S-${i + 1}`, ...c }));
-  const cut = selected.length ? Math.min(...selected.map((s) => s.score)) : 0;
+  const ranked = selected.filter((s) => !s.exploratory); // the free scenario is kept whatever it scores, so it sets no cut
+  const cut = ranked.length ? Math.min(...ranked.map((s) => s.score)) : 0;
   const notSelected = ok.filter((c) => !picked.includes(c)).sort((a, b) => b.score - a.score)
     .map((c) => ({ id: c.id, reason: `does not fit the ${max}-scenario budget: score ${c.score} against a cut of ${cut}` }));
-  return { selected, notSelected, rejected };
+  const warnings = selected.some((s) => s.exploratory) ? [] : ["no class-3 exploratory scenario selected"];
+  return { selected, notSelected, rejected, warnings };
 }
 
 const brief = (ref) => (ref.length > 70 ? `${ref.slice(0, 67)}...` : ref); // an untested ref is a whole sentence
@@ -111,6 +120,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   if (!Number.isInteger(max) || max < 1) { console.error("--max must be a positive integer"); process.exit(1); }
   const result = scoreScenarios({ candidates: doc.candidates, changeMap, bundle, max });
   writeFileSync(join(work, "scenarios.json"), JSON.stringify(result, null, 2));
+  for (const w of result.warnings) console.error(`warning: ${w}`);
   console.log(renderScenarios({ ...result, candidates: doc.candidates }));
   process.exit(result.selected.length ? 0 : 2);
 }
