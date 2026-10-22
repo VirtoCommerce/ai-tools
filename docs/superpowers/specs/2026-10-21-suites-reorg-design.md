@@ -75,7 +75,7 @@ that measure; anything that does not is deferred (§9).
 | D14 | Harness in this repo first. vc-test gets a self-contained copy in M3, as vc-fix does | owner |
 | D15 | A passed check that cannot be scripted gets a CSV row with no spec, and a mini agent wave runs only those rows | owner |
 | D16 | `test-management-specialist.md` must get under the 19K cap. Its detail moves into its skills' supporting files, and the spec hand-off is added inside that budget | owner |
-| D18 | A spec is written **directly** from source and the generated selectors and run at once; recording Playwright code from an MCP browser pass is the fallback, not the default — the default has no browser agent per checklist item (vc-test U27, B4, U55) | owner, 2026-10-21 |
+| D18 | A spec is written **directly** from source and the generated selectors and run at once; a `playwright-cli` session attached to the paused draft spec (`--debug=cli`, signed in by its own fixtures) is the fallback, and its printed code the draft, not the default — the default has no browser agent per checklist item (vc-test U27, B4, U55) | owner, 2026-10-21 |
 | D17 | A new or changed spec passes a **fidelity review** before it replaces the agent in a regression run. It is a new `/qa-review-tests` dimension, done by a fresh agent that is not the spec's author, once per spec change (not per run). It builds the table "row item (Assertions, Cross_Layer_Checks) → `expect` → OK / WEAKENED / MISSING". Any WEAKENED or MISSING item means the case stays on the agent lane. The approval lapses when the spec or its row changes; how that is recorded and detected is the builder's call (§8, M3) | owner |
 
 ## 5. Layout

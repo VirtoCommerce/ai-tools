@@ -1,4 +1,4 @@
-# Writing a spec — layout, link, data, MCP log (fallback), the one run
+# Writing a spec — layout, link, data, CLI session (fallback), the one run
 
 Read from `/qa-test-automation` step 4–5. Decisions cited by number (D5–D13): [`docs/superpowers/specs/2026-10-21-suites-reorg-design.md`](../../../docs/superpowers/specs/2026-10-21-suites-reorg-design.md) §4–§8.
 
@@ -36,19 +36,35 @@ Never combine the plain `page` fixture with `signedInAs` in one test: both write
 Fixture states that other things can move (auto-enrolment, expiry, pooled state) are created in the case, not
 seeded: [`../../rules/test-data.md`](../../rules/test-data.md) FIFTH RULE, DISPOSABLE FIXTURES rules.
 
-## From the MCP log to a spec
+## From a CLI session to a spec
 
 The fallback only (D18): used when a spec cannot be written from source and the generated selectors.
+`@playwright/cli` is pinned in `package.json`; it drives the browser of a paused test, so it never types a
+password or picks an account itself.
 
-1. Take the code Playwright MCP reports for the **passed** run (or the reproduction). It is a draft, not the spec.
-2. **Replace every observed literal** with its source: a URL becomes `env("FRONT_URL")` + path; an SKU, coupon
+1. **Write the spec's skeleton first** — title, fixtures (`signedInAs` / `apiAs`), the data it needs through
+   `data.ts`, and the steps you already know — then pause it **in the background**:
+   `PLAYWRIGHT_HTML_OPEN=never npm run specs:debug -- -g "<CASE-ID>:"`. Wait for "Debugging Instructions" and
+   the `tw-XXXX` session name. It opens a headed browser, so it runs on a desktop, not in CI or a cloud session.
+2. **Attach and walk the row's Steps:** `npx playwright-cli attach tw-XXXX`, then `snapshot` (find refs),
+   `click e7`, `fill e3 …`, `requests`, `console`. Each action prints the Playwright line it ran; that line is the
+   draft. Never `fill` a password or a token — sign-in is the fixture's.
+3. **The CSV row is the plan, the live app is not the authority.** A step that names something the page does
+   not have, or an expectation the page does not meet, is a finding: report the row as stale or the behaviour
+   as a bug (D7, [`../../knowledge/execution/cases-that-catch-bugs.md`](../../knowledge/execution/cases-that-catch-bugs.md)).
+   Never edit the row, or soften an `expect`, to match what the page does — the CLI's own skill advises that,
+   which is why it is not installed.
+4. **Stop the session and the background test** before the next case: `npx playwright-cli close` and end the
+   `specs:debug` process.
+5. Take the printed lines as a draft, not the spec, and finish it with the steps below.
+6. **Replace every observed literal** with its source: a URL becomes `env("FRONT_URL")` + path; an SKU, coupon
    or org becomes `td(...)`; an account becomes a role through the fixture; a generated name becomes `random`.
    A GUID or e-mail in the draft is a leak — `DV-025` catches the literal, you catch the reason.
-3. **Replace brittle locators** (nth-child, generated class names, coordinates) per `practice.md` §Locators.
-4. **Map each row tag to a check, in row order**, with the tag in a comment (`// [MATH] …`) as the pilots do.
+7. **Replace brittle locators** (nth-child, generated class names, coordinates) per `practice.md` §Locators.
+8. **Map each row tag to a check, in row order**, with the tag in a comment (`// [MATH] …`) as the pilots do.
    Every assertion in the row has an `expect` in the spec. Add none the row does not state.
-5. **Delete everything the draft did only to explore** — wait-for-timeouts, manual screenshots, console prints.
-6. Do not keep the MCP log in the repo; it stays in the run's gitignored folder.
+9. **Delete everything the draft did only to explore** — wait-for-timeouts, manual screenshots, console prints.
+10. Do not keep the CLI output in the repo; anything you saved stays in the run's gitignored folder.
 
 ## The one run (D9)
 
