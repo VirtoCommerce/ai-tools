@@ -3,7 +3,7 @@
 // Spec: docs/superpowers/specs/2026-10-08-preflight-skill-design.md §4.
 import { basename } from "node:path";
 import { CORE_REQUIRED_VARS } from "./env-core.js";
-import { resolveTestEnv } from "./resolve-test-env.js";
+import { selectTestEnv } from "./load-env.mjs";
 import { isLocalUrl, loadEnvFiles, resolveEnvCoords, REPO_ROOT, type EnvCoords } from "../deploy/lib/env.ts";
 import { fetchFile, setToken } from "../deploy/lib/github.ts";
 import { platformHealthy, probeAdminToken, probeLiveModules, probePlatformVersion, probeThemeVersion, type LiveModule } from "../deploy/lib/live.ts";
@@ -143,7 +143,7 @@ export function probeCoords(env: string): EnvCoords {
 }
 
 export async function getEnvFacts(opts: EnvFactsOptions = {}): Promise<EnvFacts> {
-  const env = opts.env ?? resolveTestEnv("vcst");
+  const env = opts.env ?? selectTestEnv("vcst"); // not resolveTestEnv: loadEnvFiles is ambientWins (load-env.mjs selectTestEnv)
   const now = opts.now ?? new Date();
   loadEnvFiles(env); // the layers, the KEY_<ENV> promotion, the QA_ENV_PATH folders, the master password
   setToken(process.env.GIT_TOKEN || process.env.GITHUB_TOKEN || process.env.GITHUB_PERSONAL_ACCESS_TOKEN);
