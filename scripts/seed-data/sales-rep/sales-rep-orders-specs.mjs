@@ -356,9 +356,15 @@ export function validateRecencyContracts(rows) {
  *
  * LIMITS THIS FIXTURE DOES NOT DECIDE (stated here rather than implied by a green case)
  * -----------------------------------------------------------------------------------
- *  - The fourth cell (buyer-authored order in an UNSERVED org) is deliberately not seeded. It adds
- *    no discrimination the other three do not already give, and it would need a buyer contact in an
- *    org nothing else uses.
+ *  - The fourth cell (buyer-authored order in an UNSERVED org, `notServedBuyer`) is NOT part of the
+ *    one-factor-at-a-time argument above and adds nothing to the xAPI null-oracle — ORDER_NOT_SERVED
+ *    stays the attribution fixture for that. It exists for a DIFFERENT surface: the storefront BUYER
+ *    page `/account/orders/:id` (097 SR-CO-012, BL-SR-002). There the rep-authored ORDER_NOT_SERVED is
+ *    useless as a negative, because the rep IS its customer and a customer may open their own order —
+ *    a refusal could only be observed on an order whose customer is somebody else. Added 2026-10-20
+ *    with a dedicated ORG-005 buyer (b2b USR-030) so no other fixture's org gains a member. It is
+ *    held one-factor-away from ORDER_NOT_SERVED (same org/store/status/items, different customer), and
+ *    `validateAuthorshipShape` check [j] fails if its org ever becomes served or its customer is a rep.
  *  - These orders are ARRANGED through `POST /api/order/customerOrders`, not placed through the
  *    storefront checkout. That is correct for arranging a precondition and WRONG for proving the
  *    link that arranges it - a journey case must place a real order through the cart. What is being
@@ -432,6 +438,14 @@ export const AUTHORSHIP_MATRIX = {
     orderKey: 'SRO-EU-NOT-SERVED',
     alias: 'ORDER_NOT_SERVED',
     productSlot: 8,
+  },
+  // The 4th cell — see LIMITS above: serves the storefront buyer-page refusal (097 SR-CO-012), where
+  // the rep-authored notServed cannot, because the rep is that order's own customer.
+  notServedBuyer: {
+    cell: 'UNSERVED org x buyer-authored',
+    orderKey: 'SRO-EU-BUYER-NOT-SERVED',
+    alias: 'ORDER_UNSERVED_BUYER',
+    productSlot: 9,
   },
 };
 
@@ -535,9 +549,9 @@ export function validateAuthorshipShape(rows, { orgRows = [], repRows = [], user
     if (declared !== expected) problems.push(`row ${meta.orderKey}: ${ORDER_NUMBER_COLUMN}="${declared}" but the seeder stamps "${expected}" - ${meta.alias}.number is what a storefront case asserts against the visible order number, so a stale value makes the case fail on the fixture`);
     cells[cellKey] = row;
   }
-  if (Object.keys(cells).length !== 3) return problems;   // the rest compares cells pairwise
+  if (Object.keys(cells).length !== Object.keys(AUTHORSHIP_MATRIX).length) return problems;   // the rest compares cells pairwise
 
-  const { repPlaced, buyerPlaced, notServed } = cells;
+  const { repPlaced, buyerPlaced, notServed, notServedBuyer } = cells;
   const A = AUTHORSHIP_MATRIX;
 
   // [b] AUTHORSHIP actually diverges across the served-org pair. This is THE property.
@@ -599,8 +613,61 @@ export function validateAuthorshipShape(rows, { orgRows = [], repRows = [], user
     }
   }
 
+  // [j] The 4th cell — buyer-authored order in an UNSERVED org (097 SR-CO-012, BL-SR-002). The case
+  //     is "the rep types /account/orders/<id> and is refused"; it is vacuous if the org is served
+  //     (serving = org membership, so the rep may legitimately open it) or if the customer is a rep
+  //     (a customer may open their own order). Both are checked here, statically, against the
+  //     committed rep fixture; [5c] in the guard re-checks the SEEDED customerId against every rep.
+  problems.push(...notServedBuyerProblems(notServedBuyer, { notServed, repPlaced, buyerPlaced, orgRows, repRows, userRows }));
+
   // [i] Product slots stay clear of the ranking-asserting stats fixture.
   problems.push(...authorshipProductSlotProblems(reservedProductSlots));
 
+  return problems;
+}
+
+/**
+ * Problems with the `notServedBuyer` cell (PURE). Exported so the guard can print what it checked.
+ * Every value is read from the committed fixtures the caller passes — the rep's served set and the rep
+ * e-mails are NEVER transcribed here, or a re-served org / a buyer who later becomes a rep would pass.
+ */
+export function notServedBuyerProblems(row, { notServed, repPlaced, buyerPlaced, orgRows = [], repRows = [], userRows = [] } = {}) {
+  const problems = [];
+  const A = AUTHORSHIP_MATRIX;
+  const key = A.notServedBuyer.orderKey;
+  if (!row) return [`no row "${key}" — ${A.notServedBuyer.alias} would resolve to nothing`];
+  const role = customerRoleFor(row);
+  if (role.kind !== 'buyer') {
+    problems.push(`row ${key}: must be buyer-authored (${CUSTOMER_ROLE_COLUMN}=buyer:<user_id>), got ${JSON.stringify(role)} - a rep-authored order is openable by its own customer on /account/orders/:id, so "the rep is refused" could not fail`);
+  }
+  // Org: NOT served by SR_REP_PRIMARY, Active, pinned — the same host rules as notServed.
+  const servedKeys = servedOrgKeysFor(repRows);
+  if (!servedKeys.length) problems.push(`row ${key}: could not read SR_REP_PRIMARY served_orgs - the not-served check would be a rubber stamp`);
+  else problems.push(...notServedOrgProblems(row.org, orgRows, servedKeys).map((p) => p.replace(A.notServed.alias, A.notServedBuyer.alias)));
+  if (repPlaced && row.org === repPlaced.org) problems.push(`row ${key} is in ${row.org}, the served org of ${A.repPlaced.orderKey} - it must sit in an org the rep does NOT serve`);
+  // One factor away from notServed: same org/store/status/items, only the customer differs.
+  if (notServed) {
+    if (row.org !== notServed.org) problems.push(`row ${key} (${row.org}) and ${A.notServed.orderKey} (${notServed.org}) are in different orgs - the pair should differ ONLY in the customer, so a refusal of one and a null of the other share every other cause`);
+    for (const col of AUTHORSHIP_CONTROLLED_COLUMNS) {
+      if (String(row[col] ?? '') !== String(notServed[col] ?? '')) problems.push(`rows ${key} and ${A.notServed.orderKey} differ on "${col}" (${row[col]} vs ${notServed[col]}) - a rival explanation for any behavioural difference`);
+    }
+  }
+  for (const other of [repPlaced, buyerPlaced, notServed].filter(Boolean)) {
+    if (Math.abs(Number(row.total) - Number(other.total)) < 0.005) problems.push(`row ${key}: total ${row.total} equals ${other.order_key}'s - a leaked order would be indistinguishable from a visible one`);
+  }
+  // The buyer: a real, seeded member of THAT org, and NOT a rep.
+  if (role.kind === 'buyer') {
+    const u = (userRows || []).find((x) => String(x.user_id || '').trim() === role.userKey);
+    if (!u) {
+      problems.push(`row ${key}: ${CUSTOMER_ROLE_COLUMN} names user "${role.userKey}", absent from b2b/users.csv`);
+    } else {
+      if (String(u.seeded ?? '').trim().toLowerCase() !== 'true') problems.push(`row ${key}: buyer ${role.userKey} has seeded=${u.seeded} - its account may not exist`);
+      const buyerOrgs = String(u.org_id ?? '').split(';').map((s) => s.trim()).filter(Boolean);
+      if (!buyerOrgs.includes(row.org)) problems.push(`row ${key}: buyer ${role.userKey} belongs to ${buyerOrgs.join(';') || '(none)'} but the order is in ${row.org} - not "a buyer of that organization"`);
+      const repEmails = new Set((repRows || []).map((r) => String(r.email || '').trim().toLowerCase()).filter(Boolean));
+      if (repEmails.has(String(u.email || '').trim().toLowerCase())) problems.push(`row ${key}: buyer ${role.userKey} (${u.email}) IS a sales rep in sales-reps.csv - the order's customer must not be a rep, or the refusal is not about org scope`);
+      if (buyerPlaced && customerRoleFor(buyerPlaced).userKey === role.userKey) problems.push(`row ${key}: shares buyer ${role.userKey} with ${A.buyerPlaced.orderKey} (a SERVED-org buyer) - use a buyer of the unserved org only`);
+    }
+  }
   return problems;
 }

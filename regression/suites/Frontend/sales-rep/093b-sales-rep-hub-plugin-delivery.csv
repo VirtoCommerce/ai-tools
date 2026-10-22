@@ -1,7 +1,7 @@
 ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
 SR-HD-100,[JOURNEY] Sales Rep Hub served by the sales-rep plugin — dashboard to order and back,Sales Rep Hub > Plugin delivery (Module Federation),Critical,BL-SR-011,ECL-10.1,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
-SR_REP_PRIMARY is the same account as @td(SR_REP_PRIMARY.email) (password key TEST_USER_PASSWORD) and serves @td(ORG_ACME.id). Store setting SalesRep.Enabled=true on {{STORE_ID}}; the storefront delivers the hub from the sales-rep plugin (theme switches module_federation_enabled=true, sales_rep_builtin_enabled=false), so the plugin folder is /modules/$(VirtoCommerce.SalesRep)/plugins/vc-frontend/ (literal $(...) in the path). The TaskManagement module is installed (the rail carries Tasks).","rep=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}, org=@td(ORG_ACME.id), org_name=@td(ORG_ACME.name)","--- SCREEN: Cold load and plugin discovery ---
+SR_REP_PRIMARY is the same account as @td(SR_REP_PRIMARY.email) (password key TEST_USER_PASSWORD) and serves @td(ORG_ACME.platform_id). Store setting SalesRep.Enabled=true on {{STORE_ID}}; the storefront delivers the hub from the sales-rep plugin (theme switches module_federation_enabled=true, sales_rep_builtin_enabled=false), so the plugin folder is /modules/$(VirtoCommerce.SalesRep)/plugins/vc-frontend/ (literal $(...) in the path). The TaskManagement module is installed (the rail carries Tasks).","rep=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}, org=@td(ORG_ACME.platform_id), org_name=@td(ORG_ACME.name)","--- SCREEN: Cold load and plugin discovery ---
 [SETUP] start recording every network request of the tab (URL, status, content-type, resource type) into REQ_LOG
 [NAV] {{FRONT_URL}}/account (full document load, so GetStorePlugins is issued inside the recording)
 [WAIT] account page rendered and the left rail is visible
@@ -42,8 +42,8 @@ SR_REP_PRIMARY is the same account as @td(SR_REP_PRIMARY.email) (password key TE
 [DOM] the left rail carries a 'Sales Rep hub' section holding 'Dashboard', 'My customers' and 'Tasks' {OBSERVED}
 [NAV] URL_DASH ends with /company/dashboard and WIDGETS_FIRST is at least 1 {OBSERVED}
 [NAV] URL_CUST ends with /company/my-customers {OBSERVED}
-[NAV] URL_PROFILE is {{FRONT_URL}}/company/my-customers/@td(ORG_ACME.id) {OBSERVED}
-[NAV] URL_ORDERS ends with /orders and contains @td(ORG_ACME.id) {SPEC}
+[NAV] URL_PROFILE is {{FRONT_URL}}/company/my-customers/@td(ORG_ACME.platform_id) -- the route takes the organization platform id, not the business key {OBSERVED}
+[NAV] URL_ORDERS ends with /orders and contains @td(ORG_ACME.platform_id) {SPEC}
 [SHAPE] ORDER_NO_SHOWN is not empty - the opened order renders its own number {SPEC}
 [NAV] URL_ALL is {{FRONT_URL}}/company/customer-orders {OBSERVED}
 [NAV] URL_TASKS ends with /company/tasks {OBSERVED}
@@ -51,15 +51,15 @@ SR_REP_PRIMARY is the same account as @td(SR_REP_PRIMARY.email) (password key TE
 [COUNT] entries of PLUGIN_REQS whose status is not 200 or 304 == 0, and PLUGIN_REQS contains mf-manifest.json (content-type application/json) and remoteEntry.js {OBSERVED}
 [REL] H1_DASH, H1_CUST, H1_PROFILE, H1_ORDERS, H1_ALL and H1_TASKS are non-empty and pairwise different, and none contains 'Page not found' - a route that fell to the host catch-all would repeat the Not Found text {SPEC}
 [REL] WIDGETS_SECOND equals WIDGETS_FIRST - the dashboard is the same page the second time, not a re-registered duplicate or a half-mounted one {SPEC}
-[COUNT] sections named 'Sales Rep hub' in the left rail == 1 on every screen of the journey - a plugin that registers its rail section twice shows two {OBSERVED}
+[COUNT] sections named 'Sales Rep hub' in the left rail == 1 on every hub screen of the journey (Dashboard, My customers, Customer profile, Customer orders, All customer orders, Tasks) -- the host order page reached from the order row (/account/orders/<id>) is a theme page and carries no hub rail, so it is excluded - a plugin that registers its rail section twice shows two {OBSERVED}
 [STATE] H1_TASKS contains 'Tasks' {OBSERVED}","[NETWORK] no 4xx/5xx on /graphql for the whole journey
 [CONSOLE] no uncaught TypeError or ReferenceError from the hub pages (unrelated image-host DNS errors are excluded)","a hub page after the first renders the host Not Found page or an empty body although the rail still lists it - its route or component did not make the port (mid-journey)
 the rail loses or doubles the 'Sales Rep hub' section after navigating from one hub page to the next (mid-journey)
 a page chunk is requested from the host /assets/ folder, or from the plugin folder with a 404, while earlier pages loaded fine
-WIDGETS_SECOND differs from WIDGETS_FIRST on the return to the dashboard",none (read-only; sign out is not required),VCST-6015 · Archetype:PARITY · Technique:FLOW · Probe:VC-PLATFORM-002 · Behavior:sr.hub.basic-rep · Fixed: VCST-6015 triage REG-2026-10-15-1548,Draft
+WIDGETS_SECOND differs from WIDGETS_FIRST on the return to the dashboard",none (read-only; sign out is not required),"VCST-6015 · Archetype:PARITY · Technique:FLOW · Probe:VC-PLATFORM-002 · Behavior:sr.hub.basic-rep · Fixed: VCST-6015 triage REG-2026-10-15-1548 | VCST-5337 r2 2026-10-20: profile/orders URLs use the org platform id alias (business key ORG-001 gives ""Customer not found""); hub-rail count excludes the host /account/orders/<id> page, which has no rail (REG-2026-10-19-1950)",Draft
 SR-HD-101,Rep cold deep link to each hub route resolves to the real page with no Not Found flash,Sales Rep Hub > Plugin delivery (Module Federation),High,BL-SR-011,"ECL-7.3, ECL-10.1","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
-SR_REP_PRIMARY serves @td(ORG_ACME.id). Each route is opened in a NEW tab by full document load (no SPA navigation), which is the bookmark and emailed-link path. Complements the SPA-navigation rows of the hub suites, none of which samples the frames before the page settles.","rep=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}, org=@td(ORG_ACME.id)","[SETUP] open a new tab and install an init script that samples the visible body text every 100 ms into FRAMES_1 until the page H1 appears
+SR_REP_PRIMARY serves @td(ORG_ACME.platform_id). Each route is opened in a NEW tab by full document load (no SPA navigation), which is the bookmark and emailed-link path. Complements the SPA-navigation rows of the hub suites, none of which samples the frames before the page settles.","rep=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}, org=@td(ORG_ACME.platform_id)","[SETUP] open a new tab and install an init script that samples the visible body text every 100 ms into FRAMES_1 until the page H1 appears
 [NAV] {{FRONT_URL}}/company/dashboard
 [WAIT] the page H1 has rendered
 [KEY] record the final URL (FINAL_URL_1), the H1 text (H1_1) and the seconds from navigation start to the H1 (T_1)
@@ -68,7 +68,7 @@ SR_REP_PRIMARY serves @td(ORG_ACME.id). Each route is opened in a NEW tab by ful
 [WAIT] the page H1 has rendered
 [KEY] record the final URL (FINAL_URL_2), the H1 text (H1_2) and the seconds from navigation start to the H1 (T_2)
 [SETUP] open a new tab and install an init script that samples the visible body text every 100 ms into FRAMES_3 until the page H1 appears
-[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_ACME.id)
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_ACME.platform_id)
 [WAIT] the page H1 has rendered
 [KEY] record the final URL (FINAL_URL_3), the H1 text (H1_3) and the seconds from navigation start to the H1 (T_3)
 [SETUP] open a new tab and install an init script that samples the visible body text every 100 ms into FRAMES_4 until the page H1 appears
@@ -86,7 +86,7 @@ SR_REP_PRIMARY serves @td(ORG_ACME.id). Each route is opened in a NEW tab by ful
 [NETWORK] no 4xx/5xx on /graphql","a frame shows 'Page not found' before the real page replaces it (the placeholder route was not in place when the catch-all matched)
 a route stays on a loader or an empty body past 5 s
 the URL changes away from the requested hub route for a rep who holds sales-rep:access
-one of the five routes ends on the same H1 as another route",close the extra tabs and remove the init script,VCST-6015 · Archetype:RACE · Technique:EP · Behavior:sr.hub.basic-rep,Draft
+one of the five routes ends on the same H1 as another route",close the extra tabs and remove the init script,"VCST-6015 · Archetype:RACE · Technique:EP · Behavior:sr.hub.basic-rep | VCST-5337 r2 2026-10-20: route 3 uses the org platform id alias; the business key rendered ""Customer not found or not in your customers."" with no H1 (REG-2026-10-19-1950)",Draft
 SR-HD-102,Non-rep buyer deep link to hub routes ends on the account dashboard with no hub request,Sales Rep Hub > Plugin delivery (Module Federation),Critical,BL-SR-011,ECL-4.1,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ACME_BUYER]
 ACME_BUYER is a plain corporate member of @td(ORG_ACME.id) with NO sales-rep:access (not a maintainer, unlike the ORG_USER_DEFAULT account, which is an organization maintainer). Extends the existing non-rep refusal rows of the My customers, customer profile and dashboard suites, which each visit one route, to every hub route and adds what the plugin delivery changed: the guard is reached through a placeholder hand-over, so the first navigation can show Not Found before the redirect.","buyer=@td(ACME_BUYER.email), password=@td(ACME_BUYER.password), org=@td(ORG_ACME.id)","[SETUP] start recording every network request of the tab into REQ_LOG

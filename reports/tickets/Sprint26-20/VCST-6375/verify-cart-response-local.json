@@ -1,0 +1,50 @@
+{
+ "cartId": "8eba5be8-ae53-4605-ab37-bb767290413a",
+ "subTotal": 669,
+ "discountTotal": 264.2,
+ "total": 404.8,
+ "items": [
+  {
+   "id": "c560c35a-de06-4061-bb47-a6b4271180f5",
+   "sku": "DRH-42771013",
+   "name": "Gin Tonic Three Cents - Cherry Soda 200 ml",
+   "quantity": 1,
+   "showPlacedPrice": false,
+   "listPrice": 180,
+   "salePrice": 180,
+   "placedPrice": 144,
+   "extendedPrice": 144,
+   "listTotal": 180,
+   "discountTotal": 36,
+   "discounts": []
+  },
+  {
+   "id": "23ca2df2-11c1-45ed-bd87-aa30e58c3331",
+   "sku": "LJO-92804653",
+   "name": "ABSOLUT BLUE VODKA BOTTLE 1,00L",
+   "quantity": 1,
+   "showPlacedPrice": false,
+   "listPrice": 400,
+   "salePrice": 237,
+   "placedPrice": 189.6,
+   "extendedPrice": 189.6,
+   "listTotal": 400,
+   "discountTotal": 210.4,
+   "discounts": []
+  },
+  {
+   "id": "9c719a00-3bc0-4c6b-8bf3-220060688ada",
+   "sku": "0003420",
+   "name": "Fanta Mango Soda 6x330ml",
+   "quantity": 1,
+   "showPlacedPrice": false,
+   "listPrice": 89,
+   "salePrice": 89,
+   "placedPrice": 71.2,
+   "extendedPrice": 71.2,
+   "listTotal": 89,
+   "discountTotal": 17.8,
+   "discounts": []
+  }
+ ]
+}

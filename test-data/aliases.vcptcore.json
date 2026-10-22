@@ -488,70 +488,80 @@
     "store_id": "Electronics"
   },
   "SR_TASK_FUTURE_YANKEE": {
-    "id": "f3a5831e-f820-43e0-b312-d3098e7e2e81",
-    "due_date": "2026-09-23T11:00:00.000Z"
+    "id": "8a5ca6aa-cc39-4477-8b31-e866aa9528f8",
+    "due_date": "2026-10-21T11:00:00.000Z"
   },
   "SR_TASK_OVERDUE_MIKE": {
-    "id": "8a18d1d2-32ff-49ee-97a9-dccaa228c084",
-    "due_date": "2026-09-21T09:00:00.000Z"
+    "id": "259c626c-bf7c-461a-9b96-29f91f4ff479",
+    "due_date": "2026-10-19T09:00:00.000Z"
   },
   "SR_TASK_DONE_ECHO": {
-    "id": "7a6cb61f-70ee-48c5-9d5c-c5cc78b0320a",
-    "due_date": "2026-09-13T16:00:00.000Z"
+    "id": "742fdc1c-a0f4-42ef-87a6-844deda13882",
+    "due_date": "2026-10-11T16:00:00.000Z"
   },
   "SR_TASK_FUTURE_ROMEO": {
-    "id": "8b13fddc-9e5e-432b-9744-d32c5b53a189",
-    "due_date": "2026-09-29T09:00:00.000Z"
+    "id": "b2e9e918-46b0-46d3-bce6-6bd16d4a8875",
+    "due_date": "2026-10-27T09:00:00.000Z"
   },
   "SR_TASK_TODAY_SIERRA": {
-    "id": "1be6af71-a3af-4371-81c9-a0c1f1df368b",
-    "due_date": "2026-09-22T12:00:00.000Z"
+    "id": "9c7509fd-2ac5-42e6-96ee-8dd34bcaf32e",
+    "due_date": "2026-10-20T12:00:00.000Z"
   },
   "SR_TASK_FUTURE_OSCAR": {
-    "id": "e1509864-2712-4aa0-8cfe-f567d184e044",
-    "due_date": "2026-10-06T13:00:00.000Z"
+    "id": "fa2fa388-426d-4396-8658-99dfdfc0483a",
+    "due_date": "2026-11-03T13:00:00.000Z"
   },
   "SR_TASK_OVERDUE_ZULU": {
-    "id": "f4e1ffae-1039-4cf5-8e23-45ede0847561",
-    "due_date": "2026-09-17T10:00:00.000Z"
+    "id": "00d03e65-73dd-42c4-8d52-4da50e22e218",
+    "due_date": "2026-10-15T10:00:00.000Z"
   },
   "SR_TASK_DONE_FOXTROT": {
-    "id": "b45539e6-ef6a-4541-b007-2da5636b877d",
-    "due_date": "2026-09-27T10:00:00.000Z"
+    "id": "24de2e83-bf0b-44bc-b05c-e7ccd22e57d6",
+    "due_date": "2026-10-25T10:00:00.000Z"
   },
   "SR_TASK_TODAY_DELTA": {
-    "id": "41e62a86-97f0-4e84-9001-dc4a69c6ef07",
-    "due_date": "2026-09-22T20:00:00.000Z"
+    "id": "7e7d422c-3f42-4da8-87fc-2ec1953a4b02",
+    "due_date": "2026-10-20T20:00:00.000Z"
   },
   "SR_TASK_FUTURE_CHARLIE": {
-    "id": "106de804-1362-4e0e-b4a9-1e1901b4c244",
-    "due_date": "2026-09-29T17:00:00.000Z"
+    "id": "17b104a9-0747-4659-967f-24007976fbc4",
+    "due_date": "2026-10-27T17:00:00.000Z"
   },
   "SR_TASK_DONE_NOVEMBER": {
-    "id": "3edc8823-b684-416f-86f6-f513ebe16c7b",
-    "due_date": "2026-09-20T12:00:00.000Z"
+    "id": "8b53d816-4a21-4d6f-bb48-03d521b05b21",
+    "due_date": "2026-10-18T12:00:00.000Z"
   },
   "SR_TASK_TODAY_ALPHA": {
-    "id": "f216ae8d-61ea-48ca-903a-ff92a3abee73",
-    "due_date": "2026-09-22T07:00:00.000Z"
+    "id": "e4067333-fff3-4a0f-9823-cd1f89184765",
+    "due_date": "2026-10-20T07:00:00.000Z"
   },
   "SR_TASK_FUTURE_BRAVO": {
-    "id": "cc032a0e-ec86-4884-a13d-4116ae5d260c",
-    "due_date": "2026-09-25T15:00:00.000Z"
+    "id": "0765f127-447a-4b6b-bdb5-f53aacca16b6",
+    "due_date": "2026-10-23T15:00:00.000Z"
   },
   "SR_TASK_DONE_TANGO": {
-    "id": "f18b2143-7737-433d-b924-0b1969caca76",
-    "due_date": "2026-09-22T15:00:00.000Z"
+    "id": "58d7f002-50b1-44c6-a500-953736e732bf",
+    "due_date": "2026-10-20T15:00:00.000Z"
   },
   "SR_TASK_GROUPS": {
     "open_overdue": "2",
-    "open_today": "3",
-    "open_future": "5",
+    "open_today": "5",
+    "open_future": "7",
     "completed": "4",
-    "total": "14",
-    "seeded_at": "2026-09-22T11:54:44.917Z",
-    "decays_at_utc": "2026-09-23T00:00:00.000Z",
-    "owner_rep_email": "agent-test-sr-primary@example.com"
+    "total": "22",
+    "seeded_at": "2026-10-20T05:40:09.497Z",
+    "decays_at_utc": "2026-10-20T21:00:00.000Z",
+    "owner_rep_email": "agent-test-sr-primary@example.com",
+    "canceled": "3",
+    "dateless": "1",
+    "chip_upcoming": "12",
+    "chip_overdue": "2",
+    "chip_completed": "4",
+    "chip_all": "22",
+    "today_scope_excl_canceled": "6",
+    "canceled_due_today": "1",
+    "all_minus_tabs": "4",
+    "browser_tz": "Europe/Moscow"
   },
   "SR_UNSERVED_ORG": {
     "id": "c00b995b-fc31-430e-89b8-4a8802e9a843",
@@ -1163,5 +1173,71 @@
     "id": "cfa32136-1cf8-408a-a886-ca1e81e34b0d",
     "createdDate": "2026-10-13T13:02:55.3202367Z",
     "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594"
+  },
+  "SR_STATS_CART_SPLIT": {
+    "id": "c6374396-c3fa-4f30-9210-08608d805c48",
+    "name": "default"
+  },
+  "SR_TASK_EDGE_QUEBEC": {
+    "id": "1230b45f-94e7-4bb5-b89e-fcdb7e123146",
+    "due_date": "2026-10-21T03:30:00.000Z"
+  },
+  "SR_TASK_CANCELED_LIMA": {
+    "id": "f9fbdbf6-83d4-469c-aea3-07dec3e4aea9",
+    "due_date": "2026-10-20T10:00:00.000Z"
+  },
+  "SR_TASK_EDGE_UNIFORM": {
+    "id": "9d2ad736-3213-4393-b115-ed9eb76667b9",
+    "due_date": "2026-12-19T10:00:00.000Z"
+  },
+  "SR_TASK_NODATE_INDIA": {
+    "id": "01a5c1d5-6f4f-4019-bb68-6b52caa88d39",
+    "due_date": ""
+  },
+  "SR_TASK_CANCELED_KILO": {
+    "id": "756da2f3-117b-4b7a-be37-17586ab0a7c9",
+    "due_date": "2026-10-17T11:00:00.000Z"
+  },
+  "SR_TASK_EDGE_GOLF": {
+    "id": "b06b01a8-cd4d-419a-81fc-e630a987d60c",
+    "due_date": "2026-10-19T21:00:00.000Z"
+  },
+  "SR_TASK_CANCELED_HOTEL": {
+    "id": "84f9e1f3-4c8f-4b73-b66a-f8f8dc4fa1b6",
+    "due_date": "2026-10-22T14:00:00.000Z"
+  },
+  "SR_TASK_EDGE_PAPA": {
+    "id": "62140bcb-279d-4770-8102-745f8972b960",
+    "due_date": "2026-10-20T20:30:00.000Z"
+  },
+  "SR_TASK_GROUPS_NY": {
+    "open_overdue": "3",
+    "open_today": "5",
+    "open_future": "6",
+    "completed": "4",
+    "canceled": "3",
+    "dateless": "1",
+    "total": "22",
+    "chip_upcoming": "11",
+    "chip_overdue": "3",
+    "chip_completed": "4",
+    "chip_all": "22",
+    "today_scope_excl_canceled": "6",
+    "canceled_due_today": "1",
+    "all_minus_tabs": "4",
+    "seeded_at": "2026-10-20T05:40:09.497Z",
+    "decays_at_utc": "2026-10-21T04:00:00.000Z"
+  },
+  "ORDER_UNSERVED_BUYER": {
+    "id": "c4291a98-4eb2-4d9f-96ed-174c040030e5",
+    "createdDate": "2026-10-20T08:10:48.0924622Z",
+    "customerId": "87af2675-adc2-423b-bc87-93c6d33691ea"
+  },
+  "SR_BULK_DATASET": {
+    "org_ids": "7c5fc2d9-7461-4758-90a0-5332c66563b5;1b50626e-296e-411f-91a4-637da8ede014",
+    "order_count": "1230",
+    "stats_order_count": "1208",
+    "large_stats_total": "2452452",
+    "seeded_at": "2026-10-21T08:19:07.967Z"
   }
 }

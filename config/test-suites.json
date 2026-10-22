@@ -4,7 +4,7 @@
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
     "generated": "2026-10-22",
-    "totalSuites": 162,
+    "totalSuites": 164,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -1778,7 +1778,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 155,
+      "testCount": 156,
       "estimatedMinutes": 245,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1793,7 +1793,7 @@
       ],
       "customerApplicability": "reference",
       "lanes": {
-        "machine": 151,
+        "machine": 152,
         "browser": 1,
         "manual": 0,
         "deprecated": 3
@@ -1821,6 +1821,35 @@
         "sales-rep"
       ],
       "customerApplicability": "reference"
+    },
+    {
+      "id": "050m3",
+      "name": "GraphQL xAPI — Sales Rep Customer Activity & Insights (scoped /graphql/sales-rep)",
+      "file": "regression/suites/Backend/graphql/050m3-graphql-sales-rep-activity.csv",
+      "domain": "sales-rep",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 10,
+      "estimatedMinutes": 15,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "graphql",
+        "xapi",
+        "sales-rep",
+        "b2b",
+        "scoped-schema",
+        "google-analytics"
+      ],
+      "requiresModules": [
+        "sales-rep"
+      ],
+      "customerApplicability": "reference",
+      "lanes": {
+        "machine": 10,
+        "browser": 0,
+        "manual": 0
+      }
     },
     {
       "id": "050n",
@@ -3968,6 +3997,31 @@
       "customerApplicability": "reference",
       "notes": "VCST-5887 (Epic VCST-5154). Create requisition at checkout: the storefront builds a cXML PunchOutOrderMessage and posts it to the session's return URL. PNCR-001 is the [JOURNEY] case. Every cart-content case uses the dedicated buyer PUNCHOUT_MAPPING_REQUISITION (AGENT-TEST-PO-300) and resets its carts in Setup and Cleanup (npm run seed:punchout:reset-carts), so run the suite on one lane and never beside another suite that uses that buyer. PNCR-019 and PNCR-034 flip the store-wide Punchout.Enabled of the configuration-0 store, so they serialise via the suite exclusiveGroup store-setting:Punchout.Enabled. PNCR-018 waits out a 10-minute session; PNCR-018 and PNCR-021 need a configuration-1 store on its own storefront host and are BLOCKED (environment) on vcptcore_qa1, where New-super shares the B2B-store host. Bug A (the module read only the cart named default) is fixed in vc-module-punchout PR #2, so PNCR-002, PNCR-003 and PNCR-027 are regression guards for the cart resolution. A second return of a session is REFUSED with errorCode SessionReturned (the replay was removed in vc-module-punchout PR #2 head c49023f): PNCR-013 browser Back, PNCR-015 two tabs, PNCR-028 API, PNCR-029 cart changed after the return (neither the old nor a new document is sent), PNCR-030 parallel calls (one document, the loser gets SessionReturned or SessionExpired); with Punchout.Enabled off a returned session answers StoreNotConfigured and SessionReturned again after the restore (PNCR-034). The SessionReturned toast text (vc-frontend c83fdf2) is not asserted until the theme ships. Per-errorCode toast texts are the design (PNCR-033, PNCR-034). Env-scoped by requiresModules, so it is meant for vcptcore_qa1 only — select with `punchout`. Cases stay Draft until a run promotes them.",
       "exclusiveGroup": "store-setting:Punchout.Enabled",
+      "clickDriven": true
+    },
+    {
+      "id": "110",
+      "name": "Sales Rep — Customer Activity & Insights (storefront)",
+      "file": "regression/suites/Frontend/sales-rep/110-sales-rep-activity-storefront.csv",
+      "domain": "sales-rep",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 28,
+      "estimatedMinutes": 60,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "sales-rep",
+        "storefront",
+        "customer-activity",
+        "google-analytics",
+        "b2b",
+        "feature-gated"
+      ],
+      "requiresModules": [
+        "sales-rep"
+      ],
+      "customerApplicability": "reference",
       "clickDriven": true
     }
   ],

@@ -1,0 +1,160 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+SR-ACTG-001,salesRepActivities - Served Organization Returns Only That Organization's Events With Platform Rows Present,GraphQL > Sales Rep > Query > salesRepActivities > Scope,Critical,BL-SR-002,ECL-14.3,"Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. Requires SalesRep 3.1015+ with GoogleEcommerceAnalytics installed. Caller is a PLAIN rep (SALES_REP = SR_REP_PRIMARY; administrators pass every scope check). storeId is passed explicitly. @td(ORG_ACME.platform_id) is served by SR_REP_PRIMARY and holds platform rows (a membership-dated customers row) regardless of GA lag, so the case is non-vacuous even when no GA data has arrived. {SPEC} (VCST-5731 AC-6: only the served organization's events).",org=@td(ORG_ACME.platform_id); store={{STORE_ID}},"[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=SALES_REP]
+[GQL-OP main]
+query { salesRepActivities(organizationId: ""{{org}}"", storeId: ""{{store}}"", take: 50) { totalCount isAnalyticsAvailable categoryCounts { category count } items { category type occurredAt precision count organizationId organizationName orderId orderNumber orderTotal { amount } searchTerm productId productCode productName } } }
+[GQL-EXEC main]","[ERRORS label=main] errors[] empty {SPEC} (VCST-5337 2026-10-02)
+[DATA label=main] data.salesRepActivities.totalCount >= 1 {SPEC} (VCST-5337 2026-10-02: Customers category is platform data)
+[COUNT label=main] data.salesRepActivities.items[*?organizationId!={{org}}].length = 0 {SPEC} (VCST-5731 AC-6)
+[DATA label=main] data.salesRepActivities.items.0.occurredAt is non-null {SPEC} (VCST-5337 2026-10-02)
+[DATA label=main] data.salesRepActivities.isAnalyticsAvailable is non-null {SPEC}",[API] storefront twin in suite 110,"an item whose organizationId differs from the requested served org
+errors[] non-empty
+totalCount 0 although the org has platform rows",none (read-only),"VCST-5337, VCST-5731 · Archetype:SCOPE · Technique:EP · Purpose:FUNC · Catches:VCST-5337",Draft
+SR-ACTG-002,salesRepActivities - categoryCounts Are Identical Across the Categories Filter and an Unknown Category Returns Nothing Without an Error,GraphQL > Sales Rep > Query > salesRepActivities > Counts,High,BL-SR-002,ECL-14.3,"Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. Requires SalesRep 3.1015+ with GoogleEcommerceAnalytics installed. Caller is a PLAIN rep (SALES_REP = SR_REP_PRIMARY; administrators pass every scope check). storeId is passed explicitly. The tab-count invariant of the activity page: counts do not change with the selected tab, because the page's tab selection is the categories filter. {SPEC} (VCST-5337 2026-10-02 D-7). Behaviour of an unknown category and the row-vs-event split is {OBSERVED} (KB-B7076554, single observation on SalesRep 3.1013/3.1015) and is asserted only where the spec also states it.",org=@td(ORG_ACME.platform_id); store={{STORE_ID}},"[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=SALES_REP]
+[GQL-OP unfiltered]
+query { salesRepActivities(organizationId: ""{{org}}"", storeId: ""{{store}}"") { totalCount categoryCounts { category count } } }
+[GQL-EXEC unfiltered]
+[GQL-CAPTURE unfiltered.data.salesRepActivities.categoryCounts.0.category → CAT0]
+[GQL-CAPTURE unfiltered.data.salesRepActivities.categoryCounts.0.count → CAT0_COUNT]
+[GQL-OP filtered]
+query { salesRepActivities(organizationId: ""{{org}}"", storeId: ""{{store}}"", categories: [""{{CAT0}}""]) { totalCount categoryCounts { category count } items { category } } }
+[GQL-EXEC filtered]
+[GQL-OP unknown]
+query { salesRepActivities(organizationId: ""{{org}}"", storeId: ""{{store}}"", categories: [""no-such-category""]) { totalCount items { category } } }
+[GQL-EXEC unknown]","[ERRORS label=unfiltered] errors[] empty {SPEC} (VCST-5337 2026-10-02)
+[DATA label=unfiltered] data.salesRepActivities.categoryCounts.length >= 5 {SPEC} (VCST-5337 2026-10-02: six tabs incl. All is UI-side; five categories server-side)
+[ERRORS label=filtered] errors[] empty {SPEC}
+[COUNT label=filtered] data.salesRepActivities.items[*?category!={{CAT0}}].length = 0 {SPEC} (VCST-5337 2026-10-02)
+[DATA label=filtered] data.salesRepActivities.categoryCounts[?category={{CAT0}}].count = {{CAT0_COUNT}} {SPEC} (VCST-5337 2026-10-02 D-7: a tab's count is the same whichever tab is selected)
+[ERRORS label=unknown] errors[] empty {OBSERVED} (KB-B7076554)
+[DATA label=unknown] data.salesRepActivities.totalCount = 0 {OBSERVED} (KB-B7076554)",[API] storefront twin in suite 110,"categoryCounts change with the filter (badge flips when another tab is selected)
+an unknown category raises errors[] or returns rows",none (read-only),"VCST-5337, VCST-5731 · Archetype:PARITY · Technique:EP · Purpose:FUNC · Catches:VCST-5337",Draft
+SR-ACTG-003,Unserved Organization - All Three Activity Operations Return Null With No errors[],GraphQL > Sales Rep > Query > Activity > Unserved org,Critical,BL-SR-002,ECL-14.3,Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. Requires SalesRep 3.1015+ with GoogleEcommerceAnalytics installed. Caller is a PLAIN rep (SALES_REP = SR_REP_PRIMARY; administrators pass every scope check). storeId is passed explicitly. SR_REP_PRIMARY does NOT serve @td(ORG_SUSPENDED.id) (a real organization). Same shape as the salesRepCustomer unserved-org case in 050m. {SPEC} (VCST-5337 2026-10-02: a hand-edited customer id gets not-found and no data).,not_served_org=@td(ORG_SUSPENDED.platform_id); store={{STORE_ID}},"[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=SALES_REP]
+[GQL-OP acts]
+query { salesRepActivities(organizationId: ""{{not_served_org}}"", storeId: ""{{store}}"") { totalCount items { organizationId } } }
+[GQL-EXEC acts]
+[GQL-OP summary]
+query { salesRepCustomerActivitySummary(organizationId: ""{{not_served_org}}"", storeId: ""{{store}}"") { createdOn visitsCount } }
+[GQL-EXEC summary]
+[GQL-OP insights]
+query { salesRepCustomerInsights(organizationId: ""{{not_served_org}}"", storeId: ""{{store}}"") { isAnalyticsAvailable searchTerms { __typename } } }
+[GQL-EXEC insights]","[ERRORS label=acts] errors[] empty {SPEC} (VCST-5337 2026-10-02)
+[NULL label=acts] data.salesRepActivities {SPEC} (VCST-5337 2026-10-02)
+[ERRORS label=summary] errors[] empty {SPEC}
+[NULL label=summary] data.salesRepCustomerActivitySummary {SPEC}
+[ERRORS label=insights] errors[] empty {SPEC}
+[NULL label=insights] data.salesRepCustomerInsights {SPEC}",[API] storefront twin in suite 110,"any operation returns an object for an unserved organization (data leak)
+errors[] confirms the org exists",none (read-only),"VCST-5337, VCST-5731 · Archetype:SCOPE · Technique:DT · Purpose:FUNC · Catches:VCST-5337 · Role:plain rep",Draft
+SR-ACTG-004,Hand-Edited Non-Existent Organization Id - All Three Activity Operations Return Null With No errors[],GraphQL > Sales Rep > Query > Activity > Unknown org,High,BL-SR-002,ECL-14.3,"Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. Requires SalesRep 3.1015+ with GoogleEcommerceAnalytics installed. Caller is a PLAIN rep (SALES_REP = SR_REP_PRIMARY; administrators pass every scope check). storeId is passed explicitly. The id is a random-data string with no organization behind it (neither served nor existing), distinct from SR-ACTG-003 where the organization exists. {SPEC} (VCST-5337 2026-10-02: hand-edited customer id).",bogus_org=AGENT-TEST-no-such-org-<rand8>; store={{STORE_ID}},"[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=SALES_REP]
+[GQL-OP acts]
+query { salesRepActivities(organizationId: ""{{bogus_org}}"", storeId: ""{{store}}"") { totalCount } }
+[GQL-EXEC acts]
+[GQL-OP summary]
+query { salesRepCustomerActivitySummary(organizationId: ""{{bogus_org}}"", storeId: ""{{store}}"") { createdOn } }
+[GQL-EXEC summary]
+[GQL-OP insights]
+query { salesRepCustomerInsights(organizationId: ""{{bogus_org}}"", storeId: ""{{store}}"") { isAnalyticsAvailable } }
+[GQL-EXEC insights]","[ERRORS label=acts] errors[] empty {SPEC} (VCST-5337 2026-10-02)
+[NULL label=acts] data.salesRepActivities {SPEC}
+[ERRORS label=summary] errors[] empty {SPEC}
+[NULL label=summary] data.salesRepCustomerActivitySummary {SPEC}
+[ERRORS label=insights] errors[] empty {SPEC}
+[NULL label=insights] data.salesRepCustomerInsights {SPEC}",none,"an exception surfaces as errors[] or HTTP 5xx for a malformed id
+an unfiltered (all customers) feed is returned for an id that matches nothing",none (read-only),"VCST-5337, VCST-5731 · Archetype:BOUNDARY · Technique:EG · Purpose:FUNC · Catches:VCST-5337 · Role:plain rep",Draft
+SR-ACTG-005,Non-Rep Member of a Served Organization Receives Null From the Activity Operations on /graphql/sales-rep,GraphQL > Sales Rep > Query > Activity > Non-rep caller,Critical,"BL-SR-011, BL-SR-002","ECL-14.3, ECL-4.2","Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. Requires SalesRep 3.1015+ with GoogleEcommerceAnalytics installed. Caller is ACME_BUYER: a member of @td(ORG_ACME.id) who holds NO sales-rep:access. storeId is passed explicitly. Asks about his OWN organization, which SR_REP_PRIMARY does serve - the sharpest refusal. {SPEC} (VCST-5337 checklist D-34/38). Whether errors[] is populated is not specified for this caller and is deliberately not asserted.",org=@td(ORG_ACME.platform_id); store={{STORE_ID}},"[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=ACME_BUYER]
+[GQL-OP acts]
+query { salesRepActivities(organizationId: ""{{org}}"", storeId: ""{{store}}"") { totalCount } }
+[GQL-EXEC acts]
+[GQL-OP summary]
+query { salesRepCustomerActivitySummary(organizationId: ""{{org}}"", storeId: ""{{store}}"") { createdOn } }
+[GQL-EXEC summary]
+[GQL-OP insights]
+query { salesRepCustomerInsights(organizationId: ""{{org}}"", storeId: ""{{store}}"") { isAnalyticsAvailable } }
+[GQL-EXEC insights]","[NULL label=acts] data.salesRepActivities {SPEC} (VCST-5337 checklist D-34/38)
+[NULL label=summary] data.salesRepCustomerActivitySummary {SPEC}
+[NULL label=insights] data.salesRepCustomerInsights {SPEC}",[API] storefront twin in suite 110,"any operation returns data for a non-rep member
+errors[] leaks the organization name or a stack trace",none (read-only),"VCST-5337, VCST-5731 · Archetype:SCOPE · Technique:DT · Purpose:FUNC · Catches:VCST-5337 · Role:non-rep org member",Draft
+SR-ACTG-006,Non-Rep Member Receives Null From the Activity Operations on the Default /graphql Endpoint Too,GraphQL > Sales Rep > Query > Activity > Non-rep caller,Critical,"BL-SR-011, BL-SR-002","ECL-14.3, ECL-4.2","Default xAPI endpoint /graphql (no [GQL-ENDPOINT]): the three operations are also exposed there. Caller is ACME_BUYER (member of @td(ORG_ACME.id), no sales-rep:access). {SPEC} (VCST-5337 checklist D-34/38: null on /graphql and /graphql/sales-rep). errors[] not asserted (unspecified).",org=@td(ORG_ACME.platform_id); store={{STORE_ID}},"[AUTH role=ACME_BUYER]
+[GQL-OP acts]
+query { salesRepActivities(organizationId: ""{{org}}"", storeId: ""{{store}}"") { totalCount } }
+[GQL-EXEC acts]
+[GQL-OP summary]
+query { salesRepCustomerActivitySummary(organizationId: ""{{org}}"", storeId: ""{{store}}"") { createdOn } }
+[GQL-EXEC summary]
+[GQL-OP insights]
+query { salesRepCustomerInsights(organizationId: ""{{org}}"", storeId: ""{{store}}"") { isAnalyticsAvailable } }
+[GQL-EXEC insights]","[NULL label=acts] data.salesRepActivities {SPEC} (VCST-5337 checklist D-34/38)
+[NULL label=summary] data.salesRepCustomerActivitySummary {SPEC}
+[NULL label=insights] data.salesRepCustomerInsights {SPEC}",none,"activity data returned on the default endpoint (the second door was left open)
+HTTP 5xx instead of a null result",none (read-only),"VCST-5337, VCST-5731 · Archetype:SCOPE · Technique:DT · Purpose:FUNC · Catches:VCST-5337 · Role:non-rep org member",Draft
+SR-ACTG-007,"Rep With Zero Customers - salesRepActivities Returns null (No Error); the UI Shows ""No customers assigned to you yet""",GraphQL > Sales Rep > Query > salesRepActivities > Empty,Medium,BL-SR-002,ECL-14.3,"Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. Requires SalesRep 3.1015+ with GoogleEcommerceAnalytics installed. Caller is SALES_REP_NOCUSTOMERS (permissioned rep serving zero organizations, as in 050m). storeId is passed explicitly. No organizationId given: 'all of my customers' over an empty set. {SPEC} (VCST-5337 2026-10-13: rep with no customers).",store={{STORE_ID}},"[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=SALES_REP_NOCUSTOMERS]
+[GQL-OP main]
+query { salesRepActivities(storeId: ""{{store}}"") { totalCount items { category } categoryCounts { category count } } }
+[GQL-EXEC main]
+[GQL-OP customers]
+query { salesRepCustomers(storeId: ""{{store}}"") { totalCount } }
+[GQL-EXEC customers]","[ERRORS label=main] errors[] empty {SPEC}
+[DATA label=main] data.salesRepActivities is null {BL} (BL-SR-002(a) allows null; zero customers gives null BY DESIGN per SalesRepActivitiesQueryHandler.cs:38-52, same convention as salesRepCustomerInsights; kb KB-8B3C6CE5)
+[ERRORS label=customers] errors[] empty {SPEC}
+[DATA label=customers] data.salesRepCustomers.totalCount = 0 {SPEC} (the storefront empty state No customers assigned to you yet is driven by this)",[API] storefront twin in suite 110,"a zero-customer rep gets another rep's or all customers' events (empty served set read as 'no filter'): salesRepActivities non-null with items
+errors[] non-empty",none (read-only),"VCST-5337, VCST-5731 · Archetype:BOUNDARY · Technique:EP · Purpose:FUNC · Catches:VCST-5337 · Role:zero-customer rep · VCST-5337 r2 2026-10-20d: zero-customer rep gets salesRepActivities null with errors[] empty BY DESIGN (SalesRepActivitiesQueryHandler.cs:38-52; kb KB-8B3C6CE5); the UI empty state is driven by salesRepCustomers.totalCount === 0",Draft
+SR-ACTG-008,"salesRepActivities - A Shorter Period Never Holds More Than a Longer One, and a 2000-2010 Window Holds Nothing",GraphQL > Sales Rep > Query > salesRepActivities > Period,High,BL-SR-001,ECL-14.3,"Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. Requires SalesRep 3.1015+ with GoogleEcommerceAnalytics installed. Caller is a PLAIN rep (SALES_REP = SR_REP_PRIMARY; administrators pass every scope check). storeId is passed explicitly. Nested fixed windows (never derived from today, as in 050m): ancient 2000-01-01..2010-12-31 inside wide 2000-01-01..2099-12-31 inside the omitted period (all time). BL-SR-001: bounds are inclusive UTC instants, omitted bounds mean all time. {SPEC} (VCST-5337 checklist D-9/16/17: This month <= This year <= All time). Compares totalCount (rows) with itself across windows, never rows with events.",org=@td(ORG_ACME.platform_id); store={{STORE_ID}},"[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=SALES_REP]
+[GQL-OP alltime]
+query { salesRepActivities(organizationId: ""{{org}}"", storeId: ""{{store}}"") { totalCount } }
+[GQL-EXEC alltime]
+[GQL-CAPTURE alltime.data.salesRepActivities.totalCount → ALL_N]
+[GQL-OP wide]
+query { salesRepActivities(organizationId: ""{{org}}"", storeId: ""{{store}}"", period: {from: ""2000-01-01T00:00:00Z"", to: ""2099-12-31T23:59:59Z""}) { totalCount } }
+[GQL-EXEC wide]
+[GQL-CAPTURE wide.data.salesRepActivities.totalCount → WIDE_N]
+[GQL-OP ancient]
+query { salesRepActivities(organizationId: ""{{org}}"", storeId: ""{{store}}"", period: {from: ""2000-01-01T00:00:00Z"", to: ""2010-12-31T23:59:59Z""}) { totalCount items { category } } }
+[GQL-EXEC ancient]","[ERRORS label=alltime] errors[] empty {SPEC}
+[ERRORS label=wide] errors[] empty {SPEC}
+[ERRORS label=ancient] errors[] empty {SPEC}
+[DATA label=alltime] data.salesRepActivities.totalCount >= 1 {SPEC}
+[DATA label=wide] data.salesRepActivities.totalCount <= {{ALL_N}} {SPEC} (VCST-5337 checklist D-9/16/17)
+[DATA label=ancient] data.salesRepActivities.totalCount <= {{WIDE_N}} {SPEC}
+[DATA label=ancient] data.salesRepActivities.totalCount = 0 {SPEC} (BL-SR-001)",[API] storefront twin in suite 110,"the 2000-2010 window returns rows (period ignored)
+errors[] on a bounded period",none (read-only),"VCST-5337, VCST-5731 · Archetype:BOUNDARY · Technique:BVA · Purpose:FUNC · Catches:VCST-5337",Draft
+SR-ACTG-009,"salesRepActivities - take Clamps at 50, Negative take Returns Nothing, and Rows Past the 500-Row Window Return Nothing With Counts Unchanged",GraphQL > Sales Rep > Query > salesRepActivities > Paging,Medium,BL-SR-002,ECL-14.3,"Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. Requires SalesRep 3.1015+ with GoogleEcommerceAnalytics installed. Caller is a PLAIN rep (SALES_REP = SR_REP_PRIMARY; administrators pass every scope check). storeId is passed explicitly. {OBSERVED} (KB-B7076554, SalesRep 3.1013/3.1015, single observation): take 51 and 1000 return 50 items, negative take returns 0 items, skip 500/501/520 return 0 items while totalCount and categoryCounts stay unchanged, negative skip is treated as 0. {SPEC} for the window: 20 rows per page, up to 26 pages (VCST-5337 2026-10-02). Since the observation is not a spec of the clamp value, a mismatch is re-observed, not auto-failed as a regression of intent; the 'rows past the window do not repeat' check is the spec-bearing assertion.",org=@td(ORG_ACME.platform_id); store={{STORE_ID}},"[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=SALES_REP]
+[GQL-OP clampq]
+query { salesRepActivities(storeId: ""{{store}}"", take: 1000) { totalCount items { category } } }
+[GQL-EXEC clampq]
+[GQL-OP negtake]
+query { salesRepActivities(storeId: ""{{store}}"", take: -1) { items { category } } }
+[GQL-EXEC negtake]
+[GQL-OP head]
+query { salesRepActivities(storeId: ""{{store}}"", take: 5, skip: 0) { totalCount categoryCounts { category count } items { occurredAt category } } }
+[GQL-EXEC head]
+[GQL-CAPTURE head.data.salesRepActivities.totalCount → HEAD_N]
+[GQL-OP past]
+query { salesRepActivities(storeId: ""{{store}}"", take: 5, skip: 501) { totalCount categoryCounts { category count } items { occurredAt category } } }
+[GQL-EXEC past]","[ERRORS label=clampq] errors[] empty {SPEC}
+[DATA label=clampq] data.salesRepActivities.items.length <= 50 {OBSERVED} (KB-B7076554)
+[COUNT label=negtake] data.salesRepActivities.items.length = 0 {OBSERVED} (KB-B7076554)
+[ERRORS label=past] errors[] empty {SPEC}
+[COUNT label=past] data.salesRepActivities.items.length = 0 {SPEC} (VCST-5337 2026-10-02: nothing beyond the 26-page window)
+[DATA label=past] data.salesRepActivities.totalCount = {{HEAD_N}} {OBSERVED} (KB-B7076554)",none,"skip 501 repeats rows from the start of the window
+negative take or oversized take raises errors[]",none (read-only),"VCST-5337, VCST-5731 · Archetype:BOUNDARY · Technique:BVA · Purpose:FUNC · Catches:VCST-5337",Draft
+SR-ACTG-010,salesRepCustomerActivitySummary - Total Visits Equals the Logins Event Count and Platform Fields Are Present,GraphQL > Sales Rep > Query > salesRepCustomerActivitySummary > Consistency,High,BL-SR-002,ECL-14.3,"Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. Requires SalesRep 3.1015+ with GoogleEcommerceAnalytics installed. Caller is a PLAIN rep (SALES_REP = SR_REP_PRIMARY; administrators pass every scope check). storeId is passed explicitly. {SPEC} (VCST-5337 2026-10-13: 'the Logins tab agrees with Total visits'). Both read the same GA events over all time. isAnalyticsAvailable must be true in both or the equality could be 0 = 0 on a failed read - the case asserts it, so an unreachable GA fails the fixture rather than passing vacuously. The 'logins' category name is {OBSERVED} (KB-B7076554: categories orders, customers, searches, productViews, logins).",org=@td(ORG_ACME.platform_id); store={{STORE_ID}},"[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=SALES_REP]
+[GQL-OP summary]
+query { salesRepCustomerActivitySummary(organizationId: ""{{org}}"", storeId: ""{{store}}"") { createdOn lastWebLogin visitsCount lastSearchTerm lastSearchedDate lastViewedProduct { code productId name imageUrl } lastViewedDate isAnalyticsAvailable } }
+[GQL-EXEC summary]
+[GQL-CAPTURE summary.data.salesRepCustomerActivitySummary.visitsCount → VISITS_N]
+[GQL-OP acts]
+query { salesRepActivities(organizationId: ""{{org}}"", storeId: ""{{store}}"") { isAnalyticsAvailable categoryCounts { category count } } }
+[GQL-EXEC acts]","[ERRORS label=summary] errors[] empty {SPEC}
+[DATA label=summary] data.salesRepCustomerActivitySummary.createdOn is non-null {SPEC} (VCST-5337 2026-10-02: Created on is platform data)
+[DATA label=summary] data.salesRepCustomerActivitySummary.isAnalyticsAvailable = true {SPEC}
+[DATA label=acts] data.salesRepActivities.isAnalyticsAvailable = true {SPEC}
+[DATA label=acts] data.salesRepActivities.categoryCounts[?category=logins].count = {{VISITS_N}} {SPEC} (VCST-5337 2026-10-13)",[API] storefront twin in suite 110,"visitsCount differs from the logins category count (row vs event counting)
+createdOn null",none (read-only),"VCST-5337, VCST-5731 · Archetype:PARITY · Technique:EP · Purpose:FUNC · Catches:VCST-5337",Draft

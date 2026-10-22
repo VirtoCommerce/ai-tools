@@ -24,3 +24,4 @@ CON-026,,ORG-020,Push,Reader,Push Reader,agent-test-push-reader@test-agent.com,,
 CON-027,,ORG-020,Push,Bystander,Push Bystander,agent-test-push-bystander@test-agent.com,,,,Approved,America/New_York,en-US,USD,true,"068 PUSH-024 user B: same org as the reader, never in any memberIds"
 CON-028,,ORG-020,Push,Bulk,Push Bulk,agent-test-push-bulk@test-agent.com,,,,Approved,America/New_York,en-US,USD,true,068 PUSH-021/029: absorbs mark-all-read and clear-all
 CON-029,,ORG-021,Push,Api,Push Api,agent-test-push-api@test-agent.com,,,,Approved,America/New_York,en-US,USD,true,050l xAPI recipient (mark/mark-all/clear-all)
+CON-030,,ORG-005,Eu,Buyer,Eu Buyer,agent-test-sr-eu-buyer@test-agent.com,,,,Approved,Europe/Berlin,en-US,USD,true,"097 SR-CO-012 / ORDER_UNSERVED_BUYER: the ONLY member of ORG-005 (an org SR_REP_PRIMARY does not serve). Places the buyer-authored unserved-org order; never a rep"

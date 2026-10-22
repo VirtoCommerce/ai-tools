@@ -1,6 +1,6 @@
 # GraphQL xAPI Schema Reference
 
-> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-10-15)
+> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-10-19)
 > **Purpose**: Agents MUST consult this file before writing or reviewing GraphQL queries/mutations.
 > **Refresh**: `npm run schema:refresh` — run when the schema may have changed.
 > **SCOPE — read this before concluding a field does not exist.** The query and mutation
@@ -26,16 +26,16 @@
 12. **Pass the ambient context — `cultureName`, `storeId`, `userId`, `organizationId` — on almost every query and mutation.**
     Most xAPI operations resolve against an implied context, and **omitting a context arg is not an error**:
     the server substitutes a default and returns `200` with data that is wrong, empty, or `null`. There is no
-    message to notice. Measured on this schema (120 queries, derived at refresh):
+    message to notice. Measured on this schema (125 queries, derived at refresh):
 
     | Context arg | Queries accepting it | Required | Optional |
     |---|---|---|---|
-    | `cultureName` | 65 (54%) | 3 | 62 |
-    | `storeId` | 72 (60%) | 38 | 34 |
-    | `userId` | 31 (26%) | 2 | 29 |
-    | `organizationId` | 15 (13%) | 3 | 12 |
+    | `cultureName` | 68 (54%) | 3 | 65 |
+    | `storeId` | 76 (61%) | 38 | 38 |
+    | `userId` | 31 (25%) | 2 | 29 |
+    | `organizationId` | 18 (14%) | 4 | 14 |
 
-    **92 of 120 queries (77%) accept at least one; 79 (66%) accept one OPTIONALLY** —
+    **96 of 125 queries (77%) accept at least one; 83 (66%) accept one OPTIONALLY** —
     that last figure is the exposure, because those are the calls that can quietly answer for a context you
     never chose. Mutations take the same fields inside the `command:` wrapper (see Rule 1), so the same rule applies.
 
@@ -191,10 +191,15 @@ return(id: String!)
 returnReasons(storeId: String!, cultureName: String)
 returns(after: String, first: Int, keyword: String, sort: String, storeId: String!, statuses: [String], startDate: DateTime, endDate: DateTime)
 returnStatuses(cultureName: String)
+purchaseRequest(purchaseRequestId: String!)
+purchaseRequests(after: String, first: Int, keyword: String, sort: String, storeId: String, customerId: String)
 canLeaveFeedback(storeId: String!, entityId: String!, entityType: String!)
 customerReviews(after: String, first: Int, keyword: String, sort: String, storeId: String!, entityId: String!, entityType: String!, filter: String)
 customerSalesReps(after: String, first: Int, keyword: String, sort: String, storeId: String)
+salesRepActivities(organizationId: String, storeId: String, categories: [String!], period: SalesRepStatisticsPeriodInput, take: Int, skip: Int, cultureName: String)
+salesRepCustomerActivitySummary(organizationId: String!, storeId: String, period: SalesRepStatisticsPeriodInput, cultureName: String)
 salesRepCustomerFilterRules(storeId: String, cultureName: String)
+salesRepCustomerInsights(organizationId: String, storeId: String, period: SalesRepStatisticsPeriodInput, cultureName: String)
 salesRepCustomer(organizationId: String!)
 salesRepCustomerSortRules(storeId: String, cultureName: String)
 salesRepCustomers(after: String, first: Int, keyword: String, sort: String, storeId: String, filter: String, cultureName: String)
@@ -380,6 +385,12 @@ wishlists(after: String, first: Int, storeId: String, userId: String, currencyCo
 | `createReturn` | `CreateReturnCommandType` |
 | `submitReturn` | `SubmitReturnCommandType` |
 | `updateReturn` | `UpdateReturnCommandType` |
+| `addPurchaseRequestSource` | `InputAddPurchaseRequestSourceType` |
+| `createPurchaseRequest` | `InputCreatePurchaseRequestType` |
+| `createPurchaseRequestFromDocuments` | `InputCreatePurchaseRequestFromDocumentsType` |
+| `extractPurchaseRequestSourcesData` | `InputExtractDataFromPurchaseRequestSourcesType` |
+| `postProcessPurchaseRequestSources` | `InputPostProcessPurchaseRequestSourcesType` |
+| `updatePurchaseRequestByDocuments` | `InputUpdatePurchaseRequestByDocumentsType` |
 | `saveSalesRepLayout` | `InputSalesRepLayout` |
 | `sendCustomerCommunication` | `InputSendCustomerCommunicationType` |
 

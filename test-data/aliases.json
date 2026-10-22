@@ -4503,6 +4503,17 @@
     "name": "AGENT-TEST-SR-CART-WEST",
     "_notes": "Second active cart, in ORG-004/AcmeWest, so the cross-customer dashboard cart count is >1 and cross-org cart scoping is exercised (BL-SR-002/BL-SR-006). Runtime id in aliases.<env>.json (npm run seed:sales-rep-stats)."
   },
+  "SR_STATS_CART_SPLIT": {
+    "_inline": true,
+    "id": "",
+    "name": "default",
+    "org_key": "ORG-003",
+    "currency": "USD",
+    "store": "B2B-store",
+    "selected_qty": 3,
+    "unselected_qty": 7,
+    "_notes": "SR-HD-061 (BL-SR-006): lines in SR_REP_PRIMARY's cart NAMED \"default\" for ORG-003/BuildRight, USD, B2B-store — one product SELECTED for checkout (qty selected_qty) and one DIFFERENT product NOT selected (qty unselected_qty). It must be the \"default\" cart: the dashboard Active carts card queries salesRepCustomerCartStatistics period(filter: \"active-carts\"), and that built-in kind counts ONLY carts named \"default\" (an include-list by name), so the first version of this fixture — a named cart AGENT-TEST-SR-CART-SPLIT, now retired and removed by the seeder — was invisible to the card. The two quantities differ on purpose, so a swapped value/sub is visible; ORG-003 holds no other rep USD default cart, so salesRepCustomerCartStatistics(organizationId=ORG-003, active-carts) equals this fixture exactly, while the dashboard roll-up ADDS it to the other served orgs' default carts (read the roll-up from the API, never from these numbers). BORROWED cart: the seeder did not create it and never removes it — seed adds only the fixture's two lines (and refuses if the cart holds anyone else's line), teardown removes only those lines. FIFTH-RULE LIMIT: this is the cart the storefront uses when the rep shops with BuildRight selected — a case that adds to / clears the cart as SR_REP_PRIMARY with BuildRight selected disturbs it (062 and 097 act in ACME, not BuildRight); the EUR \"default\" BuildRight cart is a separate currency-scoped cart and is never touched. Shape lives in scripts/seed-data/sales-rep/sales-rep-stats-specs.mjs CART_FIXTURES (key SPLIT); td:validate:sales-rep-stats fails if the quantities stop diverging, drift from the spec, or the fixture leaves the \"default\" cart. Runtime id in aliases.<env>.json (npm run seed:sales-rep-stats -- --only SPLIT)."
+  },
   "SR_REP_PERF": {
     "_inline": true,
     "seed": "seed:sales-rep-perf",
@@ -4521,6 +4532,16 @@
     "stats_order_count": "",
     "seeded_at": "",
     "_notes": "VCST-5755 AC-5 performance dataset summary for the env it was seeded on: semicolon-joined runtime org GUIDs (ORG-01..15 order), the number of AGENT-TEST-SRPERF-* orders present after the last seed, and how many of them the statistics scope counts (not IsCancelled, BL-SR-005). Written by npm run seed:sales-rep-perf; removed by seed:sales-rep-perf:teardown."
+  },
+  "SR_BULK_DATASET": {
+    "_inline": true,
+    "seed": "seed:sales-rep-bulk",
+    "org_ids": "",
+    "order_count": "",
+    "stats_order_count": "",
+    "large_stats_total": "",
+    "seeded_at": "",
+    "_notes": "Bulk-volume dataset on the PLAIN rep SR_REP_PRIMARY (089 SR-FE-052 + hub large-number layout): two dedicated orgs AGENT-TEST-SR-BULK-ORG-01 (LARGE: >= 1000 statistics orders, >= $1,000,000) and -02 (MID: 3-digit count, 6-digit money) that SR_REP_PRIMARY serves, holding AGENT-TEST-SRBULK-NNNNNN orders created with customerId = the rep's ApplicationUser id. All orders are dated the seed day (createdDate is server-assigned), so YTD = MTD = today. org_ids = runtime GUIDs (LARGE;MID); counts/total = what the seed recorded. Shape in scripts/seed-data/sales-rep/sales-rep-bulk-specs.mjs; guard td:validate:sr-bulk. Written by npm run seed:sales-rep-bulk; cleared by seed:sales-rep-bulk:teardown (which also drops the two memberships)."
   },
   "SR_REP_LOCKABLE": {
     "file": "sales-rep/sales-reps",
@@ -4894,7 +4915,7 @@
       "roleName": "role_name",
       "extraRoleName": "extra_role_name"
     },
-    "_notes": "VCST-5730 — sales rep with sales-rep-documents:WRITE but NOT :read (\"Sales Representative\" + \"Sales Rep Documents Manager\"). Use for the read-gate disjunction (SalesRepDocumentPermissions.HasReadAccess = Administrator OR :read OR :write) and for upload/pin/delete-authorised cases. Two roles are structurally required: POST /api/sales-rep silently substitutes a granting role for a non-granting roleId, so the write-only role is added to the ApplicationUser afterwards. Runtime GUIDs in aliases.<env>.json."
+    "_notes": "VCST-5730 — sales rep with sales-rep-documents:WRITE but NOT :read (\"Sales Representative\" + \"Sales Rep Documents Manager\"). NEGATIVE read-gate fixture: since SalesRep 3.1006.0 reading the document library REQUIRES sales-rep-documents:read and a write-only holder is Forbidden, BY DESIGN (the 3.1014.0 component test pins \"write does not imply read in code\"); there is no read-OR-write disjunction. Use it to prove write-only cannot list/download, and for upload/pin/delete-authorised cases. STAND CAVEAT: the fixture is write-only only where the \"Sales Rep Documents Manager\" role was seeded by the pre-merge build (vcptcore-qa); on stands seeded from a released build that role carries read+write, so this rep CAN read there — check the role's permissions on the stand before asserting Forbidden. Two roles are structurally required: POST /api/sales-rep silently substitutes a granting role for a non-granting roleId, so the write-only role is added to the ApplicationUser afterwards. Runtime GUIDs in aliases.<env>.json."
   },
   "SR_DOC_PDF": {
     "_inline": true,
@@ -5304,6 +5325,26 @@
       "customerId": "customer_id"
     },
     "notes": "VCST-5733 AUTHORSHIP matrix cell 'UNSERVED org x REP-authored' — the negative fixture. It lives in ORG-005 (Acme-EU-Operations), an org SR_REP_PRIMARY holds NO membership on (verified live on vcst 2026-09-02: zero organization memberships, and salesRepCustomerOrders(organizationId: ORG-005) returns totalCount 0 for the rep). salesRepCustomerOrder(id: @td(ORDER_NOT_SERVED.id)) MUST return null and the salesRepCustomerOrders list must never contain @td(ORDER_NOT_SERVED.number). THE ORACLE IS null, NOT AN ERROR: vc-module-sales-rep PR #14 loads the order by id and THEN filters it through IsVisibleAsync on served OrganizationId, so an assertion expecting a 403 or an errors[] entry produces a false FAIL. IT IS REP-AUTHORED ON PURPOSE, and that is load-bearing: the rep is this order's own customer, so the ONLY thing separating it from ORDER_REP_PLACED — which IS returned — is the organization, which is what makes a null attributable to ORG SCOPE rather than to authorship. A buyer-authored version would be explainable by either dimension, and an implementation that authorized by authorship alone (the pre-VCST-5733 salesRepOrders rule) would WRONGLY return this order. ORG_SUSPENDED (ORG-006) is DELIBERATELY NOT the host: its status is Suspended, which gives the exclusion a second candidate cause and makes the case unable to attribute the one it is about — td:validate:sr-orders check [5] refuses any host whose committed status is not Active. Runtime .id / .createdDate / .customerId live ONLY in aliases.<env>.json (npm run seed:sales-rep)."
+  },
+  "ORDER_UNSERVED_BUYER": {
+    "file": "sales-rep/sales-rep-orders",
+    "filter": {
+      "order_key": "SRO-EU-BUYER-NOT-SERVED"
+    },
+    "fields": {
+      "number": "order_number",
+      "orderKey": "order_key",
+      "org": "org",
+      "store": "store",
+      "status": "status",
+      "total": "total",
+      "customerRole": "customer_role",
+      "customerName": "customer_name",
+      "id": "order_id",
+      "createdDate": "created_date",
+      "customerId": "customer_id"
+    },
+    "notes": "097 SR-CO-012 (BL-SR-002) — the 4th AUTHORSHIP cell 'UNSERVED org x BUYER-authored': an order in ORG-005 (Acme-EU-Operations), an org SR_REP_PRIMARY neither serves nor is a member of, whose customer is the ORG-005 buyer USR-030 (agent-test-sr-eu-buyer, created 2026-10-20 as that org's only member), NOT the rep. Used for 'the rep types {{FRONT_URL}}/account/orders/@td(ORDER_UNSERVED_BUYER.id) and is refused' — ORDER_NOT_SERVED cannot serve that case because the rep IS its customer and a customer may open their own order. One factor away from ORDER_NOT_SERVED (same org/store/status/items_count, only the customer differs; total 142.00 distinct). .org is the business key ORG-005; resolve the org name via b2b/organizations.csv. Runtime .id / .createdDate / .customerId live ONLY in aliases.<env>.json (npm run seed:sales-rep; the buyer comes from npm run seed:b2b -- --only CON-030). td:validate:sr-orders check [j] fails if ORG-005 joins the rep's served set or the buyer is a rep; [5c] fails if the SEEDED customerId equals any SR_REP_* user_id."
   },
   "CAT_EMPTY": {
     "_inline": true,

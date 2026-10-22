@@ -1,0 +1,75 @@
+{
+  "ticket": "VCST-5731",
+  "ticket_type": "Story",
+  "flow": "feature-test",
+  "tracker": {
+    "system": "jira",
+    "comment_id": "112157",
+    "artifact": "theme 2.61.0-pr-2458-3f0b; SalesRep 3.1015.0-pr-15-e5bc; GA 4.1005.0-pr-61-5267",
+    "amended": "2026-10-21 GA read-back complete"
+  },
+  "path": "FULL",
+  "verdict": "PASS WITH NOTES",
+  "date": "2026-10-20",
+  "environment": "vcptcore-qa, store B2B-store",
+  "status_transitions": [
+    {
+      "at": "1a",
+      "from": "Ready for test",
+      "to": "Testing",
+      "made": true,
+      "transition": "On QA",
+      "reason": "opening hop"
+    },
+    {
+      "at": "5-status",
+      "from": "Testing",
+      "to": "Tested",
+      "made": true,
+      "transition": "Finish test",
+      "confirmed_by": "operator 2026-10-20 (after GA read-back)",
+      "reason": "PASS WITH NOTES",
+      "at_time": "2026-10-21T07:07Z"
+    }
+  ],
+  "bugs_filed": [],
+  "bugs_not_filed": [],
+  "timing": {
+    "note": "Round 2; tested together with VCST-5337 (see reports/tickets/Sprint26-20/VCST-5337/summary.json)."
+  },
+  "ac_analysis": {
+    "story_acs": 6,
+    "weak_acs": 4,
+    "gap_acs_added": 0,
+    "impl_coverage": {
+      "satisfied": 6,
+      "drift": 0,
+      "contradicts": 0,
+      "not_found": 0
+    },
+    "conditions_total": 6,
+    "conditions_with_evidence": 6,
+    "ac_dod_estimate": {
+      "ac_coverage_pct": 1,
+      "dod_total": 0,
+      "dod_met": 0,
+      "dod_pct": null
+    },
+    "acceptance_criteria": {
+      "AC-1": "PASS",
+      "AC-2": "PASS",
+      "AC-3": "PASS",
+      "AC-4": "PASS",
+      "AC-5": "PASS (GA read-back 2026-10-20 18:10Z)",
+      "AC-6": "PASS"
+    }
+  },
+  "regression": {
+    "c1": {
+      "ran": false,
+      "skipped_reason": "covered by the VCST-5337 run (suites 110 (ran as 109) / 050m3, REG-2026-10-20-1332)"
+    },
+    "feature_release_gate": "not-assessed"
+  },
+  "report": null
+}

@@ -1,0 +1,19 @@
+{
+  "ticket": "VCST-6142",
+  "repo": "VirtoCommerce/vc-frontend",
+  "repoKind": "frontend",
+  "branch": "claude/qa-autofix/VCST-6142",
+  "commit": "0ffa9dc75890fa0c195d5ea6efffddaa774dfd02",
+  "prUrl": "https://github.com/VirtoCommerce/vc-frontend/pull/2590",
+  "prState": "OPEN (awaiting human review; not merged)",
+  "ticketStatus": "In review",
+  "trackerComment": "112207",
+  "gates": {
+    "G0": "PASS", "G1": "PASS", "G2": "RED", "G3": "GREEN", "G4": "APPROVE",
+    "G5": "PASS", "G6": "NOT_RUN_BY_DESIGN (needs deploy verification)", "G7": "STOP_AT_IN_REVIEW"
+  },
+  "contrast": { "before_worst_light": 2.26, "before_worst_dark": 1.76, "after_worst": 3.74 },
+  "designSignoffNeeded": true,
+  "confidence": "HIGH",
+  "next": "/qa-verify-fix VCST-6142 after merge + deploy"
+}
