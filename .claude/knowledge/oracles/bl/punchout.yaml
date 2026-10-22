@@ -78,7 +78,7 @@ rules:
     status: ACTIVE
     verified:
       date: 2026-10-22
-      by: REG-2026-10-22-0943
+      by: REG-2026-10-22-1014
   - id: BL-PUNCHOUT-004
     title: Only the session owner obtains a session's document
     rule: "`createPunchoutRequisition` answers only the buyer who holds the punchout session's own token. A password-grant token of the same buyer, an anonymous call, and a call from another user or another store return `SessionNotFound` and no cXML, for an active session and for one that has already returned its cart."
@@ -205,4 +205,4 @@ rules:
     status: ACTIVE
     verified:
       date: 2026-10-22
-      by: REG-2026-10-22-0943
+      by: REG-2026-10-22-1014
