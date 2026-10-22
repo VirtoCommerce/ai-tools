@@ -22,12 +22,12 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 
 | Verdict | Rows |
 |---|---|
-| REAL_BUG | 43 |
+| REAL_BUG | 42 |
 | BY_DESIGN | 3 |
 | TEST_DEFECT | 69 |
 | DATA | 59 |
 | ENV_CONFIG | 39 |
-| DUPLICATE | 2 |
+| DUPLICATE | 3 |
 | FLAKY | 1 |
 | PENDING_DECISION | 3 |
 

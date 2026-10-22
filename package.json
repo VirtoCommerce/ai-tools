@@ -204,6 +204,7 @@
     "regression:plan": "npx tsx scripts/regression/plan-run.ts",
     "regression:select": "npx tsx scripts/regression/select-suites.ts",
     "regression:recalibrate": "npx tsx scripts/regression/recalibrate-estimates.ts",
+    "release:diagram": "node scripts/regression/release-flow-diagram.mjs",
     "release:diff": "npx tsx scripts/regression/release-diff.ts",
     "release:report": "npx tsx scripts/regression/release-report.ts",
     "release:status": "npx tsx scripts/regression/release-status.ts",
