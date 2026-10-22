@@ -88,3 +88,38 @@ The stale rows are listed in the strategy's Artifacts row with their reason and 
 
 In the strategy it is computed from the planned `RUN` rows; at close-out, from what ran. The label is for people reading reports. No rule, floor or gate reads it, so it cannot drift from what ran.
 It never appears in a risk row; a risk carries **effort** (`low` / `medium` / `high`, D12).
+
+## Clause 11 — every strategy; clauses 12–13 — vc-test runs
+
+The script half of SKILL.md §Gate clauses 11–13. **Clause 11 runs on every strategy** — `/qa-test`, `/qa-test-fast` and vc-test alike (U57 and U58 are general rules). It reads the `Project risks:` line; an item is a `P<n>` that starts the line or follows a `·` or a sentence end (`.` or `;`), so a `P95 2s` inside an item is not an item. 12 and 13 run only with a change map (a vc-test run). Each error names its item or hotspot, so a fix is aimed.
+
+### 11a — a project risk is not a product risk (U58)
+
+A project risk is about the run's world: the stand, its settings, the data, the tooling. The script flags an item that carries one of three signs of product behaviour:
+
+- a code anchor in **product source** — `path.ext:line` for `cs ts tsx vue js mjs json graphql cshtml html`, except a path under `test-data/`, `config/`, `scripts/`, `reports/`, `regression/`, `ci/`, `.claude/` or a `.env*` file (those are the project's own world);
+- a hotspot id `H-n` (an `S-n` is a scenario id, clause 13, which a project risk may name);
+- held state stated as a fact: `in memory`, `per instance`/`replica`/`pod`, or a limit, limiter, counter, lockout, throttle, rate limit or session that `is`/`are` held, kept, stored, reset, shared, scoped or cached — U58's own example, `P9 the wrong-code limit is in memory per instance → accepted`, is caught.
+
+Any of them makes the item a **product risk** — its own `R-n` row with a technique, an oracle and a check — and an `accepted` project line lets it escape unchecked.
+
+**11a's semantic half is the verifier's (U64).** A regex catches only the explicit forms: "cached" alone is also how a stand's CDN is described, so the script does not flag it. The verifier reads every project-risk item and refuses one that states how the product behaves in any other words — what a setting does, what the code keeps, counts, resets or enforces, how a limit or a session behaves — however the stand constrains testing it. A project item may say the stand's setting is **unknown** (it is then checked at entry, 11b); it may not say what the product does with it.
+
+### 11b — the AC/doc value stays the oracle (U57)
+
+An item that names a risk (`R-n`) and says it only *records* what it observed, or *instead of asserting*, `no PASS/FAIL`, `never FAIL`, `not asserted`, lowers how that risk is decided. A value the AC or the docs state stays the oracle: an unknown stand setting is **checked at entry** (a probe or a settings read), never a reason to turn the assertion into a recording. If the value cannot be known, the risk is `{HYPOTHESIS}` and goes to the PO (method rules), not to a quiet downgrade.
+
+### 12 — held state needs a SCALE risk (U59)
+
+A hotspot whose `risk` text matches `STATE_HOTSPOT` (`limit/limiter`, `attempt(s)`, `counter`, `throttle`, `rate limit`, `cache`, `lockout`, `in-memory`, `session state`) holds state — what it holds can differ per instance, per restart or per replica. It is covered when either (a) a risk with technique `SCALE` cites its id or its `path:line` (the hotspot `source` without the leading `repo:`) in What or Source, or (b) an Out of scope line names it and says `single instance` — with the check that established it. `SCALE` is a technique token like `EXPLORE`: the case exercises the state across more than one instance, restart or session, or states why that cannot happen. The match is on the hotspot's text, so a hotspot that only mentions e.g. `lockout` in passing is also asked for — answer it with the (b) line, not by dropping the id.
+
+### 13 — every scenario cites a risk, every MODEL risk has a scenario (B18)
+
+A vc-test run lists its scenarios in `### Scenarios` (columns `S | Class | What it does | Bug it hunts | Why likely | Score | Proof | Writes`, after `### Approach per risk`). The list is generated before the risks exist, so a scenario cites its risk **inside the `Why likely` cell** (`… · R2`) and the strategy writer adds that `R-n`. Four checks, each error naming its scenario or risk:
+
+- **(a)** a scenario whose `Why likely` cites no `R-n` ⇒ `13: S-2 cites no risk`; one citing an `R-n` the Risks table does not register ⇒ `13: S-2 cites R9, which is not a registered risk`.
+- **(0)** a round with no `### Scenarios` heading ⇒ `13: no Scenarios table — a vc-test strategy is the scenario list (U62)`.
+- **(b)** a risk with technique `MODEL` that no scenario cites ⇒ `13: R1 (MODEL) has no scenario`.
+- **(c)** `Class` is a number 1–6, U60's six classes in its order; anything else ⇒ `13: S-1 Class "7" is not 1–6`.
+
+**6e under vc-test.** With a change map, 6e no longer requires `Test model` RUN for a MODEL risk — the scenarios carry it, so write `SKIP — scenarios cover the MODEL risks`; check (b) is the replacement. `Test model` RUN with no MODEL risk is still refused. Without a change map, 6e and clause 13 behave as before (no `### Scenarios` heading is read or required).

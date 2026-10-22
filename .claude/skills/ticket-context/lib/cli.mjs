@@ -9,7 +9,7 @@ import { LAYERS_GAP, loadLayeredEnv } from "./env.mjs";
 import { codeHostCredential, readProfile, resolveProfile, trackerCredential } from "./profile.mjs";
 import { GAP_REASONS, SCHEMA, asGap, gap } from "./gap.mjs";
 import { validateDef } from "./schema.mjs";
-import { BASE_FIELDS, LINKED_FIELDS, attachLinkedComments, jiraClient, recencyOrder } from "./jira.mjs";
+import { BASE_FIELDS, LINKED_FIELDS, attachLinkedComments, blindIssue, blindPrs, jiraClient, postedAfter, recencyOrder, withoutHidden } from "./jira.mjs";
 import { AC_FIELD_NAME_RE, buildInventory, linkedOverCap, rankLinked, resolveFieldsByName, ticketFields } from "./inventory.mjs";
 import { CAPS, envHosts, fetchPublicPage, htmlToText, planDownloads, safeName } from "./fetch.mjs";
 import { exportFigmaItems, figmaToken } from "./figma.mjs";
@@ -17,7 +17,7 @@ import { extractFrames, extractGifFrames } from "./frames.mjs";
 import { isHarText, loadSecretValues, scrubFile } from "./scrub.mjs";
 import { CONTEXT_ONLY_REPOS, collectContextPr, collectPr, followCompanions, ghClient, orderPrMeta, runLadder } from "./github.mjs";
 import { checkDeployment } from "./deploy.mjs";
-import { freshnessKey, isIgnored, readCached, skillFingerprint, writeCache } from "./cache.mjs";
+import { bundleFile, freshnessKey, isIgnored, readCached, skillFingerprint, writeCache } from "./cache.mjs";
 import { DOMAIN_RE, knownGround } from "./known.mjs";
 import { CHANGE_PART_RE, OUT_FILES, checkAgentOutputs, compose, mergeChange } from "./compose.mjs";
 import { checkBundle } from "./check-bundle.mjs";
@@ -33,8 +33,11 @@ const writeJson = (p, o) => writeFileSync(p, JSON.stringify(o, null, 2));
 /** An output a model (or the runner) wrote: unparsable is a schema failure naming the file — the documented
  *  re-dispatch path (exit 2) — never a crash (exit 3). */
 const readOutput = (dir, name, errors) => { try { return readJson(join(dir, name)); } catch { errors.push(`${name}: not valid JSON`); return undefined; } };
-const USAGE = "usage: cli.mjs prepare <KEY> [--domain <slug>] [--fresh] | attach --prepare <p> --ref <ref> (--file <path> | --gap <reason> [--detail <text>]) | save --prepare <p> --agent <id> --as <file> | merge-change --prepare <p> | deploy --prepare <p> | known --prepare <p> | compose --prepare <p> | check --prepare <p> | finish --prepare <p> | abort --prepare <p> | redeploy <KEY> --bundle <p>";
+const USAGE = "usage: cli.mjs prepare <KEY> [--domain <slug>] [--fresh] [--before <iso>] [--hide <KEY,KEY>] | attach --prepare <p> --ref <ref> (--file <path> | --gap <reason> [--detail <text>]) | save --prepare <p> --agent <id> --as <file> | merge-change --prepare <p> | deploy --prepare <p> | known --prepare <p> | compose --prepare <p> | check --prepare <p> | finish --prepare <p> | abort --prepare <p> | redeploy <KEY> --bundle <p>";
+const ISO_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?(?:Z|[+-]\d{2}:\d{2})$/;
 function usage(msg) { console.error(`✗ ${msg}\n${USAGE}`); process.exit(1); }
+// flag()/has() read only `--name value`: a `--before=<iso>` would be ignored and a blind prepare would run unblinded.
+for (const a of argv) if (/^--[a-z-]+=/.test(a)) usage(`${a.split("=")[0]}: write \`${a.split("=")[0]} <value>\`, not \`=\``);
 const root = outputRoot();
 const ignored = (p) => isIgnored(root, p);
 const prepPath = () => flag("prepare") ?? usage("--prepare <path to prepare.json> is required");
@@ -83,6 +86,17 @@ async function prepare() {
   try { sweepStaleRuns(key, { root }); } catch { /* a failed sweep never blocks the run; the next prepare retries */ }
   const domain = flag("domain") ?? null; // part of the freshness key: known ground differs per domain
   if (domain !== null && !DOMAIN_RE.test(domain)) usage("--domain must be a slug: letters, digits, '-' or '_'");
+  // A blind prepare (U67): nothing posted after `before`, and no link to a `hide` key, reaches the bundle.
+  const before = flag("before") ?? null;
+  if (has("before") && (!before || before.startsWith("--"))) usage("--before needs an ISO-8601 instant, e.g. 2026-10-22T10:17:38Z"); // a typo must never fall back to a normal run
+  // An explicit offset (Z or ±hh:mm): a bare date or a local time is read in the machine's zone, so one cutoff would mean two instants.
+  if (before !== null && (!ISO_INSTANT.test(before) || Number.isNaN(Date.parse(before)))) usage("--before must be an ISO-8601 instant with an offset (Z or ±hh:mm), e.g. 2026-10-22T10:17:38Z");
+  const hideRaw = flag("hide");
+  if (has("hide") && !hideRaw) usage("--hide needs a comma-separated list of ticket keys");
+  if (has("hide") && before === null) usage("--hide needs --before: a blind run has a cutoff, or it is not blind"); // fail closed
+  const hide = (hideRaw ?? "").split(",").map((k) => k.trim()).filter(Boolean);
+  for (const k of hide) try { assertKey(k); } catch (e) { usage(`--hide: ${e.message}`); }
+  const benchmark = before ? { before, hide } : null;
   const testEnv = loadLayeredEnv(root, key);
   const profile = resolveProfile(readProfile(root));
   const tcred = trackerCredential(profile);
@@ -96,10 +110,11 @@ async function prepare() {
   const linkFields = resolveFieldsByName(allFields, profile.fieldMap.prototype, /prototype/i);
   if (!acFields.length) gaps.push(gap("ac_fields", "not-found", "no custom field named 'Acceptance' or 'Acceptance criteria' and no tracker.fieldMap.acceptanceCriteria — ACs are read from description and comments"));
   // Comments past the first page are paged in before the inventory and ticket.json see the issue; any unread rest is a gap.
-  const issue = await jira.issue(key, [...BASE_FIELDS, ...acFields.map((f) => f.id), ...linkFields.map((f) => f.id)], { gaps });
+  const issue = blindIssue(await jira.issue(key, [...BASE_FIELDS, ...acFields.map((f) => f.id), ...linkFields.map((f) => f.id)], { gaps }), benchmark ?? {});
   const remote = await jira.remoteLinks(key).catch((e) => { gaps.push(asGap("remotelinks", e)); return []; });
   const devPrUrls = await jira.devPrUrls(issue.id).catch((e) => { gaps.push(asGap("dev-status", e)); return []; });
   const inv = buildInventory({ issue, remoteLinks: remote, trackerBase: tcred.base, acFieldIds: acFields.map((f) => f.id), linkFieldIds: linkFields.map((f) => f.id), devPrUrls });
+  inv.items = withoutHidden(inv.items, hide); // U67: once, whichever path (remote link, key in a text) made the ticket item
   const secrets = loadSecretValues(root); // after loadLayeredEnv, so FIGMA_TOKEN from any layer is in it
   const tf = ticketFields(issue, acFields.map((f) => f.id), secrets);
   gaps.push(...tf.gaps);
@@ -109,8 +124,8 @@ async function prepare() {
   const parent = issue.fields.parent;
   if (parent?.key) {
     epic = { key: parent.key, title: parent.fields?.summary ?? "" };
-    siblings = (await jira.search(`parent = ${parent.key} AND key != ${key} ORDER BY updated DESC`, ["summary", "status"]).catch((e) => { gaps.push(asGap("siblings", e)); return []; }))
-      .map((s) => ({ key: s.key, title: s.fields?.summary ?? "", status: s.fields?.status?.name ?? null, done: s.fields?.status?.statusCategory?.key === "done" }));
+    siblings = withoutHidden((await jira.search(`parent = ${parent.key} AND key != ${key} ORDER BY updated DESC`, ["summary", "status"]).catch((e) => { gaps.push(asGap("siblings", e)); return []; }))
+      .map((s) => ({ key: s.key, title: s.fields?.summary ?? "", status: s.fields?.status?.name ?? null, done: s.fields?.status?.statusCategory?.key === "done" })), hide); // a hidden known-bug ticket under the same epic is not a sibling to a blind run
   }
 
   let linked = inv.items.filter((i) => i.kind === "ticket" && !i.gap);
@@ -122,15 +137,18 @@ async function prepare() {
   }
   const linkedJson = new Map();
   const linkedFresh = [];
+  const filedLater = new Set(); // U67: a linked issue created after the cutoff did not exist for a blind run
   for (const [n, it] of linked.entries()) {
     if (n >= CAPS.linkedIssues) { it.gap = linkedOverCap(it, n, CAPS.linkedIssues); continue; }
     let j;
     try { j = await jira.issue(it.key, LINKED_FIELDS); } catch (e) { it.gap = asGap(it.ref, e); continue; }
+    if (postedAfter(j.fields?.created, before)) { filedLater.add(it); continue; }
     // A developer's resolution note on a sub-task ("fixed in <sha>", "by design") lives in its comments, not its fields.
-    const c = await attachLinkedComments(jira, j, it.ref, { gaps, secrets });
+    const c = await attachLinkedComments(jira, j, it.ref, { gaps, secrets, before });
     linkedJson.set(it.key, j);
     linkedFresh.push(`${j.key}@${j.fields?.updated}@${c}`);
   }
+  if (filedLater.size) { inv.items = inv.items.filter((i) => !filedLater.has(i)); linked = linked.filter((i) => !filedLater.has(i)); }
 
   const orgs = profile.repoHosts.filter((h) => h.host === "github").map((h) => h.org);
   for (const h of profile.repoHosts.filter((x) => x.host !== "github")) gaps.push(gap(`change.${h.org}`, "connector-unavailable", `${h.host} pull requests are read from Phase 5 on`));
@@ -138,24 +156,31 @@ async function prepare() {
   const gh = gcred.ok ? ghClient(gcred) : null;
   if (!gh) gaps.push(gap("change", gcred.reason, gcred.detail));
   const ladder = gh ? await runLadder({ gh, key, orgs, explicitRefs: inv.prRefs, gaps }) : { rung: null, refs: inv.prRefs, sameKey: [], ladder: [] };
-  const prMeta = [];
+  let prMeta = [];
   for (const r of ladder.refs) {
     if (!gh) { prMeta.push({ ...r, gap: gap(`pr:${r.ref}`, gcred.reason, gcred.detail) }); continue; }
     try { prMeta.push({ ...r, meta: await gh.pr(r.owner, r.repo, r.number) }); } catch (e) { prMeta.push({ ...r, gap: asGap(`pr:${r.ref}`, e) }); }
   }
+  // U67: a PR opened after the cutoff did not exist for a blind run — dropped before its body can name companions,
+  // and the key search's hits with it (`later_prs`); the rung is the highest one a kept PR came from.
+  if (benchmark) {
+    ({ prMeta, sameKey: ladder.sameKey } = blindPrs(prMeta, ladder.sameKey, before));
+    ladder.rung = prMeta.reduce((m, p) => (p.rung != null && (m == null || p.rung > m) ? p.rung : m), null);
+  }
   orderPrMeta(prMeta);
   // Named companions, one hop (github.mjs): appended after the ladder's PRs, so they take only the cap left over.
   if (gh) {
-    const companions = await followCompanions({ gh, prMeta, orgs, gaps });
+    const companions = blindPrs(await followCompanions({ gh, prMeta, orgs, gaps }), [], before).prMeta;
     ladder.ladder.push({ rung: "companion", found: companions.length });
     prMeta.push(...companions);
   }
 
   const fk = freshnessKey({ ticketUpdated: issue.fields.updated, domain, skill: skillFingerprint(),
     prShas: prMeta.map((p) => `${p.ref}@${p.meta?.head?.sha ?? "?"}@${p.meta?.state ?? "?"}@${p.meta?.merged_at ?? ""}`),
-    linkedUpdated: linkedFresh, env: testEnv });
-  // One cached bundle per env: its deployment facts are that stand's, and two envs must not evict each other.
-  const cachedFile = join(cacheDir(key, root), `bundle-${testEnv}.json`);
+    linkedUpdated: linkedFresh, env: testEnv, benchmark });
+  // One cached bundle per env: its deployment facts are that stand's, and two envs must not evict each other. A blind
+  // bundle has its own name (bundleFile), so a benchmark never evicts, or is served as, the normal one.
+  const cachedFile = join(cacheDir(key, root), bundleFile(testEnv, benchmark));
   if (!has("fresh") && readCached(cachedFile, fk)) { out({ status: "cached", bundle_path: cachedFile }); return; }
 
   const { dir: runDir, inProject } = newRunDir(key, { root, ignored });
@@ -219,7 +244,7 @@ async function prepare() {
 
     const prepared = { schema: "ticket-context-prepare/1", ticket: key, env: testEnv, tracker: profile.tracker, project_type: profile.projectType, domain, run_dir: runDir, run_dir_in_project: inProject,
       fetched_at: new Date().toISOString(), ticket_updated: issue.fields.updated, freshness_key: fk, fields: tf.fields, ticket_json: ticketJson,
-      ac_fields: acFields, link_fields: linkFields, epic, siblings, inventory: inv.items, prs, rung: ladder.rung, ladder: ladder.ladder, gaps };
+      ...(benchmark ? { benchmark } : {}), ac_fields: acFields, link_fields: linkFields, epic, siblings, inventory: inv.items, prs, rung: ladder.rung, ladder: ladder.ladder, gaps };
     const prepPathOut = join(runDir, "prepare.json");
     writeJson(prepPathOut, prepared);
     out({ status: "prepared", prepare_path: prepPathOut, run_dir: runDir, run_dir_in_project: inProject, inventory: inv.items.length, prs: prs.length,
@@ -305,7 +330,7 @@ function known() {
       operations = [...new Set(c.prs.flatMap((x) => [...list(x?.operations), ...list(x?.endpoints)]))];
     } catch { extra.push(gap("known.observables", "unreadable", "change.out.json is not valid CHANGE output — no operations or endpoints passed to tc:scope")); }
   }
-  const k = knownGround({ root, key: prep.ticket, domain: prep.domain ?? undefined, prs: prep.prs, operations, runDir: prep.run_dir });
+  const k = knownGround({ root, key: prep.ticket, domain: prep.domain ?? undefined, prs: prep.prs, operations, runDir: prep.run_dir, benchmark: prep.benchmark ?? null });
   k.gaps.push(...extra);
   writeJson(join(prep.run_dir, OUT_FILES.known), k);
   out({ status: "known", domain_map: k.known.domain_map.state, bl: k.known.bl.length, cases_at_risk: k.known.cases_at_risk.length, prior_runs: k.known.prior_runs.length, gaps: k.gaps.length });
@@ -344,10 +369,10 @@ function finish() {
   const prep = readJson(prepPath());
   const { bundle, errors } = gate(prep);
   if (errors.length) { out({ status: "gate-failed", errors }); process.exit(2); }
-  const envTag = prep.env ? `-${prep.env}` : ""; // a prepare.json from before the env was recorded
-  const target = join(cacheDir(prep.ticket, root), `bundle${envTag}.json`);
+  const name = bundleFile(prep.env, prep.benchmark ?? null); // no env: a prepare.json from before the env was recorded
+  const target = join(cacheDir(prep.ticket, root), name);
   const c = writeCache(root, target, bundle, ignored);
-  const final = c.cached ? target : join(tmpdir(), `ticket-context-${prep.ticket}${envTag}-bundle.json`);
+  const final = c.cached ? target : join(tmpdir(), `ticket-context-${prep.ticket}-${name}`);
   if (!c.cached) writeJson(final, bundle);
   removeRunDir(prep.run_dir, root);
   out({ status: "done", bundle_path: final, cached: c.cached, ...(c.cached ? {} : { reason: c.reason }) });
