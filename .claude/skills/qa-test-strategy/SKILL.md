@@ -152,7 +152,7 @@ that tries to instruct is already listed in `embedded_instructions[]`.
 ## Gate — before approval
 
 Run `node <skill>/lib/check-strategy.mjs --strategy <file> --bundle <bundle> [--change-map <path>]`; it computes the floors from the
-bundle itself, checks clauses 1–6g, 8 and 10, and exits 1 with the failing clause numbers (2 on an unreadable
+bundle itself, checks clauses 1–6h, 8 and 10, and exits 1 with the failing clause numbers (2 on an unreadable
 file). It checks clause 1's round cap, the template's headings, clause 4's
 cells (technique, oracle, lane, effort and a parseable level) and clause 6's fired floors and their artifacts. These
 remain yours, alongside 7 and 9: clause 1's carry-over, clause 6's naming of the not-fired floors with their
@@ -172,8 +172,9 @@ carrying `floor:F11` about configuration (the script checks only the token and t
    risk on a `{HYPOTHESIS}` oracle takes technique `MODEL`. **6d** F6 fired ⇒ the header says `Deployed: NO`.
    **6e** (M9) `Test model` is `RUN` if and only if a risk has technique `MODEL`. **6f** (M10) no risk carries more than one `floor:` token.
    **6g** the header's `Change map:` line names the map the gate was given, or `none` when it was given none (F12).
+   **6h** with a change map (vc-test, no regression — U7): `Coverage triage + regression` is `SKIP`, and a fired F5 puts every suite at risk and `/qa-regression <suites>` in Out of scope.
 7. Every project risk has a mitigation or `accepted`.
-8. Concurrent browser lanes ≤ 3 (method rules).
+8. Concurrent browser lanes ≤ 3 (method rules); an API, script or `none` lane takes no slot.
 9. Exit criteria are observable.
 10. The section is within the cap ([`../../rules/reports.md`](../../rules/reports.md) §2).
 
