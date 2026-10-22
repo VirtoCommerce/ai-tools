@@ -4,7 +4,8 @@
 //
 //   node "$pluginRoot/scripts/env/run-folder.mjs" use <TICKET> [<env>]   Step 0 of a ticket run: bind this
 //        session's env (the argument, else the default) and its run folder; create the folder; print both
-//   node "$pluginRoot/scripts/env/run-folder.mjs" use --clear            unbind the run folder (the env stays)
+//   node "$pluginRoot/scripts/env/run-folder.mjs" use --clear            unbind the run folder (the env stays,
+//        unless only a ticket's folder defines it)
 //   node "$pluginRoot/scripts/env/run-folder.mjs" dir                    this session's run folder (exit 1: none)
 //   node "$pluginRoot/scripts/env/run-folder.mjs" dir --ticket <KEY> [--env <env>] [--prior]
 //
@@ -13,9 +14,10 @@
 // that cannot resolve).
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { parse } from 'dotenv';
 import { BindError, bindSessionEnv, describeSessionEnv, pruneStale } from '../lib/session-env.mjs';
 import { sessionEnvFile } from '../lib/resolve-test-env.js';
-import { dedicatedEnvs, knownEnvs } from '../lib/env-layers.mjs';
+import { dedicatedEnvs, findEnv, knownEnvs } from '../lib/env-layers.mjs';
 import { TICKET_KEY, completeTemplate, priorRunDirs, resolveRunDir, runDirTemplate, laneScreenshots, runLayout, sessionRun } from '../lib/run-dir.mjs';
 import { loadLayeredEnv } from '../lib/load-layered-env.mjs';
 
@@ -46,6 +48,16 @@ function use() {
   if (args.includes('--clear')) {
     const had = runFile && existsSync(runFile);
     if (had) rmSync(runFile);
+    // An env only a ticket's folder defines (vcst_6314) cannot be found once no run fills `<ticket>`: a binding to it
+    // would stop every loader. It goes too, and the session resolves its default again.
+    const envFile = sessionEnvFile();
+    const bound = envFile && existsSync(envFile) ? parse(readFileSync(envFile)).TEST_ENV?.trim() : undefined;
+    if (bound && !findEnv(bound)) {
+      rmSync(envFile);
+      console.log(`${had ? 'run folder unbound, and so is' : 'unbound'} the env: ${bound} is a ticket's own stand, and with no run bound no file defines it`);
+      for (const line of describeSessionEnv().lines) console.log(line);
+      return;
+    }
     console.log(had ? 'run folder unbound (the env binding stays)' : 'this session has no run folder bound');
     return;
   }
