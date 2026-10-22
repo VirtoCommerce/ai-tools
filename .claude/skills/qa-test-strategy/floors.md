@@ -107,10 +107,11 @@ A hotspot whose `risk` text matches `STATE_HOTSPOT` (`limit/limiter`, `attempt(s
 
 ### 13 — every scenario cites a risk, every MODEL risk has a scenario (B18)
 
-A vc-test run lists its scenarios in `### Scenarios` (columns `S | Class | What it does | Bug it hunts | Why likely | Score | Proof | Writes`, after `### Approach per risk`). The list is generated before the risks exist, so a scenario cites its risk **inside the `Why likely` cell** (`… · R2`) and the strategy writer adds that `R-n`. Three checks, each error naming its scenario or risk:
+A vc-test run lists its scenarios in `### Scenarios` (columns `S | Class | What it does | Bug it hunts | Why likely | Score | Proof | Writes`, after `### Approach per risk`). The list is generated before the risks exist, so a scenario cites its risk **inside the `Why likely` cell** (`… · R2`) and the strategy writer adds that `R-n`. Four checks, each error naming its scenario or risk:
 
 - **(a)** a scenario whose `Why likely` cites no `R-n` ⇒ `13: S-2 cites no risk`; one citing an `R-n` the Risks table does not register ⇒ `13: S-2 cites R9, which is not a registered risk`.
+- **(0)** a round with no `### Scenarios` heading ⇒ `13: no Scenarios table — a vc-test strategy is the scenario list (U62)`.
 - **(b)** a risk with technique `MODEL` that no scenario cites ⇒ `13: R1 (MODEL) has no scenario`.
 - **(c)** `Class` is a number 1–6, U60's six classes in its order; anything else ⇒ `13: S-1 Class "7" is not 1–6`.
 
-**6e under vc-test.** With a change map, 6e no longer requires `Test model` RUN for a MODEL risk — the scenarios carry it, so write `SKIP — scenarios cover the MODEL risks`; check (b) is the replacement. `Test model` RUN with no MODEL risk is still refused. Without a change map, 6e and clause 13 behave as before (no `### Scenarios` heading is read).
+**6e under vc-test.** With a change map, 6e no longer requires `Test model` RUN for a MODEL risk — the scenarios carry it, so write `SKIP — scenarios cover the MODEL risks`; check (b) is the replacement. `Test model` RUN with no MODEL risk is still refused. Without a change map, 6e and clause 13 behave as before (no `### Scenarios` heading is read or required).

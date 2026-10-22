@@ -144,6 +144,7 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names, chan
   // 13 (B18, U62): only vc-test lists scenarios. Each cites a registered risk in its Why-likely cell (the writer adds the
   // R-n after the risks exist), its Class is one of U60's six, and every MODEL risk is cited by at least one scenario.
   if (vcTest) {
+    if (!HEADING("Scenarios").test(sec)) errors.push("13: no Scenarios table — a vc-test strategy is the scenario list (U62)");
     const scenarios = rows(block(sec, "Scenarios")).map(([s, cls, , , why]) => ({ s: s ?? "", cls: cls ?? "", why: why ?? "" })).filter((x) => x.s);
     const citedBy = new Set();
     for (const x of scenarios) {
