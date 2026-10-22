@@ -14,7 +14,8 @@
 //   latest   newest GA release  — clean `x.y.z` (no -alpha/-pr/-beta/-rc, no bare sha suffix)
 //   alpha    newest alpha build — `x.y.z-alpha.<N>` (the rolling main-branch build vcst-dev runs);
 //            highest base version, then highest alpha build number
-//   pr <N>   newest build of PR #N — `x.y.z-pr-<N>-<sha>` (handy when you know the PR but not the task)
+//   pr <N>   newest build of PR #N — `x.y.z-pr-<N>-<sha>` (handy when you know the PR but not the task);
+//            newest by blob publish time (Last-Modified), because the `<sha>` suffix carries no order
 //
 // USAGE
 //   node resolve-theme.mjs latest                 # → -FrontendUrl line + summary
@@ -69,47 +70,60 @@ function cmpVersion(a, b) {
 }
 
 async function listThemes(container, prefix) {
-  let marker = "", names = [];
+  let marker = "", blobs = [];
   do {
     const url = `${BLOB_BASE}/${container}?restype=container&comp=list&prefix=${encodeURIComponent(prefix)}&maxresults=5000${marker ? `&marker=${encodeURIComponent(marker)}` : ""}`;
     const res = await fetch(url);
     if (!res.ok) { console.error(`Blob list failed: ${res.status} ${res.statusText}\n  ${url}`); process.exit(1); }
     const body = await res.text();
-    names.push(...[...body.matchAll(/<Name>([^<]+)<\/Name>/g)].map((m) => m[1]));
+    for (const [, blob] of body.matchAll(/<Blob>([\s\S]*?)<\/Blob>/g)) {
+      const name = (blob.match(/<Name>([^<]+)<\/Name>/) || [])[1];
+      const modified = (blob.match(/<Last-Modified>([^<]+)<\/Last-Modified>/) || [])[1];
+      if (name) blobs.push({ name, modified: modified ? Date.parse(modified) : 0 });
+    }
     marker = (body.match(/<NextMarker>([^<]*)<\/NextMarker>/) || [])[1] || "";
   } while (marker);
-  return names;
+  return blobs;
 }
 
-function pick(channel, pr, names, prefix) {
+function pick(channel, pr, blobs, prefix) {
   const ver = (n) => n.replace(new RegExp("^" + prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), "").replace(/\.zip$/i, "");
   // Exclude the storybook sub-family (vc-theme-b2b-vue-storybook-*) — not a deployable storefront theme.
-  const versions = names.map(ver).filter((v) => !/^storybook-/.test(v));
-  let pool;
-  if (channel === "latest") pool = versions.filter((v) => /^\d+\.\d+\.\d+$/.test(v));            // clean GA x.y.z
-  else if (channel === "alpha") pool = versions.filter((v) => /-alpha\.\d+$/.test(v));            // x.y.z-alpha.N
-  else pool = versions.filter((v) => new RegExp(`-pr-${pr}-`).test(v));                            // x.y.z-pr-<N>-sha
+  const themes = blobs.map((b) => ({ version: ver(b.name), modified: b.modified })).filter((t) => !/^storybook-/.test(t.version));
+  if (channel === "pr") {
+    const pool = themes.filter((t) => new RegExp(`-pr-${pr}-`).test(t.version));                  // x.y.z-pr-<N>-sha
+    if (!pool.length) return null;
+    return pool.sort((a, b) => a.modified - b.modified || cmpVersion(a.version, b.version)).pop();
+  }
+  const versions = themes.map((t) => t.version);
+  const pool = channel === "latest"
+    ? versions.filter((v) => /^\d+\.\d+\.\d+$/.test(v))                                            // clean GA x.y.z
+    : versions.filter((v) => /-alpha\.\d+$/.test(v));                                              // x.y.z-alpha.N
   if (!pool.length) return null;
-  return pool.sort(cmpVersion).pop();
+  const version = pool.sort(cmpVersion).pop();
+  return themes.find((t) => t.version === version);
 }
 
 async function main() {
   const o = parseArgs(process.argv.slice(2));
-  const names = await listThemes(o.container, o.prefix);
-  const version = pick(o.channel, o.pr, names, o.prefix);
-  if (!version) {
-    console.error(`No ${o.channel}${o.pr ? ` #${o.pr}` : ""} theme found under ${o.prefix}* in ${o.container} (${names.length} blobs scanned).`);
+  const blobs = await listThemes(o.container, o.prefix);
+  const theme = pick(o.channel, o.pr, blobs, o.prefix);
+  if (!theme) {
+    console.error(`No ${o.channel}${o.pr ? ` #${o.pr}` : ""} theme found under ${o.prefix}* in ${o.container} (${blobs.length} blobs scanned).`);
     process.exit(1);
   }
+  const { version } = theme;
+  const published = theme.modified ? new Date(theme.modified).toISOString() : null;
   const file = `${o.prefix}${version}.zip`;
   const url = `${BLOB_BASE}/${o.container}/${file}`;
 
   if (o.url) { console.log(url); return; }
-  if (o.json) { console.log(JSON.stringify({ channel: o.channel, pr: o.pr, version, file, url }, null, 2)); return; }
+  if (o.json) { console.log(JSON.stringify({ channel: o.channel, pr: o.pr, version, file, url, published }, null, 2)); return; }
 
   console.log(`resolve-theme :: ${o.channel}${o.pr ? ` #${o.pr}` : ""} → ${version}`);
   console.log(`  file  : ${file}`);
   console.log(`  url   : ${url}`);
+  if (published) console.log(`  published : ${published}`);
   console.log(`\n  provision frontend : -FrontendUrl "${url}"`);
   console.log(`  e.g.  pwsh -File skills/qa-local-env/provision.ps1 -Action up \\`);
   console.log(`          -Manifest .local-env/packages.custom.json -FrontendUrl "${url}"`);
