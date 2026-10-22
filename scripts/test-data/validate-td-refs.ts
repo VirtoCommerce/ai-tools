@@ -469,7 +469,58 @@ if (evidenceHits.length === 0) {
   );
 }
 
+// --- DV-025: a Playwright spec carries no hardcode (GOLDEN RULE + THIRD RULE) ---
+// A `regression/**/*.spec.ts` is a test case in executable form, so the rules a CSV row obeys apply
+// to it unchanged: no URL (`FRONT_URL` / `BACK_URL` come from the fixtures), no GUID, no e-mail
+// (`@td()` / the user registry), no evidence output path (the RUN supplies it), and no direct
+// `process.env` / `config.js` — the shared helpers in `regression/lib/` are the one place that
+// resolves them, which is why that folder is excluded. A literal here is correct exactly once and
+// then fails silently. Escape hatch: put `DV-025-OK` on the line to record a reviewed exception.
+const SPEC_HARDCODE_RES: RegExp[] = [
+  /https?:\/\/[^\s"'`)]*/,
+  /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i,
+  /[\w.+-]+@[\w-]+\.[\w.]+/,
+  EVIDENCE_PATH_RE,
+  /reports\//,
+  /process\.env/,
+  /\bimport\b[^\n]*config\.js/,
+];
+const specHits: { file: string; line: number; hit: string }[] = [];
+{
+  const regressionDir = join(ROOT, "regression");
+  const libDir = join(regressionDir, "lib");
+  const walk = (dir: string): string[] =>
+    readdirSync(dir).flatMap((e) => {
+      const p = join(dir, e);
+      if (p === libDir) return [];
+      return statSync(p).isDirectory() ? walk(p) : p.endsWith(".spec.ts") ? [p] : [];
+    });
+  for (const file of walk(regressionDir)) {
+    readFileSync(file, "utf8").split(/\r?\n/).forEach((text, i) => {
+      if (/DV-025-OK/.test(text)) return;
+      for (const re of SPEC_HARDCODE_RES) {
+        const m = text.match(re);
+        if (m) specHits.push({ file: relative(ROOT, file).split("\\").join("/"), line: i + 1, hit: m[0] });
+      }
+    });
+  }
+}
+console.log("\n--- Spec Hardcode Guard (DV-025) ---\n");
+if (specHits.length === 0) {
+  console.log("  No Playwright spec hardcodes a URL, GUID, e-mail, evidence path or env access. ✓");
+} else {
+  const tag = WARN_ONLY ? "WARN" : "FAIL";
+  console.log(`  ${specHits.length} hardcode(s) in spec files [${tag}]:`);
+  for (const h of specHits) console.log(`    DV-025 ${h.file}:${h.line} ${h.hit}`);
+  console.log(
+    "\n  A spec obeys the same no-hardcode rules as a CSV case. URLs, credentials and ids come from\n" +
+    "  the fixtures and helpers in regression/lib/ (signedInAs / apiAs / data.ts), evidence paths from\n" +
+    "  the run, never from the spec. Reviewed exception: add DV-025-OK on the line." +
+    (WARN_ONLY ? "\n  (--warn-only: not failing the build. Drop the flag to enforce.)" : "")
+  );
+}
+
 const idFatal =
   (idHits.length > 0 || aliasGuidHits.length > 0 || shapeHits.length > 0 || driftHits.length > 0 ||
-    evidenceHits.length > 0) && !WARN_ONLY;
+    evidenceHits.length > 0 || specHits.length > 0) && !WARN_ONLY;
 process.exit(totalFailed > 0 || idFatal || (REQUIRE_SEEDED && totalUnseeded > 0) ? 1 : 0);

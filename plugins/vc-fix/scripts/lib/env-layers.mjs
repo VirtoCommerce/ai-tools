@@ -44,6 +44,15 @@ const CORE_PASSWORDS = ['ADMIN_PASSWORD', 'USER_PASSWORD'];
  */
 export const isLoginSecretName = (n) => /^[A-Z][A-Z0-9_]*_PASSWORD$/.test(n) && !/TOKEN|API|KEY|SECRET/.test(n);
 
+/**
+ * An environment value that is an UNEXPANDED placeholder (`${env:ADMIN}`, `${ADMIN}`) counts as unset (#503): an IDE
+ * that forwards `${env:X}` for a variable it does not have passes the literal through, and outranking the files with
+ * it sent `username=${env:ADMIN}` to /connect/token on every pre-flight.
+ */
+const UNEXPANDED = /^\$\{(env:)?[A-Za-z_][A-Za-z0-9_]*\}$/;
+const real = (v) => (UNEXPANDED.test(v ?? '') ? undefined : v);
+const expanded = (ambient) => Object.fromEntries(Object.entries(ambient).filter(([, v]) => real(v) !== undefined));
+
 /** A dotenv file's pairs, or null when it cannot be read (absent). */
 export function readEnvFile(file) {
   try { return parse(readFileSync(file)); } catch { return null; }
@@ -51,7 +60,7 @@ export function readEnvFile(file) {
 
 /** QA_ENV_PATH's folders as written: from the process environment, else the root's .env.local, else .env.defaults. */
 export function envPathTemplates({ root = process.cwd(), ambient = process.env } = {}) {
-  const raw = ambient.QA_ENV_PATH
+  const raw = real(ambient.QA_ENV_PATH)
     ?? readEnvFile(join(root, '.env.local'))?.QA_ENV_PATH
     ?? readEnvFile(join(root, '.env.defaults'))?.QA_ENV_PATH
     ?? '';
@@ -180,7 +189,7 @@ export const usesMaster = (env) => env?.PASSWORDS?.trim().toLowerCase() === 'mas
 /** The master password: MASTER_PASSWORD in the root's `.env.playwright.master`, else in the process environment (CI). */
 export function readMaster({ root = process.cwd(), ambient = process.env } = {}) {
   const file = join(root, MASTER_FILE);
-  const value = readEnvFile(file)?.[MASTER_NAME] || ambient[MASTER_NAME] || null;
+  const value = readEnvFile(file)?.[MASTER_NAME] || real(ambient[MASTER_NAME]) || null;
   return { file, value };
 }
 
@@ -234,6 +243,7 @@ export function testAccountPasswordNames(root = process.cwd(), extra = []) {
  *   `sourceOf(key)` names what supplied a key's value — print it next to any target you act on.
  */
 export function layered(testEnv, { root = process.cwd(), ambient = process.env, ticket, ambientWins = false, passwordNames = [], masterValues = true } = {}) {
+  ambient = expanded(ambient); // an unexpanded `${env:X}` is unset: it neither wins (ambientWins) nor survives
   const suffix = envSuffix(testEnv);
   const env = { ...ambient, TEST_ENV: testEnv };
   const from = new Map(); // key → { file, pin? }: the layer that set its value (file null: the process environment)

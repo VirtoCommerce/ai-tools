@@ -30,7 +30,8 @@ export interface EnvCoords {
  * LATER file wins over an earlier one, so `.env.local` (per-developer secrets + the identities they pair with) beats a
  * committed `.env.<env>`, and the env's QA_ENV_PATH files beat both. First-wins here silently mismatched a committed
  * `.env.<env>` JIRA_EMAIL against the `.env.local` JIRA_API_TOKEN of whoever ran it → Jira 404 on a ticket that
- * exists. An AMBIENT value (real process env — an inline `VAR=x npm run …`, or CI) still outranks every file.
+ * exists. An AMBIENT value (real process env — an inline `VAR=x npm run …`, or CI) still outranks every file, except
+ * an UNEXPANDED placeholder (`${env:ADMIN}`), which counts as unset — env-layers.mjs `layered` (#503).
  */
 export function loadEnvFiles(testEnv: string): void {
   loadEnvFor(testEnv, { root: REPO_ROOT, ambientWins: true });
