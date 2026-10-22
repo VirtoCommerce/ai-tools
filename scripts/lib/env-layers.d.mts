@@ -62,8 +62,9 @@ export interface Layered {
   /** Set when the env says PASSWORDS=master. `names` is empty under `masterValues: false`. */
   master: { file: string; found: boolean; names: string[] } | null;
   /** A PASSWORDS value that was dropped because it did not come from the env's own files (a bare one in
-   *  .env.local, say), and where it came from; null when none was. */
-  ignoredPasswords: { value: string | undefined; file: string | null } | null;
+   *  .env.local, say), or (`production`) a PASSWORDS=master on an ENV_RISK=production stand, and where it came from;
+   *  null when none was. */
+  ignoredPasswords: { value: string | undefined; file: string | null; production?: boolean } | null;
   /** What supplied a key's value. */
   sourceOf(key: string): string;
 }
@@ -79,5 +80,6 @@ export interface LayerOptions extends LookupOptions {
 
 /** An env's variables in the one order, without touching process.env. */
 export declare function layered(testEnv: string, options?: LayerOptions): Layered;
-/** `layered`, written into process.env, with the once-per-run warnings. */
-export declare function applyLayered(testEnv: string, options?: Omit<LayerOptions, 'ambient'>): Layered;
+/** `layered`, written into process.env, with the once-per-run warnings; throws when no file defines the env this
+ *  session is bound to. It always applies the master values. */
+export declare function applyLayered(testEnv: string, options?: Omit<LayerOptions, 'ambient' | 'masterValues'>): Layered;

@@ -14,9 +14,10 @@
 // override a shared env for that ticket's runs (`.env.vcptcore_dev`). Each file is self-contained: none extends another.
 //
 // MASTER stands: `PASSWORDS=master` in an env's own file means every test account on it signs in with ONE password,
-// MASTER_PASSWORD in the root's `.env.playwright.master`. Every test-account password variable resolves to it, and a
-// browser lane types MASTER_PASSWORD in every password field. Without the marker an env keeps its own passwords.
-// Only the env's own file counts: the root's `.env.<env>` for an env the project defines, else its QA_ENV_PATH file.
+// MASTER_PASSWORD in the root's `.env.playwright.master`. Every test-account password variable resolves to it (the
+// platform admin's, ADMIN_PASSWORD, included), and a browser lane types MASTER_PASSWORD in every password field.
+// Without the marker an env keeps its own passwords. Only the env's own file counts: the root's `.env.<env>` for an
+// env the project defines, else its QA_ENV_PATH file. A production stand (ENV_RISK=production) never is one.
 //
 // The run's ticket fills `<ticket>`: an explicit argument, else QA_TICKET, else this session's bound run
 // (`npm run run:use`); a folder whose placeholder has no value is skipped.
@@ -237,9 +238,11 @@ export function testAccountPasswordNames(root = process.cwd(), extra = []) {
  *   needs only the decision (the enforce-secret-token hook, one process per typed password).
  * @returns {{ env: Record<string, string | undefined>, ticket: string | null, rootFile: boolean, dedicated: string[],
  *   dedicatedKeys: Set<string>, perEnv: Set<string>, master: null | { file: string, found: boolean, names: string[] },
- *   ignoredPasswords: null | { value: string | undefined, file: string | null }, sourceOf: (key: string) => string }}
+ *   ignoredPasswords: null | { value: string | undefined, file: string | null, production?: boolean },
+ *   sourceOf: (key: string) => string }}
  *   `perEnv`: keys holding this env's own value (a KEY_<ENV> pin, a dedicated file, the master password);
- *   `ignoredPasswords`: a PASSWORDS value dropped because it did not come from the env's own files;
+ *   `ignoredPasswords`: a PASSWORDS value dropped because it did not come from the env's own files, or (`production`)
+ *   a PASSWORDS=master dropped because the env says ENV_RISK=production;
  *   `sourceOf(key)` names what supplied a key's value — print it next to any target you act on.
  */
 export function layered(testEnv, { root = process.cwd(), ambient = process.env, ticket, ambientWins = false, passwordNames = [], masterValues = true } = {}) {
@@ -298,6 +301,13 @@ export function layered(testEnv, { root = process.cwd(), ambient = process.env, 
       if (ownValue === undefined) { delete env.PASSWORDS; from.delete('PASSWORDS'); } else put('PASSWORDS', ownValue, `.env.${testEnv}`);
     }
   }
+  // A production stand is never a master stand, whatever its file says: the one password every master stand shares
+  // would reach its sign-in form, and seeding there would reset its accounts to it.
+  const risk = [env.ENV_RISK, own?.ENV_RISK, own?.[`ENV_RISK${suffix}`]];
+  if (usesMaster(env) && risk.some((v) => v?.trim().toLowerCase() === 'production')) {
+    ignoredPasswords = { value: env.PASSWORDS, file: from.get('PASSWORDS')?.file ?? null, production: true };
+    delete env.PASSWORDS; from.delete('PASSWORDS');
+  }
 
   let master = null;
   if (usesMaster(env)) {
@@ -333,12 +343,19 @@ const ENV_OWNED = ['BACK_URL', 'FRONT_URL', 'ENV_RISK'];
 /**
  * `layered` for this process: every changed value written into process.env. Warns once per run (child processes
  * inherit the mark) about the silent ways an env goes wrong — no file defines it (a typo, or a ticket's stand with
- * no run ticket), `.env.local` overriding a root env's own URL or risk class, PASSWORDS=master with no master
- * password. Returns what `layered` returns.
+ * no run ticket), `.env.local` or a ticket folder's override changing a root env's own URL or risk class,
+ * PASSWORDS=master with no master password or on a production stand. Throws when no file defines an env this
+ * session is BOUND to (TEST_ENV_SOURCE `<env>|session`): its runs would go wherever .env.local points. Returns what
+ * `layered` returns.
  */
 export function applyLayered(testEnv, { root = process.cwd(), ticket, ambientWins = false, passwordNames = [] } = {}) {
   const ambient = { ...process.env };
   const r = layered(testEnv, { root, ambient, ticket, ambientWins, passwordNames });
+  const [chosen, source] = (ambient.TEST_ENV_SOURCE ?? '').split('|');
+  if (chosen === testEnv && source === 'session' && !r.rootFile && !r.dedicated.some((f) => basename(f) === `.env.${testEnv}`)) {
+    throw new Error(`[env] this session is bound to TEST_ENV=${testEnv}, but there is no .env.${testEnv} in ${lookedIn(testEnv, { ticket: r.ticket, root, ambient })} — ` +
+      'only .env.defaults and .env.local would apply. Bind the session to an env that exists (env:use <env>; a ticket run: run:use <TICKET> [<env>]).');
+  }
   for (const [k, v] of Object.entries(r.env)) if (v !== undefined && process.env[k] !== v) process.env[k] = v;
   for (const k of Object.keys(ambient)) if (!(k in r.env)) delete process.env[k]; // inherited values `layered` dropped
   warnOnce(testEnv, r, root, ambient);
@@ -354,7 +371,9 @@ function warnOnce(testEnv, r, root, ambient) {
     console.warn(`[env] TEST_ENV=${testEnv} but there is no ${envFile} in ${lookedIn(testEnv, { ticket: r.ticket, root, ambient })} — only .env.defaults and .env.local apply. Typo?`);
     return;
   }
-  if (r.ignoredPasswords?.value?.trim().toLowerCase() === 'master' && r.ignoredPasswords.file) {
+  if (r.ignoredPasswords?.production) {
+    console.warn(`[env] PASSWORDS=master on ${testEnv} is ignored: it says ENV_RISK=production, and a production stand never signs in with the master password every master stand shares.`);
+  } else if (r.ignoredPasswords?.value?.trim().toLowerCase() === 'master' && r.ignoredPasswords.file) {
     const own = r.rootFile ? `the project root's ${envFile}` : `${testEnv}'s own ${envFile} in its QA_ENV_PATH folder`;
     console.warn(`[env] PASSWORDS=master from ${r.ignoredPasswords.file} is ignored: only ${own} can make ${testEnv} a master stand. Anything else would switch a stand others use, and seeding would reset its accounts to the master password.`);
   }
@@ -370,6 +389,12 @@ function warnOnce(testEnv, r, root, ambient) {
     const pinned = own[key + suffix] || local[key + suffix] || ambient[key + suffix] || r.dedicatedKeys.has(key);
     if (!pinned && own[key] && local[key] && own[key] !== local[key]) {
       console.warn(`[env] .env.local sets ${key}=${local[key]}, overriding ${envFile} (${own[key]}) — .env.local loads last for every TEST_ENV. Move it out, or pin ${key}${suffix}= in ${envFile}.`);
+    }
+    // A ticket's folder may override a project env for that ticket's runs, and a changed URL is where every lane then
+    // types this env's passwords (a changed ENV_RISK moves its admin-write guard). Never silently.
+    const project = own[key + suffix] ?? own[key];
+    if (r.dedicatedKeys.has(key) && project && r.env[key] !== project) {
+      console.warn(`[env] ${r.sourceOf(key)} overrides ${envFile}'s ${key}=${project} with ${r.env[key]}: ${key === 'ENV_RISK' ? 'the admin-write guard follows the override' : `the lanes sign in there with ${testEnv}'s passwords`}. Check it is that stand, or give it its own env name.`);
     }
   }
 }

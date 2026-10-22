@@ -15,7 +15,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { dirname, join } from 'node:path';
 import { BindError, bindSessionEnv, describeSessionEnv, pruneStale } from '../lib/session-env.mjs';
 import { sessionEnvFile } from '../lib/resolve-test-env.js';
-import { dedicatedEnvs } from '../lib/env-layers.mjs';
+import { dedicatedEnvs, knownEnvs } from '../lib/env-layers.mjs';
 import { TICKET_KEY, completeTemplate, priorRunDirs, resolveRunDir, runDirTemplate, laneScreenshots, runLayout, sessionRun } from '../lib/run-dir.mjs';
 import { loadLayeredEnv } from '../lib/load-layered-env.mjs';
 
@@ -34,9 +34,11 @@ const quote = (v) => {
 };
 
 /** The env a ticket's own QA_ENV_PATH folder defines, when it defines exactly one (`.env.vcst_6314` for VCST-6314);
- *  else null. A ticket run with no env argument binds it instead of the project's default. */
+ *  else null. A ticket run with no env argument binds it instead of the project's default. An env the project root
+ *  defines too is not the ticket's own: the folder only overrides that shared stand for the ticket's runs. */
 function ticketStand(ticket) {
-  const envs = new Set(dedicatedEnvs().filter((e) => e.ticket === ticket && !e.secrets).map((e) => e.env));
+  const shared = new Set(knownEnvs());
+  const envs = new Set(dedicatedEnvs().filter((e) => e.ticket === ticket && !e.secrets && !shared.has(e.env)).map((e) => e.env));
   return envs.size === 1 ? [...envs][0] : null;
 }
 
@@ -51,6 +53,13 @@ function use() {
   const positionals = args.filter((a, i) => !a.startsWith('--') && !(envAt !== -1 && i === envAt + 1));
   const ticket = positionals[0]?.toUpperCase();
   if (!ticket || !TICKET_KEY.test(ticket)) throw new BindError(`use needs a ticket key (VCST-1234, or an Azure Boards id) first, got "${positionals[0] ?? ''}"`);
+  // QA_TICKET in the environment beats the bound run for QA_ENV_PATH's <ticket> folders, as TEST_ENV beats the env
+  // binding: bound to another ticket, this run would still read that ticket's stands.
+  const inherited = process.env.QA_TICKET?.trim().toUpperCase();
+  if (inherited && TICKET_KEY.test(inherited) && inherited !== ticket) {
+    throw new BindError(`this session's environment sets QA_TICKET=${inherited}, which beats a bound run: the QA_ENV_PATH <ticket> folders would still be ${inherited}'s. ` +
+      `Start Claude Code from a shell without QA_TICKET, or bind ${inherited}'s run instead.`);
+  }
   // A run folder that cannot resolve or be created (an unmounted drive in QA_OUTPUT_DIR) must change nothing: keep
   // the env binding to put it back, and write the run binding only once the folder exists — else the new env would
   // sit beside the previous run's folder.
