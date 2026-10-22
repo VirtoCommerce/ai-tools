@@ -30,7 +30,7 @@ mode). `--fix` is ignored in this mode, and the report says so.
 
 - **`--fix`** — enables Phase 5 write actions: delegate test-defect classes to `/qa-review-tests suite <ID> --fix` (which asks before each CSV write) and draft `reports/bugs/open/<severity>/` files (inside a ticket run, the run folder's `bugs/<severity>/`) for confirmed real bugs. **Without `--fix`, the flow is report-only** — it changes no test case, bug draft or tracker and recommends the exact follow-up command per failure. It still writes its own bookkeeping in both modes: the fingerprint store (`--record`, gitignored), `reports/regression/history.json` (Phase 2 — **tracked**, so it shows in `git status`), and the Phase 6 `triage-report.md`.
 - **`--verify`** — live-reproduce **every** `REAL_BUG` candidate (default: only `CONFIDENCE: HIGH` candidates are reproduced live; MEDIUM/LOW are listed as needs-review).
-- **`--min-severity P0|P1|P2|P3`** — a severity floor for Phase 4: a `REAL_BUG` candidate whose `SEVERITY` is below it is **never reproduced live**, with or without `--verify`. It is returned as `below floor (<SEVERITY>)` with its evidence — never `needs-review`, never drafted. `/vc-test:qa-ticket` passes `P2`, so only Medium or worse is investigated (vc-test spec U29). Default: no floor.
+- **`--min-severity P0|P1|P2|P3`** — a severity floor for Phase 4: a `REAL_BUG` candidate whose `SEVERITY` is below it is **never reproduced live**, with or without `--verify`. It is returned as `below floor (<SEVERITY>)` with its evidence — never `needs-review`, never drafted — and listed in Phase 6's *Below floor* table. `/vc-test:qa-ticket` passes `P2`, so only Medium or worse is investigated (vc-test spec U29). Default: no floor.
 
 > **Hard orchestration rule.** You orchestrate; you do not execute. Run the deterministic collector, delegate classification to the triage agent, delegate live verification to the QA experts, delegate CSV fixes to `/qa-review-tests`, delegate bug drafting to `/qa-bug`. You only: parse the args, run the deterministic collectors (Phases 1–2), run the gates, write the Phase 6 report, and print the verdict. **You never edit a CSV, never open a browser, never write to a bug tracker, never call `/qa-fix`.** The end state is always a report + (optionally) applied test fixes + drafted bugs awaiting human review.
 
@@ -94,12 +94,13 @@ Route each CLASS by the **routing table in the skill's `.claude/skills/qa-triage
 ## Phase 6 — Triage report + verdict
 > **Owner:** `qa-lead-orchestrator`
 
-Write **`reports/regression/{RUN_ID}/triage-report.md`** — an addendum inside the existing regression-summary category (NOT a new report type). **Ticket mode:** `<ticketDir>/triage-report.md` — a ticket-check report beside the checklist (`.claude/rules/reports.md` §1, category 6) — and the confirmed-bugs table carries each bug's investigation-package path in place of a draft link. Three tables (mirrors `/qa-monitoring`):
+Write **`reports/regression/{RUN_ID}/triage-report.md`** — an addendum inside the existing regression-summary category (NOT a new report type). **Ticket mode:** `<ticketDir>/triage-report.md` — a ticket-check report beside the checklist (`.claude/rules/reports.md` §1, category 6) — and the confirmed-bugs table carries each bug's investigation-package path in place of a draft link. Three tables (mirrors `/qa-monitoring`), and a fourth under `--min-severity`:
 1. **Confirmed real bugs** — case, severity, repo, root cause, draft link, trace ref.
 2. **Test-case fixes** — case, CLASS, suite, the fix (applied or recommended).
 3. **Dismissed** — case, CLASS (`FLAKY`/`ENV`/`KNOWN_ISSUE`), reason.
+4. **Below floor** (`--min-severity` only) — case, severity, root cause, evidence path; not investigated, not drafted.
 
-Header: run ID / date / env / #failures / #real-bugs / #test-defects / #dismissed. Reference traces + screenshots by path — never inline the JSON. Footer: **"No tracker ticket filed, no fix triggered — human decides."** Keep within the regression-with-failures size cap in `.claude/rules/reports.md`.
+Header: run ID / date / env / #failures / #real-bugs / #test-defects / #dismissed (+ #below-floor under `--min-severity`). Reference traces + screenshots by path — never inline the JSON. Footer: **"No tracker ticket filed, no fix triggered — human decides."** Keep within the regression-with-failures size cap in `.claude/rules/reports.md`.
 
 Deliver a concise verdict to the user: counts per bucket, the report path, and the recommended next commands.
 

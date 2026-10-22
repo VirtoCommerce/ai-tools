@@ -1,4 +1,4 @@
-// .claude/skills/qa-test-strategy/lib/floors.mjs — the floors F1–F11, computed from the /ticket-context bundle.
+// .claude/skills/qa-test-strategy/lib/floors.mjs — the floors F1–F12, computed from the /ticket-context bundle.
 // R2 of the /qa-test redesign: a floor is a gate rule, never a model judgment. This script reads signals; it
 // never chooses a risk. F9 (doubt ⇒ the floor applies) is built in: a signal that cannot be read fires its floor.
 // Specs: docs/superpowers/specs/2026-10-09-qa-test-strategy-redesign.md §6 (F1–F9),
@@ -123,11 +123,16 @@ export function computeFloors(bundle, { domainMapText = null, p01Names = P01_DEF
   const f11 = diffFloor("F11", key ? `setting: ${key[0]}` : hb.length ? `hidden behaviour: ${hb.map((r) => r.item).join(", ")}` : read ? `setting read: ${read[0]}` : null,
     "no setting key, setting read or feature-flags/default-values row", ["a configuration risk with technique MODEL, Source carrying floor:F11", "stand values in Inputs"]);
 
-  // F12 reads vc-test's layer-0 change map, only when the caller passes one (vc-test spec U47).
-  const zoned = (changeMap?.hotspots ?? []).filter((h) => h.zone && h.zone !== "none");
+  // F12 reads vc-test's layer-0 change map, only when the caller passes one (vc-test spec U47). Doubt fires it (F9): a
+  // map with no hotspots list, or a hotspot with no zone, may hide a significant one.
+  const spots = changeMap?.hotspots;
+  const zoneOf = (h) => (typeof h?.zone === "string" && h.zone.trim()) || null;
+  const zoned = Array.isArray(spots) ? spots.filter((h) => zoneOf(h)?.toLowerCase() !== "none") : [];
+  const f12req = ["exploratory on the significant-zone hotspots"];
   const f12 = !changeMap ? floor("F12", false, "no change map (vc-test layer 0 did not run)")
-    : floor("F12", zoned.length > 0, zoned.length ? `significant-zone hotspots: ${zoned.slice(0, 5).map((h) => `${h.id} (${h.zone})`).join(", ")}`
-      : "no hotspot in a significant zone", ["exploratory on the significant-zone hotspots"]);
+    : !Array.isArray(spots) ? floor("F12", true, "doubt: the change map has no hotspots list", f12req)
+    : floor("F12", zoned.length > 0, zoned.length ? `significant-zone hotspots: ${zoned.slice(0, 5).map((h) => `${h?.id ?? "?"} (${zoneOf(h) ?? "no zone — doubt"})`).join(", ")}`
+      : "no hotspot in a significant zone", f12req);
 
   return { product_prs: prs.length, floors: [f1, f2, f3, f4, f5, f6, f7, f8,
     floor("F9", false, "doubt rule — applied inside every floor above"), f10, f11, f12] };
@@ -160,6 +165,6 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   if (i < 0 || !process.argv[i + 1]) { console.error("usage: floors.mjs --bundle <bundle.json> [--change-map <change-map.json>]"); process.exit(1); }
   const bundle = readJsonOrExit(process.argv[i + 1], "floors.mjs");
   const m = process.argv.indexOf("--change-map");
-  const changeMap = m < 0 ? null : readJsonOrExit(process.argv[m + 1], "floors.mjs");
+  const changeMap = m < 0 ? null : (readJsonOrExit(process.argv[m + 1], "floors.mjs") ?? {}); // a `null` file is a map in doubt
   console.log(JSON.stringify(computeFloors(bundle, { domainMapText: domainMapTextOf(bundle), p01Names: p01NamesOf(), changeMap }), null, 2));
 }
