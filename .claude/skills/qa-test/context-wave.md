@@ -59,7 +59,8 @@ returns:
   §Essential Rules → *Product context*).
 
 **Hand it the contract's REV, not its path.** When `1b` item 2d refreshed, the brief carries
-`graphql-schema.md @ <refresh date> — refreshed this run` plus any fixture drift the gate reported. Without
+`{RUN_DIR}/knowledge/api/graphql-schema.md @ <refresh date> — refreshed this run` (the run's copy: the agent
+reads it, not the repo's) plus any fixture drift the gate reported. Without
 the rev, the agent's own definition tells it the snapshot is of **UNKNOWN age** and to report every field
 name it took from the file as unverified — correct, but it costs the run its GraphQL grounding, so it
 guesses ([`contract-refresh.md`](contract-refresh.md) §4). When 2d recorded

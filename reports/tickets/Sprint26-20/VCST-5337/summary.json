@@ -111,7 +111,7 @@
       "run_ids": [
         "REG-2026-10-20-1332"
       ],
-      "note": "109 + 050m3 executed; GA-lag cases BLOCKED by design until read-back"
+      "note": "110 (ran as 109, renumbered on merge with main) + 050m3 executed; GA-lag cases BLOCKED by design until read-back"
     },
     "hub_regression": {
       "suites": [
@@ -127,7 +127,7 @@
         "093b",
         "097",
         "106",
-        "109"
+        "110"
       ],
       "run_ids": [
         "REG-2026-10-19-2032",
@@ -262,7 +262,7 @@
       "F-8": "BY DESIGN (VCST-5845)"
     },
     "ga_readback": {
-      "planted": "2026-10-19 17:29-17:45Z (ledger A); 2026-10-20 10:54-11:04Z (suite 109)",
+      "planted": "2026-10-19 17:29-17:45Z (ledger A); 2026-10-20 10:54-11:04Z (suite 110, ran as 109)",
       "reads": [
         "2026-10-20 02:30Z - none visible",
         "2026-10-20 05:05Z - none visible",

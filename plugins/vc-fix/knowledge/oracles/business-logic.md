@@ -608,7 +608,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 
 ### BL-AUTH-016: An org refusal is a single code, lock-first, and only when no fallback remains `[P0-revenue]`
 - **Rule:** When the requested organization is one the user is associated with but cannot currently access, the outcome is decided in this order:
-  1. **Fallback first, on every credential sign-in** — since VCST-6132 (vc-module-customer PR #321, open on 2026-10-20; observed on Customer 3.1030.0-pr-321-c54f). A credential sign-in is a token request that authenticates the user's own credential: `password`, `otp_email`, and `mfa` once it ships. On such a sign-in, the request is silently re-pointed at the first accessible organization and returns **HTTP 200 with no error**. This is deliberate: the storefront resends the last-used org on every interactive sign-in, so a blocked org there is never a deliberate choice, and one blocked org must not lock the user out of the others. An **explicit** org switch on an existing session (`refresh_token`) gets **no** fallback, and neither does any other non-credential grant (impersonation, external sign-in). On a build of the Customer module without VCST-6132, only the `password` grant falls back.
+  1. **Fallback first, on every credential sign-in** — since VCST-6132 (vc-module-customer PR #321, released in Customer 3.1030.0). A credential sign-in is a token request that authenticates the user's own credential: `password`, `otp_email`, and `mfa` once it ships. On such a sign-in, the request is silently re-pointed at the first accessible organization and returns **HTTP 200 with no error**. This is deliberate: the storefront resends the last-used org on every interactive sign-in, so a blocked org there is never a deliberate choice, and one blocked org must not lock the user out of the others. An **explicit** org switch on an existing session (`refresh_token`) gets **no** fallback, and neither does any other non-credential grant (impersonation, external sign-in). On a Customer module build before 3.1030.0, only the `password` grant falls back.
   2. **When nothing accessible remains, on a credential sign-in:**
      - If the requested org is **locked**, the sign-in succeeds with **no organization** (HTTP 200, no `organization_id` claim).
      - If it is blocked by **status only** (Invited, Rejected or Deleted), exactly **one** error is returned, carrying that status's code (BL-AUTH-013).
@@ -630,6 +630,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - A credential sign-in (`password` or `otp_email`) refused outright when another accessible org exists. The fallback has regressed, and a multi-org user is locked out of orgs they can still use.
 - A `refresh_token` switch or an impersonation silently succeeding on an inaccessible org. The fallback is leaking into an explicit-switch path.
 - **Agents:** qa-frontend-expert, qa-testing-expert, qa-backend-expert, test-management-specialist
+- **Docs:** vc-module-customer release 3.1030.0 (2026-10-21) — release note "Fall back to an accessible organization on OTP and MFA sign-in (#321)": the credential-sign-in fallback of VCST-6132 is released.
 - **Source:** `vc-module-customer` `OrganizationIdRequestValidator.cs:28` (before VCST-6132: `allowFallback` was set from the `password` grant type only), `:87-116` (`isLocked` and `statusError` are computed independently, the fallback branch returns no error whenever an accessible org resolves, and the terminal expression yields a single response with the lock code winning) and `:61-74` (the unassociated-organization path: refusal without fallback, substitution with it). Live-confirmed on the environment: the three-state lock/status walk returned exactly one code each time with the lock code winning and the status code restored on unlock; a `password` grant naming a locked org succeeded on the accessible org while a freshly-issued non-`password` grant for the same org was refused with the lock code (controls on the accessible org and with no org both succeeded); and a blocking-status single-org user with no explicit org signed in with no organization context.
 - **Source:** `vc-module-customer` `OrganizationIdRequestValidator.cs` `ValidateOrganizationAccessAsync` — `isLocked` and `statusError` are computed independently, the `allowFallback` branch returns `null` (no error) whenever a fallback org resolves, and the terminal `return isLocked ? UserIsLockedInOrganization(...) : statusError` yields a single response; before VCST-6132 `allowFallback` was set from `GrantType == password` only. Live-confirmed on the environment: the three-state lock/status probe returned exactly one code with the lock code winning and the status code restored on unlock; separately, a blocking-status single-org user with no explicit org signed in successfully with no organization context. Docs axis: N/A — no published guide covers the token endpoint's org fallback or error precedence (waived).
 - **Source:** VCST-5496 (Done) — fixed one locked org membership blocking sign-in entirely despite other active orgs (restores fallback).
@@ -2422,6 +2423,102 @@ These invariants hold for any rendered customer-facing surface on the accessibil
 
 ---
 
+## Domain 29: Punchout (BL-PUNCHOUT)
+
+> **First invariants, drafted 2026-10-20 from VCST-5887 (Create requisition -> cXML PunchOutOrderMessage).**
+> The human sources are the developer's QA guide (Jira comment of 2026-10-12; the ticket has no AC field) and
+> the developer and operator decisions of 2026-10-20..22 that supersede parts of it (a second return of a
+> session is refused, per-code error messages). Code and live runs only fill `verified` and `scope`. Not promoted, each needing a human
+> decision or source first: rounding of `Total` for a
+> sub-cent line price, the console `errorCode` line, access token and session id absent from the cXML, what the
+> punchout checkout hides, whether the cart is cleared after a return. Surfaces: suites 107, 108, 109.
+
+### BL-PUNCHOUT-001: The requisition carries the cart the buyer sees, selected lines only `[P0-revenue]`
+- **Rule:** The cXML PunchOutOrderMessage built by Create requisition contains exactly the cart the storefront shows and validates: one `ItemIn` per cart line that is selected for checkout, with `quantity` equal to the line quantity at the moment of the click. A line that is not selected is not sent. When the buyer has more than one cart (for example a named cart created by another channel), the cart sent is the one on screen, never another cart. A quantity changed in the cart after reaching checkout is the quantity sent. With no line selected, Create requisition is disabled.
+- **Verify:** Cases PNCR-001, PNCR-002, PNCR-003, PNCR-005, PNCR-006, PNCR-017, PNCR-027, PNCR-032. Fill a cart with 3 lines (one quantity above 1), untick one, change one quantity at checkout, click Create requisition; on the return page assert one ItemIn per selected line with the screen quantities and no unselected line. Then give the same buyer a second cart with different lines (created through xAPI with a cart name) and assert the cart sent is the one displayed. Untick every line and assert the button is disabled.
+- **Violation signal:** The return page shows a line the buyer did not select, a quantity different from the screen, or a different cart than the one displayed (even a valid one); OR the button is enabled by one cart while another is sent.
+- **Agents:** qa-frontend-expert, qa-backend-expert
+- **Source:** VCST-5887 developer QA guide (Jira comment 2026-10-12, no AC field) — Step 3 "the items match the storefront cart"; case 3 "only selected items are returned: 2 ItemIn"; case 4 "no item selected: Create requisition is disabled"; case 12 "the cXML has the updated quantities and total"
+- **Source:** VCST-5887 checklist round 1 B3/B4/A4 (a named cart on screen, the default cart sent: FAIL), round 2 R2-B1/R2-B2/R2-A1/R2-A6/R2-B11 (fixed, PASS); B5, B6, B18 PASS
+- **Trust:** DECLARED
+
+### BL-PUNCHOUT-002: cXML Total is the sum of line totals after line discounts `[P0-revenue]`
+- **Rule:** `PunchOutOrderMessageHeader/Total/Money` is the sum of the sent lines' totals (unit price x quantity after line-level discounts) in the cart currency. Cart-level discounts (coupons), shipping and taxes are not included. `UnitPrice` is the placed per-unit price after the line discount, not the list price. After a currency switch on the storefront the currency and the prices follow the selected currency.
+- **Verify:** Cases PNCR-001, PNCR-005, PNCR-007, PNCR-008, PNCR-010. Cart with line-promoted lines: assert UnitPrice equals the placed price on the checkout page and Total equals the sum of the line totals shown. Apply a cart-level percentage coupon and a fixed coupon separately: Total is unchanged. Switch currency (if an orderable product exists in it): Money/@currency and prices follow.
+- **Violation signal:** Total includes a cart-level discount, shipping or tax; OR UnitPrice is the list price while a line discount applies; OR the currency differs from the cart currency.
+- **Agents:** qa-frontend-expert, qa-backend-expert
+- **Source:** VCST-5887 developer QA guide (Jira comment 2026-10-12) — Step 4 Total "sum of line totals (price x quantity after line discounts), with the cart currency; cart-level discounts, shipping and taxes are not included"; case 3 "Total counts only the selected items"; case 5 "UnitPrice is the price per unit, Total includes the line discount"; case 7 currency; section 5 known limitation "Total does not include cart-level discounts, shipping or taxes"
+- **Source:** VCST-5887 checklist B1, B5, B7, B8, B11 PASS. B9 (a 3-decimal placed price: Total 239.98 against 239.97 from the printed UnitPrice) is OPEN, not covered by this rule
+- **Trust:** DECLARED
+
+### BL-PUNCHOUT-003: A session returns its cart at most once `[P0-revenue]`
+- **Rule:** A punchout session returns its cart at most once: after a successful return, any later Create requisition by the session owner (a repeated call, browser Back and click, a second tab, also after the cart changed since the return) is refused with `SessionReturned`, url and cXML are null, and nothing is posted to the procurement system. Two parallel calls on an Active session produce exactly one document; the loser gets `SessionReturned` or `SessionExpired`, never a second document. A double click or repeated Enter sends exactly one requisition, and the button shows a loading state and cannot be clicked again while it runs.
+- **Verify:** Cases PNCR-013, PNCR-014, PNCR-015, PNCR-028, PNCR-029, PNCR-030. Return a cart once, then call again with the same token (API, browser Back, a second tab) and again after changing the cart: SessionReturned, url and cxml null, nothing reaches the return URL. Double click and double Enter: one mutation. Two parallel calls on a fresh session, several attempts: exactly one document.
+- **Violation signal:** A second call on a returned session returns or posts a cXML (the stored one or a new one), also after a cart change; OR two documents leave one session; OR a double click sends two requisitions; OR a returned session answers with a code other than SessionReturned (when the store is enabled).
+- **Agents:** qa-frontend-expert, qa-backend-expert
+- **Source:** VCST-5887 developer QA guide (Jira comment 2026-10-12) — Step 3 "loading state and cannot be clicked again"; case 9 "only one requisition is sent, one PunchoutOrderMessage row"
+- **Source:** Developer decision 2026-10-21 in VCST-5887, relayed by the QA lead: "a second return is forbidden"; implemented in vc-module-punchout PR #2 c49023f (errorCode SessionReturned). Supersedes the 2026-10-20 operator decision (author commit 33d791f) that made the replay of the stored cXML the design, and the guide's case 2 (SessionExpired). A human decision, not a Jira resolution
+- **Source:** VCST-5887 checklist round 4 R4-1..R4-5, R4-7 PASS on Punchout 3.1000.0-pr-2-c490 (repeat call, Back, changed cart, two tabs, three parallel attempts: loser SessionReturned 1x / SessionExpired 2x); round 1 B15, B16 (one mutation per double click)
+- **Trust:** DECLARED
+
+### BL-PUNCHOUT-004: Only the session owner obtains a session's document `[P0-security]`
+- **Rule:** `createPunchoutRequisition` answers only the buyer who holds the punchout session's own token. A password-grant token of the same buyer, an anonymous call, and a call from another user or another store return `SessionNotFound` and no cXML, for an active session and for one that has already returned its cart.
+- **Verify:** Cases PNCR-026, PNCR-031. Call createPunchoutRequisition on an active and on a returned session with the buyer's password token, with no token, and with a token of another store: errorCode SessionNotFound, cxml null. Control: the owner's own call on an active session succeeds, and on a returned one gets SessionReturned.
+- **Violation signal:** A non-owner call returns cXML, or answers with a code other than SessionNotFound that reveals the session exists.
+- **Agents:** qa-frontend-expert, qa-backend-expert
+- **Source:** VCST-5887 developer QA guide (Jira comment 2026-10-12) — section 4 error table: `SessionNotFound` "the session does not exist, or it belongs to another user or store"
+- **Source:** VCST-5887 checklist A1, R2-A4, R3-4 and round 4 R4-8 (the owner check comes before the returned check) PASS for a password token, an anonymous call and another storeId. Not observed: another buyer's punchout token (no free second buyer)
+- **Trust:** DECLARED
+
+### BL-PUNCHOUT-005: A store with Punchout.Enabled off returns nothing, returned sessions included `[P1-data]`
+- **Rule:** When `Punchout.Enabled` is off on the store, Create requisition returns `StoreNotConfigured` and nothing is sent to the procurement system: for an active session and also for a session that has already returned its cart (the store check comes before the returned check). When the setting is turned back on, a returned session gets `SessionReturned` again.
+- **Verify:** Cases PNCR-019, PNCR-034. One window: session S1 returned earlier, session S2 active; turn Punchout.Enabled off, call S1 (API) and click on S2 (browser): StoreNotConfigured both, nothing sent. Restore the setting and read it back, then call S1 again: SessionReturned.
+- **Violation signal:** With the setting off, a cXML is posted or returned; OR a returned session answers SessionReturned instead of StoreNotConfigured while the setting is off; OR the call fails with another code.
+- **Agents:** qa-frontend-expert, qa-backend-expert
+- **Source:** VCST-5887 developer QA guide (Jira comment 2026-10-12) — case 14 "Punchout.Enabled off: StoreNotConfigured"; section 4 `StoreNotConfigured` "the store does not exist, or punchout is disabled for it"
+- **Source:** Operator decision 2026-10-20 (QA lead; fixed in vc-module-punchout 05b55ba) — a returned session with Punchout.Enabled off must get StoreNotConfigured; kept after the SessionReturned change (developer decision 2026-10-21, c49023f). A human decision, not a Jira resolution
+- **Source:** VCST-5887 checklist round 1 A11 PASS (active session); round 2 R2-A7 replayed while off (the defect); round 3 R3-1, R3-2 PASS; round 4 R4-6 PASS on Punchout 3.1000.0-pr-2-c490 (returned S1 StoreNotConfigured while off, SessionReturned after restore)
+- **Trust:** DECLARED
+
+### BL-PUNCHOUT-006: The cXML never carries the SharedSecret `[P0-security]`
+- **Rule:** `Header/Sender/Credential` of the PunchOutOrderMessage repeats `From` (domain and Identity) and carries no `SharedSecret`; `UserAgent` is `Virto Commerce Punchout`. The configuration's shared secret appears nowhere in the posted document.
+- **Verify:** Cases PNCR-004, PNCR-001. Read the raw cXML on the return page: Sender equals From, no SharedSecret element, and a text search of the whole document for the configuration's shared secret finds nothing.
+- **Violation signal:** A SharedSecret element, or the secret's text, appears anywhere in the posted cXML.
+- **Agents:** qa-frontend-expert, qa-backend-expert
+- **Source:** VCST-5887 developer QA guide (Jira comment 2026-10-12) — Step 4 `Header/Sender/Credential`: "Same as From. There is no SharedSecret. UserAgent = Virto Commerce Punchout"
+- **Source:** VCST-5887 checklist B2, A5 PASS (no SharedSecret in the posted cXML)
+- **Trust:** DECLARED
+
+### BL-PUNCHOUT-007: The cXML envelope and line fields follow the setup request and the cart `[P1-data]`
+- **Rule:** `From` and `To` are the setup request's `To` and `From` swapped; `BuyerCookie` is echoed unchanged; `PunchOutOrderMessageHeader/@operationAllowed` is `create`. Per line: `SupplierPartID` is the product SKU, `SupplierPartAuxiliaryID` is the cart line item id, `UnitPrice` has 2 decimals and a dot as the decimal separator whatever the storefront language, `UnitOfMeasure` is the product measure unit or `EA` when it is empty, `Description` is the product name with an `xml:lang`. A name with XML special or non-Latin characters is escaped and the document stays well formed.
+- **Verify:** Cases PNCR-004, PNCR-009, PNCR-011, PNCR-012, PNCR-022, PNCR-023. Compare the raw cXML with the setup request and the checkout page field by field as in Step 4; repeat with a product with and without a measure unit, a name containing & and Cyrillic, and a comma-decimal language.
+- **Violation signal:** From and To not swapped, BuyerCookie changed, a comma in UnitPrice or Total, an empty UnitOfMeasure, or a document the return page rejects as malformed.
+- **Agents:** qa-frontend-expert, qa-backend-expert
+- **Source:** VCST-5887 developer QA guide (Jira comment 2026-10-12) — Step 4 field table; case 6 measure unit or EA; case 8 language, "the cXML is still valid"
+- **Source:** VCST-5887 checklist B2, B10, B12, B13, R2-B3 PASS. SupplierPartID of a configurable line is the line SKU (`Configuration-<sku>`), the SKU the order line carries; recorded by design 2026-10-15, so the Step 4 "Product SKU" wording is read as the line SKU
+- **Trust:** DECLARED
+
+### BL-PUNCHOUT-008: Create requisition replaces Place order only in punchout mode `[P1-ux]`
+- **Rule:** In a punchout session the checkout shows `Create requisition` where `Place order` normally is, and does not show `Place order`; the buyer need not fill in shipping or payment because the procurement system handles them. After a regular login-and-password sign-in (also after a punchout session and sign-out) the checkout shows `Place order` and not `Create requisition`. A successful requisition creates no order and reserves no inventory.
+- **Verify:** Cases PNCR-001, PNCR-016, PNCR-035. Punchout session: assert the button label and the absence of Place order with empty shipping and payment. Sign out, sign in by password as the same buyer: Place order present, Create requisition absent. After a requisition, assert the buyer's order list and stock are unchanged.
+- **Violation signal:** Both buttons shown, or Create requisition shown after a password sign-in; OR an order is created or stock is reserved by a requisition.
+- **Agents:** qa-frontend-expert, qa-backend-expert
+- **Source:** VCST-5887 developer QA guide (Jira comment 2026-10-12) — flow step 3 "In punchout mode this button replaces Place order"; Step 3 "you don't need to fill in shipping or payment"; case 10 "regular login: Place order is shown, Create requisition is not"
+- **Source:** VCST-5887 checklist B1, B17, R2-B12, B25 PASS (no order created, inventory unchanged)
+- **Trust:** DECLARED
+
+### BL-PUNCHOUT-009: A failed requisition names its reason, sends nothing and leaves the buyer able to retry `[P2-ux]`
+- **Rule:** Each failure `errorCode` (SessionNotFound, SessionExpired, SessionReturned, StoreNotConfigured, ConfigurationError, CartNotFound, CartIsEmpty, MessageError) shows its own message to the buyer, translated in the storefront languages, instead of one generic text. A failure sends nothing to the procurement system, the buyer stays on the checkout page and the button is active again. A failure before the cart is built (CartIsEmpty, StoreNotConfigured) does not consume the session.
+- **Verify:** Cases PNCR-024, PNCR-033, PNCR-034. Reach CartIsEmpty (deselect every line through the API after render) and StoreNotConfigured in en and de: assert a message specific to the code (not the generic text), nothing posted, button active; retry after fixing the cause succeeds for CartIsEmpty.
+- **Violation signal:** The generic text shown for a code that has its own message; OR an untranslated message in a supported language; OR the button stays disabled or the session is consumed after a failure that sent nothing.
+- **Agents:** qa-frontend-expert, qa-backend-expert
+- **Source:** VCST-5887 developer QA guide (Jira comment 2026-10-12) — section 4 error code table; "the storefront shows a message and stays on the checkout page"
+- **Source:** Operator decision 2026-10-20 (QA lead; per-code messages are the design) supersedes the guide's section 5 "the error notification is generic". A human decision, not a Jira resolution
+- **Source:** VCST-5887 checklist R2-B10 (CartIsEmpty en/de), R3-2 (StoreNotConfigured en/de) PASS; round 4 R4-2 (SessionReturned shows the generic fallback text; the specific message waits for the theme deployment of vc-frontend c83fdf2, not yet deployed); B6 session not burned by CartIsEmpty
+- **Trust:** DECLARED
+
+---
+
 ## Invariant Coverage Summary
 
 Generated from `bl/*.yaml` by `npm run bl:render`. P0 rolls up `[P0-revenue]` + `[P0-security]`; P1 rolls up
@@ -2459,4 +2556,5 @@ ticket or a docs page disputes (`status`).
 | Analytics & Tracking | BL-GA4-001–004 | 4 | 0 | 4 | 0 | 3 | 2 |
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Returns | — | 0 | 0 | 0 | 0 | 0 | 0 |
-| **Total** | | **223** | **60** | **125** | **38** | **115** | **46** |
+| Punchout | BL-PUNCHOUT-001–009 | 9 | 5 | 3 | 1 | 9 | 0 |
+| **Total** | | **232** | **65** | **128** | **39** | **124** | **46** |

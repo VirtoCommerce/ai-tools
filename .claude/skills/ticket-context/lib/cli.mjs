@@ -21,6 +21,7 @@ import { freshnessKey, isIgnored, readCached, skillFingerprint, writeCache } fro
 import { DOMAIN_RE, knownGround } from "./known.mjs";
 import { CHANGE_PART_RE, OUT_FILES, checkAgentOutputs, compose, mergeChange } from "./compose.mjs";
 import { checkBundle } from "./check-bundle.mjs";
+import { extractAgentOutput, findAgentTranscript, readTranscript } from "./agent-output.mjs";
 
 const argv = process.argv.slice(2);
 const cmd = argv[0];
@@ -32,7 +33,7 @@ const writeJson = (p, o) => writeFileSync(p, JSON.stringify(o, null, 2));
 /** An output a model (or the runner) wrote: unparsable is a schema failure naming the file — the documented
  *  re-dispatch path (exit 2) — never a crash (exit 3). */
 const readOutput = (dir, name, errors) => { try { return readJson(join(dir, name)); } catch { errors.push(`${name}: not valid JSON`); return undefined; } };
-const USAGE = "usage: cli.mjs prepare <KEY> [--domain <slug>] [--fresh] | attach --prepare <p> --ref <ref> (--file <path> | --gap <reason> [--detail <text>]) | merge-change --prepare <p> | deploy --prepare <p> | known --prepare <p> | compose --prepare <p> | check --prepare <p> | finish --prepare <p> | abort --prepare <p> | redeploy <KEY> --bundle <p>";
+const USAGE = "usage: cli.mjs prepare <KEY> [--domain <slug>] [--fresh] | attach --prepare <p> --ref <ref> (--file <path> | --gap <reason> [--detail <text>]) | save --prepare <p> --agent <id> --as <file> | merge-change --prepare <p> | deploy --prepare <p> | known --prepare <p> | compose --prepare <p> | check --prepare <p> | finish --prepare <p> | abort --prepare <p> | redeploy <KEY> --bundle <p>";
 function usage(msg) { console.error(`✗ ${msg}\n${USAGE}`); process.exit(1); }
 const root = outputRoot();
 const ignored = (p) => isIgnored(root, p);
@@ -82,7 +83,7 @@ async function prepare() {
   try { sweepStaleRuns(key, { root }); } catch { /* a failed sweep never blocks the run; the next prepare retries */ }
   const domain = flag("domain") ?? null; // part of the freshness key: known ground differs per domain
   if (domain !== null && !DOMAIN_RE.test(domain)) usage("--domain must be a slug: letters, digits, '-' or '_'");
-  loadLayeredEnv(root);
+  const testEnv = loadLayeredEnv(root);
   const profile = resolveProfile(readProfile(root));
   const tcred = trackerCredential(profile);
   if (!tcred.ok) { out({ status: "no-tracker", gap: gap("ticket", tcred.reason, tcred.detail) }); process.exit(3); }
@@ -151,8 +152,9 @@ async function prepare() {
 
   const fk = freshnessKey({ ticketUpdated: issue.fields.updated, domain, skill: skillFingerprint(),
     prShas: prMeta.map((p) => `${p.ref}@${p.meta?.head?.sha ?? "?"}@${p.meta?.state ?? "?"}@${p.meta?.merged_at ?? ""}`),
-    linkedUpdated: linkedFresh });
-  const cachedFile = join(cacheDir(key, root), "bundle.json");
+    linkedUpdated: linkedFresh, env: testEnv });
+  // One cached bundle per env: its deployment facts are that stand's, and two envs must not evict each other.
+  const cachedFile = join(cacheDir(key, root), `bundle-${testEnv}.json`);
   if (!has("fresh") && readCached(cachedFile, fk)) { out({ status: "cached", bundle_path: cachedFile }); return; }
 
   const { dir: runDir, inProject } = newRunDir(key, { root, ignored });
@@ -214,7 +216,7 @@ async function prepare() {
       try { prs.push(await collectPr(gh, p, runDir, { sameKey: ladder.sameKey })); } catch (e) { prs.push({ ...base, gap: asGap(`pr:${p.ref}`, e) }); }
     }
 
-    const prepared = { schema: "ticket-context-prepare/1", ticket: key, tracker: profile.tracker, project_type: profile.projectType, domain, run_dir: runDir, run_dir_in_project: inProject,
+    const prepared = { schema: "ticket-context-prepare/1", ticket: key, env: testEnv, tracker: profile.tracker, project_type: profile.projectType, domain, run_dir: runDir, run_dir_in_project: inProject,
       fetched_at: new Date().toISOString(), ticket_updated: issue.fields.updated, freshness_key: fk, fields: tf.fields, ticket_json: ticketJson,
       ac_fields: acFields, link_fields: linkFields, epic, siblings, inventory: inv.items, prs, rung: ladder.rung, ladder: ladder.ladder, gaps };
     const prepPathOut = join(runDir, "prepare.json");
@@ -247,6 +249,22 @@ function attach() {
   } else usage("attach needs --file or --gap");
   writeJson(p, prep);
   out({ status: "attached", ref, local_path: it.local_path ?? null, gap: it.gap ?? null });
+}
+
+/** Step 2: an analyst's returned JSON, read from its own transcript and written verbatim — never retyped. */
+function save() {
+  const prep = readJson(prepPath());
+  const agent = flag("agent") ?? usage("--agent <id> is required (the id its hand-back names)");
+  const name = flag("as") ?? usage("--as <file> is required");
+  const allowed = [OUT_FILES.ticket, OUT_FILES.materials, OUT_FILES.change];
+  if (!allowed.includes(name) && !CHANGE_PART_RE.test(name)) usage(`--as must be ${allowed.join(", ")} or change.<n>.out.json`);
+  let transcript;
+  try { transcript = findAgentTranscript(agent); } catch (e) { usage(e.message); }
+  if (!transcript) { out({ status: "not-found", agent }); process.exit(3); }
+  const text = extractAgentOutput(readTranscript(transcript));
+  if (text === null) { out({ status: "no-json", agent, detail: "the agent's last message is not one JSON object — re-dispatch it" }); process.exit(2); }
+  writeFileSync(join(prep.run_dir, name), `${text}\n`);
+  out({ status: "saved", file: name, bytes: text.length });
 }
 
 /** Step 2 with one CHANGE dispatch per product PR: change.<n>.out.json (each saved verbatim) → change.out.json. */
@@ -325,9 +343,10 @@ function finish() {
   const prep = readJson(prepPath());
   const { bundle, errors } = gate(prep);
   if (errors.length) { out({ status: "gate-failed", errors }); process.exit(2); }
-  const target = join(cacheDir(prep.ticket, root), "bundle.json");
+  const envTag = prep.env ? `-${prep.env}` : ""; // a prepare.json from before the env was recorded
+  const target = join(cacheDir(prep.ticket, root), `bundle${envTag}.json`);
   const c = writeCache(root, target, bundle, ignored);
-  const final = c.cached ? target : join(tmpdir(), `ticket-context-${prep.ticket}-bundle.json`);
+  const final = c.cached ? target : join(tmpdir(), `ticket-context-${prep.ticket}${envTag}-bundle.json`);
   if (!c.cached) writeJson(final, bundle);
   removeRunDir(prep.run_dir, root);
   out({ status: "done", bundle_path: final, cached: c.cached, ...(c.cached ? {} : { reason: c.reason }) });
@@ -366,7 +385,7 @@ function redeploy() {
   out({ status: "redeployed", bundle_path: bp, chain_deployed: d.chain_deployed, blockers: d.blockers });
 }
 
-const commands = { prepare, attach, "merge-change": mergeChangeCmd, deploy, known, compose: composeCmd, check, finish, abort, redeploy };
+const commands = { prepare, attach, save, "merge-change": mergeChangeCmd, deploy, known, compose: composeCmd, check, finish, abort, redeploy };
 if (!commands[cmd]) usage(cmd ? `unknown command "${cmd}"` : "no command");
 try { await commands[cmd](); } catch (e) {
   console.error(`✗ ticket-context ${cmd} could not run: ${String(e?.message ?? e).slice(0, 300)}`);

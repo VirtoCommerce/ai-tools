@@ -185,9 +185,9 @@ Install these via Claude Code's MCP settings (`.mcp.json` or `claude_code/settin
 ```jsonc
 {
   "mcpServers": {
-    "playwright-chrome":  { "command": "npx", "args": ["@playwright/mcp@0.0.77", "--config", "config/mcp-playwright-chrome.config.json"] },
-    "playwright-firefox": { "command": "npx", "args": ["@playwright/mcp@0.0.77", "--config", "config/mcp-playwright-firefox.config.json"] },
-    "playwright-edge":    { "command": "npx", "args": ["@playwright/mcp@0.0.77", "--config", "config/mcp-playwright-edge.config.json"] },
+    "playwright-chrome":  { "command": "npx", "args": ["@playwright/mcp@0.0.83", "--config", "config/mcp-playwright-chrome.config.json"] },
+    "playwright-firefox": { "command": "npx", "args": ["@playwright/mcp@0.0.83", "--config", "config/mcp-playwright-firefox.config.json"] },
+    "playwright-edge":    { "command": "npx", "args": ["@playwright/mcp@0.0.83", "--config", "config/mcp-playwright-edge.config.json"] },
     "kb":                 { "command": "node", "args": ["scripts/kb/mcp.mjs"] }
   }
 }

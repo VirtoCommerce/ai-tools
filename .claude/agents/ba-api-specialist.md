@@ -104,7 +104,7 @@ When the slug is unclear, search rather than guess: `mcp__github__search_reposit
 - `test-data/README.md` + `test-data/aliases.json` — `@td(ALIAS.field)` resolver registry (catalogs, products, orgs, payment cards, addresses, coupons). Reference these when documenting required vars / example payloads instead of hardcoding GUIDs/SKUs/emails.
 
 **Live GraphQL introspection (no rev in the brief, or a new mutation suspected):**
-- `POST {api_base_url}/graphql` with the standard introspection query — or run `npm run schema:refresh`, which writes **`.claude/knowledge/api/graphql-schema.md` and nothing else**. It does **NOT** write `scripts/.graphql-schema.cache.json`: that cache is written only by `npm run graphql:fixtures:validate:refresh` (and by `graphql-runner.ts`). `loadSchemaCache` has **no age check**, so `npm run graphql:fixtures:validate` passes clean against any old cache — refresh both, or say which one you refreshed.
+- `POST {api_base_url}/graphql` with the introspection query — or run `npm run schema:refresh`, which writes **`.claude/knowledge/api/graphql-schema.md` and nothing else** (in a ticket run, the run's copy: it prints the path). It does **NOT** write the schema cache: that is written only by `npm run graphql:fixtures:validate:refresh` (and by `graphql-runner.ts`). `loadSchemaCache` has **no age check**, so `npm run graphql:fixtures:validate` passes clean against any old cache — refresh both, or say which one you refreshed.
 - One-off probe: `npx tsx scripts/graphql/graphql-runner.ts --query "{ __type(name: \"TypeName\") { fields { name } } }"` — validates without sending a real request.
 
 **From Live Swagger UI (browser):**

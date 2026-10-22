@@ -97,7 +97,8 @@ them here costs nothing extra and makes the cases better — and since 2026-09-1
 **disposition** itself, which now happens inside Artifact A, *after* this lane
 ([`coverage-triage.md`](coverage-triage.md) §2a-own).
 
-**Then, and only then, the open half.** The remaining box time runs the ordinary discovery technique from
+**Then, and only then, the open half.** Getting the order backwards produces a pleasant session and no answers to
+the questions asked. The remaining box time runs the ordinary discovery technique from
 [`scenario-discovery.md`](../qa-sbtm/scenario-discovery.md) — surprise-seeking first — with the ECL's
 domain `[THEORETICAL]` sections as candidate shapes and the domain's `BL-*` as the correctness oracle
 (`/qa-exploratory` §5a, both read to **supply**). The suites and `vc-bug-catalog.md` are read to
@@ -190,8 +191,12 @@ downstream of the charter — pre-flight, technique selection, the session, the 
 unchanged and not restated here.
 
 ```
-/qa-exploratory ticket <ticket-key>     # Step 3x. Charter from the Test Model; 30-60 min box; chrome/edge
+/qa-exploratory ticket <ticket-key> <env>     # Step 3x. Charter from the Test Model; 30-60 min box; chrome/edge
 ```
+
+Pass the run's env: the lane is a subagent, shares the session's env binding and never re-binds it
+([`run-env.md`](../../knowledge/execution/run-env.md)). It checks the argument against that binding and STOPs
+when they differ.
 
 **Auto-invocation is not a risk here and the guard is not the frontmatter flag.** `/qa-exploratory` is
 read-only against the product, files nothing, transitions nothing, and edits no oracle — its only write is
@@ -214,7 +219,7 @@ Mission — the sources present (1–5 from a model, 6 from a strategy), each co
   6. Strategy risks the Exploratory row names: [R-n — what a customer would see — oracle or open question]
 
 Value chain (Test Model Part 0, verbatim): [chain]
-Domains: [1a domains]   Model: reports/ba/test-models/<TICKET>-<date>.md | none — no MODEL risk   Strategy: [path · Round N | none]
+Domains: [1a domains]   Model: {RUN_DIR}/test-model.md | none — no MODEL risk   Strategy: [path · Round N | none]
 Test data: [the @td()/{{VAR}} 3a has confirmed seeded so far — resolve at runtime, never hardcode]
 
 Extra returns this caller needs, beyond /qa-exploratory's own §Output tables:
@@ -268,11 +273,11 @@ driven — a contradiction between two of the run's own records.
   },
   "hypotheses_grounded": 4,          // {HYPOTHESIS} → {OBSERVED}
   "hypotheses_remaining": 1,
-  "model_amendments": 3,             // applied to reports/ba/test-models/<TICKET>-<date>.md
+  "model_amendments": 3,             // applied to {RUN_DIR}/test-model.md
   "scenarios_new": [{ "id": "EXP-01", "fate": "PROMOTE", "case_id": "SR-042", "oracle_ref": "NONE" }],
   "oracle_proposals": 2,             // routed to /qa-review-oracles
   "bugs_surfaced": ["handed to 5-triage — never filed here"],
-  "report": "reports/exploratory/SBTM-<ticket-key>-2026-09-03.md"
+  "report": "{RUN_DIR}/exploratory/SBTM-<ticket-key>-2026-09-03.md"
 }
 ```
 

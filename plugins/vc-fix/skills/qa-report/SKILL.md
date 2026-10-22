@@ -7,7 +7,7 @@ argument-hint: "<TICKET | RUN_ID | path> [--kind test|fix|regression|smoke] [--l
 # /qa-report — the result comment and the report page
 
 ```
-/vc-fix:qa-report VCST-1234                                  # newest summary.json / verification-summary.json
+/vc-fix:qa-report VCST-1234                                  # the ticket's run folder: this session's, else its newest
 /vc-fix:qa-report REG-2026-10-05-1200 --verdict GO --ticket VCST-1300
 /vc-fix:qa-report SMOKE-2026-10-05-0900 --verdict NO_GO
 ```
@@ -25,7 +25,7 @@ Class: **Mechanic** (report rendering) — exempt from the `kb` step. `$pluginRo
 
 | Argument | Kind | Source |
 |---|---|---|
-| ticket key | `fix` if `verification-summary.json` is newer, else `test` (`--kind` overrides; both and no `--kind` ⇒ ask) | newest `reports/tickets/**/<KEY>/…` |
+| ticket key | `fix` if `verification-summary.json` is newer, else `test` (`--kind` overrides; both and no `--kind` ⇒ ask) | the session's run folder when it is that ticket's (`node "$pluginRoot/scripts/env/run-folder.mjs" dir --json` → `ticket`), else the newest record in `… dir --ticket <KEY> --prior` (every env and layout, a folder outside the project too); in the ai-tools repo `npm run run:dir --` |
 | `REG-*` | `regression` | `reports/regression/<RUN_ID>/` |
 | `SMOKE-*` | `smoke` | `reports/regression/<RUN_ID>/` |
 | a path | from the file name / folder | as given |
