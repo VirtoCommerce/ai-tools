@@ -47,6 +47,7 @@ import {
   stripSeededGlobalRoles, deleteUserByEmail, resolvePassword,
 } from '../../lib/user-provision.mjs';
 import { orgAlreadyServed, appendServedOrg, removeServedOrg } from './rep-only-org-specs.mjs';
+import { normalizeMembershipStatus } from '../b2b/membership-alias-specs.mjs';
 import { UPLOAD_SCOPE } from './sales-rep-docs-specs.mjs';
 import {
   DEMO_ORGS, DEMO_CONTACTS, DEMO_REPS, DEMO_DOCUMENTS, DEMO_TASKS, DEMO_PROFILE, DEMO_LEDGER_KEY,
@@ -139,12 +140,21 @@ async function resolveReps() {
   }
   const resolved = [];
 
+  // Rep variables under a name no declared rep uses (an older naming, a typo) are ignored by every
+  // lookup below, so say so instead of silently falling back to the operator path or a SKIP.
+  const declaredVars = new Set(DEMO_REPS.flatMap((s) => [s.emailVar, s.passwordVar]));
+  for (const k of Object.keys(process.env)) {
+    const m = k.match(/^(SR_DEMO_REP_[A-Z0-9]+_(?:EMAIL|PASSWORD))(?:_[A-Z0-9_]+)?$/);
+    if (m && !declaredVars.has(m[1])) log(`NOTE ${k} is set but no demo rep reads it (rep variables: ${[...declaredVars].join(', ')}). Rename it.`);
+  }
+
   for (const spec of DEMO_REPS) {
     const email = repEmail(spec);
     if (!email) {
       log(`SKIP rep ${spec.key} (${spec.fullName}) — ${spec.emailVar} is not set.`);
-      log(`     Set it in .env.${TEST_ENV}. This seeder will not guess an email: attaching sales-rep`);
-      log('     status to the wrong real person is not a recoverable mistake.');
+      log(`     Set ${repEmailEnvKeys(spec, TEST_ENV)[0]} in .env.local (gitignored: it names a real person,`);
+      log('     never put it in a committed .env.<env>). This seeder will not guess an email: attaching');
+      log('     sales-rep status to the wrong real person is not a recoverable mistake.');
       resolved.push({ spec, skipped: 'no-email' });
       continue;
     }
@@ -360,7 +370,7 @@ async function ensureBuyerAccounts(orgs, contacts) {
     // Approved is converged — extra roles a sibling demo granted are not drift.
     const current = existing.find((m) => m.organizationId === org.id);
     const holdsRole = (current?.roles || []).some((x) => (x.roleId || x.id) === role.id);
-    if (holdsRole && current.isLocked === false && current.status === 'Approved') {
+    if (holdsRole && current.isLocked === false && normalizeMembershipStatus(current.status) === normalizeMembershipStatus('Approved')) {
       verbose(`membership ${spec.email} @ ${org.name} already holds "${spec.role}" — extra roles kept`);
     } else {
       await ensureOrgMembership(userId, org.id, org.name, role.id, existing, false, spec.email, 'Approved');
@@ -387,8 +397,14 @@ async function attachServedOrgs(reps, orgs) {
   const attachments = [];
   for (const r of reps) {
     if (r.skipped) continue;
-    const priorOrgs = (r.rep.organizations || []).map((o) => ({ organizationId: o.organizationId, organizationName: o.organizationName }));
-    let organizations = [...priorOrgs];
+    // The rep's DEMO organizations are demo-owned (teardown deletes them), so every one the live list
+    // holds counts as added, recomputed each run. Recording only THIS run's additions made a re-run
+    // write addedOrgIds: [] and priorOrganizations = the whole live list, so teardown detached nothing.
+    const demoIds = new Set(r.spec.servedOrgs.map((k) => orgs[k]?.id).filter((id) => id && !String(id).startsWith('dry-')));
+    const live = (r.rep.organizations || []).map((o) => ({ organizationId: o.organizationId, organizationName: o.organizationName }));
+    const priorOrgs = live.filter((o) => !demoIds.has(o.organizationId));
+    const servedDemoIds = (list) => list.map((o) => o.organizationId).filter((id) => demoIds.has(id));
+    let organizations = [...live];
     const added = [];
     for (const key of r.spec.servedOrgs) {
       const org = orgs[key];
@@ -400,7 +416,7 @@ async function attachServedOrgs(reps, orgs) {
     attachments.push({
       type: 'rep-attachment', key: r.spec.key, salesRepId: r.rep.id, userId: r.rep.userId,
       priorOrganizations: priorOrgs,
-      addedOrgIds: added.map((k) => orgs[k].id),
+      addedOrgIds: servedDemoIds(organizations),
       servedOrgIds: organizations.map((o) => o.organizationId),
     });
     if (!added.length) { verbose(`rep ${r.spec.key}: already serves every demo org`); continue; }
@@ -415,12 +431,12 @@ async function attachServedOrgs(reps, orgs) {
       log(`  SKIP attaching ${r.spec.key}: the contact also belongs to ${dropped.length} organization(s) it does not serve`);
       log(`       (${dropped.join(', ')}). PUT /api/sales-rep would remove them and DELETE the memberships`);
       log('       there. Make them served orgs, or remove them from the contact deliberately, then re-run.');
-      // Nothing was attached, so teardown must not detach anything either.
-      attachments[attachments.length - 1] = { ...attachments[attachments.length - 1], addedOrgIds: [], servedOrgIds: priorOrgs.map((o) => o.organizationId) };
+      // Nothing was attached this run: teardown detaches only the demo orgs already served.
+      attachments[attachments.length - 1] = { ...attachments[attachments.length - 1], addedOrgIds: servedDemoIds(live), servedOrgIds: live.map((o) => o.organizationId) };
       continue;
     }
     await api('PUT', '/api/sales-rep', { ...r.rep, organizations }, { expectStatus: [200, 201, 204] });
-    log(`rep ${r.spec.key}: +${added.length} demo org(s) (${added.join(', ')}); ${organizations.length} total, ${priorOrgs.length} pre-existing preserved`);
+    log(`rep ${r.spec.key}: +${added.length} demo org(s) (${added.join(', ')}); ${organizations.length} total, ${priorOrgs.length} non-demo preserved`);
   }
   return attachments;
 }
@@ -744,6 +760,7 @@ async function teardown() {
   if (taskRows.length && !DRY_RUN) {
     for (const a of attachments) {
       const spec = DEMO_REPS.find((r) => r.key === a.key);
+      if (!spec) { log(`  tasks for ${a.key}: no such rep in the spec (renamed?), left in place.`); continue; }
       const token = await repToken({ spec, email: repEmail(spec), rep: { userId: a.userId } });
       if (!token) { log(`  tasks for ${a.key}: unreachable without a token — left in place.`); continue; }
       const gql = makeGql(token);
@@ -787,10 +804,22 @@ async function teardown() {
   for (const a of attachments) {
     const liveRep = await api('GET', `/api/sales-rep/${a.salesRepId}`, null, { expectStatus: [200, 404] });
     if (!liveRep?.id) { log(`  rep ${a.key}: no longer present, nothing to detach.`); continue; }
+    const toDetach = (a.addedOrgIds || []).filter((id) => orgAlreadyServed(liveRep.organizations || [], id));
+    if (!toDetach.length) { log(`  rep ${a.key}: no demo org to detach, no write.`); continue; }
     let organizations = liveRep.organizations || [];
-    for (const id of a.addedOrgIds || []) organizations = removeServedOrg(organizations, id);
+    for (const id of toDetach) organizations = removeServedOrg(organizations, id);
+    // Same hazard as attach: the PUT rewrites the contact's organizations[] to the served list and
+    // deletes the membership of anything it drops. Only the demo orgs being detached may go.
+    const contact = DRY_RUN ? null : await api('GET', `/api/members/${a.salesRepId}`, null, { expectStatus: [200, 404] });
+    const keep = new Set([...organizations.map((o) => o.organizationId), ...toDetach]);
+    const dropped = (contact?.organizations || []).filter((id) => !keep.has(id));
+    if (dropped.length) {
+      log(`  SKIP detaching ${a.key}: the contact also belongs to ${dropped.length} organization(s) it does not serve (${dropped.join(', ')});`);
+      log('       PUT /api/sales-rep would delete those memberships. Detach the demo orgs in the Admin UI instead.');
+      continue;
+    }
     if (!DRY_RUN) await api('PUT', '/api/sales-rep', { ...liveRep, organizations }, { expectStatus: [200, 201, 204] });
-    log(`  rep ${a.key}: detached ${(a.addedOrgIds || []).length} demo org(s); ${a.priorOrganizations.length} pre-existing restored`);
+    log(`  rep ${a.key}: detached ${toDetach.length} demo org(s); ${organizations.length} other served org(s) kept`);
   }
 
   // 4b. Buyer accounts + their org memberships. Before the contacts, because the account is what
@@ -1207,11 +1236,15 @@ async function main() {
   // an earlier run recorded still name live entities. Dropping them orphaned 28 (virtostart,
   // 2026-10-22: no rep password, no operator), so a full run carries them forward; teardown's
   // deletes tolerate 404, so a row whose entity is already gone costs nothing.
+  // A rep SKIPPED this run (no email set on this machine) keeps its rep-attachment row for the same
+  // reason: teardown reaches a rep's tasks and demo orgs only through that row.
   const CARRIED = new Set(['task', 'list', 'cart']);
+  const skippedReps = new Set(reps.filter((r) => r.skipped).map((r) => r.spec.key));
+  const carried = (e) => CARRIED.has(e.type) || (e.type === 'rep-attachment' && skippedReps.has(e.key));
   const notRewritten = (e) => !entities.some((n) => n.type === e.type && n.key === e.key);
   const merged = ONLY
     ? [...(readLedger().entities || []).filter(notRewritten), ...entities]
-    : [...entities, ...(PRIOR_LEDGER.entities || []).filter((e) => CARRIED.has(e.type) && notRewritten(e))];
+    : [...entities, ...(PRIOR_LEDGER.entities || []).filter((e) => carried(e) && notRewritten(e))];
   writeLedger(merged);
 
   const skipped = reps.filter((r) => r.skipped);

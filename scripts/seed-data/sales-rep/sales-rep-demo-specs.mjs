@@ -152,6 +152,11 @@ export const DEMO_ORGS = [
   },
 
   // ---- The org-switcher book (DEMO_REP_SWITCHER) -----------------------------------------------
+  // TEARDOWN IS DESTRUCTIVE HERE. The rep's own BUYER memberships in these orgs (varied roles, two
+  // LOCKED: the point of the org-switcher mockup) were made by hand on virtostart and are NOT
+  // declared in this module, so no seed recreates them. `seed:sales-rep-demo:teardown` deletes these
+  // orgs and those memberships with them, irreversibly; on any other env the book comes back without
+  // them. Rebuild them by hand (Admin → the rep's account → organizations) after a teardown.
   // The ten organizations of the storefront organization-switcher mockup. The NAMES are the
   // mockup's, so they must match exactly: on virtostart they already exist (created 2026-10-22
   // with the rep's own memberships), and ensureOrgs() adopts an existing org by name.
@@ -360,7 +365,7 @@ export const DEMO_REPS = [
     firstName: 'Primary', lastName: 'Rep', fullName: 'Primary demo rep',
     store: DEMO_STORE,
     // Required, not aspirational: this rep is the one who demonstrates the document library, and
-    // the basic role has no link and no widget for it. Verified live 2026-09-23: she already holds
+    // the basic role has no link and no widget for it. Verified live 2026-09-23: the rep already holds
     // Advanced, so this is an assertion the seeder checks, never a write it performs.
     salesRepRole: SALES_REP_ROLE_ADVANCED,
     showsDocuments: true,
@@ -374,8 +379,8 @@ export const DEMO_REPS = [
     passwordVar: 'SR_DEMO_REP_SECOND_PASSWORD',
     firstName: 'Second', lastName: 'Rep', fullName: 'Second demo rep',
     store: DEMO_STORE,
-    // Either role works for this rep — he demonstrates the customer/order side, not documents. The
-    // seeder reports whichever he actually holds rather than requiring one.
+    // Either role works for this rep — it demonstrates the customer/order side, not documents. The
+    // seeder reports whichever the rep actually holds rather than requiring one.
     salesRepRole: null,
     showsDocuments: false,
     servedOrgs: ['DORG-CONTOSO', 'DORG-WINGTIP'],
@@ -779,7 +784,7 @@ export const DEMO_LIST_SCOPE = { ORGANIZATION: 'Organization', CUSTOMER: 'Custom
 export const DEMO_LIST_NAME_MAX = 25;
 
 export const DEMO_LISTS = [
-  // The rep curates for each customer she serves — the sales-rep half.
+  // The rep curates for each customer it serves — the sales-rep half.
   { key: 'DLIST-NW-REP', scope: 'Customer', author: 'DEMO_REP_PRIMARY', org: 'DORG-NORTHWIND', name: 'Q1 Stock Up — Fasteners', description: 'Curated for the Seattle yard ahead of the Q1 build season. Prices held to the volume agreement.', items: 5 },
   { key: 'DLIST-CN-REP', scope: 'Customer', author: 'DEMO_REP_PRIMARY', org: 'DORG-CONTOSO', name: 'Printer Fleet Refresh', description: 'Replacement models for the Columbus print room, matched to the fleet already on site.', items: 4 },
   { key: 'DLIST-FB-REP', scope: 'Customer', author: 'DEMO_REP_PRIMARY', org: 'DORG-FABRIKAM', name: 'Backup Power Proposal', description: 'Portable power options for line-side outages at Plant 2, sized from the last incident report.', items: 4 },

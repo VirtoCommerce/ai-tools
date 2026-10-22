@@ -65,7 +65,7 @@ it, and classifies each into four buckets:
 
 | Bucket | Test | Recreatable |
 |---|---|---|
-| `protected` | email ∈ `SR_DEMO_PROTECTED_EMAILS` — a real person's reused account | never deleted; their ORDERS are excluded from the sweep too |
+| `protected` | email ∈ `SR_DEMO_PROTECTED_EMAILS[_<ENV>]` or a demo rep's `SR_DEMO_REP_*_EMAIL[_<ENV>]` (`.env.local`), or its SHA-256 ∈ the committed `SR_DEMO_PROTECTED_EMAIL_SHA256` — a real person's reused account | never deleted; their ORDERS are excluded from the sweep too |
 | `repo-seeded` | matches a committed CSV / spec row | yes — `npm run seed:sales-rep*` |
 | `repo-family` | carries `AGENT-TEST` or `DEMO-SR`, no current CSV/spec row — an orphan | only by re-adding the row |
 | `foreign` | carries neither — hand-made in the Admin UI | **no** |
@@ -143,8 +143,8 @@ data**: Model a rep from a contact, a login account, and a role, with no new dat
 GET-merge-PUT on `/api/platform/security/users` adding the role — that endpoint carries **no
 password field at all**. Verified live 2026-09-23 on the second demo rep's account: adding
 `Advanced Sales Representative` made `GET /api/sales-rep/{memberId}` resolve with
-`hasGlobalSalesRepRole: true` and put him in `POST /api/sales-rep/search`, with no second Contact
-created (the rep id is his existing contact id).
+`hasGlobalSalesRepRole: true` and put the account in `POST /api/sales-rep/search`, with no second Contact
+created (the rep id is the existing contact id).
 
 **A rep who also holds buyer memberships.** `PUT /api/sales-rep` overwrites the rep contact's
 `organizations[]` with the served list, and an organization dropped from it takes the rep's WHOLE
@@ -156,6 +156,9 @@ where it holds buyer memberships with varied roles, two of them locked — and a
 out of the rep's hub entirely (customers, orders, statistics; `KB-3AD6DEAA`, confirmed live
 2026-10-22), so its hub shows 8 customers, not 10. Its email is set only in `.env.local`
 (`SR_DEMO_REP_SWITCHER_EMAIL_<ENV>`) — a real colleague, kept out of the repo.
+**Teardown on virtostart is irreversible for that book:** the rep's buyer memberships there (the
+varied roles and the two locked ones) are hand-made and declared nowhere, so
+`seed:sales-rep-demo:teardown` deletes them with the `DORG-SW-*` orgs and no seed brings them back.
 
 **`storeCatalog: true`** on a `DEMO_ORGS` row draws its product pool from the store's own catalog
 (read live from `GET /api/stores/{id}`), not from every catalog the admin search reaches. On
@@ -307,5 +310,5 @@ discovery is the only place that can be caught.
   path). Its Contact `status` is `New` where both other reps are `Approved` — noted, not changed; it
   is a real person's record and `New` is not the platform's known sign-in blocker (`Invited` is).
 - **A colleague** actively placing orders, not part of the demo. `protected`.
-- Outstanding before a full demo seed: both `SR_DEMO_REP_*_PASSWORD_VIRTOSTART` values, without which
+- Outstanding before a full demo seed: the `SR_DEMO_REP_*_PASSWORD_VIRTOSTART` values, without which
   nothing is skipped any more — the operator fallback covers tasks, rep carts and Customer lists.
