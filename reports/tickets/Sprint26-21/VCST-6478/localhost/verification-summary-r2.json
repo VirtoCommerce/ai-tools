@@ -1,0 +1,39 @@
+{
+  "ticket": "VCST-6478",
+  "round": 2,
+  "verdict": "VERIFIED_WITH_NOTES",
+  "date": "2026-10-22",
+  "environment": "http://localhost (frontend-only; API proxied to vcst-qa, store B2B-store)",
+  "build": {
+    "platform": "vcst-qa (remote, unchanged)",
+    "theme": "2.61.0-pr-2598-9b6d-9b6db3d9",
+    "relevant_modules": {},
+    "pr_build": "vc-theme-b2b-vue-2.61.0-pr-2598-9b6d-9b6db3d9 (VirtoCommerce/vc-frontend#2598 head 9b6db3d)",
+    "baseline_theme": "2.61.0-pr-2598-fd57-fd578365 (round 1)"
+  },
+  "agent_used": "qa-frontend-expert",
+  "str_result": "3/3",
+  "baseline_reproduction": "round 1 on build fd57: select_item items had no index",
+  "before_after": [
+    {"check": "select_item index, /printers cards 0/2/6", "before": "no index", "after": "0, 2, 6 = view_item_list index"},
+    {"check": "infinite scroll: page-1 card clicked after page 2 loaded", "before": "list named page_2", "after": "page_1, index 9"},
+    {"check": "search_bar, PDP bought-together, products block", "before": "no index", "after": "2, 1, 2 = list index"},
+    {"check": "wishlist, recently browsed, compare", "before": "no index", "after": "1, 1, 1 = list index"},
+    {"check": "currency on select_item / view_item / add_to_wishlist, EUR", "before": "PASS (round 1)", "after": "unchanged; EUR index 4"}
+  ],
+  "checklist_total": 9,
+  "checklist_passed": 9,
+  "checklist_failed": 0,
+  "regression_issues": [],
+  "side_effects": [
+    {"summary": "Search and bought-together items have no item_brand; bought-together items have no discount", "severity": "Low", "why": "pre-existing"},
+    {"summary": "Multi-image card: image click changes the slide, no select_item", "severity": "Low", "why": "pre-existing"},
+    {"summary": "List row remove button is labelled Remove from cart", "severity": "Low", "why": "a11y label; not checked against dev"}
+  ],
+  "bugs_filed": [],
+  "business_rules_verified": ["BL-GA4-001"],
+  "tracker_transition": {"role": "tested", "state": "Tested"},
+  "evidence": "reports/tickets/Sprint26-21/VCST-6478/localhost/evidence/ (r2-*)",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-21/VCST-6478/localhost/"
+}
