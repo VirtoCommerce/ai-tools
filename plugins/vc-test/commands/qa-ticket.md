@@ -107,5 +107,7 @@ Evidence. A row with an empty Result is unresulted and stops triage.
 ## 8 — Human point 2
 
 For each confirmed Medium-or-worse bug, `/vc-fix:qa-bug` with its investigation package (U50), one at a time;
-its own question decides filing. Tear down every entity in `<WORK>/ledger.jsonl`, newest first, by its id —
-never by prefix; name any that could not be deleted. Then print `verdict.md`'s first two lines and its path.
+its own question decides filing. Tear down with `node <plugin>/lib/teardown.mjs --key <TICKET>` (`--dry-run` shows
+the plan): ledger entities only, newest first, by id; settings back to their first `before`. Exit 2 ⇒ name what
+failed, what it left for a human (`manual`) and what it did not know (`unknown`). Then print `verdict.md`'s first
+two lines and its path.
