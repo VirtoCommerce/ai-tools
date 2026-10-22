@@ -69,15 +69,17 @@ export function planRun({ strategy, registry, capabilities }) {
   const wave = new Map();
   const browserCount = [];
   const lanesIn = []; // wave -> lanes taken: two browser entries never share one (one browser session per agent)
-  // Scenarios that write the same setting never share a wave. A scenario that writes a GLOBAL setting runs alone in its
-  // wave — no other scenario, no ac-checks, nothing: the flipped value would falsify what its wave-mates observe (and a
-  // second global window could not open). An entry with `missing` is not dispatched, so it takes no room.
+  // Scenarios that write the same setting never share a wave. A scenario that writes a GLOBAL setting, or a setting of a
+  // SHARED store (any store but one the run created, `store:new-…`), runs alone in its wave — no other scenario, no
+  // ac-checks, nothing: the flipped value would falsify what its wave-mates observe (and a second global window could
+  // not open). An entry with `missing` is not dispatched, so it takes no room.
   const writeKey = (w) => `${w.scope}/${w.name}`;
   const writersIn = [];
   const clash = (w, sc) => (writersIn[w] ?? []).some((o) => o.writes.some((x) => sc.writes.some((y) => writeKey(x) === writeKey(y))));
-  const isGlobal = (s) => !!s.scenario?.writes.some((x) => x.scope === "global");
+  const shared = (x) => x.scope === "global" || (x.scope.startsWith("store:") && !x.scope.startsWith("store:new-"));
+  const isGlobal = (s) => !!s.scenario?.writes.some(shared);
   const runningIn = []; // wave -> how many dispatched entries it holds
-  const globalIn = []; // wave -> it holds a global writer
+  const globalIn = []; // wave -> it holds a writer of shared state
   for (const id of ordered) {
     const s = selected.get(id);
     let w = 1 + Math.max(0, ...needsOf(s).map((n) => wave.get(n)));

@@ -4,12 +4,19 @@
 // once. Two processes reclaiming one stale lock at the same instant can have the second rm delete the first one's fresh
 // lock; the window is microseconds against a 120 s, human-gated lock, so it is accepted.
 // The webhook URL is a secret: it is never printed and never put into a reason.
-// CLI: node plugins/vc-test/lib/window.mjs open|close --key <KEY> --setting <name> --value <v> [--max-s 120]
+// CLI: node plugins/vc-test/lib/window.mjs run --key <KEY> --setting <name> --value <v> --out <file> [--max-s 120] -- <cmd…>
+//      node plugins/vc-test/lib/window.mjs open|close --key <KEY> --setting <name> --value <v> [--max-s 120]
 //      node plugins/vc-test/lib/window.mjs check   → exit 0 when TEAMS_WEBHOOK_URL is set, 1 when not; prints nothing
+//   run = open, the command (its stdout+stderr to --out), close — with the deadline ENFORCED: the command gets
+//   VC_TEST_WINDOW_DEADLINE (epoch ms, RESERVE_S before the end) to stop its steps and restore in its `finally`, and is
+//   killed with its process tree at --max-s; the lock is held GRACE_S longer than that, so no other run can reclaim it
+//   while the command lives. The close announces the command's last output line (the value on the stand).
 //   open = acquire, announce (a failed announce releases the lock again); close = announce, release (always).
 //   Every subcommand loads the project's config.js first, so a webhook kept in .env.local is seen.
-//   exit 0: done; 1: usage (check: not set); 2: refused (window held, or no announcement); 3: no config.js here
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+//   exit 0: done; 1: usage (check: not set); 2: refused (window held, or no announcement); 3: no config.js here;
+//   4 (run): the command was killed at the window's end — the value on the stand is unknown
+import { spawn, spawnSync } from "node:child_process";
+import { closeSync, existsSync, mkdirSync, openSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { argOf, outputRoot } from "./paths.mjs";
@@ -52,8 +59,8 @@ export async function announce({ webhook = process.env.TEAMS_WEBHOOK_URL, phase,
 }
 
 // The CLI's open and close, for a caller in this process (teardown.mjs). The env must already be loaded.
-export async function openWindow({ key, setting, value, maxSeconds = 120, lockPath = defaultLockPath(), fetch }) {
-  const got = acquire({ key, setting, maxSeconds, lockPath });
+export async function openWindow({ key, setting, value, maxSeconds = 120, lockSeconds = maxSeconds, lockPath = defaultLockPath(), fetch }) {
+  const got = acquire({ key, setting, maxSeconds: lockSeconds, lockPath });
   if (!got.ok) { // an unreadable lock is never reclaimed automatically: a human decides
     return { code: 2, out: got.holder ? { status: "refused", reason: "another window is open", holder: got.holder }
       : { status: "refused", reason: `unreadable lock file — delete ${lockPath} if no window is open`, lock: lockPath } };
@@ -69,6 +76,41 @@ export async function closeWindow({ key, setting, value, maxSeconds = 120, lockP
   return { code: told.ok && freed.ok ? 0 : 2, out: { status: told.ok ? "closed" : "closed-unannounced", reason: told.reason, released: freed.ok } };
 }
 
+export const RESERVE_S = 20; // the command's steps stop this long before the end, so its `finally` restore fits
+export const GRACE_S = 30; // the lock outlives the kill by this much: the kill and the close fit inside it
+const killTree = (child) => {
+  if (process.platform === "win32") spawnSync("taskkill", ["/pid", String(child.pid), "/T", "/F"], { stdio: "ignore" });
+  else try { process.kill(-child.pid, "SIGKILL"); } catch { child.kill("SIGKILL"); } // detached: its own process group
+};
+const lastLine = (file) => { try { return readFileSync(file, "utf8").trimEnd().split(/\r?\n/).pop() || null; } catch { return null; } };
+
+// open → the command → close, with the window's end enforced rather than promised (U68). `ran: false` means no window
+// was opened and nothing ran; a refused open is never closed (the lock is released by ticket key, not by holder).
+export async function runWindow({ key, setting, value, maxSeconds = 120, cmd, out, lockPath = defaultLockPath(), fetch, spawnImpl = spawn }) {
+  const opened = await openWindow({ key, setting, value, maxSeconds, lockSeconds: maxSeconds + GRACE_S, lockPath, fetch });
+  if (opened.code) return { code: opened.code, out: { ...opened.out, ran: false } };
+  const deadline = Date.now() + (maxSeconds - RESERVE_S) * 1000;
+  const fd = openSync(out, "w");
+  let killed = false;
+  let exit;
+  try {
+    exit = await new Promise((done) => {
+      let child;
+      try {
+        child = spawnImpl(cmd[0], cmd.slice(1), { stdio: ["ignore", fd, fd], detached: process.platform !== "win32",
+          env: { ...process.env, VC_TEST_WINDOW_DEADLINE: String(deadline) } });
+      } catch (err) { done({ error: err?.code ?? "spawn failed" }); return; }
+      const timer = setTimeout(() => { killed = true; killTree(child); }, maxSeconds * 1000);
+      child.once("error", (err) => { clearTimeout(timer); done({ error: err?.code ?? "spawn failed" }); });
+      child.once("exit", (code, signal) => { clearTimeout(timer); done({ code, signal }); });
+    });
+  } finally { closeSync(fd); }
+  const stand = killed ? null : lastLine(out);
+  const closed = await closeWindow({ key, setting, value: stand ?? "unknown — the command was stopped at the window's end", lockPath, fetch });
+  return { code: killed ? 4 : closed.code, out: { status: killed ? "killed" : closed.out.status, ran: true, killed, exit, stand: stand ?? null,
+    out, released: closed.out.released, ...(closed.out.reason ? { reason: closed.out.reason } : {}) } };
+}
+
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   const [cmd] = process.argv.slice(2);
   const config = join(process.cwd(), "config.js");
@@ -81,13 +123,18 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
     try { await import(pathToFileURL(config).href); } finally { Object.assign(console, saved); }
     process.exit(process.env.TEAMS_WEBHOOK_URL ? 0 : 1); // the value itself is never printed
   }
-  const [key, setting, value] = ["key", "setting", "value"].map((n) => argOf(process.argv, n));
-  const maxSeconds = Number(argOf(process.argv, "max-s") ?? 120);
-  if (!["open", "close"].includes(cmd) || !key || !setting || value === undefined || !(maxSeconds > 0)) {
-    console.error("usage: window.mjs open|close --key <KEY> --setting <name> --value <v> [--max-s 120] | window.mjs check"); process.exit(1);
+  const dd = process.argv.indexOf("--");
+  const flags = dd < 0 ? process.argv : process.argv.slice(0, dd); // run: everything after `--` is the command
+  const [key, setting, value, out] = ["key", "setting", "value", "out"].map((n) => argOf(flags, n));
+  const maxSeconds = Number(argOf(flags, "max-s") ?? 120);
+  const command = dd < 0 ? [] : process.argv.slice(dd + 1);
+  const runBad = cmd === "run" && (!out || !command.length || !(maxSeconds > RESERVE_S));
+  if (!["run", "open", "close"].includes(cmd) || !key || !setting || value === undefined || !(maxSeconds > 0) || runBad) {
+    console.error(`usage: window.mjs run --key <KEY> --setting <name> --value <v> --out <file> [--max-s 120 (> ${RESERVE_S})] -- <cmd…> | window.mjs open|close --key <KEY> --setting <name> --value <v> [--max-s 120] | window.mjs check`); process.exit(1);
   }
   await import(pathToFileURL(config).href); // runs the layered env loader into process.env (TEAMS_WEBHOOK_URL from .env.local)
-  const r = await (cmd === "open" ? openWindow : closeWindow)({ key, setting, value, maxSeconds });
+  const r = cmd === "run" ? await runWindow({ key, setting, value, maxSeconds, cmd: command, out })
+    : await (cmd === "open" ? openWindow : closeWindow)({ key, setting, value, maxSeconds });
   console.log(JSON.stringify(r.out));
   process.exit(r.code);
 }

@@ -41,8 +41,9 @@ Dispatch description: `[vc-test:ac-checks] <KEY>`.
   past the limit by at least the number of instances you suspect, and record any instance marker the responses
   carry (a header, a cookie, a server id). Seeing one instance only is `BLOCKED — one instance seen`, never PASS.
 - **Settings (U68).** **You never write a global setting:** a row that needs one is
-  `BLOCKED — needs a global window (U68)`, and a scenario covers it. A scenario that writes a global setting runs in
-  a wave of its own (`run-plan.json`), never beside you, so no global value this run flips moves under your checks.
+  `BLOCKED — needs a global window (U68)`, and a scenario covers it. A scenario that writes a global setting, or a
+  setting of a store it did not create, runs in a wave of its own (`run-plan.json`), never beside you, so no shared
+  value this run flips moves under your checks.
   A store setting only on a store this run created or the strategy's `Shared store:`, restored when done; each write
   and its restore go into the ledger. Re-read a setting before you write it and before each row that depends on it;
   a value that is neither its value before the run nor this run's last ledger `after` is another's change ⇒

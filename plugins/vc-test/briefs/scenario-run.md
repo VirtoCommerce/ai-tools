@@ -50,10 +50,11 @@ description: `[vc-test:scenario:S-n] <KEY>` (U66: the run's cost is counted per 
 - **Guard.** Re-read a setting before your first write and right before each step that depends on it. It must
   equal the value it had before the run (the ledger's first `before`, else your first read) or the last `after`
   this run recorded. Anything else is someone else's change ⇒ `BLOCKED — <setting> changed by another (<value>)`,
-  never FAIL; put nothing back. A scenario that writes a global setting runs alone in its wave (`run-plan.json`):
-  no AC check or other scenario of this run runs beside it, so a global value that moves is never a wave-mate's.
+  never FAIL; put nothing back. A scenario that writes a global setting, or a setting of a store it did not create,
+  runs alone in its wave (`run-plan.json`): no AC check or other scenario of this run runs beside it, so a shared
+  value that moves is never a wave-mate's.
 - **A global setting is written only inside a window, and the window is ONE scripted `node` run** — no tool call, no
-  page click, no turn of yours inside it, so its 120 s holds. Prepare everything first (users, data), then write
+  page click, no turn of yours inside it. Prepare everything first (users, data), then write
   `<RUN_DIR>/scenarios/S-n.window.mjs`. It imports the project's `config.js` (the env) and
   `scripts/lib/seed-common.mjs` (`auth`, `api`), then: write the setting, read it back, ledger it
   (`--before <old> --after <new>`, running `ledger.mjs append` as a child process), run only the steps that need the
@@ -61,18 +62,28 @@ description: `[vc-test:scenario:S-n] <KEY>` (U66: the run's cost is counted per 
   lane — and, in a `finally` so a failed step still restores, put the old value back, read it back and ledger the
   restore too (`--before <new> --after <old>` — teardown then sees it restored). It prints each step's deciding
   excerpt and, as its LAST line, the value the stand holds at its end, followed by ` RESTORE FAILED` when that is
-  not the old value. Read it through once; then run open, the script and close as ONE shell command:
+  not the old value.
+  - **The deadline is enforced.** The script gets `VC_TEST_WINDOW_DEADLINE` (epoch ms, 20 s before the window's
+    end). Before each step it throws when `Date.now()` has passed it, and every step's request carries
+    `AbortSignal.timeout(deadline - Date.now())`, so the `finally` restore runs in time. At the window's end the
+    script is killed and nothing restores but teardown.
+  - **`api` is only for writing and reading back the setting.** Every request of a SCALE step (U59) goes over a
+    fresh connection — `node:https` (or `node:http`) `request` with `agent: false` — with no retry, one counted
+    attempt each, and the script prints each response's instance marker. `api` keeps connections alive and retries, which would pin every attempt to one instance and inflate
+    the count: a SCALE result through it is not evidence.
 
-      node <plugin>/lib/window.mjs open --key <KEY> --setting <name> --value <new> [--max-s 120] && { node <RUN_DIR>/scenarios/S-n.window.mjs > <RUN_DIR>/scenarios/S-n.window.out 2>&1; node <plugin>/lib/window.mjs close --key <KEY> --setting <name> --value "$(tail -n 1 <RUN_DIR>/scenarios/S-n.window.out)"; }
+  Read the script through once; then run the window as ONE command, which opens it, runs the script and closes it:
 
-  The `&&` is the rule **close only a window you opened** (open printed `"status":"open"`): a refused open is never
-  closed — the lock is released by ticket key, so your close would free another holder's window. Open exit 2 with
-  "another window is open" ⇒ wait until its `expiresAt` and run the line once more. Any other refusal, or a second
-  one ⇒ `BLOCKED — window refused: <reason>`, and no write. **A window you opened is always closed, with the value
-  actually on the stand** — the `;` closes it after a failed script too. **A failed restore** (the out file's last
-  line ends `RESTORE FAILED` or names no value) is reported: your return's first line is `RESTORE FAILED: <setting>
-  still <value>`, and a row says it, Result `BLOCKED — RESTORE FAILED: <setting> still <value>` (teardown restores
-  it from the ledger, inside its own window).
+      node <plugin>/lib/window.mjs run --key <KEY> --setting <name> --value <new> --out <RUN_DIR>/scenarios/S-n.window.out [--max-s 120] -- node <RUN_DIR>/scenarios/S-n.window.mjs
+
+  It prints one JSON line. `"ran": false` ⇒ no window was opened and nothing ran: `"another window is open"` ⇒ wait
+  until the holder's `expiresAt` and run it once more; any other refusal, or a second one ⇒ `BLOCKED — window
+  refused: <reason>`, and no write. Never run `window.mjs close` yourself — the lock is released by ticket key, so a
+  close would free another holder's window. `"ran": true` ⇒ the window was closed with the value the script's last
+  line names. **A failed restore** — exit 4 (`"killed": true`: the stand's value is unknown), or the out file's last
+  line ends `RESTORE FAILED` or names no value — is reported: your return's first line is `RESTORE FAILED: <setting>
+  still <value or unknown>`, and a row says it, Result `BLOCKED — RESTORE FAILED: <setting> still <value or
+  unknown>` (teardown restores it from the ledger, inside its own window).
 - **A store setting** only on a store this run created (it is in the ledger) or the one `Shared store:` names.
   Any other store ⇒ `BLOCKED — U68: store <id> is shared and was not named at approval`. Never move the scenario
   to another store or path to avoid the block. On the named store, restore and ledger as for a global setting.
