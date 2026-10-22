@@ -24,20 +24,22 @@ beats the env binding: `run:use` refuses another ticket while it is set. A ticke
 the ticket's own stand when its folder defines exactly one env the repo does not. An override of a repo env never
 moves that stand: the loader warns when it changes the env's `BACK_URL`, `FRONT_URL` or `ENV_RISK`, and deploy
 reads a repo env from the repo's files only. A session bound to an env no file defines any more stops every loader
-with an error instead of running on `.env.local`'s stand.
+with an error instead of running on `.env.local`'s stand; `run:use --clear` removes such a binding with the run.
 
 **Added: master stands.** `PASSWORDS=master` in a stand's env file makes every test-account password
 variable resolve to `MASTER_PASSWORD` from `.env.playwright.master`, so the seeders set it. The platform admin's
 `ADMIN_PASSWORD` is one of them: the stand's admin must use the master password too. Only the stand's own
 env file counts: the root `.env.<env>` for a repo env, else its `QA_ENV_PATH` file, and never on an
 `ENV_RISK=production` stand. A `PASSWORDS` line in
-`.env.local`, or a ticket folder's override of a repo env, is ignored with a warning: seeding would reset a shared
-stand's accounts to the master password. Browser lanes then type `MASTER_PASSWORD` in every password field.
+`.env.local`, or a ticket folder's override of a repo env, is ignored with a warning, and one in the process
+environment (inherited, or passed by CI) is ignored too: seeding would reset a shared stand's accounts to the master
+password. With no `.env.playwright.master` a master stand's test-account passwords are unset, never another
+stand's. Browser lanes then type `MASTER_PASSWORD` in every password field.
 `secrets:sync:all` copies it into `.env.playwright.all` as one stable line, so a new master stand needs no re-sync
 and no MCP reconnect; the single-env `secrets:sync` writes it only for a master stand, keeps an earlier value only
 from a file generated for the same env, and never carries a copy of the master password to another stand.
 `enforce-secret-token` blocks the master password (`MASTER_PASSWORD`, or any name holding a copy of it) in a session
-whose stand did not opt in or that nothing chose, a copy older than the master file, and any name from a single-env
+whose stand did not opt in, that nothing chose or that it cannot resolve, a copy older than the master file, and any name from a single-env
 `--secrets` file generated for another env. It now guards every `playwright-*` lane (`playwright-mobile` was missed).
 
 **Changed:**
@@ -53,7 +55,8 @@ whose stand did not opt in or that nothing chose, a copy older than the master f
   `GIT_TOKEN`. `deployed` and `--expect` read the stand's build as before, and a missing build no longer advises
   `/qa-deploy-pr`.
 - The ticket-context skill imports the loader at run time: an install without `scripts/lib/env-layers.mjs` reads
-  the root's files as before and reports a GAP instead of failing to start.
+  the root's files as before and reports a GAP instead of failing to start. It loads the env with the ticket it
+  analyses, so its `deploy:pr` and `/preflight` children see that ticket's stands.
 
 **Fixed:** the runners that let the environment win (`ci:regression`, `ci:monitor`, `deploy:pr`, `/preflight`)
 took `.env.playwright.<env>` for the environment: the resolver had put it there as `KEY_<ENV>` first, so it beat a

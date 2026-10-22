@@ -35,7 +35,8 @@ may sit in dedicated folders — `QA_ENV_PATH` in `.env.local`, `;`-separated, t
 (`QA_ENV_PATH=P:\VC\_VIRTO\tickets\<ticket>\.work\self-qa;P:\VC\_VIRTO\qa-envs`), with `QA_OUTPUT_DIR`'s
 placeholders and nothing appended; `<ticket>` is the run's ticket (`run-folder.mjs use`'s argument, else
 `QA_TICKET=<KEY>` in the environment, else the session's bound run — `use` refuses another ticket while
-`QA_TICKET` is set). A dedicated file beats the project's key by key, pins included: a ticket's folder holds its
+`QA_TICKET` is set; name a `<ticket>` folder with the key in upper case, which a case-sensitive file system needs).
+A dedicated file beats the project's key by key, pins included: a ticket's folder holds its
 own stands and may override a shared env for that ticket's runs. The loader warns when that override changes the
 shared env's `BACK_URL`, `FRONT_URL` or `ENV_RISK`, and stops with an error when no file defines the session's
 bound env. `scripts/lib/env-layers.mjs` is the order, byte-identical with the ai-tools repo's.

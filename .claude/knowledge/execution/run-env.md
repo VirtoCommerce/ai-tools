@@ -50,7 +50,10 @@ QA_ENV_PATH=P:\VC\_VIRTO\tickets\<ticket>\.work\self-qa;P:\VC\_VIRTO\qa-envs
 - **Placeholders** are `QA_OUTPUT_DIR`'s — `<ticket>` (the run's ticket: `run:use`'s argument, else `QA_TICKET=<KEY>`
   in the environment, else the session's bound run; `QA_TICKET` beats a bound run as `TEST_ENV` beats the env
   binding, so `run:use` refuses another ticket while it is set), `<env>`, `<sprint>` — and nothing is appended. A
-  folder whose placeholder has no value is skipped.
+  folder whose placeholder has no value is skipped. A `<ticket>` folder is named with the key in upper case
+  (`VCST-6314`): on a case-sensitive file system (Linux, macOS) a lower-case one is listed but never opened.
+  `run:use --clear` also removes an env binding that only the ticket's folder defined: with no run bound, no file
+  would define that env.
 - **A dedicated file beats the project root key by key**, `KEY_<ENV>` pins included. A ticket's folder holds its
   own stands (`.env.vcst_6314`, `.env.vcst_6314_es` — ticket-based names) and may override a shared env for that
   ticket's runs only (a `.env.vcptcore_dev` there). Each file is self-contained: none extends another. A stand
@@ -69,17 +72,22 @@ QA_ENV_PATH=P:\VC\_VIRTO\tickets\<ticket>\.work\self-qa;P:\VC\_VIRTO\qa-envs
   upper- and a lowercase letter), because the seeders set it on accounts.
 - **`PASSWORDS=master`** in the stand's own env file opts it in: the project root's `.env.<env>` for an env the
   repo defines, else its file in its `QA_ENV_PATH` folder. A line in `.env.local` or a ticket folder's override of a
-  repo env is ignored with a warning: it would switch a stand others use, and seeding would reset that stand's
-  accounts to the master password. The stand's file then holds no passwords. Every test-account
+  repo env is ignored with a warning, and one in the process environment (inherited, or passed by CI) is ignored too:
+  each would switch a stand others use, and seeding would reset that stand's accounts to the master password. The
+  stand's file then holds no passwords. Without `.env.playwright.master` its test-account passwords are unset, never
+  another stand's. Every test-account
   password variable resolves to the master value: the role registry, every name the suites and test-data type,
   and the platform admin's `ADMIN_PASSWORD` — the seeders sign in as the admin, so the stand's admin must use the
-  master password too (a seeder's `invalid_grant` there says so). Accounts nothing names keep their own. A
+  master password too (a seeder's `invalid_grant` there says so). Accounts nothing names keep their own, so a value
+  that is not an account's password — a deliberately wrong or a new password in a case — is never named
+  `*_PASSWORD`: on a master stand it would equal the master password. A
   production stand (`ENV_RISK=production`) is never a master stand: its `PASSWORDS=master` is ignored with a
   warning. A shared stand keeps per-env passwords unless the team agrees.
 - **The lanes type `MASTER_PASSWORD` in every password field.** `npm run secrets:sync:all` copies it into
   `.env.playwright.all` as one stable line, so a new master stand needs no re-sync and no reconnect. The
   `enforce-secret-token` hook blocks the master password — `MASTER_PASSWORD`, or any name whose value is a copy of
-  it — in a session whose stand did not opt in, or that no binding, `TEST_ENV` or `.env.test-env` chose.
+  it — in a session whose stand did not opt in, or that no binding, `TEST_ENV` or `.env.test-env` chose, and when
+  it cannot resolve the stand at all (no `node_modules`, an env file it cannot layer).
 
 ## What every dispatch brief carries
 
