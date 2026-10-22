@@ -18,15 +18,15 @@ const rows = (text) => text.split("\n").filter((l) => /^\|/.test(l) && !/^[\s|:-
 // No floor maps to "Test model": the model runs if and only if a risk has technique MODEL (6e, M9), and the floors
 // that used to force it now force a MODEL risk instead (MODEL_RISK_FOR; F1's half is 6c).
 const ARTIFACTS_FOR = { F1: ["Exploratory"], F2: ["Exploratory"], F3: ["Visual lane"], F8: ["Visual lane"],
-  F5: ["Coverage triage + regression"] };
+  F5: ["Coverage triage + regression"], F12: ["Exploratory"] };
 // A fired floor here needs its OWN risk: Source carries the token `floor:<id>`, technique is MODEL (M10). A risk carries
 // at most one such token. A fixed token, not a bare id, so a passing mention of "F10" in prose never counts.
 const MODEL_RISK_FOR = { F2: "a purpose", F10: "an org-context", F11: "a configuration" };
 
-export function checkStrategy(md, bundle, { domainMapText = null, p01Names } = {}) {
+export function checkStrategy(md, bundle, { domainMapText = null, p01Names, changeMap = null, changeMapPath = null } = {}) {
   if (bundle?.schema !== "ticket-context/1") return { round: 0, errors: ["0: bundle is not a ticket-context/1 bundle"] };
   md = String(md).replace(/\r\n?/g, "\n"); // a CRLF checkout (core.autocrlf) reads the same as the LF file
-  const floors = computeFloors(bundle, { domainMapText, ...(p01Names ? { p01Names } : {}) });
+  const floors = computeFloors(bundle, { domainMapText, changeMap, ...(p01Names ? { p01Names } : {}) });
   const errors = [];
   const sec = lastRound(md);
   const head = /^## Round (\d+)/.exec(sec);
@@ -80,6 +80,13 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names } = {
   const modelRisks = risks.filter((x) => isModel(x.r)).map((x) => x.r);
   if (modelRisks.length && !running("Test model")) errors.push(`6e: ${modelRisks.join(", ")} technique MODEL ⇒ Test model is RUN (M9)`);
   if (!modelRisks.length && running("Test model")) errors.push("6e: Test model is RUN but no risk has technique MODEL — SKIP — no MODEL risk (M9)");
+  // 6g: F12 reads a file the caller passes, so the header names it and the gate must be given the same one — otherwise
+  // leaving --change-map off the gate would turn F12 off unseen.
+  const cm = /^Change map:[ \t]*(.*)$/m.exec(sec)?.[1].trim() ?? "";
+  const named = cm && !/^none\b/i.test(cm) ? cm : null;
+  if (named && !changeMapPath) errors.push(`6g: the header names change map ${named} but the gate was not given it (--change-map)`);
+  else if (!named && changeMapPath) errors.push(`6g: the gate was given --change-map ${changeMapPath} but no 'Change map:' line names it`);
+  else if (named && resolve(named) !== resolve(changeMapPath)) errors.push(`6g: the header names change map ${named}, the gate was given ${changeMapPath}`);
   for (const x of risks) {
     const own = Object.keys(MODEL_RISK_FOR).filter((id) => names(x, id));
     if (own.length > 1) errors.push(`6f: ${x.r} carries ${own.map((id) => `floor:${id}`).join(" and ")} — one floor, one risk (M10)`);
@@ -94,11 +101,13 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names } = {
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const arg = (n) => { const i = process.argv.indexOf(`--${n}`); return i < 0 ? null : process.argv[i + 1]; };
-  if (!arg("strategy") || !arg("bundle")) { console.error("usage: check-strategy.mjs --strategy <md> --bundle <json>"); process.exit(1); }
+  if (!arg("strategy") || !arg("bundle")) { console.error("usage: check-strategy.mjs --strategy <md> --bundle <json> [--change-map <json>]"); process.exit(1); }
   let md;
   try { md = readFileSync(arg("strategy"), "utf8"); } catch (e) { console.error(`check-strategy.mjs: cannot read ${arg("strategy")} (${e.code ?? e.message})`); process.exit(2); }
   const bundle = readJsonOrExit(arg("bundle"), "check-strategy.mjs");
-  const res = checkStrategy(md, bundle, { domainMapText: domainMapTextOf(bundle), p01Names: p01NamesOf() });
+  const changeMapPath = arg("change-map") || null;
+  const changeMap = changeMapPath ? (readJsonOrExit(changeMapPath, "check-strategy.mjs") ?? {}) : null; // a `null` file is a map in doubt
+  const res = checkStrategy(md, bundle, { domainMapText: domainMapTextOf(bundle), p01Names: p01NamesOf(), changeMap, changeMapPath });
   console.log(JSON.stringify(res, null, 2));
   process.exit(res.errors.length ? 1 : 0);
 }
