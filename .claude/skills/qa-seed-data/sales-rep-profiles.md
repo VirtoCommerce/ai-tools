@@ -124,7 +124,7 @@ sweep a silent no-op that *reports success*. Re-run this probe after a platform 
 
 ## 5. Reusing a real person's account as a rep
 
-The demo's two reps are real colleagues. Three rules follow, and the seeder enforces all three:
+The demo's reps are real colleagues. Three rules follow, and the seeder enforces all three:
 
 1. **Never `POST /api/sales-rep` for them.** It is a CREATE shape carrying `password`, and
    `ensureRep()` in `seed-sales-rep.mjs` calls `resetSecurityPassword()` on every reseed of an
@@ -145,6 +145,22 @@ password field at all**. Verified live 2026-09-23 on `oleg@virtoworks.com`: addi
 `Advanced Sales Representative` made `GET /api/sales-rep/{memberId}` resolve with
 `hasGlobalSalesRepRole: true` and put him in `POST /api/sales-rep/search`, with no second Contact
 created (the rep id is his existing contact id).
+
+**A rep who also holds buyer memberships.** `PUT /api/sales-rep` overwrites the rep contact's
+`organizations[]` with the served list, and an organization dropped from it takes the rep's WHOLE
+membership with it, buyer roles included; adding a served org only adds the sales-rep role to an
+existing membership (measured on virtostart 2026-10-22, `KB-D173BBB8`). `attachServedOrgs()`
+therefore refuses the write, with a SKIP naming the organizations, while it would drop any. The
+third rep (`DEMO_REP_SWITCHER`) is that case: its own ten-organization book (`DORG-SW-*`) is also
+where it holds buyer memberships with varied roles, two of them locked — and a LOCKED membership takes that organization
+out of the rep's hub entirely (customers, orders, statistics; `KB-3AD6DEAA`, confirmed live
+2026-10-22), so its hub shows 8 customers, not 10. Its email is set only in `.env.local`
+(`SR_DEMO_REP_SWITCHER_EMAIL_<ENV>`) — a real colleague, kept out of the repo.
+
+**`storeCatalog: true`** on a `DEMO_ORGS` row draws its product pool from the store's own catalog
+(read live from `GET /api/stores/{id}`), not from every catalog the admin search reaches. On
+virtostart the store sells electronics while name-matched marketplace products live in other
+catalogs: orders accept them, carts refuse them (`PRODUCT_PRICE_INVALID`). The `DORG-SW-*` book uses it.
 
 **Which role matters.** Per `domain/sales-rep.md` §3b, a plain `Sales Representative` gets **no
 Document library** — no sidebar link, no dashboard widget. A demo rep who must show documents needs

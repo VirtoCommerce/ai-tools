@@ -150,6 +150,135 @@ export const DEMO_ORGS = [
     productSearch: 'cable',
     productMatch: /\b(cable|cord|charger|charging|wire)\b/i,
   },
+
+  // ---- The org-switcher book (DEMO_REP_SWITCHER) -----------------------------------------------
+  // The ten organizations of the storefront organization-switcher mockup. The NAMES are the
+  // mockup's, so they must match exactly: on virtostart they already exist (created 2026-10-22
+  // with the rep's own memberships), and ensureOrgs() adopts an existing org by name.
+  //
+  // `storeCatalog: true` — draw from the STORE's catalog only (resolved live from DEMO_STORE), not
+  // from every catalog the admin search reaches. Measured on virtostart 2026-10-22: B2B-store's
+  // catalog is electronics, and the name-matched marketplace products the admin search returns are
+  // NOT in it, so a rep cannot put them in a cart (PRODUCT_PRICE_INVALID on every candidate) and
+  // Top sellers would link to products the storefront does not show. Hence technology families:
+  // every one of these businesses buys IT, and only store products make carts and lists work.
+  {
+    key: 'DORG-SW-NWTOOLS',
+    name: 'Northwind Tools',
+    line1: '1120 NW Couch Street',
+    city: 'Portland', regionName: 'Oregon', postalCode: '97209',
+    countryCode: 'USA', countryName: 'United States',
+    phone: '+1 503 555 0171', email: 'orders@northwindtools.example',
+    productSearch: 'laptop',
+    productMatch: /\b(laptops?|notebook|chromebook|macbook)\b/i,
+    productExclude: /\b(memory|so-dimm|ddr\d|sleeve|bag|case)\b/i,
+    storeCatalog: true,
+  },
+  {
+    key: 'DORG-SW-BAYSIDE',
+    name: 'Bayside Garden & Gift',
+    line1: '1 Ferry Building, Suite 42',
+    city: 'San Francisco', regionName: 'California', postalCode: '94111',
+    countryCode: 'USA', countryName: 'United States',
+    phone: '+1 415 555 0136', email: 'hello@baysidegardengift.example',
+    productSearch: 'tablet',
+    productMatch: /\b(tablets?|tab|ipad)\b/i,
+    productExclude: /\b(protection|case|cover|protector|keyboard)\b/i,
+    storeCatalog: true,
+  },
+  {
+    key: 'DORG-SW-BLUERIDGE',
+    name: 'Blue Ridge Mercantile',
+    line1: '33 Page Avenue',
+    city: 'Asheville', regionName: 'North Carolina', postalCode: '28801',
+    countryCode: 'USA', countryName: 'United States',
+    phone: '+1 828 555 0154', email: 'buying@blueridgemercantile.example',
+    productSearch: 'phone',
+    productMatch: /\b(phone|iphone|pixel|galaxy|redmi|smartphone)\b/i,
+    productExclude: /\b(case|protection|protector|holder|watch|tab)\b/i,
+    storeCatalog: true,
+  },
+  {
+    key: 'DORG-SW-CEDARPOINT',
+    name: 'Cedar Point Provisions',
+    line1: '1 Cedar Point Drive',
+    city: 'Sandusky', regionName: 'Ohio', postalCode: '44870',
+    countryCode: 'USA', countryName: 'United States',
+    phone: '+1 419 555 0187', email: 'kitchen@cedarpointprovisions.example',
+    productSearch: 'router',
+    productMatch: /\b(router|gateway|access point|mesh)\b/i,
+    storeCatalog: true,
+  },
+  {
+    key: 'DORG-SW-COASTAL',
+    name: 'Coastal Décor Co',
+    line1: '250 King Street',
+    city: 'Charleston', regionName: 'South Carolina', postalCode: '29401',
+    countryCode: 'USA', countryName: 'United States',
+    phone: '+1 843 555 0163', email: 'studio@coastaldecor.example',
+    productSearch: 'tv',
+    productMatch: /\b(tv|television|qled|oled)\b/i,
+    productExclude: /\b(mount|stand|monitor)\b/i,
+    storeCatalog: true,
+  },
+  {
+    key: 'DORG-SW-DRIFTINN',
+    name: 'Drift Inn Resort',
+    line1: '3100 Ocean Front Walk',
+    city: 'San Diego', regionName: 'California', postalCode: '92109',
+    countryCode: 'USA', countryName: 'United States',
+    phone: '+1 619 555 0148', email: 'purchasing@driftinnresort.example',
+    productSearch: 'monitor',
+    productMatch: /\b(monitor|display)\b/i,
+    productExclude: /\b(arm|mount|stand|protector)\b/i,
+    storeCatalog: true,
+  },
+  {
+    key: 'DORG-SW-GREENLEAF',
+    name: 'Greenleaf Garden Center',
+    line1: '1300 Nicollet Mall',
+    city: 'Minneapolis', regionName: 'Minnesota', postalCode: '55403',
+    countryCode: 'USA', countryName: 'United States',
+    phone: '+1 612 555 0119', email: 'store@greenleafgarden.example',
+    productSearch: 'speaker',
+    productMatch: /\b(speaker|echo|homepod|soundbar)\b/i,
+    productExclude: /\bspeakerphone\b/i,
+    storeCatalog: true,
+  },
+  {
+    key: 'DORG-SW-HARBORLIGHT',
+    name: 'Harbor Light Gifts',
+    line1: '301 Light Street',
+    city: 'Baltimore', regionName: 'Maryland', postalCode: '21202',
+    countryCode: 'USA', countryName: 'United States',
+    phone: '+1 410 555 0192', email: 'shop@harborlightgifts.example',
+    productSearch: 'camera',
+    productMatch: /\b(camera|webcam)\b/i,
+    storeCatalog: true,
+  },
+  {
+    key: 'DORG-SW-IRONWOOD',
+    name: 'Ironwood Industrial',
+    line1: '600 Grant Street',
+    city: 'Pittsburgh', regionName: 'Pennsylvania', postalCode: '15219',
+    countryCode: 'USA', countryName: 'United States',
+    phone: '+1 412 555 0125', email: 'procurement@ironwoodindustrial.example',
+    productSearch: 'nas',
+    productMatch: /\b(nas|diskstation|lockerstor)\b/i,
+    storeCatalog: true,
+  },
+  {
+    key: 'DORG-SW-LAKEVIEW',
+    name: 'Lakeview Outfitters',
+    line1: '2511 Main Street',
+    city: 'Lake Placid', regionName: 'New York', postalCode: '12946',
+    countryCode: 'USA', countryName: 'United States',
+    phone: '+1 518 555 0177', email: 'gear@lakeviewoutfitters.example',
+    productSearch: 'headset',
+    productMatch: /\b(headsets?|headphones?|earbuds?)\b/i,
+    productExclude: /\bvr\b/i,
+    storeCatalog: true,
+  },
 ];
 
 /**
@@ -211,7 +340,7 @@ export const PLATFORM_SALES_REP_ROLES = [SALES_REP_ROLE_BASIC, SALES_REP_ROLE_AD
 export const roleSeesDocuments = (roleName) => String(roleName || '').trim() === SALES_REP_ROLE_ADVANCED;
 
 /**
- * The two reps, and the organizations each serves.
+ * The reps, and the organizations each serves.
  *
  * DORG-CONTOSO is served by BOTH on purpose. A demo where every customer has exactly one rep cannot
  * show the multi-rep surface at all — `customerSalesReps` would return a single row everywhere, and
@@ -251,6 +380,28 @@ export const DEMO_REPS = [
     purpose: 'Second rep, smaller book, sharing Contoso with Volkova so the multi-rep-per-customer '
       + 'surface is non-degenerate.',
   },
+  {
+    key: 'DEMO_REP_SWITCHER',
+    emailVar: 'SR_DEMO_REP_SWITCHER_EMAIL',
+    passwordVar: 'SR_DEMO_REP_SWITCHER_PASSWORD',
+    // A real colleague's account, so the identity lives ONLY in the env (SR_DEMO_REP_SWITCHER_EMAIL,
+    // set per machine in .env.local) and nowhere in the repo. These labels are for log lines only.
+    firstName: 'Switcher', lastName: 'Rep', fullName: 'Switcher demo rep',
+    store: DEMO_STORE,
+    // Verified live 2026-10-22: already Advanced on virtostart, so documents are reachable.
+    salesRepRole: SALES_REP_ROLE_ADVANCED,
+    showsDocuments: true,
+    // Its OWN book, shared with nobody: the ten organizations of the org-switcher mockup. The rep also
+    // holds buyer memberships in them (varied roles, two LOCKED), which is the mockup's point.
+    // Attaching ADDS the sales-rep role to those memberships and keeps the others; detaching
+    // deletes the whole membership (measured 2026-10-22, see attachServedOrgs()).
+    servedOrgs: [
+      'DORG-SW-NWTOOLS', 'DORG-SW-BAYSIDE', 'DORG-SW-BLUERIDGE', 'DORG-SW-CEDARPOINT', 'DORG-SW-COASTAL',
+      'DORG-SW-DRIFTINN', 'DORG-SW-GREENLEAF', 'DORG-SW-HARBORLIGHT', 'DORG-SW-IRONWOOD', 'DORG-SW-LAKEVIEW',
+    ],
+    purpose: 'Third rep: a ten-customer book of its own for working the sales-rep hub, including the '
+      + 'organization switcher with locked memberships.',
+  },
 ];
 
 /** Buyer contacts. Real names, per-organization email domains, no AGENT-TEST anywhere. */
@@ -262,6 +413,21 @@ export const DEMO_CONTACTS = [
   { key: 'DCT-FB-1', org: 'DORG-FABRIKAM', firstName: 'Elena', lastName: 'Duarte', email: 'e.duarte@fabrikam-industrial.example', role: 'Organization manager' },
   { key: 'DCT-FB-2', org: 'DORG-FABRIKAM', firstName: 'Marcus', lastName: 'Webb', email: 'm.webb@fabrikam-industrial.example', role: 'Purchasing agent' },
   { key: 'DCT-WT-1', org: 'DORG-WINGTIP', firstName: 'James', lastName: 'Whitfield', email: 'j.whitfield@wingtip-electrical.example', role: 'Organization maintainer' },
+  // The org-switcher book.
+  { key: 'DCT-SW-NWT-1', org: 'DORG-SW-NWTOOLS', firstName: 'Rachel', lastName: 'Kim', email: 'r.kim@northwindtools.example', role: 'Organization maintainer' },
+  { key: 'DCT-SW-NWT-2', org: 'DORG-SW-NWTOOLS', firstName: 'Victor', lastName: 'Mendes', email: 'v.mendes@northwindtools.example', role: 'Purchasing agent' },
+  { key: 'DCT-SW-BAY-1', org: 'DORG-SW-BAYSIDE', firstName: 'Laura', lastName: 'Chen', email: 'l.chen@baysidegardengift.example', role: 'Organization maintainer' },
+  { key: 'DCT-SW-BLR-1', org: 'DORG-SW-BLUERIDGE', firstName: 'Samuel', lastName: 'Brooks', email: 's.brooks@blueridgemercantile.example', role: 'Organization maintainer' },
+  { key: 'DCT-SW-BLR-2', org: 'DORG-SW-BLUERIDGE', firstName: 'Hannah', lastName: 'Price', email: 'h.price@blueridgemercantile.example', role: 'Purchasing agent' },
+  { key: 'DCT-SW-CDP-1', org: 'DORG-SW-CEDARPOINT', firstName: 'Diego', lastName: 'Alvarez', email: 'd.alvarez@cedarpointprovisions.example', role: 'Organization manager' },
+  { key: 'DCT-SW-CST-1', org: 'DORG-SW-COASTAL', firstName: 'Claire', lastName: 'Dubois', email: 'c.dubois@coastaldecor.example', role: 'Organization maintainer' },
+  { key: 'DCT-SW-DRI-1', org: 'DORG-SW-DRIFTINN', firstName: 'Noah', lastName: 'Patel', email: 'n.patel@driftinnresort.example', role: 'Organization maintainer' },
+  { key: 'DCT-SW-DRI-2', org: 'DORG-SW-DRIFTINN', firstName: 'Grace', lastName: 'Miller', email: 'g.miller@driftinnresort.example', role: 'Purchasing agent' },
+  { key: 'DCT-SW-GRL-1', org: 'DORG-SW-GREENLEAF', firstName: 'Owen', lastName: 'Fletcher', email: 'o.fletcher@greenleafgarden.example', role: 'Organization maintainer' },
+  { key: 'DCT-SW-HBL-1', org: 'DORG-SW-HARBORLIGHT', firstName: 'Megan', lastName: 'Doyle', email: 'm.doyle@harborlightgifts.example', role: 'Purchasing agent' },
+  { key: 'DCT-SW-IRW-1', org: 'DORG-SW-IRONWOOD', firstName: 'Frank', lastName: 'Kowalski', email: 'f.kowalski@ironwoodindustrial.example', role: 'Organization manager' },
+  { key: 'DCT-SW-IRW-2', org: 'DORG-SW-IRONWOOD', firstName: 'Lisa', lastName: 'Novak', email: 'l.novak@ironwoodindustrial.example', role: 'Purchasing agent' },
+  { key: 'DCT-SW-LKV-1', org: 'DORG-SW-LAKEVIEW', firstName: 'Ethan', lastName: 'Ward', email: 'e.ward@lakeviewoutfitters.example', role: 'Organization maintainer' },
 ];
 
 /**
@@ -301,6 +467,31 @@ export const DEMO_ORDERS = [
 
   { key: 'DORD-WT-01', org: 'DORG-WINGTIP', buyer: 'DCT-WT-1', status: 'Completed', total: 3420.60, items: 4, seq: 50 },
   { key: 'DORD-WT-02', org: 'DORG-WINGTIP', buyer: 'DCT-WT-1', status: 'New', total: 990.00, items: 2, seq: 99 },
+
+  // The org-switcher book — two or three per customer, the newest posted last.
+  { key: 'DORD-SW-NWT-01', org: 'DORG-SW-NWTOOLS', buyer: 'DCT-SW-NWT-1', status: 'Completed', total: 2840.00, items: 4, seq: 101 },
+  { key: 'DORD-SW-NWT-02', org: 'DORG-SW-NWTOOLS', buyer: 'DCT-SW-NWT-2', status: 'Processing', total: 615.40, items: 2, seq: 151 },
+  { key: 'DORD-SW-NWT-03', org: 'DORG-SW-NWTOOLS', buyer: 'DCT-SW-NWT-1', status: 'New', total: 1938.75, items: 3, seq: 191 },
+  { key: 'DORD-SW-BAY-01', org: 'DORG-SW-BAYSIDE', buyer: 'DCT-SW-BAY-1', status: 'Completed', total: 742.30, items: 3, seq: 105 },
+  { key: 'DORD-SW-BAY-02', org: 'DORG-SW-BAYSIDE', buyer: 'DCT-SW-BAY-1', status: 'New', total: 318.00, items: 2, seq: 185 },
+  { key: 'DORD-SW-BLR-01', org: 'DORG-SW-BLUERIDGE', buyer: 'DCT-SW-BLR-1', status: 'Completed', total: 1564.90, items: 4, seq: 110 },
+  { key: 'DORD-SW-BLR-02', org: 'DORG-SW-BLUERIDGE', buyer: 'DCT-SW-BLR-2', status: 'Cancelled', total: 289.99, items: 2, seq: 140 },
+  { key: 'DORD-SW-BLR-03', org: 'DORG-SW-BLUERIDGE', buyer: 'DCT-SW-BLR-2', status: 'Processing', total: 976.20, items: 3, seq: 180 },
+  { key: 'DORD-SW-CDP-01', org: 'DORG-SW-CEDARPOINT', buyer: 'DCT-SW-CDP-1', status: 'Completed', total: 2215.00, items: 4, seq: 115 },
+  { key: 'DORD-SW-CDP-02', org: 'DORG-SW-CEDARPOINT', buyer: 'DCT-SW-CDP-1', status: 'New', total: 487.60, items: 2, seq: 175 },
+  { key: 'DORD-SW-CST-01', org: 'DORG-SW-COASTAL', buyer: 'DCT-SW-CST-1', status: 'Completed', total: 1129.50, items: 2, seq: 120 },
+  { key: 'DORD-SW-CST-02', org: 'DORG-SW-COASTAL', buyer: 'DCT-SW-CST-1', status: 'Processing', total: 654.00, items: 2, seq: 170 },
+  { key: 'DORD-SW-DRI-01', org: 'DORG-SW-DRIFTINN', buyer: 'DCT-SW-DRI-1', status: 'Completed', total: 6480.00, items: 4, seq: 125 },
+  { key: 'DORD-SW-DRI-02', org: 'DORG-SW-DRIFTINN', buyer: 'DCT-SW-DRI-2', status: 'Processing', total: 3210.80, items: 3, seq: 160 },
+  { key: 'DORD-SW-DRI-03', org: 'DORG-SW-DRIFTINN', buyer: 'DCT-SW-DRI-2', status: 'New', total: 1875.00, items: 2, seq: 195 },
+  { key: 'DORD-SW-GRL-01', org: 'DORG-SW-GREENLEAF', buyer: 'DCT-SW-GRL-1', status: 'Completed', total: 398.40, items: 3, seq: 130 },
+  { key: 'DORD-SW-GRL-02', org: 'DORG-SW-GREENLEAF', buyer: 'DCT-SW-GRL-1', status: 'Cancelled', total: 126.00, items: 2, seq: 165 },
+  { key: 'DORD-SW-HBL-01', org: 'DORG-SW-HARBORLIGHT', buyer: 'DCT-SW-HBL-1', status: 'Completed', total: 845.25, items: 3, seq: 135 },
+  { key: 'DORD-SW-HBL-02', org: 'DORG-SW-HARBORLIGHT', buyer: 'DCT-SW-HBL-1', status: 'New', total: 267.90, items: 2, seq: 186 },
+  { key: 'DORD-SW-IRW-01', org: 'DORG-SW-IRONWOOD', buyer: 'DCT-SW-IRW-1', status: 'Completed', total: 3925.00, items: 4, seq: 112 },
+  { key: 'DORD-SW-IRW-02', org: 'DORG-SW-IRONWOOD', buyer: 'DCT-SW-IRW-2', status: 'Processing', total: 1460.30, items: 3, seq: 155 },
+  { key: 'DORD-SW-LKV-01', org: 'DORG-SW-LAKEVIEW', buyer: 'DCT-SW-LKV-1', status: 'Completed', total: 2690.00, items: 3, seq: 118 },
+  { key: 'DORD-SW-LKV-02', org: 'DORG-SW-LAKEVIEW', buyer: 'DCT-SW-LKV-1', status: 'New', total: 1149.99, items: 2, seq: 198 },
 ];
 
 export const DEMO_DOC_CATEGORIES = { CATALOGS: 'Catalogs', PRICING: 'Price Lists', CONTRACTS: 'Contracts' };
@@ -373,6 +564,17 @@ export const DEMO_TASKS = [
   { key: 'DTSK-Z-07', rep: 'DEMO_REP_ZHUK', name: 'Resolve invoice query on order {{order:DORD-WT-01}}', type: 'Call', priority: 'High', dueInDays: -2, description: 'James flagged a freight line he did not expect on the invoice.' },
   { key: 'DTSK-Z-08', rep: 'DEMO_REP_ZHUK', name: 'Kick-off call with Wingtip', type: 'Meeting', priority: 'Normal', dueInDays: -5, completed: true, description: 'Introduced the portal and agreed a monthly check-in.' },
   { key: 'DTSK-Z-09', rep: 'DEMO_REP_ZHUK', name: 'Send terms of sale to Contoso', type: 'Email', priority: 'Low', dueInDays: -1, completed: true, description: 'Shared the Terms and Conditions of Sale from the document library.' },
+
+  { key: 'DTSK-S-01', rep: 'DEMO_REP_SWITCHER', name: 'Follow up on Drift Inn lobby displays', type: 'Call', priority: 'High', dueInDays: 0, description: 'Noah wants the second batch of front-desk monitors before the season opens.' },
+  { key: 'DTSK-S-02', rep: 'DEMO_REP_SWITCHER', name: 'Send holiday price list to Blue Ridge', type: 'Email', priority: 'High', dueInDays: 0, description: 'Samuel asked for the updated list ahead of their holiday buying.' },
+  { key: 'DTSK-S-03', rep: 'DEMO_REP_SWITCHER', name: 'Size the NAS expansion — Ironwood Industrial', type: 'Task', priority: 'Normal', dueInDays: 2, description: 'Frank needs storage for camera footage from the new night shift.' },
+  { key: 'DTSK-S-04', rep: 'DEMO_REP_SWITCHER', name: 'Quarterly review — Northwind Tools', type: 'Meeting', priority: 'Normal', dueInDays: 4, description: 'Walk Rachel through order history and the volume pricing tiers.' },
+  { key: 'DTSK-S-05', rep: 'DEMO_REP_SWITCHER', name: 'Chase cancelled order {{order:DORD-SW-BLR-02}} with Blue Ridge', type: 'Call', priority: 'Normal', dueInDays: 1, description: 'Hannah cancelled it; find out whether it can be rebooked.' },
+  { key: 'DTSK-S-06', rep: 'DEMO_REP_SWITCHER', name: 'Headset refresh for Lakeview Outfitters', type: 'Task', priority: 'Low', dueInDays: 8, description: 'Replace the store-floor headsets before the spring season.' },
+  { key: 'DTSK-S-07', rep: 'DEMO_REP_SWITCHER', name: 'Call Harbor Light about portal access', type: 'Call', priority: 'High', dueInDays: -2, description: 'Their organization access is locked; confirm who approves the unlock.' },
+  { key: 'DTSK-S-08', rep: 'DEMO_REP_SWITCHER', name: 'Send revised quote to Cedar Point', type: 'Email', priority: 'Normal', dueInDays: -1, description: 'Diego is waiting on pricing before he releases order {{order:DORD-SW-CDP-02}}.' },
+  { key: 'DTSK-S-09', rep: 'DEMO_REP_SWITCHER', name: 'Confirm delivery of order {{order:DORD-SW-DRI-01}}', type: 'Call', priority: 'Normal', dueInDays: -4, completed: true, description: 'Noah confirmed the full delivery arrived at the resort.' },
+  { key: 'DTSK-S-10', rep: 'DEMO_REP_SWITCHER', name: 'Welcome call with Coastal Décor', type: 'Meeting', priority: 'Normal', dueInDays: -6, completed: true, description: 'Introduced the portal to Claire and agreed a monthly check-in.' },
 ];
 
 // ---- derivations -----------------------------------------------------------
@@ -576,6 +778,9 @@ export const DEMO_LISTS = [
   // A buyer shares with their own colleagues — the other half, so the demo shows both.
   { key: 'DLIST-NW-ORG', scope: 'Organization', author: 'DCT-NW-2', org: 'DORG-NORTHWIND', name: 'Site Consumables', description: 'Everyday consumables kept on the shelf; top up when the bin is half empty.', items: 3 },
   { key: 'DLIST-CN-ORG', scope: 'Organization', author: 'DCT-CN-2', org: 'DORG-CONTOSO', name: 'Print Room Standing Order', description: 'Monthly consumables for the print room.', items: 3 },
+  // The org-switcher book.
+  { key: 'DLIST-SW-DRI-REP', scope: 'Customer', author: 'DEMO_REP_SWITCHER', org: 'DORG-SW-DRIFTINN', name: 'Lobby Refit Picks', description: 'Display options for the lobby refit, matched to the screens already at the front desk.', items: 3 },
+  { key: 'DLIST-SW-BLR-ORG', scope: 'Organization', author: 'DCT-SW-BLR-2', org: 'DORG-SW-BLUERIDGE', name: 'Holiday Shelf Restock', description: 'Phones that sell out first in December.', items: 3 },
 ];
 
 /**
@@ -594,6 +799,10 @@ export const DEMO_CARTS = [
   { key: 'DCART-FB-1', contact: 'DCT-FB-1', items: 2, quantities: [1, 2] },
   { key: 'DCART-FB-2', contact: 'DCT-FB-2', items: 2, quantities: [3, 8] },
   { key: 'DCART-WT-1', contact: 'DCT-WT-1', items: 3, quantities: [12, 4, 2] },
+  { key: 'DCART-SW-NWT-2', contact: 'DCT-SW-NWT-2', items: 2, quantities: [5, 2] },
+  { key: 'DCART-SW-BLR-1', contact: 'DCT-SW-BLR-1', items: 2, quantities: [3, 1] },
+  { key: 'DCART-SW-DRI-2', contact: 'DCT-SW-DRI-2', items: 3, quantities: [10, 4, 2] },
+  { key: 'DCART-SW-IRW-2', contact: 'DCT-SW-IRW-2', items: 2, quantities: [2, 1] },
 ];
 
 /**
@@ -609,6 +818,9 @@ export const DEMO_REP_CARTS = [
   { key: 'DRCART-VOL-FB', rep: 'DEMO_REP_VOLKOVA', org: 'DORG-FABRIKAM', items: 2, quantities: [1, 3], unselect: 1 },
   { key: 'DRCART-ZHK-CN', rep: 'DEMO_REP_ZHUK', org: 'DORG-CONTOSO', items: 2, quantities: [4, 2], unselect: 0 },
   { key: 'DRCART-ZHK-WT', rep: 'DEMO_REP_ZHUK', org: 'DORG-WINGTIP', items: 3, quantities: [15, 8, 3], unselect: 1 },
+  { key: 'DRCART-SW-NWT', rep: 'DEMO_REP_SWITCHER', org: 'DORG-SW-NWTOOLS', items: 3, quantities: [6, 3, 1], unselect: 1 },
+  { key: 'DRCART-SW-DRI', rep: 'DEMO_REP_SWITCHER', org: 'DORG-SW-DRIFTINN', items: 2, quantities: [12, 4], unselect: 0 },
+  { key: 'DRCART-SW-LKV', rep: 'DEMO_REP_SWITCHER', org: 'DORG-SW-LAKEVIEW', items: 2, quantities: [2, 5], unselect: 1 },
 ];
 
 /** Products the active carts need from each org's pool. */

@@ -89,6 +89,7 @@ const PROTECTED_EMAILS = new Set(
       [
         (process.env.SR_DEMO_REP_ZHUK_EMAIL || '').trim().toLowerCase(),
         (process.env.SR_DEMO_REP_VOLKOVA_EMAIL || '').trim().toLowerCase(),
+        (process.env[`SR_DEMO_REP_SWITCHER_EMAIL_${TEST_ENV.toUpperCase()}`] || process.env.SR_DEMO_REP_SWITCHER_EMAIL || '').trim().toLowerCase(),
       ].filter(Boolean),
     ),
 );
