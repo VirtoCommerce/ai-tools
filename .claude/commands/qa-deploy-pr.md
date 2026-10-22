@@ -29,8 +29,12 @@ terminal entry; the skill holds the methodology, the env wiring, and the deliver
 - **Tracker-agnostic:** the explicit `--pr`/`--module` path works with any tracker; ticket-key
   auto-resolution uses the configured tracker's dev links (Jira today) — on Azure Boards pass
   the PRs via `--pr`.
-- **Env-aware:** the `vc-deploy-dev` branch + `BACK_URL` come from `TEST_ENV` / `.env.<env>`
-  (`vcst`→`vcst-qa`, else the branch matching the env). Never hardcode `vcst-qa`.
+- **Env-aware:** the `vc-deploy-dev` branch + `BACK_URL` come from `TEST_ENV` / `.env.<env>` — the
+  project root's or a `QA_ENV_PATH` folder's, a dedicated cloud stand's included (`DEPLOY_BRANCH`;
+  [`run-env.md`](../knowledge/execution/run-env.md)) — `vcst`→`vcst-qa`, else the branch matching the env.
+  Never hardcode `vcst-qa`.
+- **A local stand is refused:** an env whose `BACK_URL` is on this machine runs the ticket's own build, so
+  there is nothing to deploy — the script exits before any tracker or GitHub call. Name a cloud stand's env.
 
 Deterministic core: `scripts/deploy/vc-deploy.ts pr` (core in `scripts/deploy/pr/pr.ts` + `scripts/deploy/lib/`; `npm run deploy:pr` /
 `deploy:pr:apply`). Gate context: `.claude/knowledge/execution/quality-gates.md` (G6 E2E verification) +

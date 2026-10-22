@@ -4,7 +4,8 @@
 //   npm run run:use -- <TICKET> [<env>]        Step 0 of a ticket run: bind this session's env (as env:use — the
 //                                              argument, else the default) and its run folder; create the folder;
 //                                              print both, and the ticket's prior run folders
-//   npm run run:use -- --clear                 unbind the run folder (the env binding stays)
+//   npm run run:use -- --clear                 unbind the run folder (the env binding stays, unless only a
+//                                              ticket's folder defines that env)
 //   npm run run:dir                            print this session's run folder (exit 1 when none is bound)
 //   npm run run:dir -- --ticket <KEY> [--env <env>]   resolve a ticket's run folder without binding anything
 //   npm run run:dir -- --ticket <KEY> --prior         every existing run folder of the ticket (all envs, older layouts)
@@ -17,8 +18,10 @@
 import '../lib/sync-stdio.mjs'; // before any output: a piped stdout must not lose its tail to process.exit()
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { parse } from 'dotenv';
 import { BindError, bindSessionEnv, describeSessionEnv, pruneStale } from '../lib/session-env.mjs';
 import { sessionEnvFile } from '../lib/resolve-test-env.js';
+import { dedicatedEnvs, findEnv, knownEnvs } from '../lib/env-layers.mjs';
 import { TICKET_KEY, allRunDirs, completeTemplate, priorRunDirs, resolveRunDir, runDirTemplate, laneScreenshots, runLayout, sessionRun } from '../lib/run-dir.mjs';
 import { loadEnv } from '../lib/load-env.mjs';
 
@@ -51,10 +54,29 @@ function listPrior(ticket, own) {
   for (const p of prior) console.log(`    ${p.dir}  (${p.env ?? 'before the env level'})`);
 }
 
+/** The env a ticket's own QA_ENV_PATH folder defines, when it defines exactly one (`.env.vcst_6314` for VCST-6314);
+ *  else null. A ticket run with no env argument binds it instead of the checkout default. An env the project root
+ *  defines too is not the ticket's own: the folder only overrides that shared stand for the ticket's runs. */
+function ticketStand(ticket) {
+  const shared = new Set(knownEnvs());
+  const envs = new Set(dedicatedEnvs().filter((e) => e.ticket === ticket && !e.secrets && !shared.has(e.env)).map((e) => e.env));
+  return envs.size === 1 ? [...envs][0] : null;
+}
+
 function use() {
   if (args.includes('--clear')) {
     const had = runFile && existsSync(runFile);
     if (had) rmSync(runFile);
+    // An env only a ticket's folder defines (vcst_6314) cannot be found once no run fills `<ticket>`: a binding to it
+    // would stop every loader. It goes too, and the session resolves its default again.
+    const envFile = sessionEnvFile();
+    const bound = envFile && existsSync(envFile) ? parse(readFileSync(envFile)).TEST_ENV?.trim() : undefined;
+    if (bound && !findEnv(bound)) {
+      rmSync(envFile);
+      console.log(`${had ? `removed ${fwd(runFile)} and` : 'removed'} the env binding: ${bound} is a ticket's own stand, and with no run bound no file defines it`);
+      for (const line of describeSessionEnv().lines) console.log(line);
+      return;
+    }
     console.log(had ? `removed ${fwd(runFile)} (the env binding stays)` : 'this session has no run folder bound');
     return;
   }
@@ -62,14 +84,25 @@ function use() {
   const positionals = args.filter((a, i) => !a.startsWith('--') && !(envAt !== -1 && i === envAt + 1));
   const ticket = positionals[0]?.toUpperCase();
   if (!ticket || !TICKET_KEY.test(ticket)) throw new BindError(`run:use needs a ticket key (VCST-1234, or an Azure Boards id) first, got "${positionals[0] ?? ''}"`);
-  const envArg = value('--env') ?? positionals[1];
+  // QA_TICKET in the environment beats the bound run for QA_ENV_PATH's <ticket> folders, as TEST_ENV beats the env
+  // binding: bound to another ticket, this run would still read that ticket's stands.
+  const inherited = process.env.QA_TICKET?.trim().toUpperCase();
+  if (inherited && TICKET_KEY.test(inherited) && inherited !== ticket) {
+    throw new BindError(`this session's environment sets QA_TICKET=${inherited}, which beats a bound run: the QA_ENV_PATH <ticket> folders would still be ${inherited}'s. ` +
+      `Start Claude Code from a shell without QA_TICKET, or bind ${inherited}'s run instead.`);
+  }
+  const named = value('--env') ?? positionals[1];
+  // No env named: the ticket's own stand when its QA_ENV_PATH folder defines exactly one env, else the default.
+  const ownStand = named ? null : ticketStand(ticket);
+  if (ownStand) console.log(`env: ${ownStand} — ${ticket}'s own stand (the only env its QA_ENV_PATH folder defines)`);
+  const envArg = named ?? ownStand ?? undefined;
   // A run folder that cannot resolve or be created (an unmounted drive in QA_OUTPUT_DIR) must change nothing: keep
   // the env binding to put it back, and write the run binding only once the folder exists — else the new env would
   // sit beside the previous run's folder.
   const envFile = sessionEnvFile();
   const envBefore = envFile && existsSync(envFile) ? readFileSync(envFile, 'utf8') : null;
-  if (bindSessionEnv(envArg, { reason: `run:use ${ticket}` }) === null) console.log('not in a Claude Code session (no CLAUDE_CODE_SESSION_ID): nothing is bound; TEST_ENV resolves per process');
-  const { testEnv, sourceOf, lines } = describeSessionEnv();
+  if (bindSessionEnv(envArg, { reason: `run:use ${ticket}`, ticket }) === null) console.log('not in a Claude Code session (no CLAUDE_CODE_SESSION_ID): nothing is bound; TEST_ENV resolves per process');
+  const { testEnv, sourceOf, lines } = describeSessionEnv({ ticket });
   let dir;
   try {
     dir = resolveRunDir({ ticket, env: testEnv });
@@ -111,7 +144,7 @@ function dir() {
     return;
   }
   if (!TICKET_KEY.test(ticket)) throw new BindError(`--ticket expects a key (VCST-1234, or an Azure Boards id), got "${ticket}"`);
-  const { testEnv } = loadEnv({ fallback: 'vcst' });
+  const { testEnv } = loadEnv({ fallback: 'vcst', ticket });
   if (args.includes('--prior')) {
     const prior = priorRunDirs({ ticket });
     if (args.includes('--json')) console.log(JSON.stringify(prior, null, 2));
