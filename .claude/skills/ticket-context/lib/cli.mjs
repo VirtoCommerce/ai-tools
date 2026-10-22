@@ -5,7 +5,7 @@ import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from "no
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { assertKey, cacheDir, isInside, newRunDir, outputRoot, removeRunDir, sweepStaleRuns } from "./paths.mjs";
-import { loadLayeredEnv } from "./env.mjs";
+import { LAYERS_GAP, loadLayeredEnv } from "./env.mjs";
 import { codeHostCredential, readProfile, resolveProfile, trackerCredential } from "./profile.mjs";
 import { GAP_REASONS, SCHEMA, asGap, gap } from "./gap.mjs";
 import { validateDef } from "./schema.mjs";
@@ -21,6 +21,7 @@ import { freshnessKey, isIgnored, readCached, skillFingerprint, writeCache } fro
 import { DOMAIN_RE, knownGround } from "./known.mjs";
 import { CHANGE_PART_RE, OUT_FILES, checkAgentOutputs, compose, mergeChange } from "./compose.mjs";
 import { checkBundle } from "./check-bundle.mjs";
+import { extractAgentOutput, findAgentTranscript, readTranscript } from "./agent-output.mjs";
 
 const argv = process.argv.slice(2);
 const cmd = argv[0];
@@ -32,7 +33,7 @@ const writeJson = (p, o) => writeFileSync(p, JSON.stringify(o, null, 2));
 /** An output a model (or the runner) wrote: unparsable is a schema failure naming the file — the documented
  *  re-dispatch path (exit 2) — never a crash (exit 3). */
 const readOutput = (dir, name, errors) => { try { return readJson(join(dir, name)); } catch { errors.push(`${name}: not valid JSON`); return undefined; } };
-const USAGE = "usage: cli.mjs prepare <KEY> [--domain <slug>] [--fresh] | attach --prepare <p> --ref <ref> (--file <path> | --gap <reason> [--detail <text>]) | merge-change --prepare <p> | deploy --prepare <p> | known --prepare <p> | compose --prepare <p> | check --prepare <p> | finish --prepare <p> | abort --prepare <p> | redeploy <KEY> --bundle <p>";
+const USAGE = "usage: cli.mjs prepare <KEY> [--domain <slug>] [--fresh] | attach --prepare <p> --ref <ref> (--file <path> | --gap <reason> [--detail <text>]) | save --prepare <p> --agent <id> --as <file> | merge-change --prepare <p> | deploy --prepare <p> | known --prepare <p> | compose --prepare <p> | check --prepare <p> | finish --prepare <p> | abort --prepare <p> | redeploy <KEY> --bundle <p>";
 function usage(msg) { console.error(`✗ ${msg}\n${USAGE}`); process.exit(1); }
 const root = outputRoot();
 const ignored = (p) => isIgnored(root, p);
@@ -82,12 +83,13 @@ async function prepare() {
   try { sweepStaleRuns(key, { root }); } catch { /* a failed sweep never blocks the run; the next prepare retries */ }
   const domain = flag("domain") ?? null; // part of the freshness key: known ground differs per domain
   if (domain !== null && !DOMAIN_RE.test(domain)) usage("--domain must be a slug: letters, digits, '-' or '_'");
-  const testEnv = loadLayeredEnv(root);
+  const testEnv = loadLayeredEnv(root, key);
   const profile = resolveProfile(readProfile(root));
   const tcred = trackerCredential(profile);
   if (!tcred.ok) { out({ status: "no-tracker", gap: gap("ticket", tcred.reason, tcred.detail) }); process.exit(3); }
   const jira = jiraClient(tcred);
   const gaps = [];
+  if (LAYERS_GAP) gaps.push(gap("env", "not-available-in-install", LAYERS_GAP));
 
   const allFields = await jira.fields();
   const acFields = resolveFieldsByName(allFields, profile.fieldMap.acceptanceCriteria, AC_FIELD_NAME_RE);
@@ -250,6 +252,22 @@ function attach() {
   out({ status: "attached", ref, local_path: it.local_path ?? null, gap: it.gap ?? null });
 }
 
+/** Step 2: an analyst's returned JSON, read from its own transcript and written verbatim — never retyped. */
+function save() {
+  const prep = readJson(prepPath());
+  const agent = flag("agent") ?? usage("--agent <id> is required (the id its hand-back names)");
+  const name = flag("as") ?? usage("--as <file> is required");
+  const allowed = [OUT_FILES.ticket, OUT_FILES.materials, OUT_FILES.change];
+  if (!allowed.includes(name) && !CHANGE_PART_RE.test(name)) usage(`--as must be ${allowed.join(", ")} or change.<n>.out.json`);
+  let transcript;
+  try { transcript = findAgentTranscript(agent); } catch (e) { usage(e.message); }
+  if (!transcript) { out({ status: "not-found", agent }); process.exit(3); }
+  const text = extractAgentOutput(readTranscript(transcript));
+  if (text === null) { out({ status: "no-json", agent, detail: "the agent's last message is not one JSON object — re-dispatch it" }); process.exit(2); }
+  writeFileSync(join(prep.run_dir, name), `${text}\n`);
+  out({ status: "saved", file: name, bytes: text.length });
+}
+
 /** Step 2 with one CHANGE dispatch per product PR: change.<n>.out.json (each saved verbatim) → change.out.json. */
 function mergeChangeCmd() {
   const prep = readJson(prepPath());
@@ -312,7 +330,7 @@ function composeCmd() {
 
 function gate(prep) {
   const bundle = readJson(join(prep.run_dir, "bundle.json"));
-  loadLayeredEnv(root); // so an env-layer FIGMA_TOKEN is in the secret set here too, as it was in prepare
+  loadLayeredEnv(root, prep.ticket); // so an env-layer FIGMA_TOKEN is in the secret set here too, as it was in prepare
   return { bundle, errors: checkBundle(bundle, prep, { secrets: loadSecretValues(root) }) };
 }
 
@@ -368,7 +386,7 @@ function redeploy() {
   out({ status: "redeployed", bundle_path: bp, chain_deployed: d.chain_deployed, blockers: d.blockers });
 }
 
-const commands = { prepare, attach, "merge-change": mergeChangeCmd, deploy, known, compose: composeCmd, check, finish, abort, redeploy };
+const commands = { prepare, attach, save, "merge-change": mergeChangeCmd, deploy, known, compose: composeCmd, check, finish, abort, redeploy };
 if (!commands[cmd]) usage(cmd ? `unknown command "${cmd}"` : "no command");
 try { await commands[cmd](); } catch (e) {
   console.error(`✗ ticket-context ${cmd} could not run: ${String(e?.message ?? e).slice(0, 300)}`);

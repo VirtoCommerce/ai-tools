@@ -29,5 +29,9 @@ export interface LoadEnvOptions {
 
 export declare function loadEnv(options?: LoadEnvOptions & { fallback?: string }): LoadedEnv;
 
+/** The TEST_ENV resolveTestEnv() picks, written to process.env, without exposing `.env.playwright.<env>` — for a
+ *  caller that loads the layers next. */
+export declare function selectTestEnv(fallback?: string): string;
+
 /** loadEnv for a named env the caller already resolved. */
 export declare function loadEnvFor(testEnv: string, options?: LoadEnvOptions): LoadedEnv;

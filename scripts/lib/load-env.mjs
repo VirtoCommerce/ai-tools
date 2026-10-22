@@ -1,6 +1,6 @@
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { resolveTestEnv } from './resolve-test-env.js';
+import { testEnvChoice } from './resolve-test-env.js';
 import { applyLayered } from './env-layers.mjs';
 import { ROLE_PASSWORD_NAMES } from './env-core.js';
 
@@ -21,12 +21,15 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
  * refresh-graphql-schema.mjs and validate-graphql-fixtures.ts introspected `.env.local`'s localhost on
  * TEST_ENV=vcptcore_dev despite its BACK_URL_VCPTCORE_DEV pin. Call this instead of copying the loop again.
  *
- * TEST_ENV comes from resolveTestEnv() (process.env > the session's binding > .env.test-env > fallback). The
- * layers are read from the repo root. Never exits; warns once when no file defines the env.
+ * TEST_ENV is chosen as resolveTestEnv() chooses it (process.env > the session's binding > .env.test-env > fallback),
+ * by selectTestEnv below. The layers are read from the repo root. Warns once when no file defines the env; throws
+ * when the session is bound to an env no file defines (scripts/lib/env-layers.mjs `applyLayered`).
  *
  * `ambientWins` is for runners that CI drives with `-e` (ci/run-regression.ts, ci/run-monitor.ts): what
  * the process environment already held beats every file and every file's pin, and the files only fill
- * the gaps — config.js's documented intent for CI ("process.env wins"), which its overrides do not do.
+ * the gaps — config.js's documented intent for CI ("process.env wins"), which its overrides do not do. Two
+ * exceptions (env-layers.mjs `layered`): PASSWORDS comes only from the stand's own file, and a copy of an inherited
+ * MASTER_PASSWORD is not the environment's own.
  *
  * @param {{ fallback?: string, ambientWins?: boolean, root?: string, ticket?: string | null }} [options] `fallback`:
  *   TEST_ENV to use when nothing selects one; `ticket`: the run's ticket for QA_ENV_PATH's `<ticket>` (default: QA_TICKET,
@@ -38,7 +41,20 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
  *   'BACK_URL_VCPTCORE_DEV from .env.vcptcore_dev' — print it next to any target you act on.
  */
 export function loadEnv({ fallback = 'vcst', ambientWins = false, root = ROOT, ticket } = {}) {
-  return loadEnvFor(resolveTestEnv(fallback), { ambientWins, root, ticket });
+  return loadEnvFor(selectTestEnv(fallback), { ambientWins, root, ticket });
+}
+
+/**
+ * The TEST_ENV resolveTestEnv() picks, written back to process.env (TEST_ENV, TEST_ENV_SOURCE) as it writes it — but
+ * not its other side effect, `.env.playwright.<env>` exposed in process.env as KEY_<ENV>. For a caller that loads
+ * the layers next: `layered` reads that file itself as its lowest layer, and values put in process.env first pass for
+ * the environment's, so under `ambientWins` the file's pins beat what CI passed and a `.env.local` pin.
+ */
+export function selectTestEnv(fallback = 'vcst') {
+  const { env, source } = testEnvChoice(fallback);
+  process.env.TEST_ENV = env;
+  process.env.TEST_ENV_SOURCE = `${env}|${source}`;
+  return env;
 }
 
 /** loadEnv for a named env (the caller resolved it): the same layers, written into process.env. */

@@ -538,7 +538,9 @@
     "sessionLifetime": "04:00:00",
     "tokenLifetimeMinutes": 15,
     "sessionLifetimeMinutes": 240,
-    "source": "vc-deploy-dev#6693 infra/environments.yml (Punchout__Configurations__0..3), deployed 2026-10-01"
+    "source": "vc-deploy-dev#6693 infra/environments.yml (Punchout__Configurations__0..3, 2026-10-01) + #6926 (Ids qa1-punchout-0..2 added, configuration 3 removed, 2026-10-14)",
+    "deployed": true,
+    "configurationId": "qa1-punchout-0"
   },
   "PUNCHOUT_CONFIG_1": {
     "storeId": "New-super",
@@ -551,7 +553,9 @@
     "sessionLifetime": "00:10:00",
     "tokenLifetimeMinutes": 2,
     "sessionLifetimeMinutes": 10,
-    "source": "vc-deploy-dev#6693 infra/environments.yml (Punchout__Configurations__0..3), deployed 2026-10-01"
+    "source": "vc-deploy-dev#6693 infra/environments.yml (Punchout__Configurations__0..3, 2026-10-01) + #6926 (Ids qa1-punchout-0..2 added, configuration 3 removed, 2026-10-14)",
+    "deployed": true,
+    "configurationId": "qa1-punchout-1"
   },
   "PUNCHOUT_CONFIG_2": {
     "storeId": "AGENT-TEST-no-such-store",
@@ -564,7 +568,9 @@
     "sessionLifetime": "04:00:00",
     "tokenLifetimeMinutes": 15,
     "sessionLifetimeMinutes": 240,
-    "source": "vc-deploy-dev#6693 infra/environments.yml (Punchout__Configurations__0..3), deployed 2026-10-01"
+    "source": "vc-deploy-dev#6693 infra/environments.yml (Punchout__Configurations__0..3, 2026-10-01) + #6926 (Ids qa1-punchout-0..2 added, configuration 3 removed, 2026-10-14)",
+    "deployed": true,
+    "configurationId": "qa1-punchout-2"
   },
   "PUNCHOUT_CONFIG_3": {
     "storeId": "",
@@ -573,11 +579,15 @@
     "senderDomainCheck": false,
     "allowedReturnUrl": "",
     "returnUrlCheck": false,
-    "tokenLifetime": "00:15:00",
-    "sessionLifetime": "04:00:00",
-    "tokenLifetimeMinutes": 15,
-    "sessionLifetimeMinutes": 240,
-    "source": "vc-deploy-dev#6693 infra/environments.yml (Punchout__Configurations__0..3), deployed 2026-10-01"
+    "tokenLifetime": "",
+    "sessionLifetime": "",
+    "tokenLifetimeMinutes": null,
+    "sessionLifetimeMinutes": null,
+    "source": "vc-deploy-dev#6693 infra/environments.yml (Punchout__Configurations__0..3, 2026-10-01) + #6926 (Ids qa1-punchout-0..2 added, configuration 3 removed, 2026-10-14)",
+    "deployed": false,
+    "retired": true,
+    "retiredReason": "not deployable since Punchout PR #2 (build 3.1000.0-pr-2): PunchoutOptionsValidator runs at platform start and refuses a configuration without Id/StoreId, so vc-deploy-dev#6926 removed it from vcptcore-qa1 (2026-10-14). Its secret now matches no configuration (cXML 401). The \"no StoreId\" scenario is a startup failure, not a cXML answer — test it as a deployment check, not with this alias.",
+    "configurationId": ""
   },
   "PUNCHOUT_MAPPING_DEFAULT": {
     "id": "01d406dc-8568-4b08-9263-96ee8ec34416",
@@ -727,5 +737,61 @@
     "org_buildright_id": "91b24624-6b94-4c29-8969-d87d64f7a45c",
     "techflow_membership_id": "55db3264-72e0-47ed-a6a7-decdbc060074",
     "buildright_membership_id": "ed37b41c-0f47-4947-93cf-bf417106c79b"
+  },
+  "PUNCHOUT_MAPPING_REQUISITION": {
+    "id": "7a4437c4-6b5d-4477-b957-496911ae07d1",
+    "userId": "ab33e096-ad35-4636-ad61-0af318f16d56",
+    "memberId": "94bc2d85-ca56-4c42-a573-374fd698b577",
+    "currentOrganizationId": "7c901bc8-e83b-4953-a77c-bbf7d3512d78",
+    "otherOrganizationId": "",
+    "organizationCount": 1,
+    "organizationId": "7c901bc8-e83b-4953-a77c-bbf7d3512d78"
+  },
+  "PUNCHOUT_PRODUCT_UOM": {
+    "id": "0df4bb7d-cd56-43b7-a936-5a3f1ccc54f3",
+    "catalogId": "69a1ed6a-2a71-4cee-b889-6ae8330c5c03",
+    "categoryId": "1c99ffad-89f2-43bc-b7e6-862d730aad60",
+    "ffcId": "142ba5568ae4454aad553ece41b9c3b5"
+  },
+  "PUNCHOUT_PRODUCT_PLAIN": {
+    "id": "adb3ccc9-e204-452f-abb9-de43d30b222a",
+    "catalogId": "69a1ed6a-2a71-4cee-b889-6ae8330c5c03",
+    "categoryId": "1c99ffad-89f2-43bc-b7e6-862d730aad60",
+    "ffcId": "142ba5568ae4454aad553ece41b9c3b5"
+  },
+  "PUNCHOUT_PRICELIST_USD": {
+    "id": "04f095f8-e6f8-4316-9c12-b424dd1b67cb",
+    "currency": "USD",
+    "storeIds": "B2B-store,New-super",
+    "assignmentIds": "2c08c4a1-a679-4631-9ab3-941176ea7d5c,e695a7f2-e571-410d-a2e3-0bb3fb61fd2d"
+  },
+  "PUNCHOUT_PRICELIST_EUR": {
+    "id": "6106ca5b-5977-4036-a87b-25c5a27cf2f4",
+    "currency": "EUR",
+    "storeIds": "B2B-store",
+    "assignmentIds": "0f734391-24be-499b-a6f8-6c1ad9ba94e8"
+  },
+  "PUNCHOUT_STORE_FFC_CONFIG_1": {
+    "storeId": "New-super",
+    "sourceStoreId": "B2B-store",
+    "field": "mainFulfillmentCenterId",
+    "ffcId": "142ba5568ae4454aad553ece41b9c3b5",
+    "assignedFfcId": "142ba5568ae4454aad553ece41b9c3b5",
+    "previousValue": "",
+    "owned": true
+  },
+  "SHELL_SEARCH_NOREAD": {
+    "_inline": true,
+    "platform_id": "cf7ddc24-7b25-4c4b-b0f2-60d5a08fc6dc",
+    "user_id": "cf7ddc24-7b25-4c4b-b0f2-60d5a08fc6dc",
+    "role_id": "AGENT-TEST-Shell-Search-NoRead",
+    "userName": "AGENT-TEST-shell-search-noread@test.virtocommerce.com"
+  },
+  "SHELL_SEARCH_READ": {
+    "_inline": true,
+    "platform_id": "6a0ac2a6-20d2-421e-9dc6-087454a7b1f3",
+    "user_id": "6a0ac2a6-20d2-421e-9dc6-087454a7b1f3",
+    "role_id": "AGENT-TEST-Shell-Search-Read",
+    "userName": "AGENT-TEST-shell-search-read@test.virtocommerce.com"
   }
 }

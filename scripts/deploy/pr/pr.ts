@@ -80,7 +80,7 @@ import { existsSync } from 'node:fs';
 import { basename } from 'node:path';
 import { OWNER, REPO_ROOT, envFilePath, isLocalUrl, loadEnvFiles, resolveEnvCoords } from '../lib/env.ts';
 import { lookedIn } from '../../lib/env-layers.mjs';
-import { resolveTestEnv } from '../../lib/resolve-test-env.js';
+import { selectTestEnv } from '../../lib/load-env.mjs';
 import { fetchFile, getToken, ghJson, setToken } from '../lib/github.ts';
 import { DeliverError, deliverPr } from '../lib/deliver.ts';
 import type { DeliverResult } from '../lib/deliver.ts';
@@ -269,8 +269,9 @@ export async function runPr(args: string[]): Promise<void> {
 
   // The session env as every entry point resolves it (TEST_ENV, else this session's binding, else
   // .env.test-env, else vcst): reading TEST_ENV alone sent a checkout whose env is set only in
-  // .env.test-env to vcst / vcst-qa.
-  const sessionEnv = resolveTestEnv('vcst');
+  // .env.test-env to vcst / vcst-qa. selectTestEnv, not resolveTestEnv: the latter puts .env.playwright.<env> in
+  // process.env first, and loadEnvFiles' ambientWins would then let those pins beat what the environment passed.
+  const sessionEnv = selectTestEnv('vcst');
   loadEnvFiles(sessionEnv);
   const env = named || sessionEnv;
   const c = resolveEnvCoords(env, flag('password'), ticketArg);

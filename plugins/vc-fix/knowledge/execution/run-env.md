@@ -11,7 +11,7 @@ another session reads is edited.
   a `QA_ENV_PATH` folder, §Where an env's files live), or `--env <env>`
   ⇒ `node "$pluginRoot/scripts/env/use-env.mjs" <env>` (`$pluginRoot`: [`plugin-root.md`](plugin-root.md)).
 - **They name none** ⇒ for a ticket run (`run-folder.mjs use <TICKET>`) the ticket's own stand when the
-  ticket's `QA_ENV_PATH` folder defines exactly one env; otherwise the same script with `--default`. It binds the default too, so the run keeps one env
+  ticket's `QA_ENV_PATH` folder defines exactly one env the project does not; otherwise the same script with `--default`. It binds the default too, so the run keeps one env
   even if someone edits `.env.test-env` while it runs. When that moves a session that was on another env, it
   prints a `⚠ this session was on …` line: show it to the user, who passes the env to stay.
 - **Exit 2 ⇒ STOP** and show its message: an unknown env, or a `TEST_ENV` in the session's environment that
@@ -33,15 +33,19 @@ session id. No `TEST_ENV=` prefix is needed. `env:check` and the `[config]` line
 An env is the same files wherever they live: `.env.<env>` and `.env.playwright.<env>`. Besides the project, they
 may sit in dedicated folders — `QA_ENV_PATH` in `.env.local`, `;`-separated, the first wins
 (`QA_ENV_PATH=P:\VC\_VIRTO\tickets\<ticket>\.work\self-qa;P:\VC\_VIRTO\qa-envs`), with `QA_OUTPUT_DIR`'s
-placeholders and nothing appended; `<ticket>` is the run's ticket (`run-folder.mjs use`'s argument, else the
-session's bound run; outside a session `QA_TICKET=<KEY>`). A dedicated file beats the project's key by key,
-pins included: a ticket's folder holds its own stands and may override a shared env for that ticket's runs.
-`scripts/lib/env-layers.mjs` is the order, byte-identical with the ai-tools repo's.
+placeholders and nothing appended; `<ticket>` is the run's ticket (`run-folder.mjs use`'s argument, else
+`QA_TICKET=<KEY>` in the environment, else the session's bound run — `use` refuses another ticket while
+`QA_TICKET` is set; name a `<ticket>` folder with the key in upper case, which a case-sensitive file system needs).
+A dedicated file beats the project's key by key, pins included: a ticket's folder holds its
+own stands and may override a shared env for that ticket's runs. The loader warns when that override changes the
+shared env's `BACK_URL`, `FRONT_URL` or `ENV_RISK`, and stops with an error when no file defines the session's
+bound env. `scripts/lib/env-layers.mjs` is the order, byte-identical with the ai-tools repo's.
 
 **Master stands:** `PASSWORDS=master` in a stand's own env file (the project's `.env.<env>` for an env the project
 defines, else its `QA_ENV_PATH` file; nowhere else) means every test account on it signs in with ONE
 password, `MASTER_PASSWORD` in the project's `.env.playwright.master`; every test-account password variable
-resolves to it, and a lane types `MASTER_PASSWORD` in every password field.
+resolves to it — the platform admin's `ADMIN_PASSWORD` too, so the stand's admin must use it — and a lane types
+`MASTER_PASSWORD` in every password field. A production stand (`ENV_RISK=production`) is never a master stand.
 
 ## What every dispatch brief carries
 

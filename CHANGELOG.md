@@ -19,17 +19,28 @@ in with one password. `vc-init`, `vc-perf` and `vc-secrets` are unchanged.
 `<env>` and `<sprint>`. Each folder may hold `.env.<env>` and `.env.playwright.<env>`, and a file there beats the
 repo's key by key, `KEY_<ENV>` pins included. A ticket's folder holds its own stands (`vcst_6314`) and may
 override a shared env for that ticket's runs. `env:use`, `run:use`, `/preflight --env` and `deploy:pr` accept
-those envs. Outside a session, `QA_TICKET=<KEY>` names the ticket. A ticket run with no env argument binds the
-ticket's own stand when its folder defines exactly one env.
+those envs. `QA_TICKET=<KEY>` in the environment names the ticket and beats a session's bound run, as `TEST_ENV`
+beats the env binding: `run:use` refuses another ticket while it is set. A ticket run with no env argument binds
+the ticket's own stand when its folder defines exactly one env the repo does not. An override of a repo env never
+moves that stand: the loader warns when it changes the env's `BACK_URL`, `FRONT_URL` or `ENV_RISK`, and deploy
+reads a repo env from the repo's files only. A session bound to an env no file defines any more stops every loader
+with an error instead of running on `.env.local`'s stand; `run:use --clear` removes such a binding with the run.
 
 **Added: master stands.** `PASSWORDS=master` in a stand's env file makes every test-account password
-variable resolve to `MASTER_PASSWORD` from `.env.playwright.master`, so the seeders set it. Only the stand's own
-env file counts: the root `.env.<env>` for a repo env, else its `QA_ENV_PATH` file. A `PASSWORDS` line in
-`.env.local`, or a ticket folder's override of a repo env, is ignored with a warning: seeding would reset a shared
-stand's accounts to the master password. Browser lanes then type `MASTER_PASSWORD` in every password field.
+variable resolve to `MASTER_PASSWORD` from `.env.playwright.master`, so the seeders set it. The platform admin's
+`ADMIN_PASSWORD` is one of them: the stand's admin must use the master password too. Only the stand's own
+env file counts: the root `.env.<env>` for a repo env, else its `QA_ENV_PATH` file, and never on an
+`ENV_RISK=production` stand. A `PASSWORDS` line in
+`.env.local`, or a ticket folder's override of a repo env, is ignored with a warning, and one in the process
+environment (inherited, or passed by CI) is ignored too: seeding would reset a shared stand's accounts to the master
+password. With no `.env.playwright.master` a master stand's test-account passwords are unset, never another
+stand's. Browser lanes then type `MASTER_PASSWORD` in every password field.
 `secrets:sync:all` copies it into `.env.playwright.all` as one stable line, so a new master stand needs no re-sync
-and no MCP reconnect; the single-env `secrets:sync` writes it only for a master stand. `enforce-secret-token`
-blocks `MASTER_PASSWORD` in a session whose stand did not opt in, and a copy older than the master file.
+and no MCP reconnect; the single-env `secrets:sync` writes it only for a master stand, keeps an earlier value only
+from a file generated for the same env, and never carries a copy of the master password to another stand.
+`enforce-secret-token` blocks the master password (`MASTER_PASSWORD`, or any name holding a copy of it) in a session
+whose stand did not opt in, that nothing chose or that it cannot resolve, a copy older than the master file, and any name from a single-env
+`--secrets` file generated for another env. It now guards every `playwright-*` lane (`playwright-mobile` was missed).
 
 **Changed:**
 - One loader: `scripts/lib/env-layers.mjs` holds the order. config.js, `load-env.mjs`, the seeders, the GraphQL
@@ -37,10 +48,19 @@ blocks `MASTER_PASSWORD` in a session whose stand did not opt in, and a copy old
   The "no `.env.<env>`" warning moved from the resolver to the loader.
 - `secrets:sync:all` reads every ticket's folder and writes atomically. It refuses a name whose value differs
   between a shared env and a ticket's override of it.
-- `/qa-deploy-pr` refuses an env whose `BACK_URL` is on this machine, and reads a dedicated cloud stand's
+- `/qa-deploy-pr` refuses an env whose `BACK_URL` is on this machine (localhost, a loopback or unspecified address in
+  IPv4 or IPv6 form, a Docker `*.docker.internal` name), and reads a dedicated cloud stand's
   `DEPLOY_BRANCH` and `BACK_URL` from its own files.
 - `/preflight` on a local stand reports `declared` as `local stand` instead of an UNKNOWN that asked for a
-  `GIT_TOKEN`. `deployed` and `--expect` read the stand's build as before.
+  `GIT_TOKEN`. `deployed` and `--expect` read the stand's build as before, and a missing build no longer advises
+  `/qa-deploy-pr`.
+- The ticket-context skill imports the loader at run time: an install without `scripts/lib/env-layers.mjs` reads
+  the root's files as before and reports a GAP instead of failing to start. It loads the env with the ticket it
+  analyses, so its `deploy:pr` and `/preflight` children see that ticket's stands.
+
+**Fixed:** the runners that let the environment win (`ci:regression`, `ci:monitor`, `deploy:pr`, `/preflight`)
+took `.env.playwright.<env>` for the environment: the resolver had put it there as `KEY_<ENV>` first, so it beat a
+CI `-e` value and a `.env.local` pin. They now resolve only the env's name and let the loader read that file.
 
 **Changed (`vc-fix`):**
 - The plugin's loader, `use-env.mjs` and `run-folder.mjs` find envs in the `QA_ENV_PATH` folders, and the env
@@ -50,6 +70,44 @@ blocks `MASTER_PASSWORD` in a session whose stand did not opt in, and a copy old
 **Upgrade note.** Nothing has to change. Without `QA_ENV_PATH` every env comes from the repo as before. Without
 `PASSWORDS=master` a stand keeps its own passwords. A master stand needs `.env.playwright.master`, then one
 `npm run secrets:sync:all` and a reconnect of the `playwright-*` servers.
+
+## `vc-init` `0.3.3`: the `$VC_RUN` bridge no longer takes `~/.claude` for a project — 2026-10-21
+
+**Fixed.** `bridge/run.mjs` `findDeclarations` walked up from the cwd and stopped at the first
+`.claude/vc-secrets*.json`, which for any undeclared folder under `$HOME` was the user-scope
+`~/.claude/vc-secrets.json`, so the home directory became the project root: the inner side ran against the user's
+own declaration instead of refusing. It now skips `~/.claude` exactly as vc-secrets' `configPaths` does. This was
+the `run.test.mjs` failure on Windows machines with a user-level declaration (exit 69 instead of 64), where
+`os.tmpdir()` sits inside the profile.
+
+## `vc-frontend`: theme forks and storefront plugins — catalog `0.13.0`, `vc-frontend` `0.1.0` — 2026-10-21
+
+**Added: the `vc-frontend` plugin** (`defaultEnabled: false`) with three skills: two for teams that keep a fork of
+the storefront theme (vc-frontend-next, customer themes), one for a backend module that ships a storefront plugin. Its description and README say the skills can make mistakes
+and every change needs human review.
+
+- **`merge-upstream`** brings upstream `VirtoCommerce/vc-frontend` (its `dev` or a release tag) into the fork, or a
+  redesign branch's own base into it. The fork keeps its markup, styles and tokens; upstream's behavior is carried
+  into them. Every conflict is briefed before it is resolved; every upstream line is traced into the result; the
+  ported code is covered by mutation-checked tests; the built app is smoke-tested with `vite preview`. The PR gets a
+  QA checklist — an existing PR for the branch is updated rather than duplicated — and lands as a merge commit: the
+  skill checks the repository settings, puts the warning at the top of the PR and confirms two parents after the
+  merge. Each merge leaves a log in the fork's `upstream-merges/`, which the next merge reads before asking anything.
+  Every `gh` call names its repository, because a bare `gh` in a clone with an `upstream` remote resolves to
+  upstream. `git rerere` is on as a safety net for a merge that has to be redone; a leftover empty merge branch is
+  recreated, one with work on it is left for the user to decide.
+- **`port-upstream-to-fork`**, which `merge-upstream` calls after the merge. A merge delivers an upstream change only
+  to the file upstream changed; when the fork renders its own component there, the change merges cleanly and reaches
+  nobody. `fork-drift.mjs` builds the fork and upstream commits with the repository's own Vite config and compares
+  Rollup's module graphs (name-level imports through barrels, tree-shaking, Sass partials) to list upstream code the
+  fork no longer renders, render sites it dropped, and changes to files a committed `fork-map.json` says the fork
+  replaced. The skill briefs each upstream commit as port / already / n/a / lost feature, ports the approved ones
+  with a mutation-checked test, and keeps the map current.
+- **`mf-new-plugin`** makes a backend module ship a storefront plugin (scenario S1a of vc-frontend's Module
+  Federation docs). vc-frontend's `create:plugin --module` writes only new files; the skill edits the module's own
+  `.csproj`, `module.manifest` and `.gitignore` after the user approves the diffs, copying versions only from what
+  `check:plugin-module` prints. Its report says whether the sources are wired or the package is verified too
+  (`--artifact`). It never commits, and reports CI without editing it, because module CI is updated centrally.
 
 ---
 
