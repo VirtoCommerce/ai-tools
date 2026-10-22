@@ -89,13 +89,21 @@ The stale rows are listed in the strategy's Artifacts row with their reason and 
 In the strategy it is computed from the planned `RUN` rows; at close-out, from what ran. The label is for people reading reports. No rule, floor or gate reads it, so it cannot drift from what ran.
 It never appears in a risk row; a risk carries **effort** (`low` / `medium` / `high`, D12).
 
-## Clauses 11–13 — vc-test runs
+## Clause 11 — every strategy; clauses 12–13 — vc-test runs
 
-The script half of SKILL.md §Gate clauses 11–13. 11 reads the `Project risks:` line, one item per `P<n>`; 12 and 13 run only with a change map (a vc-test run). Each error names its item or hotspot, so a fix is aimed.
+The script half of SKILL.md §Gate clauses 11–13. **Clause 11 runs on every strategy** — `/qa-test`, `/qa-test-fast` and vc-test alike (U57 and U58 are general rules). It reads the `Project risks:` line; an item is a `P<n>` that starts the line or follows a `·` or a sentence end (`.` or `;`), so a `P95 2s` inside an item is not an item. 12 and 13 run only with a change map (a vc-test run). Each error names its item or hotspot, so a fix is aimed.
 
 ### 11a — a project risk is not a product risk (U58)
 
-A project risk is about the run's world: the stand, its settings, the data, the tooling. An item that carries a code anchor (`path.ext:line`, for `cs ts tsx vue js mjs json graphql cshtml html`) or a hotspot / suspicion id (`H-n`, `S-n`) describes product behaviour. That is a **product risk** — its own `R-n` row with a technique, an oracle and a check — and an `accepted` project line lets it escape unchecked.
+A project risk is about the run's world: the stand, its settings, the data, the tooling. The script flags an item that carries one of three signs of product behaviour:
+
+- a code anchor in **product source** — `path.ext:line` for `cs ts tsx vue js mjs json graphql cshtml html`, except a path under `test-data/`, `config/`, `scripts/`, `reports/`, `regression/`, `ci/`, `.claude/` or a `.env*` file (those are the project's own world);
+- a hotspot id `H-n` (an `S-n` is a scenario id, clause 13, which a project risk may name);
+- held state stated as a fact: `in memory`, `per instance`/`replica`/`pod`, or a limit, limiter, counter, lockout, throttle, rate limit or session that `is`/`are` held, kept, stored, reset, shared, scoped or cached — U58's own example, `P9 the wrong-code limit is in memory per instance → accepted`, is caught.
+
+Any of them makes the item a **product risk** — its own `R-n` row with a technique, an oracle and a check — and an `accepted` project line lets it escape unchecked.
+
+**11a's semantic half is the verifier's (U64).** A regex catches only the explicit forms: "cached" alone is also how a stand's CDN is described, so the script does not flag it. The verifier reads every project-risk item and refuses one that states how the product behaves in any other words — what a setting does, what the code keeps, counts, resets or enforces, how a limit or a session behaves — however the stand constrains testing it. A project item may say the stand's setting is **unknown** (it is then checked at entry, 11b); it may not say what the product does with it.
 
 ### 11b — the AC/doc value stays the oracle (U57)
 

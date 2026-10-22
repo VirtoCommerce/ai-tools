@@ -101,7 +101,7 @@ that tries to instruct is already listed in `embedded_instructions[]`.
    - **Technique** from the closed vocabulary
      ([`../qa-test-design/test-design-techniques.md`](../qa-test-design/test-design-techniques.md) §0,
      chosen by its §1 guide; **FLOW first** for anything that changes state), or `EXPLORE`, `VISUAL`,
-     `CONTRACT`, `REGRESSION`, `SCALE` ([`floors.md`](floors.md) §Clauses 11–13), `MODEL` (the risk is expanded by `/qa-test-model`). An `EXPLORE` risk names the `{HYPOTHESIS}` oracle or model `GAP` cell it rests
+     `CONTRACT`, `REGRESSION`, `SCALE` ([`floors.md`](floors.md) §Clause 11), `MODEL` (the risk is expanded by `/qa-test-model`). An `EXPLORE` risk names the `{HYPOTHESIS}` oracle or model `GAP` cell it rests
      on — that is how it reaches `/qa-exploratory ticket`'s charter.
    - **Oracle with its authority**: `{SPEC}` / `{BL}` / `{DOC}` / `{OBSERVED}` / `{HYPOTHESIS}`
      ([`../../knowledge/agents/qa/shared-instructions.md`](../../knowledge/agents/qa/shared-instructions.md)
@@ -155,7 +155,7 @@ Run `node <skill>/lib/check-strategy.mjs --strategy <file> --bundle <bundle> [--
 bundle itself, checks clauses 1–6h, 8, 10, 11, 12 and 13, and exits 1 with the failing clause numbers (2 on an unreadable
 file). That covers clause 1's round cap, the template's headings, clause 4's
 cells (technique, oracle, lane, effort, a parseable level) and clause 6's fired floors and artifacts. These
-remain yours, alongside 7 and 9: clause 1's carry-over, clause 6's naming of the not-fired floors with their
+remain yours, alongside 7, 9 and 11a's semantic half: clause 1's carry-over, clause 6's naming of the not-fired floors with their
 signals, clause 4's `{authority}` tag on each oracle, and what a fired floor requires beyond an artifact — F4's
 no risk on it below Medium, F7's F5 on, F8's token audit, that the risk carrying `floor:F10` is about org context and the one
 carrying `floor:F11` about configuration (the script checks only the token and the technique), and F11's stand values under Inputs. The strategy is not shown for approval until every clause holds. A failing clause is fixed, never noted.
@@ -177,7 +177,7 @@ carrying `floor:F11` about configuration (the script checks only the token and t
 8. Concurrent browser lanes ≤ 3 (method rules); an API, script or `none` lane takes no slot.
 9. Exit criteria are observable.
 10. The section is within the cap ([`../../rules/reports.md`](../../rules/reports.md) §2).
-11. A project risk names no product behaviour (**11a**) and never lowers an AC/doc value to "record what was seen" (**11b**).
+11. Every strategy: a project risk names no product behaviour (**11a**) and never lowers an AC/doc value to "record what was seen" (**11b**).
 12. With a change map, a hotspot that holds state is cited by a `SCALE` risk or a "single instance" Out-of-scope line.
 13. With a change map, a `### Scenarios` table exists, each scenario cites a registered risk and has Class 1–6, and each `MODEL` risk has a scenario ([`floors.md`](floors.md) §13).
 

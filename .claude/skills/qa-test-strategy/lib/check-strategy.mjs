@@ -28,9 +28,15 @@ const MODEL_RISK_FOR = { F2: "a purpose", F10: "an org-context", F11: "a configu
 // Clause 12 (U59): a hotspot whose risk text says the code holds state — a limiter, a counter, a cache, a lockout — is
 // only decided on the stand if the stand's scale (instances, replicas, restarts) is part of the question.
 export const STATE_HOTSPOT = /\b(limit(?:er|s)?|attempts?|counter|throttl\w*|rate[- ]?limit\w*|cach(?:e|ed|ing)|lockout|locked out|in[- ]memory|session state)\b/i;
-// Clause 11a/11b (U57, U58): what a project risk must not carry.
-const CODE_ANCHOR = /\b[\w./-]+\.(?:cs|ts|tsx|vue|js|mjs|json|graphql|cshtml|html):\d+\b/;
-const SUSPICION_ID = /\b[HS]-\d+\b/;
+// Clause 11a/11b (U57, U58): what a project risk must not carry. A code anchor counts only in product source: a path
+// under the project's own data, config, tooling or reports is about the run's world, which is what a project risk is.
+const CODE_ANCHOR = /(?<![\w./-])([\w./-]+)\.(?:cs|ts|tsx|vue|js|mjs|json|graphql|cshtml|html):\d+\b/g;
+const NOT_PRODUCT = /(?:^|\/)(?:test-data|config|scripts|reports|regression|ci|\.claude)\/|(?:^|\/)\.env/;
+const SUSPICION_ID = /\bH-\d+\b/; // a hotspot id; S-n is a scenario (clause 13), which a project risk may name
+// Held state stated as a fact about the product (U58's own example: "the limit is in memory per instance"). Only the
+// explicit forms: "cached" alone is also how a stand's CDN is described, so the rest of 11a is the verifier's.
+const HELD_STATE = /\b(?:in[- ]memory|per[- ](?:instance|replica|pod))\b|\b(?:limit(?:er)?|counter|lockout|throttl\w*|rate[- ]?limit\w*|session(?: state)?)\s+(?:is|are)\s+(?:held|kept|stored|reset|shared|scoped|cached)\b/i;
+const productAnchor = (item) => [...item.matchAll(CODE_ANCHOR)].find((m) => !NOT_PRODUCT.test(m[1]))?.[0];
 const RISK_REF = /\bR-?\d+\b/;
 const WEAKENING = /record(?:s|ed|ing)?\b[^.·]*\bobserved|instead of assert|no PASS\/FAIL|never FAIL|not asserted/i;
 const escapeRe = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -119,12 +125,13 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names, chan
   // An API, script or `none` lane takes no slot; every other lane does (agents.md §Parallel Execution).
   const lanes = new Set(approach.map((a) => a.lane.split("·")[0].trim()).filter((l) => l && !NON_BROWSER_LANE.test(l)));
   if (lanes.size > 3 && !/^Lanes sequenced:/m.test(sec)) errors.push(`8: ${lanes.size} browser lanes and no 'Lanes sequenced:' line`);
-  // 11 (U57, U58): a project risk is about the project — the stand, the data, the tooling. Product behaviour is a product
-  // risk with its own row and check (11a), and an AC/doc value is never lowered to "record what was seen" (11b).
+  // 11 (U57, U58), every strategy: a project risk is about the project — the stand, the data, the tooling. Product
+  // behaviour is a product risk with its own row and check (11a), and an AC/doc value is never lowered to "record what
+  // was seen" (11b). An item starts the line or follows a `·` or a sentence end, so "P95 2s" inside an item is no item.
   const projectLine = /^Project risks:(.*)$/m.exec(sec)?.[1] ?? "";
-  for (const item of projectLine.split(/(?=\bP\d+\b)/).map((t) => t.trim()).filter((t) => /^P\d+\b/.test(t))) {
+  for (const item of projectLine.split(/(?:·|(?<=[.;]))\s*(?=P\d+\s)/).map((t) => t.trim()).filter((t) => /^P\d+\b/.test(t))) {
     const id = /^P\d+/.exec(item)[0];
-    const anchor = CODE_ANCHOR.exec(item)?.[0] ?? SUSPICION_ID.exec(item)?.[0];
+    const anchor = productAnchor(item) ?? SUSPICION_ID.exec(item)?.[0] ?? HELD_STATE.exec(item)?.[0];
     if (anchor) errors.push(`11a: ${id} describes product behaviour (${anchor}) — a product risk with its own check, not a project risk (U58)`);
     const ref = RISK_REF.exec(item)?.[0];
     if (ref && WEAKENING.test(item)) errors.push(`11b: ${id} lowers how ${ref} is decided — the AC/doc value stays the oracle (U57)`);

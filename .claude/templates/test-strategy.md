@@ -40,8 +40,10 @@ Regression-averse <✔/—: why> · Process-compliant <✔/—: why>
 | R1 | FLOW, DT | AC-2 {SPEC} | storefront · Playwright | chrome · qa-frontend-expert | high |
 <!-- Technique tokens: test-design-techniques.md §0 + EXPLORE · VISUAL · CONTRACT · REGRESSION · SCALE · MODEL (expanded by /qa-test-model). -->
 
+<!-- VC-TEST ONLY — delete outside vc-test: a /qa-test or /qa-test-fast strategy drops this whole block (the heading,
+     the table and this comment). Under vc-test it is required (clause 13, floors.md §13); the list is generated before
+     the risks, so add the R-n to Why likely. -->
 ### Scenarios
-<!-- vc-test runs only (clause 13, floors.md §13); the list is generated before the risks, so add the R-n to Why likely. -->
 | S | Class | What it does | Bug it hunts | Why likely | Score | Proof | Writes |
 |---|---|---|---|---|---|---|---|
 | S-1 | <1–6> | <the action on the stand> | <the bug it hunts> | <why a bug is likely here> · R1 | <n> | <what proves it> | <none / what it writes> |
