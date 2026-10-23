@@ -30,6 +30,36 @@ export const LOCAL_HEADER = [
   ``, ``,
 ].join("\n");
 
+/** Header of a NEW `.env.local` on a host-governed project: no password and no token of ours lives here. */
+export const LOCAL_HEADER_HOST = [
+  `# ==============================================================================`,
+  `# .env.local — this machine's project settings (GITIGNORED — never commit).`,
+  `# Templated by /project-init on a host-governed project. Holds what is the SAME for`,
+  `# every environment (the tracker / code-host connection). No password and no token`,
+  `# goes here: test-user passwords are stored with the host plugin's own secret tool,`,
+  `# and its MCP servers hold every credential. Per-env URLs live in .env.<env>.`,
+  `# ==============================================================================`,
+  ``, ``,
+].join("\n");
+
+/** Header of a NEW `.env.<env>`. A host-governed project keeps it local and puts test-user logins in it. */
+export function envHeader(env, { hostGoverned = false } = {}) {
+  return [
+    `# ==============================================================================`,
+    hostGoverned
+      ? `# .env.${env} — per-env URLs and test-user logins (GITIGNORED — never commit, NO secrets).`
+      : `# .env.${env} — per-env URLs / identifiers (Bucket #2, committed, NO secrets).`,
+    `# Templated by project-init/scaffold-env.mjs. FILL IN each value below, then`,
+    `# run verify-access.mjs. What is the same for every env (the tracker /`,
+    hostGoverned
+      ? `# code-host connection) lives in .env.local; passwords live in the host's secret tool.`
+      : `# code-host connection) and the test-user passwords live in .env.local.`,
+    `# Activate: TEST_ENV=${env} npm run env:check`,
+    `# ==============================================================================`,
+    ``, ``,
+  ].join("\n");
+}
+
 /** Names that look like `.env.<x>` but are not an environment. */
 // `test` is not here: it is a valid TEST_ENV name ([a-z0-9_]+), and its file must migrate like any other.
 const NOT_AN_ENV = new Set(["local", "defaults", "example", "template", "backup"]);

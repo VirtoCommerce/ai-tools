@@ -478,7 +478,8 @@ function hostPersonRows(g, installPath, root) {
     const slotOf = (u) => slots.find((s) => s.hostEnv === hostEnv && s.slot === u.key);
     const users = markedUsersIn(readFileSync(resolve(root, `.env.${env}`), "utf8")).filter(slotOf);
     add(`Website test users — ${env}`, users.length ? "PASS" : "WARN",
-      users.length ? `${users.map((u) => `${u.key} (${slotOf(u).secret})`).join(", ")} on ${hostEnv} — whether each slot holds a password is ${setup}'s check`
+      // The verdict first: no secret is resolved here, so a filled slot is NOT checked — say so up front.
+      users.length ? `slots unchecked · ${users.map((u) => `${u.key}→${slotOf(u).secret}`).join(", ")} (${hostEnv}); ${setup} checks them`
         : `no test user yet on ${hostEnv} — /project-init --add-user`);
   }
 }

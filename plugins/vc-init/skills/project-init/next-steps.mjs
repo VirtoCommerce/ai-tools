@@ -27,7 +27,9 @@ export const PLUGIN_ACTIONS = {
     what: "the bug lifecycle (reproduce, fix, verify)",
     actions: [
       ["/qa-bug <what is wrong>", "reproduce a bug in the browser, capture evidence, file a ticket"],
-      ["/qa-fix {KEY}", "fix a filed bug in the right repo and open a PR for review (never merges)"],
+      // On a host-governed project a fix needs a code host the person can reach; without one, no PR.
+      ["/qa-fix {KEY}", "fix a filed bug in the right repo and open a PR for review (never merges)",
+        (p) => !p?.governance?.host || Boolean(p.governance.servers?.codeHost)],
       ["/qa-verify-fix {KEY}", "re-check a fix on the deployed build and move the ticket"],
       ["/qa-env-check", "quick check of env vars, stands and tracker / code-host access"],
     ],

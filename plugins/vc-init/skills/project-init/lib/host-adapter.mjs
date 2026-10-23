@@ -267,7 +267,51 @@ export function hostState(host, installPath, projectRoot, home = process.env.HOM
     slots,
     wrapper,
     genProfile: genProfileFlags(host, servers, websiteAuth),
+    facts: hostFacts(launches, hostMarketplaceUrl(host, projectRoot, home), hostEnvsOf(slots)),
   };
+}
+
+/** The host's marketplace source URL (Claude Code's registry, else this folder's settings). */
+export function hostMarketplaceUrl(host, projectRoot, home = process.env.HOME || os.homedir()) {
+  const marketplace = String(host || "").split("@")[1];
+  if (!marketplace) return "";
+  const known = readJson(join(home, ".claude", "plugins", "known_marketplaces.json"))?.[marketplace]?.source?.url;
+  const local = readJson(join(resolve(projectRoot), ".claude", "settings.json"))?.extraKnownMarketplaces?.[marketplace]?.source?.url;
+  return String(known || local || "");
+}
+
+/**
+ * Answers the interview need not ask, read from what the host itself declares — each with the place it
+ * was read from, so the operator is TOLD what was filled in, never asked. Pure over the inputs:
+ *   tracker    — the kind of the tracker server that is on (by its MCP package);
+ *   adoOrg     — the organization an Azure DevOps server is started for (its first positional argument),
+ *                else the org of the host's marketplace URL;
+ *   adoProject — the project in the host's marketplace URL when it is on that same org;
+ *   clientVcs  — Azure Repos when the host's own repository lives on Azure DevOps, GitHub when on github.com;
+ *   envs       — the host's website environments (its password slots), proposed as the env names.
+ * A fact not read from the host is absent — then the interview asks.
+ */
+export function hostFacts(launches, marketplaceUrl, hostEnvs) {
+  const facts = {};
+  const tracker = launches.find((l) => l.kind === "tracker");
+  const text = tracker ? [tracker.command, ...tracker.args].join(" ") : "";
+  if (/@azure-devops\/mcp|azure-devops-mcp/i.test(text)) facts.tracker = { value: "azure", from: `the ${tracker.key} server runs the Azure DevOps MCP` };
+  else if (/atlassian|jira/i.test(text)) facts.tracker = { value: "jira", from: `the ${tracker.key} server runs a Jira MCP` };
+  if (facts.tracker?.value === "azure") {
+    const at = tracker.args.findIndex((a) => /@azure-devops\/mcp/i.test(a));
+    const org = at >= 0 && /^[A-Za-z0-9][A-Za-z0-9-]*$/.test(tracker.args[at + 1] || "") ? tracker.args[at + 1] : "";
+    if (org) facts.adoOrg = { value: org, from: `the ${tracker.key} server is started for it` };
+  }
+  const ado = /^https:\/\/dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\//i.exec(marketplaceUrl || "");
+  if (ado) {
+    if (!facts.adoOrg) facts.adoOrg = { value: decodeURIComponent(ado[1]), from: "the host's marketplace URL" };
+    if (facts.adoOrg.value.toLowerCase() === decodeURIComponent(ado[1]).toLowerCase()) facts.adoProject = { value: decodeURIComponent(ado[2]), from: "the host's marketplace URL" };
+    facts.clientVcs = { value: "azure-repos", from: "the host's own repository is on Azure DevOps" };
+  } else if (/^https:\/\/github\.com\//i.test(marketplaceUrl || "")) {
+    facts.clientVcs = { value: "github", from: "the host's own repository is on GitHub" };
+  }
+  if (hostEnvs?.length) facts.envs = { value: [...hostEnvs], from: "the host's test-user password slots" };
+  return facts;
 }
 
 /**

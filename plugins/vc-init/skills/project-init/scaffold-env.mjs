@@ -46,7 +46,7 @@ import { resolveOutPath, outputRoot } from "./lib/paths.mjs";
 // writers all call it, and only the first one actually appends.
 import { ensureProjectIgnores } from "./lib/gitignore.mjs";
 import { isHostGoverned } from "./lib/governance.mjs";
-import { LOCAL_FILE, LOCAL_HEADER, LOCAL_SECTION, describeMove, envSuffixesIn, keyComment, keySuffixes, moveProjectKeys, readKey } from "./lib/project-env.mjs";
+import { LOCAL_FILE, LOCAL_HEADER, LOCAL_HEADER_HOST, LOCAL_SECTION, envHeader, describeMove, envSuffixesIn, keyComment, keySuffixes, moveProjectKeys, readKey } from "./lib/project-env.mjs";
 
 function parseArgs(argv) {
   const a = {};
@@ -162,7 +162,7 @@ function main() {
 
   if (localBlocks.length) {
     // The section a move just opened (or an earlier run wrote) is reused, never repeated.
-    const header = !existingLocal ? LOCAL_HEADER
+    const header = !existingLocal ? (opts.hostGoverned ? LOCAL_HEADER_HOST : LOCAL_HEADER)
       : existingLocal.includes(LOCAL_SECTION) ? "\n"
       : `\n${LOCAL_SECTION}\n`;
     const added = (existingLocal && !existingLocal.endsWith("\n") ? "\n" : "") + header + localBlocks.join("\n");
@@ -174,16 +174,7 @@ function main() {
   if (blocks.length) {
     const header = existing
       ? `\n# === /project-init placeholders (${env}) — fill in the values below ===\n`
-      : [
-          `# ==============================================================================`,
-          `# .env.${env} — per-env URLs / identifiers (Bucket #2, committed, NO secrets).`,
-          `# Templated by project-init/scaffold-env.mjs. FILL IN each value below, then`,
-          `# run verify-access.mjs. What is the same for every env (the tracker /`,
-          `# code-host connection) and the test-user passwords live in .env.local.`,
-          `# Activate: TEST_ENV=${env} npm run env:check`,
-          `# ==============================================================================`,
-          ``, ``,
-        ].join("\n");
+      : envHeader(env, { hostGoverned: opts.hostGoverned });
     writeFileSync(outPath, existing + header + blocks.join("\n"));
   }
 

@@ -369,6 +369,17 @@ function main() {
     profile = { ...profile, governance: { ...current, host: currentId, ...governanceExtras(args, current) } };
   }
 
+  // A host-governed project is a client's, and its repo scan (§4/§5) does not run — so the defaults
+  // (platform, a VirtoCommerce fork) would describe a project that is not there. Record it as a client
+  // project the operator works in, and file nothing upstream: nothing leaves for VirtoCommerce from a
+  // guest. An explicit flag still wins.
+  if (profile.governance?.host) {
+    if (!args["project-type"]) profile.projectType = "client";
+    if (!args.operator) profile.operator = "client";
+    profile.upstream = { ...profile.upstream, fileIssues: false };
+    if (profile.projectType === "client" && profile.buildVerify?.source === "vc-deploy-dev") profile.buildVerify.source = "modules-endpoint";
+  }
+
   // Prune infra sub-objects that don't apply to the chosen tracker / code host, so the written
   // file MIRRORS THE ANSWERS — no dead `azure:{}` block in a Jira+GitHub profile. This is SAFE:
   // the discriminators are `tracker.kind` and `vcs.clientHost` (never object *presence*), and
@@ -399,12 +410,18 @@ function main() {
 
   // Protect BEFORE creating — the fourth and last writer of a generated local file. It is also the
   // one that turns self-diagnostics ON, so `.vc-fix/` starts filling right after (VCST-5774 #4).
-  const ignored = ensureProjectIgnores(outputRoot());
+  // On a host-governed project every `.env.<env>` is local too: it holds the test users' logins, and the
+  // host's rules keep environment files out of the repository.
+  const ignored = ensureProjectIgnores(outputRoot(), profile.governance?.host ? [".env.*"] : []);
   if (ignored.length) console.log(`[gen-profile] .gitignore += ${ignored.join(", ")}`);
   writeFileSync(outPath, JSON.stringify(withMeta, null, 2) + "\n");
   console.log(`[gen-profile] wrote ${outPath}`);
-  console.log(
-    `[gen-profile] projectType=${profile.projectType} tracker=${profile.tracker.kind} ` +
+  const g = profile.governance;
+  console.log(g?.host
+    // A guest's tracker / code host are only known once the interview filled them in — say what IS set.
+    ? `[gen-profile] host-governed by ${g.host}: tracker server ${g.servers.tracker || "—"}, code host ${g.servers.codeHost || "—"}, ` +
+      `test users ${g.websiteAuth || "—"}${args.tracker || args["client-vcs"] ? ` · tracker=${profile.tracker.kind} clientVcs=${profile.vcs.clientHost}` : ""}`
+    : `[gen-profile] projectType=${profile.projectType} tracker=${profile.tracker.kind} ` +
       `clientVcs=${profile.vcs.clientHost} upstream=${profile.upstream.org} ` +
       `contributionMode=${profile.upstream.contributionMode}` +
       (profile.vcs.githubTokenKind ? ` githubToken=${profile.vcs.githubTokenKind}/${profile.vcs.githubForkCapable || "unknown"}` : ""),

@@ -108,6 +108,9 @@ function main() {
   for (const role of ROLES) {
     const flag = args[`${role}-passwords`];
     if (flag !== undefined && !["vc-secrets", "env-local"].includes(flag)) fail(`--${role}-passwords must be vc-secrets or env-local, got "${flag}"`);
+    // A back-office (admin) password never goes to a file: only a storefront user's may (§2d). An admin
+    // already kept in .env.local by an older onboarding still works — only a NEW choice of a file is refused.
+    if (role === "admin" && flag === "env-local") fail("--admin-passwords env-local is not offered: an admin password goes to vc-secrets only (--admin-passwords vc-secrets)");
     if (!hostGoverned && (flag === "vc-secrets" || (flag === undefined && declared.includes(role)))) vcRoles.push(role);
   }
   // A host-governed project keeps no password in a file of ours: the host's wrapper holds them

@@ -352,7 +352,8 @@ Install the npm dependencies of EVERY installed plugin of this marketplace (foun
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/install-deps.mjs"   # each plugin's own install folder
 npx playwright install chromium firefox       # browser binaries (global cache — cwd-independent)
 ```
-(Edge uses the system `msedge` channel; WebKit is not used on Windows.) This step
+(Edge uses the system `msedge` channel; WebKit is not used on Windows. On a host-governed project skip
+`playwright install`: the browser servers are the host's.) This step
 must run before any generator/verify script. **Never a bare `npm install` in the project** — the
 scripts import `dotenv` (vc-fix also `@playwright/mcp`), and Node resolves a bare specifier from the
 *script's own* directory, i.e. each plugin's install folder. Claude Code installs no npm dependencies,
@@ -362,6 +363,9 @@ is why `--check` runs this again.
 
 ## 2. Interview — three answers + an auth preference, THEN scaffold
 
+> **Host-governed project?** §2 is replaced by [`host-governed.md`](host-governed.md) steps 2–4: the
+> facts read from the host are shown, one question round, then the logins one by one.
+>
 > **No mid-interview reconnaissance.** Do **not** read files, inspect the `.mjs`
 > scripts, or run any other Bash **between** the interview steps. Ask the questions,
 > then run step 3. Only these answers are collected — **no operator / projectType /
@@ -435,15 +439,39 @@ Applicable axes:
 | **GitHub** | **always** (the platform upstream is always GitHub; and the client host may be GitHub) | `PAT` (Recommended) → vc-secrets `github-pat` · `Browser login` → `gh auth login` |
 | **Azure DevOps** | tracker = `azure` **OR** code host = `azure-repos` | `PAT` (Recommended) → vc-secrets `ado-pat` · `Browser login` → `az login` |
 | **Jira** | tracker = `jira` | `API token` (Recommended) → vc-secrets `jira-token` · `Atlassian MCP OAuth` (no token) |
-| **Admin passwords** | always | `vc-secrets` (Recommended) → `admin-password-<env>`, no file · `.env.local` → `ADMIN_PASSWORD_<ENV>` in the file |
+| **Admin passwords** | always — **not asked** | `vc-secrets` only → `admin-password-<env>`, no file. A back-office password is never offered a file: pass `--admin-passwords vc-secrets` |
 | **Storefront-user passwords** | always | `.env.local` (Recommended — easy to edit when there are many users) → `USER_PASSWORD_<ENV>` in the file · `vc-secrets` → `user-password-<env>`, no file |
 
 Map the answers to the flags every later step takes: `--github-auth pat|gh-cli`, `--ado-auth
-pat|az-login`, `--jira-auth pat|oauth`, `--admin-passwords vc-secrets|env-local`, `--user-passwords
+pat|az-login`, `--jira-auth pat|oauth`, `--admin-passwords vc-secrets` (always), `--user-passwords
 vc-secrets|env-local`. **Carry the auth ones to step 6** — gen-profile writes them to `auth.*` in the
 profile. The password choices are recorded by the vc-secrets declaration itself (3c), not the profile:
 a role is in vc-secrets when its `ADMIN_PASSWORD` / `USER_PASSWORD` is declared in a
 `vc-init-onboard.<env>` task (`lib/passwords.mjs`), and `--add-env` / `--add-user` follow that.
+
+### 2e. Values and logins — ONE form, then the logins one account at a time
+
+The operator does not fill the env files by hand. After 2d, ONE plain-chat message asks for every
+non-secret value at once, as a short form answered in one reply — only the lines that apply to the
+answers so far:
+
+```
+Environment <env>:
+  storefront URL:
+  admin (back office) URL:
+Tracker:   Jira base URL / project key / your Jira email   — or —   Azure DevOps org / project
+How many test accounts: admins __, storefront users __
+```
+
+`STORE_ID` is not asked (normalize-env detects it). Then ask the LOGINS one account at a time — admins
+first, then storefront users — one plain-chat question each: *"`<env>` · admin 1 of N — login (email)
+and one line about the account"*. The first admin is `ADMIN`, the first storefront user `USER_EMAIL`;
+every further one is added with `add-user.mjs` (§--add-user). **Never ask for a password in chat.**
+Where it goes is fixed by 2d: an admin's password ALWAYS goes to vc-secrets; a storefront user's goes
+where the operator chose (`.env.local` or vc-secrets).
+
+After §3a scaffolds the files, write every answer with `write-env.mjs` (values on stdin, never argv), so
+§3d only has to hand over what is secret.
 
 ## 3. Scaffold the env templates + the vc-secrets declarations, then hand off
 
@@ -520,9 +548,10 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/check-secrets.mjs" --steps
 Then, under a framed `🔒  FILL IN · TRUST · STORE TOKENS` step header (§Output FORMAT), print three
 short parts, in this order:
 
-1. **The files to fill** — `.env.<env>` (per-env URLs/identifiers) and `.env.local` (the tracker /
-   code-host connection, and the test-user passwords of each role kept there), with the placeholder keys each emitted; the inline comments say
-   what each value is and where to get it.
+1. **What is filled, what is left** — ONE table, `File | Field | Value / what to do`: every key 2e wrote
+   (value shown, never a secret), `STORE_ID` as "detected after you reply", and only the keys still
+   empty with what to put there. A storefront-user password kept in `.env.local` is a row
+   "`USER_PASSWORD_<ENV>` — type it in the file in your editor, never in chat".
 2. **Approve the declarations** — only when 3c reported `trustNeeded: true`: the operator runs, in
    their own terminal in the project directory, `node "<VC_SECRETS>" trust`, reads what it shows (the
    bridge command and env names, no values) and types `y`. It needs a real terminal — the `!` prefix

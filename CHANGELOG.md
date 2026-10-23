@@ -38,6 +38,18 @@ host's setup ran here, that the profile names the servers that are on, and every
 users. vc-fix's `host-governance.md` says how an agent signs in: the login as text, the password by the
 slot's NAME, or by hand when `manual-operator`.
 
+**Changed: the interview asks once, and never what the host already says.** On a host-governed project
+`state.facts` holds what the host's own files declare — the tracker kind, the Azure DevOps organization (the
+tracker server's argument) and project (the host's marketplace URL), the code host kind, the website
+environments — and the skill shows them with their source instead of asking. What is left is one question
+round, then the logins one account at a time (admins first), then one hand-off table of files, fields and the
+password commands. Every test-user password goes to the host's slots there. The profile is recorded as a client
+project that files nothing upstream; `.env.*` is gitignored and the env headers no longer speak of vc-secrets;
+assert-profile does not grade the scans a guest skips; next-steps offers no `/qa-fix` without a code host. In
+a normal project the same shape applies (§2e: one form for every non-secret value, logins one by one, §3d a
+filled-fields table), and an admin password goes to vc-secrets only — `--admin-passwords env-local` is refused;
+a storefront user's still goes where the operator chooses.
+
 **Verified.** On a machine with a client governance plugin installed for one folder and its setup already run
 there: no candidate for this repository or its parent folder; the folder's plugin found in any letter case,
 its work-items, test-management, telemetry and three browser servers classified by package, its setup
