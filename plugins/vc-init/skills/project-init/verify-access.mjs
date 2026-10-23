@@ -56,7 +56,7 @@ import { defaultShimPath } from "../../scripts/install-bridge.mjs";
 import { parseDoctor, runDoctor, secretsVerdict } from "./lib/vc-secrets-doctor.mjs";
 import { ROLES, hostInstallPath, hostLine, hostServerKeys, isHostGoverned } from "./lib/governance.mjs";
 import { hostState } from "./lib/host-adapter.mjs";
-import { envsIn, hostEnvFor, usersIn } from "./add-user.mjs";
+import { envsIn, hostEnvFor, markedUsersIn } from "./add-user.mjs";
 import {
   probeGithubUpstream, resolveGithubToken, resolveAdoTenant, ADO_RESOURCE,
   githubCanWrite, discoverAdoWorkItemId, probeAdoWorkItemsWrite, probeAdoCodeWrite,
@@ -451,9 +451,10 @@ function signalSelfDiagnosticsComplete() {
 function hostPersonRows(g, installPath, root) {
   const state = hostState(g.host, installPath, root);
   const setup = state.setupCommands[0] || "the host's setup";
-  add("Host setup for this folder", state.setUp ? "PASS" : "FAIL",
-    state.setUp ? `${state.enabled.length} of ${g.host}'s servers on, ${state.disabled.length} switched off`
-      : `${state.reasons.join("; ")} — run ${setup} in this folder, then restart Claude Code`);
+  add("Host setup for this folder", !state.setUp ? "FAIL" : state.confirmed ? "PASS" : "WARN",
+    !state.setUp ? `${state.reasons.join("; ")} — run ${setup} in this folder, then restart Claude Code`
+      : state.confirmed ? `${state.enabled.length} of ${g.host}'s servers on, ${state.disabled.length} switched off`
+        : `not confirmed: none of ${g.host}'s servers is switched off here — if ${setup} has not run in this folder, run it`);
   const drift = ["tracker", "testManagement"].filter((r) => state.setUp && (g.servers?.[r] || "") !== (state.servers[r] || ""));
   if (drift.length) add("Profile vs servers on", "WARN", drift.map((r) => `${r}: profile ${g.servers?.[r] || "—"}, on ${state.servers[r] || "—"}`).join("; ") + " — re-run /project-init to record the servers that are on");
 
@@ -469,7 +470,7 @@ function hostPersonRows(g, installPath, root) {
       continue;
     }
     const slotOf = (u) => slots.find((s) => s.hostEnv === hostEnv && s.slot === u.key);
-    const users = usersIn(readFileSync(resolve(root, `.env.${env}`), "utf8")).filter(slotOf);
+    const users = markedUsersIn(readFileSync(resolve(root, `.env.${env}`), "utf8")).filter(slotOf);
     add(`Website test users — ${env}`, users.length ? "PASS" : "WARN",
       users.length ? `${users.map((u) => `${u.key} (${slotOf(u).secret})`).join(", ")} on ${hostEnv} — whether each slot holds a password is ${setup}'s check`
         : `no test user yet on ${hostEnv} — /project-init --add-user`);

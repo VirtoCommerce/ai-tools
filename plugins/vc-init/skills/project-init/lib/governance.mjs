@@ -17,6 +17,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import os from "node:os";
 import { join, resolve } from "node:path";
+import { pluginRoot } from "./paths.mjs";
 
 /** Roles a host server can fill. `browsers` is a list; the rest are one server key each. */
 export const ROLES = ["tracker", "codeHost", "github", "telemetry", "testManagement", "browsers"];
@@ -29,11 +30,44 @@ export const ROLES = ["tracker", "codeHost", "github", "telemetry", "testManagem
  */
 export const WEBSITE_AUTH = ["host-secrets", "manual-operator"];
 
-/** The marketplaces our own plugins come from — never a candidate host. */
-export const OWN_MARKETPLACES = ["ai-tools", "vc-tools"];
 
 /** A host is recorded by its plugin id: `<plugin>@<marketplace>`. */
 export const PLUGIN_ID_RE = /^[A-Za-z0-9._-]+@[A-Za-z0-9._-]+$/;
+/** A plugin name alone — how a profile written before 0.4.0 recorded its host. */
+const PLUGIN_NAME_RE = /^[A-Za-z0-9._-]+$/;
+
+/**
+ * The plugin id a recorded host means. A full id is itself. A bare name (a 0.3.x profile recorded the
+ * host by its plugin name) is the one installed plugin with that name, or null when none or several
+ * match — never a guess.
+ */
+export function resolveHostId(host, { home = process.env.HOME || os.homedir() } = {}) {
+  const h = String(host || "");
+  if (PLUGIN_ID_RE.test(h)) return h;
+  if (!PLUGIN_NAME_RE.test(h)) return null;
+  const ids = Object.keys(readJson(join(home, ".claude", "plugins", "installed_plugins.json"))?.plugins || {});
+  const hits = ids.filter((id) => id.split("@")[0] === h);
+  return hits.length === 1 ? hits[0] : null;
+}
+
+/**
+ * The marketplaces our own plugins come from — never a candidate host. Read, not listed: the
+ * marketplace this plugin was installed from (its cache path, or the install record whose files are
+ * this plugin's), so a rename or a mirror needs no change here.
+ */
+export function ownMarketplaces({ home = process.env.HOME || os.homedir(), root = pluginRoot() } = {}) {
+  const out = new Set();
+  const parts = resolve(root).split(/[\\/]/);
+  const at = parts.lastIndexOf("cache");
+  if (at >= 0 && parts[at + 1]) out.add(parts[at + 1]);
+  const registry = readJson(join(home, ".claude", "plugins", "installed_plugins.json"))?.plugins || {};
+  for (const [id, records] of Object.entries(registry)) {
+    for (const r of Array.isArray(records) ? records : []) {
+      if (r && typeof r.installPath === "string" && samePath(r.installPath, root)) out.add(id.split("@")[1]);
+    }
+  }
+  return [...out].filter(Boolean);
+}
 
 /** The governance block for a host (or none). Pure. */
 export function governanceBlock(host, overrides = {}, extras = {}) {
@@ -105,12 +139,6 @@ export function folderRecord(records, projectRoot) {
   return list.find((r) => (r.scope === "project" || r.scope === "local") && samePath(r.projectPath, projectRoot)) || null;
 }
 
-/** Any install record whose files exist (the version this machine runs). Pure apart from the exists check. */
-function anyInstall(records, { exists = existsSync } = {}) {
-  const list = (Array.isArray(records) ? records : []).filter((r) => r && typeof r.installPath === "string");
-  return list.find((r) => exists(r.installPath)) || null;
-}
-
 /** The project's settings `enabledPlugins` (local wins over shared): id → boolean. */
 function enabledInSettings(projectRoot) {
   const out = {};
@@ -168,10 +196,11 @@ export function setupCommandsOf(installPath) {
 export function hostCandidates({ projectRoot = process.cwd(), home = process.env.HOME || os.homedir(), machineWide = false } = {}) {
   const registry = readJson(join(home, ".claude", "plugins", "installed_plugins.json"))?.plugins || {};
   const enabled = enabledInSettings(projectRoot);
+  const ours = ownMarketplaces({ home });
   const ids = new Set([...Object.keys(registry), ...Object.keys(enabled).filter((id) => enabled[id])]);
   const out = [];
   for (const id of ids) {
-    if (!PLUGIN_ID_RE.test(id) || OWN_MARKETPLACES.includes(id.split("@")[1]) || enabled[id] === false) continue;
+    if (!PLUGIN_ID_RE.test(id) || ours.includes(id.split("@")[1]) || enabled[id] === false) continue;
     const bound = folderRecord(registry[id], projectRoot);
     const userWide = (Array.isArray(registry[id]) ? registry[id] : []).find((r) => r && r.scope === "user");
     let source;
@@ -179,8 +208,7 @@ export function hostCandidates({ projectRoot = process.cwd(), home = process.env
     else if (enabled[id] === true) source = "enabled in this folder's .claude/settings";
     else if (machineWide && userWide) source = "installed for the whole machine (user scope)";
     else continue;
-    const rec = bound && typeof bound.installPath === "string" && existsSync(bound.installPath) ? bound : anyInstall(registry[id]);
-    const installPath = rec?.installPath || null;
+    const installPath = hostInstallPath(id, { projectRoot, home });
     const servers = [...hostServerKeys(installPath)];
     if (!servers.length || !hasSessionStartHook(installPath)) continue;
     out.push({ pluginId: id, installPath, source, folderBound: !source.startsWith("installed for the whole"), servers, setupCommands: setupCommandsOf(installPath) });
@@ -195,13 +223,21 @@ export function detectHost(opts = {}) {
   return first ? { host: first.pluginId, pluginId: first.pluginId, installPath: first.installPath, source: first.source } : null;
 }
 
-/** The install path of a host plugin as this folder runs it: its install for this folder, else any. */
+/**
+ * The install path of a host plugin as this folder runs it: its install for THIS folder, else its
+ * machine-wide (user scope) install. An install made for another folder is never used — those files
+ * may be another version, and they are another project's. A bare plugin name (a 0.3.x profile) is
+ * resolved first.
+ */
 export function hostInstallPath(host, { projectRoot = process.cwd(), home = process.env.HOME || os.homedir() } = {}) {
-  if (!PLUGIN_ID_RE.test(String(host || ""))) return null;
-  const records = readJson(join(home, ".claude", "plugins", "installed_plugins.json"))?.plugins?.[host];
+  const id = resolveHostId(host, { home });
+  if (!id) return null;
+  const records = readJson(join(home, ".claude", "plugins", "installed_plugins.json"))?.plugins?.[id];
+  const usable = (r) => r && typeof r.installPath === "string" && existsSync(r.installPath);
   const bound = folderRecord(records, projectRoot);
-  if (bound && typeof bound.installPath === "string" && existsSync(bound.installPath)) return bound.installPath;
-  return anyInstall(records)?.installPath || null;
+  if (usable(bound)) return bound.installPath;
+  const userWide = (Array.isArray(records) ? records : []).find((r) => r?.scope === "user" && usable(r));
+  return userWide?.installPath || null;
 }
 
 /** The one line a token path prints when it stands down on a host-governed project. */

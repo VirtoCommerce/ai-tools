@@ -12,10 +12,9 @@
  *     secret reference (`<scheme>:<name>`), never a literal.
  * A slot, server or environment the host adds shows up without a change here.
  */
-import { spawnSync } from "node:child_process";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import os from "node:os";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { hostServerKeys, samePath, setupCommandsOf } from "./governance.mjs";
 
 function readJson(path) {
@@ -99,7 +98,10 @@ export function resolveLaunch(installPath, key, docs = pluginJsonDocs(installPat
   const at = args.indexOf(key);
   const script = at >= 2 ? args[at - 2] : "";
   if (script && insideDir(script, installPath)) {
-    const inner = docs.map((d) => d.doc?.servers?.[key]).find((s) => s && typeof s.command === "string");
+    // The declarations next to the wrapper first — the file it reads — then the rest of the plugin.
+    const near = (d) => samePath(dirname(d.path), dirname(script));
+    const ordered = [...docs.filter(near), ...docs.filter((d) => !near(d))];
+    const inner = ordered.map((d) => d.doc?.servers?.[key]).find((s) => s && typeof s.command === "string");
     if (inner) return { key, command: inner.command, args: (inner.args || []).map(String), env: inner.env || {}, wrapper: script };
   }
   return { key, command: expand(spec.command || ""), args, env: spec.env || {}, wrapper: "" };
@@ -170,22 +172,35 @@ export function hostEnvsOf(slots) {
   return [...new Set(slots.map((s) => s.hostEnv))];
 }
 
+/** Does a wrapper's source carry a usage line with a `set` verb? Pure over the text. */
+export function usageOffersSet(source) {
+  return String(source || "").split(/\r?\n/).some((l) => /usage/i.test(l) && /[<|\s]set[|>\s]/.test(l));
+}
+
 /**
  * How the operator stores one secret with the host's wrapper: `node "<wrapper>" set <name>` when the
- * wrapper's own usage line offers a `set` verb, else null (the host's setup command documents it). Spawns.
+ * usage text in the wrapper's SOURCE offers a `set` verb, else null (the host's setup command documents
+ * it). Reads the file; never runs it.
  */
 export function storeCommand(wrapper, secret) {
   if (!wrapper) return null;
-  const r = spawnSync(process.execPath, [wrapper], { encoding: "utf8", timeout: 10000 });
-  const usage = `${r.stdout || ""}\n${r.stderr || ""}`.split(/\r?\n/).find((l) => /usage/i.test(l)) || "";
-  return /[<|\s]set[|>\s]/.test(usage) ? `node "${wrapper}" set ${secret}` : null;
+  let source = "";
+  try {
+    source = readFileSync(wrapper, "utf8");
+  } catch {
+    return null;
+  }
+  return usageOffersSet(source) ? `node "${wrapper}" set ${secret}` : null;
 }
 
 /**
  * Has the host's own setup run for this folder, and what did it leave? Read-only.
- * A role with more than one server on means the host's setup has not picked this person's.
+ *   setUp: false — a role has more than one server on: the host's setup has not picked this person's.
+ *   confirmed    — the setup left a trace here (some of the host's servers switched off). A host whose
+ *                  setup changes nothing in the folder cannot be confirmed without knowing the host, so
+ *                  `setUp && !confirmed` means "not contradicted" and the operator is asked.
  */
-export function hostState(host, installPath, projectRoot, home = os.homedir()) {
+export function hostState(host, installPath, projectRoot, home = process.env.HOME || os.homedir()) {
   const shipped = [...hostServerKeys(installPath)];
   const disabled = disabledHostKeys(readJson(join(home, ".claude.json")), projectRoot, hostPluginName(host));
   const enabled = shipped.filter((k) => !disabled.includes(k));
@@ -197,6 +212,7 @@ export function hostState(host, installPath, projectRoot, home = os.homedir()) {
   const setupCommands = setupCommandsOf(installPath);
   return {
     setUp: ambiguous.length === 0,
+    confirmed: ambiguous.length === 0 && disabled.length > 0,
     reasons: ambiguous.map((k) => `more than one ${k} server is on`),
     setupCommands,
     enabled: launches.map(({ key, kind }) => ({ key, kind })),

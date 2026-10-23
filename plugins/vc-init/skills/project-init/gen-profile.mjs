@@ -56,7 +56,7 @@ import { resolve } from "path";
 import { PROFILE_DEFAULTS, PROFILE_SCHEMA_VERSION } from "../../scripts/lib/project-profile.mjs";
 import { outputRoot, resolveOutPath } from "./lib/paths.mjs";
 import { ensureProjectIgnores } from "./lib/gitignore.mjs";
-import { PLUGIN_ID_RE, WEBSITE_AUTH, governanceBlock, parseEnvMap } from "./lib/governance.mjs";
+import { WEBSITE_AUTH, governanceBlock, parseEnvMap, resolveHostId } from "./lib/governance.mjs";
 
 // A work-item field whose VALUE is time-varying (a sprint/area NODE id: System.IterationId /
 // System.AreaId). Persisting it as a fieldDefaults constant silently files future bugs into a
@@ -176,8 +176,8 @@ function main() {
     if (existing.perf && typeof existing.perf === "object") base.perf = existing.perf;
     if (existing.governance && typeof existing.governance === "object") base = deepMerge(base, { governance: existing.governance });
   }
-  if (args.governance !== undefined && args.governance !== "none" && !PLUGIN_ID_RE.test(String(args.governance))) {
-    fail(`Invalid --governance "${args.governance}". Allowed: a plugin id (<plugin>@<marketplace>) | none`);
+  if (args.governance !== undefined && args.governance !== "none" && !resolveHostId(args.governance)) {
+    fail(`Invalid --governance "${args.governance}". Allowed: a plugin id (<plugin>@<marketplace>), the name of one installed plugin, or none`);
   }
 
   // Build the override patch from flags (only set what was provided).
@@ -346,21 +346,26 @@ function main() {
   else if (effectiveType === "platform") set("buildVerify.source", "vc-deploy-dev");
 
   let profile = deepMerge(base, patch);
-  const govExtras = governanceExtras(args, profile.governance);
+  // A profile written before 0.4.0 recorded the host by its plugin NAME: read it as the plugin id it
+  // means (the one installed plugin with that name), so a re-run upgrades it in place.
+  const current = profile.governance;
+  const currentId = current?.host ? resolveHostId(current.host) || current.host : null;
   if (args.governance !== undefined) {
-    const host = args.governance === "none" ? null : args.governance;
+    const host = args.governance === "none" ? null : resolveHostId(args.governance);
     const flagged = { tracker: args["gov-tracker"], codeHost: args["gov-code-host"], github: args["gov-github"], telemetry: args["gov-telemetry"], testManagement: args["gov-test-management"], browsers: args["gov-browsers"] };
     // Re-running with the SAME host (§6 after §0-host, or --check) keeps what was confirmed earlier;
     // only a flag changes a role. A different host starts from that host's defaults.
-    const same = host && profile.governance?.host === host ? profile.governance : null;
+    const same = host && currentId === host ? current : null;
+    // Another host starts clean: its environments are not the previous host's.
+    const govExtras = governanceExtras(args, same || {});
     const kept = same ? { ...same.servers, browsers: (same.servers?.browsers || []).join(",") } : {};
     const overrides = Object.fromEntries(Object.keys(flagged).map((k) => [k, flagged[k] !== undefined ? flagged[k] : kept[k]]));
     const extras = same ? { websiteAuth: same.websiteAuth, envs: same.envs, ...govExtras } : govExtras;
     profile = { ...profile, governance: governanceBlock(host, overrides, extras) };
-  } else if (profile.governance?.host) {
+  } else if (current?.host) {
     // A day-2 run (--add-env) on a governed project: fold the answers
     // into the block that is already there, and keep everything else.
-    profile = { ...profile, governance: { ...profile.governance, ...govExtras } };
+    profile = { ...profile, governance: { ...current, host: currentId, ...governanceExtras(args, current) } };
   }
 
   // Prune infra sub-objects that don't apply to the chosen tracker / code host, so the written

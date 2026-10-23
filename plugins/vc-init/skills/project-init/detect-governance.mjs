@@ -8,14 +8,14 @@
  *   { candidates: [...], machineWide: [...], detected: <first candidate> | null,
  *     governance: <the block it would write>, state: <what the host's own setup left here> | null }
  * `machineWide` are the same shape installed for the whole machine — never picked, only offered.
- * `state` (lib/host-adapter.mjs hostState): `setUp` + `reasons`, the host's own setup command(s), the
+ * `state` (lib/host-adapter.mjs hostState): `setUp` + `confirmed` + `reasons`, the host's own setup command(s), the
  * servers on and the role each fills, the role → server map, the test-user password slots, the website
  * environments and the wrapper path. `--governance <plugin@marketplace|none>` overrides detection (the
  * operator's choice wins). Read-only — it runs nothing of the host's.
  */
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { PLUGIN_ID_RE, governanceBlock, hostCandidates, hostInstallPath } from "./lib/governance.mjs";
+import { governanceBlock, hostCandidates, hostInstallPath, resolveHostId } from "./lib/governance.mjs";
 import { hostState } from "./lib/host-adapter.mjs";
 import { outputRoot } from "./lib/paths.mjs";
 
@@ -23,8 +23,8 @@ function main() {
   const argv = process.argv.slice(2);
   const at = argv.indexOf("--governance");
   const explicit = at >= 0 ? argv[at + 1] : null;
-  if (explicit && explicit !== "none" && !PLUGIN_ID_RE.test(explicit)) {
-    console.error(`[detect-governance] --governance takes a plugin id (<plugin>@<marketplace>) or none, got "${explicit}"`);
+  if (explicit && explicit !== "none" && !resolveHostId(explicit)) {
+    console.error(`[detect-governance] --governance takes a plugin id (<plugin>@<marketplace>), the name of one installed plugin, or none — got "${explicit}"`);
     process.exit(1);
   }
   const root = outputRoot();
@@ -32,10 +32,10 @@ function main() {
   const candidates = all.filter((c) => c.folderBound);
   const machineWide = all.filter((c) => !c.folderBound);
   const detected = candidates[0] ? { host: candidates[0].pluginId, installPath: candidates[0].installPath, source: candidates[0].source } : null;
-  const host = explicit === "none" ? null : explicit || detected?.host || null;
+  const host = explicit === "none" ? null : resolveHostId(explicit) || detected?.host || null;
   const installPath = host ? hostInstallPath(host, { projectRoot: root }) : null;
   if (host && !installPath) {
-    console.error(`[detect-governance] ${host} is not installed on this machine`);
+    console.error(`[detect-governance] ${host} is not installed for this folder or for the whole machine`);
     process.exit(1);
   }
   const state = installPath ? hostState(host, installPath, root) : null;

@@ -26,6 +26,9 @@ that plugin governs this project; yes ⇒ re-run with `--governance <plugin@mark
 - **`setUp: false`** ⇒ STOP. Show `reasons` in one line and tell the operator to run
   the host's setup (`state.setupCommands`) in this folder, restart Claude Code, and re-run
   `/project-init`. Do not run any part of it yourself.
+- **`setUp: true`, `confirmed: false`** ⇒ nothing contradicts it, but the host's setup left no trace
+  here (none of its servers is switched off). Ask once whether it has run in this folder; no ⇒ the
+  STOP above.
 - **`setUp: true`** ⇒ show `governance.servers` as ONE table (role → host server, `—` for none). They
   were read from the servers the host's setup left ON here, each by the MCP package it runs
   (`state.enabled[].kind`); ask: accept, or correct a role. The code host is never inferred: ask whether

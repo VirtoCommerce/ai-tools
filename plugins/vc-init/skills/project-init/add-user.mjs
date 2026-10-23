@@ -162,6 +162,14 @@ function fail(message) {
   process.exit(1);
 }
 
+/**
+ * Only the users this script added (the `# vc-init user` blocks) — never the built-in ADMIN / USER, so a
+ * host slot that happens to be named ADMIN or USER is matched to its own block, not to a built-in. Pure.
+ */
+export function markedUsersIn(text) {
+  return usersIn(text).slice(BUILT_IN.length);
+}
+
 /** The host website environment an `.env.<env>` is: the profile's map, else a same-named host env. Pure. */
 export function hostEnvFor(env, governance, hostEnvs) {
   const mapped = governance?.envs?.[env];
@@ -190,9 +198,10 @@ function hostMain(root, profile, args) {
   const state = hostState(g.host, installPath, root);
   const { slots, hostEnvs } = state;
   if (!slots.length) fail(`${g.host} declares no test-user password slots — sign in by hand (gen-profile --gov-website-auth manual-operator)`);
+  if (!state.setUp) fail(`${state.reasons.join("; ")} — run ${state.setupCommands[0] || "the host's setup"} in this folder first, then restart Claude Code`);
   const envView = (env) => {
     const hostEnv = hostEnvFor(env, g, hostEnvs);
-    const users = usersIn(readFileSync(join(root, `.env.${env}`), "utf8")).filter((u) => !BUILT_IN.some((b) => b.key === u.key));
+    const users = markedUsersIn(readFileSync(join(root, `.env.${env}`), "utf8"));
     return {
       env,
       hostEnv,
