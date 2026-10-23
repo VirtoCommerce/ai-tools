@@ -36,7 +36,7 @@
  * Usage: node skills/project-init/verify-access.mjs
  */
 import { execSync } from "child_process";
-import { existsSync, readFileSync } from "fs";
+import { existsSync, readFileSync, readdirSync } from "fs";
 import { resolve } from "path";
 import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
 import { resolveTestEnv } from "../../scripts/lib/resolve-test-env.js";
@@ -55,6 +55,8 @@ import { resolvePluginFile, resolvePluginRoot } from "../../bridge/resolve-plugi
 import { defaultShimPath } from "../../scripts/install-bridge.mjs";
 import { parseDoctor, runDoctor, secretsVerdict } from "./lib/vc-secrets-doctor.mjs";
 import { ROLES, hostInstallPath, hostLine, hostServerKeys, isHostGoverned } from "./lib/governance.mjs";
+import { hostState, roleDrift } from "./lib/host-adapter.mjs";
+import { envsIn, hostEnvFor, markedUsersIn } from "./lib/test-users.mjs";
 import {
   probeGithubUpstream, resolveGithubToken, resolveAdoTenant, ADO_RESOURCE,
   githubCanWrite, discoverAdoWorkItemId, probeAdoWorkItemsWrite, probeAdoCodeWrite,
@@ -439,6 +441,57 @@ function signalSelfDiagnosticsComplete() {
   }
 }
 
+/**
+ * Host-governed rows that depend on THIS folder: the host's own setup ran here (a role with more than one
+ * server on means it has not — lib/host-adapter.mjs hostState), the profile names the servers that are
+ * actually on, and every `.env.<env>` maps to a host website environment with its test users on the
+ * host's password slots. Read-only, and no secret is resolved: whether a slot holds a password is the
+ * host's own check (its setup command), not ours.
+ */
+function hostPersonRows(g, installPath, root) {
+  const state = hostState(g.host, installPath, root);
+  const setup = state.setupCommands[0] || "the host's setup";
+  // Never a FAIL: without knowing the host, "its setup has not run" is a guess (hostState).
+  add("Host setup for this folder", state.confirmed ? "PASS" : "WARN",
+    state.confirmed ? `${state.enabled.length} of ${g.host}'s servers on, ${state.disabled.length} switched off`
+      : state.likelyFresh ? `looks untouched: ${state.reasons.join("; ")} — if ${setup} has not run in this folder, run it and restart Claude Code`
+        : `not confirmed: none of ${g.host}'s servers is switched off here — if ${setup} has not run in this folder, run it`);
+  const drift = roleDrift(g, state);
+  if (drift.length) add("Profile vs servers on", "WARN", `${drift.join("; ")} — re-run /project-init to record the servers that are on`);
+
+  // A guest profile written before 0.4.0 has no websiteAuth: the host's own slots decide.
+  if ((g.websiteAuth || state.websiteAuth) !== "host-secrets") {
+    add("Website test users", "SKIP", "the operator signs in by hand (governance.websiteAuth manual-operator)");
+    return;
+  }
+  const { slots, hostEnvs } = state;
+  if (!slots.length) {
+    add("Website test users", "FAIL", `the profile says the host keeps test-user passwords, but ${g.host} declares no password slots now — gen-profile --gov-website-auth manual-operator, or update the host plugin`);
+    return;
+  }
+  for (const env of envsIn(readdirSafe(root))) {
+    const hostEnv = hostEnvFor(env, g, hostEnvs);
+    if (!hostEnv) {
+      add(`Website test users — ${env}`, "FAIL", `.env.${env} is not mapped to a ${g.host} website environment (${hostEnvs.join(", ")}) — gen-profile --gov-envs ${env}=<one of them>`);
+      continue;
+    }
+    const slotOf = (u) => slots.find((s) => s.hostEnv === hostEnv && s.slot === u.key);
+    const users = markedUsersIn(readFileSync(resolve(root, `.env.${env}`), "utf8")).filter(slotOf);
+    add(`Website test users — ${env}`, users.length ? "PASS" : "WARN",
+      // The verdict first: no secret is resolved here, so a filled slot is NOT checked — say so up front.
+      users.length ? `slots unchecked · ${users.map((u) => `${u.key}→${slotOf(u).secret}`).join(", ")} (${hostEnv}); ${setup} checks them`
+        : `no test user yet on ${hostEnv} — /project-init --add-user`);
+  }
+}
+
+function readdirSafe(dir) {
+  try {
+    return readdirSync(dir);
+  } catch {
+    return [];
+  }
+}
+
 async function main() {
   // 1. Profile — loadProjectProfile() returns PROFILE_DEFAULTS even when the file is ABSENT, so
   //    `profile ? PASS : FAIL` was ALWAYS PASS: a silently-failed profile write read as green with
@@ -458,7 +511,7 @@ async function main() {
   //     the non-secret URLs answer. No token, no session probe, no login: none of that is ours here.
   if (profileExists && isHostGoverned(profile)) {
     const g = profile.governance;
-    const installPath = hostInstallPath(g.host);
+    const installPath = hostInstallPath(g.host, { projectRoot: outputRoot() });
     add("Host governance plugin", installPath ? "PASS" : "FAIL",
       installPath ? `${g.host} installed (${installPath}) — its rules outrank ours` : `${g.host} is recorded in the profile but not installed — install it, or re-run /project-init --governance none`);
     const keys = hostServerKeys(installPath);
@@ -473,6 +526,7 @@ async function main() {
     add("Storefront URL (FRONT_URL)", fS >= 200 && fS < 500 ? "PASS" : FRONT ? "FAIL" : "SKIP", `${FRONT || "(unset)"}${FRONT ? ` → HTTP ${fS}` : ""}`);
     const bS = await httpStatus(BACK);
     add("Admin/platform URL (BACK_URL)", bS >= 200 && bS < 500 ? "PASS" : BACK ? "FAIL" : "SKIP", `${BACK || "(unset)"}${BACK ? ` → HTTP ${bS}` : ""}`);
+    if (installPath) hostPersonRows(g, installPath, outputRoot());
     add("Tokens / MCP config", "SKIP", hostLine(profile, "no vc-secrets, no $VC_RUN, no .mcp.json of ours"));
     console.log("\n  Host-governed readiness (no secret is resolved in this mode)");
     renderTable(results);

@@ -8,6 +8,71 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## `vc-init` `0.4.0`, `vc-fix` `0.13.1`: a host is found by its shape, and guest mode reads what its own setup left — 2026-10-22
+
+**Fixed: detection no longer turns other projects into guests.** `detectHost` counted any install record of a
+known host plugin, so a client governance plugin installed for one folder (`--scope project`) made
+`/project-init` offer guest mode in every Virto checkout on the same machine.
+
+**Changed: no host is named in the plugins any more.** The `HOSTS` registry is gone. A candidate host is a
+plugin bound to the folder — installed for it with project or local scope, or enabled in its own
+`.claude/settings*.json` — that is not one of ours and ships MCP servers and a `SessionStart` hook; a plugin
+installed for the whole machine is only offered, never picked. The profile records it by plugin id
+(`<plugin>@<marketplace>`); `--governance` takes one.
+
+**Changed: the host sets the person up, vc-init sets the project up.** The host's own setup command (its skill
+or command named for setup / init / onboarding) owns the role, the sign-in, its secrets and which of its
+servers stay on; vc-init never runs or repeats it. `detect-governance.mjs` prints the host's `state`
+(`lib/host-adapter.mjs`, read-only): whether that setup ran here (no role has two servers on), each server
+that is on and the role it fills — by the MCP package it launches, through a wrapper when the plugin declares
+one — and the test-user password slots its browser servers launch with (`<ENV>_<SLOT>_PASSWORD` from a secret
+reference). Not set up ⇒ `/project-init` stops with the host's command. The code host is never inferred.
+
+**Added: test users on the host's password slots.** `governance` gains `websiteAuth` (`host-secrets` |
+`manual-operator`) and `envs` (`.env.<env>` → host website env); gen-profile takes `--gov-website-auth` and
+`--gov-envs`, and a re-run with the same host keeps the confirmed servers and the env map. `add-user` offers
+the host's free slots, writes the login and a one-line note to `.env.<env>` and hands the operator the way to
+store the slot's secret (the wrapper's own `set` verb when its usage offers one); no built-in `ADMIN` /
+`USER_EMAIL` and no password placeholder is written on such a project. `verify-access` checks that the
+host's setup ran here, that the profile names the servers that are on, and every env's mapping and test
+users. vc-fix's `host-governance.md` says how an agent signs in: the login as text, the password by the
+slot's NAME, or by hand when `manual-operator`.
+
+**Changed: the interview asks once, and never what the host already says.** On a host-governed project
+`state.facts` holds what the host's own files declare — the tracker kind, the Azure DevOps organization (the
+tracker server's argument) and project (the host's marketplace URL), the code host kind, the website
+environments — and the skill shows them with their source instead of asking. What is left is asked in
+`AskUserQuestion` rounds (choices, URLs, then each account, admins first), then one hand-off table of files, fields and the
+password commands. Every test-user password goes to the host's slots there. The profile is recorded as a client
+project that files nothing upstream; `.env.*` is gitignored and the env headers no longer speak of vc-secrets;
+assert-profile does not grade the scans a guest skips; next-steps offers no `/qa-fix` without a code host. In
+a normal project the same shape applies (§2e: `AskUserQuestion` rounds for every non-secret value and login, §3d a
+filled-fields table), and an admin password goes to vc-secrets only — `--admin-passwords env-local` is refused;
+a storefront user's still goes where the operator chooses.
+
+**Added: code access is probed, and readable code is scanned like the normal flow.** A host's
+documentation is not the person's rights: `/project-init` calls the tracker server's list-repositories
+tool, and when it answers the repos are scanned through the host's server — `discover-repos.mjs
+--listing-json` takes the listing the skill read, reports `needs-files` (root `package.json` of each
+storefront candidate, `module.manifest` ids of each module repo) until it has them, and classifies them as
+it always does. `governance.codeAccess` (`none` | `read` | `write`) records the result: with `read` the
+client repos carry `access: "read"` and no PR plan, vc-fix reads code for the root cause and opens no PR, and
+next-steps offers `/qa-fix` only with `write`. A `--gov-<role>` flag on a day-2 gen-profile run now
+changes that role.
+
+**Changed: every interview answer is an `AskUserQuestion` form.** Choices are options; typed values — URLs,
+logins, account notes — are the questions' Other answers, at most four questions per call: the URLs, how many
+accounts, then each account (login and a one-line note), admins first. No form in the chat and no file to fill.
+
+**Fixed: an install for the folder that its settings no longer switch on is reported `inactive`** — Claude
+Code does not load it, so detection no longer treats it as the host.
+
+**Verified.** On a machine with a client governance plugin installed for one folder and its setup already run
+there: no candidate for this repository or its parent folder; the folder's plugin found in any letter case,
+its work-items, test-management, telemetry and three browser servers classified by package, its setup
+command found, 10 slots on two environments, the store command read from the wrapper's usage. A sandbox
+project went through gen-profile → scaffold-env → scaffold-secrets → add-user → reconcile → verify-access in
+both states (setup not run / run). 3912 unit tests and the vc-init bridge tests pass.
 ## An env's files can live outside the repo; a stand can use one master password — `vc-fix` `0.13.0` — 2026-10-21
 
 Every ticket now runs on its own stand, and dedicated cloud stands are replacing the shared ones. A stand that

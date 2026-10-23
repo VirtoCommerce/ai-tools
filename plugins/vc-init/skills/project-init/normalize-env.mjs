@@ -29,9 +29,9 @@
  *                    BACK_URL); almost always a paste mistake, but not fatal.
  *
  * Usage:
- *   node skills/project-init/normalize-env.mjs --env opus_qa            # fix in place
- *   node skills/project-init/normalize-env.mjs --env opus_qa --check    # report only
- *   node skills/project-init/normalize-env.mjs --file ./.env.opus_qa    # explicit path
+ *   node skills/project-init/normalize-env.mjs --env acme_qa            # fix in place
+ *   node skills/project-init/normalize-env.mjs --env acme_qa --check    # report only
+ *   node skills/project-init/normalize-env.mjs --file ./.env.acme_qa    # explicit path
  *
  * Flags: --env <name> (or --file <path>), --check (never write), --json, --quiet.
  */

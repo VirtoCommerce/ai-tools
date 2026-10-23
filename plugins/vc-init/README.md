@@ -77,22 +77,23 @@ storefront users (typically admins in vc-secrets, users in `.env.local`, which i
 
 Some client projects run their own governance plugin: it injects binding rules, ships the approved MCP
 servers and keeps every secret in its own wrapper. There vc-init, vc-fix and vc-perf are guests, and the
-host's rules win. The first known host is `opus-governance` (`lib/governance.mjs` holds the registry).
-
-`/project-init` detects one (the install registry, the project's `enabledPlugins`), the operator confirms
-it (`--governance <host|none>` overrides detection either way), and the profile records:
+host's rules win. No host is known by name: `/project-init` looks for a plugin bound to the folder (installed
+for it, or enabled in its settings) that ships MCP servers and a `SessionStart` hook, the operator confirms it
+(`--governance <plugin@marketplace|none>` overrides detection either way), and the profile records:
 
 ```json
-"governance": { "host": "opus-governance", "secrets": "host",
+"governance": { "host": "<plugin>@<marketplace>", "secrets": "host",
                 "servers": { "tracker": "…", "codeHost": "…", "github": "…", "telemetry": "…",
                              "testManagement": "…", "browsers": ["…"] },
-                "stand": { "writable": false } }
+                "stand": { "writable": false },
+                "websiteAuth": "host-secrets|manual-operator", "envs": { "<env>": "<host env>" } }
 ```
 
-The host's default server per role is shown for the operator to accept or correct — which server is the
-tracker and which the code host is the operator's answer, never inferred. On such a project
-`/project-init` writes the profile, `.env.<env>` and the test-user password placeholders, and **nothing
-else**: no vc-secrets declaration, no `$VC_RUN` shim, no token step, no `.mcp.json` and no settings
+The host's own setup command runs first and sets the person up (role, sign-in, its secrets, which servers
+stay on); `/project-init` never repeats it and stops with its name when it has not run. The servers per role
+are read from the ones left on — by the MCP package each runs — for the operator to accept or correct; the
+code host is the operator's answer, never inferred. On such a project `/project-init` writes the profile and
+`.env.<env>` (URLs, and test users on the host's password slots), and **nothing else**: no vc-secrets declaration, no `$VC_RUN` shim, no token step, no `.mcp.json` and no settings
 `enabledMcpjsonServers`/`env`, no `az login`, no repo or tracker discovery (done through the host's
 servers at run time), self-diagnostics off with no consent question. `verify-access` prints a host-mode
 table: the host plugin installed and each mapped server among the servers it ships.

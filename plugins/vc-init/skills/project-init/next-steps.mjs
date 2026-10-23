@@ -27,7 +27,9 @@ export const PLUGIN_ACTIONS = {
     what: "the bug lifecycle (reproduce, fix, verify)",
     actions: [
       ["/qa-bug <what is wrong>", "reproduce a bug in the browser, capture evidence, file a ticket"],
-      ["/qa-fix {KEY}", "fix a filed bug in the right repo and open a PR for review (never merges)"],
+      // On a host-governed project a fix needs a code host the person can reach; without one, no PR.
+      ["/qa-fix {KEY}", "fix a filed bug in the right repo and open a PR for review (never merges)",
+        (p) => !p?.governance?.host || (Boolean(p.governance.servers?.codeHost) && p.governance.codeAccess !== "read" && p.governance.codeAccess !== "none")],
       ["/qa-verify-fix {KEY}", "re-check a fix on the deployed build and move the ticket"],
       ["/qa-env-check", "quick check of env vars, stands and tracker / code-host access"],
     ],
@@ -93,6 +95,8 @@ export function renderNextSteps(profile, plugins, { env = "" } = {}) {
     }
   }
   rows.push(["/project-init --add-env", "add another environment (URLs + test-user passwords)"]);
+  // A guest profile from before 0.4.0 has no websiteAuth yet: add-user then lets the host's slots decide.
+  if (gov && gov.websiteAuth !== "manual-operator") rows.push(["/project-init --add-user", `add a test user: its login in \`.env.<env>\`, its password in a \`${gov.host}\` slot`]);
   rows.push(["/project-init --check", "after a plugin update: bring the profile up to date and re-verify"]);
 
   const out = [

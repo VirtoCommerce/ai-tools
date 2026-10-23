@@ -33,7 +33,7 @@
  *   through the $VC_RUN bridge; a session value (`gh-cli`, `az-login`, `oauth`) ⇒ the tool's own
  *   login. "" ⇒ the axis does not apply to this deployment (e.g. `ado` on Jira + GitHub).
  * @property {Record<string, any>} perf  vc-perf's block — an open map, kept wholesale by reconcile
- * @property {{host:string|null, secrets:"host"|"vc-secrets", servers:Record<string,string|string[]>, stand:{writable:boolean}}} governance
+ * @property {{host:string|null, secrets:"host"|"vc-secrets", servers:Record<string,string|string[]>, stand:{writable:boolean}, websiteAuth:""|"host-secrets"|"manual-operator", envs:Record<string,string>, codeAccess:""|"none"|"read"|"write"}} governance
  *   a host-governed project (schema 3): see the PROFILE_DEFAULTS comment
  * @property {"platform"|"client"} projectType
  * @property {"virto-engineer"|"client"|"ask"} operator
@@ -276,16 +276,24 @@ export const PROFILE_DEFAULTS = {
 
   // governance — a HOST-GOVERNED project (VCST-6402 step 8): the client runs its own governance
   // plugin (rules, approved MCP servers, its own secret wrapper) and our plugins are a guest.
-  //   host:    the host plugin's registry key (vc-init lib/governance.mjs HOSTS) | null (= not governed)
+  //   host:    the host plugin's id, `<plugin>@<marketplace>` (found by vc-init lib/governance.mjs) | null (= not governed)
   //   secrets: "host" — no token path of ours runs at all (bridge refuses, no vc-secrets, no PAT, no
   //            az login) | "vc-secrets" — the normal VCST-6402 flow
   //   servers: the host's MCP server key per role — operator-confirmed, never inferred
   //   stand.writable: false on a governed project (no seeding/mutation of the client's stands)
+  //   websiteAuth: how test users sign in to the client's site — "host-secrets" (passwords in the host's
+  //            wrapper, typed by NAME) | "manual-operator" (the operator signs in by hand) | ""
+  //   envs:    open map, `.env.<env>` name → the host's website environment (its password slots' prefix)
+  //   codeAccess: what the person may do with the client's code through servers.codeHost —
+  //            "none" | "read" (read for root cause, never a PR) | "write" (a PR for review) | ""
   governance: {
     host: null,
     secrets: "vc-secrets",
     servers: { tracker: "", codeHost: "", github: "", telemetry: "", testManagement: "", browsers: [] },
     stand: { writable: true },
+    websiteAuth: "",
+    envs: {},
+    codeAccess: "",
   },
 };
 

@@ -27,6 +27,11 @@
  *       one env per call (a login usually differs per env). Prints one JSON report whose `steps` are the
  *       operator's commands, relayed verbatim. --replace overwrites a different login under the same KEY.
  *
+ * On a host-governed project whose host keeps the passwords (governance.websiteAuth "host-secrets"), a user
+ * takes one of the host's password SLOTS instead (hostMain below):
+ *   node add-user.mjs --list            every env, its host website env, and each slot: free or whose
+ *   node add-user.mjs --env <env> --slot <SLOT> --role user|admin --login <login> [--note "<one line>"] [--replace]
+ *
  * Exit: 0 done (or nothing to do), 1 a bad argument or a refusal (the JSON / stderr says why).
  */
 import { appendFileSync, existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
@@ -38,27 +43,15 @@ import { defaultShimPath } from "../../scripts/install-bridge.mjs";
 import { vcSecretsShim } from "../../bridge/vc-secrets-path.mjs";
 import { ensureProjectIgnores } from "./lib/gitignore.mjs";
 import { outputRoot } from "./lib/paths.mjs";
-import { standDownIfHostGoverned } from "./lib/governance.mjs";
+import { hostInstallPath, standDownIfHostGoverned } from "./lib/governance.mjs";
+import { hostState, storeCommand } from "./lib/host-adapter.mjs";
+import { BUILT_IN, envsIn, hostEnvFor, markedUsersIn, usersIn } from "./lib/test-users.mjs";
 import { ENV_NAME_RE, ROLES, ROLE_PASSWORD, declaredPasswords, isPasswordName, passwordSecret } from "./lib/passwords.mjs";
 import { patAxesFromProfile, writeSecretsDecl } from "./write-secrets-decl.mjs";
 
-/** `.env.<x>` files that are not an environment. */
-const NOT_ENVS = new Set(["local", "defaults", "example", "template", "backup"]);
-/** The users every environment already has (scaffold-env / scaffold-secrets). */
-const BUILT_IN = [
-  { key: "ADMIN", role: "admin", loginVar: "ADMIN", password: "ADMIN_PASSWORD" },
-  { key: "USER", role: "user", loginVar: "USER_EMAIL", password: "USER_PASSWORD" },
-];
-const MARK_RE = /^#\s*vc-init user ([A-Z][A-Z0-9_]*) \((user|admin)\)/;
-const ROLE_TEXT = { user: "storefront test user", admin: "back-office (admin) test user" };
+export { envsIn, hostEnvFor, markedUsersIn, usersIn };
 
-/** The environment names of a directory listing (`.env.<env>` files). Pure. */
-export function envsIn(names) {
-  return names
-    .map((n) => /^\.env\.([a-z0-9_]+)$/.exec(n)?.[1])
-    .filter((e) => e && !NOT_ENVS.has(e))
-    .sort();
-}
+const ROLE_TEXT = { user: "storefront test user", admin: "back-office (admin) test user" };
 
 /** Why a KEY is not usable, or null. Pure. */
 export function keyProblem(key) {
@@ -75,32 +68,29 @@ export function loginProblem(login) {
   return null;
 }
 
-/** The users an `.env.<env>` text declares: the built-ins plus every `# vc-init user` block. Pure. */
-export function usersIn(text) {
-  const values = parse(String(text || ""));
-  const users = BUILT_IN.map((b) => ({ ...b, login: values[b.loginVar] || "" }));
-  for (const line of String(text || "").split(/\r?\n/)) {
-    const m = MARK_RE.exec(line.trim());
-    if (m) users.push({ key: m[1], role: m[2], loginVar: `${m[1]}_LOGIN`, password: `${m[1]}_PASSWORD`, login: values[`${m[1]}_LOGIN`] || "" });
-  }
-  return users;
-}
-
 /**
  * The `.env.<env>` text with the user's block added or its login changed. Pure.
  * @returns {{ text: string, change: "added"|"replaced"|"unchanged" } | { refused: string }}
  */
-export function withUser(text, { key, role, login, replace = false }) {
+export function withUser(text, { key, role, login, replace = false, note = "", password = `${key}_PASSWORD`, where = "" }) {
   const loginVar = `${key}_LOGIN`;
   const current = parse(String(text || ""))[loginVar];
-  if (current === login) return { text, change: "unchanged" };
+  const comment = `# vc-init user ${key} (${role}) — ${note || ROLE_TEXT[role]}. Login below; the agent types the password by its NAME: ${password}${where ? ` (${where})` : ""}`;
+  if (current === login && !replace) return { text, change: "unchanged" };
   if (current !== undefined) {
     if (!replace) return { refused: `${loginVar} is already ${JSON.stringify(current)} here — pass --replace to change it` };
     // A replacer function: a login is data, and `$&` / `$1` in a string replacement would be a pattern.
-    return { text: String(text).replace(new RegExp(`^(\\s*${loginVar}\\s*=).*$`, "m"), (_m, lead) => `${lead}${login}`), change: "replaced" };
+    // The comment above it is rewritten too, so its role, note and password NAME follow the new user.
+    const marker = new RegExp(`^#\\s*vc-init user ${key} \\((?:user|admin)\\).*$`, "m");
+    // A login line written by hand has no marker: one is added above it, or the slot reads as free.
+    const loginLine = new RegExp(`^(\\s*${loginVar}\\s*=).*$`, "m");
+    const next = marker.test(text)
+      ? String(text).replace(loginLine, (_m, lead) => `${lead}${login}`).replace(marker, () => comment)
+      : String(text).replace(loginLine, (_m, lead) => `${comment}\n${lead}${login}`);
+    return { text: next, change: next === text ? "unchanged" : "replaced" };
   }
   const base = String(text || "");
-  const block = `# vc-init user ${key} (${role}) — ${ROLE_TEXT[role]}. Login below; the agent types the password by its NAME: ${key}_PASSWORD\n${loginVar}=${login}\n`;
+  const block = `${comment}\n${loginVar}=${login}\n`;
   return { text: `${base}${base && !base.endsWith("\n") ? "\n" : ""}${base ? "\n" : ""}${block}`, change: "added" };
 }
 
@@ -156,6 +146,87 @@ function fail(message) {
   process.exit(1);
 }
 
+/** Why a note is not usable, or null. It lands in a one-line `#` comment. Pure. */
+export function noteProblem(note) {
+  if (note === undefined || note === "") return null;
+  if (/[\r\n]/.test(note) || note.length > 160) return "--note is one line of at most 160 characters";
+  return null;
+}
+
+/**
+ * A host-governed project whose host keeps test-user passwords (governance.websiteAuth "host-secrets"): the
+ * host declares fixed password SLOTS per website environment (lib/host-adapter.mjs), each with the
+ * NAME a browser agent types. A user takes a free slot of its environment: the login and a one-line
+ * note go into `.env.<env>` (the built-in ADMIN / USER have no slot there and are not offered), and
+ * the operator stores the password with the host's wrapper — never this script, never a file.
+ */
+function hostMain(root, profile, args) {
+  const g = profile.governance;
+  const installPath = hostInstallPath(g.host, { projectRoot: root });
+  if (!installPath) fail(`${g.host} is not installed for this folder — install it first (the host's own instructions)`);
+  const state = hostState(g.host, installPath, root);
+  const { slots, hostEnvs } = state;
+  if (!slots.length) fail(`${g.host} declares no test-user password slots — sign in by hand (gen-profile --gov-website-auth manual-operator)`);
+  // A slot holds ONE password, so it belongs to one user across every `.env.<env>` that maps to the same
+  // host environment — two files claiming it would share a password.
+  const allEnvs = envsIn(readdirSync(root));
+  const holders = (hostEnv) => allEnvs.filter((e) => hostEnvFor(e, g, hostEnvs) === hostEnv)
+    .flatMap((e) => markedUsersIn(readFileSync(join(root, `.env.${e}`), "utf8")).map((u) => ({ ...u, env: e })));
+  const envView = (env) => {
+    const hostEnv = hostEnvFor(env, g, hostEnvs);
+    const users = hostEnv ? holders(hostEnv) : [];
+    return {
+      env,
+      hostEnv,
+      slots: slots.filter((s) => s.hostEnv === hostEnv).map((s) => {
+        const u = users.find((x) => x.key === s.slot);
+        return { slot: s.slot, password: s.password, secret: s.secret, login: u?.login || "", role: u?.role || "", heldIn: u?.env || "", free: !u };
+      }),
+    };
+  };
+
+  if (args.list) {
+    const envs = envsIn(readdirSync(root)).map(envView);
+    console.log(JSON.stringify({ host: g.host, websiteAuth: "host-secrets", hostEnvs, envs,
+      unmapped: envs.filter((e) => !e.hostEnv).map((e) => e.env) }, null, 2));
+    return;
+  }
+
+  const { env, role, login, note = "" } = args;
+  const slot = args.slot || args.key;
+  if (!ENV_NAME_RE.test(String(env || ""))) fail("--env <name> is required ([a-z0-9_]+)");
+  if (!existsSync(join(root, `.env.${env}`))) fail(`no .env.${env} — the environments here are: ${envsIn(readdirSync(root)).join(", ") || "(none)"}; add one with /project-init --add-env`);
+  const view = envView(env);
+  if (!view.hostEnv) fail(`.env.${env} is not mapped to a ${g.host} website environment (${hostEnvs.join(", ")}) — gen-profile --gov-envs ${env}=<one of them>`);
+  const target = view.slots.find((s) => s.slot === slot);
+  if (!target) fail(`--slot must be one of ${view.slots.map((s) => s.slot).join(", ")} (the ${g.host} slots for ${view.hostEnv})`);
+  if (!target.free && target.heldIn !== env) fail(`slot ${slot} of ${view.hostEnv} already belongs to ${target.login} in .env.${target.heldIn} — one slot is one password; pick a free slot`);
+  if (!["user", "admin"].includes(role)) fail("--role must be user (storefront) or admin (back office)");
+  const lp = loginProblem(login);
+  if (lp) fail(lp);
+  const np = noteProblem(note);
+  if (np) fail(np);
+
+  const envFile = join(root, `.env.${env}`);
+  const next = withUser(readFileSync(envFile, "utf8"), { key: slot, role, login, note, password: target.password, where: `${g.host} slot ${target.secret}`, replace: !!args.replace });
+  if (next.refused) fail(next.refused);
+  if (next.change !== "unchanged") writeFileSync(envFile, next.text);
+  const store = storeCommand(state.wrapper, target.secret);
+  console.log(JSON.stringify({
+    env,
+    hostEnv: view.hostEnv,
+    user: { key: slot, role, loginVar: `${slot}_LOGIN`, login, password: target.password, envFile: `.env.${env}`, login_change: next.change },
+    password: { mode: "host", host: g.host, secret: target.secret },
+    steps: [
+      store
+        ? `${store}    # in your own terminal: hidden input — paste the password, never into the chat`
+        : `store the password as the secret "${target.secret}" with ${g.host}'s own secret tool${state.wrapper ? ` (${state.wrapper})` : ""} — ${state.setupCommands[0] || "its setup"} shows how; in your own terminal, never in the chat`,
+      "restart Claude Code — the browser servers read the passwords at start",
+    ],
+    agent: `log in with ${slot}_LOGIN from .env.${env} and type the password by its NAME: browser_type(text="${target.password}")`,
+  }, null, 2));
+}
+
 function main() {
   let args;
   try {
@@ -164,8 +235,11 @@ function main() {
     fail(e.message);
   }
   const root = outputRoot();
-  standDownIfHostGoverned(root, "add-user skipped: the host's secret wrapper owns the test users", { json: true });
   const { raw: profile, error, path } = readProjectProfile(root);
+  // A guest profile written before 0.4.0 has no websiteAuth: let the host's own slots decide (hostMain
+  // refuses with the manual-operator fix when it declares none).
+  if (profile?.governance?.host && ["host-secrets", "", undefined].includes(profile.governance.websiteAuth)) return hostMain(root, profile, args);
+  standDownIfHostGoverned(root, "add-user skipped: test users sign in by hand here (governance.websiteAuth is not host-secrets)", { json: true });
   if (!profile) fail(error ? `cannot parse ${path}: ${error}` : `no ${path} — this project is not onboarded; run /project-init first`);
 
   if (args.list) {

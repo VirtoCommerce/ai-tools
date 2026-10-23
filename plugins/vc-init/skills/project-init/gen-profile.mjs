@@ -38,6 +38,9 @@
  *                              block is kept, like `perf`.
  *   --gov-tracker <key> --gov-code-host <key> --gov-github <key> --gov-telemetry <key>
  *   --gov-test-management <key> --gov-browsers <k1,k2>   operator overrides of the host's server per role
+ *   --gov-website-auth host-secrets|manual-operator   how test users sign in to the client's website
+ *   --gov-envs <env>=<host env>,…   which host website environment each `.env.<env>` is (added, never dropped)
+ *   --gov-code-access none|read|write   what the person may do with the client's code through --gov-code-host
  *
  *   # Merge a discovered repo map (output of discover-repos.mjs) into an existing profile:
  *   node skills/project-init/gen-profile.mjs --repos-json repos.json --merge --print
@@ -53,8 +56,11 @@ import { readFileSync, writeFileSync, existsSync } from "fs";
 import { resolve } from "path";
 import { PROFILE_DEFAULTS, PROFILE_SCHEMA_VERSION } from "../../scripts/lib/project-profile.mjs";
 import { outputRoot, resolveOutPath } from "./lib/paths.mjs";
-import { ensureProjectIgnores } from "./lib/gitignore.mjs";
-import { HOSTS, governanceBlock } from "./lib/governance.mjs";
+import { ensureGitignoreEntries, ensureProjectIgnores, removeGitignoreBlock } from "./lib/gitignore.mjs";
+
+/** The .gitignore block a host-governed project gets for its env files (removed when it stops being one). */
+const HOST_ENV_IGNORE = "vc-init (/project-init) — host-governed: env files are local";
+import { CODE_ACCESS, WEBSITE_AUTH, governanceBlock, parseEnvMap, resolveHostId } from "./lib/governance.mjs";
 
 // A work-item field whose VALUE is time-varying (a sprint/area NODE id: System.IterationId /
 // System.AreaId). Persisting it as a fieldDefaults constant silently files future bugs into a
@@ -90,6 +96,31 @@ function parseArgs(argv) {
     }
   }
   return args;
+}
+
+/**
+ * The answers of a host-governed block besides its servers (`--gov-website-auth`,
+ * `--gov-envs <env>=<host env>,…`), merged over what the block already holds: an env map ADDS
+ * environments, it never drops one.
+ */
+function governanceExtras(args, current = {}) {
+  const extras = {};
+  if (args["gov-website-auth"] !== undefined) {
+    if (!WEBSITE_AUTH.includes(args["gov-website-auth"])) fail(`Invalid --gov-website-auth "${args["gov-website-auth"]}". Allowed: ${WEBSITE_AUTH.join(" | ")}`);
+    extras.websiteAuth = args["gov-website-auth"];
+  }
+  if (args["gov-code-access"] !== undefined) {
+    if (!CODE_ACCESS.includes(args["gov-code-access"])) fail(`Invalid --gov-code-access "${args["gov-code-access"]}". Allowed: ${CODE_ACCESS.join(" | ")}`);
+    extras.codeAccess = args["gov-code-access"];
+  }
+  if (args["gov-envs"] !== undefined) {
+    try {
+      extras.envs = { ...(current?.envs || {}), ...parseEnvMap(args["gov-envs"]) };
+    } catch (e) {
+      fail(`--gov-envs: ${e.message}`);
+    }
+  }
+  return extras;
 }
 
 function fail(msg) {
@@ -153,8 +184,8 @@ function main() {
     if (existing.perf && typeof existing.perf === "object") base.perf = existing.perf;
     if (existing.governance && typeof existing.governance === "object") base = deepMerge(base, { governance: existing.governance });
   }
-  if (args.governance !== undefined && args.governance !== "none" && !HOSTS[args.governance]) {
-    fail(`Invalid --governance "${args.governance}". Allowed: ${Object.keys(HOSTS).join(" | ")} | none`);
+  if (args.governance !== undefined && args.governance !== "none" && !resolveHostId(args.governance)) {
+    fail(`Invalid --governance "${args.governance}". Allowed: a plugin id (<plugin>@<marketplace>), the name of one installed plugin, or none`);
   }
 
   // Build the override patch from flags (only set what was provided).
@@ -323,9 +354,54 @@ function main() {
   else if (effectiveType === "platform") set("buildVerify.source", "vc-deploy-dev");
 
   let profile = deepMerge(base, patch);
+  // A profile written before 0.4.0 recorded the host by its plugin NAME: read it as the plugin id it
+  // means (the one installed plugin with that name), so a re-run upgrades it in place.
+  const current = profile.governance;
+  const currentId = current?.host ? resolveHostId(current.host) || current.host : null;
+  const leavingHost = args.governance === "none" && Boolean(currentId);
   if (args.governance !== undefined) {
-    const overrides = { tracker: args["gov-tracker"], codeHost: args["gov-code-host"], github: args["gov-github"], telemetry: args["gov-telemetry"], testManagement: args["gov-test-management"], browsers: args["gov-browsers"] };
-    profile = { ...profile, governance: governanceBlock(args.governance === "none" ? null : args.governance, overrides) };
+    const host = args.governance === "none" ? null : resolveHostId(args.governance);
+    const flagged = { tracker: args["gov-tracker"], codeHost: args["gov-code-host"], github: args["gov-github"], telemetry: args["gov-telemetry"], testManagement: args["gov-test-management"], browsers: args["gov-browsers"] };
+    // Re-running with the SAME host (§6 after §0-host, or --check) keeps what was confirmed earlier;
+    // only a flag changes a role. A different host starts EMPTY — no host has defaults here; pass every
+    // role (detect-governance's state.genProfile carries them all).
+    const same = host && currentId === host ? current : null;
+    // Another host starts clean: its environments are not the previous host's.
+    const govExtras = governanceExtras(args, same || {});
+    const kept = same ? { ...same.servers, browsers: (same.servers?.browsers || []).join(",") } : {};
+    const overrides = Object.fromEntries(Object.keys(flagged).map((k) => [k, flagged[k] !== undefined ? flagged[k] : kept[k]]));
+    const extras = same ? { websiteAuth: same.websiteAuth, envs: same.envs, codeAccess: same.codeAccess, ...govExtras } : govExtras;
+    profile = { ...profile, governance: governanceBlock(host, overrides, extras) };
+  } else if (current?.host) {
+    // A day-2 run (--add-env) on a governed project: fold the answers
+    // into the block that is already there, and keep everything else.
+    // A --gov-<role> flag changes that one role here too (e.g. the code host once §3a has scanned).
+    const servers = { ...current.servers };
+    for (const [flag, role] of [["gov-tracker", "tracker"], ["gov-code-host", "codeHost"], ["gov-github", "github"],
+      ["gov-telemetry", "telemetry"], ["gov-test-management", "testManagement"]]) {
+      if (args[flag] !== undefined) servers[role] = String(args[flag]);
+    }
+    if (args["gov-browsers"] !== undefined) servers.browsers = String(args["gov-browsers"]).split(",").map((s) => s.trim()).filter(Boolean);
+    profile = { ...profile, governance: { ...current, host: currentId, servers, ...governanceExtras(args, current) } };
+  }
+
+  // A host-governed project is a client's, and its repo scan (§4/§5) does not run — so the defaults
+  // (platform, a VirtoCommerce fork) would describe a project that is not there. Record it as a client
+  // project the operator works in, and file nothing upstream: nothing leaves for VirtoCommerce from a
+  // guest. An explicit flag still wins.
+  if (profile.governance?.host) {
+    if (!args["project-type"]) profile.projectType = "client";
+    if (!args.operator) profile.operator = "client";
+    profile.upstream = { ...profile.upstream, fileIssues: false };
+    if (profile.projectType === "client" && profile.buildVerify?.source === "vc-deploy-dev") profile.buildVerify.source = "modules-endpoint";
+  } else if (leavingHost) {
+    // Leaving guest mode (`--governance none` on a profile that had a host): undo what guest mode forced,
+    // so a project once taken for host-governed by mistake is a normal one again. The repo scan (§4)
+    // re-derives projectType / operator; an explicit flag still wins.
+    if (!args["project-type"]) profile.projectType = PROFILE_DEFAULTS.projectType;
+    if (!args.operator) profile.operator = PROFILE_DEFAULTS.operator;
+    profile.upstream = { ...profile.upstream, fileIssues: PROFILE_DEFAULTS.upstream.fileIssues };
+    if (profile.projectType === "platform" && profile.buildVerify?.source === "modules-endpoint") profile.buildVerify.source = "vc-deploy-dev";
   }
 
   // Prune infra sub-objects that don't apply to the chosen tracker / code host, so the written
@@ -358,12 +434,26 @@ function main() {
 
   // Protect BEFORE creating — the fourth and last writer of a generated local file. It is also the
   // one that turns self-diagnostics ON, so `.vc-fix/` starts filling right after (VCST-5774 #4).
+  // On a host-governed project every `.env.<env>` is local too: it holds the test users' logins, and the
+  // host's rules keep environment files out of the repository.
+  // That rule lives in its own marked block, so leaving guest mode removes exactly it — a normal project
+  // commits its `.env.<env>`.
   const ignored = ensureProjectIgnores(outputRoot());
+  if (profile.governance?.host) {
+    ignored.push(...ensureGitignoreEntries(outputRoot(), [".env.*"], { title: HOST_ENV_IGNORE, notes: ["Every .env.<env> here holds test-user logins; the host's rules keep env files out of git."] }));
+  } else if (leavingHost) {
+    const dropped = removeGitignoreBlock(outputRoot(), HOST_ENV_IGNORE);
+    if (dropped.length) console.log(`[gen-profile] .gitignore -= ${dropped.join(", ")} (not host-governed any more)`);
+  }
   if (ignored.length) console.log(`[gen-profile] .gitignore += ${ignored.join(", ")}`);
   writeFileSync(outPath, JSON.stringify(withMeta, null, 2) + "\n");
   console.log(`[gen-profile] wrote ${outPath}`);
-  console.log(
-    `[gen-profile] projectType=${profile.projectType} tracker=${profile.tracker.kind} ` +
+  const g = profile.governance;
+  console.log(g?.host
+    // A guest's tracker / code host are only known once the interview filled them in — say what IS set.
+    ? `[gen-profile] host-governed by ${g.host}: tracker server ${g.servers.tracker || "—"}, code host ${g.servers.codeHost || "—"}, ` +
+      `test users ${g.websiteAuth || "—"}${args.tracker || args["client-vcs"] ? ` · tracker=${profile.tracker.kind} clientVcs=${profile.vcs.clientHost}` : ""}`
+    : `[gen-profile] projectType=${profile.projectType} tracker=${profile.tracker.kind} ` +
       `clientVcs=${profile.vcs.clientHost} upstream=${profile.upstream.org} ` +
       `contributionMode=${profile.upstream.contributionMode}` +
       (profile.vcs.githubTokenKind ? ` githubToken=${profile.vcs.githubTokenKind}/${profile.vcs.githubForkCapable || "unknown"}` : ""),

@@ -26,6 +26,8 @@
  * Usage:
  *   node skills/project-init/discover-repos.mjs \
  *     [--client-vcs github|azure-repos] [--client-org acme-corp] [--out repos.json] [--print] [--insecure]
+ *   # a host-governed project: the repos the skill read through the HOST's MCP server (listingSource):
+ *   node skills/project-init/discover-repos.mjs --listing-json listing.json --out repos.json
  *   # offline test with mock module data ([{Id,ProjectUrl}, ...]); skips the repo scan:
  *   node skills/project-init/discover-repos.mjs --modules-json mods.json --print
  */
@@ -351,10 +353,13 @@ export function frontendProvenanceFromPackage(pkg) {
   const name = String(pkg.name || "").toLowerCase();
   const deps = { ...(pkg.dependencies || {}), ...(pkg.devDependencies || {}) };
   const isUpstreamItself = name === "vc-frontend";
+  // vc-frontend was published as `vc-theme-b2b-vue` before its rename, and a fork keeps either name; its
+  // in-repo core package is `@vc-frontend/*`, and its add-ons ship as `@virto-commerce/*`.
   const vcSignal =
     isUpstreamItself ||
     name.includes("vc-frontend") ||
-    Object.keys(deps).some((d) => /@vc-shell|virtocommerce|@virto\//i.test(d));
+    name.includes("vc-theme-b2b-vue") ||
+    Object.keys(deps).some((d) => /@vc-shell|@vc-frontend\/|virtocommerce|@virto\/|@virto-commerce\//i.test(d));
   if (!vcSignal) return null;
   const upstreamRef = isUpstreamItself ? String(pkg.version || "") : vcFrontendRef(pkg.version);
   return { upstream: "VirtoCommerce/vc-frontend", upstreamRef };
@@ -438,19 +443,19 @@ async function listClientReposLive(host, { org, project }) {
  * Azure Repos, which has no fork lineage) read the repo's package.json and infer vc-frontend
  * lineage + version. Never throws — provenance is optional; the operator fills gaps.
  */
-async function deriveFrontendProvenance(host, { org, project, name, isFork, fullName }) {
+async function deriveFrontendProvenance(host, { org, project, name, isFork, fullName }, src = LIVE_SOURCE) {
   try {
     // 1. Identify the upstream repo (a real GitHub fork names its parent; else infer
     //    vc-frontend lineage from package.json) and read the fork's own version.
     let upstream = "";
-    if (host === "github") {
+    if (host === "github" && src.live) {
       const res = await fetch(`https://api.github.com/repos/${org}/${name}`, { headers: githubHeaders() });
       if (res.ok) {
         const repo = await res.json();
         if (repo.fork && repo.parent?.full_name) upstream = repo.parent.full_name;
       }
     }
-    const pkg = await readPackageJsonLive(host, { org, project, name });
+    const pkg = await src.packageJson(host, { org, project, name });
     if (!upstream) {
       const strong = frontendProvenanceFromPackage(pkg); // @vc-shell/virtocommerce signal
       if (strong?.upstream) upstream = strong.upstream;
@@ -587,6 +592,61 @@ const hostnameOf = (u) => {
   try { return new URL(u).hostname; } catch { return ""; }
 };
 
+/** Where the client's repos are read from: the code host's API with our credentials (live). */
+const LIVE_SOURCE = Object.freeze({
+  live: true,
+  listRepos: listClientReposLive,
+  packageJson: readPackageJsonLive,
+  branches: listRepoBranches,
+});
+
+/**
+ * A host-governed project reads the client's code only through the HOST's MCP server, never with a
+ * token of ours: the skill calls that server and writes what it returned as a LISTING —
+ *   { host, org, project, access: "read"|"write", server: <the host's code-host server key>,
+ *     repos: [{ name, id?, defaultBranch?, branches?: [..],
+ *               packageJson?: <object|null>,     // the repo's root package.json, when read
+ *               moduleIds?: [<module id>, ..] }] }  // the <id> of each src/*.Web/module.manifest
+ * A repo the scan needs a file of but the listing has not read yet is reported in `needs`
+ * (listingNeeds), so the skill fetches exactly those and runs again. Pure.
+ */
+export function listingSource(listing) {
+  const repos = Array.isArray(listing?.repos) ? listing.repos : [];
+  const byName = new Map(repos.map((r) => [r.name, r]));
+  return {
+    live: false,
+    listRepos: async () => repos.map((r) => ({ name: r.name, id: r.id || "", defaultBranch: stripRef(r.defaultBranch) })),
+    packageJson: async (_h, { name }) => byName.get(name)?.packageJson || null,
+    branches: async (_h, { name }) => (Array.isArray(byName.get(name)?.branches) ? byName.get(name).branches.map(stripRef) : []),
+  };
+}
+
+/** Module descriptors from a listing's manifests, shaped like the modules API's `{Id, ProjectUrl}`. Pure. */
+export function listingModules(listing) {
+  const out = [];
+  for (const r of Array.isArray(listing?.repos) ? listing.repos : []) {
+    const url = listing.host === "azure-repos"
+      ? `https://dev.azure.com/${listing.org}/${listing.project}/_git/${r.name}`
+      : `https://github.com/${listing.org}/${r.name}`;
+    for (const id of Array.isArray(r.moduleIds) ? r.moduleIds : []) out.push({ Id: id, ProjectUrl: url });
+  }
+  return out;
+}
+
+/**
+ * Which files the scan still needs from the host: the root package.json of every storefront/theme
+ * candidate (pickFrontendRepos), and the module manifests of every repo whose name says module. A
+ * key that is PRESENT (even null / []) counts as read. Pure.
+ */
+export function listingNeeds(listing) {
+  const repos = Array.isArray(listing?.repos) ? listing.repos : [];
+  const fe = new Set(pickFrontendRepos(repos.map((r) => r.name)));
+  return {
+    packageJson: repos.filter((r) => fe.has(r.name) && !("packageJson" in r)).map((r) => r.name),
+    moduleIds: repos.filter((r) => !fe.has(r.name) && /module/i.test(r.name) && !("moduleIds" in r)).map((r) => r.name),
+  };
+}
+
 async function getModulesLive() {
   loadLayeredEnv("vcst"); // throws on a malformed TEST_ENV — let it crash loudly here
 
@@ -613,15 +673,38 @@ async function getModulesLive() {
 }
 
 async function main() {
-  standDownIfHostGoverned(process.env.VC_FIX_HOME || process.cwd(), "discover-repos skipped: the client code host is scanned through the host's code-host MCP server, never with a PAT or az");
   const args = parseArgs(process.argv.slice(2));
+  // A host-governed project is scanned ONLY from a listing the skill read through the host's MCP
+  // server (--listing-json); without one, nothing of ours may reach the client's code host.
+  const listing = args["listing-json"] ? JSON.parse(readFileSync(resolve(args["listing-json"]), "utf-8")) : null;
+  if (!listing) standDownIfHostGoverned(process.env.VC_FIX_HOME || process.cwd(), "discover-repos skipped: the client code host is scanned through the host's code-host MCP server, never with a PAT or az — pass the listing it returned as --listing-json");
+  if (listing) {
+    const needs = listingNeeds(listing);
+    if (needs.packageJson.length || needs.moduleIds.length) {
+      // Not an error: the skill reads exactly these through the host's server, adds them, re-runs.
+      console.log(JSON.stringify({ status: "needs-files", needs }, null, 2));
+      return;
+    }
+  }
+  const src = listing ? listingSource(listing) : LIVE_SOURCE;
   if (args.insecure) process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-  const override = args["client-org"] || "";
-  const host = args["client-vcs"] || "github";
-  const vcsAuth = args["vcs-auth"] || "pat";
+  const override = args["client-org"] || listing?.org || "";
+  const host = listing?.host || args["client-vcs"] || "github";
+  // Through the host's server there is no auth env of ours; a read-only code host gets no PR plan.
+  const vcsAuth = listing ? "host" : args["vcs-auth"] || "pat";
+  if (listing) {
+    // The listing names the org / project it was read from; a stale ADO_ORG in the environment must not
+    // re-home its repos.
+    if (listing.org) process.env.ADO_ORG = listing.org;
+    if (listing.project) process.env.ADO_PROJECT = listing.project;
+  }
 
   let modules;
-  if (args["modules-json"]) {
+  if (listing) {
+    // The modules API needs an admin sign-in, which is the host's to hold: the client modules are
+    // read from their own manifests instead. VirtoCommerce modules are not listed (no platform repos).
+    modules = listingModules(listing);
+  } else if (args["modules-json"]) {
     modules = JSON.parse(readFileSync(resolve(args["modules-json"]), "utf-8"));
   } else {
     try {
@@ -648,11 +731,11 @@ async function main() {
 
   // Scan the CLIENT's repos for a storefront/theme/frontend repo — it is NOT installed as
   // a platform module, so the modules API never surfaces it. Live mode only, needs an org.
-  if (!args["modules-json"] && clientOrg) {
+  if ((listing || !args["modules-json"]) && clientOrg) {
     try {
       const org = host === "azure-repos" ? (process.env.ADO_ORG || clientOrg) : clientOrg;
       const project = process.env.ADO_PROJECT || "";
-      const all = await listClientReposLive(host, { org, project });
+      const all = await src.listRepos(host, { org, project });
       const byName = new Map(all.map((r) => [r.name, r]));
       const liveNames = all.map((r) => r.name);
       const fe = pickFrontendRepos(liveNames);
@@ -689,13 +772,19 @@ async function main() {
       for (const n of fe) {
         if (have.has(n)) continue;
         const info = byName.get(n) || {};
+        // Read through a host's server, a name match with NO root package.json is not a vc-frontend app
+        // (e.g. a vc-storefront ASP.NET host): it gets no frontend toolchain — the operator says what it is.
+        if (listing && (listing.repos.find((r) => r.name === n) || {}).packageJson === null) {
+          console.error(`[discover-repos] ${n} is named like a storefront but has no root package.json — not added as a frontend (Vue) repo; ASK the operator what it is (e.g. an ASP.NET vc-storefront host).`);
+          continue;
+        }
         const entry = { name: `${org}/${n}`, kind: "frontend", host };
         if (info.defaultBranch) entry.defaultBranch = info.defaultBranch;
         // Best-effort upstream provenance (H3): the platform repo + version this fork
         // was cut from, so /qa-fix can tell a client customization from a platform bug.
         const prov = await deriveFrontendProvenance(host, {
           org, project, name: n, isFork: info.isFork, fullName: info.fullName,
-        });
+        }, src);
         if (prov?.upstream) {
           entry.upstream = prov.upstream;
           entry.upstreamRef = prov.upstreamRef;
@@ -714,7 +803,7 @@ async function main() {
       const unverified = feEntries.filter((c) => c.upstream && !c.upstreamRefResolved);
       console.error(
         fe.length
-          ? `[discover-repos] storefront/theme repo(s) found: ${fe.join(", ")}` +
+          ? `[discover-repos] storefront/theme repo(s) found: ${feEntries.map((c) => c.name.split("/").pop()).join(", ") || "(none kept)"}` +
               (feEntries.some((c) => c.upstream)
                 ? unverified.length
                   ? ` (provenance derived; upstreamRef UNVERIFIED for ${unverified.map((c) => c.name).join(", ")} — ASK the operator to confirm the vc-frontend line base tag, e.g. 2.49 → 2.49.0)`
@@ -738,10 +827,22 @@ async function main() {
         const bare = c.name.split("/").pop();
         const info = byName.get(bare) || {};
         if (info.id && !c.repoId) c.repoId = info.id;
-        const branches = await listRepoBranches(host, { org, project, name: bare });
+        const branches = await src.branches(host, { org, project, name: bare });
         c.integrationBranch = detectIntegrationBranch(branches, c.defaultBranch);
         c.workBranchPrefix = "claude/qa-autofix/";
-        c.contribution = contributionForClient(host, {
+        // Read through a host's server: the code is readable, but a PR is the host role's to grant — and,
+        // when granted, it is opened through the HOST's server: our bridge refuses gh / the ADO REST on a
+        // host-governed project (exit 78), so the plan names the host's tools, never ours.
+        if (listing && listing.access !== "write") c.access = "read";
+        else if (listing) {
+          c.access = "write";
+          c.contribution = {
+            ...contributionForClient(host, { org, project, name: c.name, integrationBranch: c.integrationBranch, vcsAuth }),
+            prApi: "host-mcp",
+            server: String(listing.server || ""),
+            authEnv: "",
+          };
+        } else c.contribution = contributionForClient(host, {
           org, project, name: c.name, integrationBranch: c.integrationBranch, vcsAuth,
         });
         c.toolchain = kindToolchain(c.kind);
@@ -792,7 +893,7 @@ async function main() {
     if (c.nameFromId && c.nameUnverified === undefined) c.nameUnverified = true;
     delete c.nameFromId;
   }
-  const out = { projectType, clientOrg, ...result };
+  const out = { projectType, clientOrg, ...result, ...(listing ? { scannedThrough: "host", access: listing.access === "write" ? "write" : "read" } : {}) };
   console.error(`[discover-repos] derived projectType=${projectType}`);
   if (projectType === "client" && !clientOrg && host === "github") {
     console.error(
