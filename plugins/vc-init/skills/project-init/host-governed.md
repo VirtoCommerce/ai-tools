@@ -104,57 +104,60 @@ DevOps server reaches Azure Repos): call its list-repositories tool for the proj
   automatic refusal) ⇒ say so, record nothing, and ask the operator to run the same request in their
   own words; never work around it.
 
-### 4. URLs and test accounts — AskUserQuestion, no file
+### 4. Environments, URLs and logins — one value per question
 
-Every answer comes through `AskUserQuestion` — no form typed in the chat, no file to fill. A typed value
-(a URL, a login, a note) is the question's **Other** answer: each question offers its sensible fixed
-choices as options and the operator types anything else there. At most four questions per call, so:
+**How every typed value is asked — the operator must see at once WHAT to enter.** `AskUserQuestion` shows
+its options first and the free-text box last ("Type something"), so a question that names a value but
+offers only exceptions reads as a riddle. Every such question therefore:
 
-1. **URLs** — one call per two environments, one question per URL: *"`qa` — storefront URL?"*, *"`qa` —
-   admin (back office) URL?"*. Options: `Skip this environment` · `Leave empty for now`; the URL is typed
-   as Other. Never invent a URL; an origin the host blocks is refused and asked again.
-2. **How many accounts** — one call, two questions per environment: admins / storefront users, options
-   `0` · `1` · `2` · `3` (Other for more — at most the free host password slots of that environment).
-3. **Each account, admins first** — one call per two accounts, two questions each: *"`qa` · admin 1 of 2 —
-   login?"* (options: `Skip this account` · `Same login as on <previous env>` when there is one; the
-   login typed as Other) and *"`qa` · admin 1 — what is this account?"* (options: a few typical notes —
-   `Main admin`, `Buyer`, `Approver`, `Read-only user`; Other for anything else). Never a password.
+- **starts with "Enter …" and names exactly one value** — *"Enter the STOREFRONT URL of `qa`"*, never
+  *"`qa` — storefront URL?"*;
+- **says where to type it and shows an example**, in the question text itself: *"Choose “Type something”
+  below and paste it, e.g. https://qa.shop.example.com"*;
+- **has a short tab header naming the value** (`qa · storefront`, `qa · admin email`);
+- **offers only real exceptions as options**, worded as an answer, not an action: *"There is no `qa`
+  environment"*, *"I don't know it yet — I'll fill it in later"*, *"No admin account on `qa`"*,
+  *"Same as on `uat`"*. Never an option that looks like the expected answer.
 
-Write each answer as it arrives:
+Write the questions in the operator's language. Never a password, in any question.
+
+The order — one `AskUserQuestion` call per step, at most four questions (tabs) per call:
+
+1. **Which environments** — one question, multi-select: *"Which environments do we set up? Tick each one;
+   to add another, choose “Type something” and type its name"*. Options: the host's environments
+   (`state.hostEnvs`, e.g. `qa`, `uat`). A typed name that is not a host environment is mapped with
+   `--gov-envs` (one more question: *"Which host environment is `<name>`?"*, options = `state.hostEnvs`).
+2. **Per environment, one call with four tabs**: *Enter the STOREFRONT URL of `<env>`* · *Enter the ADMIN
+   (back office) URL of `<env>`* · *Enter the ADMIN's login (email) on `<env>`* · *Enter the STOREFRONT
+   USER's login (email) on `<env>`*. Never invent a URL; an origin the host blocks is refused and asked again.
+3. **More accounts?** — *"Add another account on `<env>`?"*, options *"No, that's all"* · *"Another admin"*
+   · *"Another storefront user"*; each yes is one *"Enter the login (email) of the next admin on `<env>`"*
+   question, then this question again — up to the host's free password slots of that environment.
+
+Write each answer as it arrives — values on stdin, never argv, never a file left in the project:
 
 ```bash
-# URLs (and the ADO coordinates read from the host) — values on stdin, never argv:
-node "$CLAUDE_PLUGIN_ROOT/skills/project-init/write-env.mjs" < answers.json
-# each account, into the next free slot of its environment:
-node "$CLAUDE_PLUGIN_ROOT/skills/project-init/add-user.mjs" --env <env> --slot <next free slot>   --role admin|user --login <login> --note "<the note>"
+echo '{"env":"<env>","envVars":{"FRONT_URL":"…","BACK_URL":"…","ADO_ORG":"…","ADO_PROJECT":"…"},"secrets":{}}'   | node "$CLAUDE_PLUGIN_ROOT/skills/project-init/write-env.mjs"
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/add-user.mjs" --env <env> --slot <next free slot>   --role admin|user --login <login> --note "<admin | storefront user>"
 ```
 
-Pipe the write-env JSON from the command line (`echo '<json>' | …`), never a file left in the project.
-Collect every add-user report's `steps` for the hand-off. Then §3e normalize-env (it detects `STORE_ID`).
+Admins take their environment's slots first. Collect every add-user report's `steps` for the hand-off,
+then §3e normalize-env (it detects `STORE_ID`).
 
-### 5. ONE hand-off — what is filled, what is left, where the passwords go
+### 5. The hand-off — what was set up, then exactly how to enter the passwords
 
-After §8 verify-access, one message the operator can follow top to bottom:
+One message, two parts, after §8 verify-access:
 
-```
-Files written (all in this folder, all gitignored):
-| File                 | Field                  | Value / what to do                 |
-|----------------------|------------------------|------------------------------------|
-| project-profile.json | governance, tracker    | written — nothing to do            |
-| .env.qa              | FRONT_URL, BACK_URL    | written                            |
-| .env.qa              | STORE_ID               | detected: <id>                     |
-| .env.qa              | USER1_LOGIN …          | written, one per account           |
-| .env.local           | ADO_ORG, ADO_PROJECT   | written                            |
-
-Passwords — in YOUR OWN terminal, one command per account (hidden input; paste, Enter; never in the chat):
-  <the add-user reports' store commands, one per line, each with the account's login as a comment>
-
-Then: restart Claude Code — the host's browser servers read the passwords at start.
-```
-
-Every password goes to the host's slot — admins and storefront users alike: the host's browser servers
-read passwords only from its own secret tool, and an agent may never read one from a file to type it. So
-no storage question is asked on a host-governed project.
+1. **What was set up** — a short table `File | Field | Value`: the URLs, `STORE_ID` (detected), each
+   account (`USER1` — admin — <login>), the ADO coordinates. Nothing for the operator to do there.
+2. **Enter the passwords — numbered steps**, written for someone doing it for the first time:
+   1. Open a terminal (PowerShell) — a separate window, not this chat.
+   2. For each account, run its command (from `steps`), one at a time. Put the account's login above it
+      as a comment so the operator knows whose password is asked.
+   3. The terminal asks for the value without showing it: paste the password and press Enter. Nothing
+      appears on screen — that is expected.
+   4. When all are done, restart Claude Code (the host's browser servers read the passwords at start).
+   5. Reply "done" — then I check the setup.
 
 ## What runs, what does not
 

@@ -449,31 +449,35 @@ profile. The password choices are recorded by the vc-secrets declaration itself 
 a role is in vc-secrets when its `ADMIN_PASSWORD` / `USER_PASSWORD` is declared in a
 `vc-init-onboard.<env>` task (`lib/passwords.mjs`), and `--add-env` / `--add-user` follow that.
 
-### 2e. Values and logins — AskUserQuestion rounds, no file
+### 2e. URLs and logins — one value per question
 
-Every answer comes through `AskUserQuestion` — no form typed in the chat, no file to fill. A typed value
-(a URL, a login, a note) is the question's **Other** answer: each question offers its sensible fixed
-choices as options and the operator types anything else there. At most four questions per call, so:
+**How every typed value is asked — the operator must see at once WHAT to enter.** `AskUserQuestion` shows
+its options first and the free-text box last ("Type something"), so a question that names a value but
+offers only exceptions reads as a riddle. Every such question therefore:
 
-1. **URLs** — one call per two environments, one question per URL: *"`qa` — storefront URL?"*, *"`qa` —
-   admin (back office) URL?"*. Options: `Skip this environment` · `Leave empty for now`; the URL is typed
-   as Other. Never invent a URL; an origin the host blocks is refused and asked again.
-2. **How many accounts** — one call, two questions per environment: admins / storefront users, options
-   `0` · `1` · `2` · `3` (Other for more).
-3. **Each account, admins first** — one call per two accounts, two questions each: *"`qa` · admin 1 of 2 —
-   login?"* (options: `Skip this account` · `Same login as on <previous env>` when there is one; the
-   login typed as Other) and *"`qa` · admin 1 — what is this account?"* (options: a few typical notes —
-   `Main admin`, `Buyer`, `Approver`, `Read-only user`; Other for anything else). Never a password.
+- **starts with "Enter …" and names exactly one value** — *"Enter the STOREFRONT URL of `qa`"*, never
+  *"`qa` — storefront URL?"*;
+- **says where to type it and shows an example**, in the question text itself: *"Choose “Type something”
+  below and paste it, e.g. https://qa.shop.example.com"*;
+- **has a short tab header naming the value** (`qa · storefront`, `qa · admin email`);
+- **offers only real exceptions as options**, worded as an answer, not an action: *"There is no `qa`
+  environment"*, *"I don't know it yet — I'll fill it in later"*, *"No admin account on `qa`"*,
+  *"Same as on `uat`"*. Never an option that looks like the expected answer.
 
-Write each answer as it arrives:
+Write the questions in the operator's language. Never a password, in any question.
 
-The project-wide connection (Jira base URL / project key / email, or Azure DevOps org / project) is one
-more round of the same kind, before the URLs. `STORE_ID` is not asked (normalize-env detects it). After §3a
-has scaffolded the files, write the values with `write-env.mjs` (stdin, never argv, never a file left in
-the project): the first admin's login is `ADMIN`, the first storefront user's `USER_EMAIL`; every further
-account is added with `add-user.mjs` (§--add-user). Where a password goes is fixed by 2d: an admin's
-ALWAYS to vc-secrets; a storefront user's where the operator chose (`.env.local` or vc-secrets). §3d then
-only hands over what is secret.
+After 2d, the same order as on a host-governed project ([`host-governed.md`](host-governed.md) step 4):
+first the project-wide connection, one value per question (*Enter the Jira base URL*, *Enter the Jira
+project key*, *Enter your Jira email* — or *Enter the Azure DevOps organization / project*); then per
+environment one call with four tabs (*Enter the STOREFRONT URL / ADMIN URL of `<env>`*, *Enter the
+ADMIN's login*, *Enter the STOREFRONT USER's login*); then *"Add another account?"*. `STORE_ID` is not
+asked (normalize-env detects it).
+
+After §3a has scaffolded the files, write the values with `write-env.mjs` (stdin, never argv, never a file
+left in the project): the first admin's login is `ADMIN`, the first storefront user's `USER_EMAIL`; every
+further account is added with `add-user.mjs` (§--add-user). Where a password goes is fixed by 2d: an
+admin's ALWAYS to vc-secrets; a storefront user's where the operator chose (`.env.local` or vc-secrets).
+§3d then hands over only what is secret, as numbered steps (host-governed.md step 5 is the model).
 
 ## 3. Scaffold the env templates + the vc-secrets declarations, then hand off
 
