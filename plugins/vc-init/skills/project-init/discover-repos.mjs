@@ -353,10 +353,13 @@ export function frontendProvenanceFromPackage(pkg) {
   const name = String(pkg.name || "").toLowerCase();
   const deps = { ...(pkg.dependencies || {}), ...(pkg.devDependencies || {}) };
   const isUpstreamItself = name === "vc-frontend";
+  // vc-frontend was published as `vc-theme-b2b-vue` before its rename, and a fork keeps either name; its
+  // in-repo core package is `@vc-frontend/*`, and its add-ons ship as `@virto-commerce/*`.
   const vcSignal =
     isUpstreamItself ||
     name.includes("vc-frontend") ||
-    Object.keys(deps).some((d) => /@vc-shell|virtocommerce|@virto\//i.test(d));
+    name.includes("vc-theme-b2b-vue") ||
+    Object.keys(deps).some((d) => /@vc-shell|@vc-frontend\/|virtocommerce|@virto\/|@virto-commerce\//i.test(d));
   if (!vcSignal) return null;
   const upstreamRef = isUpstreamItself ? String(pkg.version || "") : vcFrontendRef(pkg.version);
   return { upstream: "VirtoCommerce/vc-frontend", upstreamRef };
@@ -767,6 +770,12 @@ async function main() {
       for (const n of fe) {
         if (have.has(n)) continue;
         const info = byName.get(n) || {};
+        // Read through a host's server, a name match with NO root package.json is not a vc-frontend app
+        // (e.g. a vc-storefront ASP.NET host): it gets no frontend toolchain — the operator says what it is.
+        if (listing && (listing.repos.find((r) => r.name === n) || {}).packageJson === null) {
+          console.error(`[discover-repos] ${n} is named like a storefront but has no root package.json — not added as a frontend (Vue) repo; ASK the operator what it is (e.g. an ASP.NET vc-storefront host).`);
+          continue;
+        }
         const entry = { name: `${org}/${n}`, kind: "frontend", host };
         if (info.defaultBranch) entry.defaultBranch = info.defaultBranch;
         // Best-effort upstream provenance (H3): the platform repo + version this fork
@@ -792,7 +801,7 @@ async function main() {
       const unverified = feEntries.filter((c) => c.upstream && !c.upstreamRefResolved);
       console.error(
         fe.length
-          ? `[discover-repos] storefront/theme repo(s) found: ${fe.join(", ")}` +
+          ? `[discover-repos] storefront/theme repo(s) found: ${feEntries.map((c) => c.name.split("/").pop()).join(", ") || "(none kept)"}` +
               (feEntries.some((c) => c.upstream)
                 ? unverified.length
                   ? ` (provenance derived; upstreamRef UNVERIFIED for ${unverified.map((c) => c.name).join(", ")} — ASK the operator to confirm the vc-frontend line base tag, e.g. 2.49 → 2.49.0)`
