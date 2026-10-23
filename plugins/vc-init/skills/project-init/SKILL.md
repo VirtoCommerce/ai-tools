@@ -364,7 +364,7 @@ is why `--check` runs this again.
 ## 2. Interview — three answers + an auth preference, THEN scaffold
 
 > **Host-governed project?** §2 is replaced by [`host-governed.md`](host-governed.md) steps 2–4: the
-> facts read from the host are shown, one question round, then one form file for URLs and accounts.
+> facts read from the host are shown, then `AskUserQuestion` rounds for choices, URLs and accounts.
 >
 > **No mid-interview reconnaissance.** Do **not** read files, inspect the `.mjs`
 > scripts, or run any other Bash **between** the interview steps. Ask the questions,
@@ -449,25 +449,31 @@ profile. The password choices are recorded by the vc-secrets declaration itself 
 a role is in vc-secrets when its `ADMIN_PASSWORD` / `USER_PASSWORD` is declared in a
 `vc-init-onboard.<env>` task (`lib/passwords.mjs`), and `--add-env` / `--add-user` follow that.
 
-### 2e. Values and logins — ONE form FILE, filled in an editor
+### 2e. Values and logins — AskUserQuestion rounds, no file
 
-Questions with a fixed set of answers are `AskUserQuestion` forms (2b, 2d). Everything typed — URLs, the
-tracker connection, test-account logins — goes into ONE file, never a form typed in the chat. After §3a
-has scaffolded the env files:
+Every answer comes through `AskUserQuestion` — no form typed in the chat, no file to fill. A typed value
+(a URL, a login, a note) is the question's **Other** answer: each question offers its sensible fixed
+choices as options and the operator types anything else there. At most four questions per call, so:
 
-```bash
-node "$CLAUDE_PLUGIN_ROOT/skills/project-init/form.mjs" --write --envs <env>
-```
+1. **URLs** — one call per two environments, one question per URL: *"`qa` — storefront URL?"*, *"`qa` —
+   admin (back office) URL?"*. Options: `Skip this environment` · `Leave empty for now`; the URL is typed
+   as Other. Never invent a URL; an origin the host blocks is refused and asked again.
+2. **How many accounts** — one call, two questions per environment: admins / storefront users, options
+   `0` · `1` · `2` · `3` (Other for more).
+3. **Each account, admins first** — one call per two accounts, two questions each: *"`qa` · admin 1 of 2 —
+   login?"* (options: `Skip this account` · `Same login as on <previous env>` when there is one; the
+   login typed as Other) and *"`qa` · admin 1 — what is this account?"* (options: a few typical notes —
+   `Main admin`, `Buyer`, `Approver`, `Read-only user`; Other for anything else). Never a password.
 
-It writes `project-init.form.ini` (gitignored): the project-wide keys still empty (Jira base URL / key /
-email, or Azure DevOps org / project), per environment `FRONT_URL` / `BACK_URL`, and account lines
-`account = <admin|user> | <login> | <one line about it>`. Tell the operator its path in one short message
-and end the turn with the WAITING block. `STORE_ID` is not in it (normalize-env detects it). On "done",
-`form.mjs --apply` writes everything through write-env and add-user: the first admin becomes `ADMIN`, the
-first storefront user `USER_EMAIL`, the rest numbered users. A reported problem keeps the form for a fix
-and another "done"; an account already applied is left as it is. **Never a password in the form or the
-chat.** Where a password goes is fixed by 2d: an admin's ALWAYS to vc-secrets; a storefront user's where
-the operator chose (`.env.local` or vc-secrets). §3d then only hands over what is secret.
+Write each answer as it arrives:
+
+The project-wide connection (Jira base URL / project key / email, or Azure DevOps org / project) is one
+more round of the same kind, before the URLs. `STORE_ID` is not asked (normalize-env detects it). After §3a
+has scaffolded the files, write the values with `write-env.mjs` (stdin, never argv, never a file left in
+the project): the first admin's login is `ADMIN`, the first storefront user's `USER_EMAIL`; every further
+account is added with `add-user.mjs` (§--add-user). Where a password goes is fixed by 2d: an admin's
+ALWAYS to vc-secrets; a storefront user's where the operator chose (`.env.local` or vc-secrets). §3d then
+only hands over what is secret.
 
 ## 3. Scaffold the env templates + the vc-secrets declarations, then hand off
 
@@ -1476,7 +1482,6 @@ Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or j
 | `verify-access.mjs` | full `/qa-fix` readiness table + verdict, incl. the two **secret-hygiene** rows that audit `.mcp.json` + `.claude/settings.local.json` for an exposed credential (graded by committability: tracked/not-ignored ⇒ FAIL); prints an untruncated "To resolve" block (incl. an auto-discovered `az login --tenant <guid>`). Also **reports every non-PASS row as self-diagnostics telemetry** (`lib/diag-obs.mjs` → the collector's `obs` subcommand) — the table used to be rendered and discarded, so a WARN the operator could plainly read was invisible to `/vc-self-check` and the run self-diagnosed "no plugin issues detected" (VCST-5582 H). Exit code is unchanged: 0 unless a hard FAIL |
 | `assert-profile.mjs` | asserts the **SHAPE** of the profile just written and records each degradation as a `degraded_artifact` observation: empty `tracker.fields` (⇒ `/qa-bug` sends "unverified defaults"), `roleStatesComplete:false`, unmapped required fields, empty `repos.client` on a client project, an unresolved storefront `upstreamRef`, `githubForkCapable != "yes"` while the upstream path is needed. Complements `verify-access` (which probes ACCESS): a scan can return empty with no HTTP error, and what `/qa-fix` reads at runtime is the persisted shape. Read-only, **always exits 0** — a diagnostic, not a second readiness gate |
 | `migrate-secrets.mjs` | **`--check` Step M**: `--scan` lists every token left in a file (`.env*`, settings `env`, `.mcp.json`, `.fix-workspace/*/.git/config` remote URLs, the profile) by NAME and LOCATION and flags the ones in git history (⇒ rotate); `--strip` removes an axis's plaintext copies only after its bridge probe passes. With passwords in vc-secrets also their `.env` lines (once stored) and `.env.playwright.local` |
-| `form.mjs` | §2e / host step 4: `--write --envs <a,b>` writes `project-init.form.ini` (gitignored) — URLs, empty project keys and account lines, known values pre-filled, one account line per free host slot; `--apply` writes them through write-env and add-user (admins first), reports `users` / `steps` / `problems`, deletes the form when all applied; never holds a password |
 | `detect-governance.mjs` | §0-host: find a host governance plugin bound to this folder by its shape (`lib/governance.mjs` hostCandidates — no host named) and print the `governance` block it would write plus the host's `state` — whether its own setup ran here, the servers it left on, its test-user password slots (`lib/host-adapter.mjs`, read-only); `--governance <host|none>` overrides |
 | `render-scan.mjs` | §4a/§4b: the operator's confirmation tables, verbatim — `--repos` (client repos with default branch + PR target) and `--tracker` (role → state per work-item type) |
 | `next-steps.mjs` | §9: "the project is ready" + what to do now, from the profile and the installed plugins (`--plugins a,b` overrides detection) |

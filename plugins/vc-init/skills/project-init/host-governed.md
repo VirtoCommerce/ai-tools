@@ -22,7 +22,7 @@ kind, the website environments. Fill those in and SAY what was filled and from w
 instead of asking. The operator corrects a line only if it is wrong. `STORE_ID` is detected from the
 storefront by normalize-env (one HTTP request to the URL the operator gives), so it is never asked either.
 
-## The flow — host check, ONE question round, ONE form file, ONE hand-off
+## The flow — host check, AskUserQuestion rounds, ONE hand-off
 
 ### 1. Host check (§0-host)
 
@@ -65,9 +65,8 @@ Everything with a fixed set of answers goes into ONE `AskUserQuestion` call (at 
 the ones that apply): the host is this project's governance · the host's setup has run here (only when
 `confirmed: false`) · which server serves each role in `state.choices` (telemetry included — which one is
 production is never guessed) · only when the code probe (3a) READ the repos: may the agent open PRs on
-the client's repos (the person's host role grants writing) — yes ⇒ `write`, no ⇒ `read`. Every
-free-text value then goes into ONE FILE the operator fills in an editor — never a form typed in chat
-(step 4).
+the client's repos (the person's host role grants writing) — yes ⇒ `write`, no ⇒ `read`. URLs and
+accounts follow in step 4, also as `AskUserQuestion` rounds.
 
 Never invent a URL; an origin the host blocks (its browser config's `blockedOrigins`) is refused.
 
@@ -105,31 +104,33 @@ DevOps server reaches Azure Repos): call its list-repositories tool for the proj
   automatic refusal) ⇒ say so, record nothing, and ask the operator to run the same request in their
   own words; never work around it.
 
-### 4. The form file — URLs and test accounts, filled in an editor
+### 4. URLs and test accounts — AskUserQuestion, no file
+
+Every answer comes through `AskUserQuestion` — no form typed in the chat, no file to fill. A typed value
+(a URL, a login, a note) is the question's **Other** answer: each question offers its sensible fixed
+choices as options and the operator types anything else there. At most four questions per call, so:
+
+1. **URLs** — one call per two environments, one question per URL: *"`qa` — storefront URL?"*, *"`qa` —
+   admin (back office) URL?"*. Options: `Skip this environment` · `Leave empty for now`; the URL is typed
+   as Other. Never invent a URL; an origin the host blocks is refused and asked again.
+2. **How many accounts** — one call, two questions per environment: admins / storefront users, options
+   `0` · `1` · `2` · `3` (Other for more — at most the free host password slots of that environment).
+3. **Each account, admins first** — one call per two accounts, two questions each: *"`qa` · admin 1 of 2 —
+   login?"* (options: `Skip this account` · `Same login as on <previous env>` when there is one; the
+   login typed as Other) and *"`qa` · admin 1 — what is this account?"* (options: a few typical notes —
+   `Main admin`, `Buyer`, `Approver`, `Read-only user`; Other for anything else). Never a password.
+
+Write each answer as it arrives:
 
 ```bash
-node "$CLAUDE_PLUGIN_ROOT/skills/project-init/form.mjs" --write --envs <env1,env2>
+# URLs (and the ADO coordinates read from the host) — values on stdin, never argv:
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/write-env.mjs" < answers.json
+# each account, into the next free slot of its environment:
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/add-user.mjs" --env <env> --slot <next free slot>   --role admin|user --login <login> --note "<the note>"
 ```
 
-It writes `project-init.form.ini` in the project (gitignored): per environment `FRONT_URL` / `BACK_URL`
-and one `account = <admin|user> | <login> | <one line about it>` line per FREE host password slot, plus
-any project-wide key still empty — what is known (the ADO organization and project read from the host)
-already filled in. Tell the operator the file's path and what to fill in one short message, then end
-the turn with the WAITING block; the operator saves the file and replies "done". Never ask for a
-password; the form refuses a value that looks like one, without echoing it.
-
-On "done":
-
-```bash
-node "$CLAUDE_PLUGIN_ROOT/skills/project-init/form.mjs" --apply
-```
-
-It writes the URLs and project keys (write-env), then each account into the next free slot of its
-environment, admins first (add-user), and prints the report: `users`, `steps` (one password command per
-account) and `problems`. A problem keeps the form: relay it in one line, the operator fixes the file and
-says "done" again (an account already applied is left as it is). Then §3e normalize-env (it detects
-`STORE_ID`). Never invent a URL; an origin the host blocks (its browser config's `blockedOrigins`) is
-refused.
+Pipe the write-env JSON from the command line (`echo '<json>' | …`), never a file left in the project.
+Collect every add-user report's `steps` for the hand-off. Then §3e normalize-env (it detects `STORE_ID`).
 
 ### 5. ONE hand-off — what is filled, what is left, where the passwords go
 
@@ -163,7 +164,7 @@ no storage question is asked on a host-governed project.
 | §0d vc-secrets check, `install-bridge` | **skipped** — no vc-secrets, no `$VC_RUN` |
 | §0e tooling | `gh`/`az` are not installed for us; Node + git only |
 | §1 deps | `install-deps` as usual; **no `playwright install`** — the browser servers are the host's |
-| §2 interview | replaced by steps 2–4 above: facts shown, one question round, one form file (URLs + accounts). §2b and §2d are **not asked** |
+| §2 interview | replaced by steps 2–4 above: facts shown, then `AskUserQuestion` rounds (choices, URLs, accounts). §2b and §2d are **not asked** |
 | §3a `.env.<env>` | URLs only — no built-in `ADMIN` / `USER_EMAIL`: test users take the host's slots. The file is gitignored |
 | §3b `.env.local` | **no password placeholder** — the tracker / code-host connection only |
 | §3c `write-secrets-decl`, §3d token pause, §3e token gate | **skipped** |

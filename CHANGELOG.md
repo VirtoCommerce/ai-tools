@@ -46,7 +46,7 @@ round, then the logins one account at a time (admins first), then one hand-off t
 password commands. Every test-user password goes to the host's slots there. The profile is recorded as a client
 project that files nothing upstream; `.env.*` is gitignored and the env headers no longer speak of vc-secrets;
 assert-profile does not grade the scans a guest skips; next-steps offers no `/qa-fix` without a code host. In
-a normal project the same shape applies (§2e: one form for every non-secret value, logins one by one, §3d a
+a normal project the same shape applies (§2e: `AskUserQuestion` rounds for every non-secret value and login, §3d a
 filled-fields table), and an admin password goes to vc-secrets only — `--admin-passwords env-local` is refused;
 a storefront user's still goes where the operator chooses.
 
@@ -60,12 +60,9 @@ client repos carry `access: "read"` and no PR plan, vc-fix reads code for the ro
 next-steps offers `/qa-fix` only with `write`. A `--gov-<role>` flag on a day-2 gen-profile run now
 changes that role.
 
-**Added: typed answers go into one form file, not the chat.** `form.mjs --write` writes
-`project-init.form.ini` (gitignored) with the URLs, the empty project keys and one account line per free slot
-(`account = <admin|user> | <login> | <note>`), known values pre-filled; `--apply` writes them through
-write-env and add-user, admins first, refuses a value that looks like a password without echoing it, keeps
-the form while anything failed, and leaves an already-applied account alone on a second run. Choices stay
-`AskUserQuestion` forms.
+**Changed: every interview answer is an `AskUserQuestion` form.** Choices are options; typed values — URLs,
+logins, account notes — are the questions' Other answers, at most four questions per call: the URLs, how many
+accounts, then each account (login and a one-line note), admins first. No form in the chat and no file to fill.
 
 **Fixed: an install for the folder that its settings no longer switch on is reported `inactive`** — Claude
 Code does not load it, so detection no longer treats it as the host.
