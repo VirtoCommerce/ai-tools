@@ -45,26 +45,13 @@ import { ensureProjectIgnores } from "./lib/gitignore.mjs";
 import { outputRoot } from "./lib/paths.mjs";
 import { hostInstallPath, standDownIfHostGoverned } from "./lib/governance.mjs";
 import { hostState, storeCommand } from "./lib/host-adapter.mjs";
+import { BUILT_IN, envsIn, hostEnvFor, markedUsersIn, usersIn } from "./lib/test-users.mjs";
 import { ENV_NAME_RE, ROLES, ROLE_PASSWORD, declaredPasswords, isPasswordName, passwordSecret } from "./lib/passwords.mjs";
 import { patAxesFromProfile, writeSecretsDecl } from "./write-secrets-decl.mjs";
 
-/** `.env.<x>` files that are not an environment. */
-const NOT_ENVS = new Set(["local", "defaults", "example", "template", "backup"]);
-/** The users every environment already has (scaffold-env / scaffold-secrets). */
-const BUILT_IN = [
-  { key: "ADMIN", role: "admin", loginVar: "ADMIN", password: "ADMIN_PASSWORD" },
-  { key: "USER", role: "user", loginVar: "USER_EMAIL", password: "USER_PASSWORD" },
-];
-const MARK_RE = /^#\s*vc-init user ([A-Z][A-Z0-9_]*) \((user|admin)\)/;
-const ROLE_TEXT = { user: "storefront test user", admin: "back-office (admin) test user" };
+export { envsIn, hostEnvFor, markedUsersIn, usersIn };
 
-/** The environment names of a directory listing (`.env.<env>` files). Pure. */
-export function envsIn(names) {
-  return names
-    .map((n) => /^\.env\.([a-z0-9_]+)$/.exec(n)?.[1])
-    .filter((e) => e && !NOT_ENVS.has(e))
-    .sort();
-}
+const ROLE_TEXT = { user: "storefront test user", admin: "back-office (admin) test user" };
 
 /** Why a KEY is not usable, or null. Pure. */
 export function keyProblem(key) {
@@ -79,17 +66,6 @@ export function loginProblem(login) {
   if (!login || typeof login !== "string") return "--login is required";
   if (/[\s"'`#\\]/.test(login)) return "a login holds no space, quote, # or backslash";
   return null;
-}
-
-/** The users an `.env.<env>` text declares: the built-ins plus every `# vc-init user` block. Pure. */
-export function usersIn(text) {
-  const values = parse(String(text || ""));
-  const users = BUILT_IN.map((b) => ({ ...b, login: values[b.loginVar] || "" }));
-  for (const line of String(text || "").split(/\r?\n/)) {
-    const m = MARK_RE.exec(line.trim());
-    if (m) users.push({ key: m[1], role: m[2], loginVar: `${m[1]}_LOGIN`, password: `${m[1]}_PASSWORD`, login: values[`${m[1]}_LOGIN`] || "" });
-  }
-  return users;
 }
 
 /**
@@ -160,21 +136,6 @@ function parseArgs(argv) {
 function fail(message) {
   console.error(`[add-user] ${message}`);
   process.exit(1);
-}
-
-/**
- * Only the users this script added (the `# vc-init user` blocks) — never the built-in ADMIN / USER, so a
- * host slot that happens to be named ADMIN or USER is matched to its own block, not to a built-in. Pure.
- */
-export function markedUsersIn(text) {
-  return usersIn(text).slice(BUILT_IN.length);
-}
-
-/** The host website environment an `.env.<env>` is: the profile's map, else a same-named host env. Pure. */
-export function hostEnvFor(env, governance, hostEnvs) {
-  const mapped = governance?.envs?.[env];
-  if (mapped) return hostEnvs.includes(mapped) ? mapped : null;
-  return hostEnvs.includes(env) ? env : null;
 }
 
 /** Why a note is not usable, or null. It lands in a one-line `#` comment. Pure. */
@@ -262,7 +223,9 @@ function main() {
   }
   const root = outputRoot();
   const { raw: profile, error, path } = readProjectProfile(root);
-  if (profile?.governance?.host && profile.governance.websiteAuth === "host-secrets") return hostMain(root, profile, args);
+  // A guest profile written before 0.4.0 has no websiteAuth: let the host's own slots decide (hostMain
+  // refuses with the manual-operator fix when it declares none).
+  if (profile?.governance?.host && ["host-secrets", "", undefined].includes(profile.governance.websiteAuth)) return hostMain(root, profile, args);
   standDownIfHostGoverned(root, "add-user skipped: test users sign in by hand here (governance.websiteAuth is not host-secrets)", { json: true });
   if (!profile) fail(error ? `cannot parse ${path}: ${error}` : `no ${path} — this project is not onboarded; run /project-init first`);
 

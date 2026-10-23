@@ -10,7 +10,7 @@
  * `machineWide` are the same shape installed for the whole machine — never picked, only offered.
  * `state` (lib/host-adapter.mjs hostState): `setUp` + `confirmed` + `reasons`, the host's own setup command(s), the
  * servers on and the role each fills, the role → server map, the test-user password slots, the website
- * environments and the wrapper path. `--governance <plugin@marketplace|none>` overrides detection (the
+ * environments, the wrapper path and `genProfile` (the ready gen-profile governance flags). `--governance <plugin@marketplace|none>` overrides detection (the
  * operator's choice wins). Read-only — it runs nothing of the host's.
  */
 import { resolve } from "node:path";

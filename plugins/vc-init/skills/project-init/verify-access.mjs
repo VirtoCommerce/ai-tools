@@ -55,8 +55,8 @@ import { resolvePluginFile, resolvePluginRoot } from "../../bridge/resolve-plugi
 import { defaultShimPath } from "../../scripts/install-bridge.mjs";
 import { parseDoctor, runDoctor, secretsVerdict } from "./lib/vc-secrets-doctor.mjs";
 import { ROLES, hostInstallPath, hostLine, hostServerKeys, isHostGoverned } from "./lib/governance.mjs";
-import { hostState } from "./lib/host-adapter.mjs";
-import { envsIn, hostEnvFor, markedUsersIn } from "./add-user.mjs";
+import { hostState, roleDrift } from "./lib/host-adapter.mjs";
+import { envsIn, hostEnvFor, markedUsersIn } from "./lib/test-users.mjs";
 import {
   probeGithubUpstream, resolveGithubToken, resolveAdoTenant, ADO_RESOURCE,
   githubCanWrite, discoverAdoWorkItemId, probeAdoWorkItemsWrite, probeAdoCodeWrite,
@@ -455,10 +455,11 @@ function hostPersonRows(g, installPath, root) {
     !state.setUp ? `${state.reasons.join("; ")} — run ${setup} in this folder, then restart Claude Code`
       : state.confirmed ? `${state.enabled.length} of ${g.host}'s servers on, ${state.disabled.length} switched off`
         : `not confirmed: none of ${g.host}'s servers is switched off here — if ${setup} has not run in this folder, run it`);
-  const drift = ["tracker", "testManagement"].filter((r) => state.setUp && (g.servers?.[r] || "") !== (state.servers[r] || ""));
-  if (drift.length) add("Profile vs servers on", "WARN", drift.map((r) => `${r}: profile ${g.servers?.[r] || "—"}, on ${state.servers[r] || "—"}`).join("; ") + " — re-run /project-init to record the servers that are on");
+  const drift = state.setUp ? roleDrift(g, state) : [];
+  if (drift.length) add("Profile vs servers on", "WARN", `${drift.join("; ")} — re-run /project-init to record the servers that are on`);
 
-  if (g.websiteAuth !== "host-secrets") {
+  // A guest profile written before 0.4.0 has no websiteAuth: the host's own slots decide.
+  if ((g.websiteAuth || state.websiteAuth) !== "host-secrets") {
     add("Website test users", "SKIP", "the operator signs in by hand (governance.websiteAuth manual-operator)");
     return;
   }

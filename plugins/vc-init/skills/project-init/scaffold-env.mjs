@@ -121,7 +121,7 @@ function main() {
     clientVcs: args["client-vcs"] || "github",
     // A host-governed project has no built-in ADMIN / USER: its test users take the host's password
     // slots (add-user.mjs), so a login here would point at a password that exists nowhere.
-    hostGoverned: isHostGoverned(readJsonOrNull(join(outputRoot(), "project-profile.json"))),
+    hostGoverned: isHostGoverned(readJsonOrNull(process.env.PROJECT_PROFILE_PATH || join(outputRoot(), "project-profile.json"))),
   };
   // Default output → the deployment project (process.cwd()); config.js dotenv-loads
   // `.env.${env}` relative to cwd, so this must land there. --out still overrides.

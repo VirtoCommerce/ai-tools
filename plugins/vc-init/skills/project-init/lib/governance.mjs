@@ -45,7 +45,7 @@ export function resolveHostId(host, { home = process.env.HOME || os.homedir() } 
   const h = String(host || "");
   if (PLUGIN_ID_RE.test(h)) return h;
   if (!PLUGIN_NAME_RE.test(h)) return null;
-  const ids = Object.keys(readJson(join(home, ".claude", "plugins", "installed_plugins.json"))?.plugins || {});
+  const ids = Object.keys(readRegistry(home) || {});
   const hits = ids.filter((id) => id.split("@")[0] === h);
   return hits.length === 1 ? hits[0] : null;
 }
@@ -60,7 +60,7 @@ export function ownMarketplaces({ home = process.env.HOME || os.homedir(), root 
   const parts = resolve(root).split(/[\\/]/);
   const at = parts.lastIndexOf("cache");
   if (at >= 0 && parts[at + 1]) out.add(parts[at + 1]);
-  const registry = readJson(join(home, ".claude", "plugins", "installed_plugins.json"))?.plugins || {};
+  const registry = readRegistry(home) || {};
   for (const [id, records] of Object.entries(registry)) {
     for (const r of Array.isArray(records) ? records : []) {
       if (r && typeof r.installPath === "string" && samePath(r.installPath, root)) out.add(id.split("@")[1]);
@@ -149,22 +149,44 @@ function enabledInSettings(projectRoot) {
   return out;
 }
 
-/** The MCP server keys a plugin ships: its `.mcp.json` and its plugin.json `mcpServers` (read-only). */
-export function hostServerKeys(installPath) {
-  const keys = new Set();
-  if (!installPath) return keys;
-  for (const doc of [readJson(join(installPath, ".mcp.json")), readJson(join(installPath, ".claude-plugin", "plugin.json"))]) {
-    const servers = doc?.mcpServers;
-    if (servers && typeof servers === "object" && !Array.isArray(servers)) for (const k of Object.keys(servers)) keys.add(k);
-  }
-  return keys;
+/**
+ * Claude Code's install registry, `plugins` map — read once per home per process (a single run asks
+ * it many times). Read-only.
+ */
+const registryCache = new Map();
+export function readRegistry(home) {
+  if (!registryCache.has(home)) registryCache.set(home, readJson(join(home, ".claude", "plugins", "installed_plugins.json"))?.plugins || {});
+  return registryCache.get(home);
 }
 
-/** Does a plugin run something at session start (its hooks file or plugin.json `hooks`)? */
+/**
+ * A plugin.json field that may be inline or a path to a JSON file inside the plugin (`"mcpServers":
+ * "./mcp.json"`); returns the object, unwrapping a `{ <field>: … }` file. Read-only.
+ */
+function manifestField(installPath, field) {
+  const v = readJson(join(installPath, ".claude-plugin", "plugin.json"))?.[field];
+  if (typeof v === "string") {
+    const doc = readJson(resolve(installPath, v));
+    return doc && typeof doc === "object" ? (doc[field] && typeof doc[field] === "object" ? doc[field] : doc) : null;
+  }
+  return v && typeof v === "object" && !Array.isArray(v) ? v : null;
+}
+
+/** Every MCP server a plugin ships: its `.mcp.json` and its plugin.json `mcpServers` (inline or a file). */
+export function pluginMcpServers(installPath) {
+  if (!installPath) return {};
+  return { ...(readJson(join(installPath, ".mcp.json"))?.mcpServers || {}), ...(manifestField(installPath, "mcpServers") || {}) };
+}
+
+/** The MCP server keys a plugin ships (read-only). */
+export function hostServerKeys(installPath) {
+  return new Set(Object.keys(pluginMcpServers(installPath)));
+}
+
+/** Does a plugin run something at session start (`hooks/hooks.json`, or plugin.json `hooks` inline or a file)? */
 export function hasSessionStartHook(installPath) {
   if (!installPath) return false;
-  for (const doc of [readJson(join(installPath, "hooks", "hooks.json")), readJson(join(installPath, ".claude-plugin", "plugin.json"))]) {
-    const hooks = doc?.hooks;
+  for (const hooks of [readJson(join(installPath, "hooks", "hooks.json"))?.hooks, manifestField(installPath, "hooks")]) {
     if (hooks && typeof hooks === "object" && Array.isArray(hooks.SessionStart) && hooks.SessionStart.length) return true;
   }
   return false;
@@ -194,7 +216,7 @@ export function setupCommandsOf(installPath) {
  * @returns {{ pluginId: string, installPath: string|null, source: string, servers: string[], setupCommands: string[] }[]}
  */
 export function hostCandidates({ projectRoot = process.cwd(), home = process.env.HOME || os.homedir(), machineWide = false } = {}) {
-  const registry = readJson(join(home, ".claude", "plugins", "installed_plugins.json"))?.plugins || {};
+  const registry = readRegistry(home) || {};
   const enabled = enabledInSettings(projectRoot);
   const ours = ownMarketplaces({ home });
   const ids = new Set([...Object.keys(registry), ...Object.keys(enabled).filter((id) => enabled[id])]);
@@ -232,7 +254,7 @@ export function detectHost(opts = {}) {
 export function hostInstallPath(host, { projectRoot = process.cwd(), home = process.env.HOME || os.homedir() } = {}) {
   const id = resolveHostId(host, { home });
   if (!id) return null;
-  const records = readJson(join(home, ".claude", "plugins", "installed_plugins.json"))?.plugins?.[id];
+  const records = readRegistry(home)?.[id];
   const usable = (r) => r && typeof r.installPath === "string" && existsSync(r.installPath);
   const bound = folderRecord(records, projectRoot);
   if (usable(bound)) return bound.installPath;

@@ -15,7 +15,7 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import os from "node:os";
 import { dirname, join, resolve } from "node:path";
-import { hostServerKeys, samePath, setupCommandsOf } from "./governance.mjs";
+import { hostServerKeys, pluginMcpServers, samePath, setupCommandsOf } from "./governance.mjs";
 
 function readJson(path) {
   try {
@@ -84,24 +84,25 @@ function pluginJsonDocs(installPath) {
 }
 
 /**
- * What a host server launches. A server started as `<script inside the plugin> <verb> <key>` is a
- * wrapper: the real command, args and env are the `servers.<key>` entry of one of the plugin's own JSON
- * files. Anything else launches what its `.mcp.json` entry says. Read-only.
+ * What a host server launches. A server started as `<script inside the plugin> <verb> <name>` is a
+ * wrapper: the real command, args and env are the `servers.<name>` entry of one of the plugin's own JSON
+ * files. `<name>` need not be the server's key — an OS twin such as `<x>-linux` runs the wrapper with
+ * `<x>`. Anything else launches what its own entry says. Read-only.
  * @returns {{ key: string, command: string, args: string[], env: object, wrapper: string }|null}
  */
 export function resolveLaunch(installPath, key, docs = pluginJsonDocs(installPath)) {
-  const spec = readJson(join(installPath, ".mcp.json"))?.mcpServers?.[key]
-    || readJson(join(installPath, ".claude-plugin", "plugin.json"))?.mcpServers?.[key];
+  const spec = pluginMcpServers(installPath)[key];
   if (!spec) return null;
   const expand = (s) => String(s).split("${CLAUDE_PLUGIN_ROOT}").join(installPath);
   const args = (spec.args || []).map(expand);
-  const at = args.indexOf(key);
-  const script = at >= 2 ? args[at - 2] : "";
-  if (script && insideDir(script, installPath)) {
+  const at = args.findIndex((a) => /\.[cm]?js$/i.test(a) && insideDir(a, installPath));
+  const name = at >= 0 && /^[a-z][a-z-]*$/i.test(args[at + 1] || "") ? args[at + 2] : "";
+  if (name) {
+    const script = args[at];
     // The declarations next to the wrapper first — the file it reads — then the rest of the plugin.
     const near = (d) => samePath(dirname(d.path), dirname(script));
     const ordered = [...docs.filter(near), ...docs.filter((d) => !near(d))];
-    const inner = ordered.map((d) => d.doc?.servers?.[key]).find((s) => s && typeof s.command === "string");
+    const inner = ordered.map((d) => d.doc?.servers?.[name]).find((s) => s && typeof s.command === "string");
     if (inner) return { key, command: inner.command, args: (inner.args || []).map(String), env: inner.env || {}, wrapper: script };
   }
   return { key, command: expand(spec.command || ""), args, env: spec.env || {}, wrapper: "" };
@@ -120,17 +121,17 @@ export function classifyLaunch(launch) {
 }
 
 /**
- * The role → server map from the servers that are ON, by kind. A role with more than one server on
- * is ambiguous (the host's setup has not picked one for this person); telemetry prefers a non-prod
- * server. The code host is never inferred — whether the tracker's server reaches code is the person's
- * role on the host, so the operator says so. Pure.
+ * The role → server map from the servers that are ON, by kind. A role with more than one server on is
+ * left empty and listed in `choices` — the operator picks (a person may legitimately keep two, e.g. one
+ * per access level). Telemetry prefers a non-prod server. The code host is never inferred — whether the
+ * tracker's server reaches code is the person's role on the host, so the operator says so. Pure.
  */
 export function serversFromLaunches(launches) {
   const of = (kind) => launches.filter((l) => l.kind === kind).map((l) => l.key);
-  const ambiguous = [];
+  const choices = {};
   const one = (kind) => {
     const on = of(kind);
-    if (on.length > 1) ambiguous.push(kind);
+    if (on.length > 1) choices[kind] = on;
     return on.length === 1 ? on[0] : "";
   };
   const telemetry = of("telemetry");
@@ -143,11 +144,24 @@ export function serversFromLaunches(launches) {
       testManagement: one("testManagement"),
       browsers: of("browsers"),
     },
-    ambiguous: ambiguous.filter((k) => k !== "github"),
+    choices,
   };
 }
 
-const SLOT_VAR = /^([A-Z][A-Z0-9]*)_([A-Z][A-Z0-9_]*)_PASSWORD$/;
+/** gen-profile's governance flags for a host and a server map. Empty roles are passed as "". Pure. */
+export function genProfileFlags(host, servers, websiteAuth) {
+  const q = (v) => (v ? v : '""');
+  return [
+    `--governance ${host}`,
+    `--gov-tracker ${q(servers.tracker)}`, `--gov-code-host ${q(servers.codeHost)}`, `--gov-github ${q(servers.github)}`,
+    `--gov-telemetry ${q(servers.telemetry)}`, `--gov-test-management ${q(servers.testManagement)}`,
+    `--gov-browsers ${q((servers.browsers || []).join(","))}`, `--gov-website-auth ${websiteAuth}`,
+  ].join(" ");
+}
+
+// The slot is the LAST segment before _PASSWORD; the environment is everything before it, so a
+// multi-word environment (PRE_PROD_USER1_PASSWORD → pre_prod / USER1) keeps its name.
+const SLOT_VAR = /^([A-Z][A-Z0-9_]*?)_([A-Z][A-Z0-9]*)_PASSWORD$/;
 const SECRET_REF = /^[a-z][a-z0-9-]*:([A-Za-z0-9._-]+)$/;
 
 /**
@@ -195,10 +209,12 @@ export function storeCommand(wrapper, secret) {
 
 /**
  * Has the host's own setup run for this folder, and what did it leave? Read-only.
- *   setUp: false — a role has more than one server on: the host's setup has not picked this person's.
- *   confirmed    — the setup left a trace here (some of the host's servers switched off). A host whose
- *                  setup changes nothing in the folder cannot be confirmed without knowing the host, so
- *                  `setUp && !confirmed` means "not contradicted" and the operator is asked.
+ *   confirmed    — the setup left a trace here (some of the host's servers switched off).
+ *   setUp: false — no trace AND a role still has several servers on: the state of a fresh install the
+ *                  host's setup has not touched. Several servers on after the setup left a trace is a
+ *                  person's legitimate choice (`choices`), never a block.
+ *   setUp && !confirmed means "not contradicted" — a host whose setup changes nothing in the folder
+ *   cannot be confirmed without knowing the host, so the operator is asked.
  */
 export function hostState(host, installPath, projectRoot, home = process.env.HOME || os.homedir()) {
   const shipped = [...hostServerKeys(installPath)];
@@ -206,21 +222,43 @@ export function hostState(host, installPath, projectRoot, home = process.env.HOM
   const enabled = shipped.filter((k) => !disabled.includes(k));
   const docs = pluginJsonDocs(installPath);
   const launches = enabled.map((k) => resolveLaunch(installPath, k, docs)).filter(Boolean).map((l) => ({ ...l, kind: classifyLaunch(l) }));
-  const { servers, ambiguous } = serversFromLaunches(launches);
+  const { servers, choices } = serversFromLaunches(launches);
   const slots = slotsFromLaunches(launches);
   const wrapper = launches.find((l) => l.kind === "browsers" && l.wrapper)?.wrapper || launches.find((l) => l.wrapper)?.wrapper || "";
   const setupCommands = setupCommandsOf(installPath);
+  const confirmed = disabled.length > 0;
+  const crowded = Object.keys(choices).filter((k) => k !== "github");
+  const setUp = confirmed || crowded.length === 0;
+  const websiteAuth = slots.length ? "host-secrets" : "manual-operator";
   return {
-    setUp: ambiguous.length === 0,
-    confirmed: ambiguous.length === 0 && disabled.length > 0,
-    reasons: ambiguous.map((k) => `more than one ${k} server is on`),
+    setUp,
+    confirmed,
+    reasons: setUp ? [] : ["none of the host's servers is switched off here", ...crowded.map((k) => `more than one ${k} server is on`)],
     setupCommands,
     enabled: launches.map(({ key, kind }) => ({ key, kind })),
     disabled,
     servers,
-    websiteAuth: slots.length ? "host-secrets" : "manual-operator",
+    choices,
+    websiteAuth,
     hostEnvs: hostEnvsOf(slots),
     slots,
     wrapper,
+    genProfile: genProfileFlags(host, servers, websiteAuth),
   };
+}
+
+/**
+ * Does a profile role point at a server that is ON and fills that role? `browsers` checks each. A role
+ * the operator chose among `choices`, or corrected, is fine as long as the server is on. Pure.
+ */
+export function roleDrift(governance, state) {
+  const on = new Map(state.enabled.map((e) => [e.key, e.kind]));
+  const out = [];
+  for (const role of ["tracker", "codeHost", "github", "telemetry", "testManagement"]) {
+    const v = governance?.servers?.[role] || "";
+    if (v && !on.has(v)) out.push(`${role}: ${v} is not on here`);
+    else if (!v && state.servers[role]) out.push(`${role}: none recorded, ${state.servers[role]} is on`);
+  }
+  for (const b of governance?.servers?.browsers || []) if (!on.has(b)) out.push(`browsers: ${b} is not on here`);
+  return out;
 }

@@ -25,21 +25,23 @@ that plugin governs this project; yes ⇒ re-run with `--governance <plugin@mark
 
 - **`setUp: false`** ⇒ STOP. Show `reasons` in one line and tell the operator to run
   the host's setup (`state.setupCommands`) in this folder, restart Claude Code, and re-run
-  `/project-init`. Do not run any part of it yourself.
+  `/project-init`. Do not run any part of it yourself. (It means a fresh install: nothing of the host's
+  is switched off here AND a role still has several servers on.)
 - **`setUp: true`, `confirmed: false`** ⇒ nothing contradicts it, but the host's setup left no trace
   here (none of its servers is switched off). Ask once whether it has run in this folder; no ⇒ the
   STOP above.
 - **`setUp: true`** ⇒ show `governance.servers` as ONE table (role → host server, `—` for none). They
   were read from the servers the host's setup left ON here, each by the MCP package it runs
-  (`state.enabled[].kind`); ask: accept, or correct a role. The code host is never inferred: ask whether
-  the person's host role reaches the code, and if so it is usually the tracker's server. A role with no
-  server stays empty — never offer a substitute. Write
-  the profile stub at once:
+  (`state.enabled[].kind`). A role in `state.choices` has several servers on — a person may keep two
+  legitimately — so it is empty in the table: ask which one serves that role. Then ask: accept, or
+  correct a role. The code host is never inferred: ask whether the person's host role reaches the code,
+  and if so it is usually the tracker's server. A role with no server stays empty — never offer a
+  substitute. Write the profile stub at once, from `state.genProfile` (every role, telemetry and
+  GitHub included) with the operator's answers swapped in:
 
 ```bash
-node "$CLAUDE_PLUGIN_ROOT/skills/project-init/gen-profile.mjs" --governance <host> \
-  --gov-tracker <k> --gov-code-host <k|""> --gov-test-management <k|""> --gov-browsers <k1,k2> \
-  --gov-website-auth <state.websiteAuth> --self-diagnostics false --runtime-mode plugin
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/gen-profile.mjs" <state.genProfile, answers applied> \
+  --self-diagnostics false --runtime-mode plugin
 ```
 
 ## What runs, what does not
