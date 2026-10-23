@@ -36,7 +36,7 @@
  *   through the $VC_RUN bridge; a session value (`gh-cli`, `az-login`, `oauth`) ⇒ the tool's own
  *   login. "" ⇒ the axis does not apply to this deployment (e.g. `ado` on Jira + GitHub).
  * @property {Record<string, any>} perf  vc-perf's block — an open map, kept wholesale by reconcile
- * @property {{host:string|null, secrets:"host"|"vc-secrets", servers:Record<string,string|string[]>, stand:{writable:boolean}, websiteAuth:""|"host-secrets"|"manual-operator", envs:Record<string,string>}} governance
+ * @property {{host:string|null, secrets:"host"|"vc-secrets", servers:Record<string,string|string[]>, stand:{writable:boolean}, websiteAuth:""|"host-secrets"|"manual-operator", envs:Record<string,string>, codeAccess:""|"none"|"read"|"write"}} governance
  *   a host-governed project (schema 3): see the PROFILE_DEFAULTS comment
  * @property {"platform"|"client"} projectType
  * @property {"virto-engineer"|"client"|"ask"} operator
@@ -287,6 +287,8 @@ export const PROFILE_DEFAULTS = {
   //   websiteAuth: how test users sign in to the client's site — "host-secrets" (passwords in the host's
   //            wrapper, typed by NAME) | "manual-operator" (the operator signs in by hand) | ""
   //   envs:    open map, `.env.<env>` name → the host's website environment (its password slots' prefix)
+  //   codeAccess: what the person may do with the client's code through servers.codeHost —
+  //            "none" | "read" (read for root cause, never a PR) | "write" (a PR for review) | ""
   governance: {
     host: null,
     secrets: "vc-secrets",
@@ -294,6 +296,7 @@ export const PROFILE_DEFAULTS = {
     stand: { writable: true },
     websiteAuth: "",
     envs: {},
+    codeAccess: "",
   },
 };
 

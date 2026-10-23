@@ -60,8 +60,9 @@ A fact that is absent is asked in the round below instead.
 Everything with a fixed set of answers goes into ONE `AskUserQuestion` call (at most four questions; only
 the ones that apply): the host is this project's governance · the host's setup has run here (only when
 `confirmed: false`) · which server serves each role in `state.choices` (telemetry included — which one is
-production is never guessed) · whether the person's role on the host reaches the client's code (yes ⇒ the
-code host is the tracker's server; no ⇒ empty). Then ONE plain-chat message asks for every free-text
+production is never guessed) · only when the code probe (3a) READ the repos: may the agent open PRs on
+the client's repos (the person's host role grants writing) — yes ⇒ `write`, no ⇒ `read`. Then ONE
+plain-chat message asks for every free-text
 value at once, as a short form the operator answers in one reply:
 
 ```
@@ -84,6 +85,29 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/gen-profile.mjs" <state.genProfile
 
 (`--gov-envs` only for an env whose name differs from the host's.) Then §3a scaffold-env for each env,
 write the URLs and the ADO coordinates with write-env, and §3e normalize-env (it detects `STORE_ID`).
+
+### 3a. Code access — probe it, never ask it; then scan the repos
+
+Whether the person reaches the client's code is a fact of their host role, not of the host's
+documentation — so it is PROBED, before the question round, through the tracker's server (an Azure
+DevOps server reaches Azure Repos): call its list-repositories tool for the project (e.g.
+`repo_list_repos_by_project`). The operator approves the call when Claude Code asks.
+
+- **It returns repos** ⇒ the person can READ the code: `codeAccess` is at least `read`, the code host
+  is the tracker's server. Scan them as the normal flow does (§4), only through the host's server:
+  write the listing as JSON (`{ host, org, project, access, repos: [{ name, id, defaultBranch }] }`,
+  `access` from the question round), run
+  `discover-repos.mjs --listing-json <file> --out repos.json`. It answers `needs-files` with the repos
+  whose files it needs: for each in `needs.packageJson` read the root `/package.json` (the file tool,
+  e.g. `repo_get_file_content`) into `packageJson` (`null` when absent); for each in `needs.moduleIds`
+  list `/src` and read `/src/<X>.Web/module.manifest`, putting each `<id>` into `moduleIds` (`[]` when
+  none). Re-run until it writes `repos.json`, then `gen-profile --repos-json repos.json --merge
+  --gov-code-host <tracker server> --gov-code-access read|write`. Keep the listing in a temp file,
+  not in the project.
+- **It is refused or errors** ⇒ `--gov-code-access none`, no code host, no scan.
+- **The call is blocked by Claude Code itself** (a permission prompt the operator declined, or an
+  automatic refusal) ⇒ say so, record nothing, and ask the operator to run the same request in their
+  own words; never work around it.
 
 ### 4. Logins, one account at a time — admins first, then storefront users
 
@@ -138,7 +162,8 @@ no storage question is asked on a host-governed project.
 | §3b `.env.local` | **no password placeholder** — the tracker / code-host connection only |
 | §3c `write-secrets-decl`, §3d token pause, §3e token gate | **skipped** |
 | §3e normalize-env | as usual — it requests the storefront URL once to detect `STORE_ID` |
-| §4 `discover-repos`, §4b `discover-tracker`, §5 `derive-context` | **skipped** — read through the host's MCP servers at run time; each script stands down by itself |
+| §4 `discover-repos` | **through the host**: step 3a — a listing read with the host's server, `--listing-json`; without one it stands down. VirtoCommerce modules are not listed (the modules API needs an admin sign-in, which is the host's) |
+| §4b `discover-tracker`, §5 `derive-context` | **skipped** — read through the host's MCP servers at run time; each script stands down by itself |
 | §6 `gen-profile` | written in step 3 with the facts and answers; recorded as a client project that files nothing upstream |
 | §7 `sync-browser-secrets`, `gen-mcp`, `write-agent-rules` | **skipped** — servers, browser lanes and their rules are the host's |
 | §8 `verify-access` | the **host-mode readiness table**: host plugin, each role's server, the host's setup ran here, the profile matches the servers on, each env's test users and their slots (a filled slot is NOT checked — no secret is resolved), the URLs |

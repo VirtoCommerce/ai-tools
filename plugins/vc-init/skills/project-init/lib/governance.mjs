@@ -30,6 +30,9 @@ export const ROLES = ["tracker", "codeHost", "github", "telemetry", "testManagem
  */
 export const WEBSITE_AUTH = ["host-secrets", "manual-operator"];
 
+/** What a person may do with the client's code through the host's code-host server. */
+export const CODE_ACCESS = ["none", "read", "write"];
+
 
 /** A host is recorded by its plugin id: `<plugin>@<marketplace>`. */
 export const PLUGIN_ID_RE = /^[A-Za-z0-9._-]+@[A-Za-z0-9._-]+$/;
@@ -89,12 +92,13 @@ export function emptyServers() {
 
 /** The answers a host-governed block carries besides the servers. */
 export function emptyExtras() {
-  return { websiteAuth: "", envs: {} };
+  return { websiteAuth: "", envs: {}, codeAccess: "" };
 }
 
 function cleanExtras(extras) {
   const out = {};
   if (typeof extras.websiteAuth === "string") out.websiteAuth = extras.websiteAuth;
+  if (typeof extras.codeAccess === "string") out.codeAccess = extras.codeAccess;
   if (extras.envs && typeof extras.envs === "object") out.envs = { ...extras.envs };
   return out;
 }

@@ -40,6 +40,7 @@
  *   --gov-test-management <key> --gov-browsers <k1,k2>   operator overrides of the host's server per role
  *   --gov-website-auth host-secrets|manual-operator   how test users sign in to the client's website
  *   --gov-envs <env>=<host env>,…   which host website environment each `.env.<env>` is (added, never dropped)
+ *   --gov-code-access none|read|write   what the person may do with the client's code through --gov-code-host
  *
  *   # Merge a discovered repo map (output of discover-repos.mjs) into an existing profile:
  *   node skills/project-init/gen-profile.mjs --repos-json repos.json --merge --print
@@ -56,7 +57,7 @@ import { resolve } from "path";
 import { PROFILE_DEFAULTS, PROFILE_SCHEMA_VERSION } from "../../scripts/lib/project-profile.mjs";
 import { outputRoot, resolveOutPath } from "./lib/paths.mjs";
 import { ensureProjectIgnores } from "./lib/gitignore.mjs";
-import { WEBSITE_AUTH, governanceBlock, parseEnvMap, resolveHostId } from "./lib/governance.mjs";
+import { CODE_ACCESS, WEBSITE_AUTH, governanceBlock, parseEnvMap, resolveHostId } from "./lib/governance.mjs";
 
 // A work-item field whose VALUE is time-varying (a sprint/area NODE id: System.IterationId /
 // System.AreaId). Persisting it as a fieldDefaults constant silently files future bugs into a
@@ -104,6 +105,10 @@ function governanceExtras(args, current = {}) {
   if (args["gov-website-auth"] !== undefined) {
     if (!WEBSITE_AUTH.includes(args["gov-website-auth"])) fail(`Invalid --gov-website-auth "${args["gov-website-auth"]}". Allowed: ${WEBSITE_AUTH.join(" | ")}`);
     extras.websiteAuth = args["gov-website-auth"];
+  }
+  if (args["gov-code-access"] !== undefined) {
+    if (!CODE_ACCESS.includes(args["gov-code-access"])) fail(`Invalid --gov-code-access "${args["gov-code-access"]}". Allowed: ${CODE_ACCESS.join(" | ")}`);
+    extras.codeAccess = args["gov-code-access"];
   }
   if (args["gov-envs"] !== undefined) {
     try {
@@ -361,12 +366,19 @@ function main() {
     const govExtras = governanceExtras(args, same || {});
     const kept = same ? { ...same.servers, browsers: (same.servers?.browsers || []).join(",") } : {};
     const overrides = Object.fromEntries(Object.keys(flagged).map((k) => [k, flagged[k] !== undefined ? flagged[k] : kept[k]]));
-    const extras = same ? { websiteAuth: same.websiteAuth, envs: same.envs, ...govExtras } : govExtras;
+    const extras = same ? { websiteAuth: same.websiteAuth, envs: same.envs, codeAccess: same.codeAccess, ...govExtras } : govExtras;
     profile = { ...profile, governance: governanceBlock(host, overrides, extras) };
   } else if (current?.host) {
     // A day-2 run (--add-env) on a governed project: fold the answers
     // into the block that is already there, and keep everything else.
-    profile = { ...profile, governance: { ...current, host: currentId, ...governanceExtras(args, current) } };
+    // A --gov-<role> flag changes that one role here too (e.g. the code host once §3a has scanned).
+    const servers = { ...current.servers };
+    for (const [flag, role] of [["gov-tracker", "tracker"], ["gov-code-host", "codeHost"], ["gov-github", "github"],
+      ["gov-telemetry", "telemetry"], ["gov-test-management", "testManagement"]]) {
+      if (args[flag] !== undefined) servers[role] = String(args[flag]);
+    }
+    if (args["gov-browsers"] !== undefined) servers.browsers = String(args["gov-browsers"]).split(",").map((s) => s.trim()).filter(Boolean);
+    profile = { ...profile, governance: { ...current, host: currentId, servers, ...governanceExtras(args, current) } };
   }
 
   // A host-governed project is a client's, and its repo scan (§4/§5) does not run — so the defaults

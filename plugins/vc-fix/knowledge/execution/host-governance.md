@@ -9,7 +9,8 @@ the vc-* plugins are a **guest**. `/project-init` (vc-init) records it in `proje
                 "servers": { "tracker": "…", "codeHost": "…", "github": "…", "telemetry": "…",
                              "testManagement": "…", "browsers": ["…"] },
                 "stand": { "writable": false },
-                "websiteAuth": "host-secrets|manual-operator", "envs": { "<env>": "<host env>" } }
+                "websiteAuth": "host-secrets|manual-operator", "envs": { "<env>": "<host env>" },
+                "codeAccess": "none|read|write" }
 ```
 
 **The rule, whenever `governance.host` is set:**
@@ -30,6 +31,14 @@ client's code ⇒ `servers.codeHost`; the VirtoCommerce upstream ⇒ `servers.gi
 `servers.telemetry`; test cases ⇒ `servers.testManagement`; a browser lane ⇒ one of
 `servers.browsers`. A role with no server mapped is a capability the project does not grant — STOP and
 say so; do not reach for a substitute.
+
+**The client's code — `governance.codeAccess`:**
+
+- `read` — read the client's repos (`repos.client`, `access: "read"`) through `servers.codeHost` — its
+  file and search tools — for the root cause, a reproduction, a review. Never a branch, a push or a PR:
+  `/qa-fix` stops after its root-cause step and hands the fix to a person.
+- `write` — the normal `/qa-fix` path through `servers.codeHost`, ending at a PR for human review.
+- `none` / empty — no code at all: say so and STOP where code is needed.
 
 **Signing in to the client's website as a test user:**
 

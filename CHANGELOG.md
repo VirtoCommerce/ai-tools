@@ -50,6 +50,16 @@ a normal project the same shape applies (§2e: one form for every non-secret val
 filled-fields table), and an admin password goes to vc-secrets only — `--admin-passwords env-local` is refused;
 a storefront user's still goes where the operator chooses.
 
+**Added: code access is probed, and readable code is scanned like the normal flow.** A host's
+documentation is not the person's rights: `/project-init` calls the tracker server's list-repositories
+tool, and when it answers the repos are scanned through the host's server — `discover-repos.mjs
+--listing-json` takes the listing the skill read, reports `needs-files` (root `package.json` of each
+storefront candidate, `module.manifest` ids of each module repo) until it has them, and classifies them as
+it always does. `governance.codeAccess` (`none` | `read` | `write`) records the result: with `read` the
+client repos carry `access: "read"` and no PR plan, vc-fix reads code for the root cause and opens no PR, and
+next-steps offers `/qa-fix` only with `write`. A `--gov-<role>` flag on a day-2 gen-profile run now
+changes that role.
+
 **Verified.** On a machine with a client governance plugin installed for one folder and its setup already run
 there: no candidate for this repository or its parent folder; the folder's plugin found in any letter case,
 its work-items, test-management, telemetry and three browser servers classified by package, its setup
