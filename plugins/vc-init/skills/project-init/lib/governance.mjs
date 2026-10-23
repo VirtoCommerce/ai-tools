@@ -225,24 +225,18 @@ export function hostCandidates({ projectRoot = process.cwd(), home = process.env
     if (!PLUGIN_ID_RE.test(id) || ours.includes(id.split("@")[1]) || enabled[id] === false) continue;
     const bound = folderRecord(registry[id], projectRoot);
     const userWide = (Array.isArray(registry[id]) ? registry[id] : []).find((r) => r && r.scope === "user");
-    let source;
-    if (bound) source = `installed for this folder (${bound.scope} scope)`;
-    else if (enabled[id] === true) source = "enabled in this folder's .claude/settings";
-    else if (machineWide && userWide) source = "installed for the whole machine (user scope)";
-    else continue;
+    // How the plugin is bound here, strongest first: an install for this folder (2), switched on in
+    // this folder's settings (1), installed for the whole machine (0 — only ever offered).
+    const binding = bound ? 2 : enabled[id] === true ? 1 : machineWide && userWide ? 0 : -1;
+    if (binding < 0) continue;
+    const source = binding === 2 ? `installed for this folder (${bound.scope} scope)`
+      : binding === 1 ? "enabled in this folder's .claude/settings" : "installed for the whole machine (user scope)";
     const installPath = hostInstallPath(id, { projectRoot, home });
     const servers = [...hostServerKeys(installPath)];
     if (!servers.length || !hasSessionStartHook(installPath)) continue;
-    out.push({ pluginId: id, installPath, source, folderBound: !source.startsWith("installed for the whole"), servers, setupCommands: setupCommandsOf(installPath) });
+    out.push({ pluginId: id, installPath, source, binding, folderBound: binding > 0, servers, setupCommands: setupCommandsOf(installPath) });
   }
-  const rank = (c) => (c.source.startsWith("installed for this folder") ? 2 : c.folderBound ? 1 : 0);
-  return out.sort((a, b) => rank(b) - rank(a));
-}
-
-/** The first host candidate bound to this folder, or null (a machine-wide one is only ever offered). */
-export function detectHost(opts = {}) {
-  const [first] = hostCandidates({ ...opts, machineWide: false });
-  return first ? { host: first.pluginId, pluginId: first.pluginId, installPath: first.installPath, source: first.source } : null;
+  return out.sort((a, b) => b.binding - a.binding);
 }
 
 /**

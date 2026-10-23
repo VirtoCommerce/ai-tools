@@ -451,11 +451,12 @@ function signalSelfDiagnosticsComplete() {
 function hostPersonRows(g, installPath, root) {
   const state = hostState(g.host, installPath, root);
   const setup = state.setupCommands[0] || "the host's setup";
-  add("Host setup for this folder", !state.setUp ? "FAIL" : state.confirmed ? "PASS" : "WARN",
-    !state.setUp ? `${state.reasons.join("; ")} — run ${setup} in this folder, then restart Claude Code`
-      : state.confirmed ? `${state.enabled.length} of ${g.host}'s servers on, ${state.disabled.length} switched off`
+  // Never a FAIL: without knowing the host, "its setup has not run" is a guess (hostState).
+  add("Host setup for this folder", state.confirmed ? "PASS" : "WARN",
+    state.confirmed ? `${state.enabled.length} of ${g.host}'s servers on, ${state.disabled.length} switched off`
+      : state.likelyFresh ? `looks untouched: ${state.reasons.join("; ")} — if ${setup} has not run in this folder, run it and restart Claude Code`
         : `not confirmed: none of ${g.host}'s servers is switched off here — if ${setup} has not run in this folder, run it`);
-  const drift = state.setUp ? roleDrift(g, state) : [];
+  const drift = roleDrift(g, state);
   if (drift.length) add("Profile vs servers on", "WARN", `${drift.join("; ")} — re-run /project-init to record the servers that are on`);
 
   // A guest profile written before 0.4.0 has no websiteAuth: the host's own slots decide.
@@ -464,6 +465,10 @@ function hostPersonRows(g, installPath, root) {
     return;
   }
   const { slots, hostEnvs } = state;
+  if (!slots.length) {
+    add("Website test users", "FAIL", `the profile says the host keeps test-user passwords, but ${g.host} declares no password slots now — gen-profile --gov-website-auth manual-operator, or update the host plugin`);
+    return;
+  }
   for (const env of envsIn(readdirSafe(root))) {
     const hostEnv = hostEnvFor(env, g, hostEnvs);
     if (!hostEnv) {

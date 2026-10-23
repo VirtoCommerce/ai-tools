@@ -354,7 +354,8 @@ function main() {
     const host = args.governance === "none" ? null : resolveHostId(args.governance);
     const flagged = { tracker: args["gov-tracker"], codeHost: args["gov-code-host"], github: args["gov-github"], telemetry: args["gov-telemetry"], testManagement: args["gov-test-management"], browsers: args["gov-browsers"] };
     // Re-running with the SAME host (§6 after §0-host, or --check) keeps what was confirmed earlier;
-    // only a flag changes a role. A different host starts from that host's defaults.
+    // only a flag changes a role. A different host starts EMPTY — no host has defaults here; pass every
+    // role (detect-governance's state.genProfile carries them all).
     const same = host && currentId === host ? current : null;
     // Another host starts clean: its environments are not the previous host's.
     const govExtras = governanceExtras(args, same || {});

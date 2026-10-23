@@ -23,17 +23,17 @@ write and the host's `state`. Confirm with `AskUserQuestion`: the detected plugi
 `source`) is this project's governance, or not. No candidate but a `machineWide` one ⇒ ask once whether
 that plugin governs this project; yes ⇒ re-run with `--governance <plugin@marketplace>`. Then read `state`:
 
-- **`setUp: false`** ⇒ STOP. Show `reasons` in one line and tell the operator to run
-  the host's setup (`state.setupCommands`) in this folder, restart Claude Code, and re-run
-  `/project-init`. Do not run any part of it yourself. (It means a fresh install: nothing of the host's
-  is switched off here AND a role still has several servers on.)
-- **`setUp: true`, `confirmed: false`** ⇒ nothing contradicts it, but the host's setup left no trace
-  here (none of its servers is switched off). Ask once whether it has run in this folder; no ⇒ the
-  STOP above.
-- **`setUp: true`** ⇒ show `governance.servers` as ONE table (role → host server, `—` for none). They
+- **`confirmed: false`** ⇒ the host's setup left no trace here (none of its servers is switched off);
+  `likelyFresh: true` adds that a role still has several servers on, the look of an untouched install
+  (show `reasons`). Neither is a verdict — a person may keep several servers on legitimately. Ask ONCE
+  whether the host's setup (`state.setupCommands`) has run in this folder. No ⇒ STOP: tell the operator
+  to run it here, restart Claude Code, and re-run `/project-init`; do not run any part of it yourself.
+  Yes ⇒ go on.
+- Then show `governance.servers` as ONE table (role → host server, `—` for none). They
   were read from the servers the host's setup left ON here, each by the MCP package it runs
   (`state.enabled[].kind`). A role in `state.choices` has several servers on — a person may keep two
-  legitimately — so it is empty in the table: ask which one serves that role. Then ask: accept, or
+  legitimately, and which telemetry server is production is never guessed — so it is empty in the
+  table: ask which one serves that role. Then ask: accept, or
   correct a role. The code host is never inferred: ask whether the person's host role reaches the code,
   and if so it is usually the tracker's server. A role with no server stays empty — never offer a
   substitute. Write the profile stub at once, from `state.genProfile` (every role, telemetry and

@@ -15,7 +15,7 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import os from "node:os";
 import { dirname, join, resolve } from "node:path";
-import { hostServerKeys, pluginMcpServers, samePath, setupCommandsOf } from "./governance.mjs";
+import { pluginMcpServers, samePath, setupCommandsOf } from "./governance.mjs";
 
 function readJson(path) {
   try {
@@ -90,8 +90,8 @@ function pluginJsonDocs(installPath) {
  * `<x>`. Anything else launches what its own entry says. Read-only.
  * @returns {{ key: string, command: string, args: string[], env: object, wrapper: string }|null}
  */
-export function resolveLaunch(installPath, key, docs = pluginJsonDocs(installPath)) {
-  const spec = pluginMcpServers(installPath)[key];
+export function resolveLaunch(installPath, key, docs = pluginJsonDocs(installPath), declared = pluginMcpServers(installPath)) {
+  const spec = declared[key];
   if (!spec) return null;
   const expand = (s) => String(s).split("${CLAUDE_PLUGIN_ROOT}").join(installPath);
   const args = (spec.args || []).map(expand);
@@ -123,8 +123,9 @@ export function classifyLaunch(launch) {
 /**
  * The role → server map from the servers that are ON, by kind. A role with more than one server on is
  * left empty and listed in `choices` — the operator picks (a person may legitimately keep two, e.g. one
- * per access level). Telemetry prefers a non-prod server. The code host is never inferred — whether the
- * tracker's server reaches code is the person's role on the host, so the operator says so. Pure.
+ * per access level). Telemetry is no exception: which of several telemetry servers is production is not
+ * guessed from a name — the operator says. The code host is never inferred — whether the tracker's server
+ * reaches code is the person's role on the host, so the operator says so. Pure.
  */
 export function serversFromLaunches(launches) {
   const of = (kind) => launches.filter((l) => l.kind === kind).map((l) => l.key);
@@ -134,13 +135,12 @@ export function serversFromLaunches(launches) {
     if (on.length > 1) choices[kind] = on;
     return on.length === 1 ? on[0] : "";
   };
-  const telemetry = of("telemetry");
   return {
     servers: {
       tracker: one("tracker"),
       codeHost: "",
       github: one("github"),
-      telemetry: telemetry.find((k) => !/prod/i.test(k)) || telemetry[0] || "",
+      telemetry: one("telemetry"),
       testManagement: one("testManagement"),
       browsers: of("browsers"),
     },
@@ -162,20 +162,43 @@ export function genProfileFlags(host, servers, websiteAuth) {
 // The slot is the LAST segment before _PASSWORD; the environment is everything before it, so a
 // multi-word environment (PRE_PROD_USER1_PASSWORD → pre_prod / USER1) keeps its name.
 const SLOT_VAR = /^([A-Z][A-Z0-9_]*?)_([A-Z][A-Z0-9]*)_PASSWORD$/;
-const SECRET_REF = /^[a-z][a-z0-9-]*:([A-Za-z0-9._-]+)$/;
+const SECRET_REF = /^([a-z][a-z0-9-]*):([a-z0-9][a-z0-9._-]*)$/;
+
+/**
+ * The reference schemes the host's declarations actually use (`secret:` in `secret:<name>`): a scheme
+ * counts when a NON-slot env value uses it too, or when at least two slots do — so one literal password
+ * that merely contains a colon is never read as a reference, and never echoed. Pure.
+ */
+export function referenceSchemes(launches) {
+  const outside = new Set();
+  const inSlots = new Map();
+  for (const l of launches) {
+    for (const [name, value] of Object.entries(l.env || {})) {
+      const ref = SECRET_REF.exec(String(value));
+      if (!ref) continue;
+      // Distinct slot NAMES: the same slot repeated on every browser server is still one value.
+      if (SLOT_VAR.test(name)) inSlots.set(ref[1], (inSlots.get(ref[1]) || new Set()).add(name));
+      else outside.add(ref[1]);
+    }
+  }
+  for (const [scheme, names] of inSlots) if (names.size >= 2) outside.add(scheme);
+  return outside;
+}
 
 /**
  * The test-user password slots the browser servers launch with: every env entry
- * `<ENV>_<SLOT>_PASSWORD` whose value is a secret REFERENCE (`<scheme>:<name>`). Pure.
+ * `<ENV>_<SLOT>_PASSWORD` whose value is a REFERENCE in a scheme the host uses elsewhere too
+ * (`<scheme>:<name>`, referenceSchemes). `launches` are all the servers that are on. Pure.
  * @returns {{ hostEnv: string, slot: string, password: string, secret: string }[]}
  */
 export function slotsFromLaunches(launches) {
+  const schemes = referenceSchemes(launches);
   const out = new Map();
   for (const l of launches.filter((x) => x.kind === "browsers")) {
     for (const [name, value] of Object.entries(l.env || {})) {
       const m = SLOT_VAR.exec(name);
       const ref = SECRET_REF.exec(String(value));
-      if (m && ref) out.set(name, { hostEnv: m[1].toLowerCase(), slot: m[2], password: name, secret: ref[1] });
+      if (m && ref && schemes.has(ref[1])) out.set(name, { hostEnv: m[1].toLowerCase(), slot: m[2], password: name, secret: ref[2] });
     }
   }
   return [...out.values()].sort((a, b) => a.hostEnv.localeCompare(b.hostEnv) || a.slot.localeCompare(b.slot, undefined, { numeric: true }));
@@ -208,32 +231,32 @@ export function storeCommand(wrapper, secret) {
 }
 
 /**
- * Has the host's own setup run for this folder, and what did it leave? Read-only.
- *   confirmed    — the setup left a trace here (some of the host's servers switched off).
- *   setUp: false — no trace AND a role still has several servers on: the state of a fresh install the
- *                  host's setup has not touched. Several servers on after the setup left a trace is a
- *                  person's legitimate choice (`choices`), never a block.
- *   setUp && !confirmed means "not contradicted" — a host whose setup changes nothing in the folder
- *   cannot be confirmed without knowing the host, so the operator is asked.
+ * What the host's own setup left in this folder. Read-only, and it never decides on its own that the
+ * setup has not run — without knowing the host that is a guess, so it only says how sure it is:
+ *   confirmed    — the setup left a trace here (some of the host's servers switched off);
+ *   likelyFresh  — no trace AND a role still has several servers on, the look of an untouched install.
+ *                  The operator is ASKED whether the host's setup ran; a person may keep several
+ *                  servers on legitimately (`choices`), so this is never a block by itself.
  */
 export function hostState(host, installPath, projectRoot, home = process.env.HOME || os.homedir()) {
-  const shipped = [...hostServerKeys(installPath)];
+  const declared = pluginMcpServers(installPath);
+  const shipped = Object.keys(declared);
   const disabled = disabledHostKeys(readJson(join(home, ".claude.json")), projectRoot, hostPluginName(host));
   const enabled = shipped.filter((k) => !disabled.includes(k));
   const docs = pluginJsonDocs(installPath);
-  const launches = enabled.map((k) => resolveLaunch(installPath, k, docs)).filter(Boolean).map((l) => ({ ...l, kind: classifyLaunch(l) }));
+  const launches = enabled.map((k) => resolveLaunch(installPath, k, docs, declared)).filter(Boolean).map((l) => ({ ...l, kind: classifyLaunch(l) }));
   const { servers, choices } = serversFromLaunches(launches);
   const slots = slotsFromLaunches(launches);
   const wrapper = launches.find((l) => l.kind === "browsers" && l.wrapper)?.wrapper || launches.find((l) => l.wrapper)?.wrapper || "";
   const setupCommands = setupCommandsOf(installPath);
   const confirmed = disabled.length > 0;
   const crowded = Object.keys(choices).filter((k) => k !== "github");
-  const setUp = confirmed || crowded.length === 0;
+  const likelyFresh = !confirmed && crowded.length > 0;
   const websiteAuth = slots.length ? "host-secrets" : "manual-operator";
   return {
-    setUp,
     confirmed,
-    reasons: setUp ? [] : ["none of the host's servers is switched off here", ...crowded.map((k) => `more than one ${k} server is on`)],
+    likelyFresh,
+    reasons: likelyFresh ? ["none of the host's servers is switched off here", ...crowded.map((k) => `more than one ${k} server is on`)] : [],
     setupCommands,
     enabled: launches.map(({ key, kind }) => ({ key, kind })),
     disabled,

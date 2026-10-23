@@ -75,14 +75,20 @@ export function loginProblem(login) {
 export function withUser(text, { key, role, login, replace = false, note = "", password = `${key}_PASSWORD`, where = "" }) {
   const loginVar = `${key}_LOGIN`;
   const current = parse(String(text || ""))[loginVar];
-  if (current === login) return { text, change: "unchanged" };
+  const comment = `# vc-init user ${key} (${role}) — ${note || ROLE_TEXT[role]}. Login below; the agent types the password by its NAME: ${password}${where ? ` (${where})` : ""}`;
+  if (current === login && !replace) return { text, change: "unchanged" };
   if (current !== undefined) {
     if (!replace) return { refused: `${loginVar} is already ${JSON.stringify(current)} here — pass --replace to change it` };
     // A replacer function: a login is data, and `$&` / `$1` in a string replacement would be a pattern.
-    return { text: String(text).replace(new RegExp(`^(\\s*${loginVar}\\s*=).*$`, "m"), (_m, lead) => `${lead}${login}`), change: "replaced" };
+    // The comment above it is rewritten too, so its role, note and password NAME follow the new user.
+    const marker = new RegExp(`^#\\s*vc-init user ${key} \\((?:user|admin)\\).*$`, "m");
+    const next = String(text)
+      .replace(new RegExp(`^(\\s*${loginVar}\\s*=).*$`, "m"), (_m, lead) => `${lead}${login}`)
+      .replace(marker, () => comment);
+    return { text: next, change: next === text ? "unchanged" : "replaced" };
   }
   const base = String(text || "");
-  const block = `# vc-init user ${key} (${role}) — ${note || ROLE_TEXT[role]}. Login below; the agent types the password by its NAME: ${password}${where ? ` (${where})` : ""}\n${loginVar}=${login}\n`;
+  const block = `${comment}\n${loginVar}=${login}\n`;
   return { text: `${base}${base && !base.endsWith("\n") ? "\n" : ""}${base ? "\n" : ""}${block}`, change: "added" };
 }
 
@@ -159,16 +165,20 @@ function hostMain(root, profile, args) {
   const state = hostState(g.host, installPath, root);
   const { slots, hostEnvs } = state;
   if (!slots.length) fail(`${g.host} declares no test-user password slots — sign in by hand (gen-profile --gov-website-auth manual-operator)`);
-  if (!state.setUp) fail(`${state.reasons.join("; ")} — run ${state.setupCommands[0] || "the host's setup"} in this folder first, then restart Claude Code`);
+  // A slot holds ONE password, so it belongs to one user across every `.env.<env>` that maps to the same
+  // host environment — two files claiming it would share a password.
+  const allEnvs = envsIn(readdirSync(root));
+  const holders = (hostEnv) => allEnvs.filter((e) => hostEnvFor(e, g, hostEnvs) === hostEnv)
+    .flatMap((e) => markedUsersIn(readFileSync(join(root, `.env.${e}`), "utf8")).map((u) => ({ ...u, env: e })));
   const envView = (env) => {
     const hostEnv = hostEnvFor(env, g, hostEnvs);
-    const users = markedUsersIn(readFileSync(join(root, `.env.${env}`), "utf8"));
+    const users = hostEnv ? holders(hostEnv) : [];
     return {
       env,
       hostEnv,
       slots: slots.filter((s) => s.hostEnv === hostEnv).map((s) => {
         const u = users.find((x) => x.key === s.slot);
-        return { slot: s.slot, password: s.password, secret: s.secret, login: u?.login || "", role: u?.role || "", free: !u };
+        return { slot: s.slot, password: s.password, secret: s.secret, login: u?.login || "", role: u?.role || "", heldIn: u?.env || "", free: !u };
       }),
     };
   };
@@ -188,6 +198,7 @@ function hostMain(root, profile, args) {
   if (!view.hostEnv) fail(`.env.${env} is not mapped to a ${g.host} website environment (${hostEnvs.join(", ")}) — gen-profile --gov-envs ${env}=<one of them>`);
   const target = view.slots.find((s) => s.slot === slot);
   if (!target) fail(`--slot must be one of ${view.slots.map((s) => s.slot).join(", ")} (the ${g.host} slots for ${view.hostEnv})`);
+  if (!target.free && target.heldIn !== env) fail(`slot ${slot} of ${view.hostEnv} already belongs to ${target.login} in .env.${target.heldIn} — one slot is one password; pick a free slot`);
   if (!["user", "admin"].includes(role)) fail("--role must be user (storefront) or admin (back office)");
   const lp = loginProblem(login);
   if (lp) fail(lp);
