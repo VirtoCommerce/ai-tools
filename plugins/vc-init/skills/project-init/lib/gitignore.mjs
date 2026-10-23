@@ -70,6 +70,26 @@ export function ignoreEntryFor(projectRoot, absPath) {
 }
 
 /**
+ * Remove ONE block this plugin appended, found by its exact title line (`# === <title> ===`): the
+ * title, its `#` notes and its entries up to the next blank line. Nothing else in the file is touched.
+ * Returns the entries removed ([] when the block is absent).
+ */
+export function removeGitignoreBlock(root, title) {
+  const path = join(root, ".gitignore");
+  if (!existsSync(path)) return [];
+  const lines = readFileSync(path, "utf-8").split(/\r?\n/);
+  const at = lines.findIndex((l) => l.trim() === `# === ${title} ===`);
+  if (at < 0) return [];
+  let end = at + 1;
+  while (end < lines.length && lines[end].trim() !== "") end++;
+  const removed = lines.slice(at + 1, end).map((l) => l.trim()).filter((l) => l && !l.startsWith("#"));
+  const start = at > 0 && lines[at - 1].trim() === "" ? at - 1 : at;
+  lines.splice(start, end - start);
+  writeFileSync(path, lines.join("\n"));
+  return removed;
+}
+
+/**
  * Append the ignore entries a destination implies, if missing. Idempotent, and it only ever
  * APPENDS a marked block — an existing .gitignore is never rewritten or reordered, and a project
  * with no .gitignore at all gets one. `title`/`notes` label the block so separate calls (secrets,

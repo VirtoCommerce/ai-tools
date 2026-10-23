@@ -56,7 +56,10 @@ import { readFileSync, writeFileSync, existsSync } from "fs";
 import { resolve } from "path";
 import { PROFILE_DEFAULTS, PROFILE_SCHEMA_VERSION } from "../../scripts/lib/project-profile.mjs";
 import { outputRoot, resolveOutPath } from "./lib/paths.mjs";
-import { ensureProjectIgnores } from "./lib/gitignore.mjs";
+import { ensureGitignoreEntries, ensureProjectIgnores, removeGitignoreBlock } from "./lib/gitignore.mjs";
+
+/** The .gitignore block a host-governed project gets for its env files (removed when it stops being one). */
+const HOST_ENV_IGNORE = "vc-init (/project-init) — host-governed: env files are local";
 import { CODE_ACCESS, WEBSITE_AUTH, governanceBlock, parseEnvMap, resolveHostId } from "./lib/governance.mjs";
 
 // A work-item field whose VALUE is time-varying (a sprint/area NODE id: System.IterationId /
@@ -355,6 +358,7 @@ function main() {
   // means (the one installed plugin with that name), so a re-run upgrades it in place.
   const current = profile.governance;
   const currentId = current?.host ? resolveHostId(current.host) || current.host : null;
+  const leavingHost = args.governance === "none" && Boolean(currentId);
   if (args.governance !== undefined) {
     const host = args.governance === "none" ? null : resolveHostId(args.governance);
     const flagged = { tracker: args["gov-tracker"], codeHost: args["gov-code-host"], github: args["gov-github"], telemetry: args["gov-telemetry"], testManagement: args["gov-test-management"], browsers: args["gov-browsers"] };
@@ -390,6 +394,14 @@ function main() {
     if (!args.operator) profile.operator = "client";
     profile.upstream = { ...profile.upstream, fileIssues: false };
     if (profile.projectType === "client" && profile.buildVerify?.source === "vc-deploy-dev") profile.buildVerify.source = "modules-endpoint";
+  } else if (leavingHost) {
+    // Leaving guest mode (`--governance none` on a profile that had a host): undo what guest mode forced,
+    // so a project once taken for host-governed by mistake is a normal one again. The repo scan (§4)
+    // re-derives projectType / operator; an explicit flag still wins.
+    if (!args["project-type"]) profile.projectType = PROFILE_DEFAULTS.projectType;
+    if (!args.operator) profile.operator = PROFILE_DEFAULTS.operator;
+    profile.upstream = { ...profile.upstream, fileIssues: PROFILE_DEFAULTS.upstream.fileIssues };
+    if (profile.projectType === "platform" && profile.buildVerify?.source === "modules-endpoint") profile.buildVerify.source = "vc-deploy-dev";
   }
 
   // Prune infra sub-objects that don't apply to the chosen tracker / code host, so the written
@@ -424,7 +436,15 @@ function main() {
   // one that turns self-diagnostics ON, so `.vc-fix/` starts filling right after (VCST-5774 #4).
   // On a host-governed project every `.env.<env>` is local too: it holds the test users' logins, and the
   // host's rules keep environment files out of the repository.
-  const ignored = ensureProjectIgnores(outputRoot(), profile.governance?.host ? [".env.*"] : []);
+  // That rule lives in its own marked block, so leaving guest mode removes exactly it — a normal project
+  // commits its `.env.<env>`.
+  const ignored = ensureProjectIgnores(outputRoot());
+  if (profile.governance?.host) {
+    ignored.push(...ensureGitignoreEntries(outputRoot(), [".env.*"], { title: HOST_ENV_IGNORE, notes: ["Every .env.<env> here holds test-user logins; the host's rules keep env files out of git."] }));
+  } else if (leavingHost) {
+    const dropped = removeGitignoreBlock(outputRoot(), HOST_ENV_IGNORE);
+    if (dropped.length) console.log(`[gen-profile] .gitignore -= ${dropped.join(", ")} (not host-governed any more)`);
+  }
   if (ignored.length) console.log(`[gen-profile] .gitignore += ${ignored.join(", ")}`);
   writeFileSync(outPath, JSON.stringify(withMeta, null, 2) + "\n");
   console.log(`[gen-profile] wrote ${outPath}`);

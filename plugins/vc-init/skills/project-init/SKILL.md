@@ -224,7 +224,8 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/detect-governance.mjs" [--governan
 ```
 
 It looks for a plugin bound to THIS folder (installed for it, or enabled in its settings) that is not ours and ships MCP servers and a `SessionStart` hook — no host is known by name, and one installed for another folder does not count.
-`detected: null` and no `--governance` ⇒ the normal flow below. A host found (or named with
+`detected: null`, no `machineWide` or `inactive` entry and no `--governance` ⇒ the normal flow below (a
+`machineWide` / `inactive` entry is handled as [`host-governed.md`](host-governed.md) §1 says). A host found (or named with
 `--governance <host>`) ⇒ confirm with `AskUserQuestion` (host-governed / not — the operator decides),
 then follow [`host-governed.md`](host-governed.md) — the host's own setup command runs first, vc-init reads what it left — instead of the token steps: our plugins are a
 guest there — **no vc-secrets, no `$VC_RUN`, no `.mcp.json` or settings written, no PAT, no
