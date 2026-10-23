@@ -229,16 +229,20 @@ export function hostCandidates({ projectRoot = process.cwd(), home = process.env
     if (!PLUGIN_ID_RE.test(id) || ours.includes(id.split("@")[1]) || enabled[id] === false) continue;
     const bound = folderRecord(registry[id], projectRoot);
     const userWide = (Array.isArray(registry[id]) ? registry[id] : []).find((r) => r && r.scope === "user");
-    // How the plugin is bound here, strongest first: an install for this folder (2), switched on in
-    // this folder's settings (1), installed for the whole machine (0 — only ever offered).
-    const binding = bound ? 2 : enabled[id] === true ? 1 : machineWide && userWide ? 0 : -1;
-    if (binding < 0) continue;
-    const source = binding === 2 ? `installed for this folder (${bound.scope} scope)`
-      : binding === 1 ? "enabled in this folder's .claude/settings" : "installed for the whole machine (user scope)";
+    // How the plugin is bound here, strongest first: installed for this folder AND switched on in its
+    // settings (2), switched on in its settings only (1), installed for the whole machine (0 — only ever
+    // offered). An install record for this folder whose settings no longer switch it on (the settings
+    // file was removed or edited) is NOT loaded by Claude Code: it is reported as `inactive`, never used.
+    const inactive = Boolean(bound) && enabled[id] !== true;
+    const binding = inactive ? -1 : bound ? 2 : enabled[id] === true ? 1 : machineWide && userWide ? 0 : -2;
+    if (binding < -1) continue;
+    const source = inactive ? `installed for this folder (${bound.scope} scope) but not switched on in its .claude/settings — Claude Code does not load it`
+      : binding === 2 ? `installed for this folder (${bound.scope} scope)`
+        : binding === 1 ? "enabled in this folder's .claude/settings" : "installed for the whole machine (user scope)";
     const installPath = hostInstallPath(id, { projectRoot, home });
     const servers = [...hostServerKeys(installPath)];
     if (!servers.length || !hasSessionStartHook(installPath)) continue;
-    out.push({ pluginId: id, installPath, source, binding, folderBound: binding > 0, servers, setupCommands: setupCommandsOf(installPath) });
+    out.push({ pluginId: id, installPath, source, binding, inactive, folderBound: binding > 0, servers, setupCommands: setupCommandsOf(installPath) });
   }
   return out.sort((a, b) => b.binding - a.binding);
 }

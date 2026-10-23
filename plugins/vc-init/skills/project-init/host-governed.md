@@ -30,7 +30,11 @@ storefront by normalize-env (one HTTP request to the URL the operator gives), so
 write and the host's `state`. Confirm the detected plugin (name it and its `source`) is this project's
 governance — fold this into the question round below when nothing else needs an answer first. No
 candidate but a `machineWide` one ⇒ ask once whether that plugin governs this project; yes ⇒ re-run with
-`--governance <plugin@marketplace>`.
+`--governance <plugin@marketplace>`. An `inactive` one (installed for this folder, but its settings no
+longer switch it on — e.g. the folder's `.claude/settings.json` was deleted) ⇒ STOP: Claude Code does not
+load it, so neither its rules nor its servers are here. Tell the operator to switch it on again with the
+host's own install instructions (for this folder's scope) and restart Claude Code; never edit the settings
+for them.
 
 `confirmed: false` ⇒ the host's setup left no trace here (none of its servers is switched off);
 `likelyFresh: true` adds that a role still has several servers on, the look of an untouched install (show

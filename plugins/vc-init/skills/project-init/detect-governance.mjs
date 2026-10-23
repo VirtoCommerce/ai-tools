@@ -8,6 +8,8 @@
  *   { candidates: [...], machineWide: [...], detected: <first candidate> | null,
  *     governance: <the block it would write>, state: <what the host's own setup left here> | null }
  * `machineWide` are the same shape installed for the whole machine — never picked, only offered.
+ * `inactive` are installed for this folder but no longer switched on in its settings (Claude Code does
+ * not load them) — the operator re-enables one, never us.
  * `state` (lib/host-adapter.mjs hostState): `confirmed` + `likelyFresh` + `reasons` (never a verdict — the
  * operator is asked), the role `choices`, the host's own setup command(s), the
  * servers on and the role each fills, the role → server map, the test-user password slots, the website
@@ -31,7 +33,8 @@ function main() {
   const root = outputRoot();
   const all = hostCandidates({ projectRoot: root, machineWide: true });
   const candidates = all.filter((c) => c.folderBound);
-  const machineWide = all.filter((c) => !c.folderBound);
+  const machineWide = all.filter((c) => !c.folderBound && !c.inactive);
+  const inactive = all.filter((c) => c.inactive);
   const detected = candidates[0] ? { host: candidates[0].pluginId, installPath: candidates[0].installPath, source: candidates[0].source } : null;
   const host = explicit === "none" ? null : resolveHostId(explicit) || detected?.host || null;
   const installPath = host ? hostInstallPath(host, { projectRoot: root }) : null;
@@ -41,7 +44,7 @@ function main() {
   }
   const state = installPath ? hostState(host, installPath, root) : null;
   const governance = governanceBlock(host, state ? { ...state.servers, browsers: state.servers.browsers.join(",") } : {}, state ? { websiteAuth: state.websiteAuth } : {});
-  console.log(JSON.stringify({ candidates, machineWide, detected, explicit, governance, state }, null, 2));
+  console.log(JSON.stringify({ candidates, machineWide, inactive, detected, explicit, governance, state }, null, 2));
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();
