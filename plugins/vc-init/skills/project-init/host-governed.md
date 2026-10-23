@@ -22,7 +22,7 @@ kind, the website environments. Fill those in and SAY what was filled and from w
 instead of asking. The operator corrects a line only if it is wrong. `STORE_ID` is detected from the
 storefront by normalize-env (one HTTP request to the URL the operator gives), so it is never asked either.
 
-## The flow — host check, ONE question round, logins one by one, ONE hand-off
+## The flow — host check, ONE question round, ONE form file, ONE hand-off
 
 ### 1. Host check (§0-host)
 
@@ -65,21 +65,14 @@ Everything with a fixed set of answers goes into ONE `AskUserQuestion` call (at 
 the ones that apply): the host is this project's governance · the host's setup has run here (only when
 `confirmed: false`) · which server serves each role in `state.choices` (telemetry included — which one is
 production is never guessed) · only when the code probe (3a) READ the repos: may the agent open PRs on
-the client's repos (the person's host role grants writing) — yes ⇒ `write`, no ⇒ `read`. Then ONE
-plain-chat message asks for every free-text
-value at once, as a short form the operator answers in one reply:
-
-```
-For each environment (qa, uat — or rename / drop one):
-  storefront URL:
-  admin (back office) URL:
-How many test accounts per environment: admins __, storefront users __
-```
+the client's repos (the person's host role grants writing) — yes ⇒ `write`, no ⇒ `read`. Every
+free-text value then goes into ONE FILE the operator fills in an editor — never a form typed in chat
+(step 4).
 
 Never invent a URL; an origin the host blocks (its browser config's `blockedOrigins`) is refused.
 
-Write the profile once these answers are in — `state.genProfile` with the answers applied, plus the
-tracker / code host facts — and the env files:
+Write the profile once the question round is answered — `state.genProfile` with the answers applied,
+plus the tracker / code host facts:
 
 ```bash
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/gen-profile.mjs" <state.genProfile, answers applied> \
@@ -87,8 +80,7 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/gen-profile.mjs" <state.genProfile
   --client-vcs <facts.clientVcs> --gov-envs <env>=<host env>,… --self-diagnostics false --runtime-mode plugin
 ```
 
-(`--gov-envs` only for an env whose name differs from the host's.) Then §3a scaffold-env for each env,
-write the URLs and the ADO coordinates with write-env, and §3e normalize-env (it detects `STORE_ID`).
+(`--gov-envs` only for an env whose name differs from the host's.) Then §3a scaffold-env for each env.
 
 ### 3a. Code access — probe it, never ask it; then scan the repos
 
@@ -113,21 +105,31 @@ DevOps server reaches Azure Repos): call its list-repositories tool for the proj
   automatic refusal) ⇒ say so, record nothing, and ask the operator to run the same request in their
   own words; never work around it.
 
-### 4. Logins, one account at a time — admins first, then storefront users
-
-For each account the operator counted, in order: all admins of the first environment, then its storefront
-users, then the next environment. One plain-chat question per account:
-
-```
-<env> · admin 1 of 2 — login (email) and one line about the account, e.g. "buyer in org A, approval limit":
-```
-
-Never ask for a password. Each answer goes straight in, taking the next free slot of that environment:
+### 4. The form file — URLs and test accounts, filled in an editor
 
 ```bash
-node "$CLAUDE_PLUGIN_ROOT/skills/project-init/add-user.mjs" --env <env> --slot <next free slot> \
-  --role admin|user --login <login> --note "<the line>"
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/form.mjs" --write --envs <env1,env2>
 ```
+
+It writes `project-init.form.ini` in the project (gitignored): per environment `FRONT_URL` / `BACK_URL`
+and one `account = <admin|user> | <login> | <one line about it>` line per FREE host password slot, plus
+any project-wide key still empty — what is known (the ADO organization and project read from the host)
+already filled in. Tell the operator the file's path and what to fill in one short message, then end
+the turn with the WAITING block; the operator saves the file and replies "done". Never ask for a
+password; the form refuses a value that looks like one, without echoing it.
+
+On "done":
+
+```bash
+node "$CLAUDE_PLUGIN_ROOT/skills/project-init/form.mjs" --apply
+```
+
+It writes the URLs and project keys (write-env), then each account into the next free slot of its
+environment, admins first (add-user), and prints the report: `users`, `steps` (one password command per
+account) and `problems`. A problem keeps the form: relay it in one line, the operator fixes the file and
+says "done" again (an account already applied is left as it is). Then §3e normalize-env (it detects
+`STORE_ID`). Never invent a URL; an origin the host blocks (its browser config's `blockedOrigins`) is
+refused.
 
 ### 5. ONE hand-off — what is filled, what is left, where the passwords go
 
@@ -161,7 +163,7 @@ no storage question is asked on a host-governed project.
 | §0d vc-secrets check, `install-bridge` | **skipped** — no vc-secrets, no `$VC_RUN` |
 | §0e tooling | `gh`/`az` are not installed for us; Node + git only |
 | §1 deps | `install-deps` as usual; **no `playwright install`** — the browser servers are the host's |
-| §2 interview | replaced by steps 2–4 above: facts shown, one question round, logins one by one. §2b and §2d are **not asked** |
+| §2 interview | replaced by steps 2–4 above: facts shown, one question round, one form file (URLs + accounts). §2b and §2d are **not asked** |
 | §3a `.env.<env>` | URLs only — no built-in `ADMIN` / `USER_EMAIL`: test users take the host's slots. The file is gitignored |
 | §3b `.env.local` | **no password placeholder** — the tracker / code-host connection only |
 | §3c `write-secrets-decl`, §3d token pause, §3e token gate | **skipped** |

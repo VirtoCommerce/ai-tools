@@ -60,6 +60,16 @@ client repos carry `access: "read"` and no PR plan, vc-fix reads code for the ro
 next-steps offers `/qa-fix` only with `write`. A `--gov-<role>` flag on a day-2 gen-profile run now
 changes that role.
 
+**Added: typed answers go into one form file, not the chat.** `form.mjs --write` writes
+`project-init.form.ini` (gitignored) with the URLs, the empty project keys and one account line per free slot
+(`account = <admin|user> | <login> | <note>`), known values pre-filled; `--apply` writes them through
+write-env and add-user, admins first, refuses a value that looks like a password without echoing it, keeps
+the form while anything failed, and leaves an already-applied account alone on a second run. Choices stay
+`AskUserQuestion` forms.
+
+**Fixed: an install for the folder that its settings no longer switch on is reported `inactive`** — Claude
+Code does not load it, so detection no longer treats it as the host.
+
 **Verified.** On a machine with a client governance plugin installed for one folder and its setup already run
 there: no candidate for this repository or its parent folder; the folder's plugin found in any letter case,
 its work-items, test-management, telemetry and three browser servers classified by package, its setup
