@@ -29,8 +29,15 @@ export function skillFingerprint(root = skillRoot()) {
  *  the --domain the known-ground lookups used + the skill fingerprint. Confluence/Figma/Loom/pages are not in it (documented). */
 // `env` is part of the key: a bundle records whether each PR is deployed on THIS stand, so another env's bundle
 // is never fresh for this one.
-export function freshnessKey({ ticketUpdated, prShas = [], linkedUpdated = [], domain = null, skill = null, env = null }) {
-  return createHash("sha256").update(JSON.stringify({ t: ticketUpdated, p: [...prShas].sort(), l: [...linkedUpdated].sort(), d: domain ?? null, s: skill ?? null, e: env ?? null })).digest("hex").slice(0, 16);
+export function freshnessKey({ ticketUpdated, prShas = [], linkedUpdated = [], domain = null, skill = null, env = null, benchmark = null }) {
+  return createHash("sha256").update(JSON.stringify({ t: ticketUpdated, p: [...prShas].sort(), l: [...linkedUpdated].sort(), d: domain ?? null, s: skill ?? null, e: env ?? null, ...(benchmark ? { b: benchmark } : {}) })).digest("hex").slice(0, 16);
+}
+
+/** The cached bundle's file name: one per env, and a blind bundle (U67) under its own name per cutoff and hidden keys,
+ *  so a benchmark and a normal run never evict each other and no consumer mistakes one for the other. */
+export function bundleFile(env, benchmark = null) {
+  const blind = benchmark ? `-blind-${createHash("sha256").update(JSON.stringify({ before: benchmark.before, hide: [...(benchmark.hide ?? [])].sort() })).digest("hex").slice(0, 8)}` : "";
+  return `bundle${env ? `-${env}` : ""}${blind}.json`;
 }
 
 /**

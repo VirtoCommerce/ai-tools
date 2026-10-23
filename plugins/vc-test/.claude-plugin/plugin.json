@@ -1,0 +1,19 @@
+{
+  "name": "vc-test",
+  "description": "PROTOTYPE — one testing flow for a Virto Commerce ticket: /ticket-context → change map → /qa-test-strategy → only the artifacts the approved strategy selected → triage → Medium-only investigation → verdict, with tokens and minutes per step. Calls the skills of the ai-tools repository in place; not in the marketplace until P1.",
+  "version": "0.0.1",
+  "displayName": "Virto Commerce Testing Flow (prototype)",
+  "author": {
+    "name": "Virto Commerce",
+    "email": "support@virtocommerce.com"
+  },
+  "homepage": "https://github.com/VirtoCommerce/ai-tools",
+  "repository": "https://github.com/VirtoCommerce/ai-tools",
+  "license": "SEE LICENSE IN LICENSE",
+  "keywords": ["testing", "qa", "virtocommerce", "test-strategy"],
+  "defaultEnabled": false,
+  "dependencies": [
+    { "name": "vc-init", "version": ">=0.3.3" },
+    { "name": "vc-fix", "version": ">=0.12.0" }
+  ]
+}

@@ -100,6 +100,7 @@ export function compose(prep, outs) {
   return {
     schema: "ticket-context/1", ticket: prep.ticket, tracker: prep.tracker, fields: prep.fields,
     fetched_at: prep.fetched_at, ticket_updated: prep.ticket_updated, freshness_key: prep.freshness_key,
+    ...(prep.benchmark ? { benchmark: prep.benchmark } : {}), // a blind bundle says so (U67); SKILL.md lists what it does not blind
     acs: t.acs, signals: t.signals, epic: prep.epic, siblings: t.siblings, layer_guess: t.layer_guess, domains_guess: t.domains_guess,
     materials, design: m.design,
     change: { rung: prep.rung, prs, chain_deployed: d.chain_deployed ?? "NONE", ac_to_diff: j.ac_to_diff, diff_to_ac: j.diff_to_ac, hidden_behaviour: c.hidden_behaviour },

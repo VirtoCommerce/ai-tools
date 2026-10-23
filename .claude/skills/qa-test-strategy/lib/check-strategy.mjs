@@ -25,6 +25,21 @@ const ARTIFACTS_FOR = { F1: ["Exploratory"], F2: ["Exploratory"], F3: ["Visual l
 // A fired floor here needs its OWN risk: Source carries the token `floor:<id>`, technique is MODEL (M10). A risk carries
 // at most one such token. A fixed token, not a bare id, so a passing mention of "F10" in prose never counts.
 const MODEL_RISK_FOR = { F2: "a purpose", F10: "an org-context", F11: "a configuration" };
+// Clause 12 (U59): a hotspot whose risk text says the code holds state — a limiter, a counter, a cache, a lockout — is
+// only decided on the stand if the stand's scale (instances, replicas, restarts) is part of the question.
+export const STATE_HOTSPOT = /\b(limit(?:er|s)?|attempts?|counter|throttl\w*|rate[- ]?limit\w*|cach(?:e|ed|ing)|lockout|locked out|in[- ]memory|session state)\b/i;
+// Clause 11a/11b (U57, U58): what a project risk must not carry. A code anchor counts only in product source: a path
+// under the project's own data, config, tooling or reports is about the run's world, which is what a project risk is.
+const CODE_ANCHOR = /(?<![\w./-])([\w./-]+)\.(?:cs|ts|tsx|vue|js|mjs|json|graphql|cshtml|html):\d+\b/g;
+const NOT_PRODUCT = /(?:^|\/)(?:test-data|config|scripts|reports|regression|ci|\.claude)\/|(?:^|\/)\.env/;
+const SUSPICION_ID = /\bH-\d+\b/; // a hotspot id; S-n is a scenario (clause 13), which a project risk may name
+// Held state stated as a fact about the product (U58's own example: "the limit is in memory per instance"). Only the
+// explicit forms: "cached" alone is also how a stand's CDN is described, so the rest of 11a is the verifier's.
+const HELD_STATE = /\b(?:in[- ]memory|per[- ](?:instance|replica|pod))\b|\b(?:limit(?:er)?|counter|lockout|throttl\w*|rate[- ]?limit\w*|session(?: state)?)\s+(?:is|are)\s+(?:held|kept|stored|reset|shared|scoped|cached)\b/i;
+const productAnchor = (item) => [...item.matchAll(CODE_ANCHOR)].find((m) => !NOT_PRODUCT.test(m[1]))?.[0];
+const RISK_REF = /\bR-?\d+\b/;
+const WEAKENING = /record(?:s|ed|ing)?\b[^.·]*\bobserved|instead of assert|no PASS\/FAIL|never FAIL|not asserted/i;
+const escapeRe = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 export function checkStrategy(md, bundle, { domainMapText = null, p01Names, changeMap = null, changeMapPath = null } = {}) {
   if (bundle?.schema !== "ticket-context/1") return { round: 0, errors: ["0: bundle is not a ticket-context/1 bundle"] };
@@ -85,7 +100,8 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names, chan
   for (const x of high) { const a = approach.find((y) => y.r === x.r); if (a && /\{HYPOTHESIS\}/.test(a.oracle) && !isModel(x.r)) errors.push(`6c: ${x.r} High/Critical on {HYPOTHESIS} needs MODEL (M1)`); }
   if (fired.includes("F6") && !/Deployed:\s*NO\b/.test(sec)) errors.push("6d: F6 fired but the header does not say 'Deployed: NO'");
   const modelRisks = risks.filter((x) => isModel(x.r)).map((x) => x.r);
-  if (modelRisks.length && !running("Test model")) errors.push(`6e: ${modelRisks.join(", ")} technique MODEL ⇒ Test model is RUN (M9)`);
+  // Under vc-test the scenarios, not a model file, carry a MODEL risk (B18): 6e's "RUN" half becomes clause 13.
+  if (!vcTest && modelRisks.length && !running("Test model")) errors.push(`6e: ${modelRisks.join(", ")} technique MODEL ⇒ Test model is RUN (M9)`);
   if (!modelRisks.length && running("Test model")) errors.push("6e: Test model is RUN but no risk has technique MODEL — SKIP — no MODEL risk (M9)");
   // 6g: F12 reads a file the caller passes, so the header names it and the gate must be given the same one — otherwise
   // leaving --change-map off the gate would turn F12 off unseen.
@@ -109,6 +125,45 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names, chan
   // An API, script or `none` lane takes no slot; every other lane does (agents.md §Parallel Execution).
   const lanes = new Set(approach.map((a) => a.lane.split("·")[0].trim()).filter((l) => l && !NON_BROWSER_LANE.test(l)));
   if (lanes.size > 3 && !/^Lanes sequenced:/m.test(sec)) errors.push(`8: ${lanes.size} browser lanes and no 'Lanes sequenced:' line`);
+  // 11 (U57, U58), every strategy: a project risk is about the project — the stand, the data, the tooling. Product
+  // behaviour is a product risk with its own row and check (11a), and an AC/doc value is never lowered to "record what
+  // was seen" (11b). An item starts the line or follows a `·` or a sentence end, so "P95 2s" inside an item is no item.
+  const projectLine = /^Project risks:(.*)$/m.exec(sec)?.[1] ?? "";
+  for (const item of projectLine.split(/(?:·|(?<=[.;]))\s*(?=P\d+\s)/).map((t) => t.trim()).filter((t) => /^P\d+\b/.test(t))) {
+    const id = /^P\d+/.exec(item)[0];
+    const anchor = productAnchor(item) ?? SUSPICION_ID.exec(item)?.[0] ?? HELD_STATE.exec(item)?.[0];
+    if (anchor) errors.push(`11a: ${id} describes product behaviour (${anchor}) — a product risk with its own check, not a project risk (U58)`);
+    const ref = RISK_REF.exec(item)?.[0];
+    if (ref && WEAKENING.test(item)) errors.push(`11b: ${id} lowers how ${ref} is decided — the AC/doc value stays the oracle (U57)`);
+  }
+  // 12 (U59): only vc-test has a change map. Covered = a SCALE risk cites the hotspot's id or path:line, or Out of scope
+  // names it on a "single instance" line.
+  if (vcTest) {
+    const scaleText = risks.filter((x) => /\bSCALE\b/.test(approach.find((a) => a.r === x.r)?.technique ?? "")).map((x) => `${x.what} ${x.source}`).join("\n");
+    const singleInstance = outOfScope.split("\n").filter((l) => /single[- ]instance/i.test(l)).join("\n");
+    const cites = (text, id, at) => new RegExp(`(?<![\\w-])${escapeRe(id)}(?![\\w-])`).test(text) || (at !== "" && text.includes(at));
+    const uncovered = (changeMap?.hotspots ?? []).filter((h) => STATE_HOTSPOT.test(String(h.risk ?? ""))).filter((h) => {
+      const at = String(h.source ?? "").replace(/^[^:]*:/, "");
+      return !(cites(scaleText, String(h.id), at) || cites(singleInstance, String(h.id), at));
+    });
+    if (uncovered.length) errors.push(`12: ${uncovered.map((h) => h.id).join(", ")} hold state but no SCALE risk cites them (U59)`);
+  }
+  // 13 (B18, U62): only vc-test lists scenarios. Each cites a registered risk in its Why-likely cell (the writer adds the
+  // R-n after the risks exist), its Class is one of U60's six, and every MODEL risk is cited by at least one scenario.
+  if (vcTest) {
+    if (!HEADING("Scenarios").test(sec)) errors.push("13: no Scenarios table — a vc-test strategy is the scenario list (U62)");
+    const scenarios = rows(block(sec, "Scenarios")).map(([s, cls, , , why]) => ({ s: s ?? "", cls: cls ?? "", why: why ?? "" })).filter((x) => x.s);
+    const citedBy = new Set();
+    for (const x of scenarios) {
+      const refs = [...x.why.matchAll(new RegExp(RISK_REF.source, "g"))].map((m) => m[0].replace("-", ""));
+      refs.forEach((r) => citedBy.add(r));
+      if (!refs.length) errors.push(`13: ${x.s} cites no risk`);
+      for (const r of refs) if (!registered.has(r)) errors.push(`13: ${x.s} cites ${r}, which is not a registered risk`);
+      const c = Number(/^\W*(\d+)\b/.exec(x.cls)?.[1]);
+      if (!(c >= 1 && c <= 6)) errors.push(`13: ${x.s} Class "${x.cls}" is not 1–6`);
+    }
+    for (const r of modelRisks) if (!citedBy.has(r)) errors.push(`13: ${r} (MODEL) has no scenario`);
+  }
   const lines = sec.trimEnd().split("\n").length;
   if (lines > CAP) errors.push(`10: round section is ${lines} lines (cap ${CAP})`);
   return { round, errors };

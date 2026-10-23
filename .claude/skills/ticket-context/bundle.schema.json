@@ -101,6 +101,8 @@
       "properties": {
         "schema": { "const": "ticket-context/1" }, "ticket": { "type": "string", "pattern": "^[A-Z][A-Z0-9]*-[0-9]+$" }, "tracker": { "enum": ["jira", "azure"] }, "fields": { "$ref": "#/$defs/fields" },
         "fetched_at": { "$ref": "#/$defs/text" }, "ticket_updated": { "$ref": "#/$defs/text" }, "freshness_key": { "$ref": "#/$defs/text" },
+        "benchmark": { "type": "object", "additionalProperties": false, "required": ["before", "hide"], "description": "a blind prepare (U67): the cutoff and the hidden keys; absent on a normal bundle",
+          "properties": { "before": { "$ref": "#/$defs/text" }, "hide": { "type": "array", "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9]*-[0-9]+$" } } } },
         "acs": { "type": "array", "items": { "$ref": "#/$defs/ac" } }, "signals": { "$ref": "#/$defs/sourcedList" },
         "epic": { "type": ["object", "null"], "properties": { "key": { "type": "string" }, "title": { "type": "string" } } },
         "siblings": { "type": "array", "items": { "$ref": "#/$defs/sibling" } }, "layer_guess": { "$ref": "#/$defs/guess" }, "domains_guess": { "$ref": "#/$defs/guess" },
