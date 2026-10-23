@@ -77,7 +77,9 @@ export function ignoreEntryFor(projectRoot, absPath) {
 export function removeGitignoreBlock(root, title) {
   const path = join(root, ".gitignore");
   if (!existsSync(path)) return [];
-  const lines = readFileSync(path, "utf-8").split(/\r?\n/);
+  const text = readFileSync(path, "utf-8");
+  const eol = text.includes("\r\n") ? "\r\n" : "\n"; // the file's own line endings are kept
+  const lines = text.split(/\r?\n/);
   const at = lines.findIndex((l) => l.trim() === `# === ${title} ===`);
   if (at < 0) return [];
   let end = at + 1;
@@ -85,7 +87,7 @@ export function removeGitignoreBlock(root, title) {
   const removed = lines.slice(at + 1, end).map((l) => l.trim()).filter((l) => l && !l.startsWith("#"));
   const start = at > 0 && lines[at - 1].trim() === "" ? at - 1 : at;
   lines.splice(start, end - start);
-  writeFileSync(path, lines.join("\n"));
+  writeFileSync(path, lines.join(eol));
   return removed;
 }
 

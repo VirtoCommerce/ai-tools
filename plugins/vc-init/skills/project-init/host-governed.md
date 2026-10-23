@@ -90,7 +90,8 @@ DevOps server reaches Azure Repos): call its list-repositories tool for the proj
 
 - **It returns repos** ⇒ the person can READ the code: `codeAccess` is at least `read`, the code host
   is the tracker's server. Scan them as the normal flow does (§4), only through the host's server:
-  write the listing as JSON (`{ host, org, project, access, repos: [{ name, id, defaultBranch }] }`,
+  write the listing as JSON (`{ host, org, project, access, server: <tracker server key>, repos: [{ name, id,
+  defaultBranch }] }`,
   `access` from the question round), run
   `discover-repos.mjs --listing-json <file> --out repos.json`. It answers `needs-files` with the repos
   whose files it needs: for each in `needs.packageJson` read the root `/package.json` (the file tool,

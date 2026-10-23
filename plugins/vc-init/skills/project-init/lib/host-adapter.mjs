@@ -103,18 +103,21 @@ export function resolveLaunch(installPath, key, docs = pluginJsonDocs(installPat
     const near = (d) => samePath(dirname(d.path), dirname(script));
     const ordered = [...docs.filter(near), ...docs.filter((d) => !near(d))];
     const inner = ordered.map((d) => d.doc?.servers?.[name]).find((s) => s && typeof s.command === "string");
-    if (inner) return { key, command: inner.command, args: (inner.args || []).map(String), env: inner.env || {}, wrapper: script };
+    if (inner) return { key, command: inner.command, args: (inner.args || []).map(String), env: inner.env || {}, wrapper: script, url: "" };
   }
-  return { key, command: expand(spec.command || ""), args, env: spec.env || {}, wrapper: "" };
+  // A remote server (`type: "http" | "sse"`) has a `url` and no command; it is classified by that URL.
+  return { key, command: expand(spec.command || ""), args, env: spec.env || {}, wrapper: "", url: expand(spec.url || "") };
 }
 
 /** The role a launch fills, by the MCP package it runs — product knowledge, not a host's names. Pure. */
 export function classifyLaunch(launch) {
   if (!launch) return "other";
-  const text = [launch.command, ...launch.args].join(" ");
-  if (/@azure-devops\/mcp|azure-devops-mcp|mcp-atlassian|atlassian|jira/i.test(text)) return "tracker";
-  if (/testrail|zephyr|xray|qase/i.test(text)) return "testManagement";
+  // A remote (HTTP / SSE) server is known by its URL; a local one by the package it runs. Browsers first:
+  // a browser lane's arguments may name anything (a Jira start page), its package may not.
+  const text = [launch.command, ...launch.args, launch.url || ""].join(" ");
   if (/@playwright\/mcp|playwright-mcp/i.test(text)) return "browsers";
+  if (/@azure-devops\/mcp|azure-devops-mcp|mcp-atlassian|@atlassian\/|mcp\.atlassian\.com|jira-mcp|mcp-jira/i.test(text)) return "tracker";
+  if (/testrail|zephyr|xray|qase/i.test(text)) return "testManagement";
   if (/github-mcp-server|server-github|githubcopilot\.com\/mcp/i.test(text)) return "github";
   if (/azure\.mcp|@azure\/mcp|azure-mcp/i.test(text) && /monitor|applicationinsights/i.test(text)) return "telemetry";
   return "other";
@@ -321,11 +324,17 @@ export function hostFacts(launches, marketplaceUrl, hostEnvs) {
 export function roleDrift(governance, state) {
   const on = new Map(state.enabled.map((e) => [e.key, e.kind]));
   const out = [];
+  // The kind a role's server must run: the code host is reached through a tracker-kind server.
+  const kindOf = { tracker: "tracker", codeHost: "tracker", github: "github", telemetry: "telemetry", testManagement: "testManagement" };
   for (const role of ["tracker", "codeHost", "github", "telemetry", "testManagement"]) {
     const v = governance?.servers?.[role] || "";
     if (v && !on.has(v)) out.push(`${role}: ${v} is not on here`);
+    else if (v && on.get(v) !== kindOf[role]) out.push(`${role}: ${v} does not run a ${kindOf[role]} server`);
     else if (!v && state.servers[role]) out.push(`${role}: none recorded, ${state.servers[role]} is on`);
   }
-  for (const b of governance?.servers?.browsers || []) if (!on.has(b)) out.push(`browsers: ${b} is not on here`);
+  for (const b of governance?.servers?.browsers || []) {
+    if (!on.has(b)) out.push(`browsers: ${b} is not on here`);
+    else if (on.get(b) !== "browsers") out.push(`browsers: ${b} is not a browser server`);
+  }
   return out;
 }

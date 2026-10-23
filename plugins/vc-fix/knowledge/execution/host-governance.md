@@ -37,7 +37,10 @@ say so; do not reach for a substitute.
 - `read` — read the client's repos (`repos.client`, `access: "read"`) through `servers.codeHost` — its
   file and search tools — for the root cause, a reproduction, a review. Never a branch, a push or a PR:
   `/qa-fix` stops after its root-cause step and hands the fix to a person.
-- `write` — the normal `/qa-fix` path through `servers.codeHost`, ending at a PR for human review.
+- `write` — the `/qa-fix` path, but every branch, push and PR through `servers.codeHost` (the client repos'
+  `contribution.prApi` is `host-mcp`): never `gh`, never the ADO REST, never a clone with credentials of
+  ours — the bridge refuses them here (exit 78). What the host's server cannot do (e.g. push file
+  changes) is handed to a person with the diff.
 - `none` / empty — no code at all: say so and STOP where code is needed.
 
 **Signing in to the client's website as a test user:**

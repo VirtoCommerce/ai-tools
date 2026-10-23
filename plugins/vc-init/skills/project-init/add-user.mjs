@@ -82,9 +82,11 @@ export function withUser(text, { key, role, login, replace = false, note = "", p
     // A replacer function: a login is data, and `$&` / `$1` in a string replacement would be a pattern.
     // The comment above it is rewritten too, so its role, note and password NAME follow the new user.
     const marker = new RegExp(`^#\\s*vc-init user ${key} \\((?:user|admin)\\).*$`, "m");
-    const next = String(text)
-      .replace(new RegExp(`^(\\s*${loginVar}\\s*=).*$`, "m"), (_m, lead) => `${lead}${login}`)
-      .replace(marker, () => comment);
+    // A login line written by hand has no marker: one is added above it, or the slot reads as free.
+    const loginLine = new RegExp(`^(\\s*${loginVar}\\s*=).*$`, "m");
+    const next = marker.test(text)
+      ? String(text).replace(loginLine, (_m, lead) => `${lead}${login}`).replace(marker, () => comment)
+      : String(text).replace(loginLine, (_m, lead) => `${comment}\n${lead}${login}`);
     return { text: next, change: next === text ? "unchanged" : "replaced" };
   }
   const base = String(text || "");

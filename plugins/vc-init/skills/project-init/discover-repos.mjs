@@ -603,7 +603,7 @@ const LIVE_SOURCE = Object.freeze({
 /**
  * A host-governed project reads the client's code only through the HOST's MCP server, never with a
  * token of ours: the skill calls that server and writes what it returned as a LISTING —
- *   { host, org, project, access: "read"|"write",
+ *   { host, org, project, access: "read"|"write", server: <the host's code-host server key>,
  *     repos: [{ name, id?, defaultBranch?, branches?: [..],
  *               packageJson?: <object|null>,     // the repo's root package.json, when read
  *               moduleIds?: [<module id>, ..] }] }  // the <id> of each src/*.Web/module.manifest
@@ -693,8 +693,10 @@ async function main() {
   // Through the host's server there is no auth env of ours; a read-only code host gets no PR plan.
   const vcsAuth = listing ? "host" : args["vcs-auth"] || "pat";
   if (listing) {
-    process.env.ADO_ORG = process.env.ADO_ORG || listing.org || "";
-    process.env.ADO_PROJECT = process.env.ADO_PROJECT || listing.project || "";
+    // The listing names the org / project it was read from; a stale ADO_ORG in the environment must not
+    // re-home its repos.
+    if (listing.org) process.env.ADO_ORG = listing.org;
+    if (listing.project) process.env.ADO_PROJECT = listing.project;
   }
 
   let modules;
@@ -828,9 +830,19 @@ async function main() {
         const branches = await src.branches(host, { org, project, name: bare });
         c.integrationBranch = detectIntegrationBranch(branches, c.defaultBranch);
         c.workBranchPrefix = "claude/qa-autofix/";
-        // Read through a host's server: the code is readable, but a PR is the host role's to grant.
+        // Read through a host's server: the code is readable, but a PR is the host role's to grant — and,
+        // when granted, it is opened through the HOST's server: our bridge refuses gh / the ADO REST on a
+        // host-governed project (exit 78), so the plan names the host's tools, never ours.
         if (listing && listing.access !== "write") c.access = "read";
-        else c.contribution = contributionForClient(host, {
+        else if (listing) {
+          c.access = "write";
+          c.contribution = {
+            ...contributionForClient(host, { org, project, name: c.name, integrationBranch: c.integrationBranch, vcsAuth }),
+            prApi: "host-mcp",
+            server: String(listing.server || ""),
+            authEnv: "",
+          };
+        } else c.contribution = contributionForClient(host, {
           org, project, name: c.name, integrationBranch: c.integrationBranch, vcsAuth,
         });
         c.toolchain = kindToolchain(c.kind);
