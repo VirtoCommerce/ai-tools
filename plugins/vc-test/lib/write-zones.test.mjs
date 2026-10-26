@@ -4,11 +4,12 @@
 // Each test builds its own temporary git repository; this repository's tree is never touched.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { execFileSync, spawnSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { changed, outside, registryErrors, snapshot, zonesFor } from "./write-zones.mjs";
+import { fileURLToPath } from "node:url";
+import { changed, outside, registryErrors, runDirProblem, snapshot, zonesFor } from "./write-zones.mjs";
 import { loadRegistry } from "./strategy-artifacts.mjs";
 
 const git = (cwd, ...args) => execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", ...args], { cwd, stdio: "pipe" });
@@ -123,4 +124,73 @@ test("Windows compares paths without regard to case; Linux does not", (t) => {
   const p = `${RUN}/TESTING-CHECKLIST.md`;
   assert.deepEqual(outside([p], zones(root, ["checklist"], { platform: "win32" })), []);
   assert.deepEqual(outside([p], zones(root, ["checklist"], { platform: "linux" })), [p]);
+});
+
+// --- fix round 1: no git scope, an outside run folder, renames, symlinks ---------------------------------------------
+
+const CLI = fileURLToPath(new URL("./write-zones.mjs", import.meta.url));
+function cli(root, args) {
+  const r = spawnSync(process.execPath, [CLI, ...args], { encoding: "utf8", env: { ...process.env, VC_FIX_HOME: root, TEST_ENV: "vcst", GIT_CEILING_DIRECTORIES: dirname(root) } });
+  return { code: r.status, out: r.stdout.trim() ? JSON.parse(r.stdout.trim().split("\n").pop()) : null, err: r.stderr };
+}
+function plain(t) { // a folder that is not a git repository
+  const root = mkdtempSync(join(tmpdir(), "vct-wz-nogit-"));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  put(root, `${RUN}/testing-checklist.md`);
+  put(root, "plan.json", JSON.stringify({ waves: [[{ id: "checklist" }]], notRun: [] }));
+  return root;
+}
+
+test("no git scope is recorded by snapshot and is never a clean pass for check (exit 3)", (t) => {
+  const root = plain(t);
+  const s = cli(root, ["snapshot", "--key", "K-1", "--run-dir", RUN]);
+  assert.equal(s.code, 0);
+  assert.equal(s.out.gitScope, false);
+  assert.match(s.out.reason, /git rev-parse failed/);
+  assert.ok(!/at .*\.mjs:\d+/.test(s.err), "no stack trace");
+  const c = cli(root, ["check", "--key", "K-1", "--run-dir", RUN, "--run-plan", join(root, "plan.json")]);
+  assert.equal(c.code, 3);
+  assert.deepEqual(c.out.outside, []);
+  assert.equal(c.out.gitScope, false);
+  assert.ok(c.out.reason);
+  assert.equal(c.err, "");
+});
+
+test("a stray file inside the run folder is exit 2 even without git scope", (t) => {
+  const root = plain(t);
+  cli(root, ["snapshot", "--key", "K-1", "--run-dir", RUN]);
+  put(root, `${RUN}/design-report.md`);
+  const c = cli(root, ["check", "--key", "K-1", "--run-dir", RUN, "--run-plan", join(root, "plan.json")]);
+  assert.equal(c.code, 2);
+  assert.deepEqual(c.out.outside, [`${RUN}/design-report.md`]);
+  assert.equal(c.out.gitScope, false);
+});
+
+test("a run folder outside the output root is not checkable (exit 3), never checked blind", (t) => {
+  const root = repo(t);
+  assert.equal(runDirProblem({ root, runDir: join(root, RUN) }), null);
+  assert.equal(runDirProblem({ root, runDir: RUN }), null);
+  for (const bad of [join(root, "..", "elsewhere"), "../elsewhere"]) assert.equal(runDirProblem({ root, runDir: bad }), "run folder outside the output root: not checkable");
+  for (const cmd of ["snapshot", "check"]) {
+    const r = cli(root, [cmd, "--key", "K-1", "--run-dir", join(root, "..", "elsewhere"), "--run-plan", "x"]);
+    assert.equal(r.code, 3);
+    assert.equal(r.out.reason, "run folder outside the output root: not checkable");
+  }
+});
+
+test("a tracked file renamed to a path with a space after the snapshot: the old and the new path both changed", (t) => {
+  const root = repo(t);
+  const before = snapshot({ root, runDir: join(root, RUN) });
+  mkdirSync(join(root, "my docs"));
+  git(root, "mv", "README.md", "my docs/read me.md");
+  assert.deepEqual(changed(before, snapshot({ root, runDir: join(root, RUN) })), ["README.md", "my docs/read me.md"]);
+  assert.deepEqual(outsideOf(root, ["checklist"], before), ["README.md", "my docs/read me.md"]);
+});
+
+test("a symlink loop in the run folder is not followed", (t) => {
+  const root = repo(t);
+  put(root, `${RUN}/a/file.md`);
+  try { symlinkSync(join(root, RUN), join(root, RUN, "a", "loop"), "junction"); } catch { return t.skip("cannot create a symlink here"); }
+  const snap = snapshot({ root, runDir: join(root, RUN) });
+  assert.deepEqual(Object.keys(snap.files), [`${RUN}/a/file.md`]);
 });

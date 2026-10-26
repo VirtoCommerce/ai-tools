@@ -3,14 +3,20 @@
 // own files are `orchestrator.writes` in artifacts.json; `.vc-fix/**` (working state) is always allowed.
 // A file is "changed" by comparing two snapshots of content hashes, so a file already dirty before the run and left
 // alone is not blamed on it, while a second edit to it is.
+// What it cannot see: (1) a write to a git-IGNORED path outside the run folder and .vc-fix (e.g. .env.local,
+// project-profile.json) — git does not list it and only the run folder is walked; (2) which agent wrote a file —
+// the orchestrator's zone is run-wide, so a stray file inside it is attributed to no one.
 // CLI: node plugins/vc-test/lib/write-zones.mjs snapshot --key <KEY> --run-dir <RUN_DIR>        (before the first wave)
 //      node plugins/vc-test/lib/write-zones.mjs check --key <KEY> --run-dir <RUN_DIR> --run-plan <run-plan.json>
-//   check prints { outside, registryErrors }. exit 0: none outside; 2: a file outside every zone (BLOCKED);
-//   1: usage, no snapshot, or a registry error. `--env <env>` selects the work dir's env (default: the current one).
+//   check prints { outside, registryErrors, gitScope, reason }. exit 0: none outside; 2: a file outside every zone
+//   (BLOCKED; wins over 3); 3: not checkable — git could not be asked (gitScope false, so nothing outside the run
+//   folder was looked at) or --run-dir is outside the output root; never a clean pass. 1: usage, no snapshot, or a
+//   registry error. snapshot exits 0 and records gitScope; 3 only for a run folder outside the root.
+//   `--env <env>` selects the work dir's env (default: the current one).
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
-import { isAbsolute, join, relative, resolve } from "node:path";
+import { existsSync, lstatSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { argOf, currentEnv, outputRoot, workDir } from "./paths.mjs";
 import { loadProfile, testBlock } from "./profile.mjs";
@@ -69,24 +75,28 @@ export function zonesFor({ registry, ran, runDir, store = null, root = outputRoo
   return zones;
 }
 
+// lstat, so a symlink (a loop included) is never followed; an entry that vanishes mid-walk is skipped.
 function walk(dir, out) {
-  for (const name of readdirSync(dir)) {
+  let names;
+  try { names = readdirSync(dir); } catch { return; }
+  for (const name of names) {
     const f = join(dir, name);
-    const st = statSync(f);
+    let st;
+    try { st = lstatSync(f); } catch { continue; }
     if (st.isDirectory()) walk(f, out);
     else if (st.isFile()) out.push(f);
   }
 }
 
+const gitReason = (e, what) => `${what}: ${(e.code === "ENOENT" ? "git is not on PATH" : String(e.stderr || e.message).split("\n")[0]).trim().slice(0, 160)}`;
+
 // `git status --porcelain=v1 -z`: "XY path\0", and for a rename or copy "XY new\0old\0".
+// ok:false (with a reason) when git cannot be asked — the caller must never read that as "nothing changed".
 function dirtyPaths(root) {
-  let top;
-  try {
-    top = execFileSync("git", ["-C", root, "rev-parse", "--show-toplevel"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
-  } catch {
-    return [];
-  }
-  const raw = execFileSync("git", ["-C", root, "status", "--porcelain=v1", "-z", "--untracked-files=all"], { encoding: "utf8", maxBuffer: 1 << 28 });
+  const ask = (...args) => execFileSync("git", ["-C", root, ...args], { encoding: "utf8", maxBuffer: 1 << 28, stdio: ["ignore", "pipe", "pipe"] });
+  let top, raw;
+  try { top = ask("rev-parse", "--show-toplevel").trim(); } catch (e) { return { ok: false, reason: gitReason(e, "git rev-parse failed"), paths: [] }; }
+  try { raw = ask("status", "--porcelain=v1", "-z", "--untracked-files=all"); } catch (e) { return { ok: false, reason: gitReason(e, "git status failed"), paths: [] }; }
   const parts = raw.split("\0");
   const paths = [];
   for (let i = 0; i < parts.length; i++) {
@@ -95,20 +105,28 @@ function dirtyPaths(root) {
     paths.push(join(top, e.slice(3)));
     if (/[RC]/.test(e.slice(0, 2))) { i += 1; if (parts[i]) paths.push(join(top, parts[i])); }
   }
-  return paths;
+  return { ok: true, paths };
 }
 
-/** Every file under runDir and every path git lists as changed, each with the SHA-1 of its bytes ("deleted" when it is gone). */
+/** The reason a run folder cannot be checked (it is outside the output root), else null. */
+export function runDirProblem({ root = outputRoot(), runDir }) {
+  const rel = relative(root, resolve(root, runDir));
+  return rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel) ? "run folder outside the output root: not checkable" : null;
+}
+
+/** Every file under runDir and every path git lists as changed, each with the SHA-1 of its bytes ("deleted" when it is gone).
+ *  gitScope is false (with a reason) when git could not be asked: then only the run folder was seen. */
 export function snapshot({ root = outputRoot(), runDir }) {
-  const abs = new Set(dirtyPaths(root));
+  const git = dirtyPaths(root);
+  const abs = new Set(git.paths);
   if (existsSync(runDir)) { const found = []; walk(runDir, found); found.forEach((f) => abs.add(f)); }
   const files = {};
   for (const f of abs) {
     const key = posix(relative(root, f));
     if (key.startsWith("../") || key === "..") continue;
-    files[key] = existsSync(f) && statSync(f).isFile() ? sha1(f) : "deleted";
+    try { files[key] = statSync(f).isFile() ? sha1(f) : "deleted"; } catch { files[key] = "deleted"; }
   }
-  return { at: new Date().toISOString(), files };
+  return { at: new Date().toISOString(), gitScope: git.ok, ...(git.ok ? {} : { reason: git.reason }), files };
 }
 
 /** Paths added, removed or with a different hash between two snapshots. */
@@ -123,7 +141,7 @@ function storeOf(root) {
   try { return testBlock(loadProfile({ root })).knowledgeStore; } catch { return null; }
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+function main() {
   const [cmd] = process.argv.slice(2);
   const key = argOf(process.argv, "key");
   const runDir = argOf(process.argv, "run-dir");
@@ -131,6 +149,8 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   const usage = () => { console.error("usage: write-zones.mjs snapshot --key <KEY> --run-dir <RUN_DIR> | check --key <KEY> --run-dir <RUN_DIR> --run-plan <p> [--env <env>]"); process.exit(1); };
   if (!["snapshot", "check"].includes(cmd) || !key || !runDir || (cmd === "check" && !planPath)) usage();
   const root = outputRoot();
+  const problem = runDirProblem({ root, runDir });
+  if (problem) { console.log(JSON.stringify({ outside: [], registryErrors: [], gitScope: false, reason: problem })); process.exit(3); }
   let work;
   try { work = workDir(key, { env: argOf(process.argv, "env") ?? currentEnv(), root }); } catch (e) { console.error(e.message); process.exit(1); }
   const snapFile = join(work, "zones-snapshot.json");
@@ -138,7 +158,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   if (cmd === "snapshot") {
     const snap = snapshot({ root, runDir: runAbs });
     writeFileSync(snapFile, JSON.stringify(snap));
-    console.log(JSON.stringify({ snapshot: snapFile, files: Object.keys(snap.files).length }));
+    console.log(JSON.stringify({ snapshot: snapFile, files: Object.keys(snap.files).length, gitScope: snap.gitScope, ...(snap.reason ? { reason: snap.reason } : {}) }));
     process.exit(0);
   }
   if (!existsSync(snapFile)) { console.error(`no ${snapFile} — run "snapshot" before the first wave`); process.exit(1); }
@@ -149,7 +169,15 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   const plan = JSON.parse(readFileSync(planPath, "utf8"));
   const ran = (plan.waves ?? []).flat().filter((e) => !e.missing).map((e) => e.id);
   const zones = zonesFor({ registry, ran, runDir: runAbs, store: storeOf(root), root });
-  const stray = outside(changed(JSON.parse(readFileSync(snapFile, "utf8")), snapshot({ root, runDir: runAbs })), zones);
-  console.log(JSON.stringify({ outside: stray, registryErrors: [] }));
-  process.exit(stray.length ? 2 : 0);
+  const before = JSON.parse(readFileSync(snapFile, "utf8"));
+  const after = snapshot({ root, runDir: runAbs });
+  const stray = outside(changed(before, after), zones);
+  const gitScope = before.gitScope !== false && after.gitScope;
+  const reason = gitScope ? undefined : after.reason ?? before.reason ?? "git scope was not available when the snapshot was taken";
+  console.log(JSON.stringify({ outside: stray, registryErrors: [], gitScope, ...(reason ? { reason } : {}) }));
+  process.exit(stray.length ? 2 : gitScope ? 0 : 3);
+}
+
+if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+  try { main(); } catch (e) { console.error(`write-zones: ${e.message}`); process.exit(1); }
 }
