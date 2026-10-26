@@ -39,7 +39,9 @@ It installs disabled. Enable it in `/plugin`, or with `claude plugin enable vc-f
 4. **It checks nothing upstream got lost**, line by line, and in components the fork replaced.
 5. **[PAUSE] A second brief, if needed:** fixes to port into the fork's own components.
 6. It writes tests for ported code nothing covered, and proves each one fails when the port is removed.
-7. It smoke-tests the built app against a backend you name.
+7. It smoke-tests the built app against a backend you name, then **compares the fork's look before and
+   after the merge, pixel by pixel**: Storybook and pages. Anything that moved and that you did not accept
+   is a regression to fix before the push.
 8. **[PAUSE] You say when to push.** It opens the PR — or updates the branch's existing one — with a QA checklist.
 
 ## The rules that matter
@@ -53,6 +55,9 @@ It installs disabled. Enable it in `/plugin`, or with `claude plugin enable vc-f
 - 🔁 **`git rerere`** is a safety net for a merge that has to be redone: it replays a resolution only
   for the identical conflict, never stages it, and every replay is still reviewed in the brief.
 - 🧪 **`*.upstream.test.ts`** files guard upstream behavior inside the fork's markup. Keep them green.
+- 🖼 **The fork owns how it looks.** A merge that moves a fork component, its theme or a ui-kit component the
+  fork restyles is a regression unless the brief accepted it. The visual check finds those, including
+  components the merge never touched directly.
 
 ## What it needs
 
@@ -60,6 +65,9 @@ It installs disabled. Enable it in `/plugin`, or with `claude plugin enable vc-f
 - Node and Yarn, as the fork uses them.
 - A reachable backend for the smoke test (`APP_BACKEND_URL` in `.env.local`).
 - `gh`, for the repo settings check and the PR.
+- For the visual check, once per machine: `node <plugin>/visual/setup.mjs` installs Playwright, pixelmatch and
+  pngjs into the fork's `node_modules/.cache/`, never its `package.json`. Add `--with-browser` if Chromium is
+  not on the machine (a ~150 MB download, asked first).
 
 ## A storefront plugin in a backend module
 

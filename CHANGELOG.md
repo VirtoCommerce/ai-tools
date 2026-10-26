@@ -8,7 +8,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
-## Host-governed projects — `vc-test` `0.5.0` — 2026-10-26
+## Host-governed projects — `vc-test` `0.6.0` — 2026-10-26
 
 `/vc-test:ticket-context` now builds its bundle on a host-governed project, whose tracker and code host are reachable
 only through the host plugin's MCP servers (vc-test spec U22, U23, B9; plan P1d-3b).
@@ -41,6 +41,57 @@ prefixes, so a server the host plugin ships (`mcp__plugin_<plugin>_<server>__`) 
 server's tools, write tools included; every shell, messaging, publishing and scheduling tool is disallowed.
 Read-only, the mapped servers only and the raw folder only rest on its brief. Accepted for the preview; a hook that
 enforces them is P5's.
+## A merge into a theme fork is checked pixel by pixel — `vc-frontend` `0.2.0` — 2026-10-26
+
+**Added — the visual check in `/vc-frontend:merge-upstream` (step 7).** The fork owns how it looks, so the skill
+now compares the fork before the merge (`M^1`) with the merge (`M`): the fork's Storybook, and its pages with the
+API answers replayed from one recording so both sides render the same data. A fork component, its theme or a
+ui-kit component the fork restyles that moved without the brief accepting it is a regression, fixed before the
+push. The procedure is `skills/merge-upstream/visual.md` (VCST-6534).
+
+**Added — the PIXEL engine ships in the plugin** (`visual/`). `setup.mjs` installs its three packages (Playwright,
+pixelmatch, pngjs) once into the fork's `node_modules/.cache/vc-frontend-visual`, never into its `package.json`;
+`--with-browser` also downloads Chromium. ai-tools' `npm run visual:*` now runs these same files, and the
+TypeScript copies under `scripts/visual/` are gone.
+
+**Fixed (review) — packages resolve from the project.** `lib.mjs` resolved a package from its own folder, which in an
+install is the plugin cache, so a fork that already had them still exited 2. It now resolves from the cache
+`setup.mjs` fills (the pins, so Playwright matches the Chromium it downloaded), then the project root (git toplevel,
+else the working directory), then its own folder, and imports the path as a file URL.
+`setup.mjs` writes the pins as the cache folder's own `dependencies`: a second run no longer prunes what the first
+installed, and an installed version other than its pin is reinstalled.
+
+## A visual risk names the instrument that decides it — `vc-test` `0.5.0` — 2026-10-26
+
+**Changed — the strategy gate (clause 4).** A risk with technique `VISUAL` now names its instrument:
+`VISUAL:PIXEL`, `VISUAL:DESIGN`, `VISUAL:PROBE` or `VISUAL:CONTENT`, chosen by `.claude/skills/qa-test/visual-axis.md`
+§2a (VCST-6534); several are one token, comma-separated: `VISUAL:DESIGN,PIXEL` (`floors.md` §VISUAL). A bare
+`VISUAL`, beside a named one too, fails the gate: it was a "look at it" row that decided nothing. Clauses 4 and 6 read
+the technique cell's leading token list the same way, case-insensitively, so prose ("FLOW (not VISUAL)") is no token.
+A strategy written before this release that uses a bare `VISUAL` fails a re-check until its technique names an
+instrument.
+
+**Changed — F8 takes `PIXEL` on an existing surface (clause 6).** When the change modifies a ui-kit file, a risk
+whose technique names `PIXEL` is required. Such a change moves components the ticket never names: in the
+2026-10-23 spike, two 2 px CSS edits changed stories in 14 components. A ui-kit file the PR only adds is a new
+surface with no base build, so F8 asks the rest but not `PIXEL`; the bundle's PR entries now carry `added` (from the
+files API) for that.
+
+**Added — `PIXEL` in `/vc-test:qa-ticket`, as its own item.** The orchestrator runs each `PIXEL` risk itself, whatever
+the Visual lane row says, with the vc-frontend plugin's `visual/` engine on a front checkout (the project root or a
+`.fix-workspace/` clone whose origin is the PR's repo) against the PR's base ref, running the engine's setup and the
+base/head builds from that checkout. Every risk gets a `PIX-<m>` row in its own `scenarios/pixel.rows.md` (the Visual
+lane keeps `visual.rows.md`, so the two never write one file in one wave): `FAIL`, `PASS`, or `BLOCKED — <which>`
+when the engine, the checkout, setup or a build fails. `scenario-rows.mjs merge` takes `pixel` and skips a row whose
+id the checklist already holds, so merging after a later wave never duplicates it.
+
+**Fixed (review) — the gate.** A Lane reading `SKIP — not available in this install` takes no browser slot (clause
+8); a backticked `` `VISUAL` `` is still a bare VISUAL, and `VISUAL:DESIGN PIXEL` (no comma) fails clause 4 instead
+of dropping `PIXEL`; the 6s message tells an unprobed `pixel` from an install that can run it.
+
+**Added — `PIXEL` in the capabilities.** `capabilities.json` `pixel` names the engine and the front checkouts found.
+With `--capabilities`, an install without one keeps F8's `PIXEL` risk with its Lane reading
+`SKIP — not available in this install: <capability>`, and Out of scope names `PIXEL` (clause 6s).
 
 ## The #540 review fixes — `vc-test` `0.4.1` — 2026-10-26
 

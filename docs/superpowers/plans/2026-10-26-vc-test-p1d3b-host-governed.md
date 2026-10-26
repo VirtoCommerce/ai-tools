@@ -24,7 +24,7 @@ not know which route ran.
 
 ## Status
 
-**Built 2026-10-26 as vc-test 0.5.0, in review.** Tasks 1–6 done.
+**Built 2026-10-26 as vc-test 0.6.0, in review** (0.5.0 went to #539, the visual-regression release, which merged first). Tasks 1–6 done.
 
 - **Task 1 (the agent's tools):** a plugin agent cannot name an unknown server's tools, so `fetch` lists no `tools:`
   and disallows Bash, Edit, NotebookEdit, WebFetch, WebSearch and Agent. It inherits the session's MCP tools,
