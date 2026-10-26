@@ -49,6 +49,11 @@ export function profileViolations(profile) {
   const upstream = p.upstream || {};
   const clientRepos = Array.isArray(p.repos?.client) ? p.repos.client : [];
 
+  // A host-governed project skips every scan these checks grade (§4/§4b/§5): its tracker contract,
+  // repos and upstream are read through the host's MCP servers at run time, and nothing goes upstream.
+  // An empty field there is the design, not a degradation — grading it would only file noise.
+  if (p.governance?.host) return out;
+
   // ─── tracker: the bug FIELD CONTRACT ─────────────────────────────────────────
   // Azure Boards only — Jira discovers its transitions live and bakes no field contract, so an
   // empty `fields` there is correct, not degraded.
