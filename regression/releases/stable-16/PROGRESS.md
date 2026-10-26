@@ -4,14 +4,14 @@
 
 Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1 · 2.59.0
 
-**Executed 1997 · PASS 1479 · FAIL 171 · BLOCKED 298** · ledger 347 rows
+**Executed 1997 · PASS 1481 · FAIL 171 · BLOCKED 296** · ledger 345 rows
 
 | Wave | Scope | Owner | Status | Planned | Executed | PASS | FAIL | BLOCKED | FAIL/BLOCKED without a verdict | Ledger | Runs |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | W0 | Smoke gate | Elena Kutasina | DONE | 149 | 149 | 100 | 4 | 19 | 0 | 5 | REG-2026-10-12-1659 |
 | W1 | Platform & infrastructure | Elena Kutasina | DONE | 538 | 538 | 436 | 19 | 67 | 0 | 26 | REG-2026-10-13-0035 REG-2026-10-13-1241-UCP |
 | W2 | Catalog & search | Elena Kutasina | TRIAGED | 611 | 553 | 445 | 53 | 51 | 0 | 58 | REG-2026-10-13-W2 |
-| W3 | Purchase flow | Elena Kutasina | TRIAGED | 840 | 757 | 498 | 95 | 161 | 0 | 258 | REG-2026-10-15-W3 REG-2026-10-26-1847-W3R REG-2026-10-26-2010-W3R2 |
+| W3 | Purchase flow | Elena Kutasina | TRIAGED | 840 | 757 | 500 | 95 | 159 | 0 | 256 | REG-2026-10-15-W3 REG-2026-10-26-1847-W3R REG-2026-10-26-2010-W3R2 REG-2026-10-26-2044-W3R3 |
 | W4 | Returns, B2B, accounts | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W5 | Marketing & content | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W6 | Theme cross-cutting + gap sessions | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
@@ -26,7 +26,7 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | BY_DESIGN | 7 |
 | TEST_DEFECT | 69 |
 | DATA | 95 |
-| ENV_CONFIG | 102 |
+| ENV_CONFIG | 100 |
 | NOT_TESTABLE | 23 |
 | DUPLICATE | 3 |
 | FLAKY | 1 |

@@ -5,14 +5,15 @@
  "runIds": [
   "REG-2026-10-15-W3",
   "REG-2026-10-26-1847-W3R",
-  "REG-2026-10-26-2010-W3R2"
+  "REG-2026-10-26-2010-W3R2",
+  "REG-2026-10-26-2044-W3R3"
  ],
  "totals": {
   "planned": 840,
   "executed": 757,
-  "pass": 498,
+  "pass": 500,
   "fail": 95,
-  "blocked": 161,
+  "blocked": 159,
   "skipped": 3,
   "ambiguous": 0
  },
