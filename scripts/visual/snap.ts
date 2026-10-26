@@ -21,7 +21,10 @@
  *   reducedMotion + animations ... no mid-transition frames
  *   disabled, caret hidden
  *   networkidle, fonts, images ... icons arrive as lazy chunks: on `load` alone the VcCollapsibleContent
- *                                  chevron was missing in some passes and present in others
+ *                                  chevron was missing in some passes and present in others. A
+ *                                  `loading="lazy"` image is switched to eager (a full-page shot includes
+ *                                  it, and below the fold it never loads by itself); an image still
+ *                                  loading after IMAGE_WAIT_MS makes the target unrendered
  *   timezone UTC, locale en-US ... date/number formatting is the same on every machine
  *   storybook: foreign requests .. a story never renders live data (off with --allow-network)
  *     aborted
@@ -47,16 +50,20 @@
  *     --har <file> --har-url <glob>       replay API answers matching <glob> from <file>, matched by
  *                                          method + path + query + body (GraphQL POSTs every operation to
  *                                          one path) — never by origin: base and head live at
- *                                          different addresses); an unmatched API call is aborted, so
- *                                          missing data shows instead of drifting
- *     --record-har <file> --har-url <glob>  record those answers on this pass (once, on base)
+ *                                          different addresses); an unmatched API call is aborted and
+ *                                          recorded on the shot as `replayMisses` — `visual:diff` then
+ *                                          calls the target unrendered, because both sides missing the
+ *                                          same call render the same error state and would compare `same`
+ *     --record-har <file> --har-url <glob>  record those answers on this pass (once, on base); every
+ *                                          capture set is recorded, then merged into <file>
  *     --block <glob[,glob]>               abort matching requests (analytics, chat widgets)
  *   targets.json: { "hide": [sel], "mask": [sel],
  *                   "targets": [{ "name", "path", "group"?, "waitFor"?: sel, "hide"?: [sel], "mask"?: [sel] }] }
  * COMMON
  *     --viewports 1280x800,375x812        default 1280x800
  *     --grep <substr[,substr]>            targets whose id contains any substring
- *                                          (`visual:diff` writes the flagged ids as such a list)
+ *     --grep-file <file>                  the same list read from a file — `visual:diff`'s
+ *                                          `flagged-ids.txt`, which can outgrow a Windows command line
  *     --repeat <n>                        shots per target (default 1; 3 for the confirmation pass)
  *     --workers <n>                       parallel pages (default 4)
  *     --executable <path>                 Chromium binary (default: Playwright's own)
@@ -65,10 +72,10 @@
  *         viewport, plus the globals when given. The caller passes <out> inside its run folder.
  *
  * EXIT    0 every selected target shot · 1 some failed to render (listed) · 2 nothing usable
- *         (no index/targets, nothing selected, browser did not start).
+ *         (no index/targets, nothing selected, browser did not start, a bad flag).
  */
 import "../lib/sync-stdio.mjs";
-import { createReadStream, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { createReadStream, existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import http from "node:http";
 import type { AddressInfo } from "node:net";
 import { extname, join, resolve } from "node:path";
@@ -77,8 +84,9 @@ import { flagValue, intFlag, rejectUnknownFlags } from "../lib/cli-args.ts";
 
 export interface SnapshotSet { name: string; viewport: { width: number; height: number }; globals: string | null }
 /** `files`: one path per successful shot, relative to the out dir; empty ⇒ the target did not render.
- *  `ref`: the story's importPath, or the page's path. */
-export interface Shot { id: string; title: string; ref: string; set: string; files: string[]; error?: string }
+ *  `ref`: the story's importPath, or the page's path. `replayMisses`: `--har` calls with no recorded
+ *  answer (method + path), which were aborted. */
+export interface Shot { id: string; title: string; ref: string; set: string; files: string[]; error?: string; replayMisses?: string[] }
 export interface SnapshotManifest {
   kind: "storybook" | "pages"; source: string; createdAt: string; browser: string; repeat: number;
   sets: SnapshotSet[]; stories: Shot[];
@@ -87,8 +95,8 @@ interface Target { id: string; title: string; ref: string; url: (set: SnapshotSe
 
 const argv = process.argv.slice(2);
 const VALUED = ["--storybook", "--source", "--pages", "--base-url", "--out", "--viewports", "--globals", "--only", "--grep",
-  "--repeat", "--workers", "--executable", "--storage-state", "--har", "--har-url", "--record-har", "--block"];
-rejectUnknownFlags(argv, [...VALUED, "--allow-network"], VALUED);
+  "--repeat", "--workers", "--executable", "--storage-state", "--har", "--har-url", "--record-har", "--block", "--grep-file"];
+rejectUnknownFlags(argv, [...VALUED, "--allow-network"], VALUED, 2);
 // --source is the pre-pages name of --storybook, kept so a written-down command keeps working.
 const storybook = flagValue(argv, "--storybook") ?? flagValue(argv, "--source");
 const pages = flagValue(argv, "--pages");
@@ -103,8 +111,9 @@ if ((flagValue(argv, "--har") || flagValue(argv, "--record-har")) && !harUrl) {
   console.error("✗ --har / --record-har need --har-url <glob>: only API answers are frozen, never the app's own assets");
   process.exit(2);
 }
-const workers = Math.max(1, intFlag(argv, "--workers", 4));
-const repeat = Math.max(1, intFlag(argv, "--repeat", 1));
+const workers = Math.max(1, intFlag(argv, "--workers", 4, 2));
+const repeat = Math.max(1, intFlag(argv, "--repeat", 1, 2));
+const IMAGE_WAIT_MS = 15_000;
 
 function parseViewports(raw: string): { width: number; height: number }[] {
   return raw.split(",").map((v) => {
@@ -176,9 +185,11 @@ function pageTargets(file: string, baseUrl: string): Target[] {
 }
 
 function grepFilter(targets: Target[]): Target[] {
-  const grep = flagValue(argv, "--grep");
-  if (!grep) return targets;
-  const parts = grep.split(",").map((g) => g.trim()).filter(Boolean);
+  const file = flagValue(argv, "--grep-file");
+  if (file && !existsSync(file)) { console.error(`✗ --grep-file ${file} not found`); process.exit(2); }
+  const grep = [flagValue(argv, "--grep"), file && readFileSync(file, "utf-8")].filter(Boolean).join(",");
+  if (!grep && !file) return targets;
+  const parts = grep.split(/[,\r\n]/).map((g) => g.trim()).filter(Boolean);
   return targets.filter((t) => parts.some((g) => t.id.includes(g)));
 }
 
@@ -189,15 +200,22 @@ async function render(page: Page, t: Target, url: string): Promise<void> {
   if (storybook && (await page.$(".sb-show-errordisplay"))) throw new Error("story threw (Storybook error display)");
   if (t.hide.length) await page.addStyleTag({ content: `${t.hide.join(",")}{visibility:hidden !important}` });
   // No named helpers inside evaluate: tsx wraps them in `__name`, which the page does not define.
-  await page.evaluate(async () => {
-    await document.fonts.ready;
-    await Promise.all([...document.images].map((i) => (i.complete ? null : new Promise((r) => { i.onload = i.onerror = r; }))));
-  });
+  const pending = await page.evaluate((ms) => {
+    for (const i of [...document.images]) if (i.loading === "lazy") i.loading = "eager";
+    const ready = document.fonts.ready.then(() => Promise.all([...document.images].map((i) => (i.complete ? null
+      : new Promise((r) => { i.addEventListener("load", r, { once: true }); i.addEventListener("error", r, { once: true }); })))));
+    return Promise.race([
+      ready.then(() => 0),
+      new Promise<number>((r) => setTimeout(() => r(Math.max(1, [...document.images].filter((i) => !i.complete).length)), ms)),
+    ]);
+  }, IMAGE_WAIT_MS);
+  if (pending) throw new Error(`${pending} image(s) or the fonts still loading after ${IMAGE_WAIT_MS / 1000} s`);
   await page.waitForLoadState("networkidle");
   await page.waitForTimeout(300);
 }
 
-async function prepareContext(ctx: BrowserContext, origin: string): Promise<void> {
+/** `misses`: per page, the replay misses of the target it is shooting now. */
+async function prepareContext(ctx: BrowserContext, origin: string, misses: Map<Page, Set<string>>): Promise<void> {
   if (storybook && !argv.includes("--allow-network")) await ctx.route((u) => u.origin !== origin, (r) => r.abort());
   const block = flagValue(argv, "--block");
   for (const g of block ? block.split(",").map((s) => s.trim()).filter(Boolean) : []) await ctx.route(g, (r) => r.abort());
@@ -210,7 +228,15 @@ async function prepareContext(ctx: BrowserContext, origin: string): Promise<void
     await ctx.route(harUrl!, async (route) => {
       const req = route.request();
       const hit = answers.get(harKey(req.method(), req.url(), req.postData()));
-      if (!hit) { await route.abort(); return; } // missing data shows as a failure, never as live drift
+      if (!hit) {
+        // Missing data is a failure, never live drift — and it is recorded: both sides missing the same
+        // call render the same error state, which would otherwise compare `same`.
+        let page: Page | undefined;
+        try { page = req.frame().page(); } catch { /* a worker's request has no frame */ }
+        if (page) misses.get(page)?.add(`${req.method()} ${new URL(req.url()).pathname}`);
+        await route.abort();
+        return;
+      }
       await route.fulfill({ status: hit.status, headers: hit.headers, body: hit.body });
     });
   }
@@ -236,6 +262,18 @@ function harAnswers(file: string): Map<string, { status: number; headers: Record
   return map;
 }
 
+/** Each capture set records its own part; `mergeHars` joins them into the --record-har file. */
+const harPart = (record: string, set: SnapshotSet) => `${record}.${set.name}.har`;
+
+function mergeHars(record: string, sets: SnapshotSet[]): number {
+  const parts = sets.map((s) => harPart(record, s)).filter((p) => existsSync(p));
+  const logs = parts.map((p) => JSON.parse(readFileSync(p, "utf-8")).log ?? {});
+  const entries = logs.flatMap((l) => l.entries ?? []);
+  writeFileSync(record, JSON.stringify({ log: { ...logs[0], pages: logs.flatMap((l) => l.pages ?? []), entries } }));
+  for (const p of parts) rmSync(p, { force: true });
+  return entries.length;
+}
+
 async function shootSet(browser: Browser, origin: string, set: SnapshotSet, targets: Target[]): Promise<Shot[]> {
   const dir = join(out!, set.name);
   mkdirSync(dir, { recursive: true });
@@ -243,9 +281,11 @@ async function shootSet(browser: Browser, origin: string, set: SnapshotSet, targ
   const ctx = await browser.newContext({
     viewport: set.viewport, deviceScaleFactor: 1, reducedMotion: "reduce", timezoneId: "UTC", locale: "en-US",
     storageState: flagValue(argv, "--storage-state"),
-    recordHar: record ? { path: record, urlFilter: harUrl, content: "embed" } : undefined,
+    // One file per context: every context closing on the same path would leave only the last set's answers.
+    recordHar: record ? { path: harPart(record, set), urlFilter: harUrl, content: "embed" } : undefined,
   });
-  await prepareContext(ctx, origin);
+  const misses = new Map<Page, Set<string>>();
+  await prepareContext(ctx, origin, misses);
   const shots: Shot[] = [];
   let next = 0;
   async function worker() {
@@ -253,6 +293,8 @@ async function shootSet(browser: Browser, origin: string, set: SnapshotSet, targ
     while (next < targets.length) {
       const t = targets[next++];
       const shot: Shot = { id: t.id, title: t.title, ref: t.ref, set: set.name, files: [] };
+      const missed = new Set<string>();
+      misses.set(page, missed);
       for (let r = 1; r <= repeat; r++) {
         try {
           // Every repeat is a fresh navigation: a bistable layout must get its chance to land elsewhere.
@@ -267,6 +309,7 @@ async function shootSet(browser: Browser, origin: string, set: SnapshotSet, targ
           shot.error = String((e as Error).message ?? e).split("\n")[0];
         }
       }
+      if (missed.size) shot.replayMisses = [...missed].sort();
       shots.push(shot);
     }
     await page.close();
@@ -308,11 +351,17 @@ async function main(): Promise<void> {
   await browser.close();
   src.close();
   writeFileSync(join(out!, "snapshots.json"), JSON.stringify(manifest, null, 2));
+  const record = flagValue(argv, "--record-har");
+  const recorded = record ? mergeHars(record, sets) : 0;
 
   const failed = shots.filter((s) => s.files.length === 0);
   console.log(`visual:snap  ${targets.length} ${manifest.kind === "storybook" ? "stories" : "pages"} × ${sets.length} set(s) × ${repeat} shot(s) → ${shots.length - failed.length} shot, ${failed.length} failed  (${Math.round((Date.now() - t0) / 1000)} s, ${manifest.browser})`);
   for (const f of failed.slice(0, 20)) console.log(`  ✗ ${f.set}/${f.id}: ${f.error}`);
   if (failed.length > 20) console.log(`  … ${failed.length - 20} more in snapshots.json`);
+  const missed = shots.filter((s) => s.replayMisses?.length);
+  for (const m of missed.slice(0, 20)) console.log(`  ⚠ ${m.set}/${m.id}: no recorded answer for ${m.replayMisses!.join(", ")}`);
+  if (missed.length > 20) console.log(`  … ${missed.length - 20} more replay misses in snapshots.json`);
+  if (record) console.log(`  recorded: ${recorded} API answer(s) → ${record}`);
   console.log(`  manifest: ${join(out!, "snapshots.json")}`);
   process.exit(failed.length ? 1 : 0);
 }

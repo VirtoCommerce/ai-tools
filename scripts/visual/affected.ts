@@ -30,24 +30,28 @@
  *     --roots <dir[,dir]>      component roots (default client-app/ui-kit/components)
  *     --global <regex[,regex]> files that restyle every story (default: vc-frontend's, see GLOBAL)
  *     --out <file>             also write the JSON (input of visual:snap --only)
- * EXIT  0 when the inputs were readable · 2 not a checkout / git failed / no root found.
+ * EXIT  0 when the inputs were readable · 2 not a checkout / git failed / no root found / bad flag.
+ *
+ * Every path is compared in ONE form, forward slashes: git prints them that way and Windows'
+ * `path.join` does not — with two forms no changed file would find its component.
  */
 import "../lib/sync-stdio.mjs";
 import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { basename, dirname, join, relative } from "node:path";
+import { basename, join, posix, relative } from "node:path";
 import { flagValue, rejectUnknownFlags } from "../lib/cli-args.ts";
 
 const VALUED = ["--repo", "--base", "--files", "--roots", "--global", "--out"];
 const argv = process.argv.slice(2);
-rejectUnknownFlags(argv, VALUED, VALUED);
+rejectUnknownFlags(argv, VALUED, VALUED, 2);
 const repo = flagValue(argv, "--repo");
 if (!repo || !existsSync(repo)) {
   console.error("usage: npm run visual:affected -- --repo <checkout> (--base <ref> | --files a,b) [--roots dir,dir] [--global re,re] [--out file]");
   process.exit(2);
 }
 const list = (raw: string | undefined, fallback: string[]) => (raw ? raw.split(",").map((s) => s.trim()).filter(Boolean) : fallback);
-const ROOTS = list(flagValue(argv, "--roots"), ["client-app/ui-kit/components"]).map((r) => r.replace(/\/+$/, ""));
+const slashed = (p: string) => p.replace(/\\/g, "/").replace(/^\.\//, "");
+const ROOTS = list(flagValue(argv, "--roots"), ["client-app/ui-kit/components"]).map((r) => slashed(r).replace(/\/+$/, ""));
 // vc-frontend's files that restyle every story. Not under a component, yet not attributable to one.
 const GLOBAL = list(flagValue(argv, "--global"), [
   "^client-app/ui-kit/(?!components/)",
@@ -69,7 +73,7 @@ if (missingRoots.length === ROOTS.length) {
 
 function changedFiles(): string[] {
   const files = flagValue(argv, "--files");
-  if (files) return list(files, []);
+  if (files) return list(files, []).map(slashed);
   const ref = flagValue(argv, "--base");
   if (!ref) { console.error("✗ pass --base <ref> or --files"); process.exit(2); }
   try {
@@ -84,7 +88,7 @@ function walk(dir: string): string[] {
   return readdirSync(dir).flatMap((n) => {
     if (n === "node_modules" || n.startsWith(".")) return [];
     const p = join(dir, n);
-    return statSync(p).isDirectory() ? walk(p) : [p];
+    return statSync(p).isDirectory() ? walk(p) : [slashed(p)];
   });
 }
 
@@ -92,15 +96,15 @@ function walk(dir: string): string[] {
 interface Component { dir: string; names: string[]; sources: string[] }
 function componentIndex(): Component[] {
   const files = ROOTS.filter((r) => existsSync(join(repo!, r))).flatMap((r) => walk(join(repo!, r)));
-  const dirs = [...new Set(files.filter((f) => /\.stories\.[jt]sx?$/.test(f) || /\.stories\.mdx$/.test(f)).map(dirname))];
+  const dirs = [...new Set(files.filter((f) => /\.stories\.[jt]sx?$/.test(f) || /\.stories\.mdx$/.test(f)).map(posix.dirname))];
   return dirs.map((abs) => {
-    const own = files.filter((f) => dirname(f) === abs || (f.startsWith(abs + "/") && !dirs.some((d) => d !== abs && d.startsWith(abs + "/") && f.startsWith(d + "/"))));
+    const own = files.filter((f) => posix.dirname(f) === abs || (f.startsWith(abs + "/") && !dirs.some((d) => d !== abs && d.startsWith(abs + "/") && f.startsWith(d + "/"))));
     // <vc-button> and VcButton for vc-button.vue; ProductCard for ProductCard.tsx.
     const names = own.filter((f) => /\.(vue|tsx|jsx|svelte)$/.test(f)).map((f) => basename(f).replace(/\.[^.]+$/, ""))
       .flatMap((n) => [n, n.replace(/(^|-)([a-z])/g, (_, __, c: string) => c.toUpperCase())]);
     // Stories count: a story that slots a VcButton into a VcEmptyView moves when VcButton does.
     const sources = own.filter((f) => SOURCE.test(f) && !NOT_SOURCE.test(f));
-    return { dir: relative(repo!, abs), names: [...new Set(names)], sources };
+    return { dir: slashed(relative(repo!, abs)), names: [...new Set(names)], sources };
   });
 }
 
@@ -108,9 +112,10 @@ const changed = changedFiles();
 const index = componentIndex();
 /** The component a changed file belongs to: the deepest component dir that contains it. */
 const owner = (f: string) => index.filter((c) => f.startsWith(c.dir + "/")).sort((a, b) => b.dir.length - a.dir.length)[0];
-// Inside a component root but owned by no component (a barrel index, a shared helper): fail open.
+// Inside a component root but owned by no component (a barrel index, a shared helper, a style partial
+// several components import): fail open.
 const underRoot = (f: string) => ROOTS.some((r) => f.startsWith(r + "/"));
-const globalHits = changed.filter((f) => GLOBAL.some((g) => g.test(f)) || (underRoot(f) && SOURCE.test(f) && !owner(f)));
+const globalHits = changed.filter((f) => GLOBAL.some((g) => g.test(f)) || (underRoot(f) && (SOURCE.test(f) || RENDERING.test(f)) && !owner(f)));
 const direct = [...new Set(changed.filter((f) => !globalHits.includes(f)).map(owner).filter(Boolean).map((c) => c!.dir))];
 const uncovered = changed.filter((f) => RENDERING.test(f) && !globalHits.includes(f) && !owner(f));
 

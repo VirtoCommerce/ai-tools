@@ -82,8 +82,11 @@ the header, not a copy of it here.
 
 5. **Compare in two passes.**
    - **Pass 1:** run `visual:diff` on the one-shot sets. It writes `flagged-ids.txt`.
-   - **Pass 2 (confirmation):** shoot only those targets again with `--grep "<flagged ids>" --repeat 3`,
-     on base and on head, then run `visual:diff` again. Only pass 2's verdict counts.
+   - **Pass 2 (confirmation):** shoot only those targets again with
+     `--grep-file <pass-1 out>/flagged-ids.txt --repeat 3`, on base and on head, then run `visual:diff`
+     again. Pass 2's verdict replaces pass 1's for the targets it re-shot.
+   - **Pass 1's `unrendered`, `added` and `removed` rows are not re-shot. They carry forward** into
+     the verdict unchanged. They are never dropped because pass 2 did not see them.
    - **Why two passes:** a few targets render one of two layouts at random. With three shots each,
      such a target has a matching base × head pair and comes back `same`, while a real change
      differs on every pair. `unstable` means the target's own shots disagree and it also changed:
@@ -91,7 +94,7 @@ the header, not a copy of it here.
    - Pixel size is never the filter. A real 2 px radius regression moved 12 px, about as much as
      noise (script header).
    - **Exit codes:** `0` means nothing moved. `1` means something moved or did not render. `2` means
-     the inputs are unusable, which makes the instrument `INCONCLUSIVE`, never `PASS`.
+     the inputs or the flags are unusable, which makes the instrument `INCONCLUSIVE`, never `PASS`.
 
 6. **Triage each changed component or page group** as intended, regression or noise:
    [`triage.md`](triage.md). Triage is read against the PR diff and the ticket's ACs. Read the diff
@@ -131,5 +134,10 @@ The blocking rule is [`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §
   on other data (long values, a locale, many currencies) is `PROBE` territory.
 - **A HAR freezes the API answers, not the build's server-side rendering.** A route rendered on the
   server shows whatever that server read.
+- **A replay answers only the requests it recorded.** A call with no recorded answer is aborted and
+  the target comes back `unrendered`, with the missed calls in its note. Two causes:
+  - a request body that changes per load, such as a client id or a timestamp in GraphQL variables;
+  - a head that changes the query itself, for example a PR that adds a field. Such a page cannot be
+    compared on frozen data. Use another instrument for it.
 - **Interaction states** (hover, focus-visible, an opened dialog) are shot only when a story or a
   page target renders them. A state no target shows is a gap to list, not a pass.

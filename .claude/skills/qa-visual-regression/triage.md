@@ -38,7 +38,10 @@ lies outside that region, it is a real change on top of an unstable story. The i
 a story defect worth a row: a story that cannot render the same way twice cannot guard anything.
 
 **`unrendered` is not triaged as noise.** A story that rendered on base and fails on head is a
-regression until shown otherwise: it may be a thrown error in the changed component.
+regression until shown otherwise: it may be a thrown error in the changed component. A page whose
+note says `replay missed` was not measured on the recorded data. Record it as `unrendered`, with the
+missed calls, and never as a regression or a pass (SKILL.md §Limits). Pass 1's `unrendered` rows
+carry into the verdict even though pass 2 does not re-shoot them.
 
 ## 3. The checklist row
 

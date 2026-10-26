@@ -13,7 +13,8 @@
  *                 `--repeat` > 1): it renders more than one way, so a human reads the diff
  *   size-changed  every pair differs in width/height — itself a layout change
  *   added/removed in one set only (a new or deleted story)
- *   unrendered    the story failed to render in base, head or both (never counted as `same`)
+ *   unrendered    the story failed to render in base, head or both, or a `--har` replay found no
+ *                 recorded answer for one of its API calls (`replayMisses`) — never counted as `same`
  *
  * WHY NO PIXEL THRESHOLD BY DEFAULT (--min-diff-px 1): same build shot twice, the noisiest story
  * differed by 10 px — and a REAL seeded regression (VcBadge radius −2 px) moved only 12 px on its
@@ -27,12 +28,14 @@
  *     --threshold <0..1>     pixelmatch colour threshold (default 0.1)
  *     --min-diff-px <n>      pairs closer than this count as equal (default 1)
  *
- * OUTPUT  <out>/visual-diff.json, <out>/diff/<set>/<storyId>.png, <out>/flagged-ids.txt (the `--grep`
- *         list for the confirmation pass), a summary grouped by component.
- * EXIT    0 nothing changed · 1 something changed or failed to render · 2 inputs unusable.
+ * OUTPUT  <out>/visual-diff.json, <out>/diff/<set>/<storyId>.png, <out>/flagged-ids.txt (the
+ *         changed / unstable / size-changed ids: `visual:snap --grep-file` input for the confirmation
+ *         pass; removed when none), a summary grouped by component. The confirmation pass re-shoots only
+ *         those, so this pass's unrendered / added / removed rows carry forward into the verdict.
+ * EXIT    0 nothing changed · 1 something changed or failed to render · 2 inputs unusable or a bad flag.
  */
 import "../lib/sync-stdio.mjs";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import pixelmatch from "pixelmatch";
 import { PNG } from "pngjs";
@@ -44,7 +47,7 @@ interface Row { set: string; id: string; title: string; status: Status; diffPx?:
 
 const argv = process.argv.slice(2);
 const VALUED = ["--base", "--head", "--out", "--threshold", "--min-diff-px"];
-rejectUnknownFlags(argv, VALUED, VALUED);
+rejectUnknownFlags(argv, VALUED, VALUED, 2);
 const baseDir = flagValue(argv, "--base");
 const headDir = flagValue(argv, "--head");
 const out = flagValue(argv, "--out");
@@ -54,7 +57,7 @@ if (!baseDir || !headDir || !out) {
 }
 const threshold = Number(flagValue(argv, "--threshold") ?? 0.1);
 if (!(threshold >= 0 && threshold <= 1)) { console.error("✗ --threshold expects 0..1"); process.exit(2); }
-const minDiffPx = Math.max(1, intFlag(argv, "--min-diff-px", 1));
+const minDiffPx = Math.max(1, intFlag(argv, "--min-diff-px", 1, 2));
 
 function readManifest(dir: string): SnapshotManifest {
   const p = join(dir, "snapshots.json");
@@ -99,6 +102,11 @@ for (const k of new Set([...baseMap.keys(), ...headMap.keys()])) {
   else if (!b.files.length || !h.files.length) {
     row.status = "unrendered";
     row.note = [b.error && `base: ${b.error}`, h.error && `head: ${h.error}`].filter(Boolean).join(" · ");
+  } else if (b.replayMisses?.length || h.replayMisses?.length) {
+    // Rendered, but not on the recorded data: two identical error states would compare `same`.
+    row.status = "unrendered";
+    row.note = [b.replayMisses?.length && `base replay missed: ${b.replayMisses.join(", ")}`,
+      h.replayMisses?.length && `head replay missed: ${h.replayMisses.join(", ")}`].filter(Boolean).join(" · ");
   } else {
     // The closest base × head pair decides: a story that renders two ways is unchanged if the ways overlap.
     let best: { n: number; bf: string; hf: string } | null = null;
@@ -152,11 +160,17 @@ for (const [title, rs] of [...byComponent.entries()].sort((a, b) => b[1].length 
   console.log(`  ${title}: ${rs.length} stor${rs.length === 1 ? "y" : "ies"} (${[...new Set(rs.map((r) => r.status))].join(", ")}${max})`);
 }
 const ids = [...new Set(flagged.filter((r) => ["changed", "unstable", "size-changed"].includes(r.status)).map((r) => r.id))];
+// Removed when empty: a list left by an earlier run in this --out must not feed the next pass.
+rmSync(join(out, "flagged-ids.txt"), { force: true });
 if (ids.length) {
-  writeFileSync(join(out, "flagged-ids.txt"), ids.join(","));
+  writeFileSync(join(out, "flagged-ids.txt"), ids.join("\n"));
   if (Math.max(base.repeat ?? 1, head.repeat ?? 1) === 1) {
-    console.log(`  confirm: visual:snap --grep "$(cat ${join(out, "flagged-ids.txt")})" --repeat 3 on base and head, then diff again`);
+    console.log(`  confirm: visual:snap --grep-file ${join(out, "flagged-ids.txt")} --repeat 3 on base and head, then diff again`);
   }
+}
+const carried = flagged.filter((r) => ["unrendered", "added", "removed"].includes(r.status)).length;
+if (carried && Math.max(base.repeat ?? 1, head.repeat ?? 1) === 1) {
+  console.log(`  ${carried} unrendered / added / removed row(s) are not re-shot: they carry forward into the verdict`);
 }
 console.log(`  report: ${join(out, "visual-diff.json")}`);
 process.exit(flagged.length ? 1 : 0);
