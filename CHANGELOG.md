@@ -29,6 +29,20 @@ commit). PR statuses are not read yet. Checked against recorded responses; live 
 `VC_RUN` unset ⇒ `no-tracker` (exit 3). A host-governed project ⇒ `host-governed` (exit 4) before any read, until
 P1d-3. On an Azure Boards tracker GitHub is searched for the profile's cross-link token + id (`AB#967`).
 
+## One plugin installed in several scopes is not a duplicate — `vc-init` `0.5.1` — 2026-10-26
+
+**Fixed: a false `Plugin installs` WARN.** `claude plugin list` prints one row per install on the machine: the
+user's, and one per folder that has a project or local install (a project's `.claude/settings.json` enables
+the plugin, and every checkout or worktree is its own folder). verify-access counted those rows, so one
+plugin installed for the user and for two folders read as enabled three times. It now counts only the rows
+that load in this folder (enabled, and machine-wide or recorded for this folder) and distinct ids among them
+(`duplicateInstalls`): an old `@vc-tools` copy installed for another folder no longer warns here. "This
+folder" is the one Claude Code runs in (`CLAUDE_PROJECT_DIR`, else the cwd), not `VC_FIX_HOME`.
+
+**Fixed: the uninstall hint names every copy and its scope.** `claude plugin uninstall` without `--scope`
+removes only the user's install; the hint now lists each copy of the old id as a command to paste
+(`--scope user|project|local`) and, for a project or local copy, the folder to run it in.
+
 ## The benchmark tooling is gone — `vc-test` `0.2.2` — 2026-10-26
 
 **Removed.** P0 closed without its benchmark run (spec U69), and nothing else needs the tooling:

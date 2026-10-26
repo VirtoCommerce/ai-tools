@@ -23,6 +23,11 @@ const BRANCH_MAP: Record<string, string> = { vcst: 'vcst-qa', vcptcore: 'vcptcor
 export interface EnvCoords {
   env: string; deployOwner: string; deployRepo: string; branch: string;
   packagesPath: string; themePath: string; storybookPath: string; backUrl: string; admin: string; password: string;
+  /** The env's service-account API key (`PLATFORM_API_KEY_<ENV>`): reads the platform without the shared admin. */
+  apiKey?: string;
+  /** The BACK_URL the key was resolved for. live.ts sends the key only there, so a caller that re-points backUrl
+   *  (env-facts probeCoords, an ambient BACK_URL) never hands this stand's key to another host. */
+  apiKeyFor?: string;
 }
 
 /**
@@ -68,6 +73,15 @@ export function isLocalUrl(url: string): boolean {
     || host.endsWith('.docker.internal');
 }
 
+/**
+ * An env's read-only service-account key, `PLATFORM_API_KEY_<ENV>` with the env's own name upper-cased: the
+ * .env.local pin, then the env's own password file (unsuffixed), then the process. Never a generic key.
+ */
+export function platformApiKey(env: string, local: Record<string, string>, ownPasswords: Record<string, string>): string {
+  const name = `PLATFORM_API_KEY_${env.toUpperCase().replace(/[^A-Z0-9]/g, '_')}`;
+  return local[name] || ownPasswords.PLATFORM_API_KEY || process.env[name] || '';
+}
+
 /** What says where an env is deployed and probed, and as whom. */
 const DEPLOY_KEYS = ['DEPLOY_REPO', 'DEPLOY_BRANCH', 'DEPLOY_PACKAGES_PATH', 'DEPLOY_THEME_PATH', 'DEPLOY_STORYBOOK_PATH', 'BACK_URL', 'ADMIN'];
 
@@ -91,7 +105,7 @@ export function resolveEnvCoords(env: string, passwordOverride?: string, ticket?
   const branch = e.DEPLOY_BRANCH || BRANCH_MAP[env] || env.replace(/_/g, '-');
   // Per-env secret lookup, in config.js's own order: a `.env.local` pin in its promotion form FIRST
   // (`ADMIN_PASSWORD_${TEST_ENV}` upper-cased), then the env's own password file. Without that file a
-  // machine that keeps env passwords only there fell through to `Password1`; without the promotion
+  // machine that keeps env passwords only there fell through to a guessed password; without the promotion
   // form a plain `vcptcore` stripped to "" in the suffix forms below (they only ever produce
   // STABLE/REGRESSION) and fell through to the generic ADMIN_PASSWORD. Either way: wrong account →
   // no admin token → --verify's live column reads "unavailable" instead of the version.
@@ -105,13 +119,23 @@ export function resolveEnvCoords(env: string, passwordOverride?: string, ticket?
     || local[`ADMIN_PASSWORD_${envKey}`]
     || own.passwords.ADMIN_PASSWORD
     || local[`ADMIN_PASSWORD_VCPTCORE_${suffix}`] || local[`ADMIN_PASSWORD_${suffix}`]
-    || local.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || 'Password1';
+    // No guessed fallback: an empty password makes probeAdminToken skip the sign-in. The old 'Password1'
+    // was stale, and from a machine without secrets (CI) it locked the stand's shared admin out.
+    || local.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || '';
+  // A read-only service account's key, per env only (never a generic one: a key is bound to one stand).
+  // When present, the live readers use it instead of signing in as the stand's shared admin; an explicit
+  // --password still means "sign in with this", so it drops the key. Looked up where the password is: the
+  // .env.local pin, then the env's own password file.
+  const apiKey = passwordOverride ? '' : platformApiKey(env, local, own.passwords);
+  const backUrl = (e.BACK_URL || process.env.BACK_URL || '').replace(/\/$/, '');
+  // Bound to the env's OWN BACK_URL only: an ambient process BACK_URL is another env's stand.
+  const ownBackUrl = (e.BACK_URL || '').replace(/\/$/, '');
   return {
     env, deployOwner, deployRepo, branch,
     packagesPath: e.DEPLOY_PACKAGES_PATH || PACKAGES_PATH_DEFAULT,
     themePath: e.DEPLOY_THEME_PATH || THEME_PATH_DEFAULT,
     storybookPath: e.DEPLOY_STORYBOOK_PATH || STORYBOOK_PATH_DEFAULT,
-    backUrl: (e.BACK_URL || process.env.BACK_URL || '').replace(/\/$/, ''),
-    admin: e.ADMIN || process.env.ADMIN || 'admin', password,
+    backUrl, admin: e.ADMIN || process.env.ADMIN || 'admin', password,
+    ...(apiKey && ownBackUrl ? { apiKey, apiKeyFor: ownBackUrl } : {}),
   };
 }
