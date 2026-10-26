@@ -27,8 +27,11 @@ unshaped. `vc-init`, `vc-perf` and `vc-secrets` are unchanged, and the bridge ad
 - `get-file --commit <sha>`.
 
 **Added: `raw-out.mjs`.** A download from a token-holding CLI is written only inside `<outputRoot>/.vc-fix/`. The
-path is checked after resolving links and before any request. A download is cut at `--max-bytes` (default
-25 MiB), and a cut file is deleted.
+path is checked after resolving links and before any request. The bytes go to a fresh file that is renamed into
+place, so a link already at the target is never written through. A download is cut at `--max-bytes` (default
+25 MiB), and a cut download leaves no file. No new command can hang: a JSON read times out after 30 s and a
+download, body included, after 120 s. Paging stops on a page with nothing new. Azure comments come oldest first,
+like Jira's, and `--newest` reverses that. `pr-changes` follows Azure's `nextSkip`.
 
 ## An env's files can live outside the repo; a stand can use one master password — `vc-fix` `0.13.0` — 2026-10-21
 
