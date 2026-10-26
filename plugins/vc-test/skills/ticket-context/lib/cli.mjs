@@ -117,7 +117,7 @@ async function prepare() {
   const testEnv = loadLayeredEnv(root, key, raw);
   // §7, U20: every tracker read is a $VC_RUN launch; this process holds no token.
   const noTracker = (reason, detail) => { out({ status: "no-tracker", gap: gap("ticket", reason, detail) }); process.exit(3); };
-  if (!profile.trackerBase) noTracker("no-credential", "project-profile.json has no tracker.baseUrl — run /project-init --check");
+  if (!profile.trackerBase) noTracker("no-credential", "project-profile.json has no tracker.baseUrl (Jira) or tracker.azure.apiBase (Azure Boards) — run /project-init --check");
   if (!vcRun()) noTracker("no-credential", "VC_RUN is not set — run /project-init");
   const tracker = profile.tracker === "azure" ? azureBoardsConnector({ profile, key, root }) : jiraConnector({ base: profile.trackerBase, key, root });
   const gaps = [];

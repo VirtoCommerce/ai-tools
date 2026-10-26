@@ -8,6 +8,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## An Azure Boards ticket reaches the gated bundle — `vc-test` `0.3.1` — 2026-10-26
+
+**Fixed — the Azure Boards tracker address.** `/vc-test:ticket-context` read the tracker address only from
+`tracker.baseUrl`, which `/project-init` writes for Jira alone, so every Azure Boards prepare stopped with
+`no-tracker`. On an Azure Boards tracker it now reads `tracker.azure.apiBase`, else
+`https://dev.azure.com/<tracker.azure.organization>/<tracker.azure.project>`.
+
+**Fixed — numeric ticket keys in the bundle and change map.** `bundle.schema.json` (`ticket`, `benchmark.hide[]`)
+and `change-map.schema.json` (`ticket`) accepted only `ABC-123`, so `check` and `finish` failed on every Azure
+Boards work item id. They now accept a work item id too.
+
 ## `/vc-test:ticket-context` reads Jira, GitHub, Azure Boards and Azure Repos through `$VC_RUN` — `vc-test` `0.3.0` — 2026-10-26
 
 P1d-2 of the `vc-test` plan (`docs/superpowers/plans/2026-10-26-vc-test-p1d2-connectors.md`). Needs `vc-fix` ≥ 0.15.0.

@@ -18,17 +18,23 @@ export function resolveProfile(profile) {
   const codeHost = projectType === "client" && vcs.clientHost === "azure-repos" ? "azure-repos" : "github";
   const clientOrg = str(vcs.clientOrg);
   const orgs = projectType === "client" && codeHost === "github" && clientOrg && clientOrg !== upstream ? [clientOrg, upstream] : [upstream];
+  // /project-init writes tracker.baseUrl for Jira only; an Azure Boards profile carries tracker.azure.apiBase
+  // (https://dev.azure.com/<org>/<project>), or at least its organization and project.
+  const az = obj(t.azure);
+  const azureBase = str(az.apiBase)
+    || (str(az.organization) && str(az.project) ? `https://dev.azure.com/${encodeURIComponent(str(az.organization))}/${encodeURIComponent(str(az.project))}` : "");
+  const trackerBase = (str(t.baseUrl) || (tracker === "azure" ? azureBase : "")).replace(/\/+$/, "");
   const fieldList = [];
   for (const list of Object.values(obj(t.fields))) for (const f of Array.isArray(list) ? list : []) {
     if (f?.ref && !fieldList.some((x) => x.id === f.ref)) fieldList.push({ id: f.ref, name: f.name ?? f.ref });
   }
   return {
     projectType, tracker, codeHost, orgs, fieldList,
-    trackerBase: str(t.baseUrl).replace(/\/+$/, ""),
+    trackerBase,
     keyFormat: t.ticketKeyFormat === "numeric" || t.ticketKeyFormat === "prefixed" ? t.ticketKeyFormat : tracker === "azure" ? "numeric" : "prefixed",
     crossLinkToken: str(t.crossLinkToken),
     fieldMap: obj(t.fieldMap),
-    azure: { roleStates: obj(t.azure?.roleStates), roleStatesByType: obj(t.azure?.roleStatesByType) }, // org and project: the bridge pins them
+    azure: { roleStates: obj(az.roleStates), roleStatesByType: obj(az.roleStatesByType) }, // org and project: the bridge pins them
     governed: !!profile.governance?.host,
   };
 }
