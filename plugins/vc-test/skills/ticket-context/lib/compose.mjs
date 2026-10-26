@@ -74,7 +74,8 @@ export function compose(prep, outs) {
     const dp = dep.get(p.ref);
     const fallback = p.gap?.reason === "over-cap" ? "over-cap — not checked" : p.context_only ? "context only — not change surface" : "deployment not checked";
     // found_via: a companion named in the body of the ladder PR it names (one hop) — provenance from prepare, never the agent.
-    prs.push({ ...identity, ...analysis, ...(p.gap ? { gap: p.gap } : {}), ...(p.found_via ? { found_via: p.found_via } : {}), context_only: !!p.context_only,
+    prs.push({ ...identity, ...analysis, ...(p.gap ? { gap: p.gap } : {}), ...(p.found_via ? { found_via: p.found_via } : {}),
+      ...(Array.isArray(p.added) ? { added: p.added } : {}), context_only: !!p.context_only, // added: from prepare's files list, never the agent
       artifact: dp?.artifact ?? null, deployed: dp?.deployed ?? "UNKNOWN", deployed_reason: dp?.deployed_reason ?? fallback });
   }
 

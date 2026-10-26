@@ -1,56 +1,50 @@
-// plugins/vc-test/skills/ticket-context/lib/profile.mjs — C2 + D9: what to read and with which credential.
-// Field names are project-profile.json's (plugins/vc-fix/scripts/lib/project-profile.d.mts).
-import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+// plugins/vc-test/skills/ticket-context/lib/profile.mjs — C2 + D9: what to read, from project-profile.json (vc-init's,
+// loaded by the plugin's read-only loader). No profile is a STOP (U19): there is no native-platform default here.
+// Field names are vc-init's (plugins/vc-init/scripts/lib/project-profile.mjs PROFILE_DEFAULTS).
+import { ProfileError } from "../../../lib/profile.mjs";
 
-/** The documented "absent profile ⇒ native-platform defaults" (CLAUDE.md §Prerequisites). */
-export const DEFAULT_ORG = "VirtoCommerce";
+const str = (v) => (typeof v === "string" ? v.trim() : "");
+const obj = (v) => (v && typeof v === "object" && !Array.isArray(v) ? v : {});
 
-export function readProfile(root) {
-  const p = join(root, "project-profile.json");
-  return existsSync(p) ? JSON.parse(readFileSync(p, "utf8")) : null;
-}
-
+/** The profile as /ticket-context reads it. Throws ProfileError(3) when it names no upstream org. */
 export function resolveProfile(profile) {
-  if (!profile) return { source: "defaults", projectType: "platform", tracker: "jira", trackerBaseUrl: null, fieldMap: {}, repoHosts: [{ host: "github", org: DEFAULT_ORG }], authEnv: null };
+  const t = obj(profile?.tracker);
+  const vcs = obj(profile?.vcs);
+  const upstream = str(profile?.upstream?.org);
+  if (!upstream) throw new ProfileError(3, "project-profile.json names no upstream.org — run /project-init --check");
   const projectType = profile.projectType === "client" ? "client" : "platform";
-  const repoHosts = [{ host: "github", org: profile.upstream?.org || DEFAULT_ORG }];
-  const client = profile.vcs?.clientOrg;
-  if (projectType === "client" && client && client !== repoHosts[0].org) {
-    repoHosts.unshift({ host: profile.vcs?.clientHost === "azure-repos" ? "azure-repos" : "github", org: client });
+  const tracker = t.kind === "azure" ? "azure" : "jira";
+  // The client's own code host; a platform project's code is the upstream's, on GitHub.
+  const codeHost = projectType === "client" && vcs.clientHost === "azure-repos" ? "azure-repos" : "github";
+  const clientOrg = str(vcs.clientOrg);
+  const orgs = projectType === "client" && codeHost === "github" && clientOrg && clientOrg !== upstream ? [clientOrg, upstream] : [upstream];
+  // /project-init writes tracker.baseUrl for Jira only; an Azure Boards profile carries tracker.azure.apiBase
+  // (https://dev.azure.com/<org>/<project>), or at least its organization and project.
+  const az = obj(t.azure);
+  const azureBase = str(az.apiBase)
+    || (str(az.organization) && str(az.project) ? `https://dev.azure.com/${encodeURIComponent(str(az.organization))}/${encodeURIComponent(str(az.project))}` : "");
+  const trackerBase = (str(t.baseUrl) || (tracker === "azure" ? azureBase : "")).replace(/\/+$/, "");
+  const fieldList = [];
+  for (const list of Object.values(obj(t.fields))) for (const f of Array.isArray(list) ? list : []) {
+    if (f?.ref && !fieldList.some((x) => x.id === f.ref)) fieldList.push({ id: f.ref, name: f.name ?? f.ref });
   }
   return {
-    source: "profile", projectType,
-    tracker: profile.tracker?.kind === "azure" ? "azure" : "jira",
-    trackerBaseUrl: profile.tracker?.baseUrl || null,
-    fieldMap: profile.tracker?.fieldMap ?? {},
-    repoHosts,
-    authEnv: profile.vcs?.authEnv || null,
+    projectType, tracker, codeHost, upstream, orgs, fieldList,
+    formLayout: obj(t.formLayout), // Azure Boards: { <type>: { htmlControls: [field ref, …] } }, in form order
+    trackerBase,
+    keyFormat: t.ticketKeyFormat === "numeric" || t.ticketKeyFormat === "prefixed" ? t.ticketKeyFormat : tracker === "azure" ? "numeric" : "prefixed",
+    crossLinkToken: str(t.crossLinkToken),
+    fieldMap: obj(t.fieldMap),
+    azure: { roleStates: obj(az.roleStates), roleStatesByType: obj(az.roleStatesByType) }, // org and project: the bridge pins them
+    governed: !!profile.governance?.host || profile.governance?.secrets === "host", // the bridge's own refusal (vc-init bridge/run.mjs hostRefusal)
+    // The host's MCP servers per role (U23): the host-governed fetch reads through these, and only these.
+    servers: { tracker: str(profile.governance?.servers?.tracker), codeHost: str(profile.governance?.servers?.codeHost), github: str(profile.governance?.servers?.github) },
+    // How a role's tools are named: `mcp__<server>__` for a server of the session, `mcp__plugin_<plugin>_<server>__`
+    // for one the host plugin ships (governance.host is `<plugin>@<marketplace>`).
+    toolPrefixes: Object.fromEntries(["tracker", "codeHost", "github"].map((role) => {
+      const s = str(profile.governance?.servers?.[role]);
+      const plugin = str(profile.governance?.host).split("@")[0];
+      return [role, s ? [`mcp__${s}__`, ...(plugin ? [`mcp__plugin_${plugin}_${s}__`] : [])] : []];
+    })),
   };
-}
-
-export function trackerCredential(p, env = process.env) {
-  if (p.tracker !== "jira") return { ok: false, reason: "connector-unavailable", detail: "Azure Boards is read from Phase 5 on" };
-  const base = (env.JIRA_BASE_URL || p.trackerBaseUrl || "").replace(/\/+$/, "");
-  const missing = [!base && "JIRA_BASE_URL", !env.JIRA_EMAIL && "JIRA_EMAIL", !env.JIRA_API_TOKEN && "JIRA_API_TOKEN"].filter(Boolean);
-  if (missing.length) return { ok: false, reason: "no-credential", detail: `set ${missing.join(", ")} in .env.local (/project-init writes them)` };
-  return { ok: true, base, auth: `Basic ${Buffer.from(`${env.JIRA_EMAIL}:${env.JIRA_API_TOKEN}`).toString("base64")}` };
-}
-
-/** One code-host credential, chosen once (S7): the profile's authEnv, else GIT_TOKEN, else the gh session. */
-export function codeHostCredential(p, env = process.env, ghToken = ghCliToken) {
-  const name = p.authEnv || "GIT_TOKEN";
-  if (env[name]) return { ok: true, auth: `Bearer ${env[name]}`, via: name };
-  const t = ghToken(env);
-  if (t) return { ok: true, auth: `Bearer ${t}`, via: "gh auth token" };
-  return { ok: false, reason: "no-credential", detail: `set ${name} in .env.local, or run gh auth login` };
-}
-
-function ghCliToken(env) {
-  // The gh session itself, not a token gh would pick up from the env (as scripts/deploy/lib/github.ts GH_ENV does).
-  const clean = { ...env };
-  delete clean.GITHUB_TOKEN;
-  delete clean.GH_TOKEN;
-  try { return execFileSync("gh", ["auth", "token"], { env: clean, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim() || null; } catch { return null; }
 }

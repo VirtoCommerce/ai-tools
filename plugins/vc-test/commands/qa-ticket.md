@@ -1,5 +1,5 @@
 ---
-description: "[Testing] PROTOTYPE vc-test — one feature-test ticket by scenarios: context → change map → approved scenarios, one agent each, beside the background AC run → triage → verdict, costed. Triage, investigation and some context scripts still need an ai-tools checkout (P1d-3)."
+description: "[Testing] PROTOTYPE vc-test — one feature-test ticket by scenarios: context → change map → approved scenarios, one agent each, beside the background AC run → triage → verdict, costed. Triage and investigation still need an ai-tools checkout (P2)."
 argument-hint: "<TICKET> [<env>] [--yes] [--dry-run]"
 disable-model-invocation: true
 ---
@@ -31,13 +31,13 @@ brief "Read and follow `<plugin>/briefs/<x>.md`" + the paths P.
 1. `npm run run:use -- <TICKET> [<env>]` → note `RUN_DIR` and the start time (`date -u +%FT%TZ`).
 2. `node <plugin>/lib/capabilities.mjs --key <TICKET> --mcp <list>` — which of `playwright-chrome`,
    `playwright-firefox`, `playwright-edge`, `chrome-devtools` you have.
-3. **Domain slug** from the ticket's components and summary, checked by `npm run bl:extract -- --has-domain <slug>`;
-   none checks out ⇒ no slug (F2 fires on doubt).
+3. **Domain slug** from the ticket's components and summary, checked by `npm run bl:extract -- --has-domain <slug>` or
+   listed in `capabilities.json` `knowledgeStore.domainMaps`; none checks out ⇒ no slug (F2 fires on doubt).
 
 ## 1 — Context
 
 `/vc-test:ticket-context <TICKET> --domain <slug>` (none without a slug); its bundle is every agent's `BUNDLE`. Its
-STOPs are this run's. Before its `finish`: `node <plugin>/lib/keep-prepare.mjs --prepare <prepare_path> --key
+STOPs are this run's; on a host-governed project it reads in passes through the host's servers (its Step 0). Before its `finish`: `node <plugin>/lib/keep-prepare.mjs --prepare <prepare_path> --key
 <TICKET>` → `PREPARE` (none if cached). A `NOT DEPLOYED:` line in `blockers[]` ⇒ BLOCKED on deploy: write
 `verdict.md` with it and stop.
 
@@ -51,7 +51,7 @@ STOPs are this run's. Before its `finish`: `node <plugin>/lib/keep-prepare.mjs -
 
 ## 3 — Strategy (human point 1)
 
-**You do not write the strategy.** Dispatch `strategy` (`opus`) with `BUNDLE`, `CHANGE_MAP`,
+**You do not write the strategy.** Dispatch `strategy` (`opus`) with `BUNDLE`, `CHANGE_MAP`, `CAPABILITIES`,
 `SCENARIOS_TABLE = <WORK>/scenarios.md`, `SCENARIOS = <WORK>/scenarios.json`, `RUN_DIR`. It returns the approval
 summary once gate and verifier pass; its round must still say `Status: DRAFT`, else back once, then STOP.
 
@@ -80,8 +80,20 @@ One message per wave of `run-plan.json`; each brief gets `RUN_DIR`, `STRATEGY`, 
 **A `global/…` writer is BLOCKED before dispatch** if `node <plugin>/lib/window.mjs check` exits 1: write its row,
 `BLOCKED — no channel to announce the window (U68)`, to `<RUN_DIR>/scenarios/S-n.rows.md`. The visual lane's
 findings: a row each in `scenarios/visual.rows.md`, `VIS-<m>`, Proof `visual`, `FAIL <severity>`. **After each
-wave**: `node <plugin>/lib/scenario-rows.mjs merge --run-dir <RUN_DIR> --ids <its S-n,…[,visual]>`; exit 2 ⇒
+wave**: `node <plugin>/lib/scenario-rows.mjs merge --run-dir <RUN_DIR> --ids <its S-n,…[,visual][,pixel]>` (a row already merged is skipped); exit 2 ⇒
 `missing` / `refused` back to their agent once, merge those again.
+
+**Each risk whose technique names `PIXEL` is your own item, with the first wave, whatever the Visual lane row
+says** — scripts, not a browser slot. The engine is the vc-frontend plugin's `visual/` (`capabilities.json`
+`pixel.engine`), run as its `skills/merge-upstream/visual.md`, every command with the **front checkout** as the
+working directory (the `pixel.checkouts` entry whose `git remote get-url origin` is the PR's repo — never cloned by
+this run; the engine's packages live in its `node_modules/.cache/`): §Once per machine — setup (`setup.mjs`; a
+no-op once done; `--with-browser` only on the user's yes), §Base and head (base = the PR's base ref, head = its
+`head_sha`, each a temporary `git worktree` with its install and Storybook build), §Scope, then §Shoot, compare,
+confirm. Each risk gets a `PIX-<m>` row naming its `R-n` in `scenarios/pixel.rows.md`, never `visual.rows.md`:
+`FAIL <severity>` per confirmed regression, else `PASS`; no engine, no checkout of that repo, a setup or a build that
+fails ⇒ `BLOCKED — <which>`; a Lane reading `SKIP — not available in this install` ⇒ `SKIP — <capability>`. Never
+absent: merge `pixel` after that wave. A PIXEL risk that runs has Lane `scripts · PIXEL`.
 
 ## 6 — Triage, then Medium-only investigation
 

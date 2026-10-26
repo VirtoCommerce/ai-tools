@@ -5,12 +5,12 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { computeFloors, domainMapTextOf, isAbandoned, p01NamesOf, readJsonOrExit } from "./floors.mjs";
+import { ARTIFACT_NEEDS, ARTIFACTS_FOR, computeFloors, domainMapTextOf, isAbandoned, p01NamesOf, PIXEL_REQUIREMENT, readCapabilitiesOrExit, readJsonOrExit } from "./floors.mjs";
 
 const CAP = 120; // lines per round section (D9)
 // A lane that opens no browser, by its leading word. Every other lane counts toward the three of agents.md §Parallel
 // Execution — an unrecognised name (`msedge`, `Lane A`) counts, so a new browser name can never slip past clause 8.
-const NON_BROWSER_LANE = /^(?:(?:api|rest|graphql|xapi|scripts?|node|cli|shell|unit|newman|postman|none)\b|n\/a\b|[—–-]\s*$)/i;
+const NON_BROWSER_LANE = /^(?:(?:api|rest|graphql|xapi|scripts?|node|cli|shell|unit|newman|postman|none|skip)\b|n\/a\b|[—–-]\s*$)/i;
 const lastRound = (md) => { const i = md.lastIndexOf("\n## Round "); return i < 0 ? "" : md.slice(i + 1); };
 // A heading counts only as the template writes it: a renamed one ("### Risk register") is missing, never matched.
 const HEADING = (h) => new RegExp(`^### ${h}[ \\t]*$`, "m");
@@ -19,9 +19,8 @@ const REQUIRED = [["Risks", 4], ["Approach per risk", 4], ["Artifacts", 6], ["Ou
 // A table line that is not a separator (`|---|`, `|:--|--:|` alike); the first one left is the header row.
 const rows = (text) => text.split("\n").filter((l) => /^\|/.test(l) && !/^[\s|:-]+$/.test(l)).map((l) => l.split("|").slice(1, -1).map((c) => c.trim())).slice(1);
 // No floor maps to "Test model": the model runs if and only if a risk has technique MODEL (6e, M9), and the floors
-// that used to force it now force a MODEL risk instead (MODEL_RISK_FOR; F1's half is 6c).
-const ARTIFACTS_FOR = { F1: ["Exploratory"], F2: ["Exploratory"], F3: ["Visual lane"], F8: ["Visual lane"],
-  F5: ["Coverage triage + regression"], F12: ["Exploratory"] };
+// that used to force it now force a MODEL risk instead (MODEL_RISK_FOR; F1's half is 6c). ARTIFACTS_FOR lives in
+// floors.mjs, beside the capability each row needs (vc-test spec §5.2).
 // A fired floor here needs its OWN risk: Source carries the token `floor:<id>`, technique is MODEL (M10). A risk carries
 // at most one such token. A fixed token, not a bare id, so a passing mention of "F10" in prose never counts.
 const MODEL_RISK_FOR = { F2: "a purpose", F10: "an org-context", F11: "a configuration" };
@@ -38,13 +37,40 @@ const SUSPICION_ID = /\bH-\d+\b/; // a hotspot id; S-n is a scenario (clause 13)
 const HELD_STATE = /\b(?:in[- ]memory|per[- ](?:instance|replica|pod))\b|\b(?:limit(?:er)?|counter|lockout|throttl\w*|rate[- ]?limit\w*|session(?: state)?)\s+(?:is|are)\s+(?:held|kept|stored|reset|shared|scoped|cached)\b/i;
 const productAnchor = (item) => [...item.matchAll(CODE_ANCHOR)].find((m) => !NOT_PRODUCT.test(m[1]))?.[0];
 const RISK_REF = /\bR-?\d+\b/;
+// A VISUAL risk names the instrument that decides it (floors.md §VISUAL; a visual row with no instrument is "look at
+// it", which decides nothing): `VISUAL:<instrument>[,<instrument>…]`, e.g. `VISUAL:DESIGN,PIXEL`. Only the technique
+// cell's leading token list is read (`FLOW, DT, VISUAL:PIXEL`); prose after it ("FLOW (not VISUAL)") is no token.
+// Case-insensitive, so `visual:pixel` is that token and a lowercase `visual` cannot slip past clause 4. Clauses 4 and 6
+// both read a technique through techniqueTokens(), so they never disagree on what it names.
+export const INSTRUMENTS = ["PIXEL", "DESIGN", "PROBE", "CONTENT"];
+const TOKEN = new RegExp(`\\s*([a-z][\\w-]*)(?::([^\\s,·()|]+(?:,[^\\s,·()|]+|\\s*,\\s*(?:${INSTRUMENTS.join("|")})\\b)*))?`, "iy");
+const TOKEN_SEP = /\s*[,·+/]\s*/y;
+// An instrument after anything but a comma (`VISUAL:DESIGN PIXEL`) would drop out of the list unseen: it is `stray`.
+const STRAY = new RegExp(`^\\s*[^,\\w\\s]?\\s*(${INSTRUMENTS.join("|")})\\b`, "i");
+export function techniqueTokens(raw) {
+  const cell = String(raw).replace(/`/g, ""); // a backticked `VISUAL` is still the token
+  const tokens = [];
+  for (let i = 0; ;) {
+    TOKEN.lastIndex = i;
+    const m = TOKEN.exec(cell);
+    if (!m) break;
+    const stray = m[2] === undefined ? null : STRAY.exec(cell.slice(TOKEN.lastIndex))?.[1]?.toUpperCase() ?? null;
+    tokens.push({ name: m[1].toUpperCase(), instruments: m[2] === undefined ? null : m[2].split(/\s*,\s*/).map((s) => s.toUpperCase()), stray });
+    TOKEN_SEP.lastIndex = TOKEN.lastIndex;
+    if (!TOKEN_SEP.test(cell)) break;
+    i = TOKEN_SEP.lastIndex;
+  }
+  return tokens;
+}
+const instrumentsOf = (technique) => techniqueTokens(technique).filter((t) => t.name === "VISUAL").flatMap((t) => t.instruments ?? []);
+const NOT_IN_INSTALL = /^SKIP\s*—\s*not available in this install/i;
 const WEAKENING = /record(?:s|ed|ing)?\b[^.·]*\bobserved|instead of assert|no PASS\/FAIL|never FAIL|not asserted/i;
 const escapeRe = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-export function checkStrategy(md, bundle, { domainMapText = null, p01Names, changeMap = null, changeMapPath = null } = {}) {
+export function checkStrategy(md, bundle, { domainMapText = null, p01Names, changeMap = null, changeMapPath = null, capabilities = null } = {}) {
   if (bundle?.schema !== "ticket-context/1") return { round: 0, errors: ["0: bundle is not a ticket-context/1 bundle"] };
   md = String(md).replace(/\r\n?/g, "\n"); // a CRLF checkout (core.autocrlf) reads the same as the LF file
-  const floors = computeFloors(bundle, { domainMapText, changeMap, ...(p01Names ? { p01Names } : {}) });
+  const floors = computeFloors(bundle, { domainMapText, changeMap, capabilities, ...(p01Names ? { p01Names } : {}) });
   const errors = [];
   const sec = lastRound(md);
   const head = /^## Round (\d+)/.exec(sec);
@@ -76,6 +102,11 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names, chan
     if (!a) { errors.push(`4: ${x.r} has no approach row`); continue; }
     if (!a.technique || !a.oracle || !a.lane) errors.push(`4: ${x.r} approach row lacks a technique, oracle or lane`);
     if (!/^\W*(low|medium|high)\b/i.test(a.effort)) errors.push(`4: ${x.r} effort "${a.effort}" is not low|medium|high`);
+    for (const t of techniqueTokens(a.technique).filter((y) => y.name === "VISUAL")) {
+      if (!t.instruments) errors.push(`4: ${x.r} technique VISUAL names no instrument — VISUAL:<${INSTRUMENTS.join("|")}>, several comma-separated: VISUAL:DESIGN,PIXEL (floors.md §VISUAL)`);
+      else if (t.stray) errors.push(`4: ${x.r} technique VISUAL:${t.instruments.join(",")} is followed by ${t.stray} without a comma — several instruments are one comma-separated token: VISUAL:DESIGN,PIXEL`);
+      else for (const i of t.instruments.filter((y) => !INSTRUMENTS.includes(y))) errors.push(`4: ${x.r} technique VISUAL names "${i}", not an instrument — ${INSTRUMENTS.join(", ")}; several are comma-separated: VISUAL:DESIGN,PIXEL`);
+    }
   }
   for (const a of approach) if (!registered.has(a.r)) errors.push(`4: approach row ${a.r} names no registered risk`);
   for (const a of approach) if (/\{HYPOTHESIS\}/.test(a.oracle) && !/\b(EXPLORE|MODEL)\b/.test(a.technique)) errors.push(`5: ${a.r} decides on a {HYPOTHESIS} oracle`);
@@ -89,14 +120,45 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names, chan
   // the follow-up in Out of scope (6h), not for the regression row.
   const vcTest = changeMap !== null;
   const requiredFor = (id) => (vcTest && id === "F5" ? [] : ARTIFACTS_FOR[id] ?? []);
+  // §5.2, only with capabilities: a row this install cannot run may read `SKIP — not available in this install: <cap>`
+  // when Out of scope names it; a skipped floor is named on the Floors line's `skipped:` part and in Out of scope.
+  const unavailable = new Map(capabilities ? Object.entries(ARTIFACT_NEEDS).map(([a, need]) => [a, need(capabilities)]).filter(([, cap]) => cap) : []);
+  const skippedFor = (name) => unavailable.has(name) && /^SKIP\s*—\s*not available in this install/i.test((artifacts.get(name) ?? "").trim());
+  const unnamed = new Set(); // a row reported once, whichever clause (6 or 6b) reached it first
+  const satisfied = (id, name) => {
+    if (running(name)) return true;
+    if (!skippedFor(name)) return false;
+    if (!new RegExp(escapeRe(name), "i").test(outOfScope) && !unnamed.has(name)) {
+      unnamed.add(name);
+      errors.push(`6s: ${id} needs '${name}', which is SKIP — not available in this install (${unavailable.get(name)}), but Out of scope does not name it`);
+    }
+    return true;
+  };
   for (const id of fired) {
     if (!new RegExp(`\\b${id}\\b`).test(firedLine)) errors.push(`6: ${id} fired but is not on the 'Floors fired:' line`);
-    for (const name of requiredFor(id)) if (!running(name)) errors.push(`6: ${id} fired but '${name}' is not RUN (SKIP, N/A, missing or other)`);
+    for (const name of requiredFor(id)) if (!satisfied(id, name)) errors.push(`6: ${id} fired but '${name}' is not RUN (SKIP, N/A, missing or other)`);
     if (MODEL_RISK_FOR[id] && !risks.some((x) => names(x, id) && isModel(x.r)))
       errors.push(`6: ${id} fired but no risk carries floor:${id} in its Source with technique MODEL (${MODEL_RISK_FOR[id]} risk, M10)`);
   }
+  const skippedLine = /^Floors fired:[^\n]*?\bskipped:([^\n]*)/m.exec(sec)?.[1] ?? "";
+  for (const f of floors.floors.filter((x) => x.skipped)) {
+    if (!new RegExp(`\\b${f.id}\\b[^·]*${escapeRe(f.skipped)}`).test(skippedLine)) errors.push(`6s: ${f.id} is skipped (${f.skipped}) but not on the 'Floors fired:' line's skipped part`);
+    if (!new RegExp(`\\b${f.id}\\b`).test(outOfScope)) errors.push(`6s: ${f.id} is skipped but Out of scope does not name it`);
+  }
+  // F8 on an EXISTING ui-kit surface needs a PIXEL risk (a design-system change moves components the ticket never
+  // names); a purely added surface has no base, so floors.mjs lists the requirement only for the former. With
+  // capabilities, an install that cannot run PIXEL keeps the risk, its Lane reads `SKIP — not available in this
+  // install: <cap>`, and Out of scope names PIXEL — 6s, as for an unavailable Artifacts row.
+  const pixelRows = approach.filter((a) => instrumentsOf(a.technique).includes("PIXEL"));
+  const pixelCap = capabilities ? ARTIFACT_NEEDS.PIXEL(capabilities) : null;
+  for (const a of pixelRows.filter((y) => NOT_IN_INSTALL.test(y.lane))) {
+    if (!pixelCap) errors.push(`6s: ${a.r} PIXEL is SKIP — not available in this install, but ${!capabilities ? "no --capabilities was given" : !capabilities.pixel ? "capabilities.json has no `pixel` (the install was not probed for it)" : "this install can run PIXEL"}`);
+    else if (!/\bPIXEL\b/.test(outOfScope)) errors.push(`6s: ${a.r} PIXEL is SKIP — not available in this install (${pixelCap}), but Out of scope does not name PIXEL`);
+  }
+  if (floors.floors.some((f) => f.id === "F8" && f.requires.includes(PIXEL_REQUIREMENT)) && !pixelRows.length)
+    errors.push("6: F8 fired on an existing ui-kit surface but no risk has a VISUAL technique naming PIXEL — a design-system change moves components the ticket never names");
   const high = risks.filter((x) => x.level === "high" || x.level === "critical");
-  if (high.length && !running("Exploratory")) errors.push(`6b: ${high.map((x) => x.r).join(", ")} High/Critical ⇒ Exploratory runs (F1)`);
+  if (high.length && !satisfied("6b", "Exploratory")) errors.push(`6b: ${high.map((x) => x.r).join(", ")} High/Critical ⇒ Exploratory runs (F1)`);
   for (const x of high) { const a = approach.find((y) => y.r === x.r); if (a && /\{HYPOTHESIS\}/.test(a.oracle) && !isModel(x.r)) errors.push(`6c: ${x.r} High/Critical on {HYPOTHESIS} needs MODEL (M1)`); }
   if (fired.includes("F6") && !/Deployed:\s*NO\b/.test(sec)) errors.push("6d: F6 fired but the header does not say 'Deployed: NO'");
   const modelRisks = risks.filter((x) => isModel(x.r)).map((x) => x.r);
@@ -171,13 +233,14 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names, chan
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const arg = (n) => { const i = process.argv.indexOf(`--${n}`); return i < 0 ? null : process.argv[i + 1]; };
-  if (!arg("strategy") || !arg("bundle")) { console.error("usage: check-strategy.mjs --strategy <md> --bundle <json> [--change-map <json>]"); process.exit(1); }
+  if (!arg("strategy") || !arg("bundle")) { console.error("usage: check-strategy.mjs --strategy <md> --bundle <json> [--change-map <json>] [--capabilities <json>]"); process.exit(1); }
   let md;
   try { md = readFileSync(arg("strategy"), "utf8"); } catch (e) { console.error(`check-strategy.mjs: cannot read ${arg("strategy")} (${e.code ?? e.message})`); process.exit(2); }
   const bundle = readJsonOrExit(arg("bundle"), "check-strategy.mjs");
   const changeMapPath = arg("change-map") || null;
   const changeMap = changeMapPath ? (readJsonOrExit(changeMapPath, "check-strategy.mjs") ?? {}) : null; // a `null` file is a map in doubt
-  const res = checkStrategy(md, bundle, { domainMapText: domainMapTextOf(bundle), p01Names: p01NamesOf(), changeMap, changeMapPath });
+  const capabilities = arg("capabilities") ? readCapabilitiesOrExit(arg("capabilities"), "check-strategy.mjs") : null;
+  const res = checkStrategy(md, bundle, { domainMapText: domainMapTextOf(bundle), p01Names: p01NamesOf(), changeMap, changeMapPath, capabilities });
   console.log(JSON.stringify(res, null, 2));
   process.exit(res.errors.length ? 1 : 0);
 }

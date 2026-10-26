@@ -121,6 +121,11 @@ Treat neither surface as the other's proxy. And remember the hosted Storybook is
 which of the two owns a finding — reproduces in a story ⇒ Storybook; only once composed into a page ⇒
 accessibility.
 
+**This class also takes `PIXEL`** ([`visual-axis.md`](visual-axis.md) §2a). A token or a shared component
+moves components the ticket never names. In the 2026-10-23 spike, two 2 px edits changed stories in 14
+components. The carrier matrix above checks what the change intends; `/qa-visual-regression` finds
+what else it moved.
+
 ## 7. The checklist is the ONLY durable record, so a blank row is a defect
 
 With Artifact A skipped there is no case corpus to fall back on and no `4c` run to point at. Everything this

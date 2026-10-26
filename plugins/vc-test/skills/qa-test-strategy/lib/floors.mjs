@@ -43,10 +43,62 @@ const F2_REQUIRES = ["a purpose risk with technique MODEL, Source carrying floor
 
 const floor = (id, fired, signal, requires = []) => ({ id, fired, signal, requires: fired ? requires : [] });
 
+// The Artifacts rows a fired floor needs RUN (check-strategy clause 6), and the capability each row needs in this
+// install (vc-test spec §5.2: what the install cannot run is a named SKIP, never a doubt).
+export const ARTIFACTS_FOR = { F1: ["Exploratory"], F2: ["Exploratory"], F3: ["Visual lane"], F8: ["Visual lane"],
+  F5: ["Coverage triage + regression"], F12: ["Exploratory"] };
+// Only a probe that ran says a tool is missing: the MCP list capabilities.mjs was given (`mcp`; a 0.4.0 file has only
+// its `mcp:<name>` keys), else null — unprobed reads as available, so the row stays required.
+const probedMcp = (c) => {
+  if (Array.isArray(c.mcp)) return c.mcp.map(String);
+  const named = Object.keys(c).filter((k) => k.startsWith("mcp:") && c[k] === true).map((k) => k.slice(4));
+  return named.length ? named : null;
+};
+const lacks = (c, re, cap) => { const m = probedMcp(c); return m && !m.some((n) => re.test(n)) ? cap : null; };
+export const ARTIFACT_NEEDS = {
+  Exploratory: (c) => lacks(c, /playwright/i, "a browser lane (mcp:playwright-*)"),
+  "Visual lane": (c) => lacks(c, /chrome[-_ ]?dev[-_ ]?tools/i, "mcp:chrome-devtools"),
+  "Coverage triage + regression": (c) => (c.scripts?.["regression-select"] === false ? "regression-select" : null),
+  // Not an Artifacts row: F8's PIXEL risk (PIXEL_REQUIREMENT). Unprobed (no `pixel` key) is not unavailable.
+  PIXEL: (c) => (!c.pixel ? null : !c.pixel.engine ? "pixel-engine (the vc-frontend plugin's visual/)"
+    : !c.pixel.checkouts?.length ? "a front checkout (the project root or .fix-workspace/<repo>)" : null),
+};
+export const PIXEL_REQUIREMENT = "VISUAL:PIXEL risk";
+
+/**
+ * "Unavailable is not doubt" (§5.2), only when the caller passes capabilities.json. F5 fired on doubt only because the
+ * install has no regression corpus becomes `skipped`; any other fired floor stays fired and lists, as `unavailable`,
+ * the required rows this install cannot run (the strategy may SKIP those rows, naming them in Out of scope).
+ */
+function applyCapabilities(floors, bundle, caps) {
+  const lookupGaps = (bundle.gaps ?? []).filter((g) => (g.where.startsWith("known.regression:select") || g.where.startsWith("known.tc:scope"))
+    && g.where !== "known.tc:scope.observables"); // a name the step could not pass on is not a lookup that ran
+  // A lookup that ran and failed is doubt whatever capabilities.json says: only "not declared" is unavailability.
+  const ranAndFailed = lookupGaps.some((g) => g.reason !== "not-available-in-install");
+  // No domain (or a dropped observable) kept tc:scope from looking: doubt, unless tc:scope is missing as well.
+  const scopeDoubt = (bundle.gaps ?? []).some((g) => g.where === "known.domain" || g.where === "known.tc:scope.observables");
+  const noScope = caps.scripts?.["tc-scope"] === false || lookupGaps.some((g) => g.where === "known.tc:scope" && g.reason === "not-available-in-install");
+  const noCorpus = !ranAndFailed && (!scopeDoubt || noScope) && (lookupGaps.length > 0 || caps.scripts?.["regression-select"] === false);
+  return floors.map((f) => {
+    if (!f.fired) return f;
+    if (f.id === "F5" && /^doubt:/.test(f.signal) && !(bundle.known?.cases_at_risk ?? []).length && noCorpus) {
+      return { ...f, fired: false, skipped: "regression-select", signal: `not available in this install: regression-select (${f.signal})`, requires: [] };
+    }
+    const needed = [...(ARTIFACTS_FOR[f.id] ?? []), ...(f.requires.includes(PIXEL_REQUIREMENT) ? ["PIXEL"] : [])];
+    const unavailable = needed.map((artifact) => ({ artifact, capability: ARTIFACT_NEEDS[artifact]?.(caps) ?? null })).filter((u) => u.capability);
+    return unavailable.length ? { ...f, unavailable } : f;
+  });
+}
+
 /** A PR closed without merge never shipped: it is not change surface (check-bundle counts it out the same way). */
 export const isAbandoned = (p) => p.state === "closed" && p.merged === false;
 
-export function computeFloors(bundle, { domainMapText = null, p01Names = P01_DEFAULT, changeMap = null } = {}) {
+export function computeFloors(bundle, { domainMapText = null, p01Names = P01_DEFAULT, changeMap = null, capabilities = null } = {}) {
+  const result = baseFloors(bundle, { domainMapText, p01Names, changeMap });
+  return capabilities ? { ...result, floors: applyCapabilities(result.floors, bundle, capabilities) } : result;
+}
+
+function baseFloors(bundle, { domainMapText, p01Names, changeMap }) {
   const fields = bundle.fields ?? {};
   const p01 = new Set(p01Names.map((n) => String(n).toLowerCase()));
   const prs = (bundle.change?.prs ?? []).filter((p) => !p.context_only && !p.gap && !isAbandoned(p));
@@ -112,8 +164,14 @@ export function computeFloors(bundle, { domainMapText = null, p01Names = P01_DEF
     : floor("F7", /^review task$/i.test(fields.type), `type ${fields.type}`, ["oracles from the diff only", "F5 on"]);
 
   const kit = paths.filter((p) => UI_KIT.test(p));
+  // PIXEL never takes a new surface (it has no base build): a ui-kit path every PR that lists it ADDS (the bundle's
+  // `added`, from the files API) asks for no PIXEL risk. A PR without that list reads as modifying — fails closed.
+  const sameFile = (a, b) => a === b || a.endsWith(`/${b}`) || b.endsWith(`/${a}`);
+  const addedBy = (p, path) => Array.isArray(p.added) && p.added.some((a) => sameFile(String(a), path));
+  const existing = kit.filter((path) => prs.some((p) => Object.values(p.layers ?? {}).flat().includes(path) && !addedBy(p, path)));
   // Fails closed on what was NOT read; a ui-kit path in the part that was read still fires it.
-  const f8 = kit.length ? floor("F8", true, `ui-kit files: ${kit.slice(0, 3).join(", ")}`, ["visual lane", "token audit"])
+  const f8 = kit.length ? floor("F8", true, `ui-kit files: ${kit.slice(0, 3).join(", ")}${existing.length ? "" : " (all added: a new surface, no PIXEL)"}`,
+    ["visual lane", "token audit", ...(existing.length ? [PIXEL_REQUIREMENT] : [])])
     : floor("F8", false, diffUnread ? `${diffUnread} — F8 fails closed (ticket-routing §5c)` : "no ui-kit file");
 
   const org = surface.match(ORG);
@@ -147,6 +205,15 @@ export function readJsonOrExit(path, script) {
     process.exit(2);
   }
 }
+/** capabilities.json, or exit 2 when it is not an object (`null`, a list) or its `mcp` / `scripts` have the wrong shape:
+ *  a malformed file must not read as "nothing available". */
+export function readCapabilitiesOrExit(path, script) {
+  const c = readJsonOrExit(path, script);
+  const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+  if (isObj(c) && (c.mcp === undefined || Array.isArray(c.mcp)) && (c.scripts === undefined || isObj(c.scripts))) return c;
+  console.error(`${script}: ${path} is not a capabilities object (capabilities.mjs output)`);
+  process.exit(2);
+}
 /** The domain map a bundle names, or null when it has none or the file is gone (F2 then fires on doubt). The path is
  *  repo-relative: tried against the working directory, then against this skill's repo, so any cwd gets one answer. */
 export function domainMapTextOf(bundle) {
@@ -164,9 +231,11 @@ export function p01NamesOf() {
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const i = process.argv.indexOf("--bundle");
-  if (i < 0 || !process.argv[i + 1]) { console.error("usage: floors.mjs --bundle <bundle.json> [--change-map <change-map.json>]"); process.exit(1); }
+  if (i < 0 || !process.argv[i + 1]) { console.error("usage: floors.mjs --bundle <bundle.json> [--change-map <change-map.json>] [--capabilities <capabilities.json>]"); process.exit(1); }
   const bundle = readJsonOrExit(process.argv[i + 1], "floors.mjs");
   const m = process.argv.indexOf("--change-map");
   const changeMap = m < 0 ? null : (readJsonOrExit(process.argv[m + 1], "floors.mjs") ?? {}); // a `null` file is a map in doubt
-  console.log(JSON.stringify(computeFloors(bundle, { domainMapText: domainMapTextOf(bundle), p01Names: p01NamesOf(), changeMap }), null, 2));
+  const c = process.argv.indexOf("--capabilities");
+  const capabilities = c < 0 ? null : readCapabilitiesOrExit(process.argv[c + 1], "floors.mjs");
+  console.log(JSON.stringify(computeFloors(bundle, { domainMapText: domainMapTextOf(bundle), p01Names: p01NamesOf(), changeMap, capabilities }), null, 2));
 }
