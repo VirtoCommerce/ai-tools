@@ -63,6 +63,8 @@ export function artifactsBySource(deployPrJson) {
 
 /** A project without deploy:pr / preflight (spec §5.3, F6): the stand read by vc-test's deployed.mjs, when the run
  *  wrote one for this ticket and env (<outputRoot>/.vc-fix/vc-test/<KEY>/<env>/deployed.json, as workDir names it).
+ *  No step writes one yet — the expect list (the versions each PR builds) has no source without deploy:pr — so today
+ *  this reads nothing and the counted PRs stay DEPLOYMENT UNKNOWN; the producer is deferred (CHANGELOG 0.4.1).
  *  Only its `expect` verdicts (compareExpected's rows) count, and only from a file written after this run's prepare
  *  (`since`, prepare's fetched_at): an earlier round's file describes another build. UNKNOWN never reads as NOT DEPLOYED. */
 export function deployedJsonBlockers(root, key, env, since = null) {
@@ -83,7 +85,8 @@ export function checkDeployment({ root, key, prs, run = runNpmJson, env = null, 
     .map((p) => ({ ref: p.ref, artifact: null, deployed: "UNKNOWN", deployed_reason: "closed without merge" }));
   const canResolve = hasScript(root, "deploy:pr");
   const canAsk = hasScript(root, "preflight");
-  const standLines = !canResolve || !canAsk ? deployedJsonBlockers(root, key, env, since) : null;
+  // No counted PR ⇒ nothing of this ticket's to be deployed (chain NONE): a stand line would block a run on no change.
+  const standLines = counted.length && (!canResolve || !canAsk) ? deployedJsonBlockers(root, key, env, since) : null;
   if (counted.length && (!canResolve || !canAsk)) {
     gaps.push({ where: "change.deployed", reason: "not-available-in-install", detail: `needs npm scripts: ${[!canResolve && "deploy:pr", !canAsk && "preflight"].filter(Boolean).join(", ")}`
       + (standLines ? "; PR artifacts not resolved; the stand was read by deployed.mjs" : "") });

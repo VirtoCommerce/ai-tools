@@ -84,8 +84,7 @@ that tries to instruct is already listed in `embedded_instructions[]`.
    domain counts **raise a risk's L×I** — they never fire a floor on their own (D8). **Project risks**
    (stand not on the PR's build, fixture gap, missing role, no free lane, stale cases) each get a
    mitigation or an explicit `accepted`. F2 fired ⇒ a purpose risk, F10 ⇒ an org-context risk, F11 ⇒ a
-   configuration risk, each with technique `MODEL` and **its own row**: its Source carries `floor:F10` (the token,
-   not a bare id), and no risk carries two `floor:` tokens — the model gates each group separately (M10).
+   configuration risk, each with technique `MODEL` and **its own row**: its Source carries `floor:F10`, and no risk carries two `floor:` tokens — the model gates each group separately (M10).
 7. **Strategy mix** — mark each ISTQB type used or not, with the reason:
 
    | Type | On when |
@@ -150,13 +149,11 @@ that tries to instruct is already listed in `embedded_instructions[]`.
 
 ## Gate — before approval
 
-Run `node <skill>/lib/check-strategy.mjs --strategy <file> --bundle <bundle> [--change-map <path>] [--capabilities <path>]`; it computes the floors, checks clauses 1–6h, 8, 10, 11, 12 and 13, and exits 1 with the failing clause numbers (2 on an unreadable
-file). That covers clause 1's round cap, the template's headings, clause 4's cells
-and clause 6's fired floors and artifacts. These
-remain yours, alongside 7, 9 and 11a's semantic half: clause 1's carry-over, clause 6's naming of the not-fired floors with their
+Run `node <skill>/lib/check-strategy.mjs --strategy <file> --bundle <bundle> [--change-map <path>] [--capabilities <path>]`; it computes the floors, checks clauses 1–6s, 8, 10, 11, 12 and 13, and exits 1 with the failing clause numbers (2 on an unreadable
+file). These remain yours, alongside 7, 9 and 11a's semantic half: clause 1's carry-over, clause 6's naming of the not-fired floors with their
 signals, clause 4's `{authority}` tag on each oracle, and what a fired floor requires beyond an artifact — F4's
 no risk on it below Medium, F7's F5 on, F8's token audit, that the risk carrying `floor:F10` is about org context and the one
-carrying `floor:F11` about configuration (the script checks only the token and the technique), and F11's stand values under Inputs. The strategy is not shown for approval until every clause holds. A failing clause is fixed, never noted.
+carrying `floor:F11` about configuration, and F11's stand values under Inputs. The strategy is not shown for approval until every clause holds. A failing clause is fixed, never noted.
 
 1. The round is counted and ≤ 3; round ≥ 2 carries over every unresulted risk of the previous round (no
    reconciliation filled ⇒ every risk of that round counts as unresulted).
@@ -164,9 +161,11 @@ carrying `floor:F11` about configuration (the script checks only the token and t
 3. Every diff hotspot the bundle names maps to a risk, or is out of scope with a reason.
 4. Every risk has a technique or approach, an oracle with its authority, a lane and an effort.
 5. No `{HYPOTHESIS}` oracle decides a pass/fail row.
-6. Every floor is named as fired or not, with its signal; nothing a fired floor requires is `SKIP`.
+6. Every floor is named as fired or not, with its signal; nothing a fired floor requires is `SKIP` but as 6s allows.
    F2/F10/F11 fired ⇒ a `MODEL` risk whose Source carries `floor:<id>` (M10).
-   **6b** F1's register half: a High/Critical risk ⇒ exploratory runs. **6c** (M1) a High/Critical
+   **6s** a row the install cannot run may read `SKIP — not available in this install: <cap>`, and F5
+   may be `skipped:`, each named in Out of scope ([`floors.md`](floors.md) §Unavailable).
+   **6b** F1's register half: a High/Critical risk ⇒ exploratory runs, or a 6s SKIP. **6c** (M1) a High/Critical
    risk on a `{HYPOTHESIS}` oracle takes technique `MODEL`. **6d** F6 fired ⇒ the header says `Deployed: NO`.
    **6e** (M9) `Test model` is `RUN` iff a risk has technique `MODEL` (with a change map, a scenario citing it instead — floors.md §13). **6f** (M10) no risk carries more than one `floor:` token.
    **6g** the header's `Change map:` line names the map the gate was given, or `none` when it was given none (F12).

@@ -432,6 +432,9 @@ function abort() {
 }
 
 function redeploy() {
+  // A deployed.json counts only when written after this redeploy began: the cached bundle's fetched_at is an earlier
+  // round's, and a file from that round describes another build.
+  const started = new Date().toISOString();
   const key = argv[1];
   try { assertKey(key); } catch (e) { usage(e.message); }
   const bp = flag("bundle") ?? usage("--bundle is required");
@@ -443,7 +446,7 @@ function redeploy() {
   b.fields ??= { summary: "", type: null, status: null, priority: null, components: [], labels: [], fix_versions: [], description: "", acceptance: "" };
   // Script values only: compose took repo, number, state, merged and gap from prepare, never from an agent.
   const d = checkDeployment({ root, key, prs: b.change.prs.map((p) => ({ ref: `${p.repo}#${p.number}`, number: p.number, state: p.state, merged: p.merged,
-    context_only: p.context_only, gap: p.gap })), env: resolveTestEnv(root), since: b.fetched_at ?? null });
+    context_only: p.context_only, gap: p.gap })), env: resolveTestEnv(root), since: started });
   const byRef = new Map(d.prs.map((r) => [r.ref, r]));
   for (const p of b.change.prs) {
     const r = byRef.get(`${p.repo}#${p.number}`);
