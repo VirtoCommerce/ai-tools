@@ -30,7 +30,12 @@
 
 ## Status (2026-10-26)
 
-**A1–A3 merged in #521, B1–B6 in #520; B7 is open.** The gate check of A1 Step 3 was re-run on 2026-10-26 against
+**Closed 2026-10-26 (spec U69).** A1–A3 merged in #521, B1–B6 in #520. **B7 is not run**, by the owner's decision:
+the scenario flow was already run on VCST-5904 (spec §2b), and vcst had moved off the pinned build (theme replaced by
+`vc-frontend#2595`, MFA at `dd9b`). The §2c rows without a result are measured in P3. The rest of this section is the
+state as it was before that decision.
+
+**Before the decision:** The gate check of A1 Step 3 was re-run on 2026-10-26 against
 the prototype's strategy: it fails 11b on P5 and P10, 11a on P9 and 12 on H-23, H-25, H-34 and H-50, which are the
 causes of the X5 miss. The same run lists ~80 `6h` errors (each regression suite at risk must be named in Out of
 scope). That is a cost for the strategy writer on a wide domain such as auth.
