@@ -143,10 +143,11 @@ change, no version bump.
   320/375/768/1280, themes. **Needs a reachable stand**: a case is promoted only after it ran there (and, per
   `cases-that-catch-bugs.md`, after it failed once on the bug it targets).
 
-### Phase 6 — vc-frontend CI (frontend team)
+### Phase 6 — vc-frontend CI — not doing (decided 2026-10-26)
 
-- `PIXEL` on every PR in vc-frontend, pinned Linux image, baselines owned there. Until then the base
-  is a build of the PR's base commit, shot in the same run.
+- Dropped: no `PIXEL` gate on every vc-frontend PR, no pinned image, no stored baselines. `PIXEL` stays an
+  instrument the strategy picks where it pays, and its base is always a build of the PR's base commit, shot in
+  the same run.
 
 ## Constraints
 
