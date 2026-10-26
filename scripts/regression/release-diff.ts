@@ -20,29 +20,37 @@
  *
  * STATUS per component: `NEW` (only in --to) · `REMOVED` (only in --from) · `SAME` (same version) ·
  * `REBUILD` (versions differ, no code file) · `CODE` (versions differ, code changed) ·
- * `UNRESOLVED` (no repo mapping, or the compare failed — read `note`).
+ * `UNRESOLVED` (no repo mapping, the compare failed or was refused, or the new version is BEHIND the old one — a
+ * downgrade, whose forward compare lists nothing — read `note`).
  *
  * --suites asks `regression:select` (the deterministic change→suite mapper) for the candidate suites
  * of every CODE component, from its changed code files. Candidates, not the plan: a release plan
  * also covers NEW modules and cross-cutting suites the file paths cannot name.
  *
- * Repos come from `config/module-repo-map.json` (the same map `bundle:check` uses). Token: GIT_TOKEN /
- * GITHUB_TOKEN from `.env.local`; without one GitHub allows 60 calls an hour, which a full diff exceeds.
+ * Repos come from `config/module-repo-map.json` (the same map `bundle:check` uses), read next to this script —
+ * it is the script's own data. The project (env files, the suite manifest) is QA_RUN_HOME, else the working
+ * directory, as in `release:status`. Token: GIT_TOKEN / GITHUB_TOKEN (scripts/lib/github-token.ts); without one
+ * GitHub allows 60 calls an hour, which a full diff exceeds.
  *
- * Exit codes: 0 diff produced · 1 bad usage · 2 a bundle could not be read or GitHub refused.
+ * Exit codes: 0 diff produced · 1 bad usage · 2 a bundle could not be read, or GitHub's rate limit ran out. Any
+ * other refusal of one compare (a 403 on a private repo, a missing tag) makes that component UNRESOLVED.
  */
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail
-import { parse as parseDotenv } from "dotenv";
-import { classifyLane } from "../../ci/lib/lane-classifier.js";
-import { firefoxClickOk, loadManifest } from "../../ci/lib/suite-manifest.js";
-import { resolveSuiteSource } from "../test-cases/suite-source-map.js";
-import { selectSuites, type SelectableSuite } from "../lib/suite-selection.js";
+import { firefoxClickOk, loadManifest, MANIFEST_PATH } from "../../ci/lib/suite-manifest.js";
+import { selectSuites } from "../lib/suite-selection.js";
+import { loadGithubToken } from "../lib/github-token.js";
+import { CONCURRENCY, selectableSuites, suiteReposOf } from "./select-suites.js";
 
 const OWNER = "VirtoCommerce";
 const BUNDLE_REPO = "vc-modules";
-const REPO_ROOT = resolve(import.meta.dirname, "../..");
+// The PROJECT (env files, the suite manifest): QA_RUN_HOME, else the working directory — as release-status resolves it.
+const PROJECT_ROOT = resolve(process.env.QA_RUN_HOME || process.cwd());
+// This script's own data (config/module-repo-map.json) sits next to it. fileURLToPath, not import.meta.dirname
+// (Node >= 20.11): the repo supports Node 18.
+const SCRIPT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
 interface Args {
   from: string;
@@ -98,18 +106,8 @@ function parseArgs(argv: readonly string[]): Args {
   return a;
 }
 
-function loadToken(): string | undefined {
-  // Same layered read as bundle:check: config.js is not imported because its validator exits on
-  // test-only variables this script does not need.
-  for (const f of [".env.defaults", ".env.local"]) {
-    const p = join(REPO_ROOT, f);
-    if (!existsSync(p)) continue;
-    for (const [k, v] of Object.entries(parseDotenv(readFileSync(p)))) if (!process.env[k]) process.env[k] = v;
-  }
-  return process.env.GIT_TOKEN || process.env.GITHUB_TOKEN || process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
-}
-
-const TOKEN = loadToken();
+// config.js is not imported: its validator exits on test-only variables this script does not need.
+const TOKEN = loadGithubToken(PROJECT_ROOT);
 function headers(accept = "application/vnd.github+json"): Record<string, string> {
   const h: Record<string, string> = { Accept: accept, "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "vc-release-diff" };
   if (TOKEN) h.Authorization = `Bearer ${TOKEN}`;
@@ -118,7 +116,9 @@ function headers(accept = "application/vnd.github+json"): Record<string, string>
 
 async function getJson(url: string): Promise<{ status: number; body: any }> {
   const res = await fetch(url, { headers: headers() });
-  if (res.status === 403 || res.status === 429) {
+  // Only an exhausted rate limit stops the whole diff — every later call would fail the same way. Any other 403
+  // (a private repo, a token without access) is about ONE repo and comes back as that component's UNRESOLVED.
+  if (res.status === 429 || (res.status === 403 && res.headers.get("x-ratelimit-remaining") === "0")) {
     throw new Error(`GitHub refused (HTTP ${res.status}, remaining=${res.headers.get("x-ratelimit-remaining")})${TOKEN ? "" : " — set GIT_TOKEN in .env.local"}`);
   }
   return { status: res.status, body: res.status === 200 ? await res.json() : null };
@@ -173,7 +173,11 @@ const MAX_COMMITS = 250; // …and its commit-list cap
 async function compare(c: Component): Promise<DiffEntry> {
   if (!c.repo) return { ...c, status: "UNRESOLVED", note: "no repo in config/module-repo-map.json" };
   const { status, body } = await getJson(`https://api.github.com/repos/${OWNER}/${c.repo}/compare/${c.from}...${c.to}`);
-  if (status !== 200) return { ...c, status: "UNRESOLVED", note: `compare ${c.from}...${c.to} → HTTP ${status} (missing tag?)` };
+  if (status !== 200) return { ...c, status: "UNRESOLVED", note: `compare ${c.from}...${c.to} → HTTP ${status} (${status === 403 ? "no access to the repo?" : "missing tag?"})` };
+  // A downgrade: the forward compare lists no files, which would read as REBUILD — but code DID change (back).
+  if (body.status === "behind") {
+    return { ...c, status: "UNRESOLVED", note: `downgrade: ${c.to} is behind ${c.from} (${body.behind_by ?? "?"} commits reverted) — compare ${c.to}...${c.from} by hand` };
+  }
   const raw: { filename: string; patch?: string }[] = (body.files ?? []).map((f: any) => ({ filename: String(f.filename), patch: f.patch }));
   const commits: string[] = (body.commits ?? []).map((k: any) => String(k.commit?.message ?? "").split("\n")[0]);
   const codeFiles = raw.filter((f) => isCode(f.filename, f.patch)).map((f) => f.filename);
@@ -195,33 +199,18 @@ async function compare(c: Component): Promise<DiffEntry> {
  * The suites `regression:select` maps a component's changed code files to. Only `change` reasons
  * are kept: the selector also tops a selection up with the risk floor and a staleness rotation,
  * which are right for one PR and noise for a per-module release table. Built the way
- * `select-suites.ts` builds its input, so the two cannot disagree about a suite.
+ * `select-suites.ts` builds its input — with its own exported builder — so the two cannot disagree about a suite.
  */
 function makeSuiteMapper(): (e: DiffEntry) => string[] {
-  const manifest = loadManifest();
-  const suites: SelectableSuite[] = manifest.suites.map((s) => {
-    const raw = s as unknown as Record<string, unknown>;
-    return {
-      id: s.id, name: s.name, file: s.file,
-      domain: raw.domain as string | undefined, layer: raw.layer as string | undefined,
-      priority: raw.priority as string | undefined, tags: raw.tags as string[] | undefined,
-      testCount: s.testCount, estimatedMinutes: raw.estimatedMinutes as number | undefined,
-      requiresModules: raw.requiresModules as string[] | undefined, clickDriven: raw.clickDriven as boolean | undefined,
-      runner: raw.runner as string | undefined, preferredBrowser: raw.preferredBrowser as string | undefined,
-      lane: classifyLane({ file: s.file, runner: raw.runner as string | undefined }),
-    };
-  });
-  const suiteRepos = new Map<string, readonly string[]>();
-  for (const s of manifest.suites) {
-    const req = ((s as unknown as Record<string, unknown>).requiresModules as string[] | undefined) ?? [];
-    suiteRepos.set(s.id, resolveSuiteSource(s.id, req).repos);
-  }
+  const manifest = loadManifest(join(PROJECT_ROOT, MANIFEST_PATH));
+  const suites = selectableSuites(manifest);
+  const suiteRepos = suiteReposOf(manifest);
   return (e) => {
     if (e.status !== "CODE" || !e.repo || !e.codeFiles?.length) return [];
     const r = selectSuites({
       suites, suiteRepos, history: [], rotation: [], rotationCount: 0, targetMinutes: null,
       changed: e.codeFiles.map((path) => ({ repo: e.repo!, path })),
-      concurrency: { browser: 3, fastpath: 4, deterministic: 2 },
+      concurrency: CONCURRENCY,
       firefoxClickOk: firefoxClickOk(manifest),
     });
     return r.selected.filter((s) => s.reasons.some((x) => x.kind === "change")).map((s) => s.id);
@@ -239,7 +228,7 @@ async function pool<T, R>(items: T[], size: number, fn: (t: T) => Promise<R>): P
 
 async function main(): Promise<number> {
   const a = parseArgs(process.argv.slice(2));
-  const map = JSON.parse(readFileSync(join(REPO_ROOT, "config/module-repo-map.json"), "utf-8")) as RepoMap;
+  const map = JSON.parse(readFileSync(join(SCRIPT_ROOT, "config/module-repo-map.json"), "utf-8")) as RepoMap;
   let fromB: any, toB: any;
   try {
     [fromB, toB] = await Promise.all([readBundle(a.from, a.fromRef), readBundle(a.to, a.toRef)]);
