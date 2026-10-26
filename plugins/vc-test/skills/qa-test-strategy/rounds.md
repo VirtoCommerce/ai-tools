@@ -10,7 +10,7 @@ stands**: a round on another environment still counts.
 **Counting.** A round is any of: a `summary.json` in a run folder of the ticket
 (`npm run --silent run:dir -- --ticket <TICKET> --prior`: every env, wherever `QA_OUTPUT_DIR` puts them) or
 under `reports/tickets/*/<TICKET>/` on any branch (`git log --all`), a round section in the ticket's `test-strategy.md`, or a QA verdict comment on the
-ticket (a "QA Complete" / PASS / FAIL / PASS WITH NOTES heading), read from the `/ticket-context` bundle's
+ticket (a "QA Complete" / PASS / FAIL / PASS WITH NOTES heading), read from the `/vc-test:ticket-context` bundle's
 `signals[]` — never from a tracker fetch of this skill's own. Count distinct builds, not comments: two
 comments about the same build are one round. Record the rounds found and their builds in the section header.
 

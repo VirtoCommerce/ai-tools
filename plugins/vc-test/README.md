@@ -7,8 +7,8 @@ background. After that come triage, a Medium-only investigation, and a verdict t
 per step.
 
 **Preview.** `/vc-test:ticket-context` and `/vc-test:qa-test-strategy` are this plugin's own code, but both still
-read documents that live only in a checkout of `ai-tools`: `/qa-test-strategy` its technique vocabulary, risk framework,
-data rules and visual-axis floors (P2 moves them); `/ticket-context` some repository scripts (P1d-3). `/vc-test:qa-ticket`
+read documents that live only in a checkout of `ai-tools`: `/vc-test:qa-test-strategy` its technique vocabulary, risk framework,
+data rules and visual-axis floors (P2 moves them); `/vc-test:ticket-context` some repository scripts (P1d-3). `/vc-test:qa-ticket`
 also calls triage and investigation from there. `/vc-test:init` and the scripts below work in any project.
 
 ## Install

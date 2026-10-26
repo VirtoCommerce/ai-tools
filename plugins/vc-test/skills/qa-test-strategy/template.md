@@ -1,6 +1,6 @@
 # Test strategy — <TICKET>
 
-<!-- Shape for /qa-test-strategy; lib/check-strategy.mjs reads it. Write a Decision cell as plain `RUN` (not bold) and a risk
+<!-- Shape for /vc-test:qa-test-strategy; lib/check-strategy.mjs reads it. Write a Decision cell as plain `RUN` (not bold) and a risk
      Level as Critical | High | Medium | Low, in full words. More than 3 lanes ⇒ add a `Lanes sequenced:` line.
      ONE file per ticket (D7), one "## Round N" section per round, newest last.
      Each round section's size cap: the reports policy §2 (D9). Method, floors, rounds:

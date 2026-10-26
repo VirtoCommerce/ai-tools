@@ -12,7 +12,7 @@ Dispatch C first when it is due (background, its own browser lane), then run
 ACs with provenance, comment signals, every attachment, inline image and link with an outcome, design
 conditions, the PRs (only product-repo PRs are change surface), PR↔AC both ways, whether each PR is
 deployed on this stand, known ground, gaps and blockers. Do not re-fetch the ticket or a PR, and do not
-re-check deployment: the bundle is the answer. **When `/ticket-context` STOPs** (no tracker credential,
+re-check deployment: the bundle is the answer. **When `/vc-test:ticket-context` STOPs** (no tracker credential,
 a failed gate, a run dir outside the project), Stage 1 is `BLOCKED` and the verdict quotes its STOP line
 verbatim — never a FAIL, and never a model built from a partial read.
 
@@ -29,7 +29,7 @@ the trigger is this section's heading. The state is decided by [`../qa-test/axes
 
 ## Join 1 — the context bundle
 
-The bundle is `/ticket-context`'s file; it is never copied under `reports/` (not a report category), and
+The bundle is `/vc-test:ticket-context`'s file; it is never copied under `reports/` (not a report category), and
 **no consumer ever writes it**: it is schema-gated and cached, so run-derived state has no field there.
 That state goes to the **run context**, a file in this run's scratchpad that names the bundle path. It
 holds `visual_surface` + `surface_source[]`, C's domain-map result, the map signals, contract-refresh
@@ -52,8 +52,8 @@ touches goes into the run context as a model input.
 
 Run [`/vc-test:qa-test-strategy`](../../../plugins/vc-test/skills/qa-test-strategy/SKILL.md) inline, from its procedure step 2, with the bundle
 path — you counted the round from local evidence at Step 0.6; run its step 1's **second** count here (the
-bundle's `signals[]` verdict comments; a fourth round ⇒ its STOP) and then step 2 onward. The bundle is `/ticket-context`'s, so it never runs a
-second `/preflight` or `/ticket-context`. Its gate (`check-strategy.mjs`), its verifier on a Critical risk
+bundle's `signals[]` verdict comments; a fourth round ⇒ its STOP) and then step 2 onward. The bundle is `/vc-test:ticket-context`'s, so it never runs a
+second `/preflight` or `/vc-test:ticket-context`. Its gate (`check-strategy.mjs`), its verifier on a Critical risk
 and its one approval question all run as that skill says; `--dry-run` still asks. Never dispatch it — it
 chooses from the whole bundle. Write the approved path into the run context. From here the round's
 `### Artifacts` table decides what runs: a `SKIP` row is recorded in `verdict.md` with its reason (rule 4),

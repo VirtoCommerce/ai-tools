@@ -56,7 +56,7 @@
     "Exploratory": "U65 — the free class-3 scenario in the Scenarios list",
     "Mind map": "U43 — read only in a run",
     "Coverage triage + regression": "U7 — no regression in vc-test",
-    "Verifier": "run by /qa-test-strategy before approval",
+    "Verifier": "run by /vc-test:qa-test-strategy before approval",
     "Case authoring": "U18 — kept .spec is out of the prototype"
   }
 }

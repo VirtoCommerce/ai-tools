@@ -52,7 +52,7 @@ the domain map, mind map and GraphQL schema it builds or refreshes included (lay
    the deployed build, `{SPRINT}`, the duplicate check (its row says "same build" / "different build" when
    both runs probed the deployed modules) and MCP availability, and runs its own remediation loop. A `not-deployed:*`
    row is BLOCKED-on-deploy, never a FAIL. **No `--expect` here:** the PRs are found in Stage 1, where
-   `/ticket-context` asks the same core per PR.
+   `/vc-test:ticket-context` asks the same core per PR.
 3. **Prior artifacts are inputs.** For this ticket, read the prior run folders `run:use` listed (every env),
    `reports/ba/test-models/<TICKET>-*` (the older place) and `reports/bugs/**`. A prior model is amended into
    `{RUN_DIR}/test-model.md`, never forked. Prior bugs are the dedupe baseline `qa-bug` checks against. A
