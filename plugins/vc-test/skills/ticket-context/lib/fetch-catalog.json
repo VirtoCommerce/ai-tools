@@ -3,7 +3,7 @@
   "commands": {
     "jira get": { "role": "tracker", "expect": "the issue JSON as GET /rest/api/3/issue/{key}?fields=…&expand=renderedFields returns it: key, id, fields{…}, renderedFields{…}" },
     "jira comments": { "role": "tracker", "expect": "{ total, comments: [Jira comment objects: id, created, updated, body (ADF)], truncated } — all comments oldest first; with --newest the newest --max, newest first; with --rendered each also has renderedBody (HTML)" },
-    "jira request": { "role": "tracker", "expect": "the JSON Jira returns for that --method and --path: the field list [{ id, name, custom }], the remote links [{ object: { url, title } }], or a JQL search { issues: [{ key, fields }] }" },
+    "jira request": { "role": "tracker", "expect": "the JSON Jira returns for that --method and --path: the field list [{ id, name, custom }], the remote links [{ object: { url, title } }], or a JQL search { issues: [{ key, fields }] } — the first maxResults issues of the body's jql in its ORDER BY, one page, not every page" },
     "jira dev-prs": { "role": "tracker", "expect": "{ issueId, urls: [pull request URLs from the issue's development panel] }" },
     "jira download": { "role": "tracker", "binary": true, "expect": "an attachment's bytes — binary" },
     "jira confluence-page": { "role": "tracker", "expect": "the page JSON as GET /wiki/api/v2/pages/{id}?body-format=storage returns it: id, title, body.storage.value" },
@@ -20,7 +20,7 @@
   "gh": [
     { "kind": "graphql", "expect": "{ data: { repository: { pullRequest: { reviewThreads: { nodes: [{ isResolved }] } } } } } — the pinned review-thread query's answer" },
     { "kind": "diff", "expect": "the pull request's unified diff, as text (not JSON)" },
-    { "kind": "search/issues", "match": "^search/issues\\?", "expect": "{ items: [issues and pull requests: number, title, state, created_at, html_url, pull_request] } — GitHub search results" },
+    { "kind": "search/issues", "match": "^search/issues\\?", "expect": "{ items: [issues and pull requests: number, title, state, created_at, html_url, repository_url (https://api.github.com/repos/{owner}/{repo} — the PR's repository is read from it), pull_request] } — GitHub search results" },
     { "kind": "search/commits", "match": "^search/commits\\?", "expect": "{ items: [commits: sha, repository{ full_name }] } — GitHub commit search results" },
     { "kind": "commit pulls", "match": "^repos/[^/]+/[^/]+/commits/[^/]+/pulls$", "expect": "[pull requests associated with the commit: number, …]" },
     { "kind": "check-runs", "match": "^repos/[^/]+/[^/]+/commits/[^/]+/check-runs", "expect": "{ check_runs: [{ name, status, conclusion }] }" },

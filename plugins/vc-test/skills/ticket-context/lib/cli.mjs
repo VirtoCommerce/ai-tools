@@ -162,10 +162,18 @@ async function prepare() {
   // In a host pass an unanswered first read is not a refusal: the pass ends and asks for it (NeedsFetch).
   const firstRead = (p) => p.catch((e) => { if (HOST?.run.pending.length) throw new NeedsFetch(); if (e instanceof GapError) noTracker(e.reason, e.detail); throw e; });
 
-  const allFields = await firstRead(tracker.fields());
+  // A host's servers may have no read for the site-wide field list (the Atlassian MCP offers only per-project
+  // metadata): that is not "the tracker cannot be read" — the issue read below still decides that.
+  let fieldsGap = null;
+  const allFields = await firstRead(tracker.fields().catch((e) => {
+    if (!HOST || !(e instanceof GapError) || e.reason !== "connector-unavailable") throw e;
+    fieldsGap = gap("ac_fields", "connector-unavailable", `${e.detail} — ACs are read from description and comments`);
+    return [];
+  }));
   const acFields = resolveFieldsByName(allFields, profile.fieldMap.acceptanceCriteria, AC_FIELD_NAME_RE);
   const linkFields = resolveFieldsByName(allFields, profile.fieldMap.prototype, /prototype/i);
-  if (!acFields.length) gaps.push(gap("ac_fields", "not-found", "no custom field named 'Acceptance' or 'Acceptance criteria' and no tracker.fieldMap.acceptanceCriteria — ACs are read from description and comments"));
+  if (fieldsGap) gaps.push(fieldsGap);
+  else if (!acFields.length) gaps.push(gap("ac_fields", "not-found", "no custom field named 'Acceptance' or 'Acceptance criteria' and no tracker.fieldMap.acceptanceCriteria — ACs are read from description and comments"));
   // Comments past the first page are paged in before the inventory and ticket.json see the issue; any unread rest is a gap.
   const issue = blindIssue(await firstRead(tracker.issue(key, [...BASE_FIELDS, ...acFields.map((f) => f.id), ...linkFields.map((f) => f.id)], { gaps })), benchmark ?? {});
   const remote = await tracker.remoteLinks(key).catch((e) => { gaps.push(asGap("remotelinks", e)); return []; });
