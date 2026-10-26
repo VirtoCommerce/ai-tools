@@ -14,8 +14,9 @@
  *
  * HOST PINNING: every request goes to the profile's `tracker.baseUrl` (written by /project-init) and
  * to nothing else — there is no flag and no env var that changes the host, because the process holds
- * a token and the command line is the caller's. Paths must be `/rest/…`; `request` refuses a full URL
- * and refuses DELETE (deleting tracker data is a human decision).
+ * a token and the command line is the caller's. Paths must be `/rest/…` (`safePath`); the one exception is
+ * `confluence-page`, a GET of `/wiki/api/v2/pages/<digits>` (`safeWikiPath`) that follows no redirect.
+ * `request` refuses a full URL and refuses DELETE (deleting tracker data is a human decision).
  *
  * Auth: Basic `JIRA_EMAIL:JIRA_API_TOKEN` (JIRA_EMAIL is an identifier, read from .env.local).
  * Prints JSON on stdout; exits non-zero on an HTTP error. NEVER prints the token.
@@ -35,8 +36,9 @@
  *   comments       --key ABC-1 [--rendered] [--max 500] [--newest]   # every page, one launch → { total, comments, truncated }
  *   download       --attachment 10050 --out .vc-fix/… [--max-bytes 26214400]   # → { path, bytes, contentType }
  *   dev-prs        --key ABC-1                               # the development panel's PR URLs → { issueId, urls }
+ *   confluence-page --id 123456                              # a Confluence page on the same host, storage body
  *
- * The reads (comments, download, dev-prs) print Jira's own objects unshaped — a caller (vc-test's
+ * The reads (comments, download, dev-prs, confluence-page) print Jira's own objects unshaped — a caller (vc-test's
  * connector) builds its raw files from them. `download` writes only inside <outputRoot>/.vc-fix/ and stops
  * at --max-bytes (raw-out.mjs): this process holds a token and its command line is the caller's.
  *
@@ -119,6 +121,15 @@ export function pinnedOrigin(profile) {
 export function safePath(path) {
   const p = String(path || "");
   return p.startsWith("/rest/") && !p.includes("://") && !p.includes("\\") && !/(^|\/)\.\.(\/|$)/.test(p) && !/[\r\n]/.test(p);
+}
+
+/** A Confluence page id: digits only, at most 20. */
+export const PAGE_ID = /^\d{1,20}$/;
+
+/** The one Confluence path this CLI may send: a page by numeric id, storage body. Pure. */
+export function safeWikiPath(path) {
+  const m = /^\/wiki\/api\/v2\/pages\/([^/?]*)(\?body-format=storage)?$/.exec(String(path || ""));
+  return !!m && PAGE_ID.test(m[1]);
 }
 
 /** Plain text → a minimal ADF document (one paragraph per blank-line-separated block). Pure. */
@@ -216,16 +227,23 @@ function main() {
   if (!email) fail("no JIRA_EMAIL — set it in .env.local (an identifier, not a secret — the same for every env)");
   const auth = `Basic ${Buffer.from(`${email}:${token}`).toString("base64")}`;
 
-  const call = async (method, path, { body, headers = {}, raw = false, redirect = "follow", timeout = FETCH_TIMEOUT_MS } = {}) => {
-    if (!safePath(path)) fail(`refusing path ${JSON.stringify(path)} — only /rest/… on ${pin.origin}`);
+  const call = async (method, path, { body, headers = {}, raw = false, redirect = "follow", timeout = FETCH_TIMEOUT_MS, wiki = false } = {}) => {
+    if (wiki ? method !== "GET" || !safeWikiPath(path) : !safePath(path)) {
+      fail(`refusing ${method} ${JSON.stringify(path)} — only ${wiki ? "GET /wiki/api/v2/pages/<digits>" : "/rest/…"} on ${pin.origin}`);
+    }
     const res = await timedFetch(`${pin.origin}${path}`, {
       method,
-      redirect,
+      // A page GET has no reason to redirect; following one would hand the host pin to the runtime's fetch.
+      redirect: wiki ? "manual" : redirect,
       headers: { Authorization: auth, Accept: "application/json", ...(body !== undefined && !(body instanceof FormData) ? { "Content-Type": "application/json" } : {}), ...headers },
       body: body === undefined ? undefined : body instanceof FormData ? body : JSON.stringify(body),
     }, timeout, `${method} ${path}`, { buffer: !raw });
     if (raw) return res;
     const text = await res.text();
+    if (wiki && res.status >= 300 && res.status < 400) fail(`HTTP ${res.status} for ${method} ${path} — a redirect, not followed`);
+    if (wiki && (res.status === 401 || res.status === 403)) {
+      fail(`HTTP ${res.status} for ${method} ${path} — Confluence refused this account. Check that it has Confluence access and the token can read Confluence; Jira reads are a separate check (jira myself)`);
+    }
     if (res.status === 401 || res.status === 403) {
       fail(`HTTP ${res.status} for ${method} ${path} — the Jira token was rejected. Store a fresh one: node "<VC_SECRETS>" set jira-token`);
     }
@@ -333,6 +351,11 @@ function main() {
     "dev-prs": async () => {
       const issue = await call("GET", `/rest/api/3/issue/${key()}?fields=id`);
       return { issueId: String(issue.id), urls: await devPrUrls((path) => call("GET", path), issue.id) };
+    },
+    "confluence-page": () => {
+      const id = String(args.id ?? "");
+      if (!PAGE_ID.test(id)) fail(`refusing --id ${JSON.stringify(id)} — a Confluence page id is digits only`);
+      return call("GET", `/wiki/api/v2/pages/${id}?body-format=storage`, { wiki: true });
     },
     request: () => {
       const method = String(args.method || "GET").toUpperCase();
