@@ -77,7 +77,7 @@ export function removeRunDir(dir, root = outputRoot()) {
   const contextBase = resolve(join(root, ".vc-fix", "context"));
   if (resolved.startsWith(contextBase + sep)) {
     const rel = relative(contextBase, resolved);
-    const m = /^([A-Z][A-Z0-9]*-\d+)[/\\]run-(\d+)$/.exec(rel);
+    const m = /^([A-Z][A-Z0-9]*-\d+|[1-9]\d{0,9})[/\\]run-(\d+)$/.exec(rel);
     if (m) {
       rmSync(resolved, { recursive: true, force: true });
       return;

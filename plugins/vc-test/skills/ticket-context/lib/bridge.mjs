@@ -2,9 +2,28 @@
 // launch (spec §7, U20). This process never holds a token: the bridge hands the child one group's secret. A failed
 // launch becomes ONE gap from the closed vocabulary; only the first meaningful stderr line ever reaches it.
 import { spawn } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
+import { join } from "node:path";
 import { CAPS } from "./fetch.mjs";
 import { GapError } from "./gap.mjs";
+import { cacheDir } from "./paths.mjs";
+
+/** A maker of fresh file paths under the ticket's .vc-fix/context/<key>/ — where a bridge tool may write. */
+export function bridgeTempFiles(key, root) {
+  let n = 0;
+  return (ext) => { const d = cacheDir(key, root); mkdirSync(d, { recursive: true }); return join(d, `bridge-${process.pid}-${Date.now()}-${++n}.${ext}`); };
+}
+
+/** One capped download: the tool writes ≤ CAPS.attachmentBytes to `out`; the bytes are read and the file removed. */
+export async function bridgeDownload(run, tool, args, out) {
+  try {
+    await run(tool, [...args, "--out", out, "--max-bytes", String(CAPS.attachmentBytes)], { ms: CAPS.downloadTimeoutMs });
+    return readFileSync(out);
+  } catch (e) {
+    if (/over-cap/.test(e?.detail ?? e?.message ?? "")) throw new GapError("over-cap", `more than ${CAPS.attachmentBytes} bytes: attachment download`);
+    throw e;
+  } finally { rmSync(out, { force: true }); }
+}
 
 /** The bridge answered 78: a host-governed project, where the host's MCP servers read instead (P1d-3). */
 export class HostGoverned extends Error {

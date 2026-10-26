@@ -14,6 +14,17 @@ import { cacheDir, outputRoot } from "../paths.mjs";
 
 const PR_URL_RE = /^https:\/\/(?:dev\.azure\.com\/[^/]+|[^./]+\.visualstudio\.com)\/([^/?#]+)\/_git\/([^/?#]+)\/pullrequest\/(\d+)/i;
 const strip = (p) => String(p ?? "").replace(/^\/+/, "");
+const READ_FILES = 4; // files whose two sides are read at once: up to 8 bridge launches in flight
+
+/** `fn` over `list`, at most `limit` at a time; results in `list` order. */
+async function mapLimit(list, limit, fn) {
+  const out = new Array(list.length);
+  let next = 0;
+  await Promise.all(Array.from({ length: Math.min(limit, list.length) }, async () => {
+    while (next < list.length) { const i = next++; out[i] = await fn(list[i]); }
+  }));
+  return out;
+}
 
 /** A pull-request URL a ticket names (`…/<project>/_git/<repo>/pullrequest/<n>`) as a ref, or null — also null when a
  *  name fails the ref check that keeps names safe in paths and file names. */
@@ -85,17 +96,17 @@ export function azureReposConnector({ key, run = bridgeRun, git = spawnSync, roo
       const dir = join(cacheDir(key, root), `az-diff-${process.pid}-${Date.now()}`);
       const noPatch = [];
       const out = [];
+      // `originalPath` is a renamed file's path before the rename; `item.path` is its path now.
+      const files = changes.slice(0, CAPS.prFiles).map((c) => ({ path: strip(c.item?.path), old: strip(c.originalPath ?? c.item?.path), st: status(c.changeType) }));
+      // Both sides of a file are one launch each, so the reads run READ_FILES files at a time; null = not read.
+      const sides = await mapLimit(files, READ_FILES, ({ path, old, st }) => Promise.all([
+        st === "added" ? "" : run("ado", ["get-file", "--repo", r, "--path", old, "--commit", base], { as: "text" }),
+        st === "removed" ? "" : run("ado", ["get-file", "--repo", r, "--path", path, "--commit", head], { as: "text" }),
+      ]).catch(() => null));
       try {
-        for (const c of changes.slice(0, CAPS.prFiles)) {
-          const path = strip(c.item?.path);
-          const old = strip(c.sourceServerItem ?? c.item?.path);
-          const st = status(c.changeType);
-          let a = "";
-          let b = "";
-          try {
-            if (st !== "added") a = await run("ado", ["get-file", "--repo", r, "--path", old, "--commit", base], { as: "text" });
-            if (st !== "removed") b = await run("ado", ["get-file", "--repo", r, "--path", path, "--commit", head], { as: "text" });
-          } catch { noPatch.push(path); continue; }
+        for (const [i, { path, old, st }] of files.entries()) {
+          if (!sides[i]) { noPatch.push(path); continue; }
+          const [a, b] = sides[i];
           if (a.includes("\0") || b.includes("\0")) { noPatch.push(path); continue; }
           const [aRel, bRel] = [`a/${st === "added" ? path : old}`, `b/${st === "removed" ? old : path}`];
           for (const [rel, text] of [[aRel, a], [bRel, b]]) { mkdirSync(dirname(join(dir, rel)), { recursive: true }); writeFileSync(join(dir, rel), text); }

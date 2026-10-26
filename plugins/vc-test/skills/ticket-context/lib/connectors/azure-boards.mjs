@@ -3,14 +3,12 @@
 // profile). A work item is normalised to the Jira issue shape buildInventory, ticketFields and the blind cut already
 // read, so nothing downstream of prepare knows which tracker ran. A field Azure does not return stays empty — never
 // a guessed value; "done" comes only from the profile's role states.
-import { mkdirSync, readFileSync, rmSync } from "node:fs";
-import { join } from "node:path";
-import { bridgeRun } from "../bridge.mjs";
+import { bridgeDownload, bridgeRun, bridgeTempFiles } from "../bridge.mjs";
 import { CAPS, htmlToText } from "../fetch.mjs";
 import { GapError, asGap, gap } from "../gap.mjs";
-import { cacheDir, outputRoot } from "../paths.mjs";
+import { AZURE_ATTACHMENT_RE as ATTACHMENT_RE } from "../inventory.mjs";
+import { outputRoot } from "../paths.mjs";
 
-const ATTACHMENT_RE = /\/_apis\/wit\/attachments\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
 const WORK_ITEM_RE = /\/workItems\/(\d+)$/i;
 const PR_ARTIFACT_RE = /^vstfs:\/\/\/Git\/PullRequestId\/(.+)$/i;
 const LINK_RELS = /^System\.LinkTypes\.(Related|Duplicate-(Forward|Reverse)|Dependency-(Forward|Reverse))$/i;
@@ -88,8 +86,7 @@ export function azureBoardsConnector({ profile, key, run = bridgeRun, root = out
   const base = profile.trackerBase;
   const origin = new URL(base).origin;
   const items = new Map(); // id → the raw work item, for the relation reads after issue()
-  let n = 0;
-  const tempFile = () => { const d = cacheDir(key, root); mkdirSync(d, { recursive: true }); return join(d, `bridge-${process.pid}-${Date.now()}-${++n}.bin`); };
+  const tempFile = bridgeTempFiles(key, root);
   const getItem = async (id) => {
     if (!items.has(String(id))) items.set(String(id), await run("ado", ["get-workitem", "--id", String(id), "--json"]));
     return items.get(String(id));
@@ -140,14 +137,7 @@ export function azureBoardsConnector({ profile, key, run = bridgeRun, root = out
       if (target.origin !== origin) throw new GapError("private-host", `not sent: ${target.host} is not the tracker (${new URL(base).host})`);
       const guid = guidOf(target.pathname);
       if (!guid) throw new GapError("unreadable", `no attachment id in ${target.pathname}`);
-      const out = tempFile();
-      try {
-        await run("ado", ["download-attachment", "--guid", guid, "--out", out, "--max-bytes", String(CAPS.attachmentBytes)], { ms: CAPS.downloadTimeoutMs });
-        return readFileSync(out);
-      } catch (e) {
-        if (/over-cap/.test(e?.detail ?? e?.message ?? "")) throw new GapError("over-cap", `more than ${CAPS.attachmentBytes} bytes: attachment download`);
-        throw e;
-      } finally { rmSync(out, { force: true }); }
+      return bridgeDownload(run, "ado", ["download-attachment", "--guid", guid], tempFile("bin"));
     },
     page: async () => { throw new GapError("connector-unavailable", "a Confluence page needs a Jira tracker"); },
   };

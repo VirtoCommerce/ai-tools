@@ -32,7 +32,7 @@ export function attachmentKind(filename = "", mime = "") {
 
 // A tracker attachment URL names an id; only an id on THIS issue is already an item. Jira's ids are numbers; an Azure
 // Boards attachment (`…/_apis/wit/attachments/<guid>`) is keyed by its lower-cased guid.
-const AZURE_ATTACHMENT_RE = /\/_apis\/wit\/attachments\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
+export const AZURE_ATTACHMENT_RE =/\/_apis\/wit\/attachments\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
 const TRACKER_ATTACHMENT_RE = /^\/(?:secure\/(?:attachment|thumbnail)|rest\/api\/[23]\/attachment)\//;
 const isTrackerAttachment = (pathname) => TRACKER_ATTACHMENT_RE.test(pathname) || AZURE_ATTACHMENT_RE.test(pathname);
 const attachmentIdOf = (pathname) =>

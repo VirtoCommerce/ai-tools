@@ -184,8 +184,9 @@ async function prepare() {
   // (those leave the inventory: a PR is change surface, not a page to fetch). Rung 1 — they are explicitly linked.
   const az = profile.codeHost === "azure-repos" ? azureReposConnector({ key, root }) : null;
   if (az) {
-    const azRefs = new Map(linkedPrs.refs.map((r) => [r.ref.toLowerCase(), r]));
-    inv.items = inv.items.filter((it) => { const r = it.url && azurePrRefFromUrl(it.url); if (r) azRefs.set(r.ref.toLowerCase(), r); return !r; });
+    // Keyed by PR id: a link names the project and repository by id, a URL by name, and get-pr reads by id alone.
+    const azRefs = new Map(linkedPrs.refs.map((r) => [r.number, r]));
+    inv.items = inv.items.filter((it) => { const r = it.url && azurePrRefFromUrl(it.url); if (r && !azRefs.has(r.number)) azRefs.set(r.number, r); return !r; });
     for (const r of azRefs.values()) {
       try {
         const meta = await az.pr(r.owner, r.repo, r.number);

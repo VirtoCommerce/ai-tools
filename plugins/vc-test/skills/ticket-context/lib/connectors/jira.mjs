@@ -1,12 +1,11 @@
 // plugins/vc-test/skills/ticket-context/lib/connectors/jira.mjs — the Jira tracker connector (spec §7). Every method is
 // one `node "$VC_RUN" jira …` launch (vc-fix's qa-fix-routing/jira.mjs, host pinned to the profile's tracker.baseUrl)
 // and returns what the old in-process client returned, so prepare reads the same shapes. This process holds no token.
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
-import { bridgeRun } from "../bridge.mjs";
+import { rmSync, writeFileSync } from "node:fs";
+import { bridgeDownload, bridgeRun, bridgeTempFiles } from "../bridge.mjs";
 import { CAPS } from "../fetch.mjs";
 import { GapError, asGap, gap } from "../gap.mjs";
-import { cacheDir, outputRoot } from "../paths.mjs";
+import { outputRoot } from "../paths.mjs";
 
 const ATTACHMENT_RE = /\/rest\/api\/3\/attachment\/content\/(\d+)(?:[?#]|$)/;
 
@@ -49,9 +48,7 @@ async function completeComments(run, key, issue, gaps) {
 /** `base`: the profile's tracker.baseUrl. `key`: the ticket being prepared — its .vc-fix/context/<key>/ holds temp files. */
 export function jiraConnector({ base, key, run = bridgeRun, root = outputRoot() }) {
   const origin = new URL(base).origin;
-  const work = () => { const d = cacheDir(key, root); mkdirSync(d, { recursive: true }); return d; };
-  let n = 0;
-  const tempFile = (ext) => join(work(), `bridge-${process.pid}-${Date.now()}-${++n}.${ext}`);
+  const tempFile = bridgeTempFiles(key, root);
   const request = (method, path) => run("jira", ["request", "--method", method, "--path", path]);
   async function search(jql, fields, maxResults) {
     const f = tempFile("json");
@@ -85,14 +82,7 @@ export function jiraConnector({ base, key, run = bridgeRun, root = outputRoot() 
       if (target.origin !== origin) throw new GapError("private-host", `not sent: ${target.host} is not the tracker (${new URL(base).host})`);
       const id = ATTACHMENT_RE.exec(target.pathname + target.search)?.[1];
       if (!id) throw new GapError("unreadable", `no attachment id in ${target.pathname}`);
-      const out = tempFile("bin");
-      try {
-        await run("jira", ["download", "--attachment", id, "--out", out, "--max-bytes", String(CAPS.attachmentBytes)], { ms: CAPS.downloadTimeoutMs });
-        return readFileSync(out);
-      } catch (e) {
-        if (/over-cap/.test(e?.detail ?? e?.message ?? "")) throw new GapError("over-cap", `more than ${CAPS.attachmentBytes} bytes: attachment download`);
-        throw e;
-      } finally { rmSync(out, { force: true }); }
+      return bridgeDownload(run, "jira", ["download", "--attachment", id], tempFile("bin"));
     },
     page: (id) => run("jira", ["confluence-page", "--id", String(id)]),
   };
