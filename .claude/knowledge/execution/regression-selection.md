@@ -180,6 +180,20 @@ phase**, which disposes the hits before the same agent authors, on **both paths*
 `CONFIRMED` / `REPAIR` / `RE-BASE` / `SUPERSEDED`. Single source of truth for those:
 `.claude/skills/qa-test/coverage-triage.md`.
 
+## Visual regression at a release — `PIXEL`, not a suite
+
+A pixel regression is not a CSV suite, so no `selections` group holds it and `/qa-regression` does not run
+it. At a release, run [`/qa-visual-regression`](../../skills/qa-visual-regression/SKILL.md) beside the
+suite regression:
+
+- **Base** is the previous release tag. **Head** is the release candidate.
+- **Storybook source:** every story (`visual:affected` is not needed — the scope is the whole kit), on the
+  a11y-gated presets × desktop + the narrowest supported width.
+- **Pages source:** the project's key routes, if a targets file exists for them.
+
+Its regressions are triaged like any other finding ([`../../skills/qa-visual-regression/triage.md`](../../skills/qa-visual-regression/triage.md)).
+Intended changes are listed against the release notes that declare them.
+
 ## Post-Run Results Triage — `/qa-triage-results`
 
 A regression run tells you *which* tests failed; **`/qa-triage-results [RUN_ID|latest] [--fix] [--verify]`** works out *why* each one failed and what to do. **Owned by `qa-lead-orchestrator`** (orchestrate-only Triage Orchestrator — delegates classification to `regression-triage-agent`, live verification to `qa-frontend/backend-expert`, test fixes to `/qa-review-tests`, bug drafts to `/qa-bug`; never edits a CSV, files a ticket, or calls `/qa-fix`). It reads a completed run under `reports/regression/{RUN_ID}/`, and — cloning the `/qa-monitoring` skeleton (collect → dedup → triage → live-verify → report → STOP) — classifies every FAIL into **real product bug** vs a **test defect** (`TEST_STEPS_DEFECT` / `ASSERTION_DEFECT` / `TEST_DATA_DEFECT` / `STALE_TEST`) vs `FLAKY` / `ENV` / `KNOWN_ISSUE`.

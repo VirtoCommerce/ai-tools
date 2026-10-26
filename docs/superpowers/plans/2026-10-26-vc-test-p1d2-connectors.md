@@ -25,6 +25,23 @@ for the Azure diff; `node:test` for temporary tests.
 
 **Spec:** [`docs/superpowers/specs/2026-10-15-vc-test-plugin-design.md`](../specs/2026-10-15-vc-test-plugin-design.md) — U19, U20, U23 (exit 78 only), B8, §7 (Connectors), §9, §10 P1. P1d split: [`2026-10-26-vc-test-p1d1-move.md`](2026-10-26-vc-test-p1d1-move.md) §P1d is three plans. The CLI commands this plan calls: [`2026-10-26-vc-test-p1b-vc-fix-reads.md`](2026-10-26-vc-test-p1b-vc-fix-reads.md) and the pinned GraphQL read of [`2026-10-26-vc-test-p1a-vc-init.md`](2026-10-26-vc-test-p1a-vc-init.md).
 
+## Status (2026-10-26)
+
+**Done.** Task 1 merged in #532 (vc-fix 0.15.0, tagged); Tasks 2–9 are vc-test 0.3.0. Built differently from the
+tasks below — the code is normative, the tasks are kept as planned:
+- A missing profile exits **3** (`no-profile`), the CLI's "could not run", not 2, which there means a failed gate.
+- The old credential helpers and the `VC_RUN`-unset stop went with their last callers (Tasks 4–5), so every commit ran.
+- `assertKey(key)` with no format accepts a Jira key or an Azure work-item id (cache paths need both); `prepare`
+  checks the profile's format strictly.
+- `TEST_ENV` with no binding falls back to the profile's one declared test env, then still to `vcst`: the profile
+  has no field for a default env, so dropping `vcst` needs a vc-init field first.
+- Azure Boards siblings are one `wiql --fields` launch, not a `get-workitem` per id; issue links carry Azure's own
+  link names, so "Dependency" ranks as "other", never guessed as "blocks".
+- Azure PRs read by work-item link are renamed to project/repository names when those pass the ref check (an
+  analyst reads a repository's layer from its name); `refWithNames` does it.
+- The Azure recorded responses were assembled from Microsoft Learn's REST samples — no Azure DevOps project was
+  reachable; live Azure is P5. Task 8's results are in the release PR.
+
 ## Global Constraints
 
 - **No token in `prepare`'s process** (U20). After this plan nothing under `plugins/vc-test/skills/ticket-context/lib/` reads `JIRA_API_TOKEN`, `JIRA_EMAIL`, `GIT_TOKEN`, `GITHUB_TOKEN`, `GH_TOKEN`, `ADO_PAT`, a profile `authEnv`, or runs `gh auth token`. Task 8 checks it with a grep.

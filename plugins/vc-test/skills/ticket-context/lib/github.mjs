@@ -2,7 +2,7 @@
 // qa-test/technical-change.md §2.1, rungs 1–3, as a script (A4), plus the per-PR files the CHANGE agent reads.
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { CAPS, timedFetch, timeoutGap } from "./fetch.mjs";
+import { CAPS } from "./fetch.mjs";
 import { GapError, asGap, gap } from "./gap.mjs";
 
 /** Stage-1 rule: deployment-manifest PRs, this repo's PRs, QA test-tooling PRs and the public knowledge base's PRs
@@ -14,11 +14,11 @@ export const CONTEXT_ONLY_REPOS = Object.freeze(["vc-deploy-dev", "ai-tools", "v
 const NAME = /^[A-Za-z0-9_.-]+$/;
 const SHA = /^[0-9a-fA-F]{7,64}$/;
 const invalidRef = () => new GapError("unreadable", "invalid repository reference");
-function checkRepo(owner, repo) {
+export function checkRepo(owner, repo) {
   for (const x of [owner, repo]) if (typeof x !== "string" || !NAME.test(x) || x === "." || x === "..") throw invalidRef();
 }
-function checkNumber(n) { if (!Number.isInteger(n) || n <= 0) throw invalidRef(); }
-function checkSha(sha) { if (typeof sha !== "string" || !SHA.test(sha)) throw invalidRef(); }
+export function checkNumber(n) { if (!Number.isInteger(n) || n <= 0) throw invalidRef(); }
+export function checkSha(sha) { if (typeof sha !== "string" || !SHA.test(sha)) throw invalidRef(); }
 
 /** UTF-8-safe byte cut: at or below `cap` bytes, never inside a multi-byte sequence. */
 function cutBytes(text, cap) {
@@ -29,52 +29,10 @@ function cutBytes(text, cap) {
   return { text: buf.subarray(0, end).toString("utf8"), bytes: buf.length, cut: true };
 }
 
-export function ghClient(cred, fetchImpl = fetch) {
-  async function req(path, { accept = "application/vnd.github+json", method = "GET", body } = {}) {
-    const where = path.split("?")[0];
-    const res = await timedFetch(fetchImpl, `https://api.github.com${path}`, { method, body, headers: {
-      Authorization: cred.auth, Accept: accept, "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "ticket-context",
-      ...(body ? { "Content-Type": "application/json" } : {}) } }, CAPS.fetchTimeoutMs, `GitHub ${where}`);
-    // Primary limit (remaining 0) and secondary limit (retry-after) are both "wait", never "denied".
-    if ((res.status === 403 || res.status === 429) && (res.headers.get("x-ratelimit-remaining") === "0" || res.headers.get("retry-after") !== null)) throw new GapError("unreadable", `GitHub rate limit reached on ${where} — wait for the reset`);
-    if (res.status === 401 || res.status === 403) throw new GapError("access-denied", `GitHub ${res.status} on ${where} (credential: ${cred.via}; never retried with another)`);
-    if (res.status === 404) throw new GapError("deleted", `GitHub 404 on ${where}`);
-    if (!res.ok) throw Object.assign(new GapError("unreadable", `GitHub ${res.status} on ${where}`), { status: res.status });
-    return res;
-  }
-  const readBody = async (res, as) => { try { return await res[as](); } catch (e) { throw timeoutGap(e, "GitHub response body", CAPS.fetchTimeoutMs); } };
-  const json = async (p, o) => readBody(await req(p, o), "json");
-  const q = (s) => encodeURIComponent(s);
-  return {
-    searchPrs: async (key, orgs) => (await json(`/search/issues?q=${q(`"${key}" is:pr ${orgs.map((o) => `org:${o}`).join(" ")}`)}&per_page=50`)).items ?? [],
-    searchCommits: async (key, orgs) => (await json(`/search/commits?q=${q(`"${key}" ${orgs.map((o) => `org:${o}`).join(" ")}`)}&per_page=30`)).items ?? [],
-    prsForCommit: async (o, r, sha) => { checkRepo(o, r); checkSha(sha); return json(`/repos/${o}/${r}/commits/${sha}/pulls`); },
-    pr: async (o, r, n) => { checkRepo(o, r); checkNumber(n); return json(`/repos/${o}/${r}/pulls/${n}`); },
-    // Returns up to cap+1 entries: the extra one is how the caller sees that the PR has more files than the cap.
-    files: async (o, r, n, cap) => {
-      checkRepo(o, r); checkNumber(n);
-      const out = [];
-      for (let page = 1; out.length <= cap; page++) {
-        const batch = await json(`/repos/${o}/${r}/pulls/${n}/files?per_page=100&page=${page}`);
-        out.push(...batch);
-        if (batch.length < 100) break;
-      }
-      return out.slice(0, cap + 1);
-    },
-    diff: async (o, r, n) => { checkRepo(o, r); checkNumber(n); return readBody(await req(`/repos/${o}/${r}/pulls/${n}`, { accept: "application/vnd.github.diff" }), "text"); },
-    reviewComments: async (o, r, n) => { checkRepo(o, r); checkNumber(n); return json(`/repos/${o}/${r}/pulls/${n}/comments?per_page=100`); },
-    unresolvedThreads: async (o, r, n) => {
-      checkRepo(o, r); checkNumber(n);
-      const query = "query($o:String!,$r:String!,$n:Int!){repository(owner:$o,name:$r){pullRequest(number:$n){reviewThreads(first:100){nodes{isResolved}}}}}";
-      const j = await json("/graphql", { method: "POST", body: JSON.stringify({ query, variables: { o, r, n } }) });
-      // A 200 can still carry {errors, data:null}: that is "not read", never "0 unresolved".
-      const nodes = j?.data?.repository?.pullRequest?.reviewThreads?.nodes;
-      if (j?.errors || !Array.isArray(nodes)) throw new GapError("unreadable", "GitHub GraphQL returned errors or no pull request for the review threads");
-      return nodes.filter((t) => !t.isResolved).length;
-    },
-    checkRuns: async (o, r, sha) => { checkRepo(o, r); checkSha(sha); return json(`/repos/${o}/${r}/commits/${sha}/check-runs?per_page=100`); },
-  };
-}
+// The review-thread count is the one GraphQL read: the bridge admits it only byte-equal to vc-init's PINNED_GRAPHQL
+// (B8), and plugins/vc-init/bridge/allowlist.test.mjs reads this line to keep the two copies equal.
+const query = "query($o:String!,$r:String!,$n:Int!){repository(owner:$o,name:$r){pullRequest(number:$n){reviewThreads(first:100){nodes{isResolved}}}}}";
+export const REVIEW_THREADS_QUERY = query;
 
 export function refFromSearchItem(item) {
   const m = /\/repos\/([^/]+)\/([^/]+)$/.exec(item.repository_url ?? "");
@@ -265,6 +223,7 @@ export async function collectPr(gh, p, runDir, { caps = CAPS, sameKey = [], befo
     if (all.length > caps.prFiles) entry.gaps.push(gap(`pr:${p.ref}:files`, "over-cap", `${all.length}+ files; first ${caps.prFiles} read`));
     files = all.slice(0, caps.prFiles);
     entry.files_path = write("files.json", files.map((f) => ({ filename: f.filename, status: f.status, additions: f.additions, deletions: f.deletions })));
+    entry.added = files.filter((f) => f.status === "added").map((f) => f.filename); // a new surface: F8 asks no PIXEL for it (floors.mjs)
   } catch (e) { entry.gaps.push(asGap(`pr:${p.ref}:files`, e)); }
   const writeDiff = (text) => {
     const cut = cutBytes(text, caps.diffBytes);
