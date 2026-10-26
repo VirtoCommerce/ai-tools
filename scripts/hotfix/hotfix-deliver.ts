@@ -64,9 +64,10 @@
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+import { basename, dirname, resolve } from 'node:path';
 import { parse as parseDotenv } from 'dotenv';
 import { getAdminToken, probeLiveModules, type AdminAuth, type ProbeStatus } from '../deploy/lib/live.ts';
+import { platformApiKey } from '../deploy/lib/env.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '..', '..');
@@ -135,15 +136,15 @@ function loadEnvCoords(env: string, passwordOverride?: string): EnvCoords {
   // (.env.playwright.vcptcore_<key>, which this skipped — a machine that keeps env passwords only there
   // fell through to a guessed password), then the legacy suffix form and the shared fallbacks. No guess:
   // an empty password skips the sign-in (getAdminToken) instead of a failed attempt against the shared admin.
-  const own = readEnvFile(resolve(REPO_ROOT, `.env.playwright.vcptcore_${key}`));
+  const envName = basename(file).replace(/^\.env\./, ''); // the env's own name, as its file spells it
+  const own = readEnvFile(resolve(REPO_ROOT, `.env.playwright.${envName}`));
   const password = passwordOverride
     || local[`ADMIN_PASSWORD_VCPTCORE_${suffix}`]
     || own.ADMIN_PASSWORD
     || local[`ADMIN_PASSWORD_${suffix}`]
     || local.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || '';
-  // The env's read-only service-account key, as scripts/deploy/lib/env.ts reads it: used instead of the shared admin.
-  const apiKey = passwordOverride ? ''
-    : local[`PLATFORM_API_KEY_VCPTCORE_${suffix}`] || own.PLATFORM_API_KEY || process.env[`PLATFORM_API_KEY_VCPTCORE_${suffix}`] || '';
+  // The env's read-only service-account key, named and looked up by scripts/deploy/lib/env.ts: used instead of the shared admin.
+  const apiKey = passwordOverride ? '' : platformApiKey(envName, local, own);
   const backUrl = (e.BACK_URL || '').replace(/\/$/, '');
   return {
     env: key, file, deployOwner, deployRepo, branch: e.DEPLOY_BRANCH, path: e.DEPLOY_PACKAGES_PATH,

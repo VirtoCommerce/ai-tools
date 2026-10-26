@@ -73,6 +73,15 @@ export function isLocalUrl(url: string): boolean {
     || host.endsWith('.docker.internal');
 }
 
+/**
+ * An env's read-only service-account key, `PLATFORM_API_KEY_<ENV>` with the env's own name upper-cased: the
+ * .env.local pin, then the env's own password file (unsuffixed), then the process. Never a generic key.
+ */
+export function platformApiKey(env: string, local: Record<string, string>, ownPasswords: Record<string, string>): string {
+  const name = `PLATFORM_API_KEY_${env.toUpperCase().replace(/[^A-Z0-9]/g, '_')}`;
+  return local[name] || ownPasswords.PLATFORM_API_KEY || process.env[name] || '';
+}
+
 /** What says where an env is deployed and probed, and as whom. */
 const DEPLOY_KEYS = ['DEPLOY_REPO', 'DEPLOY_BRANCH', 'DEPLOY_PACKAGES_PATH', 'DEPLOY_THEME_PATH', 'DEPLOY_STORYBOOK_PATH', 'BACK_URL', 'ADMIN'];
 
@@ -117,8 +126,7 @@ export function resolveEnvCoords(env: string, passwordOverride?: string, ticket?
   // When present, the live readers use it instead of signing in as the stand's shared admin; an explicit
   // --password still means "sign in with this", so it drops the key. Looked up where the password is: the
   // .env.local pin, then the env's own password file.
-  const apiKey = passwordOverride ? ''
-    : local[`PLATFORM_API_KEY_${envKey}`] || own.passwords.PLATFORM_API_KEY || process.env[`PLATFORM_API_KEY_${envKey}`] || '';
+  const apiKey = passwordOverride ? '' : platformApiKey(env, local, own.passwords);
   const backUrl = (e.BACK_URL || process.env.BACK_URL || '').replace(/\/$/, '');
   // Bound to the env's OWN BACK_URL only: an ambient process BACK_URL is another env's stand.
   const ownBackUrl = (e.BACK_URL || '').replace(/\/$/, '');
