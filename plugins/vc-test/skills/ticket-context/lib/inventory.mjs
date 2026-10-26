@@ -30,10 +30,14 @@ export function attachmentKind(filename = "", mime = "") {
   return "other";
 }
 
-// A tracker attachment URL names an id; only an id on THIS issue is already an item.
+// A tracker attachment URL names an id; only an id on THIS issue is already an item. Jira's ids are numbers; an Azure
+// Boards attachment (`…/_apis/wit/attachments/<guid>`) is keyed by its lower-cased guid.
+export const AZURE_ATTACHMENT_RE =/\/_apis\/wit\/attachments\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
 const TRACKER_ATTACHMENT_RE = /^\/(?:secure\/(?:attachment|thumbnail)|rest\/api\/[23]\/attachment)\//;
+const isTrackerAttachment = (pathname) => TRACKER_ATTACHMENT_RE.test(pathname) || AZURE_ATTACHMENT_RE.test(pathname);
 const attachmentIdOf = (pathname) =>
-  /^\/(?:secure\/(?:attachment|thumbnail)\/|rest\/api\/[23]\/attachment\/(?:(?:content|thumbnail)\/)?)(\d+)/.exec(pathname)?.[1] ?? null;
+  /^\/(?:secure\/(?:attachment|thumbnail)\/|rest\/api\/[23]\/attachment\/(?:(?:content|thumbnail)\/)?)(\d+)/.exec(pathname)?.[1]
+  ?? AZURE_ATTACHMENT_RE.exec(pathname)?.[1]?.toLowerCase() ?? null;
 
 /** ownAttachmentIds (a Set of id strings) tells this issue's attachments from another issue's; omitted, every
  *  tracker attachment URL is "skip". Returns "foreign-attachment" for an attachment URL not on this issue. */
@@ -46,7 +50,7 @@ export function classifyLink(url, trackerBase, ownAttachmentIds) {
   if (tracker && u.host === tracker) {
     if (/^\/wiki\//.test(u.pathname)) return "confluence";
     if (/^\/browse\/[A-Z][A-Z0-9]*-\d+/.test(u.pathname)) return "ticket";
-    if (TRACKER_ATTACHMENT_RE.test(u.pathname)) {
+    if (isTrackerAttachment(u.pathname)) {
       const id = attachmentIdOf(u.pathname);
       return !ownAttachmentIds || (id && ownAttachmentIds.has(id)) ? "skip" : "foreign-attachment";
     }
@@ -81,6 +85,7 @@ export function adfRefs(adf) {
 export function renderedAttachmentIds(html = "") {
   const ids = new Set();
   for (const m of String(html).matchAll(/\/(?:rest\/api\/[23]\/attachment\/(?:content|thumbnail)|secure\/(?:attachment|thumbnail))\/(\d+)/g)) ids.add(m[1]);
+  for (const m of String(html).matchAll(new RegExp(AZURE_ATTACHMENT_RE.source, "gi"))) ids.add(m[1].toLowerCase());
   return [...ids];
 }
 
