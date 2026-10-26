@@ -4,6 +4,7 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { isAbsolute, join, relative } from "node:path";
 import { hasScript, runNpmJson } from "./npm.mjs";
+import { storeConfig } from "../../../lib/knowledge-store.mjs";
 
 // Values that reach an npm script's argv: an allow-list, as deploy.mjs does for an artifact id and version.
 // A domain is an operator slug; an observable is a GraphQL operation or REST endpoint an AGENT read from a diff,
@@ -75,7 +76,11 @@ export function priorRuns(root, key, run = null) {
   }
   const models = join(root, "reports", "ba", "test-models");
   for (const f of list(models)) if (f.startsWith(`${key}-`)) out.push(`reports/ba/test-models/${f}`);
-  const mention = new RegExp(`(?<![A-Za-z0-9-])${escapeRe(key)}(?!\\d)`); // VCST-62 is not VCST-6223, nor XVCST-62
+  // VCST-62 is not VCST-6223, nor XVCST-62. A bare work item id is any number in any text, so an Azure Boards id
+  // counts only in a work-item form: AB#967, #967, "work item 967", …/_workitems/edit/967.
+  const mention = /^\d+$/.test(key)
+    ? new RegExp(`(?:(?<![A-Za-z0-9])[A-Za-z]*#|\\bwork ?item\\s+|/_workitems/edit/)${key}(?!\\d)`, "i")
+    : new RegExp(`(?<![A-Za-z0-9-])${escapeRe(key)}(?!\\d)`);
   for (const f of walk(join(root, "reports", "bugs"))) {
     if (!f.endsWith(".md")) continue;
     try { if (mention.test(readFileSync(f, "utf8"))) out.push(relative(root, f).split("\\").join("/")); } catch { /* dangling link, unreadable file */ }
@@ -83,7 +88,7 @@ export function priorRuns(root, key, run = null) {
   return out;
 }
 
-export function knownGround({ root, key, domain, prs, operations = [], runDir, run = runNpmJson, benchmark = null }) {
+export function knownGround({ root, key, domain, prs, operations = [], runDir, run = runNpmJson, benchmark = null, profile = null }) {
   const gaps = [];
   const known = { domain_map: { state: "unresolved", path: null }, mind_map: { path: null }, bl: [], cases_at_risk: [], kb: [], prior_runs: [] };
   const need = (s) => {
@@ -102,14 +107,21 @@ export function knownGround({ root, key, domain, prs, operations = [], runDir, r
   const observables = [...new Set(terms.filter(usable))];
   const dropped = terms.filter((t) => !usable(t)).length;
   if (dropped) gaps.push({ where: "known.tc:scope.observables", reason: "unreadable", detail: `${dropped} operation/endpoint name(s) with unexpected characters, or a route with under two literal path segments, not passed to tc:scope` });
-  if (domain && need("domain:check")) {
+  // F2's source (spec §5.3, U6): the project knowledge store's map first; the repository's domain:check only when the
+  // store has none. With a profile the store was looked at, so no map anywhere is ABSENT, not unresolved.
+  const storeMap = domain && profile ? join(storeConfig(profile, { root }).project, "domain", `${domain}.md`) : null;
+  if (storeMap && existsSync(storeMap)) {
+    known.domain_map = { state: "PRESENT", path: storeMap };
+    const mm = storeMap.replace(/\.md$/, ".mind-map.json");
+    known.mind_map.path = existsSync(mm) ? mm : null;
+  } else if (domain && need("domain:check")) {
     const r = run(root, ["domain:check", "--", "--json"]);
     if (r.json) {
       known.domain_map = domainState(r.json, domain);
       const mm = known.domain_map.path?.replace(/\.md$/, ".mind-map.json");
       known.mind_map.path = mm && existsSync(isAbsolute(mm) ? mm : join(root, mm)) ? mm : null;
     } else failed("domain:check", r);
-  }
+  } else if (storeMap) known.domain_map = { state: "ABSENT", path: null };
   if (domain && need("bl:extract")) {
     const r = run(root, ["bl:extract", "--", "--domain", domain, "--json"]);
     if (r.json) known.bl = (r.json.invariants ?? []).map((i) => ({ id: i.id, title: i.title, severity: i.severity }));

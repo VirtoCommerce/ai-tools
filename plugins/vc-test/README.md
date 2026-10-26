@@ -8,8 +8,9 @@ per step.
 
 **Preview.** `/vc-test:ticket-context` and `/vc-test:qa-test-strategy` are this plugin's own code, but both still
 read documents that live only in a checkout of `ai-tools`: `/vc-test:qa-test-strategy` its technique vocabulary, risk framework,
-data rules and visual-axis floors (P2 moves them); `/vc-test:ticket-context` some repository scripts (P1d-3). It reads the tracker and the code host — Jira or Azure Boards, GitHub or Azure Repos, as `project-profile.json` names them — only through `$VC_RUN`; a host-governed project stops until P1d-3. `/vc-test:qa-ticket`
-also calls triage and investigation from there. `/vc-test:init` and the scripts below work in any project.
+data rules and visual-axis floors (P2 moves them); `/vc-test:ticket-context` uses this repository's scripts (`deploy:pr`, `domain:check`, `regression:select`, …) where a project declares them, and records a named SKIP where it does not. It reads the tracker and the code host — Jira or Azure Boards, GitHub or Azure Repos, as `project-profile.json` names them — only through `$VC_RUN`, or, on a host-governed project, through the host's MCP servers: a `fetch` agent answers what
+each `prepare` pass could not read, and the orchestrator never sees that content. `/vc-test:qa-ticket` also calls
+triage and investigation from there (P2 moves them). `/vc-test:init` and the scripts below work in any project.
 
 ## Install
 
@@ -29,11 +30,12 @@ folder>` once; `/vc-test:init` says so when they are missing. A checkout of this
 |---|---|
 | `commands/init.md` | `/vc-test:init`. Writes the profile's `test` block through vc-init's `profile-set.mjs` and lists missing accounts with their `/project-init --add-user` command. It never asks for or writes a password |
 | `skills/ticket-context/`, `agents/ticket-context-analyst.md` | `/vc-test:ticket-context`: one gated context bundle for one ticket |
+| `agents/fetch.md`, `skills/ticket-context/lib/replay.mjs`, `fetch-catalog.json` | The host-governed route: `prepare --raw` answers each read from a raw folder and ends `needs-fetch` with the reads it lacks; the `fetch` agent answers them through the host's servers (read tools only), shaped as the catalog says the bridge would print. A read the servers have no tool for is a gap, never a guess |
 | `skills/qa-test-strategy/`, `agents/strategy-verifier.md` | `/vc-test:qa-test-strategy`: the floors, the gate, and an independent read-only verifier on a Critical risk |
 | `commands/qa-ticket.md` | `/vc-test:qa-ticket <KEY> [<env>] [--yes] [--dry-run]`, the QA run (preview) |
 | `lib/profile.mjs` | The read-only profile loader. A missing profile is a STOP ("run /project-init"), never a default |
 | `lib/capabilities.mjs` | What this install can do: connectors, stand URLs, MCP servers, the knowledge store, the project's scripts. A stand is writable only by declaration (`test.environments`) and only when `BACK_URL` is the declared stand |
-| `lib/deployed.mjs` | F6. It reads module, platform and theme versions from the stand. Run it as `node "$VC_RUN" runner plugin deployed --key <KEY>`, because it needs the admin login. A side it cannot read is UNKNOWN, never "not deployed"; a module the stand has not installed, or disabled on a load error, is never DEPLOYED |
+| `lib/deployed.mjs` | F6. It reads module, platform and theme versions from the stand. Run it as `node "$VC_RUN" runner plugin deployed --key <KEY>`, because it needs the admin login. A side it cannot read is UNKNOWN, never "not deployed"; a module the stand has not installed, or disabled on a load error, is never DEPLOYED. No step runs it with `--expect` yet, so on a project without `deploy:pr` F6 produces no `NOT DEPLOYED` line (every PR is DEPLOYMENT UNKNOWN); the producer is deferred to P2 |
 | `lib/knowledge-store.mjs` | The one reader and writer of project and platform knowledge. A client project never writes to the platform store, text is scrubbed, and nothing lands outside the store. It has committed tests (`knowledge-store.test.mjs`) |
 | `harness/playwright.config.mjs` | The config vc-init's runner runs `.spec` files under. `testDir` is the project |
 | `lib/plan-run.mjs`, `score-scenarios.mjs`, `window.mjs`, `teardown.mjs`, `run-cost.mjs`, … | The run's deterministic steps (P0); see each file's header |

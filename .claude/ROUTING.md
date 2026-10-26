@@ -48,6 +48,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Refresh the storefront sitemap knowledge file** | `/qa-sitemap [--check] [--no-browser]` | Command |
 | **Review THIS repo's own code diff** | `/code-review-full [branch \| SHA \| PR \| path]` (or the harness's own `/code-review`, `/security-review`, `/simplify`) | Command |
 | **Review a PR in `vc-platform` or a `vc-module-*` repo** (backward compatibility of the NuGet surface first) | `/review-pr-virto` — asks for repo, PR number and local clone | Skill |
+| **Review a PR that changes GitHub Actions** (`VirtoCommerce/.github` workflows, actions, module templates, or a repo's own `.github/workflows/` — untrusted input vs secrets first, then the contract for consumers; GitHub only, not Azure DevOps) | `/review-pr-gh-workflow <repo> <pr> [<clone>]` | Skill |
 | **Self-diagnose the plugin from session telemetry** | `/vc-self-check [latest \| <session-id>] \| deliver` | Command |
 | **Review / heal / improve a skill, command or agent prompt** | `/prompt-review <name \| path \| changed \| all> [--fix] [--improve] [--dry-run]` | Skill |
 | **Check the stand is fit before testing or analysing against it** (env health, declared vs deployed build, MCP availability) | `/preflight <ticket \| ticket-fast \| exploratory \| lifecycle \| domain-map \| ba> [--ticket KEY] [--components A,B] [--expect Module.Id@version]` (CLI: `npm run preflight`) | Skill |
@@ -121,7 +122,8 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 - `/qa-review-oracles` — Two-axis oracle review: `bl` syncs `bl/<slug>.yaml` from human sources (AC, docs, Jira) and re-checks `SUSPECT` rules; `ecl` triangulates `e-commerce-edge-cases-library.md` against docs + live + source and auto-applies confirmed changes. **Value gates GROWTH only**, never a correction
 
 ### Specialized Testing (Skills — domain expertise)
-- `/qa-storybook` — Visual regression, responsive breakpoints, state variations
+- `/qa-storybook` — Responsive breakpoints, state variations, in-story a11y
+- `/qa-visual-regression` — Pixel regression (`PIXEL`) for any web front: Storybook stories or app pages (API replayed from one HAR), base build vs head build, then triage intended / regression / noise. Which visual instrument a risk takes: `skills/qa-test/visual-axis.md` §2a
 - `/qa-accessibility` — WCAG 2.2 AA audits (POUR + the 2.2 additions, axe-core, Lighthouse, keyboard walk)
 - `/qa-design` — Dual Storybook + Storefront BL-UI audit, design-system consistency, UX heuristics, and the **`vs. DESIGN` axis** (tokens / control geometry / icon name→glyph parity vs a Claude Design project's local files via `npm run design:extract`; reports `SKIPPED`, never PASS, when no copy is on disk)
 - `/qa-api` — REST + GraphQL xAPI: reference lookup, execution, case generation
@@ -170,7 +172,9 @@ Roster detail (model, colour, team framework): [`knowledge/agents/README.md`](kn
 - `regression-orchestrator` — Parallel regression, retries, consolidated reports
 - `test-runner-agent` — Parameterized suite runner (spawned by regression-orchestrator)
 - `vc-test:ticket-context-analyst` (the vc-test plugin's) — Read-only, no-browser ticket reader for `/vc-test:ticket-context` (TICKET / MATERIALS / CHANGE modes); never writes to a tracker, a PR or the `kb`
+- `vc-test:fetch` (the vc-test plugin's) — Host-governed reads for `/vc-test:ticket-context`: answers one `needs-fetch` pass through the host's MCP servers (read tools only), writes only answer files in the raw folder and returns a count line, never content.
 - `vc-test:strategy-verifier` (the vc-test plugin's) — Read-only, independent gate check `/vc-test:qa-test-strategy` dispatches on a Critical risk before approval: re-derives §Gate from the bundle and the strategy, `APPROVE`/`REJECT`, never edits.
+- `pr-review-reader` — Read-only helper of `/review-pr-gh-workflow` (Read only, by the paths its brief lists — no search, no shell, no writes, no network); reads what the lead saved and returns requests for anything else
 
 **BA Team (+ shared-instructions):**
 - `ba-system-analyzer` — Repo structure, module inventory, user flows, pain points; **gathers the evidence for both shared oracles** (BL from human sources only; never edits a CSV)

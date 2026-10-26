@@ -18,17 +18,33 @@ export function resolveProfile(profile) {
   const codeHost = projectType === "client" && vcs.clientHost === "azure-repos" ? "azure-repos" : "github";
   const clientOrg = str(vcs.clientOrg);
   const orgs = projectType === "client" && codeHost === "github" && clientOrg && clientOrg !== upstream ? [clientOrg, upstream] : [upstream];
+  // /project-init writes tracker.baseUrl for Jira only; an Azure Boards profile carries tracker.azure.apiBase
+  // (https://dev.azure.com/<org>/<project>), or at least its organization and project.
+  const az = obj(t.azure);
+  const azureBase = str(az.apiBase)
+    || (str(az.organization) && str(az.project) ? `https://dev.azure.com/${encodeURIComponent(str(az.organization))}/${encodeURIComponent(str(az.project))}` : "");
+  const trackerBase = (str(t.baseUrl) || (tracker === "azure" ? azureBase : "")).replace(/\/+$/, "");
   const fieldList = [];
   for (const list of Object.values(obj(t.fields))) for (const f of Array.isArray(list) ? list : []) {
     if (f?.ref && !fieldList.some((x) => x.id === f.ref)) fieldList.push({ id: f.ref, name: f.name ?? f.ref });
   }
   return {
-    projectType, tracker, codeHost, orgs, fieldList,
-    trackerBase: str(t.baseUrl).replace(/\/+$/, ""),
+    projectType, tracker, codeHost, upstream, orgs, fieldList,
+    formLayout: obj(t.formLayout), // Azure Boards: { <type>: { htmlControls: [field ref, …] } }, in form order
+    trackerBase,
     keyFormat: t.ticketKeyFormat === "numeric" || t.ticketKeyFormat === "prefixed" ? t.ticketKeyFormat : tracker === "azure" ? "numeric" : "prefixed",
     crossLinkToken: str(t.crossLinkToken),
     fieldMap: obj(t.fieldMap),
-    azure: { roleStates: obj(t.azure?.roleStates), roleStatesByType: obj(t.azure?.roleStatesByType) }, // org and project: the bridge pins them
-    governed: !!profile.governance?.host,
+    azure: { roleStates: obj(az.roleStates), roleStatesByType: obj(az.roleStatesByType) }, // org and project: the bridge pins them
+    governed: !!profile.governance?.host || profile.governance?.secrets === "host", // the bridge's own refusal (vc-init bridge/run.mjs hostRefusal)
+    // The host's MCP servers per role (U23): the host-governed fetch reads through these, and only these.
+    servers: { tracker: str(profile.governance?.servers?.tracker), codeHost: str(profile.governance?.servers?.codeHost), github: str(profile.governance?.servers?.github) },
+    // How a role's tools are named: `mcp__<server>__` for a server of the session, `mcp__plugin_<plugin>_<server>__`
+    // for one the host plugin ships (governance.host is `<plugin>@<marketplace>`).
+    toolPrefixes: Object.fromEntries(["tracker", "codeHost", "github"].map((role) => {
+      const s = str(profile.governance?.servers?.[role]);
+      const plugin = str(profile.governance?.host).split("@")[0];
+      return [role, s ? [`mcp__${s}__`, ...(plugin ? [`mcp__plugin_${plugin}_${s}__`] : [])] : []];
+    })),
   };
 }
