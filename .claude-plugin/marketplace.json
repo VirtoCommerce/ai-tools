@@ -1,7 +1,7 @@
 {
   "name": "ai-tools",
   "description": "Virto Commerce internal QA tooling, published as a Claude Code marketplace for VC customers running the VC platform.",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "owner": {
     "name": "Virto Commerce",
     "email": "support@virtocommerce.com"
@@ -35,7 +35,7 @@
     {
       "name": "vc-test",
       "source": "./plugins/vc-test",
-      "description": "PREVIEW — one testing flow per ticket: scenarios that hunt significant bugs, approved at one human point, one agent each, costed per step. /vc-test:init for its own settings. Depends on vc-init and vc-fix. Its QA command needs an ai-tools checkout until P1d."
+      "description": "PREVIEW — one testing flow per ticket: /vc-test:ticket-context (one gated context bundle), /vc-test:qa-test-strategy (floors, gate, an independent verifier), then scenarios that hunt significant bugs, approved at one human point, one agent each, costed per step. /vc-test:init for its own settings. Depends on vc-init and vc-fix. Parts of the QA command still need an ai-tools checkout until P1d-3."
     }
   ]
 }

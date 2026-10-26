@@ -1,4 +1,4 @@
-// .claude/skills/ticket-context/lib/inventory.mjs — Q1. The list of inputs the gate checks the bundle
+// plugins/vc-test/skills/ticket-context/lib/inventory.mjs — Q1. The list of inputs the gate checks the bundle
 // against, built from the tracker's own data so no model writes it. Pure: one issue in, items out.
 // Nothing leaves silently: every attachment, inline image, link and linked issue becomes an item (possibly
 // carrying a gap) or is routed (PR -> prRefs; an attachment URL of THIS issue -> its existing item; a link to

@@ -1,4 +1,4 @@
-// .claude/skills/ticket-context/lib/paths.mjs — C4. Two roots, as plugins/CLAUDE.md defines them:
+// plugins/vc-test/skills/ticket-context/lib/paths.mjs — C4. Two roots, as plugins/CLAUDE.md defines them:
 // outputRoot() is where state goes (the project), skillRoot() is where this skill's own files live.
 // Same rule as plugins/vc-init/skills/project-init/lib/paths.mjs, copied (M1: no import across the boundary).
 import { existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, rmSync } from "node:fs";

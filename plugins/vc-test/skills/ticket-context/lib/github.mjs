@@ -1,4 +1,4 @@
-// .claude/skills/ticket-context/lib/github.mjs — block 3 "find" (design §5): the measured ladder of
+// plugins/vc-test/skills/ticket-context/lib/github.mjs — block 3 "find" (design §5): the measured ladder of
 // qa-test/technical-change.md §2.1, rungs 1–3, as a script (A4), plus the per-PR files the CHANGE agent reads.
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";

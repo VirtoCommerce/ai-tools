@@ -1,4 +1,4 @@
-// .claude/skills/ticket-context/lib/check-bundle.mjs — the gate (design §6). Six rules; an empty list passes.
+// plugins/vc-test/skills/ticket-context/lib/check-bundle.mjs — the gate (design §6). Six rules; an empty list passes.
 import { existsSync } from "node:fs";
 import { isCounted } from "./deploy.mjs";
 import { SCHEMA } from "./gap.mjs";

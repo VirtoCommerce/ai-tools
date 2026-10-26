@@ -1,4 +1,4 @@
-// .claude/skills/ticket-context/lib/frames.mjs — D4. ffmpeg is a SOFT dependency: absent ⇒ GAP with the remedy.
+// plugins/vc-test/skills/ticket-context/lib/frames.mjs — D4. ffmpeg is a SOFT dependency: absent ⇒ GAP with the remedy.
 // Videos and animated GIFs share one path: a GIF with more than one frame is never read as its first frame.
 import { spawnSync } from "node:child_process";
 import { mkdirSync, readdirSync, readFileSync } from "node:fs";

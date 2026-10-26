@@ -1,4 +1,4 @@
-// .claude/skills/ticket-context/lib/env.mjs — the layered .env loader. TEST_ENV is resolved here, against `root` (copied
+// plugins/vc-test/skills/ticket-context/lib/env.mjs — the layered .env loader. TEST_ENV is resolved here, against `root` (copied
 // from scripts/lib/resolve-test-env.js — keep in step by hand). The files are applied by the repo's
 // scripts/lib/env-layers.mjs, the one order every loader applies, when this install has it: imported at run time, so
 // the skill stays self-contained (M1). Without it the minimal order applies, and LAYERS_GAP says what is missing:

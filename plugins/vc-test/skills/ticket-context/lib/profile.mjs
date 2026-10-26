@@ -1,4 +1,4 @@
-// .claude/skills/ticket-context/lib/profile.mjs — C2 + D9: what to read and with which credential.
+// plugins/vc-test/skills/ticket-context/lib/profile.mjs — C2 + D9: what to read and with which credential.
 // Field names are project-profile.json's (plugins/vc-fix/scripts/lib/project-profile.d.mts).
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";

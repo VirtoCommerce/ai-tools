@@ -1,4 +1,4 @@
-// .claude/skills/ticket-context/lib/gap.mjs — the closed GAP vocabulary, read from bundle.schema.json so it
+// plugins/vc-test/skills/ticket-context/lib/gap.mjs — the closed GAP vocabulary, read from bundle.schema.json so it
 // is declared exactly once ($defs.gapReason).
 import { readFileSync } from "node:fs";
 import { join } from "node:path";

@@ -1,4 +1,4 @@
-// .claude/skills/ticket-context/lib/schema.mjs — a JSON-schema SUBSET validator (M4: vc-fix ships no ajv).
+// plugins/vc-test/skills/ticket-context/lib/schema.mjs — a JSON-schema SUBSET validator (M4: vc-fix ships no ajv).
 // It supports exactly the keywords bundle.schema.json uses, and THROWS on any other, so the schema can
 // never quietly outgrow the validator and pass something it did not check.
 const SUPPORTED = new Set(["$schema", "$id", "$defs", "$ref", "title", "description", "allOf", "type", "enum", "const",

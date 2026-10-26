@@ -1,4 +1,4 @@
-// .claude/skills/ticket-context/lib/known.mjs — block 4, the script half (the kb half is the runner's:
+// plugins/vc-test/skills/ticket-context/lib/known.mjs — block 4, the script half (the kb half is the runner's:
 // known-ground.md). Every lookup is capability-checked (M2); paths are this repo's layout and are simply
 // absent on a client install.
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";

@@ -1,4 +1,4 @@
-// .claude/skills/ticket-context/lib/npm.mjs — M2: repo tooling is run only when this install declares it.
+// plugins/vc-test/skills/ticket-context/lib/npm.mjs — M2: repo tooling is run only when this install declares it.
 // Security: npm is NEVER run through a shell. Some arguments derive from external text (a PR body's artifact
 // URL, an agent's observable); with `shell: true` on Windows cmd.exe they could be run as commands. We spawn
 // node itself on npm's CLI script, with the arguments as an array.

@@ -1,4 +1,4 @@
-// .claude/skills/ticket-context/lib/cache.mjs — P3 + D2 + D10. A bundle is cached only where git ignores it.
+// plugins/vc-test/skills/ticket-context/lib/cache.mjs — P3 + D2 + D10. A bundle is cached only where git ignores it.
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";

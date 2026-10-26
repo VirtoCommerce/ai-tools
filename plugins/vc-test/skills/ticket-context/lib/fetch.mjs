@@ -1,4 +1,4 @@
-// .claude/skills/ticket-context/lib/fetch.mjs — P5 caps (D12, declared once here) and S5 public-page reads.
+// plugins/vc-test/skills/ticket-context/lib/fetch.mjs — P5 caps (D12, declared once here) and S5 public-page reads.
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { GapError, gap } from "./gap.mjs";

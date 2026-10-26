@@ -1,4 +1,4 @@
-// .claude/skills/ticket-context/lib/agent-output.mjs — reads an analyst's returned JSON from its own transcript, so the
+// plugins/vc-test/skills/ticket-context/lib/agent-output.mjs — reads an analyst's returned JSON from its own transcript, so the
 // orchestrator saves it with `cli.mjs save` instead of retyping it (a retyped 25 KB output is paid twice: as the
 // orchestrator's output and in every later turn's context — measured on the vc-test dry run, VCST-5904).
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";

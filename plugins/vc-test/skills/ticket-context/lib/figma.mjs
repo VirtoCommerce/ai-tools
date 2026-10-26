@@ -1,4 +1,4 @@
-// .claude/skills/ticket-context/lib/figma.mjs — a Figma link's frame as a PNG, read by prepare when the env names
+// plugins/vc-test/skills/ticket-context/lib/figma.mjs — a Figma link's frame as a PNG, read by prepare when the env names
 // FIGMA_TOKEN (design-sources.md). One credential, never retried with another (S7); the token goes to
 // api.figma.com only, and the image is downloaded from a Figma image host without it, under the attachment cap.
 import { writeFileSync } from "node:fs";

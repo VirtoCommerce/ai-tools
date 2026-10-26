@@ -8,6 +8,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## /ticket-context and /qa-test-strategy are vc-test's — `vc-test` `0.2.0`, catalog `0.15.0` — 2026-10-26
+
+P1d-1 of the `vc-test` plan (`docs/superpowers/plans/2026-10-26-vc-test-p1d1-move.md`). Behaviour is unchanged: the
+deterministic `prepare` on VCST-5097 and the strategy gate on a saved strategy give the same output before and
+after the move. The one difference is the cache key's skill fingerprint, which changes when the skill's own files
+change, as designed.
+
+**Moved:** `/ticket-context` and `ticket-context-analyst`, and `/qa-test-strategy` with its template, now live in
+`plugins/vc-test/`. Git keeps their history. Nothing of them remains under `.claude/`.
+
+**Added: `vc-test:strategy-verifier`.** A read-only agent that `/vc-test:qa-test-strategy` dispatches on a Critical
+risk. It is cut from `qa-lead-orchestrator`'s Verifier Mode, which keeps `/qa-test`'s own per-step gates until P4.
+
+**Changed:**
+- `/qa-test-fast` calls `/vc-test:ticket-context` and `/vc-test:qa-test-strategy`, and stops with an install hint when vc-test is missing.
+- vc-test is enabled in the tracked `.claude/settings.json`, and the onboarding prerequisites name it.
+- `ticket-context` loads the plugin's own copy of the env loader.
+
 ## vc-test in the marketplace, as a preview — `vc-test` `0.1.0`, catalog `0.14.0` — 2026-10-26
 
 The third of four P1 plans (`docs/superpowers/plans/2026-10-26-vc-test-p1c-plugin.md`). `vc-test` is now listed,

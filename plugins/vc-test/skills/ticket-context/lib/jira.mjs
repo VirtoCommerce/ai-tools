@@ -1,4 +1,4 @@
-// .claude/skills/ticket-context/lib/jira.mjs — read-only Jira Cloud REST v3 + Confluence REST v2.
+// plugins/vc-test/skills/ticket-context/lib/jira.mjs — read-only Jira Cloud REST v3 + Confluence REST v2.
 // The credential is never sent to an origin other than the tracker's (S7); a refusal is a GAP, never a retry.
 import { CAPS, readCapped, timedFetch, timeoutGap } from "./fetch.mjs";
 import { GapError, asGap, gap } from "./gap.mjs";

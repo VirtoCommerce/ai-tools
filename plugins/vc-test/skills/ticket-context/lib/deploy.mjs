@@ -1,4 +1,4 @@
-// .claude/skills/ticket-context/lib/deploy.mjs — D3. No probe of its own: the PR's CI artifact comes from
+// plugins/vc-test/skills/ticket-context/lib/deploy.mjs — D3. No probe of its own: the PR's CI artifact comes from
 // `deploy:pr` (dry-run, read-only), and whether it is on the stand from the pre-flight core via its CLI
 // (`preflight --expect`). This file only maps a PR to an `expect`, folds the answers and writes blockers.
 import { hasScript, runNpmJson } from "./npm.mjs";

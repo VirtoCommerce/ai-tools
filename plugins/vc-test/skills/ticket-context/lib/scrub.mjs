@@ -1,4 +1,4 @@
-// .claude/skills/ticket-context/lib/scrub.mjs — S2. Nothing an agent reads still carries a credential.
+// plugins/vc-test/skills/ticket-context/lib/scrub.mjs — S2. Nothing an agent reads still carries a credential.
 // COPIED from scripts/kb/core/secret-gate.mjs (design D11, M1): SECRET_NAME, looksLikePath,
 // MIN_SECRET_LENGTH, TOKEN_SHAPES, secretValuesFrom, the env-file list, stringsOf. Keep in step by hand —
 // it is a value scan of the real env secrets first, shapes second, never a 40-hex guess.

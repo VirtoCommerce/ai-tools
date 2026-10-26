@@ -1,4 +1,4 @@
-// .claude/skills/ticket-context/lib/compose.mjs — a deterministic merge (design §5 step 5). No model composes
+// plugins/vc-test/skills/ticket-context/lib/compose.mjs — a deterministic merge (design §5 step 5). No model composes
 // the bundle; a model's omission stays an omission, so gate rule 3 can name it.
 import { CAPS } from "./fetch.mjs";
 import { SCHEMA } from "./gap.mjs";

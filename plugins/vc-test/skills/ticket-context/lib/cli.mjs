@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// .claude/skills/ticket-context/lib/cli.mjs — the deterministic half of /ticket-context (design §5).
+// plugins/vc-test/skills/ticket-context/lib/cli.mjs — the deterministic half of /ticket-context (design §5).
 // Exit: 0 ok · 1 usage · 2 gate or schema failed · 3 could not run. stdout is one JSON object; no secret is printed.
 import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
