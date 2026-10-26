@@ -8,6 +8,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## A visual risk names the instrument that decides it — `vc-test` `0.4.0` — 2026-10-26
+
+**Changed — the strategy gate (clause 4).** A risk with technique `VISUAL` now names its instrument:
+`VISUAL:PIXEL`, `VISUAL:DESIGN`, `VISUAL:PROBE` or `VISUAL:CONTENT`, chosen by `.claude/skills/qa-test/visual-axis.md`
+§2a (VCST-6534). A bare `VISUAL` fails the gate: it was a "look at it" row that decided nothing. A strategy written
+before this release that uses a bare `VISUAL` fails a re-check until its technique names an instrument.
+
+**Changed — F8 takes `PIXEL` (clause 6).** When the change is the design system or the token layer, a risk with
+technique `VISUAL:PIXEL` is required. Such a change moves components the ticket never names: in the 2026-10-23
+spike, two 2 px CSS edits changed stories in 14 components. `floors.mjs` lists it among F8's requirements.
+
+**Added — `PIXEL` in `/vc-test:qa-ticket`.** Each `VISUAL:PIXEL` risk is run by the orchestrator through the
+`qa-visual-regression` skill (scripts, not a browser slot) on the PR's front checkout against its base ref.
+Without the checkout its row is `BLOCKED`. Regressions land as `VIS-<m>` rows like the visual lane's other
+findings.
+
 ## An Azure Boards ticket reaches the gated bundle — `vc-test` `0.3.1` — 2026-10-26
 
 **Fixed — the Azure Boards tracker address.** `/vc-test:ticket-context` read the tracker address only from

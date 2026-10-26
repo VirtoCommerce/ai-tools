@@ -274,6 +274,17 @@ On **FAST the Artifact-B checklist is the run's only durable record**, so every 
 it as a row with a verdict, exactly like every other condition. **An uncovered visual condition is listed,
 never omitted** — dropping the row is what makes a checklist look complete when it is not.
 
+**Every visual row names its instrument** as its first tag: `[PIXEL]`, `[DESIGN]`, `[PROBE]` or `[CONTENT]`
+(§2a). The rows are derived after the ticket analysis, never written as "check the page":
+
+- `PIXEL` rows: one per component group `visual:affected` puts in scope, in the row format of
+  [`../qa-visual-regression/triage.md`](../qa-visual-regression/triage.md) §3.
+- Every `uncovered[]` file becomes a row on the pages source or on another instrument.
+- `DESIGN` rows: one per design-specified surface. `PROBE` rows: one per breaking dimension (locale, length,
+  width, theme). `CONTENT` rows: one per changed label, format or empty state.
+
+A visual row without an instrument decides nothing, and it is the shape a by-eye check takes.
+
 The pass also writes its own per-ticket `design-report.md` **into the run's own ticket folder**
 (`{RUN_DIR}/design-report.md`) — `.claude/rules/reports.md` category 6, which
 already permits a ticket-scoped `/qa-design` run; 30–60 lines, cap 120. Note this is deliberately the

@@ -38,6 +38,9 @@ const SUSPICION_ID = /\bH-\d+\b/; // a hotspot id; S-n is a scenario (clause 13)
 const HELD_STATE = /\b(?:in[- ]memory|per[- ](?:instance|replica|pod))\b|\b(?:limit(?:er)?|counter|lockout|throttl\w*|rate[- ]?limit\w*|session(?: state)?)\s+(?:is|are)\s+(?:held|kept|stored|reset|shared|scoped|cached)\b/i;
 const productAnchor = (item) => [...item.matchAll(CODE_ANCHOR)].find((m) => !NOT_PRODUCT.test(m[1]))?.[0];
 const RISK_REF = /\bR-?\d+\b/;
+// A VISUAL risk names the instrument that decides it (.claude/skills/qa-test/visual-axis.md §2a): a visual row with no
+// instrument is "look at it", which decides nothing. F8 (the change IS the design system) takes PIXEL for the blast radius.
+const VISUAL_INSTRUMENT = /\bVISUAL:(PIXEL|DESIGN|PROBE|CONTENT)\b/;
 const WEAKENING = /record(?:s|ed|ing)?\b[^.·]*\bobserved|instead of assert|no PASS\/FAIL|never FAIL|not asserted/i;
 const escapeRe = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -76,6 +79,7 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names, chan
     if (!a) { errors.push(`4: ${x.r} has no approach row`); continue; }
     if (!a.technique || !a.oracle || !a.lane) errors.push(`4: ${x.r} approach row lacks a technique, oracle or lane`);
     if (!/^\W*(low|medium|high)\b/i.test(a.effort)) errors.push(`4: ${x.r} effort "${a.effort}" is not low|medium|high`);
+    if (/\bVISUAL\b/.test(a.technique) && !VISUAL_INSTRUMENT.test(a.technique)) errors.push(`4: ${x.r} technique VISUAL names no instrument — VISUAL:PIXEL|DESIGN|PROBE|CONTENT (visual-axis.md §2a)`);
   }
   for (const a of approach) if (!registered.has(a.r)) errors.push(`4: approach row ${a.r} names no registered risk`);
   for (const a of approach) if (/\{HYPOTHESIS\}/.test(a.oracle) && !/\b(EXPLORE|MODEL)\b/.test(a.technique)) errors.push(`5: ${a.r} decides on a {HYPOTHESIS} oracle`);
@@ -95,6 +99,7 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names, chan
     if (MODEL_RISK_FOR[id] && !risks.some((x) => names(x, id) && isModel(x.r)))
       errors.push(`6: ${id} fired but no risk carries floor:${id} in its Source with technique MODEL (${MODEL_RISK_FOR[id]} risk, M10)`);
   }
+  if (fired.includes("F8") && !approach.some((a) => /\bVISUAL:PIXEL\b/.test(a.technique))) errors.push("6: F8 fired but no risk has technique VISUAL:PIXEL — a design-system change moves components the ticket never names");
   const high = risks.filter((x) => x.level === "high" || x.level === "critical");
   if (high.length && !running("Exploratory")) errors.push(`6b: ${high.map((x) => x.r).join(", ")} High/Critical ⇒ Exploratory runs (F1)`);
   for (const x of high) { const a = approach.find((y) => y.r === x.r); if (a && /\{HYPOTHESIS\}/.test(a.oracle) && !isModel(x.r)) errors.push(`6c: ${x.r} High/Critical on {HYPOTHESIS} needs MODEL (M1)`); }

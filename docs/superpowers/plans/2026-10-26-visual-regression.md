@@ -92,14 +92,17 @@ change, no version bump.
 
 ### Phase 2 — the checklist, the strategy, the fork flow
 
-- Visual checklist rows carry `instrument: PIXEL|DESIGN|PROBE|CONTENT` (`qa-checklist`, Artifact B),
-  generated after ticket analysis from `visual:affected`. A row with no instrument decides nothing.
-- `vc-test` strategy: `VISUAL` risks name their instrument; F8 adds `PIXEL`. Plugin change ⇒ version
-  bump + tag (`docs/release-process.md`).
-- `vc-frontend` plugin: `merge-upstream` runs `PIXEL` on the fork before vs after the merge (the fork
-  owns how it looks). Plugin change ⇒ version bump + tag.
-- `/qa-regression visual` (release): all stories + a page targets set, Coffee + Red × 375 + 1280, base
-  = the previous release tag.
+- [x] Visual checklist rows name their instrument (`[PIXEL]`, `[DESIGN]`, `[PROBE]`, `[CONTENT]`) and are derived
+  after ticket analysis — `visual-axis.md` §6.
+- [x] `vc-test` 0.4.0: a `VISUAL` risk names its instrument (`VISUAL:PIXEL|DESIGN|PROBE|CONTENT`, gate clause 4);
+  F8 requires a `VISUAL:PIXEL` risk (gate clause 6, `floors.mjs`); `/vc-test:qa-ticket` runs each `VISUAL:PIXEL`
+  risk through `qa-visual-regression`. Tag `vc-test--v0.4.0` after the merge (`docs/release-process.md` §Step 5a).
+- [x] Release visual run — `regression-selection.md` §Visual regression at a release: base = the previous
+  release tag, the whole kit, plus the key routes.
+- [ ] `vc-frontend` `merge-upstream` runs `PIXEL` on the fork before vs after the merge. **Open decision:** the
+  plugin is self-contained and runs inside the fork, which has neither the engine nor its dependencies
+  (Playwright, pixelmatch, pngjs). Either the plugin ships its own copy of `scripts/visual/` with an install
+  step, or the step calls an ai-tools checkout the operator points it at. Decide before building.
 
 ### Phase 3 — page targets for the Virto storefront (needs a reachable stand)
 

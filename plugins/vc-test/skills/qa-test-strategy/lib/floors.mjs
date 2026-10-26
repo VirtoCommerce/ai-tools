@@ -113,7 +113,7 @@ export function computeFloors(bundle, { domainMapText = null, p01Names = P01_DEF
 
   const kit = paths.filter((p) => UI_KIT.test(p));
   // Fails closed on what was NOT read; a ui-kit path in the part that was read still fires it.
-  const f8 = kit.length ? floor("F8", true, `ui-kit files: ${kit.slice(0, 3).join(", ")}`, ["visual lane", "token audit"])
+  const f8 = kit.length ? floor("F8", true, `ui-kit files: ${kit.slice(0, 3).join(", ")}`, ["visual lane", "token audit", "VISUAL:PIXEL risk"])
     : floor("F8", false, diffUnread ? `${diffUnread} — F8 fails closed (ticket-routing §5c)` : "no ui-kit file");
 
   const org = surface.match(ORG);

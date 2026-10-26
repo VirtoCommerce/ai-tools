@@ -38,7 +38,7 @@ Regression-averse <✔/—: why> · Process-compliant <✔/—: why>
 | R | Technique / approach | Oracle {authority} | Layer · tool | Lane · agent | Effort |
 |---|---|---|---|---|---|
 | R1 | FLOW, DT | AC-2 {SPEC} | storefront · Playwright | chrome · qa-frontend-expert | high |
-<!-- Technique tokens: test-design-techniques.md §0 + EXPLORE · VISUAL · CONTRACT · REGRESSION · SCALE · MODEL (expanded by /qa-test-model). -->
+<!-- Technique tokens: test-design-techniques.md §0 + EXPLORE · VISUAL:<PIXEL|DESIGN|PROBE|CONTENT> (visual-axis.md §2a) · CONTRACT · REGRESSION · SCALE · MODEL (expanded by /qa-test-model). -->
 
 <!-- VC-TEST ONLY — delete outside vc-test: a /qa-test or /qa-test-fast strategy drops this whole block (the heading,
      the table and this comment). Under vc-test it is required (clause 13, floors.md §13); the list is generated before
@@ -55,7 +55,7 @@ Regression-averse <✔/—: why> · Process-compliant <✔/—: why>
 | Mind map | RUN \| SKIP — <reason> |
 | Checklist | RUN (always) |
 | Exploratory | RUN <box> min, FIRST \| ALONGSIDE — charter: <R-ids> \| SKIP — <reason> |
-| Visual lane | RUN (F3/F8) \| SKIP — <reason> |
+| Visual lane | RUN (F3/F8) — instruments: <PIXEL, DESIGN, PROBE, CONTENT as the VISUAL risks name them> \| SKIP — <reason> |
 | Contract refresh | RUN \| SKIP — <reason> |
 | Coverage triage + regression | RUN — <n> cases; stale → lifecycle: <ids + reason> \| SKIP — <reason> |
 | Verifier | RUN (Critical R-n) \| SKIP — no Critical risk |

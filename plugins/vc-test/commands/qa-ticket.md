@@ -75,11 +75,11 @@ One message per wave of `run-plan.json`; each brief gets `RUN_DIR`, `STRATEGY`, 
 |---|---|
 | `contract-refresh` | both commands of its `run.commands` |
 | `checklist`, `ac-checks`, `scenario:S-n` | its `run.agent` and `run.model`, `[vc-test:<id>] <TICKET>`, brief "Read and follow `<plugin>/<run.brief>`"; checklist + `CHANGE_MAP`; ac-checks + `CHECKLIST`, `CHANGE_MAP`, `CAPABILITIES`; a scenario + `S`, `SCENARIOS`, `BUNDLE`, `CAPABILITIES`, `LANE` = its `lane`, `EXPLORATORY` = its `exploratory` |
-| `visual` | `ui-ux-expert` on Chrome DevTools MCP, brief opening with Skill `qa-design` (`.claude/skills/qa-test/visual-axis.md` §2, §4, §5) |
+| `visual` | `ui-ux-expert` on Chrome DevTools MCP, brief opening with Skill `qa-design` (`.claude/skills/qa-test/visual-axis.md` §2, §4, §5). Each `VISUAL:PIXEL` risk: you run Skill `qa-visual-regression` yourself — scripts, not a browser slot — on the PR's front checkout vs its base ref; no checkout ⇒ its row `BLOCKED — needs the front checkout` |
 
 **A `global/…` writer is BLOCKED before dispatch** if `node <plugin>/lib/window.mjs check` exits 1: write its row,
 `BLOCKED — no channel to announce the window (U68)`, to `<RUN_DIR>/scenarios/S-n.rows.md`. The visual lane's
-findings: a row each in `scenarios/visual.rows.md`, `VIS-<m>`, Proof `visual`, `FAIL <severity>`. **After each
+findings, `PIXEL` regressions included: a row each in `scenarios/visual.rows.md`, `VIS-<m>`, Proof `visual`, `FAIL <severity>`. **After each
 wave**: `node <plugin>/lib/scenario-rows.mjs merge --run-dir <RUN_DIR> --ids <its S-n,…[,visual]>`; exit 2 ⇒
 `missing` / `refused` back to their agent once, merge those again.
 
