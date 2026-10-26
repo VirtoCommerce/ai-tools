@@ -68,7 +68,8 @@ test("env: only an environment the profile's test block lists", () => {
 });
 
 test("inner env: passwords only — never a token, never NODE_OPTIONS", () => {
-  const source = { ...process.env, ADMIN_PASSWORD: "p1", GH_TOKEN: "t1", GITHUB_TOKEN: "t2", GITHUB_FIX_BUGS_TOKEN: "t3", ADO_PAT: "t4", JIRA_API_TOKEN: "t5", NODE_OPTIONS: "--require x" };
+  // Only what the test sets: a machine's own *PASSWORD variable (CI's PGPASSWORD) is a password too.
+  const source = { PATH: process.env.PATH, ADMIN_PASSWORD: "p1", GH_TOKEN: "t1", GITHUB_TOKEN: "t2", GITHUB_FIX_BUGS_TOKEN: "t3", ADO_PAT: "t4", JIRA_API_TOKEN: "t5", NODE_OPTIONS: "--require x" };
   const { env, secrets } = buildInnerEnv(source, "runner");
   assert.equal(env.ADMIN_PASSWORD, "p1");
   for (const k of ["GH_TOKEN", "GITHUB_TOKEN", "GITHUB_FIX_BUGS_TOKEN", "ADO_PAT", "JIRA_API_TOKEN", "NODE_OPTIONS"]) assert.equal(k in env, false, k);
