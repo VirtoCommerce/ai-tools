@@ -1,5 +1,5 @@
 ---
-description: "[Testing] PROTOTYPE vc-test — one feature-test ticket by scenarios: context → change map → approved scenarios, one agent each, beside the background AC run → triage → verdict, costed. Triage, investigation and some context scripts still need an ai-tools checkout (P1d-3)."
+description: "[Testing] PROTOTYPE vc-test — one feature-test ticket by scenarios: context → change map → approved scenarios, one agent each, beside the background AC run → triage → verdict, costed. Triage and investigation still need an ai-tools checkout (P2)."
 argument-hint: "<TICKET> [<env>] [--yes] [--dry-run]"
 disable-model-invocation: true
 ---

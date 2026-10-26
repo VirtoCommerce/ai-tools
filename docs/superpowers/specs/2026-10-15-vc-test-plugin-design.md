@@ -590,8 +590,8 @@ read, because what it reads next depends on what it has read: linked issues, att
 companions. The property the table is after holds: the process that analyses holds no token, and each launch holds
 one group's secret (U20). The cost is the launches — about 0.5 s each; VCST-5097 makes 40 and takes ×1.7 its
 in-process time. Azure Repos has no unified-diff endpoint, so `prepare` builds the diff from each file at the merge
-base and the source commit with plain local `git diff --no-index`. How the host-governed fetch agent fills the same
-calls is P1d-3's.
+base and the source commit with plain local `git diff --no-index`. The host-governed fetch agent fills the same
+calls (below, *As built (P1d-3b)*).
 
 **A host-governed project (U22, U23)** has no bridge route: the bridge refuses every token-bearing tool there.
 The orchestrator dispatches a fresh fetch agent instead, which reads through the host's MCP servers the profile
@@ -613,6 +613,28 @@ maps (B9):
 
 Defaults that assume this repository (`DEFAULT_ORG = "VirtoCommerce"`, `TEST_ENV` default `vcst`) become profile
 reads. With no profile the run STOPs with "run /project-init" (U19) — there is no fallback to those defaults.
+
+**As built (P1d-3b, 2026-10-26): the fetch runs in passes, and its answers are the bridge's own outputs.** Since the
+reads stay interleaved (above), there is no whole tracker fetch before a whole host fetch. `prepare --raw <dir>`
+runs the normal connectors over a *replay transport*: each `run(tool, args)` is answered from `<dir>/<id>.json`
+(the id is a hash of the normalised argv), holding what the bridge command would have printed (`stdout`) or why
+it cannot be had (`missing`). A pass that meets unanswered reads writes them to `requests.json`, with each read's
+role and expected shape from `fetch-catalog.json`, and ends `needs-fetch` (exit 5). A fresh `vc-test:fetch` agent
+answers them through the role's server and returns one count line; the next pass asks for what the new answers
+lead to. Eight passes at most, then `no-tracker`. A finished run's `prepare.json` carries `fetched_via: "host"`.
+A missing answer keeps the bridge's gap reason (404 → `deleted`, 401/403 → `access-denied`, no tool →
+`connector-unavailable`).
+
+- **The agent's tools (B9, U56).** A plugin agent cannot name the tools of a server it does not know, and
+  `mcp__<server>__*` needs the name, so `fetch` lists no `tools:` and disallows Bash, Edit, NotebookEdit,
+  WebFetch, WebSearch and Agent. It inherits the session's MCP tools, write tools included: *read only* rests
+  on its brief, not on its tool list. That residual risk is accepted for the preview and re-checked in P5.
+- **Measured on VCST-6534** (Atlassian + GitHub MCP, Sonnet): converged in 4 fetch passes, 10 answers, about
+  200k agent tokens. Equal to the bridge route except where a server has no read tool: Jira's site-wide field
+  list (so no AC custom fields, gap `ac_fields`), the development panel (gap `dev-status`; its PRs are still
+  found by the key search) and GitHub commit search (gap `change.commits`, rung 3 finds nothing). On a host
+  route the field list is therefore a gap, not a `no-tracker`: the issue read decides whether the tracker can
+  be read.
 
 ## 8. Security, speed, tokens
 
@@ -676,7 +698,7 @@ Every step ends in one of four states: **OK**, **SKIP**(reason), **BLOCKED**(rea
 | Phase | Delivers | Checked by |
 |---|---|---|
 | **P0 Prototype v2 — scenarios** (before P1) | in `plugins/vc-test/`, still loaded with `--plugin-dir`: the scenario generator (brief + a scoring script over the U61 signals), the scenario list at human point 1 (U62), one runner per scenario with its own settings window (U65), the background AC run, per-scenario cost (`[vc-test:scenario:S-n]`); the strategy gate's clauses 11–12 and the verifier's U57/U58 checks (U64) in `qa-test-strategy`, on their own branch | **Closed 2026-10-26 without its benchmark run (U69).** Planned: the blind benchmark (U66, U67), VCST-5904 on the §2b build finding X5 at no more than the prototype's cost (B19), with every row of §2c given a result. The unmeasured rows of §2c move to P3 |
-| **P1 Foundation** — P1a–P1d-2 and P1d-3a merged (2026-10-26: vc-init 0.4.0/0.4.1, vc-fix 0.14.0/0.15.0, vc-test 0.1.0–0.4.0); P1d-3b (host-governed) open | plugin manifest, `vc-init` + `vc-fix` dependencies, marketplace entry; the `vc-init` change (`test` in `MERGEABLE` + schema; the script-runner bridge tool, U32 + B10; the pinned GraphQL read, B8) and the `vc-fix` change (connector read commands in `jira.mjs`/`ado.mjs`), each with its version bump and tag; `/vc-test:init` (U21: stand declared writable or not, knowledge-store path, accounts per role checked); `ticket-context` and `qa-test-strategy` moved, with the agents `ticket-context-analyst` and `strategy-verifier` (U56); the `fetch` agent for the host-governed route; tracker/host interfaces with Jira, GitHub, Azure Boards and Azure Repos, fetching through `$VC_RUN`, and the host-governed route through the host's MCP servers into the same raw schema (§7, U23); `capabilities.mjs`; F6 via `/api/platform/modules`; `knowledge-store.mjs` (+ committed tests); the "unavailable is not doubt" rule in the floors | `claude plugin validate`; committed store tests and `vc-init`'s committed bridge tests green, including every B8 and B10 refusal; temporary tests for the rest; `/ticket-context` + strategy from the plugin on VCST-5097, with tokens only in `vc-secrets`, reproduce today's bundle and gate result; Azure connectors against recorded responses; the host-governed route: raw files written from recorded host-server responses give the same bundle as the bridge route on the same ticket |
+| **P1 Foundation** — P1a–P1d-2 and P1d-3a merged (2026-10-26: vc-init 0.4.0/0.4.1, vc-fix 0.14.0/0.15.0, vc-test 0.1.0–0.4.1); P1d-3b (host-governed) built as vc-test 0.5.0, in review | plugin manifest, `vc-init` + `vc-fix` dependencies, marketplace entry; the `vc-init` change (`test` in `MERGEABLE` + schema; the script-runner bridge tool, U32 + B10; the pinned GraphQL read, B8) and the `vc-fix` change (connector read commands in `jira.mjs`/`ado.mjs`), each with its version bump and tag; `/vc-test:init` (U21: stand declared writable or not, knowledge-store path, accounts per role checked); `ticket-context` and `qa-test-strategy` moved, with the agents `ticket-context-analyst` and `strategy-verifier` (U56); the `fetch` agent for the host-governed route; tracker/host interfaces with Jira, GitHub, Azure Boards and Azure Repos, fetching through `$VC_RUN`, and the host-governed route through the host's MCP servers into the same raw schema (§7, U23); `capabilities.mjs`; F6 via `/api/platform/modules`; `knowledge-store.mjs` (+ committed tests); the "unavailable is not doubt" rule in the floors | `claude plugin validate`; committed store tests and `vc-init`'s committed bridge tests green, including every B8 and B10 refusal; temporary tests for the rest; `/ticket-context` + strategy from the plugin on VCST-5097, with tokens only in `vc-secrets`, reproduce today's bundle and gate result; Azure connectors against recorded responses; the host-governed route: raw files written from recorded host-server responses give the same bundle as the bridge route on the same ticket |
 | **P2 Flow** | `artifacts.json`, `plan-run.mjs`, `route.mjs`, `rounds.mjs`, `trace.mjs`, `write-zones.mjs` (+ committed tests); the command with its two human points; `ac-checks` (API checks + `.spec` scripts) and `ui-checks` (U27); the kept `.spec` with its CSV row (U18 revised; layout from the suites-reorganization design); the severity filter and Medium-only investigation (U25, U29); exploratory as the main lane with its significant-bug charter and access probe (U26); evidence on failure (U28); the round-N refresh (U15); `run-cost.mjs` and the fresh writing agent (U30), with the §2b per-run totals measured by it (B11); execution skills moved (`qa-triage-results` invocable), with `ui-ux-expert`; `/qa-test-automation` and the `.spec` harness copy (U56); the agents `change-map`, `checklist-writer` and `verdict-writer` with their narrow tools, replacing the prototype's general-purpose briefs (U56); `qa-checklist` risk ids (`vc-fix` bump); the join speed-up (O6); per-entry models | `--dry-run` on 3 tickets: wave plan, gates, no outward write |
 | **P2b Test data** | the test-data family moved and refactored (§6a): lighter skills, the engine with generic platform operations, this repository's seeders ported as project content | `td:validate` + `td:reconcile` green on the platform project before and after; one domain seeded and torn down from the plugin on a non-production stand; BUDGET-004 for every moved `SKILL.md` |
 | **P3 Validation, stage 1 — native platform** | live runs on 3–5 VC tickets in this repository (Story, Review task, Technical task, UI-only, Bug not-fixed) on Jira + GitHub, with the plugin installed the way a client installs it | redesign §8 measures (R3 not slower on a small ticket, R4 nothing FULL ran is lost on a large one, no floor overridden by hand); the platform store receives the kb writes; against the §2b baseline (U34): at most 50% of the comparable run's per-run total (B11), and VCST-6398 re-run finds every Medium the baseline found (VCST-6452, 6453, 6454 — U48; a miss fails P3 whatever the cost); a control plain-review run on the same tickets, and the layered run finds more significant bugs than it (U49); wall clock per command on a small, a component and a large ticket, the developer command at most 1.5 h on a typical one (U51); a round 2 costs a fraction of round 1; every §2c row P0 left unverified gets a result (U69) |

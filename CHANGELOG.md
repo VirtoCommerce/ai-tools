@@ -8,6 +8,32 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## Host-governed projects — `vc-test` `0.5.0` — 2026-10-26
+
+`/vc-test:ticket-context` now builds its bundle on a host-governed project, whose tracker and code host are reachable
+only through the host plugin's MCP servers (vc-test spec U22, U23, B9; plan P1d-3b).
+
+**Added — `prepare --raw` and the pass loop.** A governed profile without `--raw` prints `host-governed` with the
+raw folder and the mapped servers (exit 4). With `--raw`, every read is answered from that folder, one file per
+request, holding what the bridge command would have printed. A pass with unanswered reads writes `requests.json`
+and ends `needs-fetch` (exit 5); eight passes at most. The connectors, the inventory and the bundle do not know
+which route ran; a finished `prepare.json` says `fetched_via: "host"`.
+
+**Added — the `fetch` agent.** It answers one pass through the role's server (`governance.servers.tracker`,
+`codeHost`, `github`), read tools only, writes only answer files, and returns one count line, so the orchestrator
+never reads ticket or PR content. A read a server has no tool for is answered `missing` and becomes a gap with the
+bridge's reason. `fetch-catalog.json` tells it the shape each bridge command prints.
+
+**Changed — a host route that cannot list Jira's fields goes on.** The Atlassian MCP has no site-wide field list; on
+a host route that is gap `ac_fields` / `connector-unavailable` (ACs come from the description and comments) and
+the issue read decides whether the tracker can be read.
+
+**Fixed — a JQL search keeps at most `maxResults` issues** whatever the transport returns (a host's server may page
+through everything; Jira itself already caps).
+
+**Known limit.** `fetch` cannot name an unknown server's tools, so it inherits the session's MCP tools, write
+tools included; read-only rests on its brief. Accepted for the preview.
+
 ## The #540 review fixes — `vc-test` `0.4.1` — 2026-10-26
 
 Fixes from an independent review of 0.4.0 (#540).
