@@ -121,7 +121,8 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 - `/qa-review-oracles` — Two-axis oracle review: `bl` syncs `bl/<slug>.yaml` from human sources (AC, docs, Jira) and re-checks `SUSPECT` rules; `ecl` triangulates `e-commerce-edge-cases-library.md` against docs + live + source and auto-applies confirmed changes. **Value gates GROWTH only**, never a correction
 
 ### Specialized Testing (Skills — domain expertise)
-- `/qa-storybook` — Visual regression, responsive breakpoints, state variations
+- `/qa-storybook` — Responsive breakpoints, state variations, in-story a11y
+- `/qa-visual-regression` — Pixel regression (`PIXEL`) for any web front: Storybook stories or app pages (API replayed from one HAR), base build vs head build, then triage intended / regression / noise. Which visual instrument a risk takes: `skills/qa-test/visual-axis.md` §2a
 - `/qa-accessibility` — WCAG 2.2 AA audits (POUR + the 2.2 additions, axe-core, Lighthouse, keyboard walk)
 - `/qa-design` — Dual Storybook + Storefront BL-UI audit, design-system consistency, UX heuristics, and the **`vs. DESIGN` axis** (tokens / control geometry / icon name→glyph parity vs a Claude Design project's local files via `npm run design:extract`; reports `SKIPPED`, never PASS, when no copy is on disk)
 - `/qa-api` — REST + GraphQL xAPI: reference lookup, execution, case generation

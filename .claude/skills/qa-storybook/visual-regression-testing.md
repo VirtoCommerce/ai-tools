@@ -1,77 +1,25 @@
-# Visual Regression Testing Guide
+# Visual Regression Testing — moved to `/qa-visual-regression`
 
-> Reference file for ui-ux-expert agent. Read when performing visual regression testing.
+> Reference file for ui-ux-expert agent. Read when someone asks for "visual regression" on Storybook.
 
-## Test Case Template
+Pixel regression of the UI kit is the `PIXEL` instrument, owned by
+[`../qa-visual-regression/SKILL.md`](../qa-visual-regression/SKILL.md). It is a script pipeline
+(`visual:affected` → `visual:snap` base + head → `visual:diff`) followed by a triage step.
+It does not hand an agent screenshots to compare.
 
-```markdown
-Test Case: TC_VISUAL_REGRESSION_001
-Title: Visual regression test for [Component]
+What this file used to prescribe — an agent capturing "baselines" through an MCP browser and
+comparing them by eye — is retired, for three reasons:
 
-Using playwright MCP for visual testing:
+- **No comparator.** "Compare new vs baseline" had no tool behind it. A 2 px padding change is not
+  visible by eye on a full-page shot, and the 2026-10-23 spike moved 59 stories with two such
+  edits.
+- **No determinism.** An MCP screenshot runs at the browser's own DPR, fonts and animation state.
+  Two captures of the same build differ, so every diff is suspect.
+- **Wrong baseline.** A baseline captured "on demand" in an earlier session is a build of unknown
+  commit on another machine. `/qa-visual-regression` shoots the base build and the head build in
+  one run instead.
 
-1. CAPTURE BASELINE:
-   [] Navigate to component in Storybook
-   [] Capture screenshot of each story:
-     - Default state
-     - Hover state (trigger hover)
-     - Focus state (trigger focus)
-     - Error state
-     - Loading state
-   [] Save screenshots as baseline:
-     - productcard-default-baseline.png
-     - productcard-hover-baseline.png
-     - etc.
-
-2. AFTER CODE CHANGES:
-   [] Navigate to component again
-   [] Capture new screenshots (same stories)
-   [] Compare new vs baseline:
-     - Use visual diff tool (playwright built-in or external)
-     - Highlight differences in pixels
-
-3. ANALYZE DIFFERENCES:
-   For each difference:
-   [] Is change intentional?
-     - YES: Update baseline (this is new design)
-     - NO: Visual regression bug! Report it.
-
-   [] Types of differences to watch for:
-     - Color changed (unintended)
-     - Spacing changed (padding, margin)
-     - Font changed (size, weight, family)
-     - Layout shifted
-     - Element moved
-     - Border/shadow changed
-     - Opacity changed
-
-4. REPORT VISUAL REGRESSIONS:
-   If unintended change detected:
-
-   Bug: "Visual Regression - ProductCard spacing changed"
-
-   Description:
-   - Expected: Padding 16px
-   - Actual: Padding 12px
-   - Diff screenshot: [Attach]
-   - Likely cause: CSS refactor changed padding
-   - Affects: All ProductCard instances
-
-Visual Regression Tools (in order of preference):
-- **Chromatic** (default) — first-party Storybook integration, deterministic browser pool, TurboSnap skips unchanged stories, baseline review UI per PR.
-- **Playwright `toHaveScreenshot()`** (self-hosted fallback) — drive with `test-storybook --index-json` if Chromatic cost is prohibitive. Pin a single Linux Chromium image; fonts and AA rendering differ across OS and will break baselines.
-- Percy — viable alternative to Chromatic; pick whichever has the cheaper plan for the team size.
-- *Avoid:* BackstopJS (not actively recommended against SB 9), HTML/DOM snapshot tests as a primary signal.
-```
-
-## Determinism — required for stable baselines
-
-Without these, you'll fight flake instead of finding regressions:
-
-- **Font loading** — preview decorator that awaits `document.fonts.ready` before rendering. Otherwise Arial-fallback ↔ real-font swaps cause diffs.
-- **Animations/transitions** — set `parameters.chromatic.pauseAnimationAtEnd: true` per story, or inject CSS to disable transitions in the test preview.
-- **Time/random** — mock `Date.now()`, `Math.random()`, timers (`vi.useFakeTimers()` in setup).
-- **Network** — MSW addon (`msw-storybook-addon`). Stories must not call live backends.
-- **Theme scope** — **Coffee** and **Red** are the A11y-gated themes; capture all themes for visual diff, but assert a11y only on those two.
-
-See `tooling-stack.md` for the full package map and CI gating rules.
+Which visual instrument a risk takes (`PIXEL` / `DESIGN` / `PROBE` / `CONTENT`):
+[`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §2a. Chromatic and the other hosted
+services are still an option for vc-frontend's own CI ([`tooling-stack.md`](tooling-stack.md)
+§Decision). That is a frontend-team decision and Phase 6 of the plan, not something this repo runs.
