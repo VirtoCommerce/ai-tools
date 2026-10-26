@@ -59,7 +59,11 @@ export const ARTIFACT_NEEDS = {
   Exploratory: (c) => lacks(c, /playwright/i, "a browser lane (mcp:playwright-*)"),
   "Visual lane": (c) => lacks(c, /chrome[-_ ]?dev[-_ ]?tools/i, "mcp:chrome-devtools"),
   "Coverage triage + regression": (c) => (c.scripts?.["regression-select"] === false ? "regression-select" : null),
+  // Not an Artifacts row: F8's PIXEL risk (PIXEL_REQUIREMENT). Unprobed (no `pixel` key) is not unavailable.
+  PIXEL: (c) => (!c.pixel ? null : !c.pixel.engine ? "pixel-engine (the vc-frontend plugin's visual/)"
+    : !c.pixel.checkouts?.length ? "a front checkout (the project root or .fix-workspace/<repo>)" : null),
 };
+export const PIXEL_REQUIREMENT = "VISUAL:PIXEL risk";
 
 /**
  * "Unavailable is not doubt" (§5.2), only when the caller passes capabilities.json. F5 fired on doubt only because the
@@ -80,7 +84,8 @@ function applyCapabilities(floors, bundle, caps) {
     if (f.id === "F5" && /^doubt:/.test(f.signal) && !(bundle.known?.cases_at_risk ?? []).length && noCorpus) {
       return { ...f, fired: false, skipped: "regression-select", signal: `not available in this install: regression-select (${f.signal})`, requires: [] };
     }
-    const unavailable = (ARTIFACTS_FOR[f.id] ?? []).map((artifact) => ({ artifact, capability: ARTIFACT_NEEDS[artifact]?.(caps) ?? null })).filter((u) => u.capability);
+    const needed = [...(ARTIFACTS_FOR[f.id] ?? []), ...(f.requires.includes(PIXEL_REQUIREMENT) ? ["PIXEL"] : [])];
+    const unavailable = needed.map((artifact) => ({ artifact, capability: ARTIFACT_NEEDS[artifact]?.(caps) ?? null })).filter((u) => u.capability);
     return unavailable.length ? { ...f, unavailable } : f;
   });
 }
@@ -159,8 +164,14 @@ function baseFloors(bundle, { domainMapText, p01Names, changeMap }) {
     : floor("F7", /^review task$/i.test(fields.type), `type ${fields.type}`, ["oracles from the diff only", "F5 on"]);
 
   const kit = paths.filter((p) => UI_KIT.test(p));
+  // PIXEL never takes a new surface (it has no base build): a ui-kit path every PR that lists it ADDS (the bundle's
+  // `added`, from the files API) asks for no PIXEL risk. A PR without that list reads as modifying — fails closed.
+  const sameFile = (a, b) => a === b || a.endsWith(`/${b}`) || b.endsWith(`/${a}`);
+  const addedBy = (p, path) => Array.isArray(p.added) && p.added.some((a) => sameFile(String(a), path));
+  const existing = kit.filter((path) => prs.some((p) => Object.values(p.layers ?? {}).flat().includes(path) && !addedBy(p, path)));
   // Fails closed on what was NOT read; a ui-kit path in the part that was read still fires it.
-  const f8 = kit.length ? floor("F8", true, `ui-kit files: ${kit.slice(0, 3).join(", ")}`, ["visual lane", "token audit"])
+  const f8 = kit.length ? floor("F8", true, `ui-kit files: ${kit.slice(0, 3).join(", ")}${existing.length ? "" : " (all added: a new surface, no PIXEL)"}`,
+    ["visual lane", "token audit", ...(existing.length ? [PIXEL_REQUIREMENT] : [])])
     : floor("F8", false, diffUnread ? `${diffUnread} — F8 fails closed (ticket-routing §5c)` : "no ui-kit file");
 
   const org = surface.match(ORG);
