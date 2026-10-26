@@ -32,6 +32,13 @@
  *   transitions    --key ABC-1
  *   transition     --key ABC-1 --to "In Review"              # by name or id
  *   request        --method GET|POST|PUT --path /rest/api/3/… [--body-file b.json]
+ *   comments       --key ABC-1 [--rendered] [--max 500] [--newest]   # every page, one launch → { total, comments, truncated }
+ *   download       --attachment 10050 --out .vc-fix/… [--max-bytes 26214400]   # → { path, bytes, contentType }
+ *   dev-prs        --key ABC-1                               # the development panel's PR URLs → { issueId, urls }
+ *
+ * The reads (comments, download, dev-prs) print Jira's own objects unshaped — a caller (vc-test's
+ * connector) builds its raw files from them. `download` writes only inside <outputRoot>/.vc-fix/ and stops
+ * at --max-bytes (raw-out.mjs): this process holds a token and its command line is the caller's.
  *
  * Without --wiki a body file that parses as JSON is sent as an ADF document; anything else is sent as
  * plain text, one paragraph per blank-line-separated block. Markdown is NOT converted — use the
@@ -42,6 +49,7 @@ import { basename, isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
 import { loadProjectProfile } from "../../scripts/lib/project-profile.mjs";
+import { rawOutPath, writeCapped } from "./raw-out.mjs";
 
 function fail(msg, code = 1) {
   console.error(`[jira] ${msg}`);
@@ -123,6 +131,54 @@ export function textToAdf(text) {
   };
 }
 
+/**
+ * Every comment page up to `max`, in one process (a bridge launch per page would cost a vc-secrets start
+ * each). An empty page ends the loop whatever `total` says; an id seen twice (a comment posted mid-read
+ * shifts the window) is kept once. Pure: `fetchPage(startAt, maxResults)` does the I/O.
+ * @returns {Promise<{ total: number, comments: object[], truncated: boolean }>}
+ */
+export async function pageComments(fetchPage, { max = 500, pageSize = 100 } = {}) {
+  const comments = [];
+  const seen = new Set();
+  let total = null;
+  let startAt = 0;
+  while (comments.length < max) {
+    const want = Math.min(pageSize, max - comments.length);
+    const page = await fetchPage(startAt, want);
+    const items = Array.isArray(page?.comments) ? page.comments : [];
+    if (Number.isInteger(page?.total)) total = page.total;
+    if (!items.length) break;
+    for (const c of items) {
+      const id = c?.id ?? JSON.stringify(c);
+      if (seen.has(id) || comments.length >= max) continue;
+      seen.add(id);
+      comments.push(c);
+    }
+    startAt += items.length;
+    if (items.length < want || (total !== null && startAt >= total)) break;
+  }
+  const known = total ?? comments.length;
+  return { total: known, comments, truncated: comments.length < known };
+}
+
+/**
+ * The PR URLs Jira's development panel holds for an issue (moved unchanged from /ticket-context): `detail`
+ * answers only for the applicationType the integration is registered under — a wrong one is an empty 200 —
+ * so the types come from `summary`, plus "GitHub". Pure: `getJson(path)` does the I/O.
+ * @returns {Promise<string[]>}
+ */
+export async function devPrUrls(getJson, issueId) {
+  const id = encodeURIComponent(issueId);
+  const sum = await getJson(`/rest/dev-status/latest/issue/summary?issueId=${id}`);
+  const types = new Set([...Object.keys(sum?.summary?.pullrequest?.byInstanceType ?? {}), "GitHub"]);
+  const urls = new Set();
+  for (const t of types) {
+    const j = await getJson(`/rest/dev-status/latest/issue/detail?issueId=${id}&applicationType=${encodeURIComponent(t)}&dataType=pullrequest`);
+    for (const d of j?.detail ?? []) for (const p of d.pullRequests ?? []) if (p.url) urls.add(p.url);
+  }
+  return [...urls];
+}
+
 function readBody(args) {
   if (!args["body-file"]) fail("--body-file required");
   const text = readInput("body-file", args["body-file"]);
@@ -184,6 +240,11 @@ function main() {
     if (!args.key || !/^[A-Z][A-Z0-9_]*-\d+$/.test(String(args.key))) fail("--key ABC-123 required");
     return args.key;
   };
+  const intArg = (name, dflt) => {
+    if (args[name] === undefined) return dflt;
+    if (!/^\d+$/.test(String(args[name])) || Number(args[name]) < 1) fail(`--${name} must be a positive integer`);
+    return Number(args[name]);
+  };
   const commands = {
     myself: () => call("GET", "/rest/api/3/myself").then((m) => ({ accountId: m.accountId, displayName: m.displayName, emailAddress: m.emailAddress })),
     get: () => {
@@ -234,6 +295,32 @@ function main() {
       if (!t) fail(`no transition "${args.to}" — available: ${list.map((x) => x.name).join(", ")}`);
       await call("POST", `/rest/api/3/issue/${key()}/transitions`, { body: { transition: { id: t.id } } });
       return { ok: true, transition: t.name, to: t.to?.name };
+    },
+    comments: () => {
+      const max = intArg("max", 500);
+      const order = args.newest ? "-created" : "created";
+      const expand = args.rendered ? "&expand=renderedBody" : "";
+      return pageComments((startAt, maxResults) => call("GET", `/rest/api/3/issue/${key()}/comment?startAt=${startAt}&maxResults=${maxResults}&orderBy=${order}${expand}`), { max });
+    },
+    download: async () => {
+      if (!args.attachment || !/^\d+$/.test(String(args.attachment))) fail("--attachment <id> required");
+      let out;
+      try {
+        out = rawOutPath(String(args.out ?? ""));
+      } catch (e) {
+        fail(e.message);
+      }
+      const res = await call("GET", `/rest/api/3/attachment/content/${args.attachment}`, { raw: true, headers: { Accept: "*/*" } });
+      if (!res.ok) fail(`HTTP ${res.status} for the attachment ${args.attachment}`);
+      try {
+        return { path: out, ...(await writeCapped(res, out, intArg("max-bytes", 25 * 2 ** 20))) };
+      } catch (e) {
+        fail(e.message);
+      }
+    },
+    "dev-prs": async () => {
+      const issue = await call("GET", `/rest/api/3/issue/${key()}?fields=id`);
+      return { issueId: String(issue.id), urls: await devPrUrls((path) => call("GET", path), issue.id) };
     },
     request: () => {
       const method = String(args.method || "GET").toUpperCase();
