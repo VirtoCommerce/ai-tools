@@ -11,6 +11,7 @@ import { HostGoverned, vcRun } from "./bridge.mjs";
 import { jiraConnector } from "./connectors/jira.mjs";
 import { azureBoardsConnector } from "./connectors/azure-boards.mjs";
 import { githubConnector, searchKeyFor } from "./connectors/github.mjs";
+import { azurePrRefFromUrl, azureReposConnector, refWithNames } from "./connectors/azure-repos.mjs";
 import { ProfileError, loadProfile } from "../../../lib/profile.mjs";
 import { GAP_REASONS, SCHEMA, asGap, gap } from "./gap.mjs";
 import { validateDef } from "./schema.mjs";
@@ -129,7 +130,8 @@ async function prepare() {
   // Comments past the first page are paged in before the inventory and ticket.json see the issue; any unread rest is a gap.
   const issue = blindIssue(await tracker.issue(key, [...BASE_FIELDS, ...acFields.map((f) => f.id), ...linkFields.map((f) => f.id)], { gaps }), benchmark ?? {});
   const remote = await tracker.remoteLinks(key).catch((e) => { gaps.push(asGap("remotelinks", e)); return []; });
-  const devPrUrls = (await tracker.linkedPrs(issue).catch((e) => { gaps.push(asGap("dev-status", e)); return { urls: [] }; })).urls;
+  const linkedPrs = await tracker.linkedPrs(issue).catch((e) => { gaps.push(asGap("dev-status", e)); return { urls: [], refs: [] }; });
+  const devPrUrls = linkedPrs.urls;
   const inv = buildInventory({ issue, remoteLinks: remote, trackerBase: tracker.base, acFieldIds: acFields.map((f) => f.id), linkFieldIds: linkFields.map((f) => f.id), devPrUrls });
   inv.items = withoutHidden(inv.items, hide); // U67: once, whichever path (remote link, key in a text) made the ticket item
   const secrets = loadSecretValues(root); // after loadLayeredEnv, so FIGMA_TOKEN from any layer is in it
@@ -168,9 +170,8 @@ async function prepare() {
   if (filedLater.size) { inv.items = inv.items.filter((i) => !filedLater.has(i)); linked = linked.filter((i) => !filedLater.has(i)); }
 
   const orgs = profile.orgs;
-  if (profile.azureRepos) gaps.push(gap(`change.${profile.azureRepos.organization}`, "connector-unavailable", "azure-repos pull requests are read from Phase 5 on"));
   // §7, U20: every GitHub read is a $VC_RUN `gh api` GET. The platform upstream is always GitHub, so this runs on an
-  // Azure Repos project too; there the client's own PRs come from the tracker (P1d-2 Task 7).
+  // Azure Repos project too; there the client's own PRs come from the tracker (below).
   const gh = githubConnector();
   const searchKey = searchKeyFor(profile, key);
   if (!searchKey) gaps.push(gap("change.search", "not-found", "the profile names no tracker.crossLinkToken, so GitHub was not searched for this work item"));
@@ -178,6 +179,21 @@ async function prepare() {
   let prMeta = [];
   for (const r of ladder.refs) {
     try { prMeta.push({ ...r, meta: await gh.pr(r.owner, r.repo, r.number) }); } catch (e) { prMeta.push({ ...r, gap: asGap(`pr:${r.ref}`, e) }); }
+  }
+  // Azure Repos (§7): the client's PRs are the work item's own pull-request links, or Azure PR URLs the ticket names
+  // (those leave the inventory: a PR is change surface, not a page to fetch). Rung 1 — they are explicitly linked.
+  const az = profile.codeHost === "azure-repos" ? azureReposConnector({ key, root }) : null;
+  if (az) {
+    const azRefs = new Map(linkedPrs.refs.map((r) => [r.ref.toLowerCase(), r]));
+    inv.items = inv.items.filter((it) => { const r = it.url && azurePrRefFromUrl(it.url); if (r) azRefs.set(r.ref.toLowerCase(), r); return !r; });
+    for (const r of azRefs.values()) {
+      try {
+        const meta = await az.pr(r.owner, r.repo, r.number);
+        prMeta.push({ ...refWithNames(r, meta.names), rung: 1, host: "azure-repos", meta });
+      } catch (e) { prMeta.push({ ...r, rung: 1, host: "azure-repos", gap: asGap(`pr:${r.ref}`, e) }); }
+    }
+    ladder.ladder.push({ rung: "work-item", found: azRefs.size });
+    if (azRefs.size && ladder.rung == null) ladder.rung = 1;
   }
   // U67: a PR opened after the cutoff did not exist for a blind run — dropped before its body can name companions,
   // and the key search's hits with it (`later_prs`); the rung is the highest one a kept PR came from.
@@ -255,7 +271,11 @@ async function prepare() {
           gap: gap(`pr:${p.ref}`, "over-cap", `more than ${CAPS.prs} product PRs; rung 1 first, then the most recent, then the companions they name`) });
         continue;
       }
-      try { prs.push(await collectPr(gh, p, runDir, { sameKey: ladder.sameKey, before })); } catch (e) { prs.push({ ...base, gap: asGap(`pr:${p.ref}`, e) }); }
+      try {
+        const entry = await collectPr(p.host === "azure-repos" ? az : gh, p, runDir, { sameKey: ladder.sameKey, before });
+        if (p.host === "azure-repos") entry.gaps.push(...az.diffGaps(p.repo, p.number)); // files Azure's diff could not show
+        prs.push(entry);
+      } catch (e) { prs.push({ ...base, gap: asGap(`pr:${p.ref}`, e) }); }
     }
 
     const prepared = { schema: "ticket-context-prepare/1", ticket: key, env: testEnv, tracker: profile.tracker, project_type: profile.projectType, domain, run_dir: runDir, run_dir_in_project: inProject,
