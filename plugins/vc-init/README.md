@@ -69,7 +69,8 @@ storefront users (typically admins in vc-secrets, users in `.env.local`, which i
   run as `vc-init-onboard.<env>`. vc-test's `.spec` files and check scripts run as `node ${VC_RUN} runner
   playwright <spec…>` / `runner node <script>` — the task `vc-init-runner.<env>`, which holds that env's
   passwords and never a token, only for an env the profile's `test` block lists and only on files inside its
-  `scriptRoots` (`bridge/runner.mjs`). A lane also reads the passwords of the roles kept in `.env.local` for its
+  `scriptRoots` (`bridge/runner.mjs`); `runner plugin <name>` starts one of vc-test's own scripts by name
+  (`RUNNER_PLUGIN_SCRIPTS`, from the trusted install — F6's `deployed`). A lane also reads the passwords of the roles kept in `.env.local` for its
   env straight from that file, so a mixed setup needs no generated file. One declaration per env means an env whose passwords are not stored yet
   breaks only itself, and switching `TEST_ENV` asks for no new trust.
 - **`.env.local`** — `ADMIN_PASSWORD_<ENV>` …, and `sync-browser-secrets.mjs` generates
