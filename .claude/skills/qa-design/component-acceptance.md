@@ -22,6 +22,11 @@ Storybook and prod share component code. So prod-vs-Storybook catches a theme, a
 defect, **never a regression of the component itself**. A component regression is `PIXEL`'s job: base build vs
 head build.
 
+**Both sides must show the same content.** The engine compares what is rendered, so a different label, or an
+icon-only twin of a text button, comes out as a width, an anatomy and a pixel difference that says nothing about
+the design. Point each target at the instance with the story's text and variant. A selector that matches several
+visible elements is compared on the first and reported as `info` with the count; `nth` picks another.
+
 ## 2. What `visual:design` judges, and what it leaves to its owner
 
 | AC | Judged by `visual:design` | Owner when not |
@@ -29,9 +34,9 @@ head build.
 | AC-CMP anatomy | visible descendants per tag; an instance not found | a home-made duplicate of a library component — a human call |
 | AC-LAY, AC-SPC | box size; padding and gap | — |
 | AC-TYP | family and weight exact; size, line-height, letter-spacing within tolerance; transform, decoration | — |
-| AC-CLR, AC-BRD | colour by CIEDE2000; opacity; border width, colour, radius | — |
+| AC-CLR, AC-BRD | colour by CIEDE2000 as shown (transparency counts); opacity; border width, colour, radius | — |
 | AC-ELV | box-shadow layers and offsets | — |
-| AC-PIX | the element's own pixels, at DPR 2 | never across two presets |
+| AC-PIX | the element's own pixels, at DPR 2 | never across two presets (a token both pages define differs) |
 | AC-THM | the theme tokens that differ between the two pages, listed for confirmation | — |
 | AC-STA | one spec entry per state (`hover` / `focus` on a target, or the state's story) | — |
 | AC-A11Y | — | `qa-accessibility`, `measure-layout.ts` contrast (our thresholds, BL-A11Y) |
@@ -44,11 +49,13 @@ the design project only. The spacing grid is the generated token scale (`tokens:
 
 ## 3. Theme normalisation
 
-Both pages' theme tokens (`--color-*`, `--vc-radius`, `--font*`) are read. A colour difference whose reference
-value **and** tested value resolve to the **same token name** on their own pages is `theme`: the component is right,
-the preset differs. The tokens that differ go to the report's *Theme baseline*. Confirm with the user that the
-preset is intended — `visual:design` cannot know. A colour that resolves to **different** tokens on the two sides
-is a defect, because the component uses the wrong token.
+Both pages' theme tokens (`--color-*`, `--vc-radius*`, `--font*`) are read. A colour, a font family or a corner
+radius whose reference value **and** tested value resolve to the **same token name** on their own pages is `theme`:
+the component is right, the preset differs. A box that is wider or taller only because the font is a theme font is
+`theme` too. The tokens **both** pages define whose values differ (`.5rem` and `0.5rem` are one value; a token only
+one page defines, such as a storefront-only `--color-header-*`, is not a preset difference) go to the report's
+*Theme baseline*. Confirm with the user that the preset is intended — `visual:design` cannot know. A value that
+resolves to **different** tokens on the two sides is a defect, because the component uses the wrong token.
 
 ## 4. What a finding may do
 
@@ -59,6 +66,8 @@ The catalog's verdict — FAIL / PASS WITH ISSUES / PASS — is the report's. **
 - A clipped, overlapping or hidden element (the catalog's P1) is a `BL-UI` invariant FAIL. It blocks through
   `layout-runner`, not through this report.
 - `theme` is never a defect. It goes to the Theme baseline for confirmation.
+- `INCONCLUSIVE` (exit 2) is not a result: a page did not load, or one side matched nothing at all. Fix the spec or
+  the stand and run again. Never report it as a pass or as advisory drift.
 
 A `ui-kit` ticket ([`../qa-test/ui-kit-class.md`](../qa-test/ui-kit-class.md)) is the exception the carrier matrix
 already makes: there the rendered surface is the deliverable, so its own component's P2 is triaged as a finding.

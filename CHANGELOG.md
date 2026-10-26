@@ -14,8 +14,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 once: the reference (Storybook, or a design-system build) and the one under review (prod, QA, a fork's preview). Per
 component it judges anatomy, box, spacing, typography, colour (CIEDE2000), borders, shadows and the element's own
 pixels against the `design-review` acceptance catalog's tolerances. It sorts each difference into P2 / P3 / `theme`.
-A colour difference that the same theme token names on both sides is `theme`, not a defect, and the differing
-tokens are listed for confirmation (VCST-6534).
+A colour, font or radius difference that the same theme token names on both sides is `theme`, not a defect, and
+the differing tokens are listed for confirmation. A run where a page did not load, or one side matched nothing,
+is `INCONCLUSIVE` with exit 2 (VCST-6534).
 
 ## Host-governed projects — `vc-test` `0.6.0` — 2026-10-26
 

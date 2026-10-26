@@ -10,22 +10,33 @@
  * headless, so it runs in a pipeline instead of a person's browser tab.
  *
  * What it checks per component (THRESHOLDS below is the one place the numbers live):
- *   AC-CMP  anatomy — the count of visible descendants per tag; an element missing or extra
+ *   AC-CMP  anatomy — the count of visible descendants per tag; an element missing or extra. A selector that matches
+ *           several visible elements is compared on the first (or on `nth`) and says how many it matched (`info`)
  *   AC-LAY  box width / height
- *   AC-SPC  padding, gap
- *   AC-TYP  font family and weight exactly; size / line-height / letter-spacing within tolerance; transform, decoration
- *   AC-CLR  text and background colour, CIEDE2000 ΔE; opacity
+ *   AC-SPC  padding, gap (`normal` is 0)
+ *   AC-TYP  font family and weight exactly; size / line-height / letter-spacing within tolerance; transform, decoration.
+ *           A value that is not a length on one side only (`line-height: normal` vs `24px`) is P2
+ *   AC-CLR  text and background colour, CIEDE2000 ΔE of the colour as shown — composited over white and over black,
+ *           the larger counts, so a transparent background against a solid one is a difference; opacity
  *   AC-BRD  border width, colour (ΔE), radius
  *   AC-ELV  box-shadow: layer count, offsets / blur / spread
- *   AC-PIX  the element's own pixels (pixelmatch, threshold 0.1) — not judged across two theme presets
- *   AC-THM  the theme tokens (--color-*-500, --vc-radius, font) of both pages; a colour difference that the SAME token
- *           names on both sides is `theme`, not a defect of the component
+ *   AC-PIX  the element's own pixels (pixelmatch, threshold 0.1) — not judged across two theme presets (a token both
+ *           pages define has a different value)
+ *   AC-THM  the theme tokens (--color-*, --vc-radius*, --font*) of both pages. A colour, a font family or a corner radius
+ *           that the SAME token names on both sides is `theme`, not a defect of the component; so is a box size that
+ *           differs only because the font is a theme font
  * Not here, because another probe owns them: AC-A11Y (axe, contrast — qa-accessibility, measure-layout.ts),
  * AC-RSP / AC-CNT (layout-runner PROBE), AC-TOK (tokens:check). AC-STA: give each state its own component entry
  * (a story with the state's args, or a target with `hover` / `focus`).
  *
  * Severity (the catalog's): P1 blocker · P2 a visible difference · P3 within 2 px / ΔE ≤ 3 · theme · info.
- * Verdict: a P1 ⇒ FAIL; a P2 ⇒ PASS WITH ISSUES; else PASS. A component not found on either side is P2 and named.
+ * Verdict: a P1 ⇒ FAIL; a P2 ⇒ PASS WITH ISSUES; else PASS. A component not found on one side is P2 and named.
+ * INCONCLUSIVE instead, whatever else was found: a page answered HTTP ≥ 400 or did not load, or one side matched
+ * nothing at all (a wrong baseUrl, a Storybook still warming up, every selector stale) — that run judged nothing.
+ *
+ * Both sides must show the SAME content: a different label or an icon-only twin of a text button is a width, an
+ * anatomy and a pixel difference that says nothing about the design. Point both targets at instances with the same
+ * text and variant (`nth` picks one of several visible matches, 0-based).
  *
  * USAGE
  *   node design.mjs --spec <design.json> --out <dir> [--executable <chromium>] [--storage-state <file>]
@@ -35,11 +46,12 @@
  *       "test": { "label": "prod",      "baseUrl": "https://…" },
  *       "components": [ { "name": "VcButton · solid primary md",
  *                         "ref":  { "path": "/iframe.html?id=components-molecules-vcbutton--basic&viewMode=story", "selector": ".vc-button" },
- *                         "test": { "path": "/cart", "selector": ".vc-button--solid--primary", "hover"?: true, "focus"?: true } } ] }
+ *                         "test": { "path": "/cart", "selector": ".vc-button--solid--primary", "nth"?: 0, "hover"?: true, "focus"?: true } } ] }
  *   Either side's baseUrl may be a local `storybook build` dir: it is served on 127.0.0.1.
  *
  * OUTPUT  <out>/design-report.json, <out>/design-report.md, <out>/img/<n>-ref.png|-test.png|-diff.png
- * EXIT    0 PASS · 1 PASS WITH ISSUES or FAIL · 2 unusable input (a bad spec, the browser did not start).
+ * EXIT    0 PASS · 1 PASS WITH ISSUES or FAIL · 2 INCONCLUSIVE or unusable input (a bad spec, a missing build dir,
+ *         the browser did not start, any error during the run).
  */
 import { createReadStream, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import http from "node:http";
@@ -76,6 +88,15 @@ if (!spec.ref?.baseUrl || !spec.test?.baseUrl || !Array.isArray(spec.components)
   console.error("✗ the spec needs ref.baseUrl, test.baseUrl and a non-empty components[]");
   process.exit(2);
 }
+const badTarget = (t) => typeof t?.path !== "string" || typeof t?.selector !== "string"
+  || (t.nth !== undefined && !(Number.isInteger(t.nth) && t.nth >= 0));
+const bad = spec.components.findIndex((c) => badTarget(c?.ref) || badTarget(c?.test));
+if (bad >= 0) { console.error(`✗ components[${bad}]: ref and test each need a path and a selector (and an "nth" ≥ 0, if any)`); process.exit(2); }
+for (const s of ["ref", "test"]) {
+  const b = spec[s].baseUrl;
+  if (!/^https?:\/\//.test(b) && !(existsSync(b) && statSync(b).isDirectory())) { console.error(`✗ ${s}.baseUrl: "${b}" is neither a URL nor a build directory`); process.exit(2); }
+}
+if (!/^\d+x\d+$/.test(String(spec.viewport ?? "1280x800"))) { console.error(`✗ viewport "${spec.viewport}": expected <width>x<height>`); process.exit(2); }
 const [vw, vh] = String(spec.viewport ?? "1280x800").split("x").map(Number);
 
 // ---------------------------------------------------------------------------------------------------- colour maths
@@ -130,6 +151,13 @@ export function deltaE2000(c1, c2) {
   return Math.sqrt((dLp / SL) ** 2 + (dCp / SC) ** 2 + (dHp / SH) ** 2 + RT * (dCp / SC) * (dHp / SH));
 }
 
+/** ΔE2000 of two [r,g,b,a] colours as they show: each composited over white and over black, the larger counts. A
+ *  colour against its transparent twin is then a difference; two equally translucent colours compare as solids. */
+export function deltaEShown(a, b) {
+  const over = (c, bg) => [0, 1, 2].map((i) => c[i] * c[3] + bg * (1 - c[3]));
+  return Math.max(deltaE2000(over(a, 255), over(b, 255)), deltaE2000(over(a, 0), over(b, 0)));
+}
+
 // ---------------------------------------------------------------------------------------------------- capture
 
 const STYLE_PROPS = ["width", "height", "padding-top", "padding-right", "padding-bottom", "padding-left", "row-gap", "column-gap",
@@ -137,18 +165,19 @@ const STYLE_PROPS = ["width", "height", "padding-top", "padding-right", "padding
   "color", "background-color", "opacity", "border-top-width", "border-right-width", "border-bottom-width", "border-left-width",
   "border-top-color", "border-top-left-radius", "border-top-right-radius", "border-bottom-right-radius", "border-bottom-left-radius", "box-shadow"];
 
-/** Theme tokens of the page: the custom properties a component's colours, radius and font resolve to. */
+/** Theme tokens of the page — the custom properties a component's colours, radius and font resolve to — and the root
+ *  font size, which turns a `rem` token into the px a computed style reports. */
 const THEME_SNIPPET = `(() => {
-  const out = {};
+  const tokens = {};
   const cs = getComputedStyle(document.documentElement);
   for (const sheet of Array.from(document.styleSheets)) {
     let rules; try { rules = sheet.cssRules; } catch { continue; }
     for (const r of Array.from(rules || [])) {
       if (!r.style) continue;
-      for (const p of Array.from(r.style)) if (p.startsWith('--') && /^--(color-|vc-radius|font)/.test(p)) out[p] = cs.getPropertyValue(p).trim();
+      for (const p of Array.from(r.style)) if (p.startsWith('--') && /^--(color-|vc-radius|font)/.test(p)) tokens[p] = cs.getPropertyValue(p).trim();
     }
   }
-  return out;
+  return { tokens, rootPx: parseFloat(cs.fontSize) || 16 };
 })()`;
 
 function serveStatic(dir) {
@@ -157,7 +186,9 @@ function serveStatic(dir) {
     ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".webp": "image/webp", ".woff2": "font/woff2", ".woff": "font/woff" };
   return new Promise((ok) => {
     const server = http.createServer((req, res) => {
-      const p = join(root, decodeURIComponent((req.url ?? "/").split("?")[0]));
+      let rel;
+      try { rel = decodeURIComponent((req.url ?? "/").split("?")[0]); } catch { res.writeHead(400); res.end(); return; }
+      const p = join(root, rel);
       const f = existsSync(p) && statSync(p).isDirectory() ? join(p, "index.html") : p;
       if (!f.startsWith(root) || !existsSync(f)) { res.writeHead(404); res.end(); return; }
       res.writeHead(200, { "content-type": types[extname(f)] ?? "application/octet-stream" });
@@ -172,14 +203,18 @@ async function openSide(side) {
   return serveStatic(side.baseUrl);
 }
 
-/** Load a target, wait for it, read its styles, anatomy and pixels. `null` when the selector matches nothing visible. */
+/** Load a target, wait for it, read its styles, anatomy and pixels. `null` when the selector matches nothing visible
+ *  (at `nth`); throws when the page itself did not load — the run is then INCONCLUSIVE, not a finding. */
 async function capture(page, base, target, file) {
-  await page.goto(base + target.path, { waitUntil: "networkidle" });
+  await page.mouse.move(0, 0);
+  const res = await page.goto(base + target.path, { waitUntil: "networkidle" });
+  if (res && res.status() >= 400) throw new Error(`HTTP ${res.status()} on ${base + target.path}`);
   await page.evaluate(() => document.fonts.ready);
-  const handle = await page.waitForFunction((sel) => Array.from(document.querySelectorAll(sel)).find((e) => e.getClientRects().length) ?? null,
-    target.selector, { timeout: 15000 }).catch(() => null);
+  const handle = await page.waitForFunction(([sel, nth]) => Array.from(document.querySelectorAll(sel)).filter((e) => e.getClientRects().length)[nth] ?? null,
+    [target.selector, target.nth ?? 0], { timeout: 15000 }).catch(() => null);
   const el = handle?.asElement();
   if (!el) return null;
+  const matches = await page.evaluate((sel) => Array.from(document.querySelectorAll(sel)).filter((e) => e.getClientRects().length).length, target.selector);
   if (target.hover) await el.hover();
   if (target.focus) { await el.focus(); await page.keyboard.press("Shift"); }
   await page.waitForTimeout(250);
@@ -193,23 +228,63 @@ async function capture(page, base, target, file) {
     return { styles, anatomy };
   }, STYLE_PROPS);
   await el.screenshot({ path: file, animations: "disabled", caret: "hide" });
-  return data;
+  return { ...data, matches };
 }
 
 // ---------------------------------------------------------------------------------------------------- compare
 
 const num = (v) => { const n = parseFloat(v); return Number.isFinite(n) ? n : null; };
 const grade = (delta, [pass, p3]) => (delta <= pass + 1e-9 ? null : delta <= p3 + 1e-9 ? "P3" : "P2");
-const namesOf = (theme, value) => Object.entries(theme).filter(([, v]) => v && parseColor(v) && parseColor(value)
-  && deltaE2000(parseColor(v), parseColor(value)) < 0.5).map(([k]) => k);
+/** A token or computed length in px: `8px`, `.5rem`, `0`. `rem` / `em` use the page's root font size. */
+const px = (v, rootPx) => { const m = /^(-?[\d.]+)(px|rem|em)?$/.exec(String(v ?? "").trim()); return m ? Number(m[1]) * (m[2] === "rem" || m[2] === "em" ? rootPx : 1) : null; };
+const fontKey = (v) => String(v ?? "").replace(/["']/g, "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean).join(",");
+/** Do two values mean the same thing? Colours by ΔE as shown, lengths in px, anything else (a font stack) as text. */
+function sameValue(a, b, rootA, rootB) {
+  const ca = parseColor(a), cb = parseColor(b);
+  if (ca && cb) return deltaEShown(ca, cb) < 0.5;
+  const la = px(a, rootA), lb = px(b, rootB);
+  if (la !== null && lb !== null) return Math.abs(la - lb) < 0.5;
+  return fontKey(a) === fontKey(b);
+}
+/** The tokens under `prefix` whose value is `value` on that page. */
+const namesOf = (theme, value, prefix) => Object.entries(theme.tokens)
+  .filter(([k, v]) => k.startsWith(prefix) && v && sameValue(v, value, theme.rootPx, theme.rootPx)).map(([k]) => k);
+/** `theme`: one token names the reference value on the reference page and the tested value on the tested one. */
+const sharedToken = (themes, prefix, a, b) => namesOf(themes.ref, a, prefix).find((n) => namesOf(themes.test, b, prefix).includes(n));
+
+/** AC-THM: the tokens BOTH pages define whose values differ — the preset difference. A token only one page defines
+ *  (a storefront-only `--color-header-*`) says nothing about the preset; `0.5rem` and `.5rem` are one value. */
+function themeDiff(ref, test) {
+  return Object.keys(ref.tokens).filter((k) => ref.tokens[k] && test.tokens[k] && !sameValue(ref.tokens[k], test.tokens[k], ref.rootPx, test.rootPx))
+    .map((k) => ({ token: k, ref: ref.tokens[k], test: test.tokens[k] }));
+}
+
+const NORMAL_IS_ZERO = new Set(["row-gap", "column-gap", "letter-spacing"]);
 
 function compare(ref, test, themes) {
   const f = [];
   const add = (severity, ac, prop, a, b, why) => severity && f.push({ severity, ac, prop, ref: a, test: b, ...(why ? { why } : {}) });
-  const length = (ac, prop, tol) => { const a = num(ref.styles[prop]), b = num(test.styles[prop]); if (a !== null && b !== null) add(grade(Math.abs(a - b), tol), ac, prop, a, b); };
-  length("AC-LAY", "width", THRESHOLDS.box); length("AC-LAY", "height", THRESHOLDS.box);
+  /** `themeWhy(refValue, testValue)` names the token that explains a difference beyond tolerance, or nothing. */
+  const length = (ac, prop, tol, themeWhy) => {
+    const ra = ref.styles[prop], rb = test.styles[prop];
+    const val = (v) => (v === "normal" && NORMAL_IS_ZERO.has(prop) ? 0 : num(v));
+    const a = val(ra), b = val(rb);
+    if (a === null || b === null) { if (ra !== rb) add("P2", ac, prop, ra, rb, "not comparable as a length"); return; }
+    const sev = grade(Math.abs(a - b), tol);
+    const why = sev && themeWhy?.(ra, rb);
+    add(why ? "theme" : sev, ac, prop, a, b, why || undefined);
+  };
+  // The font first: a theme font explains the box it grows.
+  let themeFont = false;
+  if (fontKey(ref.styles["font-family"]) !== fontKey(test.styles["font-family"])) {
+    const n = sharedToken(themes, "--font", ref.styles["font-family"], test.styles["font-family"]);
+    themeFont = !!n;
+    add(n ? "theme" : "P2", "AC-TYP", "font-family", ref.styles["font-family"], test.styles["font-family"], n ? `both ${n}` : undefined);
+  }
+  const byFont = () => (themeFont ? "follows the theme font" : null);
+  length("AC-LAY", "width", THRESHOLDS.box, byFont); length("AC-LAY", "height", THRESHOLDS.box, byFont);
   for (const p of ["padding-top", "padding-right", "padding-bottom", "padding-left", "row-gap", "column-gap"]) length("AC-SPC", p, THRESHOLDS.spacing);
-  for (const p of ["font-family", "font-weight", "text-transform", "text-decoration-line"])
+  for (const p of ["font-weight", "text-transform", "text-decoration-line"])
     if (ref.styles[p] !== test.styles[p]) add("P2", "AC-TYP", p, ref.styles[p], test.styles[p]);
   length("AC-TYP", "font-size", THRESHOLDS.fontSize); length("AC-TYP", "line-height", THRESHOLDS.lineHeight);
   length("AC-TYP", "letter-spacing", THRESHOLDS.letterSpacing);
@@ -217,17 +292,16 @@ function compare(ref, test, themes) {
     const a = parseColor(ref.styles[p]), b = parseColor(test.styles[p]);
     if (!a || !b) { if (ref.styles[p] !== test.styles[p]) add("P2", p === "border-top-color" ? "AC-BRD" : "AC-CLR", p, ref.styles[p], test.styles[p]); continue; }
     if (a[3] === 0 && b[3] === 0) continue; // both transparent
-    const dE = Math.round(deltaE2000(a, b) * 100) / 100;
+    const dE = Math.round(deltaEShown(a, b) * 100) / 100;
     const sev = grade(dE, THRESHOLDS.colorDeltaE);
     if (!sev) continue;
-    // `theme`: the same token names the reference value in the reference theme and the tested value in the tested one.
-    const shared = namesOf(themes.ref, ref.styles[p]).filter((n) => namesOf(themes.test, test.styles[p]).includes(n));
-    add(shared.length ? "theme" : sev, p === "border-top-color" ? "AC-BRD" : "AC-CLR", p, ref.styles[p], test.styles[p],
-      shared.length ? `ΔE ${dE}, both ${shared[0]}` : `ΔE ${dE}`);
+    const n = sharedToken(themes, "--color-", ref.styles[p], test.styles[p]);
+    add(n ? "theme" : sev, p === "border-top-color" ? "AC-BRD" : "AC-CLR", p, ref.styles[p], test.styles[p], n ? `ΔE ${dE}, both ${n}` : `ΔE ${dE}`);
   }
   length("AC-CLR", "opacity", THRESHOLDS.opacity);
   for (const p of ["border-top-width", "border-right-width", "border-bottom-width", "border-left-width"]) length("AC-BRD", p, THRESHOLDS.borderWidth);
-  for (const p of ["border-top-left-radius", "border-top-right-radius", "border-bottom-right-radius", "border-bottom-left-radius"]) length("AC-BRD", p, THRESHOLDS.radius);
+  const byRadius = (a, b) => { const n = sharedToken(themes, "--vc-radius", a, b); return n ? `both ${n}` : null; };
+  for (const p of ["border-top-left-radius", "border-top-right-radius", "border-bottom-right-radius", "border-bottom-left-radius"]) length("AC-BRD", p, THRESHOLDS.radius, byRadius);
   const layers = (s) => (s && s !== "none" ? s.split(/,(?![^(]*\))/) : []);
   const [sa, sb] = [layers(ref.styles["box-shadow"]), layers(test.styles["box-shadow"])];
   if (sa.length !== sb.length) add("P2", "AC-ELV", "box-shadow", ref.styles["box-shadow"], test.styles["box-shadow"], "layer count differs");
@@ -258,61 +332,79 @@ mkdirSync(join(out, "img"), { recursive: true });
 let browser;
 try { browser = await chromium.launch({ executablePath: flagValue(argv, "--executable") }); }
 catch (e) { console.error(`✗ browser did not start: ${e.message.split("\n")[0]}`); process.exit(2); }
-const sides = { ref: await openSide(spec.ref), test: await openSide(spec.test) };
-const ctxOpts = { viewport: { width: vw, height: vh }, deviceScaleFactor: 2, reducedMotion: "reduce", timezoneId: "UTC", locale: "en-US" };
-const pages = {
-  ref: await (await browser.newContext(ctxOpts)).newPage(),
-  test: await (await browser.newContext({ ...ctxOpts, storageState: flagValue(argv, "--storage-state") })).newPage(),
-};
+const sides = {};
+let exitCode = 2;
+try {
+  sides.ref = await openSide(spec.ref); sides.test = await openSide(spec.test);
+  const ctxOpts = { viewport: { width: vw, height: vh }, deviceScaleFactor: 2, reducedMotion: "reduce", timezoneId: "UTC", locale: "en-US" };
+  const pages = {
+    ref: await (await browser.newContext(ctxOpts)).newPage(),
+    test: await (await browser.newContext({ ...ctxOpts, storageState: flagValue(argv, "--storage-state") })).newPage(),
+  };
 
-const themes = { ref: null, test: null };
-const report = { meta: { ref: spec.ref.label ?? "reference", test: spec.test.label ?? "under test", viewport: `${vw}x${vh}`, dpr: 2, thresholds: THRESHOLDS }, theme: [], components: [] };
-for (const [i, c] of spec.components.entries()) {
-  const files = { ref: join(out, "img", `${i + 1}-ref.png`), test: join(out, "img", `${i + 1}-test.png`), diff: join(out, "img", `${i + 1}-diff.png`) };
-  const got = {};
-  for (const s of ["ref", "test"]) {
-    got[s] = await capture(pages[s], sides[s].base, c[s], files[s]).catch((e) => ({ error: e.message.split("\n")[0] }));
-    if (!themes[s] && got[s] && !got[s].error) themes[s] = await pages[s].evaluate(THEME_SNIPPET);
-  }
-  const entry = { name: c.name, ref: c.ref, test: c.test, findings: [] };
-  for (const s of ["ref", "test"]) if (!got[s] || got[s].error)
-    entry.findings.push({ severity: "P2", ac: "AC-CMP", prop: `${s} instance`, why: got[s]?.error ?? `"${c[s].selector}" matches nothing visible on ${c[s].path}` });
-  if (!entry.findings.length) {
-    const themeDiffers = JSON.stringify(themes.ref) !== JSON.stringify(themes.test);
-    entry.findings = compare(got.ref, got.test, { ref: themes.ref ?? {}, test: themes.test ?? {} });
-    entry.pixels = pixels(files.ref, files.test, files.diff, themeDiffers);
-    if (entry.pixels.pct !== null) {
-      const sev = grade(entry.pixels.pct, THRESHOLDS.pixelPct);
-      if (sev) entry.findings.push({ severity: sev, ac: "AC-PIX", prop: "mismatch %", ref: 0, test: entry.pixels.pct });
+  const themes = { ref: null, test: null };
+  let preset = null; // themeDiff(ref, test), once both pages' tokens are read
+  const report = { meta: { ref: spec.ref.label ?? "reference", test: spec.test.label ?? "under test", viewport: `${vw}x${vh}`, dpr: 2, thresholds: THRESHOLDS }, theme: [], inconclusive: [], components: [] };
+  for (const [i, c] of spec.components.entries()) {
+    const files = { ref: join(out, "img", `${i + 1}-ref.png`), test: join(out, "img", `${i + 1}-test.png`), diff: join(out, "img", `${i + 1}-diff.png`) };
+    const got = {};
+    for (const s of ["ref", "test"]) {
+      got[s] = await capture(pages[s], sides[s].base, c[s], files[s]).catch((e) => ({ error: e.message.split("\n")[0] }));
+      if (!themes[s] && got[s] && !got[s].error) themes[s] = await pages[s].evaluate(THEME_SNIPPET);
     }
-    entry.shots = { ref: files.ref, test: files.test, diff: entry.pixels.pct !== null ? files.diff : null };
+    if (!preset && themes.ref && themes.test) preset = themeDiff(themes.ref, themes.test);
+    const entry = { name: c.name, ref: c.ref, test: c.test, found: { ref: !!got.ref && !got.ref.error, test: !!got.test && !got.test.error }, findings: [] };
+    for (const s of ["ref", "test"]) {
+      if (got[s]?.error) report.inconclusive.push(`${c.name} · ${s}: ${got[s].error}`);
+      else if (!got[s]) entry.findings.push({ severity: "P2", ac: "AC-CMP", prop: `${s} instance`, why: `"${c[s].selector}" matches nothing visible on ${c[s].path}` });
+    }
+    if (entry.found.ref && entry.found.test) {
+      entry.matches = { ref: got.ref.matches, test: got.test.matches };
+      entry.findings = compare(got.ref, got.test, themes);
+      entry.pixels = pixels(files.ref, files.test, files.diff, preset.length > 0);
+      if (entry.pixels.pct !== null) {
+        const sev = grade(entry.pixels.pct, THRESHOLDS.pixelPct);
+        if (sev) entry.findings.push({ severity: sev, ac: "AC-PIX", prop: "mismatch %", ref: 0, test: entry.pixels.pct });
+      }
+      entry.shots = { ref: files.ref, test: files.test, diff: entry.pixels.pct !== null ? files.diff : null };
+      for (const s of ["ref", "test"]) if (got[s].matches > 1 && c[s].nth === undefined)
+        entry.findings.push({ severity: "info", ac: "AC-CMP", prop: `${s} instance`,
+          why: `"${c[s].selector}" matches ${got[s].matches} visible elements; the first was compared — set "nth" to the one with the same content` });
+    }
+    report.components.push(entry);
   }
-  report.components.push(entry);
-}
-for (const k of new Set([...Object.keys(themes.ref ?? {}), ...Object.keys(themes.test ?? {})]))
-  if ((themes.ref ?? {})[k] !== (themes.test ?? {})[k]) report.theme.push({ token: k, ref: themes.ref?.[k] ?? null, test: themes.test?.[k] ?? null });
-await browser.close();
-sides.ref.close(); sides.test.close();
+  report.theme = preset ?? [];
+  for (const s of ["ref", "test"]) if (!report.components.some((c) => c.found[s]))
+    report.inconclusive.push(`nothing matched on the ${s} side — a wrong baseUrl, a page that did not render, or every selector stale`);
 
-const all = report.components.flatMap((c) => c.findings);
-const count = (s) => all.filter((x) => x.severity === s).length;
-report.counts = { P1: count("P1"), P2: count("P2"), P3: count("P3"), theme: count("theme") };
-report.verdict = report.counts.P1 ? "FAIL" : report.counts.P2 ? "PASS WITH ISSUES" : "PASS";
-writeFileSync(join(out, "design-report.json"), JSON.stringify(report, null, 2));
+  const all = report.components.flatMap((c) => c.findings);
+  const count = (s) => all.filter((x) => x.severity === s).length;
+  report.counts = { P1: count("P1"), P2: count("P2"), P3: count("P3"), theme: count("theme"), info: count("info") };
+  report.verdict = report.inconclusive.length ? "INCONCLUSIVE" : report.counts.P1 ? "FAIL" : report.counts.P2 ? "PASS WITH ISSUES" : "PASS";
+  writeFileSync(join(out, "design-report.json"), JSON.stringify(report, null, 2));
 
-const md = [`# Design review — ${report.meta.test} vs ${report.meta.ref}`, "",
-  `**${report.verdict}** · P1 ${report.counts.P1} · P2 ${report.counts.P2} · P3 ${report.counts.P3} · theme ${report.counts.theme} · ${report.meta.viewport} @2x`, ""];
-if (report.theme.length) md.push("## Theme baseline (AC-THM — confirm the preset is intended)", "", "| Token | Reference | Under test |", "|---|---|---|",
-  ...report.theme.slice(0, 40).map((t) => `| \`${t.token}\` | ${t.ref ?? "—"} | ${t.test ?? "—"} |`), "");
-for (const c of report.components) {
-  md.push(`## ${c.name}`, "", `Pixels: ${c.pixels?.pct ?? "—"}%${c.pixels?.note ? ` (${c.pixels.note})` : ""}${c.shots?.diff ? ` · diff ${c.shots.diff}` : ""}`, "");
-  if (!c.findings.length) { md.push("No difference beyond tolerance.", ""); continue; }
-  md.push("| Severity | AC | Property | Reference | Under test | Note |", "|---|---|---|---|---|---|",
-    ...c.findings.map((x) => `| ${x.severity} | ${x.ac} | ${x.prop} | ${x.ref ?? ""} | ${x.test ?? ""} | ${x.why ?? ""} |`), "");
+  const md = [`# Design review — ${report.meta.test} vs ${report.meta.ref}`, "",
+    `**${report.verdict}** · P1 ${report.counts.P1} · P2 ${report.counts.P2} · P3 ${report.counts.P3} · theme ${report.counts.theme} · ${report.meta.viewport} @2x`, ""];
+  if (report.inconclusive.length) md.push("## Inconclusive — this run could not judge", "", ...report.inconclusive.map((x) => `- ${x}`), "");
+  if (report.theme.length) md.push("## Theme baseline (AC-THM — confirm the preset is intended)", "", "| Token | Reference | Under test |", "|---|---|---|",
+    ...report.theme.slice(0, 40).map((t) => `| \`${t.token}\` | ${t.ref} | ${t.test} |`), "");
+  for (const c of report.components) {
+    md.push(`## ${c.name}`, "", `Pixels: ${c.pixels?.pct ?? "—"}%${c.pixels?.note ? ` (${c.pixels.note})` : ""}${c.shots?.diff ? ` · diff ${c.shots.diff}` : ""}`, "");
+    if (!c.findings.length) { md.push("No difference beyond tolerance.", ""); continue; }
+    md.push("| Severity | AC | Property | Reference | Under test | Note |", "|---|---|---|---|---|---|",
+      ...c.findings.map((x) => `| ${x.severity} | ${x.ac} | ${x.prop} | ${x.ref ?? ""} | ${x.test ?? ""} | ${x.why ?? ""} |`), "");
+  }
+  writeFileSync(join(out, "design-report.md"), md.join("\n"));
+  console.log(`visual:design  ${report.verdict} · P1 ${report.counts.P1} · P2 ${report.counts.P2} · P3 ${report.counts.P3} · theme ${report.counts.theme} · ${report.components.length} component(s)`);
+  for (const x of report.inconclusive) console.log(`  ✗ ${x}`);
+  for (const c of report.components) for (const x of c.findings.filter((y) => y.severity !== "theme").slice(0, 6))
+    console.log(`  ${x.severity} ${x.ac} ${c.name} · ${x.prop}: ${x.ref ?? ""} → ${x.test ?? ""}${x.why ? ` (${x.why})` : ""}`);
+  console.log(`  report: ${join(out, "design-report.md")}`);
+  exitCode = { PASS: 0, INCONCLUSIVE: 2 }[report.verdict] ?? 1;
+} catch (e) {
+  console.error(`✗ ${e.message.split("\n")[0]}`);
+} finally {
+  await browser.close().catch(() => {});
+  sides.ref?.close(); sides.test?.close();
 }
-writeFileSync(join(out, "design-report.md"), md.join("\n"));
-console.log(`visual:design  ${report.verdict} · P1 ${report.counts.P1} · P2 ${report.counts.P2} · P3 ${report.counts.P3} · theme ${report.counts.theme} · ${report.components.length} component(s)`);
-for (const c of report.components) for (const x of c.findings.filter((y) => y.severity !== "theme").slice(0, 6))
-  console.log(`  ${x.severity} ${x.ac} ${c.name} · ${x.prop}: ${x.ref ?? ""} → ${x.test ?? ""}${x.why ? ` (${x.why})` : ""}`);
-console.log(`  report: ${join(out, "design-report.md")}`);
-process.exit(report.verdict === "PASS" ? 0 : 1);
+process.exit(exitCode);
