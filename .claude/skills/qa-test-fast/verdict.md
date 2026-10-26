@@ -57,7 +57,7 @@ bug. The calls run sequentially because `qa-bug` may take a browser lane.
 
 ## Verdict
 
-**Reconcile the strategy first**, per [`../qa-test-strategy/SKILL.md`](../qa-test-strategy/SKILL.md)
+**Reconcile the strategy first**, per [`/vc-test:qa-test-strategy`](../../../plugins/vc-test/skills/qa-test-strategy/SKILL.md)
 §Reconcile: fill the round's `### Reconciliation`, apply its cap (a High/Critical risk without a result is
 never `PASS`), and write `summary.json.strategy` — never null once a strategy ran.
 

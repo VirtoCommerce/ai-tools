@@ -42,6 +42,7 @@ You need each of these before you start. If any are missing, the install will fa
 | Two test accounts | One non-admin storefront user, one admin SPA user. | See [Test accounts](#test-accounts) below. |
 | Your customer's JIRA project key (e.g. `ACME`) | For bug filing. Default falls back to `VCST` if not set. | Atlassian → Projects → your project → Settings → Details. |
 | Serena plugin + `uv`/`uvx` | Shared semantic code-navigation for the whole team (enabled in tracked config; install per machine). | `uvx --version`; see [Serena setup](#serena--semantic-code-navigation-whole-team-one-time-per-machine). |
+| `vc-test` plugin | `/qa-test-fast` calls its `/vc-test:ticket-context` and `/vc-test:qa-test-strategy` (enabled in tracked config; install per machine). | `/plugin install vc-test@ai-tools`, then restart Claude Code |
 
 ## Install
 

@@ -6,7 +6,7 @@ Anything the brief can pass as a **file** is passed as a path, never pasted.
 
 ## Wave 1 — the ticket context, and the domain map when it is missing
 
-### A+B · Ticket context — [`/ticket-context`](../ticket-context/SKILL.md)
+### A+B · Ticket context — [`/vc-test:ticket-context`](../../../plugins/vc-test/skills/ticket-context/SKILL.md)
 Dispatch C first when it is due (background, its own browser lane), then run
 `/ticket-context <KEY> --domain <slug> --kb-hits <ids from Step 0>`. It returns one gated bundle:
 ACs with provenance, comment signals, every attachment, inline image and link with an outcome, design
@@ -50,7 +50,7 @@ touches goes into the run context as a model input.
 
 ## Strategy — after Join 1, before Wave 2
 
-Run [`/qa-test-strategy`](../qa-test-strategy/SKILL.md) inline, from its procedure step 2, with the bundle
+Run [`/vc-test:qa-test-strategy`](../../../plugins/vc-test/skills/qa-test-strategy/SKILL.md) inline, from its procedure step 2, with the bundle
 path — you counted the round from local evidence at Step 0.6; run its step 1's **second** count here (the
 bundle's `signals[]` verdict comments; a fourth round ⇒ its STOP) and then step 2 onward. The bundle is `/ticket-context`'s, so it never runs a
 second `/preflight` or `/ticket-context`. Its gate (`check-strategy.mjs`), its verifier on a Critical risk
