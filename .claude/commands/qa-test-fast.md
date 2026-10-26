@@ -33,7 +33,11 @@ behind every step, the rationalization table and the red flags are in
 
 ## Step 0 — Pre-flight (inline)
 
-**Env and run folder first.** `npm run run:use -- <TICKET> [<env>]` binds this session's env
+**Before anything:** `vc-test:ticket-context` and `vc-test:qa-test-strategy` must both be in your skill list
+(vc-test ≥ 0.2.0). Either absent ⇒ **STOP**: "install or update vc-test (`/plugin install vc-test@ai-tools`, or
+`/plugin marketplace update ai-tools`), then restart Claude Code" — never run half the pipeline.
+
+**Env and run folder next.** `npm run run:use -- <TICKET> [<env>]` binds this session's env
 ([`run-env.md`](../knowledge/execution/run-env.md); no env argument ⇒ the default) and its run folder
 `{RUN_DIR}` ([`run-output.md`](../knowledge/execution/run-output.md)). Every script below then resolves both, its
 output fills the Environment line of every brief, and **every file this run writes goes into `{RUN_DIR}`** —
@@ -48,7 +52,7 @@ the domain map, mind map and GraphQL schema it builds or refreshes included (lay
    the deployed build, `{SPRINT}`, the duplicate check (its row says "same build" / "different build" when
    both runs probed the deployed modules) and MCP availability, and runs its own remediation loop. A `not-deployed:*`
    row is BLOCKED-on-deploy, never a FAIL. **No `--expect` here:** the PRs are found in Stage 1, where
-   `/ticket-context` asks the same core per PR.
+   `/vc-test:ticket-context` asks the same core per PR.
 3. **Prior artifacts are inputs.** For this ticket, read the prior run folders `run:use` listed (every env),
    `reports/ba/test-models/<TICKET>-*` (the older place) and `reports/bugs/**`. A prior model is amended into
    `{RUN_DIR}/test-model.md`, never forked. Prior bugs are the dedupe baseline `qa-bug` checks against. A
@@ -63,7 +67,7 @@ the domain map, mind map and GraphQL schema it builds or refreshes included (lay
    `npm run bl:extract -- --has-domain <slug>`.
 5. **Ask the base for this run's coordinates** — done inside `/preflight` step 3 (kb first, then
    VirtoOZ). Carry its hit ids into Stage 1.
-6. **Round.** Count it per [`/qa-test-strategy`](../skills/qa-test-strategy/SKILL.md) procedure step 1,
+6. **Round.** Count it per [`/vc-test:qa-test-strategy`](../../plugins/vc-test/skills/qa-test-strategy/SKILL.md) procedure step 1,
    from local evidence. A fourth round ⇒ **STOP** with that skill's escalation; nothing below runs.
 
 ## Stage 1 — Context
@@ -74,13 +78,13 @@ Full briefs, merge rules and the context bundle:
 1. **Wave 1:**
    - **C** domain map — `/qa-domain-map <slug>` on `playwright-firefox`, only when the map is
      `ABSENT`/`unresolved`; dispatch it first, in the background
-   - **A+B** [`/ticket-context <KEY> --domain <slug> --kb-hits <Step 0 ids>`](../skills/ticket-context/SKILL.md)
+   - **A+B** [`/vc-test:ticket-context <KEY> --domain <slug> --kb-hits <Step 0 ids>`](../../plugins/vc-test/skills/ticket-context/SKILL.md)
      — ticket, every attachment and link, the PRs, their deployment on this stand, known ground and
      gaps, as one gated bundle
 2. **Join.** The bundle is the context. Its `blockers[]` decide deployment, and if it names a GraphQL
    operation, run both contract-refresh commands
    ([`context-wave.md`](../skills/qa-test-fast/context-wave.md) §Join 1).
-3. **Strategy.** Run [`/qa-test-strategy`](../skills/qa-test-strategy/SKILL.md) with the bundle: step 1's
+3. **Strategy.** Run [`/vc-test:qa-test-strategy`](../../plugins/vc-test/skills/qa-test-strategy/SKILL.md) with the bundle: step 1's
    second round count (the bundle's `signals[]`), then step 2 onward — its gate, then one approval question ([`context-wave.md`](../skills/qa-test-fast/context-wave.md)
    §Strategy). Its STOP is this run's STOP. The approved round decides which artifacts below run.
 4. **Wave 2 — one message:**

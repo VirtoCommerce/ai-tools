@@ -70,6 +70,28 @@ export function ignoreEntryFor(projectRoot, absPath) {
 }
 
 /**
+ * Remove ONE block this plugin appended, found by its exact title line (`# === <title> ===`): the
+ * title, its `#` notes and its entries up to the next blank line. Nothing else in the file is touched.
+ * Returns the entries removed ([] when the block is absent).
+ */
+export function removeGitignoreBlock(root, title) {
+  const path = join(root, ".gitignore");
+  if (!existsSync(path)) return [];
+  const text = readFileSync(path, "utf-8");
+  const eol = text.includes("\r\n") ? "\r\n" : "\n"; // the file's own line endings are kept
+  const lines = text.split(/\r?\n/);
+  const at = lines.findIndex((l) => l.trim() === `# === ${title} ===`);
+  if (at < 0) return [];
+  let end = at + 1;
+  while (end < lines.length && lines[end].trim() !== "") end++;
+  const removed = lines.slice(at + 1, end).map((l) => l.trim()).filter((l) => l && !l.startsWith("#"));
+  const start = at > 0 && lines[at - 1].trim() === "" ? at - 1 : at;
+  lines.splice(start, end - start);
+  writeFileSync(path, lines.join(eol));
+  return removed;
+}
+
+/**
  * Append the ignore entries a destination implies, if missing. Idempotent, and it only ever
  * APPENDS a marked block — an existing .gitignore is never rewritten or reordered, and a project
  * with no .gitignore at all gets one. `title`/`notes` label the block so separate calls (secrets,
@@ -77,7 +99,7 @@ export function ignoreEntryFor(projectRoot, absPath) {
  */
 export function ensureGitignoreEntries(root, entries, opts = {}) {
   const {
-    title = "vc-fix (/project-init) — browser evidence landing zone",
+    title = "vc-init (/project-init) — browser evidence landing zone",
     notes = [
       "The Playwright MCP servers write raw captures here; /qa-bug moves the ones it keeps",
       "into reports/bugs/screenshots/<bug-slug>/. Nothing here is evidence of record.",
@@ -107,7 +129,7 @@ export function ensureGitignoreEntries(root, entries, opts = {}) {
 export function ensureProjectIgnores(projectRoot, extraEntries = []) {
   try {
     return ensureGitignoreEntries(projectRoot, [...new Set([...extraEntries.filter(Boolean), ...SECRET_IGNORES])], {
-      title: "vc-fix (/project-init) — generated local config, never commit",
+      title: "vc-init (/project-init) — generated local config, never commit",
       notes: [
         "Per-machine onboarding output: the profile, env files (.env.local holds test-user passwords),",
         "the MCP config and the vc-secrets declarations. Tokens live in vc-secrets, not here. Never commit.",

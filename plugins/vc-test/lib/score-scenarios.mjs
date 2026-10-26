@@ -5,9 +5,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-// PENDING: this prototype imports the schema validator from .claude/skills/ticket-context/lib/ (the skill stays where it is);
-// moving a copy of it into this plugin is not done yet.
-import { validateDef } from "../../../.claude/skills/ticket-context/lib/schema.mjs";
+import { validateDef } from "../skills/ticket-context/lib/schema.mjs";
 import { KEY_RE, argOf, currentEnv, outputRoot, workDir } from "./paths.mjs";
 
 const SCHEMA = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), "scenarios.schema.json"), "utf8"));

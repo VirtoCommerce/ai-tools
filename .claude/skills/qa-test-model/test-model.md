@@ -350,7 +350,7 @@ layer's e2e suite (`concern: e2e` in `config/test-suites.json`). Handoff contrac
 ## Strategy mode — the model of a strategy's `MODEL` risks
 
 A model built with `--strategy` ([`SKILL.md`](SKILL.md) §Two modes) details only the risks the approved
-`/qa-test-strategy` round gave technique `MODEL`. The strategy already holds what the ticket header, the risk
+`/vc-test:qa-test-strategy` round gave technique `MODEL`. The strategy already holds what the ticket header, the risk
 areas and the rounds used to carry, so the model does not restate them. Everything above this section
 applies **except**:
 

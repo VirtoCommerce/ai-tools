@@ -1,5 +1,5 @@
 // plugins/vc-test/lib/strategy-artifacts.mjs — reads the approved round of test-strategy.md and the artifact registry.
-// The section, block and row parsing mirrors .claude/skills/qa-test-strategy/lib/check-strategy.mjs, so a file its
+// The section, block and row parsing mirrors skills/qa-test-strategy/lib/check-strategy.mjs, so a file its
 // gate accepts reads the same here.
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";

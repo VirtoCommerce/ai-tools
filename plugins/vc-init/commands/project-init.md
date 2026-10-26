@@ -6,14 +6,14 @@ argument-hint: "(no args — interactive) | --add-env (add another environment t
 
 # /project-init — deploy & wire the QA plugins for a customer
 
-Bring the Virto Commerce plugins (vc-fix, vc-perf, …) up on a new machine / for a new customer and
+Bring the Virto Commerce plugins up on a new machine / for a new customer and
 produce the **deployment profile** (`project-profile.json`) that every installed plugin reads — the
 tracker (Jira or Azure Boards), the code host and its repositories (client module / theme / storefront
 fork **or** native VirtoCommerce platform), the stands.
 
 Methodology + helper scripts: the [`/project-init` skill](../skills/project-init/SKILL.md). This
-plugin (vc-init) is the ONLY writer of the profile; vc-fix and vc-perf stop with "run /project-init"
-when it is absent.
+plugin (vc-init) is the ONLY writer of the profile; every plugin that reads it stops with
+"run /project-init" when it is absent.
 
 **Tokens never pass through chat or a file.** The operator stores each PAT with
 `node "<VC_SECRETS>" set <name>` in their own terminal and approves the declarations with

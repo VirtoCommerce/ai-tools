@@ -8,6 +8,119 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## /ticket-context and /qa-test-strategy are vc-test's — `vc-test` `0.2.0`, catalog `0.15.0` — 2026-10-26
+
+P1d-1 of the `vc-test` plan (`docs/superpowers/plans/2026-10-26-vc-test-p1d1-move.md`). Behaviour is unchanged: the
+deterministic `prepare` on VCST-5097 and the strategy gate on a saved strategy give the same output before and
+after the move. The one difference is the cache key's skill fingerprint, which changes when the skill's own files
+change, as designed.
+
+**Moved:** `/ticket-context` and `ticket-context-analyst`, and `/qa-test-strategy` with its template, now live in
+`plugins/vc-test/`. Git keeps their history. Nothing of them remains under `.claude/`.
+
+**Still repository-bound, as before the move:** `/vc-test:qa-test-strategy` links to this repository's technique
+vocabulary, risk framework, data rules and qa-test files (P2 moves them), and `/vc-test:ticket-context` calls repository
+scripts (P1d-3). Outside an `ai-tools` checkout they are not usable yet.
+
+**Added: `vc-test:strategy-verifier`.** A read-only agent that `/vc-test:qa-test-strategy` dispatches on a Critical
+risk. It is cut from `qa-lead-orchestrator`'s Verifier Mode, which keeps `/qa-test`'s own per-step gates until P4.
+
+**Changed:**
+- `/qa-test-fast` calls `/vc-test:ticket-context` and `/vc-test:qa-test-strategy`, and stops with an install hint when vc-test is missing.
+- vc-test is enabled in the tracked `.claude/settings.json`, and the onboarding prerequisites name it.
+- `ticket-context` loads the plugin's own copy of the env loader.
+
+## `vc-init` `0.5.0`, `vc-fix` `0.14.1`: a host is found by its shape, and guest mode reads what its own setup left — 2026-10-26
+
+**Fixed: detection no longer turns other projects into guests.** `detectHost` counted any install record of a
+known host plugin, so a client governance plugin installed for one folder (`--scope project`) made
+`/project-init` offer guest mode in every Virto checkout on the same machine.
+
+**Changed: no host is named in the plugins any more.** The `HOSTS` registry is gone. A candidate host is a
+plugin bound to the folder — installed for it with project or local scope, or enabled in its own
+`.claude/settings*.json` — that is not one of ours and ships MCP servers and a `SessionStart` hook; a plugin
+installed for the whole machine is only offered, never picked. The profile records it by plugin id
+(`<plugin>@<marketplace>`); `--governance` takes one.
+
+**Changed: the host sets the person up, vc-init sets the project up.** The host's own setup command (its skill
+or command named for setup / init / onboarding) owns the role, the sign-in, its secrets and which of its
+servers stay on; vc-init never runs or repeats it. `detect-governance.mjs` prints the host's `state`
+(`lib/host-adapter.mjs`, read-only): whether that setup ran here (no role has two servers on), each server
+that is on and the role it fills — by the MCP package it launches, through a wrapper when the plugin declares
+one — and the test-user password slots its browser servers launch with (`<ENV>_<SLOT>_PASSWORD` from a secret
+reference). Not set up ⇒ `/project-init` stops with the host's command. The code host is never inferred.
+
+**Added: test users on the host's password slots.** `governance` gains `websiteAuth` (`host-secrets` |
+`manual-operator`) and `envs` (`.env.<env>` → host website env); gen-profile takes `--gov-website-auth` and
+`--gov-envs`, and a re-run with the same host keeps the confirmed servers and the env map. `add-user` offers
+the host's free slots, writes the login and a one-line note to `.env.<env>` and hands the operator the way to
+store the slot's secret (the wrapper's own `set` verb when its usage offers one); no built-in `ADMIN` /
+`USER_EMAIL` and no password placeholder is written on such a project. `verify-access` checks that the
+host's setup ran here, that the profile names the servers that are on, and every env's mapping and test
+users. vc-fix's `host-governance.md` says how an agent signs in: the login as text, the password by the
+slot's NAME, or by hand when `manual-operator`.
+
+**Changed: the interview asks once, and never what the host already says.** On a host-governed project
+`state.facts` holds what the host's own files declare — the tracker kind, the Azure DevOps organization (the
+tracker server's argument) and project (the host's marketplace URL), the code host kind, the website
+environments — and the skill shows them with their source instead of asking. What is left is asked in
+`AskUserQuestion` rounds (choices, URLs, then each account, admins first), then one hand-off table of files, fields and the
+password commands. Every test-user password goes to the host's slots there. The profile is recorded as a client
+project that files nothing upstream; `.env.*` is gitignored and the env headers no longer speak of vc-secrets;
+assert-profile does not grade the scans a guest skips; next-steps offers no `/qa-fix` without a code host. In
+a normal project the same shape applies (§2e: `AskUserQuestion` rounds for every non-secret value and login, §3d a
+filled-fields table), and an admin password goes to vc-secrets only — `--admin-passwords env-local` is refused;
+a storefront user's still goes where the operator chooses.
+
+**Added: code access is probed, and readable code is scanned like the normal flow.** A host's
+documentation is not the person's rights: `/project-init` calls the tracker server's list-repositories
+tool, and when it answers the repos are scanned through the host's server — `discover-repos.mjs
+--listing-json` takes the listing the skill read, reports `needs-files` (root `package.json` of each
+storefront candidate, `module.manifest` ids of each module repo) until it has them, and classifies them as
+it always does. `governance.codeAccess` (`none` | `read` | `write`) records the result: with `read` the
+client repos carry `access: "read"` and no PR plan, vc-fix reads code for the root cause and opens no PR, and
+next-steps offers `/qa-fix` only with `write`. A `--gov-<role>` flag on a day-2 gen-profile run now
+changes that role.
+
+**Changed: every interview answer is an `AskUserQuestion` form.** Choices are options; typed values — URLs,
+logins, account notes — are the questions' Other answers, at most four questions per call: the URLs, how many
+accounts, then each account (login and a one-line note), admins first. No form in the chat and no file to fill.
+
+**Fixed: an install for the folder that its settings no longer switch on is reported `inactive`** — Claude
+Code does not load it, so detection no longer treats it as the host.
+
+**Changed: vc-init installs on its own.** The README and the install lines name `/plugin install
+vc-init@ai-tools` (it pulls in vc-secrets), and the onboarding text names no particular plugin: every plugin
+that reads the profile is treated alike. `verify-access` drops its `Plugin root` row, which failed whenever
+vc-fix was not installed; a plugin that is not there is already reported by next-steps, and the
+self-diagnostics marker is skipped without it.
+
+**Fixed: a git-tracked `.env.<env>` keeps its tracker keys.** Moving the project keys (`JIRA_*`,
+`ADO_ORG`/`ADO_PROJECT`, `CLIENT_REPO_ORG`) into `.env.local` used to delete them from every env file,
+including one the team commits, so a teammate without a `.env.local` lost the Jira connection on the next
+commit. A key a tracked file holds now stays in the env files and is not copied into `.env.local` either (a
+copy would win at runtime and go stale when the team changes the shared value): scaffold-env and
+normalize-env say `left in the git-tracked env files …`, a new env file gets the key with the shared value
+(never an empty `.env.local` placeholder that would blank it), write-env refuses a different value, and a
+`.env.local` line that overrides it is reported. Untracked
+env files are cleaned as before. On a host-governed project gen-profile warns about every env file git still
+tracks (the `.env.*` ignore does not untrack it), and add-user refuses to write a login into one.
+
+**Fixed (review of this PR).** verify-access warns when one plugin of this marketplace is enabled under both
+`@ai-tools` and the old `@vc-tools` (two collectors), on a host-governed project too, without requiring any plugin; reports a test user whose
+host slot is gone instead of dropping it; a GitHub code-host server no longer reads as the wrong kind. A
+host listing must name its org, and for Azure Repos its project (no `undefined` URLs, no stray `ADO_*`), its
+storefront `localVerify` no longer names `USER_EMAIL` / `USER_PASSWORD`, and write-env's new env files carry
+the same header as scaffold-env's (local on a host-governed project).
+The `.gitignore` blocks /project-init appends are titled `vc-init (/project-init)`, not `vc-fix`.
+
+**Verified.** On a machine with a client governance plugin installed for one folder and its setup already run
+there: no candidate for this repository or its parent folder; the folder's plugin found in any letter case,
+its work-items, test-management, telemetry and three browser servers classified by package, its setup
+command found, 10 slots on two environments, the store command read from the wrapper's usage. A sandbox
+project went through gen-profile → scaffold-env → scaffold-secrets → add-user → reconcile → verify-access in
+both states (setup not run / run). 3912 unit tests and the vc-init bridge tests pass.
+
 ## vc-test in the marketplace, as a preview — `vc-test` `0.1.0`, catalog `0.14.0` — 2026-10-26
 
 The third of four P1 plans (`docs/superpowers/plans/2026-10-26-vc-test-p1c-plugin.md`). `vc-test` is now listed,

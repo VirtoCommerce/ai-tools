@@ -15,7 +15,7 @@ nothing and re-open no page. Dispatch description: `[vc-test:verdict] <KEY>`.
 
 ## Rules (cited, not restated)
 
-- **Reconcile the strategy** first, per `.claude/skills/qa-test-strategy/SKILL.md` §Reconcile.
+- **Reconcile the strategy** first, per `<plugin>/skills/qa-test-strategy/SKILL.md` §Reconcile.
 - **Verdict vocabulary and decision rules:** `.claude/skills/qa-test/close-out.md` §5-verdict.2. An in-scope
   Critical or High bug is FAIL; an in-scope Medium is PASS WITH NOTES; an out-of-scope bug never fails the ticket
   (spec B6).

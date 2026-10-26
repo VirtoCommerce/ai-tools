@@ -5,11 +5,11 @@ itself, it says where the later layers look (spec U37, U44). Dispatch descriptio
 
 ## Inputs (paths only — read them, nothing else)
 
-- `BUNDLE` — the `/ticket-context` bundle. Read `acs[]` and `change` (PRs, their `hotspots[]`, `operations`,
+- `BUNDLE` — the `/vc-test:ticket-context` bundle. Read `acs[]` and `change` (PRs, their `hotspots[]`, `operations`,
   `endpoints`, `settings`, `untested`, `hidden_behaviour`, the `ac_to_diff` / `diff_to_ac` traces). **Never read
   the raw diff, a PR or a source file:** the CHANGE analysis already did, and the bundle is scrubbed.
 - `MIND_MAP` — `.claude/knowledge/domain/<slug>.mind-map.json`, when it exists (`<slug>` is the domain the
-  command resolved and passed to `/ticket-context`; the bundle's `known.domain_map` names it).
+  command resolved and passed to `/vc-test:ticket-context`; the bundle's `known.domain_map` names it).
 - `DATA_MODEL` — `test-data/models/<slug>.data-model.json`, when it exists.
 - `OUT` — where to write `change-map.json`.
 
