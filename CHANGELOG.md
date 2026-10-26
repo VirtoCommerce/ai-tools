@@ -8,6 +8,31 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## The tracker CLIs read what a connector needs — `vc-fix` `0.14.0` — 2026-10-26
+
+The second of four P1 plans for the `vc-test` plugin (`docs/superpowers/plans/2026-10-26-vc-test-p1b-vc-fix-reads.md`).
+These are new read commands in `qa-fix-routing/jira.mjs` and `ado.mjs`, so that one `$VC_RUN` call fetches what
+`/ticket-context` reads with its own tokens today. Every one is a GET and prints the tracker's own objects
+unshaped. `vc-init`, `vc-perf` and `vc-secrets` are unchanged, and the bridge admits the new names as it is.
+
+**Added, `jira.mjs`:**
+- `comments`: every page in one launch, or the newest N.
+- `download`: an attachment's bytes to a file.
+- `dev-prs`: the PR URLs in the issue's development panel.
+
+**Added, `ado.mjs`:**
+- `comments`: follows `continuationToken`.
+- `download-attachment`: takes the GUID of an `AttachedFile` relation, never a URL.
+- Azure Repos PR reads: `get-pr`, `pr-iterations`, `pr-changes` (paged) and `pr-threads`.
+- `get-file --commit <sha>`.
+
+**Added: `raw-out.mjs`.** A download from a token-holding CLI is written only inside `<outputRoot>/.vc-fix/`. The
+path is checked after resolving links and before any request. The bytes go to a fresh file that is renamed into
+place, so a link already at the target is never written through. A download is cut at `--max-bytes` (default
+25 MiB), and a cut download leaves no file. No new command can hang: a JSON read times out after 30 s and a
+download, body included, after 120 s. Paging stops on a page with nothing new. Azure comments come oldest first,
+like Jira's, and `--newest` reverses that. `pr-changes` follows Azure's `nextSkip`.
+
 ## What vc-test needs from onboarding — `vc-init` `0.4.0` — 2026-10-26
 
 The first of four P1 plans for the `vc-test` plugin (`docs/superpowers/plans/2026-10-26-vc-test-p1a-vc-init.md`).
