@@ -149,11 +149,15 @@ that bug.
    repro through `vc-fix:qa-investigate`, one candidate per dispatch, ≤3 at a time, each on its own lane; it leaves an
    evidence package (screenshots, requests, the deciding source) under `reports/regression/<RUN_ID>/evidence/<case>/`.
    Not reproduced ⇒ change the row's verdict, do not file. A bug without screenshots is not filed.
-2. **File through `/vc-fix:qa-bug`**, one call per confirmed bug, handing it that evidence package — it owns the
-   duplicate check, the tracker fields, the origin labels (`found-by-agent` + `found-in-regression`), the inline
-   screenshots and the render check ([`../rules/reports.md`](../../rules/reports.md) §0–§0b,
-   [`tracker-ops.md`](../../knowledge/execution/tracker-ops.md)). Link each to `release.json` `ticket`. Do not hand-roll
-   the tracker call: a second filing path drifts from the first.
+2. **File through `/vc-fix:qa-bug`**, one call per confirmed bug:
+   `/vc-fix:qa-bug "<defect>" found-by:agent-regression <RUN_ID> --evidence <the package> --link <release.json ticket> --confirmed`.
+   `--evidence` makes it read the package instead of reproducing a second time; `--link` relates the bug to the release
+   ticket; `--confirmed` passes on the yes this step already took, so it does not ask per bug. It owns the duplicate
+   check, the tracker fields, Need hotfixes, the origin labels (`found-by-agent` + `found-in-regression`), the
+   screenshots inside the fields and the render check ([`../rules/reports.md`](../../rules/reports.md) §0–§0b,
+   [`tracker-ops.md`](../../knowledge/execution/tracker-ops.md)). Do not hand-roll the tracker call: a second filing
+   path drifts from the first. The flags need vc-fix with the `qa-bug` field rules (PR to follow); on an older install
+   they are ignored and it asks per bug, as before.
 3. Replace `DRAFT` with the key; the other rows of the same defect become `DUPLICATE` with that key.
 
 ## Step 7 — ASK: put it in GitHub?
