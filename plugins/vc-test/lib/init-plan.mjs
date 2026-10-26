@@ -5,11 +5,11 @@
 //   → writes <outputRoot>/.vc-fix/vc-test/test-block.json (for `profile-set.mjs --merge test=@<that file>`) and
 //     prints { file, test, warnings, gaps }
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { isAbsolute, join, relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { argOf, outputRoot } from "./paths.mjs";
-import { ownEnv } from "../scripts/lib/env-layers.mjs";
-import { runDirTemplate } from "../scripts/lib/run-dir.mjs";
+import { ownEnv, readEnvFile } from "../scripts/lib/env-layers.mjs";
+import { DEFAULT_TEMPLATE } from "../scripts/lib/run-dir.mjs";
 
 export const ROLES = Object.freeze(["admin", "user"]); // vc-init's roles: the back-office admin, the storefront user
 
@@ -25,7 +25,15 @@ export function scriptRootOf(template) {
  * an override in .env.local must not turn a "writable" declaration onto another stand).
  * @returns {{ test: object, warnings: string[] }}
  */
-export function planTestBlock({ envs, writable = [], knowledgeStore, backUrlOf, template, hasCorpus }) {
+/**
+ * The run-folder template a run will use: QA_OUTPUT_DIR from the process, else from `.env.local` (where
+ * run-output.md says it lives), else run-dir's default. The CLI loads no env layer, so it reads the file itself.
+ */
+export function outputTemplate(root, env = process.env) {
+  return env.QA_OUTPUT_DIR?.trim() || readEnvFile(join(root, ".env.local"))?.QA_OUTPUT_DIR?.trim() || DEFAULT_TEMPLATE;
+}
+
+export function planTestBlock({ envs, writable = [], knowledgeStore, backUrlOf, template, hasCorpus, root = outputRoot() }) {
   const unknown = writable.filter((e) => !envs.includes(e));
   if (unknown.length) throw new Error(`not an environment of this project: ${unknown.join(", ")} (known: ${envs.join(", ") || "none"})`);
   const environments = {};
@@ -35,8 +43,12 @@ export function planTestBlock({ envs, writable = [], knowledgeStore, backUrlOf, 
     environments[env] = { writable: writable.includes(env), ...(backUrl ? { backUrl } : {}) };
     if (!backUrl && writable.includes(env)) warnings.push(`${env}: its .env.${env} declares no BACK_URL, so it stays read-only until it does`);
   }
-  const root = scriptRootOf(template);
-  const scriptRoots = [...(root ? [root] : []), ...(hasCorpus ? ["regression"] : [])];
+  // The runner runs files only inside the project (vc-init bridge/runner.mjs): a run folder outside it cannot be a
+  // script root, so it is named in a warning instead of recorded — the runner would refuse every root otherwise.
+  const runRoot = scriptRootOf(template);
+  const inProject = runRoot && !isAbsolute(runRoot) && !relative(root, resolve(root, runRoot)).startsWith("..");
+  if (runRoot && !inProject) warnings.push(`QA_OUTPUT_DIR (${template}) is outside the project: the runner cannot run a kept .spec there, so it is not a script root`);
+  const scriptRoots = [...(inProject ? [runRoot] : []), ...(hasCorpus ? ["regression"] : [])];
   return { test: { environments, scriptRoots, knowledgeStore }, warnings };
 }
 
@@ -67,7 +79,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   let plan;
   try {
     plan = planTestBlock({ envs, writable, knowledgeStore: argOf(process.argv, "store") ?? "qa-knowledge/",
-      backUrlOf: (env) => ownEnv(env, { root }).vars.BACK_URL || null, template: runDirTemplate(), hasCorpus: existsSync(join(root, "regression")) });
+      backUrlOf: (env) => ownEnv(env, { root }).vars.BACK_URL || null, template: outputTemplate(root), hasCorpus: existsSync(join(root, "regression")), root });
   } catch (e) {
     console.error(e.message);
     process.exit(1);

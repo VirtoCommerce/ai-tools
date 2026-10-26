@@ -12,7 +12,9 @@ export default {
   testDir: project,
   testMatch: ["**/*.spec.ts", "**/*.spec.mjs", "**/*.spec.js"],
   testIgnore: ["**/node_modules/**", "**/.fix-workspace/**"],
-  outputDir: join(project, ".vc-fix", "vc-test", "playwright-results"),
+  // Its own folder per run: Playwright empties outputDir when a run starts, and two scenario agents of one wave
+  // must not delete each other's failure traces and screenshots.
+  outputDir: join(project, ".vc-fix", "vc-test", "playwright-results", `${Date.now()}-${process.pid}`),
   workers: 1,
   reporter: [["list"]],
   use: {

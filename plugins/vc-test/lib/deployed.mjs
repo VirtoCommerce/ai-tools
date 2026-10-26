@@ -49,7 +49,8 @@ async function modulesOf(ctx) {
     const r = await ctx.fetch(`${ctx.backUrl}/api/platform/modules`, { signal: timed(), headers: { Authorization: `Bearer ${t.token}` } });
     if (r.status !== 200) return { unknown: `modules ${r.status}` };
     const mods = await r.json();
-    return (Array.isArray(mods) ? mods : []).filter((m) => m?.id).map((m) => ({ id: String(m.id), version: String(m.version ?? "") }));
+    if (!Array.isArray(mods)) return { unknown: "modules: not a list" }; // an error body read as "no modules" would mark every module NOT DEPLOYED
+    return mods.filter((m) => m?.id).map((m) => ({ id: String(m.id), version: String(m.version ?? "") }));
   } catch {
     return { unknown: "modules network" };
   }

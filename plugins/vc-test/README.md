@@ -18,8 +18,9 @@ the scripts below work in any project.
 /vc-test:init                           # vc-test: which envs a run may write to, the knowledge store
 ```
 
-`vc-test` loads env files with `dotenv`. In an install, run `npm install` in the plugin's folder once, as you do
-for `vc-init`. A checkout of this repository already has it.
+`vc-test` has its own dependencies: `dotenv` for the env loader it carries, and `@playwright/test` for `.spec`
+runs in a project without its own Playwright. In an install, run `npm install --omit=dev --prefix <the plugin's
+folder>` once; `/vc-test:init` says so when they are missing. A checkout of this repository already has them.
 
 ## What is here
 

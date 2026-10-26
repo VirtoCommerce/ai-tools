@@ -6,9 +6,11 @@
 // error. Every write is scrubbed of the project's secret values first and lands inside its store only.
 // Tests: knowledge-store.test.mjs (committed, U10).
 import { randomBytes } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, realpathSync, renameSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
-import { loadSecretValues, redactText } from "./scrub.mjs";
+import { currentEnv } from "./paths.mjs";
+import { MIN_SECRET_LENGTH, SECRET_NAME, TOKEN_SHAPES, loadSecretValues, looksLikePath, secretValuesFrom } from "./scrub.mjs";
+import { envFolders } from "../scripts/lib/env-layers.mjs";
 
 /** What the stores hold, in the formats §6 names. `<slug>` is the caller's; everything else is fixed here. */
 export const KINDS = Object.freeze({
@@ -36,8 +38,62 @@ export function storeConfig(profile, { root }) {
     root,
     project: resolve(root, pick(t.knowledgeStore) ?? DEFAULT_STORE),
     platform: platform ? resolve(root, platform) : null,
-    platformWritable: profile?.projectType !== "client",
+    // Only a project that declares itself the platform writes there: a missing or unknown projectType is refused.
+    platformWritable: profile?.projectType === "platform",
   };
+}
+
+/**
+ * Every secret VALUE this project holds: `.env.local` and every `.env.playwright.*` file (per env, master, all) in
+ * the root and in the env's QA_ENV_PATH folders, plus this process's secret-named variables (a password the
+ * bridge handed over from vc-secrets lives only there).
+ */
+export function knowledgeSecretValues(root, env = process.env) {
+  const values = loadSecretValues(root, env);
+  const dirs = [root, ...envFolders({ env: currentEnv(), root, ambient: env })];
+  for (const dir of dirs) {
+    let names = [];
+    try { names = readdirSync(dir); } catch { continue; }
+    for (const n of names) {
+      if (n !== ".env.local" && !/^\.env\.playwright\..+$/.test(n)) continue;
+      try { for (const v of secretValuesFrom(readFileSync(join(dir, n), "utf8"))) values.add(v); } catch { /* unreadable: skip */ }
+    }
+  }
+  for (const [name, v] of Object.entries(env)) {
+    if (SECRET_NAME.test(name) && typeof v === "string" && v.length >= MIN_SECRET_LENGTH && !looksLikePath(v)) values.add(v);
+  }
+  return values;
+}
+
+/**
+ * Knowledge is prose and data, not a log: only secret VALUES (and token shapes) are masked — never a key named
+ * like a secret, a "Token:" line or a URL query, which are facts about the product. Every spelling of a value.
+ */
+export function scrubValues(text, values) {
+  let s = String(text);
+  const variants = new Set();
+  for (const v of values) {
+    if (!v) continue;
+    variants.add(v);
+    variants.add(JSON.stringify(v).slice(1, -1));
+    try { variants.add(encodeURIComponent(v)); } catch { /* not encodable */ }
+  }
+  for (const v of [...variants].sort((a, b) => b.length - a.length)) s = s.split(v).join("[REDACTED]");
+  for (const [, re] of TOKEN_SHAPES) s = s.replace(new RegExp(re.source, re.flags.includes("g") ? re.flags : `${re.flags}g`), "[REDACTED]");
+  return s;
+}
+
+/** A JSON kind is scrubbed inside its string values and must still be JSON; anything else is scrubbed as text. */
+function scrubFor(kind, text, values) {
+  if (!KINDS[kind].endsWith(".json")) return scrubValues(text, values);
+  let doc;
+  try {
+    doc = JSON.parse(String(text));
+  } catch (e) {
+    throw new Error(`${kind} must be valid JSON: not valid JSON (${e.message})`);
+  }
+  const walk = (v) => (typeof v === "string" ? scrubValues(v, values) : Array.isArray(v) ? v.map(walk) : v && typeof v === "object" ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, walk(x)])) : v);
+  return `${JSON.stringify(walk(doc), null, 2)}\n`;
 }
 
 const outside = () => new Error("outside the store — a slug is lowercase letters, digits and dashes, and the file stays inside its store");
@@ -90,7 +146,7 @@ export function writeKnowledge(cfg, { kind, slug, text, target = "project" }) {
   if (!store) throw new Error("no platform store is configured here — the platform's knowledge is written through the kb, not a file");
   const file = fileIn(store, kind, slug);
   mkdirSync(dirname(file), { recursive: true });
-  const clean = redactText(String(text ?? ""), loadSecretValues(cfg.root));
+  const clean = scrubFor(kind, String(text ?? ""), knowledgeSecretValues(cfg.root));
   const part = `${file}.part-${process.pid}-${randomBytes(4).toString("hex")}`;
   writeFileSync(part, clean, { flag: "wx" });
   renameSync(part, file);

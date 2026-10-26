@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { KINDS, readKnowledge, storeConfig, writeKnowledge } from "./knowledge-store.mjs";
 
-function project({ projectType = "native", platformStore } = {}) {
+function project({ projectType = "platform", platformStore } = {}) {
   const root = mkdtempSync(join(tmpdir(), "vct-ks-"));
   const profile = { schemaVersion: 3, projectType, test: { knowledgeStore: "qa-knowledge/", ...(platformStore ? { platformStore } : {}) } };
   return { root, profile, cfg: storeConfig(profile, { root }) };
@@ -75,4 +75,48 @@ test("read order: the project store first, then the platform folder; nothing ⇒
   writeKnowledge(cfg, { kind: "domain-map", slug: "cart", text: "project map" });
   assert.deepEqual(readKnowledge(cfg, "domain-map", "cart"), { text: "project map", source: "project" });
   assert.equal(readKnowledge(cfg, "domain-map", "orders"), null);
+});
+
+// ── Fix pass after the P1c review ────────────────────────────────────────────────────────────────
+
+test("a JSON kind survives the scrub: keys named like secrets and URL queries are knowledge, not secrets", () => {
+  const { root, cfg } = project();
+  const doc = { session: { ttl: 20 }, passwordPolicy: { min: 8 }, url: "/search?q=shoes&page=2" };
+  const { path } = writeKnowledge(cfg, { kind: "mind-map", slug: "auth", text: JSON.stringify(doc, null, 2) });
+  assert.deepEqual(JSON.parse(readFileSync(path, "utf8")), doc);
+  const md = writeKnowledge(cfg, { kind: "test-doc", slug: "t", text: "- Session: kept 30 min\n- Token: the CSRF token rotates\nGET /search?q=shoes" });
+  assert.equal(readFileSync(md.path, "utf8"), "- Session: kept 30 min\n- Token: the CSRF token rotates\nGET /search?q=shoes");
+});
+
+test("a JSON kind is redacted inside its string values and stays valid; text that is not JSON is refused", () => {
+  const { root, cfg } = project();
+  writeFileSync(join(root, ".env.local"), "ADMIN_PASSWORD=Sup3rSecretPw\n");
+  const { path } = writeKnowledge(cfg, { kind: "observed", slug: "login", text: JSON.stringify({ claim: "logged in with Sup3rSecretPw" }) });
+  const back = JSON.parse(readFileSync(path, "utf8"));
+  assert.doesNotMatch(back.claim, /Sup3rSecretPw/);
+  assert.throws(() => writeKnowledge(cfg, { kind: "observed", slug: "bad", text: "{not json" }), /not valid JSON/);
+});
+
+test("every password file and the process's password variables are scrubbed by value", () => {
+  const { root, cfg } = project();
+  writeFileSync(join(root, ".env.playwright.vcst"), "ADMIN_PASSWORD=PerEnvSecret99\n");
+  writeFileSync(join(root, ".env.playwright.master"), "MASTER_PASSWORD=MasterSecret42\n");
+  const prev = process.env.ZED_PASSWORD;
+  process.env.ZED_PASSWORD = "EnvOnlySecret77";
+  try {
+    const { path } = writeKnowledge(cfg, { kind: "test-doc", slug: "p", text: "PerEnvSecret99 MasterSecret42 EnvOnlySecret77 plain" });
+    const text = readFileSync(path, "utf8");
+    assert.doesNotMatch(text, /PerEnvSecret99|MasterSecret42|EnvOnlySecret77/);
+    assert.match(text, /plain$/);
+  } finally {
+    if (prev === undefined) delete process.env.ZED_PASSWORD; else process.env.ZED_PASSWORD = prev;
+  }
+});
+
+test("only a declared platform project may write to the platform store (no projectType ⇒ refused)", () => {
+  const root = mkdtempSync(join(tmpdir(), "vct-ks-"));
+  const cfg = storeConfig({ schemaVersion: 3, test: { platformStore: "platform/" } }, { root });
+  assert.equal(cfg.platformWritable, false);
+  assert.throws(() => writeKnowledge(cfg, { kind: "rules", slug: "x", text: "a: 1", target: "platform" }), /platform write refused/);
+  assert.equal(storeConfig({ schemaVersion: 3, projectType: "platform" }, { root }).platformWritable, true);
 });
