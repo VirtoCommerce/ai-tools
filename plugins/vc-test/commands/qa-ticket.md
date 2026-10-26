@@ -82,7 +82,8 @@ row goes in `testing-checklist.md` under `## Scenario results`, never `scenarios
 
 **A `global/…` writer is BLOCKED before dispatch** if `node <plugin>/lib/window.mjs check` exits 1: write its row,
 `BLOCKED — no channel to announce the window (U68)`, to `<RUN_DIR>/scenarios/S-n.rows.md`. The visual lane's
-findings: a row each in `scenarios/visual.rows.md`, `VIS-<m>`, Proof `visual`, `FAIL <severity>`. **After each
+rows go in `scenarios/visual.rows.md`, `VIS-<m>`, Proof `visual`: `FAIL <severity>` per finding, and one `PASS` row
+naming each VISUAL risk it covered without one. Never absent. **After each
 wave**: `node <plugin>/lib/scenario-rows.mjs merge --run-dir <RUN_DIR> --ids <its S-n,…[,visual][,pixel]>` (a row already merged is skipped); exit 2 ⇒
 `missing` / `refused` back to their agent once, merge those again.
 

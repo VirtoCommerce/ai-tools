@@ -18,7 +18,8 @@ const lf = (s) => String(s).replace(/\r\n?/g, "\n");
 // A cell may hold an escaped pipe; split only on the unescaped ones.
 const cellsOf = (line) => line.split(/(?<!\\)\|/).slice(1, -1).map((c) => c.trim().replace(/\\\|/g, "|"));
 const named = (ref, re) => [...String(ref).matchAll(re)].map((m) => m[1]);
-const risksIn = (ref) => named(ref, /(?<![\w-])(R\d+)(?![\w-])/g);
+// `R-3` is the prose spelling of `R3` (the command and floors write `R-n`): both name the same risk.
+const risksIn = (ref) => named(ref, /(?<![\w-])R-?(\d+)(?![\w-])/g).map((n) => `R${n}`);
 const scenariosIn = (ref) => named(ref, /(?<![\w-])(S-\d+)(?![\w-])/g);
 const namesAc = (ref, id) => new RegExp(`(?<![\\w-])${id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\w-])`).test(ref);
 
@@ -26,22 +27,25 @@ function resultRows(checklistMd) {
   return lf(checklistMd).split("\n").filter((l) => /^\|/.test(l.trim())).map((l) => cellsOf(l.trim()))
     .filter((c) => ROW_ID.test(c[0] ?? "")).map((c) => {
       const res = /^(PASS|FAIL|BLOCKED)\b\s*(?:[—–:-]\s*)?(.*)$/i.exec(c[5] ?? "");
-      return { id: c[0], ref: c[1] ?? "", status: res?.[1].toUpperCase() ?? null, detail: (res?.[2] ?? "").trim() };
+      return { id: c[0], ref: c[1] ?? "", status: res?.[1].toUpperCase() ?? null, detail: (res?.[2] ?? "").trim(), raw: c[5] ?? "" };
     });
 }
 
-// FAIL <worst severity> > BLOCKED (and no PASS) > PASS (every row with a result); null when no row has a result.
+// The first word of a FAIL's detail, punctuation aside: `High: …`, `(Critical)` and `— Medium` all name a severity.
+const severityOf = (detail) => SEVERITY.findIndex((s) => s.toLowerCase() === /\p{L}+/u.exec(detail)?.[0].toLowerCase());
+// A row whose Result is not PASS, FAIL or BLOCKED (empty, `SKIP — <capability>`, `N/A`) proves nothing.
+const unproved = (list) => list.filter((r) => !r.status);
+
+// FAIL <worst severity> > BLOCKED > PASS; null when no row has any result written.
 function verdictOf(list) {
-  const done = list.filter((r) => r.status);
-  if (!done.length) return null;
-  const fails = done.filter((r) => r.status === "FAIL");
+  if (!list.some((r) => r.status || r.raw)) return null;
+  const fails = list.filter((r) => r.status === "FAIL");
   if (fails.length) {
-    const rank = (r) => SEVERITY.findIndex((s) => s.toLowerCase() === r.detail.split(/\s+/)[0]?.toLowerCase());
-    const worst = fails.map(rank).filter((i) => i >= 0).sort((a, b) => a - b)[0];
+    const worst = fails.map((r) => severityOf(r.detail)).filter((i) => i >= 0).sort((a, b) => a - b)[0];
     return worst === undefined ? "FAIL" : `FAIL ${SEVERITY[worst]}`;
   }
-  // A mix of PASS and BLOCKED is not a PASS: the blocked row is an unproved part of the risk.
-  return done.some((r) => r.status === "BLOCKED") ? "BLOCKED" : "PASS";
+  // A PASS beside a BLOCKED or an unproved row is not a PASS: that row is an unproved part of the risk.
+  return list.some((r) => r.status === "BLOCKED") || unproved(list).length ? "BLOCKED" : "PASS";
 }
 
 export function reconcile({ strategyMd, checklistMd, runPlan = null, acs = [] }) {
@@ -68,7 +72,8 @@ export function reconcile({ strategyMd, checklistMd, runPlan = null, acs = [] })
     const result = verdictOf(mine);
     const notRun = scenarios.filter((s) => missingOf.has(s)).map((s) => `not run: needs ${missingOf.get(s)}`);
     const blocked = mine.filter((x) => x.status === "BLOCKED").map((x) => x.detail || "blocked");
-    const parts = [...blocked, ...notRun];
+    const noResult = result === null ? [] : unproved(mine).map((x) => `${x.id}: ${x.raw || "no result"}`);
+    const parts = [...blocked, ...noResult, ...notRun];
     return {
       r, level,
       planned: [scenarios.join(", "), a?.technique, a?.lane].filter(Boolean).join(" · ") || "—",
@@ -102,11 +107,14 @@ export function writeReconciliation(strategyMd, rows) {
   const heading = /^### Reconciliation.*$/m.exec(sec);
   if (!sec || !heading) throw new Error("no `### Reconciliation` table in the last round");
   const lines = sec.slice(heading.index + heading[0].length + 1).split("\n");
-  let n = 0;
+  // Blank lines between the heading and its table stay where they are; the table starts after them.
+  let s = 0;
+  while (s < lines.length && !lines[s].trim()) s++;
+  let n = s;
   while (n < lines.length && /^\|/.test(lines[n])) n++;
-  const head = n >= 2 ? lines.slice(0, 2) : ["| R | Planned | Ran (item ids · charter · lane · case ids) | Result | Deviation — reason |", "|---|---|---|---|---|"];
+  const head = n - s >= 2 ? lines.slice(s, s + 2) : ["| R | Planned | Ran (item ids · charter · lane · case ids) | Result | Deviation — reason |", "|---|---|---|---|---|"];
   const body = rows.map((x) => `| ${[x.r, x.planned, x.ran, x.result ?? "—", x.deviation].map(cell).join(" | ")} |`);
-  const next = [...head, ...body, ...lines.slice(n)].join("\n");
+  const next = [...lines.slice(0, s), ...head, ...body, ...lines.slice(n)].join("\n");
   const full = text.slice(0, start) + sec.slice(0, heading.index + heading[0].length + 1) + next;
   return crlf ? full.replace(/\n/g, "\r\n") : full;
 }
