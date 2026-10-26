@@ -41,8 +41,9 @@ external, Confluence and design pages as they are now, the stand's deployed buil
 - `status: "no-profile"` (exit 3) → **STOP.** Report its `detail`: run `/project-init` (vc-init) first.
 - `status: "host-governed"` (exit 4) → **STOP.** The project's tracker and code host are read through the
   host's MCP servers, which this skill does not do yet (vc-test P1d-3). Nothing was read.
-- `status: "no-tracker"` (exit 3) → **STOP.** Report the gap's `detail` (`VC_RUN` not set, or no
-  `tracker.baseUrl`: run `/project-init`). Nothing can be read without the ticket.
+- `status: "no-tracker"` (exit 3) → **STOP.** Report the gap's `reason` and `detail`: `VC_RUN` not set, no
+  tracker address in the profile (run `/project-init`), or the tracker's own refusal of the first read (no stored
+  token, a refused token, a ticket that does not exist). Nothing can be read without the ticket.
 - `status: "prepared"` with `run_dir_in_project: false` → the run dir fell back to the OS temp
   directory, which a dispatched agent cannot read without a prompt. Run `abort` (below) and **STOP**
   with the remedy: add `.vc-fix/` to `.gitignore`, or run inside a git project.

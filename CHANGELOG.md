@@ -8,6 +8,39 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## An Azure Boards ticket reaches the gated bundle — `vc-test` `0.3.1` — 2026-10-26
+
+**Fixed — the Azure Boards tracker address.** `/vc-test:ticket-context` read the tracker address only from
+`tracker.baseUrl`, which `/project-init` writes for Jira alone, so every Azure Boards prepare stopped with
+`no-tracker`. On an Azure Boards tracker it now reads `tracker.azure.apiBase`, else
+`https://dev.azure.com/<tracker.azure.organization>/<tracker.azure.project>`.
+
+**Fixed — numeric ticket keys in the bundle and change map.** `bundle.schema.json` (`ticket`, `benchmark.hide[]`)
+and `change-map.schema.json` (`ticket`) accepted only `ABC-123`, so `check` and `finish` failed on every Azure
+Boards work item id. They now accept a work item id too.
+
+**Fixed — what an Azure Boards work item carries.** The description is the type's rich-text form fields in form
+order (`tracker.formLayout`; without one, Description, Repro Steps and System Info), so a Bug keeps its Repro
+Steps. An image pasted into a field or comment is read as an attachment (it is stored as one but is not an
+`AttachedFile` link), dated by its comment for the blind cut. A Task's parent story is read as a linked issue, as a
+Jira sub-task's is. A linked issue's parent title is no longer fetched.
+
+**Fixed — the Azure Repos diff.** Files are read until the diff passes `CAPS.diffBytes` (what the bundle keeps);
+the rest is an `over-cap` gap. A refused token stops the diff at once instead of failing each file in turn; a file
+whose path the disk cannot hold is one `no patch` file, not the whole diff; no `git` on `PATH` is `tool-missing`.
+
+**Changed — GitHub search on an Azure Boards tracker.** The cross-link token (`AB#967`) is searched only in the
+client's own GitHub org, never the upstream's; on Azure Repos nothing is searched (plan Task 7). GitHub PRs a ticket
+names are still read.
+
+**Fixed — smaller.** `check` and `finish` load the env `prepare` resolved, so the secret scan uses the same secrets.
+A refusal on the first tracker read is a `no-tracker` JSON status, not a stack line. `governance.secrets: "host"`
+is host-governed (exit 4) before any read, as the bridge already treated it. A gap's detail keeps a failed request's
+status and path, never the tracker's response body. On Linux and macOS a timed-out launch kills the bridge's process
+group, so the token-holding tool stops too (on Windows it already did). A killed run's bridge temp files and Azure
+diff dirs are swept after 24 h like its run dir. A bug report counts as prior art for an Azure Boards id only in a
+work-item form (`AB#967`, `#967`, "work item 967", a `_workitems/edit/967` URL), not any `967` in its text.
+
 ## `/vc-test:ticket-context` reads Jira, GitHub, Azure Boards and Azure Repos through `$VC_RUN` — `vc-test` `0.3.0` — 2026-10-26
 
 P1d-2 of the `vc-test` plan (`docs/superpowers/plans/2026-10-26-vc-test-p1d2-connectors.md`). Needs `vc-fix` ≥ 0.15.0.

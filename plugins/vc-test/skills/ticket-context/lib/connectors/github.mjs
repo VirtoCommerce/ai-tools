@@ -12,6 +12,13 @@ export function searchKeyFor(profile, key) {
   return profile.crossLinkToken ? `${profile.crossLinkToken}${key}` : null;
 }
 
+/** Where the search rungs look. A Jira key may be in any configured org. An Azure Boards token means something only
+ *  in the client's own GitHub org — the upstream's PRs never carry it — so on Azure Repos, or a platform project,
+ *  nothing is searched (plan Task 7: the GitHub ladder does not run there). */
+export function searchOrgsFor(profile) {
+  return profile.tracker === "azure" ? profile.orgs.filter((o) => o !== profile.upstream) : profile.orgs;
+}
+
 export function githubConnector({ run = bridgeRun } = {}) {
   const api = (path, opts) => run("gh", ["api", path], opts);
   const q = (s) => encodeURIComponent(s);
