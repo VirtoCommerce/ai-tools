@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { BUDGET, BASELINE, alwaysLoadedFiles, measureBudget, isPlaceholderPath, isEphemeralPath, citationTarget, citedFromRoot, pathResolves, headingMatch, DERIVED_COUNT_RE, isTranscribedCount, MAY_NOT_EXIST, classifyScript, ratchet, lint, isGitIgnored, promptFiles, checkPromptBudget, PROMPT_BASELINE_PATH, charCount, memoryRefs, relativeLinkTargets } from '../maintenance/lint-claude-docs.mjs';
+import { BUDGET, BASELINE, alwaysLoadedFiles, measureBudget, isPlaceholderPath, isEphemeralPath, citationTarget, citedFromRoot, pathResolves, headingMatch, DERIVED_COUNT_RE, isTranscribedCount, MAY_NOT_EXIST, classifyScript, ratchet, lint, isGitIgnored, promptFiles, checkPromptBudget, PROMPT_BASELINE_PATH, charCount, memoryRefs } from '../maintenance/lint-claude-docs.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -106,17 +106,6 @@ test('promptFiles = commands + agents + SKILL.md, in .claude/ AND every plugin, 
   assert.ok(files.includes('.claude/commands/qa-test.md') && files.some((f) => f.startsWith('.claude/agents/')), 'commands and agents must both be in scope');
   // A plugin's prompts are loaded whole exactly as the repo's are — the moved vc-test skills went unmeasured before.
   assert.ok(files.some((f) => /^plugins\/[^/]+\/commands\//.test(f)) && files.some((f) => /^plugins\/[^/]+\/agents\//.test(f)) && files.some((f) => /^plugins\/[^/]+\/skills\/.+\/SKILL\.md$/.test(f)), 'plugin commands, agents and SKILL.md must be in scope');
-});
-
-test('relativeLinkTargets: every relative link a reader follows, except the ones DOC-003 already owns', () => {
-  assert.deepEqual(relativeLinkTargets('see [`../../rules/test-data.md`](../../rules/test-data.md) and [close-out](../qa-test/close-out.md#5-verdict)'),
-    ['../../rules/test-data.md', '../qa-test/close-out.md']);
-  assert.deepEqual(relativeLinkTargets('[x](https://example.com) [y](#anchor) [z](mailto:a@b) [w](//host/x)'), []);
-  // A backticked repo-root label is DOC-003's (citationTarget already checks its target); counting it twice would double-report.
-  assert.deepEqual(relativeLinkTargets('[`.claude/rules/agents.md`](../rules/agents.md)'), []);
-  assert.deepEqual(relativeLinkTargets('[`template.md`](template.md) [dir](sub/)'), ['template.md', 'sub']);
-  // Link syntax quoted in a code span is an example a reader never follows.
-  assert.deepEqual(relativeLinkTargets('a Markdown image path (`![alt](path)`) renders as nothing; see [it](real.md)'), ['real.md']);
 });
 
 test('checkPromptBudget: the four verdicts', () => {
