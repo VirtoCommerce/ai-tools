@@ -8,6 +8,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## The runner starts an allowlisted vc-test script — `vc-init` `0.4.1` — 2026-10-26
+
+Part of the third P1 plan for `vc-test` (`docs/superpowers/plans/2026-10-26-vc-test-p1c-plugin.md`).
+
+**Added: `node "$VC_RUN" runner plugin <name> [args…]`.** It starts one of vc-test's own scripts with the current
+env's test-user passwords and never a token, so F6 can log in as the admin to read the stand's module versions.
+- **Names, never paths.** The name must be in `RUNNER_PLUGIN_SCRIPTS`; v1 has only `deployed`. This is the same pattern as `onboard`'s allowlist.
+- **The file comes from the vc-test install,** the trusted one on the inner side, so it needs no `scriptRoots`.
+- **The env check still applies:** only an env the profile's `test` block lists.
+
 ## What vc-test needs from onboarding — `vc-init` `0.4.0` — 2026-10-26
 
 The first of four P1 plans for the `vc-test` plugin (`docs/superpowers/plans/2026-10-26-vc-test-p1a-vc-init.md`).
