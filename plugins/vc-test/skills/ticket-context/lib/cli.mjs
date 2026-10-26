@@ -239,7 +239,7 @@ async function prepare() {
           gap: gap(`pr:${p.ref}`, "over-cap", `more than ${CAPS.prs} product PRs; rung 1 first, then the most recent, then the companions they name`) });
         continue;
       }
-      try { prs.push(await collectPr(gh, p, runDir, { sameKey: ladder.sameKey })); } catch (e) { prs.push({ ...base, gap: asGap(`pr:${p.ref}`, e) }); }
+      try { prs.push(await collectPr(gh, p, runDir, { sameKey: ladder.sameKey, before })); } catch (e) { prs.push({ ...base, gap: asGap(`pr:${p.ref}`, e) }); }
     }
 
     const prepared = { schema: "ticket-context-prepare/1", ticket: key, env: testEnv, tracker: profile.tracker, project_type: profile.projectType, domain, run_dir: runDir, run_dir_in_project: inProject,
