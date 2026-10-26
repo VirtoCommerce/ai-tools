@@ -5,7 +5,7 @@ import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from "no
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { assertKey, cacheDir, isInside, newRunDir, outputRoot, removeRunDir, sweepStaleRuns } from "./paths.mjs";
-import { LAYERS_GAP, loadLayeredEnv } from "./env.mjs";
+import { LAYERS_GAP, loadLayeredEnv, resolveTestEnv } from "./env.mjs";
 import { resolveProfile } from "./profile.mjs";
 import { HostGoverned, vcRun } from "./bridge.mjs";
 import { jiraConnector } from "./connectors/jira.mjs";
@@ -46,6 +46,8 @@ function usage(msg) { console.error(`✗ ${msg}\n${USAGE}`); process.exit(1); }
 for (const a of argv) if (/^--[a-z-]+=/.test(a)) usage(`${a.split("=")[0]}: write \`${a.split("=")[0]} <value>\`, not \`=\``);
 const root = outputRoot();
 const ignored = (p) => isIgnored(root, p);
+/** The profile for the steps after prepare (which already stopped on a missing one); null if it is gone since. */
+const profileOrNull = () => { try { return loadProfile({ root }); } catch { return null; } };
 const prepPath = () => flag("prepare") ?? usage("--prepare <path to prepare.json> is required");
 
 async function materialize(it, tracker, runDir, secrets) {
@@ -351,7 +353,7 @@ function mergeChangeCmd() {
 
 function deploy() {
   const prep = readJson(prepPath());
-  const d = checkDeployment({ root, key: prep.ticket, prs: prep.prs });
+  const d = checkDeployment({ root, key: prep.ticket, prs: prep.prs, env: prep.env ?? null });
   writeJson(join(prep.run_dir, OUT_FILES.deploy), d);
   out({ status: "deploy-checked", chain_deployed: d.chain_deployed, blockers: d.blockers });
 }
@@ -371,7 +373,7 @@ function known() {
       operations = [...new Set(c.prs.flatMap((x) => [...list(x?.operations), ...list(x?.endpoints)]))];
     } catch { extra.push(gap("known.observables", "unreadable", "change.out.json is not valid CHANGE output — no operations or endpoints passed to tc:scope")); }
   }
-  const k = knownGround({ root, key: prep.ticket, domain: prep.domain ?? undefined, prs: prep.prs, operations, runDir: prep.run_dir, benchmark: prep.benchmark ?? null });
+  const k = knownGround({ root, key: prep.ticket, domain: prep.domain ?? undefined, prs: prep.prs, operations, runDir: prep.run_dir, benchmark: prep.benchmark ?? null, profile: profileOrNull() });
   k.gaps.push(...extra);
   writeJson(join(prep.run_dir, OUT_FILES.known), k);
   out({ status: "known", domain_map: k.known.domain_map.state, bl: k.known.bl.length, cases_at_risk: k.known.cases_at_risk.length, prior_runs: k.known.prior_runs.length, gaps: k.gaps.length });
@@ -441,7 +443,7 @@ function redeploy() {
   b.fields ??= { summary: "", type: null, status: null, priority: null, components: [], labels: [], fix_versions: [], description: "", acceptance: "" };
   // Script values only: compose took repo, number, state, merged and gap from prepare, never from an agent.
   const d = checkDeployment({ root, key, prs: b.change.prs.map((p) => ({ ref: `${p.repo}#${p.number}`, number: p.number, state: p.state, merged: p.merged,
-    context_only: p.context_only, gap: p.gap })) });
+    context_only: p.context_only, gap: p.gap })), env: resolveTestEnv(root) });
   const byRef = new Map(d.prs.map((r) => [r.ref, r]));
   for (const p of b.change.prs) {
     const r = byRef.get(`${p.repo}#${p.number}`);
