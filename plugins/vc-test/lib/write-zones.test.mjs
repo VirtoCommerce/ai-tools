@@ -226,6 +226,18 @@ test("a root that is a subfolder of the repository keys git's paths relative to 
   assert.deepEqual(outside(changed(before, snapshot({ root, runDir })), zones(root, ["checklist"])), ["keep.md"]);
 });
 
+test("a root whose folder name starts with a space keeps git's prefix whole and still sees an edit", (t) => {
+  const top = repo(t);
+  const root = join(top, " lead-space");
+  put(top, " lead-space/keep.md");
+  git(top, "add", ".");
+  git(top, "commit", "-q", "-m", "lead-space");
+  const runDir = join(root, RUN);
+  const before = snapshot({ root, runDir });
+  put(top, " lead-space/keep.md", "edited");
+  assert.deepEqual(outside(changed(before, snapshot({ root, runDir })), zones(root, ["checklist"])), ["keep.md"]);
+});
+
 test("the contract-refresh zone covers every file the repo's run layout gives its commands (schema, cache, fixtures report)", async (t) => {
   let runLayout;
   try { ({ runLayout } = await import("../../../scripts/lib/run-dir.mjs")); } catch { return t.skip("the repo's scripts/lib/run-dir.mjs is not beside this plugin"); }

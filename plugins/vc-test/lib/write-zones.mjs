@@ -6,7 +6,9 @@
 // What it cannot see: (1) a write to a git-IGNORED path outside the run folder and .vc-fix (e.g. .env.local,
 // project-profile.json) — git does not list it and only the run folder is walked; (2) which agent wrote a file —
 // the orchestrator's zone is run-wide, so a stray file inside it is attributed to no one; (3) a directory git lists as
-// one entry (a nested repository, a submodule) is not looked into; (4) a symlink inside the run folder is skipped.
+// one entry (a nested repository, a submodule) is not looked into; (4) a symlink inside the run folder is skipped;
+// (5) when the output root is a subfolder of a larger repository, a change outside that subfolder is not this run's
+// and is not seen.
 // Keys are in git's own spelling (its `--show-prefix` of the root), never the filesystem's, so a root reached through a
 // junction, a symlink or an 8.3 short name still keys every git path.
 // CLI: node plugins/vc-test/lib/write-zones.mjs snapshot --key <KEY> --run-dir <RUN_DIR>        (before the first wave)
@@ -99,7 +101,8 @@ const gitReason = (e, what) => `${what}: ${(e.code === "ENOENT" ? "git is not on
 function dirtyPaths(root) {
   const ask = (...args) => execFileSync("git", ["-C", root, ...args], { encoding: "utf8", maxBuffer: 1 << 28, stdio: ["ignore", "pipe", "pipe"] });
   let prefix, raw;
-  try { prefix = ask("rev-parse", "--show-prefix").trim(); } catch (e) { return { ok: false, reason: gitReason(e, "git rev-parse failed"), paths: [] }; }
+  // Only the line end goes: a leading space is part of a folder name, and trimming it would drop every git path.
+  try { prefix = ask("rev-parse", "--show-prefix").replace(/\r?\n$/, ""); } catch (e) { return { ok: false, reason: gitReason(e, "git rev-parse failed"), paths: [] }; }
   try { raw = ask("status", "--porcelain=v1", "-z", "--untracked-files=all"); } catch (e) { return { ok: false, reason: gitReason(e, "git status failed"), paths: [] }; }
   const parts = raw.split("\0");
   const paths = [];
