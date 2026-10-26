@@ -1,0 +1,10 @@
+{
+  "name": "vc-test",
+  "version": "0.1.0",
+  "description": "The vc-test plugin's own runtime dependencies (the env loader it carries, like vc-init and vc-fix).",
+  "type": "module",
+  "license": "SEE LICENSE IN LICENSE",
+  "dependencies": {
+    "dotenv": "^17.4.2"
+  }
+}
