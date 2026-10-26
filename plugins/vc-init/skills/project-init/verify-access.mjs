@@ -278,6 +278,20 @@ const OUR_MARKETPLACES = ["ai-tools", "vc-tools"];
  * file. Only a WARN, and only when the `claude` CLI answers; a plugin that is absent is not a fault. Runs
  * on every project, a host-governed one included (the hooks are ours either way).
  */
+/**
+ * The plugins enabled under more than one of our ids, each as its distinct ids. `claude plugin list` prints
+ * one row per install, so one id installed for the user AND for a project (a project's settings enable it)
+ * is several rows of the SAME id — one plugin, not a duplicate. Pure.
+ */
+export function duplicateInstalls(list) {
+  const byName = {};
+  for (const p of Array.isArray(list) ? list : []) {
+    const [name, market] = String(p.id || "").split("@");
+    if (p.enabled && OUR_MARKETPLACES.includes(market)) (byName[name] ||= new Set()).add(p.id);
+  }
+  return Object.values(byName).filter((ids) => ids.size > 1).map((ids) => [...ids]);
+}
+
 function checkPluginInstalls(add) {
   let list = null;
   try {
@@ -285,12 +299,7 @@ function checkPluginInstalls(add) {
   } catch {
     /* claude CLI unavailable — nothing to check */
   }
-  const byName = {};
-  for (const p of Array.isArray(list) ? list : []) {
-    const [name, market] = String(p.id || "").split("@");
-    if (p.enabled && OUR_MARKETPLACES.includes(market)) (byName[name] ||= []).push(p.id);
-  }
-  for (const ids of Object.values(byName).filter((ids) => ids.length > 1)) {
+  for (const ids of duplicateInstalls(list)) {
     add("Plugin installs", "WARN",
       `${ids.join(" and ")} are both enabled — each one's hooks run, so spans duplicate and state writes race. Uninstall the old one (/plugin uninstall ${ids.filter((id) => !id.endsWith("@ai-tools")).join(", ")}) and restart Claude Code`);
   }

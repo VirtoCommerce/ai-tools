@@ -8,6 +8,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## One plugin installed in several scopes is not a duplicate — `vc-init` `0.5.1` — 2026-10-26
+
+**Fixed: a false `Plugin installs` WARN.** `claude plugin list` prints one row per install, so a plugin
+installed for the user and for a project (a project's `.claude/settings.json` enables it, and every checkout
+or worktree of that project gets its own install) appears several times under the same id. verify-access
+counted rows and warned that `vc-secrets@ai-tools and vc-secrets@ai-tools … are both enabled`. It now counts
+distinct ids (`duplicateInstalls`), so it warns only when one plugin is enabled under both `@ai-tools` and the
+old `@vc-tools`.
+
 ## The benchmark tooling is gone — `vc-test` `0.2.2` — 2026-10-26
 
 **Removed.** P0 closed without its benchmark run (spec U69), and nothing else needs the tooling:
