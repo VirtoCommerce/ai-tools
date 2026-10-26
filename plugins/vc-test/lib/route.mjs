@@ -4,7 +4,9 @@
 //   node plugins/vc-test/lib/route.mjs --key <KEY>              reads type, status, issuetype.subtask and the parent
 //                                                                (and the parent's type and status): two reads at most
 //   node plugins/vc-test/lib/route.mjs --bundle <bundle.json>   routes from the bundle's fields.type / fields.status; no
-//                                                                parent is read, so a Sub-task is `unresolved`
+//                                                                parent is read, so a type named Sub-task / Subtask is
+//                                                                `unresolved` (the name only refuses, never routes)
+//   On Azure Boards there are no sub-tasks: the `subtask` flag is ignored, no parent is read, every type but Bug is `test`.
 // stdout is the result JSON: { job, role, reason, next }, job one of test | verify-fix | hotfix-check | unresolved.
 // Exit: 0 a decided job · 1 usage · 2 no readable project-profile.json (a STOP, U19) · 3 the tracker cannot be read here
 //   (the $VC_RUN bridge is missing or refused it — HostGoverned — or the read failed): the command routes after step 1
@@ -40,6 +42,9 @@ export function roleOf({ status, profile }) {
   return null;
 }
 
+const isAzure = (profile) => profile?.tracker?.kind === "azure"; // the raw profile; resolveProfile's `tracker` is the same kind
+const SUBTASK_TYPE = /^sub-?task$/i; // a --bundle names the type only; used to refuse, never to route
+
 const unresolved = (role, reason) => ({ job: "unresolved", role, reason, next: null });
 
 function decide({ key, type, status, profile }) {
@@ -59,7 +64,7 @@ function decide({ key, type, status, profile }) {
  * { key, type, subtask, status } or null when none was read.
  */
 export function route({ key = null, type = null, subtask = false, status = null, parent = null, profile = {} }) {
-  if (!subtask) return decide({ key, type, status, profile });
+  if (!subtask || isAzure(profile)) return decide({ key, type, status, profile });
   if (!parent) return unresolved(null, "a Sub-task is routed by its parent and no parent was read");
   if (parent.subtask) return unresolved(null, `a Sub-task is routed by its parent, and ${parent.key ?? "its parent"} is a Sub-task too`);
   const r = decide({ key: parent.key, type: parent.type, status: parent.status, profile });
@@ -84,7 +89,7 @@ async function readTicket({ key, raw, root }) {
   const own = snapshot(issue);
   const parentKey = issue.fields?.parent?.key;
   let parent = null;
-  if (own.subtask && parentKey) {
+  if (profile.tracker !== "azure" && own.subtask && parentKey) { // the Azure connector flags a Task a sub-task; on Azure it is not one
     try { parent = { ...snapshot(await tracker.issue(parentKey, ["issuetype", "status"])), key: parentKey }; } catch (e) { if (e instanceof HostGoverned) throw e; }
   }
   return { ...own, key, parent };
@@ -112,7 +117,7 @@ async function main() {
   if (bundle !== undefined) {
     let b;
     try { b = JSON.parse(readFileSync(bundle, "utf8")); } catch (e) { usage(`${bundle}: ${e.message}`); }
-    input = { key: typeof b.ticket === "string" ? b.ticket : null, type: b.fields?.type ?? null, status: b.fields?.status ?? null, subtask: !!b.fields?.subtask };
+    input = { key: typeof b.ticket === "string" ? b.ticket : null, type: b.fields?.type ?? null, status: b.fields?.status ?? null, subtask: SUBTASK_TYPE.test(b.fields?.type ?? "") };
   } else {
     try { input = await readTicket({ key, raw, root }); } catch (e) {
       if (e instanceof ProfileError) { console.error(e.message); process.exit(2); }
