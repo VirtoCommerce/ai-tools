@@ -19,7 +19,7 @@ import { LATEST_PROTOCOL, TOOLS, createServer as createKbServer, memoizeReader }
 /** Every in-process server gets `KB_BUILD: '0'`: its `env` REPLACES process.env, so `npm test`'s own
  *  KB_BUILD=0 never reached it, and every kb_confirm / kb_dispute naming a deployment signed in to that
  *  real stand as admin (CI kept vcst-qa's admin locked out). A test that wants the probe passes it. */
-const createServer = (opts = {}) => createKbServer({ ...opts, env: { KB_BUILD: '0', ...opts.env } });
+const createServer = (opts = {}) => createKbServer({ ...opts, env: { KB_BUILD: '0', ...(opts.env ?? process.env) } });
 
 const run = promisify(execFile);
 const REPO = join(import.meta.dirname, '..', '..');

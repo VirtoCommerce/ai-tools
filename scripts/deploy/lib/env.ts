@@ -115,15 +115,19 @@ export function resolveEnvCoords(env: string, passwordOverride?: string, ticket?
     || local.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || '';
   // A read-only service account's key, per env only (never a generic one: a key is bound to one stand).
   // When present, the live readers use it instead of signing in as the stand's shared admin; an explicit
-  // --password still means "sign in with this", so it drops the key.
-  const apiKey = passwordOverride ? '' : local[`PLATFORM_API_KEY_${envKey}`] || process.env[`PLATFORM_API_KEY_${envKey}`] || '';
+  // --password still means "sign in with this", so it drops the key. Looked up where the password is: the
+  // .env.local pin, then the env's own password file.
+  const apiKey = passwordOverride ? ''
+    : local[`PLATFORM_API_KEY_${envKey}`] || own.passwords.PLATFORM_API_KEY || process.env[`PLATFORM_API_KEY_${envKey}`] || '';
   const backUrl = (e.BACK_URL || process.env.BACK_URL || '').replace(/\/$/, '');
+  // Bound to the env's OWN BACK_URL only: an ambient process BACK_URL is another env's stand.
+  const ownBackUrl = (e.BACK_URL || '').replace(/\/$/, '');
   return {
     env, deployOwner, deployRepo, branch,
     packagesPath: e.DEPLOY_PACKAGES_PATH || PACKAGES_PATH_DEFAULT,
     themePath: e.DEPLOY_THEME_PATH || THEME_PATH_DEFAULT,
     storybookPath: e.DEPLOY_STORYBOOK_PATH || STORYBOOK_PATH_DEFAULT,
     backUrl, admin: e.ADMIN || process.env.ADMIN || 'admin', password,
-    ...(apiKey && backUrl ? { apiKey, apiKeyFor: backUrl } : {}),
+    ...(apiKey && ownBackUrl ? { apiKey, apiKeyFor: ownBackUrl } : {}),
   };
 }
