@@ -5,10 +5,9 @@
 // engine nor its packages. The same files serve ai-tools (`npm run visual:*`): one engine, no second copy.
 
 import { execFileSync } from "node:child_process";
-import { existsSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 // On POSIX, Node writes to a pipe asynchronously and process.exit() does not wait for it: `snap | tee` would lose
 // the tail. Blocking stdio is the fix `set-blocking` applies; a no-op where the handle cannot block.
@@ -54,29 +53,41 @@ export function rejectUnknownFlags(argv, known, valued = [], exitCode = 1) {
   }
 }
 
+/** The repository the engine runs in: git's toplevel of the working directory, else the working directory. */
+export function projectRoot() {
+  try {
+    return execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+  } catch {
+    return process.cwd(); // not a checkout
+  }
+}
+
 /**
  * Where `setup.mjs` installs the packages when the project does not have them: the repository's own
  * `node_modules/.cache/` (fork-drift.mjs caches there too) — never the fork's package.json, never the
  * plugin's install folder (read-only). `VC_VISUAL_DEPS` overrides it.
  */
 export function depsDir() {
-  if (process.env.VC_VISUAL_DEPS) return process.env.VC_VISUAL_DEPS;
-  let root = process.cwd();
-  try { root = execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim(); } catch { /* not a checkout */ }
-  return join(root, "node_modules", ".cache", "vc-frontend-visual");
+  return process.env.VC_VISUAL_DEPS || join(projectRoot(), "node_modules", ".cache", "vc-frontend-visual");
 }
 
 /**
- * Load one package: first as this file resolves it (an ai-tools checkout has them in its node_modules), then from
- * depsDir(). Exits 2 with the setup command when neither has it.
+ * Load one package, resolved from (1) the project root — so an engine running from the plugin cache still finds the
+ * project's node_modules, which a bare `import(name)` never would (it resolves from this file's folder) — then
+ * (2) depsDir(), then (3) this file's own folder (an ai-tools checkout run from elsewhere). The resolved path is
+ * imported as a file URL: a bare Windows path is not a valid import specifier. Exits 2 with the setup command when
+ * none has it.
  */
 export async function load(name) {
-  try {
-    return await import(name);
-  } catch {
-    const dir = depsDir();
-    if (existsSync(join(dir, "node_modules", name))) return createRequire(join(dir, "package.json"))(name);
-    console.error(`✗ "${name}" is not installed. Run once: node ${join(dirname(fileURLToPath(import.meta.url)), "setup.mjs")} (installs into ${dir})`);
-    process.exit(2);
+  for (const base of [projectRoot(), depsDir(), dirname(fileURLToPath(import.meta.url))]) {
+    let path;
+    try {
+      path = createRequire(join(base, "package.json")).resolve(name);
+    } catch {
+      continue; // not resolvable from there
+    }
+    return import(pathToFileURL(path).href);
   }
+  console.error(`✗ "${name}" is not installed. Run once: node ${join(dirname(fileURLToPath(import.meta.url)), "setup.mjs")} (installs into ${depsDir()})`);
+  process.exit(2);
 }
