@@ -23,7 +23,8 @@
  * --with-baseline adds the ledger of the release named in `release.json` `baseline` (when that
  * folder exists), so a recurrence from the previous bundle is recognised as known ground.
  *
- * Exit codes: 0 ok · 1 bad usage, or --check found a violation · 2 the release folder is missing.
+ * Exit codes: 0 ok · 1 bad usage, --check found a violation, or --ledger could not read a file (the rows it
+ * printed leave that file out) · 2 the release folder is missing.
  */
 import "../lib/sync-stdio.mjs";
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -159,11 +160,12 @@ function check(release: string, dir: string, plan: Release | null, states: Map<s
   for (const w of plan.waves) {
     if (!/^[A-Z][A-Za-z0-9-]*$/.test(w.id ?? "")) problems.push(`release.json: wave id '${w.id}' must start with a capital letter (W0, C-purchase, WX)`);
     if (w.tier !== undefined && !TIERS.includes(w.tier)) problems.push(`release.json: wave ${w.id} tier '${w.tier}' not one of ${TIERS.join(" ")}`);
-    // Priority is a dependency: a high wave waits for every critical wave, a rest wave for every high one.
-    const before = w.tier === "high" ? "critical" : w.tier === "rest" ? "high" : null;
-    if (before && !cycle) {
-      for (const o of plan.waves.filter((x) => x.tier === before)) {
-        if (!dependsOnWave(plan.waves, w.id, o.id)) problems.push(`release.json: ${w.tier} wave ${w.id} must depend on ${before} wave ${o.id}`);
+    // Priority is a dependency: a wave waits for every wave of EVERY higher tier — a rest wave for each critical wave
+    // too, so a plan with no high wave still orders rest after critical. Transitive dependencies count.
+    const rank = w.tier === undefined ? -1 : TIERS.indexOf(w.tier);
+    if (rank > 0 && !cycle) {
+      for (const o of plan.waves.filter((x) => x.tier !== undefined && TIERS.indexOf(x.tier) >= 0 && TIERS.indexOf(x.tier) < rank)) {
+        if (!dependsOnWave(plan.waves, w.id, o.id)) problems.push(`release.json: ${w.tier} wave ${w.id} must depend on ${o.tier} wave ${o.id}`);
       }
     }
     if (!Array.isArray(w.suites) || w.suites.length === 0) problems.push(`release.json: wave ${w.id} has no suites`);
@@ -174,7 +176,7 @@ function check(release: string, dir: string, plan: Release | null, states: Map<s
     // cases, which is why they are here); in a wave still to run it would run in parallel — the
     // exact thing exclusivity exists to prevent.
     for (const x of w.exclusive ?? []) {
-      if (!w.suites.includes(x)) problems.push(`release.json: wave ${w.id} lists exclusive '${x}' that is not among its suites`);
+      if (!(w.suites ?? []).includes(x)) problems.push(`release.json: wave ${w.id} lists exclusive '${x}' that is not among its suites`);
       for (const o of plan.waves) {
         if (o.id === w.id || !o.suites?.includes(x)) continue;
         if (!RAN.has(states.get(o.id)?.status ?? "NOT_STARTED")) problems.push(`release.json: exclusive suite ${x} (wave ${w.id}) is also in wave ${o.id}, which has not run — take it out of ${o.id}`);
@@ -193,7 +195,7 @@ function check(release: string, dir: string, plan: Release | null, states: Map<s
     if (RAN.has(s.status)) {
       if (!s.runIds?.length) problems.push(`${where}: a ${s.status} wave names no runIds`);
       if (!s.totals) problems.push(`${where}: a ${s.status} wave has no totals`);
-      if (!isCount(s.untriaged)) problems.push(`${where}: a ${s.status} wave states how many FAILs have no ledger row (untriaged)`);
+      if (!isCount(s.untriaged)) problems.push(`${where}: a ${s.status} wave states how many FAIL or BLOCKED cases have no ledger row (untriaged)`);
     }
     if ((s.status === "TRIAGED" || s.status === "DONE") && s.untriaged !== 0) problems.push(`${where}: ${s.status} needs untriaged = 0 (got ${s.untriaged})`);
     if (s.status === "BLOCKED" && !s.notRun?.length) problems.push(`${where}: a BLOCKED wave says in notRun what is blocked and why`);
@@ -203,19 +205,23 @@ function check(release: string, dir: string, plan: Release | null, states: Map<s
       const sum = t.pass + t.fail + t.blocked + t.skipped + t.ambiguous;
       if (sum !== t.executed) problems.push(`${where}: pass+fail+blocked+skipped+ambiguous = ${sum}, executed = ${t.executed}`);
       if (t.executed > t.planned) problems.push(`${where}: executed exceeds planned`);
-      if (isCount(s.untriaged) && s.untriaged! > t.fail) problems.push(`${where}: untriaged exceeds the FAIL count`);
+      if (isCount(s.untriaged) && s.untriaged! > t.fail + t.blocked) problems.push(`${where}: untriaged exceeds the FAIL + BLOCKED count`);
     }
     for (const n of s.notRun ?? []) {
       if (!Array.isArray(n.suites) || !n.suites.length || !n.reason || !isCount(n.cases)) problems.push(`${where}: each notRun entry needs suites[], cases and a reason`);
-      for (const id of n.suites ?? []) if (!w.suites.includes(id)) problems.push(`${where}: notRun suite ${id} is not in wave ${folder}`);
+      for (const id of n.suites ?? []) if (!(w.suites ?? []).includes(id)) problems.push(`${where}: notRun suite ${id} is not in wave ${folder}`);
     }
+  }
+  // A ledger in a folder no planned wave owns is checked against nothing — say so instead of reading it as known ground.
+  for (const folder of new Set(ledger.map((r) => r.wave))) {
+    if (!waves.has(folder)) problems.push(`waves/${folder}/ledger.csv: wave ${folder} is not in release.json`);
   }
   const seen = new Set<string>();
   for (const r of ledger) {
     const where = `waves/${r.wave}/ledger.csv ${r.case_id || "(no case_id)"}`;
     const w = waves.get(r.wave), s = states.get(r.wave);
     if (!r.case_id || !r.suite) problems.push(`${where}: case_id and suite are required`);
-    if (w && r.suite && !w.suites.includes(r.suite)) problems.push(`${where}: suite ${r.suite} is not in wave ${r.wave}`);
+    if (w && r.suite && !(w.suites ?? []).includes(r.suite)) problems.push(`${where}: suite ${r.suite} is not in wave ${r.wave}`);
     if (s && !s.runIds?.includes(r.run_id)) problems.push(`${where}: run_id ${r.run_id} is not in the wave's runIds`);
     const key = `${r.wave}|${r.case_id}|${r.run_id}`;
     if (seen.has(key)) problems.push(`${where}: duplicated for run ${r.run_id} — amend the row, do not append`);
@@ -250,8 +256,11 @@ function summarise(plan: Release, states: Map<string, State>, ledger: LedgerRow[
     };
   });
   const verdicts = Object.fromEntries(VERDICTS.map((v) => [v, ledger.filter((r) => r.verdict === v).length]));
-  const pending = ledger.filter((r) => r.verdict === "PENDING_DECISION");
-  const drafts = ledger.filter((r) => r.verdict === "REAL_BUG" && DRAFT.test(r.follow_up));
+  // In release.json wave order, not folder order: PROGRESS.md reads like the plan.
+  const order = new Map(plan.waves.map((w, i) => [w.id, i]));
+  const byWave = (a: LedgerRow, b: LedgerRow) => (order.get(a.wave) ?? Infinity) - (order.get(b.wave) ?? Infinity);
+  const pending = ledger.filter((r) => r.verdict === "PENDING_DECISION").sort(byWave);
+  const drafts = ledger.filter((r) => r.verdict === "REAL_BUG" && DRAFT.test(r.follow_up)).sort(byWave);
   const sum = (k: "executed" | "pass" | "fail" | "blocked") => rows.reduce((n, r) => n + (r[k] ?? 0), 0);
   return { rows, verdicts, pending, drafts, totals: { executed: sum("executed"), pass: sum("pass"), fail: sum("fail"), blocked: sum("blocked") } };
 }
@@ -270,8 +279,8 @@ function render(plan: Release, s: ReturnType<typeof summarise>): string {
   const meta = [plan.ticket && `Ticket: ${plan.ticket}`, plan.baseline && `Baseline: ${plan.baseline}`, plan.env && `Env: ${Object.values(plan.env).filter(Boolean).join(" · ")}`].filter(Boolean);
   if (meta.length) L.push(meta.join(" · "), "");
   L.push(`**Executed ${s.totals.executed} · PASS ${s.totals.pass} · FAIL ${s.totals.fail} · BLOCKED ${s.totals.blocked}** · ledger ${Object.values(s.verdicts).reduce((a, b) => a + b, 0)} rows`, "");
-  L.push("| Wave | Scope | Owner | Status | Planned | Executed | PASS | FAIL | BLOCKED | FAIL without a verdict | Ledger | Runs |", "|---|---|---|---|---|---|---|---|---|---|---|---|");
-  for (const r of s.rows) L.push(`| ${r.wave} | ${r.title} | ${r.owner} | ${r.status} | ${n(r.planned)} | ${n(r.executed)} | ${n(r.pass)} | ${n(r.fail)} | ${n(r.blocked)} | ${n(r.untriaged)} | ${r.ledger} | ${r.runIds.join(" ") || "—"} |`);
+  L.push("| Wave | Scope | Owner | Status | Planned | Executed | PASS | FAIL | BLOCKED | FAIL/BLOCKED without a verdict | Ledger | Runs |", "|---|---|---|---|---|---|---|---|---|---|---|---|");
+  for (const r of s.rows) L.push(`| ${r.wave} | ${cell(r.title)} | ${cell(r.owner)} | ${r.status} | ${n(r.planned)} | ${n(r.executed)} | ${n(r.pass)} | ${n(r.fail)} | ${n(r.blocked)} | ${n(r.untriaged)} | ${r.ledger} | ${r.runIds.join(" ") || "—"} |`);
   L.push("", "## Triage verdicts", "", "| Verdict | Rows |", "|---|---|");
   for (const [v, c] of Object.entries(s.verdicts)) if (c) L.push(`| ${v} | ${c} |`);
   const notRun = s.rows.flatMap((r) => r.notRun.map((x) => ({ ...x, wave: r.wave })));
@@ -281,11 +290,11 @@ function render(plan: Release, s: ReturnType<typeof summarise>): string {
   }
   if (s.drafts.length) {
     L.push("", "## Real bugs awaiting filing", "", "| Wave | Case | Summary | New in release | Note |", "|---|---|---|---|---|");
-    for (const r of s.drafts) L.push(`| ${r.wave} | ${r.case_id} | ${cell(r.summary)} | ${r.new_in_release} | ${cell(r.follow_up.replace(DRAFT, "").replace(/^[\s:—-]+/, ""))} |`);
+    for (const r of s.drafts) L.push(`| ${r.wave} | ${cell(r.case_id)} | ${cell(r.summary)} | ${cell(r.new_in_release)} | ${cell(r.follow_up.replace(DRAFT, "").replace(/^[\s:—-]+/, ""))} |`);
   }
   if (s.pending.length) {
     L.push("", "## Decisions pending", "", "| Wave | Case | Question | Who decides |", "|---|---|---|---|");
-    for (const r of s.pending) L.push(`| ${r.wave} | ${r.case_id} | ${cell(r.summary)} | ${r.decided_by} |`);
+    for (const r of s.pending) L.push(`| ${r.wave} | ${cell(r.case_id)} | ${cell(r.summary)} | ${cell(r.decided_by)} |`);
   }
   L.push("", "Per-wave detail: `waves/<wave>/report.md` · verdicts: `waves/<wave>/ledger.csv` · contract: `.claude/skills/qa-run/release-folder.md`.", "");
   return L.join("\n");
@@ -303,7 +312,7 @@ function checkOne(release: string): boolean {
   // A planned suite the manifest does not have (yet) is a note, not a failure: it may land in another PR.
   try {
     const ids = new Set((JSON.parse(readFileSync(join(REPO_ROOT, "config/test-suites.json"), "utf-8")).suites ?? []).map((x: { id: string }) => x.id));
-    for (const w of plan!.waves) for (const id of w.suites) if (!ids.has(id)) console.warn(`  note: wave ${w.id} plans suite ${id}, which config/test-suites.json does not have on this branch`);
+    for (const w of plan!.waves) for (const id of w.suites ?? []) if (!ids.has(id)) console.warn(`  note: wave ${w.id} plans suite ${id}, which config/test-suites.json does not have on this branch`);
   } catch { /* manifest unreadable: suites:lint reports it */ }
   return true;
 }
@@ -340,12 +349,20 @@ function main(): number {
   if (flag("--ledger")) {
     const want = suitesArg ? new Set(suitesArg.split(",").map((x) => x.trim()).filter(Boolean)) : null;
     let rows = ledger;
+    const broken = [...problems];
     if (flag("--with-baseline") && plan.baseline) {
       const base = load(plan.baseline, false);
-      if (base) rows = [...rows, ...base.ledger];
+      if (base) { rows = [...rows, ...base.ledger]; broken.push(...base.problems.map((p) => `${plan.baseline}: ${p}`)); }
       else console.error(`release-status: baseline ${plan.baseline} has no release folder — only ${release}'s ledger is listed`);
     }
     console.log(JSON.stringify(rows.filter((r) => !want || want.has(r.suite)), null, 1));
+    // A ledger that does not parse is LEFT OUT of the rows above: known ground that is silently partial reads as
+    // "nothing was decided here". Name every file and fail, so the caller knows the list is incomplete.
+    if (broken.length) {
+      console.error(`release-status: ${broken.length} file problem(s) — the rows above may be incomplete:`);
+      for (const p of broken) console.error(`  - ${p}`);
+      return 1;
+    }
     return 0;
   }
   const s = summarise(plan, states, ledger);
