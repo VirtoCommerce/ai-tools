@@ -9,6 +9,7 @@ import { LAYERS_GAP, loadLayeredEnv } from "./env.mjs";
 import { resolveProfile } from "./profile.mjs";
 import { HostGoverned, vcRun } from "./bridge.mjs";
 import { jiraConnector } from "./connectors/jira.mjs";
+import { azureBoardsConnector } from "./connectors/azure-boards.mjs";
 import { githubConnector, searchKeyFor } from "./connectors/github.mjs";
 import { ProfileError, loadProfile } from "../../../lib/profile.mjs";
 import { GAP_REASONS, SCHEMA, asGap, gap } from "./gap.mjs";
@@ -46,9 +47,9 @@ const root = outputRoot();
 const ignored = (p) => isIgnored(root, p);
 const prepPath = () => flag("prepare") ?? usage("--prepare <path to prepare.json> is required");
 
-async function materialize(it, jira, runDir, secrets) {
+async function materialize(it, tracker, runDir, secrets) {
   const file = join(runDir, `att-${it.id}-${safeName(it.filename)}`);
-  try { writeFileSync(file, await jira.download(it.url)); } catch (e) { it.gap = asGap(it.ref, e); return; }
+  try { writeFileSync(file, await tracker.download(it.url)); } catch (e) { it.gap = asGap(it.ref, e); return; }
   if (["har", "log", "trace"].includes(it.kind)) {
     try {
       if (it.kind !== "har" && isHarText(readFileSync(file, "utf8"))) it.kind = "har"; // classified by content: a HAR saved as .json
@@ -115,22 +116,21 @@ async function prepare() {
   const testEnv = loadLayeredEnv(root, key, raw);
   // §7, U20: every tracker read is a $VC_RUN launch; this process holds no token.
   const noTracker = (reason, detail) => { out({ status: "no-tracker", gap: gap("ticket", reason, detail) }); process.exit(3); };
-  if (profile.tracker !== "jira") noTracker("connector-unavailable", "Azure Boards is read from Phase 5 on");
   if (!profile.trackerBase) noTracker("no-credential", "project-profile.json has no tracker.baseUrl — run /project-init --check");
   if (!vcRun()) noTracker("no-credential", "VC_RUN is not set — run /project-init");
-  const jira = jiraConnector({ base: profile.trackerBase, key, root });
+  const tracker = profile.tracker === "azure" ? azureBoardsConnector({ profile, key, root }) : jiraConnector({ base: profile.trackerBase, key, root });
   const gaps = [];
   if (LAYERS_GAP) gaps.push(gap("env", "not-available-in-install", LAYERS_GAP));
 
-  const allFields = await jira.fields();
+  const allFields = await tracker.fields();
   const acFields = resolveFieldsByName(allFields, profile.fieldMap.acceptanceCriteria, AC_FIELD_NAME_RE);
   const linkFields = resolveFieldsByName(allFields, profile.fieldMap.prototype, /prototype/i);
   if (!acFields.length) gaps.push(gap("ac_fields", "not-found", "no custom field named 'Acceptance' or 'Acceptance criteria' and no tracker.fieldMap.acceptanceCriteria — ACs are read from description and comments"));
   // Comments past the first page are paged in before the inventory and ticket.json see the issue; any unread rest is a gap.
-  const issue = blindIssue(await jira.issue(key, [...BASE_FIELDS, ...acFields.map((f) => f.id), ...linkFields.map((f) => f.id)], { gaps }), benchmark ?? {});
-  const remote = await jira.remoteLinks(key).catch((e) => { gaps.push(asGap("remotelinks", e)); return []; });
-  const devPrUrls = (await jira.linkedPrs(issue).catch((e) => { gaps.push(asGap("dev-status", e)); return { urls: [] }; })).urls;
-  const inv = buildInventory({ issue, remoteLinks: remote, trackerBase: jira.base, acFieldIds: acFields.map((f) => f.id), linkFieldIds: linkFields.map((f) => f.id), devPrUrls });
+  const issue = blindIssue(await tracker.issue(key, [...BASE_FIELDS, ...acFields.map((f) => f.id), ...linkFields.map((f) => f.id)], { gaps }), benchmark ?? {});
+  const remote = await tracker.remoteLinks(key).catch((e) => { gaps.push(asGap("remotelinks", e)); return []; });
+  const devPrUrls = (await tracker.linkedPrs(issue).catch((e) => { gaps.push(asGap("dev-status", e)); return { urls: [] }; })).urls;
+  const inv = buildInventory({ issue, remoteLinks: remote, trackerBase: tracker.base, acFieldIds: acFields.map((f) => f.id), linkFieldIds: linkFields.map((f) => f.id), devPrUrls });
   inv.items = withoutHidden(inv.items, hide); // U67: once, whichever path (remote link, key in a text) made the ticket item
   const secrets = loadSecretValues(root); // after loadLayeredEnv, so FIGMA_TOKEN from any layer is in it
   const tf = ticketFields(issue, acFields.map((f) => f.id), secrets);
@@ -141,7 +141,7 @@ async function prepare() {
   const parent = issue.fields.parent;
   if (parent?.key) {
     epic = { key: parent.key, title: parent.fields?.summary ?? "" };
-    siblings = withoutHidden((await jira.siblings(parent.key, key).catch((e) => { gaps.push(asGap("siblings", e)); return []; }))
+    siblings = withoutHidden((await tracker.siblings(parent.key, key).catch((e) => { gaps.push(asGap("siblings", e)); return []; }))
       .map((s) => ({ key: s.key, title: s.fields?.summary ?? "", status: s.fields?.status?.name ?? null, done: s.fields?.status?.statusCategory?.key === "done" })), hide); // a hidden known-bug ticket under the same epic is not a sibling to a blind run
   }
 
@@ -149,7 +149,7 @@ async function prepare() {
   // D12: over the cap, the cap keeps the right ones — ranked by relation, then most recently updated first.
   // The dates cost one search, made only when there is something to drop.
   if (linked.length > CAPS.linkedIssues) {
-    const order = await recencyOrder(jira, linked.map((i) => i.key), gaps);
+    const order = await recencyOrder(tracker, linked.map((i) => i.key), gaps);
     linked = rankLinked(linked, { parentKey: issue.fields.parent?.key ?? null, subtaskKeys: (issue.fields.subtasks ?? []).map((t) => t.key), order });
   }
   const linkedJson = new Map();
@@ -158,10 +158,10 @@ async function prepare() {
   for (const [n, it] of linked.entries()) {
     if (n >= CAPS.linkedIssues) { it.gap = linkedOverCap(it, n, CAPS.linkedIssues); continue; }
     let j;
-    try { j = await jira.issue(it.key, LINKED_FIELDS); } catch (e) { it.gap = asGap(it.ref, e); continue; }
+    try { j = await tracker.issue(it.key, LINKED_FIELDS); } catch (e) { it.gap = asGap(it.ref, e); continue; }
     if (postedAfter(j.fields?.created, before)) { filedLater.add(it); continue; }
     // A developer's resolution note on a sub-task ("fixed in <sha>", "by design") lives in its comments, not its fields.
-    const c = await attachLinkedComments(jira, j, it.ref, { gaps, secrets, before });
+    const c = await attachLinkedComments(tracker, j, it.ref, { gaps, secrets, before });
     linkedJson.set(it.key, j);
     linkedFresh.push(`${j.key}@${j.fields?.updated}@${c}`);
   }
@@ -211,9 +211,9 @@ async function prepare() {
     }
     const plan = planDownloads(inv.items.filter((i) => i.ref.startsWith("attachment:")), CAPS);
     for (const [ref, g] of plan.gaps) inv.items.find((i) => i.ref === ref).gap = g;
-    for (const it of plan.toFetch) await materialize(it, jira, runDir, secrets);
+    for (const it of plan.toFetch) await materialize(it, tracker, runDir, secrets);
 
-    const privateHosts = new Set([...envHosts(root), new URL(jira.base).hostname, "github.com", "api.github.com"]);
+    const privateHosts = new Set([...envHosts(root), new URL(tracker.base).hostname, "github.com", "api.github.com"]);
     let pages = 0;
     const figma = figmaToken(); // FIGMA_TOKEN after the layered loader; never printed
     const figmaItems = [];
@@ -222,7 +222,7 @@ async function prepare() {
         const id = /\/pages\/(\d+)/.exec(it.url)?.[1];
         if (!id) { it.gap = gap(it.ref, "unreadable", "no page id in the Confluence URL"); continue; }
         try {
-          const page = await jira.page(id);
+          const page = await tracker.page(id);
           it.local_path = join(runDir, `confluence-${id}.txt`);
           writeFileSync(it.local_path, htmlToText(page.body?.storage?.value ?? "").slice(0, CAPS.pageTextBytes));
         } catch (e) { it.gap = asGap(it.ref, e); }
