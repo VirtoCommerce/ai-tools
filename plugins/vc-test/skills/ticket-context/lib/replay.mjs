@@ -28,15 +28,11 @@ function normalised(args) {
   return out;
 }
 
-/** A missing answer's gap reason, as the bridge route would have given it (bridge.mjs bridgeGap): the floors read
- *  `deleted` and `access-denied` differently from a plain unreadable read. */
-function missingReason(text) {
-  const t = String(text ?? "");
-  if (/\b404\b|not found|does not exist/i.test(t)) return "deleted";
-  if (/\b40[13]\b|forbidden|unauthori[sz]ed|permission/i.test(t)) return "access-denied";
-  if (/not available through the host|no \w+ server mapped|has no tool|no read tool/i.test(t)) return "connector-unavailable";
-  return "unreadable";
-}
+/** A missing answer's closed reason → the gap reason the bridge route would have given (bridge.mjs bridgeGap): the
+ *  floors read `deleted` and `access-denied` differently from a plain unreadable read. The agent picks the reason;
+ *  its words are only a capped detail, never parsed. */
+const MISSING_REASONS = { "no-tool": "connector-unavailable", binary: "connector-unavailable", "not-found": "deleted", denied: "access-denied", error: "unreadable" };
+const DETAIL_MAX = 120;
 
 export function requestId(tool, args) {
   return createHash("sha256").update(JSON.stringify([tool, ...normalised(args)])).digest("hex").slice(0, 16);
@@ -88,6 +84,7 @@ export function replayRun({ dir, catalog = loadCatalog() }) {
     try { a = JSON.parse(readFileSync(file, "utf8")); } catch { why = "not JSON"; }
     if (!why && a?.request?.id !== id) why = `it answers request ${a?.request?.id ?? "?"}, not ${id}`;
     if (!why && ("stdout" in a) === ("missing" in a)) why = "it must hold exactly one of stdout and missing";
+    if (!why && "missing" in a && !Object.hasOwn(MISSING_REASONS, a.missing?.reason)) why = `missing must be { reason: ${Object.keys(MISSING_REASONS).join(" | ")}, detail }`;
     if (why) {
       const marker = join(dir, `${id}.rejected.json`);
       if (existsSync(marker)) throw new GapError("unreadable", `the host's answer stayed unreadable: ${why}`);
@@ -95,7 +92,7 @@ export function replayRun({ dir, catalog = loadCatalog() }) {
       renameSync(file, join(dir, `${id}.bad.json`));
       return ask(tool, args, id, why);
     }
-    if ("missing" in a) throw new GapError(missingReason(a.missing), `the host's servers could not give it: ${a.missing}`);
+    if ("missing" in a) throw new GapError(MISSING_REASONS[a.missing.reason], `the host's servers could not give it (${a.missing.reason}): ${String(a.missing.detail ?? "").replace(/\s+/g, " ").slice(0, DETAIL_MAX)}`);
     const v = a.stdout;
     if (as === "none") return null;
     if (as === "text") return typeof v === "string" ? v : JSON.stringify(v);

@@ -622,13 +622,21 @@ it cannot be had (`missing`). A pass that meets unanswered reads writes them to 
 role and expected shape from `fetch-catalog.json`, and ends `needs-fetch` (exit 5). A fresh `vc-test:fetch` agent
 answers them through the role's server and returns one count line; the next pass asks for what the new answers
 lead to. Eight passes at most, then `no-tracker`. A finished run's `prepare.json` carries `fetched_via: "host"`.
-A missing answer keeps the bridge's gap reason (404 → `deleted`, 401/403 → `access-denied`, no tool →
-`connector-unavailable`).
+A missing answer is a closed reason (`no-tool`, `not-found`, `denied`, `binary`, `error`) with a capped detail,
+mapped onto the bridge's gap reasons (`connector-unavailable`, `deleted`, `access-denied`, `unreadable`); the
+agent's words are never parsed. One run, one raw folder: `prepare` without `--raw` empties it, every end of the
+run (prepared, cached, `no-tracker`, a crash) removes it, and it lies in the ticket's cache only when git ignores
+that, else in tmp — answers never serve a later run, and unscrubbed client text never sits in a tracked folder.
+`prepare` prints each role's tool-name prefixes: `mcp__<server>__` for a session server and
+`mcp__plugin_<plugin>_<server>__` for one the host plugin ships.
 
 - **The agent's tools (B9, U56).** A plugin agent cannot name the tools of a server it does not know, and
-  `mcp__<server>__*` needs the name, so `fetch` lists no `tools:` and disallows Bash, Edit, NotebookEdit,
-  WebFetch, WebSearch and Agent. It inherits the session's MCP tools, write tools included: *read only* rests
-  on its brief, not on its tool list. That residual risk is accepted for the preview and re-checked in P5.
+  `mcp__<server>__*` needs the name, so `fetch` lists no `tools:` and disallows every shell (Bash, PowerShell,
+  the desktop terminal), Edit, Agent, Skill, web fetch and search, messaging, publishing and scheduling. It
+  still inherits Read and Write without a path limit and every connected MCP server's tools, write tools
+  included: *read only, the mapped servers only, the raw folder only* rest on its brief, not on its tool list.
+  That residual risk is accepted for the preview; a `PreToolUse` hook that enforces the three, and a check of the
+  agent's real inherited tools on a client's machine, belong to P5.
 - **Measured on VCST-6534** (Atlassian + GitHub MCP, Sonnet): converged in 4 fetch passes, 10 answers, about
   200k agent tokens. Equal to the bridge route except where a server has no read tool: Jira's site-wide field
   list (so no AC custom fields, gap `ac_fields`), the development panel (gap `dev-status`; its PRs are still

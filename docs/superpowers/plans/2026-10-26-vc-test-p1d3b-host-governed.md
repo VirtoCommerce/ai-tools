@@ -36,6 +36,10 @@ not know which route ran.
   `search/issues` must carry `repository_url`; a JQL search keeps at most `maxResults` issues. After them the
   bundle equals the bridge route's except where a server has no read tool (field list, development panel, commit
   search), each an explained gap.
+- **Final review (fresh Opus):** fixed in one pass — the raw folder is per run (emptied at start, removed at every
+  end, in tmp unless git-ignored), so answers and the pass count never outlive a run; `missing` is a closed reason;
+  each role's tool prefixes cover plugin-shipped servers; the agent disallows every shell, messaging, publishing and
+  scheduling tool. Minors deferred: see the PR.
 
 ## Global Constraints
 

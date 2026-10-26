@@ -31,8 +31,16 @@ the issue read decides whether the tracker can be read.
 **Fixed — a JQL search keeps at most `maxResults` issues** whatever the transport returns (a host's server may page
 through everything; Jira itself already caps).
 
-**Known limit.** `fetch` cannot name an unknown server's tools, so it inherits the session's MCP tools, write
-tools included; read-only rests on its brief. Accepted for the preview.
+**Contained.** One run, one raw folder: `prepare` without `--raw` empties it and every end of the run removes it,
+so a later run never reuses old answers or an old pass count. It lies in the ticket's cache only when git ignores
+that, else in tmp. A missing answer is a closed reason (`no-tool`, `not-found`, `denied`, `binary`, `error`)
+with a detail of at most 120 characters; the agent's words are never parsed. `prepare` prints each role's tool-name
+prefixes, so a server the host plugin ships (`mcp__plugin_<plugin>_<server>__`) is found too.
+
+**Known limit.** `fetch` cannot name an unknown server's tools, so it inherits Read, Write and every connected MCP
+server's tools, write tools included; every shell, messaging, publishing and scheduling tool is disallowed.
+Read-only, the mapped servers only and the raw folder only rest on its brief. Accepted for the preview; a hook that
+enforces them is P5's.
 
 ## The #540 review fixes — `vc-test` `0.4.1` — 2026-10-26
 
