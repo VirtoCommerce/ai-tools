@@ -70,12 +70,24 @@ The image that shows the defect goes **inside Actual result**; an image of the c
 same screen at another width, or on the previous release) goes inside **Expected result**; a step whose
 input is not obvious may carry its own image inside **Steps to reproduce**. The Description carries none.
 
-Mechanism — the same four steps as for the Description in `/qa-bug` Step 5 (upload → Media Services
-UUID from the `303` `Location` → ADF `mediaSingle` with `width`/`height` from the PNG header → PUT),
-applied to the custom rich-text field instead of `description`. **Verify with
-`jira get --key <KEY> --fields <fieldId> --expand renderedFields`**: each field must contain one `<img …/attachment/content/{id}>` per image. A
-field that persisted the node but renders no `<img>` is not delivered; fall back to the inline-image
-comment (`tracker-ops.md` §2, the wiki carve-out) and say so in the result.
+Mechanism — the field is `description` or the custom rich-text field; one image is attached, then embedded. A filename
+in the body is not evidence anyone opens. Every step runs through the bridge (`node "$VC_RUN" jira …`, host = the
+profile's `tracker.baseUrl`; the token stays in vc-secrets), and **step 2 is the trap**:
+
+1. **Upload** — the Atlassian MCP has **no attachment tool**; `node "$VC_RUN" jira attach --key <KEY> --file a.png [--file b.png]` (a multipart `POST …/issue/{key}/attachments` with the mandatory `X-Atlassian-Token: no-check` header) → `[{id, filename}]`.
+2. **Resolve the Media Services ID.** ADF `media.attrs.id` is a **Media Services UUID**, **NOT the numeric Jira attachment id** — passing the attachment id fails the whole request with `400 ATTACHMENT_VALIDATION_ERROR`. The UUID is absent from the attachment metadata; it lives in the content endpoint's `303` redirect (`Location: https://api.media.atlassian.com/file/<UUID>/binary?token=…`) — `node "$VC_RUN" jira media-id --attachment <attachmentId>` → `{ uuid }` reads it for you.
+3. **PUT the field as ADF.** `width`/`height` are **required** or the image won't display — read them from the PNG IHDR (`buf.readUInt32BE(16)` / `(20)`), never guess. `collection` is the empty string (verified against a Jira-authored node). Safest pattern: `node "$VC_RUN" jira get --key <KEY> --fields description` (already ADF), push the nodes onto `description.content`, write `{"description": …}` to a file and `node "$VC_RUN" jira update --key <KEY> --fields-file fields.json` (a `PUT …/issue/{key}` with `{fields}`) — that preserves the MD-converted body instead of hand-authoring the whole doc.
+   ```js
+   { type: 'mediaSingle', attrs: { width, widthType: 'pixel', layout: 'align-start' },
+     content: [{ type: 'media', attrs: { type: 'file', id: '<UUID>', alt: '<filename>',
+                                         collection: '', width, height } }] }
+   ```
+4. **Verify it renders** — persisted ≠ rendered. Read back `node "$VC_RUN" jira get --key <KEY> --fields <fieldId> --expand renderedFields` and assert the HTML contains `<img src="…/rest/api/3/attachment/content/{attachmentId}" …>`. No `<img>` ⇒ the node is wrong; don't claim success.
+
+**Do not bother trying** (each fails): markdown `![alt](file.png)` → silently dropped (MD→ADF can't resolve a filename to an attachment); wiki `!file.png!` → renders literally (VCST-5212 class); `attrs.id` = attachment id → `400`. Embed the 1–3 images that show the defect (`.claude/rules/reports.md` §5); attach-only is fine for supporting shots.
+
+A field that persisted the node but renders no `<img>` is not delivered; fall back to the inline-image comment
+(`tracker-ops.md` §2, the wiki carve-out) and say so in the result.
 
 ## 4. Need hotfixes — decided by code, against the two latest stable bundles
 
