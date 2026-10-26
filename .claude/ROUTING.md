@@ -23,8 +23,8 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Run smoke tests** | `/qa-smoke [storefront\|admin]` | Command |
 | **Run regression suites** | `/qa-regression [smoke\|critical\|sprint\|full\|frontend\|backend\|IDs] [--cases <tier>] [--also-ids <ids>] [--no-plan]` | Command |
 | **Triage a finished regression run's failures** | `/qa-triage-results [RUN_ID\|latest] [--fix] [--verify]` | Command |
-| **Plan any regression — a sprint or a stable bundle** | `/qa-test-plan <sprint> | stable <N> [--ref <branch>] [--ticket <KEY>]` | Command |
-| **Run any regression, then triage and publish it** (one-off, sprint, or one wave of a stable bundle) | `/qa-run <selection> | sprint[:XX-YY] | stable:<N> <wave> [--claim|--continue|--handover]` · `stable:<N> status` | Command |
+| **Plan any regression — a sprint or a stable bundle** | `/qa-test-plan <sprint> \| stable <N> [--ref <branch>] [--ticket <KEY>]` | Command |
+| **Run any regression, then triage and publish it** (one-off, sprint, or one wave of a stable bundle) | `/qa-run <selection> \| sprint[:XX-YY] \| stable:<N> <wave> [--claim\|--continue\|--handover]` · `stable:<N> status` | Command |
 | **Test a ticket / feature / PR** | `/qa-test <ticket-key> \| feature \| PR #N \| --epic <KEY> [--iterate]` | Command |
 | **Quick but grounded test of a ticket** (PR diff + ticket + domain/model/mind map → checklist ‖ exploratory ‖ visual → triage → investigate → bugs → HTML verdict) | `/qa-test-fast <ticket-key> [--layer fe\|be\|both] [--no-explore] [--no-visual] [--dry-run]` | Command |
 | **Run an exploratory session** | `/qa-exploratory [sprint\|sprint:XX-YY\|checkout\|catalog\|B2B\|mobile\|new]` | Command |

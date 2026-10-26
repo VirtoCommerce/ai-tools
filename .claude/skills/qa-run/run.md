@@ -9,11 +9,11 @@ calls this file for its execution step.
 |---|---|---|---|
 | `smoke`, `critical`, `full`, `frontend`, `backend`, a manifest selection group, `042,078` | a one-off run | `config/test-suites.json` `selections`, or the ids given | no — the triage report of the run is the record |
 | `sprint`, `sprint:XX-YY` | the sprint plan | `docs/Sprint plans/sprint-{XX-YY}-summary.json` `suitesActivated[]` (resolution order: `regression-selection.md` §Plan-driven selection) | not yet — a sprint plan writes no release folder |
-| `stable:<N> <wave>` · `stable:<N> status` | one wave of a stable-bundle regression | `regression/releases/stable-<N>/release.json` — that wave's `suites`, its `tier` as `--cases`, minus every other wave's `exclusive` | yes — [`waves.md`](waves.md) |
+| `stable:<N> <wave>` · `stable:<N> status` | one wave of a stable-bundle regression | `regression/releases/stable-<N>/release.json` — that wave's `suites`, its `tier` as `--cases` (`rest` → `medium,low`), minus every other wave's `exclusive` | yes — [`waves.md`](waves.md) |
 | bare `stable:<N>` | — | refused: a release runs wave by wave, so claims, tier order and the ledger hold. Show `npm run release:status -- stable-<N>` | — |
 
-`--cases`, `--ids`, `--also-ids`, `--seed`, `--teardown`, `--promote` and the layer flags pass through to the
-execution pipeline unchanged.
+`--cases`, `--ids`, `--also-ids`, `--seed`, `--teardown`, `--promote`, `--run-blocked` and the layer flags pass
+through to the execution pipeline unchanged (`--run-blocked` lands on its `regression:plan` call).
 
 ## 2. Run it
 
@@ -31,7 +31,7 @@ the automatic triage and the GitHub question around a pipeline that already work
 1. **Triage runs automatically** as soon as the run has FAIL or BLOCKED cases — no question:
    [`/qa-triage-results`](../../commands/qa-triage-results.md) on the run id. A wave also feeds it the ledger
    (`waves.md` Step 5).
-2. **"Put it in GitHub?"** — always asked after triage. What goes in
+2. **"Put it in GitHub?"** — always asked after triage, and after a clean run (nothing to triage) too. What goes in
    depends on the scope:
    - one-off or sprint run: the case and fixture repairs the triage found, as one PR (repairs in their own commit),
      plus `reports/regression/history.json` if the run updated it;

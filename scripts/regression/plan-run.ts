@@ -33,6 +33,12 @@
  *   npm run regression:plan -- smoke --preflight --run-id <RUN_ID>        # this run's own test-run-status.json is not a lock
  *   npm run regression:plan -- smoke --preflight --accept drift:<id>[,…]  # "proceed as is" on those drift BLOCKs (WARN)
  *   npm run regression:plan -- smoke --preflight --run-blocked   # run the cases the pre-flight predicts will BLOCK (default: recorded BLOCKED, not run)
+ *   npm run regression:plan -- 042,078 --cases critical[,high]            # size only those tiers (same filter as suites:filter)
+ *   npm run regression:plan -- 042,078 --ids SMK-008,SMK-014              # size an exact case set
+ *
+ * `--cases` / `--also-ids` / `--ids` read each suite's CSV through `suites:filter`'s own `filterRows`, so the
+ * per-suite case counts are the filtered ones and each estimate is scaled by kept/source cases. Cases whose
+ * Priority is unreadable are left out (and counted), exactly as `suites:filter` leaves them out.
  *
  * Exit codes: 0 planned cleanly · 1 the selection cannot run as-is (unknown id, missing CSV,
  * no executor, or a cap that would guarantee truncation) · 2 --preflight: pre-flight NOT READY ·
@@ -40,7 +46,7 @@
  * `drift:`) is also exit 1.
  */
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
-import { existsSync, mkdirSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 import { browserDenyListFor, loadManifest, resolveSelection, selectionNames, type ManifestSuite } from "../../ci/lib/suite-manifest.ts";
@@ -51,6 +57,8 @@ import { orderLpt, simulateMakespan } from "../../ci/lib/scheduler.ts";
 import { formatPreflightProblems, preflightManifest, type PreflightSuite } from "../../ci/lib/manifest-preflight.ts";
 import { runRegressionPreflight, type RegressionPreflight } from "./preflight.ts";
 import { renderHuman } from "../preflight/render.ts";
+import { filterRows, TIER_NAMES, unknownTiers } from "./filter-cases.ts";
+import { isCanonicalHeader, parseSuite } from "../test-cases/append-test-cases-to-suite.js";
 
 const DEFAULT_CONCURRENCY = { browser: 3, fastpath: 4, deterministic: 2 };
 
@@ -64,10 +72,13 @@ function parseArgs(argv: string[]): {
   runId: string | null;
   accept: string[];
   runBlocked: boolean;
+  cases: string[];
+  alsoIds: string[];
+  ids: string[];
 } {
   const args = argv.filter((a) => a !== "--");
   const flags = new Set(args.filter((a) => a.startsWith("--")));
-  const valued = new Set(["--preflight-out", "--run-id", "--accept", "--browsers", "--fastpath", "--deterministic"]);
+  const valued = new Set(["--preflight-out", "--run-id", "--accept", "--browsers", "--fastpath", "--deterministic", "--cases", "--also-ids", "--ids"]);
   const positional = args.filter((a, i) => !a.startsWith("--") && !valued.has(args[i - 1]));
 
   const numFlag = (name: string, fallback: number): number => {
@@ -78,6 +89,7 @@ function parseArgs(argv: string[]): {
   };
 
   const valueOf = (name: string): string | null => { const i = args.indexOf(name); return i >= 0 && args[i + 1] && !args[i + 1].startsWith("--") ? args[i + 1] : null; };
+  const listOf = (name: string): string[] => (valueOf(name) ?? "").split(",").map((x) => x.trim()).filter(Boolean);
 
   return {
     selection: positional[0] || "smoke",
@@ -86,7 +98,10 @@ function parseArgs(argv: string[]): {
     preflight: flags.has("--preflight"),
     preflightOut: valueOf("--preflight-out"),
     runId: valueOf("--run-id"),
-    accept: (valueOf("--accept") ?? "").split(",").map((x) => x.trim()).filter(Boolean),
+    accept: listOf("--accept"),
+    cases: listOf("--cases"),
+    alsoIds: listOf("--also-ids"),
+    ids: listOf("--ids"),
     runBlocked: flags.has("--run-blocked"),
     concurrency: {
       browser: numFlag("browsers", DEFAULT_CONCURRENCY.browser),
@@ -96,8 +111,41 @@ function parseArgs(argv: string[]): {
   };
 }
 
+/** What a case filter left of one suite. `legacy`: an 11-column suite, whose Priority cannot be read — left unfiltered. */
+interface CaseScope { id: string; kept: number; source: number; untypeable: number; legacy?: boolean }
+
+/** Narrow each suite to the requested cases with `suites:filter`'s own `filterRows`; null when no filter was asked for. */
+function scopeCases(suites: readonly ManifestSuite[], sel: { tiers: string[]; alsoIds: string[]; ids: string[] }): Map<string, CaseScope> | null {
+  if (sel.tiers.length === 0 && sel.ids.length === 0) return null;
+  const out = new Map<string, CaseScope>();
+  for (const s of suites) {
+    if (!existsSync(s.file)) continue; // the manifest pre-flight reports a missing CSV
+    const text = readFileSync(s.file, "utf-8");
+    const { rows } = parseSuite(text);
+    const source = rows.filter((r) => (r.ID ?? "").trim()).length;
+    if (!isCanonicalHeader(text)) { out.set(s.id, { id: s.id, kept: source, source, untypeable: 0, legacy: true }); continue; }
+    const r = filterRows(rows, sel);
+    out.set(s.id, { id: s.id, kept: r.kept.length, source, untypeable: r.untypeable.length });
+  }
+  return out;
+}
+
 async function main(): Promise<void> {
-  const { selection, json, verbose, concurrency, preflight: wantPreflight, preflightOut, runId, accept, runBlocked } = parseArgs(process.argv.slice(2));
+  const { selection, json, verbose, concurrency, preflight: wantPreflight, preflightOut, runId, accept, runBlocked, cases, alsoIds, ids } = parseArgs(process.argv.slice(2));
+  // Same rules `suites:filter` applies to the same flags.
+  if (ids.length > 0 && (cases.length > 0 || alsoIds.length > 0)) {
+    console.error("--ids selects an exact case set; --cases (optionally with --also-ids) selects a tier — pass one or the other, never both");
+    process.exit(1);
+  }
+  if (alsoIds.length > 0 && cases.length === 0) {
+    console.error("--also-ids adds to a tier — pass --cases <tier> with it");
+    process.exit(1);
+  }
+  const badTiers = unknownTiers(cases);
+  if (badTiers.length > 0) {
+    console.error(`unknown --cases tier(s) ${badTiers.join(", ")} — expected one of ${TIER_NAMES.join(", ")}`);
+    process.exit(1);
+  }
   // D9: only a drift BLOCK can be "proceeded as is"; anything else is a usage error, never a silent no-op.
   const notDrift = accept.filter((a) => !a.startsWith("drift:"));
   if (notDrift.length > 0) {
@@ -160,12 +208,22 @@ async function main(): Promise<void> {
     }
   }
 
+  // A case filter changes how much of each suite runs: its count becomes the kept cases and its estimate scales by
+  // kept/source. A suite that keeps no case leaves the plan and is reported, never hidden.
+  const scope = scopeCases(toPlan, { tiers: cases, alsoIds, ids });
+  const empty = scope ? toPlan.filter((s) => scope.get(s.id)?.kept === 0) : [];
+  if (scope) toPlan = toPlan.filter((s) => scope.get(s.id)?.kept !== 0);
+  const scaled = (s: ManifestSuite) => {
+    const c = scope?.get(s.id);
+    if (!c || c.legacy || c.source === 0) return { testCount: s.testCount, estimatedMinutes: s.estimatedMinutes };
+    return { testCount: c.kept, estimatedMinutes: Math.max(1, Math.ceil(((s.estimatedMinutes ?? 0) * c.kept) / c.source)) };
+  };
+
   const plannable: PlannableSuite[] = toPlan.map((s) => ({
     id: s.id,
     description: s.name,
     lane: classifyLane(s),
-    testCount: s.testCount,
-    estimatedMinutes: s.estimatedMinutes,
+    ...scaled(s),
     preferredBrowser: s.preferredBrowser,
     exclusiveGroup: s.exclusiveGroup,
     browserDenyList: browserDenyListFor(s, manifest),
@@ -181,6 +239,7 @@ async function main(): Promise<void> {
       selection,
       filterSummary: resolved.filterSummary,
       skipped: resolved.skipped,
+      ...(scope ? { caseFilter: { tiers: cases, alsoIds, ids, suites: [...scope.values()], noCaseKept: empty.map((s) => s.id) } } : {}),
       problems,
       totals: {
         suites: plan.totalSuites,
@@ -225,6 +284,15 @@ async function main(): Promise<void> {
     console.log("");
     console.log(`Filtered out (${resolved.skipped.length}) — this is why the run is shorter than expected:`);
     for (const s of resolved.skipped) console.log(`  ${s.id}: ${s.reason}`);
+  }
+  if (scope) {
+    const all = [...scope.values()];
+    const sum = (k: "kept" | "source" | "untypeable") => all.reduce((n, c) => n + c[k], 0);
+    console.log("");
+    console.log(`Case filter (${ids.length ? `ids: ${ids.length} requested` : cases.join(", ")}${alsoIds.length ? ` + ${alsoIds.length} also-ids` : ""}): ${sum("kept")} of ${sum("source")} cases kept`);
+    if (sum("untypeable")) console.log(`  ${sum("untypeable")} case(s) with an unreadable Priority left out (as suites:filter leaves them out): ${all.filter((c) => c.untypeable).map((c) => `${c.id} ${c.untypeable}`).join(", ")}`);
+    for (const c of all.filter((x) => x.legacy)) console.log(`  ! ${c.id}: legacy 11-column suite — Priority unreadable, counted unfiltered`);
+    if (empty.length) console.log(`  No case kept — left out of the plan: ${empty.map((s) => s.id).join(", ")}`);
   }
   console.log("");
   console.log(formatRunPlan(plan, { verbose }));

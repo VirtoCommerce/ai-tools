@@ -27,7 +27,7 @@ is asked, whenever the wave reaches them, whatever flag brought it there.
 |---|---|
 | `NOT_STARTED` + `--claim` | Step 1 |
 | `CLAIMED`, or `RUN_DONE` with `notRun` + `--continue` | Step 2 (then runs only what is not run yet) |
-| `RUN_DONE` with `untriaged > 0` — with no flag, `--triage`, `--publish` or `--handover` | **Step 4** (triage runs first) |
+| `RUN_DONE` with `untriaged > 0` (FAIL or BLOCKED cases without a ledger row) — with no flag, `--triage`, `--publish` or `--handover` | **Step 4** (triage runs first) |
 | `RUN_DONE` with `untriaged = 0`, or `TRIAGED` | Step 6 |
 | `--handover` on `CLAIMED` (nothing ran) | Step 8 |
 
@@ -83,7 +83,7 @@ folder exists. It is used in Step 5, and its `ENV_CONFIG` / `DATA` rows tell you
 
 ## Step 3 — Run
 
-1. **Resolve the run** with `npm run regression:plan -- <suite ids>`, plus `--cases <tier>` when the wave has a `tier` (`critical`, `high`; a `rest` wave runs the cases neither tier selected — `npm run suites:filter`). Remove every suite or case listed in
+1. **Resolve the run** with `npm run regression:plan -- <suite ids>`, plus `--cases <tier>` when the wave has a `tier` — `rest` is `--cases medium,low` ([`release-folder.md`](release-folder.md) §3: unreadable priorities only in Scope Exclusions). Remove every suite or case listed in
    **another** wave's `exclusive` (contract §7.2) — this wave's own `exclusive` list is what it exists to run.
    Machine-lane suites first: they cost no model tokens (contract §7).
 2. **Do not re-seed** a fixture set another wave uses while another wave is running — check the wave sub-tasks
@@ -92,11 +92,12 @@ folder exists. It is used in Step 5, and its `ENV_CONFIG` / `DATA` rows tell you
 3. Set `state.json` `status: RUNNING` and move the sub-task to in-progress, then run
    the execution pipeline ([`run.md`](run.md) — today the `/qa-regression` pipeline, Steps 0–8) with the wave's suite ids, its `--cases` tier and
    `TEST_ENV=<env.testEnv>`. Its plan must write `reports/regression/<RUN_ID>/preflight.json` (`--preflight-out`): that
-   file is what `suites:lanes` reads the `skip` map from. Every rule of that pipeline applies unchanged (browser lanes, `--secrets`, the observed-behaviour steps of its runners).
+   file is what `suites:lanes` reads the `skip` map from. This second pre-flight is the one that counts: it re-derives
+   the `skip` map after any Step 0 fix, so a gap fixed at Step 0 no longer skips its cases. Every rule of that pipeline applies unchanged (browser lanes, `--secrets`, the observed-behaviour steps of its runners).
 4. When it finishes — or is cut short (usage limit, env down) — append the run id to `runIds`, write `totals` from
    the run's consolidated report (never counted by hand; `ambiguous` holds what is neither pass, fail, blocked nor
    skipped), put anything not run into `notRun` (suite ids + case count + reason — including each suite's
-   `notDeployed` cases from its results file, reason `not deployed: <module>`), set `untriaged` to the FAIL count,
+   `notDeployed` cases from its results file, reason `not deployed: <module>`), set `untriaged` to the FAIL + BLOCKED count,
    `status: RUN_DONE`. **Then go to Step 4 — a cut-short run too.**
 
 ## Step 4 — Triage starts on its own
@@ -122,10 +123,11 @@ the user stops it.
    `waves/<W>/ledger.csv`, mapping the triage class per the contract §6. Amend a row for a re-check of the same run;
    never append a duplicate. Real bugs not filed yet: `follow_up: DRAFT`; the same defect seen in several cases: one
    `DRAFT`, the others `DRAFT: same defect as <case>, file once`. A question only a person can answer:
-   `PENDING_DECISION` with `decided_by` naming that person. Set `untriaged` to the FAILs still without a row.
+   `PENDING_DECISION` with `decided_by` naming that person. Set `untriaged` to the FAIL and BLOCKED cases still without a row.
    The triage packet's `preClassified` cases (recorded BLOCKED by the pre-flight, never run) get one row per case with
-   `source: preflight` and the row's reason: `req:` / `secret:` / a persona's module or password → `ENV_CONFIG` (or
-   `NOT_TESTABLE` when the module is not in the bundle), an unseeded `fixture:` → `DATA`. They cost no classifier call.
+   `source: preflight` and the row's reason: `req:` / `secret:` / a persona's password → `ENV_CONFIG`, an unseeded
+   `fixture:` → `DATA`. They cost no classifier call. (A case whose module is not on the stand never gets here: it
+   left the plan as `notDeployed`.)
 5. **Bank what the triage established** — for each platform behaviour your rows state (real bug, by-design,
    env quirk): matched ⇒ `mcp__kb__kb_confirm`, contradicted ⇒ `kb_dispute`, base held nothing ⇒ `kb_capture` (CLI:
    `npm run kb -- capture`). Anchor = the route or request, never a label; contract:
@@ -156,25 +158,18 @@ that bug.
    check, the tracker fields, Need hotfixes, the origin labels (`found-by-agent` + `found-in-regression`), the
    screenshots inside the fields and the render check ([`../rules/reports.md`](../../rules/reports.md) §0–§0b,
    [`tracker-ops.md`](../../knowledge/execution/tracker-ops.md)). Do not hand-roll the tracker call: a second filing
-   path drifts from the first. The flags need vc-fix with the `qa-bug` field rules (vc-fix 0.16.0, #536); on an older install
-   they are ignored and it asks per bug, as before.
-3. Replace `DRAFT` with the key; the other rows of the same defect become `DUPLICATE` with that key.
+   path drifts from the first. The flags need vc-fix ≥ 0.16.0 (#536). On an older install they are ignored: it asks per
+   bug and does not link — then link each filed bug to `release.json` `ticket` (Relates) yourself.
+3. Replace `DRAFT` with the key. The other rows of the same defect (the `DRAFT: same defect as …` rows) now point at an
+   existing issue, so they become `DUPLICATE` with that key.
 
 ## Step 7 — ASK: put it in GitHub?
 
 **Always ask after triage:** "Commit the wave, open a PR and post the wave report?" On *yes*:
 
 1. `npm run release:status -- stable-<N> --write`, then `npm run release:check -- stable-<N>` — must be green.
-2. Commit on the wave branch: `waves/<W>/` (state, ledger, report) and `PROGRESS.md`; the case / fixture repairs from
-   Step 5.7 in their own commit, so they can be reviewed apart from the record. Commit author per the user's git identity.
-3. Push and open **one PR to `main`** — body in English: wave, run ids, totals, new-in-release bugs, decisions pending,
-   what is left. **Never merge.** If CI reports `PROGRESS.md is stale` (another wave merged first), rebase on `main`,
-   re-run `--write`, push again.
-4. **`DONE`** is set in the wave's own PR once nothing is open in it: `untriaged` 0, every repair merged or on this PR,
-   every `DRAFT` filed or explicitly deferred by the user. Otherwise the wave stays `TRIAGED`, and the PR that closes
-   the last open item sets `DONE`.
-5. **The wave report in the tracker:** `npm run release:report -- stable-<N> --wave <W> --post` (before the commit, so
-   the comment ids it records in `state.json` `reports` are in it). It posts two NEW comments, each with an inline image:
+2. **The wave report in the tracker:** `npm run release:report -- stable-<N> --wave <W> --post` — before the commit, so
+   the comment ids it records in `state.json` `reports` are in it. It posts two NEW comments, each with an inline image:
    - on the **wave sub-task** — the run's own dashboard (`regression-report.html`, its summary part as a PNG; the HTML
      attached), the totals, the wave's real bugs, the ledger's verdict counts, what was not run;
    - on the **release ticket** — the release dashboard (every wave, status, numbers, owner, real bugs filed / to file,
@@ -183,10 +178,18 @@ that bug.
    A new comment per wave is the rule, not a duplicate: a wave is its own run, and only a new comment notifies.
    Re-posting the same wave amends its own two comments. Without `--post` the script only builds the files
    (`reports/regression/releases/<release>/<W>/`) — show them first when the user wants to see before posting.
+3. Commit on the wave branch: `waves/<W>/` (state, ledger, report) and `PROGRESS.md`; the case / fixture repairs from
+   Step 5.7 in their own commit, so they can be reviewed apart from the record. Commit author per the user's git identity.
+4. Push and open **one PR to `main`** — body in English: wave, run ids, totals, new-in-release bugs, decisions pending,
+   what is left. **Never merge.** If CI reports `PROGRESS.md is stale` (another wave merged first), rebase on `main`,
+   re-run `--write`, push again.
+5. **`DONE`** is set in the wave's own PR once nothing is open in it: `untriaged` 0, every repair merged or on this PR,
+   every `DRAFT` filed or explicitly deferred by the user. Otherwise the wave stays `TRIAGED`, and the PR that closes
+   the last open item sets `DONE`.
 
 ## Step 8 — Handover (`--handover`, or when stopping early)
 
-Triage (Step 4) runs first if the wave has FAILs without a verdict. Then leave the wave `RUN_DONE` (or `CLAIMED`
+Triage (Step 4) runs first if the wave has FAIL or BLOCKED cases without a ledger row. Then leave the wave `RUN_DONE` (or `CLAIMED`
 if nothing ran) with `notRun` filled in and a "Before the next owner continues" section in `report.md` — including
 where any unpushed repair lives — and go to Step 7 so it reaches git. Offer to unassign the sub-task. The next owner
 runs `/qa-run stable:<N> <wave> --continue`, which records the handover in `handovers`; the wave id stays.

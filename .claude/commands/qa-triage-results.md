@@ -73,8 +73,9 @@ judgement that does need more stays where it is: every `REAL_BUG` candidate stil
 layer's QA expert, and the `CONFIDENCE: LOW` bias below is unchanged.
 
 **`preClassified` is not dispatched.** Those cases were recorded BLOCKED by the pre-flight and never run (lane
-`preflight`); each carries the row that predicted it. Report them grouped by that row, class `ENV` (a `fixture:` row is
-`TEST_DATA_DEFECT` when the alias is broken rather than unseeded), never as a fresh finding.
+`preflight`); each carries the row that predicted it. Report them grouped by that row, never as a fresh finding: a `fixture:` row is `TEST_DATA_DEFECT` (unseeded or broken
+alias — the same `DATA` verdict `/qa-run` records), every other row (`req:`, `secret:`, a persona's password) is `ENV`.
+A case whose module is not on the stand is not here: it left the plan as `notDeployed`.
 
 First run the deterministic linter on each affected suite so the classifier has static signal:
 ```

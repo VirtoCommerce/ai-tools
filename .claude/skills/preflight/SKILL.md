@@ -109,9 +109,9 @@ level-3 MCP rows and step 3's misses. Do not reword a row, do not re-grade it, a
 - `READY` with no rows ⇒ one line, proceed.
 - `READY` with warnings ⇒ name each in one line. If any has a fix you can make (list 1 of step 5), ask step 5's one question first; otherwise proceed. A WARN never asks anything else.
 - `READY` with `UNKNOWN` rows only (no BLOCK, no WARN) ⇒ list each `UNKNOWN` row with its `Who`/`Do`, never as OK, and do not ask.
-- `NOT READY` ⇒ go to step 5. **At most one question, and only for a BLOCK.**
+- `NOT READY` ⇒ go to step 5. **At most one question per run** — step 5's, whether a BLOCK or a fixable WARN raised it.
 - A level-3 BLOCK from step 2 alone also makes the run `NOT READY` and routes to step 5; the verdict returned in step 6 is the combined one (CLI verdict, downgraded by any level-3 BLOCK).
-- A non-interactive caller (`--ci` passed to this skill, or this skill running inside a subagent) asks no question: it returns `NOT READY` with the rows to its caller (step 6) and performs no remediation.
+- A non-interactive caller (`--ci` passed to this skill, or this skill running inside a subagent) asks no question — not for a BLOCK, not for a fixable WARN: it returns the verdict with the rows to its caller (step 6) and performs no remediation.
 
 ## Step 5 — remediation: diagnose → fix → re-check
 
