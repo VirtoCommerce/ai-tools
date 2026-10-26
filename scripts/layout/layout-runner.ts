@@ -485,6 +485,7 @@ async function runSteps(
         break;
       case "PROBE:CONTENT":
         st.content = (await page.evaluate(contentAuditSnippet(arg || "body"))) as ContentAuditResult;
+        if (!st.content.scopeMatched) throw new Error(`[PROBE:CONTENT] scope "${arg || "body"}" matched nothing`);
         break;
       default:
         throw new Error(`unknown step tag [${tag}] — see the grammar in this file's header`);
