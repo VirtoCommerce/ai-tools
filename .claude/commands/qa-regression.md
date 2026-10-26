@@ -13,7 +13,7 @@ You are the **Regression Orchestrator** for Virto Commerce. When invoked, you ex
 /qa-regression                             # Default: smoke
 /qa-regression smoke                       # the smoke selection (pre-deploy gate)
 /qa-regression critical                    # the P0 selection
-/qa-regression sprint                      # Reads vc/shared/docs/Sprint plans/ for the current sprint plan and runs ALL Section 5.1 suites (5.1.1 Frontend + 5.1.2 Backend); falls back to static group if no plan
+/qa-regression sprint                      # Reads docs/Sprint plans/ for the current sprint plan and runs ALL Section 5.1 suites (5.1.1 Frontend + 5.1.2 Backend); falls back to static group if no plan
 /qa-regression sprint --frontend           # Run only the plan's §5.1.1 Frontend suites (regression/suites/Frontend/)
 /qa-regression sprint --backend            # Run only the plan's §5.1.2 Backend suites (regression/suites/Backend/)
 /qa-regression sprint:XX-YY                # Pin to a specific sprint plan
@@ -293,12 +293,10 @@ rides the run's PR. [`bl-audit-criteria.md`](../skills/qa-review-oracles/bl-audi
 3. On teardown failure: log to report but do not fail the overall run — the regression results are what matter.
 
 ### Step 8 — Deliver Summary
-Output concise verdict to user with pass rate, bugs, **the Step-6.5 promotion line** (`N promotable, M
-held`, or `skipped — delegated run`), and **both report paths**:
-- Markdown: `reports/regression/{RUN_ID}/regression-YYYY-MM-DD.md`
-- HTML dashboard: `reports/regression/{RUN_ID}/regression-report.html` (the live dashboard, now final)
-
-Mention seed profile used and whether teardown ran. The HTML report was generated automatically — no manual `npm run report:regression` needed.
+Output the verdict, pass rate, bugs, **the Step-6.5 promotion line** (`N promotable, M held`, or `skipped —
+delegated run`), the seed profile, whether teardown ran, and both report paths in `reports/regression/{RUN_ID}/`. Then `/vc-fix:qa-report {RUN_ID}
+--verdict <GO|CONDITIONAL_GO|NO_GO, from the pass rate and bugs> --lede "<clean? if not, do the failures share a cause>"`
+(+ `--ticket <KEY> --bugs <keys>` for a ticket run). Refused ⇒ `/plugin update`, stop this step.
 
 ---
 
@@ -362,7 +360,7 @@ count and predicted makespan.
 |-----------|-------|----------|
 | `smoke` | manifest `include` list | Daily pre-deploy |
 | `critical` | manifest `include` list (P0) | P0 gate |
-| `sprint` | **Plan-driven** — reads `vc/shared/docs/Sprint plans/sprint-{XX-YY}-summary.json` → `suitesActivated[]`. Falls back to the static group when no plan exists or `--no-plan` is set | Sprint release |
+| `sprint` | **Plan-driven** — reads `docs/Sprint plans/sprint-{XX-YY}-summary.json` → `suitesActivated[]`. Falls back to the static group when no plan exists or `--no-plan` is set | Sprint release |
 | `sprint:XX-YY` | Pinned to a specific sprint plan | Re-run a past sprint's regression scope |
 | `full` | all suites minus the manifest's `exclude` list | Production release |
 | `frontend` | `where: {layer: frontend}` minus its excludes | Frontend only |
@@ -386,7 +384,7 @@ count and predicted makespan.
 - If >50% suites fail, flag as critical_failure — suggest `/qa-triage-results latest` to classify the failures (real bug vs stale test), or `/qa-test-lifecycle diff` to sync against recent code changes
 - If a browser fails to launch, retry with fallback chain (see Browser Pool table above)
 - `--teardown` runs after the report is written; failures are logged but don't fail the run
-- **Sprint-plan precedence:** When selection is `sprint`, `vc/shared/docs/Sprint plans/sprint-*-summary.json` → `suitesActivated[]` overrides the static `sprint` group from `test-suites.json`. Use `--no-plan` to opt out, `sprint:XX-YY` to pin.
+- **Sprint-plan precedence:** When selection is `sprint`, `docs/Sprint plans/sprint-*-summary.json` → `suitesActivated[]` overrides the static `sprint` group from `test-suites.json`. Use `--no-plan` to opt out, `sprint:XX-YY` to pin.
 - **Sprint layer modifiers:** `--frontend` / `--backend` are only valid with `sprint` / `sprint:XX-YY`; they filter the resolved `suitesActivated[]` to that layer (§5.1.1 Frontend / §5.1.2 Backend), classified by the suite's CSV layer directory in `config/test-suites.json`. Mutually exclusive; ignored (with a warning) on non-sprint selections. Do NOT confuse them with the top-level `frontend`/`backend` selections, which run every suite in a layer independent of any plan.
 - **Plan-driven runs are still validated against the manifest** — every `suitesActivated[]` ID must exist in `config/test-suites.json` (warn and drop unknowns rather than failing the run).
 - **No silent fallback:** if `sprint:XX-YY` is pinned but the plan file is missing, abort with a clear error instructing the user to run `/qa-test-plan {XX-YY}` first or add `--no-plan`.

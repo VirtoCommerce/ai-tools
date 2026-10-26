@@ -113,12 +113,18 @@ into chat.
 to a scratch file first, then run a plain command. The piped-stdin form is rejected by Claude Code's
 auto-mode permission classifier **before the script runs** (a pipe feeding data into an interpreter
 reads as arbitrary execution) and, being a pipeline, is not cleanly allowlistable — so a consented
-delivery silently never happens in auto mode. A plain `node deliver.mjs --input <file>` is both
+delivery silently never happens in auto mode. A plain `node "$VC_RUN" deliver --input <file>` is both
 classifier-friendlier and narrowly allowlistable.
+
+**Launch it through the bridge.** No GitHub token sits in a project file (VCST-6402): it lives in
+vc-secrets and reaches `deliver.mjs` — even the dry run, whose dedup lookup reads GitHub — only through
+`$VC_RUN`, which runs vc-fix's installed `deliver.mjs`. `$VC_RUN` is set by `/project-init` (vc-init)
+in `.claude/settings.local.json` `env`; if it is unset, the project was onboarded before VCST-6402 —
+run `/project-init --check`.
 
 ```bash
 # write the struct to a scratch file (once), then run WITHOUT a pipe:
-node "$pluginRoot/skills/vc-self-check/deliver.mjs" --input "<outputRoot>/.vc-fix/diagnostics/<sid>.deliver-input.json" --session <sid> --json
+node "$VC_RUN" deliver --input "<outputRoot>/.vc-fix/diagnostics/<sid>.deliver-input.json" --session <sid> --json
 ```
 
 **Enumerate every possible OUTCOME the yes covers**, in this order — so the consent genuinely covers
@@ -200,9 +206,10 @@ A turn emits ONE info line + at most ONE question. Never a second question, neve
 pipe — see the auto-mode note in Step 2) into GitHub Issues on `VirtoCommerce/ai-tools`.
 On the interactive path the orchestrator does NOT run `--confirm` itself — after the one yes it spawns
 the [`self-check-deliverer`](../../agents/self-check-deliverer.md) subagent, which writes the struct to
-a scratch file and runs `deliver.mjs --input <file> --confirm` off the main thread (so dedup output +
-issue/comment bodies never enter the conversation) and returns one line. `deliver.mjs` is still invoked
-directly for the dry disclosure plan (Step 2) and as `/vc-self-check deliver`.
+a scratch file and runs `node "$VC_RUN" deliver --input <file> --confirm` off the main thread (so
+dedup output + issue/comment bodies never enter the conversation) and returns one line. The
+orchestrator still runs `node "$VC_RUN" deliver` itself for the dry disclosure plan (Step 2) and as
+`/vc-self-check deliver`.
 
 **The validator is the only gateway (B3).** Neither the orchestrator, the deliverer, nor any skill
 may hand-author or edit an upstream body to route around a validator denial. The only outbound bytes
@@ -212,14 +219,14 @@ deliverer sends what passed and notes the omission in one clause of its result l
 back to `mcp__github__*` / `gh` / a raw body to add it back.
 
 ```
-<struct.json  node deliver.mjs [--session <sid>] [--confirm] [--dry] [--as issue|local]
-                               [--assert-nonempty] [--keep] [--json]
-node deliver.mjs --batch  [--confirm] [--json]      # consolidate the state.json records
-node deliver.mjs --purge  --session <sid> [--json]  # clear this session's telemetry
-node deliver.mjs --backfill [--json]                # one-off: mark legacy bundled issues
+node "$VC_RUN" deliver [--input <file>] [--session <sid>] [--confirm] [--dry] [--as issue|local]
+                       [--assert-nonempty] [--keep] [--json]   # or `… < struct.json`
+node "$VC_RUN" deliver --batch  [--confirm] [--json]      # consolidate the state.json records
+node "$VC_RUN" deliver --purge  --session <sid> [--json]  # clear this session's telemetry
+node "$VC_RUN" deliver --backfill [--json]                # one-off: mark legacy bundled issues
 ```
 
-- **Input is a struct on stdin**, not a report path. The old `--diag <path>` + markdown/regex
+- **Input is a struct** (`--input <file>`, or stdin), not a report path. The old `--diag <path>` + markdown/regex
   recovery is gone (item 1): `deliver` re-derives nothing from prose.
 - **`--assert-nonempty`** (implies `--dry`, no network) is the information-free-payload gate: exits
   **3** when a struct with a BROKEN/DEGRADED finding would carry nothing identifying (all `other` /
@@ -250,7 +257,8 @@ why two sessions filed #173 and #174 for one `project-init/tracker_field_contrac
   everything they contain. `--backfill` adds per-finding marker comments to open bundled issues.
 
 **Two routes only** (`issue` / `local`), by the GitHub token's real rights via
-`../project-init/probe-lib.mjs`. There is no PR route — a self-check contribution is a telemetry
+`../../scripts/lib/probe-lib.mjs` (vc-fix's own copy of the probes; `/project-init` moved to vc-init).
+There is no PR route — a self-check contribution is a telemetry
 report, not a code change; the old `pr`/`fork-pr` hand-offs sent nothing. `--as pr` is rejected. A
 transient probe failure is retried once (`probeWithRetry`).
 

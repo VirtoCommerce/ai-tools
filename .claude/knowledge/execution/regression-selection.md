@@ -14,12 +14,12 @@ The static `sprint` selection group in `test-suites.json` is a generic "all P0+P
 
 Resolution order:
 
-1. **Explicit pin** (`sprint:XX-YY`) → read `vc/shared/docs/Sprint plans/sprint-{XX-YY}-summary.json`. If missing → abort with a clear error: "No sprint plan found for {XX-YY}. Run /qa-test-plan {XX-YY} first, or use --no-plan to fall back to the static group."
+1. **Explicit pin** (`sprint:XX-YY`) → read `docs/Sprint plans/sprint-{XX-YY}-summary.json`. If missing → abort with a clear error: "No sprint plan found for {XX-YY}. Run /qa-test-plan {XX-YY} first, or use --no-plan to fall back to the static group."
 
 2. **Bare `sprint`** → auto-detect the active sprint plan:
-   - List `vc/shared/docs/Sprint plans/sprint-*-summary.json` files
+   - List `docs/Sprint plans/sprint-*-summary.json` files
    - Pick the one whose `endDate` is closest to (but not after) today's date — i.e. the most-recent-completed sprint plan
-   - If no plan files exist → fall back to the static group from `test-suites.json`, log a warning: "No sprint plan found in vc/shared/docs/Sprint plans/ — using static sprint selection group. Run /qa-test-plan to generate a plan-driven selection."
+   - If no plan files exist → fall back to the static group from `test-suites.json`, log a warning: "No sprint plan found in docs/Sprint plans/ — using static sprint selection group. Run /qa-test-plan to generate a plan-driven selection."
 
 3. **Read** `summary.json` and extract `suitesActivated[]` — these are the suite IDs to run. Validate every ID exists in `test-suites.json` (warn and drop unknowns rather than failing).
 
@@ -27,11 +27,11 @@ Resolution order:
 
 4. **Resolved-from-plan output** — log to the run report header:
    ```
-   Selection: sprint (resolved from vc/shared/docs/Sprint plans/sprint-26-09-summary.json)
+   Selection: sprint (resolved from docs/Sprint plans/sprint-26-09-summary.json)
    Sprint: Sprint26-09 (2026-04-29 – 2026-05-15)
    Suites: 042, 044, 049, 078, 082, 031, 032, 033, 020, 026, 027, … (46 from suitesActivated[])
    Test cases: <sum of the manifest testCount for the resolved set>
-   Plan link: vc/shared/docs/Sprint plans/sprint-26-09-test-plan.md
+   Plan link: docs/Sprint plans/sprint-26-09-test-plan.md
    ```
 
 5. **`--no-plan` opt-out** → skip 1c entirely; use the static `sprint` group from the manifest.
@@ -114,7 +114,7 @@ suites assert the OLD label **62 times** (093: 43, 091: 19). The Dim-11 rotation
 almost nothing in the corpus carries an `Audited:` stamp, and **not one** of the rows in the four suites
 the two FULL `/qa-test` runs touched does. The stamped share is a moving number (every append changes
 it, and the append that added this section moved it), so it is measured once in
-[`skills/qa-test/coverage-triage.md`](../skills/qa-test/coverage-triage.md) §1 and cited from here —
+[`skills/qa-test/coverage-triage.md`](../../skills/qa-test/coverage-triage.md) §1 and cited from here —
 a count transcribed into four files is wrong in four places at once, silently (§GOLDEN RULE).
 
 | Command | Does |

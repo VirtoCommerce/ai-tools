@@ -5,18 +5,29 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { enumFlag, flagValue, rejectUnknownFlags } from "../lib/cli-args.ts";
 import { getEnvFacts } from "../lib/env-facts.ts";
+import { findEnv, lookedIn } from "../lib/env-layers.mjs";
 import { checkMcpStatic, loadMcpRequirements, readMcpJson } from "./mcp-static.ts";
 import { buildChecks, CHANGE_FOR, findDuplicate, isBlocking, resolveSprint, type ChangeFor } from "./policy.ts";
 import { renderHuman } from "./render.ts";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const argv = process.argv.slice(2);
-rejectUnknownFlags(argv, ["--for", "--ticket", "--components", "--domain", "--expect", "--storefront", "--json"], ["--for", "--ticket", "--components", "--domain", "--expect"]);
+rejectUnknownFlags(argv, ["--for", "--ticket", "--components", "--domain", "--expect", "--env", "--storefront", "--json"], ["--for", "--ticket", "--components", "--domain", "--expect", "--env"]);
+// The ticket is checked first: it fills QA_ENV_PATH's `<ticket>` path segment, below and in every loader.
+const ticket = flagValue(argv, "--ticket");
+if (ticket && !/^[A-Z][A-Z0-9]*-\d+$/.test(ticket)) { console.error(`✗ --ticket expects a key like VCST-1234, got "${ticket}"`); process.exit(1); }
+// --env checks a named env instead of the one this session resolves (TEST_ENV → session binding →
+// .env.test-env); set before anything resolves it, so every loader below agrees. The env is the project root's or a
+// QA_ENV_PATH folder's — a ticket's own stand, with --ticket (else the session's run) filling `<ticket>`.
+const envFlag = flagValue(argv, "--env");
+if (envFlag !== undefined) {
+  if (!findEnv(envFlag, { root: ROOT, ticket })) { console.error(`✗ --env: no .env.${envFlag} in ${lookedIn(envFlag, { root: ROOT, ticket })}`); process.exit(1); }
+  process.env.TEST_ENV = envFlag;
+}
 const forFlag = enumFlag(argv, "--for", CHANGE_FOR) as ChangeFor | undefined;
 if (!forFlag) { console.error(`✗ --for is required: ${CHANGE_FOR.join(" | ")}`); process.exit(1); }
-const ticket = flagValue(argv, "--ticket");
 if ((forFlag === "ticket" || forFlag === "ticket-fast") && !ticket) { console.error("✗ --for ticket needs --ticket <KEY>"); process.exit(1); }
-if (ticket && !/^[A-Z][A-Z0-9]*-\d+$/.test(ticket)) { console.error(`✗ --ticket expects a key like VCST-1234, got "${ticket}"`); process.exit(1); }
+if (ticket) process.env.QA_TICKET = ticket; // every loader below fills QA_ENV_PATH's <ticket> with the run's ticket
 const domain = flagValue(argv, "--domain");
 const components = (flagValue(argv, "--components") ?? "").split(",").map((s) => s.trim()).filter(Boolean);
 const expectRaw = flagValue(argv, "--expect");
@@ -33,7 +44,7 @@ try {
   const mcpJson = readMcpJson(ROOT);
   const mcp = { ...checkMcpStatic(forFlag, loadMcpRequirements(ROOT), mcpJson.json), jsonError: mcpJson.error };
   const sprint = forFlag === "ticket" || forFlag === "ticket-fast" ? resolveSprint(ROOT) : null;
-  const duplicate = findDuplicate(ROOT, forFlag, { ticket, domain, now });
+  const duplicate = findDuplicate(ROOT, forFlag, { ticket, domain, env: facts.env, now });
   const checks = buildChecks({ for: forFlag, ticket, domain, expect, facts, mcp, sprint, duplicate });
   const verdict = isBlocking(checks) ? "NOT READY" : "READY";
   if (argv.includes("--json")) console.log(JSON.stringify({ for: forFlag, ticket: ticket ?? null, domain: domain ?? null, sprint, duplicate, facts, mcp, checks, verdict }, null, 2));

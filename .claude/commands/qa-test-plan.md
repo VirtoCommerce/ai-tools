@@ -1,5 +1,5 @@
 ---
-description: "Plan any regression: a SPRINT test plan (Jira Done items + merged PRs → risk → suites → charters, written to vc/shared/docs/Sprint plans/) or a STABLE-BUNDLE regression (bundles/v{N-1} → vN diff → classified scope → waves by priority tier × domain that several QA run in parallel, written to regression/releases/stable-N/). Plans only — the run is /qa-run (sprint or stable:N wave by wave); a sprint plan also runs on /qa-regression sprint."
+description: "Plan any regression: a SPRINT test plan (Jira Done items + merged PRs → risk → suites → charters, written to docs/Sprint plans/) or a STABLE-BUNDLE regression (bundles/v{N-1} → vN diff → classified scope → waves by priority tier × domain that several QA run in parallel, written to regression/releases/stable-N/). Plans only — the run is /qa-run (sprint or stable:N wave by wave); a sprint plan also runs on /qa-regression sprint."
 argument-hint: "SprintXX-YY | XX-YY | current | last | stable <N> [--ref <branch>] [--env <TEST_ENV>] [--ticket <KEY>] [--update]"
 disable-model-invocation: true
 ---
@@ -22,7 +22,7 @@ gap-diff, exploratory charters, the rules).
 
 | Argument | Mode | Read and follow | Writes | Run it with |
 |---|---|---|---|---|
-| `SprintXX-YY`, `XX-YY`, `current`, `last` | sprint | [`sprint-mode.md`](../knowledge/execution/test-plan/sprint-mode.md) | `vc/shared/docs/Sprint plans/sprint-{XX-YY}-test-plan.md` + `-summary.json` | `/qa-run sprint` · `/qa-exploratory sprint` |
+| `SprintXX-YY`, `XX-YY`, `current`, `last` | sprint | [`sprint-mode.md`](../knowledge/execution/test-plan/sprint-mode.md) | `docs/Sprint plans/sprint-{XX-YY}-test-plan.md` + `-summary.json` | `/qa-run sprint` · `/qa-exploratory sprint` |
 | `stable <N>` | stable | [`stable-mode.md`](../knowledge/execution/test-plan/stable-mode.md) | `regression/releases/stable-<N>/` (plan, scope, waves, ledger) | `/qa-run stable:<N> <wave> --claim` |
 
 An argument that is neither a sprint label nor `stable <N>`: ask the user which they mean, never guess.

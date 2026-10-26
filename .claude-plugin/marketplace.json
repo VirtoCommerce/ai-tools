@@ -1,7 +1,7 @@
 {
   "name": "ai-tools",
   "description": "Virto Commerce internal QA tooling, published as a Claude Code marketplace for VC customers running the VC platform.",
-  "version": "0.11.0",
+  "version": "0.15.0",
   "owner": {
     "name": "Virto Commerce",
     "email": "support@virtocommerce.com"
@@ -10,17 +10,32 @@
     {
       "name": "vc-fix",
       "source": "./plugins/vc-fix",
-      "description": "Bug lifecycle for Virto Commerce QA — project setup, bug filing, autonomous fixing, fix verification, online bug monitoring, and self-diagnostics (/vc-self-check). Self-contained plugin (10 agents, 16 skills, 8 commands)."
+      "description": "Bug lifecycle for Virto Commerce QA — bug filing, autonomous fixing, fix verification, online bug monitoring, self-diagnostics (/vc-self-check), and one renderer for every result comment and report page (/vc-fix:qa-report). Onboarding comes from vc-init (installed with it). Self-contained plugin (10 agents, 16 skills, 7 commands)."
+    },
+    {
+      "name": "vc-init",
+      "source": "./plugins/vc-init",
+      "description": "Onboarding for the Virto Commerce QA plugins — /project-init, the only writer of project-profile.json. Every token it and its dependents need (GitHub, Azure DevOps, Jira) is kept in vc-secrets and reaches a process only through the $VC_RUN bridge, so none sits in a project file. Depends on vc-secrets; Installs on its own; every Virto plugin that reads the profile depends on it."
     },
     {
       "name": "vc-perf",
       "source": "./plugins/vc-perf",
-      "description": "Three-layer performance loop — BenchmarkDotNet A/B (L1), k6 load harness (L2), dotnet-trace allocation/CPU/DB attribution (L3), machine-readable perf-verdict, optimization PRs. Depends on vc-fix (reuses its onboarding, routing, and backend dev/review agents). Advisory only."
+      "description": "Three-layer performance loop — BenchmarkDotNet A/B (L1), k6 load harness (L2), dotnet-trace allocation/CPU/DB attribution (L3), machine-readable perf-verdict, optimization PRs. Depends on vc-init (onboarding, profile) and vc-fix (routing, backend dev/review agents). Advisory only."
     },
     {
       "name": "vc-secrets",
       "source": "./plugins/vc-secrets",
       "description": "Runs a declared process with its secrets resolved at launch, so no plaintext token sits in an MCP config, a settings env block or a .env file."
+    },
+    {
+      "name": "vc-frontend",
+      "source": "./plugins/vc-frontend",
+      "description": "Skills for the Virto Commerce storefront (vc-frontend): keep a theme fork up to date with upstream, and add a storefront plugin to a backend module. Can make mistakes: review every change before merging."
+    },
+    {
+      "name": "vc-test",
+      "source": "./plugins/vc-test",
+      "description": "PREVIEW — one testing flow per ticket: /vc-test:ticket-context (one gated context bundle), /vc-test:qa-test-strategy (floors, gate, an independent verifier), then scenarios that hunt significant bugs, approved at one human point, one agent each, costed per step. /vc-test:init for its own settings. Depends on vc-init and vc-fix. Parts of the QA command still need an ai-tools checkout until P1d-3."
     }
   ]
 }

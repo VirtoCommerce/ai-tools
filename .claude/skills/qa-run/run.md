@@ -8,7 +8,7 @@ calls this file for its execution step.
 | Argument | Scope | Where the suites come from | Ledger |
 |---|---|---|---|
 | `smoke`, `critical`, `full`, `frontend`, `backend`, a manifest selection group, `042,078` | a one-off run | `config/test-suites.json` `selections`, or the ids given | no — the triage report of the run is the record |
-| `sprint`, `sprint:XX-YY` | the sprint plan | `vc/shared/docs/Sprint plans/sprint-{XX-YY}-summary.json` `suitesActivated[]` (resolution order: `regression-selection.md` §Plan-driven selection) | not yet — a sprint plan writes no release folder |
+| `sprint`, `sprint:XX-YY` | the sprint plan | `docs/Sprint plans/sprint-{XX-YY}-summary.json` `suitesActivated[]` (resolution order: `regression-selection.md` §Plan-driven selection) | not yet — a sprint plan writes no release folder |
 | `stable:<N> <wave>` · `stable:<N> status` | one wave of a stable-bundle regression | `regression/releases/stable-<N>/release.json` — that wave's `suites`, its `tier` as `--cases`, minus every other wave's `exclusive` | yes — [`waves.md`](waves.md) |
 | bare `stable:<N>` | — | refused: a release runs wave by wave, so claims, tier order and the ledger hold. Show `npm run release:status -- stable-<N>` | — |
 

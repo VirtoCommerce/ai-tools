@@ -55,7 +55,7 @@ References (read these):
   - skills/qa-test-design/test-design-techniques.md
   - .claude/skills/qa-checklist/domain-checklists.md + backend-admin-checklists.md + graphql-checklist.md
   - .claude/skills/qa-sbtm/sprint-charter-selection.md   (the §5.3 derivation rule — read before writing charters)
-  - reports/exploratory/  (last 24h of SBTM-* sessions — disqualifier D3)
+  - reports/exploratory/ + the run folders' exploratory/  (last 24h of SBTM-* sessions — disqualifier D3)
 
 Context7: query `/virtocommerce/vc-docs` per primary domain (tokens: 8000)
 
@@ -121,7 +121,7 @@ that was considered and correctly ruled out.
 
 ## Rules
 
-- Reference example: `vc/shared/docs/Sprint plans/sprint-26-08-test-plan.md` — match its structure section-for-section.
+- Reference example: `docs/Sprint plans/sprint-26-08-test-plan.md` — match its structure section-for-section.
 - Pull JIRA items via Atlassian MCP only — do NOT scrape the web. If MCP unavailable, ask user to paste.
 - Pull PRs via GitHub MCP only — do NOT shell out to `gh` from this command (the orchestrator runs inline; `gh` is fine inside agent dispatches).
 - The sprint window for PRs is the **JIRA sprint dates**, not arbitrary dates. Honor `--from` / `--to` only when explicitly given.

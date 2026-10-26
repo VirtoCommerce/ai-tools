@@ -1,23 +1,24 @@
 #!/usr/bin/env node
 /**
- * Refreshes .claude/knowledge/api/graphql-schema.md from live GraphQL introspection.
+ * Refreshes .claude/knowledge/api/graphql-schema.md from live GraphQL introspection — or, inside a ticket run
+ * (`npm run run:use` bound one for this session and env), that run's own copy, `<run>/knowledge/api/graphql-schema.md`:
+ * the schema is the env's, and two runs on two envs must not overwrite one file (scripts/lib/run-dir.mjs).
  *
  * Usage:
- *   node scripts/refresh-graphql-schema.mjs              # uses BACK_URL from .env
+ *   node scripts/refresh-graphql-schema.mjs              # BACK_URL of the active TEST_ENV (lib/load-env.mjs)
  *   node scripts/refresh-graphql-schema.mjs --dry-run    # print to stdout only
  *   node scripts/refresh-graphql-schema.mjs --url https://custom-url.com
  */
 
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { mkdirSync, writeFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { parse } from 'dotenv';
-import { resolveTestEnv } from '../lib/resolve-test-env.js';
+import { loadEnv } from '../lib/load-env.mjs';
+import { sessionRunPath } from '../lib/run-dir.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..', '..');
-const OUTPUT = resolve(ROOT, '.claude/knowledge/api/graphql-schema.md');
 
 // Parse args
 const args = process.argv.slice(2);
@@ -29,23 +30,18 @@ const dryRun = args.includes('--dry-run');
 const urlIdx = args.indexOf('--url');
 let backUrl = urlIdx !== -1 ? args[urlIdx + 1] : null;
 
-// Resolve BACK_URL from the layered env files, matching config.js precedence:
-//   .env.defaults → .env.${TEST_ENV} → .env.local → process.env (wins).
-// The legacy monolithic .env file was removed from this project, so reading it
-// (as this script used to) always failed. Read the same layered files config.js does.
-const testEnv = resolveTestEnv('vcst');
-if (!backUrl) {
-  const merged = {};
-  for (const layer of ['.env.defaults', `.env.${testEnv}`, '.env.local']) {
-    const p = resolve(ROOT, layer);
-    if (existsSync(p)) Object.assign(merged, parse(readFileSync(p)));
-  }
-  backUrl = process.env.BACK_URL || merged.BACK_URL || null;
-}
+// BACK_URL as config.js resolves it — the layered files, then the `KEY_<ENV>` promotion — so a
+// BACK_URL_<ENV> pin beats .env.local's localhost. Like config.js, the files also beat a shell
+// BACK_URL: --url is the override. The output is the agents' contract oracle, so say where it came from.
+const { testEnv, sourceOf } = loadEnv({ fallback: 'vcst' });
+const REPO_SCHEMA = resolve(ROOT, '.claude/knowledge/api/graphql-schema.md');
+const OUTPUT = sessionRunPath('schema', { env: testEnv }) ?? REPO_SCHEMA;
+const urlSource = backUrl ? '--url' : sourceOf('BACK_URL');
+backUrl ||= process.env.BACK_URL || null;
 
 if (!backUrl) {
   console.error(
-    `Error: BACK_URL not found in .env.defaults / .env.${testEnv} / .env.local and --url not provided`
+    `Error: no BACK_URL (or BACK_URL_${testEnv.toUpperCase()}) in .env.defaults / .env.${testEnv} / .env.local, and no --url`
   );
   process.exit(1);
 }
@@ -251,7 +247,7 @@ function categorizeMutation(name) {
 }
 
 async function main() {
-  console.error(`Introspecting ${GQL}...`);
+  console.error(`Introspecting ${GQL} (TEST_ENV=${testEnv}; ${urlSource})...`);
 
   const [queries, mutations] = await Promise.all([
     introspectQueries(),
@@ -432,8 +428,9 @@ async function main() {
     process.stdout.write(md);
     console.error('\n[dry-run] Schema printed to stdout. Use without --dry-run to write to file.');
   } else {
+    mkdirSync(dirname(OUTPUT), { recursive: true });
     writeFileSync(OUTPUT, md, 'utf-8');
-    console.error(`Written to ${OUTPUT}`);
+    console.error(`Written to ${OUTPUT}${OUTPUT === REPO_SCHEMA ? '' : ' (this run\'s copy; the repo\'s .claude/knowledge/api/graphql-schema.md is unchanged)'}`);
     console.error(`  Queries: ${queries.length}`);
     console.error(`  Mutations: ${mutations.length}`);
     console.error(`  Types: ${Object.keys(typeResults).length}`);

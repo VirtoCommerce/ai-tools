@@ -4,9 +4,12 @@
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { baseOf, isUnknown, type EnvFacts, type ReleasedNotDeployed } from "../lib/env-facts.ts";
+import { LOCAL_STAND, baseOf, isUnknown, type EnvFacts, type ReleasedNotDeployed } from "../lib/env-facts.ts";
 import type { McpStatic } from "./mcp-static.ts";
 import { cmpSemver } from "../maintenance/refresh-release-ledger.mjs";
+import { priorRunDirs, resolveSprint, runLayout } from "../lib/run-dir.mjs";
+
+export { resolveSprint };
 
 export type ChangeFor = "ticket" | "ticket-fast" | "exploratory" | "lifecycle" | "domain-map" | "ba";
 export const CHANGE_FOR: readonly ChangeFor[] = ["ticket", "ticket-fast", "exploratory", "lifecycle", "domain-map", "ba"];
@@ -28,6 +31,12 @@ export interface PolicyInput {
 }
 
 const isTicket = (f: ChangeFor) => f === "ticket" || f === "ticket-fast";
+/** A stand on this machine runs the ticket's own build: nothing deploys to it, /qa-deploy-pr refuses it. */
+const isLocalStand = (f: EnvFacts) => isUnknown(f.declared) && f.declared.unknown === LOCAL_STAND;
+/** What brings the change under test onto the stand. */
+const deployAdvice = (i: PolicyInput) => isLocalStand(i.facts)
+  ? "build the change into this local stand and restart it (/qa-deploy-pr does not deploy to a local stand)"
+  : `/qa-deploy-pr ${i.ticket ?? "<KEY>"}, or wait`;
 /** `--expect` names the storefront theme rather than a module: its repo, its artifact name or the manifest key. */
 export const isThemeId = (id: string) => /^(vc-frontend|vc-theme[\w-]*|theme|themeb2bvue|virtocommerce\.theme)$/i.test(id);
 const DUP_WINDOW_MIN: Record<ChangeFor, number | null> = { "ticket": 120, "ticket-fast": 120, "exploratory": 1440, "lifecycle": 1440, "domain-map": null, "ba": null };
@@ -35,14 +44,6 @@ const SECRET = /PASSWORD|TOKEN|SECRET|KEY/;
 
 const ok = (id: string, found: string): Check => ({ id, status: "OK", found, who: null, do: null, diagnose: [] });
 
-export function resolveSprint(root: string): string | null {
-  const dir = join(root, "reports/tickets");
-  if (!existsSync(dir)) return null;
-  const names = readdirSync(dir);
-  if (names.includes("Sprint-current")) return "Sprint-current";
-  const sprints = names.filter((n) => /^Sprint\d{2}-\d{2}$/.test(n)).sort();
-  return sprints.at(-1) ?? null;
-}
 
 /**
  * A comparable id for the deployed MODULE set: `modules:<12 hex of sha1 over the sorted "id@version" lines>`.
@@ -81,21 +82,23 @@ function storefrontRemedy(reason: string, env: string): { who: Who; do: string }
   return { who: "me", do: "wait and re-run" };
 }
 
-export function findDuplicate(root: string, f: ChangeFor, opts: { ticket?: string; domain?: string; now: Date }): Duplicate | null {
+export function findDuplicate(root: string, f: ChangeFor, opts: { ticket?: string; domain?: string; env?: string; now: Date }): Duplicate | null {
   const windowMin = DUP_WINDOW_MIN[f];
   if (windowMin === null) return null;
   const candidates: string[] = [];
+  // A ticket's run folders (scripts/lib/run-dir.mjs): this env's, and those written before the env level.
+  // Another env's folder is a parallel run, not a duplicate.
+  const runDirs = opts.ticket ? priorRunDirs({ ticket: opts.ticket, root }).filter((r) => r.env === null || !opts.env || r.env === opts.env) : [];
   if (isTicket(f) && opts.ticket) {
-    const base = join(root, "reports/tickets");
-    if (existsSync(base)) {
-      try {
-        for (const sprint of readdirSync(base)) {
-          const p = join(base, sprint, opts.ticket, "summary.json");
-          if (existsSync(p)) candidates.push(p);
-        }
-      } catch { /* unreadable dir ⇒ skip */ }
-    }
+    for (const r of runDirs) if (existsSync(runLayout(r.dir).summary)) candidates.push(runLayout(r.dir).summary);
   } else if (!isTicket(f) && (opts.domain || opts.ticket)) {
+    // A ticket's exploratory sessions live in its run folders.
+    if (f === "exploratory") {
+      for (const r of runDirs) {
+        const dir = runLayout(r.dir).exploratory;
+        try { for (const n of readdirSync(dir)) if (n.startsWith("SBTM-")) candidates.push(join(dir, n)); } catch { /* none */ }
+      }
+    }
     const [dir, prefix] = f === "exploratory" ? ["reports/exploratory", "SBTM-"] : ["reports/test-lifecycle", "TLC-"];
     const base = join(root, dir);
     // Session files are named by ticket (SBTM-VCST-5317-…) as often as by domain: match either.
@@ -150,7 +153,8 @@ export function envChecks(f: EnvFacts, o: EnvCheckOptions): EnvCheckResult {
 
   // declared
   // read over GitHub REST with GIT_TOKEN / GITHUB_TOKEN only — `gh` auth is not consulted
-  if (isUnknown(f.declared)) checks.push({ id: "declared", status: "UNKNOWN", found: f.declared.unknown, who: "you", do: "set GIT_TOKEN in .env.local",
+  if (isLocalStand(f)) checks.push(ok("declared", `${LOCAL_STAND} — 'deployed' and --expect read it off the stand`));
+  else if (isUnknown(f.declared)) checks.push({ id: "declared", status: "UNKNOWN", found: f.declared.unknown, who: "you", do: "set GIT_TOKEN in .env.local",
     diagnose: ["which .env layer GIT_TOKEN resolves from (value never printed)"] });
   else checks.push(ok("declared", `Platform ${f.declared.platform ?? "?"} · Theme ${f.declared.theme ?? "?"}`));
 
@@ -260,14 +264,14 @@ export function buildChecks(i: PolicyInput): Check[] {
     else if (expectMet(live, i.expect.version) || (i.expect.version.includes("-") && live.toLowerCase().startsWith(`${i.expect.version.toLowerCase()}-`)))
       checks.push(ok("expect", `${i.expect.module} ${live}`));
     else checks.push({ id: "expect", status: isTicket(i.for) ? "BLOCK" : "WARN", found: `${i.expect.module} ${i.expect.version} not deployed (has ${live})`,
-      who: "me, with OK", do: `/qa-deploy-pr ${i.ticket ?? "<KEY>"}, or wait`, diagnose: ["is the PR artifact built", "is it in vc-deploy-dev theme/artifact.json", "a returning browser may still hold the old index HTML (max-age=7200)"] });
+      who: "me, with OK", do: deployAdvice(i), diagnose: ["is the PR artifact built", "is it in vc-deploy-dev theme/artifact.json", "a returning browser may still hold the old index HTML (max-age=7200)"] });
   } else if (i.expect) {
     const id = i.expect.module.toLowerCase();
     const live = isUnknown(f.deployed) ? null : f.deployed.modules[id]?.version ?? null;
     if (isUnknown(f.deployed)) checks.push({ id: "expect", status: isTicket(i.for) ? "BLOCK" : "WARN", found: `${i.expect.module} — deployed state unknown`, who: deployedUnknownWho, do: deployedUnknownDo, diagnose: [] });
     else if (live !== null && expectMet(live, i.expect.version)) checks.push(ok("expect", `${i.expect.module} ${live}`));
     else checks.push({ id: "expect", status: isTicket(i.for) ? "BLOCK" : "WARN", found: `${i.expect.module} ${i.expect.version} not deployed (has ${live ?? "none"})`,
-      who: "me, with OK", do: `/qa-deploy-pr ${i.ticket ?? "<KEY>"}, or wait`, diagnose: ["is the PR artifact built", "is it in vc-deploy-dev backend/packages.json"] });
+      who: "me, with OK", do: deployAdvice(i), diagnose: ["is the PR artifact built", "is it in vc-deploy-dev backend/packages.json"] });
   }
 
   // sprint (ticket only)

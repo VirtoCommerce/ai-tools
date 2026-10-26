@@ -46,9 +46,9 @@ Parse any of `SprintXX-YY` / `sprint-XX-YY` / `XX-YY` (where `XX` is the year su
 
 If parsing fails (input doesn't match `XX-YY` and isn't `current`/`last`), ask the user for the correct sprint label rather than guessing.
 
-**Output target:** `vc/shared/docs/Sprint plans/sprint-{XX-YY}-test-plan.md` (single canonical location for all sprint plans — co-located with the structural reference). Per-ticket test artifacts (test-cases.csv, exploratory-session.md, etc.) continue to live under `reports/tickets/{SPRINT_LABEL}/VCST-XXXX/` — the sprint plan does NOT go there. Create the `vc/shared/docs/Sprint plans/` directory if it doesn't exist.
+**Output target:** `docs/Sprint plans/sprint-{XX-YY}-test-plan.md` (single canonical location for all sprint plans — co-located with the structural reference). Per-ticket test artifacts (test-cases.csv, exploratory-session.md, etc.) live in each ticket's run folder — the sprint plan does NOT go there. Create the `docs/Sprint plans/` directory if it doesn't exist.
 
-**Duplicate guard:** If `vc/shared/docs/Sprint plans/sprint-{XX-YY}-test-plan.md` already exists, ask the user whether to overwrite or append a `-v2` suffix. Never silently overwrite.
+**Duplicate guard:** If `docs/Sprint plans/sprint-{XX-YY}-test-plan.md` already exists, ask the user whether to overwrite or append a `-v2` suffix. Never silently overwrite.
 
 ---
 
@@ -138,7 +138,7 @@ Delegate Sections 5.2 (Coverage Gaps), **5.3 (Exploratory Charters)** and 6 (New
 
 #### 6a. Orchestrator-written sections
 
-Follow the structure of `vc/shared/docs/Sprint plans/sprint-26-08-test-plan.md` exactly. Sections:
+Follow the structure of `docs/Sprint plans/sprint-26-08-test-plan.md` exactly. Sections:
 
 1. **Sprint Summary** — date range, theme (1-2 sentence narrative inferred from top-priority tickets), Done counts (split by type), test-relevant count, merged PR count
 2. **Scope** — 2.1 Stories table, 2.2 Bugs table, 2.3 TechDebt/Structural (BEM, data-test-ids, etc.), 2.4 Out of Scope
@@ -162,9 +162,9 @@ sprint inputs are the Done items, the merged PRs, the Step 5 risk matrix and the
 
 ### Step 7 — Write the Plan
 
-Output path: `vc/shared/docs/Sprint plans/sprint-{XX-YY}-test-plan.md`
+Output path: `docs/Sprint plans/sprint-{XX-YY}-test-plan.md`
 
-Use the **exact structure** of `vc/shared/docs/Sprint plans/sprint-26-08-test-plan.md`, **plus Section 5.3 Exploratory Charters** (added 2026-08-26 — see Step 6d; the 26-08…26-16 plans predate it and have no 5.3). Do not invent any other new section numbers; do not omit sections. If a section has no content for this sprint (e.g., no analytics changes), keep the section heading and write `_None in this sprint._` — for 5.3 that means writing the "Not chartered (and why)" line, never an empty section.
+Use the **exact structure** of `docs/Sprint plans/sprint-26-08-test-plan.md`, **plus Section 5.3 Exploratory Charters** (added 2026-08-26 — see Step 6d; the 26-08…26-16 plans predate it and have no 5.3). Do not invent any other new section numbers; do not omit sections. If a section has no content for this sprint (e.g., no analytics changes), keep the section heading and write `_None in this sprint._` — for 5.3 that means writing the "Not chartered (and why)" line, never an empty section.
 
 **Header block:**
 ```markdown
@@ -178,7 +178,7 @@ Use the **exact structure** of `vc/shared/docs/Sprint plans/sprint-26-08-test-pl
 ```
 
 **Companion files** (write alongside the plan):
-- `vc/shared/docs/Sprint plans/sprint-{XX-YY}-summary.json` — machine-readable summary (co-located with the plan)
+- `docs/Sprint plans/sprint-{XX-YY}-summary.json` — machine-readable summary (co-located with the plan)
 
 ```json
 {
@@ -199,7 +199,7 @@ Use the **exact structure** of `vc/shared/docs/Sprint plans/sprint-26-08-test-pl
   ],
   "criticalTickets": ["VCST-..."],
   "outOfScopeCount": 0,
-  "artifacts": "vc/shared/docs/Sprint plans/"
+  "artifacts": "docs/Sprint plans/"
 }
 ```
 
@@ -220,13 +220,13 @@ Coverage gaps identified: {GAP_COUNT}
 Exploratory charters: {EXP_COUNT} (§5.3)
 New test cases estimated: {RANGE}
 
-Plan: vc/shared/docs/Sprint plans/sprint-{XX-YY}-test-plan.md
-Summary: vc/shared/docs/Sprint plans/sprint-{XX-YY}-summary.json
+Plan: docs/Sprint plans/sprint-{XX-YY}-test-plan.md
+Summary: docs/Sprint plans/sprint-{XX-YY}-summary.json
 
 Next: review the plan, then either:
   - /qa-test-cases-generator VCST-XXXX  (per-ticket case generation, driven by Section 6 counts/techniques)
   - /qa-test VCST-XXXX                  (test a specific ticket, prefilled from Section 11 row)
-  - /qa-regression sprint               (auto-resolves vc/shared/docs/Sprint plans/sprint-{XX-YY}-summary.json → suitesActivated[])
+  - /qa-regression sprint               (auto-resolves docs/Sprint plans/sprint-{XX-YY}-summary.json → suitesActivated[])
   - /qa-regression sprint:{XX-YY}       (pin to this exact sprint plan; useful when re-running a past sprint)
   - /qa-exploratory sprint              (run this plan's §5.3 charters — reads exploratoryCharters[] from the summary.json)
 ```
