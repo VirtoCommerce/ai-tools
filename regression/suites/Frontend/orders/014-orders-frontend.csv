@@ -917,3 +917,30 @@ The store exposes exactly 3 locales: en-US, de-DE, es-ES. This case runs the rev
 [ACT] switch locale to es-ES; repeat the same reversed-range entry
 [ASSERT] the es-ES validation message renders as ""La fecha de fin debe ser igual o posterior a la fecha de inicio"" -- real translated prose, no raw i18n key, no English fallback text","[DOM] the validation message element's text does not equal the literal key string 'ui_kit.date_range_input.invalid_range' in either locale
 [DOM] the validation message element's text does not equal the English string 'End date must be on or after start date' when de-DE/es-ES is active",[CONSOLE] no i18n-missing-key warnings logged for either locale,either locale shows the raw i18n key instead of translated prose; either locale silently falls back to English; the translated string is present but does not match the confirmed wording,Switch locale back to the default (en-US); click 'Reset' to clear the date filter before ending the session,"VCST-5097; LIVE-VERIFIED 2026-09-09 vcptcore-qa storefront, theme 2.58.0-pr-2402-d7e2-d7e218e7 (vc-frontend PR #2402, OPEN/not merged at authoring time -- re-ground these cases if the PR's base changes before merge); exact translated strings confirmed live: de-DE ""Enddatum muss auf oder nach dem Startdatum liegen"", es-ES ""La fecha de fin debe ser igual o posterior a la fecha de inicio""",Draft
+ORD-104,"Order List — an OR clause in the search box shows a buyer with no orders the empty state, never other customers' orders",Orders > Search > Data Isolation,Critical,BL-AUTH-006,,"[PRE:SIGNIN_AS:LOYALTY_NOBAL_USER]
+Buyer logged in as {{LOYALTY_NOBAL_USER_EMAIL}}. STATE DEPENDENCY: this buyer has ZERO orders of its own (loyalty zero-balance fixture, no organization), while other customers' orders exist on the environment, which is the leak surface. Zero orders is environment state another suite can change, so the case guards it: if the unfiltered /account/orders list shows any order, end BLOCKED:PRECONDITION_UNMET:BUYER_HAS_ORDERS, never PASS and never FAIL. Fix under test: vc-module-x-order PR #57.","url={{FRONT_URL}}, user={{LOYALTY_NOBAL_USER_EMAIL}}, password={{LOYALTY_NOBAL_USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders page rendered (list or empty state)
+[ASSERT] guard: no order row is listed for this buyer before searching; if any order row is listed, stop with BLOCKED:PRECONDITION_UNMET:BUYER_HAS_ORDERS
+[ACT] type OR status:""Processing"" into the 'Search by number, name or other data' input
+[KEY] press Enter (or click the 'Search orders' button)
+[WAIT] search results rendered
+[KEY] note the GetOrders response of this search: totalCount, items length and whether errors[] is present
+[ASSERT] verify the empty state 'There are no results found' with a 'Reset search' button is shown
+[ASSERT] verify no order row is listed
+[ACT] click 'Reset search'
+[WAIT] search box cleared
+[ACT] type OR (the bare operator) into the 'Search by number, name or other data' input
+[KEY] press Enter (or click the 'Search orders' button)
+[WAIT] search results rendered
+[KEY] note the GetOrders response of this search: totalCount, items length and whether errors[] is present
+[ASSERT] verify the empty state 'There are no results found' with a 'Reset search' button is shown
+[ASSERT] verify no order row is listed
+[ACT] click 'Reset search'
+[WAIT] search box cleared","[DOM] after searching OR status:""Processing"" the empty state 'There are no results found' is shown {BL} (BL-AUTH-006)
+[STATE] after searching OR status:""Processing"" no order row is listed for a buyer with zero own orders {BL} (BL-AUTH-006)
+[DOM] after searching OR the empty state 'There are no results found' is shown {BL} (BL-AUTH-006)
+[STATE] after searching OR no order row is listed for a buyer with zero own orders {BL} (BL-AUTH-006)
+[STATE] GetOrders response for both searches has totalCount = 0 and no errors[] {SPEC} (VCST-6536)
+[STATE] 'Reset search' clears the box and returns the page to its unfiltered state {OBSERVED}","[API] POST /graphql GetOrders for both searches returns totalCount 0, items [] and no errors[]
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","any order row listed after the OR search for a buyer with zero own orders (foreign orders leaked); GetOrders totalCount above 0 for the OR search; errors[] present in GetOrders; spinner visible >5s; mid-journey: the unfiltered list already shows orders (fixture drift, BLOCKED not FAIL)",none,VCST-6536 · Archetype:SCOPE · Technique:EG · Purpose:FUNC · Catches:VCST-6536 | Promoted: REG-2026-10-27-0036 (2026-10-26),Automated
