@@ -29,12 +29,13 @@ export function resolveProfile(profile) {
     if (f?.ref && !fieldList.some((x) => x.id === f.ref)) fieldList.push({ id: f.ref, name: f.name ?? f.ref });
   }
   return {
-    projectType, tracker, codeHost, orgs, fieldList,
+    projectType, tracker, codeHost, upstream, orgs, fieldList,
+    formLayout: obj(t.formLayout), // Azure Boards: { <type>: { htmlControls: [field ref, …] } }, in form order
     trackerBase,
     keyFormat: t.ticketKeyFormat === "numeric" || t.ticketKeyFormat === "prefixed" ? t.ticketKeyFormat : tracker === "azure" ? "numeric" : "prefixed",
     crossLinkToken: str(t.crossLinkToken),
     fieldMap: obj(t.fieldMap),
     azure: { roleStates: obj(az.roleStates), roleStatesByType: obj(az.roleStatesByType) }, // org and project: the bridge pins them
-    governed: !!profile.governance?.host,
+    governed: !!profile.governance?.host || profile.governance?.secrets === "host", // the bridge's own refusal (vc-init bridge/run.mjs hostRefusal)
   };
 }

@@ -37,6 +37,38 @@ function comment(c, html) {
   return { id: String(c.id), created: c.createdDate ?? null, updated: c.modifiedDate ?? c.createdDate ?? null, body: html ? (c.text ?? "") : htmlText(c.text ?? "") };
 }
 
+// Where a work item keeps its own text: its form's rich-text controls in form order (/project-init's
+// tracker.formLayout); with no scanned layout, the ones the stock processes use. A Bug's is Repro Steps, not Description.
+const TEXT_FIELDS = Object.freeze(["System.Description", "Microsoft.VSTS.TCM.ReproSteps", "Microsoft.VSTS.TCM.SystemInfo"]);
+const INLINE_RE = /https?:\/\/[^"'\s<>]+\/_apis\/wit\/attachments\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}[^"'\s<>]*/gi;
+const escHtml = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+/** The type's text fields as one HTML body, each under its field name when there is more than one. A field read on
+ *  its own (`own`: the AC and prototype fields) is not repeated here. */
+function descriptionHtml(f, profile, type, own) {
+  const refs = profile.formLayout?.[type]?.htmlControls ?? TEXT_FIELDS;
+  const parts = refs.filter((ref) => !own.has(ref) && typeof f[ref] === "string" && f[ref].trim());
+  if (parts.length <= 1) return parts.length ? f[parts[0]] : null;
+  const name = (ref) => profile.fieldList?.find((x) => x.id === ref)?.name ?? ref.split(".").pop();
+  return parts.map((ref) => `<h3>${escHtml(name(ref))}</h3>\n${f[ref]}`).join("\n");
+}
+
+/** An image pasted into a rich-text field is stored as an attachment but is not an AttachedFile relation: each one the
+ *  HTML names becomes an attachment, dated by the comment it is in (the blind cut reads that date). */
+function inlineAttachments(sources, known) {
+  const out = [];
+  for (const [html, created] of sources) for (const m of String(html ?? "").matchAll(INLINE_RE)) {
+    const url = m[0].replace(/&amp;/g, "&");
+    const id = guidOf(url);
+    if (!id || known.has(id)) continue;
+    known.add(id);
+    let name = null;
+    try { name = new URL(url).searchParams.get("fileName"); } catch { /* the guid names it */ }
+    out.push({ id, filename: name || id, size: null, content: url, created });
+  }
+  return out;
+}
+
 /** A work item (`get-workitem --json`, `$expand=all`) and its comments page (`comments`) as a Jira issue. */
 export function normalizeWorkItem(item, commentsPage, profile, fieldIds = []) {
   const f = item.fields ?? {};
@@ -45,9 +77,18 @@ export function normalizeWorkItem(item, commentsPage, profile, fieldIds = []) {
   const state = f["System.State"] ?? null;
   const parentId = rels.map((r) => (/Hierarchy-Reverse$/i.test(r.rel) ? idOf(r.url) : null)).find(Boolean);
   const raw = commentsPage?.comments ?? [];
+  const own = new Set(fieldIds);
+  const description = descriptionHtml(f, profile, type, own);
+  const attached = rels.filter((r) => r.rel === "AttachedFile" && guidOf(r.url)).map((r) => ({
+    id: guidOf(r.url), filename: r.attributes?.name ?? guidOf(r.url), size: r.attributes?.resourceSize ?? null, content: r.url,
+    created: r.attributes?.resourceCreatedDate ?? r.attributes?.authorizedDate ?? null,
+  }));
+  const pasted = inlineAttachments([[description, null], ...fieldIds.map((id) => [f[id], null]), ...raw.map((c) => [c.text, c.createdDate ?? null])],
+    new Set(attached.map((a) => a.id)));
   const fields = {
     summary: f["System.Title"] ?? "",
-    issuetype: { name: type },
+    // A Task is Azure's sub-task: its parent is the story or bug it implements, so buildInventory reads that parent.
+    issuetype: { name: type, subtask: /^task$/i.test(type ?? "") },
     status: { name: state, statusCategory: { key: doneKey(profile, type, state) } },
     priority: f["Microsoft.VSTS.Common.Priority"] != null ? { name: String(f["Microsoft.VSTS.Common.Priority"]) } : null,
     labels: String(f["System.Tags"] ?? "").split(";").map((t) => t.trim()).filter(Boolean),
@@ -55,11 +96,8 @@ export function normalizeWorkItem(item, commentsPage, profile, fieldIds = []) {
     fixVersions: [],
     created: f["System.CreatedDate"] ?? null,
     updated: f["System.ChangedDate"] ?? null,
-    description: htmlText(f["System.Description"] ?? null),
-    attachment: rels.filter((r) => r.rel === "AttachedFile" && guidOf(r.url)).map((r) => ({
-      id: guidOf(r.url), filename: r.attributes?.name ?? guidOf(r.url), size: r.attributes?.resourceSize ?? null, content: r.url,
-      created: r.attributes?.resourceCreatedDate ?? r.attributes?.authorizedDate ?? null,
-    })),
+    description: htmlText(description),
+    attachment: [...attached, ...pasted],
     subtasks: rels.filter((r) => /Hierarchy-Forward$/i.test(r.rel) && idOf(r.url)).map((r) => ({ key: idOf(r.url) })),
     // Azure's own link name ("Related", "Duplicate-Forward", "Dependency-Reverse") is the type name rankLinked reads;
     // a -Reverse link points inward, as Jira's inwardIssue does.
@@ -69,7 +107,7 @@ export function normalizeWorkItem(item, commentsPage, profile, fieldIds = []) {
     })),
     ...(parentId ? { parent: { key: parentId, fields: { summary: "" } } } : {}),
   };
-  const renderedFields = { description: f["System.Description"] ?? null };
+  const renderedFields = { description };
   for (const id of fieldIds) {
     if (!(id in f) || id === "System.Description") continue;
     fields[id] = typeof f[id] === "string" ? htmlText(f[id]) : f[id];
@@ -105,7 +143,7 @@ export function azureBoardsConnector({ profile, key, run = bridgeRun, root = out
         } catch (e) { const g = asGap("comments", e); gaps.push(gap("comments", g.reason, `comments not read: ${g.detail ?? g.reason}`)); }
       }
       const issue = normalizeWorkItem(item, page, profile, fieldIds);
-      if (issue.fields.parent) {
+      if (issue.fields.parent && fieldIds.includes("parent")) { // a linked issue's parent title is never read
         try { issue.fields.parent.fields.summary = (await getItem(issue.fields.parent.key)).fields?.["System.Title"] ?? ""; } catch { /* the epic's title is context only */ }
       }
       return issue;

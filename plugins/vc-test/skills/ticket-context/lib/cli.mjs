@@ -10,10 +10,10 @@ import { resolveProfile } from "./profile.mjs";
 import { HostGoverned, vcRun } from "./bridge.mjs";
 import { jiraConnector } from "./connectors/jira.mjs";
 import { azureBoardsConnector } from "./connectors/azure-boards.mjs";
-import { githubConnector, searchKeyFor } from "./connectors/github.mjs";
+import { githubConnector, searchKeyFor, searchOrgsFor } from "./connectors/github.mjs";
 import { azurePrRefFromUrl, azureReposConnector, refWithNames } from "./connectors/azure-repos.mjs";
 import { ProfileError, loadProfile } from "../../../lib/profile.mjs";
-import { GAP_REASONS, SCHEMA, asGap, gap } from "./gap.mjs";
+import { GAP_REASONS, GapError, SCHEMA, asGap, gap } from "./gap.mjs";
 import { validateDef } from "./schema.mjs";
 import { BASE_FIELDS, LINKED_FIELDS, attachLinkedComments, blindIssue, blindPrs, postedAfter, recencyOrder, withoutHidden } from "./jira.mjs";
 import { AC_FIELD_NAME_RE, buildInventory, linkedOverCap, rankLinked, resolveFieldsByName, ticketFields } from "./inventory.mjs";
@@ -122,13 +122,16 @@ async function prepare() {
   const tracker = profile.tracker === "azure" ? azureBoardsConnector({ profile, key, root }) : jiraConnector({ base: profile.trackerBase, key, root });
   const gaps = [];
   if (LAYERS_GAP) gaps.push(gap("env", "not-available-in-install", LAYERS_GAP));
+  // The first reads answer "can the tracker be read at all": a refusal there is `no-tracker`, one JSON object like a
+  // missing VC_RUN, never a stack line. HostGoverned is no GapError and keeps its own exit 4 (the top-level catch).
+  const firstRead = (p) => p.catch((e) => { if (e instanceof GapError) noTracker(e.reason, e.detail); throw e; });
 
-  const allFields = await tracker.fields();
+  const allFields = await firstRead(tracker.fields());
   const acFields = resolveFieldsByName(allFields, profile.fieldMap.acceptanceCriteria, AC_FIELD_NAME_RE);
   const linkFields = resolveFieldsByName(allFields, profile.fieldMap.prototype, /prototype/i);
   if (!acFields.length) gaps.push(gap("ac_fields", "not-found", "no custom field named 'Acceptance' or 'Acceptance criteria' and no tracker.fieldMap.acceptanceCriteria — ACs are read from description and comments"));
   // Comments past the first page are paged in before the inventory and ticket.json see the issue; any unread rest is a gap.
-  const issue = blindIssue(await tracker.issue(key, [...BASE_FIELDS, ...acFields.map((f) => f.id), ...linkFields.map((f) => f.id)], { gaps }), benchmark ?? {});
+  const issue = blindIssue(await firstRead(tracker.issue(key, [...BASE_FIELDS, ...acFields.map((f) => f.id), ...linkFields.map((f) => f.id)], { gaps })), benchmark ?? {});
   const remote = await tracker.remoteLinks(key).catch((e) => { gaps.push(asGap("remotelinks", e)); return []; });
   const linkedPrs = await tracker.linkedPrs(issue).catch((e) => { gaps.push(asGap("dev-status", e)); return { urls: [], refs: [] }; });
   const devPrUrls = linkedPrs.urls;
@@ -170,12 +173,13 @@ async function prepare() {
   if (filedLater.size) { inv.items = inv.items.filter((i) => !filedLater.has(i)); linked = linked.filter((i) => !filedLater.has(i)); }
 
   const orgs = profile.orgs;
-  // §7, U20: every GitHub read is a $VC_RUN `gh api` GET. The platform upstream is always GitHub, so this runs on an
-  // Azure Repos project too; there the client's own PRs come from the tracker (below).
+  // §7, U20: every GitHub read is a $VC_RUN `gh api` GET. The platform upstream is always GitHub, so GitHub PRs a
+  // ticket names are read on an Azure Repos project too; there the client's own PRs come from the tracker (below).
   const gh = githubConnector();
   const searchKey = searchKeyFor(profile, key);
-  if (!searchKey) gaps.push(gap("change.search", "not-found", "the profile names no tracker.crossLinkToken, so GitHub was not searched for this work item"));
-  const ladder = await runLadder({ gh, key: searchKey ?? key, orgs: searchKey ? orgs : [], explicitRefs: inv.prRefs, gaps });
+  const searchOrgs = searchOrgsFor(profile);
+  if (!searchKey && searchOrgs.length) gaps.push(gap("change.search", "not-found", "the profile names no tracker.crossLinkToken, so GitHub was not searched for this work item"));
+  const ladder = await runLadder({ gh, key: searchKey ?? key, orgs: searchKey ? searchOrgs : [], explicitRefs: inv.prRefs, gaps });
   let prMeta = [];
   for (const r of ladder.refs) {
     try { prMeta.push({ ...r, meta: await gh.pr(r.owner, r.repo, r.number) }); } catch (e) { prMeta.push({ ...r, gap: asGap(`pr:${r.ref}`, e) }); }
@@ -392,7 +396,10 @@ function composeCmd() {
 
 function gate(prep) {
   const bundle = readJson(join(prep.run_dir, "bundle.json"));
-  loadLayeredEnv(root, prep.ticket); // so an env-layer FIGMA_TOKEN is in the secret set here too, as it was in prepare
+  // The env prepare resolved (it read the profile's declared one), so the secret set is the one prepare scrubbed with;
+  // an env-layer FIGMA_TOKEN is in it here too.
+  if (prep.env) process.env.TEST_ENV = prep.env;
+  loadLayeredEnv(root, prep.ticket);
   return { bundle, errors: checkBundle(bundle, prep, { secrets: loadSecretValues(root) }) };
 }
 
