@@ -8,6 +8,33 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## vc-test in the marketplace, as a preview — `vc-test` `0.1.0`, catalog `0.14.0` — 2026-10-26
+
+The third of four P1 plans (`docs/superpowers/plans/2026-10-26-vc-test-p1c-plugin.md`). `vc-test` is now listed,
+with `defaultEnabled: false`. Its QA command still needs an `ai-tools` checkout until P1d.
+
+**Added:**
+- **`/vc-test:init`.** It writes the profile's `test` block through `vc-init`'s writer: which environments a run may write to, each with its declared `BACK_URL`, plus the script roots and the knowledge store. It lists missing accounts with their `/project-init --add-user` command, and never touches a password.
+- **A read-only profile loader.** A missing profile is a STOP.
+- **The full capabilities probe.** A stand is writable only by declaration, and only when `BACK_URL` is the declared stand.
+- **`deployed.mjs` (F6).** It reads module, platform and theme versions from the stand. A side it cannot read is UNKNOWN, never "not deployed".
+- **`knowledge-store.mjs`, with committed tests.** A client project never writes to the platform store.
+- **The pinned Playwright config** the `vc-init` runner uses.
+
+**Changed:**
+- `CLAUDE.md`, `when-to-write-a-test.md` and the unit-test workflow name the knowledge store's committed tests as an exception (spec U10).
+- The plugin carries its own copy of the env loader instead of importing the repository's.
+
+## The runner starts an allowlisted vc-test script — `vc-init` `0.4.1` — 2026-10-26
+
+Part of the third P1 plan for `vc-test` (`docs/superpowers/plans/2026-10-26-vc-test-p1c-plugin.md`).
+
+**Added: `node "$VC_RUN" runner plugin <name> [args…]`.** It starts one of vc-test's own scripts with the current
+env's test-user passwords and never a token, so F6 can log in as the admin to read the stand's module versions.
+- **Names, never paths.** The name must be in `RUNNER_PLUGIN_SCRIPTS`; v1 has only `deployed`. This is the same pattern as `onboard`'s allowlist.
+- **The file comes from the vc-test install,** the trusted one on the inner side, so it needs no `scriptRoots`.
+- **The env check still applies:** only an env the profile's `test` block lists.
+
 ## The tracker CLIs read what a connector needs — `vc-fix` `0.14.0` — 2026-10-26
 
 The second of four P1 plans for the `vc-test` plugin (`docs/superpowers/plans/2026-10-26-vc-test-p1b-vc-fix-reads.md`).

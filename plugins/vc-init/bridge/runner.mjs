@@ -19,9 +19,16 @@ import { isAbsolute, join, relative, resolve } from "node:path";
 
 const ok = () => ({ ok: true, reason: "" });
 const no = (reason) => ({ ok: false, reason });
-const USAGE = "runner runs `playwright <spec file…>` or `node <script.mjs|.js> [args…]`";
+const USAGE = "runner runs `playwright <spec file…>`, `node <script.mjs|.js> [args…]` or `plugin <name> [args…]`";
 const SPEC_RE = /\.spec\.(ts|mjs|js)$/;
 const SCRIPT_RE = /\.(mjs|js)$/;
+
+/**
+ * vc-test's own scripts the runner may start with the env's passwords — plugin-shipped and named here, never a
+ * path, as `onboard`'s ONBOARD_SCRIPTS are. A plugin file is not in the project, so `scriptRoots` cannot hold it;
+ * this list is what admits it. `deployed`: F6, the stand's module/platform/theme versions (needs the admin login).
+ */
+export const RUNNER_PLUGIN_SCRIPTS = Object.freeze(["deployed"]);
 
 /** The command line's shape, with no file system: the mode, then files only (playwright) or one script. */
 export function checkRunnerShape(args) {
@@ -39,6 +46,11 @@ export function checkRunnerShape(args) {
     if (!script) return no(`${USAGE} — no script given`);
     if (script.startsWith("-")) return no(`runner node takes a script, never a node option (${JSON.stringify(script)})`);
     if (!SCRIPT_RE.test(script)) return no(`runner node runs a .mjs or .js script, got ${JSON.stringify(script)}`);
+    return ok();
+  }
+  if (mode === "plugin") {
+    const [name] = rest;
+    if (!RUNNER_PLUGIN_SCRIPTS.includes(name)) return no(`runner plugin runs one of: ${RUNNER_PLUGIN_SCRIPTS.join(", ")} (got ${JSON.stringify(name ?? "")})`);
     return ok();
   }
   return no(USAGE);

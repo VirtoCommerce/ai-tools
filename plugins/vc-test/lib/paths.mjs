@@ -2,7 +2,7 @@
 // One folder per ticket AND env, as the run folder is: a ledger written on one stand is never read against another.
 import { mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { TEST_ENV_PATTERN, testEnvChoice } from "../../../scripts/lib/resolve-test-env.js"; // prototype: runs from an ai-tools checkout
+import { TEST_ENV_PATTERN, testEnvChoice } from "../scripts/lib/resolve-test-env.js"; // the plugin's own copy (plugins/CLAUDE.md)
 
 export const KEY_RE = /^[A-Z][A-Z0-9]*-\d+$/;
 export function outputRoot() { return process.env.VC_FIX_HOME ? resolve(process.env.VC_FIX_HOME) : process.cwd(); }

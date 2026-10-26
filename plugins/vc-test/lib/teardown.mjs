@@ -9,7 +9,8 @@ import { appendFileSync, existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import { pathToFileURL } from "node:url";
-import { standOf } from "./capabilities.mjs";
+import { reach, standOf } from "./capabilities.mjs";
+import { loadProfile, testBlock } from "./profile.mjs";
 import { argOf, currentEnv, workDir } from "./paths.mjs";
 
 const enc = encodeURIComponent;
@@ -129,7 +130,10 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   const entries = readFileSync(ledger, "utf8").split("\n").filter(Boolean).flatMap((l) => { try { return [JSON.parse(l)]; } catch { bad++; return []; } });
   const plan = planTeardown(entries, here);
   if (process.argv.includes("--dry-run")) { console.log(JSON.stringify({ status: "planned", here, unreadable_lines: bad, ...plan }, null, 2)); process.exit(0); }
-  const stand = standOf(process.env);
+  let profile;
+  try { profile = loadProfile(); } catch (e) { console.log(JSON.stringify({ status: "refused", reason: e.message, here, ...plan }, null, 2)); process.exit(3); }
+  const stand = standOf({ envName: here.env, backUrl: process.env.BACK_URL, block: testBlock(profile), governance: profile.governance ?? null,
+    reachable: process.env.BACK_URL ? await reach(process.env.BACK_URL) : false });
   if (!stand.writable) {
     console.log(JSON.stringify({ status: "refused", reason: `this stand may not be written to (${stand.reason}) — every line is for a human`, here, ...plan }, null, 2));
     process.exit(3);
