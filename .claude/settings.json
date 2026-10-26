@@ -43,6 +43,16 @@
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/enforce-bug-labels.mjs\""
           }
         ]
+      },
+      {
+        "matcher": "^Read$",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Read(//**/scratchpad/**)",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/review-pr-allow.mjs\""
+          }
+        ]
       }
     ],
     "PostToolUse": [

@@ -446,7 +446,13 @@ export function lint(root = '.') {
     const headings = new Map();
     const headsOf = (f) => {
       if (!headings.has(f)) {
-        try { headings.set(f, fs.readFileSync(f, 'utf8').split(/\r?\n/).filter((l) => /^#{1,6} /.test(l)).map((l) => norm(l.replace(/^#+ /, '')))); }
+        // A numbered step heading ("### 6. Verify, then consolidate") is also matched without its
+        // number, so a citation can name the step by its title and survive a renumbering — a
+        // number-only `§6` is skipped below and would catch nothing.
+        try { headings.set(f, fs.readFileSync(f, 'utf8').split(/\r?\n/).filter((l) => /^#{1,6} /.test(l))
+          .map((l) => norm(l.replace(/^#+ /, '')))
+          // The trailing dot is required: "6. Verify" and "1–2. Context" are steps, "2026-09 incidents" is not.
+          .flatMap((h) => { const t = h.replace(/^\d+[a-z]?(?:[.–-]\d+)*\.\s+/, ''); return t !== h && t ? [h, t] : [h]; })); }
         catch { headings.set(f, null); }
       }
       return headings.get(f);
