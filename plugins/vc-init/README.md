@@ -43,7 +43,7 @@ What it writes into the project (all gitignored):
 | `project-profile.json` | the deployment profile (`schemaVersion` 3): tracker, code host, repos, `auth.{github,ado,jira}`, `governance` |
 | `.env.<env>` | per-env URLs and identifiers (no secret) |
 | `.env.local` | what is the same for every env — the tracker / code-host connection (`JIRA_BASE_URL`, `JIRA_PROJECT_KEY`, `JIRA_EMAIL` / `ADO_ORG`, `ADO_PROJECT`, `CLIENT_REPO_ORG`) — and the test-user passwords of the roles not kept in vc-secrets (below) |
-| `.claude/vc-secrets.local.json` | the vc-secrets declarations: one `local` secret per PAT axis (`github-pat`, `ado-pat`, `jira-token`), the bridge's `vc-init-*` tasks, the GitHub MCP server; with the passwords in vc-secrets also, per env, its password secrets, `vc-init-onboard.<env>` and the `playwright-<lane>.<env>` servers |
+| `.claude/vc-secrets.local.json` | the vc-secrets declarations: one `local` secret per PAT axis (`github-pat`, `ado-pat`, `jira-token`), the bridge's `vc-init-*` tasks, the GitHub MCP server; with the passwords in vc-secrets also, per env, its password secrets, `vc-init-onboard.<env>`, `vc-init-runner.<env>` and the `playwright-<lane>.<env>` servers |
 | `.mcp.json` + `.claude/settings.local.json` | MCP servers; the settings `env` holds `VC_RUN` and `VC_SECRETS` (paths) and no token |
 
 One more file is meant to be **committed**: `.claude/rules/vc-browser.md`, the always-loaded rule that every
@@ -66,7 +66,10 @@ storefront users (typically admins in vc-secrets, users in `.env.local`, which i
   declared vc-secrets server `playwright-<lane>.<env>`, which starts the pinned `@playwright/mcp` in-process
   (`bridge/playwright-mcp.mjs`) with the passwords as `config.secrets` — a browser agent types the NAME
   (`ADMIN_PASSWORD`), the lane types the value and masks it. The onboarding scripts that log in over the API
-  run as `vc-init-onboard.<env>`. A lane also reads the passwords of the roles kept in `.env.local` for its
+  run as `vc-init-onboard.<env>`. vc-test's `.spec` files and check scripts run as `node ${VC_RUN} runner
+  playwright <spec…>` / `runner node <script>` — the task `vc-init-runner.<env>`, which holds that env's
+  passwords and never a token, only for an env the profile's `test` block lists and only on files inside its
+  `scriptRoots` (`bridge/runner.mjs`). A lane also reads the passwords of the roles kept in `.env.local` for its
   env straight from that file, so a mixed setup needs no generated file. One declaration per env means an env whose passwords are not stored yet
   breaks only itself, and switching `TEST_ENV` asks for no new trust.
 - **`.env.local`** — `ADMIN_PASSWORD_<ENV>` …, and `sync-browser-secrets.mjs` generates
@@ -146,7 +149,7 @@ code already running as the user, which can read the credential store directly.
 |---|---|
 | `skills/project-init/` | the skill and its scripts (`SKILL.md` §Scripts lists them) |
 | `commands/project-init.md` | the `/project-init` command |
-| `bridge/` | the dispatcher, allowlist, credential helper, redactor, plugin resolver, the Playwright lane launcher (`playwright-mcp.mjs`) — and their committed tests (`node --test "plugins/vc-init/bridge/*.test.mjs"`) |
+| `bridge/` | the dispatcher, allowlist, credential helper, redactor, plugin resolver, the Playwright lane launcher (`playwright-mcp.mjs`), vc-test's script runner (`runner.mjs`) — and their committed tests (`node --test "plugins/vc-init/bridge/*.test.mjs"`) |
 | `vc-run-shim.mjs`, `scripts/install-bridge.mjs` | the stable `$VC_RUN` pointer and its installer |
 | `scripts/lib/` | vc-init's own copies of the shared libs (plugins are self-contained) |
 | `templates/.mcp.json.example` | the MCP template `gen-mcp.mjs` writes `.mcp.json` from |

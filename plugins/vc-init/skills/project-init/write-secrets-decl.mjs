@@ -18,6 +18,8 @@
  *
  *   secrets   admin-password-<env> / user-password-<env> / …   { backend: "local" }
  *   tasks     vc-init-onboard.<env>                 the onboard task plus that env's passwords (API logins)
+ *             vc-init-runner.<env>                  that env's passwords and NO token: vc-test's .spec and
+ *                                                   check scripts (bridge/runner.mjs)
  *   servers   playwright-<lane>.<env>               each Playwright lane, run in-process with that env's
  *                                                   passwords (bridge/playwright-mcp.mjs; .mcp.json says
  *                                                   `node ${VC_RUN} playwright <lane>`)
@@ -60,7 +62,7 @@ import { ensureProjectIgnores } from "./lib/gitignore.mjs";
 import { outputRoot } from "./lib/paths.mjs";
 import { GITHUB_MCP_DECL } from "./lib/github-mcp.mjs";
 import { standDownIfHostGoverned } from "./lib/governance.mjs";
-import { ENV_NAME_RE, ROLES, ROLE_PASSWORD, declaredLanes, declaredPasswords, isPasswordName, laneArgsForEnv, laneServer, onboardTask, passwordSecret, passwordSecretNames, vcSecretsRoles } from "./lib/passwords.mjs";
+import { ENV_NAME_RE, ROLES, ROLE_PASSWORD, declaredLanes, declaredPasswords, isPasswordName, laneArgsForEnv, laneServer, onboardTask, passwordSecret, passwordSecretNames, runnerTask, vcSecretsRoles } from "./lib/passwords.mjs";
 import { laneCommands, readTemplateServers } from "./lib/playwright-lanes.mjs";
 
 /**
@@ -122,6 +124,7 @@ export function buildDeclarations(existing, { pat, shim, projectId, githubServer
   const laneDefs = lanes === undefined ? declaredLanes(base) : lanes;
   for (const n of passwordSecretNames(priorPasswords)) delete secrets[n];
   for (const e of Object.keys(priorPasswords)) delete tasks[onboardTask(e)];
+  for (const name of Object.keys(tasks)) if (/^vc-init-runner\.[a-z0-9_]+$/.test(name)) delete tasks[name];
   for (const name of Object.keys(servers)) if (/^playwright-[a-z0-9]+\.[a-z0-9_]+$/.test(name)) delete servers[name];
 
   const axes = Object.keys(AXIS_SECRETS).filter((a) => pat[a]);
@@ -140,6 +143,9 @@ export function buildDeclarations(existing, { pat, shim, projectId, githubServer
     const bind = Object.fromEntries(pw[e].map((n) => [n, `secret:${passwordSecret(n, e)}`]));
     for (const n of pw[e]) secrets[passwordSecret(n, e)] = { backend: "local" };
     envTasks[onboardTask(e)] = { ...task("onboard", axes), env: { ...env(axes), ...bind } };
+    // vc-test's runner (bridge/runner.mjs): that env's passwords and no token axis, whatever axes exist.
+    // TEST_ENV is pinned, so a caller-set TEST_ENV cannot pass another env's check with these passwords.
+    envTasks[runnerTask(e)] = { ...task("runner", []), env: { ...bind, TEST_ENV: `literal:${e}` } };
     for (const lane of Object.keys(laneDefs).sort()) {
       laneServers[laneServer(lane, e)] = { command: laneDefs[lane].command, args: laneArgsForEnv(laneDefs[lane].args, e), env: { ...bind, npm_config_prefer_offline: "literal:true" } };
     }
@@ -306,7 +312,7 @@ export function writeSecretsDecl({ root, pat, shim, githubServer = GITHUB_MCP_DE
     path: out,
     projectId,
     secrets: [...Object.keys(AXIS_SECRETS).filter((a) => pat[a]).map((a) => AXIS_SECRETS[a].secret), ...passwordSecretNames(passwords)],
-    tasks: Object.keys(next.tasks || {}).filter((t) => OWNED_TASKS.includes(t) || Object.keys(passwords).some((e) => t === onboardTask(e))),
+    tasks: Object.keys(next.tasks || {}).filter((t) => OWNED_TASKS.includes(t) || Object.keys(passwords).some((e) => t === onboardTask(e) || t === runnerTask(e))),
     servers: Object.keys(next.servers || {}).filter((n) => n === "github" || /^playwright-[a-z0-9]+\./.test(n)),
     passwords,
     trustNeeded,
