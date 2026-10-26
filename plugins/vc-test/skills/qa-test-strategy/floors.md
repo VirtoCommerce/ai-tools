@@ -22,7 +22,7 @@ Source carries the token `floor:<id>`, and no risk carries two (test-model redes
 | F5 | the bundle's `known.cases_at_risk` is non-empty (`/vc-test:ticket-context` block 4 ran `regression:select` over the changed files; the strategy adds `npm run tc:scope -- --domain <slug> --observable <each observable the diff or an AC moves>` where path tokens miss — [`regression-selection.md`](../../../../.claude/knowledge/execution/regression-selection.md)) | coverage triage + a regression run over those cases, **after the staleness check below**. Under vc-test (`--change-map`) the requirement is the list, not the run: every suite at risk, their residual risk and `/qa-regression <suites>` in Out of scope, the row `SKIP` (gate 6h, vc-test U7); fired on doubt, Out of scope names the failed lookup instead of the suites |
 | F6 | a `NOT DEPLOYED:` line in the bundle's `blockers[]` — a counted PR whose build the stand does not carry. A `DEPLOYMENT UNKNOWN:` line (no live source for that layer, or not checked) does **not** fire it | **BLOCKED** before any browser opens. `UNKNOWN` is not blocked: the run proceeds and the verdict says "deployment unverified", quoting the line |
 | F7 | `Review task` — no ACs | oracles from the diff only; F5 on by default (the strategy's job: the script fires F7 but does not touch F5) |
-| F8 | the change IS the design system or the token layer (`ui-kit`, [`ui-kit-class.md`](../../../../.claude/skills/qa-test/ui-kit-class.md)) | F3 + token audit; fails closed |
+| F8 | the change IS the design system or the token layer (`ui-kit`, [`ui-kit-class.md`](../../../../.claude/skills/qa-test/ui-kit-class.md)) | F3 + token audit + a risk whose technique names `PIXEL` when the change modifies an existing ui-kit file (§VISUAL); fails closed |
 | F9 | any doubt about a floor's signal | the floor applies (every floor except F8, which fails closed; F4 and F6 read only what was read) |
 | F10 | the change surface names org context: an `organizationId`-style argument, `xapi:my_organization:*`, an org route or list, `/graphql/sales-rep` or a `sales-rep:*` permission, `loginOnBehalf` / `CanImpersonate` / `/account/impersonate` ([`2026-10-09-qa-test-model-redesign.md`](../../../../docs/superpowers/specs/2026-10-09-qa-test-model-redesign.md) §5) | an org-context risk with technique `MODEL` whose Source carries `floor:F10` |
 | F11 | the PR adds or changes a setting (a settings entry names its key — see below), a hidden-behaviour row answers `yes` for `feature-flags` / `default-values`, or the diff reads one (`ModuleConstants.Settings`, `settingsManager`, `store.settings`, `$cfg.`) (§5a) | a configuration risk with technique `MODEL` whose Source carries `floor:F11`, + the stand's values in Inputs (`npm run store:caps -- --settings` / `--store` for public settings, the admin REST API for the rest — SKILL.md step 2) |
@@ -44,7 +44,9 @@ Source carries the token `floor:<id>`, and no risk carries two (test-model redes
   missing:** a lane is missing when `capabilities.json` lists the MCP servers it was given (`mcp`) and none of them
   is one (a browser lane: a name containing `playwright`; the Visual lane: `chrome-devtools`); a script, when
   `scripts.<name>` is `false`. A
-  capability the file does not state — no `--mcp`, `{}` — is not missing. A file that is not an object exits 2.
+  capability the file does not state — no `--mcp`, `{}` — is not missing. A file that is not an object exits 2. F8's `PIXEL` risk (§VISUAL) needs
+  `capabilities.json` `pixel`: an engine and a front checkout; without them the risk stays, its Lane reads that
+  `SKIP`, and Out of scope names `PIXEL`.
 - **Never silent.** A skipped floor goes on the Floors line as `skipped: F5 (not available in this install:
   regression-select)`, and Out of scope names it with its residual risk. An unavailable row is named in Out of scope
   the same way. The gate refuses either one unnamed (clause 6s).
@@ -53,6 +55,22 @@ Source carries the token `floor:<id>`, and no risk carries two (test-model redes
   writes the `deployed.json` expect list `/vc-test:ticket-context` would read (its source, the versions each PR
   builds, is not resolved without `deploy:pr`), so every counted PR is `DEPLOYMENT UNKNOWN` and F6 does not fire —
   the run proceeds as "deployment unverified". The producer is deferred to P2.
+
+## VISUAL
+
+A `VISUAL` risk names the instrument that decides it — the whole rule is here; ai-tools' `visual-axis.md` §2a is its
+source, not a step: `PIXEL` (did anything change that should
+not have — a change that declares no visual effect or moves shared UI), `DESIGN` (matches its reference), `PROBE`
+(layout holds on hard data), `CONTENT` (the rendered text is right).
+
+- **One form:** `VISUAL:<instrument>`, several comma-separated with no `VISUAL` repeated — `VISUAL:DESIGN,PIXEL`.
+  Case does not matter. The gate reads only the technique cell's leading token list (`FLOW, DT, VISUAL:PIXEL`), so
+  prose after it ("FLOW (not VISUAL)") is no token. A bare `VISUAL` — beside a named one too, or in backticks — a name that is
+  not an instrument (`VISUAL:DESIGN+PIXEL`), and an instrument after anything but a comma (`VISUAL:DESIGN PIXEL`)
+  fail clause 4.
+- **F8 takes `PIXEL` only for an existing surface** (clause 6): a ui-kit file some counted PR modifies. A file every
+  PR that lists it adds (the bundle's `added`, from the files API) is a new surface: `PIXEL` has no base build for
+  it, so F8 asks only for the visual lane and the token audit. A PR without `added` reads as modifying.
 
 ## How `floors.mjs` reads the bundle
 

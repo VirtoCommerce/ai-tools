@@ -15,7 +15,7 @@ Storybook 9.1 is built and deployed by CI and compared with nothing.
 
 | Instrument | Question it answers | Engine | Where it is the right tool |
 |---|---|---|---|
-| `PIXEL` | Did anything change that should not have? | `scripts/visual/` — head build vs base build | ui-kit / token / global-style change, a refactor or dependency upgrade that declares *no visual change*, an upstream merge into a fork, a theme, the release regression |
+| `PIXEL` | Did anything change that should not have? | `plugins/vc-frontend/visual/` (`npm run visual:*`) — head build vs base build | ui-kit / token / global-style change, a refactor or dependency upgrade that declares *no visual change*, an upstream merge into a fork, a theme, the release regression |
 | `DESIGN` | Does it match its reference (design project, Storybook)? | `qa-design` + `claude-design-verification.md`; later the `design-review` AC catalog (Phase 4) | new UI with a design link, a customer theme |
 | `PROBE` | Does layout break on hard data? | `layout-runner` (`048c`) + `measure-layout.ts` | any rendered change; stress matrix: locale × length × width × theme |
 | `CONTENT` | Is the rendered text right? | new probes (Phase 5) | raw i18n keys, GUIDs, placeholder prices, broken images/icons |
@@ -75,11 +75,11 @@ predate it — one instrument of four.
 
 ### Phase 1 — `PIXEL` engine + skill + axis wiring (this PR)
 
-- [x] `scripts/visual/snap.ts` — Storybook and pages sources, determinism settings, `--repeat`,
+- [x] `visual:snap` (moved in Phase 2 to `plugins/vc-frontend/visual/snap.mjs`) — Storybook and pages sources, determinism settings, `--repeat`,
   HAR record/replay (`--har-url` mandatory), `--storage-state`, `--block`, `hide`/`mask`.
-- [x] `scripts/visual/diff.ts` — best-pair comparison over repeated shots; `same / changed / unstable
+- [x] `visual:diff` — best-pair comparison over repeated shots; `same / changed / unstable
   / size-changed / added / removed / unrendered`; diff PNGs; `flagged-ids.txt` for pass 2.
-- [x] `scripts/visual/affected.ts` — git diff → components + their renderers, any repo with stories.
+- [x] `visual:affected` — git diff → components + their renderers, any repo with stories.
 - [x] `.claude/skills/qa-visual-regression/` — sources, two-pass procedure, triage, checklist rows.
 - [x] `visual-axis.md` §2a — the four instruments; `PIXEL` verdict rows in §3; `ui-kit-class.md`
   takes `PIXEL`.
@@ -92,14 +92,21 @@ change, no version bump.
 
 ### Phase 2 — the checklist, the strategy, the fork flow
 
-- Visual checklist rows carry `instrument: PIXEL|DESIGN|PROBE|CONTENT` (`qa-checklist`, Artifact B),
-  generated after ticket analysis from `visual:affected`. A row with no instrument decides nothing.
-- `vc-test` strategy: `VISUAL` risks name their instrument; F8 adds `PIXEL`. Plugin change ⇒ version
-  bump + tag (`docs/release-process.md`).
-- `vc-frontend` plugin: `merge-upstream` runs `PIXEL` on the fork before vs after the merge (the fork
-  owns how it looks). Plugin change ⇒ version bump + tag.
-- `/qa-regression visual` (release): all stories + a page targets set, Coffee + Red × 375 + 1280, base
-  = the previous release tag.
+- [x] Visual checklist rows name their instrument (`[PIXEL]`, `[DESIGN]`, `[PROBE]`, `[CONTENT]`) and are derived
+  after ticket analysis — `visual-axis.md` §6.
+- [x] `vc-test` 0.4.0: a `VISUAL` risk names its instrument (`VISUAL:PIXEL|DESIGN|PROBE|CONTENT`, gate clause 4);
+  F8 requires a `VISUAL:PIXEL` risk (gate clause 6, `floors.mjs`); `/vc-test:qa-ticket` runs each `VISUAL:PIXEL`
+  risk through `qa-visual-regression`. Tag `vc-test--v0.4.0` after the merge (`docs/release-process.md` §Step 5a).
+- [x] Release visual run — `regression-selection.md` §Visual regression at a release: base = the previous
+  release tag, the whole kit, plus the key routes.
+- [x] `vc-frontend` 0.2.0: the engine ships in the plugin (`plugins/vc-frontend/visual/*.mjs`), and
+  `npm run visual:*` in ai-tools runs the same files — one engine, no second copy. `setup.mjs` installs its three
+  packages into the fork's `node_modules/.cache/` (never its `package.json`); `--with-browser` adds Chromium.
+  `merge-upstream` step 7 compares the fork before the merge (`M^1`) with the merge (`M`) on Storybook and pages
+  (`skills/merge-upstream/visual.md`): a fork component, its theme or a restyled ui-kit component that moved
+  without the brief accepting it is a regression. Verified as an installed plugin in a repository with no
+  packages: exit 2 with the setup command, setup, then the seeded badge regression found. Tag
+  `vc-frontend--v0.2.0` after the merge only if another plugin starts depending on it (none does today).
 
 ### Phase 3 — page targets for the Virto storefront (needs a reachable stand)
 

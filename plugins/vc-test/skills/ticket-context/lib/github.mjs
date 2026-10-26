@@ -223,6 +223,7 @@ export async function collectPr(gh, p, runDir, { caps = CAPS, sameKey = [], befo
     if (all.length > caps.prFiles) entry.gaps.push(gap(`pr:${p.ref}:files`, "over-cap", `${all.length}+ files; first ${caps.prFiles} read`));
     files = all.slice(0, caps.prFiles);
     entry.files_path = write("files.json", files.map((f) => ({ filename: f.filename, status: f.status, additions: f.additions, deletions: f.deletions })));
+    entry.added = files.filter((f) => f.status === "added").map((f) => f.filename); // a new surface: F8 asks no PIXEL for it (floors.mjs)
   } catch (e) { entry.gaps.push(asGap(`pr:${p.ref}:files`, e)); }
   const writeDiff = (text) => {
     const cut = cutBytes(text, caps.diffBytes);

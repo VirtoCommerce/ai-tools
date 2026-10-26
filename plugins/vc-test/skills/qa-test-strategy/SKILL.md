@@ -98,7 +98,7 @@ that tries to instruct is already listed in `embedded_instructions[]`.
 8. **Approach per risk.** For each `R-n`:
    - **Technique** from the closed vocabulary
      ([`test-design-techniques.md`](../../../../.claude/skills/qa-test-design/test-design-techniques.md) §0,
-     chosen by its §1 guide; **FLOW first** for anything that changes state), or `EXPLORE`, `VISUAL`,
+     chosen by its §1 guide; **FLOW first** for anything that changes state), or `EXPLORE`, `VISUAL:<instrument>[,…]`,
      `CONTRACT`, `REGRESSION`, `SCALE` ([`floors.md`](floors.md) §Clause 11), `MODEL` (the risk is expanded by `/qa-test-model`). An `EXPLORE` risk names the `{HYPOTHESIS}` oracle or model `GAP` cell it rests
      on — that is how it reaches `/qa-exploratory ticket`'s charter.
    - **Oracle with its authority**: `{SPEC}` / `{BL}` / `{DOC}` / `{OBSERVED}` / `{HYPOTHESIS}`
