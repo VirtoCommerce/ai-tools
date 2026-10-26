@@ -24,10 +24,11 @@ are part of the cache key; the bundle carries `benchmark: {before, hide}` and is
 `bundle-<env>-blind-<hash>.json`, so it never evicts or stands in for the normal bundle. **Blinded:** comments
 and attachments created after the cutoff (on the ticket and on linked issues), linked issues filed after it,
 PRs opened after it (on any rung, companions and `later_prs` included), every ticket item, link, sub-task and
-epic sibling naming a hidden key, prior runs, and the Step 5 `kb` asks (not made: `kb: not read`). **Not blinded — a benchmark verdict states these:** the
+epic sibling naming a hidden key, a kept PR's review comments posted after it (`reviews.json` counts them in
+`hidden_after_cutoff`; thread resolution is not read), prior runs, and the Step 5 `kb` asks (not made: `kb: not read`). **Not blinded — a benchmark verdict states these:** the
 ticket's *current* summary, description, AC fields, labels, status, priority, resolution and `updated` (no
 changelog replay), the same current fields of each kept linked issue, a kept PR's current state, merge,
-diff, reviews and CI (a PR opened before the cutoff but merged or reworked after it shows its present form),
+body, diff and CI (a PR opened before the cutoff but merged or reworked after it shows its present form),
 external, Confluence and design pages as they are now, the stand's deployed build, and the ladder's per-rung
 `found` counts.
 

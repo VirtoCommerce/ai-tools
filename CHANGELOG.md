@@ -8,6 +8,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## A blind `/vc-test:ticket-context` hides PR review comments after the cutoff — `vc-test` `0.2.1` — 2026-10-26
+
+**Fixed.** `--before` already hid ticket comments, linked issues and PRs created after the cutoff. A PR it kept
+still had its review comments read as they are today, so a benchmark run could see reviewers discussing the bugs
+it is meant to find. `collectPr` now keeps only the comments posted by the cutoff, records how many it hid in
+`reviews.json` as `hidden_after_cutoff`, and does not read thread resolution, which only exists as today's state
+(`unresolved_threads: null`). The PR body, diff and CI are still read as they are now, and the bundle still lists
+them as not blinded.
+
 ## /ticket-context and /qa-test-strategy are vc-test's — `vc-test` `0.2.0`, catalog `0.15.0` — 2026-10-26
 
 P1d-1 of the `vc-test` plan (`docs/superpowers/plans/2026-10-26-vc-test-p1d1-move.md`). Behaviour is unchanged: the
