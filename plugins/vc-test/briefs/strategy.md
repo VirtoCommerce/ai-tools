@@ -12,7 +12,8 @@ scenario cites a risk. The orchestrator asks the user; you never do. Dispatch de
 - `SCENARIOS_TABLE` — `<WORK>/scenarios.md`: the scorer's `### Scenarios` table, its Not selected and Rejected
   lists, and the generator's Gaps. `SCENARIOS` — `<WORK>/scenarios.json`, the same as data, beside the
   generator's `<WORK>/candidates.json`.
-- `RUN_DIR` — the run folder.
+- `RUN_DIR` — the run folder. `MISSION` — optional, one line: a not-fixed Bug's routing reason; it is the mission line
+  of your approval summary.
 
 ## How
 

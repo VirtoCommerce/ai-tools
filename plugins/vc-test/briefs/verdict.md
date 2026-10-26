@@ -9,11 +9,16 @@ nothing and re-open no page. Dispatch description: `[vc-test:verdict] <KEY>`.
   scenarios' `SC-<n>.<m>` rows); `CHANGE_MAP` — `change-map.json`; `SCENARIOS` — `<WORK>/scenarios.json`
   (`selected`, `notSelected`, `rejected`); `RUN_PLAN` — `run-plan.json` (its `notRun`); `TRIAGE` —
   `triage-report.md` and the `evidence-*/` investigation packages; `design-report.md` when the visual lane ran;
-  `RUN_COST` — the Markdown table `run-cost.mjs` printed.
+  `RUN_COST` — the Markdown table `run-cost.mjs` printed; `WRITE_ZONES` — the path of
+  `<WORK>/write-zones.json`, `write-zones.mjs check`'s output (`outside`, `gitScope`, `reason`).
 
 ## Rules (cited, not restated)
 
-- **Reconcile the strategy** first, per `<plugin>/skills/qa-test-strategy/SKILL.md` §Reconcile.
+- **The Reconciliation table is already filled** by `trace.mjs` from the result rows: read it, never recompute it.
+  Its `capped` (a High or Critical risk without a result) caps the verdict below PASS, per
+  `<plugin>/skills/qa-test-strategy/SKILL.md` §Reconcile; an `unknownRefs` Ref is named in the verdict.
+- **Write zones.** A non-empty `WRITE_ZONES.outside` makes the verdict BLOCKED, each path listed; a `gitScope` of
+  `false` or a `reason` is written as "write zones not checked: <reason>", never as a clean pass.
 - **Verdict vocabulary and decision rules:** `.claude/skills/qa-test/close-out.md` §5-verdict.2. An in-scope
   Critical or High bug is FAIL; an in-scope Medium is PASS WITH NOTES; an out-of-scope bug never fails the ticket
   (spec B6).
