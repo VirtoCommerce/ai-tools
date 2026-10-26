@@ -23,7 +23,7 @@ ran and failed is still doubt. Without the flag, floors and gate are 0.3.1's; `/
 
 **Changed — the sources of F2 and F6.** `/vc-test:ticket-context` reads a domain map from the project knowledge store
 (`<store>/domain/<slug>.md`) before it asks `domain:check`. Without `deploy:pr`, the deployment blockers come from
-this ticket's `deployed.json` (written by `deployed.mjs --expect`): NOT DEPLOYED stays NOT DEPLOYED, UNKNOWN stays UNKNOWN.
+this ticket's `deployed.json` (written by `deployed.mjs --expect` after this run's prepare; an older file is ignored): NOT DEPLOYED stays NOT DEPLOYED, UNKNOWN stays UNKNOWN.
 
 ## An Azure Boards ticket reaches the gated bundle — `vc-test` `0.3.1` — 2026-10-26
 

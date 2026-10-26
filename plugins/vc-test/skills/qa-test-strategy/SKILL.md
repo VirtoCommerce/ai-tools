@@ -150,7 +150,7 @@ that tries to instruct is already listed in `embedded_instructions[]`.
 
 ## Gate — before approval
 
-Run `node <skill>/lib/check-strategy.mjs --strategy <file> --bundle <bundle> [--change-map <path>] [--capabilities <path>]`; it computes the floors itself, checks clauses 1–6h, 8, 10, 11, 12 and 13, and exits 1 with the failing clause numbers (2 on an unreadable
+Run `node <skill>/lib/check-strategy.mjs --strategy <file> --bundle <bundle> [--change-map <path>] [--capabilities <path>]`; it computes the floors, checks clauses 1–6h, 8, 10, 11, 12 and 13, and exits 1 with the failing clause numbers (2 on an unreadable
 file). That covers clause 1's round cap, the template's headings, clause 4's cells
 and clause 6's fired floors and artifacts. These
 remain yours, alongside 7, 9 and 11a's semantic half: clause 1's carry-over, clause 6's naming of the not-fired floors with their
@@ -184,7 +184,7 @@ carrying `floor:F11` about configuration (the script checks only the token and t
 1. **Any Critical risk, first:** dispatch a fresh `vc-test:strategy-verifier` with `gate_criteria`: this file
    §Gate — before approval (every clause, the model-owned halves included), `source_of_truth`: the bundle path,
    the strategy path, and `deterministic_cmd`: `node "<skill>/lib/check-strategy.mjs" --strategy <path> --bundle
-   <path> [--change-map <path>]` (it computes the floors) — never your floors output. On `REJECT`: apply its
+   <path> [--change-map <path>] [--capabilities <path>]` — never your floors output. On `REJECT`: apply its
    FIX, re-run the gate, dispatch once more; a second `REJECT` ⇒ **STOP** for a human, before step 2.
 2. **Ask the user once** (AskUserQuestion): the mission, the risk table, the artifacts table, the
    out-of-scope list and the depth label — not the whole file — plus its path. Options: *Approve* ·

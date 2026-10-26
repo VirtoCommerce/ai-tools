@@ -353,7 +353,7 @@ function mergeChangeCmd() {
 
 function deploy() {
   const prep = readJson(prepPath());
-  const d = checkDeployment({ root, key: prep.ticket, prs: prep.prs, env: prep.env ?? null });
+  const d = checkDeployment({ root, key: prep.ticket, prs: prep.prs, env: prep.env ?? null, since: prep.fetched_at ?? null });
   writeJson(join(prep.run_dir, OUT_FILES.deploy), d);
   out({ status: "deploy-checked", chain_deployed: d.chain_deployed, blockers: d.blockers });
 }
@@ -443,7 +443,7 @@ function redeploy() {
   b.fields ??= { summary: "", type: null, status: null, priority: null, components: [], labels: [], fix_versions: [], description: "", acceptance: "" };
   // Script values only: compose took repo, number, state, merged and gap from prepare, never from an agent.
   const d = checkDeployment({ root, key, prs: b.change.prs.map((p) => ({ ref: `${p.repo}#${p.number}`, number: p.number, state: p.state, merged: p.merged,
-    context_only: p.context_only, gap: p.gap })), env: resolveTestEnv(root) });
+    context_only: p.context_only, gap: p.gap })), env: resolveTestEnv(root), since: b.fetched_at ?? null });
   const byRef = new Map(d.prs.map((r) => [r.ref, r]));
   for (const p of b.change.prs) {
     const r = byRef.get(`${p.repo}#${p.number}`);

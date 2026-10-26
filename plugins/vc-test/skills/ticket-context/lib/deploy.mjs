@@ -63,24 +63,27 @@ export function artifactsBySource(deployPrJson) {
 
 /** A project without deploy:pr / preflight (spec §5.3, F6): the stand read by vc-test's deployed.mjs, when the run
  *  wrote one for this ticket and env (<outputRoot>/.vc-fix/vc-test/<KEY>/<env>/deployed.json, as workDir names it).
- *  Only its `expected[]` verdicts count; UNKNOWN never reads as NOT DEPLOYED. */
-export function deployedJsonBlockers(root, key, env) {
+ *  Only its `expect` verdicts (compareExpected's rows) count, and only from a file written after this run's prepare
+ *  (`since`, prepare's fetched_at): an earlier round's file describes another build. UNKNOWN never reads as NOT DEPLOYED. */
+export function deployedJsonBlockers(root, key, env, since = null) {
   if (!env) return null;
   let d;
   try { d = JSON.parse(readFileSync(join(root, ".vc-fix", "vc-test", String(key), String(env), "deployed.json"), "utf8")); } catch { return null; }
-  if (!Array.isArray(d?.expected)) return null;
-  return d.expected.filter((e) => e?.verdict === "NOT DEPLOYED" || e?.verdict === "UNKNOWN").map((e) =>
+  const rows = d?.expect;
+  if (!Array.isArray(rows)) return null;
+  if (since && !(Date.parse(d.at) >= Date.parse(since))) return null;
+  return rows.filter((e) => e?.verdict === "NOT DEPLOYED" || e?.verdict === "UNKNOWN").map((e) =>
     `${e.verdict === "NOT DEPLOYED" ? "NOT DEPLOYED" : "DEPLOYMENT UNKNOWN"}: ${e.id} — expected ${e.expected}, live ${e.live ?? "unknown"} (deployed.json)`);
 }
 
-export function checkDeployment({ root, key, prs, run = runNpmJson, env = null }) {
+export function checkDeployment({ root, key, prs, run = runNpmJson, env = null, since = null }) {
   const gaps = [];
   const counted = prs.filter(isCounted);
   const closed = prs.filter((p) => !p.context_only && closedUnmerged(p))
     .map((p) => ({ ref: p.ref, artifact: null, deployed: "UNKNOWN", deployed_reason: "closed without merge" }));
   const canResolve = hasScript(root, "deploy:pr");
   const canAsk = hasScript(root, "preflight");
-  const standLines = !canResolve || !canAsk ? deployedJsonBlockers(root, key, env) : null;
+  const standLines = !canResolve || !canAsk ? deployedJsonBlockers(root, key, env, since) : null;
   if (counted.length && (!canResolve || !canAsk)) {
     gaps.push({ where: "change.deployed", reason: "not-available-in-install", detail: `needs npm scripts: ${[!canResolve && "deploy:pr", !canAsk && "preflight"].filter(Boolean).join(", ")}`
       + (standLines ? "; PR artifacts not resolved; the stand was read by deployed.mjs" : "") });

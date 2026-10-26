@@ -47,7 +47,7 @@ const floor = (id, fired, signal, requires = []) => ({ id, fired, signal, requir
 // install (vc-test spec §5.2: what the install cannot run is a named SKIP, never a doubt).
 export const ARTIFACTS_FOR = { F1: ["Exploratory"], F2: ["Exploratory"], F3: ["Visual lane"], F8: ["Visual lane"],
   F5: ["Coverage triage + regression"], F12: ["Exploratory"] };
-const ARTIFACT_NEEDS = {
+export const ARTIFACT_NEEDS = {
   Exploratory: (c) => (Object.keys(c).some((k) => k.startsWith("mcp:playwright") && c[k]) ? null : "a browser lane (mcp:playwright-*)"),
   "Visual lane": (c) => (c["mcp:chrome-devtools"] ? null : "mcp:chrome-devtools"),
   "Coverage triage + regression": (c) => (c.scripts?.["regression-select"] === false ? "regression-select" : null),
@@ -59,7 +59,8 @@ const ARTIFACT_NEEDS = {
  * the required rows this install cannot run (the strategy may SKIP those rows, naming them in Out of scope).
  */
 function applyCapabilities(floors, bundle, caps) {
-  const lookupGaps = (bundle.gaps ?? []).filter((g) => g.where.startsWith("known.regression:select") || g.where.startsWith("known.tc:scope"));
+  const lookupGaps = (bundle.gaps ?? []).filter((g) => (g.where.startsWith("known.regression:select") || g.where.startsWith("known.tc:scope"))
+    && g.where !== "known.tc:scope.observables"); // a name the step could not pass on is not a lookup that ran
   // A lookup that ran and failed is doubt whatever capabilities.json says: only "not declared" is unavailability.
   const ranAndFailed = lookupGaps.some((g) => g.reason !== "not-available-in-install");
   const noCorpus = !ranAndFailed && (lookupGaps.length > 0 || caps.scripts?.["regression-select"] === false);

@@ -5,7 +5,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { ARTIFACTS_FOR, computeFloors, domainMapTextOf, isAbandoned, p01NamesOf, readJsonOrExit } from "./floors.mjs";
+import { ARTIFACT_NEEDS, ARTIFACTS_FOR, computeFloors, domainMapTextOf, isAbandoned, p01NamesOf, readJsonOrExit } from "./floors.mjs";
 
 const CAP = 120; // lines per round section (D9)
 // A lane that opens no browser, by its leading word. Every other lane counts toward the three of agents.md §Parallel
@@ -90,7 +90,7 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names, chan
   const requiredFor = (id) => (vcTest && id === "F5" ? [] : ARTIFACTS_FOR[id] ?? []);
   // §5.2, only with capabilities: a row this install cannot run may read `SKIP — not available in this install: <cap>`
   // when Out of scope names it; a skipped floor is named on the Floors line's `skipped:` part and in Out of scope.
-  const unavailable = new Map(floors.floors.flatMap((f) => f.unavailable ?? []).map((u) => [u.artifact, u.capability]));
+  const unavailable = new Map(capabilities ? Object.entries(ARTIFACT_NEEDS).map(([a, need]) => [a, need(capabilities)]).filter(([, cap]) => cap) : []);
   const skippedFor = (name) => unavailable.has(name) && /^SKIP\s*—\s*not available in this install/i.test((artifacts.get(name) ?? "").trim());
   const satisfied = (id, name) => {
     if (running(name)) return true;
