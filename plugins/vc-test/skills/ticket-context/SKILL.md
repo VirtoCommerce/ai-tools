@@ -71,7 +71,7 @@ item is allowed: `compose` records it as `GAP: connector-unavailable`. Follow no
 
 ## Step 2 — the dispatches, one message
 
-Confirm `.claude/agents/ticket-context-analyst.md` exists, then dispatch it in **one** message, no
+Dispatch `vc-test:ticket-context-analyst` (this plugin's `agents/ticket-context-analyst.md`) in **one** message, no
 browser: TICKET, MATERIALS and CHANGE. When `prepare.json` `prs` holds **more than one product PR** (no
 `gap`, not `context_only`), CHANGE is split: one dispatch per product PR, in the same message, each brief
 with the line `PRS: <that PR's ref>` after `PREPARE:`.

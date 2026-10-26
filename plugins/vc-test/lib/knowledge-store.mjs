@@ -9,7 +9,7 @@ import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { currentEnv } from "./paths.mjs";
-import { MIN_SECRET_LENGTH, SECRET_NAME, TOKEN_SHAPES, loadSecretValues, looksLikePath, secretValuesFrom } from "./scrub.mjs";
+import { MIN_SECRET_LENGTH, SECRET_NAME, TOKEN_SHAPES, loadSecretValues, looksLikePath, secretValuesFrom } from "../skills/ticket-context/lib/scrub.mjs";
 import { envFolders, readEnvFile } from "../scripts/lib/env-layers.mjs";
 
 /** What the stores hold, in the formats §6 names. `<slug>` is the caller's; everything else is fixed here. */
