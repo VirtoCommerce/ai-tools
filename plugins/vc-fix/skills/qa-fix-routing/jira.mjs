@@ -35,8 +35,9 @@
  *   comments       --key ABC-1 [--rendered] [--max 500] [--newest]   # every page, one launch → { total, comments, truncated }
  *   download       --attachment 10050 --out .vc-fix/… [--max-bytes 26214400]   # → { path, bytes, contentType }
  *   dev-prs        --key ABC-1                               # the development panel's PR URLs → { issueId, urls }
+ *   confluence-page --id 123456                              # a Confluence page on the same host, storage body
  *
- * The reads (comments, download, dev-prs) print Jira's own objects unshaped — a caller (vc-test's
+ * The reads (comments, download, dev-prs, confluence-page) print Jira's own objects unshaped — a caller (vc-test's
  * connector) builds its raw files from them. `download` writes only inside <outputRoot>/.vc-fix/ and stops
  * at --max-bytes (raw-out.mjs): this process holds a token and its command line is the caller's.
  *
@@ -119,6 +120,11 @@ export function pinnedOrigin(profile) {
 export function safePath(path) {
   const p = String(path || "");
   return p.startsWith("/rest/") && !p.includes("://") && !p.includes("\\") && !/(^|\/)\.\.(\/|$)/.test(p) && !/[\r\n]/.test(p);
+}
+
+/** The one Confluence path this CLI may send: a page by numeric id, storage body. Pure. */
+export function safeWikiPath(path) {
+  return /^\/wiki\/api\/v2\/pages\/\d{1,20}(\?body-format=storage)?$/.test(String(path || ""));
 }
 
 /** Plain text → a minimal ADF document (one paragraph per blank-line-separated block). Pure. */
@@ -216,8 +222,8 @@ function main() {
   if (!email) fail("no JIRA_EMAIL — set it in .env.local (an identifier, not a secret — the same for every env)");
   const auth = `Basic ${Buffer.from(`${email}:${token}`).toString("base64")}`;
 
-  const call = async (method, path, { body, headers = {}, raw = false, redirect = "follow", timeout = FETCH_TIMEOUT_MS } = {}) => {
-    if (!safePath(path)) fail(`refusing path ${JSON.stringify(path)} — only /rest/… on ${pin.origin}`);
+  const call = async (method, path, { body, headers = {}, raw = false, redirect = "follow", timeout = FETCH_TIMEOUT_MS, wiki = false } = {}) => {
+    if (wiki ? method !== "GET" || !safeWikiPath(path) : !safePath(path)) fail(`refusing path ${JSON.stringify(path)} — only /rest/… on ${pin.origin}`);
     const res = await timedFetch(`${pin.origin}${path}`, {
       method,
       redirect,
@@ -333,6 +339,11 @@ function main() {
     "dev-prs": async () => {
       const issue = await call("GET", `/rest/api/3/issue/${key()}?fields=id`);
       return { issueId: String(issue.id), urls: await devPrUrls((path) => call("GET", path), issue.id) };
+    },
+    "confluence-page": () => {
+      const id = String(args.id ?? "");
+      if (!/^\d{1,20}$/.test(id)) fail(`refusing --id ${JSON.stringify(id)} — a Confluence page id is digits only`);
+      return call("GET", `/wiki/api/v2/pages/${id}?body-format=storage`, { wiki: true });
     },
     request: () => {
       const method = String(args.method || "GET").toUpperCase();
