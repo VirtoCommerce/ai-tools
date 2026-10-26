@@ -6,7 +6,7 @@
 import { spawnSync } from "node:child_process";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { bridgeRun } from "../bridge.mjs";
+import { HostGoverned, bridgeRun } from "../bridge.mjs";
 import { CAPS } from "../fetch.mjs";
 import { GapError, gap } from "../gap.mjs";
 import { checkNumber, checkRepo } from "../github.mjs";
@@ -15,16 +15,7 @@ import { cacheDir, outputRoot } from "../paths.mjs";
 const PR_URL_RE = /^https:\/\/(?:dev\.azure\.com\/[^/]+|[^./]+\.visualstudio\.com)\/([^/?#]+)\/_git\/([^/?#]+)\/pullrequest\/(\d+)/i;
 const strip = (p) => String(p ?? "").replace(/^\/+/, "");
 const READ_FILES = 4; // files whose two sides are read at once: up to 8 bridge launches in flight
-
-/** `fn` over `list`, at most `limit` at a time; results in `list` order. */
-async function mapLimit(list, limit, fn) {
-  const out = new Array(list.length);
-  let next = 0;
-  await Promise.all(Array.from({ length: Math.min(limit, list.length) }, async () => {
-    while (next < list.length) { const i = next++; out[i] = await fn(list[i]); }
-  }));
-  return out;
-}
+const FATAL = new Set(["access-denied", "no-credential"]); // every other file would be refused the same way
 
 /** A pull-request URL a ticket names (`…/<project>/_git/<repo>/pullrequest/<n>`) as a ref, or null — also null when a
  *  name fails the ref check that keeps names safe in paths and file names. */
@@ -96,31 +87,47 @@ export function azureReposConnector({ key, run = bridgeRun, git = spawnSync, roo
       const dir = join(cacheDir(key, root), `az-diff-${process.pid}-${Date.now()}`);
       const noPatch = [];
       const out = [];
+      let bytes = 0;
+      let unread = 0;
       // `originalPath` is a renamed file's path before the rename; `item.path` is its path now.
       const files = changes.slice(0, CAPS.prFiles).map((c) => ({ path: strip(c.item?.path), old: strip(c.originalPath ?? c.item?.path), st: status(c.changeType) }));
-      // Both sides of a file are one launch each, so the reads run READ_FILES files at a time; null = not read.
-      const sides = await mapLimit(files, READ_FILES, ({ path, old, st }) => Promise.all([
+      // Both sides of a file are one launch each; null = this file not read. A refusal stops the whole diff.
+      const read = ({ path, old, st }) => Promise.all([
         st === "added" ? "" : run("ado", ["get-file", "--repo", r, "--path", old, "--commit", base], { as: "text" }),
         st === "removed" ? "" : run("ado", ["get-file", "--repo", r, "--path", path, "--commit", head], { as: "text" }),
-      ]).catch(() => null));
+      ]).catch((e) => { if (e instanceof HostGoverned || FATAL.has(e?.reason)) throw e; return null; });
       try {
-        for (const [i, { path, old, st }] of files.entries()) {
-          if (!sides[i]) { noPatch.push(path); continue; }
-          const [a, b] = sides[i];
-          if (a.includes("\0") || b.includes("\0")) { noPatch.push(path); continue; }
-          const [aRel, bRel] = [`a/${st === "added" ? path : old}`, `b/${st === "removed" ? old : path}`];
-          for (const [rel, text] of [[aRel, a], [bRel, b]]) { mkdirSync(dirname(join(dir, rel)), { recursive: true }); writeFileSync(join(dir, rel), text); }
-          const d = git("git", ["-c", "core.autocrlf=false", "diff", "--no-index", "--no-color", "--text", "--no-prefix", "--", aRel, bRel], { cwd: dir, encoding: "utf8", maxBuffer: 64 * 2 ** 20 });
-          if (d.status === 0) continue; // identical content: nothing to show
-          if (d.status !== 1) { noPatch.push(path); continue; }
-          let text = d.stdout;
-          if (st === "added") text = text.replace(`--- ${aRel}`, "--- /dev/null");
-          if (st === "removed") text = text.replace(`+++ ${bRel}`, "+++ /dev/null");
-          out.push(text);
+        // READ_FILES files at a time, and none once the diff is past what collectPr keeps (CAPS.diffBytes).
+        for (let i = 0; i < files.length; i += READ_FILES) {
+          if (bytes > CAPS.diffBytes) { unread = files.length - i; break; }
+          const batch = files.slice(i, i + READ_FILES);
+          const sides = await Promise.all(batch.map(read));
+          for (const [j, { path, old, st }] of batch.entries()) {
+            if (!sides[j]) { noPatch.push(path); continue; }
+            const [a, b] = sides[j];
+            if (a.includes("\0") || b.includes("\0")) { noPatch.push(path); continue; }
+            const [aRel, bRel] = [`a/${st === "added" ? path : old}`, `b/${st === "removed" ? old : path}`];
+            let d;
+            try {
+              for (const [rel, text] of [[aRel, a], [bRel, b]]) { mkdirSync(dirname(join(dir, rel)), { recursive: true }); writeFileSync(join(dir, rel), text); }
+              d = git("git", ["-c", "core.autocrlf=false", "diff", "--no-index", "--no-color", "--text", "--no-prefix", "--", aRel, bRel], { cwd: dir, encoding: "utf8", maxBuffer: 64 * 2 ** 20 });
+            } catch { noPatch.push(path); continue; } // a path this disk cannot hold: a reserved name, too long
+            if (d.error?.code === "ENOENT") throw new GapError("tool-missing", "git is not on PATH: the Azure Repos diff is built with git diff --no-index");
+            if (d.status === 0) continue; // identical content: nothing to show
+            if (d.status !== 1) { noPatch.push(path); continue; }
+            let text = d.stdout;
+            if (st === "added") text = text.replace(`--- ${aRel}`, "--- /dev/null");
+            if (st === "removed") text = text.replace(`+++ ${bRel}`, "+++ /dev/null");
+            out.push(text);
+            bytes += Buffer.byteLength(text);
+          }
         }
       } finally { rmSync(dir, { recursive: true, force: true }); }
-      if (noPatch.length) diffGaps.set(`${r}#${n}`, [gap(`pr:${o}/${r}#${n}:patches`, "unreadable",
-        `no patch (binary or unreadable) for ${noPatch.length} file(s): ${noPatch.slice(0, 20).join(", ")}${noPatch.length > 20 ? ", …" : ""}`)]);
+      const gaps = [];
+      if (noPatch.length) gaps.push(gap(`pr:${o}/${r}#${n}:patches`, "unreadable",
+        `no patch (binary or unreadable) for ${noPatch.length} file(s): ${noPatch.slice(0, 20).join(", ")}${noPatch.length > 20 ? ", …" : ""}`));
+      if (unread) gaps.push(gap(`pr:${o}/${r}#${n}:diff-files`, "over-cap", `the diff passed ${CAPS.diffBytes} bytes; ${unread} of ${files.length} file(s) not read`));
+      diffGaps.set(`${r}#${n}`, gaps);
       return out.join("");
     },
     /** The gaps the last diff of this PR left (files it could not show), for prepare to add to the PR's entry. */

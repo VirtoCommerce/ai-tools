@@ -43,10 +43,14 @@ function firstLine(stderr) {
   return line.slice(0, 200);
 }
 
+/** A tool's `HTTP 400 for POST /path: <response body>` keeps its status and path, never the body: the tracker's own
+ *  error text can quote the ticket. */
+const noBody = (line) => line.replace(/^(.*?\bHTTP \d{3}\b[^:]*?):\s.*$/, "$1");
+
 /** The one mapping from a failed launch to a gap. Pure. */
 export function bridgeGap(tool, { code, stderr = "", timedOut = false, ms = CAPS.fetchTimeoutMs }) {
   const all = String(stderr);
-  const line = firstLine(all);
+  const line = noBody(firstLine(all));
   const status = Number(/\bHTTP (\d{3})\b/.exec(all)?.[1]) || null;
   const with_ = (g, extra) => Object.assign(g, extra);
   if (timedOut) return new GapError("unreadable", `${tool} timed out after ${Math.round(ms / 1000)} s`);
@@ -61,14 +65,23 @@ export function bridgeGap(tool, { code, stderr = "", timedOut = false, ms = CAPS
   return new GapError("unreadable", `${tool} failed: ${line}`);
 }
 
+/** The bridge and the token-holding tool it starts. On Windows killing the bridge is enough: Node puts its children
+ *  in a kill-on-close job, so the tool dies with it (measured). Elsewhere the tool would run on to its own fetch
+ *  timeout, so the bridge's process group is signalled. */
+function killTree(child) {
+  if (process.platform === "win32" || !child.pid) { child.kill(); return; }
+  try { process.kill(-child.pid, "SIGKILL"); } catch { child.kill(); }
+}
+
 /** Starts `node <VC_RUN> <tool> …args` with no shell; kills it at `ms + graceMs`. Resolves {code, stdout, stderr, timedOut}. */
 function spawnRun(vcRunPath, tool, args, { ms, graceMs, env }) {
   return new Promise((done) => {
-    const child = spawn(process.execPath, [vcRunPath, tool, ...args], { shell: false, stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, ...env }, windowsHide: true });
+    const child = spawn(process.execPath, [vcRunPath, tool, ...args], { shell: false, stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, ...env }, windowsHide: true,
+      detached: process.platform !== "win32" }); // its own process group, so killTree reaches the tool too
     const out = [];
     const err = [];
     let timedOut = false;
-    const timer = setTimeout(() => { timedOut = true; child.kill(); }, ms + graceMs);
+    const timer = setTimeout(() => { timedOut = true; killTree(child); }, ms + graceMs);
     child.stdout.on("data", (b) => out.push(b));
     child.stderr.on("data", (b) => err.push(b));
     const finish = (code) => { clearTimeout(timer); done({ code, stdout: Buffer.concat(out).toString("utf8"), stderr: Buffer.concat(err).toString("utf8"), timedOut }); };
