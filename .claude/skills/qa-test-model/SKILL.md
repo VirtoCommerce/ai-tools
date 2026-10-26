@@ -1,6 +1,6 @@
 ---
 name: qa-test-model
-description: "[QA Method] Use when a ticket needs a TEST MODEL (the fault model: value chain, mechanism matrix, scenario table) — /qa-test FULL Step 1e, /qa-test-fast Stage 1 (with --strategy: only the approved strategy's MODEL risks), or before /qa-checklist --from-model. Builds or amends reports/ba/test-models/<TICKET>-<date>.md. Not for test cases (/qa-test-cases-generator) or a domain's behaviour graph (/qa-test-mind-map)."
+description: "[QA Method] Use when a ticket needs a TEST MODEL (the fault model: value chain, mechanism matrix, scenario table) — /qa-test FULL Step 1e, /qa-test-fast Stage 1 (with --strategy: only the approved strategy's MODEL risks), or before /qa-checklist --from-model. Builds or amends {RUN_DIR}/test-model.md (the ticket's run folder). Not for test cases (/qa-test-cases-generator) or a domain's behaviour graph (/qa-test-mind-map)."
 argument-hint: "<TICKET> [--context <file>] [--strategy <test-strategy.md>]"
 ---
 
@@ -21,7 +21,7 @@ oracle clause depends on, and the observed-behaviour steps.
 
 | | **Strategy mode** — `--strategy <path>` | **Ticket mode** — no strategy |
 |---|---|---|
-| Caller | `/qa-test-fast` Stage 1, after `/qa-test-strategy` approved a round whose `Test model` row is `RUN` | `/qa-test` FULL `1e`, a standalone call |
+| Caller | `/qa-test-fast` Stage 1, after `/vc-test:qa-test-strategy` approved a round whose `Test model` row is `RUN` | `/qa-test` FULL `1e`, a standalone call |
 | Scope | **only** the strategy's risks with technique `MODEL` — chain, matrix and scenarios for those | the whole ticket |
 | Gate · shape · cap | [`test-model.md`](test-model.md) §Strategy mode — its gate, the org-context and configuration groups; the strategy-mode cap in `reports-policy.md` §2 | §The gate; the ticket-mode cap there |
 | Rounds | the strategy's round number; no `## Round N` rules of its own | §One ticket, one model file |
@@ -34,7 +34,7 @@ strategy (design: `docs/superpowers/specs/2026-10-09-qa-test-model-redesign.md` 
 ## Inputs — the context bundle
 
 `--context <file>` is the bundle a caller already gathered — `/qa-test` FULL passes `1a` + `1c` + `1d`,
-`/qa-test-fast` its run context, which names the `/ticket-context` bundle. A caller that already ran
+`/qa-test-fast` its run context, which names the `/vc-test:ticket-context` bundle. A caller that already ran
 step 2 or 3 passes their result in that file.
 Without it, gather each part yourself; a part that cannot be obtained is a **recorded gap in the
 model's header**, never a guess.
@@ -51,14 +51,15 @@ model's header**, never a guess.
 1. **Find the prior model first.** In strategy mode the strategy's `Artifacts` row already decides `new`
    or `amend <path>` — an amendment is a section headed with the strategy's round — and only the third
    bullet below still applies: a new model carries Part 0 forward from another ticket's model of the same
-   surface. In ticket mode, `ls reports/ba/test-models/<TICKET>-*` and, for the surface,
-   the models the domain map or the bundle names. Then exactly one of these applies
+   surface. In ticket mode, the ticket's `test-model.md` in `{RUN_DIR}` or in a prior run folder
+   `run:use` listed (an amendment copies it into `{RUN_DIR}` first), else the older
+   `reports/ba/test-models/<TICKET>-*`; for the surface, the models the domain map or the bundle names. Then exactly one of these applies
    ([`test-model.md`](test-model.md) §Why it is a durable file):
    - **same ticket, and the diff moved since the model was written** (a fix, new commits) → amend that
      file with a `## Round N` section (§One ticket, one model file). Never a second dated file for one ticket.
    - **same ticket, same diff** → reuse the model and run step 6 against it. A failing clause is a
      `## Round N — correction` (§One ticket, one model file — the unchanged-diff case).
-   - **another ticket, same surface** → a new `<TICKET>-<date>.md` whose `Prior model:` names the
+   - **another ticket, same surface** → a new `{RUN_DIR}/test-model.md` whose `Prior model:` names the
      predecessor and **carries Part 0 forward**; corrections are drift against it, never a re-derivation.
 2. **Resolve the domain map and mind map.** Slug: `npm run bl:extract -- --has-domain <slug>`, then
    `npm run domain:check`. Record the state (`PRESENT` / `STALE` / `ABSENT` / `unresolved`) exactly as
@@ -76,8 +77,9 @@ model's header**, never a guess.
    ids; a miss is not a blocker. VirtoOZ (`/vc-docs`) before any claim about what the platform is
    supposed to do — released vs new decides the source. Rule: [`../../../CLAUDE.md`](../../../CLAUDE.md)
    §Essential Rules → *Product context*.
-5. **Write the model** to `reports/ba/test-models/<TICKET>-<date>.md` in the template's shape, Part 0
-   first, per the method file.
+5. **Write the model** to `{RUN_DIR}/test-model.md` in the template's shape, Part 0 first, per the method
+   file. Standalone, `npm run run:use -- <TICKET>` binds the run folder first
+   ([`run-output.md`](../../knowledge/execution/run-output.md)).
 6. **Run the gate** — every clause of the mode's gate ([`test-model.md`](test-model.md) §Strategy mode or §The gate), inline,
    against the written file. A failing clause is fixed in the file, then re-checked; it is never waived
    in the output. No verifier dispatch — the gate is the doer's own completeness check on every path.

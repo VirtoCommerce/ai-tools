@@ -47,8 +47,9 @@ test("outer: a PAT axis goes through `vc-secrets task vc-init-<group>` with the 
 
 test("outer: a PAT axis with vc-secrets missing stops with the install instruction", () => {
   const dir = project({ tasks: { [taskName("ado")]: { command: "node" } } });
-  // HOME is the temp project, so the default shim path the bridge falls back to holds nothing.
-  const r = bridge(["ado", "whoami"], { cwd: dir, env: { HOME: dir } });
+  // HOME is an empty temp dir, so the default shim path the bridge falls back to holds nothing. Not the
+  // project itself: HOME/.claude is the user scope, which findDeclarations skips, as vc-secrets does.
+  const r = bridge(["ado", "whoami"], { cwd: dir, env: { HOME: mkdtempSync(join(tmpdir(), "vc-run-home-")) } });
   assert.equal(r.status, 69);
   assert.match(r.stderr, /project-init --check/);
 });
@@ -156,6 +157,17 @@ test("declarations: the nearest .claude/vc-secrets*.json up the tree decides the
   assert.equal(taskDeclared(null, "github"), false);
 });
 
+test("declarations: ~/.claude is the user scope, never a project, as in vc-secrets", () => {
+  const home = project({ tasks: { [taskName("github")]: {} } });
+  const below = join(home, "work", "undeclared");
+  mkdirSync(below, { recursive: true });
+  // Not `null`: on Windows os.tmpdir() sits inside the real profile, so the climb may still reach a
+  // developer's own ~/.claude, which this fake HOME does not name. What matters is that HOME is not it.
+  assert.notEqual(findDeclarations(below, { HOME: home })?.root, home);
+  // The same tree under another HOME is an ordinary declared project.
+  assert.equal(findDeclarations(below, { HOME: project(null) }).root, home);
+});
+
 test("runChild: a child that prints its secret has it masked on both streams", async () => {
   const script = `process.stdout.write("out:" + process.env.T + "\\n"); process.stderr.write("err:" + Buffer.from(":" + process.env.T).toString("base64") + "\\n"); process.exit(3);`;
   const child = spawnSync(process.execPath, ["--input-type=module", "-e", `
@@ -172,7 +184,7 @@ test("runChild: a child that prints its secret has it masked on both streams", a
 });
 
 // ─── host-governed projects (VCST-6402 step 8) ──────────────────────────────────────────────────
-const HOST_GOV = { host: "opus-governance", secrets: "host", servers: { tracker: "azure-mcp-work", codeHost: "azure-mcp-dev", github: "github" } };
+const HOST_GOV = { host: "client-governance@client-tools", secrets: "host", servers: { tracker: "tracker-work", codeHost: "tracker-dev", github: "github" } };
 
 function governedProject(extra = {}) {
   const dir = project({ tasks: { [taskName("github")]: { command: "node" }, [taskName("ado")]: { command: "node" } } });
@@ -187,9 +199,9 @@ test("host-governed: EVERY token-bearing tool is refused before vc-secrets is to
   const cases = [
     [["gh", "pr", "list"], /github MCP server/],
     [["git-gh", "ls-remote", "https://github.com/a/b"], /github MCP server/],
-    [["git-ado", "ls-remote", "https://dev.azure.com/o/p/_git/r"], /azure-mcp-dev MCP server/],
-    [["ado", "whoami"], /azure-mcp-work MCP server/],
-    [["jira", "myself"], /azure-mcp-work MCP server/],
+    [["git-ado", "ls-remote", "https://dev.azure.com/o/p/_git/r"], /tracker-dev MCP server/],
+    [["ado", "whoami"], /tracker-work MCP server/],
+    [["jira", "myself"], /tracker-work MCP server/],
     [["deliver", "--json"], /github MCP server/],
     [["onboard", "verify-access"], /MCP server/],
   ];
@@ -198,7 +210,7 @@ test("host-governed: EVERY token-bearing tool is refused before vc-secrets is to
     assert.equal(r.status, 78, `${argv.join(" ")}: ${r.stderr}`);
     assert.match(r.stderr, /host-governed project/);
     assert.match(r.stderr, re);
-    assert.match(r.stderr, /opus-governance/);
+    assert.match(r.stderr, /client-governance/);
   }
   assert.equal(existsSync(fake + ".ran"), false, "vc-secrets must never be launched on a host-governed project");
 });
@@ -214,9 +226,9 @@ test("host-governed: the profile is found from a nested directory; no governance
   const dir = governedProject();
   const nested = join(dir, ".fix-workspace", "repo");
   mkdirSync(nested, { recursive: true });
-  assert.equal(findGovernance(nested).host, "opus-governance");
+  assert.equal(findGovernance(nested).host, "client-governance@client-tools");
   assert.equal(hostRefusal("gh", null), null);
   assert.equal(hostRefusal("gh", { host: null, secrets: "vc-secrets" }), null);
-  assert.match(hostRefusal("ado", HOST_GOV), /azure-mcp-work/);
-  assert.match(hostRefusal("git-ado", HOST_GOV), /azure-mcp-dev/);
+  assert.match(hostRefusal("ado", HOST_GOV), /tracker-work/);
+  assert.match(hostRefusal("git-ado", HOST_GOV), /tracker-dev/);
 });

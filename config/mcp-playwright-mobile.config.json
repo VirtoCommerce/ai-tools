@@ -24,6 +24,5 @@
       ]
     }
   },
-  "outputDir": "./test-results/mobile",
-  "screenshot": "only-on-failure"
+  "outputDir": "./test-results/mobile"
 }

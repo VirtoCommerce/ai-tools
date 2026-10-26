@@ -93,7 +93,7 @@ sequenceDiagram
             Orch->>BA2: Review ACs vs PR diff (no writes)
             BA2-->>Orch: AC scorecard, gap-ACs, AC-vs-impl
         end
-        Orch->>Orch: 1e · Build TEST MODEL — REQUIRED, written to reports/ba/test-models/
+        Orch->>Orch: 1e · Build TEST MODEL — REQUIRED, written to {RUN_DIR}/test-model.md
         note over Orch: Gate 1 = inline self-check (no verifier dispatch)
         note over Orch: Step 2 · enrich the model (BL, ECL, E2E, VC-* probes, archetype + UIP sweeps)
     else FAST path
@@ -111,7 +111,7 @@ sequenceDiagram
     else FAST path
         note over Orch,TMS: NO Artifact A — a FAST run authors no cases
     end
-    TMS->>TMS: Checklist (B) → reports/tickets/{SPRINT}/<TICKET>/testing-checklist.md; regression scope (C)
+    TMS->>TMS: Checklist (B) → {RUN_DIR}/testing-checklist.md; regression scope (C)
     opt Cases/checklist need un-fixtured data
         TMS->>TDE: generate + seed data
         TDE-->>TMS: seeded, green td:validate

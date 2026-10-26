@@ -1,0 +1,246 @@
+{
+  "ticket": "VCST-6260",
+  "ticket_type": "Story",
+  "flow": "feature-test",
+  "tracker": {
+    "kind": "jira",
+    "comment_id": "112269"
+  },
+  "path": "full",
+  "path_route": {
+    "decided_at": "1a",
+    "provisional": false,
+    "narrow_story_tokens": null,
+    "escalated_reason": null,
+    "basis": "Story, priority Highest (P0) -> FULL per ticket-routing.md §5. Operator chose FULL over the reporter's 'fast smoke' comment; a FAST round 1 ran first at the operator's request.",
+    "rounds": [
+      {
+        "round": 1,
+        "path": "fast",
+        "window": "2026-10-21T13:05:39Z/13:19:25Z",
+        "reason": "operator: quick smoke + comment first"
+      },
+      {
+        "round": 2,
+        "path": "full",
+        "window": "2026-10-21T14:35:15Z/15:45:00Z"
+      }
+    ],
+    "verdict_derivation": {
+      "derived": "FAIL",
+      "final": "PASS WITH NOTES",
+      "by": "operator decision 2026-10-21",
+      "reason": "Derived FAIL rested on BL-UI-007 (Collapse button focus/state) and BL-UI-004 on phone (KPI tiles, QA pill over search). Operator ruled the remaining findings not bugs; the two layout issues the operator raised were fixed in the PR itself (efd7f75, 375d141). B-1 (search stale 'Nothing found') withdrawn: Playwright fill() artifact, real paste works; phone drawer Esc/focus withdrawn: not a bug."
+    },
+    "test_model": "reports/ba/test-models/VCST-6260-2026-10-21.md"
+  },
+  "layer": "cross-layer",
+  "release": {
+    "layers": [
+      "admin-spa",
+      "api"
+    ]
+  },
+  "shape_class": {
+    "value": null,
+    "sources": [
+      "diff: AngularJS shell templates/js + sass + SettingsV2Controller; no ui-kit/token-layer package"
+    ]
+  },
+  "domain_map": {
+    "state": "ABSENT",
+    "path": null,
+    "mind_map": null,
+    "recommended": true,
+    "all_layer_chain": false,
+    "all_layer_confirmed_at": "1e-confirmed",
+    "build_outcome": null,
+    "unmapped_surfaces": [
+      "admin shell chrome + MainMenu.State",
+      "global search + providers",
+      "book-mode responsive blades",
+      "dashboard/widget container",
+      "look/theme system",
+      "Settings v2 REST",
+      "admin localization + shell extension APIs"
+    ]
+  },
+  "verdict": "PASS_WITH_NOTES",
+  "date": "2026-10-21",
+  "timing": {
+    "started_at": "2026-10-21T12:55:00Z",
+    "test_window_start": "2026-10-21T13:05:39Z",
+    "finished_at": "2026-10-21T20:25:00Z",
+    "time_to_first_test_minutes": null,
+    "reachability_minutes": 0,
+    "reachability_note": "1r satisfied by FAST round 1 on the same build (REACHABLE)",
+    "agent_dispatches": 11,
+    "note": "Held at 1b until deploy PR vc-deploy-dev#6971 was merged (PR build not deployed anywhere)."
+  },
+  "environment": "https://vcptcore-qa1.govirto.com",
+  "build": {
+    "declared": {
+      "VirtoCommerce.Platform": "3.1087.0-pr-3134-a3d2 (vc-deploy-dev#6971 on vcptcore-qa1)"
+    },
+    "deployed": {
+      "platform": "3.1088.0-pr-3134-c475 (redeployed 2026-10-22 via vc-deploy-dev#6972; QA fixes verified live)",
+      "relevant_modules": {}
+    },
+    "pr": "VirtoCommerce/vc-platform#3134 merged 2026-10-22 (squash c401260 into dev); includes QA fixes efd7f75, 375d141, c4758cf",
+    "temporary_pin": "DUE: revert vcptcore-qa1 Platform pin (PR merged); before VCST-6260 it was 3.1084.0-pr-3140-9092",
+    "releasedThrough": "UNKNOWN (release ledger stale since 2026-09-01)",
+    "preflight": {
+      "verdict": "NOT READY -> READY after deploy",
+      "notes": [
+        "expect row false BLOCK for Platform (checker reads /api/platform/modules)",
+        "ledger stale",
+        "mcp:github absent (REST fallback)"
+      ]
+    }
+  },
+  "visual": {
+    "ran": true,
+    "design_report": "reports/tickets/Sprint26-21/VCST-6260/design-report.md",
+    "vs_design": "SKIPPED — no Claude Design project on the ticket"
+  },
+  "contract": {
+    "contract_surface": true,
+    "sources": [
+      "SettingsV2Controller.cs (REST, not GraphQL)"
+    ],
+    "schema_refresh": "REFRESHED",
+    "fixtures": "86/86"
+  },
+  "coverage_triage": {
+    "hits": 29,
+    "dispositions": "29 CONFIRMED + 063/064/076 read by hand CONFIRMED",
+    "repair": [],
+    "rebase": []
+  },
+  "discovery": {
+    "report": "reports/exploratory/SBTM-VCST-6260-2026-10-21.md",
+    "partial": true,
+    "reason": "firefox resize hang"
+  },
+  "regression": {
+    "c1": {
+      "run_id": "REG-2026-10-21-1800",
+      "cases": "PLAT-106..PLAT-127 (22 Draft at run time); after the operator decision PLAT-115/117 deleted, PLAT-110/116/122/123/124 revised -> 20 Draft in suite 020b (split out of 020, ceiling 81): PLAT-106..114, 116, 118..127",
+      "passed": 14,
+      "failed": 7,
+      "blocked": 1,
+      "pass_rate": 63.6,
+      "promote": false
+    },
+    "release_gate": "not-assessed",
+    "note": "Run REG-2026-10-21-1800 predates the revision. Operator decision 2026-10-21 encoded: Settings v2 value validation, collapse-button focus/state, phone QA pill and book-mode strips are accepted behaviour."
+  },
+  "status_transitions": [
+    {
+      "at": "1a",
+      "from": "Testing",
+      "to": "Testing",
+      "by": "qa-lead (inline)",
+      "confirmed": false,
+      "skipped": "already in testing"
+    },
+    {
+      "at": "5-status",
+      "from": "Testing",
+      "to": "Tested",
+      "by": "qa-lead (inline)",
+      "confirmed": true,
+      "transition": "Finish test (8)",
+      "note": "operator: remaining findings are not bugs, close the task"
+    }
+  ],
+  "bugs_filed": [],
+  "bugs_not_filed": [
+    {
+      "id": "F1/10b",
+      "severity": "Medium",
+      "provenance": "PRE-EXISTING",
+      "title": "Settings v2: wrong-typed value -> 500; value outside allowedValues stored (204); replaceAll with an invalid value resets every other key",
+      "note": "operator: not a bug for this ticket"
+    },
+    {
+      "id": "B-5",
+      "severity": "Medium",
+      "provenance": "PRE-EXISTING",
+      "title": "Store setting saved via v2 visible in /api/stores Full only after ~4 min",
+      "note": "operator: not a bug for this ticket"
+    },
+    {
+      "id": "F-UI-1/2/4",
+      "severity": "Medium",
+      "provenance": "IN-SCOPE",
+      "title": "a11y of new chrome: search muted text 3.36:1, no aria-activedescendant, no focus indicator on Collapse",
+      "note": "operator: not bugs"
+    },
+    {
+      "id": "F2,F4,F5,F6,B-3,B-4",
+      "severity": "Low",
+      "provenance": "IN-SCOPE",
+      "title": "phone QA pill over search; long names as '…'; 1 px overflow; Swagger lacks 400; double-escaped empty-state query; Settings toolbar 'More' after hard reload"
+    },
+    {
+      "id": "V-05 note",
+      "severity": "Low",
+      "provenance": "IN-SCOPE",
+      "title": "Look dialog: Cancel/Esc restore Classic visually but still write Theme=classic / ThemePreset=gray to localStorage",
+      "note": "accepted — demo-only feature (operator 2026-10-21); PLAT-126 asserts the visual restore only"
+    }
+  ],
+  "test_data": {
+    "value": true,
+    "seeded": [
+      "SHELL_SEARCH_NOREAD",
+      "SHELL_SEARCH_READ"
+    ],
+    "guard": "td:validate:rbac green"
+  },
+  "regression_triage": {
+    "fixed_in_pr_by_qa": [
+      {
+        "id": "F7",
+        "commit": "efd7f75 (pushed)",
+        "title": "Phone: widget value above its label (KPI tiles, blade widgets)",
+        "verified_on": "3.1088.0-pr-3134-c475"
+      },
+      {
+        "id": "F8",
+        "commit": "375d141 (pushed)",
+        "title": "Collapsed menu: Expand button tooltip like the menu items",
+        "verified_on": "3.1088.0-pr-3134-c475"
+      },
+      {
+        "id": "F9",
+        "commit": "c4758cf (pushed)",
+        "title": "Cancelled global-search request flashed a red error bar on the open blade (httpErrorInterceptor ignores xhrStatus abort)",
+        "verified_on": "3.1088.0-pr-3134-c475"
+      }
+    ],
+    "withdrawn": [
+      {
+        "id": "B-1",
+        "reason": "reproduced only with Playwright fill(); real Ctrl+A/Ctrl+V paste shows results; kb KB-DBD2EE69 disputed"
+      },
+      {
+        "id": "F-UI-5",
+        "reason": "phone drawer Esc/focus — not a bug (operator)"
+      }
+    ],
+    "questions_for_dev": [
+      "Two questions for the developer are kept in the VCST-6260 tracker comment"
+    ],
+    "modern_looks": {
+      "scope": "operator: not to be tested (demo-only per PR)",
+      "partial_pass": "design-report.md §Modern looks pass (2026-10-21)",
+      "findings_not_filed": [
+        "D1-D4 Medium",
+        "D5-D6 Low-Medium",
+        "D7-D9 Low"
+      ]
+    }
+  }
+}

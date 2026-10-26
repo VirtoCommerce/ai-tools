@@ -43,6 +43,7 @@ Call `/vc-fix:qa-bug "<one-line defect>"` once per **confirmed** bug. Give it, *
 - the checklist item id or charter item it came from
 - the ledger ids of the data involved
 - the build versions from Step 0
+- the run folder `{RUN_DIR}`, so the report and its screenshots land in its `bugs/`
 - `found-by:agent-testing <ticket-key>` — left out only for a bug the user brought in, which `qa-bug` then
   records as a human's (`.claude/knowledge/execution/tracker-ops.md` §Labels on bugs Claude files)
 
@@ -56,7 +57,7 @@ bug. The calls run sequentially because `qa-bug` may take a browser lane.
 
 ## Verdict
 
-**Reconcile the strategy first**, per [`../qa-test-strategy/SKILL.md`](../qa-test-strategy/SKILL.md)
+**Reconcile the strategy first**, per [`/vc-test:qa-test-strategy`](../../../plugins/vc-test/skills/qa-test-strategy/SKILL.md)
 §Reconcile: fill the round's `### Reconciliation`, apply its cap (a High/Critical risk without a result is
 never `PASS`), and write `summary.json.strategy` — never null once a strategy ran.
 
@@ -65,7 +66,7 @@ The vocabulary and the decision rules are [`../qa-test/close-out.md`](../qa-test
 checklist's AC items. A `Low` finding never makes a FAIL, and an accessibility finding never blocks a
 functional ticket.
 
-## Files — `reports/tickets/{SPRINT}/<TICKET>/`
+## Files — `{RUN_DIR}` (the run folder, `run-output.md`)
 
 - **`summary.json`** — keys come only from
   [`../../templates/qa-test-summary.schema.json`](../../templates/qa-test-summary.schema.json):
@@ -119,7 +120,7 @@ or path that returns becomes the finding's proposed route. They are handed to th
 
 ## HTML page
 
-Write the page's extras to `<scratchpad>/extra.json` from `verdict.md`: `lede` = the one sentence — **mandatory**, and it is what satisfies D7 for this caller; `rows` = the AC table (`id`, `text`, `result`, `evidence`); `notTested`; `context` = the Data and Context-used lines as `{label, value}`; `shots` ≤ 4. Then run `/vc-fix:qa-report reports/tickets/{SPRINT}/<TICKET>/summary.json --kind test --extra <scratchpad>/extra.json`. It loads `artifact-design`, publishes the page, renders the comment with its link, and asks the one question in §Tracker comment. Skill refused ⇒ the install predates it: `/plugin update`, stop the report step — never type the page or comment by hand.
+Write the page's extras to `<scratchpad>/extra.json` from `verdict.md`: `lede` = the one sentence — **mandatory**, and it is what satisfies D7 for this caller; `rows` = the AC table (`id`, `text`, `result`, `evidence`); `notTested`; `context` = the Data and Context-used lines as `{label, value}`; `shots` ≤ 4. Then run `/vc-fix:qa-report {RUN_DIR}/summary.json --kind test --extra <scratchpad>/extra.json`. It loads `artifact-design`, publishes the page, renders the comment with its link, and asks the one question in §Tracker comment. Skill refused ⇒ the install predates it: `/plugin update`, stop the report step — never type the page or comment by hand.
 
 **Audience: Anyone at Virto Commerce.** The page is read by the ticket's developers and PO through the
 tracker comment's link, so it is shared org-wide, not kept to its author. The Artifact tool publishes

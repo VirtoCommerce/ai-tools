@@ -104,7 +104,7 @@ in lock-step with `EXPECTED_OUTPUT` in `hooks/session-telemetry.mjs`.
 
 | Skill / command | An expected-output marker is ANY of |
 |-----------------|-------------------------------------|
-| `/qa-bug` | a `reports/bugs/` write · a tracker-create (`createJiraIssue`/`create_issue`) · a clean BAIL |
+| `/qa-bug` | a `reports/bugs/` write (or a run folder's `bugs/<severity>/BUG-*`) · a tracker-create (`createJiraIssue`/`create_issue`) · a clean BAIL |
 | `/qa-fix` | a PR created (`create_pull_request` / `gh pr create` / `pull/<n>`) · a clean BAIL |
 | `/qa-verify-fix` | a ticket transition/update · `READY FOR TEST`/`testing`/`verified`/`reproduc…` · a clean BAIL |
 | `/qa-monitoring` | a `reports/monitoring/` write · `signature`/`dedup`/"no new signatures" · a clean BAIL |
@@ -315,7 +315,7 @@ Step-1 collector's signals can actually surface.
 
 ### `/project-init` — onboard the plugin onto a deployment
 - **Expected phases** (vc-init's `commands/project-init.md` → the `/project-init` skill — onboarding is the vc-init plugin since VCST-6402; its runs are still judged here, because the collector is vc-fix's): **§0d vc-secrets preflight** (`check-secrets.mjs --preflight`; not installed ⇒ a clean STOP before the interview) + `install-bridge.mjs` (`VC_RUN=<path>`) → install deps → ask *only* env name + tracker (Jira/Azure Boards) + code host (GitHub/Azure Repos) + auth-per-axis → scaffold `.env.<env>` (per-env URLs) + `.env.local` (tracker / code-host connection + test-user passwords) + the vc-secrets declarations → **§3d token pause** (`check-secrets.mjs --steps`, the turn ends on the waiting banner) → **§3e token gate** (`check-secrets.mjs`; exit 1 ⇒ re-ask, never proceed) + `normalize-env.mjs` → **derive** projectType/client-org/contribution-mode/fork-account via `node "$VC_RUN" onboard discover-repos|discover-tracker|derive-context` → write `project-profile.json` + `.mcp.json` → **verify access** (`node "$VC_RUN" onboard verify-access`, readiness table).
-- **Required outputs:** `project-profile.json` (valid JSON, at the project root — never under the plugin dir), `.env.<env>` + `.env.local`, `.claude/vc-secrets.local.json` (when a PAT axis was chosen), `.mcp.json`, and a printed readiness table. **No token in any of them** — tokens live in vc-secrets.
+- **Required outputs:** `project-profile.json` (valid JSON, at the project root — never under the plugin dir), `.env.<env>` + `.env.local`, `.claude/vc-secrets.local.json` (when a PAT axis was chosen), `.mcp.json`, and a printed readiness table. **No token in any of them** — tokens live in vc-secrets. <!-- doclint:may-not-exist -->
 - **Anti-patterns:**
   - **S1** — the run ends with no `project-profile.json` written (or it landed under the plugin install dir instead of `outputRoot`), or the verify-access step never ran; or a token was written into a project file (`.env.local`, `.mcp.json`, `.claude/settings.local.json`) or taken in chat. *Signal:* required-output missing; `permission_denied`/`tool_error` on the token probe with no recovery; a Write/Edit of a token key into one of those files.
   - **S2** — profile written but the readiness table shows a probed axis DOWN and the run proceeded anyway; or it went past a failing §3e token gate; or it asked the operator what the profile already answers (redundant prompts). *Signal:* `tool_error` on a tracker/host probe inside the verify phase, run still finalized OK.
@@ -323,7 +323,7 @@ Step-1 collector's signals can actually surface.
 
 ### `/qa-bug` — reproduce, evidence, report, (optional) file
 - **Expected phases** (`commands/qa-bug.md`): Step 0 pre-flight (build/version + Context7 + dup check) → Step 1 gather/reproduce → **Step 2 4-Layer Validation** → Step 3 research + resolve exact repo → Step 4 write report → Step 5 (optional, consent-gated) create ticket.
-- **Required outputs:** a `reports/bugs/open/<bucket>/BUG-*.md` with the **Fix Routing block** filled; a tracker ticket **only if** the user said yes.
+- **Required outputs:** a `reports/bugs/open/<bucket>/BUG-*.md` (in a ticket run, `<run folder>/bugs/<bucket>/BUG-*.md`) with the **Fix Routing block** filled; a tracker ticket **only if** the user said yes.
 - **Anti-patterns:**
   - **S1** — no bug report written despite a reproduced defect; or a ticket was filed **without** the explicit user "yes" (consent violation). *Signal:* required-output missing; a tracker-create tool call with no preceding consent in the transcript.
   - **S2** — report written but **over the bug-report cap** (`reports.md` §2: simple ≤80 / functional ≤120 / cross-layer ≤150), or Step 2 4-layer validation never ran (owning layer unproven → route untrustworthy). *Signal:* oversized report; missing-phase.
@@ -340,7 +340,7 @@ Step-1 collector's signals can actually surface.
 
 ### `/qa-verify-fix` — verify a deployed fix, transition the ticket
 - **Expected phases** (`commands/qa-verify-fix.md`): Step 0 pre-flight → Step 1 fetch ticket → **Step 2 confirm-deployment hard gate** → Step 3 transition to `testing` (ONLY after Step 2) → Step 4 checklist → Step 5 execute (STR ×3) → Step 6 decide + transition by role → Step 7 summary.
-- **Required outputs:** `reports/tickets/{SPRINT}/<ticket-key>/verification-summary.json` with a verdict; a role transition consistent with the verdict (or a BLOCKED with no transition).
+- **Required outputs:** `<run folder>/verification-summary.json` (`knowledge/execution/run-env.md` §The run folder) with a verdict; a role transition consistent with the verdict (or a BLOCKED with no transition).
 - **Anti-patterns:**
   - **S1** — transitioned the ticket to `testing` (or `tested`/`reopen`) **before/without** the Step-2 deploy confirmation — tested old code and moved the ticket on a false "deployed". *Signal:* a transition tool call before any deploy-check evidence; missing Step-2 phase.
   - **S1** — an undeployed fix was transitioned to `reopen` (an undeployed fix is not a failed fix). *Signal:* `reopen` transition + a "not deployed" marker in the same span.

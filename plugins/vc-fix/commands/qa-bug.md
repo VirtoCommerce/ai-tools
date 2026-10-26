@@ -46,7 +46,7 @@ Create a structured bug report from a description, screenshot, or observed issue
    - **`ticket`** (frontend-only client bug) — take the storefront version from the ticket's system info; do NOT call the admin modules endpoint.
    - Record platform version, theme version, and modules relevant to the bug area — include in the bug report (Step 3)
 2. **Context7 query** — resolve `/virtocommerce/vc-docs`, query the affected area (e.g., `"cart pricing calculations"`, `"order status workflow"`) with `tokens: 8000`. Verify expected behavior before concluding it's a bug — the observed behavior may be by design.
-3. **Duplicate check** — scan `reports/bugs/open/**` (recursively — it is foldered by severity) and `reports/bugs/fixed/` for existing bug reports with the same component/title. If found in `open/`, warn user and show existing report. If found in `fixed/`, check whether it's a regression (same bug resurfaced).
+3. **Duplicate check** — scan `reports/bugs/open/**` (recursively — it is foldered by severity), `reports/bugs/fixed/` and, for a ticket's bug, the `bugs/` of every run folder of the ticket (`node "$pluginRoot/scripts/env/run-folder.mjs" dir --ticket <key> --prior`) for existing bug reports with the same component/title. If found in `open/`, warn user and show existing report. If found in `fixed/`, check whether it's a regression (same bug resurfaced).
 
 ## Step 1 — Gather Bug Details
 
@@ -94,14 +94,14 @@ Validate the failing scenario across all four layers. Record per-layer PASS / FA
 > names to stay within the output directory"*; absolute paths are undocumented, so nothing may be
 > built on them. `/project-init` pins each Playwright server's `--output-dir` to an **absolute**
 > path inside this project — `reports/bugs/screenshots/_incoming/<browser>/`. On the pinned
-> `@playwright/mcp@0.0.77`, a bare filename is **not guaranteed** to land there: 0.0.77 may resolve
+> `@playwright/mcp@0.0.83`, a bare filename is **not guaranteed** to land there: it may resolve
 > it against the MCP server's own cwd — which can be the project root (VCST-5582 C). So a capture
 > may appear at the project root, and Step 4 MUST reconcile it (locate → move) rather than assume it
 > is already under `--output-dir`.
 >
 > Do **not** try to place a screenshot at its final location during capture, and do not guess where
 > it went. `_incoming/` is a landing zone; Step 4 performs ONE deterministic move (including the
-> reconcile from the server cwd when 0.0.77 misplaced it). Mechanism + the mandatory reconcile step:
+> reconcile from the server cwd when the server misplaced it). Mechanism + the mandatory reconcile step:
 > [`skills/qa-evidence/output-paths.md`](../skills/qa-evidence/output-paths.md).
 
 ### Layer 1 — Storefront Frontend (vc-frontend)
@@ -232,18 +232,19 @@ their permanent home — one move, one destination, no guessing:
 
 ```bash
 # <slug> = the same Short-Description the report filename uses, e.g. Products-Main-Menu-Dropdown-Empty
-mkdir -p reports/bugs/screenshots/<slug>
-mv reports/bugs/screenshots/_incoming/*/<kept>.png reports/bugs/screenshots/<slug>/
+# <bugs> = reports/bugs, or <run folder>/bugs when the caller named a ticket run's folder (Step 4 below)
+mkdir -p <bugs>/screenshots/<slug>
+mv reports/bugs/screenshots/_incoming/*/<kept>.png <bugs>/screenshots/<slug>/
 ```
 
 - Move **only** the 1–5 captures the report actually references (`.claude/rules/reports.md` §5);
   leave the rest in `_incoming/` — it is gitignored and disposable.
-- The report then references the **final** path (`reports/bugs/screenshots/<slug>/<file>.png`) —
+- The report then references the **final** path (`<bugs>/screenshots/<slug>/<file>.png`) —
   never an `_incoming/` path and never a bare filename.
 - If a capture is not where you expect, **list `reports/bugs/screenshots/_incoming/`** — do not
   guess a path. A guessed path was one of the two `Read` failures on a client deployment run.
 
-Generate a report in `reports/bugs/open/<bucket>/` — `critical-high/` · `medium/` · `low/`, chosen by the severity the report declares (`.claude/rules/reports.md` §1a; a straddling grade files at the lower bucket), using this naming convention:
+Generate a report in `reports/bugs/open/<bucket>/` — `critical-high/` · `medium/` · `low/` (when the caller names a ticket run's folder — `/qa-test`, `/qa-test-fast`, `/qa-triage-results` — in `<run folder>/bugs/<bucket>/` instead: `knowledge/execution/run-env.md` §The run folder), chosen by the severity the report declares (`.claude/rules/reports.md` §1a; a straddling grade files at the lower bucket), using this naming convention:
 `BUG-{Short-Description}.md` or `BUG-{Short-Description}-<ticket-key>.md` (if a JIRA ticket is known)
 
 ### Bug Report Folder Structure
@@ -442,8 +443,8 @@ ls -1 *.png *.har *.zip *.webm 2>/dev/null   # also catches an already-ignored f
   root-level files, so a silent move would erase the only clue if the pattern repeats
   (VCST-5582 C). Report it as an observation, not a failure — the run still succeeded.
 
-Never create anything at the project root yourself: reports go under `reports/bugs/`, browser
-captures under `reports/bugs/screenshots/`, scratch files under the session temp dir.
+Never create anything at the project root yourself: reports go under `reports/bugs/` (or the caller's run
+folder's `bugs/`), browser captures under `reports/bugs/screenshots/`, scratch files under the session temp dir.
 
 ## Signal completion (self-diagnostics — the LAST action)
 

@@ -40,7 +40,7 @@ export const WRITABLE = [
   "tracker.azure.stateMap.",
 ];
 /** `--merge` roots: a whole block another plugin owns. */
-export const MERGEABLE = ["perf"];
+export const MERGEABLE = ["perf", "test"];
 
 export function isWritable(path) {
   return WRITABLE.some((p) => path.startsWith(p) && path.length > p.length);

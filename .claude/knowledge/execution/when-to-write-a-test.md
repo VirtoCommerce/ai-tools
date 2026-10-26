@@ -44,6 +44,9 @@ after that the drift guards, `context:check` and the other gates are what run on
   `plugins/vc-secrets/` (`vc-secrets.test.mjs`, `vc-secrets-oauth.test.mjs`, `lib/*.test.mjs`) and
   `plugins/vc-init/bridge/` (`*.test.mjs` — the `$VC_RUN` bridge's allowlist, host-pinned git credential
   helper, output redactor, inner-side refusals and the vc-secrets declaration writer, VCST-6402).
+  Also committed, by the owner's decision in the vc-test spec (U10): `plugins/vc-test/lib/knowledge-store.test.mjs`
+  — the knowledge-store write router, which refuses a client project's platform write, scrubs text and keeps
+  every file inside its store; leaking client text into the public kb is not something a guard would catch.
 
 ### Writing the temporary test — derivation, never declaration
 

@@ -42,6 +42,7 @@ You need each of these before you start. If any are missing, the install will fa
 | Two test accounts | One non-admin storefront user, one admin SPA user. | See [Test accounts](#test-accounts) below. |
 | Your customer's JIRA project key (e.g. `ACME`) | For bug filing. Default falls back to `VCST` if not set. | Atlassian → Projects → your project → Settings → Details. |
 | Serena plugin + `uv`/`uvx` | Shared semantic code-navigation for the whole team (enabled in tracked config; install per machine). | `uvx --version`; see [Serena setup](#serena--semantic-code-navigation-whole-team-one-time-per-machine). |
+| `vc-test` plugin | `/qa-test-fast` calls its `/vc-test:ticket-context` and `/vc-test:qa-test-strategy` (enabled in tracked config; install per machine). | `/plugin install vc-test@ai-tools`, then restart Claude Code |
 
 ## Install
 
@@ -185,9 +186,9 @@ Install these via Claude Code's MCP settings (`.mcp.json` or `claude_code/settin
 ```jsonc
 {
   "mcpServers": {
-    "playwright-chrome":  { "command": "npx", "args": ["@playwright/mcp@0.0.77", "--config", "config/mcp-playwright-chrome.config.json"] },
-    "playwright-firefox": { "command": "npx", "args": ["@playwright/mcp@0.0.77", "--config", "config/mcp-playwright-firefox.config.json"] },
-    "playwright-edge":    { "command": "npx", "args": ["@playwright/mcp@0.0.77", "--config", "config/mcp-playwright-edge.config.json"] },
+    "playwright-chrome":  { "command": "npx", "args": ["@playwright/mcp@0.0.83", "--config", "config/mcp-playwright-chrome.config.json"] },
+    "playwright-firefox": { "command": "npx", "args": ["@playwright/mcp@0.0.83", "--config", "config/mcp-playwright-firefox.config.json"] },
+    "playwright-edge":    { "command": "npx", "args": ["@playwright/mcp@0.0.83", "--config", "config/mcp-playwright-edge.config.json"] },
     "kb":                 { "command": "node", "args": ["scripts/kb/mcp.mjs"] }
   }
 }

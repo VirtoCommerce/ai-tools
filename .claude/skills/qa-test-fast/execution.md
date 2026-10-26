@@ -8,7 +8,7 @@ Execution); the visual lane joins it or follows as soon as one lane returns
 |---|---|---|---|---|
 | Storefront | `qa-frontend-expert` | `playwright-chrome` | `@td(AGENT_POOL_SLOT_1.*)` | the checklist's storefront section |
 | Admin + API | `qa-backend-expert` | `playwright-edge` | `@td(AGENT_POOL_SLOT_3.*)` | the Admin/REST/GraphQL section |
-| Exploratory | `qa-testing-expert` | `playwright-firefox` | `@td(AGENT_POOL_SLOT_2.*)` | `/qa-exploratory ticket <TICKET>` |
+| Exploratory | `qa-testing-expert` | `playwright-firefox` | `@td(AGENT_POOL_SLOT_2.*)` | `/qa-exploratory ticket <TICKET> <env>` |
 | Visual | `ui-ux-expert` | Chrome DevTools MCP | the auth path the brief names (§Visual) | the `qa-design` skill's axes, when `visual_surface: true` |
 
 The pool slots are the ones in [`../../knowledge/execution/live-discovery.md`](../../knowledge/execution/live-discovery.md)
@@ -25,7 +25,8 @@ Use the [`agent-dispatch.md`](../../templates/agent-dispatch.md) structure, **in
 - **Data:** the Data cell of each item is the instruction (§Data below).
 - **Shared state:** the checklist header's Rules block. Only the lane it names writes a shared setting,
   and that lane restores the setting and re-reads it to prove it.
-- **Evidence:** `reports/tickets/{SPRINT}/<TICKET>/screenshots/`, per
+- **Evidence:** `{SCREENSHOTS}`, the `run:use` line — a lane that refuses it (outside the project, without
+  `--allow-unrestricted-file-access`) saves a bare filename and the file is moved in ([`run-output.md`](../../knowledge/execution/run-output.md) §Screenshots) — per
   [`../qa-evidence/evidence-capture-policy.md`](../qa-evidence/evidence-capture-policy.md). HAR always.
 - **Return, per item:**
   - `PASS` / `FAIL` / `BLOCKED` and a one-line note
@@ -36,7 +37,7 @@ Use the [`agent-dispatch.md`](../../templates/agent-dispatch.md) structure, **in
 
 ## Exploratory
 
-Invoke `/qa-exploratory ticket <TICKET>` — the command, never a re-implementation. The charter
+Invoke `/qa-exploratory ticket <TICKET> <env>` (the run's env; the lane never binds it — [`run-env.md`](../../knowledge/execution/run-env.md)) — the command, never a re-implementation. The charter
 payload has the shape of [`../qa-test/exploratory-lane.md`](../qa-test/exploratory-lane.md) §6, and
 its mission is the strategy's Exploratory row (its R-ids, each with the `{HYPOTHESIS}` oracle or question it
 rests on — source 6 there), plus, when a model ran, the `/qa-test-model` output's item 4 (the unresolved
@@ -62,7 +63,7 @@ the Skill tool with `skill: "qa-design"` before any browser call**, and open the
 ticket's Prototype link + the `design:extract` spec path, the invariant text, the auth path, no
 credential names), the lane-count rule and the verdict vocabulary are
 [`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §2–§4 — cited, not restated here.
-- **Writes** `reports/tickets/{SPRINT}/<TICKET>/design-report.md`; you write `summary.json.visual`.
+- **Writes** `{RUN_DIR}/design-report.md`; you write `summary.json.visual`.
 - **Read-only.** It creates no data; a role-gated target uses the pre-signed profile, never a minted
   account ([`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §2).
 - **Skipped** (`visual_surface: false` or `--no-visual`) ⇒ `visual.ran: false` + the reason.

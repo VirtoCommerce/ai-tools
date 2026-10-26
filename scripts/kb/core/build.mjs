@@ -111,8 +111,9 @@ async function readers(root) {
 export async function liveBuild(stand, { env = process.env, root = REPO_ROOT, probe = null, now = () => new Date() } = {}) {
   if (!stand) return { unknown: 'no stand named', code: 'no-stand' };
   // `KB_BUILD=0` -- no stand is read. `npm test` sets it: the door tests spawn the real CLI, and a
-  // machine with `.env.local` would otherwise log in to every real stand a fixture names.
-  if (isOff(env.KB_BUILD)) return { unknown: 'KB_BUILD=0', code: 'off' };
+  // machine with `.env.local` would otherwise log in to every real stand a fixture names. The PROCESS's
+  // KB_BUILD counts too: an in-process caller's hand-built `env` must not switch the real probe back on.
+  if (isOff(env.KB_BUILD) || (!probe && isOff(process.env.KB_BUILD))) return { unknown: 'KB_BUILD=0', code: 'off' };
   const file = cachePath(env, stand);
   try {
     const cached = JSON.parse(await readFile(file, 'utf8'));

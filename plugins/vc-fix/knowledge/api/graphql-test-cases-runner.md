@@ -5,9 +5,9 @@ applicability_rationale: "Runner contract grammar (tag syntax, predicate shapes,
 
 # Authoring GraphQL Test Cases for Runner-Native Execution
 
-Canonical reference for writing **runner-native GraphQL test cases** in suite CSVs. Cases written to this spec execute via `scripts/graphql-runner.ts` (browserless, ~10–30× faster than GraphiQL UI flow), are schema-validated before send, and produce structured JSON evidence.
+Canonical reference for writing **runner-native GraphQL test cases** in suite CSVs. Cases written to this spec execute via `scripts/graphql/graphql-runner.ts` (browserless, ~10–30× faster than GraphiQL UI flow), are schema-validated before send, and produce structured JSON evidence.
 
-> **In `vc-fix`:** the CSV-suite runner (`scripts/graphql-runner.ts` + its `scripts/lib/graphql-*.ts`
+> **In `vc-fix`:** the CSV-suite runner (`scripts/graphql/graphql-runner.ts` + its `scripts/lib/graphql-*.ts`
 > helpers), the alias registry (`test-data/aliases.json`), and `regression/suites/` are **full
 > `vc-qa` plugin only, not shipped here** — this plugin's `qa-backend-expert` / `qa-frontend-expert`
 > / `qa-testing-expert` use this file only for the **tag grammar / predicate shapes / query-authoring
@@ -19,7 +19,7 @@ Canonical reference for writing **runner-native GraphQL test cases** in suite CS
 
 **Source of truth (read these if anything below seems ambiguous — code wins; not shipped in `vc-fix`, full `vc-qa` plugin only):**
 
-- `scripts/graphql-runner.ts` — orchestrator (loadCase → parse → AUTH → GQL/REST exec → assertions → cleanup → evidence)
+- `scripts/graphql/graphql-runner.ts` — orchestrator (loadCase → parse → AUTH → GQL/REST exec → assertions → cleanup → evidence)
 - `scripts/lib/graphql-case-parser.ts` — Steps tag grammar (`isStepTag()` + `parseSteps()`)
 - `scripts/lib/graphql-assertions.ts` — Assertion grammar + `getByPath()` + filter syntax
 - `scripts/lib/graphql-validator.ts` — DV-006…DV-011 schema-validate-before-send
@@ -577,7 +577,7 @@ Walks: AUTH → set up vars → declare op + vars + body → execute → capture
 | Business invariants (BL-*) | `knowledge/oracles/business-logic.md` |
 | Edge case taxonomy (ECL-*) | `knowledge/oracles/e-commerce-edge-cases-library.md` |
 | Test-data resolver (`@td()`) | `scripts/lib/test-data-resolver.ts`; forms and precedence in §6.1 above |
-| Runner CLI usage | always the canonical runner `scripts/graphql-runner.ts` — never a bespoke script |
+| Runner CLI usage | always the canonical runner `scripts/graphql/graphql-runner.ts` — never a bespoke script |
 | Gold-standard examples | `regression/suites/Backend/graphql/050i-graphql-configurations.csv` |
 
 When in doubt: read the source files in `scripts/` and `scripts/lib/` listed at the top of this doc — they are the actual runner contract; this doc is a guided summary.
