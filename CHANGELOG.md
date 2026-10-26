@@ -8,6 +8,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## What vc-test needs from onboarding — `vc-init` `0.4.0` — 2026-10-26
+
+The first of four P1 plans for the `vc-test` plugin (`docs/superpowers/plans/2026-10-26-vc-test-p1a-vc-init.md`).
+`vc-fix` gains only the matching profile default; `vc-perf` and `vc-secrets` are unchanged.
+
+**Added: a `test` block in `project-profile.json`.** `vc-test`'s own open map, kept wholesale like `perf`:
+`environments` (env → `{ writable }`), `scriptRoots` and `knowledgeStore`. `profile-set.mjs --merge 'test=<json>'`
+writes it, and a `/project-init` re-run keeps it.
+
+**Added: one pinned GraphQL read through the bridge.** `node "$VC_RUN" gh api graphql` is still refused, except
+for a document byte-equal to the review-thread query `/ticket-context` reads, with only its variables. A
+mutation, another query, a header, an input file, or a field value read from a file (`@…`) stays refused.
+
+**Added: the `runner` bridge tool.** `node "$VC_RUN" runner playwright <spec…>` and `runner node <script> [args…]`
+run `vc-test`'s `.spec` files and check scripts with the current env's test-user passwords and never a token. It
+runs only for an environment the `test` block lists, and only on files inside its `scriptRoots`, checked after
+resolving links. The argv is fixed and Playwright uses `vc-test`'s pinned config. Output is redacted. With the
+passwords in vc-secrets it runs as the new task `vc-init-runner.<env>`, which `write-secrets-decl.mjs` declares
+beside each password env. Re-run `/project-init --check` and `vc-secrets trust` to pick it up.
+
 ## An env's files can live outside the repo; a stand can use one master password — `vc-fix` `0.13.0` — 2026-10-21
 
 Every ticket now runs on its own stand, and dedicated cloud stands are replacing the shared ones. A stand that
