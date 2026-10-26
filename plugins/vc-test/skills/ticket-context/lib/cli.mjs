@@ -6,11 +6,13 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { assertKey, cacheDir, isInside, newRunDir, outputRoot, removeRunDir, sweepStaleRuns } from "./paths.mjs";
 import { LAYERS_GAP, loadLayeredEnv } from "./env.mjs";
-import { codeHostCredential, resolveProfile, trackerCredential } from "./profile.mjs";
+import { codeHostCredential, resolveProfile } from "./profile.mjs";
+import { HostGoverned, vcRun } from "./bridge.mjs";
+import { jiraConnector } from "./connectors/jira.mjs";
 import { ProfileError, loadProfile } from "../../../lib/profile.mjs";
 import { GAP_REASONS, SCHEMA, asGap, gap } from "./gap.mjs";
 import { validateDef } from "./schema.mjs";
-import { BASE_FIELDS, LINKED_FIELDS, attachLinkedComments, blindIssue, blindPrs, jiraClient, postedAfter, recencyOrder, withoutHidden } from "./jira.mjs";
+import { BASE_FIELDS, LINKED_FIELDS, attachLinkedComments, blindIssue, blindPrs, postedAfter, recencyOrder, withoutHidden } from "./jira.mjs";
 import { AC_FIELD_NAME_RE, buildInventory, linkedOverCap, rankLinked, resolveFieldsByName, ticketFields } from "./inventory.mjs";
 import { CAPS, envHosts, fetchPublicPage, htmlToText, planDownloads, safeName } from "./fetch.mjs";
 import { exportFigmaItems, figmaToken } from "./figma.mjs";
@@ -110,9 +112,12 @@ async function prepare() {
   try { assertKey(key, profile.keyFormat); } catch (e) { usage(e.message); }
   if (profile.governed) { out({ status: "host-governed", detail: "the host-governed route lands in P1d-3; nothing was read" }); process.exit(4); }
   const testEnv = loadLayeredEnv(root, key, raw);
-  const tcred = trackerCredential(profile);
-  if (!tcred.ok) { out({ status: "no-tracker", gap: gap("ticket", tcred.reason, tcred.detail) }); process.exit(3); }
-  const jira = jiraClient(tcred);
+  // §7, U20: every tracker read is a $VC_RUN launch; this process holds no token.
+  const noTracker = (reason, detail) => { out({ status: "no-tracker", gap: gap("ticket", reason, detail) }); process.exit(3); };
+  if (profile.tracker !== "jira") noTracker("connector-unavailable", "Azure Boards is read from Phase 5 on");
+  if (!profile.trackerBase) noTracker("no-credential", "project-profile.json has no tracker.baseUrl — run /project-init --check");
+  if (!vcRun()) noTracker("no-credential", "VC_RUN is not set — run /project-init");
+  const jira = jiraConnector({ base: profile.trackerBase, key, root });
   const gaps = [];
   if (LAYERS_GAP) gaps.push(gap("env", "not-available-in-install", LAYERS_GAP));
 
@@ -123,8 +128,8 @@ async function prepare() {
   // Comments past the first page are paged in before the inventory and ticket.json see the issue; any unread rest is a gap.
   const issue = blindIssue(await jira.issue(key, [...BASE_FIELDS, ...acFields.map((f) => f.id), ...linkFields.map((f) => f.id)], { gaps }), benchmark ?? {});
   const remote = await jira.remoteLinks(key).catch((e) => { gaps.push(asGap("remotelinks", e)); return []; });
-  const devPrUrls = await jira.devPrUrls(issue.id).catch((e) => { gaps.push(asGap("dev-status", e)); return []; });
-  const inv = buildInventory({ issue, remoteLinks: remote, trackerBase: tcred.base, acFieldIds: acFields.map((f) => f.id), linkFieldIds: linkFields.map((f) => f.id), devPrUrls });
+  const devPrUrls = (await jira.linkedPrs(issue).catch((e) => { gaps.push(asGap("dev-status", e)); return { urls: [] }; })).urls;
+  const inv = buildInventory({ issue, remoteLinks: remote, trackerBase: jira.base, acFieldIds: acFields.map((f) => f.id), linkFieldIds: linkFields.map((f) => f.id), devPrUrls });
   inv.items = withoutHidden(inv.items, hide); // U67: once, whichever path (remote link, key in a text) made the ticket item
   const secrets = loadSecretValues(root); // after loadLayeredEnv, so FIGMA_TOKEN from any layer is in it
   const tf = ticketFields(issue, acFields.map((f) => f.id), secrets);
@@ -135,7 +140,7 @@ async function prepare() {
   const parent = issue.fields.parent;
   if (parent?.key) {
     epic = { key: parent.key, title: parent.fields?.summary ?? "" };
-    siblings = withoutHidden((await jira.search(`parent = ${parent.key} AND key != ${key} ORDER BY updated DESC`, ["summary", "status"]).catch((e) => { gaps.push(asGap("siblings", e)); return []; }))
+    siblings = withoutHidden((await jira.siblings(parent.key, key).catch((e) => { gaps.push(asGap("siblings", e)); return []; }))
       .map((s) => ({ key: s.key, title: s.fields?.summary ?? "", status: s.fields?.status?.name ?? null, done: s.fields?.status?.statusCategory?.key === "done" })), hide); // a hidden known-bug ticket under the same epic is not a sibling to a blind run
   }
 
@@ -208,7 +213,7 @@ async function prepare() {
     for (const [ref, g] of plan.gaps) inv.items.find((i) => i.ref === ref).gap = g;
     for (const it of plan.toFetch) await materialize(it, jira, runDir, secrets);
 
-    const privateHosts = new Set([...envHosts(root), new URL(tcred.base).hostname, "github.com", "api.github.com"]);
+    const privateHosts = new Set([...envHosts(root), new URL(jira.base).hostname, "github.com", "api.github.com"]);
     let pages = 0;
     const figma = figmaToken(); // FIGMA_TOKEN after the layered loader; never printed
     const figmaItems = [];
@@ -217,7 +222,7 @@ async function prepare() {
         const id = /\/pages\/(\d+)/.exec(it.url)?.[1];
         if (!id) { it.gap = gap(it.ref, "unreadable", "no page id in the Confluence URL"); continue; }
         try {
-          const page = await jira.confluencePage(id);
+          const page = await jira.page(id);
           it.local_path = join(runDir, `confluence-${id}.txt`);
           writeFileSync(it.local_path, htmlToText(page.body?.storage?.value ?? "").slice(0, CAPS.pageTextBytes));
         } catch (e) { it.gap = asGap(it.ref, e); }
@@ -425,6 +430,7 @@ function redeploy() {
 const commands = { prepare, attach, save, "merge-change": mergeChangeCmd, deploy, known, compose: composeCmd, check, finish, abort, redeploy };
 if (!commands[cmd]) usage(cmd ? `unknown command "${cmd}"` : "no command");
 try { await commands[cmd](); } catch (e) {
+  if (e instanceof HostGoverned) { out({ status: "host-governed", detail: "the bridge reports a host-governed project (P1d-3); nothing more was read" }); process.exit(4); }
   console.error(`✗ ticket-context ${cmd} could not run: ${String(e?.message ?? e).slice(0, 300)}`);
   process.exit(3);
 }

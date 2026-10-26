@@ -36,15 +36,7 @@ export function resolveProfile(profile) {
   };
 }
 
-// The two credential helpers below go with their last callers: the Jira connector (Task 4) and the GitHub one (Task 5).
-export function trackerCredential(p, env = process.env) {
-  if (p.tracker !== "jira") return { ok: false, reason: "connector-unavailable", detail: "Azure Boards is read from Phase 5 on" };
-  const base = (env.JIRA_BASE_URL || p.trackerBase || "").replace(/\/+$/, "");
-  const missing = [!base && "JIRA_BASE_URL", !env.JIRA_EMAIL && "JIRA_EMAIL", !env.JIRA_API_TOKEN && "JIRA_API_TOKEN"].filter(Boolean);
-  if (missing.length) return { ok: false, reason: "no-credential", detail: `set ${missing.join(", ")} in .env.local (/project-init writes them)` };
-  return { ok: true, base, auth: `Basic ${Buffer.from(`${env.JIRA_EMAIL}:${env.JIRA_API_TOKEN}`).toString("base64")}` };
-}
-
+// codeHostCredential goes with its last caller, the GitHub connector (P1d-2 Task 5).
 /** One code-host credential, chosen once (S7): the profile's authEnv, else GIT_TOKEN, else the gh session. */
 export function codeHostCredential(p, env = process.env, ghToken = ghCliToken) {
   const name = p.authEnv || "GIT_TOKEN";
