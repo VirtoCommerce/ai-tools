@@ -1,5 +1,5 @@
 ---
-description: "[Testing] PROTOTYPE vc-test — one feature-test ticket by scenarios: context → change map → approved scenarios, one agent each, beside the background AC run → triage → verdict, costed. --benchmark runs it blind (U67). ai-tools checkout only."
+description: "[Testing] PROTOTYPE vc-test — one feature-test ticket by scenarios: context → change map → approved scenarios, one agent each, beside the background AC run → triage → verdict, costed. --benchmark runs it blind (U67). Triage, investigation and some context scripts still need an ai-tools checkout (P1d-3)."
 argument-hint: "<TICKET> [<env>] [--yes] [--dry-run] [--benchmark]"
 disable-model-invocation: true
 ---
@@ -43,7 +43,7 @@ brief "Read and follow `<plugin>/briefs/<x>.md`" + the paths P.
 
 ## 1 — Context
 
-`/ticket-context <TICKET> --domain <slug>` (none without a slug; a benchmark adds `--before <before> --hide
+`/vc-test:ticket-context <TICKET> --domain <slug>` (none without a slug; a benchmark adds `--before <before> --hide
 <hide,…>` and skips the kb asks: `kb.out.json` is the not-read row, reason `hidden (U67)`). Its STOPs are this
 run's. Before its `finish`: `BA keep-prepare --prepare <prepare_path> --key <TICKET>` → `PREPARE` (none if cached).
 A `NOT DEPLOYED:` line in `blockers[]` ⇒ BLOCKED on deploy: write `verdict.md` with it and stop. **Benchmark:**
