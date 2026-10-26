@@ -18,6 +18,8 @@
  * Every function here is pure: argv in, { ok, reason } out.
  */
 
+import { checkRunnerShape } from "./runner.mjs";
+
 /** Tool → the vc-secrets task group whose secrets it receives. */
 export const TOOL_GROUP = Object.freeze({
   gh: "github",
@@ -27,10 +29,11 @@ export const TOOL_GROUP = Object.freeze({
   "git-ado": "ado",
   jira: "jira",
   onboard: "onboard",
+  runner: "runner",
 });
 
 /** The groups, i.e. the vc-secrets tasks `vc-init-<group>`. */
-export const GROUPS = Object.freeze(["github", "ado", "jira", "onboard"]);
+export const GROUPS = Object.freeze(["github", "ado", "jira", "onboard", "runner"]);
 
 /** Hosts a git credential (and a URL argument) may name, per git tool. */
 export const GIT_HOSTS = Object.freeze({
@@ -165,6 +168,19 @@ function checkGh(args) {
   return ok();
 }
 
+/**
+ * GraphQL read queries the bridge admits (vc-test B8). A document must be BYTE-EQUAL to one of these, and
+ * its fields are exactly `query` plus that query's variables. The one v1 entry is the review-thread count
+ * `/ticket-context` reads (`lib/github.mjs` unresolvedThreads); the REST API has no field for it. The two
+ * copies change together — allowlist.test.mjs fails when they differ.
+ */
+export const PINNED_GRAPHQL = Object.freeze({
+  reviewThreads: Object.freeze({
+    query: "query($o:String!,$r:String!,$n:Int!){repository(owner:$o,name:$r){pullRequest(number:$n){reviewThreads(first:100){nodes{isResolved}}}}}",
+    variables: Object.freeze(["o", "r", "n"]),
+  }),
+});
+
 /** gh api flags that take a value (the next argument, unless written as --flag=value). */
 /** gh api's one-letter flags that take a value (-i is its only boolean shorthand). */
 const GH_API_VALUE_SHORTS = "XFfHqtp";
@@ -174,11 +190,12 @@ const GH_API_VALUE_FLAGS = new Set(["-X", "--method", "-F", "--field", "-f", "--
 /**
  * `gh api` reads only. A write through it would sidestep the sub-command allowlist above (`gh pr merge`
  * is `PUT repos/…/pulls/<n>/merge`), and every write the plugins make has a gh command of its own.
- * GraphQL is out because a mutation is a POST to the same endpoint as a query. Field and input flags
+ * GraphQL is out because a mutation is a POST to the same endpoint as a query — except a PINNED_GRAPHQL
+ * read, checked byte for byte (checkPinnedGraphql). Field and input flags
  * switch gh to POST unless the method is set to GET explicitly. Returns the refusal, or null. Pure.
  */
 export function ghApiWrite(rest, endpoint) {
-  if (/^\/?graphql$/i.test(endpoint)) return "gh api graphql is not allowed through the bridge — use the gh command for the operation";
+  if (/^\/?graphql$/i.test(endpoint)) return checkPinnedGraphql(rest);
   let method = null;
   let body = false;
   for (let i = 0; i < rest.length; i++) {
@@ -193,6 +210,51 @@ export function ghApiWrite(rest, endpoint) {
   }
   if (method && method !== "GET") return `gh api --method ${method} is not allowed through the bridge — gh api reads only; use the gh command for the write`;
   if (body && method !== "GET") return "gh api with -f/-F/--field/--input sends a POST — not allowed through the bridge (add --method GET for query parameters)";
+  return null;
+}
+
+/**
+ * `gh api graphql …` is admitted only as a PINNED_GRAPHQL read: one `query` field byte-equal to a pinned
+ * query, each of its variables exactly once, optionally `--jq`. No other flag (a method, a header, an
+ * input file), no second positional, and no value starting with `@` (gh reads that file and posts it).
+ * Returns the refusal, or null. Pure.
+ */
+export function checkPinnedGraphql(rest) {
+  const FIELD = ["-f", "-F", "--field", "--raw-field"];
+  let query = null;
+  const vars = new Map();
+  let positional = 0;
+  for (let i = 0; i < rest.length; i++) {
+    const a = rest[i];
+    const name = flagName(a);
+    if (name === null) {
+      if (++positional > 1) return `gh api graphql: unexpected argument ${JSON.stringify(a)}`;
+      continue;
+    }
+    if (/^-[fF]./.test(a)) return "gh api graphql: write each field as its own flag (-f name=value)";
+    if (name === "--jq" || name === "-q") {
+      if (!a.includes("=")) i++;
+      continue;
+    }
+    if (!FIELD.includes(name)) return `gh api graphql: ${name} is not allowed with a pinned query`;
+    const field = a.includes("=") ? a.slice(a.indexOf("=") + 1) : rest[++i];
+    const eq = typeof field === "string" ? field.indexOf("=") : -1;
+    if (eq < 1) return `gh api graphql: ${name} needs name=value`;
+    const [key, value] = [field.slice(0, eq), field.slice(eq + 1)];
+    if (value.startsWith("@")) return `gh api graphql: a field value read from a file (${key}=@…) is not allowed`;
+    if (key === "query") {
+      if (query !== null) return "gh api graphql: query given twice";
+      query = value;
+    } else {
+      if (vars.has(key)) return `gh api graphql: variable ${key} given twice`;
+      vars.set(key, value);
+    }
+  }
+  if (query === null) return "gh api graphql needs -f query=<a pinned read query>";
+  const pinned = Object.values(PINNED_GRAPHQL).find((p) => p.query === query);
+  if (!pinned) return "gh api graphql: the query is not a pinned read query (vc-init PINNED_GRAPHQL) — graphql is allowed only for those";
+  for (const k of vars.keys()) if (!pinned.variables.includes(k)) return `gh api graphql: ${JSON.stringify(k)} is not a variable of the pinned query`;
+  for (const k of pinned.variables) if (!vars.has(k)) return `gh api graphql: missing variable ${k}`;
   return null;
 }
 
@@ -290,7 +352,7 @@ export function checkArgv(tool, args) {
   if (!Array.isArray(args) || args.some((a) => typeof a !== "string")) return no("arguments must be strings");
   if (args.some((a) => a.includes("\0"))) return no("an argument holds a NUL byte");
   // A body or a comment legitimately spans lines (gh, ado, jira); a git argument or a script name never does.
-  if (["git-gh", "git-ado", "onboard", "deliver"].includes(tool) && args.some((a) => /[\r\n]/.test(a))) {
+  if (["git-gh", "git-ado", "onboard", "deliver", "runner"].includes(tool) && args.some((a) => /[\r\n]/.test(a))) {
     return no("an argument holds a line break");
   }
   switch (tool) {
@@ -301,6 +363,7 @@ export function checkArgv(tool, args) {
     case "jira": return checkJira(args);
     case "deliver": return checkDeliver(args);
     case "onboard": return checkOnboard(args);
+    case "runner": return checkRunnerShape(args);
     default: return no(`unknown tool ${tool}`);
   }
 }

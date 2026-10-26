@@ -151,6 +151,7 @@ function main() {
     // rewrites the profile from the defaults, and neither may silently disappear with it.
     base = { ...PROFILE_DEFAULTS };
     if (existing.perf && typeof existing.perf === "object") base.perf = existing.perf;
+    if (existing.test && typeof existing.test === "object") base.test = existing.test; // vc-test's, like perf
     if (existing.governance && typeof existing.governance === "object") base = deepMerge(base, { governance: existing.governance });
   }
   if (args.governance !== undefined && args.governance !== "none" && !HOSTS[args.governance]) {
