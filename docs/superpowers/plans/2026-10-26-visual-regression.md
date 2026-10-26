@@ -15,7 +15,7 @@ Storybook 9.1 is built and deployed by CI and compared with nothing.
 
 | Instrument | Question it answers | Engine | Where it is the right tool |
 |---|---|---|---|
-| `PIXEL` | Did anything change that should not have? | `scripts/visual/` — head build vs base build | ui-kit / token / global-style change, a refactor or dependency upgrade that declares *no visual change*, an upstream merge into a fork, a theme, the release regression |
+| `PIXEL` | Did anything change that should not have? | `plugins/vc-frontend/visual/` (`npm run visual:*`) — head build vs base build | ui-kit / token / global-style change, a refactor or dependency upgrade that declares *no visual change*, an upstream merge into a fork, a theme, the release regression |
 | `DESIGN` | Does it match its reference (design project, Storybook)? | `qa-design` + `claude-design-verification.md`; later the `design-review` AC catalog (Phase 4) | new UI with a design link, a customer theme |
 | `PROBE` | Does layout break on hard data? | `layout-runner` (`048c`) + `measure-layout.ts` | any rendered change; stress matrix: locale × length × width × theme |
 | `CONTENT` | Is the rendered text right? | new probes (Phase 5) | raw i18n keys, GUIDs, placeholder prices, broken images/icons |
@@ -75,11 +75,11 @@ predate it — one instrument of four.
 
 ### Phase 1 — `PIXEL` engine + skill + axis wiring (this PR)
 
-- [x] `scripts/visual/snap.ts` — Storybook and pages sources, determinism settings, `--repeat`,
+- [x] `visual:snap` (moved in Phase 2 to `plugins/vc-frontend/visual/snap.mjs`) — Storybook and pages sources, determinism settings, `--repeat`,
   HAR record/replay (`--har-url` mandatory), `--storage-state`, `--block`, `hide`/`mask`.
-- [x] `scripts/visual/diff.ts` — best-pair comparison over repeated shots; `same / changed / unstable
+- [x] `visual:diff` — best-pair comparison over repeated shots; `same / changed / unstable
   / size-changed / added / removed / unrendered`; diff PNGs; `flagged-ids.txt` for pass 2.
-- [x] `scripts/visual/affected.ts` — git diff → components + their renderers, any repo with stories.
+- [x] `visual:affected` — git diff → components + their renderers, any repo with stories.
 - [x] `.claude/skills/qa-visual-regression/` — sources, two-pass procedure, triage, checklist rows.
 - [x] `visual-axis.md` §2a — the four instruments; `PIXEL` verdict rows in §3; `ui-kit-class.md`
   takes `PIXEL`.
@@ -99,10 +99,14 @@ change, no version bump.
   risk through `qa-visual-regression`. Tag `vc-test--v0.4.0` after the merge (`docs/release-process.md` §Step 5a).
 - [x] Release visual run — `regression-selection.md` §Visual regression at a release: base = the previous
   release tag, the whole kit, plus the key routes.
-- [ ] `vc-frontend` `merge-upstream` runs `PIXEL` on the fork before vs after the merge. **Open decision:** the
-  plugin is self-contained and runs inside the fork, which has neither the engine nor its dependencies
-  (Playwright, pixelmatch, pngjs). Either the plugin ships its own copy of `scripts/visual/` with an install
-  step, or the step calls an ai-tools checkout the operator points it at. Decide before building.
+- [x] `vc-frontend` 0.2.0: the engine ships in the plugin (`plugins/vc-frontend/visual/*.mjs`), and
+  `npm run visual:*` in ai-tools runs the same files — one engine, no second copy. `setup.mjs` installs its three
+  packages into the fork's `node_modules/.cache/` (never its `package.json`); `--with-browser` adds Chromium.
+  `merge-upstream` step 7 compares the fork before the merge (`M^1`) with the merge (`M`) on Storybook and pages
+  (`skills/merge-upstream/visual.md`): a fork component, its theme or a restyled ui-kit component that moved
+  without the brief accepting it is a regression. Verified as an installed plugin in a repository with no
+  packages: exit 2 with the setup command, setup, then the seeded badge regression found. Tag
+  `vc-frontend--v0.2.0` after the merge only if another plugin starts depending on it (none does today).
 
 ### Phase 3 — page targets for the Virto storefront (needs a reachable stand)
 

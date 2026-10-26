@@ -8,6 +8,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## A merge into a theme fork is checked pixel by pixel — `vc-frontend` `0.2.0` — 2026-10-26
+
+**Added — the visual check in `/vc-frontend:merge-upstream` (step 7).** The fork owns how it looks, so the skill
+now compares the fork before the merge (`M^1`) with the merge (`M`): the fork's Storybook, and its pages with the
+API answers replayed from one recording so both sides render the same data. A fork component, its theme or a
+ui-kit component the fork restyles that moved without the brief accepting it is a regression, fixed before the
+push. The procedure is `skills/merge-upstream/visual.md` (VCST-6534).
+
+**Added — the PIXEL engine ships in the plugin** (`visual/`). `setup.mjs` installs its three packages (Playwright,
+pixelmatch, pngjs) once into the fork's `node_modules/.cache/vc-frontend-visual`, never into its `package.json`;
+`--with-browser` also downloads Chromium. ai-tools' `npm run visual:*` now runs these same files, and the
+TypeScript copies under `scripts/visual/` are gone.
+
 ## A visual risk names the instrument that decides it — `vc-test` `0.4.0` — 2026-10-26
 
 **Changed — the strategy gate (clause 4).** A risk with technique `VISUAL` now names its instrument:
