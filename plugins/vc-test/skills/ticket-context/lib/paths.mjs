@@ -12,7 +12,11 @@ export const RUN_TTL_MS = 24 * 3600 * 1000;
 // The two run-dir shapes, anchored. The temp fallback is mkdtemp's: the prefix plus exactly six [A-Za-z0-9].
 const RUN_NAME = /^run-(\d+)$/;
 const TMP_RUN_NAME = /^ticket-context-([A-Z][A-Z0-9]*-\d+|[1-9]\d{0,9})-[A-Za-z0-9]{6}$/;
+// What a killed run leaves next to them: a bridge download or request body (bridge.mjs bridgeTempFiles), an Azure
+// diff's work dir (connectors/azure-repos.mjs). Both carry their Date.now() stamp.
+const TEMP_NAME = /^(?:bridge-\d+-(\d+)-\d+\.\w+|az-diff-\d+-(\d+))$/;
 const isRealDir = (p) => { try { const st = lstatSync(p); return st.isDirectory() && !st.isSymbolicLink(); } catch { return false; } };
+const isRealFile = (p) => { try { const st = lstatSync(p); return st.isFile() && !st.isSymbolicLink(); } catch { return false; } };
 
 /** `format` "prefixed" or "numeric" is the profile's (prepare checks it); none accepts either — the path-safety check. */
 export function assertKey(key, format) {
@@ -42,13 +46,17 @@ export function newRunDir(key, { root = outputRoot(), ignored, now = Date.now() 
   return { dir: mkdtempSync(join(tmpdir(), `ticket-context-${key}-`)), inProject: false };
 }
 
-/** Delete run dirs a crashed run left behind. Returns how many were removed. */
+/** Delete the run dirs and bridge temp files a crashed run left behind. Returns how many were removed. */
 export function sweepRunDirs(base, now = Date.now()) {
   if (!existsSync(base)) return 0;
   let n = 0;
   for (const name of readdirSync(base)) {
-    const m = RUN_NAME.exec(name);
-    if (m && now - Number(m[1]) > RUN_TTL_MS && isRealDir(join(base, name))) { rmSync(join(base, name), { recursive: true, force: true }); n++; }
+    const p = join(base, name);
+    const run = RUN_NAME.exec(name);
+    const temp = TEMP_NAME.exec(name);
+    const stamp = Number(run?.[1] ?? temp?.[1] ?? temp?.[2]);
+    if (!(now - stamp > RUN_TTL_MS)) continue;
+    if (run ? isRealDir(p) : temp[1] ? isRealFile(p) : isRealDir(p)) { rmSync(p, { recursive: true, force: true }); n++; }
   }
   return n;
 }

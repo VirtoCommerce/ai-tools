@@ -75,7 +75,11 @@ export function priorRuns(root, key, run = null) {
   }
   const models = join(root, "reports", "ba", "test-models");
   for (const f of list(models)) if (f.startsWith(`${key}-`)) out.push(`reports/ba/test-models/${f}`);
-  const mention = new RegExp(`(?<![A-Za-z0-9-])${escapeRe(key)}(?!\\d)`); // VCST-62 is not VCST-6223, nor XVCST-62
+  // VCST-62 is not VCST-6223, nor XVCST-62. A bare work item id is any number in any text, so an Azure Boards id
+  // counts only in a work-item form: AB#967, #967, "work item 967", …/_workitems/edit/967.
+  const mention = /^\d+$/.test(key)
+    ? new RegExp(`(?:(?<![A-Za-z0-9])[A-Za-z]*#|\\bwork ?item\\s+|/_workitems/edit/)${key}(?!\\d)`, "i")
+    : new RegExp(`(?<![A-Za-z0-9-])${escapeRe(key)}(?!\\d)`);
   for (const f of walk(join(root, "reports", "bugs"))) {
     if (!f.endsWith(".md")) continue;
     try { if (mention.test(readFileSync(f, "utf8"))) out.push(relative(root, f).split("\\").join("/")); } catch { /* dangling link, unreadable file */ }
