@@ -8,6 +8,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## A component is compared with its reference — `vc-frontend` `0.3.0` — 2026-10-26
+
+**Added — `visual/design.mjs`** (ai-tools: `npm run visual:design`). It compares the same component in two places at
+once: the reference (Storybook, or a design-system build) and the one under review (prod, QA, a fork's preview). Per
+component it judges anatomy, box, spacing, typography, colour (CIEDE2000), borders, shadows and the element's own
+pixels against the `design-review` acceptance catalog's tolerances. It sorts each difference into P2 / P3 / `theme`.
+A colour, font or radius difference that the same theme token names on both sides is `theme`, not a defect, and
+the differing tokens are listed for confirmation. A run where a page did not load, or one side matched nothing,
+is `INCONCLUSIVE` with exit 2 (VCST-6534).
+
 ## Host-governed projects — `vc-test` `0.6.0` — 2026-10-26
 
 `/vc-test:ticket-context` now builds its bundle on a host-governed project, whose tracker and code host are reachable
@@ -41,6 +51,7 @@ prefixes, so a server the host plugin ships (`mcp__plugin_<plugin>_<server>__`) 
 server's tools, write tools included; every shell, messaging, publishing and scheduling tool is disallowed.
 Read-only, the mapped servers only and the raw folder only rest on its brief. Accepted for the preview; a hook that
 enforces them is P5's.
+
 ## A merge into a theme fork is checked pixel by pixel — `vc-frontend` `0.2.0` — 2026-10-26
 
 **Added — the visual check in `/vc-frontend:merge-upstream` (step 7).** The fork owns how it looks, so the skill
