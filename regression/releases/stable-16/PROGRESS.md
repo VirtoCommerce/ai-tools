@@ -4,14 +4,14 @@
 
 Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1 · 2.59.0
 
-**Executed 2057 · PASS 1479 · FAIL 171 · BLOCKED 358** · ledger 219 rows
+**Executed 2019 · PASS 1479 · FAIL 171 · BLOCKED 320** · ledger 219 rows
 
 | Wave | Scope | Owner | Status | Planned | Executed | PASS | FAIL | BLOCKED | FAIL/BLOCKED without a verdict | Ledger | Runs |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | W0 | Smoke gate | Elena Kutasina | DONE | 149 | 149 | 100 | 4 | 19 | 0 | 5 | REG-2026-10-12-1659 |
 | W1 | Platform & infrastructure | Elena Kutasina | DONE | 538 | 538 | 436 | 19 | 67 | 0 | 26 | REG-2026-10-13-0035 REG-2026-10-13-1241-UCP |
 | W2 | Catalog & search | Elena Kutasina | TRIAGED | 611 | 553 | 445 | 53 | 51 | 0 | 58 | REG-2026-10-13-W2 |
-| W3 | Purchase flow | Elena Kutasina | RUN_DONE | 900 | 817 | 498 | 95 | 221 | 188 | 130 | REG-2026-10-15-W3 |
+| W3 | Purchase flow | Elena Kutasina | RUN_DONE | 862 | 779 | 498 | 95 | 183 | 150 | 130 | REG-2026-10-15-W3 |
 | W4 | Returns, B2B, accounts | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W5 | Marketing & content | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W6 | Theme cross-cutting + gap sessions | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
@@ -39,6 +39,7 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | W3 | 065 | 20 | not started before the usage limit |
 | W3 | 050b1 050b2 050b3 050b4 050b5 050c | 13 | browser lane of these GraphQL suites not run |
 | W3 | 050h | 1 | manual case |
+| W3 | 007 | 38 | not deployed: VirtoCommerce.SalesRep (Publish-to-Customer / Sales-Rep list sharing) — run 2026-10-15 recorded them BLOCKED, before the pre-… |
 
 ## Real bugs awaiting filing
 

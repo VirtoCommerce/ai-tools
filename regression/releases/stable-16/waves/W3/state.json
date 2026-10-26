@@ -6,11 +6,11 @@
   "REG-2026-10-15-W3"
  ],
  "totals": {
-  "planned": 900,
-  "executed": 817,
+  "planned": 862,
+  "executed": 779,
   "pass": 498,
   "fail": 95,
-  "blocked": 221,
+  "blocked": 183,
   "skipped": 3,
   "ambiguous": 0
  },
@@ -47,12 +47,19 @@
    ],
    "cases": 1,
    "reason": "manual case"
+  },
+  {
+   "suites": [
+    "007"
+   ],
+   "cases": 38,
+   "reason": "not deployed: VirtoCommerce.SalesRep (Publish-to-Customer / Sales-Rep list sharing) — run 2026-10-15 recorded them BLOCKED, before the pre-flight dropped such cases from the plan (2026-10-20)"
   }
  ],
  "handovers": [],
  "updatedAt": "2026-10-20",
  "personas": "config.js personas USER, ORG_USER, EUR, MULTI_ORG and ACME_BUYER as resolved from Elena Kutasina's .env.local; a parallel owner must use different accounts",
- "untriaged": 188,
+ "untriaged": 150,
  "evidence": "Raw results, HAR and screenshots stay in the owner's local run folders reports/regression/<runId>/ (gitignored); each filed bug carries its own evidence in Jira.",
  "reports": {
   "W3": {
