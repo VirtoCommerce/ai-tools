@@ -156,7 +156,7 @@ that bug.
    check, the tracker fields, Need hotfixes, the origin labels (`found-by-agent` + `found-in-regression`), the
    screenshots inside the fields and the render check ([`../rules/reports.md`](../../rules/reports.md) §0–§0b,
    [`tracker-ops.md`](../../knowledge/execution/tracker-ops.md)). Do not hand-roll the tracker call: a second filing
-   path drifts from the first. The flags need vc-fix with the `qa-bug` field rules (PR to follow); on an older install
+   path drifts from the first. The flags need vc-fix with the `qa-bug` field rules (vc-fix 0.16.0, #536); on an older install
    they are ignored and it asks per bug, as before.
 3. Replace `DRAFT` with the key; the other rows of the same defect become `DUPLICATE` with that key.
 
