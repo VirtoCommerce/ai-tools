@@ -97,7 +97,7 @@ import { discoverAdoWorkItemId, probeAdoWorkItemsWrite } from "../../scripts/lib
 // and the TS tracker (trackers/azure-tracker.ts) can't drift. ensureAzureHtml/mdToHtml are
 // re-exported below for the unit test that imports them from this file.
 import { ensureAzureHtml, mdToHtml, buildBugFields, countImages } from "./ado-html.mjs";
-import { rawOutPath, writeCapped } from "./raw-out.mjs";
+import { DOWNLOAD_TIMEOUT_MS, FETCH_TIMEOUT_MS, rawOutPath, timedFetch, writeCapped } from "./raw-out.mjs";
 // Pure date-range validation for a team iteration, SHARED with discover-tracker.mjs so the runtime
 // "which sprint is current" resolve and the onboarding "which team owns the current sprint" scan can
 // never disagree. `$timeframe=current` alone is untrustworthy (Azure keeps the flag on a dormant
@@ -294,13 +294,21 @@ const RETRY_STATUS = new Set([429, 500, 502, 503, 504]);
 const THROTTLE_ONLY = new Set([429]);
 const IDEMPOTENT_METHODS = new Set(["GET", "HEAD", "PUT", "PATCH", "DELETE"]);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-async function fetchRetry(url, opts, { attempts = 3, baseMs = 250 } = {}) {
+async function fetchRetry(url, opts, { attempts = 3, baseMs = 250, timeoutMs = FETCH_TIMEOUT_MS } = {}) {
   const method = String(opts?.method || "GET").toUpperCase();
   const retryStatus = IDEMPOTENT_METHODS.has(method) ? RETRY_STATUS : THROTTLE_ONLY;
   let lastErr;
   for (let attempt = 1; attempt <= attempts; attempt++) {
     try {
-      const res = await fetch(url, opts);
+      // Never a hang (timedFetch). A timed-out non-idempotent call may have landed server-side, so it is
+      // not retried — the same reason a create POST is not retried on a 5xx.
+      let res;
+      try {
+        res = await timedFetch(url, opts, timeoutMs, `${method} ${url.split("?")[0]}`);
+      } catch (e) {
+        if (/timed out/.test(e.message) && !IDEMPOTENT_METHODS.has(method)) attempt = attempts;
+        throw e;
+      }
       if (retryStatus.has(res.status) && attempt < attempts) {
         await sleep(baseMs * 2 ** (attempt - 1)); // 250ms, 500ms
         continue;
@@ -568,6 +576,10 @@ export async function pageByToken(fetchPage, { max = 500 } = {}) {
     const room = max - items.length;
     items.push(...got.slice(0, room));
     const next = page?.token || null;
+    if (!got.length) {
+      truncated = !!next || (total !== null && total > items.length); // an empty page ends it, whatever token it carries
+      break;
+    }
     if (got.length > room || (items.length >= max && (next || (total !== null && total > items.length)))) {
       truncated = true;
       break;
@@ -590,14 +602,32 @@ export async function pageByToken(fetchPage, { max = 500 } = {}) {
  */
 export async function pageBySkip(fetchPage, { max = 2000, top = 500 } = {}) {
   const items = [];
+  let skip = 0;
   for (;;) {
     const want = Math.min(top, max - items.length);
-    const page = await fetchPage(items.length, want);
-    const got = Array.isArray(page) ? page : [];
+    const page = await fetchPage(skip, want);
+    // Azure's own word on the end is `nextSkip` ("zero if there are no more"); a short page is the end only
+    // when the response does not say — a server may cap a page below $top.
+    const got = Array.isArray(page) ? page : Array.isArray(page?.items) ? page.items : [];
+    const next = Array.isArray(page) ? undefined : page?.nextSkip;
     items.push(...got.slice(0, want));
+    if (!got.length) return { items, truncated: false };
+    if (Number.isInteger(next)) {
+      if (next <= 0) return { items, truncated: got.length > want };
+      if (items.length >= max || next <= skip) return { items, truncated: true };
+      skip = next;
+      continue;
+    }
     if (got.length < want) return { items, truncated: false };
     if (items.length >= max) return { items, truncated: true };
+    skip += got.length;
   }
+}
+
+/** The query of one Azure work-item comments page: oldest first unless `newest`, the token encoded. */
+export function adoCommentsQuery({ token = null, newest = false } = {}) {
+  const t = token ? `&continuationToken=${enc(token)}` : "";
+  return `?$top=200&order=${newest ? "desc" : "asc"}${t}&api-version=7.1-preview.4`;
 }
 
 const GUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -1208,8 +1238,7 @@ const COMMANDS = {
     const id = posInt(args, "id", { required: true });
     const max = posInt(args, "max", { dflt: 500 });
     const r = await pageByToken(async (token) => {
-      const t = token ? `&continuationToken=${enc(token)}` : "";
-      const d = await call("GET", `${base(args, "tracker")}/_apis/wit/workItems/${id}/comments?$top=200${t}&api-version=7.1-preview.4`);
+      const d = await call("GET", `${base(args, "tracker")}/_apis/wit/workItems/${id}/comments${adoCommentsQuery({ token, newest: !!args.newest })}`);
       return { items: d.comments || [], token: d.continuationToken || null, total: d.totalCount };
     }, { max });
     return { total: r.total, comments: r.items, truncated: r.truncated };
@@ -1224,7 +1253,7 @@ const COMMANDS = {
       fail(e.message);
     }
     const url = `${base(args, "tracker")}/_apis/wit/attachments/${args.guid}?download=true&${V}`;
-    const res = await fetchRetry(url, { headers: { Authorization: await authHeader(), Accept: "*/*" }, redirect: "manual" });
+    const res = await fetchRetry(url, { headers: { Authorization: await authHeader(), Accept: "*/*" }, redirect: "manual" }, { timeoutMs: DOWNLOAD_TIMEOUT_MS });
     if (res.status >= 300 && res.status < 400) fail(`HTTP ${res.status} sign-in redirect on download-attachment — ADO auth not accepted.`);
     if (!res.ok) fail(`HTTP ${res.status} on download-attachment ${args.guid}`);
     try {
@@ -1252,7 +1281,7 @@ const COMMANDS = {
     const cmp = compare === undefined ? "" : `&$compareTo=${compare}`;
     const r = await pageBySkip(async (skip, top) => {
       const d = await call("GET", `${base(args, "vcs")}/_apis/git/repositories/${repo}/pullRequests/${pr}/iterations/${iteration}/changes?$top=${top}&$skip=${skip}${cmp}&${V}`);
-      return d.changeEntries || [];
+      return { items: d.changeEntries || [], nextSkip: d.nextSkip };
     }, { max, top: 500 });
     return { changeEntries: r.items, truncated: r.truncated };
   },

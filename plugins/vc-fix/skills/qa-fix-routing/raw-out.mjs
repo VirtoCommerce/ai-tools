@@ -7,7 +7,8 @@
  * checked after resolving links, and the bytes are counted as they arrive: a declared size is the
  * tracker's word, the bytes read are ours (the same rule as /ticket-context's readCapped).
  */
-import { closeSync, existsSync, mkdirSync, openSync, realpathSync, unlinkSync, writeSync } from "node:fs";
+import { randomBytes } from "node:crypto";
+import { closeSync, existsSync, mkdirSync, openSync, realpathSync, renameSync, unlinkSync, writeSync } from "node:fs";
 import { dirname, isAbsolute, relative, resolve } from "node:path";
 import { outputRoot } from "../../scripts/lib/run-dir.mjs";
 
@@ -49,16 +50,37 @@ export function rawOutPath(out, root = outputRoot()) {
   return abs;
 }
 
+export const FETCH_TIMEOUT_MS = 30_000; // a JSON read — /ticket-context's CAPS.fetchTimeoutMs
+export const DOWNLOAD_TIMEOUT_MS = 120_000; // an attachment, body included — CAPS.downloadTimeoutMs
+
+const isTimeout = (e) => e?.name === "TimeoutError" || e?.name === "AbortError";
+const timedOut = (label, ms) => new Error(`${label} timed out after ${ms / 1000} s`);
+
+/**
+ * fetch() that never hangs: the whole exchange, body included, is aborted after `ms`, and the abort is one
+ * readable error. A stalled tracker must not leave a token-holding process running.
+ */
+export async function timedFetch(url, opts = {}, ms = FETCH_TIMEOUT_MS, label = "the request") {
+  try {
+    return await fetch(url, { ...opts, signal: AbortSignal.timeout(ms) });
+  } catch (e) {
+    throw isTimeout(e) ? timedOut(label, ms) : e;
+  }
+}
+
 /**
  * Stream a fetch Response's body to `file`, at most `maxBytes`. A declared Content-Length over the cap, or
- * more bytes than the cap, throws `over-cap` and leaves no file behind.
+ * more bytes than the cap, throws `over-cap`. The bytes go to a fresh sibling file opened exclusively and
+ * renamed over `file` only when complete: a rename replaces the directory entry, so a link already at
+ * `file` (symbolic or hard) is never written through, and a good file there survives a failed download.
  * @returns {Promise<{ bytes: number, contentType: string|null }>}
  */
 export async function writeCapped(res, file, maxBytes) {
   const over = () => new Error(`over-cap: more than ${maxBytes} bytes`);
   const declared = Number(res.headers.get("content-length"));
   if (Number.isFinite(declared) && declared > maxBytes) throw over();
-  const fd = openSync(file, "w");
+  const part = `${file}.part-${process.pid}-${randomBytes(4).toString("hex")}`;
+  const fd = openSync(part, "wx");
   let bytes = 0;
   let failed = null;
   try {
@@ -77,17 +99,18 @@ export async function writeCapped(res, file, maxBytes) {
       }
     }
   } catch (e) {
-    failed = e;
+    failed = isTimeout(e) ? new Error("the download timed out") : e;
   } finally {
     closeSync(fd);
   }
   if (failed) {
     try {
-      unlinkSync(file);
+      unlinkSync(part);
     } catch {
       /* already gone */
     }
     throw failed;
   }
+  renameSync(part, file);
   return { bytes, contentType: res.headers.get("content-type") };
 }

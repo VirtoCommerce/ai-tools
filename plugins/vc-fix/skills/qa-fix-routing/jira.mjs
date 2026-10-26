@@ -49,7 +49,7 @@ import { basename, isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
 import { loadProjectProfile } from "../../scripts/lib/project-profile.mjs";
-import { rawOutPath, writeCapped } from "./raw-out.mjs";
+import { DOWNLOAD_TIMEOUT_MS, FETCH_TIMEOUT_MS, rawOutPath, timedFetch, writeCapped } from "./raw-out.mjs";
 
 function fail(msg, code = 1) {
   console.error(`[jira] ${msg}`);
@@ -148,14 +148,18 @@ export async function pageComments(fetchPage, { max = 500, pageSize = 100 } = {}
     const items = Array.isArray(page?.comments) ? page.comments : [];
     if (Number.isInteger(page?.total)) total = page.total;
     if (!items.length) break;
+    let added = 0;
     for (const c of items) {
       const id = c?.id ?? JSON.stringify(c);
       if (seen.has(id) || comments.length >= max) continue;
       seen.add(id);
       comments.push(c);
+      added++;
     }
+    if (!added) break; // a page with nothing new: a server repeating itself ends the loop, never spins it
     startAt += items.length;
-    if (items.length < want || (total !== null && startAt >= total)) break;
+    // With a known total, a short page is a server cap, not the end; without one, it is the end.
+    if (total !== null ? startAt >= total : items.length < want) break;
   }
   const known = total ?? comments.length;
   return { total: known, comments, truncated: comments.length < known };
@@ -212,14 +216,14 @@ function main() {
   if (!email) fail("no JIRA_EMAIL — set it in .env.local (an identifier, not a secret — the same for every env)");
   const auth = `Basic ${Buffer.from(`${email}:${token}`).toString("base64")}`;
 
-  const call = async (method, path, { body, headers = {}, raw = false, redirect = "follow" } = {}) => {
+  const call = async (method, path, { body, headers = {}, raw = false, redirect = "follow", timeout = FETCH_TIMEOUT_MS } = {}) => {
     if (!safePath(path)) fail(`refusing path ${JSON.stringify(path)} — only /rest/… on ${pin.origin}`);
-    const res = await fetch(`${pin.origin}${path}`, {
+    const res = await timedFetch(`${pin.origin}${path}`, {
       method,
       redirect,
       headers: { Authorization: auth, Accept: "application/json", ...(body !== undefined && !(body instanceof FormData) ? { "Content-Type": "application/json" } : {}), ...headers },
       body: body === undefined ? undefined : body instanceof FormData ? body : JSON.stringify(body),
-    });
+    }, timeout, `${method} ${path}`);
     if (raw) return res;
     const text = await res.text();
     if (res.status === 401 || res.status === 403) {
@@ -310,7 +314,7 @@ function main() {
       } catch (e) {
         fail(e.message);
       }
-      const res = await call("GET", `/rest/api/3/attachment/content/${args.attachment}`, { raw: true, headers: { Accept: "*/*" } });
+      const res = await call("GET", `/rest/api/3/attachment/content/${args.attachment}`, { raw: true, headers: { Accept: "*/*" }, timeout: DOWNLOAD_TIMEOUT_MS });
       if (!res.ok) fail(`HTTP ${res.status} for the attachment ${args.attachment}`);
       try {
         return { path: out, ...(await writeCapped(res, out, intArg("max-bytes", 25 * 2 ** 20))) };
