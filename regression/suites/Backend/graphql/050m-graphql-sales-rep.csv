@@ -1721,6 +1721,10 @@ query Q($storeId: String) { salesRepOrders(storeId: $storeId, first: 50) { total
 query Q($storeId: String, $f: String) { salesRepOrders(storeId: $storeId, first: 50, filter: $f) { totalCount items { number organizationId } } }
 [GQL-VARS rep_filter] {""storeId"":""{{storeId}}"",""f"":""OR status:\""Processing\""""}
 [GQL-EXEC rep_filter]
+[GQL-OP rep_or_only]
+query Q($storeId: String, $f: String) { salesRepOrders(storeId: $storeId, first: 50, filter: $f) { totalCount items { number organizationId } } }
+[GQL-VARS rep_or_only] {""storeId"":""{{storeId}}"",""f"":""OR""}
+[GQL-EXEC rep_or_only]
 [GQL-OP rep_keyword]
 query Q($storeId: String, $k: String) { salesRepOrders(storeId: $storeId, first: 50, keyword: $k) { totalCount items { number organizationId } } }
 [GQL-VARS rep_keyword] {""storeId"":""{{storeId}}"",""k"":""OR status:\""Processing\""""}
@@ -1735,6 +1739,8 @@ query Q($storeId: String, $k: String) { salesRepOrders(storeId: $storeId, first:
 [ERRORS label=rep_all] errors[] empty {SPEC} (VCST-6536)
 [ERRORS label=rep_filter] errors[] empty {SPEC} (VCST-6536)
 [COUNT label=rep_filter] data.salesRepOrders.totalCount <= {{REP_ALL_TOTAL}} {BL} (BL-AUTH-006)
+[ERRORS label=rep_or_only] errors[] empty {SPEC} (VCST-6536)
+[COUNT label=rep_or_only] data.salesRepOrders.totalCount <= {{REP_ALL_TOTAL}} {BL} (BL-AUTH-006)
 [ERRORS label=rep_keyword] errors[] empty {SPEC} (VCST-6536)
 [COUNT label=rep_keyword] data.salesRepOrders.totalCount <= {{REP_ALL_TOTAL}} {BL} (BL-AUTH-006)","[API] errors[] is empty in the GraphQL response
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql",none,VCST-6536 · Archetype:SCOPE · Technique:EG · Purpose:FUNC · Catches:VCST-6536 | Promoted: REG-2026-10-27-0036 (2026-10-26),Automated
