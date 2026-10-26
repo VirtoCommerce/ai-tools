@@ -86,7 +86,9 @@ interface BundleResult {
 
 // ── env / token ──────────────────────────────────────────────────────────────
 function loadToken(): string | undefined {
-  for (const f of ['.env.defaults', '.env.local']) {
+  // A variable already set is never overwritten, so the file read FIRST wins: .env.local before .env.defaults gives
+  // the documented order (process env, then .env.local, then .env.defaults). The reverse let a default beat a local value.
+  for (const f of ['.env.local', '.env.defaults']) {
     const p = resolve(REPO_ROOT, f);
     if (existsSync(p)) {
       const vars = parseDotenv(readFileSync(p));
