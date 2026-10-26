@@ -19,6 +19,20 @@ so this repository's runs and the existing gate tests behave as today.
 
 **Spec:** [`docs/superpowers/specs/2026-10-15-vc-test-plugin-design.md`](../specs/2026-10-15-vc-test-plugin-design.md) — §5.2 (the rule), §5.3 (F2, F5, F6), U6, U7, §6. P1d-3 is two plans: this one, and [`2026-10-26-vc-test-p1d3b-host-governed.md`](2026-10-26-vc-test-p1d3b-host-governed.md), the host-governed route. They touch different files and can land in either order.
 
+## Status (2026-10-26)
+
+**Done — vc-test 0.4.0.** Built differently from the tasks below; the code is normative:
+- A fired floor whose artifact the install cannot run is **not** skipped as a whole. It stays fired and lists
+  `unavailable[]` rows, which may read `SKIP — not available in this install: <capability>` (§5.2 words the rule per
+  artifact; skipping F1/F2/F12 whole would drop their MODEL-risk requirements, which need no tool). Only F5's doubt
+  from a missing corpus is skipped as a floor, as §5.3 says. Clause 6b accepts the same unavailable Exploratory row.
+- A regression or tc lookup that ran and failed stays doubt even when `capabilities.json` says the script is missing.
+- `deployed.json` is read from `<outputRoot>/.vc-fix/vc-test/<KEY>/<env>/`, the path `workDir` names, without calling
+  it: `workDir` creates the folder and accepts only Jira keys.
+- Task 2 Step 4's and Task 4 Step 1's live checks on VCST-5097 were not run: the Jira token in this checkout's
+  `.env.local` was rejected from about 16:47 on. Both are equal by construction here (this repository has no
+  `qa-knowledge/` store and declares every script), and are to be run once the token is fixed.
+
 ## Global Constraints
 
 - **Unread is still doubt (F9).** Only a capability the install *lacks* turns a floor into SKIP. A script that is declared but fails, times out or prints no JSON stays a doubt that fires the floor, as today.
