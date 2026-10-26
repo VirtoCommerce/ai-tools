@@ -47,9 +47,17 @@ const floor = (id, fired, signal, requires = []) => ({ id, fired, signal, requir
 // install (vc-test spec §5.2: what the install cannot run is a named SKIP, never a doubt).
 export const ARTIFACTS_FOR = { F1: ["Exploratory"], F2: ["Exploratory"], F3: ["Visual lane"], F8: ["Visual lane"],
   F5: ["Coverage triage + regression"], F12: ["Exploratory"] };
+// Only a probe that ran says a tool is missing: the MCP list capabilities.mjs was given (`mcp`; a 0.4.0 file has only
+// its `mcp:<name>` keys), else null — unprobed reads as available, so the row stays required.
+const probedMcp = (c) => {
+  if (Array.isArray(c.mcp)) return c.mcp.map(String);
+  const named = Object.keys(c).filter((k) => k.startsWith("mcp:") && c[k] === true).map((k) => k.slice(4));
+  return named.length ? named : null;
+};
+const lacks = (c, re, cap) => { const m = probedMcp(c); return m && !m.some((n) => re.test(n)) ? cap : null; };
 export const ARTIFACT_NEEDS = {
-  Exploratory: (c) => (Object.keys(c).some((k) => k.startsWith("mcp:playwright") && c[k]) ? null : "a browser lane (mcp:playwright-*)"),
-  "Visual lane": (c) => (c["mcp:chrome-devtools"] ? null : "mcp:chrome-devtools"),
+  Exploratory: (c) => lacks(c, /playwright/i, "a browser lane (mcp:playwright-*)"),
+  "Visual lane": (c) => lacks(c, /chrome[-_ ]?dev[-_ ]?tools/i, "mcp:chrome-devtools"),
   "Coverage triage + regression": (c) => (c.scripts?.["regression-select"] === false ? "regression-select" : null),
 };
 
@@ -63,7 +71,10 @@ function applyCapabilities(floors, bundle, caps) {
     && g.where !== "known.tc:scope.observables"); // a name the step could not pass on is not a lookup that ran
   // A lookup that ran and failed is doubt whatever capabilities.json says: only "not declared" is unavailability.
   const ranAndFailed = lookupGaps.some((g) => g.reason !== "not-available-in-install");
-  const noCorpus = !ranAndFailed && (lookupGaps.length > 0 || caps.scripts?.["regression-select"] === false);
+  // No domain (or a dropped observable) kept tc:scope from looking: doubt, unless tc:scope is missing as well.
+  const scopeDoubt = (bundle.gaps ?? []).some((g) => g.where === "known.domain" || g.where === "known.tc:scope.observables");
+  const noScope = caps.scripts?.["tc-scope"] === false || lookupGaps.some((g) => g.where === "known.tc:scope" && g.reason === "not-available-in-install");
+  const noCorpus = !ranAndFailed && (!scopeDoubt || noScope) && (lookupGaps.length > 0 || caps.scripts?.["regression-select"] === false);
   return floors.map((f) => {
     if (!f.fired) return f;
     if (f.id === "F5" && /^doubt:/.test(f.signal) && !(bundle.known?.cases_at_risk ?? []).length && noCorpus) {
@@ -183,6 +194,15 @@ export function readJsonOrExit(path, script) {
     process.exit(2);
   }
 }
+/** capabilities.json, or exit 2 when it is not an object (`null`, a list) or its `mcp` / `scripts` have the wrong shape:
+ *  a malformed file must not read as "nothing available". */
+export function readCapabilitiesOrExit(path, script) {
+  const c = readJsonOrExit(path, script);
+  const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+  if (isObj(c) && (c.mcp === undefined || Array.isArray(c.mcp)) && (c.scripts === undefined || isObj(c.scripts))) return c;
+  console.error(`${script}: ${path} is not a capabilities object (capabilities.mjs output)`);
+  process.exit(2);
+}
 /** The domain map a bundle names, or null when it has none or the file is gone (F2 then fires on doubt). The path is
  *  repo-relative: tried against the working directory, then against this skill's repo, so any cwd gets one answer. */
 export function domainMapTextOf(bundle) {
@@ -205,6 +225,6 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const m = process.argv.indexOf("--change-map");
   const changeMap = m < 0 ? null : (readJsonOrExit(process.argv[m + 1], "floors.mjs") ?? {}); // a `null` file is a map in doubt
   const c = process.argv.indexOf("--capabilities");
-  const capabilities = c < 0 ? null : readJsonOrExit(process.argv[c + 1], "floors.mjs");
+  const capabilities = c < 0 ? null : readCapabilitiesOrExit(process.argv[c + 1], "floors.mjs");
   console.log(JSON.stringify(computeFloors(bundle, { domainMapText: domainMapTextOf(bundle), p01Names: p01NamesOf(), changeMap, capabilities }), null, 2));
 }

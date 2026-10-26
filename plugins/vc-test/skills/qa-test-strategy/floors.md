@@ -40,12 +40,19 @@ Source carries the token `floor:<id>`, and no risk carries two (test-model redes
 - **A row this install cannot run.** A fired floor stays fired, and every other requirement holds. `unavailable[]`
   lists each row it needs that the install lacks a tool for: `Exploratory` needs a browser lane (`mcp:playwright-*`),
   `Visual lane` needs `mcp:chrome-devtools`, `Coverage triage + regression` needs `regression-select`. That row may
-  read `SKIP — not available in this install: <capability>` instead of `RUN`.
+  read `SKIP — not available in this install: <capability>` instead of `RUN`. **Only a probe says a tool is
+  missing:** a lane is missing when `capabilities.json` lists the MCP servers it was given (`mcp`) and none of them
+  is one (a browser lane: a name containing `playwright`; the Visual lane: `chrome-devtools`); a script, when
+  `scripts.<name>` is `false`. A
+  capability the file does not state — no `--mcp`, `{}` — is not missing. A file that is not an object exits 2.
 - **Never silent.** A skipped floor goes on the Floors line as `skipped: F5 (not available in this install:
   regression-select)`, and Out of scope names it with its residual risk. An unavailable row is named in Out of scope
   the same way. The gate refuses either one unnamed (clause 6s).
 - **F2 and F6 are not affected.** F2 reads the domain map `/vc-test:ticket-context` found, in the project knowledge
-  store first. F6 reads the bundle's `NOT DEPLOYED:` lines; without `deploy:pr`, those come from `deployed.json`.
+  store first. F6 reads the bundle's `NOT DEPLOYED:` lines. **Without `deploy:pr` none is produced yet:** no step
+  writes the `deployed.json` expect list `/vc-test:ticket-context` would read (its source, the versions each PR
+  builds, is not resolved without `deploy:pr`), so every counted PR is `DEPLOYMENT UNKNOWN` and F6 does not fire —
+  the run proceeds as "deployment unverified". The producer is deferred to P2.
 
 ## How `floors.mjs` reads the bundle
 
