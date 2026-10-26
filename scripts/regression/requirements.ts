@@ -29,7 +29,7 @@ import { parse as parseCsv } from "csv-parse/sync";
 import { parse as parseYaml } from "yaml";
 import { TestDataResolver } from "../lib/test-data-resolver.ts";
 import { resolveEnvCoords, type EnvCoords } from "../deploy/lib/env.ts";
-import { getAdminToken } from "../deploy/lib/live.ts";
+import { getAdminToken, type AdminAuth } from "../deploy/lib/live.ts";
 import { ghJson, setToken } from "../deploy/lib/github.ts";
 import type { Check } from "../preflight/policy.ts";
 
@@ -162,8 +162,8 @@ export function fixtureChecks(root: string, env: string, refs: Map<string, Set<s
 interface AliasEntry { email_env?: string; password_env?: string; [k: string]: unknown }
 
 /** The platform account behind an email: by user name first, then by search (storefront user names often differ from the email). */
-async function lookupAccount(c: EnvCoords, token: string, email: string): Promise<{ user: any | null; status: number }> {
-  const h = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+async function lookupAccount(c: EnvCoords, token: AdminAuth, email: string): Promise<{ user: any | null; status: number }> {
+  const h = { ...token.headers, "Content-Type": "application/json" };
   try {
     const r = await fetch(`${c.backUrl}/api/platform/security/users/${encodeURIComponent(email)}`, { headers: h });
     if (r.status === 200) { const u = await r.json().catch(() => null); if (u) return { user: u, status: 200 }; }
@@ -192,17 +192,17 @@ function personaModule(reqs: Record<string, PersonaRequirement> | undefined, ali
 }
 
 /** Installed module ids, or null when they could not be read (then no persona is judged on its module). */
-async function installedModules(c: EnvCoords, token: string | null): Promise<Set<string> | null> {
+async function installedModules(c: EnvCoords, token: AdminAuth | null): Promise<Set<string> | null> {
   if (!token || !c.backUrl) return null;
   try {
-    const r = await fetch(`${c.backUrl}/api/platform/modules`, { headers: { Authorization: `Bearer ${token}` } });
+    const r = await fetch(`${c.backUrl}/api/platform/modules`, { headers: token.headers });
     if (r.status !== 200) return null;
     const list = (await r.json()) as { id: string; isInstalled?: boolean }[];
     return new Set(list.filter((m) => m.isInstalled !== false).map((m) => m.id));
   } catch { return null; }
 }
 
-export async function personaChecks(root: string, env: string, c: EnvCoords, token: string | null, personas: Map<string, Set<string>>,
+export async function personaChecks(root: string, env: string, c: EnvCoords, token: AdminAuth | null, personas: Map<string, Set<string>>,
   modules: { reqs?: Record<string, PersonaRequirement>; installed: Set<string> | null } = { installed: null }): Promise<Check[]> {
   const registry = JSON.parse(readFileSync(join(root, "test-data/aliases.json"), "utf-8")) as Record<string, AliasEntry>;
   const resolver = makeResolver(root, env);
@@ -251,7 +251,7 @@ export async function personaChecks(root: string, env: string, c: EnvCoords, tok
  * (test-runner-agent Phase 1) — two lanes on one persona collide, which reads as product failures. A WARN, not a
  * BLOCK: the run still works, and stopping it would hide the cases that are fine.
  */
-export async function laneAccountChecks(root: string, env: string, c: EnvCoords, token: string | null, slots = 3): Promise<Check[]> {
+export async function laneAccountChecks(root: string, env: string, c: EnvCoords, token: AdminAuth | null, slots = 3): Promise<Check[]> {
   const p = join(root, "test-data/users/agent-user-pool.csv");
   if (!existsSync(p)) return [];
   const rows = parseCsv(readFileSync(p, "utf-8").replace(/^﻿/, ""), { columns: true, skip_empty_lines: true, relax_column_count: true }) as Record<string, string>[];
@@ -306,10 +306,10 @@ function meets(r: Requirement, value: unknown, present: boolean): boolean {
 }
 const want = (r: Requirement) => r.allowedIncludes ? `to offer ${r.allowedIncludes.map((v) => JSON.stringify(v)).join(", ")}` : r.equals !== undefined ? `= ${JSON.stringify(r.equals)}` : r.notEquals !== undefined ? `≠ ${JSON.stringify(r.notEquals)}` : "set";
 
-export async function declaredChecks(env: string, c: EnvCoords, token: string | null, reqs: { suite: string; r: Requirement }[]): Promise<Check[]> {
+export async function declaredChecks(env: string, c: EnvCoords, token: AdminAuth | null, reqs: { suite: string; r: Requirement }[]): Promise<Check[]> {
   if (!reqs.length) return [];
   const storeId = process.env.STORE_ID || "B2B-store";
-  const auth = token ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } : null;
+  const auth = token ? { ...token.headers, "Content-Type": "application/json" } : null;
   const getJson = async (url: string, init?: RequestInit) => {
     if (!auth || !c.backUrl) return null;
     try { const r = await fetch(`${c.backUrl}${url}`, { headers: auth, ...init }); return r.status === 200 ? await r.json() : null; } catch { return null; }
@@ -379,7 +379,7 @@ export async function declaredChecks(env: string, c: EnvCoords, token: string | 
 export async function requirementChecks(o: { root: string; env: string; suites: SuiteFile[] }): Promise<Check[]> {
   const reqFile = loadRequirements(o.root);
   const needs = collectCaseNeeds(o.root, o.suites);
-  let c: EnvCoords | null = null, token: string | null = null;
+  let c: EnvCoords | null = null, token: AdminAuth | null = null;
   try { c = resolveEnvCoords(o.env); } catch { /* reported per row as UNKNOWN */ }
   // One retry: without the token every account and module check degrades to UNKNOWN, and a single dropped
   // connection is common enough on a busy stand to cost the whole case-level half (2026-10-20, vcptcore_regression).
