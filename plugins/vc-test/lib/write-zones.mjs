@@ -5,7 +5,10 @@
 // alone is not blamed on it, while a second edit to it is.
 // What it cannot see: (1) a write to a git-IGNORED path outside the run folder and .vc-fix (e.g. .env.local,
 // project-profile.json) — git does not list it and only the run folder is walked; (2) which agent wrote a file —
-// the orchestrator's zone is run-wide, so a stray file inside it is attributed to no one.
+// the orchestrator's zone is run-wide, so a stray file inside it is attributed to no one; (3) a directory git lists as
+// one entry (a nested repository, a submodule) is not looked into; (4) a symlink inside the run folder is skipped.
+// Keys are in git's own spelling (its `--show-prefix` of the root), never the filesystem's, so a root reached through a
+// junction, a symlink or an 8.3 short name still keys every git path.
 // CLI: node plugins/vc-test/lib/write-zones.mjs snapshot --key <KEY> --run-dir <RUN_DIR>        (before the first wave)
 //      node plugins/vc-test/lib/write-zones.mjs check --key <KEY> --run-dir <RUN_DIR> --run-plan <run-plan.json>
 //   check prints { outside, registryErrors, gitScope, reason }. exit 0: none outside; 2: a file outside every zone
@@ -15,7 +18,7 @@
 //   `--env <env>` selects the work dir's env (default: the current one).
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, lstatSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, readFileSync, readdirSync, realpathSync, statSync, writeFileSync } from "node:fs";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { argOf, currentEnv, outputRoot, workDir } from "./paths.mjs";
@@ -90,20 +93,22 @@ function walk(dir, out) {
 
 const gitReason = (e, what) => `${what}: ${(e.code === "ENOENT" ? "git is not on PATH" : String(e.stderr || e.message).split("\n")[0]).trim().slice(0, 160)}`;
 
-// `git status --porcelain=v1 -z`: "XY path\0", and for a rename or copy "XY new\0old\0".
+// `git status --porcelain=v1 -z`: "XY path\0", and for a rename or copy "XY new\0old\0"; paths are relative to the repo's
+// top. `paths` are keyed relative to `root` by git's own prefix for it; a path outside `root` is not this run's.
 // ok:false (with a reason) when git cannot be asked — the caller must never read that as "nothing changed".
 function dirtyPaths(root) {
   const ask = (...args) => execFileSync("git", ["-C", root, ...args], { encoding: "utf8", maxBuffer: 1 << 28, stdio: ["ignore", "pipe", "pipe"] });
-  let top, raw;
-  try { top = ask("rev-parse", "--show-toplevel").trim(); } catch (e) { return { ok: false, reason: gitReason(e, "git rev-parse failed"), paths: [] }; }
+  let prefix, raw;
+  try { prefix = ask("rev-parse", "--show-prefix").trim(); } catch (e) { return { ok: false, reason: gitReason(e, "git rev-parse failed"), paths: [] }; }
   try { raw = ask("status", "--porcelain=v1", "-z", "--untracked-files=all"); } catch (e) { return { ok: false, reason: gitReason(e, "git status failed"), paths: [] }; }
   const parts = raw.split("\0");
   const paths = [];
+  const keep = (p) => { if (p.startsWith(prefix)) paths.push(p.slice(prefix.length)); };
   for (let i = 0; i < parts.length; i++) {
     const e = parts[i];
     if (e.length < 4) continue;
-    paths.push(join(top, e.slice(3)));
-    if (/[RC]/.test(e.slice(0, 2))) { i += 1; if (parts[i]) paths.push(join(top, parts[i])); }
+    keep(e.slice(3));
+    if (/[RC]/.test(e.slice(0, 2))) { i += 1; if (parts[i]) keep(parts[i]); }
   }
   return { ok: true, paths };
 }
@@ -118,12 +123,20 @@ export function runDirProblem({ root = outputRoot(), runDir }) {
  *  gitScope is false (with a reason) when git could not be asked: then only the run folder was seen. */
 export function snapshot({ root = outputRoot(), runDir }) {
   const git = dirtyPaths(root);
-  const abs = new Set(git.paths);
-  if (existsSync(runDir)) { const found = []; walk(runDir, found); found.forEach((f) => abs.add(f)); }
+  const keys = new Set(git.paths);
+  if (existsSync(runDir)) {
+    // The run folder's key is its place under the root, both resolved alike, so it agrees with git's keys.
+    let runKey;
+    try { runKey = posix(relative(realpathSync.native(root), realpathSync.native(runDir))); } catch { runKey = null; }
+    if (runKey === null || runKey === ".." || runKey.startsWith("../") || isAbsolute(runKey)) runKey = posix(relative(root, runDir));
+    const found = [];
+    walk(runDir, found);
+    for (const f of found) { const r = posix(relative(runDir, f)); keys.add(runKey ? `${runKey}/${r}` : r); }
+  }
   const files = {};
-  for (const f of abs) {
-    const key = posix(relative(root, f));
+  for (const key of keys) {
     if (key.startsWith("../") || key === "..") continue;
+    const f = join(root, key);
     try { files[key] = statSync(f).isFile() ? sha1(f) : "deleted"; } catch { files[key] = "deleted"; }
   }
   return { at: new Date().toISOString(), gitScope: git.ok, ...(git.ok ? {} : { reason: git.reason }), files };

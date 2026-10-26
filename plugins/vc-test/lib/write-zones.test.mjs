@@ -194,3 +194,43 @@ test("a symlink loop in the run folder is not followed", (t) => {
   const snap = snapshot({ root, runDir: join(root, RUN) });
   assert.deepEqual(Object.keys(snap.files), [`${RUN}/a/file.md`]);
 });
+
+// --- final review: the root spelled differently from git's toplevel -----------------------------------------------------
+
+test("a root reached through a symlink or junction still sees an edit after the snapshot as outside", (t) => {
+  const real = repo(t);
+  const holder = mkdtempSync(join(tmpdir(), "vct-wz-link-"));
+  t.after(() => rmSync(holder, { recursive: true, force: true }));
+  const link = join(holder, "root");
+  try { symlinkSync(real, link, process.platform === "win32" ? "junction" : "dir"); } catch { return t.skip("cannot create a symlink here"); }
+  const runDir = join(link, RUN);
+  const before = snapshot({ root: link, runDir });
+  assert.equal(before.gitScope, true);
+  put(real, "README.md", "edited by the run");
+  put(real, "new-untracked.txt");
+  put(real, `${RUN}/design-report.md`);
+  const stray = outside(changed(before, snapshot({ root: link, runDir })), zones(link, ["checklist"]));
+  assert.deepEqual(stray, [`${RUN}/design-report.md`, "README.md", "new-untracked.txt"].sort());
+});
+
+test("a root that is a subfolder of the repository keys git's paths relative to it, and ignores those outside it", (t) => {
+  const top = repo(t);
+  const root = join(top, "proj");
+  put(top, "proj/keep.md");
+  git(top, "add", ".");
+  git(top, "commit", "-q", "-m", "proj");
+  const runDir = join(root, RUN);
+  const before = snapshot({ root, runDir });
+  put(top, "proj/keep.md", "edited");
+  put(top, "outside-the-root.md");
+  assert.deepEqual(outside(changed(before, snapshot({ root, runDir })), zones(root, ["checklist"])), ["keep.md"]);
+});
+
+test("the contract-refresh zone covers every file the repo's run layout gives its commands (schema, cache, fixtures report)", async (t) => {
+  let runLayout;
+  try { ({ runLayout } = await import("../../../scripts/lib/run-dir.mjs")); } catch { return t.skip("the repo's scripts/lib/run-dir.mjs is not beside this plugin"); }
+  const root = repo(t);
+  const L = runLayout(join(root, RUN));
+  const files = [L.schema, L.schemaCache, L.fixturesReport].map((f) => f.slice(root.length + 1).split("\\").join("/"));
+  assert.deepEqual(outside(files, zones(root, ["contract-refresh"])), []);
+});

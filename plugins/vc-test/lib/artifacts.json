@@ -8,7 +8,7 @@
       "needs": [],
       "lane": null,
       "requires": ["back-url"],
-      "writes": ["<run>/knowledge/api/graphql-schema.md", "<run>/.graphql-schema.cache.json"]
+      "writes": ["<run>/knowledge/api/graphql-schema.md", "<run>/.graphql-schema.cache.json", "<run>/graphql-fixtures-validation.md"]
     },
     {
       "id": "checklist",
