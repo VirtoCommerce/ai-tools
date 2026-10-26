@@ -9,7 +9,7 @@ Dispatch description: `[vc-test:checklist] <KEY>`.
 
 - `STRATEGY` — the approved `test-strategy.md` (its last `## Round N`).
 - `CHANGE_MAP` — `change-map.json` (layer 0): ACs with `NO CODE`, hotspots with `proof` and `zone`, suspicions.
-- `RUN_DIR` — the run folder. `CUTOFF` — only in a benchmark.
+- `RUN_DIR` — the run folder.
 
 ## How
 
@@ -45,11 +45,5 @@ no blank line after it (a blank line ends the table for triage):
 
     | # | Ref | Item | Proof | Data | Result | Evidence |
     |---|---|---|---|---|---|---|
-
-**Benchmark (`CUTOFF` given, U67):** read only your inputs above and the `qa-checklist` skill (`<plugin>` is the
-folder above this brief's). Never `docs/superpowers/**`, `.superpowers/**`, `.claude/worktrees/**`,
-`<plugin>/benchmarks/**` or git history (no `git log`, `show`, `blame`, `diff`); never resolve a U-id by grepping
-the spec — a U-id here is a label, this brief is the whole rule. No kb, no earlier run folder, nothing under
-`reports/bugs/`, no bug catalog.
 
 Return **only** the file path and the count of rows.

@@ -11,8 +11,7 @@ Dispatch description: `[vc-test:ac-checks] <KEY>`.
   files, merged by the orchestrator after the wave); change only your own rows and never touch the
   `## Scenario results` table.
 - `CHANGE_MAP` — `change-map.json`: the endpoints and operations of its hotspots.
-- `STRATEGY` — `test-strategy.md`, read only for its last round's `Shared store:` line. `CUTOFF` — only in a
-  benchmark.
+- `STRATEGY` — `test-strategy.md`, read only for its last round's `Shared store:` line.
 - `RUN_DIR` — the run folder. Responses you keep go to `{RUN_DIR}/ac-checks/`.
 - `CAPABILITIES` — `capabilities.json`; its `stand.writable` decides whether you may create or change data.
 - `KEY` and `ledger.md` (beside this brief) — every entity you create and every setting you change is recorded as
@@ -49,11 +48,6 @@ Dispatch description: `[vc-test:ac-checks] <KEY>`.
   a value that is neither its value before the run nor this run's last ledger `after` is another's change ⇒
   `BLOCKED`, never FAIL.
 - A FAIL is a fact you saw. You do not investigate it and you do not write a bug: triage does that.
-
-**Benchmark (`CUTOFF` given, U67):** read only your inputs above, `ledger.md` and the files `live-discovery.md`
-names. Never `docs/superpowers/**`, `.superpowers/**`, `.claude/worktrees/**`, `<plugin>/benchmarks/**` or git
-history (no `git log`, `show`, `blame`, `diff`); never resolve a U-id by grepping the spec — a U-id here is a label,
-this brief is the whole rule. No kb, no earlier run folder, nothing under `reports/bugs/`, no bug catalog.
 
 Return **only**: counts of PASS / FAIL / BLOCKED (and how many BLOCKED need a look or a global window), and the
 `#` ids of the FAIL rows.
