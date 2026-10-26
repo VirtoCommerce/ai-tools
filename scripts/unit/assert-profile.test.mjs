@@ -1,9 +1,9 @@
 // Unit tests for the pure profile-shape asserter:
-// plugins/vc-fix/skills/project-init/assert-profile.mjs `profileViolations`.
+// plugins/vc-init/skills/project-init/assert-profile.mjs `profileViolations`.
 // Pure — no env, no network, no fs. Run: `node --test` / `npm test`.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { profileViolations } from "../../plugins/vc-fix/skills/project-init/assert-profile.mjs";
+import { profileViolations } from "../../plugins/vc-init/skills/project-init/assert-profile.mjs";
 
 const subjects = (p) => profileViolations(p).map((v) => v.subject);
 

@@ -62,7 +62,7 @@ All probes run via the MCP servers already wired into this repo:
 - **Playwright MCP** (`mcp__playwright-chrome__*` / `playwright-firefox` / `playwright-edge`) — for cross-browser execution, programmatic clicks, evaluate-in-page.
 - **Browser DevTools UI** (manual) — when the MCPs don't expose the surface (e.g., direct edit of a cookie value, DevTools Sensors panel).
 
-Where a probe uses a specific MCP tool, the example is given inline.
+Where a probe uses a specific MCP tool, the example is given inline. Every `evaluate_script` / `browser_evaluate` payload carries `/* @exploratory: <probe> — <reason> */` — without it the real-user hook (`hooks/enforce-real-user.mjs`) blocks the call. A finding from a probe is a server/API-layer finding, never a UI defect.
 
 ---
 
@@ -76,7 +76,7 @@ The user's DevTools is the easiest server-bypass mechanism. Server-side validati
 
 ```
 mcp__Chrome_DevTools__evaluate_script:
-  function: () => document.querySelector('[data-test-id="place-order"]').removeAttribute('disabled')
+  function: () => /* @exploratory: 1.1 disabled-control bypass — server must reject */ document.querySelector('[data-test-id="place-order"]').removeAttribute('disabled')
 ```
 
 **Expected:** Server-side validation rejects the submission with a clear, actionable error.
@@ -101,7 +101,7 @@ mcp__Chrome_DevTools__fill:
 ```
 mcp__Chrome_DevTools__list_network_requests  # find the request
 mcp__Chrome_DevTools__evaluate_script:
-  function: () => fetch('/api/cart/items', {
+  function: () => /* @exploratory: 1.3 tampered replay — server must re-check */ fetch('/api/cart/items', {
     method: 'POST',
     body: JSON.stringify({ productId: '<another-product>', quantity: 999 }),
     headers: { 'Content-Type': 'application/json' }
@@ -122,7 +122,7 @@ mcp__Chrome_DevTools__evaluate_script:
 
 ```
 mcp__Chrome_DevTools__evaluate_script:
-  function: () => window.__APOLLO_CLIENT__?.cache.extract()
+  function: () => /* @exploratory: 1.5 exposed client state */ window.__APOLLO_CLIENT__?.cache.extract()
 ```
 
 **Bug class:** Exposed dev tools in production, accessible secrets in JS bundles, source maps in prod.

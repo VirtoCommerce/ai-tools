@@ -13,7 +13,8 @@ the branch locally, pointing it at the deployment's QA backend, and driving the 
 
 `localVerify` fields: `devCmd`, `url`, `selfSignedCert`, `backendUrlForDev`, `storeId`, `storeDomain`,
 `userEnv`, `passEnv`. Login creds live in the env files (`userEnv`→`USER_EMAIL`, `passEnv`→`USER_PASSWORD`,
-password promoted from the `_<ENV>` suffix).
+password promoted from the `_<ENV>` suffix). Empty `userEnv`/`passEnv` mean a host-governed project: sign in as a
+storefront user from the env file's `<SLOT>_LOGIN` lines, password by the slot's NAME (`host-governance.md`).
 
 ## Why `APP_BACKEND_URL` must be the STOREFRONT host (the blank-app trap)
 In dev, vc-frontend's `client-app/app-runner.ts` derives the store-resolution `domain` from the

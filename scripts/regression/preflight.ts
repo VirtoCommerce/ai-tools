@@ -2,7 +2,7 @@
 // /qa-regression and /qa-smoke over the same fact core as the change-scoped one. Read-only.
 import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { getEnvFacts, isUnknown, type EnvFacts, type Unknown } from "../lib/env-facts.ts";
 import { readLedger } from "../lib/release-ledger-read.ts";
 import { envChecks, mcpChecks, isBlocking, type Check, type PolicyInput } from "../preflight/policy.ts";
@@ -10,18 +10,22 @@ import { checkMcpStatic, loadMcpRequirements, readMcpJson } from "../preflight/m
 import { classifyRun, gatherActivity, loadStatus, type Classification } from "./reap-stalled-run.ts";
 import { gateSuites, resolveRequiredModule, type GatingResult, type SuiteRef } from "./requires.ts";
 import { baselineDelta, readBaseline, type ModuleChange } from "./baseline.ts";
-import { SECRETS_FILE, classifySecretNames, readSecretsFile, suiteSecretCases } from "../lib/browser-secrets.mjs";
+import { classifySecretNames, declaredSecretsFile, readSecretsFile, splitQualifiedName, suiteSecretCases } from "../lib/browser-secrets.mjs";
+import { MASTER_NAME, usesMaster } from "../lib/env-layers.mjs";
 
 export type BuildFor = "regression" | "smoke";
 
 /**
- * The browser-lane passwords the selected suites type, against `.env.playwright.local` (the playwright-*
- * MCP `--secrets` file). A name the file lacks is typed as a literal and the case BLOCKs on sign-in
- * mid-run, so it is decided here. `gated`: suites EVERY case of which needs an undeclared name.
+ * The browser-lane passwords the selected suites type, against the playwright-* MCP `--secrets` file the
+ * nearest `.mcp.json` declares (`.env.playwright.local` when none does). A name the file lacks is typed as a
+ * literal and the case BLOCKs on sign-in mid-run, so it is decided here. On the combined
+ * `.env.playwright.all` a name is looked up as NAME_<ENV> for this run's env. On a master stand
+ * (PASSWORDS=master) every name is typed as MASTER_PASSWORD, so that one name is what the file must hold.
+ * `gated`: suites EVERY case of which needs an undeclared name.
  */
 export interface SecretsGate {
   names: string[];
-  file: { exists: boolean; env: string | null };
+  file: { name: string; exists: boolean; env: string | null; combined: boolean; envs: string[] | null };
   unsynced: string[];
   undeclared: { name: string; cases: Record<string, string[]> }[];
   gated: { suite: string; names: string[] }[];
@@ -30,11 +34,28 @@ export interface SecretsGate {
 export function computeSecretsGate(root: string, browserSuites: string[], env: string, processEnv: Record<string, string | undefined> = process.env): SecretsGate {
   const perSuite = suiteSecretCases(root, browserSuites) as Record<string, { cases: number; byName: Record<string, string[]> }>;
   const names = [...new Set(Object.values(perSuite).flatMap((s) => Object.keys(s.byName)))].sort();
-  const file = readSecretsFile(root);
-  const cls = classifySecretNames(names, file, processEnv);
-  // A file generated for another TEST_ENV holds another stand's values: every env-backed name is unsynced.
-  const otherEnv = file.exists && file.env !== null && file.env !== env;
-  const unsynced = otherEnv ? names.filter((n) => processEnv[n]) : cls.unsynced;
+  const declared = declaredSecretsFile(root);
+  const file = declared ? readSecretsFile(root, declared) : readSecretsFile(root);
+  const combined = file.envs !== null;
+  const master = usesMaster(processEnv);
+  // What a lane substitutes for each name: on a master stand MASTER_PASSWORD's value, else the combined file's
+  // NAME_<ENV> entries for this env under their bare names, else the single-env file's.
+  const masterHeld = file.values.get(MASTER_NAME);
+  const view = master
+    ? { values: new Map(masterHeld ? names.map((n): [string, string] => [n, masterHeld]) : []) }
+    : combined
+    ? { values: new Map([...file.values].flatMap(([q, v]): [string, string][] => {
+        const split = splitQualifiedName(q, file.envs!);
+        return split?.env === env ? [[split.name, v]] : [];
+      })) }
+    : file;
+  const cls = classifySecretNames(names, view, processEnv);
+  // A file generated for (or a combined file without) another TEST_ENV holds another stand's values:
+  // every env-backed name is unsynced.
+  const otherEnv = !master && file.exists && (combined ? !file.envs!.includes(env) : file.env !== null && file.env !== env);
+  const unsynced = master
+    ? (cls.unsynced.length ? [MASTER_NAME] : [])
+    : otherEnv ? names.filter((n) => processEnv[n]) : cls.unsynced;
   const undeclared = cls.undeclared.map((name) => ({
     name, cases: Object.fromEntries(Object.entries(perSuite).filter(([, s]) => s.byName[name]).map(([id, s]) => [id, s.byName[name]])),
   }));
@@ -44,23 +65,28 @@ export function computeSecretsGate(root: string, browserSuites: string[], env: s
     const hit = new Set(missing.flatMap((n) => s.byName[n]));
     if (missing.length && s.cases > 0 && hit.size >= s.cases) gated.push({ suite, names: missing });
   }
-  return { names, file: { exists: file.exists, env: file.env }, unsynced, undeclared, gated };
+  return { names, file: { name: basename(file.path), exists: file.exists, env: file.env, combined, envs: file.envs }, unsynced, undeclared, gated };
 }
 
 export function secretsChecks(s: SecretsGate, env: string): Check[] {
   if (s.names.length === 0) return [];
   const checks: Check[] = [];
-  const fix = "npm run secrets:sync, then reconnect playwright-chrome / -firefox / -edge in /mcp before any browser suite starts";
+  const sync = s.file.combined ? "npm run secrets:sync:all" : "npm run secrets:sync";
+  const fix = `${sync}, then reconnect playwright-chrome / -firefox / -edge in /mcp before any browser suite starts`;
+  const diagnose = s.file.combined ? "npm run secrets:check:all" : "npm run secrets:check";
+  const forEnv = s.file.combined
+    ? (s.file.envs?.includes(env) ? "" : ` (it covers ${s.file.envs?.join(", ") || "no env"}, not ${env})`)
+    : (s.file.env && s.file.env !== env ? ` (generated for TEST_ENV=${s.file.env})` : "");
   if (!s.file.exists)
-    checks.push({ id: "secrets:sync", status: "BLOCK", found: `${SECRETS_FILE} absent — ${s.names.length} password name(s) the selected browser suites type cannot be substituted`, who: "me", do: fix, diagnose: ["npm run secrets:check"] });
+    checks.push({ id: "secrets:sync", status: "BLOCK", found: `${s.file.name} absent — ${s.names.length} password name(s) the selected browser suites type cannot be substituted`, who: "me", do: fix, diagnose: [diagnose] });
   else if (s.unsynced.length)
     checks.push({ id: "secrets:sync", status: "BLOCK",
-      found: `${s.unsynced.join(", ")} missing from or different in ${SECRETS_FILE}${s.file.env && s.file.env !== env ? ` (generated for TEST_ENV=${s.file.env})` : ""} — those cases would sign in with the literal name`,
-      who: "me", do: fix, diagnose: ["npm run secrets:check (names only, never values)"] });
+      found: `${s.unsynced.join(", ")} missing from or different in ${s.file.name}${forEnv} — those cases would sign in with the literal name`,
+      who: "me", do: fix, diagnose: [`${diagnose} (names only, never values)`] });
   const gated = new Set(s.gated.map((g) => g.suite));
   for (const u of s.undeclared) {
     const parts = Object.entries(u.cases).map(([suite, ids]) => gated.has(suite) ? `${suite} (all cases — leaves the plan)` : `${suite}: ${ids.join(", ")}`);
-    checks.push({ id: `secret:${u.name}`, status: "WARN", found: `${u.name} has no value in .env.local or ${SECRETS_FILE} — report BLOCKED, no sign-in attempt: ${parts.join("; ")}`,
+    checks.push({ id: `secret:${u.name}`, status: "WARN", found: `${u.name} has no value in .env.local or ${s.file.name} — report BLOCKED, no sign-in attempt: ${parts.join("; ")}`,
       who: "you", do: `add ${u.name} to .env.local (team secret store), then ${fix}`, diagnose: [] });
   }
   if (s.file.exists && !s.unsynced.length && !s.undeclared.length)

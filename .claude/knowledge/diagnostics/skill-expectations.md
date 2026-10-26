@@ -11,8 +11,8 @@ in **lock-step with the collector's inline consts** (Tier 1 uses them); the pros
 the diagnostician's judgment guide (Tier 2).
 
 > **Reference, don't restate.** Gate IDs (`G0`–`G7`) are defined once in
-> [`../../.claude/knowledge/execution/quality-gates.md`](../../.claude/knowledge/execution/quality-gates.md); report
-> size caps live once in [`../../.claude/rules/reports.md`](../../.claude/rules/reports.md).
+> [`../../.claude/knowledge/execution/quality-gates.md`](../execution/quality-gates.md); report
+> size caps live once in [`../../.claude/rules/reports.md`](../../rules/reports.md).
 > This file cites them by ID/name and never re-defines them.
 
 ---
@@ -104,7 +104,7 @@ in lock-step with `EXPECTED_OUTPUT` in `hooks/session-telemetry.mjs`.
 
 | Skill / command | An expected-output marker is ANY of |
 |-----------------|-------------------------------------|
-| `/qa-bug` | a `reports/bugs/` write · a tracker-create (`createJiraIssue`/`create_issue`) · a clean BAIL |
+| `/qa-bug` | a `reports/bugs/` write (or a run folder's `bugs/<severity>/BUG-*`) · a tracker-create (`createJiraIssue`/`create_issue`) · a clean BAIL |
 | `/qa-fix` | a PR created (`create_pull_request` / `gh pr create` / `pull/<n>`) · a clean BAIL |
 | `/qa-verify-fix` | a ticket transition/update · `READY FOR TEST`/`testing`/`verified`/`reproduc…` · a clean BAIL |
 | `/qa-monitoring` | a `reports/monitoring/` write · `signature`/`dedup`/"no new signatures" · a clean BAIL |
@@ -314,7 +314,7 @@ Each entry lists the **expected phases/gates**, the **required outputs**, and
 Step-1 collector's signals can actually surface.
 
 ### `/project-init` — onboard the plugin onto a deployment
-- **Expected phases** (`plugins/vc-fix/commands/project-init.md` → the `/project-init` skill): install deps → ask *only* env name + tracker (Jira/Azure Boards) + code host (GitHub/Azure Repos) + auth-per-axis → **derive** projectType/client-org/contribution-mode/fork-account from token + live module/repo scan → write `project-profile.json` + `.env.<env>` + `.env.local` + `.mcp.json` → **verify access** (readiness table).
+- **Expected phases** (`plugins/vc-init/commands/project-init.md` → the `/project-init` skill, shipped by the vc-init plugin since VCST-6402): install deps → ask *only* env name + tracker (Jira/Azure Boards) + code host (GitHub/Azure Repos) + auth-per-axis → **derive** projectType/client-org/contribution-mode/fork-account from token + live module/repo scan → write `project-profile.json` + `.env.<env>` + `.env.local` + `.mcp.json` → **verify access** (readiness table).
 - **Required outputs:** `project-profile.json` (valid JSON, at the project root — never under the plugin dir), `.env.<env>` + `.env.local`, `.mcp.json`, and a printed readiness table.
 - **Anti-patterns:**
   - **S1** — the run ends with no `project-profile.json` written (or it landed under the plugin install dir instead of `outputRoot`), or the verify-access step never ran. *Signal:* required-output missing; `permission_denied`/`tool_error` on the token probe with no recovery.
@@ -323,7 +323,7 @@ Step-1 collector's signals can actually surface.
 
 ### `/qa-bug` — reproduce, evidence, report, (optional) file
 - **Expected phases** (`plugins/vc-fix/commands/qa-bug.md`): Step 0 pre-flight (build/version + Context7 + dup check) → Step 1 gather/reproduce → **Step 2 4-Layer Validation** → Step 3 research + resolve exact repo → Step 4 write report → Step 5 (optional, consent-gated) create ticket.
-- **Required outputs:** a `reports/bugs/open/<bucket>/BUG-*.md` with the **Fix Routing block** filled; a tracker ticket **only if** the user said yes.
+- **Required outputs:** a `reports/bugs/open/<bucket>/BUG-*.md` (in a ticket run, `<run folder>/bugs/<bucket>/BUG-*.md`) with the **Fix Routing block** filled; a tracker ticket **only if** the user said yes.
 - **Anti-patterns:**
   - **S1** — no bug report written despite a reproduced defect; or a ticket was filed **without** the explicit user "yes" (consent violation). *Signal:* required-output missing; a tracker-create tool call with no preceding consent in the transcript.
   - **S2** — report written but **over the bug-report cap** (`reports.md` §2: simple ≤80 / functional ≤120 / cross-layer ≤150), or Step 2 4-layer validation never ran (owning layer unproven → route untrustworthy). *Signal:* oversized report; missing-phase.
@@ -340,7 +340,7 @@ Step-1 collector's signals can actually surface.
 
 ### `/qa-verify-fix` — verify a deployed fix, transition the ticket
 - **Expected phases** (`plugins/vc-fix/commands/qa-verify-fix.md`): Step 0 pre-flight → Step 1 fetch ticket → **Step 2 confirm-deployment hard gate** → Step 3 transition to `testing` (ONLY after Step 2) → Step 4 checklist → Step 5 execute (STR ×3) → Step 6 decide + transition by role → Step 7 summary.
-- **Required outputs:** `reports/tickets/{SPRINT}/<ticket-key>/verification-summary.json` with a verdict; a role transition consistent with the verdict (or a BLOCKED with no transition).
+- **Required outputs:** `<run folder>/verification-summary.json` (`knowledge/execution/run-env.md` §The run folder) with a verdict; a role transition consistent with the verdict (or a BLOCKED with no transition).
 - **Anti-patterns:**
   - **S1** — transitioned the ticket to `testing` (or `tested`/`reopen`) **before/without** the Step-2 deploy confirmation — tested old code and moved the ticket on a false "deployed". *Signal:* a transition tool call before any deploy-check evidence; missing Step-2 phase.
   - **S1** — an undeployed fix was transitioned to `reopen` (an undeployed fix is not a failed fix). *Signal:* `reopen` transition + a "not deployed" marker in the same span.
@@ -398,8 +398,8 @@ the diagnostician still confirms the root cause and names the fix:
 
 ## 6. References
 
-- Gate ladder G0–G7 + no-auto-merge + client-code containment: [`../../.claude/knowledge/execution/quality-gates.md`](../../.claude/knowledge/execution/quality-gates.md)
-- Report categories + size caps + bloat patterns: [`../../.claude/rules/reports.md`](../../.claude/rules/reports.md)
+- Gate ladder G0–G7 + no-auto-merge + client-code containment: [`../../.claude/knowledge/execution/quality-gates.md`](../execution/quality-gates.md)
+- Report categories + size caps + bloat patterns: [`../../.claude/rules/reports.md`](../../rules/reports.md)
 - Signal source + record schema: [`../../hooks/session-telemetry.mjs`](../../hooks/session-telemetry.mjs)
 - **Upstream contribution schema (default-deny, closed vocabulary):** [`upstream-schema.md`](./upstream-schema.md) + ADR [`adr-upstream-default-deny.md`](./adr-upstream-default-deny.md). The `deliver` step builds its outbound artifact ONLY from the structured jsonl reduced to this closed schema — the LLM DIAG free text (`signal`/`rootcause`/`fix`) never leaves the machine.
 - The 6 command definitions: [`../../commands/`](../../commands/)

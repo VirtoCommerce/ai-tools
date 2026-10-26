@@ -55,7 +55,7 @@ References (read these):
   - skills/qa-test-design/test-design-techniques.md
   - .claude/skills/qa-checklist/domain-checklists.md + backend-admin-checklists.md + graphql-checklist.md
   - .claude/skills/qa-sbtm/sprint-charter-selection.md   (the §5.3 derivation rule — read before writing charters)
-  - reports/exploratory/  (last 24h of SBTM-* sessions — disqualifier D3)
+  - reports/exploratory/ + the run folders' exploratory/  (last 24h of SBTM-* sessions — disqualifier D3)
 
 Context7: query `/virtocommerce/vc-docs` per primary domain (tokens: 8000)
 

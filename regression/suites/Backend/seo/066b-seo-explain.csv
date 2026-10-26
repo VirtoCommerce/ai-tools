@@ -1,0 +1,496 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+SEO-EXP-001,Explain returns the Candidates stage with the rejected record when the store's catalog excludes it,SEO > Debug SEO links > Explain REST,Critical,,,"Runner-native (machine lane). Admin token via [AUTH role=ADMIN_DEFAULT]. Every entity is created in the case and named after the case's own virtual catalog id {{VCAT}} (a server-generated GUID), so data is isolated per case and per run and Cleanup deletes exactly what this case created. A setup call that fails leaves a capture empty, which the runner turns into INVALID (blocked), never PASS or FAIL. Store {{STORE_ID}} exists; the category lives in a fresh virtual catalog no store uses, so {{STORE_ID}}'s catalog excludes it.",store={{STORE_ID}}; culture={{CULTURE_NAME}}; currency={{CURRENCY_CODE}},"[AUTH role=ADMIN_DEFAULT]
+[REST-OP vcat]
+POST {{BACK_URL}}/api/catalog/catalogs
+Content-Type: application/json
+Body: {""name"": ""AGENT-TEST-SEOX-VC"", ""isVirtual"": true, ""languages"": [{""languageCode"": ""{{CULTURE_NAME}}"", ""isDefault"": true}]}
+[REST-EXEC vcat]
+[REST-CAPTURE vcat.body.id → VCAT]
+[REST-OP cata]
+POST {{BACK_URL}}/api/catalog/categories
+Content-Type: application/json
+Body: {""catalogId"": ""{{VCAT}}"", ""name"": ""AGENT-TEST-SEOX-CATA"", ""code"": ""seox-a-{{VCAT}}"", ""seoInfos"": [{""semanticUrl"": ""agent-test-seox-rej-{{VCAT}}"", ""languageCode"": ""{{CULTURE_NAME}}"", ""isActive"": true, ""objectType"": ""Category""}]}
+[REST-EXEC cata]
+[REST-CAPTURE cata.body.id → CATA]
+[REST-CAPTURE cata.body.seoInfos.0.id → CATA_SEO]
+[REST-OP cata_get]
+GET {{BACK_URL}}/api/catalog/categories/{{CATA}}
+[REST-EXEC cata_get]
+[REST-CAPTURE cata_get.body.seoInfos.0.semanticUrl → CATA_SLUG]
+[REST-OP rej]
+GET {{BACK_URL}}/api/seoinfos/explain?storeId={{STORE_ID}}&storeDefaultLanguage={{CULTURE_NAME}}&languageCode={{CULTURE_NAME}}&permalink={{CATA_SLUG}}
+[REST-EXEC rej]","[ERRORS label=rej] HTTP 200 {SPEC} (VCST-5989)
+[COUNT label=rej] body.length = 7 {SPEC} (VCST-5989)
+[DATA label=rej] body.[0].stage = Candidates {SPEC} (VCST-5989)
+[DATA label=rej] body.[1].stage = Original {SPEC} (VCST-5989)
+[DATA label=rej] body.[2].stage = Filtered {SPEC} (VCST-5989)
+[DATA label=rej] body.[3].stage = Scored {SPEC} (VCST-5989)
+[DATA label=rej] body.[4].stage = FilteredScore {SPEC} (VCST-5989)
+[DATA label=rej] body.[5].stage = Ordered {SPEC} (VCST-5989)
+[DATA label=rej] body.[6].stage = Final {SPEC} (VCST-5989)
+[COUNT label=rej] body.[?stage=Candidates].items.length = 1 {SPEC} (VCST-5989)
+[DATA label=rej] body.[?stage=Candidates].items.0.seoInfo.objectId = {{CATA}} {SPEC} (VCST-5989)
+[DATA label=rej] body.[?stage=Candidates].items.0.seoInfo.semanticUrl = {{CATA_SLUG}} {SPEC} (VCST-5989)
+[DATA label=rej] body.[?stage=Candidates].items.0.isResolved = false {SPEC} (VCST-5989)
+[COUNT label=rej] body.[?stage=Candidates].items.0.reasons.length = 1 {OBSERVED} (KB-4D953F8A)
+[DATA label=rej] body.[?stage=Candidates].items.0.reasons.0.code = NotInStoreCatalog {OBSERVED} (KB-4D953F8A)
+[COUNT label=rej] body.[?stage=Original].items.length = 0 {SPEC} (VCST-5989)
+[COUNT label=rej] body.[?stage=Filtered].items.length = 0 {SPEC} (VCST-5989)
+[COUNT label=rej] body.[?stage=Scored].items.length = 0 {SPEC} (VCST-5989)
+[COUNT label=rej] body.[?stage=FilteredScore].items.length = 0 {SPEC} (VCST-5989)
+[COUNT label=rej] body.[?stage=Ordered].items.length = 0 {SPEC} (VCST-5989)
+[COUNT label=rej] body.[?stage=Final].items.length = 0 {SPEC} (VCST-5989)","[EVIDENCE] the AGENT-TEST-SEOX- store(s), catalog and categories created in Steps are gone after Cleanup","explain returns [] for a record that exists (the VCST-5989 bug is back), Candidates stage missing or not first, the rejected record listed in any stage after Candidates, the rejected record reported isResolved=true, a reason code other than NotInStoreCatalog","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/catalog/catalogs/{{VCAT}}]",VCST-5989 | https://github.com/VirtoCommerce/vc-module-seo/pull/22 | https://github.com/VirtoCommerce/vc-module-catalog/pull/910 | https://docs.virtocommerce.org/platform/user-guide/seo/debugging-seo-links | Archetype:SILENT | Technique:EP | Catches:VCST-5989 | Purpose:FUNC | KB-4C86ED98 KB-4D953F8A | Promoted: REG-2026-10-20-1700-066b-qa1 (2026-10-20),Automated
+SEO-EXP-002,Same permalink is rejected in a store without the catalog and resolved in a store that has it,SEO > Debug SEO links > Explain REST,High,,,"Runner-native (machine lane). Admin token via [AUTH role=ADMIN_DEFAULT]. Every entity is created in the case and named after the case's own virtual catalog id {{VCAT}} (a server-generated GUID), so data is isolated per case and per run and Cleanup deletes exactly what this case created. A setup call that fails leaves a capture empty, which the runner turns into INVALID (blocked), never PASS or FAIL. Store {{STORE_ID}} exists. The case creates one category and a control store on its own catalog, so the ONLY difference between the two explain calls is which store sees the catalog.",store={{STORE_ID}}; culture={{CULTURE_NAME}}; currency={{CURRENCY_CODE}},"[AUTH role=ADMIN_DEFAULT]
+[REST-OP vcat]
+POST {{BACK_URL}}/api/catalog/catalogs
+Content-Type: application/json
+Body: {""name"": ""AGENT-TEST-SEOX-VC"", ""isVirtual"": true, ""languages"": [{""languageCode"": ""{{CULTURE_NAME}}"", ""isDefault"": true}]}
+[REST-EXEC vcat]
+[REST-CAPTURE vcat.body.id → VCAT]
+[REST-OP cata]
+POST {{BACK_URL}}/api/catalog/categories
+Content-Type: application/json
+Body: {""catalogId"": ""{{VCAT}}"", ""name"": ""AGENT-TEST-SEOX-CATA"", ""code"": ""seox-a-{{VCAT}}"", ""seoInfos"": [{""semanticUrl"": ""agent-test-seox-pair-{{VCAT}}"", ""languageCode"": ""{{CULTURE_NAME}}"", ""isActive"": true, ""objectType"": ""Category""}]}
+[REST-EXEC cata]
+[REST-CAPTURE cata.body.id → CATA]
+[REST-CAPTURE cata.body.seoInfos.0.id → CATA_SEO]
+[REST-OP cata_get]
+GET {{BACK_URL}}/api/catalog/categories/{{CATA}}
+[REST-EXEC cata_get]
+[REST-CAPTURE cata_get.body.seoInfos.0.semanticUrl → CATA_SLUG]
+[REST-OP ctrl]
+POST {{BACK_URL}}/api/stores
+Content-Type: application/json
+Body: {""id"": ""AGENT-TEST-SEOX-CTRL-{{VCAT}}"", ""name"": ""AGENT-TEST-SEOX-CTRL-{{VCAT}}"", ""catalog"": ""{{VCAT}}"", ""storeState"": ""Open"", ""defaultLanguage"": ""{{CULTURE_NAME}}"", ""languages"": [""{{CULTURE_NAME}}""], ""defaultCurrency"": ""{{CURRENCY_CODE}}"", ""currencies"": [""{{CURRENCY_CODE}}""]}
+[REST-EXEC ctrl]
+[REST-CAPTURE ctrl.body.id → CTRL_ID]
+[REST-OP rej]
+GET {{BACK_URL}}/api/seoinfos/explain?storeId={{STORE_ID}}&storeDefaultLanguage={{CULTURE_NAME}}&languageCode={{CULTURE_NAME}}&permalink={{CATA_SLUG}}
+[REST-EXEC rej]
+[REST-OP ok]
+GET {{BACK_URL}}/api/seoinfos/explain?storeId={{CTRL_ID}}&storeDefaultLanguage={{CULTURE_NAME}}&languageCode={{CULTURE_NAME}}&permalink={{CATA_SLUG}}
+[REST-EXEC ok]","[ERRORS label=ok] HTTP 200 {SPEC} (VCST-5989)
+[DATA label=ok] body.[0].stage = Candidates {SPEC} (VCST-5989)
+[COUNT label=ok] body.[?stage=Candidates].items.length = 1 {SPEC} (VCST-5989)
+[DATA label=ok] body.[?stage=Candidates].items.0.isResolved = true {SPEC} (VCST-5989)
+[COUNT label=ok] body.[?stage=Candidates].items.0.reasons.length = 0 {SPEC} (VCST-5989)
+[COUNT label=ok] body.[?stage=Original].items.length = 1 {OBSERVED} (KB-4C86ED98)
+[COUNT label=ok] body.[?stage=Filtered].items.length = 1 {OBSERVED} (KB-4C86ED98)
+[COUNT label=ok] body.[?stage=Scored].items.length = 1 {OBSERVED} (KB-4C86ED98)
+[COUNT label=ok] body.[?stage=FilteredScore].items.length = 1 {OBSERVED} (KB-4C86ED98)
+[COUNT label=ok] body.[?stage=Ordered].items.length = 1 {OBSERVED} (KB-4C86ED98)
+[COUNT label=ok] body.[?stage=Final].items.length = 1 {OBSERVED} (KB-4C86ED98)
+[DATA label=ok] body.[?stage=Final].items.0.seoInfo.objectId = {{CATA}} {SPEC} (VCST-5989)
+[ERRORS label=rej] HTTP 200 {SPEC} (VCST-5989)
+[DATA label=rej] body.[?stage=Candidates].items.0.seoInfo.objectId = {{CATA}} {SPEC} (VCST-5989)
+[DATA label=rej] body.[?stage=Candidates].items.0.isResolved = false {SPEC} (VCST-5989)
+[DATA label=rej] body.[?stage=Candidates].items.0.reasons.0.code = NotInStoreCatalog {OBSERVED} (KB-4D953F8A)
+[COUNT label=rej] body.[?stage=Final].items.length = 0 {SPEC} (VCST-5989)","[EVIDENCE] the AGENT-TEST-SEOX- store(s), catalog and categories created in Steps are gone after Cleanup","the control store rejects a record its own catalog contains, both stores give the same verdict for the same permalink, Final in the control store is empty or points at another object","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/stores?ids=AGENT-TEST-SEOX-CTRL-{{VCAT}}]
+[REST DELETE /api/catalog/catalogs/{{VCAT}}]","VCST-5989 | https://github.com/VirtoCommerce/vc-module-seo/pull/22 | https://github.com/VirtoCommerce/vc-module-catalog/pull/910 | https://docs.virtocommerce.org/platform/user-guide/seo/debugging-seo-links | Archetype:PARITY | Technique:EP | Catches:VCST-5989 | Purpose:FUNC | KB-4C86ED98 | Same permalink, same record: only the store differs - isResolved false vs true and Final 0 vs 1 | Promoted: REG-2026-10-20-1700-066b-qa1 (2026-10-20)",Automated
+SEO-EXP-003,Unknown slug returns an empty array and is distinguishable from a rejected record,SEO > Debug SEO links > Explain REST,High,,,"Runner-native (machine lane). Admin token via [AUTH role=ADMIN_DEFAULT]. Every entity is created in the case and named after the case's own virtual catalog id {{VCAT}} (a server-generated GUID), so data is isolated per case and per run and Cleanup deletes exactly what this case created. A setup call that fails leaves a capture empty, which the runner turns into INVALID (blocked), never PASS or FAIL. Store {{STORE_ID}} exists. The case creates a category outside that store's catalog (rejected slug) and uses a second slug, carrying the same {{VCAT}}, that exists nowhere.",store={{STORE_ID}}; culture={{CULTURE_NAME}}; currency={{CURRENCY_CODE}},"[AUTH role=ADMIN_DEFAULT]
+[REST-OP vcat]
+POST {{BACK_URL}}/api/catalog/catalogs
+Content-Type: application/json
+Body: {""name"": ""AGENT-TEST-SEOX-VC"", ""isVirtual"": true, ""languages"": [{""languageCode"": ""{{CULTURE_NAME}}"", ""isDefault"": true}]}
+[REST-EXEC vcat]
+[REST-CAPTURE vcat.body.id → VCAT]
+[REST-OP cata]
+POST {{BACK_URL}}/api/catalog/categories
+Content-Type: application/json
+Body: {""catalogId"": ""{{VCAT}}"", ""name"": ""AGENT-TEST-SEOX-CATA"", ""code"": ""seox-a-{{VCAT}}"", ""seoInfos"": [{""semanticUrl"": ""agent-test-seox-known-{{VCAT}}"", ""languageCode"": ""{{CULTURE_NAME}}"", ""isActive"": true, ""objectType"": ""Category""}]}
+[REST-EXEC cata]
+[REST-CAPTURE cata.body.id → CATA]
+[REST-CAPTURE cata.body.seoInfos.0.id → CATA_SEO]
+[REST-OP cata_get]
+GET {{BACK_URL}}/api/catalog/categories/{{CATA}}
+[REST-EXEC cata_get]
+[REST-CAPTURE cata_get.body.seoInfos.0.semanticUrl → CATA_SLUG]
+[REST-OP rej]
+GET {{BACK_URL}}/api/seoinfos/explain?storeId={{STORE_ID}}&storeDefaultLanguage={{CULTURE_NAME}}&languageCode={{CULTURE_NAME}}&permalink={{CATA_SLUG}}
+[REST-EXEC rej]
+[REST-OP unk]
+GET {{BACK_URL}}/api/seoinfos/explain?storeId={{STORE_ID}}&storeDefaultLanguage={{CULTURE_NAME}}&languageCode={{CULTURE_NAME}}&permalink=agent-test-seox-nowhere-{{VCAT}}
+[REST-EXEC unk]","[ERRORS label=unk] HTTP 200 {SPEC} (VCST-5989)
+[COUNT label=unk] body.length = 0 {SPEC} (VCST-5989: an unknown slug is unchanged by design)
+[ERRORS label=rej] HTTP 200 {SPEC} (VCST-5989)
+[COUNT label=rej] body.length = 7 {SPEC} (VCST-5989)
+[DATA label=rej] body.[?stage=Candidates].items.0.seoInfo.objectId = {{CATA}} {SPEC} (VCST-5989)","[EVIDENCE] the AGENT-TEST-SEOX- store(s), catalog and categories created in Steps are gone after Cleanup","an unknown slug returns stages instead of [], a rejected record returns [] and is indistinguishable from an unknown slug, a 4xx/5xx for an unknown slug","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/catalog/catalogs/{{VCAT}}]",VCST-5989 | https://github.com/VirtoCommerce/vc-module-seo/pull/22 | https://github.com/VirtoCommerce/vc-module-catalog/pull/910 | https://docs.virtocommerce.org/platform/user-guide/seo/debugging-seo-links | Archetype:SILENT | Technique:EP | Catches:VCST-5989 | Purpose:FUNC | KB-4C86ED98 | rejected (7 stages) vs unknown ([]) - a caller can tell an existing-but-rejected record from nothing | Promoted: REG-2026-10-20-1700-066b-qa1 (2026-10-20),Automated
+SEO-EXP-004,Explain on a rejected and an unknown permalink creates no broken link and bumps no hit count,SEO > Debug SEO links > Side effects,High,,,"Runner-native (machine lane). Admin token via [AUTH role=ADMIN_DEFAULT]. Every entity is created in the case and named after the case's own virtual catalog id {{VCAT}} (a server-generated GUID), so data is isolated per case and per run and Cleanup deletes exactly what this case created. A setup call that fails leaves a capture empty, which the runner turns into INVALID (blocked), never PASS or FAIL. Store {{STORE_ID}} exists. Broken-link detection must be ON (Seo.BrokenLinkDetection.Enabled, value ?? defaultValue): the positive control proves it - when the slugInfo miss writes no record, its capture stays empty and the case is INVALID (blocked), never a vacuous PASS. Slugs carry {{VCAT}}, so no earlier record can match.",store={{STORE_ID}}; culture={{CULTURE_NAME}}; currency={{CURRENCY_CODE}},"[AUTH role=ADMIN_DEFAULT]
+[REST-OP vcat]
+POST {{BACK_URL}}/api/catalog/catalogs
+Content-Type: application/json
+Body: {""name"": ""AGENT-TEST-SEOX-VC"", ""isVirtual"": true, ""languages"": [{""languageCode"": ""{{CULTURE_NAME}}"", ""isDefault"": true}]}
+[REST-EXEC vcat]
+[REST-CAPTURE vcat.body.id → VCAT]
+[REST-OP cata]
+POST {{BACK_URL}}/api/catalog/categories
+Content-Type: application/json
+Body: {""catalogId"": ""{{VCAT}}"", ""name"": ""AGENT-TEST-SEOX-CATA"", ""code"": ""seox-a-{{VCAT}}"", ""seoInfos"": [{""semanticUrl"": ""agent-test-seox-nobl-{{VCAT}}-rej"", ""languageCode"": ""{{CULTURE_NAME}}"", ""isActive"": true, ""objectType"": ""Category""}]}
+[REST-EXEC cata]
+[REST-CAPTURE cata.body.id → CATA]
+[REST-CAPTURE cata.body.seoInfos.0.id → CATA_SEO]
+[REST-OP cata_get]
+GET {{BACK_URL}}/api/catalog/categories/{{CATA}}
+[REST-EXEC cata_get]
+[REST-CAPTURE cata_get.body.seoInfos.0.semanticUrl → CATA_SLUG]
+[REST-OP bl_before]
+POST {{BACK_URL}}/api/seo/broken-links/search
+Content-Type: application/json
+Body: {""keyword"": ""agent-test-seox-nobl-{{VCAT}}"", ""storeId"": ""{{STORE_ID}}"", ""skip"": 0, ""take"": 20}
+[REST-EXEC bl_before]
+[REST-OP ex_rej]
+GET {{BACK_URL}}/api/seoinfos/explain?storeId={{STORE_ID}}&storeDefaultLanguage={{CULTURE_NAME}}&languageCode={{CULTURE_NAME}}&permalink={{CATA_SLUG}}
+[REST-EXEC ex_rej]
+[REST-OP ex_unk]
+GET {{BACK_URL}}/api/seoinfos/explain?storeId={{STORE_ID}}&storeDefaultLanguage={{CULTURE_NAME}}&languageCode={{CULTURE_NAME}}&permalink=agent-test-seox-nobl-{{VCAT}}-unk
+[REST-EXEC ex_unk]
+[WAIT seconds=15]
+[REST-OP bl_after]
+POST {{BACK_URL}}/api/seo/broken-links/search
+Content-Type: application/json
+Body: {""keyword"": ""agent-test-seox-nobl-{{VCAT}}"", ""storeId"": ""{{STORE_ID}}"", ""skip"": 0, ""take"": 20}
+[REST-EXEC bl_after]
+[GQL-OP ctl_miss]
+query { slugInfo(permalink: ""agent-test-seox-ctl-{{VCAT}}"", storeId: ""{{STORE_ID}}"", cultureName: ""{{CULTURE_NAME}}"") { entityInfo { id } } }
+[GQL-EXEC ctl_miss]
+[WAIT seconds=10]
+[REST-OP ctl]
+POST {{BACK_URL}}/api/seo/broken-links/search
+Content-Type: application/json
+Body: {""keyword"": ""agent-test-seox-ctl-{{VCAT}}"", ""storeId"": ""{{STORE_ID}}"", ""skip"": 0, ""take"": 20}
+[REST-EXEC ctl]
+[REST-CAPTURE ctl.body.results.0.id → CTL_ID]","[ERRORS label=ex_rej] HTTP 200 {SPEC} (VCST-5989)
+[ERRORS label=ex_unk] HTTP 200 {SPEC} (VCST-5989)
+[DATA label=bl_before] body.totalCount = 0 {SPEC} (VCST-5989)
+[DATA label=bl_after] body.totalCount = 0 {SPEC} (VCST-5989: explain on a rejected and an unknown permalink writes no broken link)
+[COUNT label=bl_after] body.results[*?permalink={{CATA_SLUG}}].length = 0 {SPEC} (VCST-5989)
+[COUNT label=bl_after] body.results[*?permalink=agent-test-seox-nobl-{{VCAT}}-unk].length = 0 {SPEC} (VCST-5989)
+[ERRORS label=ctl_miss] errors[] empty {OBSERVED} (KB-2E8CAC3D)
+[DATA label=ctl] body.totalCount = 1 {OBSERVED} (positive control: the same detector DID record a slugInfo miss - KB-2E8CAC3D, KB-4DDC303D)
+[DATA label=ctl] body.results.0.hitCount = 1 {OBSERVED} (KB-2E8CAC3D)","[EVIDENCE] the AGENT-TEST-SEOX- store(s), catalog and categories created in Steps are gone after Cleanup","the after-search finds agent-test-seox-nobl-{{VCAT}}-rej or agent-test-seox-nobl-{{VCAT}}-unk (explain wrote a broken link), a hit count grew between the two searches, the positive control finds no record (detector not writing - BLOCKED, never PASS)","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/seo/broken-links?ids={{CTL_ID}}]
+[REST DELETE /api/catalog/catalogs/{{VCAT}}]","VCST-5989 | https://github.com/VirtoCommerce/vc-module-seo/pull/22 | https://github.com/VirtoCommerce/vc-module-catalog/pull/910 | https://docs.virtocommerce.org/platform/user-guide/seo/debugging-seo-links | Archetype:SILENT | Technique:EG | Catches:VCST-5989 | Purpose:FUNC | KB-85780059 KB-2E8CAC3D | Note: a storefront slugInfo on a missing permalink IS a write (BL-SEO-002), so only the control calls it | If the bug returns, explain-written records (permalinks agent-test-seox-nobl-<VCAT>-rej / -unk) stay in {{STORE_ID}} for the AGENT-TEST- teardown: the runner Cleanup cannot search | Promoted: REG-2026-10-20-1700-066b-qa1 (2026-10-20)",Automated
+SEO-EXP-005,Explain names StoreMismatch and LanguageMismatch (each with NoSeoPath) for records of another store or language,SEO > Debug SEO links > Reason codes,Medium,,,"Runner-native (machine lane). Admin token via [AUTH role=ADMIN_DEFAULT]. Every entity is created in the case and named after the case's own virtual catalog id {{VCAT}} (a server-generated GUID), so data is isolated per case and per run and Cleanup deletes exactly what this case created. A setup call that fails leaves a capture empty, which the runner turns into INVALID (blocked), never PASS or FAIL. The case creates a virtual catalog with {{CULTURE_NAME}} and {{ALT_CULTURE_NAME}}, two stores on it ({{CULTURE_NAME}} only), and two categories whose only SEO record is assigned to the other store (A) or to {{ALT_CULTURE_NAME}} (B). {{ALT_CULTURE_NAME}} (.env.defaults) must differ from {{CULTURE_NAME}} on the env under test. FIFTH RULE: all of it is created in the case because nothing but this case needs it.",store={{STORE_ID}}; culture={{CULTURE_NAME}}; currency={{CURRENCY_CODE}}; alt_culture={{ALT_CULTURE_NAME}},"[AUTH role=ADMIN_DEFAULT]
+[REST-OP vcat]
+POST {{BACK_URL}}/api/catalog/catalogs
+Content-Type: application/json
+Body: {""name"": ""AGENT-TEST-SEOX-VC"", ""isVirtual"": true, ""languages"": [{""languageCode"": ""{{CULTURE_NAME}}"", ""isDefault"": true}, {""languageCode"": ""{{ALT_CULTURE_NAME}}""}]}
+[REST-EXEC vcat]
+[REST-CAPTURE vcat.body.id → VCAT]
+[REST-OP main]
+POST {{BACK_URL}}/api/stores
+Content-Type: application/json
+Body: {""id"": ""AGENT-TEST-SEOX-MAIN-{{VCAT}}"", ""name"": ""AGENT-TEST-SEOX-MAIN-{{VCAT}}"", ""catalog"": ""{{VCAT}}"", ""storeState"": ""Open"", ""defaultLanguage"": ""{{CULTURE_NAME}}"", ""languages"": [""{{CULTURE_NAME}}""], ""defaultCurrency"": ""{{CURRENCY_CODE}}"", ""currencies"": [""{{CURRENCY_CODE}}""]}
+[REST-EXEC main]
+[REST-CAPTURE main.body.id → MAIN_ID]
+[REST-OP other]
+POST {{BACK_URL}}/api/stores
+Content-Type: application/json
+Body: {""id"": ""AGENT-TEST-SEOX-OTHER-{{VCAT}}"", ""name"": ""AGENT-TEST-SEOX-OTHER-{{VCAT}}"", ""catalog"": ""{{VCAT}}"", ""storeState"": ""Open"", ""defaultLanguage"": ""{{CULTURE_NAME}}"", ""languages"": [""{{CULTURE_NAME}}""], ""defaultCurrency"": ""{{CURRENCY_CODE}}"", ""currencies"": [""{{CURRENCY_CODE}}""]}
+[REST-EXEC other]
+[REST-CAPTURE other.body.id → OTHER_ID]
+[REST-OP cata]
+POST {{BACK_URL}}/api/catalog/categories
+Content-Type: application/json
+Body: {""catalogId"": ""{{VCAT}}"", ""name"": ""AGENT-TEST-SEOX-CATA"", ""code"": ""seox-a-{{VCAT}}"", ""seoInfos"": [{""semanticUrl"": ""agent-test-seox-store-{{VCAT}}"", ""languageCode"": ""{{CULTURE_NAME}}"", ""isActive"": true, ""storeId"": ""{{OTHER_ID}}"", ""objectType"": ""Category""}]}
+[REST-EXEC cata]
+[REST-CAPTURE cata.body.id → CATA]
+[REST-CAPTURE cata.body.seoInfos.0.id → CATA_SEO]
+[REST-OP cata_get]
+GET {{BACK_URL}}/api/catalog/categories/{{CATA}}
+[REST-EXEC cata_get]
+[REST-CAPTURE cata_get.body.seoInfos.0.semanticUrl → CATA_SLUG]
+[REST-OP catb]
+POST {{BACK_URL}}/api/catalog/categories
+Content-Type: application/json
+Body: {""catalogId"": ""{{VCAT}}"", ""name"": ""AGENT-TEST-SEOX-CATB"", ""code"": ""seox-b-{{VCAT}}"", ""seoInfos"": [{""semanticUrl"": ""agent-test-seox-lang-{{VCAT}}"", ""languageCode"": ""{{ALT_CULTURE_NAME}}"", ""isActive"": true, ""objectType"": ""Category""}]}
+[REST-EXEC catb]
+[REST-CAPTURE catb.body.id → CATB]
+[REST-CAPTURE catb.body.seoInfos.0.id → CATB_SEO]
+[REST-OP catb_get]
+GET {{BACK_URL}}/api/catalog/categories/{{CATB}}
+[REST-EXEC catb_get]
+[REST-CAPTURE catb_get.body.seoInfos.0.semanticUrl → CATB_SLUG]
+[REST-OP a]
+GET {{BACK_URL}}/api/seoinfos/explain?storeId={{MAIN_ID}}&storeDefaultLanguage={{CULTURE_NAME}}&languageCode={{CULTURE_NAME}}&permalink={{CATA_SLUG}}
+[REST-EXEC a]
+[REST-OP b]
+GET {{BACK_URL}}/api/seoinfos/explain?storeId={{MAIN_ID}}&storeDefaultLanguage={{CULTURE_NAME}}&languageCode={{CULTURE_NAME}}&permalink={{CATB_SLUG}}
+[REST-EXEC b]","[ERRORS label=a] HTTP 200 {SPEC} (VCST-5989)
+[DATA label=a] body.[?stage=Candidates].items.0.seoInfo.objectId = {{CATA}} {SPEC} (VCST-5989)
+[DATA label=a] body.[?stage=Candidates].items.0.isResolved = false {SPEC} (VCST-5989)
+[COUNT label=a] body.[?stage=Candidates].items.0.reasons.length = 2 {OBSERVED} (KB-2289BD9F)
+[COUNT label=a] body.[?stage=Candidates].items.0.reasons[*?code=StoreMismatch].length = 1 {SPEC} (VCST-5989)
+[COUNT label=a] body.[?stage=Candidates].items.0.reasons[*?code=NoSeoPath].length = 1 {OBSERVED} (KB-2289BD9F, KB-4D953F8A)
+[COUNT label=a] body.[?stage=Candidates].items.0.reasons[*?code=LanguageMismatch].length = 0 {SPEC} (VCST-5989)
+[ERRORS label=b] HTTP 200 {SPEC} (VCST-5989)
+[DATA label=b] body.[?stage=Candidates].items.0.seoInfo.objectId = {{CATB}} {SPEC} (VCST-5989)
+[DATA label=b] body.[?stage=Candidates].items.0.isResolved = false {SPEC} (VCST-5989)
+[COUNT label=b] body.[?stage=Candidates].items.0.reasons.length = 2 {OBSERVED} (KB-2289BD9F)
+[COUNT label=b] body.[?stage=Candidates].items.0.reasons[*?code=LanguageMismatch].length = 1 {SPEC} (VCST-5989)
+[COUNT label=b] body.[?stage=Candidates].items.0.reasons[*?code=NoSeoPath].length = 1 {OBSERVED} (KB-2289BD9F, KB-4D953F8A)
+[COUNT label=b] body.[?stage=Candidates].items.0.reasons[*?code=StoreMismatch].length = 0 {SPEC} (VCST-5989)
+[COUNT label=a] body.[?stage=Final].items.length = 0 {SPEC} (VCST-5989)
+[COUNT label=b] body.[?stage=Final].items.length = 0 {SPEC} (VCST-5989)","[EVIDENCE] the AGENT-TEST-SEOX- store(s), catalog and categories created in Steps are gone after Cleanup","StoreMismatch and LanguageMismatch conflated or missing, NoSeoPath missing beside either, a record of another store or language resolved in the MAIN store","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/stores?ids=AGENT-TEST-SEOX-MAIN-{{VCAT}}]
+[REST DELETE /api/stores?ids=AGENT-TEST-SEOX-OTHER-{{VCAT}}]
+[REST DELETE /api/catalog/catalogs/{{VCAT}}]",VCST-5989 | https://github.com/VirtoCommerce/vc-module-seo/pull/22 | https://github.com/VirtoCommerce/vc-module-catalog/pull/910 | https://docs.virtocommerce.org/platform/user-guide/seo/debugging-seo-links | Archetype:SILENT | Technique:DT | Catches:VCST-5989 | Purpose:FUNC | KB-2289BD9F KB-4D953F8A | Store-scoped storeId and second-language seoInfos persist as sent (KB-D2EBDDB1) | Promoted: REG-2026-10-20-1700-066b-qa1 (2026-10-20),Automated
+SEO-EXP-006,"Inactive SEO record gives Inactive, inactive object gives ObjectInactive, and activating the record makes it resolve",SEO > Debug SEO links > Reason codes,Medium,,,"Runner-native (machine lane). Admin token via [AUTH role=ADMIN_DEFAULT]. Every entity is created in the case and named after the case's own virtual catalog id {{VCAT}} (a server-generated GUID), so data is isolated per case and per run and Cleanup deletes exactly what this case created. A setup call that fails leaves a capture empty, which the runner turns into INVALID (blocked), never PASS or FAIL. The case creates a virtual catalog, a control store on it, category A (active category; its SEO record is switched off and back on in Steps) and category B (inactive category, active SEO record). A category is updated by POST /api/catalog/categories with its id (PUT returns 405, KB-D2EBDDB1).",store={{STORE_ID}}; culture={{CULTURE_NAME}}; currency={{CURRENCY_CODE}},"[AUTH role=ADMIN_DEFAULT]
+[REST-OP vcat]
+POST {{BACK_URL}}/api/catalog/catalogs
+Content-Type: application/json
+Body: {""name"": ""AGENT-TEST-SEOX-VC"", ""isVirtual"": true, ""languages"": [{""languageCode"": ""{{CULTURE_NAME}}"", ""isDefault"": true}]}
+[REST-EXEC vcat]
+[REST-CAPTURE vcat.body.id → VCAT]
+[REST-OP ctrl]
+POST {{BACK_URL}}/api/stores
+Content-Type: application/json
+Body: {""id"": ""AGENT-TEST-SEOX-CTRL-{{VCAT}}"", ""name"": ""AGENT-TEST-SEOX-CTRL-{{VCAT}}"", ""catalog"": ""{{VCAT}}"", ""storeState"": ""Open"", ""defaultLanguage"": ""{{CULTURE_NAME}}"", ""languages"": [""{{CULTURE_NAME}}""], ""defaultCurrency"": ""{{CURRENCY_CODE}}"", ""currencies"": [""{{CURRENCY_CODE}}""]}
+[REST-EXEC ctrl]
+[REST-CAPTURE ctrl.body.id → CTRL_ID]
+[REST-OP cata]
+POST {{BACK_URL}}/api/catalog/categories
+Content-Type: application/json
+Body: {""catalogId"": ""{{VCAT}}"", ""name"": ""AGENT-TEST-SEOX-CATA"", ""code"": ""seox-a-{{VCAT}}"", ""seoInfos"": [{""semanticUrl"": ""agent-test-seox-inrec-{{VCAT}}"", ""languageCode"": ""{{CULTURE_NAME}}"", ""isActive"": true, ""objectType"": ""Category""}]}
+[REST-EXEC cata]
+[REST-CAPTURE cata.body.id → CATA]
+[REST-CAPTURE cata.body.seoInfos.0.id → CATA_SEO]
+[REST-OP cata_get]
+GET {{BACK_URL}}/api/catalog/categories/{{CATA}}
+[REST-EXEC cata_get]
+[REST-CAPTURE cata_get.body.seoInfos.0.semanticUrl → CATA_SLUG]
+[REST-OP catb]
+POST {{BACK_URL}}/api/catalog/categories
+Content-Type: application/json
+Body: {""catalogId"": ""{{VCAT}}"", ""name"": ""AGENT-TEST-SEOX-CATB"", ""code"": ""seox-b-{{VCAT}}"", ""isActive"": false, ""seoInfos"": [{""semanticUrl"": ""agent-test-seox-inobj-{{VCAT}}"", ""languageCode"": ""{{CULTURE_NAME}}"", ""isActive"": true, ""objectType"": ""Category""}]}
+[REST-EXEC catb]
+[REST-CAPTURE catb.body.id → CATB]
+[REST-CAPTURE catb.body.seoInfos.0.id → CATB_SEO]
+[REST-OP catb_get]
+GET {{BACK_URL}}/api/catalog/categories/{{CATB}}
+[REST-EXEC catb_get]
+[REST-CAPTURE catb_get.body.seoInfos.0.semanticUrl → CATB_SLUG]
+[REST-OP a_off]
+POST {{BACK_URL}}/api/catalog/categories
+Content-Type: application/json
+Body: {""id"": ""{{CATA}}"", ""catalogId"": ""{{VCAT}}"", ""name"": ""AGENT-TEST-SEOX-CATA"", ""code"": ""seox-a-{{VCAT}}"", ""seoInfos"": [{""id"": ""{{CATA_SEO}}"", ""semanticUrl"": ""agent-test-seox-inrec-{{VCAT}}"", ""languageCode"": ""{{CULTURE_NAME}}"", ""isActive"": false, ""objectType"": ""Category""}]}
+[REST-EXEC a_off]
+[REST-OP a_off_get]
+GET {{BACK_URL}}/api/catalog/categories/{{CATA}}
+[REST-EXEC a_off_get]
+[REST-CAPTURE a_off_get.body.seoInfos[?isActive=false].id → A_OFF_OK]
+[REST-OP a1]
+GET {{BACK_URL}}/api/seoinfos/explain?storeId={{CTRL_ID}}&storeDefaultLanguage={{CULTURE_NAME}}&languageCode={{CULTURE_NAME}}&permalink={{CATA_SLUG}}
+[REST-EXEC a1]
+[REST-OP b1]
+GET {{BACK_URL}}/api/seoinfos/explain?storeId={{CTRL_ID}}&storeDefaultLanguage={{CULTURE_NAME}}&languageCode={{CULTURE_NAME}}&permalink={{CATB_SLUG}}
+[REST-EXEC b1]
+[REST-OP a_on]
+POST {{BACK_URL}}/api/catalog/categories
+Content-Type: application/json
+Body: {""id"": ""{{CATA}}"", ""catalogId"": ""{{VCAT}}"", ""name"": ""AGENT-TEST-SEOX-CATA"", ""code"": ""seox-a-{{VCAT}}"", ""seoInfos"": [{""id"": ""{{CATA_SEO}}"", ""semanticUrl"": ""agent-test-seox-inrec-{{VCAT}}"", ""languageCode"": ""{{CULTURE_NAME}}"", ""isActive"": true, ""objectType"": ""Category""}]}
+[REST-EXEC a_on]
+[REST-OP a_on_get]
+GET {{BACK_URL}}/api/catalog/categories/{{CATA}}
+[REST-EXEC a_on_get]
+[REST-CAPTURE a_on_get.body.seoInfos[?isActive=true].id → A_ON_OK]
+[REST-OP a2]
+GET {{BACK_URL}}/api/seoinfos/explain?storeId={{CTRL_ID}}&storeDefaultLanguage={{CULTURE_NAME}}&languageCode={{CULTURE_NAME}}&permalink={{CATA_SLUG}}
+[REST-EXEC a2]","[DATA label=a1] body.[?stage=Candidates].items.0.isResolved = false {SPEC} (VCST-5989)
+[COUNT label=a1] body.[?stage=Candidates].items.0.reasons.length = 1 {OBSERVED} (KB-2289BD9F: NoSeoPath absent)
+[DATA label=a1] body.[?stage=Candidates].items.0.reasons.0.code = Inactive {SPEC} (VCST-5989)
+[DATA label=catb_get] body.isActive = false {OBSERVED} (setup guard: category B is saved inactive)
+[DATA label=b1] body.[?stage=Candidates].items.0.isResolved = false {SPEC} (VCST-5989)
+[COUNT label=b1] body.[?stage=Candidates].items.0.reasons.length = 1 {OBSERVED} (KB-2289BD9F)
+[DATA label=b1] body.[?stage=Candidates].items.0.reasons.0.code = ObjectInactive {SPEC} (VCST-5989)
+[DATA label=a2] body.[?stage=Candidates].items.0.isResolved = true {SPEC} (VCST-5989)
+[COUNT label=a2] body.[?stage=Candidates].items.0.reasons.length = 0 {SPEC} (VCST-5989)
+[COUNT label=a2] body.[?stage=Final].items.length = 1 {SPEC} (VCST-5989)
+[DATA label=a2] body.[?stage=Final].items.0.seoInfo.objectId = {{CATA}} {SPEC} (VCST-5989)","[EVIDENCE] the AGENT-TEST-SEOX- store(s), catalog and categories created in Steps are gone after Cleanup","Inactive and ObjectInactive conflated, NoSeoPath reported for an inactive record, the record still not resolved after it is activated","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/stores?ids=AGENT-TEST-SEOX-CTRL-{{VCAT}}]
+[REST DELETE /api/catalog/catalogs/{{VCAT}}]",VCST-5989 | https://github.com/VirtoCommerce/vc-module-seo/pull/22 | https://github.com/VirtoCommerce/vc-module-catalog/pull/910 | https://docs.virtocommerce.org/platform/user-guide/seo/debugging-seo-links | Archetype:SILENT | Technique:DT | Catches:VCST-5989 | Purpose:FUNC | KB-2289BD9F KB-4D953F8A | Inactive vs ObjectInactive are separate causes; switching the record back on makes it resolve | Promoted: REG-2026-10-20-1700-066b-qa1 (2026-10-20),Automated
+SEO-EXP-007,Two same-slug categories under different parents: Long links resolve one and report PermalinkMismatch on the other,SEO > Debug SEO links > Reason codes,Medium,BL-SEO-001,,"Runner-native (machine lane). Admin token via [AUTH role=ADMIN_DEFAULT]. Every entity is created in the case and named after the case's own virtual catalog id {{VCAT}} (a server-generated GUID), so data is isolated per case and per run and Cleanup deletes exactly what this case created. A setup call that fails leaves a capture empty, which the runner turns into INVALID (blocked), never PASS or FAIL. The case creates a virtual catalog, a store on it with Stores.SeoLinksType=Long (guarded: the read-back must carry a setting valued Long, else INVALID), two parent categories with slugs and one child under each carrying the SAME slug.",store={{STORE_ID}}; culture={{CULTURE_NAME}}; currency={{CURRENCY_CODE}},"[AUTH role=ADMIN_DEFAULT]
+[REST-OP vcat]
+POST {{BACK_URL}}/api/catalog/catalogs
+Content-Type: application/json
+Body: {""name"": ""AGENT-TEST-SEOX-VC"", ""isVirtual"": true, ""languages"": [{""languageCode"": ""{{CULTURE_NAME}}"", ""isDefault"": true}]}
+[REST-EXEC vcat]
+[REST-CAPTURE vcat.body.id → VCAT]
+[REST-OP long]
+POST {{BACK_URL}}/api/stores
+Content-Type: application/json
+Body: {""id"": ""AGENT-TEST-SEOX-LONG-{{VCAT}}"", ""name"": ""AGENT-TEST-SEOX-LONG-{{VCAT}}"", ""catalog"": ""{{VCAT}}"", ""storeState"": ""Open"", ""defaultLanguage"": ""{{CULTURE_NAME}}"", ""languages"": [""{{CULTURE_NAME}}""], ""defaultCurrency"": ""{{CURRENCY_CODE}}"", ""currencies"": [""{{CURRENCY_CODE}}""], ""settings"": [{""name"": ""Stores.SeoLinksType"", ""value"": ""Long""}]}
+[REST-EXEC long]
+[REST-CAPTURE long.body.id → LONG_ID]
+[REST-OP long_get]
+GET {{BACK_URL}}/api/stores/{{LONG_ID}}
+[REST-EXEC long_get]
+[REST-CAPTURE long_get.body.settings[?value=Long].name → LONG_SETTING]
+[REST-OP par1]
+POST {{BACK_URL}}/api/catalog/categories
+Content-Type: application/json
+Body: {""catalogId"": ""{{VCAT}}"", ""name"": ""AGENT-TEST-SEOX-PAR1"", ""code"": ""seox-p1-{{VCAT}}"", ""seoInfos"": [{""semanticUrl"": ""agent-test-seox-p1-{{VCAT}}"", ""languageCode"": ""{{CULTURE_NAME}}"", ""isActive"": true, ""objectType"": ""Category""}]}
+[REST-EXEC par1]
+[REST-CAPTURE par1.body.id → PAR1]
+[REST-CAPTURE par1.body.seoInfos.0.id → PAR1_SEO]
+[REST-OP par1_get]
+GET {{BACK_URL}}/api/catalog/categories/{{PAR1}}
+[REST-EXEC par1_get]
+[REST-CAPTURE par1_get.body.seoInfos.0.semanticUrl → PAR1_SLUG]
+[REST-OP par2]
+POST {{BACK_URL}}/api/catalog/categories
+Content-Type: application/json
+Body: {""catalogId"": ""{{VCAT}}"", ""name"": ""AGENT-TEST-SEOX-PAR2"", ""code"": ""seox-p2-{{VCAT}}"", ""seoInfos"": [{""semanticUrl"": ""agent-test-seox-p2-{{VCAT}}"", ""languageCode"": ""{{CULTURE_NAME}}"", ""isActive"": true, ""objectType"": ""Category""}]}
+[REST-EXEC par2]
+[REST-CAPTURE par2.body.id → PAR2]
+[REST-CAPTURE par2.body.seoInfos.0.id → PAR2_SEO]
+[REST-OP par2_get]
+GET {{BACK_URL}}/api/catalog/categories/{{PAR2}}
+[REST-EXEC par2_get]
+[REST-CAPTURE par2_get.body.seoInfos.0.semanticUrl → PAR2_SLUG]
+[REST-OP ch1]
+POST {{BACK_URL}}/api/catalog/categories
+Content-Type: application/json
+Body: {""catalogId"": ""{{VCAT}}"", ""name"": ""AGENT-TEST-SEOX-CH1"", ""code"": ""seox-ch1-{{VCAT}}"", ""parentId"": ""{{PAR1}}"", ""seoInfos"": [{""semanticUrl"": ""agent-test-seox-shared-{{VCAT}}"", ""languageCode"": ""{{CULTURE_NAME}}"", ""isActive"": true, ""objectType"": ""Category""}]}
+[REST-EXEC ch1]
+[REST-CAPTURE ch1.body.id → CH1]
+[REST-CAPTURE ch1.body.seoInfos.0.id → CH1_SEO]
+[REST-OP ch1_get]
+GET {{BACK_URL}}/api/catalog/categories/{{CH1}}
+[REST-EXEC ch1_get]
+[REST-CAPTURE ch1_get.body.seoInfos.0.semanticUrl → CH1_SLUG]
+[REST-OP ch2]
+POST {{BACK_URL}}/api/catalog/categories
+Content-Type: application/json
+Body: {""catalogId"": ""{{VCAT}}"", ""name"": ""AGENT-TEST-SEOX-CH2"", ""code"": ""seox-ch2-{{VCAT}}"", ""parentId"": ""{{PAR2}}"", ""seoInfos"": [{""semanticUrl"": ""agent-test-seox-shared-{{VCAT}}"", ""languageCode"": ""{{CULTURE_NAME}}"", ""isActive"": true, ""objectType"": ""Category""}]}
+[REST-EXEC ch2]
+[REST-CAPTURE ch2.body.id → CH2]
+[REST-OP full]
+GET {{BACK_URL}}/api/seoinfos/explain?storeId={{LONG_ID}}&storeDefaultLanguage={{CULTURE_NAME}}&languageCode={{CULTURE_NAME}}&permalink={{PAR1_SLUG}}/{{CH1_SLUG}}
+[REST-EXEC full]
+[REST-OP bare]
+GET {{BACK_URL}}/api/seoinfos/explain?storeId={{LONG_ID}}&storeDefaultLanguage={{CULTURE_NAME}}&languageCode={{CULTURE_NAME}}&permalink={{CH1_SLUG}}
+[REST-EXEC bare]","[VAR] {{LONG_SETTING}} = Stores.SeoLinksType {OBSERVED} (KB-4DDC303D)
+[ERRORS label=ch2] HTTP 200 {OBSERVED} (KB-51C67C3F: a second category with the same slug is saved without an error)
+[DATA label=ch2] body.seoInfos.0.semanticUrl = agent-test-seox-shared-{{VCAT}} {OBSERVED} (KB-51C67C3F)
+[COUNT label=full] body.[?stage=Candidates].items.length = 2 {SPEC} (VCST-5989)
+[COUNT label=full] body.[?stage=Candidates].items[*?isResolved=true].length = 1 {SPEC} (VCST-5989)
+[DATA label=full] body.[?stage=Candidates].items[?isResolved=true].seoInfo.objectId = {{CH1}} {SPEC} (VCST-5989)
+[DATA label=full] body.[?stage=Candidates].items[?isResolved=false].reasons.0.code = PermalinkMismatch {SPEC} (VCST-5989)
+[DATA label=full] body.[?stage=Candidates].items[?isResolved=false].seoInfo.objectId = {{CH2}} {SPEC} (VCST-5989)
+[DATA label=full] body.[?stage=Candidates].items[?isResolved=false].reasons.0.details = {{PAR2_SLUG}}/{{CH1_SLUG}} {OBSERVED} (KB-4D953F8A: details is the path the record does have)
+[COUNT label=full] body.[?stage=Final].items.length = 1 {SPEC} (VCST-5989)
+[DATA label=full] body.[?stage=Final].items.0.seoInfo.objectId = {{CH1}} {SPEC} (VCST-5989)
+[COUNT label=bare] body.[?stage=Candidates].items.length = 2 {OBSERVED} (KB-4D953F8A)
+[COUNT label=bare] body.[?stage=Candidates].items[*?isResolved=true].length = 0 {OBSERVED} (KB-4D953F8A)
+[COUNT label=bare] body.[?stage=Final].items.length = 0 {OBSERVED} (KB-4D953F8A)","[EVIDENCE] the AGENT-TEST-SEOX- store(s), catalog and categories created in Steps are gone after Cleanup","both same-slug children resolved, neither resolved for the full Long path, PermalinkMismatch missing or with empty details, the bare child slug resolves under Long links","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/stores?ids=AGENT-TEST-SEOX-LONG-{{VCAT}}]
+[REST DELETE /api/catalog/catalogs/{{VCAT}}]","VCST-5989 | https://github.com/VirtoCommerce/vc-module-seo/pull/22 | https://github.com/VirtoCommerce/vc-module-catalog/pull/910 | https://docs.virtocommerce.org/platform/user-guide/seo/debugging-seo-links | Archetype:CONFIG | Technique:DT | Catches:VCST-5989 | Purpose:FUNC | KB-4D953F8A | p1/shared resolves CH1, the CH2 record gets PermalinkMismatch with details <p2>/<shared> (KB-4D953F8A, KB-4DDC303D) | BL-SEO-001: the resolver disambiguates two same-slug records by the Long-link path | the CH2 save returning 200 is observed behaviour (KB-51C67C3F), not a rule | Promoted: REG-2026-10-20-1700-066b-qa1 (2026-10-20)",Automated
+SEO-EXP-008,"Candidates blade shows a Not resolved label, a Resolved check icon with an accessible name, and an Inactive label",SEO > Debug SEO links > Admin UI,High,,,"Admin signed in at {{BACK_URL}} with the admin UI language English. The case creates a virtual catalog, a control store on it, category A (active record) and category B (record made inactive), both outside {{STORE_ID}}'s catalog.","{{BACK_URL}} {{ADMIN}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{CULTURE_NAME}} {{CURRENCY_CODE}}; <vcat> = the id of the virtual catalog this case creates (server-generated GUID); every slug and store id below carries <vcat>, so the data is isolated per case and per run, nothing is hardcoded","[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access - capture admin access_token
+[SETUP] POST {{BACK_URL}}/api/catalog/catalogs body {name:""AGENT-TEST-SEOX-VC"", isVirtual:true, languages:[{languageCode:""{{CULTURE_NAME}}"",isDefault:true}]} - capture catalog.id as <vcat>
+[SETUP] POST {{BACK_URL}}/api/stores body {id:""AGENT-TEST-SEOX-UI-<vcat>"", name:""AGENT-TEST-SEOX-UI-<vcat>"", catalog:<vcat>, storeState:""Open"", defaultLanguage:""{{CULTURE_NAME}}"", languages:[""{{CULTURE_NAME}}""], defaultCurrency:""{{CURRENCY_CODE}}"", currencies:[""{{CURRENCY_CODE}}""]}
+[SETUP] POST {{BACK_URL}}/api/catalog/categories body {catalogId:<vcat>, name:""AGENT-TEST-SEOX-CATA-<vcat>"", code:""seox-a-<vcat>"", seoInfos:[{semanticUrl:""agent-test-seox-ui-ok-<vcat>"", languageCode:""{{CULTURE_NAME}}"", isActive:true, objectType:""Category""}]} - capture category.id as <CATA>
+[SETUP] GET {{BACK_URL}}/api/catalog/categories/<CATA> Authorization: Bearer <admin access_token> - confirm seoInfos[0].semanticUrl/languageCode/storeId/isActive as sent
+[SETUP] POST {{BACK_URL}}/api/catalog/categories body {catalogId:<vcat>, name:""AGENT-TEST-SEOX-CATB-<vcat>"", code:""seox-b-<vcat>"", seoInfos:[{semanticUrl:""agent-test-seox-ui-off-<vcat>"", languageCode:""{{CULTURE_NAME}}"", isActive:true, objectType:""Category""}]} - capture category.id as <CATB>
+[SETUP] GET {{BACK_URL}}/api/catalog/categories/<CATB> Authorization: Bearer <admin access_token> - confirm seoInfos[0].semanticUrl/languageCode/storeId/isActive as sent
+[SETUP] GET category <CATB>, set seoInfos[0].isActive=false, POST the full object back to {{BACK_URL}}/api/catalog/categories (create-or-update; PUT returns 405) - re-GET and confirm false
+[GUARD] if any [SETUP] response is not 2xx, or the GET read-back of a created category does not return its seoInfos, mark the case BLOCKED (not FAIL), run Cleanup and stop
+--- SCREEN: Rejected row ---
+[NAV] Navigate to Stores (top-level menu) at {{BACK_URL}}
+[GRID] open store {{STORE_ID}}
+[ACT] click the 'Debug SEO' widget
+[WAIT] 'Debug SEO links' blade opens with the Language code select and the Permalink field
+[ACT] choose language {{CULTURE_NAME}} in the 'Language code' select
+[ACT] type permalink agent-test-seox-ui-ok-<vcat> into the 'Permalink' field
+[ACT] click 'Debug'
+[WAIT] 'Debug SEO links Stages' blade lists 7 rows
+[ACT] click the row 'Stage 0: Candidates'
+[WAIT] 'Debug SEO links Candidates' blade opens with 1 row
+--- SCREEN: Resolved row ---
+[NAV] Navigate to Stores (top-level menu) at {{BACK_URL}}
+[GRID] open store AGENT-TEST-SEOX-UI-<vcat>
+[ACT] click the 'Debug SEO' widget
+[WAIT] 'Debug SEO links' blade opens with the Language code select and the Permalink field
+[ACT] choose language {{CULTURE_NAME}} in the 'Language code' select
+[ACT] type permalink agent-test-seox-ui-ok-<vcat> into the 'Permalink' field
+[ACT] click 'Debug'
+[WAIT] 'Debug SEO links Stages' blade lists 7 rows
+[ACT] click the row 'Stage 0: Candidates'
+[WAIT] Candidates blade opens with 1 row
+--- SCREEN: Stage switch (same Stages blade) ---
+[ACT] click the row 'Stage 1: Original' in the Stages blade
+[WAIT] the child blade shows the Original stage with 1 row
+[ACT] click the row 'Stage 0: Candidates' again
+[WAIT] the child blade shows the Candidates columns (Resolved, Rejection reasons) with 1 row
+--- SCREEN: Inactive record ---
+[ACT] in the same store blade click the 'Debug SEO' widget
+[WAIT] 'Debug SEO links' blade opens with the Language code select and the Permalink field
+[ACT] choose language {{CULTURE_NAME}} in the 'Language code' select
+[ACT] type permalink agent-test-seox-ui-off-<vcat> into the 'Permalink' field
+[ACT] click 'Debug'
+[WAIT] Stages blade lists 7 rows
+[ACT] click the row 'Stage 0: Candidates'
+[WAIT] Candidates blade opens with 1 row
+--- SCREEN: Unknown slug ---
+[ACT] in the same store blade click the 'Debug SEO' widget
+[WAIT] 'Debug SEO links' blade opens with the Language code select and the Permalink field
+[ACT] choose language {{CULTURE_NAME}} in the 'Language code' select
+[ACT] type permalink agent-test-seox-ui-none-<vcat> into the 'Permalink' field
+[ACT] click 'Debug'
+[WAIT] Stages blade finishes loading","[GRID] Rejected row: the Resolved cell of the single row reads 'Not resolved' as text and exposes no image in the accessibility tree {SPEC} (VCST-5989 dev comment, commit 7ef94e19) {OBSERVED} (KB-D2620142)
+[GRID] Rejected row: the Rejection reasons cell reads ""The category or product isn't in the store's catalog"" {OBSERVED} (KB-4D953F8A)
+[DOM] Resolved row: the Resolved cell exposes img 'Resolved' in the accessibility tree (the check icon; role=img with a translated title - the markup detail i.table-ico.fa-check is {SPEC} per dev comment, not verified in the DOM) {SPEC} (VCST-5989 dev comment) {OBSERVED} (KB-D2620142)
+[REL] the Resolved cell differs between the rejected and the resolved row (label vs icon) - the column is not rendered empty for false {SPEC} (VCST-5989 dev comment) {OBSERVED}
+[GRID] Inactive record: the Active cell reads 'Inactive' as text and exposes no image; the Resolved cell reads 'Not resolved' {SPEC} (VCST-5989 dev comment) {OBSERVED} (KB-D2620142)
+[BLADE] Stage switch: after Stage 1 the child blade shows the Original stage (no Resolved or Rejection reasons column), and after returning to Stage 0 it shows the Candidates columns again with the Resolved check icon - never the previous stage's rows {OBSERVED}
+[BLADE] Unknown slug: the Stages blade shows 'Nothing found for your request' and lists no stage rows {OBSERVED} (KB-D2620142)","[CONSOLE] no JS error while the Candidates blade renders
+[NETWORK] each Debug issues one GET /api/seoinfos/explain returning 200
+[A11Y] the Resolved check icon exposes role=img with a non-empty accessible name","Resolved cell empty for a rejected row, check icon without role=img or title, Active cell empty for an inactive record, stale blade after switching Stage 0 and Stages 1-6","[ACT] close all Debug SEO blades
+[HTTP] POST {{BACK_URL}}/connect/token grant_type=password username={{ADMIN}} password={{ADMIN_PASSWORD}} scope=offline_access - capture admin access_token
+[TEARDOWN] DELETE {{BACK_URL}}/api/stores?ids=AGENT-TEST-SEOX-UI-<vcat> (204)
+[TEARDOWN] GET {{BACK_URL}}/api/stores/AGENT-TEST-SEOX-UI-<vcat> - a deleted store reads 200 with an EMPTY body (not 404); assert the body is empty
+[TEARDOWN] DELETE {{BACK_URL}}/api/catalog/catalogs/<vcat> (204; cascades to its categories)","VCST-5989 | https://github.com/VirtoCommerce/vc-module-seo/pull/22 | https://github.com/VirtoCommerce/vc-module-catalog/pull/910 | https://docs.virtocommerce.org/platform/user-guide/seo/debugging-seo-links | Archetype:RENDER | Technique:EP | Catches:VCST-5989 | Purpose:VISUAL | KB-D2620142 KB-4D953F8A | Admin strings are {OBSERVED}, not {DOC}: the docs page does not describe Stage 0 | KB-D2EBDDB1 KB-4DDC303D | Browser run of this text pending",Draft
+SEO-EXP-009,Final item of explain equals what the xAPI slugInfo resolves for the same permalink,SEO > Debug SEO links > Consistency,High,,,"Runner-native (machine lane). Admin token via [AUTH role=ADMIN_DEFAULT]. Every entity is created in the case and named after the case's own virtual catalog id {{VCAT}} (a server-generated GUID), so data is isolated per case and per run and Cleanup deletes exactly what this case created. A setup call that fails leaves a capture empty, which the runner turns into INVALID (blocked), never PASS or FAIL. The case creates a virtual catalog, a control store on it and one category with a slug; only a RESOLVING permalink is sent to slugInfo (a missing permalink would write a broken link).",store={{STORE_ID}}; culture={{CULTURE_NAME}}; currency={{CURRENCY_CODE}},"[AUTH role=ADMIN_DEFAULT]
+[REST-OP vcat]
+POST {{BACK_URL}}/api/catalog/catalogs
+Content-Type: application/json
+Body: {""name"": ""AGENT-TEST-SEOX-VC"", ""isVirtual"": true, ""languages"": [{""languageCode"": ""{{CULTURE_NAME}}"", ""isDefault"": true}]}
+[REST-EXEC vcat]
+[REST-CAPTURE vcat.body.id → VCAT]
+[REST-OP ctrl]
+POST {{BACK_URL}}/api/stores
+Content-Type: application/json
+Body: {""id"": ""AGENT-TEST-SEOX-CTRL-{{VCAT}}"", ""name"": ""AGENT-TEST-SEOX-CTRL-{{VCAT}}"", ""catalog"": ""{{VCAT}}"", ""storeState"": ""Open"", ""defaultLanguage"": ""{{CULTURE_NAME}}"", ""languages"": [""{{CULTURE_NAME}}""], ""defaultCurrency"": ""{{CURRENCY_CODE}}"", ""currencies"": [""{{CURRENCY_CODE}}""]}
+[REST-EXEC ctrl]
+[REST-CAPTURE ctrl.body.id → CTRL_ID]
+[REST-OP cata]
+POST {{BACK_URL}}/api/catalog/categories
+Content-Type: application/json
+Body: {""catalogId"": ""{{VCAT}}"", ""name"": ""AGENT-TEST-SEOX-CATA"", ""code"": ""seox-a-{{VCAT}}"", ""seoInfos"": [{""semanticUrl"": ""agent-test-seox-cons-{{VCAT}}"", ""languageCode"": ""{{CULTURE_NAME}}"", ""isActive"": true, ""objectType"": ""Category""}]}
+[REST-EXEC cata]
+[REST-CAPTURE cata.body.id → CATA]
+[REST-CAPTURE cata.body.seoInfos.0.id → CATA_SEO]
+[REST-OP cata_get]
+GET {{BACK_URL}}/api/catalog/categories/{{CATA}}
+[REST-EXEC cata_get]
+[REST-CAPTURE cata_get.body.seoInfos.0.semanticUrl → CATA_SLUG]
+[REST-OP ex]
+GET {{BACK_URL}}/api/seoinfos/explain?storeId={{CTRL_ID}}&storeDefaultLanguage={{CULTURE_NAME}}&languageCode={{CULTURE_NAME}}&permalink={{CATA_SLUG}}
+[REST-EXEC ex]
+[GQL-OP slug]
+query { slugInfo(permalink: ""{{CATA_SLUG}}"", storeId: ""{{CTRL_ID}}"", cultureName: ""{{CULTURE_NAME}}"") { entityInfo { id objectId objectType semanticUrl } redirectUrl } }
+[GQL-EXEC slug]","[ERRORS label=ex] HTTP 200 {SPEC} (VCST-5989)
+[DATA label=ex] body.[?stage=Candidates].items.0.isResolved = true {SPEC} (VCST-5989)
+[COUNT label=ex] body.[?stage=Final].items.length = 1 {SPEC} (VCST-5989)
+[DATA label=ex] body.[?stage=Final].items.0.seoInfo.id = {{CATA_SEO}} {SPEC} (VCST-5989)
+[DATA label=ex] body.[?stage=Final].items.0.seoInfo.objectId = {{CATA}} {SPEC} (VCST-5989)
+[DATA label=ex] body.[?stage=Final].items.0.seoInfo.objectType = Category {SPEC} (VCST-5989)
+[ERRORS label=slug] errors[] empty {SPEC} (VCST-5989: the fix must not change resolution)
+[DATA label=slug] data.slugInfo.entityInfo.id = {{CATA_SEO}} {SPEC} (VCST-5989: same SEO record as explain Final)
+[DATA label=slug] data.slugInfo.entityInfo.objectId = {{CATA}} {SPEC} (VCST-5989)
+[DATA label=slug] data.slugInfo.entityInfo.objectType = Category {SPEC} (VCST-5989)","[EVIDENCE] the AGENT-TEST-SEOX- store(s), catalog and categories created in Steps are gone after Cleanup","explain Final and slugInfo point at different SEO records or objects, slugInfo returns errors[] or a null entityInfo for a resolving permalink, Candidates reports not resolved while slugInfo resolves","[AUTH role=ADMIN_DEFAULT]
+[REST DELETE /api/stores?ids=AGENT-TEST-SEOX-CTRL-{{VCAT}}]
+[REST DELETE /api/catalog/catalogs/{{VCAT}}]","VCST-5989 | https://github.com/VirtoCommerce/vc-module-seo/pull/22 | https://github.com/VirtoCommerce/vc-module-catalog/pull/910 | https://docs.virtocommerce.org/platform/user-guide/seo/debugging-seo-links | Archetype:PARITY | Technique:EG | Catches:VCST-5989 | Purpose:FUNC | KB-4C86ED98 KB-2E8CAC3D | explain Final and slugInfo are compared through the ids the case created ({{CATA}}, {{CATA_SEO}}), never through a capture of the response under test | Not asserted here: slugInfo on the REJECTED permalink (it writes a broken link) | Promoted: REG-2026-10-20-1700-066b-qa1 (2026-10-20)",Automated

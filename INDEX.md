@@ -30,7 +30,7 @@ browser automation with AI agents, **not** traditional `.spec.js` files. The rep
 | [CLAUDE.md](CLAUDE.md) | Project instructions for Claude Code (overrides defaults) |
 | [.claude/ROUTING.md](.claude/ROUTING.md) | "When to use what" — task → command / skill / agent |
 | [.claude/](.claude/) | The project-scoped `vc-qa` surface: agents, skills, commands, rules, knowledge, hooks |
-| [plugins/](plugins/) | The marketplace plugins: [`vc-fix`](plugins/vc-fix/README.md) · `vc-perf` · [`vc-secrets`](plugins/vc-secrets/README.md) |
+| [plugins/](plugins/) | The marketplace plugins: [`vc-init`](plugins/vc-init/README.md) · [`vc-fix`](plugins/vc-fix/README.md) · `vc-perf` · [`vc-test`](plugins/vc-test/README.md) (preview) · [`vc-secrets`](plugins/vc-secrets/README.md) · [`vc-frontend`](plugins/vc-frontend/README.md) |
 | [config/](config/) | MCP browser configs + `test-suites.json` manifest |
 | [regression/suites/](regression/suites/) | Module-aligned CSV suites (Frontend/ + Backend/) — `npm run suites:lint` prints the totals |
 | [test-data/](test-data/) | `@td()` alias registry + CSV fixtures |
@@ -65,9 +65,12 @@ ai-tools/
 │   └── architecture/TIER.md        # A/B/C/D reuse classification
 │
 ├── plugins/
-│   ├── vc-fix/                     # bug lifecycle + Developers team (self-contained)
-│   ├── vc-perf/                    # three-layer performance loop (depends on vc-fix)
-│   └── vc-secrets/                 # secrets launcher for MCP configs
+│   ├── vc-init/                    # onboarding (/project-init), the profile writer, the $VC_RUN token bridge
+│   ├── vc-fix/                     # bug lifecycle + Developers team (self-contained; depends on vc-init)
+│   ├── vc-perf/                    # three-layer performance loop (depends on vc-init + vc-fix)
+│   ├── vc-test/                    # testing flow per ticket, preview (depends on vc-init + vc-fix)
+│   ├── vc-secrets/                 # secrets launcher for MCP configs
+│   └── vc-frontend/                # theme-fork upstream merges, storefront plugins
 │
 ├── config/                         # MCP browser configs + test-suites.json manifest
 │   ├── mcp-playwright-{chrome,firefox,edge,mobile}.config.json
@@ -159,7 +162,7 @@ reviewers sonnet) — one developer + one reviewer per repo kind. They live in
 ## Commands & Skills
 
 - **Task → tool index** — [.claude/ROUTING.md](.claude/ROUTING.md).
-- **Slash commands** — [commands/](.claude/commands), reference: each file's frontmatter (the `/` menu). Count: `ls .claude/commands/*.md | wc -l`. The bug-lifecycle commands (`/project-init`, `/qa-env-check`, `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-monitoring`, `/vc-self-check`, `/vc-feedback`) come from the `vc-fix` plugin.
+- **Slash commands** — [commands/](.claude/commands), reference: each file's frontmatter (the `/` menu). Count: `ls .claude/commands/*.md | wc -l`. The bug-lifecycle commands (`/qa-env-check`, `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-monitoring`, `/vc-self-check`, `/vc-feedback`) come from the `vc-fix` plugin, and `/project-init` from `vc-init`.
 - **Skills** — one level each under [skills/](.claude/skills) (`skills/<name>/SKILL.md`); see [skills/README.md](.claude/skills/README.md), which derives the per-category split. Count: `ls -d .claude/skills/*/ | wc -l`.
 
 ## MCP Servers

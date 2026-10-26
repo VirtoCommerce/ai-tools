@@ -93,7 +93,7 @@ sequenceDiagram
             Orch->>BA2: Review ACs vs PR diff (no writes)
             BA2-->>Orch: AC scorecard, gap-ACs, AC-vs-impl
         end
-        Orch->>Orch: 1e · Build TEST MODEL — REQUIRED, written to reports/ba/test-models/
+        Orch->>Orch: 1e · Build TEST MODEL — REQUIRED, written to {RUN_DIR}/test-model.md
         note over Orch: Gate 1 = inline self-check (no verifier dispatch)
         note over Orch: Step 2 · enrich the model (BL, ECL, E2E, VC-* probes, archetype + UIP sweeps)
     else FAST path
@@ -111,7 +111,7 @@ sequenceDiagram
     else FAST path
         note over Orch,TMS: NO Artifact A — a FAST run authors no cases
     end
-    TMS->>TMS: Checklist (B) → reports/tickets/{SPRINT}/<TICKET>/testing-checklist.md; regression scope (C)
+    TMS->>TMS: Checklist (B) → {RUN_DIR}/testing-checklist.md; regression scope (C)
     opt Cases/checklist need un-fixtured data
         TMS->>TDE: generate + seed data
         TDE-->>TMS: seeded, green td:validate
@@ -294,8 +294,8 @@ sequenceDiagram
   (parent-child; `.claude/knowledge/execution/tracker-ops.md` §5b), replacing a plain link — it *is* this
   ticket's defect. **PRE-EXISTING → linked only, never re-filed.** **OUT-OF-SCOPE incidental → its own
   standalone ticket + a related link (unchanged)**, since it wasn't caused by this ticket's change.
-- **Step 5-report Report, before Step 5-status status change.** The tracker comment (QA Complete summary, incl. the
-  AC/DoD percentages, the regression-triage counts, and the release-gate recommendation) is posted **before**
+- **Step 5-report Report, before Step 5-status status change.** The tracker comment (rendered by /vc-fix:qa-report from summary.json, incl. the
+  AC/DoD estimate, the regression pass rate, and the release-gate line) is posted **before**
   the TESTED/REOPEN transition — two distinct actions, not bundled.
 - **Close-out loop (pointer, not auto-trigger — the default)** — FAIL/REOPEN → `/qa-fix` → human
   merge/deploy → `/qa-verify-fix` (RED→GREEN re-test) → TESTED/DONE; BLOCKED → resolve → re-run `/qa-test`.

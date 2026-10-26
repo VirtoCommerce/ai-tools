@@ -91,7 +91,9 @@ Diff them, or re-derive the matrix from the chain afterwards and see which cells
 
 ## Why it is a durable file
 
-Written to `reports/ba/test-models/<TICKET>-<date>.md` — `.claude/rules/reports.md` **category 3**. Three
+Written to `{RUN_DIR}/test-model.md`, the ticket's run folder
+([`run-output.md`](../../knowledge/execution/run-output.md)) — `.claude/rules/reports.md` **category 3**; promoted by
+hand as `reports/ba/test-models/<TICKET>-<date>.md`, where the next ticket on the surface reads it. Three
 reasons it cannot be a terminal dump:
 
 1. A model nobody can re-open cannot be **argued with**, which is the whole point of having one.
@@ -108,7 +110,7 @@ reasons it cannot be a terminal dump:
    existing model, so "reused" was an aspiration: `reports/ba/test-models/` already carries
    `VCST-5346-2026-08-28.md` **and** `VCST-5346-2026-09-02.md` — one ticket, one surface, two fault
    models, which is the fork the section below forbids arriving by a different door. **Find the prior
-   model in `reports/ba/test-models/`** (`1b` item 2-map lists it and the `1c` brief carries the path), then
+   model** — the ticket's own in its run folders, the surface's in `reports/ba/test-models/` (`1b` item 2-map lists it and the `1c` brief carries the path), then
    apply whichever of the **two** rules fits. They are not one rule, and the ticket-keyed filename is what
    makes conflating them easy:
 
@@ -348,7 +350,7 @@ layer's e2e suite (`concern: e2e` in `config/test-suites.json`). Handoff contrac
 ## Strategy mode — the model of a strategy's `MODEL` risks
 
 A model built with `--strategy` ([`SKILL.md`](SKILL.md) §Two modes) details only the risks the approved
-`/qa-test-strategy` round gave technique `MODEL`. The strategy already holds what the ticket header, the risk
+`/vc-test:qa-test-strategy` round gave technique `MODEL`. The strategy already holds what the ticket header, the risk
 areas and the rounds used to carry, so the model does not restate them. Everything above this section
 applies **except**:
 

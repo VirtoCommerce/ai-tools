@@ -5,7 +5,7 @@ This is the **one** PR body template for every auto-fix PR opened by `/qa-fix`
 template **here**. Write the filled body to the `PR_BODY.md` path your assignment gives you.
 
 **Upstream shape.** The skeleton follows Virto's general PR-description guide,
-`VirtoCommerce/vc-platform` → `docs/prompts/pr-description-guide.md` (synced at `05b48b01`, 2026-08-14). Its
+`VirtoCommerce/vc-platform` → `docs/prompts/pr-description-guide.md` (synced at `05b48b01`, 2026-08-14). Its <!-- doclint:may-not-exist -->
 rationale is not restated here — read it there. This file keeps only the skeleton, the per-kind slots and
 what differs for an auto-fix PR. When the guide changes, re-sync this file and bump the commit above.
 
@@ -186,9 +186,9 @@ CI rewrites the `Artifact URL` line after every build, and review bots (Cursor B
 own blocks. A whole-body update built from your local `PR_BODY.md` silently deletes them — `gh pr edit`
 returns success anyway. So every edit after the PR is open:
 
-1. Read the live body: `gh pr view <pr> --json body --jq .body > <scratch>/live-body.md`.
+1. Read the live body: `node "$VC_RUN" gh pr view <pr> --json body --jq .body > <scratch>/live-body.md`.
 2. Change only your own lines in that copy; leave the Artifact URL line and every bot block untouched.
-3. `gh pr edit <pr> --body-file <scratch>/live-body.md`, then read the body back and confirm both survived.
+3. `node "$VC_RUN" gh pr edit <pr> --body-file <scratch>/live-body.md`, then read the body back and confirm both survived.
 
 ## Keep it true after every push
 
