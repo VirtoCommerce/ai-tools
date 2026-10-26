@@ -6,9 +6,10 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { assertKey, cacheDir, isInside, newRunDir, outputRoot, removeRunDir, sweepStaleRuns } from "./paths.mjs";
 import { LAYERS_GAP, loadLayeredEnv } from "./env.mjs";
-import { codeHostCredential, resolveProfile } from "./profile.mjs";
+import { resolveProfile } from "./profile.mjs";
 import { HostGoverned, vcRun } from "./bridge.mjs";
 import { jiraConnector } from "./connectors/jira.mjs";
+import { githubConnector, searchKeyFor } from "./connectors/github.mjs";
 import { ProfileError, loadProfile } from "../../../lib/profile.mjs";
 import { GAP_REASONS, SCHEMA, asGap, gap } from "./gap.mjs";
 import { validateDef } from "./schema.mjs";
@@ -18,7 +19,7 @@ import { CAPS, envHosts, fetchPublicPage, htmlToText, planDownloads, safeName } 
 import { exportFigmaItems, figmaToken } from "./figma.mjs";
 import { extractFrames, extractGifFrames } from "./frames.mjs";
 import { isHarText, loadSecretValues, scrubFile } from "./scrub.mjs";
-import { CONTEXT_ONLY_REPOS, collectContextPr, collectPr, followCompanions, ghClient, orderPrMeta, runLadder } from "./github.mjs";
+import { CONTEXT_ONLY_REPOS, collectContextPr, collectPr, followCompanions, orderPrMeta, runLadder } from "./github.mjs";
 import { checkDeployment } from "./deploy.mjs";
 import { bundleFile, freshnessKey, isIgnored, readCached, skillFingerprint, writeCache } from "./cache.mjs";
 import { DOMAIN_RE, knownGround } from "./known.mjs";
@@ -168,13 +169,14 @@ async function prepare() {
 
   const orgs = profile.orgs;
   if (profile.azureRepos) gaps.push(gap(`change.${profile.azureRepos.organization}`, "connector-unavailable", "azure-repos pull requests are read from Phase 5 on"));
-  const gcred = codeHostCredential(profile);
-  const gh = gcred.ok ? ghClient(gcred) : null;
-  if (!gh) gaps.push(gap("change", gcred.reason, gcred.detail));
-  const ladder = gh ? await runLadder({ gh, key, orgs, explicitRefs: inv.prRefs, gaps }) : { rung: null, refs: inv.prRefs, sameKey: [], ladder: [] };
+  // §7, U20: every GitHub read is a $VC_RUN `gh api` GET. The platform upstream is always GitHub, so this runs on an
+  // Azure Repos project too; there the client's own PRs come from the tracker (P1d-2 Task 7).
+  const gh = githubConnector();
+  const searchKey = searchKeyFor(profile, key);
+  if (!searchKey) gaps.push(gap("change.search", "not-found", "the profile names no tracker.crossLinkToken, so GitHub was not searched for this work item"));
+  const ladder = await runLadder({ gh, key: searchKey ?? key, orgs: searchKey ? orgs : [], explicitRefs: inv.prRefs, gaps });
   let prMeta = [];
   for (const r of ladder.refs) {
-    if (!gh) { prMeta.push({ ...r, gap: gap(`pr:${r.ref}`, gcred.reason, gcred.detail) }); continue; }
     try { prMeta.push({ ...r, meta: await gh.pr(r.owner, r.repo, r.number) }); } catch (e) { prMeta.push({ ...r, gap: asGap(`pr:${r.ref}`, e) }); }
   }
   // U67: a PR opened after the cutoff did not exist for a blind run — dropped before its body can name companions,
@@ -185,11 +187,9 @@ async function prepare() {
   }
   orderPrMeta(prMeta);
   // Named companions, one hop (github.mjs): appended after the ladder's PRs, so they take only the cap left over.
-  if (gh) {
-    const companions = blindPrs(await followCompanions({ gh, prMeta, orgs, gaps }), [], before).prMeta;
-    ladder.ladder.push({ rung: "companion", found: companions.length });
-    prMeta.push(...companions);
-  }
+  const companions = blindPrs(await followCompanions({ gh, prMeta, orgs, gaps }), [], before).prMeta;
+  ladder.ladder.push({ rung: "companion", found: companions.length });
+  prMeta.push(...companions);
 
   const fk = freshnessKey({ ticketUpdated: issue.fields.updated, domain, skill: skillFingerprint(),
     prShas: prMeta.map((p) => `${p.ref}@${p.meta?.head?.sha ?? "?"}@${p.meta?.state ?? "?"}@${p.meta?.merged_at ?? ""}`),

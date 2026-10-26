@@ -1,7 +1,6 @@
 // plugins/vc-test/skills/ticket-context/lib/profile.mjs — C2 + D9: what to read, from project-profile.json (vc-init's,
 // loaded by the plugin's read-only loader). No profile is a STOP (U19): there is no native-platform default here.
 // Field names are vc-init's (plugins/vc-init/scripts/lib/project-profile.mjs PROFILE_DEFAULTS).
-import { execFileSync } from "node:child_process";
 import { ProfileError } from "../../../lib/profile.mjs";
 
 const str = (v) => (typeof v === "string" ? v.trim() : "");
@@ -32,24 +31,5 @@ export function resolveProfile(profile) {
     fieldMap: obj(t.fieldMap),
     azure: { organization: str(t.azure?.organization), project: str(t.azure?.project), roleStates: obj(t.azure?.roleStates), roleStatesByType: obj(t.azure?.roleStatesByType) },
     governed: !!profile.governance?.host,
-    authEnv: str(vcs.authEnv) || null, // read by codeHostCredential until the GitHub connector replaces it (P1d-2 Task 5)
   };
-}
-
-// codeHostCredential goes with its last caller, the GitHub connector (P1d-2 Task 5).
-/** One code-host credential, chosen once (S7): the profile's authEnv, else GIT_TOKEN, else the gh session. */
-export function codeHostCredential(p, env = process.env, ghToken = ghCliToken) {
-  const name = p.authEnv || "GIT_TOKEN";
-  if (env[name]) return { ok: true, auth: `Bearer ${env[name]}`, via: name };
-  const t = ghToken(env);
-  if (t) return { ok: true, auth: `Bearer ${t}`, via: "gh auth token" };
-  return { ok: false, reason: "no-credential", detail: `set ${name} in .env.local, or run gh auth login` };
-}
-
-function ghCliToken(env) {
-  // The gh session itself, not a token gh would pick up from the env (as scripts/deploy/lib/github.ts GH_ENV does).
-  const clean = { ...env };
-  delete clean.GITHUB_TOKEN;
-  delete clean.GH_TOKEN;
-  try { return execFileSync("gh", ["auth", "token"], { env: clean, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim() || null; } catch { return null; }
 }
