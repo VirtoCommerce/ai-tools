@@ -48,7 +48,8 @@ import { GROUPS, checkArgv, checkPlaywright, groupOf, toolInGroup } from "./allo
 import { createRedactor } from "./redact.mjs";
 import { resolvePluginFile, resolvePluginRoot, selfRoot } from "./resolve-plugin.mjs";
 import { vcSecretsShim } from "./vc-secrets-path.mjs";
-import { currentEnv, declaredPasswords, isPasswordName, laneServer, onboardTask } from "../skills/project-init/lib/passwords.mjs";
+import { checkRunnerFiles, findPlaywright, runnerCommand, runnerEnvAllowed } from "./runner.mjs";
+import { currentEnv, declaredPasswords, isPasswordName, laneServer, onboardTask, runnerTask } from "../skills/project-init/lib/passwords.mjs";
 
 export const EX_REFUSED = 64;
 export const EX_UNAVAILABLE = 69;
@@ -56,7 +57,7 @@ export const EX_SOFTWARE = 70;
 export const EX_CONFIG = 78;
 
 /** Which host server role a bridge tool's job belongs to on a host-governed project. */
-const HOST_ROLE = Object.freeze({ gh: "github", "git-gh": "github", deliver: "github", ado: "tracker", "git-ado": "codeHost", jira: "tracker", onboard: "tracker", playwright: "browsers" });
+const HOST_ROLE = Object.freeze({ gh: "github", "git-gh": "github", deliver: "github", ado: "tracker", "git-ado": "codeHost", jira: "tracker", onboard: "tracker", playwright: "browsers", runner: "browsers" });
 
 /**
  * The nearest project-profile.json's `governance` block (PROJECT_PROFILE_PATH, VC_FIX_HOME, then the cwd
@@ -64,6 +65,15 @@ const HOST_ROLE = Object.freeze({ gh: "github", "git-gh": "github", deliver: "gi
  * bridge launches stop on it themselves.
  */
 export function findGovernance(start = process.cwd(), { useEnv = true } = {}) {
+  const found = findProfile(start, { useEnv });
+  return found ? found.profile.governance || null : null;
+}
+
+/**
+ * The nearest project-profile.json, found as findGovernance finds it: { path, profile }, or null when
+ * there is none or it does not parse.
+ */
+export function findProfile(start = process.cwd(), { useEnv = true } = {}) {
   const candidates = [];
   // The inner side passes useEnv:false and the declarations root: the caller sets those variables.
   if (useEnv && process.env.PROJECT_PROFILE_PATH) candidates.push(process.env.PROJECT_PROFILE_PATH);
@@ -78,7 +88,8 @@ export function findGovernance(start = process.cwd(), { useEnv = true } = {}) {
   for (const p of candidates) {
     if (!existsSync(p)) continue;
     try {
-      return JSON.parse(readFileSync(p, "utf8")).governance || null;
+      const profile = JSON.parse(readFileSync(p, "utf8"));
+      return profile && typeof profile === "object" ? { path: p, profile } : null;
     } catch {
       return null;
     }
@@ -109,6 +120,8 @@ export const GROUP_SECRETS = Object.freeze({
   ado: ["ADO_PAT"],
   jira: ["JIRA_API_TOKEN"],
   onboard: ["GITHUB_FIX_BUGS_TOKEN", "GITHUB_TOKEN", "ADO_PAT", "JIRA_API_TOKEN"],
+  // Test-user passwords only, never a token (B10): buildInnerEnv takes them by name.
+  runner: [],
 });
 
 /** The vc-secrets task name for a group. */
@@ -155,8 +168,9 @@ export function buildInnerEnv(source, group, { nodePath = process.execPath, help
   for (const name of GROUP_SECRETS[group] || []) {
     if (typeof source[name] === "string" && source[name].length) secrets[name] = source[name];
   }
-  // onboard also logs in over the API: the `vc-init-onboard.<env>` task injects that env's passwords.
-  if (group === "onboard") {
+  // onboard also logs in over the API: the `vc-init-onboard.<env>` task injects that env's passwords;
+  // the runner's `vc-init-runner.<env>` task injects nothing else.
+  if (group === "onboard" || group === "runner") {
     for (const [name, v] of Object.entries(source)) if (isPasswordName(name) && typeof v === "string" && v.length) secrets[name] = v;
   }
   Object.assign(env, secrets);
@@ -312,12 +326,12 @@ function say(message) {
 }
 
 /** Run a child, optionally piping its output through redactors; resolves to its exit code. */
-export function runChild(command, args, { env = process.env, secrets = [], emails = [] } = {}) {
+export function runChild(command, args, { env = process.env, secrets = [], emails = [], cwd } = {}) {
   return new Promise((done) => {
     const redact = secrets.length > 0;
     let child;
     try {
-      child = spawn(command, args, { env, stdio: ["inherit", redact ? "pipe" : "inherit", redact ? "pipe" : "inherit"], windowsHide: true });
+      child = spawn(command, args, { env, ...(cwd ? { cwd } : {}), stdio: ["inherit", redact ? "pipe" : "inherit", redact ? "pipe" : "inherit"], windowsHide: true });
     } catch (e) {
       say(`cannot start ${command}: ${e.message}`);
       done(EX_UNAVAILABLE);
@@ -376,6 +390,8 @@ const USAGE = `usage: node "$VC_RUN" <tool> [args…]
   deliver …              vc-fix vc-self-check/deliver.mjs
   onboard <script> …     vc-init /project-init scripts (verify-access, discover-repos, discover-tracker, derive-context)
   playwright <lane>      a Playwright MCP lane with the current env's passwords from vc-secrets (.mcp.json runs this)
+  runner playwright <spec…> | runner node <script> [args…]
+                         vc-test's checks with the env's test-user passwords, never a token (profile test block)
   --where                print what the bridge resolves (plugins, vc-secrets, the project's declared tasks)`;
 
 /** OUTER side. */
@@ -395,6 +411,7 @@ async function outer(argv) {
       declarations: decls ? decls.root : null,
       tasks: Object.fromEntries(GROUPS.map((g) => [taskName(g), taskDeclared(decls, g)])),
       passwordEnvs: passwordEnvs(decls),
+      runnerTasks: passwordEnvs(decls).map(runnerTask).filter((t) => declared(decls, t)),
     };
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
     return 0;
@@ -410,6 +427,7 @@ async function outer(argv) {
     say(`refused — ${check.reason}`);
     return EX_REFUSED;
   }
+  if (tool === "runner") return runnerOuter(args);
   const group = groupOf(tool);
   // From the cwd, exactly as vc-secrets finds its declarations: the route decided here and the task
   // vc-secrets then launches must come from the same file.
@@ -465,6 +483,54 @@ async function playwrightLane(args) {
   return runChild(process.execPath, [shim, "run", server]);
 }
 
+/**
+ * The runner's checks against one profile (bridge/runner.mjs): the env is one `test.environments` lists, every
+ * file lies inside `test.scriptRoots`, Playwright and its pinned config resolve. Returns
+ * { code, message } to refuse, or { cmd, projectRoot, env } to run. The project root is the profile's folder.
+ */
+export function prepareRunner(args, decls, found, { trustedOnly = false } = {}) {
+  if (!found) return { code: EX_REFUSED, message: "refused — no project-profile.json — run /project-init, then /vc-test:init" };
+  const projectRoot = dirname(found.path);
+  const testBlock = found.profile.test;
+  const env = currentEnv(decls ? decls.root : projectRoot, passwordEnvs(decls));
+  const envOk = runnerEnvAllowed(testBlock, env);
+  if (!envOk.ok) return { code: EX_REFUSED, message: `refused — ${envOk.reason}` };
+  const files = checkRunnerFiles(args, { projectRoot, scriptRoots: testBlock?.scriptRoots });
+  if (!files.ok) return { code: EX_REFUSED, message: `refused — ${files.reason}` };
+  let pw = {};
+  if (args[0] === "playwright") {
+    pw = findPlaywright(projectRoot, resolvePluginFile, { trustedOnly });
+    if (pw.error) return { code: EX_UNAVAILABLE, message: pw.error };
+  }
+  return { cmd: runnerCommand(args, { node: process.execPath, ...pw, files: files.files }), projectRoot, env };
+}
+
+/**
+ * OUTER side of `runner`: refuse before anything starts unless prepareRunner passes; then the env's
+ * `vc-init-runner.<env>` task when its passwords are in vc-secrets, else run it here (passwords in
+ * .env.local: nothing to inject) — with the same allowlisted environment, so no NODE_OPTIONS and no token.
+ */
+async function runnerOuter(args) {
+  const decls = findDeclarations(process.cwd());
+  const runner = prepareRunner(args, decls, findProfile(process.cwd()));
+  if (runner.code) {
+    say(runner.message);
+    return runner.code;
+  }
+  if (declared(decls, runnerTask(runner.env))) {
+    const { path: shim, present } = vcSecretsShim();
+    if (!present) {
+      say("the runner keeps its passwords in vc-secrets, but the vc-secrets shim is not installed — run /project-init --check, then restart Claude Code");
+      return EX_UNAVAILABLE;
+    }
+    return runChild(process.execPath, [shim, "task", runnerTask(runner.env)], {
+      env: { ...process.env, TEST_ENV: runner.env, VC_RUN_ARGV: JSON.stringify(["runner", ...args]) },
+    });
+  }
+  const { env, secrets } = buildInnerEnv(process.env, "runner", { projectRoot: runner.projectRoot });
+  return runChild(runner.cmd.command, runner.cmd.args, { env, secrets: Object.values(secrets), cwd: runner.projectRoot });
+}
+
 /** INNER side — runs inside `vc-secrets task vc-init-<group>`, with that group's secrets in its env. */
 async function inner(group) {
   if (!GROUPS.includes(group)) {
@@ -504,12 +570,18 @@ async function inner(group) {
     say(`refused — ${check.reason}`);
     return EX_REFUSED;
   }
+  // The runner's checks are repeated here against the declared project's own profile (useEnv:false).
+  const runner = tool === "runner" ? prepareRunner(args, decls, findProfile(decls.root, { useEnv: false }), { trustedOnly: true }) : null;
+  if (runner?.code) {
+    say(runner.message);
+    return runner.code;
+  }
   const { env, secrets } = buildInnerEnv(process.env, group, { projectRoot: decls.root });
   if (group !== "onboard" && Object.keys(secrets).length === 0) {
     say(`vc-secrets started the ${group} task without its secret (${GROUP_SECRETS[group].join(", ")}) — check the declaration with "node \\"$VC_SECRETS\\" doctor"`);
     return EX_UNAVAILABLE;
   }
-  const cmd = commandFor(tool, args, { trustedOnly: true });
+  const cmd = runner ? runner.cmd : commandFor(tool, args, { trustedOnly: true });
   if (cmd.error) {
     say(cmd.error);
     return EX_UNAVAILABLE;
@@ -521,6 +593,7 @@ async function inner(group) {
       env: { ...env, GH_CONFIG_DIR: own.ghConfigDir, GIT_CONFIG_GLOBAL: own.gitGlobalConfig },
       secrets: Object.values(secrets),
       emails: [process.env.JIRA_EMAIL, process.env.JIRA_USER].filter(Boolean),
+      ...(runner ? { cwd: runner.projectRoot } : {}),
     });
   } finally {
     own.cleanup();

@@ -63,14 +63,18 @@ export function passwordSecret(name, env) {
 /** The onboarding task that carries an env's passwords. */
 export const onboardTask = (env) => `vc-init-onboard.${env}`;
 
+/** The runner task (bridge/runner.mjs) that carries an env's passwords and no token. */
+export const runnerTask = (env) => `vc-init-runner.${env}`;
+
 /** The Playwright lane server of an env. */
 export const laneServer = (lane, env) => `playwright-${lane}.${env}`;
 
 const ONBOARD_ENV_TASK_RE = /^vc-init-onboard\.([a-z0-9_]+)$/;
 const LANE_SERVER_RE = /^playwright-([a-z0-9]+)\.([a-z0-9_]+)$/;
+const RUNNER_TASK_RE = /^vc-init-runner\.([a-z0-9_]+)$/;
 
 /** Is `name` a task or server this module names? */
-export const isPasswordLaunchable = (name) => ONBOARD_ENV_TASK_RE.test(name) || LANE_SERVER_RE.test(name);
+export const isPasswordLaunchable = (name) => ONBOARD_ENV_TASK_RE.test(name) || LANE_SERVER_RE.test(name) || RUNNER_TASK_RE.test(name);
 
 /**
  * The passwords a declaration file keeps in vc-secrets: { <env>: [<NAME>, …] }, read from its

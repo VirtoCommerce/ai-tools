@@ -18,6 +18,8 @@
  * Every function here is pure: argv in, { ok, reason } out.
  */
 
+import { checkRunnerShape } from "./runner.mjs";
+
 /** Tool → the vc-secrets task group whose secrets it receives. */
 export const TOOL_GROUP = Object.freeze({
   gh: "github",
@@ -27,10 +29,11 @@ export const TOOL_GROUP = Object.freeze({
   "git-ado": "ado",
   jira: "jira",
   onboard: "onboard",
+  runner: "runner",
 });
 
 /** The groups, i.e. the vc-secrets tasks `vc-init-<group>`. */
-export const GROUPS = Object.freeze(["github", "ado", "jira", "onboard"]);
+export const GROUPS = Object.freeze(["github", "ado", "jira", "onboard", "runner"]);
 
 /** Hosts a git credential (and a URL argument) may name, per git tool. */
 export const GIT_HOSTS = Object.freeze({
@@ -348,7 +351,7 @@ export function checkArgv(tool, args) {
   if (!Array.isArray(args) || args.some((a) => typeof a !== "string")) return no("arguments must be strings");
   if (args.some((a) => a.includes("\0"))) return no("an argument holds a NUL byte");
   // A body or a comment legitimately spans lines (gh, ado, jira); a git argument or a script name never does.
-  if (["git-gh", "git-ado", "onboard", "deliver"].includes(tool) && args.some((a) => /[\r\n]/.test(a))) {
+  if (["git-gh", "git-ado", "onboard", "deliver", "runner"].includes(tool) && args.some((a) => /[\r\n]/.test(a))) {
     return no("an argument holds a line break");
   }
   switch (tool) {
@@ -359,6 +362,7 @@ export function checkArgv(tool, args) {
     case "jira": return checkJira(args);
     case "deliver": return checkDeliver(args);
     case "onboard": return checkOnboard(args);
+    case "runner": return checkRunnerShape(args);
     default: return no(`unknown tool ${tool}`);
   }
 }
