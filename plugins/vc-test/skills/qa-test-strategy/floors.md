@@ -28,6 +28,25 @@ Source carries the token `floor:<id>`, and no risk carries two (test-model redes
 | F11 | the PR adds or changes a setting (a settings entry names its key — see below), a hidden-behaviour row answers `yes` for `feature-flags` / `default-values`, or the diff reads one (`ModuleConstants.Settings`, `settingsManager`, `store.settings`, `$cfg.`) (§5a) | a configuration risk with technique `MODEL` whose Source carries `floor:F11`, + the stand's values in Inputs (`npm run store:caps -- --settings` / `--store` for public settings, the admin REST API for the rest — SKILL.md step 2) |
 | F12 | vc-test's layer-0 change map (`--change-map`) has a hotspot whose `zone` is not `none` — access, money, data, order state, buyer path. Without a change map it never fires (vc-test spec U47); with one, a map with no hotspots list or a hotspot with no zone fires it (F9). The strategy's `Change map:` line names the map (gate clause 6g) | exploratory, its charter covering those hotspots |
 
+## Unavailable
+
+**Unavailable is not doubt** (vc-test spec §5.2). Only with `--capabilities <capabilities.json>` on `floors.mjs` and
+`check-strategy.mjs` (vc-test passes it; without it nothing below applies):
+
+- **F5 skipped.** F5 would fire only on doubt because the install declares no regression corpus (the bundle's
+  `known.regression:select` / `known.tc:scope` gap says `not-available-in-install`, or `scripts.regression-select` is
+  false), and no case is at risk ⇒ `skipped: "regression-select"`, not fired. A lookup that ran and failed stays doubt
+  and fires it; a case at risk fires it.
+- **A row this install cannot run.** A fired floor stays fired, and every other requirement holds. `unavailable[]`
+  lists each row it needs that the install lacks a tool for: `Exploratory` needs a browser lane (`mcp:playwright-*`),
+  `Visual lane` needs `mcp:chrome-devtools`, `Coverage triage + regression` needs `regression-select`. That row may
+  read `SKIP — not available in this install: <capability>` instead of `RUN`.
+- **Never silent.** A skipped floor goes on the Floors line as `skipped: F5 (not available in this install:
+  regression-select)`, and Out of scope names it with its residual risk. An unavailable row is named in Out of scope
+  the same way. The gate refuses either one unnamed (clause 6s).
+- **F2 and F6 are not affected.** F2 reads the domain map `/vc-test:ticket-context` found, in the project knowledge
+  store first. F6 reads the bundle's `NOT DEPLOYED:` lines; without `deploy:pr`, those come from `deployed.json`.
+
 ## How `floors.mjs` reads the bundle
 
 - **F9 is built into every floor except F8, F4 and F6:** a floor that cannot be read fires, with a `doubt:`

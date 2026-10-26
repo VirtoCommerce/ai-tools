@@ -5,7 +5,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { computeFloors, domainMapTextOf, isAbandoned, p01NamesOf, readJsonOrExit } from "./floors.mjs";
+import { ARTIFACT_NEEDS, ARTIFACTS_FOR, computeFloors, domainMapTextOf, isAbandoned, p01NamesOf, readJsonOrExit } from "./floors.mjs";
 
 const CAP = 120; // lines per round section (D9)
 // A lane that opens no browser, by its leading word. Every other lane counts toward the three of agents.md §Parallel
@@ -19,9 +19,8 @@ const REQUIRED = [["Risks", 4], ["Approach per risk", 4], ["Artifacts", 6], ["Ou
 // A table line that is not a separator (`|---|`, `|:--|--:|` alike); the first one left is the header row.
 const rows = (text) => text.split("\n").filter((l) => /^\|/.test(l) && !/^[\s|:-]+$/.test(l)).map((l) => l.split("|").slice(1, -1).map((c) => c.trim())).slice(1);
 // No floor maps to "Test model": the model runs if and only if a risk has technique MODEL (6e, M9), and the floors
-// that used to force it now force a MODEL risk instead (MODEL_RISK_FOR; F1's half is 6c).
-const ARTIFACTS_FOR = { F1: ["Exploratory"], F2: ["Exploratory"], F3: ["Visual lane"], F8: ["Visual lane"],
-  F5: ["Coverage triage + regression"], F12: ["Exploratory"] };
+// that used to force it now force a MODEL risk instead (MODEL_RISK_FOR; F1's half is 6c). ARTIFACTS_FOR lives in
+// floors.mjs, beside the capability each row needs (vc-test spec §5.2).
 // A fired floor here needs its OWN risk: Source carries the token `floor:<id>`, technique is MODEL (M10). A risk carries
 // at most one such token. A fixed token, not a bare id, so a passing mention of "F10" in prose never counts.
 const MODEL_RISK_FOR = { F2: "a purpose", F10: "an org-context", F11: "a configuration" };
@@ -41,10 +40,10 @@ const RISK_REF = /\bR-?\d+\b/;
 const WEAKENING = /record(?:s|ed|ing)?\b[^.·]*\bobserved|instead of assert|no PASS\/FAIL|never FAIL|not asserted/i;
 const escapeRe = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-export function checkStrategy(md, bundle, { domainMapText = null, p01Names, changeMap = null, changeMapPath = null } = {}) {
+export function checkStrategy(md, bundle, { domainMapText = null, p01Names, changeMap = null, changeMapPath = null, capabilities = null } = {}) {
   if (bundle?.schema !== "ticket-context/1") return { round: 0, errors: ["0: bundle is not a ticket-context/1 bundle"] };
   md = String(md).replace(/\r\n?/g, "\n"); // a CRLF checkout (core.autocrlf) reads the same as the LF file
-  const floors = computeFloors(bundle, { domainMapText, changeMap, ...(p01Names ? { p01Names } : {}) });
+  const floors = computeFloors(bundle, { domainMapText, changeMap, capabilities, ...(p01Names ? { p01Names } : {}) });
   const errors = [];
   const sec = lastRound(md);
   const head = /^## Round (\d+)/.exec(sec);
@@ -89,14 +88,29 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names, chan
   // the follow-up in Out of scope (6h), not for the regression row.
   const vcTest = changeMap !== null;
   const requiredFor = (id) => (vcTest && id === "F5" ? [] : ARTIFACTS_FOR[id] ?? []);
+  // §5.2, only with capabilities: a row this install cannot run may read `SKIP — not available in this install: <cap>`
+  // when Out of scope names it; a skipped floor is named on the Floors line's `skipped:` part and in Out of scope.
+  const unavailable = new Map(capabilities ? Object.entries(ARTIFACT_NEEDS).map(([a, need]) => [a, need(capabilities)]).filter(([, cap]) => cap) : []);
+  const skippedFor = (name) => unavailable.has(name) && /^SKIP\s*—\s*not available in this install/i.test((artifacts.get(name) ?? "").trim());
+  const satisfied = (id, name) => {
+    if (running(name)) return true;
+    if (!skippedFor(name)) return false;
+    if (!new RegExp(escapeRe(name), "i").test(outOfScope)) errors.push(`6s: ${id} fired; '${name}' is SKIP — not available in this install (${unavailable.get(name)}), but Out of scope does not name it`);
+    return true;
+  };
   for (const id of fired) {
     if (!new RegExp(`\\b${id}\\b`).test(firedLine)) errors.push(`6: ${id} fired but is not on the 'Floors fired:' line`);
-    for (const name of requiredFor(id)) if (!running(name)) errors.push(`6: ${id} fired but '${name}' is not RUN (SKIP, N/A, missing or other)`);
+    for (const name of requiredFor(id)) if (!satisfied(id, name)) errors.push(`6: ${id} fired but '${name}' is not RUN (SKIP, N/A, missing or other)`);
     if (MODEL_RISK_FOR[id] && !risks.some((x) => names(x, id) && isModel(x.r)))
       errors.push(`6: ${id} fired but no risk carries floor:${id} in its Source with technique MODEL (${MODEL_RISK_FOR[id]} risk, M10)`);
   }
+  const skippedLine = /^Floors fired:[^\n]*?\bskipped:([^\n]*)/m.exec(sec)?.[1] ?? "";
+  for (const f of floors.floors.filter((x) => x.skipped)) {
+    if (!new RegExp(`\\b${f.id}\\b[^·]*${escapeRe(f.skipped)}`).test(skippedLine)) errors.push(`6s: ${f.id} is skipped (${f.skipped}) but not on the 'Floors fired:' line's skipped part`);
+    if (!new RegExp(`\\b${f.id}\\b`).test(outOfScope)) errors.push(`6s: ${f.id} is skipped but Out of scope does not name it`);
+  }
   const high = risks.filter((x) => x.level === "high" || x.level === "critical");
-  if (high.length && !running("Exploratory")) errors.push(`6b: ${high.map((x) => x.r).join(", ")} High/Critical ⇒ Exploratory runs (F1)`);
+  if (high.length && !running("Exploratory") && !skippedFor("Exploratory")) errors.push(`6b: ${high.map((x) => x.r).join(", ")} High/Critical ⇒ Exploratory runs (F1)`);
   for (const x of high) { const a = approach.find((y) => y.r === x.r); if (a && /\{HYPOTHESIS\}/.test(a.oracle) && !isModel(x.r)) errors.push(`6c: ${x.r} High/Critical on {HYPOTHESIS} needs MODEL (M1)`); }
   if (fired.includes("F6") && !/Deployed:\s*NO\b/.test(sec)) errors.push("6d: F6 fired but the header does not say 'Deployed: NO'");
   const modelRisks = risks.filter((x) => isModel(x.r)).map((x) => x.r);
@@ -171,13 +185,14 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names, chan
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const arg = (n) => { const i = process.argv.indexOf(`--${n}`); return i < 0 ? null : process.argv[i + 1]; };
-  if (!arg("strategy") || !arg("bundle")) { console.error("usage: check-strategy.mjs --strategy <md> --bundle <json> [--change-map <json>]"); process.exit(1); }
+  if (!arg("strategy") || !arg("bundle")) { console.error("usage: check-strategy.mjs --strategy <md> --bundle <json> [--change-map <json>] [--capabilities <json>]"); process.exit(1); }
   let md;
   try { md = readFileSync(arg("strategy"), "utf8"); } catch (e) { console.error(`check-strategy.mjs: cannot read ${arg("strategy")} (${e.code ?? e.message})`); process.exit(2); }
   const bundle = readJsonOrExit(arg("bundle"), "check-strategy.mjs");
   const changeMapPath = arg("change-map") || null;
   const changeMap = changeMapPath ? (readJsonOrExit(changeMapPath, "check-strategy.mjs") ?? {}) : null; // a `null` file is a map in doubt
-  const res = checkStrategy(md, bundle, { domainMapText: domainMapTextOf(bundle), p01Names: p01NamesOf(), changeMap, changeMapPath });
+  const capabilities = arg("capabilities") ? readJsonOrExit(arg("capabilities"), "check-strategy.mjs") : null;
+  const res = checkStrategy(md, bundle, { domainMapText: domainMapTextOf(bundle), p01Names: p01NamesOf(), changeMap, changeMapPath, capabilities });
   console.log(JSON.stringify(res, null, 2));
   process.exit(res.errors.length ? 1 : 0);
 }

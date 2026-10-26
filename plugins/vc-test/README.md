@@ -8,7 +8,7 @@ per step.
 
 **Preview.** `/vc-test:ticket-context` and `/vc-test:qa-test-strategy` are this plugin's own code, but both still
 read documents that live only in a checkout of `ai-tools`: `/vc-test:qa-test-strategy` its technique vocabulary, risk framework,
-data rules and visual-axis floors (P2 moves them); `/vc-test:ticket-context` some repository scripts (P1d-3). It reads the tracker and the code host — Jira or Azure Boards, GitHub or Azure Repos, as `project-profile.json` names them — only through `$VC_RUN`; a host-governed project stops until P1d-3. `/vc-test:qa-ticket`
+data rules and visual-axis floors (P2 moves them); `/vc-test:ticket-context` uses this repository's scripts (`deploy:pr`, `domain:check`, `regression:select`, …) where a project declares them, and records a named SKIP where it does not. It reads the tracker and the code host — Jira or Azure Boards, GitHub or Azure Repos, as `project-profile.json` names them — only through `$VC_RUN`; a host-governed project stops until P1d-3. `/vc-test:qa-ticket`
 also calls triage and investigation from there. `/vc-test:init` and the scripts below work in any project.
 
 ## Install

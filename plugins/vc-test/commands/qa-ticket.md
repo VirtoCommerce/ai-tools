@@ -31,8 +31,8 @@ brief "Read and follow `<plugin>/briefs/<x>.md`" + the paths P.
 1. `npm run run:use -- <TICKET> [<env>]` → note `RUN_DIR` and the start time (`date -u +%FT%TZ`).
 2. `node <plugin>/lib/capabilities.mjs --key <TICKET> --mcp <list>` — which of `playwright-chrome`,
    `playwright-firefox`, `playwright-edge`, `chrome-devtools` you have.
-3. **Domain slug** from the ticket's components and summary, checked by `npm run bl:extract -- --has-domain <slug>`;
-   none checks out ⇒ no slug (F2 fires on doubt).
+3. **Domain slug** from the ticket's components and summary, checked by `npm run bl:extract -- --has-domain <slug>` or
+   listed in `capabilities.json` `knowledgeStore.domainMaps`; none checks out ⇒ no slug (F2 fires on doubt).
 
 ## 1 — Context
 
@@ -51,7 +51,7 @@ STOPs are this run's. Before its `finish`: `node <plugin>/lib/keep-prepare.mjs -
 
 ## 3 — Strategy (human point 1)
 
-**You do not write the strategy.** Dispatch `strategy` (`opus`) with `BUNDLE`, `CHANGE_MAP`,
+**You do not write the strategy.** Dispatch `strategy` (`opus`) with `BUNDLE`, `CHANGE_MAP`, `CAPABILITIES`,
 `SCENARIOS_TABLE = <WORK>/scenarios.md`, `SCENARIOS = <WORK>/scenarios.json`, `RUN_DIR`. It returns the approval
 summary once gate and verifier pass; its round must still say `Status: DRAFT`, else back once, then STOP.
 
