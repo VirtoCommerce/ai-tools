@@ -166,7 +166,7 @@ export async function pageComments(fetchPage, { max = 500, pageSize = 100 } = {}
 }
 
 /**
- * The PR URLs Jira's development panel holds for an issue (moved unchanged from /ticket-context): `detail`
+ * The PR URLs Jira's development panel holds for an issue (a copy of /ticket-context's `devPrUrls` — vc-fix is self-contained, so a fix to one is made to both): `detail`
  * answers only for the applicationType the integration is registered under — a wrong one is an empty 200 —
  * so the types come from `summary`, plus "GitHub". Pure: `getJson(path)` does the I/O.
  * @returns {Promise<string[]>}
@@ -223,7 +223,7 @@ function main() {
       redirect,
       headers: { Authorization: auth, Accept: "application/json", ...(body !== undefined && !(body instanceof FormData) ? { "Content-Type": "application/json" } : {}), ...headers },
       body: body === undefined ? undefined : body instanceof FormData ? body : JSON.stringify(body),
-    }, timeout, `${method} ${path}`);
+    }, timeout, `${method} ${path}`, { buffer: !raw });
     if (raw) return res;
     const text = await res.text();
     if (res.status === 401 || res.status === 403) {
@@ -274,7 +274,7 @@ function main() {
       if (!args.file.length) fail("--file <path> required (repeatable)");
       const form = new FormData();
       for (const f of args.file) form.append("file", new Blob([readInput("file", f, { raw: true })]), basename(f));
-      const out = await call("POST", `/rest/api/3/issue/${key()}/attachments`, { body: form, headers: { "X-Atlassian-Token": "no-check" } });
+      const out = await call("POST", `/rest/api/3/issue/${key()}/attachments`, { body: form, headers: { "X-Atlassian-Token": "no-check" }, timeout: DOWNLOAD_TIMEOUT_MS });
       return (Array.isArray(out) ? out : []).map((a) => ({ id: a.id, filename: a.filename }));
     },
     "media-id": async () => {
@@ -314,7 +314,15 @@ function main() {
       } catch (e) {
         fail(e.message);
       }
-      const res = await call("GET", `/rest/api/3/attachment/content/${args.attachment}`, { raw: true, headers: { Accept: "*/*" }, timeout: DOWNLOAD_TIMEOUT_MS });
+      let res = await call("GET", `/rest/api/3/attachment/content/${args.attachment}`, { raw: true, redirect: "manual", headers: { Accept: "*/*" }, timeout: DOWNLOAD_TIMEOUT_MS });
+      // Jira answers with a redirect to its media host. Follow it ourselves, https only and WITHOUT the token,
+      // instead of trusting the runtime's fetch to drop Authorization on the cross-origin hop.
+      if (res.status >= 300 && res.status < 400) {
+        const loc = res.headers.get("location");
+        const next = loc ? new URL(loc, pin.origin) : null;
+        if (!next || next.protocol !== "https:") fail(`HTTP ${res.status} for the attachment ${args.attachment} with no https Location`);
+        res = await timedFetch(next.href, { headers: { Accept: "*/*" } }, DOWNLOAD_TIMEOUT_MS, "the attachment download");
+      }
       if (!res.ok) fail(`HTTP ${res.status} for the attachment ${args.attachment}`);
       try {
         return { path: out, ...(await writeCapped(res, out, intArg("max-bytes", 25 * 2 ** 20))) };

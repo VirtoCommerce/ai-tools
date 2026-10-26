@@ -294,7 +294,7 @@ const RETRY_STATUS = new Set([429, 500, 502, 503, 504]);
 const THROTTLE_ONLY = new Set([429]);
 const IDEMPOTENT_METHODS = new Set(["GET", "HEAD", "PUT", "PATCH", "DELETE"]);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-async function fetchRetry(url, opts, { attempts = 3, baseMs = 250, timeoutMs = FETCH_TIMEOUT_MS } = {}) {
+async function fetchRetry(url, opts, { attempts = 3, baseMs = 250, timeoutMs = FETCH_TIMEOUT_MS, buffer = false } = {}) {
   const method = String(opts?.method || "GET").toUpperCase();
   const retryStatus = IDEMPOTENT_METHODS.has(method) ? RETRY_STATUS : THROTTLE_ONLY;
   let lastErr;
@@ -304,7 +304,7 @@ async function fetchRetry(url, opts, { attempts = 3, baseMs = 250, timeoutMs = F
       // not retried — the same reason a create POST is not retried on a 5xx.
       let res;
       try {
-        res = await timedFetch(url, opts, timeoutMs, `${method} ${url.split("?")[0]}`);
+        res = await timedFetch(url, opts, timeoutMs, `${method} ${url.split("?")[0]}`, { buffer });
       } catch (e) {
         if (/timed out/.test(e.message) && !IDEMPOTENT_METHODS.has(method)) attempt = attempts;
         throw e;
@@ -331,7 +331,7 @@ async function call(method, url, { body, contentType } = {}) {
     headers,
     body: body === undefined ? undefined : typeof body === "string" ? body : JSON.stringify(body),
     redirect: "manual",
-  });
+  }, { buffer: true });
   if (res.status >= 300 && res.status < 400) {
     fail(`HTTP ${res.status} redirect to sign-in for ${method} ${url}\n      => ADO auth not accepted. Run through the bridge (\`node "$VC_RUN" ado …\`) so the stored PAT is used; if it was, the PAT is expired or lacks scope — store a new one with \`node "<VC_SECRETS>" set ado-pat\`.`);
   }
@@ -365,7 +365,7 @@ async function callSoft(method, url, { body, contentType } = {}) {
       method, headers,
       body: body === undefined ? undefined : typeof body === "string" ? body : JSON.stringify(body),
       redirect: "manual",
-    });
+    }, { buffer: true });
     const text = await res.text();
     let data = {};
     try { data = text ? JSON.parse(text) : {}; } catch { data = { _raw: text }; }
@@ -1205,7 +1205,7 @@ const COMMANDS = {
   // Upload a file (screenshot, HAR, GQL log) to ADO and return its attachment URL. Embed the
   // URL inline in a Description/comment (`<img src=...>`) and/or pass it to create-workitem's
   // `--attachments` to also link it in the Attachments tab. Binary body — direct fetch (the
-  // shared `call` helper JSON-encodes non-string bodies), like get-file.
+  // shared `call` helper JSON-encodes non-string bodies), never retried (a POST).
   async "upload-attachment"(args) {
     const file = args.file;
     if (typeof file !== "string" || !file) fail("--file <path> required");
@@ -1218,7 +1218,7 @@ const COMMANDS = {
       Accept: "application/json",
       "Content-Type": "application/octet-stream",
     };
-    const res = await fetch(url, { method: "POST", headers, body: buf, redirect: "manual" });
+    const res = await timedFetch(url, { method: "POST", headers, body: buf, redirect: "manual" }, DOWNLOAD_TIMEOUT_MS, "upload-attachment", { buffer: true });
     if (res.status >= 300 && res.status < 400) {
       fail(`HTTP ${res.status} sign-in redirect on upload-attachment — ADO_PAT not accepted.`);
     }
@@ -1253,8 +1253,17 @@ const COMMANDS = {
       fail(e.message);
     }
     const url = `${base(args, "tracker")}/_apis/wit/attachments/${args.guid}?download=true&${V}`;
-    const res = await fetchRetry(url, { headers: { Authorization: await authHeader(), Accept: "*/*" }, redirect: "manual" }, { timeoutMs: DOWNLOAD_TIMEOUT_MS });
-    if (res.status >= 300 && res.status < 400) fail(`HTTP ${res.status} sign-in redirect on download-attachment — ADO auth not accepted.`);
+    let res = await fetchRetry(url, { headers: { Authorization: await authHeader(), Accept: "*/*" }, redirect: "manual" }, { timeoutMs: DOWNLOAD_TIMEOUT_MS });
+    if (res.status >= 300 && res.status < 400) {
+      // A sign-in redirect (no Location, or one to the sign-in/AAD hosts) is an auth failure; any other https
+      // redirect is the blob store, followed WITHOUT the credential.
+      const loc = res.headers.get("location");
+      const next = loc ? new URL(loc, url) : null;
+      if (!next || next.protocol !== "https:" || /(^|\.)vssps\.visualstudio\.com$|(^|\.)login\.microsoftonline\.com$/i.test(next.hostname) || /\/_signin\b/i.test(next.pathname)) {
+        fail(`HTTP ${res.status} sign-in redirect on download-attachment — ADO auth not accepted.`);
+      }
+      res = await timedFetch(next.href, { headers: { Accept: "*/*" } }, DOWNLOAD_TIMEOUT_MS, "download-attachment");
+    }
     if (!res.ok) fail(`HTTP ${res.status} on download-attachment ${args.guid}`);
     try {
       return { path: out, ...(await writeCapped(res, out, posInt(args, "max-bytes", { dflt: 25 * 2 ** 20 }))) };
@@ -1324,7 +1333,7 @@ const COMMANDS = {
     const url = `${base(args, "vcs")}/_apis/git/repositories/${enc(args.repo)}/items?path=${enc(args.path)}${q}&${V}&$format=text&includeContent=true`;
     // items endpoint returns raw text with $format=text
     const headers = { Authorization: await authHeader() };
-    const res = await fetch(url, { headers, redirect: "manual" });
+    const res = await fetchRetry(url, { headers, redirect: "manual" }, { buffer: true });
     if (res.status >= 300 && res.status < 400) fail(`HTTP ${res.status} sign-in redirect — ADO_PAT not accepted.`);
     const text = await res.text();
     if (!res.ok) fail(`HTTP ${res.status} for get-file: ${text.slice(0, 200)}`);

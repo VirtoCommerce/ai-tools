@@ -58,11 +58,16 @@ const timedOut = (label, ms) => new Error(`${label} timed out after ${ms / 1000}
 
 /**
  * fetch() that never hangs: the whole exchange, body included, is aborted after `ms`, and the abort is one
- * readable error. A stalled tracker must not leave a token-holding process running.
+ * readable error. A stalled tracker must not leave a token-holding process running. `buffer` reads the body
+ * here too, so a stall mid-body is the same readable error (and a caller's retry sees it), not a bare abort.
  */
-export async function timedFetch(url, opts = {}, ms = FETCH_TIMEOUT_MS, label = "the request") {
+export async function timedFetch(url, opts = {}, ms = FETCH_TIMEOUT_MS, label = "the request", { buffer = false } = {}) {
   try {
-    return await fetch(url, { ...opts, signal: AbortSignal.timeout(ms) });
+    const res = await fetch(url, { ...opts, signal: AbortSignal.timeout(ms) });
+    if (!buffer) return res;
+    const body = await res.arrayBuffer();
+    const nullBody = [101, 204, 205, 304].includes(res.status);
+    return new Response(nullBody ? null : body, { status: res.status, statusText: res.statusText, headers: res.headers });
   } catch (e) {
     throw isTimeout(e) ? timedOut(label, ms) : e;
   }
@@ -111,6 +116,15 @@ export async function writeCapped(res, file, maxBytes) {
     }
     throw failed;
   }
-  renameSync(part, file);
+  try {
+    renameSync(part, file);
+  } catch (e) {
+    try {
+      unlinkSync(part);
+    } catch {
+      /* already gone */
+    }
+    throw new Error(`cannot write ${file}: ${e.code || e.message}`);
+  }
   return { bytes, contentType: res.headers.get("content-type") };
 }
