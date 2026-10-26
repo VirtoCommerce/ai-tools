@@ -8,6 +8,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## The benchmark tooling is gone — `vc-test` `0.2.2` — 2026-10-26
+
+**Removed.** P0 closed without its benchmark run (spec U69), and nothing else needs the tooling:
+`lib/benchmark.mjs`, `lib/bench-aside.mjs`, `briefs/blind.md`, `benchmarks/VCST-5904.json` and
+`/vc-test:qa-ticket --benchmark`, with the `CUTOFF` and `BENCHMARK` rules in the briefs and the verdict's
+`## Benchmark` section. `keep-prepare`, which every run uses, moved to `lib/keep-prepare.mjs` unchanged (step 1 of
+`qa-ticket` now calls it there). `/vc-test:ticket-context --before`/`--hide` stays: it still reads a ticket as it was
+at an instant.
+
 ## A blind `/vc-test:ticket-context` hides PR review comments after the cutoff — `vc-test` `0.2.1` — 2026-10-26
 
 **Fixed.** `--before` already hid ticket comments, linked issues and PRs created after the cutoff. A PR it kept

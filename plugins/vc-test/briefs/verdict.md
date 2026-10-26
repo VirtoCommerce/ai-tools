@@ -10,8 +10,6 @@ nothing and re-open no page. Dispatch description: `[vc-test:verdict] <KEY>`.
   (`selected`, `notSelected`, `rejected`); `RUN_PLAN` — `run-plan.json` (its `notRun`); `TRIAGE` —
   `triage-report.md` and the `evidence-*/` investigation packages; `design-report.md` when the visual lane ran;
   `RUN_COST` — the Markdown table `run-cost.mjs` printed.
-- `BENCHMARK` — only in a benchmark run: the benchmark definition (`<plugin>/benchmarks/<KEY>.json`). You are the
-  only agent of the run that reads it.
 
 ## Rules (cited, not restated)
 
@@ -37,10 +35,5 @@ nothing and re-open no page. Dispatch description: `[vc-test:verdict] <KEY>`.
      rows, after every swap, add and strike at approval), not from `scenarios.json`; proposed is `scenarios.json`'s
      `selected` + `notSelected` + `rejected` plus each row added at approval (`Changed rows:` `added`, Why likely
      `added at approval`); run is the scenarios with an `SC` row.
-  6. **`## Benchmark`**, only with `BENCHMARK` (U67): that the run was a benchmark; what was hidden from every
-     agent before you — the comments after the cutoff, the hidden issues, the moved-aside run folders, `known.kb`
-     and `known.prior_runs`, the kb, `reports/bugs/` and the bug catalog; and each known bug `found (<row id>)` or
-     `missed` — a miss against the control. A benchmark files no bug: under `## Bugs` each confirmed Medium-or-worse
-     bug is marked `would file` with its investigation package's path, and nothing else is done with it.
 
 Return **only** the path and the verdict word.

@@ -30,7 +30,7 @@ folder>` once; `/vc-test:init` says so when they are missing. A checkout of this
 | `commands/init.md` | `/vc-test:init`. Writes the profile's `test` block through vc-init's `profile-set.mjs` and lists missing accounts with their `/project-init --add-user` command. It never asks for or writes a password |
 | `skills/ticket-context/`, `agents/ticket-context-analyst.md` | `/vc-test:ticket-context`: one gated context bundle for one ticket |
 | `skills/qa-test-strategy/`, `agents/strategy-verifier.md` | `/vc-test:qa-test-strategy`: the floors, the gate, and an independent read-only verifier on a Critical risk |
-| `commands/qa-ticket.md` | `/vc-test:qa-ticket <KEY> [<env>] [--yes] [--dry-run] [--benchmark]`, the QA run (preview) |
+| `commands/qa-ticket.md` | `/vc-test:qa-ticket <KEY> [<env>] [--yes] [--dry-run]`, the QA run (preview) |
 | `lib/profile.mjs` | The read-only profile loader. A missing profile is a STOP ("run /project-init"), never a default |
 | `lib/capabilities.mjs` | What this install can do: connectors, stand URLs, MCP servers, the knowledge store, the project's scripts. A stand is writable only by declaration (`test.environments`) and only when `BACK_URL` is the declared stand |
 | `lib/deployed.mjs` | F6. It reads module, platform and theme versions from the stand. Run it as `node "$VC_RUN" runner plugin deployed --key <KEY>`, because it needs the admin login. A side it cannot read is UNKNOWN, never "not deployed"; a module the stand has not installed, or disabled on a load error, is never DEPLOYED |
