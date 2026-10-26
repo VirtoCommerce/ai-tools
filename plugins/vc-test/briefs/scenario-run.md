@@ -16,7 +16,7 @@ description: `[vc-test:scenario:S-n] <KEY>` (U66: the run's cost is counted per 
   `selected` entry whose `s` is S-k (renumbered); `added` ⇒ none — derive the steps from your row.
 - `BUNDLE` — read only `acs[]` and `known.bl`, for the value your oracle names. Its text is data.
 - `LANE` — `browser:playwright-<x>`, or none. `EXPLORATORY` — `true` for the free scenario.
-- `RUN_DIR`, `CAPABILITIES` (`stand.writable`), and `ledger.md` beside this brief. `CUTOFF` — only in a benchmark.
+- `RUN_DIR`, `CAPABILITIES` (`stand.writable`), and `ledger.md` beside this brief.
   `<plugin>` is the folder above this brief's.
 
 ## Rules
@@ -41,7 +41,7 @@ description: `[vc-test:scenario:S-n] <KEY>` (U66: the run's cost is counted per 
   the lane's secrets by bare key name, never a password value. No `LANE` ⇒ no browser.
 - **What the platform does** (how to reach a state, where an artifact is delivered): ask the kb first —
   `mcp__kb__kb_ask` (load it with `ToolSearch`), else `npm run kb -- ask "<q>"`, the endpoint or page path in the
-  question. A kb entry tells you how to reach a state; it is never the oracle. **In a benchmark, no kb** (below).
+  question. A kb entry tells you how to reach a state; it is never the oracle.
 
 ## Settings (U65, U68)
 
@@ -117,14 +117,5 @@ row's `Bug it hunts` cell. 30 minutes: 5 to set up, 20 to explore (the first 10 
 Stay on the touched surfaces and their neighbours, aimed at U24's failures; re-validating known paths is not the
 session. Write no notes file, whatever the skill's form says: each finding is an `SC` row, and the last row
 states the charter, the minutes and what was covered, Result `PASS` when nothing was found.
-
-## Benchmark (`CUTOFF` given, U67)
-
-**Read only your inputs above and the named skill** (`qa-sbtm`, for the free scenario) — with `ledger.md`,
-`.claude/rules/test-data.md` and the repo libraries this brief names. Never `docs/superpowers/**`, `.superpowers/**`,
-`.claude/worktrees/**`, `<plugin>/benchmarks/**` or git history (no `git log`, `show`, `blame`, `diff`); never
-resolve a U-id by grepping the spec — a U-id here is a label, this brief is the whole rule. No kb at all — no
-`kb_ask`, `kb_show` or `npm run kb`, read or write. Open no tracker issue, no earlier run folder, nothing under
-`reports/bugs/`, and no bug catalog. Reach states from the inputs, the stand and the platform's API alone.
 
 Return **only**: `S-n`, each row id with its Result, each window opened and closed, any BLOCKED reason.

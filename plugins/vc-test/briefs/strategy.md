@@ -11,14 +11,7 @@ scenario cites a risk. The orchestrator asks the user; you never do. Dispatch de
 - `SCENARIOS_TABLE` — `<WORK>/scenarios.md`: the scorer's `### Scenarios` table, its Not selected and Rejected
   lists, and the generator's Gaps. `SCENARIOS` — `<WORK>/scenarios.json`, the same as data, beside the
   generator's `<WORK>/candidates.json`.
-- `RUN_DIR` — the run folder. `CUTOFF` — given only in a benchmark run.
-
-**Benchmark (`CUTOFF` given, U67):** read only your inputs above and the `vc-test:qa-test-strategy` skill (`<plugin>` is the
-folder above this brief's). Never `docs/superpowers/**`, `.superpowers/**`, `.claude/worktrees/**`,
-`<plugin>/benchmarks/**` or git history (no `git log`, `show`, `blame`, `diff`); never resolve a U-id by grepping
-the spec — a U-id here is a label, this brief is the whole rule. No kb, no earlier run folder, nothing under
-`reports/bugs/`, no bug catalog. This holds for you and for the verifier you dispatch: put this paragraph into its
-brief.
+- `RUN_DIR` — the run folder.
 
 ## How
 
