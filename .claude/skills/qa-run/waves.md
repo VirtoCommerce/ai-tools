@@ -27,7 +27,7 @@ is asked, whenever the wave reaches them, whatever flag brought it there.
 |---|---|
 | `NOT_STARTED` + `--claim` | Step 1 |
 | `CLAIMED`, or `RUN_DONE` with `notRun` + `--continue` | Step 2 (then runs only what is not run yet) |
-| `RUN_DONE` with `untriaged > 0` — with no flag, `--triage`, `--publish` or `--handover` | **Step 4** (triage runs first) |
+| `RUN_DONE` with `untriaged > 0` (FAIL or BLOCKED cases without a ledger row) — with no flag, `--triage`, `--publish` or `--handover` | **Step 4** (triage runs first) |
 | `RUN_DONE` with `untriaged = 0`, or `TRIAGED` | Step 6 |
 | `--handover` on `CLAIMED` (nothing ran) | Step 8 |
 
@@ -75,7 +75,7 @@ folder exists. It is used in Step 5, and its `ENV_CONFIG` / `DATA` rows tell you
 
 ## Step 3 — Run
 
-1. **Resolve the run** with `npm run regression:plan -- <suite ids>`, plus `--cases <tier>` when the wave has a `tier` (`critical`, `high`; a `rest` wave runs the cases neither tier selected — `npm run suites:filter`). Remove every suite or case listed in
+1. **Resolve the run** with `npm run regression:plan -- <suite ids>`, plus `--cases <tier>` when the wave has a `tier` — `rest` is `--cases medium,low` ([`release-folder.md`](release-folder.md) §3: unreadable priorities only in Scope Exclusions). Remove every suite or case listed in
    **another** wave's `exclusive` (contract §7.2) — this wave's own `exclusive` list is what it exists to run.
    Machine-lane suites first: they cost no model tokens (contract §7).
 2. **Do not re-seed** a fixture set another wave uses while another wave is running — check the wave sub-tasks
@@ -86,7 +86,7 @@ folder exists. It is used in Step 5, and its `ENV_CONFIG` / `DATA` rows tell you
    `TEST_ENV=<env.testEnv>`. Every rule of that pipeline applies unchanged (browser lanes, `--secrets`, the observed-behaviour steps of its runners).
 4. When it finishes — or is cut short (usage limit, env down) — append the run id to `runIds`, write `totals` from
    the run's consolidated report (never counted by hand; `ambiguous` holds what is neither pass, fail, blocked nor
-   skipped), put anything not run into `notRun` (suite ids + case count + reason), set `untriaged` to the FAIL count,
+   skipped), put anything not run into `notRun` (suite ids + case count + reason), set `untriaged` to the FAIL + BLOCKED count,
    `status: RUN_DONE`. **Then go to Step 4 — a cut-short run too.**
 
 ## Step 4 — Triage starts on its own
@@ -112,7 +112,7 @@ the user stops it.
    `waves/<W>/ledger.csv`, mapping the triage class per the contract §6. Amend a row for a re-check of the same run;
    never append a duplicate. Real bugs not filed yet: `follow_up: DRAFT`; the same defect seen in several cases: one
    `DRAFT`, the others `DRAFT: same defect as <case>, file once`. A question only a person can answer:
-   `PENDING_DECISION` with `decided_by` naming that person. Set `untriaged` to the FAILs still without a row.
+   `PENDING_DECISION` with `decided_by` naming that person. Set `untriaged` to the FAIL and BLOCKED cases still without a row.
 5. **Bank what the triage established** — for each platform behaviour your rows state (real bug, by-design,
    env quirk): matched ⇒ `mcp__kb__kb_confirm`, contradicted ⇒ `kb_dispute`, base held nothing ⇒ `kb_capture` (CLI:
    `npm run kb -- capture`). Anchor = the route or request, never a label; contract:
@@ -149,7 +149,7 @@ without the user's yes for that bug.
 
 ## Step 8 — Handover (`--handover`, or when stopping early)
 
-Triage (Step 4) runs first if the wave has FAILs without a verdict. Then leave the wave `RUN_DONE` (or `CLAIMED`
+Triage (Step 4) runs first if the wave has FAIL or BLOCKED cases without a ledger row. Then leave the wave `RUN_DONE` (or `CLAIMED`
 if nothing ran) with `notRun` filled in and a "Before the next owner continues" section in `report.md` — including
 where any unpushed repair lives — and go to Step 7 so it reaches git. Offer to unassign the sub-task. The next owner
 runs `/qa-run stable:<N> <wave> --continue`, which records the handover in `handovers`; the wave id stays.

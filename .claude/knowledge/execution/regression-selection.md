@@ -34,7 +34,7 @@ Resolution order:
    Plan link: docs/Sprint plans/sprint-26-09-test-plan.md
    ```
 
-5. **`--no-plan` opt-out** → skip 1c entirely; use the static `sprint` group from the manifest.
+5. **`--no-plan` opt-out** → skip this resolution entirely (`/qa-regression` Step 1c; `/qa-run` §1 for `sprint`); use the static `sprint` group from the manifest.
 
 ### `stable:N`
 

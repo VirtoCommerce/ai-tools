@@ -419,7 +419,7 @@ Report categories don't accumulate forever — each has a lifecycle:
 - **Durable categories never prune**: `reports/bugs/`, `reports/ba/` (**including `release-notes/`** —
   a release note is the record of what shipped, so it outlives every run that produced it; do not add
   a prune rule for it), `reports/knowledge/`,
-  `regression/suites/` (Test cases), and `reports/exploratory/` (kept for its own 24h duplicate-charter
+  `regression/suites/` (Test cases), `regression/releases/` (a release's plan, wave states and triage ledgers), and `reports/exploratory/` (kept for its own 24h duplicate-charter
   check — revisit only if it grows unbounded).
 
 Tool: `scripts/maintenance/prune-old-artifacts.mjs` (dry-run by default; `--apply` to act; `--target=local`

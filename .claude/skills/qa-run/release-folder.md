@@ -63,9 +63,10 @@ wave PR does not go up while it fails, and CI runs `release:check -- --all` on e
 - **W0 is always the smoke gate** and every other wave depends on it: a broken job engine or a
   failed login stops the release before anyone spends a wave on it.
 - **Waves are priority tier × domain group** (`/qa-test-plan stable` Step 3, [`stable-mode.md`](../../knowledge/execution/test-plan/stable-mode.md)): `tier` is `critical`, `high` or
-  `rest` (the cases neither tier selects; run through `--cases` / `suites:filter`), and the domain groups split
-  each tier between owners. Tier order is a dependency: every `high` wave depends on every `critical` wave, every
-  `rest` wave on every `high` wave — `release:check` fails otherwise. A wave without `tier` runs all of its
+  `rest` (the cases neither tier selects), and the domain groups split each tier between owners. A wave's tier becomes
+  `--cases <tier>`; `rest` becomes `--cases medium,low`. A case whose `Priority` is unreadable is in no tier: every
+  tiered wave leaves it out, and it appears only in the run's Scope Exclusions. Tier order is a dependency: a wave
+  depends on every wave of every higher tier (directly or through another wave) — `release:check` fails otherwise. A wave without `tier` runs all of its
   suites' cases (W0, the exclusive wave, and plans written before tiers existed, such as Stable 16).
 - A wave's `suites` is a plan, not a promise. The owner re-resolves it with `npm run regression:plan`
   when claiming, and records what actually ran in `state.json`.
@@ -101,7 +102,7 @@ commit list, the bundle's `release_notes.md` and `breaking_changes.md`.
 
 - `totals`: whole numbers; `pass + fail + blocked + skipped + ambiguous = executed`, and `executed ≤ planned`.
   `ambiguous` holds what the run could not decide either way.
-- `untriaged`: FAILs that have no ledger row yet. Required once the wave has run; `TRIAGED` and `DONE` need 0.
+- `untriaged`: FAIL or BLOCKED cases that have no ledger row yet. Required once the wave has run; `TRIAGED` and `DONE` need 0.
 - `personas`: which accounts the owner signs in as (§7.1). Required from `CLAIMED` on, so a parallel owner
   knows which accounts to avoid.
 - `notRun`: suite ids from this wave, a case count and the reason. A `BLOCKED` wave must have it.
@@ -113,9 +114,9 @@ Status moves forward only:
 |---|---|---|
 | `NOT_STARTED` | nobody holds it | the planner creates the wave |
 | `CLAIMED` | an owner holds it, nothing ran yet | `/qa-run stable:<N> <wave> --claim` |
-| `RUNNING` | a run is in progress | the first `/qa-regression` of the wave starts |
+| `RUNNING` | a run is in progress | the first `/qa-run` of the wave starts |
 | `RUN_DONE` | the run finished; triage not done or not complete | the run is consolidated |
-| `TRIAGED` | every FAIL has a ledger row (`untriaged` 0); repairs or filing may still be open | triage is written to the ledger |
+| `TRIAGED` | every FAIL and BLOCKED case has a ledger row (`untriaged` 0); repairs or filing may still be open | triage is written to the ledger |
 | `DONE` | triaged, repairs merged, real bugs filed or explicitly deferred | in the wave's own PR once nothing is open in it, or in the PR that closes its last open item |
 | `BLOCKED` | cannot proceed; `notRun[].reason` says why | an env or access blocker stops it |
 
