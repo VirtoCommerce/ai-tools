@@ -12,7 +12,7 @@ import { config, parse } from "dotenv";
 
 let layers = null;
 try {
-  layers = await import("../../../../scripts/lib/env-layers.mjs");
+  layers = await import("../../../scripts/lib/env-layers.mjs");
 } catch (e) {
   if (e?.code !== "ERR_MODULE_NOT_FOUND") throw e; // a broken loader fails loudly; only a missing one falls back
 }
