@@ -20,7 +20,7 @@ import {
 import {
   moduleToRepo as moduleToRepoPlugin,
   flagUnverifiedModules as flagUnverifiedModulesPlugin,
-} from "../../plugins/vc-fix/skills/project-init/discover-repos.mjs";
+} from "../../plugins/vc-init/skills/project-init/discover-repos.mjs";
 
 test("moduleToRepo: parses a GitHub ProjectUrl", () => {
   const r = moduleToRepo({ Id: "VirtoCommerce.Cart", ProjectUrl: "https://github.com/VirtoCommerce/vc-module-cart" });

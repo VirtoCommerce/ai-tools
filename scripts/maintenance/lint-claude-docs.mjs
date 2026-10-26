@@ -25,6 +25,13 @@
  *   DOC-007     a citation of the per-user memory directory — a `feedback_*` / `reference_*` /
  *               `project_*` slug, `MEMORY.md`, "in MEMORY". It resolves on one laptop only; product
  *               behaviour belongs in the kb, team rules in a tracked file (CLAUDE.md)             (ratchet)
+ *   DOC-008     a relative Markdown link (`[text](../x.md)`) whose target does not exist, resolved from
+ *               the citing file's own folder — the link a reader actually follows               (ratchet)
+ *
+ * SCOPE. CLAUDE.md, every .claude/**\/*.md and every plugins/**\/*.md; BUDGET-004 measures each plugin's
+ * commands/, agents/ and skills/*\/SKILL.md beside .claude/'s. A plugin file's repo-root path also
+ * resolves against its own plugin root, where an installed copy finds it. A path the plugin WRITES into a
+ * client's project (`.claude/vc-secrets.local.json`) does not exist here and carries `doclint:may-not-exist`.
  *
  * DOC-002/003/004 generalise `scripts/qa-test/doclint.mjs` (which stays scoped to /qa-test and owns the
  * qa-test-specific DOC-001/005/006) to CLAUDE.md + every .claude/**\/*.md. They are RATCHETS, same shape as
@@ -81,7 +88,9 @@ export const PROMPT_BASELINE_PATH = 'scripts/maintenance/.prompt-size-baseline.j
 // 0 is the real number for all three, and a ratchet at 0 is the only one that catches the next one.
 // DOC-007 was introduced 2026-09-30 at 292, lowered to 84 (#349) and brought to 0 the same day by the memory-ref cleanups.
 // 0 is the only baseline that catches the next one — never raise it.
-export const BASELINE = { 'DOC-002': 0, 'DOC-003': 0, 'DOC-004': 0, 'DOC-006': 0, 'DOC-007': 0 };
+// DOC-008 and the plugins/ scope were added 2026-10-26: 15 broken relative links, 3 stale § citations and 23
+// stale paths surfaced and were fixed in the same change, so it starts where the others are.
+export const BASELINE = { 'DOC-002': 0, 'DOC-003': 0, 'DOC-004': 0, 'DOC-006': 0, 'DOC-007': 0, 'DOC-008': 0 };
 
 /**
  * DOC-007 — a pointer into the per-user memory directory. The slug families are the ones the harness
@@ -224,6 +233,31 @@ export function citationTarget(label, rest) {
   return cited || null;
 }
 
+/** A backticked label that names a repo-root path: DOC-003 owns that link (citationTarget checks its target). */
+const ROOT_LABEL_RE = /^`(?:\.claude|scripts|ci|config|docs|regression|reports|test-data|templates|plugins)\//;
+const MD_LINK_RE = /\[([^\]]*)\]\(([^)\s]+)\)/g;
+
+/**
+ * DOC-008's input: every RELATIVE link target on a line that a reader would follow — `[`../../rules/x.md`](…)`,
+ * `[close-out](../qa-test/close-out.md#…)`, `[`template.md`](template.md)`. DOC-003 only ever looked at backticked
+ * paths that start at a repo root, so a link written relative to its own file was never resolved: 21 such links
+ * in a skill moved into `plugins/vc-test/` dangled (one silently resolving to `plugins/CLAUDE.md`) with every gate
+ * green. External, anchor-only and root-absolute links are not relative; a repo-root label is DOC-003's.
+ */
+export function relativeLinkTargets(line) {
+  const out = [];
+  // Link SYNTAX quoted in a code span (`![alt](path)`, "write [text](path)") is an example, not a link a reader follows.
+  const prose = line.replace(/`[^`]*\]\([^`]*`/g, '');
+  for (const m of prose.matchAll(MD_LINK_RE)) {
+    const [, label, target] = m;
+    if (EXTERNAL_RE.test(target) || target.startsWith('#') || target.startsWith('/')) continue;
+    if (ROOT_LABEL_RE.test(label)) continue;
+    const t = target.split('#')[0].replace(/\/$/, '');
+    if (t) out.push(t);
+  }
+  return out;
+}
+
 /**
  * The citation as a path from the repo ROOT, whichever way it was written.
  *
@@ -240,7 +274,10 @@ export function citedFromRoot(file, cited) {
 /** Does a citation resolve — from the repo root, or relative to the file it is written in? Both are
  *  legitimate ways to write one, and DOC-004 has always accepted both. */
 export function pathResolves(file, cited, exists = fs.existsSync) {
-  return exists(cited) || exists(posix(path.normalize(path.join(path.dirname(file), cited))));
+  // Inside a plugin, `scripts/…` / `knowledge/…` name the PLUGIN's own copy (plugins/CLAUDE.md: a plugin carries
+  // its own), so its root is a third legitimate base.
+  const plugin = /^plugins\/[^/]+\//.exec(posix(file))?.[0];
+  return exists(cited) || exists(posix(path.normalize(path.join(path.dirname(file), cited)))) || (!!plugin && exists(posix(path.join(plugin, cited))));
 }
 
 export function classifyScript(name, scripts) {
@@ -346,14 +383,20 @@ export function walkMd(dir) {
  * chars), and a body cap on a lookup table would be a category error.
  */
 export function promptFiles(root = '.') {
-  const dirs = ['.claude/commands', '.claude/agents', '.claude/skills'];
+  // A plugin's commands, agents and SKILL.md are loaded whole exactly as the repo's are, and a skill moved into a
+  // plugin must not leave the budget's reach on the way.
+  const pluginsDir = path.join(root, 'plugins');
+  const plugins = fs.existsSync(pluginsDir) ? fs.readdirSync(pluginsDir, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => `plugins/${e.name}`) : [];
+  const bases = ['.claude', ...plugins];
   const out = [];
-  for (const d of dirs) {
-    const abs = path.join(root, d);
-    if (!fs.existsSync(abs)) continue;
-    for (const p of walkMd(abs)) {
-      if (d === '.claude/skills' && path.basename(p) !== 'SKILL.md') continue;   // supporting files: see above
-      out.push(posix(path.relative(root, p)));
+  for (const base of bases) {
+    for (const kind of ['commands', 'agents', 'skills']) {
+      const abs = path.join(root, base, kind);
+      if (!fs.existsSync(abs)) continue;
+      for (const p of walkMd(abs)) {
+        if (kind === 'skills' && path.basename(p) !== 'SKILL.md') continue;   // supporting files: see above
+        out.push(posix(path.relative(root, p)));
+      }
     }
   }
   return out.sort();
@@ -389,7 +432,8 @@ export function checkPromptBudget(files, baseline, read = (f) => fs.readFileSync
 export function lint(root = '.') {
   const cwd = process.cwd(); process.chdir(root);
   try {
-    const files = ['CLAUDE.md', ...walkMd('.claude')].filter((f) => fs.existsSync(f));
+    // plugins/ too: a plugin's prompts and docs are read the same way, and a file moved there must not leave the gate.
+    const files = ['CLAUDE.md', ...walkMd('.claude'), ...(fs.existsSync('plugins') ? walkMd('plugins') : [])].filter((f) => fs.existsSync(f));
     // DOC-006 applies to the ALWAYS-LOADED tier only. A count in a knowledge file is read by the one
     // step that needs it and can be corrected there; the same count in `.claude/rules/` is paid, and
     // believed, by every agent on every dispatch.
@@ -442,6 +486,13 @@ export function lint(root = '.') {
           if (isPlaceholderPath(label) || pathResolves(f, cited) || ignored(cited) || ignored(cited + '/')) continue;
           const detail = `cited path does not exist: ${cited === label ? label : `${label} → ${cited}`}`;
           add(isEphemeralPath(citedFromRoot(f, cited)) ? 'DOC-003E' : 'DOC-003', f, i + 1, detail);
+        }
+        for (const t of relativeLinkTargets(l)) {
+          if (exempt) break;
+          if (isPlaceholderPath(t)) continue;
+          const abs = posix(path.normalize(path.join(path.dirname(f), t)));
+          if (fs.existsSync(abs) || ignored(abs) || ignored(abs + '/')) continue;
+          add(isEphemeralPath(abs) ? 'DOC-003E' : 'DOC-008', f, i + 1, `relative link does not resolve from ${path.posix.dirname(f)}: ${t}`);
         }
         for (const m of l.matchAll(SEC_RE)) {
           let t = m[1];

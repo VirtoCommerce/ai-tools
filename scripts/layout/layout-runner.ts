@@ -73,6 +73,8 @@
  *   [PROBE:TOUCH]    <scope selector>
  *   [PROBE:IMAGES]   <selector>                              (aspect-ratio squash/stretch)
  *   [PROBE:IMGDIMS]  <selector>                              (no reserved space — CLS root cause)
+ *   [PROBE:CONTENT]  <scope selector>                        (raw i18n keys, GUIDs, broken images,
+ *                                                             leaked placeholders, values wrapped mid-token)
  *
  * ASSERTION GRAMMAR (the `Assertions` column, one per line; all must hold)
  *   [CLS]      <= 0.1
@@ -86,6 +88,8 @@
  *   [IMAGES]   aspectDrift == 0
  *   [IMGDIMS]  missingDims == 0
  *   [SHIFT]    before vs after topDelta == 0             (also leftDelta / any)
+ *   [CONTENT]  rawKeys == 0 | guids == 0 | brokenImages == 0 | placeholders == 0 | midWrap == 0
+ *              one metric per line; a bare `[CONTENT] == 0` asserts all five together
  *
  * A case with no parseable assertion is reported BLOCKED, never PASS — silence is not a pass.
  */
@@ -94,9 +98,8 @@ import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lo
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import { join, basename } from "path";
 import { parse as parseCsv } from "csv-parse/sync";
-import { config as loadDotenv } from "dotenv";
 import { chromium, type Browser, type BrowserContext, type Page } from "playwright";
-import { resolveTestEnv } from "../lib/resolve-test-env.js";
+import { loadEnv } from "../lib/load-env.mjs";
 
 import {
   LAYOUT_SNIPPETS,
@@ -105,6 +108,7 @@ import {
   touchTargetAuditSnippet,
   imageAspectAuditSnippet,
   imageIntrinsicDimsSnippet,
+  contentAuditSnippet,
   rectSnapshotSnippet,
   classifyCls,
   classifySpacing,
@@ -118,15 +122,17 @@ import {
   type TouchTargetAuditResult,
   type ImageAspectAuditResult,
   type ImageIntrinsicDimsResult,
+  type ContentAuditResult,
   type RectSnapshot,
 } from "../lib/measure-layout.js";
 import { TestDataResolver } from "../lib/test-data-resolver.js";
 import { roleByKey, resolveRole } from "../lib/user-roles.mjs";
 
-// Layered, TEST_ENV-aware env load — mirrors graphql-runner.ts / seed-common.mjs.
-// A bare loadDotenv() reads only `.env`, which does not exist in this repo, so live
-// runs would see no FRONT_URL and no credentials for [AUTH]. Deliberately does NOT
-// import config.js, whose strict CORE validation would block a layout-only run.
+// Layered, TEST_ENV-aware env load — scripts/lib/load-env.mjs, the one order graphql-runner.ts and seed-common.mjs
+// apply too (the layers, the `FOO_VCST` → `FOO` promotion, the QA_ENV_PATH files, the master password). A bare
+// dotenv config() reads only `.env`, which does not exist in this repo, so live runs would see no FRONT_URL and no
+// credentials for [AUTH]. Deliberately does NOT import config.js, whose strict CORE validation would block a
+// layout-only run.
 // NOTE: --env is honoured by re-reading TEST_ENV below, so it must be applied first.
 {
   const argv = process.argv.slice(2);
@@ -135,16 +141,7 @@ import { roleByKey, resolveRole } from "../lib/user-roles.mjs";
     process.env.TEST_ENV = argv[envIdx + 1];
   }
 }
-const TEST_ENV = resolveTestEnv("vcst");
-loadDotenv({ path: ".env.defaults" });
-loadDotenv({ path: `.env.${TEST_ENV}`, override: true });
-loadDotenv({ path: ".env.local", override: true });
-
-// Per-env override promotion: `FOO_VCST` → `FOO`, so `.env.local` can carry variants.
-const ENV_SUFFIX = `_${TEST_ENV.toUpperCase()}`;
-for (const [key, value] of Object.entries(process.env)) {
-  if (key.endsWith(ENV_SUFFIX) && value) process.env[key.slice(0, -ENV_SUFFIX.length)] = value;
-}
+const { testEnv: TEST_ENV } = loadEnv({ fallback: "vcst" });
 
 // ---------------------------------------------------------------------------
 // CLI
@@ -256,6 +253,7 @@ interface CaseState {
   touch?: TouchTargetAuditResult;
   images?: ImageAspectAuditResult;
   imgDims?: ImageIntrinsicDimsResult;
+  content?: ContentAuditResult;
   snaps: Record<string, RectSnapshot>;
   bound: Record<string, string>;
   consoleErrors: string[];
@@ -485,6 +483,10 @@ async function runSteps(
       case "PROBE:IMGDIMS":
         st.imgDims = (await page.evaluate(imageIntrinsicDimsSnippet(arg || "img"))) as ImageIntrinsicDimsResult;
         break;
+      case "PROBE:CONTENT":
+        st.content = (await page.evaluate(contentAuditSnippet(arg || "body"))) as ContentAuditResult;
+        if (!st.content.scopeMatched) throw new Error(`[PROBE:CONTENT] scope "${arg || "body"}" matched nothing`);
+        break;
       default:
         throw new Error(`unknown step tag [${tag}] — see the grammar in this file's header`);
     }
@@ -625,6 +627,15 @@ function evaluateAssertion(raw: string, st: CaseState): AssertOutcome | null {
         .map((o) => `${o.src.split("/").pop() || "(inline)"} ar=${o.cssAspectRatio}`)
         .join(", ");
       return { ...out, detail: `${out.detail}; evaluated=${im.evaluated}${sample ? ` [${sample}]` : ""}` };
+    }
+    case "CONTENT": {
+      const c = need(st.content, "[PROBE:CONTENT]");
+      const metrics = ["rawKeys", "guids", "brokenImages", "placeholders", "midWrap"] as const;
+      const named = metrics.find((k) => new RegExp(`\\b${k}\\b`).test(body));
+      const list = named ? c[named] : metrics.flatMap((k) => c[k].map((o) => ({ ...o, text: `${k}: ${o.text}` })));
+      const out = numeric(list.length, named ?? "contentDefects");
+      const sample = list.slice(0, 3).map((o) => `"${o.text}" in ${o.where}`).join(", ");
+      return { ...out, detail: `${out.detail}; scope=${c.scope}; evaluated=${c.evaluated}${sample ? ` [${sample}]` : ""}` };
     }
     case "SHIFT": {
       const sm = /^(\w+)\s+vs\s+(\w+)\s+(\w+)\s*([<>=!]=?)\s*([\d.]+)$/.exec(body);

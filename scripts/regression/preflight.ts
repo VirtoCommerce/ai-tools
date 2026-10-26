@@ -2,7 +2,7 @@
 // /qa-regression and /qa-smoke over the same fact core as the change-scoped one. Read-only.
 import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { getEnvFacts, isUnknown, type EnvFacts, type Unknown } from "../lib/env-facts.ts";
 import { readLedger } from "../lib/release-ledger-read.ts";
 import { envChecks, mcpChecks, isBlocking, type Check, type PolicyInput } from "../preflight/policy.ts";
@@ -10,14 +10,96 @@ import { checkMcpStatic, loadMcpRequirements, readMcpJson } from "../preflight/m
 import { classifyRun, gatherActivity, loadStatus, type Classification } from "./reap-stalled-run.ts";
 import { gateSuites, resolveRequiredModule, type GatingResult, type SuiteRef } from "./requires.ts";
 import { baselineDelta, readBaseline, type ModuleChange } from "./baseline.ts";
+import { classifySecretNames, declaredSecretsFile, readSecretsFile, splitQualifiedName, suiteSecretCases } from "../lib/browser-secrets.mjs";
+import { MASTER_NAME, usesMaster } from "../lib/env-layers.mjs";
 
 export type BuildFor = "regression" | "smoke";
+
+/**
+ * The browser-lane passwords the selected suites type, against the playwright-* MCP `--secrets` file the
+ * nearest `.mcp.json` declares (`.env.playwright.local` when none does). A name the file lacks is typed as a
+ * literal and the case BLOCKs on sign-in mid-run, so it is decided here. On the combined
+ * `.env.playwright.all` a name is looked up as NAME_<ENV> for this run's env. On a master stand
+ * (PASSWORDS=master) every name is typed as MASTER_PASSWORD, so that one name is what the file must hold.
+ * `gated`: suites EVERY case of which needs an undeclared name.
+ */
+export interface SecretsGate {
+  names: string[];
+  file: { name: string; exists: boolean; env: string | null; combined: boolean; envs: string[] | null };
+  unsynced: string[];
+  undeclared: { name: string; cases: Record<string, string[]> }[];
+  gated: { suite: string; names: string[] }[];
+}
+
+export function computeSecretsGate(root: string, browserSuites: string[], env: string, processEnv: Record<string, string | undefined> = process.env): SecretsGate {
+  const perSuite = suiteSecretCases(root, browserSuites) as Record<string, { cases: number; byName: Record<string, string[]> }>;
+  const names = [...new Set(Object.values(perSuite).flatMap((s) => Object.keys(s.byName)))].sort();
+  const declared = declaredSecretsFile(root);
+  const file = declared ? readSecretsFile(root, declared) : readSecretsFile(root);
+  const combined = file.envs !== null;
+  const master = usesMaster(processEnv);
+  // What a lane substitutes for each name: on a master stand MASTER_PASSWORD's value, else the combined file's
+  // NAME_<ENV> entries for this env under their bare names, else the single-env file's.
+  const masterHeld = file.values.get(MASTER_NAME);
+  const view = master
+    ? { values: new Map(masterHeld ? names.map((n): [string, string] => [n, masterHeld]) : []) }
+    : combined
+    ? { values: new Map([...file.values].flatMap(([q, v]): [string, string][] => {
+        const split = splitQualifiedName(q, file.envs!);
+        return split?.env === env ? [[split.name, v]] : [];
+      })) }
+    : file;
+  const cls = classifySecretNames(names, view, processEnv);
+  // A file generated for (or a combined file without) another TEST_ENV holds another stand's values:
+  // every env-backed name is unsynced.
+  const otherEnv = !master && file.exists && (combined ? !file.envs!.includes(env) : file.env !== null && file.env !== env);
+  const unsynced = master
+    ? (cls.unsynced.length ? [MASTER_NAME] : [])
+    : otherEnv ? names.filter((n) => processEnv[n]) : cls.unsynced;
+  const undeclared = cls.undeclared.map((name) => ({
+    name, cases: Object.fromEntries(Object.entries(perSuite).filter(([, s]) => s.byName[name]).map(([id, s]) => [id, s.byName[name]])),
+  }));
+  const gated: SecretsGate["gated"] = [];
+  for (const [suite, s] of Object.entries(perSuite)) {
+    const missing = cls.undeclared.filter((n) => s.byName[n]);
+    const hit = new Set(missing.flatMap((n) => s.byName[n]));
+    if (missing.length && s.cases > 0 && hit.size >= s.cases) gated.push({ suite, names: missing });
+  }
+  return { names, file: { name: basename(file.path), exists: file.exists, env: file.env, combined, envs: file.envs }, unsynced, undeclared, gated };
+}
+
+export function secretsChecks(s: SecretsGate, env: string): Check[] {
+  if (s.names.length === 0) return [];
+  const checks: Check[] = [];
+  const sync = s.file.combined ? "npm run secrets:sync:all" : "npm run secrets:sync";
+  const fix = `${sync}, then reconnect playwright-chrome / -firefox / -edge in /mcp before any browser suite starts`;
+  const diagnose = s.file.combined ? "npm run secrets:check:all" : "npm run secrets:check";
+  const forEnv = s.file.combined
+    ? (s.file.envs?.includes(env) ? "" : ` (it covers ${s.file.envs?.join(", ") || "no env"}, not ${env})`)
+    : (s.file.env && s.file.env !== env ? ` (generated for TEST_ENV=${s.file.env})` : "");
+  if (!s.file.exists)
+    checks.push({ id: "secrets:sync", status: "BLOCK", found: `${s.file.name} absent — ${s.names.length} password name(s) the selected browser suites type cannot be substituted`, who: "me", do: fix, diagnose: [diagnose] });
+  else if (s.unsynced.length)
+    checks.push({ id: "secrets:sync", status: "BLOCK",
+      found: `${s.unsynced.join(", ")} missing from or different in ${s.file.name}${forEnv} — those cases would sign in with the literal name`,
+      who: "me", do: fix, diagnose: [`${diagnose} (names only, never values)`] });
+  const gated = new Set(s.gated.map((g) => g.suite));
+  for (const u of s.undeclared) {
+    const parts = Object.entries(u.cases).map(([suite, ids]) => gated.has(suite) ? `${suite} (all cases — leaves the plan)` : `${suite}: ${ids.join(", ")}`);
+    checks.push({ id: `secret:${u.name}`, status: "WARN", found: `${u.name} has no value in .env.local or ${s.file.name} — report BLOCKED, no sign-in attempt: ${parts.join("; ")}`,
+      who: "you", do: `add ${u.name} to .env.local (team secret store), then ${fix}`, diagnose: [] });
+  }
+  if (s.file.exists && !s.unsynced.length && !s.undeclared.length)
+    checks.push(ok("secrets", `${s.names.length} password name(s) the selected browser suites type are registered`));
+  return checks;
+}
 type Mcp = PolicyInput["mcp"];
 export interface RegressionPolicyInput {
   for: BuildFor; facts: EnvFacts; mcp: Mcp;
   manifestProblems: { suiteId: string; kind: string; detail: string }[];
   lock: Classification | null; gating: GatingResult; suiteIds: string[];
   changedSince: ModuleChange[] | Unknown; baselineRunId: string | null;
+  secrets?: SecretsGate;
   smokeGates: { ok: boolean; output: string; spawnError?: string } | null; smokeDuplicate: string | null;
   /** The status file describes THIS run (`--run-id`): it is the run's own envelope, not a lock. */
   ownRunId?: string | null;
@@ -25,7 +107,7 @@ export interface RegressionPolicyInput {
   accepted?: string[];
 }
 export interface RegressionPreflight {
-  for: BuildFor; selection: string; facts: EnvFacts; mcp: Mcp; gating: GatingResult;
+  for: BuildFor; selection: string; facts: EnvFacts; mcp: Mcp; gating: GatingResult; secrets: SecretsGate;
   changedSince: ModuleChange[] | Unknown; baselineRunId: string | null; falseFailureRisk: string[];
   accepted: string[]; checks: Check[]; verdict: "READY" | "NOT READY";
 }
@@ -79,9 +161,10 @@ export function buildRegressionChecks(i: RegressionPolicyInput): Check[] {
   for (const [mod, e] of byModule)
     checks.push({ id: `gated:${mod}`, status: "WARN", found: `${mod} ${e.state} — suites ${e.suites.join(", ")} leave the plan`, who: "me",
       do: "report them as NOT_DEPLOYED (BLOCKED-on-deploy), never FAIL", diagnose: [] });
-  const gatedSuites = new Set(i.gating.gated.map((g) => g.suite));
+  const gatedSuites = new Set([...i.gating.gated, ...(i.secrets?.gated ?? [])].map((g) => g.suite));
   if (i.suiteIds.length > 0 && i.suiteIds.every((s) => gatedSuites.has(s)))
-    checks.push({ id: "gating:all", status: "BLOCK", found: `every suite of the selection is gated (${i.suiteIds.length}) — nothing left to run`, who: "you", do: "pick another selection, or deploy the missing modules", diagnose: [] });
+    checks.push({ id: "gating:all", status: "BLOCK", found: `every suite of the selection is gated (${i.suiteIds.length}) — nothing left to run`, who: "you", do: "pick another selection, deploy the missing modules, or add the missing passwords", diagnose: [] });
+  if (i.secrets) checks.push(...secretsChecks(i.secrets, f.env));
   if (i.gating.gatingOff)
     checks.push({ id: "gating", status: "WARN", found: `no suite gated: ${i.gating.gatingOff}`, who: "me", do: "every suite runs; resolve the deployed check to gate", diagnose: [] });
   for (const u of i.gating.unmapped)
@@ -141,6 +224,8 @@ export async function runRegressionPreflight(o: {
   for: BuildFor; selection: string; suites: SuiteRef[];
   manifestProblems: { suiteId: string; kind: string; detail: string }[];
   root: string; now?: Date; env?: string; runId?: string; accept?: string[];
+  /** Suites a browser agent types into — the only ones the secrets file matters for. Default: all. */
+  browserSuites?: string[];
 }): Promise<RegressionPreflight> {
   const now = o.now ?? new Date();
   const required = [...new Set(o.suites.flatMap((s) => (s.requiresModules ?? []).map((e) => resolveRequiredModule(e).pascal)))];
@@ -153,14 +238,16 @@ export async function runRegressionPreflight(o: {
   const gating = gateSuites(o.suites, facts, ledger);
   const baseline = readBaseline(o.root, facts.env);
   const changedSince = baselineDelta(baseline, facts);
+  // After getEnvFacts: process.env is the layered, suffix-promoted env the values are compared against.
+  const secrets = computeSecretsGate(o.root, o.browserSuites ?? o.suites.map((s) => s.id), facts.env);
   const checks = buildRegressionChecks({
     for: o.for, facts, mcp, manifestProblems: o.manifestProblems, lock, gating, suiteIds: o.suites.map((s) => s.id),
-    changedSince, baselineRunId: baseline?.runId ?? null, ownRunId, accepted: o.accept ?? [],
+    changedSince, baselineRunId: baseline?.runId ?? null, ownRunId, accepted: o.accept ?? [], secrets,
     smokeGates: o.for === "smoke" ? runSmokeGates(o.root) : null,
     smokeDuplicate: o.for === "smoke" ? smokeDuplicateToday(o.root, now) : null,
   });
   return {
-    for: o.for, selection: o.selection, facts, mcp, gating, changedSince, baselineRunId: baseline?.runId ?? null,
+    for: o.for, selection: o.selection, facts, mcp, gating, secrets, changedSince, baselineRunId: baseline?.runId ?? null,
     falseFailureRisk: falseFailureRisk(changedSince, gating), accepted: o.accept ?? [], checks, verdict: isBlocking(checks) ? "NOT READY" : "READY",
   };
 }

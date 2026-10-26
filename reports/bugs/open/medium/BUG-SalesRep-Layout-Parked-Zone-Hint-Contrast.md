@@ -3,6 +3,7 @@
 **Severity:** Medium (P2) · A11y — WCAG 2.2 AA 1.4.3 Contrast (Minimum) · Storefront (Sales Rep hub dashboard + customer profile, layout edit mode)
 **Env:** vcptcore-qa @ theme `vc-theme-b2b-vue-2.55.0-pr-2400-c6ca`, `VirtoCommerce.SalesRep 3.1001.0-pr-6-4f32` · Chrome 1920×1080
 **Ticket:** VCST-5367 (vc-frontend PR #2400)
+**Jira:** never filed on its own (searched 2026-10-15, no match). Tracked under **VCST-6395** (filed 2026-10-15 for the Document library meta + Edit layout labels; carries this parked-zone hint as a sibling node, root-cause note on `opacity-70` included).
 
 ## Summary
 

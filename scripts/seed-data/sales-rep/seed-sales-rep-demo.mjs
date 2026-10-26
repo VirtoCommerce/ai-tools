@@ -7,7 +7,7 @@
  * `AGENT-TEST` string on any surface a viewer can see. Declarations and derivations live in
  * sales-rep-demo-specs.mjs; this file is resolve-then-write plus its own teardown.
  *
- * REUSED ACCOUNTS ARE HANDLED WITH DELIBERATE COWARDICE. The two reps are real people, so this
+ * REUSED ACCOUNTS ARE HANDLED WITH DELIBERATE COWARDICE. The reps are real people, so this
  * seeder NEVER calls `ensureRep()` and never goes near `POST /api/sales-rep`. That endpoint is a
  * CREATE shape (it takes a password) and the fixture seeder calls `resetSecurityPassword()` on
  * every reseed of an existing rep — pointing either at a colleague's email would reset their
@@ -47,13 +47,14 @@ import {
   stripSeededGlobalRoles, deleteUserByEmail, resolvePassword,
 } from '../../lib/user-provision.mjs';
 import { orgAlreadyServed, appendServedOrg, removeServedOrg } from './rep-only-org-specs.mjs';
+import { normalizeMembershipStatus } from '../b2b/membership-alias-specs.mjs';
 import { UPLOAD_SCOPE } from './sales-rep-docs-specs.mjs';
 import {
   DEMO_ORGS, DEMO_CONTACTS, DEMO_REPS, DEMO_DOCUMENTS, DEMO_TASKS, DEMO_PROFILE, DEMO_LEDGER_KEY,
   demoMarker, isDemoMarker, markerSweepInScope, demoProblems,
   buildDemoFileBytes, buildDemoDocumentRequest, buildDemoOrderBody,
   demoOrderNumber, ordersInPostOrder, productNeedByOrg, isDemoSafeProduct,
-  orgByKey, contactByKey, roleSeesDocuments, SALES_REP_ROLE_ADVANCED, documentSourceRel,
+  orgByKey, contactByKey, repEmailEnvKeys, roleSeesDocuments, SALES_REP_ROLE_ADVANCED, documentSourceRel,
   DEMO_LISTS, listProductNeedByOrg, DEMO_LIST_SCOPE, DEMO_CARTS, DEMO_REP_CARTS, cartProductNeedByOrg, resolveTaskText,
 } from './sales-rep-demo-specs.mjs';
 
@@ -115,6 +116,12 @@ async function allReps() {
 }
 
 /**
+ * A rep's email: `<emailVar>_<ENV>` first (the form .env.local uses), then `<emailVar>`. Reps are real
+ * people, so the address is read from the env every time and never written to the ledger.
+ */
+const repEmail = (spec) => String(repEmailEnvKeys(spec, TEST_ENV).map((k) => process.env[k]).find(Boolean) || '').trim().toLowerCase();
+
+/**
  * Resolve each declared rep to a LIVE sales-rep record, or explain precisely why it cannot be used.
  * Never creates anything: a rep who is not already a rep is reported, not provisioned.
  */
@@ -133,12 +140,21 @@ async function resolveReps() {
   }
   const resolved = [];
 
+  // Rep variables under a name no declared rep uses (an older naming, a typo) are ignored by every
+  // lookup below, so say so instead of silently falling back to the operator path or a SKIP.
+  const declaredVars = new Set(DEMO_REPS.flatMap((s) => [s.emailVar, s.passwordVar]));
+  for (const k of Object.keys(process.env)) {
+    const m = k.match(/^(SR_DEMO_REP_[A-Z0-9]+_(?:EMAIL|PASSWORD))(?:_[A-Z0-9_]+)?$/);
+    if (m && !declaredVars.has(m[1])) log(`NOTE ${k} is set but no demo rep reads it (rep variables: ${[...declaredVars].join(', ')}). Rename it.`);
+  }
+
   for (const spec of DEMO_REPS) {
-    const email = String(process.env[spec.emailVar] || '').trim().toLowerCase();
+    const email = repEmail(spec);
     if (!email) {
       log(`SKIP rep ${spec.key} (${spec.fullName}) — ${spec.emailVar} is not set.`);
-      log(`     Set it in .env.${TEST_ENV}. This seeder will not guess an email: attaching sales-rep`);
-      log('     status to the wrong real person is not a recoverable mistake.');
+      log(`     Set ${repEmailEnvKeys(spec, TEST_ENV)[0]} in .env.local (gitignored: it names a real person,`);
+      log('     never put it in a committed .env.<env>). This seeder will not guess an email: attaching');
+      log('     sales-rep status to the wrong real person is not a recoverable mistake.');
       resolved.push({ spec, skipped: 'no-email' });
       continue;
     }
@@ -162,7 +178,7 @@ async function resolveReps() {
     // — so signing in with the other email yields a token that carries sales-rep:access (the hub
     // renders in full) over ZERO granting memberships, i.e. an empty customer list, empty orders and
     // zero counters, with no error anywhere. Measured live on virtostart 2026-09-23: the contact
-    // "Alla Volkova" has two accounts; the one this variable named had 0 memberships while the rep
+    // the primary demo rep has two accounts; the one this variable named had 0 memberships while the rep
     // record's had 6. Whoever looks at that screen concludes the DATA is broken.
     const repUserName = String(full?.userName || '').trim().toLowerCase();
     if (repUserName && repUserName !== email) {
@@ -215,7 +231,7 @@ async function findExisting(memberType, marker, name, ledgerId) {
   const rows = res?.results || [];
   const hit = rows.find((m) => m.outerId === marker) || rows.find((m) => m.name === name) || null;
   if (!hit && !ledgerId) {
-    verbose(`no ${memberType} found for "${name}" by marker or name — will CREATE`);
+    verbose(`no ${memberType} found for "${name}" by marker or name${TEARDOWN ? ' — nothing to sweep' : ' — will CREATE'}`);
   }
   return hit;
 }
@@ -348,7 +364,17 @@ async function ensureBuyerAccounts(orgs, contacts) {
 
     await stripSeededGlobalRoles(spec.email);
     const existing = await searchMemberships(userId);
-    await ensureOrgMembership(userId, org.id, org.name, role.id, existing, false, spec.email, 'Approved');
+    // ensureOrgMembership reconciles roles to EXACTLY the declared one. The returns demo adds its
+    // "Organization returns manager" role to these same buyers (seed-returns-demo.mjs), so a reseed
+    // here used to strip it and break that demo. Already holding the declared role, unlocked and
+    // Approved is converged — extra roles a sibling demo granted are not drift.
+    const current = existing.find((m) => m.organizationId === org.id);
+    const holdsRole = (current?.roles || []).some((x) => (x.roleId || x.id) === role.id);
+    if (holdsRole && current.isLocked === false && normalizeMembershipStatus(current.status) === normalizeMembershipStatus('Approved')) {
+      verbose(`membership ${spec.email} @ ${org.name} already holds "${spec.role}" — extra roles kept`);
+    } else {
+      await ensureOrgMembership(userId, org.id, org.name, role.id, existing, false, spec.email, 'Approved');
+    }
 
     created.push({
       type: 'account', key: spec.key, id: userId, email: spec.email,
@@ -371,8 +397,14 @@ async function attachServedOrgs(reps, orgs) {
   const attachments = [];
   for (const r of reps) {
     if (r.skipped) continue;
-    const priorOrgs = (r.rep.organizations || []).map((o) => ({ organizationId: o.organizationId, organizationName: o.organizationName }));
-    let organizations = [...priorOrgs];
+    // The rep's DEMO organizations are demo-owned (teardown deletes them), so every one the live list
+    // holds counts as added, recomputed each run. Recording only THIS run's additions made a re-run
+    // write addedOrgIds: [] and priorOrganizations = the whole live list, so teardown detached nothing.
+    const demoIds = new Set(r.spec.servedOrgs.map((k) => orgs[k]?.id).filter((id) => id && !String(id).startsWith('dry-')));
+    const live = (r.rep.organizations || []).map((o) => ({ organizationId: o.organizationId, organizationName: o.organizationName }));
+    const priorOrgs = live.filter((o) => !demoIds.has(o.organizationId));
+    const servedDemoIds = (list) => list.map((o) => o.organizationId).filter((id) => demoIds.has(id));
+    let organizations = [...live];
     const added = [];
     for (const key of r.spec.servedOrgs) {
       const org = orgs[key];
@@ -383,13 +415,28 @@ async function attachServedOrgs(reps, orgs) {
     }
     attachments.push({
       type: 'rep-attachment', key: r.spec.key, salesRepId: r.rep.id, userId: r.rep.userId,
-      email: r.email, priorOrganizations: priorOrgs,
-      addedOrgIds: added.map((k) => orgs[k].id),
+      priorOrganizations: priorOrgs,
+      addedOrgIds: servedDemoIds(organizations),
       servedOrgIds: organizations.map((o) => o.organizationId),
     });
     if (!added.length) { verbose(`rep ${r.spec.key}: already serves every demo org`); continue; }
+    // PUT /api/sales-rep overwrites the rep CONTACT's organizations[] with the served list, and an
+    // organization dropped from it takes the rep's whole membership with it — buyer roles included.
+    // Measured on virtostart 2026-10-22: a contact listing 12 orgs, PUT with 5 served, and 8 of the
+    // user's own memberships were gone. So the write is refused while it would drop anything.
+    const contact = DRY_RUN ? null : await api('GET', `/api/members/${r.rep.id}`, null, { expectStatus: [200, 404] });
+    const servedIds = new Set(organizations.map((o) => o.organizationId));
+    const dropped = (contact?.organizations || []).filter((id) => !servedIds.has(id));
+    if (dropped.length) {
+      log(`  SKIP attaching ${r.spec.key}: the contact also belongs to ${dropped.length} organization(s) it does not serve`);
+      log(`       (${dropped.join(', ')}). PUT /api/sales-rep would remove them and DELETE the memberships`);
+      log('       there. Make them served orgs, or remove them from the contact deliberately, then re-run.');
+      // Nothing was attached this run: teardown detaches only the demo orgs already served.
+      attachments[attachments.length - 1] = { ...attachments[attachments.length - 1], addedOrgIds: servedDemoIds(live), servedOrgIds: live.map((o) => o.organizationId) };
+      continue;
+    }
     await api('PUT', '/api/sales-rep', { ...r.rep, organizations }, { expectStatus: [200, 201, 204] });
-    log(`rep ${r.spec.key}: +${added.length} demo org(s) (${added.join(', ')}); ${organizations.length} total, ${priorOrgs.length} pre-existing preserved`);
+    log(`rep ${r.spec.key}: +${added.length} demo org(s) (${added.join(', ')}); ${organizations.length} total, ${priorOrgs.length} non-demo preserved`);
   }
   return attachments;
 }
@@ -406,6 +453,21 @@ async function attachServedOrgs(reps, orgs) {
  */
 // `need` lets a second consumer (the shared lists) ask for its own per-org counts. The claim set
 // is per CALL, so lists and orders draw independently — two callers are not meant to share a pool.
+/**
+ * The store's own catalog id, read live (never transcribed). An org declaring `storeCatalog: true`
+ * draws only from it, because the admin search otherwise reaches every catalog and returns products
+ * the store does not sell — fine for an order written through the admin API, refused by a cart.
+ */
+let STORE_CATALOG_ID;
+async function storeCatalogId() {
+  if (STORE_CATALOG_ID === undefined) {
+    const store = await api('GET', `/api/stores/${STORE_ID}`, null, { expectStatus: [200, 404] }).catch(() => null);
+    STORE_CATALOG_ID = store?.catalog || null;
+    if (!STORE_CATALOG_ID) log(`  WARN store ${STORE_ID} has no catalog — storeCatalog orgs fall back to every catalog.`);
+  }
+  return STORE_CATALOG_ID;
+}
+
 async function discoverProductPools(need = productNeedByOrg()) {
   if (DRY_RUN) return {};
   const claimed = new Set();
@@ -417,7 +479,8 @@ async function discoverProductPools(need = productNeedByOrg()) {
     // but not relevance-bounded (see productMatch in the spec module), it carries near-duplicate
     // rows for the same physical product, and it still serves this repo's own fixture products.
     // Capped: discoverCatalogProducts asks for twice this, and a search over ~1000 fails SILENTLY to [].
-    const found = await discoverCatalogProducts(api, Math.min(want * 8 + 40, 450), { searchPhrase: org.productSearch, withImages: true }).catch(() => []);
+    const catalogId = org.storeCatalog ? await storeCatalogId() : null;
+    const found = await discoverCatalogProducts(api, Math.min(want * 8 + 40, 450), { searchPhrase: org.productSearch, withImages: true, catalogId }).catch(() => []);
     const seenName = new Set();
     const usable = [];
     for (const p of found) {
@@ -697,7 +760,8 @@ async function teardown() {
   if (taskRows.length && !DRY_RUN) {
     for (const a of attachments) {
       const spec = DEMO_REPS.find((r) => r.key === a.key);
-      const token = await repToken({ spec, email: a.email, rep: { userId: a.userId } });
+      if (!spec) { log(`  tasks for ${a.key}: no such rep in the spec (renamed?), left in place.`); continue; }
+      const token = await repToken({ spec, email: repEmail(spec), rep: { userId: a.userId } });
       if (!token) { log(`  tasks for ${a.key}: unreachable without a token — left in place.`); continue; }
       const gql = makeGql(token);
       const mine = taskRows.filter((t) => t.ownerUserId === a.userId);
@@ -740,10 +804,22 @@ async function teardown() {
   for (const a of attachments) {
     const liveRep = await api('GET', `/api/sales-rep/${a.salesRepId}`, null, { expectStatus: [200, 404] });
     if (!liveRep?.id) { log(`  rep ${a.key}: no longer present, nothing to detach.`); continue; }
+    const toDetach = (a.addedOrgIds || []).filter((id) => orgAlreadyServed(liveRep.organizations || [], id));
+    if (!toDetach.length) { log(`  rep ${a.key}: no demo org to detach, no write.`); continue; }
     let organizations = liveRep.organizations || [];
-    for (const id of a.addedOrgIds || []) organizations = removeServedOrg(organizations, id);
+    for (const id of toDetach) organizations = removeServedOrg(organizations, id);
+    // Same hazard as attach: the PUT rewrites the contact's organizations[] to the served list and
+    // deletes the membership of anything it drops. Only the demo orgs being detached may go.
+    const contact = DRY_RUN ? null : await api('GET', `/api/members/${a.salesRepId}`, null, { expectStatus: [200, 404] });
+    const keep = new Set([...organizations.map((o) => o.organizationId), ...toDetach]);
+    const dropped = (contact?.organizations || []).filter((id) => !keep.has(id));
+    if (dropped.length) {
+      log(`  SKIP detaching ${a.key}: the contact also belongs to ${dropped.length} organization(s) it does not serve (${dropped.join(', ')});`);
+      log('       PUT /api/sales-rep would delete those memberships. Detach the demo orgs in the Admin UI instead.');
+      continue;
+    }
     if (!DRY_RUN) await api('PUT', '/api/sales-rep', { ...liveRep, organizations }, { expectStatus: [200, 201, 204] });
-    log(`  rep ${a.key}: detached ${(a.addedOrgIds || []).length} demo org(s); ${a.priorOrganizations.length} pre-existing restored`);
+    log(`  rep ${a.key}: detached ${toDetach.length} demo org(s); ${organizations.length} other served org(s) kept`);
   }
 
   // 4b. Buyer accounts + their org memberships. Before the contacts, because the account is what
@@ -767,7 +843,7 @@ async function teardown() {
       const name = type === 'organization' ? spec.name : `${spec.firstName} ${spec.lastName}`;
       const m = demoMarker(marker, spec.key);
       if (!markerSweepInScope(m, ONLY)) continue;
-      const hit = await findByMarker(type === 'organization' ? 'Organization' : 'Contact', m, name);
+      const hit = await findExisting(type === 'organization' ? 'Organization' : 'Contact', m, name);
       if (hit?.id && hit.outerId === m && !fromLedger.includes(hit.id)) swept.push(hit.id);
     }
     const ids = [...new Set([...fromLedger, ...swept])];
@@ -1012,7 +1088,7 @@ async function ensureRepCarts(orgs, pools, reps, cursor) {
     }
     const off = (cart?.items || []).filter((i) => i.selectedForCheckout === false).length;
     log(`rep cart: ${r.spec.fullName} @ ${org.name} — ${cart?.itemsCount || 0} line(s), ${off} not for checkout, ${cart?.total?.formattedAmount}`);
-    created.push({ type: 'cart', key: spec.key, id: cart.id, owner: r.email, org: spec.org, createdByRep: spec.rep, itemsCount: cart?.itemsCount || 0 });
+    created.push({ type: 'cart', key: spec.key, id: cart.id, org: spec.org, createdByRep: spec.rep, itemsCount: cart?.itemsCount || 0 });
   }
   return created;
 }
@@ -1156,9 +1232,19 @@ async function main() {
   // A scoped run (--only) produced a SUBSET, so it MERGES into the ledger instead of replacing it.
   // Replacing it once dropped every contact id; the next full run fell back to a member search the
   // index had not caught up with, and created seven duplicate buyers (vcst, 2026-09-24).
+  // Tasks, lists and carts need a rep or buyer token and SKIP when none is available — but the rows
+  // an earlier run recorded still name live entities. Dropping them orphaned 28 (virtostart,
+  // 2026-10-22: no rep password, no operator), so a full run carries them forward; teardown's
+  // deletes tolerate 404, so a row whose entity is already gone costs nothing.
+  // A rep SKIPPED this run (no email set on this machine) keeps its rep-attachment row for the same
+  // reason: teardown reaches a rep's tasks and demo orgs only through that row.
+  const CARRIED = new Set(['task', 'list', 'cart']);
+  const skippedReps = new Set(reps.filter((r) => r.skipped).map((r) => r.spec.key));
+  const carried = (e) => CARRIED.has(e.type) || (e.type === 'rep-attachment' && skippedReps.has(e.key));
+  const notRewritten = (e) => !entities.some((n) => n.type === e.type && n.key === e.key);
   const merged = ONLY
-    ? [...(readLedger().entities || []).filter((e) => !entities.some((n) => n.type === e.type && n.key === e.key)), ...entities]
-    : entities;
+    ? [...(readLedger().entities || []).filter(notRewritten), ...entities]
+    : [...entities, ...(PRIOR_LEDGER.entities || []).filter((e) => carried(e) && notRewritten(e))];
   writeLedger(merged);
 
   const skipped = reps.filter((r) => r.skipped);

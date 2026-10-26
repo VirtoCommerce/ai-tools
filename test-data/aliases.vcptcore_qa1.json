@@ -526,5 +526,272 @@
   "PUSH_AUDIENCE_EMPLOYEE": {
     "id": "8c28ba10-3c72-4456-8c60-7c1eba0d1abf",
     "platform_id": "8c28ba10-3c72-4456-8c60-7c1eba0d1abf"
+  },
+  "PUNCHOUT_CONFIG_0": {
+    "storeId": "B2B-store",
+    "storeExists": true,
+    "senderDomain": "NetworkId",
+    "senderDomainCheck": true,
+    "allowedReturnUrl": "https://punchoutcommerce.com/*",
+    "returnUrlCheck": true,
+    "tokenLifetime": "00:15:00",
+    "sessionLifetime": "04:00:00",
+    "tokenLifetimeMinutes": 15,
+    "sessionLifetimeMinutes": 240,
+    "source": "vc-deploy-dev#6693 infra/environments.yml (Punchout__Configurations__0..3, 2026-10-01) + #6926 (Ids qa1-punchout-0..2 added, configuration 3 removed, 2026-10-14)",
+    "deployed": true,
+    "configurationId": "qa1-punchout-0"
+  },
+  "PUNCHOUT_CONFIG_1": {
+    "storeId": "New-super",
+    "storeExists": true,
+    "senderDomain": "",
+    "senderDomainCheck": false,
+    "allowedReturnUrl": "",
+    "returnUrlCheck": false,
+    "tokenLifetime": "00:02:00",
+    "sessionLifetime": "00:10:00",
+    "tokenLifetimeMinutes": 2,
+    "sessionLifetimeMinutes": 10,
+    "source": "vc-deploy-dev#6693 infra/environments.yml (Punchout__Configurations__0..3, 2026-10-01) + #6926 (Ids qa1-punchout-0..2 added, configuration 3 removed, 2026-10-14)",
+    "deployed": true,
+    "configurationId": "qa1-punchout-1"
+  },
+  "PUNCHOUT_CONFIG_2": {
+    "storeId": "AGENT-TEST-no-such-store",
+    "storeExists": false,
+    "senderDomain": "",
+    "senderDomainCheck": false,
+    "allowedReturnUrl": "",
+    "returnUrlCheck": false,
+    "tokenLifetime": "00:15:00",
+    "sessionLifetime": "04:00:00",
+    "tokenLifetimeMinutes": 15,
+    "sessionLifetimeMinutes": 240,
+    "source": "vc-deploy-dev#6693 infra/environments.yml (Punchout__Configurations__0..3, 2026-10-01) + #6926 (Ids qa1-punchout-0..2 added, configuration 3 removed, 2026-10-14)",
+    "deployed": true,
+    "configurationId": "qa1-punchout-2"
+  },
+  "PUNCHOUT_CONFIG_3": {
+    "storeId": "",
+    "storeExists": false,
+    "senderDomain": "",
+    "senderDomainCheck": false,
+    "allowedReturnUrl": "",
+    "returnUrlCheck": false,
+    "tokenLifetime": "",
+    "sessionLifetime": "",
+    "tokenLifetimeMinutes": null,
+    "sessionLifetimeMinutes": null,
+    "source": "vc-deploy-dev#6693 infra/environments.yml (Punchout__Configurations__0..3, 2026-10-01) + #6926 (Ids qa1-punchout-0..2 added, configuration 3 removed, 2026-10-14)",
+    "deployed": false,
+    "retired": true,
+    "retiredReason": "not deployable since Punchout PR #2 (build 3.1000.0-pr-2): PunchoutOptionsValidator runs at platform start and refuses a configuration without Id/StoreId, so vc-deploy-dev#6926 removed it from vcptcore-qa1 (2026-10-14). Its secret now matches no configuration (cXML 401). The \"no StoreId\" scenario is a startup failure, not a cXML answer — test it as a deployment check, not with this alias.",
+    "configurationId": ""
+  },
+  "PUNCHOUT_MAPPING_DEFAULT": {
+    "id": "01d406dc-8568-4b08-9263-96ee8ec34416",
+    "userId": "8955c03c-190f-4c2e-8cd3-d85cb1780f56",
+    "memberId": "28df4ed6-67ed-455a-8fbf-65d1958f69cc",
+    "currentOrganizationId": "7c901bc8-e83b-4953-a77c-bbf7d3512d78",
+    "otherOrganizationId": "",
+    "organizationCount": 1
+  },
+  "PUNCHOUT_MAPPING_MULTI_ORG": {
+    "id": "4e47cebb-17fa-465d-9626-982803bb3618",
+    "userId": "1fbedcd6-ccd1-4479-8f9a-6cff894ccf2f",
+    "memberId": "e4a80a20-85a1-4fb3-aad7-e136ea30abd5",
+    "currentOrganizationId": "a0a835c4-ec97-4467-914d-9fbfa7500349",
+    "otherOrganizationId": "91b24624-6b94-4c29-8969-d87d64f7a45c",
+    "organizationCount": 2
+  },
+  "BACKOFFICE_PUNCHOUT_READ": {
+    "user_id": "170e26ee-5854-4b8b-8a88-fab75a6dd1fa",
+    "role_id": "AGENT-TEST-Punchout-Reader"
+  },
+  "BACKOFFICE_NO_PUNCHOUT": {
+    "user_id": "31171794-f3db-4f5d-91d5-6d243754e02a",
+    "role_id": "AGENT-TEST-Punchout-None"
+  },
+  "PB_ASSETS_ROOT": {
+    "_inline": true,
+    "folderUrl": "/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726",
+    "storeAssetRoot": "/stores/B2B-store/Page Builder"
+  },
+  "PB_ASSETS_P500": {
+    "_inline": true,
+    "folderUrl": "/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726/p500",
+    "count": 500,
+    "firstByName": "asset-000.png",
+    "lastByName": "asset-499.png",
+    "firstByUpload": "asset-497.png",
+    "lastByUpload": "asset-129.png"
+  },
+  "PB_ASSETS_MIXED": {
+    "_inline": true,
+    "folderUrl": "/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726/mixed",
+    "count": 500,
+    "imageCount": 480,
+    "firstImage": "asset-020.png"
+  },
+  "PB_ASSETS_FOLDERS": {
+    "_inline": true,
+    "folderUrl": "/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726/folders",
+    "totalCount": 55,
+    "fileCount": 30
+  },
+  "PB_ASSETS_DEEP": {
+    "_inline": true,
+    "folderUrl": "/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726/deep",
+    "leafUrl": "/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726/deep/l1/l2/l3/l4/l5"
+  },
+  "PB_ASSETS_EMPTY": {
+    "_inline": true,
+    "folderUrl": "/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726/empty",
+    "totalCount": 0
+  },
+  "PB_ASSETS_TPL": {
+    "_inline": true,
+    "folderUrl": "/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726/tpl",
+    "file": "tpl-{{=window.__vcst5726=2}}.png",
+    "tplFolder": "tpl-{{=window.__vcst5726=1}}",
+    "tplFolderUrl": "/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726/tpl-{{=window.__vcst5726=1}}"
+  },
+  "PB_ASSET_REF_1": {
+    "_inline": true,
+    "assetUrl": "https://vcptcore-qa1.govirto.com/cms-content/assets/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726/p500/asset-007.png",
+    "expectedRefs": 1,
+    "observedPages": 1,
+    "observedSc": 0,
+    "pageIds": [
+      "afd63ad0-9371-4606-8ab7-eadd469e0c92"
+    ],
+    "observedTotal": 1
+  },
+  "PB_ASSET_REF_3": {
+    "_inline": true,
+    "assetUrl": "https://vcptcore-qa1.govirto.com/cms-content/assets/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726/p500/asset-025.png",
+    "expectedRefs": 3,
+    "observedPages": 3,
+    "observedSc": 0,
+    "pageIds": [
+      "d4bca345-2cf2-46a7-b23c-5e8b9ca96c5b",
+      "a71dc120-40be-41cc-8611-a0f67d1bfe2b",
+      "afd63ad0-9371-4606-8ab7-eadd469e0c92"
+    ],
+    "observedTotal": 3
+  },
+  "PB_ASSET_REF_2": {
+    "_inline": true,
+    "assetUrl": "https://vcptcore-qa1.govirto.com/cms-content/assets/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726/p500/asset-499.png",
+    "expectedRefs": 4,
+    "observedPages": 2,
+    "observedSc": 2,
+    "pageIds": [
+      "d4bca345-2cf2-46a7-b23c-5e8b9ca96c5b",
+      "afd63ad0-9371-4606-8ab7-eadd469e0c92"
+    ],
+    "observedTotal": 4
+  },
+  "PB_ASSET_REF_DEEP": {
+    "_inline": true,
+    "assetUrl": "https://vcptcore-qa1.govirto.com/cms-content/assets/stores/B2B-store/Page Builder/AGENT-TEST-VCST5726/deep/l1/l2/l3/l4/l5/d5-a.png",
+    "expectedRefs": 1,
+    "observedPages": 1,
+    "observedSc": 0,
+    "pageIds": [
+      "0a0ff18e-fe8c-470d-b62c-55f365c1fea8"
+    ],
+    "observedTotal": 1
+  },
+  "PB_ASSET_REF_SC": {
+    "_inline": true,
+    "ids": [
+      "d2536f4a136e44abbd59a81a09ab6640",
+      "4f65f3bf4920484bb910a082a1294d01"
+    ],
+    "names": [
+      "AGENT-TEST-VCST5726-sc-1",
+      "AGENT-TEST-VCST5726-sc-2"
+    ]
+  },
+  "RESTRICTED_CMS_ADMIN": {
+    "_inline": true,
+    "platform_id": "672a38a3-f322-43e0-ba2f-d9a439bc352d",
+    "user_id": "672a38a3-f322-43e0-ba2f-d9a439bc352d",
+    "role_id": "AGENT-TEST-Restricted-CMS-Viewer",
+    "userName": "AGENT-TEST-restricted-cms@test.virtocommerce.com"
+  },
+  "MULTI_ORG_TF_BR": {
+    "id": "e4a80a20-85a1-4fb3-aad7-e136ea30abd5",
+    "userId": "1fbedcd6-ccd1-4479-8f9a-6cff894ccf2f",
+    "org_techflow_id": "a0a835c4-ec97-4467-914d-9fbfa7500349",
+    "org_buildright_id": "91b24624-6b94-4c29-8969-d87d64f7a45c",
+    "techflow_membership_id": "02843f54afc547058c029706a115c4c7",
+    "buildright_membership_id": "22b667faa4d44bf59d90a13cf6f8ded2"
+  },
+  "MULTI_ORG_TF_BR_ALT": {
+    "id": "6bc1c444-4861-4ea2-8dcc-9e9f8e3c3ce0",
+    "userId": "17d49302-6e59-4cc4-8a74-48e9eb285357",
+    "org_techflow_id": "a0a835c4-ec97-4467-914d-9fbfa7500349",
+    "org_buildright_id": "91b24624-6b94-4c29-8969-d87d64f7a45c",
+    "techflow_membership_id": "55db3264-72e0-47ed-a6a7-decdbc060074",
+    "buildright_membership_id": "ed37b41c-0f47-4947-93cf-bf417106c79b"
+  },
+  "PUNCHOUT_MAPPING_REQUISITION": {
+    "id": "7a4437c4-6b5d-4477-b957-496911ae07d1",
+    "userId": "ab33e096-ad35-4636-ad61-0af318f16d56",
+    "memberId": "94bc2d85-ca56-4c42-a573-374fd698b577",
+    "currentOrganizationId": "7c901bc8-e83b-4953-a77c-bbf7d3512d78",
+    "otherOrganizationId": "",
+    "organizationCount": 1,
+    "organizationId": "7c901bc8-e83b-4953-a77c-bbf7d3512d78"
+  },
+  "PUNCHOUT_PRODUCT_UOM": {
+    "id": "0df4bb7d-cd56-43b7-a936-5a3f1ccc54f3",
+    "catalogId": "69a1ed6a-2a71-4cee-b889-6ae8330c5c03",
+    "categoryId": "1c99ffad-89f2-43bc-b7e6-862d730aad60",
+    "ffcId": "142ba5568ae4454aad553ece41b9c3b5"
+  },
+  "PUNCHOUT_PRODUCT_PLAIN": {
+    "id": "adb3ccc9-e204-452f-abb9-de43d30b222a",
+    "catalogId": "69a1ed6a-2a71-4cee-b889-6ae8330c5c03",
+    "categoryId": "1c99ffad-89f2-43bc-b7e6-862d730aad60",
+    "ffcId": "142ba5568ae4454aad553ece41b9c3b5"
+  },
+  "PUNCHOUT_PRICELIST_USD": {
+    "id": "04f095f8-e6f8-4316-9c12-b424dd1b67cb",
+    "currency": "USD",
+    "storeIds": "B2B-store,New-super",
+    "assignmentIds": "2c08c4a1-a679-4631-9ab3-941176ea7d5c,e695a7f2-e571-410d-a2e3-0bb3fb61fd2d"
+  },
+  "PUNCHOUT_PRICELIST_EUR": {
+    "id": "6106ca5b-5977-4036-a87b-25c5a27cf2f4",
+    "currency": "EUR",
+    "storeIds": "B2B-store",
+    "assignmentIds": "0f734391-24be-499b-a6f8-6c1ad9ba94e8"
+  },
+  "PUNCHOUT_STORE_FFC_CONFIG_1": {
+    "storeId": "New-super",
+    "sourceStoreId": "B2B-store",
+    "field": "mainFulfillmentCenterId",
+    "ffcId": "142ba5568ae4454aad553ece41b9c3b5",
+    "assignedFfcId": "142ba5568ae4454aad553ece41b9c3b5",
+    "previousValue": "",
+    "owned": true
+  },
+  "SHELL_SEARCH_NOREAD": {
+    "_inline": true,
+    "platform_id": "cf7ddc24-7b25-4c4b-b0f2-60d5a08fc6dc",
+    "user_id": "cf7ddc24-7b25-4c4b-b0f2-60d5a08fc6dc",
+    "role_id": "AGENT-TEST-Shell-Search-NoRead",
+    "userName": "AGENT-TEST-shell-search-noread@test.virtocommerce.com"
+  },
+  "SHELL_SEARCH_READ": {
+    "_inline": true,
+    "platform_id": "6a0ac2a6-20d2-421e-9dc6-087454a7b1f3",
+    "user_id": "6a0ac2a6-20d2-421e-9dc6-087454a7b1f3",
+    "role_id": "AGENT-TEST-Shell-Search-Read",
+    "userName": "AGENT-TEST-shell-search-read@test.virtocommerce.com"
   }
 }

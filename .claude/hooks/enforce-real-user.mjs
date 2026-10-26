@@ -5,7 +5,9 @@
 // evaluate_script) unless the JS payload matches a documented exception. Wired
 // via the plugin manifest hooks/hooks.json (PreToolUse, ${CLAUDE_PLUGIN_ROOT}) so
 // it ships with the plugin; a per-machine .claude/settings.json entry may also
-// point here. Source of rule: knowledge/agents/qa/shared-instructions.md
+// point here. Both matchers take ANY MCP server name (`^mcp__.+__…$`): a
+// plugin-provided browser server is namespaced `mcp__plugin_<plugin>_<server>__…`,
+// which the old `mcp__playwright-(chrome|…)__` matcher never fired on. Source of rule: knowledge/agents/qa/shared-instructions.md
 // §"Browser Interaction — Mandatory Real-User Behavior". Rationale: a real user
 // cannot click a disabled control, so forcing one proves nothing.
 
@@ -77,6 +79,14 @@ const ALLOWED_PATTERNS = [
   // scripted mutation. Pair with a read-only measure (measure-layout.ts) to prove
   // the result numerically. Convention: `/* @allow-eval: <one-line reason> */`.
   /@allow-eval\b/,
+  // Explicit opt-in for EXPLORATORY / SBTM probes (/qa-exploratory, /qa-sbtm —
+  // skills/qa-sbtm/modern-web-attack-surface.md). Those charters use the page as an
+  // attack tool on purpose: strip a `disabled` attribute, replay a fetch with a
+  // tampered body, read `window.__APOLLO_CLIENT__`. The question they ask is whether
+  // the SERVER holds, so a finding from such a probe is a server/API-layer finding,
+  // never a UI-layer one (VCST-5100). NOT for scripted test cases or regression runs.
+  // Convention: `/* @exploratory: <charter or probe id> — <one-line reason> */`.
+  /@exploratory\b/,
 ];
 
 const BLOCK_MESSAGE = [
@@ -104,6 +114,10 @@ const BLOCK_MESSAGE = [
   "  - /* @allow-eval: <reason> */  — explicit opt-in for a UI-FIX / DEBUG DOM",
   "                                 experiment (move/toggle a node to validate a fix live),",
   "                                 NOT for test runs. Re-measure to prove the result.",
+  "  - /* @exploratory: <charter> — <reason> */",
+  "                               — explicit opt-in for an exploratory / SBTM probe",
+  "                                 (DevTools-as-attack-tool, tampered replay). Findings are",
+  "                                 server/API-layer only, never a UI defect. NOT for test runs.",
   "",
   "If your case fits an exception but was blocked, refine the regex in",
   "hooks/enforce-real-user.mjs (do not bypass — extend the allowlist).",

@@ -145,8 +145,10 @@ async function main(): Promise<void> {
       suites: suites.map((s) => ({ id: s.id, layer: s.layer, requiresModules: s.requiresModules })),
       manifestProblems: problems.map((p) => ({ suiteId: p.suiteId, kind: p.kind, detail: p.detail })),
       root: process.cwd(), ...(runId ? { runId } : {}), accept,
+      browserSuites: suites.filter((s) => classifyLane(s) === "browser").map((s) => s.id),
     });
-    const gated = new Set(pf.gating.gated.map((g) => g.suite));
+    // Off the plan: a required module is not deployed, or every case needs a password nobody has.
+    const gated = new Set([...pf.gating.gated, ...pf.secrets.gated].map((g) => g.suite));
     toPlan = suites.filter((s) => !gated.has(s.id));
     if (preflightOut) {
       mkdirSync(dirname(preflightOut), { recursive: true });

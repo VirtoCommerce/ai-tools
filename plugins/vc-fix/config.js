@@ -1,12 +1,14 @@
-import { config } from 'dotenv';
-import { resolveTestEnv } from './scripts/lib/resolve-test-env.js';
+import { resolveTestEnv, testEnvChoice } from './scripts/lib/resolve-test-env.js';
+import { applyLayered } from './scripts/lib/env-layers.mjs';
 import { loadProjectProfile } from './scripts/lib/project-profile.mjs';
 
 // Layered env loader. Precedence (later overrides earlier):
 //   1. .env.defaults       — cross-env constants (sandbox cards, builder.io URL)
 //   2. .env.${TEST_ENV}    — per-env URLs/identifiers (vcst | vcptcore | virtostart)
 //   3. .env.local          — secrets (passwords, tokens) — gitignored
-//   4. process.env         — already wins (CI passes via -e flags)
+//   4. the env's files in the QA_ENV_PATH folders — they beat 1-3 key by key
+//   5. PASSWORDS=master    — every test account's password is MASTER_PASSWORD (.env.playwright.master)
+// The order is scripts/lib/env-layers.mjs `layered` (byte-identical with the ai-tools repo's).
 // The legacy monolithic .env file was removed — all values live in the layered
 // files above. Per-env scaffolds are committed; secrets stay in .env.local.
 //
@@ -28,19 +30,10 @@ if (!/^[a-z0-9_]+$/.test(TEST_ENV)) {
     process.exit(1);
 }
 
-config({ path: '.env.defaults' });
-config({ path: `.env.${TEST_ENV}`, override: true });
-config({ path: '.env.local', override: true });
-
-// Per-env override promotion: any key ending in `_${TEST_ENV.toUpperCase()}`
-// is promoted to its base name. Lets `.env.local` carry per-env password
-// variants (e.g. USER_PASSWORD_VIRTOSTART) without leaking into committed files.
-const ENV_SUFFIX = `_${TEST_ENV.toUpperCase()}`;
-for (const [key, value] of Object.entries(process.env)) {
-    if (key.endsWith(ENV_SUFFIX) && value) {
-        process.env[key.slice(0, -ENV_SUFFIX.length)] = value;
-    }
-}
+// The layers and the per-env override promotion — any key ending in `_${TEST_ENV.toUpperCase()}` is promoted to
+// its base name, so `.env.local` can carry per-env password variants (e.g. USER_PASSWORD_VIRTOSTART) — then the
+// QA_ENV_PATH folders and the master password: scripts/lib/env-layers.mjs.
+applyLayered(TEST_ENV, { root: process.cwd() });
 
 // ENV_RISK: safety-by-config (not by env name). Production-risk envs block
 // admin-write suites by default; opt-in via --allow-admin-writes-on-prod.
@@ -51,7 +44,7 @@ if (!['dev', 'test', 'staging', 'production'].includes(ENV_RISK)) {
     process.exit(1);
 }
 
-console.log(`[config] TEST_ENV=${TEST_ENV} ENV_RISK=${ENV_RISK}`);
+console.log(`[config] TEST_ENV=${TEST_ENV} (from ${testEnvChoice('vcst').source}) ENV_RISK=${ENV_RISK}`);
 if (ENV_RISK === 'production') {
     console.log(`[config] ⚠ PRODUCTION-RISK ENV. Admin-write suites blocked unless --allow-admin-writes-on-prod is passed.`);
 }
@@ -172,10 +165,15 @@ const getEnvVar = (name, defaultValue = undefined) => {
     return value || defaultValue;
 };
 
-// Deployment profile (written by /project-init; see scripts/lib/project-profile.mjs).
-// Safe + memoized; returns platform/jira/github defaults when the file is absent,
-// so this load is a no-op for the existing VirtoCommerce-internal setup.
-const profile = loadProjectProfile();
+// Deployment profile (written by vc-init's /project-init; see scripts/lib/project-profile.mjs).
+// Loaded OPTIONALLY here: this module is the env check's backbone, and a missing profile must be
+// reported, not crash the report. The commands that act on the profile (/qa-fix, /qa-bug, …) load
+// it themselves and STOP when it is absent — there are no native-platform defaults any more
+// (VCST-6402). A malformed or too-new profile still throws: that is never a state to report past.
+const profile = loadProjectProfile(undefined, { optional: true });
+if (!profile) {
+    console.warn('No project-profile.json in this project — run /project-init (the vc-init plugin) before /qa-fix, /qa-bug or /qa-verify-fix.');
+}
 
 // Export configuration object
 export const env = {
@@ -285,14 +283,13 @@ export const env = {
     EUR_USER_PASSWORD: getEnvVar('EUR_USER_PASSWORD', ''),
     ORG_USER_EMAIL: getEnvVar('ORG_USER_EMAIL', ''),
 
-    // --- Deployment profile (written by /project-init; see scripts/lib/project-profile.mjs).
+    // --- Deployment profile (written by vc-init's /project-init; see scripts/lib/project-profile.mjs).
     // Tells every skill WHICH infrastructure this checkout targets. When
-    // project-profile.json is absent these resolve to the pre-existing
-    // VirtoCommerce-internal defaults (platform / jira / github), so nothing changes.
-    PROJECT_TYPE: profile.projectType,            // platform | client
-    TRACKER_KIND: profile.tracker.kind,           // jira | azure
-    CLIENT_VCS_HOST: profile.vcs.clientHost,      // github | azure-repos
-    UPSTREAM_ORG: profile.upstream.org,           // GitHub org for platform issues/PRs (VirtoCommerce)
+    // project-profile.json is absent these are undefined and PROFILE is null — run /project-init.
+    PROJECT_TYPE: profile?.projectType,            // platform | client
+    TRACKER_KIND: profile?.tracker.kind,           // jira | azure
+    CLIENT_VCS_HOST: profile?.vcs.clientHost,      // github | azure-repos
+    UPSTREAM_ORG: profile?.upstream.org,           // GitHub org for platform issues/PRs (VirtoCommerce)
     PROFILE: profile                              // full profile object for skills needing detail
 };
 

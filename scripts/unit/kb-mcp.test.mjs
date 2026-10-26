@@ -14,7 +14,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 
-import { LATEST_PROTOCOL, TOOLS, createServer, memoizeReader } from '../kb/mcp.mjs';
+import { LATEST_PROTOCOL, TOOLS, createServer as createKbServer, memoizeReader } from '../kb/mcp.mjs';
+
+/** Every in-process server gets `KB_BUILD: '0'`: its `env` REPLACES process.env, so `npm test`'s own
+ *  KB_BUILD=0 never reached it, and every kb_confirm / kb_dispute naming a deployment signed in to that
+ *  real stand as admin (CI kept vcst-qa's admin locked out). A test that wants the probe passes it. */
+const createServer = (opts = {}) => createKbServer({ ...opts, env: { KB_BUILD: '0', ...(opts.env ?? process.env) } });
 
 const run = promisify(execFile);
 const REPO = join(import.meta.dirname, '..', '..');
@@ -377,8 +382,9 @@ test('WHEN STDIN CLOSES the queue is flushed — and with no token it is KEPT, n
   const q = scratch('flush');
   try {
     // A queue left by this session id, exactly as a capture would have written it.
+    // Dated a day back (VCST-6378): a log line from today waits for a change or tomorrow even at close.
     writeFileSync(join(q.dir, 'mcpproc2.jsonl'),
-      `${JSON.stringify({ at: new Date().toISOString(), kind: 'ask', q: 'anything', state: 'miss' })}\n`, 'utf8');
+      `${JSON.stringify({ at: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString(), kind: 'ask', q: 'anything', state: 'miss' })}\n`, 'utf8');
 
     const r = await spawnServer([{ jsonrpc: '2.0', id: 1, method: 'ping' }], {
       KB_QUEUE_DIR: q.dir,

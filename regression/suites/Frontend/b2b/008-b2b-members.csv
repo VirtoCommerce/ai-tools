@@ -264,40 +264,54 @@ Dedicated cross-org member @td(MULTI_ORG_TF_BR.email) is seeded on vcst-qa with 
 19. [ASSERT] Role column for @td(MULTI_ORG_TF_BR.email) still shows 'Organization employee' — this was already the seeded BuildRight role and must be unchanged by the TechFlow role change (per-org scope confirmed; AC1)","[STATE] Role change in TechFlow does not propagate to BuildRight — AC1 org-isolation confirmed {OBSERVED} (live 2026-07-30 REG-2026-07-30-1040: after the TechFlow role change, the BuildRight roster checked as BUILDRIGHT_ADMIN still showed 'Organization employee' and the BuildRight membership was unchanged)
 [STATE] changeOrganizationContactRole is scoped to the JWT org context (BL-B2B-005) {OBSERVED} (live 2026-07-30 REG-2026-07-30-1040: ChangeOrganizationContactRole variables = {command:{memberId, roleIds:[org-maintainer]}} with NO organizationId argument; response {succeeded:true, errors:[]})
 [DOM] 'Company members' Roles column reflects org-specific assignment in each org context {OBSERVED} (live 2026-07-30 REG-2026-07-30-1040: the Role column shows the org-specific assignment in each org context)","[API] changeOrganizationContactRole mutation uses org from JWT; no organizationId in mutation args","Role change in TechFlow reflects in BuildRight (global scope leak — AC1 violation); role not saved; success toast absent; Role column does not update after Save","Sign in as TechFlow admin; navigate to /company/members; locate @td(MULTI_ORG_TF_BR.email); click button 'Actions' → 'Edit role'; restore to 'Organization maintainer'; click Save (restores AC1 oracle)","VCST-5028","Draft"
-"B2C-MBR-020","Block Member - Org-Scoped (AC3 - blocked in org B can login to org A)","B2C Features > Members > Org Membership [JOURNEY]","Critical","BL-B2B-005; BL-AUTH-012; BL-AUTH-013","","[PRE:CLEAR_SESSION]
-[PRE:SIGNIN_AS:TECHFLOW_ADMIN]
-Dedicated cross-org member @td(MULTI_ORG_TF_BR.email) is seeded on vcst-qa; member is ACTIVE in both TechFlow (@td(MULTI_ORG_TF_BR.org_techflow_id)) and BuildRight (@td(MULTI_ORG_TF_BR.org_buildright_id)) orgs at start of test. TechFlow admin (TECHFLOW_ADMIN) performs the block.","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}},target_member_email=@td(MULTI_ORG_TF_BR.email),target_member_password=@td(MULTI_ORG_TF_BR.password)","--- SCREEN: TechFlow Admin blocks member ---
+"B2C-MBR-020","Block Member - Org-Scoped (AC3 - blocked in org B can login to org A)","B2C Features > Members > Org Membership [JOURNEY]","Critical","BL-B2B-005; BL-AUTH-012; BL-AUTH-013; BL-AUTH-016","","[PRE:CLEAR_SESSION]
+The steps sign in as the TechFlow admin explicitly (first sign-in block).
+Dedicated cross-org member @td(MULTI_ORG_TF_BR.email) is seeded; member is ACTIVE in both TechFlow (@td(MULTI_ORG_TF_BR.org_techflow_id)) and BuildRight (@td(MULTI_ORG_TF_BR.org_buildright_id)) orgs at start of test. TechFlow admin (TECHFLOW_ADMIN) performs the block.
+Build under test: VirtoCommerce.Customer with the VCST-6132 organization fallback (vc-module-customer PR #321 — open on 2026-10-20; observed on 3.1030.0-pr-321-c54f). On a Customer build without it the fallback expectations do not hold: record the case BLOCKED for the build, never FAIL, and never re-base it to the old behaviour.","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}},target_member_email=@td(MULTI_ORG_TF_BR.email),target_member_password=@td(MULTI_ORG_TF_BR.password)","[PRE:CLEAR_SESSION] start from an empty browser session (cookies, localStorage, tokens)
+--- SCREEN: TechFlow Admin blocks member ---
 1. [NAV] Navigate to {{FRONT_URL}}/sign-in
-2. [ACT] Fill [data-test-id=""email-input""] with {{ORG_USER_EMAIL}}
-3. [ACT] Fill [data-test-id=""password-input""] with {{ORG_USER_PASSWORD}}
-4. [ACT] Click [data-test-id=""login-button""]
-5. [WAIT] Header [data-test-id=""account-button""] shows TechFlow org name
-6. [NAV] Navigate to {{FRONT_URL}}/company/members
-7. [ASSERT] 'Company members' table visible; locate @td(MULTI_ORG_TF_BR.email) — Active column shows button 'Active'
-8. [ACT] Click button 'Actions' in that member's row
-9. [ACT] In the Actions dropdown, click button 'Block user'
-10. [ASSERT] Active column for @td(MULTI_ORG_TF_BR.email) now shows button 'Blocked' — status toggled in TechFlow
-11. [ACT] Click [data-test-id=""account-button""] → click [data-test-id=""sign-out-button""]
+2. [ACT] Click button 'Sign in with a password instead' ([data-test-id=""otp-email-switch-to-password-link""])
+3. [WAIT] the password form is shown: [data-test-id=""password-input""] is visible (switching clears the email field)
+4. [ACT] Fill [data-test-id=""email-input""] (the password form's Email field) with {{ORG_USER_EMAIL}}
+5. [ACT] Fill [data-test-id=""password-input""] with {{ORG_USER_PASSWORD}}
+6. [ACT] Click [data-test-id=""login-button""]
+7. [WAIT] Header [data-test-id=""account-button""] shows TechFlow org name
+8. [NAV] Navigate to {{FRONT_URL}}/company/members
+9. [ASSERT] 'Company members' table visible; locate @td(MULTI_ORG_TF_BR.email) — the Active column status indicator (img) has alt 'Active'
+10. [ACT] Click button 'Actions' in that member's row
+11. [ACT] In the Actions dropdown, click button 'Block user'
+12. [ACT] In the confirmation dialog, click button 'OK'
+13. [WAIT] the dialog closes and the member row refreshes
+14. [ASSERT] Active column for @td(MULTI_ORG_TF_BR.email) status indicator (img) now has alt 'Blocked' — status toggled in TechFlow
+15. [ACT] Click [data-test-id=""account-button""] → click [data-test-id=""sign-out-button""]
 --- SCREEN: Blocked member tries BuildRight ---
-12. [NAV] Navigate to {{FRONT_URL}}/sign-in
-13. [ACT] Fill [data-test-id=""email-input""] with @td(MULTI_ORG_TF_BR.email)
-14. [ACT] Fill [data-test-id=""password-input""] with @td(MULTI_ORG_TF_BR.password)
-15. [ACT] Click [data-test-id=""login-button""]
-16. [WAIT] Sign-in completes and lands in the member's DEFAULT org context -- there is NO org selection on the /sign-in page
-17. [ACT] Click [data-test-id=""account-button""] and pick BuildRight from the account-menu 'Organizations' listbox (the org switcher is post-authentication)
-18. [ASSERT] Sign-in to BuildRight SUCCEEDS — user lands on storefront; no blocked error (per-org scope: blocked in TechFlow only)
-19. [ACT] Click [data-test-id=""account-button""] → click [data-test-id=""sign-out-button""]
+16. [NAV] Navigate to {{FRONT_URL}}/sign-in
+17. [ACT] Click button 'Sign in with a password instead' ([data-test-id=""otp-email-switch-to-password-link""])
+18. [WAIT] the password form is shown: [data-test-id=""password-input""] is visible (switching clears the email field)
+19. [ACT] Fill [data-test-id=""email-input""] (the password form's Email field) with @td(MULTI_ORG_TF_BR.email)
+20. [ACT] Fill [data-test-id=""password-input""] with @td(MULTI_ORG_TF_BR.password)
+21. [ACT] Click [data-test-id=""login-button""]
+22. [WAIT] Sign-in completes and lands in an accessible org — the storefront resends the last-used org and a blocked one falls back (BL-AUTH-016); there is NO org selection on the /sign-in page
+23. [ACT] Click [data-test-id=""account-button""] and pick BuildRight from the account-menu 'Organizations' listbox (the org switcher is post-authentication)
+24. [ASSERT] Sign-in to BuildRight SUCCEEDS — user lands on storefront; no blocked error (per-org scope: blocked in TechFlow only)
+25. [ACT] Click [data-test-id=""account-button""] → click [data-test-id=""sign-out-button""]
 --- SCREEN: Blocked member tries TechFlow ---
-20. [NAV] Navigate to {{FRONT_URL}}/sign-in
-21. [ACT] Fill [data-test-id=""email-input""] with @td(MULTI_ORG_TF_BR.email)
-22. [ACT] Fill [data-test-id=""password-input""] with @td(MULTI_ORG_TF_BR.password)
-23. [ACT] Click [data-test-id=""login-button""]
-24. [WAIT] Sign-in completes and lands in the default org context (no org selection on /sign-in)
-25. [ACT] Click [data-test-id=""account-button""] and pick TechFlow from the account-menu 'Organizations' listbox
-26. [ASSERT] Sign-in to TechFlow is REJECTED — error message visible verbatim: ""Your access to organization '...' has been blocked. Please contact your organization administrator."" (BL-AUTH-013) — NOT a generic account-locked message","[STATE] Member blocked in TechFlow: login to TechFlow rejected {BL} BL-AUTH-013 (REFUTED live 2026-07-30 REG-2026-07-30-1040: sign-in is NOT rejected -- /connect/token returns HTTP 200 with a zero-permission token pinned to the blocked org and the SPA lands on a generic /403; keeps failing as BUG_008_002)
+26. [NAV] Navigate to {{FRONT_URL}}/sign-in
+27. [ACT] Click button 'Sign in with a password instead' ([data-test-id=""otp-email-switch-to-password-link""])
+28. [WAIT] the password form is shown: [data-test-id=""password-input""] is visible (switching clears the email field)
+29. [ACT] Fill [data-test-id=""email-input""] (the password form's Email field) with @td(MULTI_ORG_TF_BR.email)
+30. [ACT] Fill [data-test-id=""password-input""] with @td(MULTI_ORG_TF_BR.password)
+31. [ACT] Click [data-test-id=""login-button""]
+32. [WAIT] Sign-in completes and lands in an accessible org — the storefront resends the last-used org and a blocked one falls back (no org selection on /sign-in)
+33. [ACT] Click [data-test-id=""account-button""] and open the account-menu 'Organizations' listbox
+34. [ASSERT] TechFlow is NOT where the session lands: the header shows the BuildRight org name; in listbox 'Organizations' the TechFlow option is disabled with the lock-closed icon and cannot be selected (keyboard path only — never force the disabled control)
+35. [CAPTURE] from the network log the POST /connect/token of steps 27-32: decode its access_token organization_id claim as $TF_ATTEMPT_CLAIM and record its refresh_token as $RT (minted AFTER the block, so valid)
+36. [HTTP] POST {{FRONT_URL}}/connect/token grant_type=refresh_token refresh_token=$RT storeId={{STORE_ID}} organization_id=@td(MULTI_ORG_TF_BR.org_techflow_id) — record status, error, errors[] and errorDescription as $SWITCH (a refresh token minted BEFORE the block is revoked and fails code-less, KB-D1D30720)
+37. [ASSERT] $SWITCH is the refusal of the explicit switch to the blocked TechFlow org (see Assertions)","[STATE] Member blocked in TechFlow: a password sign-in is NOT refused and never lands in TechFlow — $TF_ATTEMPT_CLAIM equals @td(MULTI_ORG_TF_BR.org_buildright_id) and the header shows BuildRight {SPEC} (VCST-5496; VCST-6132 + D. Grishin 2026-10-14: every credential sign-in falls back) {BL} (BL-AUTH-016, BL-AUTH-015) {OBSERVED} (API baseline REG-2026-10-20-0125 suite 027 CUST-111/113 and 3x/4a UI, KB-51FB70F2; storefront half pending re-run)
 [STATE] Same member ACTIVE in BuildRight: login to BuildRight succeeds (AC3) {BL} BL-AUTH-012 (the user MUST still authenticate into any other organization whose membership is unlocked; live-corroborated on this build in B2C-MBR-010, live 2026-07-30 REG-2026-07-30-1040)
-[DOM] Error message visible when blocked org login attempted: ""Your access to organization '...' has been blocked. Please contact your organization administrator."" (BL-AUTH-013) {DOC} (verbatim string confirmed live 2026-07-30 REG-2026-07-30-1040 at POST /connect/token with an explicit organization_id=<blocked org> -> HTTP 400 code user_is_locked_in_organization; the storefront does NOT surface it -- REFUTED, BUG_008_002)
-[STATE] lockOrganizationContact is org-scoped (BL-AUTH-012) {OBSERVED} (live 2026-07-30 REG-2026-07-30-1040: TechFlow isLocked=true while BuildRight isLocked=false and global /locked={locked:false})","[API] lockOrganizationContact mutation errors[] empty","Member blocked globally (cannot login to any org — AC3 violation); blocked message missing; blocking fails silently","Sign in as TechFlow admin; navigate to /company/members; locate @td(MULTI_ORG_TF_BR.email); click button 'Actions' → click 'Unblock user' (or click inline button 'Blocked' in Active column)","VCST-5028","Draft"
+[DOM] In listbox 'Organizations' the TechFlow option is disabled and renders the lock-closed icon — the blocked org is listed but cannot be selected {SPEC} (VCST-5317 switcher lock flag) {OBSERVED} (suite 006 B2C-ORG-041, KB-51FB70F2; pending re-run here)
+[BODY] $SWITCH is HTTP 400 with error = 'invalid_grant', code 'user_is_locked_in_organization', and its errorDescription field (camelCase; the same text is in errors[0].description) reads verbatim ""Your access to organization '...' has been blocked. Please contact your organization administrator."" — not a generic account-locked message {SPEC} (VCST-6132 + D. Grishin 2026-10-14: refresh_token still refuses) {BL} (BL-AUTH-013) {OBSERVED} (REG-2026-07-30-1040: explicit organization_id=<blocked org> -> HTTP 400; the refusal is relocated here from the password sign-in, which no longer refuses)
+[STATE] lockOrganizationContact is org-scoped (BL-AUTH-012) {OBSERVED} (live 2026-07-30 REG-2026-07-30-1040: TechFlow isLocked=true while BuildRight isLocked=false and global /locked={locked:false})","[API] lockOrganizationContact mutation errors[] empty","Member blocked globally (cannot login to any org — AC3 violation); the password sign-in is refused or lands in the blocked TechFlow; the TechFlow option is enabled in the switcher; the explicit-switch refusal carries a generic account-locked message or a code-less invalid_grant (refresh token minted before the block — the verdict is void); blocking fails silently","Sign in as TechFlow admin; navigate to /company/members; locate @td(MULTI_ORG_TF_BR.email); click button 'Actions' → click button 'Unblock user' → in the confirmation dialog click button 'OK' → wait for the dialog to close and the member row status indicator (img alt) to read 'Active'","VCST-5028 | Re-based: VCST-6132 (verified REG-2026-10-21-1043) | Promoted: REG-2026-10-21-1043 (2026-10-21)",Automated
 "B2C-MBR-021","Unblock Member - Org-Scoped Restore","B2C Features > Members","High","BL-B2B-005","","[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:TECHFLOW_ADMIN]
 Dedicated cross-org member @td(MULTI_ORG_TF_BR.email) is currently in 'Blocked' state for TechFlow org (state from B2C-MBR-020 or pre-blocked via setup). Member remains Active in BuildRight org.","url={{FRONT_URL}},org_user={{ORG_USER_EMAIL}},org_password={{ORG_USER_PASSWORD}},target_member_email=@td(MULTI_ORG_TF_BR.email),target_member_password=@td(MULTI_ORG_TF_BR.password)","1. [NAV] Navigate to {{FRONT_URL}}/sign-in

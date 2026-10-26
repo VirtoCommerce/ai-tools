@@ -35,7 +35,7 @@ import {
   LINE_ROLE_X, LINE_ROLE_Y, RETURN_WINDOW_DAYS_ASSUMED,
 } from './orders-specs.mjs';
 import {
-  ROLES, ORGS, PERSONAS, FIXTURE_GAPS, OTHER_RETURN, OTHER_RETURN_REF, BASE_ROLE, PASSWORD_VAR, ORDER_TEMPLATE_FIXTURE,
+  ROLES, ORGS, PERSONAS, FIXTURE_GAPS, OTHER_RETURN, OTHER_RETURN_REF, OTHER_STORE_RETURN, OTHER_STORE_RETURN_REF, BASE_ROLE, PASSWORD_VAR, ORDER_TEMPLATE_FIXTURE,
   VIEW_PERMISSION, fullNameOf, emailOf, accountEmailOf, orgEmailOf, upperVariant, orgOrderNumber, toOrderSpec, shapeOrgOrder,
   expectedCanView, validateOrgReturnsFixtureSet, spareOrderKeys, orderKeysOf, spareField, ORG_STATUS, orgDescriptionOf, orgDrift,
 } from './org-returns-specs.mjs';
@@ -471,6 +471,44 @@ async function ensureOtherReturn(order, buyer, password, ctx) {
   return r;
 }
 
+/**
+ * OTHER_STORE_RETURN: submitted by the buyer in STORE_ID (xAPI createReturn has no storeId — a return's
+ * store comes from its order), then moved by an administrator PUT /api/return. The PUT echoes the FULL
+ * GET body: it clears any field it omits, and drops a line sent without returnId (RET-ORG-011, observed
+ * 2026-10-12). Reused only while it is Requested AND still in the target store.
+ */
+async function ensureOtherStoreReturn(order, buyer, password, ctx, targetStore) {
+  const mine = (await returnsOnOrder(order.id)).filter((r) => r.customerReference === OTHER_STORE_RETURN_REF);
+  const keep = mine.find((r) => r.status === OTHER_STORE_RETURN.returnStatus && r.storeId === targetStore);
+  if (keep && mine.length === 1) { verbose(`reuse ${keep.number} (${keep.status}, store ${keep.storeId})`); return keep; }
+  if (mine.length) await api('DELETE', `/api/return?${idsParam(mine.map((r) => r.id))}`, null, { expectStatus: [200, 204] });
+  if (DRY_RUN) { log(`  [DRY] would submit a return on ${order.number} and move it to store ${targetStore}`); return null; }
+  const t = await tokenFor(buyer.login, password, order.organizationId);
+  if (!t.ok) throw new Error(`${buyer.login} cannot sign in to submit ${OTHER_STORE_RETURN.alias}: ${t.status} ${t.error}`);
+  const byRole = lineMaps(order, ctx.rolesBySku);
+  const items = Object.entries(OTHER_STORE_RETURN.requested).map(([role, quantity]) => ({
+    orderLineItemId: byRole[role].id, quantity, reasonCode: ctx.reason.code, ...(ctx.reason.requiresComment ? { reasonComment: 'AGENT-TEST other-store return' } : {}),
+  }));
+  const F = 'id number status';
+  const c = await gql(`mutation($c:CreateReturnCommandType!){ createReturn(command:$c){ ${F} } }`, { c: { orderId: order.id, customerReference: OTHER_STORE_RETURN_REF, customerComment: 'AGENT-TEST VCST-5884 other store', items } }, t.token);
+  if (c.errors?.length || !c.data?.createReturn?.id) throw new Error(`createReturn (other store): ${JSON.stringify(c.errors || c.data).slice(0, 300)}`);
+  const id = c.data.createReturn.id;
+  const s = await gql(`mutation($c:SubmitReturnCommandType!){ submitReturn(command:$c){ ${F} } }`, { c: { returnId: id } }, t.token);
+  if (s.errors?.length) throw new Error(`submitReturn (other store): ${JSON.stringify(s.errors).slice(0, 300)}`);
+  const r = await api('GET', `/api/return/${id}`);
+  await api('PUT', '/api/return', { ...r, storeId: targetStore, lineItems: (r.lineItems || []).map((l) => ({ ...l, returnId: id })) }, { expectStatus: [200, 204] });
+  const moved = await api('GET', `/api/return/${id}`);
+  const drift = [
+    moved.storeId !== targetStore && `storeId ${moved.storeId} != ${targetStore}`,
+    moved.status !== OTHER_STORE_RETURN.returnStatus && `status ${moved.status} != ${OTHER_STORE_RETURN.returnStatus}`,
+    moved.organizationId !== order.organizationId && `organizationId ${moved.organizationId} != ${order.organizationId}`,
+    !(moved.lineItems || []).length && 'the PUT dropped its line',
+  ].filter(Boolean);
+  if (drift.length) throw new Error(`${OTHER_STORE_RETURN.alias} did not survive the store move: ${drift.join('; ')}`);
+  log(`  ✓ other-store return ${moved.number} (${moved.status}) moved ${STORE_ID} → ${moved.storeId}, organization ${moved.organizationName}`);
+  return moved;
+}
+
 /** One persona: contact, account, memberships, credential, main order + spares. Returns its write-back record. */
 async function seedPersona(p, { password, orgs, orgIdByKey, ctx, ids = {} }) {
   log(`\n${p.alias} — ${p.login}`);
@@ -612,6 +650,27 @@ async function teardownOtherReturn() {
   if (residue) { log(`⚠ ${residue} return(s) still present after teardown`); process.exitCode = 1; } else log('Teardown complete — zero residue.');
 }
 
+/** `--teardown --only ORG_RET_OTHER_STORE_RETURN`: that one return, never its buyer or the spare order it sits on. */
+async function teardownOtherStoreReturn() {
+  const X = DRY_RUN ? '[DRY] would remove' : '✗';
+  const buyer = PERSONAS.find((p) => p.key === OTHER_STORE_RETURN.persona);
+  const number = orgOrderNumber(spareOrderKeys(buyer)[OTHER_STORE_RETURN.spare - 1]);
+  const find = async () => {
+    const out = [];
+    for (const o of await findOrdersByExactNumber(api, number)) out.push(...(await returnsOnOrder(o.id)).filter((r) => r.customerReference === OTHER_STORE_RETURN_REF));
+    return out;
+  };
+  const mine = await find();
+  log(`TEARDOWN — ${OTHER_STORE_RETURN.alias} only (${buyer.alias} and its order ${number} stay)`);
+  if (!mine.length) { log('  nothing to remove'); return; }
+  if (!DRY_RUN) await api('DELETE', `/api/return?${idsParam(mine.map((r) => r.id))}`, null, { expectStatus: [200, 204] });
+  log(`  ${X} ${mine.length} return(s) ${mine.map((r) => r.number).join(', ')}`);
+  if (DRY_RUN) return;
+  await sleep(1500);
+  const residue = await verifyRemoved(find);
+  if (residue) { log(`⚠ ${residue} return(s) still present after teardown`); process.exitCode = 1; } else log('Teardown complete — zero residue.');
+}
+
 /* ── main ────────────────────────────────────────────────────────────────────────────────────── */
 
 async function main() {
@@ -621,7 +680,7 @@ async function main() {
   await auth();
   const password = process.env[PASSWORD_VAR];
   if (!password) throw new Error(`${PASSWORD_VAR} is unset in the layered env — refusing to create accounts with a fallback password`);
-  const personas = PERSONAS.filter((p) => !ONLY || p.key === ONLY || p.alias === ONLY || (ONLY === OTHER_RETURN.alias && p.key === OTHER_RETURN.persona));
+  const personas = PERSONAS.filter((p) => !ONLY || p.key === ONLY || p.alias === ONLY || (ONLY === OTHER_RETURN.alias && p.key === OTHER_RETURN.persona) || (ONLY === OTHER_STORE_RETURN.alias && p.key === OTHER_STORE_RETURN.persona));
   if (ONLY && !personas.length && ONLY !== OTHER_RETURN.alias) throw new Error(`--only ${ONLY} matches no persona`);
   if (ISOLATED_ONLY && (ONLY || SPARES_ONLY || FRESH)) throw new Error('--isolated-only cannot be combined with --only / --spares-only / --fresh');
   if (ORGS_ONLY) {
@@ -630,6 +689,7 @@ async function main() {
   }
   if (TEARDOWN && ISOLATED_ONLY) { await teardown(PERSONAS.filter((p) => p.isolated), { orgs: ORGS.filter((o) => o.isolated), roles: [], wide: true }); return; }
   if (TEARDOWN && ONLY === OTHER_RETURN.alias) { await teardownOtherReturn(); return; } // the return only — never its buyer
+  if (TEARDOWN && ONLY === OTHER_STORE_RETURN.alias) { await teardownOtherStoreReturn(); return; }
   if (TEARDOWN) { await teardown(personas); return; }
 
   const store = await api('GET', `/api/stores/${STORE_ID}`);
@@ -674,6 +734,20 @@ async function main() {
     if (!reason) throw new Error('returnReasons is empty — cannot submit the other-org return');
     const r = await ensureOtherReturn(ids.OTHER_BUYER.order, PERSONAS.find((p) => p.key === 'OTHER_BUYER'), password, { ...ctx, reason });
     if (r) writeback[OTHER_RETURN.alias] = { id: r.id, number: r.number, status: r.status, orderId: ids.OTHER_BUYER.order.id, orderNumber: ids.OTHER_BUYER.order.number, organizationId: r.organizationId };
+  }
+  const osBuyer = PERSONAS.find((p) => p.key === OTHER_STORE_RETURN.persona);
+  const osOrderId = writeback[osBuyer.alias]?.[spareField(OTHER_STORE_RETURN.spare, 'OrderId')];
+  if ((!ONLY || ONLY === OTHER_STORE_RETURN.alias || ONLY === osBuyer.key) && osOrderId) {
+    log(`\n${OTHER_STORE_RETURN.alias}`);
+    const targetStore = process.env[OTHER_STORE_RETURN.storeVar];
+    if (!targetStore || targetStore === STORE_ID) throw new Error(`${OTHER_STORE_RETURN.storeVar} must name a store other than ${STORE_ID} (got ${targetStore || 'unset'})`);
+    if (!(await api('GET', `/api/stores/${encodeURIComponent(targetStore)}`, null, { expectStatus: [200, 204, 404] }))?.id) throw new Error(`store ${targetStore} (${OTHER_STORE_RETURN.storeVar}) does not exist on ${TEST_ENV}`);
+    const order = await api('GET', `/api/order/customerOrders/${osOrderId}`);
+    const t = await tokenFor(osBuyer.login, password, order.organizationId);
+    const reason = (t.ok ? (await gql('query($s:String!){ returnReasons(storeId:$s){ code requiresComment } }', { s: STORE_ID }, t.token))?.data?.returnReasons : null)?.[0];
+    if (!reason) throw new Error('returnReasons is empty — cannot submit the other-store return');
+    const r = await ensureOtherStoreReturn(order, osBuyer, password, { ...ctx, reason }, targetStore);
+    if (r) writeback[OTHER_STORE_RETURN.alias] = { id: r.id, number: r.number, status: r.status, storeId: r.storeId, orderId: order.id, orderNumber: order.number, organizationId: r.organizationId };
   }
 
   if (!DRY_RUN) {

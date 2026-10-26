@@ -8,13 +8,22 @@ This repo hosts two things:
 
 1. **The `ai-tools` Claude Code marketplace** ([`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json)) —
    each plugin versions and tags independently:
-   - **[`vc-fix`](plugins/vc-fix/)** — self-contained bug lifecycle: setup, filing, autonomous fixing,
+   - **[`vc-fix`](plugins/vc-fix/)** — self-contained bug lifecycle: filing, autonomous fixing,
      verification, monitoring, self-diagnostics. **The flagship offering** — see Quick Start below.
+   - **[`vc-init`](plugins/vc-init/)** — onboarding (`/project-init`): writes the deployment profile and keeps
+     every GitHub / Azure DevOps / Jira token in `vc-secrets`, handed to a process only through the `$VC_RUN`
+     bridge. Installed with `vc-fix`; depends on `vc-secrets`.
    - **`vc-perf`** ([`plugins/vc-perf/`](plugins/vc-perf/)) — the three-layer performance loop (BenchmarkDotNet
-     A/B → k6 load → dotnet-trace attribution → perf verdict → optimization PRs). Depends on `vc-fix`;
+     A/B → k6 load → dotnet-trace attribution → perf verdict → optimization PRs). Depends on `vc-init` + `vc-fix`;
      advisory only, never a CI gate.
+   - **[`vc-test`](plugins/vc-test/)** (preview): one testing flow per ticket. It scores scenarios that hunt
+     significant bugs, you approve them at one human point, and each gets its own agent; the run is costed per step.
+     `/vc-test:init` sets which environments a run may write to. Depends on `vc-init` + `vc-fix`. Its QA command
+     needs an ai-tools checkout until its skills move into the plugin.
    - **[`vc-secrets`](plugins/vc-secrets/)** — a launcher that resolves an MCP server's secrets per launch
-     from the OS credential store or Azure Key Vault, so no client config holds a token. Independent of the others.
+     from the OS credential store or Azure Key Vault, so no client config holds a token. `vc-init` depends on it.
+   - **[`vc-frontend`](plugins/vc-frontend/)** — for the storefront theme: brings upstream vc-frontend into a
+     fork without losing the fork's look, and adds a storefront plugin to a backend module. Independent of the others.
 2. **The full `vc-qa` agent crew** (regression, BA analysis, the regression suites, the agent crew) — the source
    `vc-fix` was extracted from. It lives project-scoped under `.claude/` (auto-discovered on any
    clone, no plugin manifest) but is **not marketplace-installable**: not listed in the marketplace,
@@ -25,14 +34,18 @@ This repo hosts two things:
 
 ```
 /plugin marketplace add VirtoCommerce/ai-tools
-/plugin install vc-fix@ai-tools
+/plugin install vc-fix@ai-tools        # pulls in vc-init and vc-secrets
 ```
 
-Then, in the plugin install directory (Claude Code shows the path after install), run:
+Then, in your deployment project, run (it installs the vc-secrets shim itself and writes `VC_SECRETS` into
+the project's `.claude/settings.local.json` — nothing to add to `~/.claude/settings.json`):
 
 ```
 /project-init
 ```
+
+Every token is stored by you, in a terminal, with `node "<VC_SECRETS>" set <name>` — never typed into the chat
+and never written to a file. Full flow: [`plugins/vc-init/README.md`](plugins/vc-init/README.md).
 
 It interviews you for env name, bug tracker (Jira or Azure Boards), code host (GitHub or Azure
 Repos), and auth (never passwords) — then derives the rest (native-platform vs client project,
@@ -61,8 +74,9 @@ Then try:
 
 Full plugin docs: **[`plugins/vc-fix/README.md`](plugins/vc-fix/README.md)** (agent/command/skill
 inventory, self-containment rationale, gate ladder reference). The other plugins install the same way
-(`/plugin install vc-perf@ai-tools`, `/plugin install vc-secrets@ai-tools`); `vc-secrets` is described
-normatively in [`plugins/vc-secrets/README.md`](plugins/vc-secrets/README.md).
+(`/plugin install vc-perf@ai-tools`, `/plugin install vc-secrets@ai-tools`, `/plugin install vc-frontend@ai-tools`);
+`vc-secrets` and `vc-frontend` are described normatively in [`plugins/vc-secrets/README.md`](plugins/vc-secrets/README.md)
+and [`plugins/vc-frontend/README.md`](plugins/vc-frontend/README.md).
 
 ---
 
@@ -83,13 +97,20 @@ npx playwright install chromium firefox   # Edge uses the system msedge channel
 # Create .mcp.json (see below) → restart IDE → type: /qa-env-check
 ```
 
-> `/project-init`, `/qa-env-check` and the other bug-lifecycle commands come from the `vc-fix` plugin — install it
+> `/project-init` (vc-init), `/qa-env-check` and the other bug-lifecycle commands come from the `vc-fix` plugin and its dependencies — install it
 > as above even on a direct clone (the team enables it at user level). New here? Start at
 > [`.claude/ROUTING.md`](.claude/ROUTING.md); a guided first run is `/qa-onboarding`.
 
-Default `TEST_ENV` is `vcst`. Switch with `TEST_ENV=vcptcore npm run env:check` or `TEST_ENV=virtostart …`.
+Default `TEST_ENV` is `vcst`. Switch with `TEST_ENV=vcptcore npm run env:check` or `TEST_ENV=virtostart …`, or set a
+per-checkout default in a gitignored `.env.test-env` (`TEST_ENV=vcptcore_dev`). **Several envs at once:** a command's env
+argument binds one Claude Code session only (`/qa-test VCST-1234 vcptcore_dev`, or `npm run env:use -- vcptcore_dev`), so
+two sessions in one checkout run two envs without editing a shared file. Order: `TEST_ENV` → the session's binding →
+`.env.test-env` → `vcst`. Browser lanes for several envs: `npm run secrets:sync:all` (`.claude/knowledge/execution/browser-lanes.md`).
+**Envs outside the repo:** `QA_ENV_PATH` in `.env.local` lists folders whose `.env.<env>` files are envs too — a ticket's own
+stand, cloud stands — and beat the repo's key by key; `PASSWORDS=master` in a stand's file signs every test account in with
+one password, `MASTER_PASSWORD` in `.env.playwright.master` (`.claude/knowledge/execution/run-env.md`).
 
-> **New deployment or new customer?** Run **`/project-init`** in Claude Code instead of hand-writing the files below. It asks only what shapes config (env name, bug tracker — Jira or Azure Boards, code host — GitHub or Azure Repos, auth per axis) and **derives** the rest (native-platform vs client project, client org, fork account) from your token + a live repo scan, then writes `project-profile.json` + `.env.<env>` + `.env.local` + `.mcp.json` and verifies access. That profile is what routes each `/qa-fix` to the right repo (client custom code vs native VirtoCommerce platform) and the right tracker.
+> **New deployment or new customer?** Run **`/project-init`** in Claude Code instead of hand-writing the files below. It asks only what shapes config (env name, bug tracker — Jira or Azure Boards, code host — GitHub or Azure Repos, auth per axis) and **derives** the rest (native-platform vs client project, client org, fork account) from your token + a live repo scan, then writes `project-profile.json` + `.env.<env>` + `.env.local` (test-user passwords only) + `.mcp.json`, keeps every token in `vc-secrets`, and verifies access. That profile is what routes each `/qa-fix` to the right repo (client custom code vs native VirtoCommerce platform) and the right tracker.
 
 ### Prerequisites
 
@@ -108,7 +129,11 @@ Files load in order; later overrides earlier:
 | `.env.defaults` | git | Cross-env constants (sandbox cards, Builder.io) |
 | `.env.${TEST_ENV}` | git | Per-env URLs/IDs (`.env.vcst`, `.env.vcptcore`, `.env.virtostart`, …) — no secrets |
 | `.env.local` | **gitignored** | Secrets — create this locally (passwords, API tokens) |
-| `.env.playwright.local` | **gitignored** | Browser-login secrets passed to Playwright MCP via `--secrets` |
+| `.env.playwright.<env>` | **gitignored** | Optional: one env's passwords (bare names), read as that env's own — they beat `.env.local`'s shared values |
+| `.env.playwright.local` | **gitignored** | Generated by `npm run secrets:sync`: one env's browser-login passwords for Playwright MCP `--secrets` |
+| `.env.playwright.all` | **gitignored** | Generated by `npm run secrets:sync:all`: every env's, as `NAME_<ENV>` — one set of lanes serves sessions on several envs |
+| `.env.playwright.master` | **gitignored** | Optional: `MASTER_PASSWORD`, the one password of every `PASSWORDS=master` stand; both sync commands copy it into the lanes' file |
+| `.env.<env>`, `.env.playwright.<env>` in a `QA_ENV_PATH` folder | outside the repo | A stand that belongs to a ticket or a machine — the same files; they beat the repo's key by key |
 
 Validate with `npm run env:check` (it prints which variables are set, empty and required). Variable *names* are stable across envs — only values differ. Access in code via `import { env } from './config.js'` (ES modules — always `.js`); a key the curated `env` export does not carry is read from `process.env` after the import.
 
@@ -131,9 +156,9 @@ Safe non-prod defaults ship in [`templates/.env.local.template`](templates/.env.
 ```json
 {
   "mcpServers": {
-    "playwright-chrome":  { "type": "stdio", "command": "cmd", "args": ["/c", "npx", "@playwright/mcp@<pinned>", "--config", "config/mcp-playwright-chrome.config.json", "--secrets", ".env.playwright.local"] },
-    "playwright-firefox": { "type": "stdio", "command": "cmd", "args": ["/c", "npx", "@playwright/mcp@<pinned>", "--config", "config/mcp-playwright-firefox.config.json", "--secrets", ".env.playwright.local"] },
-    "playwright-edge":    { "type": "stdio", "command": "cmd", "args": ["/c", "npx", "@playwright/mcp@<pinned>", "--config", "config/mcp-playwright-edge.config.json", "--secrets", ".env.playwright.local"] }
+    "playwright-chrome":  { "type": "stdio", "command": "cmd", "args": ["/c", "npx", "@playwright/mcp@<pinned>", "--config", "config/mcp-playwright-chrome.config.json", "--secrets", ".env.playwright.all"] },
+    "playwright-firefox": { "type": "stdio", "command": "cmd", "args": ["/c", "npx", "@playwright/mcp@<pinned>", "--config", "config/mcp-playwright-firefox.config.json", "--secrets", ".env.playwright.all"] },
+    "playwright-edge":    { "type": "stdio", "command": "cmd", "args": ["/c", "npx", "@playwright/mcp@<pinned>", "--config", "config/mcp-playwright-edge.config.json", "--secrets", ".env.playwright.all"] }
   }
 }
 ```
@@ -210,7 +235,9 @@ ai-tools/
 │   ├── vc-fix/           # self-contained bug-lifecycle plugin (own agents/skills/commands + own copies
 │   │                     #   of knowledge/, .claude/rules/, scripts/, config.js)
 │   ├── vc-perf/          # performance loop (depends on vc-fix)
-│   └── vc-secrets/       # secrets launcher
+│   ├── vc-test/          # testing flow per ticket (preview; depends on vc-init + vc-fix)
+│   ├── vc-secrets/       # secrets launcher
+│   └── vc-frontend/      # theme-fork upstream merges, storefront plugins
 ├── .claude/              # PROJECT-SCOPED vc-qa surface (auto-discovered — no plugin manifest)
 │   ├── agents/           #   agents, flat *.md (QA / BA) — no subfolders
 │   ├── skills/           #   skills, each skills/<name>/SKILL.md ([Category] tag in the description)

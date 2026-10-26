@@ -39,7 +39,9 @@
  *
  * ── CREDENTIALS (GOLDEN RULE — nothing hardcoded) ────────────────────────────────────────────────
  *   SALES_REP_EMAIL     — identity, committed in `.env.<env>` / `.env.defaults`
- *   SALES_REP_PASSWORD  — secret, ONLY in the gitignored `.env.local`, per-env suffixed
+ *   SALES_REP_PASSWORD  — secret, ONLY in the gitignored `.env.local`, per-env suffixed — used only when
+ *                         SALES_REP_EMAIL is NOT a sales-reps.csv fixture rep; a fixture rep's password is
+ *                         owned by seed-sales-rep.mjs (SR_REP_PASSWORD || TEST_USER_PASSWORD), see REP_PASSWORD
  *   ADMIN / ADMIN_PASSWORD, BACK_URL / STORE_ID — from the layered `.env` loader
  * All resolved through `process.env` AFTER the loader has run (never off one layer, never off the
  * curated `config.js` export — `.claude/rules/test-data.md` §Resolving a variable).
@@ -50,9 +52,11 @@
  * Teardown: TEST_ENV=vcst npm run seed:sales-rep-tasks:teardown
  * Guard:    npm run td:validate:sales-rep-tasks
  */
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   assertSafeTarget, auth, api, log, verbose, writeEnvAliasOverride, verifyRemoved,
-  DRY_RUN, TEARDOWN, BACK_URL, STORE_ID,
+  DRY_RUN, TEARDOWN, BACK_URL, STORE_ID, ROOT,
 } from '../../lib/seed-common.mjs';
 import {
   TASK_SPECS, TASK_MARK, GROUPS_ALIAS, GROUPS_NY_ALIAS, NEGATIVE_OFFSET_ZONE,
@@ -65,7 +69,15 @@ import {
 const TEST_ENV = process.env.TEST_ENV || 'vcst';
 const ENV_SUFFIX = TEST_ENV.toUpperCase();
 const REP_EMAIL = process.env.SALES_REP_EMAIL;
-const REP_PASSWORD = process.env.SALES_REP_PASSWORD;
+// A rep declared in sales-reps.csv is OWNED by seed-sales-rep.mjs, which force-resets its password from
+// SR_REP_PASSWORD || TEST_USER_PASSWORD on every reseed — so for that rep SALES_REP_PASSWORD is stale the
+// moment the family runs (measured on vcst 2026-10-14: login_failed right after seed:reps). Read the
+// owner's chain for an owned rep; SALES_REP_PASSWORD stays the credential for a rep nothing here manages.
+const FIXTURE_REP_EMAILS = new Set(readFileSync(join(ROOT, 'test-data/sales-rep/sales-reps.csv'), 'utf8')
+  .split(/\r?\n/).slice(1).map((l) => (l.split(',')[1] || '').trim().toLowerCase()).filter(Boolean));
+const REP_IS_FIXTURE = FIXTURE_REP_EMAILS.has((REP_EMAIL || '').toLowerCase());
+const REP_PASSWORD_VAR = REP_IS_FIXTURE ? (process.env.SR_REP_PASSWORD ? 'SR_REP_PASSWORD' : 'TEST_USER_PASSWORD') : 'SALES_REP_PASSWORD';
+const REP_PASSWORD = process.env[REP_PASSWORD_VAR];
 const ENDPOINT = '/graphql/sales-rep';
 const BROWSER_TZ = process.env.BROWSER_TZ || Intl.DateTimeFormat().resolvedOptions().timeZone;
 
@@ -84,8 +96,8 @@ async function repToken() {
   }
   if (!REP_PASSWORD) {
     throw new Error(
-      `SALES_REP_PASSWORD did not resolve for TEST_ENV=${TEST_ENV}.\n`
-      + `  Add SALES_REP_PASSWORD_${ENV_SUFFIX}=<the rep's password> to the gitignored .env.local\n`
+      `${REP_PASSWORD_VAR} did not resolve for TEST_ENV=${TEST_ENV}${REP_IS_FIXTURE ? ` (${REP_EMAIL} is a sales-reps.csv fixture rep, so seed-sales-rep.mjs owns its password)` : ''}.\n`
+      + `  Add ${REP_PASSWORD_VAR}_${ENV_SUFFIX}=<the rep's password> to the gitignored .env.local\n`
       + `  (see templates/.env.local.template). The suffix must match TEST_ENV EXACTLY — a\n`
       + `  differently-shaped name is never promoted, and the miss is SILENT.`,
     );
@@ -100,7 +112,7 @@ async function repToken() {
     throw new Error(
       `rep token failed (${res.status}) for ${REP_EMAIL} @ ${new URL(BACK_URL).host} storeId=${STORE_ID}: `
       + `${JSON.stringify(body).slice(0, 200)}\n`
-      + `  If this is invalid_grant, SALES_REP_PASSWORD_${ENV_SUFFIX} is probably missing from .env.local,\n`
+      + `  If this is invalid_grant, ${REP_PASSWORD_VAR}_${ENV_SUFFIX} is probably missing from .env.local,\n`
       + `  so another env's shared password was used. Stop re-running until it is set — each attempt is a\n`
       + `  failed login against a shared account.`,
     );

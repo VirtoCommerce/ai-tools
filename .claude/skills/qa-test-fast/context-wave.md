@@ -1,18 +1,18 @@
 # Stage 1 — the context waves, in detail
 
-Three waves. Every brief uses the section structure of
+Three waves, with the strategy between the first and the second. Every brief uses the section structure of
 [`../../templates/agent-dispatch.md`](../../templates/agent-dispatch.md) §Agent Prompt Structure.
 Anything the brief can pass as a **file** is passed as a path, never pasted.
 
 ## Wave 1 — the ticket context, and the domain map when it is missing
 
-### A+B · Ticket context — [`/ticket-context`](../ticket-context/SKILL.md)
+### A+B · Ticket context — [`/vc-test:ticket-context`](../../../plugins/vc-test/skills/ticket-context/SKILL.md)
 Dispatch C first when it is due (background, its own browser lane), then run
-`/ticket-context <KEY> --domain <slug> --kb-hits <ids from Step 0>`. It returns one gated bundle:
+`/vc-test:ticket-context <KEY> --domain <slug> --kb-hits <ids from Step 0>`. It returns one gated bundle:
 ACs with provenance, comment signals, every attachment, inline image and link with an outcome, design
 conditions, the PRs (only product-repo PRs are change surface), PR↔AC both ways, whether each PR is
 deployed on this stand, known ground, gaps and blockers. Do not re-fetch the ticket or a PR, and do not
-re-check deployment: the bundle is the answer. **When `/ticket-context` STOPs** (no tracker credential,
+re-check deployment: the bundle is the answer. **When `/vc-test:ticket-context` STOPs** (no tracker credential,
 a failed gate, a run dir outside the project), Stage 1 is `BLOCKED` and the verdict quotes its STOP line
 verbatim — never a FAIL, and never a model built from a partial read.
 
@@ -29,7 +29,7 @@ the trigger is this section's heading. The state is decided by [`../qa-test/axes
 
 ## Join 1 — the context bundle
 
-The bundle is `/ticket-context`'s file; it is never copied under `reports/` (not a report category), and
+The bundle is `/vc-test:ticket-context`'s file; it is never copied under `reports/` (not a report category), and
 **no consumer ever writes it**: it is schema-gated and cached, so run-derived state has no field there.
 That state goes to the **run context**, a file in this run's scratchpad that names the bundle path. It
 holds `visual_surface` + `surface_source[]`, C's domain-map result, the map signals, contract-refresh
@@ -48,11 +48,25 @@ drift, the suspect list and `mind_map_findings`. Before Wave 2, **wait for C** w
 [`../qa-test/contract-refresh.md`](../qa-test/contract-refresh.md) §2. Drift on an operation the diff
 touches goes into the run context as a model input.
 
+## Strategy — after Join 1, before Wave 2
+
+Run [`/vc-test:qa-test-strategy`](../../../plugins/vc-test/skills/qa-test-strategy/SKILL.md) inline, from its procedure step 2, with the bundle
+path — you counted the round from local evidence at Step 0.6; run its step 1's **second** count here (the
+bundle's `signals[]` verdict comments; a fourth round ⇒ its STOP) and then step 2 onward. The bundle is `/vc-test:ticket-context`'s, so it never runs a
+second `/preflight` or `/vc-test:ticket-context`. Its gate (`check-strategy.mjs`), its verifier on a Critical risk
+and its one approval question all run as that skill says; `--dry-run` still asks. Never dispatch it — it
+chooses from the whole bundle. Write the approved path into the run context. From here the round's
+`### Artifacts` table decides what runs: a `SKIP` row is recorded in `verdict.md` with its reason (rule 4),
+not second-guessed.
+
 ## Wave 2 — one message
 
-- **Test model — you, inline.** `/qa-test-model <TICKET> --context <run context>`. You are the Judge, and
-  the model's gate runs inside that skill.
-- **Mind map — `ba-system-analyzer`, no browser.**
+- **Test model — you, inline, only when the strategy's `Test model` row is `RUN`.**
+  `/qa-test-model <TICKET> --context <run context> --strategy <test-strategy.md>`: strategy mode, which
+  expands only the `MODEL` risks. You are the Judge, and the model's gate runs inside that skill. A finding
+  that changes a risk is appended to the round's `### Amendments`, never left in the model alone.
+- **Mind map — `ba-system-analyzer`, no browser, only when the strategy's `Mind map` row is `RUN`** (it
+  runs only with the model: with no model, Mode 5 has no chain position to select nodes by).
   - The map exists → `/qa-test-mind-map update <slug> --from <TICKET>`.
   - It is absent and the domain map is `PRESENT` → `build`, **with step 10 removed from the brief**,
     because this flow writes no suite CSV.
@@ -71,10 +85,13 @@ chain link and descent).
 
 ## Wave 3 — the checklist
 
-`/qa-checklist <TICKET> --from-model --mind-map <slug>`
-([`../qa-checklist/from-model.md`](../qa-checklist/from-model.md)), written to
-`reports/tickets/{SPRINT}/<TICKET>/testing-checklist.md`. The model's unresolved items are **not**
-checklist items. They are the exploratory charter ([`execution.md`](execution.md) §Exploratory).
+`/qa-checklist <TICKET> --from-model --strategy <test-strategy.md> [--mind-map <slug>]`
+([`../qa-checklist/from-model.md`](../qa-checklist/from-model.md) §With a strategy), written to
+`{RUN_DIR}/testing-checklist.md`. Always Mode 5: every in-scope risk is an item or
+an omission line, the model's scenarios are added when a model ran, and `--mind-map` is passed only when
+Wave 2 ran the map. The model's unresolved items and the
+strategy's `EXPLORE` risks are **not** checklist items. They are the exploratory charter
+([`execution.md`](execution.md) §Exploratory).
 
 **Map signals decide what a node's item asserts.** Mode 5 step 3 already gives every in-scope node an
 item or an omission line; this table says which, for the nodes whose truth is not settled.
@@ -91,8 +108,9 @@ item or an omission line; this table says which, for the nodes whose truth is no
 
 | Check | Fails when |
 |---|---|
-| Model | any gate line is neither `PASS` nor `FIXED` |
-| Checklist | an in-scope scenario row or node is neither an item nor an omission line |
+| Strategy | `check-strategy.mjs` exits non-zero, or the round's `Status:` is still `DRAFT` |
+| Model | a model ran and any gate line is neither `PASS` nor `FIXED` |
+| Checklist | an in-scope risk, scenario row or node is neither an item nor an omission line |
 | Data | an item has no Data cell (`FIXTURE-GAP` with a reason counts as a cell) |
 | Record | a Stage-1 artifact is neither produced nor SKIPPED with an observable reason |
 | Visual | `visual_surface` is not recorded with its sources |

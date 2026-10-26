@@ -76,6 +76,7 @@ test-data/
 │   ├── sample-organizations.csv    # Special character testing
 │   └── search-test-data.csv        # Organization search test cases
 ├── catalogs/                        # Catalog seed data
+│   ├── brands.csv                   # storefront Brands catalog, the sample-data brands (seed:brands)
 │   ├── catalogs.csv
 │   ├── categories.csv
 │   ├── category-images.csv          # image file → category name (seed:category-images)
@@ -325,6 +326,9 @@ Real artwork for the store catalog's categories. Each row maps a file in `upload
 
 It never touches either store's barcode settings, any other product, prices or stock. Both stores are fingerprinted before and after, and any difference fails the run. It refuses with "run the full seed" when the product or the store itself is missing. Use it instead of the full `seed:barcode` between two sub-flows of one case: the full seed resets `AGENT-TEST-BARCODE`'s settings, reconciles and reindexes every fixture, and runs the multi-minute proof.
 
+### 14d. Brands (catalogs/brands.csv)
+The storefront Brands catalog (`/brands`, brand pages, the "Top brands" logo row): the brands of the vc-sample-data B2B store (VCST-3286), with a logo and banner each in `uploads/brands/`. Brands go into the catalog the store's `BrandCatalogId` names; only when there is none is `AGENT-TEST-SEED-Brands` created, and only that owned catalog gets store settings, the `Featured` property and the `pinned-links` entry written. On an env-owned catalog the seeder adds its brand categories and asset files and nothing else, and logs what `/brands` would still need. A brand the catalog already carries is left alone. Seeded brands are recognised by the code prefix `AGENT-TEST-SEED-BRAND-` or an image in the `catalog/agent-test-brands` asset folder; teardown deletes those, purges their search-index documents, and undoes the owned catalog's writes. Seed: `npm run seed:brands` (`--dry-run`, `--only <brand_code>`, `--reupload`); teardown: `npm run seed:brands:teardown` (all brands; `--only` is refused); guard: `npm run td:validate:brands`. Also runs in `seed:bootstrap` as optional step `brands` (priority 86, after category-images). Products match a brand by NAME, so no id is committed. No aliases.
+
 ### 15. Loyalty missions (no CSV — `scripts/seed-data/loyalty/missions-specs.mjs`)
 The VCST-5319 mission fixtures have **no committed data file**: the side-effect-free spec module IS the
 source of truth, and everything runtime (mission GUIDs, the resolved currency/locale codes, the banner
@@ -560,24 +564,27 @@ Admin status strings and storefront display labels are NOT 1:1. Test case assert
 
 ### Quote Fixtures (suite 015)
 
-All quotes must be owned by `{{ORG_USER_EMAIL}}` (B2B org buyer). Quote statuses use their own vocabulary separate from order statuses.
+**Seeded** by `npm run seed:quotes` (`scripts/seed-data/orders/seed-quotes.mjs`), once **per agent-pool
+B2B buyer** (`test-data/users/agent-user-pool.csv`). Each quote has `customerId` = that buyer's login id, `organizationId` = the
+buyer's **live** organization (the buyer's list filters on both, KB-874B24DD) and the store's `languageCode`
+(KB-97C03EB4). The states, what each one decides, which case consumes it and which are DISPOSABLE all live
+in one place, `scripts/seed-data/orders/orders-specs.mjs` `QUOTE_FIXTURES`. The aliases are registered in
+`aliases.json` (the slot-1 `id`/`number`, plus `id_slot<n>` for every slot, in `aliases.<env>.json`).
+Guards: `npm run td:validate:orders` §[1]/[1b] (static contract), `npm run td:reconcile` §[16] (live owner/org/state).
 
-> **VCST-5482 — now SEEDED:** `QUOTE_WITH_ADMIN_RESPONSE` and `ACCEPTED_QUOTE` are provided by
-> `npm run seed:quotes` (`scripts/seed-data/orders/seed-quotes.mjs`) as `@td()` JSON-fixture aliases
-> (requires the Quote module deployed + `Stores.EnableQuotes`). The remaining feature-gated states
-> (expired, multi-round negotiation, substitution, OOS, PO) stay **DEFERRED**. The Quote REST route +
-> status vocabulary are confirmed live on first run; `scripts/seed-data/orders/orders-specs.mjs` is the
-> single place to correct them.
+Status vocabulary is the platform's `Quotes.Status` (Processing, On hold, New, Declined, Proposal sent,
+Ordered) plus the storefront default `Draft`. There is **no** "Accepted", "Quote Received", "Rejected" or
+"Expired" status: Approve accepts only `Proposal sent` and places the order in the same call, ending in
+`Ordered` (KB-2BCFC8A6), and expiry is only `expirationDate`, which Approve does not check (KB-411B8AA9).
 
-| Env Var | Fixture Spec | Quote Status | Quote Label | Suites Affected | Admin Path |
-|---------|-------------|-------------|-------------|-----------------|------------|
-| `QUOTE_WITH_ADMIN_RESPONSE` | Quote submitted by `{{ORG_USER_EMAIL}}`; admin has responded with per-line pricing | DEFERRED | "Quote Received" | 015: QUOTE-004, 005, 006, 008, 009, 018, 019, 020, 021, 025 | Admin > Quotes > [Quote] > enter per-line prices > submit response |
-| `ACCEPTED_QUOTE` | Quote submitted by `{{ORG_USER_EMAIL}}`; admin priced; buyer accepted | DEFERRED | "Ordered" | 015: QUOTE-007, 024, 027, 028, 030 | Complete QUOTE_WITH_ADMIN_RESPONSE flow → buyer accepts |
-| `ACCEPTED_QUOTE_WITH_PO` | Accepted quote that was originally submitted with a PO number field populated | DEFERRED | "Ordered" | 015: QUOTE-029 | Same as ACCEPTED_QUOTE but with PO number entered during RFQ submission |
-| `ACCEPTED_QUOTE_OOS` | Accepted quote where at least one quoted item has since been set to OOS in inventory | DEFERRED | "Ordered" (with OOS item) | 015: QUOTE-026 | Create ACCEPTED_QUOTE; then Admin > Inventory > set that item stock=0 |
-| `EXPIRED_QUOTE` | Quote with admin-set expiry date that has already passed; system should auto-transition to Expired status | DEFERRED | "Expired" | 015: QUOTE-011, 022, 023 | Admin > Quotes > [Quote] > set expiry date to yesterday > save |
-| `QUOTE_MULTI_ROUND` | Quote that has completed 2+ negotiation rounds (admin offer → buyer counter → admin re-offer) | DEFERRED | Negotiation state | 015: QUOTE-019 | Requires negotiation feature enabled; DEFERRED until feature confirmed |
-| `QUOTE_WITH_SUBSTITUTION` | Quote where admin offered a substitute product on at least one line | DEFERRED | Depends on substitution feature | 015: QUOTE-010 | Admin > Quotes > [Quote] > line item > offer substitute product; DEFERRED until feature confirmed |
+**Not seedable — no platform mechanism (checked 2026-10-15):**
+
+| Former alias | Why |
+|---|---|
+| `QUOTE_WITH_SUBSTITUTION` | `QuoteItem` has no substitute/alternative field (live GET shape) and the admin guide offers only add/remove lines and tier prices — a "substitute" would be an ordinary extra line, indistinguishable from one |
+| `QUOTE_MULTI_ROUND` | There is no buyer counter-offer step: the xAPI quote mutations have no counter/negotiate operation (`.claude/knowledge/api/graphql-schema.md` §Quotes) and on `Proposal sent` the storefront offers only Approve/Decline (KB-2BCFC8A6) |
+| `ACCEPTED_QUOTE_WITH_PO` | `QuoteRequest` has no purchase-order field (live GET shape), and "accepted" is not a state (Approve = order) |
+| `ACCEPTED_QUOTE_OOS` | Replaced by `QUOTE_PROPOSAL_OOS`: an accepted quote is already an order, so the reachable state is a `Proposal sent` quote whose first line is the permanent OOS product |
 
 **Suite 015 feature gates (DEFERRED — confirm with product owner):**
 - RFQ feature enabled for org (`{{ORG_USER_EMAIL}}` org must have quotes enabled)

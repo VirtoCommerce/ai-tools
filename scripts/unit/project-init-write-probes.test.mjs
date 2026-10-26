@@ -1,5 +1,5 @@
 // Unit tests for the WRITE-capability probes in the SHIPPED plugin copy
-// (plugins/vc-fix/skills/project-init/probe-lib.mjs). These distinguish a READ-only token
+// (plugins/vc-init/skills/project-init/probe-lib.mjs). These distinguish a READ-only token
 // from a WRITE-capable one at /project-init readiness time, so a read-only PAT no longer
 // passes as READY only to 401 mid-fix (the LEO gap: get-workitem 200, transition 401).
 //
@@ -14,7 +14,7 @@ import {
   probeAdoWorkItemsWrite,
   probeAdoCodeWrite,
   discoverAdoWorkItemId,
-} from "../../plugins/vc-fix/skills/project-init/probe-lib.mjs";
+} from "../../plugins/vc-init/skills/project-init/probe-lib.mjs";
 
 // A stub `fetch` that records the call and returns a canned status/json — no network.
 function fakeFetch({ status = 200, json = {}, ok } = {}) {

@@ -11,9 +11,9 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/search?q=@td(BUYABL
 [WAIT] wait for the 'in Cart' indicator to update","[DOM] ""in Cart"" indicator visible adjacent to stepper showing ""1""
 [DOM] cart badge count incremented by ""1""
 [STATE] product appears in cart
-[STATE] verify cart badge count incremented","[API] addItem mutation response errors[] is empty
+[STATE] verify cart badge count incremented","[API] updateCartQuantity mutation response errors[] is empty
 [CONSOLE] no JS errors after add-to-cart click
-[NETWORK] no 4xx/5xx on cart API requests",cart badge stuck at 0; success notification never appears; '+' stepper button not visible or stays in loading state,Remove added item from cart,VCST-4499; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/shared/common/components/quantity-control.vue (PDP stepper — no toast wired); Docs: N/A — implementation-detail,Automated
+[NETWORK] no 4xx/5xx on cart API requests",cart badge stuck at 0; success notification never appears; '+' stepper button not visible or stays in loading state,Remove added item from cart,VCST-4499; Audited: 2026-10-21 (TCA-2026-10-21); Source: VirtoCommerce/vc-frontend/client-app/shared/common/components/quantity-control.vue (PDP stepper — no toast wired); Docs: N/A — implementation-detail,Automated
 CART-002,Add to Cart - From Category List,Cart > Add,High,BL-CART-007,"ECL-2.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in, category page with products visible, quick-add available on product cards","url={{FRONT_URL}}
@@ -81,9 +81,9 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [WAIT] wait for quantity to update and totals to recalculate","[DOM] line item quantity shows ""2""
 [MATH] line total = unit price × 2 (2 decimal places)
 [MATH] cart subtotal = sum of all updated line totals
-[STATE] verify quantity incremented to 2","[API] changeCartItemQuantity mutation response errors[] is empty
+[STATE] verify quantity incremented to 2","[API] changeCartItemsQuantity mutation response errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx",quantity does not increment; line total stays at unit price; subtotal not recalculated,Restore item quantity to 1 or remove item,VCST-4499; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/core/api/graphql/cart/mutations/changeCartItemQuantity (field changeCartItemQuantity); Docs: N/A — implementation-detail: GraphQL field name,Automated
+[NETWORK] no 4xx/5xx",quantity does not increment; line total stays at unit price; subtotal not recalculated,Restore item quantity to 1 or remove item,VCST-4499; Audited: 2026-10-21 (TCA-2026-10-21); Source: VirtoCommerce/vc-frontend/client-app/core/api/graphql/cart/mutations/changeFullCartItemsQuantity (field changeCartItemsQuantity); Docs: N/A — implementation-detail: GraphQL field name,Automated
 CART-007,Update Quantity - Decrease,Cart > Update,High,BL-CART-002,"ECL-3.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Product in cart with qty > 1 (e.g., qty=2), user on cart page","url={{FRONT_URL}}/cart
@@ -95,9 +95,9 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/cart
 [MATH] line total = unit price × 1 (2 decimal places)
 [MATH] cart subtotal recalculated = sum of (unit price × quantity) for all included line items (2 decimal places)
 [STATE] verify quantity decremented to 1
-[STATE] verify '-' (Decrease quantity) is disabled when qty=1","[API] changeCartItemQuantity mutation response errors[] is empty
+[STATE] verify '-' (Decrease quantity) is disabled when qty=1","[API] changeCartItemsQuantity mutation response errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx",quantity goes below 1; '-' button active at qty=1; totals not recalculated,Restore or remove item,VCST-4499; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/core/api/graphql/cart/mutations/changeCartItemQuantity (field changeCartItemQuantity); Docs: N/A — implementation-detail: GraphQL field name,Automated
+[NETWORK] no 4xx/5xx",quantity goes below 1; '-' button active at qty=1; totals not recalculated,Restore or remove item,VCST-4499; Audited: 2026-10-21 (TCA-2026-10-21); Source: VirtoCommerce/vc-frontend/client-app/core/api/graphql/cart/mutations/changeFullCartItemsQuantity (field changeCartItemsQuantity); Docs: N/A — implementation-detail: GraphQL field name,Automated
 CART-008,Update Quantity - Direct Input,Cart > Update,Medium,BL-CART-002,"ECL-3.1, ECL-4.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Product in cart, user on cart page","url={{FRONT_URL}}/cart
@@ -215,9 +215,9 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/search?q={{TEST_SKU
 [STATE] verify spinbutton shows '1'
 [STATE] verify 'in Cart' indicator appears showing '1'
 [STATE] verify Cart badge incremented by 1
-[STATE] verify 'Decrease quantity' button becomes enabled","[API] addItem mutation response errors[] is empty
+[STATE] verify 'Decrease quantity' button becomes enabled","[API] updateCartQuantity mutation response errors[] is empty
 [CONSOLE] no JS errors
-[NETWORK] no 4xx/5xx on add-to-cart request",spinbutton does not increment; cart badge unchanged; 'in Cart' indicator not appearing; mutation returns error,Remove item from cart,QS-PDP-001; Audited: 2026-08-06 (TCA-2026-08-06); Source: VirtoCommerce/vc-frontend/client-app/shared/common/components/quantity-control.vue:150-165 (PDP stepper allowZero=true); Docs: N/A — implementation-detail: quantity-stepper mechanics,Manual
+[NETWORK] no 4xx/5xx on add-to-cart request",spinbutton does not increment; cart badge unchanged; 'in Cart' indicator not appearing; mutation returns error,Remove item from cart,QS-PDP-001; Audited: 2026-10-21 (TCA-2026-10-21); Source: VirtoCommerce/vc-frontend/client-app/shared/common/components/quantity-control.vue:150-165 (PDP stepper allowZero=true); Docs: N/A — implementation-detail: quantity-stepper mechanics,Manual
 CART-032,Quantity Stepper - PDP Decrement to Zero Removes from Cart,Cart > Quantity Stepper,Critical,"BL-CART-007, BL-CART-003","ECL-3.1, ECL-14.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 User logged in; product in cart with qty=1; on product detail page; spinbutton shows '1'","url={{FRONT_URL}}/search?q={{TEST_SKU}}

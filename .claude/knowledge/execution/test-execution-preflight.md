@@ -153,7 +153,7 @@ Each primitive is a UI-only sequence. No JS shortcuts unless explicitly noted.
    - If the alias entry has `email_env` / `password_env`: read `process.env.<email_env>` and `process.env.<password_env>` from `.env`.
    - Otherwise use `@td(<alias>.email)` / `@td(<alias>.password)` via the standard resolver.
 5. Fill the email field with the resolved email.
-6. Fill the password field with the resolved password.
+6. Fill the password field with the resolved password — on a browser lane, its NAME in the form the brief's Passwords slot gives; on a master stand that is `MASTER_PASSWORD` for every account ([`browser-lanes.md`](browser-lanes.md) §Browser login secrets).
 7. Click the submit button.
 8. Wait for redirect away from `/sign-in` (to `/account/dashboard`, `/`, or a storefront landing page).
 9. Verify: account-menu button is visible in the header; whoami matches the target.

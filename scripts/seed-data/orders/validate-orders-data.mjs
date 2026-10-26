@@ -21,7 +21,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse as parseCsv } from 'csv-parse/sync';
 import {
-  ORDER_FIXTURES, QUOTE_FIXTURES, ALL_FIXTURES, OWNED_ALIASES,
+  ORDER_FIXTURES, QUOTE_FIXTURES, ALL_FIXTURES, OWNED_ALIASES, quoteFixtureSetProblems,
   validateFixtureShape, findGuidLeaks, GUID_RE,
   RETURN_ORDER_FIXTURES, RETURN_LINE_X_ALIAS, RETURN_WINDOW_DAYS_ASSUMED,
   validateReturnFixtureSet, validateReturnFixtureShape,
@@ -35,12 +35,13 @@ import {
   validateDecisionFixtureSet, validateDecisionTemplate,
   shapeDecisionTemplate, toOrderSpec, foreignRecipients, recipientEmailsOf,
 } from './return-decisions-specs.mjs';
+import { resolveTestEnv } from '../../lib/resolve-test-env.js';
 
 /**
  * The env whose SEEDED STATE section [6] checks. Static checks ([1]–[5]) are env-agnostic; the
  * returns fixtures' age can only be judged against the overlay of the env they were seeded on.
  */
-const TARGET_ENV = process.env.TEST_ENV || 'vcst';
+const TARGET_ENV = resolveTestEnv('vcst');
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const problems = [], notes = [];
@@ -63,6 +64,21 @@ for (const [kind, list] of [['order', ORDER_FIXTURES], ['quote', QUOTE_FIXTURES]
     if (shapeOk) ok(`${spec.alias} (${spec.fixtureFile}) — ${kind} body valid, status "${obj.status}" matches spec, no GUID`);
     else ps.forEach((p) => fail(`${spec.alias}: ${p}`));
   }
+}
+
+// 1b. Quote set contract (SECOND RULE): the states still discriminate, and every consumer case exists.
+console.log('\n[1b] Quote fixtures — set-level design contract + consumer cases exist in suite 015');
+{
+  const contract = quoteFixtureSetProblems();
+  if (contract.length) contract.forEach((p) => fail(`quote set: ${p}`));
+  else ok(`${QUOTE_FIXTURES.length} quote states: disposable quotes have one consumer each, expiry triad past/future/none in one status, >= 4 list statuses, one OOS quote with an in-stock sibling`);
+  const suiteRel = 'regression/suites/Frontend/orders/015-quotes.csv';
+  if (existsSync(join(ROOT, suiteRel))) {
+    const ids = new Set(parseCsv(readFileSync(join(ROOT, suiteRel), 'utf8'), { columns: true, skip_empty_lines: true, bom: true }).map((r) => r.ID));
+    const ghosts = QUOTE_FIXTURES.flatMap((s) => (s.consumers || []).filter((c) => !ids.has(c)).map((c) => `${s.alias}→${c}`));
+    if (ghosts.length) fail(`quote consumer case(s) not in ${suiteRel}: ${ghosts.join(', ')}`);
+    else ok(`every quote consumer case exists in ${suiteRel}`);
+  } else warn(`${suiteRel} not found — consumer cases unchecked`);
 }
 
 // 2. Owned aliases are JSON-fixture aliases in the base registry, no pinned GUID.

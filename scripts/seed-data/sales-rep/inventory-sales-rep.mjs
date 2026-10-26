@@ -56,6 +56,7 @@ import {
   assertSafeTarget, auth, api, log, verbose, loadCsv, idsParam,
 } from '../../lib/seed-common.mjs';
 import { isSeededDocument } from './sales-rep-docs-specs.mjs';
+import { DEMO_REPS, repEmailEnvKeys } from './sales-rep-demo-specs.mjs';
 import { REP_ONLY_ORG } from './rep-only-org-specs.mjs';
 
 const argv = process.argv.slice(2);
@@ -77,21 +78,22 @@ const DEMO_MARK = 'DEMO-SR';
 
 /**
  * Accounts the demo REUSES — real people. Never deleted, never password-reset, never counted toward
- * residue. Sourced from the env so adding a person needs no code change; alla.volkova@virtoway.com
- * is the committed default because the demo brief names her explicitly.
+ * residue. The addresses name real colleagues, so no committed file holds them. Two sources:
+ *   - SR_DEMO_PROTECTED_EMAIL_SHA256 (committed in .env.<env>): SHA-256 of each lowercased address.
+ *     Enforced on every machine without revealing anyone, so an incomplete .env.local cannot
+ *     leave a real account unprotected.
+ *   - SR_DEMO_PROTECTED_EMAILS[_<ENV>] and every demo rep's own email (.env.local, gitignored).
+ * With neither list configured, --delete refuses to run (see main()).
  */
-const PROTECTED_EMAILS = new Set(
-  (process.env.SR_DEMO_PROTECTED_EMAILS || 'alla.volkova@virtoway.com')
-    .split(',')
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean)
-    .concat(
-      [
-        (process.env.SR_DEMO_REP_ZHUK_EMAIL || '').trim().toLowerCase(),
-        (process.env.SR_DEMO_REP_VOLKOVA_EMAIL || '').trim().toLowerCase(),
-      ].filter(Boolean),
-    ),
-);
+const envOf = (key) => process.env[`${key}_${TEST_ENV.toUpperCase()}`] || process.env[key] || '';
+const listOf = (v) => String(v || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
+const sha256 = (s) => createHash('sha256').update(String(s).trim().toLowerCase()).digest('hex');
+const PROTECTED_EMAILS = new Set([
+  ...listOf(envOf('SR_DEMO_PROTECTED_EMAILS')),
+  ...DEMO_REPS.map((spec) => String(repEmailEnvKeys(spec, TEST_ENV).map((k) => process.env[k]).find(Boolean) || '').trim().toLowerCase()).filter(Boolean),
+]);
+const PROTECTED_HASHES = new Set(listOf(envOf('SR_DEMO_PROTECTED_EMAIL_SHA256')));
+const isProtected = (email) => !!email && (PROTECTED_EMAILS.has(email) || PROTECTED_HASHES.has(sha256(email)));
 
 const PAGING_PREFIX = 'AGENT-TEST-SR-Paging-';
 const OWNER_NAME = 'AGENT-TEST-SR-Owner-Acme';
@@ -140,7 +142,8 @@ const hasMark = (mark, vals) => vals.some((v) => String(v ?? '').toUpperCase().i
 function classify({ declared, protectedHit, markerFields }) {
   if (protectedHit) return 'protected';
   if (declared) return 'repo-seeded';
-  if (hasMark(FAMILY_MARK, markerFields) || hasMark(DEMO_MARK, markerFields)) return 'repo-family';
+  // DEMO-RET: the returns demo's orders sit in the same demo organizations (seed-returns-demo.mjs).
+  if (hasMark(FAMILY_MARK, markerFields) || hasMark(DEMO_MARK, markerFields) || hasMark('DEMO-RET', markerFields)) return 'repo-family';
   return 'foreign';
 }
 
@@ -227,7 +230,7 @@ async function buildPlan() {
       createdDate: r.createdDate,
       bucket: classify({
         declared: declaredRepEmails.has(email) || declaredRepNames.has(r.fullName),
-        protectedHit: PROTECTED_EMAILS.has(email),
+        protectedHit: isProtected(email),
         markerFields: [r.fullName, email, r.userName],
       }),
     };
@@ -477,6 +480,11 @@ async function main() {
   assertSafeTarget();
 
   if (DELETE) {
+    if (!PROTECTED_HASHES.size && !listOf(envOf('SR_DEMO_PROTECTED_EMAILS')).length) {
+      console.error('ABORT: --delete with NO protected-account list for this env. Commit SR_DEMO_PROTECTED_EMAIL_SHA256 in');
+      console.error(`       .env.${TEST_ENV} or set SR_DEMO_PROTECTED_EMAILS_${TEST_ENV.toUpperCase()} in .env.local; a rep's own email alone is not enough.`);
+      process.exit(2);
+    }
     // The overlay this run rewrites is COMMITTED for vcst/vcptcore. An env mismatch here would blank
     // the alias file every suite resolves @td() through, so it is a hard stop, not a warning.
     if (!ENV_CONFIRM || ENV_CONFIRM !== TEST_ENV) {

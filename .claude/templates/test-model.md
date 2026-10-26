@@ -1,7 +1,7 @@
 # Test Model template — `/qa-test` Step 1e
 
-Fill-in shape for the durable Test Model written to `reports/ba/test-models/<TICKET>-<date>.md`
-(`.claude/rules/reports.md` category 3). **The line cap is the `reports-policy.md` §2 row — read it
+Fill-in shape for the durable Test Model written to `{RUN_DIR}/test-model.md`, the ticket's run folder
+(`.claude/rules/reports.md` category 3; promoted by hand as `reports/ba/test-models/<TICKET>-<date>.md`). **The line cap is the `reports-policy.md` §2 row — read it
 there, never from here:** the number was transcribed into this file once as 220 and was stale from the
 day §2 raised it.
 
@@ -65,6 +65,41 @@ Business Rules: [BL-CART-001, BL-PAY-003, ...]   (filled in Step 2)
 Edge cases:  [ECL-* patterns]                    (filled in Step 2)
 Docs grounding: [VirtoOZ / VC-doc refs]
 Agents to dispatch: [list]
+```
+
+## Strategy mode (`/qa-test-model --strategy`)
+
+The block above is **ticket mode**. A model built from an approved `/vc-test:qa-test-strategy` round uses this
+shape instead: the strategy carries the ticket, ACs, oracles and risks, so they are cited, not restated.
+Gate and rules: [`test-model.md`](../skills/qa-test-model/test-model.md) §Strategy mode.
+
+```
+TEST MODEL — <ticket-key>
+Strategy:    {RUN_DIR}/test-strategy.md · Round N · Floors: <F10, F11 | none> · Risks: R2, R5   (clause 1)
+Prior model: [path — Part 0 carried forward | none]
+Domain map:  [path @ rev N | ABSENT]   Mind map: [path — node ids | ABSENT]
+Chain position: [the links the MODEL risks cross, of the domain chain — and the links they do NOT]   (clause 11)
+--- Part 0 — VALUE CHAIN, scoped to the MODEL risks ---
+Value chain · Chain diagrams · Variants · Mechanism coverage matrix · Reverse edges · Fixture lifecycle
+              [as ticket mode; an integration link carries the owning domain's variants or WAIVED + reason (clause 14)]
+--- Org-context group (F10 fired; or row 1 alone when the matrix has >1 ROLE variant) — clause 12 ---
+  | # | Variant | Scenario # / WAIVED + reason |
+  | 1 | Role within the org (Part 0r rules: Not allowed, server refusal, fixture alias) | |
+  | 2 | Org boundary | |
+  | 3 | Multi-org + switching | |
+  | 4 | Membership state | |
+  | 5 | Sales rep | |
+  | 6 | Login on behalf | |
+  Roles in scope + BSC-<n> scenarios: [as Part 0r above, for row 1]
+--- Configuration group (F11 fired) — clause 13, one block per setting the diff reads or changes ---
+  <Setting.Key> = <stand value>
+  | Default | On | Off | Scope (global / per store) | Change at runtime |
+  | S#… / WAIVED + reason | … | … | … | … |
+--- Parts 1–5 — FAULT MODEL ---
+Condition space: [factors → classes; constraints; N]
+Reduction:       [technique + what was collapsed and why; N → M]
+Test scenarios (M rows)
+  | # | R-n | Cell (factor values) | Defect hypothesis | Archetype | Technique | Oracle | P |
 ```
 
 ## Companion: the authoring plan

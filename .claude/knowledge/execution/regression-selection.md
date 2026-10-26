@@ -75,7 +75,7 @@ suites assert the OLD label **62 times** (093: 43, 091: 19). The Dim-11 rotation
 almost nothing in the corpus carries an `Audited:` stamp, and **not one** of the rows in the four suites
 the two FULL `/qa-test` runs touched does. The stamped share is a moving number (every append changes
 it, and the append that added this section moved it), so it is measured once in
-[`skills/qa-test/coverage-triage.md`](../skills/qa-test/coverage-triage.md) §1 and cited from here —
+[`skills/qa-test/coverage-triage.md`](../../skills/qa-test/coverage-triage.md) §1 and cited from here —
 a count transcribed into four files is wrong in four places at once, silently (§GOLDEN RULE).
 
 | Command | Does |
@@ -140,6 +140,20 @@ Consumed by `/qa-test` `1b` item 2e (the derived `coverage_surface` token) and b
 phase**, which disposes the hits before the same agent authors, on **both paths** and routes each hit to one of four dispositions —
 `CONFIRMED` / `REPAIR` / `RE-BASE` / `SUPERSEDED`. Single source of truth for those:
 `.claude/skills/qa-test/coverage-triage.md`.
+
+## Visual regression at a release — `PIXEL`, not a suite
+
+A pixel regression is not a CSV suite, so no `selections` group holds it and `/qa-regression` does not run
+it. At a release, run [`/qa-visual-regression`](../../skills/qa-visual-regression/SKILL.md) beside the
+suite regression:
+
+- **Base** is the previous release tag. **Head** is the release candidate.
+- **Storybook source:** every story (`visual:affected` is not needed — the scope is the whole kit), on the
+  a11y-gated presets × desktop + the narrowest supported width.
+- **Pages source:** the project's key routes, if a targets file exists for them.
+
+Its regressions are triaged like any other finding ([`../../skills/qa-visual-regression/triage.md`](../../skills/qa-visual-regression/triage.md)).
+Intended changes are listed against the release notes that declare them.
 
 ## Post-Run Results Triage — `/qa-triage-results`
 

@@ -22,6 +22,7 @@ import { parse } from 'csv-parse/sync';
 import {
   CSV_SOURCE, FIXTURE_KEY, RUNTIME_COLUMNS, MAIN_FFC, loadFixture, validateFixtureShape,
 } from './variation-stock-specs.mjs';
+import { resolveTestEnv } from '../../lib/resolve-test-env.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const readCsv = (rel) => parse(readFileSync(join(ROOT, 'test-data', rel), 'utf8'), { columns: true, skip_empty_lines: true, relax_quotes: true, relax_column_count: true });
@@ -81,7 +82,7 @@ for (const [name, required] of Object.entries(REQUIRED_ALIASES)) {
   if (!missing.length) ok(`${name}: ${declared.length} field(s), all required ones present and column-backed`);
 }
 
-const env = process.env.TEST_ENV || 'vcst';
+const env = resolveTestEnv('vcst');
 console.log(`\n[4] aliases.${env}.json: runtime ids present (informational — seed the env to populate)`);
 const overlayPath = join(ROOT, 'test-data', `aliases.${env}.json`);
 if (!existsSync(overlayPath)) warn(`aliases.${env}.json does not exist — run \`TEST_ENV=${env} npm run seed:variation-stock\``);
