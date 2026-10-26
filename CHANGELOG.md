@@ -25,6 +25,32 @@ ran and failed is still doubt. Without the flag, floors and gate are 0.3.1's; `/
 (`<store>/domain/<slug>.md`) before it asks `domain:check`. Without `deploy:pr`, the deployment blockers come from
 this ticket's `deployed.json` (written by `deployed.mjs --expect` after this run's prepare; an older file is ignored): NOT DEPLOYED stays NOT DEPLOYED, UNKNOWN stays UNKNOWN.
 
+## `/vc-fix:qa-bug` fills the Jira Bug's own fields, links it, and decides Need hotfixes by code — `vc-fix` `0.16.0` — 2026-10-26
+
+**Added — the Jira Bug's fields (`knowledge/execution/jira-bug-fields.md`).** Step 5 discovers the Bug type's fields from
+the issue-type metadata (no field id in the plugin) and fills Steps to reproduce, Expected result, Actual result,
+Environment, Error message and the components fields when the project has them; the Description keeps the context
+only. Assignee, Sprint, QA engineer, Fix versions and Parent are left alone. Each screenshot goes inside the field it
+proves (Actual / Expected / Steps), and every rich-text field is sent as lists with bold labels and `code` values,
+verified from `renderedFields`. Checked on VCST-6500: three images render inside Actual result.
+
+**Added — Need hotfixes, by code.** On VirtoCommerce's own tracker — `tracker-ops.md` §2a now defines it as a Jira
+profile with `operator: "virto-engineer"` and `projectType: "platform"`, the same test as the origin labels — the flag
+is set when the defect's code is in either of the two latest stable bundles (the two highest `vN` in
+`vc-modules/bundles`, compared as numbers), whatever the priority, and never from a stand.
+
+**Changed — the Bug is created with the Atlassian MCP.** The origin-label hook checks only the MCP create, so the bridge
+`jira request` POST is used only without the MCP, carries the labels itself, and the labels are read back after the create. The option is set by id (VC's value reads `" true"`), and one Environment line names the bundles and the anchor.
+
+**Added — three arguments.** `--evidence <dir>` reads a `/qa-investigate` package instead of reproducing again;
+`--link <KEY>[:type]` relates the bug to a ticket; `--confirmed` carries a caller's yes so Step 5 does not ask per
+bug. Step 5 also searches the tracker for duplicates before asking (§5): a real duplicate stops and asks before
+anything is written to that ticket, and `--confirmed` never covers it. `/qa-run` step 6 passes all three once #469
+lands.
+
+**Moved.** The Jira screenshot recipe (upload → Media-Services UUID → ADF `mediaSingle` → render check) moved from
+`commands/qa-bug.md` Step 5 to `jira-bug-fields.md` §3, so the command stays under its BUDGET-004 baseline.
+
 ## An Azure Boards ticket reaches the gated bundle — `vc-test` `0.3.1` — 2026-10-26
 
 **Fixed — the Azure Boards tracker address.** `/vc-test:ticket-context` read the tracker address only from
