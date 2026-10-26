@@ -47,4 +47,4 @@ From round 2, `floors.mjs` still reads the whole PR diff in the bundle, so the f
 `{RUN_DIR}/test-strategy.md` holds one `## Round N` section per round, each with
 its own amendments and reconciliation. Round N cites round N−1 by section, not by path. When the run
 folder changes between rounds (a new sprint, another env), the file moves with the newest round and the older folder keeps a one-line
-pointer. Shape: [`../../templates/test-strategy.md`](../../templates/test-strategy.md).
+pointer. Shape: [`template.md`](template.md).

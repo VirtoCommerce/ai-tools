@@ -17,7 +17,7 @@ Why this shape (HTSM, ISTQB, ISO/IEC/IEEE 29119-3, agent research):
 |---|---|
 | The floors F1–F12, the staleness check, the depth label | [`floors.md`](floors.md) |
 | Rounds: what counts, the cap of three, what round N reads from N−1 | [`rounds.md`](rounds.md) |
-| The file's shape | [`../../templates/test-strategy.md`](../../templates/test-strategy.md) |
+| The file's shape | [`template.md`](template.md) |
 
 ## Who chooses — the orchestrator, inline
 
@@ -183,12 +183,11 @@ carrying `floor:F11` about configuration (the script checks only the token and t
 
 ## Approval — one question, every run (D4)
 
-1. **Any Critical risk, first:** dispatch a fresh `qa-lead-orchestrator` in Verifier Mode with `step:
-   strategy-gate`, `gate_criteria`: this file §Gate — before approval (every clause, the model-owned halves
-   included), `source_of_truth`: the bundle path, the strategy path, and `deterministic_cmd`: `node .claude/skills/qa-test-strategy/lib/check-strategy.mjs
-   --strategy <path> --bundle <path> [--change-map <path>]` (it computes the floors itself) — never your floors output. It re-derives
-   the gate and returns `APPROVE`/`REJECT`. Loop and
-   independence rules: [`../qa-test/SKILL.md`](../qa-test/SKILL.md) §The verifier, in one place.
+1. **Any Critical risk, first:** dispatch a fresh `vc-test:strategy-verifier` with `gate_criteria`: this file
+   §Gate — before approval (every clause, the model-owned halves included), `source_of_truth`: the bundle path,
+   the strategy path, and `deterministic_cmd`: `node "<skill>/lib/check-strategy.mjs" --strategy <path> --bundle
+   <path> [--change-map <path>]` (it computes the floors itself) — never your floors output. It re-derives the gate
+   and returns `APPROVE`/`REJECT`; its loop and independence rules are its own (`agents/strategy-verifier.md`).
 2. **Ask the user once** (AskUserQuestion): the mission, the risk table, the artifacts table, the
    out-of-scope list and the depth label — not the whole file — plus its path. Options: *Approve* ·
    *Change* (free text). A change is applied, the gate re-run, and the question asked again. On *Approve*, set
@@ -210,7 +209,7 @@ reconciliation:
 - A planned risk that did not run and has no reason ⇒ back to execution, or listed under *Not tested, and
   why*. It is never dropped; in round 3 it goes to the escalation.
 - A High or Critical risk without a result **caps the verdict**: not `PASS`
-  ([`../qa-test/close-out.md`](../qa-test/close-out.md) §5-verdict.2).
+  ([close-out](../../../../.claude/skills/qa-test/close-out.md) §5-verdict.2).
 - Copy the counts, the round, the depth label and the candidate cases into `summary.json.strategy` (keys
   from [`../../templates/qa-test-summary.schema.json`](../../templates/qa-test-summary.schema.json)).
 

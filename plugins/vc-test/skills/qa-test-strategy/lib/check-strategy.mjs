@@ -1,4 +1,4 @@
-// .claude/skills/qa-test-strategy/lib/check-strategy.mjs — the script half of SKILL.md §Gate. Reads the LAST
+// plugins/vc-test/skills/qa-test-strategy/lib/check-strategy.mjs — the script half of SKILL.md §Gate. Reads the LAST
 // "## Round N" section of test-strategy.md and checks it against the bundle, computing the floors itself from that
 // bundle (never a floors file a doer hands it). The clauses that need judgment (7 project-risk mitigations,
 // 9 observable exit criteria) stay the model's inline check.
