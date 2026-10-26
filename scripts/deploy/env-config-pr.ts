@@ -28,6 +28,7 @@
  * reference value (reported; the rest still goes into the PR).
  */
 import "../lib/sync-stdio.mjs";
+import { execFileSync } from "node:child_process";
 import { parse as parseYaml } from "yaml";
 import { loadEnvFiles, resolveEnvCoords, REPO_ROOT } from "./lib/env.ts";
 import { ghJson, setToken, getToken } from "./lib/github.ts";
@@ -155,10 +156,13 @@ async function main(): Promise<number> {
       const ref = refs.find((x) => [...x.flat].some(([k, v]) => /^platform\.config\.FileUpload__Scopes__\d+__Scope$/.test(k) && v === r.name));
       if (!ref) { missing.push(`upload scope ${r.name}: no reference env has it`); continue; }
       const k = [...ref.flat].find(([kk, v]) => /^platform\.config\.FileUpload__Scopes__\d+__Scope$/.test(kk) && v === r.name)![0].match(/__Scopes__(\d+)__/)![1];
-      const src = ref.text.split("\n").filter((l) => new RegExp(`^\\s*FileUpload__Scopes__${k}__`).test(l));
+      // From the reference env's own block (ref.flat), not the whole file: a file holding several env blocks
+      // would otherwise contribute every block's lines for that index.
+      const pre = `platform.config.FileUpload__Scopes__${k}__`;
+      const src = [...ref.flat].filter(([kk]) => kk.startsWith(pre));
       const n = nextScope();
       changes.push({ ...base, kind: "add", from: ref.name, note: `scope ${r.name} (copied from ${ref.name}, index ${k} → ${n})`,
-        lines: src.map((l) => l.trim().replace(`FileUpload__Scopes__${k}__`, `FileUpload__Scopes__${n}__`)) });
+        lines: src.map(([kk, v]) => `FileUpload__Scopes__${n}__${kk.slice(pre.length)}: ${JSON.stringify(v)}`) });
       continue;
     }
     const [root, ...rest] = r.name.split(".");
@@ -236,7 +240,9 @@ async function main(): Promise<number> {
   const mk = await api(`/git/refs`, { method: "POST", body: JSON.stringify({ ref: `refs/heads/${head}`, sha: baseRef.object.sha }) });
   if (mk.status !== 201 && mk.status !== 422) { console.error(`env-config-pr: could not create ${head} (HTTP ${mk.status})`); return 2; }
   const cur = await readYml(head);
-  const author = { name: process.env.GIT_AUTHOR_NAME || "Elena Kutasina", email: process.env.GIT_AUTHOR_EMAIL || "kutasina.elena@gmail.com" };
+  const gitConfig = (k: string) => { try { return execFileSync("git", ["config", k], { encoding: "utf8" }).trim(); } catch { return ""; } };
+  const author = { name: process.env.GIT_AUTHOR_NAME || gitConfig("user.name"), email: process.env.GIT_AUTHOR_EMAIL || gitConfig("user.email") };
+  if (!author.name || !author.email) { console.error("env-config-pr: no commit identity — set git config user.name / user.email (or GIT_AUTHOR_NAME / GIT_AUTHOR_EMAIL)"); return 2; }
   const msg = `${c.branch}: config the regression cases need (${changes.map((x) => x.req.kind === "uploadScope" ? `scope ${x.req.name}` : x.req.name.split(".").pop()).join(", ")})`;
   const put = await api(`/contents/${FILE}`, { method: "PUT", body: JSON.stringify({ message: msg, content: Buffer.from(text).toString("base64"), sha: cur?.sha ?? target.sha, branch: head, author, committer: author }) });
   if (put.status !== 200 && put.status !== 201) { console.error(`env-config-pr: commit failed (HTTP ${put.status}): ${(await put.text()).slice(0, 200)}`); return 2; }
@@ -248,6 +254,13 @@ async function main(): Promise<number> {
     "", "Merging this deploys the environment. Re-run the pre-flight afterwards: the rows above should read OK.",
     "", "🤖 Generated with [Claude Code](https://claude.com/claude-code)",
   ].join("\n");
+  // A same-day re-run reuses the day's branch, whose PR already exists: update that one instead of failing.
+  const open = await (await api(`/pulls?state=open&head=VirtoCommerce:${encodeURIComponent(head)}&base=${encodeURIComponent(c.branch)}`)).json().catch(() => []);
+  if (Array.isArray(open) && open[0]) {
+    await api(`/pulls/${open[0].number}`, { method: "PATCH", body: JSON.stringify({ title: msg, body }) });
+    console.log(`\nPR updated: ${open[0].html_url} — review and merge it yourself; merging deploys ${c.branch}.`);
+    return missing.length ? 3 : 0;
+  }
   const pr = await api(`/pulls`, { method: "POST", body: JSON.stringify({ title: msg, head, base: c.branch, body }) });
   const pj = await pr.json().catch(() => ({}));
   if (pr.status !== 201) { console.error(`env-config-pr: PR not opened (HTTP ${pr.status}): ${JSON.stringify(pj).slice(0, 200)}`); return 2; }

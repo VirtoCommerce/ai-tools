@@ -295,10 +295,16 @@ async function post(a: ReturnType<typeof args>) {
   const key = a.asOf || a.wave;
   const prev = state.reports?.[key] ?? {};
   const artifact = `${a.release} ${a.wave}`;
+  // Record each comment id the moment it exists: if the second post fails, a re-run amends the first instead of
+  // posting it again. The key is the as-of wave, so `--as-of` is a comment of its own, never an amend of the wave's.
+  const record = (part: "subtask" | "release", id: string) => {
+    state.reports = { ...(state.reports ?? {}), [key]: { ...(state.reports?.[key] ?? {}), [part]: id } };
+    writeFileSync(statePath, JSON.stringify(state, null, 1) + "\n");
+  };
   const subId = comment(r.sub, join(r.out, `${r.base}-subtask.wiki`), r.runPngs, r.htmlCopies, artifact, prev.subtask);
+  record("subtask", subId);
   const relId = comment(r.L.rel.ticket, join(r.out, `${r.base}-release.wiki`), [r.relPng], [], artifact, prev.release);
-  state.reports = { ...(state.reports ?? {}), [key]: { subtask: subId, release: relId } };
-  writeFileSync(statePath, JSON.stringify(state, null, 1) + "\n");
+  record("release", relId);
   console.log(`  recorded in waves/${a.wave}/state.json reports.${key}: sub-task comment ${subId}, release comment ${relId}`);
 }
 
@@ -326,7 +332,7 @@ async function subtasks(a: ReturnType<typeof args>) {
   for (const w of L.rel.waves) {
     const summary = `${title(L.rel)} regression · ${w.id} ${w.title ?? ""}`.trim();
     const have = w.subtask ?? existing.get(summary);
-    if (have) { if (!w.subtask) { w.subtask = have; changed = true; } console.log(`  ${w.id}: ${have} (exists)`); continue; }
+    if (have) { if (!w.subtask && a.apply) { w.subtask = have; changed = true; } console.log(`  ${w.id}: ${have} (exists${w.subtask ? "" : ", recorded with --apply"})`); continue; }
     if (!a.apply) { console.log(`  ${w.id}: would create "${summary}"`); continue; }
     const st = L.states.get(w.id)!;
     const ownerIsMe = st.owner && me.displayName && st.owner.toLowerCase() === String(me.displayName).toLowerCase();

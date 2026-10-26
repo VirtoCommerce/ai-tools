@@ -200,7 +200,7 @@ function planOne(suite: { id: string; file: string; name: string }, args: Args):
     machineSourceCsv: suite.file,
     browserCsv: browserRows.length > 0 ? join(outDir, `suite-${suite.id}-resolved.browser.csv`) : "",
     counts: {
-      total: rows.length - absent.size,
+      total: rows.filter((r) => !absent.has(r.ID)).length,
       machine: result.machine.filter((id) => !pre.has(id) && !absent.has(id)).length,
       browser: browserRows.length,
       manual: result.manual.filter((id) => !absent.has(id)).length,

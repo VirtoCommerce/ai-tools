@@ -301,9 +301,10 @@ export async function runRegressionPreflight(o: {
     smokeGates: o.for === "smoke" ? runSmokeGates(o.root) : null,
     smokeDuplicate: o.for === "smoke" ? smokeDuplicateToday(o.root, now) : null,
   });
-  // What THESE cases need from the stand — only for suites that will actually run (gated ones are already out).
+  // What THESE cases need from the stand — only for suites that will actually run: module-gated and
+  // secret-gated suites leave the plan, so their cases must not reach the skip / not-deployed counts.
   if (o.requirements !== false) {
-    const gated = new Set(gating.gated.map((g) => g.suite));
+    const gated = new Set([...gating.gated, ...secrets.gated].map((g) => g.suite));
     let files = new Map<string, string>();
     try { files = new Map(loadManifest().suites.map((s) => [s.id, s.file])); } catch { /* manifest problems are reported above */ }
     const run = o.suites.filter((s) => !gated.has(s.id) && files.has(s.id)).map((s) => ({ id: s.id, file: files.get(s.id)! }));

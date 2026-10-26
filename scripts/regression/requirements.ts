@@ -28,8 +28,9 @@ import { join } from "node:path";
 import { parse as parseCsv } from "csv-parse/sync";
 import { parse as parseYaml } from "yaml";
 import { TestDataResolver } from "../lib/test-data-resolver.ts";
-import { resolveEnvCoords, type EnvCoords } from "../deploy/lib/env.ts";
-import { getAdminToken, type AdminAuth } from "../deploy/lib/live.ts";
+import { type EnvCoords } from "../deploy/lib/env.ts";
+import { probeCoords } from "../lib/env-facts.ts";
+import { probeAdminToken, type AdminAuth } from "../deploy/lib/live.ts";
 import { ghJson, setToken } from "../deploy/lib/github.ts";
 import type { Check } from "../preflight/policy.ts";
 
@@ -236,6 +237,8 @@ export async function personaChecks(root: string, env: string, c: EnvCoords, tok
     }
     if (!token || !c.backUrl) { out.push({ id: `persona:${alias}`, status: "UNKNOWN", found: `${email}: account state not checked (no admin token) — ${where}`, who: "you", do: `fix the admin credentials for ${env}`, diagnose: [] }); continue; }
     const { user: u, status } = await lookupAccount(c, token, email);
+    // A failed read (401/5xx/network) says nothing about the account: UNKNOWN, so no case is skipped on it.
+    if (!u && status !== 200) { out.push({ id: `persona:${alias}`, status: "UNKNOWN", found: `${email}: account lookup failed (HTTP ${status}) — ${where}`, who: "me", do: `re-run the pre-flight; if it repeats, check the admin credentials for ${env}`, diagnose: [] }); continue; }
     const problems = accountProblems(u, status);
     out.push(problems.length
       ? { id: `persona:${alias}`, status: "WARN", found: `${email}: ${problems.join("; ")} — ${where}`, who: "me, with OK",
@@ -263,6 +266,7 @@ export async function laneAccountChecks(root: string, env: string, c: EnvCoords,
       if (!email) continue;
       if (!token || !c.backUrl) return [{ id: "lanes:accounts", status: "UNKNOWN", found: "lane accounts not checked (no admin token)", who: "you", do: `fix the admin credentials for ${env}`, diagnose: [] }];
       const { user, status } = await lookupAccount(c, token, email);
+      if (!user && status !== 200) return [{ id: "lanes:accounts", status: "UNKNOWN", found: `lane accounts not checked: lookup of ${email} failed (HTTP ${status})`, who: "me", do: `re-run the pre-flight; if it repeats, check the admin credentials for ${env}`, diagnose: [] }];
       const pr = accountProblems(user, status);
       if (pr.length) bad.push(`${kind} ${email}: ${pr.join("; ")}`);
     }
@@ -314,6 +318,11 @@ export async function declaredChecks(env: string, c: EnvCoords, token: AdminAuth
     if (!auth || !c.backUrl) return null;
     try { const r = await fetch(`${c.backUrl}${url}`, { headers: auth, ...init }); return r.status === 200 ? await r.json() : null; } catch { return null; }
   };
+  // A setting read keeps its status: 404 means the setting is absent, anything else but 200 means unknown.
+  const getSetting = async (name: string): Promise<{ status: number; body: any }> => {
+    if (!auth || !c.backUrl) return { status: -1, body: null };
+    try { const r = await fetch(`${c.backUrl}/api/platform/settings/${encodeURIComponent(name)}`, { headers: auth }); return { status: r.status, body: r.status === 200 ? await r.json().catch(() => null) : null }; } catch { return { status: -1, body: null }; }
+  };
   const kinds = new Set(reqs.map((x) => x.r.kind));
   const store = kinds.has("storeSetting") ? await getJson(`/api/stores/${encodeURIComponent(storeId)}`) : null;
   const payments = kinds.has("paymentMethod") ? await getJson(`/api/payment/search`, { method: "POST", body: JSON.stringify({ storeId, take: 100 }) }) : null;
@@ -338,9 +347,10 @@ export async function declaredChecks(env: string, c: EnvCoords, token: AdminAuth
       if (!store) unknown = `store ${storeId} not readable (admin token?)`;
       else { const s = (store.settings ?? []).find((x: any) => x.name === r.name); present = !!s; value = s ? s.value ?? s.defaultValue : undefined; where = `store ${storeId}`; }
     } else if (r.kind === "platformSetting") {
-      if (!platform.has(r.name)) platform.set(r.name, await getJson(`/api/platform/settings/${encodeURIComponent(r.name)}`));
-      const s: any = platform.get(r.name);
+      if (!platform.has(r.name)) platform.set(r.name, await getSetting(r.name));
+      const got: any = platform.get(r.name), s = got?.body ?? null;
       if (!auth) unknown = "no admin token";
+      else if (got?.status !== 200 && got?.status !== 404) unknown = `platform setting ${r.name} not readable (HTTP ${got?.status})`;
       else { present = !!s; value = s ? (r.allowedIncludes ? s.allowedValues ?? [] : s.value ?? s.defaultValue) : undefined; where = r.allowedIncludes ? "platform, allowed values" : "platform"; }
     } else if (r.kind === "paymentMethod") {
       if (!payments) unknown = `payment methods of ${storeId} not readable`;
@@ -375,16 +385,34 @@ export async function declaredChecks(env: string, c: EnvCoords, token: AdminAuth
   return out;
 }
 
+/**
+ * The admin credential, checked once. A refused API key falls back to the password, as probeLiveModules does. A
+ * dropped connection or a 5xx is retried once (a busy stand, 2026-10-20); a 400/401 never is — a second failed
+ * password sign-in counts toward the shared admin's lockout.
+ */
+async function adminAuth(c: EnvCoords): Promise<AdminAuth | null> {
+  for (let i = 0; i < 2; i++) {
+    const p = await probeAdminToken(c);
+    if (p.token?.via === "api-key") {
+      const r = await fetch(`${c.backUrl}/api/platform/modules`, { headers: p.token.headers }).catch(() => null);
+      if (r && r.status !== 401 && r.status !== 403) return p.token;
+      return (await probeAdminToken({ ...c, apiKey: undefined })).token;
+    }
+    if (p.token) return p.token;
+    if (p.status !== "network" && !(typeof p.status === "number" && p.status >= 500)) return null;
+  }
+  return null;
+}
+
 /** All case-level checks for the selected suites. Read-only. */
 export async function requirementChecks(o: { root: string; env: string; suites: SuiteFile[] }): Promise<Check[]> {
   const reqFile = loadRequirements(o.root);
   const needs = collectCaseNeeds(o.root, o.suites);
   let c: EnvCoords | null = null, token: AdminAuth | null = null;
-  try { c = resolveEnvCoords(o.env); } catch { /* reported per row as UNKNOWN */ }
-  // One retry: without the token every account and module check degrades to UNKNOWN, and a single dropped
-  // connection is common enough on a busy stand to cost the whole case-level half (2026-10-20, vcptcore_regression).
-  for (let i = 0; c && !token && i < 2; i++) { try { token = await getAdminToken(c); } catch { /* retried, then UNKNOWN */ } }
+  // probeCoords, as the rest of the pre-flight: a .env.local ADMIN/BACK_URL override pairs with its own password.
   const checks: Check[] = [];
+  try { c = probeCoords(o.env); } catch (e) { checks.push({ id: "case-needs:env", status: "UNKNOWN", found: `${o.env}: stand coordinates not resolved (${(e as Error).message}) — personas, lane accounts and declared settings were not checked`, who: "you", do: `fix the env files for ${o.env} (npm run env:check)`, diagnose: [] }); }
+  if (c) token = await adminAuth(c);
   for (const s of needs.unreadable) checks.push({ id: `case-needs:${s}`, status: "UNKNOWN", found: `suite ${s}: CSV not readable, its personas and fixtures were not checked`, who: "me", do: "npm run suites:lint", diagnose: [] });
   const installed = c && reqFile.personas ? await installedModules(c, token) : null;
   checks.push(...fixtureChecks(o.root, o.env, needs.refs, { reqs: reqFile.personas, installed }));
