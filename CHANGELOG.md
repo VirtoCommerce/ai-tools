@@ -22,8 +22,9 @@ pixelmatch, pngjs) once into the fork's `node_modules/.cache/vc-frontend-visual`
 TypeScript copies under `scripts/visual/` are gone.
 
 **Fixed (review) — packages resolve from the project.** `lib.mjs` resolved a package from its own folder, which in an
-install is the plugin cache, so a fork that already had them still exited 2. It now resolves from the project root
-(git toplevel, else the working directory), then the cache, then its own folder, and imports the path as a file URL.
+install is the plugin cache, so a fork that already had them still exited 2. It now resolves from the cache
+`setup.mjs` fills (the pins, so Playwright matches the Chromium it downloaded), then the project root (git toplevel,
+else the working directory), then its own folder, and imports the path as a file URL.
 `setup.mjs` writes the pins as the cache folder's own `dependencies`: a second run no longer prunes what the first
 installed, and an installed version other than its pin is reinstalled.
 
@@ -45,8 +46,15 @@ files API) for that.
 
 **Added — `PIXEL` in `/vc-test:qa-ticket`, as its own item.** The orchestrator runs each `PIXEL` risk itself, whatever
 the Visual lane row says, with the vc-frontend plugin's `visual/` engine on a front checkout (the project root or a
-`.fix-workspace/` clone whose origin is the PR's repo) against the PR's base ref. Every risk gets a `VIS-<m>` row:
-`FAIL`, `PASS`, or `BLOCKED — <which>` when the engine, the checkout or a build is missing.
+`.fix-workspace/` clone whose origin is the PR's repo) against the PR's base ref, running the engine's setup and the
+base/head builds from that checkout. Every risk gets a `PIX-<m>` row in its own `scenarios/pixel.rows.md` (the Visual
+lane keeps `visual.rows.md`, so the two never write one file in one wave): `FAIL`, `PASS`, or `BLOCKED — <which>`
+when the engine, the checkout, setup or a build fails. `scenario-rows.mjs merge` takes `pixel` and skips a row whose
+id the checklist already holds, so merging after a later wave never duplicates it.
+
+**Fixed (review) — the gate.** A Lane reading `SKIP — not available in this install` takes no browser slot (clause
+8); a backticked `` `VISUAL` `` is still a bare VISUAL, and `VISUAL:DESIGN PIXEL` (no comma) fails clause 4 instead
+of dropping `PIXEL`; the 6s message tells an unprobed `pixel` from an install that can run it.
 
 **Added — `PIXEL` in the capabilities.** `capabilities.json` `pixel` names the engine and the front checkouts found.
 With `--capabilities`, an install without one keeps F8's `PIXEL` risk with its Lane reading

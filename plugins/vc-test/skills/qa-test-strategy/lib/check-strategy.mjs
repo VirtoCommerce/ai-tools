@@ -10,7 +10,7 @@ import { ARTIFACT_NEEDS, ARTIFACTS_FOR, computeFloors, domainMapTextOf, isAbando
 const CAP = 120; // lines per round section (D9)
 // A lane that opens no browser, by its leading word. Every other lane counts toward the three of agents.md §Parallel
 // Execution — an unrecognised name (`msedge`, `Lane A`) counts, so a new browser name can never slip past clause 8.
-const NON_BROWSER_LANE = /^(?:(?:api|rest|graphql|xapi|scripts?|node|cli|shell|unit|newman|postman|none)\b|n\/a\b|[—–-]\s*$)/i;
+const NON_BROWSER_LANE = /^(?:(?:api|rest|graphql|xapi|scripts?|node|cli|shell|unit|newman|postman|none|skip)\b|n\/a\b|[—–-]\s*$)/i;
 const lastRound = (md) => { const i = md.lastIndexOf("\n## Round "); return i < 0 ? "" : md.slice(i + 1); };
 // A heading counts only as the template writes it: a renamed one ("### Risk register") is missing, never matched.
 const HEADING = (h) => new RegExp(`^### ${h}[ \\t]*$`, "m");
@@ -45,13 +45,17 @@ const RISK_REF = /\bR-?\d+\b/;
 export const INSTRUMENTS = ["PIXEL", "DESIGN", "PROBE", "CONTENT"];
 const TOKEN = new RegExp(`\\s*([a-z][\\w-]*)(?::([^\\s,·()|]+(?:,[^\\s,·()|]+|\\s*,\\s*(?:${INSTRUMENTS.join("|")})\\b)*))?`, "iy");
 const TOKEN_SEP = /\s*[,·+/]\s*/y;
-export function techniqueTokens(cell) {
+// An instrument after anything but a comma (`VISUAL:DESIGN PIXEL`) would drop out of the list unseen: it is `stray`.
+const STRAY = new RegExp(`^\\s*[^,\\w\\s]?\\s*(${INSTRUMENTS.join("|")})\\b`, "i");
+export function techniqueTokens(raw) {
+  const cell = String(raw).replace(/`/g, ""); // a backticked `VISUAL` is still the token
   const tokens = [];
   for (let i = 0; ;) {
     TOKEN.lastIndex = i;
     const m = TOKEN.exec(cell);
     if (!m) break;
-    tokens.push({ name: m[1].toUpperCase(), instruments: m[2] === undefined ? null : m[2].split(/\s*,\s*/).map((s) => s.toUpperCase()) });
+    const stray = m[2] === undefined ? null : STRAY.exec(cell.slice(TOKEN.lastIndex))?.[1]?.toUpperCase() ?? null;
+    tokens.push({ name: m[1].toUpperCase(), instruments: m[2] === undefined ? null : m[2].split(/\s*,\s*/).map((s) => s.toUpperCase()), stray });
     TOKEN_SEP.lastIndex = TOKEN.lastIndex;
     if (!TOKEN_SEP.test(cell)) break;
     i = TOKEN_SEP.lastIndex;
@@ -100,6 +104,7 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names, chan
     if (!/^\W*(low|medium|high)\b/i.test(a.effort)) errors.push(`4: ${x.r} effort "${a.effort}" is not low|medium|high`);
     for (const t of techniqueTokens(a.technique).filter((y) => y.name === "VISUAL")) {
       if (!t.instruments) errors.push(`4: ${x.r} technique VISUAL names no instrument — VISUAL:<${INSTRUMENTS.join("|")}>, several comma-separated: VISUAL:DESIGN,PIXEL (floors.md §VISUAL)`);
+      else if (t.stray) errors.push(`4: ${x.r} technique VISUAL:${t.instruments.join(",")} is followed by ${t.stray} without a comma — several instruments are one comma-separated token: VISUAL:DESIGN,PIXEL`);
       else for (const i of t.instruments.filter((y) => !INSTRUMENTS.includes(y))) errors.push(`4: ${x.r} technique VISUAL names "${i}", not an instrument — ${INSTRUMENTS.join(", ")}; several are comma-separated: VISUAL:DESIGN,PIXEL`);
     }
   }
@@ -147,7 +152,7 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names, chan
   const pixelRows = approach.filter((a) => instrumentsOf(a.technique).includes("PIXEL"));
   const pixelCap = capabilities ? ARTIFACT_NEEDS.PIXEL(capabilities) : null;
   for (const a of pixelRows.filter((y) => NOT_IN_INSTALL.test(y.lane))) {
-    if (!pixelCap) errors.push(`6s: ${a.r} PIXEL is SKIP — not available in this install, but ${capabilities ? "this install can run PIXEL" : "no --capabilities was given"}`);
+    if (!pixelCap) errors.push(`6s: ${a.r} PIXEL is SKIP — not available in this install, but ${!capabilities ? "no --capabilities was given" : !capabilities.pixel ? "capabilities.json has no `pixel` (the install was not probed for it)" : "this install can run PIXEL"}`);
     else if (!/\bPIXEL\b/.test(outOfScope)) errors.push(`6s: ${a.r} PIXEL is SKIP — not available in this install (${pixelCap}), but Out of scope does not name PIXEL`);
   }
   if (floors.floors.some((f) => f.id === "F8" && f.requires.includes(PIXEL_REQUIREMENT)) && !pixelRows.length)

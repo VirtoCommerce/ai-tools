@@ -8,8 +8,8 @@
 // package.json `dependencies` before `npm install` runs there, so a second run never prunes what the first
 // installed, and a changed pin (an installed version that differs from it) reinstalls that package. --with-browser also downloads
 // Playwright's Chromium into Playwright's own cache (~/.cache/ms-playwright on Linux); a machine that already has it
-// skips the download. A repository whose node_modules already resolves all three needs no setup: the engine loads
-// them from there first.
+// skips the download. A repository whose node_modules already resolves all three needs no setup; once setup has run,
+// the engine loads its pinned copies first.
 //
 // EXIT 0 installed (or already present) · 2 npm or the browser download failed.
 

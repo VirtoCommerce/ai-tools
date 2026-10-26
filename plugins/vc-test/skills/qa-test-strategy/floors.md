@@ -58,15 +58,16 @@ Source carries the token `floor:<id>`, and no risk carries two (test-model redes
 
 ## VISUAL
 
-A `VISUAL` risk names the instrument that decides it, chosen by
-[`visual-axis.md`](../../../../.claude/skills/qa-test/visual-axis.md) §2a: `PIXEL` (did anything change that should
+A `VISUAL` risk names the instrument that decides it — the whole rule is here; ai-tools' `visual-axis.md` §2a is its
+source, not a step: `PIXEL` (did anything change that should
 not have — a change that declares no visual effect or moves shared UI), `DESIGN` (matches its reference), `PROBE`
 (layout holds on hard data), `CONTENT` (the rendered text is right).
 
 - **One form:** `VISUAL:<instrument>`, several comma-separated with no `VISUAL` repeated — `VISUAL:DESIGN,PIXEL`.
   Case does not matter. The gate reads only the technique cell's leading token list (`FLOW, DT, VISUAL:PIXEL`), so
-  prose after it ("FLOW (not VISUAL)") is no token. A bare `VISUAL` — beside a named one too — and a name that is
-  not an instrument (`VISUAL:DESIGN+PIXEL`) fail clause 4.
+  prose after it ("FLOW (not VISUAL)") is no token. A bare `VISUAL` — beside a named one too, or in backticks — a name that is
+  not an instrument (`VISUAL:DESIGN+PIXEL`), and an instrument after anything but a comma (`VISUAL:DESIGN PIXEL`)
+  fail clause 4.
 - **F8 takes `PIXEL` only for an existing surface** (clause 6): a ui-kit file some counted PR modifies. A file every
   PR that lists it adds (the bundle's `added`, from the files API) is a new surface: `PIXEL` has no base build for
   it, so F8 asks only for the visual lane and the token audit. A PR without `added` reads as modifying.

@@ -72,14 +72,15 @@ export function depsDir() {
 }
 
 /**
- * Load one package, resolved from (1) the project root — so an engine running from the plugin cache still finds the
- * project's node_modules, which a bare `import(name)` never would (it resolves from this file's folder) — then
- * (2) depsDir(), then (3) this file's own folder (an ai-tools checkout run from elsewhere). The resolved path is
+ * Load one package, resolved from (1) depsDir() — the pinned versions setup.mjs installed, so playwright matches the
+ * Chromium `--with-browser` downloaded for it — then (2) the project root, so an engine running from the plugin cache
+ * still finds a project's own node_modules without setup (a bare `import(name)` never would: it resolves from this
+ * file's folder), then (3) this file's own folder (an ai-tools checkout run from elsewhere). The resolved path is
  * imported as a file URL: a bare Windows path is not a valid import specifier. Exits 2 with the setup command when
  * none has it.
  */
 export async function load(name) {
-  for (const base of [projectRoot(), depsDir(), dirname(fileURLToPath(import.meta.url))]) {
+  for (const base of [depsDir(), projectRoot(), dirname(fileURLToPath(import.meta.url))]) {
     let path;
     try {
       path = createRequire(join(base, "package.json")).resolve(name);
