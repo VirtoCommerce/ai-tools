@@ -1,7 +1,7 @@
 // plugins/vc-test/lib/trace.mjs — fills the last round's `### Reconciliation` table of test-strategy.md from the result
 // rows of testing-checklist.md, so a risk's result is read off its rows by a script, never copied by hand (SKILL.md §Reconcile).
-// A result row (`C-n`, `SC-n.m`, `VIS-n`, `PIX-n`) belongs to a risk when its Ref names `R<n>`, or names `S-<n>` whose
-// `### Scenarios` row's Why likely ends `· R<n>`. A Ref naming an R or S the round does not have is reported, not guessed.
+// A result row (`C-n`, `SC-n.m`, `VIS-n`, `PIX-n`) belongs to a risk when its Ref names `R<n>`, or (an `SC-`/`VIS-`/`PIX-` row only) names `S-<n>` whose
+// `### Scenarios` row's Why likely ends `· R<n>`. In a `C-n` row an `S-n` is a change-map suspicion: ignored, never unknown. A Ref naming an R or S the round does not have is reported.
 // CLI: node plugins/vc-test/lib/trace.mjs reconcile --strategy <test-strategy.md> --checklist <testing-checklist.md>
 //        [--run-plan <run-plan.json>] [--bundle <bundle.json>] [--write]
 //   prints { unresulted, capped, unknownRefs, acsWithoutRow }; --write replaces the table's rows (idempotent).
@@ -56,7 +56,11 @@ export function reconcile({ strategyMd, checklistMd, runPlan = null, acs = [] })
   const results = resultRows(checklistMd);
   const known = new Set(risks.map((x) => x.r));
 
-  const owners = (row) => new Set([...risksIn(row.ref), ...scenariosIn(row.ref).flatMap((s) => scenarioRisks.get(s) ?? [])]);
+  // In a `C-n` row an `S-n` is a change-map suspicion (briefs/checklist.md): it attributes nothing. Only the scenario rows
+  // (`SC-`, `VIS-`, `PIX-`) resolve an `S-n` to a Scenarios row.
+  const scenarioRow = (row) => !row.id.startsWith("C-");
+  const scenariosOf = (row) => (scenarioRow(row) ? scenariosIn(row.ref) : []);
+  const owners = (row) => new Set([...risksIn(row.ref), ...scenariosOf(row).flatMap((s) => scenarioRisks.get(s) ?? [])]);
   const out = risks.map(({ r, level }) => {
     const mine = results.filter((row) => owners(row).has(r));
     const scenarios = [...scenarioRisks].filter(([, rs]) => rs.includes(r)).map(([s]) => s);
@@ -75,7 +79,7 @@ export function reconcile({ strategyMd, checklistMd, runPlan = null, acs = [] })
   });
 
   const knownS = new Set(scenarioRisks.keys());
-  const unknownRefs = results.filter((row) => risksIn(row.ref).some((x) => !known.has(x)) || scenariosIn(row.ref).some((x) => !knownS.has(x)))
+  const unknownRefs = results.filter((row) => risksIn(row.ref).some((x) => !known.has(x)) || scenariosOf(row).some((x) => !knownS.has(x)))
     .map((row) => ({ id: row.id, ref: row.ref }));
   return {
     rows: out,
