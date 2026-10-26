@@ -17,9 +17,13 @@ only. Assignee, Sprint, QA engineer, Fix versions and Parent are left alone. Eac
 proves (Actual / Expected / Steps), and every rich-text field is sent as lists with bold labels and `code` values,
 verified from `renderedFields`. Checked on VCST-6500: three images render inside Actual result.
 
-**Added — Need hotfixes, by code.** On VirtoCommerce's own tracker the flag is set when the defect's code is in either
-of the two latest stable bundles (the two highest `vN` in `vc-modules/bundles`), whatever the priority, and never from
-a stand. The option is set by id (VC's value reads `" true"`), and one Environment line names the bundles and the anchor.
+**Added — Need hotfixes, by code.** On VirtoCommerce's own tracker — `tracker-ops.md` §2a now defines it as a Jira
+profile with `operator: "virto-engineer"` and `projectType: "platform"`, the same test as the origin labels — the flag
+is set when the defect's code is in either of the two latest stable bundles (the two highest `vN` in
+`vc-modules/bundles`, compared as numbers), whatever the priority, and never from a stand.
+
+**Changed — the Bug is created with the Atlassian MCP.** The origin-label hook checks only the MCP create, so the bridge
+`jira request` POST is used only without the MCP, carries the labels itself, and the labels are read back after the create. The option is set by id (VC's value reads `" true"`), and one Environment line names the bundles and the anchor.
 
 **Added — three arguments.** `--evidence <dir>` reads a `/qa-investigate` package instead of reproducing again;
 `--link <KEY>[:type]` relates the bug to a ticket; `--confirmed` carries a caller's yes so Step 5 does not ask per

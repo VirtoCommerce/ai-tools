@@ -54,15 +54,17 @@ as paragraphs came back from the reader as unreadable.
 A rich-text field takes **ADF** on the v3 API, not Markdown. Recognise it by its `schema`, not its type name:
 createmeta reports it as `type: "string"` (VCST's Steps to reproduce does), with `custom` ending in `:textarea`
 or `system` = `description` / `environment`. The MCP's Markdown→ADF conversion covers the Description only.
-Create with the MCP, then set the other fields
+Create with the MCP `createJiraIssue`, then set the other fields
 with one `node "$VC_RUN" jira update --key <KEY> --fields-file fields.json` carrying ADF for every
-rich-text field, shaped as above (`orderedList` / `bulletList`, `strong` and `code` marks); or create everything at once
-with `jira request --method POST --path /rest/api/3/issue --body-file issue.json`.
+rich-text field, shaped as above (`orderedList` / `bulletList`, `strong` and `code` marks). Create through
+`jira request --method POST --path /rest/api/3/issue --body-file issue.json` **only when the Atlassian MCP is not
+connected**: the origin-label hook (`tracker-ops.md` §2a) checks the MCP create, never a bridge POST, so the bridge
+body carries the labels itself. Either way, read `labels` back after the create and add a missing one with `jira update`.
 
 ## 2. Links
 
 - `--link <KEY>[:<type>]` (repeatable) — a Relates link by default to the ticket the caller names
-  (`/qa-run` passes the release ticket, `/qa-test` the ticket under test). The link type is one of the
+  (a release run passes its release ticket, `/qa-test` the ticket under test). The link type is one of the
   site's own (`jira request --method GET --path /rest/api/3/issueLinkType`), created with
   `jira request --method POST --path /rest/api/3/issueLink`; never a Parent link, which is an epic in most projects.
 - Every related ticket the duplicate search (§5) found but judged **not** a duplicate is linked
@@ -97,12 +99,13 @@ A field that persisted the node but renders no `<img>` is not delivered; fall ba
 ## 4. Need hotfixes — decided by code, against the two latest stable bundles
 
 Only when **both** hold: the Bug type has a `Need hotfixes` field (§1), and the tracker is VirtoCommerce's own
-Jira — the same rule as the VC-internal origin labels (`tracker-ops.md` §2a). `projectType: platform` alone does
-not qualify: a customer running stock VC on their own Jira has it too, and has no VC stable bundles. Otherwise
-skip this section, and write no Need-hotfixes line.
+Jira — decided exactly as for the VC-internal origin labels (`tracker-ops.md` §2a, *VC's own Jira*). `projectType:
+platform` alone does not qualify: a customer running stock VC on their own Jira has it too, and has no VC stable
+bundles. Otherwise skip this section, and write no Need-hotfixes line.
 
-1. **Which bundles.** List `bundles/` in `VirtoCommerce/vc-modules` and take the **two highest `vN`
-   folders** — never a version number written into a prompt; when a new bundle is cut, the pair moves.
+1. **Which bundles.** List `bundles/` in `VirtoCommerce/vc-modules`, keep the folders named `v<number>`, and take the
+   **two highest by that number** — the listing is in text order (`v16` before `v2`), so never the last two
+   entries; and never a version number written into a prompt: when a new bundle is cut, the pair moves.
 2. **Which version.** Read each bundle's `package.json` and take the pinned version of the repo that
    owns the defect (the Fix Routing block's repo; `vc-frontend` for the theme).
 3. **Is the defect there.** Open the defect's code anchor (`root-cause.md` / the Fix Routing block names
@@ -110,8 +113,8 @@ skip this section, and write no Need-hotfixes line.
    set, **whatever the priority** — the decision to actually hotfix stays with the product owner.
    Different code with the same visible defect (e.g. a value not masked at all in the older bundle)
    counts as present.
-4. **Already fixed on that line** (a newer same-line patch contains the fix — `/qa-bundle-check`) ⇒ no
-   hotfix; the bundle needs that patch picked up. Say so in Environment instead of setting the flag.
+4. **Already fixed on that line** — the owning repo has a tag on the pinned version's `major.minor` line newer
+   than the pinned one, and the anchor is fixed at it ⇒ no hotfix; the bundle needs that patch picked up. Say so in Environment instead of setting the flag.
 5. **No code anchor** ⇒ leave the flag unset and write `Need hotfixes: undetermined — no code anchor`.
 6. **Never confirm it on a stand.** The decision is the code at the bundle's pinned tag; a stand can
    drift from its bundle in either direction.
@@ -124,8 +127,8 @@ Append one line to Environment:
 
 ## 5. Duplicate search — before the operator is asked
 
-- **Where.** `tracker.projectKey`, plus the projects in `tracker.duplicateSearchProjects` when the profile lists
-  them (VC files product bugs in several projects). Nothing else is guessed.
+- **Where.** `tracker.projectKey`, plus the project of each `--link` ticket (VC files product bugs in several
+  projects, and the caller's ticket names the one that matters). Nothing else is guessed.
 - **How.** `issuetype = Bug AND text ~ "<2–4 distinctive terms>" ORDER BY updated DESC` — the terms are the
   verbatim error message or the endpoint / GraphQL operation plus one UI noun, not the summary. Read at most the
   first 10 hits. Done issues stay in: a fixed bug that is back is a regression to link, not a new defect.

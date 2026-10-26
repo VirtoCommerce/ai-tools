@@ -220,7 +220,8 @@ them. Always resolve the *destination status* by role, then map it to the live w
 
 Every Jira **Bug** Claude creates — and every **Sub-task** that is a bug (§5b in-scope filing) — says who found it
 and, for an agent finding, during what.
-In the VirtoCommerce QA repo a PreToolUse hook refuses the create call without a valid set.
+In the VirtoCommerce QA repo a PreToolUse hook refuses the Atlassian MCP create call without a valid set; a bridge
+`jira request` POST is not checked, so it is used only without the MCP (`jira-bug-fields.md` §1).
 
 | Who found it | Labels |
 |---|---|
@@ -239,6 +240,11 @@ crediting agents with a person's finding corrupts the metric.
 
 A label that turns out wrong is corrected in Jira by hand. **These labels are VC-internal: apply them only on
 VC's own Jira, never on a client project's tracker.**
+
+**VC's own Jira** = `tracker.kind = jira` **and** the profile's `operator: "virto-engineer"` **and** `projectType:
+"platform"`. `/project-init` derives both: `operator` from the token's push access to `VirtoCommerce/vc-platform`,
+`projectType` from the repo scan. Anything else — `operator: "client"` or `"ask"`, or a client project a VC
+engineer works in — is not VC's own Jira.
 
 ## 3. Which git/PR mechanism? — from `contributionPlan(repo)`
 
