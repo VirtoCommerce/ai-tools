@@ -144,7 +144,8 @@ export function buildDeclarations(existing, { pat, shim, projectId, githubServer
     for (const n of pw[e]) secrets[passwordSecret(n, e)] = { backend: "local" };
     envTasks[onboardTask(e)] = { ...task("onboard", axes), env: { ...env(axes), ...bind } };
     // vc-test's runner (bridge/runner.mjs): that env's passwords and no token axis, whatever axes exist.
-    envTasks[runnerTask(e)] = { ...task("runner", []), env: { ...bind } };
+    // TEST_ENV is pinned, so a caller-set TEST_ENV cannot pass another env's check with these passwords.
+    envTasks[runnerTask(e)] = { ...task("runner", []), env: { ...bind, TEST_ENV: `literal:${e}` } };
     for (const lane of Object.keys(laneDefs).sort()) {
       laneServers[laneServer(lane, e)] = { command: laneDefs[lane].command, args: laneArgsForEnv(laneDefs[lane].args, e), env: { ...bind, npm_config_prefer_offline: "literal:true" } };
     }

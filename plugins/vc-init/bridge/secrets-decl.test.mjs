@@ -98,7 +98,8 @@ test("the CLI writes the .gitignore entry before the file exists", () => {
 
 test("a runner task per password env binds that env's passwords and no token", () => {
   const d = buildDeclarations(null, { pat: { github: true, jira: true }, shim: SHIM, projectId: "p", passwords: { vcst: ["ADMIN_PASSWORD"] } });
-  assert.deepEqual(d.tasks[runnerTask("vcst")], { command: "node", args: [SHIM, "--inner", "runner"], env: { ADMIN_PASSWORD: `secret:${passwordSecret("ADMIN_PASSWORD", "vcst")}` } });
+  assert.deepEqual(d.tasks[runnerTask("vcst")], { command: "node", args: [SHIM, "--inner", "runner"], env: { ADMIN_PASSWORD: `secret:${passwordSecret("ADMIN_PASSWORD", "vcst")}`, TEST_ENV: "literal:vcst" } });
+  // The task pins its own env: a caller-set TEST_ENV cannot pass another env's check with these passwords.
   const dropped = buildDeclarations(d, { pat: { github: true, jira: true }, shim: SHIM, projectId: "p", passwords: {} });
   assert.equal(runnerTask("vcst") in (dropped.tasks || {}), false);
   const none = buildDeclarations(null, { pat: { github: true }, shim: SHIM, projectId: "p" });

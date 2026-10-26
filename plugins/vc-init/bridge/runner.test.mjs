@@ -84,7 +84,7 @@ test("groups: runner is its own group, and no other tool runs in it", () => {
 
 test("command: a fixed argv, the pinned config, the project's own Playwright first", () => {
   assert.deepEqual(runnerCommand(["playwright", "a.spec.ts"], { node: "N", playwrightCli: "CLI", config: "CFG", files: ["/abs/a.spec.ts"] }),
-    { command: "N", args: ["CLI", "test", "--config", "CFG", "/abs/a.spec.ts"] });
+    { command: "N", args: ["CLI", "test", "--config", "CFG", "^[\\\\/]abs[\\\\/]a\\.spec\\.ts$"] });
   assert.deepEqual(runnerCommand(["node", "c.mjs", "--x", "1"], { node: "N", files: ["/abs/c.mjs"] }), { command: "N", args: ["/abs/c.mjs", "--x", "1"] });
   const dir = project();
   const plugin = (name, rel) => (name === "vc-test" ? `/plugin/${rel}` : null);
@@ -147,4 +147,61 @@ test("inner: another group's task cannot run the runner, and the runner task can
   writeFileSync(join(dir, "reports", "tickets", "c.mjs"), "");
   assert.equal(bridge(["--inner", "onboard"], { cwd: dir, env: { VC_RUN_ARGV: JSON.stringify(["runner", "node", "reports/tickets/c.mjs"]) } }).status, 64);
   assert.equal(bridge(["--inner", "runner"], { cwd: dir, env: { ADMIN_PASSWORD: "p", VC_RUN_ARGV: JSON.stringify(["gh", "pr", "list"]) } }).status, 64);
+});
+
+// ── Fix pass after the branch review ─────────────────────────────────────────────────────────────
+
+test("review 1: a Playwright file filter is an anchored, escaped pattern that matches either separator", () => {
+  const win = "C:\\Users\\a\\reports\\tickets\\a.spec.ts";
+  const [, , , , filter] = runnerCommand(["playwright", "a.spec.ts"], { node: "N", playwrightCli: "CLI", config: "CFG", files: [win] }).args;
+  for (const p of [win, "C:/Users/a/reports/tickets/a.spec.ts"]) assert.equal(new RegExp(filter, "gi").test(p), true, p);
+  assert.equal(new RegExp(filter, "gi").test("C:/Users/a/reports/tickets/b.spec.ts"), false);
+  const [, , , , wide] = runnerCommand(["playwright", "x|.spec.ts"], { node: "N", playwrightCli: "CLI", config: "CFG", files: ["/p/r/x|.spec.ts"] }).args;
+  assert.equal(new RegExp(wide, "gi").test("/p/other/any.spec.ts"), false);
+  assert.equal(new RegExp(wide, "gi").test("/p/r/x|.spec.ts"), true);
+});
+
+test("review 2: the direct route runs the child on the env it checked", () => {
+  const dir = project({ test: { environments: { qa: {} }, scriptRoots: ["reports/tickets"] }, decl: { tasks: { "vc-init-onboard.qa": { command: "node", env: { ADMIN_PASSWORD: "secret:admin-password-qa" } } } } });
+  writeFileSync(join(dir, "reports", "tickets", "env.mjs"), "console.log('env=' + process.env.TEST_ENV)");
+  const r = bridge(["runner", "node", "reports/tickets/env.mjs"], { cwd: dir, env: {} });
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /env=qa/);
+});
+
+test("review 3: passwords kept in .env.local are redacted from the output too", () => {
+  const dir = project();
+  writeFileSync(join(dir, ".env.local"), "ADMIN_PASSWORD_VCST=FilePw-12345\nUSER_PASSWORD=Plain-Pw-678\n");
+  writeFileSync(join(dir, "reports", "tickets", "p.mjs"),
+    "import { readFileSync } from 'node:fs'; console.log(readFileSync('.env.local', 'utf8'))");
+  const r = bridge(["runner", "node", "reports/tickets/p.mjs"], { cwd: dir, env: { TEST_ENV: "vcst" } });
+  assert.equal(r.status, 0, r.stderr);
+  assert.doesNotMatch(r.stdout, /FilePw-12345|Plain-Pw-678/);
+});
+
+test("review 4: the inner side reads the declared project's own profile, never a parent's", () => {
+  const parent = project();
+  const child = join(parent, "sub");
+  mkdirSync(join(child, ".claude"), { recursive: true });
+  mkdirSync(join(child, "reports", "tickets"), { recursive: true });
+  writeFileSync(join(child, ".claude", "vc-secrets.local.json"), JSON.stringify({ tasks: { [runnerTask("vcst")]: { command: "node" } } }));
+  writeFileSync(join(child, "reports", "tickets", "c.mjs"), "console.log('ran')");
+  writeFileSync(join(parent, "reports", "tickets", "c.mjs"), "console.log('ran')"); // so only the profile decides
+  const r = bridge(["--inner", "runner"], { cwd: child, env: { TEST_ENV: "vcst", ADMIN_PASSWORD: "p", VC_RUN_ARGV: JSON.stringify(["runner", "node", "reports/tickets/c.mjs"]) } });
+  assert.equal(r.status, 64, r.stdout + r.stderr);
+  assert.doesNotMatch(r.stdout, /ran/);
+});
+
+test("review 5: a scriptRoot outside the project is no root at all", () => {
+  const dir = project();
+  const inner = join(dir, "proj");
+  mkdirSync(inner);
+  no(checkRunnerFiles(["node", join(dir, "outside.mjs")], { projectRoot: inner, scriptRoots: [".."] }));
+  writeFileSync(join(dir, "outside.mjs"), "");
+  no(checkRunnerFiles(["node", join(dir, "outside.mjs")], { projectRoot: inner, scriptRoots: [".."] }), /outside the project/);
+});
+
+test("review 9: the runner keeps PLAYWRIGHT_BROWSERS_PATH (not a credential)", () => {
+  const { env } = buildInnerEnv({ ...process.env, PLAYWRIGHT_BROWSERS_PATH: "D:/pw" }, "runner");
+  assert.equal(env.PLAYWRIGHT_BROWSERS_PATH, "D:/pw");
 });

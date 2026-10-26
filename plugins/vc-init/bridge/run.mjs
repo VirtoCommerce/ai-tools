@@ -49,7 +49,7 @@ import { createRedactor } from "./redact.mjs";
 import { resolvePluginFile, resolvePluginRoot, selfRoot } from "./resolve-plugin.mjs";
 import { vcSecretsShim } from "./vc-secrets-path.mjs";
 import { checkRunnerFiles, findPlaywright, runnerCommand, runnerEnvAllowed } from "./runner.mjs";
-import { currentEnv, declaredPasswords, isPasswordName, laneServer, onboardTask, runnerTask } from "../skills/project-init/lib/passwords.mjs";
+import { currentEnv, declaredPasswords, envFilePasswords, isPasswordName, laneServer, onboardTask, runnerTask } from "../skills/project-init/lib/passwords.mjs";
 
 export const EX_REFUSED = 64;
 export const EX_UNAVAILABLE = 69;
@@ -71,15 +71,16 @@ export function findGovernance(start = process.cwd(), { useEnv = true } = {}) {
 
 /**
  * The nearest project-profile.json, found as findGovernance finds it: { path, profile }, or null when
- * there is none or it does not parse.
+ * there is none or it does not parse. `walk: false` reads `start` itself only (the runner's inner side:
+ * the declared project's own profile, never a parent folder's).
  */
-export function findProfile(start = process.cwd(), { useEnv = true } = {}) {
+export function findProfile(start = process.cwd(), { useEnv = true, walk = true } = {}) {
   const candidates = [];
   // The inner side passes useEnv:false and the declarations root: the caller sets those variables.
   if (useEnv && process.env.PROJECT_PROFILE_PATH) candidates.push(process.env.PROJECT_PROFILE_PATH);
   if (useEnv && process.env.VC_FIX_HOME) candidates.push(join(resolve(process.env.VC_FIX_HOME), "project-profile.json"));
   let dir = resolve(start);
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < (walk ? 12 : 1); i++) {
     candidates.push(join(dir, "project-profile.json"));
     const parent = dirname(dir);
     if (parent === dir) break;
@@ -172,6 +173,10 @@ export function buildInnerEnv(source, group, { nodePath = process.execPath, help
   // the runner's `vc-init-runner.<env>` task injects nothing else.
   if (group === "onboard" || group === "runner") {
     for (const [name, v] of Object.entries(source)) if (isPasswordName(name) && typeof v === "string" && v.length) secrets[name] = v;
+  }
+  // Playwright's own browser location: not a credential, and `runner playwright` fails without it.
+  if (group === "runner") {
+    for (const [k, v] of Object.entries(source)) if (k.toUpperCase() === "PLAYWRIGHT_BROWSERS_PATH") env[k] = v;
   }
   Object.assign(env, secrets);
   const githubToken = secrets.GITHUB_FIX_BUGS_TOKEN || secrets.GITHUB_TOKEN;
@@ -502,7 +507,16 @@ export function prepareRunner(args, decls, found, { trustedOnly = false } = {}) 
     pw = findPlaywright(projectRoot, resolvePluginFile, { trustedOnly });
     if (pw.error) return { code: EX_UNAVAILABLE, message: pw.error };
   }
-  return { cmd: runnerCommand(args, { node: process.execPath, ...pw, files: files.files }), projectRoot, env };
+  // Passwords kept in the env files reach the child only through its own loader, but its output is
+  // redacted for them too (B10): only the values, never into the child's environment.
+  const filePasswords = [".env.local", `.env.playwright.${env}`].flatMap((name) => {
+    try {
+      return Object.values(envFilePasswords(readFileSync(join(projectRoot, name), "utf8"), env));
+    } catch {
+      return [];
+    }
+  });
+  return { cmd: runnerCommand(args, { node: process.execPath, ...pw, files: files.files }), projectRoot, env, filePasswords };
 }
 
 /**
@@ -528,7 +542,8 @@ async function runnerOuter(args) {
     });
   }
   const { env, secrets } = buildInnerEnv(process.env, "runner", { projectRoot: runner.projectRoot });
-  return runChild(runner.cmd.command, runner.cmd.args, { env, secrets: Object.values(secrets), cwd: runner.projectRoot });
+  env.TEST_ENV = runner.env; // the env just checked, not whatever the child's loader would fall back to
+  return runChild(runner.cmd.command, runner.cmd.args, { env, secrets: [...Object.values(secrets), ...runner.filePasswords], cwd: runner.projectRoot });
 }
 
 /** INNER side — runs inside `vc-secrets task vc-init-<group>`, with that group's secrets in its env. */
@@ -571,7 +586,7 @@ async function inner(group) {
     return EX_REFUSED;
   }
   // The runner's checks are repeated here against the declared project's own profile (useEnv:false).
-  const runner = tool === "runner" ? prepareRunner(args, decls, findProfile(decls.root, { useEnv: false }), { trustedOnly: true }) : null;
+  const runner = tool === "runner" ? prepareRunner(args, decls, findProfile(decls.root, { useEnv: false, walk: false }), { trustedOnly: true }) : null;
   if (runner?.code) {
     say(runner.message);
     return runner.code;
@@ -591,7 +606,7 @@ async function inner(group) {
   try {
     return await runChild(cmd.command, cmd.args, {
       env: { ...env, GH_CONFIG_DIR: own.ghConfigDir, GIT_CONFIG_GLOBAL: own.gitGlobalConfig },
-      secrets: Object.values(secrets),
+      secrets: [...Object.values(secrets), ...(runner ? runner.filePasswords : [])],
       emails: [process.env.JIRA_EMAIL, process.env.JIRA_USER].filter(Boolean),
       ...(runner ? { cwd: runner.projectRoot } : {}),
     });

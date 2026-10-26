@@ -64,7 +64,18 @@ export function checkRunnerFiles(args, { projectRoot, scriptRoots } = {}) {
   if (!Array.isArray(scriptRoots) || !scriptRoots.some((r) => typeof r === "string" && r.trim())) {
     return { ...no("the profile's test block names no scriptRoots — run /vc-test:init"), files: [] };
   }
-  const roots = scriptRoots.filter((r) => typeof r === "string" && r.trim()).map((r) => real(resolve(projectRoot, r))).filter(Boolean);
+  const project = real(projectRoot);
+  const within = (root, path) => {
+    const rel = relative(root, path);
+    return rel === "" || (!rel.startsWith("..") && !isAbsolute(rel));
+  };
+  const roots = [];
+  for (const r of scriptRoots.filter((x) => typeof x === "string" && x.trim())) {
+    const root = real(resolve(projectRoot, r));
+    if (!root) continue; // a root that does not exist yet holds nothing to run
+    if (!project || !within(project, root)) return { ...no(`scriptRoot ${JSON.stringify(r)} is outside the project — a root holds the run folder or the corpus`), files: [] };
+    roots.push(root);
+  }
   const files = [];
   for (const f of filesOf(args)) {
     const abs = resolve(projectRoot, f);
@@ -105,8 +116,23 @@ export function findPlaywright(projectRoot, resolvePlugin, opts = {}) {
   return { playwrightCli, config };
 }
 
-/** The fixed argv: node runs the Playwright CLI or the script; nothing else reaches the command line. */
+/**
+ * Playwright reads every CLI file argument as a case-insensitive REGEX matched anywhere in a test file's
+ * path. A raw Windows path never matches (`\r`, `\t` become escapes) and a name like `x|.spec.ts` would
+ * widen the selection past the checked file, so each file goes as an anchored, escaped pattern that
+ * accepts either separator.
+ */
+export function fileFilter(path) {
+  const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return `^${String(path).split(/[\\/]/).map(escape).join("[\\\\/]")}$`;
+}
+
+/**
+ * The fixed argv: node runs the Playwright CLI or the script; nothing else reaches the command line.
+ * Contract for vc-test's pinned config (P1c): its `testDir` must come from the project (the cwd the runner
+ * sets), not from the config's own folder, or no project file is ever found.
+ */
 export function runnerCommand(args, { node, playwrightCli, config, files }) {
-  if (args[0] === "playwright") return { command: node, args: [playwrightCli, "test", "--config", config, ...files] };
+  if (args[0] === "playwright") return { command: node, args: [playwrightCli, "test", "--config", config, ...files.map(fileFilter)] };
   return { command: node, args: [files[0], ...args.slice(2)] };
 }
