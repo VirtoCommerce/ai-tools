@@ -6,16 +6,22 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { assertKey, cacheDir, isInside, newRunDir, outputRoot, removeRunDir, sweepStaleRuns } from "./paths.mjs";
 import { LAYERS_GAP, loadLayeredEnv } from "./env.mjs";
-import { codeHostCredential, readProfile, resolveProfile, trackerCredential } from "./profile.mjs";
+import { resolveProfile } from "./profile.mjs";
+import { HostGoverned, vcRun } from "./bridge.mjs";
+import { jiraConnector } from "./connectors/jira.mjs";
+import { azureBoardsConnector } from "./connectors/azure-boards.mjs";
+import { githubConnector, searchKeyFor } from "./connectors/github.mjs";
+import { azurePrRefFromUrl, azureReposConnector, refWithNames } from "./connectors/azure-repos.mjs";
+import { ProfileError, loadProfile } from "../../../lib/profile.mjs";
 import { GAP_REASONS, SCHEMA, asGap, gap } from "./gap.mjs";
 import { validateDef } from "./schema.mjs";
-import { BASE_FIELDS, LINKED_FIELDS, attachLinkedComments, blindIssue, blindPrs, jiraClient, postedAfter, recencyOrder, withoutHidden } from "./jira.mjs";
+import { BASE_FIELDS, LINKED_FIELDS, attachLinkedComments, blindIssue, blindPrs, postedAfter, recencyOrder, withoutHidden } from "./jira.mjs";
 import { AC_FIELD_NAME_RE, buildInventory, linkedOverCap, rankLinked, resolveFieldsByName, ticketFields } from "./inventory.mjs";
 import { CAPS, envHosts, fetchPublicPage, htmlToText, planDownloads, safeName } from "./fetch.mjs";
 import { exportFigmaItems, figmaToken } from "./figma.mjs";
 import { extractFrames, extractGifFrames } from "./frames.mjs";
 import { isHarText, loadSecretValues, scrubFile } from "./scrub.mjs";
-import { CONTEXT_ONLY_REPOS, collectContextPr, collectPr, followCompanions, ghClient, orderPrMeta, runLadder } from "./github.mjs";
+import { CONTEXT_ONLY_REPOS, collectContextPr, collectPr, followCompanions, orderPrMeta, runLadder } from "./github.mjs";
 import { checkDeployment } from "./deploy.mjs";
 import { bundleFile, freshnessKey, isIgnored, readCached, skillFingerprint, writeCache } from "./cache.mjs";
 import { DOMAIN_RE, knownGround } from "./known.mjs";
@@ -42,9 +48,9 @@ const root = outputRoot();
 const ignored = (p) => isIgnored(root, p);
 const prepPath = () => flag("prepare") ?? usage("--prepare <path to prepare.json> is required");
 
-async function materialize(it, jira, runDir, secrets) {
+async function materialize(it, tracker, runDir, secrets) {
   const file = join(runDir, `att-${it.id}-${safeName(it.filename)}`);
-  try { writeFileSync(file, await jira.download(it.url)); } catch (e) { it.gap = asGap(it.ref, e); return; }
+  try { writeFileSync(file, await tracker.download(it.url)); } catch (e) { it.gap = asGap(it.ref, e); return; }
   if (["har", "log", "trace"].includes(it.kind)) {
     try {
       if (it.kind !== "har" && isHarText(readFileSync(file, "utf8"))) it.kind = "har"; // classified by content: a HAR saved as .json
@@ -97,23 +103,36 @@ async function prepare() {
   const hide = (hideRaw ?? "").split(",").map((k) => k.trim()).filter(Boolean);
   for (const k of hide) try { assertKey(k); } catch (e) { usage(`--hide: ${e.message}`); }
   const benchmark = before ? { before, hide } : null;
-  const testEnv = loadLayeredEnv(root, key);
-  const profile = resolveProfile(readProfile(root));
-  const tcred = trackerCredential(profile);
-  if (!tcred.ok) { out({ status: "no-tracker", gap: gap("ticket", tcred.reason, tcred.detail) }); process.exit(3); }
-  const jira = jiraClient(tcred);
+  // U19: no profile is a STOP, never the native-platform defaults; a host-governed project reads through the host's
+  // MCP servers (P1d-3), so nothing is read here.
+  let raw;
+  let profile;
+  try { raw = loadProfile({ root }); profile = resolveProfile(raw); } catch (e) {
+    if (!(e instanceof ProfileError)) throw e;
+    out({ status: "no-profile", detail: e.message });
+    process.exit(3);
+  }
+  try { assertKey(key, profile.keyFormat); } catch (e) { usage(e.message); }
+  if (profile.governed) { out({ status: "host-governed", detail: "the host-governed route lands in P1d-3; nothing was read" }); process.exit(4); }
+  const testEnv = loadLayeredEnv(root, key, raw);
+  // §7, U20: every tracker read is a $VC_RUN launch; this process holds no token.
+  const noTracker = (reason, detail) => { out({ status: "no-tracker", gap: gap("ticket", reason, detail) }); process.exit(3); };
+  if (!profile.trackerBase) noTracker("no-credential", "project-profile.json has no tracker.baseUrl — run /project-init --check");
+  if (!vcRun()) noTracker("no-credential", "VC_RUN is not set — run /project-init");
+  const tracker = profile.tracker === "azure" ? azureBoardsConnector({ profile, key, root }) : jiraConnector({ base: profile.trackerBase, key, root });
   const gaps = [];
   if (LAYERS_GAP) gaps.push(gap("env", "not-available-in-install", LAYERS_GAP));
 
-  const allFields = await jira.fields();
+  const allFields = await tracker.fields();
   const acFields = resolveFieldsByName(allFields, profile.fieldMap.acceptanceCriteria, AC_FIELD_NAME_RE);
   const linkFields = resolveFieldsByName(allFields, profile.fieldMap.prototype, /prototype/i);
   if (!acFields.length) gaps.push(gap("ac_fields", "not-found", "no custom field named 'Acceptance' or 'Acceptance criteria' and no tracker.fieldMap.acceptanceCriteria — ACs are read from description and comments"));
   // Comments past the first page are paged in before the inventory and ticket.json see the issue; any unread rest is a gap.
-  const issue = blindIssue(await jira.issue(key, [...BASE_FIELDS, ...acFields.map((f) => f.id), ...linkFields.map((f) => f.id)], { gaps }), benchmark ?? {});
-  const remote = await jira.remoteLinks(key).catch((e) => { gaps.push(asGap("remotelinks", e)); return []; });
-  const devPrUrls = await jira.devPrUrls(issue.id).catch((e) => { gaps.push(asGap("dev-status", e)); return []; });
-  const inv = buildInventory({ issue, remoteLinks: remote, trackerBase: tcred.base, acFieldIds: acFields.map((f) => f.id), linkFieldIds: linkFields.map((f) => f.id), devPrUrls });
+  const issue = blindIssue(await tracker.issue(key, [...BASE_FIELDS, ...acFields.map((f) => f.id), ...linkFields.map((f) => f.id)], { gaps }), benchmark ?? {});
+  const remote = await tracker.remoteLinks(key).catch((e) => { gaps.push(asGap("remotelinks", e)); return []; });
+  const linkedPrs = await tracker.linkedPrs(issue).catch((e) => { gaps.push(asGap("dev-status", e)); return { urls: [], refs: [] }; });
+  const devPrUrls = linkedPrs.urls;
+  const inv = buildInventory({ issue, remoteLinks: remote, trackerBase: tracker.base, acFieldIds: acFields.map((f) => f.id), linkFieldIds: linkFields.map((f) => f.id), devPrUrls });
   inv.items = withoutHidden(inv.items, hide); // U67: once, whichever path (remote link, key in a text) made the ticket item
   const secrets = loadSecretValues(root); // after loadLayeredEnv, so FIGMA_TOKEN from any layer is in it
   const tf = ticketFields(issue, acFields.map((f) => f.id), secrets);
@@ -124,7 +143,7 @@ async function prepare() {
   const parent = issue.fields.parent;
   if (parent?.key) {
     epic = { key: parent.key, title: parent.fields?.summary ?? "" };
-    siblings = withoutHidden((await jira.search(`parent = ${parent.key} AND key != ${key} ORDER BY updated DESC`, ["summary", "status"]).catch((e) => { gaps.push(asGap("siblings", e)); return []; }))
+    siblings = withoutHidden((await tracker.siblings(parent.key, key).catch((e) => { gaps.push(asGap("siblings", e)); return []; }))
       .map((s) => ({ key: s.key, title: s.fields?.summary ?? "", status: s.fields?.status?.name ?? null, done: s.fields?.status?.statusCategory?.key === "done" })), hide); // a hidden known-bug ticket under the same epic is not a sibling to a blind run
   }
 
@@ -132,7 +151,7 @@ async function prepare() {
   // D12: over the cap, the cap keeps the right ones — ranked by relation, then most recently updated first.
   // The dates cost one search, made only when there is something to drop.
   if (linked.length > CAPS.linkedIssues) {
-    const order = await recencyOrder(jira, linked.map((i) => i.key), gaps);
+    const order = await recencyOrder(tracker, linked.map((i) => i.key), gaps);
     linked = rankLinked(linked, { parentKey: issue.fields.parent?.key ?? null, subtaskKeys: (issue.fields.subtasks ?? []).map((t) => t.key), order });
   }
   const linkedJson = new Map();
@@ -141,25 +160,41 @@ async function prepare() {
   for (const [n, it] of linked.entries()) {
     if (n >= CAPS.linkedIssues) { it.gap = linkedOverCap(it, n, CAPS.linkedIssues); continue; }
     let j;
-    try { j = await jira.issue(it.key, LINKED_FIELDS); } catch (e) { it.gap = asGap(it.ref, e); continue; }
+    try { j = await tracker.issue(it.key, LINKED_FIELDS); } catch (e) { it.gap = asGap(it.ref, e); continue; }
     if (postedAfter(j.fields?.created, before)) { filedLater.add(it); continue; }
     // A developer's resolution note on a sub-task ("fixed in <sha>", "by design") lives in its comments, not its fields.
-    const c = await attachLinkedComments(jira, j, it.ref, { gaps, secrets, before });
+    const c = await attachLinkedComments(tracker, j, it.ref, { gaps, secrets, before });
     linkedJson.set(it.key, j);
     linkedFresh.push(`${j.key}@${j.fields?.updated}@${c}`);
   }
   if (filedLater.size) { inv.items = inv.items.filter((i) => !filedLater.has(i)); linked = linked.filter((i) => !filedLater.has(i)); }
 
-  const orgs = profile.repoHosts.filter((h) => h.host === "github").map((h) => h.org);
-  for (const h of profile.repoHosts.filter((x) => x.host !== "github")) gaps.push(gap(`change.${h.org}`, "connector-unavailable", `${h.host} pull requests are read from Phase 5 on`));
-  const gcred = codeHostCredential(profile);
-  const gh = gcred.ok ? ghClient(gcred) : null;
-  if (!gh) gaps.push(gap("change", gcred.reason, gcred.detail));
-  const ladder = gh ? await runLadder({ gh, key, orgs, explicitRefs: inv.prRefs, gaps }) : { rung: null, refs: inv.prRefs, sameKey: [], ladder: [] };
+  const orgs = profile.orgs;
+  // §7, U20: every GitHub read is a $VC_RUN `gh api` GET. The platform upstream is always GitHub, so this runs on an
+  // Azure Repos project too; there the client's own PRs come from the tracker (below).
+  const gh = githubConnector();
+  const searchKey = searchKeyFor(profile, key);
+  if (!searchKey) gaps.push(gap("change.search", "not-found", "the profile names no tracker.crossLinkToken, so GitHub was not searched for this work item"));
+  const ladder = await runLadder({ gh, key: searchKey ?? key, orgs: searchKey ? orgs : [], explicitRefs: inv.prRefs, gaps });
   let prMeta = [];
   for (const r of ladder.refs) {
-    if (!gh) { prMeta.push({ ...r, gap: gap(`pr:${r.ref}`, gcred.reason, gcred.detail) }); continue; }
     try { prMeta.push({ ...r, meta: await gh.pr(r.owner, r.repo, r.number) }); } catch (e) { prMeta.push({ ...r, gap: asGap(`pr:${r.ref}`, e) }); }
+  }
+  // Azure Repos (§7): the client's PRs are the work item's own pull-request links, or Azure PR URLs the ticket names
+  // (those leave the inventory: a PR is change surface, not a page to fetch). Rung 1 — they are explicitly linked.
+  const az = profile.codeHost === "azure-repos" ? azureReposConnector({ key, root }) : null;
+  if (az) {
+    // Keyed by PR id: a link names the project and repository by id, a URL by name, and get-pr reads by id alone.
+    const azRefs = new Map(linkedPrs.refs.map((r) => [r.number, r]));
+    inv.items = inv.items.filter((it) => { const r = it.url && azurePrRefFromUrl(it.url); if (r && !azRefs.has(r.number)) azRefs.set(r.number, r); return !r; });
+    for (const r of azRefs.values()) {
+      try {
+        const meta = await az.pr(r.owner, r.repo, r.number);
+        prMeta.push({ ...refWithNames(r, meta.names), rung: 1, host: "azure-repos", meta });
+      } catch (e) { prMeta.push({ ...r, rung: 1, host: "azure-repos", gap: asGap(`pr:${r.ref}`, e) }); }
+    }
+    ladder.ladder.push({ rung: "work-item", found: azRefs.size });
+    if (azRefs.size && ladder.rung == null) ladder.rung = 1;
   }
   // U67: a PR opened after the cutoff did not exist for a blind run — dropped before its body can name companions,
   // and the key search's hits with it (`later_prs`); the rung is the highest one a kept PR came from.
@@ -169,11 +204,9 @@ async function prepare() {
   }
   orderPrMeta(prMeta);
   // Named companions, one hop (github.mjs): appended after the ladder's PRs, so they take only the cap left over.
-  if (gh) {
-    const companions = blindPrs(await followCompanions({ gh, prMeta, orgs, gaps }), [], before).prMeta;
-    ladder.ladder.push({ rung: "companion", found: companions.length });
-    prMeta.push(...companions);
-  }
+  const companions = blindPrs(await followCompanions({ gh, prMeta, orgs, gaps }), [], before).prMeta;
+  ladder.ladder.push({ rung: "companion", found: companions.length });
+  prMeta.push(...companions);
 
   const fk = freshnessKey({ ticketUpdated: issue.fields.updated, domain, skill: skillFingerprint(),
     prShas: prMeta.map((p) => `${p.ref}@${p.meta?.head?.sha ?? "?"}@${p.meta?.state ?? "?"}@${p.meta?.merged_at ?? ""}`),
@@ -195,9 +228,9 @@ async function prepare() {
     }
     const plan = planDownloads(inv.items.filter((i) => i.ref.startsWith("attachment:")), CAPS);
     for (const [ref, g] of plan.gaps) inv.items.find((i) => i.ref === ref).gap = g;
-    for (const it of plan.toFetch) await materialize(it, jira, runDir, secrets);
+    for (const it of plan.toFetch) await materialize(it, tracker, runDir, secrets);
 
-    const privateHosts = new Set([...envHosts(root), new URL(tcred.base).hostname, "github.com", "api.github.com"]);
+    const privateHosts = new Set([...envHosts(root), new URL(tracker.base).hostname, "github.com", "api.github.com"]);
     let pages = 0;
     const figma = figmaToken(); // FIGMA_TOKEN after the layered loader; never printed
     const figmaItems = [];
@@ -206,7 +239,7 @@ async function prepare() {
         const id = /\/pages\/(\d+)/.exec(it.url)?.[1];
         if (!id) { it.gap = gap(it.ref, "unreadable", "no page id in the Confluence URL"); continue; }
         try {
-          const page = await jira.confluencePage(id);
+          const page = await tracker.page(id);
           it.local_path = join(runDir, `confluence-${id}.txt`);
           writeFileSync(it.local_path, htmlToText(page.body?.storage?.value ?? "").slice(0, CAPS.pageTextBytes));
         } catch (e) { it.gap = asGap(it.ref, e); }
@@ -239,7 +272,11 @@ async function prepare() {
           gap: gap(`pr:${p.ref}`, "over-cap", `more than ${CAPS.prs} product PRs; rung 1 first, then the most recent, then the companions they name`) });
         continue;
       }
-      try { prs.push(await collectPr(gh, p, runDir, { sameKey: ladder.sameKey, before })); } catch (e) { prs.push({ ...base, gap: asGap(`pr:${p.ref}`, e) }); }
+      try {
+        const entry = await collectPr(p.host === "azure-repos" ? az : gh, p, runDir, { sameKey: ladder.sameKey, before });
+        if (p.host === "azure-repos") entry.gaps.push(...az.diffGaps(p.repo, p.number)); // files Azure's diff could not show
+        prs.push(entry);
+      } catch (e) { prs.push({ ...base, gap: asGap(`pr:${p.ref}`, e) }); }
     }
 
     const prepared = { schema: "ticket-context-prepare/1", ticket: key, env: testEnv, tracker: profile.tracker, project_type: profile.projectType, domain, run_dir: runDir, run_dir_in_project: inProject,
@@ -414,6 +451,7 @@ function redeploy() {
 const commands = { prepare, attach, save, "merge-change": mergeChangeCmd, deploy, known, compose: composeCmd, check, finish, abort, redeploy };
 if (!commands[cmd]) usage(cmd ? `unknown command "${cmd}"` : "no command");
 try { await commands[cmd](); } catch (e) {
+  if (e instanceof HostGoverned) { out({ status: "host-governed", detail: "the bridge reports a host-governed project (P1d-3); nothing more was read" }); process.exit(4); }
   console.error(`✗ ticket-context ${cmd} could not run: ${String(e?.message ?? e).slice(0, 300)}`);
   process.exit(3);
 }

@@ -6,14 +6,20 @@ import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export const KEY_RE = /^[A-Z][A-Z0-9]*-\d+$/;
+export const KEY_RE = /^[A-Z][A-Z0-9]*-\d+$/; // a Jira key
+export const NUMERIC_KEY_RE = /^[1-9]\d{0,9}$/; // an Azure Boards work item id
 export const RUN_TTL_MS = 24 * 3600 * 1000;
 // The two run-dir shapes, anchored. The temp fallback is mkdtemp's: the prefix plus exactly six [A-Za-z0-9].
 const RUN_NAME = /^run-(\d+)$/;
-const TMP_RUN_NAME = /^ticket-context-([A-Z][A-Z0-9]*-\d+)-[A-Za-z0-9]{6}$/;
+const TMP_RUN_NAME = /^ticket-context-([A-Z][A-Z0-9]*-\d+|[1-9]\d{0,9})-[A-Za-z0-9]{6}$/;
 const isRealDir = (p) => { try { const st = lstatSync(p); return st.isDirectory() && !st.isSymbolicLink(); } catch { return false; } };
 
-export function assertKey(key) { if (!KEY_RE.test(String(key))) throw new Error(`not a ticket key: "${key}"`); }
+/** `format` "prefixed" or "numeric" is the profile's (prepare checks it); none accepts either — the path-safety check. */
+export function assertKey(key, format) {
+  const k = String(key);
+  const ok = format === "prefixed" ? KEY_RE.test(k) : format === "numeric" ? NUMERIC_KEY_RE.test(k) : KEY_RE.test(k) || NUMERIC_KEY_RE.test(k);
+  if (!ok) throw new Error(`not a ticket key${format ? ` (${format})` : ""}: "${key}"`);
+}
 export function outputRoot() { return process.env.VC_FIX_HOME ? resolve(process.env.VC_FIX_HOME) : process.cwd(); }
 export function skillRoot() { return resolve(dirname(fileURLToPath(import.meta.url)), ".."); }
 export function cacheDir(key, root = outputRoot()) { assertKey(key); return join(root, ".vc-fix", "context", key); }
@@ -71,7 +77,7 @@ export function removeRunDir(dir, root = outputRoot()) {
   const contextBase = resolve(join(root, ".vc-fix", "context"));
   if (resolved.startsWith(contextBase + sep)) {
     const rel = relative(contextBase, resolved);
-    const m = /^([A-Z][A-Z0-9]*-\d+)[/\\]run-(\d+)$/.exec(rel);
+    const m = /^([A-Z][A-Z0-9]*-\d+|[1-9]\d{0,9})[/\\]run-(\d+)$/.exec(rel);
     if (m) {
       rmSync(resolved, { recursive: true, force: true });
       return;
