@@ -8,6 +8,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## `/vc-test:ticket-context` reads Jira, GitHub, Azure Boards and Azure Repos through `$VC_RUN` — `vc-test` `0.3.0` — 2026-10-26
+
+P1d-2 of the `vc-test` plan (`docs/superpowers/plans/2026-10-26-vc-test-p1d2-connectors.md`). Needs `vc-fix` ≥ 0.15.0.
+
+**Changed — no token in `/vc-test:ticket-context`'s process (spec U20).** Every tracker and code-host read is one
+`node "$VC_RUN" jira|gh|ado …` launch; the in-process Jira and GitHub clients and the credential helpers are gone.
+Jira and GitHub behave as before: VCST-5097 and a blind VCST-5904 prepare give the same `prepare.json` and per-PR
+files as 0.2.2 at the same moment. The cost is the launches: VCST-5097 makes 40 and takes 26 s instead of 15 s.
+
+**Added — Azure.** `project-profile.json` picks the connector (`tracker.kind`, `vcs.clientHost`). An Azure Boards
+work item is read into the issue shape the bundle step already reads (fields, the AC field, comments, attachments,
+parent, children, links, hyperlinks); "done" comes only from the profile's role states. On Azure Repos the client's
+PRs are the work item's own pull-request links, or Azure PR URLs a ticket names; each is read with its changes,
+review threads and a diff built locally (`git diff --no-index` of each file at the merge base and the source
+commit). PR statuses are not read yet. Checked against recorded responses; live Azure comes with P5.
+
+**Changed — stops.** No profile, or one naming no `upstream.org` ⇒ `no-profile` (exit 3): the `VirtoCommerce` and
+`vcst` defaults are gone (U19; with no env bound, the profile's one declared test env is used, then still `vcst`).
+`VC_RUN` unset ⇒ `no-tracker` (exit 3). A host-governed project ⇒ `host-governed` (exit 4) before any read, until
+P1d-3. On an Azure Boards tracker GitHub is searched for the profile's cross-link token + id (`AB#967`).
+
 ## The benchmark tooling is gone — `vc-test` `0.2.2` — 2026-10-26
 
 **Removed.** P0 closed without its benchmark run (spec U69), and nothing else needs the tooling:
