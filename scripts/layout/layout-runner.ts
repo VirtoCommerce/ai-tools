@@ -73,6 +73,8 @@
  *   [PROBE:TOUCH]    <scope selector>
  *   [PROBE:IMAGES]   <selector>                              (aspect-ratio squash/stretch)
  *   [PROBE:IMGDIMS]  <selector>                              (no reserved space — CLS root cause)
+ *   [PROBE:CONTENT]  <scope selector>                        (raw i18n keys, GUIDs, broken images,
+ *                                                             leaked placeholders, values wrapped mid-token)
  *
  * ASSERTION GRAMMAR (the `Assertions` column, one per line; all must hold)
  *   [CLS]      <= 0.1
@@ -86,6 +88,8 @@
  *   [IMAGES]   aspectDrift == 0
  *   [IMGDIMS]  missingDims == 0
  *   [SHIFT]    before vs after topDelta == 0             (also leftDelta / any)
+ *   [CONTENT]  rawKeys == 0 | guids == 0 | brokenImages == 0 | placeholders == 0 | midWrap == 0
+ *              one metric per line; a bare `[CONTENT] == 0` asserts all five together
  *
  * A case with no parseable assertion is reported BLOCKED, never PASS — silence is not a pass.
  */
@@ -104,6 +108,7 @@ import {
   touchTargetAuditSnippet,
   imageAspectAuditSnippet,
   imageIntrinsicDimsSnippet,
+  contentAuditSnippet,
   rectSnapshotSnippet,
   classifyCls,
   classifySpacing,
@@ -117,6 +122,7 @@ import {
   type TouchTargetAuditResult,
   type ImageAspectAuditResult,
   type ImageIntrinsicDimsResult,
+  type ContentAuditResult,
   type RectSnapshot,
 } from "../lib/measure-layout.js";
 import { TestDataResolver } from "../lib/test-data-resolver.js";
@@ -247,6 +253,7 @@ interface CaseState {
   touch?: TouchTargetAuditResult;
   images?: ImageAspectAuditResult;
   imgDims?: ImageIntrinsicDimsResult;
+  content?: ContentAuditResult;
   snaps: Record<string, RectSnapshot>;
   bound: Record<string, string>;
   consoleErrors: string[];
@@ -476,6 +483,9 @@ async function runSteps(
       case "PROBE:IMGDIMS":
         st.imgDims = (await page.evaluate(imageIntrinsicDimsSnippet(arg || "img"))) as ImageIntrinsicDimsResult;
         break;
+      case "PROBE:CONTENT":
+        st.content = (await page.evaluate(contentAuditSnippet(arg || "body"))) as ContentAuditResult;
+        break;
       default:
         throw new Error(`unknown step tag [${tag}] — see the grammar in this file's header`);
     }
@@ -616,6 +626,15 @@ function evaluateAssertion(raw: string, st: CaseState): AssertOutcome | null {
         .map((o) => `${o.src.split("/").pop() || "(inline)"} ar=${o.cssAspectRatio}`)
         .join(", ");
       return { ...out, detail: `${out.detail}; evaluated=${im.evaluated}${sample ? ` [${sample}]` : ""}` };
+    }
+    case "CONTENT": {
+      const c = need(st.content, "[PROBE:CONTENT]");
+      const metrics = ["rawKeys", "guids", "brokenImages", "placeholders", "midWrap"] as const;
+      const named = metrics.find((k) => new RegExp(`\\b${k}\\b`).test(body));
+      const list = named ? c[named] : metrics.flatMap((k) => c[k].map((o) => ({ ...o, text: `${k}: ${o.text}` })));
+      const out = numeric(list.length, named ?? "contentDefects");
+      const sample = list.slice(0, 3).map((o) => `"${o.text}" in ${o.where}`).join(", ");
+      return { ...out, detail: `${out.detail}; scope=${c.scope}; evaluated=${c.evaluated}${sample ? ` [${sample}]` : ""}` };
     }
     case "SHIFT": {
       const sm = /^(\w+)\s+vs\s+(\w+)\s+(\w+)\s*([<>=!]=?)\s*([\d.]+)$/.exec(body);

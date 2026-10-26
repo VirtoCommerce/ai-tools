@@ -128,9 +128,15 @@ change, no version bump.
 
 ### Phase 5 — `CONTENT` probes + `PROBE` stress matrix
 
-- `layout-runner` probes: visible text shaped like an i18n key or a GUID, `img`/icon with
-  `naturalWidth = 0`, a value wrapped mid-token.
-- Stress matrix on `048c`: locales (`pt`, `de`), ×2 text, many currencies, 320/375/768/1280, themes.
+- [x] `layout-runner` `[PROBE:CONTENT]` + `[CONTENT]` (`measure-layout.ts` `contentAuditSnippet`): raw i18n keys in
+  text and in accessible-name attributes, GUIDs in visible text, `img` loaded with `naturalWidth = 0`, leaked
+  `undefined` / `NaN` / `null` / `[object Object]` / `{{ … }}`, and a no-space value with a digit drawn on two lines.
+  Verified 2026-10-26: a planted page finds each class and none of its look-alikes (an e-mail, a URL, a host, a
+  file name, a version, a price that fits); across all 750 vc-frontend stories, 0 raw keys / GUIDs / placeholders /
+  mid-wraps, and the only 3 broken images are external photos the run itself blocked.
+- [ ] `048c` rows using it, and the stress matrix: locales (`pt`, `de`), ×2 text, many currencies,
+  320/375/768/1280, themes. **Needs a reachable stand**: a case is promoted only after it ran there (and, per
+  `cases-that-catch-bugs.md`, after it failed once on the bug it targets).
 
 ### Phase 6 — vc-frontend CI (frontend team)
 
