@@ -21,7 +21,7 @@
   ".claude/skills/qa-seed-data/SKILL.md": 32249,
   ".claude/skills/qa-test-cases-generator/SKILL.md": 41951,
   ".claude/skills/vc-self-check/SKILL.md": 27380,
-  "plugins/vc-fix/commands/qa-bug.md": 47817,
+  "plugins/vc-fix/commands/qa-bug.md": 47777,
   "plugins/vc-fix/commands/qa-fix.md": 36070,
   "plugins/vc-fix/commands/qa-verify-fix.md": 33475,
   "plugins/vc-fix/skills/vc-self-check/SKILL.md": 21399,

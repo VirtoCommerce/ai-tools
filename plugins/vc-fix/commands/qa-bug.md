@@ -1,6 +1,6 @@
 ---
 description: "Reproduce a bug, capture evidence, write a structured report, and optionally create a tracker ticket."
-argument-hint: "bug description | ticket <key> | screenshot path"
+argument-hint: "bug description | ticket <key> | screenshot path [--evidence <dir>] [--link <KEY>] [--confirmed]"
 
 ---
 
@@ -39,7 +39,7 @@ Create a structured bug report from a description, screenshot, or observed issue
 
 - `--evidence <dir>` — a `/qa-investigate` evidence package (`evidence-index.md`, `root-cause.md`, screenshots). Steps 1–3 read it instead of reproducing again (Step 1).
 - `--link <KEY>[:<type>]` — repeatable; the ticket this bug relates to (Relates by default). Jira: [`knowledge/execution/jira-bug-fields.md`](../knowledge/execution/jira-bug-fields.md) §2.
-- `--confirmed` — the caller already holds the operator's yes for filing this bug (e.g. `/qa-run` asked once for the whole wave); Step 5 does not ask again. Without it Step 5 asks as before.
+- `--confirmed` — the calling command asked the operator via `AskUserQuestion` in this session and got a yes for filing this bug; Step 5 does not ask again. It covers the create only — never a duplicate comment (`jira-bug-fields.md` §5) or an Azure question.
 
 ---
 
@@ -330,10 +330,8 @@ instead of re-deriving it. Fill it from Step 2 (owning layer) + Step 3a (exact r
 
 > **Skills:** Use `/qa-defect triage <ticket-key>` for triage routing (duplicate check, classification, assignment). Use `/qa-risk` to assess severity if unclear.
 
-**Duplicate search in the tracker, before asking.** Search the tracker for the same defect — Jira: JQL
-`text ~ "<key terms>"` over the bug's project **and** the other projects the site files product bugs in;
-Azure: WIQL on the title. A real duplicate ⇒ do not file; add the evidence there and report its key.
-Related but different ⇒ file, link it (Relates), and say in one clause how it differs.
+**Duplicate search in the tracker, before asking** — Jira: [`jira-bug-fields.md`](../knowledge/execution/jira-bug-fields.md) §5
+(scope, JQL, cap); Azure: WIQL on the title. A real duplicate ⇒ stop and ask (§5); related ⇒ file and link.
 
 **With `--confirmed`, skip the question below** — the caller already holds the operator's yes for this bug —
 and go straight to the create. Otherwise:
@@ -346,7 +344,7 @@ resume the agent and push the question out of view — exactly what happened on 
 mechanism the parent-link question below already uses.
 
 If yes, **create via the profile's tracker** (`tracker-ops.md` §2 — Create), Type = Bug:
-- **Jira** (`tracker.kind = jira`) → **the Bug's own fields first: read [`knowledge/execution/jira-bug-fields.md`](../knowledge/execution/jira-bug-fields.md) before the create.** fills the Bug's own fields (no field id in this plugin), formats them as lists, adds the links, puts screenshots inside the fields and decides **Need hotfixes** by code (§4). Then Atlassian MCP `createJiraIssue`, project = `tracker.projectKey` (falls back to `env.JIRA_PROJECT_KEY`; customer sets their own). Description = **GitHub-flavored Markdown, NOT Jira wiki markup** (the MCP converts MD→ADF; wiki markup like `h2.`/`{code}`/`*bold*` renders literally — VCST-5212), and follow `tracker-ops.md` §2 **Comment & body style** (clear, brief, outcome-first, structured — not a wall of text). Same rule for any follow-up comment.
+- **Jira** (`tracker.kind = jira`) → **follow [`knowledge/execution/jira-bug-fields.md`](../knowledge/execution/jira-bug-fields.md) in its order:** field metadata → create (Atlassian MCP `createJiraIssue`, or `jira request` POST) → `jira update` the rich-text fields as ADF lists → attach and embed screenshots → verify; **Need hotfixes** §4. Create in project = `tracker.projectKey` (falls back to `env.JIRA_PROJECT_KEY`; customer sets their own). Description = **GitHub-flavored Markdown, NOT Jira wiki markup** (the MCP converts MD→ADF; wiki markup like `h2.`/`{code}`/`*bold*` renders literally — VCST-5212), and follow `tracker-ops.md` §2 **Comment & body style** (clear, brief, outcome-first, structured — not a wall of text). Same rule for any follow-up comment.
   - **Screenshots — attach AND embed inline**, inside the Actual / Expected / Steps field (else the description). The upload → Media-Services UUID → ADF `mediaSingle` → render-check recipe, and what fails, is [`jira-bug-fields.md`](../knowledge/execution/jira-bug-fields.md) §3.
 - **Azure Boards** (`tracker.kind = azure`) → the work item is the **lean, replayable** version of the bug, not a copy of the markdown report. Its field set is **DISCOVERED, never hardcoded** (VCST-5582 E): `project-profile.json` `tracker.fields.Bug[]` carries THIS organization's contract — `{ ref, name, required, type, allowedValues?, defaultValue? }` — scanned by `/project-init`. Body format follows [`knowledge/execution/azure-html-format.md`](../knowledge/execution/azure-html-format.md) (the single source of truth for the SHAPE); whether a field is HTML is **derived from its contract `type`** (`html` ⇒ HTML, `plainText` ⇒ text), not assumed.
   - **The `body` slot = abstract Summary → Preconditions → Steps → Actual → Expected**, and nothing else competes with them. The concrete field the `body` slot lands in is **resolved per work-item TYPE from the scanned form layout** (`tracker.formLayout.<Type>`), never assumed: on the Agile process a Bug's body is `Microsoft.VSTS.TCM.ReproSteps` while a User Story / Task use `System.Description` — and a field can exist in the contract yet be off the form, where the body would be invisible (VCST-5702 ITEM 0). The Summary is 1–3 sentences with **no user-specific data** (no emails, IDs, order numbers, GUIDs, names) — reproducible by anyone who meets the Preconditions. The VC extras (4-Layer Validation, Module Versions, Root Cause Analysis, Fix Routing) go into **one collapsed `🔧 Technical Details` block below**, trimmed to the essentials — never as top-level sections. Pass `--repro-file` only when the type has a **distinct form-visible** `repro` field; when the body target is the only html control on the form, a `--repro` is folded into the body automatically (create resolves this from the layout — never assume which field is hidden).
@@ -402,7 +400,7 @@ If yes, **create via the profile's tracker** (`tracker-ops.md` §2 — Create), 
 
 Fields either way:
 - Summary: from bug title
-- Description: **Jira** = markdown, the context only when the project has its own Steps / Expected / Actual / Environment fields (`jira-bug-fields.md` §1), else the full structured report; **Azure** = HTML (`azure-html-format.md`)
+- Description: **Jira** = markdown, the context plus a section per slot the project has no field for (`jira-bug-fields.md` §1); **Azure** = HTML (`azure-html-format.md`)
 - Priority: mapped from severity (Critical→Highest, High→High, Medium→Medium, Low→Low — Jira; Azure uses the numeric `Priority` field)
 - **Origin labels (VC's own Jira only — never on a client project's tracker).** Say who found the bug: `found-by-agent` + `found-in-testing` (a `/qa-test` run) or `found-in-regression` (a regression run or its triage) when the report's `**Found by:**` line says `agent — testing …` or `agent — regression …` (Step 1); `reported-by-human` when a person found it and asked for it to be filed, and whenever the origin is unclear. Rule: `knowledge/execution/tracker-ops.md` §2a.
 - **Labels / Tags — apply `vc-fix` AND `qa-autofix` when `/qa-fix` could fix this bug.** These two labels ARE the auto-fix queue: the hourly `/qa-fix` routine selects tickets by them, so an eligible bug missing them is never picked up. Jira → the `labels` field; Azure Boards → `--tags` (`System.Tags`). Apply **both, or neither** — never one.
@@ -487,12 +485,12 @@ already resolved this run, else resolve via `claude plugin list --json` (see
 ## Rules
 - Follow `skills/qa-evidence/output-paths.md` for artifact output paths and naming conventions
 - Follow `.claude/templates/agent-dispatch.md` for dispatch conventions, browser fallback, and error handling
-- Always reproduce the bug before filing — never file unverified bugs
+- Always reproduce the bug before filing — never file unverified bugs (an `--evidence` package reproduced on the same build counts)
 - Always include evidence (screenshot + console + network)
 - Always complete the 4-layer validation (Step 2) before writing the report — the owning layer drives triage routing and root-cause scope. Mark layers N/A only when the scenario genuinely doesn't exercise that layer (e.g., a pure CSS bug → REST layer N/A).
 - Use the qa-testing-expert agent for reproduction: `playwright-firefox` (fallback: `playwright-edge`)
 - Always query Context7 in Step 0 to verify expected behavior — don't file bugs for intended behavior
-- Ask before creating tracker tickets (explicit permission required) — via **`AskUserQuestion`**, never
+- Ask before creating tracker tickets (explicit permission required; `--confirmed` = the caller already asked) — via **`AskUserQuestion`**, never
   prose, and emit `complete --skill` only **after** that decision (see Step 5 + Signal completion)
 - If a new regression is found during investigation, escalate via `/qa-bug` (separate report)
 - **File every confirmed bug** `/qa-bug` reports all defects and routes each one; auto-fix

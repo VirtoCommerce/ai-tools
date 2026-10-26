@@ -23,8 +23,12 @@ a stand. The option is set by id (VC's value reads `" true"`), and one Environme
 
 **Added — three arguments.** `--evidence <dir>` reads a `/qa-investigate` package instead of reproducing again;
 `--link <KEY>[:type]` relates the bug to a ticket; `--confirmed` carries a caller's yes so Step 5 does not ask per
-bug. Step 5 also searches the tracker for duplicates before asking and links related tickets. `/qa-run` step 6
-(#469) passes all three.
+bug. Step 5 also searches the tracker for duplicates before asking (§5): a real duplicate stops and asks before
+anything is written to that ticket, and `--confirmed` never covers it. `/qa-run` step 6 passes all three once #469
+lands.
+
+**Moved.** The Jira screenshot recipe (upload → Media-Services UUID → ADF `mediaSingle` → render check) moved from
+`commands/qa-bug.md` Step 5 to `jira-bug-fields.md` §3, so the command stays under its BUDGET-004 baseline.
 
 ## `/vc-test:ticket-context` reads Jira, GitHub, Azure Boards and Azure Repos through `$VC_RUN` — `vc-test` `0.3.0` — 2026-10-26
 
