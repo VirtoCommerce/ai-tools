@@ -1159,5 +1159,60 @@
     "id": "cfa32136-1cf8-408a-a886-ca1e81e34b0d",
     "createdDate": "2026-10-13T13:02:55.3202367Z",
     "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594"
+  },
+  "PB_6443_LEGACY_S6": {
+    "id": "61f8559c-b889-4316-b7b3-e62ef48fbea0",
+    "page_id": "4390a4d9-62c8-437b-8431-4fbcbc57133f",
+    "name": "AGENT-TEST-6443 legacy S6",
+    "permalink": "/agent-test-6443 legacy-s6"
+  },
+  "PB_6443_LEGACY_S7": {
+    "id": "fe8466d4-da26-48fa-8009-0818f27e7b30",
+    "page_id": "91d5bd4f-ec03-4cdd-8b19-53121db92cad",
+    "name": "AGENT-TEST-6443 legacy S7",
+    "permalink": "/agent-test-6443-legacy-S7&x"
+  },
+  "PB_6443_LEGACY_S8": {
+    "id": "a20a5300-2b62-4062-b03b-007445a6be8a",
+    "page_id": "494a0289-5793-4480-9518-66af735c34f3",
+    "name": "AGENT-TEST-6443 legacy S8",
+    "permalink": "/agent-test-6443 legacy-s8?x"
+  },
+  "PB_6443_LEGACY_S18": {
+    "id": "56d6baf6-558f-4d1d-8236-7d5b050c83e2",
+    "page_id": "97305415-4c8e-475a-995a-b1d78868807f",
+    "name": "AGENT-TEST-6443 legacy S18",
+    "permalink": "/agent-test-6443 legacy-s18"
+  },
+  "PB_6443_LEGACY_EXP1": {
+    "id": "f281bf66-b965-4aea-aeb2-1f18d03b9bcd",
+    "page_id": "eaada83e-fee7-4ea3-ac5c-311d5cf43241",
+    "name": "AGENT-TEST-6443 legacy EXP1",
+    "permalink": "/agent-test-6443 legacy-exp1"
+  },
+  "PB_6443_LEGACY_EXP2": {
+    "id": "6daeeaa0-d4f8-4d86-a0d5-fee5ddd33adb",
+    "page_id": "93f8ef05-661f-4f26-812d-f50ff1cff173",
+    "name": "AGENT-TEST-6443 legacy EXP2",
+    "permalink": "/agent-test-6443 legacy-exp2"
+  },
+  "PB_6443_LEGACY_PCT": {
+    "id": "c12b3360-cab9-4c3a-8d36-680c71027985",
+    "page_id": "79e93946-ed77-4dce-afa0-b50aeca77783",
+    "name": "AGENT-TEST-6443 legacy PCT",
+    "permalink": "/agent-test-6443-legacy%20pct"
+  },
+  "PB_6443_LEGACY_LT": {
+    "id": "c0ee0be1-05b2-498e-9ad0-135e1fc941dc",
+    "page_id": "2ef242e0-38d1-4f6c-b593-ac380a42281a",
+    "name": "AGENT-TEST-6443 legacy LT",
+    "permalink": "/agent-test-6443-legacy<lt>"
+  },
+  "PB_6443_NOCREATE_USER": {
+    "id": "2753a044-c95b-42dc-bea4-6ba16943681c",
+    "login": "agent-test-6443-nocreate",
+    "email": "agent-test-6443-nocreate@test.virtocommerce.com",
+    "role": "AGENT-TEST-6443 no-create",
+    "password_var": "DEFAULT_TEST_PASSWORD"
   }
 }

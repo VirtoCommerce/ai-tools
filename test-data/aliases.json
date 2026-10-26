@@ -11019,5 +11019,118 @@
     "assignedFfcId": "",
     "previousValue": "",
     "owned": ""
+  },
+  "PB_6443_LEGACY_S6": {
+    "_inline": true,
+    "seed": "seed:pb-legacy-permalinks",
+    "id": "",
+    "name": "AGENT-TEST-6443 legacy S6",
+    "permalink": "/agent-test-6443 legacy-s6",
+    "invalid_because": "space",
+    "store_id": "B2B-store",
+    "culture": "en-US",
+    "_notes": "VCST-6443 (PageBuilder permalink validation, PR #178): a LEGACY-INVALID page group, created through PLATFORM IMPORT (POST /api/platform/import bypasses PageBuilderPermalink.IsValid, which only guards the REST create/update endpoints) so the permalink is stored verbatim. Per-run and TERMINAL: one page per consuming scenario, never shared; a case that fixes the permalink consumes it. name/permalink are the env-invariant business keys; the runtime group id lives only in aliases.<env>.json (provisioned by test-data-engineer per run; teardown DELETE /api/page-builder-pages/grouped/{id} -> GET 404). storeId B2B-store, en-US, Draft, content {settings:{},content:[]}."
+  },
+  "PB_6443_LEGACY_S7": {
+    "_inline": true,
+    "seed": "seed:pb-legacy-permalinks",
+    "id": "",
+    "name": "AGENT-TEST-6443 legacy S7",
+    "permalink": "/agent-test-6443-legacy-S7&x",
+    "invalid_because": "ampersand + uppercase S (case-only change test)",
+    "store_id": "B2B-store",
+    "culture": "en-US",
+    "_notes": "VCST-6443 (PageBuilder permalink validation, PR #178): a LEGACY-INVALID page group, created through PLATFORM IMPORT (POST /api/platform/import bypasses PageBuilderPermalink.IsValid, which only guards the REST create/update endpoints) so the permalink is stored verbatim. Per-run and TERMINAL: one page per consuming scenario, never shared; a case that fixes the permalink consumes it. name/permalink are the env-invariant business keys; the runtime group id lives only in aliases.<env>.json (provisioned by test-data-engineer per run; teardown DELETE /api/page-builder-pages/grouped/{id} -> GET 404). storeId B2B-store, en-US, Draft, content {settings:{},content:[]}."
+  },
+  "PB_6443_LEGACY_S8": {
+    "_inline": true,
+    "seed": "seed:pb-legacy-permalinks",
+    "id": "",
+    "name": "AGENT-TEST-6443 legacy S8",
+    "permalink": "/agent-test-6443 legacy-s8?x",
+    "invalid_because": "space + question mark",
+    "store_id": "B2B-store",
+    "culture": "en-US",
+    "_notes": "VCST-6443 (PageBuilder permalink validation, PR #178): a LEGACY-INVALID page group, created through PLATFORM IMPORT (POST /api/platform/import bypasses PageBuilderPermalink.IsValid, which only guards the REST create/update endpoints) so the permalink is stored verbatim. Per-run and TERMINAL: one page per consuming scenario, never shared; a case that fixes the permalink consumes it. name/permalink are the env-invariant business keys; the runtime group id lives only in aliases.<env>.json (provisioned by test-data-engineer per run; teardown DELETE /api/page-builder-pages/grouped/{id} -> GET 404). storeId B2B-store, en-US, Draft, content {settings:{},content:[]}."
+  },
+  "PB_6443_LEGACY_S10": {
+    "_inline": true,
+    "id": "",
+    "name": "AGENT-TEST-6443 legacy S10",
+    "permalink": "/agent-test-6443 legacy-s10#y",
+    "invalid_because": "space + hash",
+    "store_id": "B2B-store",
+    "culture": "en-US",
+    "_notes": "VCST-6443 (PageBuilder permalink validation, PR #178): a LEGACY-INVALID page group, created through PLATFORM IMPORT (POST /api/platform/import bypasses PageBuilderPermalink.IsValid, which only guards the REST create/update endpoints) so the permalink is stored verbatim. Per-run and TERMINAL: one page per consuming scenario, never shared; a case that fixes the permalink consumes it. name/permalink are the env-invariant business keys; the runtime group id lives only in aliases.<env>.json (provisioned by test-data-engineer per run; teardown DELETE /api/page-builder-pages/grouped/{id} -> GET 404). storeId B2B-store, en-US, Draft, content {settings:{},content:[]}."
+  },
+  "PB_6443_LEGACY_S18": {
+    "_inline": true,
+    "seed": "seed:pb-legacy-permalinks",
+    "id": "",
+    "name": "AGENT-TEST-6443 legacy S18",
+    "permalink": "/agent-test-6443 legacy-s18",
+    "invalid_because": "space",
+    "store_id": "B2B-store",
+    "culture": "en-US",
+    "_notes": "VCST-6443 (PageBuilder permalink validation, PR #178): a LEGACY-INVALID page group, created through PLATFORM IMPORT (POST /api/platform/import bypasses PageBuilderPermalink.IsValid, which only guards the REST create/update endpoints) so the permalink is stored verbatim. Per-run and TERMINAL: one page per consuming scenario, never shared; a case that fixes the permalink consumes it. name/permalink are the env-invariant business keys; the runtime group id lives only in aliases.<env>.json (provisioned by test-data-engineer per run; teardown DELETE /api/page-builder-pages/grouped/{id} -> GET 404). storeId B2B-store, en-US, Draft, content {settings:{},content:[]}."
+  },
+  "PB_6443_LEGACY_EXP1": {
+    "_inline": true,
+    "seed": "seed:pb-legacy-permalinks",
+    "id": "",
+    "name": "AGENT-TEST-6443 legacy EXP1",
+    "permalink": "/agent-test-6443 legacy-exp1",
+    "invalid_because": "space (exploratory)",
+    "store_id": "B2B-store",
+    "culture": "en-US",
+    "_notes": "VCST-6443 (PageBuilder permalink validation, PR #178): a LEGACY-INVALID page group, created through PLATFORM IMPORT (POST /api/platform/import bypasses PageBuilderPermalink.IsValid, which only guards the REST create/update endpoints) so the permalink is stored verbatim. Per-run and TERMINAL: one page per consuming scenario, never shared; a case that fixes the permalink consumes it. name/permalink are the env-invariant business keys; the runtime group id lives only in aliases.<env>.json (provisioned by test-data-engineer per run; teardown DELETE /api/page-builder-pages/grouped/{id} -> GET 404). storeId B2B-store, en-US, Draft, content {settings:{},content:[]}."
+  },
+  "PB_6443_LEGACY_EXP2": {
+    "_inline": true,
+    "seed": "seed:pb-legacy-permalinks",
+    "id": "",
+    "name": "AGENT-TEST-6443 legacy EXP2",
+    "permalink": "/agent-test-6443 legacy-exp2",
+    "invalid_because": "space (exploratory)",
+    "store_id": "B2B-store",
+    "culture": "en-US",
+    "_notes": "VCST-6443 (PageBuilder permalink validation, PR #178): a LEGACY-INVALID page group, created through PLATFORM IMPORT (POST /api/platform/import bypasses PageBuilderPermalink.IsValid, which only guards the REST create/update endpoints) so the permalink is stored verbatim. Per-run and TERMINAL: one page per consuming scenario, never shared; a case that fixes the permalink consumes it. name/permalink are the env-invariant business keys; the runtime group id lives only in aliases.<env>.json (provisioned by test-data-engineer per run; teardown DELETE /api/page-builder-pages/grouped/{id} -> GET 404). storeId B2B-store, en-US, Draft, content {settings:{},content:[]}."
+  },
+  "PB_6443_LEGACY_PCT": {
+    "_inline": true,
+    "seed": "seed:pb-legacy-permalinks",
+    "id": "",
+    "name": "AGENT-TEST-6443 legacy PCT",
+    "permalink": "/agent-test-6443-legacy%20pct",
+    "invalid_because": "percent escape (accepted before PR #178, rejected by the new rule)",
+    "status": "Published",
+    "visibility": true,
+    "store_id": "B2B-store",
+    "culture": "en-US",
+    "_notes": "VCST-6443 (PageBuilder permalink validation, PR #178): a LEGACY-INVALID page group, created through PLATFORM IMPORT (POST /api/platform/import bypasses PageBuilderPermalink.IsValid, which only guards the REST create/update endpoints) so the permalink is stored verbatim. Unlike its siblings it is PUBLISHED with visibility=true, because a storefront natural-URL probe reads it (create-group-page without visibility stores false, so an anonymous visitor would get 404 for a reason unrelated to the permalink). Per-run and TERMINAL: one page per consuming scenario, never shared. name/permalink are the env-invariant business keys; the runtime group id lives only in aliases.<env>.json. Seeder: npm run seed:pb-legacy-permalinks (teardown: npm run seed:pb-legacy-permalinks:teardown). storeId B2B-store, en-US, content {settings:{},content:[]}."
+  },
+  "PB_6443_LEGACY_LT": {
+    "_inline": true,
+    "seed": "seed:pb-legacy-permalinks",
+    "id": "",
+    "name": "AGENT-TEST-6443 legacy LT",
+    "permalink": "/agent-test-6443-legacy<lt>",
+    "invalid_because": "angle bracket",
+    "store_id": "B2B-store",
+    "culture": "en-US",
+    "_notes": "VCST-6443 (PageBuilder permalink validation, PR #178): a LEGACY-INVALID page group, created through PLATFORM IMPORT (POST /api/platform/import bypasses PageBuilderPermalink.IsValid, which only guards the REST create/update endpoints) so the permalink is stored verbatim. Covers the angle-bracket class (a literal '<' and '>'), which no other legacy fixture carries. Per-run and TERMINAL: one page per consuming scenario, never shared. name/permalink are the env-invariant business keys; the runtime group id lives only in aliases.<env>.json. Seeder: npm run seed:pb-legacy-permalinks (teardown: npm run seed:pb-legacy-permalinks:teardown). storeId B2B-store, en-US, Draft, content {settings:{},content:[]}."
+  },
+  "PB_6443_NOCREATE_USER": {
+    "_inline": true,
+    "seed": "seed:pb-legacy-permalinks",
+    "id": "",
+    "login": "agent-test-6443-nocreate",
+    "email": "agent-test-6443-nocreate@test.virtocommerce.com",
+    "role": "AGENT-TEST-6443 no-create",
+    "permissions": "builder:access, builder:read, builder:update",
+    "excluded_permission": "builder:create",
+    "user_type": "Manager",
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "_notes": "VCST-6443: back-office (Manager, isAdministrator=false) account WITHOUT builder:create but WITH builder:read + builder:update, so POST /api/page-builder-pages/create-group-page returns 403 for it on a VALID permalink (verified at provision) — the case decides whether an INVALID permalink is rejected 400 before or 403 at the permission gate. Password is the {{DEFAULT_TEST_PASSWORD}} secret from .env.local (localhost-safe fallback via user-provision.mjs resolvePassword), never committed. Runtime user id lives only in aliases.<env>.json. Teardown: DELETE /api/platform/security/users?names=agent-test-6443-nocreate + DELETE /api/platform/security/roles?ids=AGENT-TEST-6443%20no-create."
   }
 }
