@@ -62,6 +62,16 @@
  *   node ado.mjs edit-comment   --id 967 --comment-id 4711 --text-file body.txt   # the amend path
  *   node ado.mjs patch-fields   --id 967 --field "System.Description=" --fields-file fields.json
  *   node ado.mjs wiql           --query "SELECT [System.Id] FROM WorkItems WHERE …" [--fields System.Title] [--top 50]
+ *   node ado.mjs get-file       --repo frontend --path client-app/x.vue --commit <sha>   # a file at a commit
+ *
+ * Reads for vc-test's connectors — Azure's own objects, unshaped (the bundle step shapes them):
+ *   node ado.mjs comments            --id 967 [--max 500]          # every page → { total, comments, truncated }
+ *   node ado.mjs download-attachment --guid <GUID> --out .vc-fix/… [--max-bytes 26214400]   # → { path, bytes, contentType }
+ *     the GUID of an AttachedFile relation, never a URL; the file goes only inside <outputRoot>/.vc-fix/ (raw-out.mjs)
+ *   node ado.mjs get-pr              --pr 1200                     # project-scoped: no repo needed
+ *   node ado.mjs pr-iterations       --repo <name|id> --pr 1200
+ *   node ado.mjs pr-changes          --repo <name|id> --pr 1200 --iteration 3 [--compare-to 0] [--max 2000]
+ *   node ado.mjs pr-threads          --repo <name|id> --pr 1200
  *
  * Token-holding calls run through the vc-init bridge (VCST-6402): `node "$VC_RUN" ado <command> …`
  * gives this process ADO_PAT from vc-secrets for a PAT axis, or runs it as is for an `az login` axis.
@@ -87,6 +97,7 @@ import { discoverAdoWorkItemId, probeAdoWorkItemsWrite } from "../../scripts/lib
 // and the TS tracker (trackers/azure-tracker.ts) can't drift. ensureAzureHtml/mdToHtml are
 // re-exported below for the unit test that imports them from this file.
 import { ensureAzureHtml, mdToHtml, buildBugFields, countImages } from "./ado-html.mjs";
+import { rawOutPath, writeCapped } from "./raw-out.mjs";
 // Pure date-range validation for a team iteration, SHARED with discover-tracker.mjs so the runtime
 // "which sprint is current" resolve and the onboarding "which team owns the current sprint" scan can
 // never disagree. `$timeframe=current` alone is untrustworthy (Azure keeps the flag on a dormant
@@ -537,6 +548,71 @@ async function resolveCurrentIteration(args) {
       `\n      Pass an explicit --iteration <path>, or fix the active sprint's dates in Azure Boards.`,
   };
 }
+
+// ---- paging (pure: the fetcher does the I/O) ------------------------------------------
+/**
+ * Follow `continuationToken` pages up to `max`. A token seen before ends the loop (never forever); the
+ * result says `truncated` when it stopped with more to read.
+ * @param {(token: string|null) => Promise<{ items: object[], token: string|null, total?: number }>} fetchPage
+ */
+export async function pageByToken(fetchPage, { max = 500 } = {}) {
+  const items = [];
+  const seen = new Set();
+  let token = null;
+  let total = null;
+  let truncated = false;
+  for (;;) {
+    const page = await fetchPage(token);
+    const got = Array.isArray(page?.items) ? page.items : [];
+    if (Number.isInteger(page?.total)) total = page.total;
+    const room = max - items.length;
+    items.push(...got.slice(0, room));
+    const next = page?.token || null;
+    if (got.length > room || (items.length >= max && (next || (total !== null && total > items.length)))) {
+      truncated = true;
+      break;
+    }
+    if (!next) break;
+    if (seen.has(next)) {
+      truncated = true;
+      break;
+    }
+    seen.add(next);
+    token = next;
+  }
+  return { total: total ?? items.length, items, truncated };
+}
+
+/**
+ * Read `$top`/`$skip` pages up to `max`; a short or empty page is the end. Reaching `max` on a full page
+ * is reported as `truncated` (there may be more).
+ * @param {(skip: number, top: number) => Promise<object[]>} fetchPage
+ */
+export async function pageBySkip(fetchPage, { max = 2000, top = 500 } = {}) {
+  const items = [];
+  for (;;) {
+    const want = Math.min(top, max - items.length);
+    const page = await fetchPage(items.length, want);
+    const got = Array.isArray(page) ? page : [];
+    items.push(...got.slice(0, want));
+    if (got.length < want) return { items, truncated: false };
+    if (items.length >= max) return { items, truncated: true };
+  }
+}
+
+const GUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const posInt = (args, name, { required = false, dflt } = {}) => {
+  if (args[name] === undefined || args[name] === true) {
+    if (required) fail(`--${name} <number> required`);
+    return dflt;
+  }
+  if (!/^\d+$/.test(String(args[name]))) fail(`--${name} must be a non-negative integer`);
+  return Number(args[name]);
+};
+const prArgs = (args, { repo = true } = {}) => {
+  if (repo && (!args.repo || args.repo === true)) fail("--repo <name|id> required");
+  return { repo: repo ? enc(args.repo) : null, pr: posInt(args, "pr", { required: true }) };
+};
 
 // ---- commands -----------------------------------------------------------------------
 const COMMANDS = {
@@ -1127,6 +1203,65 @@ const COMMANDS = {
     return { id: data.id, url: data.url, name };
   },
 
+  // ---- reads for vc-test's connectors (raw objects; the bundle step shapes them) ----------------
+  async comments(args) {
+    const id = posInt(args, "id", { required: true });
+    const max = posInt(args, "max", { dflt: 500 });
+    const r = await pageByToken(async (token) => {
+      const t = token ? `&continuationToken=${enc(token)}` : "";
+      const d = await call("GET", `${base(args, "tracker")}/_apis/wit/workItems/${id}/comments?$top=200${t}&api-version=7.1-preview.4`);
+      return { items: d.comments || [], token: d.continuationToken || null, total: d.totalCount };
+    }, { max });
+    return { total: r.total, comments: r.items, truncated: r.truncated };
+  },
+
+  async "download-attachment"(args) {
+    if (!GUID_RE.test(String(args.guid ?? ""))) fail("--guid <attachment GUID> required (from an AttachedFile relation; never a URL)");
+    let out;
+    try {
+      out = rawOutPath(String(args.out ?? ""));
+    } catch (e) {
+      fail(e.message);
+    }
+    const url = `${base(args, "tracker")}/_apis/wit/attachments/${args.guid}?download=true&${V}`;
+    const res = await fetchRetry(url, { headers: { Authorization: await authHeader(), Accept: "*/*" }, redirect: "manual" });
+    if (res.status >= 300 && res.status < 400) fail(`HTTP ${res.status} sign-in redirect on download-attachment — ADO auth not accepted.`);
+    if (!res.ok) fail(`HTTP ${res.status} on download-attachment ${args.guid}`);
+    try {
+      return { path: out, ...(await writeCapped(res, out, posInt(args, "max-bytes", { dflt: 25 * 2 ** 20 }))) };
+    } catch (e) {
+      fail(e.message);
+    }
+  },
+
+  async "get-pr"(args) {
+    const { pr } = prArgs(args, { repo: false });
+    return call("GET", `${base(args, "vcs")}/_apis/git/pullrequests/${pr}?${V}`);
+  },
+
+  async "pr-iterations"(args) {
+    const { repo, pr } = prArgs(args);
+    return call("GET", `${base(args, "vcs")}/_apis/git/repositories/${repo}/pullRequests/${pr}/iterations?${V}`);
+  },
+
+  async "pr-changes"(args) {
+    const { repo, pr } = prArgs(args);
+    const iteration = posInt(args, "iteration", { required: true });
+    const compare = posInt(args, "compare-to");
+    const max = posInt(args, "max", { dflt: 2000 });
+    const cmp = compare === undefined ? "" : `&$compareTo=${compare}`;
+    const r = await pageBySkip(async (skip, top) => {
+      const d = await call("GET", `${base(args, "vcs")}/_apis/git/repositories/${repo}/pullRequests/${pr}/iterations/${iteration}/changes?$top=${top}&$skip=${skip}${cmp}&${V}`);
+      return d.changeEntries || [];
+    }, { max, top: 500 });
+    return { changeEntries: r.items, truncated: r.truncated };
+  },
+
+  async "pr-threads"(args) {
+    const { repo, pr } = prArgs(args);
+    return call("GET", `${base(args, "vcs")}/_apis/git/repositories/${repo}/pullRequests/${pr}/threads?${V}`);
+  },
+
   async "list-refs"(args) {
     if (!args.repo) fail("--repo required");
     const filter = args.filter ? `filter=${enc(args.filter)}&` : "";
@@ -1148,10 +1283,15 @@ const COMMANDS = {
         "      or drop the leading slash (`--path client-app/x.vue`)."
       );
     }
+    if (args.branch && args.commit) fail("--branch and --commit are exclusive — a file is read at one version");
     const b = args.branch || "";
-    const q = b
-      ? `&versionDescriptor.version=${enc(b)}&versionDescriptor.versionType=branch`
-      : "";
+    const c = args.commit && args.commit !== true ? String(args.commit) : "";
+    if (args.commit && !/^[0-9a-f]{7,40}$/i.test(c)) fail("--commit <sha> must be a commit hash");
+    const q = c
+      ? `&versionDescriptor.version=${enc(c)}&versionDescriptor.versionType=commit`
+      : b
+        ? `&versionDescriptor.version=${enc(b)}&versionDescriptor.versionType=branch`
+        : "";
     const url = `${base(args, "vcs")}/_apis/git/repositories/${enc(args.repo)}/items?path=${enc(args.path)}${q}&${V}&$format=text&includeContent=true`;
     // items endpoint returns raw text with $format=text
     const headers = { Authorization: await authHeader() };
