@@ -43,7 +43,7 @@
   "required": ["schema", "ticket", "acs", "hidden", "hotspots", "suspicions"],
   "properties": {
     "schema": { "const": "vc-test/change-map/1" },
-    "ticket": { "type": "string", "pattern": "^[A-Z][A-Z0-9]*-[0-9]+$" },
+    "ticket": { "type": "string", "pattern": "^(?:[A-Z][A-Z0-9]*-[0-9]+|[1-9][0-9]{0,9})$" },
     "acs": { "type": "array", "items": { "$ref": "#/$defs/acRow" } },
     "hidden": { "type": "array", "items": { "$ref": "#/$defs/hidden" } },
     "hotspots": { "type": "array", "items": { "$ref": "#/$defs/hotspot" } },
