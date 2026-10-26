@@ -4,14 +4,14 @@
 
 Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1 · 2.59.0
 
-**Executed 2019 · PASS 1479 · FAIL 171 · BLOCKED 320** · ledger 219 rows
+**Executed 1997 · PASS 1479 · FAIL 171 · BLOCKED 298** · ledger 347 rows
 
 | Wave | Scope | Owner | Status | Planned | Executed | PASS | FAIL | BLOCKED | FAIL/BLOCKED without a verdict | Ledger | Runs |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | W0 | Smoke gate | Elena Kutasina | DONE | 149 | 149 | 100 | 4 | 19 | 0 | 5 | REG-2026-10-12-1659 |
 | W1 | Platform & infrastructure | Elena Kutasina | DONE | 538 | 538 | 436 | 19 | 67 | 0 | 26 | REG-2026-10-13-0035 REG-2026-10-13-1241-UCP |
 | W2 | Catalog & search | Elena Kutasina | TRIAGED | 611 | 553 | 445 | 53 | 51 | 0 | 58 | REG-2026-10-13-W2 |
-| W3 | Purchase flow | Elena Kutasina | RUN_DONE | 862 | 779 | 498 | 95 | 183 | 150 | 130 | REG-2026-10-15-W3 |
+| W3 | Purchase flow | Elena Kutasina | TRIAGED | 840 | 757 | 498 | 95 | 161 | 0 | 258 | REG-2026-10-15-W3 |
 | W4 | Returns, B2B, accounts | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W5 | Marketing & content | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W6 | Theme cross-cutting + gap sessions | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
@@ -23,13 +23,14 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | Verdict | Rows |
 |---|---|
 | REAL_BUG | 42 |
-| BY_DESIGN | 3 |
+| BY_DESIGN | 7 |
 | TEST_DEFECT | 69 |
-| DATA | 59 |
-| ENV_CONFIG | 39 |
+| DATA | 95 |
+| ENV_CONFIG | 102 |
+| NOT_TESTABLE | 23 |
 | DUPLICATE | 3 |
 | FLAKY | 1 |
-| PENDING_DECISION | 3 |
+| PENDING_DECISION | 5 |
 
 ## Not run yet
 
@@ -40,6 +41,7 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | W3 | 050b1 050b2 050b3 050b4 050b5 050c | 13 | browser lane of these GraphQL suites not run |
 | W3 | 050h | 1 | manual case |
 | W3 | 007 | 38 | not deployed: VirtoCommerce.SalesRep (Publish-to-Customer / Sales-Rep list sharing) — run 2026-10-15 recorded them BLOCKED, before the pre-… |
+| W3 | 007 014 028 029 030 037 072e | 22 | not executed in the run (recorded BLOCKED): one login per persona, lane time, or the parallel lanes' named-cart contention (CHK-022) — 007 … |
 
 ## Real bugs awaiting filing
 
@@ -61,5 +63,7 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | W1 | STORE-069 | Verification link still confirms the email after store email verification is turned off: intended? | product owner |
 | W2 | SRCH-009 | SRCH-009 and SRCH-010 assert behaviour this bundle deprecates: deprecate the cases or retarget them? | Elena Kutasina |
 | W3 | ORDA-068 | A full refund leaves the payment status Paid: is Refunded expected? | product owner |
+| W3 | BOPIS-081 | Precondition 'post-purchase registration option is available' is not met: the guest confirmation page for CO261014-00010 offers only 'Show … | triage by recorded reason · Elena Kutasina |
+| W3 | CFG-PDP-045-COND | Partial/env-index: REST POST /api/catalog/products/configurations ACCEPTED a circular dependsOnSectionId pair (SecA->SecB, SecB->SecA) on a… | triage by recorded reason · Elena Kutasina |
 
 Per-wave detail: `waves/<wave>/report.md` · verdicts: `waves/<wave>/ledger.csv` · contract: `.claude/skills/qa-run/release-folder.md`.
