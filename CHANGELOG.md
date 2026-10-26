@@ -14,11 +14,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 user's, and one per folder that has a project or local install (a project's `.claude/settings.json` enables
 the plugin, and every checkout or worktree is its own folder). verify-access counted those rows, so one
 plugin installed for the user and for two folders read as enabled three times. It now counts only the rows
-that load in this folder (enabled, and the user's or this folder's) and distinct ids among them
-(`duplicateInstalls`): an old `@vc-tools` copy installed for another folder no longer warns here.
+that load in this folder (enabled, and machine-wide or recorded for this folder) and distinct ids among them
+(`duplicateInstalls`): an old `@vc-tools` copy installed for another folder no longer warns here. "This
+folder" is the one Claude Code runs in (`CLAUDE_PROJECT_DIR`, else the cwd), not `VC_FIX_HOME`.
 
-**Fixed: the uninstall hint names the scope.** `claude plugin uninstall` without `--scope` removes only the
-user's install; the hint now gives `--scope project|local` and the folder when the old copy is one of those.
+**Fixed: the uninstall hint names every copy and its scope.** `claude plugin uninstall` without `--scope`
+removes only the user's install; the hint now lists each copy of the old id as a command to paste
+(`--scope user|project|local`) and, for a project or local copy, the folder to run it in.
 
 ## The benchmark tooling is gone — `vc-test` `0.2.2` — 2026-10-26
 
