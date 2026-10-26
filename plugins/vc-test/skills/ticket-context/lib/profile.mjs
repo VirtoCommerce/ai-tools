@@ -1,38 +1,45 @@
-// plugins/vc-test/skills/ticket-context/lib/profile.mjs — C2 + D9: what to read and with which credential.
-// Field names are project-profile.json's (plugins/vc-fix/scripts/lib/project-profile.d.mts).
+// plugins/vc-test/skills/ticket-context/lib/profile.mjs — C2 + D9: what to read, from project-profile.json (vc-init's,
+// loaded by the plugin's read-only loader). No profile is a STOP (U19): there is no native-platform default here.
+// Field names are vc-init's (plugins/vc-init/scripts/lib/project-profile.mjs PROFILE_DEFAULTS).
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { ProfileError } from "../../../lib/profile.mjs";
 
-/** The documented "absent profile ⇒ native-platform defaults" (CLAUDE.md §Prerequisites). */
-export const DEFAULT_ORG = "VirtoCommerce";
+const str = (v) => (typeof v === "string" ? v.trim() : "");
+const obj = (v) => (v && typeof v === "object" && !Array.isArray(v) ? v : {});
 
-export function readProfile(root) {
-  const p = join(root, "project-profile.json");
-  return existsSync(p) ? JSON.parse(readFileSync(p, "utf8")) : null;
-}
-
+/** The profile as /ticket-context reads it. Throws ProfileError(3) when it names no upstream org. */
 export function resolveProfile(profile) {
-  if (!profile) return { source: "defaults", projectType: "platform", tracker: "jira", trackerBaseUrl: null, fieldMap: {}, repoHosts: [{ host: "github", org: DEFAULT_ORG }], authEnv: null };
+  const t = obj(profile?.tracker);
+  const vcs = obj(profile?.vcs);
+  const upstream = str(profile?.upstream?.org);
+  if (!upstream) throw new ProfileError(3, "project-profile.json names no upstream.org — run /project-init --check");
   const projectType = profile.projectType === "client" ? "client" : "platform";
-  const repoHosts = [{ host: "github", org: profile.upstream?.org || DEFAULT_ORG }];
-  const client = profile.vcs?.clientOrg;
-  if (projectType === "client" && client && client !== repoHosts[0].org) {
-    repoHosts.unshift({ host: profile.vcs?.clientHost === "azure-repos" ? "azure-repos" : "github", org: client });
+  const tracker = t.kind === "azure" ? "azure" : "jira";
+  const codeHost = vcs.clientHost === "azure-repos" ? "azure-repos" : "github";
+  const clientOrg = str(vcs.clientOrg);
+  const orgs = projectType === "client" && codeHost === "github" && clientOrg && clientOrg !== upstream ? [clientOrg, upstream] : [upstream];
+  const azureRepos = projectType === "client" && codeHost === "azure-repos"
+    ? { organization: str(vcs.azure?.organization) || clientOrg, project: str(vcs.azure?.project) } : null;
+  const fieldList = [];
+  for (const list of Object.values(obj(t.fields))) for (const f of Array.isArray(list) ? list : []) {
+    if (f?.ref && !fieldList.some((x) => x.id === f.ref)) fieldList.push({ id: f.ref, name: f.name ?? f.ref });
   }
   return {
-    source: "profile", projectType,
-    tracker: profile.tracker?.kind === "azure" ? "azure" : "jira",
-    trackerBaseUrl: profile.tracker?.baseUrl || null,
-    fieldMap: profile.tracker?.fieldMap ?? {},
-    repoHosts,
-    authEnv: profile.vcs?.authEnv || null,
+    projectType, tracker, codeHost, orgs, azureRepos, fieldList,
+    trackerBase: str(t.baseUrl).replace(/\/+$/, ""),
+    keyFormat: t.ticketKeyFormat === "numeric" || t.ticketKeyFormat === "prefixed" ? t.ticketKeyFormat : tracker === "azure" ? "numeric" : "prefixed",
+    crossLinkToken: str(t.crossLinkToken),
+    fieldMap: obj(t.fieldMap),
+    azure: { organization: str(t.azure?.organization), project: str(t.azure?.project), roleStates: obj(t.azure?.roleStates), roleStatesByType: obj(t.azure?.roleStatesByType) },
+    governed: !!profile.governance?.host,
+    authEnv: str(vcs.authEnv) || null, // read by codeHostCredential until the GitHub connector replaces it (P1d-2 Task 5)
   };
 }
 
+// The two credential helpers below go with their last callers: the Jira connector (Task 4) and the GitHub one (Task 5).
 export function trackerCredential(p, env = process.env) {
   if (p.tracker !== "jira") return { ok: false, reason: "connector-unavailable", detail: "Azure Boards is read from Phase 5 on" };
-  const base = (env.JIRA_BASE_URL || p.trackerBaseUrl || "").replace(/\/+$/, "");
+  const base = (env.JIRA_BASE_URL || p.trackerBase || "").replace(/\/+$/, "");
   const missing = [!base && "JIRA_BASE_URL", !env.JIRA_EMAIL && "JIRA_EMAIL", !env.JIRA_API_TOKEN && "JIRA_API_TOKEN"].filter(Boolean);
   if (missing.length) return { ok: false, reason: "no-credential", detail: `set ${missing.join(", ")} in .env.local (/project-init writes them)` };
   return { ok: true, base, auth: `Basic ${Buffer.from(`${env.JIRA_EMAIL}:${env.JIRA_API_TOKEN}`).toString("base64")}` };

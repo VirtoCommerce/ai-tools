@@ -6,7 +6,8 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { assertKey, cacheDir, isInside, newRunDir, outputRoot, removeRunDir, sweepStaleRuns } from "./paths.mjs";
 import { LAYERS_GAP, loadLayeredEnv } from "./env.mjs";
-import { codeHostCredential, readProfile, resolveProfile, trackerCredential } from "./profile.mjs";
+import { codeHostCredential, resolveProfile, trackerCredential } from "./profile.mjs";
+import { ProfileError, loadProfile } from "../../../lib/profile.mjs";
 import { GAP_REASONS, SCHEMA, asGap, gap } from "./gap.mjs";
 import { validateDef } from "./schema.mjs";
 import { BASE_FIELDS, LINKED_FIELDS, attachLinkedComments, blindIssue, blindPrs, jiraClient, postedAfter, recencyOrder, withoutHidden } from "./jira.mjs";
@@ -97,8 +98,18 @@ async function prepare() {
   const hide = (hideRaw ?? "").split(",").map((k) => k.trim()).filter(Boolean);
   for (const k of hide) try { assertKey(k); } catch (e) { usage(`--hide: ${e.message}`); }
   const benchmark = before ? { before, hide } : null;
-  const testEnv = loadLayeredEnv(root, key);
-  const profile = resolveProfile(readProfile(root));
+  // U19: no profile is a STOP, never the native-platform defaults; a host-governed project reads through the host's
+  // MCP servers (P1d-3), so nothing is read here.
+  let raw;
+  let profile;
+  try { raw = loadProfile({ root }); profile = resolveProfile(raw); } catch (e) {
+    if (!(e instanceof ProfileError)) throw e;
+    out({ status: "no-profile", detail: e.message });
+    process.exit(3);
+  }
+  try { assertKey(key, profile.keyFormat); } catch (e) { usage(e.message); }
+  if (profile.governed) { out({ status: "host-governed", detail: "the host-governed route lands in P1d-3; nothing was read" }); process.exit(4); }
+  const testEnv = loadLayeredEnv(root, key, raw);
   const tcred = trackerCredential(profile);
   if (!tcred.ok) { out({ status: "no-tracker", gap: gap("ticket", tcred.reason, tcred.detail) }); process.exit(3); }
   const jira = jiraClient(tcred);
@@ -150,8 +161,8 @@ async function prepare() {
   }
   if (filedLater.size) { inv.items = inv.items.filter((i) => !filedLater.has(i)); linked = linked.filter((i) => !filedLater.has(i)); }
 
-  const orgs = profile.repoHosts.filter((h) => h.host === "github").map((h) => h.org);
-  for (const h of profile.repoHosts.filter((x) => x.host !== "github")) gaps.push(gap(`change.${h.org}`, "connector-unavailable", `${h.host} pull requests are read from Phase 5 on`));
+  const orgs = profile.orgs;
+  if (profile.azureRepos) gaps.push(gap(`change.${profile.azureRepos.organization}`, "connector-unavailable", "azure-repos pull requests are read from Phase 5 on"));
   const gcred = codeHostCredential(profile);
   const gh = gcred.ok ? ghClient(gcred) : null;
   if (!gh) gaps.push(gap("change", gcred.reason, gcred.detail));
