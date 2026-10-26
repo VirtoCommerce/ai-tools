@@ -20,8 +20,8 @@ Investigate a suspected bug using a structured 5-phase process: Reproduce → Is
 1. **Read the investigation flow:** Load `bug-investigation-flow.md` from this skill folder for the full process, decision tree, and common VC patterns (P1–P8). For the **operational** evidence-capture pass and the root-cause worksheet, also load `evidence-and-root-cause.md` (the runnable companion) — this is where the depth lives.
 
    **Scaffold the evidence package up front** so every artifact has one home and nothing is missed
-   (`scripts/bundle-evidence.ts` is full `vc-qa` plugin only, not shipped in `vc-fix` — create the
-   package dir by hand at `<run folder>/evidence-<UTCstamp>/` (`evidence-and-root-cause.md` §Package location) with
+   (`scripts/regression/bundle-evidence.ts` is full `vc-qa` plugin only, not shipped in `vc-fix` — create the
+   package dir by hand at `<run folder>/evidence-<UTCstamp>/` with
    `screenshots/ network/ console/ har/` subfolders, and write `evidence-index.md` /
    `root-cause.md` yourself; see `evidence-and-root-cause.md` §0 for the exact shapes).
 
