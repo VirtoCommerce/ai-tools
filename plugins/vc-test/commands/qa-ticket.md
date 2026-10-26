@@ -70,7 +70,7 @@ report its errors, STOP. **`--dry-run` stops here**: print the waves and `notRun
 
 ## 5 — Waves
 
-First `node <plugin>/lib/write-zones.mjs snapshot --key <TICKET> --run-dir <RUN_DIR>`. One message per wave of
+First `node <plugin>/lib/write-zones.mjs snapshot --key <TICKET> --run-dir <RUN_DIR>` (exit 1 or 3 ⇒ note its line, go on: step 7 reports "not checked"). One message per wave of
 `run-plan.json`; each brief gets `RUN_DIR`, `STRATEGY`, `KEY`, its own paths below, and `<plugin>/briefs/ledger.md` if it may write. An entry with `missing` is not dispatched; its rows:
 `BLOCKED — needs <missing>`.
 
@@ -90,7 +90,7 @@ wave**: `node <plugin>/lib/scenario-rows.mjs merge --run-dir <RUN_DIR> --ids <it
 says** — scripts, not a browser slot. The engine is the vc-frontend plugin's `visual/` (`capabilities.json`
 `pixel.engine`), run as its `skills/merge-upstream/visual.md`, every command with the **front checkout** as the
 working directory (the `pixel.checkouts` entry whose `git remote get-url origin` is the PR's repo; never cloned by
-this run): §Once per machine — setup (`setup.mjs`; `--with-browser` only on the user's yes), §Base and head (base =
+this run; the engine's packages live in its `node_modules/.cache/`): §Once per machine — setup (`setup.mjs`; `--with-browser` only on the user's yes), §Base and head (base =
 the PR's base ref, head = its `head_sha`, each a temporary `git worktree` with its install and Storybook build),
 §Scope, then §Shoot, compare, confirm. Each risk gets a `PIX-<m>` row naming its `R-n` in `scenarios/pixel.rows.md`, never `visual.rows.md`:
 `FAIL <severity>` per confirmed regression, else `PASS`; no engine, no checkout of that repo, a setup or a build that
@@ -107,12 +107,14 @@ absent: merge `pixel` after that wave. A PIXEL risk that runs has Lane `scripts 
 ## 7 — Verdict
 
 1. `node <plugin>/lib/trace.mjs reconcile --strategy <RUN_DIR>/test-strategy.md --checklist
-   <RUN_DIR>/testing-checklist.md --run-plan <WORK>/run-plan.json --bundle <BUNDLE> --write`. Exit 2: `unresulted` ⇒
-   back to their agents once (as step 6's), reconcile again; `unknownRefs` ⇒ named in the verdict.
+   <RUN_DIR>/testing-checklist.md --run-plan <WORK>/run-plan.json --bundle <BUNDLE> --write > <WORK>/trace.json` →
+   `TRACE`. Exit 2: `unresulted` ⇒ back to their agents once (as step 6's), reconcile again; `unknownRefs`,
+   `acsWithoutRow` ⇒ the verdict names them (not a send-back).
 2. `node <plugin>/lib/write-zones.mjs check --key <TICKET> --run-dir <RUN_DIR> --run-plan <WORK>/run-plan.json >
-   <WORK>/write-zones.json` → `WRITE_ZONES`. Exit 2 ⇒ BLOCKED, the verdict names each file; 3 ⇒ "not checked".
+   <WORK>/write-zones.json` → `WRITE_ZONES`. Exit 2 ⇒ BLOCKED, the verdict names each file; 3 ⇒ "not checked"; any other exit ⇒ write
+   `{"outside":[],"gitScope":false,"reason":"<its registryErrors, or its first stderr line>"}` there instead.
 3. `node <plugin>/lib/run-cost.mjs --since <start> --key <TICKET>` → keep its Markdown table.
-4. Dispatch a fresh `verdict` (`sonnet`) with the paths its brief lists, `WRITE_ZONES` and the table.
+4. Dispatch a fresh `verdict` (`sonnet`) with the paths its brief lists, `TRACE`, `WRITE_ZONES` and the table.
 
 ## 8 — Human point 2
 
