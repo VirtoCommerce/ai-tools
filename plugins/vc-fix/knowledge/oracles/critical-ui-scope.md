@@ -5,7 +5,7 @@ applicability_rationale: "vcst's 7 components × 8 pages coverage matrix. Custom
 
 # Critical UI Scope — Regression-Enforced Component Checklist
 
-**Canonical scope of UI primitives that every regression run must verify.** Layout-stability findings on these components are revenue-protecting, not cosmetic. The Coverage Matrix at the bottom of this file is **machine-readable**: `scripts/validate-critical-ui-scope.ts` (full `vc-qa` plugin only, not shipped here) parses it and fails the build if any cell points at a test ID that doesn't exist in any regression suite CSV.
+**Canonical scope of UI primitives that every regression run must verify.** Layout-stability findings on these components are revenue-protecting, not cosmetic. The Coverage Matrix at the bottom of this file is **machine-readable**: `scripts/maintenance/validate-critical-ui-scope.ts` (full `vc-qa` plugin only, not shipped here) parses it and fails the build if any cell points at a test ID that doesn't exist in any regression suite CSV.
 
 > ⚠️ **UNCOVERED as of 2026-07-25.** Suite `048b-layout-stability.csv` — the sole carrier of every covering test ID in both matrices — was **removed**. All 197 applicable cells are now marked `GAP`. This file is retained as the **scope definition** (what SHOULD be covered) and as an audit-protocol reference, but it no longer gates a regression run. The validator still hard-fails on a cell pointing at a **nonexistent** test ID, and reports the GAP count as a warning; `--strict` makes GAPs fatal again once a replacement suite lands.
 
@@ -1147,7 +1147,7 @@ NOTE: BL-UI-001 / BL-UI-003 / BL-UI-006 marked n/a — static once rendered;
 
 ## Coverage Matrix — machine-readable
 
-The validator at `scripts/validate-critical-ui-scope.ts` (full `vc-qa` plugin only, not shipped here) parses the table below.
+The validator at `scripts/maintenance/validate-critical-ui-scope.ts` (full `vc-qa` plugin only, not shipped here) parses the table below.
 
 **Cell value contract:**
 - A test ID like `LAYOUT-CLS-001` or `LAYOUT-COMP-VCBUTTON-001` — must exist in a regression suite CSV under the `ID` column. A test ID that does **not** resolve is always a hard failure.
