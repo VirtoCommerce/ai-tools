@@ -8,6 +8,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## `/vc-fix:qa-bug` fills the Jira Bug's own fields, links it, and decides Need hotfixes by code — `vc-fix` `0.16.0` — 2026-10-26
+
+**Added — the Jira Bug's fields (`knowledge/execution/jira-bug-fields.md`).** Step 5 discovers the Bug type's fields from
+the issue-type metadata (no field id in the plugin) and fills Steps to reproduce, Expected result, Actual result,
+Environment, Error message and the components fields when the project has them; the Description keeps the context
+only. Assignee, Sprint, QA engineer, Fix versions and Parent are left alone. Each screenshot goes inside the field it
+proves (Actual / Expected / Steps), and every rich-text field is sent as lists with bold labels and `code` values,
+verified from `renderedFields`. Checked on VCST-6500: three images render inside Actual result.
+
+**Added — Need hotfixes, by code.** On VirtoCommerce's own tracker the flag is set when the defect's code is in either
+of the two latest stable bundles (the two highest `vN` in `vc-modules/bundles`), whatever the priority, and never from
+a stand. The option is set by id (VC's value reads `" true"`), and one Environment line names the bundles and the anchor.
+
+**Added — three arguments.** `--evidence <dir>` reads a `/qa-investigate` package instead of reproducing again;
+`--link <KEY>[:type]` relates the bug to a ticket; `--confirmed` carries a caller's yes so Step 5 does not ask per
+bug. Step 5 also searches the tracker for duplicates before asking and links related tickets. `/qa-run` step 6
+(#469) passes all three.
+
 ## `/vc-test:ticket-context` reads Jira, GitHub, Azure Boards and Azure Repos through `$VC_RUN` — `vc-test` `0.3.0` — 2026-10-26
 
 P1d-2 of the `vc-test` plan (`docs/superpowers/plans/2026-10-26-vc-test-p1d2-connectors.md`). Needs `vc-fix` ≥ 0.15.0.
