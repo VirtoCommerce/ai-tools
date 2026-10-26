@@ -3,6 +3,8 @@
 // a token printer, a request to a host the caller picks, code the caller picks running with the token.
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { PINNED_GRAPHQL, checkArgv, checkGitLocation, ghApiEndpoint, groupOf, hostAllowed, toolInGroup } from "./allowlist.mjs";
 
 const allowed = (tool, args) => assert.equal(checkArgv(tool, args).ok, true, `${tool} ${args.join(" ")} should be allowed: ${checkArgv(tool, args).reason}`);
@@ -47,7 +49,9 @@ test("gh api reads only: no write method, no body, no GraphQL", () => {
 // query, with only that query's variables. A variable read from a file would post a local file to GitHub.
 test("gh api graphql: only a pinned read query, with only its variables", () => {
   const Q = PINNED_GRAPHQL.reviewThreads.query;
-  assert.equal(Q, "query($o:String!,$r:String!,$n:Int!){repository(owner:$o,name:$r){pullRequest(number:$n){reviewThreads(first:100){nodes{isResolved}}}}}");
+  // The pin is a copy of the query /ticket-context sends: edited on one side only, every read is refused.
+  const source = readFileSync(fileURLToPath(new URL("../../../.claude/skills/ticket-context/lib/github.mjs", import.meta.url)), "utf8");
+  assert.equal(Q, /const query = "([^"]*reviewThreads[^"]*)"/.exec(source)?.[1]);
   const vars = ["-F", "o=VirtoCommerce", "-F", "r=vc-platform", "-F", "n=3133"];
   allowed("gh", ["api", "graphql", "-f", `query=${Q}`, ...vars]);
   allowed("gh", ["api", "graphql", "-f", `query=${Q}`, ...vars, "--jq", ".data"]);

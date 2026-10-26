@@ -57,38 +57,40 @@ const real = (p) => {
 
 /**
  * Every file the command runs must exist and lie inside one of the profile's `test.scriptRoots`
- * (project-relative), compared after realpath on both sides. Returns the real paths to run.
- * @returns {{ ok: boolean, reason: string, files: string[] }}
+ * (project-relative), compared after realpath on both sides. A file argument is relative to `base` (the
+ * caller's cwd; default the project root). Returns the real paths to run, and `given` — the same files
+ * resolved but not realpath'd, the form a directory walk from the project sees (fileFilter).
+ * @returns {{ ok: boolean, reason: string, files: string[], given: string[] }}
  */
-export function checkRunnerFiles(args, { projectRoot, scriptRoots } = {}) {
+export function checkRunnerFiles(args, { projectRoot, scriptRoots, base = projectRoot } = {}) {
   if (!Array.isArray(scriptRoots) || !scriptRoots.some((r) => typeof r === "string" && r.trim())) {
-    return { ...no("the profile's test block names no scriptRoots — run /vc-test:init"), files: [] };
+    return { ...no("the profile's test block names no scriptRoots — run /vc-test:init"), files: [], given: [] };
   }
   const project = real(projectRoot);
-  const within = (root, path) => {
+  // `strict`: the path must lie strictly below the root, not be the root itself.
+  const within = (root, path, strict = false) => {
     const rel = relative(root, path);
-    return rel === "" || (!rel.startsWith("..") && !isAbsolute(rel));
+    return rel === "" ? !strict : !rel.startsWith("..") && !isAbsolute(rel);
   };
   const roots = [];
   for (const r of scriptRoots.filter((x) => typeof x === "string" && x.trim())) {
     const root = real(resolve(projectRoot, r));
     if (!root) continue; // a root that does not exist yet holds nothing to run
-    if (!project || !within(project, root)) return { ...no(`scriptRoot ${JSON.stringify(r)} is outside the project — a root holds the run folder or the corpus`), files: [] };
+    if (!project || !within(project, root)) return { ...no(`scriptRoot ${JSON.stringify(r)} is outside the project — a root holds the run folder or the corpus`), files: [], given: [] };
     roots.push(root);
   }
   const files = [];
+  const given = [];
   for (const f of filesOf(args)) {
-    const abs = resolve(projectRoot, f);
-    if (!existsSync(abs)) return { ...no(`no such file: ${f}`), files: [] };
+    const abs = resolve(base, f);
+    if (!existsSync(abs)) return { ...no(`no such file: ${f}`), files: [], given: [] };
     const path = real(abs);
-    const inside = path && roots.some((root) => {
-      const rel = relative(root, path);
-      return rel !== "" && !rel.startsWith("..") && !isAbsolute(rel);
-    });
-    if (!inside) return { ...no(`${f} is outside the test block's scriptRoots (${scriptRoots.join(", ")})`), files: [] };
+    const inside = path && roots.some((root) => within(root, path, true));
+    if (!inside) return { ...no(`${f} is outside the test block's scriptRoots (${scriptRoots.join(", ")})`), files: [], given: [] };
     files.push(path);
+    given.push(abs);
   }
-  return { ...ok(), files };
+  return { ...ok(), files, given };
 }
 
 /** Only an environment the profile's `test.environments` lists; writability is vc-test's business. */
@@ -120,11 +122,14 @@ export function findPlaywright(projectRoot, resolvePlugin, opts = {}) {
  * Playwright reads every CLI file argument as a case-insensitive REGEX matched anywhere in a test file's
  * path. A raw Windows path never matches (`\r`, `\t` become escapes) and a name like `x|.spec.ts` would
  * widen the selection past the checked file, so each file goes as an anchored, escaped pattern that
- * accepts either separator.
+ * accepts either separator. Given several spellings of one file (its real path and the path as walked from
+ * the project — they differ under a junction, a `subst` drive or an 8.3 name), the pattern accepts each.
  */
-export function fileFilter(path) {
+export function fileFilter(...paths) {
   const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return `^${String(path).split(/[\\/]/).map(escape).join("[\\\\/]")}$`;
+  const one = (p) => String(p).split(/[\\/]/).map(escape).join("[\\\\/]");
+  const alts = [...new Set(paths.filter(Boolean).map(one))];
+  return alts.length === 1 ? `^${alts[0]}$` : `^(?:${alts.join("|")})$`;
 }
 
 /**
@@ -132,7 +137,7 @@ export function fileFilter(path) {
  * Contract for vc-test's pinned config (P1c): its `testDir` must come from the project (the cwd the runner
  * sets), not from the config's own folder, or no project file is ever found.
  */
-export function runnerCommand(args, { node, playwrightCli, config, files }) {
-  if (args[0] === "playwright") return { command: node, args: [playwrightCli, "test", "--config", config, ...files.map(fileFilter)] };
+export function runnerCommand(args, { node, playwrightCli, config, files, given = [] }) {
+  if (args[0] === "playwright") return { command: node, args: [playwrightCli, "test", "--config", config, ...files.map((f, i) => fileFilter(f, given[i]))] };
   return { command: node, args: [files[0], ...args.slice(2)] };
 }

@@ -171,7 +171,8 @@ function checkGh(args) {
 /**
  * GraphQL read queries the bridge admits (vc-test B8). A document must be BYTE-EQUAL to one of these, and
  * its fields are exactly `query` plus that query's variables. The one v1 entry is the review-thread count
- * `/ticket-context` reads (`lib/github.mjs` unresolvedThreads); the REST API has no field for it.
+ * `/ticket-context` reads (`lib/github.mjs` unresolvedThreads); the REST API has no field for it. The two
+ * copies change together — allowlist.test.mjs fails when they differ.
  */
 export const PINNED_GRAPHQL = Object.freeze({
   reviewThreads: Object.freeze({

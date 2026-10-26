@@ -129,6 +129,28 @@ export function declaredLanes(decl) {
  * @returns {Record<string,string>}
  */
 export function envFilePasswords(text, env) {
+  const values = parseEnvText(text);
+  const out = {};
+  const suffix = `_${String(env).toUpperCase()}`;
+  for (const [k, v] of Object.entries(values)) if (v && isPasswordName(k)) out[k] = v;
+  for (const [k, v] of Object.entries(values)) {
+    if (v && k.endsWith(suffix) && isPasswordName(k.slice(0, -suffix.length))) out[k.slice(0, -suffix.length)] = v;
+  }
+  return out;
+}
+
+/**
+ * Every password VALUE an env-file text holds, whatever env it is for: a bare `<NAME>` or `<NAME>_<ENV>`
+ * for any env — what a redactor needs, since a loader reads the whole file. Pure.
+ * @returns {string[]}
+ */
+export function envFilePasswordValues(text) {
+  const isSuffixed = (k) => [...k.matchAll(/_/g)].some(({ index }) => isPasswordName(k.slice(0, index)) && /^[A-Z0-9_]+$/.test(k.slice(index + 1)));
+  return Object.entries(parseEnvText(text)).filter(([k, v]) => v && (isPasswordName(k) || isSuffixed(k))).map(([, v]) => v);
+}
+
+/** KEY=value lines of an env-file text → { KEY: value } (see envFilePasswords). Pure. */
+function parseEnvText(text) {
   const values = {};
   for (const raw of String(text || "").split(/\r?\n/)) {
     const m = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/.exec(raw);
@@ -139,13 +161,7 @@ export function envFilePasswords(text, env) {
     else v = v.replace(/\s+#.*$/, "");
     values[m[1]] = v;
   }
-  const out = {};
-  const suffix = `_${String(env).toUpperCase()}`;
-  for (const [k, v] of Object.entries(values)) if (v && isPasswordName(k)) out[k] = v;
-  for (const [k, v] of Object.entries(values)) {
-    if (v && k.endsWith(suffix) && isPasswordName(k.slice(0, -suffix.length))) out[k.slice(0, -suffix.length)] = v;
-  }
-  return out;
+  return values;
 }
 
 /** Every password secret name a { env: names } map declares. Pure. */

@@ -49,7 +49,7 @@ import { createRedactor } from "./redact.mjs";
 import { resolvePluginFile, resolvePluginRoot, selfRoot } from "./resolve-plugin.mjs";
 import { vcSecretsShim } from "./vc-secrets-path.mjs";
 import { checkRunnerFiles, findPlaywright, runnerCommand, runnerEnvAllowed } from "./runner.mjs";
-import { currentEnv, declaredPasswords, envFilePasswords, isPasswordName, laneServer, onboardTask, runnerTask } from "../skills/project-init/lib/passwords.mjs";
+import { currentEnv, declaredPasswords, envFilePasswordValues, isPasswordName, laneServer, onboardTask, runnerTask } from "../skills/project-init/lib/passwords.mjs";
 
 export const EX_REFUSED = 64;
 export const EX_UNAVAILABLE = 69;
@@ -491,7 +491,8 @@ async function playwrightLane(args) {
 /**
  * The runner's checks against one profile (bridge/runner.mjs): the env is one `test.environments` lists, every
  * file lies inside `test.scriptRoots`, Playwright and its pinned config resolve. Returns
- * { code, message } to refuse, or { cmd, projectRoot, env } to run. The project root is the profile's folder.
+ * { code, message } to refuse, or { cmd, projectRoot, env } to run. The project root is the profile's folder;
+ * file arguments resolve from the cwd.
  */
 export function prepareRunner(args, decls, found, { trustedOnly = false } = {}) {
   if (!found) return { code: EX_REFUSED, message: "refused — no project-profile.json — run /project-init, then /vc-test:init" };
@@ -500,23 +501,30 @@ export function prepareRunner(args, decls, found, { trustedOnly = false } = {}) 
   const env = currentEnv(decls ? decls.root : projectRoot, passwordEnvs(decls));
   const envOk = runnerEnvAllowed(testBlock, env);
   if (!envOk.ok) return { code: EX_REFUSED, message: `refused — ${envOk.reason}` };
-  const files = checkRunnerFiles(args, { projectRoot, scriptRoots: testBlock?.scriptRoots });
+  // File arguments are the caller's: relative to its cwd, not to the project root.
+  const files = checkRunnerFiles(args, { projectRoot, scriptRoots: testBlock?.scriptRoots, base: process.cwd() });
   if (!files.ok) return { code: EX_REFUSED, message: `refused — ${files.reason}` };
   let pw = {};
   if (args[0] === "playwright") {
     pw = findPlaywright(projectRoot, resolvePluginFile, { trustedOnly });
     if (pw.error) return { code: EX_UNAVAILABLE, message: pw.error };
   }
-  // Passwords kept in the env files reach the child only through its own loader, but its output is
-  // redacted for them too (B10): only the values, never into the child's environment.
-  const filePasswords = [".env.local", `.env.playwright.${env}`].flatMap((name) => {
+  return { cmd: runnerCommand(args, { node: process.execPath, ...pw, files: files.files, given: files.given }), projectRoot, env };
+}
+
+/**
+ * Passwords kept in the env files reach the runner's child only through its own loader, but its output is
+ * redacted for them too (B10): only the values, never into the child's environment. Every env's, because
+ * the loader reads the whole of `.env.local`; `.env.playwright.local` is the lanes' `--secrets` file.
+ */
+export function runnerFilePasswords(projectRoot) {
+  return [".env.local", ".env.playwright.local"].flatMap((name) => {
     try {
-      return Object.values(envFilePasswords(readFileSync(join(projectRoot, name), "utf8"), env));
+      return envFilePasswordValues(readFileSync(join(projectRoot, name), "utf8"));
     } catch {
       return [];
     }
   });
-  return { cmd: runnerCommand(args, { node: process.execPath, ...pw, files: files.files }), projectRoot, env, filePasswords };
 }
 
 /**
@@ -526,7 +534,9 @@ export function prepareRunner(args, decls, found, { trustedOnly = false } = {}) 
  */
 async function runnerOuter(args) {
   const decls = findDeclarations(process.cwd());
-  const runner = prepareRunner(args, decls, findProfile(process.cwd()));
+  // The profile the inner side will check: the declared project's own (no PROJECT_PROFILE_PATH /
+  // VC_FIX_HOME, no parent folder's) — without a declaration, the nearest one above the cwd.
+  const runner = prepareRunner(args, decls, findProfile(decls ? decls.root : process.cwd(), { useEnv: false, walk: !decls }));
   if (runner.code) {
     say(runner.message);
     return runner.code;
@@ -543,7 +553,7 @@ async function runnerOuter(args) {
   }
   const { env, secrets } = buildInnerEnv(process.env, "runner", { projectRoot: runner.projectRoot });
   env.TEST_ENV = runner.env; // the env just checked, not whatever the child's loader would fall back to
-  return runChild(runner.cmd.command, runner.cmd.args, { env, secrets: [...Object.values(secrets), ...runner.filePasswords], cwd: runner.projectRoot });
+  return runChild(runner.cmd.command, runner.cmd.args, { env, secrets: [...Object.values(secrets), ...runnerFilePasswords(runner.projectRoot)], cwd: runner.projectRoot });
 }
 
 /** INNER side — runs inside `vc-secrets task vc-init-<group>`, with that group's secrets in its env. */
@@ -593,7 +603,8 @@ async function inner(group) {
   }
   const { env, secrets } = buildInnerEnv(process.env, group, { projectRoot: decls.root });
   if (group !== "onboard" && Object.keys(secrets).length === 0) {
-    say(`vc-secrets started the ${group} task without its secret (${GROUP_SECRETS[group].join(", ")}) — check the declaration with "node \\"$VC_SECRETS\\" doctor"`);
+    const expected = GROUP_SECRETS[group].length ? GROUP_SECRETS[group].join(", ") : "the env's test-user passwords, *_PASSWORD";
+    say(`vc-secrets started the ${group} task without its secret (${expected}) — check the declaration with "node \\"$VC_SECRETS\\" doctor"`);
     return EX_UNAVAILABLE;
   }
   const cmd = runner ? runner.cmd : commandFor(tool, args, { trustedOnly: true });
@@ -606,7 +617,7 @@ async function inner(group) {
   try {
     return await runChild(cmd.command, cmd.args, {
       env: { ...env, GH_CONFIG_DIR: own.ghConfigDir, GIT_CONFIG_GLOBAL: own.gitGlobalConfig },
-      secrets: [...Object.values(secrets), ...(runner ? runner.filePasswords : [])],
+      secrets: [...Object.values(secrets), ...(runner ? runnerFilePasswords(runner.projectRoot) : [])],
       emails: [process.env.JIRA_EMAIL, process.env.JIRA_USER].filter(Boolean),
       ...(runner ? { cwd: runner.projectRoot } : {}),
     });

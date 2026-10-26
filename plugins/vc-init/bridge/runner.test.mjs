@@ -11,7 +11,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { checkArgv, toolInGroup } from "./allowlist.mjs";
 import { buildInnerEnv } from "./run.mjs";
-import { checkRunnerFiles, checkRunnerShape, findPlaywright, runnerCommand, runnerEnvAllowed } from "./runner.mjs";
+import { checkRunnerFiles, checkRunnerShape, fileFilter, findPlaywright, runnerCommand, runnerEnvAllowed } from "./runner.mjs";
 import { runnerTask } from "../skills/project-init/lib/passwords.mjs";
 
 const RUN = fileURLToPath(new URL("./run.mjs", import.meta.url));
@@ -205,4 +205,36 @@ test("review 5: a scriptRoot outside the project is no root at all", () => {
 test("review 9: the runner keeps PLAYWRIGHT_BROWSERS_PATH (not a credential)", () => {
   const { env } = buildInnerEnv({ ...process.env, PLAYWRIGHT_BROWSERS_PATH: "D:/pw" }, "runner");
   assert.equal(env.PLAYWRIGHT_BROWSERS_PATH, "D:/pw");
+});
+
+// ── Fix pass after the PR review ─────────────────────────────────────────────────────────────────
+
+test("pr review 1+2: .env.playwright.local and every env's .env.local passwords are redacted", () => {
+  const dir = project();
+  writeFileSync(join(dir, ".env.local"), "ADMIN_PASSWORD_VCST=Vcst-Pw-111\nADMIN_PASSWORD_VIRTOSTART=Other-Env-Pw-222\n");
+  writeFileSync(join(dir, ".env.playwright.local"), "USER_PASSWORD=Lane-Pw-333\n");
+  writeFileSync(join(dir, "reports", "tickets", "p.mjs"),
+    "import { readFileSync } from 'node:fs'; console.log(readFileSync('.env.local', 'utf8'), readFileSync('.env.playwright.local', 'utf8'))");
+  const r = bridge(["runner", "node", "reports/tickets/p.mjs"], { cwd: dir, env: { TEST_ENV: "vcst" } });
+  assert.equal(r.status, 0, r.stderr);
+  assert.doesNotMatch(r.stdout, /Vcst-Pw-111|Other-Env-Pw-222|Lane-Pw-333/);
+});
+
+test("pr review 3: the Playwright filter accepts the real path and the path as walked", () => {
+  const filter = new RegExp(fileFilter("C:\\real\\proj\\a.spec.ts", "S:\\proj\\a.spec.ts"), "gi");
+  for (const p of ["C:\\real\\proj\\a.spec.ts", "S:/proj/a.spec.ts"]) {
+    filter.lastIndex = 0;
+    assert.equal(filter.test(p), true, p);
+  }
+  filter.lastIndex = 0;
+  assert.equal(filter.test("S:/proj/b.spec.ts"), false);
+});
+
+test("pr review 5: a relative file argument resolves from the caller's cwd, not the project root", () => {
+  const dir = project();
+  writeFileSync(join(dir, "reports", "tickets", "c.mjs"), "console.log('right')");
+  writeFileSync(join(dir, "tickets.mjs"), "");
+  const r = bridge(["runner", "node", "tickets/c.mjs"], { cwd: join(dir, "reports"), env: { TEST_ENV: "vcst" } });
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /right/);
 });
