@@ -10,12 +10,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ## One plugin installed in several scopes is not a duplicate — `vc-init` `0.5.1` — 2026-10-26
 
-**Fixed: a false `Plugin installs` WARN.** `claude plugin list` prints one row per install, so a plugin
-installed for the user and for a project (a project's `.claude/settings.json` enables it, and every checkout
-or worktree of that project gets its own install) appears several times under the same id. verify-access
-counted rows and warned that `vc-secrets@ai-tools and vc-secrets@ai-tools … are both enabled`. It now counts
-distinct ids (`duplicateInstalls`), so it warns only when one plugin is enabled under both `@ai-tools` and the
-old `@vc-tools`.
+**Fixed: a false `Plugin installs` WARN.** `claude plugin list` prints one row per install on the machine: the
+user's, and one per folder that has a project or local install (a project's `.claude/settings.json` enables
+the plugin, and every checkout or worktree is its own folder). verify-access counted those rows, so one
+plugin installed for the user and for two folders read as enabled three times. It now counts only the rows
+that load in this folder (enabled, and the user's or this folder's) and distinct ids among them
+(`duplicateInstalls`): an old `@vc-tools` copy installed for another folder no longer warns here.
+
+**Fixed: the uninstall hint names the scope.** `claude plugin uninstall` without `--scope` removes only the
+user's install; the hint now gives `--scope project|local` and the folder when the old copy is one of those.
 
 ## The benchmark tooling is gone — `vc-test` `0.2.2` — 2026-10-26
 

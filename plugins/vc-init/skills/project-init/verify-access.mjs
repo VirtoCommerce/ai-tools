@@ -272,36 +272,50 @@ export function findSettingsSecrets(settingsJsonText) {
 /** This marketplace's ids: `ai-tools`, and `vc-tools` — its name before the 2026-09-30 rename. */
 const OUR_MARKETPLACES = ["ai-tools", "vc-tools"];
 
+/** Two folder paths name the same folder (case-insensitive on Windows). */
+function samePath(a, b) {
+  const norm = (p) => resolve(p).replace(/[\\/]+$/, "");
+  return process.platform === "win32" ? norm(a).toLowerCase() === norm(b).toLowerCase() : norm(a) === norm(b);
+}
+
 /**
- * One install per plugin. A plugin of this marketplace enabled under BOTH its ids (`@ai-tools`, and
- * `@vc-tools` from before the 2026-09-30 rename) runs every hook twice — two telemetry collectors on one
- * file. Only a WARN, and only when the `claude` CLI answers; a plugin that is absent is not a fault. Runs
- * on every project, a host-governed one included (the hooks are ours either way).
+ * The plugins that load in `projectRoot` under more than one of our ids: for each, its loading install rows,
+ * one per distinct id. `claude plugin list` prints one row per install on the MACHINE — the user's, and a
+ * `project` / `local` one for every folder that has one — so a row loads here only when it is enabled and
+ * is the user's or this folder's. One id in several rows (user + this project) is one plugin, and an old
+ * id installed for another folder does not load here: neither is a duplicate. Pure.
  */
-/**
- * The plugins enabled under more than one of our ids, each as its distinct ids. `claude plugin list` prints
- * one row per install, so one id installed for the user AND for a project (a project's settings enable it)
- * is several rows of the SAME id — one plugin, not a duplicate. Pure.
- */
-export function duplicateInstalls(list) {
+export function duplicateInstalls(list, projectRoot) {
   const byName = {};
   for (const p of Array.isArray(list) ? list : []) {
     const [name, market] = String(p.id || "").split("@");
-    if (p.enabled && OUR_MARKETPLACES.includes(market)) (byName[name] ||= new Set()).add(p.id);
+    if (!p.enabled || !OUR_MARKETPLACES.includes(market)) continue;
+    if (p.scope !== "user" && !(p.projectPath && samePath(p.projectPath, projectRoot))) continue;
+    const ids = (byName[name] ||= new Map());
+    if (!ids.has(p.id)) ids.set(p.id, p);
   }
-  return Object.values(byName).filter((ids) => ids.size > 1).map((ids) => [...ids]);
+  return Object.values(byName).filter((ids) => ids.size > 1).map((ids) => [...ids.values()]);
 }
 
-function checkPluginInstalls(add) {
+/**
+ * One install per plugin. A plugin of this marketplace that loads under BOTH its ids (`@ai-tools`, and
+ * `@vc-tools` from before the 2026-09-30 rename) runs every hook twice — two telemetry collectors on one
+ * file. Only a WARN, and only when the `claude` CLI answers; a plugin that is absent is not a fault. Runs
+ * on every project, a host-governed one included (the hooks are ours either way). The hint names the old
+ * copy's scope: `uninstall` without one removes only the user's install.
+ */
+function checkPluginInstalls(add, projectRoot) {
   let list = null;
   try {
-    list = JSON.parse(execSync("claude plugin list --json", { stdio: ["ignore", "pipe", "ignore"], timeout: 20000 }).toString());
+    list = JSON.parse(execSync("claude plugin list --json", { cwd: projectRoot, stdio: ["ignore", "pipe", "ignore"], timeout: 20000 }).toString());
   } catch {
     /* claude CLI unavailable — nothing to check */
   }
-  for (const ids of duplicateInstalls(list)) {
+  for (const rows of duplicateInstalls(list, projectRoot)) {
+    const old = rows.filter((r) => !r.id.endsWith("@ai-tools"));
     add("Plugin installs", "WARN",
-      `${ids.join(" and ")} are both enabled — each one's hooks run, so spans duplicate and state writes race. Uninstall the old one (/plugin uninstall ${ids.filter((id) => !id.endsWith("@ai-tools")).join(", ")}) and restart Claude Code`);
+      `${rows.map((r) => r.id).join(" and ")} both load here — each one's hooks run, so spans duplicate and state writes race. ` +
+      `Uninstall the old one (${old.map((r) => `claude plugin uninstall ${r.id} --scope ${r.scope || "user"}${r.scope && r.scope !== "user" ? ` in ${r.projectPath}` : ""}`).join("; ")}) and restart Claude Code`);
   }
 }
 
@@ -532,7 +546,7 @@ async function main() {
     profileExists
       ? `type=${profile.projectType} tracker=${profile.tracker.kind} vcs=${profile.vcs.clientHost} upstream=${profile.upstream.org}/${profile.upstream.contributionMode}`
       : `no project-profile.json at ${profilePath} — run /project-init to create it (every plugin that reads it stops until it exists)`);
-  checkPluginInstalls(add);
+  checkPluginInstalls(add, outputRoot());
 
   // 1-host. A HOST-GOVERNED project (VCST-6402 step 8): the client's governance plugin owns the MCP
   //     servers and every secret, so this table checks what is ours to check and nothing else — the
