@@ -11,6 +11,8 @@ export interface LiveModule { id: string; version: string; projectUrl?: string; 
 /** Admin token plus WHY it failed — pre-flight's diagnosis needs 401 vs 5xx vs no BACK_URL. */
 export async function probeAdminToken(c: EnvCoords, signal?: AbortSignal): Promise<{ token: string | null; status: ProbeStatus }> {
   if (!c.backUrl) return { token: null, status: 'no-back-url' };
+  // A service-account API key is the credential itself: no sign-in, so no lockout and no second factor.
+  if (c.apiKey) return { token: c.apiKey, status: 200 };
   // No password, no attempt: a guessed one is a failed sign-in that counts toward the shared admin's lockout.
   if (!c.password) return { token: null, status: 'no-password' };
   try {
@@ -19,6 +21,10 @@ export async function probeAdminToken(c: EnvCoords, signal?: AbortSignal): Promi
     return { token: (await r.json())?.access_token ?? null, status: 200 };
   } catch { return { token: null, status: 'network' }; }
 }
+/** The header a "token" from probeAdminToken travels in: the env's API key, or a bearer token. */
+function authHeader(c: EnvCoords, token: string): Record<string, string> {
+  return c.apiKey && token === c.apiKey ? { api_key: token } : { Authorization: `Bearer ${token}` };
+}
 export async function getAdminToken(c: EnvCoords): Promise<string | null> {
   return (await probeAdminToken(c)).token;
 }
@@ -26,7 +32,7 @@ export async function getAdminToken(c: EnvCoords): Promise<string | null> {
 export async function probeLiveModules(c: EnvCoords, token: string, signal?: AbortSignal): Promise<{ ok: true; modules: LiveModule[] } | { ok: false; status: ProbeStatus }> {
   if (!c.backUrl) return { ok: false, status: 'no-back-url' };
   try {
-    const r = await fetch(`${c.backUrl}/api/platform/modules`, { signal, headers: { Authorization: `Bearer ${token}` } });
+    const r = await fetch(`${c.backUrl}/api/platform/modules`, { signal, headers: authHeader(c, token) });
     if (r.status !== 200) return { ok: false, status: r.status };
     const mods = await r.json();
     const modules: LiveModule[] = [];

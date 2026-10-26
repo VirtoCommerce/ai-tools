@@ -23,6 +23,8 @@ const BRANCH_MAP: Record<string, string> = { vcst: 'vcst-qa', vcptcore: 'vcptcor
 export interface EnvCoords {
   env: string; deployOwner: string; deployRepo: string; branch: string;
   packagesPath: string; themePath: string; storybookPath: string; backUrl: string; admin: string; password: string;
+  /** The env's service-account API key (`PLATFORM_API_KEY_<ENV>`): reads the platform without the shared admin. */
+  apiKey?: string;
 }
 
 /**
@@ -108,12 +110,15 @@ export function resolveEnvCoords(env: string, passwordOverride?: string, ticket?
     // No guessed fallback: an empty password makes probeAdminToken skip the sign-in. The old 'Password1'
     // was stale, and from a machine without secrets (CI) it locked the stand's shared admin out.
     || local.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || '';
+  // A read-only service account's key, per env only (never a generic one: a key is bound to one stand).
+  // When present, the live readers use it instead of signing in as the stand's shared admin.
+  const apiKey = local[`PLATFORM_API_KEY_${envKey}`] || process.env[`PLATFORM_API_KEY_${envKey}`] || '';
   return {
     env, deployOwner, deployRepo, branch,
     packagesPath: e.DEPLOY_PACKAGES_PATH || PACKAGES_PATH_DEFAULT,
     themePath: e.DEPLOY_THEME_PATH || THEME_PATH_DEFAULT,
     storybookPath: e.DEPLOY_STORYBOOK_PATH || STORYBOOK_PATH_DEFAULT,
     backUrl: (e.BACK_URL || process.env.BACK_URL || '').replace(/\/$/, ''),
-    admin: e.ADMIN || process.env.ADMIN || 'admin', password,
+    admin: e.ADMIN || process.env.ADMIN || 'admin', password, apiKey,
   };
 }
