@@ -12,7 +12,7 @@
 
 ---
 
-## 0. Bundle the package first — `scripts/bundle-evidence.ts`
+## 0. Bundle the package first — `scripts/regression/bundle-evidence.ts`
 
 Before you start capturing, scaffold the evidence package so every artifact lands in one place with a
 manifest:
@@ -28,7 +28,7 @@ npx tsx scripts/bundle-evidence.ts VCST-5391 --sprint=Sprint-current --browser=c
 npx tsx scripts/bundle-evidence.ts VCST-5391 --sprint=Sprint-current --check
 ```
 
-> **In `vc-fix`:** `scripts/bundle-evidence.ts` is full `vc-qa` plugin only, not shipped here.
+> **In `vc-fix`:** `scripts/regression/bundle-evidence.ts` is full `vc-qa` plugin only, not shipped here.
 > Create the package dir by hand at the path in "Package location" below (`<run folder>/evidence-<UTCstamp>/`), with `screenshots/ network/ console/ har/`
 > subfolders, and write `evidence-index.md` / `root-cause.md` yourself following the manifest/worksheet
 > shapes below (Part A's table is the `evidence-index.md` checklist; Part B is `root-cause.md`). There is

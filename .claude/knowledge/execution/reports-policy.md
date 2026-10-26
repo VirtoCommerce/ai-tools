@@ -187,7 +187,7 @@ file to see what the comment describes.
 **The requirement is tracker-agnostic; the mechanism is not.** On **Azure Boards** it is
 `ado.mjs upload-attachment --file <path>` → `{ url }`, then an inline `<img src="{url}">` in the
 body (`knowledge/execution/tracker-ops.md`). On **Jira** it is attach-then-wiki, specified ONCE in
-[`knowledge/execution/tracker-ops.md`](../knowledge/execution/tracker-ops.md) **§5c**: attach via the
+[`knowledge/execution/tracker-ops.md`](tracker-ops.md) **§5c**: attach via the
 REST attachment endpoint, then reference `!filename.png|width=700!` through the **v2** comment API,
 which flips the whole body to wiki markup. **Cite §5c; never restate the mechanism** — including here.
 Hand-built ADF `media` nodes are a documented dead end and §5c lists all four failed variants,

@@ -8,6 +8,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## The benchmark tooling is gone — `vc-test` `0.2.2` — 2026-10-26
+
+**Removed.** P0 closed without its benchmark run (spec U69), and nothing else needs the tooling:
+`lib/benchmark.mjs`, `lib/bench-aside.mjs`, `briefs/blind.md`, `benchmarks/VCST-5904.json` and
+`/vc-test:qa-ticket --benchmark`, with the `CUTOFF` and `BENCHMARK` rules in the briefs and the verdict's
+`## Benchmark` section. `keep-prepare`, which every run uses, moved to `lib/keep-prepare.mjs` unchanged (step 1 of
+`qa-ticket` now calls it there). `/vc-test:ticket-context --before`/`--hide` stays: it still reads a ticket as it was
+at an instant.
+
+## `jira confluence-page` — the Confluence read the vc-test connector makes — `vc-fix` `0.15.0` — 2026-10-26
+
+**Added.** `node "$VC_RUN" jira confluence-page --id <digits>` prints the raw page object of
+`GET /wiki/api/v2/pages/<id>?body-format=storage`. `/vc-test:ticket-context` reads a page the ticket links, and
+P1d-2 moves that read behind the bridge (the P1d-2 connectors plan, Task 1, on branch `claude/vc-test-p1d2-plan`).
+`request` still admits only `/rest/…`. The new path rule is `safeWikiPath`: a page by numeric id, GET only, on the
+same pinned `tracker.baseUrl` origin, and a redirect is refused rather than followed. A non-numeric `--id` is
+refused before any request. A 401/403 from Confluence says Confluence refused the account, not that the Jira token
+is bad.
+
 ## A blind `/vc-test:ticket-context` hides PR review comments after the cutoff — `vc-test` `0.2.1` — 2026-10-26
 
 **Fixed.** `--before` already hid ticket comments, linked issues and PRs created after the cutoff. A PR it kept
