@@ -129,6 +129,34 @@ below.
 
 ---
 
+## 2a. The four instruments — which one a visual risk takes
+
+**This section is the single source for the choice.** The strategy's `VISUAL` technique, the
+checklist's visual rows and `/qa-visual-regression` cite it. A visual row with no instrument means
+"look at it", and that decides nothing.
+
+| Instrument | Question | Engine | Takes the risk when |
+|---|---|---|---|
+| `PIXEL` | Did anything change that should not have? | [`/qa-visual-regression`](../qa-visual-regression/SKILL.md) — `visual:snap` base + head (Storybook stories, or app pages with API answers replayed from one HAR) → `visual:diff` | the `ui-kit` class ([`ui-kit-class.md`](ui-kit-class.md)) · a global style, token, theme preset or Tailwind change · a refactor, dependency upgrade, upstream merge into a fork or other change on rendering code that **declares no visual effect** |
+| `DESIGN` | Does it match its reference? | §2 table: design-system + `vs. DESIGN` (`ui-ux-expert`) | new or redesigned UI with a design link · a customer theme |
+| `PROBE` | Does layout hold on hard data? | `layout-runner` / `048c` probes (§5) | any rendered change; the data that breaks it: locale × text length × width × theme |
+| `CONTENT` | Is the rendered text right? | text assertions in the checklist (raw i18n key, GUID, placeholder price, broken image or icon) | a changed label, format, empty state or i18n key |
+
+- **One risk can take several instruments.** A token change takes `PIXEL` for the blast radius and
+  `DESIGN` for conformance.
+- **`PIXEL` never takes a new surface.** There is no build before it, so a diff against an earlier
+  build shows only what was added. A defect that predates the change is also invisible to it.
+  Those go to `DESIGN`, `PROBE` or `CONTENT`.
+- **`PIXEL` is not tied to one front.** Its Storybook source works on any Storybook build: vc-frontend,
+  frontend-next, a customer fork, vc-shell. Its pages source works on any running web app, Admin SPA
+  included. A rendering file with no story is listed by `visual:affected` as `uncovered`. Its row
+  goes to the pages source or to another instrument.
+
+`PIXEL` is a headless script, not an MCP browser lane, so it does not take one of the §4 slots.
+Run it while the lanes are waiting, never instead of one.
+
+---
+
 ## 3. Verdict handling — layout blocks, a11y files separately, spec drift advises
 
 Precedence is `BL-UI / BL-A11Y invariant > design spec > UX heuristic`, unchanged from what `/qa-design`
@@ -147,6 +175,8 @@ severity: [`triage.md`](triage.md) §7a.
 | `BL-UI-*` **FAIL** (layout, overflow, alignment, CLS) | `summary.json.visual.invariant_failures[]` | **Yes** — an ordinary finding: triaged at 5-triage, severity-graded, filed under the existing 5-file floor |
 | `BL-A11Y-*` **FAIL**, ticket is functional / feature / E2E | `visual.a11y_findings[]` | **No** — filed as its **own standalone ticket** at its **real severity**, named in the report, never blocking ([`triage.md`](triage.md) §7a) |
 | `BL-A11Y-*` **FAIL**, ticket is *about* accessibility | `visual.invariant_failures[]` | **Yes** — the carve-out: an a11y/WCAG remediation ticket, ACs naming an accessibility outcome, or a `/qa-accessibility` run. The test is the ticket's own ACs, never the finding's severity |
+| `PIXEL` **regression** (an unintended change, [`../qa-visual-regression/triage.md`](../qa-visual-regression/triage.md)) | `visual.pixel.regressions[]` | **Yes** — an ordinary finding, like a `BL-UI` FAIL |
+| `PIXEL` **intended** / **noise** | `visual.pixel` | No — each row names the AC or PR line that intends the change, or the re-shoot that cleared it |
 | `vs. DESIGN` **DRIFT** / **MISSING** | `visual.advisory[]` | **No** — recorded and reported, never blocking |
 | **UNSPEC** | `visual.advisory[]` | No — a design project is rarely exhaustive; failing "not in the spec" turns the axis into ignored noise |
 | **KNOWN_DIVERGENCE** | `visual.advisory[]` | No — the spec itself declares it unshipped. Also never a clean PASS |
