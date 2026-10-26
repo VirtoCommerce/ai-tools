@@ -503,7 +503,9 @@ keys, never clobbers.
 The tracker / code-host keys (`JIRA_*`, `ADO_ORG`/`ADO_PROJECT`, `CLIENT_REPO_ORG`) are one value for
 the whole project, so they go to **`.env.local`**, once — never into `.env.<env>`, and a later env adds
 none. A project onboarded before that has them in each `.env.<env>`: scaffold-env (and normalize-env)
-moves them first (`lib/project-env.mjs`) and prints `moved to .env.local …`. When the env files hold
+moves them first (`lib/project-env.mjs`) and prints `moved to .env.local …`. A `.env.<env>` that git
+tracks is the team's copy and is never edited: the value is copied to `.env.local` and the key stays in
+the shared file (`left in the git-tracked env files …`). When the env files hold
 **different** values for one key it moves nothing and prints `NOT moved <KEY> — the files disagree`:
 relay that line; the operator keeps one value in `.env.local` (or `<KEY>_<ENV>` there per env) and
 deletes the rest. Once a key is kept per env, every later env gets its own `<KEY>_<NEW>` placeholder, never
@@ -1472,7 +1474,7 @@ Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or j
 | `../../bridge/run.mjs` | the `$VC_RUN` dispatcher: allowlist (`bridge/allowlist.mjs`) → `vc-secrets task vc-init-<group>` for a PAT axis, else the tool directly; inner side builds an allowlisted env, pins git to `bridge/git-credential.mjs`, redacts output (`bridge/redact.mjs`) |
 | `normalize-env.mjs` | **run on the operator's "done" (§3e) and in `--check` Step C** — move any tracker / code-host key left in a `.env.<env>` into `.env.local` (`lib/project-env.mjs`; a key the env files disagree on is reported, never moved), then normalize the hand-filled `.env.<env>` and the project keys in `.env.local` IN PLACE (quotes / padding / **all** trailing slashes; a pasted `dev.azure.com/<org>` → the bare slug) and validate it: exit 1 on an unfilled placeholder, a URL with no `http(s)://`, or a path-shaped `ADO_ORG`/`ADO_PROJECT`; WARN on a path component in `FRONT_URL`/`BACK_URL`. Prints every fix. Rules come from `scaffold-env.mjs` `CATALOG` (`type` + no-`def`), never a private copy |
 | `write-env.mjs` | (non-interactive helper) write `.env.<env>` / `.env.local` from a JSON answer object on STDIN when values ARE known programmatically — a `scope: "project"` key in `envVars` lands in `.env.local`; idempotent |
-| `lib/project-env.mjs` | where the project-level keys live (`.env.local`) and the one-time move out of every `.env.<env>` that scaffold-env + normalize-env run; the shared `.env.local` header |
+| `lib/project-env.mjs` | where the project-level keys live (`.env.local`) and the one-time move out of every `.env.<env>` git does not track, run by scaffold-env + normalize-env; the shared `.env.local` header |
 | `discover-repos.mjs` | ALWAYS-run scan: Platform API modules → client/platform split, client-host scan for the storefront repo, and **derives projectType + clientOrg**; bakes per-repo `contribution`/`integrationBranch`/`toolchain`/`localVerify`; emits `{ projectType, clientOrg, client, platform }` |
 | `discover-tracker.mjs` | **Azure-only** scan of work-item types → per-type `states` + a `role→state` map (`roleStates`), plus `apiBase`/`projectId`/`ticketKeyFormat`/`crossLinkToken`; emits `.local-env/tracker.json` for `gen-profile --tracker-json`. Jira: format facts only (transitions discovered live). Enables `/qa-fix`'s silent role-based transitions |
 | `derive-context.mjs` | the **derive block**: reads the filled env + sessions, probes the upstream permission, emits JSON — auth actually present per axis, contributionMode, forkAccount, operator |

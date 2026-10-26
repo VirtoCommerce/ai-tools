@@ -99,7 +99,7 @@ export function removeGitignoreBlock(root, title) {
  */
 export function ensureGitignoreEntries(root, entries, opts = {}) {
   const {
-    title = "vc-fix (/project-init) — browser evidence landing zone",
+    title = "vc-init (/project-init) — browser evidence landing zone",
     notes = [
       "The Playwright MCP servers write raw captures here; /qa-bug moves the ones it keeps",
       "into reports/bugs/screenshots/<bug-slug>/. Nothing here is evidence of record.",
@@ -129,7 +129,7 @@ export function ensureGitignoreEntries(root, entries, opts = {}) {
 export function ensureProjectIgnores(projectRoot, extraEntries = []) {
   try {
     return ensureGitignoreEntries(projectRoot, [...new Set([...extraEntries.filter(Boolean), ...SECRET_IGNORES])], {
-      title: "vc-fix (/project-init) — generated local config, never commit",
+      title: "vc-init (/project-init) — generated local config, never commit",
       notes: [
         "Per-machine onboarding output: the profile, env files (.env.local holds test-user passwords),",
         "the MCP config and the vc-secrets declarations. Tokens live in vc-secrets, not here. Never commit.",

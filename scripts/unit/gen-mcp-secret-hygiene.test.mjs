@@ -169,7 +169,7 @@ test("#4: all four writers together produce ONE block with no duplicate entries"
     assert.equal(lines.filter((l) => l === entry).length, 1, `${entry} appears more than once`);
   }
   assert.equal(
-    lines.filter((l) => l.startsWith("# === vc-fix (/project-init) — generated local config")).length, 1,
+    lines.filter((l) => l.startsWith("# === vc-init (/project-init) — generated local config")).length, 1,
     "one labelled block, not four",
   );
 }));

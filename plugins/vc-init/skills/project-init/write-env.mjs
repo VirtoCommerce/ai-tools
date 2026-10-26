@@ -46,10 +46,10 @@
  *   --print     after writing, list the keys written per file (names only, no values)
  */
 import { readFileSync, writeFileSync, existsSync } from "fs";
-import { join } from "path";
+import { basename, dirname, join } from "path";
 import { outputRoot } from "./lib/paths.mjs";
 import { CATALOG } from "./scaffold-env.mjs";
-import { LOCAL_HEADER, envSuffixesIn, keySuffixes, readKey, removeKey } from "./lib/project-env.mjs";
+import { LOCAL_HEADER, envSuffixesIn, isGitTracked, keySuffixes, readKey, removeKey } from "./lib/project-env.mjs";
 import { normalizeValue } from "./normalize-env.mjs";
 
 // The project-level keys — one value for every env — go to .env.local, never .env.<env>.
@@ -172,7 +172,7 @@ function main() {
   // Project keys: one value for every env, so a different one already in .env.local is another env's
   // tracker — never overwritten silently (that would redirect the other env's runs). A project that keeps
   // them per env (`KEY_<ENV>` lines) gets this env's suffixed line. The copy left in .env.<env> by an
-  // older onboarding is removed, so the two files cannot disagree afterwards.
+  // older onboarding is removed, so the two files cannot disagree afterwards — unless git tracks .env.<env>.
   const localText = existsSync(localPath) ? readFileSync(localPath, "utf-8") : "";
   const refused = [];
   const projectWritten = [];
@@ -195,7 +195,8 @@ function main() {
   // --- Bucket #2: .env.<env> (non-secret) ---
   let envReport = null;
   const envText = existsSync(envPath) ? readFileSync(envPath, "utf-8") : "";
-  const stale = projectWritten.filter((k) => readKey(envText, k) !== null);
+  // A git-tracked .env.<env> is the team's copy: its old project keys stay there (lib/project-env.mjs isGitTracked).
+  const stale = envText && isGitTracked(dirname(envPath), basename(envPath)) ? [] : projectWritten.filter((k) => readKey(envText, k) !== null);
   if (Object.keys(envVars).length || stale.length) {
     const existing = stale.reduce((t, k) => removeKey(t, k), envText);
     const header = existing

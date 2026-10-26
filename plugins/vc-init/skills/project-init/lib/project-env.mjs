@@ -9,6 +9,7 @@
  * change. `scaffold-env.mjs` `CATALOG` marks these keys `scope: "project"`; this module is the one place that
  * knows where they go and moves them out of a project onboarded before the split.
  */
+import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -167,6 +168,20 @@ export function setKey(text, key, value, comment = "") {
   return base + sep + gap + (comment ? comment.replace(/\n/g, eol) : "") + `${key}=${value}${eol}`;
 }
 
+/**
+ * Whether git tracks `file` in `root`. A tracked `.env.<env>` is the team's shared copy: a key removed
+ * from it is removed for every teammate on the next commit, and one without a `.env.local` loses it.
+ * No git, or not a repository ⇒ false (nothing is shared through git there).
+ */
+export function isGitTracked(root, file) {
+  try {
+    execFileSync("git", ["ls-files", "--error-unmatch", "--", file], { cwd: root, stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** The comment scaffold-env writes above a key, from its CATALOG meta. */
 export const keyComment = (key, meta) => `# ${key} — ${meta.what}\n#   ${meta.where}\n`;
 
@@ -183,17 +198,21 @@ export const keyComment = (key, meta) => `# ${key} — ${meta.what}\n#   ${meta.
  *     the caller reports it (a project that really points two stands at two trackers keeps `KEY_<ENV>` in
  *     `.env.local`, which config.js / load-layered-env promote per env).
  *
+ * A file git tracks is never edited: the value is still copied to `.env.local`, and the key stays in the
+ * shared file (`kept`) — removing it there would remove it for every teammate (isGitTracked).
+ *
  * @param {string} root  the project directory
  * @param {Array<[string, object]>} catalog  scaffold-env CATALOG entries with `scope: "project"`
- * @param {{ dryRun?: boolean }} [opts]
- * @returns {{ moved: Array<{key:string, from:string[]}>, cleaned: Array<{key:string, from:string[]}>, conflicts: Array<{key:string, values:Record<string,string>}> }}
+ * @param {{ dryRun?: boolean, isTracked?: (root: string, file: string) => boolean }} [opts]
+ * @returns {{ moved: Array<{key:string, from:string[]}>, cleaned: Array<{key:string, from:string[]}>, kept: Array<{key:string, in:string[]}>, conflicts: Array<{key:string, values:Record<string,string>}> }}
  */
-export function moveProjectKeys(root, catalog, { dryRun = false } = {}) {
+export function moveProjectKeys(root, catalog, { dryRun = false, isTracked = isGitTracked } = {}) {
   const files = envFileNames(root);
+  const tracked = new Set(files.filter((f) => isTracked(root, f)));
   const localPath = join(root, LOCAL_FILE);
   let local = existsSync(localPath) ? readFileSync(localPath, "utf8") : "";
   const texts = Object.fromEntries(files.map((f) => [f, readFileSync(join(root, f), "utf8")]));
-  const result = { moved: [], cleaned: [], conflicts: [] };
+  const result = { moved: [], cleaned: [], kept: [], conflicts: [] };
   let localChanged = false;
   const changedFiles = new Set();
 
@@ -221,10 +240,12 @@ export function moveProjectKeys(root, catalog, { dryRun = false } = {}) {
       local = setKey(local, key, distinct[0] ?? "", keyComment(key, meta));
       localChanged = true;
       result.moved.push({ key, from: holders });
-    } else {
-      result.cleaned.push({ key, from: holders });
+    } else if (holders.some((f) => !tracked.has(f))) {
+      result.cleaned.push({ key, from: holders.filter((f) => !tracked.has(f)) });
     }
-    for (const f of holders) { texts[f] = removeKey(texts[f], key); changedFiles.add(f); }
+    const shared = holders.filter((f) => tracked.has(f));
+    if (shared.length) result.kept.push({ key, in: shared });
+    for (const f of holders) if (!tracked.has(f)) { texts[f] = removeKey(texts[f], key); changedFiles.add(f); }
   }
 
   if (!dryRun) {
@@ -236,10 +257,11 @@ export function moveProjectKeys(root, catalog, { dryRun = false } = {}) {
 }
 
 /** One line per move / conflict, for a scaffolder's or normalizer's own log prefix. */
-export function describeMove({ moved, cleaned, conflicts }) {
+export function describeMove({ moved, cleaned, kept = [], conflicts }) {
   const lines = [];
   if (moved.length) lines.push(`moved to ${LOCAL_FILE} (same for every env): ${moved.map((m) => `${m.key} ← ${m.from.join(", ")}`).join("; ")}`);
   if (cleaned.length) lines.push(`removed from the env files (${LOCAL_FILE} already holds it): ${cleaned.map((m) => `${m.key} ← ${m.from.join(", ")}`).join("; ")}`);
+  if (kept.length) lines.push(`left in the git-tracked env files (shared with the team; ${LOCAL_FILE} wins at runtime): ${kept.map((k) => `${k.key} in ${k.in.join(", ")}`).join("; ")}`);
   for (const c of conflicts) {
     if (c.reason) { lines.push(`NOT moved ${c.key} — ${c.reason}`); continue; }
     lines.push(`NOT moved ${c.key} — the files disagree (${Object.entries(c.values).map(([f, v]) => `${f}: ${v || "(empty)"}`).join(", ")}); keep one value in ${LOCAL_FILE}, or ${c.key}_<ENV> there per env, and delete the rest`);

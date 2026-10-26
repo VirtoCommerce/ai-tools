@@ -73,6 +73,13 @@ that reads the profile is treated alike. `verify-access` drops its `Plugin root`
 vc-fix was not installed; a plugin that is not there is already reported by next-steps, and the
 self-diagnostics marker is skipped without it.
 
+**Fixed: a git-tracked `.env.<env>` keeps its tracker keys.** Moving the project keys (`JIRA_*`,
+`ADO_ORG`/`ADO_PROJECT`, `CLIENT_REPO_ORG`) into `.env.local` used to delete them from every env file,
+including one the team commits, so a teammate without a `.env.local` lost the Jira connection on the next
+commit. scaffold-env, normalize-env and write-env now copy the value into `.env.local` and leave a tracked
+file untouched, saying so (`left in the git-tracked env files …`); untracked env files are cleaned as before.
+The `.gitignore` blocks /project-init appends are titled `vc-init (/project-init)`, not `vc-fix`.
+
 **Verified.** On a machine with a client governance plugin installed for one folder and its setup already run
 there: no candidate for this repository or its parent folder; the folder's plugin found in any letter case,
 its work-items, test-management, telemetry and three browser servers classified by package, its setup
