@@ -43,10 +43,10 @@ What it writes into the project (all gitignored):
 | `project-profile.json` | the deployment profile (`schemaVersion` 3): tracker, code host, repos, `auth.{github,ado,jira}`, `governance` |
 | `.env.<env>` | per-env URLs and identifiers (no secret) |
 | `.env.local` | what is the same for every env — the tracker / code-host connection (`JIRA_BASE_URL`, `JIRA_PROJECT_KEY`, `JIRA_EMAIL` / `ADO_ORG`, `ADO_PROJECT`, `CLIENT_REPO_ORG`) — and the test-user passwords of the roles not kept in vc-secrets (below) |
-| `.claude/vc-secrets.local.json` | the vc-secrets declarations: one `local` secret per PAT axis (`github-pat`, `ado-pat`, `jira-token`), the bridge's `vc-init-*` tasks, the GitHub MCP server; with the passwords in vc-secrets also, per env, its password secrets, `vc-init-onboard.<env>`, `vc-init-runner.<env>` and the `playwright-<lane>.<env>` servers |
+| `.claude/vc-secrets.local.json` | the vc-secrets declarations: one `local` secret per PAT axis (`github-pat`, `ado-pat`, `jira-token`), the bridge's `vc-init-*` tasks, the GitHub MCP server; with the passwords in vc-secrets also, per env, its password secrets, `vc-init-onboard.<env>`, `vc-init-runner.<env>` and the `playwright-<lane>.<env>` servers <!-- doclint:may-not-exist --> |
 | `.mcp.json` + `.claude/settings.local.json` | MCP servers; the settings `env` holds `VC_RUN` and `VC_SECRETS` (paths) and no token |
 
-One more file is meant to be **committed**: `.claude/rules/vc-browser.md`, the always-loaded rule that every
+One more file is meant to be **committed**: `.claude/rules/vc-browser.md`, the always-loaded rule that every <!-- doclint:may-not-exist -->
 browser action goes through a Playwright MCP lane — never the built-in browser pane, Claude in Chrome,
 Chrome DevTools or a browser started from a shell, none of which can type a password. It sits in the project,
 not in a plugin, so it binds every plugin in it, including ones installed later (`write-agent-rules.mjs`,

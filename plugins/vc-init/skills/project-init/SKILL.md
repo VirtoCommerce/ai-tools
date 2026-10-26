@@ -41,9 +41,9 @@ operator can do now, built from the plugins actually installed.
 |----------|---------|
 | `project-profile.json` (gitignored) | the deployment profile (`schemaVersion` 3) — read by vc-fix (`config.js`, `skills/qa-fix-routing/repo-router.ts`, `skills/qa-fix-routing/trackers/*`) and vc-perf. vc-init is its ONLY writer: other plugins persist into it through `profile-set.mjs` |
 | `.env.<env>` + `.env.local` | Both scaffolded as **commented templates** the operator fills in — no values are asked in the interview. `scaffold-env.mjs` writes `.env.<env>` (per-env URLs/identifiers) and, ONCE, the project-level keys its `CATALOG` marks `scope: "project"` — the tracker / code-host connection (`JIRA_BASE_URL`/`JIRA_PROJECT_KEY`/`JIRA_EMAIL`, `ADO_ORG`/`ADO_PROJECT`, `CLIENT_REPO_ORG`), the same for every env — into `.env.local`; `scaffold-secrets.mjs` adds the test-user passwords (`_<ENV>`-suffixed) to `.env.local`. No token goes into either. |
-| `.claude/vc-secrets.local.json` (gitignored) | the vc-secrets declarations (`write-secrets-decl.mjs`): one `local` secret per PAT axis (`github-pat` / `ado-pat` / `jira-token`), the `vc-init-*` tasks the `$VC_RUN` bridge dispatches to, and the GitHub MCP server. Reviewed and approved by the operator with `vc-secrets trust` |
+| `.claude/vc-secrets.local.json` (gitignored) | the vc-secrets declarations (`write-secrets-decl.mjs`): one `local` secret per PAT axis (`github-pat` / `ado-pat` / `jira-token`), the `vc-init-*` tasks the `$VC_RUN` bridge dispatches to, and the GitHub MCP server. Reviewed and approved by the operator with `vc-secrets trust` <!-- doclint:may-not-exist --> |
 | `.mcp.json` + `.claude/settings.local.json` | MCP servers enabled for the chosen tracker/VCS (via `gen-mcp.mjs`); `settings.local.json` `env` carries `VC_RUN` (a path, not a secret) and no token. The Playwright servers are configured entirely via CLI flags (`--browser` / `--isolated` / `--viewport-size` / `--output-dir`). Only `playwright-chrome` is enabled by default; `playwright-firefox` / `playwright-edge` stay defined for opt-in cross-browser runs. |
-| `.claude/rules/vc-browser.md` (**committed**, not ignored) | the always-loaded agent rule (`write-agent-rules.mjs`, §7): every browser action goes through a Playwright MCP lane — never the built-in browser pane, Claude in Chrome, Chrome DevTools or a Bash-started browser, none of which can type a password. Lives in the project so it binds every plugin, including ones installed later. Copied from `templates/rules/` |
+| `.claude/rules/vc-browser.md` (**committed**, not ignored) | the always-loaded agent rule (`write-agent-rules.mjs`, §7): every browser action goes through a Playwright MCP lane — never the built-in browser pane, Claude in Chrome, Chrome DevTools or a Bash-started browser, none of which can type a password. Lives in the project so it binds every plugin, including ones installed later. Copied from `templates/rules/` <!-- doclint:may-not-exist --> |
 
 ## Pipeline
 
@@ -185,7 +185,7 @@ change` → end the turn, no tool call after it. The operator answers in chat.
   session use the literal path `install-bridge.mjs` printed**, wherever this file says `$VC_RUN`.
 - **Deployment project directory** (your Bash cwd — the folder Claude Code was launched
   in): where **all generated state lands** — `project-profile.json`, `.env.<env>`,
-  `.env.local`, `.mcp.json`, `.claude/settings.local.json` and `.claude/vc-secrets.local.json`.
+  `.env.local`, `.mcp.json`, `.claude/settings.local.json` and `.claude/vc-secrets.local.json`. <!-- doclint:may-not-exist -->
   The generators default their output there automatically (symmetric with the readers). You do
   **not** pass an output path in the normal flow. `VC_FIX_HOME=<dir>` overrides the output root
   only for out-of-project / CI callers — the interactive flow never sets it.
@@ -495,7 +495,7 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/write-secrets-decl.mjs" \
   --github-auth pat --ado-auth az-login --jira-auth pat --tracker jira --client-vcs github \
   --shim "<the VC_RUN path from §0d>"
 ```
-Writes `.claude/vc-secrets.local.json` (gitignored first): one `local` secret per PAT axis
+Writes `.claude/vc-secrets.local.json` (gitignored first): one `local` secret per PAT axis <!-- doclint:may-not-exist -->
 (`github-pat` / `ado-pat` / `jira-token`), the `vc-init-<group>` tasks the bridge dispatches to, and a
 stable `projectId`. Prints a JSON report — keep `secrets` and `trustNeeded`. With no PAT axis at all
 it declares nothing (every axis is a session login) and 3d's token block is empty. A re-run with the
@@ -877,7 +877,7 @@ Code**: the MCP servers, `VC_RUN` and `VC_SECRETS` take effect only in a new ses
 (read from `auth.github` in the profile §6 wrote; `--github-auth` overrides):
 
 - **PAT** → `.mcp.json` holds `node ${VC_SECRETS} run github` and nothing else. The server itself is
-  declared in `.claude/vc-secrets.local.json` (§3c wrote it; gen-mcp re-checks it, writing nothing when
+  declared in `.claude/vc-secrets.local.json` (§3c wrote it; gen-mcp re-checks it, writing nothing when <!-- doclint:may-not-exist -->
   it matches): the pinned `mcp-remote` against the hosted GitHub MCP, with `github-pat` from vc-secrets
   in the `Authorization` header. Verified on Windows `npx.cmd`.
 - **Browser login** → the hosted server with no header; Claude Code runs OAuth on first use.
@@ -1397,7 +1397,7 @@ Once the profile exists, the fix pipeline uses it automatically:
 - **Tracker** — comments + status transitions go to Jira or Azure Boards per
   `tracker.kind`.
 
-Client-code containment (vc-fix's `.claude/rules/quality-gates.md` §2a) is enforced regardless:
+Client-code containment (vc-fix's `.claude/rules/quality-gates.md` §2a) is enforced regardless: <!-- doclint:may-not-exist -->
 client code never leaves the client project. Gate ladder is unchanged. Never auto-merges.
 
 ## Re-running
@@ -1420,7 +1420,7 @@ Gate 1b reconstructs a resolvable ref on the fly. A `/project-init` re-run (or j
 | `scaffold-env.mjs` | write a commented `.env.<env>` **template** (non-secret URL/identifier/tracker placeholders + what/example comments); topology-driven, idempotent. **Calls `lib/gitignore.mjs` `ensureProjectIgnores()` BEFORE it writes**, so the file it is about to create is already covered (VCST-5774). |
 | `scaffold-secrets.mjs` | add the commented test-user password placeholders to `.env.local` (what/why/where per value); reports which tokens this topology stores in vc-secrets and warns on a plaintext token still in `.env.local`; idempotent. **Calls `lib/gitignore.mjs` `ensureProjectIgnores()` BEFORE it writes**, so the file it is about to create is already covered (VCST-5774). |
 | `lib/gitignore.mjs` | the ONE list of what onboarding generates that must never be committed, plus the append-only writer. Shared because FOUR scripts create such files at four different steps and each must protect its own **before** creating it — while only `gen-mcp` (§7) wrote the block, `.env.local` (§3b) sat unignored through the operator's fill-in pause and through any run that aborted before §7. Idempotent, so four calls cost one read and produce one block |
-| `write-secrets-decl.mjs` | write `.claude/vc-secrets.local.json` — one `local` secret per PAT axis, the `vc-init-<group>` bridge tasks, the GitHub MCP server, a stable `projectId`. Owns only those keys, writes nothing when unchanged (so trust is re-asked only when the PAT axes change). `--from-profile` reads `auth.*`. `--password-envs` / `--password-names`: per env the password secrets, `vc-init-onboard.<env>` and the `playwright-<lane>.<env>` servers (`lib/passwords.mjs`, `lib/playwright-lanes.mjs`) |
+| `write-secrets-decl.mjs` | write `.claude/vc-secrets.local.json` — one `local` secret per PAT axis, the `vc-init-<group>` bridge tasks, the GitHub MCP server, a stable `projectId`. Owns only those keys, writes nothing when unchanged (so trust is re-asked only when the PAT axes change). `--from-profile` reads `auth.*`. `--password-envs` / `--password-names`: per env the password secrets, `vc-init-onboard.<env>` and the `playwright-<lane>.<env>` servers (`lib/passwords.mjs`, `lib/playwright-lanes.mjs`) <!-- doclint:may-not-exist --> |
 | `add-user.mjs` | **`--add-user`**: `--list` — every `.env.<env>`, its password mode and its users; `--env --key --role --login` — writes `<KEY>_LOGIN` into `.env.<env>` and declares `<KEY>_PASSWORD` in that env's vc-secrets declaration or adds its `.env.local` placeholder; prints the operator's `steps`. Never sees a password |
 | `check-secrets.mjs` | `--preflight` (§0d): is vc-secrets installed and runnable · `--steps` (§3d): the token block — what/why/where + the exact `set <name>` command per token (and each declared password's) · default (§3e): the TOKEN GATE — reads `vc-secrets doctor`'s lines and exits 1 with the `trust` / `set` commands still to run. Never sees a value |
 | `lib/token-guide.mjs` | what/why/where of each onboarding token (`github-pat`, `ado-pat`, `jira-token`) — the texts that used to sit in `.env.local` comments |

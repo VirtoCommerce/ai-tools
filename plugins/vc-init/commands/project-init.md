@@ -57,7 +57,7 @@ PAT, no `az login`, self-diagnostics off; the host's rules win.
    a vc-secrets secret is declared (PAT) or a login is run (session). **Do NOT ask about upstream
    `feedback.mode`** (PR #172 item 4) — it stays at its `ask` default.
 3. Scaffold + hand off: `scaffold-env.mjs` → `.env.<env>` (per-env URLs) + the tracker / code-host connection
-   into `.env.local` (once, same for every env); `scaffold-secrets.mjs` → the test-user passwords in `.env.local`; `write-secrets-decl.mjs` → `.claude/vc-secrets.local.json` (one
+   into `.env.local` (once, same for every env); `scaffold-secrets.mjs` → the test-user passwords in `.env.local`; `write-secrets-decl.mjs` → `.claude/vc-secrets.local.json` (one <!-- doclint:may-not-exist -->
    secret per PAT axis + the bridge tasks). Show the operator what to fill, the `trust` command when
    the declarations changed, and the token block from `check-secrets.mjs --steps` (what / where / the
    `set <name>` command per token) — then **pause** with the waiting banner, no tool calls after it.
