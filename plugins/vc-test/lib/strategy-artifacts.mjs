@@ -7,9 +7,9 @@ import { fileURLToPath } from "node:url";
 
 const LIB = dirname(fileURLToPath(import.meta.url));
 
-const lastRound = (md) => { const i = md.lastIndexOf("\n## Round "); return i < 0 ? (md.startsWith("## Round ") ? md : "") : md.slice(i + 1); };
-const block = (sec, heading) => { const m = new RegExp(`^### ${heading}[ \\t]*\\n([\\s\\S]*?)(?=\\n### |(?![\\s\\S]))`, "m").exec(sec); return m ? m[1] : ""; };
-const rows = (text) => text.split("\n").filter((l) => /^\|/.test(l) && !/^[\s|:-]+$/.test(l)).map((l) => l.split("|").slice(1, -1).map((c) => c.trim())).slice(1);
+export const lastRound = (md) => { const i = md.lastIndexOf("\n## Round "); return i < 0 ? (md.startsWith("## Round ") ? md : "") : md.slice(i + 1); };
+export const block = (sec, heading) => { const m = new RegExp(`^### ${heading}[ \\t]*\\n([\\s\\S]*?)(?=\\n### |(?![\\s\\S]))`, "m").exec(sec); return m ? m[1] : ""; };
+export const rows = (text) => text.split("\n").filter((l) => /^\|/.test(l) && !/^[\s|:-]+$/.test(l)).map((l) => l.split("|").slice(1, -1).map((c) => c.trim())).slice(1);
 
 function decisionOf(cell) {
   const decision = /^SKIP\b/i.test(cell) ? "SKIP" : /^RUN\b/i.test(cell) ? "RUN" : null;
