@@ -44,6 +44,7 @@ import { vcSecretsShim } from "../../bridge/vc-secrets-path.mjs";
 import { ensureProjectIgnores } from "./lib/gitignore.mjs";
 import { outputRoot } from "./lib/paths.mjs";
 import { hostInstallPath, standDownIfHostGoverned } from "./lib/governance.mjs";
+import { isGitTracked } from "./lib/project-env.mjs";
 import { hostState, storeCommand } from "./lib/host-adapter.mjs";
 import { BUILT_IN, envsIn, hostEnvFor, markedUsersIn, usersIn } from "./lib/test-users.mjs";
 import { ENV_NAME_RE, ROLES, ROLE_PASSWORD, declaredPasswords, isPasswordName, passwordSecret } from "./lib/passwords.mjs";
@@ -207,6 +208,9 @@ function hostMain(root, profile, args) {
   const np = noteProblem(note);
   if (np) fail(np);
 
+  // The host keeps env files out of git (gen-profile's `.env.*` ignore), but an ignore rule does not untrack
+  // a file git already tracks: a login written there would reach the repository with the next commit.
+  if (isGitTracked(root, `.env.${env}`)) fail(`.env.${env} is tracked by git, so a login written there would be committed — untrack it first: git rm --cached .env.${env} (and commit), then re-run`);
   const envFile = join(root, `.env.${env}`);
   const next = withUser(readFileSync(envFile, "utf8"), { key: slot, role, login, note, password: target.password, where: `${g.host} slot ${target.secret}`, replace: !!args.replace });
   if (next.refused) fail(next.refused);

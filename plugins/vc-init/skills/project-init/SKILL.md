@@ -503,9 +503,10 @@ keys, never clobbers.
 The tracker / code-host keys (`JIRA_*`, `ADO_ORG`/`ADO_PROJECT`, `CLIENT_REPO_ORG`) are one value for
 the whole project, so they go to **`.env.local`**, once — never into `.env.<env>`, and a later env adds
 none. A project onboarded before that has them in each `.env.<env>`: scaffold-env (and normalize-env)
-moves them first (`lib/project-env.mjs`) and prints `moved to .env.local …`. A `.env.<env>` that git
-tracks is the team's copy and is never edited: the value is copied to `.env.local` and the key stays in
-the shared file (`left in the git-tracked env files …`). When the env files hold
+moves them first (`lib/project-env.mjs`) and prints `moved to .env.local …`. A key a git-tracked
+`.env.<env>` holds stays where it is and is NOT copied to `.env.local` (a copy there would win at
+runtime and go stale when the team changes the shared value); it prints `left in the git-tracked env
+files …`, and `write-env.mjs` refuses a different value for it (change it in the shared file). When the env files hold
 **different** values for one key it moves nothing and prints `NOT moved <KEY> — the files disagree`:
 relay that line; the operator keeps one value in `.env.local` (or `<KEY>_<ENV>` there per env) and
 deletes the rest. Once a key is kept per env, every later env gets its own `<KEY>_<NEW>` placeholder, never
@@ -961,7 +962,8 @@ Prints a bordered readiness table + a **READY / NOT READY** verdict for the proj
 Run it THROUGH THE BRIDGE as above — a direct run sees only the session logins, so every PAT axis
 would read as missing (it says so in a `Launched through $VC_RUN` WARN row).
 
-Checks (PASS / FAIL / WARN / SKIP): deployment profile · **`$VC_RUN`
+Checks (PASS / FAIL / WARN / SKIP): deployment profile · **plugin installs** (WARN only when one
+plugin is enabled under both `@ai-tools` and the old `@vc-tools`) · **`$VC_RUN`
 bridge** (the shim §0d installed) · **vc-secrets (tokens)** (every declared token stored and the
 declarations trusted — read from `vc-secrets doctor`'s lines; FAIL names the `trust` / `set <name>`
 commands still to run) · core env vars · storefront

@@ -174,11 +174,18 @@ export function setKey(text, key, value, comment = "") {
  * No git, or not a repository ⇒ false (nothing is shared through git there).
  */
 export function isGitTracked(root, file) {
+  return gitTracked(root, [file]).has(file);
+}
+
+/** The subset of `files` (names relative to `root`) git tracks — one `git ls-files` for all of them. */
+export function gitTracked(root, files) {
+  if (!files.length) return new Set();
   try {
-    execFileSync("git", ["ls-files", "--error-unmatch", "--", file], { cwd: root, stdio: "ignore" });
-    return true;
+    const out = execFileSync("git", ["ls-files", "-z", "--", ...files], { cwd: root, stdio: ["ignore", "pipe", "ignore"] }).toString();
+    const listed = new Set(out.split("\0").filter(Boolean));
+    return new Set(files.filter((f) => listed.has(f)));
   } catch {
-    return false;
+    return new Set();
   }
 }
 
@@ -198,17 +205,18 @@ export const keyComment = (key, meta) => `# ${key} — ${meta.what}\n#   ${meta.
  *     the caller reports it (a project that really points two stands at two trackers keeps `KEY_<ENV>` in
  *     `.env.local`, which config.js / load-layered-env promote per env).
  *
- * A file git tracks is never edited: the value is still copied to `.env.local`, and the key stays in the
- * shared file (`kept`) — removing it there would remove it for every teammate (isGitTracked).
+ * A key any git-tracked env file holds is left exactly where it is (`kept`): removing it from the shared
+ * file would remove it for every teammate, and a copy in `.env.local` would win at runtime and go stale the
+ * next time the team changes the shared value (isGitTracked).
  *
  * @param {string} root  the project directory
  * @param {Array<[string, object]>} catalog  scaffold-env CATALOG entries with `scope: "project"`
- * @param {{ dryRun?: boolean, isTracked?: (root: string, file: string) => boolean }} [opts]
+ * @param {{ dryRun?: boolean, trackedIn?: (root: string, files: string[]) => Set<string> }} [opts]
  * @returns {{ moved: Array<{key:string, from:string[]}>, cleaned: Array<{key:string, from:string[]}>, kept: Array<{key:string, in:string[]}>, conflicts: Array<{key:string, values:Record<string,string>}> }}
  */
-export function moveProjectKeys(root, catalog, { dryRun = false, isTracked = isGitTracked } = {}) {
+export function moveProjectKeys(root, catalog, { dryRun = false, trackedIn = gitTracked } = {}) {
   const files = envFileNames(root);
-  const tracked = new Set(files.filter((f) => isTracked(root, f)));
+  const tracked = trackedIn(root, files);
   const localPath = join(root, LOCAL_FILE);
   let local = existsSync(localPath) ? readFileSync(localPath, "utf8") : "";
   const texts = Object.fromEntries(files.map((f) => [f, readFileSync(join(root, f), "utf8")]));
@@ -219,6 +227,8 @@ export function moveProjectKeys(root, catalog, { dryRun = false, isTracked = isG
   for (const [key, meta] of catalog) {
     const holders = files.filter((f) => readKey(texts[f], key) !== null);
     if (!holders.length) continue;
+    const shared = holders.filter((f) => tracked.has(f));
+    if (shared.length) { result.kept.push({ key, in: shared }); continue; }
     const values = Object.fromEntries(holders.map((f) => [f, readKey(texts[f], key)]));
     const distinct = [...new Set(Object.values(values).filter((v) => v !== ""))];
     const localValue = readKey(local, key);
@@ -240,12 +250,10 @@ export function moveProjectKeys(root, catalog, { dryRun = false, isTracked = isG
       local = setKey(local, key, distinct[0] ?? "", keyComment(key, meta));
       localChanged = true;
       result.moved.push({ key, from: holders });
-    } else if (holders.some((f) => !tracked.has(f))) {
-      result.cleaned.push({ key, from: holders.filter((f) => !tracked.has(f)) });
+    } else {
+      result.cleaned.push({ key, from: holders });
     }
-    const shared = holders.filter((f) => tracked.has(f));
-    if (shared.length) result.kept.push({ key, in: shared });
-    for (const f of holders) if (!tracked.has(f)) { texts[f] = removeKey(texts[f], key); changedFiles.add(f); }
+    for (const f of holders) { texts[f] = removeKey(texts[f], key); changedFiles.add(f); }
   }
 
   if (!dryRun) {
@@ -261,7 +269,7 @@ export function describeMove({ moved, cleaned, kept = [], conflicts }) {
   const lines = [];
   if (moved.length) lines.push(`moved to ${LOCAL_FILE} (same for every env): ${moved.map((m) => `${m.key} ← ${m.from.join(", ")}`).join("; ")}`);
   if (cleaned.length) lines.push(`removed from the env files (${LOCAL_FILE} already holds it): ${cleaned.map((m) => `${m.key} ← ${m.from.join(", ")}`).join("; ")}`);
-  if (kept.length) lines.push(`left in the git-tracked env files (shared with the team; ${LOCAL_FILE} wins at runtime): ${kept.map((k) => `${k.key} in ${k.in.join(", ")}`).join("; ")}`);
+  if (kept.length) lines.push(`left in the git-tracked env files (shared with the team, so not moved to ${LOCAL_FILE}): ${kept.map((k) => `${k.key} in ${k.in.join(", ")}`).join("; ")}`);
   for (const c of conflicts) {
     if (c.reason) { lines.push(`NOT moved ${c.key} — ${c.reason}`); continue; }
     lines.push(`NOT moved ${c.key} — the files disagree (${Object.entries(c.values).map(([f, v]) => `${f}: ${v || "(empty)"}`).join(", ")}); keep one value in ${LOCAL_FILE}, or ${c.key}_<ENV> there per env, and delete the rest`);

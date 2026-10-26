@@ -269,6 +269,9 @@ export function findSettingsSecrets(settingsJsonText) {
  * VCST-6402 settings.local.json WAS the value's home and a credential there graded PASS — an upgraded
  * project still carries one, and the row now says how to move it.
  */
+/** This marketplace's ids: `ai-tools`, and `vc-tools` — its name before the 2026-09-30 rename. */
+const OUR_MARKETPLACES = ["ai-tools", "vc-tools"];
+
 export function gradeSecretHygiene({ kind, file, hits, weak = [], unparsable, inRepo, ignored, tracked }) {
   const exposed = inRepo && (tracked || !ignored);
   const why = tracked ? "tracked by git" : "not gitignored";
@@ -461,7 +464,14 @@ function hostPersonRows(g, installPath, root) {
       continue;
     }
     const slotOf = (u) => slots.find((s) => s.hostEnv === hostEnv && s.slot === u.key);
-    const users = markedUsersIn(readFileSync(resolve(root, `.env.${env}`), "utf8")).filter(slotOf);
+    const marked = markedUsersIn(readFileSync(resolve(root, `.env.${env}`), "utf8"));
+    const users = marked.filter(slotOf);
+    // A user whose slot the host no longer declares (renamed, removed) is reported, never dropped silently.
+    const orphans = marked.filter((u) => !slotOf(u));
+    if (orphans.length) {
+      add(`Website test users — ${env} (no slot)`, "WARN",
+        `${orphans.map((u) => `${u.key}_LOGIN`).join(", ")} in .env.${env} name no ${g.host} slot on ${hostEnv} now — re-add each with /project-init --add-user on one of: ${slots.filter((s) => s.hostEnv === hostEnv).map((s) => s.slot).join(", ") || "(none)"}`);
+    }
     add(`Website test users — ${env}`, users.length ? "PASS" : "WARN",
       // The verdict first: no secret is resolved here, so a filled slot is NOT checked — say so up front.
       users.length ? `slots unchecked · ${users.map((u) => `${u.key}→${slotOf(u).secret}`).join(", ")} (${hostEnv}); ${setup} checks them`
@@ -545,6 +555,27 @@ async function main() {
     const tracked = inRepo && tryCmd(`git ls-files --error-unmatch -- "${rel}"`, { cwd: projectRoot });
     const { status, detail } = gradeSecretHygiene({ kind, file: rel, hits, weak, unparsable, inRepo, ignored, tracked });
     add(label, status, detail);
+  }
+
+  // 1b. One install per plugin. A plugin of this marketplace enabled under BOTH its ids (`@ai-tools`, and
+  //     `@vc-tools` from before the 2026-09-30 rename) runs every hook twice — two telemetry collectors on
+  //     one file. Only a WARN, and only when the `claude` CLI answers; a plugin that is absent is not a fault.
+  {
+    let list = null;
+    try {
+      list = JSON.parse(execSync("claude plugin list --json", { stdio: ["ignore", "pipe", "ignore"], timeout: 20000 }).toString());
+    } catch {
+      /* claude CLI unavailable — nothing to check */
+    }
+    const byName = {};
+    for (const p of Array.isArray(list) ? list : []) {
+      const [name, market] = String(p.id || "").split("@");
+      if (p.enabled && OUR_MARKETPLACES.includes(market)) (byName[name] ||= []).push(p.id);
+    }
+    for (const ids of Object.values(byName).filter((ids) => ids.length > 1)) {
+      add("Plugin installs", "WARN",
+        `${ids.join(" and ")} are both enabled — each one's hooks run, so spans duplicate and state writes race. Uninstall the old one (/plugin uninstall ${ids.filter((id) => !id.endsWith("@ai-tools")).join(", ")}) and restart Claude Code`);
+    }
   }
 
   // 1b''. Each installed plugin's npm dependencies are in ITS install folder — Claude Code installs none,

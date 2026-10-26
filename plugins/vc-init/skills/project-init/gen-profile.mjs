@@ -61,6 +61,8 @@ import { ensureGitignoreEntries, ensureProjectIgnores, removeGitignoreBlock } fr
 /** The .gitignore block a host-governed project gets for its env files (removed when it stops being one). */
 const HOST_ENV_IGNORE = "vc-init (/project-init) — host-governed: env files are local";
 import { CODE_ACCESS, WEBSITE_AUTH, governanceBlock, parseEnvMap, resolveHostId } from "./lib/governance.mjs";
+import { envFileNames, gitTracked } from "./lib/project-env.mjs";
+import { emitObservations } from "./lib/diag-obs.mjs";
 
 // A work-item field whose VALUE is time-varying (a sprint/area NODE id: System.IterationId /
 // System.AreaId). Persisting it as a fieldDefaults constant silently files future bugs into a
@@ -442,6 +444,12 @@ function main() {
   const ignored = ensureProjectIgnores(outputRoot());
   if (profile.governance?.host) {
     ignored.push(...ensureGitignoreEntries(outputRoot(), [".env.*"], { title: HOST_ENV_IGNORE, notes: ["Every .env.<env> here holds test-user logins; the host's rules keep env files out of git."] }));
+    // An ignore rule does not untrack a file git already tracks: say which ones, or their logins get committed.
+    const trackedEnvs = [...gitTracked(outputRoot(), envFileNames(outputRoot()))];
+    if (trackedEnvs.length) {
+      console.warn(`[gen-profile] ⚠ git still tracks ${trackedEnvs.join(", ")} — .gitignore does not untrack it, and add-user refuses to write a login there. Untrack: git rm --cached ${trackedEnvs.join(" ")} (and commit)`);
+      emitObservations([{ class: "self_reported_warn", subject: "tracked_env_in_guest_mode", code: "NONE", evidence: { snippet: `${trackedEnvs.length} tracked env file(s)` } }], { skill: "project-init" });
+    }
   } else if (leavingHost) {
     const dropped = removeGitignoreBlock(outputRoot(), HOST_ENV_IGNORE);
     if (dropped.length) console.log(`[gen-profile] .gitignore -= ${dropped.join(", ")} (not host-governed any more)`);

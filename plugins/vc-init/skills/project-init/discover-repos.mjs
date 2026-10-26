@@ -679,6 +679,12 @@ async function main() {
   const listing = args["listing-json"] ? JSON.parse(readFileSync(resolve(args["listing-json"]), "utf-8")) : null;
   if (!listing) standDownIfHostGoverned(process.env.VC_FIX_HOME || process.cwd(), "discover-repos skipped: the client code host is scanned through the host's code-host MCP server, never with a PAT or az — pass the listing it returned as --listing-json");
   if (listing) {
+    // An Azure Repos listing names its project: without it every module URL would read `/undefined/`, and
+    // the client scan would fall back to whatever ADO_PROJECT this shell happens to carry.
+    if (listing.host === "azure-repos" && !listing.project) {
+      console.error("[discover-repos] the listing has host azure-repos but no project — add the Azure DevOps project the repositories belong to, then re-run");
+      process.exit(2);
+    }
     const needs = listingNeeds(listing);
     if (needs.packageJson.length || needs.moduleIds.length) {
       // Not an error: the skill reads exactly these through the host's server, adds them, re-runs.
@@ -733,8 +739,9 @@ async function main() {
   // a platform module, so the modules API never surfaces it. Live mode only, needs an org.
   if ((listing || !args["modules-json"]) && clientOrg) {
     try {
-      const org = host === "azure-repos" ? (process.env.ADO_ORG || clientOrg) : clientOrg;
-      const project = process.env.ADO_PROJECT || "";
+      // A listing is the whole truth on a host-governed project: never mix in this shell's ADO_* values.
+      const org = host === "azure-repos" && !listing ? (process.env.ADO_ORG || clientOrg) : clientOrg;
+      const project = listing ? listing.project || "" : process.env.ADO_PROJECT || "";
       const all = await src.listRepos(host, { org, project });
       const byName = new Map(all.map((r) => [r.name, r]));
       const liveNames = all.map((r) => r.name);
@@ -863,8 +870,10 @@ async function main() {
             // Gate-6 local-verify recipe must NOT trust it blindly (the "blank-app
             // trap" frontend-local-verify.md warns about) — re-probe/confirm by hand.
             probed: Boolean(feProbe),
-            userEnv: "USER_EMAIL",
-            passEnv: "USER_PASSWORD",
+            // A host-governed project has no USER_EMAIL / USER_PASSWORD: its storefront users are
+            // `<SLOT>_LOGIN` lines with the password typed by the slot's NAME (vc-fix host-governance.md).
+            userEnv: listing ? "" : "USER_EMAIL",
+            passEnv: listing ? "" : "USER_PASSWORD",
           };
           console.error(
             feProbe

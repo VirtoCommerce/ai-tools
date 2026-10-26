@@ -49,7 +49,8 @@ import { readFileSync, writeFileSync, existsSync } from "fs";
 import { basename, dirname, join } from "path";
 import { outputRoot } from "./lib/paths.mjs";
 import { CATALOG } from "./scaffold-env.mjs";
-import { LOCAL_HEADER, envSuffixesIn, isGitTracked, keySuffixes, readKey, removeKey } from "./lib/project-env.mjs";
+import { LOCAL_HEADER, envHeader, envSuffixesIn, isGitTracked, keySuffixes, readKey, removeKey } from "./lib/project-env.mjs";
+import { isHostGoverned } from "./lib/governance.mjs";
 import { normalizeValue } from "./normalize-env.mjs";
 
 // The project-level keys — one value for every env — go to .env.local, never .env.<env>.
@@ -172,9 +173,14 @@ function main() {
   // Project keys: one value for every env, so a different one already in .env.local is another env's
   // tracker — never overwritten silently (that would redirect the other env's runs). A project that keeps
   // them per env (`KEY_<ENV>` lines) gets this env's suffixed line. The copy left in .env.<env> by an
-  // older onboarding is removed, so the two files cannot disagree afterwards — unless git tracks .env.<env>.
+  // older onboarding is removed, so the two files cannot disagree afterwards. A .env.<env> git tracks is the
+  // team's copy (lib/project-env.mjs isGitTracked): a key it already holds stays there and is NOT copied to
+  // .env.local, which would win at runtime and go stale when the team changes the shared value.
   const localText = existsSync(localPath) ? readFileSync(localPath, "utf-8") : "";
+  const envText = existsSync(envPath) ? readFileSync(envPath, "utf-8") : "";
+  const envTracked = !!envText && isGitTracked(dirname(envPath), basename(envPath));
   const refused = [];
+  const refusedShared = [];
   const projectWritten = [];
   const envSuffixes = envSuffixesIn(OUTPUT_ROOT, envName);
   // Compared as normalize-env would store them, so `https://x/` and `https://x` are one value, not a conflict.
@@ -184,6 +190,11 @@ function main() {
     const value = envVars[key];
     delete envVars[key];
     if (value === undefined || value === null || value === "") continue;
+    const shared = envTracked ? readKey(envText, key) : null;
+    if (shared !== null && shared !== "") {
+      if (canon(key, shared) !== canon(key, value)) refusedShared.push(key);
+      continue;
+    }
     const current = readKey(localText, key);
     // Written in the canonical form too: a raw `https://x/` would break `${KEY}/rest/…` until the next normalize-env.
     if (keySuffixes(localText, key, envSuffixes).length && current === null) secretKv[`${key}${SUFFIX}`] = canon(key, value);
@@ -194,22 +205,14 @@ function main() {
 
   // --- Bucket #2: .env.<env> (non-secret) ---
   let envReport = null;
-  const envText = existsSync(envPath) ? readFileSync(envPath, "utf-8") : "";
-  // A git-tracked .env.<env> is the team's copy: its old project keys stay there (lib/project-env.mjs isGitTracked).
-  const stale = envText && isGitTracked(dirname(envPath), basename(envPath)) ? [] : projectWritten.filter((k) => readKey(envText, k) !== null);
+  const stale = envTracked ? [] : projectWritten.filter((k) => readKey(envText, k) !== null);
   if (Object.keys(envVars).length || stale.length) {
     const existing = stale.reduce((t, k) => removeKey(t, k), envText);
-    const header = existing
-      ? ""
-      : [
-          `# ==============================================================================`,
-          `# .env.${envName} — per-env URLs / identifiers (Bucket #2, committed, no secrets)`,
-          `# Written by project-init/write-env.mjs. Activate: TEST_ENV=${envName} npm run env:check`,
-          `# Secrets for this env live in .env.local (suffixed _${envName.toUpperCase()}).`,
-          `# ==============================================================================`,
-          "",
-          "",
-        ].join("\n");
+    // The same header scaffold-env writes — on a host-governed project the file is local, not committed.
+    const profilePath = process.env.PROJECT_PROFILE_PATH || join(OUTPUT_ROOT, "project-profile.json");
+    let profile = null;
+    try { profile = JSON.parse(readFileSync(profilePath, "utf-8")); } catch { /* no profile yet ⇒ a normal project */ }
+    const header = existing ? "" : envHeader(envName, { hostGoverned: isHostGoverned(profile) });
     const res = upsert(header + existing, envVars);
     envReport = { path: envPath, ...res, created: !envText, removed: stale };
     if (!DRY_RUN) writeFileSync(envPath, res.text);
@@ -242,10 +245,13 @@ function main() {
     if (localReport) console.log(`[write-env] .env.local keys: ${Object.keys(secretKv).join(", ")}`);
   }
   console.log(`[write-env] done${DRY_RUN ? " (dry-run, no files changed)" : ""}.`);
+  if (refusedShared.length) {
+    console.error(`[write-env] NOT written: ${refusedShared.join(", ")} — .env.${envName} is tracked by git and holds a different value, the one the team shares. Change it there (and commit), or keep a personal override as <KEY>_${envName.toUpperCase()} in .env.local.`);
+  }
   if (refused.length) {
     console.error(`[write-env] NOT written: ${refused.join(", ")} — .env.local already holds a different value, the one every env uses. Edit .env.local by hand, or keep one value per env as <KEY>_<ENV> there.`);
-    process.exit(1);
   }
+  if (refused.length || refusedShared.length) process.exit(1);
 }
 
 main();

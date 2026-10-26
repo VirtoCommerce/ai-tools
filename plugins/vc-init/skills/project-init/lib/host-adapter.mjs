@@ -324,12 +324,13 @@ export function hostFacts(launches, marketplaceUrl, hostEnvs) {
 export function roleDrift(governance, state) {
   const on = new Map(state.enabled.map((e) => [e.key, e.kind]));
   const out = [];
-  // The kind a role's server must run: the code host is reached through a tracker-kind server.
-  const kindOf = { tracker: "tracker", codeHost: "tracker", github: "github", telemetry: "telemetry", testManagement: "testManagement" };
+  // The kinds a role's server may run: the code host is Azure Repos through the tracker-kind (Azure DevOps)
+  // server, or GitHub through a github-kind one.
+  const kindOf = { tracker: ["tracker"], codeHost: ["tracker", "github"], github: ["github"], telemetry: ["telemetry"], testManagement: ["testManagement"] };
   for (const role of ["tracker", "codeHost", "github", "telemetry", "testManagement"]) {
     const v = governance?.servers?.[role] || "";
     if (v && !on.has(v)) out.push(`${role}: ${v} is not on here`);
-    else if (v && on.get(v) !== kindOf[role]) out.push(`${role}: ${v} does not run a ${kindOf[role]} server`);
+    else if (v && !kindOf[role].includes(on.get(v))) out.push(`${role}: ${v} does not run a ${kindOf[role].join(" or ")} server`);
     else if (!v && state.servers[role]) out.push(`${role}: none recorded, ${state.servers[role]} is on`);
   }
   for (const b of governance?.servers?.browsers || []) {
