@@ -41,13 +41,17 @@ export function standOf({ envName, backUrl, block, governance = null, reachable 
 
 const listMaps = (dir, suffix) => (existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith(suffix)).map((f) => f.slice(0, -suffix.length)).sort() : []);
 
+// The repository scripts the context step and the floors lean on (§5.2): a project without one has the capability
+// missing, and a floor that needs it is a named SKIP, never a doubt.
+const SCRIPTS = { "deploy-pr": "deploy:pr", preflight: "preflight", "domain-check": "domain:check", "bl-extract": "bl:extract",
+  "regression-select": "regression:select", "tc-scope": "tc:scope", "schema-refresh": "schema:refresh" };
+
 function projectScripts(root) {
-  try {
-    const scripts = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).scripts ?? {};
-    return { "contract-refresh": "schema:refresh" in scripts, "regression-corpus": "regression:select" in scripts };
-  } catch {
-    return { "contract-refresh": false, "regression-corpus": false };
-  }
+  let declared = {};
+  try { declared = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).scripts ?? {}; } catch { /* no package.json: none declared */ }
+  const scripts = Object.fromEntries(Object.entries(SCRIPTS).map(([cap, name]) => [cap, Object.hasOwn(declared, name)]));
+  // The 0.3.x keys stay for their readers.
+  return { scripts, "contract-refresh": scripts["schema-refresh"], "regression-corpus": scripts["regression-select"] };
 }
 
 const AXIS = { jira: "jira", azure: "ado", github: "github", "azure-repos": "ado" };

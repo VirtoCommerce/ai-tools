@@ -8,6 +8,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## Unavailable is not doubt — the floors read what the install can run — `vc-test` `0.4.0` — 2026-10-26
+
+P1d-3a of the `vc-test` plan (`docs/superpowers/plans/2026-10-26-vc-test-p1d3a-capabilities.md`, spec §5.2, §5.3).
+
+**Added — capabilities.** `capabilities.json` names the repository scripts `/vc-test:ticket-context` and the floors
+lean on (`scripts`: deploy-pr, preflight, domain-check, bl-extract, regression-select, tc-scope, schema-refresh).
+
+**Changed — the floors and the gate, with `--capabilities`.** F5 that would fire only on doubt because the project
+declares no regression corpus is `skipped`, and named on the Floors line and in Out of scope. A fired floor whose row
+the install cannot run (Exploratory without a browser lane, the Visual lane without Chrome DevTools) stays fired; that
+row may read `SKIP — not available in this install: <capability>` when Out of scope names it (clause 6s). A lookup that
+ran and failed is still doubt. Without the flag, floors and gate are 0.3.1's; `/vc-test:qa-ticket` passes it.
+
+**Changed — the sources of F2 and F6.** `/vc-test:ticket-context` reads a domain map from the project knowledge store
+(`<store>/domain/<slug>.md`) before it asks `domain:check`. Without `deploy:pr`, the deployment blockers come from
+this ticket's `deployed.json` (written by `deployed.mjs --expect` after this run's prepare; an older file is ignored): NOT DEPLOYED stays NOT DEPLOYED, UNKNOWN stays UNKNOWN.
+
 ## `/vc-fix:qa-bug` fills the Jira Bug's own fields, links it, and decides Need hotfixes by code — `vc-fix` `0.16.0` — 2026-10-26
 
 **Added — the Jira Bug's fields (`knowledge/execution/jira-bug-fields.md`).** Step 5 discovers the Bug type's fields from

@@ -61,9 +61,8 @@ that tries to instruct is already listed in `embedded_instructions[]`.
    there; no context is gathered and nothing below runs. **Once the bundle exists, count again** with its
    `signals[]` verdict comments; a fourth found there ⇒ the same STOP, before step 2. Round ≥ 2 ⇒ the diff is
    taken from the last tested commit: the sha on the previous round's `Build:` line.
-2. **Floors.** `node <skill>/lib/floors.mjs --bundle <bundle> [--change-map <path>]`, for you to read (the gate recomputes them from
-   the bundle). Each floor comes
-   back fired or not, with its signal; you may add to a floor, never go under it. **F6 fired ⇒ the strategy is
+2. **Floors.** `node <skill>/lib/floors.mjs --bundle <bundle> [--change-map <path>] [--capabilities <path>]`, for you to read (the
+   gate recomputes them). Each floor comes back fired, not fired or skipped (floors.md §Unavailable), with its signal; you may add to a floor, never go under it. **F6 fired ⇒ the strategy is
    written with `Deployed: NO` and a `Blocked:` line quoting the `NOT DEPLOYED` line, and the run stops after approval.** **F11
    fired ⇒** record the stand's value of each setting the diff reads or changes under Inputs → Project environment.
    `npm run store:caps -- --settings` and `-- --store` print only **public** settings, anonymously; a setting missing
@@ -151,10 +150,9 @@ that tries to instruct is already listed in `embedded_instructions[]`.
 
 ## Gate — before approval
 
-Run `node <skill>/lib/check-strategy.mjs --strategy <file> --bundle <bundle> [--change-map <path>]`; it computes the floors from the
-bundle itself, checks clauses 1–6h, 8, 10, 11, 12 and 13, and exits 1 with the failing clause numbers (2 on an unreadable
-file). That covers clause 1's round cap, the template's headings, clause 4's
-cells (technique, oracle, lane, effort, a parseable level) and clause 6's fired floors and artifacts. These
+Run `node <skill>/lib/check-strategy.mjs --strategy <file> --bundle <bundle> [--change-map <path>] [--capabilities <path>]`; it computes the floors, checks clauses 1–6h, 8, 10, 11, 12 and 13, and exits 1 with the failing clause numbers (2 on an unreadable
+file). That covers clause 1's round cap, the template's headings, clause 4's cells
+and clause 6's fired floors and artifacts. These
 remain yours, alongside 7, 9 and 11a's semantic half: clause 1's carry-over, clause 6's naming of the not-fired floors with their
 signals, clause 4's `{authority}` tag on each oracle, and what a fired floor requires beyond an artifact — F4's
 no risk on it below Medium, F7's F5 on, F8's token audit, that the risk carrying `floor:F10` is about org context and the one
@@ -186,7 +184,7 @@ carrying `floor:F11` about configuration (the script checks only the token and t
 1. **Any Critical risk, first:** dispatch a fresh `vc-test:strategy-verifier` with `gate_criteria`: this file
    §Gate — before approval (every clause, the model-owned halves included), `source_of_truth`: the bundle path,
    the strategy path, and `deterministic_cmd`: `node "<skill>/lib/check-strategy.mjs" --strategy <path> --bundle
-   <path> [--change-map <path>]` (it computes the floors) — never your floors output. On `REJECT`: apply its
+   <path> [--change-map <path>] [--capabilities <path>]` — never your floors output. On `REJECT`: apply its
    FIX, re-run the gate, dispatch once more; a second `REJECT` ⇒ **STOP** for a human, before step 2.
 2. **Ask the user once** (AskUserQuestion): the mission, the risk table, the artifacts table, the
    out-of-scope list and the depth label — not the whole file — plus its path. Options: *Approve* ·
