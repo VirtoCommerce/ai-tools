@@ -40,7 +40,7 @@
  *   --apply                    Perform the gated write (commit) + wait for deploy. Omit = dry-run.
  *   --dry-run                  Explicit no-op form of the default (read-only); wins over --apply if both given.
  *   --no-wait                  (with --apply) commit but skip the deploy Action + module polling.
- *   --password=<pw>            Admin password for the /api/platform/modules check (else env/Password1).
+ *   --password=<pw>            Admin password for the /api/platform/modules check (else the env's secrets; none => no sign-in).
  *   --probe=<METHOD /path>     Behavioural liveness probe — the ONLY trustworthy proof for a Platform
  *                              hotfix (see --probe-expect). Anonymous request, polled until it returns
  *                              the expected status. e.g. --probe='POST /api/platform/security/login'
@@ -64,8 +64,10 @@
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+import { basename, dirname, resolve } from 'node:path';
 import { parse as parseDotenv } from 'dotenv';
+import { getAdminToken, probeLiveModules, type AdminAuth, type ProbeStatus } from '../deploy/lib/live.ts';
+import { platformApiKey } from '../deploy/lib/env.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '..', '..');
@@ -87,7 +89,7 @@ const JIRA_BASE = (process.env.JIRA_BASE_URL || 'https://virtocommerce.atlassian
 // ── types ──────────────────────────────────────────────────────────────────────
 interface SemVer { major: number; minor: number; patch: number; }
 interface PrInfo { repo: string; number: number; title: string; url: string; merged: boolean; mergeCommitSha: string | null; }
-interface EnvCoords { env: string; file: string; deployOwner: string; deployRepo: string; branch: string; path: string; backUrl: string; admin: string; password: string; }
+interface EnvCoords { env: string; file: string; deployOwner: string; deployRepo: string; branch: string; path: string; backUrl: string; admin: string; password: string; apiKey?: string; apiKeyFor?: string; }
 type EnvVerdict = 'delivered' | 'already-delivered' | 'no-hotfix-on-line' | 'asset-missing' | 'not-in-manifest' | 'deploy-failed' | 'not-confirmed' | 'deployed-unverified' | 'committed-unconfirmed' | 'wrong-source' | 'version-line-mismatch' | 'skipped' | 'planned' | 'error';
 interface Probe { method: string; path: string; body?: string; expect: number; }
 interface EnvResult {
@@ -132,15 +134,22 @@ function loadEnvCoords(env: string, passwordOverride?: string): EnvCoords {
   const suffix = key.toUpperCase(); // per-env secret override, e.g. ADMIN_PASSWORD_STABLE
   // scripts/deploy/lib/env.ts's order: the .env.local pin, then the env's own password file
   // (.env.playwright.vcptcore_<key>, which this skipped — a machine that keeps env passwords only there
-  // fell through to Password1), then the legacy suffix form and the shared fallbacks.
+  // fell through to a guessed password), then the legacy suffix form and the shared fallbacks. No guess:
+  // an empty password skips the sign-in (getAdminToken) instead of a failed attempt against the shared admin.
+  const envName = basename(file).replace(/^\.env\./, ''); // the env's own name, as its file spells it
+  const own = readEnvFile(resolve(REPO_ROOT, `.env.playwright.${envName}`));
   const password = passwordOverride
     || local[`ADMIN_PASSWORD_VCPTCORE_${suffix}`]
-    || readEnvFile(resolve(REPO_ROOT, `.env.playwright.vcptcore_${key}`)).ADMIN_PASSWORD
+    || own.ADMIN_PASSWORD
     || local[`ADMIN_PASSWORD_${suffix}`]
-    || local.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || 'Password1';
+    || local.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || '';
+  // The env's read-only service-account key, named and looked up by scripts/deploy/lib/env.ts: used instead of the shared admin.
+  const apiKey = passwordOverride ? '' : platformApiKey(envName, local, own);
+  const backUrl = (e.BACK_URL || '').replace(/\/$/, '');
   return {
     env: key, file, deployOwner, deployRepo, branch: e.DEPLOY_BRANCH, path: e.DEPLOY_PACKAGES_PATH,
-    backUrl: (e.BACK_URL || '').replace(/\/$/, ''), admin: e.ADMIN || 'admin', password,
+    backUrl, admin: e.ADMIN || 'admin', password,
+    ...(apiKey && backUrl ? { apiKey, apiKeyFor: backUrl } : {}),
   };
 }
 
@@ -361,26 +370,13 @@ async function waitDeploy(c: EnvCoords, commitSha: string, deadline: number): Pr
 }
 
 // ── live module-version poll (/api/platform/modules) ───────────────────────────
-async function getAdminToken(c: EnvCoords): Promise<string | null> {
-  if (!c.backUrl) return null;
-  const body = new URLSearchParams({ grant_type: 'password', username: c.admin, password: c.password });
-  try {
-    const r = await fetch(`${c.backUrl}/connect/token`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body });
-    if (r.status !== 200) return null;
-    return (await r.json())?.access_token ?? null;
-  } catch { return null; }
-}
 /** `status` lets the poller tell "still restarting" (5xx/network) apart from "token went stale"
  * (401/403) — both previously collapsed into the same `null`, so a persistent auth failure could
  * spin silently until timeout with a note that read identically to "app just hasn't come up yet". */
-async function liveModuleVersion(c: EnvCoords, token: string, id: string): Promise<{ status: number; version: string | null }> {
-  try {
-    const r = await fetch(`${c.backUrl}/api/platform/modules`, { headers: { Authorization: `Bearer ${token}` } });
-    if (r.status !== 200) return { status: r.status, version: null };
-    const mods = await r.json();
-    const m = (Array.isArray(mods) ? mods : []).find((x: any) => (x.id || '').toLowerCase() === id.toLowerCase());
-    return { status: r.status, version: m?.version ?? null };
-  } catch { return { status: 0, version: null }; }
+async function liveModuleVersion(c: EnvCoords, token: AdminAuth, id: string): Promise<{ status: ProbeStatus; version: string | null }> {
+  const r = await probeLiveModules(c, token);
+  if (!r.ok) return { status: r.status, version: null };
+  return { status: 200, version: r.modules.find((m) => m.id.toLowerCase() === id.toLowerCase())?.version || null };
 }
 /** One /health probe — "is the app answering", NOT "is the fix live" (see pollHealthy/waitProbe). */
 async function healthOnce(c: EnvCoords): Promise<boolean> {
@@ -446,16 +442,19 @@ async function waitProbe(c: EnvCoords, probe: Probe, deadline: number): Promise<
 /** Poll the live env until the module reports `target` (or timeout). */
 async function waitLiveVersion(c: EnvCoords, id: string, target: string, deadline: number): Promise<{ ok: boolean; version: string | null; note: string }> {
   let token = await getAdminToken(c);
-  if (!token) return { ok: false, version: null, note: `could not get an admin token at ${c.backUrl} — verify the version by hand` };
+  if (!token) return { ok: false, version: null, note: c.password || c.apiKey ? `could not get an admin token at ${c.backUrl} — verify the version by hand` : `no admin password for ${c.env} in .env.local / .env.playwright.* — verify the version by hand` };
   let last: string | null = null;
   let consecutiveAuthFailures = 0;
   while (Date.now() < deadline) {
     const { status, version } = await liveModuleVersion(c, token, id);
     last = version;
     if (version === target) return { ok: true, version, note: `live module ${id} = ${version}` };
-    consecutiveAuthFailures = status === 401 || status === 403 ? consecutiveAuthFailures + 1 : 0;
+    const authFailed = status === 401 || status === 403 || status === 'api-key-rejected';
+    consecutiveAuthFailures = authFailed ? consecutiveAuthFailures + 1 : 0;
     await sleep(POLL_INTERVAL_MS);
-    token = (await getAdminToken(c)) || token; // refresh (deploy may bounce the app / expire the token)
+    // Refresh only on a refusal (a bounced app can invalidate the token): a password grant on every poll is
+    // shared-admin sign-in traffic for the whole deploy budget.
+    if (authFailed) token = (await getAdminToken(c)) || token;
   }
   if (consecutiveAuthFailures > 0) {
     return { ok: false, version: last, note: `admin token was rejected (401/403) on the last ${consecutiveAuthFailures} check(s) at ${c.backUrl} — this may be an auth problem, not "still restarting"; verify credentials before assuming the version` };

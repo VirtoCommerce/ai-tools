@@ -63,7 +63,7 @@
  *   --message=<text>            Commit / PR title (default "VCST-XXXX: <ticket title>", else
  *                               "VCST-XXXX: deploy N artifacts to <env>" when no summary resolved).
  *                               --apply REFUSES with neither a ticket key nor --message.
- *   --password=<pw>             Admin password for the /api/platform/modules verify (else env / Password1).
+ *   --password=<pw>             Admin password for the /api/platform/modules verify (else the env's secrets; none => no sign-in).
  *   --json                      Machine-readable output.
  *
  * Exit codes:
@@ -86,7 +86,7 @@ import { DeliverError, deliverPr } from '../lib/deliver.ts';
 import type { DeliverResult } from '../lib/deliver.ts';
 import { THEME_URL_RE, countChangedLines, editPackagesText, editThemeText, pinnedModule, tagOf } from '../lib/manifest.ts';
 import type { Target } from '../lib/manifest.ts';
-import { getAdminToken, liveModules, platformHealthy } from '../lib/live.ts';
+import { getAdminToken, liveModules, platformHealthy, type AdminAuth } from '../lib/live.ts';
 import { Exit, fail } from '../lib/exit.ts';
 import { STORYBOOK_WORKFLOW, buildStorybook, editStorybookText, existingStorybookTag, storybookNeed } from './storybook.ts';
 import type { StorybookNeed } from './storybook.ts';
@@ -413,7 +413,7 @@ export async function runPr(args: string[]): Promise<void> {
 
   // ── VERIFY (read-only live/branch state) ──
   if (verify) {
-    let token: string | null = null, live: Record<string, string> | null = null;
+    let token: AdminAuth | null = null, live: Record<string, string> | null = null;
     if (c.backUrl) { token = await getAdminToken(c); if (token) live = await liveModules(c, token); }
     const vrows: { label: string; pinned: string; liveVer: string; verdict: string }[] = [];
     let anyMissing = false;
