@@ -51,7 +51,7 @@ STOPs are this run's. Before its `finish`: `node <plugin>/lib/keep-prepare.mjs -
 
 ## 3 — Strategy (human point 1)
 
-**You do not write the strategy.** Dispatch `strategy` (`opus`) with `BUNDLE`, `CHANGE_MAP`,
+**You do not write the strategy.** Dispatch `strategy` (`opus`) with `BUNDLE`, `CHANGE_MAP`, `CAPABILITIES`,
 `SCENARIOS_TABLE = <WORK>/scenarios.md`, `SCENARIOS = <WORK>/scenarios.json`, `RUN_DIR`. It returns the approval
 summary once gate and verifier pass; its round must still say `Status: DRAFT`, else back once, then STOP.
 
