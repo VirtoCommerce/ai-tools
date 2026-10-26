@@ -143,7 +143,8 @@ checklist's visual rows and `/qa-visual-regression` cite it. A visual row with n
 | `CONTENT` | Is the rendered text right? | text assertions in the checklist (raw i18n key, GUID, placeholder price, broken image or icon) | a changed label, format, empty state or i18n key |
 
 - **One risk can take several instruments.** A token change takes `PIXEL` for the blast radius and
-  `DESIGN` for conformance.
+  `DESIGN` for conformance. The strategy writes them as one technique token, comma-separated:
+  `VISUAL:DESIGN,PIXEL` (vc-test's gate refuses a bare `VISUAL` and any other separator).
 - **`PIXEL` never takes a new surface.** There is no build before it, so a diff against an earlier
   build shows only what was added. A defect that predates the change is also invisible to it.
   Those go to `DESIGN`, `PROBE` or `CONTENT`.

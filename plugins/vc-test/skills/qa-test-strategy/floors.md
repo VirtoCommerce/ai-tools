@@ -22,11 +22,47 @@ Source carries the token `floor:<id>`, and no risk carries two (test-model redes
 | F5 | the bundle's `known.cases_at_risk` is non-empty (`/vc-test:ticket-context` block 4 ran `regression:select` over the changed files; the strategy adds `npm run tc:scope -- --domain <slug> --observable <each observable the diff or an AC moves>` where path tokens miss — [`regression-selection.md`](../../../../.claude/knowledge/execution/regression-selection.md)) | coverage triage + a regression run over those cases, **after the staleness check below**. Under vc-test (`--change-map`) the requirement is the list, not the run: every suite at risk, their residual risk and `/qa-regression <suites>` in Out of scope, the row `SKIP` (gate 6h, vc-test U7); fired on doubt, Out of scope names the failed lookup instead of the suites |
 | F6 | a `NOT DEPLOYED:` line in the bundle's `blockers[]` — a counted PR whose build the stand does not carry. A `DEPLOYMENT UNKNOWN:` line (no live source for that layer, or not checked) does **not** fire it | **BLOCKED** before any browser opens. `UNKNOWN` is not blocked: the run proceeds and the verdict says "deployment unverified", quoting the line |
 | F7 | `Review task` — no ACs | oracles from the diff only; F5 on by default (the strategy's job: the script fires F7 but does not touch F5) |
-| F8 | the change IS the design system or the token layer (`ui-kit`, [`ui-kit-class.md`](../../../../.claude/skills/qa-test/ui-kit-class.md)) | F3 + token audit + a risk with technique `VISUAL:PIXEL` (the blast radius: components the ticket never names); fails closed |
+| F8 | the change IS the design system or the token layer (`ui-kit`, [`ui-kit-class.md`](../../../../.claude/skills/qa-test/ui-kit-class.md)) | F3 + token audit + a risk whose technique names `PIXEL` when the change modifies an existing ui-kit file (§VISUAL); fails closed |
 | F9 | any doubt about a floor's signal | the floor applies (every floor except F8, which fails closed; F4 and F6 read only what was read) |
 | F10 | the change surface names org context: an `organizationId`-style argument, `xapi:my_organization:*`, an org route or list, `/graphql/sales-rep` or a `sales-rep:*` permission, `loginOnBehalf` / `CanImpersonate` / `/account/impersonate` ([`2026-10-09-qa-test-model-redesign.md`](../../../../docs/superpowers/specs/2026-10-09-qa-test-model-redesign.md) §5) | an org-context risk with technique `MODEL` whose Source carries `floor:F10` |
 | F11 | the PR adds or changes a setting (a settings entry names its key — see below), a hidden-behaviour row answers `yes` for `feature-flags` / `default-values`, or the diff reads one (`ModuleConstants.Settings`, `settingsManager`, `store.settings`, `$cfg.`) (§5a) | a configuration risk with technique `MODEL` whose Source carries `floor:F11`, + the stand's values in Inputs (`npm run store:caps -- --settings` / `--store` for public settings, the admin REST API for the rest — SKILL.md step 2) |
 | F12 | vc-test's layer-0 change map (`--change-map`) has a hotspot whose `zone` is not `none` — access, money, data, order state, buyer path. Without a change map it never fires (vc-test spec U47); with one, a map with no hotspots list or a hotspot with no zone fires it (F9). The strategy's `Change map:` line names the map (gate clause 6g) | exploratory, its charter covering those hotspots |
+
+## Unavailable
+
+**Unavailable is not doubt** (vc-test spec §5.2). Only with `--capabilities <capabilities.json>` on `floors.mjs` and
+`check-strategy.mjs` (vc-test passes it; without it nothing below applies):
+
+- **F5 skipped.** F5 would fire only on doubt because the install declares no regression corpus (the bundle's
+  `known.regression:select` / `known.tc:scope` gap says `not-available-in-install`, or `scripts.regression-select` is
+  false), and no case is at risk ⇒ `skipped: "regression-select"`, not fired. A lookup that ran and failed stays doubt
+  and fires it; a case at risk fires it.
+- **A row this install cannot run.** A fired floor stays fired, and every other requirement holds. `unavailable[]`
+  lists each row it needs that the install lacks a tool for: `Exploratory` needs a browser lane (`mcp:playwright-*`),
+  `Visual lane` needs `mcp:chrome-devtools`, `Coverage triage + regression` needs `regression-select`. That row may
+  read `SKIP — not available in this install: <capability>` instead of `RUN`. F8's `PIXEL` risk (§VISUAL) needs
+  `capabilities.json` `pixel`: an engine and a front checkout; without them the risk stays, its Lane reads that
+  `SKIP`, and Out of scope names `PIXEL`.
+- **Never silent.** A skipped floor goes on the Floors line as `skipped: F5 (not available in this install:
+  regression-select)`, and Out of scope names it with its residual risk. An unavailable row is named in Out of scope
+  the same way. The gate refuses either one unnamed (clause 6s).
+- **F2 and F6 are not affected.** F2 reads the domain map `/vc-test:ticket-context` found, in the project knowledge
+  store first. F6 reads the bundle's `NOT DEPLOYED:` lines; without `deploy:pr`, those come from `deployed.json`.
+
+## VISUAL
+
+A `VISUAL` risk names the instrument that decides it, chosen by
+[`visual-axis.md`](../../../../.claude/skills/qa-test/visual-axis.md) §2a: `PIXEL` (did anything change that should
+not have — a change that declares no visual effect or moves shared UI), `DESIGN` (matches its reference), `PROBE`
+(layout holds on hard data), `CONTENT` (the rendered text is right).
+
+- **One form:** `VISUAL:<instrument>`, several comma-separated with no `VISUAL` repeated — `VISUAL:DESIGN,PIXEL`.
+  Case does not matter. The gate reads only the technique cell's leading token list (`FLOW, DT, VISUAL:PIXEL`), so
+  prose after it ("FLOW (not VISUAL)") is no token. A bare `VISUAL` — beside a named one too — and a name that is
+  not an instrument (`VISUAL:DESIGN+PIXEL`) fail clause 4.
+- **F8 takes `PIXEL` only for an existing surface** (clause 6): a ui-kit file some counted PR modifies. A file every
+  PR that lists it adds (the bundle's `added`, from the files API) is a new surface: `PIXEL` has no base build for
+  it, so F8 asks only for the visual lane and the token audit. A PR without `added` reads as modifying.
 
 ## How `floors.mjs` reads the bundle
 
@@ -56,10 +92,6 @@ Source carries the token `floor:<id>`, and no risk carries two (test-model redes
   ([`visual-axis.md`](../../../../.claude/skills/qa-test/visual-axis.md) §1 source 1) and never on a bare storefront/admin-spa
   layer, because eligibility-as-trigger pinned that axis to true (visual-axis.md §1). The strategy adds the visual
   lane itself when it identifies a changed rendered value.
-- **A `VISUAL` risk names its instrument** — `VISUAL:PIXEL`, `VISUAL:DESIGN`, `VISUAL:PROBE` or `VISUAL:CONTENT`,
-  chosen by [`visual-axis.md`](../../../../.claude/skills/qa-test/visual-axis.md) §2a (`PIXEL` for a change that
-  declares no visual effect or moves shared UI; never for a new surface, which has no base to compare). The gate
-  fails a bare `VISUAL` (clause 4) and an F8 strategy with no `VISUAL:PIXEL` risk (clause 6).
 - **F4 reads names, never prose:** paths, operations, endpoints, settings, components and domains — not claims
   or hotspot risk text. No word boundary (`shopping_cart.vue`, `CartController` count) for
   `cart|checkout|payments?|pric(e|es|ing)|quotes?`; `orders?` needs a non-letter before it or a camelCase join

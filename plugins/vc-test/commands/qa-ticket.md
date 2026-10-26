@@ -31,8 +31,8 @@ brief "Read and follow `<plugin>/briefs/<x>.md`" + the paths P.
 1. `npm run run:use -- <TICKET> [<env>]` → note `RUN_DIR` and the start time (`date -u +%FT%TZ`).
 2. `node <plugin>/lib/capabilities.mjs --key <TICKET> --mcp <list>` — which of `playwright-chrome`,
    `playwright-firefox`, `playwright-edge`, `chrome-devtools` you have.
-3. **Domain slug** from the ticket's components and summary, checked by `npm run bl:extract -- --has-domain <slug>`;
-   none checks out ⇒ no slug (F2 fires on doubt).
+3. **Domain slug** from the ticket's components and summary, checked by `npm run bl:extract -- --has-domain <slug>` or
+   listed in `capabilities.json` `knowledgeStore.domainMaps`; none checks out ⇒ no slug (F2 fires on doubt).
 
 ## 1 — Context
 
@@ -51,7 +51,7 @@ STOPs are this run's. Before its `finish`: `node <plugin>/lib/keep-prepare.mjs -
 
 ## 3 — Strategy (human point 1)
 
-**You do not write the strategy.** Dispatch `strategy` (`opus`) with `BUNDLE`, `CHANGE_MAP`,
+**You do not write the strategy.** Dispatch `strategy` (`opus`) with `BUNDLE`, `CHANGE_MAP`, `CAPABILITIES`,
 `SCENARIOS_TABLE = <WORK>/scenarios.md`, `SCENARIOS = <WORK>/scenarios.json`, `RUN_DIR`. It returns the approval
 summary once gate and verifier pass; its round must still say `Status: DRAFT`, else back once, then STOP.
 
@@ -75,13 +75,23 @@ One message per wave of `run-plan.json`; each brief gets `RUN_DIR`, `STRATEGY`, 
 |---|---|
 | `contract-refresh` | both commands of its `run.commands` |
 | `checklist`, `ac-checks`, `scenario:S-n` | its `run.agent` and `run.model`, `[vc-test:<id>] <TICKET>`, brief "Read and follow `<plugin>/<run.brief>`"; checklist + `CHANGE_MAP`; ac-checks + `CHECKLIST`, `CHANGE_MAP`, `CAPABILITIES`; a scenario + `S`, `SCENARIOS`, `BUNDLE`, `CAPABILITIES`, `LANE` = its `lane`, `EXPLORATORY` = its `exploratory` |
-| `visual` | `ui-ux-expert` on Chrome DevTools MCP, brief opening with Skill `qa-design` (`.claude/skills/qa-test/visual-axis.md` §2, §4, §5). Each `VISUAL:PIXEL` risk: you run Skill `qa-visual-regression` yourself — scripts, not a browser slot — on the PR's front checkout vs its base ref; no checkout ⇒ its row `BLOCKED — needs the front checkout` |
+| `visual` | `ui-ux-expert` on Chrome DevTools MCP, brief opening with Skill `qa-design` (`.claude/skills/qa-test/visual-axis.md` §2, §4, §5) |
 
 **A `global/…` writer is BLOCKED before dispatch** if `node <plugin>/lib/window.mjs check` exits 1: write its row,
 `BLOCKED — no channel to announce the window (U68)`, to `<RUN_DIR>/scenarios/S-n.rows.md`. The visual lane's
-findings, `PIXEL` regressions included: a row each in `scenarios/visual.rows.md`, `VIS-<m>`, Proof `visual`, `FAIL <severity>`. **After each
+findings: a row each in `scenarios/visual.rows.md`, `VIS-<m>`, Proof `visual`, `FAIL <severity>`. **After each
 wave**: `node <plugin>/lib/scenario-rows.mjs merge --run-dir <RUN_DIR> --ids <its S-n,…[,visual]>`; exit 2 ⇒
 `missing` / `refused` back to their agent once, merge those again.
+
+**Each risk whose technique names `PIXEL` is your own item, with the first wave, whatever the Visual lane row
+says** — scripts, not a browser slot. The engine is the vc-frontend plugin's `visual/` (`capabilities.json`
+`pixel.engine`), run as its `skills/merge-upstream/visual.md` §Scope and §Shoot, compare, confirm describe:
+`affected.mjs`, `snap.mjs` on base and head, `diff.mjs`, flagged ids re-shot `--repeat 3`. Base is the PR's base
+ref, head its `head_sha`, each a temporary `git worktree` of the **front checkout**: the `pixel.checkouts` entry whose
+`git remote get-url origin` is the PR's repo — never cloned by this run. Each risk gets a `VIS-<m>` row naming its
+`R-n`: `FAIL <severity>` per confirmed regression, else `PASS`; no engine, no checkout of that repo, or a build that
+fails ⇒ `BLOCKED — <which>`; a Lane reading `SKIP — not available in this install` ⇒ `SKIP — <capability>`. Never
+absent: merge `visual` after that wave even when the Visual lane is SKIP.
 
 ## 6 — Triage, then Medium-only investigation
 

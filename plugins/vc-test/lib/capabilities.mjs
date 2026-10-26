@@ -3,8 +3,8 @@
 // CLI: node plugins/vc-test/lib/capabilities.mjs --key <KEY> --mcp <comma list>   → <WORK>/capabilities.json
 //   (the MCP list comes from the orchestrator: a script cannot see the session's servers)
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
-import { pathToFileURL } from "node:url";
+import { dirname, join } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { storeConfig } from "./knowledge-store.mjs";
 import { argOf, currentEnv, outputRoot, workDir } from "./paths.mjs";
 import { ProfileError, loadProfile, testBlock } from "./profile.mjs";
@@ -41,16 +41,53 @@ export function standOf({ envName, backUrl, block, governance = null, reachable 
 
 const listMaps = (dir, suffix) => (existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith(suffix)).map((f) => f.slice(0, -suffix.length)).sort() : []);
 
+// The repository scripts the context step and the floors lean on (§5.2): a project without one has the capability
+// missing, and a floor that needs it is a named SKIP, never a doubt.
+const SCRIPTS = { "deploy-pr": "deploy:pr", preflight: "preflight", "domain-check": "domain:check", "bl-extract": "bl:extract",
+  "regression-select": "regression:select", "tc-scope": "tc:scope", "schema-refresh": "schema:refresh" };
+
 function projectScripts(root) {
-  try {
-    const scripts = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).scripts ?? {};
-    return { "contract-refresh": "schema:refresh" in scripts, "regression-corpus": "regression:select" in scripts };
-  } catch {
-    return { "contract-refresh": false, "regression-corpus": false };
-  }
+  let declared = {};
+  try { declared = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).scripts ?? {}; } catch { /* no package.json: none declared */ }
+  const scripts = Object.fromEntries(Object.entries(SCRIPTS).map(([cap, name]) => [cap, Object.hasOwn(declared, name)]));
+  // The 0.3.x keys stay for their readers.
+  return { scripts, "contract-refresh": scripts["schema-refresh"], "regression-corpus": scripts["regression-select"] };
 }
 
 const AXIS = { jira: "jira", azure: "ado", github: "github", "azure-repos": "ado" };
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const semver = (v) => (/^(\d+)\.(\d+)\.(\d+)/.exec(v) ?? []).slice(1).map(Number);
+const newer = (a, b) => { const [x, y] = [semver(a), semver(b)]; for (let i = 0; i < 3; i++) if ((x[i] ?? -1) !== (y[i] ?? -1)) return (x[i] ?? -1) > (y[i] ?? -1); return false; };
+
+/**
+ * PIXEL (F8's risk, visual-axis §2a) needs the vc-frontend plugin's engine and a local clone of a front to build base
+ * and head from. The engine sits beside this plugin: `plugins/vc-frontend/visual/` in a checkout, the highest
+ * `<marketplace>/vc-frontend/<version>/visual/` in the plugin cache. A front checkout is the project root or a
+ * `.fix-workspace/<repo>/` clone whose package.json builds a front (a storybook script, or a vite / vue dependency);
+ * which of them is the PR's own repo is the run's check, not the install's.
+ */
+export function pixelProbe(root, here = HERE) {
+  let engine = null;
+  const sibling = join(here, "..", "..", "vc-frontend", "visual", "snap.mjs");
+  if (existsSync(sibling)) engine = join(here, "..", "..", "vc-frontend", "visual");
+  else {
+    const versions = join(here, "..", "..", "..", "vc-frontend");
+    const best = (existsSync(versions) ? readdirSync(versions) : []).filter((v) => existsSync(join(versions, v, "visual", "snap.mjs")))
+      .reduce((a, v) => (a === null || newer(v, a) ? v : a), null);
+    if (best) engine = join(versions, best, "visual");
+  }
+  const isFront = (dir) => {
+    try {
+      const pkg = JSON.parse(readFileSync(join(dir, "package.json"), "utf8"));
+      const deps = { ...pkg.dependencies, ...pkg.devDependencies };
+      return existsSync(join(dir, ".git")) && (Object.keys(pkg.scripts ?? {}).some((s) => /storybook/i.test(s)) || "vite" in deps || "vue" in deps);
+    } catch { return false; }
+  };
+  const ws = join(root, ".fix-workspace");
+  const candidates = [root, ...(existsSync(ws) ? readdirSync(ws).map((d) => join(ws, d)) : [])];
+  return { engine, checkouts: candidates.filter(isFront) };
+}
 
 export async function probe({ env, envName = currentEnv(), profile, mcp = [], root = outputRoot(), reach: reachFn = reach }) {
   const caps = { missing: [] };
@@ -77,6 +114,7 @@ export async function probe({ env, envName = currentEnv(), profile, mcp = [], ro
   const domainDir = join(store.project, "domain");
   caps.knowledgeStore = { path: store.project, exists: existsSync(store.project), domainMaps: listMaps(domainDir, ".md"), mindMaps: listMaps(domainDir, ".mind-map.json") };
   Object.assign(caps, projectScripts(root));
+  caps.pixel = pixelProbe(root);
 
   caps.stand = standOf({ envName, backUrl: env.BACK_URL, block: testBlock(profile), governance, reachable: caps["back-url"] === true });
   return caps;

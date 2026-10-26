@@ -11,7 +11,7 @@
 Status: DRAFT | APPROVED (<who>, <date>) | CHANGED (<n> edits) | AUTO (--yes) · Depth label: <light | standard | deep> (computed)
 Blocked: <F6 — quote the NOT DEPLOYED line | no>
 Build: <PR#n @ sha per repo> · Stand: <env> · Deployed: <yes | NO → F6 | UNKNOWN → unverified> · Previous: <Round N−1 verdict, build | none>
-Floors fired: <F1 (signal) · F3 (signal) · …> · not fired: <F2, F4, …>
+Floors fired: <F1 (signal) · F3 (signal) · …> · not fired: <F2, F4, …>[ · skipped: <F5 (not available in this install: <capability>)>]
 Change map: <the --change-map path | none>
 
 **Mission.** <one sentence: the question this round answers, and for whom. Round 3: say it is the last.>
@@ -38,7 +38,7 @@ Regression-averse <✔/—: why> · Process-compliant <✔/—: why>
 | R | Technique / approach | Oracle {authority} | Layer · tool | Lane · agent | Effort |
 |---|---|---|---|---|---|
 | R1 | FLOW, DT | AC-2 {SPEC} | storefront · Playwright | chrome · qa-frontend-expert | high |
-<!-- Technique tokens: test-design-techniques.md §0 + EXPLORE · VISUAL:<PIXEL|DESIGN|PROBE|CONTENT> (visual-axis.md §2a) · CONTRACT · REGRESSION · SCALE · MODEL (expanded by /qa-test-model). -->
+<!-- Technique tokens: test-design-techniques.md §0 + EXPLORE · VISUAL:<PIXEL|DESIGN|PROBE|CONTENT>, several comma-separated as VISUAL:DESIGN,PIXEL (floors.md §VISUAL) · CONTRACT · REGRESSION · SCALE · MODEL (expanded by /qa-test-model). -->
 
 <!-- VC-TEST ONLY — delete outside vc-test: a /qa-test or /qa-test-fast strategy drops this whole block (the heading,
      the table and this comment). Under vc-test it is required (clause 13, floors.md §13); the list is generated before
@@ -55,7 +55,7 @@ Regression-averse <✔/—: why> · Process-compliant <✔/—: why>
 | Mind map | RUN \| SKIP — <reason> |
 | Checklist | RUN (always) |
 | Exploratory | RUN <box> min, FIRST \| ALONGSIDE — charter: <R-ids> \| SKIP — <reason> |
-| Visual lane | RUN (F3/F8) — instruments: <PIXEL, DESIGN, PROBE, CONTENT as the VISUAL risks name them> \| SKIP — <reason> |
+| Visual lane | RUN (F3/F8) — instruments: <DESIGN, PROBE, CONTENT as the VISUAL risks name them; PIXEL runs as its own item, whatever this row says> \| SKIP — <reason> |
 | Contract refresh | RUN \| SKIP — <reason> |
 | Coverage triage + regression | RUN — <n> cases; stale → lifecycle: <ids + reason> \| SKIP — <reason> |
 | Verifier | RUN (Critical R-n) \| SKIP — no Critical risk |

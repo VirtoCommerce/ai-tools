@@ -21,21 +21,79 @@ pixelmatch, pngjs) once into the fork's `node_modules/.cache/vc-frontend-visual`
 `--with-browser` also downloads Chromium. ai-tools' `npm run visual:*` now runs these same files, and the
 TypeScript copies under `scripts/visual/` are gone.
 
-## A visual risk names the instrument that decides it — `vc-test` `0.4.0` — 2026-10-26
+**Fixed (review) — packages resolve from the project.** `lib.mjs` resolved a package from its own folder, which in an
+install is the plugin cache, so a fork that already had them still exited 2. It now resolves from the project root
+(git toplevel, else the working directory), then the cache, then its own folder, and imports the path as a file URL.
+`setup.mjs` writes the pins as the cache folder's own `dependencies`: a second run no longer prunes what the first
+installed, and an installed version other than its pin is reinstalled.
+
+## A visual risk names the instrument that decides it — `vc-test` `0.5.0` — 2026-10-26
 
 **Changed — the strategy gate (clause 4).** A risk with technique `VISUAL` now names its instrument:
 `VISUAL:PIXEL`, `VISUAL:DESIGN`, `VISUAL:PROBE` or `VISUAL:CONTENT`, chosen by `.claude/skills/qa-test/visual-axis.md`
-§2a (VCST-6534). A bare `VISUAL` fails the gate: it was a "look at it" row that decided nothing. A strategy written
-before this release that uses a bare `VISUAL` fails a re-check until its technique names an instrument.
+§2a (VCST-6534); several are one token, comma-separated: `VISUAL:DESIGN,PIXEL` (`floors.md` §VISUAL). A bare
+`VISUAL`, beside a named one too, fails the gate: it was a "look at it" row that decided nothing. Clauses 4 and 6 read
+the technique cell's leading token list the same way, case-insensitively, so prose ("FLOW (not VISUAL)") is no token.
+A strategy written before this release that uses a bare `VISUAL` fails a re-check until its technique names an
+instrument.
 
-**Changed — F8 takes `PIXEL` (clause 6).** When the change is the design system or the token layer, a risk with
-technique `VISUAL:PIXEL` is required. Such a change moves components the ticket never names: in the 2026-10-23
-spike, two 2 px CSS edits changed stories in 14 components. `floors.mjs` lists it among F8's requirements.
+**Changed — F8 takes `PIXEL` on an existing surface (clause 6).** When the change modifies a ui-kit file, a risk
+whose technique names `PIXEL` is required. Such a change moves components the ticket never names: in the
+2026-10-23 spike, two 2 px CSS edits changed stories in 14 components. A ui-kit file the PR only adds is a new
+surface with no base build, so F8 asks the rest but not `PIXEL`; the bundle's PR entries now carry `added` (from the
+files API) for that.
 
-**Added — `PIXEL` in `/vc-test:qa-ticket`.** Each `VISUAL:PIXEL` risk is run by the orchestrator through the
-`qa-visual-regression` skill (scripts, not a browser slot) on the PR's front checkout against its base ref.
-Without the checkout its row is `BLOCKED`. Regressions land as `VIS-<m>` rows like the visual lane's other
-findings.
+**Added — `PIXEL` in `/vc-test:qa-ticket`, as its own item.** The orchestrator runs each `PIXEL` risk itself, whatever
+the Visual lane row says, with the vc-frontend plugin's `visual/` engine on a front checkout (the project root or a
+`.fix-workspace/` clone whose origin is the PR's repo) against the PR's base ref. Every risk gets a `VIS-<m>` row:
+`FAIL`, `PASS`, or `BLOCKED — <which>` when the engine, the checkout or a build is missing.
+
+**Added — `PIXEL` in the capabilities.** `capabilities.json` `pixel` names the engine and the front checkouts found.
+With `--capabilities`, an install without one keeps F8's `PIXEL` risk with its Lane reading
+`SKIP — not available in this install: <capability>`, and Out of scope names `PIXEL` (clause 6s).
+
+## Unavailable is not doubt — the floors read what the install can run — `vc-test` `0.4.0` — 2026-10-26
+
+P1d-3a of the `vc-test` plan (`docs/superpowers/plans/2026-10-26-vc-test-p1d3a-capabilities.md`, spec §5.2, §5.3).
+
+**Added — capabilities.** `capabilities.json` names the repository scripts `/vc-test:ticket-context` and the floors
+lean on (`scripts`: deploy-pr, preflight, domain-check, bl-extract, regression-select, tc-scope, schema-refresh).
+
+**Changed — the floors and the gate, with `--capabilities`.** F5 that would fire only on doubt because the project
+declares no regression corpus is `skipped`, and named on the Floors line and in Out of scope. A fired floor whose row
+the install cannot run (Exploratory without a browser lane, the Visual lane without Chrome DevTools) stays fired; that
+row may read `SKIP — not available in this install: <capability>` when Out of scope names it (clause 6s). A lookup that
+ran and failed is still doubt. Without the flag, floors and gate are 0.3.1's; `/vc-test:qa-ticket` passes it.
+
+**Changed — the sources of F2 and F6.** `/vc-test:ticket-context` reads a domain map from the project knowledge store
+(`<store>/domain/<slug>.md`) before it asks `domain:check`. Without `deploy:pr`, the deployment blockers come from
+this ticket's `deployed.json` (written by `deployed.mjs --expect` after this run's prepare; an older file is ignored): NOT DEPLOYED stays NOT DEPLOYED, UNKNOWN stays UNKNOWN.
+
+## `/vc-fix:qa-bug` fills the Jira Bug's own fields, links it, and decides Need hotfixes by code — `vc-fix` `0.16.0` — 2026-10-26
+
+**Added — the Jira Bug's fields (`knowledge/execution/jira-bug-fields.md`).** Step 5 discovers the Bug type's fields from
+the issue-type metadata (no field id in the plugin) and fills Steps to reproduce, Expected result, Actual result,
+Environment, Error message and the components fields when the project has them; the Description keeps the context
+only. Assignee, Sprint, QA engineer, Fix versions and Parent are left alone. Each screenshot goes inside the field it
+proves (Actual / Expected / Steps), and every rich-text field is sent as lists with bold labels and `code` values,
+verified from `renderedFields`. Checked on VCST-6500: three images render inside Actual result.
+
+**Added — Need hotfixes, by code.** On VirtoCommerce's own tracker — `tracker-ops.md` §2a now defines it as a Jira
+profile with `operator: "virto-engineer"` and `projectType: "platform"`, the same test as the origin labels — the flag
+is set when the defect's code is in either of the two latest stable bundles (the two highest `vN` in
+`vc-modules/bundles`, compared as numbers), whatever the priority, and never from a stand.
+
+**Changed — the Bug is created with the Atlassian MCP.** The origin-label hook checks only the MCP create, so the bridge
+`jira request` POST is used only without the MCP, carries the labels itself, and the labels are read back after the create. The option is set by id (VC's value reads `" true"`), and one Environment line names the bundles and the anchor.
+
+**Added — three arguments.** `--evidence <dir>` reads a `/qa-investigate` package instead of reproducing again;
+`--link <KEY>[:type]` relates the bug to a ticket; `--confirmed` carries a caller's yes so Step 5 does not ask per
+bug. Step 5 also searches the tracker for duplicates before asking (§5): a real duplicate stops and asks before
+anything is written to that ticket, and `--confirmed` never covers it. `/qa-run` step 6 passes all three once #469
+lands.
+
+**Moved.** The Jira screenshot recipe (upload → Media-Services UUID → ADF `mediaSingle` → render check) moved from
+`commands/qa-bug.md` Step 5 to `jira-bug-fields.md` §3, so the command stays under its BUDGET-004 baseline.
 
 ## An Azure Boards ticket reaches the gated bundle — `vc-test` `0.3.1` — 2026-10-26
 
