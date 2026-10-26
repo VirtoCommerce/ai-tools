@@ -1,7 +1,7 @@
 {
   "name": "vc-test",
-  "description": "PREVIEW — one testing flow for a Virto Commerce ticket: /ticket-context → change map → scored scenarios approved at one human point → one agent per scenario plus a background AC run → triage → Medium-only investigation → verdict, with tokens and minutes per step. /vc-test:init declares which environments a run may write to and the project's knowledge store. Until P1d moves /ticket-context and /qa-test-strategy into the plugin, /vc-test:qa-ticket runs only in a checkout of the ai-tools repository. Depends on vc-init (profile, $VC_RUN, the script runner) and vc-fix.",
-  "version": "0.1.0",
+  "description": "PREVIEW — one testing flow for a Virto Commerce ticket: /vc-test:ticket-context → change map → scored scenarios approved at one human point → one agent per scenario plus a background AC run → triage → Medium-only investigation → verdict, with tokens and minutes per step. /vc-test:init declares which environments a run may write to and the project's knowledge store. Ships /vc-test:ticket-context and /vc-test:qa-test-strategy with their agents (ticket-context-analyst, strategy-verifier). Triage, investigation and some context scripts of /vc-test:qa-ticket still need an ai-tools checkout until P1d-3. Depends on vc-init (profile, $VC_RUN, the script runner) and vc-fix.",
+  "version": "0.2.0",
   "displayName": "Virto Commerce Testing Flow (preview)",
   "author": {
     "name": "Virto Commerce",

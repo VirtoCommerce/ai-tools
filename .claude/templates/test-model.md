@@ -69,7 +69,7 @@ Agents to dispatch: [list]
 
 ## Strategy mode (`/qa-test-model --strategy`)
 
-The block above is **ticket mode**. A model built from an approved `/qa-test-strategy` round uses this
+The block above is **ticket mode**. A model built from an approved `/vc-test:qa-test-strategy` round uses this
 shape instead: the strategy carries the ticket, ACs, oracles and risks, so they are cited, not restated.
 Gate and rules: [`test-model.md`](../skills/qa-test-model/test-model.md) §Strategy mode.
 

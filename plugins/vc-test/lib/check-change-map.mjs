@@ -4,7 +4,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { validate } from "../../../.claude/skills/ticket-context/lib/schema.mjs"; // prototype: the skill stays in place
+import { validate } from "../skills/ticket-context/lib/schema.mjs";
 import { argOf } from "./paths.mjs";
 
 const SCHEMA = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), "change-map.schema.json"), "utf8"));

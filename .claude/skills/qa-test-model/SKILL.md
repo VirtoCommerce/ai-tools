@@ -21,7 +21,7 @@ oracle clause depends on, and the observed-behaviour steps.
 
 | | **Strategy mode** — `--strategy <path>` | **Ticket mode** — no strategy |
 |---|---|---|
-| Caller | `/qa-test-fast` Stage 1, after `/qa-test-strategy` approved a round whose `Test model` row is `RUN` | `/qa-test` FULL `1e`, a standalone call |
+| Caller | `/qa-test-fast` Stage 1, after `/vc-test:qa-test-strategy` approved a round whose `Test model` row is `RUN` | `/qa-test` FULL `1e`, a standalone call |
 | Scope | **only** the strategy's risks with technique `MODEL` — chain, matrix and scenarios for those | the whole ticket |
 | Gate · shape · cap | [`test-model.md`](test-model.md) §Strategy mode — its gate, the org-context and configuration groups; the strategy-mode cap in `reports-policy.md` §2 | §The gate; the ticket-mode cap there |
 | Rounds | the strategy's round number; no `## Round N` rules of its own | §One ticket, one model file |
@@ -34,7 +34,7 @@ strategy (design: `docs/superpowers/specs/2026-10-09-qa-test-model-redesign.md` 
 ## Inputs — the context bundle
 
 `--context <file>` is the bundle a caller already gathered — `/qa-test` FULL passes `1a` + `1c` + `1d`,
-`/qa-test-fast` its run context, which names the `/ticket-context` bundle. A caller that already ran
+`/qa-test-fast` its run context, which names the `/vc-test:ticket-context` bundle. A caller that already ran
 step 2 or 3 passes their result in that file.
 Without it, gather each part yourself; a part that cannot be obtained is a **recorded gap in the
 model's header**, never a guess.

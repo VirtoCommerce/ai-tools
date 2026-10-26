@@ -8,6 +8,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## /ticket-context and /qa-test-strategy are vc-test's — `vc-test` `0.2.0`, catalog `0.15.0` — 2026-10-26
+
+P1d-1 of the `vc-test` plan (`docs/superpowers/plans/2026-10-26-vc-test-p1d1-move.md`). Behaviour is unchanged: the
+deterministic `prepare` on VCST-5097 and the strategy gate on a saved strategy give the same output before and
+after the move. The one difference is the cache key's skill fingerprint, which changes when the skill's own files
+change, as designed.
+
+**Moved:** `/ticket-context` and `ticket-context-analyst`, and `/qa-test-strategy` with its template, now live in
+`plugins/vc-test/`. Git keeps their history. Nothing of them remains under `.claude/`.
+
+**Still repository-bound, as before the move:** `/vc-test:qa-test-strategy` links to this repository's technique
+vocabulary, risk framework, data rules and qa-test files (P2 moves them), and `/vc-test:ticket-context` calls repository
+scripts (P1d-3). Outside an `ai-tools` checkout they are not usable yet.
+
+**Added: `vc-test:strategy-verifier`.** A read-only agent that `/vc-test:qa-test-strategy` dispatches on a Critical
+risk. It is cut from `qa-lead-orchestrator`'s Verifier Mode, which keeps `/qa-test`'s own per-step gates until P4.
+
+**Changed:**
+- `/qa-test-fast` calls `/vc-test:ticket-context` and `/vc-test:qa-test-strategy`, and stops with an install hint when vc-test is missing.
+- vc-test is enabled in the tracked `.claude/settings.json`, and the onboarding prerequisites name it.
+- `ticket-context` loads the plugin's own copy of the env loader.
+
 ## `vc-init` `0.5.0`, `vc-fix` `0.14.1`: a host is found by its shape, and guest mode reads what its own setup left — 2026-10-26
 
 **Fixed: detection no longer turns other projects into guests.** `detectHost` counted any install record of a

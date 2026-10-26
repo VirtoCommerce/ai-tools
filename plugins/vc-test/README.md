@@ -6,9 +6,10 @@ scenario list at one human point. Each scenario then gets its own agent, and one
 background. After that come triage, a Medium-only investigation, and a verdict that reports tokens and minutes
 per step.
 
-**Preview.** `/vc-test:qa-ticket` still calls `/ticket-context` and `/qa-test-strategy` from this repository's
-`.claude/`, so it runs only in a checkout of `ai-tools` until P1d moves them into the plugin. `/vc-test:init` and
-the scripts below work in any project.
+**Preview.** `/vc-test:ticket-context` and `/vc-test:qa-test-strategy` are this plugin's own code, but both still
+read documents that live only in a checkout of `ai-tools`: `/vc-test:qa-test-strategy` its technique vocabulary, risk framework,
+data rules and visual-axis floors (P2 moves them); `/vc-test:ticket-context` some repository scripts (P1d-3). `/vc-test:qa-ticket`
+also calls triage and investigation from there. `/vc-test:init` and the scripts below work in any project.
 
 ## Install
 
@@ -27,6 +28,8 @@ folder>` once; `/vc-test:init` says so when they are missing. A checkout of this
 | Path | Does |
 |---|---|
 | `commands/init.md` | `/vc-test:init`. Writes the profile's `test` block through vc-init's `profile-set.mjs` and lists missing accounts with their `/project-init --add-user` command. It never asks for or writes a password |
+| `skills/ticket-context/`, `agents/ticket-context-analyst.md` | `/vc-test:ticket-context`: one gated context bundle for one ticket |
+| `skills/qa-test-strategy/`, `agents/strategy-verifier.md` | `/vc-test:qa-test-strategy`: the floors, the gate, and an independent read-only verifier on a Critical risk |
 | `commands/qa-ticket.md` | `/vc-test:qa-ticket <KEY> [<env>] [--yes] [--dry-run] [--benchmark]`, the QA run (preview) |
 | `lib/profile.mjs` | The read-only profile loader. A missing profile is a STOP ("run /project-init"), never a default |
 | `lib/capabilities.mjs` | What this install can do: connectors, stand URLs, MCP servers, the knowledge store, the project's scripts. A stand is writable only by declaration (`test.environments`) and only when `BACK_URL` is the declared stand |

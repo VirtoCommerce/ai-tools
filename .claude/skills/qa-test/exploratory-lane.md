@@ -88,7 +88,7 @@ spans** (§5), not to how interesting the feature is.
 | 3 | Every scenario row whose oracle is **`{HYPOTHESIS}`** | the expected value nobody has seen — observe it | `1e` |
 | 4 | Every AC marked **DRIFT / NOT-FOUND / CONTRADICTS** | `1d` already says *"a static-diff finding is a suspicion, verify it live"* — this is where that verification happens | `1d` |
 | 5 | Every **at-risk row** `tc:scope` returned | is the existing assertion stale, or is the change wrong? A live look answers it *before* the row is disposed, not after | `1b` 2e |
-| 6 | Every risk an approved **test strategy**'s Exploratory row names, with the `{HYPOTHESIS}` oracle or question it rests on | the risks the strategy chose to explore rather than assert — the only source when the strategy ran no model (test-model redesign M9) | `/qa-test-strategy` (from `/qa-test-fast`) |
+| 6 | Every risk an approved **test strategy**'s Exploratory row names, with the `{HYPOTHESIS}` oracle or question it rests on | the risks the strategy chose to explore rather than assert — the only source when the strategy ran no model (test-model redesign M9) | `/vc-test:qa-test-strategy` (from `/qa-test-fast`) |
 
 **Sources 4 and 5 are not new work — they are work the pipeline already deferred and never scheduled.**
 `1d` says to carry every DRIFT into execution *"as a thing to verify live"*, and an at-risk row's `RE-BASE`
