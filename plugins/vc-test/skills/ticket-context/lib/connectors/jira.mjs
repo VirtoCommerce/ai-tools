@@ -53,7 +53,8 @@ export function jiraConnector({ base, key, run = bridgeRun, root = outputRoot() 
   async function search(jql, fields, maxResults) {
     const f = tempFile("json");
     writeFileSync(f, JSON.stringify({ jql, fields, maxResults }));
-    try { return (await run("jira", ["request", "--method", "POST", "--path", "/rest/api/3/search/jql", "--body-file", f])).issues ?? []; }
+    // Jira returns at most maxResults; a host's servers may page through everything, so the cap is applied here too.
+    try { return ((await run("jira", ["request", "--method", "POST", "--path", "/rest/api/3/search/jql", "--body-file", f])).issues ?? []).slice(0, maxResults); }
     finally { rmSync(f, { force: true }); }
   }
   return {

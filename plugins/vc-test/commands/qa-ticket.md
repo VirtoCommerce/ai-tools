@@ -1,5 +1,5 @@
 ---
-description: "[Testing] PROTOTYPE vc-test — one feature-test ticket by scenarios: context → change map → approved scenarios, one agent each, beside the background AC run → triage → verdict, costed. Triage, investigation and some context scripts still need an ai-tools checkout (P1d-3)."
+description: "[Testing] PROTOTYPE vc-test — one feature-test ticket by scenarios: context → change map → approved scenarios, one agent each, beside the background AC run → triage → verdict, costed. Triage and investigation still need an ai-tools checkout (P2)."
 argument-hint: "<TICKET> [<env>] [--yes] [--dry-run]"
 disable-model-invocation: true
 ---
@@ -37,7 +37,7 @@ brief "Read and follow `<plugin>/briefs/<x>.md`" + the paths P.
 ## 1 — Context
 
 `/vc-test:ticket-context <TICKET> --domain <slug>` (none without a slug); its bundle is every agent's `BUNDLE`. Its
-STOPs are this run's. Before its `finish`: `node <plugin>/lib/keep-prepare.mjs --prepare <prepare_path> --key
+STOPs are this run's; on a host-governed project it reads in passes through the host's servers (its Step 0). Before its `finish`: `node <plugin>/lib/keep-prepare.mjs --prepare <prepare_path> --key
 <TICKET>` → `PREPARE` (none if cached). A `NOT DEPLOYED:` line in `blockers[]` ⇒ BLOCKED on deploy: write
 `verdict.md` with it and stop.
 

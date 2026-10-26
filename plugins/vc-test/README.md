@@ -8,8 +8,9 @@ per step.
 
 **Preview.** `/vc-test:ticket-context` and `/vc-test:qa-test-strategy` are this plugin's own code, but both still
 read documents that live only in a checkout of `ai-tools`: `/vc-test:qa-test-strategy` its technique vocabulary, risk framework,
-data rules and visual-axis floors (P2 moves them); `/vc-test:ticket-context` uses this repository's scripts (`deploy:pr`, `domain:check`, `regression:select`, …) where a project declares them, and records a named SKIP where it does not. It reads the tracker and the code host — Jira or Azure Boards, GitHub or Azure Repos, as `project-profile.json` names them — only through `$VC_RUN`; a host-governed project stops until P1d-3. `/vc-test:qa-ticket`
-also calls triage and investigation from there. `/vc-test:init` and the scripts below work in any project.
+data rules and visual-axis floors (P2 moves them); `/vc-test:ticket-context` uses this repository's scripts (`deploy:pr`, `domain:check`, `regression:select`, …) where a project declares them, and records a named SKIP where it does not. It reads the tracker and the code host — Jira or Azure Boards, GitHub or Azure Repos, as `project-profile.json` names them — only through `$VC_RUN`, or, on a host-governed project, through the host's MCP servers: a `fetch` agent answers what
+each `prepare` pass could not read, and the orchestrator never sees that content. `/vc-test:qa-ticket` also calls
+triage and investigation from there (P2 moves them). `/vc-test:init` and the scripts below work in any project.
 
 ## Install
 
@@ -29,6 +30,7 @@ folder>` once; `/vc-test:init` says so when they are missing. A checkout of this
 |---|---|
 | `commands/init.md` | `/vc-test:init`. Writes the profile's `test` block through vc-init's `profile-set.mjs` and lists missing accounts with their `/project-init --add-user` command. It never asks for or writes a password |
 | `skills/ticket-context/`, `agents/ticket-context-analyst.md` | `/vc-test:ticket-context`: one gated context bundle for one ticket |
+| `agents/fetch.md`, `skills/ticket-context/lib/replay.mjs`, `fetch-catalog.json` | The host-governed route: `prepare --raw` answers each read from a raw folder and ends `needs-fetch` with the reads it lacks; the `fetch` agent answers them through the host's servers (read tools only), shaped as the catalog says the bridge would print. A read the servers have no tool for is a gap, never a guess |
 | `skills/qa-test-strategy/`, `agents/strategy-verifier.md` | `/vc-test:qa-test-strategy`: the floors, the gate, and an independent read-only verifier on a Critical risk |
 | `commands/qa-ticket.md` | `/vc-test:qa-ticket <KEY> [<env>] [--yes] [--dry-run]`, the QA run (preview) |
 | `lib/profile.mjs` | The read-only profile loader. A missing profile is a STOP ("run /project-init"), never a default |

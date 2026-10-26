@@ -171,6 +171,7 @@ Roster detail (model, colour, team framework): [`knowledge/agents/README.md`](kn
 - `regression-orchestrator` — Parallel regression, retries, consolidated reports
 - `test-runner-agent` — Parameterized suite runner (spawned by regression-orchestrator)
 - `vc-test:ticket-context-analyst` (the vc-test plugin's) — Read-only, no-browser ticket reader for `/vc-test:ticket-context` (TICKET / MATERIALS / CHANGE modes); never writes to a tracker, a PR or the `kb`
+- `vc-test:fetch` (the vc-test plugin's) — Host-governed reads for `/vc-test:ticket-context`: answers one `needs-fetch` pass through the host's MCP servers (read tools only), writes only answer files in the raw folder and returns a count line, never content.
 - `vc-test:strategy-verifier` (the vc-test plugin's) — Read-only, independent gate check `/vc-test:qa-test-strategy` dispatches on a Critical risk before approval: re-derives §Gate from the bundle and the strategy, `APPROVE`/`REJECT`, never edits.
 
 **BA Team (+ shared-instructions):**
