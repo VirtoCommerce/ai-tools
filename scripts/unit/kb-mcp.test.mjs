@@ -14,7 +14,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 
-import { LATEST_PROTOCOL, TOOLS, createServer, memoizeReader } from '../kb/mcp.mjs';
+import { LATEST_PROTOCOL, TOOLS, createServer as createKbServer, memoizeReader } from '../kb/mcp.mjs';
+
+/** Every in-process server gets `KB_BUILD: '0'`: its `env` REPLACES process.env, so `npm test`'s own
+ *  KB_BUILD=0 never reached it, and every kb_confirm / kb_dispute naming a deployment signed in to that
+ *  real stand as admin (CI kept vcst-qa's admin locked out). A test that wants the probe passes it. */
+const createServer = (opts = {}) => createKbServer({ ...opts, env: { KB_BUILD: '0', ...opts.env } });
 
 const run = promisify(execFile);
 const REPO = join(import.meta.dirname, '..', '..');
@@ -27,13 +32,11 @@ function scratch(name) {
   return { dir, done: () => { try { rmSync(dir, { recursive: true, force: true }); } catch { /* best effort */ } } };
 }
 
-/** A server over the fixture base, with its own queue. `KB_BUILD: '0'` because this `env` REPLACES
- *  process.env, so `npm test`'s own KB_BUILD=0 never reached the server: every kb_confirm / kb_dispute
- *  naming a deployment then signed in to that real stand as admin (CI kept vcst-qa's admin locked out). */
+/** A server over the fixture base, with its own queue. */
 function fixtureServer(queueDir, extra = {}) {
   return createServer({
     env: {
-      KB_BASE: FIXTURE, KB_QUEUE_DIR: queueDir, KB_NO_SWEEP: '1', KB_BUILD: '0',
+      KB_BASE: FIXTURE, KB_QUEUE_DIR: queueDir, KB_NO_SWEEP: '1',
       CLAUDE_CODE_HOST_SESSION_ID: 'mcptest0', ...extra,
     },
   });
@@ -134,7 +137,7 @@ test('UNREACHABLE is an error and says so in words that cannot be read as a miss
     const { cpSync, rmSync: rm } = await import('node:fs');
     cpSync(FIXTURE, broken.dir, { recursive: true });
     rm(join(broken.dir, 'entries'), { recursive: true, force: true });
-    const s = createServer({ env: { KB_BASE: broken.dir, KB_QUEUE_DIR: q.dir, KB_NO_SWEEP: '1', KB_BUILD: '0', CLAUDE_CODE_HOST_SESSION_ID: 'mcptest0' } });
+    const s = createServer({ env: { KB_BASE: broken.dir, KB_QUEUE_DIR: q.dir, KB_NO_SWEEP: '1', CLAUDE_CODE_HOST_SESSION_ID: 'mcptest0' } });
     const r = await call(s, 'kb_ask', { question: 'what does the Active column on /company/members reflect' });
     assert.equal(r.result.isError, true, 'a failed lookup must be loud: the model then says "lookup failed" instead of guessing (PLAN §1.7)');
     assert.match(callText(r), /not "nothing is known"/);
@@ -145,7 +148,7 @@ test('UNREACHABLE is an error and says so in words that cannot be read as a miss
 test('NO BASE is an error, and it is named as a config problem rather than a knowledge one', async () => {
   const q = scratch('nobase');
   try {
-    const s = createServer({ env: { KB_BASE: join(import.meta.dirname, 'fixtures'), KB_QUEUE_DIR: q.dir, KB_NO_SWEEP: '1', KB_BUILD: '0' } });
+    const s = createServer({ env: { KB_BASE: join(import.meta.dirname, 'fixtures'), KB_QUEUE_DIR: q.dir, KB_NO_SWEEP: '1' } });
     const r = await call(s, 'kb_ask', { question: 'anything' });
     assert.equal(r.result.isError, true);
     assert.match(callText(r), /no base is configured|not a base|no kb\.json/);

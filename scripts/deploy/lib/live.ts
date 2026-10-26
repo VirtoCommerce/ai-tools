@@ -12,7 +12,8 @@ export interface LiveModule { id: string; version: string; projectUrl?: string; 
 export async function probeAdminToken(c: EnvCoords, signal?: AbortSignal): Promise<{ token: string | null; status: ProbeStatus }> {
   if (!c.backUrl) return { token: null, status: 'no-back-url' };
   // A service-account API key is the credential itself: no sign-in, so no lockout and no second factor.
-  if (c.apiKey) return { token: c.apiKey, status: 200 };
+  const key = boundApiKey(c);
+  if (key) return { token: key, status: 200 };
   // No password, no attempt: a guessed one is a failed sign-in that counts toward the shared admin's lockout.
   if (!c.password) return { token: null, status: 'no-password' };
   try {
@@ -21,9 +22,13 @@ export async function probeAdminToken(c: EnvCoords, signal?: AbortSignal): Promi
     return { token: (await r.json())?.access_token ?? null, status: 200 };
   } catch { return { token: null, status: 'network' }; }
 }
+/** The env's API key, only while backUrl is still the host it was resolved for. */
+function boundApiKey(c: EnvCoords): string | null {
+  return c.apiKey && c.apiKeyFor === c.backUrl ? c.apiKey : null;
+}
 /** The header a "token" from probeAdminToken travels in: the env's API key, or a bearer token. */
 function authHeader(c: EnvCoords, token: string): Record<string, string> {
-  return c.apiKey && token === c.apiKey ? { api_key: token } : { Authorization: `Bearer ${token}` };
+  return token === boundApiKey(c) ? { api_key: token } : { Authorization: `Bearer ${token}` };
 }
 export async function getAdminToken(c: EnvCoords): Promise<string | null> {
   return (await probeAdminToken(c)).token;

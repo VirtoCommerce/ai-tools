@@ -63,7 +63,7 @@
  *   --message=<text>            Commit / PR title (default "VCST-XXXX: <ticket title>", else
  *                               "VCST-XXXX: deploy N artifacts to <env>" when no summary resolved).
  *                               --apply REFUSES with neither a ticket key nor --message.
- *   --password=<pw>             Admin password for the /api/platform/modules verify (else env / Password1).
+ *   --password=<pw>             Admin password for the /api/platform/modules verify (else the env's secrets; none => no sign-in).
  *   --json                      Machine-readable output.
  *
  * Exit codes:

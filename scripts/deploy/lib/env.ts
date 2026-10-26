@@ -25,6 +25,9 @@ export interface EnvCoords {
   packagesPath: string; themePath: string; storybookPath: string; backUrl: string; admin: string; password: string;
   /** The env's service-account API key (`PLATFORM_API_KEY_<ENV>`): reads the platform without the shared admin. */
   apiKey?: string;
+  /** The BACK_URL the key was resolved for. live.ts sends the key only there, so a caller that re-points backUrl
+   *  (env-facts probeCoords, an ambient BACK_URL) never hands this stand's key to another host. */
+  apiKeyFor?: string;
 }
 
 /**
@@ -93,7 +96,7 @@ export function resolveEnvCoords(env: string, passwordOverride?: string, ticket?
   const branch = e.DEPLOY_BRANCH || BRANCH_MAP[env] || env.replace(/_/g, '-');
   // Per-env secret lookup, in config.js's own order: a `.env.local` pin in its promotion form FIRST
   // (`ADMIN_PASSWORD_${TEST_ENV}` upper-cased), then the env's own password file. Without that file a
-  // machine that keeps env passwords only there fell through to `Password1`; without the promotion
+  // machine that keeps env passwords only there fell through to a guessed password; without the promotion
   // form a plain `vcptcore` stripped to "" in the suffix forms below (they only ever produce
   // STABLE/REGRESSION) and fell through to the generic ADMIN_PASSWORD. Either way: wrong account →
   // no admin token → --verify's live column reads "unavailable" instead of the version.
@@ -111,14 +114,16 @@ export function resolveEnvCoords(env: string, passwordOverride?: string, ticket?
     // was stale, and from a machine without secrets (CI) it locked the stand's shared admin out.
     || local.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || '';
   // A read-only service account's key, per env only (never a generic one: a key is bound to one stand).
-  // When present, the live readers use it instead of signing in as the stand's shared admin.
-  const apiKey = local[`PLATFORM_API_KEY_${envKey}`] || process.env[`PLATFORM_API_KEY_${envKey}`] || '';
+  // When present, the live readers use it instead of signing in as the stand's shared admin; an explicit
+  // --password still means "sign in with this", so it drops the key.
+  const apiKey = passwordOverride ? '' : local[`PLATFORM_API_KEY_${envKey}`] || process.env[`PLATFORM_API_KEY_${envKey}`] || '';
+  const backUrl = (e.BACK_URL || process.env.BACK_URL || '').replace(/\/$/, '');
   return {
     env, deployOwner, deployRepo, branch,
     packagesPath: e.DEPLOY_PACKAGES_PATH || PACKAGES_PATH_DEFAULT,
     themePath: e.DEPLOY_THEME_PATH || THEME_PATH_DEFAULT,
     storybookPath: e.DEPLOY_STORYBOOK_PATH || STORYBOOK_PATH_DEFAULT,
-    backUrl: (e.BACK_URL || process.env.BACK_URL || '').replace(/\/$/, ''),
-    admin: e.ADMIN || process.env.ADMIN || 'admin', password, apiKey,
+    backUrl, admin: e.ADMIN || process.env.ADMIN || 'admin', password,
+    ...(apiKey && backUrl ? { apiKey, apiKeyFor: backUrl } : {}),
   };
 }

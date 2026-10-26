@@ -40,7 +40,7 @@
  *   --apply                    Perform the gated write (commit) + wait for deploy. Omit = dry-run.
  *   --dry-run                  Explicit no-op form of the default (read-only); wins over --apply if both given.
  *   --no-wait                  (with --apply) commit but skip the deploy Action + module polling.
- *   --password=<pw>            Admin password for the /api/platform/modules check (else env/Password1).
+ *   --password=<pw>            Admin password for the /api/platform/modules check (else the env's secrets; none => no sign-in).
  *   --probe=<METHOD /path>     Behavioural liveness probe — the ONLY trustworthy proof for a Platform
  *                              hotfix (see --probe-expect). Anonymous request, polled until it returns
  *                              the expected status. e.g. --probe='POST /api/platform/security/login'
@@ -447,7 +447,7 @@ async function waitProbe(c: EnvCoords, probe: Probe, deadline: number): Promise<
 /** Poll the live env until the module reports `target` (or timeout). */
 async function waitLiveVersion(c: EnvCoords, id: string, target: string, deadline: number): Promise<{ ok: boolean; version: string | null; note: string }> {
   let token = await getAdminToken(c);
-  if (!token) return { ok: false, version: null, note: `could not get an admin token at ${c.backUrl} — verify the version by hand` };
+  if (!token) return { ok: false, version: null, note: c.password ? `could not get an admin token at ${c.backUrl} — verify the version by hand` : `no admin password for ${c.env} in .env.local / .env.playwright.* — verify the version by hand` };
   let last: string | null = null;
   let consecutiveAuthFailures = 0;
   while (Date.now() < deadline) {
