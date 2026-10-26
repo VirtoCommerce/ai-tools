@@ -17,8 +17,8 @@ execution instead of before it.
 
 ```
 Step 0  route · env · prior artifacts · slug · kb ask · round (≤3)
-Stage 1 Wave 1  /ticket-context (ticket · materials · PRs · deploy) ‖ C domain map (only if ABSENT)   ── join → bundle (+ schema:refresh)
-        Strategy /qa-test-strategy (floors · risks · artifacts · one approval)
+Stage 1 Wave 1  /vc-test:ticket-context (ticket · materials · PRs · deploy) ‖ C domain map (only if ABSENT)   ── join → bundle (+ schema:refresh)
+        Strategy /vc-test:qa-test-strategy (floors · risks · artifacts · one approval)
         Wave 2  /qa-test-model --strategy (only if a risk is MODEL) ‖ /qa-test-mind-map (update|build, no stamps; only if the model runs)
         Wave 3  /qa-checklist --from-model --strategy  ──  stage gate   [--dry-run stops here]
 Stage 2         runner(chrome) ‖ runner(edge) ‖ exploratory(firefox), data on the fly ── settings restored

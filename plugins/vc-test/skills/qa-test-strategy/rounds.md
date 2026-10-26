@@ -4,7 +4,7 @@
 
 A **round** is one QA verdict on one deployed build of the ticket's PRs. A re-run on the **same** build
 amends the current round; a **new** build starts the next one — and gets a new tracker comment
-([`../../rules/reports.md`](../../rules/reports.md) §0, rule 5). Rounds count **per ticket, across
+([`reports.md`](../../../../.claude/rules/reports.md) §0, rule 5). Rounds count **per ticket, across
 stands**: a round on another environment still counts.
 
 **Counting.** A round is any of: a `summary.json` in a run folder of the ticket

@@ -13,7 +13,7 @@ scenario cites a risk. The orchestrator asks the user; you never do. Dispatch de
   generator's `<WORK>/candidates.json`.
 - `RUN_DIR` — the run folder. `CUTOFF` — given only in a benchmark run.
 
-**Benchmark (`CUTOFF` given, U67):** read only your inputs above and the `qa-test-strategy` skill (`<plugin>` is the
+**Benchmark (`CUTOFF` given, U67):** read only your inputs above and the `vc-test:qa-test-strategy` skill (`<plugin>` is the
 folder above this brief's). Never `docs/superpowers/**`, `.superpowers/**`, `.claude/worktrees/**`,
 `<plugin>/benchmarks/**` or git history (no `git log`, `show`, `blame`, `diff`); never resolve a U-id by grepping
 the spec — a U-id here is a label, this brief is the whole rule. No kb, no earlier run folder, nothing under
@@ -22,7 +22,7 @@ brief.
 
 ## How
 
-1. Load the `qa-test-strategy` skill and follow its procedure from **step 2** (the orchestrator counted the
+1. Load the `vc-test:qa-test-strategy` skill and follow its procedure from **step 2** (the orchestrator counted the
    round), with `--change-map <CHANGE_MAP>` on `floors.mjs` and on `check-strategy.mjs`, and the header line
    `Change map: <CHANGE_MAP>`. Approach names, per risk, what proves it: a scenario (`S-n`) or the background AC
    run (`ac-checks`, lane `none` or `api`).

@@ -6,9 +6,10 @@ scenario list at one human point. Each scenario then gets its own agent, and one
 background. After that come triage, a Medium-only investigation, and a verdict that reports tokens and minutes
 per step.
 
-**Preview.** `/vc-test:ticket-context` and `/vc-test:qa-test-strategy` are this plugin's own. `/vc-test:qa-ticket`
-still calls triage, investigation and some repository scripts that live only in a checkout of `ai-tools`, until
-P1d-3. `/vc-test:init` and the scripts below work in any project.
+**Preview.** `/vc-test:ticket-context` and `/vc-test:qa-test-strategy` are this plugin's own code, but both still
+read documents that live only in a checkout of `ai-tools`: `/qa-test-strategy` its technique vocabulary, risk framework,
+data rules and visual-axis floors (P2 moves them); `/ticket-context` some repository scripts (P1d-3). `/vc-test:qa-ticket`
+also calls triage and investigation from there. `/vc-test:init` and the scripts below work in any project.
 
 ## Install
 

@@ -4,13 +4,15 @@
 // Specs: docs/superpowers/specs/2026-10-09-qa-test-strategy-redesign.md §6 (F1–F9),
 //        docs/superpowers/specs/2026-10-09-qa-test-model-redesign.md §5, §5a (F10, F11).
 import { existsSync, readFileSync } from "node:fs";
-import { dirname, isAbsolute, resolve } from "node:path";
+import { isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 // The tracker's names for P0/P1 come from project-profile.json `tracker.p0p1Priorities` (an array of names); with no
 // profile entry, this default (Jira's Highest/High plus the P0/P1/Blocker/Critical spellings). A name not listed reads as P2+.
 const P01_DEFAULT = ["p0", "p1", "highest", "high", "blocker", "critical"];
-const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../../.."); // lib → skill → skills → .claude → repo
+// The project root a repo-relative path resolves against: VC_FIX_HOME, else the cwd (plugins/CLAUDE.md outputRoot) — never
+// a path derived from this file, which sits in the plugin install.
+const projectRoot = () => resolve(process.env.VC_FIX_HOME || process.cwd());
 // qa-test/visual-axis.md §1 source 1 — a rendering file.
 const VISUAL = /\.(vue|scss|css|html)$|\/Scripts\/.*\.html$|\/icons?\/|design-tokens?|_tokens?\.scss$/i; // not a bare "token": TokenService.cs is not a rendering file
 // ticket-routing.md §5c — the change IS the design system.
@@ -150,7 +152,7 @@ export function readJsonOrExit(path, script) {
 export function domainMapTextOf(bundle) {
   const dmPath = bundle?.known?.domain_map?.path;
   if (!dmPath) return null;
-  const hit = (isAbsolute(dmPath) ? [dmPath] : [resolve(dmPath), resolve(REPO_ROOT, dmPath)]).find((p) => existsSync(p));
+  const hit = (isAbsolute(dmPath) ? [dmPath] : [resolve(projectRoot(), dmPath), resolve(dmPath)]).find((p) => existsSync(p));
   return hit ? readFileSync(hit, "utf8") : null;
 }
 /** `tracker.p0p1Priorities` from project-profile.json (VC_FIX_HOME or cwd), else the default names. */

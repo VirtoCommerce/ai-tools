@@ -33,11 +33,11 @@ behind every step, the rationalization table and the red flags are in
 
 ## Step 0 — Pre-flight (inline)
 
-**`vc-test` first.** `/ticket-context` and `/qa-test-strategy` are the `vc-test` plugin's
-(`/vc-test:ticket-context`, `/vc-test:qa-test-strategy`). Not installed ⇒ **STOP**: "install vc-test
-(`/plugin install vc-test@ai-tools`), then restart Claude Code" — never run half the pipeline.
+**Before anything:** `vc-test:ticket-context` and `vc-test:qa-test-strategy` must both be in your skill list
+(vc-test ≥ 0.2.0). Either absent ⇒ **STOP**: "install or update vc-test (`/plugin install vc-test@ai-tools`, or
+`/plugin marketplace update ai-tools`), then restart Claude Code" — never run half the pipeline.
 
-**Env and run folder first.** `npm run run:use -- <TICKET> [<env>]` binds this session's env
+**Env and run folder next.** `npm run run:use -- <TICKET> [<env>]` binds this session's env
 ([`run-env.md`](../knowledge/execution/run-env.md); no env argument ⇒ the default) and its run folder
 `{RUN_DIR}` ([`run-output.md`](../knowledge/execution/run-output.md)). Every script below then resolves both, its
 output fills the Environment line of every brief, and **every file this run writes goes into `{RUN_DIR}`** —

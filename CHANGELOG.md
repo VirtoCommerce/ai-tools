@@ -18,6 +18,10 @@ change, as designed.
 **Moved:** `/ticket-context` and `ticket-context-analyst`, and `/qa-test-strategy` with its template, now live in
 `plugins/vc-test/`. Git keeps their history. Nothing of them remains under `.claude/`.
 
+**Still repository-bound, as before the move:** `/vc-test:qa-test-strategy` links to this repository's technique
+vocabulary, risk framework, data rules and qa-test files (P2 moves them), and `/vc-test:ticket-context` calls repository
+scripts (P1d-3). Outside an `ai-tools` checkout they are not usable yet.
+
 **Added: `vc-test:strategy-verifier`.** A read-only agent that `/vc-test:qa-test-strategy` dispatches on a Critical
 risk. It is cut from `qa-lead-orchestrator`'s Verifier Mode, which keeps `/qa-test`'s own per-step gates until P4.
 

@@ -8,7 +8,7 @@ Anything the brief can pass as a **file** is passed as a path, never pasted.
 
 ### A+B · Ticket context — [`/vc-test:ticket-context`](../../../plugins/vc-test/skills/ticket-context/SKILL.md)
 Dispatch C first when it is due (background, its own browser lane), then run
-`/ticket-context <KEY> --domain <slug> --kb-hits <ids from Step 0>`. It returns one gated bundle:
+`/vc-test:ticket-context <KEY> --domain <slug> --kb-hits <ids from Step 0>`. It returns one gated bundle:
 ACs with provenance, comment signals, every attachment, inline image and link with an outcome, design
 conditions, the PRs (only product-repo PRs are change surface), PR↔AC both ways, whether each PR is
 deployed on this stand, known ground, gaps and blockers. Do not re-fetch the ticket or a PR, and do not
