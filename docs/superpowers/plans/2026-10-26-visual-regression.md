@@ -117,14 +117,17 @@ change, no version bump.
 
 ### Phase 4 — `DESIGN` from the `design-review` skill (with its author)
 
-- Port its AC catalog (16 numeric criteria, P1/P2/P3, verdict rule), its source model (Storybook for
-  existing components, the design project for new ones, the innovations registry) and its theme
-  normalisation into `qa-design`; reconcile thresholds with BL-UI and `measure-layout.ts` (it uses 44 px
-  touch targets at 390, ours is 24 AA / 44 AAA) so each lives in one place.
-- Move its tools into git; run its extractor headless on our lanes.
-- Its report (columns, heatmap, onion-skin) becomes the review view for `PIXEL` diffs too.
-- Its prod-vs-Storybook mode stays the customer-theme check: it cannot catch a component regression,
-  because Storybook and prod share the component code.
+- [x] Its AC catalog, source model and theme normalisation in `qa-design` (`component-acceptance.md`), with
+  the overlaps reconciled: AC-A11Y / RSP / CNT / TOK stay with their owners (ours win: touch targets 24 AA / 44
+  AAA, the generated spacing scale); a DESIGN difference stays advisory (`visual-axis.md` §3).
+- [x] **Without its tools** (they live in a Claude project that could not be exported — only the loader
+  `SKILL.md` was): our own headless engine, `visual:design` (`plugins/vc-frontend/visual/design.mjs`, vc-frontend
+  0.3.0). Per component it judges AC-CMP / LAY / SPC / TYP / CLR (CIEDE2000) / BRD / ELV / PIX / THM against the
+  catalog's tolerances, kept in its `THRESHOLDS`. Verified 2026-10-26 on vc-frontend Storybook: the seeded button
+  padding (P3) and width (P2) and badge radius (P3, pixels P2) found, a control alert clean, a missing instance P2;
+  the same button on the red preset is `theme` (both `--color-primary-500`), PASS, pixels not judged.
+- [ ] Its report view (columns, heatmap, onion-skin) — and its tools, if they are ever exported, compared with
+  `visual:design` before either replaces the other.
 
 ### Phase 5 — `CONTENT` probes + `PROBE` stress matrix
 

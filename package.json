@@ -282,6 +282,7 @@
     "visual:snap": "node plugins/vc-frontend/visual/snap.mjs",
     "visual:diff": "node plugins/vc-frontend/visual/diff.mjs",
     "visual:affected": "node plugins/vc-frontend/visual/affected.mjs",
+    "visual:design": "node plugins/vc-frontend/visual/design.mjs",
     "verify:multi-env": "npx tsx scripts/test-cases/verify-multi-env-filters.ts",
     "verify:multi-env:report": "npx tsx scripts/test-cases/verify-multi-env-filters.ts --write-report",
     "bundle:check": "npx tsx scripts/hotfix/bundle-version-check.ts",

@@ -138,7 +138,7 @@ checklist's visual rows and `/qa-visual-regression` cite it. A visual row with n
 | Instrument | Question | Engine | Takes the risk when |
 |---|---|---|---|
 | `PIXEL` | Did anything change that should not have? | [`/qa-visual-regression`](../qa-visual-regression/SKILL.md) — `visual:snap` base + head (Storybook stories, or app pages with API answers replayed from one HAR) → `visual:diff` | the `ui-kit` class ([`ui-kit-class.md`](ui-kit-class.md)) · a global style, token, theme preset or Tailwind change · a refactor, dependency upgrade, upstream merge into a fork or other change on rendering code that **declares no visual effect** |
-| `DESIGN` | Does it match its reference? | §2 table: design-system + `vs. DESIGN` (`ui-ux-expert`) | new or redesigned UI with a design link · a customer theme |
+| `DESIGN` | Does it match its reference? | §2 table: design-system + `vs. DESIGN` (`ui-ux-expert`); rendered component vs its reference (prod vs Storybook, a fork's theme): `visual:design`, [`../qa-design/component-acceptance.md`](../qa-design/component-acceptance.md) | new or redesigned UI with a design link · a customer theme |
 | `PROBE` | Does layout hold on hard data? | `layout-runner` / `048c` probes (§5) | any rendered change; the data that breaks it: locale × text length × width × theme |
 | `CONTENT` | Is the rendered text right? | text assertions in the checklist (raw i18n key, GUID, placeholder price, broken image or icon) | a changed label, format, empty state or i18n key |
 

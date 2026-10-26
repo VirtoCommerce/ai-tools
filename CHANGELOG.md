@@ -8,6 +8,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## A component is compared with its reference — `vc-frontend` `0.3.0` — 2026-10-26
+
+**Added — `visual/design.mjs`** (ai-tools: `npm run visual:design`). It compares the same component in two places at
+once: the reference (Storybook, or a design-system build) and the one under review (prod, QA, a fork's preview). Per
+component it judges anatomy, box, spacing, typography, colour (CIEDE2000), borders, shadows and the element's own
+pixels against the `design-review` acceptance catalog's tolerances. It sorts each difference into P2 / P3 / `theme`.
+A colour difference that the same theme token names on both sides is `theme`, not a defect, and the differing
+tokens are listed for confirmation (VCST-6534).
+
 ## A merge into a theme fork is checked pixel by pixel — `vc-frontend` `0.2.0` — 2026-10-26
 
 **Added — the visual check in `/vc-frontend:merge-upstream` (step 7).** The fork owns how it looks, so the skill
