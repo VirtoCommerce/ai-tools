@@ -9,11 +9,19 @@ nothing and re-open no page. Dispatch description: `[vc-test:verdict] <KEY>`.
   scenarios' `SC-<n>.<m>` rows); `CHANGE_MAP` — `change-map.json`; `SCENARIOS` — `<WORK>/scenarios.json`
   (`selected`, `notSelected`, `rejected`); `RUN_PLAN` — `run-plan.json` (its `notRun`); `TRIAGE` —
   `triage-report.md` and the `evidence-*/` investigation packages; `design-report.md` when the visual lane ran;
-  `RUN_COST` — the Markdown table `run-cost.mjs` printed.
+  `RUN_COST` — the Markdown table `run-cost.mjs` printed; `TRACE` — `<WORK>/trace.json`,
+  `trace.mjs`'s output (`unresulted`, `capped`, `unknownRefs`, `acsWithoutRow`); `WRITE_ZONES` —
+  `<WORK>/write-zones.json` (`outside`, `gitScope`, `reason`).
 
 ## Rules (cited, not restated)
 
-- **Reconcile the strategy** first, per `<plugin>/skills/qa-test-strategy/SKILL.md` §Reconcile.
+- **The Reconciliation table is already filled** by `trace.mjs` from the result rows: read it, never recompute it.
+  `TRACE.capped` (a High or Critical risk without a result) caps the verdict below PASS, per
+  `<plugin>/skills/qa-test-strategy/SKILL.md` §Reconcile; each `TRACE.unknownRefs` Ref is named in the verdict. A `TRACE` that is missing, empty, has an `error` or no `capped` is
+  "reconciliation not done: <error or why>", which caps the verdict below PASS and is named.
+- **Write zones.** A non-empty `WRITE_ZONES.outside` makes the verdict BLOCKED, each path listed; a missing or empty
+  `WRITE_ZONES` file, one with no `gitScope`, a `gitScope` of `false`, or a `reason` is written as "write zones not checked:
+  <reason>", never as a clean pass.
 - **Verdict vocabulary and decision rules:** `.claude/skills/qa-test/close-out.md` §5-verdict.2. An in-scope
   Critical or High bug is FAIL; an in-scope Medium is PASS WITH NOTES; an out-of-scope bug never fails the ticket
   (spec B6).
@@ -25,8 +33,8 @@ nothing and re-open no page. Dispatch description: `[vc-test:verdict] <KEY>`.
      screenshot, no bug (spec U25).
   3. **Not tested, and why** also lists every `notRun` row of `RUN_PLAN` with its reason — except `Exploratory`,
      which ran as the free class-3 scenario (U65) — every `SKIP` row of the strategy, every scenario not selected or
-     struck at approval (U61), every scenario or row `BLOCKED` with its reason, and every AC row
-     `BLOCKED — needs a look` or `BLOCKED — needs a global window` (U65, U68) — each with its residual risk.
+     struck at approval (U61), every scenario or row `BLOCKED` with its reason, and every AC in `TRACE.acsWithoutRow` (no result row),
+     every AC row `BLOCKED — needs a look` or `BLOCKED — needs a global window` (U65, U68) — each with its residual risk.
   4. **Suspicions** — each layer-0 suspicion with `confirmed (<id>)`, `refuted (<id>)` or `not checked`, naming
      the `C-n` or `SC-<n>.<m>` row that decided it.
   5. **`## Cost`** at the end — the `RUN_COST` table as given, then **per scenario** one line — S-n · class ·
