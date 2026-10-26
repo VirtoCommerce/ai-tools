@@ -41,6 +41,6 @@ export function readStrategy(md) {
 }
 
 export function loadRegistry(path = join(LIB, "artifacts.json")) {
-  const { artifacts, rows_not_run } = JSON.parse(readFileSync(path, "utf8"));
-  return { artifacts, rows_not_run };
+  const { artifacts, rows_not_run, orchestrator } = JSON.parse(readFileSync(path, "utf8"));
+  return { artifacts, rows_not_run, orchestrator };
 }

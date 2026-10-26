@@ -47,6 +47,8 @@ after that the drift guards, `context:check` and the other gates are what run on
   Also committed, by the owner's decision in the vc-test spec (U10): `plugins/vc-test/lib/knowledge-store.test.mjs`
   — the knowledge-store write router, which refuses a client project's platform write, scrubs text and keeps
   every file inside its store; leaking client text into the public kb is not something a guard would catch.
+  And `plugins/vc-test/lib/write-zones.test.mjs` — the write-zone check (a run's changed files against its artifacts'
+  `writes` globs, in a throwaway git repo); a wrong glob there blocks a clean run or lets a stray write through unseen.
 
 ### Writing the temporary test — derivation, never declaration
 
