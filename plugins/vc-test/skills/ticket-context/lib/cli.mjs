@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 // plugins/vc-test/skills/ticket-context/lib/cli.mjs — the deterministic half of /ticket-context (design §5).
 // Exit: 0 ok · 1 usage · 2 gate or schema failed · 3 could not run. stdout is one JSON object; no secret is printed.
-import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { assertKey, cacheDir, isInside, newRunDir, outputRoot, removeRunDir, sweepStaleRuns } from "./paths.mjs";
 import { LAYERS_GAP, loadLayeredEnv, resolveTestEnv } from "./env.mjs";
 import { resolveProfile } from "./profile.mjs";
-import { HostGoverned, vcRun } from "./bridge.mjs";
+import { HostGoverned, bridgeRun, vcRun } from "./bridge.mjs";
+import { replayRun } from "./replay.mjs";
 import { jiraConnector } from "./connectors/jira.mjs";
 import { azureBoardsConnector } from "./connectors/azure-boards.mjs";
 import { githubConnector, searchKeyFor, searchOrgsFor } from "./connectors/github.mjs";
@@ -48,6 +49,31 @@ const root = outputRoot();
 const ignored = (p) => isIgnored(root, p);
 /** The profile for the steps after prepare (which already stopped on a missing one); null if it is gone since. */
 const profileOrNull = () => { try { return loadProfile({ root }); } catch { return null; } };
+// The host-governed route (U23): the replay transport of this pass, and the pass's end when something was unanswered.
+let HOST = null;
+class NeedsFetch extends Error {}
+const MAX_PASSES = 8;
+function rawDirOf(key) {
+  const r = flag("raw");
+  if (!has("raw")) return null;
+  if (!r || r.startsWith("--")) usage("--raw needs the folder prepare printed as raw_dir");
+  const dir = resolve(r);
+  if (!isInside(cacheDir(key, root), dir)) usage(`--raw must lie inside ${cacheDir(key, root)}`);
+  mkdirSync(dir, { recursive: true });
+  return dir;
+}
+/** Writes this pass's unanswered requests and ends it: exit 5, or exit 3 once the passes stop converging. */
+function needsFetch() {
+  const passFile = join(HOST.dir, "passes.json");
+  let pass = 1;
+  try { pass = JSON.parse(readFileSync(passFile, "utf8")).passes + 1; } catch { /* the first pass */ }
+  if (pass > MAX_PASSES) { out({ status: "no-tracker", gap: gap("ticket", "unreadable", `host fetch did not converge after ${MAX_PASSES} passes`) }); process.exit(3); }
+  const requests = join(HOST.dir, "requests.json");
+  writeJson(requests, HOST.run.pending);
+  writeJson(passFile, { passes: pass });
+  out({ status: "needs-fetch", requests_path: requests, pending: HOST.run.pending.length, pass });
+  process.exit(5);
+}
 const prepPath = () => flag("prepare") ?? usage("--prepare <path to prepare.json> is required");
 
 async function materialize(it, tracker, runDir, secrets) {
@@ -115,18 +141,26 @@ async function prepare() {
     process.exit(3);
   }
   try { assertKey(key, profile.keyFormat); } catch (e) { usage(e.message); }
-  if (profile.governed) { out({ status: "host-governed", detail: "the host-governed route lands in P1d-3; nothing was read" }); process.exit(4); }
+  // U23: a host-governed project is read in passes through the host's MCP servers. Without --raw, say where the passes
+  // keep their answers and which servers answer; nothing is read here.
+  const rawDir = rawDirOf(key);
+  if (profile.governed && !rawDir) {
+    out({ status: "host-governed", raw_dir: join(cacheDir(key, root), "raw"), servers: profile.servers, detail: "read in passes: prepare --raw <raw_dir>, a fetch agent answering each needs-fetch through these servers" });
+    process.exit(4);
+  }
+  const run = rawDir ? (HOST = { dir: rawDir, run: replayRun({ dir: rawDir }) }).run : bridgeRun;
   const testEnv = loadLayeredEnv(root, key, raw);
   // §7, U20: every tracker read is a $VC_RUN launch; this process holds no token.
   const noTracker = (reason, detail) => { out({ status: "no-tracker", gap: gap("ticket", reason, detail) }); process.exit(3); };
   if (!profile.trackerBase) noTracker("no-credential", "project-profile.json has no tracker.baseUrl (Jira) or tracker.azure.apiBase (Azure Boards) — run /project-init --check");
-  if (!vcRun()) noTracker("no-credential", "VC_RUN is not set — run /project-init");
-  const tracker = profile.tracker === "azure" ? azureBoardsConnector({ profile, key, root }) : jiraConnector({ base: profile.trackerBase, key, root });
+  if (!rawDir && !vcRun()) noTracker("no-credential", "VC_RUN is not set — run /project-init");
+  const tracker = profile.tracker === "azure" ? azureBoardsConnector({ profile, key, root, run }) : jiraConnector({ base: profile.trackerBase, key, root, run });
   const gaps = [];
   if (LAYERS_GAP) gaps.push(gap("env", "not-available-in-install", LAYERS_GAP));
   // The first reads answer "can the tracker be read at all": a refusal there is `no-tracker`, one JSON object like a
   // missing VC_RUN, never a stack line. HostGoverned is no GapError and keeps its own exit 4 (the top-level catch).
-  const firstRead = (p) => p.catch((e) => { if (e instanceof GapError) noTracker(e.reason, e.detail); throw e; });
+  // In a host pass an unanswered first read is not a refusal: the pass ends and asks for it (NeedsFetch).
+  const firstRead = (p) => p.catch((e) => { if (HOST?.run.pending.length) throw new NeedsFetch(); if (e instanceof GapError) noTracker(e.reason, e.detail); throw e; });
 
   const allFields = await firstRead(tracker.fields());
   const acFields = resolveFieldsByName(allFields, profile.fieldMap.acceptanceCriteria, AC_FIELD_NAME_RE);
@@ -177,7 +211,7 @@ async function prepare() {
   const orgs = profile.orgs;
   // §7, U20: every GitHub read is a $VC_RUN `gh api` GET. The platform upstream is always GitHub, so GitHub PRs a
   // ticket names are read on an Azure Repos project too; there the client's own PRs come from the tracker (below).
-  const gh = githubConnector();
+  const gh = githubConnector({ run });
   const searchKey = searchKeyFor(profile, key);
   const searchOrgs = searchOrgsFor(profile);
   if (!searchKey && searchOrgs.length) gaps.push(gap("change.search", "not-found", "the profile names no tracker.crossLinkToken, so GitHub was not searched for this work item"));
@@ -188,7 +222,7 @@ async function prepare() {
   }
   // Azure Repos (§7): the client's PRs are the work item's own pull-request links, or Azure PR URLs the ticket names
   // (those leave the inventory: a PR is change surface, not a page to fetch). Rung 1 — they are explicitly linked.
-  const az = profile.codeHost === "azure-repos" ? azureReposConnector({ key, root }) : null;
+  const az = profile.codeHost === "azure-repos" ? azureReposConnector({ key, root, run }) : null;
   if (az) {
     // Keyed by PR id: a link names the project and repository by id, a URL by name, and get-pr reads by id alone.
     const azRefs = new Map(linkedPrs.refs.map((r) => [r.number, r]));
@@ -220,7 +254,7 @@ async function prepare() {
   // One cached bundle per env: its deployment facts are that stand's, and two envs must not evict each other. A blind
   // bundle has its own name (bundleFile), so a benchmark never evicts, or is served as, the normal one.
   const cachedFile = join(cacheDir(key, root), bundleFile(testEnv, benchmark));
-  if (!has("fresh") && readCached(cachedFile, fk)) { out({ status: "cached", bundle_path: cachedFile }); return; }
+  if (!has("fresh") && !HOST?.run.pending.length && readCached(cachedFile, fk)) { out({ status: "cached", bundle_path: cachedFile }); return; }
 
   const { dir: runDir, inProject } = newRunDir(key, { root, ignored });
   try {
@@ -285,7 +319,9 @@ async function prepare() {
       } catch (e) { prs.push({ ...base, gap: asGap(`pr:${p.ref}`, e) }); }
     }
 
-    const prepared = { schema: "ticket-context-prepare/1", ticket: key, env: testEnv, tracker: profile.tracker, project_type: profile.projectType, domain, run_dir: runDir, run_dir_in_project: inProject,
+    if (HOST?.run.pending.length) throw new NeedsFetch(); // the run folder goes in the catch below
+    if (HOST) rmSync(join(HOST.dir, "passes.json"), { force: true });
+    const prepared = { schema: "ticket-context-prepare/1", ticket: key, env: testEnv, tracker: profile.tracker, ...(HOST ? { fetched_via: "host" } : {}), project_type: profile.projectType, domain, run_dir: runDir, run_dir_in_project: inProject,
       fetched_at: new Date().toISOString(), ticket_updated: issue.fields.updated, freshness_key: fk, fields: tf.fields, ticket_json: ticketJson,
       ...(benchmark ? { benchmark } : {}), ac_fields: acFields, link_fields: linkFields, epic, siblings, inventory: inv.items, prs, rung: ladder.rung, ladder: ladder.ladder, gaps };
     const prepPathOut = join(runDir, "prepare.json");
@@ -463,6 +499,7 @@ function redeploy() {
 const commands = { prepare, attach, save, "merge-change": mergeChangeCmd, deploy, known, compose: composeCmd, check, finish, abort, redeploy };
 if (!commands[cmd]) usage(cmd ? `unknown command "${cmd}"` : "no command");
 try { await commands[cmd](); } catch (e) {
+  if (e instanceof NeedsFetch || (HOST?.run.pending.length && !(e instanceof HostGoverned))) needsFetch();
   if (e instanceof HostGoverned) { out({ status: "host-governed", detail: "the bridge reports a host-governed project (P1d-3); nothing more was read" }); process.exit(4); }
   console.error(`✗ ticket-context ${cmd} could not run: ${String(e?.message ?? e).slice(0, 300)}`);
   process.exit(3);

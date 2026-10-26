@@ -37,5 +37,7 @@ export function resolveProfile(profile) {
     fieldMap: obj(t.fieldMap),
     azure: { roleStates: obj(az.roleStates), roleStatesByType: obj(az.roleStatesByType) }, // org and project: the bridge pins them
     governed: !!profile.governance?.host || profile.governance?.secrets === "host", // the bridge's own refusal (vc-init bridge/run.mjs hostRefusal)
+    // The host's MCP servers per role (U23): the host-governed fetch reads through these, and only these.
+    servers: { tracker: str(profile.governance?.servers?.tracker), codeHost: str(profile.governance?.servers?.codeHost), github: str(profile.governance?.servers?.github) },
   };
 }
