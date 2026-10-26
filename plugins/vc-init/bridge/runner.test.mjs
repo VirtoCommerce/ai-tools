@@ -10,7 +10,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { checkArgv, toolInGroup } from "./allowlist.mjs";
-import { buildInnerEnv } from "./run.mjs";
+import { buildInnerEnv, prepareRunner } from "./run.mjs";
 import { checkRunnerFiles, checkRunnerShape, fileFilter, findPlaywright, runnerCommand, runnerEnvAllowed } from "./runner.mjs";
 import { runnerTask } from "../skills/project-init/lib/passwords.mjs";
 
@@ -237,4 +237,42 @@ test("pr review 5: a relative file argument resolves from the caller's cwd, not 
   const r = bridge(["runner", "node", "tickets/c.mjs"], { cwd: join(dir, "reports"), env: { TEST_ENV: "vcst" } });
   assert.equal(r.status, 0, r.stderr);
   assert.match(r.stdout, /right/);
+});
+
+// ── vc-init 0.4.1: an allowlisted vc-test script (vc-test P1c, F6) ───────────────────────────────
+
+test("plugin mode: only an allowlisted vc-test script name, nothing path- or file-shaped", () => {
+  ok(checkRunnerShape(["plugin", "deployed"]));
+  ok(checkRunnerShape(["plugin", "deployed", "--key", "ABC-1"]));
+  for (const bad of [["plugin"], ["plugin", "other"], ["plugin", "../x"], ["plugin", "deployed.mjs"], ["plugin", "lib/deployed"], ["plugin", "-e"]]) no(checkRunnerShape(bad));
+});
+
+test("plugin mode: runs the trusted vc-test install's lib/<name>.mjs, with the env check and no scriptRoots", () => {
+  const dir = project({ test: { environments: { vcst: {} } } }); // no scriptRoots: plugin files need none
+  const asked = [];
+  const resolvePlugin = (name, rel, opts) => (asked.push([name, rel, opts?.trustedOnly]), `/trusted/vc-test/${rel}`);
+  const prev = process.env.TEST_ENV;
+  process.env.TEST_ENV = "vcst";
+  try {
+    const r = prepareRunner(["plugin", "deployed", "--key", "ABC-1"], null, { path: join(dir, "project-profile.json"), profile: { test: { environments: { vcst: {} } } } }, { trustedOnly: true, resolvePlugin });
+    assert.equal(r.code, undefined, r.message);
+    assert.deepEqual(r.cmd, { command: process.execPath, args: ["/trusted/vc-test/lib/deployed.mjs", "--key", "ABC-1"] });
+    assert.deepEqual(asked, [["vc-test", "lib/deployed.mjs", true]]);
+    const missing = prepareRunner(["plugin", "deployed"], null, { path: join(dir, "project-profile.json"), profile: { test: { environments: { vcst: {} } } } }, { resolvePlugin: () => null });
+    assert.equal(missing.code, 69);
+    assert.match(missing.message, /vc-test/);
+    const prod = (process.env.TEST_ENV = "prod", prepareRunner(["plugin", "deployed"], null, { path: join(dir, "project-profile.json"), profile: { test: { environments: { vcst: {} } } } }, { resolvePlugin }));
+    assert.equal(prod.code, 64);
+  } finally {
+    if (prev === undefined) delete process.env.TEST_ENV; else process.env.TEST_ENV = prev;
+  }
+});
+
+test("plugin mode, outer: an unlisted env is refused before vc-secrets starts", () => {
+  const dir = project({ decl: { tasks: { [runnerTask("prod")]: { command: "node" } } } });
+  const fake = join(dir, "fake-vc-secrets.mjs");
+  writeFileSync(fake, "process.stdout.write('vc-secrets started')");
+  const r = bridge(["runner", "plugin", "deployed"], { cwd: dir, env: { TEST_ENV: "prod", VC_SECRETS: fake } });
+  assert.equal(r.status, 64, r.stderr);
+  assert.doesNotMatch(r.stdout, /vc-secrets started/);
 });

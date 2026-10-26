@@ -395,7 +395,7 @@ const USAGE = `usage: node "$VC_RUN" <tool> [args…]
   deliver …              vc-fix vc-self-check/deliver.mjs
   onboard <script> …     vc-init /project-init scripts (verify-access, discover-repos, discover-tracker, derive-context)
   playwright <lane>      a Playwright MCP lane with the current env's passwords from vc-secrets (.mcp.json runs this)
-  runner playwright <spec…> | runner node <script> [args…]
+  runner playwright <spec…> | runner node <script> [args…] | runner plugin <name> [args…]
                          vc-test's checks with the env's test-user passwords, never a token (profile test block)
   --where                print what the bridge resolves (plugins, vc-secrets, the project's declared tasks)`;
 
@@ -494,13 +494,21 @@ async function playwrightLane(args) {
  * { code, message } to refuse, or { cmd, projectRoot, env } to run. The project root is the profile's folder;
  * file arguments resolve from the cwd.
  */
-export function prepareRunner(args, decls, found, { trustedOnly = false } = {}) {
+export function prepareRunner(args, decls, found, { trustedOnly = false, resolvePlugin = resolvePluginFile } = {}) {
   if (!found) return { code: EX_REFUSED, message: "refused — no project-profile.json — run /project-init, then /vc-test:init" };
   const projectRoot = dirname(found.path);
   const testBlock = found.profile.test;
   const env = currentEnv(decls ? decls.root : projectRoot, passwordEnvs(decls));
   const envOk = runnerEnvAllowed(testBlock, env);
   if (!envOk.ok) return { code: EX_REFUSED, message: `refused — ${envOk.reason}` };
+  // An allowlisted vc-test script (RUNNER_PLUGIN_SCRIPTS): the file comes from the vc-test install — the trusted
+  // one on the inner side — never from the caller, so it needs no scriptRoots.
+  if (args[0] === "plugin") {
+    const rel = `lib/${args[1]}.mjs`;
+    const file = resolvePlugin("vc-test", rel, { trustedOnly });
+    if (!file) return { code: EX_UNAVAILABLE, message: `vc-test is not installed (looked for ${rel}) — /plugin install vc-test@ai-tools` };
+    return { cmd: { command: process.execPath, args: [file, ...args.slice(2)] }, projectRoot, env };
+  }
   // File arguments are the caller's: relative to its cwd, not to the project root.
   const files = checkRunnerFiles(args, { projectRoot, scriptRoots: testBlock?.scriptRoots, base: process.cwd() });
   if (!files.ok) return { code: EX_REFUSED, message: `refused — ${files.reason}` };

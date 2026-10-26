@@ -1,7 +1,7 @@
 {
   "name": "ai-tools",
   "description": "Virto Commerce internal QA tooling, published as a Claude Code marketplace for VC customers running the VC platform.",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "owner": {
     "name": "Virto Commerce",
     "email": "support@virtocommerce.com"
@@ -31,6 +31,11 @@
       "name": "vc-frontend",
       "source": "./plugins/vc-frontend",
       "description": "Skills for the Virto Commerce storefront (vc-frontend): keep a theme fork up to date with upstream, and add a storefront plugin to a backend module. Can make mistakes: review every change before merging."
+    },
+    {
+      "name": "vc-test",
+      "source": "./plugins/vc-test",
+      "description": "PREVIEW — one testing flow per ticket: scenarios that hunt significant bugs, approved at one human point, one agent each, costed per step. /vc-test:init for its own settings. Depends on vc-init and vc-fix. Its QA command needs an ai-tools checkout until P1d."
     }
   ]
 }

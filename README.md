@@ -16,6 +16,10 @@ This repo hosts two things:
    - **`vc-perf`** ([`plugins/vc-perf/`](plugins/vc-perf/)) — the three-layer performance loop (BenchmarkDotNet
      A/B → k6 load → dotnet-trace attribution → perf verdict → optimization PRs). Depends on `vc-init` + `vc-fix`;
      advisory only, never a CI gate.
+   - **[`vc-test`](plugins/vc-test/)** (preview): one testing flow per ticket. It scores scenarios that hunt
+     significant bugs, you approve them at one human point, and each gets its own agent; the run is costed per step.
+     `/vc-test:init` sets which environments a run may write to. Depends on `vc-init` + `vc-fix`. Its QA command
+     needs an ai-tools checkout until its skills move into the plugin.
    - **[`vc-secrets`](plugins/vc-secrets/)** — a launcher that resolves an MCP server's secrets per launch
      from the OS credential store or Azure Key Vault, so no client config holds a token. `vc-init` depends on it.
    - **[`vc-frontend`](plugins/vc-frontend/)** — for the storefront theme: brings upstream vc-frontend into a
@@ -231,6 +235,7 @@ ai-tools/
 │   ├── vc-fix/           # self-contained bug-lifecycle plugin (own agents/skills/commands + own copies
 │   │                     #   of knowledge/, .claude/rules/, scripts/, config.js)
 │   ├── vc-perf/          # performance loop (depends on vc-fix)
+│   ├── vc-test/          # testing flow per ticket (preview; depends on vc-init + vc-fix)
 │   ├── vc-secrets/       # secrets launcher
 │   └── vc-frontend/      # theme-fork upstream merges, storefront plugins
 ├── .claude/              # PROJECT-SCOPED vc-qa surface (auto-discovered — no plugin manifest)
