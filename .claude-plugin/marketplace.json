@@ -15,7 +15,7 @@
     {
       "name": "vc-init",
       "source": "./plugins/vc-init",
-      "description": "Onboarding for the Virto Commerce QA plugins — /project-init, the only writer of project-profile.json. Every token it and its dependents need (GitHub, Azure DevOps, Jira) is kept in vc-secrets and reaches a process only through the $VC_RUN bridge, so none sits in a project file. Depends on vc-secrets; vc-fix and vc-perf depend on it."
+      "description": "Onboarding for the Virto Commerce QA plugins — /project-init, the only writer of project-profile.json. Every token it and its dependents need (GitHub, Azure DevOps, Jira) is kept in vc-secrets and reaches a process only through the $VC_RUN bridge, so none sits in a project file. Depends on vc-secrets; Installs on its own; every Virto plugin that reads the profile depends on it."
     },
     {
       "name": "vc-perf",

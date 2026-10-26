@@ -236,7 +236,7 @@ function main() {
   }
   const root = outputRoot();
   const { raw: profile, error, path } = readProjectProfile(root);
-  // A guest profile written before 0.4.0 has no websiteAuth: let the host's own slots decide (hostMain
+  // A guest profile written before 0.5.0 has no websiteAuth: let the host's own slots decide (hostMain
   // refuses with the manual-operator fix when it declares none).
   if (profile?.governance?.host && ["host-secrets", "", undefined].includes(profile.governance.websiteAuth)) return hostMain(root, profile, args);
   standDownIfHostGoverned(root, "add-user skipped: test users sign in by hand here (governance.websiteAuth is not host-secrets)", { json: true });

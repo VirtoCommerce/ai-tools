@@ -1,6 +1,6 @@
 ---
 name: project-init
-description: "Initialize / onboard the Virto Commerce plugins (vc-fix, vc-perf, …) onto a deployment. Checks that vc-secrets is installed, installs deps, then asks the operator only what genuinely shapes the config — the environment NAME, the tracker (Jira / Azure Boards), the code host (GitHub / Azure Repos), and an auth preference per axis (PAT recommended, else browser/CLI login). Every PAT is stored in vc-secrets by the operator in a terminal — never typed in chat, never written to a file — and reaches a process only through the $VC_RUN bridge. Everything else — native-platform or CLIENT project, the client org, the contribution mode, the fork account — is DERIVED from the token + the filled env + a live module/repo scan. Writes project-profile.json + .env.<env> (per-env URLs) + .env.local (the tracker / code-host connection, the same for every env, + test-user passwords) + .mcp.json + the vc-secrets declarations + the always-loaded rule that browser work goes only through the Playwright MCP lanes (.claude/rules/vc-browser.md), and verifies access. That one profile is what every installed plugin reads — vc-fix routes a bug to the RIGHT repo and tracker with it, vc-perf finds the stand and the code with it. Use when standing the plugins up on a new machine or for a new customer. On a host-governed project (a client governance plugin owns MCP servers and secrets) it checks that the host's own setup has run (and stops with its command when it has not), reads the servers and test-user password slots that setup left, and skips every token / MCP step of ours. Day-2 modes skip the interview: `--add-env` adds another environment (URLs + per-env passwords) to an already-onboarded project; `--add-user` adds another storefront user or admin (login in `.env.<env>`, password in vc-secrets or `.env.local`); `--check` reconciles an existing profile to the current schema, moves any plaintext token into vc-secrets, then verifies."
+description: "Initialize / onboard the Virto Commerce plugins onto a deployment. Checks that vc-secrets is installed, installs deps, then asks the operator only what genuinely shapes the config — the environment NAME, the tracker (Jira / Azure Boards), the code host (GitHub / Azure Repos), and an auth preference per axis (PAT recommended, else browser/CLI login). Every PAT is stored in vc-secrets by the operator in a terminal — never typed in chat, never written to a file — and reaches a process only through the $VC_RUN bridge. Everything else — native-platform or CLIENT project, the client org, the contribution mode, the fork account — is DERIVED from the token + the filled env + a live module/repo scan. Writes project-profile.json + .env.<env> (per-env URLs) + .env.local (the tracker / code-host connection, the same for every env, + test-user passwords) + .mcp.json + the vc-secrets declarations + the always-loaded rule that browser work goes only through the Playwright MCP lanes (.claude/rules/vc-browser.md), and verifies access. That one profile is what every installed plugin reads — the tracker, the repositories and the stands come from it. Use when standing the plugins up on a new machine or for a new customer. On a host-governed project (a client governance plugin owns MCP servers and secrets) it checks that the host's own setup has run (and stops with its command when it has not), reads the servers and test-user password slots that setup left, and skips every token / MCP step of ours. Day-2 modes skip the interview: `--add-env` adds another environment (URLs + per-env passwords) to an already-onboarded project; `--add-user` adds another storefront user or admin (login in `.env.<env>`, password in vc-secrets or `.env.local`); `--check` reconciles an existing profile to the current schema, moves any plaintext token into vc-secrets, then verifies."
 ---
 
 # /project-init — deploy & wire this QA plugin for a customer
@@ -20,7 +20,7 @@ operator can do now, built from the plugins actually installed.
 > module/repo scan. Ask again only on a *genuine* ambiguity.
 
 > **Additive, never destructive.** This skill only *adds* a profile + config; nothing existing is
-> rewritten. It is also **required**: vc-fix and vc-perf STOP with "run /project-init" when
+> rewritten. It is also **required**: every plugin that reads the profile STOPs with "run /project-init" when
 > `project-profile.json` is absent (VCST-6402) — there are no silent native-platform defaults.
 
 > **No token in chat, no token in a file.** A PAT (GitHub, Azure DevOps, Jira API token) is stored by
@@ -39,7 +39,7 @@ operator can do now, built from the plugins actually installed.
 
 | Artifact | Purpose |
 |----------|---------|
-| `project-profile.json` (gitignored) | the deployment profile (`schemaVersion` 3) — read by vc-fix (`config.js`, `skills/qa-fix-routing/repo-router.ts`, `skills/qa-fix-routing/trackers/*`) and vc-perf. vc-init is its ONLY writer: other plugins persist into it through `profile-set.mjs` |
+| `project-profile.json` (gitignored) | the deployment profile (`schemaVersion` 3) — read by every installed plugin that needs the deployment's tracker, repositories or stands. vc-init is its ONLY writer: other plugins persist into it through `profile-set.mjs` |
 | `.env.<env>` + `.env.local` | Both scaffolded as **commented templates** the operator fills in — no values are asked in the interview. `scaffold-env.mjs` writes `.env.<env>` (per-env URLs/identifiers) and, ONCE, the project-level keys its `CATALOG` marks `scope: "project"` — the tracker / code-host connection (`JIRA_BASE_URL`/`JIRA_PROJECT_KEY`/`JIRA_EMAIL`, `ADO_ORG`/`ADO_PROJECT`, `CLIENT_REPO_ORG`), the same for every env — into `.env.local`; `scaffold-secrets.mjs` adds the test-user passwords (`_<ENV>`-suffixed) to `.env.local`. No token goes into either. |
 | `.claude/vc-secrets.local.json` (gitignored) | the vc-secrets declarations (`write-secrets-decl.mjs`): one `local` secret per PAT axis (`github-pat` / `ado-pat` / `jira-token`), the `vc-init-*` tasks the `$VC_RUN` bridge dispatches to, and the GitHub MCP server. Reviewed and approved by the operator with `vc-secrets trust` |
 | `.mcp.json` + `.claude/settings.local.json` | MCP servers enabled for the chosen tracker/VCS (via `gen-mcp.mjs`); `settings.local.json` `env` carries `VC_RUN` (a path, not a secret) and no token. The Playwright servers are configured entirely via CLI flags (`--browser` / `--isolated` / `--viewport-size` / `--output-dir`). Only `playwright-chrome` is enabled by default; `playwright-firefox` / `playwright-edge` stay defined for opt-in cross-browser runs. |
@@ -347,7 +347,7 @@ proceeding.
 
 ## 1. Install dependencies
 
-Install the npm dependencies of EVERY installed plugin of this marketplace (found at run time — vc-init, vc-fix, vc-perf, any later one) + the Playwright browsers:
+Install the npm dependencies of EVERY installed plugin of this marketplace (found at run time — vc-init and whichever others are installed) + the Playwright browsers:
 
 ```bash
 node "$CLAUDE_PLUGIN_ROOT/skills/project-init/install-deps.mjs"   # each plugin's own install folder
@@ -356,9 +356,9 @@ npx playwright install chromium firefox       # browser binaries (global cache �
 (Edge uses the system `msedge` channel; WebKit is not used on Windows. On a host-governed project skip
 `playwright install`: the browser servers are the host's.) This step
 must run before any generator/verify script. **Never a bare `npm install` in the project** — the
-scripts import `dotenv` (vc-fix also `@playwright/mcp`), and Node resolves a bare specifier from the
+scripts import `dotenv` (some also `@playwright/mcp`), and Node resolves a bare specifier from the
 *script's own* directory, i.e. each plugin's install folder. Claude Code installs no npm dependencies,
-and vc-fix's tracker / code-host helpers (`ado.mjs`, `jira.mjs`) fail with "Cannot find package
+and a plugin's tracker / code-host helpers fail with "Cannot find package
 'dotenv'" without them. A plugin update lands in a new version folder WITHOUT `node_modules` — which
 is why `--check` runs this again.
 
@@ -850,7 +850,7 @@ node "$CLAUDE_PLUGIN_ROOT/skills/project-init/gen-profile.mjs" \
 #   ... --tracker azure --azure-org acme --azure-project Web --client-vcs azure-repos --github-auth pat --ado-auth pat ...
 ```
 The `--github-auth` / `--ado-auth` / `--jira-auth` answers (§2d) land in `auth.*` — an axis that
-does not apply is written as `""`; vc-fix's prompts and the bridge read them. If step 5 derived
+does not apply is written as `""`; the plugins' prompts and the bridge read them. If step 5 derived
 `none` for an axis the operator chose, that is step 5's exception line — the profile still records
 the CHOICE. `--repos-json` supplies `projectType`, `vcs.clientOrg`, and the client/platform repo
 lists in one shot. **`--tracker-json .local-env/tracker.json`** (from step 4b) bakes the
@@ -868,11 +868,10 @@ If step 4 surfaced a storefront/theme repo the scan couldn't classify, hand-edit
 `project-profile.json` `repos.client` to add it (or fix any miscategorised entry).
 
 **No plugin path is baked into the profile — it is resolved at runtime.** gen-profile does
-NOT write `paths.pluginRoot` (a versioned cache dir `…/vc-fix/<version>` would freeze to a
+NOT write `paths.pluginRoot` (a versioned cache dir `…/<plugin>/<version>` would freeze to a
 stale/deleted version on the next upgrade). Instead every command's `node "$pluginRoot/skills/…"`
 resolves `$pluginRoot` = the ACTIVE (enabled) install at call time via `claude plugin list --json`
-(fallback: a highest-semver scan of `~/.claude/plugins/cache/*/vc-fix/`) — vc-fix's
-`knowledge/execution/plugin-root.md`. Result:
+(fallback: a highest-semver scan of `~/.claude/plugins/cache/*/<plugin>/`). Result:
 **no re-run of `/project-init` after an upgrade**, no version-stamped path, no stale link.
 
 ## 7. Generate the browser login secrets, then `.mcp.json`, then the browser rule
@@ -960,9 +959,7 @@ Prints a bordered readiness table + a **READY / NOT READY** verdict for the proj
 Run it THROUGH THE BRIDGE as above — a direct run sees only the session logins, so every PAT axis
 would read as missing (it says so in a `Launched through $VC_RUN` WARN row).
 
-Checks (PASS / FAIL / WARN / SKIP): deployment profile · **plugin root** (`claude plugin list --json`
-resolves the active vc-init AND vc-fix installs — `skills/project-init/verify-access.mjs` and
-`skills/qa-fix-routing/ado.mjs` present; WARN if the `claude` CLI isn't on PATH) · **`$VC_RUN`
+Checks (PASS / FAIL / WARN / SKIP): deployment profile · **`$VC_RUN`
 bridge** (the shim §0d installed) · **vc-secrets (tokens)** (every declared token stored and the
 declarations trusted — read from `vc-secrets doctor`'s lines; FAIL names the `trust` / `set <name>`
 commands still to run) · core env vars · storefront
@@ -1098,7 +1095,7 @@ node "<vcFix>/hooks/session-telemetry.mjs" complete --skill "project-init"
 ```
 
 (`<vcFix>` is the `vcFix` path `node "$VC_RUN" --where` prints — the collector belongs to vc-fix,
-not to this plugin.)
+not to this plugin. Without vc-fix installed there is no collector and the step is skipped.)
 
 It tells the vc-fix self-diagnostics collector this run has finished, so its one-line
 clean/health status prints **exactly once** (right after this step) instead of on every

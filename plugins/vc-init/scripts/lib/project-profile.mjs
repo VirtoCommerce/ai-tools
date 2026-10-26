@@ -11,6 +11,7 @@
  *                  fixes are PR'd / platform bugs are filed as issues
  *   - repos:       the discovered client/platform repo map
  *   - perf:        vc-perf's block (written through profile-set.mjs by /perf-init)
+ *   - test:        vc-test's block (written through profile-set.mjs by /vc-test:init)
  *
  * vc-init is the ONLY writer (VCST-6402): `/project-init` (gen-profile.mjs, reconcile-profile.mjs)
  * and profile-set.mjs, which /qa-bug and /perf-init call instead of editing the file. vc-fix and
@@ -33,6 +34,7 @@
  *   through the $VC_RUN bridge; a session value (`gh-cli`, `az-login`, `oauth`) ⇒ the tool's own
  *   login. "" ⇒ the axis does not apply to this deployment (e.g. `ado` on Jira + GitHub).
  * @property {Record<string, any>} perf  vc-perf's block — an open map, kept wholesale by reconcile
+ * @property {Record<string, any>} test  vc-test's block — an open map, kept wholesale by reconcile
  * @property {{host:string|null, secrets:"host"|"vc-secrets", servers:Record<string,string|string[]>, stand:{writable:boolean}, websiteAuth:""|"host-secrets"|"manual-operator", envs:Record<string,string>, codeAccess:""|"none"|"read"|"write"}} governance
  *   a host-governed project (schema 3): see the PROFILE_DEFAULTS comment
  * @property {"platform"|"client"} projectType
@@ -273,6 +275,11 @@ export const PROFILE_DEFAULTS = {
   // OPEN MAP here: its keys are vc-perf's to define, so reconcile keeps it wholesale and never
   // prunes it, and `/perf-init` writes it through profile-set.mjs `--merge perf=<json>`.
   perf: {},
+
+  // test — vc-test's block: `environments` (env → { writable }), `scriptRoots` (project-relative
+  // folders the $VC_RUN runner may execute files from) and `knowledgeStore`. An OPEN MAP, like
+  // `perf`: `/vc-test:init` writes it through profile-set.mjs `--merge test=<json>`.
+  test: {},
 
   // governance — a HOST-GOVERNED project (VCST-6402 step 8): the client runs its own governance
   // plugin (rules, approved MCP servers, its own secret wrapper) and our plugins are a guest.

@@ -182,6 +182,7 @@ function main() {
     // rewrites the profile from the defaults, and neither may silently disappear with it.
     base = { ...PROFILE_DEFAULTS };
     if (existing.perf && typeof existing.perf === "object") base.perf = existing.perf;
+    if (existing.test && typeof existing.test === "object") base.test = existing.test; // vc-test's, like perf
     if (existing.governance && typeof existing.governance === "object") base = deepMerge(base, { governance: existing.governance });
   }
   if (args.governance !== undefined && args.governance !== "none" && !resolveHostId(args.governance)) {
@@ -354,7 +355,7 @@ function main() {
   else if (effectiveType === "platform") set("buildVerify.source", "vc-deploy-dev");
 
   let profile = deepMerge(base, patch);
-  // A profile written before 0.4.0 recorded the host by its plugin NAME: read it as the plugin id it
+  // A profile written before 0.5.0 recorded the host by its plugin NAME: read it as the plugin id it
   // means (the one installed plugin with that name), so a re-run upgrades it in place.
   const current = profile.governance;
   const currentId = current?.host ? resolveHostId(current.host) || current.host : null;

@@ -41,7 +41,7 @@ import { resolve } from "path";
 import { loadLayeredEnv } from "../../scripts/lib/load-layered-env.mjs";
 import { resolveTestEnv } from "../../scripts/lib/resolve-test-env.js";
 import { loadProjectProfile } from "../../scripts/lib/project-profile.mjs";
-import { outputRoot, pluginRoot } from "./lib/paths.mjs";
+import { outputRoot } from "./lib/paths.mjs";
 // The SAME distinctive-prefix matcher the telemetry redactor uses. Shared on purpose: this
 // audit used to keep its own shorter copy, so a token type redact.mjs already knew about
 // (glpat-/xoxb-/sk_live_/AKIA/JWT) passed the hygiene check clean.
@@ -51,7 +51,7 @@ import { SECRET_PREFIX_RE } from "../../scripts/lib/redact.mjs";
 // so a WARN the operator could plainly see — e.g. "no field contract scanned for Bug" — was
 // invisible to /vc-self-check and the run self-diagnosed "no plugin issues detected".
 import { emitObservations, httpStatusFrom, classForStatus } from "./lib/diag-obs.mjs";
-import { resolvePluginFile, resolvePluginRoot } from "../../bridge/resolve-plugin.mjs";
+import { resolvePluginFile } from "../../bridge/resolve-plugin.mjs";
 import { defaultShimPath } from "../../scripts/install-bridge.mjs";
 import { parseDoctor, runDoctor, secretsVerdict } from "./lib/vc-secrets-doctor.mjs";
 import { ROLES, hostInstallPath, hostLine, hostServerKeys, isHostGoverned } from "./lib/governance.mjs";
@@ -269,21 +269,6 @@ export function findSettingsSecrets(settingsJsonText) {
  * VCST-6402 settings.local.json WAS the value's home and a credential there graded PASS — an upgraded
  * project still carries one, and the row now says how to move it.
  */
-/** The ids vc-fix can be installed under, in PRIORITY order: `vc-tools` is the marketplace's name
- *  before the 2026-09-30 rename, so a pre-rename install still resolves, but never ahead of a new one. */
-export const VC_FIX_PLUGIN_IDS = ["vc-fix@ai-tools", "vc-fix@vc-tools"];
-/** vc-init — the onboarding plugin since VCST-6402; it was born after the rename, so one id. */
-export const VC_INIT_PLUGIN_IDS = ["vc-init@ai-tools"];
-
-/** Pick the vc-fix install from `claude plugin list --json`: the highest-priority id with an ENABLED
- *  entry, else the highest-priority id with any entry. `enabledIds` lists every id that is enabled —
- *  more than one means two copies' hooks.json each start a telemetry collector (CLAUDE.md, VCST-5582 H). */
-export function pickPluginInstall(list, ids = VC_FIX_PLUGIN_IDS) {
-  const find = (id, enabledOnly) => list.find((x) => x.id === id && (!enabledOnly || x.enabled));
-  const first = (enabledOnly) => ids.map((id) => find(id, enabledOnly)).find(Boolean);
-  return { entry: first(true) || first(false) || null, enabledIds: ids.filter((id) => find(id, true)) };
-}
-
 export function gradeSecretHygiene({ kind, file, hits, weak = [], unparsable, inRepo, ignored, tracked }) {
   const exposed = inRepo && (tracked || !ignored);
   const why = tracked ? "tracked by git" : "not gitignored";
@@ -459,7 +444,7 @@ function hostPersonRows(g, installPath, root) {
   const drift = roleDrift(g, state);
   if (drift.length) add("Profile vs servers on", "WARN", `${drift.join("; ")} — re-run /project-init to record the servers that are on`);
 
-  // A guest profile written before 0.4.0 has no websiteAuth: the host's own slots decide.
+  // A guest profile written before 0.5.0 has no websiteAuth: the host's own slots decide.
   if ((g.websiteAuth || state.websiteAuth) !== "host-secrets") {
     add("Website test users", "SKIP", "the operator signs in by hand (governance.websiteAuth manual-operator)");
     return;
@@ -560,49 +545,6 @@ async function main() {
     const tracked = inRepo && tryCmd(`git ls-files --error-unmatch -- "${rel}"`, { cwd: projectRoot });
     const { status, detail } = gradeSecretHygiene({ kind, file: rel, hits, weak, unparsable, inRepo, ignored, tracked });
     add(label, status, detail);
-  }
-
-  // 1b. The ACTIVE plugin installs resolve at runtime. Since VCST-6402 onboarding is its own plugin
-  //     (vc-init) and the bug lifecycle that READS this profile is vc-fix — both must be installed,
-  //     and each command resolves its own launch path from `claude plugin list --json` (by the ids
-  //     below, knowledge/execution/plugin-root.md), NOT a baked profile field. Confirm that resolver
-  //     finds both, and fall back to the on-disk resolver (bridge/resolve-plugin.mjs: a checkout
-  //     sibling, the install registry, the cache) when the `claude` CLI isn't on PATH in the shell.
-  let cliList = null;
-  try {
-    cliList = JSON.parse(execSync("claude plugin list --json", { stdio: ["ignore", "pipe", "ignore"], timeout: 20000 }).toString());
-  } catch {
-    /* claude CLI unavailable / not on PATH — fall back to the on-disk resolver below */
-  }
-  const enabledIds = [];
-  const roots = {};
-  for (const [name, ids, probe] of [
-    ["vc-init", VC_INIT_PLUGIN_IDS, ["skills", "project-init", "verify-access.mjs"]],
-    ["vc-fix", VC_FIX_PLUGIN_IDS, ["skills", "qa-fix-routing", "ado.mjs"]],
-  ]) {
-    const picked = cliList ? pickPluginInstall(cliList, ids) : { entry: null, enabledIds: [] };
-    if (picked.enabledIds.length > 1) enabledIds.push(picked.enabledIds);
-    const active = picked.entry?.installPath || "";
-    const onDisk = name === "vc-init" ? pluginRoot() : (resolvePluginRoot("vc-fix") || "");
-    if (active && existsSync(resolve(active, ...probe))) roots[name] = { root: active, how: "cli" };
-    else if (!active && onDisk && existsSync(resolve(onDisk, ...probe))) roots[name] = { root: onDisk, how: "disk" };
-    else roots[name] = { root: "", how: "" };
-  }
-  const missing = Object.entries(roots).filter(([, r]) => !r.root).map(([n]) => n);
-  if (missing.length) {
-    add("Plugin root (claude plugin list)", "FAIL",
-      `could not resolve the active ${missing.join(" + ")} install — install it with /plugin install ${missing.map((n) => `${n}@ai-tools`).join(" ")} (vc-fix pulls in vc-init and vc-secrets); see knowledge/execution/plugin-root.md`);
-  } else if (Object.values(roots).every((r) => r.how === "cli")) {
-    add("Plugin root (claude plugin list)", "PASS", `vc-init and vc-fix both resolve (${roots["vc-init"].root} · ${roots["vc-fix"].root})`);
-  } else {
-    const why = cliList
-      ? "`claude plugin list` ran but found no enabled install for " + Object.entries(roots).filter(([, r]) => r.how === "disk").map(([n]) => n).join(" + ") + " (running from a checkout, or the plugin is disabled)"
-      : "`claude plugin list` unavailable in this shell — commands must use the cache-dir fallback (plugin-root.md)";
-    add("Plugin root (claude plugin list)", "WARN", `${why}. Found on disk: ${roots["vc-init"].root} · ${roots["vc-fix"].root}`);
-  }
-  for (const ids of enabledIds) {
-    add("Plugin root (single install)", "WARN",
-      `${ids.join(" and ")} are both enabled — each one's hooks.json starts its own telemetry collector, so spans duplicate and state writes race. Uninstall the old one (/plugin uninstall ${ids.slice(1).join(", ")}) and restart Claude Code`);
   }
 
   // 1b''. Each installed plugin's npm dependencies are in ITS install folder — Claude Code installs none,

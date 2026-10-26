@@ -95,7 +95,7 @@ export function renderNextSteps(profile, plugins, { env = "" } = {}) {
     }
   }
   rows.push(["/project-init --add-env", "add another environment (URLs + test-user passwords)"]);
-  // A guest profile from before 0.4.0 has no websiteAuth yet: add-user then lets the host's slots decide.
+  // A guest profile from before 0.5.0 has no websiteAuth yet: add-user then lets the host's slots decide.
   if (gov && gov.websiteAuth !== "manual-operator") rows.push(["/project-init --add-user", `add a test user: its login in \`.env.<env>\`, its password in a \`${gov.host}\` slot`]);
   rows.push(["/project-init --check", "after a plugin update: bring the profile up to date and re-verify"]);
 

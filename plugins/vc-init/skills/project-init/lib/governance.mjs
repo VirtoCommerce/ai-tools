@@ -36,7 +36,7 @@ export const CODE_ACCESS = ["none", "read", "write"];
 
 /** A host is recorded by its plugin id: `<plugin>@<marketplace>`. */
 export const PLUGIN_ID_RE = /^[A-Za-z0-9._-]+@[A-Za-z0-9._-]+$/;
-/** A plugin name alone — how a profile written before 0.4.0 recorded its host. */
+/** A plugin name alone — how a profile written before 0.5.0 recorded its host. */
 const PLUGIN_NAME_RE = /^[A-Za-z0-9._-]+$/;
 
 /**

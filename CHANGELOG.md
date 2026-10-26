@@ -8,7 +8,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
-## `vc-init` `0.4.0`, `vc-fix` `0.13.1`: a host is found by its shape, and guest mode reads what its own setup left — 2026-10-22
+## `vc-init` `0.5.0`, `vc-fix` `0.13.1`: a host is found by its shape, and guest mode reads what its own setup left — 2026-10-26
 
 **Fixed: detection no longer turns other projects into guests.** `detectHost` counted any install record of a
 known host plugin, so a client governance plugin installed for one folder (`--scope project`) made
@@ -67,12 +67,39 @@ accounts, then each account (login and a one-line note), admins first. No form i
 **Fixed: an install for the folder that its settings no longer switch on is reported `inactive`** — Claude
 Code does not load it, so detection no longer treats it as the host.
 
+**Changed: vc-init installs on its own.** The README and the install lines name `/plugin install
+vc-init@ai-tools` (it pulls in vc-secrets), and the onboarding text names no particular plugin: every plugin
+that reads the profile is treated alike. `verify-access` drops its `Plugin root` row, which failed whenever
+vc-fix was not installed; a plugin that is not there is already reported by next-steps, and the
+self-diagnostics marker is skipped without it.
+
 **Verified.** On a machine with a client governance plugin installed for one folder and its setup already run
 there: no candidate for this repository or its parent folder; the folder's plugin found in any letter case,
 its work-items, test-management, telemetry and three browser servers classified by package, its setup
 command found, 10 slots on two environments, the store command read from the wrapper's usage. A sandbox
 project went through gen-profile → scaffold-env → scaffold-secrets → add-user → reconcile → verify-access in
 both states (setup not run / run). 3912 unit tests and the vc-init bridge tests pass.
+
+## What vc-test needs from onboarding — `vc-init` `0.4.0` — 2026-10-26
+
+The first of four P1 plans for the `vc-test` plugin (`docs/superpowers/plans/2026-10-26-vc-test-p1a-vc-init.md`).
+`vc-fix` gains only the matching profile default; `vc-perf` and `vc-secrets` are unchanged.
+
+**Added: a `test` block in `project-profile.json`.** `vc-test`'s own open map, kept wholesale like `perf`:
+`environments` (env → `{ writable }`), `scriptRoots` and `knowledgeStore`. `profile-set.mjs --merge 'test=<json>'`
+writes it, and a `/project-init` re-run keeps it.
+
+**Added: one pinned GraphQL read through the bridge.** `node "$VC_RUN" gh api graphql` is still refused, except
+for a document byte-equal to the review-thread query `/ticket-context` reads, with only its variables. A
+mutation, another query, a header, an input file, or a field value read from a file (`@…`) stays refused.
+
+**Added: the `runner` bridge tool.** `node "$VC_RUN" runner playwright <spec…>` and `runner node <script> [args…]`
+run `vc-test`'s `.spec` files and check scripts with the current env's test-user passwords and never a token. It
+runs only for an environment the `test` block lists, and only on files inside its `scriptRoots`, checked after
+resolving links. The argv is fixed and Playwright uses `vc-test`'s pinned config. Output is redacted. With the
+passwords in vc-secrets it runs as the new task `vc-init-runner.<env>`, which `write-secrets-decl.mjs` declares
+beside each password env. Re-run `/project-init --check` and `vc-secrets trust` to pick it up.
+
 ## An env's files can live outside the repo; a stand can use one master password — `vc-fix` `0.13.0` — 2026-10-21
 
 Every ticket now runs on its own stand, and dedicated cloud stands are replacing the shared ones. A stand that
