@@ -7,6 +7,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, symlinkS
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { KINDS, readKnowledge, storeConfig, writeKnowledge } from "./knowledge-store.mjs";
+import { currentEnv } from "./paths.mjs";
 
 function project({ projectType = "platform", platformStore } = {}) {
   const root = mkdtempSync(join(tmpdir(), "vct-ks-"));
@@ -110,6 +111,20 @@ test("every password file and the process's password variables are scrubbed by v
     assert.match(text, /plain$/);
   } finally {
     if (prev === undefined) delete process.env.ZED_PASSWORD; else process.env.ZED_PASSWORD = prev;
+  }
+});
+
+test("a secret-named variable whose value a non-secret layer declares is a fact, not a secret", () => {
+  const { root, cfg } = project();
+  writeFileSync(join(root, ".env.defaults"), "ORDER_KEYWORD_TOKEN=Beacon\n");
+  writeFileSync(join(root, `.env.${currentEnv()}`), "PASSWORDS=master\n");
+  const saved = { ORDER_KEYWORD_TOKEN: process.env.ORDER_KEYWORD_TOKEN, PASSWORDS: process.env.PASSWORDS, ZED_PASSWORD: process.env.ZED_PASSWORD };
+  Object.assign(process.env, { ORDER_KEYWORD_TOKEN: "Beacon", PASSWORDS: "master", ZED_PASSWORD: "EnvOnlySecret77" });
+  try {
+    const { path } = writeKnowledge(cfg, { kind: "test-doc", slug: "f", text: "Beacon order on a master stand, EnvOnlySecret77" });
+    assert.equal(readFileSync(path, "utf8"), "Beacon order on a master stand, [REDACTED]");
+  } finally {
+    for (const [k, v] of Object.entries(saved)) if (v === undefined) delete process.env[k]; else process.env[k] = v;
   }
 });
 

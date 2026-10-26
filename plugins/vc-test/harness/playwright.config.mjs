@@ -7,6 +7,8 @@
 import { join } from "node:path";
 
 const project = process.cwd();
+// Each worker re-imports this file: the run's id is fixed once, in the main process, and workers inherit it.
+process.env.VC_TEST_PW_RUN ||= `${Date.now()}-${process.pid}`;
 
 export default {
   testDir: project,
@@ -14,7 +16,7 @@ export default {
   testIgnore: ["**/node_modules/**", "**/.fix-workspace/**"],
   // Its own folder per run: Playwright empties outputDir when a run starts, and two scenario agents of one wave
   // must not delete each other's failure traces and screenshots.
-  outputDir: join(project, ".vc-fix", "vc-test", "playwright-results", `${Date.now()}-${process.pid}`),
+  outputDir: join(project, ".vc-fix", "vc-test", "playwright-results", process.env.VC_TEST_PW_RUN),
   workers: 1,
   reporter: [["list"]],
   use: {

@@ -10,7 +10,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameS
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { currentEnv } from "./paths.mjs";
 import { MIN_SECRET_LENGTH, SECRET_NAME, TOKEN_SHAPES, loadSecretValues, looksLikePath, secretValuesFrom } from "./scrub.mjs";
-import { envFolders } from "../scripts/lib/env-layers.mjs";
+import { envFolders, readEnvFile } from "../scripts/lib/env-layers.mjs";
 
 /** What the stores hold, in the formats §6 names. `<slug>` is the caller's; everything else is fixed here. */
 export const KINDS = Object.freeze({
@@ -46,11 +46,18 @@ export function storeConfig(profile, { root }) {
 /**
  * Every secret VALUE this project holds: `.env.local` and every `.env.playwright.*` file (per env, master, all) in
  * the root and in the env's QA_ENV_PATH folders, plus this process's secret-named variables (a password the
- * bridge handed over from vc-secrets lives only there).
+ * bridge handed over from vc-secrets lives only there) — except a variable whose value a non-secret layer
+ * (`.env.defaults`, `.env.<env>`) declares: `ORDER_KEYWORD_TOKEN=Beacon` or `PASSWORDS=master` is a fact, and
+ * masking it would blank that word wherever the knowledge mentions it.
  */
 export function knowledgeSecretValues(root, env = process.env) {
   const values = loadSecretValues(root, env);
-  const dirs = [root, ...envFolders({ env: currentEnv(), root, ambient: env })];
+  const testEnv = currentEnv();
+  const dirs = [root, ...envFolders({ env: testEnv, root, ambient: env })];
+  const declared = new Set();
+  for (const file of [join(root, ".env.defaults"), ...dirs.map((dir) => join(dir, `.env.${testEnv}`))]) {
+    for (const v of Object.values(readEnvFile(file) ?? {})) declared.add(v);
+  }
   for (const dir of dirs) {
     let names = [];
     try { names = readdirSync(dir); } catch { continue; }
@@ -60,7 +67,7 @@ export function knowledgeSecretValues(root, env = process.env) {
     }
   }
   for (const [name, v] of Object.entries(env)) {
-    if (SECRET_NAME.test(name) && typeof v === "string" && v.length >= MIN_SECRET_LENGTH && !looksLikePath(v)) values.add(v);
+    if (SECRET_NAME.test(name) && typeof v === "string" && v.length >= MIN_SECRET_LENGTH && !looksLikePath(v) && !declared.has(v)) values.add(v);
   }
   return values;
 }

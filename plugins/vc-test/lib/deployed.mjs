@@ -1,8 +1,10 @@
 // plugins/vc-test/lib/deployed.mjs — F6 from the stand itself (spec §5.3): what is deployed, read the way any Virto
 // Commerce project can be read. Module versions from /api/platform/modules (an admin login), the platform version
 // from the Admin SPA's root page and the theme version from the storefront's entry bundle (both anonymous). A port
-// to plain JS of scripts/deploy/lib/live.ts's probes, unchanged in behaviour. A side that cannot be read is
-// UNKNOWN with its reason — F6 then fires on doubt (§5.2) — and never reads as "not deployed".
+// to plain JS of scripts/deploy/lib/live.ts's probes, unchanged in behaviour, with the filter its readers apply
+// (scripts/lib/env-facts.ts): a module the stand lists but has not installed, or disabled on a load error, is not
+// running, so it is never DEPLOYED. A side that cannot be read is UNKNOWN with its reason — F6 then fires on doubt
+// (§5.2) — and never reads as "not deployed".
 // CLI (the admin password reaches it only through the bridge):
 //   node "$VC_RUN" runner plugin deployed --key <KEY> [--expect <file: [{ id, version }]>]   → <WORK>/deployed.json
 import { readFileSync, writeFileSync } from "node:fs";
@@ -50,7 +52,11 @@ async function modulesOf(ctx) {
     if (r.status !== 200) return { unknown: `modules ${r.status}` };
     const mods = await r.json();
     if (!Array.isArray(mods)) return { unknown: "modules: not a list" }; // an error body read as "no modules" would mark every module NOT DEPLOYED
-    return mods.filter((m) => m?.id).map((m) => ({ id: String(m.id), version: String(m.version ?? "") }));
+    return mods.filter((m) => m?.id).map((m) => ({
+      id: String(m.id), version: String(m.version ?? ""),
+      ...(typeof m.isInstalled === "boolean" ? { isInstalled: m.isInstalled } : {}),
+      loadErrors: Array.isArray(m.validationErrors) ? m.validationErrors.map(String) : [],
+    }));
   } catch {
     return { unknown: "modules network" };
   }
@@ -92,14 +98,21 @@ export async function deployed({ backUrl, frontUrl, admin, password, fetch = glo
   return { platform, modules, theme };
 }
 
-/** Each expected module against the stand: DEPLOYED, NOT DEPLOYED, or UNKNOWN when the module list could not be read. */
+/**
+ * Each expected module against the stand: DEPLOYED, NOT DEPLOYED, or UNKNOWN when the module list could not be read.
+ * The right version that is not installed or failed to load is NOT DEPLOYED, with that `reason`: its code is not running.
+ */
 export function compareExpected(d, expect) {
   const known = Array.isArray(d.modules);
-  const live = new Map(known ? d.modules.map((m) => [m.id.toLowerCase(), m.version]) : []);
+  const live = new Map(known ? d.modules.map((m) => [m.id.toLowerCase(), m]) : []);
   return expect.map(({ id, version }) => {
     if (!known) return { id, expected: version, live: null, verdict: "UNKNOWN" };
-    const v = live.get(String(id).toLowerCase()) ?? null;
-    return { id, expected: version, live: v, verdict: v === version ? "DEPLOYED" : "NOT DEPLOYED" };
+    const m = live.get(String(id).toLowerCase());
+    const row = { id, expected: version, live: m?.version ?? null };
+    if (m?.version !== version) return { ...row, verdict: "NOT DEPLOYED" };
+    if (m.isInstalled === false) return { ...row, verdict: "NOT DEPLOYED", reason: "not installed" };
+    if (m.loadErrors?.length) return { ...row, verdict: "NOT DEPLOYED", reason: `load errors: ${m.loadErrors.join("; ")}` };
+    return { ...row, verdict: "DEPLOYED" };
   });
 }
 
