@@ -55,9 +55,8 @@ via a push, and polling two endpoints is mechanical. So:
   verification, comment on JIRA, and pick + confirm the **bundle** bumps.
 
 `GIT_TOKEN` (a PAT with `contents:write` on vc-deploy-dev + `actions:read` + product-repo read) is read
-from `.env.local`. The live version check needs the env's read-only key (`PLATFORM_API_KEY_<ENV>`, the env's name upper-cased) or its admin
-password (per-env `ADMIN_PASSWORD_*` in `.env.local`). With neither it signs in to nothing and the version
-is verified by hand — never guess a password: a failed sign-in counts toward the shared admin's lockout.
+from `.env.local`. The live version check uses `PLATFORM_API_KEY_<ENV>` or `ADMIN_PASSWORD_*`; with neither,
+verify by hand.
 
 ---
 
