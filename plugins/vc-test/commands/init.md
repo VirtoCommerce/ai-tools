@@ -1,6 +1,6 @@
 ---
 description: "[Setup] Onboard vc-test onto a deployment — after vc-init's /project-init, declare which environments a run may write to and where the project's knowledge store is (the profile's `test` block, through vc-init's writer), and check every test environment has an admin and a storefront account. Never asks for or writes a password."
-argument-hint: "[--writable <env,…|none>] [--store <path>]"
+argument-hint: "[--writable <env,…|none>] [--store <path>] [--routing <json>]"
 disable-model-invocation: true
 ---
 
@@ -24,8 +24,14 @@ vc-init owns `project-profile.json`; this command only fills vc-test's own block
      scenario that needs a write there is BLOCKED (spec U16).
    - *Where should this project's knowledge store live?* default `qa-knowledge/` (a folder in this repository,
      versioned with it).
+   - *Which statuses mean a Bug is ready for test, ready on a hotfix line, not fixed yet?* Three free-text answers
+     (comma-separated status names), one per role: `fix-ready`, `hotfix-ready`, `not-fixed`. Prefill from the profile's stored `test.routing`; where none, on Azure from
+     `tracker.azure.roleStates`: `ready-for-test`, `testing` ⇒ fix-ready; `in-progress`, `in-review`, `reopen` ⇒
+     not-fixed; hotfix-ready empty. A role left empty is fine: a Bug in an unlisted status is asked at run time.
+     Pass `--routing '{"fix-ready":[…],"hotfix-ready":[…],"not-fixed":[…]}'` in step 5 only when the operator changed an
+     answer; otherwise omit it, so a re-run keeps what is stored.
 5. **Plan.** `node <plugin>/lib/init-plan.mjs --list .vc-fix/vc-test/accounts.json --writable <envs|none>
-   --store <path>`. Exit 1 ⇒ show its message, ask again. Show its `warnings` verbatim.
+   --store <path> [--routing <json>]`. Exit 1 ⇒ show its message, ask again. Show its `warnings` verbatim.
 6. **Write.** `node "<vcInit>/skills/project-init/profile-set.mjs" --merge 'test=@<file from step 5>'`. Not
    `written` ⇒ STOP with its JSON.
 7. **Accounts.** For each entry in step 5's `gaps`: one line, `<env> has no <role> account — run <fix>`. Never
