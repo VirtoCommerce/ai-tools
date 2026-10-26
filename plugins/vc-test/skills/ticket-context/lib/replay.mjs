@@ -28,6 +28,16 @@ function normalised(args) {
   return out;
 }
 
+/** A missing answer's gap reason, as the bridge route would have given it (bridge.mjs bridgeGap): the floors read
+ *  `deleted` and `access-denied` differently from a plain unreadable read. */
+function missingReason(text) {
+  const t = String(text ?? "");
+  if (/\b404\b|not found|does not exist/i.test(t)) return "deleted";
+  if (/\b40[13]\b|forbidden|unauthori[sz]ed|permission/i.test(t)) return "access-denied";
+  if (/not available through the host|no \w+ server mapped|has no tool|no read tool/i.test(t)) return "connector-unavailable";
+  return "unreadable";
+}
+
 export function requestId(tool, args) {
   return createHash("sha256").update(JSON.stringify([tool, ...normalised(args)])).digest("hex").slice(0, 16);
 }
@@ -85,7 +95,7 @@ export function replayRun({ dir, catalog = loadCatalog() }) {
       renameSync(file, join(dir, `${id}.bad.json`));
       return ask(tool, args, id, why);
     }
-    if ("missing" in a) throw new GapError("unreadable", `the host's servers could not give it: ${a.missing}`);
+    if ("missing" in a) throw new GapError(missingReason(a.missing), `the host's servers could not give it: ${a.missing}`);
     const v = a.stdout;
     if (as === "none") return null;
     if (as === "text") return typeof v === "string" ? v : JSON.stringify(v);
