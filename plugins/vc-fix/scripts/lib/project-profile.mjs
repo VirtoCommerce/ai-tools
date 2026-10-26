@@ -104,8 +104,8 @@
  * @property {string} backendUrlForDev  APP_BACKEND_URL for local dev — the STOREFRONT host (resolves the store AND proxies the API), NOT the admin host
  * @property {string} [storeId]
  * @property {string} [storeDomain]
- * @property {string} [userEnv]  env var with the storefront login (default USER_EMAIL)
- * @property {string} [passEnv]  env var with the storefront password (default USER_PASSWORD)
+ * @property {string} [userEnv]  env var with the storefront login (absent ⇒ USER_EMAIL; "" ⇒ host-governed: a `<SLOT>_LOGIN` user, no default)
+ * @property {string} [passEnv]  env var with the storefront password (absent ⇒ USER_PASSWORD; "" ⇒ typed by the host slot NAME)
  */
 import { readFileSync, existsSync } from "fs";
 import { dirname, join, resolve } from "path";

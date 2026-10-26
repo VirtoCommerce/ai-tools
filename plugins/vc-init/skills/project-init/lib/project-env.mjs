@@ -189,6 +189,25 @@ export function gitTracked(root, files) {
   }
 }
 
+/**
+ * The project keys the team keeps in its git-tracked env files: key → the shared value ("" when the files
+ * disagree or hold it empty). Such a key never goes to `.env.local` (moveProjectKeys): a new env file gets
+ * it beside the others, and a different value is refused.
+ */
+export function sharedProjectKeys(root, keys, { trackedIn = gitTracked } = {}) {
+  const files = envFileNames(root);
+  const tracked = [...trackedIn(root, files)];
+  const texts = Object.fromEntries(tracked.map((f) => [f, readFileSync(join(root, f), "utf8")]));
+  const out = new Map();
+  for (const key of keys) {
+    const vals = tracked.map((f) => readKey(texts[f], key)).filter((v) => v !== null);
+    if (!vals.length) continue;
+    const distinct = [...new Set(vals.filter((v) => v !== ""))];
+    out.set(key, distinct.length === 1 ? distinct[0] : "");
+  }
+  return out;
+}
+
 /** The comment scaffold-env writes above a key, from its CATALOG meta. */
 export const keyComment = (key, meta) => `# ${key} — ${meta.what}\n#   ${meta.where}\n`;
 
@@ -205,14 +224,15 @@ export const keyComment = (key, meta) => `# ${key} — ${meta.what}\n#   ${meta.
  *     the caller reports it (a project that really points two stands at two trackers keeps `KEY_<ENV>` in
  *     `.env.local`, which config.js / load-layered-env promote per env).
  *
- * A key any git-tracked env file holds is left exactly where it is (`kept`): removing it from the shared
- * file would remove it for every teammate, and a copy in `.env.local` would win at runtime and go stale the
- * next time the team changes the shared value (isGitTracked).
+ * A key any git-tracked env file holds is left exactly where it is (`kept`, with the shared value): the
+ * project keeps it in its committed env files, so that is its home. Removing it would remove it for every
+ * teammate, and a copy in `.env.local` would win at runtime and go stale the next time the team changes
+ * the shared value (isGitTracked) — a `.env.local` line that differs is reported as a conflict instead.
  *
  * @param {string} root  the project directory
  * @param {Array<[string, object]>} catalog  scaffold-env CATALOG entries with `scope: "project"`
  * @param {{ dryRun?: boolean, trackedIn?: (root: string, files: string[]) => Set<string> }} [opts]
- * @returns {{ moved: Array<{key:string, from:string[]}>, cleaned: Array<{key:string, from:string[]}>, kept: Array<{key:string, in:string[]}>, conflicts: Array<{key:string, values:Record<string,string>}> }}
+ * @returns {{ moved: Array<{key:string, from:string[]}>, cleaned: Array<{key:string, from:string[]}>, kept: Array<{key:string, in:string[], value:string}>, conflicts: Array<{key:string, values:Record<string,string>}> }}
  */
 export function moveProjectKeys(root, catalog, { dryRun = false, trackedIn = gitTracked } = {}) {
   const files = envFileNames(root);
@@ -228,7 +248,24 @@ export function moveProjectKeys(root, catalog, { dryRun = false, trackedIn = git
     const holders = files.filter((f) => readKey(texts[f], key) !== null);
     if (!holders.length) continue;
     const shared = holders.filter((f) => tracked.has(f));
-    if (shared.length) { result.kept.push({ key, in: shared }); continue; }
+    if (shared.length) {
+      // The project keeps this key in its committed env files: leave every copy where it is. What still
+      // needs the operator is a value that disagrees with the shared one — above all a `.env.local` line,
+      // which loads last and would override it for every env (even an empty `KEY=` line does).
+      const all = Object.fromEntries(holders.map((f) => [f, readKey(texts[f], key)]));
+      const sharedValues = [...new Set(shared.map((f) => all[f]).filter((v) => v !== ""))];
+      const localValue = readKey(local, key);
+      const value = sharedValues.length === 1 ? sharedValues[0] : "";
+      const otherEnvDiffers = holders.some((f) => !tracked.has(f) && all[f] !== "" && all[f] !== value);
+      if (sharedValues.length > 1 || otherEnvDiffers || (localValue !== null && localValue !== value)) {
+        result.conflicts.push({
+          key, values: { ...all, ...(localValue !== null ? { [LOCAL_FILE]: localValue } : {}) },
+          reason: `the team's env files (${shared.join(", ")}) hold it, so they are its home: give every env file the same value, and delete the ${LOCAL_FILE} line (it loads last and overrides them)`,
+        });
+      }
+      result.kept.push({ key, in: shared, value });
+      continue;
+    }
     const values = Object.fromEntries(holders.map((f) => [f, readKey(texts[f], key)]));
     const distinct = [...new Set(Object.values(values).filter((v) => v !== ""))];
     const localValue = readKey(local, key);

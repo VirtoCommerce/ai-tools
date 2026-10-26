@@ -681,6 +681,10 @@ async function main() {
   if (listing) {
     // An Azure Repos listing names its project: without it every module URL would read `/undefined/`, and
     // the client scan would fall back to whatever ADO_PROJECT this shell happens to carry.
+    if (!listing.org) {
+      console.error("[discover-repos] the listing names no org — add the organization the repositories belong to (it is never taken from this shell's ADO_ORG), then re-run");
+      process.exit(2);
+    }
     if (listing.host === "azure-repos" && !listing.project) {
       console.error("[discover-repos] the listing has host azure-repos but no project — add the Azure DevOps project the repositories belong to, then re-run");
       process.exit(2);
@@ -728,7 +732,7 @@ async function main() {
 
   // Derive the client org from the classified client modules (or ADO_ORG / override).
   const clientOrg = deriveClientOrg(result.client, {
-    host, adoOrg: process.env.ADO_ORG || "", override,
+    host, adoOrg: listing ? "" : process.env.ADO_ORG || "", override,
   });
   console.error(
     `[discover-repos] ${result.platform.length} platform repo(s), ${result.client.length} client repo(s)` +

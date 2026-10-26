@@ -504,9 +504,10 @@ The tracker / code-host keys (`JIRA_*`, `ADO_ORG`/`ADO_PROJECT`, `CLIENT_REPO_OR
 the whole project, so they go to **`.env.local`**, once — never into `.env.<env>`, and a later env adds
 none. A project onboarded before that has them in each `.env.<env>`: scaffold-env (and normalize-env)
 moves them first (`lib/project-env.mjs`) and prints `moved to .env.local …`. A key a git-tracked
-`.env.<env>` holds stays where it is and is NOT copied to `.env.local` (a copy there would win at
-runtime and go stale when the team changes the shared value); it prints `left in the git-tracked env
-files …`, and `write-env.mjs` refuses a different value for it (change it in the shared file). When the env files hold
+`.env.<env>` holds stays in the env files and is NOT copied to `.env.local` (a copy there would win at
+runtime and go stale when the team changes the shared value): it prints `left in the git-tracked env
+files …`, a new env file gets the key with the shared value, `write-env.mjs` refuses a different value,
+and a `.env.local` line for it is reported `NOT moved … delete the .env.local line`. When the env files hold
 **different** values for one key it moves nothing and prints `NOT moved <KEY> — the files disagree`:
 relay that line; the operator keeps one value in `.env.local` (or `<KEY>_<ENV>` there per env) and
 deletes the rest. Once a key is kept per env, every later env gets its own `<KEY>_<NEW>` placeholder, never

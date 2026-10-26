@@ -46,7 +46,7 @@ import { resolveOutPath, outputRoot } from "./lib/paths.mjs";
 // writers all call it, and only the first one actually appends.
 import { ensureProjectIgnores } from "./lib/gitignore.mjs";
 import { isHostGoverned } from "./lib/governance.mjs";
-import { LOCAL_FILE, LOCAL_HEADER, LOCAL_HEADER_HOST, LOCAL_SECTION, envHeader, describeMove, envSuffixesIn, keyComment, keySuffixes, moveProjectKeys, readKey } from "./lib/project-env.mjs";
+import { LOCAL_FILE, LOCAL_HEADER, LOCAL_HEADER_HOST, LOCAL_SECTION, envHeader, describeMove, envSuffixesIn, keyComment, keySuffixes, moveProjectKeys, readKey, serializeValue } from "./lib/project-env.mjs";
 
 function parseArgs(argv) {
   const a = {};
@@ -151,6 +151,15 @@ function main() {
     if (readKey(project ? existingLocal : existing, key) !== null) { skipped.push(key); continue; }
     // A conflicting key is still in the env files: never add a third copy next to it.
     if (project && move.conflicts.some((c) => c.key === key)) { skipped.push(key); continue; }
+    // The team keeps this key in its committed env files: this env file gets it beside them, with the
+    // shared value — never .env.local, which loads last and would override every env with a copy.
+    const kept = project && move.kept.find((k) => k.key === key);
+    if (kept) {
+      if (readKey(existing, key) !== null) { skipped.push(key); continue; }
+      blocks.push(keyComment(key, meta) + `${key}=${serializeValue(kept.value) ?? ""}\n`);
+      emitted.push({ key, name: key, file: "", filled: kept.value !== "" });
+      continue;
+    }
     // Kept per env (`KEY_<ENV>`, one tracker per stand): this env gets its own suffixed line, never a bare
     // empty one that would fail normalize-env for every env.
     const suffixes = project ? keySuffixes(existingLocal, key, envSuffixes) : [];
@@ -182,7 +191,7 @@ function main() {
   // Requiredness is looked up by the CATALOG key; the file is only a label for the operator.
   const label = (e) => (e.file ? `${e.name} (${e.file})` : e.name);
   const optional = emitted.filter((e) => CATALOG.find(([n]) => n === e.key)?.[1].optional);
-  const toFill = emitted.filter((e) => !optional.includes(e));
+  const toFill = emitted.filter((e) => !optional.includes(e) && !e.filled);
   if (toFill.length) console.log(`[scaffold-env] to fill: ${toFill.map(label).join(", ")}`);
   if (optional.length) console.log(`[scaffold-env] may stay empty (detected): ${optional.map(label).join(", ")}`);
   if (skipped.length) console.log(`[scaffold-env] already present (kept): ${skipped.join(", ")}`);

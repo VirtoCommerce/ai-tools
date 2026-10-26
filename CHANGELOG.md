@@ -76,16 +76,18 @@ self-diagnostics marker is skipped without it.
 **Fixed: a git-tracked `.env.<env>` keeps its tracker keys.** Moving the project keys (`JIRA_*`,
 `ADO_ORG`/`ADO_PROJECT`, `CLIENT_REPO_ORG`) into `.env.local` used to delete them from every env file,
 including one the team commits, so a teammate without a `.env.local` lost the Jira connection on the next
-commit. A key a tracked file holds now stays exactly there and is not copied into `.env.local` either (a
+commit. A key a tracked file holds now stays in the env files and is not copied into `.env.local` either (a
 copy would win at runtime and go stale when the team changes the shared value): scaffold-env and
-normalize-env say `left in the git-tracked env files …`, write-env refuses a different value for it. Untracked
+normalize-env say `left in the git-tracked env files …`, a new env file gets the key with the shared value
+(never an empty `.env.local` placeholder that would blank it), write-env refuses a different value, and a
+`.env.local` line that overrides it is reported. Untracked
 env files are cleaned as before. On a host-governed project gen-profile warns about every env file git still
 tracks (the `.env.*` ignore does not untrack it), and add-user refuses to write a login into one.
 
 **Fixed (review of this PR).** verify-access warns when one plugin of this marketplace is enabled under both
-`@ai-tools` and the old `@vc-tools` (two collectors), without requiring any plugin; reports a test user whose
+`@ai-tools` and the old `@vc-tools` (two collectors), on a host-governed project too, without requiring any plugin; reports a test user whose
 host slot is gone instead of dropping it; a GitHub code-host server no longer reads as the wrong kind. A
-host listing for Azure Repos must name its project (no `undefined` URLs, no stray `ADO_PROJECT`), its
+host listing must name its org, and for Azure Repos its project (no `undefined` URLs, no stray `ADO_*`), its
 storefront `localVerify` no longer names `USER_EMAIL` / `USER_PASSWORD`, and write-env's new env files carry
 the same header as scaffold-env's (local on a host-governed project).
 The `.gitignore` blocks /project-init appends are titled `vc-init (/project-init)`, not `vc-fix`.

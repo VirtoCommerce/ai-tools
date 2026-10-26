@@ -49,7 +49,7 @@ import { readFileSync, writeFileSync, existsSync } from "fs";
 import { basename, dirname, join } from "path";
 import { outputRoot } from "./lib/paths.mjs";
 import { CATALOG } from "./scaffold-env.mjs";
-import { LOCAL_HEADER, envHeader, envSuffixesIn, isGitTracked, keySuffixes, readKey, removeKey } from "./lib/project-env.mjs";
+import { LOCAL_HEADER, envHeader, envSuffixesIn, isGitTracked, keySuffixes, readKey, removeKey, sharedProjectKeys } from "./lib/project-env.mjs";
 import { isHostGoverned } from "./lib/governance.mjs";
 import { normalizeValue } from "./normalize-env.mjs";
 
@@ -173,12 +173,14 @@ function main() {
   // Project keys: one value for every env, so a different one already in .env.local is another env's
   // tracker — never overwritten silently (that would redirect the other env's runs). A project that keeps
   // them per env (`KEY_<ENV>` lines) gets this env's suffixed line. The copy left in .env.<env> by an
-  // older onboarding is removed, so the two files cannot disagree afterwards. A .env.<env> git tracks is the
-  // team's copy (lib/project-env.mjs isGitTracked): a key it already holds stays there and is NOT copied to
-  // .env.local, which would win at runtime and go stale when the team changes the shared value.
+  // older onboarding is removed, so the two files cannot disagree afterwards. A key the team keeps in its
+  // git-tracked env files — any of them, not only this one (lib/project-env.mjs sharedProjectKeys) — stays
+  // in the env files: this one gets it beside them, and it is NOT copied to .env.local, which loads last,
+  // overrides every env and would go stale when the team changes the shared value.
   const localText = existsSync(localPath) ? readFileSync(localPath, "utf-8") : "";
   const envText = existsSync(envPath) ? readFileSync(envPath, "utf-8") : "";
   const envTracked = !!envText && isGitTracked(dirname(envPath), basename(envPath));
+  const shared = sharedProjectKeys(OUTPUT_ROOT, [...PROJECT_KEYS]);
   const refused = [];
   const refusedShared = [];
   const projectWritten = [];
@@ -190,9 +192,11 @@ function main() {
     const value = envVars[key];
     delete envVars[key];
     if (value === undefined || value === null || value === "") continue;
-    const shared = envTracked ? readKey(envText, key) : null;
-    if (shared !== null && shared !== "") {
-      if (canon(key, shared) !== canon(key, value)) refusedShared.push(key);
+    if (shared.has(key)) {
+      const sharedValue = shared.get(key);
+      if (sharedValue !== "" && canon(key, sharedValue) !== canon(key, value)) refusedShared.push(key);
+      // This env file gets the key beside the team's copies when it lacks one (written as an env key below).
+      else if (readKey(envText, key) === null) envVars[key] = canon(key, value);
       continue;
     }
     const current = readKey(localText, key);
@@ -246,7 +250,7 @@ function main() {
   }
   console.log(`[write-env] done${DRY_RUN ? " (dry-run, no files changed)" : ""}.`);
   if (refusedShared.length) {
-    console.error(`[write-env] NOT written: ${refusedShared.join(", ")} — .env.${envName} is tracked by git and holds a different value, the one the team shares. Change it there (and commit), or keep a personal override as <KEY>_${envName.toUpperCase()} in .env.local.`);
+    console.error(`[write-env] NOT written: ${refusedShared.join(", ")} — the team's git-tracked env files hold a different value for it, the one everybody shares. Change it there (and commit), or keep a personal override as <KEY>_${envName.toUpperCase()} in .env.local.`);
   }
   if (refused.length) {
     console.error(`[write-env] NOT written: ${refused.join(", ")} — .env.local already holds a different value, the one every env uses. Edit .env.local by hand, or keep one value per env as <KEY>_<ENV> there.`);

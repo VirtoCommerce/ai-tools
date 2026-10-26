@@ -272,6 +272,30 @@ export function findSettingsSecrets(settingsJsonText) {
 /** This marketplace's ids: `ai-tools`, and `vc-tools` — its name before the 2026-09-30 rename. */
 const OUR_MARKETPLACES = ["ai-tools", "vc-tools"];
 
+/**
+ * One install per plugin. A plugin of this marketplace enabled under BOTH its ids (`@ai-tools`, and
+ * `@vc-tools` from before the 2026-09-30 rename) runs every hook twice — two telemetry collectors on one
+ * file. Only a WARN, and only when the `claude` CLI answers; a plugin that is absent is not a fault. Runs
+ * on every project, a host-governed one included (the hooks are ours either way).
+ */
+function checkPluginInstalls(add) {
+  let list = null;
+  try {
+    list = JSON.parse(execSync("claude plugin list --json", { stdio: ["ignore", "pipe", "ignore"], timeout: 20000 }).toString());
+  } catch {
+    /* claude CLI unavailable — nothing to check */
+  }
+  const byName = {};
+  for (const p of Array.isArray(list) ? list : []) {
+    const [name, market] = String(p.id || "").split("@");
+    if (p.enabled && OUR_MARKETPLACES.includes(market)) (byName[name] ||= []).push(p.id);
+  }
+  for (const ids of Object.values(byName).filter((ids) => ids.length > 1)) {
+    add("Plugin installs", "WARN",
+      `${ids.join(" and ")} are both enabled — each one's hooks run, so spans duplicate and state writes race. Uninstall the old one (/plugin uninstall ${ids.filter((id) => !id.endsWith("@ai-tools")).join(", ")}) and restart Claude Code`);
+  }
+}
+
 export function gradeSecretHygiene({ kind, file, hits, weak = [], unparsable, inRepo, ignored, tracked }) {
   const exposed = inRepo && (tracked || !ignored);
   const why = tracked ? "tracked by git" : "not gitignored";
@@ -498,7 +522,8 @@ async function main() {
   add("Deployment profile", profileExists ? "PASS" : "FAIL",
     profileExists
       ? `type=${profile.projectType} tracker=${profile.tracker.kind} vcs=${profile.vcs.clientHost} upstream=${profile.upstream.org}/${profile.upstream.contributionMode}`
-      : `no project-profile.json at ${profilePath} — run /project-init to create it (vc-fix and vc-perf stop until it exists)`);
+      : `no project-profile.json at ${profilePath} — run /project-init to create it (every plugin that reads it stops until it exists)`);
+  checkPluginInstalls(add);
 
   // 1-host. A HOST-GOVERNED project (VCST-6402 step 8): the client's governance plugin owns the MCP
   //     servers and every secret, so this table checks what is ours to check and nothing else — the
@@ -555,27 +580,6 @@ async function main() {
     const tracked = inRepo && tryCmd(`git ls-files --error-unmatch -- "${rel}"`, { cwd: projectRoot });
     const { status, detail } = gradeSecretHygiene({ kind, file: rel, hits, weak, unparsable, inRepo, ignored, tracked });
     add(label, status, detail);
-  }
-
-  // 1b. One install per plugin. A plugin of this marketplace enabled under BOTH its ids (`@ai-tools`, and
-  //     `@vc-tools` from before the 2026-09-30 rename) runs every hook twice — two telemetry collectors on
-  //     one file. Only a WARN, and only when the `claude` CLI answers; a plugin that is absent is not a fault.
-  {
-    let list = null;
-    try {
-      list = JSON.parse(execSync("claude plugin list --json", { stdio: ["ignore", "pipe", "ignore"], timeout: 20000 }).toString());
-    } catch {
-      /* claude CLI unavailable — nothing to check */
-    }
-    const byName = {};
-    for (const p of Array.isArray(list) ? list : []) {
-      const [name, market] = String(p.id || "").split("@");
-      if (p.enabled && OUR_MARKETPLACES.includes(market)) (byName[name] ||= []).push(p.id);
-    }
-    for (const ids of Object.values(byName).filter((ids) => ids.length > 1)) {
-      add("Plugin installs", "WARN",
-        `${ids.join(" and ")} are both enabled — each one's hooks run, so spans duplicate and state writes race. Uninstall the old one (/plugin uninstall ${ids.filter((id) => !id.endsWith("@ai-tools")).join(", ")}) and restart Claude Code`);
-    }
   }
 
   // 1b''. Each installed plugin's npm dependencies are in ITS install folder — Claude Code installs none,
