@@ -98,7 +98,8 @@ Companion to `~/.claude/plans/functional-singing-cosmos.md` (the strategic plan)
 | `qa-postman/` | **B** | Postman MCP authoring — generic. Examples reference VC backend. |
 | `qa-api/` | **B** | REST/GraphQL test patterns — generic; examples are xAPI. |
 | `qa-accessibility/` | **A** | WCAG 2.1 AA — universal. |
-| `qa-storybook/` | **B** | Storybook visual regression — Storybook is the constant, examples are vc-frontend. |
+| `qa-storybook/` | **B** | Storybook component testing — Storybook is the constant, examples are vc-frontend. |
+| `qa-visual-regression/` | **B** | Pixel regression (`PIXEL`) for any web front, base build vs head build — Storybook stories or app pages with replayed API data. Playwright is the constant; vc-frontend is the default layout. |
 | `qa-checklist/` | **B** | Per-domain checklists — domains C, structure B. **Becomes template + project pack.** |
 | `qa-review-tests/` | **B** | 11-dimension quality review — generic dimensions, examples C. |
 | `qa-coverage-gap/` | **B** | Coverage gap analysis pipeline — generic methodology, domain map is C. |
@@ -167,6 +168,7 @@ Companion to `~/.claude/plans/functional-singing-cosmos.md` (the strategic plan)
 | `scripts/lib/random-data.ts` | **B** | Zero-dep random generators — generic. |
 | `scripts/test-data/validate-td-refs.ts` | **B** | Generic validator. |
 | `scripts/graphql/graphql-runner.ts` | **B** | Runner-native GraphQL execution — generic for any GraphQL endpoint. |
+| `plugins/vc-frontend/visual/{snap,diff,affected,design,setup,lib}.mjs` (`npm run visual:*`) | **B** | Ships in the vc-frontend plugin (its `merge-upstream` runs it in a fork) and serves ai-tools from the same files. `visual:snap` shoots any Storybook 7+ build or any web app's pages (HAR-replayed API); `visual:diff` compares two sets; `visual:affected` maps a diff to components in any repo with stories — vc-frontend's layout is only the default (`--roots`, `--global`). Consumed by `qa-visual-regression` (B). |
 | `scripts/lib/axe-runner.ts` | **A** | `axeRunSnippet()` + `classifyAxeResults()` + keyboard-trail classifier. WCAG axe run + severity mapping — universal. Consumed by `qa-accessibility` (A) and `qa-storybook` (B). |
 | `scripts/regression/compute-metrics.ts` | **A** | Deterministic source for every formula/gate in `quality-metrics-catalog.md` + `quality-gates.md`. Consumed by `qa-metrics` (A). Generic computation; open-P0/P1 counts injected via flags. |
 | `scripts/test-cases/append-test-cases-to-suite.ts` | **A** | Safe writer enforcing the **15-column enriched-CSV org standard** (schema + escaping + boundary newline + dedup + round-trip). Consumed by `qa-test-cases-generator` (A), `qa-api` (B), `qa-coverage-gap` (B). Tier-A because it enforces the A-tier format contract. |

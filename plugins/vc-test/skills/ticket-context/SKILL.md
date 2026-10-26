@@ -13,19 +13,21 @@ transition or label, no PR comment, no `kb` capture, confirm or dispute.
 
 `<skill>` below is this skill's base directory, as given when the skill loads. Run every command from
 the project root. Every `cli.mjs` command prints one JSON object; exit `1` usage · `2` gate or schema
-failed · `3` could not run.
+failed · `3` could not run · `4` host-governed project.
 
 ## Step 0 — prepare (script)
 
 `node "<skill>/lib/cli.mjs" prepare <KEY> [--domain <slug>] [--fresh]` — the domain is part of the cache
-key, and Step 5 reads it from `prepare.json`. A benchmark run (U67) adds `--before <iso>`, an instant with
+key, and Step 5 reads it from `prepare.json`. `project-profile.json` picks the tracker (Jira or Azure Boards)
+and the code host (GitHub or Azure Repos); every read of them is a `node "$VC_RUN" …` launch, and this process
+holds no token. A blind run (U67) adds `--before <iso>`, an instant with
 an explicit offset (`Z` or `±hh:mm`), and may add `--hide <KEY,KEY>` (never without `--before`: exit 1). Both
 are part of the cache key; the bundle carries `benchmark: {before, hide}` and is cached under its own
 `bundle-<env>-blind-<hash>.json`, so it never evicts or stands in for the normal bundle. **Blinded:** comments
 and attachments created after the cutoff (on the ticket and on linked issues), linked issues filed after it,
 PRs opened after it (on any rung, companions and `later_prs` included), every ticket item, link, sub-task and
 epic sibling naming a hidden key, a kept PR's review comments posted after it (`reviews.json` counts them in
-`hidden_after_cutoff`; thread resolution is not read), prior runs, and the Step 5 `kb` asks (not made: `kb: not read`). **Not blinded — a benchmark verdict states these:** the
+`hidden_after_cutoff`; thread resolution is not read), prior runs, and the Step 5 `kb` asks (not made: `kb: not read`). **Not blinded — a blind run's report states these:** the
 ticket's *current* summary, description, AC fields, labels, status, priority, resolution and `updated` (no
 changelog replay), the same current fields of each kept linked issue, a kept PR's current state, merge,
 body, diff and CI (a PR opened before the cutoff but merged or reworked after it shows its present form),
@@ -36,8 +38,18 @@ external, Confluence and design pages as they are now, the stand's deployed buil
   `node "<skill>/lib/cli.mjs" redeploy <KEY> --bundle <bundle_path>`, then go to Step 7. `redeploy`
   exit 2 or 3 means the cached bundle no longer validates or reads: run `prepare <KEY> --fresh` (same
   flags) and continue from its answer.
-- `status: "no-tracker"` (exit 3) → **STOP.** Report the gap's `detail` (the variable to set, or the
-  tracker not read yet). Nothing can be read without the ticket.
+- `status: "no-profile"` (exit 3) → **STOP.** Report its `detail`: run `/project-init` (vc-init) first.
+- `status: "host-governed"` (exit 4) → the tracker and code host are read through the host's MCP servers, in
+  passes (U23). Each server in `servers` must be connected in this session (a tool whose name starts with one of
+  its `tool_prefixes`), else **STOP**: BLOCKED, naming it. This call also empties `raw_dir`: a run never reuses
+  another's answers. Then loop: `prepare <KEY> --raw <raw_dir>` (same flags); on `status: "needs-fetch"` (exit 5)
+  dispatch `vc-test:fetch` with `RAW = <raw_dir>`, `REQUESTS = <requests_path>`, `SERVERS = <servers>`,
+  `TOOL_PREFIXES = <tool_prefixes>` — the first pass a
+  fresh dispatch, later passes `SendMessage` to the same agent — and run `prepare --raw` again. Read only the
+  status and the agent's count line, never a file in `raw_dir`. `prepared` ends the loop; carry on below.
+- `status: "no-tracker"` (exit 3) → **STOP.** Report the gap's `reason` and `detail`: `VC_RUN` not set, no
+  tracker address in the profile (run `/project-init`), or the tracker's own refusal of the first read (no stored
+  token, a refused token, a ticket that does not exist). Nothing can be read without the ticket.
 - `status: "prepared"` with `run_dir_in_project: false` → the run dir fell back to the OS temp
   directory, which a dispatched agent cannot read without a prompt. Run `abort` (below) and **STOP**
   with the remedy: add `.vc-fix/` to `.gitignore`, or run inside a git project.
