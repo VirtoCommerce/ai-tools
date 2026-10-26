@@ -89,7 +89,7 @@ export function pixelProbe(root, here = HERE) {
   return { engine, checkouts: candidates.filter(isFront) };
 }
 
-export async function probe({ env, envName = currentEnv(), profile, mcp = [], root = outputRoot(), reach: reachFn = reach }) {
+export async function probe({ env, envName = currentEnv(), profile, mcp = null, root = outputRoot(), reach: reachFn = reach }) {
   const caps = { missing: [] };
   for (const [cap, name] of Object.entries(URLS)) {
     const url = env[name];
@@ -97,7 +97,10 @@ export async function probe({ env, envName = currentEnv(), profile, mcp = [], ro
     caps[cap] = await reachFn(url);
     if (!caps[cap]) caps.missing.push(`${cap}: ${url} did not answer`);
   }
-  const names = mcp.map((n) => String(n).trim()).filter(Boolean);
+  const names = (mcp ?? []).map((n) => String(n).trim()).filter(Boolean);
+  // The list itself, only when the caller gave one (`--mcp`): the floors read a lane as missing only from a list that
+  // was probed — no list is "not probed", never "nothing installed".
+  if (mcp) caps.mcp = names;
   for (const name of names) caps[mcpKey(name)] = true;
   const has = (re) => names.some((n) => re.test(n));
   caps.kb = has(/^kb$/i);
@@ -127,7 +130,8 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   try { profile = loadProfile(); } catch (e) { console.error(e.message); process.exit(e instanceof ProfileError ? e.code : 1); }
   const { loadLayeredEnv } = await import("../scripts/lib/load-layered-env.mjs");
   loadLayeredEnv(currentEnv()); // the project's env files into process.env, as every vc-fix script loads them
-  const caps = await probe({ env: process.env, profile, mcp: (argOf(process.argv, "mcp") ?? "").split(",") });
+  const mcpArg = argOf(process.argv, "mcp");
+  const caps = await probe({ env: process.env, profile, mcp: mcpArg === undefined ? null : mcpArg.split(",") });
   const out = join(workDir(key), "capabilities.json");
   writeFileSync(out, JSON.stringify(caps, null, 2) + "\n");
   console.log(JSON.stringify({ path: out, ...caps }));

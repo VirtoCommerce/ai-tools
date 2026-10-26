@@ -5,7 +5,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { ARTIFACT_NEEDS, ARTIFACTS_FOR, computeFloors, domainMapTextOf, isAbandoned, p01NamesOf, PIXEL_REQUIREMENT, readJsonOrExit } from "./floors.mjs";
+import { ARTIFACT_NEEDS, ARTIFACTS_FOR, computeFloors, domainMapTextOf, isAbandoned, p01NamesOf, PIXEL_REQUIREMENT, readCapabilitiesOrExit, readJsonOrExit } from "./floors.mjs";
 
 const CAP = 120; // lines per round section (D9)
 // A lane that opens no browser, by its leading word. Every other lane counts toward the three of agents.md §Parallel
@@ -119,10 +119,14 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names, chan
   // when Out of scope names it; a skipped floor is named on the Floors line's `skipped:` part and in Out of scope.
   const unavailable = new Map(capabilities ? Object.entries(ARTIFACT_NEEDS).map(([a, need]) => [a, need(capabilities)]).filter(([, cap]) => cap) : []);
   const skippedFor = (name) => unavailable.has(name) && /^SKIP\s*—\s*not available in this install/i.test((artifacts.get(name) ?? "").trim());
+  const unnamed = new Set(); // a row reported once, whichever clause (6 or 6b) reached it first
   const satisfied = (id, name) => {
     if (running(name)) return true;
     if (!skippedFor(name)) return false;
-    if (!new RegExp(escapeRe(name), "i").test(outOfScope)) errors.push(`6s: ${id} fired; '${name}' is SKIP — not available in this install (${unavailable.get(name)}), but Out of scope does not name it`);
+    if (!new RegExp(escapeRe(name), "i").test(outOfScope) && !unnamed.has(name)) {
+      unnamed.add(name);
+      errors.push(`6s: ${id} needs '${name}', which is SKIP — not available in this install (${unavailable.get(name)}), but Out of scope does not name it`);
+    }
     return true;
   };
   for (const id of fired) {
@@ -149,7 +153,7 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names, chan
   if (floors.floors.some((f) => f.id === "F8" && f.requires.includes(PIXEL_REQUIREMENT)) && !pixelRows.length)
     errors.push("6: F8 fired on an existing ui-kit surface but no risk has a VISUAL technique naming PIXEL — a design-system change moves components the ticket never names");
   const high = risks.filter((x) => x.level === "high" || x.level === "critical");
-  if (high.length && !running("Exploratory") && !skippedFor("Exploratory")) errors.push(`6b: ${high.map((x) => x.r).join(", ")} High/Critical ⇒ Exploratory runs (F1)`);
+  if (high.length && !satisfied("6b", "Exploratory")) errors.push(`6b: ${high.map((x) => x.r).join(", ")} High/Critical ⇒ Exploratory runs (F1)`);
   for (const x of high) { const a = approach.find((y) => y.r === x.r); if (a && /\{HYPOTHESIS\}/.test(a.oracle) && !isModel(x.r)) errors.push(`6c: ${x.r} High/Critical on {HYPOTHESIS} needs MODEL (M1)`); }
   if (fired.includes("F6") && !/Deployed:\s*NO\b/.test(sec)) errors.push("6d: F6 fired but the header does not say 'Deployed: NO'");
   const modelRisks = risks.filter((x) => isModel(x.r)).map((x) => x.r);
@@ -230,7 +234,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const bundle = readJsonOrExit(arg("bundle"), "check-strategy.mjs");
   const changeMapPath = arg("change-map") || null;
   const changeMap = changeMapPath ? (readJsonOrExit(changeMapPath, "check-strategy.mjs") ?? {}) : null; // a `null` file is a map in doubt
-  const capabilities = arg("capabilities") ? readJsonOrExit(arg("capabilities"), "check-strategy.mjs") : null;
+  const capabilities = arg("capabilities") ? readCapabilitiesOrExit(arg("capabilities"), "check-strategy.mjs") : null;
   const res = checkStrategy(md, bundle, { domainMapText: domainMapTextOf(bundle), p01Names: p01NamesOf(), changeMap, changeMapPath, capabilities });
   console.log(JSON.stringify(res, null, 2));
   process.exit(res.errors.length ? 1 : 0);

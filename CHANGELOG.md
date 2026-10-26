@@ -52,6 +52,41 @@ the Visual lane row says, with the vc-frontend plugin's `visual/` engine on a fr
 With `--capabilities`, an install without one keeps F8's `PIXEL` risk with its Lane reading
 `SKIP — not available in this install: <capability>`, and Out of scope names `PIXEL` (clause 6s).
 
+## The #540 review fixes — `vc-test` `0.4.1` — 2026-10-26
+
+Fixes from an independent review of 0.4.0 (#540).
+
+**Fixed — the verifier's oracle agreed with the gate.** `strategy-verifier` takes `qa-test-strategy` §Gate as its only
+criteria, and clause 6 still said "nothing a fired floor requires is `SKIP`" and 6b "exploratory runs", so it would
+reject the `SKIP — not available in this install: <capability>` row the script accepts. §Gate now lists clause **6s**
+and names it as the one exception in 6 and 6b.
+
+**Fixed — 6b names its SKIP too.** With F1 not fired but a High/Critical risk in the register, an
+`Exploratory | SKIP — not available…` row passed with Out of scope silent. It now needs Out of scope to name it (6s),
+reported once whichever clause reaches the row first.
+
+**Fixed — unprobed is not unavailable.** A capability counts as missing only when `capabilities.json` says so: a lane
+when the file lists the MCP servers it was given (`mcp`, written only when `capabilities.mjs` got `--mcp`) and none is
+a browser lane (a name containing `playwright`) or Chrome DevTools; a script when `scripts.<name>` is `false`. A file
+of `{}`, or a run without `--mcp`, no longer lets F1/F2/F3/F8/F12's rows read SKIP, and a Playwright server named
+outside the four known lanes counts. A capabilities file that is `null`, a list, or has a malformed `mcp`/`scripts`
+exits 2 from `floors.mjs` and `check-strategy.mjs`, like any malformed input.
+
+**Fixed — F5 is not skipped on a domain doubt `tc:scope` could have settled.** A `known.domain` or dropped-observable
+gap skipped F5 whenever `regression-select` was missing; it now stays doubt unless `tc:scope` is missing as well.
+
+**Fixed — `deployed.json` is read only when it belongs to this check.** `redeploy` accepted a file written after the
+cached bundle's fetch, i.e. an earlier round's; it now reads only a file written after the redeploy began. And with
+no counted PR (`chain_deployed` NONE), a `deployed.json` line no longer blocks the run.
+
+**Corrected — F6 without `deploy:pr`.** 0.4.0 said that, without `deploy:pr`, the deployment blockers come from
+`deployed.json` written by `deployed.mjs --expect`. No step writes that file: the expect list (the versions each PR
+builds) has no source without `deploy:pr`. So on such a project every counted PR is `DEPLOYMENT UNKNOWN`, F6 does
+not fire, and the run proceeds as "deployment unverified". The reader stays; its producer is deferred to P2.
+
+Without `--capabilities`, `floors.mjs` and `check-strategy.mjs` still give 0.3.1's output (checked on the seven saved
+bundles and two saved strategies).
+
 ## Unavailable is not doubt — the floors read what the install can run — `vc-test` `0.4.0` — 2026-10-26
 
 P1d-3a of the `vc-test` plan (`docs/superpowers/plans/2026-10-26-vc-test-p1d3a-capabilities.md`, spec §5.2, §5.3).
