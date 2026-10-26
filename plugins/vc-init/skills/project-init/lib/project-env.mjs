@@ -9,6 +9,7 @@
  * change. `scaffold-env.mjs` `CATALOG` marks these keys `scope: "project"`; this module is the one place that
  * knows where they go and moves them out of a project onboarded before the split.
  */
+import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -29,6 +30,36 @@ export const LOCAL_HEADER = [
   `# ==============================================================================`,
   ``, ``,
 ].join("\n");
+
+/** Header of a NEW `.env.local` on a host-governed project: no password and no token of ours lives here. */
+export const LOCAL_HEADER_HOST = [
+  `# ==============================================================================`,
+  `# .env.local — this machine's project settings (GITIGNORED — never commit).`,
+  `# Templated by /project-init on a host-governed project. Holds what is the SAME for`,
+  `# every environment (the tracker / code-host connection). No password and no token`,
+  `# goes here: test-user passwords are stored with the host plugin's own secret tool,`,
+  `# and its MCP servers hold every credential. Per-env URLs live in .env.<env>.`,
+  `# ==============================================================================`,
+  ``, ``,
+].join("\n");
+
+/** Header of a NEW `.env.<env>`. A host-governed project keeps it local and puts test-user logins in it. */
+export function envHeader(env, { hostGoverned = false } = {}) {
+  return [
+    `# ==============================================================================`,
+    hostGoverned
+      ? `# .env.${env} — per-env URLs and test-user logins (GITIGNORED — never commit, NO secrets).`
+      : `# .env.${env} — per-env URLs / identifiers (Bucket #2, committed, NO secrets).`,
+    `# Templated by project-init/scaffold-env.mjs. FILL IN each value below, then`,
+    `# run verify-access.mjs. What is the same for every env (the tracker /`,
+    hostGoverned
+      ? `# code-host connection) lives in .env.local; passwords live in the host's secret tool.`
+      : `# code-host connection) and the test-user passwords live in .env.local.`,
+    `# Activate: TEST_ENV=${env} npm run env:check`,
+    `# ==============================================================================`,
+    ``, ``,
+  ].join("\n");
+}
 
 /** Names that look like `.env.<x>` but are not an environment. */
 // `test` is not here: it is a valid TEST_ENV name ([a-z0-9_]+), and its file must migrate like any other.
@@ -137,6 +168,46 @@ export function setKey(text, key, value, comment = "") {
   return base + sep + gap + (comment ? comment.replace(/\n/g, eol) : "") + `${key}=${value}${eol}`;
 }
 
+/**
+ * Whether git tracks `file` in `root`. A tracked `.env.<env>` is the team's shared copy: a key removed
+ * from it is removed for every teammate on the next commit, and one without a `.env.local` loses it.
+ * No git, or not a repository ⇒ false (nothing is shared through git there).
+ */
+export function isGitTracked(root, file) {
+  return gitTracked(root, [file]).has(file);
+}
+
+/** The subset of `files` (names relative to `root`) git tracks — one `git ls-files` for all of them. */
+export function gitTracked(root, files) {
+  if (!files.length) return new Set();
+  try {
+    const out = execFileSync("git", ["ls-files", "-z", "--", ...files], { cwd: root, stdio: ["ignore", "pipe", "ignore"] }).toString();
+    const listed = new Set(out.split("\0").filter(Boolean));
+    return new Set(files.filter((f) => listed.has(f)));
+  } catch {
+    return new Set();
+  }
+}
+
+/**
+ * The project keys the team keeps in its git-tracked env files: key → the shared value ("" when the files
+ * disagree or hold it empty). Such a key never goes to `.env.local` (moveProjectKeys): a new env file gets
+ * it beside the others, and a different value is refused.
+ */
+export function sharedProjectKeys(root, keys, { trackedIn = gitTracked } = {}) {
+  const files = envFileNames(root);
+  const tracked = [...trackedIn(root, files)];
+  const texts = Object.fromEntries(tracked.map((f) => [f, readFileSync(join(root, f), "utf8")]));
+  const out = new Map();
+  for (const key of keys) {
+    const vals = tracked.map((f) => readKey(texts[f], key)).filter((v) => v !== null);
+    if (!vals.length) continue;
+    const distinct = [...new Set(vals.filter((v) => v !== ""))];
+    out.set(key, distinct.length === 1 ? distinct[0] : "");
+  }
+  return out;
+}
+
 /** The comment scaffold-env writes above a key, from its CATALOG meta. */
 export const keyComment = (key, meta) => `# ${key} — ${meta.what}\n#   ${meta.where}\n`;
 
@@ -153,23 +224,48 @@ export const keyComment = (key, meta) => `# ${key} — ${meta.what}\n#   ${meta.
  *     the caller reports it (a project that really points two stands at two trackers keeps `KEY_<ENV>` in
  *     `.env.local`, which config.js / load-layered-env promote per env).
  *
+ * A key any git-tracked env file holds is left exactly where it is (`kept`, with the shared value): the
+ * project keeps it in its committed env files, so that is its home. Removing it would remove it for every
+ * teammate, and a copy in `.env.local` would win at runtime and go stale the next time the team changes
+ * the shared value (isGitTracked) — a `.env.local` line that differs is reported as a conflict instead.
+ *
  * @param {string} root  the project directory
  * @param {Array<[string, object]>} catalog  scaffold-env CATALOG entries with `scope: "project"`
- * @param {{ dryRun?: boolean }} [opts]
- * @returns {{ moved: Array<{key:string, from:string[]}>, cleaned: Array<{key:string, from:string[]}>, conflicts: Array<{key:string, values:Record<string,string>}> }}
+ * @param {{ dryRun?: boolean, trackedIn?: (root: string, files: string[]) => Set<string> }} [opts]
+ * @returns {{ moved: Array<{key:string, from:string[]}>, cleaned: Array<{key:string, from:string[]}>, kept: Array<{key:string, in:string[], value:string}>, conflicts: Array<{key:string, values:Record<string,string>}> }}
  */
-export function moveProjectKeys(root, catalog, { dryRun = false } = {}) {
+export function moveProjectKeys(root, catalog, { dryRun = false, trackedIn = gitTracked } = {}) {
   const files = envFileNames(root);
+  const tracked = trackedIn(root, files);
   const localPath = join(root, LOCAL_FILE);
   let local = existsSync(localPath) ? readFileSync(localPath, "utf8") : "";
   const texts = Object.fromEntries(files.map((f) => [f, readFileSync(join(root, f), "utf8")]));
-  const result = { moved: [], cleaned: [], conflicts: [] };
+  const result = { moved: [], cleaned: [], kept: [], conflicts: [] };
   let localChanged = false;
   const changedFiles = new Set();
 
   for (const [key, meta] of catalog) {
     const holders = files.filter((f) => readKey(texts[f], key) !== null);
     if (!holders.length) continue;
+    const shared = holders.filter((f) => tracked.has(f));
+    if (shared.length) {
+      // The project keeps this key in its committed env files: leave every copy where it is. What still
+      // needs the operator is a value that disagrees with the shared one — above all a `.env.local` line,
+      // which loads last and would override it for every env (even an empty `KEY=` line does).
+      const all = Object.fromEntries(holders.map((f) => [f, readKey(texts[f], key)]));
+      const sharedValues = [...new Set(shared.map((f) => all[f]).filter((v) => v !== ""))];
+      const localValue = readKey(local, key);
+      const value = sharedValues.length === 1 ? sharedValues[0] : "";
+      const otherEnvDiffers = holders.some((f) => !tracked.has(f) && all[f] !== "" && all[f] !== value);
+      if (sharedValues.length > 1 || otherEnvDiffers || (localValue !== null && localValue !== value)) {
+        result.conflicts.push({
+          key, values: { ...all, ...(localValue !== null ? { [LOCAL_FILE]: localValue } : {}) },
+          reason: `the team's env files (${shared.join(", ")}) hold it, so they are its home: give every env file the same value, and delete the ${LOCAL_FILE} line (it loads last and overrides them)`,
+        });
+      }
+      result.kept.push({ key, in: shared, value });
+      continue;
+    }
     const values = Object.fromEntries(holders.map((f) => [f, readKey(texts[f], key)]));
     const distinct = [...new Set(Object.values(values).filter((v) => v !== ""))];
     const localValue = readKey(local, key);
@@ -206,10 +302,11 @@ export function moveProjectKeys(root, catalog, { dryRun = false } = {}) {
 }
 
 /** One line per move / conflict, for a scaffolder's or normalizer's own log prefix. */
-export function describeMove({ moved, cleaned, conflicts }) {
+export function describeMove({ moved, cleaned, kept = [], conflicts }) {
   const lines = [];
   if (moved.length) lines.push(`moved to ${LOCAL_FILE} (same for every env): ${moved.map((m) => `${m.key} ← ${m.from.join(", ")}`).join("; ")}`);
   if (cleaned.length) lines.push(`removed from the env files (${LOCAL_FILE} already holds it): ${cleaned.map((m) => `${m.key} ← ${m.from.join(", ")}`).join("; ")}`);
+  if (kept.length) lines.push(`left in the git-tracked env files (shared with the team, so not moved to ${LOCAL_FILE}): ${kept.map((k) => `${k.key} in ${k.in.join(", ")}`).join("; ")}`);
   for (const c of conflicts) {
     if (c.reason) { lines.push(`NOT moved ${c.key} — ${c.reason}`); continue; }
     lines.push(`NOT moved ${c.key} — the files disagree (${Object.entries(c.values).map(([f, v]) => `${f}: ${v || "(empty)"}`).join(", ")}); keep one value in ${LOCAL_FILE}, or ${c.key}_<ENV> there per env, and delete the rest`);
