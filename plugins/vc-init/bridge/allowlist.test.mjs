@@ -3,7 +3,7 @@
 // a token printer, a request to a host the caller picks, code the caller picks running with the token.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { checkArgv, checkGitLocation, ghApiEndpoint, groupOf, hostAllowed, toolInGroup } from "./allowlist.mjs";
+import { PINNED_GRAPHQL, checkArgv, checkGitLocation, ghApiEndpoint, groupOf, hostAllowed, toolInGroup } from "./allowlist.mjs";
 
 const allowed = (tool, args) => assert.equal(checkArgv(tool, args).ok, true, `${tool} ${args.join(" ")} should be allowed: ${checkArgv(tool, args).reason}`);
 const refused = (tool, args, re) => {
@@ -41,6 +41,32 @@ test("gh api reads only: no write method, no body, no GraphQL", () => {
   refused("gh", ["pr", "list", "-wRevil.example/a/b"], /combined/);
   refused("gh", ["pr", "create", "-fRevil.example/a/b"], /combined/);
   allowed("gh", ["api", "-XGET", "-fper_page=100", "repos/a/b/pulls"]);
+});
+
+// B8 (vc-test): GraphQL is a POST, so it stays refused — except a document byte-equal to a pinned read
+// query, with only that query's variables. A variable read from a file would post a local file to GitHub.
+test("gh api graphql: only a pinned read query, with only its variables", () => {
+  const Q = PINNED_GRAPHQL.reviewThreads.query;
+  assert.equal(Q, "query($o:String!,$r:String!,$n:Int!){repository(owner:$o,name:$r){pullRequest(number:$n){reviewThreads(first:100){nodes{isResolved}}}}}");
+  const vars = ["-F", "o=VirtoCommerce", "-F", "r=vc-platform", "-F", "n=3133"];
+  allowed("gh", ["api", "graphql", "-f", `query=${Q}`, ...vars]);
+  allowed("gh", ["api", "graphql", "-f", `query=${Q}`, ...vars, "--jq", ".data"]);
+  allowed("gh", ["api", "graphql", `--raw-field=query=${Q}`, ...vars]);
+  allowed("gh", ["api", "graphql", "-f", `query=${Q}`, "-f", "o=VirtoCommerce", "-f", "r=vc-platform", "-F", "n=1"]);
+  refused("gh", ["api", "graphql", "-f", `query=${Q} `, ...vars], /not a pinned read query/);
+  refused("gh", ["api", "graphql", "-f", "query=mutation{addStar(input:{starrableId:\"x\"}){clientMutationId}}", ...vars], /not a pinned read query/);
+  refused("gh", ["api", "graphql", "-f", `query=${Q}query{viewer{login}}`, ...vars], /not a pinned read query/);
+  refused("gh", ["api", "graphql", "-F", "query=@q.graphql", ...vars], /from a file/);
+  refused("gh", ["api", "graphql", "-f", `query=${Q}`, "-F", "o=@secret.txt", "-F", "r=x", "-F", "n=1"], /from a file/);
+  refused("gh", ["api", "graphql", "-f", `query=${Q}`, ...vars, "-F", "x=1"], /not a variable of the pinned query/);
+  refused("gh", ["api", "graphql", "-f", `query=${Q}`, ...vars, "-F", "o=b"], /twice/);
+  refused("gh", ["api", "graphql", "-f", `query=${Q}`, "-F", "o=a", "-F", "r=b"], /missing variable n/);
+  refused("gh", ["api", "graphql", "-f", `query=${Q}`, ...vars, "--input", "body.json"], /not allowed with a pinned query/);
+  refused("gh", ["api", "graphql", "-f", `query=${Q}`, ...vars, "-H", "X: y"], /not allowed with a pinned query/);
+  refused("gh", ["api", "graphql", "-X", "POST", "-f", `query=${Q}`, ...vars], /not allowed with a pinned query/);
+  refused("gh", ["api", "graphql", "-f", `query=${Q}`, ...vars, "--hostname", "example.com"], /hostname/);
+  refused("gh", ["api", "graphql"], /needs -f query=/);
+  refused("gh", ["api", "graphql", "-f", "query=query { viewer { login } }"], /graphql/);
 });
 
 test("gh: -R with its value attached is held to github.com too; repo fork may not run git", () => {
