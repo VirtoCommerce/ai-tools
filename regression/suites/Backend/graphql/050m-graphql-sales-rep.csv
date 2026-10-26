@@ -1697,3 +1697,44 @@ query { salesRepDocuments(first: 1) { totalCount } }
 [GQL-EXEC read2]","[ERRORS label=read1] errors[] empty {OBSERVED}
 [ERRORS label=read2] errors[] empty {OBSERVED}
 [DATA label=read2] data.salesRepDocuments.totalCount >= data.read1.salesRepDocuments.totalCount {OBSERVED}",none,"totalCount decreases between read1 and read2 with no delete having occurred, errors[] is non-empty on either read",none (read-only),"VCST-5730; LIVE-CONFIRMED 2026-08-20 vcptcore-qa (totalCount observed 5 then 7 across the same probing session, shared env) | Behavior:sr.documents.live-mutable",Automated
+SR-GQL-157,salesRepCustomerOrders / salesRepOrders — an OR clause in filter or keyword never widens the list beyond the served organizations,Sales Rep > Customer Orders > Data Isolation,Critical,"BL-AUTH-006, BL-SR-002",,"Runner-native via [GQL-ENDPOINT /graphql/sales-rep]. Requires the Sales Rep module. Caller is SALES_REP (= SR_REP_PRIMARY), serving @td(ORG_ACME.id), @td(ORG_TECHFLOW.id), @td(ORG_BUILDRIGHT.id) and @td(ORG_ACMEWEST.id) (the same served set as SR-GQL-032; if the rep gains a fifth served organization the sum-of-served-orgs assertions must be extended); other organizations on the environment hold orders, which is the leak surface. Unfiltered totals are captured at run time, never written into the row. Fix under test: vc-module-x-order PR #57. A filter starting with OR is expected to return the rep's whole served scope, so this case never asserts that the status term narrows the result. Each list is its own request (several heavy searches in one request intermittently fail a field with INVALID_OPERATION on the shared stand).",storeId={{STORE_ID}}; org_a=@td(ORG_ACME.platform_id); org_b=@td(ORG_TECHFLOW.platform_id); org_c=@td(ORG_BUILDRIGHT.platform_id); org_d=@td(ORG_ACMEWEST.platform_id),"[GQL-ENDPOINT /graphql/sales-rep]
+[AUTH role=SALES_REP]
+[GQL-OP all]
+query Q($storeId: String) { salesRepCustomerOrders(storeId: $storeId, first: 50) { totalCount } }
+[GQL-VARS all] {""storeId"":""{{storeId}}""}
+[GQL-EXEC all]
+[GQL-CAPTURE all.data.salesRepCustomerOrders.totalCount → ALL_TOTAL]
+[GQL-OP or_only]
+query Q($storeId: String, $f: String) { salesRepCustomerOrders(storeId: $storeId, first: 50, filter: $f) { totalCount items { number organizationId } } }
+[GQL-VARS or_only] {""storeId"":""{{storeId}}"",""f"":""OR""}
+[GQL-EXEC or_only]
+[GQL-OP or_status]
+query Q($storeId: String, $f: String) { salesRepCustomerOrders(storeId: $storeId, first: 50, filter: $f) { totalCount items { number organizationId } } }
+[GQL-VARS or_status] {""storeId"":""{{storeId}}"",""f"":""OR status:\""Processing\""""}
+[GQL-EXEC or_status]
+[GQL-OP rep_all]
+query Q($storeId: String) { salesRepOrders(storeId: $storeId, first: 50) { totalCount } }
+[GQL-VARS rep_all] {""storeId"":""{{storeId}}""}
+[GQL-EXEC rep_all]
+[GQL-CAPTURE rep_all.data.salesRepOrders.totalCount → REP_ALL_TOTAL]
+[GQL-OP rep_filter]
+query Q($storeId: String, $f: String) { salesRepOrders(storeId: $storeId, first: 50, filter: $f) { totalCount items { number organizationId } } }
+[GQL-VARS rep_filter] {""storeId"":""{{storeId}}"",""f"":""OR status:\""Processing\""""}
+[GQL-EXEC rep_filter]
+[GQL-OP rep_keyword]
+query Q($storeId: String, $k: String) { salesRepOrders(storeId: $storeId, first: 50, keyword: $k) { totalCount items { number organizationId } } }
+[GQL-VARS rep_keyword] {""storeId"":""{{storeId}}"",""k"":""OR status:\""Processing\""""}
+[GQL-EXEC rep_keyword]","[ERRORS label=all] errors[] empty {SPEC} (VCST-6536)
+[COUNT label=all] data.salesRepCustomerOrders.totalCount > 0 {OBSERVED}
+[ERRORS label=or_only] errors[] empty {SPEC} (VCST-6536)
+[COUNT label=or_only] data.salesRepCustomerOrders.totalCount <= {{ALL_TOTAL}} {BL} (BL-AUTH-006)
+[DATA label=or_only] data.salesRepCustomerOrders.items[*?organizationId={{org_a}}].length + data.salesRepCustomerOrders.items[*?organizationId={{org_b}}].length + data.salesRepCustomerOrders.items[*?organizationId={{org_c}}].length + data.salesRepCustomerOrders.items[*?organizationId={{org_d}}].length = data.salesRepCustomerOrders.items.length {BL} (BL-AUTH-006)
+[ERRORS label=or_status] errors[] empty {SPEC} (VCST-6536)
+[COUNT label=or_status] data.salesRepCustomerOrders.totalCount <= {{ALL_TOTAL}} {BL} (BL-AUTH-006)
+[DATA label=or_status] data.salesRepCustomerOrders.items[*?organizationId={{org_a}}].length + data.salesRepCustomerOrders.items[*?organizationId={{org_b}}].length + data.salesRepCustomerOrders.items[*?organizationId={{org_c}}].length + data.salesRepCustomerOrders.items[*?organizationId={{org_d}}].length = data.salesRepCustomerOrders.items.length {BL} (BL-AUTH-006)
+[ERRORS label=rep_all] errors[] empty {SPEC} (VCST-6536)
+[ERRORS label=rep_filter] errors[] empty {SPEC} (VCST-6536)
+[COUNT label=rep_filter] data.salesRepOrders.totalCount <= {{REP_ALL_TOTAL}} {BL} (BL-AUTH-006)
+[ERRORS label=rep_keyword] errors[] empty {SPEC} (VCST-6536)
+[COUNT label=rep_keyword] data.salesRepOrders.totalCount <= {{REP_ALL_TOTAL}} {BL} (BL-AUTH-006)","[API] errors[] is empty in the GraphQL response
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql",none,VCST-6536 · Archetype:SCOPE · Technique:EG · Purpose:FUNC · Catches:VCST-6536 | Promoted: REG-2026-10-27-0036 (2026-10-26),Automated
