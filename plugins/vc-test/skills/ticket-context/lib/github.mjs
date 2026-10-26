@@ -241,7 +241,7 @@ export function assembleDiff(files) {
   return { text: parts.length ? `${parts.join("\n")}\n` : "", noPatch };
 }
 
-export async function collectPr(gh, p, runDir, { caps = CAPS, sameKey = [] } = {}) {
+export async function collectPr(gh, p, runDir, { caps = CAPS, sameKey = [], before = null } = {}) {
   const { owner, repo, number, meta } = p;
   checkRepo(owner, repo);
   checkNumber(number);
@@ -283,12 +283,16 @@ export async function collectPr(gh, p, runDir, { caps = CAPS, sameKey = [] } = {
   let comments = null;
   try { comments = await gh.reviewComments(owner, repo, number); } catch (e) { entry.gaps.push(asGap(`pr:${p.ref}:reviews`, e)); }
   if (comments) {
+    // A blind prepare (U67) keeps only the review comments posted by the cutoff. Thread resolution is today's state,
+    // so it is not read at all: null says "not read", never 0.
+    const kept = before ? comments.filter((c) => !(Date.parse(c.created_at) > Date.parse(before))) : comments;
     // A threads failure must not discard the comments already read: null says "not read", never 0.
     let unresolved = null;
-    try { unresolved = await gh.unresolvedThreads(owner, repo, number); } catch (e) { entry.gaps.push(asGap(`pr:${p.ref}:threads`, e)); }
+    if (!before) try { unresolved = await gh.unresolvedThreads(owner, repo, number); } catch (e) { entry.gaps.push(asGap(`pr:${p.ref}:threads`, e)); }
     // No author handles: who said it is not what the agent reports.
     entry.reviews_path = write("reviews.json", { unresolved_threads: unresolved,
-      comments: comments.map((c) => ({ path: c.path, line: c.line ?? c.original_line ?? null, body: String(c.body ?? "").slice(0, 500), created_at: c.created_at })) });
+      ...(before ? { hidden_after_cutoff: comments.length - kept.length } : {}),
+      comments: kept.map((c) => ({ path: c.path, line: c.line ?? c.original_line ?? null, body: String(c.body ?? "").slice(0, 500), created_at: c.created_at })) });
   }
   if (entry.head_sha) {
     try { entry.checks_path = write("checks.json", summarizeChecks(await gh.checkRuns(owner, repo, entry.head_sha))); } catch (e) { entry.gaps.push(asGap(`pr:${p.ref}:checks`, e)); }
