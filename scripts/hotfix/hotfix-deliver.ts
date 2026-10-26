@@ -132,12 +132,13 @@ function loadEnvCoords(env: string, passwordOverride?: string): EnvCoords {
   const suffix = key.toUpperCase(); // per-env secret override, e.g. ADMIN_PASSWORD_STABLE
   // scripts/deploy/lib/env.ts's order: the .env.local pin, then the env's own password file
   // (.env.playwright.vcptcore_<key>, which this skipped — a machine that keeps env passwords only there
-  // fell through to Password1), then the legacy suffix form and the shared fallbacks.
+  // fell through to a guessed password), then the legacy suffix form and the shared fallbacks. No guess:
+  // an empty password skips the sign-in (getAdminToken) instead of a failed attempt against the shared admin.
   const password = passwordOverride
     || local[`ADMIN_PASSWORD_VCPTCORE_${suffix}`]
     || readEnvFile(resolve(REPO_ROOT, `.env.playwright.vcptcore_${key}`)).ADMIN_PASSWORD
     || local[`ADMIN_PASSWORD_${suffix}`]
-    || local.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || 'Password1';
+    || local.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || '';
   return {
     env: key, file, deployOwner, deployRepo, branch: e.DEPLOY_BRANCH, path: e.DEPLOY_PACKAGES_PATH,
     backUrl: (e.BACK_URL || '').replace(/\/$/, ''), admin: e.ADMIN || 'admin', password,
@@ -362,7 +363,7 @@ async function waitDeploy(c: EnvCoords, commitSha: string, deadline: number): Pr
 
 // ── live module-version poll (/api/platform/modules) ───────────────────────────
 async function getAdminToken(c: EnvCoords): Promise<string | null> {
-  if (!c.backUrl) return null;
+  if (!c.backUrl || !c.password) return null;
   const body = new URLSearchParams({ grant_type: 'password', username: c.admin, password: c.password });
   try {
     const r = await fetch(`${c.backUrl}/connect/token`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body });

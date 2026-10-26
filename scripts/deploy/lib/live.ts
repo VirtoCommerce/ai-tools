@@ -3,7 +3,7 @@
 
 import type { EnvCoords } from './env.ts';
 
-export type ProbeStatus = number | 'network' | 'no-back-url';
+export type ProbeStatus = number | 'network' | 'no-back-url' | 'no-password';
 /** `isInstalled` absent ⇒ treated as installed (older platforms omit it); `loadErrors` ← `validationErrors`. */
 export interface LiveModule { id: string; version: string; projectUrl?: string; isInstalled?: boolean; loadErrors: string[] }
 
@@ -11,6 +11,8 @@ export interface LiveModule { id: string; version: string; projectUrl?: string; 
 /** Admin token plus WHY it failed — pre-flight's diagnosis needs 401 vs 5xx vs no BACK_URL. */
 export async function probeAdminToken(c: EnvCoords, signal?: AbortSignal): Promise<{ token: string | null; status: ProbeStatus }> {
   if (!c.backUrl) return { token: null, status: 'no-back-url' };
+  // No password, no attempt: a guessed one is a failed sign-in that counts toward the shared admin's lockout.
+  if (!c.password) return { token: null, status: 'no-password' };
   try {
     const r = await fetch(`${c.backUrl}/connect/token`, { signal, method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ grant_type: 'password', username: c.admin, password: c.password }) });
     if (r.status !== 200) return { token: null, status: r.status };

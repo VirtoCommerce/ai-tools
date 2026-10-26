@@ -105,7 +105,9 @@ export function resolveEnvCoords(env: string, passwordOverride?: string, ticket?
     || local[`ADMIN_PASSWORD_${envKey}`]
     || own.passwords.ADMIN_PASSWORD
     || local[`ADMIN_PASSWORD_VCPTCORE_${suffix}`] || local[`ADMIN_PASSWORD_${suffix}`]
-    || local.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || 'Password1';
+    // No guessed fallback: an empty password makes probeAdminToken skip the sign-in. The old 'Password1'
+    // was stale, and from a machine without secrets (CI) it locked the stand's shared admin out.
+    || local.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || '';
   return {
     env, deployOwner, deployRepo, branch,
     packagesPath: e.DEPLOY_PACKAGES_PATH || PACKAGES_PATH_DEFAULT,
