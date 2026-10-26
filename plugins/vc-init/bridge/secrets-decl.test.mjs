@@ -9,6 +9,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildDeclarations, newProjectId } from "../skills/project-init/write-secrets-decl.mjs";
+import { passwordSecret, runnerTask } from "../skills/project-init/lib/passwords.mjs";
 
 const WRITER = fileURLToPath(new URL("../skills/project-init/write-secrets-decl.mjs", import.meta.url));
 const SHIM = "/data/vc-init-ai-tools/vc-run.mjs";
@@ -93,4 +94,13 @@ test("the CLI writes the .gitignore entry before the file exists", () => {
   const dir = mkdtempSync(join(tmpdir(), "decl-"));
   write(dir, ["--github-auth", "pat"]);
   assert.match(readFileSync(join(dir, ".gitignore"), "utf8"), /^\.claude\/vc-secrets\.local\.json$/m);
+});
+
+test("a runner task per password env binds that env's passwords and no token", () => {
+  const d = buildDeclarations(null, { pat: { github: true, jira: true }, shim: SHIM, projectId: "p", passwords: { vcst: ["ADMIN_PASSWORD"] } });
+  assert.deepEqual(d.tasks[runnerTask("vcst")], { command: "node", args: [SHIM, "--inner", "runner"], env: { ADMIN_PASSWORD: `secret:${passwordSecret("ADMIN_PASSWORD", "vcst")}` } });
+  const dropped = buildDeclarations(d, { pat: { github: true, jira: true }, shim: SHIM, projectId: "p", passwords: {} });
+  assert.equal(runnerTask("vcst") in (dropped.tasks || {}), false);
+  const none = buildDeclarations(null, { pat: { github: true }, shim: SHIM, projectId: "p" });
+  assert.deepEqual(Object.keys(none.tasks).filter((t) => t.startsWith("vc-init-runner")), []);
 });
