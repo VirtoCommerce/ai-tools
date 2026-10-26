@@ -39,8 +39,14 @@ external, Confluence and design pages as they are now, the stand's deployed buil
   exit 2 or 3 means the cached bundle no longer validates or reads: run `prepare <KEY> --fresh` (same
   flags) and continue from its answer.
 - `status: "no-profile"` (exit 3) → **STOP.** Report its `detail`: run `/project-init` (vc-init) first.
-- `status: "host-governed"` (exit 4) → **STOP.** The project's tracker and code host are read through the
-  host's MCP servers, which this skill does not do yet (vc-test P1d-3). Nothing was read.
+- `status: "host-governed"` (exit 4) → the tracker and code host are read through the host's MCP servers, in
+  passes (U23). Each server in `servers` must be connected in this session (a tool whose name starts with one of
+  its `tool_prefixes`), else **STOP**: BLOCKED, naming it. This call also empties `raw_dir`: a run never reuses
+  another's answers. Then loop: `prepare <KEY> --raw <raw_dir>` (same flags); on `status: "needs-fetch"` (exit 5)
+  dispatch `vc-test:fetch` with `RAW = <raw_dir>`, `REQUESTS = <requests_path>`, `SERVERS = <servers>`,
+  `TOOL_PREFIXES = <tool_prefixes>` — the first pass a
+  fresh dispatch, later passes `SendMessage` to the same agent — and run `prepare --raw` again. Read only the
+  status and the agent's count line, never a file in `raw_dir`. `prepared` ends the loop; carry on below.
 - `status: "no-tracker"` (exit 3) → **STOP.** Report the gap's `reason` and `detail`: `VC_RUN` not set, no
   tracker address in the profile (run `/project-init`), or the tracker's own refusal of the first read (no stored
   token, a refused token, a ticket that does not exist). Nothing can be read without the ticket.

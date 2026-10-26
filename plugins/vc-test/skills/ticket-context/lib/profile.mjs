@@ -37,5 +37,14 @@ export function resolveProfile(profile) {
     fieldMap: obj(t.fieldMap),
     azure: { roleStates: obj(az.roleStates), roleStatesByType: obj(az.roleStatesByType) }, // org and project: the bridge pins them
     governed: !!profile.governance?.host || profile.governance?.secrets === "host", // the bridge's own refusal (vc-init bridge/run.mjs hostRefusal)
+    // The host's MCP servers per role (U23): the host-governed fetch reads through these, and only these.
+    servers: { tracker: str(profile.governance?.servers?.tracker), codeHost: str(profile.governance?.servers?.codeHost), github: str(profile.governance?.servers?.github) },
+    // How a role's tools are named: `mcp__<server>__` for a server of the session, `mcp__plugin_<plugin>_<server>__`
+    // for one the host plugin ships (governance.host is `<plugin>@<marketplace>`).
+    toolPrefixes: Object.fromEntries(["tracker", "codeHost", "github"].map((role) => {
+      const s = str(profile.governance?.servers?.[role]);
+      const plugin = str(profile.governance?.host).split("@")[0];
+      return [role, s ? [`mcp__${s}__`, ...(plugin ? [`mcp__plugin_${plugin}_${s}__`] : [])] : []];
+    })),
   };
 }

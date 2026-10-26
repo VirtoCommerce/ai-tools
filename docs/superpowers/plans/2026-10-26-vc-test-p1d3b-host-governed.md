@@ -22,6 +22,25 @@ not know which route ran.
 
 **Spec:** [`docs/superpowers/specs/2026-10-15-vc-test-plugin-design.md`](../specs/2026-10-15-vc-test-plugin-design.md) — U22, U23, B9, §7 (A host-governed project), §8, §9 (the BLOCKED row for an unconnected server). The other half of P1d-3: [`2026-10-26-vc-test-p1d3a-capabilities.md`](2026-10-26-vc-test-p1d3a-capabilities.md). The host-governed rules this follows: `plugins/vc-fix/knowledge/execution/host-governance.md`.
 
+## Status
+
+**Built 2026-10-26 as vc-test 0.6.0, in review** (0.5.0 went to #539, the visual-regression release, which merged first). Tasks 1–6 done.
+
+- **Task 1 (the agent's tools):** a plugin agent cannot name an unknown server's tools, so `fetch` lists no `tools:`
+  and disallows Bash, Edit, NotebookEdit, WebFetch, WebSearch and Agent. It inherits the session's MCP tools,
+  write tools included; read-only rests on its brief. Accepted for the preview, re-checked in P5 (spec §7).
+- **Task 5 Step 1 (recorded Azure answers):** both routes give equal `prepare.json` and per-PR files once a missing
+  answer keeps the bridge's gap reason (404 → `deleted`, 401/403 → `access-denied`).
+- **Task 5 Step 2 (the real agent, VCST-6534, Atlassian + GitHub MCP):** converged in 4 fetch passes, about 200k
+  agent tokens. Three fixes came out of it: a field list the host cannot give is a gap, not `no-tracker`;
+  `search/issues` must carry `repository_url`; a JQL search keeps at most `maxResults` issues. After them the
+  bundle equals the bridge route's except where a server has no read tool (field list, development panel, commit
+  search), each an explained gap.
+- **Final review (fresh Opus):** fixed in one pass — the raw folder is per run (emptied at start, removed at every
+  end, in tmp unless git-ignored), so answers and the pass count never outlive a run; `missing` is a closed reason;
+  each role's tool prefixes cover plugin-shipped servers; the agent disallows every shell, messaging, publishing and
+  scheduling tool. Minors deferred: see the PR.
+
 ## Global Constraints
 
 - **The orchestrator never reads a raw answer** (B9). It reads `prepare`'s JSON status and the fetch agent's one-line count, nothing else. Only the fetch agent sees host content, and it returns no content.

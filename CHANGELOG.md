@@ -17,6 +17,40 @@ pixels against the `design-review` acceptance catalog's tolerances. It sorts eac
 A colour difference that the same theme token names on both sides is `theme`, not a defect, and the differing
 tokens are listed for confirmation (VCST-6534).
 
+## Host-governed projects — `vc-test` `0.6.0` — 2026-10-26
+
+`/vc-test:ticket-context` now builds its bundle on a host-governed project, whose tracker and code host are reachable
+only through the host plugin's MCP servers (vc-test spec U22, U23, B9; plan P1d-3b).
+
+**Added — `prepare --raw` and the pass loop.** A governed profile without `--raw` prints `host-governed` with the
+raw folder and the mapped servers (exit 4). With `--raw`, every read is answered from that folder, one file per
+request, holding what the bridge command would have printed. A pass with unanswered reads writes `requests.json`
+and ends `needs-fetch` (exit 5); eight passes at most. The connectors, the inventory and the bundle do not know
+which route ran; a finished `prepare.json` says `fetched_via: "host"`.
+
+**Added — the `fetch` agent.** It answers one pass through the role's server (`governance.servers.tracker`,
+`codeHost`, `github`), read tools only, writes only answer files, and returns one count line, so the orchestrator
+never reads ticket or PR content. A read a server has no tool for is answered `missing` and becomes a gap with the
+bridge's reason. `fetch-catalog.json` tells it the shape each bridge command prints.
+
+**Changed — a host route that cannot list Jira's fields goes on.** The Atlassian MCP has no site-wide field list; on
+a host route that is gap `ac_fields` / `connector-unavailable` (ACs come from the description and comments) and
+the issue read decides whether the tracker can be read.
+
+**Fixed — a JQL search keeps at most `maxResults` issues** whatever the transport returns (a host's server may page
+through everything; Jira itself already caps).
+
+**Contained.** One run, one raw folder: `prepare` without `--raw` empties it and every end of the run removes it,
+so a later run never reuses old answers or an old pass count. It lies in the ticket's cache only when git ignores
+that, else in tmp. A missing answer is a closed reason (`no-tool`, `not-found`, `denied`, `binary`, `error`)
+with a detail of at most 120 characters; the agent's words are never parsed. `prepare` prints each role's tool-name
+prefixes, so a server the host plugin ships (`mcp__plugin_<plugin>_<server>__`) is found too.
+
+**Known limit.** `fetch` cannot name an unknown server's tools, so it inherits Read, Write and every connected MCP
+server's tools, write tools included; every shell, messaging, publishing and scheduling tool is disallowed.
+Read-only, the mapped servers only and the raw folder only rest on its brief. Accepted for the preview; a hook that
+enforces them is P5's.
+
 ## A merge into a theme fork is checked pixel by pixel — `vc-frontend` `0.2.0` — 2026-10-26
 
 **Added — the visual check in `/vc-frontend:merge-upstream` (step 7).** The fork owns how it looks, so the skill
