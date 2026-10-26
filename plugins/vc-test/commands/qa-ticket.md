@@ -31,7 +31,7 @@ brief "Read and follow `<plugin>/briefs/<x>.md`" + the paths P.
 
 1. `npm run run:use -- <TICKET> [<env>]` → note `RUN_DIR` and the start time (`date -u +%FT%TZ`).
 2. `node <plugin>/lib/route.mjs --key <TICKET>` → `{job, reason, next}`: `verify-fix` / `hotfix-check` ⇒ STOP naming `next`; exit 4 (`unresolved`) ⇒ ask
-   which job, quoting `reason` (not a third human point: the run has not started); exit 3 ⇒ route after step 1 with
+   which job, quoting `reason` (not a third human point: the run has not started), then verify-fix / hotfix-check ⇒ STOP naming `next`, test ⇒ go on; exit 3 ⇒ route after step 1 with
    `--bundle <BUNDLE>`; exit 2 ⇒ STOP "run /project-init". A not-fixed Bug's `reason` is `MISSION` (step 3).
 3. `node <plugin>/lib/capabilities.mjs --key <TICKET> --mcp <list>` — which of `playwright-chrome`,
    `playwright-firefox`, `playwright-edge`, `chrome-devtools` you have.
@@ -71,8 +71,8 @@ report its errors, STOP. **`--dry-run` stops here**: print the waves and `notRun
 ## 5 — Waves
 
 First `node <plugin>/lib/write-zones.mjs snapshot --key <TICKET> --run-dir <RUN_DIR>` (exit 1 or 3 ⇒ note its line, go on: step 7 reports "not checked"). One message per wave of
-`run-plan.json`; each brief gets `RUN_DIR`, `STRATEGY`, `KEY`, its own paths below, and `<plugin>/briefs/ledger.md` if it may write. An entry with `missing` is not dispatched; its rows:
-`BLOCKED — needs <missing>`.
+`run-plan.json`; each brief gets `RUN_DIR`, `STRATEGY`, `KEY`, its own paths below, and `<plugin>/briefs/ledger.md` if it may write. An entry with `missing` is not dispatched; its `BLOCKED — needs <missing>`
+row goes in `testing-checklist.md` under `## Scenario results`, never `scenarios/S-n.rows.md`.
 
 | id | How |
 |---|---|
@@ -108,7 +108,7 @@ absent: merge `pixel` after that wave. A PIXEL risk that runs has Lane `scripts 
 
 1. `node <plugin>/lib/trace.mjs reconcile --strategy <RUN_DIR>/test-strategy.md --checklist
    <RUN_DIR>/testing-checklist.md --run-plan <WORK>/run-plan.json --bundle <BUNDLE> --write > <WORK>/trace.json` →
-   `TRACE`. Exit 2: `unresulted` ⇒ back to their agents once (as step 6's), reconcile again; `unknownRefs`,
+   `TRACE`. Exit 1 ⇒ write `{"error":"<its first stderr line>"}` to that file. Exit 2: `unresulted` ⇒ back to their agents once (as step 6's), `scenario-rows.mjs merge` again, reconcile again; `unknownRefs`,
    `acsWithoutRow` ⇒ the verdict names them (not a send-back).
 2. `node <plugin>/lib/write-zones.mjs check --key <TICKET> --run-dir <RUN_DIR> --run-plan <WORK>/run-plan.json >
    <WORK>/write-zones.json` → `WRITE_ZONES`. Exit 2 ⇒ BLOCKED, the verdict names each file; 3 ⇒ "not checked"; any other exit ⇒ write

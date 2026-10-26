@@ -17,7 +17,8 @@ nothing and re-open no page. Dispatch description: `[vc-test:verdict] <KEY>`.
 
 - **The Reconciliation table is already filled** by `trace.mjs` from the result rows: read it, never recompute it.
   `TRACE.capped` (a High or Critical risk without a result) caps the verdict below PASS, per
-  `<plugin>/skills/qa-test-strategy/SKILL.md` §Reconcile; each `TRACE.unknownRefs` Ref is named in the verdict.
+  `<plugin>/skills/qa-test-strategy/SKILL.md` §Reconcile; each `TRACE.unknownRefs` Ref is named in the verdict. A `TRACE` that is missing, empty, has an `error` or no `capped` is
+  "reconciliation not done: <error or why>", which caps the verdict below PASS and is named.
 - **Write zones.** A non-empty `WRITE_ZONES.outside` makes the verdict BLOCKED, each path listed; a missing or empty
   `WRITE_ZONES` file, one with no `gitScope`, a `gitScope` of `false`, or a `reason` is written as "write zones not checked:
   <reason>", never as a clean pass.

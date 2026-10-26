@@ -25,11 +25,11 @@ vc-init owns `project-profile.json`; this command only fills vc-test's own block
    - *Where should this project's knowledge store live?* default `qa-knowledge/` (a folder in this repository,
      versioned with it).
    - *Which statuses mean a Bug is ready for test, ready on a hotfix line, not fixed yet?* Three free-text answers
-     (comma-separated status names), one per role: `fix-ready`, `hotfix-ready`, `not-fixed`. On Azure prefill from
+     (comma-separated status names), one per role: `fix-ready`, `hotfix-ready`, `not-fixed`. Prefill from the profile's stored `test.routing`; where none, on Azure from
      `tracker.azure.roleStates`: `ready-for-test`, `testing` ⇒ fix-ready; `in-progress`, `in-review`, `reopen` ⇒
      not-fixed; hotfix-ready empty. A role left empty is fine: a Bug in an unlisted status is asked at run time.
-     Pass the answers as `--routing '{"fix-ready":[…],"hotfix-ready":[…],"not-fixed":[…]}'` in step 5; omit the flag
-     to keep what is stored.
+     Pass `--routing '{"fix-ready":[…],"hotfix-ready":[…],"not-fixed":[…]}'` in step 5 only when the operator changed an
+     answer; otherwise omit it, so a re-run keeps what is stored.
 5. **Plan.** `node <plugin>/lib/init-plan.mjs --list .vc-fix/vc-test/accounts.json --writable <envs|none>
    --store <path> [--routing <json>]`. Exit 1 ⇒ show its message, ask again. Show its `warnings` verbatim.
 6. **Write.** `node "<vcInit>/skills/project-init/profile-set.mjs" --merge 'test=@<file from step 5>'`. Not
