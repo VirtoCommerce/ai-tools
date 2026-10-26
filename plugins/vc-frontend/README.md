@@ -68,6 +68,9 @@ It installs disabled. Enable it in `/plugin`, or with `claude plugin enable vc-f
 - For the visual check, once per machine: `node <plugin>/visual/setup.mjs` installs Playwright, pixelmatch and
   pngjs into the fork's `node_modules/.cache/`, never its `package.json`. Add `--with-browser` if Chromium is
   not on the machine (a ~150 MB download, asked first).
+- A customer theme against upstream's components: `node <plugin>/visual/design.mjs --spec <file> --out <dir>` compares
+  each component on the fork's pages with its Storybook story — styles, geometry, pixels — and marks a colour, font
+  or radius that the same theme token names on both sides as `theme`, not a defect.
 
 ## A storefront plugin in a backend module
 
