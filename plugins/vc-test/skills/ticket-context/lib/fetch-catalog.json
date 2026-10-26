@@ -1,0 +1,31 @@
+{
+  "$comment": "What each bridge read prints, for the host-governed fetch agent (vc-test P1d-3b). An answer is that output: the same JSON, or the text for a text command. role names the governance.servers entry that serves it. A binary command cannot travel as JSON text and is answered missing.",
+  "commands": {
+    "jira get": { "role": "tracker", "expect": "the issue JSON as GET /rest/api/3/issue/{key}?fields=…&expand=renderedFields returns it: key, id, fields{…}, renderedFields{…}" },
+    "jira comments": { "role": "tracker", "expect": "{ total, comments: [Jira comment objects: id, created, updated, body (ADF)], truncated } — all comments oldest first; with --newest the newest --max, newest first; with --rendered each also has renderedBody (HTML)" },
+    "jira request": { "role": "tracker", "expect": "the JSON Jira returns for that --method and --path: the field list [{ id, name, custom }], the remote links [{ object: { url, title } }], or a JQL search { issues: [{ key, fields }] }" },
+    "jira dev-prs": { "role": "tracker", "expect": "{ issueId, urls: [pull request URLs from the issue's development panel] }" },
+    "jira download": { "role": "tracker", "binary": true, "expect": "an attachment's bytes — binary" },
+    "jira confluence-page": { "role": "tracker", "expect": "the page JSON as GET /wiki/api/v2/pages/{id}?body-format=storage returns it: id, title, body.storage.value" },
+    "ado get-workitem": { "role": "tracker", "expect": "the work item as GET _apis/wit/workitems/{id}?$expand=all returns it: id, fields{System.Title, System.State, …}, relations[{ rel, url, attributes }]" },
+    "ado comments": { "role": "tracker", "expect": "{ total, comments: [Azure work-item comments: id, text (HTML), createdDate, modifiedDate], truncated } — oldest first; with --newest the newest --max, newest first" },
+    "ado wiql": { "role": "tracker", "expect": "the WIQL query's result in its ORDER BY: with --fields { count, items: [{ id, <field ref>: value }] }; without { count, ids: [id] }" },
+    "ado download-attachment": { "role": "tracker", "binary": true, "expect": "an attachment's bytes — binary" },
+    "ado get-pr": { "role": "codeHost", "expect": "the pull request as GET _apis/git/pullrequests/{id} returns it: status, title, description, creationDate, closedDate, sourceRefName, targetRefName, lastMergeSourceCommit.commitId, repository{ id, name, project{ name } }" },
+    "ado pr-iterations": { "role": "codeHost", "expect": "{ value: [iterations: id, sourceRefCommit.commitId, targetRefCommit.commitId, commonRefCommit.commitId] }" },
+    "ado pr-changes": { "role": "codeHost", "expect": "{ changeEntries: [{ item: { path }, changeType, sourceServerItem }], truncated } — that iteration's changes against the merge base" },
+    "ado pr-threads": { "role": "codeHost", "expect": "{ value: [threads: id, status, isDeleted, threadContext{ filePath, rightFileStart{ line } }, comments[{ content, commentType, publishedDate, isDeleted }]] }" },
+    "ado get-file": { "role": "codeHost", "expect": "the file's content at that commit, as text (not JSON)" }
+  },
+  "gh": [
+    { "kind": "graphql", "expect": "{ data: { repository: { pullRequest: { reviewThreads: { nodes: [{ isResolved }] } } } } } — the pinned review-thread query's answer" },
+    { "kind": "diff", "expect": "the pull request's unified diff, as text (not JSON)" },
+    { "kind": "search/issues", "match": "^search/issues\\?", "expect": "{ items: [issues and pull requests: number, title, state, created_at, html_url, pull_request] } — GitHub search results" },
+    { "kind": "search/commits", "match": "^search/commits\\?", "expect": "{ items: [commits: sha, repository{ full_name }] } — GitHub commit search results" },
+    { "kind": "commit pulls", "match": "^repos/[^/]+/[^/]+/commits/[^/]+/pulls$", "expect": "[pull requests associated with the commit: number, …]" },
+    { "kind": "check-runs", "match": "^repos/[^/]+/[^/]+/commits/[^/]+/check-runs", "expect": "{ check_runs: [{ name, status, conclusion }] }" },
+    { "kind": "pr files", "match": "^repos/[^/]+/[^/]+/pulls/\\d+/files", "expect": "[changed files: filename, status, additions, deletions, patch] — that one page" },
+    { "kind": "pr comments", "match": "^repos/[^/]+/[^/]+/pulls/\\d+/comments", "expect": "[review comments: path, line, original_line, body, created_at]" },
+    { "kind": "pr", "match": "^repos/[^/]+/[^/]+/pulls/\\d+$", "expect": "the pull request JSON: title, state, merged_at, created_at, head{ sha }, base{ ref }, body" }
+  ]
+}
