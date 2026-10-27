@@ -8,6 +8,38 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## `/vc-fix:qa-bug` writes from the investigation; `qa-checklist` Mode 5 with risk ids — `vc-fix` `0.17.0` — 2026-10-27
+
+**Changed — `/vc-fix:qa-bug --evidence` writes from the `/qa-investigate` package, with no second investigation
+(`knowledge/execution/bug-from-package.md`).** It reproduces nothing and calls no browser, probe, `search_code` /
+`get_file_contents`, App Insights or Context7 query; it reads the package, the deployed versions, the duplicate check
+and `fix-repos.json` to spell the repo name. A package made on another build than the one deployed now stops that bug
+with `STALE_PACKAGE: <name> <package ver> ≠ <deployed ver>` (the owning repo's package, or every listed version when the
+package names no repo); a package missing a mandatory slot stops it with `INCOMPLETE_PACKAGE: <slots>`; `qa-bug` never
+captures the missing artifact itself. A frontend-only package needs no trace id: layers 2-4 read
+`N/A — not probed by the investigation`. LOW routing confidence is filed with no repo and status `REPRODUCED`.
+Where the report goes: a folder the caller names, else `<package>/../bugs/<bucket>/` when the package sits in a ticket
+run folder, else `reports/bugs/open/<bucket>/`; screenshots are copied to `<bugs>/screenshots/<slug>/` and the package
+stays whole for `/qa-fix`. The Medium-or-worse filter stays with the caller, and the "Create a bug-tracker ticket?"
+question stays with `qa-bug` (`--evidence` does not imply `--confirmed`).
+
+**Added — `qa-checklist` Mode 5 in the plugin.** `/vc-fix:qa-checklist --from-strategy <file>` writes the checklist
+with the approved strategy as authority, reading the test model only when the strategy's `Test model` row says `RUN`;
+the risk id leads every item's Ref as the strategy's table writes it — `R3 · S#4 · <node-id>`, `AC-2 · R7` — so
+`trace.mjs` can attribute it. `--from-model --strategy <file>` keeps working as the old spelling. A strategy that
+skips the checklist prints `SKIP — <the row's reason>`. The skill no longer carries `disable-model-invocation`, so an
+agent that lists `vc-fix:qa-checklist` can load it.
+
+**Changed — the self-diagnostics oracle** (`skill-expectations.md`, both copies) accepts an `--evidence` run: S1 takes
+an `--evidence` STOP as a valid outcome, S2 no longer expects Step 2's four-layer validation there (a `browser_*` or
+`search_code` call in such a run is the S2 instead) and excepts Step 0's `vc-deploy-dev` read.
+
+**Moved.** The "Screenshots — RELATIVE filenames" box in `commands/qa-bug.md` Step 2 is now one line citing
+`skills/qa-evidence/output-paths.md`, so the command ends below its BUDGET-004 baseline.
+
+vc-test switches to `--from-strategy` and requires `vc-fix >=0.17.0` in P2-5.
+
+
 ## A component is compared with its reference — `vc-frontend` `0.3.0` — 2026-10-26
 
 **Added — `visual/design.mjs`** (ai-tools: `npm run visual:design`). It compares the same component in two places at
