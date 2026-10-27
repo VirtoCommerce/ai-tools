@@ -2,7 +2,7 @@
 
 > **This file is a pointer. The policy lives in [`.claude/knowledge/execution/reports-policy.md`](../../knowledge/execution/reports-policy.md)** (reachable as `.claude/rules/reports.md §N` — that stub keeps the section numbers).
 >
-> Read it for: the ten report categories and their paths (§1), where artifacts must NOT go (§1, closing block), severity foldering of `reports/bugs/open/` (§1a), size caps (§2), screenshot rules and per-scope budgets (§5), console/network/HAR evidence (§6), **naming conventions including the `FAIL` marker and `--iterate` round suffix (§7)**, and retention (§9).
+> Read it for: the eleven report categories and their paths (§1), where artifacts must NOT go (§1, closing block), severity foldering of `reports/bugs/open/` (§1a), size caps (§2), screenshot rules and per-scope budgets (§5), console/network/HAR evidence (§6), **naming conventions including the `FAIL` marker and `--iterate` round suffix (§7)**, and retention (§9).
 >
 > This stub is kept at its original path so the existing references across commands, skills, agent definitions and historical sprint artifacts continue to resolve.
 
