@@ -56,6 +56,9 @@ jobs:
       # all of them lagging and none of it dangling, so context:check had passed through all of it.
       - name: docs:index:check — README rosters current, hand-written indexes complete
         run: npm run docs:index:check
+      # The visual lane's measurement code shipped in plugins/vc-test is GENERATED from scripts/lib/*.ts; this names the stale file.
+      - name: vc-test:design:check — plugin measurement bundle + bl-ui.md current
+        run: npm run vc-test:design:check
       - name: qa-test:doclint — /qa-test command↔skill integrity
         run: npm run qa-test:doclint
       - name: kb stand map — every tracked .env profile declares KB_STAND (VCST-6189)
