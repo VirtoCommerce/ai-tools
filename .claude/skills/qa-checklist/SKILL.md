@@ -1,7 +1,7 @@
 ---
 name: qa-checklist
 description: "[Testing] Generate test case writing checklists for any domain, feature, or regression area. Uses the built-in domain checklists (storefront + backend/admin + GraphQL) + custom creation."
-argument-hint: "domain name | feature | VCST-XXXX [--strategy <file>] [--from-model] | new <domain> | admin <module>"
+argument-hint: "domain name | feature | <ticket-key> [--from-model] [--from-strategy <test-strategy.md>] | new <domain> | admin <module>"
 
 
 ---
@@ -20,6 +20,7 @@ Generate or retrieve domain-specific checklists that ensure complete test case c
 /qa-checklist admin pricing            # Retrieve Pricing Admin checklist
 /qa-checklist VCST-1234                # Generate checklist for JIRA ticket scope
 /qa-checklist VCST-1234 --from-model   # Mode 5: from test model + mind map
+/qa-checklist VCST-1234 --from-strategy <file>  # Mode 5, strategy-led
 /qa-checklist new "push messages"      # Create new checklist for unlisted domain
 /qa-checklist all                      # List every domain checklist with item counts
 ```
@@ -75,8 +76,7 @@ here and belongs to `/qa-exploratory`, whose job is discovery. This mirrors
 bitten us, the session hunts what hasn't yet.
 
 **IDs are a citation contract.** Cite an ID that exists; never invent, renumber or guess one — a
-dangling ref reads as coverage and is none (the `ecl:lint` ECLC-001 class, whose first run found 20 of
-them, one citing a section that has never existed). Neither oracle is edited from here: an item needing
+dangling ref reads as coverage and is none (the `ecl:lint` ECLC-001 class). Neither oracle is edited from here: an item needing
 an invariant or pattern the oracle lacks is a proposal for `/qa-review-oracles`, whose sole writer is
 `ba-system-analyzer`. A **reserved** id (one the oracle skips deliberately, e.g. `BL-LOY-011`) has
 nothing to cite and is not a gap.
@@ -236,9 +236,9 @@ Products · xCart Wishlists & Saved for Later · xOrder · xProfile · xQuote ·
    (API/backend domains) — ask user for confirmation. On write: add the summary-table row, the section,
    and re-derive the header count with `npm run checklists:count` rather than incrementing by hand
 
-### Mode 5: From the test model (`VCST-XXXX --from-model`)
+### Mode 5: From the test model (`--from-model` / `--from-strategy`)
 
-Mode 2 + the test model + the mind map; every in-scope row or node becomes an item or a declared omission. `--strategy`: every risk too, and no model needed if it ran none. Procedure: [`from-model.md`](from-model.md).
+Mode 2 + the test model + the mind map; every in-scope row or node becomes an item or an omission line. `--from-strategy`: every risk too; a model only when its Test model row is RUN. Procedure: [`from-model.md`](from-model.md).
 
 ### Mode 4: List All (`all` keyword)
 

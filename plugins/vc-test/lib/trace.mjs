@@ -1,7 +1,8 @@
 // plugins/vc-test/lib/trace.mjs — fills the last round's `### Reconciliation` table of test-strategy.md from the result
 // rows of testing-checklist.md, so a risk's result is read off its rows by a script, never copied by hand (SKILL.md §Reconcile).
-// A result row (`C-n`, `SC-n.m`, `VIS-n`, `PIX-n`) belongs to a risk when its Ref names `R<n>`, or (an `SC-`/`VIS-`/`PIX-` row only) names `S-<n>` whose
-// `### Scenarios` row's Why likely ends `· R<n>`. In a `C-n` row an `S-n` is a change-map suspicion: ignored, never unknown. A Ref naming an R or S the round does not have is reported.
+// A result row (`C-n`, `SC-n.m`, `VIS-n`, `PIX-n`, a prior bug's `PB-n`) belongs to a risk when its Ref names `R<n>` (`PB-1 · R3`), or (an `SC-`/`VIS-`/`PIX-` row only) names `S-<n>` whose
+// `### Scenarios` row's Why likely ends `· R<n>`. In a `C-n` or `PB-n` row an `S-n` attributes nothing: ignored, never unknown.
+// A PB row's Result (`PASS — FIXED`, `FAIL <severity> — NOT FIXED: …`, `BLOCKED — <why>`) is read like any other row's. A Ref naming an R or S the round does not have is reported.
 // CLI: node plugins/vc-test/lib/trace.mjs reconcile --strategy <test-strategy.md> --checklist <testing-checklist.md>
 //        [--run-plan <run-plan.json>] [--bundle <bundle.json>] [--write]
 //   prints { unresulted, capped, unknownRefs, acsWithoutRow }; --write replaces the table's rows (idempotent).
@@ -12,7 +13,7 @@ import { pathToFileURL } from "node:url";
 import { argOf } from "./paths.mjs";
 import { block, lastRound, rows as tableRows } from "./strategy-artifacts.mjs";
 
-const ROW_ID = /^(?:C-\d+|SC-\d+\.\d+|VIS-\d+|PIX-\d+)$/;
+const ROW_ID = /^(?:C-\d+|SC-\d+\.\d+|VIS-\d+|PIX-\d+|PB-\d+)$/;
 const SEVERITY = ["Critical", "High", "Medium", "Low"];
 const lf = (s) => String(s).replace(/\r\n?/g, "\n");
 // A cell may hold an escaped pipe; split only on the unescaped ones.
@@ -60,9 +61,9 @@ export function reconcile({ strategyMd, checklistMd, runPlan = null, acs = [] })
   const results = resultRows(checklistMd);
   const known = new Set(risks.map((x) => x.r));
 
-  // In a `C-n` row an `S-n` is a change-map suspicion (briefs/checklist.md): it attributes nothing. Only the scenario rows
-  // (`SC-`, `VIS-`, `PIX-`) resolve an `S-n` to a Scenarios row.
-  const scenarioRow = (row) => !row.id.startsWith("C-");
+  // In a `C-n` row an `S-n` is a change-map suspicion (agents/checklist-writer.md), and a `PB-n` row is attributed by its R<n>
+  // alone: neither resolves an `S-n`. Only the scenario rows (`SC-`, `VIS-`, `PIX-`) resolve one to a Scenarios row.
+  const scenarioRow = (row) => /^(?:SC|VIS|PIX)-/.test(row.id);
   const scenariosOf = (row) => (scenarioRow(row) ? scenariosIn(row.ref) : []);
   const owners = (row) => new Set([...risksIn(row.ref), ...scenariosOf(row).flatMap((s) => scenarioRisks.get(s) ?? [])]);
   const out = risks.map(({ r, level }) => {

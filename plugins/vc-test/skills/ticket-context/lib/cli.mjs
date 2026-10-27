@@ -3,7 +3,7 @@
 // Exit: 0 ok · 1 usage · 2 gate or schema failed · 3 could not run. stdout is one JSON object; no secret is printed.
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { assertKey, cacheDir, isInside, newRunDir, outputRoot, removeRunDir, sweepStaleRuns } from "./paths.mjs";
 import { LAYERS_GAP, loadLayeredEnv, resolveTestEnv } from "./env.mjs";
 import { resolveProfile } from "./profile.mjs";
@@ -28,6 +28,7 @@ import { bundleFile, freshnessKey, isIgnored, readCached, skillFingerprint, writ
 import { DOMAIN_RE, knownGround } from "./known.mjs";
 import { CHANGE_PART_RE, OUT_FILES, checkAgentOutputs, compose, mergeChange } from "./compose.mjs";
 import { checkBundle } from "./check-bundle.mjs";
+import { acceptanceChanged, classifyPr, commentsAfter, outOfScopeKeys, readRoundRecord } from "./since.mjs";
 import { extractAgentOutput, findAgentTranscript, readTranscript } from "./agent-output.mjs";
 
 const argv = process.argv.slice(2);
@@ -40,7 +41,7 @@ const writeJson = (p, o) => writeFileSync(p, JSON.stringify(o, null, 2));
 /** An output a model (or the runner) wrote: unparsable is a schema failure naming the file — the documented
  *  re-dispatch path (exit 2) — never a crash (exit 3). */
 const readOutput = (dir, name, errors) => { try { return readJson(join(dir, name)); } catch { errors.push(`${name}: not valid JSON`); return undefined; } };
-const USAGE = "usage: cli.mjs prepare <KEY> [--domain <slug>] [--fresh] [--before <iso>] [--hide <KEY,KEY>] | attach --prepare <p> --ref <ref> (--file <path> | --gap <reason> [--detail <text>]) | save --prepare <p> --agent <id> --as <file> | merge-change --prepare <p> | deploy --prepare <p> | known --prepare <p> | compose --prepare <p> | check --prepare <p> | finish --prepare <p> | abort --prepare <p> | redeploy <KEY> --bundle <p>";
+const USAGE = "usage: cli.mjs prepare <KEY> [--domain <slug>] [--fresh] [--before <iso>] [--hide <KEY,KEY>] [--since <round record>] | attach --prepare <p> --ref <ref> (--file <path> | --gap <reason> [--detail <text>]) | save --prepare <p> --agent <id> --as <file> | merge-change --prepare <p> | deploy --prepare <p> | known --prepare <p> | compose --prepare <p> | check --prepare <p> | finish --prepare <p> | abort --prepare <p> | redeploy <KEY> --bundle <p>";
 const ISO_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?(?:Z|[+-]\d{2}:\d{2})$/;
 function usage(msg) { console.error(`✗ ${msg}\n${USAGE}`); process.exit(1); }
 // flag()/has() read only `--name value`: a `--before=<iso>` would be ignored and a blind prepare would run unblinded.
@@ -140,6 +141,12 @@ async function prepare() {
   const hide = (hideRaw ?? "").split(",").map((k) => k.trim()).filter(Boolean);
   for (const k of hide) try { assertKey(k); } catch (e) { usage(`--hide: ${e.message}`); }
   const benchmark = before ? { before, hide } : null;
+  // A round-N delta read (P2-2, rounds.md): only what changed since the round record's build and closedAt. Never cached.
+  const sinceArg = flag("since") ?? null;
+  if (has("since") && (!sinceArg || sinceArg.startsWith("--"))) usage("--since needs the round record's path, e.g. <RUN_DIR>/rounds/round-1.json");
+  if (has("since") && has("before")) usage("--since is a round-N delta read and --before a blind run: not both");
+  let since = null;
+  if (has("since")) try { since = readRoundRecord(sinceArg, root); } catch (e) { usage(e.message); }
   // U19: no profile is a STOP, never the native-platform defaults; a host-governed project reads through the host's
   // MCP servers (P1d-3), so nothing is read here.
   let raw;
@@ -201,11 +208,12 @@ async function prepare() {
   const parent = issue.fields.parent;
   if (parent?.key) {
     epic = { key: parent.key, title: parent.fields?.summary ?? "" };
-    siblings = withoutHidden((await tracker.siblings(parent.key, key).catch((e) => { gaps.push(asGap("siblings", e)); return []; }))
+    if (!since) siblings = withoutHidden((await tracker.siblings(parent.key, key).catch((e) => { gaps.push(asGap("siblings", e)); return []; }))
       .map((s) => ({ key: s.key, title: s.fields?.summary ?? "", status: s.fields?.status?.name ?? null, done: s.fields?.status?.statusCategory?.key === "done" })), hide); // a hidden known-bug ticket under the same epic is not a sibling to a blind run
   }
 
-  let linked = inv.items.filter((i) => i.kind === "ticket" && !i.gap);
+  // A delta read reads no linked issue, attachment, page or design: only the ticket, its PRs and the record's bugs.
+  let linked = since ? [] : inv.items.filter((i) => i.kind === "ticket" && !i.gap);
   // D12: over the cap, the cap keeps the right ones — ranked by relation, then most recently updated first.
   // The dates cost one search, made only when there is something to drop.
   if (linked.length > CAPS.linkedIssues) {
@@ -273,13 +281,16 @@ async function prepare() {
   // One cached bundle per env: its deployment facts are that stand's, and two envs must not evict each other. A blind
   // bundle has its own name (bundleFile), so a benchmark never evicts, or is served as, the normal one.
   const cachedFile = join(cacheDir(key, root), bundleFile(testEnv, benchmark));
-  if (!has("fresh") && !HOST?.run.pending.length && readCached(cachedFile, fk)) { endHost(); out({ status: "cached", bundle_path: cachedFile }); return; }
+  if (!since && !has("fresh") && !HOST?.run.pending.length && readCached(cachedFile, fk)) { endHost(); out({ status: "cached", bundle_path: cachedFile }); return; }
 
   const { dir: runDir, inProject } = newRunDir(key, { root, ignored });
   try {
     const ticketJson = join(runDir, "ticket.json");
-    writeJson(ticketJson, issue);
+    // A delta read keeps only the comments posted after the round closed; the inventory above saw them all (rung 1).
+    const kept = since ? commentsAfter(issue, since.record.closedAt) : issue;
+    writeJson(ticketJson, kept);
     for (const it of linked) if (linkedJson.has(it.key)) { it.local_path = join(runDir, `issue-${it.key}.json`); writeJson(it.local_path, linkedJson.get(it.key)); }
+    if (since) inv.items = [];
 
     // An attachment the agent cannot read is never downloaded: its outcome is recorded without the bytes.
     for (const it of inv.items) if (it.ref.startsWith("attachment:") && it.kind === "other" && !it.gap) {
@@ -321,32 +332,61 @@ async function prepare() {
       const contextOnly = CONTEXT_ONLY_REPOS.includes(p.repo.toLowerCase());
       const base = { ref: p.ref, repo: `${p.owner}/${p.repo}`, number: p.number, rung: p.rung ?? null, ...(p.found_via ? { found_via: p.found_via } : {}), context_only: contextOnly };
       // A PR that could not be read (lookup 404, access denied, network) is no change surface, so it takes no cap slot.
-      if (p.gap) { prs.push({ ...base, gap: p.gap }); continue; }
+      if (p.gap) { prs.push({ ...base, ...(since ? { delta: null } : {}), gap: p.gap }); continue; }
+      // --since: this PR against the record's build — unchanged (no diff read, no cap slot), changed, or new.
+      const d = since ? classifyPr(p, since.record.build) : null;
+      const tag = d ? { delta: d.delta } : {};
       if (contextOnly) {
-        try { prs.push(collectContextPr(p, base, runDir, ladder.sameKey)); } catch (e) { prs.push({ ...base, gap: asGap(`pr:${p.ref}`, e) }); }
+        try { prs.push({ ...collectContextPr(p, base, runDir, ladder.sameKey), ...tag }); } catch (e) { prs.push({ ...base, ...tag, gap: asGap(`pr:${p.ref}`, e) }); }
+        continue;
+      }
+      if (d?.delta === "unchanged") {
+        const merged_at = p.meta.merged_at ?? null;
+        prs.push({ ...base, state: p.meta.state, merged: !!merged_at, merged_at, created_at: p.meta.created_at ?? null, head_sha: p.meta.head?.sha ?? null,
+          meta_path: null, files_path: null, diff_path: null, reviews_path: null, checks_path: null, gaps: [], delta: "unchanged" });
         continue;
       }
       if (product++ >= CAPS.prs) {
-        prs.push({ ...base, state: p.meta.state, merged: !!p.meta.merged_at, head_sha: p.meta.head?.sha ?? null,
+        prs.push({ ...base, state: p.meta.state, merged: !!p.meta.merged_at, head_sha: p.meta.head?.sha ?? null, ...tag,
           gap: gap(`pr:${p.ref}`, "over-cap", `more than ${CAPS.prs} product PRs; rung 1 first, then the most recent, then the companions they name`) });
         continue;
       }
       try {
-        const entry = await collectPr(p.host === "azure-repos" ? az : gh, p, runDir, { sameKey: ladder.sameKey, before });
+        const entry = await collectPr(p.host === "azure-repos" ? az : gh, p, runDir, { sameKey: ladder.sameKey, before, from: d?.from ?? null });
         if (p.host === "azure-repos") entry.gaps.push(...az.diffGaps(p.repo, p.number)); // files Azure's diff could not show
-        prs.push(entry);
-      } catch (e) { prs.push({ ...base, gap: asGap(`pr:${p.ref}`, e) }); }
+        prs.push({ ...entry, ...tag });
+      } catch (e) { prs.push({ ...base, ...tag, gap: asGap(`pr:${p.ref}`, e) }); }
+    }
+
+    // --since: each out-of-scope bug the round filed, read for its status (one read each; a failure is a gap).
+    let delta = null;
+    if (since) {
+      const bugStatus = [];
+      for (const k of outOfScopeKeys(since.record)) {
+        try { assertKey(k, profile.keyFormat); } catch { gaps.push(gap(`bug:${String(k).slice(0, 40)}`, "unreadable", "the round record names no valid ticket key for this bug")); continue; }
+        try { bugStatus.push({ key: k, status: (await tracker.issue(k, ["status"])).fields?.status?.name ?? null }); }
+        catch (e) { gaps.push(asGap(`bug:${k}`, e)); bugStatus.push({ key: k, status: null }); }
+      }
+      // The round's bundle copy holds the description and AC text that round tested; unreadable is "changed", said as a gap.
+      let changed = true;
+      try { changed = acceptanceChanged(tf.fields, readJson(resolve(root, String(since.record.bundle)))); }
+      catch { gaps.push(gap("delta.acceptance", "unreadable", `the round's bundle copy ${String(since.record.bundle).slice(0, 120)} could not be read: acceptance treated as changed`)); }
+      const rel = relative(root, since.path);
+      delta = { since: !rel.startsWith("..") && !isAbsolute(rel) ? rel.split(sep).join("/") : since.path, closed_at: since.record.closedAt,
+        comments: kept.fields?.comment?.comments?.length ?? 0, acceptance_changed: changed, bug_status: bugStatus };
     }
 
     if (HOST?.run.pending.length) throw new NeedsFetch(); // the run folder goes in the catch below
     endHost();
     const prepared = { schema: "ticket-context-prepare/1", ticket: key, env: testEnv, tracker: profile.tracker, ...(HOST ? { fetched_via: "host" } : {}), project_type: profile.projectType, domain, run_dir: runDir, run_dir_in_project: inProject,
-      fetched_at: new Date().toISOString(), ticket_updated: issue.fields.updated, freshness_key: fk, fields: tf.fields, ticket_json: ticketJson,
-      ...(benchmark ? { benchmark } : {}), ac_fields: acFields, link_fields: linkFields, epic, siblings, inventory: inv.items, prs, rung: ladder.rung, ladder: ladder.ladder, gaps };
+      fetched_at: new Date().toISOString(), ticket_updated: issue.fields.updated, freshness_key: since ? null : fk, fields: tf.fields, ticket_json: ticketJson,
+      ...(benchmark ? { benchmark } : {}), ...(delta ? { delta } : {}), ac_fields: acFields, link_fields: linkFields, epic, siblings, inventory: inv.items, prs, rung: ladder.rung, ladder: ladder.ladder, gaps };
     const prepPathOut = join(runDir, "prepare.json");
     writeJson(prepPathOut, prepared);
+    const count = (v) => prs.filter((p) => p.delta === v).length;
     out({ status: "prepared", prepare_path: prepPathOut, run_dir: runDir, run_dir_in_project: inProject, inventory: inv.items.length, prs: prs.length,
-      rung: ladder.rung, needs_connector: inv.items.filter((i) => i.needs_connector).map((i) => i.ref), gaps: gaps.length });
+      rung: ladder.rung, needs_connector: inv.items.filter((i) => i.needs_connector).map((i) => i.ref), gaps: gaps.length,
+      ...(delta ? { delta: { unchanged: count("unchanged"), changed: count("changed"), new: count("new"), comments: delta.comments, acceptance_changed: delta.acceptance_changed, bugs: delta.bug_status.length } } : {}) });
   } catch (e) {
     try { removeRunDir(runDir, root); } catch { /* the original failure is the one to report */ }
     throw e;
@@ -436,6 +476,7 @@ function known() {
 
 function composeCmd() {
   const prep = readJson(prepPath());
+  if (prep.delta) usage("this prepare.json is a --since delta read (no attachments, pages or linked issues): it is never composed into a bundle");
   const outs = {};
   const parseErrors = [];
   for (const [k, f] of Object.entries(OUT_FILES)) {

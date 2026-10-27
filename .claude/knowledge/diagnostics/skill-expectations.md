@@ -322,11 +322,11 @@ Step-1 collector's signals can actually surface.
   - **S3** — one `permission_denied` on an optional MCP the skill recovered from (noted, non-blocking).
 
 ### `/qa-bug` — reproduce, evidence, report, (optional) file
-- **Expected phases** (`plugins/vc-fix/commands/qa-bug.md`): Step 0 pre-flight (build/version + Context7 + dup check) → Step 1 gather/reproduce → **Step 2 4-Layer Validation** → Step 3 research + resolve exact repo → Step 4 write report → Step 5 (optional, consent-gated) create ticket.
-- **Required outputs:** a `reports/bugs/open/<bucket>/BUG-*.md` (in a ticket run, `<run folder>/bugs/<bucket>/BUG-*.md`) with the **Fix Routing block** filled; a tracker ticket **only if** the user said yes.
+- **Expected phases** (`plugins/vc-fix/commands/qa-bug.md`): Step 0 pre-flight (build/version + Context7 + dup check) → Step 1 gather/reproduce → **Step 2 4-Layer Validation** → Step 3 research + resolve exact repo → Step 4 write report → Step 5 (optional, consent-gated) create ticket. With `--evidence`: Step 0 (versions + §Build + dup check) → `bug-from-package.md` §Complete → Step 4 → Step 5; no Step 2 or Step 3 tool call.
+- **Required outputs:** a `reports/bugs/open/<bucket>/BUG-*.md` (in a ticket run, `<run folder>/bugs/<bucket>/BUG-*.md`) with the **Fix Routing block** filled — with `--evidence`: or the `INCOMPLETE_PACKAGE` / `STALE_PACKAGE` line (`bug-from-package.md` §Outcome); a tracker ticket **only if** the user said yes.
 - **Anti-patterns:**
-  - **S1** — no bug report written despite a reproduced defect; or a ticket was filed **without** the explicit user "yes" (consent violation). *Signal:* required-output missing; a tracker-create tool call with no preceding consent in the transcript.
-  - **S2** — report written but **over the bug-report cap** (`reports.md` §2: simple ≤80 / functional ≤120 / cross-layer ≤150), or Step 2 4-layer validation never ran (owning layer unproven → route untrustworthy). *Signal:* oversized report; missing-phase.
+  - **S1** — no bug report written despite a reproduced defect (not on an `--evidence` STOP); or a ticket was filed **without** the explicit user "yes" (consent violation). *Signal:* required-output missing; a tracker-create tool call with no preceding consent in the transcript.
+  - **S2** — report written but **over the bug-report cap** (`reports.md` §2: simple ≤80 / functional ≤120 / cross-layer ≤150), or Step 2 4-layer validation never ran (not with `--evidence`) (owning layer unproven → route untrustworthy); or, with `--evidence`, any `browser_*`, `qa-testing-expert` dispatch, `search_code` / `get_file_contents` (Step 0's `vc-deploy-dev` version read excepted), `applicationinsights` or Context7 call — a second investigation (U50). *Signal:* oversized report; missing-phase; with `--evidence`, that tool call inside the span.
   - **S3** — one `tool_error` on a layer probe that a later layer covered.
 
 ### `/qa-fix` — autonomous single-repo fix (gate ladder G0→G7)

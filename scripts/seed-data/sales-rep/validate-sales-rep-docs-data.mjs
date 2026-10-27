@@ -161,8 +161,8 @@ const writeNoRead = seededRows.filter((r) => {
 });
 if (withRead.length < 1) fail(`[9] no rep holds ${PERM_DOCS_READ} — the happy path has no caller`);
 if (writeNoRead.length < 1) {
-  fail(`[9] no rep holds ${PERM_DOCS_WRITE} WITHOUT ${PERM_DOCS_READ} — the read-gate disjunction `
-    + '(Administrator OR :read OR :write) is unfalsifiable');
+  fail(`[9] no rep holds ${PERM_DOCS_WRITE} WITHOUT ${PERM_DOCS_READ} — the read gate (:read required, `
+    + 'write-only Forbidden by design since SalesRep 3.1006.0) has no negative caller');
 }
 notes.push(`read-capable: ${withRead.map((r) => r.rep_key).join(', ')}; write-without-read: ${writeNoRead.map((r) => r.rep_key).join(', ')}`);
 

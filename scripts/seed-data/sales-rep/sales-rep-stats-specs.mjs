@@ -41,6 +41,25 @@ export const STATS_ORDER_MARK = 'AGENT-TEST-SRO-STATS';
 export const cartName = (key) => `${CART_MARK}-${key}`;
 export const statsOrderNumber = (key) => `${STATS_ORDER_MARK}-${key}`;
 
+/**
+ * The storefront cart name. The built-in `active-carts` filter of salesRepCustomerCartStatistics is an
+ * INCLUDE-LIST BY NAME: it counts only carts named "default" (vc-module-sales-rep README §Cart / project
+ * statistics; SalesRepCartFilterRuleResolver `names: [ModuleConstants.DefaultCartName]`). A fixture the
+ * dashboard Active carts card must see therefore has to live in a cart of THIS name — a named
+ * AGENT-TEST- cart is counted by the unfiltered statistic only, never by the card (SR-HD-061, 2026-10-20).
+ */
+export const DEFAULT_CART_NAME = 'default';
+
+/** The cart a fixture writes to: its own `cartName` (the rep's "default" cart) or its AGENT-TEST- name (PURE). */
+export const fixtureCartName = (spec) => spec.cartName || cartName(spec.key);
+
+/** True when the fixture writes into a cart it does NOT own (the user's default cart): seed/teardown add
+ *  and remove only the fixture's own lines and never remove the cart itself (PURE). */
+export const isBorrowedCart = (spec) => fixtureCartName(spec) === DEFAULT_CART_NAME;
+
+/** Named carts an earlier version of a fixture created; the seeder removes them on seed and teardown. */
+export const RETIRED_CART_NAMES = { SPLIT: [cartName('SPLIT')] };
+
 /** A committed fixture must carry NO runtime platform GUID (those live in aliases.<env>.json). */
 export const GUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -190,11 +209,52 @@ export function preferSanelyPriced(candidates, max = MAX_SANE_UNIT_PRICE) {
 export const CART_FIXTURES = [
   { key: 'ACME', alias: 'SR_STATS_CART_ACME', orgKey: 'ORG-001', productSlot: 0, quantity: 5, test_purpose: 'Active (non-empty) cart in ACME — salesRepCustomerCartStatistics count/lastCartDate non-zero (BL-SR-006)' },
   { key: 'WEST', alias: 'SR_STATS_CART_WEST', orgKey: 'ORG-004', productSlot: 1, quantity: 2, test_purpose: 'Active cart in AcmeWest — a second org so the dashboard cart count is >1 and cross-org scoping is exercised' },
+  // SPLIT (SR-HD-061, BL-SR-006): the Active carts tile splits quantities into selected-for-checkout
+  // (value) vs NOT selected (sub). Until this fixture no served cart held an unselected line, so the
+  // sub read 0 and a swapped or dropped split was undecidable (SECOND RULE). The selected line and the
+  // unselected line use DIFFERENT products (addItem merges a repeated product into one line) and
+  // DIFFERENT quantities, so a value/sub swap is visible. It sits alone in ORG-003/BuildRight, which
+  // holds no other rep USD cart, so the per-org statistic equals this fixture exactly.
+  // It MUST be the rep's cart NAMED "default" (USD, B2B-store): the card's `active-carts` filter counts
+  // only default-named carts, so the first version of this fixture (named cart AGENT-TEST-SR-CART-SPLIT)
+  // was invisible to the card and SR-HD-061 failed on the fixture, not the product (2026-10-20).
+  // The seeder does NOT own that cart (the storefront created it): it adds and removes only its own two
+  // lines. FIFTH-RULE LIMIT: it is the cart the storefront uses when the rep shops with BuildRight
+  // selected, so a case that adds to / clears the cart as SR_REP_PRIMARY in BuildRight disturbs it
+  // (062 and 097 act in ACME). The EUR "default" cart is a separate, currency-scoped cart, never touched.
+  {
+    key: 'SPLIT', alias: 'SR_STATS_CART_SPLIT', orgKey: 'ORG-003', cartName: DEFAULT_CART_NAME, productSlot: 2, quantity: 3,
+    unselected: { productSlot: 3, quantity: 7 },
+    test_purpose: 'Cart with a selected AND a not-selected-for-checkout line of different quantities — the Active carts value/sub split (SR-HD-061)',
+  },
 ];
+
+/** Every line a cart fixture carries, the selected one first (PURE). */
+export function cartLines(spec) {
+  const lines = [{ productSlot: spec.productSlot, quantity: spec.quantity, selected: true }];
+  if (spec.unselected) lines.push({ productSlot: spec.unselected.productSlot, quantity: spec.unselected.quantity, selected: false });
+  return lines;
+}
+
+/** The selected / not-selected quantities salesRepCustomerCartStatistics should report for one cart fixture (PURE). */
+export function expectedCartSplit(spec) {
+  const lines = cartLines(spec);
+  const sum = (sel) => lines.filter((l) => l.selected === sel).reduce((s, l) => s + l.quantity, 0);
+  return { selectedItemQuantity: sum(true), unselectedItemQuantity: sum(false) };
+}
+
+/** True when a fixture makes the selected/not-selected split decidable: both sides non-zero and unequal (PURE). */
+export function cartSplitDiverges(spec) {
+  const { selectedItemQuantity: s, unselectedItemQuantity: u } = expectedCartSplit(spec);
+  return s > 0 && u > 0 && s !== u;
+}
+
+/** The cart fixtures that carry a not-selected line. */
+export const SPLIT_CART_FIXTURES = CART_FIXTURES.filter((c) => c.unselected);
 
 /** How many DISTINCT store products the seeder must discover to satisfy every slot. */
 export const requiredProductSlots = () =>
-  Math.max(...TOP_SELLER_LINES.map((l) => l.productSlot), ...CART_FIXTURES.map((c) => c.productSlot)) + 1;
+  Math.max(...TOP_SELLER_LINES.map((l) => l.productSlot), ...CART_FIXTURES.flatMap((c) => cartLines(c).map((l) => l.productSlot))) + 1;
 
 /** The @td() aliases this fixture set owns. */
 export const OWNED_ALIASES = [TOP_SELLER_ORDER.alias, ...CART_FIXTURES.map((c) => c.alias)];
