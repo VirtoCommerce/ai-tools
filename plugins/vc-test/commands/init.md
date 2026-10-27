@@ -1,6 +1,6 @@
 ---
 description: "[Setup] Onboard vc-test onto a deployment — after vc-init's /project-init, declare which environments a run may write to and where the project's knowledge store is (the profile's `test` block, through vc-init's writer), and check every test environment has an admin and a storefront account. Never asks for or writes a password."
-argument-hint: "[--writable <env,…|none>] [--store <path>] [--routing <json>]"
+argument-hint: "[--writable <env,…|none>] [--store <path>] [--routing <json>] [--budget <json>]"
 disable-model-invocation: true
 ---
 
@@ -30,8 +30,14 @@ vc-init owns `project-profile.json`; this command only fills vc-test's own block
      not-fixed; hotfix-ready empty. A role left empty is fine: a Bug in an unlisted status is asked at run time.
      Pass `--routing '{"fix-ready":[…],"hotfix-ready":[…],"not-fixed":[…]}'` in step 5 only when the operator changed an
      answer; otherwise omit it, so a re-run keeps what is stored.
+   - *What may one run spend?* (spec U73) Show the numbers in force: the profile's stored `test.budget`, else
+     `node <plugin>/lib/profile.mjs --budget-defaults`; for `qa`
+     and `dev`, input-equivalent tokens and wall minutes (defaults: half of the measured VCST-6398 run for `qa`; for `dev`,
+     40% of `qa`'s tokens and U51's 90 minutes). Enter keeps them; else ask the four numbers and an optional `windowTokens` (a usage-window size,
+     shown as a share beside the tokens, never a gate). Pass `--budget '{"qa":{"tokens":N,"minutes":N},"dev":{…},"windowTokens":N}'`
+     in step 5 only when the operator changed one; otherwise omit it. A run reports its spend against it, never enforces it.
 5. **Plan.** `node <plugin>/lib/init-plan.mjs --list .vc-fix/vc-test/accounts.json --writable <envs|none>
-   --store <path> [--routing <json>]`. Exit 1 ⇒ show its message, ask again. Show its `warnings` verbatim.
+   --store <path> [--routing <json>] [--budget <json>]`. Exit 1 ⇒ show its message, ask again. Show its `warnings` verbatim.
 6. **Write.** `node "<vcInit>/skills/project-init/profile-set.mjs" --merge 'test=@<file from step 5>'`. Not
    `written` ⇒ STOP with its JSON.
 7. **Accounts.** For each entry in step 5's `gaps`: one line, `<env> has no <role> account — run <fix>`. Never

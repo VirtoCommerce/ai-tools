@@ -61,7 +61,7 @@ export function reconcile({ strategyMd, checklistMd, runPlan = null, acs = [] })
   const results = resultRows(checklistMd);
   const known = new Set(risks.map((x) => x.r));
 
-  // In a `C-n` row an `S-n` is a change-map suspicion (briefs/checklist.md), and a `PB-n` row is attributed by its R<n>
+  // In a `C-n` row an `S-n` is a change-map suspicion (agents/checklist-writer.md), and a `PB-n` row is attributed by its R<n>
   // alone: neither resolves an `S-n`. Only the scenario rows (`SC-`, `VIS-`, `PIX-`) resolve one to a Scenarios row.
   const scenarioRow = (row) => /^(?:SC|VIS|PIX)-/.test(row.id);
   const scenariosOf = (row) => (scenarioRow(row) ? scenariosIn(row.ref) : []);
