@@ -1301,7 +1301,7 @@
       "layer": "frontend",
       "concern": "non-functional",
       "priority": "P1",
-      "testCount": 34,
+      "testCount": 49,
       "estimatedMinutes": 3,
       "agent": "none",
       "runner": "layout-runner",
@@ -2158,7 +2158,7 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 58,
+      "testCount": 78,
       "estimatedMinutes": 17,
       "agent": "qa-backend-expert",
       "tags": [
@@ -2184,7 +2184,7 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 45,
+      "testCount": 48,
       "estimatedMinutes": 13,
       "agent": "qa-backend-expert",
       "tags": [

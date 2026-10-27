@@ -24,9 +24,17 @@ import { join } from "path";
 import { fileURLToPath } from "url";
 import "../../config.js"; // loads .env layers into process.env
 import { resolveRole } from "../lib/graphql-auth.js";
+// The sign-in selectors live in a module with no side effects: this one loads config.js, which exits
+// on a missing CORE variable, so a script that needs only the selectors imports them from there.
+import {
+  EMAIL_SELECTORS,
+  PWD_SELECTORS,
+  SUBMIT_SELECTORS,
+  SWITCH_TO_PASSWORD_SELECTORS,
+} from "../lib/sign-in-selectors.js";
 
-// FRONT_URL and OUT_DIR are read where they are used: importing this module (for the selectors
-// below) must not exit the process or create directories — only the CLI does that.
+// FRONT_URL and OUT_DIR are read where they are used: importing this module must not create
+// directories — only the CLI does that.
 const TEST_DATA_DIR = join(process.cwd(), "test-data");
 const OUT_DIR = join(process.cwd(), "test-results", "auth");
 
@@ -41,23 +49,6 @@ const DEFAULT_ALIASES = [
   "MULTI_ORG_TF_BR",
 ];
 
-// Sign-in selectors (test-execution-preflight.md). Two known data-test-id forms.
-export const EMAIL_SELECTORS = [
-  '[data-test-id="sign-in-page.email-input"]',
-  '[data-test-id="email-input"]',
-];
-export const PWD_SELECTORS = [
-  '[data-test-id="sign-in-page.password-input"]',
-  '[data-test-id="password-input"]',
-];
-export const SUBMIT_SELECTORS = [
-  '[data-test-id="sign-in-page.login-button"]',
-  '[data-test-id="login-button"]',
-];
-
-// The sign-in page now opens on a one-time-code form (email + "Continue"); the password form sits
-// behind this link. Observed live on vcst 2026-10-21. Absent on builds that open on the password form.
-export const SWITCH_TO_PASSWORD_SELECTORS = ['[data-test-id="otp-email-switch-to-password-link"]'];
 
 async function firstVisible(page: any, selectors: string[], waitMs = 0) {
   // Optionally wait for any of the selectors to hydrate (SPA).

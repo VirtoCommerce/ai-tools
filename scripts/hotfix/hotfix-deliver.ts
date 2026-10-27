@@ -57,8 +57,8 @@
  *   2  tool error: task/repo unresolved, missing env coords, GitHub auth/rate-limit
  *
  * Auth: GIT_TOKEN with contents:write + actions:read on vc-deploy-dev, and repo read on the product
- * repo (a PAT with `repo`/`workflow`). Read from .env.local / .env.defaults — same as the other
- * hotfix scripts. The /api/platform/modules check needs the env's admin credentials.
+ * repo (a PAT with `repo`/`workflow`). Read from the process env, then .env.local, then .env.defaults
+ * (first found wins). The /api/platform/modules check needs the env's admin credentials.
  */
 
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
@@ -101,7 +101,9 @@ interface EnvResult {
 
 // ── env / token ──────────────────────────────────────────────────────────────
 function loadToken(): string | undefined {
-  for (const f of ['.env.defaults', '.env.local']) {
+  // A variable already set is never overwritten, so the file read FIRST wins: .env.local before .env.defaults gives
+  // the documented order (process env, then .env.local, then .env.defaults). The reverse let a default beat a local value.
+  for (const f of ['.env.local', '.env.defaults']) {
     const p = resolve(REPO_ROOT, f);
     if (existsSync(p)) { const vars = parseDotenv(readFileSync(p)); for (const [k, v] of Object.entries(vars)) if (!process.env[k]) process.env[k] = v; }
   }

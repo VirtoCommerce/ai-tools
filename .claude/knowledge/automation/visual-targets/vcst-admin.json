@@ -1,0 +1,58 @@
+{
+  "_notes": [
+    "PIXEL page targets for the vcst Admin SPA (BACK_URL), measured 2026-10-27 — plan docs/superpowers/plans/2026-10-26-visual-regression.md §Phase 3.",
+    "Signed in as ADMIN through the real login form. No repo command produces an Admin storage state yet (scripts/auth/save-storage-state.ts signs into the storefront only); the measurement used a one-off script that fills input[name=login] / input[name=password] from resolveRole(\"ADMIN\") in-process and saves context.storageState(). Replay: --har-url \"**/api/**\" — the Admin SPA talks REST, not GraphQL.",
+    "Only the first blade of each module is addressable by URL; a detail blade opens by click and is not a page target.",
+    "Masks: the platform version in the logo (differs per deploy); hides: the notifications dropdown."
+  ],
+  "hide": [
+    ".dropdown-menu.notifications"
+  ],
+  "mask": [
+    ".logo-version__number"
+  ],
+  "targets": [
+    {
+      "name": "dashboard",
+      "path": "/#!/workspace",
+      "group": "dashboard",
+      "waitFor": ".logo-version"
+    },
+    {
+      "name": "catalog-blade",
+      "path": "/#!/workspace/catalog",
+      "group": "catalog",
+      "waitFor": ".blade-header__title"
+    },
+    {
+      "name": "orders-blade",
+      "path": "/#!/workspace/orders",
+      "group": "orders",
+      "waitFor": ".blade-header__title"
+    },
+    {
+      "name": "customers-blade",
+      "path": "/#!/workspace/customers",
+      "group": "customers",
+      "waitFor": ".blade-header__title"
+    },
+    {
+      "name": "stores-blade",
+      "path": "/#!/workspace/store",
+      "group": "stores",
+      "waitFor": ".blade-header__title"
+    },
+    {
+      "name": "pricing-blade",
+      "path": "/#!/workspace/pricing",
+      "group": "pricing",
+      "waitFor": ".blade-header__title"
+    },
+    {
+      "name": "marketing-blade",
+      "path": "/#!/workspace/marketing",
+      "group": "marketing",
+      "waitFor": ".blade-header__title"
+    }
+  ]
+}
