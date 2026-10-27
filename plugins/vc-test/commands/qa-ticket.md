@@ -10,8 +10,8 @@ You orchestrate **inline** and hold only paths: every hand-off is a file, never 
 Design: `docs/superpowers/specs/2026-10-15-vc-test-plugin-design.md` §3, U60–U68.
 `<plugin>` is this plugin's folder (`plugins/vc-test` here). Run every command from the project root. `WORK` is
 `.vc-fix/vc-test/<TICKET>/<env>/`.
-**Dispatch `<x>` (`<model>`) with P** = a `general-purpose` agent of that model, description `[vc-test:<x>] <TICKET>`,
-brief "Read and follow `<plugin>/briefs/<x>.md`" + the paths P.
+**Dispatch `<x>` (`vc-test:<agent>` or `<model>`) with P** = that subagent type on the model in its own frontmatter, or a
+`general-purpose` agent of `<model>` with brief "Read and follow `<plugin>/briefs/<x>.md`"; P always has `PLUGIN` = `<plugin>`.
 
 ## Rules
 
@@ -19,7 +19,7 @@ brief "Read and follow `<plugin>/briefs/<x>.md`" + the paths P.
    but step 0's `unresolved` route.
 2. **No ticket status transition, no tracker comment** — `verdict.md` is the output.
 3. **Bugs only through `/vc-fix:qa-bug`** (step 8).
-4. **Every dispatch's description starts `[vc-test:<step>]`**, a skill's too: `run-cost.mjs` counts by it.
+4. **Every dispatch's description is `[vc-test:<step>] <TICKET>`**, a skill's too: `run-cost.mjs` counts by it.
 5. **A brief is paths plus the one skill its step needs.** Never paste the bundle, the strategy or a result.
 6. One browser lane per agent, ≤ 3 at once (`run-plan.json` keeps both).
 7. A Low or cosmetic finding gets one line under "Noticed" — no investigation, no screenshot, no bug (U25).
@@ -35,7 +35,7 @@ brief "Read and follow `<plugin>/briefs/<x>.md`" + the paths P.
    which job, quoting `reason` (not a third human point: the run has not started), then verify-fix / hotfix-check ⇒ STOP naming `next`, test ⇒ go on; exit 3 ⇒ route after step 1 with
    `--bundle <BUNDLE>` (round ≥ 2: after 0b.1, `--bundle <DELTA_PREPARE>`); exit 2 ⇒ STOP "run /project-init". A not-fixed Bug's `reason` is `MISSION` (step 3).
 3. `node <plugin>/lib/rounds.mjs count --key <TICKET> --run-dir <RUN_DIR>` → `ROUND`, `MODE`. Exit 2 ⇒ STOP: print its
-   `escalation` (`<plugin>/skills/qa-test-strategy/rounds.md` §At most three) — nothing else runs. `refresh`, or
+   `escalation` (`<plugin>/skills/qa-test-strategy/rounds.md` §At most three). `refresh`, or
    `resume` with ROUND ≥ 2: its `recordRound` must be ROUND − 1, else STOP naming the remedy (rounds.md §Round N in
    vc-test, "starts from round N−1's record"); `BASE` is its `bundle`. `refresh` ⇒ 0b instead of steps 1–3.
    `resume` ⇒ the steps of that round, its approved section reused: round ≥ 2 runs 0b, and its analyst and strategy
@@ -81,10 +81,9 @@ STOPs are this run's; on a host-governed project it reads through the host's ser
 
 ## 2 — Change map, then scenarios
 
-1. Dispatch `vc-test:change-map` (description `[vc-test:change-map] <TICKET>`) with `PLUGIN`, `BUNDLE`, `MIND_MAP` / `DATA_MODEL`
-   of the slug if they exist. It has no write tool: its reply is the map. Then `node <plugin>/lib/check-change-map.mjs
+1. Dispatch `change-map` (`vc-test:change-map`) with `BUNDLE`, `MIND_MAP` / `DATA_MODEL` of the slug if they exist. It has no write tool: its reply is the map. Then `node <plugin>/lib/check-change-map.mjs
    --agent <its agent id> --out <WORK>/change-map.json --bundle <BUNDLE>`; exit 2 ⇒ SendMessage it the printed
-   errors once, run the command again, then STOP. **Show the suspicions**: one line each, file and line (U41).
+   errors once, rerun, then STOP. **Show the suspicions**: one line each, file and line (U41).
 2. Dispatch `scenarios` (`opus`) with `BUNDLE`, `PREPARE`, `CHANGE_MAP`, `MIND_MAP`, `DATA_MODEL`, `OUT =
    <WORK>/candidates.json`, `KEY`. No `<WORK>/scenarios.json` ⇒ back once, then STOP. Delete `<WORK>/prepare/`.
 
@@ -113,8 +112,8 @@ Ref `PB-n · R<k>`, the `R` of its `### Prior bugs` row.
 | id | How |
 |---|---|
 | `contract-refresh` | both commands of its `run.commands` |
-| `checklist`, `ac-checks`, `scenario:S-n` | its `run.agent` (`vc-test:…` ⇒ that subagent type; else `run.model` + `<plugin>/<run.brief>`), `[vc-test:<id>] <TICKET>`; checklist + `CHANGE_MAP`; ac-checks + `CHECKLIST`, `CHANGE_MAP`, `CAPABILITIES`; a scenario + `S`, `SCENARIOS`, `BUNDLE`, `CAPABILITIES`, `LANE` = its `lane`, `EXPLORATORY` = its `exploratory` |
-| `bug:PB-n` (round ≥ 2) | the same, + `PB`, `CAPABILITIES`, `LANE` = its `lane` (none when it has none) |
+| `checklist`, `ac-checks`, `scenario:S-n` | its `run.agent` (a brief entry: on `run.model`, brief `<plugin>/<run.brief>`); checklist + `CHANGE_MAP`; ac-checks + `CHECKLIST`, `CHANGE_MAP`, `CAPABILITIES`; a scenario + `S`, `SCENARIOS`, `BUNDLE`, `CAPABILITIES`, `LANE`, `EXPLORATORY` (its `lane`, `exploratory`) |
+| `bug:PB-n` (round ≥ 2) | the same, + `PB`, `CAPABILITIES`, `LANE` (its `lane`, if any) |
 | `visual` | `ui-ux-expert` on Chrome DevTools MCP, brief opening with Skill `qa-design` (`.claude/skills/qa-test/visual-axis.md` §2, §4, §5) |
 
 **A `global/…` writer is BLOCKED before dispatch** if `node <plugin>/lib/window.mjs check` exits 1: write its row,
@@ -128,7 +127,7 @@ wave**: `node <plugin>/lib/scenario-rows.mjs merge --run-dir <RUN_DIR> --ids <it
 says** — scripts, not a browser slot. The engine is the vc-frontend plugin's `visual/` (`capabilities.json`
 `pixel.engine`), run as its `skills/merge-upstream/visual.md`, every command with the **front checkout** as the
 working directory (the `pixel.checkouts` entry whose `git remote get-url origin` is the PR's repo; never cloned by
-this run; the engine's packages live in its `node_modules/.cache/`): §Once per machine — setup (`setup.mjs`; `--with-browser` only on the user's yes), §Base and head (base =
+this run): §Once per machine — setup (`setup.mjs`; `--with-browser` only on the user's yes), §Base and head (base =
 the PR's base ref, head = its `head_sha`, each a temporary `git worktree` with its install and Storybook build),
 §Scope, then §Shoot, compare, confirm. Each risk gets a `PIX-<m>` row naming its `R-n` in `scenarios/pixel.rows.md`, never `visual.rows.md`:
 `FAIL <severity>` per confirmed regression, else `PASS`; no engine, no checkout of that repo, a setup or a build that
@@ -139,9 +138,8 @@ absent: merge `pixel` after that wave. A PIXEL risk that runs has Lane `scripts 
 
 1. The `qa-triage-results` skill, `ticket <TICKET> --min-severity P2` — only Medium+ is reproduced live (U29).
    `unresulted[]` rows ⇒ back to their agent once, triage again; still some ⇒ STOP, list them.
-2. **Below floor**, Low, cosmetic ⇒ "Noticed". **Medium+** listed `needs-review` ⇒ a `[vc-test:investigate]`
-   dispatch each, invoking `vc-fix:qa-investigate`, ≤ 3 at a time — never for a `PB-n` row: a NOT FIXED prior bug
-   is already filed (P6).
+2. **Medium+** listed `needs-review` ⇒ a `[vc-test:investigate]` dispatch each,
+   invoking `vc-fix:qa-investigate`, ≤ 3 at a time — never for a `PB-n` row: a NOT FIXED prior bug is already filed (P6).
 
 ## 7 — Verdict
 
@@ -153,7 +151,7 @@ absent: merge `pixel` after that wave. A PIXEL risk that runs has Lane `scripts 
    <WORK>/write-zones.json` → `WRITE_ZONES`. Exit 2 ⇒ BLOCKED, the verdict names each file; 3 ⇒ "not checked"; any other exit ⇒ write
    `{"outside":[],"gitScope":false,"reason":"<its registryErrors, or its first stderr line>"}` there instead.
 3. `node <plugin>/lib/run-cost.mjs --since <start> --key <TICKET>` → keep its Markdown table.
-4. Dispatch `vc-test:verdict-writer`, `[vc-test:verdict] <TICKET>`, with `PLUGIN`, its paths, `TRACE`, `WRITE_ZONES`, the table, `ROUND`
+4. Dispatch `verdict` (`vc-test:verdict-writer`) with its paths, `TRACE`, `WRITE_ZONES`, the table, `ROUND`
    and, round ≥ 2, `PRIOR_BUGS` = `DELTA`.
 
 ## 8 — Human point 2

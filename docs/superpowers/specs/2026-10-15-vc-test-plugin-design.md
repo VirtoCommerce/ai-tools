@@ -670,8 +670,19 @@ the measured runs (§2b); round N ≥ 2 skips them (U15). The known slow step is
 
 **Tokens.** A thin command; skills load only for `RUN` rows; files, not summaries, between steps; scripts own
 the deterministic work (floors, gate, plan, trace, rounds, routing); `model` per registry entry. Measured in the
-`/ticket-context` validation: analysts on Opus cost 2.5× the old Stage 1, on Sonnet about 1.7×; the default is
-chosen per entry in P2 from that measurement.
+`/ticket-context` validation: analysts on Opus cost 2.5× the old Stage 1, on Sonnet about 1.7×; P2-3 chose the model per step from that measurement and §2b:
+
+| Step id | Runs as | Model | Why |
+|---|---|---|---|
+| `ticket-context` analysts (TICKET, MATERIALS, CHANGE) | agent `vc-test:ticket-context-analyst` | sonnet | Q4: Sonnet is 1.7× the old Stage 1, Opus 2.5×; `check-bundle.mjs` gates the output, so a weaker extraction fails loudly |
+| `change-map`, `checklist`, `verdict` | agents `vc-test:change-map`, `checklist-writer`, `verdict-writer` | sonnet | U30: fresh small-context writers; the deterministic checks own the quality |
+| `scenarios`, `strategy` | brief, `general-purpose` | opus | the choices a person approves at human point 1 |
+| `strategy-verifier` | agent `vc-test:strategy-verifier` | sonnet | a read-only re-check of the gate clauses against files |
+| `ac-checks`, `scenario:S-n`, `bug:PB-n`, `visual` | registry lanes (`artifacts.json` `run.model`) | sonnet | the prototype's browser lanes cost 18.9–26.3M tokens each (§2b) |
+| `fetch` | agent `vc-test:fetch` | sonnet | its own frontmatter: it only relays host-server reads into answer files |
+
+Every model a dispatch uses is declared in exactly one place: an agent's frontmatter, a registry `run.model`, or, for
+`scenarios` and `strategy` only, the command line.
 
 What the cost actually is (§2b): every agent turn re-reads the whole context, so the cost is **turns × context**,
 not output. The rules that follow from it (U30):

@@ -1,7 +1,7 @@
 ---
 name: ticket-context-analyst
 description: "Read-only ticket context extractor for /vc-test:ticket-context. Reads only the files the skill already fetched and scrubbed (prepare.json and the paths in it). Three modes — TICKET (ACs, comment signals, epic/siblings, guesses), MATERIALS (attachments, inline images, linked pages and tickets, design conditions), CHANGE (per PR: layers, operations, settings, tests, fate, risk hotspots, PR-body claims, hidden behaviour). Every input ends as a finding with provenance or a GAP with a reason; returns ONE JSON object for its mode and nothing else. No network, no shell, no writes."
-model: inherit
+model: sonnet
 color: cyan
 applicability: universal
 applicability_rationale: "Extracting what a ticket, its attachments and its PRs say is independent of any one deployment; the skill fetches per the project profile and hands this agent files only."
