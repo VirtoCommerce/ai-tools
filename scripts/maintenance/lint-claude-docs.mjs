@@ -444,6 +444,7 @@ export function checkPromptBudget(files, baseline, read = (f) => fs.readFileSync
  * and a code comment outside `harness/` (history, not a read). A link whose label is a backticked path counts
  * once. In `harness/*.mjs` only comment text is scanned, and a bare `.claude/…` token counts there (and in a
  * `.json` value) because a comment or a data value is rarely backticked.
+ * Not caught (the same limit as DOC-008): reference-style links, autolinks, titled links and angle-bracket targets.
  */
 const DOC009_ROOT = 'plugins/vc-test';
 const THIS_REPO_MARK_RE = /\(in this repository:[^)]*\)/g;
@@ -459,7 +460,9 @@ export function claudeReadsOnLine(file, line, mode = 'md') {
   const out = [];
   if (mode === 'md') {
     // Link SYNTAX quoted in a code span is an example, not a link a reader follows.
-    rest = rest.replace(/`[^`]*\]\([^`]*`/g, '');
+    // Whole code spans, paired left to right: only a span that CONTAINS link syntax is dropped, so a real link
+    // between two spans survives and a backticked label (`[`x`](t)`) is not a span with `](` inside.
+    rest = rest.replace(/`[^`]*`/g, (s) => (s.includes('](') ? '' : s));
     for (const m of rest.matchAll(LINK_ANY_RE)) {
       const t = m[1].split('#')[0];
       if (!t || EXTERNAL_RE.test(t) || t.startsWith('/')) continue;
