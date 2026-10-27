@@ -9,24 +9,31 @@
 // CLI: node plugins/vc-test/lib/rounds.mjs count --key <KEY> [--run-dir <RUN_DIR>] [--bundle <bundle.json>]
 //   reads test-strategy.md, rounds/round-*.json and summary.json (+ its git versions) of every run folder of the ticket
 //   (`priorRunDirs`: every env, wherever QA_OUTPUT_DIR puts them) and of --run-dir; prints
-//   { round, mode, closed, open, superseded, escalation, strategy, record }, mode one of first | refresh | resume | cap.
+//   { round, mode, closed, open, superseded, escalation, strategy, record, recordRound, bundle }, mode one of first |
+//   refresh | resume | cap; `record` is the newest round record, `recordRound` its round, `bundle` its bundle copy
+//   resolved against outputRoot() (a refresh or a round ≥ 2 resume needs recordRound = round − 1, rounds.md §Round N).
 //   exit 0: a round to run; 2: mode cap (a fourth round is refused, `escalation` says to whom the ticket goes back);
 //   1: usage or an unreadable input.
-// CLI: node plugins/vc-test/lib/rounds.mjs close --key <KEY> --run-dir <RUN_DIR> --bundle <bundle.json> [--filed B-1=VCST-7001,…]
+// CLI: node plugins/vc-test/lib/rounds.mjs close --key <KEY> --run-dir <RUN_DIR> --bundle <bundle.json> [--delta <WORK>/delta.json]
+//        [--filed B-1=VCST-7001,…]
 //   closes the round the last `## Round N` section of <RUN_DIR>/test-strategy.md opened: reads <RUN_DIR>/verdict.json
-//   (validated against verdict.schema.json), writes <RUN_DIR>/rounds/round-<N>.json and copies --bundle beside it as
-//   round-<N>.bundle.json (the bundle is swept after 24 h and round N+1 needs it; skipped when --bundle is that file).
+//   (validated against verdict.schema.json), writes <RUN_DIR>/rounds/round-<N>.json and copies --bundle (a relative path
+//   resolves against outputRoot()) beside it as round-<N>.bundle.json (the bundle is swept after 24 h and round N+1
+//   needs it; skipped when --bundle is that file). Round ≥ 2 passes --delta: the copy then carries the delta read's
+//   description and acceptance, so round N+1 diffs the AC text against round N's, not round 1's.
 //   Then it archives the round into <RUN_DIR>/rounds/round-<N>/: MOVES scenarios/*.rows.md and testing-checklist.md (so
 //   round N+1 in the same folder merges none of them) and COPIES verdict.md and verdict.json (the originals stay).
 //   Every path the record stores is POSIX-relative to outputRoot(). exit 0; 1: usage, a missing or invalid verdict.json,
-//   no `## Round`, or a --filed id that is no bug of the verdict.
+//   no `## Round`, a Build line with no `<repo>#<n> @ <sha>`, a --delta of another round, or a --filed id that is no bug
+//   of the verdict.
 // CLI: node plugins/vc-test/lib/rounds.mjs delta --key <KEY> --run-dir <RUN_DIR> --prepare <delta prepare.json>
 //   round N's refresh over `ticket-context prepare --since`'s output: which PRs changed, which analysts to dispatch
-//   (TICKET on new comments or a changed AC, CHANGE per changed or new PR), the prior bugs of every round (in scope only,
-//   one PB per bug), the out-of-scope bugs with their status, the carried risks, and the round recounted with the kept
+//   (TICKET on new comments or a changed AC, CHANGE per changed or new PR), the prior bugs of every round (in scope and
+//   filed only, one PB per bug), the out-of-scope bugs with their status, the carried risks, the read's description
+//   and acceptance (`fields`, kept in the file, never printed), and the round recounted with the kept
 //   comments as signals, by the rule above (a new comment naming an untested sha is a round; a sha-less one is the
 //   newest round's). Writes <WORK>/delta.json (WORK = paths.mjs workDir) and prints it. exit 0; 2: the same build
-//   (P3: no PR changed or new — round N−1 already tested it) or mode cap (`escalation` as `count`); 1: usage or an
+//   (P3: product PRs, all unchanged — round N−1 already tested it; no product PR is never the same build) or mode cap (`escalation` as `count`); 1: usage or an
 //   unreadable input.
 // CLI: node plugins/vc-test/lib/rounds.mjs append --run-dir <RUN_DIR> --delta <WORK>/delta.json [--change-map <path>]
 //   appends `## Round <N>` to <RUN_DIR>/test-strategy.md without asking (U15): the carried risks, one risk and one
@@ -109,13 +116,18 @@ function summaryCandidate({ path, json, committedAt = null }) {
 
 // ── grouping: one group = one round, however many sources saw it ─────────────────────────────────────────────────
 // Sections are the spine and are never merged with each other (a multi-PR ticket keeps the unchanged PRs' shas from
-// round to round). A record joins the section it shares most shas with; a summary joins the group it shares most with, or
+// round to round). A record joins the section of its own round number, else the one it shares most shas with; a
+// summary joins the group it shares most with, or
 // the group a no-hex summary's identical build text names.
 function group({ sections, records, summaries }) {
   const groups = [];
   for (const s of sections) groups.push({ strategy: s, record: null, summaries: [], keys: new Set(s.keys), text: null });
   for (const r of records) {
-    const cands = groups.filter((g) => !g.record && g.strategy).map((g) => [g, overlap(r.keys, g.keys)]).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]);
+    // the section with the record's own round number first (a Build line `close` could not parse leaves the record no
+    // sha to group by), then the one it shares most shas with
+    const free = groups.filter((g) => !g.record && g.strategy);
+    const sameN = free.filter((g) => r.n != null && g.strategy.n === r.n).sort((a, b) => overlap(r.keys, b.keys) - overlap(r.keys, a.keys));
+    const cands = sameN.length ? [[sameN[0], 1]] : free.map((g) => [g, overlap(r.keys, g.keys)]).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]);
     if (cands.length) cands[0][0].record = r;
     else groups.push({ strategy: null, record: r, summaries: [], keys: new Set(r.keys), text: null });
   }
@@ -222,6 +234,9 @@ export function countRounds({ strategies = [], records = [], summaries = [], sig
   const recs = records.slice().sort((a, b) => (a.json?.round ?? 0) - (b.json?.round ?? 0) || String(a.json?.closedAt).localeCompare(String(b.json?.closedAt)));
   result.strategy = newestStrategy;
   result.record = recs.at(-1)?.path ?? null;
+  // the newest record's round and its bundle copy: refresh and resume need round ROUND−1's (rounds.md §Round N)
+  result.recordRound = recs.at(-1)?.json?.round ?? null;
+  result.bundle = recs.at(-1)?.json?.bundle ?? null;
 
   if (mode === "cap") {
     const per = closed.map((g) => failuresOf(g));
@@ -272,9 +287,11 @@ export function closeRound({ round, strategyMd, verdict, filed = {}, env, closed
   if (!section) throw new Error(round == null ? "test-strategy.md has no `## Round N` section" : `test-strategy.md has no \`## Round ${round}\` section`);
   const ids = new Set(verdict.bugs.map((b) => b.id));
   for (const id of Object.keys(filed)) if (!ids.has(id)) throw new Error(`--filed ${id}: the verdict has no such bug`);
+  const build = parseBuild(section.build);
+  if (!build.length) throw new Error(`Round ${section.n}'s Build line "${section.build}" names no \`<repo>#<n> @ <sha>\` — fix the line, then close again`);
   return {
     round: section.n, env, closedAt, verdict: verdict.verdict,
-    build: parseBuild(section.build),
+    build,
     bugs: verdict.bugs.map((b) => ({ ...b, key: filed[b.id] ?? b.key ?? null })),
     unresulted: unresultedOf(strategyMd, section.n),
     bundle: bundlePath,
@@ -325,13 +342,15 @@ export function commentSignals(ticket) {
   return (ticket?.fields?.comment?.comments ?? []).map((c) => ({ text: firstLine(c?.body), source: `comment:${c?.id}@${c?.created ?? ""}` })).filter((s) => s.text);
 }
 
-/** Every in-scope bug of every record, one entry per bug (B2): a re-observed bug — the same tracker key, or a bug whose
- *  `priorBug` names an entry — joins its first sighting; otherwise `id@round` is the identity. PB-n in round, then id order. */
+/** Every in-scope bug of every record that has a tracker key (filed in its round, or carried as a prior bug), one entry
+ *  per bug (B2): a bug declined at human point 2 has no key and is never re-run. A re-observed bug — the same tracker
+ *  key, or a bug whose `priorBug` names an entry — joins its first sighting; otherwise `id@round` is the identity.
+ *  PB-n in round, then id order. */
 export function priorBugsOf(records) {
   const out = [];
   const byKey = new Map(), byPb = new Map(), byId = new Map();
   for (const rec of records.map((r) => asRecord(r).json).filter(Boolean).sort(byRound)) {
-    for (const b of (rec.bugs ?? []).filter((x) => x?.scope === "in").sort((x, y) => idNum(x.id) - idNum(y.id))) {
+    for (const b of (rec.bugs ?? []).filter((x) => x?.scope === "in" && x.key).sort((x, y) => idNum(x.id) - idNum(y.id))) {
       const hit = (b.key && byKey.get(b.key)) || (b.priorBug && byPb.get(b.priorBug)) || byId.get(`${b.id}@${rec.round}`);
       if (hit) {
         for (const f of ["key", "spec", "package"]) hit[f] ??= b[f] ?? null;
@@ -369,7 +388,10 @@ export function deltaOf({ records = [], strategies = [], summaries = [], prepare
   const acceptanceChanged = !!prepare.delta.acceptance_changed;
   return {
     round: recount.round, mode: recount.mode, ...(recount.escalation ? { escalation: recount.escalation } : {}),
-    since: prepare.delta.since ?? null, sameBuild: prs.every((p) => p.delta === "unchanged"), prs, comments, acceptanceChanged,
+    // no product PR is no build to call the same (`every` holds on an empty list)
+    since: prepare.delta.since ?? null, sameBuild: prs.length > 0 && prs.every((p) => p.delta === "unchanged"), prs, comments, acceptanceChanged,
+    // the delta read's text, which `close --delta` lays over the bundle copy so round N+1 diffs against round N's
+    fields: { description: String(prepare.fields?.description ?? ""), acceptance: String(prepare.fields?.acceptance ?? "") },
     priorBugs: priorBugsOf(recs), outOfScope: (prepare.delta.bug_status ?? []).map((b) => ({ key: b.key, status: b.status ?? null })),
     carried: newest ? (newest.unresulted ?? []).map((r) => ({ r, round: newest.round })) : [],
     previous: newest ? { round: newest.round, verdict: newest.verdict ?? null, build: shortBuild(newest.build) } : null,
@@ -522,7 +544,7 @@ function readInputs({ key, runDir, root }) {
 }
 
 function usage(msg) {
-  console.error(`${msg}\nusage: rounds.mjs count --key <KEY> [--run-dir <RUN_DIR>] [--bundle <bundle.json>]\n       rounds.mjs close --key <KEY> --run-dir <RUN_DIR> --bundle <bundle.json> [--filed B-1=VCST-7001,B-2=…]
+  console.error(`${msg}\nusage: rounds.mjs count --key <KEY> [--run-dir <RUN_DIR>] [--bundle <bundle.json>]\n       rounds.mjs close --key <KEY> --run-dir <RUN_DIR> --bundle <bundle.json> [--delta <WORK>/delta.json] [--filed B-1=VCST-7001,B-2=…]
        rounds.mjs delta --key <KEY> --run-dir <RUN_DIR> --prepare <delta prepare.json>
        rounds.mjs append --run-dir <RUN_DIR> --delta <WORK>/delta.json [--change-map <path>]`);
   process.exit(1);
@@ -537,6 +559,7 @@ function count(argv, key) {
   let inputs;
   try { inputs = readInputs({ key, runDir: argOf(argv, "run-dir"), root: outputRoot() }); } catch (e) { console.error(e.message); process.exit(1); }
   const result = countRounds({ ...inputs, signals });
+  if (result.bundle) result.bundle = resolve(outputRoot(), result.bundle);
   console.log(JSON.stringify(result, null, 2));
   process.exit(result.mode === "cap" ? 2 : 0);
 }
@@ -562,14 +585,23 @@ function close(argv) {
   try { verdict = JSON.parse(read(verdictFile)); } catch (e) { fail(`${verdictFile}: ${e.message}`); }
   const n = strategySections(strategyMd).at(-1)?.n;
   if (n == null) fail(`${strategyFile}: no "## Round N" section`);
-  if (!existsSync(bundle)) fail(`${bundle}: not found`);
   const root = outputRoot();
+  const bundleFile = resolve(root, bundle); // a record's `bundle` is stored relative to the output root
+  if (!existsSync(bundleFile)) fail(`${bundleFile}: not found`);
+  const deltaPath = argOf(argv, "delta");
+  const delta = deltaPath ? readJsonFile(deltaPath) : null;
+  if (delta && Number(delta.round) !== n) fail(`${deltaPath} is for Round ${delta.round}; test-strategy.md's last section is Round ${n}`);
   const rdir = join(runDir, "rounds");
   const copy = join(rdir, `round-${n}.bundle.json`);
   let record;
   try { record = closeRound({ round: n, strategyMd, verdict, filed, env: currentEnv(), bundlePath: posix(copy, root) }); } catch (e) { fail(e.message); }
   mkdirSync(rdir, { recursive: true });
-  if (resolve(bundle) !== resolve(copy)) copyFileSync(bundle, copy);
+  if (delta) {
+    // round ≥ 2: the copy carries this round's description and acceptance, so round N+1 diffs against them
+    const b = readJsonFile(bundleFile);
+    b.fields = { ...(b.fields ?? {}), description: String(delta.fields?.description ?? ""), acceptance: String(delta.fields?.acceptance ?? "") };
+    writeFileSync(copy, `${JSON.stringify(b, null, 2)}\n`);
+  } else if (resolve(bundleFile) !== resolve(copy)) copyFileSync(bundleFile, copy);
   writeFileSync(join(rdir, `round-${n}.json`), `${JSON.stringify(record, null, 2)}\n`);
   let arc;
   try { arc = archiveRound({ runDir, n }); } catch (e) { fail(`archiving round ${n}: ${e.message}`); }
@@ -595,7 +627,8 @@ function deltaCmd(argv, key) {
   const d = { key, ...deltaOf({ ...inputs, prepare, ticket }) };
   if (d.sameBuild) d.stop = `round ${d.round - 1} already tested this build (P3): no PR changed and none is new — amend that round instead`;
   writeFileSync(join(workDir(key), "delta.json"), `${JSON.stringify(d, null, 2)}\n`);
-  console.log(JSON.stringify(d, null, 2));
+  const { fields, ...shown } = d; // the ticket's text stays in the file (B3: none reaches the orchestrator)
+  console.log(JSON.stringify(shown, null, 2));
   process.exit(d.sameBuild || d.mode === "cap" ? 2 : 0);
 }
 

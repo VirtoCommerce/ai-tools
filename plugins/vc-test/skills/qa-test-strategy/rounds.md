@@ -55,7 +55,8 @@ Under vc-test each step above is a script over machine records; prose is never p
 
 - **The record.** `rounds.mjs close` ends a round: `<RUN_DIR>/rounds/round-<N>.json` (build per PR, verdict, the
   bugs of `verdict.json`, the unresulted risks) and a copy of the round's bundle beside it, which round N+1 diffs the
-  acceptance text against (the bundle itself is swept after 24 h). Every path in it is relative to the output root.
+  acceptance text against (the bundle itself is swept after 24 h; round ≥ 2's `close --delta` lays the delta read's
+  description and acceptance over the copy, so the diff is against round N's text, never round 1's). Every path in it is relative to the output root.
   It also archives the round into `<RUN_DIR>/rounds/round-<N>/`: the row files and `testing-checklist.md` move there,
   `verdict.md` and `verdict.json` are copied, so round N+1 in the same folder starts from none of round N's rows.
 - **The delta.** `ticket-context prepare <KEY> --since <round record>` reads only what changed: each PR `unchanged`,
@@ -65,9 +66,11 @@ Under vc-test each step above is a script over machine records; prose is never p
   CHANGE per changed or new PR), the round recounted with the new comments as signals (a fourth round still STOPs).
 - **The same build STOPs (P3).** No PR changed and none is new ⇒ round N−1 already tested this build; nothing runs.
   Amending a closed round stays manual (D7).
-- **Prior bugs come from every round.** Each in-scope bug of every earlier record, once (by tracker key — a bug still
-  failing is carried by the next record with its `priorBug` and original key), is a `PB-n` row of `### Prior bugs`
-  and its own risk: "fixed, and nothing next to it broke", at its severity, re-run from its `.spec` or its package.
+- **Prior bugs come from every round.** Each in-scope bug of every earlier record that has a tracker key — filed in
+  its round, or carried as a prior bug — once (by that key: a bug still failing is carried by the next record with its
+  `priorBug` and original key), is a `PB-n` row of `### Prior bugs` and its own risk: "fixed, and nothing next to it
+  broke", at its severity, re-run from its `.spec` or its package. A bug declined at human point 2 has no key and is
+  not re-run.
 - **Out-of-scope bugs are listed, not re-run (B2).** The delta reports their tracker status; Out of scope names them.
 - **The section is appended without asking (U15).** `rounds.mjs append` writes `## Round N` — the carried risks, the
   prior-bug risks and rows, round N−1's Artifacts — and leaves one `TBD — strategy agent` line per part the strategy
