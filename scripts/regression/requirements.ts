@@ -223,7 +223,10 @@ export async function personaChecks(root: string, env: string, c: EnvCoords, tok
   for (const [alias, cases] of personas) {
     // Not an alias: a config.js persona (USER, ORG_USER, ADMIN…), read from <NAME>_EMAIL / <NAME> and <NAME>_PASSWORD.
     const envEmail = [`${alias}_EMAIL`, `${alias}_USERNAME`, alias].find((k) => process.env[k] && process.env[k]!.includes("@") || (k === alias && process.env[k]));
-    const entry: AliasEntry | undefined = registry[alias] ?? (envEmail && process.env[`${alias}_PASSWORD`] !== undefined ? { email_env: envEmail, password_env: `${alias}_PASSWORD` } : undefined);
+    // A tag may name the email variable itself ([PRE:SIGNIN_AS:MULTI_ORG_USER_EMAIL]); its password is then under the
+    // base name (MULTI_ORG_USER_PASSWORD), as config.js pairs them — never MULTI_ORG_USER_EMAIL_PASSWORD.
+    const pwdVar = [`${alias}_PASSWORD`, `${alias.replace(/_(EMAIL|USERNAME)$/, "")}_PASSWORD`].find((k) => process.env[k] !== undefined);
+    const entry: AliasEntry | undefined = registry[alias] ?? (envEmail && pwdVar ? { email_env: envEmail, password_env: pwdVar } : undefined);
     const where = `${count(cases)}: ${bySuite(cases)}`;
     // Before the account: without the module the account cannot be provisioned, so "no such account" would send
     // someone to seed what the platform cannot hold (Stable 16: seed:sales-rep → 404 on /api/sales-rep/*).
