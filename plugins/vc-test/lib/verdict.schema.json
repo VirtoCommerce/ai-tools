@@ -1,0 +1,25 @@
+{
+  "description": "The round's machine record, written by the verdict agent beside verdict.md (P2-2, spec B3). Medium-or-worse bugs only: a Low finding is a line under Noticed, never a bug. Paths are POSIX-relative to outputRoot(); `key` is set only for a prior bug, whose tracker key is already known (P6); a bug filed this round gets its key from `rounds.mjs close --filed`.",
+  "$defs": {
+    "path": { "type": ["string", "null"] },
+    "bug": {
+      "type": "object", "additionalProperties": false, "required": ["id", "severity", "scope", "title", "rows"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^B-[0-9]+$" },
+        "severity": { "enum": ["Critical", "High", "Medium"] },
+        "scope": { "enum": ["in", "out"] },
+        "title": { "type": "string", "minLength": 1 },
+        "rows": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "package": { "$ref": "#/$defs/path" },
+        "spec": { "$ref": "#/$defs/path" },
+        "priorBug": { "type": ["string", "null"], "pattern": "^PB-[0-9]+$" },
+        "key": { "type": ["string", "null"] }
+      }
+    }
+  },
+  "type": "object", "additionalProperties": false, "required": ["verdict", "bugs"],
+  "properties": {
+    "verdict": { "enum": ["PASS", "PASS WITH NOTES", "FAIL", "BLOCKED"] },
+    "bugs": { "type": "array", "items": { "$ref": "#/$defs/bug" } }
+  }
+}

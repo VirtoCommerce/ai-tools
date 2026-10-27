@@ -53,7 +53,7 @@
   ],
   "orchestrator": {
     "writes": [
-      "<run>/test-strategy.md", "<run>/testing-checklist.md", "<run>/verdict.md", "<run>/summary.json", "<run>/triage-report.md",
+      "<run>/test-strategy.md", "<run>/testing-checklist.md", "<run>/verdict.md", "<run>/verdict.json", "<run>/rounds/**", "<run>/summary.json", "<run>/triage-report.md",
       "<run>/scenarios/pixel.rows.md", "<run>/evidence-*/**", "<run>/investigations/**", "<run>/bugs/**", "<store>/**"
     ]
   },

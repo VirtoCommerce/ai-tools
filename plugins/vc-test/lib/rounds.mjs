@@ -9,11 +9,18 @@
 //   { round, mode, closed, open, superseded, escalation, strategy, record }, mode one of first | refresh | resume | cap.
 //   exit 0: a round to run; 2: mode cap (a fourth round is refused, `escalation` says to whom the ticket goes back);
 //   1: usage or an unreadable input.
+// CLI: node plugins/vc-test/lib/rounds.mjs close --key <KEY> --run-dir <RUN_DIR> --bundle <bundle.json> [--filed B-1=VCST-7001,…]
+//   closes the round the last `## Round N` section of <RUN_DIR>/test-strategy.md opened: reads <RUN_DIR>/verdict.json
+//   (validated against verdict.schema.json), writes <RUN_DIR>/rounds/round-<N>.json and copies --bundle beside it as
+//   round-<N>.bundle.json (the bundle is swept after 24 h and round N+1 needs it; skipped when --bundle is that file).
+//   Every path the record stores is POSIX-relative to outputRoot(). exit 0; 1: usage, a missing or invalid verdict.json,
+//   no `## Round`, or a --filed id that is no bug of the verdict.
 import { execFileSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
-import { pathToFileURL } from "node:url";
-import { argOf, KEY_RE, outputRoot } from "./paths.mjs";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { argOf, currentEnv, KEY_RE, outputRoot } from "./paths.mjs";
+import { validate } from "../skills/ticket-context/lib/schema.mjs";
 import { rows as tableRows } from "./strategy-artifacts.mjs";
 import { priorRunDirs } from "../scripts/lib/run-dir.mjs";
 
@@ -210,6 +217,50 @@ export function countRounds({ strategies = [], records = [], summaries = [], sig
   return result;
 }
 
+// ── closing a round: the machine record ──────────────────────────────────────────────────────────────────────────
+const VERDICT_SCHEMA = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), "verdict.schema.json"), "utf8"));
+export const validateVerdict = (verdict) => validate(verdict, VERDICT_SCHEMA);
+
+/** Every `<repo>#<n> @ <hex>` of a Build line, the sha being the first hex after `@`. */
+export function parseBuild(build) {
+  return [...String(build ?? "").matchAll(/([\w.-]+(?:\/[\w.-]+)?)#(\d+)\s*@\s*([0-9a-f]{7,40})(?![0-9a-z])/gi)]
+    .map((m) => ({ repo: m[1], number: Number(m[2]), sha: m[3].toLowerCase() }));
+}
+
+/** The R ids of a section whose Reconciliation Result is empty, a dash, or BLOCKED. */
+function unresultedOf(md, n) {
+  const text = lf(md);
+  const starts = [...text.matchAll(/^## Round (\d+)\b/gm)];
+  const i = starts.findIndex((m) => Number(m[1]) === n);
+  if (i < 0) return [];
+  const sec = text.slice(starts[i].index, starts[i + 1]?.index);
+  return tableRows(reconBlock(sec))
+    .filter((c) => /^R\d+/.test(c[0] ?? "") && (UNRESULTED.test(c[3] ?? "") || /^BLOCKED(?![\p{L}\p{N}_-])/iu.test(c[3] ?? "")))
+    .map((c) => /^R\d+/.exec(c[0])[0]);
+}
+
+/**
+ * The record `rounds/round-<N>.json` that closes a round. `strategyMd` is test-strategy.md; the round it closes is its last
+ * section (`round` names it, the last section's own number when omitted); `verdict` is verdict.json; `filed` maps a bug id
+ * to the tracker key it was just filed under; `bundlePath` is the stored, outputRoot-relative path of the round's bundle copy.
+ */
+export function closeRound({ round, strategyMd, verdict, filed = {}, env, closedAt = new Date().toISOString(), bundlePath }) {
+  const errors = validateVerdict(verdict);
+  if (errors.length) throw new Error(`verdict.json is invalid: ${errors.join("; ")}`);
+  const sections = strategySections(strategyMd);
+  const section = round == null ? sections.at(-1) : sections.find((s) => s.n === round);
+  if (!section) throw new Error(round == null ? "test-strategy.md has no `## Round N` section" : `test-strategy.md has no \`## Round ${round}\` section`);
+  const ids = new Set(verdict.bugs.map((b) => b.id));
+  for (const id of Object.keys(filed)) if (!ids.has(id)) throw new Error(`--filed ${id}: the verdict has no such bug`);
+  return {
+    round: section.n, env, closedAt, verdict: verdict.verdict,
+    build: parseBuild(section.build),
+    bugs: verdict.bugs.map((b) => ({ ...b, key: filed[b.id] ?? b.key ?? null })),
+    unresulted: unresultedOf(strategyMd, section.n),
+    bundle: bundlePath,
+  };
+}
+
 // ── CLI ──────────────────────────────────────────────────────────────────────────────────────────────────────────
 const posix = (file, root) => { const rel = relative(root, file); return (isAbsolute(rel) || rel.startsWith("..") ? file : rel).split(sep).join("/"); };
 const git = (cwd, args) => execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 64 * 1024 * 1024 });
@@ -250,15 +301,11 @@ function readInputs({ key, runDir, root }) {
 }
 
 function usage(msg) {
-  console.error(`${msg}\nusage: rounds.mjs count --key <KEY> [--run-dir <RUN_DIR>] [--bundle <bundle.json>]`);
+  console.error(`${msg}\nusage: rounds.mjs count --key <KEY> [--run-dir <RUN_DIR>] [--bundle <bundle.json>]\n       rounds.mjs close --key <KEY> --run-dir <RUN_DIR> --bundle <bundle.json> [--filed B-1=VCST-7001,B-2=…]`);
   process.exit(1);
 }
 
-function main() {
-  const argv = process.argv.slice(2);
-  if (argv[0] !== "count") usage(`unknown command "${argv[0] ?? ""}"`);
-  const key = argOf(argv, "key");
-  if (!key || !KEY_RE.test(key)) usage(`--key must be a ticket key, got "${key ?? ""}"`);
+function count(argv, key) {
   const bundlePath = argOf(argv, "bundle");
   let signals = [];
   if (bundlePath !== undefined) {
@@ -269,6 +316,47 @@ function main() {
   const result = countRounds({ ...inputs, signals });
   console.log(JSON.stringify(result, null, 2));
   process.exit(result.mode === "cap" ? 2 : 0);
+}
+
+function close(argv) {
+  const runDir = argOf(argv, "run-dir");
+  const bundle = argOf(argv, "bundle");
+  if (!runDir) usage("--run-dir is required");
+  if (!bundle) usage("--bundle is required");
+  const filed = {};
+  for (const pair of (argOf(argv, "filed") ?? "").split(",").filter(Boolean)) {
+    const m = /^(B-\d+)=(.+)$/.exec(pair.trim());
+    if (!m) usage(`--filed expects B-<n>=<KEY>[,…], got "${pair}"`);
+    filed[m[1]] = m[2];
+  }
+  const fail = (msg) => { console.error(msg); process.exit(1); };
+  const read = (file) => { try { return readFileSync(file, "utf8"); } catch (e) { return fail(`${file}: ${e.message}`); } };
+  const strategyFile = join(runDir, "test-strategy.md");
+  const verdictFile = join(runDir, "verdict.json");
+  const strategyMd = read(strategyFile);
+  let verdict;
+  try { verdict = JSON.parse(read(verdictFile)); } catch (e) { fail(`${verdictFile}: ${e.message}`); }
+  const n = strategySections(strategyMd).at(-1)?.n;
+  if (n == null) fail(`${strategyFile}: no "## Round N" section`);
+  if (!existsSync(bundle)) fail(`${bundle}: not found`);
+  const root = outputRoot();
+  const rdir = join(runDir, "rounds");
+  const copy = join(rdir, `round-${n}.bundle.json`);
+  let record;
+  try { record = closeRound({ round: n, strategyMd, verdict, filed, env: currentEnv(), bundlePath: posix(copy, root) }); } catch (e) { fail(e.message); }
+  mkdirSync(rdir, { recursive: true });
+  if (resolve(bundle) !== resolve(copy)) copyFileSync(bundle, copy);
+  writeFileSync(join(rdir, `round-${n}.json`), `${JSON.stringify(record, null, 2)}\n`);
+  console.log(JSON.stringify({ record: posix(join(rdir, `round-${n}.json`), root), bundle: record.bundle, round: n, verdict: record.verdict, unresulted: record.unresulted }));
+  process.exit(0);
+}
+
+function main() {
+  const argv = process.argv.slice(2);
+  if (argv[0] !== "count" && argv[0] !== "close") usage(`unknown command "${argv[0] ?? ""}"`);
+  const key = argOf(argv, "key");
+  if (!key || !KEY_RE.test(key)) usage(`--key must be a ticket key, got "${key ?? ""}"`);
+  if (argv[0] === "close") close(argv); else count(argv, key);
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) main();
