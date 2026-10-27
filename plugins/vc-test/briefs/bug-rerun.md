@@ -12,7 +12,8 @@ investigate a failure nor write a bug, and a bug still failing is never filed ag
 - `STRATEGY` — the approved `test-strategy.md`. Read its last round: your row of `### Prior bugs`
   (`| PB | Bug | Severity | Found | Reproduction | R |`) and the risk its `R` names — its `### Risks` row and its
   oracle in `### Approach per risk`.
-- `LANE` — `browser:playwright-<x>`, or none (a `spec` reproduction runs without a browser).
+- `LANE` — `browser:playwright-<x>` for a `package` reproduction; none for `spec` (the runner needs no browser) and
+  for `none` (nothing to run).
 - `RUN_DIR`, `CAPABILITIES` (`stand.writable`), and `ledger.md` beside this brief. `<plugin>` is the folder above
   this brief's. Every path in the row is relative to the project root.
 
@@ -52,12 +53,15 @@ buyer path is Medium or worse).
 ## Result — one `PB` row in `<RUN_DIR>/scenarios/PB-n.rows.md`
 
 **Never write `testing-checklist.md`.** The file holds your one row, on one line, no heading, no header, no blank
-line; a correction is the same id added again. Any other id is refused at the merge.
+line; a correction is the same id added again. Any other id is refused at the merge. The row has the checklist
+table's seven columns (`# | Ref | Item | Proof | Data | Result | Evidence`):
 
-    | PB-<n> | PB-<n> · R<k> | <what was done: the spec run, or the steps and attempts> | <expected> | <observed> | <Result> |
+    | PB-<n> | PB-<n> · R<k> | <what was done: the spec run, or the steps and attempts>; expected <the oracle> | <spec, package or none> | <data> | <Result> | <observed> |
 
-`R<k>` is your row's `R` — it is what attributes the result to the risk. Result is `PASS — FIXED`,
-`FAIL <severity> — NOT FIXED: <observed>` or `BLOCKED — <why>`; never empty. A FAIL on a page names its screenshots
-in `{RUN_DIR}/screenshots/` in the observed cell; a PASS is text.
+`R<k>` is your row's `R` — it is what attributes the result to the risk. Proof is the Reproduction's kind; Data the
+`@td()` aliases, live-discovered or `AGENT-TEST-` entities you used, or `—`. Result is `PASS — FIXED`,
+`FAIL <severity> — NOT FIXED: <observed>` or `BLOCKED — <why>`; never empty. Evidence is what you observed — the
+spec's failing assertion, or the deciding status, field and value; a FAIL on a page also names its screenshots in
+`{RUN_DIR}/screenshots/`. A PASS is text.
 
 Return **only**: `PB-n` and its Result.

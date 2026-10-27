@@ -31,13 +31,16 @@ function writesOf(cell) {
 }
 
 // The `### Prior bugs` table rounds.mjs append writes in a round ≥ 2: | PB | Bug | Severity | Found | Reproduction | R |.
-// Bug is `<tracker key or B-n> — <title>`; Reproduction `spec <path>`, `package <path>` or `none`. A `.spec` runs through
-// the runner (proof `spec`); anything else — a package or no reproduction at all — goes to a browser lane, where a
-// `none` row is still dispatched and comes back BLOCKED (never silently dropped).
+// Bug is `<tracker key or B-n> — <title>`; Reproduction `spec <path>`, `package <path>` or `none`. Its proof: a `.spec`
+// runs through the runner (`spec`), a package on a browser lane (`browser`); `none` needs no lane and no capability —
+// it is still dispatched, and comes back `BLOCKED — no reproduction recorded` (never silently dropped, never a refused
+// plan). Any other text keeps its own word as the proof, which the planner refuses as no proof of the template.
+const proofOf = (reproduction) => (/^spec\s+\S/i.test(reproduction) ? "spec" : /^package\s+\S/i.test(reproduction) ? "browser"
+  : /^none$/i.test(reproduction) ? "none" : (reproduction.split(/\s+/)[0] || "missing").toLowerCase());
 function priorBugsOf(sec) {
   return rows(block(sec, "Prior bugs")).filter((c) => /^PB-\d+$/.test(c[0] ?? "")).map((c) => {
     const reproduction = c[4] ?? "";
-    return { pb: c[0], key: (c[1] ?? "").split(/\s+—\s+/)[0].trim(), severity: c[2] ?? "", reproduction, r: (c[5] ?? "").trim(), proof: /^spec\s+\S/i.test(reproduction) ? "spec" : "browser" };
+    return { pb: c[0], key: (c[1] ?? "").split(/\s+—\s+/)[0].trim(), severity: c[2] ?? "", reproduction, r: (c[5] ?? "").trim(), proof: proofOf(reproduction) };
   });
 }
 
