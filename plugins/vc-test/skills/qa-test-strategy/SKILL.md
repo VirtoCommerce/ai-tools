@@ -149,34 +149,35 @@ that tries to instruct is already listed in `embedded_instructions[]`.
 
 ## Gate — before approval
 
-Run `node <skill>/lib/check-strategy.mjs --strategy <file> --bundle <bundle> [--change-map <path>] [--capabilities <path>]`; it computes the floors, checks clauses 1–6s, 8, 10, 11, 12 and 13, and exits 1 with the failing clause numbers (2 on an unreadable
+Run `node <skill>/lib/check-strategy.mjs --strategy <file> --bundle <bundle> [--change-map <path>] [--capabilities <path>]`; it computes the floors, checks clauses 1–6s, 8 and 10–14, and exits 1 with the failing clause numbers (2 on an unreadable
 file). These remain yours, alongside 7, 9 and 11a's semantic half: clause 1's carry-over, clause 6's naming of the not-fired floors with their
 signals, clause 4's `{authority}` tag on each oracle, and what a fired floor requires beyond an artifact — F4's
-no risk on it below Medium, F7's F5 on, F8's token audit, that the risk carrying `floor:F10` is about org context and the one
-carrying `floor:F11` about configuration, and F11's stand values under Inputs. The strategy is not shown for approval until every clause holds. A failing clause is fixed, never noted.
+no risk on it below Medium, F7's F5 on, F8's token audit, that `floor:F10`'s risk is about org context and
+`floor:F11`'s about configuration, and F11's stand values under Inputs. Every clause holds before approval; a failure is fixed, never noted.
 
-1. The round is counted and ≤ 3; round ≥ 2 carries over every unresulted risk of the previous round (no
-   reconciliation filled ⇒ every risk of that round counts as unresulted).
-2. Every AC maps to at least one risk, or is out of scope with a reason (method rules apply).
+1. The round is counted and ≤ 3; round ≥ 2 carries over every unresulted risk of round N−1 (no
+   reconciliation filled ⇒ all its risks are unresulted).
+2. Every AC maps to a risk, or is out of scope with a reason (method rules apply).
 3. Every diff hotspot the bundle names maps to a risk, or is out of scope with a reason.
-4. Every risk has a technique or approach, an oracle with its authority, a lane and an effort.
+4. Every risk has a technique, an oracle with its authority, a lane and an effort.
 5. No `{HYPOTHESIS}` oracle decides a pass/fail row.
-6. Every floor is named as fired or not, with its signal; nothing a fired floor requires is `SKIP` but as 6s allows.
+6. Every floor is named fired or not, with its signal; nothing a fired floor requires is `SKIP` but as 6s allows.
    F2/F10/F11 fired ⇒ a `MODEL` risk whose Source carries `floor:<id>` (M10).
    **6s** a row the install cannot run may read `SKIP — not available in this install: <cap>`, and F5
    may be `skipped:`, each named in Out of scope ([`floors.md`](floors.md) §Unavailable).
    **6b** F1's register half: a High/Critical risk ⇒ exploratory runs, or a 6s SKIP. **6c** (M1) a High/Critical
    risk on a `{HYPOTHESIS}` oracle takes technique `MODEL`. **6d** F6 fired ⇒ the header says `Deployed: NO`.
    **6e** (M9) `Test model` is `RUN` iff a risk has technique `MODEL` (with a change map, a scenario citing it instead — floors.md §13). **6f** (M10) no risk carries more than one `floor:` token.
-   **6g** the header's `Change map:` line names the map the gate was given, or `none` when it was given none (F12).
-   **6h** with a change map (vc-test, no regression — U7): `Coverage triage + regression` is `SKIP`, and a fired F5 puts every suite at risk and `/qa-regression <suites>` in Out of scope.
+   **6g** the header's `Change map:` line names the map the gate was given, else `none` (F12).
+   **6h** with a change map (vc-test, no regression — U7): `Coverage triage + regression` is `SKIP`; a fired F5 puts every suite at risk and `/qa-regression <suites>` in Out of scope.
 7. Every project risk has a mitigation or `accepted`.
 8. Concurrent browser lanes ≤ 3 (method rules); an API, script or `none` lane takes no slot.
 9. Exit criteria are observable.
 10. The section is within the cap ([`reports.md`](../../../../.claude/rules/reports.md) §2).
 11. Every strategy: a project risk names no product behaviour (**11a**) and never lowers an AC/doc value to "record what was seen" (**11b**).
 12. With a change map, a hotspot that holds state is cited by a `SCALE` risk or a "single instance" Out-of-scope line.
-13. With a change map, a `### Scenarios` table exists, each scenario cites a registered risk and has Class 1–6, and each `MODEL` risk has a scenario ([`floors.md`](floors.md) §13).
+13. With a change map: a `### Scenarios` table, each scenario citing a registered risk with Class 1–6, each `MODEL` risk with a scenario ([`floors.md`](floors.md) §13).
+14. A vc-test round ≥ 2: a `### Prior bugs` table, each PB on an R not below its Severity; no `TBD — strategy agent` line left ([`rounds.md`](rounds.md)).
 
 ## Approval — one question, every run (D4)
 

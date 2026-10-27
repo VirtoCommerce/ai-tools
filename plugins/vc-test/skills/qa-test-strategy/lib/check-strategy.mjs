@@ -226,6 +226,23 @@ export function checkStrategy(md, bundle, { domainMapText = null, p01Names, chan
     }
     for (const r of modelRisks) if (!citedBy.has(r)) errors.push(`13: ${r} (MODEL) has no scenario`);
   }
+  // 14 (P2-2, rounds.md §Round N in vc-test): a vc-test round ≥ 2 — a change map, or the vc-test-only Scenarios table —
+  // re-runs the ticket's prior bugs. `rounds.mjs append` writes a `### Prior bugs` table; each PB row names a risk of the
+  // round whose Level is not below the bug's Severity. In any round, no `TBD — strategy agent` line append left remains.
+  if (round >= 2 && (vcTest || HEADING("Scenarios").test(sec))) {
+    if (!HEADING("Prior bugs").test(sec)) errors.push("14: round ≥ 2 has no '### Prior bugs' table — `rounds.mjs append` writes it");
+    const RANK = ["low", "medium", "high", "critical"];
+    for (const [pb, , severity, , , r] of rows(block(sec, "Prior bugs")).filter((c) => /^PB-\d+$/.test(c[0] ?? ""))) {
+      const want = levelOf(severity ?? "");
+      const id = (RISK_REF.exec(r ?? "")?.[0] ?? "").replace("-", "");
+      const risk = risks.find((x) => x.r === id);
+      if (!want) errors.push(`14: ${pb} Severity "${severity ?? ""}" is not Critical/High/Medium`);
+      if (!risk) errors.push(`14: ${pb} names no risk of the round ("${r ?? ""}")`);
+      else if (want && risk.level && RANK.indexOf(risk.level) < RANK.indexOf(want)) errors.push(`14: ${pb} is ${severity}, but ${risk.r}'s Level is ${risk.level} — a prior bug's risk is never below its severity`);
+    }
+  }
+  const tbd = sec.split("\n").filter((l) => l.includes("TBD — strategy agent"));
+  if (tbd.length) errors.push(`14: ${tbd.length} line(s) still read 'TBD — strategy agent' (first: ${tbd[0].trim().slice(0, 80)})`);
   const lines = sec.trimEnd().split("\n").length;
   if (lines > CAP) errors.push(`10: round section is ${lines} lines (cap ${CAP})`);
   return { round, errors };

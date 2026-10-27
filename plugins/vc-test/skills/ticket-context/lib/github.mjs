@@ -4,6 +4,7 @@ import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { CAPS } from "./fetch.mjs";
 import { GapError, asGap, gap } from "./gap.mjs";
+import { compareFrom } from "./since.mjs";
 
 /** Stage-1 rule: deployment-manifest PRs, this repo's PRs, QA test-tooling PRs and the public knowledge base's PRs
  *  (vc-knowledge: each is a kb entry about the ticket, not a change to it) are context, not change surface — so
@@ -199,7 +200,7 @@ export function assembleDiff(files) {
   return { text: parts.length ? `${parts.join("\n")}\n` : "", noPatch };
 }
 
-export async function collectPr(gh, p, runDir, { caps = CAPS, sameKey = [], before = null } = {}) {
+export async function collectPr(gh, p, runDir, { caps = CAPS, sameKey = [], before = null, from = null } = {}) {
   const { owner, repo, number, meta } = p;
   checkRepo(owner, repo);
   checkNumber(number);
@@ -230,7 +231,30 @@ export async function collectPr(gh, p, runDir, { caps = CAPS, sameKey = [], befo
     if (cut.cut) entry.gaps.push(gap(`pr:${p.ref}:diff`, "over-cap", `diff truncated at ${caps.diffBytes} of ${cut.bytes} bytes`));
     entry.diff_path = write("diff.patch", cut.text);
   };
-  try { writeDiff(String(await gh.diff(owner, repo, number))); } catch (e) {
+  // prepare --since: the diff from the last tested sha. GitHub says whether that sha is still an ancestor of the head
+  // (compare); a force-push (diverged, behind) or an unreadable compare is the whole PR diff with `from: null`, never a
+  // delta read from a commit the head no longer contains. Azure Repos has no compare: `from` must be the source commit
+  // of one of the PR's iterations (deltaBase, which also expands it to the full id), and the base side is read there.
+  let delta = null;
+  let azureFrom = null;
+  if (from) {
+    entry.from = null;
+    const fallback = (why) => entry.gaps.push(gap(`pr:${p.ref}:delta`, "unreadable", `${why}: the whole PR diff is read`));
+    if (gh.compareDiff) {
+      try {
+        const c = await gh.compareDiff(owner, repo, from, entry.head_sha);
+        if (compareFrom(c.status, from)) { entry.from = from; delta = String(c.diff); }
+        else fallback(`${from} is not an ancestor of the head (compare: ${c.status})`);
+      } catch (e) { const g = asGap(`pr:${p.ref}:delta`, e); fallback(`compare from ${from} not read (${g.detail ?? g.reason})`); }
+    } else if (gh.deltaBase) {
+      try {
+        azureFrom = await gh.deltaBase(owner, repo, number, from);
+        if (azureFrom) entry.from = azureFrom;
+        else fallback(`${from} is the source commit of none of the PR's iterations (a force-push?)`);
+      } catch (e) { const g = asGap(`pr:${p.ref}:delta`, e); fallback(`iterations not read to place ${from} (${g.detail ?? g.reason})`); }
+    } else fallback("this code host cannot diff from a commit");
+  }
+  try { writeDiff(delta ?? String(await gh.diff(owner, repo, number, azureFrom ? { from: azureFrom } : undefined))); } catch (e) {
     // 406 = GitHub will not render the whole diff (too many lines or files). The same hunks come per file from the
     // files API read above; the PR's diff is a gap only when that read failed too.
     if (e?.status === 406 && files) {
