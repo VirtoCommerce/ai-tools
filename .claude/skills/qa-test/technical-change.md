@@ -197,7 +197,7 @@ three browser lanes, the fallback chain, retries, HAR capture, `test-run-status.
 report. **Nothing here is headless, lighter or special-cased.** This flow has no opinion about how a suite
 runs; `/qa-regression` and [`regression-pipelines.md`](../../knowledge/execution/regression-pipelines.md)
 own that and are unmodified. Launch the run's watcher as usual — a regression is the deliverable here, not a
-side track. Carry its `RUN_ID` into `5-triage`, which triages through `/qa-triage-results <RUN_ID>`, never from
+side track. Carry its `RUN_ID` into `5-triage`, which triages through the Skill `vc-test:qa-triage-results` with `<RUN_ID>`, never from
 scratch.
 
 **A backend-only technical change still runs storefront suites.** A telemetry SDK or a runtime bump is

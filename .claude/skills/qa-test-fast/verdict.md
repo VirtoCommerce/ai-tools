@@ -8,13 +8,13 @@ hand.
 1. **The input is the checklist.** At the Stage 2 join every exploratory and visual finding became a row with a
    verdict in `testing-checklist.md`. **Dedupe there, by defect class rather than by surface**: two lanes that
    saw one defect make one row with two pieces of evidence.
-2. **Invoke the `qa-triage-results` skill with `ticket <TICKET> --verify`**
-   ([`../../commands/qa-triage-results.md`](../../commands/qa-triage-results.md) §Usage, its *Ticket mode* paragraph). It collects
-   the FAIL / BLOCKED / NOT-RUN rows (`npm run triage:collect -- --ticket <TICKET>`) and classifies them with
+2. **Invoke the skill `skill: "vc-test:qa-triage-results"` with `ticket <TICKET> --verify`**
+   ([`../../../plugins/vc-test/skills/qa-triage-results/SKILL.md`](../../../plugins/vc-test/skills/qa-triage-results/SKILL.md) §Usage, its *Ticket mode* paragraph). It collects
+   the FAIL / BLOCKED / NOT-RUN rows (the installed plugin's `lib/triage-collect.mjs --ticket <TICKET>`, not this checkout's copy) and classifies them with
    the regression classifier. Phase 4 then sends **every** real-bug candidate to the layer's QA expert, whose
    brief makes it invoke `vc-fix:qa-investigate` ahead of `qa-bug`. Each one returns `REPRODUCED` /
    `NOT_REPRODUCED` plus an evidence package.
-3. **Apply what it returns** ([`../qa-triage-results/routing-and-fix.md`](../qa-triage-results/routing-and-fix.md)
+3. **Apply what it returns** ([`../../../plugins/vc-test/skills/qa-triage-results/routing-and-fix.md`](../../../plugins/vc-test/skills/qa-triage-results/routing-and-fix.md)
    §Ticket mode):
 
 | Returned class | Goes to |
@@ -39,7 +39,7 @@ Call `/vc-fix:qa-bug "<one-line defect>"` once per **confirmed** bug. Give it, *
 - **the `vc-fix:qa-investigate` package** (`evidence-index.md`, `root-cause.md`, screenshots, HAR,
   console/network lines). Say that the bug is already reproduced and investigated, so `qa-bug` reuses the
   package for its reproduction and its 4-layer validation and does not dispatch a second repro
-  ([`../qa-triage-results/routing-and-fix.md`](../qa-triage-results/routing-and-fix.md) §The `/qa-bug` brief)
+  ([`../../../plugins/vc-test/skills/qa-triage-results/routing-and-fix.md`](../../../plugins/vc-test/skills/qa-triage-results/routing-and-fix.md) §The `/qa-bug` brief)
 - the checklist item id or charter item it came from
 - the ledger ids of the data involved
 - the build versions from Step 0

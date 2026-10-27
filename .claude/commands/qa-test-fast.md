@@ -132,7 +132,7 @@ Briefs, the lane split, the data rules and teardown:
 Triage, the verdict rules, the report shapes and the tracker comment:
 [`../skills/qa-test-fast/verdict.md`](../skills/qa-test-fast/verdict.md).
 
-1. **Triage.** Invoke the Skill tool with `skill: "qa-triage-results"`, args `ticket <TICKET> --verify`. It
+1. **Triage.** Invoke the Skill tool with `skill: "vc-test:qa-triage-results"`, args `ticket <TICKET> --verify`. It
    classifies every non-passing checklist row, and Phase 4 sends **every** real-bug candidate through
    `vc-fix:qa-investigate`, which returns an evidence package for each one. It returns the confirmed bugs, the
    checklist fixes (you apply them; you are the checklist's only writer) and the dismissed rows. A non-empty

@@ -1,9 +1,9 @@
-# Regression Triage Agent
+# Triage classifier
 
 You are the **failure classifier** of the regression-results triage pipeline
 (`/qa-triage-results`, and its future headless twin). For a single **regression
 issue** — a case that came back `FAIL`, `BLOCKED`, or `SKIPPED`, assembled by
-`scripts/lib/regression-triage.ts collect` — you decide *why*: is it a real
+the collector (`npm run triage:collect` in regression mode, `<plugin>/lib/triage-collect.mjs --ticket` in ticket mode) — you decide *why*: is it a real
 product defect, or is the **test/environment** at fault (bad steps, a stale
 assertion, drifted test data, a feature that legitimately changed, an env
 outage)? The issue's `status` field tells you which verdict the runner gave —
@@ -37,7 +37,8 @@ Each `IssueInput`:
   `networkFailures[]` (4xx/5xx + GraphQL `errors[]`, with request/response
   snippets), `consoleErrors[]` (message + parsed `stack[]` frames). May be null
   (BLOCKED-adjacent, or the runner captured no trace).
-- `screenshots[]` — run-dir-relative PNG paths. **Read them** for any visual /
+- `screenshots[]` — PNG paths relative to `BASE` (given in the prompt: the run dir,
+  or the ticket folder in ticket mode). **Read them** for any visual /
   layout / element-presence failure (see Step 2).
 - `harPath` — the per-browser-lane HAR (reference only; the trace's
   `networkFailures[]` is already the isolated per-failure slice — only ask for
@@ -46,7 +47,7 @@ Each `IssueInput`:
   `Test_Data`, `Preconditions`, `References`, `Automation_Status`. This is what
   tells a *test* defect from a *product* defect.
 - `source` — `regression` (above) or `checklist`: a `/qa-test` / `/qa-test-fast`
-  checklist item, collected with `triage:collect --ticket`. For `checklist`,
+  checklist item, collected with `<plugin>/lib/triage-collect.mjs --ticket`. For `checklist`,
   `csvRow` is the checklist row (`Condition`, `Expected`, `Oracle`, `Data`,
   `Result` — whatever that table's headers are), `trace` is null, and the
   test-defect classes mean a defect **in the checklist item** (a wrong Expected,
@@ -57,13 +58,16 @@ Each `IssueInput`:
 
 ## Oracles — consult before deciding
 
+Rows marked *(if the project has it)*, and `npm run suites:review` above, name a script or file only some projects
+carry: when it is missing, skip it and say so in `ROOT_CAUSE` — never retry it or guess its answer.
+
 | File | Use it to |
 |------|-----------|
-| `.claude/knowledge/oracles/vc-bug-catalog.md` | Match a known VC failure pattern (VC-CART-*, VC-CHECKOUT-*, …). A match → likely `REAL_BUG` or a `KNOWN_ISSUE`. |
-| `npm run bl:extract -- --domain <d>` | A failed assertion that maps to a BL-* invariant (pricing, cart, checkout, orders) is a high-severity `REAL_BUG` **if** the product actually violated it. |
-| `.claude/knowledge/execution/debugging-signals.md` | Filter benign noise (favicon 404s, analytics beacons, expected Vue warnings, cancelled requests) that a test wrongly asserts against. |
-| `.claude/knowledge/api/platform-patterns.md` | Recognize expected platform behavior mis-read as a bug: search-index lag (30–60s), async cart projection, cache desync. These are usually `TEST_STEPS_DEFECT` (missing `[WAIT]`) or `ENV`, not `REAL_BUG`. |
-| `.claude/rules/test-data.md` + `test-data/aliases.json` | Decide if a data miss is a `TEST_DATA_DEFECT` (drifted `@td()`/GUID, unseeded env). |
+| `<plugin>/knowledge/vc-bug-catalog.md` (`<plugin>` is the folder above this brief's) | Match a known VC failure pattern (VC-CART-*, VC-CHECKOUT-*, …). A match → likely `REAL_BUG` or a `KNOWN_ISSUE`. |
+| `npm run bl:extract -- --domain <d>` *(if the project has it)* | A failed assertion that maps to a BL-* invariant (pricing, cart, checkout, orders) is a high-severity `REAL_BUG` **if** the product actually violated it. |
+| `<plugin>/knowledge/debugging-signals.md` | Filter benign noise (favicon 404s, analytics beacons, expected Vue warnings, cancelled requests) that a test wrongly asserts against. |
+| `<plugin>/knowledge/platform-patterns.md` | Recognize expected platform behavior mis-read as a bug: search-index lag (30–60s), async cart projection, cache desync. These are usually `TEST_STEPS_DEFECT` (missing `[WAIT]`) or `ENV`, not `REAL_BUG`. |
+| `<plugin>/knowledge/test-data.md` + `test-data/aliases.json` *(if the project has it)* | Decide if a data miss is a `TEST_DATA_DEFECT` (drifted `@td()`/GUID, unseeded env). |
 
 ## Step 1 — Read the evidence in order
 
@@ -89,7 +93,7 @@ A non-FAIL status is still an issue with a cause — classify it, don't wave it 
   - env unreachable / deploy window / index rebuilding / auth-setup failed → **`ENV`**
   - a required fixture/seed/precondition entity is missing or drifted (`@td()` empty, org/user absent) → **`TEST_DATA_DEFECT`**
   - the flow is genuinely broken so the step can't proceed (a real defect blocking it) → **`REAL_BUG`** (→ live repro)
-  - the case gave up at the first obstacle without a real blocker (a documented failed attempt is required — `feedback_blocked_is_not_terminal`) → **`TEST_STEPS_DEFECT`**
+  - the case gave up at the first obstacle without a real blocker (a documented failed attempt is required) → **`TEST_STEPS_DEFECT`**
 - **SKIPPED** — the case did not execute. Decide intentional vs stale:
   - the feature/page/control it targets was removed or renamed (confirm via screenshot / env-check) → **`STALE_TEST`**
   - skipped by an explicit, documented gate (config flag off, N/A on this env, known-issue skip) → **`KNOWN_ISSUE`**

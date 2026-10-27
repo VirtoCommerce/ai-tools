@@ -100,7 +100,7 @@ under the output `verdict.md`'s Data heading and in `summary.json.test_data`, ne
 - The visual lane returned with `qa-design skill: loaded` (else re-dispatched once), or is recorded as
   not run with its reason.
 - Every exploratory and visual finding is a row in ONE table at the end of `testing-checklist.md`,
-  which `triage:collect --ticket` reads:
+  which `plugins/vc-test/lib/triage-collect.mjs --ticket` reads:
   `## X. Exploratory + visual findings` with `| # | Condition | Source | Result |`, ids `X1…`
   (exploratory) and `V1…` (visual), Result led by `FAIL` / `BLOCKED` / `NOT-RUN` / `PASS` / `DRIFT`. A
   finding a lane item already covers goes into that item's row. Prose is NOT collected.
