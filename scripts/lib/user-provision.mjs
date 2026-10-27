@@ -147,18 +147,20 @@ export async function findMemberById(id) {
   if (!id) return null;
   try { return await api('GET', `/api/members/${id}`, null, { expectStatus: [200, 404] }); } catch { return null; }
 }
-export async function findUserByEmail(email) {
+// `http` (optional): a caller with its own authenticated transport (e.g. a refreshing admin bearer)
+// passes it here instead of swapping this module's api — a swap is shared state across concurrent calls.
+export async function findUserByEmail(email, { api: http = api } = {}) {
   // Search FIRST — the GET-by-username endpoint is cache-flaky (200 + empty/stale body), which
   // caused duplicate account+contact creation across re-seeds. Search is the reliable check.
   try {
-    const s = await api('POST', '/api/platform/security/users/search', { keyword: email, take: 10 });
+    const s = await http('POST', '/api/platform/security/users/search', { keyword: email, take: 10 });
     const hit = (s?.results || []).find(u =>
       (u.userName || '').toLowerCase() === email.toLowerCase() ||
       (u.email || '').toLowerCase() === email.toLowerCase());
     if (hit?.id) return hit;
   } catch { /* fall through */ }
   try {
-    const u = await api('GET', `/api/platform/security/users/${encodeURIComponent(email)}`, null, { expectStatus: [200, 404] });
+    const u = await http('GET', `/api/platform/security/users/${encodeURIComponent(email)}`, null, { expectStatus: [200, 404] });
     return u?.id ? u : null;
   } catch { return null; }
 }
@@ -173,8 +175,8 @@ export async function findContactById(id) {
   if (!id) return null;
   try { return await api('GET', `/api/contacts/${id}`, null, { expectStatus: [200, 404] }); } catch { return null; }
 }
-export async function findContactByEmail(email) {
-  const r = await api('POST', '/api/members/search', { memberType: 'Contact', keyword: email, take: 20 });
+export async function findContactByEmail(email, { api: http = api } = {}) {
+  const r = await http('POST', '/api/members/search', { memberType: 'Contact', keyword: email, take: 20 });
   return (r?.results || []).find(m => (m.emails || []).some(e => e?.toLowerCase() === email.toLowerCase()));
 }
 
@@ -636,11 +638,11 @@ function latchLegacyMembership(where) {
  * from then on searchMemberships() returns [] by design, so a caller must not count its rows. */
 export const isLegacyMembershipApi = () => _legacyMembershipApi;
 
-export async function searchMemberships(userId) {
+export async function searchMemberships(userId, { api: http = api } = {}) {
   if (DRY_RUN && userId?.startsWith?.('dry-')) return [];
   if (_legacyMembershipApi) return [];
   try {
-    const r = await api('POST', '/api/customer/organization-memberships/search', { userId, take: 100 });
+    const r = await http('POST', '/api/customer/organization-memberships/search', { userId, take: 100 });
     return r?.results || [];
   } catch (e) {
     if (!isMissingEndpoint(e)) throw e;
@@ -1140,24 +1142,24 @@ export async function ensurePersonalAccount(u) {
 
 // --- Teardown primitives ---
 // Delete one account (+ its memberships + contact) by email. Returns {account, contact}.
-export async function deleteUserByEmail(email) {
-  const user = await findUserByEmail(email);
+export async function deleteUserByEmail(email, { api: http = api } = {}) {
+  const user = await findUserByEmail(email, { api: http });
   let contactId = user?.memberId || null;
   let account = false, contact = false;
   if (user?.id) {
-    const ids = (await searchMemberships(user.id)).map(m => m.id).filter(Boolean);
+    const ids = (await searchMemberships(user.id, { api: http })).map(m => m.id).filter(Boolean);
     if (ids.length) {
       const qs = ids.map(id => `ids=${encodeURIComponent(id)}`).join('&');
-      await api('DELETE', `/api/customer/organization-memberships?${qs}`, null, { expectStatus: [200, 204, 404] });
+      await http('DELETE', `/api/customer/organization-memberships?${qs}`, null, { expectStatus: [200, 204, 404] });
       if (VERBOSE) console.log(`    ✗ deleted ${ids.length} membership(s) for ${email}`);
     }
     // security delete query param is `names` (NOT userNames — that binds an empty array).
-    await api('DELETE', `/api/platform/security/users?names=${encodeURIComponent(email)}`, null, { expectStatus: [200, 204, 404] });
+    await http('DELETE', `/api/platform/security/users?names=${encodeURIComponent(email)}`, null, { expectStatus: [200, 204, 404] });
     account = true;
   }
-  if (!contactId) contactId = (await findContactByEmail(email))?.id || null;
+  if (!contactId) contactId = (await findContactByEmail(email, { api: http }))?.id || null;
   if (contactId) {
-    await api('DELETE', `/api/members?ids=${encodeURIComponent(contactId)}`, null, { expectStatus: [200, 204, 404] });
+    await http('DELETE', `/api/members?ids=${encodeURIComponent(contactId)}`, null, { expectStatus: [200, 204, 404] });
     contact = true;
   }
   if (account || contact) console.log(`    ✗ ${email}`);

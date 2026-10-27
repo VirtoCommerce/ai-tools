@@ -564,7 +564,7 @@ Buyer logged in as {{USER_EMAIL}}; mobile viewport (375px width); account has or
 [DOM] expanded filter shows status options
 [STATE] selecting filter updates results while panel is open
 [STATE] collapsing filter panel preserves the active filter
-[STATE] filter panel closes and filtered results remain visible",[CONSOLE] no JS errors on filter toggle at mobile viewport; [NETWORK] 2xx on filtered request at mobile,filters take up full screen space at mobile width pushing content below fold; filter toggle absent; selecting filter causes page to jump to top; collapsing panel clears the active filter,none,"Coverage Gap Analysis — GAP-F02 | Corrected: VCST-6042 (2026-10-21) — SPLIT (run REG-2026-10-15-W3): the assertion that an active-filter indicator is visible at 375px is dropped — the chips are hidden below the lg breakpoint (1024px) by design (vc-frontend@2.59.0 orders.vue .orders__chips), the applied filter is visible only inside the filter sidebar; KB-ACB009C9. The accessible-name check of the icon-only filter button is its own case, ORD-104",Draft
+[STATE] filter panel closes and filtered results remain visible",[CONSOLE] no JS errors on filter toggle at mobile viewport; [NETWORK] 2xx on filtered request at mobile,filters take up full screen space at mobile width pushing content below fold; filter toggle absent; selecting filter causes page to jump to top; collapsing panel clears the active filter,none,"Coverage Gap Analysis — GAP-F02 | Corrected: VCST-6042 (2026-10-21) — SPLIT (run REG-2026-10-15-W3): the assertion that an active-filter indicator is visible at 375px is dropped — the chips are hidden below the lg breakpoint (1024px) by design (vc-frontend@2.59.0 orders.vue .orders__chips), the applied filter is visible only inside the filter sidebar; KB-ACB009C9. The accessible-name check of the icon-only filter button is its own case, ORD-105",Draft
 ORD-028,Mobile - Order Detail Responsive Layout,Orders > Mobile,High,BL-ORD-003,ECL-7.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 Buyer logged in as {{USER_EMAIL}}; mobile viewport (375px width); order exists with line items and shipping address and payment info",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[ACT] resize browser to 375px width
 [NAV] navigate to /account/orders
@@ -920,7 +920,34 @@ The store exposes exactly 3 locales: en-US, de-DE, es-ES. This case runs the rev
 [ACT] switch locale to es-ES; repeat the same reversed-range entry
 [ASSERT] the es-ES validation message renders as ""La fecha de fin debe ser igual o posterior a la fecha de inicio"" -- real translated prose, no raw i18n key, no English fallback text","[DOM] the validation message element's text does not equal the literal key string 'ui_kit.date_range_input.invalid_range' in either locale
 [DOM] the validation message element's text does not equal the English string 'End date must be on or after start date' when de-DE/es-ES is active",[CONSOLE] no i18n-missing-key warnings logged for either locale,either locale shows the raw i18n key instead of translated prose; either locale silently falls back to English; the translated string is present but does not match the confirmed wording,Switch locale back to the default (en-US); click 'Reset' to clear the date filter before ending the session,"VCST-5097; LIVE-VERIFIED 2026-09-09 vcptcore-qa storefront, theme 2.58.0-pr-2402-d7e2-d7e218e7 (vc-frontend PR #2402, OPEN/not merged at authoring time -- re-ground these cases if the PR's base changes before merge); exact translated strings confirmed live: de-DE ""Enddatum muss auf oder nach dem Startdatum liegen"", es-ES ""La fecha de fin debe ser igual o posterior a la fecha de inicio""",Draft
-ORD-104,Mobile - Order Filters Icon Button Exposes an Accessible Name (WCAG 2.2 SC 4.1.2),Orders > Mobile > Accessibility,Medium,BL-A11Y-002,ECL-3.2,"[PRE:SIGNIN_AS:USER_DEFAULT]
+ORD-104,"Order List — an OR clause in the search box shows a buyer with no orders the empty state, never other customers' orders",Orders > Search > Data Isolation,Critical,BL-AUTH-006,,"[PRE:SIGNIN_AS:LOYALTY_NOBAL_USER]
+Buyer logged in as {{LOYALTY_NOBAL_USER_EMAIL}}. STATE DEPENDENCY: this buyer has ZERO orders of its own (loyalty zero-balance fixture, no organization), while other customers' orders exist on the environment, which is the leak surface. Zero orders is environment state another suite can change, so the case guards it: if the unfiltered /account/orders list shows any order, end BLOCKED:PRECONDITION_UNMET:BUYER_HAS_ORDERS, never PASS and never FAIL. Fix under test: vc-module-x-order PR #57.","url={{FRONT_URL}}, user={{LOYALTY_NOBAL_USER_EMAIL}}, password={{LOYALTY_NOBAL_USER_PASSWORD}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[WAIT] orders page rendered (list or empty state)
+[ASSERT] guard: no order row is listed for this buyer before searching; if any order row is listed, stop with BLOCKED:PRECONDITION_UNMET:BUYER_HAS_ORDERS
+[ACT] type OR status:""Processing"" into the 'Search by number, name or other data' input
+[KEY] press Enter (or click the 'Search orders' button)
+[WAIT] search results rendered
+[KEY] note the GetOrders response of this search: totalCount, items length and whether errors[] is present
+[ASSERT] verify the empty state 'There are no results found' with a 'Reset search' button is shown
+[ASSERT] verify no order row is listed
+[ACT] click 'Reset search'
+[WAIT] search box cleared
+[ACT] type OR (the bare operator) into the 'Search by number, name or other data' input
+[KEY] press Enter (or click the 'Search orders' button)
+[WAIT] search results rendered
+[KEY] note the GetOrders response of this search: totalCount, items length and whether errors[] is present
+[ASSERT] verify the empty state 'There are no results found' with a 'Reset search' button is shown
+[ASSERT] verify no order row is listed
+[ACT] click 'Reset search'
+[WAIT] search box cleared","[DOM] after searching OR status:""Processing"" the empty state 'There are no results found' is shown {BL} (BL-AUTH-006)
+[STATE] after searching OR status:""Processing"" no order row is listed for a buyer with zero own orders {BL} (BL-AUTH-006)
+[DOM] after searching OR the empty state 'There are no results found' is shown {BL} (BL-AUTH-006)
+[STATE] after searching OR no order row is listed for a buyer with zero own orders {BL} (BL-AUTH-006)
+[STATE] GetOrders response for both searches has totalCount = 0 and no errors[] {SPEC} (VCST-6536)
+[STATE] 'Reset search' clears the box and returns the page to its unfiltered state {OBSERVED}","[API] POST /graphql GetOrders for both searches returns totalCount 0, items [] and no errors[]
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","any order row listed after the OR search for a buyer with zero own orders (foreign orders leaked); GetOrders totalCount above 0 for the OR search; errors[] present in GetOrders; spinner visible >5s; mid-journey: the unfiltered list already shows orders (fixture drift, BLOCKED not FAIL)",none,VCST-6536 · Archetype:SCOPE · Technique:EG · Purpose:FUNC · Catches:VCST-6536 | Promoted: REG-2026-10-27-0036 (2026-10-26),Automated
+ORD-105,Mobile - Order Filters Icon Button Exposes an Accessible Name (WCAG 2.2 SC 4.1.2),Orders > Mobile > Accessibility,Medium,BL-A11Y-002,ECL-3.2,"[PRE:SIGNIN_AS:USER_DEFAULT]
 Buyer logged in as {{USER_EMAIL}}; mobile viewport (375px width); account has orders. KNOWN FAILING until VCST-6482 is fixed: vc-frontend orders-mobile-filters.vue passes no aria-label or title to its icon-only button, so the control is unnamed in the accessibility tree. Do not soften this case to match the build.",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[ACT] resize browser to 375px width
 [NAV] navigate to {{FRONT_URL}}/account/orders
 [WAIT] orders list rendered

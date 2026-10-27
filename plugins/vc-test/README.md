@@ -28,7 +28,7 @@ folder>` once; `/vc-test:init` says so when they are missing. A checkout of this
 
 | Path | Does |
 |---|---|
-| `commands/init.md` | `/vc-test:init`. Writes the profile's `test` block through vc-init's `profile-set.mjs` and lists missing accounts with their `/project-init --add-user` command. It never asks for or writes a password |
+| `commands/init.md` | `/vc-test:init`. Writes the profile's `test` block (environments, knowledge store, `test.routing`) through vc-init's `profile-set.mjs` and lists missing accounts with their `/project-init --add-user` command. It never asks for or writes a password |
 | `skills/ticket-context/`, `agents/ticket-context-analyst.md` | `/vc-test:ticket-context`: one gated context bundle for one ticket |
 | `agents/fetch.md`, `skills/ticket-context/lib/replay.mjs`, `fetch-catalog.json` | The host-governed route: `prepare --raw` answers each read from a raw folder and ends `needs-fetch` with the reads it lacks; the `fetch` agent answers them through the host's servers (read tools only), shaped as the catalog says the bridge would print. A read the servers have no tool for is a gap, never a guess |
 | `skills/qa-test-strategy/`, `agents/strategy-verifier.md` | `/vc-test:qa-test-strategy`: the floors, the gate, and an independent read-only verifier on a Critical risk |
@@ -38,6 +38,9 @@ folder>` once; `/vc-test:init` says so when they are missing. A checkout of this
 | `lib/deployed.mjs` | F6. It reads module, platform and theme versions from the stand. Run it as `node "$VC_RUN" runner plugin deployed --key <KEY>`, because it needs the admin login. A side it cannot read is UNKNOWN, never "not deployed"; a module the stand has not installed, or disabled on a load error, is never DEPLOYED. No step runs it with `--expect` yet, so on a project without `deploy:pr` F6 produces no `NOT DEPLOYED` line (every PR is DEPLOYMENT UNKNOWN); the producer is deferred to P2 |
 | `lib/knowledge-store.mjs` | The one reader and writer of project and platform knowledge. A client project never writes to the platform store, text is scrubbed, and nothing lands outside the store. It has committed tests (`knowledge-store.test.mjs`) |
 | `harness/playwright.config.mjs` | The config vc-init's runner runs `.spec` files under. `testDir` is the project |
+| `lib/route.mjs` | Step 0: a ticket's type × status role → the job (`test`, `verify-fix`, `hotfix-check`), or `unresolved` (exit 4) so the command asks. A status reaches a role only through the profile's `test.routing` (or Azure's `roleStates`), never by name in code; a Sub-task is decided by the connector's `issuetype.subtask`, not its name |
+| `lib/trace.mjs` | Step 7: fills the last round's Reconciliation table from the checklist's result rows (`C-n`, `SC-n.m`, `VIS-n`, `PIX-n`), and reports `unresulted`, `capped`, `unknownRefs` and `acsWithoutRow` |
+| `lib/write-zones.mjs` | Steps 5 and 7: snapshots before the first wave and, at close, reports every changed file outside the `writes` zones of the artifacts that ran. A file outside is BLOCKED; no git scope is "not checked", never a clean pass. It has committed tests (`write-zones.test.mjs`) |
 | `lib/plan-run.mjs`, `score-scenarios.mjs`, `window.mjs`, `teardown.mjs`, `run-cost.mjs`, … | The run's deterministic steps (P0); see each file's header |
 | `briefs/` | One brief per agent of a run |
 | `scripts/lib/` | The env loader, copied from vc-fix (`plugins/CLAUDE.md`: a plugin carries its own) |
