@@ -16,8 +16,8 @@ Steps 1–3 are §Complete, §Layers and §Routing, Step 4 is §Report.
 
 - **It reads** the package, Step 0's deployed versions, the duplicate check, and `fix-repos.json` +
   `module-suite-map.md` to spell the repo name.
-- **It never** calls a browser tool, dispatches `qa-testing-expert`, runs `search_code` / `get_file_contents`,
-  queries App Insights or Context7.
+- **It never** calls a browser tool, dispatches `qa-testing-expert`, runs `search_code` / `get_file_contents`
+  (Step 0's `vc-deploy-dev` version read excepted), queries App Insights or Context7.
 
 Something the report needs and the package does not hold is a §Complete stop, never a reason to go and get it.
 
@@ -46,7 +46,8 @@ Runs at Step 0, after the deployed versions are fetched. Compare `BUILD_VERSIONS
 
 - on the owning repo's package — the entry for §2's repo (by repo name, or by the module id the version source
   reports for that repo);
-- when §2 names no repo (§7 LOW), on every version the package lists.
+- a frontend repo (`vc-frontend`, or a client storefront fork) with no entry of its own: on the `theme` entry;
+- when §2 names no repo (§7 LOW), or the owning repo has no entry otherwise, on every version the package lists.
 
 **A mismatch ⇒ stop for this bug:** `STALE_PACKAGE: <name> <package ver> ≠ <deployed ver> — re-run
 vc-fix:qa-investigate`, no report. The bug is never filed against a build nobody tested and never reproduced again
@@ -88,21 +89,25 @@ The template of `qa-bug.md` Step 4, each section from the package:
 | Report section | From |
 |---|---|
 | Title + severity | §1; severity graded from the package as without `--evidence` |
-| Status (line 3) | `READY_TO_SUBMIT` at §7 HIGH / MEDIUM, `CONFIRMED` at LOW |
+| Status (line 3) | `READY_TO_SUBMIT` at §7 HIGH / MEDIUM, `REPRODUCED` at LOW (root cause not yet identified) |
 | `**Found by:**` (line 4) | the caller's `found-by:` argument, as `qa-bug.md` Step 1 says; none ⇒ `human` |
 | Env | `BUILD_VERSIONS`, and `REPRO_RATE` when filled |
 | Summary | §1, and §4 for the why |
 | Steps to reproduce, Actual | the manifest's reproduction steps and the Part A artifacts (row 4's call with its inputs for an API bug) |
-| Expected | §5's by-design row — the documented behaviour the symptom was ruled against |
+| Expected | §5's by-design row — the documented behaviour the symptom was ruled against; a row that cites without stating it ⇒ the behaviour the §3 / §4 claim contradicts. Never a new lookup |
 | Layer Validation | §Layers |
 | Root Cause Analysis | §3–§5 with package paths, never inlined (`.claude/rules/reports.md` §8) |
 | Regression | §6, when filled |
 | Fix Routing | §Routing |
 
-- **Where:** `<package>/../bugs/<bucket>/BUG-*.md` — the package sits at `<run folder>/evidence-<UTCstamp>/`, so this
-  is the package's own run folder ([`run-env.md`](run-env.md) §The run folder), bucket by the declared severity.
+- **Where** — `<bugs>/<bucket>/BUG-*.md`, bucket by the declared severity, `<bugs>` being the first that applies:
+  1. a folder the caller names (`qa-bug.md` Step 4);
+  2. `<package>/../bugs/` when the package's parent is a ticket run folder — [`run-env.md`](run-env.md) §The run
+     folder decides what one is (`vc-fix:qa-investigate` writes `<run folder>/evidence-<UTCstamp>/`);
+  3. otherwise `<outputRoot>/reports/bugs/open/` — e.g. a `/qa-run` package under `reports/regression/<RUN_ID>/`,
+     a pruned folder a bug report must not land in.
 - **Screenshots:** the 1–3 the report cites are **copied** from `<package>/screenshots/` to
-  `<bugs>/screenshots/<slug>/` (this is `qa-bug.md` Step 4a for a package), and the report cites the copy. The
+  `<bugs>/screenshots/<slug>/` (relative to the chosen `<bugs>`) (this is `qa-bug.md` Step 4a for a package), and the report cites the copy. The
   package stays whole for `/qa-fix`.
 - The bug-report size caps hold (`.claude/rules/reports.md` §2): the package carries the detail, the report cites it.
 
@@ -110,7 +115,7 @@ The template of `qa-bug.md` Step 4, each section from the package:
 
 What `qa-bug` returns to its caller for this bug — exactly one of:
 
-- the report path (`<run folder>/bugs/<bucket>/BUG-*.md`);
+- the report path (`<bugs>/<bucket>/BUG-*.md`, §Report);
 - `INCOMPLETE_PACKAGE: <slot, slot>` (§Complete);
 - `STALE_PACKAGE: <name> <package ver> ≠ <deployed ver> — re-run vc-fix:qa-investigate` (§Build).
 

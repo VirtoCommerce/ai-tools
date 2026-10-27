@@ -121,7 +121,7 @@ Validate the failing scenario across all four layers. Record per-layer PASS / FA
 
 ### Layer 4 — Platform REST API
 - **Where:** `{BACK_URL}/api/...` — see `knowledge/api/api-auth.md` for OAuth2 token flow
-- **Tool:** qa-backend-expert via direct HTTP call (`/qa-postman` — full `vc-qa` plugin only, not shipped here)
+- **Tool:** qa-backend-expert via direct HTTP call
 - **Verify:** call the underlying Platform REST endpoint (e.g., `/api/catalog/products/{id}`, `/api/order/customerOrders/{id}`, `/api/pricing/prices/search`). Compare response to GraphQL/Admin/UI.
 - **Signal:** REST wrong = module/DB/seeding issue (lowest layer). REST right + GraphQL wrong = xAPI bug. REST + GraphQL right + UI wrong = frontend bug.
 
@@ -242,7 +242,7 @@ mv reports/bugs/screenshots/_incoming/*/<kept>.png <bugs>/screenshots/<slug>/
   never an `_incoming/` path and never a bare filename.
 - If a capture is not where you expect, **list `reports/bugs/screenshots/_incoming/`** — do not
   guess a path. A guessed path was one of the two `Read` failures on a client deployment run.
-- With `--evidence`, copy from the package's `screenshots/` instead (`bug-from-package.md` §Report).
+- With `--evidence`, copy from the package's `screenshots/` (`bug-from-package.md` §Report).
 
 Generate a report in `reports/bugs/open/<bucket>/` — `critical-high/` · `medium/` · `low/` (when the caller names a ticket run's folder — `/qa-test`, `/qa-test-fast`, `/qa-triage-results` — in `<run folder>/bugs/<bucket>/` instead: `knowledge/execution/run-env.md` §The run folder), chosen by the severity the report declares (`.claude/rules/reports.md` §1a; a straddling grade files at the lower bucket), using this naming convention:
 `BUG-{Short-Description}.md` or `BUG-{Short-Description}-<ticket-key>.md` (if a JIRA ticket is known)
@@ -479,7 +479,7 @@ already resolved this run, else resolve via `claude plugin list --json` (see
 - Always reproduce the bug before filing — never file unverified bugs — with `--evidence`, the package did it (`bug-from-package.md`)
 - Always include evidence (screenshot + console + network)
 - Always complete the 4-layer validation (Step 2) before writing the report — the owning layer drives triage routing and root-cause scope. Mark layers N/A only when the scenario genuinely doesn't exercise that layer (e.g., a pure CSS bug → REST layer N/A) — with `--evidence`, the package did it (`bug-from-package.md`)
-- Use the qa-testing-expert agent for reproduction: `playwright-firefox` (fallback: `playwright-edge`)
+- Use the qa-testing-expert agent for reproduction: `playwright-firefox` (fallback: `playwright-edge`) — with `--evidence`, the package did it (`bug-from-package.md`)
 - Always query Context7 in Step 0 to verify expected behavior — don't file bugs for intended behavior — with `--evidence`, the package did it (`bug-from-package.md`)
 - Ask before creating tracker tickets (explicit permission required; `--confirmed` = the caller already asked) — via **`AskUserQuestion`**, never
   prose, and emit `complete --skill` only **after** that decision (see Step 5 + Signal completion)
