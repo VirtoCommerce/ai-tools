@@ -100,22 +100,23 @@ The template of `qa-bug.md` Step 4, each section from the package:
 | Regression | §6, when filled |
 | Fix Routing | §Routing |
 
-- **Where** — `<bugs>/<bucket>/BUG-*.md`, bucket by the declared severity, `<bugs>` being the first that applies:
-  1. a folder the caller names (`qa-bug.md` Step 4);
-  2. `<package>/../bugs/` when the package's parent is a ticket run folder — [`run-env.md`](run-env.md) §The run
-     folder decides what one is (`vc-fix:qa-investigate` writes `<run folder>/evidence-<UTCstamp>/`);
-  3. otherwise `<outputRoot>/reports/bugs/open/` — e.g. a `/qa-run` package under `reports/regression/<RUN_ID>/`,
-     a pruned folder a bug report must not land in.
+- **Where** — `<bugs>` is the bugs root, the first that applies; the bucket is the declared severity's:
+  1. the run folder the caller names (`qa-bug.md` Step 4): `<bugs>` = `<run folder>/bugs`, report in `<bugs>/<bucket>/`;
+  2. the package's parent, when it is a ticket run folder — [`run-env.md`](run-env.md) §The run folder decides what
+     one is (`vc-fix:qa-investigate` writes `<run folder>/evidence-<UTCstamp>/`): `<bugs>` = `<package>/../bugs`,
+     report in `<bugs>/<bucket>/`;
+  3. otherwise `<bugs>` = `<outputRoot>/reports/bugs`, report in `<bugs>/open/<bucket>/` — e.g. a `/qa-run` package
+     under `reports/regression/<RUN_ID>/`, a pruned folder a bug report must not land in.
 - **Screenshots:** the 1–3 the report cites are **copied** from `<package>/screenshots/` to
-  `<bugs>/screenshots/<slug>/` (relative to the chosen `<bugs>`) (this is `qa-bug.md` Step 4a for a package), and the report cites the copy. The
-  package stays whole for `/qa-fix`.
+  `<bugs>/screenshots/<slug>/` (the chosen `<bugs>` root; this is `qa-bug.md` Step 4a for a package), and the report
+  cites the copy. The package stays whole for `/qa-fix`.
 - The bug-report size caps hold (`.claude/rules/reports.md` §2): the package carries the detail, the report cites it.
 
 ## §Outcome
 
 What `qa-bug` returns to its caller for this bug — exactly one of:
 
-- the report path (`<bugs>/<bucket>/BUG-*.md`, §Report);
+- the report path (`<bugs>/<bucket>/BUG-*.md`, or `<bugs>/open/<bucket>/BUG-*.md` under rule 3 — §Report);
 - `INCOMPLETE_PACKAGE: <slot, slot>` (§Complete);
 - `STALE_PACKAGE: <name> <package ver> ≠ <deployed ver> — re-run vc-fix:qa-investigate` (§Build).
 
