@@ -1649,11 +1649,12 @@
   "B2B_STORE_MEMBERSHIP_ROLES": {
     "pre_state": "[\"Organization employee\"]",
     "captured_at": "2026-09-18T18:54:32.537Z",
-    "seeded_values": "Organization employee;Purchasing agent;Organization maintainer;Sales Representative;Advanced Sales Representative",
+    "seeded_values": "Organization employee;Purchasing agent;Organization maintainer;Sales Representative;Advanced Sales Representative;AGENT-TEST-Org-Returns-View-Submit;AGENT-TEST-Org-Returns-Viewer",
     "sales_rep_roles": "Sales Representative;Advanced Sales Representative",
-    "seeded_values_json": "[\"Organization employee\",\"Purchasing agent\",\"Organization maintainer\",\"Sales Representative\",\"Advanced Sales Representative\"]",
-    "narrowed_values": "[\"Organization employee\",\"Organization maintainer\",\"Sales Representative\",\"Advanced Sales Representative\"]",
-    "narrowed_omitted_role": "Purchasing agent"
+    "seeded_values_json": "[\"Organization employee\",\"Purchasing agent\",\"Organization maintainer\",\"Sales Representative\",\"Advanced Sales Representative\",\"AGENT-TEST-Org-Returns-View-Submit\",\"AGENT-TEST-Org-Returns-Viewer\"]",
+    "narrowed_values": "[\"Organization employee\",\"Organization maintainer\",\"Sales Representative\",\"Advanced Sales Representative\",\"AGENT-TEST-Org-Returns-View-Submit\",\"AGENT-TEST-Org-Returns-Viewer\"]",
+    "narrowed_omitted_role": "Purchasing agent",
+    "returns_roles": "AGENT-TEST-Org-Returns-View-Submit;AGENT-TEST-Org-Returns-Viewer"
   },
   "SC_MULTI": {
     "_inline": true,

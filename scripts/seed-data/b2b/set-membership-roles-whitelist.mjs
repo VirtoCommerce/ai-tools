@@ -15,6 +15,7 @@
  *   TEST_ENV=vcst node scripts/seed-data/b2b/set-membership-roles-whitelist.mjs --teardown
  *   TEST_ENV=vcst node scripts/seed-data/b2b/set-membership-roles-whitelist.mjs --store Electronics
  *   TEST_ENV=vcst node scripts/seed-data/b2b/set-membership-roles-whitelist.mjs --variant narrowed
+ *   TEST_ENV=vcst node scripts/seed-data/b2b/set-membership-roles-whitelist.mjs --narrowed-warn-only
  *
  * npm: seed:membership-roles · seed:membership-roles:teardown · seed:membership-roles:verify
  *
@@ -46,8 +47,8 @@ import {
 import {
   SETTING_NAME, TENANT_TYPE, ALIAS, ORG_ROLE_NAMES, DESCRIPTOR_POOL, DESCRIPTOR_POOL_SOURCE_REF,
   SALES_REP_GRANT_PERMISSION, DECLARED_GRANTING_ROLES, PICKER_PAGE_SIZE, PICKER_SOURCE_REF,
-  REFRESH_REQUIREMENT, FIXTURE_LIMITS, NARROWED_OMITTED_ROLE,
-  tenantValuesPath, sameSet, selectSalesRepRoles, buildWhitelist, planWrite,
+  REFRESH_REQUIREMENT, FIXTURE_LIMITS, NARROWED_OMITTED_ROLE, ORG_RETURNS_GRANT_PERMISSIONS,
+  tenantValuesPath, sameSet, selectSalesRepRoles, selectOrgReturnsRoles, buildWhitelist, planWrite,
   capturePreState, planTeardown, entriesOutsideDefaultPage, findRoleProblems, findDecidabilityProblems,
   buildNarrowedValues, toJsonArrayField, parseJsonArrayField, findNarrowingProblems,
 } from './membership-roles-whitelist-specs.mjs';
@@ -66,6 +67,18 @@ const EMIT_JSON = has('--json');
 const VARIANT = (val('--variant') || 'seeded').toLowerCase();
 if (!['seeded', 'narrowed'].includes(VARIANT)) {
   console.error(`--variant must be "seeded" (default) or "narrowed" — got "${VARIANT}"`);
+  process.exit(1);
+}
+/**
+ * `--narrowed-warn-only` turns an INADMISSIBLE narrowed variant from an abort into a warning, so the
+ * full seeded set is still applied (and `--verify` still exits 0). `narrowed_values` is still recorded
+ * as the declared derivation (seeded minus the omitted role) so the overlay stays consistent with the
+ * seeded set, but a case that drives the narrowed variant must reach the omitted role with a picker
+ * keyword, because the un-keyworded page no longer shows it. Cannot be combined with `--variant narrowed`.
+ */
+const NARROWED_WARN_ONLY = has('--narrowed-warn-only');
+if (NARROWED_WARN_ONLY && VARIANT === 'narrowed') {
+  console.error('--narrowed-warn-only cannot be combined with --variant narrowed — there is no admissible narrowed set to apply');
   process.exit(1);
 }
 const TARGET_STORE = val('--store') || STORE_ID;
@@ -192,9 +205,11 @@ async function verify() {
 
   const liveRoles = await readLiveRoles();
   const salesRep = selectSalesRepRoles(liveRoles).map((r) => r.name);
-  const target = withDemoRoles(buildWhitelist(ORG_ROLE_NAMES, salesRep));
+  const returnsRoles = selectOrgReturnsRoles(liveRoles).map((r) => r.name);
+  const target = withDemoRoles(buildWhitelist(ORG_ROLE_NAMES, salesRep, returnsRoles));
   const seeded = sameSet(whitelist, target);
   log(`  live sales-rep roles (${SALES_REP_GRANT_PERMISSION}): [${salesRep.join(', ') || 'NONE'}]`);
+  log(`  live org-returns roles (${ORG_RETURNS_GRANT_PERMISSIONS.join(' | ')}): [${returnsRoles.join(', ') || 'NONE'}]`);
   log(`  seeded state: ${seeded ? 'PRESENT — the fixture is applied' : 'ABSENT — the whitelist is not the fixture set'}`);
 
   const missing = whitelist.filter((v) => !liveRoles.some((r) => r.name.toLowerCase() === String(v).trim().toLowerCase()));
@@ -219,15 +234,19 @@ async function verify() {
   });
   if (narrowProblems.length) {
     // Loud, and non-zero exit: a narrowed variant that no longer discriminates keeps every case
-    // built on it GREEN, so a warning here would be read as noise.
-    throw new Error(`NARROWED VARIANT NO LONGER ADMISSIBLE on ${TEST_ENV}:\n  - ${narrowProblems.join('\n  - ')}`);
+    // built on it GREEN, so a warning here would be read as noise — unless the operator opted in.
+    const msg = `NARROWED VARIANT NO LONGER ADMISSIBLE on ${TEST_ENV}:\n  - ${narrowProblems.join('\n  - ')}`;
+    if (!NARROWED_WARN_ONLY) throw new Error(msg);
+    log(`  ⚠ ${msg}`);
+    log('  ⚠ --narrowed-warn-only: a case driving the narrowed variant must reach the omitted role with a picker keyword.');
+    return { whitelist, captured, seeded, salesRep, returnsRoles, liveRoles, missing, outside, recordedNarrowed, recordedSeededJson, narrowProblems };
   }
   if (recordedNarrowed && recordedSeededJson && sameSet(recordedNarrowed, recordedSeededJson)) {
     throw new Error(`${ALIAS}.narrowed_values equals .seeded_values_json — the variant omits nothing and ORGROLE-019 would pass vacuously`);
   }
   log(`  narrowed variant: ADMISSIBLE — "${NARROWED_OMITTED_ROLE}" is inside the picker's default page of ${PICKER_PAGE_SIZE} and inside the seeded set`);
 
-  return { whitelist, captured, seeded, salesRep, liveRoles, missing, outside, recordedNarrowed, recordedSeededJson };
+  return { whitelist, captured, seeded, salesRep, returnsRoles, liveRoles, missing, outside, recordedNarrowed, recordedSeededJson };
 }
 
 async function apply() {
@@ -254,7 +273,13 @@ async function apply() {
   const roleProblems = findRoleProblems({ orgRoleNames: ORG_ROLE_NAMES, salesRepRoles, liveRoles });
   if (roleProblems.length) throw new Error(`ROLE RESOLUTION FAILED:\n  - ${roleProblems.join('\n  - ')}`);
 
-  const target = withDemoRoles(buildWhitelist(ORG_ROLE_NAMES, salesRep));
+  // "All org-returns roles" — resolved LIVE by permission. Empty is reported, not fatal: it means the
+  // org-returns fixture (npm run seed:returns:org) is not on this env yet.
+  const returnsRoles = selectOrgReturnsRoles(liveRoles).map((r) => r.name);
+  log(`org-returns roles by permission ${ORG_RETURNS_GRANT_PERMISSIONS.map((p) => `"${p}"`).join(' | ')}: ${returnsRoles.length ? returnsRoles.map((n) => `"${n}"`).join(', ') : 'NONE'}`);
+  if (!returnsRoles.length) log(`  ⚠ no org-returns role on ${TEST_ENV} — run \`TEST_ENV=${TEST_ENV} npm run seed:returns:org\` first, then re-run this seeder`);
+
+  const target = withDemoRoles(buildWhitelist(ORG_ROLE_NAMES, salesRep, returnsRoles));
   const decid = findDecidabilityProblems({ orgRoleNames: ORG_ROLE_NAMES, salesRepRoleNames: salesRep, pool: DESCRIPTOR_POOL });
   if (decid.length) throw new Error(`DECIDABILITY FAILED — this whitelist would not discriminate:\n  - ${decid.join('\n  - ')}`);
   log(`seeded whitelist (${target.length}): [${target.join(', ')}]`);
@@ -269,12 +294,20 @@ async function apply() {
     seededValues: target, omittedRole: NARROWED_OMITTED_ROLE, orderedLiveRoleNames,
     pageSize: PICKER_PAGE_SIZE, pool: DESCRIPTOR_POOL,
   });
-  if (narrowProblems.length) throw new Error(`NARROWED VARIANT INADMISSIBLE — refusing to record a variant that discriminates nothing:\n  - ${narrowProblems.join('\n  - ')}`);
-  const narrowed = buildNarrowedValues(target, NARROWED_OMITTED_ROLE);
   const omittedPos = orderedLiveRoleNames.findIndex((n) => n.toLowerCase() === NARROWED_OMITTED_ROLE.toLowerCase()) + 1;
+  if (narrowProblems.length) {
+    const msg = `NARROWED VARIANT INADMISSIBLE — refusing to record a variant that discriminates nothing:\n  - ${narrowProblems.join('\n  - ')}`;
+    if (!NARROWED_WARN_ONLY) throw new Error(msg);
+    log(`⚠ ${msg}`);
+    log('  --narrowed-warn-only: applying the full seeded set anyway and recording narrowed_values as the declared');
+    log(`  derivation; a case driving it must reach "${NARROWED_OMITTED_ROLE}" with a picker keyword.`);
+  }
+  const narrowed = buildNarrowedValues(target, NARROWED_OMITTED_ROLE);
   log(`narrowed variant (${narrowed.length}): [${narrowed.join(', ')}]  — omits "${NARROWED_OMITTED_ROLE}"`);
-  log(`  "${NARROWED_OMITTED_ROLE}" is live at position ${omittedPos}/${orderedLiveRoleNames.length}, INSIDE the picker's default page of ${PICKER_PAGE_SIZE} — its disappearance is the whitelist, not paging`);
-  log('  DECLARED TARGET ONLY: it is recorded to the alias overlay for a case to write during its own run; this seeder does not apply it.');
+  if (!narrowProblems.length) {
+    log(`  "${NARROWED_OMITTED_ROLE}" is live at position ${omittedPos}/${orderedLiveRoleNames.length}, INSIDE the picker's default page of ${PICKER_PAGE_SIZE} — its disappearance is the whitelist, not paging`);
+    log('  DECLARED TARGET ONLY: it is recorded to the alias overlay for a case to write during its own run; this seeder does not apply it.');
+  }
 
   // The applied state. `--variant narrowed` is manual-work only and never the npm-script default.
   const applyTarget = VARIANT === 'narrowed' ? narrowed : target;
@@ -301,20 +334,20 @@ async function apply() {
     // seeded_values / sales_rep_roles describe the fixture's STEADY STATE and are written whichever
     // variant is applied — `--variant narrowed` is a temporary manual excursion, not a new steady
     // state, and rewriting them to the narrowed set would make a Cleanup restore the wrong thing.
-    writeEnvAliasOverride({
-      [ALIAS]: {
-        seeded_values: target.join(';'),
-        seeded_values_json: toJsonArrayField(target),
-        sales_rep_roles: salesRep.join(';'),
-        narrowed_values: toJsonArrayField(narrowed),
-        // Static, but it MUST be written to the overlay: the @td() resolver's inline path reads only
-        // TOP-LEVEL keys of an alias object and never the base entry's nested `fields` documentation
-        // bag, so a case referencing .narrowed_omitted_role resolves on an env only if the seeder put
-        // it here. Omitting it worked on vcst purely because the key had been added by hand.
-        narrowed_omitted_role: NARROWED_OMITTED_ROLE,
-      },
-    });
-    log(`  wrote ${ALIAS}.seeded_values + .seeded_values_json + .sales_rep_roles + .narrowed_values + .narrowed_omitted_role to test-data/aliases.${TEST_ENV}.json`);
+    const fields = {
+      seeded_values: target.join(';'),
+      seeded_values_json: toJsonArrayField(target),
+      sales_rep_roles: salesRep.join(';'),
+      returns_roles: returnsRoles.join(';'),
+    };
+    fields.narrowed_values = toJsonArrayField(narrowed);
+    // Static, but it MUST be written to the overlay: the @td() resolver's inline path reads only
+    // TOP-LEVEL keys of an alias object and never the base entry's nested `fields` documentation
+    // bag, so a case referencing .narrowed_omitted_role resolves on an env only if the seeder put
+    // it here. Omitting it worked on vcst purely because the key had been added by hand.
+    fields.narrowed_omitted_role = NARROWED_OMITTED_ROLE;
+    writeEnvAliasOverride({ [ALIAS]: fields });
+    log(`  wrote ${ALIAS}.${Object.keys(fields).join(' + .')} to test-data/aliases.${TEST_ENV}.json`);
   }
 
   const outside = entriesOutsideDefaultPage(orderedLiveRoleNames, target, PICKER_PAGE_SIZE);
@@ -332,7 +365,7 @@ async function apply() {
   if (EMIT_JSON) {
     console.log(JSON.stringify({
       env: TEST_ENV, store: TARGET_STORE, setting: SETTING_NAME, tenantType: TENANT_TYPE,
-      preState: res.before.whitelist, seeded: target, salesRepRoles: salesRep,
+      preState: res.before.whitelist, seeded: target, salesRepRoles: salesRep, returnsRoles,
       variantApplied: VARIANT, applied: applyTarget,
       narrowedOmittedRole: NARROWED_OMITTED_ROLE, narrowed, narrowedOmittedRoleLivePosition: omittedPos,
       changed: res.changed, tenantKeyCount: res.after.keyCount, outsideDefaultPage: outside,
