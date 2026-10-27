@@ -6,6 +6,9 @@ of today (spec B6): only outbound references changed.
 
 Labels kept verbatim from this repository's `/qa-test`: `5-verdict.1` = §Reconcile, `5-verdict.2` = §Decide the verdict,
 `5-triage` = the run's triage, `C1` = the ticket's regression (Artifact C1), `Step 4` = the run's execution step.
+§Reconcile is `/qa-test`'s close-out procedure, kept word for word: its `1a`/`1d`/`1e` steps, Artifact B, FULL/FAST,
+`npm run verify:gate`, `compute-metrics.ts`, `ui-ux-expert` and `/qa-regression` exist only in this repository. A vc-test
+run takes its reconciliation from `trace.mjs` (SKILL.md §Reconcile — at close-out) and reads §Decide the verdict and §Shape.
 
 ## Reconcile — AC & DoD vs implementation
 

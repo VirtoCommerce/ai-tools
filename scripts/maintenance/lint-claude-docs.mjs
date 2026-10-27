@@ -448,6 +448,9 @@ export function checkPromptBudget(files, baseline, read = (f) => fs.readFileSync
  * once. In `harness/*.mjs` only comment text is scanned, and a bare `.claude/…` token counts there (and in a
  * `.json` value) because a comment or a data value is rarely backticked.
  * Not caught (the same limit as DOC-008): reference-style links, autolinks, titled links and angle-bracket targets.
+ * Nor a repository-only document named WITHOUT its `.claude/` prefix (`test-design-techniques.md` §1a was one), an
+ * `npm run` script only this repository has, or a path string in `lib/*.mjs` code: a clean DOC-009 is not proof
+ * that the plugin reads nothing outside itself.
  */
 const DOC009_ROOT = 'plugins/vc-test';
 const THIS_REPO_MARK_RE = /\(in this repository:[^)]*\)/g;
@@ -523,7 +526,9 @@ export function vcTestClaudeReads(root = '.') {
  *
  * COMPARED: the copy's body (header line dropped) against the whole source, or — when the header names `§N` / `§N, §M`
  * (optionally `(Parent heading)` to say which numbered family) — against those sections only, each running to the next
- * heading of its own or a higher level. A source H1 the copy also carries is kept in the comparison.
+ * heading of its own or a higher level. A source H1 the copy also carries is kept in the comparison. The bracketed name
+ * is matched as a PREFIX of a heading's text and the numbered section is then looked for from that heading on, so a
+ * section's own title works too (`§5 (Live-Verification Policy)`); a title the heading does not start with is `§N not found`.
  * NOT a difference: CRLF vs LF, blank lines, a lone `---` line, and an outbound reference rewritten for the plugin. A
  * reference is a Markdown link (compared as its text), a backticked path-like token (it holds a `/` or ends in a file
  * extension) or a backticked "`name` skill" — each is dropped from both sides, together with the "this repository's" /

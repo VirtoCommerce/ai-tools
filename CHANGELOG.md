@@ -18,7 +18,7 @@ their meaning unchanged (spec B6) and only the links rewritten. `verdict-writer`
 `.claude/skills/qa-test/close-out.md` keeps its headings and points at it.
 
 **Added — `knowledge/`.** Nine copies, each naming its source in its first line, the repository copy staying canonical:
-`test-data.md`, `reports.md`, `live-discovery.md`, `oracle-authority.md`, `test-design-techniques.md` (§0–§1),
+`test-data.md`, `reports.md`, `live-discovery.md`, `oracle-authority.md`, `test-design-techniques.md` (§0, §1, §1a FLOW),
 `exploratory-box.md` (§5), `ui-kit-class.md`, `domain-map.md`, and `risk-prioritization-framework.md` (copied
 instead of citing `vc-fix:qa-risk`, whose `disable-model-invocation` keeps an agent from loading it).
 

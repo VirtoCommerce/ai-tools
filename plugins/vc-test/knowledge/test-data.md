@@ -15,7 +15,7 @@ The five-step pattern that replaces a transcribed constant (generator → up the
 
 The GOLDEN RULE governs *where a value comes from*. This one governs *which values exist at all*, and its absence is expensive in a way no validator detects: a fixture can satisfy every `@td()`, every drift guard and every secret-hygiene check and still make the feature's central question **undecidable**.
 
-**The test is falsifiability, per link.** For each link of the feature's value chain (`/qa-test-design` `test-design-techniques.md` §1a), ask: *if this link were implemented wrong, would THIS data make the case fail?* If the right and the wrong implementation produce the same observation, the fixture is not a fixture — it is a coincidence, and the case built on it is a vacuous pass.
+**The test is falsifiability, per link.** For each link of the feature's value chain ([`test-design-techniques.md`](test-design-techniques.md) §1a), ask: *if this link were implemented wrong, would THIS data make the case fail?* If the right and the wrong implementation produce the same observation, the fixture is not a fixture — it is a coincidence, and the case built on it is a vacuous pass.
 
 **Divergence is the property that makes a fixture discriminating.** Two quantities that must not be confused have to be *different* in the data; two rankings that must not collapse have to *disagree*; a variant that must behave differently from its sibling has to be seeded as a real pair. **Equal values on both sides of a distinction under test are a data defect, not a neutral choice.**
 
