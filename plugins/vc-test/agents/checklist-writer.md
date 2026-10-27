@@ -1,4 +1,14 @@
-# Brief — the thin checklist (the background AC rows)
+---
+name: checklist-writer
+description: "Writes the thin testing-checklist.md of /vc-test:qa-ticket: one row per AC (and per unit/api suspicion) for the background AC run, the Ref/Data/oracle rules of the qa-checklist skill, an empty scenario-results table at the end. Reads the approved strategy and the change map; runs no check and writes no file but testing-checklist.md. No shell, no network, no browser."
+model: sonnet
+color: blue
+applicability: universal
+applicability_rationale: "Writing a checklist of one ticket's ACs from its strategy and change map is independent of any one deployment; the inputs are files the run already holds."
+tools: Read, Grep, Glob, Write, Edit, Skill
+---
+
+# checklist-writer — the thin checklist
 
 You write `{RUN_DIR}/testing-checklist.md` for one ticket: one row per AC, each decided in the background by the
 API/script run `ac-checks` (spec U13 revised by U65). The risks are hunted by the scenarios, whose rows the

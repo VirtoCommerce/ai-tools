@@ -1,11 +1,13 @@
 // plugins/vc-test/lib/plan-run.mjs — approved strategy + registry + capabilities → run-plan.json (spec §4.1, §5.2).
 // CLI: node plugins/vc-test/lib/plan-run.mjs --strategy <test-strategy.md> --key <KEY>   (exit 2 when refused)
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
-import { pathToFileURL } from "node:url";
+import { dirname, join } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { argOf, workDir } from "./paths.mjs";
 import { INSTANCE_PREFIX, loadRegistry, readStrategy } from "./strategy-artifacts.mjs";
 
+const PLUGIN_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+const PLUGIN_AGENT = /^vc-test:/;
 const APPROVED = new Set(["APPROVED", "CHANGED", "AUTO"]);
 const MAX_BROWSER_LANES = 3;
 // Where each per-row template's instances come from. A prior bug needs nothing (`needs: []`), so it runs in the first
@@ -15,7 +17,16 @@ const INSTANCES = {
   "prior-bug": { noun: "prior bugs", key: "bug", list: (st) => (st.priorBugs ?? []).map((b) => ({ name: b.pb, proof: b.proof, item: b })) },
 };
 
-export function planRun({ strategy, registry, capabilities }) {
+// A `run` block names a plugin agent (`vc-test:<name>`, whose prompt and model live in agents/<name>.md) OR a brief a
+// general agent reads — never both, and a brief must exist (a stale checkout can carry an old registry entry).
+function runBlockErrors(entry, root) {
+  const { agent, brief } = entry.run ?? {};
+  if (agent && PLUGIN_AGENT.test(agent) && brief) return [`${entry.id}: run names the plugin agent ${agent} and a brief (${brief}) — an agent carries its own prompt`];
+  if (brief && !existsSync(join(root, brief))) return [`${entry.id}: run.brief ${brief} does not exist under ${root}`];
+  return [];
+}
+
+export function planRun({ strategy, registry, capabilities, root = PLUGIN_ROOT }) {
   if (!APPROVED.has(strategy.status)) return { ok: false, errors: [`round ${strategy.round}: strategy is not approved (Status: ${strategy.status ?? "missing"})`] };
   // `append` writes `Status: AUTO` before the strategy agent completes the section: a run stopped in between must not
   // plan an ungated section, whatever order the command runs its steps in.
@@ -57,6 +68,7 @@ export function planRun({ strategy, registry, capabilities }) {
   const active = (d) => selected.has(d) || [...selected.values()].some((s) => s.instanceOf === d);
   for (const e of registry.artifacts) if (e.derivedFrom && active(e.derivedFrom)) selected.set(e.id, { entry: e, order: null });
 
+  for (const s of selected.values()) errors.push(...runBlockErrors(s.entry, root));
   if (registry.artifacts.some((e) => e.id === "checklist") && !selected.has("checklist")) errors.push("Checklist is not RUN — nothing would decide the ACs");
   for (const s of selected.values()) {
     const missing = s.entry.requires.filter((cap) => !capabilities[cap]);

@@ -113,7 +113,7 @@ Ref `PB-n · R<k>`, the `R` of its `### Prior bugs` row.
 | id | How |
 |---|---|
 | `contract-refresh` | both commands of its `run.commands` |
-| `checklist`, `ac-checks`, `scenario:S-n` | its `run.agent` and `run.model`, `[vc-test:<id>] <TICKET>`, brief "Read and follow `<plugin>/<run.brief>`"; checklist + `CHANGE_MAP`; ac-checks + `CHECKLIST`, `CHANGE_MAP`, `CAPABILITIES`; a scenario + `S`, `SCENARIOS`, `BUNDLE`, `CAPABILITIES`, `LANE` = its `lane`, `EXPLORATORY` = its `exploratory` |
+| `checklist`, `ac-checks`, `scenario:S-n` | its `run.agent` (`vc-test:…` ⇒ that subagent type; else `run.model` + `<plugin>/<run.brief>`), `[vc-test:<id>] <TICKET>`; checklist + `CHANGE_MAP`; ac-checks + `CHECKLIST`, `CHANGE_MAP`, `CAPABILITIES`; a scenario + `S`, `SCENARIOS`, `BUNDLE`, `CAPABILITIES`, `LANE` = its `lane`, `EXPLORATORY` = its `exploratory` |
 | `bug:PB-n` (round ≥ 2) | the same, + `PB`, `CAPABILITIES`, `LANE` = its `lane` (none when it has none) |
 | `visual` | `ui-ux-expert` on Chrome DevTools MCP, brief opening with Skill `qa-design` (`.claude/skills/qa-test/visual-axis.md` §2, §4, §5) |
 
@@ -153,7 +153,7 @@ absent: merge `pixel` after that wave. A PIXEL risk that runs has Lane `scripts 
    <WORK>/write-zones.json` → `WRITE_ZONES`. Exit 2 ⇒ BLOCKED, the verdict names each file; 3 ⇒ "not checked"; any other exit ⇒ write
    `{"outside":[],"gitScope":false,"reason":"<its registryErrors, or its first stderr line>"}` there instead.
 3. `node <plugin>/lib/run-cost.mjs --since <start> --key <TICKET>` → keep its Markdown table.
-4. Dispatch a fresh `verdict` (`sonnet`) with the paths its brief lists, `TRACE`, `WRITE_ZONES`, the table, `ROUND`
+4. Dispatch `vc-test:verdict-writer`, `[vc-test:verdict] <TICKET>`, with its paths, `TRACE`, `WRITE_ZONES`, the table, `ROUND`
    and, round ≥ 2, `PRIOR_BUGS` = `DELTA`.
 
 ## 8 — Human point 2
