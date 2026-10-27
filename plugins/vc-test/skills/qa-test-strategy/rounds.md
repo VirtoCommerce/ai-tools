@@ -48,3 +48,26 @@ From round 2, `floors.mjs` still reads the whole PR diff in the bundle, so the f
 its own amendments and reconciliation. Round N cites round N−1 by section, not by path. When the run
 folder changes between rounds (a new sprint, another env), the file moves with the newest round and the older folder keeps a one-line
 pointer. Shape: [`template.md`](template.md).
+
+## Round N in vc-test — scripts, not prose (P2-2)
+
+Under vc-test each step above is a script over machine records; prose is never parsed (B3).
+
+- **The record.** `rounds.mjs close` ends a round: `<RUN_DIR>/rounds/round-<N>.json` (build per PR, verdict, the
+  bugs of `verdict.json`, the unresulted risks) and a copy of the round's bundle beside it, which round N+1 diffs the
+  acceptance text against (the bundle itself is swept after 24 h). Every path in it is relative to the output root.
+- **The delta.** `ticket-context prepare <KEY> --since <round record>` reads only what changed: each PR `unchanged`,
+  `changed` (diffed from the recorded sha; a force-push reads the whole PR diff) or `new`, the comments posted after
+  the round closed, whether the description or AC text changed, and the status of the round's out-of-scope bugs.
+  `rounds.mjs delta` turns it into `delta.json`: the PRs, which analysts run (TICKET on a new comment or a changed AC,
+  CHANGE per changed or new PR), the round recounted with the new comments as signals (a fourth round still STOPs).
+- **The same build STOPs (P3).** No PR changed and none is new ⇒ round N−1 already tested this build; nothing runs.
+  Amending a closed round stays manual (D7).
+- **Prior bugs come from every round.** Each in-scope bug of every earlier record, once (by tracker key — a bug still
+  failing is carried by the next record with its `priorBug` and original key), is a `PB-n` row of `### Prior bugs`
+  and its own risk: "fixed, and nothing next to it broke", at its severity, re-run from its `.spec` or its package.
+- **Out-of-scope bugs are listed, not re-run (B2).** The delta reports their tracker status; Out of scope names them.
+- **The section is appended without asking (U15).** `rounds.mjs append` writes `## Round N` — the carried risks, the
+  prior-bug risks and rows, round N−1's Artifacts — and leaves one `TBD — strategy agent` line per part the strategy
+  agent writes (mission, inputs, data, out of scope, criteria, the floors). Round N−1's text is never touched; the gate's
+  clause 14 fails while a `TBD` remains or a prior bug's risk sits below its severity.

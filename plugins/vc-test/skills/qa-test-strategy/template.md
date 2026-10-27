@@ -48,6 +48,14 @@ Regression-averse <✔/—: why> · Process-compliant <✔/—: why>
 |---|---|---|---|---|---|---|---|
 | S-1 | <1–6> | <the action on the stand> | <the bug it hunts> | <why a bug is likely here> · R1 | <n> | <what proves it> | <none / what it writes> |
 
+<!-- ROUND ≥ 2 ONLY, VC-TEST ONLY — delete in round 1 and outside vc-test (the heading, the table and this comment).
+     `rounds.mjs append` writes it with the round: one row per in-scope bug of every earlier round, each re-run as its R
+     (Level not below the Severity — clause 14). Reproduction: `spec <path>` | `package <path>` | `none`. rounds.md §Round N in vc-test. -->
+### Prior bugs
+| PB | Bug | Severity | Found | Reproduction | R |
+|---|---|---|---|---|---|
+| PB-1 | <key — title> | <Critical/High/Medium> | Round <n> | <spec <path> / package <path> / none> | R<n> |
+
 ### Artifacts
 | Artifact | Decision |
 |---|---|

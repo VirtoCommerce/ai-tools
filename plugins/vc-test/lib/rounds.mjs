@@ -15,11 +15,25 @@
 //   round-<N>.bundle.json (the bundle is swept after 24 h and round N+1 needs it; skipped when --bundle is that file).
 //   Every path the record stores is POSIX-relative to outputRoot(). exit 0; 1: usage, a missing or invalid verdict.json,
 //   no `## Round`, or a --filed id that is no bug of the verdict.
+// CLI: node plugins/vc-test/lib/rounds.mjs delta --key <KEY> --run-dir <RUN_DIR> --prepare <delta prepare.json>
+//   round N's refresh over `ticket-context prepare --since`'s output: which PRs changed, which analysts to dispatch
+//   (TICKET on new comments or a changed AC, CHANGE per changed or new PR), the prior bugs of every round (in scope only,
+//   one PB per bug), the out-of-scope bugs with their status, the carried risks, and the round recounted with the kept
+//   comments as signals. Writes <WORK>/delta.json (WORK = paths.mjs workDir) and prints it. exit 0; 2: the same build
+//   (P3: no PR changed or new — round N−1 already tested it) or mode cap (`escalation` as `count`); 1: usage or an
+//   unreadable input.
+// CLI: node plugins/vc-test/lib/rounds.mjs append --run-dir <RUN_DIR> --delta <WORK>/delta.json [--change-map <path>]
+//   appends `## Round <N>` to <RUN_DIR>/test-strategy.md without asking (U15): the carried risks, one risk and one
+//   `### Prior bugs` row per prior bug, the Artifacts of round N−1, and one `TBD — strategy agent` line for each part the
+//   strategy agent writes. A RUN_DIR with no test-strategy.md first takes the newest prior one, whose folder keeps the
+//   line `Moved to <path> at Round <N>.` (rounds.md §Storage). Round N−1's text is never touched; a last section already
+//   numbered N is left as it is. A --change-map that does not exist (another env's WORK) is `Change map: none`.
+//   exit 0; 1: usage, an unreadable input, a delta that STOPs, or a file whose last round is not N−1.
 import { execFileSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { argOf, currentEnv, KEY_RE, outputRoot } from "./paths.mjs";
+import { argOf, currentEnv, KEY_RE, outputRoot, workDir } from "./paths.mjs";
 import { validate } from "../skills/ticket-context/lib/schema.mjs";
 import { rows as tableRows } from "./strategy-artifacts.mjs";
 import { priorRunDirs } from "../scripts/lib/run-dir.mjs";
@@ -261,8 +275,188 @@ export function closeRound({ round, strategyMd, verdict, filed = {}, env, closed
   };
 }
 
+// ── round N: the delta and the appended section ──────────────────────────────────────────────────────────────────
+const asRecord = (r) => (r && typeof r === "object" && "json" in r ? r : { path: null, json: r });
+const idNum = (id) => Number(/\d+/.exec(String(id ?? ""))?.[0] ?? 0);
+const SEVERITY = ["Medium", "High", "Critical"];
+const byRound = (a, b) => (a.round ?? 0) - (b.round ?? 0) || String(a.closedAt).localeCompare(String(b.closedAt));
+
+/** The first non-blank line of a comment body: a Jira v2 string (a wiki heading marker dropped) or a v3 ADF document. */
+function firstLine(body) {
+  if (typeof body === "string") return (lf(body).split("\n").map((l) => l.trim()).find(Boolean) ?? "").replace(/^h[1-6]\.\s*/i, "");
+  const texts = [];
+  const walk = (n) => { if (!n || typeof n !== "object") return; if (typeof n.text === "string") texts.push(n.text); for (const c of n.content ?? []) walk(c); };
+  for (const blockNode of body?.content ?? []) {
+    texts.length = 0;
+    walk(blockNode);
+    const t = texts.join("").trim();
+    if (t) return t.split("\n")[0].trim();
+  }
+  return "";
+}
+
+/** The kept comments of a delta read (prepare's ticket_json) as countRounds signals. */
+export function commentSignals(ticket) {
+  return (ticket?.fields?.comment?.comments ?? []).map((c) => ({ text: firstLine(c?.body), source: `comment:${c?.id}@${c?.created ?? ""}` })).filter((s) => s.text);
+}
+
+/** Every in-scope bug of every record, one entry per bug (B2): a re-observed bug — the same tracker key, or a bug whose
+ *  `priorBug` names an entry — joins its first sighting; otherwise `id@round` is the identity. PB-n in round, then id order. */
+export function priorBugsOf(records) {
+  const out = [];
+  const byKey = new Map(), byPb = new Map(), byId = new Map();
+  for (const rec of records.map((r) => asRecord(r).json).filter(Boolean).sort(byRound)) {
+    for (const b of (rec.bugs ?? []).filter((x) => x?.scope === "in").sort((x, y) => idNum(x.id) - idNum(y.id))) {
+      const hit = (b.key && byKey.get(b.key)) || (b.priorBug && byPb.get(b.priorBug)) || byId.get(`${b.id}@${rec.round}`);
+      if (hit) {
+        for (const f of ["key", "spec", "package"]) hit[f] ??= b[f] ?? null;
+        if (SEVERITY.indexOf(b.severity) > SEVERITY.indexOf(hit.severity)) hit.severity = b.severity;
+        if (hit.key) byKey.set(hit.key, hit);
+        continue;
+      }
+      const e = { pb: `PB-${out.length + 1}`, key: b.key ?? null, id: b.id, title: b.title, severity: b.severity, foundIn: rec.round ?? null, spec: b.spec ?? null, package: b.package ?? null };
+      out.push(e);
+      byPb.set(e.pb, e);
+      byId.set(`${b.id}@${rec.round}`, e);
+      if (e.key) byKey.set(e.key, e);
+    }
+  }
+  return out;
+}
+
+const shortBuild = (build) => (build ?? []).map((b) => `${b.repo}#${b.number} @ ${String(b.sha ?? "").slice(0, 8)}`).join(", ") || "none";
+
+/**
+ * Round N's delta over `ticket-context prepare --since`'s output. `records` are every round record of the ticket
+ * (`{ path, json }` or the bare record), `strategies` / `summaries` what `count` reads, `ticket` the parsed
+ * `prepare.ticket_json` (the comments posted after the round closed). A context-only PR is no build; a PR that could
+ * not be read (`delta: null`) is not "the same build" — the build is never assumed unread.
+ */
+export function deltaOf({ records = [], strategies = [], summaries = [], prepare, ticket = null }) {
+  if (!prepare?.delta) throw new Error("not a --since delta prepare.json (it has no `delta`)");
+  const recs = records.map(asRecord);
+  const recount = countRounds({ strategies, records: recs, summaries, signals: commentSignals(ticket) });
+  const prs = (prepare.prs ?? []).filter((p) => !p.context_only)
+    .map((p) => ({ ref: p.ref ?? `${p.repo}#${p.number}`, repo: p.repo, number: p.number, delta: p.delta ?? null, from: p.from ?? null, to: p.head_sha ?? null }));
+  const moved = prs.filter((p) => p.delta === "changed" || p.delta === "new");
+  const newest = recs.map((r) => r.json).filter(Boolean).sort(byRound).at(-1) ?? null;
+  const comments = Number(prepare.delta.comments ?? 0);
+  const acceptanceChanged = !!prepare.delta.acceptance_changed;
+  return {
+    round: recount.round, mode: recount.mode, ...(recount.escalation ? { escalation: recount.escalation } : {}),
+    since: prepare.delta.since ?? null, sameBuild: prs.every((p) => p.delta === "unchanged"), prs, comments, acceptanceChanged,
+    priorBugs: priorBugsOf(recs), outOfScope: (prepare.delta.bug_status ?? []).map((b) => ({ key: b.key, status: b.status ?? null })),
+    carried: newest ? (newest.unresulted ?? []).map((r) => ({ r, round: newest.round })) : [],
+    previous: newest ? { round: newest.round, verdict: newest.verdict ?? null, build: shortBuild(newest.build) } : null,
+    strategy: recount.strategy ?? null,
+    dispatch: { ticket: comments > 0 || acceptanceChanged, change: moved.map((p) => p.ref) },
+  };
+}
+
+const TBD = "TBD — strategy agent";
+const cell = (s) => String(s ?? "").replace(/\|/g, "/").replace(/\s+/g, " ").trim();
+/** Table lines of a block, with their cells (the header and separator rows dropped). */
+const rawRows = (text) => text.split("\n").filter((l) => /^\|/.test(l) && !/^[\s|:-]+$/.test(l)).slice(1).map((line) => ({ line, cells: line.split("|").slice(1, -1).map((c) => c.trim()) }));
+const blockOf = (sec, heading) => new RegExp(`^### ${heading}[ \\t]*\\n([\\s\\S]*?)(?=\\n### |(?![\\s\\S]))`, "m").exec(sec)?.[1] ?? "";
+const RISKS_HEAD = "| R | What a customer would see if this is wrong | Source | L×I | Level |\n|---|---|---|---|---|";
+const APPROACH_HEAD = "| R | Technique / approach | Oracle {authority} | Layer · tool | Lane · agent | Effort |\n|---|---|---|---|---|---|";
+const SCENARIOS_HEAD = "| S | Class | What it does | Bug it hunts | Why likely | Score | Proof | Writes |\n|---|---|---|---|---|---|---|---|";
+const PRIOR_HEAD = "| PB | Bug | Severity | Found | Reproduction | R |\n|---|---|---|---|---|---|";
+const RECON_HEAD = "| R | Planned | Ran (item ids · charter · lane · case ids) | Result | Deviation — reason |\n|---|---|---|---|---|";
+
+/** How a prior bug is reproduced (P4): its .spec through the runner, else its package on a browser lane, else nothing. */
+function proofOf(b) {
+  if (b.spec) return { repro: `spec ${b.spec}`, layer: "spec · Playwright runner", lane: "node · playwright test", effort: "low" };
+  if (b.package) return { repro: `package ${b.package}`, layer: "the package's layer · Playwright", lane: "chrome · qa-frontend-expert", effort: "medium" };
+  return { repro: "none", layer: "—", lane: "none · BLOCKED — no reproduction recorded", effort: "low" };
+}
+
+/**
+ * test-strategy.md with `## Round <N>` appended (U15, written without asking). Round N−1's text is the returned text's
+ * prefix, byte for byte; a last section already numbered N returns the file unchanged. Throws when the last section is
+ * neither N nor N−1.
+ */
+export function appendRound({ strategyMd, delta, env, date, changeMapPath = null }) {
+  const md = String(strategyMd);
+  const text = lf(md);
+  const n = Number(delta?.round);
+  const starts = [...text.matchAll(/^## Round (\d+)\b/gm)];
+  const last = starts.length ? Number(starts.at(-1)[1]) : null;
+  if (last === n) return md;
+  if (!Number.isInteger(n) || n < 2 || last !== n - 1) throw new Error(`test-strategy.md's last section is ${last == null ? "none" : `Round ${last}`}; the delta is for Round ${delta?.round}: expected Round ${n - 1}`);
+  const prev = text.slice(starts.at(-1).index);
+  const p = n - 1;
+
+  const riskRows = rawRows(blockOf(prev, "Risks")).filter((r) => /^R\d+$/.test(r.cells[0] ?? ""));
+  const approachRows = rawRows(blockOf(prev, "Approach per risk"));
+  const reconIds = rawRows(blockOf(prev, "Reconciliation.*")).map((r) => /^R(\d+)/.exec(r.cells[0] ?? "")?.[1]).filter(Boolean).map(Number);
+  let next = Math.max(0, ...riskRows.map((r) => idNum(r.cells[0])), ...reconIds) + 1;
+
+  const risks = [], approach = [], prior = [];
+  const carriedText = new Map();
+  for (const { r } of delta.carried ?? []) {
+    const row = riskRows.find((x) => x.cells[0] === r);
+    if (!row) {
+      risks.push(`| ${r} | ${TBD} (Round ${p} ${r} is in no Risks row) | carried from Round ${p} ${r} | — | ${TBD} |`);
+      approach.push(`| ${r} | ${TBD} | — | — | — | — |`);
+      continue;
+    }
+    const [, what = "", source = "", li = "", level = ""] = row.cells;
+    const tokens = source.split("·").map((t) => t.trim()).filter((t) => t && !/^carried from Round\b/i.test(t));
+    risks.push(`| ${r} | ${what} | ${[...tokens, `carried from Round ${p} ${r}`].join(" · ")} | ${li} | ${level} |`);
+    carriedText.set(what, r);
+    approach.push(approachRows.find((x) => x.cells[0] === r)?.line ?? `| ${r} | ${TBD} | — | — | — | — |`);
+  }
+  for (const b of delta.priorBugs ?? []) {
+    const what = `${cell(b.title)} is fixed, and nothing next to it broke`;
+    const ref = b.key ?? `${b.id} (Round ${b.foundIn})`;
+    const proof = proofOf(b);
+    let r = carriedText.get(what);
+    if (!r) {
+      r = `R${next++}`;
+      risks.push(`| ${r} | ${what} | ${ref} | — | ${b.severity} |`);
+      approach.push(`| ${r} | FLOW · REGRESSION | ${b.key ?? b.id}'s expected result {OBSERVED} | ${proof.layer} | ${proof.lane} | ${proof.effort} |`);
+    }
+    prior.push(`| ${b.pb} | ${b.key ?? b.id} — ${cell(b.title)} | ${b.severity} | Round ${b.foundIn} | ${proof.repro} | ${r} |`);
+  }
+
+  // Round N−1's Artifacts, the Prior bugs row replaced; a decision naming one of its scenarios (S-n) is round N's to write.
+  const artifacts = rawRows(blockOf(prev, "Artifacts")).filter((x) => x.cells[0] !== "Prior bugs")
+    .map((x) => (/\bS-\d+/.test(x.cells[1] ?? "") ? `| ${x.cells[0]} | ${TBD} |` : x.line));
+  const nPrior = (delta.priorBugs ?? []).length;
+  artifacts.push(`| Prior bugs | ${nPrior ? `RUN — ${nPrior} bug${nPrior > 1 ? "s" : ""}` : "SKIP — no prior bug"} |`);
+
+  const depth = /^Status:.*?Depth label:[ \t]*(.*)$/m.exec(prev)?.[1].trim() || TBD;
+  const build = (delta.prs ?? []).map((x) => `${x.repo}#${x.number} @ ${x.to ?? "?"}`).join(" · ") || "none";
+  const pv = delta.previous;
+  const section = [
+    `## Round ${n} of 3 — ${date}`, "",
+    `Status: AUTO (round ${n} refresh, U15) · Depth label: ${depth}`,
+    `Blocked: ${TBD}`,
+    `Build: ${build} · Stand: ${env} · Deployed: ${TBD} · Previous: Round ${pv?.round ?? p} ${pv?.verdict ?? "?"}, ${pv?.build ?? "none"}`,
+    `Floors fired: ${TBD}`,
+    `Change map: ${changeMapPath ?? "none"}`, "",
+    `**Mission.** ${TBD}`, "",
+    "### Inputs", TBD, "",
+    "### Risks", RISKS_HEAD, ...risks, "",
+    `Project risks: ${TBD}`, "",
+    "### Strategy mix", TBD, "",
+    "### Approach per risk", APPROACH_HEAD, ...approach, "",
+    "### Scenarios", SCENARIOS_HEAD, "",
+    "### Prior bugs", PRIOR_HEAD, ...prior, "",
+    "### Artifacts", "| Artifact | Decision |", "|---|---|", ...artifacts, "",
+    "### Data", TBD, "",
+    "### Out of scope", TBD, "",
+    "### Criteria", TBD, "",
+    "### Amendments", "",
+    "### Reconciliation (filled at close-out)", RECON_HEAD, "",
+  ];
+  const eol = /\r\n/.test(md) ? "\r\n" : "\n";
+  return md + (/\n$/.test(md) ? "" : eol) + eol + section.join(eol);
+}
+
 // ── CLI ──────────────────────────────────────────────────────────────────────────────────────────────────────────
-const posix = (file, root) => { const rel = relative(root, file); return (isAbsolute(rel) || rel.startsWith("..") ? file : rel).split(sep).join("/"); };
+const posix =(file, root) => { const rel = relative(root, file); return (isAbsolute(rel) || rel.startsWith("..") ? file : rel).split(sep).join("/"); };
 const git = (cwd, args) => execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 64 * 1024 * 1024 });
 
 /** Every committed version of a file (newest first): `[{ committedAt, text }]`; [] outside a work tree. */
@@ -301,7 +495,9 @@ function readInputs({ key, runDir, root }) {
 }
 
 function usage(msg) {
-  console.error(`${msg}\nusage: rounds.mjs count --key <KEY> [--run-dir <RUN_DIR>] [--bundle <bundle.json>]\n       rounds.mjs close --key <KEY> --run-dir <RUN_DIR> --bundle <bundle.json> [--filed B-1=VCST-7001,B-2=…]`);
+  console.error(`${msg}\nusage: rounds.mjs count --key <KEY> [--run-dir <RUN_DIR>] [--bundle <bundle.json>]\n       rounds.mjs close --key <KEY> --run-dir <RUN_DIR> --bundle <bundle.json> [--filed B-1=VCST-7001,B-2=…]
+       rounds.mjs delta --key <KEY> --run-dir <RUN_DIR> --prepare <delta prepare.json>
+       rounds.mjs append --run-dir <RUN_DIR> --delta <WORK>/delta.json [--change-map <path>]`);
   process.exit(1);
 }
 
@@ -351,12 +547,62 @@ function close(argv) {
   process.exit(0);
 }
 
+const fail = (msg) => { console.error(msg); process.exit(1); };
+const readJsonFile = (file) => { try { return JSON.parse(readFileSync(file, "utf8")); } catch (e) { return fail(`${file}: ${e.code ?? e.message}`); } };
+
+function deltaCmd(argv, key) {
+  const runDir = argOf(argv, "run-dir");
+  const prepPath = argOf(argv, "prepare");
+  if (!runDir) usage("--run-dir is required");
+  if (!prepPath) usage("--prepare is required (ticket-context prepare --since's prepare.json)");
+  const root = outputRoot();
+  const prepare = readJsonFile(prepPath);
+  if (!prepare?.delta) fail(`${prepPath}: not a --since delta read (no \`delta\`)`);
+  // The kept comments are read here and only their first lines become signals; no comment text is printed.
+  const ticket = prepare.ticket_json ? readJsonFile(resolve(root, String(prepare.ticket_json))) : null;
+  let inputs;
+  try { inputs = readInputs({ key, runDir, root }); } catch (e) { fail(e.message); }
+  const d = { key, ...deltaOf({ ...inputs, prepare, ticket }) };
+  if (d.sameBuild) d.stop = `round ${d.round - 1} already tested this build (P3): no PR changed and none is new — amend that round instead`;
+  writeFileSync(join(workDir(key), "delta.json"), `${JSON.stringify(d, null, 2)}\n`);
+  console.log(JSON.stringify(d, null, 2));
+  process.exit(d.sameBuild || d.mode === "cap" ? 2 : 0);
+}
+
+function appendCmd(argv) {
+  const runDir = argOf(argv, "run-dir");
+  const deltaPath = argOf(argv, "delta");
+  if (!runDir) usage("--run-dir is required");
+  if (!deltaPath) usage("--delta is required (<WORK>/delta.json)");
+  const delta = readJsonFile(deltaPath);
+  if (delta.mode === "cap" || delta.sameBuild) fail(`${deltaPath}: this delta STOPs the run (${delta.mode === "cap" ? "a fourth round" : "the same build"}) — nothing to append`);
+  const root = outputRoot();
+  const file = join(runDir, "test-strategy.md");
+  let src = file;
+  if (!existsSync(file)) {
+    if (!delta.strategy) fail(`${file}: not found, and the delta names no prior test-strategy.md`);
+    src = resolve(root, delta.strategy);
+  }
+  let md;
+  try { md = readFileSync(src, "utf8"); } catch (e) { fail(`${src}: ${e.code ?? e.message}`); }
+  const cm = argOf(argv, "change-map");
+  let out;
+  try { out = appendRound({ strategyMd: md, delta, env: currentEnv(), date: new Date().toISOString().slice(0, 10), changeMapPath: cm && existsSync(cm) ? cm : null }); } catch (e) { fail(e.message); }
+  mkdirSync(runDir, { recursive: true });
+  if (out !== md || src !== file) writeFileSync(file, out);
+  // The file moves with the newest round; the older folder keeps one line (rounds.md §Storage).
+  if (src !== file) writeFileSync(src, `Moved to ${posix(file, root)} at Round ${delta.round}.\n`);
+  console.log(JSON.stringify({ strategy: posix(file, root), round: delta.round, appended: out !== md, moved_from: src !== file ? posix(src, root) : null }));
+  process.exit(0);
+}
+
 function main() {
   const argv = process.argv.slice(2);
-  if (argv[0] !== "count" && argv[0] !== "close") usage(`unknown command "${argv[0] ?? ""}"`);
+  if (!["count", "close", "delta", "append"].includes(argv[0])) usage(`unknown command "${argv[0] ?? ""}"`);
+  if (argv[0] === "append") return appendCmd(argv);
   const key = argOf(argv, "key");
   if (!key || !KEY_RE.test(key)) usage(`--key must be a ticket key, got "${key ?? ""}"`);
-  if (argv[0] === "close") close(argv); else count(argv, key);
+  if (argv[0] === "close") close(argv); else if (argv[0] === "delta") deltaCmd(argv, key); else count(argv, key);
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) main();

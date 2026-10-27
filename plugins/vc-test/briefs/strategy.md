@@ -67,3 +67,26 @@ scenario cites a risk. The orchestrator asks the user; you never do. Dispatch de
   Out of scope list; the depth label.
 
 Never paste the whole file. The orchestrator reads only this return.
+
+## Round N ≥ 2 — the refresh section (rounds.md §Round N in vc-test)
+
+`rounds.mjs append` has already written `## Round N` (`Status: AUTO (round N refresh, U15)`) — nobody is asked. You
+complete it; you never start a new one.
+
+- **Inputs:** `DELTA` — `<WORK>/delta.json` (the PRs and their `unchanged` / `changed` / `new`, the new comment count,
+  `acceptanceChanged`, the prior bugs, the out-of-scope bugs with their status, the carried risks); `TICKET` and
+  `CHANGE` — the outputs of the analysts the delta dispatched (`dispatch.ticket`, `dispatch.change`), absent when it
+  dispatched none; `CHANGE_MAP`, `CAPABILITIES`, `RUN_DIR` as in round 1. There is no new bundle and no scorer table.
+- **Fill only the `TBD — strategy agent` lines** — the mission, Inputs (the change surface since the last tested
+  commit), the Floors and Blocked lines, `Deployed:`, Strategy mix, Data, Out of scope, Criteria, and any Artifacts
+  decision left `TBD` (one that named a round N−1 scenario). Out of scope also lists each of `DELTA`'s out-of-scope
+  bugs with its status — listed, never re-run (B2).
+- **Append, never edit.** Add a risk (next free `R`) for each thing the delta names — a new PR, a changed AC, a new
+  area — with its approach row and its scenarios; add one class-fitting scenario per prior bug, scoped to the fix's
+  diff, `Why likely <what the fix touched> · R<the bug's risk>`. Never edit a row `append` wrote, a `### Prior bugs`
+  row, or any line of round N−1.
+- **Round 3** says in its mission that it is the last; its Out of scope is the ticket's residual risk (rounds.md §At
+  most three).
+- **Gate:** step 3 above — `check-strategy.mjs` with `--change-map` and `--capabilities`, clauses 1–14, until it exits 0
+  (clause 14: the Prior bugs table, each PB's risk not below its severity, no `TBD` left); the verifier on a Critical risk.
+- **Return** the strategy path, the gate result and the verifier verdict — no approval summary.
