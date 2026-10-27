@@ -63,6 +63,8 @@ function main(): void {
     suiteId: string;
     suiteName?: string;
     planned: Array<{ id: string; lane: CaseLane }>;
+    preBlocked?: Array<{ id: string; reason: string }>;
+    notDeployed?: Array<{ id: string; module: string }>;
   };
 
   // Scope sidecar, written by `suites:filter` on a `--cases` run. Absent on a normal run, and its
@@ -106,6 +108,8 @@ function main(): void {
     planned: lanes.planned,
     fragments,
     ...(caseFilter ? { caseFilter } : {}),
+    ...(lanes.preBlocked?.length ? { preBlocked: lanes.preBlocked } : {}),
+    ...(lanes.notDeployed?.length ? { notDeployed: lanes.notDeployed } : {}),
   });
 
   for (const w of warnings) console.warn(`[suites:merge] WARN ${w}`);

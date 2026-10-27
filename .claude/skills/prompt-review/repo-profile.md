@@ -111,7 +111,7 @@ node -e 'for(const f of process.argv.slice(1))require("fs").readFileSync(f,"utf8
   a user-facing one has its `.claude/ROUTING.md` row, and every skill its `.claude/skills/README.md`
   row → MINOR if missing.
 - **What it produces follows the policy for that artifact**, and the prompt cites the owner:
-  - a report → one of the ten categories, its size cap and required sections
+  - a report → one of the eleven categories, its size cap and required sections
     (`.claude/rules/reports.md` §1, §2; `.claude/knowledge/execution/reports-policy.md`) → MAJOR if
     it writes outside them;
   - a test case → `.claude/knowledge/execution/cases-that-catch-bugs.md` (never rewrite an
