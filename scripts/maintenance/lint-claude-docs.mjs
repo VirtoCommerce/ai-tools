@@ -27,6 +27,8 @@
  *               behaviour belongs in the kb, team rules in a tracked file (CLAUDE.md)             (ratchet)
  *   DOC-008     a relative Markdown link (`[text](../x.md)`) whose target does not exist, resolved from
  *               the citing file's own folder — the link a reader actually follows               (ratchet)
+ *   DOC-009     a plugins/vc-test/ file that READS a `.claude/` path — a Markdown link resolving there
+ *               or a backticked `.claude/…` token. The plugin must run on a project with no such tree  (ratchet)
  *
  * SCOPE. CLAUDE.md, every .claude/**\/*.md and every plugins/**\/*.md; BUDGET-004 measures each plugin's
  * commands/, agents/ and skills/*\/SKILL.md beside .claude/'s. A plugin file's repo-root path also
@@ -90,7 +92,9 @@ export const PROMPT_BASELINE_PATH = 'scripts/maintenance/.prompt-size-baseline.j
 // 0 is the only baseline that catches the next one — never raise it.
 // DOC-008 and the plugins/ scope were added 2026-10-26: 15 broken relative links, 3 stale § citations and 23
 // stale paths surfaced and were fixed in the same change, so it starts where the others are.
-export const BASELINE = { 'DOC-002': 0, 'DOC-003': 0, 'DOC-004': 0, 'DOC-006': 0, 'DOC-007': 0, 'DOC-008': 0 };
+// DOC-009 was added 2026-10-27 (vc-test P2-5a) at the number below: the visual-axis reads deferred to P2-5c
+// (three links) plus two backticked non-read mentions. It may only go down; P2-5c takes it to the mentions.
+export const BASELINE = { 'DOC-002': 0, 'DOC-003': 0, 'DOC-004': 0, 'DOC-006': 0, 'DOC-007': 0, 'DOC-008': 0, 'DOC-009': 5 };
 
 /**
  * DOC-007 — a pointer into the per-user memory directory. The slug families are the ones the harness
@@ -429,6 +433,82 @@ export function checkPromptBudget(files, baseline, read = (f) => fs.readFileSync
   return { over: over.sort((a, b) => b.chars - a.chars), breaches: breaches.sort((a, b) => a.file.localeCompare(b.file)) };
 }
 
+/**
+ * DOC-009 — what a `plugins/vc-test/` file READS from `.claude/`.
+ *
+ * vc-test is installed into a project that has no `.claude/` tree of ours, so a prompt that links
+ * `../../.claude/rules/x.md` sends the agent to a file that is not there. COUNTED: a Markdown link whose
+ * target resolves into `.claude/`, and a backticked token that starts `.claude/` (or `../…/.claude/`).
+ * NOT counted: the copy-source header (`<!-- copy of .claude/… -->`), text inside `(in this repository: …)`
+ * (a mark for a reader of THIS repository, not a read), anything under a `docs/` folder (human rationale),
+ * and a code comment outside `harness/` (history, not a read). A link whose label is a backticked path counts
+ * once. In `harness/*.mjs` only comment text is scanned, and a bare `.claude/…` token counts there (and in a
+ * `.json` value) because a comment or a data value is rarely backticked.
+ */
+const DOC009_ROOT = 'plugins/vc-test';
+const THIS_REPO_MARK_RE = /\(in this repository:[^)]*\)/g;
+const COPY_HEADER_RE = /<!--\s*copy of \.claude\//;
+const BACKTICK_CLAUDE_RE = /`((?:\.\.\/)*\.claude\/[^`]*)`/g;
+const BARE_CLAUDE_RE = /(?:^|[\s"'(])((?:\.\.\/)*\.claude\/[\w.\/<>*-]*)/g;
+const LINK_ANY_RE = /\[[^\]]*\]\(([^)\s]*)\)/g;
+
+/** The `.claude/` reads on one line of `file` (repo-relative, posix). `mode`: 'md' | 'json' | 'comment'. */
+export function claudeReadsOnLine(file, line, mode = 'md') {
+  if (COPY_HEADER_RE.test(line)) return [];
+  let rest = line.replace(THIS_REPO_MARK_RE, '');
+  const out = [];
+  if (mode === 'md') {
+    // Link SYNTAX quoted in a code span is an example, not a link a reader follows.
+    rest = rest.replace(/`[^`]*\]\([^`]*`/g, '');
+    for (const m of rest.matchAll(LINK_ANY_RE)) {
+      const t = m[1].split('#')[0];
+      if (!t || EXTERNAL_RE.test(t) || t.startsWith('/')) continue;
+      const abs = posix(path.normalize(path.join(path.dirname(file), t)));
+      if (abs.startsWith('.claude/') || t.startsWith('.claude/')) out.push(t);
+    }
+    rest = rest.replace(LINK_ANY_RE, '');   // the label of a link already counted must not count again
+  }
+  for (const m of rest.matchAll(BACKTICK_CLAUDE_RE)) out.push(m[1]);
+  if (mode !== 'md') for (const m of rest.replace(BACKTICK_CLAUDE_RE, '').matchAll(BARE_CLAUDE_RE)) out.push(m[1]);
+  return out;
+}
+
+/** The comment text of one `.mjs` line, or null when the line carries none. */
+function commentOf(line) {
+  const t = line.trim();
+  if (/^(\/\/|\/\*|\*)/.test(t)) return line;
+  const i = line.search(/\s\/\/\s/);
+  return i >= 0 ? line.slice(i) : null;
+}
+
+function walkVcTest(dir, out = []) {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) { if (!SKIP_DIRS.has(e.name) && e.name !== 'docs') walkVcTest(p, out); }
+    else out.push(posix(p));
+  }
+  return out;
+}
+
+/** Every DOC-009 finding under `<root>/plugins/vc-test`. Findings are `{ code, file, line, detail }`, `file` relative to `root`. */
+export function vcTestClaudeReads(root = '.') {
+  const base = path.join(root, DOC009_ROOT);
+  if (!fs.existsSync(base)) return [];
+  const findings = [];
+  for (const abs of walkVcTest(base)) {
+    const file = posix(path.relative(root, abs));
+    const mode = file.endsWith('.md') ? 'md' : file.endsWith('.json') ? 'json'
+      : (/^plugins\/vc-test\/harness\/[^/]+\.mjs$/.test(file) ? 'comment' : null);
+    if (!mode) continue;
+    fs.readFileSync(abs, 'utf8').split(/\r?\n/).forEach((l, i) => {
+      const text = mode === 'comment' ? commentOf(l) : l;
+      if (text == null) return;
+      for (const t of claudeReadsOnLine(file, text, mode)) findings.push({ code: 'DOC-009', file, line: i + 1, detail: `a vc-test file reads a .claude/ path: ${t} — copy it into the plugin, point at a plugin mechanism, or mark it "(in this repository: …)"` });
+    });
+  }
+  return findings;
+}
+
 export function lint(root = '.') {
   const cwd = process.cwd(); process.chdir(root);
   try {
@@ -505,6 +585,7 @@ export function lint(root = '.') {
         }
       });
     }
+    findings.push(...vcTestClaudeReads('.'));
     const budget = measureBudget(alwaysLoadedFiles('.'));
     const skillsOver = walkMd('.claude/skills').filter((p) => path.basename(p) === 'SKILL.md')
       .map((p) => ({ file: p, chars: charCount(fs.readFileSync(p, 'utf8')) })).filter((r) => r.chars > BUDGET.skillBodyWarnChars).sort((a, b) => b.chars - a.chars);
