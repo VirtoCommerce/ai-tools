@@ -8,6 +8,32 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## The verdict rules and the strategy's reads are in the plugin — `vc-test` `0.10.0` — 2026-10-27
+
+P2-5a of the `vc-test` plan (`docs/superpowers/plans/2026-10-27-vc-test-p2-5a-verdict-and-reads.md`).
+
+**Moved — the verdict rules.** `skills/qa-test-strategy/verdict-rules.md` holds §Reconcile, §Decide the verdict and
+§Shape: this repository's `/qa-test` close-out §5-verdict.1–.2 and the `/qa-test-fast` `verdict.md` skeleton, with
+their meaning unchanged (spec B6) and only the links rewritten. `verdict-writer` and the strategy read it;
+`.claude/skills/qa-test/close-out.md` keeps its headings and points at it.
+
+**Added — `knowledge/`.** Nine copies, each naming its source in its first line, the repository copy staying canonical:
+`test-data.md`, `reports.md`, `live-discovery.md`, `oracle-authority.md`, `test-design-techniques.md` (§0–§1),
+`exploratory-box.md` (§5), `ui-kit-class.md`, `domain-map.md`, and `risk-prioritization-framework.md` (copied
+instead of citing `vc-fix:qa-risk`, whose `disable-model-invocation` keeps an agent from loading it).
+
+**Changed — the strategy, the briefs and the agents read plugin files.** Their citations point at the copies, the
+plugin's own `route.mjs` / `plan-run.mjs` / `run-dir.mjs` / `ticket-context/known-ground.md`, or say "(in this
+repository: …)" for what only this repository has (`/qa-test-fast`'s regression and summary). The visual axis's three
+reads stay until P2-5c moves that lane.
+
+**Added — a ratchet.** `npm run context:check` DOC-009 fails a `plugins/vc-test/` file that reads a `.claude/` path
+(a Markdown link, or a backticked path in a prompt or brief); baseline 5 (the three visual-axis reads and two
+non-read mentions).
+
+**Changed — `commands/qa-ticket.md`** is back at 14,071 characters (it had grown to 14,098 after P2-3): three phrases
+tightened, no rule removed.
+
 ## `/vc-fix:qa-bug` writes from the investigation; `qa-checklist` Mode 5 with risk ids — `vc-fix` `0.17.0` — 2026-10-27
 
 **Changed — `/vc-fix:qa-bug --evidence` writes from the `/qa-investigate` package, with no second investigation
