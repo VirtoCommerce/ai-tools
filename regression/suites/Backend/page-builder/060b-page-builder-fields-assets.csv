@@ -35,12 +35,16 @@ CMS-088,Error handling — Empty required fields on page creation,Error Handling
 [ACT] Leave Permalink field empty
 [ACT] Attempt to click Save
 [ASSERT] Verify validation errors appear for required fields",Save is disabled or validation errors shown for empty Name and Permalink fields; page is not created without required fields,,Page created with empty name/permalink; no validation errors; Save succeeds with missing data,none,Coverage Gap Analysis COV-2026-03-25-1630,generated
-CMS-089,Error handling — Special characters in permalink,Error Handling,Medium,,ECL-2.2,Admin logged in; PageBuilder shell open,"Special characters: spaces, &, ?, #, unicode","[ACT] Create new page with permalink containing spaces: '/my page test'
-[ASSERT] Verify system sanitizes or rejects the input
-[ACT] Create page with permalink containing special characters: '/page&test?q=1#anchor'
-[ASSERT] Verify system sanitizes or rejects
-[ACT] Create page with permalink containing unicode: '/страница-тест'
-[ASSERT] Verify behavior",System either sanitizes permalinks (removes/replaces invalid characters) or shows clear validation error; no server errors; pages with sanitized permalinks are accessible on storefront,,Server error 500; permalink accepted with invalid characters causing routing issues; storefront crash on special character URL,none,Coverage Gap Analysis COV-2026-03-25-1630,generated
+CMS-089,Error handling — Special characters in permalink,Error Handling,Medium,,ECL-2.2,Admin logged in; PageBuilder shell open,"Invalid permalinks: whitespace, & ? # backslash, //, . / ..; valid Unicode permalink","[NAV] Open the page-builder shell new-page form
+[ACT] Enter permalink with a space: '/my page test'
+[ACT] Enter permalink with reserved characters: '/page&test?q=1#anchor'
+[ACT] Submit the same invalid permalink through the REST API (create/update page)
+[WAIT] API response received
+[ACT] Enter permalink with Unicode letters: '/страница-тест'
+[ACT] Click Save
+[WAIT] Save completes
+[ACT] Reopen the saved page","Invalid permalinks (whitespace/control, ? # & backslash, //, . / ..) are rejected, never normalized: UI shows an inline field error with the rule text, Save is disabled and the typed value is left unaltered; API returns HTTP 400 with the permalink rule message (text/plain); nothing is stored {SPEC} VCST-6443 decision comment (B. Kotov 2026-10-21) {OBSERVED} REG-2026-10-22-1819
+Unicode letters and % are allowed: '/страница-тест' is accepted verbatim, Save succeeds and the reopened page holds exactly '/страница-тест' (no sanitizing, transliteration or encoding change); no 500 anywhere {SPEC} VCST-6443 decision comment {OBSERVED} REG-2026-10-22-1819",REST: invalid permalink returns 400 and the page is absent from the pages list; Unicode page returned with the unchanged permalink,Server error 500; invalid permalink saved (altered or not); permalink silently sanitized or rewritten; Save enabled with an invalid permalink; API returns 200/201 for an invalid permalink; Unicode permalink rejected or altered,Delete test pages created during the run,VCST-6443; Coverage Gap Analysis COV-2026-03-25-1630,Draft
 CMS-090,Edge case — Page with maximum sections,Edge Cases,Low,,ECL-13.1,Admin logged in; test page in designer,Draft test page,"[NAV] Open a draft page in the designer
 [ACT] Add blocks repeatedly (e.g. Title blocks) until you have 20+ sections
 [ASSERT] Verify the sections panel scrolls properly
