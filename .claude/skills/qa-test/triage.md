@@ -19,9 +19,9 @@ this same taxonomy after the verdict is recorded.
 The change-scoped run already has a `RUN_ID` with evidence bundles (`traces/*-FAIL-trace.json`, screenshots,
 HAR). Invoke **`/qa-triage-results <RUN_ID> --fix`** instead of re-deriving the taxonomy ad hoc. That
 command owns: deterministic collection (`triage:collect`), per-batch classification via
-`ci/agents/regression-triage-agent.md`, live verification of HIGH-confidence `REAL_BUG`s, auto-application
+`plugins/vc-test/briefs/triage-classifier.md`, live verification of HIGH-confidence `REAL_BUG`s, auto-application
 of confirmed test-case fixes via `/qa-review-tests --fix` for the *existing* Artifact-C suites (Step 3's own
-`--fix` pass only covers the newly-authored rows), and drafting confirmed bugs into the run folder's `bugs/` ([`routing-and-fix.md`](../qa-triage-results/routing-and-fix.md) §The `/qa-bug` brief).
+`--fix` pass only covers the newly-authored rows), and drafting confirmed bugs into the run folder's `bugs/` ([`routing-and-fix.md`](../../../plugins/vc-test/skills/qa-triage-results/routing-and-fix.md) §The `/qa-bug` brief).
 
 Two side effects `/qa-test` gets nowhere else: the cross-run **flakiness history**
 (`triage:history` → `reports/regression/history.json`) and the fingerprint dedup store.
@@ -71,7 +71,7 @@ pass. **First, every one of those findings must be a row with a verdict in `test
 already requires this for 4v). Ticket mode reads only that file, and a finding that is not in it is never
 triaged. `--verify` sends **every** `REAL_BUG` candidate through `vc-fix:qa-investigate`, not just the
 HIGH-confidence ones, so each bug that reaches 5-file arrives with an evidence package. What ticket mode returns
-and what this phase does with it: [`routing-and-fix.md`](../qa-triage-results/routing-and-fix.md) §Ticket mode.
+and what this phase does with it: [`routing-and-fix.md`](../../../plugins/vc-test/skills/qa-triage-results/routing-and-fix.md) §Ticket mode.
 
 Still classified inline, using that command's taxonomy: failed ACs (confirmed at 5-verdict.1, folded back here)
 and App-Insights signals. The classes are real product bug vs test-defect (`TEST_STEPS_DEFECT` /

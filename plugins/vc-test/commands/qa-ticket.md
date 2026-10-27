@@ -132,7 +132,7 @@ absent: merge `pixel` after that wave. A PIXEL risk that runs has Lane `scripts 
 
 ## 6 — Triage, then Medium-only investigation
 
-1. The `qa-triage-results` skill, `ticket <TICKET> --min-severity P2` — only Medium+ is reproduced live (U29).
+1. `vc-test:qa-triage-results`, `ticket <TICKET> --min-severity P2` — only Medium+ is reproduced live (U29).
    `unresulted[]` rows ⇒ back to their agent once, triage again; still some ⇒ STOP, list them.
 2. **Medium+** listed `needs-review` ⇒ an `investigate` dispatch (`sonnet`) each,
    invoking `vc-fix:qa-investigate`, ≤ 3 at a time — never for a `PB-n` row: a NOT FIXED prior bug is already filed (P6).

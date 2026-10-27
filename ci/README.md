@@ -211,7 +211,6 @@ ci/
 │   ├── qa-backend-expert.md       # API, GraphQL, Admin SPA testing
 │   ├── qa-testing-expert.md       # General-purpose test execution
 │   ├── monitor-triage-agent.md    # Signal classifier for run-monitor.ts
-│   ├── regression-triage-agent.md # Failure classifier for regression triage
 │   ├── ci-sync-agent.md           # Test-case sync agent
 │   └── ci-lifecycle-agent.md      # Static quality-review agent
 ├── lib/                           # Shared runner modules (manifest, lanes, scheduler, caps, App Insights)

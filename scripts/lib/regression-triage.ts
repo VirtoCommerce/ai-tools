@@ -9,7 +9,7 @@
  *
  * It contains NO classification judgment — deciding whether a FAIL is a real
  * product bug vs a stale assertion vs bad test data is the job of the LLM
- * classifier (`ci/agents/regression-triage-agent.md`), grounded in the oracle
+ * classifier (`plugins/vc-test/briefs/triage-classifier.md`), grounded in the oracle
  * knowledge files and a live repro. This split mirrors the repo convention:
  * deterministic formulas live in scripts (compute-metrics.ts, lint-test-cases.ts),
  * judgment lives in the agent prompt.
@@ -585,7 +585,7 @@ export function readRunIssues(runDir: string, store?: TriageStore): IssueInput[]
 // Checklist, exploratory and visual findings have no RUN_ID: they live as rows of the ticket's
 // testing-checklist.md (the run's single durable record — every lane's condition is a row with a
 // verdict). This reads that file the way readRunIssues reads a run dir, so ONE classifier
-// (`ci/agents/regression-triage-agent.md`) triages both. No fingerprint store, no history: a
+// (`plugins/vc-test/briefs/triage-classifier.md`) triages both. No fingerprint store, no history: a
 // checklist item is not a regression case and has no cross-run outcome series.
 
 const CHECKLIST_FILE = "testing-checklist.md";
