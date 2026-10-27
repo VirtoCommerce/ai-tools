@@ -1,7 +1,7 @@
 {
   "name": "vc-frontend",
   "description": "Skills for the Virto Commerce storefront (vc-frontend): keep a theme fork up to date with upstream (with a pixel check that the merge left the fork's look alone), and add a storefront plugin to a backend module. Can make mistakes: review every change before merging.",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "displayName": "Virto Commerce Frontend",
   "author": {
     "name": "Virto Commerce",

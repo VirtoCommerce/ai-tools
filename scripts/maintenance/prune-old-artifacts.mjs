@@ -197,7 +197,7 @@ function resolveCurrentSprint(ticketsAbsRoot) {
 
 /** True if git has at least one tracked file under this path. A folder can exist on disk with real
  * bytes in it (dirSizeBytes counts filesystem content, not git status) while being ENTIRELY untracked —
- * e.g. a folder that holds only *.png, which is blanket-gitignored (.gitignore:68). `git rm -r` on such
+ * e.g. a folder that holds only *.png, which is gitignored repo-wide (VCST-6394). `git rm -r` on such
  * a path fails ("pathspec did not match any files") because there's nothing in the index to remove. */
 function hasTrackedFiles(absPath) {
   const rel = relative(REPO_ROOT, absPath).split('\\').join('/');

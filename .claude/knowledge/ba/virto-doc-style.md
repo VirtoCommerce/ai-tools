@@ -312,6 +312,9 @@ customer names, or claims**: only state benefits the feature actually delivers (
    `../../tickets/…` (a run folder outside the repo cannot be linked at all: copy the screenshots the doc uses beside it) — and so does a release note in `reports/ba/release-notes/`, which sits at the
    same depth. Two docs already in the repo ship broken images because the prefix was copied
    from an exemplar without checking — a `[ -f ]` loop over the extracted paths takes seconds.
+   That check proves the images exist **on your machine only**: images are never committed
+   (`reports-policy.md` §1), so everyone else sees a guide's screenshots through the tracker comment's
+   attachments (item 8), never through the repo.
 8. **Pushing a doc to a tracker ticket is a separate job with its own rules** — the artifact goes in
    the comment *in full*, and screenshots need an attach-then-wiki-markup step or they render as
    nothing. Follow `.claude/knowledge/execution/tracker-ops.md` §5c–§5d; do not improvise it.
