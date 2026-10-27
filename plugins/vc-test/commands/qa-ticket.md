@@ -51,14 +51,15 @@ brief "Read and follow `<plugin>/briefs/<x>.md`" + the paths P.
 No `/vc-test:ticket-context`, no change map, no scenarios agent, no human point 1. `<ctx>` is
 `<plugin>/skills/ticket-context`. **Rebuild**: `node <plugin>/lib/rounds.mjs bundle --key <TICKET> --base <BASE> --delta
 <DELTA> [--ticket-out <ticket.out.json beside DELTA_PREPARE>]` (`--ticket-out` when that file exists: TICKET ran) →
-prints `BUNDLE`, round N's text and ACs, for the strategy and every later step (5, 7, 8).
+prints `BUNDLE`, round N's text and ACs, for the strategy and every later step (5, 7, 8). Without `--ticket-out` it
+reuses a `<WORK>/bundle.json` stamped for round N, and rebuilds only one missing or stamped for another round.
 
 1. `node <ctx>/lib/cli.mjs prepare <TICKET> --since <record>` (its Step 0 statuses and STOPs, host-governed passes
    included) → its `prepare_path` is `DELTA_PREPARE`; then `node <plugin>/lib/rounds.mjs delta --key <TICKET> --run-dir <RUN_DIR>
    --prepare <DELTA_PREPARE>` → `DELTA` (`<WORK>/delta.json`). Exit 2 ⇒ `abort` the prepare, then STOP: `sameBuild`
    "Round <N−1> already tested this build" (P3), `cap` its `escalation`. Route exited 3 at step 0 ⇒ now
    `node <plugin>/lib/route.mjs --bundle <DELTA_PREPARE>`, handled as step 0.2; a STOP it causes `abort`s the prepare first.
-2. A `resume` first rebuilds, then gates the section: `node <plugin>/skills/qa-test-strategy/lib/check-strategy.mjs --strategy
+2. A `resume` first rebuilds (reusing round N's), then gates the section: `node <plugin>/skills/qa-test-strategy/lib/check-strategy.mjs --strategy
    <RUN_DIR>/test-strategy.md --bundle <BUNDLE> --change-map <WORK>/change-map.json --capabilities
    <WORK>/capabilities.json`; exit 0 ⇒ only `deploy --prepare` below, then `abort` the prepare and step 4; else as a
    refresh. Dispatch `vc-test:ticket-context-analyst` per `DELTA.dispatch` (TICKET; CHANGE per PR, `PRS: <ref>`) with `PREPARE =

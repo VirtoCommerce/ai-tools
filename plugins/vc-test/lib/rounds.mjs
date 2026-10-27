@@ -29,8 +29,10 @@
 //        [--ticket-out <ticket.out.json>]
 //   round N's bundle: --base (count's `bundle`, round N−1's copy; a relative path resolves against outputRoot()) with
 //   delta.json's `fields` (description, acceptance) and, with --ticket-out (the TICKET analyst ran this round), `acs[]`
-//   replaced by that output's `acs`. Writes <WORK>/bundle.json and prints its path. exit 0; 1: usage, an unreadable
-//   input, a delta of another ticket or with no `fields`, or a TICKET output with no `acs`.
+//   replaced by that output's `acs`. Writes <WORK>/bundle.json and its stamp <WORK>/bundle.round.json ({ key, round,
+//   acs: ticket | base }) and prints the bundle's path. Without --ticket-out, a bundle already stamped for this round is
+//   kept as it is (a resume reuses it; round N's TICKET acs are never downgraded). exit 0; 1: usage, an unreadable
+//   input, a delta of another ticket, of no round ≥ 2 or with no `fields`, or a TICKET output with no `acs`.
 // CLI: node plugins/vc-test/lib/rounds.mjs delta --key <KEY> --run-dir <RUN_DIR> --prepare <delta prepare.json>
 //   round N's refresh over `ticket-context prepare --since`'s output: which PRs changed, which analysts to dispatch
 //   (TICKET on new comments or a changed AC, CHANGE per changed or new PR), the prior bugs of every round (in scope and
@@ -317,6 +319,16 @@ export function rebuildBundle({ base, delta, ticketOut = null }) {
   out.fields = { ...(out.fields ?? {}), description: String(delta.fields.description ?? ""), acceptance: String(delta.fields.acceptance ?? "") };
   if (ticketOut) out.acs = structuredClone(ticketOut.acs);
   return out;
+}
+
+/**
+ * Whether `bundle` writes or keeps <WORK>/bundle.json. `stamp` is its sidecar (`{ key, round, acs }`, null when absent
+ * or its bundle is gone). A TICKET output always writes; without one, a bundle already stamped for this ticket's round
+ * is kept — a resume reuses it, and round N's TICKET-parsed acs are never replaced by round N−1's.
+ */
+export function bundlePlan({ stamp, key, round, ticketOut }) {
+  if (ticketOut) return "write";
+  return stamp && stamp.key === key && Number(stamp.round) === Number(round) ? "keep" : "write";
 }
 
 /** Archive a closed round into <runDir>/rounds/round-<n>/: move its row files and checklist, copy its verdict. */
@@ -656,12 +668,24 @@ function bundleCmd(argv, key) {
   const root = outputRoot();
   const delta = readJsonFile(deltaPath);
   if (delta.key != null && delta.key !== key) fail(`${deltaPath} is ${delta.key}'s delta, not ${key}'s`);
+  if (!Number.isInteger(Number(delta.round)) || Number(delta.round) < 2) fail(`${deltaPath}: no round ≥ 2 (round ${delta.round})`);
+  const work = workDir(key);
+  const file = join(work, "bundle.json");
+  // the round stamp is a sidecar: bundle.schema.json allows no extra top-level key
+  const stampFile = join(work, "bundle.round.json");
+  let stamp = null;
+  if (existsSync(file) && existsSync(stampFile)) { try { stamp = JSON.parse(readFileSync(stampFile, "utf8")); } catch { stamp = null; } }
+  if (bundlePlan({ stamp, key, round: delta.round, ticketOut: !!ticketPath }) === "keep") {
+    console.error(`kept ${file}: already Round ${delta.round}'s (acs from ${stamp.acs === "ticket" ? "its TICKET analyst" : "the base"})`);
+    console.log(file);
+    process.exit(0);
+  }
   let bundle;
   try {
     bundle = rebuildBundle({ base: readJsonFile(resolve(root, basePath)), delta, ticketOut: ticketPath ? readJsonFile(ticketPath) : null });
   } catch (e) { fail(e.message); }
-  const file = join(workDir(key), "bundle.json");
   writeFileSync(file, `${JSON.stringify(bundle, null, 2)}\n`);
+  writeFileSync(stampFile, `${JSON.stringify({ key, round: Number(delta.round), acs: ticketPath ? "ticket" : "base" })}\n`);
   console.log(file);
   process.exit(0);
 }
