@@ -32,6 +32,7 @@
  *   npm run regression:plan -- smoke --preflight --preflight-out <path>   # also write the RegressionPreflight JSON to <path>
  *   npm run regression:plan -- smoke --preflight --run-id <RUN_ID>        # this run's own test-run-status.json is not a lock
  *   npm run regression:plan -- smoke --preflight --accept drift:<id>[,…]  # "proceed as is" on those drift BLOCKs (WARN)
+ *   npm run regression:plan -- smoke --preflight --run-blocked   # run the cases the pre-flight predicts will BLOCK (default: recorded BLOCKED, not run)
  *   npm run regression:plan -- 042,078 --cases critical[,high]            # size only those tiers (same filter as suites:filter)
  *   npm run regression:plan -- 042,078 --ids SMK-008,SMK-014              # size an exact case set
  *
@@ -70,6 +71,7 @@ function parseArgs(argv: string[]): {
   preflightOut: string | null;
   runId: string | null;
   accept: string[];
+  runBlocked: boolean;
   cases: string[];
   alsoIds: string[];
   ids: string[];
@@ -100,6 +102,7 @@ function parseArgs(argv: string[]): {
     cases: listOf("--cases"),
     alsoIds: listOf("--also-ids"),
     ids: listOf("--ids"),
+    runBlocked: flags.has("--run-blocked"),
     concurrency: {
       browser: numFlag("browsers", DEFAULT_CONCURRENCY.browser),
       fastpath: numFlag("fastpath", DEFAULT_CONCURRENCY.fastpath),
@@ -128,7 +131,7 @@ function scopeCases(suites: readonly ManifestSuite[], sel: { tiers: string[]; al
 }
 
 async function main(): Promise<void> {
-  const { selection, json, verbose, concurrency, preflight: wantPreflight, preflightOut, runId, accept, cases, alsoIds, ids } = parseArgs(process.argv.slice(2));
+  const { selection, json, verbose, concurrency, preflight: wantPreflight, preflightOut, runId, accept, runBlocked, cases, alsoIds, ids } = parseArgs(process.argv.slice(2));
   // Same rules `suites:filter` applies to the same flags.
   if (ids.length > 0 && (cases.length > 0 || alsoIds.length > 0)) {
     console.error("--ids selects an exact case set; --cases (optionally with --also-ids) selects a tier — pass one or the other, never both");
@@ -194,6 +197,7 @@ async function main(): Promise<void> {
       manifestProblems: problems.map((p) => ({ suiteId: p.suiteId, kind: p.kind, detail: p.detail })),
       root: process.cwd(), ...(runId ? { runId } : {}), accept,
       browserSuites: suites.filter((s) => classifyLane(s) === "browser").map((s) => s.id),
+      skipBlocked: !runBlocked,
     });
     // Off the plan: a required module is not deployed, or every case needs a password nobody has.
     const gated = new Set([...pf.gating.gated, ...pf.secrets.gated].map((g) => g.suite));

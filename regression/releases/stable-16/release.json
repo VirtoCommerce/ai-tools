@@ -28,7 +28,8 @@
    "modules": [
     "Platform",
     "Theme (vc-frontend)"
-   ]
+   ],
+   "subtask": "VCST-6404"
   },
   {
    "id": "W1",
@@ -63,7 +64,8 @@
    ],
    "dependsOn": [
     "W0"
-   ]
+   ],
+   "subtask": "VCST-6405"
   },
   {
    "id": "W2",
@@ -105,7 +107,8 @@
    ],
    "dependsOn": [
     "W0"
-   ]
+   ],
+   "subtask": "VCST-6406"
   },
   {
    "id": "W3",
@@ -152,7 +155,8 @@
    ],
    "dependsOn": [
     "W0"
-   ]
+   ],
+   "subtask": "VCST-6407"
   },
   {
    "id": "W4",
@@ -180,7 +184,8 @@
    ],
    "dependsOn": [
     "W0"
-   ]
+   ],
+   "subtask": "VCST-6408"
   },
   {
    "id": "W5",
@@ -223,7 +228,8 @@
    ],
    "dependsOn": [
     "W0"
-   ]
+   ],
+   "subtask": "VCST-6409"
   },
   {
    "id": "W6",
@@ -239,7 +245,8 @@
    ],
    "dependsOn": [
     "W0"
-   ]
+   ],
+   "subtask": "VCST-6410"
   },
   {
    "id": "W7",
@@ -268,7 +275,8 @@
    ],
    "dependsOn": [
     "W0"
-   ]
+   ],
+   "subtask": "VCST-6411"
   },
   {
    "id": "WX",
@@ -298,7 +306,8 @@
     "W5",
     "W6",
     "W7"
-   ]
+   ],
+   "subtask": "VCST-6412"
   }
  ]
 }
