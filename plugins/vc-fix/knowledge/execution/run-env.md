@@ -72,7 +72,8 @@ on two envs) never write the same file.
 - **What lands there:** `/qa-verify-fix`'s `verification-report.md`, `verification-summary.json`,
   `evidence.html` and screenshots; an investigation package as `evidence-<UTCstamp>/`; a bug report the run
   files, as `bugs/<critical-high|medium|low>/BUG-*.md` with its screenshots in `bugs/screenshots/<slug>/`.
-  `/qa-bug` writes there only when its caller names the run folder; standalone it writes `reports/bugs/`.
+  `/qa-bug` writes there when its caller names the run folder, or with `--evidence` when the package sits in
+  the run folder (the report rules of `bug-from-package.md`); otherwise it writes `reports/bugs/`.
 - **Screenshots:** a Playwright lane writes only inside its allowed roots (its output folder and the project)
   and creates no folder. `use` creates `screenshots/` and prints `SCREENSHOTS=` in the form a lane can write —
   project-relative inside the project. Outside it, a lane started with `--allow-unrestricted-file-access`

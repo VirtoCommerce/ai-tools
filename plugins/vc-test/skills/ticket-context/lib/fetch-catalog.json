@@ -19,13 +19,14 @@
   },
   "gh": [
     { "kind": "graphql", "expect": "{ data: { repository: { pullRequest: { reviewThreads: { nodes: [{ isResolved }] } } } } } — the pinned review-thread query's answer" },
-    { "kind": "diff", "expect": "the pull request's unified diff, as text (not JSON)" },
+    { "kind": "diff", "expect": "the unified diff, as text (not JSON): of the pull request, or of the compare range {from}...{to} the path names" },
     { "kind": "search/issues", "match": "^search/issues\\?", "expect": "{ items: [issues and pull requests: number, title, state, created_at, html_url, repository_url (https://api.github.com/repos/{owner}/{repo} — the PR's repository is read from it), pull_request] } — GitHub search results" },
     { "kind": "search/commits", "match": "^search/commits\\?", "expect": "{ items: [commits: sha, repository{ full_name }] } — GitHub commit search results" },
     { "kind": "commit pulls", "match": "^repos/[^/]+/[^/]+/commits/[^/]+/pulls$", "expect": "[pull requests associated with the commit: number, …]" },
     { "kind": "check-runs", "match": "^repos/[^/]+/[^/]+/commits/[^/]+/check-runs", "expect": "{ check_runs: [{ name, status, conclusion }] }" },
     { "kind": "pr files", "match": "^repos/[^/]+/[^/]+/pulls/\\d+/files", "expect": "[changed files: filename, status, additions, deletions, patch] — that one page" },
     { "kind": "pr comments", "match": "^repos/[^/]+/[^/]+/pulls/\\d+/comments", "expect": "[review comments: path, line, original_line, body, created_at]" },
+    { "kind": "compare", "match": "^repos/[^/]+/[^/]+/compare/[^/]+$", "expect": "the compare JSON for {from}...{to}: status (ahead | behind | identical | diverged), ahead_by, behind_by" },
     { "kind": "pr", "match": "^repos/[^/]+/[^/]+/pulls/\\d+$", "expect": "the pull request JSON: title, state, merged_at, created_at, head{ sha }, base{ ref }, body" }
   ]
 }

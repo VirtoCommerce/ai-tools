@@ -353,3 +353,60 @@ GET {{BACK_URL}}/api/order/customerOrders/number/{{ORDER_NUMBER}}
 [ERRORS label=introspect_order] errors[] empty {SPEC}
 [DATA label=introspect_order] data.__type.fields[?name=withPrices] is non-null {HYPOTHESIS} verify whether CustomerOrderType exposes a field (withPrices, redactedAspects, or equivalent) letting a caller distinguish a withheld price from a genuine zero, the way OrderOperation.WithPrices/withPrices does on the REST/Admin surface — graphql-schema.md's 2026-09-10 snapshot records no such field, which would make this assertion FAIL and confirm the S12 parity gap the xAPI storefront surface still has relative to the order module's own REST/Admin surfaces
 [ERRORS label=rest_get] HTTP 200 {OBSERVED}","[ADMIN] the REST total captured (REST_TOTAL) matches what the Admin SPA order-totals widget displays for the same order number, confirming three-way parity (GraphQL / REST / Admin UI) for a permitted caller's own data","errors[] non-empty on any op; data.order.total.amount does not equal the REST-captured total for the same order number (GraphQL/REST value drift); introspection shows no withPrices-equivalent field — this is the DOCUMENTED S12 gap, not a regression from this PR (vc-module-experience-api is untouched by VCST-3912), but it means a denied B2B admin viewing orders through the storefront/xAPI surface cannot be distinguished from one with a genuine $0 order; 4xx/5xx on /graphql or the REST call",none,VCST-3912 · Archetype:PARITY · Technique:EG,Draft
+ORD-GQL-015,xOrder — orders: an OR clause in the filter never widens the list beyond the caller's own orders,GraphQL > xOrder > Data Isolation,Critical,BL-AUTH-006,,"Runner-native. ORG_USER authenticated. ORG_USER sits in an organization that holds orders placed by OTHER customers (the leak surface) and has at least one order of its own. The caller's id and its unfiltered totalCount are captured at run time; no id, order number or count is written into the row. Fix under test: vc-module-x-order PR #57 (scope moved from the parsed keyword into the AND-ed criteria CustomerId). A filter starting with OR is expected to return the caller's whole own scope, so this case never asserts that the status term narrows the result. Each list is its own request: three heavy order searches in one request intermittently fail one field with INVALID_OPERATION on the shared stand.",storeId={{STORE_ID}},"[AUTH role=ORG_USER]
+[GQL-OP me]
+query { me { id } }
+[GQL-EXEC me]
+[GQL-CAPTURE me.data.me.id → CALLER_ID]
+[GQL-OP own]
+query { orders(first: 50) { totalCount items { id number customerId organizationId } } }
+[GQL-EXEC own]
+[GQL-CAPTURE own.data.orders.totalCount → OWN_TOTAL]
+[GQL-OP or_only]
+query Q($f: String) { orders(first: 50, filter: $f) { totalCount items { id number customerId organizationId } } }
+[GQL-VARS or_only] {""f"":""OR""}
+[GQL-EXEC or_only]
+[GQL-OP or_status]
+query Q($f: String) { orders(first: 50, filter: $f) { totalCount items { id number customerId organizationId } } }
+[GQL-VARS or_status] {""f"":""OR status:\""Processing\""""}
+[GQL-EXEC or_status]","[ERRORS label=me] errors[] empty {SPEC} (VCST-6536)
+[DATA label=me] data.me.id is non-null {SPEC} (VCST-6536)
+[ERRORS label=own] errors[] empty {SPEC} (VCST-6536)
+[COUNT label=own] data.orders.totalCount > 0 {OBSERVED}
+[COUNT label=own] data.orders.items[*?customerId!={{CALLER_ID}}].length = 0 {BL} (BL-AUTH-006)
+[ERRORS label=or_only] errors[] empty {SPEC} (VCST-6536)
+[COUNT label=or_only] data.orders.items[*?customerId!={{CALLER_ID}}].length = 0 {BL} (BL-AUTH-006)
+[COUNT label=or_only] data.orders.totalCount <= {{OWN_TOTAL}} {BL} (BL-AUTH-006)
+[ERRORS label=or_status] errors[] empty {SPEC} (VCST-6536)
+[COUNT label=or_status] data.orders.items[*?customerId!={{CALLER_ID}}].length = 0 {BL} (BL-AUTH-006)
+[COUNT label=or_status] data.orders.totalCount <= {{OWN_TOTAL}} {BL} (BL-AUTH-006)","[API] errors[] is empty in the GraphQL response
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql",none,VCST-6536 · Archetype:SCOPE · Technique:EG · Purpose:FUNC · Catches:VCST-6536 | Promoted: REG-2026-10-27-0036 (2026-10-26),Automated
+ORD-GQL-016,xOrder — organizationOrders: an OR clause in the filter never widens the list beyond the requested organization,GraphQL > xOrder > Data Isolation,Critical,BL-AUTH-006,,"Runner-native. ORG_USER authenticated, a member of an organization that holds orders. The caller's own organizationId and the organization's unfiltered totalCount are captured at run time (me.contact.organizationId); nothing is written into the row. Fix under test: vc-module-x-order PR #57 (organizationId moved from the parsed keyword into the AND-ed criteria OrganizationId). organizationOrders is documented as all orders of the caller's organization; a filter starting with OR is expected to return that whole scope, so this case never asserts that the status term narrows the result. Each list is its own request: three heavy order searches in one request intermittently fail one field with INVALID_OPERATION on the shared stand.",storeId={{STORE_ID}},"[AUTH role=ORG_USER]
+[GQL-OP me]
+query { me { id contact { organizationId } } }
+[GQL-EXEC me]
+[GQL-CAPTURE me.data.me.contact.organizationId → ORG_ID]
+[GQL-OP org_all]
+query Q($orgId: String) { organizationOrders(organizationId: $orgId, first: 50) { totalCount items { id number customerId organizationId } } }
+[GQL-VARS org_all] {""orgId"":""{{ORG_ID}}""}
+[GQL-EXEC org_all]
+[GQL-CAPTURE org_all.data.organizationOrders.totalCount → ORG_TOTAL]
+[GQL-OP org_or]
+query Q($orgId: String, $f: String) { organizationOrders(organizationId: $orgId, first: 50, filter: $f) { totalCount items { id number customerId organizationId } } }
+[GQL-VARS org_or] {""orgId"":""{{ORG_ID}}"",""f"":""OR""}
+[GQL-EXEC org_or]
+[GQL-OP org_or_status]
+query Q($orgId: String, $f: String) { organizationOrders(organizationId: $orgId, first: 50, filter: $f) { totalCount items { id number customerId organizationId } } }
+[GQL-VARS org_or_status] {""orgId"":""{{ORG_ID}}"",""f"":""OR status:\""Processing\""""}
+[GQL-EXEC org_or_status]","[ERRORS label=me] errors[] empty {SPEC} (VCST-6536)
+[DATA label=me] data.me.contact.organizationId is non-empty GUID {SPEC} (VCST-6536)
+[ERRORS label=org_all] errors[] empty {SPEC} (VCST-6536)
+[COUNT label=org_all] data.organizationOrders.totalCount > 0 {OBSERVED}
+[COUNT label=org_all] data.organizationOrders.items[*?organizationId!={{ORG_ID}}].length = 0 {BL} (BL-AUTH-006)
+[ERRORS label=org_or] errors[] empty {SPEC} (VCST-6536)
+[COUNT label=org_or] data.organizationOrders.items[*?organizationId!={{ORG_ID}}].length = 0 {BL} (BL-AUTH-006)
+[COUNT label=org_or] data.organizationOrders.totalCount <= {{ORG_TOTAL}} {BL} (BL-AUTH-006)
+[ERRORS label=org_or_status] errors[] empty {SPEC} (VCST-6536)
+[COUNT label=org_or_status] data.organizationOrders.items[*?organizationId!={{ORG_ID}}].length = 0 {BL} (BL-AUTH-006)
+[COUNT label=org_or_status] data.organizationOrders.totalCount <= {{ORG_TOTAL}} {BL} (BL-AUTH-006)","[API] errors[] is empty in the GraphQL response
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql",none,VCST-6536 · Archetype:SCOPE · Technique:EG · Purpose:FUNC · Catches:VCST-6536 | Promoted: REG-2026-10-27-0036 (2026-10-26),Automated

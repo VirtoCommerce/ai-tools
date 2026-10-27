@@ -34,6 +34,16 @@ body, diff and CI (a PR opened before the cutoff but merged or reworked after it
 external, Confluence and design pages as they are now, the stand's deployed build, and the ladder's per-rung
 `found` counts.
 
+**Round N (`--since <round record>`, P2-2):** the round record (`rounds.mjs close`'s `round-<N>.json`, a path
+relative to the project root) makes `prepare` a delta read, never cached and never composed: the ticket's fields
+and its PR ladder as above, and no attachment, page, design, linked issue or sibling. Each PR carries `delta` —
+`unchanged` (head is the recorded sha: no diff read), `changed` (`diff.patch` from the recorded sha, `from: <sha>`;
+`from: null` with the whole PR diff when that sha is no ancestor of the head) or `new` (read in full); `ticket.json`
+keeps only the comments after the record's `closedAt`, and `prepare.json.delta` counts them, says whether the
+description or AC text changed since the round's bundle copy (`acceptance_changed`), and gives each out-of-scope
+bug's status (`bug_status`). Not with `--before`. The caller runs Step 4's `deploy` on it and `abort` when done;
+Steps 1–3 and 5–7 do not run on it.
+
 - `status: "cached"` → deployment is never cached: run
   `node "<skill>/lib/cli.mjs" redeploy <KEY> --bundle <bundle_path>`, then go to Step 7. `redeploy`
   exit 2 or 3 means the cached bundle no longer validates or reads: run `prepare <KEY> --fresh` (same

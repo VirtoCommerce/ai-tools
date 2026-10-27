@@ -27,7 +27,7 @@ export function mergeChange(parts) {
 }
 
 // GitHub owner/repo are case-insensitive: an agent entry is matched to prepare's PR on the lower-cased repo#number.
-const prKey = (repo, number) => `${repo}#${number}`.toLowerCase();
+export const prKey = (repo, number) => `${repo}#${number}`.toLowerCase();
 // The only keys taken from the CHANGE agent. Identity (repo, number, state, merged, head_sha), context_only and
 // gap come from prepare's data: an agent that misreports a PR as merged must not move redeploy or the gate.
 const ANALYTICAL = Object.freeze(["layers", "operations", "endpoints", "settings", "tests_changed", "untested", "fate", "ci", "open_threads", "threads", "hotspots", "claims"]);
@@ -43,6 +43,25 @@ function capLists(analysis, ref, gaps) {
   return analysis;
 }
 const isChangeGap = (g) => g.where === "change" || g.where.startsWith("change.");
+
+/**
+ * One `change.prs[]` entry: prepare's PR `p`, the CHANGE agent's entry `a` for it, its deploy row `dp`; list caps cut
+ * into `capGaps`. Null when the agent left a readable product PR out. Shared with round N's bundle (rounds.mjs), so a
+ * PR read in round N lands in the bundle exactly as round 1 would have put it.
+ */
+export function prEntry(p, a, dp, capGaps) {
+  // A whole-PR gap from prepare wins over any agent entry; a context-only PR is not change surface, so the agent's entry for it (if any) is ignored too.
+  if (p.gap || p.context_only) a = undefined;
+  if (!a && !p.gap && !p.context_only) return null;
+  const identity = { repo: p.repo, number: p.number, state: p.state || "unknown", merged: !!p.merged, head_sha: p.head_sha ?? "" };
+  const analysis = a ? capLists(pick(a, ANALYTICAL), p.ref, capGaps) : { layers: {}, operations: [], endpoints: [], settings: [], tests_changed: [], untested: [],
+    fate: p.gap ? `not analysed (${p.gap.reason})` : "context only — not change surface", ci: "not read", open_threads: 0, hotspots: [], claims: [] };
+  const fallback = p.gap?.reason === "over-cap" ? "over-cap — not checked" : p.context_only ? "context only — not change surface" : "deployment not checked";
+  // found_via: a companion named in the body of the ladder PR it names (one hop) — provenance from prepare, never the agent.
+  return { ...identity, ...analysis, ...(p.gap ? { gap: p.gap } : {}), ...(p.found_via ? { found_via: p.found_via } : {}),
+    ...(Array.isArray(p.added) ? { added: p.added } : {}), context_only: !!p.context_only, // added: from prepare's files list, never the agent
+    artifact: dp?.artifact ?? null, deployed: dp?.deployed ?? "UNKNOWN", deployed_reason: dp?.deployed_reason ?? fallback };
+}
 
 export function compose(prep, outs) {
   const { ticket: t, materials: m, change: c, join: j, deploy: d, known: k } = outs;
@@ -65,18 +84,8 @@ export function compose(prep, outs) {
   const prs = [];
   const capGaps = [];
   for (const p of prep.prs) {
-    // A whole-PR gap from prepare wins over any agent entry; a context-only PR is not change surface, so the agent's entry for it (if any) is ignored too.
-    const a = (p.gap || p.context_only) ? undefined : agentPrs.get(prKey(p.repo, p.number));
-    if (!a && !p.gap && !p.context_only) continue; // the agent left it out: gate rule 3 names it
-    const identity = { repo: p.repo, number: p.number, state: p.state || "unknown", merged: !!p.merged, head_sha: p.head_sha ?? "" };
-    const analysis = a ? capLists(pick(a, ANALYTICAL), p.ref, capGaps) : { layers: {}, operations: [], endpoints: [], settings: [], tests_changed: [], untested: [],
-      fate: p.gap ? `not analysed (${p.gap.reason})` : "context only — not change surface", ci: "not read", open_threads: 0, hotspots: [], claims: [] };
-    const dp = dep.get(p.ref);
-    const fallback = p.gap?.reason === "over-cap" ? "over-cap — not checked" : p.context_only ? "context only — not change surface" : "deployment not checked";
-    // found_via: a companion named in the body of the ladder PR it names (one hop) — provenance from prepare, never the agent.
-    prs.push({ ...identity, ...analysis, ...(p.gap ? { gap: p.gap } : {}), ...(p.found_via ? { found_via: p.found_via } : {}),
-      ...(Array.isArray(p.added) ? { added: p.added } : {}), context_only: !!p.context_only, // added: from prepare's files list, never the agent
-      artifact: dp?.artifact ?? null, deployed: dp?.deployed ?? "UNKNOWN", deployed_reason: dp?.deployed_reason ?? fallback });
+    const e = prEntry(p, agentPrs.get(prKey(p.repo, p.number)), dep.get(p.ref), capGaps);
+    if (e) prs.push(e); // null: the agent left it out — gate rule 3 names it
   }
 
   // No kb.out.json means the kb step never ran. `kb: []` would read as "the base knows nothing", so it becomes the

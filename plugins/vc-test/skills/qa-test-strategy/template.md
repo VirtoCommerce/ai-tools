@@ -10,7 +10,7 @@
 
 Status: DRAFT | APPROVED (<who>, <date>) | CHANGED (<n> edits) | AUTO (--yes) · Depth label: <light | standard | deep> (computed)
 Blocked: <F6 — quote the NOT DEPLOYED line | no>
-Build: <PR#n @ sha per repo> · Stand: <env> · Deployed: <yes | NO → F6 | UNKNOWN → unverified> · Previous: <Round N−1 verdict, build | none>
+Build: <<repo>#<n> @ <sha> per PR | none> · Stand: <env> · Deployed: <yes | NO → F6 | UNKNOWN → unverified> · Previous: <Round N−1 verdict, build | none>
 Floors fired: <F1 (signal) · F3 (signal) · …> · not fired: <F2, F4, …>[ · skipped: <F5 (not available in this install: <capability>)>]
 Change map: <the --change-map path | none>
 
@@ -47,6 +47,14 @@ Regression-averse <✔/—: why> · Process-compliant <✔/—: why>
 | S | Class | What it does | Bug it hunts | Why likely | Score | Proof | Writes |
 |---|---|---|---|---|---|---|---|
 | S-1 | <1–6> | <the action on the stand> | <the bug it hunts> | <why a bug is likely here> · R1 | <n> | <what proves it> | <none / what it writes> |
+
+<!-- ROUND ≥ 2 ONLY, VC-TEST ONLY — delete in round 1 and outside vc-test (the heading, the table and this comment).
+     `rounds.mjs append` writes it with the round: one row per in-scope bug of every earlier round, each re-run as its R
+     (Level not below the Severity — clause 14). Reproduction: `spec <path>` | `package <path>` | `none`. rounds.md §Round N in vc-test. -->
+### Prior bugs
+| PB | Bug | Severity | Found | Reproduction | R |
+|---|---|---|---|---|---|
+| PB-1 | <key — title> | <Critical/High/Medium> | Round <n> | <spec <path> / package <path> / none> | R<n> |
 
 ### Artifacts
 | Artifact | Decision |

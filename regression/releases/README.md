@@ -6,6 +6,8 @@ can continue a wave someone else started.
 
 ![Parallel release regression](release-regression-flow.svg)
 
+_Redraw it with `npm run release:diagram` (`scripts/regression/release-flow-diagram.mjs`): edit the boxes there, run it, commit the SVG._
+
 - **Plan a release:** `/qa-test-plan stable <N> [--ref <branch>] --ticket <KEY>` (the same command plans a sprint: `/qa-test-plan 26-20`)
 - **Run, triage and publish one wave:** `/qa-run stable:<N> <wave> --claim` · overview: `/qa-run stable:<N> status`
 - **Check a folder:** `npm run release:check -- <release>` (CI runs `--all`)

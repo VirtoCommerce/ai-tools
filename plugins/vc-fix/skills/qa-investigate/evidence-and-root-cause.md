@@ -30,9 +30,34 @@ npx tsx scripts/bundle-evidence.ts VCST-5391 --sprint=Sprint-current --check
 
 > **In `vc-fix`:** `scripts/regression/bundle-evidence.ts` is full `vc-qa` plugin only, not shipped here.
 > Create the package dir by hand at the path in "Package location" below (`<run folder>/evidence-<UTCstamp>/`), with `screenshots/ network/ console/ har/`
-> subfolders, and write `evidence-index.md` / `root-cause.md` yourself following the manifest/worksheet
-> shapes below (Part A's table is the `evidence-index.md` checklist; Part B is `root-cause.md`). There is
-> no `--check` completeness script — self-verify against Part A's **M** rows before writing the bug report.
+> subfolders, and write `evidence-index.md` / `root-cause.md` yourself: Part B is `root-cause.md`, and
+> `evidence-index.md` has the shape below. There is no `--check` completeness script — self-verify against
+> Part A's **M** rows before writing the bug report.
+>
+> Keep the three slot names, the `## Steps to reproduce` heading and the row numbers exactly as written:
+> `/vc-fix:qa-bug --evidence` finds them by name ([`bug-from-package.md`](../../knowledge/execution/bug-from-package.md) §Complete).
+
+```markdown
+# Evidence Index — <ticket-key>
+
+**Env:** `<TEST_ENV>` — <FRONT_URL> / <BACK_URL>
+**Symptom:** <one line, observable>
+
+## Header slots
+| slot | value |
+|------|-------|
+| TRACE_ID | <row 5: Request-Id / traceparent of the failing request, or `none — the stand sends neither header`> |
+| BUILD_VERSIONS | <row 12: Platform <ver>, Theme <ver>, module <id> <ver> — one entry per package> |
+| REPRO_RATE | <row 14: X/10, only if intermittent> |
+
+## Steps to reproduce
+1. <row 15: numbered steps of the reproducing run — role and store, page or call, input, the action that shows the failure>
+
+## Captured artifacts
+| # | artifact | path / value |
+|---|----------|--------------|
+| <Part A row #> | <Part A artifact name> | <package path; row 7: the HAR path, or `none — the lane records no HAR`; row 10: the App Insights file, or `N/A for this env — <fallback log path>`> |
+```
 
 What the script does (full `vc-qa` plugin only):
 - Resolves `TEST_ENV` and pre-fills the **env header** (TEST_ENV, FRONT_URL/BACK_URL, ENV_RISK) into the
@@ -77,9 +102,13 @@ rows fire only when the trigger applies.
 | 12 | **Deployed versions** (platform + modules + theme) | always (header + P1 + §8C) | per `profile.buildVerify.source` (`tracker-ops.md` §5): native → **`vc-deploy-dev` `backend/packages.json` + `theme/artifact.json`** via GitHub MCP (branch = `TEST_ENV`: `vcst-qa`/`vcptcore`/`virtostart`); client → `{BACK_URL}/api/platform/modules`. `{BACK_URL}/#!/workspace/systeminfo` is a live cross-check | manifest header | **M** |
 | 13 | **Source evidence** (file path + line + quote) | browser/logs don't explain it | GitHub MCP `search_code` / `get_file_contents` (flow §8) | `source/findings.md` | C |
 | 14 | **Reproduction rate** (X/10) | intermittent | note in manifest | `evidence-index.md` | C |
+| 15 | **Steps to reproduce** — numbered, as the reproducing run took them | always | write them as you go | `evidence-index.md` `## Steps to reproduce` | **M** |
 
 > **M\*** — mandatory *whenever a server-side layer is involved*. A storefront-only CSS bug needs no trace
 > ID or App Insights; anything touching REST/xAPI/Admin/jobs does. When in doubt, capture it.
+> **An env that cannot give one is stated, not skipped:** a stand that sends no `Request-Id` / `traceparent` ⇒
+> `TRACE_ID` says so; an env with no App Insights ⇒ row 10 says `N/A for this env` and names the fallback log
+> (`bug-investigation-flow.md` §9), saved in the package under `console/server-*.txt`.
 
 ### Capture rules that prevent the usual misses
 

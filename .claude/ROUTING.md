@@ -177,6 +177,9 @@ Roster detail (model, colour, team framework): [`knowledge/agents/README.md`](kn
 - `vc-test:ticket-context-analyst` (the vc-test plugin's) — Read-only, no-browser ticket reader for `/vc-test:ticket-context` (TICKET / MATERIALS / CHANGE modes); never writes to a tracker, a PR or the `kb`
 - `vc-test:fetch` (the vc-test plugin's) — Host-governed reads for `/vc-test:ticket-context`: answers one `needs-fetch` pass through the host's MCP servers (read tools only), writes only answer files in the raw folder and returns a count line, never content.
 - `vc-test:strategy-verifier` (the vc-test plugin's) — Read-only, independent gate check `/vc-test:qa-test-strategy` dispatches on a Critical risk before approval: re-derives §Gate from the bundle and the strategy, `APPROVE`/`REJECT`, never edits.
+- `vc-test:change-map` (the vc-test plugin's) — Layer 0 of `/vc-test:qa-ticket`: Read/Grep/Glob only, returns the change map as JSON, which `check-change-map.mjs --agent` saves from its transcript and gates.
+- `vc-test:checklist-writer` (the vc-test plugin's) — Writes the thin AC checklist (`testing-checklist.md`) of a `/vc-test:qa-ticket` run; no shell, no network, no browser.
+- `vc-test:verdict-writer` (the vc-test plugin's) — Writes `verdict.md` and `verdict.json` of a `/vc-test:qa-ticket` run from its result files; Read/Write only.
 - `pr-review-reader` — Read-only helper of `/review-pr-gh-workflow` (Read only, by the paths its brief lists — no search, no shell, no writes, no network); reads what the lead saved and returns requests for anything else
 
 **BA Team (+ shared-instructions):**

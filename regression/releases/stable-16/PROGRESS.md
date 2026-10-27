@@ -4,14 +4,14 @@
 
 Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1 · 2.59.0
 
-**Executed 2057 · PASS 1479 · FAIL 171 · BLOCKED 358** · ledger 190 rows
+**Executed 1997 · PASS 1481 · FAIL 171 · BLOCKED 296** · ledger 345 rows
 
 | Wave | Scope | Owner | Status | Planned | Executed | PASS | FAIL | BLOCKED | FAIL/BLOCKED without a verdict | Ledger | Runs |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| W0 | Smoke gate | Elena Kutasina | DONE | 149 | 149 | 100 | 4 | 19 | 0 | 5 | REG-2026-10-12-1659 |
-| W1 | Platform & infrastructure | Elena Kutasina | DONE | 538 | 538 | 436 | 19 | 67 | 0 | 26 | REG-2026-10-13-0035 REG-2026-10-13-1241-UCP |
-| W2 | Catalog & search | Elena Kutasina | TRIAGED | 611 | 553 | 445 | 53 | 51 | 0 | 58 | REG-2026-10-13-W2 |
-| W3 | Purchase flow | Elena Kutasina | RUN_DONE | 900 | 817 | 498 | 95 | 221 | 29 | 101 | REG-2026-10-15-W3 |
+| W0 | Smoke gate | Elena Kutasina | RUN_DONE | 149 | 149 | 100 | 4 | 19 | 19 | 5 | REG-2026-10-12-1659 |
+| W1 | Platform & infrastructure | Elena Kutasina | RUN_DONE | 538 | 538 | 436 | 19 | 67 | 72 | 26 | REG-2026-10-13-0035 REG-2026-10-13-1241-UCP |
+| W2 | Catalog & search | Elena Kutasina | RUN_DONE | 611 | 553 | 445 | 53 | 51 | 49 | 58 | REG-2026-10-13-W2 |
+| W3 | Purchase flow | Elena Kutasina | TRIAGED | 840 | 757 | 500 | 95 | 159 | 0 | 256 | REG-2026-10-15-W3 REG-2026-10-26-1847-W3R REG-2026-10-26-2010-W3R2 REG-2026-10-26-2044-W3R3 |
 | W4 | Returns, B2B, accounts | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W5 | Marketing & content | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
 | W6 | Theme cross-cutting + gap sessions | — | NOT_STARTED | — | — | — | — | — | — | 0 | — |
@@ -22,14 +22,15 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 
 | Verdict | Rows |
 |---|---|
-| REAL_BUG | 40 |
-| BY_DESIGN | 3 |
-| TEST_DEFECT | 50 |
-| DATA | 57 |
-| ENV_CONFIG | 34 |
-| DUPLICATE | 2 |
+| REAL_BUG | 42 |
+| BY_DESIGN | 7 |
+| TEST_DEFECT | 69 |
+| DATA | 95 |
+| ENV_CONFIG | 100 |
+| NOT_TESTABLE | 23 |
+| DUPLICATE | 3 |
 | FLAKY | 1 |
-| PENDING_DECISION | 3 |
+| PENDING_DECISION | 5 |
 
 ## Not run yet
 
@@ -39,6 +40,8 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | W3 | 065 | 20 | not started before the usage limit |
 | W3 | 050b1 050b2 050b3 050b4 050b5 050c | 13 | browser lane of these GraphQL suites not run |
 | W3 | 050h | 1 | manual case |
+| W3 | 007 | 38 | not deployed: VirtoCommerce.SalesRep (Publish-to-Customer / Sales-Rep list sharing) — run 2026-10-15 recorded them BLOCKED, before the pre-… |
+| W3 | 007 014 028 029 030 037 072e | 22 | not executed in the run (recorded BLOCKED): one login per persona, lane time, or the parallel lanes' named-cart contention (CHK-022) — 007 … |
 
 ## Real bugs awaiting filing
 
@@ -51,16 +54,7 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | W2 | IMGTL-007 | ImageTools never thumbnails .jpg originals, so JPEG quality settings cannot take effect | no | pre-existing; also IMGTL-024, IMGTL-025 |
 | W2 | IMGTL-024 | JPEG 50% vs 95% comparison impossible: no JPEG thumbnail is produced from .jpg sources | no | same defect as IMGTL-007, file once |
 | W2 | IMGTL-025 | Task over 5 .jpg images and 1 .png: thumbnails only for the .png, success notification with 0 errors | no | same defect as IMGTL-007, file once |
-| W2 | IMGTL-026 | Thumbnail task shows no processed/total progress; the push notification reports 0 of 0 although 13 thumbnails were written | unknown | low, UX |
 | W2 | CHAN-008 | Channel completeness stays 0% after an evaluation that scored the products 62/25/25% | no | pre-existing, not filed yet |
-| W3 | ORDA-076 | Order PUT with an invalid currency or a malformed createdDate returns 500 instead of a validation error | no |  |
-| W3 | ORDA-104 | Order price protection leaks: a user without order:read_prices gets capture and refund amounts via childrenOperations and the Admin operati… | yes |  |
-| W3 | ORDA-113 | Admin operations tree does not mirror the masked price state for a price-denied user | yes | same defect as ORDA-104, file once |
-| W3 | ORDA-081 | A refund beyond the captured / remaining amount is accepted | no |  |
-| W3 | ORDA-083 | A fully refunded payment can be refunded again; the payment never reaches Refunded | no |  |
-| W3 | PRICE-031 | Export of price list assignments never completes (same ExportJob failure) | yes | same defect as PRICE-008, file once |
-| W3 | PRICE-008 | Generic Export (price lists) never completes: ExportJob cannot deserialize the abstract ExportDataQuery under BackgroundJobs | yes |  |
-| W3 | PRICE-055 | Export with the minimal pricing role: no providers load, and the export itself never completes | yes | same defect as PRICE-008, file once |
 
 ## Decisions pending
 
@@ -69,5 +63,7 @@ Ticket: VCST-6042 · Baseline: stable-15 · Env: vcptcore_regression · 3.1076.1
 | W1 | STORE-069 | Verification link still confirms the email after store email verification is turned off: intended? | product owner |
 | W2 | SRCH-009 | SRCH-009 and SRCH-010 assert behaviour this bundle deprecates: deprecate the cases or retarget them? | Elena Kutasina |
 | W3 | ORDA-068 | A full refund leaves the payment status Paid: is Refunded expected? | product owner |
+| W3 | BOPIS-081 | Precondition 'post-purchase registration option is available' is not met: the guest confirmation page for CO261014-00010 offers only 'Show … | triage by recorded reason · Elena Kutasina |
+| W3 | CFG-PDP-045-COND | Partial/env-index: REST POST /api/catalog/products/configurations ACCEPTED a circular dependsOnSectionId pair (SecA->SecB, SecB->SecA) on a… | triage by recorded reason · Elena Kutasina |
 
 Per-wave detail: `waves/<wave>/report.md` · verdicts: `waves/<wave>/ledger.csv` · contract: `.claude/skills/qa-run/release-folder.md`.

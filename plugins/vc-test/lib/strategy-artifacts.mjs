@@ -7,9 +7,9 @@ import { fileURLToPath } from "node:url";
 
 const LIB = dirname(fileURLToPath(import.meta.url));
 
-const lastRound = (md) => { const i = md.lastIndexOf("\n## Round "); return i < 0 ? (md.startsWith("## Round ") ? md : "") : md.slice(i + 1); };
-const block = (sec, heading) => { const m = new RegExp(`^### ${heading}[ \\t]*\\n([\\s\\S]*?)(?=\\n### |(?![\\s\\S]))`, "m").exec(sec); return m ? m[1] : ""; };
-const rows = (text) => text.split("\n").filter((l) => /^\|/.test(l) && !/^[\s|:-]+$/.test(l)).map((l) => l.split("|").slice(1, -1).map((c) => c.trim())).slice(1);
+export const lastRound = (md) => { const i = md.lastIndexOf("\n## Round "); return i < 0 ? (md.startsWith("## Round ") ? md : "") : md.slice(i + 1); };
+export const block = (sec, heading) => { const m = new RegExp(`^### ${heading}[ \\t]*\\n([\\s\\S]*?)(?=\\n### |(?![\\s\\S]))`, "m").exec(sec); return m ? m[1] : ""; };
+export const rows = (text) => text.split("\n").filter((l) => /^\|/.test(l) && !/^[\s|:-]+$/.test(l)).map((l) => l.split("|").slice(1, -1).map((c) => c.trim())).slice(1);
 
 function decisionOf(cell) {
   const decision = /^SKIP\b/i.test(cell) ? "SKIP" : /^RUN\b/i.test(cell) ? "RUN" : null;
@@ -30,6 +30,30 @@ function writesOf(cell) {
   });
 }
 
+// The `### Prior bugs` table rounds.mjs append writes in a round ≥ 2: | PB | Bug | Severity | Found | Reproduction | R |.
+// Bug is `<tracker key or B-n> — <title>`; Reproduction `spec <path>`, `package <path>` or `none`. Its proof: a `.spec`
+// runs through the runner (`spec`), a package on a browser lane (`browser`); `none` needs no lane and no capability —
+// it is still dispatched, and comes back `BLOCKED — no reproduction recorded` (never silently dropped, never a refused
+// plan). Any other text keeps its own word as the proof, which the planner refuses as no proof of the template.
+const proofOf = (reproduction) => (/^spec\s+\S/i.test(reproduction) ? "spec" : /^package\s+\S/i.test(reproduction) ? "browser"
+  : /^none$/i.test(reproduction) ? "none" : (reproduction.split(/\s+/)[0] || "missing").toLowerCase());
+function priorBugsOf(sec) {
+  return rows(block(sec, "Prior bugs")).filter((c) => /^PB-\d+$/.test(c[0] ?? "")).map((c) => {
+    const reproduction = c[4] ?? "";
+    return { pb: c[0], key: (c[1] ?? "").split(/\s+—\s+/)[0].trim(), severity: c[2] ?? "", reproduction, r: (c[5] ?? "").trim(), proof: proofOf(reproduction) };
+  });
+}
+
+/** The per-row templates of the registry and the plan-entry prefix of their instances (`scenario:S-n`, `bug:PB-n`). */
+export const INSTANCE_PREFIX = { scenario: "scenario", "prior-bug": "bug" };
+/** The registry template an instance id (`scenario:S-2`, `bug:PB-1`) belongs to, and its row id; null for any other id. */
+export function instanceOf(registry, id) {
+  const m = /^([a-z-]+):([A-Z]+-\d+)$/.exec(id);
+  const per = m && Object.keys(INSTANCE_PREFIX).find((p) => INSTANCE_PREFIX[p] === m[1]);
+  const template = per && registry.artifacts.find((e) => e.per === per);
+  return template ? { template, name: m[2] } : null;
+}
+
 export function readStrategy(md) {
   const sec = lastRound(String(md).replace(/\r\n?/g, "\n"));
   const head = /^## Round (\d+)/.exec(sec);
@@ -37,10 +61,12 @@ export function readStrategy(md) {
   const table = rows(block(sec, "Artifacts")).map(([row, cell]) => ({ row, ...decisionOf(cell ?? ""), cell: cell ?? "" }));
   const scenarios = rows(block(sec, "Scenarios")).filter((c) => /^S-\d+$/.test(c[0] ?? ""))
     .map((c) => ({ s: c[0], cls: Number(c[1]), proof: (c[6] ?? "").toLowerCase(), exploratory: /^exploratory/i.test(c[4] ?? ""), writes: writesOf(c[7]) }));
-  return { round: head ? Number(head[1]) : 0, status, rows: table, scenarios };
+  // the lines `rounds.mjs append` left for the strategy agent: any left means the round's section is not complete
+  const tbd = sec.split("\n").filter((l) => l.includes("TBD — strategy agent")).length;
+  return { round: head ? Number(head[1]) : 0, status, rows: table, scenarios, priorBugs: priorBugsOf(sec), tbd };
 }
 
 export function loadRegistry(path = join(LIB, "artifacts.json")) {
-  const { artifacts, rows_not_run } = JSON.parse(readFileSync(path, "utf8"));
-  return { artifacts, rows_not_run };
+  const { artifacts, rows_not_run, orchestrator } = JSON.parse(readFileSync(path, "utf8"));
+  return { artifacts, rows_not_run, orchestrator };
 }
