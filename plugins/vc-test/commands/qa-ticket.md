@@ -33,10 +33,32 @@ brief "Read and follow `<plugin>/briefs/<x>.md`" + the paths P.
 2. `node <plugin>/lib/route.mjs --key <TICKET>` → `{job, reason, next}`: `verify-fix` / `hotfix-check` ⇒ STOP naming `next`; exit 4 (`unresolved`) ⇒ ask
    which job, quoting `reason` (not a third human point: the run has not started), then verify-fix / hotfix-check ⇒ STOP naming `next`, test ⇒ go on; exit 3 ⇒ route after step 1 with
    `--bundle <BUNDLE>`; exit 2 ⇒ STOP "run /project-init". A not-fixed Bug's `reason` is `MISSION` (step 3).
-3. `node <plugin>/lib/capabilities.mjs --key <TICKET> --mcp <list>` — which of `playwright-chrome`,
+3. `node <plugin>/lib/rounds.mjs count --key <TICKET> --run-dir <RUN_DIR>` → `ROUND`, `MODE`. Exit 2 ⇒ STOP: print its
+   `escalation` (`<plugin>/skills/qa-test-strategy/rounds.md` §At most three) — nothing else runs. `refresh` ⇒ 0b
+   instead of steps 1–3 (no `record` ⇒ STOP: round <ROUND−1> left no round record). `resume` ⇒ the steps of that
+   round, its approved section reused. Round 1 only, after step 1: `count` again with `--bundle <BUNDLE>`; exit 2 ⇒ the
+   same STOP.
+4. `node <plugin>/lib/capabilities.mjs --key <TICKET> --mcp <list>` — which of `playwright-chrome`,
    `playwright-firefox`, `playwright-edge`, `chrome-devtools` you have.
-4. **Domain slug** from the ticket's components and summary, checked by `npm run bl:extract -- --has-domain <slug>` or
+5. **Domain slug** from the ticket's components and summary, checked by `npm run bl:extract -- --has-domain <slug>` or
    listed in `capabilities.json` `knowledgeStore.domainMaps`; none checks out ⇒ no slug (F2 fires on doubt).
+
+## 0b — Round N ≥ 2: refresh (U15, `rounds.md` §Round N in vc-test)
+
+No `/vc-test:ticket-context`, no change map, no scenarios agent, no human point 1. `<ctx>` is
+`<plugin>/skills/ticket-context`; `BUNDLE` is the record's `bundle`.
+
+1. `node <ctx>/lib/cli.mjs prepare <TICKET> --since <record>` (its Step 0 statuses and STOPs, host-governed passes
+   included) → its `prepare_path` is `DELTA_PREPARE`; then `node <plugin>/lib/rounds.mjs delta --key <TICKET> --run-dir <RUN_DIR>
+   --prepare <DELTA_PREPARE>` → `DELTA` (`<WORK>/delta.json`). Exit 2 ⇒ `abort` the prepare, then STOP: `sameBuild`
+   "Round <N−1> already tested this build" (P3), `cap` its `escalation`.
+2. Dispatch `vc-test:ticket-context-analyst` per `DELTA.dispatch` (TICKET; CHANGE per PR, `PRS: <ref>`) with `PREPARE =
+   DELTA_PREPARE`, then `save` / `merge-change` and `deploy --prepare` as that skill's Steps 2 and 4. `NOT DEPLOYED`
+   ⇒ BLOCKED on deploy, as step 1.
+3. `node <plugin>/lib/rounds.mjs append --run-dir <RUN_DIR> --delta <DELTA> --change-map <WORK>/change-map.json`; dispatch
+   `strategy` (`opus`) with `DELTA`, the analysts' outputs as `TICKET` / `CHANGE`, `BUNDLE`, `CHANGE_MAP` = round 1's,
+   `CAPABILITIES`, `RUN_DIR` (`briefs/strategy.md` §Round N ≥ 2). Gate fails twice ⇒ STOP. `abort` the prepare, then
+   step 4.
 
 ## 1 — Context
 
@@ -78,13 +100,14 @@ row goes in `testing-checklist.md` under `## Scenario results`, never `scenarios
 |---|---|
 | `contract-refresh` | both commands of its `run.commands` |
 | `checklist`, `ac-checks`, `scenario:S-n` | its `run.agent` and `run.model`, `[vc-test:<id>] <TICKET>`, brief "Read and follow `<plugin>/<run.brief>`"; checklist + `CHANGE_MAP`; ac-checks + `CHECKLIST`, `CHANGE_MAP`, `CAPABILITIES`; a scenario + `S`, `SCENARIOS`, `BUNDLE`, `CAPABILITIES`, `LANE` = its `lane`, `EXPLORATORY` = its `exploratory` |
+| `bug:PB-n` (round ≥ 2) | the same, + `PB`, `CAPABILITIES`, `LANE` = its `lane` (none when it has none) |
 | `visual` | `ui-ux-expert` on Chrome DevTools MCP, brief opening with Skill `qa-design` (`.claude/skills/qa-test/visual-axis.md` §2, §4, §5) |
 
 **A `global/…` writer is BLOCKED before dispatch** if `node <plugin>/lib/window.mjs check` exits 1: write its row,
 `BLOCKED — no channel to announce the window (U68)`, to `<RUN_DIR>/scenarios/S-n.rows.md`. The visual lane's
 rows go in `scenarios/visual.rows.md`, `VIS-<m>`, Proof `visual`: `FAIL <severity>` per finding, and one `PASS` row
 naming each VISUAL risk it covered without one. Never absent. **After each
-wave**: `node <plugin>/lib/scenario-rows.mjs merge --run-dir <RUN_DIR> --ids <its S-n,…[,visual][,pixel]>` (a row already merged is skipped); exit 2 ⇒
+wave**: `node <plugin>/lib/scenario-rows.mjs merge --run-dir <RUN_DIR> --ids <its S-n,…[,PB-n,…][,visual][,pixel]>` (a row already merged is skipped); exit 2 ⇒
 `missing` / `refused` back to their agent once, merge those again.
 
 **Each risk whose technique names `PIXEL` is your own item, with the first wave, whatever the Visual lane row
@@ -103,23 +126,27 @@ absent: merge `pixel` after that wave. A PIXEL risk that runs has Lane `scripts 
 1. The `qa-triage-results` skill, `ticket <TICKET> --min-severity P2` — only Medium+ is reproduced live (U29).
    `unresulted[]` rows ⇒ back to their agent once, triage again; still some ⇒ STOP, list them.
 2. **Below floor**, Low, cosmetic ⇒ "Noticed". **Medium+** listed `needs-review` ⇒ a `[vc-test:investigate]`
-   dispatch each, invoking `vc-fix:qa-investigate`, ≤ 3 at a time.
+   dispatch each, invoking `vc-fix:qa-investigate`, ≤ 3 at a time — never for a `PB-n` row: a NOT FIXED prior bug
+   is already filed (P6).
 
 ## 7 — Verdict
 
 1. `node <plugin>/lib/trace.mjs reconcile --strategy <RUN_DIR>/test-strategy.md --checklist
-   <RUN_DIR>/testing-checklist.md --run-plan <WORK>/run-plan.json --bundle <BUNDLE> --write > <WORK>/trace.json` →
-   `TRACE`. Exit 1 ⇒ write `{"error":"<its first stderr line>"}` to that file. Exit 2: `unresulted` ⇒ back to their agents once (as step 6's), `scenario-rows.mjs merge` again, reconcile again; `unknownRefs`,
+   <RUN_DIR>/testing-checklist.md --run-plan <WORK>/run-plan.json [--bundle <BUNDLE>] --write > <WORK>/trace.json` →
+   `TRACE`; `--bundle` in round 1 only (P5: round N proves only the ACs its risks cite). Exit 1 ⇒ write `{"error":"<its first stderr line>"}` to that file. Exit 2: `unresulted` ⇒ back to their agents once (as step 6's), `scenario-rows.mjs merge` again, reconcile again; `unknownRefs`,
    `acsWithoutRow` ⇒ the verdict names them (not a send-back).
 2. `node <plugin>/lib/write-zones.mjs check --key <TICKET> --run-dir <RUN_DIR> --run-plan <WORK>/run-plan.json >
    <WORK>/write-zones.json` → `WRITE_ZONES`. Exit 2 ⇒ BLOCKED, the verdict names each file; 3 ⇒ "not checked"; any other exit ⇒ write
    `{"outside":[],"gitScope":false,"reason":"<its registryErrors, or its first stderr line>"}` there instead.
 3. `node <plugin>/lib/run-cost.mjs --since <start> --key <TICKET>` → keep its Markdown table.
-4. Dispatch a fresh `verdict` (`sonnet`) with the paths its brief lists, `TRACE`, `WRITE_ZONES` and the table.
+4. Dispatch a fresh `verdict` (`sonnet`) with the paths its brief lists, `TRACE`, `WRITE_ZONES`, the table, `ROUND`
+   and, round ≥ 2, `PRIOR_BUGS` = `DELTA`.
 
 ## 8 — Human point 2
 
 Each confirmed Medium+ bug: `/vc-fix:qa-bug` with its investigation package (U50), one at a time; its own
-question decides filing. Tear down: `node <plugin>/lib/teardown.mjs --key <TICKET>`. Exit 2 ⇒ name what failed and
+question decides filing. A `verdict.json` bug with `priorBug` is skipped: it is already filed (P6). Then
+`node <plugin>/lib/rounds.mjs close --key <TICKET> --run-dir <RUN_DIR> --bundle <BUNDLE> --filed <id=KEY,…>` (the
+bugs filed just now). Tear down: `node <plugin>/lib/teardown.mjs --key <TICKET>`. Exit 2 ⇒ name what failed and
 its `manual`, `unknown`, `foreign` lists; 3 ⇒ the stand is not writable: all manual. Print `verdict.md`'s first two
 lines and path.

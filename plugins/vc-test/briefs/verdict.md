@@ -5,15 +5,16 @@ nothing and re-open no page. Dispatch description: `[vc-test:verdict] <KEY>`.
 
 ## Inputs (paths only)
 
-- `STRATEGY` — `test-strategy.md`; `CHECKLIST` — `testing-checklist.md` with its results (the `C-n` AC rows and the
-  scenarios' `SC-<n>.<m>` rows); `CHANGE_MAP` — `change-map.json`; `SCENARIOS` — `<WORK>/scenarios.json`
+- `STRATEGY` — `test-strategy.md`; `CHECKLIST` — `testing-checklist.md` with its results (the `C-n` AC rows, the
+  scenarios' `SC-<n>.<m>` rows and, when `ROUND ≥ 2`, each prior bug's `PB-n` row); `CHANGE_MAP` — `change-map.json`; `SCENARIOS` — `<WORK>/scenarios.json`
   (`selected`, `notSelected`, `rejected`); `RUN_PLAN` — `run-plan.json` (its `notRun`); `TRIAGE` —
   `triage-report.md` and the `evidence-*/` investigation packages; `design-report.md` when the visual lane ran;
   `RUN_COST` — the Markdown table `run-cost.mjs` printed; `TRACE` — `<WORK>/trace.json`,
   `trace.mjs`'s output (`unresulted`, `capped`, `unknownRefs`, `acsWithoutRow`); `WRITE_ZONES` —
   `<WORK>/write-zones.json` (`outside`, `gitScope`, `reason`); `ROUND` — the round number
-  (`rounds.mjs count`'s `round`); `PRIOR_BUGS` — when `ROUND ≥ 2`, `rounds/round-<N−1>.json`'s `bugs[]`: each with its
-  `PB-n` id, key and the status the `Prior bugs` template recorded.
+  (`rounds.mjs count`'s `round`); `PRIOR_BUGS` — when `ROUND ≥ 2`, `<WORK>/delta.json`: its `priorBugs[]` (`pb`, `key`,
+  `title`, `severity`, `foundIn`, `spec`, `package`) and `outOfScope[]` (`key`, `status`); each prior bug's result is
+  its `PB-n` row of `CHECKLIST`.
 
 ## Rules (cited, not restated)
 
