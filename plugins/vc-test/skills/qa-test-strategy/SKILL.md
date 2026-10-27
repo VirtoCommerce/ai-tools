@@ -207,7 +207,7 @@ reconciliation:
 - A planned risk that did not run and has no reason ⇒ back to execution, or listed under *Not tested, and
   why*. It is never dropped; in round 3 it goes to the escalation.
 - A High or Critical risk without a result **caps the verdict**: not `PASS`
-  ([close-out](../../../../.claude/skills/qa-test/close-out.md) §5-verdict.2).
+  ([verdict-rules](verdict-rules.md) §Decide the verdict).
 - Copy the counts, the round, the depth label and the candidate cases into `summary.json.strategy` (keys
   from [`qa-test-summary.schema.json`](../../../../.claude/templates/qa-test-summary.schema.json)).
 

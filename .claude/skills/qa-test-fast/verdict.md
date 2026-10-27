@@ -85,29 +85,7 @@ functional ticket.
 - **`testing-checklist.md`** — the Result column filled in by you, the only writer.
 - **`triage-report.md`** and the `evidence-*/` investigation packages — written by `qa-triage-results`
   ticket mode, never by hand.
-- **`verdict.md`** — **≤60 lines, in this order, nothing else:**
-
-```markdown
-# <TICKET> — <VERDICT>
-<one sentence: what was tested, on which build, and the deciding fact>
-
-| AC | Result | Evidence |
-|---|---|---|
-| AC-1 <short> | PASS | screenshots/<file> |
-
-## Bugs
-- <severity> <title> — <the path qa-bug returned> (<tracker key | not filed>)
-
-## Not tested, and why
-- <item / charter item> — <reason>
-- <node id> — candidate case (passed here, no suite case stamps it)
-
-## Data
-Created <n> AGENT-TEST- entities · removed <n> · settings restored and re-read: <list | none>
-
-## Context used
-Strategy <path · Round N> · Model <path | SKIP — no MODEL risk> · Checklist <path> · Domain map <state> · Mind map <path | SKIPPED: reason> · Exploratory <SBTM path | ran:false reason> · PRs <repo#n list>
-```
+- **`verdict.md`** — **≤60 lines, in this order, nothing else.** The shape lives in the vc-test plugin: `plugins/vc-test/skills/qa-test-strategy/verdict-rules.md` §Shape.
 
 **Mind-map findings** go into `summary.json.domain_map.mind_map_findings[]`: a node the run
 contradicted, a scenario that fit no node, every DRIFT item's `HOLDS`/`RESOLVED` result with its

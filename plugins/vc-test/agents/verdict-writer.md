@@ -38,10 +38,10 @@ nothing and re-open no page. Dispatch description: `[vc-test:verdict] <KEY>`.
 - **Write zones.** A non-empty `WRITE_ZONES.outside` makes the verdict BLOCKED, each path listed; a missing or empty
   `WRITE_ZONES` file, one with no `gitScope`, a `gitScope` of `false`, or a `reason` is written as "write zones not checked:
   <reason>", never as a clean pass.
-- **Verdict vocabulary and decision rules:** `.claude/skills/qa-test/close-out.md` §5-verdict.2. An in-scope
+- **Verdict vocabulary and decision rules:** `<PLUGIN>/skills/qa-test-strategy/verdict-rules.md` §Decide the verdict. An in-scope
   Critical or High bug is FAIL; an in-scope Medium is PASS WITH NOTES; an out-of-scope bug never fails the ticket
   (spec B6).
-- **Shape:** `.claude/skills/qa-test-fast/verdict.md` §Files, the `verdict.md` block, ≤ 60 lines, with these
+- **Shape:** `<PLUGIN>/skills/qa-test-strategy/verdict-rules.md` §Shape, ≤ 60 lines, with these
   vc-test changes:
   1. The line under the heading starts with the count of Medium-or-worse bugs, in scope and out of it
      (`Significant bugs: 1 in scope, 2 outside`), then the one sentence (spec B16).
