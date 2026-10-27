@@ -56,6 +56,8 @@ Under vc-test each step above is a script over machine records; prose is never p
 - **The record.** `rounds.mjs close` ends a round: `<RUN_DIR>/rounds/round-<N>.json` (build per PR, verdict, the
   bugs of `verdict.json`, the unresulted risks) and a copy of the round's bundle beside it, which round N+1 diffs the
   acceptance text against (the bundle itself is swept after 24 h). Every path in it is relative to the output root.
+  It also archives the round into `<RUN_DIR>/rounds/round-<N>/`: the row files and `testing-checklist.md` move there,
+  `verdict.md` and `verdict.json` are copied, so round N+1 in the same folder starts from none of round N's rows.
 - **The delta.** `ticket-context prepare <KEY> --since <round record>` reads only what changed: each PR `unchanged`,
   `changed` (diffed from the recorded sha; a force-push reads the whole PR diff) or `new`, the comments posted after
   the round closed, whether the description or AC text changed, and the status of the round's out-of-scope bugs.

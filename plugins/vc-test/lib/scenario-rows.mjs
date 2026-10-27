@@ -4,8 +4,9 @@
 // CLI: node plugins/vc-test/lib/scenario-rows.mjs merge --run-dir <RUN_DIR> --ids S-1,S-3[,PB-1][,visual][,pixel]
 //   S-n takes only its own `| SC-<n>.<m> |` rows; PB-n (a prior bug's re-run, briefs/bug-rerun.md) only its `| PB-<n> |` row; `visual` (the Visual lane's visual.rows.md) only `| VIS-<m> |` rows;
 //   `pixel` (the orchestrator's PIXEL items, pixel.rows.md) only `| PIX-<m> |` rows — two files, so the lane and the
-//   orchestrator never write one file in the same wave. A row whose id the checklist already holds is skipped, so
-//   merging an id again after a later wave never duplicates it.
+//   orchestrator never write one file in the same wave. The LAST row of an id in its file wins (a correction is the
+//   same id added again): a row whose id the checklist already holds replaces that line when it differs (`replaced`),
+//   so merging an id again after a later wave or a send-back never duplicates it.
 //   Blank lines are dropped — a blank line ends the table for triage. The checklist's trailing blank lines are cut so
 //   the first row follows the table directly.
 //   exit 0: all merged; 1: usage, or no checklist / no `## Scenario results`; 2: an id with no rows file or no row
@@ -26,19 +27,25 @@ export function mergeRows({ runDir, ids }) {
   if (!existsSync(file)) return { code: 1, out: { error: `no ${file}` } };
   const text = readFileSync(file, "utf8");
   if (!/^## Scenario results\s*$/m.test(text)) return { code: 1, out: { error: `${file} has no "## Scenario results" table` } };
-  const present = new Set(text.split(/\r?\n/).map((l) => rowId(l.trim())).filter(Boolean));
-  const merged = {}, missing = [], refused = [], rows = [];
+  const body = text.replace(/\s+$/, "").split(/\r?\n/);
+  const at = new Map(); // row id -> its line in the checklist (-1: added by this merge)
+  body.forEach((l, i) => { const k = rowId(l.trim()); if (k && !at.has(k)) at.set(k, i); });
+  const merged = {}, replaced = {}, missing = [], refused = [], rows = [];
   for (const id of ids) {
     const f = join(runDir, "scenarios", `${id}.rows.md`);
     const lines = existsSync(f) ? readFileSync(f, "utf8").split(/\r?\n/).map((l) => l.trim()).filter(Boolean) : [];
     const own = lines.filter((l) => rowRe(id).test(l));
     for (const l of lines.filter((x) => !own.includes(x))) refused.push(`${id}: ${l.slice(0, 80)}`);
-    const fresh = own.filter((l) => !present.has(rowId(l)) && present.add(rowId(l)));
-    if (!own.length) missing.push(id);
-    else if (fresh.length) { merged[id] = fresh.length; rows.push(...fresh); }
+    if (!own.length) { missing.push(id); continue; }
+    const last = new Map(); // first-seen order, the last row of each id
+    for (const l of own) last.set(rowId(l), l);
+    for (const [k, l] of last) {
+      if (!at.has(k)) { at.set(k, -1); rows.push(l); merged[id] = (merged[id] ?? 0) + 1; }
+      else if (at.get(k) >= 0 && body[at.get(k)].trim() !== l) { body[at.get(k)] = l; replaced[id] = (replaced[id] ?? 0) + 1; }
+    }
   }
-  if (rows.length) writeFileSync(file, `${text.replace(/\s+$/, "")}\n${rows.join("\n")}\n`);
-  return { code: missing.length || refused.length ? 2 : 0, out: { merged, missing, refused } };
+  if (rows.length || Object.keys(replaced).length) writeFileSync(file, `${[...body, ...rows].join("\n")}\n`);
+  return { code: missing.length || refused.length ? 2 : 0, out: { merged, replaced, missing, refused } };
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {

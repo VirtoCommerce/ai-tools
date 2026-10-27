@@ -109,7 +109,7 @@ row goes in `testing-checklist.md` under `## Scenario results`, never `scenarios
 `BLOCKED — no channel to announce the window (U68)`, to `<RUN_DIR>/scenarios/S-n.rows.md`. The visual lane's
 rows go in `scenarios/visual.rows.md`, `VIS-<m>`, Proof `visual`: `FAIL <severity>` per finding, and one `PASS` row
 naming each VISUAL risk it covered without one. Never absent. **After each
-wave**: `node <plugin>/lib/scenario-rows.mjs merge --run-dir <RUN_DIR> --ids <its S-n,…[,PB-n,…][,visual][,pixel]>` (a row already merged is skipped); exit 2 ⇒
+wave**: `node <plugin>/lib/scenario-rows.mjs merge --run-dir <RUN_DIR> --ids <its S-n,…[,PB-n,…][,visual][,pixel]>` (an id's last row wins, never duplicated); exit 2 ⇒
 `missing` / `refused` back to their agent once, merge those again.
 
 **Each risk whose technique names `PIXEL` is your own item, with the first wave, whatever the Visual lane row

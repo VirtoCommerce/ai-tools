@@ -16,6 +16,8 @@
 //   closes the round the last `## Round N` section of <RUN_DIR>/test-strategy.md opened: reads <RUN_DIR>/verdict.json
 //   (validated against verdict.schema.json), writes <RUN_DIR>/rounds/round-<N>.json and copies --bundle beside it as
 //   round-<N>.bundle.json (the bundle is swept after 24 h and round N+1 needs it; skipped when --bundle is that file).
+//   Then it archives the round into <RUN_DIR>/rounds/round-<N>/: MOVES scenarios/*.rows.md and testing-checklist.md (so
+//   round N+1 in the same folder merges none of them) and COPIES verdict.md and verdict.json (the originals stay).
 //   Every path the record stores is POSIX-relative to outputRoot(). exit 0; 1: usage, a missing or invalid verdict.json,
 //   no `## Round`, or a --filed id that is no bug of the verdict.
 // CLI: node plugins/vc-test/lib/rounds.mjs delta --key <KEY> --run-dir <RUN_DIR> --prepare <delta prepare.json>
@@ -34,7 +36,7 @@
 //   numbered N is left as it is. A --change-map that does not exist (another env's WORK) is `Change map: none`.
 //   exit 0; 1: usage, an unreadable input, a delta that STOPs, or a file whose last round is not N−1.
 import { execFileSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { argOf, currentEnv, KEY_RE, outputRoot, workDir } from "./paths.mjs";
@@ -279,6 +281,25 @@ export function closeRound({ round, strategyMd, verdict, filed = {}, env, closed
   };
 }
 
+/** Archive a closed round into <runDir>/rounds/round-<n>/: move its row files and checklist, copy its verdict. */
+export function archiveRound({ runDir, n }) {
+  const arc = join(runDir, "rounds", `round-${n}`);
+  const moved = [], copied = [];
+  const rowsDir = join(runDir, "scenarios");
+  const rowFiles = existsSync(rowsDir) ? readdirSync(rowsDir).filter((f) => f.endsWith(".rows.md")).map((f) => `scenarios/${f}`) : [];
+  for (const rel of [...rowFiles, "testing-checklist.md"].filter((r) => existsSync(join(runDir, r)))) {
+    mkdirSync(dirname(join(arc, rel)), { recursive: true });
+    renameSync(join(runDir, rel), join(arc, rel));
+    moved.push(rel);
+  }
+  for (const rel of ["verdict.md", "verdict.json"].filter((r) => existsSync(join(runDir, r)))) {
+    mkdirSync(arc, { recursive: true });
+    copyFileSync(join(runDir, rel), join(arc, rel));
+    copied.push(rel);
+  }
+  return { archive: arc, moved, copied };
+}
+
 // ── round N: the delta and the appended section ──────────────────────────────────────────────────────────────────
 const asRecord = (r) => (r && typeof r === "object" && "json" in r ? r : { path: null, json: r });
 const idNum = (id) => Number(/\d+/.exec(String(id ?? ""))?.[0] ?? 0);
@@ -462,7 +483,7 @@ export function appendRound({ strategyMd, delta, env, date, changeMapPath = null
 }
 
 // ── CLI ──────────────────────────────────────────────────────────────────────────────────────────────────────────
-const posix =(file, root) => { const rel = relative(root, file); return (isAbsolute(rel) || rel.startsWith("..") ? file : rel).split(sep).join("/"); };
+const posix = (file, root) => { const rel = relative(root, file); return (isAbsolute(rel) || rel.startsWith("..") ? file : rel).split(sep).join("/"); };
 const git = (cwd, args) => execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 64 * 1024 * 1024 });
 
 /** Every committed version of a file (newest first): `[{ committedAt, text }]`; [] outside a work tree. */
@@ -520,6 +541,8 @@ function count(argv, key) {
   process.exit(result.mode === "cap" ? 2 : 0);
 }
 
+const fail = (msg) => { console.error(msg); process.exit(1); };
+
 function close(argv) {
   const runDir = argOf(argv, "run-dir");
   const bundle = argOf(argv, "bundle");
@@ -531,7 +554,6 @@ function close(argv) {
     if (!m) usage(`--filed expects B-<n>=<KEY>[,…], got "${pair}"`);
     filed[m[1]] = m[2];
   }
-  const fail = (msg) => { console.error(msg); process.exit(1); };
   const read = (file) => { try { return readFileSync(file, "utf8"); } catch (e) { return fail(`${file}: ${e.message}`); } };
   const strategyFile = join(runDir, "test-strategy.md");
   const verdictFile = join(runDir, "verdict.json");
@@ -549,11 +571,13 @@ function close(argv) {
   mkdirSync(rdir, { recursive: true });
   if (resolve(bundle) !== resolve(copy)) copyFileSync(bundle, copy);
   writeFileSync(join(rdir, `round-${n}.json`), `${JSON.stringify(record, null, 2)}\n`);
-  console.log(JSON.stringify({ record: posix(join(rdir, `round-${n}.json`), root), bundle: record.bundle, round: n, verdict: record.verdict, unresulted: record.unresulted }));
+  let arc;
+  try { arc = archiveRound({ runDir, n }); } catch (e) { fail(`archiving round ${n}: ${e.message}`); }
+  console.log(JSON.stringify({ record: posix(join(rdir, `round-${n}.json`), root), bundle: record.bundle, round: n, verdict: record.verdict, unresulted: record.unresulted,
+    archive: posix(arc.archive, root), moved: arc.moved }));
   process.exit(0);
 }
 
-const fail = (msg) => { console.error(msg); process.exit(1); };
 const readJsonFile = (file) => { try { return JSON.parse(readFileSync(file, "utf8")); } catch (e) { return fail(`${file}: ${e.code ?? e.message}`); } };
 
 function deltaCmd(argv, key) {

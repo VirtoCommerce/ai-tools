@@ -53,7 +53,7 @@ buyer path is Medium or worse).
 ## Result — one `PB` row in `<RUN_DIR>/scenarios/PB-n.rows.md`
 
 **Never write `testing-checklist.md`.** The file holds your one row, on one line, no heading, no header, no blank
-line; a correction is the same id added again. Any other id is refused at the merge. The row has the checklist
+line; a correction is the same id added again (the last row of an id wins). Any other id is refused at the merge. The row has the checklist
 table's seven columns (`# | Ref | Item | Proof | Data | Result | Evidence`):
 
     | PB-<n> | PB-<n> · R<k> | <what was done: the spec run, or the steps and attempts>; expected <the oracle> | <spec, package or none> | <data> | <Result> | <observed> |
