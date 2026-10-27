@@ -152,7 +152,7 @@ export const GATES: Record<GateId, GateSpec> = {
   "5-verdict": {
     title: "Step 5-verdict — triage + AC/DoD reconciled against the implementation, then the verdict (inline self-check)",
     unchecked: [
-      "every PASS carries a re-openable artifact (open the screenshots/traces; a claimed PASS with no artifact is a REJECT)",
+      "every PASS carries a re-openable artifact (open its HAR / console / network refs — a screenshot only where reports-policy.md §5.1 calls for one; a claimed PASS with no artifact is a REJECT)",
       "each finding's severity grade, and its PRE-EXISTING / IN-SCOPE / OUT-OF-SCOPE provenance",
       "whether a reconciled AC is genuinely met, as opposed to merely reported met",
     ],

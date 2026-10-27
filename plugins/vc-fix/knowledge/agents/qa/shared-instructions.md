@@ -83,13 +83,13 @@ Before you report a task complete, **verify your own output** — a tool call su
 
 ## Evidence Collection Standards
 
-- **Screenshots**: only for a FAIL, a bug report, documentation, visual regression, or a tracker comment that makes a UI claim. A passing check or flow gets none. Purposes and budget: `reports-policy.md` §5.1.
+- **Screenshots**: only for a FAIL, a bug report, documentation, visual regression, or a tracker comment that makes a UI claim. A passing check or flow gets none. Purposes and budget: `.claude/rules/reports.md` §5.1.
 - **Console logs**: errors, warnings, Vue/Angular messages
 - **Network traces**: failed requests, slow responses, GraphQL errors inside HTTP 200
 - **HAR files**: always capture during browser sessions
 - **API traces**: full request + response (headers + body + status code)
 
-**Output paths**: `reports/` (tracked markdown/JSON: bugs, run folders), `test-results/` (gitignored raw browser artifacts). Screenshots, HAR and GIFs are never committed — the tracker attachment is the durable copy (`reports-policy.md` §1)
+**Output paths**: `reports/` (tracked markdown/JSON: bugs, run folders), `test-results/` (gitignored raw browser artifacts). Screenshots, HAR and GIFs are never committed — the tracker attachment is the durable copy (`.claude/rules/reports.md` §1)
 **Naming**: `{ticket-id}-{type}-{timestamp}.{ext}`
 **Full policy**: `skills/qa-evidence/evidence-capture-policy.md`
 
