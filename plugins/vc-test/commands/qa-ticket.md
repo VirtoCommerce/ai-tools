@@ -26,7 +26,7 @@ brief "Read and follow `<plugin>/briefs/<x>.md`" + the paths P.
 8. **Every turn re-reads your context**: read no supporting file or script source unless a step fails; keep a
    script's exit code and summary (`| tail -n 20`).
 9. **A STOP once step 5 has begun tears down first** (step 8); any STOP removes `<WORK>/prepare/`. `rounds.mjs
-   append` or `close` exit 1 ⇒ report its stderr, STOP.
+   bundle`, `append`, `filed` or `close` exit 1 ⇒ report its stderr, STOP.
 
 ## 0 — Probe
 
@@ -40,7 +40,8 @@ brief "Read and follow `<plugin>/briefs/<x>.md`" + the paths P.
    vc-test, "starts from round N−1's record"); `BASE` is its `bundle`. `refresh` ⇒ 0b instead of steps 1–3.
    `resume` ⇒ the steps of that round, its approved section reused: round ≥ 2 runs 0b, and its analyst and strategy
    dispatches only when the section fails the gate (0b.2). Round 1 only, after step 1: `count` again with
-   `--bundle <BUNDLE>`; exit 2 ⇒ the same STOP.
+   `--bundle <BUNDLE>`; exit 2 ⇒ the same STOP; `refresh` (a verdict comment is an earlier round) ⇒ STOP as a refresh
+   whose `recordRound` is not ROUND − 1.
 4. `node <plugin>/lib/capabilities.mjs --key <TICKET> --mcp <list>` — which of `playwright-chrome`,
    `playwright-firefox`, `playwright-edge`, `chrome-devtools` you have.
 5. **Domain slug** from the ticket's components and summary, checked by `npm run bl:extract -- --has-domain <slug>` or
@@ -49,10 +50,11 @@ brief "Read and follow `<plugin>/briefs/<x>.md`" + the paths P.
 ## 0b — Round N ≥ 2: refresh (U15, `rounds.md` §Round N in vc-test)
 
 No `/vc-test:ticket-context`, no change map, no scenarios agent, no human point 1. `<ctx>` is
-`<plugin>/skills/ticket-context`. **Rebuild**: `node <plugin>/lib/rounds.mjs bundle --key <TICKET> --base <BASE> --delta
-<DELTA> [--ticket-out <ticket.out.json beside DELTA_PREPARE>]` (`--ticket-out` when that file exists: TICKET ran) →
-prints `BUNDLE`, round N's text and ACs, for the strategy and every later step (5, 7, 8). Without `--ticket-out` it
-reuses a `<WORK>/bundle.json` stamped for round N, and rebuilds only one missing or stamped for another round.
+`<plugin>/skills/ticket-context`. `[--change-map <WORK>/change-map.json]` below is passed only when that file exists
+(another env's run has none). **Rebuild**: `node <plugin>/lib/rounds.mjs bundle --key <TICKET> --base <BASE> --delta
+<DELTA> --prepare <DELTA_PREPARE>` → prints `BUNDLE`, round N's text, ACs and PRs (the TICKET and CHANGE outputs and
+`deploy.json` beside `DELTA_PREPARE`, when they exist), for the strategy and every later step (5, 7, 8). With no
+analyst output it reuses a `<WORK>/bundle.json` stamped for round N.
 
 1. `node <ctx>/lib/cli.mjs prepare <TICKET> --since <record>` (its Step 0 statuses and STOPs, host-governed passes
    included) → its `prepare_path` is `DELTA_PREPARE`; then `node <plugin>/lib/rounds.mjs delta --key <TICKET> --run-dir <RUN_DIR>
@@ -60,14 +62,14 @@ reuses a `<WORK>/bundle.json` stamped for round N, and rebuilds only one missing
    "Round <N−1> already tested this build" (P3), `cap` its `escalation`. Route exited 3 at step 0 ⇒ now
    `node <plugin>/lib/route.mjs --bundle <DELTA_PREPARE>`, handled as step 0.2; a STOP it causes `abort`s the prepare first.
 2. A `resume` first rebuilds (reusing round N's), then gates the section: `node <plugin>/skills/qa-test-strategy/lib/check-strategy.mjs --strategy
-   <RUN_DIR>/test-strategy.md --bundle <BUNDLE> --change-map <WORK>/change-map.json --capabilities
+   <RUN_DIR>/test-strategy.md --bundle <BUNDLE> [--change-map <WORK>/change-map.json] --capabilities
    <WORK>/capabilities.json`; exit 0 ⇒ only `deploy --prepare` below, then `abort` the prepare and step 4; else as a
    refresh. Dispatch `vc-test:ticket-context-analyst` per `DELTA.dispatch` (TICKET; CHANGE per PR, `PRS: <ref>`) with `PREPARE =
-   DELTA_PREPARE`, then `save` / `merge-change` (that skill's Step 2), rebuild, and `deploy --prepare` (its Step 4). `NOT DEPLOYED`
+   DELTA_PREPARE`, then `save` / `merge-change` (that skill's Step 2), `deploy --prepare` (its Step 4), and rebuild. `NOT DEPLOYED`
    ⇒ BLOCKED on deploy, as step 1.
-3. `node <plugin>/lib/rounds.mjs append --run-dir <RUN_DIR> --delta <DELTA> --change-map <WORK>/change-map.json`; dispatch
+3. `node <plugin>/lib/rounds.mjs append --run-dir <RUN_DIR> --delta <DELTA> [--change-map <WORK>/change-map.json]`; dispatch
    `strategy` (`opus`) with `DELTA`, the analysts' outputs as `TICKET` / `CHANGE`, `DEPLOY` = `deploy.json` beside
-   `DELTA_PREPARE`, `BUNDLE`, `CHANGE_MAP` = round 1's, `CAPABILITIES`, `RUN_DIR` (`briefs/strategy.md` §Round N ≥ 2). Gate fails twice ⇒ STOP. `abort` the prepare, then
+   `DELTA_PREPARE`, `BUNDLE`, `CHANGE_MAP` = round 1's (none when it does not exist), `CAPABILITIES`, `RUN_DIR` (`briefs/strategy.md` §Round N ≥ 2). Gate fails twice ⇒ STOP. `abort` the prepare, then
    step 4.
 
 ## 1 — Context
@@ -156,8 +158,8 @@ absent: merge `pixel` after that wave. A PIXEL risk that runs has Lane `scripts 
 ## 8 — Human point 2
 
 Each confirmed Medium+ bug: `/vc-fix:qa-bug` with its investigation package (U50), one at a time; its own
-question decides filing. A `verdict.json` bug with `priorBug` is skipped: it is already filed (P6). Then
-`node <plugin>/lib/rounds.mjs close --key <TICKET> --run-dir <RUN_DIR> --bundle <BUNDLE> --filed
-<id=KEY,…>` (the bugs filed just now). Tear down: `node <plugin>/lib/teardown.mjs --key <TICKET>`. Exit 2 ⇒ name what failed and
+question decides filing; each one filed ⇒ at once `node <plugin>/lib/rounds.mjs filed --run-dir <RUN_DIR> --bug
+<id>=<KEY>`. A `verdict.json` bug with `priorBug` is skipped: it is already filed (P6). Then
+`node <plugin>/lib/rounds.mjs close --key <TICKET> --run-dir <RUN_DIR> --bundle <BUNDLE>`. Tear down: `node <plugin>/lib/teardown.mjs --key <TICKET>`. Exit 2 ⇒ name what failed and
 its `manual`, `unknown`, `foreign` lists; 3 ⇒ the stand is not writable: all manual. Print `verdict.md`'s first two
 lines and path.

@@ -16,23 +16,33 @@
 //   1: usage or an unreadable input.
 // CLI: node plugins/vc-test/lib/rounds.mjs close --key <KEY> --run-dir <RUN_DIR> --bundle <bundle.json> [--filed B-1=VCST-7001,…]
 //   closes the round the last `## Round N` section of <RUN_DIR>/test-strategy.md opened: reads <RUN_DIR>/verdict.json
-//   (validated against verdict.schema.json), writes <RUN_DIR>/rounds/round-<N>.json and copies --bundle as given (a
+//   (validated against verdict.schema.json; its `round` must be N), writes <RUN_DIR>/rounds/round-<N>.json and copies --bundle as given (a
 //   relative path resolves against outputRoot()) beside it as round-<N>.bundle.json (the bundle is swept after 24 h and
 //   round N+1 needs it; skipped when --bundle is that file). Round ≥ 2's --bundle is `bundle`'s rebuild, so round N+1
 //   diffs the AC text against round N's, not round 1's. A `Build: none` line (no product PR) records `build: []`.
-//   Then it archives the round into <RUN_DIR>/rounds/round-<N>/: MOVES scenarios/*.rows.md and testing-checklist.md (so
-//   round N+1 in the same folder merges none of them) and COPIES verdict.md and verdict.json (the originals stay).
+//   A bug's key is --filed's, else verdict.json's (`filed` wrote it), else an earlier round-<N>.json's (a re-close).
+//   Then it archives the round into <RUN_DIR>/rounds/round-<N>/: MOVES scenarios/*.rows.md, testing-checklist.md and
+//   verdict.json (so round N+1 in the same folder merges none of them and can never close on round N's verdict) and
+//   COPIES verdict.md (the run's output stays where it is).
 //   Every path the record stores is POSIX-relative to outputRoot(). exit 0; 1: usage, a missing or invalid verdict.json,
-//   no `## Round`, a Build line that is neither `none` nor names a `<repo>#<n> @ <sha>`, or a --filed id that is no bug
-//   of the verdict.
+//   a verdict.json of another round, no `## Round`, a Build line that is neither `none` nor names a `<repo>#<n> @ <sha>`,
+//   or a --filed id that is no bug of the verdict.
+// CLI: node plugins/vc-test/lib/rounds.mjs filed --run-dir <RUN_DIR> --bug B-1=VCST-7001
+//   records a bug's tracker key in <RUN_DIR>/verdict.json the moment /vc-fix:qa-bug files it, so a run that stops before
+//   `close` loses no key (a keyless bug is never re-run as a prior bug). exit 0; 1: usage, no such bug, or a bug that
+//   already has another key.
 // CLI: node plugins/vc-test/lib/rounds.mjs bundle --key <KEY> --base <bundle copy> --delta <WORK>/delta.json
-//        [--ticket-out <ticket.out.json>]
+//        [--prepare <delta prepare.json>] [--ticket-out <ticket.out.json>] [--change-out <change.out.json>]
 //   round N's bundle: --base (count's `bundle`, round N−1's copy; a relative path resolves against outputRoot()) with
-//   delta.json's `fields` (description, acceptance) and, with --ticket-out (the TICKET analyst ran this round), `acs[]`
-//   replaced by that output's `acs`. Writes <WORK>/bundle.json and its stamp <WORK>/bundle.round.json ({ key, round,
-//   acs: ticket | base }) and prints the bundle's path. Without --ticket-out, a bundle already stamped for this round is
-//   kept as it is (a resume reuses it; round N's TICKET acs are never downgraded). exit 0; 1: usage, an unreadable
-//   input, a delta of another ticket, of no round ≥ 2 or with no `fields`, or a TICKET output with no `acs`.
+//   delta.json's `fields` (description, acceptance); with a TICKET output (the TICKET analyst ran this round), `acs[]`
+//   replaced by its `acs`; with a CHANGE output, each changed, new or unread PR of --prepare replaced in (or added to)
+//   `change.prs[]` as compose would build it, so the floors and clause 3 see round N's change surface (a PR the
+//   analyst left out is a gapped entry: the floors fire on doubt). --prepare supplies `ticket.out.json`,
+//   `change.out.json` and `deploy.json` from its run dir when they exist. Writes <WORK>/bundle.json and its stamp
+//   <WORK>/bundle.round.json ({ key, round, acs: ticket | base, change }) and prints the bundle's path. A bundle already
+//   stamped for this round is kept with no output to lay on it (a resume reuses it), and is the base when there is one
+//   (round N's TICKET acs and CHANGE entries are never downgraded). exit 0; 1: usage, an unreadable input, a delta of
+//   another ticket, of no round ≥ 2 or with no `fields`, a TICKET output with no `acs`, or a CHANGE output with no `prs`.
 // CLI: node plugins/vc-test/lib/rounds.mjs delta --key <KEY> --run-dir <RUN_DIR> --prepare <delta prepare.json>
 //   round N's refresh over `ticket-context prepare --since`'s output: which PRs changed, which analysts to dispatch
 //   (TICKET on new comments or a changed AC, CHANGE per changed or new PR), the prior bugs of every round (in scope and
@@ -45,8 +55,9 @@
 // CLI: node plugins/vc-test/lib/rounds.mjs append --run-dir <RUN_DIR> --delta <WORK>/delta.json [--change-map <path>]
 //   appends `## Round <N>` to <RUN_DIR>/test-strategy.md without asking (U15): the carried risks, one risk and one
 //   `### Prior bugs` row per prior bug, the Artifacts of round N−1, and one `TBD — strategy agent` line for each part the
-//   strategy agent writes. A RUN_DIR with no test-strategy.md first takes the newest prior one, whose folder keeps the
-//   line `Moved to <path> at Round <N>.` (rounds.md §Storage). Round N−1's text is never touched; a last section already
+//   strategy agent writes. A RUN_DIR with no test-strategy.md, or only a `Moved to` pointer (a round back on an earlier
+//   folder), first takes the newest prior one, whose folder then keeps the line `Moved to <path> at Round <N>.`
+//   (rounds.md §Storage). Round N−1's text is never touched; a last section already
 //   numbered N is left as it is. A --change-map that does not exist (another env's WORK) is `Change map: none`.
 //   exit 0; 1: usage, an unreadable input, a delta that STOPs, or a file whose last round is not N−1.
 import { execFileSync } from "node:child_process";
@@ -55,6 +66,7 @@ import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { argOf, currentEnv, KEY_RE, outputRoot, workDir } from "./paths.mjs";
 import { validate } from "../skills/ticket-context/lib/schema.mjs";
+import { prEntry, prKey } from "../skills/ticket-context/lib/compose.mjs";
 import { rows as tableRows } from "./strategy-artifacts.mjs";
 import { priorRunDirs } from "../scripts/lib/run-dir.mjs";
 
@@ -263,9 +275,11 @@ export function countRounds({ strategies = [], records = [], summaries = [], sig
 const VERDICT_SCHEMA = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), "verdict.schema.json"), "utf8"));
 export const validateVerdict = (verdict) => validate(verdict, VERDICT_SCHEMA);
 
-/** Every `<repo>#<n> @ <hex>` of a Build line, the sha being the first hex after `@`. */
+/** Every `<repo>#<n> @ <hex>` of a Build line, the sha being the first hex after `@`. `PR#n` (the old template's
+ *  spelling) names no repo: it is skipped, so `close` refuses the line instead of recording a repo no PR matches. */
 export function parseBuild(build) {
   return [...String(build ?? "").matchAll(/([\w.-]+(?:\/[\w.-]+)?)#(\d+)\s*@\s*([0-9a-f]{7,40})(?![0-9a-z])/gi)]
+    .filter((m) => !/^PR$/i.test(m[1]))
     .map((m) => ({ repo: m[1], number: Number(m[2]), sha: m[3].toLowerCase() }));
 }
 
@@ -284,14 +298,17 @@ function unresultedOf(md, n) {
 /**
  * The record `rounds/round-<N>.json` that closes a round. `strategyMd` is test-strategy.md; the round it closes is its last
  * section (`round` names it, the last section's own number when omitted); `verdict` is verdict.json; `filed` maps a bug id
- * to the tracker key it was just filed under; `bundlePath` is the stored, outputRoot-relative path of the round's bundle copy.
+ * to the tracker key it was just filed under; `bundlePath` is the stored, outputRoot-relative path of the round's bundle copy;
+ * `prior` is an earlier record of the same round (a re-close), whose bug keys are kept.
  */
-export function closeRound({ round, strategyMd, verdict, filed = {}, env, closedAt = new Date().toISOString(), bundlePath }) {
+export function closeRound({ round, strategyMd, verdict, filed = {}, env, closedAt = new Date().toISOString(), bundlePath, prior = null }) {
   const errors = validateVerdict(verdict);
   if (errors.length) throw new Error(`verdict.json is invalid: ${errors.join("; ")}`);
   const sections = strategySections(strategyMd);
   const section = round == null ? sections.at(-1) : sections.find((s) => s.n === round);
   if (!section) throw new Error(round == null ? "test-strategy.md has no `## Round N` section" : `test-strategy.md has no \`## Round ${round}\` section`);
+  // a verdict.json left by another round (an interrupted verdict step) must never become this round's record
+  if (verdict.round !== section.n) throw new Error(`verdict.json is Round ${verdict.round}'s, not Round ${section.n}'s — dispatch the verdict agent for Round ${section.n}, then close again`);
   const ids = new Set(verdict.bugs.map((b) => b.id));
   for (const id of Object.keys(filed)) if (!ids.has(id)) throw new Error(`--filed ${id}: the verdict has no such bug`);
   // `Build: none` is a round with no product PR (a supported state): build []. Any other line that parses to nothing is
@@ -301,48 +318,77 @@ export function closeRound({ round, strategyMd, verdict, filed = {}, env, closed
   return {
     round: section.n, env, closedAt, verdict: verdict.verdict,
     build,
-    bugs: verdict.bugs.map((b) => ({ ...b, key: filed[b.id] ?? b.key ?? null })),
+    bugs: verdict.bugs.map((b) => ({ ...b, key: filed[b.id] ?? b.key ?? (prior?.round === section.n ? prior.bugs?.find((x) => x?.id === b.id)?.key : null) ?? null })),
     unresulted: unresultedOf(strategyMd, section.n),
     bundle: bundlePath,
   };
 }
 
 /**
- * Round N's bundle (Ruling P): round N−1's bundle copy with the delta read's description and acceptance and, when the
- * TICKET analyst ran this round, its `acs` — so every round-N agent and gate reads round N's ACs from one consistent file.
+ * Round N's bundle (Ruling P): round N−1's bundle copy with the delta read's description and acceptance; when the
+ * TICKET analyst ran this round, its `acs`; when the CHANGE analyst ran, the delta read's changed, new and unread PRs
+ * (`prepare.prs`) as compose builds them (`deploy` is that read's deploy.json) — so every round-N agent and gate, the
+ * floors and clause 3 included, reads round N's ACs and change surface from one consistent file. An unchanged PR keeps
+ * round N−1's entry.
  */
-export function rebuildBundle({ base, delta, ticketOut = null }) {
+export function rebuildBundle({ base, delta, ticketOut = null, changeOut = null, prepare = null, deploy = null }) {
   if (!base || typeof base !== "object") throw new Error("the base bundle is not a JSON object");
   if (!delta?.fields || typeof delta.fields !== "object") throw new Error("the delta has no `fields` (description, acceptance)");
   if (ticketOut && !Array.isArray(ticketOut.acs)) throw new Error("the TICKET output has no `acs` list");
+  if (changeOut && !Array.isArray(changeOut.prs)) throw new Error("the CHANGE output has no `prs` list");
+  if (changeOut && !Array.isArray(prepare?.prs)) throw new Error("a CHANGE output needs the delta read's prepare.json (--prepare)");
   const out = structuredClone(base);
   out.fields = { ...(out.fields ?? {}), description: String(delta.fields.description ?? ""), acceptance: String(delta.fields.acceptance ?? "") };
   if (ticketOut) out.acs = structuredClone(ticketOut.acs);
+  if (changeOut) {
+    const agent = new Map(changeOut.prs.map((a) => [prKey(a.repo, a.number), a]));
+    const dep = new Map((deploy?.prs ?? []).map((d) => [d.ref, d]));
+    const prs = out.change?.prs ?? [];
+    const gaps = [];
+    for (const p of prepare.prs.filter((x) => !x.context_only && (x.gap || x.delta === "changed" || x.delta === "new"))) {
+      const ref = p.ref ?? `${p.repo}#${p.number}`;
+      let e = prEntry({ ...p, ref }, agent.get(prKey(p.repo, p.number)), dep.get(ref), gaps);
+      if (!e) {
+        // the analyst left a moved PR out: its diff since the last tested build is unread, so the floors fire on doubt
+        const gap = { where: `pr:${ref}`, reason: "not-found", detail: `Round ${delta.round}'s CHANGE output has no entry for this ${p.delta} PR: its diff since the last tested build is unread` };
+        gaps.push(gap);
+        e = prEntry({ ...p, ref, gap }, undefined, dep.get(ref), gaps);
+      }
+      const i = prs.findIndex((x) => prKey(x.repo, x.number) === prKey(p.repo, p.number));
+      if (i >= 0) prs[i] = e; else prs.push(e);
+    }
+    out.change = { ...(out.change ?? {}), prs, ...(deploy?.chain_deployed ? { chain_deployed: deploy.chain_deployed } : {}) };
+    const listed = new Set((out.gaps ?? []).map((g) => g.where));
+    out.gaps = [...(out.gaps ?? []), ...gaps.filter((g) => !listed.has(g.where))];
+  }
   return out;
 }
 
 /**
- * Whether `bundle` writes or keeps <WORK>/bundle.json. `stamp` is its sidecar (`{ key, round, acs }`, null when absent
- * or its bundle is gone). A TICKET output always writes; without one, a bundle already stamped for this ticket's round
- * is kept — a resume reuses it, and round N's TICKET-parsed acs are never replaced by round N−1's.
+ * What `bundle` does with <WORK>/bundle.json. `stamp` is its sidecar (`{ key, round, acs, change }`, null when absent
+ * or its bundle is gone). A bundle already stamped for this ticket's round is kept when there is no analyst output to
+ * lay on it (a resume reuses it), and is the base of the rebuild when there is ("layer"), so round N's TICKET acs and
+ * CHANGE entries are never replaced by round N−1's. Otherwise round N−1's copy is the base ("write").
  */
-export function bundlePlan({ stamp, key, round, ticketOut }) {
-  if (ticketOut) return "write";
-  return stamp && stamp.key === key && Number(stamp.round) === Number(round) ? "keep" : "write";
+export function bundlePlan({ stamp, key, round, ticketOut, changeOut = false }) {
+  const mine = !!stamp && stamp.key === key && Number(stamp.round) === Number(round);
+  if (!mine) return "write";
+  return ticketOut || changeOut ? "layer" : "keep";
 }
 
-/** Archive a closed round into <runDir>/rounds/round-<n>/: move its row files and checklist, copy its verdict. */
+/** Archive a closed round into <runDir>/rounds/round-<n>/: move its row files, checklist and verdict.json, copy verdict.md. */
 export function archiveRound({ runDir, n }) {
   const arc = join(runDir, "rounds", `round-${n}`);
   const moved = [], copied = [];
   const rowsDir = join(runDir, "scenarios");
   const rowFiles = existsSync(rowsDir) ? readdirSync(rowsDir).filter((f) => f.endsWith(".rows.md")).map((f) => `scenarios/${f}`) : [];
-  for (const rel of [...rowFiles, "testing-checklist.md"].filter((r) => existsSync(join(runDir, r)))) {
+  // verdict.json moves: left behind, the next round's `close` could read it as its own
+  for (const rel of [...rowFiles, "testing-checklist.md", "verdict.json"].filter((r) => existsSync(join(runDir, r)))) {
     mkdirSync(dirname(join(arc, rel)), { recursive: true });
     renameSync(join(runDir, rel), join(arc, rel));
     moved.push(rel);
   }
-  for (const rel of ["verdict.md", "verdict.json"].filter((r) => existsSync(join(runDir, r)))) {
+  for (const rel of ["verdict.md"].filter((r) => existsSync(join(runDir, r)))) {
     mkdirSync(arc, { recursive: true });
     copyFileSync(join(runDir, rel), join(arc, rel));
     copied.push(rel);
@@ -578,8 +624,9 @@ function readInputs({ key, runDir, root }) {
 
 function usage(msg) {
   console.error(`${msg}\nusage: rounds.mjs count --key <KEY> [--run-dir <RUN_DIR>] [--bundle <bundle.json>]\n       rounds.mjs close --key <KEY> --run-dir <RUN_DIR> --bundle <bundle.json> [--filed B-1=VCST-7001,B-2=…]
+       rounds.mjs filed --run-dir <RUN_DIR> --bug B-1=VCST-7001
        rounds.mjs delta --key <KEY> --run-dir <RUN_DIR> --prepare <delta prepare.json>
-       rounds.mjs bundle --key <KEY> --base <round N−1's bundle copy> --delta <WORK>/delta.json [--ticket-out <ticket.out.json>]
+       rounds.mjs bundle --key <KEY> --base <round N−1's bundle copy> --delta <WORK>/delta.json [--prepare <delta prepare.json>] [--ticket-out <ticket.out.json>] [--change-out <change.out.json>]
        rounds.mjs append --run-dir <RUN_DIR> --delta <WORK>/delta.json [--change-map <path>]`);
   process.exit(1);
 }
@@ -615,21 +662,25 @@ function close(argv) {
   const strategyFile = join(runDir, "test-strategy.md");
   const verdictFile = join(runDir, "verdict.json");
   const strategyMd = read(strategyFile);
-  let verdict;
-  try { verdict = JSON.parse(read(verdictFile)); } catch (e) { fail(`${verdictFile}: ${e.message}`); }
   const n = strategySections(strategyMd).at(-1)?.n;
   if (n == null) fail(`${strategyFile}: no "## Round N" section`);
+  const rdir = join(runDir, "rounds");
+  if (!existsSync(verdictFile) && existsSync(join(rdir, `round-${n}`, "verdict.json"))) fail(`Round ${n} is already closed: its verdict.json is archived in ${join(rdir, `round-${n}`)}`);
+  let verdict;
+  try { verdict = JSON.parse(read(verdictFile)); } catch (e) { fail(`${verdictFile}: ${e.message}`); }
   const root = outputRoot();
   const bundleFile = resolve(root, bundle); // a record's `bundle` is stored relative to the output root
   if (!existsSync(bundleFile)) fail(`${bundleFile}: not found`);
-  const rdir = join(runDir, "rounds");
   const copy = join(rdir, `round-${n}.bundle.json`);
+  const recordFile = join(rdir, `round-${n}.json`);
+  let prior = null;
+  if (existsSync(recordFile)) { try { prior = JSON.parse(readFileSync(recordFile, "utf8")); } catch { prior = null; } }
   let record;
-  try { record = closeRound({ round: n, strategyMd, verdict, filed, env: currentEnv(), bundlePath: posix(copy, root) }); } catch (e) { fail(e.message); }
+  try { record = closeRound({ round: n, strategyMd, verdict, filed, env: currentEnv(), bundlePath: posix(copy, root), prior }); } catch (e) { fail(e.message); }
   mkdirSync(rdir, { recursive: true });
   // copied as given: round ≥ 2's BUNDLE is already `rounds.mjs bundle`'s rebuild (round N's text and ACs)
   if (resolve(bundleFile) !== resolve(copy)) copyFileSync(bundleFile, copy);
-  writeFileSync(join(rdir, `round-${n}.json`), `${JSON.stringify(record, null, 2)}\n`);
+  writeFileSync(recordFile, `${JSON.stringify(record, null, 2)}\n`);
   let arc;
   try { arc = archiveRound({ runDir, n }); } catch (e) { fail(`archiving round ${n}: ${e.message}`); }
   console.log(JSON.stringify({ record: posix(join(rdir, `round-${n}.json`), root), bundle: record.bundle, round: n, verdict: record.verdict, unresulted: record.unresulted,
@@ -638,6 +689,25 @@ function close(argv) {
 }
 
 const readJsonFile = (file) => { try { return JSON.parse(readFileSync(file, "utf8")); } catch (e) { return fail(`${file}: ${e.code ?? e.message}`); } };
+
+function filedCmd(argv) {
+  const runDir = argOf(argv, "run-dir");
+  const pair = argOf(argv, "bug");
+  if (!runDir) usage("--run-dir is required");
+  const m = /^(B-\d+)=(\S+)$/.exec(String(pair ?? "").trim());
+  if (!m) usage(`--bug expects B-<n>=<KEY>, got "${pair ?? ""}"`);
+  const file = join(runDir, "verdict.json");
+  const verdict = readJsonFile(file);
+  const bug = (verdict.bugs ?? []).find((b) => b.id === m[1]);
+  if (!bug) fail(`${file}: no bug ${m[1]}`);
+  if (bug.key && bug.key !== m[2]) fail(`${file}: ${m[1]} is already filed as ${bug.key}`);
+  bug.key = m[2];
+  const errors = validateVerdict(verdict);
+  if (errors.length) fail(`${file}: ${errors.join("; ")}`);
+  writeFileSync(file, `${JSON.stringify(verdict, null, 2)}\n`);
+  console.log(JSON.stringify({ bug: m[1], key: m[2] }));
+  process.exit(0);
+}
 
 function deltaCmd(argv, key) {
   const runDir = argOf(argv, "run-dir");
@@ -662,30 +732,42 @@ function deltaCmd(argv, key) {
 function bundleCmd(argv, key) {
   const basePath = argOf(argv, "base");
   const deltaPath = argOf(argv, "delta");
-  const ticketPath = argOf(argv, "ticket-out");
+  const prepPath = argOf(argv, "prepare");
   if (!basePath) usage("--base is required (count's `bundle`: round N−1's bundle copy)");
   if (!deltaPath) usage("--delta is required (<WORK>/delta.json)");
   const root = outputRoot();
   const delta = readJsonFile(deltaPath);
   if (delta.key != null && delta.key !== key) fail(`${deltaPath} is ${delta.key}'s delta, not ${key}'s`);
   if (!Number.isInteger(Number(delta.round)) || Number(delta.round) < 2) fail(`${deltaPath}: no round ≥ 2 (round ${delta.round})`);
+  // the analysts' outputs and deploy.json sit in the delta read's run dir (ticket-context `save`, `merge-change`, `deploy`)
+  const prepare = prepPath ? readJsonFile(prepPath) : null;
+  const prepDir = prepare ? resolve(String(prepare.run_dir ?? dirname(resolve(prepPath)))) : null; // as ticket-context's own steps resolve it
+  const beside = (name) => (prepDir && existsSync(join(prepDir, name)) ? join(prepDir, name) : null);
+  const ticketPath = argOf(argv, "ticket-out") ?? beside("ticket.out.json");
+  const changePath = argOf(argv, "change-out") ?? beside("change.out.json");
+  const deployPath = beside("deploy.json");
   const work = workDir(key);
   const file = join(work, "bundle.json");
   // the round stamp is a sidecar: bundle.schema.json allows no extra top-level key
   const stampFile = join(work, "bundle.round.json");
   let stamp = null;
   if (existsSync(file) && existsSync(stampFile)) { try { stamp = JSON.parse(readFileSync(stampFile, "utf8")); } catch { stamp = null; } }
-  if (bundlePlan({ stamp, key, round: delta.round, ticketOut: !!ticketPath }) === "keep") {
-    console.error(`kept ${file}: already Round ${delta.round}'s (acs from ${stamp.acs === "ticket" ? "its TICKET analyst" : "the base"})`);
+  const plan = bundlePlan({ stamp, key, round: delta.round, ticketOut: !!ticketPath, changeOut: !!changePath });
+  if (plan === "keep") {
+    console.error(`kept ${file}: already Round ${delta.round}'s (acs from ${stamp.acs === "ticket" ? "its TICKET analyst" : "the base"}${stamp.change ? ", PRs from its CHANGE analyst" : ""})`);
     console.log(file);
     process.exit(0);
   }
   let bundle;
   try {
-    bundle = rebuildBundle({ base: readJsonFile(resolve(root, basePath)), delta, ticketOut: ticketPath ? readJsonFile(ticketPath) : null });
+    bundle = rebuildBundle({ base: readJsonFile(plan === "layer" ? file : resolve(root, basePath)), delta,
+      ticketOut: ticketPath ? readJsonFile(ticketPath) : null, changeOut: changePath ? readJsonFile(changePath) : null,
+      prepare, deploy: deployPath ? readJsonFile(deployPath) : null });
   } catch (e) { fail(e.message); }
+  const layered = plan === "layer";
   writeFileSync(file, `${JSON.stringify(bundle, null, 2)}\n`);
-  writeFileSync(stampFile, `${JSON.stringify({ key, round: Number(delta.round), acs: ticketPath ? "ticket" : "base" })}\n`);
+  writeFileSync(stampFile, `${JSON.stringify({ key, round: Number(delta.round), acs: ticketPath ? "ticket" : layered ? stamp.acs : "base",
+    change: !!changePath || (layered && !!stamp.change) })}\n`);
   console.log(file);
   process.exit(0);
 }
@@ -700,9 +782,12 @@ function appendCmd(argv) {
   const root = outputRoot();
   const file = join(runDir, "test-strategy.md");
   let src = file;
-  if (!existsSync(file)) {
-    if (!delta.strategy) fail(`${file}: not found, and the delta names no prior test-strategy.md`);
+  // A file with no `## Round` is the `Moved to` pointer an earlier move left: a round back on this folder takes the
+  // newest strategy, exactly as a folder with none does.
+  if (!existsSync(file) || !/^## Round \d+/m.test(readFileSync(file, "utf8"))) {
+    if (!delta.strategy) fail(`${file}: ${existsSync(file) ? "has no `## Round` section" : "not found"}, and the delta names no prior test-strategy.md`);
     src = resolve(root, delta.strategy);
+    if (src === resolve(file)) fail(`${file}: has no \`## Round\` section, and it is the newest strategy the delta names`);
   }
   let md;
   try { md = readFileSync(src, "utf8"); } catch (e) { fail(`${src}: ${e.code ?? e.message}`); }
@@ -719,8 +804,9 @@ function appendCmd(argv) {
 
 function main() {
   const argv = process.argv.slice(2);
-  if (!["count", "close", "delta", "append", "bundle"].includes(argv[0])) usage(`unknown command "${argv[0] ?? ""}"`);
+  if (!["count", "close", "filed", "delta", "append", "bundle"].includes(argv[0])) usage(`unknown command "${argv[0] ?? ""}"`);
   if (argv[0] === "append") return appendCmd(argv);
+  if (argv[0] === "filed") return filedCmd(argv);
   const key = argOf(argv, "key");
   if (!key || !KEY_RE.test(key)) usage(`--key must be a ticket key, got "${key ?? ""}"`);
   if (argv[0] === "close") close(argv); else if (argv[0] === "delta") deltaCmd(argv, key); else if (argv[0] === "bundle") bundleCmd(argv, key); else count(argv, key);

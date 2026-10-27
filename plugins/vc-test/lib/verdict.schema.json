@@ -1,5 +1,5 @@
 {
-  "description": "The round's machine record, written by the verdict agent beside verdict.md (P2-2, spec B3). Medium-or-worse bugs only: a Low finding is a line under Noticed, never a bug. Paths are POSIX-relative to outputRoot(); `key` is set only for a prior bug, whose tracker key is already known (P6); a bug filed this round gets its key from `rounds.mjs close --filed`.",
+  "description": "The round's machine record, written by the verdict agent beside verdict.md (P2-2, spec B3). Medium-or-worse bugs only: a Low finding is a line under Noticed, never a bug. Paths are POSIX-relative to outputRoot(); `key` is set by the verdict agent only for a prior bug, whose tracker key is already known (P6); a bug filed this round gets its key from `rounds.mjs filed` the moment it is filed (or `close --filed`). `round` is the round it closes: `close` refuses a verdict.json of another round.",
   "$defs": {
     "path": { "type": ["string", "null"] },
     "bug": {
@@ -17,8 +17,9 @@
       }
     }
   },
-  "type": "object", "additionalProperties": false, "required": ["verdict", "bugs"],
+  "type": "object", "additionalProperties": false, "required": ["round", "verdict", "bugs"],
   "properties": {
+    "round": { "type": "integer", "minimum": 1 },
     "verdict": { "enum": ["PASS", "PASS WITH NOTES", "FAIL", "BLOCKED"] },
     "bugs": { "type": "array", "items": { "$ref": "#/$defs/bug" } }
   }

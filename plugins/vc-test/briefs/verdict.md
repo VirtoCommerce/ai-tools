@@ -54,7 +54,8 @@ nothing and re-open no page. Dispatch description: `[vc-test:verdict] <KEY>`.
   line, never an entry): `id` `B-<n>`, `severity`, `scope` (`in` or `out`, from the in-scope / outside count of the line
   under the heading, spec B16), `title`, the `rows` that showed it, `package` (its investigation package, POSIX path
   relative to the output root) and `spec` (the `.spec` that failed, when the row has one), else `null`. `verdict` is the
-  verdict word `verdict.md` carries.
+  verdict word `verdict.md` carries; `round` is `ROUND`. Write a new `verdict.json` every time, never edit one you find:
+  `close` refuses a file whose `round` is not the round it closes.
 - **`## Prior bugs`**, after Bugs, when `ROUND ≥ 2`: every `PB-n` row with its key and `FIXED` / `NOT FIXED` /
   `BLOCKED`, then every out-of-scope bug of `PRIOR_BUGS` with its current status (spec B2). **A `NOT FIXED` prior bug
   makes the round FAIL**, whatever its severity (spec §3, round N 4–5): it is not filed again, so its `verdict.json`
