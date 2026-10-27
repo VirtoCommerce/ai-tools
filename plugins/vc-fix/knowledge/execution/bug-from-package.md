@@ -7,7 +7,8 @@ that the package is complete and was made on the build deployed now, and then wr
 re-checks nothing.
 
 The package's shape is [`skills/qa-investigate/evidence-and-root-cause.md`](../../skills/qa-investigate/evidence-and-root-cause.md):
-`evidence-index.md` is Part A (the header slots `TRACE_ID`, `BUILD_VERSIONS`, `REPRO_RATE` and the row table),
+`evidence-index.md` is the §0 shape there (the header slots `TRACE_ID`, `BUILD_VERSIONS`, `REPRO_RATE`, the
+`## Steps to reproduce` section and the Part A row table),
 `root-cause.md` is Part B (§1 Symptom … §8 Fix Routing handoff). "Row N" below is a Part A row, "§N" a Part B
 section. The command's steps point here: [`commands/qa-bug.md`](../../commands/qa-bug.md) Step 0 runs §Build,
 Steps 1–3 are §Complete, §Layers and §Routing, Step 4 is §Report.
@@ -27,16 +28,23 @@ The mandatory set, each checked against the package on disk:
 
 - **Part A's M rows whose trigger applies** — row 1 Failure-state screenshot, 2 DOM snapshot, 3 Network capture,
   4 The failing request (only when there is a 4xx/5xx, an `errors[]` or wrong data), 6 Console messages, 7 HAR file,
-  12 Deployed versions (`BUILD_VERSIONS`).
+  12 Deployed versions (`BUILD_VERSIONS`), 15 Steps to reproduce (`## Steps to reproduce` holding at least one
+  numbered step).
 - **The M\* rows only when §2 names a server-side layer** (xAPI/GraphQL, REST, module/data or infra ticked) — row 5
   Trace / operation ID (`TRACE_ID`) and row 10 App Insights trace. A §2 that says storefront-only demands neither.
 - **`root-cause.md`** — §1 Symptom, §2 Lowest failing layer (a box ticked and "Decided by" citing a row), §5 with its
   first two rows filled (by-design / config-gated, env data drift), §7 with one box ticked.
 
 A row counts only when the file its index row names exists in the package, and a header slot only when it holds a
-value. A row the index lists whose file is gone is missing. **Row 7 is the exception:** it counts when
-`evidence-index.md` names a HAR path that exists, **or** states that the lane records no HAR (a lane `/project-init`
-configured records none). HAR alone never makes an `INCOMPLETE_PACKAGE`.
+value. A row the index lists whose file is gone is missing. **Three rows also count when the package states the env
+cannot give them**, in the words the §0 shape gives:
+
+- row 5 — `TRACE_ID` says the stand sends neither header;
+- row 10 — the row says `N/A for this env` and names a fallback log that exists in the package;
+- row 7 — the row names a HAR path that exists, **or** says the lane records no HAR (a lane `/project-init`
+  configured records none). HAR alone never makes an `INCOMPLETE_PACKAGE`.
+
+The report's Env carries each such statement, so the reader sees what the package could not hold.
 
 **Any one missing ⇒ the outcome is `INCOMPLETE_PACKAGE: <slot, slot>` and no report is written** for this bug.
 A slot is spelled as the row number and Part A's artifact name (`1 Failure-state screenshot`), or the section
@@ -96,9 +104,10 @@ The template of `qa-bug.md` Step 4, each section from the package:
 | Title + severity | §1; severity graded from the package as without `--evidence` |
 | Status (line 3) | `READY_TO_SUBMIT` at §7 HIGH / MEDIUM, `REPRODUCED` at LOW (root cause not yet identified) |
 | `**Found by:**` (line 4) | the caller's `found-by:` argument, as `qa-bug.md` Step 1 says; none ⇒ `human` |
-| Env | `BUILD_VERSIONS`, and `REPRO_RATE` when filled; an entry §Build could not compare, named as unverified |
+| Env | `BUILD_VERSIONS`, and `REPRO_RATE` when filled; an entry §Build could not compare, named as unverified; each §Complete "env cannot give it" statement |
 | Summary | §1, and §4 for the why |
-| Steps to reproduce, Actual | the manifest's reproduction steps and the Part A artifacts (row 4's call with its inputs for an API bug) |
+| Steps to reproduce | `evidence-index.md` `## Steps to reproduce` (row 15), as written there |
+| Actual | the Part A artifacts (row 4's call with its inputs for an API bug) |
 | Expected | §5's by-design row — the documented behaviour the symptom was ruled against; a row that cites without stating it ⇒ the behaviour the §3 / §4 claim contradicts. Never a new lookup |
 | Layer Validation | §Layers |
 | Root Cause Analysis | §3–§5 with package paths, never inlined (`.claude/rules/reports.md` §8) |

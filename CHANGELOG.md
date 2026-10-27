@@ -17,7 +17,10 @@ and `fix-repos.json` to spell the repo name. A package made on another build tha
 with `STALE_PACKAGE: <name> <package ver> ≠ <deployed ver>` (the owning repo's package, or every listed version when the
 package names no repo); a package missing a mandatory slot stops it with `INCOMPLETE_PACKAGE: <slots>` (the HAR counts when the index names
 one or states that the lane records none, so a missing HAR alone never stops it); `qa-bug` never captures the missing
-artifact itself. A version with no deployed counterpart is not compared and is named in the report's Env. A frontend-only package needs no trace id: layers 2-4 read
+artifact itself. The package format names what `qa-bug` checks: `evidence-index.md`'s shape (the `TRACE_ID` /
+`BUILD_VERSIONS` / `REPRO_RATE` slots and a mandatory `## Steps to reproduce`, Part A row 15) is now in
+`qa-investigate/evidence-and-root-cause.md` §0, and an env with no `traceparent` or no App Insights is stated in the
+package rather than stopping it. A version with no deployed counterpart is not compared and is named in the report's Env. A frontend-only package needs no trace id: layers 2-4 read
 `N/A — not probed by the investigation`. LOW routing confidence is filed with no repo and status `REPRODUCED`.
 Where the report goes: a folder the caller names, else `<package>/../bugs/<bucket>/` when the package sits in a ticket
 run folder (the bound run folder, or the run folder of the ticket `found-by:` / `--link` names), else `reports/bugs/open/<bucket>/`; screenshots are copied to `<bugs>/screenshots/<slug>/` and the package

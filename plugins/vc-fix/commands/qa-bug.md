@@ -244,7 +244,7 @@ mv reports/bugs/screenshots/_incoming/*/<kept>.png <bugs>/screenshots/<slug>/
   guess a path. A guessed path was one of the two `Read` failures on a client deployment run.
 - With `--evidence`, copy from the package's `screenshots/` (`bug-from-package.md` §Report).
 
-Generate a report in `reports/bugs/open/<bucket>/` — `critical-high/` · `medium/` · `low/` (when the caller names a ticket run's folder — `/qa-test`, `/qa-test-fast`, `/qa-triage-results` — in `<run folder>/bugs/<bucket>/` instead: `knowledge/execution/run-env.md` §The run folder), chosen by the severity the report declares (`.claude/rules/reports.md` §1a; a straddling grade files at the lower bucket), using this naming convention:
+Generate a report in `reports/bugs/open/<bucket>/` — `critical-high/` · `medium/` · `low/` (in `<run folder>/bugs/<bucket>/` when the caller names a ticket run's folder: `knowledge/execution/run-env.md` §The run folder; with `--evidence`: `bug-from-package.md` §Report), chosen by the severity the report declares (`.claude/rules/reports.md` §1a; a straddling grade files at the lower bucket), using this naming convention:
 `BUG-{Short-Description}.md` or `BUG-{Short-Description}-<ticket-key>.md` (if a JIRA ticket is known)
 
 ### Bug Report Folder Structure
