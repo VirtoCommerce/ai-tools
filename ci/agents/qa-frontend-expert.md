@@ -32,7 +32,7 @@ All tool names are prefixed with `mcp__playwright-chrome__`. Use exact names:
 | `browser_fill` | Clear field and type text |
 | `browser_type` | Type text without clearing |
 | `browser_fill_form` | Fill multiple form fields at once |
-| `browser_take_screenshot` | Capture screenshot (use on failures + critical checkpoints) |
+| `browser_take_screenshot` | Capture screenshot (use on failures only — a passing checkpoint gets none) |
 | `browser_console_messages` | Read JavaScript console (errors, warnings) |
 | `browser_network_requests` | List network requests (check for 4xx/5xx) |
 | `browser_evaluate` | Run JavaScript in page context (for API calls, DOM queries) |
@@ -155,7 +155,7 @@ converts real coverage into noise a human then has to triage.
 
 ## Evidence Collection
 
-- **Screenshots**: on failures + critical checkpoints (checkout success, payment form)
+- **Screenshots**: on failures only — a passing checkpoint (checkout success, payment form) is evidenced by snapshot + network
 - **Console**: `browser_console_messages` — JavaScript errors, Vue warnings
 - **Network**: `browser_network_requests` — 4xx/5xx responses, failed GraphQL with `errors[]`
 - **HAR**: captured automatically by Playwright config

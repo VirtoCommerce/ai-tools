@@ -109,6 +109,9 @@ reports/tickets/SprintXX-XX/<ticket-key>-feature-name/
 - `test-results/` and `reports/bugs/screenshots/_incoming/` are gitignored landing zones for raw
   browser output (HAR, videos, console logs, un-kept captures) — never the path a report cites
 - `reports/` is tracked in git -- use it for all documentation artifacts (the top-level `tests/` dir now holds only repo unit tests, not QA evidence)
+- **Except its images, video and HAR:** a screenshot kept in `reports/bugs/screenshots/<bug-slug>/` or a
+  run folder is local working state and is never committed (`gen-mcp.mjs` ignores `reports/**/*.png`
+  and the other evidence extensions). The tracker attachment is the durable copy (`.claude/rules/reports.md` §5.0)
 - Never save test documentation into `test-results/` and never save raw browser dumps into `reports/`
 - **Never create `reports/<ticket-key>/` directly** — a ticket run's files belong in its run folder
   (`knowledge/execution/run-env.md` §The run folder); other ticket folders belong under `reports/tickets/SprintXX-XX/<ticket-key>/` (sprint context) or `reports/tickets/<ticket-key>/` (ad-hoc, no sprint subfolder)
