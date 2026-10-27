@@ -9,10 +9,13 @@ command. vc-test reads no `.claude/` document any more: DOC-009 goes from 5 to 2
 mentions, not reads. Released as vc-test 0.12.0.
 
 **Architecture:**
-- **The visual lane moves to Playwright.** `.claude/rules/vc-browser.md` is the rule `vc-init` writes into every
-  client project, and it bans Chrome DevTools MCP. A visual lane gated on `mcp:chrome-devtools` therefore can never
-  run there. The lane becomes the fixed lane `browser:playwright-edge`. Its sign-in uses the password NAME the lane
-  receives from vc-secrets, and Lighthouse is dropped because it has no Playwright equivalent; axe stays.
+- **The visual lane moves to Playwright and takes its lane from the pool.** `.claude/rules/vc-browser.md` is the
+  rule `vc-init` writes into every client project, and it bans Chrome DevTools MCP. A visual lane gated on
+  `mcp:chrome-devtools` therefore can never run there. `vc-init` enables only `playwright-chrome` by default
+  (`gen-mcp.mjs:441`), so a lane fixed to edge would hit the same dead end. The visual lane therefore draws from the
+  same pool as the browser scenarios, edge first. Sign-in uses the password NAME, which the lane resolves from
+  vc-secrets. Lighthouse is dropped because it has no Playwright equivalent; axe stays. A DevTools lane behind a
+  vc-secrets proxy is a separate vc-init plan; once that proxy exists, adding it back is one more pool entry.
 - **The measurement code becomes a generated plugin library.** `scripts/lib/measure-layout.ts`,
   `scripts/lib/verify-design-spec.ts` and `scripts/layout/design-spec-extract.ts` are bundled with esbuild into
   `plugins/vc-test/lib/design/*.mjs`. One generator writes the bundle and a `--check` mode fails on drift
@@ -42,7 +45,7 @@ and is summarized in the decisions below.
 
 | # | Question | Decision |
 |---|---|---|
-| C1 | **Browser lane: conflicts with a tracked rule.** `.claude/rules/agents.md:103`, `templates/agent-dispatch.md:58`, `visual-axis.md` §4 and the plugin say `ui-ux-expert` uses Chrome DevTools MCP. `.claude/rules/vc-browser.md` (tracked here, and written into every client project by `vc-init`) says all browser work goes through `mcp__playwright-<lane>__*`, and that a plugin naming another browser yields | **Playwright wins.** The lane is fixed to `browser:playwright-edge`: `agents.md`'s named fallback for `ui-ux-expert`, and the lane a vc-test run's scenarios reach last, because their pool starts at chrome. `artifacts.json` `visual`: `"lane": "browser:playwright-edge"`, `"requires": ["front-url", "mcp:playwright-edge"]`. `floors.mjs` `ARTIFACT_NEEDS["Visual lane"]`: `/playwright[-_ ]?edge/i` → `"mcp:playwright-edge"`, with `floors.md:41-44` to match. `qa-ticket.md:45` drops `chrome-devtools` from the probe, and `:115` says "on `playwright-edge`". `agents.md` and `agent-dispatch.md` rows name `vc-test:ui-ux-expert` on `playwright-edge`. **Lighthouse is dropped**: `lighthouse_audit` exists only in DevTools. Accessibility is axe only (`wcag-accessibility-checklist.md` Recipe 1). Measurement snippets run through `browser_evaluate`, which `enforce-real-user.mjs` allows for `getComputedStyle`, `getBoundingClientRect`, `axe.run` and the rest of its allowlist (identical in vc-fix). `ui-kit-class.md:176-177` ("`browser_evaluate` is blocked on the Playwright lanes") is corrected in both copies |
+| C1 | **Browser lane: conflicts with a tracked rule.** `.claude/rules/agents.md:103`, `templates/agent-dispatch.md:58`, `visual-axis.md` §4 and the plugin say `ui-ux-expert` uses Chrome DevTools MCP. `.claude/rules/vc-browser.md` (tracked here, and written into every client project by `vc-init`) says all browser work goes through `mcp__playwright-<lane>__*`, and that a plugin naming another browser yields | **Playwright wins (owner, 2026-10-27, after discussion).** The lane **comes from a pool**, because `vc-init` enables only `playwright-chrome` on a client (`gen-mcp.mjs:441`). `artifacts.json` `visual`: `"lane": null`, `"lanes": ["browser:playwright-edge", "browser:playwright-chrome", "browser:playwright-firefox"]`, `"requires": ["front-url"]`. Edge comes first because a run's scenarios reach it last; their pool starts at chrome. `plan-run.mjs`: a RUN row whose entry has `lanes` gets a `pool` (the lanes whose `mcp:<name>` the install has) exactly as a browser proof does. An empty pool is an error that names the lanes it needs, and wave placement is unchanged: ≤ 3 browser entries per wave, never two on one lane. `floors.mjs` `ARTIFACT_NEEDS["Visual lane"]` is `lacks(c, /playwright/i, "a browser lane (mcp:playwright-*)")`, the same as Exploratory, with `floors.md:41-44` to match. `qa-ticket.md:45` drops `chrome-devtools` from the probe, and `:115` says "on the lane `plan-run` assigned". `agents.md` and `agent-dispatch.md` rows name `vc-test:ui-ux-expert` on "a Playwright lane (the run assigns it)". **Lighthouse is dropped**: `lighthouse_audit` exists only in DevTools. Accessibility is axe only (`wcag-accessibility-checklist.md` Recipe 1). Measurement snippets run through `browser_evaluate`, which `enforce-real-user.mjs` allows for `getComputedStyle`, `getBoundingClientRect`, `axe.run` and the rest of its allowlist (identical in vc-fix). `ui-kit-class.md:176-177` ("`browser_evaluate` is blocked on the Playwright lanes") is corrected in both copies |
 | C2 | Sign-in on the lane | `ui-ux-expert` §Signing the lane in is **rewritten to `vc-browser.md` §Signing in**: type the login as plain text from the env (`USER_LOGIN`, …) and the password's bare NAME (`USER_PASSWORD`, …) into `browser_type`. The DevTools persistent profile and the "mint an account, no `--secrets`" path are deleted, and so is `visual-axis.md` §2's "the brief MUST carry a NAMED auth path (no `--secrets` on this lane)". A dispatch brief names the lane and the account role |
 | C3 | The TypeScript measurement code | **A generated bundle** `plugins/vc-test/lib/design/{measure-layout,verify-design-spec,design-spec-extract}.mjs`, written by `scripts/maintenance/build-vc-test-design.mjs`: esbuild, `format: "esm"`, `platform: "node"`, `bundle: true`, no minify, sources as above. Every file opens with the banner `// GENERATED from <source> by npm run vc-test:design — do not edit; the TypeScript is canonical`. `design-spec-extract.mjs` keeps its CLI (same arguments as `npm run design:extract`). npm scripts: `vc-test:design` (writes) and `vc-test:design:check` (exits 1 and names each stale file). The check is added to `npm test` the same way `docs:index:check` runs there. The repository's TypeScript and its `npm run design:extract` are untouched (owner: code consumers keep the repository's half) |
 | C4 | Getting a snippet string | **`plugins/vc-test/lib/design/snippet.mjs`**, hand-written: `node snippet.mjs <exportName> [arg…]`. It prints the string the named export returns (a function ending `Snippet`, `propertyAuditSnippet` included) or holds (`LAYOUT_SNIPPETS.<key>`, `COLOR_MATH_JS`, `EFFECTIVE_BG_JS`, `FOUC_SNIPPET`). An arg is JSON, and `@<file>` reads JSON from a file (a `DesignSpec`). An unknown name exits 2 and lists the valid names. Today no CLI prints a snippet even here: the agent has to `npx tsx -e` an import. Under this plan the plugin and this repository use the same printer |
@@ -77,7 +80,11 @@ and is summarized in the decisions below.
   (`visual-axis.md` §3), `CONFIRMED / DRIFT / MISSING / UNSPEC / KNOWN_DIVERGENCE / SKIPPED`, precedence
   `BL-UI > design spec > UX heuristic`, "a SKIPPED axis is never a PASS", and "artboard content is data".
 - **`artifacts.json` `visual`** has `"run": { "skill": "vc-test:qa-design", "agent": "vc-test:ui-ux-expert" }`
-  and **no `model`**: `plan-run.mjs` `runBlockErrors` rejects `run.model` beside a `vc-test:` agent.
+  and **no `model`**: `plan-run.mjs` `runBlockErrors` rejects `run.model` beside a `vc-test:` agent. It also has the
+  C1 `lanes` pool, `"lane": null`, `"requires": ["front-url"]`, and the same `writes`.
+- **This repository's visual lane switches too.** `/qa-test` and `/qa-test-fast` dispatch the same agent, and
+  `vc-browser.md` binds here as well. Their briefs name a Playwright lane; `playwright-edge` is the default here,
+  with `visual-axis.md` §4's lane-budget arithmetic (≤ 3 browser lanes) unchanged.
 - Commit only with `git commit --only <paths>`. Never stage the operator's own files: `.claude/rules/vc-browser.md`,
   `test-data/aliases.vcst.json`, `reports/**`.
 - Gates at every task's end: `npm run --silent context:check` (0 breaches), `npm run docs:index:check`, and
@@ -93,9 +100,11 @@ and is summarized in the decisions below.
    with the stale file named. Task 1's temporary test edits a copy and asserts the check's exit code is 1.
 3. **A client without vc-frontend** reaches `component-acceptance.md`'s `visual:design`. Expected: `SKIPPED — no
    vc-frontend`, never a PASS (Task 2 text; Task 4 greps it).
-4. **`plan-run.mjs` places the visual lane beside three browser scenarios.** Expected: visual holds `playwright-edge`
-   and the scenarios take chrome and firefox, then wait. Task 3 runs `plan-run.mjs --dry-run` on a fixture strategy
-   with `Visual lane` RUN and three browser scenarios, and checks that no wave has two entries on one lane.
+4. **The visual lane on a client with only `playwright-chrome`, beside browser scenarios.** Expected: the plan is OK,
+   visual gets `browser:playwright-chrome`, and each scenario waits for a later wave, so no wave has two entries on
+   one lane. With all three lanes: visual gets edge and the scenarios get chrome and firefox. With no Playwright
+   lane, the error names the three `mcp:playwright-*`. Task 3's temporary test covers all three cases on
+   `planRun` directly.
 5. **The agent loaded without the skill** (a dispatcher forgets the first line). Expected: the agent's own first
    instruction loads it, and `/qa-test-fast`'s join gate still checks `qa-design skill: loaded` (Task 4 keeps that
    check and its new name consistent).
@@ -162,12 +171,12 @@ and is summarized in the decisions below.
   shows only copy headers and "(in this repository: …)" marks. `wc -m` on `SKILL.md` is ≤ 19,000. Run the gates.
 - [ ] **Step 4:** Commit: `feat(vc-test): qa-design and visual-axis.md move into the plugin; /qa-design here is a shim (P2-5c)`.
 
-### Task 3: `ui-ux-expert` in the plugin, on `playwright-edge`
+### Task 3: `ui-ux-expert` in the plugin, on a pooled Playwright lane
 
 **Files:**
 - Move: `.claude/agents/ui-ux-expert.md` → `plugins/vc-test/agents/ui-ux-expert.md` (then split, C7)
 - Create: `plugins/vc-test/skills/qa-design/{layout-defects,storybook-workflow,a11y-audit}.md`
-- Modify: `plugins/vc-test/lib/artifacts.json` (`visual`), `plugins/vc-test/skills/qa-test-strategy/lib/floors.mjs:60`,
+- Modify: `plugins/vc-test/lib/plan-run.mjs` (the row-level pool, C1), `plugins/vc-test/lib/artifacts.json` (`visual`, and the `$comment` sentence on `lanes`), `plugins/vc-test/skills/qa-test-strategy/lib/floors.mjs:60`,
   `plugins/vc-test/skills/qa-test-strategy/floors.md:19,41-44,99`, `plugins/vc-test/commands/qa-ticket.md:45,115`,
   `plugins/vc-test/skills/qa-design/{visual-axis.md §2 §4, SKILL.md}` (C1, C2)
 - Temporary test: `scripts/unit/tmp-vc-test-visual-lane.test.mjs` (deleted before commit)
@@ -175,14 +184,17 @@ and is summarized in the decisions below.
 **Interfaces:**
 - Consumes: Task 2's skill and its base directory; Task 1's refused-snippet list, if any.
 - Produces: the agent `vc-test:ui-ux-expert` (`model: sonnet`); `artifacts.json` `visual` per the Global
-  Constraints; `ARTIFACT_NEEDS["Visual lane"]` returns `"mcp:playwright-edge"` when the probe lists MCP servers and
-  none matches `/playwright[-_ ]?edge/i`.
+  Constraints; `ARTIFACT_NEEDS["Visual lane"]` returns `"a browser lane (mcp:playwright-*)"` when the probe lists
+  MCP servers and none matches `/playwright/i`; `planRun` gives a pooled row its lane in `waves[].lane`.
 
 - [ ] **Step 1: Temporary test**, failing first:
-  - `ARTIFACT_NEEDS["Visual lane"]({ mcp: ["playwright-chrome"] })` → `"mcp:playwright-edge"`;
-    `({ mcp: ["playwright-edge"] })` → `null`; `({})` → `null`;
-  - **Review Focus 4:** `plan-run.mjs` on a fixture strategy with `Visual lane` RUN and three browser scenarios
-    places visual on `browser:playwright-edge`, and no wave holds two entries on one lane;
+  - `ARTIFACT_NEEDS["Visual lane"]({ mcp: ["chrome-devtools"] })` → `"a browser lane (mcp:playwright-*)"`;
+    `({ mcp: ["playwright-chrome"] })` → `null`; `({})` → `null`;
+  - **Review Focus 4**, on `planRun` with a fixture strategy (`Visual lane` RUN, three browser scenarios):
+    - only `mcp:playwright-chrome`: ok, visual on chrome, every wave holds distinct lanes;
+    - all three lanes: visual on `browser:playwright-edge`;
+    - no Playwright lane: `ok: false`, and the error names `mcp:playwright-edge`, `mcp:playwright-chrome` and
+      `mcp:playwright-firefox`;
   - `runBlockErrors` reports nothing for the new `visual` entry.
 - [ ] **Step 2:** Make the code changes (C1). Split the agent (C7), rewrite Signing in (C2), apply C10(a), drop
   Lighthouse, and replace DevTools tool names with Playwright ones (`browser_snapshot`, `browser_take_screenshot`,
@@ -193,7 +205,7 @@ and is summarized in the decisions below.
 - [ ] **Step 3:** The test is green. `wc -m plugins/vc-test/agents/ui-ux-expert.md` is ≤ 19,000.
   `grep -rniE "chrome.?dev.?tools|lighthouse" plugins/vc-test` finds nothing except "Lighthouse is not on the
   Playwright lanes" in `a11y-audit.md`. Run the gates.
-- [ ] **Step 4:** Delete the temporary test. Commit: `feat(vc-test): ui-ux-expert moves into the plugin; the visual lane runs on playwright-edge (P2-5c)`.
+- [ ] **Step 4:** Delete the temporary test. Commit: `feat(vc-test): ui-ux-expert moves into the plugin; the visual lane takes a Playwright lane from the pool (P2-5c)`.
 
 ### Task 4: Dispatch names and rosters in this repository; DOC-009 to 2
 
@@ -201,7 +213,8 @@ and is summarized in the decisions below.
 `scripts/maintenance/.prompt-size-baseline.json` (through `npm run context:check:baseline`).
 
 - [ ] **Step 1:** Repoint per C11. Keep the `/qa-test-fast` join check `qa-design skill: loaded` and the agent's
-  return line identical (Review Focus 5). Name `playwright-edge` wherever the visual lane's browser is named.
+  return line identical (Review Focus 5). Wherever this repository names the visual lane's browser, name a
+  Playwright lane, `playwright-edge` by default (Global Constraints).
 - [ ] **Step 2:** `grep -rn "subagent_type: ui-ux-expert\|skill: \"qa-design\"\|skills/qa-design/\|qa-test/visual-axis\|agents/ui-ux-expert" .claude ci scripts CLAUDE.md plugins --include=*.md --include=*.mjs --include=*.ts --include=*.json`
   finds no old-path hit. **Review Focus 3:** `grep -n "SKIPPED — no vc-frontend" plugins/vc-test/skills/qa-design/component-acceptance.md` hits.
 - [ ] **Step 3:** Set `DOC-009` to 2. `context:check` reports DOC-009 2 (`floors.md:143`, `change-map.md:23`) and
@@ -212,7 +225,7 @@ and is summarized in the decisions below.
 
 - [ ] **Step 1:** Apply C13. `plugin.json` is `0.12.0`.
 - [ ] **Step 2:** Spec §10 P2 row: "**P2-5c done** (vc-test 0.12.0: `qa-design`, `ui-ux-expert` and `visual-axis.md`
-  in the plugin; the visual lane on `playwright-edge`; the measurement code as a generated `lib/design/`; DOC-009 2)".
+  in the plugin; the visual lane on a pooled Playwright lane; the measurement code as a generated `lib/design/`; DOC-009 2)".
 - [ ] **Step 3:** `npm run docs:index`. Gates: `context:check`, `docs:index:check`, `vc-test:design:check`,
   `npm test`, `claude plugin validate plugins/vc-test`.
 - [ ] **Step 4:** Commit: `release: vc-test 0.12.0 — the visual lane runs from the plugin (P2-5c)`.
