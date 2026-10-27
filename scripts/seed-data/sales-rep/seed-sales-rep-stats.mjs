@@ -20,7 +20,7 @@
  * GUIDs are written to test-data/aliases.<env>.json — never into a committed fixture.
  *
  * Flags: --dry-run (reads only) · --verbose · --teardown (removes only what this seeder creates)
- *        --only <fixture_key>  (ACME | WEST | ROWCAP)
+ *        --only <fixture_key>  (ACME | WEST | SPLIT | ROWCAP) — a cart key seeds ONLY that cart
  *
  *   3. WIDGET ROW-CAP ORDERS for SR_REP_LAYOUT (VCST-5649) — `--only ROWCAP`. A cap on rendered rows
  *      is only observable when the data set is strictly larger than the cap, and the layout rep (the
@@ -36,7 +36,8 @@ import {
   writeEnvAliasOverride, DRY_RUN, TEARDOWN, ONLY, BACK_URL, STORE_ID,
 } from '../../lib/seed-common.mjs';
 import {
-  TOP_SELLER_ORDER, CART_FIXTURES, cartName, statsOrderNumber,
+  TOP_SELLER_ORDER, CART_FIXTURES, fixtureCartName, isBorrowedCart, RETIRED_CART_NAMES,
+  statsOrderNumber, cartLines, expectedCartSplit, cartSplitDiverges,
   shapedOrderTotal, buildShapedItems, requiredProductSlots, expectedRankings, rankingsDiverge, preferSanelyPriced,
 } from './sales-rep-stats-specs.mjs';
 import {
@@ -311,52 +312,156 @@ async function seedRowcapOrders(orgs, customerId, products) {
 
 /** Find the rep's cart by name within the current org context. */
 async function findCart(token, name, userId) {
-  const d = await gql(token, `{ cart(storeId:"${STORE_ID}", cartName:"${name}", cultureName:"en-US", currencyCode:"USD", userId:"${userId}") { ${CART_SEL} } }`);
+  const d = await gql(token, `{ cart(storeId:"${STORE_ID}", cartName:"${name}", cultureName:"en-US", currencyCode:"USD", userId:"${userId}") { ${CART_SEL} ${CART_ITEMS_SEL} } }`);
   return d?.cart || null;
+}
+
+const CART_ITEMS_SEL = 'items { id productId quantity isGift selectedForCheckout }';
+
+/** Selected / not-selected quantities a live cart carries, counted the way the statistic counts them. */
+function liveSplit(cart) {
+  const items = cart?.items || [];
+  const sum = (pred) => items.filter(pred).reduce((s, i) => s + (i.quantity || 0), 0);
+  return { selectedItemQuantity: sum((i) => i.selectedForCheckout !== false), unselectedItemQuantity: sum((i) => i.selectedForCheckout === false) };
+}
+
+/** Does a live cart already hold exactly the spec'd line shape? A plain cart needs only to be non-empty. */
+function cartMatchesSpec(cart, spec) {
+  if (!((cart?.itemsCount || 0) > 0)) return false;
+  if (!spec.unselected) return true;
+  const want = expectedCartSplit(spec); const got = liveSplit(cart);
+  return (cart.items || []).length === cartLines(spec).length
+    && got.selectedItemQuantity === want.selectedItemQuantity
+    && got.unselectedItemQuantity === want.unselectedItemQuantity;
+}
+
+/**
+ * Remove only the given lines from a cart (by line id), one removeCartItem per line. Used on a BORROWED
+ * cart (the rep's "default" cart): the seeder never removes the cart itself, only the lines it put there.
+ */
+async function removeLines(tok, cart, name, userId, lineIds) {
+  // gql() is a raw fetch with no dry-run short-circuit (unlike api()) — guard here, not only at callers.
+  if (DRY_RUN) { log(`  [DRY] would remove ${lineIds.length} line(s) from cart ${name}`); return cart; }
+  let out = cart;
+  for (const lineItemId of lineIds) {
+    const d = await gql(tok, `mutation($cmd: InputRemoveItemType!) { removeCartItem(command: $cmd) { ${CART_SEL} ${CART_ITEMS_SEL} } }`, {
+      cmd: { cartId: cart.id, storeId: STORE_ID, userId, cartName: name, currencyCode: 'USD', cultureName: 'en-US', lineItemId },
+    });
+    if (d?.removeCartItem) out = d.removeCartItem;
+  }
+  return out;
+}
+
+/** The product ids a fixture's lines use, discovered exactly as the seed discovers them (teardown side). */
+let teardownCartables = null;
+async function fixtureProductIds(spec, rep) {
+  if (!teardownCartables) {
+    const tok = await repToken(rep.email, rep.store || STORE_ID);
+    // SAME `need` as main(): the cartable scan width derives from it, so a different need could map slots to other products.
+    teardownCartables = await discoverStoreProducts(tok, Math.max(requiredProductSlots(), requiredRowcapProductSlots()), { cartable: true });
+  }
+  return new Set(cartLines(spec).map((l) => teardownCartables[l.productSlot]?.id).filter(Boolean));
+}
+
+/** Remove the named carts an earlier fixture version created (RETIRED_CART_NAMES), in the fixture's org. */
+async function retireCarts(spec, tok, userId) {
+  for (const old of RETIRED_CART_NAMES[spec.key] || []) {
+    const c = await findCart(tok, old, userId);
+    // The cart query answers an id-less shell for an absent name — only a persisted cart is removed.
+    if (!c?.id) { verbose(`retired cart ${old} absent`); continue; }
+    if (DRY_RUN) { log(`  [DRY] would remove retired cart ${old} (${c.id})`); continue; }
+    await gql(tok, 'mutation($cmd: InputRemoveCartType!) { removeCart(command: $cmd) }', { cmd: { cartId: c.id, userId } });
+    const left = await findCart(tok, old, userId);
+    log(left?.id ? `  WARN retired cart ${old} still present after removeCart` : `  removed retired cart ${old} (${c.id})`);
+  }
 }
 
 async function seedCart(spec, orgs, rep, userId, products) {
   const org = orgs[spec.orgKey];
   if (!org?.id) { log(`WARN: org ${spec.orgKey} has no pinned platform_id — skipping cart ${spec.key}`); return null; }
-  const name = cartName(spec.key);
-  const product = products[spec.productSlot];
-  if (!product) { log(`WARN: cart ${spec.key} — productSlot ${spec.productSlot} unsatisfied (${products.length} cartable product(s) found), skipping`); return null; }
+  const name = fixtureCartName(spec);
+  const borrowed = isBorrowedCart(spec);
+  const lines = cartLines(spec);
+  const missing = lines.filter((l) => !products[l.productSlot]);
+  if (missing.length) { log(`WARN: cart ${spec.key} — productSlot(s) ${missing.map((l) => l.productSlot)} unsatisfied (${products.length} cartable product(s) found), skipping`); return null; }
+  if (spec.unselected && !cartSplitDiverges(spec)) throw new Error(`cart ${spec.key}: selected and not-selected quantities no longer diverge — fix the spec`);
 
-  if (DRY_RUN) { verbose(`[DRY] cart ${name} in ${spec.orgKey} with ${product.sku} ×${spec.quantity}`); return null; }
+  const plan = lines.map((l) => `${products[l.productSlot].sku} x${l.quantity}${l.selected ? '' : ' (not selected)'}`).join(', ');
+  const fixtureProductIds = new Set(lines.map((l) => products[l.productSlot].id));
 
   // Org context is what stamps cart.organizationId — a plain grant would create an org-less cart
-  // that no per-org statistics query can see.
+  // that no per-org statistics query can see. (Token + cart reads are side-effect free, so a dry run
+  // performs them too and reports the live state it would act on.)
   const tok = await repToken(rep.email, rep.store || STORE_ID, org.id);
-
+  await retireCarts(spec, tok, userId);
   const existing = await findCart(tok, name, userId);
-  if (existing?.id && (existing.itemsCount || 0) > 0 && existing.organizationId === org.id) {
-    log(`cart ${name} exists (${existing.itemsCount} item(s), ${existing.total?.formattedAmount}, org ok)`);
+
+  if (DRY_RUN) {
+    log(`  [DRY] cart "${name}" in ${spec.orgKey}${borrowed ? ' (BORROWED — lines only)' : ''}: live ${existing?.id ? `${existing.id}, ${(existing.items || []).length} line(s), split ${JSON.stringify(liveSplit(existing))}` : 'absent'}; would hold ${plan}`);
+    return null;
+  }
+
+  const matches = existing?.id && existing.organizationId === org.id && cartMatchesSpec(existing, spec)
+    && (!borrowed || (existing.items || []).every((i) => fixtureProductIds.has(i.productId)));
+  if (matches) {
+    log(`cart ${name} exists (${existing.itemsCount} item(s), ${existing.total?.formattedAmount}, org ok${spec.unselected ? `, split ${JSON.stringify(liveSplit(existing))}` : ''})`);
     return existing.id;
   }
-  // An EMPTY cart of the same name is not an active cart (BL-SR-006) — drop it and rebuild.
-  if (existing?.id) {
+  if (existing?.id && borrowed) {
+    // A BORROWED cart (the rep's "default" cart) is never removed — the seeder did not create it.
+    // A line that is not one of the fixture's products was put there by someone else (a storefront
+    // session, a case acting in this org): refuse rather than wipe it, because the per-org statistic
+    // would no longer equal the fixture and deleting another flow's line is not ours to do.
+    const foreign = (existing.items || []).filter((i) => !fixtureProductIds.has(i.productId));
+    if (foreign.length) {
+      throw new Error(`cart "${name}" (${existing.id}) in ${spec.orgKey} holds ${foreign.length} line(s) that are not this fixture's (${foreign.map((i) => `${i.productId} x${i.quantity}`).join(', ')}) — `
+        + 'someone shopped in this cart; empty it deliberately, then re-seed');
+    }
+    // Drifted fixture lines: take them out and rebuild (addItem would MERGE into an existing line).
+    await removeLines(tok, existing, name, userId, (existing.items || []).map((i) => i.id));
+    verbose(`removed ${(existing.items || []).length} drifted fixture line(s) from borrowed cart ${name}`);
+  } else if (existing?.id) {
+    // An EMPTY cart of the same name is not an active cart (BL-SR-006), and a SPLIT cart whose lines
+    // drifted no longer discriminates the split — drop it and rebuild from the spec.
     await gql(tok, 'mutation($cmd: InputRemoveCartType!) { removeCart(command: $cmd) }', { cmd: { cartId: existing.id, userId } });
-    verbose(`removed stale/empty cart ${name}`);
+    verbose(`removed stale/empty/drifted cart ${name}`);
   }
 
-  const d = await gql(tok, `mutation($cmd: InputAddItemType!) { addItem(command: $cmd) { ${CART_SEL} } }`, {
-    cmd: {
-      storeId: STORE_ID, userId, cartName: name, currencyCode: 'USD', cultureName: 'en-US',
-      productId: product.id, quantity: spec.quantity,
-    },
-  });
-  const cart = d?.addItem;
-  const errs = cart?.validationErrors || [];
-  if (errs.length) {
-    // Fail LOUD: a cart that silently stayed empty is not an active cart and would quietly
-    // under-report the statistic we are seeding for.
-    log(`  WARN cart ${name} validation: ${errs.map((e) => `${e.errorCode}: ${e.errorMessage}`).join(' | ')}`);
+  let cart = null;
+  for (const l of lines) {
+    const product = products[l.productSlot];
+    const d = await gql(tok, `mutation($cmd: InputAddItemType!) { addItem(command: $cmd) { ${CART_SEL} ${CART_ITEMS_SEL} } }`, {
+      cmd: {
+        storeId: STORE_ID, userId, cartName: name, currencyCode: 'USD', cultureName: 'en-US',
+        productId: product.id, quantity: l.quantity,
+      },
+    });
+    cart = d?.addItem;
+    const errs = cart?.validationErrors || [];
+    if (errs.length) {
+      // Fail LOUD: a cart that silently stayed empty is not an active cart and would quietly
+      // under-report the statistic we are seeding for.
+      log(`  WARN cart ${name} validation: ${errs.map((e) => `${e.errorCode}: ${e.errorMessage}`).join(' | ')}`);
+    }
   }
   if (!cart?.itemsCount) {
     log(`  WARN cart ${name} created EMPTY (itemsCount=0) — NOT an active cart per BL-SR-006`);
     return cart?.id || null;
   }
-  log(`cart ${name} (${spec.orgKey}) -> ${cart.id}  ${product.sku} ×${spec.quantity} = ${cart.total?.formattedAmount} (${cart.itemsCount} line(s))`);
+
+  // Take the spec'd lines out of checkout. Matched by productId: addItem returns lines in no fixed order.
+  const offProducts = new Set(lines.filter((l) => !l.selected).map((l) => products[l.productSlot].id));
+  const offIds = (cart.items || []).filter((i) => offProducts.has(i.productId)).map((i) => i.id);
+  if (offIds.length) {
+    const d = await gql(tok, `mutation($cmd: InputChangeCartItemsSelectedType!) { unSelectCartItems(command: $cmd) { ${CART_SEL} ${CART_ITEMS_SEL} } }`, {
+      cmd: { cartId: cart.id, storeId: STORE_ID, userId, cartName: name, currencyCode: 'USD', cultureName: 'en-US', lineItemIds: offIds },
+    });
+    if (d?.unSelectCartItems) cart = d.unSelectCartItems;
+  }
+  if (spec.unselected && !cartMatchesSpec(cart, spec)) {
+    throw new Error(`cart ${name}: built ${JSON.stringify(liveSplit(cart))}, spec wants ${JSON.stringify(expectedCartSplit(spec))} — the split fixture did not land`);
+  }
+  log(`cart ${name} (${spec.orgKey}) -> ${cart.id}  ${lines.map((l) => `${products[l.productSlot].sku} x${l.quantity}${l.selected ? '' : ' (not selected)'}`).join(', ')} = ${cart.total?.formattedAmount} (${cart.itemsCount} line(s))`);
   return cart.id;
 }
 
@@ -373,14 +478,28 @@ async function teardown(orgs, rep, userId) {
     : 'TEARDOWN (scoped to ROWCAP) — removing only the AGENT-TEST-SRO-ROWCAP orders');
 
   // Carts first (children of the org/product graph), then the order.
+  // A cart-scoped `--only <cart key>` removes ONLY that cart (and never the shared shaped order).
+  const removedCarts = [];
   for (const spec of runStats ? CART_FIXTURES : []) {
+    if (ONLY && spec.key !== ONLY) continue;
     const org = orgs[spec.orgKey];
     if (!org?.id) continue;
     try {
       const tok = await repToken(rep.email, rep.store || STORE_ID, org.id);
-      const name = cartName(spec.key);
+      await retireCarts(spec, tok, userId);
+      const name = fixtureCartName(spec);
       const c = await findCart(tok, name, userId);
-      if (c?.id) {
+      if (c?.id && isBorrowedCart(spec)) {
+        // BORROWED cart (the rep's "default" cart): remove ONLY this fixture's lines, never the cart.
+        // Lines are matched by the fixture's product set, re-discovered the same way the seed did.
+        const ids = await fixtureProductIds(spec, rep);
+        const mine = (c.items || []).filter((i) => ids.has(i.productId));
+        const foreign = (c.items || []).length - mine.length;
+        if (DRY_RUN) { log(`  [DRY] would remove ${mine.length} fixture line(s) from borrowed cart "${name}" (${c.id}), leaving ${foreign} other line(s) and the cart itself`); continue; }
+        if (mine.length) await removeLines(tok, c, name, userId, mine.map((i) => i.id));
+        log(`  emptied ${mine.length} fixture line(s) from borrowed cart "${name}" (${c.id}); cart kept${foreign ? `, ${foreign} non-fixture line(s) left untouched` : ''}`);
+        removedCarts.push({ spec, org, name, borrowed: true, ids });
+      } else if (c?.id) {
         // DRY_RUN guard is MANDATORY here: carts are removed over GraphQL, and `gql()` is a raw
         // fetch with no dry-run short-circuit — unlike `api()`, which skips every non-read call.
         // Without this, `--teardown --dry-run` really deleted both carts while printing what
@@ -388,12 +507,14 @@ async function teardown(orgs, rep, userId) {
         if (DRY_RUN) { log(`  [DRY] would remove cart ${name}`); continue; }
         await gql(tok, 'mutation($cmd: InputRemoveCartType!) { removeCart(command: $cmd) }', { cmd: { cartId: c.id, userId } });
         log(`  removed cart ${name}`);
+        removedCarts.push({ spec, org, name });
       } else verbose(`cart ${name} absent`);
     } catch (e) { log(`  WARN cart ${spec.key} teardown: ${String(e.message).slice(0, 160)}`); }
   }
 
   const number = statsOrderNumber(TOP_SELLER_ORDER.key);
-  const found = runStats ? await api('POST', '/api/order/customerOrders/search', { keyword: number, take: 5 }) : null;
+  const sweepOrder = runStats && !ONLY;
+  const found = sweepOrder ? await api('POST', '/api/order/customerOrders/search', { keyword: number, take: 5 }) : null;
   for (const o of (found?.results || [])) {
     // `api()` already skips the DELETE under --dry-run; say so rather than reporting a deletion
     // that did not happen (the log line runs either way).
@@ -415,8 +536,19 @@ async function teardown(orgs, rep, userId) {
   // Zero-residue assert. Meaningless in a dry run — nothing was deleted, so the fixture is still
   // there by design and a WARN would read as a teardown failure.
   if (DRY_RUN) { log('  [DRY] residue check skipped (nothing was deleted)'); log('Teardown complete (dry run — no writes).'); return; }
-  const after = runStats ? await api('POST', '/api/order/customerOrders/search', { keyword: number, take: 5 }) : null;
+  const after = sweepOrder ? await api('POST', '/api/order/customerOrders/search', { keyword: number, take: 5 }) : null;
   let residue = (after?.results || []).length;
+  for (const { org, name, borrowed, ids } of removedCarts) {
+    const tok = await repToken(rep.email, rep.store || STORE_ID, org.id);
+    const left = await findCart(tok, name, userId);
+    if (borrowed) {
+      const stale = (left?.items || []).filter((i) => ids.has(i.productId)).length;
+      if (stale) { residue += stale; log(`  WARN ${stale} fixture line(s) still in borrowed cart "${name}"`); }
+      continue;
+    }
+    // The cart query answers a fresh, id-less shell for an absent name — only a persisted cart counts.
+    if (left?.id && (left.itemsCount || 0) > 0) { residue += 1; log(`  WARN cart ${name} still present after removal`); }
+  }
   for (const spec of runRowcap ? ROWCAP_ORDERS : []) {
     const hit = await api('POST', '/api/order/customerOrders/search', { keyword: rowcapOrderNumber(spec.key), take: 5 });
     residue += (hit?.results || []).length;
@@ -459,7 +591,8 @@ async function main() {
 
   const writeback = {};
 
-  if (runStats) {
+  // A cart-scoped `--only <cart key>` must not rebuild the shared shaped order as a side effect.
+  if (runStats && !ONLY) {
     const orderId = await seedShapedOrder(TOP_SELLER_ORDER, orgs, userId, orderProducts);
     if (orderId) writeback[TOP_SELLER_ORDER.alias] = { id: orderId, number: statsOrderNumber(TOP_SELLER_ORDER.key) };
   }
@@ -481,7 +614,7 @@ async function main() {
     for (const spec of CART_FIXTURES) {
       if (ONLY && spec.key !== ONLY) continue;
       const id = await seedCart(spec, orgs, rep, userId, cartProducts);
-      if (id) writeback[spec.alias] = { id, name: cartName(spec.key) };
+      if (id) writeback[spec.alias] = { id, name: fixtureCartName(spec) };
     }
   }
 
