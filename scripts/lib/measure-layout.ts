@@ -26,7 +26,7 @@
  * any MCP `evaluate` tool (playwright-*, Chrome DevTools). They use no imports
  * and no TypeScript syntax — pure JS executable in any modern browser context.
  *
- * Invariants enforced (see `.claude/agents/ui-ux-expert.md` Layer 1):
+ * Invariants enforced (see `plugins/vc-test/agents/ui-ux-expert.md` Layer 1):
  *   BL-UI-001  Layout stability (CLS ≤ 0.1)
  *   BL-UI-002  Spacing grid — Tailwind's default scale (incl. half-steps 2/6/10/14 px)
  *              plus vc-frontend's `theme.extend.spacing`. NEVER a hand-picked subset;

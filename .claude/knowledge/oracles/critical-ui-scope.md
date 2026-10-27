@@ -11,7 +11,7 @@ applicability_rationale: "vcst's 7 components × 8 pages coverage matrix. Custom
 
 > **Pre-reads:** `BL-UI-*` (`npm run bl:extract -- --domain ui`), [storefront-selectors.md](../automation/storefront-selectors.md), [measure-layout.ts helper](../../../scripts/lib/measure-layout.ts).
 >
-> **Owner agent:** [ui-ux-expert](../../agents/ui-ux-expert.md). Other agents may consume this scope as input but should not modify it without explicit per-entry user approval (same convention as BL oracle promotions).
+> **Owner agent:** [ui-ux-expert](../../../plugins/vc-test/agents/ui-ux-expert.md). Other agents may consume this scope as input but should not modify it without explicit per-entry user approval (same convention as BL oracle promotions).
 
 ## Why a matrix, not a list
 

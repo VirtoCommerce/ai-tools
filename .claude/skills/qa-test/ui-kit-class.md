@@ -164,24 +164,25 @@ Each is `BLOCKED` — after a real attempt that failed, never as a shortcut
 silent PASS.** All four otherwise resolve to *"unverified"*, which is honest and, to anyone skimming,
 indistinguishable from *"fine"*. Backlog: B-35.
 
-## 9. The two lanes are COMPLEMENTARY — brief the right one, and derive only what neither can do
+## 9. One Playwright lane does both — brief each kind of work through its own tools, and derive only what the lane cannot do
 
-This class needs both measurement and real interaction, and **no single lane provides both.** Briefing the
-wrong one does not fail loudly; it returns `BLOCKED` or `INCONCLUSIVE` for a tooling reason that reads like
-a product finding.
+This class needs both measurement and real interaction, and **one Playwright lane provides both**, through
+different tools. Briefing a measurement as a click path, or a journey as a script, does not fail loudly; it
+returns `BLOCKED` or `INCONCLUSIVE` for a tooling reason that reads like a product finding.
 
-| Needs | Lane | Why the other cannot |
+| Needs | On the lane | What the hook refuses |
 |---|---|---|
 | computed colour, `getBoundingClientRect`, token reads, axe injection | **the visual lane** (`ui-ux-expert`, on the Playwright lane the run assigns), through `browser_evaluate` | the **REAL-USER RULE** (`hooks/enforce-real-user.mjs`) lets `browser_evaluate` through only for a read-only measurement — its allowlist passes `getComputedStyle`, `getBoundingClientRect`, `axe.run`, `window.axe` and their kin — so a measurement is a printed snippet (vc-test's `lib/design/snippet.mjs`), never a script that clicks, types or navigates |
-| a real keyboard `Tab` journey, `--reduced-motion=reduce`, a genuine click path | **a Playwright lane, driven through its real tools** (`browser_press_key`, `browser_click`, `browser_emulate_media`) | the same hook refuses a `browser_evaluate` that drives the UI, so a journey is never a script |
+| a real keyboard `Tab` journey, `--reduced-motion=reduce`, a genuine click path | **the same lane (or any Playwright lane), driven through its real tools** (`browser_press_key`, `browser_click`, `browser_emulate_media`) | the same hook refuses a `browser_evaluate` that drives the UI, so a journey is never a script |
 
 **Measured twice, on the same case.** Suite `097`'s `SR-CO-016` went `BLOCKED` on a Playwright lane because
 `[TOUCH]`, `[SPACING]` and axe all needed injection the rule forbids — *"BLOCKING, and the reason is tooling
 not product"* — and in an earlier run the same case recorded *"AXE INCONCLUSIVE … blocked by the real-user
-hook; **never reported as a pass**"*. This is the structural reason VCST-5653 put its contrast and axe work
-on a separate DevTools phase, and why a UI-kit run is normally **multi-phase by lane**, not by feature area.
+hook; **never reported as a pass**"*. VCST-5653 answered it with a separate DevTools phase for its contrast and
+axe work; on a Playwright lane that work is a printed snippet the hook passes, so a UI-kit run is normally
+**multi-phase by kind of work** (measurement, then journey), not by feature area and not by lane.
 
-**A derived PASS is legitimate only where neither lane can reach the condition — and only if the artifact
+**A derived PASS is legitimate only where the lane cannot reach the condition — and only if the artifact
 says what is still owed, and to which lane.** VCST-5653's reduced-motion item passed by derivation with
 *"behavioural confirmation still owed to a Playwright lane with `--reduced-motion=reduce`"* recorded. A
 derivation written down as a plain PASS is a claim the next reader cannot audit, and an `INCONCLUSIVE`

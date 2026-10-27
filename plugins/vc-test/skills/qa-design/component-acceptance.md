@@ -41,12 +41,12 @@ visible elements is compared on the first and reported as `info` with the count;
 | AC-PIX | the element's own pixels, at DPR 2 | never across two presets (a token both pages define differs) |
 | AC-THM | the theme tokens that differ between the two pages, listed for confirmation | — |
 | AC-STA | one spec entry per state (`hover` / `focus` on a target, or the state's story) | — |
-| AC-A11Y | — | the a11y axis ([`wcag-accessibility-checklist.md`](../../knowledge/wcag-accessibility-checklist.md); in this repository: `qa-accessibility`), `measure-layout.ts` contrast (our thresholds, BL-A11Y) |
+| AC-A11Y | — | the a11y axis ([`wcag-accessibility-checklist.md`](../../knowledge/wcag-accessibility-checklist.md); in this repository: `qa-accessibility`), the `measure-layout.mjs` contrast snippets (`node <plugin>/lib/design/snippet.mjs`; in this repository: `scripts/lib/measure-layout.ts`) (our thresholds, BL-A11Y) |
 | AC-RSP, AC-CNT | — | `layout-runner` (in this repository: `scripts/layout/layout-runner.ts`) `[PROBE:OVERFLOW]` / `[PROBE:TOUCH]` / `[PROBE:CONTENT]` and its stress data |
 | AC-TOK | — | `tokens:check` (in this repository: `npm run tokens:check`), [`design-system-consistency.md`](design-system-consistency.md) |
 
 **Thresholds the catalog states differently from ours: ours win.** Touch targets are BL-UI-006 / WCAG 2.5.8 —
-24 px AA, 44 px AAA, `measure-layout.ts`. The catalog's "44 px at 390" is a design-system guideline, judged against
+24 px AA, 44 px AAA, `measure-layout.mjs` (`node <plugin>/lib/design/snippet.mjs`; in this repository: `scripts/lib/measure-layout.ts`). The catalog's "44 px at 390" is a design-system guideline, judged against
 the design project only. The spacing grid is the generated token scale (`tokens:sync`), not a fixed 4/8.
 
 ## 3. Theme normalisation

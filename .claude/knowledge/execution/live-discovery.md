@@ -38,7 +38,7 @@ Cross-reference: this rule extends the resolver table in [`.claude/rules/test-da
 
 ---
 
-## JS recipes — for interactive agents (Playwright-MCP, Chrome-DevTools-MCP, standalone scripts)
+## JS recipes — for interactive agents (Playwright-MCP, standalone scripts)
 
 Use when the agent is running a TypeScript script under `scripts/` or `tests/`, not the CSV runner.
 
@@ -88,7 +88,7 @@ const { first, last } = randomPersonName(); // { first: "Alex", last: "Lane" }
 
 ## UI recipes — random pick from a rendered listing (browser agents)
 
-For interactive browser agents (Playwright-MCP, Chrome-DevTools-MCP) running test cases against the storefront. Use when the test exercises the **UI search/browse path** and just needs *any* matching product — not a specific known fixture. Hardcoded `@td(BUYABLE_NO_MIN_QTY.slug)` PDP URLs hide UI listing bugs ("stuck at product #1", coupling on alphabetical first position).
+For interactive browser agents (Playwright-MCP) running test cases against the storefront. Use when the test exercises the **UI search/browse path** and just needs *any* matching product — not a specific known fixture. Hardcoded `@td(BUYABLE_NO_MIN_QTY.slug)` PDP URLs hide UI listing bugs ("stuck at product #1", coupling on alphabetical first position).
 
 ### Recipe 1 — random search keyword
 

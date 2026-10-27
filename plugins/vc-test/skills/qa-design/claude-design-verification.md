@@ -7,7 +7,7 @@ the deterministic half lives in [`<plugin>/lib/design/verify-design-spec.mjs`](.
 ## Why this exists
 
 `ui-ux-expert`'s Judge has four axes. Three are deterministic — `vs. RULES` (BL-UI invariants),
-`vs. WCAG` (axe / Lighthouse), `vs. SYSTEM` (live-token audit), all wrapped by
+`vs. WCAG` (axe), `vs. SYSTEM` (live-token audit), all wrapped by
 [`measure-layout.mjs`](../../lib/design/measure-layout.mjs). The fourth, `vs. DESIGN`, was
 dead: `figma-remote-mcp` exposes only `authenticate` / `complete_authentication`, and Figma's
 Starter plan caps MCP at ~6 calls/month. So the one class of defect where **every invariant
@@ -221,7 +221,7 @@ remap inside `resolveIcon()` changes what renders at call sites that have no lin
 equal on-screen px. Absent, every bucket comparison is meaningless — report the mechanism first
 and re-measure the ladder once it is fixed, rather than ~3000 individual weight DRIFTs.
 
-Do not hand-roll these snippets — same rule as `measure-layout.ts`. Per-item verdicts:
+Do not hand-roll these snippets — same rule as `measure-layout.mjs` (`node <plugin>/lib/design/snippet.mjs`; in this repository: `scripts/lib/measure-layout.ts`). Per-item verdicts:
 
 | Verdict | Meaning | Severity |
 |---|---|---|
@@ -291,7 +291,7 @@ Run it as:
 2. Navigate the storefront surfaces the icons appear on (header, catalog, cart, account nav)
 3. `iconParityAuditSnippet(spec)` per surface per viewport → `classifyIconParity`
 4. Pair it with **`nonTextContrastAuditSnippet()`** (WCAG 1.4.11, 3:1, disabled-exempt) from
-   `measure-layout.ts` — the icon axis proves the *right glyph* rendered; it says nothing about
+   `measure-layout.mjs` (`node <plugin>/lib/design/snippet.mjs`; in this repository: `scripts/lib/measure-layout.ts`) — the icon axis proves the *right glyph* rendered; it says nothing about
    whether you can *see* it. That audit is what caught the outline-first thin-muted-stroke
    regression at 2.52:1 on enabled icons.
 

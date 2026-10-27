@@ -57,7 +57,7 @@ const probedMcp = (c) => {
 const lacks = (c, re, cap) => { const m = probedMcp(c); return m && !m.some((n) => re.test(n)) ? cap : null; };
 export const ARTIFACT_NEEDS = {
   Exploratory: (c) => lacks(c, /playwright/i, "a browser lane (mcp:playwright-*)"),
-  "Visual lane": (c) => lacks(c, /chrome[-_ ]?dev[-_ ]?tools/i, "mcp:chrome-devtools"),
+  "Visual lane": (c) => lacks(c, /playwright/i, "a browser lane (mcp:playwright-*)"),
   "Coverage triage + regression": (c) => (c.scripts?.["regression-select"] === false ? "regression-select" : null),
   // Not an Artifacts row: F8's PIXEL risk (PIXEL_REQUIREMENT). Unprobed (no `pixel` key) is not unavailable.
   PIXEL: (c) => (!c.pixel ? null : !c.pixel.engine ? "pixel-engine (the vc-frontend plugin's visual/)"

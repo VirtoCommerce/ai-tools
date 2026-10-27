@@ -83,8 +83,9 @@ The three axes, and where each is specified:
 There are two `qa-design` files and they behave differently. The **command**
 (in this repository: `.claude/commands/qa-design.md`) is `disable-model-invocation: true`, so no pipeline
 may run it — the same constraint that makes 5-status/5-docs *point* at `/ba-analyze` rather than run it. That
-costs nothing: the command only parses a target and dispatches `vc-test:ui-ux-expert`. The **skill**
-([`SKILL.md`](SKILL.md)) carries no such flag and **is** the methodology.
+costs nothing: the command is a shim that invokes the skill, and the skill's [`SKILL.md`](SKILL.md) holds
+Steps 1–5 (parse a target, resolve scope, dispatch `vc-test:ui-ux-expert`, report). The **skill** carries no
+such flag and **is** the methodology.
 
 So `/qa-test` Step 4v and `/qa-test-fast` Stage 2 dispatch `vc-test:ui-ux-expert` directly, exactly as they dispatch
 `qa-frontend-expert` / `qa-backend-expert`, and **the brief's first instruction is: *invoke the Skill tool
@@ -112,20 +113,17 @@ below.
    VCST-5957 (2026-10-01) that left the axis to an eyeballed screenshot comparison. A run's own extract
    makes `unresolved` machine-counted; relayed by hand it is *unknown*, never zero. Ladder and the
    artifact-chrome trap: [`claude-design-verification.md`](claude-design-verification.md) §1.
-2. **No credential variable NAMES on this lane — and the brief must NAME the auth path.** `--secrets` is a
-   `@playwright/mcp` flag; Chrome DevTools MCP has no equivalent, so typing `TEST_USER_PASSWORD` submits
-   that literal string and the sign-in is refused. Measured: VCST-5733's visual axis was briefed exactly
-   that way and all three axes came back `INCONCLUSIVE`/`SKIPPED`, costing a whole agent turn. There are
-   **three** paths and the brief picks one explicitly — an agent left to infer its own is what produced
-   that loss: the **pre-signed persistent profile** (`--userDataDir`, signed in once by hand) for a
-   **role-gated or data-bearing** target; **minting an account through the UI** (`/sign-up`,
-   `uniqueEmail("AGENT-TEST")`, a password the agent generates) for a **role-agnostic** one — public
-   pages, the design system, WCAG/axe, tokens, geometry; or **dispatch to a Playwright lane**. Minting a
-   role-gated target is not a fallback but a wrong answer: the surface renders its **empty state**, which
-   **reads as a pass**. Whichever is chosen, the brief never carries a credential, a variable name, or a
-   workaround for a permission denial
-   (in this repository: `.claude/knowledge/execution/browser-lanes.md` §*Chrome DevTools MCP has no `--secrets`*) — conditions and cleanup
-   obligations live there.
+2. **The lane and the account role — never a credential.** The visual lane is a Playwright lane: in a
+   vc-test run the one `plan-run` drew from the pool (§4), in this repository's `/qa-test` and
+   `/qa-test-fast` `playwright-edge` by default. It signs in the way every Playwright lane does — the login
+   as plain text from the env (`USER_LOGIN`, …), the password's bare NAME (`USER_PASSWORD`, …) typed into
+   the password field, the lane supplying the value — the project's `vc-browser.md` §Signing in, which
+   `vc-init` writes (in this repository: `.claude/rules/vc-browser.md`). So the brief names the **lane** and
+   the **account role** the target needs. A role-gated or data-bearing target (sales-rep hub, orders, a B2B
+   org, a loyalty tier) needs that role's account: any other renders its **empty state**, which **reads as
+   a pass**. Measured: VCST-5733's visual axis was briefed with a sign-in its lane could not resolve, and
+   all three axes came back `INCONCLUSIVE`/`SKIPPED`, costing a whole agent turn. The brief never carries a
+   password value, and never a workaround for a permission denial.
 
 ---
 
@@ -208,8 +206,12 @@ than as a PASS:
 
 ## 4. Browser budget
 
-`ui-ux-expert` runs on **Chrome DevTools MCP** — a fourth lane beside chrome/firefox/edge, and one the
-`/qa-test` pool did not previously list. The **max-3-concurrent** cap still binds across every lane.
+`vc-test:ui-ux-expert` runs on **a Playwright lane from the pool**. In a vc-test run `plan-run` draws it from
+the `visual` entry's `lanes` (`lib/artifacts.json`): edge first, the lane a run's scenarios reach last, then
+chrome, then firefox — only lanes this install has (`mcp:playwright-*`), and none at all is an error that
+names the three. On an install with only `playwright-chrome` the visual lane and the scenarios share that
+lane across waves, never within one. In this repository's `/qa-test` and `/qa-test-fast` the brief names
+`playwright-edge` by default. The **max-3-concurrent** cap still binds across every lane.
 
 When the checklist agents + regression lanes + this lane exceed 3, run in this order and **state the order
 chosen**: checklist track → visual lane → regression. The ticket verdict is the priority, and the visual
@@ -220,8 +222,8 @@ fewer than three are dispatched (`--layer`, a lane with no items, `--no-explore`
 the **same message**; otherwise it is dispatched **the moment the first lane returns**, and `verdict.md`
 states the order. Never a fourth concurrent browser agent.
 
-Never schedule the visual lane on `playwright-firefox`: this pass is click- and hover-driven, and
-any of the three lanes will do — firefox clicks here again since 2026-09-08 (in this repository: `.claude/rules/agents.md`).
+Any of the three lanes will do: this pass is click- and hover-driven, and firefox clicks here again since
+2026-09-08 (in this repository: `.claude/rules/agents.md`).
 
 ---
 
