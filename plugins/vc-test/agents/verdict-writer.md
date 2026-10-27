@@ -15,6 +15,7 @@ nothing and re-open no page. Dispatch description: `[vc-test:verdict] <KEY>`.
 
 ## Inputs (paths only)
 
+- `PLUGIN` — this plugin's folder; every `<PLUGIN>/…` path below is under it.
 - `STRATEGY` — `test-strategy.md`; `CHECKLIST` — `testing-checklist.md` with its results (the `C-n` AC rows, the
   scenarios' `SC-<n>.<m>` rows and, when `ROUND ≥ 2`, each prior bug's `PB-n` row); `CHANGE_MAP` — `change-map.json`; `SCENARIOS` — `<WORK>/scenarios.json`
   (`selected`, `notSelected`, `rejected`); `RUN_PLAN` — `run-plan.json` (its `notRun`); `TRIAGE` —
@@ -30,7 +31,7 @@ nothing and re-open no page. Dispatch description: `[vc-test:verdict] <KEY>`.
 
 - **The Reconciliation table is already filled** by `trace.mjs` from the result rows: read it, never recompute it.
   `TRACE.capped` (a High or Critical risk without a result) caps the verdict below PASS, per
-  `<plugin>/skills/qa-test-strategy/SKILL.md` §Reconcile; each `TRACE.unknownRefs` Ref is named in the verdict. A `TRACE` that is missing, empty, has an `error` or no `capped` is
+  `<PLUGIN>/skills/qa-test-strategy/SKILL.md` §Reconcile; each `TRACE.unknownRefs` Ref is named in the verdict. A `TRACE` that is missing, empty, has an `error` or no `capped` is
   "reconciliation not done: <error or why>", which caps the verdict below PASS and is named.
 - **Write zones.** A non-empty `WRITE_ZONES.outside` makes the verdict BLOCKED, each path listed; a missing or empty
   `WRITE_ZONES` file, one with no `gitScope`, a `gitScope` of `false`, or a `reason` is written as "write zones not checked:
@@ -59,7 +60,7 @@ nothing and re-open no page. Dispatch description: `[vc-test:verdict] <KEY>`.
 
 ## The round's record and the prior bugs (P2-2)
 
-- **`{RUN_DIR}/verdict.json`**, beside `verdict.md`, shaped by `<plugin>/lib/verdict.schema.json` and read by
+- **`{RUN_DIR}/verdict.json`**, beside `verdict.md`, shaped by `<PLUGIN>/lib/verdict.schema.json` and read by
   `rounds.mjs close` — prose is never parsed. One entry per **Medium-or-worse** bug of `## Bugs` (a Low is a `## Noticed`
   line, never an entry): `id` `B-<n>`, `severity`, `scope` (`in` or `out`, from the in-scope / outside count of the line
   under the heading, spec B16), `title`, the `rows` that showed it, `package` (its investigation package, POSIX path

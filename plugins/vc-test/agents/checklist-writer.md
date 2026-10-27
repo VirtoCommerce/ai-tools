@@ -17,6 +17,7 @@ Dispatch description: `[vc-test:checklist] <KEY>`.
 
 ## Inputs (paths only)
 
+- `PLUGIN` — this plugin's folder; every `<PLUGIN>/…` path below is under it.
 - `STRATEGY` — the approved `test-strategy.md` (its last `## Round N`).
 - `CHANGE_MAP` — `change-map.json` (layer 0): ACs with `NO CODE`, hotspots with `proof` and `zone`, suspicions.
 - `RUN_DIR` — the run folder.
@@ -47,7 +48,7 @@ for the Ref, Data and oracle rules — for AC rows only. Write the thin form bel
   created in the case.
 - Leave Result and Evidence empty.
 
-**Round N ≥ 2** (the strategy's last section is `## Round N`, N ≥ 2; `skills/qa-test-strategy/rounds.md` §Round N in
+**Round N ≥ 2** (the strategy's last section is `## Round N`, N ≥ 2; `<PLUGIN>/skills/qa-test-strategy/rounds.md` §Round N in
 vc-test, P5): the checklist is the round's, not the ticket's again, and it overrides "every AC is a row". Write items
 for the round's risks only — a `C-n` AC row only for an AC a round-N risk cites (in its Source), its Ref that AC and
 that risk (`AC-2 · R7`); an AC no round-N risk cites gets no row (round N−1's checklist, archived under

@@ -81,7 +81,7 @@ STOPs are this run's; on a host-governed project it reads through the host's ser
 
 ## 2 — Change map, then scenarios
 
-1. Dispatch `vc-test:change-map` (description `[vc-test:change-map] <TICKET>`) with `BUNDLE`, `MIND_MAP` / `DATA_MODEL`
+1. Dispatch `vc-test:change-map` (description `[vc-test:change-map] <TICKET>`) with `PLUGIN`, `BUNDLE`, `MIND_MAP` / `DATA_MODEL`
    of the slug if they exist. It has no write tool: its reply is the map. Then `node <plugin>/lib/check-change-map.mjs
    --agent <its agent id> --out <WORK>/change-map.json --bundle <BUNDLE>`; exit 2 ⇒ SendMessage it the printed
    errors once, run the command again, then STOP. **Show the suspicions**: one line each, file and line (U41).
@@ -106,7 +106,7 @@ report its errors, STOP. **`--dry-run` stops here**: print the waves and `notRun
 ## 5 — Waves
 
 First `node <plugin>/lib/write-zones.mjs snapshot --key <TICKET> --run-dir <RUN_DIR>` (exit 1 or 3 ⇒ note its line, go on: step 7 reports "not checked"). One message per wave of
-`run-plan.json`; each brief gets `RUN_DIR`, `STRATEGY`, `KEY`, its own paths below, and `<plugin>/briefs/ledger.md` if it may write. An entry with `missing` is not dispatched; its `BLOCKED — needs <missing>`
+`run-plan.json`; each brief gets `PLUGIN` = `<plugin>`, `RUN_DIR`, `STRATEGY`, `KEY`, its own paths below, and `<plugin>/briefs/ledger.md` if it may write. An entry with `missing` is not dispatched; its `BLOCKED — needs <missing>`
 row goes in `testing-checklist.md` under `## Scenario results`, never `scenarios/S-n.rows.md` — a `bug:PB-n`'s with
 Ref `PB-n · R<k>`, the `R` of its `### Prior bugs` row.
 
@@ -153,7 +153,7 @@ absent: merge `pixel` after that wave. A PIXEL risk that runs has Lane `scripts 
    <WORK>/write-zones.json` → `WRITE_ZONES`. Exit 2 ⇒ BLOCKED, the verdict names each file; 3 ⇒ "not checked"; any other exit ⇒ write
    `{"outside":[],"gitScope":false,"reason":"<its registryErrors, or its first stderr line>"}` there instead.
 3. `node <plugin>/lib/run-cost.mjs --since <start> --key <TICKET>` → keep its Markdown table.
-4. Dispatch `vc-test:verdict-writer`, `[vc-test:verdict] <TICKET>`, with its paths, `TRACE`, `WRITE_ZONES`, the table, `ROUND`
+4. Dispatch `vc-test:verdict-writer`, `[vc-test:verdict] <TICKET>`, with `PLUGIN`, its paths, `TRACE`, `WRITE_ZONES`, the table, `ROUND`
    and, round ≥ 2, `PRIOR_BUGS` = `DELTA`.
 
 ## 8 — Human point 2
