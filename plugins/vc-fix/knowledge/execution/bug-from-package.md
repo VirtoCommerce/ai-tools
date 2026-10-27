@@ -33,8 +33,10 @@ The mandatory set, each checked against the package on disk:
 - **`root-cause.md`** — §1 Symptom, §2 Lowest failing layer (a box ticked and "Decided by" citing a row), §5 with its
   first two rows filled (by-design / config-gated, env data drift), §7 with one box ticked.
 
-A row counts only when the file its index row names exists in the package (row 7: the referenced HAR path exists),
-and a header slot only when it holds a value. A row the index lists whose file is gone is missing.
+A row counts only when the file its index row names exists in the package, and a header slot only when it holds a
+value. A row the index lists whose file is gone is missing. **Row 7 is the exception:** it counts when
+`evidence-index.md` names a HAR path that exists, **or** states that the lane records no HAR (a lane `/project-init`
+configured records none). HAR alone never makes an `INCOMPLETE_PACKAGE`.
 
 **Any one missing ⇒ the outcome is `INCOMPLETE_PACKAGE: <slot, slot>` and no report is written** for this bug.
 A slot is spelled as the row number and Part A's artifact name (`1 Failure-state screenshot`), or the section
@@ -48,6 +50,9 @@ Runs at Step 0, after the deployed versions are fetched. Compare `BUILD_VERSIONS
   reports for that repo);
 - a frontend repo (`vc-frontend`, or a client storefront fork) with no entry of its own: on the `theme` entry;
 - when §2 names no repo (§7 LOW), or the owning repo has no entry otherwise, on every version the package lists.
+
+An entry with no deployed counterpart in Step 0's source (a module the version source does not report) is not
+compared: the report's Env names it as unverified. It is never a `STALE_PACKAGE` by inference.
 
 **A mismatch ⇒ stop for this bug:** `STALE_PACKAGE: <name> <package ver> ≠ <deployed ver> — re-run
 vc-fix:qa-investigate`, no report. The bug is never filed against a build nobody tested and never reproduced again
@@ -91,7 +96,7 @@ The template of `qa-bug.md` Step 4, each section from the package:
 | Title + severity | §1; severity graded from the package as without `--evidence` |
 | Status (line 3) | `READY_TO_SUBMIT` at §7 HIGH / MEDIUM, `REPRODUCED` at LOW (root cause not yet identified) |
 | `**Found by:**` (line 4) | the caller's `found-by:` argument, as `qa-bug.md` Step 1 says; none ⇒ `human` |
-| Env | `BUILD_VERSIONS`, and `REPRO_RATE` when filled |
+| Env | `BUILD_VERSIONS`, and `REPRO_RATE` when filled; an entry §Build could not compare, named as unverified |
 | Summary | §1, and §4 for the why |
 | Steps to reproduce, Actual | the manifest's reproduction steps and the Part A artifacts (row 4's call with its inputs for an API bug) |
 | Expected | §5's by-design row — the documented behaviour the symptom was ruled against; a row that cites without stating it ⇒ the behaviour the §3 / §4 claim contradicts. Never a new lookup |
@@ -101,14 +106,16 @@ The template of `qa-bug.md` Step 4, each section from the package:
 | Fix Routing | §Routing |
 
 - **Where** — `<bugs>` is the bugs root, the first that applies; the bucket is the declared severity's:
-  1. the run folder the caller names (`qa-bug.md` Step 4): `<bugs>` = `<run folder>/bugs`, report in `<bugs>/<bucket>/`;
-  2. the package's parent, when it is a ticket run folder — [`run-env.md`](run-env.md) §The run folder decides what
-     one is (`vc-fix:qa-investigate` writes `<run folder>/evidence-<UTCstamp>/`): `<bugs>` = `<package>/../bugs`,
-     report in `<bugs>/<bucket>/`;
+  1. the folder the caller names (`qa-bug.md` Step 4): `<bugs>` = `<that folder>/bugs`, report in `<bugs>/<bucket>/`;
+  2. the package's parent, when it is a ticket run folder (`vc-fix:qa-investigate` writes
+     `<run folder>/evidence-<UTCstamp>/`): `<bugs>` = `<package>/../bugs`, report in `<bugs>/<bucket>/`. The parent is
+     one when it equals the session's bound run folder (`RUN_DIR`, `run-folder.mjs dir`), or the run folder
+     [`run-env.md`](run-env.md) §The run folder resolves for the ticket that `found-by:` or `--link` names
+     (`run-folder.mjs dir --ticket <KEY>`); any other parent is rule 3;
   3. otherwise `<bugs>` = `<outputRoot>/reports/bugs`, report in `<bugs>/open/<bucket>/` — e.g. a `/qa-run` package
      under `reports/regression/<RUN_ID>/`, a pruned folder a bug report must not land in.
-- **Screenshots:** the 1–3 the report cites are **copied** from `<package>/screenshots/` to
-  `<bugs>/screenshots/<slug>/` (the chosen `<bugs>` root; this is `qa-bug.md` Step 4a for a package), and the report
+- **Screenshots:** the ones the report cites (as many as `qa-bug.md` Step 4a allows) are **copied** from
+  `<package>/screenshots/` to `<bugs>/screenshots/<slug>/` (the chosen `<bugs>` root; this is `qa-bug.md` Step 4a for a package), and the report
   cites the copy. The package stays whole for `/qa-fix`.
 - The bug-report size caps hold (`.claude/rules/reports.md` §2): the package carries the detail, the report cites it.
 

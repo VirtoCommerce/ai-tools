@@ -236,9 +236,9 @@ Products · xCart Wishlists & Saved for Later · xOrder · xProfile · xQuote ·
    (API/backend domains) — ask user for confirmation. On write: add the summary-table row, the section,
    and re-derive the header count with `npm run checklists:count` rather than incrementing by hand
 
-### Mode 5: From the test model (`VCST-XXXX --from-model`)
+### Mode 5: From the test model (`--from-model` / `--from-strategy`)
 
-Mode 2 + the test model + the mind map; every in-scope row or node becomes an item or a declared omission. `--from-strategy`: every risk too, and no model unless the strategy's Test model row is RUN. Procedure: [`from-model.md`](from-model.md).
+Mode 2 + the test model + the mind map; every in-scope row or node becomes an item or an omission line. `--from-strategy`: every risk too; a model only when its Test model row is RUN. Procedure: [`from-model.md`](from-model.md).
 
 ### Mode 4: List All (`all` keyword)
 

@@ -13,7 +13,7 @@ Every item traces to its source, and every in-scope source row is either an item
 | Input | Where | Missing ⇒ |
 |---|---|---|
 | Test model | `{RUN_DIR}/test-model.md` with all of its rounds ([`run-env.md`](../../knowledge/execution/run-env.md) §The run folder) | **STOP** — run `/qa-test-model <TICKET>` first. Mode 5 without a model is Mode 2. **With a strategy** the model is the one its `Test model` row names (next row), never this lookup |
-| Strategy (`--from-strategy`, or `--strategy` beside `--from-model`) | the last `## Round N` of the file, `Status:` not `DRAFT` (DRAFT ⇒ **STOP**: the strategy is a contract only once approved). Its `Test model` Artifacts row decides the model: `RUN (amend <path>)` ⇒ that file; `RUN (new)` ⇒ `test-model.md` beside the strategy; either missing ⇒ **STOP** naming the row. `SKIP — …` ⇒ no model is read | not given ⇒ Mode 5 as before |
+| Strategy (`--from-strategy`, or `--strategy` beside `--from-model`) | the last `## Round N` of the file, `Status:` not `DRAFT` (DRAFT ⇒ **STOP**: the strategy is a contract only once approved). Its `Test model` Artifacts row decides the model: `RUN (amend <path>)` ⇒ `test-model.md` beside the strategy when it holds this round's section, else `<path>`; `RUN (new)` ⇒ `test-model.md` beside the strategy; either missing ⇒ **STOP** naming the row. Of that model, only the section headed with this round and the rows it declares still valid give items (§With a strategy). `SKIP — …` ⇒ no model is read | not given ⇒ Mode 5 as before |
 | Mind map | `<name>.mind-map.json` for the slug (`--mind-map`, else the model's `Mind map:` header): the run's copy in `{RUN_DIR}/knowledge/domain/` first, else `<outputRoot>/.claude/knowledge/domain/` | proceed; write `Mind map: ABSENT` in the header. A missing map is recorded, never a blocker |
 
 ## Procedure
@@ -48,8 +48,8 @@ Every item traces to its source, and every in-scope source row is either an item
 4. **The ticket changes a mechanism no node carries?** Record it as mind-map DRIFT under the checklist.
    `/qa-test-mind-map update` resolves it; this file never edits the map.
 5. **Give every item its data strategy.** Use the data layers,
-   chosen with the [`../../knowledge/execution/live-discovery.md`](../../knowledge/execution/live-discovery.md) §Decision tree
-   decision tree. The Data cell reads as one of:
+   chosen with the [`../../knowledge/execution/live-discovery.md`](../../knowledge/execution/live-discovery.md) §Decision tree.
+   The Data cell reads as one of:
    - `{{VAR}}`
    - `@td(ALIAS.field)`, for an entity the item asserts against by name
    - `live-discover <what>`
@@ -78,8 +78,11 @@ The strategy is the authority for **what** is tested; the model only details its
   items straight from the strategy: its *what a customer would see* is the Condition, its Approach row's
   oracle and authority the Oracle, its layer the lane (step 6), its Data cell the data strategy (step 5).
   The technique shapes the items — `DT` one per rule, `BVA` the boundaries, `ST` the transitions.
-- **A `MODEL` risk is reached through the model's scenario rows** (step 2), which carry its `R<n>`. With no
-  model (the row says `SKIP`), there is no `MODEL` risk, so nothing is lost.
+- **A `MODEL` risk is reached through the model's scenario rows** (step 2), which carry its `R<n>` — the rows of
+  the model section headed with this strategy round, plus the earlier rows that section declares still valid. An
+  earlier round's row whose `R<n>` is not in this round's `### Risks` table is an omission line, never an item.
+  With no model, a `MODEL` risk (vc-test's `SKIP — scenarios cover the MODEL risks`) is an omission line naming
+  the strategy's `### Scenarios` row that covers it; under `SKIP — no MODEL risk` there is none.
 - **An `EXPLORE` risk, and a `{HYPOTHESIS}` oracle, is never an item** — `EXPLORE → charter` as an omission
   line; it is exploratory work, not pass/fail.
 - **Out of scope** stays out: the strategy's list is copied into *Not covered, deliberately*, with its

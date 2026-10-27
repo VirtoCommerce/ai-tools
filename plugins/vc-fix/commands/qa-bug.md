@@ -236,7 +236,7 @@ mkdir -p <bugs>/screenshots/<slug>
 mv reports/bugs/screenshots/_incoming/*/<kept>.png <bugs>/screenshots/<slug>/
 ```
 
-- Move **only** the 1–5 captures the report actually references (`.claude/rules/reports.md` §5);
+- Move **only** the captures the report references: 1–3, max 5 (`.claude/rules/reports.md` §5);
   leave the rest in `_incoming/` — it is gitignored and disposable.
 - The report then references the **final** path (`<bugs>/screenshots/<slug>/<file>.png`) —
   never an `_incoming/` path and never a bare filename.
