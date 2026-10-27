@@ -36,6 +36,7 @@ import { AUTOMATION_STATUSES } from "./lint-test-cases.js";
 import { CLASSIFIER_VERSION } from "../lib/case-classifier.js";
 import { classifySuiteCases, type ClassifiableRow } from "../lib/case-classifier.js";
 import { strengthLine } from "../detection/assertion-strength.ts";
+import { lintRequirements } from "../regression/requirements-lint.ts";
 
 const MANIFEST_PATH = join("config", "test-suites.json");
 const CHECK_MODE = process.argv.includes("--check");
@@ -953,6 +954,14 @@ function main(): void {
     console.error(`Legal values: ${[...AUTOMATION_STATUSES].join(", ")} (or empty).`);
     console.error(`If this value is genuinely needed, add it to AUTOMATION_STATUSES in lint-test-cases.ts`);
     console.error(`— the ONE place the vocabulary is declared — not to the baseline.`);
+    process.exit(1);
+  }
+
+  // config/suite-requirements.json: a stale entry silently takes cases out of a run, so it is checked here.
+  const reqErrors = lintRequirements(process.cwd(), manifest.suites);
+  if (reqErrors.length > 0) {
+    console.error(`[suites:lint] FAIL — ${reqErrors.length} config/suite-requirements.json error(s):`);
+    for (const e of reqErrors) console.error(`  - ${e}`);
     process.exit(1);
   }
 

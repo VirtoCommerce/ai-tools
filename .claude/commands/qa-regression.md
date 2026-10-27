@@ -150,7 +150,7 @@ If the user passes an incompatible combo (e.g. `--seed=b2b` with `catalog` selec
 ### Step 2 — Generate Run ID, get the plan
 Create `REG-YYYY-MM-DD-HHMM` and `reports/regression/{RUN_ID}/`, then — **before Step 3 writes the status file**, whose fresh `in_progress` the lock check would read as an active run — get the plan (never derive lanes, order or browser constraints by hand):
 ```bash
-npm run regression:plan -- <selection> --preflight --json --run-id {RUN_ID} --preflight-out reports/regression/{RUN_ID}/preflight.json [--accept drift:<id>,… when the user chose "proceed as is" at Step 0]
+npm run regression:plan -- <selection> --preflight --json --run-id {RUN_ID} --preflight-out reports/regression/{RUN_ID}/preflight.json [--run-blocked] [--accept drift:<id>,… on "proceed as is" at Step 0]
 ```
 Exit 1 = the selection cannot run as-is (unknown id, missing CSV, no executor, or a cap that would guarantee truncation); 2 = pre-flight NOT READY; 3 = it could not run. On any: stop and report, never improvise. Suites in `preflight.gating.gated` are not in the plan. `preflight.json` is what `regression:close` turns into the next baseline.
 

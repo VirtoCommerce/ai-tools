@@ -1,6 +1,6 @@
 ---
 description: "Run any regression: a one-off selection (smoke, critical, full, suite ids), a sprint plan, or one wave of a stable-bundle regression that several QA run in parallel (claim → known ground → run → triage into the ledger → PR). After every run it triages the failures automatically, and after triage ALWAYS asks whether to put the result in GitHub. Plans come from /qa-test-plan. The successor of /qa-regression, built to move into a plugin."
-argument-hint: "smoke | critical | full | <ids> | sprint[:XX-YY] | stable:<N> <wave> [--claim|--continue|--triage|--publish|--handover] | stable:<N> status [--cases <tier>] [--seed=…] [--teardown]"
+argument-hint: "smoke | critical | full | <ids> | sprint[:XX-YY] | stable:<N> <wave> [--claim|--continue|--triage|--publish|--handover] | stable:<N> status [--cases <tier>] [--seed=…] [--teardown] [--run-blocked]"
 disable-model-invocation: true
 ---
 
@@ -18,7 +18,12 @@ then the file the argument needs, **whole**.
 /qa-run stable:17 status                 # who holds which wave of Stable 17 (/qa-test-plan stable 17 writes the plan)
 /qa-run stable:17 C-purchase --claim     # claim one wave and run it
 /qa-run stable:17 C-purchase --continue  # pick up a wave someone handed over
+/qa-run 036 --run-blocked                # also run the cases the pre-flight predicts will BLOCK
 ```
+
+Cases the pre-flight predicts will BLOCK (no persona, unseeded fixture, a setting off, a password nobody has) are
+recorded BLOCKED with that reason and **not run** — no browser slot, no model tokens, no classifier call
+([`preflight`](../skills/preflight/SKILL.md) §build-scoped). `--run-blocked` passes `--run-blocked` to `regression:plan`.
 
 | Argument | Read | Then |
 |---|---|---|

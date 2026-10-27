@@ -12,8 +12,8 @@ calls this file for its execution step.
 | `stable:<N> <wave>` · `stable:<N> status` | one wave of a stable-bundle regression | `regression/releases/stable-<N>/release.json` — that wave's `suites`, its `tier` as `--cases` (`rest` → `medium,low`), minus every other wave's `exclusive` | yes — [`waves.md`](waves.md) |
 | bare `stable:<N>` | — | refused: a release runs wave by wave, so claims, tier order and the ledger hold. Show `npm run release:status -- stable-<N>` | — |
 
-`--cases`, `--ids`, `--also-ids`, `--seed`, `--teardown`, `--promote` and the layer flags pass through to the
-execution pipeline unchanged.
+`--cases`, `--ids`, `--also-ids`, `--seed`, `--teardown`, `--promote`, `--run-blocked` and the layer flags pass
+through to the execution pipeline unchanged (`--run-blocked` lands on its `regression:plan` call).
 
 ## 2. Run it
 

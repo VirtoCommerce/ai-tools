@@ -1,16 +1,19 @@
 {
  "wave": "W3",
  "owner": "Elena Kutasina",
- "status": "RUN_DONE",
+ "status": "TRIAGED",
  "runIds": [
-  "REG-2026-10-15-W3"
+  "REG-2026-10-15-W3",
+  "REG-2026-10-26-1847-W3R",
+  "REG-2026-10-26-2010-W3R2",
+  "REG-2026-10-26-2044-W3R3"
  ],
  "totals": {
-  "planned": 900,
-  "executed": 817,
-  "pass": 498,
+  "planned": 840,
+  "executed": 757,
+  "pass": 500,
   "fail": 95,
-  "blocked": 221,
+  "blocked": 159,
   "skipped": 3,
   "ambiguous": 0
  },
@@ -47,11 +50,37 @@
    ],
    "cases": 1,
    "reason": "manual case"
+  },
+  {
+   "suites": [
+    "007"
+   ],
+   "cases": 38,
+   "reason": "not deployed: VirtoCommerce.SalesRep (Publish-to-Customer / Sales-Rep list sharing) — run 2026-10-15 recorded them BLOCKED, before the pre-flight dropped such cases from the plan (2026-10-20)"
+  },
+  {
+   "suites": [
+    "007",
+    "014",
+    "028",
+    "029",
+    "030",
+    "037",
+    "072e"
+   ],
+   "cases": 22,
+   "reason": "not executed in the run (recorded BLOCKED): one login per persona, lane time, or the parallel lanes' named-cart contention (CHK-022) — 007 (1), 014 (6), 028 (2), 029 (2), 030 (6), 037 (4), 072e (1); re-run them"
   }
  ],
  "handovers": [],
- "updatedAt": "2026-10-27",
+ "updatedAt": "2026-10-20",
  "personas": "config.js personas USER, ORG_USER, EUR, MULTI_ORG and ACME_BUYER as resolved from Elena Kutasina's .env.local; a parallel owner must use different accounts",
- "untriaged": 217,
- "evidence": "Raw results, HAR and screenshots stay in the owner's local run folders reports/regression/<runId>/ (gitignored); each filed bug carries its own evidence in Jira."
+ "untriaged": 0,
+ "evidence": "Raw results, HAR and screenshots stay in the owner's local run folders reports/regression/<runId>/ (gitignored); each filed bug carries its own evidence in Jira.",
+ "reports": {
+  "W3": {
+   "subtask": "112110",
+   "release": "112111"
+  }
+ }
 }
