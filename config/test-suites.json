@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-10-26",
-    "totalSuites": 164,
+    "generated": "2026-10-27",
+    "totalSuites": 166,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -1778,7 +1778,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 156,
+      "testCount": 157,
       "estimatedMinutes": 245,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1793,7 +1793,7 @@
       ],
       "customerApplicability": "reference",
       "lanes": {
-        "machine": 152,
+        "machine": 153,
         "browser": 1,
         "manual": 0,
         "deprecated": 3
@@ -1821,6 +1821,35 @@
         "sales-rep"
       ],
       "customerApplicability": "reference"
+    },
+    {
+      "id": "050m3",
+      "name": "GraphQL xAPI — Sales Rep Customer Activity & Insights (scoped /graphql/sales-rep)",
+      "file": "regression/suites/Backend/graphql/050m3-graphql-sales-rep-activity.csv",
+      "domain": "sales-rep",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 10,
+      "estimatedMinutes": 15,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "graphql",
+        "xapi",
+        "sales-rep",
+        "b2b",
+        "scoped-schema",
+        "google-analytics"
+      ],
+      "requiresModules": [
+        "sales-rep"
+      ],
+      "customerApplicability": "reference",
+      "lanes": {
+        "machine": 10,
+        "browser": 0,
+        "manual": 0
+      }
     },
     {
       "id": "050n",
@@ -4019,6 +4048,31 @@
       "exclusiveGroup": "platform-setting:MultiFactorAuthentication",
       "clickDriven": true,
       "notes": "VCST-5904 (storefront half of MFA by email: vc-frontend#2570; API and Backoffice half: 110). EXCLUDED from the selections full, frontend, sprint, domain:auth-security and concern:functional (Draft, and a shared-setting window) - name 111 explicitly and run it ALONE. Every case needs OPERATOR WINDOW W2: the operator sets MultiFactorAuthentication.StoreMode = Enabled on {{STORE_ID}} (the shared B2B-store) in Admin before the run and restores it after; the cases only READ the store to assert the window state and never write a setting of {{STORE_ID}}, and without the window a case is BLOCKED (needs operator window W2), never FAIL. MFASF-010 needs the operator to switch StoreMode off on {{STORE_ID}} in the middle of the case. While the window is open every storefront password sign-in on that store is challenged, so never run it beside 031, 032, 082 or 104 (the exclusiveGroup serialises only 110 and 111). MFASF-007 depends on OtpSignIn.Enabled on {{STORE_ID}} owned by suite 104 (a suite carries one exclusiveGroup): do not run it beside 104 OTP-007. Accounts are created in the case by scripts/seed-data/auth/mfa-fixtures.mjs; codes are read from the notification journal (SMTP may be off). Expected to pass on the current build: all 13 cases (MFASF-008, 009, 011 and 012 passed in REG-2026-10-26-1652, MFASF-010 in 1726; MFASF-011 is still Draft only because its promotion is pending)."
+    },
+    {
+      "id": "112",
+      "name": "Sales Rep — Customer Activity & Insights (storefront)",
+      "file": "regression/suites/Frontend/sales-rep/112-sales-rep-activity-storefront.csv",
+      "domain": "sales-rep",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 28,
+      "estimatedMinutes": 60,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "sales-rep",
+        "storefront",
+        "customer-activity",
+        "google-analytics",
+        "b2b",
+        "feature-gated"
+      ],
+      "requiresModules": [
+        "sales-rep"
+      ],
+      "customerApplicability": "reference",
+      "clickDriven": true
     }
   ],
   "selections": {
