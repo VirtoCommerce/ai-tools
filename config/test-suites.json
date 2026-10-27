@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-10-15",
-    "totalSuites": 158,
+    "generated": "2026-10-27",
+    "totalSuites": 168,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -43,8 +43,7 @@
     "retryDelayMs": 30000,
     "rateLimitDelayMs": 60000,
     "harCapture": true,
-    "maxParallelAgents": 3,
-    "screenshotOnFailure": true
+    "maxParallelAgents": 3
   },
   "browserPool": [
     {
@@ -389,7 +388,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 68,
+      "testCount": 70,
       "estimatedMinutes": 34,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -582,6 +581,27 @@
         "users",
         "roles",
         "settings",
+        "sprint"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "universal",
+      "clickDriven": true
+    },
+    {
+      "id": "020b",
+      "name": "Platform Admin Shell — Classic theme (menu, search, Settings v2 save, responsive)",
+      "file": "regression/suites/Backend/platform/020b-admin-shell-classic.csv",
+      "domain": "platform-config",
+      "layer": "backend",
+      "concern": "admin",
+      "priority": "P1",
+      "testCount": 20,
+      "estimatedMinutes": 40,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "platform",
+        "settings",
+        "admin-shell",
         "sprint"
       ],
       "envRiskGate": "staging",
@@ -1281,7 +1301,7 @@
       "layer": "frontend",
       "concern": "non-functional",
       "priority": "P1",
-      "testCount": 34,
+      "testCount": 49,
       "estimatedMinutes": 3,
       "agent": "none",
       "runner": "layout-runner",
@@ -1506,7 +1526,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 9,
+      "testCount": 11,
       "estimatedMinutes": 5,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1517,7 +1537,7 @@
       ],
       "customerApplicability": "universal",
       "lanes": {
-        "machine": 8,
+        "machine": 10,
         "browser": 1,
         "manual": 0
       }
@@ -1758,7 +1778,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 155,
+      "testCount": 157,
       "estimatedMinutes": 245,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1773,7 +1793,7 @@
       ],
       "customerApplicability": "reference",
       "lanes": {
-        "machine": 151,
+        "machine": 153,
         "browser": 1,
         "manual": 0,
         "deprecated": 3
@@ -1801,6 +1821,35 @@
         "sales-rep"
       ],
       "customerApplicability": "reference"
+    },
+    {
+      "id": "050m3",
+      "name": "GraphQL xAPI — Sales Rep Customer Activity & Insights (scoped /graphql/sales-rep)",
+      "file": "regression/suites/Backend/graphql/050m3-graphql-sales-rep-activity.csv",
+      "domain": "sales-rep",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 10,
+      "estimatedMinutes": 15,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "graphql",
+        "xapi",
+        "sales-rep",
+        "b2b",
+        "scoped-schema",
+        "google-analytics"
+      ],
+      "requiresModules": [
+        "sales-rep"
+      ],
+      "customerApplicability": "reference",
+      "lanes": {
+        "machine": 10,
+        "browser": 0,
+        "manual": 0
+      }
     },
     {
       "id": "050n",
@@ -2060,7 +2109,32 @@
       "concern": "admin",
       "priority": "P1",
       "testCount": 51,
-      "estimatedMinutes": 42,
+      "estimatedMinutes": 25,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "cms",
+        "pages",
+        "management",
+        "admin",
+        "sprint"
+      ],
+      "requiresModules": [
+        "VirtoCommerce.PageBuilderModule"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "clickDriven": true
+    },
+    {
+      "id": "059b",
+      "name": "Page Builder — Permalink validation",
+      "file": "regression/suites/Backend/page-builder/059b-page-builder-permalink-validation.csv",
+      "domain": "content-cms",
+      "layer": "backend",
+      "concern": "admin",
+      "priority": "P1",
+      "testCount": 35,
+      "estimatedMinutes": 17,
       "agent": "qa-backend-expert",
       "tags": [
         "cms",
@@ -2109,7 +2183,7 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 58,
+      "testCount": 78,
       "estimatedMinutes": 17,
       "agent": "qa-backend-expert",
       "tags": [
@@ -2135,7 +2209,7 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 45,
+      "testCount": 48,
       "estimatedMinutes": 13,
       "agent": "qa-backend-expert",
       "tags": [
@@ -2164,6 +2238,7 @@
       "testCount": 48,
       "estimatedMinutes": 33,
       "agent": "qa-backend-expert",
+      "exclusiveGroup": "search-index:IndexationJob",
       "tags": [
         "search",
         "indexing",
@@ -2171,6 +2246,32 @@
         "admin",
         "range-facets",
         "sprint"
+      ],
+      "requiresModules": [
+        "search"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
+    },
+    {
+      "id": "061b",
+      "name": "Search Indexation Jobs",
+      "file": "regression/suites/Backend/search/061b-search-indexation-jobs.csv",
+      "domain": "catalog-search",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 6,
+      "estimatedMinutes": 25,
+      "agent": "qa-backend-expert",
+      "exclusiveGroup": "search-index:IndexationJob",
+      "tags": [
+        "search",
+        "indexing",
+        "admin",
+        "api",
+        "rest",
+        "background-jobs"
       ],
       "requiresModules": [
         "search"
@@ -2342,7 +2443,13 @@
         "seo"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true,
+      "lanes": {
+        "machine": 8,
+        "browser": 1,
+        "manual": 0
+      }
     },
     {
       "id": "067",
@@ -2436,7 +2543,8 @@
         "image-tools"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "070",
@@ -3786,7 +3894,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 17,
+      "testCount": 30,
       "estimatedMinutes": 60,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -3811,7 +3919,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 11,
+      "testCount": 21,
       "estimatedMinutes": 40,
       "agent": "qa-backend-expert",
       "tags": [
@@ -3855,6 +3963,33 @@
       "clickDriven": true
     },
     {
+      "id": "107",
+      "name": "Punchout — storefront session (start link to signed-in buyer)",
+      "file": "regression/suites/Frontend/punchout/107-punchout-storefront-session.csv",
+      "domain": "auth-security",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 8,
+      "estimatedMinutes": 60,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "punchout",
+        "cxml",
+        "sso",
+        "storefront",
+        "journey"
+      ],
+      "requiresModules": [
+        "VirtoCommerce.Punchout"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "notes": "VCST-5886 (Epic VCST-5154). Storefront half of Punchout (API/admin half: 108). PNCF-001 is the [JOURNEY] case. Each case mints its own start link by POSTing a cXML setup (single-use token). PNCF-007 flips the store-wide Punchout.Enabled of the configuration-0 store and PNCF-005 runs ~11 minutes (config-1 session lifetime, beyond the machine runner's 300 s wait cap) — exclusiveGroup keeps 108/107 from running together; run PNCF-005 outside a batch. Env-scoped by requiresModules (effective only when MODULES_ENABLED is set) — select with `punchout`. Cases stay Draft until a run promotes them.",
+      "exclusiveGroup": "store-setting:Punchout.Enabled",
+      "clickDriven": true
+    },
+    {
       "id": "108",
       "name": "Punchout — cXML setup, token exchange and Admin user mapping",
       "file": "regression/suites/Backend/punchout/108-punchout-cxml-token-admin.csv",
@@ -3887,33 +4022,6 @@
       }
     },
     {
-      "id": "107",
-      "name": "Punchout — storefront session (start link to signed-in buyer)",
-      "file": "regression/suites/Frontend/punchout/107-punchout-storefront-session.csv",
-      "domain": "auth-security",
-      "layer": "frontend",
-      "concern": "functional",
-      "priority": "P1",
-      "testCount": 8,
-      "estimatedMinutes": 60,
-      "agent": "qa-frontend-expert",
-      "tags": [
-        "punchout",
-        "cxml",
-        "sso",
-        "storefront",
-        "journey"
-      ],
-      "requiresModules": [
-        "VirtoCommerce.Punchout"
-      ],
-      "envRiskGate": "staging",
-      "customerApplicability": "reference",
-      "notes": "VCST-5886 (Epic VCST-5154). Storefront half of Punchout (API/admin half: 108). PNCF-001 is the [JOURNEY] case. Each case mints its own start link by POSTing a cXML setup (single-use token). PNCF-007 flips the store-wide Punchout.Enabled of the configuration-0 store and PNCF-005 runs ~11 minutes (config-1 session lifetime, beyond the machine runner's 300 s wait cap) — exclusiveGroup keeps 108/107 from running together; run PNCF-005 outside a batch. Env-scoped by requiresModules (effective only when MODULES_ENABLED is set) — select with `punchout`. Cases stay Draft until a run promotes them.",
-      "exclusiveGroup": "store-setting:Punchout.Enabled",
-      "clickDriven": true
-    },
-    {
       "id": "109",
       "name": "Punchout — Create requisition (PunchOutOrderMessage)",
       "file": "regression/suites/Frontend/punchout/109-punchout-requisition.csv",
@@ -3921,7 +4029,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 27,
+      "testCount": 35,
       "estimatedMinutes": 150,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -3938,6 +4046,81 @@
       "customerApplicability": "reference",
       "notes": "VCST-5887 (Epic VCST-5154). Create requisition at checkout: the storefront builds a cXML PunchOutOrderMessage and posts it to the session's return URL. PNCR-001 is the [JOURNEY] case. Every cart-content case uses the dedicated buyer PUNCHOUT_MAPPING_REQUISITION (AGENT-TEST-PO-300) and resets its carts in Setup and Cleanup (npm run seed:punchout:reset-carts), so run the suite on one lane and never beside another suite that uses that buyer. PNCR-019 and PNCR-034 flip the store-wide Punchout.Enabled of the configuration-0 store, so they serialise via the suite exclusiveGroup store-setting:Punchout.Enabled. PNCR-018 waits out a 10-minute session; PNCR-018 and PNCR-021 need a configuration-1 store on its own storefront host and are BLOCKED (environment) on vcptcore_qa1, where New-super shares the B2B-store host. Bug A (the module read only the cart named default) is fixed in vc-module-punchout PR #2, so PNCR-002, PNCR-003 and PNCR-027 are regression guards for the cart resolution. A second return of a session is REFUSED with errorCode SessionReturned (the replay was removed in vc-module-punchout PR #2 head c49023f): PNCR-013 browser Back, PNCR-015 two tabs, PNCR-028 API, PNCR-029 cart changed after the return (neither the old nor a new document is sent), PNCR-030 parallel calls (one document, the loser gets SessionReturned or SessionExpired); with Punchout.Enabled off a returned session answers StoreNotConfigured and SessionReturned again after the restore (PNCR-034). The SessionReturned toast text (vc-frontend c83fdf2) is not asserted until the theme ships. Per-errorCode toast texts are the design (PNCR-033, PNCR-034). Env-scoped by requiresModules, so it is meant for vcptcore_qa1 only — select with `punchout`. Cases stay Draft until a run promotes them.",
       "exclusiveGroup": "store-setting:Punchout.Enabled",
+      "clickDriven": true
+    },
+    {
+      "id": "110",
+      "name": "MFA Sign-In API and Backoffice",
+      "file": "regression/suites/Backend/api/110-mfa-sign-in-api.csv",
+      "layer": "backend",
+      "concern": "api",
+      "testCount": 32,
+      "estimatedMinutes": 150,
+      "agent": "qa-backend-expert",
+      "domain": "auth-security",
+      "priority": "P1",
+      "tags": [
+        "auth",
+        "mfa",
+        "sign-in"
+      ],
+      "requiresModules": [
+        "VirtoCommerce.MFA"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "exclusiveGroup": "platform-setting:MultiFactorAuthentication",
+      "clickDriven": true,
+      "notes": "VCST-5904 (MFA by email: vc-module-mfa#1, vc-platform#3133). Token-endpoint and Backoffice half (storefront half: 111). EXCLUDED from the selections full, backend, sprint, domain:auth-security and concern:api (Draft, and shared-setting windows) - name 110 explicitly and run it ALONE. Every account, disposable store and flag is created IN THE CASE by scripts/seed-data/auth/mfa-fixtures.mjs and removed with teardown(runId) (FIFTH RULE; `npm run td:validate:mfa` guards the creator). SHARED-IMPACT: MFA-001, 002, 003, 004, 011, 012, 013, 014, 016, 020, 023, 026, 030 and 031 flip the GLOBAL MultiFactorAuthentication.Enabled setting and restore it in Cleanup; while it is on every store-less password sign-in on the stand needs a code (about 63% of the stand accounts cannot get one). The exclusiveGroup serialises only suites that declare it (110 and 111), not 031/032/082/104. The admin Bearer is minted BEFORE each window; the Backoffice rows (001, 011, 012, 013, 014, 016, 020, 023, 025, 027, 030) are browser-lane. Codes are read from the notification journal (SMTP may be off). FIXTURE-GAP: the creator cannot produce a lockout-disabled account (the platform keeps lockoutEnabled true), so MFA-017 is BLOCKED until it can. MFA-029 takes about 11 minutes of real time. Expected to FAIL on the current build: MFA-006, MFA-010, MFA-013 and MFA-024 (left Draft for a product bug, VCST-6506; MFA-006 is also non-deterministic across platform instances) and MFA-025 (raw translation key on a direct #!/sign-in-code visit, decision pending). MFA-028 (log reason Unknown after a store refusal) failed in REG-2026-10-26-1422 and has not been re-run (SPEC held). MFA-004 passed (REG-2026-10-26-1715 + -2004); MFA-017 stays BLOCKED (fixture gap) and MFA-015 awaits a run - neither is a product failure. Everything else is expected to pass; MFA-027 and MFA-030 passed in REG-2026-10-26-1422/1503 (MFA-030 is Draft again after PR #547 review: the 65-character boundary on /api/mfa/signin/verify was added and needs a run, VCST-6528). MFA-026 documents decided behaviour (StoreMode=Disabled applies to every user; VCST-6530). MFA-024: the API half reads the per-user code - its verdict depends on the reading of the spec (kept as the SPEC expectation). MFA-005 records Known_Issue VCST-6495 in References and asserts only the store-bound challenge; MFA-015 carries one {HYPOTHESIS} pending a developer answer."
+    },
+    {
+      "id": "111",
+      "name": "Auth MFA Sign-In (storefront)",
+      "file": "regression/suites/Frontend/auth/111-auth-mfa-sign-in.csv",
+      "layer": "frontend",
+      "concern": "functional",
+      "testCount": 13,
+      "estimatedMinutes": 90,
+      "agent": "qa-frontend-expert",
+      "domain": "auth-security",
+      "priority": "P1",
+      "tags": [
+        "auth",
+        "mfa",
+        "sign-in"
+      ],
+      "requiresModules": [
+        "VirtoCommerce.MFA"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "exclusiveGroup": "platform-setting:MultiFactorAuthentication",
+      "clickDriven": true,
+      "notes": "VCST-5904 (storefront half of MFA by email: vc-frontend#2570; API and Backoffice half: 110). EXCLUDED from the selections full, frontend, sprint, domain:auth-security and concern:functional (Draft, and a shared-setting window) - name 111 explicitly and run it ALONE. Every case needs OPERATOR WINDOW W2: the operator sets MultiFactorAuthentication.StoreMode = Enabled on {{STORE_ID}} (the shared B2B-store) in Admin before the run and restores it after; the cases only READ the store to assert the window state and never write a setting of {{STORE_ID}}, and without the window a case is BLOCKED (needs operator window W2), never FAIL. MFASF-010 needs the operator to switch StoreMode off on {{STORE_ID}} in the middle of the case. While the window is open every storefront password sign-in on that store is challenged, so never run it beside 031, 032, 082 or 104 (the exclusiveGroup serialises only 110 and 111). MFASF-007 depends on OtpSignIn.Enabled on {{STORE_ID}} owned by suite 104 (a suite carries one exclusiveGroup): do not run it beside 104 OTP-007. Accounts are created in the case by scripts/seed-data/auth/mfa-fixtures.mjs; codes are read from the notification journal (SMTP may be off). Expected to pass on the current build: all 13 cases (MFASF-008, 009, 011 and 012 passed in REG-2026-10-26-1652, MFASF-010 in 1726; MFASF-011 is still Draft only because its promotion is pending)."
+    },
+    {
+      "id": "112",
+      "name": "Sales Rep — Customer Activity & Insights (storefront)",
+      "file": "regression/suites/Frontend/sales-rep/112-sales-rep-activity-storefront.csv",
+      "domain": "sales-rep",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 28,
+      "estimatedMinutes": 60,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "sales-rep",
+        "storefront",
+        "customer-activity",
+        "google-analytics",
+        "b2b",
+        "feature-gated"
+      ],
+      "requiresModules": [
+        "sales-rep"
+      ],
+      "customerApplicability": "reference",
       "clickDriven": true
     }
   ],
@@ -4022,6 +4205,7 @@
     "platform": {
       "include": [
         "020",
+        "020b",
         "021",
         "063",
         "101"
@@ -4074,7 +4258,8 @@
         "090",
         "091",
         "107",
-        "109"
+        "109",
+        "111"
       ]
     },
     "backend": {
@@ -4088,7 +4273,8 @@
         "092b",
         "094",
         "102",
-        "108"
+        "108",
+        "110"
       ]
     },
     "sprint": {
@@ -4111,7 +4297,9 @@
         "092b",
         "093",
         "093b",
-        "097"
+        "097",
+        "110",
+        "111"
       ]
     },
     "full": {
@@ -4127,7 +4315,9 @@
         "093",
         "093b",
         "096",
-        "097"
+        "097",
+        "110",
+        "111"
       ]
     },
     "sales-rep": {
@@ -4157,7 +4347,11 @@
     "domain:auth-security": {
       "where": {
         "domain": "auth-security"
-      }
+      },
+      "exclude": [
+        "110",
+        "111"
+      ]
     },
     "domain:marketing": {
       "where": {
@@ -4197,7 +4391,10 @@
     "concern:functional": {
       "where": {
         "concern": "functional"
-      }
+      },
+      "exclude": [
+        "111"
+      ]
     },
     "concern:non-functional": {
       "where": {
@@ -4210,7 +4407,8 @@
       },
       "exclude": [
         "050m",
-        "050m2"
+        "050m2",
+        "110"
       ]
     },
     "concern:admin": {

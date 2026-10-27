@@ -5,6 +5,8 @@ node_modules
 # Layered env files — secrets stay local, per-env scaffolds are committed
 .env.local
 .env.*.local
+# Per-env Playwright MCP secrets (.env.playwright.<env>) hold passwords — never committed
+/.env.playwright.*
 !.env.defaults
 !.env.vcst
 !.env.vcptcore
@@ -26,6 +28,8 @@ settings.json
 .mcp.json
 scripts/.graphql-schema.cache.json
 scripts/.graphql-schema.*.cache.json
+# A ticket run's own schema caches (scripts/lib/run-dir.mjs) when its run folder sits under reports/tickets/
+reports/tickets/**/.graphql-schema*.cache.json
 # Ad-hoc/run-less graphql-runner evidence (no --run-id) — scratch, not tied to a run
 scripts/.graphql-evidence/
 
@@ -36,57 +40,38 @@ scripts/.graphql-evidence/
 # The committed project-profile.example.json is the template; the real one is local.
 project-profile.json
 
-# Regression / lifecycle / coverage run evidence — ephemeral by policy.
-# Root paths catch live customer / VC active runs.
-# vc/shared/reports/ paths catch the archived Layer-2 mirror after the
-# 2026-06-02 reports->vc/shared/reports/ move (workstream #6).
-reports/regression/REG-*/**/*.png
-reports/regression/REG-*/**/*.har
-reports/regression/REG-*/**/*.jpg
+# === Run artifacts are never committed (VCST-6394) ===
+# Screenshots, GIFs, video, HAR and Playwright traces are evidence of ONE run: the durable copy of a
+# screenshot a reader needs is the tracker attachment (reports-policy.md §5), never the repo. They
+# were 677 MB of the repo's history. Ignored everywhere, so no new run folder needs its own rule.
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.bmp
+*.mp4
+*.webm
+*.har
+*.zip
+*.trace
+# ...EXCEPT seeder input: test-data/ holds the images, videos and documents the seeders upload and
+# the td:validate guards check (barcodes, brands, category images, white-labeling, uploads).
+!test-data/**/*.png
+!test-data/**/*.jpg
+!test-data/**/*.jpeg
+!test-data/**/*.JPg
+!test-data/**/*.gif
+!test-data/**/*.webp
+!test-data/**/*.mp4
+!test-data/**/*.zip
+
 # Per-FAIL failure traces (network + parsed stack traces) — disposable evidence
 # referenced from the report; may carry redacted-but-sensitive bodies, and this
 # repo is public, so never commit them. The `*` run-dir segment covers BOTH
 # regression (REG-*) and smoke (SMOKE-*) runs — both write to reports/regression/.
 reports/regression/*/traces/*.json
 vc/shared/reports/regression/*/traces/*.json
-reports/test-lifecycle/TLC-*/**/*.png
-reports/test-lifecycle/TLC-*/**/*.har
-reports/test-lifecycle/TLC-*/**/*.jpg
-reports/coverage/COV-*/**/*.png
-reports/coverage/COV-*/**/*.har
-reports/coverage/COV-*/**/*.jpg
-vc/shared/reports/regression/REG-*/**/*.png
-vc/shared/reports/regression/REG-*/**/*.har
-vc/shared/reports/regression/REG-*/**/*.jpg
-vc/shared/reports/test-lifecycle/TLC-*/**/*.png
-vc/shared/reports/test-lifecycle/TLC-*/**/*.har
-vc/shared/reports/test-lifecycle/TLC-*/**/*.jpg
-vc/shared/reports/coverage/COV-*/**/*.png
-vc/shared/reports/coverage/COV-*/**/*.har
-vc/shared/reports/coverage/COV-*/**/*.jpg
-tests/screenshots/*.png
-tests/screenshots/**/*.png
-*.png
-
-# Bug-report evidence screenshots ARE tracked deliverables (reports.md §5) —
-# re-include them past the blanket *.png ignore above.
-!reports/bugs/screenshots/*.png
-!reports/bugs/screenshots/**/*.png
-
-# Per-ticket QA evidence screenshots ARE tracked deliverables (reports.md §5) —
-# re-include them past the blanket *.png ignore above. Covers both layouts the
-# policy names: reports/tickets/<Sprint>/<TICKET>/screenshots/ and
-# reports/tickets/<TICKET>/screenshots/. Run-scoped evidence (reports/regression/,
-# reports/test-lifecycle/, reports/coverage/) stays ignored — it is disposable.
-!reports/tickets/**/screenshots/*.png
-
-# VCST-2945 scannable barcode images ARE committed test data: the storefront scanner's file-upload
-# path decodes them and `td:validate:barcode` checks each one's stamped value against the spec.
-!test-data/uploads/barcodes/*.png
-
-# Category images ARE committed test data: `seed:category-images` uploads each one named in
-# test-data/catalogs/category-images.csv, and `td:validate:category-images` fails a CI checkout without them.
-!test-data/uploads/categories images/*.png
 
 # Playwright MCP accessibility snapshots — dropped at repo root by browser MCPs
 # during exploratory sessions. Transient working state, not deliverables.
@@ -128,10 +113,6 @@ test-data/aliases.localhost.json
 .design-source/
 # Auto-fix module discovery + dependency-graph cache (rebuilt from gh on TTL)
 plugins/vc-fix/skills/qa-fix-routing/.module-registry.cache.json
-# Auto-fix run evidence (keep fix-report.md + summary.json, drop heavy artifacts)
-reports/fixes/FIX-*/**/*.png
-reports/fixes/FIX-*/**/*.har
-reports/fixes/FIX-*/**/*.jpg
 
 # Scheduled test-case staleness audit (ci/run-suite-audit.ts). Entirely ephemeral:
 # .claude/rules/reports.md has NO report category for a test-case review, so the
@@ -140,12 +121,8 @@ reports/fixes/FIX-*/**/*.jpg
 # transcript, the generated PR body, the commit message, summary.json).
 reports/suite-audit/
 
-# Online monitoring (App Insights) — fingerprint dedup state is local working
-# state, not a report. Keep MONITOR-* reports; drop heavy run artifacts.
+# Online monitoring (App Insights) — fingerprint dedup state is local working state, not a report.
 reports/monitoring/.seen-fingerprints.json
-reports/monitoring/MONITOR-*/**/*.png
-reports/monitoring/MONITOR-*/**/*.har
-reports/monitoring/MONITOR-*/**/*.jpg
 
 # Regression run artifacts are ephemeral local working state (screenshots, HARs, traces,
 # resolved CSVs, per-suite results) — they only ever exist on whoever ran them.
@@ -192,3 +169,9 @@ reports/bugs/screenshots/_incoming/
 
 # Tracker attachments downloaded as run INPUT (not a report category, reports.md 1) — kept local
 reports/tickets/**/attachments/
+
+# Playwright spec run output
+playwright-report/
+
+# Playwright .spec output in a ticket run folder (<RUN_DIR>/specs/) — never committed.
+reports/tickets/**/specs/

@@ -1,0 +1,331 @@
+{
+  "ticket": "VCST-6443",
+  "ticket_type": "Task",
+  "flow": "feature-test",
+  "path": "FULL",
+  "path_route": {
+    "decided_at": "1a",
+    "provisional": null,
+    "narrow_story_tokens": null,
+    "escalated_reason": "Task crossing layers: REST API (C#) + Vue page-builder shell + legacy AngularJS blade (ticket-routing.md §4 Task row)",
+    "axes": {
+      "layer": [
+        "api",
+        "admin-spa",
+        "module",
+        "storefront"
+      ],
+      "visual_surface": {
+        "value": false,
+        "sources": "diff adds only an inline field-error text + locale strings; no layout/token change"
+      },
+      "contract_surface": {
+        "value": false,
+        "sources": "no GraphQL op changed (REST only)"
+      },
+      "coverage_surface": {
+        "value": true,
+        "sources": "tc:scope 70 hits (050f, 059, 060, 060b, 060c)"
+      },
+      "data_surface": {
+        "value": true,
+        "sources": "fresh DB: 0 stores; legacy-invalid fixtures needed"
+      }
+    }
+  },
+  "layer": "module",
+  "shape_class": null,
+  "verdict": "FAIL",
+  "date": "2026-10-23",
+  "environment": "localhost",
+  "build": {
+    "declared": "UNKNOWN (vc-deploy-dev has no localhost branch)",
+    "deployed": {
+      "platform": "3.1089.0",
+      "relevant_modules": {
+        "VirtoCommerce.PageBuilderModule": "3.1036.0-pr-178-e4ff"
+      },
+      "theme": "2.60.0"
+    },
+    "theme": "2.60.0 (deployed, latest release)",
+    "source": "start-local stack from /qa-local-env VCST-6443: vcptcore-demo baseline + PR #178 pre-release artifact",
+    "releasedThrough": "UNKNOWN (declared unreadable for localhost)",
+    "preflight": {
+      "verdict": "NOT READY (1 BLOCK)",
+      "blocks": [
+        "config:USER_EMAIL — storefront user not in scope (admin + REST only); recorded as not applicable"
+      ],
+      "warnings": [
+        "mcp:github ABSENT — gh CLI / GIT_TOKEN fallback",
+        "lanes 1 of 3 per .mcp.json — all 3 Playwright lanes callable in-session"
+      ],
+      "expect": "OK VirtoCommerce.PageBuilderModule 3.1036.0-pr-178-e4ff",
+      "file": "preflight.json"
+    }
+  },
+  "status_transitions": [
+    {
+      "at": "1a",
+      "hop": "opening",
+      "from": "Testing",
+      "to": "Testing",
+      "skipped": "already in-testing at run start",
+      "by": "qa-lead (inline orchestrator)",
+      "confirmed": false,
+      "result": "skipped"
+    },
+    {
+      "at": "5-status",
+      "hop": "closing",
+      "from": "Testing",
+      "to": "Reopen",
+      "via": "Need fixes (id 7)",
+      "by": "qa-lead (inline orchestrator)",
+      "confirmed": true,
+      "confirmed_by": "operator 2026-10-23",
+      "result": "done"
+    }
+  ],
+  "timing": {
+    "test_window_start": "2026-10-22T14:52:09Z",
+    "test_window_end": "2026-10-22T15:50:00Z",
+    "reachability_minutes": null,
+    "reachability_note": "1r not dispatched: the fresh local DB had no store, so 1c (live API probes on B2B-store after 3a-early seeding) answered reachability — REACHABLE. Recorded as a deviation.",
+    "time_to_first_test_minutes": null,
+    "time_to_first_test_note": "4a dispatched 2026-10-22T14:52Z; run start ~14:20Z",
+    "c1_wall_clock_minutes": 15
+  },
+  "domain_map": {
+    "state": "PRESENT",
+    "maps": [
+      "page-builder@rev2"
+    ],
+    "mind_map": null,
+    "built_in_run": false,
+    "all_layer_confirmed_at": "1e-confirmed",
+    "unmapped_surfaces": [
+      "page-groups REST /api/page-builder-pages/* (create-group-page, grouped POST/PUT/DELETE, content-json, publishing)",
+      "legacy edit-page blade (Content → store → Pages, .page files) + its Content-module write path",
+      "platform export/import of page groups (PageBuilderExportImport)",
+      "AI create-page tool (ai/tools/create-page.yaml)",
+      "storefront route: GetPageContext raw vs GetSlugInfo decoded lookup (vc-frontend)"
+    ],
+    "surface_source": [
+      ".claude/knowledge/domain/page-builder.md"
+    ]
+  },
+  "visual": null,
+  "discovery": {
+    "ran": true,
+    "report": "exploratory/SBTM-VCST-6443-2026-10-22.md",
+    "box_minutes": 45,
+    "hypotheses_grounded": [
+      "S11a Unicode renders",
+      "S11b %20 404",
+      "S13 403 before validation",
+      "S18 clone of legacy page 400 surfaced",
+      "AC-10/11 Save blocked"
+    ],
+    "promoted": [
+      "S11 split",
+      "S18b",
+      "AC-10 Publish disabled while dirty",
+      "content-json S17b"
+    ]
+  },
+  "coverage_triage": {
+    "hits": 70,
+    "confirmed": 69,
+    "repair": [],
+    "re_base": [
+      "CMS-089"
+    ],
+    "superseded": [],
+    "unscannable": [
+      "062",
+      "069"
+    ],
+    "unmatched_observables": [
+      "create-group-page"
+    ]
+  },
+  "regression": {
+    "c1": {
+      "run_id": "REG-2026-10-22-1819",
+      "ids": "059 CMS-259..281 + 060b CMS-089",
+      "pass": 22,
+      "fail": 2,
+      "blocked": 0,
+      "pass_rate": 0.917,
+      "failures": [
+        "CMS-270 (%20 permalink 404 at natural URL)",
+        "CMS-281 (legacy blade trims edge whitespace)"
+      ],
+      "report": "reports/regression/REG-2026-10-22-1819/regression-2026-10-22.md",
+      "triage": "reports/regression/REG-2026-10-22-1819/triage-report.md"
+    },
+    "c2": null,
+    "release_gate": "not-assessed"
+  },
+  "bugs_not_filed": [
+    {
+      "title": "Legacy blade keeps a stale duplicate-permalink warning once the format is invalid",
+      "severity": "Low",
+      "provenance": "IN-SCOPE",
+      "draft": "bugs/low/BUG-PageBuilder-Legacy-Blade-Stale-Duplicate-Permalink-Warning.md"
+    },
+    {
+      "title": "Content API DELETE of a missing page returns 500 with the server path",
+      "severity": "Low",
+      "provenance": "OUT-OF-SCOPE",
+      "draft": "bugs/low/BUG-Content-Delete-Missing-Page-Returns-500-With-Server-Path.md"
+    }
+  ],
+  "ac_analysis": {
+    "verdict_basis": "AC-11 not met for edge whitespace: the legacy AngularJS page blade silently trims a leading/trailing space or tab instead of rejecting it (CMS-281, IN-SCOPE Medium) — contradicts the decision 'validate (reject), do not normalize'. Every other AC met live.",
+    "checklist": {
+      "file": "testing-checklist.md",
+      "rows": 28,
+      "pass": 23,
+      "fail": 2,
+      "info": 3,
+      "uncovered": [
+        "legacy page migration (AC-14 2nd half) — NOT TESTED",
+        "has-Create-wrong-store 400 vs 403 — WAIVED",
+        "a11y of the field error — WAIVED (visual_surface false)"
+      ]
+    },
+    "autotests": {
+      "suite": "vc-test-automation-framework#208 tests/restapi/page-builder/pages.spec.ts",
+      "result": "2/2 passed"
+    },
+    "open_questions_for_author": [
+      "Allowed by the rule but arguably invisible/unsafe: U+200B, empty permalink, \" < > { } | ^, full-width ？＃＆＼ — intended?",
+      "Clone of a page with a legacy invalid permalink now fails with 400 — intended, or should clone fix/strip the permalink?",
+      "Does a stored %20 mean a space or a literal %20? (decides where the storefront 404 is fixed)",
+      "content-json accepts an invalid settings.permalink (dead data, routing uses the group permalink) — acceptable?"
+    ],
+    "atomic_conditions": 32,
+    "story_acs": 15,
+    "gap_acs": 26
+  },
+  "new_cases_authored": 23,
+  "regression_triage": {
+    "report": "reports/regression/REG-2026-10-22-1819/triage-report.md",
+    "real_bugs": 3,
+    "test_defects": 0,
+    "dismissed": 0,
+    "drafts": [
+      {
+        "title": "Legacy page blade silently trims leading/trailing whitespace from the permalink",
+        "severity": "Medium",
+        "provenance": "IN-SCOPE",
+        "repo": "vc-module-pagebuilder",
+        "draft": "bugs/medium/BUG-PageBuilder-Legacy-Blade-Trims-Permalink-Edge-Whitespace-VCST-6443.md",
+        "filed": "VCST-6511"
+      },
+      {
+        "title": "Percent-escaped permalink 404s at its natural storefront URL",
+        "severity": "Medium",
+        "provenance": "PRE-EXISTING (exposed)",
+        "repo": "vc-frontend",
+        "draft": "bugs/medium/BUG-Storefront-Percent-Escaped-Permalink-404-At-Natural-URL.md",
+        "filed": "VCST-6512"
+      },
+      {
+        "title": "Permalink over 2048 chars returns 500 with a DB error",
+        "severity": "Medium",
+        "provenance": "PRE-EXISTING",
+        "repo": "vc-module-pagebuilder",
+        "draft": "bugs/medium/BUG-PageBuilder-Permalink-Over-2048-Chars-Returns-500.md",
+        "filed": "VCST-6513"
+      }
+    ],
+    "re_base_resolved": [
+      "CMS-089 (060b) rewritten to the reject decision"
+    ]
+  },
+  "bugs_filed": [
+    {
+      "key": "VCST-6511",
+      "relationship": "Sub-task of VCST-6443",
+      "severity": "Medium",
+      "provenance": "IN-SCOPE",
+      "title": "Legacy page blade silently trims leading/trailing whitespace from the permalink"
+    },
+    {
+      "key": "VCST-6512",
+      "relationship": "standalone + Relates VCST-6443",
+      "severity": "Medium",
+      "provenance": "PRE-EXISTING (vc-frontend, exposed)",
+      "title": "Percent-escaped permalink 404 at natural URL"
+    },
+    {
+      "key": "VCST-6513",
+      "relationship": "standalone + Relates VCST-6443",
+      "severity": "Medium",
+      "provenance": "PRE-EXISTING",
+      "title": "Permalink > 2048 chars returns 500"
+    }
+  ],
+  "appinsights": {
+    "status": "SKIPPED",
+    "reason": "not configured on localhost"
+  },
+  "report": {
+    "kb": {
+      "read": [
+        "KB-2C75B17E",
+        "KB-D245B911",
+        "KB-2E8CAC3D",
+        "KB-3642CE3E",
+        "KB-48CBEB82"
+      ],
+      "captured": [
+        "KB-3642CE3E",
+        "KB-58C11A20",
+        "KB-8AD383A4",
+        "KB-C301933A",
+        "KB-EC76B5AB",
+        "KB-D0ED8CDD",
+        "KB-0BA0AD5F",
+        "KB-0B4DAD09",
+        "KB-A7CA895E",
+        "KB-599B0720",
+        "KB-B617E312",
+        "KB-A51E21B6"
+      ],
+      "confirmed": [
+        "KB-8AD383A4",
+        "KB-0BA0AD5F",
+        "KB-C301933A"
+      ],
+      "disputed": [
+        "KB-2C75B17E (soft — observed on pre-fix build 3.1033.0-pr-170)"
+      ]
+    },
+    "deviations": [
+      "3a seeded a store before 1r/3x (fresh DB had none)",
+      "vc-fix:qa-investigate is disable-model-invocation — Phase-4 packages are raw evidence, not the formal gated package",
+      "1r folded into 1c live probes"
+    ],
+    "test_model": "test-model.md",
+    "checklist": "testing-checklist.md",
+    "cases_authored": {
+      "suite": "regression/suites/Backend/page-builder/059-page-builder.csv",
+      "ids": "CMS-259..CMS-281",
+      "count": 23,
+      "status": "Draft"
+    }
+  },
+  "total_cases": 24,
+  "passed": 22,
+  "failed": 2,
+  "blocked": 0,
+  "tracker": {
+    "comment_id": "112318",
+    "api": "v2 wiki + 4 inline screenshots",
+    "verified": "renderedBody: 4 <img>, 0 error, 0 literal markup",
+    "note": "posted with TEST_ENV=vcst only to satisfy config.js (USER_EMAIL empty on localhost); ledger key VCST-6443@vcst"
+  }
+}

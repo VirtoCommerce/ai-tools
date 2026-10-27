@@ -8,6 +8,888 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## Screenshots only for a reason, never committed — `vc-fix` `0.18.0`, `vc-init` `0.5.2`, `vc-frontend` `0.3.1` — 2026-10-27
+
+VCST-6394. Run artifacts were 677 MB of this repo's 777 MB git history (PNG alone).
+
+**Changed — `vc-fix`: an agent takes a screenshot only for five purposes** (`.claude/rules/reports.md` §5.1): a FAIL, a
+bug report, documentation, visual regression, and a tracker comment that makes a UI claim. A passing check or flow gets
+none; its evidence is the snapshot, the network and the HAR. The pass budget drops from 0–1 (max 2) to 0 (max 1). The
+QA shared instructions and the dispatch template say the same.
+
+**Changed — `vc-fix`: no screenshot, GIF, video, HAR or trace is committed**, `reports/bugs/screenshots/<slug>/` and run
+folders included. The tracker attachment is the durable copy (§5.0); the local file is working state.
+
+**Changed — `vc-init`: `/project-init` adds `reports/**/*.png` and the other evidence extensions to the project's
+`.gitignore`** (`EVIDENCE_IGNORES`), scoped to `reports/` so the project's own images elsewhere are untouched. A project
+already set up gets the new lines on its next `/project-init`.
+
+**Changed — `vc-frontend`: `merge-upstream`'s visual check deletes the first-pass base and head capture sets** once the
+result is logged, keeping the diffs and the confirmation-pass sets.
+
+---
+
+## `/vc-fix:qa-bug` writes from the investigation; `qa-checklist` Mode 5 with risk ids — `vc-fix` `0.17.0` — 2026-10-27
+
+**Changed — `/vc-fix:qa-bug --evidence` writes from the `/qa-investigate` package, with no second investigation
+(`knowledge/execution/bug-from-package.md`).** It reproduces nothing and calls no browser, probe, `search_code` /
+`get_file_contents`, App Insights or Context7 query; it reads the package, the deployed versions, the duplicate check
+and `fix-repos.json` to spell the repo name. A package made on another build than the one deployed now stops that bug
+with `STALE_PACKAGE: <name> <package ver> ≠ <deployed ver>` (the owning repo's package, or every listed version when the
+package names no repo); a package missing a mandatory slot stops it with `INCOMPLETE_PACKAGE: <slots>` (the HAR counts when the index names
+one or states that the lane records none, so a missing HAR alone never stops it); `qa-bug` never captures the missing
+artifact itself. The package format names what `qa-bug` checks: `evidence-index.md`'s shape (the `TRACE_ID` /
+`BUILD_VERSIONS` / `REPRO_RATE` slots and a mandatory `## Steps to reproduce`, Part A row 15) is now in
+`qa-investigate/evidence-and-root-cause.md` §0, and an env with no `traceparent` or no App Insights is stated in the
+package rather than stopping it. A version with no deployed counterpart is not compared and is named in the report's Env. A frontend-only package needs no trace id: layers 2-4 read
+`N/A — not probed by the investigation`. LOW routing confidence is filed with no repo and status `REPRODUCED`.
+Where the report goes: a folder the caller names, else `<package>/../bugs/<bucket>/` when the package sits in a ticket
+run folder (the bound run folder, or the run folder of the ticket `found-by:` / `--link` names), else `reports/bugs/open/<bucket>/`; screenshots are copied to `<bugs>/screenshots/<slug>/` and the package
+stays whole for `/qa-fix`. The Medium-or-worse filter stays with the caller, and the "Create a bug-tracker ticket?"
+question stays with `qa-bug` (`--evidence` does not imply `--confirmed`).
+
+**Added — `qa-checklist` Mode 5 in the plugin.** `/vc-fix:qa-checklist --from-strategy <file>` writes the checklist
+with the approved strategy as authority, reading the test model only when the strategy's `Test model` row says `RUN`;
+the risk id leads every item's Ref as the strategy's table writes it — `R3 · S#4 · <node-id>`, `AC-2 · R7` — so
+`trace.mjs` can attribute it. `--from-model --strategy <file>` keeps working as the old spelling. A strategy that
+skips the checklist prints `SKIP — <the row's reason>`. Items come from the model section headed with this strategy round,
+plus the rows it declares still valid; an earlier round's row whose risk id is not in this round's `### Risks` is an
+omission line. `RUN (amend <path>)` reads `test-model.md` beside the strategy when it holds this round's section, else
+`<path>`. With no model, a `MODEL` risk is an omission line naming the `### Scenarios` row that covers it. The skill no longer carries `disable-model-invocation`, so an
+agent that lists `vc-fix:qa-checklist` can load it.
+
+**Changed — the self-diagnostics oracle** (`skill-expectations.md`, both copies) accepts an `--evidence` run: S1 takes
+an `--evidence` STOP as a valid outcome, S2 no longer expects Step 2's four-layer validation there (a `browser_*` or
+`search_code` call in such a run is the S2 instead) and excepts Step 0's `vc-deploy-dev` read.
+
+**Moved.** The "Screenshots — RELATIVE filenames" box in `commands/qa-bug.md` Step 2 is now a short pointer to
+`skills/qa-evidence/output-paths.md`, so the command ends below its BUDGET-004 baseline.
+
+vc-test switches to `--from-strategy` and requires `vc-fix >=0.17.0` in P2-5.
+
+
+## A component is compared with its reference — `vc-frontend` `0.3.0` — 2026-10-26
+
+**Added — `visual/design.mjs`** (ai-tools: `npm run visual:design`). It compares the same component in two places at
+once: the reference (Storybook, or a design-system build) and the one under review (prod, QA, a fork's preview). Per
+component it judges anatomy, box, spacing, typography, colour (CIEDE2000), borders, shadows and the element's own
+pixels against the `design-review` acceptance catalog's tolerances. It sorts each difference into P2 / P3 / `theme`.
+A colour, font or radius difference that the same theme token names on both sides is `theme`, not a defect, and
+the differing tokens are listed for confirmation. A run where a page did not load, or one side matched nothing,
+is `INCONCLUSIVE` with exit 2 (VCST-6534).
+
+## Host-governed projects — `vc-test` `0.6.0` — 2026-10-26
+
+`/vc-test:ticket-context` now builds its bundle on a host-governed project, whose tracker and code host are reachable
+only through the host plugin's MCP servers (vc-test spec U22, U23, B9; plan P1d-3b).
+
+**Added — `prepare --raw` and the pass loop.** A governed profile without `--raw` prints `host-governed` with the
+raw folder and the mapped servers (exit 4). With `--raw`, every read is answered from that folder, one file per
+request, holding what the bridge command would have printed. A pass with unanswered reads writes `requests.json`
+and ends `needs-fetch` (exit 5); eight passes at most. The connectors, the inventory and the bundle do not know
+which route ran; a finished `prepare.json` says `fetched_via: "host"`.
+
+**Added — the `fetch` agent.** It answers one pass through the role's server (`governance.servers.tracker`,
+`codeHost`, `github`), read tools only, writes only answer files, and returns one count line, so the orchestrator
+never reads ticket or PR content. A read a server has no tool for is answered `missing` and becomes a gap with the
+bridge's reason. `fetch-catalog.json` tells it the shape each bridge command prints.
+
+**Changed — a host route that cannot list Jira's fields goes on.** The Atlassian MCP has no site-wide field list; on
+a host route that is gap `ac_fields` / `connector-unavailable` (ACs come from the description and comments) and
+the issue read decides whether the tracker can be read.
+
+**Fixed — a JQL search keeps at most `maxResults` issues** whatever the transport returns (a host's server may page
+through everything; Jira itself already caps).
+
+**Contained.** One run, one raw folder: `prepare` without `--raw` empties it and every end of the run removes it,
+so a later run never reuses old answers or an old pass count. It lies in the ticket's cache only when git ignores
+that, else in tmp. A missing answer is a closed reason (`no-tool`, `not-found`, `denied`, `binary`, `error`)
+with a detail of at most 120 characters; the agent's words are never parsed. `prepare` prints each role's tool-name
+prefixes, so a server the host plugin ships (`mcp__plugin_<plugin>_<server>__`) is found too.
+
+**Known limit.** `fetch` cannot name an unknown server's tools, so it inherits Read, Write and every connected MCP
+server's tools, write tools included; every shell, messaging, publishing and scheduling tool is disallowed.
+Read-only, the mapped servers only and the raw folder only rest on its brief. Accepted for the preview; a hook that
+enforces them is P5's.
+
+## A merge into a theme fork is checked pixel by pixel — `vc-frontend` `0.2.0` — 2026-10-26
+
+**Added — the visual check in `/vc-frontend:merge-upstream` (step 7).** The fork owns how it looks, so the skill
+now compares the fork before the merge (`M^1`) with the merge (`M`): the fork's Storybook, and its pages with the
+API answers replayed from one recording so both sides render the same data. A fork component, its theme or a
+ui-kit component the fork restyles that moved without the brief accepting it is a regression, fixed before the
+push. The procedure is `skills/merge-upstream/visual.md` (VCST-6534).
+
+**Added — the PIXEL engine ships in the plugin** (`visual/`). `setup.mjs` installs its three packages (Playwright,
+pixelmatch, pngjs) once into the fork's `node_modules/.cache/vc-frontend-visual`, never into its `package.json`;
+`--with-browser` also downloads Chromium. ai-tools' `npm run visual:*` now runs these same files, and the
+TypeScript copies under `scripts/visual/` are gone.
+
+**Fixed (review) — packages resolve from the project.** `lib.mjs` resolved a package from its own folder, which in an
+install is the plugin cache, so a fork that already had them still exited 2. It now resolves from the cache
+`setup.mjs` fills (the pins, so Playwright matches the Chromium it downloaded), then the project root (git toplevel,
+else the working directory), then its own folder, and imports the path as a file URL.
+`setup.mjs` writes the pins as the cache folder's own `dependencies`: a second run no longer prunes what the first
+installed, and an installed version other than its pin is reinstalled.
+
+## A visual risk names the instrument that decides it — `vc-test` `0.5.0` — 2026-10-26
+
+**Changed — the strategy gate (clause 4).** A risk with technique `VISUAL` now names its instrument:
+`VISUAL:PIXEL`, `VISUAL:DESIGN`, `VISUAL:PROBE` or `VISUAL:CONTENT`, chosen by `.claude/skills/qa-test/visual-axis.md`
+§2a (VCST-6534); several are one token, comma-separated: `VISUAL:DESIGN,PIXEL` (`floors.md` §VISUAL). A bare
+`VISUAL`, beside a named one too, fails the gate: it was a "look at it" row that decided nothing. Clauses 4 and 6 read
+the technique cell's leading token list the same way, case-insensitively, so prose ("FLOW (not VISUAL)") is no token.
+A strategy written before this release that uses a bare `VISUAL` fails a re-check until its technique names an
+instrument.
+
+**Changed — F8 takes `PIXEL` on an existing surface (clause 6).** When the change modifies a ui-kit file, a risk
+whose technique names `PIXEL` is required. Such a change moves components the ticket never names: in the
+2026-10-23 spike, two 2 px CSS edits changed stories in 14 components. A ui-kit file the PR only adds is a new
+surface with no base build, so F8 asks the rest but not `PIXEL`; the bundle's PR entries now carry `added` (from the
+files API) for that.
+
+**Added — `PIXEL` in `/vc-test:qa-ticket`, as its own item.** The orchestrator runs each `PIXEL` risk itself, whatever
+the Visual lane row says, with the vc-frontend plugin's `visual/` engine on a front checkout (the project root or a
+`.fix-workspace/` clone whose origin is the PR's repo) against the PR's base ref, running the engine's setup and the
+base/head builds from that checkout. Every risk gets a `PIX-<m>` row in its own `scenarios/pixel.rows.md` (the Visual
+lane keeps `visual.rows.md`, so the two never write one file in one wave): `FAIL`, `PASS`, or `BLOCKED — <which>`
+when the engine, the checkout, setup or a build fails. `scenario-rows.mjs merge` takes `pixel` and skips a row whose
+id the checklist already holds, so merging after a later wave never duplicates it.
+
+**Fixed (review) — the gate.** A Lane reading `SKIP — not available in this install` takes no browser slot (clause
+8); a backticked `` `VISUAL` `` is still a bare VISUAL, and `VISUAL:DESIGN PIXEL` (no comma) fails clause 4 instead
+of dropping `PIXEL`; the 6s message tells an unprobed `pixel` from an install that can run it.
+
+**Added — `PIXEL` in the capabilities.** `capabilities.json` `pixel` names the engine and the front checkouts found.
+With `--capabilities`, an install without one keeps F8's `PIXEL` risk with its Lane reading
+`SKIP — not available in this install: <capability>`, and Out of scope names `PIXEL` (clause 6s).
+
+## The #540 review fixes — `vc-test` `0.4.1` — 2026-10-26
+
+Fixes from an independent review of 0.4.0 (#540).
+
+**Fixed — the verifier's oracle agreed with the gate.** `strategy-verifier` takes `qa-test-strategy` §Gate as its only
+criteria, and clause 6 still said "nothing a fired floor requires is `SKIP`" and 6b "exploratory runs", so it would
+reject the `SKIP — not available in this install: <capability>` row the script accepts. §Gate now lists clause **6s**
+and names it as the one exception in 6 and 6b.
+
+**Fixed — 6b names its SKIP too.** With F1 not fired but a High/Critical risk in the register, an
+`Exploratory | SKIP — not available…` row passed with Out of scope silent. It now needs Out of scope to name it (6s),
+reported once whichever clause reaches the row first.
+
+**Fixed — unprobed is not unavailable.** A capability counts as missing only when `capabilities.json` says so: a lane
+when the file lists the MCP servers it was given (`mcp`, written only when `capabilities.mjs` got `--mcp`) and none is
+a browser lane (a name containing `playwright`) or Chrome DevTools; a script when `scripts.<name>` is `false`. A file
+of `{}`, or a run without `--mcp`, no longer lets F1/F2/F3/F8/F12's rows read SKIP, and a Playwright server named
+outside the four known lanes counts. A capabilities file that is `null`, a list, or has a malformed `mcp`/`scripts`
+exits 2 from `floors.mjs` and `check-strategy.mjs`, like any malformed input.
+
+**Fixed — F5 is not skipped on a domain doubt `tc:scope` could have settled.** A `known.domain` or dropped-observable
+gap skipped F5 whenever `regression-select` was missing; it now stays doubt unless `tc:scope` is missing as well.
+
+**Fixed — `deployed.json` is read only when it belongs to this check.** `redeploy` accepted a file written after the
+cached bundle's fetch, i.e. an earlier round's; it now reads only a file written after the redeploy began. And with
+no counted PR (`chain_deployed` NONE), a `deployed.json` line no longer blocks the run.
+
+**Corrected — F6 without `deploy:pr`.** 0.4.0 said that, without `deploy:pr`, the deployment blockers come from
+`deployed.json` written by `deployed.mjs --expect`. No step writes that file: the expect list (the versions each PR
+builds) has no source without `deploy:pr`. So on such a project every counted PR is `DEPLOYMENT UNKNOWN`, F6 does
+not fire, and the run proceeds as "deployment unverified". The reader stays; its producer is deferred to P2.
+
+Without `--capabilities`, `floors.mjs` and `check-strategy.mjs` still give 0.3.1's output (checked on the seven saved
+bundles and two saved strategies).
+
+## Unavailable is not doubt — the floors read what the install can run — `vc-test` `0.4.0` — 2026-10-26
+
+P1d-3a of the `vc-test` plan (`docs/superpowers/plans/2026-10-26-vc-test-p1d3a-capabilities.md`, spec §5.2, §5.3).
+
+**Added — capabilities.** `capabilities.json` names the repository scripts `/vc-test:ticket-context` and the floors
+lean on (`scripts`: deploy-pr, preflight, domain-check, bl-extract, regression-select, tc-scope, schema-refresh).
+
+**Changed — the floors and the gate, with `--capabilities`.** F5 that would fire only on doubt because the project
+declares no regression corpus is `skipped`, and named on the Floors line and in Out of scope. A fired floor whose row
+the install cannot run (Exploratory without a browser lane, the Visual lane without Chrome DevTools) stays fired; that
+row may read `SKIP — not available in this install: <capability>` when Out of scope names it (clause 6s). A lookup that
+ran and failed is still doubt. Without the flag, floors and gate are 0.3.1's; `/vc-test:qa-ticket` passes it.
+
+**Changed — the sources of F2 and F6.** `/vc-test:ticket-context` reads a domain map from the project knowledge store
+(`<store>/domain/<slug>.md`) before it asks `domain:check`. Without `deploy:pr`, the deployment blockers come from
+this ticket's `deployed.json` (written by `deployed.mjs --expect` after this run's prepare; an older file is ignored): NOT DEPLOYED stays NOT DEPLOYED, UNKNOWN stays UNKNOWN.
+
+## `/vc-fix:qa-bug` fills the Jira Bug's own fields, links it, and decides Need hotfixes by code — `vc-fix` `0.16.0` — 2026-10-26
+
+**Added — the Jira Bug's fields (`knowledge/execution/jira-bug-fields.md`).** Step 5 discovers the Bug type's fields from
+the issue-type metadata (no field id in the plugin) and fills Steps to reproduce, Expected result, Actual result,
+Environment, Error message and the components fields when the project has them; the Description keeps the context
+only. Assignee, Sprint, QA engineer, Fix versions and Parent are left alone. Each screenshot goes inside the field it
+proves (Actual / Expected / Steps), and every rich-text field is sent as lists with bold labels and `code` values,
+verified from `renderedFields`. Checked on VCST-6500: three images render inside Actual result.
+
+**Added — Need hotfixes, by code.** On VirtoCommerce's own tracker — `tracker-ops.md` §2a now defines it as a Jira
+profile with `operator: "virto-engineer"` and `projectType: "platform"`, the same test as the origin labels — the flag
+is set when the defect's code is in either of the two latest stable bundles (the two highest `vN` in
+`vc-modules/bundles`, compared as numbers), whatever the priority, and never from a stand.
+
+**Changed — the Bug is created with the Atlassian MCP.** The origin-label hook checks only the MCP create, so the bridge
+`jira request` POST is used only without the MCP, carries the labels itself, and the labels are read back after the create. The option is set by id (VC's value reads `" true"`), and one Environment line names the bundles and the anchor.
+
+**Added — three arguments.** `--evidence <dir>` reads a `/qa-investigate` package instead of reproducing again;
+`--link <KEY>[:type]` relates the bug to a ticket; `--confirmed` carries a caller's yes so Step 5 does not ask per
+bug. Step 5 also searches the tracker for duplicates before asking (§5): a real duplicate stops and asks before
+anything is written to that ticket, and `--confirmed` never covers it. `/qa-run` step 6 passes all three once #469
+lands.
+
+**Moved.** The Jira screenshot recipe (upload → Media-Services UUID → ADF `mediaSingle` → render check) moved from
+`commands/qa-bug.md` Step 5 to `jira-bug-fields.md` §3, so the command stays under its BUDGET-004 baseline.
+
+## An Azure Boards ticket reaches the gated bundle — `vc-test` `0.3.1` — 2026-10-26
+
+**Fixed — the Azure Boards tracker address.** `/vc-test:ticket-context` read the tracker address only from
+`tracker.baseUrl`, which `/project-init` writes for Jira alone, so every Azure Boards prepare stopped with
+`no-tracker`. On an Azure Boards tracker it now reads `tracker.azure.apiBase`, else
+`https://dev.azure.com/<tracker.azure.organization>/<tracker.azure.project>`.
+
+**Fixed — numeric ticket keys in the bundle and change map.** `bundle.schema.json` (`ticket`, `benchmark.hide[]`)
+and `change-map.schema.json` (`ticket`) accepted only `ABC-123`, so `check` and `finish` failed on every Azure
+Boards work item id. They now accept a work item id too.
+
+**Fixed — what an Azure Boards work item carries.** The description is the type's rich-text form fields in form
+order (`tracker.formLayout`; without one, Description, Repro Steps and System Info), so a Bug keeps its Repro
+Steps. An image pasted into a field or comment is read as an attachment (it is stored as one but is not an
+`AttachedFile` link), dated by its comment for the blind cut. A Task's parent story is read as a linked issue, as a
+Jira sub-task's is. A linked issue's parent title is no longer fetched.
+
+**Fixed — the Azure Repos diff.** Files are read until the diff passes `CAPS.diffBytes` (what the bundle keeps);
+the rest is an `over-cap` gap. A refused token stops the diff at once instead of failing each file in turn; a file
+whose path the disk cannot hold is one `no patch` file, not the whole diff; no `git` on `PATH` is `tool-missing`.
+
+**Changed — GitHub search on an Azure Boards tracker.** The cross-link token (`AB#967`) is searched only in the
+client's own GitHub org, never the upstream's; on Azure Repos nothing is searched (plan Task 7). GitHub PRs a ticket
+names are still read.
+
+**Fixed — smaller.** `check` and `finish` load the env `prepare` resolved, so the secret scan uses the same secrets.
+A refusal on the first tracker read is a `no-tracker` JSON status, not a stack line. `governance.secrets: "host"`
+is host-governed (exit 4) before any read, as the bridge already treated it. A gap's detail keeps a failed request's
+status and path, never the tracker's response body. On Linux and macOS a timed-out launch kills the bridge's process
+group, so the token-holding tool stops too (on Windows it already did). A killed run's bridge temp files and Azure
+diff dirs are swept after 24 h like its run dir. A bug report counts as prior art for an Azure Boards id only in a
+work-item form (`AB#967`, `#967`, "work item 967", a `_workitems/edit/967` URL), not any `967` in its text.
+
+## `/vc-test:ticket-context` reads Jira, GitHub, Azure Boards and Azure Repos through `$VC_RUN` — `vc-test` `0.3.0` — 2026-10-26
+
+P1d-2 of the `vc-test` plan (`docs/superpowers/plans/2026-10-26-vc-test-p1d2-connectors.md`). Needs `vc-fix` ≥ 0.15.0.
+
+**Changed — no token in `/vc-test:ticket-context`'s process (spec U20).** Every tracker and code-host read is one
+`node "$VC_RUN" jira|gh|ado …` launch; the in-process Jira and GitHub clients and the credential helpers are gone.
+Jira and GitHub behave as before: VCST-5097 and a blind VCST-5904 prepare give the same `prepare.json` and per-PR
+files as 0.2.2 at the same moment. The cost is the launches: VCST-5097 makes 40 and takes 26 s instead of 15 s.
+
+**Added — Azure.** `project-profile.json` picks the connector (`tracker.kind`, `vcs.clientHost`). An Azure Boards
+work item is read into the issue shape the bundle step already reads (fields, the AC field, comments, attachments,
+parent, children, links, hyperlinks); "done" comes only from the profile's role states. On Azure Repos the client's
+PRs are the work item's own pull-request links, or Azure PR URLs a ticket names; each is read with its changes,
+review threads and a diff built locally (`git diff --no-index` of each file at the merge base and the source
+commit). PR statuses are not read yet. Checked against recorded responses; live Azure comes with P5.
+
+**Changed — stops.** No profile, or one naming no `upstream.org` ⇒ `no-profile` (exit 3): the `VirtoCommerce` and
+`vcst` defaults are gone (U19; with no env bound, the profile's one declared test env is used, then still `vcst`).
+`VC_RUN` unset ⇒ `no-tracker` (exit 3). A host-governed project ⇒ `host-governed` (exit 4) before any read, until
+P1d-3. On an Azure Boards tracker GitHub is searched for the profile's cross-link token + id (`AB#967`).
+
+## One plugin installed in several scopes is not a duplicate — `vc-init` `0.5.1` — 2026-10-26
+
+**Fixed: a false `Plugin installs` WARN.** `claude plugin list` prints one row per install on the machine: the
+user's, and one per folder that has a project or local install (a project's `.claude/settings.json` enables
+the plugin, and every checkout or worktree is its own folder). verify-access counted those rows, so one
+plugin installed for the user and for two folders read as enabled three times. It now counts only the rows
+that load in this folder (enabled, and machine-wide or recorded for this folder) and distinct ids among them
+(`duplicateInstalls`): an old `@vc-tools` copy installed for another folder no longer warns here. "This
+folder" is the one Claude Code runs in (`CLAUDE_PROJECT_DIR`, else the cwd), not `VC_FIX_HOME`.
+
+**Fixed: the uninstall hint names every copy and its scope.** `claude plugin uninstall` without `--scope`
+removes only the user's install; the hint now lists each copy of the old id as a command to paste
+(`--scope user|project|local`) and, for a project or local copy, the folder to run it in.
+
+## The benchmark tooling is gone — `vc-test` `0.2.2` — 2026-10-26
+
+**Removed.** P0 closed without its benchmark run (spec U69), and nothing else needs the tooling:
+`lib/benchmark.mjs`, `lib/bench-aside.mjs`, `briefs/blind.md`, `benchmarks/VCST-5904.json` and
+`/vc-test:qa-ticket --benchmark`, with the `CUTOFF` and `BENCHMARK` rules in the briefs and the verdict's
+`## Benchmark` section. `keep-prepare`, which every run uses, moved to `lib/keep-prepare.mjs` unchanged (step 1 of
+`qa-ticket` now calls it there). `/vc-test:ticket-context --before`/`--hide` stays: it still reads a ticket as it was
+at an instant.
+
+## `jira confluence-page` — the Confluence read the vc-test connector makes — `vc-fix` `0.15.0` — 2026-10-26
+
+**Added.** `node "$VC_RUN" jira confluence-page --id <digits>` prints the raw page object of
+`GET /wiki/api/v2/pages/<id>?body-format=storage`. `/vc-test:ticket-context` reads a page the ticket links, and
+P1d-2 moves that read behind the bridge (the P1d-2 connectors plan, Task 1, on branch `claude/vc-test-p1d2-plan`).
+`request` still admits only `/rest/…`. The new path rule is `safeWikiPath`: a page by numeric id, GET only, on the
+same pinned `tracker.baseUrl` origin, and a redirect is refused rather than followed. A non-numeric `--id` is
+refused before any request. A 401/403 from Confluence says Confluence refused the account, not that the Jira token
+is bad.
+
+## A blind `/vc-test:ticket-context` hides PR review comments after the cutoff — `vc-test` `0.2.1` — 2026-10-26
+
+**Fixed.** `--before` already hid ticket comments, linked issues and PRs created after the cutoff. A PR it kept
+still had its review comments read as they are today, so a benchmark run could see reviewers discussing the bugs
+it is meant to find. `collectPr` now keeps only the comments posted by the cutoff, records how many it hid in
+`reviews.json` as `hidden_after_cutoff`, and does not read thread resolution, which only exists as today's state
+(`unresolved_threads: null`). The PR body, diff and CI are still read as they are now, and the bundle still lists
+them as not blinded.
+
+## /ticket-context and /qa-test-strategy are vc-test's — `vc-test` `0.2.0`, catalog `0.15.0` — 2026-10-26
+
+P1d-1 of the `vc-test` plan (`docs/superpowers/plans/2026-10-26-vc-test-p1d1-move.md`). Behaviour is unchanged: the
+deterministic `prepare` on VCST-5097 and the strategy gate on a saved strategy give the same output before and
+after the move. The one difference is the cache key's skill fingerprint, which changes when the skill's own files
+change, as designed.
+
+**Moved:** `/ticket-context` and `ticket-context-analyst`, and `/qa-test-strategy` with its template, now live in
+`plugins/vc-test/`. Git keeps their history. Nothing of them remains under `.claude/`.
+
+**Still repository-bound, as before the move:** `/vc-test:qa-test-strategy` links to this repository's technique
+vocabulary, risk framework, data rules and qa-test files (P2 moves them), and `/vc-test:ticket-context` calls repository
+scripts (P1d-3). Outside an `ai-tools` checkout they are not usable yet.
+
+**Added: `vc-test:strategy-verifier`.** A read-only agent that `/vc-test:qa-test-strategy` dispatches on a Critical
+risk. It is cut from `qa-lead-orchestrator`'s Verifier Mode, which keeps `/qa-test`'s own per-step gates until P4.
+
+**Changed:**
+- `/qa-test-fast` calls `/vc-test:ticket-context` and `/vc-test:qa-test-strategy`, and stops with an install hint when vc-test is missing.
+- vc-test is enabled in the tracked `.claude/settings.json`, and the onboarding prerequisites name it.
+- `ticket-context` loads the plugin's own copy of the env loader.
+
+## `vc-init` `0.5.0`, `vc-fix` `0.14.1`: a host is found by its shape, and guest mode reads what its own setup left — 2026-10-26
+
+**Fixed: detection no longer turns other projects into guests.** `detectHost` counted any install record of a
+known host plugin, so a client governance plugin installed for one folder (`--scope project`) made
+`/project-init` offer guest mode in every Virto checkout on the same machine.
+
+**Changed: no host is named in the plugins any more.** The `HOSTS` registry is gone. A candidate host is a
+plugin bound to the folder — installed for it with project or local scope, or enabled in its own
+`.claude/settings*.json` — that is not one of ours and ships MCP servers and a `SessionStart` hook; a plugin
+installed for the whole machine is only offered, never picked. The profile records it by plugin id
+(`<plugin>@<marketplace>`); `--governance` takes one.
+
+**Changed: the host sets the person up, vc-init sets the project up.** The host's own setup command (its skill
+or command named for setup / init / onboarding) owns the role, the sign-in, its secrets and which of its
+servers stay on; vc-init never runs or repeats it. `detect-governance.mjs` prints the host's `state`
+(`lib/host-adapter.mjs`, read-only): whether that setup ran here (no role has two servers on), each server
+that is on and the role it fills — by the MCP package it launches, through a wrapper when the plugin declares
+one — and the test-user password slots its browser servers launch with (`<ENV>_<SLOT>_PASSWORD` from a secret
+reference). Not set up ⇒ `/project-init` stops with the host's command. The code host is never inferred.
+
+**Added: test users on the host's password slots.** `governance` gains `websiteAuth` (`host-secrets` |
+`manual-operator`) and `envs` (`.env.<env>` → host website env); gen-profile takes `--gov-website-auth` and
+`--gov-envs`, and a re-run with the same host keeps the confirmed servers and the env map. `add-user` offers
+the host's free slots, writes the login and a one-line note to `.env.<env>` and hands the operator the way to
+store the slot's secret (the wrapper's own `set` verb when its usage offers one); no built-in `ADMIN` /
+`USER_EMAIL` and no password placeholder is written on such a project. `verify-access` checks that the
+host's setup ran here, that the profile names the servers that are on, and every env's mapping and test
+users. vc-fix's `host-governance.md` says how an agent signs in: the login as text, the password by the
+slot's NAME, or by hand when `manual-operator`.
+
+**Changed: the interview asks once, and never what the host already says.** On a host-governed project
+`state.facts` holds what the host's own files declare — the tracker kind, the Azure DevOps organization (the
+tracker server's argument) and project (the host's marketplace URL), the code host kind, the website
+environments — and the skill shows them with their source instead of asking. What is left is asked in
+`AskUserQuestion` rounds (choices, URLs, then each account, admins first), then one hand-off table of files, fields and the
+password commands. Every test-user password goes to the host's slots there. The profile is recorded as a client
+project that files nothing upstream; `.env.*` is gitignored and the env headers no longer speak of vc-secrets;
+assert-profile does not grade the scans a guest skips; next-steps offers no `/qa-fix` without a code host. In
+a normal project the same shape applies (§2e: `AskUserQuestion` rounds for every non-secret value and login, §3d a
+filled-fields table), and an admin password goes to vc-secrets only — `--admin-passwords env-local` is refused;
+a storefront user's still goes where the operator chooses.
+
+**Added: code access is probed, and readable code is scanned like the normal flow.** A host's
+documentation is not the person's rights: `/project-init` calls the tracker server's list-repositories
+tool, and when it answers the repos are scanned through the host's server — `discover-repos.mjs
+--listing-json` takes the listing the skill read, reports `needs-files` (root `package.json` of each
+storefront candidate, `module.manifest` ids of each module repo) until it has them, and classifies them as
+it always does. `governance.codeAccess` (`none` | `read` | `write`) records the result: with `read` the
+client repos carry `access: "read"` and no PR plan, vc-fix reads code for the root cause and opens no PR, and
+next-steps offers `/qa-fix` only with `write`. A `--gov-<role>` flag on a day-2 gen-profile run now
+changes that role.
+
+**Changed: every interview answer is an `AskUserQuestion` form.** Choices are options; typed values — URLs,
+logins, account notes — are the questions' Other answers, at most four questions per call: the URLs, how many
+accounts, then each account (login and a one-line note), admins first. No form in the chat and no file to fill.
+
+**Fixed: an install for the folder that its settings no longer switch on is reported `inactive`** — Claude
+Code does not load it, so detection no longer treats it as the host.
+
+**Changed: vc-init installs on its own.** The README and the install lines name `/plugin install
+vc-init@ai-tools` (it pulls in vc-secrets), and the onboarding text names no particular plugin: every plugin
+that reads the profile is treated alike. `verify-access` drops its `Plugin root` row, which failed whenever
+vc-fix was not installed; a plugin that is not there is already reported by next-steps, and the
+self-diagnostics marker is skipped without it.
+
+**Fixed: a git-tracked `.env.<env>` keeps its tracker keys.** Moving the project keys (`JIRA_*`,
+`ADO_ORG`/`ADO_PROJECT`, `CLIENT_REPO_ORG`) into `.env.local` used to delete them from every env file,
+including one the team commits, so a teammate without a `.env.local` lost the Jira connection on the next
+commit. A key a tracked file holds now stays in the env files and is not copied into `.env.local` either (a
+copy would win at runtime and go stale when the team changes the shared value): scaffold-env and
+normalize-env say `left in the git-tracked env files …`, a new env file gets the key with the shared value
+(never an empty `.env.local` placeholder that would blank it), write-env refuses a different value, and a
+`.env.local` line that overrides it is reported. Untracked
+env files are cleaned as before. On a host-governed project gen-profile warns about every env file git still
+tracks (the `.env.*` ignore does not untrack it), and add-user refuses to write a login into one.
+
+**Fixed (review of this PR).** verify-access warns when one plugin of this marketplace is enabled under both
+`@ai-tools` and the old `@vc-tools` (two collectors), on a host-governed project too, without requiring any plugin; reports a test user whose
+host slot is gone instead of dropping it; a GitHub code-host server no longer reads as the wrong kind. A
+host listing must name its org, and for Azure Repos its project (no `undefined` URLs, no stray `ADO_*`), its
+storefront `localVerify` no longer names `USER_EMAIL` / `USER_PASSWORD`, and write-env's new env files carry
+the same header as scaffold-env's (local on a host-governed project).
+The `.gitignore` blocks /project-init appends are titled `vc-init (/project-init)`, not `vc-fix`.
+
+**Verified.** On a machine with a client governance plugin installed for one folder and its setup already run
+there: no candidate for this repository or its parent folder; the folder's plugin found in any letter case,
+its work-items, test-management, telemetry and three browser servers classified by package, its setup
+command found, 10 slots on two environments, the store command read from the wrapper's usage. A sandbox
+project went through gen-profile → scaffold-env → scaffold-secrets → add-user → reconcile → verify-access in
+both states (setup not run / run). 3912 unit tests and the vc-init bridge tests pass.
+
+## vc-test in the marketplace, as a preview — `vc-test` `0.1.0`, catalog `0.14.0` — 2026-10-26
+
+The third of four P1 plans (`docs/superpowers/plans/2026-10-26-vc-test-p1c-plugin.md`). `vc-test` is now listed,
+with `defaultEnabled: false`. Its QA command still needs an `ai-tools` checkout until P1d.
+
+**Added:**
+- **`/vc-test:init`.** It writes the profile's `test` block through `vc-init`'s writer: which environments a run may write to, each with its declared `BACK_URL`, plus the script roots and the knowledge store. It lists missing accounts with their `/project-init --add-user` command, and never touches a password.
+- **A read-only profile loader.** A missing profile is a STOP.
+- **The full capabilities probe.** A stand is writable only by declaration, and only when `BACK_URL` is the declared stand.
+- **`deployed.mjs` (F6).** It reads module, platform and theme versions from the stand. A side it cannot read is UNKNOWN, never "not deployed".
+- **`knowledge-store.mjs`, with committed tests.** A client project never writes to the platform store.
+- **The pinned Playwright config** the `vc-init` runner uses.
+
+**Changed:**
+- `CLAUDE.md`, `when-to-write-a-test.md` and the unit-test workflow name the knowledge store's committed tests as an exception (spec U10).
+- The plugin carries its own copy of the env loader instead of importing the repository's.
+
+## The runner starts an allowlisted vc-test script — `vc-init` `0.4.1` — 2026-10-26
+
+Part of the third P1 plan for `vc-test` (`docs/superpowers/plans/2026-10-26-vc-test-p1c-plugin.md`).
+
+**Added: `node "$VC_RUN" runner plugin <name> [args…]`.** It starts one of vc-test's own scripts with the current
+env's test-user passwords and never a token, so F6 can log in as the admin to read the stand's module versions.
+- **Names, never paths.** The name must be in `RUNNER_PLUGIN_SCRIPTS`; v1 has only `deployed`. This is the same pattern as `onboard`'s allowlist.
+- **The file comes from the vc-test install,** the trusted one on the inner side, so it needs no `scriptRoots`.
+- **The env check still applies:** only an env the profile's `test` block lists.
+
+## The tracker CLIs read what a connector needs — `vc-fix` `0.14.0` — 2026-10-26
+
+The second of four P1 plans for the `vc-test` plugin (`docs/superpowers/plans/2026-10-26-vc-test-p1b-vc-fix-reads.md`).
+These are new read commands in `qa-fix-routing/jira.mjs` and `ado.mjs`, so that one `$VC_RUN` call fetches what
+`/ticket-context` reads with its own tokens today. Every one is a GET and prints the tracker's own objects
+unshaped. `vc-init`, `vc-perf` and `vc-secrets` are unchanged, and the bridge admits the new names as it is.
+
+**Added, `jira.mjs`:**
+- `comments`: every page in one launch, or the newest N.
+- `download`: an attachment's bytes to a file.
+- `dev-prs`: the PR URLs in the issue's development panel.
+
+**Added, `ado.mjs`:**
+- `comments`: follows `continuationToken`.
+- `download-attachment`: takes the GUID of an `AttachedFile` relation, never a URL.
+- Azure Repos PR reads: `get-pr`, `pr-iterations`, `pr-changes` (paged) and `pr-threads`.
+- `get-file --commit <sha>`.
+
+**Added: `raw-out.mjs`.** A download from a token-holding CLI is written only inside `<outputRoot>/.vc-fix/`. The
+path is checked after resolving links and before any request. The bytes go to a fresh file that is renamed into
+place, so a link already at the target is never written through. A download is cut at `--max-bytes` (default
+25 MiB), and a cut download leaves no file. No new command can hang: a JSON read times out after 30 s and a
+download, body included, after 120 s. Paging stops on a page with nothing new. Azure comments come oldest first,
+like Jira's, and `--newest` reverses that. `pr-changes` follows Azure's `nextSkip`.
+
+## What vc-test needs from onboarding — `vc-init` `0.4.0` — 2026-10-26
+
+The first of four P1 plans for the `vc-test` plugin (`docs/superpowers/plans/2026-10-26-vc-test-p1a-vc-init.md`).
+`vc-fix` gains only the matching profile default; `vc-perf` and `vc-secrets` are unchanged.
+
+**Added: a `test` block in `project-profile.json`.** `vc-test`'s own open map, kept wholesale like `perf`:
+`environments` (env → `{ writable }`), `scriptRoots` and `knowledgeStore`. `profile-set.mjs --merge 'test=<json>'`
+writes it, and a `/project-init` re-run keeps it.
+
+**Added: one pinned GraphQL read through the bridge.** `node "$VC_RUN" gh api graphql` is still refused, except
+for a document byte-equal to the review-thread query `/ticket-context` reads, with only its variables. A
+mutation, another query, a header, an input file, or a field value read from a file (`@…`) stays refused.
+
+**Added: the `runner` bridge tool.** `node "$VC_RUN" runner playwright <spec…>` and `runner node <script> [args…]`
+run `vc-test`'s `.spec` files and check scripts with the current env's test-user passwords and never a token. It
+runs only for an environment the `test` block lists, and only on files inside its `scriptRoots`, checked after
+resolving links. The argv is fixed and Playwright uses `vc-test`'s pinned config. Output is redacted. With the
+passwords in vc-secrets it runs as the new task `vc-init-runner.<env>`, which `write-secrets-decl.mjs` declares
+beside each password env. Re-run `/project-init --check` and `vc-secrets trust` to pick it up.
+
+## An env's files can live outside the repo; a stand can use one master password — `vc-fix` `0.13.0` — 2026-10-21
+
+Every ticket now runs on its own stand, and dedicated cloud stands are replacing the shared ones. A stand that
+belongs to one ticket or one machine no longer needs a file in the repo, and every test account on it can sign
+in with one password. `vc-init`, `vc-perf` and `vc-secrets` are unchanged.
+
+**Added: env files in dedicated folders (VCST-6350).** `QA_ENV_PATH` in `.env.local` lists folders,
+`;`-separated, the first winning, with `QA_OUTPUT_DIR`'s placeholders: `<ticket>` (the run's ticket),
+`<env>` and `<sprint>`. Each folder may hold `.env.<env>` and `.env.playwright.<env>`, and a file there beats the
+repo's key by key, `KEY_<ENV>` pins included. A ticket's folder holds its own stands (`vcst_6314`) and may
+override a shared env for that ticket's runs. `env:use`, `run:use`, `/preflight --env` and `deploy:pr` accept
+those envs. `QA_TICKET=<KEY>` in the environment names the ticket and beats a session's bound run, as `TEST_ENV`
+beats the env binding: `run:use` refuses another ticket while it is set. A ticket run with no env argument binds
+the ticket's own stand when its folder defines exactly one env the repo does not. An override of a repo env never
+moves that stand: the loader warns when it changes the env's `BACK_URL`, `FRONT_URL` or `ENV_RISK`, and deploy
+reads a repo env from the repo's files only. A session bound to an env no file defines any more stops every loader
+with an error instead of running on `.env.local`'s stand; `run:use --clear` removes such a binding with the run.
+
+**Added: master stands.** `PASSWORDS=master` in a stand's env file makes every test-account password
+variable resolve to `MASTER_PASSWORD` from `.env.playwright.master`, so the seeders set it. The platform admin's
+`ADMIN_PASSWORD` is one of them: the stand's admin must use the master password too. Only the stand's own
+env file counts: the root `.env.<env>` for a repo env, else its `QA_ENV_PATH` file, and never on an
+`ENV_RISK=production` stand. A `PASSWORDS` line in
+`.env.local`, or a ticket folder's override of a repo env, is ignored with a warning, and one in the process
+environment (inherited, or passed by CI) is ignored too: seeding would reset a shared stand's accounts to the master
+password. With no `.env.playwright.master` a master stand's test-account passwords are unset, never another
+stand's. Browser lanes then type `MASTER_PASSWORD` in every password field.
+`secrets:sync:all` copies it into `.env.playwright.all` as one stable line, so a new master stand needs no re-sync
+and no MCP reconnect; the single-env `secrets:sync` writes it only for a master stand, keeps an earlier value only
+from a file generated for the same env, and never carries a copy of the master password to another stand.
+`enforce-secret-token` blocks the master password (`MASTER_PASSWORD`, or any name holding a copy of it) in a session
+whose stand did not opt in, that nothing chose or that it cannot resolve, a copy older than the master file, and any name from a single-env
+`--secrets` file generated for another env. It now guards every `playwright-*` lane (`playwright-mobile` was missed).
+
+**Changed:**
+- One loader: `scripts/lib/env-layers.mjs` holds the order. config.js, `load-env.mjs`, the seeders, the GraphQL
+  and layout runners, deploy and the ticket-context skill apply it, and the plugin has a byte-identical copy.
+  The "no `.env.<env>`" warning moved from the resolver to the loader.
+- `secrets:sync:all` reads every ticket's folder and writes atomically. It refuses a name whose value differs
+  between a shared env and a ticket's override of it.
+- `/qa-deploy-pr` refuses an env whose `BACK_URL` is on this machine (localhost, a loopback or unspecified address in
+  IPv4 or IPv6 form, a Docker `*.docker.internal` name), and reads a dedicated cloud stand's
+  `DEPLOY_BRANCH` and `BACK_URL` from its own files.
+- `/preflight` on a local stand reports `declared` as `local stand` instead of an UNKNOWN that asked for a
+  `GIT_TOKEN`. `deployed` and `--expect` read the stand's build as before, and a missing build no longer advises
+  `/qa-deploy-pr`.
+- The ticket-context skill imports the loader at run time: an install without `scripts/lib/env-layers.mjs` reads
+  the root's files as before and reports a GAP instead of failing to start. It loads the env with the ticket it
+  analyses, so its `deploy:pr` and `/preflight` children see that ticket's stands.
+
+**Fixed:** the runners that let the environment win (`ci:regression`, `ci:monitor`, `deploy:pr`, `/preflight`)
+took `.env.playwright.<env>` for the environment: the resolver had put it there as `KEY_<ENV>` first, so it beat a
+CI `-e` value and a `.env.local` pin. They now resolve only the env's name and let the loader read that file.
+
+**Changed (`vc-fix`):**
+- The plugin's loader, `use-env.mjs` and `run-folder.mjs` find envs in the `QA_ENV_PATH` folders, and the env
+  report names `MASTER_PASSWORD` on a master stand. Under the `$VC_RUN` bridge the loader reads the folders from
+  `VC_FIX_HOME`'s `.env.local`, and the tokens the bridge injected still beat every file.
+
+**Upgrade note.** Nothing has to change. Without `QA_ENV_PATH` every env comes from the repo as before. Without
+`PASSWORDS=master` a stand keeps its own passwords. A master stand needs `.env.playwright.master`, then one
+`npm run secrets:sync:all` and a reconnect of the `playwright-*` servers.
+
+## `vc-init` `0.3.3`: the `$VC_RUN` bridge no longer takes `~/.claude` for a project — 2026-10-21
+
+**Fixed.** `bridge/run.mjs` `findDeclarations` walked up from the cwd and stopped at the first
+`.claude/vc-secrets*.json`, which for any undeclared folder under `$HOME` was the user-scope
+`~/.claude/vc-secrets.json`, so the home directory became the project root: the inner side ran against the user's
+own declaration instead of refusing. It now skips `~/.claude` exactly as vc-secrets' `configPaths` does. This was
+the `run.test.mjs` failure on Windows machines with a user-level declaration (exit 69 instead of 64), where
+`os.tmpdir()` sits inside the profile.
+
+## `vc-frontend`: theme forks and storefront plugins — catalog `0.13.0`, `vc-frontend` `0.1.0` — 2026-10-21
+
+**Added: the `vc-frontend` plugin** (`defaultEnabled: false`) with three skills: two for teams that keep a fork of
+the storefront theme (vc-frontend-next, customer themes), one for a backend module that ships a storefront plugin. Its description and README say the skills can make mistakes
+and every change needs human review.
+
+- **`merge-upstream`** brings upstream `VirtoCommerce/vc-frontend` (its `dev` or a release tag) into the fork, or a
+  redesign branch's own base into it. The fork keeps its markup, styles and tokens; upstream's behavior is carried
+  into them. Every conflict is briefed before it is resolved; every upstream line is traced into the result; the
+  ported code is covered by mutation-checked tests; the built app is smoke-tested with `vite preview`. The PR gets a
+  QA checklist — an existing PR for the branch is updated rather than duplicated — and lands as a merge commit: the
+  skill checks the repository settings, puts the warning at the top of the PR and confirms two parents after the
+  merge. Each merge leaves a log in the fork's `upstream-merges/`, which the next merge reads before asking anything.
+  Every `gh` call names its repository, because a bare `gh` in a clone with an `upstream` remote resolves to
+  upstream. `git rerere` is on as a safety net for a merge that has to be redone; a leftover empty merge branch is
+  recreated, one with work on it is left for the user to decide.
+- **`port-upstream-to-fork`**, which `merge-upstream` calls after the merge. A merge delivers an upstream change only
+  to the file upstream changed; when the fork renders its own component there, the change merges cleanly and reaches
+  nobody. `fork-drift.mjs` builds the fork and upstream commits with the repository's own Vite config and compares
+  Rollup's module graphs (name-level imports through barrels, tree-shaking, Sass partials) to list upstream code the
+  fork no longer renders, render sites it dropped, and changes to files a committed `fork-map.json` says the fork
+  replaced. The skill briefs each upstream commit as port / already / n/a / lost feature, ports the approved ones
+  with a mutation-checked test, and keeps the map current.
+- **`mf-new-plugin`** makes a backend module ship a storefront plugin (scenario S1a of vc-frontend's Module
+  Federation docs). vc-frontend's `create:plugin --module` writes only new files; the skill edits the module's own
+  `.csproj`, `module.manifest` and `.gitignore` after the user approves the diffs, copying versions only from what
+  `check:plugin-module` prints. Its report says whether the sources are wired or the package is verified too
+  (`--artifact`). It never commits, and reports CI without editing it, because module CI is updated centrally.
+
+---
+
+## Each run gets its own env and its own output folder — `vc-fix` `0.12.0` — 2026-10-21
+
+Two runs can now go in parallel in one checkout, whether they test two tickets or one ticket on a local
+stand and then a cloud one. Neither edits a shared file or writes the other's output. `vc-init`, `vc-perf`
+and `vc-secrets` are unchanged.
+
+**Added: the env is a command argument, bound to the session (#471).** `/qa-test VCST-6314 vcptcore_dev`,
+and the same optional env on `/qa-test-fast`, `/qa-exploratory`, `/qa-deploy-pr` and
+`/vc-fix:qa-verify-fix ticket <KEY> [<env>]`. Step 0 binds it into `.vc-fix/session-env/<session id>`
+(`npm run env:use`; in the plugin, `scripts/env/use-env.mjs`). Every script the session and its subagents
+run resolves `TEST_ENV`, then that binding, then `.env.test-env`, then `vcst`. `env:check` and the
+`[config]` line name where the env came from.
+
+**Added: per-env passwords and one `--secrets` file for every env (#471).** `.env.playwright.<env>` holds
+one env's passwords, read as `KEY_<ENV>`. `npm run secrets:sync:all` writes `.env.playwright.all`, which holds
+every env's names as `NAME_<ENV>`. `enforce-secret-token` and `/preflight` read the combined file.
+
+**Added: one output folder per ticket and env (#472).** `QA_OUTPUT_DIR` in `.env.local` is a path template
+with optional `<ticket>`, `<env>` and `<sprint>`. A missing `<ticket>` or `<env>` is appended. Unset, the
+folder is `reports/tickets/<sprint>/<ticket>/<env>/`. `npm run run:use -- <KEY> [<env>]` (in the plugin,
+`scripts/env/run-folder.mjs use`) binds the env and the folder at Step 0. Everything a run writes lands
+there, and the scripts that write run output follow the binding: summary, verdict, checklist, strategy,
+test model, screenshots, evidence packages, bug drafts, the maps and GraphQL schema it refreshes, and
+`/qa-verify-fix`'s files.
+
+**Changed (`vc-fix`):**
+- `/qa-verify-fix` binds the env and the run folder at Step 0 and writes no `{SPRINT}` paths.
+- `/vc-fix:qa-report` finds a run in its run folder: `/qa-test` and `/qa-verify-fix` hand it
+  `{RUN_DIR}/summary.json` / `{RUN_DIR}/verification-summary.json`, and a bare ticket key resolves to the
+  session's run folder, else the ticket's newest one.
+- `/qa-bug` writes into a run folder's `bugs/` when its caller names one.
+- The tracker-comment hooks key their ledger `<TICKET>@<env>`.
+- The plugin's resolver reads `.env.playwright.<env>` and the session binding. Under the `$VC_RUN`
+  bridge it reads both, like every env file, from `VC_FIX_HOME`, never from the caller's cwd.
+- A ticket key may be a bare Azure Boards id.
+- In self-diagnostics, both copies of the `/qa-bug` expected-output marker also accept a run folder's bug
+  report.
+
+**Upgrade note.** Nothing has to change to keep today's behaviour. Without an env argument the run uses
+`.env.test-env` as before. Without `QA_OUTPUT_DIR` the run folder is the old ticket folder plus an `<env>/`
+level, and readers look in both layouts. A project with no `reports/tickets/SprintXX-XX` folder, a new vc-fix client
+for one, gets `reports/tickets/<ticket>/<env>/`. A `QA_OUTPUT_DIR` outside the project needs
+`--allow-unrestricted-file-access` on the Playwright lanes, or each capture saved with a bare filename and
+moved in (the plugin's `knowledge/execution/run-env.md` §The run folder; in this repo,
+`.claude/knowledge/execution/run-output.md` §Screenshots).
+
+---
+
+## `@playwright/mcp` 0.0.83 — `vc-fix` `0.11.3`, `vc-init` `0.3.2` — 2026-10-21
+
+**Changed: the `@playwright/mcp` pin moves 0.0.77 → 0.0.83 everywhere it is written** — root `package.json`,
+`ci/lib/lane-mcp.ts` (`PLAYWRIGHT_MCP_PACKAGE`), `ci/run-monitor.ts`, `templates/.mcp.json.example`,
+`docs/onboarding.md`, and in the plugins `vc-init`'s `templates/.mcp.json.example` (what `/project-init` writes
+into `.mcp.json`) and `vc-fix`'s `package.json` (`@playwright/test` and `playwright` went to 1.64.1 in #497). Probed
+2026-10-21 over stdio on Windows: chrome, edge and firefox lanes (with the occlusion pref) navigate and click on
+0.0.83 exactly as on 0.0.77, and a bare-filename screenshot still lands in the server cwd, so `/qa-bug`'s Stage 5
+reconcile stays required.
+
+**Migration: per machine.** Change `@playwright/mcp@0.0.77` to `@playwright/mcp@0.0.83` in your `.mcp.json`, run
+`npx @playwright/mcp@0.0.83 install-browser chromium` and `… install-browser firefox` (0.0.83 bundles its own
+Playwright build and needs its own browsers), then restart the MCP servers.
+
+## `vc-init` `0.3.0`: the tracker / code-host connection lives in `.env.local`, once — 2026-10-21
+
+**Changed: where the project-level keys are written.** `JIRA_BASE_URL`, `JIRA_PROJECT_KEY`, `JIRA_EMAIL`, `ADO_ORG`,
+`ADO_PROJECT` and `CLIENT_REPO_ORG` are one value for the whole project, whatever stand a run targets, but
+`scaffold-env.mjs` wrote them into every `.env.<env>`, so each new env asked for them again and `JIRA_EMAIL` (a
+personal identifier) sat in a file meant for shared URLs. They now go to `.env.local`, once (`scaffold-env.mjs`
+`CATALOG` marks them `scope: "project"`; `write-env.mjs` routes them the same way). Every loader reads
+`.env.local` after `.env.<env>`, so nothing that reads `process.env` changes.
+
+**Migration: automatic.** `scaffold-env.mjs` (`/project-init`, `--add-env`) and `normalize-env.mjs` (`--check`
+Step C) move these keys out of every `.env.<env>` into `.env.local` (`lib/project-env.mjs`), with the comment
+above each. When the env files hold different values for one key, nothing is moved and the run prints
+`NOT moved <KEY> — the files disagree`; keep one value in `.env.local` (or `<KEY>_<ENV>` there per env).
+`normalize-env.mjs` now also normalises the project keys in `.env.local` (a trailing slash on `JIRA_BASE_URL`).
+A project that points two stands at two trackers keeps the key per env as `<KEY>_<ENV>` in `.env.local`:
+`scaffold-env.mjs` then adds `<KEY>_<NEW>` for a new env instead of a bare empty line, and `normalize-env.mjs`
+checks those lines like the bare key. `write-env.mjs` refuses (exit 1) a project key whose value differs from the
+one already in `.env.local`, instead of redirecting every other env, and removes the old copy from `.env.<env>`.
+The vc-fix `.env.local.template` ships these keys commented out, with no default: an uncommented line there
+overrides `.env.<env>`.
+
+**Fixed: `normalize-env.mjs` skipped every line of a CRLF file.** A `KEY=value\r` line did not match its line
+pattern, so a file saved by a Windows editor kept its quotes and trailing slashes, and an empty placeholder lost its
+`\r`. It now splits on the line break and writes the file back with its own line endings; `scaffold-env.mjs` appends
+to a CRLF `.env.local` in CRLF too. Its `--json` output keeps the old top-level fields, summed over both files, and
+adds `files` and `moved`.
+
+**Changed: operator-facing wording.** The token guide said the Jira and GitHub tokens exist so `/qa-fix` can use
+them, the readiness table was titled `/qa-fix readiness`, and an optional MCP placeholder said it was "not needed
+for /qa-fix". vc-init onboards every installed plugin, so these now say "the plugins" / "Plugin readiness". The
+`JIRA_EMAIL` hint says why the email is required: Jira Cloud accepts an API token only together with the account
+email. Messages that name a specific `/qa-fix` gate that would fail are kept as they are.
+
+## `vc-fix` `0.11.2`: docs and messages follow vc-init 0.3.0 — 2026-10-21
+
+`jira.mjs` now says to set `JIRA_EMAIL` in `.env.local`; the `.env.{env}.example` / `.env.local.template`
+references and the `/qa-env-check` bucket table show the tracker / code-host keys in `.env.local`. No runtime
+change: every reader already took these values from `process.env`.
+
+## `vc-init` `0.2.1`: the GitHub token is also handed out as `GITHUB_TOKEN` — 2026-10-21
+
+**Added: `GITHUB_TOKEN` as a second name for the `github-pat` secret.** Skills and agents are moving from
+`GITHUB_FIX_BUGS_TOKEN` / `GITHUB_PERSONAL_ACCESS_TOKEN` to one name, `GITHUB_TOKEN`. This release makes the
+token layer ready before any caller switches: the `vc-init-github` and `vc-init-onboard*` tasks bind both names to
+the same secret, the `$VC_RUN` bridge accepts either one (and gives `gh` the value as `GH_TOKEN`), the git
+credential helper answers `github.com` from either, and `load-layered-env` treats `GITHUB_TOKEN` as a token — an
+injected value is not overridden by `.env.local`, and a plaintext one there is reported. Same value, no new secret.
+The old names stay until every caller has moved; they are removed in a later release.
+
+**Migration:** run `/project-init --check` to rewrite `.claude/vc-secrets.local.json`, then `vc-secrets trust`
+once — the task env changed, so the launcher asks to re-approve it. A declaration left as it was keeps working.
+
+## `vc-init` `0.2.0`: browser work goes only through the Playwright MCP lanes — 2026-10-21
+
+**Added: an always-loaded agent rule in the onboarded project.** `/project-init` (§7) and `/project-init --check`
+(Step C) now run `write-agent-rules.mjs`, which copies `templates/rules/vc-browser.md` into the project's
+`.claude/rules/`. The rule: every browser action goes through a Playwright MCP lane (`playwright-chrome` by
+default) — never the desktop app's browser pane, Claude in Chrome, Chrome DevTools or a browser started from a
+shell. Those cannot type a password; only the lanes get the test-user passwords (vc-secrets or
+`.env.playwright.local`), and the agent types the bare NAME (`ADMIN_PASSWORD`). With no Playwright tool the agent
+stops and reports instead of switching browsers. Before this, agents asked to sign in to a stand kept reaching for
+another browser and stalled at the password field.
+
+The rule sits in the project, not in a plugin, so it binds every plugin there, including ones installed later.
+The script overwrites only files carrying its own marker, leaves a same-named operator file alone, and stands
+down on a host-governed project. The file is **not** gitignored — commit it so the whole team gets the rule.
+**Migration:** an already-onboarded project gets the rule from `/project-init --check`.
+
+---
+
+## The real-user hook guards plugin-provided browser servers; exploratory probes opt in — `vc-fix` `0.11.1` — 2026-10-21
+
+**Fixed:** `hooks/enforce-real-user.mjs` was registered with a matcher naming only
+`mcp__playwright-(chrome|firefox|edge|webkit)__…` and `mcp__Chrome_DevTools__…`, so a browser server
+installed from a plugin (`mcp__plugin_<plugin>_<server>__browser_evaluate`) was never checked. Both
+registrations (`plugins/vc-fix/hooks/hooks.json`, `.claude/settings.json`) now match any server:
+`^mcp__.+__(browser_evaluate|browser_run_code_unsafe|evaluate_script)$`.
+
+**Added:** the `/* @exploratory: <charter> — <reason> */` payload sentinel, for exploratory / SBTM probes
+that use the page as an attack tool on purpose (disabled-control bypass, tampered replay, exposed client
+state). A finding from such a probe is a server/API-layer finding, never a UI defect (VCST-5100); the
+sentinel is not for scripted cases or regression runs. `qa/shared-instructions.md` §Browser Interaction
+and the `qa-sbtm` probe examples carry it.
+
+**Verified:** hook payload checks (plugin-namespaced click payload blocked, `@exploratory` passes on
+Playwright and DevTools); matcher checked against legacy, plugin-namespaced and lookalike tool names;
+both hook copies byte-identical; `npm run context:check` green.
+
+## `vc-init`: onboarding is its own plugin, and no token sits in any file — catalog `0.12.0`, `vc-init` `0.1.0`, `vc-fix` `0.11.0`, `vc-perf` `0.4.0` — VCST-6402
+
+**Added: the `vc-init` plugin** (depends on `vc-secrets`). `/project-init` moved out of `vc-fix`, so `vc-perf`
+no longer pulls in the whole bug lifecycle to onboard. `vc-fix` and `vc-perf` now depend on `vc-init`.
+vc-init is the **only writer of `project-profile.json`**: `/qa-bug` (first-run field answers) and `/perf-init`
+(the `perf` block) write through its `profile-set.mjs`, and `/project-init --check` keeps the `perf` block.
+
+**Added: the `$VC_RUN` bridge — every GitHub / Azure DevOps / Jira token goes through `vc-secrets`.** The
+operator stores a PAT with `node "<VC_SECRETS>" set github-pat|ado-pat|jira-token` at a hidden prompt (never
+in the chat) and approves the project's declarations with `vc-secrets trust`. A process receives a token only
+as `node "$VC_RUN" gh|git-gh|git-ado|ado|jira|deliver|onboard …`: the bridge checks the command line against an
+allowlist (no `gh auth`, no `gh pr merge`, `gh api` reads only, no `git pull`, no `git -c`, no foreign host), starts `vc-secrets task
+vc-init-<group>` for a PAT axis or the tool directly for a session login, pins git to a host-scoped credential
+helper with hooks off, and redacts the child's output. New: `vc-fix` `skills/qa-fix-routing/jira.mjs` (Jira
+REST with the host pinned to the profile) and `ado.mjs edit-comment | patch-fields | wiql`.
+
+**Changed: the GitHub MCP server** runs through `vc-secrets run github` on a PAT axis (pinned `mcp-remote`
+carrying `github-pat` in the Authorization header — verified on Windows `npx.cmd`) and as the hosted server with
+OAuth otherwise. `.claude/settings.local.json` `env` holds only `VC_RUN`.
+
+**BREAKING:** a missing `project-profile.json` now **stops** vc-fix and vc-perf with "run /project-init" —
+the silent native-platform / Jira / GitHub defaults are gone; an unknown `schemaVersion` stops too. The profile
+is `schemaVersion` 3: `auth.{github,ado,jira}` replaces `vcs.auth` / `vcs.authEnv`, and a `governance` block is added (below). **Migration:** run
+`/project-init --check` — it reconciles the profile (deriving the auth axes a schema-1 file never recorded),
+writes the vc-secrets declarations, asks you to `set` each token, and then `migrate-secrets.mjs --strip` removes
+every plaintext copy (`.env.local`, settings `env`, a tokenised `.fix-workspace` remote URL) whose vc-secrets
+copy passes a live probe. A token that sat in a file ever committed to git is flagged for rotation.
+
+**Added: host-governed mode.** On a client project whose own governance plugin owns the MCP servers and the
+secrets (first host: `opus-governance`), `/project-init` detects it, the operator confirms, and the profile
+records `governance.{host, secrets: "host", servers.{tracker,codeHost,github,telemetry,testManagement,browsers},
+stand.writable: false}` — the server per role is the operator's answer, never inferred. Onboarding then writes
+the profile and the non-secret env files only: no vc-secrets, no `$VC_RUN`, no `.mcp.json` or settings, no PAT,
+no `az login`, self-diagnostics off. At run time the bridge refuses every token-bearing tool (exit 78, naming
+the host server), `deliver` refuses, and vc-fix follows `knowledge/execution/host-governance.md`.
+`governance.host: null` (the default) is today's behaviour. `--governance <host|none>` overrides detection.
+
+**Changed: `/project-init` speaks for every plugin, and shows what it asks you to confirm.** It closes
+with "the project is ready to work with" and the asks and commands of the plugins actually installed
+(`next-steps.mjs`: a ticket, the current sprint, then each plugin's entry points) instead of pointing
+at `/qa-fix`. The repo map and the tracker status map are printed in full by `render-scan.mjs` — every
+client repo with its default branch and PR target, every state the scan found with the role mapped to
+it — and the question refers to that table instead of restating the mapping in parentheses.
+
+**Changed: Azure Boards transitions work for every work-item type, not only Bugs.** The tracker scan maps
+roles to states for each type it reads (Bug, Task, User story) into `tracker.azure.roleStatesByType`;
+`ado.mjs transition --role <role>` (and `AzureTracker.transition`) picks the state by the item's own type,
+and /qa-fix, /qa-verify-fix and tracker-ops use it instead of `--state <roleStates[role]>`. The confirmation
+table is one row per role and one column per type. `STORE_ID` may stay empty: `normalize-env` asks the
+storefront at `FRONT_URL` which store it serves and fills it in.
+
+**Changed: a browser agent types a password's NAME, never its value.** vc-fix's agents type
+`ADMIN_PASSWORD` / `USER_PASSWORD` as names; Playwright MCP substitutes and masks the value, so it never
+enters the model's context or the transcript.
+
+**Added: test-user passwords in vc-secrets, asked per role.** `/project-init` asks separately where admin
+passwords live (vc-secrets recommended) and where storefront-user passwords live (`.env.local` recommended —
+easier to edit when there are many). A vc-secrets role gets one `local` secret per password per environment
+(`admin-password-<env>`), declared with a task `vc-init-onboard.<env>` (the onboarding scripts' API logins)
+and a server `playwright-<lane>.<env>` per browser lane. A lane in `.mcp.json` is then
+`node ${VC_RUN} playwright <lane>`: the bridge picks the current `TEST_ENV` and runs that env's server, which
+starts the pinned `@playwright/mcp` in-process (`bridge/playwright-mcp.mjs`) with the passwords in memory as
+`config.secrets` — the vc-secrets roles from the declaration, the `.env.local` roles of that env read straight
+from the file — so no `.env.playwright.local` is written. One declaration per env means an env whose
+passwords are not stored yet breaks only itself, and switching `TEST_ENV` asks for no new trust. With both
+roles in `.env.local`, `sync-browser-secrets.mjs` still generates `.env.playwright.local` for `--secrets`, as
+before. `migrate-secrets` moves a vc-secrets role's lines out of `.env.local` once stored. Only vc-init's
+onboarding scripts read a password through the bridge: a script elsewhere that logs in over the API from the
+env files (vc-fix's module registry, seeders) needs that role kept in `.env.local`.
+
+**Added: `/project-init --add-user`.** Adds another storefront user or admin to one or more environments:
+`add-user.mjs --list` shows each env, where each role's passwords live, its users and the next free numbered
+KEY (`USER2`, `ADMIN2`, …); the operator picks the KEY and gives a login per env; the login goes into
+`.env.<env>` as `<KEY>_LOGIN`, and `<KEY>_PASSWORD` is declared in vc-secrets or added as a `.env.local`
+placeholder by the role. The password itself is only ever typed by the operator in a terminal or editor.
+
+**Fixed: vc-fix's npm dependencies were never installed after the move.** `/project-init` installed only
+vc-init's `node_modules`, so vc-fix's tracker and code-host helpers failed with "Cannot find package
+'dotenv'". `install-deps.mjs` installs the runtime dependencies of every installed plugin into its own
+folder (§1, and `--check` after an update, which lands in a new folder without them); verify-access FAILs
+"Plugin dependencies" when one is missing. `ENV_RISK` is no longer scaffolded (`test` by default; add
+`production` by hand for a production stand).
+
+**Removed:** the `postman` and `context7` MCP servers from onboarding (each needed an API key in a file);
+`gen-mcp --inline-secrets` (refused); the token placeholders in `.env.local` (`scaffold-secrets` writes
+test-user passwords only).
+
+**Verified:** see the PR — `npm test`, `npm run context:check`, `npm run docs:index:check`, the vc-secrets and
+vc-init bridge suites, `claude plugin validate` on vc-init / vc-fix / vc-perf, a secret-at-rest scan of a
+scratch onboarding, and a live browser lane through `vc-secrets run` that typed and masked a vc-secrets
+password and an `.env.local` one.
+
+## One renderer for every result comment and report page — `vc-fix` `0.10.0`, released as part of `0.11.0` (VCST-5675)
+
+**Added: `/vc-fix:qa-report`.** A finished run becomes one char-budgeted tracker comment and one HTML report
+page, rendered from the run's machine record by `skills/qa-report/render.mjs`, never typed by hand. Four
+kinds — `test` (`summary.json`), `fix` (`verification-summary.json`, proven by a `before_after[]` RED→GREEN
+pair), `regression` and `smoke` (the run folder) — each with one template whose front-matter declares its
+`budget` and `lede_max`. Every comment opens with a lede the caller writes; over budget, the lists named in
+`trim` collapse to `+N more` in their declared order, and a comment that still does not fit is exit 3,
+never a cut. The budget is counted on the Markdown before the Jira-wiki / Azure-HTML transform. The page
+publish gate keeps a client project's page local and **never** publishes one for a client-owned-code bug.
+
+**Changed:** `/qa-test`, `/qa-test-fast`, `/qa-verify-fix`, `/qa-regression` and `/qa-smoke` report through
+it, and their own comment templates became pointers. In `/qa-verify-fix` the evidence page is rendered and
+gated inside the Step 6 call, so the one comment carries its link; Step 6A only says what the page is built
+from. A `verification-summary.json` written before this release has no `before_after[]` and is refused for
+a verified fix.
+
+**Verified:** `npm run context:check` green; the renderer exercised against the repo's real `summary.json`
+and `verification-summary.json` records in every dialect.
+
+---
+
 ## `vc-secrets`: a declared process gets its secrets at launch, not from a config file — catalog `0.11.0`, `vc-secrets` `0.1.0` — 2026-10-02
 
 **Added: the `vc-secrets` plugin** (`defaultEnabled: false`). An MCP entry calls the launcher instead of

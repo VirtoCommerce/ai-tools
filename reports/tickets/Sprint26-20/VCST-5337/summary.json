@@ -2,184 +2,288 @@
   "ticket": "VCST-5337",
   "ticket_type": "Story",
   "flow": "feature-test",
-  "path": "full",
+  "tracker": {
+    "system": "jira",
+    "comment_id": "112156",
+    "artifact": "theme 2.61.0-pr-2458-3f0b; SalesRep 3.1015.0-pr-15-e5bc; GA 4.1005.0-pr-61-5267",
+    "amended": "2026-10-21 GA read-back complete"
+  },
+  "path": "FULL",
   "path_route": {
     "decided_at": "1a",
-    "provisional": "full",
-    "escalated_reason": "Story default FULL; cross-layer (storefront + 2 modules + GA4)"
+    "provisional": false,
+    "escalated_reason": null,
+    "basis": "Story, cross-layer (storefront theme + vc-module-sales-rep + vc-module-google-ecommerce-analytics) - ticket-routing.md 5b downgrade fails on layer"
   },
-  "layer": "cross-layer",
-  "shape_class": {
-    "value": "none",
-    "sources": [
-      "feature diff in sales-rep module + GA module + theme; no ui-kit primitives"
-    ]
-  },
+  "layer": "storefront, module, api",
   "domain_map": {
     "state": "STALE",
     "path": ".claude/knowledge/domain/sales-rep.md",
     "rev": 3,
-    "mind_map": ".claude/knowledge/domain/sales-rep.mind-map.json",
+    "mind_map": ".claude/knowledge/domain/sales-rep.mind-map.json (no activity node)",
+    "all_layer_chain": true,
+    "built_in_run": false,
     "unmapped_surfaces": [
       "/company/activities",
-      "Customer activity widget",
-      "My activity dashboard widget",
+      "/company/my-customers/{id}/activities",
+      "dashboard My activity widget",
+      "profile Customer activity widget",
       "salesRepActivities / salesRepCustomerActivitySummary / salesRepCustomerInsights",
-      "POST api/sales-rep/analytics-diagnostics"
+      "GA module as optional dependency + Data API settings",
+      "Analytics diagnostics",
+      "Module Federation plugin delivery path /modules/$(VirtoCommerce.SalesRep)/plugins/vc-frontend/"
     ],
-    "docs_map": {
-      "outcome": "DEFERRED",
-      "reason": "operator chose comments only; no write-back this run"
-    }
+    "mind_map_findings": [
+      "no activity node"
+    ]
   },
-  "verdict": "FAIL",
-  "date": "2026-10-07",
-  "environment": "vcptcore-qa",
-  "build": {
-    "theme": "feat/VCST-5337-insights-widgets @5444e67 (deploy #6862)",
-    "SalesRep": "3.1013.0-pr-15-7910",
-    "GoogleEcommerceAnalytics": "4.1005.0-alpha.277-vcst-5337-ga-event-search",
-    "deployed_equals_declared": true
+  "shape_class": {
+    "value": "feature",
+    "sources": [
+      "three product PR diffs"
+    ]
   },
+  "verdict": "PASS WITH NOTES",
+  "date": "2026-10-20",
   "timing": {
-    "started_at": "2026-10-07T17:55:00Z",
-    "test_window_start": "2026-10-07T18:14:09Z",
-    "time_to_first_test_minutes": 19,
-    "reachability_minutes": null,
-    "agent_dispatches": 2
+    "started_at": "2026-10-19T15:35:00Z",
+    "blocked_window": "2026-10-19T15:45Z-17:20Z (no /modules storefront route on vcptcore-qa; fixed by vc-deploy-dev #6960)",
+    "test_window_start": "2026-10-19T17:29:00Z",
+    "finished_at": "2026-10-20T18:40:00Z",
+    "reachability_minutes": 2,
+    "note": "Env switched vcptcore-qa1 -> vcptcore-qa at operator request (qa1 had none of the three builds). 3x discovery folded into 4a lanes A/B (lane budget). 1e amended as Round 2 of the existing model. One double-runner incident in the hub regression (2026-10-19 ~18:10Z): results discarded and re-run. Fixtures repaired/added mid-run. 5-report verifier not dispatched. Round 2; tested together with VCST-5731. Checklist: reports/tickets/Sprint26-20/VCST-5337/testing-checklist.md. Repo findings: docs/repo-findings-backlog.md B-62..B-66. Relative-time question (SR-ACT-027) resolved by the ticket owner 2026-10-21: under 24 h reads ~N hours ago; ~yesterday only for the previous calendar day at >= 24 h — by design. 2026-10-21: large-number layout probe (DOM substitution, en+de, 320-1440 px) + real data (seed:sales-rep-bulk, 1,230 orders, $2.45M in one org) — activity surfaces and dashboard clean; customer-profile KPI cards clip/wrap (VCST-6470). Live localization de/fr/ru/pl/pt: strings, raw keys and plurals OK; English month-name dates (VCST-6469), de layout nits (VCST-6471/6472). Store has 13 languages."
+  },
+  "environment": "vcptcore-qa - https://vcptcore-qa-storefront.govirto.com / https://vcptcore-qa.govirto.com, store B2B-store",
+  "build": {
+    "declared": "vc-deploy-dev@vcptcore-qa 2154956",
+    "deployed": {
+      "platform": "3.1085.0",
+      "relevant_modules": {
+        "VirtoCommerce.SalesRep": "3.1015.0-pr-15-e5bc",
+        "VirtoCommerce.GoogleEcommerceAnalytics": "4.1005.0-pr-61-5267",
+        "VirtoCommerce.Xapi": "3.1027.0"
+      },
+      "theme": "2.61.0-pr-2458-3f0b-3f0b7284"
+    },
+    "prs": [
+      "VirtoCommerce/vc-frontend#2458 @3f0b728",
+      "VirtoCommerce/vc-module-sales-rep#15 @e5bcccb",
+      "VirtoCommerce/vc-module-google-ecommerce-analytics#61 @5267302"
+    ]
   },
   "status_transitions": [
     {
       "at": "1a",
-      "ticket": "VCST-5337",
       "from": "Ready for test",
       "to": "Testing",
-      "result": "done"
-    },
-    {
-      "at": "1a",
-      "ticket": "VCST-5731",
-      "result": "skipped",
-      "reason": "already in Testing"
+      "made": true,
+      "transition": "On QA",
+      "reason": "opening hop"
     },
     {
       "at": "5-status",
-      "result": "skipped",
-      "reason": "operator: comments only, statuses untouched"
+      "from": "Testing",
+      "to": "Tested",
+      "made": true,
+      "transition": "Finish test",
+      "confirmed_by": "operator 2026-10-20 (after GA read-back)",
+      "reason": "PASS WITH NOTES",
+      "at_time": "2026-10-21T07:07Z"
     }
   ],
   "agents_dispatched": [
-    "qa-frontend-expert (4a, playwright-chrome)",
-    "qa-backend-expert (4a, API)"
+    "1r qa-frontend-expert",
+    "1c ba-system-analyzer",
+    "1d ba-story-writer",
+    "GA planting qa-frontend-expert (chrome)",
+    "4a lane A qa-frontend-expert (firefox)",
+    "4a lane B qa-backend-expert (edge)",
+    "A test-management-specialist (+5 follow-up edit dispatches)",
+    "test-data-engineer x6",
+    "regression-orchestrator x5 + test runners",
+    "triage qa-frontend-expert x2, qa-backend-expert x1",
+    "GA read-back qa-backend-expert x2"
   ],
-  "ac_analysis": {
-    "related_ticket": "VCST-5731",
-    "related_verdict": "PASS WITH NOTES",
-    "test_model": "reports/ba/test-models/VCST-5337-2026-10-07.md",
-    "focus": "rep sees activity of ALL members of served customers — confirmed org-wide for searches/views (4 ACME members, 4 roles); sign-ins never tracked",
-    "atomic_conditions": 28,
-    "story_acs": 6,
-    "passed_acs": 6,
-    "dod": "none declared",
-    "not_covered": [
-      "impersonation — BLOCKED (no entry for plain rep)",
-      "second customer org / org switch — FIXTURE-GAP on vcptcore-qa",
-      "end-to-end arrival — DEFERRED to 2026-10-09 (planted qa5337-{john,sarah,lisa,nora,repself}-20261007)"
-    ],
-    "deviations": [
-      "3x discovery not run — replaced by inline API probes",
-      "Artifact A authoring not run — offered to operator",
-      "1c/1d context agents not dispatched — inline reading of 3 PRs + attachments"
-    ]
-  },
-  "total_cases": 28,
-  "passed": 23,
-  "failed": 1,
-  "blocked": 1,
-  "new_cases_authored": 0,
+  "new_cases_authored": 38,
   "regression": {
     "c1": {
-      "ran": false,
-      "reason": "no cases authored, no 2a dispositions"
-    }
+      "ran": true,
+      "run_ids": [
+        "REG-2026-10-20-1332"
+      ],
+      "note": "112 (ran as 109; renumbered 109 -> 110 -> 112 on merges with main) + 050m3 executed; GA-lag cases BLOCKED by design until read-back"
+    },
+    "hub_regression": {
+      "suites": [
+        "050m",
+        "050m2",
+        "050m3",
+        "089",
+        "090",
+        "091",
+        "092",
+        "092b",
+        "093",
+        "093b",
+        "097",
+        "106",
+        "112"
+      ],
+      "run_ids": [
+        "REG-2026-10-19-2032",
+        "REG-2026-10-19-1950",
+        "REG-2026-10-20-0307",
+        "REG-2026-10-20-0808",
+        "REG-2026-10-20-1332"
+      ],
+      "result": "no regression from the plugin move; failures triaged as test defects (fixed), pre-existing product defects, or env/data"
+    },
+    "feature_release_gate": "not-assessed"
   },
-  "bugs_filed": [],
-  "bugs_not_filed": [
+  "bugs_filed": [
     {
-      "title": "GA4 login event never delivered on password sign-in (analytics after signIn reload)",
-      "severity": "High",
-      "provenance": "PRE-EXISTING (breaks in-scope AC item 6)",
-      "repo": "vc-frontend",
-      "reason": "operator: findings reported in the tracker comment only, no separate tickets"
-    },
-    {
-      "title": "Rep's own browsing counted as customer activity — scope filter lacks is_sales_rep",
+      "key": "VCST-6437",
       "severity": "Medium",
-      "provenance": "IN-SCOPE",
-      "repo": "vc-module-sales-rep PR #15",
-      "reason": "operator: findings reported in the tracker comment only, no separate tickets"
+      "provenance": "pre-existing",
+      "summary": "Dashboard My customers card has no month-over-month indicator"
     },
     {
-      "title": "Cold GA reads intermittently fail at ~60 s → false empty/unavailable",
+      "key": "VCST-6461",
       "severity": "Medium",
-      "provenance": "IN-SCOPE",
-      "repo": "vc-module-sales-rep / google-ecommerce-analytics",
-      "reason": "operator: findings reported in the tracker comment only, no separate tickets"
+      "provenance": "pre-existing",
+      "summary": "Admin Sales Reps grid: keyword search on page 2 keeps skip=20 and shows no results"
     },
     {
-      "title": "slow first open + no loader",
-      "severity": "Low",
-      "reason": "below severity floor"
+      "key": "VCST-6462",
+      "severity": "Medium",
+      "provenance": "pre-existing",
+      "summary": "August 2026 sales-rep documents return 403 on download (readers and Administrator)"
     },
     {
-      "title": "Summary last search vs Searches tab event mismatch",
-      "severity": "Low",
-      "reason": "below severity floor"
+      "key": "VCST-6463",
+      "severity": "Medium",
+      "provenance": "pre-existing",
+      "summary": "xAPI: two aliases of one sales-rep field in one operation intermittently fail with ARGUMENT"
     },
     {
-      "title": "badges count hour buckets",
-      "severity": "Low",
-      "reason": "below severity floor"
+      "key": "VCST-6195",
+      "severity": "Medium",
+      "provenance": "pre-existing",
+      "summary": "customer orders: closing the Start chip of a preset leaves the drawer showing the preset (SR-CO-034) — existing ticket, re-confirmed on this build"
     },
     {
-      "title": "diagnostics realtime Passed with InvalidArgument",
-      "severity": "Low",
-      "reason": "below severity floor"
+      "key": "VCST-6220",
+      "severity": "Medium",
+      "provenance": "pre-existing",
+      "summary": "customer orders: focus lost after Reset filters via keyboard, BL-A11Y-001 (SR-CO-051) — existing ticket, re-confirmed on this build"
     },
     {
-      "title": "dataAsOf always null",
-      "severity": "Low",
-      "reason": "below severity floor"
+      "key": "VCST-6469",
+      "severity": "Medium",
+      "provenance": "pre-existing",
+      "summary": "Dates with a month name render in English in every locale except en/de (vc-frontend datetimeFormats); visible on the new activity surfaces"
     },
     {
-      "title": "item_list_name Category undefined",
-      "severity": "Low",
-      "reason": "below severity floor"
+      "key": "VCST-6470",
+      "severity": "Medium",
+      "provenance": "pre-existing",
+      "summary": "Customer profile KPI cards: large amount cut off (en) / currency breaks onto a second line (de)"
     },
     {
-      "title": "long product names not clamped",
+      "key": "VCST-6471",
       "severity": "Low",
-      "reason": "below severity floor"
+      "provenance": "in-scope",
+      "summary": "[de] Customer activity widget title breaks inside the word",
+      "note": "filed below the floor at the operator request"
+    },
+    {
+      "key": "VCST-6472",
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "[de] Customer activity Summary splits the last web login date at 320 px",
+      "note": "filed below the floor at the operator request"
     }
   ],
-  "discovery": null,
+  "bugs_not_filed": [
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "hourglass hint triggers 14x14 px (BL-UI-006; WCAG 2.5.8 passes on spacing)"
+    },
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "salesRepCustomerInsights lastSearchedDate/lastViewedDate always null"
+    },
+    {
+      "severity": "Low",
+      "provenance": "pre-existing",
+      "summary": "SalesRepCustomer fires twice per profile mount; it-locale dates not localized in My recent orders; de raw i18n key in Created date preset; admin pager label on page 2; no success toast in admin (de raw key = existing VCST-6196)"
+    }
+  ],
   "test_data": {
-    "data_surface": "false",
-    "fixtures": [
-      "ACME_ADMIN",
-      "ACME_BUYER",
-      "ACME_BUYER2",
-      "SR_REP_PRIMARY",
-      "SR_REP_EXCLUSIVE_TECHFLOW"
-    ],
-    "planted": "qa5337-{john,sarah,lisa,nora,repself}-20261007 searches + 1 product view each, 2026-10-07 18:18-18:28Z — re-check 2026-10-09",
-    "td_validate": "pre-existing unrelated alias failures (PROCESSING_ORDER, B2B_STORE_MEMBERSHIP_ROLES); run fixtures resolve"
+    "repaired_or_added": [
+      "SR_REP_PRIMARY layouts reset to never-saved",
+      "tasks fixture re-seeded 2026-10-20 05:05Z (decays 21:00Z)",
+      "SR_STATS_CART_SPLIT moved to the 'default' cart (BuildRight)",
+      "ORDER_UNSERVED_BUYER + USR-030 in ORG-005",
+      "SR_BULK_DATASET: AGENT-TEST-SR-BULK-ORG-01/02 served by SR_REP_PRIMARY, 1,230 orders (teardown: npm run seed:sales-rep-bulk:teardown)"
+    ]
   },
-  "tracker": {
-    "comment_posted": true,
-    "comment_id": "111596",
-    "related_comment_id": "111597",
-    "pending_filing": [],
-    "filing_decision": "operator: all findings in the tracker comment, no separate tickets"
+  "screenshots": "reports/tickets/Sprint26-20/VCST-5337/screenshots/",
+  "report": null,
+  "documentation": null,
+  "ac_analysis": {
+    "story_acs": 6,
+    "weak_acs": 4,
+    "gap_acs_added": 0,
+    "impl_coverage": {
+      "satisfied": 0,
+      "drift": 9,
+      "contradicts": 2,
+      "not_found": 4
+    },
+    "conditions_total": 68,
+    "conditions_with_evidence": 64,
+    "ac_dod_estimate": {
+      "ac_coverage_pct": 0.94,
+      "dod_total": 0,
+      "dod_met": 0,
+      "dod_pct": null
+    },
+    "round1_defects": {
+      "F-1": "FIXED",
+      "F-2": "FIXED",
+      "F-3": "CHANGED as described",
+      "F-4": "FIXED",
+      "F-5": "FIXED",
+      "F-6": "FIXED",
+      "F-7": "FIXED as described (no aria-current on customer pages - UI-kit limitation)",
+      "F-8": "BY DESIGN (VCST-5845)"
+    },
+    "ga_readback": {
+      "planted": "2026-10-19 17:29-17:45Z (ledger A); 2026-10-20 10:54-11:04Z (suite 112, ran as 109)",
+      "reads": [
+        "2026-10-20 02:30Z - none visible",
+        "2026-10-20 05:05Z - none visible",
+        "2026-10-20 18:10Z - ledger A visible except USR-004 search/view",
+        "2026-10-21 07:06Z - both ledgers complete: all must-appear rows visible, no must-not row anywhere"
+      ],
+      "verdicts": {
+        "F-1": "PASS",
+        "F-2": "PASS",
+        "F-5/N-8": "PASS (4 logins = 3 planted + 1 lane-B storefront sign-in at 17:49:29Z; the failed attempt was anonymous and not counted)",
+        "N-10": "PASS",
+        "AC-5": "PASS",
+        "AC-4": "PASS (& / % \" term intact)",
+        "AC-5 URL search": "PASS (not listed)"
+      },
+      "pending": null,
+      "lag": "most rows <20 h, slowest ~37 h"
+    },
+    "not_evidenced": [
+      "N-4..N-6 without the GA module (no env)",
+      "D-35 impersonation (no rep entry)"
+    ]
   }
 }

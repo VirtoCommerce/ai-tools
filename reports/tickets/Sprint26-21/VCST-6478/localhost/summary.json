@@ -1,0 +1,73 @@
+{
+  "ticket": "VCST-6478",
+  "flow": "verify-fix",
+  "ticket_type": "Bug",
+  "path": null,
+  "env": "localhost",
+  "status_transitions": [
+    {
+      "at": "verify-fix.3",
+      "from": "Ready for test",
+      "to": "Testing",
+      "transition": "On QA",
+      "confirmed_by_operator": true
+    },
+    {
+      "at": "verify-fix.6",
+      "from": "Testing",
+      "to": "Tested",
+      "transition": "Finish test",
+      "confirmed_by_operator": true
+    },
+    {
+      "at": "verify-fix.6 round 2",
+      "from": "Tested",
+      "to": "Tested",
+      "transition": null,
+      "reason": "already Tested; PR not merged, so no move to Done"
+    },
+    {
+      "ticket": "VCST-6502",
+      "at": "2026-10-22T17:07:56+03:00",
+      "from": "To do",
+      "to": "Cancelled",
+      "transition": null,
+      "actor": "operator's Jira account (changelog); whether by hand or by an agent is not recorded",
+      "reason": "covered by vc-frontend#2598, verified in round 2",
+      "note": "past Tested: no agent may make this move (ticket-status-transitions.md)"
+    }
+  ],
+  "tracker": {
+    "comment_id": "112295",
+    "comment_amended": "2026-10-22T16:23:25+03:00",
+    "comment_id_round2": "112299"
+  },
+  "verdict": "VERIFIED_WITH_NOTES",
+  "verification_summary": "verification-summary.json",
+  "bugs_filed": [
+    {"key": "VCST-6502", "summary": "select_item item has no index", "round": 1, "severity": "Low", "outcome": "Cancelled, covered by vc-frontend#2598; verified in round 2"}
+  ],
+  "bugs_not_filed": [
+    "recommended-list items have no discount",
+    "multi-image card image click: no select_item",
+    "empty /cart pushes view_cart + begin_checkout",
+    "GA doc names brand vs item_brand"
+  ],
+  "rounds": [
+    {
+      "round": 1,
+      "build": "2.61.0-pr-2598-fd57-fd578365",
+      "verdict": "VERIFIED_WITH_NOTES",
+      "comment_id": "112295",
+      "summary": "verification-summary.json"
+    },
+    {
+      "round": 2,
+      "build": "2.61.0-pr-2598-9b6d-9b6db3d9",
+      "verdict": "VERIFIED_WITH_NOTES",
+      "comment_id": "112299",
+      "summary": "verification-summary-r2.json",
+      "includes": "VCST-6502 (select_item index), verified on this build"
+    }
+  ]
+}

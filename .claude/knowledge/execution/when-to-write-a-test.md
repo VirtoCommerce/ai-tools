@@ -39,9 +39,20 @@ after that the drift guards, `context:check` and the other gates are what run on
   2026-10-01 (§The committed corpus below). Changing a function that a committed test covers means
   updating that test, never adding a new file beside it.
 - **Missing coverage still goes in the guard** (RULE 3), not into a committed unit test.
-- **Exempt:** `/qa-fix` G2 reproductions in product repos (RULE 4), and `plugins/vc-secrets/` — executable
-  credential-handling code whose behaviour no guard checks; its suites (`vc-secrets.test.mjs`,
-  `vc-secrets-oauth.test.mjs`) are committed and run in CI.
+- **Exempt:** `/qa-fix` G2 reproductions in product repos (RULE 4), and two packages of executable
+  credential-handling code whose behaviour no guard checks — their suites are committed and run in CI:
+  `plugins/vc-secrets/` (`vc-secrets.test.mjs`, `vc-secrets-oauth.test.mjs`, `lib/*.test.mjs`) and
+  `plugins/vc-init/bridge/` (`*.test.mjs` — the `$VC_RUN` bridge's allowlist, host-pinned git credential
+  helper, output redactor, inner-side refusals and the vc-secrets declaration writer, VCST-6402).
+  Also committed, by the owner's decision in the vc-test spec (U10): `plugins/vc-test/lib/knowledge-store.test.mjs`
+  — the knowledge-store write router, which refuses a client project's platform write, scrubs text and keeps
+  every file inside its store; leaking client text into the public kb is not something a guard would catch.
+  And `plugins/vc-test/lib/write-zones.test.mjs` — the write-zone check (a run's changed files against its artifacts'
+  `writes` globs, in a throwaway git repo); a wrong glob there blocks a clean run or lets a stray write through unseen.
+  And **permission boundaries**: a hook that approves or denies tool calls, and a script such a hook
+  approves without a prompt. A regression there silently widens what runs without the user's yes. Today
+  that is `scripts/unit/review-pr-allow.test.mjs` (`.claude/hooks/review-pr-allow.mjs` +
+  `/review-pr-gh-workflow`'s `prepare.mjs`).
 
 ### Writing the temporary test — derivation, never declaration
 

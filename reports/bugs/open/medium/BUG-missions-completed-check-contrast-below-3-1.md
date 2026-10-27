@@ -40,3 +40,9 @@ The design (Changes artifact item 4) specifies a darker, more transparent scrim,
 ## Fix Routing
 - **Repo:** `VirtoCommerce/vc-frontend` · `client-app/modules/loyalty/components/mission-card.vue` (`.mission-card__done`)
 - **Hint:** use the designed scrim (`success-600 @ 55 %`), or a solid disc behind the glyph, so the contrast doesn't depend on the banner art.
+
+## Verification 2026-10-20 (pre-merge, local PR artifact)
+**Verdict:** VERIFIED WITH NOTES, STR 3/3, checklist 10/10 · fix = vc-frontend PR #2590 (open): check on an opaque `success-600` disc.
+Fixed build `2.61.0-pr-2590` on localhost (API → vcst-qa): 5.31:1 light, 7.17:1 dark (Red). Pre-fix (remote vcst-qa, already `success-600 @ 55%` scrim): 2.04:1 light p05, 2.31:1 dark over black art. So the designed scrim alone did not fix it.
+Not observed live: default/mercury dark (3.74:1 computed), dark-art/placeholder card. Stays open until merged and re-verified on the deployed build.
+Evidence: `reports/tickets/Sprint26-20/VCST-6142/` (verification-report.md, evidence.html).

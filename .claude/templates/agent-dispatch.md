@@ -13,7 +13,7 @@ You are executing {TASK_DESCRIPTION} for run {RUN_ID}.
 
 **Scope:**
 - Ticket/Suite/Feature: {SCOPE}
-- Environment: Frontend: {FRONT_URL} | Backend: {BACK_URL}
+- Environment: TEST_ENV={TEST_ENV} | Frontend: {FRONT_URL} | Backend: {BACK_URL} | Passwords: type {NAME_FORM} (MASTER_PASSWORD in every password field on a master stand; else e.g. ORG_USER_PASSWORD_{ENV} on .env.playwright.all, the bare name on a single-env file)
 
 **Browser:** {BROWSER_SERVER} (fallback: {FALLBACK_BROWSER})
 
@@ -31,7 +31,7 @@ At close-out, for each platform behaviour you report: matched ⇒ `kb_confirm`, 
 `kb_dispute`, nothing held ⇒ `kb_capture` (anchor = the route or request, never a label; contract: `.claude/knowledge/execution/kb-capture-contract.md`). List the entry ids in your output.
 
 **Evidence policy:** Follow `skills/qa-evidence/evidence-capture-policy.md`
-- Screenshots: failures + final state of critical flows only
+- Screenshots: failures only (plus what a bug report, a guide, a visual check or a UI-claim tracker comment needs) — never a passing step
 - Console: capture errors, skip noise
 - Network: capture 4xx/5xx and slow requests (>2s)
 - HAR: always capture
@@ -112,7 +112,9 @@ Before starting a run, check for recent duplicate runs to avoid waste:
 
 ## Environment URLs
 
-Always read from `config.js` / `.env`. Never hardcode.
+Always read from `config.js` / `.env`. Never hardcode. The run's env is bound per session at its Step 0
+(`npm run env:use`, [`../knowledge/execution/run-env.md`](../knowledge/execution/run-env.md)), which prints the
+values the Environment line above carries.
 
 ```
 Frontend: FRONT_URL (storefront)

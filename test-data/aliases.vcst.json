@@ -2315,392 +2315,6 @@
       "ART": "89b0a598-fe3b-45f8-9ad3-ef7ac6fc24d5"
     }
   },
-  "OTP_LOCKOUT_USER_1": {
-    "id": "a0abe366-a55a-467c-b148-74aa9f910fd6",
-    "user_id": "17b92248-6423-4606-8e6a-1fdc88ce2a4c"
-  },
-  "OTP_LOCKOUT_USER_2": {
-    "id": "67f4e402-cdda-466a-bea3-45fb8eb38632",
-    "user_id": "b3ce3652-ee06-42f2-ac06-eb4710d37376"
-  },
-  "OTP_BLOCKED_USER": {
-    "id": "7b173e03-551e-4286-ac73-a67b50afee11",
-    "user_id": "4cf43883-e0a1-4544-b02b-976860b3308f"
-  },
-  "OTP_NO_STORE_CONTACT": {
-    "id": "9a5874d5-de05-4ad6-8206-cc272886ded9",
-    "user_id": "b3a4d85b-d9e5-4cd1-8e33-e6a5233d268b"
-  },
-  "OTP_TRUSTED_STORE_CONTACT": {
-    "id": "4d8d5d8a-f512-40c7-a830-941dd8029e7c",
-    "user_id": "af91d6ee-f8d7-4b34-a59c-3859092e4811"
-  },
-  "OTP_FOREIGN_STORE_CONTACT": {
-    "id": "9165ca00-b76f-4686-a7cc-225dd0397e18",
-    "user_id": "530d91dc-8798-453b-952c-7ab12e5e66f6"
-  },
-  "PUSH_AUDIENCE_PARENT_ORG": {
-    "id": "0ca666d2-1da0-4790-9088-efd67c97890a",
-    "platform_id": "0ca666d2-1da0-4790-9088-efd67c97890a"
-  },
-  "PUSH_AUDIENCE_CHILD_ORG": {
-    "id": "70575382-177f-4815-9058-00236b724e90",
-    "platform_id": "70575382-177f-4815-9058-00236b724e90"
-  },
-  "PUSH_AUDIENCE_PARENT_CONTACT": {
-    "id": "7ca8283d-2f1d-41fc-a263-a458523ffe3b",
-    "platform_id": "7ca8283d-2f1d-41fc-a263-a458523ffe3b"
-  },
-  "PUSH_AUDIENCE_CHILD_CONTACT_1": {
-    "id": "f9ab80e9-5df7-49cf-a4f7-8c02322e821f",
-    "platform_id": "f9ab80e9-5df7-49cf-a4f7-8c02322e821f"
-  },
-  "PUSH_AUDIENCE_CHILD_CONTACT_2": {
-    "id": "6e08817e-ebb7-4872-995e-8208e8543de9",
-    "platform_id": "6e08817e-ebb7-4872-995e-8208e8543de9"
-  },
-  "PUSH_AUDIENCE_CHILD_CONTACT_NOLOGIN": {
-    "id": "75d9b3a2-6443-4893-9350-53248123ef52",
-    "platform_id": "75d9b3a2-6443-4893-9350-53248123ef52"
-  },
-  "PUSH_AUDIENCE_EMPLOYEE": {
-    "id": "36f68ad4-44b9-441f-8b08-4a88e4783ff8",
-    "platform_id": "36f68ad4-44b9-441f-8b08-4a88e4783ff8"
-  },
-  "RETURNS_AGENT_NO_AUTHORIZE": {
-    "_inline": true,
-    "platform_id": "faaf7e43-e3fe-417d-9318-52f505862c14",
-    "user_id": "faaf7e43-e3fe-417d-9318-52f505862c14",
-    "role_id": "AGENT-TEST-Return-Agent-NoAuthorize",
-    "userName": "AGENT-TEST-return-agent-noauth@test.virtocommerce.com"
-  },
-  "PUNCHOUT_CONFIG_0": {
-    "storeId": "B2B-store",
-    "storeExists": true,
-    "senderDomain": "NetworkId",
-    "senderDomainCheck": true,
-    "allowedReturnUrl": "https://punchoutcommerce.com/*",
-    "returnUrlCheck": true,
-    "tokenLifetime": "00:15:00",
-    "sessionLifetime": "04:00:00",
-    "tokenLifetimeMinutes": 15,
-    "sessionLifetimeMinutes": 240,
-    "source": "vc-deploy-dev#6935 infra/environments.yml (Punchout__Configurations__0..3), branch vcst-qa"
-  },
-  "PUNCHOUT_CONFIG_1": {
-    "storeId": "QA-STORE",
-    "storeExists": true,
-    "senderDomain": "",
-    "senderDomainCheck": false,
-    "allowedReturnUrl": "",
-    "returnUrlCheck": false,
-    "tokenLifetime": "00:02:00",
-    "sessionLifetime": "00:10:00",
-    "tokenLifetimeMinutes": 2,
-    "sessionLifetimeMinutes": 10,
-    "source": "vc-deploy-dev#6935 infra/environments.yml (Punchout__Configurations__0..3), branch vcst-qa"
-  },
-  "PUNCHOUT_CONFIG_2": {
-    "storeId": "AGENT-TEST-no-such-store",
-    "storeExists": false,
-    "senderDomain": "",
-    "senderDomainCheck": false,
-    "allowedReturnUrl": "",
-    "returnUrlCheck": false,
-    "tokenLifetime": "00:15:00",
-    "sessionLifetime": "04:00:00",
-    "tokenLifetimeMinutes": 15,
-    "sessionLifetimeMinutes": 240,
-    "source": "vc-deploy-dev#6935 infra/environments.yml (Punchout__Configurations__0..3), branch vcst-qa"
-  },
-  "PUNCHOUT_CONFIG_3": {
-    "storeId": "",
-    "storeExists": false,
-    "senderDomain": "",
-    "senderDomainCheck": false,
-    "allowedReturnUrl": "",
-    "returnUrlCheck": false,
-    "tokenLifetime": "00:15:00",
-    "sessionLifetime": "04:00:00",
-    "tokenLifetimeMinutes": 15,
-    "sessionLifetimeMinutes": 240,
-    "source": "vc-deploy-dev#6935 infra/environments.yml (Punchout__Configurations__0..3), branch vcst-qa"
-  },
-  "PUNCHOUT_MAPPING_MULTI_ORG": {
-    "persona_email_var": "MULTI_ORG_USER_EMAIL",
-    "persona_email": "{{MULTI_ORG_USER_EMAIL}}",
-    "persona_password": "{{MULTI_ORG_USER_PASSWORD}}",
-    "id": "1726b489-fdd9-4619-9eca-9fc1ac9e356f",
-    "userId": "0cc0a829-d7fe-448c-b98c-a621e34ba788",
-    "memberId": "54729f13-9fd0-47d2-af72-1a04a41175ed",
-    "currentOrganizationId": "organization-acme-store",
-    "otherOrganizationId": "organization-redwood-provisions",
-    "organizationCount": 12
-  },
-  "BACKOFFICE_PUNCHOUT_READ": {
-    "user_id": "d8d04cd2-e070-4b37-a506-e31649a0d7e8",
-    "role_id": "AGENT-TEST-Punchout-Reader"
-  },
-  "BACKOFFICE_NO_PUNCHOUT": {
-    "user_id": "b59d80fa-79fd-4e3e-a238-a9f14761be20",
-    "role_id": "AGENT-TEST-Punchout-None"
-  },
-  "ORG_RET_OTHER_STORE_RETURN": {
-    "id": "5fd18ee3-afc6-4155-ba9a-dcfe2c52a079",
-    "number": "RET261014-00002",
-    "status": "Requested",
-    "storeId": "Electronics",
-    "orderId": "6f7f4ae9-6b3d-427b-aa3d-1c11d9ccb246",
-    "orderNumber": "AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-7",
-    "organizationId": "180022db-2ef9-44ad-8999-6fd6e7ca7d09"
-  },
-  "QUOTE_PROCESSING": {
-    "seeded_at": "2026-10-15T13:33:08.640Z",
-    "id_slot1": "f0d9f4dd-6692-45ee-9e84-75216361bdfa",
-    "number_slot1": "AGENT-TEST-QTE-PROCESSING",
-    "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
-    "expiration_date_slot1": "",
-    "id": "f0d9f4dd-6692-45ee-9e84-75216361bdfa",
-    "number": "AGENT-TEST-QTE-PROCESSING",
-    "buyer_email": "test-john.mitchell-20260310@test-agent.com",
-    "expiration_date": "",
-    "id_slot2": "da67c6de-5f31-4a7d-81a3-7920d45b0519",
-    "number_slot2": "AGENT-TEST-QTE-PROCESSING-S2",
-    "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
-    "expiration_date_slot2": "",
-    "id_slot3": "ead3bd41-62e5-4a63-9d92-f9b3623e81aa",
-    "number_slot3": "AGENT-TEST-QTE-PROCESSING-S3",
-    "buyer_email_slot3": "test-carlos.rodriguez-20260310@test-agent.com",
-    "expiration_date_slot3": ""
-  },
-  "QUOTE_ON_HOLD": {
-    "seeded_at": "2026-10-15T13:33:08.640Z",
-    "id_slot1": "e7ce45f2-2307-4d1c-9307-72a112b02573",
-    "number_slot1": "AGENT-TEST-QTE-ON-HOLD",
-    "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
-    "expiration_date_slot1": "",
-    "id": "e7ce45f2-2307-4d1c-9307-72a112b02573",
-    "number": "AGENT-TEST-QTE-ON-HOLD",
-    "buyer_email": "test-john.mitchell-20260310@test-agent.com",
-    "expiration_date": "",
-    "id_slot2": "0b8fa614-29a4-44ef-b313-0640fe620695",
-    "number_slot2": "AGENT-TEST-QTE-ON-HOLD-S2",
-    "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
-    "expiration_date_slot2": "",
-    "id_slot3": "6d9c694b-40aa-4d80-9ee5-aadb459d48f8",
-    "number_slot3": "AGENT-TEST-QTE-ON-HOLD-S3",
-    "buyer_email_slot3": "test-carlos.rodriguez-20260310@test-agent.com",
-    "expiration_date_slot3": ""
-  },
-  "QUOTE_DECLINED": {
-    "seeded_at": "2026-10-15T13:33:08.640Z",
-    "id_slot1": "13b1128c-d69e-43f5-ba98-d33f0545b95c",
-    "number_slot1": "AGENT-TEST-QTE-DECLINED",
-    "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
-    "expiration_date_slot1": "",
-    "id": "13b1128c-d69e-43f5-ba98-d33f0545b95c",
-    "number": "AGENT-TEST-QTE-DECLINED",
-    "buyer_email": "test-john.mitchell-20260310@test-agent.com",
-    "expiration_date": "",
-    "id_slot2": "9e639596-b0ed-4f06-8aa6-85c371d38054",
-    "number_slot2": "AGENT-TEST-QTE-DECLINED-S2",
-    "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
-    "expiration_date_slot2": "",
-    "id_slot3": "338b751d-9236-465c-bb0a-c6f952314d56",
-    "number_slot3": "AGENT-TEST-QTE-DECLINED-S3",
-    "buyer_email_slot3": "test-carlos.rodriguez-20260310@test-agent.com",
-    "expiration_date_slot3": ""
-  },
-  "EXPIRED_QUOTE": {
-    "seeded_at": "2026-10-15T13:33:08.640Z",
-    "id_slot1": "5361f2c2-6997-476a-845d-f0d6e7ef1601",
-    "number_slot1": "AGENT-TEST-QTE-EXPIRED",
-    "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
-    "expiration_date_slot1": "2026-10-12T12:39:57.886Z",
-    "id": "5361f2c2-6997-476a-845d-f0d6e7ef1601",
-    "number": "AGENT-TEST-QTE-EXPIRED",
-    "buyer_email": "test-john.mitchell-20260310@test-agent.com",
-    "expiration_date": "2026-10-12T12:39:57.886Z",
-    "id_slot2": "f746c7e2-188b-4492-8cde-9db45cbd092f",
-    "number_slot2": "AGENT-TEST-QTE-EXPIRED-S2",
-    "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
-    "expiration_date_slot2": "2026-10-12T12:39:57.886Z",
-    "id_slot3": "991f79c5-e1b3-4e06-b650-f6caeee61fce",
-    "number_slot3": "AGENT-TEST-QTE-EXPIRED-S3",
-    "buyer_email_slot3": "test-carlos.rodriguez-20260310@test-agent.com",
-    "expiration_date_slot3": "2026-10-12T12:39:57.886Z"
-  },
-  "QUOTE_FUTURE_EXPIRY": {
-    "seeded_at": "2026-10-15T13:33:08.640Z",
-    "id_slot1": "f64bd29f-ef1d-4670-8a5c-5035f370de88",
-    "number_slot1": "AGENT-TEST-QTE-FUTURE-EXPIRY",
-    "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
-    "expiration_date_slot1": "2026-11-14T12:39:57.886Z",
-    "id": "f64bd29f-ef1d-4670-8a5c-5035f370de88",
-    "number": "AGENT-TEST-QTE-FUTURE-EXPIRY",
-    "buyer_email": "test-john.mitchell-20260310@test-agent.com",
-    "expiration_date": "2026-11-14T12:39:57.886Z",
-    "id_slot2": "56770eab-752b-4112-8957-1be9af8f94ac",
-    "number_slot2": "AGENT-TEST-QTE-FUTURE-EXPIRY-S2",
-    "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
-    "expiration_date_slot2": "2026-11-14T12:39:57.886Z",
-    "id_slot3": "6d054b70-d6b6-4d7f-91b9-51f9452493f2",
-    "number_slot3": "AGENT-TEST-QTE-FUTURE-EXPIRY-S3",
-    "buyer_email_slot3": "test-carlos.rodriguez-20260310@test-agent.com",
-    "expiration_date_slot3": "2026-11-14T12:39:57.886Z"
-  },
-  "QUOTE_TO_ACCEPT": {
-    "seeded_at": "2026-10-15T13:33:08.640Z",
-    "id_slot1": "57531860-3447-4cc2-adab-4f7ee9bf0fc3",
-    "number_slot1": "AGENT-TEST-QTE-TO-ACCEPT",
-    "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
-    "expiration_date_slot1": "",
-    "id": "57531860-3447-4cc2-adab-4f7ee9bf0fc3",
-    "number": "AGENT-TEST-QTE-TO-ACCEPT",
-    "buyer_email": "test-john.mitchell-20260310@test-agent.com",
-    "expiration_date": "",
-    "id_slot2": "d19eae1e-11ca-4a97-a207-470741229458",
-    "number_slot2": "AGENT-TEST-QTE-TO-ACCEPT-S2",
-    "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
-    "expiration_date_slot2": "",
-    "id_slot3": "03f5cc31-dd52-445e-9b2e-779bde47fe30",
-    "number_slot3": "AGENT-TEST-QTE-TO-ACCEPT-S3",
-    "buyer_email_slot3": "test-carlos.rodriguez-20260310@test-agent.com",
-    "expiration_date_slot3": ""
-  },
-  "QUOTE_TO_DECLINE": {
-    "seeded_at": "2026-10-15T13:33:08.640Z",
-    "id_slot1": "2299bd27-b67c-4a9a-83d7-4b3e499a7c9f",
-    "number_slot1": "AGENT-TEST-QTE-TO-DECLINE",
-    "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
-    "expiration_date_slot1": "",
-    "id": "2299bd27-b67c-4a9a-83d7-4b3e499a7c9f",
-    "number": "AGENT-TEST-QTE-TO-DECLINE",
-    "buyer_email": "test-john.mitchell-20260310@test-agent.com",
-    "expiration_date": "",
-    "id_slot2": "a0485769-aa3d-4ec2-9bb5-553dad2202a7",
-    "number_slot2": "AGENT-TEST-QTE-TO-DECLINE-S2",
-    "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
-    "expiration_date_slot2": "",
-    "id_slot3": "bc5b7b70-52bb-4139-8e43-268489acb73e",
-    "number_slot3": "AGENT-TEST-QTE-TO-DECLINE-S3",
-    "buyer_email_slot3": "test-carlos.rodriguez-20260310@test-agent.com",
-    "expiration_date_slot3": ""
-  },
-  "QUOTE_TO_CONVERT": {
-    "seeded_at": "2026-10-15T13:33:08.640Z",
-    "id_slot1": "d096d4eb-b541-4b10-9c6c-0db6941f18d4",
-    "number_slot1": "AGENT-TEST-QTE-TO-CONVERT",
-    "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
-    "expiration_date_slot1": "",
-    "id": "d096d4eb-b541-4b10-9c6c-0db6941f18d4",
-    "number": "AGENT-TEST-QTE-TO-CONVERT",
-    "buyer_email": "test-john.mitchell-20260310@test-agent.com",
-    "expiration_date": "",
-    "id_slot2": "3d6bb12d-c86f-4c0e-b2b6-1a109dc0dc21",
-    "number_slot2": "AGENT-TEST-QTE-TO-CONVERT-S2",
-    "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
-    "expiration_date_slot2": "",
-    "id_slot3": "9847828f-0e73-4249-8d0a-effe00825624",
-    "number_slot3": "AGENT-TEST-QTE-TO-CONVERT-S3",
-    "buyer_email_slot3": "test-carlos.rodriguez-20260310@test-agent.com",
-    "expiration_date_slot3": ""
-  },
-  "QUOTE_TO_CONVERT_REPRICED": {
-    "seeded_at": "2026-10-15T13:33:08.640Z",
-    "id_slot1": "d2bc2ce0-379e-4278-8348-217b40b0e12b",
-    "number_slot1": "AGENT-TEST-QTE-TO-CONVERT-REPRICED",
-    "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
-    "expiration_date_slot1": "",
-    "id": "d2bc2ce0-379e-4278-8348-217b40b0e12b",
-    "number": "AGENT-TEST-QTE-TO-CONVERT-REPRICED",
-    "buyer_email": "test-john.mitchell-20260310@test-agent.com",
-    "expiration_date": "",
-    "id_slot2": "1b721ff1-8f22-4da5-b39a-277ad3f150d0",
-    "number_slot2": "AGENT-TEST-QTE-TO-CONVERT-REPRICED-S2",
-    "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
-    "expiration_date_slot2": "",
-    "id_slot3": "d1f64797-5ceb-4396-8177-b5afa652116c",
-    "number_slot3": "AGENT-TEST-QTE-TO-CONVERT-REPRICED-S3",
-    "buyer_email_slot3": "test-carlos.rodriguez-20260310@test-agent.com",
-    "expiration_date_slot3": ""
-  },
-  "QUOTE_TO_CONVERT_MULTILINE": {
-    "seeded_at": "2026-10-15T13:33:08.640Z",
-    "id_slot1": "f852da4a-d553-446d-a053-1174b3dec96d",
-    "number_slot1": "AGENT-TEST-QTE-TO-CONVERT-MULTILINE",
-    "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
-    "expiration_date_slot1": "",
-    "id": "f852da4a-d553-446d-a053-1174b3dec96d",
-    "number": "AGENT-TEST-QTE-TO-CONVERT-MULTILINE",
-    "buyer_email": "test-john.mitchell-20260310@test-agent.com",
-    "expiration_date": "",
-    "id_slot2": "751bc1d9-5c14-4084-a676-da7b1c05930a",
-    "number_slot2": "AGENT-TEST-QTE-TO-CONVERT-MULTILINE-S2",
-    "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
-    "expiration_date_slot2": "",
-    "id_slot3": "271817c5-60f5-4c75-95b6-ac2db7a70b0a",
-    "number_slot3": "AGENT-TEST-QTE-TO-CONVERT-MULTILINE-S3",
-    "buyer_email_slot3": "test-carlos.rodriguez-20260310@test-agent.com",
-    "expiration_date_slot3": ""
-  },
-  "QUOTE_TO_CONVERT_STATUS": {
-    "seeded_at": "2026-10-15T13:33:08.640Z",
-    "id_slot1": "927c7d9d-2163-47bb-9b3a-7b10a6cf0339",
-    "number_slot1": "AGENT-TEST-QTE-TO-CONVERT-STATUS",
-    "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
-    "expiration_date_slot1": "",
-    "id": "927c7d9d-2163-47bb-9b3a-7b10a6cf0339",
-    "number": "AGENT-TEST-QTE-TO-CONVERT-STATUS",
-    "buyer_email": "test-john.mitchell-20260310@test-agent.com",
-    "expiration_date": "",
-    "id_slot2": "85504f03-fdcd-41cf-9040-da7753aae005",
-    "number_slot2": "AGENT-TEST-QTE-TO-CONVERT-STATUS-S2",
-    "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
-    "expiration_date_slot2": "",
-    "id_slot3": "24553f73-8d7a-4d7c-90b8-0115941f20e6",
-    "number_slot3": "AGENT-TEST-QTE-TO-CONVERT-STATUS-S3",
-    "buyer_email_slot3": "test-carlos.rodriguez-20260310@test-agent.com",
-    "expiration_date_slot3": ""
-  },
-  "EXPIRED_QUOTE_TO_ACCEPT": {
-    "seeded_at": "2026-10-15T13:33:08.640Z",
-    "id_slot1": "cb6b1adf-7a32-4e08-9f3d-f686c68bc795",
-    "number_slot1": "AGENT-TEST-QTE-EXPIRED-TO-ACCEPT",
-    "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
-    "expiration_date_slot1": "2026-10-12T13:33:08.64Z",
-    "id": "cb6b1adf-7a32-4e08-9f3d-f686c68bc795",
-    "number": "AGENT-TEST-QTE-EXPIRED-TO-ACCEPT",
-    "buyer_email": "test-john.mitchell-20260310@test-agent.com",
-    "expiration_date": "2026-10-12T13:33:08.64Z",
-    "id_slot2": "7115e4e7-5e1b-44f4-b9c2-ab7dd770385b",
-    "number_slot2": "AGENT-TEST-QTE-EXPIRED-TO-ACCEPT-S2",
-    "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
-    "expiration_date_slot2": "2026-10-12T12:39:57.886Z",
-    "id_slot3": "44fe4a38-41af-430f-8ba8-06c87841c06e",
-    "number_slot3": "AGENT-TEST-QTE-EXPIRED-TO-ACCEPT-S3",
-    "buyer_email_slot3": "test-carlos.rodriguez-20260310@test-agent.com",
-    "expiration_date_slot3": "2026-10-12T12:39:57.886Z"
-  },
-  "QUOTE_PROPOSAL_OOS": {
-    "seeded_at": "2026-10-15T13:33:08.640Z",
-    "id_slot1": "1b06f141-bce8-4828-b01e-deb10db4c8cc",
-    "number_slot1": "AGENT-TEST-QTE-OOS",
-    "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
-    "expiration_date_slot1": "",
-    "id": "1b06f141-bce8-4828-b01e-deb10db4c8cc",
-    "number": "AGENT-TEST-QTE-OOS",
-    "buyer_email": "test-john.mitchell-20260310@test-agent.com",
-    "expiration_date": "",
-    "id_slot2": "3ed96c59-e2d8-4131-bf3c-51790de6f8f1",
-    "number_slot2": "AGENT-TEST-QTE-OOS-S2",
-    "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
-    "expiration_date_slot2": "",
-    "id_slot3": "3262d062-98b2-43c7-ad55-b575ef97471d",
-    "number_slot3": "AGENT-TEST-QTE-OOS-S3",
-    "buyer_email_slot3": "test-carlos.rodriguez-20260310@test-agent.com",
-    "expiration_date_slot3": ""
-  },
   "ORG_EXACTLY_11": {
     "email": "agent-test-org-exactly-11-20260811@test-agent.com",
     "password": "{{DEFAULT_TEST_PASSWORD}}",
@@ -3202,21 +2816,6 @@
     "lineBOrderedQuantity": 25,
     "seededAt": "2026-10-12T10:40:40.696Z"
   },
-  "USER_NO_ADDRESSES": {
-    "live_address_count": 0
-  },
-  "USER_DEFAULT_ADDRESS_BOOK": {
-    "live_count": 4,
-    "live_order_sort_discriminating": true
-  },
-  "PERSONAL_LIST_USER_DEFAULT": {
-    "id": "b3729e0b-874a-42f1-910c-b38b149e06ef",
-    "items_count": 2
-  },
-  "ORG_USER_RFQ_LIST": {
-    "id": "1f6a6dea-dd82-4f37-95d3-b022398e8654",
-    "items_count": 2
-  },
   "RETURNS_ORDER_A_HAPPY": {
     "id": "429cdcb5-e076-4e16-9be9-581ee965432d",
     "number": "AGENT-TEST-ORD-RET-A",
@@ -3585,6 +3184,462 @@
     "url": "/cart",
     "rb_session_id": "AGENT-TEST-GA4-RB-SEED",
     "recently_browsed_order_newest_first": "2YJN7,271507,261082,229032,1592321634,152123"
+  },
+  "OTP_LOCKOUT_USER_1": {
+    "id": "a0abe366-a55a-467c-b148-74aa9f910fd6",
+    "user_id": "17b92248-6423-4606-8e6a-1fdc88ce2a4c"
+  },
+  "OTP_LOCKOUT_USER_2": {
+    "id": "67f4e402-cdda-466a-bea3-45fb8eb38632",
+    "user_id": "b3ce3652-ee06-42f2-ac06-eb4710d37376"
+  },
+  "OTP_BLOCKED_USER": {
+    "id": "7b173e03-551e-4286-ac73-a67b50afee11",
+    "user_id": "4cf43883-e0a1-4544-b02b-976860b3308f"
+  },
+  "OTP_NO_STORE_CONTACT": {
+    "id": "9a5874d5-de05-4ad6-8206-cc272886ded9",
+    "user_id": "b3a4d85b-d9e5-4cd1-8e33-e6a5233d268b"
+  },
+  "OTP_TRUSTED_STORE_CONTACT": {
+    "id": "4d8d5d8a-f512-40c7-a830-941dd8029e7c",
+    "user_id": "af91d6ee-f8d7-4b34-a59c-3859092e4811"
+  },
+  "OTP_FOREIGN_STORE_CONTACT": {
+    "id": "9165ca00-b76f-4686-a7cc-225dd0397e18",
+    "user_id": "530d91dc-8798-453b-952c-7ab12e5e66f6"
+  },
+  "PUSH_AUDIENCE_PARENT_ORG": {
+    "id": "0ca666d2-1da0-4790-9088-efd67c97890a",
+    "platform_id": "0ca666d2-1da0-4790-9088-efd67c97890a"
+  },
+  "PUSH_AUDIENCE_CHILD_ORG": {
+    "id": "70575382-177f-4815-9058-00236b724e90",
+    "platform_id": "70575382-177f-4815-9058-00236b724e90"
+  },
+  "PUSH_AUDIENCE_PARENT_CONTACT": {
+    "id": "7ca8283d-2f1d-41fc-a263-a458523ffe3b",
+    "platform_id": "7ca8283d-2f1d-41fc-a263-a458523ffe3b"
+  },
+  "PUSH_AUDIENCE_CHILD_CONTACT_1": {
+    "id": "f9ab80e9-5df7-49cf-a4f7-8c02322e821f",
+    "platform_id": "f9ab80e9-5df7-49cf-a4f7-8c02322e821f"
+  },
+  "PUSH_AUDIENCE_CHILD_CONTACT_2": {
+    "id": "6e08817e-ebb7-4872-995e-8208e8543de9",
+    "platform_id": "6e08817e-ebb7-4872-995e-8208e8543de9"
+  },
+  "PUSH_AUDIENCE_CHILD_CONTACT_NOLOGIN": {
+    "id": "75d9b3a2-6443-4893-9350-53248123ef52",
+    "platform_id": "75d9b3a2-6443-4893-9350-53248123ef52"
+  },
+  "PUSH_AUDIENCE_EMPLOYEE": {
+    "id": "36f68ad4-44b9-441f-8b08-4a88e4783ff8",
+    "platform_id": "36f68ad4-44b9-441f-8b08-4a88e4783ff8"
+  },
+  "RETURNS_AGENT_NO_AUTHORIZE": {
+    "_inline": true,
+    "platform_id": "faaf7e43-e3fe-417d-9318-52f505862c14",
+    "user_id": "faaf7e43-e3fe-417d-9318-52f505862c14",
+    "role_id": "AGENT-TEST-Return-Agent-NoAuthorize",
+    "userName": "AGENT-TEST-return-agent-noauth@test.virtocommerce.com"
+  },
+  "PUNCHOUT_CONFIG_0": {
+    "storeId": "B2B-store",
+    "storeExists": true,
+    "senderDomain": "NetworkId",
+    "senderDomainCheck": true,
+    "allowedReturnUrl": "https://punchoutcommerce.com/*",
+    "returnUrlCheck": true,
+    "tokenLifetime": "00:15:00",
+    "sessionLifetime": "04:00:00",
+    "tokenLifetimeMinutes": 15,
+    "sessionLifetimeMinutes": 240,
+    "source": "vc-deploy-dev#6935 infra/environments.yml (Punchout__Configurations__0..3), branch vcst-qa"
+  },
+  "PUNCHOUT_CONFIG_1": {
+    "storeId": "QA-STORE",
+    "storeExists": true,
+    "senderDomain": "",
+    "senderDomainCheck": false,
+    "allowedReturnUrl": "",
+    "returnUrlCheck": false,
+    "tokenLifetime": "00:02:00",
+    "sessionLifetime": "00:10:00",
+    "tokenLifetimeMinutes": 2,
+    "sessionLifetimeMinutes": 10,
+    "source": "vc-deploy-dev#6935 infra/environments.yml (Punchout__Configurations__0..3), branch vcst-qa"
+  },
+  "PUNCHOUT_CONFIG_2": {
+    "storeId": "AGENT-TEST-no-such-store",
+    "storeExists": false,
+    "senderDomain": "",
+    "senderDomainCheck": false,
+    "allowedReturnUrl": "",
+    "returnUrlCheck": false,
+    "tokenLifetime": "00:15:00",
+    "sessionLifetime": "04:00:00",
+    "tokenLifetimeMinutes": 15,
+    "sessionLifetimeMinutes": 240,
+    "source": "vc-deploy-dev#6935 infra/environments.yml (Punchout__Configurations__0..3), branch vcst-qa"
+  },
+  "PUNCHOUT_CONFIG_3": {
+    "storeId": "",
+    "storeExists": false,
+    "senderDomain": "",
+    "senderDomainCheck": false,
+    "allowedReturnUrl": "",
+    "returnUrlCheck": false,
+    "tokenLifetime": "00:15:00",
+    "sessionLifetime": "04:00:00",
+    "tokenLifetimeMinutes": 15,
+    "sessionLifetimeMinutes": 240,
+    "source": "vc-deploy-dev#6935 infra/environments.yml (Punchout__Configurations__0..3), branch vcst-qa"
+  },
+  "PUNCHOUT_MAPPING_MULTI_ORG": {
+    "persona_email_var": "MULTI_ORG_USER_EMAIL",
+    "persona_email": "{{MULTI_ORG_USER_EMAIL}}",
+    "persona_password": "{{MULTI_ORG_USER_PASSWORD}}",
+    "id": "1726b489-fdd9-4619-9eca-9fc1ac9e356f",
+    "userId": "0cc0a829-d7fe-448c-b98c-a621e34ba788",
+    "memberId": "54729f13-9fd0-47d2-af72-1a04a41175ed",
+    "currentOrganizationId": "organization-acme-store",
+    "otherOrganizationId": "organization-redwood-provisions",
+    "organizationCount": 12
+  },
+  "BACKOFFICE_PUNCHOUT_READ": {
+    "user_id": "d8d04cd2-e070-4b37-a506-e31649a0d7e8",
+    "role_id": "AGENT-TEST-Punchout-Reader"
+  },
+  "BACKOFFICE_NO_PUNCHOUT": {
+    "user_id": "b59d80fa-79fd-4e3e-a238-a9f14761be20",
+    "role_id": "AGENT-TEST-Punchout-None"
+  },
+  "ORG_RET_OTHER_STORE_RETURN": {
+    "id": "5fd18ee3-afc6-4155-ba9a-dcfe2c52a079",
+    "number": "RET261014-00002",
+    "status": "Requested",
+    "storeId": "Electronics",
+    "orderId": "6f7f4ae9-6b3d-427b-aa3d-1c11d9ccb246",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-7",
+    "organizationId": "180022db-2ef9-44ad-8999-6fd6e7ca7d09"
+  },
+  "QUOTE_PROCESSING": {
+    "seeded_at": "2026-10-15T13:33:08.640Z",
+    "id_slot1": "f0d9f4dd-6692-45ee-9e84-75216361bdfa",
+    "number_slot1": "AGENT-TEST-QTE-PROCESSING",
+    "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
+    "expiration_date_slot1": "",
+    "id": "f0d9f4dd-6692-45ee-9e84-75216361bdfa",
+    "number": "AGENT-TEST-QTE-PROCESSING",
+    "buyer_email": "test-john.mitchell-20260310@test-agent.com",
+    "expiration_date": "",
+    "id_slot2": "da67c6de-5f31-4a7d-81a3-7920d45b0519",
+    "number_slot2": "AGENT-TEST-QTE-PROCESSING-S2",
+    "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
+    "expiration_date_slot2": "",
+    "id_slot3": "ead3bd41-62e5-4a63-9d92-f9b3623e81aa",
+    "number_slot3": "AGENT-TEST-QTE-PROCESSING-S3",
+    "buyer_email_slot3": "test-carlos.rodriguez-20260310@test-agent.com",
+    "expiration_date_slot3": ""
+  },
+  "QUOTE_ON_HOLD": {
+    "seeded_at": "2026-10-15T13:33:08.640Z",
+    "id_slot1": "e7ce45f2-2307-4d1c-9307-72a112b02573",
+    "number_slot1": "AGENT-TEST-QTE-ON-HOLD",
+    "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
+    "expiration_date_slot1": "",
+    "id": "e7ce45f2-2307-4d1c-9307-72a112b02573",
+    "number": "AGENT-TEST-QTE-ON-HOLD",
+    "buyer_email": "test-john.mitchell-20260310@test-agent.com",
+    "expiration_date": "",
+    "id_slot2": "0b8fa614-29a4-44ef-b313-0640fe620695",
+    "number_slot2": "AGENT-TEST-QTE-ON-HOLD-S2",
+    "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
+    "expiration_date_slot2": "",
+    "id_slot3": "6d9c694b-40aa-4d80-9ee5-aadb459d48f8",
+    "number_slot3": "AGENT-TEST-QTE-ON-HOLD-S3",
+    "buyer_email_slot3": "test-carlos.rodriguez-20260310@test-agent.com",
+    "expiration_date_slot3": ""
+  },
+  "QUOTE_DECLINED": {
+    "seeded_at": "2026-10-15T13:33:08.640Z",
+    "id_slot1": "13b1128c-d69e-43f5-ba98-d33f0545b95c",
+    "number_slot1": "AGENT-TEST-QTE-DECLINED",
+    "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
+    "expiration_date_slot1": "",
+    "id": "13b1128c-d69e-43f5-ba98-d33f0545b95c",
+    "number": "AGENT-TEST-QTE-DECLINED",
+    "buyer_email": "test-john.mitchell-20260310@test-agent.com",
+    "expiration_date": "",
+    "id_slot2": "9e639596-b0ed-4f06-8aa6-85c371d38054",
+    "number_slot2": "AGENT-TEST-QTE-DECLINED-S2",
+    "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
+    "expiration_date_slot2": "",
+    "id_slot3": "338b751d-9236-465c-bb0a-c6f952314d56",
+    "number_slot3": "AGENT-TEST-QTE-DECLINED-S3",
+    "buyer_email_slot3": "test-carlos.rodriguez-20260310@test-agent.com",
+    "expiration_date_slot3": ""
+  },
+  "EXPIRED_QUOTE": {
+    "seeded_at": "2026-10-15T13:33:08.640Z",
+    "id_slot1": "5361f2c2-6997-476a-845d-f0d6e7ef1601",
+    "number_slot1": "AGENT-TEST-QTE-EXPIRED",
+    "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
+    "expiration_date_slot1": "2026-10-12T12:39:57.886Z",
+    "id": "5361f2c2-6997-476a-845d-f0d6e7ef1601",
+    "number": "AGENT-TEST-QTE-EXPIRED",
+    "buyer_email": "test-john.mitchell-20260310@test-agent.com",
+    "expiration_date": "2026-10-12T12:39:57.886Z",
+    "id_slot2": "f746c7e2-188b-4492-8cde-9db45cbd092f",
+    "number_slot2": "AGENT-TEST-QTE-EXPIRED-S2",
+    "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
+    "expiration_date_slot2": "2026-10-12T12:39:57.886Z",
+    "id_slot3": "991f79c5-e1b3-4e06-b650-f6caeee61fce",
+    "number_slot3": "AGENT-TEST-QTE-EXPIRED-S3",
+    "buyer_email_slot3": "test-carlos.rodriguez-20260310@test-agent.com",
+    "expiration_date_slot3": "2026-10-12T12:39:57.886Z"
+  },
+  "QUOTE_FUTURE_EXPIRY": {
+    "seeded_at": "2026-10-15T13:33:08.640Z",
+    "id_slot1": "f64bd29f-ef1d-4670-8a5c-5035f370de88",
+    "number_slot1": "AGENT-TEST-QTE-FUTURE-EXPIRY",
+    "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
+    "expiration_date_slot1": "2026-11-14T12:39:57.886Z",
+    "id": "f64bd29f-ef1d-4670-8a5c-5035f370de88",
+    "number": "AGENT-TEST-QTE-FUTURE-EXPIRY",
+    "buyer_email": "test-john.mitchell-20260310@test-agent.com",
+    "expiration_date": "2026-11-14T12:39:57.886Z",
+    "id_slot2": "56770eab-752b-4112-8957-1be9af8f94ac",
+    "number_slot2": "AGENT-TEST-QTE-FUTURE-EXPIRY-S2",
+    "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
+    "expiration_date_slot2": "2026-11-14T12:39:57.886Z",
+    "id_slot3": "6d054b70-d6b6-4d7f-91b9-51f9452493f2",
+    "number_slot3": "AGENT-TEST-QTE-FUTURE-EXPIRY-S3",
+    "buyer_email_slot3": "test-carlos.rodriguez-20260310@test-agent.com",
+    "expiration_date_slot3": "2026-11-14T12:39:57.886Z"
+  },
+  "QUOTE_TO_ACCEPT": {
+    "seeded_at": "2026-10-15T13:33:08.640Z",
+    "id_slot1": "57531860-3447-4cc2-adab-4f7ee9bf0fc3",
+    "number_slot1": "AGENT-TEST-QTE-TO-ACCEPT",
+    "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
+    "expiration_date_slot1": "",
+    "id": "57531860-3447-4cc2-adab-4f7ee9bf0fc3",
+    "number": "AGENT-TEST-QTE-TO-ACCEPT",
+    "buyer_email": "test-john.mitchell-20260310@test-agent.com",
+    "expiration_date": "",
+    "id_slot2": "d19eae1e-11ca-4a97-a207-470741229458",
+    "number_slot2": "AGENT-TEST-QTE-TO-ACCEPT-S2",
+    "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
+    "expiration_date_slot2": "",
+    "id_slot3": "03f5cc31-dd52-445e-9b2e-779bde47fe30",
+    "number_slot3": "AGENT-TEST-QTE-TO-ACCEPT-S3",
+    "buyer_email_slot3": "test-carlos.rodriguez-20260310@test-agent.com",
+    "expiration_date_slot3": ""
+  },
+  "QUOTE_TO_DECLINE": {
+    "seeded_at": "2026-10-15T13:33:08.640Z",
+    "id_slot1": "2299bd27-b67c-4a9a-83d7-4b3e499a7c9f",
+    "number_slot1": "AGENT-TEST-QTE-TO-DECLINE",
+    "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
+    "expiration_date_slot1": "",
+    "id": "2299bd27-b67c-4a9a-83d7-4b3e499a7c9f",
+    "number": "AGENT-TEST-QTE-TO-DECLINE",
+    "buyer_email": "test-john.mitchell-20260310@test-agent.com",
+    "expiration_date": "",
+    "id_slot2": "a0485769-aa3d-4ec2-9bb5-553dad2202a7",
+    "number_slot2": "AGENT-TEST-QTE-TO-DECLINE-S2",
+    "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
+    "expiration_date_slot2": "",
+    "id_slot3": "bc5b7b70-52bb-4139-8e43-268489acb73e",
+    "number_slot3": "AGENT-TEST-QTE-TO-DECLINE-S3",
+    "buyer_email_slot3": "test-carlos.rodriguez-20260310@test-agent.com",
+    "expiration_date_slot3": ""
+  },
+  "QUOTE_TO_CONVERT": {
+    "seeded_at": "2026-10-15T13:33:08.640Z",
+    "id_slot1": "d096d4eb-b541-4b10-9c6c-0db6941f18d4",
+    "number_slot1": "AGENT-TEST-QTE-TO-CONVERT",
+    "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
+    "expiration_date_slot1": "",
+    "id": "d096d4eb-b541-4b10-9c6c-0db6941f18d4",
+    "number": "AGENT-TEST-QTE-TO-CONVERT",
+    "buyer_email": "test-john.mitchell-20260310@test-agent.com",
+    "expiration_date": "",
+    "id_slot2": "3d6bb12d-c86f-4c0e-b2b6-1a109dc0dc21",
+    "number_slot2": "AGENT-TEST-QTE-TO-CONVERT-S2",
+    "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
+    "expiration_date_slot2": "",
+    "id_slot3": "9847828f-0e73-4249-8d0a-effe00825624",
+    "number_slot3": "AGENT-TEST-QTE-TO-CONVERT-S3",
+    "buyer_email_slot3": "test-carlos.rodriguez-20260310@test-agent.com",
+    "expiration_date_slot3": ""
+  },
+  "QUOTE_TO_CONVERT_REPRICED": {
+    "seeded_at": "2026-10-15T13:33:08.640Z",
+    "id_slot1": "d2bc2ce0-379e-4278-8348-217b40b0e12b",
+    "number_slot1": "AGENT-TEST-QTE-TO-CONVERT-REPRICED",
+    "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
+    "expiration_date_slot1": "",
+    "id": "d2bc2ce0-379e-4278-8348-217b40b0e12b",
+    "number": "AGENT-TEST-QTE-TO-CONVERT-REPRICED",
+    "buyer_email": "test-john.mitchell-20260310@test-agent.com",
+    "expiration_date": "",
+    "id_slot2": "1b721ff1-8f22-4da5-b39a-277ad3f150d0",
+    "number_slot2": "AGENT-TEST-QTE-TO-CONVERT-REPRICED-S2",
+    "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
+    "expiration_date_slot2": "",
+    "id_slot3": "d1f64797-5ceb-4396-8177-b5afa652116c",
+    "number_slot3": "AGENT-TEST-QTE-TO-CONVERT-REPRICED-S3",
+    "buyer_email_slot3": "test-carlos.rodriguez-20260310@test-agent.com",
+    "expiration_date_slot3": ""
+  },
+  "QUOTE_TO_CONVERT_MULTILINE": {
+    "seeded_at": "2026-10-15T13:33:08.640Z",
+    "id_slot1": "f852da4a-d553-446d-a053-1174b3dec96d",
+    "number_slot1": "AGENT-TEST-QTE-TO-CONVERT-MULTILINE",
+    "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
+    "expiration_date_slot1": "",
+    "id": "f852da4a-d553-446d-a053-1174b3dec96d",
+    "number": "AGENT-TEST-QTE-TO-CONVERT-MULTILINE",
+    "buyer_email": "test-john.mitchell-20260310@test-agent.com",
+    "expiration_date": "",
+    "id_slot2": "751bc1d9-5c14-4084-a676-da7b1c05930a",
+    "number_slot2": "AGENT-TEST-QTE-TO-CONVERT-MULTILINE-S2",
+    "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
+    "expiration_date_slot2": "",
+    "id_slot3": "271817c5-60f5-4c75-95b6-ac2db7a70b0a",
+    "number_slot3": "AGENT-TEST-QTE-TO-CONVERT-MULTILINE-S3",
+    "buyer_email_slot3": "test-carlos.rodriguez-20260310@test-agent.com",
+    "expiration_date_slot3": ""
+  },
+  "QUOTE_TO_CONVERT_STATUS": {
+    "seeded_at": "2026-10-15T13:33:08.640Z",
+    "id_slot1": "927c7d9d-2163-47bb-9b3a-7b10a6cf0339",
+    "number_slot1": "AGENT-TEST-QTE-TO-CONVERT-STATUS",
+    "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
+    "expiration_date_slot1": "",
+    "id": "927c7d9d-2163-47bb-9b3a-7b10a6cf0339",
+    "number": "AGENT-TEST-QTE-TO-CONVERT-STATUS",
+    "buyer_email": "test-john.mitchell-20260310@test-agent.com",
+    "expiration_date": "",
+    "id_slot2": "85504f03-fdcd-41cf-9040-da7753aae005",
+    "number_slot2": "AGENT-TEST-QTE-TO-CONVERT-STATUS-S2",
+    "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
+    "expiration_date_slot2": "",
+    "id_slot3": "24553f73-8d7a-4d7c-90b8-0115941f20e6",
+    "number_slot3": "AGENT-TEST-QTE-TO-CONVERT-STATUS-S3",
+    "buyer_email_slot3": "test-carlos.rodriguez-20260310@test-agent.com",
+    "expiration_date_slot3": ""
+  },
+  "EXPIRED_QUOTE_TO_ACCEPT": {
+    "seeded_at": "2026-10-15T13:33:08.640Z",
+    "id_slot1": "cb6b1adf-7a32-4e08-9f3d-f686c68bc795",
+    "number_slot1": "AGENT-TEST-QTE-EXPIRED-TO-ACCEPT",
+    "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
+    "expiration_date_slot1": "2026-10-12T13:33:08.64Z",
+    "id": "cb6b1adf-7a32-4e08-9f3d-f686c68bc795",
+    "number": "AGENT-TEST-QTE-EXPIRED-TO-ACCEPT",
+    "buyer_email": "test-john.mitchell-20260310@test-agent.com",
+    "expiration_date": "2026-10-12T13:33:08.64Z",
+    "id_slot2": "7115e4e7-5e1b-44f4-b9c2-ab7dd770385b",
+    "number_slot2": "AGENT-TEST-QTE-EXPIRED-TO-ACCEPT-S2",
+    "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
+    "expiration_date_slot2": "2026-10-12T12:39:57.886Z",
+    "id_slot3": "44fe4a38-41af-430f-8ba8-06c87841c06e",
+    "number_slot3": "AGENT-TEST-QTE-EXPIRED-TO-ACCEPT-S3",
+    "buyer_email_slot3": "test-carlos.rodriguez-20260310@test-agent.com",
+    "expiration_date_slot3": "2026-10-12T12:39:57.886Z"
+  },
+  "QUOTE_PROPOSAL_OOS": {
+    "seeded_at": "2026-10-15T13:33:08.640Z",
+    "id_slot1": "1b06f141-bce8-4828-b01e-deb10db4c8cc",
+    "number_slot1": "AGENT-TEST-QTE-OOS",
+    "buyer_email_slot1": "test-john.mitchell-20260310@test-agent.com",
+    "expiration_date_slot1": "",
+    "id": "1b06f141-bce8-4828-b01e-deb10db4c8cc",
+    "number": "AGENT-TEST-QTE-OOS",
+    "buyer_email": "test-john.mitchell-20260310@test-agent.com",
+    "expiration_date": "",
+    "id_slot2": "3ed96c59-e2d8-4131-bf3c-51790de6f8f1",
+    "number_slot2": "AGENT-TEST-QTE-OOS-S2",
+    "buyer_email_slot2": "test-emily.johnson-20260310@test-agent.com",
+    "expiration_date_slot2": "",
+    "id_slot3": "3262d062-98b2-43c7-ad55-b575ef97471d",
+    "number_slot3": "AGENT-TEST-QTE-OOS-S3",
+    "buyer_email_slot3": "test-carlos.rodriguez-20260310@test-agent.com",
+    "expiration_date_slot3": ""
+  },
+  "PB_6443_LEGACY_S6": {
+    "id": "bbb1e2fd-822a-427d-a28e-f4b2c8177d40",
+    "page_id": "f3491e9a-a324-4d87-9f45-027c844e7a57",
+    "name": "AGENT-TEST-6443 legacy S6",
+    "permalink": "/agent-test-6443 legacy-s6"
+  },
+  "PB_6443_LEGACY_S7": {
+    "id": "f9203325-aafa-4b5b-952b-d0e6668dfb22",
+    "page_id": "45e266d6-d917-42ef-90b9-3df5f5674a4a",
+    "name": "AGENT-TEST-6443 legacy S7",
+    "permalink": "/agent-test-6443-legacy-S7&x"
+  },
+  "PB_6443_LEGACY_S8": {
+    "id": "93da53b2-0d82-4f52-bdf7-b0eaf5c71f97",
+    "page_id": "2e2517a3-d88d-4aee-bd8b-77d0ed5266bc",
+    "name": "AGENT-TEST-6443 legacy S8",
+    "permalink": "/agent-test-6443 legacy-s8?x"
+  },
+  "PB_6443_LEGACY_S18": {
+    "id": "405a9306-0be8-4017-a16f-9782861e878b",
+    "page_id": "16671e33-a6d3-4e8b-8031-98aa5e4db0cb",
+    "name": "AGENT-TEST-6443 legacy S18",
+    "permalink": "/agent-test-6443 legacy-s18"
+  },
+  "PB_6443_LEGACY_EXP1": {
+    "id": "1be0e0b2-0b2a-4308-9e85-bb7f2f45e41d",
+    "page_id": "7ea249b1-7e0f-40aa-b041-9d1b39fa3066",
+    "name": "AGENT-TEST-6443 legacy EXP1",
+    "permalink": "/agent-test-6443 legacy-exp1"
+  },
+  "PB_6443_LEGACY_EXP2": {
+    "id": "1f3d60c1-5803-4228-915b-ff713c69e008",
+    "page_id": "484016cf-8dc4-4e5e-988c-988edef7b302",
+    "name": "AGENT-TEST-6443 legacy EXP2",
+    "permalink": "/agent-test-6443 legacy-exp2"
+  },
+  "PB_6443_LEGACY_PCT": {
+    "id": "4452162f-09f9-402b-b362-02869da4617c",
+    "page_id": "df1a4424-8caa-4013-ab22-1dafcbc3785d",
+    "name": "AGENT-TEST-6443 legacy PCT",
+    "permalink": "/agent-test-6443-legacy%20pct"
+  },
+  "PB_6443_LEGACY_LT": {
+    "id": "0c9c0e58-f0c2-4718-be3c-0894698ac0a0",
+    "page_id": "c09c2f1c-4b6d-4bb3-ae94-64c398a8696d",
+    "name": "AGENT-TEST-6443 legacy LT",
+    "permalink": "/agent-test-6443-legacy<lt>"
+  },
+  "PB_6443_NOCREATE_USER": {
+    "id": "92ab500e-acd4-49a4-a0ec-050fbf71b554",
+    "login": "agent-test-6443-nocreate",
+    "email": "agent-test-6443-nocreate@test.virtocommerce.com",
+    "role": "AGENT-TEST-6443 no-create",
+    "password_var": "DEFAULT_TEST_PASSWORD"
+  },
+  "USER_NO_ADDRESSES": {
+    "live_address_count": 0
+  },
+  "USER_DEFAULT_ADDRESS_BOOK": {
+    "live_count": 4,
+    "live_order_sort_discriminating": true
+  },
+  "PERSONAL_LIST_USER_DEFAULT": {
+    "id": "b3729e0b-874a-42f1-910c-b38b149e06ef",
+    "items_count": 2
+  },
+  "ORG_USER_RFQ_LIST": {
+    "id": "1f6a6dea-dd82-4f37-95d3-b022398e8654",
+    "items_count": 2
   },
   "RETURNS_ORDER_SF_ORD009": {
     "id": "9eda2310-264b-4001-925d-cba38caeadf2",

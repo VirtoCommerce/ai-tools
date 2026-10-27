@@ -1,0 +1,646 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+CMS-259,"[JOURNEY] Permalink — invalid value blocked in the page builder shell, corrected, published and opened on the storefront",Page Builder > Permalink validation,High,,ECL-7.2,"Admin logged in to the page builder shell. Storefront preconditions (all three, else the page 404s for a reason unrelated to the permalink): store VirtoPages.Enable = true; the Pages search index is built; the page has visibility:true (a page created through create-group-page without visibility is stored visibility:false and 404s for an anonymous shopper). PR VirtoCommerce/vc-module-pagebuilder#178 is the change under test","store=@td(STORE_PRIMARY.id); invalid=/agent test 6443 <unique> (inner spaces); valid=/agent-test-6443-<unique> (<unique> from scripts/lib/random-data.ts, AGENT-TEST- prefix on the page name so teardown sweeps it); back_url={{BACK_URL}}; front_url={{FRONT_URL}}","--- SCREEN: Page builder shell, page list ---
+[NAV] Open {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-all
+[ACT] Click ""Add"" in the page list toolbar
+[WAIT] The UI settles (no spinner, network idle)
+--- SCREEN: Page details, new page ---
+[ACT] Fill ""Name"": AGENT-TEST-6443 journey <unique>
+[ACT] Select language English
+[ACT] Make sure the page is visible to all shoppers (not Personalized)
+[ACT] Paste the invalid permalink ""/agent test 6443 <unique>"" into ""Permalink""
+[ACT] Move focus out of the field
+[ASSERT] The Permalink field is marked invalid and an inline error is shown under it; ""Save"" is disabled; ""Publish"" is disabled
+[NETWORK] No POST /api/page-builder-pages/grouped request was sent
+[ACT] Replace the permalink with ""/agent-test-6443-<unique>""
+[ACT] Move focus out
+[ASSERT] The field error is gone and ""Save"" is enabled
+--- SCREEN: Page details, saved ---
+[SAVE] Click ""Save"" and wait for the success confirmation
+[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/grouped/{groupId} (groupId from the page URL)
+[BODY] permalink equals ""/agent-test-6443-<unique>"" exactly as typed (no trimming, encoding or case change)
+[ACT] Click ""Publish""
+[WAIT] Wait for the publish confirmation
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/grouped/publish-status/{groupId}
+[BODY] The page reports Published
+--- SCREEN: Storefront ---
+[WAIT] Allow 30-60 s for the Pages index to pick up the published page
+[NAV] Open {{FRONT_URL}}/agent-test-6443-<unique>
+[ASSERT] The storefront renders the page at that exact URL (HTTP 200, not the storefront not-found page)","[ASSERT] {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21): an invalid permalink shows an error and Save cannot be used; nothing was sent to the server while the field was invalid
+[ASSERT] After correcting the permalink the same form saves, the stored permalink is byte-for-byte the typed value, and Publish becomes available {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21)
+[DOM] {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21) ticket impact: a page that can be saved has a URL that opens as written: ""{{FRONT_URL}}/agent-test-6443-<unique>"" renders the published page and is visible (HTTP 200)","[NETWORK] The only POST to /api/page-builder-pages/grouped is the one after the valid permalink; it returns 2xx
+[CONSOLE] no TypeError or JS error on the shell page
+[API] GET grouped/{groupId} permalink equals the typed value; publish-status = Published
+[STOREFRONT] page opens at {{FRONT_URL}}/<permalink> after the index lag",Save enabled while the permalink field shows an error; a POST sent for the invalid value; the saved permalink differs from the typed one; the storefront URL returns 404 after a successful publish (index not built or visibility false: check the preconditions before calling it a defect); corrected permalink still leaves Save disabled (error state stuck),DELETE /api/page-builder-pages/grouped/{id} for every AGENT-TEST-6443 page; verify GET 404,VCST-6443 · Archetype:LIFECYCLE · Technique:FLOW · Catches:VCST-6443,Draft
+CMS-260,Permalink — create-group-page rejects every forbidden character class with 400 and stores nothing,Page Builder > Permalink validation,High,,ECL-7.2,Admin Bearer token available; create-group-page = POST {{BACK_URL}}/api/page-builder-pages/create-group-page; POST grouped = POST {{BACK_URL}}/api/page-builder-pages/grouped; PUT grouped = PUT {{BACK_URL}}/api/page-builder-pages/grouped. PR VirtoCommerce/vc-module-pagebuilder#178 is the change under test,"store=@td(STORE_PRIMARY.id); body template {name:""AGENT-TEST-6443 reject <n>"", permalink:<value>, cultureName:""en-US"", storeId:<store>, visibility:true}; back_url={{BACK_URL}}","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token
+[SETUP] Repeat the next five steps for EACH permalink value in the Values line (one POST each, unique name per value)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/create-group-page with the body template and permalink = the value
+[STATUS] Verify HTTP 400
+[BODY] Verify the body is the rule sentence (names the rule (whitespace, control characters, ? # & \, empty segments //, . and .. segments))
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/search filtered by the page name (storeId from Test_Data)
+[COUNT] Verify totalCount = 0 (nothing stored)
+[DATA] Values: ticket STR first ""/test page"" then ""/test&page?x#y""; leading space "" /a""; trailing space ""/a ""; inner space ""/a b""; tab ""/a<TAB>b""; line feed ""/a<LF>b""; no-break space U+00A0 ""/a<NBSP>b""; ideographic space U+3000; next line U+0085; control U+0001 ""/a<U+0001>b""; ""/a?b""; ""/a#b""; ""/a&b""; ""/a\b""; ""//a""; ""/a//b""; ""/.""; ""/./a""; ""/a/..""; ""..""","[STATUS] {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21): every listed value returns HTTP 400 (none returns 200 or 500)
+[BODY] {OBSERVED} (KB-2C75B17E, SBTM-VCST-6443-2026-10-22): the response names the rule (whitespace, control characters, ? # & \, empty segments //, . and .. segments); the same sentence for every value
+[COUNT] {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21): a rejected create stores nothing: search totalCount = 0 for each name","[NETWORK] no 5xx for any value
+[API] page search confirms no group was created per rejected value
+[ADMIN] none of the AGENT-TEST-6443 reject pages appears in the page builder shell list",A value returns 200/201 and a group exists (class slips past the rule); HTTP 500 instead of 400; empty or non-rule body; a page created although 400 was returned,DELETE /api/page-builder-pages/grouped/{id} for every AGENT-TEST-6443 page; verify GET 404,VCST-6443 · Archetype:BOUNDARY · Technique:EP · Catches:VCST-6443,Draft
+CMS-261,Permalink — create-group-page accepts any-language letters and percent and stores them verbatim,Page Builder > Permalink validation,High,,ECL-7.2,Admin Bearer token available; create-group-page = POST {{BACK_URL}}/api/page-builder-pages/create-group-page; POST grouped = POST {{BACK_URL}}/api/page-builder-pages/grouped; PUT grouped = PUT {{BACK_URL}}/api/page-builder-pages/grouped,"store=@td(STORE_PRIMARY.id); body template {name:""AGENT-TEST-6443 accept <n>"", permalink:<value>, cultureName:""en-US"", storeId:<store>, visibility:true}; back_url={{BACK_URL}}","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token
+[SETUP] Repeat the next four steps for EACH value in the Values line (unique name per value)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/create-group-page with the body template and permalink = the value
+[STATUS] Verify HTTP 2xx
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/grouped/{id} from the response
+[BODY] Verify permalink equals the sent value exactly
+[DATA] Values: Cyrillic ""/агент-тест-6443-страница""; Japanese ""/エージェント-ページ-6443""; percent ""/agent-test-6443%20pct""; bare percent ""/agent-test-6443-100%""; trailing slash ""/agent-test-6443-<unique>/"". The bare root ""/"" is NOT used as a live permalink (it collides with the store home page).
+[DATA] Record only (no verdict on the ticket): empty permalink; no leading slash ""agent-test-6443-b""; U+200B; the characters "" < > { } | ^; full-width ？＃＆＼ (decision comment is silent on these)","[STATUS] {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21) ""letters of any language and % are allowed"": every listed value returns 2xx, none returns 400
+[BODY] {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21) (never normalize): the permalink returned by GET equals the sent value byte-for-byte (no trim, no percent-decoding, no case change)
+[DATA] {OBSERVED} baseline for the record-only values is written to the run notes as INFO, not asserted
+[ASSERT] Derivation, not a stated rule (the decision lists only rejections): a trailing slash is not a rejected class, so it is accepted and stored verbatim {SPEC} (VCST-6443 decision comment, derived)","[NETWORK] no 4xx/5xx for the accepted values
+[API] GET grouped/{id} permalink verbatim
+[ADMIN] each created page is listed in the shell grid with the permalink shown unchanged","A Cyrillic, Japanese or % value returns 400 (over-rejection); the returned permalink differs from the sent one (decoded, trimmed, lower-cased or escaped); HTTP 500",DELETE /api/page-builder-pages/grouped/{id} for every AGENT-TEST-6443 page; verify GET 404,VCST-6443 · Archetype:BOUNDARY · Technique:EP,Draft
+CMS-262,Permalink — POST grouped rejects an invalid permalink and accepts a valid one,Page Builder > Permalink validation,High,,,Admin Bearer token available; create-group-page = POST {{BACK_URL}}/api/page-builder-pages/create-group-page; POST grouped = POST {{BACK_URL}}/api/page-builder-pages/grouped; PUT grouped = PUT {{BACK_URL}}/api/page-builder-pages/grouped,"store=@td(STORE_PRIMARY.id); body {name:""AGENT-TEST-6443 post <n>"", permalink:<value>, cultureName:""en-US"", storeId:<store>, visibility:true, userGroups:null, organizationId:null}; back_url={{BACK_URL}}","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped with permalink ""/agent test 6443 post""
+[STATUS] Verify HTTP 400
+[BODY] Verify the body names the rule (whitespace, control characters, ? # & \, empty segments //, . and .. segments)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped with permalink ""/agent-test-6443-post&x?y""
+[STATUS] Verify HTTP 400
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/search by the page name
+[COUNT] Verify totalCount = 0
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped with permalink ""/agent-test-6443-post-<unique>""
+[STATUS] Verify HTTP 2xx
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/grouped/{id}
+[BODY] Verify permalink equals ""/agent-test-6443-post-<unique>""","[STATUS] {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21): POST grouped rejects an invalid permalink with HTTP 400 and the rule text, like create-group-page
+[COUNT] {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21): the rejected requests store nothing (totalCount = 0)
+[BODY] A valid permalink is accepted and stored verbatim (the rule does not over-reject on this endpoint) {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21)","[NETWORK] no 5xx on the three requests
+[API] search confirms exactly one group was stored (the valid one)",POST grouped returns 200 for the space or &?# value (rule missing on this action); HTTP 500; the valid request returns 400; two groups exist after the sequence,DELETE /api/page-builder-pages/grouped/{id} for every AGENT-TEST-6443 page; verify GET 404,VCST-6443 · Archetype:PARITY · Technique:EP · Catches:VCST-6443,Draft
+CMS-263,Permalink — PUT grouped changing to an invalid permalink returns 400 and saves none of the request,Page Builder > Permalink validation,High,,,"Admin Bearer token available; a page group created through create-group-page with a valid permalink (state: Draft, name ""AGENT-TEST-6443 put base <unique>"", permalink ""/agent-test-6443-put-<unique>""); create-group-page = POST {{BACK_URL}}/api/page-builder-pages/create-group-page; POST grouped = POST {{BACK_URL}}/api/page-builder-pages/grouped; PUT grouped = PUT {{BACK_URL}}/api/page-builder-pages/grouped",store=@td(STORE_PRIMARY.id); back_url={{BACK_URL}},"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/grouped/{id}; record name N0 and permalink P0 (the full body is the PUT template)
+[HTTP] PUT {{BACK_URL}}/api/page-builder-pages/grouped with the GET body, name changed to ""AGENT-TEST-6443 put renamed"" AND permalink changed to ""/agent test 6443 put""
+[STATUS] Verify HTTP 400
+[BODY] Verify the body names the rule (whitespace, control characters, ? # & \, empty segments //, . and .. segments)
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/grouped/{id}
+[BODY] Verify name = N0 and permalink = P0 (neither field changed)
+[HTTP] PUT the same body with permalink changed to another VALID value ""/agent-test-6443-put-2-<unique>"" and the renamed name
+[STATUS] Verify HTTP 2xx
+[BODY] GET shows the new name and the new permalink","[STATUS] {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21): PUT with a changed invalid permalink returns HTTP 400
+[STATE] {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21): the 400 saves none of the request: name and permalink after the rejected PUT equal those before it (no partial apply)
+[STATUS] A PUT that changes the permalink to a valid value still succeeds and stores both fields {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21)","[NETWORK] no 5xx
+[API] GET before = GET after for the rejected PUT (name, permalink, modifiedDate)
+[ADMIN] the shell grid shows the unchanged name after the rejected PUT",Name changed although 400 returned (partial apply); permalink changed; HTTP 500; the valid second PUT returns 400,DELETE /api/page-builder-pages/grouped/{id} for every AGENT-TEST-6443 page; verify GET 404,VCST-6443 · Archetype:SILENT · Technique:DT · Catches:VCST-6443,Draft
+CMS-264,Permalink — PUT grouped keeps a stored legacy invalid permalink editable and publishable,Page Builder > Permalink validation,High,,,"Admin Bearer token available; legacy-invalid page group @td(PB_6443_LEGACY_S6.id) exists (Draft, stored permalink @td(PB_6443_LEGACY_S6.permalink) contains a space, stored through platform import which the rule does not guard); the fixture is terminal and per run",page=@td(PB_6443_LEGACY_S6.id); stored_permalink=@td(PB_6443_LEGACY_S6.permalink); store=@td(STORE_PRIMARY.id); back_url={{BACK_URL}},"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/grouped/@td(PB_6443_LEGACY_S6.id); record the body
+[BODY] Verify the stored permalink equals @td(PB_6443_LEGACY_S6.permalink)
+[HTTP] PUT {{BACK_URL}}/api/page-builder-pages/grouped with the GET body, ONLY name changed to ""AGENT-TEST-6443 legacy S6 renamed"", permalink left as stored
+[STATUS] Verify HTTP 2xx
+[HTTP] GET grouped/@td(PB_6443_LEGACY_S6.id)
+[BODY] Verify name = the new name and permalink = @td(PB_6443_LEGACY_S6.permalink) unchanged
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/publishing/@td(PB_6443_LEGACY_S6.id)?publish=true
+[STATUS] Verify HTTP 2xx
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/grouped/publish-status/@td(PB_6443_LEGACY_S6.id)
+[BODY] Verify the page reports Published","[STATUS] {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21) ""PUT checks only a changed permalink"": a PUT that leaves the stored legacy permalink unchanged returns 2xx, not 400
+[BODY] The legacy permalink is stored untouched and the other field change persists {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21)
+[STATE] The legacy page can be published (VC-CMS-003 probe: save then publish does not lose the page) {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21)","[NETWORK] no 4xx/5xx on the PUT and publish
+[API] publish-status = Published; GET grouped permalink unchanged
+[ADMIN] the shell grid lists the renamed page, still with its legacy permalink",PUT returns 400 for an unchanged stored permalink (exemption missing: legacy pages un-editable); the permalink is rewritten or trimmed; publish returns 4xx/5xx,DELETE /api/page-builder-pages/grouped/{id} for every AGENT-TEST-6443 page; verify GET 404,VCST-6443 · Archetype:LIFECYCLE · Technique:ST · Catches:VCST-6443,Draft
+CMS-265,"Permalink — PUT grouped validates a legacy permalink once it changes, including a case-only change",Page Builder > Permalink validation,Medium,,,"Admin Bearer token available; legacy-invalid page group @td(PB_6443_LEGACY_S7.id) exists (Draft, stored permalink @td(PB_6443_LEGACY_S7.permalink) contains & and an uppercase S); per-run terminal fixture",page=@td(PB_6443_LEGACY_S7.id); stored_permalink=@td(PB_6443_LEGACY_S7.permalink); store=@td(STORE_PRIMARY.id); back_url={{BACK_URL}},"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/grouped/@td(PB_6443_LEGACY_S7.id); keep the body as the PUT template
+[HTTP] PUT the body with the stored permalink changed ONLY in case (S7 -> s7, the &x unchanged)
+[STATUS] Verify HTTP 400
+[HTTP] PUT the body with the permalink changed to another invalid value ""/agent-test-6443 other invalid""
+[STATUS] Verify HTTP 400
+[HTTP] GET grouped/@td(PB_6443_LEGACY_S7.id)
+[BODY] Verify the permalink still equals @td(PB_6443_LEGACY_S7.permalink)","[STATUS] {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21): once the permalink CHANGES (even only in letter case) it is validated, so both PUTs return 400
+[STATE] A rejected PUT leaves the stored legacy permalink exactly as it was {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21)
+[BODY] The 400 body names the rule (whitespace, control characters, ? # & \, empty segments //, . and .. segments) {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21)","[NETWORK] no 5xx
+[API] GET after = GET before for permalink","Either PUT returns 2xx (exemption is wider than ""unchanged"": any edit of a legacy page slips an invalid permalink through); permalink changed in storage; HTTP 500",DELETE /api/page-builder-pages/grouped/{id} for every AGENT-TEST-6443 page; verify GET 404,VCST-6443 · Archetype:BOUNDARY · Technique:ST · Catches:VCST-6443,Draft
+CMS-266,"Permalink — page builder shell saves the other fields of a legacy page, blocks an invalid change, allows revert",Page Builder > Permalink validation,High,,,"Admin logged in to the page builder shell; legacy-invalid page group @td(PB_6443_LEGACY_S8.id) exists (Draft, stored permalink @td(PB_6443_LEGACY_S8.permalink) contains a space and ?); per-run terminal fixture",page=@td(PB_6443_LEGACY_S8.id); stored_permalink=@td(PB_6443_LEGACY_S8.permalink); store=@td(STORE_PRIMARY.id); back_url={{BACK_URL}},"--- SCREEN: Page builder shell, legacy page ---
+[NAV] Open {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-all
+[NAV] Open the page named ""AGENT-TEST-6443 legacy S8""
+[ASSERT] The Permalink field shows @td(PB_6443_LEGACY_S8.permalink); no error is shown for the untouched stored value
+[ACT] Change ""Name"" to ""AGENT-TEST-6443 legacy S8 renamed""
+[ASSERT] ""Save"" is enabled
+[SAVE] Click ""Save"" and wait for the success confirmation
+[ACT] Change ""Name"" again to ""AGENT-TEST-6443 legacy S8 renamed 2""
+[ACT] Click ""Save"" (second in-session save)
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] The second save also succeeds
+[ACT] Reload the page (F5)
+[ACT] Open the page again
+[ASSERT] Name = ""AGENT-TEST-6443 legacy S8 renamed 2""; permalink unchanged; no error on the untouched field after the reload
+[ACT] Change ""Permalink"" to another invalid value ""/agent-test-6443 other bad""
+[ACT] Move focus out
+[ASSERT] An inline error is shown and ""Save"" is disabled
+[ACT] Revert ""Permalink"" to the stored value @td(PB_6443_LEGACY_S8.permalink)
+[ASSERT] The error is cleared and ""Save"" is enabled again
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/grouped/@td(PB_6443_LEGACY_S8.id) with an admin Bearer token
+[BODY] permalink = @td(PB_6443_LEGACY_S8.permalink) and name = ""AGENT-TEST-6443 legacy S8 renamed 2""","[ASSERT] {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21) ""a stored legacy permalink does not block other fields"": the shell saves a name change of a legacy page, twice, and again after a reload
+[ASSERT] {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21): changing the permalink to another invalid value shows the error and blocks Save; reverting to the stored value re-enables Save
+[STATE] The stored permalink is never rewritten by the name-only saves {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21)
+[DER] GET grouped permalink equals @td(PB_6443_LEGACY_S8.permalink) after all saves (stored value before = stored value after); no PUT in the HAR carried a changed permalink {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21)","[NETWORK] the two saves are PUT grouped -> 200; no PUT is sent for the invalid permalink edit
+[CONSOLE] no TypeError or JS error
+[API] GET grouped permalink unchanged, name = last saved value",Save disabled or error shown on an untouched legacy permalink; the second save blocked (stored value lost after first save); error persists after revert; a PUT sent for the invalid edit; permalink silently altered,DELETE /api/page-builder-pages/grouped/{id} for every AGENT-TEST-6443 page; verify GET 404,VCST-6443 · Archetype:LIFECYCLE · Technique:ST · Catches:VCST-6443,Draft
+CMS-267,Permalink — legacy page blade shows the format error and blocks Save for an invalid permalink,Page Builder > Permalink validation,High,,,Admin logged in to the Admin (legacy AngularJS UI); a store with the Content module pages area: Content -> store @td(STORE_PRIMARY.id) -> Pages,store=@td(STORE_PRIMARY.id); invalid=/agent test 6443 blade; valid=/agent-test-6443-blade-<unique>; back_url={{BACK_URL}},"--- SCREEN: Content, Pages list ---
+[NAV] Open {{BACK_URL}} -> Content -> select the store -> Pages
+[ACT] Click ""Add"" (new page)
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] The page blade opens
+--- SCREEN: Page blade, new page ---
+[ACT] Fill the name AGENT-TEST-6443 blade <unique>
+[ACT] Fill the Permalink input with the invalid value ""/agent test 6443 blade""
+[ASSERT] A format error is shown on the Permalink input
+[ASSERT] The ""Create"" toolbar command is disabled
+[ACT] Repeat with ""/agent-test-6443-blade&x?y#z"" (reserved characters)
+[ACT] With ""//agent-test-6443-blade""
+[ASSERT] The same error and the same disabled ""Create"" for each
+[ACT] Set the Permalink to the valid value
+[ASSERT] The error is gone and ""Create"" is enabled
+[ACT] Click ""Create""
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] Open the created page
+[ACT] Edit the Permalink to the invalid value again
+[ASSERT] The error shows and ""Save"" and ""Publish"" are disabled","[BLADE] {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21): the legacy blade shows a format error for an invalid permalink and blocks Create (new page) / Save and Publish (existing page)
+[FORM] A valid permalink clears the error and re-enables the command {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21)
+[ASSERT] {OBSERVED} (SBTM-VCST-6443-2026-10-22): the legacy save path is the Content module (.page files), which has no server rule, so the client check is the only guard; blocking must hold in the UI
+[NEG] After the invalid attempts no page named ""AGENT-TEST-6443 blade <unique>"" exists in the Pages list: count == 0 {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21)","[CONSOLE] no TypeError or JS error while typing
+[NETWORK] no save request fired for an invalid value
+[ADMIN] the page list shows no AGENT-TEST-6443 blade page for the invalid values",Create/Save stays enabled with an error shown (ui-validate not wired to the command); no error for // or reserved characters; error remains after a valid value; a page file created for an invalid value,"Delete the Content page file(s) written by this case: DELETE /api/content/pages/@td(STORE_PRIMARY.id)?urls=<file>.page (or Content -> Pages -> Delete in the Admin UI); verify the file is no longer listed by GET /api/content/pages/@td(STORE_PRIMARY.id)/search?keyword=agent-test-6443 (the blade ""Create"" writes a Content-module .page file, not a page group)",VCST-6443 · Archetype:PARITY · Technique:EP · Catches:VCST-6443,Draft
+CMS-268,"Permalink — legacy page blade saves other fields of a legacy page, also after an in-session save",Page Builder > Permalink validation,Medium,,,"Admin logged in to the Admin (legacy AngularJS UI) and an admin Bearer token available. The legacy blade edits Content-module page files, NOT page groups, so the page-group fixture @td(PB_6443_LEGACY_S10.id) cannot be opened in it; the case writes its own legacy-invalid Content page in step 1 (the Content API has no permalink rule by design) and removes it in Cleanup",store=@td(STORE_PRIMARY.id); legacy_permalink=/agent-test-6443 blade legacy <unique> (a space); back_url={{BACK_URL}},"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token
+[HTTP] POST {{BACK_URL}}/api/content/pages/@td(STORE_PRIMARY.id)?draft=true&folderUrl=%2F as multipart/form-data with ONE file part named ""agent-test-6443-blade-legacy-<unique>.page"" whose JSON body is {""settings"":{""type"":""settings"",""permalink"":""/agent-test-6443 blade legacy <unique>"",""name"":""agent-test-6443-blade-legacy-<unique>""},""content"":[]} (request shape from the SBTM-VCST-6443-2026-10-22 HAR)
+[STATUS] Verify 2xx (the Content API does not validate the permalink)
+--- SCREEN: Content, Pages list ---
+[NAV] Open {{BACK_URL}} -> Content -> select the store -> Pages
+[NAV] Open the page just written
+--- SCREEN: Page blade, legacy page ---
+[ASSERT] No format error is shown for the untouched stored permalink; ""Save"" is enabled
+[ACT] Edit the page title input
+[ACT] Click ""Save""
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] The first save succeeds
+[ACT] Edit the page title input once more
+[ACT] Click ""Save"" (second in-session save)
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] The second save also succeeds; no error appears on the Permalink input
+[ACT] Change the Permalink to another invalid value ""/agent-test-6443 other bad""
+[ASSERT] The error is shown and ""Save"" and ""Publish"" are disabled
+[ACT] Revert the Permalink to the stored value
+[ASSERT] The error is gone and ""Save"" is enabled","[BLADE] {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21) ""a stored legacy permalink does not block other fields"": Save works for a legacy page, including a second save in the same session
+[BLADE] Changing to another invalid value is blocked; reverting to the stored value re-enables Save {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21)
+[STATE] The stored permalink is not rewritten by the other-field saves {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21)","[CONSOLE] no TypeError or JS error
+[NETWORK] two save requests succeed; none is sent for the invalid edit",First or second save disabled for an untouched legacy permalink (origEntity not refreshed after save); permalink rewritten; error stuck after revert; the Content API write in step 1 returns 4xx (rule leaked into the Content path),Delete the Content page file(s) written by this case: DELETE /api/content/pages/@td(STORE_PRIMARY.id)?urls=<file>.page (or Content -> Pages -> Delete in the Admin UI); verify the file is no longer listed by GET /api/content/pages/@td(STORE_PRIMARY.id)/search?keyword=agent-test-6443,VCST-6443 · Archetype:LIFECYCLE · Technique:ST · Catches:VCST-6443,Draft
+CMS-269,Permalink — an accepted Unicode permalink opens on the storefront at its natural URL after publish,Page Builder > Permalink validation,High,,,"Admin Bearer token available. Storefront preconditions (all three, else the page 404s for a reason unrelated to the permalink): store VirtoPages.Enable = true; the Pages search index is built; the page has visibility:true (a page created through create-group-page without visibility is stored visibility:false and 404s for an anonymous shopper)",store=@td(STORE_PRIMARY.id); permalink=/agent-test-6443-<unique>-страница (<unique> from scripts/lib/random-data.ts); front_url={{FRONT_URL}}; back_url={{BACK_URL}},"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/create-group-page with name ""AGENT-TEST-6443 unicode <unique>"", the Cyrillic permalink above, cultureName en-US, storeId from Test_Data, visibility true
+[STATUS] Verify HTTP 2xx
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/publishing/{id}?publish=true
+[STATUS] Verify HTTP 2xx
+[WAIT] Allow 30-60 s for the Pages index
+[NAV] Open {{FRONT_URL}}/agent-test-6443-<unique>-страница (the browser percent-encodes the Cyrillic letters)
+[ASSERT] The storefront renders the page (HTTP 200, not the not-found page)
+[GQL] Optional cross-check: query slugInfo(permalink:""/agent-test-6443-<unique>-страница"") for the store and culture
+[DATA] entityInfo is non-null","[DOM] {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21) ticket impact ""a page URL opens as written"": the published page with a Cyrillic permalink opens at {{FRONT_URL}}/<permalink>
+[DATA] {OBSERVED} (SBTM-VCST-6443-2026-10-22 exp-s11-cyrillic-storefront): the storefront decodes the route and slugInfo matches the stored raw string, so entityInfo is non-null","[NETWORK] no 4xx/5xx on the page navigation or on the slugInfo call
+[CONSOLE] no TypeError
+[API] GET grouped/{id} permalink verbatim",Storefront 404 for the accepted Unicode permalink (rule allows a URL the storefront cannot open); slugInfo entityInfo null; a double-encoded URL is the only one that opens,DELETE /api/page-builder-pages/grouped/{id} for every AGENT-TEST-6443 page; verify GET 404,VCST-6443 · Archetype:PARITY · Technique:FLOW,Draft
+CMS-270,Permalink — an accepted permalink containing %20 opens on the storefront at its natural URL after publish,Page Builder > Permalink validation,High,,,"Admin Bearer token available. Storefront preconditions (all three, else the page 404s for a reason unrelated to the permalink): store VirtoPages.Enable = true; the Pages search index is built; the page has visibility:true (a page created through create-group-page without visibility is stored visibility:false and 404s for an anonymous shopper). Known candidate defect from discovery: the storefront returned 404 at the natural URL on localhost. The assertion below is the SPEC expectation and is NOT to be rewritten to the observed 404; a FAIL here is the finding, not a test defect",store=@td(STORE_PRIMARY.id); permalink=/agent-test-6443-<unique>%20pct (literal percent sign followed by 20); front_url={{FRONT_URL}}; back_url={{BACK_URL}},"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/create-group-page with name ""AGENT-TEST-6443 percent <unique>"", the permalink above, cultureName en-US, storeId from Test_Data, visibility true
+[STATUS] Verify HTTP 2xx (the rule allows %)
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/grouped/{id}
+[BODY] permalink equals the sent value, %20 kept literally
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/publishing/{id}?publish=true
+[STATUS] Verify HTTP 2xx
+[WAIT] Allow 30-60 s for the Pages index
+[NAV] Open {{FRONT_URL}}/agent-test-6443-<unique>%20pct exactly as stored
+[ASSERT] The storefront renders the page at that URL
+[NETWORK] Record the slugInfo permalink argument the storefront sent","[DOM] {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21) ticket impact ""a page URL opens as written"" and decision ""% is allowed"": a page saved with a %20 permalink opens at {{FRONT_URL}}/<permalink> (HTTP 200, page content)
+[STATUS] Create returns 2xx and GET returns the %20 verbatim (never normalize) {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21)
+[ASSERT] Record, without turning it into the expectation: {OBSERVED} (exp-s11-pct-storefront-404) the storefront decodes %20 to a space before slugInfo, so the stored raw value never matches and the page 404s","[NETWORK] slugInfo permalink argument recorded; no 5xx
+[API] GET grouped/{id} permalink verbatim
+[STOREFRONT] natural URL 200 vs double-encoded URL (%2520) status recorded for the report",Storefront 404 at the natural URL while create returned 2xx (accepted permalink that cannot be opened: the ticket impact re-created); slugInfo entityInfo null; page reachable only as %2520,DELETE /api/page-builder-pages/grouped/{id} for every AGENT-TEST-6443 page; verify GET 404,VCST-6443 · Archetype:PARITY · Technique:FLOW · Catches:VCST-6443,Draft
+CMS-271,Permalink — platform import stores an invalid legacy permalink unchanged,Page Builder > Permalink validation,Medium,,ECL-6.4,"Admin Bearer token available; platform export/import available. The PB_6443_LEGACY_* fixtures are provisioned by this SAME import recipe (export one valid group, edit its permalink in the JSON, import); there is no committed seeder for them yet and none is invented here",store=@td(STORE_PRIMARY.id); legacy_permalink=@td(PB_6443_LEGACY_S6.permalink) (the invalid value written into the export file); back_url={{BACK_URL}},"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/create-group-page with name ""AGENT-TEST-6443 import <unique>"", permalink ""/agent-test-6443-import-<unique>"" (valid), cultureName en-US, storeId @td(STORE_PRIMARY.id), visibility true
+[STATUS] Verify HTTP 2xx and keep {id}
+[HTTP] GET {{BACK_URL}}/api/platform/export/manifest/new
+[HTTP] POST {{BACK_URL}}/api/platform/export with {""modules"":[""VirtoCommerce.PageBuilderModule""],""exportManifest"":<manifest from the previous step>,""handleSecurity"":false,""handleSettings"":false,""handleBinaryData"":false}
+[WAIT] Poll POST /api/platform/pushnotifications until the export job is finished and downloadUrl is set
+[HTTP] GET {{BACK_URL}}<downloadUrl> and save the zip locally
+[ACT] Edit the page-builder JSON inside the zip: set the permalink of the group {id} to @td(PB_6443_LEGACY_S6.permalink)
+[ACT] Re-zip the edited files
+[HTTP] POST {{BACK_URL}}/api/assets?folderUrl=backups with the zip as multipart/form-data
+[HTTP] GET {{BACK_URL}}/api/platform/export/manifest/load?fileUrl=backups/<zip name>
+[HTTP] POST {{BACK_URL}}/api/platform/import with {""fileUrl"":""backups/<zip name>"",""exportManifest"":<loaded manifest>,""modules"":[""VirtoCommerce.PageBuilderModule""]}
+[WAIT] Poll POST /api/platform/pushnotifications until the import job is finished
+[BODY] Read errorCount and errors of the import job
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/grouped/{id}
+[BODY] Read the stored permalink","[DATA] errorCount == 0 and the import job finished: the rule does not abort or reject the import {SPEC} (VCST-6443 decision comment: not applied to import)
+[DER] GET grouped/{id} permalink equals @td(PB_6443_LEGACY_S6.permalink) byte-for-byte (verbatim, no rejection, no normalization) {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21)
+[COUNT] Exactly one group with this name exists after the import {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21)","[NETWORK] import task completes without 5xx
+[API] GET grouped permalink verbatim
+[ADMIN] the page appears in the shell grid","Import task fails or reports errors for the invalid permalink (rule leaked into GroupedPageService); the page is missing after import; permalink trimmed, encoded or replaced",DELETE /api/page-builder-pages/grouped/{id}; verify GET 404; delete the uploaded zip from the backups folder,VCST-6443 · Archetype:CONFIG · Technique:EG,Draft
+CMS-272,"Permalink — create without the Create permission returns 403, not a validation 400",Page Builder > Permalink validation,Medium,,,"Back-office user @td(PB_6443_NOCREATE_USER.login) exists with builder:read and builder:update but WITHOUT builder:create (fixture verified at provision: a VALID permalink create returns 403 for this user); admin account available for the control call; the no-create user password is {{DEFAULT_TEST_PASSWORD}}, resolved from .env.local by scripts/lib/user-provision.mjs resolvePassword()",user=@td(PB_6443_NOCREATE_USER.login); store=@td(STORE_PRIMARY.id); back_url={{BACK_URL}},"[AUTH] Obtain a Bearer token for @td(PB_6443_NOCREATE_USER.login) via POST {{BACK_URL}}/connect/token (password {{DEFAULT_TEST_PASSWORD}})
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/create-group-page with that token, permalink ""/agent test 6443 nocreate"" (invalid), name ""AGENT-TEST-6443 nocreate <unique>"", storeId from Test_Data
+[STATUS] Verify HTTP 403
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped with that token and the same invalid permalink
+[STATUS] Verify HTTP 403
+[BODY] Verify neither response leaks the permalink rule text
+[AUTH] Obtain an admin Bearer token
+[HTTP] POST create-group-page with the admin token and the same invalid permalink (control)
+[STATUS] Verify HTTP 400
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/search by the page name
+[COUNT] Verify totalCount = 0","[STATUS] Authorization precedes validation: a caller without Create gets 403 on create-group-page and POST grouped, not the validation 400 ({OBSERVED} SBTM-VCST-6443-2026-10-22: method-level [Authorize(Create)] runs first; platform convention is authorization before validation)
+[STATUS] Control: the same invalid permalink with an admin token returns 400, so the 403 above is the permission gate and not the rule {OBSERVED} (SBTM-VCST-6443-2026-10-22)
+[COUNT] Nothing is stored by any of the three calls {OBSERVED} (SBTM-VCST-6443-2026-10-22)","[NETWORK] no 5xx
+[API] search confirms nothing stored",The no-Create user receives 400 with the rule text (validation before authorization); 200 for the invalid permalink; 401 instead of 403; the control call returns 2xx,DELETE /api/page-builder-pages/grouped/{id} for every AGENT-TEST-6443 page; verify GET 404,VCST-6443 · Archetype:SCOPE · Technique:DT,Draft
+CMS-273,Permalink — 400 response contract is stable for integrations,Page Builder > Permalink validation,Low,,,Admin Bearer token available; create-group-page = POST {{BACK_URL}}/api/page-builder-pages/create-group-page; POST grouped = POST {{BACK_URL}}/api/page-builder-pages/grouped; PUT grouped = PUT {{BACK_URL}}/api/page-builder-pages/grouped,store=@td(STORE_PRIMARY.id); invalid=/agent test 6443 contract; back_url={{BACK_URL}},"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/create-group-page with name ""AGENT-TEST-6443 contract <unique>"", permalink ""/agent-test-6443-contract-<unique>"" (valid), cultureName en-US, storeId @td(STORE_PRIMARY.id), visibility true
+[STATUS] Verify HTTP 2xx and keep {id}
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/grouped/{id}; the body is the PUT template
+[HTTP] POST create-group-page with the invalid permalink ""/agent test 6443 contract""
+[BODY] Record status, Content-Type and body as R1
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped with the invalid permalink
+[BODY] Record status, Content-Type and body as R2
+[HTTP] PUT {{BACK_URL}}/api/page-builder-pages/grouped with the GET body and permalink changed to the invalid value
+[BODY] Record status, Content-Type and body as R3
+[STATUS] Verify R1, R2 and R3 are all HTTP 400
+[HEADER] Compare Content-Type of R1, R2, R3
+[BODY] Compare the three bodies character by character","[STATUS] {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21) (PR ""Behavior change""): all three endpoints answer 400 with the message
+[HEADER] {OBSERVED} (SBTM-VCST-6443-2026-10-22): Content-Type is text/plain; charset=utf-8 on all three (shape is not specified by the author; an integration depends on it staying identical)
+[BODY] The body is the same rule sentence on all three endpoints {OBSERVED} (SBTM-VCST-6443-2026-10-22)","[NETWORK] no 5xx
+[API] none stored",Different Content-Type or body between the endpoints (for example JSON on one and text on another); 400 with an empty body; a stack trace in the body,DELETE /api/page-builder-pages/grouped/{id} for every AGENT-TEST-6443 page; verify GET 404,VCST-6443 · Archetype:FALLBACK · Technique:EG,Draft
+CMS-274,Permalink — format error message is translated in both admin apps,Page Builder > Permalink validation,Low,,ECL-12.1,Admin logged in; ability to switch the Admin UI language to ru-RU and ja-JP (Profile -> language); legacy blade at Content -> store -> Pages and the page builder shell both reachable,store=@td(STORE_PRIMARY.id); invalid=/agent test 6443 i18n; back_url={{BACK_URL}},"[ACT] Switch the Admin UI language to ru-RU
+--- SCREEN: Page builder shell, new page ---
+[NAV] Open {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-all
+[ACT] Click Add
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] Type the invalid permalink
+[ACT] Move focus out
+[ASSERT] The inline error is shown in Russian (a sentence, not a key such as PAGE_BUILDER.PERMALINK...)
+--- SCREEN: Legacy blade, new page ---
+[NAV] Open Content -> store -> Pages -> Add
+[ACT] Type the invalid permalink
+[ASSERT] The blade error is shown in Russian (a sentence, not a key)
+[ACT] Switch the Admin UI language to ja-JP
+[ACT] Repeat both checks
+[ASSERT] Both errors are shown in Japanese, not as raw keys and not as English fallback","[ASSERT] {SPEC} (VCST-6443 PR #178 body, B. Kotov 2026-10-21): the format error is translated in all locales of both admin apps; ru-RU and ja-JP show text, not a raw localization key
+[ASSERT] {OBSERVED} (SBTM-VCST-6443-2026-10-22 obs. 5): UI wording (""spaces, ? # & \, double slashes, . / .."") differs from the server wording (""whitespace, control characters ...""); record only, not asserted
+[REL] The ru-RU error text != the ja-JP error text != the en-US error text, and none matches /^[A-Z0-9_.]+$/ (a raw key) {SPEC} (VCST-6443 PR #178 body)",[CONSOLE] no missing-translation warning for the permalink key in either app,A raw key is shown; the English text is shown under a non-English locale; the error missing in one of the two apps,Restore the Admin UI language to en-US (Profile -> language); no page is created by this case,VCST-6443 · Archetype:RENDER · Technique:EP,Draft
+CMS-275,Permalink — AI create-page tool description states the rule,Page Builder > Permalink validation,Low,,,Admin Bearer token available; the deployed PageBuilder module exposes its AI tool descriptors (ai/tools/create-page.yaml),back_url={{BACK_URL}},"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token
+[HTTP] Read the deployed module file ai/tools/create-page.yaml (from the module package under the platform modules folder or through the platform AI tools endpoint)
+[BODY] Find the ""permalink"" parameter and read its description
+[ASSERT] The description lists the rule: no whitespace or control characters, no ? # & \, no // and no . or .. segments; letters of any language and % allowed","[ASSERT] {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21) (AC-13): the permalink parameter description of the deployed create-page tool states the validation rule so an AI agent does not send a rejected value
+[ASSERT] The description does not promise normalization (no ""will be sanitized"" or ""spaces are replaced"") {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21)","[API] if the platform exposes the AI tools list, the create-page entry carries the same description",Description unchanged (no rule); description promises sanitizing; file absent from the deployed package (description-only change not shipped),none (read-only),VCST-6443 · Archetype:SILENT · Technique:EG,Draft
+CMS-276,Permalink — Content-module save path of the legacy blade is recorded as unguarded,Page Builder > Permalink validation,Low,,,"Admin Bearer token available; the legacy blade save path is the Content module (POST api/content/pages/{storeId}), not the page-group API (SBTM-VCST-6443-2026-10-22)",store=@td(STORE_PRIMARY.id); invalid=/agent-test-6443 content api; back_url={{BACK_URL}},"[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token
+[HTTP] POST {{BACK_URL}}/api/content/pages/@td(STORE_PRIMARY.id)?draft=true&folderUrl=%2F as multipart/form-data with ONE file part named ""agent-test-6443-content-api-<unique>.page"" whose JSON body is {""settings"":{""type"":""settings"",""permalink"":""/agent-test-6443 content api"",""name"":""agent-test-6443-content-api-<unique>""},""content"":[]} (request shape from the SBTM-VCST-6443-2026-10-22 HAR)
+[STATUS] Record the status (the Content API has no permalink rule by design)
+[HTTP] GET {{BACK_URL}}/api/content/pages/@td(STORE_PRIMARY.id)?relativeUrl=agent-test-6443-content-api-<unique>.page
+[BODY] Record the stored settings.permalink
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/create-group-page with name ""AGENT-TEST-6443 cj <unique>"", permalink ""/agent-test-6443-cj-<unique>"", cultureName en-US, storeId @td(STORE_PRIMARY.id), visibility true
+[STATUS] Verify HTTP 2xx and keep {groupId}
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/grouped/{groupId}/content
+[HEADER] Keep the strong ETag of the response
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/{groupId}/content-json with header If-Match = that ETag and the page content JSON {""settings"":{""type"":""settings"",""name"":""AGENT-TEST-6443 cj <unique>"",""permalink"":""/agent-test-6443 content json""},""content"":[]}
+[STATUS] Record the status
+[HTTP] GET grouped/{groupId} and POST {{BACK_URL}}/api/page-builder-pages/search by the name
+[BODY] Record which permalink the group, the content and the search result each carry (they can diverge)","[DATA] {SPEC} (VCST-6443 PR #178 body): the client-only legacy blade guard means the Content API stores an invalid permalink; this row RECORDS that (INFO), it does not fail the ticket
+[DATA] {OBSERVED} (SBTM-VCST-6443-2026-10-22): content-json with an invalid settings.permalink returns 204, the group permalink stays valid, the content carries the invalid value; which value the storefront and SEO use is an open author question (no verdict)
+[ASSERT] Neither call returns 5xx {OBSERVED} (SBTM-VCST-6443-2026-10-22)","[NETWORK] no 5xx
+[API] group permalink vs content settings.permalink vs pageDocuments recorded side by side","HTTP 5xx on either write; the group permalink silently replaced by the content value; the write path starts rejecting (behaviour change versus the PR body, report it); content-json returns 412 because the If-Match ETag was not the strong ETag from GET grouped/{id}/content (setup defect, not a finding)",Delete the Content page file(s) written by this case: DELETE /api/content/pages/@td(STORE_PRIMARY.id)?urls=<file>.page (or Content -> Pages -> Delete in the Admin UI); verify the file is no longer listed by GET /api/content/pages/@td(STORE_PRIMARY.id)/search?keyword=agent-test-6443; DELETE /api/page-builder-pages/grouped/{groupId}; verify GET 404,VCST-6443 · Archetype:PARITY · Technique:EG,Draft
+CMS-277,"Permalink — cloning a legacy-invalid page is surfaced, not silently lost",Page Builder > Permalink validation,Medium,,,Admin logged in to the page builder shell; legacy-invalid page group @td(PB_6443_LEGACY_S18.id) exists (stored permalink @td(PB_6443_LEGACY_S18.permalink) contains a space); per-run fixture,page=@td(PB_6443_LEGACY_S18.id); stored_permalink=@td(PB_6443_LEGACY_S18.permalink); store=@td(STORE_PRIMARY.id); back_url={{BACK_URL}},"--- SCREEN: Page builder shell, legacy page ---
+[NAV] Open {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-all
+[NAV] Open the page ""AGENT-TEST-6443 legacy S18""
+[ACT] Click ""Clone"" in the toolbar
+[WAIT] Network: POST /api/page-builder-pages/grouped for the clone completes
+[ASSERT] Record what the admin sees: alert, toast or nothing
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/search by the name ""AGENT-TEST-6443 legacy S18 (copy)""
+[COUNT] Record totalCount","[ASSERT] {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21; derived: the decision is silent on clone, and clone = create through POST grouped, which now validates): a clone of a legacy-invalid page is rejected with HTTP 400, the same rule as any create
+[ASSERT] The rejection is surfaced to the admin (alert or toast with the rule text), not silent {OBSERVED} (SBTM-VCST-6443-2026-10-22)
+[COUNT] No clone page was created (totalCount = 0) {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21)
+[ASSERT] {OBSERVED} (exp-s18-clone-legacy-400): 400 surfaced as blade alert and toast; whether this is the intended behaviour for legacy pages is an author question, so a different surfaced outcome is a finding to report, not an assumed defect","[NETWORK] POST grouped returns 400; no 5xx
+[CONSOLE] no unhandled promise rejection
+[API] search confirms no clone","No message shown after the failed clone; a page created with an invalid ""-copy"" permalink; HTTP 500; the UI freezes on the loading indicator",DELETE /api/page-builder-pages/grouped/{id} for every AGENT-TEST-6443 page; verify GET 404,VCST-6443 · Archetype:LIFECYCLE · Technique:EG,Draft
+CMS-278,Permalink — cloning a page while the form holds an unsaved invalid permalink is rejected and surfaced,Page Builder > Permalink validation,Medium,,,"Admin logged in to the page builder shell; a saved page with a valid permalink (name ""AGENT-TEST-6443 clone dirty <unique>"", permalink ""/agent-test-6443-clone-dirty-<unique>"")",store=@td(STORE_PRIMARY.id); back_url={{BACK_URL}},"--- SCREEN: Page details, saved page ---
+[NAV] Open {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-all
+[NAV] Open the page
+[ACT] Change ""Permalink"" to ""/agent test 6443 clone dirty"" without saving
+[ACT] Move focus out
+[ASSERT] The field error shows and ""Save"" is disabled
+[ACT] Click ""Clone""
+[WAIT] Network: POST /api/page-builder-pages/grouped completes
+[STATUS] Record the status of the POST and the permalink it carried
+[ASSERT] Record the alert and the toast the admin sees
+[ACT] Revert ""Permalink"" to the stored valid value
+[ASSERT] The error clears; check whether a stale alert from the failed clone remains visible
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/search by the clone name
+[COUNT] Record totalCount","[STATUS] {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21): the clone request built from the unsaved invalid permalink is rejected with HTTP 400 and no page is created (totalCount = 0)
+[ASSERT] The rejection is visible to the admin as an alert or toast with the rule text {OBSERVED} (SBTM-VCST-6443-2026-10-22)
+[ASSERT] {OBSERVED} (exp-shell-clone-dirty-invalid-400): the clone uses the dirty in-memory permalink plus ""-copy"" and a stale alert stays in the blade after the error is fixed; the stale alert is recorded as a finding candidate (INFO), the 400 is asserted","[NETWORK] POST grouped returns 400; no 5xx
+[CONSOLE] no unhandled rejection
+[API] search confirms no clone",A page created from the invalid in-memory permalink; no message after the 400; HTTP 500; stale alert remains after the form is valid again,DELETE /api/page-builder-pages/grouped/{id} for every AGENT-TEST-6443 page; verify GET 404,VCST-6443 · Archetype:LIFECYCLE · Technique:EG · Catches:VCST-6443,Draft
+CMS-279,Permalink — shell Save stays disabled for an invalid permalink even when another field is dirty and Publish is disabled while the form is dirty,Page Builder > Permalink validation,High,,,"Admin logged in to the page builder shell; a saved page with a valid permalink (name ""AGENT-TEST-6443 dirty <unique>"")",store=@td(STORE_PRIMARY.id); back_url={{BACK_URL}},"--- SCREEN: Page details, saved page ---
+[NAV] Open {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-all
+[NAV] Open the page
+[ASSERT] Form is clean: ""Save"" disabled, ""Publish"" enabled for a Draft page that can be published
+[ACT] Change ""Name"" only
+[ASSERT] ""Save"" enabled; ""Publish"" disabled while the form is dirty
+[ACT] Also change ""Permalink"" to ""/agent test 6443 dirty""
+[ACT] Move focus out
+[ASSERT] Error shown; ""Save"" disabled although another field (Name) is dirty; ""Publish"" still disabled
+[ASSERT] ""Clone"", ""Save content"" and ""Archive"" stay enabled (not blocked by the permalink error)
+[ACT] Revert the Permalink to the stored value (Name stays dirty)
+[ASSERT] Error clears; ""Save"" enabled; ""Publish"" disabled
+[SAVE] Click ""Save""
+[ASSERT] After the save, ""Publish"" is enabled again","[ASSERT] {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21) (AC-10, error + Save blocked): an invalid permalink disables Save even when another field is dirty
+[ASSERT] {OBSERVED} (exp-shell-invalid-save-disabled, SBTM-VCST-6443-2026-10-22) AC-10 Publish: Publish is disabled whenever the form is dirty and is enabled again after Save
+[ASSERT] The error does not disable unrelated toolbar commands (Clone, Save content, Archive) {OBSERVED} (SBTM-VCST-6443-2026-10-22)
+[REL] In each of the three states Save enabled == NOT(permalink invalid) and Publish enabled == NOT(form dirty) {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21)","[NETWORK] no PUT sent while the permalink is invalid
+[CONSOLE] no TypeError or JS error",Save enabled with the permalink error shown and another field dirty (Save enablement not wired to the permalink validity); Publish enabled with unsaved edits; Save disabled after the permalink is reverted,DELETE /api/page-builder-pages/grouped/{id} for every AGENT-TEST-6443 page; verify GET 404,VCST-6443 · Archetype:LIFECYCLE · Technique:DT · Catches:VCST-6443,Draft
+CMS-280,"Page builder permalink field — an invalid value typed and not saved is discarded by a reload, leaving no stale error and no save",Page Builder > Permalink validation,High,,ECL-7.2,"Admin logged in to the page builder shell; a saved page with a valid permalink (name ""AGENT-TEST-6443 refresh <unique>"", permalink ""/agent-test-6443-refresh-<unique>"")",store=@td(STORE_PRIMARY.id); back_url={{BACK_URL}},"--- SCREEN: Page details, saved page ---
+[NAV] Open {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-all
+[ACT] Open the page
+[ACT] Type the invalid permalink ""/agent test 6443 refresh"" into ""Permalink""
+[ACT] Move focus out of the field
+[ASSERT] The Permalink field is marked invalid, an inline error is shown, ""Save"" is disabled
+[NAV] Reload the page (F5)
+[WAIT] The details blade renders again
+[ASSERT] The Permalink field shows the stored valid value, no error is shown, ""Save"" is disabled (form is clean)
+[NETWORK] No PUT or POST to /api/page-builder-pages/grouped was sent by the reload
+[ACT] Replace the permalink with another valid value ""/agent-test-6443-refresh-2-<unique>""
+[ACT] Click ""Save""
+[WAIT] The save confirmation appears
+[ASSERT] The save succeeds; no stale validation state from before the reload blocked it
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/grouped/{groupId} with an admin Bearer token
+[BODY] permalink = ""/agent-test-6443-refresh-2-<unique>""","[ASSERT] {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21) (error + Save blocked) holds across a reload: the invalid edit is discarded, the stored valid permalink is shown, nothing invalid was persisted
+[STATE] After the reload the validation state is recomputed from the stored value; a stale error does not block a valid save {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21)
+[REL] Stored permalink from GET grouped before the reload == after the reload, and no PUT/POST was sent between the two reads {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21)","[CONSOLE] no TypeError after the reload
+[NETWORK] no save request fired by the reload
+[API] stored permalink valid before and after",The invalid value persisted after reload; error or disabled Save carried over to the valid form; reload sends a PUT; the field shows an empty permalink,DELETE /api/page-builder-pages/grouped/{id} for every AGENT-TEST-6443 page; verify GET 404,VCST-6443 · Archetype:STALE · Technique:EG,Draft
+CMS-281,"Page builder permalink field — a pasted value with a leading or trailing space or a line feed is rejected as typed, not trimmed, in the shell and the legacy blade",Page Builder > Permalink validation,High,,ECL-7.2,Admin logged in to the page builder shell and to the legacy blade (Content -> store -> Pages); a clipboard that can hold text with leading/trailing spaces and a line feed,store=@td(STORE_PRIMARY.id); back_url={{BACK_URL}},"--- SCREEN: Page builder shell, new page ---
+[NAV] Open {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-all
+[ACT] Click ""Add""
+[WAIT] The details blade opens
+[ACT] Fill ""Name"": AGENT-TEST-6443 paste <unique>
+[ACT] Paste "" /agent-test-6443-paste"" (one leading space) into ""Permalink""
+[ACT] Move focus out of the field
+[ASSERT] Error shown, ""Save"" disabled; the field still holds the leading space (it was not silently trimmed)
+[ACT] Paste ""/agent-test-6443-paste "" (one trailing space) into ""Permalink""
+[ACT] Move focus out of the field
+[ASSERT] Error shown, ""Save"" disabled; the trailing space is still in the field
+[ACT] Paste ""/agent-test-6443-paste<LF>second"" (a line feed from a multi-line copy) into ""Permalink""
+[ACT] Move focus out of the field
+[ASSERT] Error shown, ""Save"" disabled
+[ACT] Paste ""/agent-test-6443-paste-<unique>"" (clean) into ""Permalink""
+[ASSERT] Error cleared, ""Save"" enabled
+--- SCREEN: Legacy blade, new page ---
+[NAV] Open {{BACK_URL}} -> Content -> select the store -> Pages
+[ACT] Click ""Add""
+[WAIT] The page blade opens
+[ACT] Paste "" /agent-test-6443-paste"" into the Permalink input
+[ASSERT] The format error is shown and ""Create"" is disabled; the value was not trimmed","[ASSERT] {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21) (validate, never normalize): a pasted value with a leading or trailing space or a line feed is rejected as typed, not silently trimmed into a valid one
+[ASSERT] Both admin apps behave the same for pasted values; a clean pasted value is accepted {SPEC} (VCST-6443 decision comment, B. Kotov 2026-10-21)","[NETWORK] no save request for the pasted invalid values
+[CONSOLE] no TypeError",The pasted value is trimmed and accepted (normalization instead of validation); Save enabled with an error visible; the shell and the blade disagree for the same pasted value,none (no page is saved; discard the unsaved forms),VCST-6443 · Archetype:SILENT · Technique:EG,Draft
+CMS-282,"Permalink — create-group-page rejects every class the widened rule adds (percent, "" < > { } | ^ backtick, invisible formatting, 2049 characters) with 400 and the new rule sentence",Page Builder > Permalink validation,High,,ECL-7.2,Admin Bearer token available; create-group-page = POST {{BACK_URL}}/api/page-builder-pages/create-group-page; POST grouped = POST {{BACK_URL}}/api/page-builder-pages/grouped; PUT grouped = PUT {{BACK_URL}}/api/page-builder-pages/grouped. PageBuilder build includes PR VirtoCommerce/vc-module-pagebuilder#178 @ add254f (the widened rule of dev comment 112319 is the change under test),"store=@td(STORE_PRIMARY.id), back_url={{BACK_URL}}","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token
+[SETUP] Repeat the next six steps for EACH permalink value in the Values lines (one POST each, unique name ""AGENT-TEST-6443 r2 reject <n> <unique>"" per value, <unique> from scripts/lib/random-data.ts)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/create-group-page with {name, permalink:<value>, cultureName:""en-US"", storeId:@td(STORE_PRIMARY.id), visibility:true}
+[STATUS] Verify HTTP 400
+[HEADER] Read Content-Type
+[BODY] Compare the body with the rule sentence of dev comment 112319 (Assertions)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/search filtered by the page name (storeId @td(STORE_PRIMARY.id))
+[COUNT] Verify totalCount = 0 (nothing stored)
+[DATA] Values, percent family: ""/test%20page""; ""/100%""; ""/a%2Fb""; bare ""%"" as the whole path ""/%""
+[DATA] Values, reserved-character family, one value per character embedded as ""/a<char>b-<unique>"": "" (quote) · < · > · { · } · | · ^ · ` (backtick)
+[DATA] Values, invisible formatting family (Unicode category Cf, BMP), embedded as ""/a<char>b-<unique>"": U+200B · U+00AD · U+200E · U+2060 · U+200D · U+FEFF
+[DATA] Values, length family: 2049 characters = 2049 x 'a' with no leading slash; and 2049 characters = '/' + 2048 x 'a' (built at run time, a unique head so that a stored page cannot collide)","[STATUS] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23): every listed value returns HTTP 400 (none returns 2xx and none returns 500, including the 2049-character values)
+[BODY] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23): the 400 body is the new rule sentence, identical for every value: ""Permalink must be at most 2048 characters and cannot contain whitespace, control or invisible formatting characters, the characters ? # & % \ "" < > { } | ^ `, empty segments ('//') or '.' and '..' segments."" (it is not the pre-widening sentence that names only whitespace, control characters, ? # & \, empty segments and . / .. segments)
+[COUNT] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23): a rejected create stores nothing: search totalCount = 0 for each name
+[HEADER] {OBSERVED} (SBTM-VCST-6443-2026-10-23): Content-Type is text/plain for the 400; recorded, shape is not specified by the author (CMS-273 owns the cross-endpoint comparison)","[NETWORK] no 5xx for any value
+[API] search confirms no group was created for any rejected value
+[ADMIN] none of the AGENT-TEST-6443 r2 reject pages appears in the page builder shell list",A value returns 2xx and a group exists (the class slips past the widened rule); HTTP 500 for the 2049-character value (column overflow reaches the database); the body is still the old sentence or is empty; Content-Type is not text/plain; a page was created although 400 was returned,DELETE /api/page-builder-pages/grouped/{id} for every AGENT-TEST-6443 page this case created (including a page stored by a value that should have been rejected: find them by searching the name prefix); verify GET 404,VCST-6443 · Archetype:BOUNDARY · Technique:EP · Catches:VCST-6443,Draft
+CMS-283,"Permalink — create-group-page keeps accepting any-language letters, full-width look-alikes, a lone emoji and the 2048-character boundary, stored verbatim",Page Builder > Permalink validation,High,,ECL-7.2,Admin Bearer token available; create-group-page = POST {{BACK_URL}}/api/page-builder-pages/create-group-page; POST grouped = POST {{BACK_URL}}/api/page-builder-pages/grouped; PUT grouped = PUT {{BACK_URL}}/api/page-builder-pages/grouped. PageBuilder build includes PR VirtoCommerce/vc-module-pagebuilder#178 @ add254f (change under test: dev comment 112319),"store=@td(STORE_PRIMARY.id), back_url={{BACK_URL}}","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token
+[SETUP] Repeat the next four steps for EACH value in the Values lines (unique name ""AGENT-TEST-6443 r2 accept <n> <unique>"" per value)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/create-group-page with {name, permalink:<value>, cultureName:""en-US"", storeId:@td(STORE_PRIMARY.id), visibility:true}
+[STATUS] Verify HTTP 2xx and keep {id}
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/grouped/{id}
+[BODY] Compare the returned permalink with the sent value character by character, and compare the string length
+[DATA] Values, letters of any language (each with ""-<unique>"" appended): Cyrillic ""/агент-страница""; Japanese ""/ページ""
+[DATA] Values, full-width look-alikes of the reserved characters: ""/a？＃＆＼b-<unique>"" (U+FF1F, U+FF03, U+FF06, U+FF3C)
+[DATA] Values, no leading slash: ""agent-test-6443-noslash-<unique>""
+[DATA] Values, emoji: lone emoji ""/😀-<unique>"" (U+1F600); heart with variation selector ""/❤️-<unique>"" (U+2764 U+FE0F, category Mn so not a format character)
+[DATA] Values, length boundary, built at run time with a unique head and 'a' filler: 2048 characters with NO leading slash; and '/' + 2047 characters (2048 in total)","[STATUS] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23) ""letters of any language are allowed"": every Cyrillic and Japanese value returns 2xx, none returns 400 (the widened invisible-character and length checks do not over-reject)
+[STATUS] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23): the full-width look-alikes, the permalink without a leading slash and both 2048-character values return 2xx
+[BODY] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23) (never normalize): the permalink returned by GET equals the sent value byte-for-byte for every value; the 2048-character value without a leading slash comes back with length 2048 and NO ""/"" prefix
+[STATUS] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23), derived (an emoji is not a letter-class value the comment rejects and U+FE0F is category Mn, not Cf): ""/😀-<unique>"" and ""/❤️-<unique>"" return 2xx and are stored verbatim","[NETWORK] no 4xx/5xx for any accepted value
+[API] GET grouped/{id} permalink verbatim per value
+[ADMIN] each created page is listed in the shell grid with its permalink unchanged","A Cyrillic, Japanese, full-width, emoji or 2048-character value returns 400 (over-rejection by the widened rule); the returned permalink differs from the sent one (trimmed, prefixed with ""/"", decoded, normalized or escaped); HTTP 500 for the 2048-character no-slash value (prefix pushed it to 2049)",DELETE /api/page-builder-pages/grouped/{id} for every AGENT-TEST-6443 page this case created (including a page stored by a value that should have been rejected: find them by searching the name prefix); verify GET 404,VCST-6443 · Archetype:BOUNDARY · Technique:BVA · Catches:VCST-6443,Draft
+CMS-284,"Permalink — the 2048-character boundary holds on create-group-page, POST grouped and PUT grouped: 2048 saves, 2049 is a 400, never a 5xx",Page Builder > Permalink validation,High,,ECL-7.2,"Admin Bearer token available; create-group-page = POST {{BACK_URL}}/api/page-builder-pages/create-group-page; POST grouped = POST {{BACK_URL}}/api/page-builder-pages/grouped; PUT grouped = PUT {{BACK_URL}}/api/page-builder-pages/grouped. PageBuilder build includes PR VirtoCommerce/vc-module-pagebuilder#178 @ add254f (the widened rule of dev comment 112319 is the change under test); a base page group created through create-group-page with a valid permalink (name ""AGENT-TEST-6443 r2 length base <unique>"", permalink ""/agent-test-6443-r2-len-<unique>"") for the PUT leg","store=@td(STORE_PRIMARY.id), back_url={{BACK_URL}}","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token
+[DATA] Length values, built at run time as a unique head plus 'a' filler to the exact total length: L2047 = '/' + 2046 chars; L2048 = '/' + 2047 chars; L2049 = '/' + 2048 chars; N2048 = 2048 chars with NO leading slash
+[SETUP] Leg 1, create-group-page: for L2047, L2048, N2048 POST {name, permalink, cultureName:""en-US"", storeId:@td(STORE_PRIMARY.id), visibility:true} (unique name per call); for L2049 POST the same
+[STATUS] Verify HTTP 2xx for L2047, L2048 and N2048; HTTP 400 for L2049
+[HTTP] GET grouped/{id} for each 2xx and compare the stored permalink length and value with the sent one
+[SETUP] Leg 2, POST grouped: repeat leg 1 with POST {{BACK_URL}}/api/page-builder-pages/grouped and body {name, permalink, cultureName:""en-US"", storeId, visibility:true, userGroups:null, organizationId:null}
+[STATUS] Verify HTTP 2xx for L2047, L2048 and N2048; HTTP 400 for L2049
+[SETUP] Leg 3, PUT grouped on the base page: GET grouped/{baseId} (the GET body is the PUT template), PUT with permalink = L2048 and the name changed to ""AGENT-TEST-6443 r2 length put 2048""
+[STATUS] Verify HTTP 2xx and that GET shows the new name and the 2048-character permalink
+[HTTP] PUT the same body with permalink = L2049 and the name changed to ""AGENT-TEST-6443 r2 length put 2049""
+[STATUS] Verify HTTP 400
+[HTTP] GET grouped/{baseId}
+[BODY] Compare name and permalink with the values read after the L2048 PUT","[STATUS] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23) ""the rule checks the length of the column"": 2047 and 2048 characters return 2xx and 2049 returns 400 on create-group-page, POST grouped and PUT grouped; no endpoint returns 5xx at any length
+[BODY] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23): every 400 body is the new rule sentence ""Permalink must be at most 2048 characters and cannot contain whitespace, control or invisible formatting characters, the characters ? # & % \ "" < > { } | ^ `, empty segments ('//') or '.' and '..' segments.""
+[STATE] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23) (never normalize): a stored 2048-character permalink equals the sent value, and the N2048 permalink has no ""/"" prefix added (a prefix would make it 2049 characters and 500 on the column)
+[STATE] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23): the rejected L2049 PUT saves none of the request: name and permalink after it are byte-identical to those before it","[NETWORK] no 5xx on any of the 11 requests
+[API] GET grouped/{id} shows the stored permalink length 2048 for L2048 and N2048
+[ADMIN] the shell grid lists the 2048-character pages without breaking the list layout",L2049 returns 2xx or 500 on one of the three endpoints (VCST-6513 not fixed there); N2048 returns 500 (the slash is added and the column limit is crossed); a rejected PUT changes the name or the permalink (partial apply); L2048 returns 400 (the limit is off by one),DELETE /api/page-builder-pages/grouped/{id} for every AGENT-TEST-6443 page this case created (including a page stored by a value that should have been rejected: find them by searching the name prefix); verify GET 404,VCST-6443 · Archetype:BOUNDARY · Technique:BVA · VCST-6513 · Catches:VCST-6443,Draft
+CMS-285,Permalink — astral invisible formatting characters are rejected by the REST API exactly like the BMP ones and like both admin UIs,Page Builder > Permalink validation,High,,ECL-7.2,"Admin Bearer token available; create-group-page = POST {{BACK_URL}}/api/page-builder-pages/create-group-page; POST grouped = POST {{BACK_URL}}/api/page-builder-pages/grouped; PUT grouped = PUT {{BACK_URL}}/api/page-builder-pages/grouped. PageBuilder build includes PR VirtoCommerce/vc-module-pagebuilder#178 @ add254f (the widened rule of dev comment 112319 is the change under test); base page group for the PUT leg (name ""AGENT-TEST-6443 r2 astral base <unique>"", valid permalink). Known candidate defect from discovery (SBTM-VCST-6443-2026-10-23 D1): the add254f build accepted these values over REST while both admin UIs rejected them. The assertion below is the SPEC expectation and is NOT to be rewritten to the observed 200; a FAIL here is the finding, not a test defect","store=@td(STORE_PRIMARY.id), back_url={{BACK_URL}}","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token
+[DATA] Control value (BMP format character): ""/a<U+200B>b-<unique>""
+[DATA] Astral format-character values (Unicode category Cf, outside the BMP), embedded as ""/a<char>b-<unique>"": U+E0001 (language tag) · U+E0041 (tag latin A) · U+1D173 (musical symbol begin beam) · U+1BCA0 (shorthand format letter overlap)
+[SETUP] Repeat the next three steps for the control value and for EACH astral value, on create-group-page and on POST grouped (unique name per call)
+[HTTP] POST the endpoint with {name, permalink:<value>, cultureName:""en-US"", storeId:@td(STORE_PRIMARY.id), visibility:true}
+[STATUS] Verify the status
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/search filtered by the page name
+[COUNT] Record totalCount
+[SETUP] PUT leg: GET grouped/{baseId}; for the control value and EACH astral value PUT the GET body with the permalink changed to the value
+[STATUS] Verify the status
+[HTTP] GET grouped/{baseId} after each PUT
+[BODY] Compare name and permalink with the values before the PUT","[STATUS] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23) ""invisible formatting characters (Unicode Cf) are rejected"": the BMP control value and every astral value return HTTP 400 on create-group-page, POST grouped and PUT grouped
+[COUNT] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23): no group exists for any rejected create (totalCount = 0 per name)
+[STATE] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23): after a rejected PUT the base page permalink is unchanged
+[REL] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23), parity: the server's verdict for an astral format character equals the verdict of the shell and the legacy blade (both reject it, CMS-292)","[NETWORK] no 5xx on any request
+[API] search and GET confirm nothing invalid is stored
+[ADMIN] the shell grid does not list an AGENT-TEST-6443 r2 astral page","An astral value returns 2xx and a group or a changed permalink is stored (the server check never sees a Cf code point behind a surrogate pair); the BMP control value returns 2xx (the baseline broke, so the astral result is not comparable); HTTP 500; the server and the UIs disagree for the same value",DELETE /api/page-builder-pages/grouped/{id} for every AGENT-TEST-6443 page this case created (including a page stored by a value that should have been rejected: find them by searching the name prefix); verify GET 404,VCST-6443 · Archetype:PARITY · Technique:EP · Catches:VCST-6443,Draft
+CMS-286,Permalink — the page builder shell field accepts a permalink up to the 2048-character limit the rule and its message state,Page Builder > Permalink validation,Medium,,ECL-7.2,"Admin logged in to the page builder shell; a way to put a long text into the Permalink field in one step (a clipboard paste or a programmatic fill, never typing 2000 characters by key); an admin Bearer token for the final GET. Known candidate defect from discovery (SBTM-VCST-6443-2026-10-23 D2): the field kept 1024 characters on the add254f build. The assertion below is the derived SPEC expectation and is NOT to be rewritten to the observed cap; a FAIL here is the finding, to be put to the author","store=@td(STORE_PRIMARY.id), back_url={{BACK_URL}}","--- SCREEN: Page builder shell, new page ---
+[NAV] Open {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-all
+[ACT] Click ""Add"" in the page list toolbar
+[WAIT] The details blade opens
+[ACT] Fill ""Name"": AGENT-TEST-6443 r2 cap <unique>
+[ACT] Fill ""Permalink"" with '/' + a unique head + 'a' filler, 1025 characters in total, built at run time
+[ACT] Move focus out of the field
+[ASSERT] Read the number of characters the field now holds; read the error state and ""Save""
+[ACT] Fill ""Permalink"" with a 2048-character value ('/' + unique head + 'a' filler)
+[ACT] Move focus out of the field
+[ASSERT] Read the number of characters the field holds; no error; ""Save"" is enabled
+[SAVE] Click ""Save"" and wait for the success confirmation
+[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/grouped/{groupId} (groupId from the page URL)
+[BODY] Read the stored permalink length and compare it with the 2048-character value that was filled
+[ACT] On the saved page fill ""Permalink"" with a 2049-character value ('/' + 2048 characters)
+[ACT] Move focus out of the field
+[ASSERT] Read the number of characters the field holds, the inline error and ""Save""","[DOM] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23), derived (the rule accepts 2048 characters and the message names 2048, so an admin must be able to enter them): after the 1025-character fill the field holds 1025 characters, no error is shown and ""Save"" is enabled
+[BODY] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23), derived: the 2048-character value is saved and GET grouped/{id} returns a permalink of length 2048 equal to the filled value (not cut to a shorter value)
+[DOM] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23): the 2049-character value shows the inline error and ""Save"" is disabled (the over-limit error is reachable in the shell)
+[REL] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23), derived: the text the field holds equals the text that was filled, at 1025, 2048 and 2049 characters (the field never truncates silently)","[CONSOLE] no TypeError or JS error while filling
+[NETWORK] the only PUT/POST of the page carries the 2048-character permalink; none is sent for the 2049-character value
+[API] stored permalink length = the length shown in the field","The field holds fewer characters than were filled (silent truncation at 1024); the saved permalink is shorter than the value the author entered; the 2049-character value shows no error or leaves ""Save"" enabled; the over-limit error cannot be reached by any input",DELETE /api/page-builder-pages/grouped/{id} for every AGENT-TEST-6443 page this case created (including a page stored by a value that should have been rejected: find them by searching the name prefix); verify GET 404,VCST-6443 · Archetype:BOUNDARY · Technique:BVA · Catches:VCST-6443,Draft
+CMS-287,"Permalink — the legacy blade rejects a permalink with a leading or trailing space or tab as typed, on a new page and on an existing page, and does not trim it",Page Builder > Permalink validation,High,,ECL-7.2,"Admin logged in to the Admin (legacy AngularJS UI) and an admin Bearer token available; the legacy blade edits Content-module page files, so the ""existing page"" is a Content page file written by this case (the Content API has no permalink rule by design); PageBuilder build includes PR #178 @ add254f (VCST-6511: the blade input no longer trims)","store=@td(STORE_PRIMARY.id), back_url={{BACK_URL}}","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token
+[HTTP] POST {{BACK_URL}}/api/content/pages/@td(STORE_PRIMARY.id)?draft=true&folderUrl=%2F as multipart/form-data with ONE file part named ""agent-test-6443-r2-ws-<unique>.page"" whose JSON body is {""settings"":{""type"":""settings"",""permalink"":""/agent-test-6443-r2-ws-<unique>"",""name"":""agent-test-6443-r2-ws-<unique>""},""content"":[]} (request shape as in CMS-268)
+[DATA] Edge values (the whitespace is part of the value, typed or pasted): leading space "" /agent-test-6443-r2-ws""; trailing space ""/agent-test-6443-r2-ws ""; leading tab ""<TAB>/agent-test-6443-r2-ws""; trailing tab ""/agent-test-6443-r2-ws<TAB>""
+--- SCREEN: Content, Pages list, new page ---
+[NAV] Open {{BACK_URL}} -> Content -> select the store -> Pages
+[ACT] Click ""Add"" (new page)
+[WAIT] The UI settles (no spinner, network idle) and the page blade opens
+[ACT] Fill the name AGENT-TEST-6443 r2 ws new <unique>
+[SETUP] Repeat the next three steps for EACH edge value
+[ACT] Fill the Permalink input with the edge value
+[ACT] Move focus out of the Permalink input
+[ASSERT] The format error is shown, the ""Create"" toolbar command is disabled, and the input still holds the edge value (it was not trimmed)
+[ACT] Replace the Permalink with the valid value ""/agent-test-6443-r2-ws-<unique>-new""
+[ACT] Move focus out of the Permalink input
+[ASSERT] The error is gone and ""Create"" is enabled (do NOT click it)
+--- SCREEN: Page blade, existing page ---
+[NAV] Open the Content page written in the first step from the Pages list
+[SETUP] Repeat the next three steps for EACH edge value
+[ACT] Set the Permalink input to the edge value
+[ACT] Move focus out of the Permalink input
+[ASSERT] The format error is shown, ""Save"" and ""Publish"" are disabled, and the input still holds the edge value
+[ACT] Revert the Permalink to the stored valid value
+[ASSERT] The error is gone and ""Save"" is enabled","[BLADE] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23) (VCST-6511: leading and trailing spaces are rejected like inner ones, not trimmed): each of the four edge values shows the format error and disables ""Create"" on a new page
+[BLADE] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23): on an existing page each edge value shows the error and disables ""Save"" and ""Publish""; reverting to the stored value re-enables ""Save""
+[FORM] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23) (never normalize): after blur the input still holds the edge whitespace, so the value was not silently trimmed into a valid one
+[NEG] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23): no page named AGENT-TEST-6443 r2 ws new <unique> exists after the new-page checks (Create was never enabled with an edge value)","[CONSOLE] no TypeError or JS error while typing
+[NETWORK] no save request fired for an edge value
+[ADMIN] the Pages list shows no r2 ws new page","The input is trimmed and the error never appears (VCST-6511 not fixed); the error shows but ""Create"" or ""Save"" stays enabled (validity not wired to the command); only the leading or only the trailing variant is rejected; the tab variants slip through; the error stays after reverting to the stored value",Delete the Content page file(s) written by this case: DELETE /api/content/pages/@td(STORE_PRIMARY.id)?urls=<file>.page (or Content -> Pages -> Delete in the Admin UI); verify the file is no longer listed by GET /api/content/pages/@td(STORE_PRIMARY.id)/search?keyword=agent-test-6443,VCST-6443 · Archetype:PARITY · Technique:EP · VCST-6511 · Catches:VCST-6443,Draft
+CMS-288,Permalink — the blade duplicate-permalink warning is hidden while the format is invalid and comes back when it is fixed,Page Builder > Permalink validation,Medium,,ECL-7.2,"Admin logged in to the Admin (legacy AngularJS UI) and an admin Bearer token available; an existing Content page whose permalink is known and valid, written by this case (the blade duplicate check reads the pages of the store); PageBuilder build includes PR #178 @ add254f","store=@td(STORE_PRIMARY.id), back_url={{BACK_URL}}","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token
+[HTTP] POST {{BACK_URL}}/api/content/pages/@td(STORE_PRIMARY.id)?draft=true&folderUrl=%2F as multipart/form-data with ONE file part named ""agent-test-6443-r2-dup-<unique>.page"" whose JSON body is {""settings"":{""type"":""settings"",""permalink"":""/agent-test-6443-r2-dup-<unique>"",""name"":""agent-test-6443-r2-dup-<unique>""},""content"":[]} (request shape as in CMS-268)
+--- SCREEN: Content, Pages list, new page ---
+[NAV] Open {{BACK_URL}} -> Content -> select the store -> Pages
+[ACT] Click ""Add"" (new page)
+[WAIT] The UI settles (no spinner, network idle) and the page blade opens
+[ACT] Fill the name AGENT-TEST-6443 r2 dup new <unique>
+[ACT] Fill the Permalink input with the same permalink as the existing page: ""/agent-test-6443-r2-dup-<unique>""
+[ASSERT] State A: the duplicate warning (""Other pages have the same permalink"") is visible and names the existing page; no format error; ""Create"" is enabled
+[ACT] Append ""%"" to the Permalink: ""/agent-test-6443-r2-dup-<unique>%""
+[ASSERT] State B: the format error is visible, the duplicate warning is NOT visible, ""Create"" is disabled
+[ACT] Remove the ""%"" (Backspace)
+[ASSERT] State C: the duplicate warning is visible again, no format error, ""Create"" is enabled
+[ACT] Append ""<"" to the Permalink instead of ""%""
+[ACT] Remove the ""<"" (Backspace)
+[ASSERT] The same hidden-then-restored sequence as for ""%""","[DOM] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23) ""the duplicate warning is hidden while the format is invalid"": in State B the warning text ""Other pages have the same permalink"" is absent and the format error under the Permalink input is shown
+[DOM] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23): in State C, after the format is fixed, the warning text ""Other pages have the same permalink"" is shown again and the format error under the Permalink input is gone (the hiding is not sticky)
+[STATE] {OBSERVED} (SBTM-VCST-6443-2026-10-23 C6): the duplicate warning is advisory, so ""Create"" is enabled in State A and State C; asserted as the baseline against which State B disables it
+[REL] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23): exactly one of the two messages is visible in every state: A = duplicate only, B = format only, C = duplicate only","[CONSOLE] no TypeError or JS error while toggling the states
+[NETWORK] no save request fired (Create is never clicked)","Both messages are visible together in State B; the duplicate warning stays hidden after the format is fixed (stuck ng-if); ""Create"" enabled in State B; no duplicate warning in State A (the baseline broke, so the sequence says nothing)",Delete the Content page file(s) written by this case: DELETE /api/content/pages/@td(STORE_PRIMARY.id)?urls=<file>.page (or Content -> Pages -> Delete in the Admin UI); verify the file is no longer listed by GET /api/content/pages/@td(STORE_PRIMARY.id)/search?keyword=agent-test-6443; no new page is created by this case (Create is never clicked),VCST-6443 · Archetype:STALE · Technique:ST · Catches:VCST-6443,Draft
+CMS-289,"Permalink — a stored legacy page with a percent or angle-bracket permalink stays editable and publishable over REST, while changing that permalink is validated",Page Builder > Permalink validation,High,,ECL-7.2,"Admin Bearer token available; create-group-page = POST {{BACK_URL}}/api/page-builder-pages/create-group-page; POST grouped = POST {{BACK_URL}}/api/page-builder-pages/grouped; PUT grouped = PUT {{BACK_URL}}/api/page-builder-pages/grouped. PageBuilder build includes PR VirtoCommerce/vc-module-pagebuilder#178 @ add254f (change under test: dev comment 112319); legacy fixtures seeded by seed:pb-legacy-permalinks: @td(PB_6443_LEGACY_PCT.id) (stored permalink @td(PB_6443_LEGACY_PCT.permalink), a percent escape accepted before the change, Published, visible) and @td(PB_6443_LEGACY_LT.id) (stored permalink @td(PB_6443_LEGACY_LT.permalink), contains an angle bracket); both are written through platform import, which the rule does not guard. SHARED state with CMS-290: this case renames the pages and restores the name in Cleanup, and it never deletes them or changes their permalink. Storefront preconditions for the last step: store VirtoPages.Enable = true, the Pages index built","pct_page=@td(PB_6443_LEGACY_PCT.id), pct_permalink=@td(PB_6443_LEGACY_PCT.permalink), lt_page=@td(PB_6443_LEGACY_LT.id), lt_permalink=@td(PB_6443_LEGACY_LT.permalink), store=@td(STORE_PRIMARY.id), back_url={{BACK_URL}}, front_url={{FRONT_URL}}","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/grouped/@td(PB_6443_LEGACY_PCT.id); keep the body as the PUT template and record name N0
+[BODY] Verify the stored permalink equals @td(PB_6443_LEGACY_PCT.permalink)
+[HTTP] PUT {{BACK_URL}}/api/page-builder-pages/grouped with the GET body, ONLY the name changed to ""AGENT-TEST-6443 legacy PCT renamed"", permalink left as stored
+[STATUS] Verify HTTP 2xx
+[HTTP] GET grouped/@td(PB_6443_LEGACY_PCT.id)
+[BODY] Verify the name is the new name and the permalink equals @td(PB_6443_LEGACY_PCT.permalink) unchanged
+[HTTP] PUT the body with the permalink changed to another percent value (the stored value with ""2"" appended)
+[STATUS] Verify HTTP 400
+[HTTP] GET grouped/@td(PB_6443_LEGACY_PCT.id)
+[BODY] Verify the permalink still equals @td(PB_6443_LEGACY_PCT.permalink)
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/grouped/publishing/@td(PB_6443_LEGACY_PCT.id)?publish=true
+[STATUS] Verify HTTP 2xx
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/grouped/publish-status/@td(PB_6443_LEGACY_PCT.id)
+[BODY] Verify the page reports Published
+[HTTP] GET @td(PB_6443_LEGACY_LT.id) as above; PUT with ONLY the name changed to ""AGENT-TEST-6443 legacy LT renamed""
+[STATUS] Verify HTTP 2xx and that the permalink equals @td(PB_6443_LEGACY_LT.permalink) afterwards
+[HTTP] PUT the LT body with the permalink changed to another angle-bracket value (the stored value with ""x"" appended)
+[STATUS] Verify HTTP 400 and that GET shows the stored permalink unchanged
+[WAIT] Allow 30-60 s for the Pages index
+[NAV] Open {{FRONT_URL}}@td(PB_6443_LEGACY_PCT.permalink) exactly as stored
+[STATUS] Record the HTTP status of the storefront page and of the double-encoded form (%2520)","[STATUS] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23) ""an unchanged stored permalink is not validated on update; existing pages with % keep working"": the rename PUT of the percent page and of the angle-bracket page returns 2xx and both stored permalinks are untouched
+[STATUS] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23): once the permalink CHANGES (to another percent or angle-bracket value) it is validated: the PUT returns HTTP 400, and the stored permalink is unchanged (the exemption is not wider than ""unchanged"")
+[STATE] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23): the legacy percent page can be published (publish 2xx, publish-status Published)
+[ASSERT] INFO only, no verdict on this ticket: the HTTP status at the natural storefront URL of the percent page is recorded; the storefront still decodes the route before the lookup, so a 404 is the expected residual of VCST-6512 {OBSERVED} (SBTM-VCST-6443-2026-10-23)","[NETWORK] no 5xx on any request
+[API] GET grouped permalink unchanged for both fixtures after every call
+[STOREFRONT] natural-URL status of the percent page recorded","A rename PUT of the legacy percent or angle-bracket page returns 400 (exemption missing for the new classes: legacy pages un-editable); a changed legacy permalink returns 2xx (exemption wider than ""unchanged""); the stored permalink is rewritten; publish returns 4xx/5xx","Restore the original names with PUT grouped (name only, permalink untouched); the fixtures are NOT deleted and are terminal for a changed permalink, so re-seed with seed:pb-legacy-permalinks before re-running; verify GET shows the original name and the stored permalink",VCST-6443 · Archetype:LIFECYCLE · Technique:ST · Catches:VCST-6443,Draft
+CMS-290,Permalink — the page builder shell saves the other fields of a legacy percent page and blocks a changed invalid permalink,Page Builder > Permalink validation,High,,ECL-7.2,"Admin logged in to the page builder shell; admin Bearer token available; legacy percent page @td(PB_6443_LEGACY_PCT.id) exists (stored permalink @td(PB_6443_LEGACY_PCT.permalink), seeded through platform import which the rule does not guard); SHARED state with CMS-289: the page is renamed and the name restored in Cleanup, never deleted","pct_page=@td(PB_6443_LEGACY_PCT.id), pct_permalink=@td(PB_6443_LEGACY_PCT.permalink), store=@td(STORE_PRIMARY.id), back_url={{BACK_URL}}","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/grouped/@td(PB_6443_LEGACY_PCT.id); record the current name N0
+--- SCREEN: Page builder shell, legacy page ---
+[NAV] Open {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-all
+[NAV] Open the page named N0 (find it in the list by name)
+[ASSERT] The Permalink field shows @td(PB_6443_LEGACY_PCT.permalink); no error is shown for the untouched stored value; ""Save"" is disabled (clean form)
+[ACT] Change ""Name"" to ""AGENT-TEST-6443 legacy PCT shell""
+[ASSERT] ""Save"" is enabled and no permalink error appears
+[SAVE] Click ""Save"" and wait for the success confirmation
+[ACT] Change ""Name"" again to ""AGENT-TEST-6443 legacy PCT shell 2""
+[SAVE] Click ""Save"" (second in-session save) and wait for the success confirmation
+[ASSERT] The second save also succeeds
+[ACT] Change ""Permalink"" to the stored value with ""2"" appended
+[ACT] Move focus out of the field
+[ASSERT] The inline error is shown and ""Save"" is disabled
+[ACT] Revert ""Permalink"" to the stored value @td(PB_6443_LEGACY_PCT.permalink)
+[ASSERT] The error is cleared
+[HTTP] GET {{BACK_URL}}/api/page-builder-pages/grouped/@td(PB_6443_LEGACY_PCT.id)
+[BODY] The permalink equals @td(PB_6443_LEGACY_PCT.permalink) and the name is ""AGENT-TEST-6443 legacy PCT shell 2""","[ASSERT] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23) ""a stored permalink does not block saving other fields"": the shell shows no error for the stored percent permalink and saves a name change twice
+[ASSERT] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23): changing the permalink to another percent value shows the error and disables ""Save""; reverting to the stored value clears the error
+[STATE] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23): the stored percent permalink is never rewritten by the name-only saves (no PUT in the HAR carried a changed permalink)","[NETWORK] the two saves are PUT grouped -> 200; no PUT is sent for the invalid edit
+[CONSOLE] no TypeError or JS error
+[API] GET grouped permalink unchanged, name = last saved value","An error is shown or ""Save"" is disabled for the untouched stored percent permalink (the client rule is applied to the stored value); the second save is blocked; the error persists after the revert; a PUT is sent for the invalid edit; the permalink is altered",Restore the original name N0 through the shell or PUT grouped (name only); do NOT delete the fixture (shared with CMS-289); verify GET shows N0 and the stored permalink,VCST-6443 · Archetype:LIFECYCLE · Technique:ST · Catches:VCST-6443,Draft
+CMS-291,"Permalink — the new rule message renders in full in English, Russian and Japanese in both admin apps, with the { } | ^ characters shown literally",Page Builder > Permalink validation,Medium,,ECL-12.1,Admin logged in; the ability to switch the Admin UI language to ru-RU and ja-JP (Profile -> language) and back; the page builder shell and the legacy blade (Content -> store -> Pages) both reachable; PageBuilder build includes PR #178 @ add254f (13 + 13 locale files edited),"store=@td(STORE_PRIMARY.id), back_url={{BACK_URL}}","[SETUP] Repeat the next block for EACH Admin UI language in the order en-US, ru-RU, ja-JP
+[ACT] Switch the Admin UI language (Profile -> language)
+[NAV] Reload the Admin
+--- SCREEN: Page builder shell, new page ---
+[NAV] Open {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-all
+[ACT] Click ""Add""
+[WAIT] The details blade opens
+[ACT] Paste the invalid permalink ""/agent test 6443 i18n"" into ""Permalink""
+[ACT] Move focus out of the field
+[ASSERT] Read the full inline error text (call it T_shell)
+--- SCREEN: Legacy blade, new page ---
+[NAV] Open Content -> store -> Pages -> ""Add""
+[ACT] Fill the Permalink input with ""/agent test 6443 i18n""
+[ASSERT] Read the full format error text (call it T_blade)
+[ASSERT] Compare each text with the rule characters and with the English text (see Assertions)","[DOM] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23) (13 + 13 locale files): in every language both T_shell and T_blade contain the characters { } | ^ "" < > % and the backtick as literal characters, in the order the rule lists them
+[DOM] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23), derived: T_shell and T_blade are complete: the text continues after the ""|"" character (the last rule item is still present, the message is not cut at the pipe) and neither is blank
+[REL] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23) (translated in all locales): T for ru-RU and T for ja-JP differ from each other and from the en-US text, and none matches /^[A-Z0-9_.]+$/ (a raw localization key)
+[DOM] {OBSERVED} (SBTM-VCST-6443-2026-10-23 C7): en-US renders the shell inline error under ""Permalink"" and the blade format error in full with the literal characters; ru-RU and ja-JP were not reached in discovery","[CONSOLE] no vue-i18n message compile error and no missing-translation warning for the permalink key in either app
+[NETWORK] no save request fired","The shell error is blank, shows the raw key, or is cut at ""|"" or at ""{"" (vue-i18n compiled the braces or the pipe); the English text under ru-RU or ja-JP (fallback); the blade shows the key; a console message about a message-compile error",Restore the Admin UI language to en-US (Profile -> language); no page is created by this case,VCST-6443 · Archetype:RENDER · Technique:EP · Catches:VCST-6443,Draft
+CMS-292,"Permalink — the shell and the legacy blade agree with the REST API for one value of each new rule family, pasted as typed",Page Builder > Permalink validation,High,,ECL-7.2,Admin logged in to the page builder shell and to the legacy blade (Content -> store -> Pages); an admin Bearer token for the REST control calls; PageBuilder build includes PR #178 @ add254f,"store=@td(STORE_PRIMARY.id), back_url={{BACK_URL}}","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token
+[DATA] One value per new rule family: percent ""/agent-test-6443%20par""; reserved ""/agent-test-6443<par""; invisible, pasted ""/agent-test-6443<U+200B>par""; over-limit, pasted: ""/"" + 2048 x 'a' (2049 characters, blade only: the shell field is covered by the length case); astral format character ""/agent-test-6443<U+E0041>par"" (UI side only here, the server side is the astral-format-character case); control value valid ""/agent-test-6443-par-<unique>""
+--- SCREEN: Page builder shell, new page ---
+[NAV] Open {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-all
+[ACT] Click ""Add""
+[WAIT] The details blade opens
+[ACT] Fill ""Name"": AGENT-TEST-6443 r2 parity <unique>
+[SETUP] Repeat the next three steps for the percent, reserved, invisible and astral values, then for the valid control
+[ACT] Paste the value into ""Permalink""
+[ACT] Move focus out of the field
+[ASSERT] Record whether the field error is shown and whether ""Save"" is enabled
+[NETWORK] Record whether a POST/PUT to /api/page-builder-pages/grouped was sent
+--- SCREEN: Legacy blade, new page ---
+[NAV] Open Content -> store -> Pages
+[ACT] Click ""Add""
+[WAIT] The page blade opens
+[ACT] Fill the name AGENT-TEST-6443 r2 parity blade <unique>
+[SETUP] Repeat the next two steps for the percent, reserved, invisible, over-limit and astral values, then for the valid control
+[ACT] Fill the Permalink input with the value
+[ACT] Move focus out of the Permalink input
+[ASSERT] Record whether the format error is shown and whether ""Create"" is enabled
+[SETUP] REST control: for the percent, reserved and invisible values and for the 2049-character value POST create-group-page (unique name each, storeId @td(STORE_PRIMARY.id), visibility true)
+[STATUS] Record the status
+[HTTP] POST create-group-page with the valid control value
+[STATUS] Record the status","[ASSERT] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23) (the same rule in three places): for the percent, reserved, invisible and astral values both admin apps show the field error and disable ""Save""/""Create"", and no save request is sent; the blade does the same for the 2049-character value
+[REL] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23): for the percent, reserved, invisible and 2049-character values the verdict of each UI (blocked) equals the REST verdict for the same value (400): UI blocked <=> API 400, in both directions
+[ASSERT] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23): the valid control value shows no error, enables ""Save""/""Create"" in both apps and is accepted by REST (2xx)","[CONSOLE] no TypeError or JS error on either page
+[NETWORK] no save request fired for a blocked value; the REST control calls are the only POSTs
+[API] the REST control stores a page only for the valid value","An admin UI blocks a value the API accepts, or lets a value through that the API rejects; the shell and the blade disagree for the same value; ""Save"" or ""Create"" enabled while the error is shown; the 2049-character paste is accepted in the blade","DELETE /api/page-builder-pages/grouped/{id} for every AGENT-TEST-6443 page this case created (including a page stored by a value that should have been rejected: find them by searching the name prefix); verify GET 404; the blade ""Create"" is never clicked for an invalid value, so no Content page file is written by this case; discard the unsaved forms",VCST-6443 · Archetype:PARITY · Technique:EP · Catches:VCST-6443,Draft
+CMS-293,"Permalink — an astral-emoji permalink is never a 5xx at the length boundary, and a joined-emoji sequence is answered with the rule message",Page Builder > Permalink validation,Medium,,ECL-7.2,Admin Bearer token available; create-group-page = POST {{BACK_URL}}/api/page-builder-pages/create-group-page; POST grouped = POST {{BACK_URL}}/api/page-builder-pages/grouped; PUT grouped = PUT {{BACK_URL}}/api/page-builder-pages/grouped. PageBuilder build includes PR VirtoCommerce/vc-module-pagebuilder#178 @ add254f (change under test: dev comment 112319),"store=@td(STORE_PRIMARY.id), back_url={{BACK_URL}}","[AUTH] Obtain an admin Bearer token via POST {{BACK_URL}}/connect/token
+[SETUP] Repeat the next three steps for EACH value in the Values lines (unique name per call, ""AGENT-TEST-6443 r2 astral len <n> <unique>"")
+[HTTP] POST {{BACK_URL}}/api/page-builder-pages/create-group-page with {name, permalink:<value>, cultureName:""en-US"", storeId:@td(STORE_PRIMARY.id), visibility:true}
+[STATUS] Record the status; if 2xx, GET grouped/{id} and compare the stored permalink with the sent one
+[BODY] If 400, record the body
+[DATA] Values, astral length at the limit (emoji U+1F600, 2 UTF-16 units each, no leading slash, built at run time): exactly 1024 x emoji (2048 units, 1024 code points); uniqueness comes from the page name, a stale duplicate from an earlier failed cleanup is removed first
+[DATA] Values, astral length over the unit limit but within the code-point limit: 1025 x emoji (2050 units, 1025 code points); 1100 x emoji (2200 units, 1100 code points)
+[DATA] Value, joined emoji sequence: ""/<man U+1F468><ZWJ U+200D><woman U+1F469><ZWJ U+200D><girl U+1F467>-<unique>""","[STATUS] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23) ""the rule checks the length of the column; never a server error"": none of the four values returns 5xx
+[STATUS] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23), derived: 1024 x emoji (2048 units, 1024 characters) returns HTTP 200 (a create may answer 201) and is stored verbatim (a value that is 2048 under every counting rule is accepted)
+[BODY] {SPEC} (VCST-6443 dev comment 112319, B. Kotov 2026-10-23): every 400 body is the new rule sentence ""Permalink must be at most 2048 characters and cannot contain whitespace, control or invisible formatting characters, the characters ? # & % \ "" < > { } | ^ `, empty segments ('//') or '.' and '..' segments."", never blank or a stack trace
+[ASSERT] INFO only, no verdict on this ticket: the status for 1025 and 1100 x emoji (over-rejected when the rule counts UTF-16 units, 400 expected) and for the joined emoji (the format-character rule rejects U+200D, 400 expected) is recorded; discovery observed 400 for all three {OBSERVED} (SBTM-VCST-6443-2026-10-23 C2, C3)","[NETWORK] no 5xx for any value
+[API] GET grouped/{id} permalink verbatim for every 2xx",HTTP 500 for an emoji permalink near the limit (rule and database count length in different units); a 2xx for 1025 or 1100 emoji followed by a 500 on a later read; the 1024-emoji value is rejected; a blank or non-rule 400 body,DELETE /api/page-builder-pages/grouped/{id} for every AGENT-TEST-6443 page this case created (including a page stored by a value that should have been rejected: find them by searching the name prefix); verify GET 404,VCST-6443 · Archetype:BOUNDARY · Technique:BVA · Catches:VCST-6443,Draft

@@ -11,7 +11,11 @@
 
 The full `vc-qa` plugin adds three more categories not shipped here — test cases, BA reports, regression summaries — kept out of this table (numbering preserved for cross-reference) since `vc-fix` has no `/qa-test-cases-generator`, `/ba-analyze`, or `/qa-regression`.
 
+**A ticket run's files** — `/qa-verify-fix`'s verification files and evidence page, an investigation package, a bug report filed in the run — go into the ticket's run folder (`knowledge/execution/run-env.md` §The run folder), not under these paths.
+
 **Do NOT create files for:** per-suite intermediate JSON, coverage working files, standalone screenshot dumps, progress/status markdown, debug logs, investigation notes, per-step screenshots, side-by-side comparisons against prior runs, or anything labeled "draft"/"WIP"/"context". Return those via SendMessage. Evidence screenshots go **inline** in the bug report (not as separate `.md`).
+
+**No screenshot, GIF, video, HAR or trace is committed** — not in `reports/bugs/screenshots/`, not in a run folder. `/project-init` ignores those paths in the project's `.gitignore`; the durable copy of an image a reader needs is the **tracker attachment** (§5.0), and the local file is working state. Never `git add -f` one.
 
 **Not a report category — self-diagnostics artifacts.** The self-diagnostics subsystem writes to `<outputRoot>/.vc-fix/diagnostics/` — the passive collector's `<session_id>.jsonl` (+ `.state.json`), the `/vc-self-check` `DIAG-*.md`, and the `deliver` `DELIVERY-*.md`. These are **gitignored diagnostic artifacts**, NOT one of the report categories above; the `DIAG-*.md`/`DELIVERY-*.md` still obey the monitoring-summary size discipline (§2, target 15–40, cap ~100). They are **ephemeral, not archived**: the lifecycle is log → analyze (`/vc-self-check`) → contribute (`deliver` PR/issue) → **delete**. Once a finding is contributed upstream the PR/issue is the source of truth, so `deliver` removes the processed session's own artifacts (only that session — never others); nothing is deleted when nothing was delivered. So they don't accumulate and need no manual cleanup.
 
@@ -64,7 +68,7 @@ which is their contract; this rule exists so the policy and that command agree:
 | Artifact | What it is | Rules |
 |---|---|---|
 | `verification-summary.json` | Small structured verdict record (ticket, verdict, build, deployment, evidence paths) | Structured only, no narrative prose. It does not replace the narrative `verification-report.md` — write both |
-| `evidence.html` | The RED→GREEN evidence page linked from the tracker comment | **Reference the sibling screenshots (`<img src="screenshots/NAME.png">`) — never inline them as `data:` base64 in the committed copy.** A single inlined PNG cost 124 KB on one 124 000-char line, duplicating a PNG already tracked in the same folder byte-for-byte and making the diff unreviewable. Keep the committed page **under ~40 KB** |
+| `evidence.html` | The RED→GREEN evidence page linked from the tracker comment | **Reference the sibling screenshots (`<img src="screenshots/NAME.png">`) — never inline them as `data:` base64 in the committed copy.** A single inlined PNG cost 124 KB on one 124 000-char line and made the diff unreviewable. Keep the committed page **under ~40 KB**. The sibling screenshots are not committed (§1), so the page shows its images only where the run ran; the tracker comment's attachments are the copy everyone else sees |
 
 ## 2. Hard Size Caps (lines)
 
@@ -136,21 +140,51 @@ markup). Azure Boards: `ado.mjs upload-attachment --file <path>` → `{ url }`, 
 **A claim with no capturable screenshot says so explicitly**, so a reader can tell *"nothing to show"*
 from *"the evidence was dropped"*.
 
-**Always capture:** test FAILs, confirmed bugs (annotated), visual regressions (before/after), final state of critical flows (checkout confirmation, order created), Figma deviations, error states (console error, 500 toast).
+**Capture ONLY for these five purposes — nothing else gets a screenshot:**
 
-**Skip:** every navigation step in a passing test, loading spinners, login page (unless testing auth), successful form fills mid-flow, same page across browsers when all pass, redundant confirmations of the same bug.
+1. **A FAIL** — the failing check's state (on the MCP lanes the agent's capture is the only failure image, §5.1a), error states included (console error, 500 toast).
+2. **A bug report** — the confirmed bug, annotated.
+3. **Documentation** — a guide whose reader needs to see the screen.
+4. **Visual regression** — design or before/after evidence, where the image IS the check.
+5. **A tracker comment that makes a UI claim** (§5.0) — a PASS gets a capture only when that comment will show it.
+
+**Skip everything else:** a passing check or step, the final state of a passing flow, navigation, loading spinners, login (unless testing auth), mid-flow form fills, the same page across browsers when all pass, progress shots, redundant confirmations of the same bug. A PASS is evidenced by the snapshot, the network and the HAR, not by an image.
+
+**Element + viewport is the default; `fullPage: true` only when the defect IS the whole page's layout**
+— sections in the wrong order, a block overlapping content below the fold, an overflow that only shows
+across the full scroll height. Take the **element** shot of the thing that is wrong (`browser_take_screenshot`
+with `element` + **`target`**, not `ref`) for the claim, and one viewport shot for context. Anything that
+fits in one element never gets a full-page shot: scaled to `|width=700!` a long page is unreadable. A
+full-page shot replaces the viewport shot, never the element shot, and both count as one item.
 
 **Per-scope budget:**
 
 | Scope | Target | Max |
 |-------|--------|-----|
-| Test case (pass) | 0–1 (final state if critical) | 2 |
+| Test case (pass) | 0 (1 only when a tracker comment or guide shows it) | 1 |
 | Test case (fail) | 1–3 | 4 |
 | Bug report | 1–3 | 5 |
-| Regression suite (20+ tests) | failures + 1 summary per area | 15–20 |
+| Regression suite (20+ tests) | failures only | 15–20 |
 | Exploratory session | anomalies only | 10 |
 
-**Retention:** Regression/test-lifecycle/coverage screenshots under `reports/regression/REG-*/`, `reports/test-lifecycle/TLC-*/`, `reports/coverage/COV-*/` are gitignored — disposable artifacts referenced from the permanent markdown. Bug evidence (`reports/bugs/screenshots/`) and per-ticket evidence (`reports/tickets/SprintXX-XX/<ticket-key>/screenshots/`, `reports/tickets/<ticket-key>/screenshots/`) stay tracked.
+**Retention:** every screenshot is local working state and is **never committed** — bug evidence (`reports/bugs/screenshots/`), per-ticket evidence (the run folder's `screenshots/`) and run-scoped evidence alike (§1). The tracker attachment is the durable copy.
+
+### 5.1a Never hand-capture what the runner already captured
+
+A manual screenshot of a failure is evidence only where nothing else produced one. **Check the lane, not
+the config file** — a key in a config proves nothing until the tool's own schema reads it.
+
+| Lane | Captured on failure without being asked | Manual failure screenshot |
+|---|---|---|
+| **Playwright Test** — a `*.spec.ts` run under a `playwright.config.ts` with `screenshot: "only-on-failure"` + `trace: "retain-on-failure"` | a screenshot and a trace for every browser context the test creates | **Forbidden** in the spec, fixture, hook or helper — point at the runner's file |
+| **Playwright MCP** lanes (the `.mcp.json` servers `/project-init` writes) | **nothing**. `@playwright/mcp` has no `screenshot` option and no notion of a failing test — a `"screenshot": "only-on-failure"` key in any lane config is read by nothing (pinned 0.0.77, checked 2026-10-21) | **Required** — the agent's `browser_take_screenshot` at a FAIL is the only failure image. Never remove it as a duplicate |
+| **Chrome DevTools MCP**; a script driving the Playwright *library* | nothing — no test runner to fail | the capture taken is the only one |
+
+**What this rule never touches:** a capture made for a human reader — the inline tracker image (§5.0,
+still MANDATORY), visual evidence, motion GIFs (§5.2). Where the runner's failure screenshot already shows
+the problem legibly, reuse that file for the comment instead of shooting it again. **"Legibly" is judged
+at the width the comment shows it** (`|width=700!`), not at full size: a full viewport readable only when
+zoomed fails the test, so it stays as the context shot and an element shot of the problem is still taken.
 
 ### 5.2 Motion evidence — a GIF when the defect IS the transition
 
@@ -212,7 +246,7 @@ Reports:
 | Artifact | Lives at | Cite as |
 |----------|----------|---------|
 | HAR files | `test-results/{browser}/har/` | "HAR: `checkout-2026-05-21.har`" |
-| Full screenshot set | `reports/bugs/screenshots/` | Link 1–2 inline; reference the folder |
+| Full screenshot set | `reports/bugs/screenshots/` (local, not committed) | Attach 1–2 to the tracker comment (§5.0); a repo path is not a reference anyone else can open |
 | Test data *(full `vc-qa` plugin only, not shipped here)* | `test-data/aliases.json` | `@td(ALIAS.field)` — don't paste rows |
 | BL/ECL invariants | `knowledge/oracles/business-logic.md` | Cite the ID (`BL-AUTH-005`), not the body |
 | Prior runs *(full `vc-qa` plugin only, not shipped here)* | `reports/regression/REG-*` | Link by run ID, don't recap |

@@ -20,8 +20,8 @@ Investigate a suspected bug using a structured 5-phase process: Reproduce → Is
 1. **Read the investigation flow:** Load `bug-investigation-flow.md` from this skill folder for the full process, decision tree, and common VC patterns (P1–P8). For the **operational** evidence-capture pass and the root-cause worksheet, also load `evidence-and-root-cause.md` (the runnable companion) — this is where the depth lives.
 
    **Scaffold the evidence package up front** so every artifact has one home and nothing is missed
-   (`scripts/bundle-evidence.ts` is full `vc-qa` plugin only, not shipped in `vc-fix` — create the
-   package dir by hand at `reports/tickets/<TICKET>/evidence-<UTCstamp>/` with
+   (`scripts/regression/bundle-evidence.ts` is full `vc-qa` plugin only, not shipped in `vc-fix` — create the
+   package dir by hand at `<run folder>/evidence-<UTCstamp>/` with
    `screenshots/ network/ console/ har/` subfolders, and write `evidence-index.md` /
    `root-cause.md` yourself; see `evidence-and-root-cause.md` §0 for the exact shapes).
 
@@ -65,11 +65,11 @@ Investigate a suspected bug using a structured 5-phase process: Reproduce → Is
 
 8. **Document and hand off:**
    - **Gate first:** self-verify against Part A's mandatory (**M**) rows in `evidence-and-root-cause.md` — every mandatory slot filled + alternatives ruled out is the bar before writing the report; anything missing means go back and capture (there's no `--check` script in `vc-fix`, per §0 above).
-   - **Run ahead of `/vc-fix:qa-bug`** (a brief says so — e.g. `/qa-triage-results` Phase 4): **stop after the gate.** Return the package path, `REPRODUCED` / `NOT_REPRODUCED`, the owning layer + repo + confidence, and nothing else — `qa-bug` writes the one report from that package. Two writers make two reports for one bug. The steps below apply only when you are the last step.
+   - **Run ahead of `/vc-fix:qa-bug`** (a brief says so — e.g. `/qa-triage-results` Phase 4): **stop after the gate.** Return the package path, `REPRODUCED` / `NOT_REPRODUCED`, the owning layer + repo + confidence, and nothing else — `qa-bug` writes the one report from that package. Two writers make two reports for one bug. The package must pass `/vc-fix:qa-bug`'s `knowledge/execution/bug-from-package.md` §Complete — `qa-bug` captures nothing you left out. The steps below apply only when you are the last step.
    - Write bug report using templates in `skills/qa-defect/defect-report-templates.md` — reference the package artifacts, don't inline them (`reports.md` §8)
    - Include the **env header** (§1) and the **Fix Routing block** (owning layer + repo + `repoKind`, per `qa-bug.md` Step 4) so `/qa-fix` Gate 1 can confirm rather than re-derive
    - For regressions, add the **Regression block** (§8C Step 4): introducing commit/PR, first-bad & last-good versions, why it broke, revert-safe vs. fix-forward
-   - Save to `reports/bugs/`
+   - Save to `reports/bugs/` — or the caller's run folder's `bugs/` (`/qa-bug` Step 4)
    - Optionally create a tracker ticket via `/qa-bug` Step 5 (tracker-ops Create — Jira `createJiraIssue` / Azure `ado.mjs create-workitem`)
 
 ## Rules

@@ -35,12 +35,16 @@ CMS-088,Error handling — Empty required fields on page creation,Error Handling
 [ACT] Leave Permalink field empty
 [ACT] Attempt to click Save
 [ASSERT] Verify validation errors appear for required fields",Save is disabled or validation errors shown for empty Name and Permalink fields; page is not created without required fields,,Page created with empty name/permalink; no validation errors; Save succeeds with missing data,none,Coverage Gap Analysis COV-2026-03-25-1630,generated
-CMS-089,Error handling — Special characters in permalink,Error Handling,Medium,,ECL-2.2,Admin logged in; PageBuilder shell open,"Special characters: spaces, &, ?, #, unicode","[ACT] Create new page with permalink containing spaces: '/my page test'
-[ASSERT] Verify system sanitizes or rejects the input
-[ACT] Create page with permalink containing special characters: '/page&test?q=1#anchor'
-[ASSERT] Verify system sanitizes or rejects
-[ACT] Create page with permalink containing unicode: '/страница-тест'
-[ASSERT] Verify behavior",System either sanitizes permalinks (removes/replaces invalid characters) or shows clear validation error; no server errors; pages with sanitized permalinks are accessible on storefront,,Server error 500; permalink accepted with invalid characters causing routing issues; storefront crash on special character URL,none,Coverage Gap Analysis COV-2026-03-25-1630,generated
+CMS-089,Error handling — Special characters in permalink,Error Handling,Medium,,ECL-2.2,Admin logged in; PageBuilder shell open,"Invalid permalinks: whitespace, & ? # backslash, //, . / ..; valid Unicode permalink","[NAV] Open the page-builder shell new-page form
+[ACT] Enter permalink with a space: '/my page test'
+[ACT] Enter permalink with reserved characters: '/page&test?q=1#anchor'
+[ACT] Submit the same invalid permalink through the REST API (create/update page)
+[WAIT] API response received
+[ACT] Enter permalink with Unicode letters: '/страница-тест'
+[ACT] Click Save
+[WAIT] Save completes
+[ACT] Reopen the saved page","Invalid permalinks (whitespace/control, ? # & backslash, //, . / ..) are rejected, never normalized: UI shows an inline field error with the rule text, Save is disabled and the typed value is left unaltered; API returns HTTP 400 with the permalink rule message (text/plain); nothing is stored {SPEC} VCST-6443 decision comment (B. Kotov 2026-10-21) {OBSERVED} REG-2026-10-22-1819
+Unicode letters and % are allowed: '/страница-тест' is accepted verbatim, Save succeeds and the reopened page holds exactly '/страница-тест' (no sanitizing, transliteration or encoding change); no 500 anywhere {SPEC} VCST-6443 decision comment {OBSERVED} REG-2026-10-22-1819",REST: invalid permalink returns 400 and the page is absent from the pages list; Unicode page returned with the unchanged permalink,Server error 500; invalid permalink saved (altered or not); permalink silently sanitized or rewritten; Save enabled with an invalid permalink; API returns 200/201 for an invalid permalink; Unicode permalink rejected or altered,Delete test pages created during the run,VCST-6443; Coverage Gap Analysis COV-2026-03-25-1630,Draft
 CMS-090,Edge case — Page with maximum sections,Edge Cases,Low,,ECL-13.1,Admin logged in; test page in designer,Draft test page,"[NAV] Open a draft page in the designer
 [ACT] Add blocks repeatedly (e.g. Title blocks) until you have 20+ sections
 [ASSERT] Verify the sections panel scrolls properly
@@ -164,9 +168,9 @@ CMS-110,Routing — Publish endpoint uses groupId path parameter not query strin
 CMS-139,Asset Library Picker — dialog chrome and initial state,Asset Library Picker,Critical,,,Admin logged in; Page open in designer at ${BACK_URL}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id); store has at least one asset folder and one image file; block with image control added to page (block library label: 'Image'),storeId=@td(STORE_PRIMARY.id),"[NAV] Open a draft page in the designer and add an 'Image' block
 [ACT] [BLADE] Click the image field control (label CONTAINS 'Asset Library'; actual label observed on vcptcore-qa: 'Choose from Asset Library or drag and drop here')
 [WAIT] Asset Library picker dialog opens (modal or overlay; heading CONTAINS 'asset library', case-insensitive; observed: 'Choose from asset library')
-[ASSERT] Dialog shows: breadcrumb navigation (at least root level); folder/file list area; Search input field; Upload button; Cancel button; Select button in disabled state
+[ASSERT] Dialog shows: breadcrumb navigation (at least root level); folder/file list area; Search input field; Upload button and New folder button (New folder to the right of Upload; both shown because the admin holds platform:asset:create); asset counter; Cancel button; Select button in disabled state
 [ASSERT] Assets/folders listed are scoped to the current store's asset folder (not another store's assets)
-[ACT] Verify no file is pre-selected (Select button disabled)",[BLADE] Asset Library picker dialog opens when image field control clicked (control label CONTAINS 'Asset Library'); [DOM] dialog heading CONTAINS 'asset library' (case-insensitive); [DOM] breadcrumbs visible (at least root/store level); [DOM] folder and file list renders; [DOM] Search input field present; [DOM] 'Upload' button visible and enabled; [DOM] 'Cancel' button visible and enabled; [DOM] 'Select' button visible and DISABLED when nothing is selected; [DOM] listed assets/folders are scoped to the current store's asset folder,[CONSOLE] no JS errors on dialog open; [NETWORK] no 4xx/5xx on asset listing request,Dialog does not open; dialog opens blank/empty; 'Select' button enabled with nothing selected; breadcrumbs absent; console errors on open; assets from a different store shown,none — dialog opened/closed without modification,"VCST-4932; Phase-5 verified 2026-06-11 (vcptcore-qa): control label 'Choose from Asset Library or drag and drop here', dialog heading 'Choose from asset library' — match as CONTAINS, not exact equality",Draft
+[ACT] Verify no file is pre-selected (Select button disabled)",[BLADE] Asset Library picker dialog opens when image field control clicked (control label CONTAINS 'Asset Library'); [DOM] dialog heading CONTAINS 'asset library' (case-insensitive); [DOM] breadcrumbs visible (at least root/store level); [DOM] folder and file list renders; [DOM] Search input field present; [DOM] {OBSERVED} (VCST-5443; 4 runs on vcst-qa 2026-10-23..26) 'Upload' and 'New folder' buttons visible and enabled for the admin (platform:asset:create) with New folder to the right of Upload; [DOM] {OBSERVED} asset counter present; [DOM] 'Cancel' button visible and enabled; [DOM] 'Select' button visible and DISABLED when nothing is selected; [DOM] listed assets/folders are scoped to the current store's asset folder,[CONSOLE] no JS errors on dialog open; [NETWORK] no 4xx/5xx on asset listing request,Dialog does not open; dialog opens blank/empty; 'Select' button enabled with nothing selected; breadcrumbs absent; console errors on open; assets from a different store shown,none — dialog opened/closed without modification,"VCST-4932; Phase-5 verified 2026-06-11 (vcptcore-qa): control label 'Choose from Asset Library or drag and drop here', dialog heading 'Choose from asset library' — match as CONTAINS, not exact equality; RE-BASED 2026-10-26 (VCST-5443, vc-module-pagebuilder PR #166): toolbar is now Upload + New folder + Search assets… + asset counter (was Upload + search + counter), verified live on vcst-qa. Catches: New folder missing from the toolbar of a user who may create, or shown without the permission (see CMS-228/CMS-229)",Draft
 CMS-140,Asset Library Picker — select existing image and verify applied to control,Asset Library Picker,Critical,,,Admin logged in; Page open in designer; 'Image' block section open (block library label: 'Image'); at least one image (.jpg/.png) exists in store Asset Library root or accessible folder,storeId=@td(STORE_PRIMARY.id),"[NAV] Open a draft page in the designer; click on an Image block section
 [ACT] [BLADE] Click the image field control (label CONTAINS 'Asset Library')
 [WAIT] Asset Library picker dialog opens (heading CONTAINS 'asset library', case-insensitive)
@@ -200,7 +204,8 @@ CMS-142,Asset Library Picker — search within current location,Asset Library Pi
 [ASSERT] The folder's first page is shown again and the paginator total is back to the folder's full count","[DOM] Search field filters file list within current folder scope; [DOM] non-matching files hidden during search; [DOM] clearing search restores the folder listing (first page; paginator total = the folder's full count); [DOM] search is scoped to current location (folder), not global",[CONSOLE] no JS errors during search; [NETWORK] no 4xx/5xx on search requests,Search field not present; search returns files from other folders (not scoped); clearing search doesn't restore list; search causes JS error,none,VCST-4932,Draft
 CMS-143,Asset Library Picker — upload new file and select it,Asset Library Picker,High,,ECL-7.3,Admin logged in; store Asset Library accessible; test image file available locally (AGENT-TEST-upload prefix),storeId=@td(STORE_PRIMARY.id); upload fixture: AGENT-TEST-image-4932.jpg (add to test-data/cms/ if not present),"[NAV] Open designer; add an 'Image' block; click the image field control (label CONTAINS 'Asset Library')
 [WAIT] Dialog opens
-[ACT] Create a fresh lowercase folder for this run (e.g. 'agent-test-4932-run') and navigate into it — see the References note; the folder must be empty so the uploaded name cannot already exist
+[ACT] Click 'New folder', type the fresh lowercase name 'agent-test-4932-run' and press Enter (or click 'Create folder') — the picker creates the folder and navigates into it (breadcrumb ends with the new name); the folder is empty so the uploaded name cannot already exist
+[WAIT] The picker is inside the new folder and the breadcrumb ends with its name
 [ACT] Click 'Upload' button in the dialog
 [WAIT] File selection / upload control appears
 [ACT] Select local test image file (AGENT-TEST-image-4932.jpg)
@@ -209,7 +214,7 @@ CMS-143,Asset Library Picker — upload new file and select it,Asset Library Pic
 [ACT] Click the newly uploaded file to select it
 [WAIT] 'Select' button becomes enabled
 [ACT] Click 'Select'
-[WAIT] Dialog closes; image preview shown in control",[DOM] 'Upload' button present in dialog; [DOM] uploaded file appears in folder list after upload; [DOM] uploaded file is selectable (not greyed out); [BLADE] dialog closes and image applied after selecting uploaded file,[CONSOLE] no JS errors during upload; [NETWORK] POST asset upload request succeeds (2xx); no 4xx/5xx,Upload button absent in dialog; upload fails; uploaded file does not appear in list; uploaded file not selectable immediately; dialog freezes during upload,Delete the per-run folder 'agent-test-4932-run' (with its contents) from the Asset Library via the Admin Asset Library workspace after the test,"VCST-4932; VCST-5725. NOTE (2026-09-10, VCST-5725): upload into a FRESH per-run folder. Since the overwrite-protection change, re-uploading a name that already exists raises the ""File name conflict"" confirmation instead of uploading, so a fixed filename in a shared folder makes this case fail on its own leftovers from the previous run. Folder names must be LOWERCASE (validation: ""Folder name must only contain lowercase letters, numbers, spaces, and single dashes"").",Draft
+[WAIT] Dialog closes; image preview shown in control",[DOM] 'Upload' button present in dialog; [DOM] {OBSERVED} (VCST-5443) after 'New folder' the picker is inside the new folder so the upload lands there; [DOM] uploaded file appears in folder list after upload; [DOM] uploaded file is selectable (not greyed out); [BLADE] dialog closes and image applied after selecting uploaded file,[CONSOLE] no JS errors during upload; [NETWORK] POST asset upload request succeeds (2xx); no 4xx/5xx,Upload button absent in dialog; upload fails; uploaded file does not appear in list; uploaded file not selectable immediately; dialog freezes during upload,Delete the per-run folder 'agent-test-4932-run' (with its contents) from the Asset Library via the Admin Asset Library workspace after the test,"VCST-4932; VCST-5725; VCST-5443. REPAIRED 2026-10-26: the fresh folder is now created from the picker's own New folder button (not out-of-band). NOTE (2026-09-10, VCST-5725): upload into a FRESH per-run folder. Since the overwrite-protection change, re-uploading a name that already exists raises the ""File name conflict"" confirmation instead of uploading, so a fixed filename in a shared folder makes this case fail on its own leftovers from the previous run. Folder names must be LOWERCASE (validation: ""Folder name must only contain lowercase letters, numbers, spaces, and single dashes"").",Draft
 CMS-144,Asset Library Picker — drag-and-drop upload into dialog,Asset Library Picker,Medium,,ECL-7.3,Admin logged in; dialog open at a folder location; local test file available,storeId=@td(STORE_PRIMARY.id); drag-and-drop test file: AGENT-TEST-dnd-4932.png,"[ACT] [AUTOMATABLE since 2026-09-10] Supersedes the previous note on this case, which said an OS-filesystem-to-browser drag was impossible with the MCP toolset. The Playwright MCP exposes `browser_drop`, which takes REAL file paths and delivers them to a drop target as if dragged from outside the page; both a plain drop and a colliding drop were driven this way on vcptcore-qa 2026-09-10. Label the result precisely: this is the MCP's tool-native file-drop primitive built from real files on disk — it is NOT a page-script `DataTransfer` fake (which would prove nothing), and NOT a literal human drag from Explorer (so a defect that lives only in the OS drag source would still be missed).
 [NAV] Open designer; add an 'Image' block; click the image field control (label CONTAINS 'Asset Library')
 [WAIT] Dialog opens
@@ -651,3 +656,446 @@ CMS-173,Anchor scrolling yields to a user scroll and does not replay a stale nav
 [ACT] read the vertical scroll offset of the document","[STATE] after the manual scroll the document stays where the user left it, so the anchor scroll backs off instead of fighting the user {DOC}
 [STATE] on the page carrying no hash the document vertical scroll offset is zero — the pending scroll from the previous route is cancelled {DOC}
 [DOM] the element with id 'my-section-title' is absent from the second page, confirming no stale target is chased {DOC}",[CONSOLE] no JS errors and no unhandled promise rejection on route change; [NETWORK] no 4xx/5xx,The page jumps back to the anchor after the user scrolls; the newly opened page is scrolled by the previous route pending scroll; console shows an unhandled rejection on route change,none — read-only navigation,VCST-5704 VP-9266 PR VirtoCommerce/vc-module-pagebuilder#160 PR VirtoCommerce/vc-frontend#2441,Draft
+CMS-220,"Asset Library picker - New folder creates the folder, enters it, clears search, and the next upload lands in it",Asset Library Picker,Critical,,,"Admin signed in as {{ADMIN}} (holds platform:asset:create); the build includes vc-module-pagebuilder PR #166 (VCST-5443: picker New folder, multi-select, multi-file upload); shell loaded with a cache-busting query param ('&cb=<new value>') because index.html carries no Cache-Control and a visited browser keeps a stale bundle; desktop viewport only (the Page Builder Designer has no mobile layout, so no narrow-viewport variant exists); the case creates its own draft page and its own lowercase folder 'agent-test-5443-<unique>' (random-data suffix) and removes both in Cleanup",storeId=@td(STORE_PRIMARY.id); folder=agent-test-5443-<unique>; upload fixture=test-data/cms/uploads-4932/AGENT-TEST-image-4932.jpg,"[NAV] Open {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)&cb=<new value> ; Pages -> Add: create the draft page 'AGENT-TEST-5443-<unique>' (unique permalink, language en-US) and Save, then open it in the designer
+[ACT] Add block -> 'Image' and select it
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] Click 'Choose from Asset Library or drag and drop here' (dialog heading 'Choose from asset library', matched case-insensitively)
+[WAIT] The dialog opens at the store root; the breadcrumb starts with 'Page Builder'
+[ASSERT] The toolbar shows Upload, New folder (to the right of Upload), 'Search assets…' and the asset counter
+[ACT] Type 'zzz' into 'Search assets…' (so that clearing it is observable), then clear the network log
+[ACT] Click 'New folder'
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] A 'Folder name' input appears; the same row holds two square icon buttons: 'Create folder' (check icon) and 'Cancel new folder' (close icon); 'Create folder' is disabled while the input is empty
+[ACT] Type agent-test-5443-<unique> and press Enter
+[CAPTURE] the POST {{BACK_URL}}/api/assets/folder request (body and status) and every other request issued since the log was cleared
+[ASSERT] --- SCREEN: picker, new folder --- The dialog is still open; the breadcrumb ends with the new folder name; the 'Search assets…' box is empty; the folder is empty
+[ACT] Click 'Upload' and choose test-data/cms/uploads-4932/AGENT-TEST-image-4932.jpg
+[WAIT] The UI settles (no spinner, network idle)
+[CAPTURE] the POST {{BACK_URL}}/api/assets?folderUrl=... request
+[ASSERT] folderUrl ends with the new folder name and the response is 200; the file is listed inside the new folder
+[ACT] Click the breadcrumb segment of the parent folder
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] The new folder tile is listed in the parent","[NETWORK] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) {SPEC} (VCST-5443): exactly one POST /api/assets/folder per create; the body carries name = the typed name and parentUrl = the folder the picker was in; status 204
+[DOM] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) after create the picker navigates INTO the new folder: breadcrumb updated, dialog still open, 'Search assets…' cleared
+[NETWORK] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) the next upload is POST /api/assets?folderUrl=<new folder> with status 200 (the new folder is the upload target, not its parent)
+[DOM] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) the uploaded file is listed in the new folder and the new folder is listed in its parent
+[DOM] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) no endpoint other than /api/assets/folder is introduced by New folder","[CONSOLE] no TypeError or JS error during the picker interaction
+[NETWORK] no 4xx/5xx on /api/assets, /api/assets/folder or /api/page-builder-assets/search other than the ones this case provokes","Picker stays in the parent after create
+Upload after create lands in the parent folder
+Search text survives navigation into the new folder
+More than one POST /api/assets/folder
+Create returns non-204","Delete the folder 'agent-test-5443-<unique>' (with its contents) in the shell Assets Library; Delete the draft page 'AGENT-TEST-5443-<unique>' (Pages grid, Delete)","VCST-5443; vc-module-pagebuilder PR #166 (heads e2d395ea/3a31b201/4108ac1e). Catches: after 'New folder' the picker keeps showing the parent, so the next upload silently lands in the wrong folder and the operator picks an asset from the wrong place. Archetype:SILENT · Technique:FLOW · Purpose:FUNC",Draft
+CMS-221,Asset Library picker - New folder name validation rejects bad names inline with no request and accepts the 3-63 char boundary,Asset Library Picker,High,,,"Admin signed in as {{ADMIN}} (holds platform:asset:create); the build includes vc-module-pagebuilder PR #166 (VCST-5443: picker New folder, multi-select, multi-file upload); shell loaded with a cache-busting query param ('&cb=<new value>') because index.html carries no Cache-Control and a visited browser keeps a stale bundle; desktop viewport only (the Page Builder Designer has no mobile layout, so no narrow-viewport variant exists); the case creates its own draft page and the accepted folders under the run prefix, removed in Cleanup; every accepted folder is left via the breadcrumb before the next attempt","storeId=@td(STORE_PRIMARY.id); names: 'Abc', 'ab', 'a--b', '-ab', 64-char name ('agent-test-5443-' + 48 x 'a'), accepted 'abc'-shaped 3-char name (3 random lowercase letters), 'my folder' (agent-test-5443-my folder), 63-char name ('agent-test-5443-' + 47 x 'a')","[NAV] Open {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)&cb=<new value> ; Pages -> Add: create the draft page 'AGENT-TEST-5443-<unique>' (unique permalink, language en-US) and Save, then open it in the designer
+[ACT] Add block -> 'Image' and select it
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] Click 'Choose from Asset Library or drag and drop here' (dialog heading 'Choose from asset library', matched case-insensitively)
+[WAIT] The dialog opens at the store root; the breadcrumb starts with 'Page Builder'
+[ACT] Clear the network log; click 'New folder'
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] Type 'Abc' (uppercase)
+[ASSERT] An inline error 'Folder name must only contain lowercase letters, numbers, spaces, and single dashes.' is shown; 'Create folder' is disabled
+[ACT] Press Enter
+[ASSERT] Nothing is submitted: no POST /api/assets/folder is in the network log; the form stays open
+[ACT] Replace the value with 'ab'
+[ASSERT] The inline error mentions at least 3 characters; 'Create folder' is disabled
+[ACT] Replace the value with 'a--b'
+[ASSERT] The inline error mentions the consecutive dash; 'Create folder' is disabled
+[ACT] Replace the value with '-ab'
+[ASSERT] The inline error says the name must not start with a dash; 'Create folder' is disabled
+[ACT] Replace the value with the 64-char name
+[ASSERT] The inline error mentions at most 63 characters; 'Create folder' is disabled
+[ASSERT] Still no POST /api/assets/folder in the network log after all five invalid inputs
+[ACT] Replace the value with the 3-char name and click 'Create folder'; click the parent breadcrumb
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] Click 'New folder', type 'agent-test-5443-my folder', press Enter; click the parent breadcrumb
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] Click 'New folder', type the 63-char name, press Enter; click the parent breadcrumb
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] The three accepted names are listed as folders in the parent; the network log holds exactly three POST /api/assets/folder requests, each 204","[DOM] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) {SPEC} (VCST-5443): 'Abc' -> ""Folder name must only contain lowercase letters, numbers, spaces, and single dashes.""; 'ab' -> at least 3 characters; 'a--b' -> consecutive dash; '-ab' -> must not start with a dash; 64 chars -> at most 63 characters (wording of all but the first is matched as CONTAINS)
+[DOM] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) 'Create folder' is disabled for every one of the five invalid inputs
+[NETWORK] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) the count of POST /api/assets/folder requests = 0 for the five invalid inputs (validation is client-side, nothing is sent)
+[STATUS] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) the 3-char name, 'my folder' (with a space) and the 63-char name are each accepted: exactly one POST /api/assets/folder per name, status 204 each
+[DOM] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) the 63-char name is listed in full (boundary 63 accepted, 64 rejected)","[CONSOLE] no TypeError or JS error during the picker interaction
+[NETWORK] no 4xx/5xx on /api/assets, /api/assets/folder or /api/page-builder-assets/search other than the ones this case provokes","An invalid name is submitted (POST sent)
+Uppercase accepted
+64 chars accepted or 63 rejected
+2 chars accepted
+Error text absent while Create stays enabled","Delete the three accepted folders (with contents) in the shell Assets Library; Delete the draft page 'AGENT-TEST-5443-<unique>' (Pages grid, Delete)",VCST-5443; vc-module-pagebuilder PR #166 (heads e2d395ea/3a31b201/4108ac1e). Catches: the folder-name validator checks the wrong boundary (off by one at 63/64 or 2/3) or lets an invalid name reach the server. Archetype:BOUNDARY · Technique:BVA · Purpose:FUNC,Draft
+CMS-222,"Asset Library picker - Esc or Cancel new folder closes only the form, discards the draft and returns focus to New folder",Asset Library Picker,High,,,"Admin signed in as {{ADMIN}} (holds platform:asset:create); the build includes vc-module-pagebuilder PR #166 (VCST-5443: picker New folder, multi-select, multi-file upload); shell loaded with a cache-busting query param ('&cb=<new value>') because index.html carries no Cache-Control and a visited browser keeps a stale bundle; desktop viewport only (the Page Builder Designer has no mobile layout, so no narrow-viewport variant exists); the case creates its own draft page, removed in Cleanup; no folder is created",storeId=@td(STORE_PRIMARY.id); draft name=agent-test-5443-cancel,"[NAV] Open {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)&cb=<new value> ; Pages -> Add: create the draft page 'AGENT-TEST-5443-<unique>' (unique permalink, language en-US) and Save, then open it in the designer
+[ACT] Add block -> 'Image' and select it
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] Click 'Choose from Asset Library or drag and drop here' (dialog heading 'Choose from asset library', matched case-insensitively)
+[WAIT] The dialog opens at the store root; the breadcrumb starts with 'Page Builder'
+[ACT] Clear the network log; click 'New folder' and type 'agent-test-5443-cancel'
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] Press Esc
+[ASSERT] The 'Folder name' form is gone; the 'Choose from asset library' dialog is STILL open; focus is on the 'New folder' button
+[ACT] Click 'New folder' again
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] The 'Folder name' input is empty (the draft was discarded)
+[ACT] Type 'agent-test-5443-cancel' and click 'Cancel new folder' (close icon)
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] The form is gone; the dialog is still open; focus is back on 'New folder'
+[ACT] Click 'New folder' and leave the input empty
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] 'Create folder' is disabled
+[ASSERT] The network log holds no POST /api/assets/folder","[DOM] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) Esc closes only the New folder form; the picker dialog stays open
+[DOM] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) 'Cancel new folder' behaves like Esc: form closed, dialog open
+[STATE] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) the draft name is discarded: the re-opened input is empty
+[STATE] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) document.activeElement equals the 'New folder' button after Esc and after Cancel
+[COUNT] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) the count of POST /api/assets/folder requests = 0 after Esc, Cancel and an empty confirm; 'Create folder' is disabled for an empty name","[CONSOLE] no TypeError or JS error during the picker interaction
+[NETWORK] no 4xx/5xx on /api/assets, /api/assets/folder or /api/page-builder-assets/search other than the ones this case provokes","Esc closes the whole picker dialog
+Draft name reappears on the next open
+Focus lost to the page body after Esc
+A folder is created by cancel","Delete the draft page 'AGENT-TEST-5443-<unique>' (Pages grid, Delete)","VCST-5443; vc-module-pagebuilder PR #166 (heads e2d395ea/3a31b201/4108ac1e). Catches: Esc is handled by the dialog instead of the form, so a keystroke meant to abandon a folder name closes the whole picker and drops the operator's place. Archetype:SILENT · Technique:ST · Purpose:FUNC",Draft
+CMS-223,Asset Library picker - double-clicking Create folder (or Enter twice) sends exactly one POST /api/assets/folder,Asset Library Picker,High,,,"Admin signed in as {{ADMIN}} (holds platform:asset:create); the build includes vc-module-pagebuilder PR #166 (VCST-5443: picker New folder, multi-select, multi-file upload); shell loaded with a cache-busting query param ('&cb=<new value>') because index.html carries no Cache-Control and a visited browser keeps a stale bundle; desktop viewport only (the Page Builder Designer has no mobile layout, so no narrow-viewport variant exists); the case creates its own draft page and the folder 'agent-test-5443-dbl-<unique>', removed in Cleanup",storeId=@td(STORE_PRIMARY.id); folder=agent-test-5443-dbl-<unique>,"[NAV] Open {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)&cb=<new value> ; Pages -> Add: create the draft page 'AGENT-TEST-5443-<unique>' (unique permalink, language en-US) and Save, then open it in the designer
+[ACT] Add block -> 'Image' and select it
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] Click 'Choose from Asset Library or drag and drop here' (dialog heading 'Choose from asset library', matched case-insensitively)
+[WAIT] The dialog opens at the store root; the breadcrumb starts with 'Page Builder'
+[ACT] Clear the network log; click 'New folder' and type agent-test-5443-dbl-<unique>
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] Double-click 'Create folder' as fast as the browser allows (a single dblclick action)
+[WAIT] The UI settles (no spinner, network idle)
+[CAPTURE] every request in the network log
+[ASSERT] Exactly one POST /api/assets/folder with status 204; the picker is inside the new folder and shows no error
+[ACT] Go back via the parent breadcrumb, clear the log, click 'New folder', type agent-test-5443-dbl2-<unique>, press Enter twice in quick succession
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] Exactly one POST /api/assets/folder (204) again; the parent lists each of the two folders once","[NETWORK] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) {SPEC} (VCST-5443): one POST /api/assets/folder per create, also on a fast double-click; status 204
+[NETWORK] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) no request other than /api/assets/folder and the listing/search calls is issued by New folder
+[DOM] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) each created folder appears exactly once in the parent listing","[CONSOLE] no TypeError or JS error during the picker interaction
+[NETWORK] no 4xx/5xx on /api/assets, /api/assets/folder or /api/page-builder-assets/search other than the ones this case provokes","Two POST /api/assets/folder requests
+Second POST fails with a conflict error toast
+Duplicate tiles in the parent","Delete the folders 'agent-test-5443-dbl-<unique>' and 'agent-test-5443-dbl2-<unique>' in the shell Assets Library; Delete the draft page 'AGENT-TEST-5443-<unique>' (Pages grid, Delete)","VCST-5443; vc-module-pagebuilder PR #166 (heads e2d395ea/3a31b201/4108ac1e). Catches: no in-flight guard on the confirm button, so a double-click issues two creates and the operator gets a conflict error for a folder that was in fact created. Archetype:RACE · Technique:EG · Purpose:FUNC",Draft
+CMS-224,Asset Library picker and Admin Assets Library workspace - the same folder name gets the same verdict and message on both surfaces,Asset Library Picker,High,,,"Admin signed in as {{ADMIN}} (holds platform:asset:create); the build includes vc-module-pagebuilder PR #166 (VCST-5443: picker New folder, multi-select, multi-file upload); shell loaded with a cache-busting query param ('&cb=<new value>') because index.html carries no Cache-Control and a visited browser keeps a stale bundle; desktop viewport only (the Page Builder Designer has no mobile layout, so no narrow-viewport variant exists); the case creates its own draft page and uses run-prefixed accepted names on both surfaces, removed in Cleanup","storeId=@td(STORE_PRIMARY.id); names: 'Abc', 'ab', 'a--b', '-ab', 64-char name ('agent-test-5443-' + 48 x 'a'), 'agent-test-5443-par my folder', 63-char name ('agent-test-5443-' + 47 x 'a')","[NAV] Open {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)&cb=<new value>#/page-builder-assets (the Assets Library workspace)
+[ACT] For each name in the list: click 'Create Folder' (or 'New Folder'), type the name, press Enter or click Create
+[WAIT] The UI settles (no spinner, network idle)
+[CAPTURE] per name: the inline error text, whether the confirm control is disabled, and whether POST /api/assets/folder was sent (and its status)
+[NAV] Create the draft page 'AGENT-TEST-5443-<unique>' and open it in the designer; add block -> 'Image'
+[ACT] Click 'Choose from Asset Library or drag and drop here' (dialog heading 'Choose from asset library', matched case-insensitively)
+[WAIT] The dialog opens at the store root; the breadcrumb starts with 'Page Builder'
+[ACT] For each name in the same order: click 'New folder', type the name, press Enter, leave the parent via the breadcrumb after an accepted name
+[WAIT] The UI settles (no spinner, network idle)
+[CAPTURE] the same three observations per name
+[ASSERT] The two captured tables are identical row by row","[DOM] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) {SPEC} (VCST-5443, rule parity): every name has the same verdict on both surfaces; 'Abc' shows the identical message ""Folder name must only contain lowercase letters, numbers, spaces, and single dashes."" in the workspace and in the picker
+[DOM] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) the other four rejected names (ab, a--b, -ab, 64 chars) are rejected on BOTH surfaces with the same message text
+[STATUS] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) the accepted names (with a space; 63 chars) return 204 from POST /api/assets/folder on both surfaces
+[NETWORK] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) no request for any rejected name on either surface","[CONSOLE] no TypeError or JS error during the picker interaction
+[NETWORK] no 4xx/5xx on /api/assets, /api/assets/folder or /api/page-builder-assets/search other than the ones this case provokes","A name accepted in one surface and rejected in the other
+Different message text for the same name
+Picker accepts uppercase while the workspace rejects it","Delete every accepted folder (with contents) from the Asset Library; Delete the draft page 'AGENT-TEST-5443-<unique>' (Pages grid, Delete)",VCST-5443; vc-module-pagebuilder PR #166 (heads e2d395ea/3a31b201/4108ac1e); rule source: Admin Assets Library workspace (CMS-156). Catches: the picker re-implements the folder rules and drifts from the workspace validator. Archetype:PARITY · Technique:DT · Purpose:FUNC,Draft
+CMS-225,Asset Library picker - the New folder error text appears below the row and does not move the asset grid (desktop 1920 and 1280),Asset Library Picker,Medium,BL-UI-003,,"Admin signed in as {{ADMIN}} (holds platform:asset:create); the build includes vc-module-pagebuilder PR #166 (VCST-5443: picker New folder, multi-select, multi-file upload); shell loaded with a cache-busting query param ('&cb=<new value>') because index.html carries no Cache-Control and a visited browser keeps a stale bundle; desktop viewport only (the Page Builder Designer has no mobile layout, so no narrow-viewport variant exists); folder @td(PB_ASSETS_FOLDERS.folderUrl) seeded (npm run seed:cms-assets) so the grid is populated; the case creates its own draft page, removed in Cleanup; run once at 1920 px and once at 1280 px wide",storeId=@td(STORE_PRIMARY.id); folder=@td(PB_ASSETS_FOLDERS.folderUrl),"[NAV] Open {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)&cb=<new value> ; Pages -> Add: create the draft page 'AGENT-TEST-5443-<unique>' (unique permalink, language en-US) and Save, then open it in the designer
+[ACT] Add block -> 'Image' and select it
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] Click 'Choose from Asset Library or drag and drop here' (dialog heading 'Choose from asset library', matched case-insensitively)
+[WAIT] The dialog opens at the store root; the breadcrumb starts with 'Page Builder'
+[ACT] Open @td(PB_ASSETS_FOLDERS.folder) via the folder tiles
+[ACT] Resize the viewport to 1920 px wide
+[ACT] Record getBoundingClientRect() of the first and the last visible tile of the grid
+[ACT] Click 'New folder' and type 'Abc'
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] The inline error is visible; record getBoundingClientRect() of the error text and of the 'Folder name' row
+[ASSERT] Re-recorded tile rects: topDelta and leftDelta are both 0 against the first recording
+[ACT] Repeat from the resize step at 1280 px wide","[DOM] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) the error text top is at or below the bottom of the 'Folder name' row (it renders below the row)
+[DOM] {BL} (BL-UI-003) the first and last tile move 0 px (topDelta = 0, leftDelta = 0) when the validation message appears, at 1920 and at 1280
+[DOM] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) the confirm and cancel icon buttons keep their rects when the error appears (the row does not reflow)","[CONSOLE] no TypeError or JS error during the picker interaction
+[NETWORK] no 4xx/5xx on /api/assets, /api/assets/folder or /api/page-builder-assets/search other than the ones this case provokes","Asset grid jumps down when the error appears
+Error text overlaps the tiles
+Icon buttons shift","Delete the draft page 'AGENT-TEST-5443-<unique>' (Pages grid, Delete)",VCST-5443; vc-module-pagebuilder PR #166 (heads e2d395ea/3a31b201/4108ac1e); BL-UI-003 (no state-induced layout shift). Catches: validation text is inserted into normal flow and pushes the asset grid down while the operator is typing. Archetype:RENDER · Technique:EP · Purpose:VISUAL,Draft
+CMS-228,"Asset Library picker - without platform:asset:create there is no Upload or New folder, a drop sends no request, and selecting an existing asset still works",Asset Library Picker,Critical,,,"Admin signed in as {{ADMIN}} only to create the role and user; the picker is then exercised as a create-in-case Manager account WITHOUT platform:asset:create (BLOCKED if the permission list the build exposes differs and the account cannot open the designer at all); the build includes vc-module-pagebuilder PR #166 (VCST-5443: picker New folder, multi-select, multi-file upload); shell loaded with a cache-busting query param ('&cb=<new value>') because index.html carries no Cache-Control and a visited browser keeps a stale bundle; desktop viewport only (the Page Builder Designer has no mobile layout, so no narrow-viewport variant exists); folder @td(PB_ASSETS_P500.folder) seeded (npm run seed:cms-assets) holds the existing image asset-001.png; both the role and the user carry the AGENT-TEST-5443 prefix and are removed in Cleanup",storeId=@td(STORE_PRIMARY.id); role/user variant=nocreate; password={{DEFAULT_TEST_PASSWORD}}; folder=@td(PB_ASSETS_P500.folderUrl); drop file=test-data/cms/uploads-4932/AGENT-TEST-dnd-4932.png,"[AUTH] Obtain a Bearer token for {{ADMIN}} via POST {{BACK_URL}}/connect/token (password grant)
+[HTTP] POST {{BACK_URL}}/api/platform/security/roles: create the role 'AGENT-TEST-5443-nocreate-<unique>' with permissions builder:access, builder:read, builder:create, builder:update, platform:asset:read (plus platform:asset:access if GET {{BACK_URL}}/api/platform/security/permissions lists it) and WITHOUT platform:asset:create [variant 'nocreate']; the 'withcreate' role is the same set plus platform:asset:create
+[HTTP] POST {{BACK_URL}}/api/platform/security/users/create: user 'agent-test-5443-nocreate-<unique>' (userType Manager, password {{DEFAULT_TEST_PASSWORD}}, role = the role above)
+[HTTP] GET {{BACK_URL}}/api/platform/security/users/<user> and verify the role and that the effective permission list has / lacks platform:asset:create as intended
+[AUTH] Sign in to {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)&cb=<new value> as the new user (no platform:asset:create)
+[NAV] Pages -> Add: create the draft page 'AGENT-TEST-5443-<unique>' and open it in the designer; add block -> 'Image' and select it
+[ACT] Click 'Choose from Asset Library or drag and drop here' (dialog heading 'Choose from asset library', matched case-insensitively)
+[WAIT] The dialog opens at the store root; the breadcrumb starts with 'Page Builder'
+[ASSERT] The toolbar shows 'Search assets…' and the asset counter; there is NO 'Upload' button and NO 'New folder' button
+[ACT] Clear the network log and note the page URL/hash; drop test-data/cms/uploads-4932/AGENT-TEST-dnd-4932.png onto the grid (browser_drop)
+[ASSERT] No request to /api/assets is in the network log; the URL/hash is unchanged (the browser did not navigate to the file); the dialog is still open
+[ACT] Open @td(PB_ASSETS_P500.folder), click the image asset-001.png
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] 'Select' becomes enabled
+[ACT] Click 'Select', then Save the page
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] The thumbnail is shown and Save completes
+[ACT] Reload the designer and select the Image block
+[ASSERT] The same thumbnail is shown","[DOM] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) {SPEC} (VCST-5443): Upload and New folder are shown only to a user with platform:asset:create; without it neither button is rendered
+[NETWORK] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) dropping files on the grid: the count of /api/assets requests = 0 and the page URL is unchanged (no navigation)
+[STATE] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) selecting, applying and saving an existing asset still works without platform:asset:create; the saved URL after reload equals the URL of asset-001
+[DOM] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) Search assets… and the asset counter remain available","[CONSOLE] no TypeError or JS error during the picker interaction
+[NETWORK] no 4xx/5xx on /api/assets, /api/assets/folder or /api/page-builder-assets/search other than the ones this case provokes","Upload or New folder visible to a user without the permission
+Drop issues POST /api/assets
+Browser navigates to the dropped file
+Select of an existing asset blocked for the restricted user","Delete the user 'agent-test-5443-nocreate-<unique>' (DELETE /api/platform/security/users?names=...) and the role 'AGENT-TEST-5443-nocreate-<unique>' (as {{ADMIN}}); Delete the draft page 'AGENT-TEST-5443-<unique>' (Pages grid, Delete)","VCST-5443; vc-module-pagebuilder PR #166 (heads e2d395ea/3a31b201/4108ac1e); role set pattern: CMS-213 / RESTRICTED_CMS_ADMIN. Catches: the buttons are hidden but the drop zone still uploads (or the gate is client-only and the restricted user's drop navigates the browser away). Archetype:SCOPE · Technique:DT · Purpose:FUNC. Exact build permission names beyond platform:asset:create/read, builder:* are not grounded: confirm against GET /api/platform/security/permissions at run time.",Draft
+CMS-229,"Asset Library picker - with platform:asset:create Upload and New folder are shown and both work (folder POST 204, upload POST 200)",Asset Library Picker,High,,,"Admin signed in as {{ADMIN}} only to create the role and user; the picker is then exercised as a create-in-case Manager account WITH platform:asset:create (the positive control of CMS-228); the build includes vc-module-pagebuilder PR #166 (VCST-5443: picker New folder, multi-select, multi-file upload); shell loaded with a cache-busting query param ('&cb=<new value>') because index.html carries no Cache-Control and a visited browser keeps a stale bundle; desktop viewport only (the Page Builder Designer has no mobile layout, so no narrow-viewport variant exists); both the role and the user carry the AGENT-TEST-5443 prefix and are removed in Cleanup",storeId=@td(STORE_PRIMARY.id); role/user variant=withcreate; password={{DEFAULT_TEST_PASSWORD}}; folder=agent-test-5443-perm-<unique>; upload fixture=test-data/cms/uploads-4932/AGENT-TEST-image-4932.jpg,"[AUTH] Obtain a Bearer token for {{ADMIN}} via POST {{BACK_URL}}/connect/token (password grant)
+[HTTP] POST {{BACK_URL}}/api/platform/security/roles: create the role 'AGENT-TEST-5443-withcreate-<unique>' with permissions builder:access, builder:read, builder:create, builder:update, platform:asset:read (plus platform:asset:access if GET {{BACK_URL}}/api/platform/security/permissions lists it) and WITHOUT platform:asset:create [variant 'nocreate']; the 'withcreate' role is the same set plus platform:asset:create
+[HTTP] POST {{BACK_URL}}/api/platform/security/users/create: user 'agent-test-5443-withcreate-<unique>' (userType Manager, password {{DEFAULT_TEST_PASSWORD}}, role = the role above)
+[HTTP] GET {{BACK_URL}}/api/platform/security/users/<user> and verify the role and that the effective permission list has / lacks platform:asset:create as intended
+[AUTH] Sign in to {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)&cb=<new value> as the new user (with platform:asset:create)
+[NAV] Pages -> Add: create the draft page 'AGENT-TEST-5443-<unique>' and open it in the designer; add block -> 'Image' and select it
+[ACT] Click 'Choose from Asset Library or drag and drop here' (dialog heading 'Choose from asset library', matched case-insensitively)
+[WAIT] The dialog opens at the store root; the breadcrumb starts with 'Page Builder'
+[ASSERT] The toolbar shows both 'Upload' and 'New folder'
+[ACT] Clear the network log; click 'New folder', type agent-test-5443-perm-<unique>, press Enter
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] One POST /api/assets/folder -> 204; the picker is inside the new folder
+[ACT] Click 'Upload' and choose test-data/cms/uploads-4932/AGENT-TEST-image-4932.jpg
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] One POST /api/assets?folderUrl=... -> 200; the file is listed","[DOM] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) {SPEC} (VCST-5443): both 'Upload' and 'New folder' are shown to a user holding platform:asset:create
+[STATUS] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) folder create: POST /api/assets/folder returns status 204; upload: POST /api/assets returns status 200
+[DOM] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) the uploaded file is listed in the new folder","[CONSOLE] no TypeError or JS error during the picker interaction
+[NETWORK] no 4xx/5xx on /api/assets, /api/assets/folder or /api/page-builder-assets/search other than the ones this case provokes","Buttons missing for a user who holds the permission
+Folder POST 403
+Upload POST 403","Delete the folder 'agent-test-5443-perm-<unique>' (with contents) in the shell Assets Library; delete the user 'agent-test-5443-withcreate-<unique>' and the role 'AGENT-TEST-5443-withcreate-<unique>' (as {{ADMIN}}); Delete the draft page 'AGENT-TEST-5443-<unique>' (Pages grid, Delete)",VCST-5443; vc-module-pagebuilder PR #166 (heads e2d395ea/3a31b201/4108ac1e). Catches: the permission gate is inverted or over-restrictive and also hides the buttons from a user who may create (control for CMS-228). Archetype:SCOPE · Technique:DT · Purpose:FUNC,Draft
+CMS-233,Asset Library picker - several files in one chooser pass all upload; a single-image control ends with the LAST file selected and applies one scalar,Asset Library Picker,High,,,"Admin signed in as {{ADMIN}} (holds platform:asset:create); the build includes vc-module-pagebuilder PR #166 (VCST-5443: picker New folder, multi-select, multi-file upload); shell loaded with a cache-busting query param ('&cb=<new value>') because index.html carries no Cache-Control and a visited browser keeps a stale bundle; desktop viewport only (the Page Builder Designer has no mobile layout, so no narrow-viewport variant exists); the case creates its own draft page and the folder 'agent-test-5443-multi-<unique>' (empty, so the uploaded names cannot collide with a previous run), both removed in Cleanup",storeId=@td(STORE_PRIMARY.id); folder=agent-test-5443-multi-<unique>; upload fixtures=test-data/cms/uploads-4932/AGENT-TEST-bulk-upload-1-4932.jpg and AGENT-TEST-bulk-upload-2-4932.jpg,"[NAV] Open {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)&cb=<new value> ; Pages -> Add: create the draft page 'AGENT-TEST-5443-<unique>' (unique permalink, language en-US) and Save, then open it in the designer
+[ACT] Add block -> 'Image' (a single-image control) and select it
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] Click 'Choose from Asset Library or drag and drop here' (dialog heading 'Choose from asset library', matched case-insensitively)
+[WAIT] The dialog opens at the store root; the breadcrumb starts with 'Page Builder'
+[ACT] Click 'New folder', type agent-test-5443-multi-<unique>, press Enter
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] Clear the network log; click 'Upload' and, in ONE file-chooser pass, choose AGENT-TEST-bulk-upload-1-4932.jpg and AGENT-TEST-bulk-upload-2-4932.jpg
+[WAIT] The UI settles (no spinner, network idle)
+[CAPTURE] every POST /api/assets?folderUrl=... request
+[ASSERT] Two POST /api/assets requests, each 200, both with folderUrl = the new folder; both files are listed
+[ASSERT] The LAST uploaded file (bulk-upload-2) is the selected tile; 'Select' is enabled and reads 'Select'; no selected count is shown
+[ACT] Click 'Select', then Save the page
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] The control holds exactly one image (bulk-upload-2) and the saved value is a scalar URL string, not an array","[NETWORK] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) {SPEC} (VCST-5443): every file of a multi-file chooser pass uploads: one POST /api/assets?folderUrl=... per file, each 200 (2 files -> 2 requests)
+[STATE] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) in a SINGLE-image control the last uploaded file is selected and Select applies one scalar
+[DOM] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) no 'N selected' count is shown in single mode
+[STATE] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) the saved field value is a scalar URL string","[CONSOLE] no TypeError or JS error during the picker interaction
+[NETWORK] no 4xx/5xx on /api/assets, /api/assets/folder or /api/page-builder-assets/search other than the ones this case provokes","Only the first file uploads
+Second POST missing
+Both files selected in a single control
+First file left selected
+Saved value is an array","Delete the folder 'agent-test-5443-multi-<unique>' (with contents) in the shell Assets Library; Delete the draft page 'AGENT-TEST-5443-<unique>' (Pages grid, Delete)",VCST-5443; vc-module-pagebuilder PR #166 (heads e2d395ea/3a31b201/4108ac1e). Catches: a multi-file pick uploads only the first file (the chooser's 'multiple' is not honoured) or leaves the wrong tile selected in a single control. Archetype:SILENT · Technique:EP · Purpose:FUNC,Draft
+CMS-234,Image carousel picker - files uploaded in one pass (or one multi-file drop) join the pending multi-selection,Asset Library Picker,High,,,"Admin signed in as {{ADMIN}} (holds platform:asset:create); the build includes vc-module-pagebuilder PR #166 (VCST-5443: picker New folder, multi-select, multi-file upload); shell loaded with a cache-busting query param ('&cb=<new value>') because index.html carries no Cache-Control and a visited browser keeps a stale bundle; desktop viewport only (the Page Builder Designer has no mobile layout, so no narrow-viewport variant exists); BLOCKED, not FAIL, when the 'Image carousel' section is absent from the designer's section library: the store theme must include vc-frontend PR #2595 (Image carousel section, client-app/plugins/builder-preview/schemas/sections/image-carousel.json; not merged at authoring time, so until it ships this case cannot run); the case creates its own draft page and the folder 'agent-test-5443-upl-<unique>', both removed in Cleanup",storeId=@td(STORE_PRIMARY.id); folder=agent-test-5443-upl-<unique>; image=@td(PB_ASSETS_P500.folder)/asset-001.png; upload fixtures=test-data/cms/uploads-4932/AGENT-TEST-bulk-upload-1-4932.jpg and AGENT-TEST-bulk-upload-2-4932.jpg,"[NAV] Open {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)&cb=<new value> ; Pages -> Add: create the draft page 'AGENT-TEST-5443-<unique>' (unique permalink, language en-US) and Save, then open it in the designer
+[ACT] Add the 'Image carousel' section to the page and select it (fields: Title, Subtitle, Images, Slide height)
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] In 'Images' click 'Choose from Asset Library or drag and drop here'
+[WAIT] The dialog 'Choose from asset library' opens (multi mode)
+[ACT] Open @td(PB_ASSETS_P500.folder) and click asset-001.png (pending selection = 1)
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] Click 'New folder', type agent-test-5443-upl-<unique>, press Enter
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] Clear the network log; click 'Upload' and choose AGENT-TEST-bulk-upload-1-4932.jpg and AGENT-TEST-bulk-upload-2-4932.jpg in one pass
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] Two POST /api/assets requests, each 200; the footer reads '3 selected'
+[ACT] Click 'Select'
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] The Images control holds 3 images: asset-001, then the two uploaded files","[NETWORK] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) {SPEC} (VCST-5443): one POST /api/assets?folderUrl=... (200) per file of the pass
+[DOM] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) in a MULTI control uploaded files join the pending selection: the footer count goes from 1 to 3 selected
+[STATE] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) after Select the Images control holds the 3 images, the pre-selected one first","[CONSOLE] no TypeError or JS error during the picker interaction
+[NETWORK] no 4xx/5xx on /api/assets, /api/assets/folder or /api/page-builder-assets/search other than the ones this case provokes","Uploaded files are not selected
+Uploaded file REPLACES the pending selection
+Only one of two files uploads","Delete the folder 'agent-test-5443-upl-<unique>' (with contents) in the shell Assets Library; Delete the draft page 'AGENT-TEST-5443-<unique>' (Pages grid, Delete)",VCST-5443; vc-module-pagebuilder PR #166 (heads e2d395ea/3a31b201/4108ac1e); vc-frontend PR #2595 (Image carousel section); Catches: in multi mode an upload replaces the selection (single-mode behaviour leaks into multi). Archetype:SILENT · Technique:EP · Purpose:FUNC,Draft
+CMS-237,Asset Library picker - New folder inside a folder whose path holds {{=...}} or {{draft}} sends parentUrl literally and nothing executes,Asset Library Picker,Critical,,,"Admin signed in as {{ADMIN}} (holds platform:asset:create); the build includes vc-module-pagebuilder PR #166 (VCST-5443: picker New folder, multi-select, multi-file upload); shell loaded with a cache-busting query param ('&cb=<new value>') because index.html carries no Cache-Control and a visited browser keeps a stale bundle; desktop viewport only (the Page Builder Designer has no mobile layout, so no narrow-viewport variant exists); the parent folders are created through REST (the folder-name validator rejects '{', so they cannot be made in the UI): POST {{BACK_URL}}/api/assets/folder with parentUrl carrying the segment 'tpl-{{=window.__vcst5443=1}}' and another with 'tpl-{{draft}}', under the run folder 'agent-test-5443-sec-<unique>'; the case creates its own draft page; all folders and the page are removed in Cleanup",storeId=@td(STORE_PRIMARY.id); run folder=agent-test-5443-sec-<unique>; segments: tpl-{{=window.__vcst5443=1}} and tpl-{{draft}}; subfolder name=agent-test-5443-sub,"[AUTH] Obtain a Bearer token for {{ADMIN}}; [HTTP] create the run folder and, inside it, the two template-named folders via POST {{BACK_URL}}/api/assets/folder (parentUrl set literally)
+[NAV] Open {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)&cb=<new value> ; Pages -> Add: create the draft page 'AGENT-TEST-5443-<unique>' (unique permalink, language en-US) and Save, then open it in the designer
+[ACT] Add block -> 'Image' and select it
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] Click 'Choose from Asset Library or drag and drop here' (dialog heading 'Choose from asset library', matched case-insensitively)
+[WAIT] The dialog opens at the store root; the breadcrumb starts with 'Page Builder'
+[ACT] Click through the folder tiles to the run folder, then into 'tpl-{{=window.__vcst5443=1}}'
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] The breadcrumb shows the literal segment text; window.__vcst5443 evaluated in the Designer frame is undefined
+[ACT] Clear the network log; click 'New folder', type agent-test-5443-sub, press Enter
+[WAIT] The UI settles (no spinner, network idle)
+[CAPTURE] the POST /api/assets/folder request body
+[ASSERT] parentUrl carries the literal segment 'tpl-{{=window.__vcst5443=1}}' (not an evaluated value); the response is 204
+[ASSERT] window.__vcst5443 is still undefined in the Designer frame and in the shell frame
+[ACT] Go back and repeat inside 'tpl-{{draft}}'
+[ASSERT] parentUrl carries the literal 'tpl-{{draft}}'; nothing is substituted; the breadcrumb shows the literal segment","[NETWORK] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) {SPEC} (VCST-5443 security review): POST /api/assets/folder from the picker sends parentUrl literally for a path with a {{=...}} or a {{draft}} segment
+[STATE] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) window.__vcst5443 stays undefined: nothing executes in the Designer or shell frame
+[DOM] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) the breadcrumb shows the literal template segment as text","[CONSOLE] no TypeError or JS error during the picker interaction
+[NETWORK] no 4xx/5xx on /api/assets, /api/assets/folder or /api/page-builder-assets/search other than the ones this case provokes","window.__vcst5443 becomes defined
+parentUrl carries an evaluated value or an empty segment
+Folder created in the wrong parent
+Breadcrumb shows a substituted value","Delete the run folder 'agent-test-5443-sec-<unique>' with everything under it (REST DELETE /api/assets?urls=...); Delete the draft page 'AGENT-TEST-5443-<unique>' (Pages grid, Delete)","VCST-5443; vc-module-pagebuilder PR #166 (heads e2d395ea/3a31b201/4108ac1e); same defect class as CMS-212 (VCST-5726). Catches: the new New folder path resolves a template placeholder in the parent path (the descriptor is resolved twice), running a folder-named expression with the platform token in the Designer. Archetype:SCOPE · Technique:EG · Purpose:FUNC",Draft
+CMS-239,"Image carousel - several assets picked across folders are saved in click order, survive reload and render one slide per image in order on the storefront",Asset Library Picker > Image carousel > [JOURNEY],Critical,,,"Admin signed in as {{ADMIN}} (holds platform:asset:create); the build includes vc-module-pagebuilder PR #166 (VCST-5443: picker New folder, multi-select, multi-file upload); shell loaded with a cache-busting query param ('&cb=<new value>') because index.html carries no Cache-Control and a visited browser keeps a stale bundle; desktop viewport only (the Page Builder Designer has no mobile layout, so no narrow-viewport variant exists); BLOCKED, not FAIL, when the 'Image carousel' section is absent from the designer's section library: the store theme must include vc-frontend PR #2595 (Image carousel section, client-app/plugins/builder-preview/schemas/sections/image-carousel.json; not merged at authoring time, so until it ships this case cannot run); the draft page is published for the storefront step and the store search index is current (slugInfo resolves from the search index; reindex Pages if a freshly published page 404s); fixtures: @td(PB_ASSETS_P500.folder) (asset-001.png, asset-002.png) and @td(PB_ASSETS_FOLDERS.folder) seeded (npm run seed:cms-assets); the case creates its own draft page, removed in Cleanup","storeId=@td(STORE_PRIMARY.id); ${FRONT_URL}; click order: asset-002.png (@td(PB_ASSETS_P500.folder)), then the first file of @td(PB_ASSETS_FOLDERS.folder), then asset-001.png (@td(PB_ASSETS_P500.folder))","[NAV] Open {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)&cb=<new value> ; Pages -> Add: create the draft page 'AGENT-TEST-5443-<unique>' (unique permalink, language en-US) and Save, then open it in the designer
+[ACT] Add the 'Image carousel' section to the page and select it (fields: Title, Subtitle, Images, Slide height)
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] In 'Images' click 'Choose from Asset Library or drag and drop here'
+[WAIT] The dialog 'Choose from asset library' opens (multi mode)
+[ACT] Open @td(PB_ASSETS_P500.folder) and click asset-002.png
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] Navigate via the breadcrumb to @td(PB_ASSETS_FOLDERS.folder) and click its first file
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] Navigate back to @td(PB_ASSETS_P500.folder) and click asset-001.png
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] --- SCREEN: picker --- The footer reads '3 selected'; the 'Select' button reads exactly 'Select'
+[ACT] Click 'Select'
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] The dialog closes; the Images control shows 3 images in the click order (asset-002, folder file, asset-001)
+[ACT] Click Save; capture the saved page JSON (GET the page content) for the 'images' value
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] 'images' is an ARRAY of exactly 3 URL strings in click order
+[NAV] Reload the designer, open the page and select the Image carousel section
+[ASSERT] The Images control shows the same 3 images in the same order
+[ACT] Publish the page; [NAV] open ${FRONT_URL}/<permalink>
+[ASSERT] --- SCREEN: storefront --- The carousel renders exactly 3 slides, in the same order, with previous/next arrows; each slide image loads (HTTP 200)","[STATE] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) {SPEC} (VCST-5443): in a multi control Select applies ALL pending assets in CLICK order
+[STATE] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) Save stores 'images' as an array of URL strings in click order (3 entries; not a scalar, not name order)
+[FORM] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) after reload the same 3 images are shown in the same order
+[DOM] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) the published page renders one slide per image, in the saved order, with prev/next arrows
+[COUNT] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) the slide count equals the saved array length (3)","[CONSOLE] no TypeError or JS error during the picker interaction
+[NETWORK] no 4xx/5xx on /api/assets, /api/assets/folder or /api/page-builder-assets/search other than the ones this case provokes","Order follows listing order instead of click order
+Selection lost on navigating to another folder
+Saved value is a scalar
+Storefront shows fewer or more slides
+Reload shows a different order","Delete the draft page 'AGENT-TEST-5443-<unique>' (Pages grid, Delete)","VCST-5443; vc-module-pagebuilder PR #166 (heads e2d395ea/3a31b201/4108ac1e); vc-frontend PR #2595 (Image carousel section). Catches: the selection is stored in list order or reset per folder, so the carousel the operator built is not the carousel the customer sees. Archetype:SILENT · Technique:FLOW · Purpose:FUNC",Draft
+CMS-240,"Image carousel picker - multi mode shows a round marker per tile, a left-aligned 'N selected' count and a Select button that always reads 'Select'",Asset Library Picker > Image carousel,High,,,"Admin signed in as {{ADMIN}} (holds platform:asset:create); the build includes vc-module-pagebuilder PR #166 (VCST-5443: picker New folder, multi-select, multi-file upload); shell loaded with a cache-busting query param ('&cb=<new value>') because index.html carries no Cache-Control and a visited browser keeps a stale bundle; desktop viewport only (the Page Builder Designer has no mobile layout, so no narrow-viewport variant exists); BLOCKED, not FAIL, when the 'Image carousel' section is absent from the designer's section library: the store theme must include vc-frontend PR #2595 (Image carousel section, client-app/plugins/builder-preview/schemas/sections/image-carousel.json; not merged at authoring time, so until it ships this case cannot run); folder @td(PB_ASSETS_P500.folder) seeded; the case creates its own draft page, removed in Cleanup",storeId=@td(STORE_PRIMARY.id); folder=@td(PB_ASSETS_P500.folderUrl),"[NAV] Open {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)&cb=<new value> ; Pages -> Add: create the draft page 'AGENT-TEST-5443-<unique>' (unique permalink, language en-US) and Save, then open it in the designer
+[ACT] Add the 'Image carousel' section to the page and select it (fields: Title, Subtitle, Images, Slide height)
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] In 'Images' click 'Choose from Asset Library or drag and drop here'
+[WAIT] The dialog 'Choose from asset library' opens (multi mode)
+[ACT] Open @td(PB_ASSETS_P500.folder)
+[ASSERT] Each tile shows a round marker (empty white-ringed circle); the footer count is empty; 'Select' is disabled and reads 'Select'
+[ACT] Click the first tile
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] That tile's marker is filled with the primary colour with a centred white check; the footer reads '1 selected' at the LEFT of the pager row; 'Select' is enabled and reads exactly 'Select' on one line
+[ACT] Click two more tiles
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] The footer reads '3 selected'; 'Select' still reads exactly 'Select'
+[ACT] Click the first tile again
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] The first tile is unselected (empty marker); the footer reads '2 selected'
+[ACT] Click the other two tiles to unselect them
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] The footer count is empty again and 'Select' is disabled
+[ASSERT] The 'N selected' element has aria-live='polite'","[DOM] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) unselected tile: empty white-ringed round marker; selected tile: primary fill with a centred white check
+[COUNT] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) the footer count equals the number of selected tiles after every click (1, 3, 2, empty at 0)
+[DOM] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) 'N selected' is at the left of the pager row and carries aria-live='polite'
+[DOM] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) the Select button text is exactly 'Select' at 0, 1 and 3 selected (no '(N)' suffix), on one line; disabled at 0","[CONSOLE] no TypeError or JS error during the picker interaction
+[NETWORK] no 4xx/5xx on /api/assets, /api/assets/folder or /api/page-builder-assets/search other than the ones this case provokes","Select label becomes 'Select (3)'
+Count stays after un-selecting
+Tile has no marker in multi mode
+Clicking a selected tile does not unselect it","Delete the draft page 'AGENT-TEST-5443-<unique>' (Pages grid, Delete)","VCST-5443; vc-module-pagebuilder PR #166 (heads e2d395ea/3a31b201/4108ac1e); vc-frontend PR #2595 (Image carousel section). Not asserted by decision (operator, final): the screen-reader state of tiles (aria-checked/pressed) is deferred; the paginator background colour is being fixed separately. Catches: multi mode reuses the old 'Select (N)' label or stops toggling, so the operator cannot tell what will be applied. Archetype:RENDER · Technique:ST · Purpose:FUNC",Draft
+CMS-241,Image carousel picker - the pending selection persists across folder navigation and every folder's picks are applied,Asset Library Picker > Image carousel,High,,,"Admin signed in as {{ADMIN}} (holds platform:asset:create); the build includes vc-module-pagebuilder PR #166 (VCST-5443: picker New folder, multi-select, multi-file upload); shell loaded with a cache-busting query param ('&cb=<new value>') because index.html carries no Cache-Control and a visited browser keeps a stale bundle; desktop viewport only (the Page Builder Designer has no mobile layout, so no narrow-viewport variant exists); BLOCKED, not FAIL, when the 'Image carousel' section is absent from the designer's section library: the store theme must include vc-frontend PR #2595 (Image carousel section, client-app/plugins/builder-preview/schemas/sections/image-carousel.json; not merged at authoring time, so until it ships this case cannot run); folders @td(PB_ASSETS_P500.folder) and @td(PB_ASSETS_FOLDERS.folder) seeded; the case creates its own draft page, removed in Cleanup","storeId=@td(STORE_PRIMARY.id); folders=@td(PB_ASSETS_P500.folderUrl), @td(PB_ASSETS_FOLDERS.folderUrl)","[NAV] Open {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)&cb=<new value> ; Pages -> Add: create the draft page 'AGENT-TEST-5443-<unique>' (unique permalink, language en-US) and Save, then open it in the designer
+[ACT] Add the 'Image carousel' section to the page and select it (fields: Title, Subtitle, Images, Slide height)
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] In 'Images' click 'Choose from Asset Library or drag and drop here'
+[WAIT] The dialog 'Choose from asset library' opens (multi mode)
+[ACT] Open @td(PB_ASSETS_P500.folder) and click two tiles
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] Go up via the breadcrumb and open @td(PB_ASSETS_FOLDERS.folder); click one tile
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] The footer reads '3 selected' while in the second folder
+[ACT] Return to @td(PB_ASSETS_P500.folder)
+[ASSERT] The two tiles picked there are still marked selected; the footer reads '3 selected'
+[ACT] Click 'Select'
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] The Images control holds the 3 images from both folders","[STATE] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) {SPEC} (VCST-5443): the selection persists across folder navigation (count stays 3 in the other folder)
+[DOM] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) previously picked tiles are still marked when their folder is re-opened
+[COUNT] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) the Images control holds 3 images drawn from two folders after Select","[CONSOLE] no TypeError or JS error during the picker interaction
+[NETWORK] no 4xx/5xx on /api/assets, /api/assets/folder or /api/page-builder-assets/search other than the ones this case provokes","Count resets to 0 on folder change
+Picks from the first folder dropped on Select
+Markers lost on return","Delete the draft page 'AGENT-TEST-5443-<unique>' (Pages grid, Delete)","VCST-5443; vc-module-pagebuilder PR #166 (heads e2d395ea/3a31b201/4108ac1e); vc-frontend PR #2595 (Image carousel section). Catches: the selection is held per folder view, so navigating loses it. Archetype:STALE · Technique:ST · Purpose:FUNC",Draft
+CMS-242,"Image carousel picker - New folder with a pending multi-selection keeps the dialog open, the count unchanged, and Select applies them all (AC8)",Asset Library Picker > Image carousel,High,,,"Admin signed in as {{ADMIN}} (holds platform:asset:create); the build includes vc-module-pagebuilder PR #166 (VCST-5443: picker New folder, multi-select, multi-file upload); shell loaded with a cache-busting query param ('&cb=<new value>') because index.html carries no Cache-Control and a visited browser keeps a stale bundle; desktop viewport only (the Page Builder Designer has no mobile layout, so no narrow-viewport variant exists); BLOCKED, not FAIL, when the 'Image carousel' section is absent from the designer's section library: the store theme must include vc-frontend PR #2595 (Image carousel section, client-app/plugins/builder-preview/schemas/sections/image-carousel.json; not merged at authoring time, so until it ships this case cannot run); folder @td(PB_ASSETS_P500.folder) seeded; the case creates its own draft page and the folder 'agent-test-5443-ac8-<unique>', removed in Cleanup",storeId=@td(STORE_PRIMARY.id); folder=agent-test-5443-ac8-<unique>,"[NAV] Open {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)&cb=<new value> ; Pages -> Add: create the draft page 'AGENT-TEST-5443-<unique>' (unique permalink, language en-US) and Save, then open it in the designer
+[ACT] Add the 'Image carousel' section to the page and select it (fields: Title, Subtitle, Images, Slide height)
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] In 'Images' click 'Choose from Asset Library or drag and drop here'
+[WAIT] The dialog 'Choose from asset library' opens (multi mode)
+[ACT] Open @td(PB_ASSETS_P500.folder) and click two tiles (footer '2 selected')
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] Go up one level; click 'New folder', type agent-test-5443-ac8-<unique>, press Enter
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] The dialog is still open; the picker is inside the new folder; the footer still reads '2 selected'
+[ACT] Click 'Select'
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] The Images control holds the 2 images picked before the folder was created","[DOM] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) {SPEC} (VCST-5443 AC8): creating a folder keeps the dialog open and inside the new folder
+[COUNT] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) the selected count is unchanged (2) after New folder
+[STATE] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) Select applies all pending selections to the control","[CONSOLE] no TypeError or JS error during the picker interaction
+[NETWORK] no 4xx/5xx on /api/assets, /api/assets/folder or /api/page-builder-assets/search other than the ones this case provokes","Pending selection cleared by New folder
+Dialog closes after folder create
+Count drops to 0","Delete the folder 'agent-test-5443-ac8-<unique>' in the shell Assets Library; Delete the draft page 'AGENT-TEST-5443-<unique>' (Pages grid, Delete)",VCST-5443; vc-module-pagebuilder PR #166 (heads e2d395ea/3a31b201/4108ac1e); vc-frontend PR #2595 (Image carousel section). Catches: navigating into the new folder resets the selection state. Archetype:STALE · Technique:ST · Purpose:FUNC,Draft
+CMS-243,Image carousel - re-opening the picker on a filled control shows nothing pre-selected and Select APPENDS to the existing list (by design),Asset Library Picker > Image carousel,Medium,,,"Admin signed in as {{ADMIN}} (holds platform:asset:create); the build includes vc-module-pagebuilder PR #166 (VCST-5443: picker New folder, multi-select, multi-file upload); shell loaded with a cache-busting query param ('&cb=<new value>') because index.html carries no Cache-Control and a visited browser keeps a stale bundle; desktop viewport only (the Page Builder Designer has no mobile layout, so no narrow-viewport variant exists); BLOCKED, not FAIL, when the 'Image carousel' section is absent from the designer's section library: the store theme must include vc-frontend PR #2595 (Image carousel section, client-app/plugins/builder-preview/schemas/sections/image-carousel.json; not merged at authoring time, so until it ships this case cannot run); folder @td(PB_ASSETS_P500.folder) seeded; the case creates its own draft page, removed in Cleanup",storeId=@td(STORE_PRIMARY.id); folder=@td(PB_ASSETS_P500.folderUrl),"[NAV] Open {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)&cb=<new value> ; Pages -> Add: create the draft page 'AGENT-TEST-5443-<unique>' (unique permalink, language en-US) and Save, then open it in the designer
+[ACT] Add the 'Image carousel' section to the page and select it (fields: Title, Subtitle, Images, Slide height)
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] In 'Images' click 'Choose from Asset Library or drag and drop here'
+[WAIT] The dialog 'Choose from asset library' opens (multi mode)
+[ACT] Open @td(PB_ASSETS_P500.folder), click asset-001.png then asset-002.png, click 'Select' (control holds 2)
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] Click 'Choose from Asset Library or drag and drop here' on the filled control again
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] Nothing is marked selected; the footer count is empty; 'Select' is disabled
+[ACT] Open @td(PB_ASSETS_P500.folder), click asset-003.png, click 'Select'
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] The Images control holds 3 images in the order asset-001, asset-002, asset-003 (the new pick is appended)","[DOM] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) re-opening the picker on a filled control shows no tile pre-selected
+[STATE] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) Select APPENDS to the existing list: [asset-001, asset-002] + [asset-003] = 3 entries in that order (operator decision: by design; duplicates are possible and are NOT asserted either way)","[CONSOLE] no TypeError or JS error during the picker interaction
+[NETWORK] no 4xx/5xx on /api/assets, /api/assets/folder or /api/page-builder-assets/search other than the ones this case provokes","Select replaces the existing list
+New pick inserted before the existing ones
+Existing images dropped","Delete the draft page 'AGENT-TEST-5443-<unique>' (Pages grid, Delete)","VCST-5443; vc-module-pagebuilder PR #166 (heads e2d395ea/3a31b201/4108ac1e); vc-frontend PR #2595 (Image carousel section). Catches: a reopen replaces the list so earlier images are lost. Archetype:SILENT · Technique:EG · Purpose:FUNC. Dedup and pre-selection are deliberately NOT asserted (BY DESIGN, operator decision).",Draft
+CMS-244,"Image carousel picker - Cancel, the close icon and Esc leave the Images control unchanged; a double-click on Select applies once",Asset Library Picker > Image carousel,High,,,"Admin signed in as {{ADMIN}} (holds platform:asset:create); the build includes vc-module-pagebuilder PR #166 (VCST-5443: picker New folder, multi-select, multi-file upload); shell loaded with a cache-busting query param ('&cb=<new value>') because index.html carries no Cache-Control and a visited browser keeps a stale bundle; desktop viewport only (the Page Builder Designer has no mobile layout, so no narrow-viewport variant exists); BLOCKED, not FAIL, when the 'Image carousel' section is absent from the designer's section library: the store theme must include vc-frontend PR #2595 (Image carousel section, client-app/plugins/builder-preview/schemas/sections/image-carousel.json; not merged at authoring time, so until it ships this case cannot run); folder @td(PB_ASSETS_P500.folder) seeded; the case creates its own draft page, removed in Cleanup",storeId=@td(STORE_PRIMARY.id); folder=@td(PB_ASSETS_P500.folderUrl),"[NAV] Open {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)&cb=<new value> ; Pages -> Add: create the draft page 'AGENT-TEST-5443-<unique>' (unique permalink, language en-US) and Save, then open it in the designer
+[ACT] Add the 'Image carousel' section to the page and select it (fields: Title, Subtitle, Images, Slide height)
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] In 'Images' click 'Choose from Asset Library or drag and drop here'
+[WAIT] The dialog 'Choose from asset library' opens (multi mode)
+[ACT] Open @td(PB_ASSETS_P500.folder), click asset-001.png, click 'Select' (control holds 1)
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] Reopen the picker, click two other tiles, click 'Cancel'
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] The dialog closes; the Images control still holds exactly 1 image
+[ACT] Reopen, click two tiles, click the dialog's close (X) icon; then reopen, click two tiles, press Esc
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] Both times the dialog closes and the control still holds exactly 1 image
+[ACT] Reopen, click asset-002.png and asset-003.png, then double-click 'Select' (one dblclick action)
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] The control holds exactly 3 images (1 + 2 appended once); asset-002 and asset-003 each appear once","[STATE] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) Cancel, the close icon and Esc each leave the control unchanged (1 image)
+[COUNT] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) a double-click on Select applies the selection once: 3 entries, not 5","[CONSOLE] no TypeError or JS error during the picker interaction
+[NETWORK] no 4xx/5xx on /api/assets, /api/assets/folder or /api/page-builder-assets/search other than the ones this case provokes","Cancel applies the pending selection
+Esc keeps pending picks for the next open
+Double-click doubles the entries","Delete the draft page 'AGENT-TEST-5443-<unique>' (Pages grid, Delete)","VCST-5443; vc-module-pagebuilder PR #166 (heads e2d395ea/3a31b201/4108ac1e); vc-frontend PR #2595 (Image carousel section). Catches: Cancel/Esc commit the pending selection, or Select fires twice on a double-click and the list gets duplicated entries. Archetype:RACE · Technique:ST · Purpose:FUNC",Draft
+CMS-245,Image carousel storefront - Slide height Small renders about 450px and Large 550px,Asset Library Picker > Image carousel,Medium,,,"Admin signed in as {{ADMIN}} (holds platform:asset:create); the build includes vc-module-pagebuilder PR #166 (VCST-5443: picker New folder, multi-select, multi-file upload); shell loaded with a cache-busting query param ('&cb=<new value>') because index.html carries no Cache-Control and a visited browser keeps a stale bundle; desktop viewport only (the Page Builder Designer has no mobile layout, so no narrow-viewport variant exists); BLOCKED, not FAIL, when the 'Image carousel' section is absent from the designer's section library: the store theme must include vc-frontend PR #2595 (Image carousel section, client-app/plugins/builder-preview/schemas/sections/image-carousel.json; not merged at authoring time, so until it ships this case cannot run); storefront viewed at a desktop width; the case creates its own draft page with 2 images from @td(PB_ASSETS_P500.folder), removed in Cleanup; page published and the store search index current",storeId=@td(STORE_PRIMARY.id); ${FRONT_URL}; folder=@td(PB_ASSETS_P500.folderUrl),"[NAV] Open {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)&cb=<new value> ; Pages -> Add: create the draft page 'AGENT-TEST-5443-<unique>' (unique permalink, language en-US) and Save, then open it in the designer
+[ACT] Add the 'Image carousel' section to the page and select it (fields: Title, Subtitle, Images, Slide height)
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] In 'Images' click 'Choose from Asset Library or drag and drop here'
+[WAIT] The dialog 'Choose from asset library' opens (multi mode)
+[ACT] Pick asset-001.png and asset-002.png, click 'Select'; set 'Slide height' to 'Small'; Save and Publish
+[WAIT] The UI settles (no spinner, network idle)
+[NAV] Open ${FRONT_URL}/<permalink>
+[CAPTURE] the carousel slide's getBoundingClientRect().height
+[ASSERT] The height is about 450 px (tolerance 2 px)
+[ACT] In the designer set 'Slide height' to 'Large'; Save and Publish; reload the storefront page
+[WAIT] The UI settles (no spinner, network idle)
+[CAPTURE] the slide height again
+[ASSERT] The height is 550 px (tolerance 2 px), and larger than the Small value","[DOM] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) Slide height Small renders about 450 px; Large renders 550 px
+[COUNT] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) the slide count is 2 for both heights","[CONSOLE] no TypeError or JS error during the picker interaction
+[NETWORK] no 4xx/5xx on /api/assets, /api/assets/folder or /api/page-builder-assets/search other than the ones this case provokes","Small and Large render the same height
+Slide height setting ignored
+Height differs by more than the tolerance","Delete the draft page 'AGENT-TEST-5443-<unique>' (Pages grid, Delete)",VCST-5443; vc-module-pagebuilder PR #166 (heads e2d395ea/3a31b201/4108ac1e); vc-frontend PR #2595 (Image carousel section). Catches: the Slide height setting is not mapped to the section's CSS so every option renders at Auto. Archetype:CONFIG · Technique:EP · Purpose:FUNC,Draft
+CMS-253,"Single-image controls - the picker stays in single mode: no tile markers, no count, second click replaces the first, Save stores a scalar",Asset Library Picker,Critical,,,"Admin signed in as {{ADMIN}} (holds platform:asset:create); the build includes vc-module-pagebuilder PR #166 (VCST-5443: picker New folder, multi-select, multi-file upload); shell loaded with a cache-busting query param ('&cb=<new value>') because index.html carries no Cache-Control and a visited browser keeps a stale bundle; desktop viewport only (the Page Builder Designer has no mobile layout, so no narrow-viewport variant exists); folder @td(PB_ASSETS_P500.folder) seeded; blocks Image, Slider (slide), Features (column) and Call to Action with Image are all single-image controls (check each; Call to Action only if present in the theme); the case creates its own draft page, removed in Cleanup",storeId=@td(STORE_PRIMARY.id); folder=@td(PB_ASSETS_P500.folderUrl),"[NAV] Open {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)&cb=<new value> ; Pages -> Add: create the draft page 'AGENT-TEST-5443-<unique>' (unique permalink, language en-US) and Save, then open it in the designer
+[ACT] Add block -> 'Image' and select it
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] Click 'Choose from Asset Library or drag and drop here' (dialog heading 'Choose from asset library', matched case-insensitively)
+[WAIT] The dialog opens at the store root; the breadcrumb starts with 'Page Builder'
+[ACT] Open @td(PB_ASSETS_P500.folder)
+[ASSERT] No tile shows a selection marker; no 'N selected' count is shown; 'Select' is disabled and reads 'Select'
+[ACT] Click asset-001.png, then click asset-002.png
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] Only asset-002.png is highlighted (the second click REPLACED the first); no count is shown; 'Select' reads 'Select'
+[ACT] Click 'Select' and Save the page; capture the saved page JSON for the image value
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] The saved value is a scalar URL string of asset-002 (not an array)
+[ACT] Repeat the open / two clicks / Select on the single-image control of the Slider slide, the Features column and (if present) Call to Action with Image
+[ASSERT] Each behaves identically: single mode, scalar value","[DOM] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) single mode: no round markers on tiles and no selected count; the Select label is 'Select'
+[STATE] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) a second click replaces the first selection (one highlighted tile)
+[STATE] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) Save stores a scalar URL string for Image, Slider slide, Features column and Call to Action with Image controls","[CONSOLE] no TypeError or JS error during the picker interaction
+[NETWORK] no 4xx/5xx on /api/assets, /api/assets/folder or /api/page-builder-assets/search other than the ones this case provokes","Multi-select markers appear on a single-image control
+Two tiles stay selected
+Saved value becomes an array
+'N selected' shown","Delete the draft page 'AGENT-TEST-5443-<unique>' (Pages grid, Delete)","VCST-5443; vc-module-pagebuilder PR #166 (heads e2d395ea/3a31b201/4108ac1e). Catches: the multi-select change leaks into every image control (markers, count, array value) and breaks the existing single-image contract of the shipped theme blocks. Archetype:PARITY · Technique:DT · Purpose:FUNC",Draft
+CMS-254,Single-image picker - double-clicking a tile only selects it: the dialog stays open and nothing is applied,Asset Library Picker,Medium,,,"Admin signed in as {{ADMIN}} (holds platform:asset:create); the build includes vc-module-pagebuilder PR #166 (VCST-5443: picker New folder, multi-select, multi-file upload); shell loaded with a cache-busting query param ('&cb=<new value>') because index.html carries no Cache-Control and a visited browser keeps a stale bundle; desktop viewport only (the Page Builder Designer has no mobile layout, so no narrow-viewport variant exists); folder @td(PB_ASSETS_P500.folder) seeded; the case creates its own draft page, removed in Cleanup",storeId=@td(STORE_PRIMARY.id); folder=@td(PB_ASSETS_P500.folderUrl),"[NAV] Open {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)&cb=<new value> ; Pages -> Add: create the draft page 'AGENT-TEST-5443-<unique>' (unique permalink, language en-US) and Save, then open it in the designer
+[ACT] Add block -> 'Image' and select it
+[WAIT] The UI settles (no spinner, network idle)
+[ACT] Click 'Choose from Asset Library or drag and drop here' (dialog heading 'Choose from asset library', matched case-insensitively)
+[WAIT] The dialog opens at the store root; the breadcrumb starts with 'Page Builder'
+[ACT] Open @td(PB_ASSETS_P500.folder) and double-click asset-001.png
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] The dialog is still open; the tile is selected; 'Select' is enabled; the Image control behind the dialog is still empty
+[ACT] Click 'Select'
+[WAIT] The UI settles (no spinner, network idle)
+[ASSERT] The dialog closes and the control shows asset-001","[DOM] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) double-click on a tile only selects it (does not apply and does not close the dialog)
+[STATE] {OBSERVED} (4 runs, vcst-qa 2026-10-23..26) the control changes only after Select is clicked","[CONSOLE] no TypeError or JS error during the picker interaction
+[NETWORK] no 4xx/5xx on /api/assets, /api/assets/folder or /api/page-builder-assets/search other than the ones this case provokes","Double-click applies and closes the dialog
+Tile not selected after double-click","Delete the draft page 'AGENT-TEST-5443-<unique>' (Pages grid, Delete)","VCST-5443; vc-module-pagebuilder PR #166 (heads e2d395ea/3a31b201/4108ac1e). Catches: a double-click handler on a tile applies the asset, bypassing the Select button and the multi-select flow. Archetype:SILENT · Technique:EG · Purpose:FUNC",Draft

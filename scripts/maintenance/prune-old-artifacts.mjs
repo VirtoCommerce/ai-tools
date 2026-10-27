@@ -173,7 +173,7 @@ const TRACKED_ROOTS = [
 function isSprintDirName(name) { return /^Sprint\d+-\d+$/.test(name); }
 
 /** `Sprint26-14` -> [26, 14], comparable/subtractable as a flat ordinal. Confirmed against real
- * sprint-plan dates (vc/shared/docs/Sprint plans/*-summary.json): sprints are ~14 days apart
+ * sprint-plan dates (docs/Sprint plans/*-summary.json): sprints are ~14 days apart
  * (Sprint26-12 start 06-15 -> Sprint26-13 start 06-29 -> Sprint26-14 start 07-13). */
 function sprintOrdinal(name) {
   const m = name.match(/^Sprint(\d+)-(\d+)$/);
@@ -197,7 +197,7 @@ function resolveCurrentSprint(ticketsAbsRoot) {
 
 /** True if git has at least one tracked file under this path. A folder can exist on disk with real
  * bytes in it (dirSizeBytes counts filesystem content, not git status) while being ENTIRELY untracked —
- * e.g. a folder that holds only *.png, which is blanket-gitignored (.gitignore:68). `git rm -r` on such
+ * e.g. a folder that holds only *.png, which is gitignored repo-wide (VCST-6394). `git rm -r` on such
  * a path fails ("pathspec did not match any files") because there's nothing in the index to remove. */
 function hasTrackedFiles(absPath) {
   const rel = relative(REPO_ROOT, absPath).split('\\').join('/');

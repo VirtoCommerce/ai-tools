@@ -67,6 +67,12 @@ const TIER_ALIASES: Record<string, readonly string[]> = {
   low: ["low", "p3"],
 };
 
+/** The tier names a caller may pass; anything else is a usage error. Exported so `regression:plan --cases` validates the same way. */
+export function unknownTiers(tiers: readonly string[]): string[] {
+  return tiers.filter((t) => !TIER_ALIASES[t.trim().toLowerCase()]);
+}
+export const TIER_NAMES: readonly string[] = Object.keys(TIER_ALIASES);
+
 const TIER_OF = new Map<string, string>();
 for (const [tier, spellings] of Object.entries(TIER_ALIASES)) {
   for (const s of spellings) TIER_OF.set(s, tier);
@@ -256,9 +262,9 @@ export function parseArgs(argv: readonly string[]): Args | { error: string } {
   if (a.ids.length === 0 && a.tiers.length === 0) {
     return { error: "--priority <tier[,tier]> is required (e.g. --priority Critical), or --ids <ID,ID> for an exact set" };
   }
-  const unknown = a.tiers.filter((t) => !TIER_ALIASES[t.toLowerCase()]);
+  const unknown = unknownTiers(a.tiers);
   if (unknown.length > 0) {
-    return { error: `unknown priority tier(s) ${unknown.join(", ")} — expected one of ${Object.keys(TIER_ALIASES).join(", ")}` };
+    return { error: `unknown priority tier(s) ${unknown.join(", ")} — expected one of ${TIER_NAMES.join(", ")}` };
   }
   return a;
 }

@@ -1,7 +1,7 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.68",
+    "version": "1.5.69",
     "changelog_1_5_50": "Suite 083d (loyalty missions E2E) fixture set: MSN_E2E_RUN + MSN_E2E_{ORDERVALUE,ORDERCOUNT,PERSKU,PERSKU_PTS} + MSN_E2E_PRODUCT_{UNIT,A,B,PTS} + MSN_E2E_REWARD_USER. Run REG-2026-08-28-1154 returned 2 PASS / 6 BLOCKED because the shared MSN_* missions had been CONSUMED — MSN_ORDERCOUNT at 2 of 2 Completed, MSN_ORDERVALUE at 5,842,446/100% — and a Completed mission stops accruing entirely (proven by a control pair inside one order: MSN_ZEROTARGET 24 -> 25 while MSN_ORDERCOUNT stayed frozen at 2). Mission progress is per-(user,mission), cumulative, monotonic, frozen at completion, with NO reset path in vc-module-loyalty, so repeatability comes from minting a FRESH mission per run (name carries a run handle) rather than from resetting anything. Products are stable and NOT run-scoped (no per-user state), packSize 1 (MSN_PERSKU_PRODUCT_B steps 0->2->0, so \"quantity exactly 1\" was unachievable) and trackInventory=false. MSN_E2E_PRODUCT_PTS is the first PerSku target priced in the loyalty currency, which is what makes the no-currency-filter question (LoyaltyMissionLogicService.cs:~416 vs LoyaltyProgramHandler.cs:199) askable at all. MSN_E2E_REWARD_USER borrows the per-run ephemeral LOYALTY_ZERO_USER because a 500-PTS reward against LOYALTY_VIP_USER (964,189,233 PTS) cannot demonstrate that the points spent were earned from a mission. Seeder scripts/seed-data/loyalty/seed-missions-e2e.mjs, spec module missions-e2e-specs.mjs, guard npm run td:validate:missions-e2e (a VACUITY guard: it fails when a fixture was not pre-completion at seed time or when the reward stops being legible against the balance).",
     "updated": "GENERATED",
     "changelog_1_5_53": "VCST-5024 top-up — ORG_LOY_MISSION_2 (OrderCountGoal 1, reward 619) and ORG_LOY_MISSION_PARTIAL (OrderCountGoal 2, reward 631), both Published and targeted at AGENT-TEST-ORGLOY like ORG_LOY_MISSION. WHY: ORG_LOY_MISSION was CONSUMED before it could answer anything, because the store-mode flip silently did not take effect (the settings-v2 tenant write returns 204 and updates the tenant-settings read, but the module resolves store.Settings from the store entity, which stayed null) — so the first journey ran in Customer mode and ORG_LOY_A and ORG_LOY_B each completed the count-1 mission and were each granted 617. Once-per-MEMBER is correct Customer-mode behaviour, which is why that mission is KEPT rather than swept: it is the cleanest record that the flip had not landed. But OrderCountGoal progress is terminal per owner with no reset path, so a consumed mission cannot be repaired and a NEW one is the only route back to a decidable question. THE PAIR, NOT JUST THE REPLACEMENT: count 1 alone cannot separate pooled PROGRESS from pooled COMPLETION (it is Completed the instant anything accrues, so \"B sees it done\" fits both readings); count 2 splits them, because after ONE order a pooled implementation reads 1/2 for BOTH members and a user-keyed one reads 1/2 and 0/2, with neither Completed. Rewards are mutually DISTINCT (617/619/631) and distinct from the missions-e2e set (501/509) because all three are live at once against the same group and one order can move more than one — identical rewards would make a balance delta and a points-history row name nothing, the same failure the missions-e2e set hit with four 500s. MECHANICS: each mission spec now owns a sweep NAME-SPACE (AGENT-TEST-MSN-ORGLOY[-<KEY>]-<ts>-<rand>; ORG_LOY_MISSION keeps the empty key so its live name is unchanged), and a seed sweeps only its own predecessors — minting one mission can never delete a sibling, which is what let the consumed generation-1 record survive. New seeder flags --missions-only + --only <ALIAS,...> mint missions while touching NO account, no org, no balance read and placing no order: by this point ORG_LOY_A and ORG_LOY_B carry real pre-flip balances (39,533 and 100,033) and LOY_PERSONAL_NOORG its funding floor (38,916), all of which are load-bearing evidence a full re-seed would have overwritten. Guard npm run td:validate:org-loyalty now fails a duplicate sweep key, a duplicate or missions-e2e-colliding reward, a non-count-1 ORG_LOY_MISSION_2, a count < 2 ORG_LOY_MISSION_PARTIAL, and equal counts across the pair.",
@@ -70,7 +70,8 @@
     "changelog_1_5_65": "RETURNS_ORDER_RECIPIENT: dedicated AGENT-TEST yopmail mailbox for the VCST-5628 returns orders' address emails (seed-return-orders.mjs forces + hard-stops; td:validate:orders §8c).",
     "changelog_1_5_66": "VCST-6017 GA4 markup product lists: registered PROD_GA4_RELATED_ANCHOR, PROD_GA4_VARIATION_PARENT, CART_GA4_SFL_RB (seed:ga4-lists, scripts/seed-data/analytics) and PB_GA4_PRODUCT_LISTS, PB_GA4_HTML_LISTS (seed:cms-pages:ga4) — business keys only, runtime ids from aliases.<env>.json; gated by td:validate:ga4-lists.",
     "changelog_1_5_67": "VCST-5884 FIXTURE-GAP ORG_RET_OTHER_STORE_RETURN closed: registered ORG_RET_OTHER_STORE_RETURN (seed:returns:org) — ORG_RET_BUYER submits a return in STORE_ID on its last spare order, then an administrator PUT /api/return moves it to STORE_ID_SECONDARY (mechanism observed by 050o RET-ORG-011); no store setting is touched. RETURNS_LEGACY_STORELESS remains a FIXTURE-GAP.",
-    "changelog_1_5_68": "VCST-6268 Image Tools thumbnail source-image fixtures: IMG_THUMB_{JPG_BASELINE,JPEG_BASELINE,JPEG_PROGRESSIVE,JPEG_CMYK,JPEG_GRAY,JPEG_NOISE,JPEG_LARGE,QUADRANT_JPEG,PNG_RGBA,PNG_RGB,CHECKERBOARD,WEBP_LOSSY,WEBP_LOSSLESS_ALPHA,WEBP_ANIMATED,BMP24,BMP32,SVG,GIF,TIFF,CORRUPT_JPEG} — _inline, files under test-data/uploads/image-thumbnails/ (PR fixtures from VirtoCommerce/vc-module-image-tools@6db0e3ba + 3 generated), spec scripts/seed-data/image-tools/image-thumbnails-specs.mjs, guard td:validate:image-thumbnails. No seeder: the case owns its assets folder."
+    "changelog_1_5_68": "Registered RUN_USER — the binding of the env's storefront run persona ({{USER_EMAIL}} / {{USER_PASSWORD}} on {{STORE_ID}}), values only in the layered .env, like ADMIN_USER. No account is created or changed: the alias exists so test-data/models/auth.data-model.json (data.auth.account.store-contact) can address the persona through @td() instead of a bare {{VAR}}.",
+    "changelog_1_5_69": "VCST-6268 Image Tools thumbnail source-image fixtures: IMG_THUMB_{JPG_BASELINE,JPEG_BASELINE,JPEG_PROGRESSIVE,JPEG_CMYK,JPEG_GRAY,JPEG_NOISE,JPEG_LARGE,QUADRANT_JPEG,PNG_RGBA,PNG_RGB,CHECKERBOARD,WEBP_LOSSY,WEBP_LOSSLESS_ALPHA,WEBP_ANIMATED,BMP24,BMP32,SVG,GIF,TIFF,CORRUPT_JPEG} — _inline, files under test-data/uploads/image-thumbnails/ (PR fixtures from VirtoCommerce/vc-module-image-tools@6db0e3ba + 3 generated), spec scripts/seed-data/image-tools/image-thumbnails-specs.mjs, guard td:validate:image-thumbnails. No seeder: the case owns its assets folder."
   },
   "COMPLETED_ORDER": {
     "json": "orders/completed-order",
@@ -1490,21 +1491,6 @@
       "configuration_id": "configuration_id"
     },
     "_notes": "Repointed 2026-05-27 from CFG-009 (live 'Bike with options' f16d3e8f…, which drifted to [P?P!F?P!] after the 2026-05-15 restore and lost the test option set) to the freshly seeded flat bike CFG-032 (78daa2db…). One OPTIONAL Product section 'Select one' with 4 options: Seat $15 / Rear wheel ×2 ext $176 / Engine $225 / Pedals $14 (+ implicit None) — matches 072 CFG-PDP-001/002 prices exactly. Seeded via scripts/seed-data/seed-bike-flat-cfg.mjs. Navigate via @td(CFG_BIKE.url) (full SEO path /seed-20260527-def-parents/…); the old /products-with-options/configurations/ prefix does NOT resolve this product. Product code = AGENT-TEST-CFG-032-20260527 (the original SKU CVQ-54616437 no longer applies)."
-  },
-  "CFG_VARIATION_OPTIONS": {
-    "file": "products/configurable-products",
-    "filter": {
-      "product_id": "CFG-035"
-    },
-    "fields": {
-      "name": "product_name",
-      "slug": "product_slug",
-      "url": "storefront_url",
-      "price": "base_price",
-      "id": "product_id_guid",
-      "configuration_id": "configuration_id"
-    },
-    "_notes": "Configurable product with a VARIATION section over its own 3 variations (Red / M list 60 sale 45; Blue / L 80; Green / S 35; base 200), each with variation-level Color + Size. The section stores NO options: the catalog API drops options sent on a Variation section (kb KB-76D8F765), so a per-option quantity > 1 (CFG-VAR-005) is not seedable. For 072 CFG-VAR-001..004 (which pointed at CFG_BIKE — a Product-section bike with no variations, so every VAR case was vacuous). Seeded by seed-configurable.mjs spec CFG-035 (configurable-specs.mjs is the single source of truth); id + configuration_id land in aliases.<env>.json via syncEnvAliases. Navigate via @td(CFG_VARIATION_OPTIONS.url) or /search?q=@td(CFG_VARIATION_OPTIONS.name)."
   },
   "CFG_CONDITIONAL": {
     "file": "products/configurable-products",
@@ -3288,7 +3274,7 @@
       "techflow_membership_id": "techflow_membership_id",
       "buildright_membership_id": "buildright_membership_id"
     },
-    "_comment": "VCST-5281 cross-org fixture — the FRONTEND-LANE TWIN of MULTI_ORG_TF_BR. Same shape: ONE AGENT-TEST account belonging to BOTH AGENT-TEST orgs with DISTINCT per-org roles, so the org-isolation oracle is identical — TechFlow=org-maintainer (Organization maintainer), BuildRight=org-employee (Organization employee). Recipe: test-data/b2b/organization-memberships.csv rows MOM-003/MOM-004 → seed idempotently with `TEST_ENV=<env> node scripts/seed-data/b2b/seed-company-users.mjs cross-org --only MULTI_ORG_TF_BR_ALT` (the --only keeps the reserved MULTI_ORG_TF_BR rows untouched; plain `npm run seed:b2b:memberships` seeds both). The four runtime GUIDs (`id` = contact/member platform id, `userId` = the SECURITY-ACCOUNT user id that POST /api/customer/organization-memberships keys on, and the two membership ids) are written to aliases.<env>.json by the seeder — NEVER committed here. The two org ids ARE pinned inline: seedOrgs forces body.id = organizations.csv platform_id, so an org GUID is identical on every env (DV-021 allowlist). Password {{DEFAULT_TEST_PASSWORD}}. AGENT-TEST- prefix → swept by `npm run seed:b2b:teardown`.",
+    "_comment": "VCST-5281 cross-org fixture — the FRONTEND-LANE TWIN of MULTI_ORG_TF_BR. Same shape: ONE AGENT-TEST account belonging to BOTH AGENT-TEST orgs with DISTINCT per-org roles, so the org-isolation oracle is identical — TechFlow=org-maintainer (Organization maintainer), BuildRight=org-employee (Organization employee). Recipe: test-data/b2b/organization-memberships.csv rows MOM-003/MOM-004 → seed idempotently with `TEST_ENV=<env> node scripts/seed-data/b2b/seed-company-users.mjs cross-org --only MULTI_ORG_TF_BR_ALT` (the --only keeps the reserved MULTI_ORG_TF_BR rows untouched; plain `npm run seed:b2b:memberships` seeds both). The four runtime GUIDs (`id` = contact/member platform id, `userId` = the SECURITY-ACCOUNT user id that POST /api/customer/organization-memberships keys on, and the two membership ids) are written to aliases.<env>.json by the seeder — NEVER committed here. The two org ids are pinned inline as the seeder default: seedOrgs forces body.id = organizations.csv platform_id, so an org THIS seeder creates gets that GUID (DV-021 allowlist). An env whose orgs were created another way differs and overrides them in aliases.<env>.json — vcptcore_qa1 does: its persona belongs to other TechFlow/BuildRight GUIDs, while same-named orgs with the pinned GUIDs also exist there, so the base values resolve to real orgs the persona is not a member of. Password {{DEFAULT_TEST_PASSWORD}}. AGENT-TEST- prefix → swept by `npm run seed:b2b:teardown`.",
     "_notes": "RESERVATION — this is the FRONTEND-LANE twin of MULTI_ORG_TF_BR, created so the two lanes of a parallel VCST-5281 run NEVER share OrganizationMembership rows. MULTI_ORG_TF_BR is reserved for the BACKEND lane (token-grant matrix); MULTI_ORG_TF_BR_ALT is reserved for the FRONTEND lane (storefront journeys). Why sharing the two ORGS is safe while sharing the ACCOUNT is not: an OrganizationMembership row is keyed on (userId, organizationId) and carries the per-org `status` + `isLocked` the run mutates, so two accounts in the same two orgs own fully independent rows; the global contact `status` the ResolveEffectiveStatus fallback reads is per-CONTACT, also independent. The lanes only READ the orgs. ORG-LEVEL BASELINE observed read-only on vcst 2026-08-03 (the deciding variable when no membership row exists — org-scoped permissions then collapse to Organization.Roles): TechFlow Organization.Roles = [purchasing-agent, org-employee] (2), org status=null; BuildRight Organization.Roles = [] (EMPTY). ORG STATUS IS SHARED, MUTABLE STATE AND WAS OBSERVED DRIFTING MID-RUN: BuildRight read status=Active at ~12:5x UTC and status=Approved at 13:29:46Z the same day (modifiedBy=admin, the shared account) — NOT written by any seeder here (the cross-org seed path never touches an org; seedOrgs is only reached via seedOrgGraph). Treat org status as a live value to READ at test time, never as a seeded constant — and see the caveat below on org-level state. An EMPTY Organization.Roles means a token with no membership row carries ZERO org-scoped permissions in BuildRight — do not read that as a product failure. Nothing here was written: Organization.Roles, org status, Customer.ContactDefaultStatus/OrganizationDefaultStatus and the OrganizationRolesWhitelist/MembershipRolesWhitelist module settings were left untouched by the seed. THE ONE THING THIS DOES NOT PROTECT: a test that mutates the ORG entity itself (org status/rename) or DELETES an org — e.g. checklist condition #45 'stale invite after org deleted' — is org-level shared state and must use its own throwaway AGENT-TEST org, not TechFlow/BuildRight. AUTH: /connect/token password grant needs storeId=B2B-store (camelCase) alongside organization_id (snake_case) for an org-scoped grant; a grant WITHOUT storeId fails outright — observed live on vcst 2026-08-03: HTTP 400 `invalid_grant` (MULTI_ORG_TF_BR's older note records `user_cannot_login_in_store`; the code differs by platform version, the failure does not). So @td(MULTI_ORG_TF_BR_ALT.store_id) is load-bearing, not decorative. Baseline after seed: both memberships declare membership_status=Approved EXPLICITLY (organization-memberships.csv MOM-003/MOM-004) ⇒ effective status Approved in both orgs without depending on the contact's status. This changed on 2026-08-03: the baseline used to be status=null, which resolved to Approved only by falling through to the contact — so the per-org status a case asserted was really a property of a different entity. Effective status is unchanged; its PROVENANCE is now declared. The run's negative tests SET the blocking statuses themselves, and a re-seed heals them back to Approved."
   },
   "B2B_STORE_MEMBERSHIP_ROLES": {
@@ -3713,6 +3699,14 @@
     "password_env_var": "ADMIN_PASSWORD",
     "role_alias": "ADMIN_ROLE_TESTER",
     "user_type": "Administrator"
+  },
+  "RUN_USER": {
+    "_inline": true,
+    "_comment": "The env's storefront run persona: a Customer contact of {{STORE_ID}} with lockout enabled. Email + password come from the layered .env (USER_EMAIL + USER_PASSWORD); this alias records the binding only. It is a different account per env (vcst: b2b/users.csv USR-001, the same login as SUPPORT_AGENT / ACME_ADMIN; vcptcore_qa1: a personal account), so never assert on its organization. Shared by every storefront suite that signs in as the run user: a case that locks it, blocks it or leaves wrong passwords on it breaks them all, 082's impersonation operator included on vcst.",
+    "email_env": "USER_EMAIL",
+    "password_env": "USER_PASSWORD",
+    "store_env": "STORE_ID",
+    "user_type": "Customer"
   },
   "PUSH_MSG_SEED": {
     "_inline": true,
@@ -4510,6 +4504,17 @@
     "name": "AGENT-TEST-SR-CART-WEST",
     "_notes": "Second active cart, in ORG-004/AcmeWest, so the cross-customer dashboard cart count is >1 and cross-org cart scoping is exercised (BL-SR-002/BL-SR-006). Runtime id in aliases.<env>.json (npm run seed:sales-rep-stats)."
   },
+  "SR_STATS_CART_SPLIT": {
+    "_inline": true,
+    "id": "",
+    "name": "default",
+    "org_key": "ORG-003",
+    "currency": "USD",
+    "store": "B2B-store",
+    "selected_qty": 3,
+    "unselected_qty": 7,
+    "_notes": "SR-HD-061 (BL-SR-006): lines in SR_REP_PRIMARY's cart NAMED \"default\" for ORG-003/BuildRight, USD, B2B-store — one product SELECTED for checkout (qty selected_qty) and one DIFFERENT product NOT selected (qty unselected_qty). It must be the \"default\" cart: the dashboard Active carts card queries salesRepCustomerCartStatistics period(filter: \"active-carts\"), and that built-in kind counts ONLY carts named \"default\" (an include-list by name), so the first version of this fixture — a named cart AGENT-TEST-SR-CART-SPLIT, now retired and removed by the seeder — was invisible to the card. The two quantities differ on purpose, so a swapped value/sub is visible; ORG-003 holds no other rep USD default cart, so salesRepCustomerCartStatistics(organizationId=ORG-003, active-carts) equals this fixture exactly, while the dashboard roll-up ADDS it to the other served orgs' default carts (read the roll-up from the API, never from these numbers). BORROWED cart: the seeder did not create it and never removes it — seed adds only the fixture's two lines (and refuses if the cart holds anyone else's line), teardown removes only those lines. FIFTH-RULE LIMIT: this is the cart the storefront uses when the rep shops with BuildRight selected — a case that adds to / clears the cart as SR_REP_PRIMARY with BuildRight selected disturbs it (062 and 097 act in ACME, not BuildRight); the EUR \"default\" BuildRight cart is a separate currency-scoped cart and is never touched. Shape lives in scripts/seed-data/sales-rep/sales-rep-stats-specs.mjs CART_FIXTURES (key SPLIT); td:validate:sales-rep-stats fails if the quantities stop diverging, drift from the spec, or the fixture leaves the \"default\" cart. Runtime id in aliases.<env>.json (npm run seed:sales-rep-stats -- --only SPLIT)."
+  },
   "SR_REP_PERF": {
     "_inline": true,
     "seed": "seed:sales-rep-perf",
@@ -4528,6 +4533,16 @@
     "stats_order_count": "",
     "seeded_at": "",
     "_notes": "VCST-5755 AC-5 performance dataset summary for the env it was seeded on: semicolon-joined runtime org GUIDs (ORG-01..15 order), the number of AGENT-TEST-SRPERF-* orders present after the last seed, and how many of them the statistics scope counts (not IsCancelled, BL-SR-005). Written by npm run seed:sales-rep-perf; removed by seed:sales-rep-perf:teardown."
+  },
+  "SR_BULK_DATASET": {
+    "_inline": true,
+    "seed": "seed:sales-rep-bulk",
+    "org_ids": "",
+    "order_count": "",
+    "stats_order_count": "",
+    "large_stats_total": "",
+    "seeded_at": "",
+    "_notes": "Bulk-volume dataset on the PLAIN rep SR_REP_PRIMARY (089 SR-FE-052 + hub large-number layout): two dedicated orgs AGENT-TEST-SR-BULK-ORG-01 (LARGE: >= 1000 statistics orders, >= $1,000,000) and -02 (MID: 3-digit count, 6-digit money) that SR_REP_PRIMARY serves, holding AGENT-TEST-SRBULK-NNNNNN orders created with customerId = the rep's ApplicationUser id. All orders are dated the seed day (createdDate is server-assigned), so YTD = MTD = today. org_ids = runtime GUIDs (LARGE;MID); counts/total = what the seed recorded. Shape in scripts/seed-data/sales-rep/sales-rep-bulk-specs.mjs; guard td:validate:sr-bulk. Written by npm run seed:sales-rep-bulk; cleared by seed:sales-rep-bulk:teardown (which also drops the two memberships)."
   },
   "SR_REP_LOCKABLE": {
     "file": "sales-rep/sales-reps",
@@ -4901,7 +4916,7 @@
       "roleName": "role_name",
       "extraRoleName": "extra_role_name"
     },
-    "_notes": "VCST-5730 — sales rep with sales-rep-documents:WRITE but NOT :read (\"Sales Representative\" + \"Sales Rep Documents Manager\"). Use for the read-gate disjunction (SalesRepDocumentPermissions.HasReadAccess = Administrator OR :read OR :write) and for upload/pin/delete-authorised cases. Two roles are structurally required: POST /api/sales-rep silently substitutes a granting role for a non-granting roleId, so the write-only role is added to the ApplicationUser afterwards. Runtime GUIDs in aliases.<env>.json."
+    "_notes": "VCST-5730 — sales rep with sales-rep-documents:WRITE but NOT :read (\"Sales Representative\" + \"Sales Rep Documents Manager\"). NEGATIVE read-gate fixture: since SalesRep 3.1006.0 reading the document library REQUIRES sales-rep-documents:read and a write-only holder is Forbidden, BY DESIGN (the 3.1014.0 component test pins \"write does not imply read in code\"); there is no read-OR-write disjunction. Use it to prove write-only cannot list/download, and for upload/pin/delete-authorised cases. STAND CAVEAT: the fixture is write-only only where the \"Sales Rep Documents Manager\" role was seeded by the pre-merge build (vcptcore-qa); on stands seeded from a released build that role carries read+write, so this rep CAN read there — check the role's permissions on the stand before asserting Forbidden. Two roles are structurally required: POST /api/sales-rep silently substitutes a granting role for a non-granting roleId, so the write-only role is added to the ApplicationUser afterwards. Runtime GUIDs in aliases.<env>.json."
   },
   "SR_DOC_PDF": {
     "_inline": true,
@@ -5311,6 +5326,26 @@
       "customerId": "customer_id"
     },
     "notes": "VCST-5733 AUTHORSHIP matrix cell 'UNSERVED org x REP-authored' — the negative fixture. It lives in ORG-005 (Acme-EU-Operations), an org SR_REP_PRIMARY holds NO membership on (verified live on vcst 2026-09-02: zero organization memberships, and salesRepCustomerOrders(organizationId: ORG-005) returns totalCount 0 for the rep). salesRepCustomerOrder(id: @td(ORDER_NOT_SERVED.id)) MUST return null and the salesRepCustomerOrders list must never contain @td(ORDER_NOT_SERVED.number). THE ORACLE IS null, NOT AN ERROR: vc-module-sales-rep PR #14 loads the order by id and THEN filters it through IsVisibleAsync on served OrganizationId, so an assertion expecting a 403 or an errors[] entry produces a false FAIL. IT IS REP-AUTHORED ON PURPOSE, and that is load-bearing: the rep is this order's own customer, so the ONLY thing separating it from ORDER_REP_PLACED — which IS returned — is the organization, which is what makes a null attributable to ORG SCOPE rather than to authorship. A buyer-authored version would be explainable by either dimension, and an implementation that authorized by authorship alone (the pre-VCST-5733 salesRepOrders rule) would WRONGLY return this order. ORG_SUSPENDED (ORG-006) is DELIBERATELY NOT the host: its status is Suspended, which gives the exclusion a second candidate cause and makes the case unable to attribute the one it is about — td:validate:sr-orders check [5] refuses any host whose committed status is not Active. Runtime .id / .createdDate / .customerId live ONLY in aliases.<env>.json (npm run seed:sales-rep)."
+  },
+  "ORDER_UNSERVED_BUYER": {
+    "file": "sales-rep/sales-rep-orders",
+    "filter": {
+      "order_key": "SRO-EU-BUYER-NOT-SERVED"
+    },
+    "fields": {
+      "number": "order_number",
+      "orderKey": "order_key",
+      "org": "org",
+      "store": "store",
+      "status": "status",
+      "total": "total",
+      "customerRole": "customer_role",
+      "customerName": "customer_name",
+      "id": "order_id",
+      "createdDate": "created_date",
+      "customerId": "customer_id"
+    },
+    "notes": "097 SR-CO-012 (BL-SR-002) — the 4th AUTHORSHIP cell 'UNSERVED org x BUYER-authored': an order in ORG-005 (Acme-EU-Operations), an org SR_REP_PRIMARY neither serves nor is a member of, whose customer is the ORG-005 buyer USR-030 (agent-test-sr-eu-buyer, created 2026-10-20 as that org's only member), NOT the rep. Used for 'the rep types {{FRONT_URL}}/account/orders/@td(ORDER_UNSERVED_BUYER.id) and is refused' — ORDER_NOT_SERVED cannot serve that case because the rep IS its customer and a customer may open their own order. One factor away from ORDER_NOT_SERVED (same org/store/status/items_count, only the customer differs; total 142.00 distinct). .org is the business key ORG-005; resolve the org name via b2b/organizations.csv. Runtime .id / .createdDate / .customerId live ONLY in aliases.<env>.json (npm run seed:sales-rep; the buyer comes from npm run seed:b2b -- --only CON-030). td:validate:sr-orders check [j] fails if ORG-005 joins the rep's served set or the buyer is a rep; [5c] fails if the SEEDED customerId equals any SR_REP_* user_id."
   },
   "CAT_EMPTY": {
     "_inline": true,
@@ -9321,78 +9356,6 @@
     },
     "notes": "Suite 073 (legacy Admin SPA returns) ONLY — its dedicated disposable order. Every 073 case that creates a return picks THIS order in the Add new return > Customer orders picker by typing @td(RETURNS_ORDER_ADMIN_073.number) into the picker search, never the first order of the list (that made returns against real orders of human testers). Completed, fully delivered today in one shipment, TWO eligible lines: line A = @td(RETURNS_ORDER_ADMIN_073.lineAItemId), ordered/delivered @td(RETURNS_ORDER_ADMIN_073.lineAOrderedQuantity) (20) of @td(RETURNS_ORDER_ADMIN_073.lineASku); line B = @td(RETURNS_ORDER_ADMIN_073.lineBItemId), ordered/delivered @td(RETURNS_ORDER_ADMIN_073.lineBOrderedQuantity) (25) of @td(RETURNS_ORDER_ADMIN_073.lineBSku). The picker defaults Quantity to the full returnable quantity of a line; each 073 case Cleanup sets its return Cancelled, which releases the units. td:validate:orders FAILS when either line is ordered fewer units than the number of 073 rows that consume this alias. Re-seed with TEST_ENV=<env> npm run seed:returns -- --only ADM073: the seeder REBUILDS the order (deleting its returns first, so none is orphaned) whenever a return on it is not Cancelled, i.e. whenever a previous run left units held. Not to be used by any other suite. Static fields come from the JSON fixture; id / line ids / seededAt / deliveryDates come from aliases.<env>.json. The delivery date is RELATIVE and ages; td:validate:orders FAILS once it has aged past the return window. Re-seed, never re-date."
   },
-  "RETURNS_ORDER_SF_ORD009": {
-    "seed": "seed:returns",
-    "json": "orders/returns/return-order-sf009",
-    "fields": {
-      "number": "number",
-      "status": "status",
-      "currency": "currency",
-      "total": "total",
-      "id": "id",
-      "lineXItemId": "lineXItemId",
-      "lineAItemId": "lineAItemId",
-      "lineASku": "lineASku",
-      "lineAOrderedQuantity": "lineAOrderedQuantity",
-      "lineADeliveredQuantity": "lineADeliveredQuantity",
-      "lineBItemId": "lineBItemId",
-      "lineBSku": "lineBSku",
-      "lineBOrderedQuantity": "lineBOrderedQuantity",
-      "lineBDeliveredQuantity": "lineBDeliveredQuantity",
-      "seededAt": "seededAt"
-    },
-    "notes": "Storefront case ORD-009 (regression/suites/Frontend/orders/014-orders-frontend.csv) ONLY — its dedicated disposable order: submit a return for ALL items with a reason. Owned by the case's sign-in account (USER_EMAIL, the [PRE:SIGNIN_AS:USER_DEFAULT] buyer). Completed, fully delivered today in one shipment, two eligible lines: line A ordered/delivered 4 of @td(RETURNS_ORDER_SF_ORD009.lineASku), line B ordered/delivered 2 of @td(RETURNS_ORDER_SF_ORD009.lineBSku) — unequal on purpose. returnableItems(orderId: @td(RETURNS_ORDER_SF_ORD009.id)) must report every line isReturnable=true. The case submits a return and has no Cleanup, so the order is single-use per run: the seeder REBUILDS it (deleting its returns first) whenever a return on it still holds units — re-seed with TEST_ENV=<env> npm run seed:returns -- --only SF009 before the next run. Not to be used by any other case. Static fields come from the JSON fixture; id / line ids / seededAt / deliveryDates come from aliases.<env>.json. The delivery date is RELATIVE and ages; td:validate:orders FAILS once it has aged past the return window. Re-seed, never re-date."
-  },
-  "RETURNS_ORDER_SF_ORD010": {
-    "seed": "seed:returns",
-    "json": "orders/returns/return-order-sf010",
-    "fields": {
-      "number": "number",
-      "status": "status",
-      "currency": "currency",
-      "total": "total",
-      "id": "id",
-      "lineXItemId": "lineXItemId",
-      "lineAItemId": "lineAItemId",
-      "lineASku": "lineASku",
-      "lineAOrderedQuantity": "lineAOrderedQuantity",
-      "lineADeliveredQuantity": "lineADeliveredQuantity",
-      "lineBItemId": "lineBItemId",
-      "lineBSku": "lineBSku",
-      "lineBOrderedQuantity": "lineBOrderedQuantity",
-      "lineBDeliveredQuantity": "lineBDeliveredQuantity",
-      "seededAt": "seededAt"
-    },
-    "notes": "Storefront case ORD-010 (regression/suites/Frontend/orders/014-orders-frontend.csv) ONLY — its dedicated disposable order: partial return — select only Item A (line A), Item B (line B) must stay out. Owned by the case's sign-in account (USER_EMAIL, the [PRE:SIGNIN_AS:USER_DEFAULT] buyer). Completed, fully delivered today in one shipment, two eligible lines: line A ordered/delivered 6 of @td(RETURNS_ORDER_SF_ORD010.lineASku), line B ordered/delivered 2 of @td(RETURNS_ORDER_SF_ORD010.lineBSku) — unequal on purpose. returnableItems(orderId: @td(RETURNS_ORDER_SF_ORD010.id)) must report every line isReturnable=true. The case submits a return and has no Cleanup, so the order is single-use per run: the seeder REBUILDS it (deleting its returns first) whenever a return on it still holds units — re-seed with TEST_ENV=<env> npm run seed:returns -- --only SF010 before the next run. Not to be used by any other case. Static fields come from the JSON fixture; id / line ids / seededAt / deliveryDates come from aliases.<env>.json. The delivery date is RELATIVE and ages; td:validate:orders FAILS once it has aged past the return window. Re-seed, never re-date."
-  },
-  "RETURNS_ORDER_SF_ORD037": {
-    "seed": "seed:returns",
-    "json": "orders/returns/return-order-sf037",
-    "fields": {
-      "number": "number",
-      "status": "status",
-      "currency": "currency",
-      "total": "total",
-      "id": "id",
-      "lineXItemId": "lineXItemId",
-      "seededAt": "seededAt"
-    },
-    "notes": "Storefront case ORD-037 (regression/suites/Frontend/orders/014b-orders-frontend-returns-filtering.csv) ONLY — its dedicated disposable order: a return reason is required before submit. Owned by the case's sign-in account (USER_EMAIL, the [PRE:SIGNIN_AS:USER_DEFAULT] buyer). Completed, fully delivered today in one shipment, one eligible line ordered/delivered 2. returnableItems(orderId: @td(RETURNS_ORDER_SF_ORD037.id)) must report every line isReturnable=true. The case submits a return and has no Cleanup, so the order is single-use per run: the seeder REBUILDS it (deleting its returns first) whenever a return on it still holds units — re-seed with TEST_ENV=<env> npm run seed:returns -- --only SF037 before the next run. Not to be used by any other case. Static fields come from the JSON fixture; id / line ids / seededAt / deliveryDates come from aliases.<env>.json. The delivery date is RELATIVE and ages; td:validate:orders FAILS once it has aged past the return window. Re-seed, never re-date."
-  },
-  "RETURNS_ORDER_SF_ORD039": {
-    "seed": "seed:returns",
-    "json": "orders/returns/return-order-sf039",
-    "fields": {
-      "number": "number",
-      "status": "status",
-      "currency": "currency",
-      "total": "total",
-      "id": "id",
-      "lineXItemId": "lineXItemId",
-      "seededAt": "seededAt"
-    },
-    "notes": "Storefront case ORD-039 (regression/suites/Frontend/orders/014b-orders-frontend-returns-filtering.csv) ONLY — its dedicated disposable order: return 1 of the 3 ordered; the remaining 2 must not be included. Owned by the case's sign-in account (USER_EMAIL, the [PRE:SIGNIN_AS:USER_DEFAULT] buyer). Completed, fully delivered today in one shipment, one eligible line ordered/delivered 3. returnableItems(orderId: @td(RETURNS_ORDER_SF_ORD039.id)) must report every line isReturnable=true. The case submits a return and has no Cleanup, so the order is single-use per run: the seeder REBUILDS it (deleting its returns first) whenever a return on it still holds units — re-seed with TEST_ENV=<env> npm run seed:returns -- --only SF039 before the next run. Not to be used by any other case. Static fields come from the JSON fixture; id / line ids / seededAt / deliveryDates come from aliases.<env>.json. The delivery date is RELATIVE and ages; td:validate:orders FAILS once it has aged past the return window. Re-seed, never re-date."
-  },
   "RETURNS_LINE_X": {
     "seed": "seed:returns",
     "_inline": true,
@@ -9690,6 +9653,54 @@
     "password_var": "RETURNS_AGENT_NO_AUTHORIZE_PASSWORD",
     "role": "AGENT-TEST-Return-Agent-NoAuthorize",
     "excluded_permission": "return:authorize",
+    "user_type": "Manager"
+  },
+  "SHELL_SEARCH_NOREAD": {
+    "seed": "seed:rbac",
+    "_inline": true,
+    "_comment": "VCST-6260 (Admin shell global search, vc-platform PR #3134) back-office account WITHOUT the read permissions: holds platform:setting:access + platform:security:access + catalog:access, EXCLUDES platform:setting:read and platform:security:read (and order:access, pricing:access, settings/security writes). The settings/users/roles providers gate on *:access but their data calls need *:read — expected GET /api/platform/settings/v2/global/schema 403, POST users/search 403, POST roles/search 403; the menu provider shows Catalog but not Orders/Pricing. Differs from SHELL_SEARCH_READ by exactly the two read permissions. Single source of truth: scripts/seed-data/platform/backoffice-rbac-specs.mjs; seed: npm run seed:rbac -- --only SHELL_SEARCH_NOREAD,SHELL_SEARCH_READ (add --verify for the live proof); drift-guard: npm run td:validate:rbac; teardown: npm run seed:rbac:teardown -- --only SHELL_SEARCH_NOREAD,SHELL_SEARCH_READ. Runtime platform_id/user_id/role_id/userName resolve from aliases.<env>.json. platform:access does not exist on this build; userType Manager is the back-office entry. isAdministrator=false so the gate applies. The PASSWORD is a {{SHELL_SEARCH_PASSWORD}} secret from .env.local (never committed), shared by both accounts.",
+    "email": "AGENT-TEST-shell-search-noread@test.virtocommerce.com",
+    "login": "AGENT-TEST-shell-search-noread@test.virtocommerce.com",
+    "password": "{{SHELL_SEARCH_PASSWORD}}",
+    "password_var": "SHELL_SEARCH_PASSWORD",
+    "role": "AGENT-TEST-Shell-Search-NoRead",
+    "permissions": [
+      "platform:setting:access",
+      "platform:security:access",
+      "catalog:access"
+    ],
+    "excluded_permission": "platform:setting:read",
+    "excluded_permissions": [
+      "platform:setting:read",
+      "platform:security:read",
+      "order:access",
+      "pricing:access"
+    ],
+    "is_administrator": false,
+    "user_type": "Manager"
+  },
+  "SHELL_SEARCH_READ": {
+    "seed": "seed:rbac",
+    "_inline": true,
+    "_comment": "VCST-6260 control account: the SHELL_SEARCH_NOREAD base PLUS platform:setting:read and platform:security:read, still no order:access / pricing:access and no settings/security write. Expected schema 200, users/search 200, roles/search 200 — the settings/users/roles providers return results for a non-admin; Orders/Pricing still absent from the menu provider. Single source of truth: scripts/seed-data/platform/backoffice-rbac-specs.mjs; seed: npm run seed:rbac -- --only SHELL_SEARCH_NOREAD,SHELL_SEARCH_READ (add --verify for the live proof); drift-guard: npm run td:validate:rbac; teardown: npm run seed:rbac:teardown -- --only SHELL_SEARCH_NOREAD,SHELL_SEARCH_READ. Runtime platform_id/user_id/role_id/userName resolve from aliases.<env>.json. platform:access does not exist on this build; userType Manager is the back-office entry. isAdministrator=false so the gate applies. The PASSWORD is a {{SHELL_SEARCH_PASSWORD}} secret from .env.local (never committed), shared by both accounts.",
+    "email": "AGENT-TEST-shell-search-read@test.virtocommerce.com",
+    "login": "AGENT-TEST-shell-search-read@test.virtocommerce.com",
+    "password": "{{SHELL_SEARCH_PASSWORD}}",
+    "password_var": "SHELL_SEARCH_PASSWORD",
+    "role": "AGENT-TEST-Shell-Search-Read",
+    "permissions": [
+      "platform:setting:access",
+      "platform:security:access",
+      "catalog:access",
+      "platform:setting:read",
+      "platform:security:read"
+    ],
+    "excluded_permission": "order:access",
+    "excluded_permissions": [
+      "order:access",
+      "pricing:access"
+    ],
+    "is_administrator": false,
     "user_type": "Manager"
   },
   "OTP_LOCKOUT_USER_1": {
@@ -10729,43 +10740,6 @@
     "partial_list_id": "agent_test_html_partial",
     "empty_favorites_title": "AGENT-TEST GA4 Favorites No Match"
   },
-  "USER_DEFAULT_ADDRESS_BOOK": {
-    "_inline": true,
-    "owner_alias": "USER_DEFAULT",
-    "source": "test-data/addresses/us-addresses.csv",
-    "row_ids": "US-ADDR-005;US-ADDR-006;US-ADDR-051",
-    "min_count": 3,
-    "live_count": "",
-    "notes": "Three AGENT-TEST-marked (outerId AGENT-TEST-PADDR:<address_id>) addresses ADDED to USER_DEFAULT next to its own, picked by business key from us-addresses.csv: a control row (Seattle), a Houston row (hit for @td(ADDRESS_SEARCH.cityNeedle)) and a New York 10001 row (hit for @td(ADDRESS_SEARCH.zipNeedle)); seed order is neither ascending nor descending on first/last/full recipient name, so a column sort must visibly reorder. Serves 011 CHK-110 / CHK-114 and 045 A11Y-SORT-001/002/003. Owned by scripts/seed-data/personal-fixtures (npm run seed:personal-fixtures; guard npm run td:validate:personal-fixtures). live_count is the observed total on the env, written to aliases.<env>.json by the seeder."
-  },
-  "PERSONAL_LIST_USER_DEFAULT": {
-    "_inline": true,
-    "name": "AGENT-TEST Personal Saved List",
-    "id": "",
-    "items_count": "",
-    "notes": "Saved List (xAPI wishlist) owned by USER_DEFAULT so /account/lists renders >=1 list card (045 A11Y-SR-006 / A11Y-CC-004). Items = @td(BUYABLE_PRICED_PRODUCT) + @td(BUYABLE_SIBLING_B2B). Owned by scripts/seed-data/personal-fixtures. Runtime id is EMPTY here by design and comes from aliases.<env>.json."
-  },
-  "ORG_USER_RFQ_LIST": {
-    "_inline": true,
-    "name": "AGENT-TEST RFQ Saved List",
-    "id": "",
-    "items_count": "",
-    "notes": "Saved List owned by ORG_USER_DEFAULT with 2 DISTINCT buyable, priced products (@td(BUYABLE_PRICED_PRODUCT) + @td(BUYABLE_SIBLING_B2B)) — 015 QUOTE-015 (RFQ from a saved list). The seeder reads each line back through xAPI as the owner and fails unless it is buyable with a price. Owned by scripts/seed-data/personal-fixtures. Runtime id is EMPTY here by design and comes from aliases.<env>.json."
-  },
-  "USER_NO_ADDRESSES": {
-    "file": "users/test-users",
-    "filter": {
-      "user_id": "USER-021"
-    },
-    "fields": {
-      "email": "email",
-      "password": "password",
-      "first_name": "first_name",
-      "last_name": "last_name",
-      "id": "user_id"
-    },
-    "notes": "Personal (no-org) persona with ZERO saved addresses — the precondition of 011 CHK-095 (address popup empty state), which USER_DEFAULT cannot satisfy because CHK-110/114 need it to hold >=3. Never written to: npm run seed:personal-fixtures only CHECKS it still has 0 addresses (live_address_count in aliases.<env>.json) and fails if a suite left one behind."
-  },
   "PUNCHOUT_CONFIG_0": {
     "_inline": true,
     "_notes": "VCST-5886 Punchout configuration 0 (Punchout:Configurations:0 app setting, deployed per env via vc-deploy-dev infra/environments.yml — there is no REST read-back). Purpose: happy path — every optional check ON (sender domain + return-URL allow-list), default-length lifetimes. sharedSecret is a {{VAR}} token: the value lives only in .env.local as PUNCHOUT_SHARED_SECRET_0_<TEST_ENV> (e.g. PUNCHOUT_SHARED_SECRET_0_VCPTCORE_QA1), promoted to PUNCHOUT_SHARED_SECRET_0 by config.js / seed-common.mjs. Env facts below are EMPTY in this base file by design; the seeder writes the deployed values to the env overlay. Seeded/registered by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs. VirtoCommerce.Punchout is deployed only on vcptcore_qa1 and vcst — on every other env the seeder skips and these fields resolve to \"\" (a clear miss). Runtime ids live ONLY in aliases.<env>.json.",
@@ -10887,26 +10861,6 @@
     "otherOrganizationId": "",
     "organizationCount": ""
   },
-  "PUNCHOUT_MAPPING_REQUISITION": {
-    "_inline": true,
-    "_notes": "VCST-5887 DEDICATED punchout buyer + mapping AGENT-TEST-PO-300 — isolated from {{USER_EMAIL}} (AGENT-TEST-PO-100), which is shared with other runs and holds a dozen named carts. Contact \"AGENT-TEST-Punchout Buyer\" + Customer account @td(PUNCHOUT_MAPPING_REQUISITION.email) (password {{B2B_USER_PASSWORD}}) + ONE org membership (Purchasing agent, org-scoped) in the single org of the {{USER_EMAIL}} persona (derived live, so it prices like the default persona). Use it for every cart-content / requisition case; run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>) in Setup AND Cleanup — it deletes every cart of this buyer and mints the empty `default` cart via xAPI (DISPOSABLE FIXTURES rule 4: two suites using this buyer are serialised). Seeded by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown deletes mapping, carts, membership, account, contact); guard npm run td:validate:punchout. Runtime ids (id = mapping, userId, memberId = contact, organizationId) live ONLY in aliases.<env>.json.",
-    "seed": "seed:punchout",
-    "externalId": "AGENT-TEST-PO-300",
-    "email": "AGENT-TEST-punchout-buyer@test.virtocommerce.com",
-    "login": "AGENT-TEST-punchout-buyer@test.virtocommerce.com",
-    "password": "{{B2B_USER_PASSWORD}}",
-    "password_var": "B2B_USER_PASSWORD",
-    "org_role": "Purchasing agent",
-    "organization_from_persona_var": "USER_EMAIL",
-    "owned_by_seeder": true,
-    "id": "",
-    "userId": "",
-    "memberId": "",
-    "organizationId": "",
-    "currentOrganizationId": "",
-    "otherOrganizationId": "",
-    "organizationCount": ""
-  },
   "BACKOFFICE_PUNCHOUT_READ": {
     "_inline": true,
     "_notes": "AGENT-TEST VCST-5886 BSC-2: opens Companies & contacts (customer:access + customer:read) and sees the Punchout user widget (punchout:read). Holds NO punchout:create/update/delete, so Save/Delete must be disabled and POST/PUT/DELETE /api/punchout-user-mappings must 403. Safe to delete. Back-office Manager account (isAdministrator=false), exactly one role AGENT-TEST-Punchout-Reader. Expected REST: search 200, write 403. Seeded/registered by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown; live re-check seed:punchout:verify); guard npm run td:validate:punchout; spec punchout-specs.mjs. VirtoCommerce.Punchout is deployed only on vcptcore_qa1 and vcst — on every other env the seeder skips and these fields resolve to \"\" (a clear miss). Runtime ids live ONLY in aliases.<env>.json.",
@@ -10934,6 +10888,107 @@
     "permissions": "customer:access,customer:read",
     "user_id": "",
     "role_id": ""
+  },
+  "PB_ASSETS_ROOT": {
+    "_inline": true,
+    "_comment": "VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "folder": "AGENT-TEST-VCST5726"
+  },
+  "PB_ASSETS_P500": {
+    "_inline": true,
+    "_comment": "VCST-5726 F500: 500 PNGs asset-000..asset-499 uploaded in a seeded shuffle (name order != upload order). firstByUpload/lastByUpload are read from the live createdDate. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "folder": "AGENT-TEST-VCST5726/p500",
+    "count": 500,
+    "firstByName": "asset-000.png",
+    "lastByName": "asset-499.png"
+  },
+  "PB_ASSETS_MIXED": {
+    "_inline": true,
+    "_comment": "VCST-5726 FMIX: 20 PDF asset-000..019 + 480 PNG asset-020..499; an image-accept picker shows 480, first asset-020.png. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "folder": "AGENT-TEST-VCST5726/mixed",
+    "count": 500,
+    "imageCount": 480,
+    "firstImage": "asset-020.png"
+  },
+  "PB_ASSETS_FOLDERS": {
+    "_inline": true,
+    "_comment": "VCST-5726 FFOLDERS: 25 sub-folders sub-00..24 + 30 files file-00..29 (totalCount 55 != fileCount 30). VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "folder": "AGENT-TEST-VCST5726/folders",
+    "totalCount": 55,
+    "fileCount": 30
+  },
+  "PB_ASSETS_DEEP": {
+    "_inline": true,
+    "_comment": "VCST-5726 FDEEP: deep/l1/../l5 (3 PNG per level) + deep/l1/b1..b4 (2 PNG each); d5-a.png at the leaf is referenced by 1 page. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "folder": "AGENT-TEST-VCST5726/deep",
+    "leaf": "AGENT-TEST-VCST5726/deep/l1/l2/l3/l4/l5"
+  },
+  "PB_ASSETS_EMPTY": {
+    "_inline": true,
+    "_comment": "VCST-5726 FEMPTY: empty folder. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "folder": "AGENT-TEST-VCST5726/empty",
+    "totalCount": 0
+  },
+  "PB_ASSETS_TPL": {
+    "_inline": true,
+    "_comment": "VCST-5726 FTPL: template-literal names (harmless marker window.__vcst5726). The folder name is rejected by POST /api/assets/folder (lowercase validator) so it is created by uploading tpl-marker.png into it. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "folder": "AGENT-TEST-VCST5726/tpl",
+    "file": "tpl-{{=window.__vcst5726=2}}.png",
+    "tplFolder": "tpl-{{=window.__vcst5726=1}}"
+  },
+  "PB_ASSET_REF_1": {
+    "_inline": true,
+    "_comment": "VCST-5726: p500/asset-007.png referenced by 1 page (AGENT-TEST-VCST5726-ref-1). assetUrl/pageIds/observed counts in aliases.<env>.json. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "rel": "p500/asset-007.png",
+    "expectedRefs": 1
+  },
+  "PB_ASSET_REF_3": {
+    "_inline": true,
+    "_comment": "VCST-5726: p500/asset-025.png referenced by 3 pages (ref-1..3). VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "rel": "p500/asset-025.png",
+    "expectedRefs": 3
+  },
+  "PB_ASSET_REF_2": {
+    "_inline": true,
+    "_comment": "VCST-5726: p500/asset-499.png referenced by 2 pages (ref-1, ref-2) + 2 shared components (AGENT-TEST-VCST5726-sc-1, sc-2) => expectedRefs 4 total (distinct from asset-025 = 3). VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "rel": "p500/asset-499.png",
+    "expectedRefs": 4,
+    "expectedPageRefs": 2,
+    "expectedScRefs": 2
+  },
+  "PB_ASSET_REF_DEEP": {
+    "_inline": true,
+    "_comment": "VCST-5726: deep/l1/l2/l3/l4/l5/d5-a.png referenced by 1 page (ref-4); a folder-level references lookup from deep/ must find it. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "rel": "deep/l1/l2/l3/l4/l5/d5-a.png",
+    "expectedRefs": 1
+  },
+  "PB_ASSET_REF_SC": {
+    "_inline": true,
+    "_comment": "VCST-5726: shared components (sc-1, sc-2) each referencing p500/asset-499.png. Runtime ids in aliases.<env>.json. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
+    "names": [
+      "AGENT-TEST-VCST5726-sc-1",
+      "AGENT-TEST-VCST5726-sc-2"
+    ]
+  },
+  "PUNCHOUT_MAPPING_REQUISITION": {
+    "_inline": true,
+    "_notes": "VCST-5887 DEDICATED punchout buyer + mapping AGENT-TEST-PO-300 — isolated from {{USER_EMAIL}} (AGENT-TEST-PO-100), which is shared with other runs and holds a dozen named carts. Contact \"AGENT-TEST-Punchout Buyer\" + Customer account @td(PUNCHOUT_MAPPING_REQUISITION.email) (password {{B2B_USER_PASSWORD}}) + ONE org membership (Purchasing agent, org-scoped) in the single org of the {{USER_EMAIL}} persona (derived live, so it prices like the default persona). Use it for every cart-content / requisition case; run `npm run seed:punchout:reset-carts` (TEST_ENV=<env>) in Setup AND Cleanup — it deletes every cart of this buyer and mints the empty `default` cart via xAPI (DISPOSABLE FIXTURES rule 4: two suites using this buyer are serialised). Seeded by scripts/seed-data/punchout/seed-punchout.mjs (npm run seed:punchout; teardown seed:punchout:teardown deletes mapping, carts, membership, account, contact); guard npm run td:validate:punchout. Runtime ids (id = mapping, userId, memberId = contact, organizationId) live ONLY in aliases.<env>.json.",
+    "seed": "seed:punchout",
+    "externalId": "AGENT-TEST-PO-300",
+    "email": "AGENT-TEST-punchout-buyer@test.virtocommerce.com",
+    "login": "AGENT-TEST-punchout-buyer@test.virtocommerce.com",
+    "password": "{{B2B_USER_PASSWORD}}",
+    "password_var": "B2B_USER_PASSWORD",
+    "org_role": "Purchasing agent",
+    "organization_from_persona_var": "USER_EMAIL",
+    "owned_by_seeder": true,
+    "id": "",
+    "userId": "",
+    "memberId": "",
+    "organizationId": "",
+    "currentOrganizationId": "",
+    "otherOrganizationId": "",
+    "organizationCount": ""
   },
   "PUNCHOUT_PRODUCT_UOM": {
     "_inline": true,
@@ -11006,6 +11061,243 @@
     "assignedFfcId": "",
     "previousValue": "",
     "owned": ""
+  },
+  "PB_6443_LEGACY_S6": {
+    "_inline": true,
+    "seed": "seed:pb-legacy-permalinks",
+    "id": "",
+    "name": "AGENT-TEST-6443 legacy S6",
+    "permalink": "/agent-test-6443 legacy-s6",
+    "invalid_because": "space",
+    "store_id": "B2B-store",
+    "culture": "en-US",
+    "_notes": "VCST-6443 (PageBuilder permalink validation, PR #178): a LEGACY-INVALID page group, created through PLATFORM IMPORT (POST /api/platform/import bypasses PageBuilderPermalink.IsValid, which only guards the REST create/update endpoints) so the permalink is stored verbatim. Per-run and TERMINAL: one page per consuming scenario, never shared; a case that fixes the permalink consumes it. name/permalink are the env-invariant business keys; the runtime group id lives only in aliases.<env>.json (provisioned by test-data-engineer per run; teardown DELETE /api/page-builder-pages/grouped/{id} -> GET 404). storeId B2B-store, en-US, Draft, content {settings:{},content:[]}."
+  },
+  "PB_6443_LEGACY_S7": {
+    "_inline": true,
+    "seed": "seed:pb-legacy-permalinks",
+    "id": "",
+    "name": "AGENT-TEST-6443 legacy S7",
+    "permalink": "/agent-test-6443-legacy-S7&x",
+    "invalid_because": "ampersand + uppercase S (case-only change test)",
+    "store_id": "B2B-store",
+    "culture": "en-US",
+    "_notes": "VCST-6443 (PageBuilder permalink validation, PR #178): a LEGACY-INVALID page group, created through PLATFORM IMPORT (POST /api/platform/import bypasses PageBuilderPermalink.IsValid, which only guards the REST create/update endpoints) so the permalink is stored verbatim. Per-run and TERMINAL: one page per consuming scenario, never shared; a case that fixes the permalink consumes it. name/permalink are the env-invariant business keys; the runtime group id lives only in aliases.<env>.json (provisioned by test-data-engineer per run; teardown DELETE /api/page-builder-pages/grouped/{id} -> GET 404). storeId B2B-store, en-US, Draft, content {settings:{},content:[]}."
+  },
+  "PB_6443_LEGACY_S8": {
+    "_inline": true,
+    "seed": "seed:pb-legacy-permalinks",
+    "id": "",
+    "name": "AGENT-TEST-6443 legacy S8",
+    "permalink": "/agent-test-6443 legacy-s8?x",
+    "invalid_because": "space + question mark",
+    "store_id": "B2B-store",
+    "culture": "en-US",
+    "_notes": "VCST-6443 (PageBuilder permalink validation, PR #178): a LEGACY-INVALID page group, created through PLATFORM IMPORT (POST /api/platform/import bypasses PageBuilderPermalink.IsValid, which only guards the REST create/update endpoints) so the permalink is stored verbatim. Per-run and TERMINAL: one page per consuming scenario, never shared; a case that fixes the permalink consumes it. name/permalink are the env-invariant business keys; the runtime group id lives only in aliases.<env>.json (provisioned by test-data-engineer per run; teardown DELETE /api/page-builder-pages/grouped/{id} -> GET 404). storeId B2B-store, en-US, Draft, content {settings:{},content:[]}."
+  },
+  "PB_6443_LEGACY_S10": {
+    "_inline": true,
+    "id": "",
+    "name": "AGENT-TEST-6443 legacy S10",
+    "permalink": "/agent-test-6443 legacy-s10#y",
+    "invalid_because": "space + hash",
+    "store_id": "B2B-store",
+    "culture": "en-US",
+    "_notes": "VCST-6443 (PageBuilder permalink validation, PR #178): a LEGACY-INVALID page group, created through PLATFORM IMPORT (POST /api/platform/import bypasses PageBuilderPermalink.IsValid, which only guards the REST create/update endpoints) so the permalink is stored verbatim. Per-run and TERMINAL: one page per consuming scenario, never shared; a case that fixes the permalink consumes it. name/permalink are the env-invariant business keys; the runtime group id lives only in aliases.<env>.json (provisioned by test-data-engineer per run; teardown DELETE /api/page-builder-pages/grouped/{id} -> GET 404). storeId B2B-store, en-US, Draft, content {settings:{},content:[]}."
+  },
+  "PB_6443_LEGACY_S18": {
+    "_inline": true,
+    "seed": "seed:pb-legacy-permalinks",
+    "id": "",
+    "name": "AGENT-TEST-6443 legacy S18",
+    "permalink": "/agent-test-6443 legacy-s18",
+    "invalid_because": "space",
+    "store_id": "B2B-store",
+    "culture": "en-US",
+    "_notes": "VCST-6443 (PageBuilder permalink validation, PR #178): a LEGACY-INVALID page group, created through PLATFORM IMPORT (POST /api/platform/import bypasses PageBuilderPermalink.IsValid, which only guards the REST create/update endpoints) so the permalink is stored verbatim. Per-run and TERMINAL: one page per consuming scenario, never shared; a case that fixes the permalink consumes it. name/permalink are the env-invariant business keys; the runtime group id lives only in aliases.<env>.json (provisioned by test-data-engineer per run; teardown DELETE /api/page-builder-pages/grouped/{id} -> GET 404). storeId B2B-store, en-US, Draft, content {settings:{},content:[]}."
+  },
+  "PB_6443_LEGACY_EXP1": {
+    "_inline": true,
+    "seed": "seed:pb-legacy-permalinks",
+    "id": "",
+    "name": "AGENT-TEST-6443 legacy EXP1",
+    "permalink": "/agent-test-6443 legacy-exp1",
+    "invalid_because": "space (exploratory)",
+    "store_id": "B2B-store",
+    "culture": "en-US",
+    "_notes": "VCST-6443 (PageBuilder permalink validation, PR #178): a LEGACY-INVALID page group, created through PLATFORM IMPORT (POST /api/platform/import bypasses PageBuilderPermalink.IsValid, which only guards the REST create/update endpoints) so the permalink is stored verbatim. Per-run and TERMINAL: one page per consuming scenario, never shared; a case that fixes the permalink consumes it. name/permalink are the env-invariant business keys; the runtime group id lives only in aliases.<env>.json (provisioned by test-data-engineer per run; teardown DELETE /api/page-builder-pages/grouped/{id} -> GET 404). storeId B2B-store, en-US, Draft, content {settings:{},content:[]}."
+  },
+  "PB_6443_LEGACY_EXP2": {
+    "_inline": true,
+    "seed": "seed:pb-legacy-permalinks",
+    "id": "",
+    "name": "AGENT-TEST-6443 legacy EXP2",
+    "permalink": "/agent-test-6443 legacy-exp2",
+    "invalid_because": "space (exploratory)",
+    "store_id": "B2B-store",
+    "culture": "en-US",
+    "_notes": "VCST-6443 (PageBuilder permalink validation, PR #178): a LEGACY-INVALID page group, created through PLATFORM IMPORT (POST /api/platform/import bypasses PageBuilderPermalink.IsValid, which only guards the REST create/update endpoints) so the permalink is stored verbatim. Per-run and TERMINAL: one page per consuming scenario, never shared; a case that fixes the permalink consumes it. name/permalink are the env-invariant business keys; the runtime group id lives only in aliases.<env>.json (provisioned by test-data-engineer per run; teardown DELETE /api/page-builder-pages/grouped/{id} -> GET 404). storeId B2B-store, en-US, Draft, content {settings:{},content:[]}."
+  },
+  "PB_6443_LEGACY_PCT": {
+    "_inline": true,
+    "seed": "seed:pb-legacy-permalinks",
+    "id": "",
+    "name": "AGENT-TEST-6443 legacy PCT",
+    "permalink": "/agent-test-6443-legacy%20pct",
+    "invalid_because": "percent escape (accepted before PR #178, rejected by the new rule)",
+    "status": "Published",
+    "visibility": true,
+    "store_id": "B2B-store",
+    "culture": "en-US",
+    "_notes": "VCST-6443 (PageBuilder permalink validation, PR #178): a LEGACY-INVALID page group, created through PLATFORM IMPORT (POST /api/platform/import bypasses PageBuilderPermalink.IsValid, which only guards the REST create/update endpoints) so the permalink is stored verbatim. Unlike its siblings it is PUBLISHED with visibility=true, because a storefront natural-URL probe reads it (create-group-page without visibility stores false, so an anonymous visitor would get 404 for a reason unrelated to the permalink). Per-run and TERMINAL: one page per consuming scenario, never shared. name/permalink are the env-invariant business keys; the runtime group id lives only in aliases.<env>.json. Seeder: npm run seed:pb-legacy-permalinks (teardown: npm run seed:pb-legacy-permalinks:teardown). storeId B2B-store, en-US, content {settings:{},content:[]}."
+  },
+  "PB_6443_LEGACY_LT": {
+    "_inline": true,
+    "seed": "seed:pb-legacy-permalinks",
+    "id": "",
+    "name": "AGENT-TEST-6443 legacy LT",
+    "permalink": "/agent-test-6443-legacy<lt>",
+    "invalid_because": "angle bracket",
+    "store_id": "B2B-store",
+    "culture": "en-US",
+    "_notes": "VCST-6443 (PageBuilder permalink validation, PR #178): a LEGACY-INVALID page group, created through PLATFORM IMPORT (POST /api/platform/import bypasses PageBuilderPermalink.IsValid, which only guards the REST create/update endpoints) so the permalink is stored verbatim. Covers the angle-bracket class (a literal '<' and '>'), which no other legacy fixture carries. Per-run and TERMINAL: one page per consuming scenario, never shared. name/permalink are the env-invariant business keys; the runtime group id lives only in aliases.<env>.json. Seeder: npm run seed:pb-legacy-permalinks (teardown: npm run seed:pb-legacy-permalinks:teardown). storeId B2B-store, en-US, Draft, content {settings:{},content:[]}."
+  },
+  "PB_6443_NOCREATE_USER": {
+    "_inline": true,
+    "seed": "seed:pb-legacy-permalinks",
+    "id": "",
+    "login": "agent-test-6443-nocreate",
+    "email": "agent-test-6443-nocreate@test.virtocommerce.com",
+    "role": "AGENT-TEST-6443 no-create",
+    "permissions": "builder:access, builder:read, builder:update",
+    "excluded_permission": "builder:create",
+    "user_type": "Manager",
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "_notes": "VCST-6443: back-office (Manager, isAdministrator=false) account WITHOUT builder:create but WITH builder:read + builder:update, so POST /api/page-builder-pages/create-group-page returns 403 for it on a VALID permalink (verified at provision) — the case decides whether an INVALID permalink is rejected 400 before or 403 at the permission gate. Password is the {{DEFAULT_TEST_PASSWORD}} secret from .env.local (localhost-safe fallback via user-provision.mjs resolvePassword), never committed. Runtime user id lives only in aliases.<env>.json. Teardown: DELETE /api/platform/security/users?names=agent-test-6443-nocreate + DELETE /api/platform/security/roles?ids=AGENT-TEST-6443%20no-create."
+  },
+  "CFG_VARIATION_OPTIONS": {
+    "file": "products/configurable-products",
+    "filter": {
+      "product_id": "CFG-035"
+    },
+    "fields": {
+      "name": "product_name",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "price": "base_price",
+      "id": "product_id_guid",
+      "configuration_id": "configuration_id"
+    },
+    "_notes": "Configurable product with a VARIATION section over its own 3 variations (Red / M list 60 sale 45; Blue / L 80; Green / S 35; base 200), each with variation-level Color + Size. The section stores NO options: the catalog API drops options sent on a Variation section (kb KB-76D8F765), so a per-option quantity > 1 (CFG-VAR-005) is not seedable. For 072 CFG-VAR-001..004 (which pointed at CFG_BIKE — a Product-section bike with no variations, so every VAR case was vacuous). Seeded by seed-configurable.mjs spec CFG-035 (configurable-specs.mjs is the single source of truth); id + configuration_id land in aliases.<env>.json via syncEnvAliases. Navigate via @td(CFG_VARIATION_OPTIONS.url) or /search?q=@td(CFG_VARIATION_OPTIONS.name)."
+  },
+  "RETURNS_ORDER_SF_ORD009": {
+    "seed": "seed:returns",
+    "json": "orders/returns/return-order-sf009",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "total": "total",
+      "id": "id",
+      "lineXItemId": "lineXItemId",
+      "lineAItemId": "lineAItemId",
+      "lineASku": "lineASku",
+      "lineAOrderedQuantity": "lineAOrderedQuantity",
+      "lineADeliveredQuantity": "lineADeliveredQuantity",
+      "lineBItemId": "lineBItemId",
+      "lineBSku": "lineBSku",
+      "lineBOrderedQuantity": "lineBOrderedQuantity",
+      "lineBDeliveredQuantity": "lineBDeliveredQuantity",
+      "seededAt": "seededAt"
+    },
+    "notes": "Storefront case ORD-009 (regression/suites/Frontend/orders/014-orders-frontend.csv) ONLY — its dedicated disposable order: submit a return for ALL items with a reason. Owned by the case's sign-in account (USER_EMAIL, the [PRE:SIGNIN_AS:USER_DEFAULT] buyer). Completed, fully delivered today in one shipment, two eligible lines: line A ordered/delivered 4 of @td(RETURNS_ORDER_SF_ORD009.lineASku), line B ordered/delivered 2 of @td(RETURNS_ORDER_SF_ORD009.lineBSku) — unequal on purpose. returnableItems(orderId: @td(RETURNS_ORDER_SF_ORD009.id)) must report every line isReturnable=true. The case submits a return and has no Cleanup, so the order is single-use per run: the seeder REBUILDS it (deleting its returns first) whenever a return on it still holds units — re-seed with TEST_ENV=<env> npm run seed:returns -- --only SF009 before the next run. Not to be used by any other case. Static fields come from the JSON fixture; id / line ids / seededAt / deliveryDates come from aliases.<env>.json. The delivery date is RELATIVE and ages; td:validate:orders FAILS once it has aged past the return window. Re-seed, never re-date."
+  },
+  "RETURNS_ORDER_SF_ORD010": {
+    "seed": "seed:returns",
+    "json": "orders/returns/return-order-sf010",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "total": "total",
+      "id": "id",
+      "lineXItemId": "lineXItemId",
+      "lineAItemId": "lineAItemId",
+      "lineASku": "lineASku",
+      "lineAOrderedQuantity": "lineAOrderedQuantity",
+      "lineADeliveredQuantity": "lineADeliveredQuantity",
+      "lineBItemId": "lineBItemId",
+      "lineBSku": "lineBSku",
+      "lineBOrderedQuantity": "lineBOrderedQuantity",
+      "lineBDeliveredQuantity": "lineBDeliveredQuantity",
+      "seededAt": "seededAt"
+    },
+    "notes": "Storefront case ORD-010 (regression/suites/Frontend/orders/014-orders-frontend.csv) ONLY — its dedicated disposable order: partial return — select only Item A (line A), Item B (line B) must stay out. Owned by the case's sign-in account (USER_EMAIL, the [PRE:SIGNIN_AS:USER_DEFAULT] buyer). Completed, fully delivered today in one shipment, two eligible lines: line A ordered/delivered 6 of @td(RETURNS_ORDER_SF_ORD010.lineASku), line B ordered/delivered 2 of @td(RETURNS_ORDER_SF_ORD010.lineBSku) — unequal on purpose. returnableItems(orderId: @td(RETURNS_ORDER_SF_ORD010.id)) must report every line isReturnable=true. The case submits a return and has no Cleanup, so the order is single-use per run: the seeder REBUILDS it (deleting its returns first) whenever a return on it still holds units — re-seed with TEST_ENV=<env> npm run seed:returns -- --only SF010 before the next run. Not to be used by any other case. Static fields come from the JSON fixture; id / line ids / seededAt / deliveryDates come from aliases.<env>.json. The delivery date is RELATIVE and ages; td:validate:orders FAILS once it has aged past the return window. Re-seed, never re-date."
+  },
+  "RETURNS_ORDER_SF_ORD037": {
+    "seed": "seed:returns",
+    "json": "orders/returns/return-order-sf037",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "total": "total",
+      "id": "id",
+      "lineXItemId": "lineXItemId",
+      "seededAt": "seededAt"
+    },
+    "notes": "Storefront case ORD-037 (regression/suites/Frontend/orders/014b-orders-frontend-returns-filtering.csv) ONLY — its dedicated disposable order: a return reason is required before submit. Owned by the case's sign-in account (USER_EMAIL, the [PRE:SIGNIN_AS:USER_DEFAULT] buyer). Completed, fully delivered today in one shipment, one eligible line ordered/delivered 2. returnableItems(orderId: @td(RETURNS_ORDER_SF_ORD037.id)) must report every line isReturnable=true. The case submits a return and has no Cleanup, so the order is single-use per run: the seeder REBUILDS it (deleting its returns first) whenever a return on it still holds units — re-seed with TEST_ENV=<env> npm run seed:returns -- --only SF037 before the next run. Not to be used by any other case. Static fields come from the JSON fixture; id / line ids / seededAt / deliveryDates come from aliases.<env>.json. The delivery date is RELATIVE and ages; td:validate:orders FAILS once it has aged past the return window. Re-seed, never re-date."
+  },
+  "RETURNS_ORDER_SF_ORD039": {
+    "seed": "seed:returns",
+    "json": "orders/returns/return-order-sf039",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "total": "total",
+      "id": "id",
+      "lineXItemId": "lineXItemId",
+      "seededAt": "seededAt"
+    },
+    "notes": "Storefront case ORD-039 (regression/suites/Frontend/orders/014b-orders-frontend-returns-filtering.csv) ONLY — its dedicated disposable order: return 1 of the 3 ordered; the remaining 2 must not be included. Owned by the case's sign-in account (USER_EMAIL, the [PRE:SIGNIN_AS:USER_DEFAULT] buyer). Completed, fully delivered today in one shipment, one eligible line ordered/delivered 3. returnableItems(orderId: @td(RETURNS_ORDER_SF_ORD039.id)) must report every line isReturnable=true. The case submits a return and has no Cleanup, so the order is single-use per run: the seeder REBUILDS it (deleting its returns first) whenever a return on it still holds units — re-seed with TEST_ENV=<env> npm run seed:returns -- --only SF039 before the next run. Not to be used by any other case. Static fields come from the JSON fixture; id / line ids / seededAt / deliveryDates come from aliases.<env>.json. The delivery date is RELATIVE and ages; td:validate:orders FAILS once it has aged past the return window. Re-seed, never re-date."
+  },
+  "USER_DEFAULT_ADDRESS_BOOK": {
+    "_inline": true,
+    "owner_alias": "USER_DEFAULT",
+    "source": "test-data/addresses/us-addresses.csv",
+    "row_ids": "US-ADDR-005;US-ADDR-006;US-ADDR-051",
+    "min_count": 3,
+    "live_count": "",
+    "notes": "Three AGENT-TEST-marked (outerId AGENT-TEST-PADDR:<address_id>) addresses ADDED to USER_DEFAULT next to its own, picked by business key from us-addresses.csv: a control row (Seattle), a Houston row (hit for @td(ADDRESS_SEARCH.cityNeedle)) and a New York 10001 row (hit for @td(ADDRESS_SEARCH.zipNeedle)); seed order is neither ascending nor descending on first/last/full recipient name, so a column sort must visibly reorder. Serves 011 CHK-110 / CHK-114 and 045 A11Y-SORT-001/002/003. Owned by scripts/seed-data/personal-fixtures (npm run seed:personal-fixtures; guard npm run td:validate:personal-fixtures). live_count is the observed total on the env, written to aliases.<env>.json by the seeder."
+  },
+  "PERSONAL_LIST_USER_DEFAULT": {
+    "_inline": true,
+    "name": "AGENT-TEST Personal Saved List",
+    "id": "",
+    "items_count": "",
+    "notes": "Saved List (xAPI wishlist) owned by USER_DEFAULT so /account/lists renders >=1 list card (045 A11Y-SR-006 / A11Y-CC-004). Items = @td(BUYABLE_PRICED_PRODUCT) + @td(BUYABLE_SIBLING_B2B). Owned by scripts/seed-data/personal-fixtures. Runtime id is EMPTY here by design and comes from aliases.<env>.json."
+  },
+  "ORG_USER_RFQ_LIST": {
+    "_inline": true,
+    "name": "AGENT-TEST RFQ Saved List",
+    "id": "",
+    "items_count": "",
+    "notes": "Saved List owned by ORG_USER_DEFAULT with 2 DISTINCT buyable, priced products (@td(BUYABLE_PRICED_PRODUCT) + @td(BUYABLE_SIBLING_B2B)) — 015 QUOTE-015 (RFQ from a saved list). The seeder reads each line back through xAPI as the owner and fails unless it is buyable with a price. Owned by scripts/seed-data/personal-fixtures. Runtime id is EMPTY here by design and comes from aliases.<env>.json."
+  },
+  "USER_NO_ADDRESSES": {
+    "file": "users/test-users",
+    "filter": {
+      "user_id": "USER-021"
+    },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "first_name": "first_name",
+      "last_name": "last_name",
+      "id": "user_id"
+    },
+    "notes": "Personal (no-org) persona with ZERO saved addresses — the precondition of 011 CHK-095 (address popup empty state), which USER_DEFAULT cannot satisfy because CHK-110/114 need it to hold >=3. Never written to: npm run seed:personal-fixtures only CHECKS it still has 0 addresses (live_address_count in aliases.<env>.json) and fails if a suite left one behind."
   },
   "IMG_THUMB_JPG_BASELINE": {
     "_inline": true,
@@ -11392,86 +11684,5 @@
     "bytes": "16",
     "sha256": "eb5a550e38b8b038f777c0371e11b844b45f53e9559c45e66d76bbc7a19cbc4d",
     "source": "VirtoCommerce/vc-module-image-tools@6db0e3bac6ef8ec19e7eb8591c2b55cb5deaf13d:tests/VirtoCommerce.ImageToolsModule.Tests/media/formats/corrupt.jpg"
-  },
-  "PB_ASSETS_ROOT": {
-    "_inline": true,
-    "_comment": "VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
-    "folder": "AGENT-TEST-VCST5726"
-  },
-  "PB_ASSETS_P500": {
-    "_inline": true,
-    "_comment": "VCST-5726 F500: 500 PNGs asset-000..asset-499 uploaded in a seeded shuffle (name order != upload order). firstByUpload/lastByUpload are read from the live createdDate. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
-    "folder": "AGENT-TEST-VCST5726/p500",
-    "count": 500,
-    "firstByName": "asset-000.png",
-    "lastByName": "asset-499.png"
-  },
-  "PB_ASSETS_MIXED": {
-    "_inline": true,
-    "_comment": "VCST-5726 FMIX: 20 PDF asset-000..019 + 480 PNG asset-020..499; an image-accept picker shows 480, first asset-020.png. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
-    "folder": "AGENT-TEST-VCST5726/mixed",
-    "count": 500,
-    "imageCount": 480,
-    "firstImage": "asset-020.png"
-  },
-  "PB_ASSETS_FOLDERS": {
-    "_inline": true,
-    "_comment": "VCST-5726 FFOLDERS: 25 sub-folders sub-00..24 + 30 files file-00..29 (totalCount 55 != fileCount 30). VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
-    "folder": "AGENT-TEST-VCST5726/folders",
-    "totalCount": 55,
-    "fileCount": 30
-  },
-  "PB_ASSETS_DEEP": {
-    "_inline": true,
-    "_comment": "VCST-5726 FDEEP: deep/l1/../l5 (3 PNG per level) + deep/l1/b1..b4 (2 PNG each); d5-a.png at the leaf is referenced by 1 page. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
-    "folder": "AGENT-TEST-VCST5726/deep",
-    "leaf": "AGENT-TEST-VCST5726/deep/l1/l2/l3/l4/l5"
-  },
-  "PB_ASSETS_EMPTY": {
-    "_inline": true,
-    "_comment": "VCST-5726 FEMPTY: empty folder. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
-    "folder": "AGENT-TEST-VCST5726/empty",
-    "totalCount": 0
-  },
-  "PB_ASSETS_TPL": {
-    "_inline": true,
-    "_comment": "VCST-5726 FTPL: template-literal names (harmless marker window.__vcst5726). The folder name is rejected by POST /api/assets/folder (lowercase validator) so it is created by uploading tpl-marker.png into it. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
-    "folder": "AGENT-TEST-VCST5726/tpl",
-    "file": "tpl-{{=window.__vcst5726=2}}.png",
-    "tplFolder": "tpl-{{=window.__vcst5726=1}}"
-  },
-  "PB_ASSET_REF_1": {
-    "_inline": true,
-    "_comment": "VCST-5726: p500/asset-007.png referenced by 1 page (AGENT-TEST-VCST5726-ref-1). assetUrl/pageIds/observed counts in aliases.<env>.json. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
-    "rel": "p500/asset-007.png",
-    "expectedRefs": 1
-  },
-  "PB_ASSET_REF_3": {
-    "_inline": true,
-    "_comment": "VCST-5726: p500/asset-025.png referenced by 3 pages (ref-1..3). VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
-    "rel": "p500/asset-025.png",
-    "expectedRefs": 3
-  },
-  "PB_ASSET_REF_2": {
-    "_inline": true,
-    "_comment": "VCST-5726: p500/asset-499.png referenced by 2 pages (ref-1, ref-2) + 2 shared components (AGENT-TEST-VCST5726-sc-1, sc-2) => expectedRefs 4 total (distinct from asset-025 = 3). VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
-    "rel": "p500/asset-499.png",
-    "expectedRefs": 4,
-    "expectedPageRefs": 2,
-    "expectedScRefs": 2
-  },
-  "PB_ASSET_REF_DEEP": {
-    "_inline": true,
-    "_comment": "VCST-5726: deep/l1/l2/l3/l4/l5/d5-a.png referenced by 1 page (ref-4); a folder-level references lookup from deep/ must find it. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
-    "rel": "deep/l1/l2/l3/l4/l5/d5-a.png",
-    "expectedRefs": 1
-  },
-  "PB_ASSET_REF_SC": {
-    "_inline": true,
-    "_comment": "VCST-5726: shared components (sc-1, sc-2) each referencing p500/asset-499.png. Runtime ids in aliases.<env>.json. VCST-5726 Page Builder Asset Library fixture — scripts/seed-data/cms/seed-pagebuilder-assets.mjs (npm run seed:cms-assets, teardown seed:cms-assets:teardown, guard td:validate:cms-assets). Root = <store Page Builder folder>/AGENT-TEST-VCST5726, derived from STORE_ID; folderUrl/counts/ids are written per env to aliases.<env>.json from the live read-back.",
-    "names": [
-      "AGENT-TEST-VCST5726-sc-1",
-      "AGENT-TEST-VCST5726-sc-2"
-    ]
   }
 }

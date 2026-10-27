@@ -321,7 +321,7 @@ function volumePdf(spec) {
       '',
       'Term:      1 January 2026 to 31 December 2026',
       'Review:    Quarterly, against committed annual volume',
-      'Account manager: Alla Volkova',
+      'Account manager: your sales representative',
     ]),
     sectionPage('1. Tier structure', [
       'Tier breaks apply per category, measured on units despatched in the agreement year.',

@@ -1,0 +1,121 @@
+{
+  "ticket": "VCST-6443",
+  "ticket_type": "Task",
+  "flow": "feature-test",
+  "path": "FULL",
+  "verdict": "PASS",
+  "date": "2026-10-26",
+  "environment": "vcptcore",
+  "build": {
+    "deployed": {
+      "relevant_modules": {
+        "VirtoCommerce.PageBuilderModule": "3.1036.0-pr-178-61e8"
+      }
+    },
+    "pr": "VirtoCommerce/vc-module-pagebuilder#178 @ 61e8ba0",
+    "live_at": "2026-10-26T09:15:23Z",
+    "verified_via": "/api/platform/modules"
+  },
+  "status_transitions": [
+    {
+      "at": "5-status",
+      "hop": "closing",
+      "from": "Testing",
+      "to": "Tested",
+      "by": "qa-lead (inline orchestrator)",
+      "confirmed": true,
+      "confirmed_by": "operator 2026-10-27",
+      "result": "done",
+      "via": "Finish test (id 8)"
+    }
+  ],
+  "bugs_filed": [],
+  "report": {
+    "kb": {
+      "disputed": [
+        "KB-254B81CD (soft — fixed on pr-178-61e8: REST rejects astral Cf)",
+        "KB-427A8514 (soft — fixed on pr-178-61e8: shell holds 2048)",
+        "KB-A51E21B6 (fixed: blade no longer trims edge whitespace)",
+        "KB-A7CA895E (fixed: stale duplicate warning)"
+      ],
+      "captured": [
+        "KB-C38C3264",
+        "KB-3B124D0A"
+      ],
+      "confirmed": [
+        "KB-7BDB128B"
+      ]
+    },
+    "cleanup": "all AGENT-TEST-6443 R3 page groups and .page probes deleted (GET 404); fixture names restored",
+    "round": 3,
+    "spec": "dev comment 112319 (B. Kotov 2026-10-23) — supersedes the Round-1 rule (adds % \" < > { } | ^ ` and invisible formatting characters, max 2048)",
+    "prior_rounds": [
+      {
+        "round": 1,
+        "env": "localhost",
+        "build": "pr-178-e4ff",
+        "verdict": "FAIL",
+        "folder": "../localhost/"
+      },
+      {
+        "round": 2,
+        "env": "vcst",
+        "build": "pr-178-add2",
+        "verdict": "FAIL (R2-06) + INFO (R2-21)",
+        "folder": "../vcst/"
+      }
+    ],
+    "checklist": {
+      "file": "testing-checklist.md",
+      "rows": 34,
+      "pass": 30,
+      "fail": 0,
+      "resolved_from_prior_round": [
+        "R2-06 (server accepted astral Cf)",
+        "R2-21 (shell input capped at 1024)"
+      ],
+      "open": [
+        "R2-27 AI create-page tool description — file unchanged since add254f, not readable from the stand"
+      ],
+      "info": 4,
+      "known_low": [
+        "shell: visible error stays in the previous language until re-validation; Has-unsaved-changes banner untranslated (as R2)",
+        "VCST-6512 residual: legacy %20 page 404 at natural URL (double-encoded urlPath) — pre-existing"
+      ],
+      "autotests": {
+        "pr": "vc-test-automation-framework#208 pages.spec.ts",
+        "run": false,
+        "decision": "operator 2026-10-27: not run (its seeder resets shared store-acme user passwords); its 7 values covered by the R3 REST sweep (400, nothing stored)"
+      }
+    },
+    "fixtures": {
+      "seeded": "TEST_ENV=vcptcore npm run seed:pb-legacy-permalinks (job 111710, 0 errors)",
+      "aliases": "test-data/aliases.vcptcore.json",
+      "storefront_note": "vcptcore-qa storefront redirects anonymous visitors to /sign-in — storefront rows run as a signed-in shopper"
+    }
+  },
+  "tracker": {
+    "comment_id": "112390",
+    "api": "v2 wiki + 4 inline screenshots",
+    "verified": "renderedBody: 4 <img>, 0 error, symbols rendered literally"
+  },
+  "total_cases": 34,
+  "passed": 30,
+  "failed": 0,
+  "blocked": 0,
+  "regression": {
+    "c1": {
+      "run_id": null,
+      "skipped_reason": "the change-scoped cases (059 CMS-259..281 and the Round-2 rows) were run as this round's checklist on vcptcore"
+    }
+  },
+  "release": {
+    "refusal": "not assessed in this round"
+  },
+  "bugs_not_filed": [
+    {
+      "severity": "Low",
+      "summary": "Shell: after a UI language switch the visible permalink error stays in the previous language until re-validation; Has-unsaved-changes banner untranslated (as Round 2)"
+    }
+  ]
+}

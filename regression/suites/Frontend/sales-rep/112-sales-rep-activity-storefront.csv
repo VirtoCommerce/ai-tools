@@ -1,0 +1,655 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+SR-ACT-001,"[JOURNEY] Customer Members Plant a Tagged Search and Product View, the Plain Rep Reads Them Under Exactly That Organization on Every Activity Surface and Opens the Term in a New Tab",Sales Rep > Customer Activity > [JOURNEY] > Plant and read back,Critical,"BL-SR-002, BL-SR-011","ECL-14.3, ECL-10.1","Env vcptcore-qa, store {{STORE_ID}} (B2B-store), SalesRep + GoogleEcommerceAnalytics modules installed, theme delivers the hub from the sales-rep plugin. SR_REP_PRIMARY is a PLAIN rep (never an administrator - admins pass every scope check) and serves @td(ORG_ACME.id), @td(ORG_TECHFLOW.id), @td(ORG_BUILDRIGHT.id) and others. Tracked (GA) figures appear 24-48 h after the event, hour-bucketed, cached 60 min per date range per replica {SPEC} (VCST-5337 2026-10-02). TWO-PHASE JOURNEY, because GA lag makes plant and read-back impossible in one sitting. PHASE 1 (plant) runs on every execution and leaves tomorrow's batch; PHASE 2 (read back) reads the NEWEST earlier batch that is at least 24 h old. Token shape (random-data, AGENT-TEST- prefix so teardown sweeps it): AGENT-TEST-qa5337act-<member>-<yyyymmdd>-<rand4>; the date and random part are recorded as PLANT_DATE / PLANT_RAND in the run results (never hardcoded, never written to a file path). Members are the three ACME members with an organization on this env (@td(ACME_ADMIN.email) maintainer, @td(ACME_BUYER.email) purchasing agent, @td(ACME_BUYER2.email) purchasing agent). READ-BACK GATE: if no earlier batch (token prefix AGENT-TEST-qa5337act- dated at least 24 h before now) exists in the rep's All time Searches, end the case BLOCKED:CONDITION_NOT_MET after PHASE 1 (first-ever run: plant only). If the newest earlier batch is 24-48 h old and its rows are missing, end BLOCKED:CONDITION_NOT_MET (lag not elapsed); only a batch older than 48 h + 60 min cache TTL with missing rows is a FAIL. Never FAIL on a batch that GA may not have processed yet.","acme_org=@td(ORG_ACME.id); acme_name=@td(ORG_ACME.name); techflow_name=@td(ORG_TECHFLOW.name); rep=@td(SR_REP_PRIMARY.email); members=ACME_ADMIN,ACME_BUYER,ACME_BUYER2; token_prefix=AGENT-TEST-qa5337act","--- SCREEN: PHASE 1 - plant as member ACME_ADMIN ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_ADMIN]
+[WAIT] storefront account area rendered, header shows the signed-in member
+[KEY] record the outgoing GA collect request for the sign-in (en=login) from the network log: its count (LOGIN_REQS_ACME_ADMIN), up.organization_id (UP_ORG_ACME_ADMIN) and up.session_kind (UP_KIND_ACME_ADMIN)
+[ACT] type the planted term PLANT_TOKEN_ACME_ADMIN into the header search box
+[WAIT] the page has settled and the controls are interactive
+[ACT] press Enter (header search, NOT a typed results URL)
+[WAIT] search results page rendered (zero results for the token is expected)
+[NAV] {{FRONT_URL}}/catalog
+[ACT] open the first product card
+[WAIT] product page rendered
+[KEY] record the product code shown on the page (PLANT_SKU_ACME_ADMIN)
+[PRE:SIGNOUT]
+--- SCREEN: PHASE 1 - plant as member ACME_BUYER ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_BUYER]
+[WAIT] storefront account area rendered, header shows the signed-in member
+[KEY] record the outgoing GA collect request for the sign-in (en=login) from the network log: its count (LOGIN_REQS_ACME_BUYER), up.organization_id (UP_ORG_ACME_BUYER) and up.session_kind (UP_KIND_ACME_BUYER)
+[ACT] type the planted term PLANT_TOKEN_ACME_BUYER into the header search box
+[WAIT] the page has settled and the controls are interactive
+[ACT] press Enter (header search, NOT a typed results URL)
+[WAIT] search results page rendered (zero results for the token is expected)
+[NAV] {{FRONT_URL}}/catalog
+[ACT] open the first product card
+[WAIT] product page rendered
+[KEY] record the product code shown on the page (PLANT_SKU_ACME_BUYER)
+[PRE:SIGNOUT]
+--- SCREEN: PHASE 1 - plant as member ACME_BUYER2 ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_BUYER2]
+[WAIT] storefront account area rendered, header shows the signed-in member
+[KEY] record the outgoing GA collect request for the sign-in (en=login) from the network log: its count (LOGIN_REQS_ACME_BUYER2), up.organization_id (UP_ORG_ACME_BUYER2) and up.session_kind (UP_KIND_ACME_BUYER2)
+[ACT] type the planted term PLANT_TOKEN_ACME_BUYER2 into the header search box
+[WAIT] the page has settled and the controls are interactive
+[ACT] press Enter (header search, NOT a typed results URL)
+[WAIT] search results page rendered (zero results for the token is expected)
+[NAV] {{FRONT_URL}}/catalog
+[ACT] open the first product card
+[WAIT] product page rendered
+[KEY] record the product code shown on the page (PLANT_SKU_ACME_BUYER2)
+[PRE:SIGNOUT]
+--- SCREEN: PHASE 2 - rep, customer profile widget ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+[NAV] {{FRONT_URL}}/company/my-customers/{{acme_org}}
+[WAIT] the Customer activity widget rendered (Summary view)
+[ACT] click the 'Searches' view of the Customer activity widget
+[WAIT] the Searches list rendered
+[KEY] find the newest earlier batch: the rows whose term starts with {{token_prefix}} and whose embedded date is at least 24 h old (BATCH_DATE); if none -> end BLOCKED:CONDITION_NOT_MET. Record BATCH_TERMS (one per member) and BATCH_AGE_H
+[KEY] record for each member token the number of widget rows carrying it (WIDGET_ROWS_<member>)
+--- SCREEN: PHASE 2 - customer's Activity page ---
+[ACT] click 'All activity' in the widget
+[WAIT] the 'ACME activity' page rendered at /company/my-customers/{{acme_org}}/activities
+[ACT] press the 'All time' chip
+[WAIT] the page has settled and the controls are interactive
+[ACT] the 'Searches' tab
+[WAIT] the list rendered
+[KEY] record each BATCH_TERMS row's count (PAGE_ROWS_<member>), its x-multiplier and the heading text (H1_CUST)
+--- SCREEN: PHASE 2 - rep's own My activity page ---
+[NAV] {{FRONT_URL}}/company/activities
+[ACT] press the 'All time' chip
+[WAIT] the page has settled and the controls are interactive
+[ACT] the 'Searches' tab
+[WAIT] the list rendered
+[KEY] record for each BATCH_TERMS row the organization name shown on the row (ROW_ORG_<member>) and whether any BATCH_TERMS row appears more than once (DUP_BATCH)
+--- SCREEN: PHASE 2 - dashboard My activity widget ---
+[NAV] {{FRONT_URL}}/company/dashboard
+[WAIT] the 'My activity' widget rendered
+[KEY] record the widget's rows in order (DASH_ROWS, at most 5)
+[NAV] {{FRONT_URL}}/company/activities
+[WAIT] the 'All' tab list rendered on the default This year chip
+[KEY] record the first 5 rows of the page's All list (PAGE_TOP5)
+--- SCREEN: PHASE 2 - other customer must not hold the batch ---
+[NAV] {{FRONT_URL}}/company/my-customers
+[ACT] click the customer @td(ORG_TECHFLOW.name) row
+[WAIT] the page has settled and the controls are interactive
+[ACT] click 'All activity'
+[WAIT] the page has settled and the controls are interactive
+[ACT] press 'All time'
+[WAIT] the page has settled and the controls are interactive
+[ACT] press the 'Searches' tab
+[WAIT] list or empty state rendered
+[KEY] record the number of rows whose term starts with {{token_prefix}} (OTHER_ORG_BATCH_ROWS)
+--- SCREEN: PHASE 2 - term opens the catalog search ---
+[NAV] {{FRONT_URL}}/company/my-customers/{{acme_org}}/activities
+[ACT] press 'All time'
+[WAIT] the page has settled and the controls are interactive
+[ACT] press the 'Searches' tab
+[WAIT] the page has settled and the controls are interactive
+[ACT] click the ACME_BUYER token term in the list
+[WAIT] a new browser tab opened
+[KEY] record the new tab URL (TERM_TAB_URL) and the number of open tabs before and after (TABS_BEFORE, TABS_AFTER)","[COUNT] WIDGET_ROWS_<member> == 1 for each of the three members - one planted search is one row, attributed to a served organization, and none of the three members is silently invisible {SPEC} (VCST-5337 2026-10-02: one search is one row; rep sees all members of a served org)
+[COUNT] PAGE_ROWS_<member> == WIDGET_ROWS_<member> for each member - the widget list and the customer's Activity page agree {SPEC} (VCST-5731 AC-1)
+[REL] every ROW_ORG_<member> equals {{acme_name}} - the activity is attributed to the member's own organization, not another served org {SPEC} (VCST-5731 AC-6)
+[COUNT] OTHER_ORG_BATCH_ROWS == 0 - a served organization that did not generate the batch holds none of it {SPEC} (VCST-5731 AC-6)
+[REL] DUP_BATCH is false - one search yields one row, not a search row plus a view_search_results row {SPEC} (VCST-5337 2026-10-02: only GA search event counted)
+[REL] DASH_ROWS equals PAGE_TOP5 row for row, newest first - the dashboard widget is the head of the same feed {SPEC} (VCST-5337 2026-10-02: 5 newest events)
+[NAV] TERM_TAB_URL equals {{FRONT_URL}}/search?q=<the clicked term, URL-encoded> and TABS_AFTER == TABS_BEFORE + 1 - the term opens the catalog search in a NEW tab {SPEC} (VCST-5731 AC-4)
+[STATE] H1_CUST is '@td(ORG_ACME.name) activity' {OBSERVED}
+[REL] for each planting member LOGIN_REQS == 1, UP_ORG equals @td(ORG_ACME.platform_id) and UP_KIND is 'self' - the identity the rep's filter needs was on the wire {SPEC} (VCST-5337 2026-10-13: sign-in once with the member's identity)","[NETWORK] gtag /g/collect requests during PHASE 1 carry en=search and en=view_item with non-empty up.organization_id
+[NETWORK] no 4xx/5xx on /graphql during PHASE 2
+[CONSOLE] no TypeError on any hub page","a member's planted search never reaches the rep although others do (identity tag empty for one role) (mid-journey)
+the row shows under a different served organization (mid-journey)
+the same token appears twice (search counted twice)
+the widget list and the Activity page disagree for the same token
+term opens in the same tab or at a wrongly encoded URL
+a batch older than 48 h + 60 min is wholly absent","Sign out of every member and rep session; planted AGENT-TEST-qa5337act- searches are GA history and are never removed (terminal fixture, unique per run).","VCST-5337, VCST-5731 · Archetype:SCOPE · Technique:FLOW · Purpose:FUNC · Catches:VCST-5337",Draft
+SR-ACT-002,"Rep's Own Searches and Product Views Are Never Counted for the Customers They Serve, on Every Surface",Sales Rep > Customer Activity > Scope > Rep self-exclusion,Critical,BL-SR-002,ECL-14.3,"Env vcptcore-qa, store {{STORE_ID}} (B2B-store), SalesRep + GoogleEcommerceAnalytics modules installed, theme delivers the hub from the sales-rep plugin. SR_REP_PRIMARY is a PLAIN rep (never an administrator - admins pass every scope check) and serves @td(ORG_ACME.id), @td(ORG_TECHFLOW.id), @td(ORG_BUILDRIGHT.id) and others. Tracked (GA) figures appear 24-48 h after the event, hour-bucketed, cached 60 min per date range per replica {SPEC} (VCST-5337 2026-10-02). TWO-PHASE like SR-ACT-001. PHASE 1 plants as BOTH the rep (own browsing, a member of the served orgs) and, as control, the member @td(ACME_BUYER.email): tokens AGENT-TEST-qa5337act-repself-<yyyymmdd>-<rand4> and AGENT-TEST-qa5337act-ctrl-<yyyymmdd>-<rand4>. PHASE 2 reads the newest batch aged >= 24 h; no such batch -> BLOCKED:CONDITION_NOT_MET; a 24-48 h batch whose CONTROL row is still missing -> BLOCKED:CONDITION_NOT_MET (a missing control means GA lag, so 'rep row absent' would be a vacuous pass). The pre-fix historical rows are matched by the prefix qa5337-repself (round-1 fixtures), not by exact id.",acme_org=@td(ORG_ACME.id); token_prefix=AGENT-TEST-qa5337act; legacy_prefix=qa5337-repself,"--- SCREEN: PHASE 1 - rep browses as itself ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+[KEY] generate PLANT_DATE and PLANT_RAND; REPSELF_TOKEN = {{token_prefix}}-repself-<PLANT_DATE>-<PLANT_RAND>
+[ACT] type REPSELF_TOKEN into the header search box
+[WAIT] the page has settled and the controls are interactive
+[ACT] press Enter
+[WAIT] search results page rendered
+[NAV] {{FRONT_URL}}/catalog
+[ACT] open the first product card
+[WAIT] product page rendered
+[PRE:SIGNOUT]
+--- SCREEN: PHASE 1 - control: a customer member ---
+[PRE:SIGNIN_AS:ACME_BUYER]
+[KEY] CTRL_TOKEN = {{token_prefix}}-ctrl-<PLANT_DATE>-<PLANT_RAND>
+[ACT] type CTRL_TOKEN into the header search box
+[WAIT] the page has settled and the controls are interactive
+[ACT] press Enter
+[WAIT] search results page rendered
+[PRE:SIGNOUT]
+--- SCREEN: PHASE 2 - read back as the rep, every surface ---
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+[NAV] {{FRONT_URL}}/company/my-customers/{{acme_org}}/activities
+[ACT] press 'All time'
+[WAIT] the page has settled and the controls are interactive
+[ACT] open the 'Searches' tab
+[WAIT] the page has settled and the controls are interactive
+[KEY] on the newest batch aged >= 24 h record CTRL_ROWS (rows carrying the ctrl token) - if 0 end BLOCKED:CONDITION_NOT_MET; record REPSELF_ROWS_PAGE (rows carrying the repself token) and LEGACY_ROWS_PAGE (rows whose term starts with {{legacy_prefix}})
+[NAV] {{FRONT_URL}}/company/my-customers/{{acme_org}}
+[ACT] click 'Searches'
+[WAIT] the page has settled and the controls are interactive
+[ACT] 'Product views' in the Customer activity widget
+[WAIT] the page has settled and the controls are interactive
+[KEY] record REPSELF_ROWS_WIDGET and the widget's Summary 'Last search term' (LAST_TERM)
+[NAV] {{FRONT_URL}}/company/dashboard
+[KEY] record whether REPSELF_TOKEN appears in the My activity widget (REPSELF_DASH)
+[NAV] {{FRONT_URL}}/company/activities
+[ACT] press 'All time'
+[WAIT] the page has settled and the controls are interactive
+[ACT] open 'Searches'
+[WAIT] the page has settled and the controls are interactive
+[KEY] record REPSELF_ROWS_FEED and LEGACY_ROWS_FEED","[COUNT] CTRL_ROWS >= 1 - the control member's search is visible, so the absence checks below are not vacuous {SPEC} (VCST-5731 AC-2)
+[COUNT] REPSELF_ROWS_PAGE == 0 and REPSELF_ROWS_WIDGET == 0 and REPSELF_ROWS_FEED == 0 - the rep's own search is on none of the three lists {SPEC} (VCST-5337 2026-10-13 defect 1: rep activity excluded on every surface)
+[COUNT] LEGACY_ROWS_PAGE == 0 and LEGACY_ROWS_FEED == 0 - activity a rep generated before the fix drops out as well {SPEC} (VCST-5337 2026-10-13)
+[REL] LAST_TERM does not contain REPSELF_TOKEN and REPSELF_DASH is false - the Summary and the dashboard are filtered like the lists {SPEC} (VCST-5337 2026-10-13)","[NETWORK] salesRepActivities responses carry no item whose searchTerm is REPSELF_TOKEN
+[CONSOLE] no TypeError","REPSELF_TOKEN listed on one surface only (filter missing on that surface) (mid-journey)
+legacy qa5337-repself rows still counted",Sign out; planted rows are GA history and are never removed.,"VCST-5337, VCST-5731 · Archetype:SCOPE · Technique:DT · Purpose:FUNC · Catches:VCST-5337",Draft
+SR-ACT-003,A Visitor Who Signed Out Is Tagged Anonymous and Their Searches Are Not Counted for the Last Organization,Sales Rep > Customer Activity > Scope > Signed-out visitor,Critical,BL-SR-002,"ECL-14.3, ECL-4.2","Env vcptcore-qa, store {{STORE_ID}} (B2B-store), SalesRep + GoogleEcommerceAnalytics modules installed, theme delivers the hub from the sales-rep plugin. SR_REP_PRIMARY is a PLAIN rep (never an administrator - admins pass every scope check) and serves @td(ORG_ACME.id), @td(ORG_TECHFLOW.id), @td(ORG_BUILDRIGHT.id) and others. Tracked (GA) figures appear 24-48 h after the event, hour-bucketed, cached 60 min per date range per replica {SPEC} (VCST-5337 2026-10-02). TWO-PHASE. PHASE 1: the member @td(ACME_BUYER.email) signs in, searches a SIGNED token, signs out, then (same browser) searches an ANON token as a signed-out visitor. PHASE 2 (>= 24 h later): the rep reads the ACME Searches list. Read-back gate as SR-ACT-001: no batch >= 24 h -> BLOCKED:CONDITION_NOT_MET; SIGNED row missing in a 24-48 h batch -> BLOCKED:CONDITION_NOT_MET (control gone means lag, not a pass). The wire half (PHASE 1 collect requests) is verdict-bearing immediately.",acme_org=@td(ORG_ACME.id); token_prefix=AGENT-TEST-qa5337act,"--- SCREEN: PHASE 1 - signed in then signed out ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_BUYER]
+[KEY] SIGNED_TOKEN = {{token_prefix}}-signed-<PLANT_DATE>-<PLANT_RAND>, ANON_TOKEN = {{token_prefix}}-anon-<PLANT_DATE>-<PLANT_RAND>
+[ACT] header search: SIGNED_TOKEN
+[WAIT] search results page rendered
+[ACT] click 'Sign out' in the account dropdown
+[WAIT] storefront shows the signed-out header
+[ACT] header search: ANON_TOKEN
+[WAIT] search results page rendered
+[KEY] from the network log record up.organization_id, up.contact_id and up.session_kind of the collect request for ANON_TOKEN (ANON_UP_ORG, ANON_UP_CONTACT, ANON_UP_KIND)
+--- SCREEN: PHASE 2 - rep reads back ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+[NAV] {{FRONT_URL}}/company/my-customers/{{acme_org}}/activities
+[ACT] press 'All time'
+[WAIT] the page has settled and the controls are interactive
+[ACT] open 'Searches'
+[WAIT] the page has settled and the controls are interactive
+[KEY] on the newest batch aged >= 24 h record SIGNED_ROWS and ANON_ROWS","[REL] ANON_UP_ORG is empty and ANON_UP_CONTACT is empty - after sign-out the browser is tagged anonymous, not left holding the last organization {SPEC} (VCST-5337 2026-10-13 defect 2)
+[COUNT] SIGNED_ROWS == 1 - control: the signed-in search is visible {SPEC} (VCST-5731 AC-2)
+[COUNT] ANON_ROWS == 0 - the signed-out search is not counted for any organization {SPEC} (VCST-5337 2026-10-02: signed-out visitor not counted)","[NETWORK] collect request after sign-out carries no organization_id value
+[CONSOLE] no TypeError","up.organization_id still holds the ACME id after sign-out (identity leak)
+ANON_TOKEN listed under ACME",Sign out; planted rows are GA history.,"VCST-5337, VCST-5731 · Archetype:SCOPE · Technique:EG · Purpose:FUNC · Catches:VCST-5337",Draft
+SR-ACT-004,"A Sign-In Is Reported Once From the Landing Page With the Member's Identity, and Logins Equals Total Visits",Sales Rep > Customer Activity > Identity > Login event,High,BL-SR-002,ECL-4.2,"Env vcptcore-qa, store {{STORE_ID}} (B2B-store), SalesRep + GoogleEcommerceAnalytics modules installed, theme delivers the hub from the sales-rep plugin. SR_REP_PRIMARY is a PLAIN rep (never an administrator - admins pass every scope check) and serves @td(ORG_ACME.id), @td(ORG_TECHFLOW.id), @td(ORG_BUILDRIGHT.id) and others. Wire half runs NOW (member sign-in; capture of /g/collect requests). The figures half compares two rep surfaces on existing GA data: Logins tab count and Summary 'Total visits' both come from the same GA events and must agree {SPEC} (VCST-5337 2026-10-13: Logins agrees with Total visits). If the Logins tab shows (-) the figures half ends BLOCKED:CONDITION_NOT_MET.",acme_org=@td(ORG_ACME.id); member=@td(ACME_ADMIN.email),"--- SCREEN: sign-in wire ---
+[PRE:CLEAR_SESSION]
+[SETUP] start recording every /g/collect request of the tab (URL, query string) into COLLECT_LOG
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] sign in as ACME_ADMIN with the registered credentials (secret key, never typed literally)
+[WAIT] the landing page after sign-in rendered
+[KEY] from COLLECT_LOG count the requests with en=login (LOGIN_REQS) and record the first one's up.organization_id (LOGIN_UP_ORG), up.contact_id (LOGIN_UP_CONTACT) and up.session_kind (LOGIN_UP_KIND)
+[PRE:SIGNOUT]
+--- SCREEN: figures agree ---
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+[NAV] {{FRONT_URL}}/company/my-customers/{{acme_org}}
+[WAIT] Customer activity widget Summary rendered
+[KEY] record 'Total visits' (VISITS_SUMMARY)
+[ACT] click 'All activity'
+[WAIT] the page has settled and the controls are interactive
+[ACT] press 'All time'
+[WAIT] tabs rendered
+[KEY] record the 'Logins' tab count (LOGINS_TAB)","[COUNT] LOGIN_REQS == 1 - exactly one login event per sign-in, from the landing page {SPEC} (VCST-5337 2026-10-13 defect 5)
+[REL] LOGIN_UP_ORG equals @td(ORG_ACME.platform_id) and LOGIN_UP_CONTACT is non-empty and LOGIN_UP_KIND is 'self' - the login carries the member's identity (identity set before the event) {SPEC} (VCST-5337 2026-10-13)
+[REL] LOGINS_TAB == VISITS_SUMMARY - Logins counts events and agrees with Total visits {SPEC} (VCST-5337 2026-10-13)","[NETWORK] no en=login request fires before up.organization_id is set
+[CONSOLE] no TypeError","two en=login requests for one sign-in (double count)
+login request with empty organization_id (never attributed; ACME 0 logins)
+Logins tab differs from Total visits",Sign out of both sessions.,"VCST-5337, VCST-5731 · Archetype:SILENT · Technique:EG · Purpose:FUNC · Catches:VCST-5337",Draft
+SR-ACT-005,"A Wrong Password Is Reported Exactly Once, as an Anonymous Failed Login, and Never Counts Toward an Organization",Sales Rep > Customer Activity > Identity > Login event,Medium,BL-SR-002,ECL-4.2,"Env vcptcore-qa, store {{STORE_ID}} (B2B-store), SalesRep + GoogleEcommerceAnalytics modules installed, theme delivers the hub from the sales-rep plugin. Wire-only, runs NOW. Uses the member @td(ACME_BUYER.email) email with a deliberately wrong password built from random-data (never the real secret); ONE failed attempt only, well below the lockout threshold, so the shared account is not locked. {SPEC} (VCST-5337 2026-10-16 sign-ins).",member=@td(ACME_BUYER.email); wrong_password=AGENT-TEST-wrong-<rand8>,"[PRE:CLEAR_SESSION]
+[SETUP] start recording every /g/collect request of the tab into COLLECT_LOG
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] fill 'Email' with {{member}}
+[WAIT] the page has settled and the controls are interactive
+[ACT] 'Password' with {{wrong_password}}
+[WAIT] the page has settled and the controls are interactive
+[ACT] submit once
+[WAIT] the sign-in form shows its error and stays on the form
+[KEY] from COLLECT_LOG record the requests with en=login (LOGIN_REQS) and, from each, ep.success, up.organization_id and the session kind (LOGIN_SUCCESS, LOGIN_ORG, LOGIN_SESSION_KIND)","[COUNT] LOGIN_REQS == 1 - a wrong password is reported exactly once, from /sign-in {SPEC} (VCST-5337 2026-10-16: a wrong password is reported once; vc-frontend sign-in-form.vue:147-160)
+[STATE] LOGIN_SUCCESS is false (ep.success=false) - the one hit is a failed login, never a successful one {SPEC} (VCST-5337 2026-10-16)
+[STATE] LOGIN_ORG is empty and LOGIN_SESSION_KIND is anonymous - the failed hit carries no organization identity, so it never counts toward any organization {OBSERVED} (live triage 2026-10-20 vcptcore-qa)
+[STATE] the form still shows the sign-in error and the visitor is signed out {OBSERVED}","[CONSOLE] no TypeError
+[NETWORK] no 5xx on the token request","en=login fires with ep.success=true although authentication failed (Logins inflated)
+failed hit carries an organization_id (counts toward an organization)
+failure reported twice or not at all",none (read-only; the single failed attempt leaves no data),"VCST-5337, VCST-5731 · Archetype:SILENT · Technique:EG · Purpose:FUNC · Catches:VCST-5337 · VCST-5337 r2 2026-10-20d: wrong-password hit is intended: exactly ONE en=login ep.success=false, anonymous (organization_id """", session_kind anonymous); the old WRONG_LOGIN_REQS == 0 expectation was a test defect (sign-in-form.vue:147-160); the organization read-back counts only successful sign-ins",Draft
+SR-ACT-006,A Second Sign-In Attempt Within 10 Seconds of One That Left the Visitor on the Form Still Reaches Logins,Sales Rep > Customer Activity > Identity > Login event,Medium,BL-SR-002,ECL-4.2,"Env vcptcore-qa, store {{STORE_ID}} (B2B-store), SalesRep + GoogleEcommerceAnalytics modules installed, theme delivers the hub from the sales-rep plugin. Wire-only, runs NOW. Attempt 1 is a deliberately wrong password for @td(ACME_BUYER.email) (random-data), attempt 2 within 10 s is the real credential via the registered secret. One failed attempt only. {SPEC} (VCST-5337 2026-10-16).",member=@td(ACME_BUYER.email); wrong_password=AGENT-TEST-wrong-<rand8>,"[PRE:CLEAR_SESSION]
+[SETUP] start recording every /g/collect request of the tab into COLLECT_LOG
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] submit {{member}} with {{wrong_password}}
+[WAIT] the form shows its error (the visitor stays on the form)
+[ACT] within 10 seconds of attempt 1, clear the password
+[WAIT] the page has settled and the controls are interactive
+[ACT] submit {{member}} with the registered correct password
+[WAIT] the landing page after sign-in rendered
+[KEY] from COLLECT_LOG record every en=login request with its ep.success and up.organization_id: the failed attempt-1 hit (FAIL_LOGIN_REQS, expected exactly one with ep.success=false, anonymous) and the successful ones (RETRY_LOGIN_REQS, RETRY_UP_ORG)
+[PRE:SIGNOUT]","[COUNT] FAIL_LOGIN_REQS == 1 - attempt 1 is reported exactly once as en=login with ep.success=false and an anonymous identity (organization_id """", session_kind anonymous) {SPEC} (VCST-5337 2026-10-16; vc-frontend sign-in-form.vue:147-160)
+[COUNT] RETRY_LOGIN_REQS == 1 - the successful second attempt (ep.success=true) is reported exactly once, not lost to the first attempt's 10 s window {SPEC} (VCST-5337 2026-10-16)
+[REL] RETRY_UP_ORG equals @td(ORG_ACME.platform_id) - identity attached to the successful hit only {SPEC} (VCST-5337 2026-10-13)
+[REL] after read-back the organization's Logins count includes the successful attempt only - the anonymous failed hit adds nothing {SPEC} (VCST-5337 2026-10-16)",[CONSOLE] no TypeError,"zero successful en=login requests after the retry succeeded (sign-in lost)
+two successful en=login requests
+the failed hit counted toward the organization",Sign out.,"VCST-5337, VCST-5731 · Archetype:SILENT · Technique:ST · Purpose:FUNC · Catches:VCST-5337 · VCST-5337 r2 2026-10-20d: attempt-1 failed hit is an intended anonymous en=login ep.success=false and is asserted explicitly; only the successful sign-in counts toward the organization Logins",Draft
+SR-ACT-007,Hand-Edited Id of an Unserved Customer Shows 'Customer not found or not in your customers.' and No Data,Sales Rep > Customer Activity > Scope > Unserved customer,Critical,"BL-SR-002, BL-SR-011",ECL-14.3,"Env vcptcore-qa, store {{STORE_ID}} (B2B-store), SalesRep + GoogleEcommerceAnalytics modules installed, theme delivers the hub from the sales-rep plugin. SR_REP_PRIMARY is a PLAIN rep (never an administrator - admins pass every scope check) and serves @td(ORG_ACME.id), @td(ORG_TECHFLOW.id), @td(ORG_BUILDRIGHT.id) and others. SR_REP_PRIMARY does NOT serve @td(ORG_SUSPENDED.id) (a real organization). Same plain-rep token as the API-layer twin in the sales-rep activity GraphQL suite (050m3).",not_served_org=@td(ORG_SUSPENDED.id); not_served_name=@td(ORG_SUSPENDED.name),"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+[SETUP] start recording /graphql responses into GQL_LOG
+[NAV] {{FRONT_URL}}/company/my-customers/{{not_served_org}}/activities
+[WAIT] navigation settles
+[KEY] record the visible message (NOT_FOUND_TEXT), whether a 'Back to my customers' link exists (BACK_LINK), every visible tab or count (VISIBLE_TABS) and whether the organization name appears anywhere on the page (NAME_SHOWN)
+[ACT] click 'Back to my customers'
+[WAIT] the My customers list rendered
+[KEY] record the URL (URL_BACK)","[STATE] NOT_FOUND_TEXT contains 'Customer not found or not in your customers.' {OBSERVED}
+[DOM] BACK_LINK is present and URL_BACK ends with /company/my-customers {OBSERVED}
+[COUNT] VISIBLE_TABS == 0 and NAME_SHOWN is false for {{not_served_name}} - no customer data of an unserved organization renders {SPEC} (VCST-5337 2026-10-02: not-found view and no data)
+[REL] every salesRepActivities / salesRepCustomerActivitySummary / salesRepCustomerInsights response in GQL_LOG for this page has data null and no errors[] {SPEC} (VCST-5337 2026-10-02)","[NETWORK] no 4xx/5xx on /graphql
+[CONSOLE] no TypeError","activity rows or counts of the unserved organization render
+an error page or pop-up instead of the not-found view
+the page spins forever",none (read-only),"VCST-5337, VCST-5731 · Archetype:SCOPE · Technique:DT · Purpose:FUNC · Catches:VCST-5337",Draft
+SR-ACT-008,Non-Rep Customer Members Are Redirected From Both Activity Routes and Receive Null From the Activity Operations,Sales Rep > Customer Activity > Scope > Non-rep member,Critical,"BL-SR-011, BL-SR-002","ECL-14.3, ECL-4.2","Env vcptcore-qa, store {{STORE_ID}} (B2B-store), SalesRep + GoogleEcommerceAnalytics modules installed, theme delivers the hub from the sales-rep plugin. Part 0r refusal: @td(ACME_BUYER.email) is a member of a SERVED organization but holds no sales-rep:access. Asserted at the server (what /graphql returns to that member's token), not only by the missing menu item.",acme_org=@td(ORG_ACME.id),"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_BUYER]
+[SETUP] start recording /graphql responses into GQL_LOG
+[NAV] {{FRONT_URL}}/company/activities
+[WAIT] navigation settles
+[KEY] record the final URL (URL_PAGE) and whether any activity tab or row is visible (PAGE_DATA)
+[NAV] {{FRONT_URL}}/company/my-customers/{{acme_org}}/activities
+[WAIT] navigation settles
+[KEY] record the final URL (URL_CUST) and whether any activity tab or row is visible (CUST_DATA)
+[KEY] record every salesRep* activity operation in GQL_LOG with its data value (ACT_OPS)","[NAV] URL_PAGE and URL_CUST are the Dashboard route, not /company/activities or any customer activity sub-route {SPEC} (VCST-5337 checklist D-34/38; BL-SR-011)
+[DOM] no 'All', 'Searches' or 'Logins' tab and no activity row is visible on either route (PAGE_DATA and CUST_DATA are false) {SPEC}
+[REL] every operation in ACT_OPS has data null - the server returns nothing to a member of the served org {SPEC} (VCST-5337 checklist D-34/38)",[API] the sales-rep activity GraphQL suite (050m3) asserts the same refusal on /graphql/sales-rep and /graphql with the member's own token,"activity rows render for a buyer
+the member is left on the activity route with an empty shell",none (read-only),"VCST-5337, VCST-5731 · Archetype:SCOPE · Technique:DT · Purpose:FUNC · Catches:VCST-5337 · Role:non-rep org member",Draft
+SR-ACT-009,"The Old ?organizationId= Activity Link Opens the Rep's Own Feed, Not That Customer's Page",Sales Rep > Customer Activity > Routing > Legacy link,High,BL-SR-002,ECL-14.3,"Env vcptcore-qa, store {{STORE_ID}} (B2B-store), SalesRep + GoogleEcommerceAnalytics modules installed, theme delivers the hub from the sales-rep plugin. SR_REP_PRIMARY is a PLAIN rep (never an administrator - admins pass every scope check) and serves @td(ORG_ACME.id), @td(ORG_TECHFLOW.id), @td(ORG_BUILDRIGHT.id) and others. Link shape retired 2026-10-16: /company/activities?organizationId={id}. {SPEC} (VCST-5337 2026-10-16: an old link opens the rep's own feed). Run once with a served id and once with an unserved id.",acme_org=@td(ORG_ACME.id); not_served_org=@td(ORG_SUSPENDED.id); acme_name=@td(ORG_ACME.name),"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+[NAV] {{FRONT_URL}}/company/activities?organizationId={{acme_org}}
+[WAIT] the page rendered
+[KEY] record the H1 (H1_OLD_SERVED), the breadcrumb trail (CRUMBS_OLD) and the 'All' count (ALL_OLD)
+[NAV] {{FRONT_URL}}/company/activities
+[WAIT] the page rendered
+[KEY] record the H1 (H1_OWN) and the 'All' count (ALL_OWN)
+[NAV] {{FRONT_URL}}/company/activities?organizationId={{not_served_org}}
+[WAIT] the page rendered
+[KEY] record the H1 (H1_OLD_UNSERVED) and any not-found text (NF_OLD)","[STATE] H1_OLD_SERVED equals H1_OWN and H1_OWN is 'My activity' {OBSERVED}
+[REL] ALL_OLD equals ALL_OWN - the old parameter does not scope the feed to one customer {SPEC} (VCST-5337 2026-10-16)
+[REL] CRUMBS_OLD does not contain {{acme_name}} - no customer breadcrumb on the rep's own feed {SPEC} (VCST-5337 2026-10-16)
+[REL] H1_OLD_UNSERVED equals H1_OWN and NF_OLD is empty - the unserved id is ignored, nothing is revealed {SPEC} (VCST-5337 2026-10-16)",[CONSOLE] no TypeError,"old link still renders one customer's feed (old route alive beside the new one)
+unserved id yields a not-found page that confirms the organization exists",none (read-only),"VCST-5337, VCST-5731 · Archetype:SCOPE · Technique:EG · Purpose:FUNC · Catches:VCST-5337",Draft
+SR-ACT-010,"Customer Activity Route, Heading and Breadcrumbs, With My Customers Highlighted and My Activity Not Announced as Current",Sales Rep > Customer Activity > Routing > Navigation,High,BL-SR-011,ECL-4.2,"Env vcptcore-qa, store {{STORE_ID}} (B2B-store), SalesRep + GoogleEcommerceAnalytics modules installed, theme delivers the hub from the sales-rep plugin. SR_REP_PRIMARY is a PLAIN rep (never an administrator - admins pass every scope check) and serves @td(ORG_ACME.id), @td(ORG_TECHFLOW.id), @td(ORG_BUILDRIGHT.id) and others. {SPEC} (VCST-5337 2026-10-13 defect 7 and 2026-10-16): My customers highlighted on desktop AND mobile; screen readers must not announce 'My activity' as the current page on a customer's activity page (the remaining desktop limitation is the UI-kit marker and is recorded as known, not re-filed).",acme_org=@td(ORG_ACME.id),"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/company/my-customers/{{acme_org}}
+[ACT] click 'All activity' in the Customer activity widget
+[WAIT] the customer activity page rendered
+[KEY] record the URL (URL_DESK), the H1 (H1_DESK), the breadcrumb trail (CRUMBS_DESK), the highlighted left-rail item (ACTIVE_DESK) and the accessibility-tree entry carrying aria-current (CURRENT_DESK)
+[VIEWPORT] 375x812
+[ACT] reload the page
+[WAIT] the page has settled and the controls are interactive
+[ACT] click the header 'Menu' button
+[WAIT] the page has settled and the controls are interactive
+[KEY] record the highlighted mobile menu item (ACTIVE_MOB) and the aria-current entry (CURRENT_MOB)","[NAV] URL_DESK is {{FRONT_URL}}/company/my-customers/{{acme_org}}/activities {SPEC} (VCST-5337 2026-10-16)
+[STATE] H1_DESK is '@td(ORG_ACME.name) activity' {OBSERVED}
+[STATE] CRUMBS_DESK is 'Home / Account / Sales Rep hub / My customers / @td(ORG_ACME.name) / Activity' {OBSERVED}
+[REL] ACTIVE_DESK and ACTIVE_MOB are 'My customers', not 'My activity' {SPEC} (VCST-5337 2026-10-13 defect 7)
+[REL] CURRENT_MOB is not 'My activity' and CURRENT_DESK is not 'My activity' - no menu item is announced as the current page here {SPEC} (VCST-5337 2026-10-16)",[CONSOLE] no TypeError,"rail highlights My activity on the customer's page
+aria-current on My activity (screen readers announce the wrong page)
+breadcrumb lacks the customer or points to the old route",none (read-only),"VCST-5337, VCST-5731 · Archetype:PARITY · Technique:EP · Purpose:VISUAL · Catches:VCST-5337",Draft
+SR-ACT-011,"Activity Tabs Show Event Counts That Are Identical Across the Selected Tab, All Equals the Sum, and a Zero Tab Stays Visible",Sales Rep > Customer Activity > Page > Tabs and counts,High,BL-SR-002,ECL-14.3,"Env vcptcore-qa, store {{STORE_ID}} (B2B-store), SalesRep + GoogleEcommerceAnalytics modules installed, theme delivers the hub from the sales-rep plugin. SR_REP_PRIMARY is a PLAIN rep (never an administrator - admins pass every scope check) and serves @td(ORG_ACME.id), @td(ORG_TECHFLOW.id), @td(ORG_BUILDRIGHT.id) and others. {SPEC} (VCST-5337 2026-10-02 + 2026-10-13: a tab's count is the same whichever tab is selected, counts EVENTS (x3 counts 3), All is the sum of the tabs, a tab with zero stays visible; Logins agrees with Total visits). Counts are read from the tab buttons 'All (N)', 'Orders (N)', 'Customers (N)', 'Searches (N)', 'Product views (N)', 'Logins (N)' {OBSERVED}. Tracked counts need isAnalyticsAvailable true; a (-) on any tracked tab ends BLOCKED:CONDITION_NOT_MET (see SR-ACT-013 for that state). Note the API oracle: totalCount counts ROWS while categoryCounts count EVENTS, so All must follow categoryCounts, not totalCount (KB-B7076554).",acme_org=@td(ORG_ACME.id),"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+[NAV] {{FRONT_URL}}/company/my-customers/{{acme_org}}/activities
+[ACT] press the 'All time' chip
+[WAIT] tab counts rendered
+[KEY] while 'All' is selected record the six tab counts (COUNTS_ALL_SEL)
+[ACT] select 'Searches'
+[WAIT] the page has settled and the controls are interactive
+[KEY] record the six tab counts (COUNTS_SEARCH_SEL)
+[ACT] select 'Logins'
+[WAIT] the page has settled and the controls are interactive
+[KEY] record the six tab counts (COUNTS_LOGIN_SEL)
+[KEY] record the number of rows listed on 'Searches' (SEARCH_ROWS) and the sum of their x-multipliers (SEARCH_EVENTS), counting a row without a multiplier as 1
+[KEY] record whether a tab with count 0 is still visible (ZERO_TAB_VISIBLE, true when any tab shows 0, otherwise N/A)","[REL] COUNTS_ALL_SEL equals COUNTS_SEARCH_SEL equals COUNTS_LOGIN_SEL - the count does not change with the selected tab {SPEC} (VCST-5337 2026-10-02)
+[REL] All == Orders + Customers + Searches + Product views + Logins - All is the sum of the tabs, not a separate query {SPEC} (VCST-5337 2026-10-13 defect 3)
+[REL] Searches count == SEARCH_EVENTS and may exceed SEARCH_ROWS - the badge counts events, not rows {SPEC} (VCST-5337 2026-10-13)
+[REL] ZERO_TAB_VISIBLE is true or N/A - a tab with zero does not disappear {SPEC} (VCST-5337 2026-10-02)","[API] salesRepActivities categoryCounts equal the badges (GraphQL suite 050m3 asserts the filter invariance)
+[CONSOLE] no TypeError","All differs from the sum of the tabs (contradictory figures)
+badge changes when another tab is selected
+Searches badge counts rows while a x3 row exists
+zero tab hidden",none (read-only),"VCST-5337, VCST-5731 · Archetype:PARITY · Technique:EP · Purpose:FUNC · Catches:VCST-5337",Draft
+SR-ACT-012,"Period Chips: This Year Is the Default, This Month <= This Year <= All Time on Every Count, and a New Chip Never Shows the Previous Period's Badges",Sales Rep > Customer Activity > Page > Period chips,High,BL-SR-001,ECL-14.3,"Env vcptcore-qa, store {{STORE_ID}} (B2B-store), SalesRep + GoogleEcommerceAnalytics modules installed, theme delivers the hub from the sales-rep plugin. SR_REP_PRIMARY is a PLAIN rep (never an administrator - admins pass every scope check) and serves @td(ORG_ACME.id), @td(ORG_TECHFLOW.id), @td(ORG_BUILDRIGHT.id) and others. {SPEC} (VCST-5337 2026-10-02 chips This month / This year / All time, This year pressed by default; 2026-10-13: no stale badges while the new period loads). Month boundary: a run in the first hours of a month legitimately has an empty This month (not a failure); run on any day, the invariant month <= year <= all time holds.",acme_org=@td(ORG_ACME.id),"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+[NAV] {{FRONT_URL}}/company/my-customers/{{acme_org}}/activities
+[WAIT] the page rendered
+[KEY] record which chip is pressed on load (DEFAULT_CHIP)
+[ACT] press 'This month'
+[WAIT] the page has settled and the controls are interactive
+[KEY] immediately record every tab badge visible during the load (BADGES_DURING_LOAD) and, once loaded, the six counts (COUNTS_MONTH)
+[ACT] press 'This year'
+[WAIT] the page has settled and the controls are interactive
+[KEY] record COUNTS_YEAR
+[ACT] press 'All time'
+[WAIT] the page has settled and the controls are interactive
+[KEY] record COUNTS_ALL_TIME","[STATE] DEFAULT_CHIP is 'This year' {OBSERVED}
+[REL] for each of the six counts COUNTS_MONTH <= COUNTS_YEAR <= COUNTS_ALL_TIME {SPEC} (VCST-5337 checklist D-9/16/17)
+[REL] BADGES_DURING_LOAD is empty - after a chip change no badges from the previous period remain while the new ones load {SPEC} (VCST-5337 2026-10-13)","[NETWORK] one salesRepActivities request per chip change, no 4xx/5xx
+[CONSOLE] no TypeError","a longer period shows fewer events than a shorter one
+the previous chip's badges stay on screen while loading
+the page opens on another chip",none (read-only),"VCST-5337, VCST-5731 · Archetype:BOUNDARY · Technique:BVA · Purpose:FUNC · Catches:VCST-5337",Draft
+SR-ACT-013,"Partial Failure: Tracked Tabs and All Show (-) and the Page Says 'Some tracked activity couldn't be loaded, so these figures may be incomplete.'",Sales Rep > Customer Activity > Degradation > Partial failure,High,BL-SR-002,ECL-10.1,"Env vcptcore-qa, store {{STORE_ID}} (B2B-store), SalesRep + GoogleEcommerceAnalytics modules installed, theme delivers the hub from the sales-rep plugin. SR_REP_PRIMARY is a PLAIN rep (never an administrator - admins pass every scope check) and serves @td(ORG_ACME.id), @td(ORG_TECHFLOW.id), @td(ORG_BUILDRIGHT.id) and others. Fault injection through the store setting GoogleAnalytics4.DataApi.RequestTimeoutSeconds (default 45). Record the ORIGINAL value (TIMEOUT_ORIG) first; set 1; Cleanup restores TIMEOUT_ORIG unconditionally. The GA read cache is keyed by calendar-day range per replica for 60 min (KB-EE2E1EC4): a chip already read in the last hour answers from cache and shows NO fault. If after setting the value every tracked tab still shows a number on 'All time', end BLOCKED:CONDITION_NOT_MET (cache hit, no fault injected) - never PASS. Disruptive to concurrent testers on {{STORE_ID}}; run isolated, ~3 minutes. {SPEC} (VCST-5337 2026-10-13 defects 3 and 4).",acme_org=@td(ORG_ACME.id); timeout_fault=1,"[PRE:CLEAR_SESSION]
+[ADMIN] read store setting GoogleAnalytics4.DataApi.RequestTimeoutSeconds on {{STORE_ID}} (TIMEOUT_ORIG)
+[ADMIN] set GoogleAnalytics4.DataApi.RequestTimeoutSeconds = {{timeout_fault}} on {{STORE_ID}}
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+[NAV] {{FRONT_URL}}/company/my-customers/{{acme_org}}/activities
+[ACT] press 'All time'
+[WAIT] the page has settled and the controls are interactive
+[KEY] if every tracked tab still shows a number (a range read within the last hour answers from cache, no fault injected) end BLOCKED:CONDITION_NOT_MET
+[WAIT] tab counts and list rendered
+[KEY] record the badges of All, Orders, Customers, Searches, Product views and Logins (BADGES_FAULT) and the notice text above the list (NOTICE_TEXT)
+[KEY] record any error page, pop-up or 'Couldn't load' text (HARD_ERROR)
+[ADMIN] set GoogleAnalytics4.DataApi.RequestTimeoutSeconds back to TIMEOUT_ORIG","[STATE] the Searches, Product views and Logins badges are '(-)' {SPEC} (VCST-5337 2026-10-02: a tracked tab shows (-) when counts failed)
+[STATE] the All badge is '(-)' too - All never shows a number beside missing tracked figures {SPEC} (VCST-5337 2026-10-13 defect 3)
+[STATE] Orders and Customers badges are numbers - platform data stays exact {SPEC} (VCST-5337 2026-10-02)
+[STATE] NOTICE_TEXT is 'Some tracked activity couldn't be loaded, so these figures may be incomplete.' {OBSERVED}
+[REL] HARD_ERROR is empty - no error page, pop-up or 'Couldn't load' {SPEC} (VCST-5337 2026-10-13 defect 3)","[API] salesRepActivities returns HTTP 200, errors[] empty, isAnalyticsAvailable false, orders and customers counts unchanged (KB-EE2E1EC4)
+[CONSOLE] no TypeError","All shows a number beside (-) tabs (contradictory)
+notice missing while tabs are (-)
+error page or 'Couldn't load'
+setting not restored","[ADMIN] set GoogleAnalytics4.DataApi.RequestTimeoutSeconds = TIMEOUT_ORIG on {{STORE_ID}} even when an earlier step failed, and confirm by reading the setting back","VCST-5337, VCST-5731 · Archetype:SILENT · Technique:EG · Purpose:FUNC · Catches:VCST-5337",Draft
+SR-ACT-014,"GA Unavailable: Customer Widget Says 'Web activity isn't available right now', Platform Data Still Shows, No Error Page",Sales Rep > Customer Activity > Degradation > Widget,High,BL-SR-002,ECL-10.1,"Env vcptcore-qa, store {{STORE_ID}} (B2B-store), SalesRep + GoogleEcommerceAnalytics modules installed, theme delivers the hub from the sales-rep plugin. SR_REP_PRIMARY is a PLAIN rep (never an administrator - admins pass every scope check) and serves @td(ORG_ACME.id), @td(ORG_TECHFLOW.id), @td(ORG_BUILDRIGHT.id) and others. Same fault injection and restore discipline as SR-ACT-013 (TIMEOUT_ORIG recorded, 1 set, restored in Cleanup). Summary is all time, Searches/Product views read this year; both bypass the cache only when their date range was not read in the last 60 min on the answering replica. If the widget still shows tracked data, end BLOCKED:CONDITION_NOT_MET. {SPEC} (VCST-5337 2026-10-13 defect 3, checklist D-27).",acme_org=@td(ORG_ACME.id); timeout_fault=1,"[PRE:CLEAR_SESSION]
+[ADMIN] read GoogleAnalytics4.DataApi.RequestTimeoutSeconds on {{STORE_ID}} (TIMEOUT_ORIG); set it to {{timeout_fault}}
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+[NAV] {{FRONT_URL}}/company/my-customers/{{acme_org}}
+[WAIT] the Customer activity widget settled
+[KEY] record the Summary text (SUMMARY_TEXT), whether 'Created on' shows a date (CREATED_ON_SHOWN) and any error page or pop-up (HARD_ERROR)
+[ACT] click 'Searches' in the widget
+[WAIT] the view settled
+[KEY] record the Searches text (SEARCHES_TEXT)
+[ADMIN] set GoogleAnalytics4.DataApi.RequestTimeoutSeconds back to TIMEOUT_ORIG","[STATE] SUMMARY_TEXT contains ""Web activity isn't available right now"" {OBSERVED}
+[STATE] SEARCHES_TEXT contains ""Web activity isn't available for this store right now"" {OBSERVED}
+[STATE] CREATED_ON_SHOWN is true - platform data still shows beside the unavailable tracked parts {SPEC} (VCST-5337 2026-10-02)
+[REL] HARD_ERROR is empty - never an error page or pop-up {SPEC} (VCST-5337 2026-10-02)","[API] salesRepCustomerActivitySummary returns createdOn and isAnalyticsAvailable false (KB-EE2E1EC4)
+[CONSOLE] no TypeError","'Couldn't load' or a generic error instead of the unavailable message
+Created on missing too
+setting not restored",[ADMIN] restore GoogleAnalytics4.DataApi.RequestTimeoutSeconds = TIMEOUT_ORIG and read it back,"VCST-5337, VCST-5731 · Archetype:SILENT · Technique:EG · Purpose:FUNC · Catches:VCST-5337",Draft
+SR-ACT-015,At 320 px a Two-Page List Shows Icon-Only Previous and Next With No Horizontal Scroll,Sales Rep > Customer Activity > Responsive > Pager 320,High,BL-UI-004,ECL-1.6,"Env vcptcore-qa, store {{STORE_ID}} (B2B-store), SalesRep + GoogleEcommerceAnalytics modules installed, theme delivers the hub from the sales-rep plugin. SR_REP_PRIMARY is a PLAIN rep (never an administrator - admins pass every scope check) and serves @td(ORG_ACME.id), @td(ORG_TECHFLOW.id), @td(ORG_BUILDRIGHT.id) and others. Needs a list of EXACTLY 21-40 rows (two pages of 20) on a tab/period of the served customer; the case searches the customer's tabs and chips for one (Searches or All, This year then All time) and ends BLOCKED:CONDITION_NOT_MET if none exists - a one-page or four-page list does not exercise the defect. {SPEC} (VCST-5337 2026-10-13 defect 6: pager shows icon-only Previous / Next on a phone).",acme_org=@td(ORG_ACME.id),"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+[VIEWPORT] 320x640
+[NAV] {{FRONT_URL}}/company/my-customers/{{acme_org}}/activities
+[ACT] choose the tab
+[WAIT] the page has settled and the controls are interactive
+[KEY] record TAB_USED, CHIP_USED and PAGE_COUNT (a list of exactly two pages is required)
+[WAIT] the pager rendered
+[KEY] record the pager buttons' accessible names and visible text (PAGER_TEXT), the document scroll width and viewport width (SCROLL_W, VIEW_W), the bounding boxes of the pager controls (PAGER_BOXES)
+[ACT] press Next
+[WAIT] the page has settled and the controls are interactive
+[ACT] Previous
+[WAIT] the page has settled and the controls are interactive
+[KEY] record the current page after each press (PAGE_AFTER_NEXT, PAGE_AFTER_PREV)","[COUNT] PAGE_COUNT == 2 - the precondition holds {SPEC}
+[OVERFLOW] SCROLL_W <= VIEW_W - no horizontal scroll at 320 px {SPEC} (VCST-5337 2026-10-13 defect 6; BL-UI-004)
+[TOUCH] every pager control box is at least 32 px in both dimensions {SPEC} (BL-UI-006, checklist V-1)
+[REL] PAGER_TEXT carries no visible 'Previous'/'Next' words (icon only) while the accessible names still contain Previous and Next {SPEC} (VCST-5337 2026-10-13 defect 6)
+[REL] PAGE_AFTER_NEXT is 2 and PAGE_AFTER_PREV is 1 {SPEC}",[CONSOLE] no TypeError,"pager wider than the viewport (horizontal scroll)
+Previous/Next text still shown at 320 px
+icon buttons without accessible names",none (read-only),"VCST-5337, VCST-5731 · Archetype:BOUNDARY · Technique:BVA · Purpose:VISUAL · Catches:VCST-5337",Draft
+SR-ACT-016,Activity Page and Both Widgets Hold Their Layout From 320 px to 1920 px and at 200% Zoom,Sales Rep > Customer Activity > Responsive > Sweep,Medium,BL-UI-004,ECL-1.6,"Env vcptcore-qa, store {{STORE_ID}} (B2B-store), SalesRep + GoogleEcommerceAnalytics modules installed, theme delivers the hub from the sales-rep plugin. SR_REP_PRIMARY is a PLAIN rep (never an administrator - admins pass every scope check) and serves @td(ORG_ACME.id), @td(ORG_TECHFLOW.id), @td(ORG_BUILDRIGHT.id) and others. Checklist V-1 (VCST-5337 round 2). Widths 320, 375, 414, 768, 1024, 1280, 1440, 1920 and a 200% zoom at 1280. Surfaces: /company/activities, a customer's activity page, the dashboard My activity widget, the profile Customer activity widget, the left rail / mobile menu.",acme_org=@td(ORG_ACME.id),"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+[VIEWPORT] 320x640
+[NAV] {{FRONT_URL}}/company/activities
+[KEY] record scroll width vs viewport width and interactive targets smaller than 24 px at <=768 px (BL-UI-006 grade), each with its accessible name and the distance to the nearest other target (SW_320, SMALL_320)
+[VIEWPORT] 375x812
+[KEY] repeat on /company/my-customers/{{acme_org}}/activities, the dashboard and the profile (SW_375, SMALL_375)
+[VIEWPORT] 414x896
+[KEY] repeat the same four surfaces (SW_414, SMALL_414)
+[VIEWPORT] 768x1024
+[KEY] repeat (SW_768, SMALL_768)
+[VIEWPORT] 1024x768
+[KEY] repeat (SW_1024, SMALL_1024)
+[VIEWPORT] 1440x900
+[KEY] repeat (SW_1440, SMALL_1440)
+[VIEWPORT] 1920x1080
+[KEY] repeat (SW_1920, SMALL_1920)
+[VIEWPORT] 1280x900
+[ACT] zoom the page to 200%
+[WAIT] the page has settled and the controls are interactive
+[KEY] repeat on the four surfaces (SW_ZOOM, SMALL_ZOOM)
+[KEY] on every width record whether a long product name is cut to two lines with the full name on hover (CLAMP_OK) when a long name is present","[OVERFLOW] every SW_* <= its viewport width - no horizontal scroll on any surface at any width {SPEC} (BL-UI-004; checklist V-1)
+[TOUCH] at <=768 px every interactive target is at least 24x24 CSS px with no spacing exception - the 14x14 activity hourglass triggers (VcIcon size 14) FAIL this grade even though WCAG 2.5.8 itself passes them by the spacing exception (>=12 px to the nearest target); report them against BL-UI-006, not as a WCAG failure {BL} (BL-UI-006; live triage 2026-10-20 vcptcore-qa)
+[REL] every hourglass trigger has the accessible name ""Tracked storefront activity: can take up to 48 hours to appear."" (child img aria-label, resolvable via getByRole('button',{name:...})) {OBSERVED}
+[REL] CLAMP_OK is true or N/A (no long name present) - names are cut to two lines with the full name on hover {SPEC} (VCST-5337 2026-10-13)",[CONSOLE] no TypeError at any width,"horizontal scroll or clipped tabs at a narrow width
+targets under 24x24 CSS px at <=768 px (BL-UI-006)
+long product name pushes the row wider than the card",reset zoom to 100% and viewport to 1280x900,"VCST-5337, VCST-5731 · Archetype:BOUNDARY · Technique:EP · Purpose:VISUAL · Catches:VCST-5337 · VCST-5337 r2 2026-10-20d: hourglass triggers are 14x14 WITH an accessible name (no ""no accessible name"" defect); WCAG 2.5.8 passes via the spacing exception, so the size is graded against BL-UI-006 (24x24 at <=768 px, no spacing exception); all four triggers share one name (kb KB-0BAA4DB6)",Draft
+SR-ACT-017,"Pages Hold 20 Rows, Page 2 Repeats Nothing From Page 1, and Recent and Top Can Legitimately Disagree",Sales Rep > Customer Activity > Page > Paging and Recent/Top,Medium,BL-SR-002,ECL-14.3,"Env vcptcore-qa, store {{STORE_ID}} (B2B-store), SalesRep + GoogleEcommerceAnalytics modules installed, theme delivers the hub from the sales-rep plugin. SR_REP_PRIMARY is a PLAIN rep (never an administrator - admins pass every scope check) and serves @td(ORG_ACME.id), @td(ORG_TECHFLOW.id), @td(ORG_BUILDRIGHT.id) and others. {SPEC} (VCST-5337 2026-10-02: 20 rows per page, up to 26 pages; Searches and Product views have a Recent / Top switch defaulting to Recent, the two may disagree - not a bug). Needs a tab with more than 20 rows for the customer; else BLOCKED:CONDITION_NOT_MET. The 26-page cap (500 rows) needs a list over 500 rows and is not reachable on this fixture; it is covered at API level only when such a customer exists (see report: NO CASE).",acme_org=@td(ORG_ACME.id),"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+[NAV] {{FRONT_URL}}/company/my-customers/{{acme_org}}/activities
+[ACT] press 'All time'
+[WAIT] the page has settled and the controls are interactive
+[ACT] choose a tab with more than 20 rows
+[WAIT] the page has settled and the controls are interactive
+[KEY] record page 1 rows (P1_ROWS, with their time labels) and the row count (P1_COUNT)
+[ACT] press Next
+[WAIT] the page has settled and the controls are interactive
+[KEY] record page 2 rows (P2_ROWS) and the row count (P2_COUNT)
+[ACT] on 'Searches' select 'Top'
+[WAIT] the page has settled and the controls are interactive
+[ACT] 'Recent'
+[WAIT] the page has settled and the controls are interactive
+[KEY] record the first three terms of each (TOP_TERMS, RECENT_TERMS) and the switch default on first open (SWITCH_DEFAULT)","[COUNT] P1_COUNT == 20 {SPEC} (VCST-5337 2026-10-02)
+[REL] P1_ROWS and P2_ROWS share no row (same term/product and same hour) - every item appears exactly once across pages {SPEC} (BOUNDARY more than one page, cases-that-catch-bugs 5)
+[COUNT] P2_COUNT <= 20 {SPEC}
+[STATE] SWITCH_DEFAULT is 'Recent' {SPEC} (VCST-5337 2026-10-02)
+[REL] TOP_TERMS may differ from RECENT_TERMS - a difference is NOT a failure; an identical-but-wrongly-ordered Top (not by count descending) is {SPEC} (VCST-5337 2026-10-02)",[CONSOLE] no TypeError,"a row repeats across pages
+page 1 shows more or fewer than min(20, totalCount) rows with a longer list behind it (count the rows - do not estimate from a screenshot)
+Top is not ordered by count",none (read-only),"VCST-5337, VCST-5731 · Archetype:BOUNDARY · Technique:BVA · Purpose:FUNC · Catches:VCST-5337 · VCST-5337 r2 2026-10-20d: expectation unchanged (page 1 = min(20,totalCount) rows, pages sum to totalCount, no repeats). The 2026-10-20 FAIL was a miscount (the screenshot showed 20). If a SHORT page is seen, check first that rows with an unparseable GA dateHour (""(not set)""/""(other)"") are dropped after the read while totalCount is not corrected (AnalyticsSalesRepActivitySource.cs:97-100)",Draft
+SR-ACT-018,A Search Term With Special Characters Opens the Catalog Search in a New Tab With the Term URL-Encoded,Sales Rep > Customer Activity > Links > Search term,Medium,BL-SR-002,ECL-14.3,"Env vcptcore-qa, store {{STORE_ID}} (B2B-store), SalesRep + GoogleEcommerceAnalytics modules installed, theme delivers the hub from the sales-rep plugin. SR_REP_PRIMARY is a PLAIN rep (never an administrator - admins pass every scope check) and serves @td(ORG_ACME.id), @td(ORG_TECHFLOW.id), @td(ORG_BUILDRIGHT.id) and others. Tracked (GA) figures appear 24-48 h after the event, hour-bucketed, cached 60 min per date range per replica {SPEC} (VCST-5337 2026-10-02). TWO-PHASE. PHASE 1: member @td(ACME_BUYER.email) searches the special token AGENT-TEST-qa5337act-sp-<yyyymmdd>-<rand4> & co/100% ""x"" (ampersand, slash, percent, quote). PHASE 2 (>= 24 h later, same gate as SR-ACT-001): rep clicks the row. {SPEC} (VCST-5731 AC-4: special-char term encoded).",acme_org=@td(ORG_ACME.id); token_prefix=AGENT-TEST-qa5337act,"--- SCREEN: PHASE 1 ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_BUYER]
+[KEY] SPECIAL_TOKEN = {{token_prefix}}-sp-<PLANT_DATE>-<PLANT_RAND> & co/100% ""x""
+[ACT] header search: SPECIAL_TOKEN
+[WAIT] search results page rendered
+[PRE:SIGNOUT]
+--- SCREEN: PHASE 2 ---
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+[NAV] {{FRONT_URL}}/company/my-customers/{{acme_org}}/activities
+[ACT] press 'All time'
+[WAIT] the page has settled and the controls are interactive
+[ACT] open 'Searches'
+[WAIT] the page has settled and the controls are interactive
+[KEY] find the newest -sp- row aged >= 24 h (none -> BLOCKED:CONDITION_NOT_MET)
+[KEY] record the row text (ROW_TEXT) and the tab count before the click (TABS_BEFORE)
+[ACT] click the term
+[WAIT] a new tab opened
+[KEY] record the new tab URL (SEARCH_URL), the tab count (TABS_AFTER), the search box text there (BOX_TEXT)","[REL] ROW_TEXT equals the planted special term exactly - displayed unmangled, no HTML interpretation {SPEC} (VCST-5731 AC-4)
+[NAV] SEARCH_URL path is /search and its q parameter decodes to the planted term; the raw URL is percent-encoded (no bare & or quote splitting the query) {SPEC} (VCST-5731 AC-4)
+[COUNT] TABS_AFTER == TABS_BEFORE + 1 {SPEC} (VCST-5731 AC-4)
+[REL] BOX_TEXT equals the planted term {SPEC}",[CONSOLE] no TypeError and no CSP or script error from the term text,"URL truncated at the ampersand
+term opens in the same tab
+term text rendered as markup",close the extra tab; sign out; planted rows are GA history.,"VCST-5337, VCST-5731 · Archetype:BOUNDARY · Technique:EG · Purpose:FUNC · Catches:VCST-5731",Draft
+SR-ACT-019,"One Header Search Is One Row, and a Results Page Opened by URL Is Not Listed",Sales Rep > Customer Activity > Counting > Search event,High,BL-SR-002,ECL-14.3,"Env vcptcore-qa, store {{STORE_ID}} (B2B-store), SalesRep + GoogleEcommerceAnalytics modules installed, theme delivers the hub from the sales-rep plugin. SR_REP_PRIMARY is a PLAIN rep (never an administrator - admins pass every scope check) and serves @td(ORG_ACME.id), @td(ORG_TECHFLOW.id), @td(ORG_BUILDRIGHT.id) and others. Tracked (GA) figures appear 24-48 h after the event, hour-bucketed, cached 60 min per date range per replica {SPEC} (VCST-5337 2026-10-02). TWO-PHASE. PHASE 1: member @td(ACME_BUYER.email) searches HDR token via the header ONCE, and opens /search?q=URLTOKEN directly (typed URL). PHASE 2 (>= 24 h, gate as SR-ACT-001): the rep lists ACME Searches. {SPEC} (VCST-5731 AC-5; VCST-5337 2026-10-02: only GA search event counted, one search is one row). Control: HDR row must exist, otherwise BLOCKED:CONDITION_NOT_MET.",acme_org=@td(ORG_ACME.id); token_prefix=AGENT-TEST-qa5337act,"--- SCREEN: PHASE 1 ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:ACME_BUYER]
+[KEY] HDR_TOKEN = {{token_prefix}}-hdr-<PLANT_DATE>-<PLANT_RAND>, URL_TOKEN = {{token_prefix}}-url-<PLANT_DATE>-<PLANT_RAND>
+[ACT] header search: HDR_TOKEN once
+[WAIT] results page rendered
+[KEY] record the number of search-type collect requests the header search produced (HDR_SEARCH_REQS) and of view_search_results (HDR_VSR_REQS)
+[NAV] {{FRONT_URL}}/search?q=<URL_TOKEN>
+[WAIT] results page rendered
+[PRE:SIGNOUT]
+--- SCREEN: PHASE 2 ---
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+[NAV] {{FRONT_URL}}/company/my-customers/{{acme_org}}/activities
+[ACT] press 'All time'
+[WAIT] the page has settled and the controls are interactive
+[ACT] open 'Searches'
+[WAIT] the page has settled and the controls are interactive
+[KEY] on the newest batch aged >= 24 h record HDR_ROWS, HDR_MULTIPLIER (the xN shown, 1 when none) and URL_ROWS","[COUNT] HDR_SEARCH_REQS == 1 - one header search emits one search event {SPEC} (VCST-5731 AC-5)
+[COUNT] HDR_ROWS == 1 and HDR_MULTIPLIER == 1 - one search is one row, not a search row plus a results-view row {SPEC} (VCST-5337 2026-10-02)
+[COUNT] URL_ROWS == 0 - a results page opened by URL is not counted {SPEC} (VCST-5337 2026-10-02)","[NETWORK] view_search_results is not what the rep list counts
+[CONSOLE] no TypeError","HDR token listed twice or with x2 (search counted twice)
+URL token listed",Sign out; planted rows are GA history.,"VCST-5337, VCST-5731 · Archetype:PARITY · Technique:EG · Purpose:FUNC · Catches:VCST-5731",Draft
+SR-ACT-020,"Opening a Profile Loads Summary Only, Searches and Product Views Load on First Click and Do Not Reload on Return",Sales Rep > Customer Activity > Widget > Lazy loading,High,BL-SR-031,ECL-10.1,"Env vcptcore-qa, store {{STORE_ID}} (B2B-store), SalesRep + GoogleEcommerceAnalytics modules installed, theme delivers the hub from the sales-rep plugin. SR_REP_PRIMARY is a PLAIN rep (never an administrator - admins pass every scope check) and serves @td(ORG_ACME.id), @td(ORG_TECHFLOW.id), @td(ORG_BUILDRIGHT.id) and others. {SPEC} (VCST-5337 2026-10-02: opening a profile loads Summary only; Searches and Product views load on first click and don't reload when you go back). Observed through the network log of the tab, NOW.",acme_org=@td(ORG_ACME.id),"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+[SETUP] start recording /graphql requests (operation name, variables) into GQL_LOG
+[NAV] {{FRONT_URL}}/company/my-customers/{{acme_org}}
+[WAIT] the Customer activity widget rendered (Summary)
+[KEY] count the requests per operation: salesRepCustomerActivitySummary (SUMMARY_REQS), salesRepCustomerInsights (INSIGHT_REQS_ON_OPEN)
+[ACT] click 'Searches'
+[WAIT] for the list
+[KEY] record INSIGHT_REQS_AFTER_FIRST_SEARCHES
+[ACT] click 'Product views'
+[WAIT] the page settled
+[ACT] click 'Searches' again
+[WAIT] the page has settled and the controls are interactive
+[KEY] record INSIGHT_REQS_AFTER_RETURN and SUMMARY_REQS_AFTER_RETURN","[COUNT] SUMMARY_REQS == 1 and INSIGHT_REQS_ON_OPEN == 0 - Summary only on open {SPEC} (VCST-5337 2026-10-02)
+[COUNT] INSIGHT_REQS_AFTER_FIRST_SEARCHES >= 1 - the first click loads the tab {SPEC}
+[REL] INSIGHT_REQS_AFTER_RETURN does not exceed the count after the first Product views load (Searches is not reloaded on return) and SUMMARY_REQS_AFTER_RETURN == 1 {SPEC} (VCST-5337 2026-10-02)","[NETWORK] no 4xx/5xx on /graphql
+[CONSOLE] no TypeError","insights query fires on page open
+Searches reloads each time the tab is re-entered (slow first opens, 22-45 s)",none (read-only),"VCST-5337, VCST-5731 · Archetype:STALE · Technique:ST · Purpose:FUNC · Catches:VCST-5337",Draft
+SR-ACT-021,A Hidden My Activity Dashboard Widget Sends No Activity Query,Sales Rep > Customer Activity > Widget > Hidden widget,Medium,BL-SR-031,ECL-10.1,"Env vcptcore-qa, store {{STORE_ID}} (B2B-store), SalesRep + GoogleEcommerceAnalytics modules installed, theme delivers the hub from the sales-rep plugin. Uses the dedicated saved-layout rep @td(SR_REP_LAYOUT.email) (the only rep whose persisted layout the suite mutates; never SR_REP_PRIMARY). BL-SR-031: a hidden widget's data query does not fire. The layout is restored in Cleanup (Save is a full replace, BL-SR-016).",layout_rep=@td(SR_REP_LAYOUT.email),"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_LAYOUT]
+[NAV] {{FRONT_URL}}/company/dashboard
+[WAIT] dashboard rendered
+[KEY] record whether the 'My activity' widget is visible (WIDGET_VISIBLE_BEFORE) and note the current layout (LAYOUT_BEFORE)
+[ACT] enter layout edit mode, hide the 'My activity' widget, press Save
+[WAIT] the page has settled and the controls are interactive
+[SETUP] start recording /graphql requests into GQL_LOG
+[NAV] {{FRONT_URL}}/company/dashboard
+[WAIT] dashboard rendered
+[KEY] record whether the widget is visible (WIDGET_VISIBLE_AFTER) and the number of salesRepActivities requests (ACT_REQS_HIDDEN)
+[ACT] restore the widget from the hidden-items tray
+[WAIT] the page has settled and the controls are interactive
+[ACT] press 'Save'
+[WAIT] the page has settled and the controls are interactive
+[NAV] {{FRONT_URL}}/company/dashboard
+[KEY] record ACT_REQS_RESTORED","[REL] WIDGET_VISIBLE_AFTER is false {SPEC}
+[COUNT] ACT_REQS_HIDDEN == 0 - a hidden widget does not query {BL} (BL-SR-031)
+[COUNT] ACT_REQS_RESTORED >= 1 - control: the query fires again once visible {BL} (BL-SR-031)",[CONSOLE] no TypeError,"activity query still fires while hidden (wasted 20-40 s GA read)
+widget cannot be restored",restore the My activity widget to visible and Save so the layout equals LAYOUT_BEFORE,"VCST-5337, VCST-5731 · Archetype:CONFIG · Technique:ST · Purpose:FUNC · Catches:BL-SR-031",Draft
+SR-ACT-022,A Rep With No Customers Sees 'No customers assigned to you yet' on the Activity Page and Dashboard Widget,Sales Rep > Customer Activity > Empty states > Zero customers,Medium,BL-SR-012,ECL-14.3,"Env vcptcore-qa, store {{STORE_ID}} (B2B-store), SalesRep + GoogleEcommerceAnalytics modules installed, theme delivers the hub from the sales-rep plugin. @td(SR_REP_NOCUSTOMERS.email) holds sales-rep:access and serves zero organizations (the zero-customer rep of the scoped GraphQL suite). {SPEC} (VCST-5337 2026-10-13: a rep with no customers sees the message).",rep=@td(SR_REP_NOCUSTOMERS.email),"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_NOCUSTOMERS]
+[NAV] {{FRONT_URL}}/company/activities
+[WAIT] the page settled
+[KEY] record the empty-state text (EMPTY_PAGE) and any visible error (ERR_PAGE)
+[NAV] {{FRONT_URL}}/company/dashboard
+[WAIT] the 'My activity' widget settled
+[KEY] record the widget text (EMPTY_WIDGET)","[STATE] EMPTY_PAGE contains 'No customers assigned to you yet' {OBSERVED}
+[STATE] EMPTY_WIDGET contains 'No customers assigned to you yet' or an equivalent empty state with no error {SPEC} (VCST-5337 2026-10-13)
+[REL] ERR_PAGE is empty - zero customers is not a failure {SPEC}","[API] salesRepActivities returns totalCount 0, no errors[] (asserted in GraphQL suite 050m3)
+[CONSOLE] no TypeError","error or endless spinner for a rep with no customers
+another rep's rows shown",none (read-only),"VCST-5337, VCST-5731 · Archetype:BOUNDARY · Technique:EP · Purpose:FUNC · Catches:VCST-5337",Draft
+SR-ACT-023,A Product Code Held by Two Catalogs (ALCE*) Is Listed With Its Image and Links to the Store Catalog's Product,Sales Rep > Customer Activity > Links > Product,Medium,BL-SR-002,ECL-14.3,"Env vcptcore-qa, store {{STORE_ID}} (B2B-store), SalesRep + GoogleEcommerceAnalytics modules installed, theme delivers the hub from the sales-rep plugin. SR_REP_PRIMARY is a PLAIN rep (never an administrator - admins pass every scope check) and serves @td(ORG_ACME.id), @td(ORG_TECHFLOW.id), @td(ORG_BUILDRIGHT.id) and others. {SPEC} (VCST-5337 2026-10-13: ALCE* codes found in two catalogs link, with image, to the product the store's catalog shows; a code the catalog lacks or shows several of is plain text). Uses existing GA rows now: the case scans the rep's Product views (All time) for a code starting ALCE; none present -> BLOCKED:CONDITION_NOT_MET (no fixture to plant: a member would have to view such a product 24-48 h earlier).",acme_org=@td(ORG_ACME.id),"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+[NAV] {{FRONT_URL}}/company/activities
+[ACT] press 'All time'
+[WAIT] the page has settled and the controls are interactive
+[ACT] open 'Product views'
+[WAIT] the page has settled and the controls are interactive
+[ACT] page through to find a row whose product code starts with ALCE (none -> BLOCKED:CONDITION_NOT_MET)
+[WAIT] the page has settled and the controls are interactive
+[KEY] record whether the row has an image (ALCE_IMG) and is a link (ALCE_LINK) and its href (ALCE_HREF)
+[ACT] click it
+[WAIT] a new tab opened
+[KEY] record the new tab URL (ALCE_URL), the product code shown there (ALCE_PDP_CODE) and the catalog the product belongs to (ALCE_CATALOG)","[REL] ALCE_IMG and ALCE_LINK are true - a product held by two catalogs is not rendered as plain text {SPEC} (VCST-5337 2026-10-13)
+[REL] ALCE_PDP_CODE equals the row's product code and ALCE_CATALOG is the store's own catalog - not the other catalog's product {SPEC} (VCST-5337 2026-10-13)
+[NAV] ALCE_URL opens in a new tab on the storefront origin {SPEC}",[CONSOLE] no TypeError,"plain text for ALCE* codes
+link leads to the other catalog's product",close the extra tab,"VCST-5337, VCST-5731 · Archetype:PARITY · Technique:EG · Purpose:FUNC · Catches:VCST-5337",Draft
+SR-ACT-024,The Activity Routes Load From the sales-rep Plugin Folder After Reload and in a New Tab With No Host 404,Sales Rep > Customer Activity > Delivery > Plugin,High,BL-SR-011,ECL-10.1,"Env vcptcore-qa, store {{STORE_ID}} (B2B-store), SalesRep + GoogleEcommerceAnalytics modules installed, theme delivers the hub from the sales-rep plugin. SR_REP_PRIMARY is a PLAIN rep (never an administrator - admins pass every scope check) and serves @td(ORG_ACME.id), @td(ORG_TECHFLOW.id), @td(ORG_BUILDRIGHT.id) and others. Plugin delivery from /modules/$(VirtoCommerce.SalesRep)/plugins/vc-frontend/ (literal $(...) in the path), as suite 093b. This case adds the NEW routes to that contract: a route that did not make it into the plugin falls to the host catch-all. {SPEC} (vc-frontend s6 guide; 093b).",acme_org=@td(ORG_ACME.id),"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+[SETUP] start recording every network request (URL, status, content-type) into REQ_LOG
+[NAV] {{FRONT_URL}}/company/activities (full document load)
+[WAIT] the page rendered
+[KEY] record the H1 (H1_ACT), the plugin requests (PLUGIN_REQS under /modules/$(VirtoCommerce.SalesRep)/plugins/vc-frontend/) and the script chunks requested from the host /assets/ folder that are page chunks (HOST_PAGE_CHUNKS)
+[NAV] {{FRONT_URL}}/company/my-customers/{{acme_org}}/activities (full document load)
+[WAIT] the page rendered
+[KEY] record the H1 (H1_CUSTACT)
+[ACT] open the same URL in a new browser tab
+[WAIT] the page rendered
+[KEY] record the H1 in the new tab (H1_NEWTAB)","[REL] H1_ACT is 'My activity' and H1_CUSTACT is '@td(ORG_ACME.name) activity' and H1_NEWTAB equals H1_CUSTACT - none shows 'Page not found' {OBSERVED}
+[COUNT] entries of PLUGIN_REQS whose status is not 200 or 304 == 0 {SPEC} (093b / vc-frontend s6 guide)
+[COUNT] HOST_PAGE_CHUNKS == 0 - the host /assets/ folder serves no hub page chunk {SPEC} (093b)",[CONSOLE] no uncaught TypeError or ReferenceError from hub pages,"host Not Found on a cold load of an activity route (whole hub lost)
+plugin chunk 404",close the extra tab,"VCST-5337, VCST-5731 · Archetype:CONFIG · Technique:EP · Purpose:FUNC · Catches:VCST-5337",Draft
+SR-ACT-025,"Customer Activity Widget Structure: Views, Five Rows, This Year Label, 'Based on tracked activity only' Footer, Last Viewed Product on Its Own Line",Sales Rep > Customer Activity > Widget > Structure,Medium,BL-SR-002,ECL-4.2,"Env vcptcore-qa, store {{STORE_ID}} (B2B-store), SalesRep + GoogleEcommerceAnalytics modules installed, theme delivers the hub from the sales-rep plugin. SR_REP_PRIMARY is a PLAIN rep (never an administrator - admins pass every scope check) and serves @td(ORG_ACME.id), @td(ORG_TECHFLOW.id), @td(ORG_BUILDRIGHT.id) and others. {SPEC} (VCST-5337 2026-10-02/10-13, checklist D-5/24/25/26, N-12..14). GA tabs carry the description 'Tracked storefront activity: can take up to 48 hours to appear.' on the page {OBSERVED}. 'Created on' is platform data (no hourglass); every other Summary row is tracked (hourglass) {SPEC}.",acme_org=@td(ORG_ACME.id),"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+[NAV] {{FRONT_URL}}/company/my-customers/{{acme_org}}
+[WAIT] the Customer activity widget rendered
+[KEY] record the views offered (VIEWS), the Summary rows with and without an hourglass mark (HOURGLASS_ROWS, PLAIN_ROWS) and whether 'Last viewed product' sits on its own line under its label (LVP_OWN_LINE)
+[ACT] click 'Searches'
+[WAIT] the page has settled and the controls are interactive
+[KEY] record the row count (S_ROWS), the Recent/Top default (S_SWITCH), the period label next to the switch (S_PERIOD), the footer text (S_FOOTER) and any 'Data as of' text (S_DATA_AS_OF)
+[ACT] click 'Product views'
+[WAIT] the page has settled and the controls are interactive
+[KEY] record P_ROWS, P_FOOTER, and whether a long product name is cut to two lines with the full name on hover (P_CLAMP)
+[NAV] {{FRONT_URL}}/company/my-customers/{{acme_org}}/activities
+[ACT] open the 'Searches' tab
+[WAIT] the page has settled and the controls are interactive
+[KEY] record the tab description text (TAB_DESC)","[REL] VIEWS is exactly Summary, Searches, Product views {SPEC} (VCST-5337 2026-10-02)
+[COUNT] S_ROWS <= 5 and P_ROWS <= 5 {SPEC} (VCST-5337 2026-10-02)
+[STATE] S_SWITCH is 'Recent', S_PERIOD is 'This year', S_FOOTER and P_FOOTER are 'Based on tracked activity only' {OBSERVED}
+[REL] S_DATA_AS_OF is empty - 'Data as of' is gone {SPEC} (VCST-5337 2026-10-13)
+[REL] PLAIN_ROWS contains only 'Created on'; HOURGLASS_ROWS contains the other Summary rows {SPEC} (VCST-5337 2026-10-02)
+[REL] LVP_OWN_LINE is true and P_CLAMP is true or N/A {SPEC} (VCST-5337 2026-10-13)
+[STATE] TAB_DESC contains 'Tracked storefront activity: can take up to 48 hours to appear.' {OBSERVED}",[CONSOLE] no TypeError,"'Data as of' still shown (reads as freshness)
+hourglass on platform data or missing on tracked data
+footer with a date",none (read-only),"VCST-5337, VCST-5731 · Archetype:PARITY · Technique:EP · Purpose:VISUAL · Catches:VCST-5337",Draft
+SR-ACT-026,"Dashboard My Activity Shows the 5 Newest Events Including Orders, Newest First",Sales Rep > Customer Activity > Dashboard > My activity,High,BL-SR-002,ECL-14.3,"Env vcptcore-qa, store {{STORE_ID}} (B2B-store), SalesRep + GoogleEcommerceAnalytics modules installed, theme delivers the hub from the sales-rep plugin. SR_REP_PRIMARY is a PLAIN rep (never an administrator - admins pass every scope check) and serves @td(ORG_ACME.id), @td(ORG_TECHFLOW.id), @td(ORG_BUILDRIGHT.id) and others. {SPEC} (VCST-5337 2026-10-02: the 5 newest events across all of the rep's customers, orders included; footer, hourglass). Compared with the head of /company/activities on This year. Orders placed by the REP's user id only count as 'Orders' (customerId = rep) {SPEC}.",acme_org=@td(ORG_ACME.id),"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+[NAV] {{FRONT_URL}}/company/dashboard
+[WAIT] the 'My activity' widget rendered
+[KEY] record the rows (DASH_ROWS: kind, title / ""Order placed #number"", organization, relative time label)
+[NAV] {{FRONT_URL}}/company/activities
+[WAIT] the All list rendered on This year
+[KEY] record the first 5 rows (PAGE_TOP5) and every row's organization name (ROW_ORGS); for each order row on the page record its total and status (PAGE_ORDER_TOTAL, PAGE_ORDER_STATUS)","[COUNT] DASH_ROWS count <= 5 {SPEC}
+[REL] DASH_ROWS are the 5 newest events and equal PAGE_TOP5 in order (kind, title, organization) - newest first, same feed, orders included {SPEC} (VCST-5337 2026-10-02)
+[REL] every DASH_ROWS order row reads ""Order placed #<number>"" with its organization and a relative time label {SPEC} (VCST-5337 2026-10-02)
+[STATE] the dashboard row is COMPACT by design: relative time, no status and no total, and no ""Based on tracked activity only"" footer - their absence is not a failure {OBSERVED} (vc-frontend my-activity.vue:31 compact; activity-row.vue:22/25 gate total + status on !compact; kb KB-A85687E0)
+[REL] every organization in ROW_ORGS is one the rep serves (a member of the My customers list) {SPEC} (VCST-5731 AC-6)
+[REL] when an order row is among the /company/activities rows it shows an order number, PAGE_ORDER_TOTAL and PAGE_ORDER_STATUS (total + status are asserted on the page row, not the dashboard widget) {SPEC}","[API] the widget's salesRepActivities take is 5
+[CONSOLE] no TypeError","oldest event first
+row from an unserved organization
+widget disagrees with the page head
+order row on /company/activities lacks total or status",none (read-only),"VCST-5337, VCST-5731 · Archetype:PARITY · Technique:EP · Purpose:FUNC · Catches:VCST-5337 · VCST-5337 r2 2026-10-20d: dashboard My activity row is compact by design (no total/status/footer; KB-A85687E0) - total and status moved to the /company/activities row assertion",Draft
+SR-ACT-027,"Relative Time Labels Follow the Calendar: 'during the hour of HH:00', '~N hours ago', '~yesterday', '2 days ago'",Sales Rep > Customer Activity > Page > Time labels,Medium,BL-SR-001,ECL-14.3,"Env vcptcore-qa, store {{STORE_ID}} (B2B-store), SalesRep + GoogleEcommerceAnalytics modules installed, theme delivers the hub from the sales-rep plugin. SR_REP_PRIMARY is a PLAIN rep (never an administrator - admins pass every scope check) and serves @td(ORG_ACME.id), @td(ORG_TECHFLOW.id), @td(ORG_BUILDRIGHT.id) and others. {SPEC} (VCST-5337 2026-10-02/10-13, owner decision 2026-10-21: hour buckets, 'during the hour of 14:00' on the page, '~2 hours ago' in the widget, '~yesterday' only for the previous calendar day AND >= 24 h old, two calendar days back reads '2 days ago'). The expected label is derived from the row's own timestamp and the run's current time (never hardcoded). Rule resolved by the VCST-5337 owner (Kirill Iusupov, 2026-10-21; implemented rule kb KB-0BE09FF7, StorefrontApp formatTimeAgo): elapsed < 24 h -> ""~N hours ago"" (even when the event is on the previous calendar day); elapsed >= 24 h -> calendar days on the browser clock (previous calendar day = ""~yesterday"", two days back = ""2 days ago""). Run twice around local midnight when practical: a 23:30 event read at 00:10 is 40 minutes old and reads ""~N hours ago"", never ""~yesterday"". Run twice around local midnight when practical: a 23:30 event read at 00:10 is '~yesterday' although it is 40 minutes old.",acme_org=@td(ORG_ACME.id),"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+[NAV] {{FRONT_URL}}/company/activities
+[ACT] press 'All time'
+[WAIT] the page has settled and the controls are interactive
+[KEY] for the first rows of Searches and Product views record each row's page label (PAGE_LABEL), its title/tooltip timestamp if any (ROW_TS) and the current store-timezone date and time (NOW)
+[NAV] {{FRONT_URL}}/company/dashboard
+[KEY] record each widget row's label (WIDGET_LABEL) and the timestamp of the same event (WIDGET_TS)","[REL] every PAGE_LABEL for a tracked row has the form 'during the hour of HH:00' where HH equals the hour of ROW_TS {SPEC} (VCST-5337 2026-10-02)
+[REL] WIDGET_LABEL for an event < 24 h old (NOW - WIDGET_TS < 24 h) is '~N hours ago' with N = whole hours between NOW and WIDGET_TS, even when WIDGET_TS falls on the previous calendar day (never '~yesterday') {SPEC} (VCST-5337 owner decision 2026-10-21 + source formatTimeAgo)
+[REL] WIDGET_LABEL for an event >= 24 h old whose WIDGET_TS falls on the previous calendar day (browser clock) is '~yesterday' {SPEC} (VCST-5337 owner decision 2026-10-21 + source)
+[REL] WIDGET_LABEL for an event two calendar days back (>= 24 h old) is '2 days ago', never '~yesterday' {SPEC} (VCST-5337 2026-10-13 + source)
+[REL] no label shows an exact minute for a tracked row {SPEC} (VCST-5337 2026-10-02)",[CONSOLE] no TypeError,"'~yesterday' for an event < 24 h old, for an event of today, or for 2 days back
+exact minutes shown for hour-bucketed data",none (read-only),"VCST-5337, VCST-5731 · Archetype:BOUNDARY · Technique:BVA · Purpose:FUNC · Catches:VCST-5337 · VCST-5337 r2 2026-10-20d: OPEN QUESTION to VCST-5337 owner (calendar ""~yesterday"" for an event < 24 h old vs implemented ""< 24 h -> ~N hours ago""; kb KB-0BE09FF7); expectation intentionally unchanged, case stays Draft · VCST-5337 r2 2026-10-21: open question resolved by the ticket owner (Kirill Iusupov, 2026-10-21) — '~N hours ago' under 24 h is accepted; '~yesterday' only when the event is on the previous calendar day AND >= 24 h old",Draft
+SR-ACT-028,A Member of Two Served Organizations Who Switches Organization Is Attributed to the Organization Active at the Time,Sales Rep > Customer Activity > Identity > Org switch,High,BL-SR-002,ECL-14.3,"Env vcptcore-qa, store {{STORE_ID}} (B2B-store), SalesRep + GoogleEcommerceAnalytics modules installed, theme delivers the hub from the sales-rep plugin. SR_REP_PRIMARY is a PLAIN rep (never an administrator - admins pass every scope check) and serves @td(ORG_ACME.id), @td(ORG_TECHFLOW.id), @td(ORG_BUILDRIGHT.id) and others. Tracked (GA) figures appear 24-48 h after the event, hour-bucketed, cached 60 min per date range per replica {SPEC} (VCST-5337 2026-10-02). TWO-PHASE. Member @td(MULTI_ORG_TF_BR.email) belongs to TechFlow and BuildRight, both served by SR_REP_PRIMARY (verify on the rep's My customers list). PHASE 1: sign in under TechFlow, search TOKEN_A, switch the active organization to BuildRight through the account/organization switcher, search TOKEN_B. PHASE 2 (>= 24 h, gate as SR-ACT-001): TOKEN_A must be listed under TechFlow only, TOKEN_B under BuildRight only. {SPEC} (VCST-5337 test model S2: identity follows the selected org). FIXTURE-GAP note: a second org's SINGLE-org members are not confirmed on vcptcore (USR-003/USR-006 have no organization); this multi-org account is the only way to attribute two served orgs.",member=@td(MULTI_ORG_TF_BR.email); org_a=@td(ORG_TECHFLOW.id); org_b=@td(ORG_BUILDRIGHT.id); org_a_platform=@td(MULTI_ORG_TF_BR.org_techflow_id); org_b_platform=@td(MULTI_ORG_TF_BR.org_buildright_id); token_prefix=AGENT-TEST-qa5337act,"--- SCREEN: PHASE 1 ---
+[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:MULTI_ORG_TF_BR]
+[ACT] make TechFlow the active organization if it is not
+[WAIT] the page has settled and the controls are interactive
+[KEY] TOKEN_A = {{token_prefix}}-orga-<PLANT_DATE>-<PLANT_RAND>; TOKEN_B = {{token_prefix}}-orgb-<PLANT_DATE>-<PLANT_RAND>
+[ACT] header search: TOKEN_A
+[WAIT] the page has settled and the controls are interactive
+[KEY] record up.organization_id of that collect request (UP_A)
+[ACT] switch the active organization to BuildRight through the organization switcher
+[WAIT] the storefront reloaded under BuildRight
+[ACT] header search: TOKEN_B
+[WAIT] the page has settled and the controls are interactive
+[KEY] record up.organization_id of that collect request (UP_B)
+[PRE:SIGNOUT]
+--- SCREEN: PHASE 2 ---
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+[NAV] {{FRONT_URL}}/company/my-customers/{{org_a}}/activities
+[ACT] press 'All time'
+[WAIT] the page has settled and the controls are interactive
+[ACT] open 'Searches'
+[WAIT] the page has settled and the controls are interactive
+[KEY] record A_ON_A and B_ON_A (rows carrying TOKEN_A / TOKEN_B on the newest batch aged >= 24 h)
+[NAV] {{FRONT_URL}}/company/my-customers/{{org_b}}/activities
+[ACT] press 'All time'
+[WAIT] the page has settled and the controls are interactive
+[ACT] open 'Searches'
+[WAIT] the page has settled and the controls are interactive
+[KEY] record A_ON_B and B_ON_B","[REL] UP_A equals {{org_a_platform}} and UP_B equals {{org_b_platform}} - the tag follows the switch {SPEC} (VCST-5337 test model S2)
+[COUNT] A_ON_A == 1 and B_ON_B == 1 - each search is under the organization active when it ran {SPEC}
+[COUNT] A_ON_B == 0 and B_ON_A == 0 - nothing is attributed to the stale organization {SPEC}","[NETWORK] no 4xx/5xx during the switch
+[CONSOLE] no TypeError","TOKEN_B attributed to TechFlow (watch did not fire after the switch)
+both tokens under one organization",Sign out; leave the member's default organization as found; planted rows are GA history.,"VCST-5337, VCST-5731 · Archetype:SCOPE · Technique:ST · Purpose:FUNC · Catches:VCST-5337",Draft

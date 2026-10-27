@@ -101,7 +101,8 @@ Two gates enforce it (`upstream-reduce.mjs` `provenanceFields` / `boundaryDenial
 finding surviving:
 
 1. **Provenance** — a `codeExcerpt`/`offendingLiteral` must be a verbatim substring of the cited
-   plugin file, which `deliver` re-reads from the INSTALLED plugin at send time.
+   plugin file, which `deliver` re-reads from the INSTALLED plugin at send time (vc-init's install
+   for a `skills/project-init/…` file, since VCST-6402).
 2. **Boundary** — no URL host, no absolute path, no email, no token-shaped run, no GUID (the ADO
    `projectId` is a GUID), no value read from the client's `.env.*` / `project-profile.json`, and no
    work-item field reference outside `System.*` / `Microsoft.VSTS.*`.

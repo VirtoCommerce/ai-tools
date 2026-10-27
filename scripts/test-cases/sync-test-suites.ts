@@ -36,6 +36,7 @@ import { AUTOMATION_STATUSES } from "./lint-test-cases.js";
 import { CLASSIFIER_VERSION } from "../lib/case-classifier.js";
 import { classifySuiteCases, type ClassifiableRow } from "../lib/case-classifier.js";
 import { strengthLine } from "../detection/assertion-strength.ts";
+import { lintRequirements } from "../regression/requirements-lint.ts";
 
 const MANIFEST_PATH = join("config", "test-suites.json");
 const CHECK_MODE = process.argv.includes("--check");
@@ -273,6 +274,54 @@ export function findDuplicateCaseIds(root?: string): string[] {
     .filter(([, files]) => files.length > 1)
     .sort((a, b) => a[0].localeCompare(b[0]))
     .map(([id, files]) => `case ID "${id}" appears in ${files.length} suites: ${files.join(", ")}`);
+}
+
+/**
+ * SP-001 / SP-002 — the link between a suite CSV and the Playwright specs that sit beside it.
+ *
+ * A spec lives at `<suite dir>/<stem>/<CASE-ID>.spec.ts`, beside `<suite dir>/<stem>.csv`. The CSV
+ * stays the case's source of truth (title, steps, status); the spec is its executable form, and
+ * the filename is the only thing tying them together — so a typo, or a case renumbered in the CSV,
+ * leaves a spec that runs, passes, and reports under an ID nothing else knows.
+ *
+ *  - SP-001: the file-name ID is not a row ID in the sibling `<stem>.csv` (or there is no such CSV).
+ *  - SP-002: the file declares no `test("<ID>:` (single-quote and backtick forms too) — a result is
+ *    keyed by the test title, so a title that does not lead with the file's ID detaches from its row.
+ *
+ * Only `*.spec.ts` files are examined; a CSV with no spec folder is the normal case.
+ */
+export function findSpecLinkErrors(root = join("regression", "suites")): string[] {
+  const errors: string[] = [];
+  const specs: string[] = [];
+  const walk = (dir: string): void => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const f = join(dir, e.name);
+      if (e.isDirectory()) walk(f);
+      else if (e.name.endsWith(".spec.ts")) specs.push(f);
+    }
+  };
+  if (existsSync(root)) walk(root);
+
+  const fwd = (f: string): string => f.split(sep).join("/");
+  const csvIds = new Map<string, Set<string>>();
+  for (const spec of specs.sort()) {
+    const dir = spec.slice(0, spec.lastIndexOf(sep));
+    const fileId = spec.slice(spec.lastIndexOf(sep) + 1).replace(/\.spec\.ts$/, "");
+    const csv = `${dir}.csv`;
+    if (!csvIds.has(csv)) {
+      const text = existsSync(csv) ? readFileSync(csv, "utf-8").replace(/\r(?!\n)/g, "\n") : "";
+      csvIds.set(csv, new Set(extractExistingIds(text)));
+    }
+    if (!existsSync(csv)) {
+      errors.push(`SP-001 ${fwd(spec)}: no sibling suite CSV "${fwd(csv)}" for the spec folder`);
+    } else if (!csvIds.get(csv)!.has(fileId)) {
+      errors.push(`SP-001 ${fwd(spec)}: "${fileId}" is not a case ID in ${fwd(csv)}`);
+    }
+    const src = readFileSync(spec, "utf-8");
+    const titled = ['"', "'", "`"].some((q) => src.includes(`test(${q}${fileId}:`));
+    if (!titled) errors.push(`SP-002 ${fwd(spec)}: no test("${fileId}: …") — the title must start with the file's case ID`);
+  }
+  return errors;
 }
 
 /**
@@ -793,6 +842,25 @@ function main(): void {
     process.exit(1);
   }
 
+  // SP-001 / SP-002: a Playwright spec beside a suite CSV must name a real case of that CSV
+  // and carry that ID as its test title.
+  const specErrors = findSpecLinkErrors();
+  if (specErrors.length > 0) {
+    console.error(`[suites:lint] FAIL — ${specErrors.length} spec file(s) not linked to their suite CSV:`);
+    for (const e of specErrors.slice(0, 25)) console.error(`  - ${e}`);
+    if (specErrors.length > 25) console.error(`  … and ${specErrors.length - 25} more`);
+    console.error(
+      `A spec lives at <suite>/<stem>/<CASE-ID>.spec.ts beside <suite>/<stem>.csv; its result is keyed by`,
+    );
+    console.error(
+      `the case ID, so an ID the CSV does not declare (or a title that does not start with it) detaches`,
+    );
+    console.error(
+      `the spec from its row. Rename the spec / fix the test title, or restore the CSV row.`,
+    );
+    process.exit(1);
+  }
+
   // XREF-001: a dependency may not leave its suite CSV. Ratcheted against
   // XREF_BASELINE — a file absent from the baseline must have zero.
   const xrefs = findCrossFileCaseRefs();
@@ -886,6 +954,14 @@ function main(): void {
     console.error(`Legal values: ${[...AUTOMATION_STATUSES].join(", ")} (or empty).`);
     console.error(`If this value is genuinely needed, add it to AUTOMATION_STATUSES in lint-test-cases.ts`);
     console.error(`— the ONE place the vocabulary is declared — not to the baseline.`);
+    process.exit(1);
+  }
+
+  // config/suite-requirements.json: a stale entry silently takes cases out of a run, so it is checked here.
+  const reqErrors = lintRequirements(process.cwd(), manifest.suites);
+  if (reqErrors.length > 0) {
+    console.error(`[suites:lint] FAIL — ${reqErrors.length} config/suite-requirements.json error(s):`);
+    for (const e of reqErrors) console.error(`  - ${e}`);
     process.exit(1);
   }
 

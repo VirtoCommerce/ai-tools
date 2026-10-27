@@ -66,6 +66,9 @@
  *   [CLICK]    <selector>
  *   [FILL]     <selector> = <value>
  *   [SNAP]     before = <selector>                            (rect snapshot, named)
+ *   [STRESS:TEXT] x2 [<scope selector>]                       (every visible text in scope repeated to N× its
+ *                                                             length — the long-translation stress; run it after
+ *                                                             the page settled and before the probes)
  *   [PROBE:CLS]
  *   [PROBE:SPACING]  <selector>
  *   [PROBE:ALIGN]    <selector>
@@ -73,6 +76,8 @@
  *   [PROBE:TOUCH]    <scope selector>
  *   [PROBE:IMAGES]   <selector>                              (aspect-ratio squash/stretch)
  *   [PROBE:IMGDIMS]  <selector>                              (no reserved space — CLS root cause)
+ *   [PROBE:CONTENT]  <scope selector>                        (raw i18n keys, GUIDs, broken images,
+ *                                                             leaked placeholders, values wrapped mid-token)
  *
  * ASSERTION GRAMMAR (the `Assertions` column, one per line; all must hold)
  *   [CLS]      <= 0.1
@@ -86,6 +91,8 @@
  *   [IMAGES]   aspectDrift == 0
  *   [IMGDIMS]  missingDims == 0
  *   [SHIFT]    before vs after topDelta == 0             (also leftDelta / any)
+ *   [CONTENT]  rawKeys == 0 | guids == 0 | brokenImages == 0 | placeholders == 0 | midWrap == 0
+ *              one metric per line; a bare `[CONTENT] == 0` asserts all five together
  *
  * A case with no parseable assertion is reported BLOCKED, never PASS — silence is not a pass.
  */
@@ -94,9 +101,8 @@ import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lo
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import { join, basename } from "path";
 import { parse as parseCsv } from "csv-parse/sync";
-import { config as loadDotenv } from "dotenv";
 import { chromium, type Browser, type BrowserContext, type Page } from "playwright";
-import { resolveTestEnv } from "../lib/resolve-test-env.js";
+import { loadEnv } from "../lib/load-env.mjs";
 
 import {
   LAYOUT_SNIPPETS,
@@ -105,6 +111,7 @@ import {
   touchTargetAuditSnippet,
   imageAspectAuditSnippet,
   imageIntrinsicDimsSnippet,
+  contentAuditSnippet,
   rectSnapshotSnippet,
   classifyCls,
   classifySpacing,
@@ -118,15 +125,18 @@ import {
   type TouchTargetAuditResult,
   type ImageAspectAuditResult,
   type ImageIntrinsicDimsResult,
+  type ContentAuditResult,
   type RectSnapshot,
 } from "../lib/measure-layout.js";
 import { TestDataResolver } from "../lib/test-data-resolver.js";
+import { SWITCH_TO_PASSWORD_SELECTORS } from "../lib/sign-in-selectors.js";
 import { roleByKey, resolveRole } from "../lib/user-roles.mjs";
 
-// Layered, TEST_ENV-aware env load — mirrors graphql-runner.ts / seed-common.mjs.
-// A bare loadDotenv() reads only `.env`, which does not exist in this repo, so live
-// runs would see no FRONT_URL and no credentials for [AUTH]. Deliberately does NOT
-// import config.js, whose strict CORE validation would block a layout-only run.
+// Layered, TEST_ENV-aware env load — scripts/lib/load-env.mjs, the one order graphql-runner.ts and seed-common.mjs
+// apply too (the layers, the `FOO_VCST` → `FOO` promotion, the QA_ENV_PATH files, the master password). A bare
+// dotenv config() reads only `.env`, which does not exist in this repo, so live runs would see no FRONT_URL and no
+// credentials for [AUTH]. Deliberately does NOT import config.js, whose strict CORE validation would block a
+// layout-only run.
 // NOTE: --env is honoured by re-reading TEST_ENV below, so it must be applied first.
 {
   const argv = process.argv.slice(2);
@@ -135,16 +145,7 @@ import { roleByKey, resolveRole } from "../lib/user-roles.mjs";
     process.env.TEST_ENV = argv[envIdx + 1];
   }
 }
-const TEST_ENV = resolveTestEnv("vcst");
-loadDotenv({ path: ".env.defaults" });
-loadDotenv({ path: `.env.${TEST_ENV}`, override: true });
-loadDotenv({ path: ".env.local", override: true });
-
-// Per-env override promotion: `FOO_VCST` → `FOO`, so `.env.local` can carry variants.
-const ENV_SUFFIX = `_${TEST_ENV.toUpperCase()}`;
-for (const [key, value] of Object.entries(process.env)) {
-  if (key.endsWith(ENV_SUFFIX) && value) process.env[key.slice(0, -ENV_SUFFIX.length)] = value;
-}
+const { testEnv: TEST_ENV } = loadEnv({ fallback: "vcst" });
 
 // ---------------------------------------------------------------------------
 // CLI
@@ -256,6 +257,7 @@ interface CaseState {
   touch?: TouchTargetAuditResult;
   images?: ImageAspectAuditResult;
   imgDims?: ImageIntrinsicDimsResult;
+  content?: ContentAuditResult;
   snaps: Record<string, RectSnapshot>;
   bound: Record<string, string>;
   consoleErrors: string[];
@@ -310,6 +312,10 @@ async function storageStateForRole(browser: Browser, roleKey: string, frontUrl: 
   const page = await ctx.newPage();
   try {
     await page.goto(`${frontUrl}/sign-in`, { waitUntil: "domcontentloaded" });
+    // A build that opens on the one-time-code form keeps the password form behind a link (sign-in-selectors.ts).
+    const toPassword = SWITCH_TO_PASSWORD_SELECTORS.join(", ");
+    await page.waitForSelector(`${toPassword}, [data-test-id="password-input"], input[type="password"]`, { timeout: 30_000 });
+    if (await page.locator(toPassword).first().isVisible()) await page.click(toPassword);
     // Stable data-test-ids per storefront-selectors.md. NB the email field is
     // type="text" (not type="email") on this storefront, so a type selector misses it.
     await page.fill('[data-test-id="email-input"], input[name="email"]', resolved.email);
@@ -381,6 +387,33 @@ function splitAssignment(arg: string, tag: string): [string, string] {
   const i = arg.indexOf(" = ");
   if (i < 0) throw new Error(`[${tag}] expects "<lhs> = <rhs>" with spaces around "=", got: ${arg}`);
   return [arg.slice(0, i).trim(), arg.slice(i + 3).trim()];
+}
+
+/**
+ * [STRESS:TEXT] — every visible text node in `scope` repeated to `factor`× its length, joined by a space so it
+ * still wraps the way a long translation does. Code, form fields and hidden nodes are left alone. A string, like
+ * the measure-layout.ts snippets, so tsx's `__name` wrapper never reaches the page. Returns the nodes changed.
+ */
+function textStressSnippet(factor: number, scope: string): string {
+  return `(() => {
+    let changed = 0;
+    for (const root of document.querySelectorAll(${JSON.stringify(scope)})) {
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      const nodes = [];
+      while (walker.nextNode()) nodes.push(walker.currentNode);
+      for (const node of nodes) {
+        // The node's own leading/trailing whitespace is kept: it is what separates it from the inline element
+        // next to it, and dropping it would glue "Hello " + <b>world</b> into one unbreakable token.
+        const [, lead, text, trail] = /^(\\s*)([\\s\\S]*?)(\\s*)$/.exec(node.nodeValue);
+        const el = node.parentElement;
+        if (!text || !el || el.closest("script,style,noscript,textarea,pre,code,svg")) continue;
+        if (!el.getClientRects().length || getComputedStyle(el).visibility === "hidden") continue;
+        node.nodeValue = lead + Array(${factor}).fill(text).join(" ") + trail;
+        changed++;
+      }
+    }
+    return changed;
+  })()`;
 }
 
 async function runSteps(
@@ -462,8 +495,16 @@ async function runSteps(
         st.snaps[name] = (await page.evaluate(rectSnapshotSnippet(sel))) as RectSnapshot;
         break;
       }
+      case "STRESS:TEXT": {
+        const [, factor, scope] = /^x(\d+)\s*(.*)$/.exec(arg) ?? [];
+        if (!factor || Number(factor) < 2) throw new Error(`[STRESS:TEXT] expects "x<N>" with N >= 2, got "${arg}"`);
+        const expanded = (await page.evaluate(textStressSnippet(Number(factor), scope || "body"))) as number;
+        if (!expanded) throw new Error(`[STRESS:TEXT] scope "${scope || "body"}" holds no visible text`);
+        await page.waitForTimeout(300);
+        break;
+      }
       case "PROBE:CLS":
-        st.cls = (await page.evaluate(LAYOUT_SNIPPETS.readCls)) as ClsResult;
+        st.cls =(await page.evaluate(LAYOUT_SNIPPETS.readCls)) as ClsResult;
         break;
       case "PROBE:SPACING":
         st.spacing = (await page.evaluate(spacingAuditSnippet(arg))) as SpacingAuditResult;
@@ -484,6 +525,10 @@ async function runSteps(
         break;
       case "PROBE:IMGDIMS":
         st.imgDims = (await page.evaluate(imageIntrinsicDimsSnippet(arg || "img"))) as ImageIntrinsicDimsResult;
+        break;
+      case "PROBE:CONTENT":
+        st.content = (await page.evaluate(contentAuditSnippet(arg || "body"))) as ContentAuditResult;
+        if (!st.content.scopeMatched) throw new Error(`[PROBE:CONTENT] scope "${arg || "body"}" matched nothing`);
         break;
       default:
         throw new Error(`unknown step tag [${tag}] — see the grammar in this file's header`);
@@ -625,6 +670,15 @@ function evaluateAssertion(raw: string, st: CaseState): AssertOutcome | null {
         .map((o) => `${o.src.split("/").pop() || "(inline)"} ar=${o.cssAspectRatio}`)
         .join(", ");
       return { ...out, detail: `${out.detail}; evaluated=${im.evaluated}${sample ? ` [${sample}]` : ""}` };
+    }
+    case "CONTENT": {
+      const c = need(st.content, "[PROBE:CONTENT]");
+      const metrics = ["rawKeys", "guids", "brokenImages", "placeholders", "midWrap"] as const;
+      const named = metrics.find((k) => new RegExp(`\\b${k}\\b`).test(body));
+      const list = named ? c[named] : metrics.flatMap((k) => c[k].map((o) => ({ ...o, text: `${k}: ${o.text}` })));
+      const out = numeric(list.length, named ?? "contentDefects");
+      const sample = list.slice(0, 3).map((o) => `"${o.text}" in ${o.where}`).join(", ");
+      return { ...out, detail: `${out.detail}; scope=${c.scope}; evaluated=${c.evaluated}${sample ? ` [${sample}]` : ""}` };
     }
     case "SHIFT": {
       const sm = /^(\w+)\s+vs\s+(\w+)\s+(\w+)\s*([<>=!]=?)\s*([\d.]+)$/.exec(body);

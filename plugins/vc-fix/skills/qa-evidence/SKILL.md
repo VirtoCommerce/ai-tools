@@ -26,16 +26,17 @@ Apply the project's evidence capture policy and output path conventions. Use bef
 ## Quick Reference
 
 ### Mandatory Captures
+Only the five purposes of `.claude/rules/reports.md` §5.1 get a screenshot; a passing check gets none.
+
 | When | What | Naming |
 |------|------|--------|
 | Test FAILS | Failure state screenshot | `{TC-ID}-FAIL-{description}.png` |
 | Bug found | Bug evidence (annotated) | `BUG-{name}-evidence.png` |
 | Visual regression | Before/after comparison | `{component}-{state}-{viewport}.png` |
-| Critical flow final state | Confirmation/success page | `{flow}-final-state.png` |
 | Error state | Console panel, network 500, error toast | `{TC-ID}-error-{type}.png` |
 
 ### Skip Capturing
-- Every step of a passing test (noise)
+- Every step of a passing test, and the final state of a passing flow (noise)
 - Loading spinners, login page (unless testing auth)
 - Same page in multiple browsers if all pass
 - Redundant screenshots of the same bug
@@ -50,9 +51,9 @@ Apply the project's evidence capture policy and output path conventions. Use bef
 ### Output Paths
 | Artifact | Directory |
 |----------|-----------|
-| Test docs (plans, cases, reports) | `reports/tickets/SprintXX-XX/<ticket-key>/` |
-| Screenshots (test evidence) | `reports/tickets/SprintXX-XX/<ticket-key>/screenshots/` |
-| Bug reports | `reports/bugs/` |
+| Test docs (plans, cases, reports) | the ticket's run folder (`knowledge/execution/run-env.md` §The run folder) |
+| Screenshots (test evidence) | the run folder's `screenshots/` |
+| Bug reports | `reports/bugs/` — filed in a ticket run, the run folder's `bugs/` |
 | Bug evidence | `reports/bugs/screenshots/`, `reports/bugs/api-traces/` |
 | Regression reports | `reports/regression/` |
 | Raw browser artifacts (gitignored) | `test-results/{browser}/` |
